@@ -4,3 +4,6 @@
 /result*
 __pycache__/
 *.pyc
+/.ninja_*
+/build.ninja
+/objdiff.json

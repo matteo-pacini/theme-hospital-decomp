@@ -1,0 +1,2 @@
+# source file: function symbols it implements
+src/game/code_00010000.cpp: fn_00011058_
