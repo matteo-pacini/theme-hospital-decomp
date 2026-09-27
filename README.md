@@ -41,7 +41,7 @@ each function in its own segment. The flake provides:
 | rizin + rz-ghidra | disassembly and decompiler output (`pdg`) |
 | Open Watcom v2 | `wdis` for inspecting OMF objects |
 
-Compiler flags: `wpp386 -s -od -zm` (see `tools/cc.py`).
+Compiler flags: `wpp386 -s -d2 -zm` (`-d2`: full debug info, which also disables optimisation) (see `tools/cc.py`).
 
 ## Layout
 

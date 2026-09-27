@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Mark symbols in executable sections of an ELF32 object as FUNC, sized up to
-the next symbol in the same section (or the section end).
+"""Mark global symbols in executable sections of an ELF32 object as FUNC, sized
+up to the next global symbol in the same section (or the section end).
 
 objconv carries no type or size over from OMF and emits every public as a
-4-byte OBJECT, which objdiff would otherwise diff as data.
+4-byte OBJECT, which objdiff would otherwise diff as data. Local symbols
+(objconv's ?NoName labels for debug-info references) are left alone.
 
 Usage: tools/fixsyms.py OBJECT.o   (rewritten in place)
 """
@@ -14,6 +15,7 @@ import sys
 SHT_SYMTAB = 2
 SHF_EXECINSTR = 0x4
 STT_NOTYPE, STT_OBJECT, STT_FUNC = 0, 1, 2
+STB_LOCAL = 0
 
 
 def main(path):
@@ -28,7 +30,12 @@ def main(path):
     for i in range(size // entsize):
         o = off + i * entsize
         _, value, _, info, _, shndx = struct.unpack_from("<IIIBBH", b, o)
-        if 0 < shndx < shnum and sections[shndx][2] & SHF_EXECINSTR and info & 0xF in (STT_NOTYPE, STT_OBJECT):
+        if (
+            info >> 4 != STB_LOCAL
+            and 0 < shndx < shnum
+            and sections[shndx][2] & SHF_EXECINSTR
+            and info & 0xF in (STT_NOTYPE, STT_OBJECT)
+        ):
             code_syms.append((shndx, value, o, info))
 
     for shndx, value, o, info in code_syms:

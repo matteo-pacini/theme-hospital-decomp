@@ -16,7 +16,9 @@ import tempfile
 sys.path.insert(0, os.path.dirname(__file__))
 import fixsyms  # noqa: E402
 
-CFLAGS = ["-zq", "-s", "-od", "-zm", "-i=include"]
+# -d2 (full debug info, no optimisation) matches the original codegen; -hd
+# emits it as DWARF, which objconv drops, unlike Watcom's own format.
+CFLAGS = ["-zq", "-s", "-d2", "-hd", "-zm", "-i=include"]
 
 
 def dos_path(path):
