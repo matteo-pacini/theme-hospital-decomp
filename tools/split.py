@@ -6,7 +6,7 @@ LE fixups become R_386_32 relocations; rel32 branches leaving the function
 become R_386_PC32 relocations, as the compiler emits for any call across
 -zm segments.
 
-Usage: tools/split.py OUTDIR
+Usage: tools/split.py OUTDIR [UNIT...]   (default: every unit)
 """
 
 import os
@@ -75,20 +75,25 @@ def emit_function(le, proj, fn, n, out):
     out.append(f".size {fn.name},.-{fn.name}")
 
 
-def main(outdir):
+def write_unit(le, proj, unit, path):
+    out = [".intel_syntax noprefix"]
+    for n, fn in enumerate(unit.functions):
+        emit_function(le, proj, fn, n, out)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    text = "\n".join(out) + "\n"
+    # Leave unchanged files untouched so ninja only reassembles what moved.
+    if not os.path.exists(path) or open(path).read() != text:
+        with open(path, "w") as f:
+            f.write(text)
+
+
+def main(outdir, *only):
     proj = Project()
     le = LEFile(EXE)
     for unit in proj.units:
-        out = [".intel_syntax noprefix"]
-        for n, fn in enumerate(unit.functions):
-            emit_function(le, proj, fn, n, out)
-        path = os.path.join(outdir, unit.name + ".s")
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        text = "\n".join(out) + "\n"
-        # Leave unchanged files untouched so ninja only reassembles what moved.
-        if not os.path.exists(path) or open(path).read() != text:
-            with open(path, "w") as f:
-                f.write(text)
+        if only and unit.name not in only:
+            continue
+        write_unit(le, proj, unit, os.path.join(outdir, unit.name + ".s"))
 
 
 if __name__ == "__main__":

@@ -58,11 +58,15 @@ so they count towards the total.
 ## Matching a function
 
 1. Pick a function from `config/functions.txt`; view it with
-   `rizin -c 'aaa; pdf @ 0xADDR; pdg @ 0xADDR' orig/HOSPITAL.EXE`.
+   `tools/fn.py 0xADDR`.
 2. Write it in a source file under `src/`, declared `extern "C"` and named
    `fn_XXXXXXXX` (the trailing `_` in the symbol comes from Watcom's register
    calling convention). Reference unnamed globals as `D_XXXXXXXX`.
 3. Put `// FUNCTION: 0xXXXXXXXX` on the line above it (a new file needs
    `python3 configure.py` once).
-4. `ninja report`, or diff interactively:
+4. `tools/check.py src/<file>.cpp` for per-function results, `ninja report`
+   for overall progress, or diff interactively:
    `objdiff-cli diff -p . -u game/<unit> fn_XXXXXXXX_`.
+
+See [docs/MATCHING.md](docs/MATCHING.md) for compiler behaviour and the
+source idioms that reproduce it.

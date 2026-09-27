@@ -1,5 +1,21 @@
 #include "common.h"
 
+enum ScreenMode {
+    SCREEN_MODE_1 = 1,
+    SCREEN_MODE_13 = 13
+};
+
+struct ScreenModeInfo {
+    u16 width;
+    u16 height;
+    u8 unknown[34];
+};
+
+enum Toggle {
+    TOGGLE_0,
+    TOGGLE_1
+};
+
 struct Sprite {
     u32 data;
     u8 width;
@@ -31,15 +47,33 @@ extern char D_00120021[];
 extern char D_0013f486[];
 extern char D_0015f900[];
 
+extern u8 D_001580f4;
+extern u8 D_001896a9, D_001896b6, D_001896c2, D_001896c4, D_00189729, D_00189744;
+extern u8 D_0015f3f9;
+extern Toggle D_0015f3f5, D_0015f3f6;
+extern ScreenMode D_0015f3f4;
+extern u8 D_0015f982;
+extern ScreenModeInfo D_0014d5e8[];
+extern s32 D_001547a0;
+extern char D_0013dd5c[], D_0013df40[], D_0013e124[], D_0013e1a8[];
+extern char D_0013e33c[], D_0013e418[], D_0013e4f4[], D_0013e578[];
+
 void *fn_000bac40(u32 size);
+void fn_000bac20(void);
+void fn_000bce44(char *name);
+void fn_000bcf90(char *name);
+void fn_00031ffc(int n);
+void fn_0008bcb4(void);
+int fn_000bea80(int mode, ...);
 void fn_000baca4(void *p);
 int fn_000bc13a(char *buf, char *fmt, ...);
 int fn_000bc170(char *path);
 u8 fn_000bbbb0(char *path, void *buf, u32 size, int count);
 void fn_000bc86c(u32 a, u32 b, u32 c);
-void fn_00010f68(u32 a, int b);
+u8 fn_00010f68(u32 a, ScreenMode mode);
 void fn_00011084(void);
 void fn_00010760(void);
+void fn_00011058(void);
 
 // FUNCTION: 0x00010584
 void fn_00010584(void)
@@ -97,11 +131,99 @@ void fn_00010760(void)
     }
 }
 
+// FUNCTION: 0x00010dbc
+void fn_00010dbc(void)
+{
+    D_001580f4 = 0;
+    if (D_001896b6 || D_001896c2) {
+        D_001580f4 |= 1;
+    }
+    if (D_001896c4 || D_00189744) {
+        D_001580f4 |= 4;
+    }
+    if (D_001896a9 || D_00189729) {
+        D_001580f4 |= 2;
+    }
+}
+
+// FUNCTION: 0x00010e24
+void fn_00010e24(void)
+{
+    if (D_0015f3f9 == 2) {
+        return;
+    }
+    if (D_0015f3f5 == TOGGLE_1) {
+        fn_000bce44(D_0013e1a8);
+        fn_000bce44(D_0013dd5c);
+        fn_000bce44(D_0013e578);
+        fn_000bce44(D_0013e418);
+        fn_00031ffc(1);
+        fn_0008bcb4();
+    } else {
+        fn_000bce44(D_0013df40);
+        fn_000bce44(D_0013e124);
+        fn_000bce44(D_0013e4f4);
+        D_001547a0 = -1;
+        fn_000bce44(D_0013e33c);
+        fn_00031ffc(13);
+    }
+    D_0015f3f6 = D_0015f3f5;
+    fn_000106c0();
+    D_0015f3f9 = 2;
+}
+
+// FUNCTION: 0x00010ee0
+void fn_00010ee0(void)
+{
+    if (D_0015f3f9 == 2) {
+        if (D_0015f3f5 == TOGGLE_1) {
+            fn_000bcf90(D_0013e1a8);
+            fn_000bcf90(D_0013dd5c);
+            fn_000bcf90(D_0013e578);
+            fn_000bcf90(D_0013e418);
+        } else {
+            fn_000bcf90(D_0013df40);
+            fn_000bcf90(D_0013e124);
+            fn_000bcf90(D_0013e4f4);
+            fn_000bcf90(D_0013e33c);
+        }
+        D_0015f3f9 = 0;
+        fn_000bac20();
+    }
+}
+
+// FUNCTION: 0x00010f68
+u8 fn_00010f68(u32 a, ScreenMode mode)
+{
+    int variant;
+
+    if (mode == D_0015f3f4) {
+        return 1;
+    }
+    if (mode == SCREEN_MODE_13) {
+        variant = 1;
+        fn_00011058();
+    } else if (mode == SCREEN_MODE_1) {
+        variant = 2;
+        fn_00011084();
+    }
+    if (fn_000bea80(mode, D_0014d5e8[mode].width, D_0014d5e8[mode].height, a, variant, 0) != 1) {
+        if (mode == SCREEN_MODE_13) {
+            D_0015f982 = 4;
+        } else {
+            D_0015f982 = 3;
+        }
+        return 0;
+    }
+    D_0015f3f4 = mode;
+    return 1;
+}
+
 // FUNCTION: 0x0001102c
 void fn_0001102c(void)
 {
     fn_00011084();
-    fn_00010f68(D_00153f34, 1);
+    fn_00010f68(D_00153f34, SCREEN_MODE_1);
 }
 
 // FUNCTION: 0x00011058
