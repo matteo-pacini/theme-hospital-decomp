@@ -80,8 +80,25 @@ and comparing against the original.
 | `jmp` back to a switch head | `goto` to a label on the `switch` |
 | `&&`: false first condition via a separate `jmp end` stub | `a && b`; nested `if`s jump straight to the end |
 
+| `test byte ptr [x+0x75],4`, `and byte ptr [x+0x74],0xef` | `u16` flags field: `flags & 0x400`, `flags &= ~0x10` (masks spanning both bytes stay 16-bit) |
+| `mov al,[ebp-3]` (high byte of a parameter) | 2-byte union parameter, e.g. `union { u16 raw; struct { u8 frac; u8 tile; }; }` |
+| `shl 5; sar 5` on a bitfield | `signed int x : 27` (plain `int` bitfields are unsigned) |
+| `mov [tmp],edx; neg dword ptr [tmp]` | `x < 0 ? -(x) : (x)` (an ABS macro) |
+| `inc eax; mov al,[eax]` | `*(u8 *)((u32)p + 1)` |
+| `mov eax,[p]; add [p],2` on a `u8 *` | `(*(u16 **)&p)++` |
+| `xor ah,ah; and eax,0xffff` on an argument | explicit `(u16)` cast of a `u8` |
+| `test ax,ax` on a call result | bare truth test of a `u16` return |
+| store, load, store, load, store | chained assignment `a = b = c = 0` |
+| every `return 0` jumps to one block | `break` out of the loop, single `return 0;` after it |
+| each `&&` test jumping straight to the false label | nested `if`s; `a && b && c && d` may need `(a && b) && (c && d)` |
+| Watcom varargs prologue | `typedef char *va_list[1]` with a manual `va_start`/`va_end` (`ap[0] = 0`) |
+
 Operand order of commutative operators decides the result register
-(`a + (b << 7)` and `(b << 7) + a` differ).
+(`a + (b << 7)` and `(b << 7) + a` differ; `pos + D[i]` vs `D[i] + pos`).
+
+Adding a table to `config/symbols.txt` renames references to its interior in
+every file. Check that no other source refers to an address it covers by its
+raw name, and re-run `tools/check.py` on all files afterwards.
 
 Stack frame layout is not fully understood. Observed so far:
 
