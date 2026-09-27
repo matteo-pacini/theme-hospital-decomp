@@ -23,8 +23,11 @@ def name_for(proj, le, addr):
         fn = proj.function_at(addr)
         if fn is None:
             return f"_C_{addr:08x}"
-        return fn.name if addr == fn.addr else f"{fn.name}+{addr - fn.addr:#x}"
-    return proj.data_ref(addr)
+        label = fn.name if addr == fn.addr else f"{fn.name}+{addr - fn.addr:#x}"
+        return f"{label} ({fn.demo_name})" if fn.demo_name and addr == fn.addr else label
+    ref = proj.data_ref(addr)
+    demo = proj.demo_data.get(addr)
+    return f"{ref} ({demo})" if demo else ref
 
 
 def main(addr, *flags):
@@ -36,6 +39,8 @@ def main(addr, *flags):
         sys.exit(f"no function starts at {addr:#x}")
     md = Cs(CS_ARCH_X86, CS_MODE_32)
     print(f"; {fn.name}  {fn.addr:#x}..{fn.end:#x} ({fn.size} bytes)")
+    if fn.demo_name:
+        print(f"; demo build: {fn.demo_name} in {fn.source} ({fn.category})")
     for it in scan(le, fn.addr, fn.end):
         raw = le.read(it.addr, it.size)
         if it.mnemonic is None:

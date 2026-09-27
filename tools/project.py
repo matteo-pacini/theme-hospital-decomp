@@ -1,11 +1,14 @@
 """Project model shared by configure.py and split.py.
 
-config/functions.txt  every function: address, size, symbol
-config/symbols.txt    named data: address, symbol, size
-src/**/*.cpp          `// FUNCTION: 0xADDRESS` above each function a file implements
+config/functions.txt       every function: address, size, symbol
+config/symbols.txt         named data: address, symbol, size
+config/demo_map.txt        demo-build name and source module per function
+config/demo_data_map.txt   demo-build name per global
+src/**/*.cpp               `// FUNCTION: 0xADDRESS` above each function a file implements
 
-Functions not claimed by a source file are grouped into auto units by fixed
-address window, so assigning a function never renames unrelated units.
+Functions not claimed by a source file are grouped into auto units by their
+source module in the demo build, or by fixed address window when unknown, so
+assigning a function never renames unrelated units.
 """
 
 import bisect
@@ -17,8 +20,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXE = os.path.join(ROOT, "orig", "HOSPITAL.EXE")
 EXE_SHA1 = "d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae"
 
-# Everything below this address is Bullfrog game code built with Watcom C++
-# (unoptimised); everything above is runtime and third-party libraries.
+# Fallback category boundary for functions the demo build does not name:
+# below it is game code, above it libraries and runtime.
 GAME_END = 0xBBFF0
 AUTO_WINDOW = 0x4000
 FUNCTION_MARKER = re.compile(r"^\s*//\s*FUNCTION:\s*(0x[0-9a-fA-F]+)", re.M)
@@ -29,6 +32,9 @@ class Function:
     addr: int
     size: int
     name: str
+    demo_name: str | None = None  # mangled name in the demo build
+    source: str | None = None  # source file in the demo build, e.g. "main.cpp"
+    demo_category: str | None = None  # "game", "bflib" or "runtime"
 
     @property
     def end(self):
@@ -36,7 +42,9 @@ class Function:
 
     @property
     def category(self):
-        return "game" if self.addr < GAME_END else "lib"
+        if self.demo_category:
+            return self.demo_category
+        return "game" if self.addr < GAME_END else "runtime"
 
 
 @dataclass
@@ -81,6 +89,18 @@ class Project:
         self._fn_addrs = [f.addr for f in self.functions]
         self.by_name = {f.name: f for f in self.functions}
 
+        by_addr = {f.addr: f for f in self.functions}
+        for line in _lines(os.path.join(cfg, "demo_map.txt")):
+            retail, _, _, evidence, category, source, name = line.split()
+            fn = by_addr.get(int(retail, 16))
+            if fn is not None and evidence != "conflict":
+                fn.demo_name, fn.source, fn.demo_category = name, source, category
+
+        self.demo_data = {}  # retail address -> demo global name
+        for line in _lines(os.path.join(cfg, "demo_data_map.txt")):
+            retail, _, _, _, _, name = line.split()
+            self.demo_data[int(retail, 16)] = name
+
         self.data_symbols = []
         for line in _lines(os.path.join(cfg, "symbols.txt")):
             addr, name, size = line.split()
@@ -88,7 +108,6 @@ class Project:
         self.data_symbols.sort(key=lambda s: s.addr)
         self._data_addrs = [s.addr for s in self.data_symbols]
 
-        by_addr = {f.addr: f for f in self.functions}
         self.units = []
         claimed = {}
         for source in self.sources(root):
@@ -109,9 +128,13 @@ class Project:
         for f in self.functions:
             if f.addr in claimed:
                 continue
-            window = f.addr - f.addr % AUTO_WINDOW
-            key = (f.category, window)
-            auto.setdefault(key, Unit(f"auto/{f.category}_{window:08x}")).functions.append(f)
+            if f.source:
+                stem = os.path.splitext(f.source)[0]
+                name = f"auto/{f.category}/{stem}"
+            else:
+                window = f.addr - f.addr % AUTO_WINDOW
+                name = f"auto/{f.category}/unknown_{window:08x}"
+            auto.setdefault(name, Unit(name)).functions.append(f)
         self.units += [auto[k] for k in sorted(auto)]
 
     @staticmethod

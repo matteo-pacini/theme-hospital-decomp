@@ -15,7 +15,8 @@ from project import EXE, EXE_SHA1, ROOT, Project  # noqa: E402
 
 CATEGORIES = [
     {"id": "game", "name": "Game"},
-    {"id": "lib", "name": "Libraries"},
+    {"id": "bflib", "name": "Bullfrog libraries"},
+    {"id": "runtime", "name": "Runtime and third-party"},
 ]
 
 
@@ -31,7 +32,7 @@ def main():
     check_exe()
     proj = Project()
     tools = ["tools/lefile.py", "tools/project.py", "tools/split.py", "tools/x86scan.py"]
-    configs = ["config/functions.txt", "config/symbols.txt"]
+    configs = ["config/functions.txt", "config/symbols.txt", "config/demo_map.txt", "config/demo_data_map.txt"]
 
     n = []
     n.append("ninja_required_version = 1.10\n")

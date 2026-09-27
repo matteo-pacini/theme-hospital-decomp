@@ -27,6 +27,19 @@ No game files are included. You need your own copy.
 
    `objdiff` (GUI) can open the project root directly; it reads `objdiff.json`.
 
+## Names from the 1997 demo
+
+The March 1997 demo of the game (`HOSPITAL.EXE`, sha1
+`d37aaea89e22be35467b3050280394c74a5e0b07`, on archive.org as `HOSP_zip`) was
+built from nearly the same source and ships with Watcom debug info: 437 source
+modules and about 4,000 named functions and globals. It was built with
+optimisation, so its code differs from retail; `tools/mapdemo.py` and
+`tools/mapdata.py` match retail functions and globals to it by strings, call
+graphs, link order and struct offsets. The results are committed as
+`config/demo_map.txt` and `config/demo_data_map.txt`, so the demo is only
+needed to regenerate them (extract it to `orig/demo-1997-03/`, then
+`wdump -Dx HOSPITAL.EXE > HOSPITAL.debug.txt`).
+
 ## Toolchain
 
 The game code was built with Watcom C/C++ 10.x (`wpp386`), unoptimised, with
