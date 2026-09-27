@@ -70,6 +70,18 @@ and comparing against the original.
 | varargs call with `mov eax,N; push eax` rather than `push N` | fixed parameter declared `u8` |
 | `rep movsd` from a global into a local | struct copy from an extern struct (`Message msg = D_00129004;`) |
 | signed `jle` on two `u8` operands | `(int)a > (int)b` (without casts: byte compare, `jbe`) |
+| `u8`/`u16` field: `and`+`test` vs `cmp byte/word ptr ..,0` | `x == 0` vs `!x` / `if (x)` |
+| lone `cmp eax,1` followed by unrelated code | empty `if (g == 1) {}` |
+| `u16` local set/incremented with dword ops, read with `xor eax,eax; mov ax` | ordinary `u16` local |
+| `switch` on `u8`: value copied to two byte temps, compare tree | `switch (u8)`; on `u16` with a jump table the temps are dwords |
+| `mov eax,[base+k-1]; sar eax,0x18` | `(s8)w` of a `u16` field at offset `k` |
+| `mov [tmp],eax; mov eax,[tmp]; push eax` around a call result | result assigned to a named local before the varargs call |
+| 16-bit `imul ax,word ptr [..]` | `u16 = u16 * u16` |
+| `jmp` back to a switch head | `goto` to a label on the `switch` |
+| `&&`: false first condition via a separate `jmp end` stub | `a && b`; nested `if`s jump straight to the end |
+
+Operand order of commutative operators decides the result register
+(`a + (b << 7)` and `(b << 7) + a` differ).
 
 Stack frame layout is not fully understood. Observed so far:
 
@@ -79,6 +91,10 @@ Stack frame layout is not fully understood. Observed so far:
 - The return-value slot comes after the parameters; a local that must sit
   below it can be declared inside an inner block
   (`else { T x; ... }`).
+- Arrays go below scalars regardless of declaration order.
+- Locals of an inner block are allocated when codegen reaches the block, so
+  they land below compiler temporaries created earlier; declaring a buffer
+  inside the `if` that uses it moves it down.
 - `u8` locals follow neither declaration nor first-use order (unsolved).
 
 ## Known unsolved
@@ -90,5 +106,8 @@ Stack frame layout is not fully understood. Observed so far:
   non-matching functions in 0x10000-0x14000) and depends on earlier code in
   the function: the same expression comes out right in some places. Watcom
   10.5, 10.5a, 10.6 and 11.0 and ~40 flag combinations all behave the same.
-  Open Watcom 1.x is untested.
+  Register allocation works per basic block: a later statement in the same
+  block changes earlier choices, and splitting the block (a label, `do {}
+  while (0)`) can flip them, but no plausible source form found so far
+  reproduces the original throughout. Open Watcom 1.x is untested.
 - Ordering of `u8` locals in the frame.
