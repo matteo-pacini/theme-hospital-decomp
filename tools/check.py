@@ -35,7 +35,9 @@ def main(source, *flags):
         capture_output=True, text=True,
     )
     if r.returncode:
-        sys.exit(r.stdout + r.stderr)
+        log = r.stdout + r.stderr
+        errors = [l for l in log.splitlines() if "Error!" in l or "Warning!" in l]
+        sys.exit("\n".join(errors) or log)
 
     total = 0
     for fn in unit.functions:
