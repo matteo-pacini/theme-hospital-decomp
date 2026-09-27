@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Generate config/functions.txt: every function in the code object of HOSPITAL.EXE.
 
-Starts are the union of rizin's auto-analysis, rel32 call targets, and
-Watcom unoptimised prologues that are only reached through pointers.
-Existing names in config/functions.txt are preserved.
+Starts are the union of rizin's auto-analysis, rel32 call targets, Watcom
+unoptimised prologues that are only reached through pointers or that follow
+another function's padding, and every start already in config/functions.txt
+(so hand-added entries survive). Existing names are preserved.
 
 Usage: tools/discover.py orig/HOSPITAL.EXE config/functions.txt
 """
@@ -16,7 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from lefile import LEFile  # noqa: E402
-from x86scan import scan, trimmed_end  # noqa: E402
+from x86scan import is_padding, scan, trimmed_end  # noqa: E402
 
 # Unoptimised Watcom frame: register saves, push ebp; mov ebp,esp; sub esp,imm32
 PROLOGUE = re.compile(rb"[\x50-\x57]{1,7}\x89\xe5\x81\xec")
@@ -53,7 +54,20 @@ def main(exe, out):
         if a in fixup_targets and a % 4 == 0:
             starts.add(a)
 
+    # A prologue on a 4-byte boundary after a terminal instruction and padding
+    # starts a function nothing calls directly. Module boundaries pad to 16.
+    for it in scan(le, lo, hi):
+        if not it.terminal:
+            continue
+        for nxt in range(it.end + (-it.end % 4), it.end + 16, 4):
+            if not is_padding(code.data[it.end - lo : nxt - lo]):
+                break
+            if PROLOGUE.match(code.data, nxt - lo):
+                starts.add(nxt)
+                break
+
     names = read_names(out)
+    starts |= set(names)
     starts = sorted(starts)
     with open(out, "w") as f:
         f.write("# address  size  symbol\n")
