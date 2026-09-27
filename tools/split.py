@@ -18,6 +18,11 @@ from project import EXE, Project  # noqa: E402
 from x86scan import scan  # noqa: E402
 
 
+def q(sym):
+    """Quote a symbol for GNU as; mangled C++ names contain ?, $ and ()."""
+    return f'"{sym}"'
+
+
 def code_ref(proj, fn, section_label, addr):
     """Expression for a code address, as referenced from inside `fn`."""
     if fn.addr <= addr < fn.end:
@@ -26,13 +31,13 @@ def code_ref(proj, fn, section_label, addr):
     if target is None:
         return f"_C_{addr:08x}"
     off = addr - target.addr
-    return f"{target.name}+{off:#x}" if off else target.name
+    return f"{q(target.name)}+{off:#x}" if off else q(target.name)
 
 
 def emit_function(le, proj, fn, n, out):
     label = f".Lsec{n}"
     out.append(f'\n.section _TEXT,"ax",@progbits,unique,{n}')
-    out.append(f".globl {fn.name}\n.type {fn.name},@function\n{fn.name}:\n{label}:")
+    out.append(f".globl {q(fn.name)}\n.type {q(fn.name)},@function\n{q(fn.name)}:\n{label}:")
 
     fields = {}  # field address -> (size, expression)
     for it in scan(le, fn.addr, fn.end):
@@ -72,7 +77,7 @@ def emit_function(le, proj, fn, n, out):
             flush()
         a += 1
     flush()
-    out.append(f".size {fn.name},.-{fn.name}")
+    out.append(f".size {q(fn.name)},.-{q(fn.name)}")
 
 
 def write_unit(le, proj, unit, path):

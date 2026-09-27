@@ -25,12 +25,31 @@ and comparing against the original.
 
 ## Conventions
 
-- Declare everything `extern "C"` so symbols do not depend on C++ mangling.
-  Unnamed functions are `fn_XXXXXXXX` (symbol `fn_XXXXXXXX_`), unnamed data
-  `D_XXXXXXXX` (symbol `_D_XXXXXXXX`), both named after their address.
+- Functions and globals the 1997 demo names (see README) use their original
+  names and must mangle to exactly the symbol in `config/functions.txt` /
+  `config/symbols.txt`: write the real C++ declaration, including top-level
+  `const` on parameters (Watcom mangles it), `volatile`, and the original
+  class/enum names. `tools/fn.py` prints the demangled declaration and
+  `owdemangle` demangles any symbol. A wrong signature shows up in
+  `tools/check.py` as "not found in compiled object".
+- Some functions changed signature between the demo and retail (e.g.
+  `open_requester` takes two arguments in retail, one in the demo), and a few
+  demo globals are used differently. Such a function keeps an address name in
+  source and is bound to the target's symbol with
+  `#pragma aux fn_XXXXXXXX "W?..."` in `include/hosp.h`, so relocations still
+  match.
+- Everything else is `extern "C"` and named after its address: functions
+  `fn_XXXXXXXX` (symbol `fn_XXXXXXXX_`), data `D_XXXXXXXX` (symbol
+  `_D_XXXXXXXX`).
+- One source file per original module (`src/<module>.cpp`, as named by the
+  demo's debug info); shared types live in `include/hosp.h` (game) and
+  `include/bflib.h` (Bullfrog library types, globals and functions).
+- Never declare functions or data `static`, even where the original did:
+  objconv drops Watcom's local-symbol records, so a static function would
+  vanish from the compiled object. The mangled name does not change.
 - Put `// FUNCTION: 0xXXXXXXXX` on the line above each function definition.
-- Reference string literals and other constant data through `extern char
-  D_XXXXXXXX[]` rather than writing the literal: a literal would be emitted
+- Reference string literals and other constant data through `extern`
+  declarations rather than writing the literal: a literal would be emitted
   into this object's own `CONST` segment, and the reloc would not match.
 - If code indexes into a table or struct, the table needs an entry in
   `config/symbols.txt` (`address symbol size`, hex) so that references to its

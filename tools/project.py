@@ -164,4 +164,5 @@ class Project:
         if sym is None:
             return f"_D_{addr:08x}"
         off = addr - sym.addr
-        return f"{sym.name}+{off:#x}" if off else sym.name
+        name = f'"{sym.name}"'
+        return f"{name}+{off:#x}" if off else name
