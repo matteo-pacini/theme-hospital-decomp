@@ -7,6 +7,7 @@ extern int D_0013e634[];
 extern int *D_0015f420;
 extern int *D_0015f3fe;
 
+// FUNCTION: 0x00011058
 void fn_00011058(void)
 {
     D_0015f420 = D_0013c77c;

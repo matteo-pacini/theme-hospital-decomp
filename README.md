@@ -49,12 +49,10 @@ Compiler flags: `wpp386 -s -od -zm` (see `tools/cc.py`).
 | --- | --- |
 | `config/functions.txt` | every function: address, size, symbol (from `tools/discover.py`) |
 | `config/symbols.txt` | named data symbols |
-| `config/units.txt` | which source file implements which functions |
 | `src/` | decompiled C++ |
 | `include/` | shared headers |
 | `tools/` | LE reader, splitter, compiler wrapper |
 
-Functions not listed in `config/units.txt` are placed in hidden `auto/` units
 so they count towards the total.
 
 ## Matching a function
@@ -64,6 +62,7 @@ so they count towards the total.
 2. Write it in a source file under `src/`, declared `extern "C"` and named
    `fn_XXXXXXXX` (the trailing `_` in the symbol comes from Watcom's register
    calling convention). Reference unnamed globals as `D_XXXXXXXX`.
-3. Add the symbol to that file's line in `config/units.txt`.
+3. Put `// FUNCTION: 0xXXXXXXXX` on the line above it (a new file needs
+   `python3 configure.py` once).
 4. `ninja report`, or diff interactively:
    `objdiff-cli diff -p . -u game/<unit> fn_XXXXXXXX_`.

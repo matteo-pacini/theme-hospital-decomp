@@ -2,7 +2,7 @@
 
 config/functions.txt  every function: address, size, symbol
 config/symbols.txt    named data: address, symbol, size
-config/units.txt      source file -> the function symbols it implements
+src/**/*.cpp          `// FUNCTION: 0xADDRESS` above each function a file implements
 
 Functions not claimed by a source file are grouped into auto units by fixed
 address window, so assigning a function never renames unrelated units.
@@ -10,6 +10,7 @@ address window, so assigning a function never renames unrelated units.
 
 import bisect
 import os
+import re
 from dataclasses import dataclass, field
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -20,6 +21,7 @@ EXE_SHA1 = "d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae"
 # (unoptimised); everything above is runtime and third-party libraries.
 GAME_END = 0xBBFF0
 AUTO_WINDOW = 0x4000
+FUNCTION_MARKER = re.compile(r"^\s*//\s*FUNCTION:\s*(0x[0-9a-fA-F]+)", re.M)
 
 
 @dataclass
@@ -86,30 +88,39 @@ class Project:
         self.data_symbols.sort(key=lambda s: s.addr)
         self._data_addrs = [s.addr for s in self.data_symbols]
 
+        by_addr = {f.addr: f for f in self.functions}
         self.units = []
-        claimed = set()
-        for line in _lines(os.path.join(cfg, "units.txt")):
-            source, names = line.split(":", 1)
-            source = source.strip()
+        claimed = {}
+        for source in self.sources(root):
             fns = []
-            for n in names.split():
-                if n not in self.by_name:
-                    raise KeyError(f"units.txt: {source}: unknown function {n}")
-                if n in claimed:
-                    raise KeyError(f"units.txt: {n} claimed twice")
-                claimed.add(n)
-                fns.append(self.by_name[n])
-            name = os.path.splitext(os.path.relpath(source, "src"))[0]
-            self.units.append(Unit(name, sorted(fns, key=lambda f: f.addr), source))
+            for m in FUNCTION_MARKER.finditer(open(os.path.join(root, source)).read()):
+                addr = int(m.group(1), 16)
+                if addr not in by_addr:
+                    raise KeyError(f"{source}: no function at {addr:#x} in config/functions.txt")
+                if addr in claimed:
+                    raise KeyError(f"{source}: {addr:#x} already implemented in {claimed[addr]}")
+                claimed[addr] = source
+                fns.append(by_addr[addr])
+            if fns:
+                name = os.path.splitext(os.path.relpath(source, "src"))[0]
+                self.units.append(Unit(name, sorted(fns, key=lambda f: f.addr), source))
 
         auto = {}
         for f in self.functions:
-            if f.name in claimed:
+            if f.addr in claimed:
                 continue
             window = f.addr - f.addr % AUTO_WINDOW
             key = (f.category, window)
             auto.setdefault(key, Unit(f"auto/{f.category}_{window:08x}")).functions.append(f)
         self.units += [auto[k] for k in sorted(auto)]
+
+    @staticmethod
+    def sources(root=ROOT):
+        """Source files under src/, relative to root, in a stable order."""
+        found = []
+        for dirpath, _, files in os.walk(os.path.join(root, "src")):
+            found += [os.path.relpath(os.path.join(dirpath, f), root) for f in files if f.endswith(".cpp")]
+        return sorted(found)
 
     def function_at(self, addr):
         """Function whose [addr, end) contains addr, else None."""

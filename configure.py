@@ -31,7 +31,7 @@ def main():
     check_exe()
     proj = Project()
     tools = ["tools/lefile.py", "tools/project.py", "tools/split.py", "tools/x86scan.py"]
-    configs = ["config/functions.txt", "config/symbols.txt", "config/units.txt"]
+    configs = ["config/functions.txt", "config/symbols.txt"]
 
     n = []
     n.append("ninja_required_version = 1.10\n")
@@ -43,10 +43,12 @@ def main():
         "rule report\n  command = objdiff-cli report generate -o $out -f json-pretty"
         " && python3 tools/progress.py $out\n"
     )
-    n.append(f"build build.ninja objdiff.json: configure configure.py {' '.join(configs + tools)}\n")
+    # Sources are listed so adding a FUNCTION marker regenerates the unit list.
+    sources = Project.sources()
+    n.append(f"build build.ninja objdiff.json: configure configure.py {' '.join(configs + tools + sources)}\n")
 
     target_s = [f"build/target/{u.name}.s" for u in proj.units]
-    n.append(f"build {' '.join(target_s)}: split | {EXE} {' '.join(configs + tools)}\n")
+    n.append(f"build {' '.join(target_s)}: split | {EXE} {' '.join(configs + tools + sources)}\n")
 
     objects = []
     units = []
