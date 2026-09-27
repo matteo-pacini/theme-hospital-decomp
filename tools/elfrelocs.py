@@ -9,6 +9,7 @@ import struct
 
 SHT_SYMTAB, SHT_REL = 2, 9
 STT_FUNC, STT_SECTION = 2, 3
+STB_LOCAL = 0
 
 
 def _sections(b):
@@ -34,9 +35,9 @@ def function_relocs(path):
         name, value, size, info, _, shndx = struct.unpack_from("<IIIBBH", b, symtab[4] + i * 16)
         kind = info & 0xF
         label = sec_names[shndx] if kind == STT_SECTION else symname(name)
-        syms.append((label, value, size, kind, shndx))
+        syms.append((label, value, size, kind, shndx, info >> 4))
 
-    funcs = {label: (shndx, value, size) for label, value, size, kind, shndx in syms if kind == STT_FUNC}
+    funcs = {label: (shndx, value, size) for label, value, size, kind, shndx, _ in syms if kind == STT_FUNC}
     relocs = {name: [] for name in funcs}
     for rel in secs:
         if rel[1] != SHT_REL or rel[6] != symtab_i:
@@ -47,12 +48,15 @@ def function_relocs(path):
             off, info = struct.unpack_from("<II", b, rel[4] + j * 8)
             sym = syms[info >> 8]
             addend = struct.unpack_from("<i", b, data_off + off)[0]
-            target = sym[0]
-            if sym[3] == STT_SECTION:
+            label, value, _, kind, shndx, bind = sym
+            target = label
+            if kind == STT_SECTION or (bind == STB_LOCAL and shndx == target_sec):
+                # A reference into the function's own section: the assembler
+                # uses the section symbol, objconv a local ?NoName label.
                 # Both sides place each function at the start of its own
-                # section, so a section-relative reference is identified by
-                # its addend alone.
+                # section, so the offset identifies the target.
                 target = "<local>"
+                addend += value
             for name, (shndx, value, size) in funcs.items():
                 if shndx == target_sec and value <= off < value + size:
                     relocs[name].append((off - value, info & 0xFF, target, addend))

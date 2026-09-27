@@ -60,14 +60,35 @@ and comparing against the original.
 | `mov byte ptr [ebp-N],v; jmp epilogue` ... `mov al,[ebp-N]` | `return v;` (the slot is the compiler's return value, not a local) |
 | unsigned `jb`/`jae` against a constant | unsigned variable or comparison |
 | `if (a) X else Y` | Watcom keeps source order: the `then` block comes first, the jump goes to `else` |
+| `movsx r,word ptr [g]` on a global | the global is `volatile` (plain `s16` gives `mov r,[g-2]; sar r,16`) |
+| reloc at `g-2`/`g-3` from the `sar` trick | give `config/symbols.txt` a symbol starting there and access `g` as a member of it |
+| `mov al,[eax+T]; and eax,0xff; test eax,eax` | explicit `T[i] != 0` / `== 0` (a plain truth test gives `cmp byte ptr`) |
+| `jne next; jmp fail` inside an `&&` chain | parenthesised sub-chain: `X && (P && E) && Q` |
+| outer condition jumping past the whole `if` | nested `if (A) { if (B && C) ... }` |
+| jump into a trampoline landing in an outer loop | `goto label` at the end of the outer loop body (`break`/`continue` add an extra `jmp`) |
+| jump table whose gaps point at `default` | list the gap values as explicit `case`s next to `default:` |
+| varargs call with `mov eax,N; push eax` rather than `push N` | fixed parameter declared `u8` |
+| `rep movsd` from a global into a local | struct copy from an extern struct (`Message msg = D_00129004;`) |
+| signed `jle` on two `u8` operands | `(int)a > (int)b` (without casts: byte compare, `jbe`) |
 
-Stack frame, from `ebp-4` downwards: spilled register parameters (the last
-parameter at `ebp-4`), then the return-value slot if any, then locals in
-declaration order.
+Stack frame layout is not fully understood. Observed so far:
+
+- 4-byte locals are placed in reverse declaration order; with a 4-byte first
+  parameter the whole frame (parameter spills included) is reversed, with a
+  `u16` first parameter it is in forward order.
+- The return-value slot comes after the parameters; a local that must sit
+  below it can be declared inside an inner block
+  (`else { T x; ... }`).
+- `u8` locals follow neither declaration nor first-use order (unsolved).
 
 ## Known unsolved
 
-- A store whose value is computed in `eax` with the index in `edx`
-  (`imul edx,[i],6; mov [edx+T],eax`) instead of the reverse. It occurs three
-  times in the game code (e.g. `fn_00010618`, `fn_00010760`); no source
-  variant tried reproduces it.
+- Register choice when combining an index with a pointer or table: the
+  original computes the value in `eax` and the address in `edx`
+  (`imul eax,eax,K; mov edx,[p]; add eax,edx`, `imul edx,[i],6; mov
+  [edx+T],eax`), we get the reverse. It is common (about a third of the
+  non-matching functions in 0x10000-0x14000) and depends on earlier code in
+  the function: the same expression comes out right in some places. Watcom
+  10.5, 10.5a, 10.6 and 11.0 and ~40 flag combinations all behave the same.
+  Open Watcom 1.x is untested.
+- Ordering of `u8` locals in the frame.
