@@ -40,8 +40,8 @@ def main():
     n.append("rule as\n  command = as --32 -o $out $in\n")
     n.append("rule cc\n  command = python3 tools/cc.py $in $out\n")
     n.append(
-        "rule report\n  command = objdiff-cli report generate -o $out -f json-pretty"
-        " && python3 tools/progress.py $out\n"
+        "rule report\n  command = objdiff-cli report generate -c functionRelocDiffs=name_address -o $out -f json-pretty"
+        " && python3 tools/progress.py $out && python3 tools/verify.py $out\n"
     )
     # Sources are listed so adding a FUNCTION marker regenerates the unit list.
     sources = Project.sources()
@@ -73,7 +73,7 @@ def main():
         units.append(unit)
 
     n.append(f"build all: phony {' '.join(objects)}\n")
-    n.append("build build/report.json: report | all objdiff.json tools/progress.py\n")
+    n.append("build build/report.json: report | all objdiff.json tools/progress.py tools/verify.py tools/elfrelocs.py\n")
     n.append("build report: phony build/report.json\n")
     n.append("default all\n")
 

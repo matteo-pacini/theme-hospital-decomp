@@ -3,7 +3,9 @@
 
 Builds the unit's target and base objects in a private temporary directory,
 so several checks can run at once alongside `ninja`. Mismatched instructions
-are printed target | ours, aligned as objdiff aligns them.
+are printed target | ours, aligned as objdiff aligns them. A function only
+counts as matched if its relocations agree too (objdiff checks at most one
+per instruction).
 
 Usage: tools/check.py src/game/FILE.cpp [-v]   (-v: print every instruction)
 """
@@ -15,6 +17,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, os.path.dirname(__file__))
+from elfrelocs import function_relocs  # noqa: E402
 from lefile import LEFile  # noqa: E402
 from project import EXE, ROOT, Project  # noqa: E402
 from split import write_unit  # noqa: E402
@@ -53,6 +56,8 @@ def main(source, *flags):
     total = 0
     with tempfile.TemporaryDirectory() as tmp:
         target, base = build(unit, tmp)
+        target_relocs = function_relocs(target)
+        base_relocs = function_relocs(base)
         for fn in unit.functions:
             out = subprocess.run(
                 ["objdiff-cli", "diff", "-1", target, "-2", base, "-o", "-", "--format", "json", fn.name],
@@ -62,6 +67,15 @@ def main(source, *flags):
             left = next(s for s in diff["left"]["symbols"] if s["name"] == fn.name)
             right = next((s for s in diff["right"]["symbols"] if s["name"] == fn.name), None)
             pct = left.get("match_percent", 0.0)
+            if pct == 100.0 and target_relocs.get(fn.name) != base_relocs.get(fn.name):
+                print(f"{pct:7.2f}%  {fn.addr:#010x}  {fn.name}  RELOCATIONS DIFFER (offset, type, symbol, addend):")
+                theirs = set(target_relocs.get(fn.name, []))
+                ours = set(base_relocs.get(fn.name, []))
+                for r in sorted(theirs - ours):
+                    print(f"     target {r}")
+                for r in sorted(ours - theirs):
+                    print(f"     ours   {r}")
+                continue
             total += pct == 100.0
             print(f"{pct:7.2f}%  {fn.addr:#010x}  {fn.name}")
             if pct == 100.0 or right is None:
