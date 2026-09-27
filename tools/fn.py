@@ -13,6 +13,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from capstone import CS_ARCH_X86, CS_MODE_32, Cs  # noqa: E402
+from demangle import demangle  # noqa: E402
 from lefile import LEFile  # noqa: E402
 from project import EXE, Project  # noqa: E402
 from x86scan import scan  # noqa: E402
@@ -40,7 +41,8 @@ def main(addr, *flags):
     md = Cs(CS_ARCH_X86, CS_MODE_32)
     print(f"; {fn.name}  {fn.addr:#x}..{fn.end:#x} ({fn.size} bytes)")
     if fn.demo_name:
-        print(f"; demo build: {fn.demo_name} in {fn.source} ({fn.category})")
+        print(f"; demo build: {demangle([fn.demo_name])[fn.demo_name]}")
+        print(f";   symbol {fn.demo_name} in {fn.source} ({fn.category})")
     for it in scan(le, fn.addr, fn.end):
         raw = le.read(it.addr, it.size)
         if it.mnemonic is None:

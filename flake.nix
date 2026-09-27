@@ -38,6 +38,20 @@
           meta.mainProgram = "objdiff-cli";
         };
 
+        # Open Watcom's C++ name demangler as a filter (mangled names on stdin,
+        # declarations on stdout), built from the Open Watcom v2 source.
+        owdemangle = final.stdenv.mkDerivation {
+          pname = "owdemangle";
+          version = final.open-watcom-v2-unwrapped.version;
+          src = ./tools/owdemangle;
+          buildPhase = ''
+            $CC -O2 -w -I. -o owdemangle \
+              ${final.open-watcom-v2-unwrapped.src}/bld/lib_misc/c/demangle.c main.c \
+              -I${final.open-watcom-v2-unwrapped.src}/bld/lib_misc/h
+          '';
+          installPhase = "install -Dm755 owdemangle $out/bin/owdemangle";
+        };
+
         # Period-correct Watcom C/C++ 10.6 (Win32 host binaries, run through wibo),
         # as packaged for decomp.me.
         watcom-10_6 = final.stdenvNoCC.mkDerivation {
@@ -67,7 +81,7 @@
       overlays.default = overlay;
 
       packages.${system} = {
-        inherit (pkgs) wibo objdiff-cli watcom-10_6;
+        inherit (pkgs) wibo objdiff-cli watcom-10_6 owdemangle;
       };
 
       devShells.${system}.default = pkgs.mkShell {
@@ -76,6 +90,7 @@
           objdiff-cli
           open-watcom-v2 # wdis, for reading OMF objects
           objconv
+          owdemangle
           binutils
           (rizin.withPlugins (p: [ p.rz-ghidra ]))
           ninja
