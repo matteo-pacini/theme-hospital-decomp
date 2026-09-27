@@ -1,0 +1,6 @@
+/orig/
+/build/
+/spike/
+/result*
+__pycache__/
+*.pyc
