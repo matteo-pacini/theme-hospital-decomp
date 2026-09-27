@@ -126,5 +126,6 @@ Stack frame layout is not fully understood. Observed so far:
   Register allocation works per basic block: a later statement in the same
   block changes earlier choices, and splitting the block (a label, `do {}
   while (0)`) can flip them, but no plausible source form found so far
-  reproduces the original throughout. Open Watcom 1.x is untested.
+  reproduces the original throughout. Open Watcom 1.9 is further off
+  (7/34 matched in 0x10000-0x14000 with `-zp1`, versus 22/34 with 10.6).
 - Ordering of `u8` locals in the frame.
