@@ -754,23 +754,23 @@ void display_panel_staff_info(void)
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
-        LbDataLoadSetModifyFilenameFunction(buf, D_00160298[w->subtype]);
+        fn_000bbff0(buf, D_00160298[w->subtype]);
         if ((w->subtype == 1 || w->subtype == 4) && (w->unknown124 & 0x1e0)) {
-            LbDataLoadSetModifyFilenameFunction(buf, D_00120316);
+            fn_000bbff0(buf, D_00120316);
             n = 0;
             if (w->unknown124 & 0x80)
-                LbDataLoadSetModifyFilenameFunction(names[n++], D_00160318[7]);
+                fn_000bbff0(names[n++], D_00160318[7]);
             if (w->unknown124 & 0x100)
-                LbDataLoadSetModifyFilenameFunction(names[n++], D_00160318[8]);
+                fn_000bbff0(names[n++], D_00160318[8]);
             if (w->unknown124 & 0x20)
-                LbDataLoadSetModifyFilenameFunction(names[n++], D_00160318[5]);
+                fn_000bbff0(names[n++], D_00160318[5]);
             if (w->unknown124 & 0x40) {
                 if (n == 3)
-                    LbDataLoadSetModifyFilenameFunction(names[n++], info_bar_text[26]);
+                    fn_000bbff0(names[n++], info_bar_text[26]);
                 else
-                    LbDataLoadSetModifyFilenameFunction(names[n++], D_00160318[6]);
+                    fn_000bbff0(names[n++], D_00160318[6]);
             }
-            LbDataLoadSetModifyFilenameFunction(buf, names[0]);
+            fn_000bbff0(buf, names[0]);
             for (i = 1; i < n; i++)
                 sprintf(buf, D_00120317, buf, names[i]);
         }
@@ -1431,7 +1431,7 @@ void panel_watch_help(void)
         text = 0xed;
     else
         return;
-    LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[text]);
+    fn_000bbff0(D_0015544e, help_text[text]);
 }
 
 // FUNCTION: 0x000364e0
@@ -1439,7 +1439,7 @@ void panel_rep_help(void)
 {
     char buf[12];
 
-    LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[9]);
+    fn_000bbff0(D_0015544e, help_text[9]);
     sprintf(buf, D_00120327, myhosp->unknownc7e);
     fn_000c93bf(D_0015544e, buf);
 }

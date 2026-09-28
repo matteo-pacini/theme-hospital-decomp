@@ -1379,7 +1379,7 @@
 000bbd70    130 fn_000bbd70_
 000bbea0     6e fn_000bbea0_
 000bbf10     d1 fn_000bbf10_
-000bbff0     1f LbDataLoadSetModifyFilenameFunction_
+000bbff0     1f strcpy_
 000bc00f     6d atoi_
 000bc07c      5 flushall_
 000bc081     2f __flushall_
@@ -1404,7 +1404,7 @@
 000bcc9d     3b __do_exit_with_msg__
 000bccd8      9 __GETDS
 000bcce3      d ___GETDSEnd_
-000bccf0     15 fn_000bccf0_
+000bccf0     15 LbDataLoadSetModifyFilenameFunction_
 000bcd08     10 fn_000bcd08_
 000bcd18    12a LbDataLoadAll_
 000bce44    115 fn_000bce44_

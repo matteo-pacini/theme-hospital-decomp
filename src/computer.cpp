@@ -98,7 +98,7 @@ void setup_computer_players(void)
             for (k = 0; k < 4; k++) {
                 h = &allhosps[k];
                 if (h->f2a == 0) {
-                    LbDataLoadSetModifyFilenameFunction((char *)h, D_001602a8[j]);
+                    fn_000bbff0((char *)h, D_001602a8[j]);
                     h->f2a = 2;
                     h->f1245 = j;
                     h->f1244 = computer[j].f6;
@@ -118,12 +118,12 @@ void setup_computer_players(void)
             h = &allhosps[k];
             if (h->f2a == 0) {
                 h->f2a = 2;
-                LbDataLoadSetModifyFilenameFunction((char *)h, D_00120424);
+                fn_000bbff0((char *)h, D_00120424);
                 for (i = 0; i < 1000; i++) {
                     j = (mouse_dx + mouse_dy + old_newrand()) % 20;
                     h->f1245 = j;
                     if (used[j] == 0) {
-                        LbDataLoadSetModifyFilenameFunction((char *)h, D_001602a8[j]);
+                        fn_000bbff0((char *)h, D_001602a8[j]);
                         used[j] = 1;
                         break;
                     }

@@ -66,8 +66,8 @@ void fn_00090804(int level, u8 flag)
 
     myhosp = &allhosps[player];
     if (fn_000cd716(myplayer.unknown0) == 0)
-        LbDataLoadSetModifyFilenameFunction(myplayer.unknown0, D_001602a0[1]);
-    LbDataLoadSetModifyFilenameFunction((char *)myhosp->unknown0, myplayer.unknown0);
+        fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
+    fn_000bbff0((char *)myhosp->unknown0, myplayer.unknown0);
     myhosp->f2a = 1;
     if ((u16)level > 14)
         myhosp->f29 = 1;
@@ -153,7 +153,7 @@ void fn_00090804(int level, u8 flag)
 // FUNCTION: 0x00090c8c
 void copy_my_hosp(AllHosps *dst, AllHosps *src)
 {
-    LbDataLoadSetModifyFilenameFunction((char *)dst->unknown0, (char *)src->unknown0);
+    fn_000bbff0((char *)dst->unknown0, (char *)src->unknown0);
     dst->f29 = src->f29;
     dst->f2a = src->f2a;
     dst->f2d = src->f2d;
@@ -166,7 +166,7 @@ void load_balance(const u16 level)
     char level_path[0x90];
 
     if (fn_000cd716(balance_id) == 0)
-        LbDataLoadSetModifyFilenameFunction(balance_id, D_00120976);
+        fn_000bbff0(balance_id, D_00120976);
     if (install_type < 3) {
         sprintf(path, D_0012097b, cd_install_path, balance_id);
         check_cd_available(path);

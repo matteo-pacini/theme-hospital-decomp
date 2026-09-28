@@ -1252,7 +1252,7 @@ extern "C" void fn_0008db38(TbScreenMode mode)
 extern "C" void fn_0008dc7c(void)
 {
     if (statvar.unknownfd <= 1) {
-        LbDataLoadSetModifyFilenameFunction(D_00155ced, yesno_text[6]);
+        fn_000bbff0(D_00155ced, yesno_text[6]);
         open_yes_no_requester(0x91, 0, 0, 0x78, 1, 0);
     }
 }

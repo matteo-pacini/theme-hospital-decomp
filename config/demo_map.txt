@@ -1228,7 +1228,6 @@
 000bbaa4 0009fe08 align   consistent game    dosheap.cpp    W?GetTotalAllocation$:CDosHeapStats$n()ul
 000bbacc 0009fe0c align   consistent game    dosheap.cpp    W?GetAllocCount$:CDosHeapStats$n()ul
 000bbbb0 0009fe40 calls   confirmed  game    cdspeed.cpp    W?GetCDSpeed$n(pnapnvlul)l
-000bbff0 000a0a10 calls   consistent bflib   gdata.cpp      LbDataLoadSetModifyFilenameFunction_
 000bc00f 000afad4 calls   consistent runtime atoi           atoi_
 000bc07c 000a053a calls   consistent runtime flushall       flushall_
 000bc081 000a053f order   consistent runtime flushall       __flushall_
@@ -1248,6 +1247,7 @@
 000bcc9d 000a09c5 calls   consistent runtime cstrt386       __do_exit_with_msg__
 000bccd8 000a0a00 align   consistent runtime cstrt386       __GETDS
 000bcce3 000a0a0b bytes   confirmed  runtime cstrt386       ___GETDSEnd_
+000bccf0 000a0a10 manual  confirmed  bflib   gdata.cpp      LbDataLoadSetModifyFilenameFunction_
 000bcd18 000a0aec calls   consistent bflib   gdata.cpp      LbDataLoadAll_
 000bcf5c 000a0ba8 calls   consistent bflib   gdata.cpp      LbDataFree_
 000bcf90 000a0bd0 calls   consistent bflib   gdata.cpp      LbDataFreeAll_

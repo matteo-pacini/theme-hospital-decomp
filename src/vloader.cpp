@@ -309,7 +309,7 @@ u16 array_index(char *name)
         }
         strncpy(buf3, start, len);
         strncat(buf, buf3, fn_000cd716(buf3) + 1);
-        LbDataLoadSetModifyFilenameFunction(name, buf);
+        fn_000bbff0(name, buf);
         return idx;
     }
     return 0;

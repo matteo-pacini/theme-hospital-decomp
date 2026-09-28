@@ -271,7 +271,7 @@ u32 announce_emergency(u8 owner, char **strs)
             }
         }
     }
-    LbDataLoadSetModifyFilenameFunction(name, strs[saferand() % 4 + 9]);
+    fn_000bbff0(name, strs[saferand() % 4 + 9]);
     text[0] = 0;
     a = 0;
     b = 0;

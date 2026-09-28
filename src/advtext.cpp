@@ -133,7 +133,7 @@ void fn_000b2178(u8 n)
     out = buf2;
     LbMemorySet(buf1, 0, 0x118);
     LbMemorySet(buf2, 0, 0x10e);
-    LbDataLoadSetModifyFilenameFunction(buf1, D_0015820c);
+    fn_000bbff0(buf1, D_0015820c);
     p = buf1;
     brk = buf1;
     start = buf1;
@@ -163,7 +163,7 @@ void fn_000b2178(u8 n)
         }
     } while (lines < 3 && *p != '\0');
     if (!*p) {
-        LbDataLoadSetModifyFilenameFunction(D_0015820c, buf2);
+        fn_000bbff0(D_0015820c, buf2);
         if (lines < 3)
             D_0015831e = lines;
         else

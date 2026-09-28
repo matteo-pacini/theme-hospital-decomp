@@ -517,7 +517,7 @@ s8 tutorial(void)
                     D_0015831e = 0;
                     D_0015831f = 0;
                     D_0015831c = 0xb;
-                    LbDataLoadSetModifyFilenameFunction(D_0015544e, room_help[7]);
+                    fn_000bbff0(D_0015544e, room_help[7]);
                     set_force_help(2, 0xed);
                     D_0016120e = 1;
                     if (D_0015f3f5 == SCREEN_MODE_13)

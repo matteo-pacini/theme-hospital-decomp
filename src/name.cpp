@@ -153,7 +153,7 @@ void draw_nickname(void)
         mainmenu.unknown2 = 0;
         display_mode = 2;
         if (fn_000cd716(myplayer.unknown0) == 0)
-            LbDataLoadSetModifyFilenameFunction(myplayer.unknown0, D_001602a0[1]);
+            fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
         sprintf(statvar.f6c, D_001208bb, myplayer.unknown0);
         load_player_details();
         break;
@@ -235,7 +235,7 @@ void process_keys_nickname(void)
                 nickname.unknown2 = 1;
                 play_sound(10, 0x41, -1, -1);
                 if (myplayer.name[0] == 0)
-                    LbDataLoadSetModifyFilenameFunction(myplayer.unknown0, D_001602a0[1]);
+                    fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
                 break;
             case 0xe:
             case 0x53:
@@ -511,7 +511,7 @@ u8 setup_balance_files(u8 cd)
     if (handle == -1)
         done = 1;
     while (!done) {
-        LbDataLoadSetModifyFilenameFunction(fname, balance_file.Filename);
+        fn_000bbff0(fname, balance_file.Filename);
         strtok(fname, D_00120935);
         len = fn_000cd716(fname);
         strncpy(num, &fname[len] - 2, 2);
@@ -550,10 +550,10 @@ u8 setup_balance_files(u8 cd)
                 current_balance_file = current_balance_file->next;
         }
         balance_filename(current_balance_file->name);
-        LbDataLoadSetModifyFilenameFunction(balance_id, current_balance_file->name);
+        fn_000bbff0(balance_id, current_balance_file->name);
         return 1;
     } else {
-        LbDataLoadSetModifyFilenameFunction(balance_file_name, nickname_text[0x15]);
+        fn_000bbff0(balance_file_name, nickname_text[0x15]);
         return 0;
     }
 }
@@ -582,7 +582,7 @@ void next_balance_file(void)
 {
     if (current_balance_file) {
         current_balance_file = current_balance_file->next;
-        LbDataLoadSetModifyFilenameFunction(balance_id, current_balance_file->name);
+        fn_000bbff0(balance_id, current_balance_file->name);
         balance_filename(balance_id);
     }
 }
@@ -592,7 +592,7 @@ void prev_balance_file(void)
 {
     if (current_balance_file) {
         current_balance_file = current_balance_file->prev;
-        LbDataLoadSetModifyFilenameFunction(balance_id, current_balance_file->name);
+        fn_000bbff0(balance_id, current_balance_file->name);
         balance_filename(balance_id);
     }
 }
@@ -618,16 +618,16 @@ void balance_filename(char *name)
     }
     len = LbFileLengthRnc(path);
     if (len == -1) {
-        LbDataLoadSetModifyFilenameFunction(balance_file_name, nickname_text[0x15]);
+        fn_000bbff0(balance_file_name, nickname_text[0x15]);
         return;
     }
     buf = (char *)LbMemoryAlloc(len + 1);
     if (buf == 0) {
-        LbDataLoadSetModifyFilenameFunction(balance_file_name, nickname_text[0x15]);
+        fn_000bbff0(balance_file_name, nickname_text[0x15]);
         return;
     }
     if (LbFileLoadAt(path, buf) == -1) {
-        LbDataLoadSetModifyFilenameFunction(balance_file_name, nickname_text[0x15]);
+        fn_000bbff0(balance_file_name, nickname_text[0x15]);
         LbMemoryFree(buf);
         return;
     }
@@ -687,7 +687,7 @@ extern "C" void fn_00090610(void)
     current_text.text[0] = 0;
     if (debug.unknown1fa) {
         if (fn_000cd716(myplayer.unknown0) == 0)
-            LbDataLoadSetModifyFilenameFunction(myplayer.unknown0, D_001602a0[1]);
+            fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
         fn_00090804((u16)level_number, 1);
         load_player_details();
         D_001553dc = D_00153f34;

@@ -67,7 +67,7 @@ int main(u16 argc, char **argv)
                 switch (c) {
                 case 'B':
                 case 'b':
-                    LbDataLoadSetModifyFilenameFunction(balance_id, arg);
+                    fn_000bbff0(balance_id, arg);
                     goto next_arg;
                 case 'C':
                 case 'c':

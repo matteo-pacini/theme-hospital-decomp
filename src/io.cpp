@@ -366,7 +366,7 @@ void process_turn(void)
         LbFileRead(D_001581e8, &gamevar, 0x178);
         LbFileRead(D_001581e8, &version, 4);
         if (seed != version) {
-            LbDataLoadSetModifyFilenameFunction(debug.unknown116, D_0012026a);
+            fn_000bbff0(debug.unknown116, D_0012026a);
             debug.unknown1de = 200;
         }
         LbMouseSetPosition(w, h);

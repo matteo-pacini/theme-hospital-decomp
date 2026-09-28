@@ -148,7 +148,7 @@ u8 setup_sound(void)
     myplayer.f10 = 0;
     myplayer.ff = 0;
     myplayer.unknown11 = 0;
-    LbDataLoadSetModifyFilenameFunction(statvar.fd0, options.unknown0);
+    fn_000bbff0(statvar.fd0, options.unknown0);
     InitAudio(&options);
     if (GetSoundInstalled() && GetSoundAble()) {
         LbDataLoadAll(&D_0013ecb4[D_00156433]);

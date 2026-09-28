@@ -240,19 +240,19 @@ void read_modem_ini_file(void)
     read_line_from_buf(line, 0x7f, buf);
     p = strchr(line, '=');
     if (p && fn_000cd716(++p) <= 0x50)
-        LbDataLoadSetModifyFilenameFunction(init_str, p);
+        fn_000bbff0(init_str, p);
     read_line_from_buf(line, 0x7f, buf);
     p = strchr(line, '=');
     if (p && fn_000cd716(++p) <= 0x50)
-        LbDataLoadSetModifyFilenameFunction(dial_str, p);
+        fn_000bbff0(dial_str, p);
     read_line_from_buf(line, 0x7f, buf);
     p = strchr(line, '=');
     if (p && fn_000cd716(++p) <= 0x50)
-        LbDataLoadSetModifyFilenameFunction(hangup_str, p);
+        fn_000bbff0(hangup_str, p);
     read_line_from_buf(line, 0x7f, buf);
     p = strchr(line, '=');
     if (p && fn_000cd716(++p) <= 0x50)
-        LbDataLoadSetModifyFilenameFunction(auto_ans_str, p);
+        fn_000bbff0(auto_ans_str, p);
     read_line_from_buf(0, 1, 0);
     LbMemoryFree(buf);
 }
@@ -1423,7 +1423,7 @@ void process_serial_buttons(u8 n)
                         D_00160eb4 = 0;
                         if (LbNetwork_EnumerateSessions((TbNetworkCallbackFunc)fn_000842d4, 0) == Lb_OK) {
                             D_0013804c = 0;
-                            LbDataLoadSetModifyFilenameFunction(D_00138050, SESSION_NAME);
+                            fn_000bbff0(D_00138050, SESSION_NAME);
                             if (network_button_join() == -1) {
                                 LbNetwork_Stop();
                                 report_message(D_00160308[31]);
@@ -1542,7 +1542,7 @@ void process_modem_buttons(u8 n)
                     D_0016051c.hangup = hangup_str;
                     D_0016051c.auto_ans = auto_ans_str;
                     if (setup_network(service, &D_0016051c, 2)) {
-                        LbDataLoadSetModifyFilenameFunction(D_00160594, PhoneBook[BookHilight]);
+                        fn_000bbff0(D_00160594, PhoneBook[BookHilight]);
                         if (n == 4) {
                             D_001605e8 = network_service_function_init;
                             RestoreDisplay = DesiredDisplay;
@@ -1600,7 +1600,7 @@ void process_modem_buttons(u8 n)
                             D_00160eb4 = 0;
                             if (LbNetwork_EnumerateSessions((TbNetworkCallbackFunc)fn_000842d4, 0) == Lb_OK) {
                                 D_0013804c = 0;
-                                LbDataLoadSetModifyFilenameFunction(D_00138050, SESSION_NAME);
+                                fn_000bbff0(D_00138050, SESSION_NAME);
                                 D_001605e8 = network_service_function_init;
                                 D_001605ec = network_service_function_connect;
                                 RestoreDisplay = DesiredDisplay;
@@ -2055,7 +2055,7 @@ void fn_000842d4(TbNetworkCallbackData *data, void *arg)
     TbNetworkSessionNameEntry *session;
 
     session = (TbNetworkSessionNameEntry *)data;
-    LbDataLoadSetModifyFilenameFunction(SESSION_NAMES[D_00160eb4], session->name);
+    fn_000bbff0(SESSION_NAMES[D_00160eb4], session->name);
     D_00160e34[D_00160eb4] = session;
     D_00160eb4++;
 }
@@ -2079,9 +2079,9 @@ void fn_00084324(SessionInfo *sessions)
         swapped = 0;
         for (i = 0; D_00160eb4 - 1 > i; i++) {
             if (strcmp(SESSION_NAMES[i], SESSION_NAMES[i + 1]) > 0) {
-                LbDataLoadSetModifyFilenameFunction(name, SESSION_NAMES[i]);
-                LbDataLoadSetModifyFilenameFunction(SESSION_NAMES[i], SESSION_NAMES[i + 1]);
-                LbDataLoadSetModifyFilenameFunction(SESSION_NAMES[i + 1], name);
+                fn_000bbff0(name, SESSION_NAMES[i]);
+                fn_000bbff0(SESSION_NAMES[i], SESSION_NAMES[i + 1]);
+                fn_000bbff0(SESSION_NAMES[i + 1], name);
                 t = D_00160e34[i];
                 D_00160e34[i] = D_00160e34[i + 1];
                 D_00160e34[i + 1] = t;
@@ -2095,7 +2095,7 @@ void fn_00084324(SessionInfo *sessions)
         D_00138050[0] = 0;
     } else if (D_0013804c == -1) {
         D_0013804c = 0;
-        LbDataLoadSetModifyFilenameFunction(D_00138050, SESSION_NAMES[0]);
+        fn_000bbff0(D_00138050, SESSION_NAMES[0]);
     }
     if (D_0013804c >= 0) {
         if (strcmp(D_00138050, SESSION_NAMES[D_0013804c])) {
@@ -2106,7 +2106,7 @@ void fn_00084324(SessionInfo *sessions)
                     D_00138050[0] = 0;
                 } else {
                     D_0013804c = i;
-                    LbDataLoadSetModifyFilenameFunction(D_00138050, SESSION_NAMES[i]);
+                    fn_000bbff0(D_00138050, SESSION_NAMES[i]);
                 }
                 break;
             }
@@ -2141,7 +2141,7 @@ void fn_00084324(SessionInfo *sessions)
                     D_00138050[0] = 0;
                 } else {
                     D_0013804c = i;
-                    LbDataLoadSetModifyFilenameFunction(D_00138050, SESSION_NAMES[i]);
+                    fn_000bbff0(D_00138050, SESSION_NAMES[i]);
                 }
                 D_00188c7e = D_00188c7b = 0;
             }
@@ -2156,7 +2156,7 @@ void __stdcall players_callback(TbNetworkCallbackData *data, void *arg)
     TbNetworkPlayerNameEntry *entry;
 
     entry = (TbNetworkPlayerNameEntry *)data;
-    LbDataLoadSetModifyFilenameFunction(player_names[player_count], entry->name);
+    fn_000bbff0(player_names[player_count], entry->name);
     player_count++;
 }
 
@@ -2187,11 +2187,11 @@ void swap_level_number(void)
 {
     if (statvar.unknownfd > 1) {
         D_00160eb8[player].level = level_number;
-        LbDataLoadSetModifyFilenameFunction(D_00160eb8[player].balance, balance_id);
+        fn_000bbff0(D_00160eb8[player].balance, balance_id);
         LbNetwork_ChangeExchangeBuffer(D_00160eb8, 0xf);
         LbNetwork_Exchange(&D_00160eb8[player]);
         level_number = D_00160eb8[modem_dev.unknown1c].level;
-        LbDataLoadSetModifyFilenameFunction(balance_id, D_00160eb8[modem_dev.unknown1c].balance);
+        fn_000bbff0(balance_id, D_00160eb8[modem_dev.unknown1c].balance);
         if ((s8)balance_id[0] != 0)
             balance_filename(balance_id);
     }
@@ -2840,7 +2840,7 @@ void init_network_players(void)
 
     for (i = 0; i < 4; i++) {
         if (D_001609c4[i].active)
-            LbDataLoadSetModifyFilenameFunction((char *)allhosps[i].unknown0, player_info[i].name);
+            fn_000bbff0((char *)allhosps[i].unknown0, player_info[i].name);
         allhosps[i].f2a = 1;
     }
 }

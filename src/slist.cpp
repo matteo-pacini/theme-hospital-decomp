@@ -768,35 +768,35 @@ void draw_slist_coverup(void)
 void slist_salary_help_if_present(void)
 {
     if (D_0015f420[D_00155c64].row < D_00155e13)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[50]);
+        fn_000bbff0(D_0015544e, help_text[50]);
 }
 
 // FUNCTION: 0x00093f88
 void slist_happiness_help_if_present(void)
 {
     if (D_0015f420[D_00155c64].row < D_00155e13)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[51]);
+        fn_000bbff0(D_0015544e, help_text[51]);
 }
 
 // FUNCTION: 0x00093fd8
 void slist_tiredness_help_if_present(void)
 {
     if (D_0015f420[D_00155c64].row < D_00155e13)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[52]);
+        fn_000bbff0(D_0015544e, help_text[52]);
 }
 
 // FUNCTION: 0x00094028
 void slist_ability_help_if_present(void)
 {
     if (D_0015f420[D_00155c64].row < D_00155e13)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[53]);
+        fn_000bbff0(D_0015544e, help_text[53]);
 }
 
 // FUNCTION: 0x00094078
 void slist_help_if_doctor(void)
 {
     if (D_00155401 & 1)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
 // NONMATCHING: pct * 100 is computed before the divisor global is loaded in the target; here after
@@ -808,7 +808,7 @@ void slist_help_if_surgeon(void)
 
     w = &thing[slist.unknown0];
     if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x20)) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
     } else {
         pct = w->unknown148[3];
         if (pct != 0) {
@@ -828,7 +828,7 @@ void slist_help_if_shrink(void)
 
     w = &thing[slist.unknown0];
     if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x40)) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
     } else {
         pct = w->unknown148[4];
         if (pct != 0) {
@@ -848,7 +848,7 @@ void slist_help_if_researcher(void)
 
     w = &thing[slist.unknown0];
     if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x100)) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
     } else {
         pct = w->unknown148[5];
         if (pct != 0) {

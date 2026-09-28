@@ -890,7 +890,7 @@ u8 hosp_play_smk(const u8 idx)
         sprintf(D_0015fde4, D_001201c5, cd_install_path, animation_table[idx].name);
         check_cd_available(D_0015fde4);
     } else {
-        LbDataLoadSetModifyFilenameFunction(D_0015fde4, animation_table[idx].name);
+        fn_000bbff0(D_0015fde4, animation_table[idx].name);
     }
     if (LbFileExists(D_0015fde4)) {
         ok = play_smk(D_0015fde4, animation_table[idx].f32, animation_table[idx].f36);
@@ -1065,7 +1065,7 @@ void fn_0001bc94(u8 idx, u8 flag)
 
     if (D_0015f3f4 == SCREEN_MODE_13) {
         if (idx != loaded_requester) {
-            LbDataLoadSetModifyFilenameFunction(path, name);
+            fn_000bbff0(path, name);
             fn_000c93bf(path, D_001201ca);
             size = LbFileLengthRnc(path);
             if ((s32)end_button_sprites - (s32)button_sprite < size) {
@@ -1074,7 +1074,7 @@ void fn_0001bc94(u8 idx, u8 flag)
             if (LbFileLoadAt(path, button_sprite) != size) {
                 return;
             }
-            LbDataLoadSetModifyFilenameFunction(path, name);
+            fn_000bbff0(path, name);
             fn_000c93bf(path, D_001201cf);
             size = LbFileLengthRnc(path);
             if ((s32)end_button_sprite_data - (s32)button_sprite_data < size) {

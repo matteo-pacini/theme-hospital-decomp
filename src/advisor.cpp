@@ -948,7 +948,7 @@ void mouse_advice(void)
 
     switch (D_001581fe.f200) {
     default:
-        LbDataLoadSetModifyFilenameFunction(D_0015820c, D_001602ec[D_001581fe.f200]);
+        fn_000bbff0(D_0015820c, D_001602ec[D_001581fe.f200]);
         break;
     }
 }
@@ -960,7 +960,7 @@ void forced_advice(void)
 
     switch (D_001581fe.fe) {
     case 2:
-        LbDataLoadSetModifyFilenameFunction(D_0015820c, D_001602e8[D_001581fe.fe]);
+        fn_000bbff0(D_0015820c, D_001602e8[D_001581fe.fe]);
         for (i = 0; i < 4; i++) {
             if (D_00155e24[i]) {
                 sprintf(D_0015820c, D_00120480, D_0015820c, allhosps[i].unknown0);
@@ -977,7 +977,7 @@ void forced_advice(void)
         }
         break;
     default:
-        LbDataLoadSetModifyFilenameFunction(D_0015820c, D_001602e8[D_001581fe.fe]);
+        fn_000bbff0(D_0015820c, D_001602e8[D_001581fe.fe]);
         break;
     }
     D_001581fc = 0;

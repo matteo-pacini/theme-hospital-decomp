@@ -169,22 +169,22 @@ void reset_host(void)
     LbScreenReset();
     switch (D_0015f982) {
     case 1:
-        LbDataLoadSetModifyFilenameFunction(msg.text, D_0012005b);
+        fn_000bbff0(msg.text, D_0012005b);
         break;
     case 2:
-        LbDataLoadSetModifyFilenameFunction(msg.text, D_00120073);
+        fn_000bbff0(msg.text, D_00120073);
         break;
     case 3:
-        LbDataLoadSetModifyFilenameFunction(msg.text, D_00120087);
+        fn_000bbff0(msg.text, D_00120087);
         break;
     case 4:
-        LbDataLoadSetModifyFilenameFunction(msg.text, D_001200a9);
+        fn_000bbff0(msg.text, D_001200a9);
         break;
     case 5:
-        LbDataLoadSetModifyFilenameFunction(msg.text, D_001200ce);
+        fn_000bbff0(msg.text, D_001200ce);
         break;
     case 6:
-        LbDataLoadSetModifyFilenameFunction(msg.text, D_001200e9);
+        fn_000bbff0(msg.text, D_001200e9);
         break;
     case 8:
         hosp_dos_printf(D_00120102);

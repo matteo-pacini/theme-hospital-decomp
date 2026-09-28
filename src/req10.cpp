@@ -254,5 +254,5 @@ void req10_help_room(void)
 
     idx = req_indices[D_0015f420[D_00155c64].unknownA];
     if (idx)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, room_help[idx]);
+        fn_000bbff0(D_0015544e, room_help[idx]);
 }

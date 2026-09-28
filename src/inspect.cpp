@@ -56,7 +56,7 @@ void generate_inspector(u8 owner)
     if (allhosps[owner].unknown209[1] != 0)
         return;
     if (allhosps[owner].f201 = create_inspector(owner)) {}
-    LbDataLoadSetModifyFilenameFunction(debug.unknown116, D_00121ae0);
+    fn_000bbff0(debug.unknown116, D_00121ae0);
     debug.unknown1de = 0xc8;
     allhosps[owner].unknown209[1] = 3;
 }

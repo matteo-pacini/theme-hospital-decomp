@@ -364,7 +364,7 @@ void mapwho_numfx(Thing *w, s32 x, s32 y)
         if (w->mode == 0) {
             sprintf(buf, D_001201a4, w->value);
         } else if (w->mode == 1) {
-            LbDataLoadSetModifyFilenameFunction(buf, w->text);
+            fn_000bbff0(buf, w->text);
         } else if (w->mode == 2) {
             sprintf(buf, w->text, w->value);
         }

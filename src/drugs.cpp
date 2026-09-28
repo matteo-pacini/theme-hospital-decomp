@@ -489,7 +489,7 @@ void setup_drug(u16 a, u16 b)
 void drugs_help_concentrate(void)
 {
     if (D_00155c6e) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
     }
 }
 
@@ -503,14 +503,14 @@ void drugs_help_cure_type(void)
         if (allhosps[player].rooms[D_00155444].unknown1C == 1) {
             sprintf(D_0015544e, help_text[148], allhosps[player].rooms[D_00155444].unknown1B);
         } else {
-            LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[147]);
+            fn_000bbff0(D_0015544e, help_text[147]);
         }
     } else if (expertise[D_00155444].unknown0 == 0x40) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[149]);
+        fn_000bbff0(D_0015544e, help_text[149]);
     } else if (expertise[D_00155444].category == 10) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[150]);
+        fn_000bbff0(D_0015544e, help_text[150]);
     } else {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[151]);
+        fn_000bbff0(D_0015544e, help_text[151]);
     }
 }
 
@@ -518,26 +518,26 @@ void drugs_help_cure_type(void)
 void drugs_help_handled(void)
 {
     if (allhosps[player].rooms[D_00155444].unknown1C == 1) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[152]);
+        fn_000bbff0(D_0015544e, help_text[152]);
         return;
     }
     what_is_required(D_00155444, player);
     if (required.unknown7) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[153]);
+        fn_000bbff0(D_0015544e, help_text[153]);
     } else if (required.unknown6) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[154]);
+        fn_000bbff0(D_0015544e, help_text[154]);
     } else if (required.unknown4 == 2) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[155]);
+        fn_000bbff0(D_0015544e, help_text[155]);
     } else if (required.unknown4 == 1) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[156]);
+        fn_000bbff0(D_0015544e, help_text[156]);
     } else if (required.unknown3) {
         sprintf(D_0015544e, help_text[157], D_00160318[required.unknown3]);
     } else if (required.unknown8) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[158]);
+        fn_000bbff0(D_0015544e, help_text[158]);
     } else if (required.unknown9) {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[159]);
+        fn_000bbff0(D_0015544e, help_text[159]);
     } else {
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[160]);
+        fn_000bbff0(D_0015544e, help_text[160]);
     }
 }
 

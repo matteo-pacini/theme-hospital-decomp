@@ -237,7 +237,7 @@ void req11_help_object(void)
 
     idx = req_indices[D_0015f420[D_00155c64].unknownA];
     if (idx)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, object_help[idx]);
+        fn_000bbff0(D_0015544e, object_help[idx]);
 }
 
 // FUNCTION: 0x0009d3cc
@@ -247,7 +247,7 @@ void req11_help_plus(void)
 
     idx = req_indices[D_0015f420[D_00155c64].unknownA];
     if (idx)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[0x29]);
+        fn_000bbff0(D_0015544e, help_text[0x29]);
 }
 
 // FUNCTION: 0x0009d424
@@ -257,5 +257,5 @@ void req11_help_minus(void)
 
     idx = req_indices[D_0015f420[D_00155c64].unknownA];
     if (idx)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[0x2a]);
+        fn_000bbff0(D_0015544e, help_text[0x2a]);
 }

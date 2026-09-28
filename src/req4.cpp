@@ -372,7 +372,7 @@ void req4_help_if_doctor(void)
 
     w = &thing[D_001581b2[2].value];
     if (w > thing && w->unknown124 & 0x10)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
 // FUNCTION: 0x000880e4
@@ -382,7 +382,7 @@ void req4_help_if_surgeon(void)
 
     w = &thing[D_001581b2[2].value];
     if (w > thing && w->unknown124 & 0x20)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
 // FUNCTION: 0x00088160
@@ -392,7 +392,7 @@ void req4_help_if_shrink(void)
 
     w = &thing[D_001581b2[2].value];
     if (w > thing && w->unknown124 & 0x40)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
 // FUNCTION: 0x000881dc
@@ -402,5 +402,5 @@ void req4_help_if_research(void)
 
     w = &thing[D_001581b2[2].value];
     if (w > thing && w->unknown124 & 0x100)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }

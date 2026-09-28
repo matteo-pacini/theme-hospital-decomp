@@ -402,7 +402,7 @@ extern "C" void fn_00074064(void)
 
     w = &thing[D_001581b2[1].value];
     if (w->unknown146 >= D_0012dd7c[0])
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
 // FUNCTION: 0x000740e4
@@ -413,7 +413,7 @@ extern "C" void fn_000740e4(void)
     w = &thing[D_001581b2[1].value];
     if (w->unknown171 != 0 && !(w->flags & 0x1000) && !(w->flags & 0x4000) && w->style != w->unknown169
         && w->unknown146 >= D_0012dd7c[0])
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
 // FUNCTION: 0x000741a4
@@ -423,7 +423,7 @@ extern "C" void fn_000741a4(void)
 
     w = &thing[D_001581b2[1].value];
     if (w->unknown140)
-        LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
 // FUNCTION: 0x00073e64

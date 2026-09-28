@@ -13,7 +13,7 @@ extern char D_001563c5[];
 void fn_000c93bf(char *dst, char *src);
 void fn_000cd2cc(char *s, ...);
 int strcmp(const char *a, const char *b);
-void fn_000bccf0(char *(*fn)(TbLoadFiles *));
+void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *));
 }
 
 extern s32 close_next_time;
@@ -65,10 +65,10 @@ char *read_line_from_buf(char *line, s32 max, char *src)
 char *modify_data_load_filename(TbLoadFiles *file)
 {
     if (*(u16 *)&file->unknown[0x2a] > install_type) {
-        LbDataLoadSetModifyFilenameFunction(filename, cd_install_path);
+        fn_000bbff0(filename, cd_install_path);
         fn_000c93bf(filename, (char *)file);
     } else {
-        LbDataLoadSetModifyFilenameFunction(filename, (char *)file);
+        fn_000bbff0(filename, (char *)file);
     }
     check_cd_available(filename);
     fn_000cd2cc(filename);
@@ -110,8 +110,8 @@ s32 read_config_file(void)
             return -1;
         data[j++] = 0;
         if (!strcmp(data + key, D_00120622)) {
-            LbDataLoadSetModifyFilenameFunction(cd_install_path, data + j);
-            fn_000bccf0(modify_data_load_filename);
+            fn_000bbff0(cd_install_path, data + j);
+            LbDataLoadSetModifyFilenameFunction(modify_data_load_filename);
         } else if (!strcmp(data + key, D_0012062f)) {
             switch (tolower((s8)data[j + 1])) {
             case 'i':
@@ -148,7 +148,7 @@ s32 read_config_file(void)
             }
             D_001547e5 = install_language;
         } else if (!strcmp(data + key, D_00120645)) {
-            LbDataLoadSetModifyFilenameFunction(D_001563c5, data + j);
+            fn_000bbff0(D_001563c5, data + j);
         } else {
             LbMemoryFree(data);
             return -1;
