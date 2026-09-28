@@ -192,7 +192,6 @@ void mayor_pauses(Thing *w)
         satisfied_net_criteria(2, w->owner);
 }
 
-// NONMATCHING: return-value slot position
 // FUNCTION: 0x000a13a4
 u8 mayor_judges_hospital(u8 owner)
 {
@@ -210,7 +209,6 @@ u8 mayor_judges_hospital(u8 owner)
     AllHosps *h;
     int avg;
     RoomInfo *room;
-    int i;
 
     score = 0;
     staff = 0;
@@ -297,9 +295,13 @@ u8 mayor_judges_hospital(u8 owner)
         D_0015f8d6 += score;
         D_0015f8da++;
     }
-    for (i = 0; i < 15; i++) {
-        if (mayor_result[i].f0 >= score)
-            return i;
+    {
+        int i;
+
+        for (i = 0; i < 15; i++) {
+            if (mayor_result[i].f0 >= score)
+                return i;
+        }
     }
     return 14;
 }

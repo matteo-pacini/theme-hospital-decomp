@@ -14,28 +14,29 @@ s32 fn_00038d04(Thing *w, u8 owner);
 void fn_000444e0(Thing *w);
 }
 
-// NONMATCHING: register choice; gate_arrive[0]/reap_arrive[0] relocs named as the preceding table
 // FUNCTION: 0x0005c230
 u8 summon_the_reaper(Thing *w)
 {
     Thing *r;
     Thing *obj;
     u16 base;
-    u16 found;
-    u16 pos;
     u16 pos2;
+    u16 pos;
     u16 i;
     u16 obj_id;
+    u16 found;
 
     obj_id = 0;
     found = 0;
     r = &thing[w->unknown73];
-    if (r > thing && r->renderer == 10)
-        return 0;
+    if (r > thing) {
+        if (r->renderer == 10)
+            return 0;
+    }
     r = allocate_thing(0x32);
     if (r) {
         r->renderer = 10;
-        base = ((u16)w->y.tile << 7) + (u16)w->x.tile;
+        base = (u16)w->x.tile + ((u16)w->y.tile << 7);
         for (i = 1; i <= gate_arrive[0]; i++) {
             pos = base + gate_arrive[i];
             if (can_i_get_to(w, pos) > 0) {

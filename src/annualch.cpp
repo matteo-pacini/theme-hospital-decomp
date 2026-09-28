@@ -128,7 +128,6 @@ void create_chart_data(void)
     fs_qsort(chart[10], n, 5, descend);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b4e88
 extern "C" void fn_000b4e88(void)
 {
@@ -239,7 +238,7 @@ extern "C" void fn_000b4e88(void)
         D_00155da5 = 0x4b0;
         D_00155da3 = mouse_dx + mouse_dy;
     }
-    if (!D_00155da5--)
+    if (!(s16)D_00155da5--)
         process_yearend_buttons(0);
     D_00188c7b = D_00188c7c = D_00188c81 = D_00188c83 = 0;
 }
@@ -378,7 +377,6 @@ void process_yearend_buttons(u8 b)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b5d10
 void check_stats_buttons(void)
 {
@@ -386,13 +384,13 @@ void check_stats_buttons(void)
 
     if (exit_the_yearend_screen)
         reqspr_draw(D_0015f43c[0x48].unknownC, D_0015f43c[0x48].unknownE,
-                    (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[0x48].sprite * 6));
+                    &screen_sprites_tab_start[D_0015f43c[0x48].sprite]);
     if (D_00188c7e) {
         for (i = 0; D_0015f43c[i + 0x48].width != 0 && D_0015f43c[i + 0x48].height != 0; i++) {
             if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0x48].x, D_0015f43c[i + 0x48].y,
                              (s16)D_0015f43c[i + 0x48].width, (s16)D_0015f43c[i + 0x48].height)) {
                 reqspr_draw(D_0015f43c[i + 0x48].unknownC, D_0015f43c[i + 0x48].unknownE,
-                            (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[i + 0x48].sprite * 6));
+                            &screen_sprites_tab_start[D_0015f43c[i + 0x48].sprite]);
                 break;
             }
         }
@@ -403,7 +401,7 @@ void check_stats_buttons(void)
                              (s16)D_0015f43c[i + 0x48].width, (s16)D_0015f43c[i + 0x48].height)) {
                 D_0015f43c[i + 0x48].callback(i);
                 reqspr_draw(D_0015f43c[i + 0x48].unknownC, D_0015f43c[i + 0x48].unknownE,
-                            (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[i + 0x48].sprite * 6));
+                            &screen_sprites_tab_start[D_0015f43c[i + 0x48].sprite]);
                 break;
             }
         }
@@ -438,7 +436,6 @@ u8 button_available(const u8 b)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b614c
 void check_awards_buttons(void)
 {
@@ -446,14 +443,14 @@ void check_awards_buttons(void)
 
     if (exit_the_yearend_screen)
         reqspr_draw(D_0015f43c[0x4b].unknownC, D_0015f43c[0x4b].unknownE,
-                    (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[0x4b].sprite * 6));
+                    &screen_sprites_tab_start[D_0015f43c[0x4b].sprite]);
     if (D_00188c7e) {
         for (i = 0; D_0015f43c[i + 0x4b].width != 0 && D_0015f43c[i + 0x4b].height != 0; i++) {
             if (button_available(i)) {
                 if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0x4b].x, D_0015f43c[i + 0x4b].y,
                                  (s16)D_0015f43c[i + 0x4b].width, (s16)D_0015f43c[i + 0x4b].height)) {
                     reqspr_draw(D_0015f43c[i + 0x4b].unknownC, D_0015f43c[i + 0x4b].unknownE,
-                                (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[i + 0x4b].sprite * 6));
+                                &screen_sprites_tab_start[D_0015f43c[i + 0x4b].sprite]);
                     break;
                 }
             }
@@ -466,7 +463,7 @@ void check_awards_buttons(void)
                                  (s16)D_0015f43c[i + 0x4b].width, (s16)D_0015f43c[i + 0x4b].height)) {
                     D_0015f43c[i + 0x4b].callback(i);
                     reqspr_draw(D_0015f43c[i + 0x4b].unknownC, D_0015f43c[i + 0x4b].unknownE,
-                                (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[i + 0x4b].sprite * 6));
+                                &screen_sprites_tab_start[D_0015f43c[i + 0x4b].sprite]);
                     break;
                 }
             }
@@ -475,7 +472,6 @@ void check_awards_buttons(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b647c
 void display_awards(void)
 {
@@ -486,7 +482,7 @@ void display_awards(void)
     for (i = 0, t = 0, a = 0; i < 9 && t < 3; i++) {
         if (trophy[i].unknown0) {
             reqspr_draw(D_0015f43c[t + 0x55].unknownC, D_0015f43c[t + 0x55].unknownE,
-                        (TbSprite *)((u32)screen_sprites_tab_start + (t + 12) * 6));
+                        &screen_sprites_tab_start[t + 12]);
             trophies_won[t].unknown0 = trophy[i].unknown0;
             trophies_won[t].f1 = trophy[i].f1;
             trophies_won[t].value = trophy[i].value;

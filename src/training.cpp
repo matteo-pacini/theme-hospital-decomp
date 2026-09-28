@@ -253,7 +253,6 @@ u16 find_emptiest_training_room(u8 owner, u16 exclude)
     return found;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00043434
 void training_done(const Thing *w, const u8 kind)
 {
@@ -273,15 +272,15 @@ void training_done(const Thing *w, const u8 kind)
     limit = old_newrand() % w->unknown126;
     skills = (u16)(w->unknown124 & 0x160);
     for (t = &thing[w->room->first]; t > thing; t = &thing[t->room_next]) {
-        if (t->renderer == 4 && t->subtype == 1 && !(t->unknown124 & 0x80) && TRAINING_OBJECT(t)
-            && thing[TRAINING_OBJECT(t)].subtype == 0x24) {
+        if (t->renderer == 4 && t->subtype == 1 && !(t->unknown124 & 0x80)
+            && (TRAINING_OBJECT(t) && thing[TRAINING_OBJECT(t)].subtype == 0x24)) {
             students++;
         }
     }
     students = (students >> 2) + 1;
     for (t = &thing[w->room->first]; t > thing; t = &thing[t->room_next]) {
-        if (t->renderer == 4 && t->subtype == 1 && !(t->unknown124 & 0x80) && TRAINING_OBJECT(t)
-            && thing[TRAINING_OBJECT(t)].subtype == 0x24) {
+        if (t->renderer == 4 && t->subtype == 1 && !(t->unknown124 & 0x80)
+            && (TRAINING_OBJECT(t) && thing[TRAINING_OBJECT(t)].subtype == 0x24)) {
             learn = skills & ~(u16)(t->unknown124 & 0x160);
             if (learn & 0x160) {
                 if (learn & 0x20) {

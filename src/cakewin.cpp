@@ -244,11 +244,10 @@ void find_cell_at_point(const u8 a, const s32 x, const s32 y)
     info.unknown58 = window.f9c[a] + (D_0015f3f7 * (col + row + 2) / 2 - window.fc[a]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000ac3c4
 void give_screen_xy_of_cell_at_column_row(const u8 a, const s32 x, const s32 y)
 {
-    info.unknown54 = (x - y - 1) * D_0015f3f8 / 2 - window.f0[a] + window.f90[a];
+    info.unknown54 = D_0015f3f8 * (x - y - 1) / 2 - window.f0[a] + window.f90[a];
     info.unknown58 = (x + y + 2) * D_0015f3f7 / 2 - window.fc[a] + window.f9c[a];
 }
 
@@ -424,15 +423,14 @@ void set_window_animating(const u8 n, const u8 a, s32 steps, const s32 x0, const
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000acdb0
 void animate_windows(void)
 {
     u8 i;
-    s32 x;
-    s32 y;
     s32 w;
     s32 h;
+    s32 x;
+    s32 y;
 
     i = 0;
     while (i < window.unknown2ec) {
@@ -440,7 +438,7 @@ void animate_windows(void)
             window.f224[i]--;
             window.zone_x[i] = (window.f290[i] * window.f224[i] >> 16) + window.f260[i];
             window.zone_y[i] = (window.f29c[i] * window.f224[i] >> 16) + window.f26c[i];
-            window.zone_w[i] = (window.f2a8[i] * window.f224[i] >> 16) + window.f278[i];
+            window.zone_w[i] = window.f278[i] + (window.f2a8[i] * window.f224[i] >> 16);
             window.zone_h[i] = window.f284[i] + (window.f2b4[i] * window.f224[i] >> 16);
             window.f90[i] = (window.zone_x[i] + window.zone_w[i]) / 2;
             window.f9c[i] = (window.zone_y[i] + window.zone_h[i]) / 2;
@@ -461,7 +459,6 @@ void animate_windows(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000ad034
 void animate_single_window(const u8 n)
 {
@@ -474,7 +471,7 @@ void animate_single_window(const u8 n)
         window.f224[n]--;
         window.zone_x[n] = (window.f290[n] * window.f224[n] >> 16) + window.f260[n];
         window.zone_y[n] = (window.f29c[n] * window.f224[n] >> 16) + window.f26c[n];
-        window.zone_w[n] = (window.f2a8[n] * window.f224[n] >> 16) + window.f278[n];
+        window.zone_w[n] = window.f278[n] + (window.f2a8[n] * window.f224[n] >> 16);
         window.zone_h[n] = window.f284[n] + (window.f2b4[n] * window.f224[n] >> 16);
         window.f90[n] = (window.zone_x[n] + window.zone_w[n]) / 2;
         window.f9c[n] = (window.zone_y[n] + window.zone_h[n]) / 2;

@@ -175,7 +175,7 @@ s32 sector_behind(Sector *s, s32 a, s32 b)
     return asin < bsin ? 1 : 0;
 }
 
-// NONMATCHING: frame slots of the ?: temporaries, register choice
+// NONMATCHING: frame layout (target puts the two ?: temporaries above tr, mid, sec, ox, oy, and swaps best and k)
 // FUNCTION: 0x000b86a8
 void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
 {

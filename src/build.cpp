@@ -8,7 +8,6 @@ void give_screen_xy_of_cell_at_column_row(const u8 view, const s32 column, const
 u8 can_place_door(u16 tile, u16 a, u8 b);
 u8 is_valid_door(u16 tile, u8 owner, u8 type);
 
-// NONMATCHING: register choice; doortype tiles reloc is named wall_hug+0xf in the target
 // FUNCTION: 0x00022b90
 void temp_place_door(u16 pos, u8 owner)
 {
@@ -79,7 +78,7 @@ void temp_place_door(u16 pos, u8 owner)
     if (room->f2 > min_h) {
         for (i = start_y, best = 9999; i <= room->f2 - end_y; i++) {
             for (j = 0; j <= room->f1; j += room->f1) {
-                tile = &cell0[(i << 7) + j] - map;
+                tile = &cell0[j + (i << 7)] - map;
                 if (b->door_state || (-map[tile + 128].first & 3) == 2) {
                     d = fn_000cb2db((s16)pos % 128 - tile % 128) + fn_000cb2db((s16)pos / 128 - tile / 128);
                     if (d < best) {
@@ -98,7 +97,7 @@ void temp_place_door(u16 pos, u8 owner)
     if (room->f1 > min_w) {
         for (i = start_x; i <= room->f1 - end_x; i++) {
             for (j = 0; j <= room->f2; j += room->f2) {
-                tile = &cell0[(j << 7) + i] - map;
+                tile = &cell0[i + (j << 7)] - map;
                 if (b->door_state || (-map[tile - 1].first & 3) == 1) {
                     d = fn_000cb2db((s16)pos % 128 - tile % 128) + fn_000cb2db((s16)pos / 128 - tile / 128);
                     if (d < best) {

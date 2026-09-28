@@ -158,7 +158,6 @@ void setup_menus(void)
     pmenu.subcount = sub;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008a1f0
 void draw_menus(void)
 {
@@ -206,14 +205,14 @@ void draw_menus(void)
                     if (pmenu.unknown0 == i)
                         draw_pulldown(x, (u16)pmenu.line_height, i);
                 }
-                x += pmenu.char_width * pmenu.pulldowns[i].length;
+                x += pmenu.pulldowns[i].length * pmenu.char_width;
             }
         }
         if (pmenu.unknown0 >= pmenu.count) {
             if (D_00188c7e) {
             x = 0;
             for (i = 1; i < pmenu.pulldowns[pmenu.unknown0].parent; i++)
-                x += pmenu.char_width * pmenu.pulldowns[i].length;
+                x += pmenu.pulldowns[i].length * pmenu.char_width;
             draw_pulldown(x, (u16)pmenu.line_height, (u16)pmenu.pulldowns[pmenu.unknown0].parent);
             x += pmenu.char_width * pmenu.pulldowns[i].width + pulldv[6].width;
             draw_pulldown(x, pmenu.pulldowns[pmenu.unknown0].y, (u16)pmenu.unknown0);

@@ -407,7 +407,6 @@ s32 find_new_drug_cost(u8 illness, u8 owner)
     return -1;
 }
 
-// NONMATCHING: imul operand order
 // FUNCTION: 0x0006e3e0
 s32 find_drug_improve_cost(u8 illness, u8 owner)
 {
@@ -417,7 +416,7 @@ s32 find_drug_improve_cost(u8 illness, u8 owner)
         && allhosps[owner].rooms[illness].unknown1C == 1) {
         rating = find_best_drug_rating(illness, owner);
         if (rating < 100)
-            return (D_0012dddb * (rating / 25) + D_0012ddda) * expertise[illness].cost / 100;
+            return (D_0012ddda + D_0012dddb * (rating / 25)) * expertise[illness].cost / 100;
     }
     return -1;
 }

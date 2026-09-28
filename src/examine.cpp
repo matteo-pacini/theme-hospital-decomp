@@ -2,10 +2,12 @@
 
 u8 treatment_machine_used(const u16 illness, const u16 tile);
 
-struct RandOverlay {
-    u16 unknown0;
-    s16 value;
+struct ComplexChoice {
+    u32 v[3];
 };
+
+extern ComplexChoice D_00136404;
+#pragma aux D_00136404 "W?$Wsi0fcomplexes$n[]ul$:.15$:?doctor_carries_out_examination$n(pn$Thing$$)vnx[]ul"
 
 struct DoorAnim {
     s16 v;
@@ -17,7 +19,6 @@ struct DoorAnim {
 extern "C" {
 extern u8 D_00158324;
 extern s16 D_001553b8;
-extern RandOverlay D_001553b6;
 extern u8 D_0012ddce;
 extern s16 D_001567b0[8];
 extern DoorAnim D_0012b598[];
@@ -25,7 +26,6 @@ extern DoorAnim D_0012b598[];
 void fn_000549bc(Thing *w);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000530e0
 void doctor_carries_out_examination(Thing *w)
 {
@@ -45,48 +45,48 @@ void doctor_carries_out_examination(Thing *w)
     case 30:
         if (o->kind != 0x20) {
             D_001553b8 = old_newrand() % 100;
-            if (D_001553b6.value >= 30 && D_001553b6.value < 32) {
+            if (D_001553b8 >= 30 && D_001553b8 < 32) {
                 w->state_b = 0x1c;
                 set_complex(w, 0x10e, 0);
                 fn_0003e724(w);
             }
-        } else {
-            w->unknown103++;
-            o->state_b = 0x20;
-            set_complex(o, 0x78, 0);
-            process_person_complex(o);
+            break;
         }
+        w->unknown103++;
+        o->state_b = 0x20;
+        set_complex(o, 0x78, 0);
+        process_person_complex(o);
         break;
     case 31:
         if (o->kind != 0x20) {
             D_001553b8 = old_newrand() % 100;
-            if (D_001553b6.value >= 33 && D_001553b6.value < 35) {
+            if (D_001553b8 >= 33 && D_001553b8 < 35) {
                 w->state_b = 0x1c;
                 set_complex(w, 0x10e, 0);
                 fn_0003e724(w);
             }
-        } else {
-            w->unknown103++;
-            w->state_b = 0x1c;
-            set_complex(w, 0x118, 0);
-            fn_0003e724(w);
+            break;
         }
+        w->unknown103++;
+        w->state_b = 0x1c;
+        set_complex(w, 0x118, 0);
+        fn_0003e724(w);
         break;
     case 32:
         D_001553b8 = old_newrand() % 100;
-        if (D_001553b6.value >= 0 && D_001553b6.value < 5) {
+        if (D_001553b8 >= 0 && D_001553b8 < 5) {
             o->anim_speed = 2;
         } else {
             D_001553b8 = old_newrand() % 100;
-            if (D_001553b6.value >= 5 && D_001553b6.value < 30) {
+            if (D_001553b8 >= 5 && D_001553b8 < 30) {
                 o->anim_speed = 1;
             } else {
                 D_001553b8 = old_newrand() % 100;
-                if (D_001553b6.value >= 30 && D_001553b6.value < 35) {
+                if (D_001553b8 >= 30 && D_001553b8 < 35) {
                     o->anim_speed = 4;
                 } else {
                     D_001553b8 = old_newrand() % 100;
-                    if (D_001553b6.value >= 35 && D_001553b6.value < 50) {
+                    if (D_001553b8 >= 35 && D_001553b8 < 50) {
                         o->anim_speed = D_0012ddce;
                         w->unknown103 = 33;
                         o->state_b = 0x20;
@@ -110,22 +110,22 @@ void doctor_carries_out_examination(Thing *w)
         fn_0003e724(w);
         break;
     case 33:
-        if (o->kind == 0x20) {
-            w->unknown103 = 40;
-            o->state_b = 0x20;
-            set_complex(o, 0xb4, 0);
-            process_person_complex(o);
-        }
+        if (o->kind != 0x20)
+            break;
+        w->unknown103 = 40;
+        o->state_b = 0x20;
+        set_complex(o, 0xb4, 0);
+        process_person_complex(o);
         break;
     case 40:
-        if (o->kind == 0x20) {
-            w->kind = 0x24;
-            w->unknown73 = 0;
-            if (!treatment_machine_used((u16)o->unknown171, o->x.tile + (o->y.tile << 7))) {
-                done_treatment(w, o);
-                w->room->unknown29 = 1;
-            }
-        }
+        if (o->kind != 0x20)
+            break;
+        w->kind = 0x24;
+        w->unknown73 = 0;
+        if (treatment_machine_used((u16)o->unknown171, o->x.tile + (o->y.tile << 7)))
+            break;
+        done_treatment(w, o);
+        w->room->unknown29 = 1;
         break;
     case 60:
         if (o->subtype == 3) {
@@ -154,52 +154,55 @@ void doctor_carries_out_examination(Thing *w)
     case 170:
     case 210:
     case 230:
-        if (!treatment_machine_used((u16)o->unknown171, o->x.tile + (o->y.tile << 7))) {
-            done_treatment(w, o);
-            w->state_b = 0x24;
-            set_complex(w, 0x154, 0);
-            fn_0003e724(w);
-            w->unknown73 = 0;
-            w->room->unknown29 = 1;
-        }
+        if (treatment_machine_used((u16)o->unknown171, o->x.tile + (o->y.tile << 7)))
+            break;
+        done_treatment(w, o);
+        w->state_b = 0x24;
+        set_complex(w, 0x154, 0);
+        fn_0003e724(w);
+        w->unknown73 = 0;
+        w->room->unknown29 = 1;
         break;
     case 240:
+        w->unknown103++;
+        o->kind = 0x2e;
+        t = &thing[o->unknown69];
         {
-            u16 f1;
-            u16 f2;
+            u16 f;
 
-            w->unknown103++;
-            o->kind = 0x2e;
-            t = &thing[o->unknown69];
-            f1 = check_frame(anim_starts[o->subtype].anims[0x79], o) + o->unknown17;
-            o->sprite = start[f1].frame;
-            o->palette = start[f1].flags > 0;
-            f2 = check_frame(anim_starts[o->unknown170].anims[0x79], o) + o->unknown17;
-            t->unknown100 = start[f2].frame;
-            t->state_b = start[f2].flags > 0;
-            D_001567b0[4] = D_001567b0[5] = 999;
-            full_draw_frame(o, o->sprite, 0, 0, 0, 1, o->palette);
-            t->unknown103 = -((TbSprite *)(element[elelist[frame[o->sprite].list]].sprite + (u32)sprite))->height
-                          - D_001567b0[5];
+            f = check_frame(anim_starts[o->subtype].anims[0x79], o) + o->unknown17;
+            o->sprite = start[f].frame;
+            o->palette = start[f].flags > 0;
         }
+        {
+            u16 f;
+
+            f = check_frame(anim_starts[o->unknown170].anims[0x79], o) + o->unknown17;
+            t->unknown100 = start[f].frame;
+            t->state_b = start[f].flags > 0;
+        }
+        D_001567b0[4] = D_001567b0[5] = 999;
+        full_draw_frame(o, o->sprite, 0, 0, 0, 1, o->palette);
+        t->unknown103 = -((TbSprite *)(element[elelist[frame[o->sprite].list]].sprite + (u32)sprite))->height
+                      - D_001567b0[5];
         break;
     case 241:
-        if (o->kind == 0x20) {
-            o->kind = 0x28;
-            effect_illness(o, 8, 1);
-            set_complex(w, 0x488, 0);
-            w->state_b = 0x1c;
-            fn_0003e724(w);
-            w->unknown103 = 230;
-        }
+        if (o->kind != 0x20)
+            break;
+        o->kind = 0x28;
+        effect_illness(o, 8, 1);
+        set_complex(w, 0x488, 0);
+        w->state_b = 0x1c;
+        fn_0003e724(w);
+        w->unknown103 = 230;
         break;
     case 110:
         {
-            u32 complexes[3] = {0x456, 0x460, 0x46a};
+            ComplexChoice complexes = D_00136404;
 
             w->unknown103 = 111;
             w->state_b = 0x1c;
-            set_complex(w, complexes[old_newrand() % 3], 0);
+            set_complex(w, complexes.v[old_newrand() % 3], 0);
             fn_0003e724(w);
         }
         break;
@@ -220,12 +223,12 @@ void doctor_carries_out_examination(Thing *w)
             Thing *h;
 
             h = &thing[w->unknown148w];
-            if (h->kind == 0x18) {
-                h->state_b = 0x18;
-                set_complex(h, 0x33e, 0);
-                fn_0003e724(h);
-                w->unknown103 = 72;
-            }
+            if (h->kind != 0x18)
+                break;
+            h->state_b = 0x18;
+            set_complex(h, 0x33e, 0);
+            fn_0003e724(h);
+            w->unknown103 = 72;
         }
         break;
     case 72:
@@ -233,27 +236,27 @@ void doctor_carries_out_examination(Thing *w)
             Thing *h;
 
             h = &thing[w->unknown148w];
-            if (h->kind == 0x18) {
-                h->state_b = 0x24;
-                set_complex(h, 0x352, 0);
-                fn_0003e724(h);
-                w->state_b = 0x1c;
-                set_complex(w, 0x348, 0);
-                fn_0003e724(w);
-                w->unknown103 = 73;
-                w->unknown148w = 0;
-            }
+            if (h->kind != 0x18)
+                break;
+            h->state_b = 0x24;
+            set_complex(h, 0x352, 0);
+            fn_0003e724(h);
+            w->state_b = 0x1c;
+            set_complex(w, 0x348, 0);
+            fn_0003e724(w);
+            w->unknown103 = 73;
+            w->unknown148w = 0;
         }
         break;
     case 73:
-        if (!treatment_machine_used((u16)o->unknown171, o->x.tile + (o->y.tile << 7))) {
-            set_complex(o, 0x276, 0);
-            process_person_complex(o);
-            done_treatment(w, o);
-            w->unknown73 = 0;
-            w->kind = 0x24;
-            w->room->unknown29 = 1;
-        }
+        if (treatment_machine_used((u16)o->unknown171, o->x.tile + (o->y.tile << 7)))
+            break;
+        set_complex(o, 0x276, 0);
+        process_person_complex(o);
+        done_treatment(w, o);
+        w->unknown73 = 0;
+        w->kind = 0x24;
+        w->room->unknown29 = 1;
         break;
     case 180:
         if (!pre_administer_drugs(o)) {
@@ -321,14 +324,14 @@ void doctor_carries_out_examination(Thing *w)
         t->unknown103 = 0;
         break;
     case 191:
-        if (o->kind == 0x20) {
-            transform_peep_who(o, 4);
-            w->state_b = 0x1c;
-            set_complex(w, 0x230, 0);
-            fn_0003e724(w);
-            w->unknown103 = 181;
-            o->kind = 0x28;
-        }
+        if (o->kind != 0x20)
+            break;
+        transform_peep_who(o, 4);
+        w->state_b = 0x1c;
+        set_complex(w, 0x230, 0);
+        fn_0003e724(w);
+        w->unknown103 = 181;
+        o->kind = 0x28;
         break;
     case 200:
         {
@@ -431,14 +434,14 @@ void doctor_carries_out_examination(Thing *w)
         }
         break;
     case 220:
-        if (!treatment_machine_used(0x2c, o->x.tile + (o->y.tile << 7))) {
-            w->state_b = 0x3e;
-            set_complex(w, 0x154, 0);
-            fn_0003e724(w);
-            w->unknown73 = 0;
-            w->room->unknown29 = 1;
-            remove_person(o);
-        }
+        if (treatment_machine_used(0x2c, o->x.tile + (o->y.tile << 7)))
+            break;
+        w->state_b = 0x3e;
+        set_complex(w, 0x154, 0);
+        fn_0003e724(w);
+        w->unknown73 = 0;
+        w->room->unknown29 = 1;
+        remove_person(o);
         break;
     default:
         w->unknown103 = 1;
@@ -449,7 +452,6 @@ void doctor_carries_out_examination(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00054444
 void effect_illness(Thing *w, u8 illness, u8 cured)
 {
@@ -575,7 +577,6 @@ void effect_illness(Thing *w, u8 illness, u8 cured)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00054870
 extern "C" void fn_00054870(Thing *w)
 {
@@ -608,7 +609,6 @@ extern "C" void fn_00054870(Thing *w)
         fn_000549bc(w);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000549bc
 extern "C" void fn_000549bc(Thing *w)
 {
@@ -685,7 +685,6 @@ extern "C" void fn_000549bc(Thing *w)
     }
 }
 
-// NONMATCHING: register choice; the table is addressed as doortype+0x29e in the target
 // FUNCTION: 0x00054d60
 extern "C" void fn_00054d60(void)
 {

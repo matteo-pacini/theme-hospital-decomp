@@ -875,7 +875,7 @@ void adjust_big_cell_flag(const u16 cell)
     map[cell].flags &= ~0x20;
 }
 
-// NONMATCHING: frame layout, register choice
+// NONMATCHING: frame layout (target: return value, col, idx, ?: temporary, v)
 // FUNCTION: 0x000a9100
 s8 check_obscuring_column(const s8 row, s8 x, s8 y)
 {
@@ -897,14 +897,13 @@ s8 check_obscuring_column(const s8 row, s8 x, s8 y)
     return -1;
 }
 
-// NONMATCHING: frame layout, register choice
 // FUNCTION: 0x000a91f0
 s8 record_covering_cell(const s8 row, const s16 pos)
 {
-    s8 col;
-    s8 idx;
-    s8 y;
     s8 x;
+    s8 y;
+    s8 idx;
+    s8 col;
     s8 v;
 
     x = pos % 128;

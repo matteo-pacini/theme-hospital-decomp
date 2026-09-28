@@ -278,7 +278,6 @@ void process_bank_panel(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007f50c
 void process_bank_button(u8 n)
 {
@@ -292,7 +291,7 @@ void process_bank_button(u8 n)
         }
         break;
     case 1:
-        if (myhosp->f41 - 5000 >= myhosp->f3d) {
+        if (myhosp->f3d <= myhosp->f41 - 5000) {
             D_001549d0[player].type = 0x66;
             play_sound(10, 0x43, -1, -1);
         } else {

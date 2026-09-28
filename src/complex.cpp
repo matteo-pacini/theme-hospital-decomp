@@ -1135,13 +1135,12 @@ void complex_success(Thing *w, u8 kind)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00042748
 u8 staff_go_near_object(Thing *w)
 {
     u16 pos;
 
-    pos = can_i_go_near_point(w, ((int)thing[w->unknown69].y.tile << 7) + (u16)thing[w->unknown69].x.tile);
+    pos = can_i_go_near_point(w, (s16)((thing[w->unknown69].y.tile << 7) + (u16)thing[w->unknown69].x.tile));
     if (pos) {
         fn_0004195c(w, pos);
         return 1;

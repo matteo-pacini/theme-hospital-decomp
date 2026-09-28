@@ -328,7 +328,6 @@ void ratnav_init(Thing *w)
     w->palette = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].flags;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007dab4
 void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h)
 {
@@ -345,7 +344,7 @@ void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h)
     }
     for (tx = x; x + w > tx; tx++) {
         for (ty = y; y + h > ty; ty++) {
-            if (map[(s16)ty * 128 + (s16)tx].floor & 0xf) {
+            if (map[(s16)tx + (s16)ty * 128].floor & 0xf) {
                 remove_litter(ty * 128 + tx, owner);
             }
         }

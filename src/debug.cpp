@@ -200,7 +200,6 @@ extern "C" void fn_0008dee0(Requester *req)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008e184
 extern "C" void fn_0008e184(Requester *req)
 {
@@ -240,7 +239,7 @@ extern "C" void fn_0008e184(Requester *req)
             reqspr_draw(x + ox + BSPR(0x20)->width, y + oy, BSPR(0x21));
             set_all_refresh_zones_in_window(x + ox + BSPR(0x20)->width, y + oy, x + ox + BSPR(0x20)->width + BSPR(0x21)->width, y + oy + BSPR(0x20)->height + BSPR(0x21)->height, 3);
             if (!D_00188c7e && crequester.unknown4) {
-                if (over_hotspot(D_00188c5c, D_00188c60, BSPR(0x20)->width + (ox + x), oy + y, BSPR(0x21)->width, BSPR(0x21)->height)) {
+                if (over_hotspot(D_00188c5c, D_00188c60, ox + x + BSPR(0x20)->width, oy + y, BSPR(0x21)->width, BSPR(0x21)->height)) {
                     if (i != D_00155d72) {
                         D_00155e08 = 0;
                         D_00155e07 = 1;
@@ -262,7 +261,7 @@ extern "C" void fn_0008e184(Requester *req)
         }
         set_all_refresh_zones_in_window(x + ox + BSPR(0x20)->width, y + oy, x + ox + BSPR(0x20)->width + BSPR(0x22)->width, y + oy + BSPR(0x20)->height + BSPR(0x22)->height, 3);
         if (!D_00188c7e && crequester.unknown4) {
-            if (over_hotspot(D_00188c5c, D_00188c60, BSPR(0x20)->width + (ox + x), oy + y, BSPR(0x22)->width, BSPR(0x22)->height)) {
+            if (over_hotspot(D_00188c5c, D_00188c60, ox + x + BSPR(0x20)->width, oy + y, BSPR(0x22)->width, BSPR(0x22)->height)) {
                 song = GetSongHandle();
                 myplayer.unknown12[i] = !myplayer.unknown12[i] ? (u8)1 : (u8)0;
                 play_sound(10, 0x43, -1, -1);

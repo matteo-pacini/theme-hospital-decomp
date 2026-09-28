@@ -1169,9 +1169,9 @@ void fn_0001bee4(void)
     }
 }
 
-// NONMATCHING: return-value slot placed below the locals
+// NONMATCHING: frame layout; matches with a u16 first parameter (prototype in hosp.h), which orders the frame forward
 // FUNCTION: 0x000b0630
-u8 fn_000b0630(int tile, u8 parity)
+u8 fn_000b0630(u16 tile, u8 parity)
 {
     Map *cell = &map[(u16)tile];
     Thing *e = fn_00019aac(cell, 8);

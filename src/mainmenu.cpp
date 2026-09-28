@@ -766,7 +766,6 @@ u8 fn_0006344c(s16 *scroll, u16 *line)
     return done;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00063680
 void fn_00063680(void)
 {
@@ -851,7 +850,7 @@ void fn_00063680(void)
         plotbid.price = total;
         if (total > 0) {
             plotbid.step = total / 10;
-            if (plotbid.step < 10)
+            if ((u32)plotbid.step < 10)
                 plotbid.step = 10;
         }
         for (i = 0; i < 4; i++)

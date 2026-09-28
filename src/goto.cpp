@@ -70,7 +70,7 @@ s16 person_goto_destination(Thing *w)
             break;
         }
     }
-    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
     y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
     move_node(w, x, y);
     return 0;
@@ -140,7 +140,7 @@ s16 person_goto_object(Thing *w)
             break;
         }
     }
-    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
     y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
     move_node(w, x, y);
     return 0;
@@ -223,7 +223,7 @@ void person_goto_queue(Thing *w)
             break;
         }
     }
-    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
     y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
     move_node(w, x, y);
 }
@@ -264,7 +264,7 @@ s16 reaper_goto_hell(Thing *w)
             break;
         }
     }
-    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
     y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
     move_node(w, x, y);
     return 0;
@@ -418,7 +418,7 @@ void staff_wanders(Thing *w)
             break;
         }
     }
-    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
     y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
     move_node(w, x, y);
     return;
@@ -472,7 +472,6 @@ decide:
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000781f8
 void peep_bp_goto(Thing *w)
 {
@@ -531,7 +530,7 @@ void peep_bp_goto(Thing *w)
             }
         }
     }
-    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
     y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
     move_node(w, x, y);
 }
@@ -574,7 +573,7 @@ s16 mayor_goto(Thing *w)
             break;
         }
     }
-    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
     y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
     move_node(w, x, y);
     return 0;
@@ -587,7 +586,6 @@ extern u8 D_00155441;
 extern u16 D_0012dd7c[];
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000788d8
 void peep_stuck(Thing *w)
 {
@@ -642,7 +640,7 @@ void peep_stuck(Thing *w)
         }
     }
     if (w->unknown17 != 4) {
-        x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+        x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
         y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
         move_node(w, x, y);
     }

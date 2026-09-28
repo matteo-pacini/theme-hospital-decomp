@@ -21,7 +21,6 @@ extern s8 RoomTileHalfData[][32][64];
 void reset_precalculated_shadows(void);
 void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSprite *dst);
 
-// NONMATCHING: register choice; map[i - 0x81] index not folded in the target
 // FUNCTION: 0x000b06d0
 void add_static_shadows(void)
 {
@@ -40,14 +39,13 @@ void add_static_shadows(void)
             if (((!map[i - 128].unknown4 && !fn_000b0630((u16)(i - 0x80), 1)) || (blocks[map[i - 128].unknown4].width & 0x60))
                 && ((!map[i].unknown3 && !fn_000b0630((u16)(i - 0x80), 1)) || (blocks[map[i].unknown3].width & 0x60))) {
                 map[i - 128].floor |= 0x40;
-                map[i - 0x81].floor |= 0x40;
+                map[i - 128 - 1].floor |= 0x40;
             }
             map[i].floor |= 0x20;
         }
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b0928
 void precalculate_shadow_blocks(void)
 {
@@ -56,7 +54,7 @@ void precalculate_shadow_blocks(void)
     i = 0;
     reset_precalculated_shadows();
     for (; i < 0x4000; i++) {
-        if (map[i].unknown3 && map[i].unknown4 && (map[i].unknown7 & (1 << player))) {
+        if (map[i].unknown3 && map[i].unknown4 && ((1 << player) & map[i].unknown7)) {
             InteriorTileFull.block = map[i].overlay;
             InteriorTileFull.sprite.width = blocks[map[i].overlay].info->width;
             InteriorTileFull.sprite.height = blocks[map[i].overlay].info->height;

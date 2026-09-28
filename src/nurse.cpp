@@ -70,7 +70,6 @@ u16 find_unallocated_bed(RoomInfo *room)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c8d8
 void nurse_in_ward(Thing *w)
 {
@@ -83,7 +82,7 @@ void nurse_in_ward(Thing *w)
     int bed;
     u32 obj;
 
-    obj = find_object((w->y.tile << 7) + w->x.tile, 1, 0, 0x97, w->owner);
+    obj = find_object(w->x.tile + (w->y.tile << 7), 1, 0, 0x97, w->owner);
     switch (w->unknown103) {
     case 0:
         w->room->f3 == 4 ? 0 : (w->room->f3 = 1);

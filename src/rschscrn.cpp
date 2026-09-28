@@ -92,15 +92,14 @@ void display_research(void)
         research.unknown2 = 2;
 }
 
-// NONMATCHING: register choice, stack slot of unused height
 // FUNCTION: 0x000b28b4
 void draw_research_text(void)
 {
     u8 total;
     u16 i;
-    s32 height;
-    u16 illness;
+    u16 height;
     u16 x;
+    u16 illness;
     s16 len;
     char buf[100];
 
@@ -122,7 +121,7 @@ void draw_research_text(void)
                     else if (len > 0x122)
                         len = 0x122;
                     for (x = 0; x < len; x += 5)
-                        reqspr_draw(x + D_0015f434[i + 0x5c].x, D_0015f434[i + 0x5c].y, &screen_sprites_tab_start[3]);
+                        reqspr_draw(D_0015f434[i + 0x5c].x + x, D_0015f434[i + 0x5c].y, &screen_sprites_tab_start[3]);
                 }
             }
         } else {

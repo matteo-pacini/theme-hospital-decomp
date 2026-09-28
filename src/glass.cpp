@@ -211,7 +211,7 @@ void draw_a_box(u8 n)
     to = ZoomBoxes[n].to;
     step = ZoomBoxes[n].f1;
     total = ZoomBoxes[n].f2 - 1;
-    x = ((total - step) * from[0] + to[0] * step) / total;
+    x = (to[0] * step + (total - step) * from[0]) / total;
     y = ((total - step) * from[1] + to[1] * step) / total;
     w = ((total - step) * from[2] + to[2] * step) / total;
     h = ((total - step) * from[3] + to[3] * step) / total;
@@ -300,8 +300,7 @@ s8 draw_zoom_boxes(void)
                 } else if (!incomplete && ZoomBoxes[i].type <= hi) {
                     if (ZoomBoxes[i].type == hi) {
                         if (!ZoomBoxes[i].f3) {
-                            ZoomBoxes[i].f1++;
-                            if (ZoomBoxes[i].f1 >= ZoomBoxes[i].f2 - 1) {
+                            if (++ZoomBoxes[i].f1 >= ZoomBoxes[i].f2 - 1) {
                                 for (j = 0; j < 0x2e; j++) {
                                     if (((ZoomBoxes[j].active && i != j) && ZoomBoxes[j].id == ZoomBoxes[i].id)
                                         && ZoomBoxes[j].f1 != ZoomBoxes[j].f2 - 1)
@@ -357,8 +356,8 @@ s8 draw_zoom_boxes(void)
 // FUNCTION: 0x000b96cc
 s32 next_map(void)
 {
-    s32 r;
     s32 diff;
+    s32 r;
 
     diff = CurrentDisplay ^ DesiredDisplay;
     r = diff & CurrentDisplay;

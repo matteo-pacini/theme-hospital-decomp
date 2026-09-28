@@ -445,7 +445,6 @@ void remove_partition_walls(void)
     recolour_all_rooms();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006541c
 void recreate_map(const u8 flag)
 {
@@ -569,8 +568,12 @@ void recreate_map(const u8 flag)
         rnd = 0xbb40e62d;
         for (i = 0; i < 0x4000; i++) {
             rnd *= 0xbb40e62d;
-            if (level->plots[i] && map[i].overlay == 0 && ((rnd >> 8) & 0x7fff) % 50 == 0)
-                map[i].unknown3 = ((rnd >> 8) & 0x7fff & 7) + 0xb6;
+            if (level->plots[i]) {
+                if (map[i].overlay == 0) {
+                    if (((rnd >> 8) & 0x7fff) % 50 == 0)
+                        map[i].unknown3 = ((rnd >> 8) & 0x7fff & 7) + 0xb6;
+                }
+            }
         }
     }
     place_partition_walls();
@@ -600,7 +603,6 @@ void adjust_mapwho(u16 tile)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00066094
 void display_plot_under_mouse(void)
 {
@@ -636,7 +638,7 @@ void display_plot_under_mouse(void)
     if ((x >= 0 && y >= 0) && (x < 128 && y < 128)) {
         plot = level->plots[x + (y << 7)];
         if (plot) {
-            price = *(u16 *)&expertise[53].unknown10[3] * land_amount[plot];
+            price = land_amount[plot] * *(u16 *)&expertise[53].unknown10[3];
             sprintf(buf, D_001204db, plot);
             LbTextDraw(D_0015f434[50].x, D_0015f434[50].y, buf);
             sprintf(buf, D_001204e0, D_001602c8[2]);
@@ -1130,7 +1132,6 @@ void process_bid_time(void)
     reqspr_draw(D_0015f434[70].x, D_0015f434[70].y, &screen_sprites_tab_start[D_0012cfbc[plotbid.timer]]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000685cc
 void draw_money_on_town(void)
 {
@@ -1162,7 +1163,7 @@ void draw_money_on_town(void)
         else
             digits = 6;
         LbTextSetClipWindow(D_0015f430->f20 + D_0015f434[54].x * digits, D_0015f430->f24,
-                            D_0015f430->f28 - digits * D_0015f434[54].x, h);
+                            D_0015f430->f28 - D_0015f434[54].x * digits, h);
         sprintf(buf, D_00120533, myhosp->f35);
         LbTextDraw(D_0015f434[55].x, D_0015f434[55].y - (h - D_001553f7 * 6), buf);
         sprintf(buf, D_00120537, D_001553f3);

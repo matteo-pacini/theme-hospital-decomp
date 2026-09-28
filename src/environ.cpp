@@ -453,7 +453,7 @@ void appraise_staff(Thing *w)
 {
     s32 value;
 
-    value = *(u16 *)&staff[w->subtype].unknown0[2] + w->unknown126 / *(u16 *)&expertise[57].unknown8;
+    value = w->unknown126 / *(u16 *)&expertise[57].category + *(u16 *)&staff[w->subtype].unknown0[2];
     if (w->unknown124 & 8)
         value += ((s16 *)&expertise[56].unknown10[6])[0];
     if (w->unknown124 & 0x10)
@@ -469,13 +469,13 @@ void appraise_staff(Thing *w)
     w->f70 = value;
     if (w->unknown124 & 0x10) {
         if ((w->unknown124 & 8) && w->unknown126 > D_0012ddd6) {
-            if (actual_game_turn - w->unknown130 >= D_0012ddc3 * 1500) {
+            if (actual_game_turn - (u16)w->unknown130 >= D_0012ddc3 * 1500) {
                 w->unknown124 &= ~8;
                 if (w->owner == player)
                     announce_this(10, 1);
             }
         } else if (!(w->unknown124 & 0x80) && w->unknown126 > D_0012ddd8) {
-            if (actual_game_turn - w->unknown130 >= D_0012ddc4 * 1500) {
+            if (actual_game_turn - (u16)w->unknown130 >= D_0012ddc4 * 1500) {
                 w->unknown124 |= 0x80;
                 if (w->owner == player)
                     announce_this(0xd, 1);

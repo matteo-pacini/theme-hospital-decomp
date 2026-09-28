@@ -8,7 +8,6 @@ u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner);
 u8 fn_0007cc88(Thing *w);
 }
 
-extern s16 door_to_room[];
 extern s16 special_around[];
 extern Map *map;
 
@@ -293,40 +292,42 @@ void handyman_works(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007b554
 void handyman_check_for_litter(Thing *w)
 {
     u8 range;
-    u32 dn;
-    u32 db;
-    u32 da;
-    u16 b;
-    u16 a;
+    u16 pos;
     Map *m;
     s32 dx;
     s32 dy;
-    u16 pos;
 
     range = 10 - w->unknown126 / 100 < 1 ? 1 : 10 - w->unknown126 / 100;
     dx = old_newrand() % (range * 2) - range;
     dy = old_newrand() % (range * 2) - range;
     pos = ((u16)w->y.tile << 7) + (u16)w->x.tile + ((dy << 7) + dx);
     m = &map[pos];
-    if (!(m->floor & 0xf) || (m->floor & 0xf) == 7 || (m->floor & 0xf) == 8 || (1 << w->owner) != m->unknown7)
+    if (!(m->floor & 0xf) || (m->floor & 0xf) == 7 || (m->floor & 0xf) == 8 || m->unknown7 != (1 << w->owner))
         return;
-    a = w->unknown148w;
-    b = w->unknown150;
-    da = (a % 128 - w->x.tile) * (a % 128 - w->x.tile) + (a / 128 - w->y.tile) * (a / 128 - w->y.tile);
-    db = (b % 128 - w->x.tile) * (b % 128 - w->x.tile) + (b / 128 - w->y.tile) * (b / 128 - w->y.tile);
-    dn = (pos % 128 - w->x.tile) * (pos % 128 - w->x.tile) + (pos / 128 - w->y.tile) * (pos / 128 - w->y.tile);
-    if (pos == a || pos == w->unknown150)
-        return;
-    if (dn < da) {
-        w->unknown150 = a;
-        w->unknown148w = pos;
-    } else if (dn < db) {
-        w->unknown150 = pos;
+    {
+        u16 a;
+        u16 b;
+        u32 dn;
+        u32 db;
+        u32 da;
+
+        a = w->unknown148w;
+        b = w->unknown150;
+        da = (a % 128 - w->x.tile) * (a % 128 - w->x.tile) + (a / 128 - w->y.tile) * (a / 128 - w->y.tile);
+        db = (b % 128 - w->x.tile) * (b % 128 - w->x.tile) + (b / 128 - w->y.tile) * (b / 128 - w->y.tile);
+        dn = (pos % 128 - w->x.tile) * (pos % 128 - w->x.tile) + (pos / 128 - w->y.tile) * (pos / 128 - w->y.tile);
+        if (pos == a || pos == w->unknown150)
+            return;
+        if (dn < da) {
+            w->unknown150 = a;
+            w->unknown148w = pos;
+        } else if (dn < db) {
+            w->unknown150 = pos;
+        }
     }
 }
 
@@ -550,19 +551,18 @@ u8 handyman_try_plant(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007c6a0
 u8 handyman_try_litter(Thing *w)
 {
-    u16 pos;
     u16 target;
+    u16 pos;
     u32 i;
 
     target = 0;
     pos = (u16)w->x.tile + ((u16)w->y.tile << 7);
     for (i = 0; i < 9; i++) {
-        if (!(!(map[door_to_room[i + 4] + pos].floor & 0xf) || (map[door_to_room[i + 4] + pos].floor & 0xf) == 7
-              || (map[door_to_room[i + 4] + pos].floor & 0xf) == 8)) {
+        if (!(!(map[pos + special_around[i]].floor & 0xf) || (map[pos + special_around[i]].floor & 0xf) == 7
+              || (map[pos + special_around[i]].floor & 0xf) == 8)) {
             target = pos + special_around[i];
             break;
         }
@@ -628,7 +628,6 @@ u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007cc88
 u8 fn_0007cc88(Thing *w)
 {
@@ -636,7 +635,7 @@ u8 fn_0007cc88(Thing *w)
     s32 pos;
 
     room = &room_info[w->unknown89];
-    pos = TILE_POS(w);
+    pos = (s16)w->x.tile + ((s16)w->y.tile << 7);
     if (fn_0007cbdc(room, pos + 1, w->owner))
         return 0;
     if (fn_0007cbdc(room, pos + 0x80, w->owner))

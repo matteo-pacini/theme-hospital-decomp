@@ -124,7 +124,7 @@ void calculate_currentbuttonstore(Window *w)
     }
 }
 
-// NONMATCHING: register choice; notover sits above the return-value slot
+// NONMATCHING: frame layout (target slots from the top: over, return value, pressed, notover)
 // FUNCTION: 0x0004cb80
 u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
 {
@@ -265,18 +265,18 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                             + (b->width - button_sprite[b->sprite18].width) * (*b->value - b->min) / (b->max - b->min)
                             + button_sprite[b->sprite18].width / 2;
                         ox = mouse_dx - D_00188c3c - ox;
-                        val = (b->max - b->min) * ox / (b->width - button_sprite[b->sprite18].width);
+                        val = ox * (b->max - b->min) / (b->width - button_sprite[b->sprite18].width);
                     }
                     if (b->height > button_sprite[b->sprite18].height) {
                         oy = b->y + w->y + button_sprite[b->sprite18].height / 2
-                            + (b->max - *b->value) * (b->height - button_sprite[b->sprite18].height)
+                            + (b->height - button_sprite[b->sprite18].height) * (b->max - *b->value)
                                 / (b->max - b->min);
                         oy = -(mouse_dy - D_00188c40 - oy);
                         if (val) {
-                            val += (b->max - b->min) * oy / (b->height - button_sprite[b->sprite18].height);
+                            val += oy * (b->max - b->min) / (b->height - button_sprite[b->sprite18].height);
                             val /= 2;
                         } else {
-                            val += (b->max - b->min) * oy / (b->height - button_sprite[b->sprite18].height);
+                            val += oy * (b->max - b->min) / (b->height - button_sprite[b->sprite18].height);
                         }
                     }
                     if (b->max > b->min) {
@@ -307,9 +307,9 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                         b->flags &= ~4;
                 }
             }
-        } else if (!buttonstore) {
-            if (mouse_over(b->x + w->x, b->y + w->y, b->x + w->x + b->width - 1, b->y + w->y + b->height - 1))
-                buttonstore = b;
+        } else if (!buttonstore
+                   && mouse_over(b->x + w->x, b->y + w->y, b->x + w->x + b->width - 1, b->y + w->y + b->height - 1)) {
+            buttonstore = b;
         }
     }
     for (; b; b = b->next) {

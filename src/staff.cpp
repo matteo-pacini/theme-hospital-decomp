@@ -794,13 +794,12 @@ void rest_staff(Thing *w, s16 amount)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002becc
 void staff_picked_up(Thing *w)
 {
     staff_exit_room_check(w);
     abandon_complex(w);
-    allhosps[w->owner].f11f6 = (w->y.tile << 7) + w->x.tile;
+    allhosps[w->owner].f11f6 = w->x.tile + (w->y.tile << 7);
     if (D_001553c7 == player) {
         gamevar.unknown77 = w->subtype;
         gamevar.unknown75 = w - thing;
@@ -988,7 +987,6 @@ void private_interrupt_staff(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002c700
 void staff_join_new_employer(u16 id, u16 owner)
 {
@@ -1008,7 +1006,7 @@ void staff_join_new_employer(u16 id, u16 owner)
         w->state_b = 0x28;
         fn_0003e724(w);
         remove_expertise_staff(w);
-        w->f8d = w->f8d + w->f8d / 4;
+        w->f8d += w->f8d / 4;
         w->unknown81 = 100;
         w->f8f = 0;
         w->unknown130 = actual_game_turn;

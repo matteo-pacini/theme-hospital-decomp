@@ -56,7 +56,13 @@ def main(source, output, *extra):
     # objconv 2.54.1 aborts (fortify buffer overflow) on long output basenames.
     with tempfile.TemporaryDirectory() as tmpdir:
         tmp = os.path.join(tmpdir, "o.o")
-        subprocess.run(["objconv", "-felf32", "-wd1211", omf, tmp], check=True, stdout=subprocess.DEVNULL)
+        r = subprocess.run(["objconv", "-felf32", "-wd1211", omf, tmp], check=True, capture_output=True, text=True)
+        # objconv drops local public/external records (static symbols, $Wsi0
+        # initialiser templates); every later external index then shifts, so
+        # relocations silently name the wrong symbols.
+        if "Warning 1212" in r.stdout + r.stderr:
+            sys.exit(f"{source}: objconv dropped local symbol records (static or local "
+                     "initialiser); the object would have wrong relocations")
         fixsyms.main(tmp)
         shutil.move(tmp, output)
 

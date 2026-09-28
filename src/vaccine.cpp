@@ -9,7 +9,6 @@ extern u16 D_0012dda6;
 u8 is_person_in_vaccine_queue(Thing *w);
 void insert_person_in_vaccination_queue(Thing *w);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000986a0
 u8 is_person_highlighted_for_vaccination(u8 flag)
 {
@@ -18,7 +17,7 @@ u8 is_person_highlighted_for_vaccination(u8 flag)
     w = &thing[D_001553f9];
     flag = 0;
     if (w > thing && w->renderer == 2 && w->owner == player && (s8)w->unknown174 > 0
-        && w->style == myhosp->f20b) {
+        && myhosp->f20b == w->style) {
         if (flag || is_person_in_vaccine_queue(w) == 0) {
             D_00155432 = D_001553f9;
             return 1;

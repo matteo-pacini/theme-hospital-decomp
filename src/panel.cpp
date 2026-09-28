@@ -455,8 +455,6 @@ void panel_r_button(const u16 icon)
     }
 }
 
-// NONMATCHING: register choice
-// NONMATCHING: register choice
 // FUNCTION: 0x000329d4
 void draw_money_on_panel(void)
 {
@@ -482,7 +480,7 @@ void draw_money_on_panel(void)
             }
         }
         LbTextSetClipWindow(D_0015f40c->unknown150 + D_0015f410->unknown248 * digits, D_0015f40c->unknown154,
-                            D_0015f40c->unknown158 - digits * D_0015f410->unknown248, height);
+                            D_0015f40c->unknown158 - D_0015f410->unknown248 * digits, height);
         sprintf(buf, D_00120300, myhosp->f35);
         LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254 - (height - D_001553f7 * 6), buf);
         sprintf(buf, D_00120304, D_001553f3);
@@ -898,18 +896,18 @@ void display_panel_usage_info(void)
     fn_00036730(buf, &line, 3);
 }
 
-// NONMATCHING: register choice, local slot order
+// NONMATCHING: control flow of the p->flash update: the target routes the (flash != 1 || D_00155e0d == 3) test and the following while loop's tail through jmp stubs
 // FUNCTION: 0x00034acc
 void draw_popup_icons(void)
 {
     u8 redraw;
     u8 no_flash;
     u8 j;
+    s32 y;
+    s32 y1;
     PlayerCall *p;
     TbSprite *spr;
     s32 i;
-    s32 y;
-    s32 y1;
     s32 x;
     s32 x1;
 

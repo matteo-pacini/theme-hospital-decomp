@@ -387,6 +387,7 @@ void add_health_to_history(Thing *w)
     }
 }
 
+// NONMATCHING: the target loads D_0012dd7c into eax before diag for the first comparison (cmp edx,eax; jl)
 // FUNCTION: 0x0003d28c
 void diagnose_patient(Thing *e, Thing *w)
 {

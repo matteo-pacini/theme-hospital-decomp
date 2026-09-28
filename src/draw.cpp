@@ -113,7 +113,6 @@ void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, cons
     D_00188c74 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002dd1c
 void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16 colour, const u8 flip)
 {
@@ -144,7 +143,7 @@ void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
                 D_00188c74 = elem->flags;
-                LbDrawHVLine(elem->x - 0x8d + x, elem->y - 0xca + y, spr, colour);
+                LbDrawHVLine(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, colour);
                 if (D_001567b0.x > elem->x - 0x8d)
                     D_001567b0.x = elem->x - 0x8d;
                 if (D_001567b0.y > elem->y - 0xca)
@@ -285,7 +284,6 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
 
 extern "C" {
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002e804
 void fn_0002e804(Thing *w, s16 x, s16 y)
 {
@@ -375,7 +373,7 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
                             icon = 1;
-                            ix = spr->width / 2 + (elem->x - 0x8d);
+                            ix = elem->x - 0x8d + spr->width / 2;
                             iy = elem->y - 0xca;
                         }
                     }
@@ -681,7 +679,6 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00030198
 void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, const u8 flip, s32 scale)
 {
@@ -701,7 +698,7 @@ void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, con
                 D_00188c74 ^= 1;
                 LbSpriteDrawScaled(x - ((elem->x - 0x8d + spr->width) * scale >> 16), y + ((elem->y - 0xca) * scale >> 16),
                                    spr, spr->width * scale >> 16, spr->height * scale >> 16);
-                if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
+                if (D_001567b0.x > -(elem->x - 0x8d + spr->width))
                     D_001567b0.x = -(elem->x - 0x8d + spr->width);
                 if (D_001567b0.y > elem->y - 0xca)
                     D_001567b0.y = elem->y - 0xca;
@@ -713,7 +710,7 @@ void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, con
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
                 D_00188c74 = elem->flags | flags;
-                LbSpriteDrawScaled(((elem->x - 0x8d) * scale >> 16) + x, y + ((elem->y - 0xca) * scale >> 16),
+                LbSpriteDrawScaled(x + ((elem->x - 0x8d) * scale >> 16), y + ((elem->y - 0xca) * scale >> 16),
                                    spr, spr->width * scale >> 16, spr->height * scale >> 16);
                 if (D_001567b0.x > elem->x - 0x8d)
                     D_001567b0.x = elem->x - 0x8d;
@@ -862,7 +859,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
                     D_00188c74 = elem->flags;
-                    LbSpriteDraw(elem->x - 0x8d + x, elem->y - 0xca + y, spr);
+                    LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
                     if (D_001567b0.x > elem->x - 0x8d)
                         D_001567b0.x = elem->x - 0x8d;
                     if (D_001567b0.y > elem->y - 0xca)

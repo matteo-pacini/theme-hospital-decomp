@@ -2699,7 +2699,7 @@ u8 fn_0003e724(Thing *w);
 #pragma aux fn_0001bc94 "W?open_requester$n(uc)v"
 void fn_0007d2a8(u8 owner, u16 tile);
 #pragma aux fn_0007d2a8 "W?delete_wall$n(ususuc)v"
-u8 fn_000b0630(int tile, u8 parity);
+u8 fn_000b0630(u16 tile, u8 parity);
 #pragma aux fn_000b0630 "W?search_mapwho$n(pn$Map$$us)pn$Thing$$"
 u8 fn_00022854(u8 warn);
 #pragma aux fn_00022854 "W?is_player_building$n()uc"

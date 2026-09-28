@@ -382,7 +382,7 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
     return 0;
 }
 
-// NONMATCHING: register choice; stack slot order of the saved-frame locals
+// NONMATCHING: frame layout (the target gives old_17 and old_palette the first slot of their blocks; ours places them after the wider locals)
 // FUNCTION: 0x00096c34
 void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
 {
@@ -454,7 +454,6 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00096f50
 void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
 {
@@ -496,7 +495,7 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                     InitPixBuffer(0, 0, 0xb4, 0xb4, 0, 0);
                     D_00188c74 = 0;
                     fr = &frame[w->sprite];
-                    set_all_refresh_zones_in_window(D_001567b0[4] + x, D_001567b0[5] + y, D_001567b0[4] + x + fr->width, y + D_001567b0[5] + fr->length, 3);
+                    set_all_refresh_zones_in_window(x + D_001567b0[4], y + D_001567b0[5], x + D_001567b0[4] + fr->width, y + D_001567b0[5] + fr->length, 3);
                     w->unknown17 = old_17;
                     w->sprite = old_sprite;
                     w->palette = old_palette;

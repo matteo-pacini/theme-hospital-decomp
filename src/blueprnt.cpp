@@ -261,16 +261,16 @@ void init_blueprint(u8 owner, u8 type)
     build->unknownD = type;
 }
 
-// NONMATCHING: u8 local slot order, register choice
+// NONMATCHING: frame layout (build/on_y1 and dx/dy slots swapped; declaration order does not move them)
 // FUNCTION: 0x00046514
 void modify_blueprint(u8 owner, u8 dragging, u16 tile)
 {
-    u8 on_x0;
-    u8 on_y0;
-    u8 on_x1;
     u8 on_y1;
+    u8 on_x1;
     u8 x;
     u8 y;
+    u8 on_x0;
+    u8 on_y0;
     u8 dx;
     u8 dy;
     BuildState *build;
@@ -697,12 +697,12 @@ void blank_wall_around_blueprint(u8 owner, u8 blank)
 // FUNCTION: 0x00047b88
 u8 is_room_clear_yet(RoomInfo *room)
 {
-    u8 y0;
-    u8 y1;
     u8 x;
     u8 y;
-    u8 x1;
     u8 x0;
+    u8 x1;
+    u8 y0;
+    u8 y1;
 
     x0 = room->pos % 128;
     y0 = room->pos / 128;

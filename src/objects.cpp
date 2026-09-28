@@ -121,7 +121,6 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     return 1;
 }
 
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x00036b28
 void place_existing_object(Thing *w, u16 tile, u8 dir)
 {
@@ -173,7 +172,7 @@ void place_existing_object(Thing *w, u16 tile, u8 dir)
     }
     if (w->subtype == 0x3a || w->subtype == 0x3b) {
         if (w->unknown17 == 1) {
-            map[((s16)w->y.tile << 7) + (s16)w->x.tile + 0x7f].flags |= 0x20;
+            map[(s16)w->x.tile + ((s16)w->y.tile << 7) + 0x7f].flags |= 0x20;
         }
     } else {
         adjust_big_cell_flag(tile);

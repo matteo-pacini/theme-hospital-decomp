@@ -2289,7 +2289,7 @@ void check_autosave(void)
     D_0015532d[2] = 0;
 }
 
-// NONMATCHING: stack slot order of h and the return value
+// NONMATCHING: frame layout (target: level, return value, h, then buf; ours puts h and the return value below buf)
 // FUNCTION: 0x000229b0
 s32 read_level_number(s32 n)
 {

@@ -61,7 +61,6 @@ char *read_line_from_buf(char *line, s32 max, char *src);
 
 #define isspace(c) (__IsTable[(u8)((c) + 1)] & 2)
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00099020
 s8 assign_value(char *name, u32 value, u16 index)
 {
@@ -74,7 +73,7 @@ s8 assign_value(char *name, u32 value, u16 index)
     if (var >= 0 && var < 0xcb) {
         if (index <= balance_variables[var].max_index) {
             addr = balance_variables[var].address;
-            addr += balance_variables[var].stride * index;
+            addr += index * balance_variables[var].stride;
             if ((balance_variables[var].flags & 1) && (balance_variables[var].flags & 0x10)) {
                 if ((s32)value >= balance_variables[var].min && value <= balance_variables[var].max) {
                     *(u8 *)addr = value;

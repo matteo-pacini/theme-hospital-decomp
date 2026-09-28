@@ -191,7 +191,6 @@ void req11_sell_object(const u16 idx, const s32 n)
         gamevar.buy_count[idx] = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009d164
 void clicked_buy_objects(const s32 idx, const u8 button)
 {
@@ -202,7 +201,7 @@ void clicked_buy_objects(const s32 idx, const u8 button)
     obj = crequester.unknown3;
     if (req_indices[idx]) {
         if (button == 1) {
-            if (allhosps[player].object_stats[obj].cost * amount + cost_of_all_selected_objects()
+            if (cost_of_all_selected_objects() + allhosps[player].object_stats[obj].cost * amount
                     <= (u32)allhosps[player].f35
                 && allhosps[player].f35 > 0) {
                 D_001549d0[player].type = 0x25;

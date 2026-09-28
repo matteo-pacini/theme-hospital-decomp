@@ -216,7 +216,6 @@ void process_keys_area_select(void)
     BufferedInkey = lbInkey = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00068fec
 void process_mouse_area_select(void)
 {
@@ -267,7 +266,7 @@ void process_mouse_area_select(void)
         D_00155da5 = 600;
         D_00155da3 = mouse_dx + mouse_dy;
     }
-    if (!D_00155da5--) {
+    if (!(s16)D_00155da5--) {
         if (allhosps->f29 == 0 || level_number == 0) {
             level_number = 1;
             allhosps->f29 = level_number;

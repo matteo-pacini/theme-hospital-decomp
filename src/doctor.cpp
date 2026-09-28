@@ -1,18 +1,8 @@
 #include "hosp.h"
 
-/*
- * The per-tick random percentage at 0x1553b8. Its signed reads go through the
- * dword at 0x1553b6, so they are written as a member of this overlay.
- */
-struct RandOverlay {
-    u16 unknown0;
-    s16 value;
-};
-
 extern "C" {
 
 extern s16 D_001553b8;
-extern RandOverlay D_001553b6;
 extern u16 D_0012ddd6;
 extern u16 D_0012ddd8;
 
@@ -57,7 +47,7 @@ void doctor_works_at_desk(Thing *w)
                     } else if ((w->f8e & 1) && take_a_break(w)) {
                     } else {
                         D_001553b8 = old_newrand() % 100;
-                        if (D_001553b6.value >= 0 && D_001553b6.value < 25) {
+                        if (D_001553b8 >= 0 && D_001553b8 < 25) {
                             queue = w->room->queue_head;
                             if (queue) {
                                 if (call_person_to_room(w, queue, 0x28, w->room->unknown4, 1)) {
@@ -73,7 +63,7 @@ void doctor_works_at_desk(Thing *w)
                             }
                         } else {
                             D_001553b8 = old_newrand() % 100;
-                            if (D_001553b6.value >= 25 && D_001553b6.value < 32) {
+                            if (D_001553b8 >= 25 && D_001553b8 < 32) {
                                 if (find_object(((u16)w->y.tile << 7) + (u16)w->x.tile, 2, 1, 0x96, w->owner)) {
                                     w->state_a = 6;
                                     set_complex(w, 0x14, 0);
@@ -307,7 +297,6 @@ void fn_0003b234(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (pointer loads go directly into the destination register in target)
 // FUNCTION: 0x0003b2c4
 void doctor_in_machine_room(Thing *w)
 {
@@ -335,7 +324,7 @@ void doctor_in_machine_room(Thing *w)
                                 w->room->f3 = 6;
                             }
                             D_001553b8 = old_newrand() % 100;
-                            if (D_001553b6.value >= 0 && D_001553b6.value < 25) {
+                            if (D_001553b8 >= 0 && D_001553b8 < 25) {
                                 if (w->room->f3 != 6 && (queue = w->room->queue_head)) {
                                     if (w->room->type == 10) {
                                         if (am_i_lead_staff(w)) {
@@ -366,16 +355,16 @@ void doctor_in_machine_room(Thing *w)
                                 }
                             } else {
                                 D_001553b8 = old_newrand() % 100;
-                                if ((D_001553b6.value >= 25 && D_001553b6.value < 27)
+                                if ((D_001553b8 >= 25 && D_001553b8 < 27)
                                     || ((s16)w->y.tile << 7) + (s16)w->x.tile == w->room->unknown6) {
                                     u16 tile;
                                     RoomInfo *r;
                                     u16 pos;
 
-                                    tile = ((u16)w->y.tile << 7) + (u16)w->x.tile;
+                                    tile = (u16)w->x.tile + ((u16)w->y.tile << 7);
                                     r = which_room(tile);
                                     D_001553b8 = old_newrand() % 100;
-                                    if (D_001553b6.value >= 25 && D_001553b6.value < 26) {
+                                    if (D_001553b8 >= 25 && D_001553b8 < 26) {
                                         pos = ((s16)(r->f2 / 2) << 7) + (s16)(r->f1 / 2) + r->pos;
                                     } else {
                                         pos = ((s16)(old_newrand() % r->f2) << 7) + (s16)(old_newrand() % r->f1) + r->pos;
@@ -439,7 +428,7 @@ void doctor_researches(Thing *w)
                 } else if (((w->f8e & 1) || w->f78 > allhosps[w->owner].f21d) && take_a_break(w)) {
                 } else {
                     D_001553b8 = old_newrand() % 100;
-                    if (D_001553b6.value >= 0 && D_001553b6.value < 25) {
+                    if (D_001553b8 >= 0 && D_001553b8 < 25) {
                         queue = w->room->queue_head;
                         if (queue) {
                             ok = 1;

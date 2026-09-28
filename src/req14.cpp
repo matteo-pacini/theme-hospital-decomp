@@ -85,7 +85,6 @@ void req14(Window *win)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009f2e0
 void req14_overdraw(Window *win)
 {
@@ -120,28 +119,28 @@ void req14_overdraw(Window *win)
                         break;
                     i++;
                 }
-                reqspr_draw(b->x + (s16)ox, b->y + (s16)oy, &button_sprite[D_0015f406[0x18]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x18]]);
             } else if (D_0015831c == D_0015f402[0x50]) {
                 for (b = win->buttons; b; b = b->next) {
                     if (i == D_0015f402[0x50])
                         break;
                     i++;
                 }
-                reqspr_draw(b->x + (s16)ox, b->y + (s16)oy, &button_sprite[D_0015f406[0x19]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x19]]);
             } else if (D_0015831c == D_0015f402[0x51]) {
                 for (b = win->buttons; b; b = b->next) {
                     if (i == D_0015f402[0x51])
                         break;
                     i++;
                 }
-                reqspr_draw(b->x + (s16)ox, b->y + (s16)oy, &button_sprite[D_0015f406[0x1a]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x1a]]);
             } else if (D_0015831c == D_0015f402[0x52]) {
                 for (b = win->buttons; b; b = b->next) {
                     if (i == D_0015f402[0x52])
                         break;
                     i++;
                 }
-                reqspr_draw(b->x + (s16)ox, b->y + (s16)oy, &button_sprite[D_0015f406[0x1b]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x1b]]);
             }
             D_00155d74 = 0;
         }

@@ -170,7 +170,7 @@ void clear_build_objects(u8 owner)
     }
 }
 
-// NONMATCHING: u8 local slot order, register choice, return computed in 16 bits
+// NONMATCHING: frame layout (local slot order)
 // FUNCTION: 0x00028288
 u16 place_object_wall_hug(u16 pos, u8 kind)
 {
@@ -207,7 +207,7 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
     ry2 = ry + room->f2;
     dx = x - rx;
     dy = y - ry;
-    below = dy < dx * room->f2 / room->f1;
+    below = dy < room->f2 * dx / room->f1;
     below2 = dy < room->f2 - dx * room->f2 / room->f1;
     if ((below && below2) || (!corner && below)) {
         side = 0;
@@ -227,10 +227,9 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
         sy = ry2;
     }
     angle = wall_hug[gamevar.f27].angle[side];
-    if (angle != gamevar.f28) {
+    if (angle != gamevar.f28)
         play_sound(10, 0x22, -1, -1);
-        gamevar.f28 = angle;
-    }
+    gamevar.f28 = angle;
     b = &D_00155f4f[kind][angle];
     if (sx + b->minX < rx) {
         sx = rx - b->minX;
@@ -263,7 +262,7 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
             sy = ry2 - b->maxY - 1 - oy;
         }
     }
-    return (sy << 7) + sx;
+    return (s16)(sx + (sy << 7));
 }
 
 // FUNCTION: 0x00028710
@@ -332,7 +331,6 @@ void init_object_drag_shape(void)
 #define DRAG_MIN(a, b) ((a) > (b) ? ((a) = (b)) : 0)
 #define DRAG_MAX(a, b) ((a) < (b) ? ((a) = (b)) : 0)
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00028984
 void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
 {
@@ -351,10 +349,10 @@ void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
         DRAG_MIN(D_00155d7f, y);
         DRAG_MAX(D_00155d80, x);
         DRAG_MAX(D_00155d81, y);
-        if (map[(s16)shape->points[i] + pos].flags & 7) {
-            map[(s16)shape->points[i] + pos].flags |= 0x80;
+        if (map[pos + (s16)shape->points[i]].flags & 7) {
+            map[pos + (s16)shape->points[i]].flags |= 0x80;
         } else {
-            map[(s16)shape->points[i] + pos].flags |= 0x40;
+            map[pos + (s16)shape->points[i]].flags |= 0x40;
         }
     }
     for (i = 2; i >= 0; i--) {
@@ -364,10 +362,10 @@ void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
         DRAG_MIN(D_00155d7f, y);
         DRAG_MAX(D_00155d80, x);
         DRAG_MAX(D_00155d81, y);
-        if (map[shape->unknown13[i] + pos].flags & 7) {
-            map[shape->unknown13[i] + pos].flags |= 0x80;
+        if (map[pos + shape->unknown13[i]].flags & 7) {
+            map[pos + shape->unknown13[i]].flags |= 0x80;
         } else {
-            map[shape->unknown13[i] + pos].flags |= 0x40;
+            map[pos + shape->unknown13[i]].flags |= 0x40;
         }
         x = (pos + shape->unknown19[i]) % 128;
         y = (pos + shape->unknown19[i]) / 128;
@@ -375,10 +373,10 @@ void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
         DRAG_MIN(D_00155d7f, y);
         DRAG_MAX(D_00155d80, x);
         DRAG_MAX(D_00155d81, y);
-        if (map[shape->unknown19[i] + pos].flags & 7) {
-            map[shape->unknown19[i] + pos].flags |= 0x80;
+        if (map[pos + shape->unknown19[i]].flags & 7) {
+            map[pos + shape->unknown19[i]].flags |= 0x80;
         } else {
-            map[shape->unknown19[i] + pos].flags |= 0x40;
+            map[pos + shape->unknown19[i]].flags |= 0x40;
         }
     }
 }
@@ -579,7 +577,6 @@ extern "C" u8 fn_00029748(void)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000297e4
 void repair_invis_walls_around_room(RoomInfo *room)
 {
@@ -598,7 +595,7 @@ void repair_invis_walls_around_room(RoomInfo *room)
     for (y = y0; y <= y1; ++y) {
         for (x = x0; x <= x1; ++x) {
             if (x == x0 || x == x1 || y == y0 || y == y1) {
-                for (w = &thing[map[((s16)y << 7) + (s16)x].first]; w > thing; w = &thing[w->next]) {
+                for (w = &thing[map[(s16)x + ((s16)y << 7)].first]; w > thing; w = &thing[w->next]) {
                     if (w->renderer == 6) {
                         check_invis_walls_around_object(w);
                     }
@@ -608,7 +605,6 @@ void repair_invis_walls_around_room(RoomInfo *room)
     }
 }
 
-// NONMATCHING: tile argument zero-extended in 16 bits, register choice
 // FUNCTION: 0x0002994c
 extern "C" void fn_0002994c(u8 owner)
 {
@@ -623,7 +619,7 @@ extern "C" void fn_0002994c(u8 owner)
         room->f22 = 0;
         for (x = build->unknown0[0]; x <= build->unknown0[2] + 1; x++) {
             for (y = build->unknown0[1]; y <= build->unknown0[3] + 1; y++) {
-                place_small_thing(x + (y << 7), 0, 0);
+                place_small_thing((s16)(x + (y << 7)), 0, 0);
             }
         }
         D_001553c8 = 1;

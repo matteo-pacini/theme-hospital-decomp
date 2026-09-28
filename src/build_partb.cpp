@@ -92,7 +92,6 @@ void object_placed(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00024874
 void price_all_rooms(u16 type, u8 owner)
 {
@@ -107,7 +106,7 @@ void price_all_rooms(u16 type, u8 owner)
         }
         for (y = room->pos / 128; y < room->pos / 128 + room->f2; y++) {
             for (x = room->pos % 128; x < room->pos % 128 + room->f1; x++) {
-                map[((s16)y << 7) + (s16)x].overlay = rooms[type].unknown22;
+                map[(s16)x + ((s16)y << 7)].overlay = rooms[type].unknown22;
             }
         }
         recolour_all_rooms();
@@ -181,7 +180,6 @@ void delete_room(RoomInfo *room)
     NRAdcounts.unknown10--;
 }
 
-// NONMATCHING: 31-case switches compile to a repne scasb scan table; the original uses a compare tree
 // FUNCTION: 0x000250f8
 void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
 {
@@ -191,16 +189,16 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
     u16 y;
     Thing *t;
 
-    for (x = room->pos % 128; x < room->f1 + room->pos % 128; x++) {
+    for (x = room->pos % 128; x < room->pos % 128 + room->f1; x++) {
         ok = 1;
-        if (map[((s16)(room->pos / 128) << 7) + (s16)x].first > 0) {
-            t = &thing[map[((s16)(room->pos / 128) << 7) + (s16)x].first];
+        if (map[(s16)x + ((s16)(room->pos / 128) << 7)].first > 0) {
+            t = &thing[map[(s16)x + ((s16)(room->pos / 128) << 7)].first];
             if (t->renderer == 3) {
                 ok = 0;
             }
         }
         if (ok) {
-            tile = ((s16)(room->pos / 128) << 7) + (s16)x;
+            tile = (s16)x + ((s16)(room->pos / 128) << 7);
             switch (map[tile].unknown3) {
             case 0x7e:
             case 0x80:
@@ -246,14 +244,14 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
     }
     for (y = room->pos / 128; y < room->pos / 128 + room->f2; y++) {
         ok = 1;
-        if (map[((s16)y << 7) + (s16)(room->pos % 128)].first > 0) {
-            t = &thing[map[((s16)y << 7) + (s16)(room->pos % 128)].first];
+        if (map[(s16)(room->pos % 128) + ((s16)y << 7)].first > 0) {
+            t = &thing[map[(s16)(room->pos % 128) + ((s16)y << 7)].first];
             if (t->renderer == 3) {
                 ok = 0;
             }
         }
         if (ok) {
-            tile = ((s16)y << 7) + (s16)(room->pos % 128);
+            tile = (s16)(room->pos % 128) + ((s16)y << 7);
             switch (map[tile].unknown4) {
             case 0x7f:
             case 0x81:

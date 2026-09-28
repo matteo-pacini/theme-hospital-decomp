@@ -73,7 +73,7 @@ s32 free_orthog_line(s32 x1, s32 y1, s32 x2, s32 y2)
 
 extern s32 other_wherefacing;
 
-// NONMATCHING: register choice in the fx/fy interpolation
+// NONMATCHING: in the second fx/fy interpolation (after the ldx/ldy == 0 test) the target multiplies with imul eax,[ldy] and adds 0x80 with lea edx; ours loads ldy into edx first
 // FUNCTION: 0x0005562c
 s32 orthonav_wn(orthonav_path *path, s32 x, s32 y, s32 dir)
 {
