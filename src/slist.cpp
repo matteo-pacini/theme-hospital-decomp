@@ -403,7 +403,6 @@ void draw_slist_staff(const u16 selected)
     }
 }
 
-// NONMATCHING: register choice; window.f0[n - 1] relocates against window-4 (target names it info+0x7c)
 // FUNCTION: 0x000926ec
 void draw_slist_window(const u16 id)
 {

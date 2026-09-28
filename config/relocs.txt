@@ -7,3 +7,5 @@
 000eb60f _D_0018cf88 0x19
 000fa9fb _D_00128e70 0xe
 000f491f ___iob 0x208
+0006bc47 W?window$n$HospWindow$$ -4
+000927b1 W?window$n$HospWindow$$ -4

@@ -582,7 +582,6 @@ extern char **D_001602a0;
 void draw_window_not_using_bscreen(const u8 idx);
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
 
-// NONMATCHING: window.f0[n - 1] relocates against window-4 (target names it info+0x7c)
 // FUNCTION: 0x0006b464
 void req12_overdraw(Window *w)
 {
