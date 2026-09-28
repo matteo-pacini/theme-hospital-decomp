@@ -849,7 +849,6 @@ HAUDIO __cdecl AIL_API_quick_load_and_play(char *filename, U32 loop_count, S32 w
 
 #pragma aux (__cdecl) AIL_API_register_EOF_callback "_AIL_API_register_EOF_callback";
 #pragma aux (__cdecl) AIL_API_send_sysex_message "_AIL_API_send_sysex_message";
-#pragma aux (__cdecl) AIL_API_redbook_track "rbpos_";
 #pragma aux (__cdecl) AIL_API_quick_shutdown "fn_000e6e50_";
 #pragma aux (__cdecl) AIL_API_quick_halt "fn_000e7330_";
 #pragma aux (__cdecl) AIL_API_quick_status "_AIL_API_quick_status";

@@ -168,7 +168,7 @@ void remove_rathole(u8 owner, u8 idx)
         map[hole->tile].floor &= 0xf0;
         map[hole->tile].floor |= 0;
     }
-    LbDrawBoxCoords(hole, last, 3);
+    fn_000c21e6(hole, last, 3);
     memset(last, 0, 3);
     allhosps[owner].fcae--;
 }

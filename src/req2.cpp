@@ -475,7 +475,7 @@ void draw_face(Picture *p, const u16 x, const u16 y)
     w = resvars.f60;
     n = resvars.f64 + resvars.f68 + resvars.f6c;
     while (--n >= 0) {
-        LbDrawBoxCoords(dst, src, w);
+        fn_000c21e6(dst, src, w);
         src += w;
         dst += D_00188c34;
     }

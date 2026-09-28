@@ -2229,7 +2229,7 @@ s8 load_level(const u8 lvl, const u8 full)
             gamevar.f134 = level->f28036;
         }
         for (i = 0; i < 4; i++) {
-            LbDrawBoxCoords(&allhosps[i].unknown1cf, &allhosps[D_00160508].unknown1cf, 8);
+            fn_000c21e6(&allhosps[i].unknown1cf, &allhosps[D_00160508].unknown1cf, 8);
         }
         recreate_map(0);
         add_static_shadows();

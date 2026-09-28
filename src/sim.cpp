@@ -239,12 +239,12 @@ void check_quarterly_game_over(void)
             if (D_0015542c > 200000000)
                 D_0015542c = 200000000;
             if (display_mode == 9) {
-                LbDrawBoxCoords(&year_end_backup.unknown2, D_00158190, 10);
+                fn_000c21e6(&year_end_backup.unknown2, D_00158190, 10);
                 year_end_backup.mode = display_mode;
                 year_end_backup.f6 = choice_spare_data;
                 year_end_backup.f8 = choice_time_out;
             } else {
-                LbDrawBoxCoords(&year_end_backup, &choice_backup, 10);
+                fn_000c21e6(&year_end_backup, &choice_backup, 10);
             }
             year_end_type = 5;
             display_mode = 0xc;

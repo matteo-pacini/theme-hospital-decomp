@@ -141,7 +141,9 @@ int LbIsActive(void);
 int LbScreenSwap(void);
 int LbDate(void);
 u32 LbTimerClock(void);
-void LbDrawBoxCoords(void *a, void *b, int c);
+/* The C library's memcpy. */
+void fn_000c21e6(void *a, void *b, int c);
+#pragma aux fn_000c21e6 "memcpy_"
 int LbPaletteGet(u8 *palette, ...);
 int LbPaletteSet(u8 *palette, ...);
 u32 GetSongHandle(void);

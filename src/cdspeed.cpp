@@ -128,7 +128,7 @@ s32 fn_000bbd70(s8 *data, s32 len)
     }
     size = out - buf;
     if (size < len)
-        LbDrawBoxCoords(data, buf, size);
+        fn_000c21e6(data, buf, size);
     else
         size = len;
     LbMemoryFree(buf);
@@ -183,7 +183,7 @@ s32 fn_000bbf10(s8 *data, s32 len)
             p += 2;
         }
     }
-    LbDrawBoxCoords(data, buf, size);
+    fn_000c21e6(data, buf, size);
     LbMemoryFree(buf);
     return size;
 }

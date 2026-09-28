@@ -261,14 +261,14 @@ void adjust_monthly_figures(void)
     u16 i;
 
     for (i = 0; i < 3; i++) {
-        LbDrawBoxCoords(mycontrol->history[1][i], &mycontrol->history[1][i][1], 0x2c);
-        LbDrawBoxCoords(mycontrol->history[2][i], &mycontrol->history[2][i][1], 0x2c);
-        LbDrawBoxCoords(mycontrol->history[0][i], &mycontrol->history[0][i][1], 0x2c);
-        LbDrawBoxCoords(mycontrol->history[3][i], &mycontrol->history[3][i][1], 0x2c);
-        LbDrawBoxCoords(mycontrol->history[4][i], &mycontrol->history[4][i][1], 0x2c);
-        LbDrawBoxCoords(mycontrol->history[5][i], &mycontrol->history[5][i][1], 0x2c);
-        LbDrawBoxCoords(mycontrol->history[6][i], &mycontrol->history[6][i][1], 0x2c);
-        LbDrawBoxCoords(mycontrol->history[7][i], &mycontrol->history[7][i][1], 0x2c);
+        fn_000c21e6(mycontrol->history[1][i], &mycontrol->history[1][i][1], 0x2c);
+        fn_000c21e6(mycontrol->history[2][i], &mycontrol->history[2][i][1], 0x2c);
+        fn_000c21e6(mycontrol->history[0][i], &mycontrol->history[0][i][1], 0x2c);
+        fn_000c21e6(mycontrol->history[3][i], &mycontrol->history[3][i][1], 0x2c);
+        fn_000c21e6(mycontrol->history[4][i], &mycontrol->history[4][i][1], 0x2c);
+        fn_000c21e6(mycontrol->history[5][i], &mycontrol->history[5][i][1], 0x2c);
+        fn_000c21e6(mycontrol->history[6][i], &mycontrol->history[6][i][1], 0x2c);
+        fn_000c21e6(mycontrol->history[7][i], &mycontrol->history[7][i][1], 0x2c);
         mycontrol->history[3][i][11] = myhosp->f35;
         mycontrol->history[1][i][11] = mycontrol->f4;
         mycontrol->history[2][i][11] = mycontrol->f8;

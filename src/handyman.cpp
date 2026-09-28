@@ -403,7 +403,7 @@ u8 thingpage_cancel(ThingPager *p, u16 id)
 
     for (i = p->count - 1; i >= 0; i--) {
         if (p->pages[i].id == id) {
-            LbDrawBoxCoords(&p->pages[i], &p->pages[p->count - 1], 9);
+            fn_000c21e6(&p->pages[i], &p->pages[p->count - 1], 9);
             p->count--;
             return 1;
         }

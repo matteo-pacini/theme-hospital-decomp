@@ -891,10 +891,10 @@ void add_phone_number(char *number)
     if (*number) {
         if (BookCount < 15) {
             BookHilight = BookCount;
-            LbDrawBoxCoords(PhoneBook[BookCount++], number, 12);
+            fn_000c21e6(PhoneBook[BookCount++], number, 12);
         } else {
             BookHilight = 0;
-            LbDrawBoxCoords(PhoneBook[0], number, 12);
+            fn_000c21e6(PhoneBook[0], number, 12);
         }
     }
 }
@@ -1036,7 +1036,7 @@ void process_keys_network_select(void)
             if (BookHilight != -1) {
                 play_sound(10, 0x10, -1, -1);
                 for (i = BookHilight; BookCount - 1 > i; i++)
-                    LbDrawBoxCoords(PhoneBook[i], PhoneBook[i + 1], 12);
+                    fn_000c21e6(PhoneBook[i], PhoneBook[i + 1], 12);
                 memset(PhoneBook[i], 0, 12);
                 BookCount--;
                 if (BookCount + 1 > 3 && D_001605f1 > BookCount - 3)
@@ -1942,7 +1942,7 @@ void update_message_box(u8 key, u8 shift, u8 from)
             }
             if (i == 9) {
                 for (j = 0; j < 8; j++)
-                    LbDrawBoxCoords(NetMessageText[j], NetMessageText[j + 1], 40);
+                    fn_000c21e6(NetMessageText[j], NetMessageText[j + 1], 40);
                 i--;
             }
             sprintf(NetMessageText[i], D_00120713, &player_info[from], login_control.players[from].text);
@@ -2895,7 +2895,7 @@ void network_read_control(u8 n)
             LbMemorySet(num, 0, 3);
             LbMemorySet(title, 0, 0x20);
             LbMemorySet(name, 0, 0x20);
-            LbDrawBoxCoords(num, current_line + 1, 2);
+            fn_000c21e6(num, current_line + 1, 2);
             read_line_from_buf(current_line, 0x100, buf);
             sprintf(title, D_0012075c, current_line);
             current_line[0] = '&';

@@ -1491,7 +1491,7 @@
 000c2140     40 fn_000c2140_
 000c2180     3f fn_000c2180_
 000c21c0     26 LbTimerClock_
-000c21e6     25 LbDrawBoxCoords_
+000c21e6     25 memcpy_
 000c2210     62 LbPaletteGet_
 000c2274    148 LbPaletteSet_
 000c23c0      7 GetNumberOfSamples_
@@ -2153,8 +2153,8 @@
 000e69b0     60 _AIL_API_redbook_track_info
 000e6a10     ad _AIL_API_redbook_id
 000e6ac0     1f _AIL_API_redbook_position
-000e6ae0     30 rbpos_
-000e6b10     74 fn_000e6b10_
+000e6ae0     30 _AIL_API_redbook_track
+000e6b10     74 rbpos_
 000e6b90     49 _AIL_API_redbook_play
 000e6be0     32 _AIL_API_redbook_stop
 000e6c20     38 _AIL_API_redbook_pause

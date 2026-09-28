@@ -213,7 +213,7 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
                 sec->text_y = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * tr) >> 8);
                 sec->text_right = lbSinTable[(mid & 0x7ff) + 0x200] >= 0 ? 1 : 0;
                 split = i;
-                LbDrawBoxCoords(&copy, &s[split], 0x21);
+                fn_000c21e6(&copy, &s[split], 0x21);
                 s[split].radius = 0;
                 flag = lbSinTable[(s[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
                 if (flag) {
@@ -253,5 +253,5 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
         }
     }
     if (split != -1)
-        LbDrawBoxCoords(&s[split], &copy, 0x21);
+        fn_000c21e6(&s[split], &copy, 0x21);
 }

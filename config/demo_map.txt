@@ -1314,7 +1314,6 @@
 000c2111 000b0651 calls   consistent runtime exit           exit_
 000c2129 000b0669 calls   consistent runtime exit           _exit_
 000c21c0 000a2d98 calls   consistent bflib   stime.cpp      LbTimerClock_
-000c21e6 000a2e80 order   consistent bflib   gbox.cpp       LbDrawBoxCoords_
 000c2210 000a2f30 calls   consistent bflib   spalette.cpp   LbPaletteGet_
 000c2274 000a2f7c calls   consistent bflib   spalette.cpp   LbPaletteSet_
 000c23c0 000a3070 bytes   confirmed  bflib   variable.cpp   GetNumberOfSamples_
@@ -1839,6 +1838,7 @@
 000e69b0 000bd640 order   consistent bflib   ailcd.c        _AIL_API_redbook_track_info
 000e6a10 000bd6a0 order   confirmed  bflib   ailcd.c        _AIL_API_redbook_id
 000e6ac0 000bd750 calls   consistent bflib   ailcd.c        _AIL_API_redbook_position
+000e6ae0 000bd770 manual  confirmed  bflib   ailcd.c        _AIL_API_redbook_track
 000e6b10 000bd7a0 bytes   confirmed  bflib   ailcd.c        rbpos_
 000e6b90 000bd820 calls   confirmed  bflib   ailcd.c        _AIL_API_redbook_play
 000e6be0 000bd870 order   confirmed  bflib   ailcd.c        _AIL_API_redbook_stop

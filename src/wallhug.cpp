@@ -166,7 +166,7 @@ restart:
             if (sub.count + path->count - 2 > 0xfc)
                 continue;
             memmove(path->route + i + sub.count, path->route + i + 2, (path->count - i) * 2 - 4);
-            LbDrawBoxCoords(path->route + i, sub.route, sub.count * 2);
+            fn_000c21e6(path->route + i, sub.route, sub.count * 2);
             path->count = sub.count + path->count - 2;
             if (i < 4)
                 from = 0;

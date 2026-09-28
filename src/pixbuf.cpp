@@ -177,7 +177,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
         } else {
             if (flags & 2) {
                 for (; rows > 0; rows--) {
-                    LbDrawBoxCoords(dst, src, cols);
+                    fn_000c21e6(dst, src, cols);
                     dst = next_dst;
                     next_dst += D_00188c34;
                     src = next_src;

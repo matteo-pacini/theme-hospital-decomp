@@ -221,7 +221,7 @@ void game(void)
                 draw_help_text();
                 break;
             case 12:
-                LbDrawBoxCoords(&choice_backup, &year_end_backup, 10);
+                fn_000c21e6(&choice_backup, &year_end_backup, 10);
                 play_winlose();
                 process_turn();
                 break;
@@ -552,7 +552,7 @@ void do_year_end(void)
         year_end_type = 4;
         break;
     case 4:
-        LbDrawBoxCoords(&choice_backup, &year_end_backup, 10);
+        fn_000c21e6(&choice_backup, &year_end_backup, 10);
         check_game_over();
         if (year_end_type == 4) {
             restore_display_screen();

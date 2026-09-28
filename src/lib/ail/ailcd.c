@@ -481,7 +481,7 @@ U32 __cdecl AIL_API_redbook_id(HREDBOOK hand)
 }
 
 // FUNCTION: 0x000e6ac0
-// NONMATCHING: jumps into rbpos, which the target names rbpos_+0x30
+// NONMATCHING: the target reaches rbpos with a short jump (same segment)
 U32 __cdecl AIL_API_redbook_position(HREDBOOK hand)
 {
     if (AIL_redbook_status(hand) != REDBOOK_PLAYING) {
@@ -491,8 +491,7 @@ U32 __cdecl AIL_API_redbook_position(HREDBOOK hand)
 }
 
 // FUNCTION: 0x000e6ae0
-// NONMATCHING: config/functions.txt sizes this function to also cover rbpos,
-// which follows it
+// NONMATCHING: the target jumps into the middle of rbpos (same segment)
 U32 __cdecl AIL_API_redbook_track(HREDBOOK hand)
 {
     if (AIL_redbook_status(hand) != REDBOOK_PLAYING) {
