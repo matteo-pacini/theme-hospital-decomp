@@ -4,8 +4,10 @@
 #
 # Bullfrog libraries (optimised C++); flags still being established. Must
 # precede the game rule, which would also match these paths.
-src/lib/bf1/*.cpp    wpp386  -s -oneatx
-src/lib/bf2/*.cpp    wpp386  -s -oneatx
+src/lib/bf1/opt/*.cpp  wpp386  -s -oneatx -4 -xs
+src/lib/bf1/*.cpp    wpp386  -s -d2 -otx
+src/lib/bf2/dbg/*.cpp    wpp386  -s -oneatx -d1+
+src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
 # Game code: C++, full debug info (which also disables optimisation).
 src/*.cpp            wpp386  -s -d2
 # Miles Sound System (RAD Game Tools): C, optimised for the 486, public

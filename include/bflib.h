@@ -39,11 +39,20 @@ struct TbScreenModeInfo {
 };
 
 struct TbDisplayStruct {
-    u32 unknown0;
+    union {
+        u32 unknown0;
+        u8 *physical_screen;
+    };
     u8 *unknown4;
     union {
         u8 unknown8[0x10];
         u8 *ghost;
+        struct {
+            u8 *ghost_;
+            u8 *fade_table;
+            u8 *graphics_window;
+            TbSprite *mouse_sprite;
+        };
     };
 
     s32 unknown18;
@@ -51,7 +60,17 @@ struct TbDisplayStruct {
 };
 
 struct TbLoadFiles {
-    u8 unknown[0x2c];
+    union {
+        u8 unknown[0x2c];
+        struct {
+            char FName[0x1c];
+            u8 **Start;
+            u8 **SEnd;
+            s32 SLength;
+            u16 Flags;
+            u16 Spare;
+        };
+    };
 };
 
 struct __iobuf {
@@ -81,45 +100,45 @@ int LbMemoryReset(void);
 void *LbMemoryAlloc(u32 size);
 int LbMemoryFree(void *p);
 void LbMemoryCopy(void *dst, void *src, u32 size);
-void LbMemorySet(void *dst, int value, u32 size);
+void LbMemorySet(void *dst, u8 value, u32 size);
 void LbDataLoadSetModifyFilenameFunction(char *dst, char *src);
 int LbDataLoadAll(TbLoadFiles *files);
-void LbDataFree(TbLoadFiles *files);
-void LbDataFreeAll(TbLoadFiles *files);
+int LbDataFree(TbLoadFiles *files);
+int LbDataFreeAll(TbLoadFiles *files);
 int LbFileLengthRnc(char *path);
 int LbFileLoadAt(char *path, void *buf);
-void LbFileSaveAt(char *path, void *buf, u32 size);
+int LbFileSaveAt(char *path, void *buf, u32 size);
 int LbFileExists(char *path);
-int LbFileOpen(char *name, int mode);
+int LbFileOpen(char *name, u8 mode);
 int LbFileClose(int handle);
 int LbFileRead(int handle, void *buf, int len);
-int LbFileSeek(int handle, int offset, int origin);
+int LbFileSeek(int handle, int offset, u8 origin);
 int LbFileWrite(int handle, void *buf, int len);
-void LbSpriteSetup(TbSprite *start, TbSprite *end, void *data);
+int LbSpriteSetup(TbSprite *start, TbSprite *end, void *data);
 void LbSpriteDraw(int x, int y, TbSprite *sprite);
-void LbMousePlace(void);
-void LbMouseRemove(void);
-void LbMouseChangeSprite(int sprite);
-void LbMouseChangeSpriteAndHotspot(TbSprite *sprite, int x, int y);
+int LbMousePlace(void);
+int LbMouseRemove(void);
+int LbMouseChangeSprite(TbSprite *sprite);
+int LbMouseChangeSpriteAndHotspot(TbSprite *sprite, s32 x, s32 y);
 int LbMouseSetup(TbSprite *sprite);
-void LbMouseReset(void);
-void LbMouseSetPosition(s32 x, s32 y);
-void LbGhostTableGenerate(u8 *palette, int intensity, char *name);
-void LbScreenSetGraphicsWindow(u32 x, u32 y, u32 w, u32 h);
-void LbScreenClear(u8 colour, ...);
-void LbScreenReset(void);
-void LbIsActive(void);
-void LbScreenSwap(void);
+int LbMouseReset(void);
+int LbMouseSetPosition(s32 x, s32 y);
+int LbGhostTableGenerate(u8 *palette, u8 intensity, char *name);
+int LbScreenSetGraphicsWindow(s32 x, s32 y, s32 w, s32 h);
+int LbScreenClear(u8 colour, ...);
+int LbScreenReset(void);
+int LbIsActive(void);
+int LbScreenSwap(void);
 int LbDate(void);
 u32 LbTimerClock(void);
 void LbDrawBoxCoords(void *a, void *b, int c);
-void LbPaletteGet(u8 *palette, ...);
-void LbPaletteSet(u8 *palette, ...);
+int LbPaletteGet(u8 *palette, ...);
+int LbPaletteSet(u8 *palette, ...);
 u32 GetSongHandle(void);
 void StopAllSamples(void);
-void LbDrawBox(u32 x, u32 y, u32 w, u32 h, u8 colour);
-void LbTextSetWindow(u32 x, u32 y, u32 w, u32 h);
-void LbTextDraw(int x, int y, char *text);
+int LbDrawBox(s32 x, s32 y, s32 w, s32 h, u8 colour);
+int LbTextSetWindow(s32 x, s32 y, s32 w, s32 h);
+int LbTextDraw(s32 x, s32 y, char *text);
 u32 LbSqrL(u32 n);
 s32 LbTextStringWidth(char *text);
 s32 LbTextStringHeight(char *text);
@@ -157,9 +176,39 @@ struct DWORDREGS {
     u32 cflag;
 };
 
+struct WORDREGS {
+    u16 ax, _1;
+    u16 bx, _2;
+    u16 cx, _3;
+    u16 dx, _4;
+    u16 si, _5;
+    u16 di, _6;
+    u32 cflag;
+};
+
+struct BYTEREGS {
+    u8 al, ah;
+    u16 _1;
+    u8 bl, bh;
+    u16 _2;
+    u8 cl, ch;
+    u16 _3;
+    u8 dl, dh;
+    u16 _4;
+};
+
 union REGS {
     DWORDREGS x;
+    WORDREGS w;
+    BYTEREGS h;
 };
+
+struct SREGS {
+    u16 es, cs, ss, ds, fs, gs;
+};
+
+int int386x(int intno, REGS *in, REGS *out, SREGS *seg);
+void segread(SREGS *seg);
 
 int int386(int intno, REGS *in, REGS *out);
 
@@ -301,7 +350,14 @@ extern __7308jnTbNetworkPlayerInfo player_info[];
 
 struct TbNetworkCallbackData;
 struct TbNetworkSessionNameEntry {
-    u8 unknown0[9];
+    union {
+        u8 unknown0[9];
+        struct {
+            u8 flags;
+            u32 id;
+            u32 in_use;
+        };
+    };
     char name[0x20];
 };
 

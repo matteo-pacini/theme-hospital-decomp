@@ -207,10 +207,21 @@ Compiler and flags per source file come from `config/cflags.txt`.
   `wcc386 -s -ox`, public functions declared `__cdecl` (symbols `_AIL_...`,
   arguments on the stack). Matches exactly with every 10.x compiler. Sources
   go in `src/lib/ail/`, shared declarations in `include/ail.h`.
-- **Bullfrog LIBRARY7** (`g*.cpp`, `s*.cpp`, ...): optimised C++ whose
-  leaf functions keep a frame (`push ebp; mov ebp,esp; ...; pop ebp`) but
-  without the `mov esp,ebp` every available compiler emits with `-of+`, so it
-  was likely built with an earlier Watcom than any we have.
+- **Bullfrog LIBRARY7** (`g*.cpp`, `s*.cpp`, ...; `src/lib/bf1/`): optimised
+  C++ built with debug info, `wpp386 -s -d2 -otx`. `-d2` together with an
+  explicit `-o` gives the leaf frame without `mov esp,ebp`, the parameter
+  spills and the dead loads of this code (no `a`: aliasing is not relaxed).
+  Bullfrog's sound and network libraries (`src/lib/bf1/opt/`) have no frames:
+  `-s -oneatx -4 -xs` (`-xs` for the network code's exception frames). The
+  network library was probably built without `-zm` (one function jumps into
+  another's epilogue). Game code stays plain `-d2`: every `-o` set scores far
+  worse there.
+- Jump tables: these libraries place a switch's table before the function
+  using it, which our build cannot reproduce, so functions with jump tables
+  stay non-matching.
+- Compiler-emitted vtables and `$Wsi0` initialiser templates are COMDATs,
+  which objconv rejects: write classes with an explicit vtable pointer and bind
+  such symbols with `#pragma aux`.
 - **Assembly modules** (`*.asm` in the demo's debug info: `gspr`, `reqspr`,
   `spr_scl`, `hvline`, `tri_f`, `arctan`, `sqroot`, `box_clip`, `scr_copy`,
   `rnc_1fm`, Miles' `aila`/`ailssa`): kept as GNU as Intel-syntax source in
