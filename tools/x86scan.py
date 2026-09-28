@@ -106,3 +106,21 @@ def trimmed_end(le, start, next_start):
         if is_padding(tail):
             return it.end
     return next_start
+
+
+def leading_table(le, start, end):
+    """Start of the jump tables placed before the function at [start, end), or None.
+
+    Optimised library code puts a function's switch tables at the head of its
+    segment, ahead of the entry point: dwords whose fixups point into the
+    function, referenced from inside it.
+    """
+    first = None
+    for site in range(start, end):
+        fx = le.fixups.get(site)
+        if fx is None or fx.target is None or not start - 0x400 <= fx.target < start:
+            continue
+        entry = le.fixups.get(fx.target)
+        if entry is not None and entry.target is not None and start <= entry.target < end:
+            first = fx.target if first is None else min(first, fx.target)
+    return first

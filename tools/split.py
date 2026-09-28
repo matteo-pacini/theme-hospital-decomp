@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from lefile import SRC_OFFSET32, LEFile  # noqa: E402
 from project import EXE, Project  # noqa: E402
 from capstone import CS_ARCH_X86, CS_MODE_32, Cs  # noqa: E402
-from x86scan import scan  # noqa: E402
+from x86scan import leading_table, scan  # noqa: E402
 
 _md = Cs(CS_ARCH_X86, CS_MODE_32)
 _SAR = re.compile(r"(e[a-d]x|e[sd]i), 0x(10|18)$")
@@ -28,13 +28,14 @@ def q(sym):
     return f'"{sym}"'
 
 
-def code_ref(proj, fn, section_label, addr):
-    """Expression for a code address, as referenced from inside `fn`."""
+def code_ref(proj, fn, section_label, section_start, addr):
+    """Expression for a code address, as referenced from inside `fn`, whose
+    section starts at `section_start`."""
     if addr == fn.addr:
         # Taking a function's own address names its symbol.
         return q(fn.name)
-    if fn.addr < addr < fn.end:
-        return f"{section_label}+{addr - fn.addr:#x}"
+    if section_start <= addr < fn.end:
+        return f"{section_label}+{addr - section_start:#x}"
     target = proj.function_at(addr)
     if target is None:
         return f"_C_{addr:08x}"
@@ -71,8 +72,8 @@ def sign_read_ref(proj, target, k):
 
 def emit_function(le, proj, fn, n, out):
     label = f".Lsec{n}"
-    out.append(f'\n.section _TEXT,"ax",@progbits,unique,{n}')
-    out.append(f".globl {q(fn.name)}\n.type {q(fn.name)},@function\n{q(fn.name)}:\n{label}:")
+    start = leading_table(le, fn.addr, fn.end) or fn.addr
+    out.append(f'\n.section _TEXT,"ax",@progbits,unique,{n}\n{label}:')
 
     items = scan(le, fn.addr, fn.end)
     sign_reads = sign_extending_reads(le, items)
@@ -82,26 +83,26 @@ def emit_function(le, proj, fn, n, out):
         if it.branch_target is None:
             continue
         if not fn.addr <= it.branch_target < fn.end:
-            fields[it.branch_field] = (4, f"{code_ref(proj, fn, label, it.branch_target)}-.-4")
+            fields[it.branch_field] = (4, f"{code_ref(proj, fn, label, start, it.branch_target)}-.-4")
         elif it.mnemonic == "call" and it.branch_target == fn.addr:
             # A recursive call is relocated against the function's own symbol;
             # as would resolve `sym-.-4` itself, so the relocation is explicit.
             fields[it.branch_field] = (4, f'-4\n.reloc .-4, R_386_PC32, {q(fn.name)}')
-    for site in range(fn.addr, fn.end):
+    for site in range(start, fn.end):
         fx = le.fixups.get(site)
         if fx is None:
             continue
         if fx.kind != SRC_OFFSET32:
             raise NotImplementedError(f"{fn.name}: fixup kind {fx.kind} at {site:#x}")
         if le.code.contains(fx.target):
-            expr = code_ref(proj, fn, label, fx.target)
+            expr = code_ref(proj, fn, label, start, fx.target)
         elif site in sign_reads:
             expr = sign_read_ref(proj, fx.target, sign_reads[site])
         else:
             expr = proj.data_ref(fx.target)
         fields[site] = (4, expr)
 
-    data = le.read(fn.addr, fn.size)
+    data = le.read(start, fn.end - start)
     pending = []
 
     def flush():
@@ -109,15 +110,18 @@ def emit_function(le, proj, fn, n, out):
             out.append(".byte " + ",".join(f"{b:#04x}" for b in pending))
             pending.clear()
 
-    a = fn.addr
+    a = start
     while a < fn.end:
+        if a == fn.addr:
+            flush()
+            out.append(f".globl {q(fn.name)}\n.type {q(fn.name)},@function\n{q(fn.name)}:")
         if a in fields:
             flush()
             size, expr = fields[a]
             out.append(f".long {expr}")
             a += size
             continue
-        pending.append(data[a - fn.addr])
+        pending.append(data[a - start])
         if len(pending) == 16:
             flush()
         a += 1

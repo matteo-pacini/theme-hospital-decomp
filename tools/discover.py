@@ -18,7 +18,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from lefile import LEFile  # noqa: E402
 from project import GAME_END, Project  # noqa: E402
-from x86scan import is_padding, scan, trimmed_end  # noqa: E402
+from x86scan import is_padding, leading_table, scan, trimmed_end  # noqa: E402
 
 # Unoptimised Watcom frame: register saves, push ebp; mov ebp,esp; sub esp,imm32
 PROLOGUE = re.compile(rb"[\x50-\x57]{1,7}\x89\xe5\x81\xec")
@@ -85,10 +85,16 @@ def main(exe, out):
     # Game functions are 4-byte aligned (-zm segments); an unaligned start
     # there is analysis noise inside another function.
     starts = sorted(s for s in starts if s >= GAME_END or s % 4 == 0)
+    # A function's leading jump tables sometimes look like a start of their own.
+    tables = {leading_table(le, s, e) for s, e in zip(starts, starts[1:] + [hi])}
+    starts = [s for s in starts if s not in tables]
     with open(out, "w") as f:
         f.write("# address  size  symbol\n")
         for i, s in enumerate(starts):
             nxt = starts[i + 1] if i + 1 < len(starts) else hi
+            if i + 1 < len(starts):
+                # The next function's leading jump tables are not part of this one.
+                nxt = leading_table(le, nxt, starts[i + 2] if i + 2 < len(starts) else hi) or nxt
             end = trimmed_end(le, s, nxt)
             f.write(f"{s:08x} {end - s:6x} {names.get(s, f'fn_{s:08x}_')}\n")
     print(f"{len(starts)} functions", file=sys.stderr)
