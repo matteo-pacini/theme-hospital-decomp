@@ -1414,6 +1414,30 @@ struct HospWindow {
             u8 fde[3];
             u8 fe1[3];
         };
+        struct {
+            s32 fa8[3];
+            s32 fb4[3];
+            s32 fc0[3];
+            s32 fcc[3];
+            u8 fd8_[12];
+            s32 fe4[5][4];
+            s32 f134[5][4];
+            s32 f184[5][4];
+            s32 f1d4[5][4];
+            s32 f224[3];
+            s32 f230[3];
+            s32 f23c[3];
+            s32 f248[3];
+            s32 f254[3];
+            s32 f260[3];
+            s32 f26c[3];
+            s32 f278[3];
+            s32 f284[3];
+            s32 f290[3];
+            s32 f29c[3];
+            s32 f2a8[3];
+            s32 f2b4[3];
+        };
     };
     u8 unknown2c0;
     u8 unknown2c1[2];
@@ -1427,9 +1451,16 @@ struct HospWindow {
             u8 unknown2d3_[0x17];
             u8 f2ea;
         };
+        struct {
+            u8 unknown2d3a_[0x14];
+            u8 f2e7;
+            u8 f2e8;
+            u8 f2e9;
+        };
     };
     u8 unknown2eb;
     u8 unknown2ec;
+    u8 unknown2ed;
 };
 
 struct Required {
