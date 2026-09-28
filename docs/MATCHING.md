@@ -112,6 +112,8 @@ and comparing against the original.
 | each `&&` test jumping straight to the false label | nested `if`s; `a && b && c && d` may need `(a && b) && (c && d)` |
 | Watcom varargs prologue | `typedef char *va_list[1]` with a manual `va_start`/`va_end` (`ap[0] = 0`) |
 
+| `[prev_global]>>16` read for a 16-bit global | `s32` alias of the preceding global bound with `#pragma aux`, written `(alias >> 16)`; a struct-member alias changes evaluation order |
+| dword load and `sar` on a `u16` field | `(s16)p->field` |
 | `ror eax,13` | `#pragma aux` inline code: `u32 ror13(u32); #pragma aux ror13 = "ror eax,13" parm [eax] value [eax];` (`_lrotr` gives `ror eax,cl`) |
 | `cmp X; jle; X = K; tmp = X; ... else tmp = 0` | discarded clamp `pct > 100 ? pct = 100 : 0;` |
 | or-chain whose true result jumps to the `else` block | `if (!(a == 1 \|\| a == 2 ...)) {...} else {...}` |
@@ -139,7 +141,13 @@ Stack frame layout is not fully understood. Observed so far:
 - Locals of an inner block are allocated when codegen reaches the block, so
   they land below compiler temporaries created earlier; declaring a buffer
   inside the `if` that uses it moves it down.
-- `u8` locals follow neither declaration nor first-use order (unsolved).
+- Slot assignment is positional: it depends on the sequence of declared
+  types, not on names or how variables are used. Swapping two same-typed
+  declarations swaps their slots, so read the target-to-ours slot pairs off
+  `tools/check.py -v` and reorder declarations to match (this also settles
+  `u8` locals). The return-value slot does not move this way.
+- `switch (p->field)` without a local copy puts its first byte temporary
+  among the locals and the second after them.
 
 ## Known unsolved
 
@@ -157,4 +165,4 @@ Stack frame layout is not fully understood. Observed so far:
   (7/34 matched in 0x10000-0x14000 with `-zp1`, versus 22/34 with 10.6),
   and the DOS-hosted 10.6 compiler (`binw`, run under DOSBox-X) generates the
   same code as the NT-hosted one.
-- Ordering of `u8` locals in the frame.
+- Position of the return-value slot relative to locals in some functions.
