@@ -1787,10 +1787,23 @@ struct Sector {
     s32 start;
     s32 end;
     s32 radius;
-    u8 unknownc[9];
+    union {
+        u8 unknownc[9];
+        struct {
+            u8 top_colour;
+            u8 side_colour1;
+            u8 side_colour2;
+            u8 rim_colour;
+            u8 edge_colour;
+            s32 text_offset;
+        };
+    };
     s32 text_x;
     s32 text_y;
-    u8 unknown1d[4];
+    union {
+        u8 unknown1d[4];
+        s32 text_right;
+    };
 };
 
 struct orthonav_path {

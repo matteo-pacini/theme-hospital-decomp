@@ -63,8 +63,8 @@ void __cdecl AIL_mem_free_lock(void *ptr)
 S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr,
                               U32 *segment_far_ptr, U32 *selector)
 {
-    union REGS outregs, inregs;
     S32 result;
+    union REGS inregs, outregs;
 
     inregs.x.eax = 0x100;
     inregs.x.ebx = n_paras;
@@ -85,6 +85,8 @@ S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr,
 }
 
 // FUNCTION: 0x000ddb50
+// NONMATCHING: the target compares protected_ptr and segment_far_ptr against 0
+// after the DPMI call and discards the result
 void __cdecl AIL_mem_free_DOS(void *protected_ptr, U32 segment_far_ptr,
                               U32 selector)
 {

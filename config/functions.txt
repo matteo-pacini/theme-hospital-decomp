@@ -1585,7 +1585,8 @@
 000c9372     4d memmove_
 000c93bf     33 fn_000c93bf_
 000c9400    20a fn_000c9400_
-000c960c    4ae W?draw_bdem_unavailable_message$n()v
+000c960c    3ca W?draw_bdem_unavailable_message$n()v
+000c99d8     e2 fn_000c99d8_
 000c9abc     84 LbSqrL_
 000c9b40     95 LbScreenCopyBox_
 000c9be0    446 fn_000c9be0_

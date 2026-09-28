@@ -3,6 +3,7 @@
 extern "C" {
 extern u8 D_001567c0[][16];
 extern u8 D_0015f3f8;
+extern u8 D_0015f3f7;
 }
 
 void copy_region(const s16 x, const s16 y, const s16 dx, const s16 dy, const s16 w, const s16 h);
@@ -112,6 +113,7 @@ void refresh_wscreen(void)
     }
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x000adf8c
 void draw_a_clipped_four_zone_wall_1(s32 x, s32 y, const s32 cell, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -212,6 +214,212 @@ void draw_a_clipped_four_zone_wall_1(s32 x, s32 y, const s32 cell, s32 x0, s32 y
                 LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
                 LbSpriteDraw(x - lbDisplay.unknown18 - cx0, y - lbDisplay.unknown1c - cy0 - blocks[mp->unknown4].info->height,
                              blocks[mp->unknown4].info);
+            }
+        }
+    }
+}
+
+// FUNCTION: 0x000ae518
+void draw_a_clipped_four_zone_wall_0(s32 x, s32 y, const TbSprite *const spr, s32 x0, s32 y0, s32 x1, s32 y1)
+{
+    s32 cx0;
+    s32 cx1;
+    s32 cy0;
+    s32 cy1;
+
+    if (window.zone_x[window.f2ea] > x0)
+        x0 = window.zone_x[window.f2ea];
+    if (window.zone_w[window.f2ea] < x1)
+        x1 = window.zone_w[window.f2ea];
+    if (window.zone_y[window.f2ea] > y0)
+        y0 = window.zone_y[window.f2ea];
+    if (window.zone_h[window.f2ea] < y1)
+        y1 = window.zone_h[window.f2ea];
+    x += refresh.f0;
+    y += refresh.f2;
+    if (x < lbDisplay.unknown18 && spr->height + lbDisplay.unknown1c > y) {
+        cx0 = x0 + refresh.f0;
+        if (cx0 < 0)
+            cx0 = 0;
+        cx1 = x1 + refresh.f0;
+        if (cx1 > lbDisplay.unknown18)
+            cx1 = lbDisplay.unknown18;
+        if (cx0 < cx1) {
+            cy0 = y0 + refresh.f2;
+            if (cy0 < 0)
+                cy0 = 0;
+            cy1 = y1 + refresh.f2;
+            if (cy1 > lbDisplay.unknown1c)
+                cy1 = lbDisplay.unknown1c;
+            if (cy0 < cy1) {
+                LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
+                LbSpriteDraw(x - cx0, y - cy0 - spr->height, (TbSprite *)spr);
+            }
+        }
+    }
+    if (x >= lbDisplay.unknown18 - D_0015f3f8 && spr->height + lbDisplay.unknown1c > y) {
+        cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
+        if (cx0 < 0)
+            cx0 = 0;
+        cx1 = refresh.f0 + x1 - lbDisplay.unknown18;
+        if (cx1 > lbDisplay.unknown18)
+            cx1 = lbDisplay.unknown18;
+        if (cx0 < cx1) {
+            cy0 = y0 + refresh.f2;
+            if (cy0 < 0)
+                cy0 = 0;
+            cy1 = y1 + refresh.f2;
+            if (cy1 > lbDisplay.unknown1c)
+                cy1 = lbDisplay.unknown1c;
+            if (cy0 < cy1) {
+                LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
+                LbSpriteDraw(x - lbDisplay.unknown18 - cx0, y - cy0 - spr->height,
+                             (TbSprite *)spr);
+            }
+        }
+    }
+    if (x < lbDisplay.unknown18 && y >= lbDisplay.unknown1c) {
+        cx0 = x0 + refresh.f0;
+        if (cx0 < 0)
+            cx0 = 0;
+        cx1 = x1 + refresh.f0;
+        if (cx1 > lbDisplay.unknown18)
+            cx1 = lbDisplay.unknown18;
+        if (cx0 < cx1) {
+            cy0 = refresh.f2 + y0 - lbDisplay.unknown1c;
+            if (cy0 < 0)
+                cy0 = 0;
+            cy1 = refresh.f2 + y1 - lbDisplay.unknown1c;
+            if (cy1 > lbDisplay.unknown1c)
+                cy1 = lbDisplay.unknown1c;
+            if (cy0 < cy1) {
+                LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
+                LbSpriteDraw(x - cx0, y - lbDisplay.unknown1c - cy0 - spr->height,
+                             (TbSprite *)spr);
+            }
+        }
+    }
+    if (x >= lbDisplay.unknown18 - D_0015f3f8 && y >= lbDisplay.unknown1c) {
+        cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
+        if (cx0 < 0)
+            cx0 = 0;
+        cx1 = refresh.f0 + x1 - lbDisplay.unknown18;
+        if (cx1 > lbDisplay.unknown18)
+            cx1 = lbDisplay.unknown18;
+        if (cx0 < cx1) {
+            cy0 = refresh.f2 + y0 - lbDisplay.unknown1c;
+            if (cy0 < 0)
+                cy0 = 0;
+            cy1 = refresh.f2 + y1 - lbDisplay.unknown1c;
+            if (cy1 > lbDisplay.unknown1c)
+                cy1 = lbDisplay.unknown1c;
+            if (cy0 < cy1) {
+                LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
+                LbSpriteDraw(x - lbDisplay.unknown18 - cx0, y - lbDisplay.unknown1c - cy0 - spr->height,
+                             (TbSprite *)spr);
+            }
+        }
+    }
+}
+
+// FUNCTION: 0x000ae9ec
+void draw_a_clipped_four_zone_floor_tile(s32 x, s32 y, const TbSprite *const spr, s32 x0, s32 y0, s32 x1, s32 y1)
+{
+    s32 cx0;
+    s32 cx1;
+    s32 cy0;
+    s32 cy1;
+
+    if (window.zone_x[window.f2ea] > x0)
+        x0 = window.zone_x[window.f2ea];
+    if (window.zone_w[window.f2ea] < x1)
+        x1 = window.zone_w[window.f2ea];
+    if (window.zone_y[window.f2ea] > y0)
+        y0 = window.zone_y[window.f2ea];
+    if (window.zone_h[window.f2ea] < y1)
+        y1 = window.zone_h[window.f2ea];
+    x += refresh.f0;
+    y += refresh.f2;
+    if (x < lbDisplay.unknown18 && D_0015f3f7 + lbDisplay.unknown1c > y) {
+        cx0 = x0 + refresh.f0;
+        if (cx0 < 0)
+            cx0 = 0;
+        cx1 = x1 + refresh.f0;
+        if (cx1 > lbDisplay.unknown18)
+            cx1 = lbDisplay.unknown18;
+        if (cx0 < cx1) {
+            cy0 = y0 + refresh.f2;
+            if (cy0 < 0)
+                cy0 = 0;
+            cy1 = y1 + refresh.f2;
+            if (cy1 > lbDisplay.unknown1c)
+                cy1 = lbDisplay.unknown1c;
+            if (cy0 < cy1) {
+                LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
+                LbSpriteDraw(x - cx0, y - cy0 - spr->height, (TbSprite *)spr);
+            }
+        }
+    }
+    if (x >= lbDisplay.unknown18 - D_0015f3f8 && D_0015f3f7 + lbDisplay.unknown1c > y) {
+        cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
+        if (cx0 < 0)
+            cx0 = 0;
+        cx1 = refresh.f0 + x1 - lbDisplay.unknown18;
+        if (cx1 > lbDisplay.unknown18)
+            cx1 = lbDisplay.unknown18;
+        if (cx0 < cx1) {
+            cy0 = y0 + refresh.f2;
+            if (cy0 < 0)
+                cy0 = 0;
+            cy1 = y1 + refresh.f2;
+            if (cy1 > lbDisplay.unknown1c)
+                cy1 = lbDisplay.unknown1c;
+            if (cy0 < cy1) {
+                LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
+                LbSpriteDraw(x - lbDisplay.unknown18 - cx0, y - cy0 - spr->height,
+                             (TbSprite *)spr);
+            }
+        }
+    }
+    if (x < lbDisplay.unknown18 && y >= lbDisplay.unknown1c) {
+        cx0 = x0 + refresh.f0;
+        if (cx0 < 0)
+            cx0 = 0;
+        cx1 = x1 + refresh.f0;
+        if (cx1 > lbDisplay.unknown18)
+            cx1 = lbDisplay.unknown18;
+        if (cx0 < cx1) {
+            cy0 = refresh.f2 + y0 - lbDisplay.unknown1c;
+            if (cy0 < 0)
+                cy0 = 0;
+            cy1 = refresh.f2 + y1 - lbDisplay.unknown1c;
+            if (cy1 > lbDisplay.unknown1c)
+                cy1 = lbDisplay.unknown1c;
+            if (cy0 < cy1) {
+                LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
+                LbSpriteDraw(x - cx0, y - lbDisplay.unknown1c - cy0 - spr->height,
+                             (TbSprite *)spr);
+            }
+        }
+    }
+    if (x >= lbDisplay.unknown18 - D_0015f3f8 && y >= lbDisplay.unknown1c) {
+        cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
+        if (cx0 < 0)
+            cx0 = 0;
+        cx1 = refresh.f0 + x1 - lbDisplay.unknown18;
+        if (cx1 > lbDisplay.unknown18)
+            cx1 = lbDisplay.unknown18;
+        if (cx0 < cx1) {
+            cy0 = refresh.f2 + y0 - lbDisplay.unknown1c;
+            if (cy0 < 0)
+                cy0 = 0;
+            cy1 = refresh.f2 + y1 - lbDisplay.unknown1c;
+            if (cy1 > lbDisplay.unknown1c)
+                cy1 = lbDisplay.unknown1c;
+            if (cy0 < cy1) {
+                LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
+                LbSpriteDraw(x - lbDisplay.unknown18 - cx0, y - lbDisplay.unknown1c - cy0 - spr->height,
+                             (TbSprite *)spr);
             }
         }
     }
