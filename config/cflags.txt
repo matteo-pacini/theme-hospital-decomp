@@ -2,6 +2,10 @@
 # is compiled: glob, compiler, flags. -zq, -hd, -zm and -i=include are always
 # added.
 #
+# Bullfrog libraries (optimised C++); flags still being established. Must
+# precede the game rule, which would also match these paths.
+src/lib/bf1/*.cpp    wpp386  -s -oneatx
+src/lib/bf2/*.cpp    wpp386  -s -oneatx
 # Game code: C++, full debug info (which also disables optimisation).
 src/*.cpp            wpp386  -s -d2
 # Miles Sound System (RAD Game Tools): C, optimised for the 486, public
