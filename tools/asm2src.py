@@ -64,7 +64,7 @@ def byte_form(le, proj, fn, addr, ins, raw, label, known_labels=None):
         disp = 4 if ins.size >= 5 else 1
         dest = int(ins.op_str, 16)
         inside = fn.addr <= dest < fn.end
-        if dest == fn.addr and disp == 4:
+        if dest == fn.addr and ins.mnemonic == "call":
             # A recursive call is relocated against the function's own symbol;
             # as would resolve `sym-.-4` itself, so the relocation is explicit.
             head = "; ".join(f".byte {b:#04x}" for b in raw[:-4])
@@ -74,7 +74,8 @@ def byte_form(le, proj, fn, addr, ins, raw, label, known_labels=None):
             return "; ".join(f".byte {b:#04x}" for b in raw)
         head = raw[: len(raw) - disp]
         directive = ".long" if disp == 4 else ".byte"
-        return "; ".join([f".byte {b:#04x}" for b in head] + [f"{directive} {ref(dest)}-.-{disp}"])
+        target = label(dest) if inside else code_ref(proj, dest)
+        return "; ".join([f".byte {b:#04x}" for b in head] + [f"{directive} {target}-.-{disp}"])
     parts, j = [], 0
     while j < len(raw):
         a = addr + j
@@ -168,7 +169,9 @@ def reachable_items(le, fn, items):
             seen.add(a)
             if it.mnemonic is None:
                 break
-            ins = next(_md.disasm(le.read(it.addr, it.size), it.addr))
+            ins = next(_md.disasm(le.read(it.addr, it.size), it.addr), None)
+            if ins is None:
+                break
             if ins.mnemonic.startswith(("j", "loop")) and ins.op_str.startswith("0x"):
                 work.append(int(ins.op_str, 16))
             if ins.mnemonic in ("ret", "retf", "iretd", "jmp") :
@@ -192,7 +195,9 @@ def reachable_items_from(le, items, at, start):
             seen.add(a)
             if it.mnemonic is None:
                 break
-            ins = next(_md.disasm(le.read(it.addr, it.size), it.addr))
+            ins = next(_md.disasm(le.read(it.addr, it.size), it.addr), None)
+            if ins is None:
+                break
             if ins.mnemonic.startswith(("j", "loop")) and ins.op_str.startswith("0x"):
                 work.append(int(ins.op_str, 16))
             if ins.mnemonic in ("ret", "retf", "iretd", "jmp"):
@@ -248,7 +253,10 @@ def emit(le, proj, fn, out):
                 proj.data_ref(target) if not le.code.contains(target) else code_ref(proj, target))
             pending.append((it.addr, f".long {expr}", None, raw))
             continue
-        ins = next(_md.disasm(raw, it.addr))
+        ins = next(_md.disasm(raw, it.addr), None)
+        if ins is None:
+            pending.append((it.addr, "; ".join(f".byte {b:#04x}" for b in raw), None, raw))
+            continue
         text = f"{ins.mnemonic} {ins.op_str}".strip()
         fields = [a - it.addr for a in range(it.addr, it.end) if a in le.fixups]
         exprs = []
