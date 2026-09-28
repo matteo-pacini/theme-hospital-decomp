@@ -44,6 +44,8 @@ def symbolic(text, raw, field_offsets, exprs):
 
 def code_ref(proj, addr):
     target = proj.function_at(addr)
+    if target is None:
+        return f"_C_{addr:08x}"
     off = addr - target.addr
     return f"{q(target.name)}+{off:#x}" if off else q(target.name)
 

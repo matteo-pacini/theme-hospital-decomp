@@ -1468,7 +1468,8 @@
 000c1ad0    14d fn_000c1ad0_
 000c1c20    3fc fn_000c1c20_
 000c2020     91 fn_000c2020_
-000c20c0     23 fn_000c20c0_
+000c20c0      1 fn_000c20c0_
+000c20cf     14 fn_000c20cf_
 000c20f0     1d fn_000c20f0_
 000c2110      1 fn_000c2110_
 000c2111     18 exit_
@@ -1665,7 +1666,8 @@
 000c9b40     95 LbScreenCopyBox_
 000c9be0    446 fn_000c9be0_
 000ca028    31f fn_000ca028_
-000ca350      e fn_000ca350_
+000ca350      6 fn_000ca350_
+000ca358      6 fn_000ca358_
 000ca360     38 play_smk_
 000ca398    1d0 W?play_smk_direct$n(pnall)l
 000ca568    161 W?play_smk_via_buffer$n(pnall)l
@@ -1778,7 +1780,8 @@
 000d1287     23 fn_000d1287_
 000d12aa     2e rename_
 000d12d8      5 fn_000d12d8_
-000d12e0     2f __wcpp_2_pure_error__
+000d12e0      a __wcpp_2_pure_error__
+000d12ea     25 fn_000d12ea_
 000d1310     a9 W?$ct:ServiceProvider$n()_
 000d13bc     1e W?$dt:ServiceProvider$n()_
 000d13dc     80 W?Initialise$:ServiceProvider$n(pn$__ic76sReceiveCallbacks$$pnv)$TbError$$
@@ -1806,7 +1809,8 @@
 000d25ac    42c W?Send$:ServiceProvider$n(ulpnv)$TbError$$
 000d29d8      d W?LookForSystemMessages$:ServiceProvider$n()$TbError$$
 000d29e8    110 W?BroadcastSystemMessage$:ServiceProvider$n(pnuc)$TbError$$
-000d2af8     a8 __wcpp_2_undef_vfun__
+000d2af8     83 __wcpp_2_undef_vfun__
+000d2b7b     25 fn_000d2b7b_
 000d2ba0    10d W?GenericSerialInit$n($__tibcaGUID$$pnv)$TbError$$
 000d2cb0    18e W?StartTwoPlayerExchange$n(pnv)$TbError$$
 000d2e40    59f W?CompleteTwoPlayerExchange$n(pnv)$TbError$$

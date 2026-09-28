@@ -3,6 +3,7 @@ extern void (*__int23_exit)(void);
 extern void (*__FPE_handler_exit)(void);
 
 void __exit(int status);
+#pragma aux __exit aborts;
 
 // FUNCTION: 0xc2110
 void fn_000c2110(void)
