@@ -14,6 +14,7 @@ src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
 # model (-mf: inline string instructions assume es == ds).
 # stat was built for the 386 and for size (enter/leave, movzx).
 src/lib/clib/stat.c  wcc386  -s -oxs -ms -r -3
+src/lib/clib/qsort.c wcc386  -s -oxs -ms -r -3
 src/lib/clib/*.c     wcc386  -s -ox -ms -r
 src/lib/clib/*.cpp   wpp386  -s -ox -mf -r -3
 # Bullfrog's Smacker player wrapper: optimised C++.

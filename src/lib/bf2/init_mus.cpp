@@ -190,3 +190,15 @@ void InitMusic(void)
     MusicInstalled = 1;
     SetMusicMasterVolume(MidiMasterVolumeOverride ? MidiMasterVolumeOverride : CurrentMusicMasterVolume);
 }
+
+extern "C" {
+
+int access(const char *path, int mode);
+
+// FUNCTION: 0xdda20
+int fn_000dda20(char *path)
+{
+    return access(path, 0) == 0;
+}
+
+}

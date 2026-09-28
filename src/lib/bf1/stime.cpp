@@ -51,6 +51,7 @@ int fn_000c2140(TbDate *curr_date)
     return 1;
 }
 
+// FUNCTION: 0x000c2180
 int fn_000c2180(TbTime *curr_time)
 {
     dostime_t time;

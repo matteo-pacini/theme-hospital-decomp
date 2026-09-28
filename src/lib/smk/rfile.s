@@ -243,3 +243,73 @@
     pop ebp
     ret
 .size "_radclose",.-"_radclose"
+
+// FUNCTION: 0x000f310f
+
+.section _TEXT,"ax",@progbits,unique,995599
+.globl "_IsRemote"
+.type "_IsRemote",@function
+"_IsRemote":
+    push ebp
+    {load} mov ebp, esp
+    push ebx
+    push edx
+    mov ax, 0x440a
+    mov ebx, dword ptr [ebp + 8]
+    {load} xor dx, dx
+    int 0x21
+    {load} mov ax, dx
+    shr ax, 0xf
+    and al, 1
+    pop edx
+    pop ebx
+    pop ebp
+    ret
+.size "_IsRemote",.-"_IsRemote"
+
+// FUNCTION: 0x000f312d
+
+.section _TEXT,"ax",@progbits,unique,995629
+.globl "_radgetfiletime"
+.type "_radgetfiletime",@function
+"_radgetfiletime":
+    push ebp
+    {load} mov ebp, esp
+    push ebx
+    push ecx
+    mov ax, 0x5700
+    mov ebx, dword ptr [ebp + 8]
+    int 0x21
+    {load} mov ax, cx
+    shl eax, 0x10
+    {load} mov ax, dx
+    pop ecx
+    pop ebx
+    pop ebp
+    ret
+.size "_radgetfiletime",.-"_radgetfiletime"
+
+// FUNCTION: 0x000f3148
+
+.section _TEXT,"ax",@progbits,unique,995656
+.globl "_radsetfiletime"
+.type "_radsetfiletime",@function
+"_radsetfiletime":
+    push ebp
+    {load} mov ebp, esp
+    push ebx
+    push ecx
+    push edx
+    mov edx, dword ptr [ebp + 0xc]
+    {load} mov ecx, edx
+    shr ecx, 0x10
+    and edx, 0xffff
+    mov ax, 0x5701
+    mov ebx, dword ptr [ebp + 8]
+    int 0x21
+    pop edx
+    pop ecx
+    pop ebx
+    pop ebp
+    ret
+.size "_radsetfiletime",.-"_radsetfiletime"

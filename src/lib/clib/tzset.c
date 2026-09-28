@@ -28,7 +28,32 @@ extern long __dst_adjust;
 extern struct tm __start_dst;
 extern struct tm __end_dst;
 
+struct tzflags {
+    unsigned cache_OS_TZ : 1;
+    unsigned have_OS_TZ : 1;
+};
+extern struct tzflags D_001522da;
+
 void fn_000f3934(void);
+
+// NONMATCHING: ours masks the setne result with 0xff before the bitfield insert
+// FUNCTION: 0xf38e0
+int __CacheOSTZ(int flag)
+{
+    int old;
+
+    old = D_001522da.cache_OS_TZ;
+    D_001522da.cache_OS_TZ = ~old;
+    D_001522da.have_OS_TZ = flag != 0;
+    return old;
+}
+
+// FUNCTION: 0xf3934
+void fn_000f3934(void)
+{
+    if (!D_001522da.cache_OS_TZ || !D_001522da.have_OS_TZ)
+        D_001522da.have_OS_TZ = 1;
+}
 
 // FUNCTION: 0xf3991
 char *parse_time(char *tz, int *val)

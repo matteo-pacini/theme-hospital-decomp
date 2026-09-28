@@ -57,20 +57,17 @@ char __hex(int num)
 }
 
 // FUNCTION: 0xf4a19
-// NONMATCHING: register allocation (the target copies buf for the loop test)
 void __MkTmpFile(char *buf, int num)
 {
     unsigned pid;
-    char *ptr;
+    int i;
 
     pid = getpid();
     buf[0] = 't';
-    ptr = &buf[4];
-    do {
-        *ptr = __hex(pid & 0x000f);
-        --ptr;
+    for (i = 4; i > 0; --i) {
+        buf[i] = __hex(pid & 0x000f);
         pid >>= 4;
-    } while (ptr != &buf[0]);
+    }
     buf[5] = '_';
     buf[6] = __hex((num >> 4) & 0x000f);
     buf[7] = __hex(num & 0x000f);

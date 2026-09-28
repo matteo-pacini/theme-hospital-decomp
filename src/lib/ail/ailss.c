@@ -28,8 +28,14 @@ extern char D_00126d78[];
 extern char D_00126d80[];
 extern char D_00126da0[];
 
-void fn_000dff00(void);
-void fn_000e0660(void);
+#define DIG_BUFFER_SERVICE 0x0010
+
+/* Timer callback: __pascal (callee pops), address-named. */
+void fn_000dff00(U32 user);
+#pragma aux (__pascal) fn_000dff00 "*_";
+/* Driver destructor: __cdecl, address-named. */
+void fn_000e0660(HDIGDRIVER dig);
+#pragma aux (__cdecl) fn_000e0660 "*_";
 void fn_000e1620(void);
 
 // FUNCTION: 0x000df970
@@ -213,6 +219,62 @@ void __cdecl SS_build_amplitude_tables(HSAMPLE S)
             }
         }
     }
+}
+
+// NONMATCHING: register allocation around the VDI call (dig in edx, not eax)
+// FUNCTION: 0xdff00
+void fn_000dff00(U32 user)
+{
+    if (entry) {
+        return;
+    }
+    entry = 1;
+    dig = (HDIGDRIVER)user;
+    if (AIL_preference[DIG_SS_LOCK]) {
+        flags = AIL_disable_interrupts();
+    }
+    if (!dig->playing) {
+        if (AIL_preference[DIG_SS_LOCK]) {
+            AIL_restore_interrupts(flags);
+        }
+        entry = 0;
+        return;
+    }
+    current = *dig->buffer_flag;
+    if (current == -1 || current == dig->last_buffer) {
+        if (AIL_preference[DIG_SS_LOCK]) {
+            AIL_restore_interrupts(flags);
+        }
+        entry = 0;
+        return;
+    }
+    dig->last_buffer = current;
+    AILSSA_flush_buffer(dig);
+    cnt = 0;
+    n = dig->n_samples;
+    S = dig->samples;
+    for (; n; n--, S++) {
+        if (S->status == SMP_PLAYING) {
+            cnt++;
+            SS_stream_to_buffer(S);
+        }
+    }
+    dig->n_active_samples = cnt;
+    AILSSA_DMA_copy(dig, current ^ 1);
+    if (dig->hw_mode_flags & DIG_BUFFER_SERVICE) {
+        VDI.CX = 0;
+        VDI.DX = current ^ 1;
+        AIL_call_driver(dig->drvr, DIG_VSE, &VDI, NULL);
+    }
+    if (dig->n_active_samples) {
+        dig->quiet = 0;
+    } else if (dig->quiet++ == 2) {
+        SS_stop_DIG_driver_playback(dig);
+    }
+    if (AIL_preference[DIG_SS_LOCK]) {
+        AIL_restore_interrupts(flags);
+    }
+    entry = 0;
 }
 
 // FUNCTION: 0x000e0120
@@ -407,6 +469,23 @@ S32 __cdecl SS_attempt_DIG_detection(HDIGDRIVER dig, IO_PARMS *IO)
         out.CX = 3;
     }
     return AIL_call_driver(dig->drvr, DRV_VERIFY_IO, &out, NULL);
+}
+
+// FUNCTION: 0xe0660
+void fn_000e0660(HDIGDRIVER dig)
+{
+    if (dig->playing) {
+        SS_stop_DIG_driver_playback(dig);
+        AILSSA_flush_buffer(dig);
+        AILSSA_DMA_copy(dig, 0);
+        AILSSA_DMA_copy(dig, 1);
+        AIL_delay(10);
+    }
+    AIL_release_timer_handle(dig->timer);
+    AIL_mem_free_DOS(dig->DMA_buf, dig->DMA_seg, dig->DMA_sel);
+    AIL_mem_free_lock(dig->samples);
+    AIL_mem_free_lock(dig->build_buffer);
+    AIL_mem_free_lock(dig);
 }
 
 // FUNCTION: 0x000e06f0

@@ -88,7 +88,9 @@ extern char D_00126e24[];
 extern char D_00126e4c[];
 
 void fn_000e1a00(void);
-void fn_000e1b60(void);
+/* WAV end-of-sample callback: __pascal (callee pops), address-named. */
+void fn_000e1b60(HSAMPLE S);
+#pragma aux (__pascal) fn_000e1b60 "*_";
 void fn_000e1ea0(void);
 
 // FUNCTION: 0x000e16e0
@@ -237,6 +239,18 @@ void __cdecl AIL_process_WAV_image(void *image, HSAMPLE S)
         d = (DATA *)((U8 *)d + d->chunk_size + 8 + (d->chunk_size & 1));
     }
     AIL_set_sample_address(S, d->data, d->chunk_size);
+}
+
+// FUNCTION: 0xe1b60
+void fn_000e1b60(HSAMPLE S)
+{
+    if (S->system_data[EOD_CALLBACK] != NULL) {
+        ((AILSAMPLECB)S->system_data[EOD_CALLBACK])(S);
+    }
+    if (S->system_data[SSD_RELEASE] > 0) {
+        AIL_release_sample_handle(S);
+    }
+    S->system_data[SSD_RELEASE] = -1;
 }
 
 // FUNCTION: 0x000e1ba0

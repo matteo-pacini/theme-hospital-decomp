@@ -59,6 +59,7 @@ int fn_000d04f0(char *path)
     return 0;
 }
 
+// FUNCTION: 0x000d0538
 int fn_000d0538(char *path)
 {
     if (rmdir(path) == 0)

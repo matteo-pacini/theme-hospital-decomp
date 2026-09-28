@@ -1086,3 +1086,78 @@ void fn_000dc440(IPXServiceProvider *sp, __1p5pi1IPXSYSTEMMESSAGE *msg)
 }
 
 }
+
+extern "C" {
+
+// NONMATCHING: config/functions.txt extends this function over two jmp thunks
+// (0xdc812, 0xdc817) that follow it
+// FUNCTION: 0xdc740
+TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid)
+{
+    TbError ret = Lb_FAIL;
+
+    switch (type->data[0]) {
+    case 0x4a435542:
+    case 0x504e5542:
+    case 0x50515542:
+    case 0x50485542:
+    case 0x4c435542:
+    case 0x4c485542:
+    case 0x4b535542:
+    case 0x49435542:
+    case 0x49485542:
+    case 0x48515542:
+    case 0x41535542:
+    case 0x44535542:
+        if (memcmp(&sp->guid, guid, sizeof(__tibcaGUID)) == 0)
+            ret = Lb_OK;
+        break;
+    case 0x4e445542:
+    case 0x47445542:
+        ret = Lb_OK;
+        break;
+    }
+    return ret;
+}
+
+}
+
+extern "C" {
+
+// FUNCTION: 0xdb4c8
+void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address)
+{
+    s32 now;
+    s32 i;
+
+    now = clock();
+    for (i = 0; i <= sp->session_count; i++) {
+        if (memcmp(&sp->session_list[i].address[10], address + 10, 6) == 0) {
+            sp->session_list[i].time = now;
+            memcpy(sp->session_list[i].address, address, 16);
+            StrCpyTrunc(sp->session_list[i].name, (char *)info + 0x1c, 0x20);
+            i = -1;
+            break;
+        }
+    }
+    if (i != -1) {
+        for (i = 0; i <= sp->session_count; i++) {
+            if (sp->session_list[i].time == 0) {
+                memcpy(sp->session_list[i].address, address, 16);
+                StrCpyTrunc(sp->session_list[i].name, (char *)info + 0x1c, 0x20);
+                sp->session_list[i].time = now;
+                i = -1;
+                break;
+            }
+        }
+        if (i != -1 && sp->session_count < 32)
+            sp->session_count++;
+    }
+    sp->ClearSessions();
+    for (i = 0; i <= sp->session_count; i++) {
+        if (sp->session_list[i].time != 0)
+            sp->AddSession(i, sp->session_list[i].name);
+    }
+}
+
+}

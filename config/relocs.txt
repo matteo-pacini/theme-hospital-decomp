@@ -3,3 +3,7 @@
 # their target, such as `a[i - 1]` (the byte before `a`).
 00081ce9 W?PhoneNumber$n[]a -1
 00085fb2 W?net_text$n[]$NetText$$ -1
+000eb601 _D_0018cf88 0x19
+000eb60f _D_0018cf88 0x19
+000fa9fb _D_00128e70 0xe
+000f491f ___iob 0x208

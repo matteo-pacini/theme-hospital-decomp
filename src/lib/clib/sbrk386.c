@@ -1,6 +1,7 @@
 #include "clib.h"
 
 #define ENOMEM 5
+#define EINVAL 9
 
 extern unsigned _STACKTOP;
 extern unsigned char _Extender;
@@ -34,6 +35,71 @@ long TinySetBlock(unsigned short seg, unsigned size);
     parm [es] [ebx] \
     value [eax] \
     modify [ebx ecx edx esi edi];
+
+/* 0x74 0x10 is jz over the five instructions after it: aux code has no labels. */
+void *DPMIAllocMem(unsigned short hi, unsigned short lo);
+#pragma aux DPMIAllocMem = \
+    "mov ah,5" \
+    "mov al,1" \
+    "int 31h" \
+    "sbb eax,eax" \
+    "inc eax" \
+    0x74 0x10 \
+    "mov ax,bx" \
+    "shl eax,16" \
+    "mov ax,cx" \
+    "mov [eax],di" \
+    "mov [eax+2],si" \
+    parm [bx] [cx] \
+    value [eax] \
+    modify [ebx ecx esi edi];
+
+void *TinyMemAlloc(unsigned size);
+#pragma aux TinyMemAlloc = \
+    "mov eax,80004800h" \
+    "int 21h" \
+    "sbb ebx,ebx" \
+    "not ebx" \
+    "and eax,ebx" \
+    parm [ebx] \
+    value [eax] \
+    modify [ebx];
+
+unsigned GetDSLimit(void);
+#pragma aux GetDSLimit = \
+    "xor eax,eax" \
+    "mov ax,ds" \
+    "lsl eax,eax" \
+    "inc eax" \
+    value [eax];
+
+void *__brk(unsigned brk_value);
+
+// FUNCTION: 0xf46ed
+void *fn_000f46ed(int increment)
+{
+    void *p;
+
+    if (((int)_Extender == 1 && _ExtenderSubtype == 0) || (int)_Extender == 9) {
+        if (increment > 0) {
+            increment = (increment + 0xfff) & ~0xfff;
+            if ((int)_Extender == 1) {
+                p = DPMIAllocMem(increment >> 16, increment);
+            } else {
+                p = TinyMemAlloc(increment);
+            }
+            if (p != NULL)
+                return p;
+            *__get_errno_ptr() = ENOMEM;
+        } else {
+            *__get_errno_ptr() = EINVAL;
+        }
+        return (void *)-1;
+    }
+    if ((int)_Extender >= 2 && (int)_Extender <= 8)
+        _curbrk = GetDSLimit();
+    return __brk(_curbrk + increment);
+}
 
 // FUNCTION: 0xf47b5
 // NONMATCHING: the target shares one TinySetBlock call between both

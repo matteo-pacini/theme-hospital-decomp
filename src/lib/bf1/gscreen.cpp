@@ -19,7 +19,9 @@ extern u16 D_00188c76;
 extern s16 D_00188c78;
 extern u8 D_00188c7a;
 extern u8 D_00188c85;
-void fn_000d12e0(void);
+extern s32 D_001507d4;
+s32 fn_000d12e0(void);
+/* config/functions.txt has this function under a wrong demo name. */
 #pragma aux fn_000d12e0 "__wcpp_2_pure_error__"
 int LbMouseSuspend(void);
 int LbVesaSetMode(s16 mode);
@@ -87,6 +89,12 @@ u32 LbScreenIsInitialised(void)
     return _lbScreenInitialised;
 }
 
+// FUNCTION: 0x000d12e0
+s32 fn_000d12e0(void)
+{
+    return D_001507d4;
+}
+
 // FUNCTION: 0x000bea80
 int fn_000bea80(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
 {
@@ -127,6 +135,7 @@ int fn_000bea80(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
     return 1;
 }
 
+// FUNCTION: 0x000bec84
 int fn_000bec84(u8 colour, ...)
 {
     s32 h;

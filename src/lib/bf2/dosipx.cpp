@@ -270,7 +270,10 @@ void fn_000d41a0(IPXHandler *self, u16 sel)
 
 }
 
-void IPXHandler::SimulateInt(u16 intno, RMREGS *rm)
+extern "C" {
+
+// FUNCTION: 0xd41c8
+u32 fn_000d41c8(IPXHandler *self, u16 intno, RMREGS *rm)
 {
     DPMIREGS r;
     SREGS s;
@@ -279,10 +282,13 @@ void IPXHandler::SimulateInt(u16 intno, RMREGS *rm)
     r.x.eax = 0x300;
     r.x.ebx = intno;
     segread(&s);
-    rm->ss = rm_ss;
-    rm->sp = rm_sp;
+    rm->ss = self->rm_ss;
+    rm->sp = self->rm_sp;
     r.x.edi = (u32)rm;
     int386x(0x31, (REGS *)&r, (REGS *)&r, &s);
+    return rm->eax;
+}
+
 }
 
 // FUNCTION: 0xd4348

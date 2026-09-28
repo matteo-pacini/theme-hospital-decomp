@@ -691,6 +691,7 @@
 0018cdb8 _LowSoundPlayedAddr 4
 0018cdc0 _DebugAudio 4
 0018cdc4 _SoundProgressMessage 100
+0018cf88 _D_0018cf88 19
 0018cfb0 ____Argc 4
 0018cfb4 ____Argv 4
 0018cff4 W?addPlayerBuffer$n[]uc 28
@@ -740,3 +741,5 @@
 0018d474 _D_0018d474 48
 0018d5a4 _D_0018d5a4 20
 0018d666 _D_0018d666 6
+00128e4c _D_00128e4c 24
+00128e70 _D_00128e70 15

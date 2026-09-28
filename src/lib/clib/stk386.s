@@ -1,5 +1,26 @@
 .intel_syntax noprefix
 
+// FUNCTION: 0x000ed28a
+
+.section _TEXT,"ax",@progbits,unique,971402
+.globl "__CHK"
+.type "__CHK",@function
+"__CHK":
+    xchg dword ptr [esp + 4], eax
+    call "fn_000ed29d_"
+    mov eax, dword ptr [esp + 4]
+    ret 4
+.size "__CHK",.-"__CHK"
+
+// FUNCTION: 0x000ed29a
+
+.section _TEXT,"ax",@progbits,unique,971418
+.globl "__GRO"
+.type "__GRO",@function
+"__GRO":
+    ret 4
+.size "__GRO",.-"__GRO"
+
 // FUNCTION: 0x000ed29d
 
 .section _TEXT,"ax",@progbits,unique,971421

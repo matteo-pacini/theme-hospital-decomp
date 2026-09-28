@@ -25,9 +25,19 @@ void __cdecl AIL_API_startup(void);
 void AILDEBUG_START(void);
 #pragma aux AILDEBUG_START "AILDEBUG_START";
 
-void *__pascal fn_000efba0(U32 size);
-void __pascal fn_000efbb0(void *ptr);
-int __pascal AIL_INT386(int intno, union REGS *in, union REGS *out);
+void *malloc(U32 size);
+void free(void *ptr);
+/* config/functions.txt has malloc and free under wrong demo names. */
+#pragma aux malloc "W?init$n()v";
+#pragma aux free "__wcpp_2_mod_register__";
+
+/* __pascal (callee pops) with address names. */
+void *fn_000efba0(U32 size);
+void fn_000efbb0(void *ptr);
+int AIL_INT386(int intno, union REGS *in, union REGS *out);
+#pragma aux (__pascal) fn_000efba0 "*_";
+#pragma aux (__pascal) fn_000efbb0 "*_";
+#pragma aux (__pascal) AIL_INT386 "fn_000efbd0_";
 void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args);
 void AILSR_end(void);
 
@@ -41,9 +51,23 @@ void AILSR_start(void)
     }
 }
 
+// FUNCTION: 0xefba0
+void *fn_000efba0(U32 size)
+{
+    void *ptr;
+
+    ptr = malloc(size);
+    return ptr;
+}
+
+// FUNCTION: 0xefbb0
+void fn_000efbb0(void *ptr)
+{
+    free(ptr);
+}
+
 // FUNCTION: 0x000efbc0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_INT386 and AIL_SPRINTF, which follow it
+// NONMATCHING: the target copies getenv's result to edx and back
 char *__pascal AIL_GETENV(char const *name)
 {
     char *value;
@@ -52,7 +76,8 @@ char *__pascal AIL_GETENV(char const *name)
     return value;
 }
 
-int __pascal AIL_INT386(int intno, union REGS *in, union REGS *out)
+// FUNCTION: 0xefbd0
+int AIL_INT386(int intno, union REGS *in, union REGS *out)
 {
     return int386(intno, in, out);
 }
@@ -83,8 +108,7 @@ void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args)
 }
 
 // FUNCTION: 0x000efcc0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AILSR_end and two C library helpers that follow it
+// NONMATCHING: the target copies localtime's result to esi and back
 void __cdecl AIL_startup_reg(void)
 {
     time_t t;
@@ -93,10 +117,10 @@ void __cdecl AIL_startup_reg(void)
     if (AIL_started) {
         return;
     }
-    AIL_mem_alloc = fn_000efba0;
-    AIL_mem_free = fn_000efbb0;
+    AIL_mem_alloc = (void *(__pascal *)(U32))fn_000efba0;
+    AIL_mem_free = (void (__pascal *)(void *))fn_000efbb0;
     AIL_getenv = AIL_GETENV;
-    AIL_int386 = AIL_INT386;
+    AIL_int386 = (int (__pascal *)(int, union REGS *, union REGS *))AIL_INT386;
     AIL_sprintf = AIL_SPRINTF;
     AILSR_start();
     AIL_debug = 0;

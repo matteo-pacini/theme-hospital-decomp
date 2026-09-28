@@ -89,6 +89,47 @@ u32 fn_000d1a10(u8 *buf, u32 &id)
 
 }
 
+// FUNCTION: 0xd189c
+u32 ServiceProvider::DecodeAddPlayerMsg(u8 *buf, u32 &id, char *name)
+{
+    u32 ret = 1;
+
+    memcpy(&id, buf + 4, 4);
+    if (name)
+        strcpy(name, (char *)buf + 8);
+    return ret;
+}
+
+extern "C" {
+
+// FUNCTION: 0xd1a38
+TbError fn_000d1a38(ServiceProvider *sp, u8 *msg)
+{
+    TbError ret = Lb_FAIL;
+    u32 id;
+    char name[32];
+
+    sp->DecodeAddPlayerMsg(msg, id, name);
+    if (sp->AddPlayer(id, name, 0, 0) == Lb_OK)
+        ret = Lb_OK;
+    return ret;
+}
+
+// FUNCTION: 0xd1ab4
+TbError fn_000d1ab4(ServiceProvider *sp, u8 *msg)
+{
+    TbError ret = Lb_FAIL;
+    u32 id;
+
+    sp->CheckForDeletedHost(msg);
+    fn_000d1a10(msg, id);
+    if (sp->DeletePlayer(id) == Lb_OK)
+        ret = Lb_OK;
+    return ret;
+}
+
+}
+
 // FUNCTION: 0xd1b04
 void StrCpyTrunc(char *dst, char *src, u32 size)
 {
@@ -123,7 +164,7 @@ void DecodeMessageStub(void *buf, u32 *size, u8 *type, u32 *seq)
 }
 
 // FUNCTION: 0xd1b90
-// NONMATCHING: the range also holds three __stdcall Nil*Callback stubs
+// NONMATCHING: register allocation (the target copies buf, not seq, into esi)
 void fn_000d1b90(void *buf, u32 *size, u8 *type, u32 *seq)
 {
     if (buf == 0) {
@@ -136,6 +177,40 @@ void fn_000d1b90(void *buf, u32 *size, u8 *type, u32 *seq)
         *seq = (*(u32 *)buf >> 20) & 0xf;
     if (type)
         *type = (*(u32 *)buf >> 24) & 0xff;
+}
+
+extern "C" {
+
+extern char D_00124f8d[];
+extern char D_00124fbf[];
+extern char D_00124ff0[];
+
+/* __stdcall callbacks (arguments on the stack, callee pops) named after their address. */
+void fn_000d1bd4(u32 id, char *name, void *data);
+#pragma aux fn_000d1bd4 "fn_000d1bd4_" parm routine [] modify [eax ecx edx]
+void fn_000d1bf0(u32 id, void *data);
+#pragma aux fn_000d1bf0 "fn_000d1bf0_" parm routine [] modify [eax ecx edx]
+void fn_000d1c08(u32 id, void *data);
+#pragma aux fn_000d1c08 "fn_000d1c08_" parm routine [] modify [eax ecx edx]
+
+// FUNCTION: 0xd1bd4
+void fn_000d1bd4(u32 id, char *name, void *data)
+{
+    fn_000c20c0(D_00124f8d, id, name);
+}
+
+// FUNCTION: 0xd1bf0
+void fn_000d1bf0(u32 id, void *data)
+{
+    fn_000c20c0(D_00124fbf, id);
+}
+
+// FUNCTION: 0xd1c08
+void fn_000d1c08(u32 id, void *data)
+{
+    fn_000c20c0(D_00124ff0, id);
+}
+
 }
 
 // FUNCTION: 0xd1cc8

@@ -1,5 +1,41 @@
 .intel_syntax noprefix
 
+// FUNCTION: 0x000ef0a8
+
+.section _TEXT,"ax",@progbits,unique,979112
+.globl "fn_000ef0a8_"
+.type "fn_000ef0a8_",@function
+"fn_000ef0a8_":
+    push es
+    push ecx
+    push ebx
+    push edx
+    fninit
+    push eax
+    fnstcw word ptr [esp]
+    pop eax
+    cmp ah, 3
+    je .L000ef0b9
+    inc ebp
+.L000ef0b9:
+    or ebp, ebp
+    je .L000ef0c2
+    call "fn_000ef0d8_"
+.L000ef0c2:
+    wait
+    fninit
+    fldcw word ptr [_D_00152a7c]
+    fldz
+    fldz
+    fldz
+    fldz
+    pop edx
+    pop ebx
+    pop ecx
+    pop es
+    ret
+.size "fn_000ef0a8_",.-"fn_000ef0a8_"
+
 // FUNCTION: 0x000ef0d8
 
 .section _TEXT,"ax",@progbits,unique,979160

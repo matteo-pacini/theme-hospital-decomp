@@ -13,7 +13,6 @@ void _nfree(void *ptr);
 void *memset(void *s, int c, size_t n);
 
 // FUNCTION: 0xf48ce
-// NONMATCHING: the target names the end of __iob ___tmpfnext
 FILE *__allocfp(int handle)
 {
     FILE *end;

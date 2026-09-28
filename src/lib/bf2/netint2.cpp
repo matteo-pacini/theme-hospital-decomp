@@ -14,8 +14,8 @@ TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
         spPtr = 0;
     }
     runningTwoPlayerModel = 1;
-    receiveCallbacks.multiPlayer = TwoPlayerMultiPlayerCallback;
-    receiveCallbacks.mpReqExDataMsg = TwoPlayerReqExDataCallback;
+    receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
+    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
     if (init_data)
         ((u32 *)init_data)[3] = 1;
     spPtr = new SerialSP(init_data);
@@ -153,8 +153,8 @@ TbError GenericModemInit(__tibcaGUID guid, void *init_data)
         spPtr = 0;
     }
     runningTwoPlayerModel = 1;
-    receiveCallbacks.multiPlayer = TwoPlayerMultiPlayerCallback;
-    receiveCallbacks.mpReqExDataMsg = TwoPlayerReqExDataCallback;
+    receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
+    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
     if (init_data)
         ((u32 *)init_data)[3] = 2;
     spPtr = new ModemSP(init_data);
@@ -165,4 +165,129 @@ TbError GenericModemInit(__tibcaGUID guid, void *init_data)
             fn_000c20c0(D_00125e26);
     }
     return ret;
+}
+
+extern "C" {
+extern char D_00125d04[];
+extern char D_00125d2b[];
+extern char D_00125d82[];
+extern char D_00125daf[];
+extern char D_00125ddc[];
+}
+
+extern "C" {
+extern char D_00125a28[];
+extern char D_00125a80[];
+extern char D_00125ad7[];
+extern char D_00125b15[];
+extern char D_00125b5b[];
+extern char D_00125b96[];
+extern char D_00125bee[];
+extern char D_00125c45[];
+extern char D_00125c83[];
+extern char D_00125cc9[];
+}
+
+// NONMATCHING: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
+// FUNCTION: 0xd309c
+void *TwoPlayerMultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
+{
+    u8 *ret = 0;
+    u32 ok;
+    u32 msg_size;
+    TbMessageType msg_type;
+
+    if (localPlayerId == hostId) {
+        if (size == exchangeSize) {
+            if (seq == sequenceNumber || seq == 15) {
+                gotCompositeData = 1;
+                ret = exchangeBuffer + exchangeSize;
+            } else {
+                fn_000c20c0(D_00125a28, seq, sequenceNumber);
+                if (seq > 0)
+                    seq--;
+                else
+                    seq = 14;
+                if (seq == sequenceNumber) {
+                    if (GetRequestCompositeExchangeDataMsgSize() > 8) {
+                        fn_000c20c0(D_00125a80);
+                    } else {
+                        EncodeRequestExchangeDataMsg(requestExchangeDataBuffer, localPlayerId, sequenceNumber);
+                        fn_000c20c0(D_00125ad7, sequenceNumber);
+                        if (spPtr->Send(remotePlayerId, requestExchangeDataBuffer) != Lb_OK)
+                            fn_000c20c0(D_00125b15);
+                    }
+                }
+            }
+        } else {
+            fn_000c20c0(D_00125b5b, size);
+        }
+    } else {
+        if (size == exchangeSize) {
+            ok = 1;
+            if (sequenceNumber == 15) {
+                sequenceNumber = seq;
+                fn_000d1b90(lastMessage, &msg_size, (u8 *)&msg_type, 0);
+                EncodeMessageStub(lastMessage, msg_size, msg_type, sequenceNumber);
+            } else if (seq != sequenceNumber) {
+                ok = 0;
+            }
+            if (ok) {
+                gotCompositeData = 1;
+                ret = exchangeBuffer;
+            } else {
+                fn_000c20c0(D_00125b96, seq, sequenceNumber);
+                if (seq > 0)
+                    seq--;
+                else
+                    seq = 14;
+                if (seq == sequenceNumber) {
+                    if (GetRequestCompositeExchangeDataMsgSize() > 8) {
+                        fn_000c20c0(D_00125bee);
+                    } else {
+                        EncodeRequestExchangeDataMsg(requestExchangeDataBuffer, localPlayerId, sequenceNumber);
+                        fn_000c20c0(D_00125c45, sequenceNumber);
+                        if (spPtr->Send(remotePlayerId, requestExchangeDataBuffer) != Lb_OK)
+                            fn_000c20c0(D_00125c83);
+                    }
+                }
+            }
+        } else {
+            fn_000c20c0(D_00125cc9, size);
+        }
+    }
+    return ret;
+}
+
+// FUNCTION: 0xd32fc
+void TwoPlayerReqExDataCallback(u32 id, u32 seq, void *data)
+{
+    u8 *msg = 0;
+    u32 msg_seq;
+
+    fn_000c20c0(D_00125d04, seq);
+    if (sequenceNumber == 15) {
+        msg = lastMessage;
+    } else {
+        fn_000d1b90(lastMessage, 0, 0, &msg_seq);
+        if (seq == msg_seq)
+            msg = lastMessage;
+        fn_000d1b90(lastButOneMessage, 0, 0, &msg_seq);
+        if (seq == msg_seq)
+            msg = lastButOneMessage;
+    }
+    if (msg == 0) {
+        fn_000c20c0(D_00125d2b);
+    } else if (spPtr->Send(id, msg) == Lb_OK) {
+        if (msg == lastButOneMessage) {
+            spPtr->Send(id, lastMessage);
+            if (seq == 14)
+                fn_000c20c0(D_00125d82, 0);
+            else
+                fn_000c20c0(D_00125daf, seq + 1);
+        }
+    } else {
+        fn_000c20c0(D_00125ddc);
+    }
+    startTime = LbTimerClock();
 }

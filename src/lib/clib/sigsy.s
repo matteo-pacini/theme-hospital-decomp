@@ -1,5 +1,113 @@
 .intel_syntax noprefix
 
+// FUNCTION: 0x000f4bca
+
+.section _TEXT,"ax",@progbits,unique,1002442
+.globl "fn_000f4bca_"
+.type "fn_000f4bca_",@function
+"fn_000f4bca_":
+    .byte 0x60  # pushal
+    push ds
+    push es
+    push fs
+    push gs
+    mov ebp, esp
+    cld
+    call "__GETDS"
+    .byte 0xb8; .long "W?com_dev$n[]$ComHandlerInfo$$"+0xbf0  # mov eax, 0x6e690
+    mov edx, ds
+    mov bx, ss
+    mov ecx, esp
+    mov ss, edx
+    mov esp, eax
+    mov dx, bx
+    mov eax, ecx
+    mov esi, dword ptr ["__STACKLOW"]
+    mov edi, dword ptr [_D_001507b8]
+    mov ecx, edx
+    .byte 0xba; .long _D_0018d6a0  # mov edx, 0x6d6a0
+    mov ebx, eax
+    mov dword ptr ["__STACKLOW"], edx
+    test edi, edi
+    jne .L000f4c2e
+    mov eax, dword ptr ["___int23_exit"]
+    .byte 0x3d; .long "fn_000c2110_"  # cmp eax, 0xb2110
+    je .L000f4c2e
+    .byte 0x3d; .long "fn_000f4f21_"  # cmp eax, 0xe4f21
+    je .L000f4c2e
+    mov eax, 4
+    sti
+    cld
+    call "fn_000fbbef_"
+    jmp .L000f4c3f
+.L000f4c2e:
+    mov dx, word ptr ["___old_int23"+0x4]
+    mov eax, dword ptr ["___old_int23"]
+    call "fn_000fbcb2_"
+.L000f4c3f:
+    mov edx, ecx
+    mov eax, ebx
+    mov bx, ss
+    mov ecx, esp
+    mov ss, edx
+    mov esp, eax
+    mov dx, bx
+    mov eax, ecx
+    mov dword ptr ["__STACKLOW"], esi
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    .byte 0x61  # popal
+    iretd
+.size "fn_000f4bca_",.-"fn_000f4bca_"
+
+// FUNCTION: 0x000f4c5f
+
+.section _TEXT,"ax",@progbits,unique,1002591
+.globl "fn_000f4c5f_"
+.type "fn_000f4c5f_",@function
+"fn_000f4c5f_":
+    .byte 0x60  # pushal
+    push ds
+    push es
+    push fs
+    push gs
+    mov ebp, esp
+    cld
+    call "__GETDS"
+    .byte 0xb8; .long "W?com_dev$n[]$ComHandlerInfo$$"+0xbf0  # mov eax, 0x6e690
+    mov edx, ds
+    mov bx, ss
+    mov ecx, esp
+    mov ss, edx
+    mov esp, eax
+    mov dx, bx
+    mov eax, ecx
+    mov esi, dword ptr ["__STACKLOW"]
+    mov edi, dword ptr [_D_001507b8]
+    mov ecx, edx
+    .byte 0xba; .long _D_0018d6a0  # mov edx, 0x6d6a0
+    mov ebx, eax
+    mov dword ptr ["__STACKLOW"], edx
+    test edi, edi
+    jne .L000f4cc6
+    mov eax, dword ptr ["___int23_exit"]
+    .byte 0x3d; .long "fn_000c2110_"  # cmp eax, 0xb2110
+    je .L000f4cc6
+    .byte 0x3d; .long "__restore_int23_"  # cmp eax, 0xe4d6b
+    je .L000f4cc6
+    mov eax, 7
+    sti
+    cld
+    call "fn_000fbbef_"
+    jmp "fn_000f4bca_"+0x75
+.L000f4cc6:
+    mov dx, word ptr ["___old_int_ctrl_break"+0x4]
+    mov eax, dword ptr ["___old_int_ctrl_break"]
+    jmp "fn_000f4bca_"+0x70
+.size "fn_000f4c5f_",.-"fn_000f4c5f_"
+
 // FUNCTION: 0x000f4cd7
 
 .section _TEXT,"ax",@progbits,unique,1002711

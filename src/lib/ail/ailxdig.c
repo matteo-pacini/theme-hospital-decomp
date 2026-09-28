@@ -48,14 +48,39 @@ typedef struct _WAVE_SYNTH {
 } WAVE_SYNTH;
 
 extern S32 locked;
-extern S32 note_freq[128];
+/* In the code segment, where the original's table sits between two functions. */
+#pragma data_seg("_TEXT", "CODE")
+// NONMATCHING: same bytes; the table's last bytes disassemble as a jmp whose
+// target lies past the section end here and in AILXDIG_start in the original
+// FUNCTION: 0xe5430
+S32 note_freq[128] = {
+    8, 17, 18, 19, 20, 21, 23, 24,
+    26, 27, 29, 30, 32, 34, 36, 38,
+    41, 43, 46, 49, 51, 55, 58, 61,
+    65, 69, 73, 77, 82, 87, 92, 98,
+    103, 110, 116, 123, 130, 138, 146, 155,
+    164, 174, 185, 196, 207, 220, 233, 247,
+    261, 277, 293, 311, 329, 349, 370, 392,
+    415, 440, 466, 493, 523, 554, 587, 622,
+    659, 698, 740, 784, 830, 880, 932, 987,
+    1046, 1108, 1174, 1244, 1318, 1396, 1480, 1568,
+    1661, 1760, 1864, 1975, 2093, 2217, 2349, 2488,
+    2636, 2793, 2960, 3136, 3322, 3520, 3729, 3951,
+    4186, 4435, 4699, 4977, 5273, 5587, 5920, 6272,
+    6644, 7040, 7459, 7902, 8372, 8870, 9398, 9955,
+    10547, 11174, 11840, 12544, 13289, 14080, 14918, 15804,
+    16745, 17740, 18796, 19910, 21094, 22348, 23680, 25088,
+};
+#pragma data_seg()
 #pragma aux note_freq "fn_000e5430_";
 
 extern char D_00127090[];
 extern char D_001270bc[];
 
 void fn_000e59e0(void);
-void fn_000e5a10(void);
+/* MIDI event trap: __pascal (callee pops), address-named. */
+S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2);
+#pragma aux (__pascal) fn_000e5a10 "*_";
 void fn_000e6090(void);
 
 void __cdecl XDIG_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2);
@@ -213,6 +238,114 @@ void XDIG_MIDI_TRAP(HWAVESYNTH W, S32 voice)
         rate = (rate * f) / base;
     }
     AIL_set_sample_playback_rate(W->S[voice], rate);
+}
+
+// FUNCTION: 0xe5a10
+S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2)
+{
+    HWAVESYNTH W;
+    S32 st;
+    S32 ch;
+    S32 i;
+    S32 j;
+    U32 t;
+    WAVE_ENTRY *wave;
+
+    st = status & 0xf0;
+    ch = status & 0x0f;
+    W = (HWAVESYNTH)mdi->system_data[0];
+    if (st == 0xb0 || st == 0xc0 || st == 0xe0) {
+        XDIG_write_log(&W->controls, status, data_1, data_2);
+    }
+    if (st == 0x90 && data_2 == 0) {
+        st = 0x80;
+    }
+    switch (st) {
+    case 0xb0:
+        switch (data_1) {
+        case PART_VOLUME:
+        case PANPOT:
+        case EXPRESSION:
+            for (i = 0; i < W->n_voices; i++) {
+                if (W->chan[i] == ch && AIL_sample_status(W->S[i]) == SMP_PLAYING) {
+                    XDIG_set_volume(W, i);
+                }
+            }
+            break;
+        case DATA_MSB:
+            for (i = 0; i < W->n_voices; i++) {
+                if (W->chan[i] == ch && AIL_sample_status(W->S[i]) == SMP_PLAYING) {
+                    XDIG_MIDI_TRAP(W, i);
+                }
+            }
+            break;
+        case 123:
+            for (i = 0; i < W->n_voices; i++) {
+                if (W->chan[i] == ch && AIL_sample_status(W->S[i]) == SMP_PLAYING) {
+                    AIL_end_sample(W->S[i]);
+                }
+            }
+            break;
+        }
+        break;
+    case 0xc0:
+        W->wave[ch] = WVL_search(W->library, W->controls.bank[ch], data_1);
+        break;
+    case 0xe0:
+        for (i = 0; i < W->n_voices; i++) {
+            if (W->chan[i] == ch && AIL_sample_status(W->S[i]) == SMP_PLAYING) {
+                XDIG_MIDI_TRAP(W, i);
+            }
+        }
+        break;
+    case 0x90:
+        if (ch == 9) {
+            W->wave[ch] = WVL_search(W->library, 127, data_1);
+        }
+        if (W->wave[ch] == NULL) {
+            break;
+        }
+        for (i = 0; i < W->n_voices; i++) {
+            if (AIL_sample_status(W->S[i]) == SMP_DONE) {
+                break;
+            }
+        }
+        if (i == W->n_voices) {
+            t = 0xffffffff;
+            for (j = 0; j < W->n_voices; j++) {
+                if (W->time[j] <= t) {
+                    t = W->time[j];
+                    i = j;
+                }
+            }
+            AIL_end_sample(W->S[i]);
+        }
+        W->chan[i] = ch;
+        W->note[i] = data_1;
+        W->root[i] = W->wave[ch]->root_key;
+        W->rate[i] = W->wave[ch]->playback_rate;
+        W->vel[i] = data_2;
+        W->time[i] = W->event++;
+        AIL_init_sample(W->S[i]);
+        AIL_set_sample_type(W->S[i], W->wave[ch]->format, W->wave[ch]->flags);
+        AIL_set_sample_address(W->S[i], (U8 *)W->library + W->wave[ch]->file_offset, W->wave[ch]->size);
+        XDIG_MIDI_TRAP(W, i);
+        XDIG_set_volume(W, i);
+        AIL_start_sample(W->S[i]);
+        return 1;
+    case 0x80:
+        if (ch == 9) {
+            break;
+        }
+        for (i = 0; i < W->n_voices; i++) {
+            if (W->chan[i] == ch && W->note[i] == data_1 && AIL_sample_status(W->S[i]) == SMP_PLAYING) {
+                AIL_end_sample(W->S[i]);
+                return 1;
+            }
+        }
+        break;
+    }
+    return 0;
 }
 
 // FUNCTION: 0x000e5e30

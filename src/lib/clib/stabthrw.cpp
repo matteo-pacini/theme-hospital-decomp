@@ -198,6 +198,8 @@ void throwIt(void *object, THROW_RO *ro, int zero);
 void popCatches(dispatch_exc *dispatch, rw_dtreg *rw);
 /* config/functions.txt has no name for this longjmp helper. */
 #pragma aux popCatches "fn_000f45ba_"
+void __wcpp_2_lj_handler_(rw_dtreg *bound);
+#pragma aux __wcpp_2_lj_handler_ "W?longjmpDtoring$n(pfv)v" modify [edx]
 
 void __wcpp_2_corrupted_stack_(void);
 DISPATCHABLE __wcpp_2_dispatchable_(dispatch_exc *dispatch, rw_dtreg *rw);
@@ -428,8 +430,6 @@ void catchDispatch(dispatch_exc *dispatch)
 }
 
 // FUNCTION: 0xf4132
-// NONMATCHING: config/functions.txt extends catchDone over
-// __wcpp_2_catch_done__ (0xf416f)
 void catchDone(thread_ctl *thr, active_exc *exc)
 {
     RT_TYPE_SIG *sig;
@@ -448,6 +448,7 @@ void catchDone(thread_ctl *thr, active_exc *exc)
     __wcpp_2_free_exc_(thr);
 }
 
+// FUNCTION: 0xf416f
 void __wcpp_2_catch_done_(void)
 {
     if (excToBePopped(&_wint_thread_data))
@@ -610,7 +611,6 @@ void dispatch_init(dispatch_exc *dispatch, THROW_RO *ro, int zero)
 }
 
 // FUNCTION: 0xf43c9
-// NONMATCHING: block order (the target places return 0 last)
 DISPATCHABLE __wcpp_2_dispatchable_(dispatch_exc *dispatch, rw_dtreg *rw)
 {
     unsigned kind;
@@ -626,18 +626,16 @@ DISPATCHABLE __wcpp_2_dispatchable_(dispatch_exc *dispatch, rw_dtreg *rw)
     dispatch->rw = rw;
     kind = rw->ro->kind;
     switch (kind) {
+    default:
+        __wcpp_2_corrupted_stack_();
     case 0:
-        break;
+        return dispatchable(dispatch, rw);
     case 1:
     case 2:
     case 3:
     case 4:
         return DISPATCHABLE_NONE;
-    default:
-        __wcpp_2_corrupted_stack_();
-        break;
     }
-    return dispatchable(dispatch, rw);
 }
 
 // FUNCTION: 0xf4422
@@ -691,9 +689,6 @@ void __wcpp_2_dispatch_(dispatch_exc *dispatch, DISPATCHABLE kind)
 }
 
 // FUNCTION: 0xf4551
-// NONMATCHING: config/functions.txt extends this function over
-// __wcpp_2_rethrow__, __wcpp_2_throw__ and __wcpp_2_throw_zero__
-// (0xf4598..0xf45ba), the last of which jumps into __wcpp_2_throw__
 void throwIt(void *object, THROW_RO *ro, int zero)
 {
     dispatch_exc dispatch;
@@ -708,11 +703,13 @@ void throwIt(void *object, THROW_RO *ro, int zero)
     __wcpp_2_dispatch_(&dispatch, disp);
 }
 
+// FUNCTION: 0xf4598
 void __wcpp_2_rethrow_(void)
 {
     throwIt(0, 0, 0);
 }
 
+// FUNCTION: 0xf45a8
 void __wcpp_2_throw_(void *object, THROW_RO *ro)
 {
     throwIt(object, ro, 0);
@@ -724,8 +721,6 @@ void __wcpp_2_throw_zero_(void *object, THROW_RO *ro)
 }
 
 // FUNCTION: 0xf45ba
-// NONMATCHING: config/functions.txt extends this function over the longjmp
-// handler (0xf4605) and its initialiser (0xf46a5)
 void popCatches(dispatch_exc *dispatch, rw_dtreg *rw)
 {
     STAB_TRAVERSE ctl;
@@ -746,6 +741,9 @@ void popCatches(dispatch_exc *dispatch, rw_dtreg *rw)
     dispatch->exc = exc;
 }
 
+// NONMATCHING: the first loop keeps the registration in ebx and its copy in
+// eax the other way round
+// FUNCTION: 0xf4605
 void __wcpp_2_lj_handler_(rw_dtreg *bound)
 {
     dispatch_exc dispatch;
@@ -753,28 +751,28 @@ void __wcpp_2_lj_handler_(rw_dtreg *bound)
     rw_dtreg *last;
 
     dispatch.thr = &_wint_thread_data;
-    last = rw = _wint_thread_data.registered;
-    for (;;) {
+    last = _wint_thread_data.registered;
+    rw = last;
+    for (;; rw = rw->prev) {
         if (rw == 0) {
             if (last == 0)
                 return;
             last = 0;
+            dispatch.state_var = 0;
             break;
         }
         last = rw;
-        if (rw >= bound)
+        if (rw >= bound) {
+            dispatch.state_var = rw->state_var;
             break;
-        rw = rw->prev;
+        }
     }
-    dispatch.state_var = rw != 0 ? rw->state_var : 0;
     dispatch.zero = 0;
     dispatch.ro = 0;
     dispatch.cmd = 0;
     dispatch.rw = last;
     dispatch.exc = getActiveExc(dispatch.thr);
-    for (rw = dispatch.thr->registered; rw != dispatch.rw; rw = rw->prev) {
-        if (dispatch.exc == 0)
-            break;
+    for (rw = dispatch.thr->registered; rw != dispatch.rw && dispatch.exc != 0; rw = rw->prev) {
         switch (rw->ro->kind) {
         case 1:
         case 2:
@@ -792,9 +790,10 @@ void __wcpp_2_lj_handler_(rw_dtreg *bound)
     unwindStack(&dispatch);
 }
 
+// FUNCTION: 0xf46a5
 void __wcpp_2_lj_init_(void)
 {
-    D_00152a90 = __wcpp_2_lj_handler_;
+    D_00152a90 = (void (*)(rw_dtreg *))__wcpp_2_lj_handler_;
 }
 
 }

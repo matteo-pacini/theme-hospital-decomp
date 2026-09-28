@@ -73,6 +73,7 @@ typedef struct _SAMPLE {
 #define DIG_USE_STEREO 7
 #define DIG_USE_16_BITS 8
 #define DIG_ALLOW_16_BIT_DMA 9
+#define DIG_SS_LOCK 10
 #define MDI_SERVICE_RATE 11
 #define MDI_SEQUENCES 12
 #define MDI_DEFAULT_VOLUME 13
@@ -154,6 +155,7 @@ typedef struct _VDI_CALL {
 #define DRV_INIT_DEV 0x305
 #define DIG_START_P_CMD 0x401
 #define DIG_STOP_P_REQ 0x402
+#define DIG_VSE 0x405
 
 #pragma pack(1)
 typedef struct {

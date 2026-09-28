@@ -68,6 +68,7 @@ s32 fn_000c9400(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
     }
 }
 
+// FUNCTION: 0x000c95f8
 int fn_000c95f8(void)
 {
     fade_started = 0;

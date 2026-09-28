@@ -763,13 +763,6 @@ TbError fn_000c197c(TbNetworkPlayerEntry *player)
     return ret;
 }
 
-// NONMATCHING: C library strlen; target saves and reloads es around the scan
-// FUNCTION: 0x000cd716
-u32 fn_000cd716(char *s)
-{
-    return strlen(s);
-}
-
 // FUNCTION: 0x000c20c0
 void fn_000c20c0(char *fmt, ...)
 {

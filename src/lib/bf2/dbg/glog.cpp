@@ -36,3 +36,30 @@ int LbLogClose(TbLog *log)
     log->suspended = 0;
     return 1;
 }
+
+extern "C" {
+
+unsigned strlen(const char *s);
+char *strcpy(char *dst, const char *src);
+#pragma intrinsic(strlen, strcpy)
+
+// FUNCTION: 0xeb2c0
+int fn_000eb2c0(TbLog *log, char *filename, u32 flags)
+{
+    log->initialised = 0;
+    memset(log->filename, 0, sizeof(log->filename));
+    memset(log->prefix, 0, sizeof(log->prefix));
+    log->flags = 0;
+    log->suspended = 0;
+    log->created = 0;
+    if ((flags & 3) == 0 || (flags & 3) == 3)
+        return -1;
+    if (strlen(filename) > 0x90)
+        return -1;
+    strcpy(log->filename, filename);
+    log->flags = flags;
+    log->initialised = 1;
+    return 1;
+}
+
+}

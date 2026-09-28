@@ -20,7 +20,7 @@ int vsprintf(char *buf, char *fmt, va_list args);
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 
-// NONMATCHING: target range also covers the next function (0xcd294)
+// NONMATCHING: the constant 1 is kept in edi (saved) in the target, ecx here
 // FUNCTION: 0x000cd1e0
 int fn_000cd1e0(char *directory, char *filename, u8 append)
 {
@@ -39,6 +39,7 @@ int fn_000cd1e0(char *directory, char *filename, u8 append)
     return 1;
 }
 
+// FUNCTION: 0x000cd294
 int fn_000cd294(void)
 {
     if (!D_0018a580)

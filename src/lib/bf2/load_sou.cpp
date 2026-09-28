@@ -145,3 +145,112 @@ s32 AllocateSoundBankMemory(u16 type)
     memset(Sfx, 0, largest_tab_size);
     return 1;
 }
+
+extern "C" {
+
+extern volatile s8 D_00150821;
+extern char D_0012813c[];
+extern char D_00128157[];
+extern char D_00128189[];
+extern char D_001281bc[];
+extern char D_001281dd[];
+extern char D_0012820d[];
+extern char D_00128244[];
+extern char D_00128275[];
+extern char D_001282ac[];
+
+// NONMATCHING: bank-offset multiply uses eax instead of ecx; volatile load order
+// FUNCTION: 0xeff70
+u32 fn_000eff70(u8 bank)
+{
+    u16 counts[9];
+    u32 offset;
+    s32 type;
+    s32 file;
+    u16 number;
+
+    number = bank;
+    sprintf(SoundProgressMessage, D_0012813c, bank);
+    SoundProgressLog(SoundProgressMessage);
+    if (SoundInstalled && SoundAble && D_00150821 != number && !DisableLoadSounds) {
+        StopAllSamples();
+        file = LbFileOpen(D_0018d4c4, 2);
+        if (file != -1) {
+            LbFileSeek(file, LbFileLength(D_0018d4c4) - 4, 0);
+            LbFileRead(file, &offset, 4);
+            LbFileSeek(file, offset, 0);
+            LbFileRead(file, counts, sizeof(counts));
+            number++;
+            switch (SoundType) {
+            case 0x66c:
+                type = 0;
+                break;
+            case 0x668:
+                type = 1;
+                break;
+            case 0x656:
+                type = 2;
+                break;
+            case 0x654:
+                type = 3;
+                break;
+            case 0x64b:
+                type = 4;
+                break;
+            case 0x64a:
+                type = 5;
+                break;
+            case 0x336:
+                type = 6;
+                break;
+            case 0x32b:
+                type = 7;
+                break;
+            case 0x320:
+                type = 8;
+                break;
+            }
+            if (number > counts[type]) {
+                LbFileClose(file);
+                sprintf(SoundProgressMessage, D_00128157);
+                SoundProgressLog(SoundProgressMessage);
+                return 1;
+            }
+            number--;
+            LbFileSeek(file, number * 0x90, 1);
+            if (!load_sound_bank(file, type)) {
+                LbFileClose(file);
+                sprintf(SoundProgressMessage, D_00128189);
+                SoundProgressLog(SoundProgressMessage);
+                return 1;
+            }
+            D_00150821 = bank;
+            LbFileClose(file);
+            sprintf(SoundProgressMessage, D_001281bc);
+            SoundProgressLog(SoundProgressMessage);
+            return 0;
+        }
+        sprintf(SoundProgressMessage, D_001281dd);
+    } else if (!SoundInstalled) {
+        sprintf(SoundProgressMessage, D_0012820d);
+    } else if (!SoundAble) {
+        sprintf(SoundProgressMessage, D_00128244);
+    } else if (DisableLoadSounds) {
+        sprintf(SoundProgressMessage, D_00128275);
+    } else {
+        sprintf(SoundProgressMessage, D_001282ac);
+    }
+    SoundProgressLog(SoundProgressMessage);
+    return 1;
+}
+
+// FUNCTION: 0xf0710
+void fn_000f0710(void)
+{
+    if (SfxData)
+        LbMemoryFree(SfxData);
+    if (Sfx)
+        LbMemoryFree(Sfx);
+}
+
+}

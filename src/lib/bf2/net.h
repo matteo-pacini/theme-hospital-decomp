@@ -93,9 +93,11 @@ struct ServiceProvider {
     void ClearPlayers(void);
     TbError DeletePlayer(u32 id);
     void ClearSessions(void);
+    TbNetworkSessionNameEntry *AddSession(u32 id, char *name);
     TbError EnumeratePlayers(void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data);
     u32 GetAddPlayerMsgSize(char *name);
     void EncodeAddPlayerMsg(u8 *buf, u32 id, char *name);
+    u32 DecodeAddPlayerMsg(u8 *buf, u32 &id, char *name);
     TbError CheckForDeletedHost(u8 *msg);
     TbError Receive(u32 flags);
     TbError Send(u32 to, void *buf);
@@ -247,8 +249,11 @@ extern u8 D_00151a74[];
 extern u8 D_00151a78[];
 }
 
-void *__stdcall TwoPlayerMultiPlayerCallback(u32 id, u32 size, u32 seq, void *data);
-void __stdcall TwoPlayerReqExDataCallback(u32 id, u32 seq, void *data);
+/* __stdcall (arguments on the stack, callee pops) under their address names. */
+void *TwoPlayerMultiPlayerCallback(u32 id, u32 size, u32 seq, void *data);
+#pragma aux TwoPlayerMultiPlayerCallback "fn_000d309c_" parm routine [] modify [eax ecx edx]
+void TwoPlayerReqExDataCallback(u32 id, u32 seq, void *data);
+#pragma aux TwoPlayerReqExDataCallback "fn_000d32fc_" parm routine [] modify [eax ecx edx]
 
 struct __3ljac5NETSOCKET {
     u16 socket;
@@ -357,6 +362,9 @@ extern char IPXDEBUGSTRING[];
 extern char ipxsendesr[];
 extern char ipxrecvesr[];
 
+struct IPXHandler;
+extern "C" u32 fn_000d41c8(IPXHandler *self, u16 intno, RMREGS *rm);
+
 struct IPXHandler {
     u32 stamp;
     u32 unknown4;
@@ -399,7 +407,7 @@ struct IPXHandler {
     void FreeIPXPackets(u32 sel);
     long AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock);
     void QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock);
-    void SimulateInt(u16 intno, RMREGS *rm);
+    u32 SimulateInt(u16 intno, RMREGS *rm) { return fn_000d41c8(this, intno, rm); }
     IPXPacket *GetFreePacket(void);
     void SendPacket(IPXPacket *packet);
     void AddBatch(IPXBatchCmd *cmd);
@@ -474,11 +482,17 @@ struct IPXQueueEntry {
     u32 from;
 };
 
+struct IPXSessionEntry {
+    u8 address[16];
+    char name[0x20];
+    s32 time;
+};
+
 struct IPXServiceProvider : ServiceProvider {
     IPXHandler ipx;
     IPXPacket *packets;
     IPXPlayerEntry *players;
-    u8 unknownb52[0x11d2 - 0xb52];
+    IPXSessionEntry session_list[32];
     __3ljac5NETSOCKET socket;
     u8 unknown11e2[0x120b - 0x11e2];
     IPXSessionInfo session;
@@ -487,7 +501,8 @@ struct IPXServiceProvider : ServiceProvider {
     IPXQueueEntry *queue;
     __6eas9nIPXDATAMESSAGE out;
     u32 packets_sel;
-    char server_name[0x1517 - 0x14e5];
+    char server_name[0x1515 - 0x14e5];
+    u16 session_count;
     u16 host_state;
     u8 sys_seq;
     u8 acked_a[0x20];

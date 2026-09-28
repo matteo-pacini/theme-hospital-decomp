@@ -58,15 +58,18 @@ char testFlag(unsigned char *flags, unsigned index);
 extern "C" {
 
 // FUNCTION: 0xf3cb0
-// NONMATCHING: register allocation
 RO_STATE *__wcpp_2_stab_entry_(RO_DTREG *ro, unsigned state_var)
 {
     RO_STATE *state;
 
-    if (state_var == 0)
-        return 0;
-    state = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->state_table(ro);
-    return ro->kind == 2 ? state : &state[state_var - 1];
+    if (state_var == 0) {
+        state = 0;
+    } else {
+        state = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->state_table(ro);
+        if (ro->kind != 2)
+            state = &state[state_var - 1];
+    }
+    return state;
 }
 
 // FUNCTION: 0xf3cde
