@@ -5,11 +5,37 @@ extern u8 D_0015f3f7;
 extern u8 D_0015f3f8;
 extern s32 D_00188c38;
 extern u8 D_001553c7;
+extern u16 D_001553e0;
+extern u8 D_001553e1[];
+extern u8 D_0015831b;
 void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 }
 
 void draw_cell_no_editor(s32 x, s32 y, u8 colour);
 u32 compute_plant_frame(Thing *w);
+u32 get_frame_for_placing_bomb(void);
+u32 get_frame_for_placing_plant(void);
+u16 place_object_wall_hug(u16 pos, u8 kind);
+u16 place_object_restrict_to_room(u16 pos, u16 offset, u8 kind, u8 dir);
+u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner);
+u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room);
+u8 corridor_object_nav_check(u16 pos, u8 kind, u8 dir);
+u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 pos2, u8 kind2, u8 dir2);
+void init_object_drag_shape(void);
+void compute_object_drag_shape(u16 pos, u8 kind, u8 angle);
+
+struct NextPartDir {
+    u8 dir;
+    u16 offset;
+    u8 unknown3[3];
+};
+
+struct NextPart {
+    u8 kind;
+    NextPartDir dirs[4];
+};
+
+extern NextPart next_part[];
 
 // NONMATCHING: register choice
 // FUNCTION: 0x000b10b0
@@ -54,6 +80,144 @@ void draw_cell_no_editor(s32 x, s32 y, u8 colour)
         fn_000c9be0(x, D_0015f3f7 - 1 + y, x - (D_0015f3f8 - 1) / 2, y + (D_0015f3f7 - 1) / 2, colour);
         fn_000c9be0(x - (D_0015f3f8 - 1) / 2, y + (D_0015f3f7 - 1) / 2, x, y, colour);
         set_all_refresh_zones_in_window(x - (D_0015f3f8 - 1) / 2, y, (D_0015f3f8 - 1) / 2 + x - 1, D_0015f3f7 - 1 + y, 3);
+    }
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000b14f0
+void draw_object_cursor(void)
+{
+    u8 flag;
+    u8 flip;
+    u8 flip2;
+    u8 dir;
+    s8 part;
+    u8 dir2;
+    u16 tile2;
+    u16 kind;
+    u16 tile;
+    u16 kind2;
+    u32 frame2;
+    RoomInfo *room;
+    s32 row;
+    s32 col;
+    s32 x;
+    s32 y;
+    s32 x2;
+    s32 y2;
+    u32 frame;
+    u8 *remap;
+
+    tile2 = 0;
+    kind2 = 0;
+    kind = gamevar.unknown25;
+    dir2 = 0;
+    dir = gamevar.f28;
+    part = objects[gamevar.unknown25].unknown17;
+    flag = gamevar.f29;
+    if (D_001553e0 == *(u16 *)&D_001553e1[1] && !flag)
+        goto draw;
+    gamevar.f29 = 0;
+    switch (gamevar.unknown26) {
+    case 1:
+        tile = place_object_wall_hug(D_001553e0 + gamevar.f31, kind);
+        dir = gamevar.f28;
+        break;
+    case 0:
+        tile = place_object_restrict_to_room(D_001553e0 + gamevar.f31, 0, kind, dir);
+        if (part != -1)
+            tile = place_object_restrict_to_room(tile, next_part[part].dirs[dir].offset, next_part[part].kind,
+                                                 next_part[part].dirs[dir].dir);
+        break;
+    case 2:
+        tile = D_001553e0 + gamevar.f31;
+        break;
+    default:
+        break;
+    }
+    if (tile == gamevar.f23 && !flag)
+        goto draw;
+    gamevar.f23 = tile;
+    gamevar.unknown2a = can_place_object(tile, kind, dir, player);
+    if (!gamevar.unknown2a)
+        goto draw;
+    if (part != -1) {
+        kind2 = next_part[part].kind;
+        tile2 = tile + next_part[part].dirs[dir].offset;
+        dir2 = next_part[part].dirs[dir].dir;
+        gamevar.unknown2a = can_place_object(tile2, kind2, dir2, player);
+        if (!gamevar.unknown2a)
+            goto draw;
+    }
+    if (gamevar.unknown26 == 2) {
+        room = which_room(tile);
+        if (room) {
+            if ((objects[kind].unknown20[2] & 8) && room->type != 6) {
+                gamevar.unknown2a = corridor_object_room_nav_check(tile, kind, dir, room);
+            } else {
+                gamevar.f23 = tile;
+                gamevar.unknown2a = 0;
+            }
+        } else {
+            gamevar.unknown2a = corridor_object_nav_check(tile, kind, dir);
+        }
+    } else {
+        gamevar.unknown2a = place_object_nav_check(&room_info[gamevar.unknown2f], tile, kind, dir, tile2, kind2, dir2);
+    }
+draw:
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
+    LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
+    if (gamevar.unknown2a) {
+        remap = 0;
+        D_0015831b &= ~2;
+    } else {
+        remap = bw_remap;
+        D_0015831b |= 2;
+    }
+    row = gamevar.f23 / 128;
+    col = gamevar.f23 % 128;
+    x = D_0015f3f8 * col / 2 - D_0015f3f8 * row / 2 - window.f0[window.unknown2eb] + window.f90[window.unknown2eb];
+    y = D_0015f3f7 * col / 2 + D_0015f3f7 * row / 2 - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
+        + D_0015f3f7 / 2;
+    switch (kind) {
+    case 0x11:
+        frame = get_frame_for_placing_bomb();
+        flip = 0;
+        break;
+    case 0x2d:
+        frame = get_frame_for_placing_plant();
+        flip = 0;
+        break;
+    default:
+        frame = start[dir + objects[kind].unknownE].frame;
+        flip = start[dir + objects[kind].unknownE].flags;
+        break;
+    }
+    init_object_drag_shape();
+    compute_object_drag_shape(gamevar.f23, kind, dir);
+    if (part != -1) {
+        u16 tile3;
+
+        tile3 = gamevar.f23 + next_part[part].dirs[dir].offset;
+        kind = next_part[part].kind;
+        dir2 = next_part[part].dirs[dir].dir;
+        compute_object_drag_shape(tile3, kind, dir2);
+        row = tile3 / 128;
+        col = tile3 % 128;
+        x2 = D_0015f3f8 * col / 2 - D_0015f3f8 * row / 2 - window.f0[window.unknown2eb] + window.f90[window.unknown2eb];
+        y2 = D_0015f3f7 * col / 2 + D_0015f3f7 * row / 2 - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
+            + D_0015f3f7 / 2;
+        frame2 = start[objects[kind].unknownE + dir2].frame;
+        flip2 = start[objects[kind].unknownE + dir2].flags;
+        if (next_part[part].dirs[dir].unknown3[2]) {
+            draw_from_frame(frame2, x2, y2, remap, flip2);
+            draw_from_frame(frame, x, y, remap, flip);
+        } else {
+            draw_from_frame(frame, x, y, remap, flip);
+            draw_from_frame(frame2, x2, y2, remap, flip2);
+        }
+    } else {
+        draw_from_frame(frame, x, y, remap, flip);
     }
 }
 

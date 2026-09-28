@@ -14,6 +14,13 @@ struct GlassBox {
     u8 f12;
 };
 
+struct SlistButton {
+    u16 x;
+    u16 y;
+    u16 x1;
+    u16 y1;
+};
+
 struct GlassFrame {
     s16 x;
     s16 y;
@@ -53,14 +60,22 @@ extern ZoomBox ZoomBoxes[];
 extern u8 playing_open_sound;
 extern u8 playing_close_sound;
 extern BalanceFileInfo *current_balance_file;
+extern u32 b_b_colour;
+extern u32 white_colour;
+extern u32 black_colour;
+extern u8 Gray[];
 
 extern "C" {
 extern GlassScreen *D_0015f444;
 extern s32 D_00188c38;
 extern u16 D_00188c74;
+extern volatile s16 D_00188c6c, D_00188c70;
+extern u8 D_00188c7e, D_00188c81;
 extern char D_00121bd0[];
 
 void StopSample(u32 a, u32 b);
+void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
+void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 }
 
 s8 add_glass_box(GlassBox *b, s32 id, s8 c1, s8 c2);
@@ -434,4 +449,162 @@ s16 button_index(s32 mask)
     default:
         return 0;
     }
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000b9b04
+void draw_glass_text(SlistButton *b, char *text)
+{
+    s16 x;
+
+    D_00188c74 &= 4;
+    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
+    if ((D_00188c7e
+         && over_hotspot((s16)mouse_dx, (s16)mouse_dy, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))
+        || (D_00188c81
+            && over_hotspot(D_00188c6c, D_00188c70, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))) {
+        set_font_from_cache(0x22);
+        x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
+        LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
+    } else {
+        set_font_from_cache(0x21);
+        x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
+        LbTextDraw(x, (b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);
+    }
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000b9d20
+void draw_glass_text_hilight(SlistButton *b, char *text)
+{
+    s16 x;
+
+    D_00188c74 &= 4;
+    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
+    set_font_from_cache(0x22);
+    x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
+    LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000b9e14
+void draw_glass_text_hilight_no_jump(SlistButton *b, char *text)
+{
+    s16 x;
+
+    D_00188c74 &= 4;
+    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
+    set_font_from_cache(0x22);
+    x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
+    if ((D_00188c7e
+         && over_hotspot((s16)mouse_dx, (s16)mouse_dy, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))
+        || (D_00188c81
+            && over_hotspot(D_00188c6c, D_00188c70, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1)))
+        LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
+    else
+        LbTextDraw(x, (b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);
+}
+
+// FUNCTION: 0x000b9ffc
+void draw_background_box(s16 x, s16 y, s16 w, s16 h, u8 style)
+{
+    u8 colour;
+
+    LbDrawBox(x, y, w, h, white_colour);
+    D_00188c74 = 0x10;
+    LbDrawBox(x, y, w, h, black_colour);
+    if (style)
+        colour = 0xca;
+    else
+        colour = b_b_colour;
+    LbDrawBox(x + 1, y + 1, w - 2, h - 2, colour);
+    LbDrawBox(x + 2, y + 2, w - 4, h - 4, colour);
+    LbDrawBox(x + 3, y + 3, w - 6, h - 6, colour);
+    D_00188c74 = 0;
+}
+
+// FUNCTION: 0x000ba0ec
+void draw_foreground_box(s16 x, s16 y, s16 w, s16 h)
+{
+    D_00188c74 = 0;
+    LbDrawBox(x, y, w, h, white_colour);
+    D_00188c74 = 0x10;
+    LbDrawBox(x, y, w, h, 0xf8);
+    LbDrawBox(x + 1, y + 1, w - 2, h - 2, b_b_colour);
+    LbDrawBox(x + 2, y + 2, w - 4, h - 4, b_b_colour);
+    LbDrawBox(x + 3, y + 3, w - 6, h - 6, b_b_colour);
+    D_00188c74 = 0;
+}
+
+// FUNCTION: 0x000ba1d4
+void draw_foreground_box2(s16 x, s16 y, s16 w, s16 h)
+{
+    D_00188c74 = 0;
+    LbDrawBox(x, y, w, h, white_colour);
+    D_00188c74 = 0x10;
+    LbDrawBox(x, y, w, h, b_b_colour);
+    LbDrawBox(x + 1, y + 1, w - 2, h - 2, b_b_colour);
+    D_00188c74 = 0;
+}
+
+// FUNCTION: 0x000ba270
+void draw_button_box(s16 x, s16 y, s16 w, s16 h)
+{
+    D_00188c74 = 0;
+    LbDrawBox(x, y, w, h, white_colour);
+    D_00188c74 = 0x10;
+    LbDrawBox(x, y, w, h, 0xf8);
+    D_00188c74 = 0;
+}
+
+// FUNCTION: 0x000ba2e0
+void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style)
+{
+    D_00188c74 = 0;
+    if (!style) {
+        fn_000c9be0(x + 1, y + 1, x + w - 1, y + 1, Gray[2]);
+        fn_000c9be0(x + 2, y + 2, x + w - 2, y + 2, Gray[3]);
+        fn_000c9be0(x + 3, y + 3, x + w - 3, y + 3, Gray[4]);
+        fn_000c9be0(x + 1, y + 2, x + 1, y + h - 1, Gray[2]);
+        fn_000c9be0(x + 2, y + 3, x + 2, y + h - 2, Gray[3]);
+        fn_000c9be0(x + 3, y + 4, x + 3, y + h - 3, Gray[4]);
+        fn_000c9be0(x + 2, y + h - 1, x + w - 1, y + h - 1, Gray[5]);
+        fn_000c9be0(x + 3, y + h - 2, x + w - 2, y + h - 2, Gray[6]);
+        fn_000c9be0(x + 4, y + h - 3, x + w - 3, y + h - 3, Gray[7]);
+        fn_000c9be0(x + w - 1, y + 2, x + w - 1, y + h - 2, Gray[5]);
+        fn_000c9be0(x + w - 2, y + 3, x + w - 2, y + h - 3, Gray[6]);
+        fn_000c9be0(x + w - 3, y + 4, x + w - 3, y + h - 4, Gray[7]);
+    } else {
+        fn_000c9be0(x + 1, y + 1, x + w - 1, y + 1, Gray[5]);
+        fn_000c9be0(x + 2, y + 2, x + w - 2, y + 2, Gray[6]);
+        fn_000c9be0(x + 3, y + 3, x + w - 3, y + 3, Gray[7]);
+        fn_000c9be0(x + 1, y + 2, x + 1, y + h - 1, Gray[5]);
+        fn_000c9be0(x + 2, y + 3, x + 2, y + h - 2, Gray[6]);
+        fn_000c9be0(x + 3, y + 4, x + 3, y + h - 3, Gray[7]);
+        fn_000c9be0(x + 2, y + h - 1, x + w - 1, y + h - 1, Gray[2]);
+        fn_000c9be0(x + 3, y + h - 2, x + w - 2, y + h - 2, Gray[3]);
+        fn_000c9be0(x + 4, y + h - 3, x + w - 3, y + h - 3, Gray[4]);
+        fn_000c9be0(x + w - 1, y + 2, x + w - 1, y + h - 2, Gray[2]);
+        fn_000c9be0(x + w - 2, y + 3, x + w - 2, y + h - 3, Gray[3]);
+        fn_000c9be0(x + w - 3, y + 4, x + w - 3, y + h - 4, Gray[4]);
+    }
+}
+
+// FUNCTION: 0x000ba800
+void calculate_grey(u8 *palette)
+{
+    b_b_colour = fn_000c960c(palette, 3, 0x2f, 0x3b);
+    white_colour = fn_000c960c(palette, 0x3f, 0x3f, 0x3f);
+    black_colour = fn_000c960c(palette, 0, 0, 0);
+    Gray[0] = 0;
+    Gray[1] = 0xff;
+    Gray[2] = 0xf5;
+    Gray[3] = 0xf5;
+    Gray[4] = 0xf5;
+    Gray[5] = 0xf8;
+    Gray[6] = 0xf8;
+    Gray[7] = 0xf6;
 }
