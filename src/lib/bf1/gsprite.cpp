@@ -29,6 +29,20 @@ int LbSpriteSetup(TbSprite *start, TbSprite *end, void *data)
     return 1;
 }
 
+struct TbSetupSprite {
+    TbSprite **Start;
+    TbSprite **End;
+    u8 **Data;
+};
+
+// FUNCTION: 0x000bc8b0
+int fn_000bc8b0(TbSetupSprite *t)
+{
+    for (; t->Start; t++)
+        LbSpriteSetup(*t->Start, *t->End, *t->Data);
+    return 1;
+}
+
 // NONMATCHING: eax/edx swapped in remap pointer; target range also covers the next function (0xbc980)
 // FUNCTION: 0x000bc8f8
 int LbSpriteDrawScaled(int x, int y, TbSprite *sprite, int dest_width, int dest_height)

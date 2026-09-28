@@ -79,6 +79,18 @@ void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq)
     memcpy(buf + 4, &id, 4);
 }
 
+extern "C" {
+
+// NONMATCHING: target range also covers the next two functions (0xd1a38, 0xd1ab4)
+// FUNCTION: 0x000d1a10
+u32 fn_000d1a10(u8 *buf, u32 &id)
+{
+    memcpy(&id, buf + 4, 4);
+    return 1;
+}
+
+}
+
 // FUNCTION: 0xd1b04
 void StrCpyTrunc(char *dst, char *src, u32 size)
 {

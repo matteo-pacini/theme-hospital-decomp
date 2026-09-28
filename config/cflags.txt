@@ -7,6 +7,7 @@
 src/lib/bf1/opt/*.cpp  wpp386  -s -oneatx -4 -xs
 src/lib/bf1/*.cpp    wpp386  -s -d2 -otx
 src/lib/bf2/dbg/*.cpp    wpp386  -s -oneatx -d1+
+src/lib/bf2/snd/*.cpp    wpp386  -s -oneatx -4 -xs
 src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
 # Watcom C/C++ runtime (clib, C++ support): small model, segment registers
 # saved (-r), -ox without a/t; the C++ support code for the 386 (-3).
@@ -14,10 +15,14 @@ src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
 # no code: objconv 2.54 writes section symbols pointing past a too-short COFF
 # string table (objects with only short symbol names) and aborts with
 # "Pointer out of range". wpp386 would rename the function sections too.
+# stat was built for the 386 and for size (enter/leave, movzx).
+src/lib/clib/stat.c  wcc386  -s -oxs -ms -r -3 -nt=_TEXT_WATCOM_CLIB_RUNTIME_LIBRARY_CODE
 src/lib/clib/*.c     wcc386  -s -ox -ms -r -nt=_TEXT_WATCOM_CLIB_RUNTIME_LIBRARY_CODE
 src/lib/clib/*.cpp   wpp386  -s -ox -ms -r -3
 # Bullfrog's Smacker player wrapper: optimised C++.
 src/lib/smk/*.cpp    wpp386  -s -oneatx -4
+# RAD's Smacker library: C, same optimisation (-oe inlines its helpers).
+src/lib/smk/*.c      wcc386  -s -oneatx -4 -nt=_TEXT_RAD_SMACKER_LIBRARY_CODE
 # Game code: C++, full debug info (which also disables optimisation). -ot
 # must come first: -d2 turns optimisation off but keeps the "optimise for
 # time" preference, which decides register allocation.

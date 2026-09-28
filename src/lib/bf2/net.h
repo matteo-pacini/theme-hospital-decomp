@@ -509,7 +509,6 @@ struct IPXServiceProvider : ServiceProvider {
     u32 ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg);
     void BatchProcess(u8 delay);
     TbError CheckMessage(u8 *data);
-    IPXQueueEntry *GetFreeQueueEntry(void);
     void ProcessSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg);
     void SendToAll(u32 me, u32 max, __1p5pi1IPXSYSTEMMESSAGE *msg);
 };

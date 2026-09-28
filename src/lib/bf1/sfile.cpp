@@ -83,7 +83,6 @@ int LbFilePosition(int handle)
 int LbFileOpenMode(char *path, TbFileOpenMode mode);
 #pragma aux LbFileOpenMode "LbFileOpen_"
 
-// NONMATCHING: second mode compare uses cmp byte ptr instead of a dl load
 // FUNCTION: 0x000be2e0
 int LbFileOpenMode(char *path, TbFileOpenMode mode)
 {
@@ -92,7 +91,7 @@ int LbFileOpenMode(char *path, TbFileOpenMode mode)
     if (!LbFileExists(path)) {
         if (mode == Lb_FILE_MODE_READ_ONLY)
             return -1;
-        if (mode == Lb_FILE_MODE_OLD)
+        else if (mode == Lb_FILE_MODE_OLD)
             mode = Lb_FILE_MODE_NEW;
     }
     if (mode == Lb_FILE_MODE_NEW) {

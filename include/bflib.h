@@ -35,7 +35,15 @@ struct TbSprite {
 struct TbScreenModeInfo {
     u16 width;
     u16 height;
-    u8 unknown[34];
+    union {
+        u8 unknown[34];
+        struct {
+            u16 BitsPerPixel;
+            s32 Available;
+            s32 VideoMode;
+            char Desc[24];
+        };
+    };
 };
 
 struct TbDisplayStruct {

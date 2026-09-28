@@ -83,12 +83,15 @@ TbError IPXServiceProvider::CheckMessage(u8 *data)
     return ret;
 }
 
-IPXQueueEntry *IPXServiceProvider::GetFreeQueueEntry(void)
+extern "C" {
+
+// FUNCTION: 0x000dc400
+IPXQueueEntry *fn_000dc400(IPXServiceProvider *sp)
 {
     IPXQueueEntry *e;
     u32 found = 0;
 
-    for (e = queue; e < queue + 32; e++) {
+    for (e = sp->queue; e < sp->queue + 32; e++) {
         if (!e->used) {
             found = 1;
             break;
@@ -99,7 +102,9 @@ IPXQueueEntry *IPXServiceProvider::GetFreeQueueEntry(void)
     return 0;
 }
 
-#define PROCESS_SYSTEM_MESSAGE(msg) \
+}
+
+#define PROCESS_SYSTEM_MESSAGE(self, msg) \
     { \
         IPXQueueEntry *q; \
         IPXPlayerEntry *p; \
@@ -112,7 +117,7 @@ IPXQueueEntry *IPXServiceProvider::GetFreeQueueEntry(void)
         u32 max; \
         u32 count; \
         u8 type; \
-        q = GetFreeQueueEntry(); \
+        q = fn_000dc400(self); \
         switch (msg->magic) { \
         case MSG_BUSD: \
             if (q) { \
@@ -120,16 +125,16 @@ IPXQueueEntry *IPXServiceProvider::GetFreeQueueEntry(void)
                 q->used = 1; \
                 q->from = msg->host; \
             } \
-            memset(&players[msg->player.id], 0, sizeof(IPXPlayerEntry)); \
+            memset(&self->players[msg->player.id], 0, sizeof(IPXPlayerEntry)); \
             changed = 1; \
             break; \
         case MSG_BUSA: \
             if (q) { \
-                EncodeAddPlayerMsg(q->data, msg->player.id, msg->player.name); \
+                self->EncodeAddPlayerMsg(q->data, msg->player.id, msg->player.name); \
                 q->used = 1; \
                 q->from = msg->host; \
             } \
-            memcpy(&players[msg->player.id], &msg->player, sizeof(IPXPlayerEntry)); \
+            memcpy(&self->players[msg->player.id], &msg->player, sizeof(IPXPlayerEntry)); \
             changed = 1; \
             break; \
         case MSG_BUDG: \
@@ -142,7 +147,7 @@ IPXQueueEntry *IPXServiceProvider::GetFreeQueueEntry(void)
                     q->used = 1; \
                     q->from = msg->host; \
                 } \
-                memset(&players[id], 0, sizeof(IPXPlayerEntry)); \
+                memset(&self->players[id], 0, sizeof(IPXPlayerEntry)); \
                 changed = 1; \
             } else if (q) { \
                 memcpy(q->data, (u8 *)msg + 0xc, size + 4); \
@@ -152,26 +157,26 @@ IPXQueueEntry *IPXServiceProvider::GetFreeQueueEntry(void)
             break; \
         } \
         if (changed == 1) { \
-            if (host_state == 1) { \
-                host = session.host_id; \
-                local = session.host_id; \
-                max = session.max_players; \
+            if (self->host_state == 1) { \
+                host = self->session.host_id; \
+                local = self->session.host_id; \
+                max = self->session.max_players; \
             } else { \
-                host = remote.host_id; \
-                local = remote.local_id; \
-                max = remote.max_players; \
+                host = self->remote.host_id; \
+                local = self->remote.local_id; \
+                max = self->remote.max_players; \
             } \
             count = 0; \
-            for (p = players; p < players + max; p++) { \
+            for (p = self->players; p < self->players + max; p++) { \
                 if (p->addr.socket) { \
                     count++; \
-                    AddPlayer(p->id, p->name, host == p->id, local == p->id); \
+                    self->AddPlayer(p->id, p->name, host == p->id, local == p->id); \
                 } \
             } \
-            if (host_state == 1) \
-                session.num_players = count; \
+            if (self->host_state == 1) \
+                self->session.num_players = count; \
             else \
-                remote.num_players = count; \
+                self->remote.num_players = count; \
         } \
     }
 
@@ -207,6 +212,32 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
         fn_000c20c0(D_00126118);
     }
     return ret;
+}
+
+extern "C" {
+extern char D_00126267[];
+
+// NONMATCHING: target range also covers the two following thunks (0xd6588, 0xd6590)
+// FUNCTION: 0x000d6550
+TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
+{
+    u32 magic;
+    TbError ret;
+
+    switch (guaranteed) {
+    case 0:
+        magic = MSG_BUDN;
+        break;
+    case 1:
+        magic = MSG_BUDG;
+        break;
+    }
+    ret = sp->SendMessageToPlayerId(to, buf, magic);
+    if (ret == Lb_FAIL)
+        fn_000c20c0(D_00126267);
+    return ret;
+}
+
 }
 
 // FUNCTION: 0xd6598
@@ -412,7 +443,7 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
                 msg.host = session.host_id;
                 msg.guid = guid;
                 memcpy(&msg.player, &players[i], sizeof(IPXPlayerEntry));
-                PROCESS_SYSTEM_MESSAGE((&msg));
+                PROCESS_SYSTEM_MESSAGE(this, (&msg));
                 BroadcastSystemMessage(&msg);
             }
         }
@@ -661,10 +692,10 @@ TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *m
         case MSG_BUSD:
             acked_a[msg->host] = 0;
             acked_b[msg->host] = 0;
-            PROCESS_SYSTEM_MESSAGE(msg);
+            PROCESS_SYSTEM_MESSAGE(this, msg);
             break;
         case MSG_BUSA:
-            PROCESS_SYSTEM_MESSAGE(msg);
+            PROCESS_SYSTEM_MESSAGE(this, msg);
             break;
         }
     }
@@ -1021,12 +1052,12 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
     }
     switch (msg->magic) {
     case MSG_BUDN:
-        PROCESS_SYSTEM_MESSAGE(((__1p5pi1IPXSYSTEMMESSAGE *)msg));
+        PROCESS_SYSTEM_MESSAGE(this, ((__1p5pi1IPXSYSTEMMESSAGE *)msg));
         break;
     case MSG_BUDG:
         if (msg->from < max) {
             if (msg->dseq == acked_b[msg->from]) {
-                PROCESS_SYSTEM_MESSAGE(((__1p5pi1IPXSYSTEMMESSAGE *)msg));
+                PROCESS_SYSTEM_MESSAGE(this, ((__1p5pi1IPXSYSTEMMESSAGE *)msg));
                 acked_b[msg->from]++;
             }
             addr = &players[msg->from].addr;
@@ -1043,4 +1074,15 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
         break;
     }
     return ret;
+}
+
+extern "C" {
+
+// NONMATCHING: frame pointer and register allocation differ
+// FUNCTION: 0x000dc440
+void fn_000dc440(IPXServiceProvider *sp, __1p5pi1IPXSYSTEMMESSAGE *msg)
+{
+    PROCESS_SYSTEM_MESSAGE(sp, msg);
+}
+
 }

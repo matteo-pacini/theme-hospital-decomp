@@ -11,6 +11,8 @@ extern u16 D_00188c76;
 extern u8 D_00188c7a;
 
 int LbMouseSuspend(void);
+int LbVesaGetInfo(void);
+int LbVesaIsModeAvailable(u16 mode);
 void LbVesaSetPage(s16 page);
 
 void rep_movsd(void *dst, void *src, u32 count);
@@ -42,10 +44,30 @@ int LbScreenReset(void)
     return 1;
 }
 
+// FUNCTION: 0x000bed50
+int fn_000bed50(void)
+{
+    return 1;
+}
+
 // NONMATCHING: target range also covers the next two functions (0xbed68, 0xbed88)
 // FUNCTION: 0x000bed5c
 int LbIsActive(void)
 {
+    return 1;
+}
+
+// FUNCTION: 0x000beda8
+int fn_000beda8(void)
+{
+    int i;
+
+    LbVesaGetInfo();
+    for (i = 1; (u32)lbScreenModeInfo[i].width; i++) {
+        if (lbScreenModeInfo[i].VideoMode >= 256)
+            lbScreenModeInfo[i].Available = LbVesaIsModeAvailable(lbScreenModeInfo[i].VideoMode);
+    }
+    lbScreenModeInfo[1].Available = 1;
     return 1;
 }
 

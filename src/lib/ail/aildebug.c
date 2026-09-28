@@ -164,10 +164,9 @@ extern char D_0012422c[];
 
 void __pascal AILDEBUG_START(void);
 void __pascal AILDEBUG_END(void);
+#pragma aux (__pascal) AILDEBUG_END "fn_000c82f0_"
 
 // FUNCTION: 0x000c24c0
-// NONMATCHING: AILDEBUG_END is missing from config/functions.txt, so the target
-// names it _AIL_quick_halt+0x210
 void __pascal AILDEBUG_START(void)
 {
     if (!locked) {
@@ -1088,6 +1087,7 @@ S32 __cdecl AIL_digital_master_volume(HDIGDRIVER dig)
     return result;
 }
 
+// FUNCTION: 0x000c4910
 void __cdecl AIL_digital_configuration(HDIGDRIVER dig, S32 *rate, S32 *format,
                                        char *string)
 {
@@ -2430,6 +2430,7 @@ HAUDIO __cdecl AIL_quick_load_and_play(char *filename, U32 loop_count, S32 wait_
     return result;
 }
 
+// FUNCTION: 0x000c82f0
 void __pascal AILDEBUG_END(void)
 {
     if (locked) {

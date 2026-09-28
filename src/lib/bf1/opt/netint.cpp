@@ -148,6 +148,12 @@ void fn_000bf7a0(u32 timeout)
     exchangeTimeout = timeout * 1000;
 }
 
+// FUNCTION: 0x000bf810
+TbError fn_000bf810(u32 a, u32 b, u32 c, u32 d, u32 e)
+{
+    return Lb_FAIL;
+}
+
 }
 
 TbError GetCurrentPlayers(void)
@@ -762,6 +768,11 @@ TbError fn_000c197c(TbNetworkPlayerEntry *player)
 u32 fn_000cd716(char *s)
 {
     return strlen(s);
+}
+
+// FUNCTION: 0x000c20c0
+void fn_000c20c0(char *fmt, ...)
+{
 }
 
 }

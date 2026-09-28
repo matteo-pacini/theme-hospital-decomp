@@ -241,6 +241,36 @@ long IPXHandler::SetupVector(void)
     return 0;
 }
 
+extern "C" {
+
+// FUNCTION: 0x000d4150
+u8 *fn_000d4150(IPXHandler *self, u32 size, u16 *sel)
+{
+    DPMIREGS r;
+
+    r.x.eax = 0x100;
+    r.x.ebx = (size + 15) >> 4;
+    int386(0x31, (REGS *)&r, (REGS *)&r);
+    if (r.x.cflag)
+        return 0;
+    if (sel)
+        *sel = r.x.edx;
+    return (u8 *)((r.x.eax & 0xffff) << 4);
+}
+
+// NONMATCHING: target range also covers the next function (0xd41c8)
+// FUNCTION: 0x000d41a0
+void fn_000d41a0(IPXHandler *self, u16 sel)
+{
+    DPMIREGS r;
+
+    r.x.eax = 0x101;
+    r.x.edx = sel;
+    int386(0x31, (REGS *)&r, (REGS *)&r);
+}
+
+}
+
 void IPXHandler::SimulateInt(u16 intno, RMREGS *rm)
 {
     DPMIREGS r;
@@ -345,8 +375,8 @@ void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
     p->frag_count = 1;
     p->frag_size = 0x240;
     p->in_use = 1;
-    p->frag_off = (u16)(u32)&p->hdr & 0xf;
     p->completion = 0;
+    p->frag_off = (u16)(u32)&p->hdr & 0xf;
     p->hdr.length = 0x1e00;
     p->frag_seg = ((u32)&p->hdr >> 4) & 0xffff;
     c.cmd = 4;

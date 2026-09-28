@@ -29,12 +29,11 @@ extern char D_00126c24[];
 
 void AIL_start(void);
 void AIL_end(void);
+#pragma aux AIL_end "fn_000df8e0_"
 void __pascal fn_000dec50(U32 user);
+#pragma aux (__pascal) fn_000dec50 "fn_000dec50_"
 
 // FUNCTION: 0x000debc0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// fn_000dec50, which follows it, and lacks AIL_end, so the target names it
-// _AIL_API_delay+0x20
 void AIL_start(void)
 {
     if (!locked) {
@@ -49,6 +48,7 @@ void AIL_start(void)
     }
 }
 
+// FUNCTION: 0x000dec50
 void __pascal fn_000dec50(U32 user)
 {
     if (!entry) {
@@ -234,8 +234,6 @@ char *__cdecl AIL_API_last_error(void)
 }
 
 // FUNCTION: 0x000df2a0
-// NONMATCHING: the timer callback fn_000dec50 has no entry in
-// config/functions.txt, so the target names it AIL_start_+0x90
 AIL_DRIVER *__cdecl AIL_API_install_driver(U8 *driver_image, U32 n_bytes)
 {
     AIL_DRIVER *drvr;
@@ -361,8 +359,9 @@ IO_PARMS *__cdecl AIL_API_get_IO_environment(AIL_DRIVER *drvr)
 }
 
 // FUNCTION: 0x000df6e0
-// NONMATCHING: the target reaches AIL_driver[0] as _MusicInstallChoice+0x118
-// and AILA_startup as _program_timers+0x66, whose config entries cover them
+// NONMATCHING: no config/symbols.txt entry covers AIL_driver - 4 (the target
+// names it _D_0018c94c), and AILA_startup has no config/functions.txt entry
+// (the target names it _program_timers+0x62)
 void __cdecl AIL_API_startup(void)
 {
     S32 i;
@@ -412,8 +411,8 @@ void __cdecl AIL_API_shutdown(void)
 }
 
 // FUNCTION: 0x000df850
-// NONMATCHING: config/symbols.txt sizes _AIL_sprintf over
-// AIL_driver_directory - 1, so the target names that address _AIL_sprintf+0xbcf
+// NONMATCHING: no config/symbols.txt entry covers AIL_driver_directory - 1,
+// so the target names that address _D_00151417
 char *__cdecl AIL_API_set_driver_directory(char *dir)
 {
     U32 len;
@@ -442,6 +441,7 @@ void __cdecl AIL_API_delay(S32 intervals)
     }
 }
 
+// FUNCTION: 0x000df8e0
 void AIL_end(void)
 {
     if (locked) {

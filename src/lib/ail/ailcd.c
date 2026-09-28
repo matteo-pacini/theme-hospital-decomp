@@ -158,21 +158,23 @@ S32 rbcontents(U32 drive, RB_CONTENTS *info)
     ioctl->count = 7;
     ioctl->transfer = segtoreal + (disk - (U8 *)req);
     disk[0] = 0xa;
-    if (mscdexread(drive, req, segtoreal, 0)) {
-        ioctl->count = 7;
-        ioctl->transfer = segtoreal + (track - (U8 *)req);
-        track[0] = 0xb;
-        for (i = disk[1]; i <= disk[2]; i++) {
-            track[1] = i;
-            if (!mscdexread(drive, req, segtoreal, 0)) {
-                return 0;
-            }
-            info->pos[i - disk[1]] = RBtoMS(*(U32 *)(track + 2)) + 1;
-        }
-        info->tracks = disk[2] - disk[1] + 1;
-        info->pos[info->tracks] = RBtoMS(*(U32 *)(disk + 3));
-        return 1;
+    if (!mscdexread(drive, req, segtoreal, 0)) {
+        goto error;
     }
+    ioctl->count = 7;
+    ioctl->transfer = segtoreal + (track - (U8 *)req);
+    track[0] = 0xb;
+    for (i = disk[1]; i <= disk[2]; i++) {
+        track[1] = i;
+        if (!mscdexread(drive, req, segtoreal, 0)) {
+            goto error;
+        }
+        info->pos[i - disk[1]] = RBtoMS(*(U32 *)(track + 2)) + 1;
+    }
+    info->tracks = disk[2] - disk[1] + 1;
+    info->pos[info->tracks] = RBtoMS(*(U32 *)(disk + 3));
+    return 1;
+error:
     return 0;
 }
 
@@ -267,7 +269,6 @@ U32 rbstatus(U32 drive)
     RQ_HDR *req;
     IOCTL_RQ *ioctl;
     U8 *buf;
-    U16 status;
 
     req = (RQ_HDR *)ptrtoreal;
     ioctl = (IOCTL_RQ *)(ptrtoreal + 0xd);
@@ -276,11 +277,10 @@ U32 rbstatus(U32 drive)
     ioctl->transfer = segtoreal + (buf - ptrtoreal);
     buf[0] = 6;
     mscdexread(drive, req, segtoreal, 0);
-    status = req->status;
-    if ((status & 0x8000) || (buf[1] & 1)) {
+    if ((req->status & 0x8000) || (buf[1] & 1)) {
         return 0;
     }
-    return ((status & 0x200) == 0) + 1;
+    return ((req->status & 0x200) == 0) + 1;
 }
 
 // FUNCTION: 0x000e6850

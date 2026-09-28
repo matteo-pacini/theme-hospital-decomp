@@ -1,4 +1,4 @@
-#include "snd.h"
+#include "../snd.h"
 
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
@@ -254,7 +254,7 @@ void LoadAwe32Soundfont(char *prefix)
         Awe32SoundfontLoaded = 0;
     }
     strcpy(CurrentAwe32SoundfontPrefix, prefix);
-    sprintf(path, D_00127ffe, MusicDataPath, prefix);
+    sprintf(path, D_00127ffe, MusicDataPath, CurrentAwe32SoundfontPrefix);
     sbkHandle = LbFileOpen(path, 2);
     if (sbkHandle == -1)
         return;
@@ -277,8 +277,9 @@ void LoadAwe32Soundfont(char *prefix)
     for (i = 0; i < info->samples; i++) {
         if (_dos_read(sbkHandle, buffer, 0x200, &nread) != 0)
             return;
-        if (AWEStreamSample((AWEDriver *)MusicDriver, 1, buffer) != 0)
-            return;
+        if (AWEStreamSample((AWEDriver *)MusicDriver, 1, buffer) == 0)
+            continue;
+        return;
     }
     preset = (u8 __far *)AllocDOSmem(info->preset_size);
     if (!preset)
