@@ -263,8 +263,6 @@ u8 nexttrack(u32 *flags)
 }
 
 // FUNCTION: 0xe7f40
-// NONMATCHING: config/functions.txt extends SMACKWAIT over SmackSoundCheck
-// (0xe8070) and SmackVolumePan (0xe8080)
 u32 __pascal SmackWait(Smack *smk)
 {
     u32 played;
@@ -305,6 +303,7 @@ u32 __pascal SmackWait(Smack *smk)
     return 1;
 }
 
+// FUNCTION: 0x000e8070
 void __pascal SmackSoundCheck(void)
 {
     if (sounds)
@@ -1060,8 +1059,6 @@ void __pascal SmackSimulate(s32 sim);
 #pragma aux (__pascal) SmackSimulate "fn_000e9c50_";
 
 // FUNCTION: 0xe9c50
-// NONMATCHING: config/functions.txt extends this function over the next one
-// (0xe9c70)
 void __pascal SmackSimulate(s32 sim)
 {
     if (sim > 0)
@@ -1069,6 +1066,7 @@ void __pascal SmackSimulate(s32 sim)
     forcerate = sim;
 }
 
+// FUNCTION: 0x000e9c70
 void __pascal SmackSpeed(u32 speed)
 {
     simspeed = speed;
@@ -1666,8 +1664,6 @@ u32 backgroundload(Smack *smk)
 }
 
 // FUNCTION: 0xeb200
-// NONMATCHING: config/functions.txt extends smkmalloc_ over fprtf's
-// file_putc (0xeb229)
 void *smkmalloc(Smack *smk, u32 bytes)
 {
     smk->f46c += bytes;

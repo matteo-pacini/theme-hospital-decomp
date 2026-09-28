@@ -1,8 +1,6 @@
 #include "clib.h"
 
 // FUNCTION: 0xeb6ae
-// NONMATCHING: config/functions.txt extends strnicmp_ over two following
-// functions (0xeb701, 0xeb733); strnicmp itself matches
 int strnicmp(const char *s, const char *t, size_t n)
 {
     char c1;

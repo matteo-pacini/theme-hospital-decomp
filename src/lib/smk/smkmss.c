@@ -158,12 +158,11 @@ void __pascal MSSLowSoundVolPan(SmackSnd *snd, U32 volume, U32 pan)
 #pragma aux (__pascal) MSSSmackTimerSetup "fn_000e7a20_";
 
 // FUNCTION: 0xe7a20
-// NONMATCHING: config/functions.txt extends this function over
-// MSSSmackTimerRead (0xe7a30) and MSSLowSoundClose (0xe7a40)
 void __pascal MSSSmackTimerSetup(void)
 {
 }
 
+// FUNCTION: 0x000e7a30
 U32 __pascal MSSSmackTimerRead(void)
 {
     return AIL_ms_count();

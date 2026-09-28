@@ -258,7 +258,6 @@ u8 *fn_000d4150(IPXHandler *self, u32 size, u16 *sel)
     return (u8 *)((r.x.eax & 0xffff) << 4);
 }
 
-// NONMATCHING: target range also covers the next function (0xd41c8)
 // FUNCTION: 0x000d41a0
 void fn_000d41a0(IPXHandler *self, u16 sel)
 {
@@ -362,7 +361,6 @@ void IPXHandler::Send(__3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *dest, u8 *data
 }
 
 // FUNCTION: 0xd4800
-// NONMATCHING: store scheduling differs
 void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
 {
     IPXBatchCmd c;

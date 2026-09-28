@@ -29,6 +29,7 @@ void __set_EINVAL(void)
     __set_errno(EINVAL);
 }
 
+// FUNCTION: 0x000ec544
 int __set_EBADF(void)
 {
     __set_errno(EBADF);

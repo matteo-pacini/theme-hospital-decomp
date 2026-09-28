@@ -87,7 +87,6 @@ u32 LbScreenIsInitialised(void)
     return _lbScreenInitialised;
 }
 
-// NONMATCHING: target range also covers the next function (0xbec84)
 // FUNCTION: 0x000bea80
 int fn_000bea80(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
 {

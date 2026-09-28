@@ -65,8 +65,6 @@ void XDIG_MIDI_TRAP(HWAVESYNTH W, S32 voice);
 #pragma aux XDIG_MIDI_TRAP "XDIG_MIDI_TRAP";
 
 // FUNCTION: 0x000e5630
-// NONMATCHING: the target's reference to AILXDIG_start itself is
-// section-relative; ours goes through the global symbol
 void AILXDIG_start(void)
 {
     if (!locked) {

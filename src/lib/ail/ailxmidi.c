@@ -111,8 +111,6 @@ void __syscall XMI_SERVE(HSEQUENCE S);
 void __cdecl XMI_destroy_MDI_driver(HMDIDRIVER mdi);
 
 // FUNCTION: 0x000e1ed0
-// NONMATCHING: the target's reference to AILXMIDI_start itself is
-// section-relative; ours goes through the global symbol
 void AILXMIDI_start(void)
 {
     if (!locked) {
@@ -701,6 +699,7 @@ S32 __cdecl XMI_attempt_MDI_detection(HMDIDRIVER mdi, IO_PARMS *IO)
     return AIL_call_driver(mdi->drvr, DRV_VERIFY_IO, NULL, NULL);
 }
 
+// FUNCTION: 0x000e3790
 void __cdecl XMI_destroy_MDI_driver(HMDIDRIVER mdi)
 {
     S32 i;

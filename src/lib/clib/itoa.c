@@ -44,8 +44,6 @@ char *utoa(unsigned value, char *buffer, int radix)
 #pragma aux itoa "_no_support_loaded_"
 
 // FUNCTION: 0xec5cf
-// NONMATCHING: config/functions.txt extends this function over
-// _no_support_loaded (0xec5ea) and ultoa's digit table
 char *itoa(int value, char *buffer, int radix)
 {
     char *p = buffer;

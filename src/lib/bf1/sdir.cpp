@@ -49,7 +49,6 @@ int fn_000d0460(char *buf, u32 size)
     return -1;
 }
 
-// NONMATCHING: target range also covers the next function (0xd0538)
 // FUNCTION: 0x000d04f0
 int fn_000d04f0(char *path)
 {

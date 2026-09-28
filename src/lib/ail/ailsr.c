@@ -32,7 +32,6 @@ void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args);
 void AILSR_end(void);
 
 // FUNCTION: 0x000efb60
-// NONMATCHING: the target names AILSR_end _AIL_startup_reg+0x170 (see below)
 void AILSR_start(void)
 {
     if (!locked) {
@@ -58,6 +57,7 @@ int __pascal AIL_INT386(int intno, union REGS *in, union REGS *out)
     return int386(intno, in, out);
 }
 
+// FUNCTION: 0x000efc00
 void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args)
 {
     switch (nargs) {
@@ -134,6 +134,7 @@ void __cdecl AIL_startup_reg(void)
     AIL_started = 1;
 }
 
+// FUNCTION: 0x000efe30
 void AILSR_end(void)
 {
     if (locked) {

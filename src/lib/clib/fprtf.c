@@ -12,6 +12,7 @@ typedef struct {
 int fputc(int c, FILE *fp);
 void __ioalloc(FILE *fp);
 
+// FUNCTION: 0x000eb229
 void file_putc(SPECS *specs, int op_char)
 {
     fputc(op_char, specs->_dest);

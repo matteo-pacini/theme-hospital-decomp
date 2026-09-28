@@ -142,7 +142,6 @@ U8 BCDtoBin(U8 bcd)
 }
 
 // FUNCTION: 0x000e6380
-// NONMATCHING: the target returns 1 through a jump to a shared epilogue
 S32 rbcontents(U32 drive, RB_CONTENTS *info)
 {
     RQ_HDR *req;
@@ -262,8 +261,6 @@ S32 rbstop(U32 drive)
 }
 
 // FUNCTION: 0x000e66c0
-// NONMATCHING: the target loads only the high byte of the status word
-// (mov ah,[esi+4])
 U32 rbstatus(U32 drive)
 {
     RQ_HDR *req;

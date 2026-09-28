@@ -33,8 +33,6 @@ void fn_000e0660(void);
 void fn_000e1620(void);
 
 // FUNCTION: 0x000df970
-// NONMATCHING: the target's reference to AILSS_start itself is section-relative;
-// ours goes through the global symbol
 void AILSS_start(void)
 {
     if (!locked) {

@@ -92,8 +92,6 @@ void fn_000e1b60(void);
 void fn_000e1ea0(void);
 
 // FUNCTION: 0x000e16e0
-// NONMATCHING: the target's reference to AILSFILE_start itself is
-// section-relative; ours goes through the global symbol
 void AILSFILE_start(void)
 {
     if (!locked) {

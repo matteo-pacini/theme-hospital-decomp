@@ -125,7 +125,6 @@ s32 GetDOSseg(u32 selector)
 }
 
 // FUNCTION: 0xef4a0
-// NONMATCHING: s16 driver results read with mov/sar instead of movsx (sound modules were built with -4)
 s32 AWEGetTotalRAM(AWEDriver *mdi)
 {
     AWECall v;
@@ -138,7 +137,6 @@ s32 AWEGetTotalRAM(AWEDriver *mdi)
 }
 
 // FUNCTION: 0xef4f0
-// NONMATCHING: s16 driver results read with mov/sar instead of movsx (sound modules were built with -4)
 s32 AWEDefMemMap(AWEDriver *mdi, u16 count, void __far *map)
 {
     AWECall v;
@@ -158,7 +156,6 @@ s32 AWEDefMemMap(AWEDriver *mdi, u16 count, void __far *map)
 }
 
 // FUNCTION: 0xef5a0
-// NONMATCHING: s16 driver results read with mov/sar instead of movsx (sound modules were built with -4)
 void __far *AWEGetSFInfo(AWEDriver *mdi, u16 bank, void __far *buf)
 {
     AWECall v;
@@ -180,7 +177,6 @@ void __far *AWEGetSFInfo(AWEDriver *mdi, u16 bank, void __far *buf)
 }
 
 // FUNCTION: 0xef670
-// NONMATCHING: s16 driver results read with mov/sar instead of movsx (sound modules were built with -4)
 s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
 {
     AWECall v;
@@ -200,7 +196,6 @@ s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
 }
 
 // FUNCTION: 0xef720
-// NONMATCHING: s16 driver results read with mov/sar instead of movsx (sound modules were built with -4)
 s32 AWELoadPreset(AWEDriver *mdi, u16 bank, void __far *buf)
 {
     AWECall v;
@@ -220,7 +215,6 @@ s32 AWELoadPreset(AWEDriver *mdi, u16 bank, void __far *buf)
 }
 
 // FUNCTION: 0xef7d0
-// NONMATCHING: s16 driver results read with mov/sar instead of movsx (sound modules were built with -4)
 s32 AWEFreeMem(AWEDriver *mdi, u16 bank)
 {
     AWECall v;
@@ -234,7 +228,6 @@ s32 AWEFreeMem(AWEDriver *mdi, u16 bank)
 }
 
 // FUNCTION: 0xef830
-// NONMATCHING: s16 loads and register allocation differ (sound modules were built with -4)
 void LoadAwe32Soundfont(char *prefix)
 {
     char path[0x14];

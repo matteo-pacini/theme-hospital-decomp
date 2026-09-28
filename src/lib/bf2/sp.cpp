@@ -57,7 +57,6 @@ void EncodeMessageStub(void *buf, u32 size, TbMessageType type, u32 seq)
 }
 
 // FUNCTION: 0xd1820
-// NONMATCHING: range also holds the following DecodeAddPlayerMsg
 void ServiceProvider::EncodeAddPlayerMsg(u8 *buf, u32 id, char *name)
 {
     EncodeMessageStub(buf, strlen(name) + 5, (TbMessageType)1, 0);
@@ -81,7 +80,6 @@ void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq)
 
 extern "C" {
 
-// NONMATCHING: target range also covers the next two functions (0xd1a38, 0xd1ab4)
 // FUNCTION: 0x000d1a10
 u32 fn_000d1a10(u8 *buf, u32 &id)
 {

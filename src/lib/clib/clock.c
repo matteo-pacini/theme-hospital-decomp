@@ -30,8 +30,6 @@ extern clock_t D_0018cfac;
 #pragma aux __get_ticks "__InitFiles_"
 
 // FUNCTION: 0xec34a
-// NONMATCHING: config/functions.txt extends this function over the rest of
-// the clock module, __InitFiles (0xec3d8) and fcloseall
 clock_t __get_ticks(void)
 {
     union REGS regs;
@@ -41,11 +39,13 @@ clock_t __get_ticks(void)
     return ((regs.h.ch * 60UL + regs.h.cl) * 60 + regs.h.dh) * 100 + regs.h.dl;
 }
 
+// FUNCTION: 0x000ec3a5
 void __clock_init(void)
 {
     D_0018cfac = __get_ticks();
 }
 
+// FUNCTION: 0x000ec3b0
 clock_t __clock(void)
 {
     clock_t ticks;
