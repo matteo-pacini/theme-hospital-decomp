@@ -1,0 +1,57 @@
+#include "clib.h"
+
+typedef unsigned long clock_t;
+
+struct BYTEREGS {
+    unsigned char al, ah;
+    unsigned short _1;
+    unsigned char bl, bh;
+    unsigned short _2;
+    unsigned char cl, ch;
+    unsigned short _3;
+    unsigned char dl, dh;
+    unsigned short _4;
+};
+
+struct DWORDREGS {
+    unsigned int eax, ebx, ecx, edx, esi, edi, cflag;
+};
+
+union REGS {
+    struct DWORDREGS x;
+    struct BYTEREGS h;
+};
+
+int intdos(union REGS *in_regs, union REGS *out_regs);
+
+extern clock_t D_0018cfac;
+
+/* config/functions.txt names this function after __InitFiles. */
+#pragma aux __get_ticks "__InitFiles_"
+
+// FUNCTION: 0xec34a
+// NONMATCHING: config/functions.txt extends this function over the rest of
+// the clock module, __InitFiles (0xec3d8) and fcloseall
+clock_t __get_ticks(void)
+{
+    union REGS regs;
+
+    regs.h.ah = 0x2c;
+    intdos(&regs, &regs);
+    return ((regs.h.ch * 60UL + regs.h.cl) * 60 + regs.h.dh) * 100 + regs.h.dl;
+}
+
+void __clock_init(void)
+{
+    D_0018cfac = __get_ticks();
+}
+
+clock_t __clock(void)
+{
+    clock_t ticks;
+
+    ticks = __get_ticks();
+    if (ticks < D_0018cfac)
+        ticks += 24UL * 60 * 60 * 100;
+    return ticks - D_0018cfac;
+}

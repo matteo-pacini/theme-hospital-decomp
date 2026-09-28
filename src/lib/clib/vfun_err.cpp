@@ -5,10 +5,8 @@ extern short D_001516fe;
 
 void __wcpp_2_fatal_runtime_error_(char *msg, int code);
 
-// FUNCTION: 0xd2af8
-// NONMATCHING: config/functions.txt starts __wcpp_2_undef_vfun__ on
-// network code; the real start is 0xd2b7b
-void __wcpp_2_undef_vfun_(void)
+// FUNCTION: 0xd2b7b
+void fn_000d2b7b(void)
 {
     if (!D_001516fe) {
         D_001516fe = 1;

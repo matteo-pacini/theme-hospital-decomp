@@ -22,7 +22,7 @@ src/lib/clib/*.cpp   wpp386  -s -ox -ms -r -3
 # Bullfrog's Smacker player wrapper: optimised C++.
 src/lib/smk/*.cpp    wpp386  -s -oneatx -4
 # RAD's Smacker library: C, same optimisation (-oe inlines its helpers).
-src/lib/smk/*.c      wcc386  -s -oneatx -4 -nt=_TEXT_RAD_SMACKER_LIBRARY_CODE
+src/lib/smk/*.c      wcc386  -s -oneatx -oe=30 -5 -nt=_TEXT_RAD_SMACKER_LIBRARY_CODE
 # Game code: C++, full debug info (which also disables optimisation). -ot
 # must come first: -d2 turns optimisation off but keeps the "optimise for
 # time" preference, which decides register allocation.

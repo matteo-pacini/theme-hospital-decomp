@@ -31,6 +31,7 @@ extern void *smack_draw_callback;
 extern u8 D_00188c7b;
 extern u16 D_00188c78;
 extern u32 D_00188c34;
+#pragma aux D_00188c34 "W?research_names$npnpna"
 extern u32 D_00188c38;
 
 u32 GetStereoSound(void);
@@ -47,13 +48,12 @@ long play_smk_via_buffer(char *name, long a2, long flags);
 extern "C" {
 
 // FUNCTION: 0xca350
-// NONMATCHING: config/functions.txt merges this with the smack_free setter
-// at 0xca358
 void fn_000ca350(void *(*fn)(u32 bytes))
 {
     smack_malloc = fn;
 }
 
+// FUNCTION: 0xca358
 void fn_000ca358(void (*fn)(void *ptr))
 {
     smack_free = fn;
@@ -200,4 +200,95 @@ void __pascal RADFREE(void *ptr)
     smack_free(ptr);
 }
 
+}
+
+typedef void (__stdcall *SmackDrawCallback)(u8 *screen, u32 pitch, u32 height);
+
+extern "C" {
+void *memcpy(void *dst, const void *src, u32 n);
+#pragma intrinsic(memcpy)
+}
+
+/* Doubles each pixel across and each row down (two rows written per pass). */
+void copy_line_double_both(u8 *dst, u8 *src, u32 width, u32 pitch);
+#pragma aux copy_line_double_both = \
+    0xc1 0xe9 0x02 0x8b 0x16 0x88 0xf0 0x88 0xf4 0xc1 0xe0 0x10 0x88 0xd0 0x88 0xd4 \
+    0x89 0x07 0x89 0x04 0x1f 0xc1 0xea 0x10 0x88 0xf0 0x88 0xf4 0xc1 0xe0 0x10 0x88 \
+    0xd0 0x88 0xd4 0x89 0x47 0x04 0x89 0x44 0x1f 0x04 0x83 0xc6 0x04 0x83 0xc7 0x08 \
+    0x49 0x75 0xd0 \
+    parm [edi] [esi] [ecx] [ebx] modify [eax ecx edx esi edi];
+
+/* Copies one row to two consecutive screen rows. */
+void copy_line_double_rows(u8 *dst, u8 *src, u32 width, u32 pitch);
+#pragma aux copy_line_double_rows = \
+    0xc1 0xe9 0x02 0x8b 0x06 0x89 0x07 0x89 0x04 0x1f 0x83 0xc6 0x04 0x83 0xc7 0x04 \
+    0x49 0x75 0xf0 \
+    parm [edi] [esi] [ecx] [ebx] modify [eax ecx esi edi];
+
+/* Doubles each pixel across. */
+void copy_line_double_width(u8 *dst, u8 *src, u32 width);
+#pragma aux copy_line_double_width = \
+    0x55 0xc1 0xe8 0x02 0x89 0xc5 0x8b 0x16 0x89 0xd1 0xc1 0xe9 0x10 0x88 0xf0 0x88 \
+    0xeb 0x88 0xf4 0x88 0xef 0xc1 0xe0 0x10 0xc1 0xe3 0x10 0x88 0xd0 0x88 0xcb 0x88 \
+    0xd4 0x88 0xcf 0x89 0x07 0x89 0x5f 0x04 0x83 0xc6 0x04 0x83 0xc7 0x08 0x4d 0x75 \
+    0xd5 0x5d \
+    parm [edi] [esi] [eax] modify [eax ebx ecx edx esi edi];
+
+// NONMATCHING: register choice for the loop counters and row steps
+// FUNCTION: 0xca6f8
+void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
+{
+    u8 *dst;
+    u32 pitch;
+    u32 screen_height;
+    u32 i;
+
+    if (D_00188c78 == 1 && !smack_draw_callback) {
+        dst = (u8 *)0xa0000;
+        pitch = 320;
+        screen_height = 200;
+    } else {
+        pitch = D_00188c34;
+        dst = lbDisplay.unknown4;
+        screen_height = D_00188c38;
+    }
+    if ((flags & 4) || (flags & 8))
+        dst += ((screen_height - height * 2) >> 1) * pitch;
+    else
+        dst += ((screen_height - height) >> 1) * pitch;
+    if (flags & 0x80)
+        dst += (pitch - width * 2) >> 1;
+    else
+        dst += (pitch - width) >> 1;
+    if (flags & 4) {
+        if (flags & 0x80) {
+            for (i = 0; i < height; i++, buf += width, dst += pitch * 2)
+                copy_line_double_both(dst, buf, width, pitch);
+        } else {
+            for (i = 0; i < height; i++, dst += pitch * 2, buf += width)
+                copy_line_double_rows(dst, buf, width, pitch);
+        }
+    } else if (flags & 0x80) {
+        if (flags & 8) {
+            for (i = 0; i < height; i++, buf += width, dst += pitch * 2)
+                copy_line_double_width(dst, buf, width);
+        } else {
+            for (i = 0; i < height; i++, buf += width, dst += pitch)
+                copy_line_double_width(dst, buf, width);
+        }
+    } else if (flags & 8) {
+        for (i = 0; i < height; i++, dst += pitch * 2, buf += width)
+            memcpy(dst, buf, width);
+    } else {
+        for (i = 0; i < height; i++, buf += width, dst += pitch)
+            memcpy(dst, buf, width);
+    }
+    if (D_00188c78 == 1 && !smack_draw_callback) {
+        if (smack_draw_callback)
+            ((SmackDrawCallback)smack_draw_callback)((u8 *)0xa0000, 320, 200);
+    } else {
+        if (smack_draw_callback)
+            ((SmackDrawCallback)smack_draw_callback)(lbDisplay.unknown4, D_00188c34, D_00188c38);
+        LbScreenSwap();
+    }
 }

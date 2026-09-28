@@ -1,0 +1,32 @@
+.intel_syntax noprefix
+
+// FUNCTION: 0x000ed29d
+
+.section _TEXT,"ax",@progbits,unique,971421
+.globl "fn_000ed29d_"
+.type "fn_000ed29d_",@function
+"fn_000ed29d_":
+    cmp eax, esp
+    jae .L000ed2ae
+    sub eax, esp
+    neg eax
+    cmp eax, dword ptr ["__STACKLOW"]
+    jbe .L000ed2ae
+    ret
+.L000ed2ae:
+    mov ax, ss
+    cmp ax, word ptr ["___umaskval"+0x4]
+    .byte 0x74; .byte 0x01  # je 0xed2bb
+    ret
+.size "fn_000ed29d_",.-"fn_000ed29d_"
+
+// FUNCTION: 0x000ed2bb
+
+.section _TEXT,"ax",@progbits,unique,971451
+.globl "__STKOVERFLOW_"
+.type "__STKOVERFLOW_",@function
+"__STKOVERFLOW_":
+    .byte 0xb8; .long "___umaskval"+0x6  # mov eax, 0x31a62
+    mov edx, 1
+    call "__fatal_runtime_error_"
+.size "__STKOVERFLOW_",.-"__STKOVERFLOW_"
