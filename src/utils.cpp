@@ -52,6 +52,8 @@ extern u8 D_001553c7;
 extern char *D_001289a0, *D_001289a4;
 extern char D_001201ac[], D_001201c2[], D_001201c5[], D_001201ca[], D_001201cf[];
 extern char D_001201d4[], D_00120202[], D_00120218[], D_0012022d[], D_0012023e[];
+extern char D_0012024e[];
+extern u8 D_0015fe74;
 
 void fn_00015b68(Thing *w);
 Thing *fn_00019aac(Map *t, u16 kind);
@@ -59,12 +61,35 @@ void fn_0001b7e0(char *dst, s8 *src, u8 mode);
 int fn_0001b874(u8 c);
 void fn_0001bab4(u8 i);
 void fn_0001bdf8(void);
+void fn_0001be78(u8 dir);
 void fn_0001bee4(void);
+u8 fn_000856c8(int player);
 int fn_000bed50(void);
 void fn_000c93bf(char *dst, char *src);
 void fn_000c9400(u8 *palette, int steps, int flag);
 void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 
+}
+
+// FUNCTION: 0x000196c0
+u8 pick_random_player(void)
+{
+    u8 i;
+    u8 count;
+
+    if (statvar.unknownfd <= 1) {
+        return 0;
+    }
+    for (i = count = 0; i < 4; i++) {
+        if (D_001609c4[i].active) {
+            count++;
+        }
+    }
+    if (!count) {
+        return 0xff;
+    }
+    count = old_newrand() % count;
+    return fn_000856c8(count + 1);
 }
 
 // FUNCTION: 0x0001974c
@@ -1098,6 +1123,23 @@ void fn_0001bdf8(void)
     }
 }
 
+// FUNCTION: 0x0001be78
+void fn_0001be78(u8 dir)
+{
+    switch (dir) {
+    case 0:
+        D_0015fe74++;
+        break;
+    case 1:
+        D_0015fe74--;
+        break;
+    default:
+        break;
+    }
+    hosp_dos_printf(D_0012024e, D_0015fe74);
+    set_mouse_sprite(D_0015fe74);
+}
+
 // FUNCTION: 0x0001bee4
 void fn_0001bee4(void)
 {
@@ -1133,5 +1175,23 @@ void fn_0001bee4(void)
         D_0015f460 = D_0013c628;
         D_0015f44c = D_0013c62c;
         D_0015f450 = D_0013c630;
+    }
+}
+
+// NONMATCHING: return-value slot placed below the locals
+// FUNCTION: 0x000b0630
+u8 fn_000b0630(int tile, u8 parity)
+{
+    Map *cell = &map[(u16)tile];
+    Thing *e = fn_00019aac(cell, 8);
+
+    if (e == 0) {
+        return 0;
+    } else if (e->unknown17 % 2 == parity) {
+        return 1;
+    } else if (e->unknown17 % 2 != parity) {
+        return 0;
+    } else {
+        return 0;
     }
 }

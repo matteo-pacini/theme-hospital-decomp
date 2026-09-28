@@ -77,7 +77,7 @@ void LbMemoryFree(void *p);
 void LbMemoryCopy(void *dst, void *src, u32 size);
 void LbMemorySet(void *dst, int value, u32 size);
 void LbDataLoadSetModifyFilenameFunction(char *dst, char *src);
-void LbDataLoadAll(TbLoadFiles *files);
+int LbDataLoadAll(TbLoadFiles *files);
 void LbDataFree(TbLoadFiles *files);
 void LbDataFreeAll(TbLoadFiles *files);
 int LbFileLengthRnc(char *path);
@@ -86,7 +86,8 @@ void LbFileSaveAt(char *path, void *buf, u32 size);
 int LbFileExists(char *path);
 int LbFileOpen(char *name, int mode);
 void LbFileClose(int handle);
-void LbFileRead(int handle, void *buf, int len);
+int LbFileRead(int handle, void *buf, int len);
+int LbFileSeek(int handle, int offset, int origin);
 void LbFileWrite(int handle, void *buf, int len);
 void LbSpriteSetup(TbSprite *start, TbSprite *end, void *data);
 void LbSpriteDraw(int x, int y, TbSprite *sprite);
@@ -114,6 +115,10 @@ void LbDrawBox(u32 x, u32 y, u32 w, u32 h, u32 colour);
 void LbTextSetWindow(u32 x, u32 y, u32 w, u32 h);
 void LbTextDraw(int x, int y, char *text);
 u32 LbSqrL(u32 n);
+s32 LbTextStringWidth(char *text);
+s32 LbTextStringHeight(char *text);
+u16 LbArcTan(s32 x, s32 y);
+int fn_000cb2db(int n);
 void LbScreenCopyBox(const u8 *src, u8 *dst, s32 height);
 u8 play_smk(char *path, u32 a, u32 b);
 void reqspr_draw(int x, int y, TbSprite *sprite);
@@ -139,6 +144,17 @@ void AIL_end_sequence(u32 handle, ...);
 }
 
 extern __1rdtuTbModemDev modem_dev;
+
+struct TbCacheUsedBlock;
+
+struct TbCache {
+    u8 unknown0[0x1c];
+
+    TbCacheUsedBlock *Allocate(u32 size, u32 tag);
+    void Free(TbCacheUsedBlock *block);
+};
+
+extern TbCache cache;
 
 void LbPackHeap(void);
 s32 GetCDSpeed(char *path, void *buf, s32 size, u32 count);

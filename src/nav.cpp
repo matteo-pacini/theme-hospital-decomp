@@ -1,0 +1,275 @@
+#include "hosp.h"
+
+#define THING_PATH(w) ((orthonav_path *)&(w)->unknown30[0xc])
+
+extern Thing *nav_person;
+extern s16 opposite_angle[];
+
+void thingpage_cancel_my_response(ThingPager *p, Thing *w);
+s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 a);
+
+extern "C" {
+
+extern char D_001203c0[];
+
+void fn_000444e0(Thing *w);
+
+// FUNCTION: 0x0004195c
+void fn_0004195c(Thing *w, u16 pos)
+{
+    w->unknown19 = pos % 128;
+    w->unknown20 = pos / 128;
+    w->height = 0;
+    fn_000444e0(w);
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000419bc
+void fn_000419bc(Thing *w, u16 pos)
+{
+    w->unknown95 = pos % 128;
+    w->unknown96 = pos / 128;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00041a08
+void fn_00041a08(Thing *w, u16 pos)
+{
+    w->unknown97 = pos % 128;
+    w->unknown98 = pos / 128;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00041a54
+void fn_00041a54(Thing *w)
+{
+    CompFrame *f;
+
+    if (actual_game_turn % w->anim_speed == 0) {
+        w->sprite = frame[w->sprite].next;
+        f = &frame[w->sprite];
+        if (f->flags & 1) {
+            process_person_complex(w);
+            sprintf((char *)&debug.unknownc[0x64], D_001203c0, (u16)(w - thing), 0);
+        }
+    }
+}
+
+// FUNCTION: 0x00041b08
+void fn_00041b08(Thing *w)
+{
+    Thing *other;
+    Thing *src;
+
+    other = &thing[w->unknown73];
+    if (other > thing) {
+        if (other->kind == 0x18) {
+        w->kind = w->state_b;
+        w->state_b = 0;
+        process_person_complex(w);
+        other->kind = 0x2a;
+        src = &thing[w->unknown69];
+        if (src > thing) {
+            w->unknown30[4] = other->unknown30[4];
+            w->unknown30[5] = other->unknown30[5];
+            w->unknown30[6] = other->unknown30[6];
+            w->unknown30[7] = other->unknown30[7];
+            w->unknown30[8] = other->unknown30[8];
+        }
+        w->unknown30[9] = src->unknown30[9];
+        w->unknown30[0xa] = src->unknown30[0xa];
+        w->unknown30[0xb] = src->unknown30[0xb];
+        }
+    }
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00041c0c
+void fn_00041c0c(Thing *w)
+{
+    if (w->state_a) {
+        u16 anim;
+
+        w->kind = w->state_a;
+        w->unknown61 = w->unknown63 = w->unknown75w = 0;
+        w->icon = w->unknown65 = 0;
+        anim = check_frame(staff_anim_starts[w->subtype].unknownA, w) + (u16)w->unknown17;
+        w->sprite = start[anim].frame;
+        w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+        if (w->subtype == 2) {
+            thingpage_cancel_my_response(&allhosps[w->owner].fd2b, w);
+            thingpage_cancel_my_response(&allhosps[w->owner].ff6d, w);
+        }
+    } else {
+        w->kind = 0x2c;
+    }
+}
+
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00043ff0
+s32 wall_in_way(u32 x, u32 y, u32 dir)
+{
+    Map *cell;
+
+    if (dir == 0 && y == 0) {
+        return 1;
+    }
+    if (dir == 1 && x >= 0x7f) {
+        return 1;
+    }
+    if (dir == 2 && y >= 0x7f) {
+        return 1;
+    }
+    if (dir == 3 && x == 0) {
+        return 1;
+    }
+    cell = &map[((s16)y << 7) + (s16)x];
+    if ((cell->flags & 1) && !(cell->flags & 2)) {
+        return 1;
+    }
+    switch (dir) {
+    case 0:
+        if (cell->unknown3) {
+            return 1;
+        }
+        break;
+    case 1:
+        cell = &map[((s16)y << 7) + (s16)(x + 1)];
+        if (cell->unknown4) {
+            return 1;
+        }
+        break;
+    case 2:
+        cell = &map[((s16)(y + 1) << 7) + (s16)x];
+        if (cell->unknown3) {
+            return 1;
+        }
+        break;
+    case 3:
+        if (cell->unknown4) {
+            return 1;
+        }
+        break;
+    }
+    switch (dir) {
+    case 0:
+        y--;
+        break;
+    case 1:
+        x++;
+        break;
+    case 2:
+        y++;
+        break;
+    case 3:
+        x--;
+        break;
+    }
+    cell = &map[((s16)y << 7) + (s16)x];
+    if ((cell->flags & 1) && !(cell->flags & 2)) {
+        return 1;
+    }
+    return 0;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00044210
+s16 person_head_for(Thing *w, u8 a)
+{
+    if (THING_PATH(w)->result == 0) {
+        fn_000444e0(w);
+    }
+    nav_person = w;
+    if (w->unknown19 != THING_PATH(w)->x1 || w->unknown20 != THING_PATH(w)->y1) {
+        fn_000444e0(w);
+    }
+    return orthonav_whatnext(THING_PATH(w), w->x.tile, w->y.tile, w->unknown17);
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000442a0
+s32 person_in_way(u32 x, u32 y, u32 dir)
+{
+    Map *cell;
+    Thing *t;
+    s16 id;
+    u8 i;
+
+    switch (dir) {
+    case 0:
+        y--;
+        break;
+    case 1:
+        x++;
+        break;
+    case 2:
+        y++;
+        break;
+    case 3:
+        x--;
+        break;
+    }
+    cell = &map[((s16)y << 7) + (s16)x];
+    id = cell->first;
+    for (i = 0; i < 4; i++) {
+        if (id > 0) {
+        t = &thing[id];
+        switch (t->renderer) {
+        case 2:
+        case 4:
+            if (t != nav_person && t->unknown17 == opposite_angle[nav_person->unknown17]) {
+                return 0x8000;
+            }
+            break;
+        }
+        id = t->next;
+        } else {
+            break;
+        }
+    }
+    return 0;
+}
+
+// FUNCTION: 0x000443ec
+s32 person_overlap(void)
+{
+    Map *cell;
+    Thing *t;
+    s16 id;
+    u8 i;
+
+    cell = &map[(s16)nav_person->y.tile * 128 + (s16)nav_person->x.tile];
+    id = cell->first;
+    for (i = 0; i < 4; i++) {
+        if (id > 0) {
+        t = &thing[id];
+        switch (t->renderer) {
+        case 2:
+        case 4:
+            if (t > nav_person) {
+                if (t->unknown17 == nav_person->unknown17) {
+                    return 0x8000;
+                }
+            }
+            break;
+        }
+        id = t->next;
+        } else {
+            break;
+        }
+    }
+    return 0;
+}
+
+extern "C" {
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000444e0
+void fn_000444e0(Thing *w)
+{
+    orthonav_init(THING_PATH(w), w->x.tile, w->y.tile, w->unknown19, w->unknown20);
+}
+
+}

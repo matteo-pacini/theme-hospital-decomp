@@ -1,0 +1,2 @@
+src\build_partb.cpp(13): Warning! W211: (col 25) #pragma attributes for 'fn_0007d2a8' may be inconsistent 
+src\build_partb.cpp(13): Note! N392: (col 25) 'void __pragma("fn_0007d2a8") fn_0007d2a8( unsigned char, unsigned short )' defined in: src\build_partb.cpp(12) (col 6) 

@@ -44,11 +44,22 @@ struct RoomInfo {
     s8 f3;
     u16 unknown4;
     u16 unknown6;
-    u8 f8;
-    u8 unknown9[3];
+    union {
+        u16 pos;
+        struct {
+            u8 f8;
+            union {
+                u8 unknown9[3];
+                struct {
+                    u8 unknown9_;
+                    u16 queue_head;
+                };
+            };
+        };
+    };
     u16 first_object;
     u16 first;
-    u8 unknown16[4];
+    u16 staff[2];
     u16 count;
     u32 unknown22;
     u8 unknown26;
@@ -80,7 +91,42 @@ struct Thing {
     u8 unknown20;
     s8 depth;
     u8 owner;
-    u8 unknown23[32];
+    u8 unknown23;
+    s8 unknown24;
+    u8 unknown25[2];
+    u16 unknown27;
+    union {
+        u8 unknown29;
+        u8 layers[1];
+    };
+    union {
+        u8 unknown30[25];
+        struct {
+            u8 unknown30_[9];
+            u8 unknown39;
+            u8 unknown40;
+            u8 unknown41;
+        };
+        struct {
+            u8 unknown30__[16];
+            union {
+                u16 f2e_raw;
+                struct {
+                    u8 f2e;
+                    u8 f2f;
+                };
+            };
+            union {
+                u16 f30_raw;
+                struct {
+                    u8 f30;
+                    u8 f31;
+                };
+            };
+            u8 unknown32_[4];
+            u8 f36;
+        };
+    };
     union {
         s32 mode;
         s16 offset;
@@ -97,18 +143,35 @@ struct Thing {
     union {
         char text[4];
         u16 unknown63;
+        s32 f3f;
+        struct {
+            u16 unknown63_;
+            u16 unknown65;
+        };
     };
     u16 icon;
     u16 unknown69;
     u16 unknown71;
     u16 unknown73;
-    u8 unknown75[2];
-    u16 room_prev;
-    u16 room_next;
-    u16 unknown81;
-    u8 unknown83[2];
-    u16 unknown85;
-    u8 unknown87[2];
+    union {
+        u8 unknown75[2];
+        u16 unknown75w;
+    };
+    union {
+        u16 use_pos[6];
+        struct {
+            u8 unknown77_[6];
+            u16 unknown83w;
+        };
+        struct {
+            u16 room_prev;
+            u16 room_next;
+            u16 unknown81;
+            u8 unknown83[2];
+            u16 unknown85;
+            u8 unknown87[2];
+        };
+    };
     u16 unknown89;
     u16 unknown91;
     u8 unknown93;
@@ -118,10 +181,56 @@ struct Thing {
             u8 unknown94;
             u16 group;
         };
+        struct {
+            u8 unknown94_;
+            u8 unknown95;
+            u8 unknown96;
+        };
     };
-    u8 unknown97[3];
+    u8 unknown97;
+    u8 unknown98;
+    u8 unknown99;
     union {
         char label[0x44];
+        struct {
+            u8 unknown100t_[0xc];
+            s32 f70;
+        };
+        struct {
+            u8 unknown100s_[0x20];
+            u8 f84;
+            u8 f85;
+            u8 f86;
+            u8 f87;
+            u8 f88;
+            u8 f89;
+            u8 f8a;
+            u8 f8b;
+            u8 f8c;
+            u8 f8d;
+            u8 unknown142s_[2];
+            u8 f90;
+            u8 unknown145s_[0xd];
+            u8 f9e;
+            u8 f9f;
+            u8 fa0;
+        };
+        struct {
+            union {
+                struct {
+                    u8 fuse;
+                    u8 fuse_tick;
+                };
+                s16 unknown100s;
+            };
+            u8 unknown102_[8];
+            u8 smoke[3];
+        };
+        struct {
+            u16 unknown100__;
+            u16 unknown102;
+            u16 unknown104w;
+        };
         struct {
             u16 unknown100;
             u8 state_b;
@@ -146,20 +255,33 @@ struct Thing {
                     u8 unknown119;
                 };
             };
-            u8 unknown120[2];
-            s16 unknown122;
+            union {
+                u8 unknown120[2];
+                u16 queue_prev;
+                s16 f78;
+            };
+            union {
+                s16 unknown122;
+                u16 queue_next;
+            };
             u16 unknown124;
-            u8 unknown126[2];
+            u16 unknown126;
             u16 unknown128;
             s16 unknown130;
-            u8 unknown132[2];
+            s16 unknown132;
             s16 unknown134;
             s16 unknown136;
             u8 unknown138[2];
-            u16 unknown140;
+            union {
+                u16 unknown140;
+                struct {
+                    u8 unknown140_lo;
+                    u8 unknown141;
+                };
+            };
             u8 f8e;
             u8 f8f;
-            u8 unknown144[2];
+            u16 unknown144;
             union {
                 s16 unknown146;
                 struct {
@@ -167,8 +289,16 @@ struct Thing {
                     u8 f93;
                 };
             };
-            u8 unknown148[10];
-            u8 unknown158[10];
+            union {
+                u8 unknown148[10];
+                u16 unknown148w;
+                u32 unknown148d;
+                struct {
+                    u16 unknown148w_;
+                    u16 unknown150;
+                };
+            };
+            s8 unknown158[10];
         };
     };
     u8 style;
@@ -179,15 +309,27 @@ struct Thing {
     u8 unknown174;
 };
 
+struct HospitalDrug {
+    u16 cost;
+    u8 unknown2;
+    u8 effectiveness;
+};
+
 struct HospitalRoom {
     s32 unknown0;
-    u8 unknown4[8];
+    s32 f4;
+    s32 f8;
     s32 unknownC;
     s32 unknown10;
     s32 unknown14;
-    u16 unknown18;
-    u8 unknown1A;
-    u8 unknown1B;
+    union {
+        HospitalDrug drug;
+        struct {
+            u16 unknown18;
+            u8 unknown1A;
+            u8 unknown1B;
+        };
+    };
     u8 unknown1C;
     u8 unknown1D;
     u16 unknown1E;
@@ -196,35 +338,101 @@ struct HospitalRoom {
     u16 unknown24;
 };
 
+struct SkillPager {
+    u16 mask;
+    u16 room;
+    u32 unknown4;
+    u16 unknown8;
+    u8 owner;
+};
+
 struct Equipment {
     u8 unknown0;
     u8 unknown1[13];
+};
+
+struct ObjectStats {
+    s32 cost;
+    u8 unknown4[4];
+    u16 unknown8;
+    u16 fA;
+    u8 unknownC[2];
 };
 
 struct ThingPager {
     u8 unknown0[1];
 };
 
+struct ComputerStrategy {
+    u16 type;
+    s16 arg;
+    s16 count;
+};
+
+struct RatHole {
+    u16 tile;
+    u8 side;
+};
+
+struct BuildState {
+    union {
+        u8 unknown0[8];
+        struct {
+            u8 x0;
+            u8 y0;
+            u8 x1;
+            u8 y1;
+        };
+    };
+    u16 room;
+    union {
+        u8 unknownA[3];
+        u16 edit_room;
+    };
+    u8 unknownD;
+    union {
+        u8 unknownE[5];
+        struct {
+            u8 unknownE_;
+            u16 door_tile;
+            u8 door_type;
+            u8 door_state;
+        };
+    };
+    u16 objects[20];
+    u8 state;
+    u8 unknown3c;
+};
+
 struct AllHosps {
-    u8 unknown0[0x2a];
+    u8 unknown0[0x29];
+    u8 f29;
     u8 f2a;
     u8 f2b;
     u8 unknown2c[9];
     s32 f35;
     u8 unknown39[4];
     s32 f3d;
-    u8 unknown41[0x18e];
+    s32 f41;
+    u8 unknown45[0x17a];
+    s32 f1bf;
+    u8 unknown1c3[0xc];
     s16 unknown1cf[4];
-    u8 unknown1d7[2];
+    u16 f1d7;
     u16 f1d9;
     u8 unknown1db[7];
     u8 f1e2;
     u8 unknown1e3[2];
     u8 f1e5;
-    u8 unknown1e6[0xb];
+    u8 unknown1e6[3];
+    u16 f1e9;
+    u16 f1eb;
+    u8 unknown1ed[2];
+    u16 f1ef;
     u16 f1f1;
     u32 f1f3;
-    u8 unknown1f7[3];
+    u8 unknown1f7[2];
+    u8 f1f9;
     u8 f1fa;
     u8 unknown1fb[8];
     u16 f203;
@@ -242,45 +450,103 @@ struct AllHosps {
     u16 f21d;
     u8 f21f;
     HospitalRoom rooms[0x2e];
-    u8 unknown8f4[0x32];
     union {
-        Equipment equipment[0x3e];
         struct {
-            u8 unknown926[0x358];
-            s32 unknownc7e;
+            u8 unknown8f4[0x32];
+            union {
+                Equipment equipment[0x3e];
+                struct {
+                    u8 unknown926[0x358];
+                    s32 unknownc7e;
+                    s32 fc82;
+                    s32 fc86;
+                };
+            };
+        };
+        struct {
+            u8 unknown8f4_[0x26];
+            ObjectStats object_stats[0x3e];
         };
     };
-    u8 unknownc8a[0xa];
+    u8 unknownc8a[6];
+    u16 fc90;
+    u16 fc92;
     u8 fc94;
     u8 fc95;
-    u8 unknownc96[0x91];
-    s16 fd27;
+    u8 fc96;
+    u8 fc97;
+    u16 fc98;
+    u16 fc9a;
+    u16 fc9c;
+    s16 fc9e[4];
+    s16 fca6;
+    u16 fca8;
+    u16 fcaa;
+    u16 fcac;
+    u8 fcae;
+    RatHole fcaf[0x28];
+    union {
+        s16 fd27;
+        u16 fd27u;
+    };
     u16 fd29;
-    u8 unknownd2b[0x242];
+    union {
+        u8 unknownd2b[0x242];
+        ThingPager fd2b;
+    };
     ThingPager ff6d;
-    u8 unknownf6e[0x249];
-    u16 unknown11b7;
-    u8 unknown11b9[3];
-    u8 f11bc;
-    u8 unknown11bd[0x31];
+    union {
+        struct {
+            u8 unknownf6e[0x249];
+            u16 unknown11b7;
+            u8 unknown11b9[3];
+            u8 f11bc;
+            u8 unknown11bd[5];
+            u16 f11c2[0x14];
+            u8 unknown11ea[4];
+        };
+        struct {
+            u8 unknownf6e_[0x241];
+            BuildState build;
+        };
+    };
     u16 unknown11ee;
     u16 unknown11f0;
     u8 unknown11f2[2];
     u16 f11f4;
     u16 f11f6;
-    u8 unknown11f8[0x5e];
+    u32 f11f8;
+    ComputerStrategy action;
+    u16 f1202;
+    ComputerStrategy notes[8];
+    s32 f1234;
+    u32 f1238;
+    s32 f123c;
+    s16 f1240;
+    s16 f1242;
+    u8 f1244;
+    u8 f1245;
+    s16 f1246[8];
     u8 unknown1256;
     u16 unknown1257;
 };
 
 struct GameControl {
-    u8 unknown0[0x64f];
+    u8 unknown0[0x10];
+    u32 unknown10;
+    union {
+        u8 unknown14[0x63b];
+        struct {
+            u8 unknown14_[0x634];
+            u16 f648;
+        };
+    };
     u8 unknown64f;
     u8 unknown650;
 };
 
 struct ListHead {
-    u8 unknown0[0x7c];
+    u16 objects[0x3e];
     u16 staff[0x10];
     u16 rooms[0x1e];
     u16 first[9];
@@ -292,21 +558,69 @@ struct PlayerCall {
     s16 timer;
     u16 id;
     u8 active;
-    u8 pad[2];
+    u8 slot;
+    u8 flash;
     u8 owner;
+};
+
+struct Window;
+
+struct WindowButton {
+    s16 x;
+    s16 y;
+    u16 width;
+    u16 height;
+    u32 flags;
+    WindowButton *next;
+    void (*callback)(Window *w);
+    s32 sprite;
+    s32 sprite18;
+    s32 sprite1c;
+    union {
+        struct {
+            s16 x20;
+            s16 y22;
+        };
+        s32 *value;
+    };
+    union {
+        struct {
+            s16 x24;
+            s16 y26;
+        };
+        s32 min;
+    };
+    s32 max;
 };
 
 struct Window {
     s16 x;
     s16 y;
-    u8 unknown4[0x1e];
+    s16 x4;
+    s16 y6;
+    u16 width;
+    u16 height;
+    u16 widthC;
+    u16 heightE;
+    u16 width10;
+    u16 height12;
+    u16 flags;
+    u8 unknown16[4];
+    WindowButton *buttons;
+    void (*draw)(Window *w);
 };
 
 struct Expertise {
     u16 unknown0;
     u8 unknown2[2];
     u8 kind;
-    u8 unknown5[3];
+    union {
+        u8 unknown5[3];
+        struct {
+            u8 unknown5_[2];
+            u8 unknown7;
+        };
+    };
     u8 unknown8;
     u8 category;
     u8 unknown10[9];
@@ -315,31 +629,89 @@ struct Expertise {
 struct ObjectControl {
     u8 unknown0[2];
     u8 shapes[4];
-    u8 unknown6[0x16];
+    union {
+        u8 unknown6[8];
+        struct {
+            u8 unknown6_[2];
+            s32 cost;
+        };
+    };
+    u16 unknownE;
+    u8 unknown10[4];
+    u8 unknown14;
+    u8 unknown15[1];
+    s8 walls;
+    s8 unknown17;
+    u8 unknown18[4];
     u8 unknown1c;
     u8 unknown1d;
     u16 unknown1e;
-    u8 unknown20[5];
+    u8 unknown20[3];
+    u8 unknown23;
+    u8 unknown24;
 };
 
 struct RoomControl {
     u16 id;
-    u8 unknown2[0xa];
+    union {
+        u8 unknown2[0xa];
+        struct {
+            u8 unknown2_[6];
+            u16 unknown8;
+        };
+        struct {
+            u8 unknown2__[2];
+            s32 cost;
+        };
+    };
     u8 fc;
-    u8 unknownd[0x17];
+    u8 objects[0x15];
+    u8 unknown22;
+    u8 unknown23;
     u8 unknown36;
-    u8 unknown25[5];
+    u8 unknown25;
+    s8 f26;
+    u8 unknown27[3];
 };
 
 struct Shapes {
     s8 count;
-    u16 points[0x15];
+    union {
+        u16 points[0x15];
+        struct {
+            u8 unknown1[0x12];
+            s16 unknown13[3];
+            s16 unknown19[3];
+            u8 unknown1f[3];
+            u8 unknown22[9];
+        };
+    };
     u8 unknown2b;
 };
 
 struct Blueprint {
     u16 anim;
-    u8 unknown2[6];
+    union {
+        u8 unknown2[6];
+        struct {
+            u16 kind;
+            u8 unknown4;
+            u8 flags;
+            u8 f6;
+            u8 unknown7;
+        };
+    };
+};
+
+struct DoorInfo {
+    u8 count;
+    u16 tiles[4];
+    u16 sprites[3];
+    u16 door1;
+    u16 door2;
+    u16 overlays[3];
+    u16 offset;
+    u8 f1b;
 };
 
 struct VXY {
@@ -348,12 +720,25 @@ struct VXY {
 };
 
 struct AnimStart {
-    u16 idle;
-    u8 unknown2[8];
-    u16 unknownA;
-    u8 unknownC[6];
-    u16 unknown12;
-    u8 unknown14[0x104];
+    union {
+        u16 anims[0x8c];
+        struct {
+            u16 idle;
+            u8 unknown2[8];
+            u16 unknownA;
+            u8 unknownC[6];
+            u16 unknown12;
+            u8 unknown14[0x8e];
+            u16 unknownA2;
+            u8 unknownA4[0x74];
+        };
+    };
+};
+
+struct StaffControl {
+    u8 unknown0[4];
+    u16 anim;
+    u8 unknown6[7];
 };
 
 struct AnimTable {
@@ -365,11 +750,30 @@ struct AnimTable {
 };
 
 struct CompFrame {
-    u8 unknown0[5];
+    u32 list;
+    u8 width;
     u8 length;
-    u8 unknown6;
+    u8 sound;
     u8 flags;
     u16 next;
+};
+
+struct CompElement {
+    u16 sprite;
+    u8 x;
+    u8 y;
+    u16 flags;
+};
+
+struct IconTable {
+    u8 unknown0;
+    u16 unknown1;
+    u8 unknown3[3];
+};
+
+struct SfxDetail {
+    u8 unknown0[0xc];
+    u16 unknownC;
 };
 
 struct CompStarts {
@@ -402,7 +806,9 @@ struct HospPlayerDetails {
 
 struct Colors {
     u8 *unknown0;
-    u8 unknown4[3];
+    s8 unknown4;
+    s8 unknown5;
+    s8 unknown6;
     u8 unknown7;
     u8 unknown8;
     u8 unknown9;
@@ -433,33 +839,61 @@ struct Blob63 {
 };
 
 struct Game {
-    u8 unknown0[0x1e];
+    union {
+        u8 unknown0[0x1e];
+        struct {
+            u32 f0;
+            u16 f4;
+            u16 f6[4];
+            u8 unknowne[2];
+            u16 f10[4];
+        };
+    };
     u8 unknown1e;
-    u8 unknown1f[2];
+    u8 unknown1f;
+    u8 unknown20;
     u8 unknown21;
     u8 unknown22[3];
     u8 unknown25;
     u8 unknown26;
-    u8 unknown27[8];
+    union {
+        u8 unknown27[8];
+        struct {
+            s8 f27;
+            u8 f28;
+            u8 f29;
+            u8 unknown2a;
+            s8 f2b;
+            s8 f2c;
+            s8 f2d;
+            s8 f2e;
+        };
+    };
     u16 unknown2f;
-    u8 unknown31[2];
+    s16 f31;
     union {
         Blob63 unknown33;
         struct {
             u8 unknown33_[0x11];
             u8 unknown44;
+            u8 unknown45[0x2c];
+            u8 unknown71;
         };
     };
     u8 unknown72[3];
     u16 unknown75;
     u16 unknown77;
     u16 unknown79;
+    u8 unknown7b[0x70];
+    u32 feb;
 };
 
 struct Statics {
     s32 unknown0;
     u16 unknown4;
-    u8 unknown6[0xdf];
+    s16 unknown6;
+    u8 unknown8[0x64];
+    char f6c[0x79];
     u8 unknowne5;
     u8 unknowne6;
     u8 unknowne7;
@@ -479,6 +913,13 @@ struct Info {
     u8 unknown0[0x5c];
     s32 unknown5c;
     s32 unknown60;
+    s32 unknown64;
+    s32 unknown68;
+    s32 unknown6c;
+    s32 unknown70;
+    s32 unknown74;
+    u8 unknown78;
+    u8 unknown79[7];
 };
 
 struct HospWindow {
@@ -491,12 +932,22 @@ struct HospWindow {
     u8 unknown4c[8];
     s32 unknown54;
     u8 unknown58[0x38];
-    s32 unknown90;
-    u8 unknown94[8];
-    s32 unknown9c;
-    u8 unknowna0[0x220];
+    union {
+        s32 unknown90;
+        s32 f90[3];
+    };
+    union {
+        s32 unknown9c;
+        s32 f9c[3];
+    };
+    u8 unknowna8[0x218];
     u8 unknown2c0;
-    u8 unknown2c1[0x2a];
+    u8 unknown2c1[2];
+    s32 unknown2c3;
+    s32 unknown2c7;
+    s32 unknown2cb;
+    s32 unknown2cf;
+    u8 unknown2d3[0x18];
     u8 unknown2eb;
     u8 unknown2ec;
 };
@@ -521,7 +972,8 @@ struct Debug {
     u8 unknownd7;
     u8 unknownd8[0xa];
     u8 unknowne2;
-    u8 unknowne3[0x27];
+    u8 unknowne3[0x25];
+    u16 unknown108;
     u8 unknown10a;
     u8 unknown10b[0xb];
     char unknown116[0xc8];
@@ -531,6 +983,32 @@ struct Debug {
     u8 *unknown1e4;
     u8 unknown1e8[0x12];
     u8 unknown1fa;
+    u8 unknown1fb[0x1e];
+    u8 f219;
+};
+
+struct RatFestLevel {
+    u16 litter_max;
+    u16 litter_chance;
+    u16 holes_max;
+    u16 holes_chance;
+    u32 seed;
+    u16 staff_max;
+    u16 staff_chance;
+};
+
+struct TrophyBalance {
+    u8 unknown0;
+    u8 unknown1[0xd];
+    u8 unknowne;
+    u8 unknownf[0x51];
+};
+
+struct StaffLevels {
+    u16 month;
+    u16 counts[4];
+    u8 f0a[5];
+    u32 fund;
 };
 
 struct GameCounts {
@@ -558,8 +1036,13 @@ struct Req {
 };
 
 struct Level {
-    u8 unknown0[0x28024];
+    u16 f0;
+    u16 f2[4][4];
+    u8 unknown22[0x28002];
     u16 unknown28024[4];
+    u16 f2802c[4];
+    u16 f28034;
+    u16 f28036;
 };
 
 struct Icons {
@@ -575,8 +1058,16 @@ struct ScreenInfo {
 struct NonResettingAdvisorCounts {
     u16 unknown0;
     u16 unknown2;
-    u8 unknown4[2];
+    u16 unknown4;
     s32 unknown6;
+    union {
+        u8 unknowna[6];
+        struct {
+            u8 unknowna_;
+            s32 unknownb;
+        };
+    };
+    u8 unknown10;
 };
 
 struct WinLoseNet {
@@ -591,8 +1082,24 @@ struct Awards {
     u8 unknown0;
 };
 
+struct ResearchTasks {
+    u16 chance;
+    u16 object;
+    u16 action;
+};
+
+struct AdvisorCounts {
+    u8 unknown0[0x8e];
+    u8 unknown8e;
+    u8 unknown8f[0x19];
+};
+
 struct orthonav_path {
-    u8 unknown0[0xc];
+    u8 x0;
+    u8 y0;
+    u8 x1;
+    u8 y1;
+    u8 unknown4[8];
     u8 result;
     u8 unknownd[3];
 };
@@ -655,6 +1162,7 @@ extern VXY around_vxy[];
 extern s16 around[];
 extern s16 next_angle[];
 extern Blueprint blueprint[];
+extern DoorInfo doortype[];
 extern ObjectControl objects[];
 extern Shapes shapes[];
 extern s8 change_person_who[][15];
@@ -687,6 +1195,10 @@ extern u8 *current_palette;
 extern u8 *bscreen;
 extern TbSprite *watch;
 extern CompFrame *frame;
+extern CompElement *element;
+extern u16 *elelist;
+extern const IconTable icon_table[];
+extern SfxDetail sfx_details[];
 extern Map *map;
 extern Map *end_map;
 extern TbSprite *game_panel;
@@ -705,6 +1217,8 @@ extern HospPlayerDetails myplayer;
 extern ListHead *listhead;
 extern PlayerCall *playercall;
 extern PlayerCall *end_playercall;
+extern SkillPager *pagers;
+extern SkillPager *end_pagers;
 extern CompStarts *start;
 extern u32 seed;
 extern char balance_id[];
@@ -730,6 +1244,11 @@ extern HospWindow window;
 extern Required required;
 extern Debug debug;
 extern GameCounts gamecounts;
+extern StaffLevels staff_levels[];
+extern StaffControl staff[];
+extern RatFestLevel rat_fest_level[];
+extern TrophyBalance awards_trophies;
+extern u32 safeseed;
 extern u8 HospShift;
 extern u8 level_number;
 extern Menu mainmenu;
@@ -746,16 +1265,21 @@ extern Menu graphs;
 extern Menu hall;
 extern Menu yearend;
 extern Menu winlose;
+extern Menu que;
 extern Req crequester;
 extern Level *level;
 extern void *midi_buffer;
 extern u16 popup_id[];
+extern u16 panel_popup_pos[];
 extern Icons *panel;
 extern u16 available_buttons;
 extern s16 choice_spare_data;
 extern ScreenInfo choice_backup;
 extern ScreenInfo year_end_backup;
 extern NonResettingAdvisorCounts NRAdcounts;
+extern AdvisorCounts adcounts;
+extern ResearchTasks research_tasks[];
+extern u8 illness_abilities[][1];
 extern WinLoseNet current_net_criteria;
 extern char cd_install_path[];
 extern u8 install_type;
@@ -766,12 +1290,38 @@ extern Trophies trophy[];
 extern Awards all_awards[];
 extern char **help_text;
 extern char **yesno_text;
+extern char **month_text;
+extern char **staff_names_1;
+extern char **staff_names_2;
+extern char **advisor_text;
+extern char **insurance_names;
+extern char **hall_text;
+extern char **extra_advice;
+extern char **nickname_text;
+extern char **room_help;
+extern char **bank_text;
+extern char **object_help;
+extern char **load_text;
+extern char **mayor_names;
+extern char **choice_text;
+extern char **cheat_text;
+extern char **ref_general_text;
+extern char **ref_good_text;
+extern char **ref_bad_text;
+extern char **info_bar_text;
+extern char **advisor_situations;
+extern u8 *text_buffer;
 extern Window *open_windows[];
 extern s8 *button_sprite_data;
 extern s8 *end_button_sprite_data;
 extern TbSprite *button_sprite;
+extern TbSprite *bord;
 extern TbSprite *end_button_sprites;
 extern u8 mouse_was_on_window;
+extern s32 CurrentWindow;
+extern u8 OldLeftButton;
+extern u8 OldRightButton;
+extern WindowButton *buttonstore;
 extern volatile s32 mouse_dx;
 extern volatile s32 mouse_dy;
 
@@ -924,31 +1474,70 @@ void staff_picked_up(Thing *e);
 void interrupt_staff(Thing *e);
 void staff_join_new_employer(u16 a, u16 b);
 void increase_staff_salaries(Thing *e, u16 a, u16 b, u8 c);
+u8 set_group_address(s32 group, char **address);
 s16 setup_lang(void);
 void draw_a_frame(const u16 sprite, const s16 x, const s16 y, const u8 flags, const u8 palette);
+void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16 colour, const u8 flip);
 void draw_special_id_frame(Thing *w, const s16 x, const s16 y);
 void draw_split_frame(Thing *w, const s16 x, const s16 y);
 void draw_energise_frame(Thing *w, const s16 x, const s16 y);
 void draw_a_frame_scaled(const u16 sprite, const s16 x, const s16 y, u8 flags, const u8 palette, s32 scale);
 void draw_hilight_frame(Thing *w, const s16 x, const s16 y);
 void draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, u8 *a, u8 *label, const u8 palette);
+void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, const s16 dx, const s16 dy);
 void draw_text_on_map(char *text, const u8 font, const s32 x, const s32 y);
 void draw_money(s32 x, s32 y, s32 value);
 void setup_panel_icons(const u8 mode);
 void clear_panel_info_bar(void);
 void delete_panel_popup(PlayerCall *p);
 void add_panel_popup(PlayerCall *p);
+void remove_panel_popup(const u8 slot);
+u8 which_icon_is_mouse_over(void);
 u16 find_object(u16 tile, u16 a, u8 b, u8 c, u8 owner);
 u16 find_object_anywhere(u16 a, u8 b, u16 c, u8 owner);
 u16 find_nearest_free_object(u16 id, u8 a);
 u16 find_nearest_manned_reception(Thing *w, const u8 a, const u8 b);
 s16 place_small_thing(u16 a, u16 b, u8 c);
+s16 find_small_thing(u16 tile);
+u8 check_room_access_with_blueprint(u8 owner);
 void replace_machine(Thing *e);
 void setup_next_treatment(Thing *a, Thing *w);
 void next_treatment_now_setup(Thing *e, u8 a);
 void best_guess_treatment(Thing *e);
 u16 find_possible_diagnosis(Thing *w);
 void record_person_as_patient(Thing *w);
+void done_treatment(Thing *e, Thing *w);
+void affect_diagnosis(Thing *e, Thing *w);
+void change_health(Thing *w, s16 amount);
+void person_dies(Thing *w);
+void person_dead(Thing *w);
+void add_health_to_history(Thing *w);
+void diagnose_patient(Thing *e, Thing *w);
+s32 calc_ability(Thing *e);
+void add_treatment_to_history(Thing *w);
+u8 treatment_already_done(Thing *w, u16 treatment);
+void person_go_for_treatment(Thing *w);
+s16 pre_administer_drugs(Thing *w);
+void administer_drugs(Thing *e, Thing *w);
+void announce_new_illness(const u16 illness, const u16 owner);
+u16 call_no_diagnosis(Thing *w, char **strs);
+void process_no_diagnosis_buttons(u8 n);
+u16 pay_for_treatment(Thing *w, u16 kind);
+u16 shall_peep_pay(Thing *w);
+void effect_illness(Thing *w, u8 illness, u8 a);
+void clean_contagious_peep(Thing *w);
+u32 old_normal_rand(u32 a, u32 b);
+s16 get_state(const u16 room, const Thing *w);
+u8 process_staff_complex(Thing *w);
+u8 take_a_break(Thing *w);
+u32 shall_i_resign(Thing *w);
+u8 obey_pager(Thing *w);
+u8 could_nurse_vaccinate(Thing *w);
+u8 am_i_lead_staff(Thing *w);
+u8 overlapping_staff_check(Thing *w, s32 state);
+void alert_epidemic(u8 illness, u8 owner);
+u8 summon_the_reaper(Thing *w);
+void send_person_for_research(Thing *w);
 u8 process_person_complex(Thing *w);
 u8 set_complex(Thing *w, u16 action, u16 arg);
 void abandon_complex(Thing *w);
@@ -966,6 +1555,8 @@ void delete_blueprint_room(u8 a);
 void allocate_roominfo(const u8 a, const u8 b);
 u16 page_member_of_staff(u16 a, u16 room, u8 b, s8 c, u8 owner);
 RoomInfo *get_expertise_dest(u16 type, Thing *w);
+void set_expertise_ward(u8 owner);
+void remove_expertise_ward(u8 owner);
 void front_queue(const u16 a, const u16 b);
 void back_queue(const u16 a, const u16 b);
 void leave_queue(Thing *w);
@@ -973,10 +1564,34 @@ u16 which_queue(Thing *w);
 void queue_person_go_home(const u16 a, const u16 b);
 void queue_person_go_reception(const u16 a, const u16 b);
 void queue_person_to_new_queue(const u16 a, const u16 b);
+void join_queue(Thing *w, RoomInfo *room);
+u16 queue_size(RoomInfo *room);
+void process_queue_button(u8 n);
+u16 get_real_person_from_room(const u16 room, const u16 pos);
+s16 spare_queue_capacity(const u16 type, const u8 a, RoomInfo *room, const u8 owner);
+s16 all_queue_capacity(const u16 type, const u8 a, const u8 owner);
+void restart_all_queue_peeps(RoomInfo *room);
+void flag_all_queue_members(RoomInfo *room);
+void draw_buttons(Window *w);
+void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style);
+void draw_window(Window *w);
 void DrawWindows(Window **windows);
+void reposition_buttons(Window *w, s32 dx, s32 dy);
+void clear_buttons(Window *w);
+u8 mouse_over(s32 x1, s32 y1, s32 x2, s32 y2);
+u8 mouse_pressed_over(s32 x1, s32 y1, s32 x2, s32 y2);
+void calculate_currentbuttonstore(Window *w);
+u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos);
+void process_buttons(Window **windows, Window *w);
+u8 insert_window(Window **windows, Window *w);
+u8 make_front_window(Window **windows, Window *w);
 u8 remove_window(Window **windows, Window *w);
 u8 OpenWindow(Window **windows, Window *w, u16 a);
 u16 CountWindows(Window **windows);
+void GetWindowDimensions(Window *w, u16 *width, u16 *height);
+u8 MouseOnWindow(Window *w);
+u8 MousePressedOnWindow(Window *w);
+void process_window(Window **windows, Window *w);
 void change_balance(const u8 a, const s32 b, const u16 c, const u16 d);
 void month_end(void);
 void year_end(void);
@@ -1092,6 +1707,7 @@ void restore_display_screen(void);
 void draw_it(void);
 void special_refresh(void);
 void set_all_refresh_zones_in_window(const s32 x, const s32 y, const s32 w, const s32 h, const u8 a);
+void find_common_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1);
 void goto_cell_in_window(const u8 a, const s32 b);
 void goto_column_row_in_window(const u8 a, const s32 x, const s32 y);
 void find_cell_at_point(const u8 a, const s32 x, const s32 y);
@@ -1111,6 +1727,20 @@ void fade_out_menu(void);
 u8 display_loading_screen(void);
 void clear_loading_screen(u8 *palette);
 void set_default_player_details(void);
+void recreate_map(const u8 flag);
+void add_static_shadows(void);
+void clear_sound_heap(void);
+s8 load_level(const u8 level, const u8 full);
+s16 save_game_valid(const s8 slot);
+void setup_addresses(void);
+void free_level(void);
+void check_autosave(void);
+s32 read_level_number(s32 n);
+void load_balance(const u16 level);
+void reset_advisor(void);
+void init_ambients(void);
+u8 save_player_details(void);
+extern u8 for_sale[];
 
 /*
  * The retail game defines or calls these with a different parameter list
@@ -1122,9 +1752,9 @@ u16 fn_00021818(s8 slot, s8 player);
 #pragma aux fn_00021818 "W?save_game$n(xc)s"
 s16 fn_00021c38(s8 slot, s8 player);
 #pragma aux fn_00021c38 "W?load_game$n(xc)s"
-u16 fn_00029c4c(int a, int b, int c, u8 owner);
+u16 fn_00029c4c(u16 tile, u16 id, u8 flag, u8 owner);
 #pragma aux fn_00029c4c "W?place_staff_on_map$n(xusxusuc)s"
-u16 fn_00037098(int a, u16 b, int c, u8 owner);
+u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner);
 #pragma aux fn_00037098 "W?place_object$n(ususuc)us"
 void fn_0004195c(Thing *w, u16 a);
 #pragma aux fn_0004195c "W?nav_init$n(pn$Thing$$)v"
@@ -1133,7 +1763,21 @@ void fn_00074220(int a, int b);
 u8 fn_000c960c(u8 *palette, int r, int g, int b);
 #pragma aux fn_000c960c "W?draw_bdem_unavailable_message$n()v"
 void fn_0001bc94(u8 idx, u8 flag);
+u8 fn_0003e724(Thing *w);
+#pragma aux fn_0003e724 "W?fail_staff_complex$n(pn$Thing$$)v"
 #pragma aux fn_0001bc94 "W?open_requester$n(uc)v"
+void fn_0007d2a8(u8 owner, u16 tile);
+#pragma aux fn_0007d2a8 "W?delete_wall$n(ususuc)v"
+u8 fn_000b0630(int tile, u8 parity);
+#pragma aux fn_000b0630 "W?search_mapwho$n(pn$Map$$us)pn$Thing$$"
+u8 fn_00022854(u8 warn);
+#pragma aux fn_00022854 "W?is_player_building$n()uc"
+void fn_00090804(int level, u8 flag);
+#pragma aux fn_00090804 "W?setup_new_level$n(xus)v"
+Thing *fn_0003c154(RoomInfo *room, u8 kind);
+#pragma aux fn_0003c154 "W?find_waiting_surgeon$n(pn$RoomInfo$$)pn$Thing$$"
+u8 fn_0003c1e8(Thing *w, u16 action);
+#pragma aux fn_0003c1e8 "W?forget_about_my_slave$n(us)uc"
 }
 
 /*

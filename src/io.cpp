@@ -93,6 +93,17 @@ extern u16 D_0015542a;
 extern u16 D_001553fd;
 extern u16 D_00155d57;
 extern u8 D_00155e4c;
+extern char D_001202ba[], D_001202c1[], D_001202c8[], D_001202cf[], D_001202e2[], D_001202f3[];
+extern TbScreenMode D_0015f3f5;
+extern u8 D_0015f3f7, D_0015f3f8;
+extern u16 D_00155444, D_00155372, D_00155374;
+extern u8 D_00155e1e;
+extern u16 D_00155e1f;
+extern u8 D_00155db1;
+extern TbCacheUsedBlock *D_00155dbe;
+extern u8 D_0015532d[5];
+extern u8 D_00155333, D_00155334;
+extern u8 *D_001553dc;
 
 int fn_000bed50(void);
 u32 fn_00022790(void);
@@ -109,6 +120,7 @@ u16 fn_0001c1b4(u16 *p, int len);
 void fn_0001c234(void);
 int fn_0001c318(s8 port, u32 base, int len);
 void fn_0001c5e4(void);
+void *fn_00022b60(TbCacheUsedBlock *block);
 
 }
 
@@ -1891,4 +1903,445 @@ void process_turn(void)
     }
     D_001553c7 = player;
     fn_000228e0();
+}
+
+// FUNCTION: 0x00021700
+s16 save_game_valid(const s8 slot)
+{
+    char buf[64];
+    int h;
+
+    sprintf(buf, D_001202ba, D_001563c5, statvar.f6c, slot);
+    if (LbFileLengthRnc(buf) == statvar.unknown0) {
+        h = LbFileOpen(buf, 2);
+        if (h != -1) {
+            LbFileRead(h, &version, 2);
+            if (version == 3) {
+                LbFileRead(h, &level_number, 1);
+                LbFileRead(h, balance_id, 10);
+                LbFileClose(h);
+                load_balance((u16)level_number);
+                return 1;
+            } else {
+                LbFileClose(h);
+                D_00155e1e = 0x1c;
+                D_00155e1f = 0x46;
+            }
+        } else {
+            D_00155e1e = 0x1c;
+            D_00155e1f = 0x46;
+        }
+    } else {
+        D_00155e1e = 0x1c;
+        D_00155e1f = 0x46;
+    }
+    return 0;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00021818
+u16 fn_00021818(s8 slot, s8 player)
+{
+    s32 cell;
+    Thing *w;
+    char buf[64];
+    int h;
+    u16 i;
+    u16 ok;
+    int tries;
+
+    if (statvar.unknownfd > 1 && player == -1) {
+        return 0;
+    }
+    if (statvar.unknownfd <= 1) {
+        if (!fn_00022854(1)) {
+            return 0;
+        }
+    }
+    if (D_0015f3f5 == SCREEN_MODE_1) {
+        find_cell_at_point(window.unknown2eb, window.f90[window.unknown2eb], window.f9c[window.unknown2eb]);
+        cell = info.unknown64;
+        window.unknown30 = 0;
+        window.unknown48 = lbScreenModeInfo[SCREEN_MODE_13].width;
+        window.unknown3c = 0;
+        window.unknown54 = lbScreenModeInfo[SCREEN_MODE_13].height;
+        D_0015f3f8 = 0x40;
+        D_0015f3f7 = 0x20;
+        window.unknown90 = (window.unknown30 + window.unknown48) / 2;
+        window.unknown9c = (window.unknown3c + window.unknown54) / 2;
+        goto_cell_in_window(window.unknown2eb, cell);
+    }
+    setup_addresses();
+    for (w = thing + 1; w < end_things; w++) {
+        if ((w->renderer == 4 || w->renderer == 2) && w->room > 0) {
+            w->mode = w->room - room_info;
+        }
+    }
+    if (player == -1) {
+        sprintf(buf, D_001202c1, D_001563c5, statvar.f6c, slot);
+        h = LbFileOpen(buf, 0);
+        if (h != -1) {
+            for (i = 0; D_001290d4[i].addr; i++) {
+                LbFileWrite(h, (void *)D_001290d4[i].addr, D_001290d4[i].size);
+            }
+            LbFileClose(h);
+            D_00155e1e = 0x18;
+            D_00155e1f = 3;
+            save_player_details();
+            ok = 1;
+        } else {
+            D_00155e1e = 0x19;
+            D_00155e1f = 0x14;
+            ok = 0;
+        }
+    } else {
+        ok = 0;
+        tries = 0;
+        do {
+        } while (LbNetwork_Send(player, D_0015fe86, 0x400) == -1 && tries++ < 8);
+        if (tries < 8) {
+            ok = 1;
+            for (i = 0; D_001290d4[i].addr; i++) {
+                if (fn_0001c030(i)) {
+                    if (!fn_0001c318(player, D_001290d4[i].addr, D_001290d4[i].size)) {
+                        ok = 0;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    for (w = thing + 1; w < end_things; w++) {
+        if ((w->renderer == 4 || w->renderer == 2) && w->room > 0) {
+            w->room = &room_info[w->mode];
+        }
+    }
+    if (D_0015f3f5 == SCREEN_MODE_1) {
+        window.unknown30 = 0;
+        window.unknown48 = lbScreenModeInfo[SCREEN_MODE_1].width;
+        window.unknown3c = 0;
+        window.unknown54 = lbScreenModeInfo[SCREEN_MODE_1].height;
+        D_0015f3f8 = 0x20;
+        D_0015f3f7 = 0x10;
+        window.unknown2c0 = 0;
+        window.unknown90 = (window.unknown30 + window.unknown48) / 2;
+        window.unknown9c = (window.unknown3c + window.unknown54) / 2;
+        window.unknown2eb = 0;
+        goto_cell_in_window(window.unknown2eb, cell);
+    }
+    return ok;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00021c38
+s16 fn_00021c38(s8 slot, s8 port)
+{
+    u8 owner;
+    u16 ok;
+    char buf[64];
+    int h;
+    u16 i;
+    s32 cell;
+    Thing *w;
+    int tries;
+
+    owner = myhosp->f29;
+    if (statvar.unknownfd > 1 && port == -1) {
+        return 0;
+    }
+    if (statvar.unknownfd <= 1) {
+        if (save_game_valid(slot) == 0) {
+            return 0;
+        }
+    }
+    if (port == -1) {
+        check_autosave();
+        close_irequesters();
+        if (crequester.unknown2 != 0x63) {
+            close_crequester(crequester.unknown2);
+        }
+        if (load_level(level_number, 1)) {
+            ok = 1;
+            setup_addresses();
+            sprintf(buf, D_001202c8, D_001563c5, statvar.f6c, slot);
+            h = LbFileOpen(buf, 2);
+            if (h != -1) {
+                for (i = 0; D_001290d4[i].addr; i++) {
+                    LbFileRead(h, (void *)D_001290d4[i].addr, D_001290d4[i].size);
+                }
+                LbFileClose(h);
+            }
+            if (D_0015f3f5 == SCREEN_MODE_1) {
+                window.unknown30 = 0;
+                window.unknown48 = lbScreenModeInfo[SCREEN_MODE_13].width;
+                window.unknown3c = 0;
+                window.unknown54 = lbScreenModeInfo[SCREEN_MODE_13].height;
+                D_0015f3f8 = 0x40;
+                D_0015f3f7 = 0x20;
+                window.unknown90 = (window.unknown30 + window.unknown48) / 2;
+                window.unknown9c = (window.unknown3c + window.unknown54) / 2;
+                find_cell_at_point(window.unknown2eb, window.f90[window.unknown2eb], window.f9c[window.unknown2eb]);
+                cell = info.unknown64;
+                window.unknown30 = 0;
+                window.unknown48 = lbScreenModeInfo[SCREEN_MODE_1].width;
+                window.unknown3c = 0;
+                window.unknown54 = lbScreenModeInfo[SCREEN_MODE_1].height;
+                window.unknown90 = (window.unknown30 + window.unknown48) / 2;
+                window.unknown9c = (window.unknown3c + window.unknown54) / 2;
+                D_0015f3f8 = 0x20;
+                D_0015f3f7 = 0x10;
+                goto_cell_in_window(window.unknown2eb, cell);
+            }
+            for (w = thing + 1; w < end_things; w++) {
+                if ((w->renderer == 2 || w->renderer == 4) && w->room > 0) {
+                    w->room = &room_info[w->mode];
+                }
+            }
+            recreate_map(1);
+            D_001553c8 = 1;
+            reset_advisor();
+            myhosp = &allhosps[player];
+            if (statvar.unknownfd > 1) {
+                myhosp->f29 = owner;
+            }
+            D_00155444 = get_next_illness(1, 0);
+            free_level();
+            return 1;
+        }
+    } else {
+        ok = 0;
+        tries = 0;
+        do {
+        } while (LbNetwork_Receive(modem_dev.unknown1c, D_0015fe86, 0x400) != 0x400 && tries++ < 8);
+        if (tries < 8) {
+            u8 found;
+
+            found = 0;
+            ok = 1;
+            setup_addresses();
+            for (i = 0; D_001290d4[i].addr; i++) {
+                if (fn_0001c030(i)) {
+                    if (!fn_0001c318(-1, D_001290d4[i].addr, D_001290d4[i].size)) {
+                        ok = 0;
+                        break;
+                    }
+                    if (D_001290d4[i].addr == (u32)thing) {
+                        found = 1;
+                    }
+                }
+            }
+            if (found) {
+                for (w = thing + 1; w < end_things; w++) {
+                    if ((w->renderer == 2 || w->renderer == 4) && w->room > 0) {
+                        w->room = &room_info[w->mode];
+                    }
+                }
+            }
+            D_001553c8 = 1;
+            reset_advisor();
+            myhosp = &allhosps[player];
+            if (statvar.unknownfd > 1) {
+                myhosp->f29 = owner;
+            }
+        }
+        return ok;
+    }
+    return 0;
+}
+
+// FUNCTION: 0x00022120
+void setup_addresses(void)
+{
+    int i;
+
+    D_001290d4[3].addr = (u32)map;
+    D_001290d4[4].addr = (u32)thing;
+    D_001290d4[5].addr = (u32)room_info;
+    D_001290d4[6].addr = (u32)pagers;
+    D_001290d4[7].addr = (u32)mycontrol;
+    D_001290d4[8].addr = (u32)listhead;
+    D_001290d4[9].addr = (u32)allhosps;
+    D_001290d4[10].addr = (u32)playercall;
+    D_001290d4[11].addr = (u32)for_sale;
+    if (statvar.unknownfd > 1) {
+        D_0016028c = 0;
+        for (i = 0; D_001290d4[i].addr; i++) {
+            if (fn_0001c030(i)) {
+                D_0016028c += D_001290d4[i].size;
+            }
+        }
+        if (modem_dev.unknown1c == player) {
+            fn_0001c234();
+        }
+    }
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000221fc
+s8 load_level(const u8 lvl, const u8 full)
+{
+    char buf[144];
+    RoomInfo *r;
+    u16 i;
+    u16 j;
+
+    if (lvl) {
+        if (D_00155db1 == lvl) {
+            return 1;
+        }
+        if (D_00155db1 > 0) {
+            free_level();
+        }
+    }
+    clear_sound_heap();
+    D_00155dbe = cache.Allocate(0x2806c, 0x63);
+    if (D_00155dbe) {
+        level = (Level *)fn_00022b60(D_00155dbe);
+    } else {
+        return 0;
+    }
+    if (install_type < 3) {
+        sprintf(buf, D_001202cf, cd_install_path, lvl);
+        check_cd_available(buf);
+    } else {
+        sprintf(buf, D_001202e2, lvl);
+    }
+    if (LbFileLoadAt(buf, level) == LbFileLengthRnc(buf)) {
+        if (!full) {
+            D_00155db1 = lvl;
+            recreate_map(1);
+            return 1;
+        }
+        if (level->f0 < 1 || level->f0 > 4) {
+            level->f0 = 1;
+        }
+        r = room_info + 1;
+        for (i = 0; i < 4; i++) {
+            if (D_001609c4[i].active || (statvar.unknownfd <= 1 && i == player)) {
+                for (j = 0; j < 4; j++) {
+                    for (; r < end_room_info; r++) {
+                        if (r->type == 0) {
+                            r->type = 1;
+                            switch (j) {
+                            case 0:
+                                r->pos = r->unknown4 = r->unknown6 = level->f2[i][0];
+                                break;
+                            case 1:
+                                r->pos = r->unknown4 = r->unknown6 = level->f2[i][1];
+                                break;
+                            case 2:
+                                r->pos = r->unknown4 = r->unknown6 = level->f2[i][2];
+                                break;
+                            case 3:
+                                r->pos = r->unknown4 = r->unknown6 = level->f2[i][3];
+                                break;
+                            }
+                            r->owner = i;
+                            allhosps[i].unknown1cf[j] = r - room_info;
+                            break;
+                        }
+                    }
+                }
+                allhosps[i].f1d7 = level->f2802c[i];
+            }
+            goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
+            D_00155372 = level->f28034;
+            D_00155374 = level->f28036;
+        }
+        for (i = 0; i < 4; i++) {
+            LbDrawBoxCoords(&allhosps[i].unknown1cf, &allhosps[modem_dev.unknown1c].unknown1cf, 8);
+        }
+        recreate_map(0);
+        add_static_shadows();
+        D_001553c8 = 1;
+        D_00155db1 = lvl;
+        return 1;
+    }
+    return 0;
+}
+
+// FUNCTION: 0x00022764
+void free_level(void)
+{
+    D_00155db1 = 0;
+    cache.Free(D_00155dbe);
+}
+
+// FUNCTION: 0x00022790
+u32 fn_00022790(void)
+{
+    u32 sum;
+    int j;
+    int i;
+
+    sum = 0;
+    sum = seed;
+    for (i = 0; i < 4; i++) {
+        if (D_001609c4[i].active) {
+            for (j = 0; j < 20; j++) {
+                sum += allhosps[i].f11c2[j];
+            }
+        }
+    }
+    return sum;
+}
+
+// FUNCTION: 0x00022820
+void check_autosave(void)
+{
+    D_0015532d[3] = 0;
+    D_00155333 = 0;
+    D_00155334 = 1;
+    D_0015532d[2] = 0;
+}
+
+// NONMATCHING: stack slot order of h and the return value
+// FUNCTION: 0x000229b0
+s32 read_level_number(s32 n)
+{
+    int h;
+    u8 level;
+    char buf[64];
+
+    sprintf(buf, D_001202f3, D_001563c5, statvar.f6c, n);
+    h = LbFileOpen(buf, 2);
+    if (h == -1) {
+        return -1;
+    }
+    if (LbFileSeek(h, 2, 0) != -1) {
+        if (LbFileRead(h, &level, 2) != -1) {
+            LbFileClose(h);
+            return level;
+        }
+    }
+    LbFileClose(h);
+    return -1;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00022a58
+void fn_00022a58(void)
+{
+    if (statvar.unknownfd <= 1) {
+        check_autosave();
+        reset_advisor();
+        close_irequesters();
+        if (crequester.unknown2 != 0x63) {
+            close_crequester(crequester.unknown2);
+        }
+        D_00156910 = 1;
+        fn_00090804((u16)level_number, 1);
+        set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+        goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
+        D_00155e14 = 1;
+        draw_it();
+        D_001553dc = D_00153f34;
+        init_ambients();
+    }
+}
+
+// FUNCTION: 0x00022b60
+void *fn_00022b60(TbCacheUsedBlock *block)
+{
+    return (u8 *)block + 0x14;
 }

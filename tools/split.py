@@ -2,9 +2,9 @@
 """Write one GNU as source per unit reproducing its functions from HOSPITAL.EXE.
 
 Each function goes in its own _TEXT section, mirroring wpp386 -zm output.
-LE fixups become R_386_32 relocations; rel32 branches leaving the function
-become R_386_PC32 relocations, as the compiler emits for any call across
--zm segments.
+LE fixups become R_386_32 relocations; rel32 branches leaving the function,
+and recursive calls, become R_386_PC32 relocations, as the compiler emits for
+any call across -zm segments.
 
 Usage: tools/split.py OUTDIR [UNIT...]   (default: every unit)
 """
@@ -41,9 +41,14 @@ def emit_function(le, proj, fn, n, out):
 
     fields = {}  # field address -> (size, expression)
     for it in scan(le, fn.addr, fn.end):
-        if it.branch_target is not None and not fn.addr <= it.branch_target < fn.end:
-            expr = code_ref(proj, fn, label, it.branch_target)
-            fields[it.branch_field] = (4, f"{expr}-.-4")
+        if it.branch_target is None:
+            continue
+        if not fn.addr <= it.branch_target < fn.end:
+            fields[it.branch_field] = (4, f"{code_ref(proj, fn, label, it.branch_target)}-.-4")
+        elif it.mnemonic == "call" and it.branch_target == fn.addr:
+            # A recursive call is relocated against the function's own symbol;
+            # as would resolve `sym-.-4` itself, so the relocation is explicit.
+            fields[it.branch_field] = (4, f'-4\n.reloc .-4, R_386_PC32, {q(fn.name)}')
     for site in range(fn.addr, fn.end):
         fx = le.fixups.get(site)
         if fx is None:
