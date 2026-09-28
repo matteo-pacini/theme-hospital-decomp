@@ -190,6 +190,12 @@ Stack frame layout is not fully understood. Observed so far:
   for the better, so the difference is most likely a 10.x patch build we
   do not have.
 
+  The "Sybase Watcom C++ 10.6a" package (archive.org
+  `watcom-c-cpp-compilers-collection`) has compiler binaries byte-identical
+  to decomp.me's 10.6, so it is the build already in use. Untested: 10.0b
+  (unlikely: 10.0a differs elsewhere), 10.6b (only QNX-hosted binaries
+  exist), 11.0c (unlikely: 11.0 is further off than 10.6).
+
   Minimal test case, `plot_bid_money` (0x68480): the original computes the
   scaled index into a fresh register, which leaves `eax` for the value;
   every available compiler shifts in place instead. Any `-o` flag produces
