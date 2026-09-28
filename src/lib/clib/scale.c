@@ -8,7 +8,7 @@ int __CmpBigInt(int digits, void *bigint);
 #pragma aux __CmpBigInt "*" parm [eax] [edx];
 
 int _Scale(int exp, double x, int digits, void *bigint);
-#pragma aux _Scale parm [eax] frame;
+#pragma aux _Scale parm [eax];
 
 // NONMATCHING: the frame pragma adds lea esp,[ebp-0x10] to the epilogue;
 // built with -of (and without the pragma) it matches exactly
