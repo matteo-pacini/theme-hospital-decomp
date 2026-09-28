@@ -18,7 +18,7 @@ FILE *__get_std_stream(unsigned handle);
 int fputs(const char *s, FILE *fp);
 int fputc(int c, FILE *fp);
 void __set_EDOM(void);
-void __set_EINVAL(void);
+void __set_ERANGE(void);
 
 // FUNCTION: 0xfdf13
 void _set_matherr(int (*rtn)(struct exception *))
@@ -38,7 +38,6 @@ void __rterrmsg(int errcode, char *funcname)
     fputc('\n', fp);
 }
 
-/* config/functions.txt names __set_ERANGE after __set_EINVAL. */
 // NONMATCHING: the target has a stray jmp into fputs after the epilogue
 // FUNCTION: 0xfdf61
 double _matherr(struct exception *excp)
@@ -48,7 +47,7 @@ double _matherr(struct exception *excp)
         if (excp->type == DOMAIN)
             __set_EDOM();
         else
-            __set_EINVAL();
+            __set_ERANGE();
     }
     return excp->retval;
 }

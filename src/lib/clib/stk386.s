@@ -7,7 +7,7 @@
 .type "__CHK",@function
 "__CHK":
     xchg dword ptr [esp + 4], eax
-    call "fn_000ed29d_"
+    call "__STK"
     mov eax, dword ptr [esp + 4]
     ret 4
 .size "__CHK",.-"__CHK"
@@ -24,9 +24,9 @@
 // FUNCTION: 0x000ed29d
 
 .section _TEXT,"ax",@progbits,unique,971421
-.globl "fn_000ed29d_"
-.type "fn_000ed29d_",@function
-"fn_000ed29d_":
+.globl "__STK"
+.type "__STK",@function
+"__STK":
     cmp eax, esp
     jae .L000ed2ae
     sub eax, esp
@@ -39,7 +39,7 @@
     cmp ax, word ptr ["___umaskval"+0x4]
     .byte 0x74; .byte 0x01  # je 0xed2bb
     ret
-.size "fn_000ed29d_",.-"fn_000ed29d_"
+.size "__STK",.-"__STK"
 
 // FUNCTION: 0x000ed2bb
 

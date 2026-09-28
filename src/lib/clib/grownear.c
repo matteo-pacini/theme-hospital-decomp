@@ -141,7 +141,7 @@ void *_TinyCBAlloc(unsigned size);
     parm caller [ebx] value [eax] modify [ebx];
 
 /* config/functions.txt has no name for __unlink. */
-#pragma aux __unlink "fn_000ebd67_"
+#pragma aux __unlink "__unlink_"
 
 // FUNCTION: 0xebd67
 void __unlink(mheapptr heap)
@@ -164,11 +164,11 @@ void __unlink(mheapptr heap)
 }
 
 /* config/functions.txt gives __FreeDPMIBlocks the name of the next function. */
-#pragma aux __FreeDPMIBlocks "__ReAllocDPMIBlock_"
+#pragma aux __FreeDPMIBlocks "__FreeDPMIBlocks_"
 
 // FUNCTION: 0xebdb8
 // NONMATCHING: config/functions.txt extends this function over
-// __ReAllocDPMIBlock (0xebe14), and the original returns through
+// __FreeDPMIBlocks (0xebe14), and the original returns through
 // RationalAlloc's epilogue
 void __FreeDPMIBlocks(void)
 {
@@ -195,7 +195,7 @@ void __FreeDPMIBlocks(void)
 
 frlptr __LinkUpNewMHeap(mheapptr p1);
 
-/* __ReAllocDPMIBlock; config/functions.txt gives its name to the function before it. */
+/* __FreeDPMIBlocks; config/functions.txt gives its name to the function before it. */
 // FUNCTION: 0xebe14
 // NONMATCHING: register allocation (req_size is spilled; the target keeps
 // it in ebp)

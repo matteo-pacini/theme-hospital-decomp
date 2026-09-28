@@ -192,10 +192,10 @@ void dispatch_init(dispatch_exc *dispatch, THROW_RO *ro, int zero);
 #pragma aux dispatch_init "W?dispatch_init$n(pn$dispatch_exc$$pn$throw_ro$$i)v"
 void throwIt(void *object, THROW_RO *ro, int zero);
 /* config/functions.txt has no name for the common throw code. */
-#pragma aux throwIt "fn_000f4551_"
+#pragma aux throwIt "W?processThrow$n(pnvpn$throw_ro$$i)v"
 void popCatches(dispatch_exc *dispatch, rw_dtreg *rw);
 /* config/functions.txt has no name for this longjmp helper. */
-#pragma aux popCatches "fn_000f45ba_"
+#pragma aux popCatches "W?longjmpExcPop$n(pn$dispatch_exc$$pn$rw_dtreg$$)v"
 void __wcpp_2_lj_handler_(rw_dtreg *bound);
 #pragma aux __wcpp_2_lj_handler_ "W?longjmpDtoring$n(pfv)v" modify [edx]
 

@@ -34,7 +34,7 @@ struct tzflags {
 };
 extern struct tzflags D_001522da;
 
-void fn_000f3934(void);
+void tryOSTimeZone(void);
 
 // NONMATCHING: ours masks the setne result with 0xff before the bitfield insert
 // FUNCTION: 0xf38e0
@@ -49,7 +49,7 @@ int __CacheOSTZ(int flag)
 }
 
 // FUNCTION: 0xf3934
-void fn_000f3934(void)
+void tryOSTimeZone(void)
 {
     if (!D_001522da.cache_OS_TZ || !D_001522da.have_OS_TZ)
         D_001522da.have_OS_TZ = 1;
@@ -200,6 +200,6 @@ void tzset(void)
     if ((tz = getenv(D_00128484)) != NULL) {
         __parse_tz(tz);
     } else {
-        fn_000f3934();
+        tryOSTimeZone();
     }
 }

@@ -46,6 +46,15 @@ def main():
     )
     # Sources are listed so adding a FUNCTION marker regenerates the unit list.
     sources = Project.sources()
+    # No dependency files are generated, so every compiled object
+    # depends on every header.
+    headers = sorted(
+        os.path.relpath(os.path.join(d, f), ROOT)
+        for top in ("include", "src")
+        for d, _, files in os.walk(os.path.join(ROOT, top))
+        for f in files
+        if f.endswith((".h", ".hpp"))
+    )
     n.append(f"build build.ninja objdiff.json: configure configure.py {' '.join(configs + tools + sources)}\n")
 
     target_s = [f"build/target/{u.name}.s" for u in proj.units]
@@ -67,7 +76,7 @@ def main():
         }
         if not u.auto:
             base = f"build/base/{u.name}.o"
-            n.append(f"build {base}: cc {u.source} | tools/cc.py tools/omf2elf.py config/cflags.txt\n")
+            n.append(f"build {base}: cc {u.source} | tools/cc.py tools/omf2elf.py config/cflags.txt {' '.join(headers)}\n")
             objects.append(base)
             unit["base_path"] = base
             unit["metadata"]["source_path"] = u.source

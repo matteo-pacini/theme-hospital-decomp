@@ -13,7 +13,7 @@ int __scnf(SCNF_SPECS *specs, const char *format, va_list args);
 
 int cget_string(SCNF_SPECS *specs);
 /* config/functions.txt has no name for cget_string. */
-#pragma aux cget_string "fn_000efe5a_"
+#pragma aux cget_string "cget_string_"
 
 // FUNCTION: 0xefe5a
 int cget_string(SCNF_SPECS *specs)
@@ -31,7 +31,7 @@ int cget_string(SCNF_SPECS *specs)
 
 void uncget_string(int c, SCNF_SPECS *specs);
 /* config/functions.txt has no name for uncget_string. */
-#pragma aux uncget_string "fn_000efe83_"
+#pragma aux uncget_string "uncget_string_"
 
 // FUNCTION: 0xefe83
 void uncget_string(int c, SCNF_SPECS *specs)

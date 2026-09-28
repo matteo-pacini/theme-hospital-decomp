@@ -116,8 +116,8 @@ int fn_000bce44(TbLoadFiles *files);
 void StopSample(u32 source, s16 sample);
 void SetSamplePan(u32 source, s16 sample, u16 pan, void *handle);
 void SetSampleVolume(u32 source, s16 sample, s16 volume, void *handle);
-SampleInfo *GetNumberOfSongs(void);
-SampleInfo *GetCurrentSoundMasterVolume(void);
+SampleInfo *GetFirstSampleInfoStructure(void);
+SampleInfo *GetLastSampleInfoStructure(void);
 
 }
 
@@ -317,7 +317,7 @@ void manage_sound(void)
     s32 pan;
     s32 half;
 
-    for (s = GetNumberOfSongs(); s <= GetCurrentSoundMasterVolume(); s++) {
+    for (s = GetFirstSampleInfoStructure(); s <= GetLastSampleInfoStructure(); s++) {
         if (IsSamplePlaying(0, 0, s->SampleHandle)) {
             if (s->SourceID > 0xe) {
             if ((Thing *)s->SourceID > thing && (Thing *)s->SourceID < end_things) {

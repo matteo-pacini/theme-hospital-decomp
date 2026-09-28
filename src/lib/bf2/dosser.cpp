@@ -109,7 +109,7 @@ extern ModemResponse modem_response[];
 
 extern "C" {
 void fn_000f5254(SerialHandler *self);
-#pragma aux fn_000f5254 "W?$dt:SerialHandler$n()_"
+#pragma aux fn_000f5254 "W?$ct:SerialHandler$n()_"
 }
 
 // FUNCTION: 0xf5254

@@ -242,7 +242,7 @@ u32 backgroundload(Smack *smk);
 void *smkmalloc(Smack *smk, u32 bytes);
 
 /* config/functions.txt has no name for nexttrack. */
-#pragma aux nexttrack "fn_000ea4f0_";
+#pragma aux nexttrack "GetFirstTrack_";
 
 // FUNCTION: 0xea4f0
 // NONMATCHING: register allocation and instruction scheduling differ
@@ -310,7 +310,7 @@ void __pascal SmackSoundCheck(void)
         LowSoundCheckAddr();
 }
 
-#pragma aux (__pascal) SmackVolumePan "fn_000e8080_";
+#pragma aux (__pascal) SmackVolumePan "SMACKVOLUMEPAN";
 
 // FUNCTION: 0xe8080
 // NONMATCHING: smk and pan swap esi/edi; the target indexes sounds with
@@ -337,7 +337,7 @@ void __pascal SmackVolumePan(Smack *smk, u32 trackflag, u32 volume, u32 pan)
 }
 
 u32 __pascal SmackSoundInTrack(Smack *smk, u32 trackflags);
-#pragma aux (__pascal) SmackSoundInTrack "fn_000e8120_";
+#pragma aux (__pascal) SmackSoundInTrack "SMACKSOUNDINTRACK";
 
 // FUNCTION: 0xe8120
 // NONMATCHING: register allocation and instruction scheduling differ
@@ -451,7 +451,7 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
 }
 
 void __pascal SmackGoto(Smack *smk, u32 frame);
-#pragma aux (__pascal) SmackGoto "fn_000e8440_";
+#pragma aux (__pascal) SmackGoto "SMACKGOTO";
 
 // FUNCTION: 0xe8440
 void __pascal SmackGoto(Smack *smk, u32 frame)
@@ -866,7 +866,7 @@ void __pascal SmackNextFrame(Smack *smk)
 }
 
 void __pascal SmackSummary(Smack *smk, SmackSum *sum);
-#pragma aux (__pascal) SmackSummary "fn_000e9110_";
+#pragma aux (__pascal) SmackSummary "SMACKSUMMARY";
 
 // FUNCTION: 0xe9110
 void __pascal SmackSummary(Smack *smk, SmackSum *sum)
@@ -1155,7 +1155,7 @@ void __pascal SmackClose(Smack *smk)
 }
 
 u32 __pascal SmackSoundOnOff(Smack *smk, u32 on);
-#pragma aux (__pascal) SmackSoundOnOff "fn_000e9a20_";
+#pragma aux (__pascal) SmackSoundOnOff "SMACKSOUNDONOFF";
 
 // FUNCTION: 0xe9a20
 // NONMATCHING: register allocation and instruction scheduling differ
@@ -1224,19 +1224,16 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
     return 1;
 }
 
-void __pascal SmackSimulate(s32 sim);
-#pragma aux (__pascal) SmackSimulate "fn_000e9c50_";
-
 // FUNCTION: 0xe9c50
-void __pascal SmackSimulate(s32 sim)
+void __pascal SmackFrameRate(s32 rate)
 {
-    if (sim > 0)
-        sim = 100000 / -sim;
-    forcerate = sim;
+    if (rate > 0)
+        rate = 100000 / -rate;
+    forcerate = rate;
 }
 
 // FUNCTION: 0x000e9c70
-void __pascal SmackSpeed(u32 speed)
+void __pascal SmackSimulate(u32 speed)
 {
     simspeed = speed;
 }
@@ -1701,7 +1698,7 @@ u32 gotoframe(Smack *smk)
 }
 
 /* config/functions.txt has no name for readframe. */
-#pragma aux readframe "fn_000eadb0_";
+#pragma aux readframe "readframe_";
 
 // FUNCTION: 0xeadb0
 u32 readframe(Smack *smk)

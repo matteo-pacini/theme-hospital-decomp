@@ -106,15 +106,16 @@ extern char D_00127074[];
 extern char D_0012707c[];
 
 void fn_000e2ff0(void);
-void fn_000e5320(void);
-void __syscall XMI_SERVE(HSEQUENCE S);
+void AILXMIDI_end(void);
+void __syscall XMI_update_volume(HSEQUENCE S);
+#pragma aux (__syscall) XMI_update_volume "_XMI_update_volume";
 void __cdecl XMI_destroy_MDI_driver(HMDIDRIVER mdi);
 
 // FUNCTION: 0x000e1ed0
 void AILXMIDI_start(void)
 {
     if (!locked) {
-        AIL_vmm_lock_range(AILXMIDI_start, fn_000e5320);
+        AIL_vmm_lock_range(AILXMIDI_start, AILXMIDI_end);
         AIL_vmm_lock(GTL_prefix, sizeof(GTL_prefix));
         AIL_vmm_lock(&entry, sizeof(entry));
         AIL_vmm_lock(&S, sizeof(S));
@@ -653,7 +654,7 @@ void __cdecl XMI_rewind_sequence(HSEQUENCE S)
 }
 
 // FUNCTION: 0x000e2fb0
-void __syscall XMI_SERVE(HSEQUENCE S)
+void __syscall XMI_update_volume(HSEQUENCE S)
 {
     S32 i;
 
@@ -1325,7 +1326,7 @@ void __cdecl AIL_API_set_sequence_volume(HSEQUENCE S, S32 volume, S32 millisecon
         S->volume_accum = 0;
         S->volume_period = milliseconds / diff;
     }
-    XMI_SERVE(S);
+    XMI_update_volume(S);
     S->driver->disable--;
 }
 
@@ -1378,7 +1379,7 @@ void __cdecl AIL_API_set_XMIDI_master_volume(HMDIDRIVER mdi, S32 master_volume)
     mdi->disable++;
     for (i = mdi->n_sequences, S = mdi->sequences; i; i--, S++) {
         if (S->status == SEQ_PLAYING) {
-            XMI_SERVE(S);
+            XMI_update_volume(S);
         }
     }
     mdi->disable--;

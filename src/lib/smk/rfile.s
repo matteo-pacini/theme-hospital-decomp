@@ -180,14 +180,6 @@
 .type "_radseekbegin",@function
 "_radseekbegin":
     mov ax, 0x4200
-.size "_radseekbegin",.-"_radseekbegin"
-
-// FUNCTION: 0x000f30d5
-
-.section _TEXT,"ax",@progbits,unique,995541
-.globl "_radseekcur"
-.type "_radseekcur",@function
-"_radseekcur":
     push ebp
     {load} mov ebp, esp
     push ebx
@@ -205,27 +197,27 @@
     pop ebx
     pop ebp
     ret
-.size "_radseekcur",.-"_radseekcur"
+.size "_radseekbegin",.-"_radseekbegin"
 
 // FUNCTION: 0x000f30f5
 
 .section _TEXT,"ax",@progbits,unique,995573
-.globl "_radseekend"
-.type "_radseekend",@function
-"_radseekend":
+.globl "_radseekcur"
+.type "_radseekcur",@function
+"_radseekcur":
     mov ax, 0x4201
     .byte 0xeb; .byte 0xda  # jmp 0xf30d5
-.size "_radseekend",.-"_radseekend"
+.size "_radseekcur",.-"_radseekcur"
 
 // FUNCTION: 0x000f30fb
 
 .section _TEXT,"ax",@progbits,unique,995579
-.globl "fn_000f30fb_"
-.type "fn_000f30fb_",@function
-"fn_000f30fb_":
+.globl "_radseekend"
+.type "_radseekend",@function
+"_radseekend":
     mov ax, 0x4202
     .byte 0xeb; .byte 0xd4  # jmp 0xf30d5
-.size "fn_000f30fb_",.-"fn_000f30fb_"
+.size "_radseekend",.-"_radseekend"
 
 // FUNCTION: 0x000f3101
 

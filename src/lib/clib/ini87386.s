@@ -201,11 +201,11 @@
     .byte 0x75; .byte .L000ef28c-.-1
     .byte 0x66; .byte 0x8b; .byte 0x15; .long "__D16Infoseg"
     .byte 0x29; .byte 0xc0
-    .byte 0xe8; .long "fn_000fa896_"-.-4
+    .byte 0xe8; .long "__unhook387"-.-4
     .byte 0xeb; .byte .L000ef29c-.-1
 .L000ef28c:
     .byte 0x29; .byte 0xd2
-    .byte 0xe8; .long "fn_000fa896_"-.-4
+    .byte 0xe8; .long "__unhook387"-.-4
     .byte 0x3c; .byte 0x01
     .byte 0x74; .byte .L000ef29c-.-1
     .byte 0xe8; .long "fn_000ef2a7_"-.-4

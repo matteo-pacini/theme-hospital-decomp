@@ -91,13 +91,13 @@ void fn_000e1a00(void);
 /* WAV end-of-sample callback: __pascal (callee pops), address-named. */
 void fn_000e1b60(HSAMPLE S);
 #pragma aux (__pascal) fn_000e1b60 "*_";
-void fn_000e1ea0(void);
+void AILSFILE_end(void);
 
 // FUNCTION: 0x000e16e0
 void AILSFILE_start(void)
 {
     if (!locked) {
-        AIL_vmm_lock_range(AILSFILE_start, fn_000e1ea0);
+        AIL_vmm_lock_range(AILSFILE_start, AILSFILE_end);
         locked = 1;
     }
 }

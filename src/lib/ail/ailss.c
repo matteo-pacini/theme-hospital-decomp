@@ -36,13 +36,13 @@ void fn_000dff00(U32 user);
 /* Driver destructor: __cdecl, address-named. */
 void fn_000e0660(HDIGDRIVER dig);
 #pragma aux (__cdecl) fn_000e0660 "*_";
-void fn_000e1620(void);
+void AILSS_end(void);
 
 // FUNCTION: 0x000df970
 void AILSS_start(void)
 {
     if (!locked) {
-        AIL_vmm_lock_range(AILSS_start, fn_000e1620);
+        AIL_vmm_lock_range(AILSS_start, AILSS_end);
         AIL_vmm_lock(pan_graph, sizeof(pan_graph));
         AIL_vmm_lock(&entry, sizeof(entry));
         AIL_vmm_lock(&dig, sizeof(dig));

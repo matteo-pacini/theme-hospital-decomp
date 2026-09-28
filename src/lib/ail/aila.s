@@ -761,9 +761,9 @@
 // FUNCTION: 0x000de6f8
 
 .section _TEXT,"ax",@progbits,unique,911096
-.globl "_AIL_switch_stack"
-.type "_AIL_switch_stack",@function
-"_AIL_switch_stack":
+.globl "_AIL_API_restore_interrupts"
+.type "_AIL_API_restore_interrupts",@function
+"_AIL_API_restore_interrupts":
     push ebp
     {load} mov ebp, esp
     push dword ptr [ebp + 8]
@@ -778,14 +778,14 @@
     popfd
     leave
     ret
-.size "_AIL_switch_stack",.-"_AIL_switch_stack"
+.size "_AIL_API_restore_interrupts",.-"_AIL_API_restore_interrupts"
 
 // FUNCTION: 0x000de70d
 
 .section _TEXT,"ax",@progbits,unique,911117
-.globl "fn_000de70d_"
-.type "fn_000de70d_",@function
-"fn_000de70d_":
+.globl "_AIL_switch_stack"
+.type "_AIL_switch_stack",@function
+"_AIL_switch_stack":
     mov eax, dword ptr [esp + 0x10]
     mov dword ptr [eax], esp
     mov eax, dword ptr [esp + 0x14]
@@ -806,7 +806,7 @@
     {load} sub esp, eax
     sub esp, 0x14
     jmp edx
-.size "fn_000de70d_",.-"fn_000de70d_"
+.size "_AIL_switch_stack",.-"_AIL_switch_stack"
 
 // FUNCTION: 0x000de743
 

@@ -6,7 +6,7 @@ void __exit(int status);
 #pragma aux __exit aborts;
 
 // FUNCTION: 0xc2110
-void fn_000c2110(void)
+void __null_int23_exit(void)
 {
 }
 

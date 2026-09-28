@@ -8,7 +8,7 @@ extern s32 CurrentMusicMasterVolume;
 extern u32 MusicDriver;
 
 // FUNCTION: 0x000c23c0
-u16 fn_000c23c0(void)
+u16 GetNumberOfSamples(void)
 {
     return NumberOfSamples;
 }
@@ -26,13 +26,13 @@ u8 GetMusicAble(void)
 }
 
 // FUNCTION: 0x000c23f0
-u8 fn_000c23f0(void)
+u8 GetSoundActive(void)
 {
     return SoundActive;
 }
 
 // FUNCTION: 0x000c2400
-u8 fn_000c2400(void)
+u8 GetMusicActive(void)
 {
     return MusicActive;
 }
@@ -50,49 +50,49 @@ u8 GetMusicInstalled(void)
 }
 
 // FUNCTION: 0x000c2430
-u8 fn_000c2430(void)
+u8 GetStereoSound(void)
 {
     return StereoSound;
 }
 
 // FUNCTION: 0x000c2440
-u16 fn_000c2440(void)
+u16 GetNumberOfSongs(void)
 {
     return NumberOfSongs;
 }
 
 // FUNCTION: 0x000c2450
-s32 fn_000c2450(void)
+s32 GetCurrentSoundMasterVolume(void)
 {
     return D_00150824;
 }
 
 // FUNCTION: 0x000c2460
-s32 fn_000c2460(void)
+s32 GetCurrentMusicMasterVolume(void)
 {
     return CurrentMusicMasterVolume;
 }
 
 // FUNCTION: 0x000c2470
-u32 GetStereoSound(void)
+u32 GetSoundDriver(void)
 {
     return SoundDriver;
 }
 
 // FUNCTION: 0x000c2480
-u32 fn_000c2480(void)
+u32 GetMusicDriver(void)
 {
     return MusicDriver;
 }
 
 // FUNCTION: 0x000c2490
-SampleInfo *GetNumberOfSongs(void)
+SampleInfo *GetFirstSampleInfoStructure(void)
 {
     return sample_id;
 }
 
 // FUNCTION: 0x000c24a0
-SampleInfo *GetCurrentSoundMasterVolume(void)
+SampleInfo *GetLastSampleInfoStructure(void)
 {
     return end_sample_id;
 }

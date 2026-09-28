@@ -34,7 +34,7 @@ extern u32 D_00188c34;
 #pragma aux D_00188c34 "W?research_names$npnpna"
 extern u32 D_00188c38;
 
-u32 GetStereoSound(void);
+u32 GetSoundDriver(void);
 int LbScreenWaitVbi(void);
 void fn_000e7910(u32 digdriver);
 #pragma aux fn_000e7910 parm routine [];
@@ -48,13 +48,13 @@ long play_smk_via_buffer(char *name, long a2, long flags);
 extern "C" {
 
 // FUNCTION: 0xca350
-void fn_000ca350(void *(*fn)(u32 bytes))
+void set_smack_malloc(void *(*fn)(u32 bytes))
 {
     smack_malloc = fn;
 }
 
 // FUNCTION: 0xca358
-void fn_000ca358(void (*fn)(void *ptr))
+void set_smack_free(void (*fn)(void *ptr))
 {
     smack_free = fn;
 }
@@ -83,10 +83,10 @@ long play_smk_direct(char *name, long a2, long flags)
     u8 new_palette;
     int i;
 
-    if ((flags & 1) || !GetStereoSound()) {
+    if ((flags & 1) || !GetSoundDriver()) {
         flags |= 1;
     } else {
-        fn_000e7910(GetStereoSound());
+        fn_000e7910(GetSoundDriver());
     }
     smk = SmackOpen(name, (flags & 1) ? 0 : SMACKTRACKS, SMACKAUTOEXTRA);
     if (smk == 0)
@@ -141,10 +141,10 @@ long play_smk_via_buffer(char *name, long a2, long flags)
     u32 frame;
     int i;
 
-    if ((flags & 1) || !GetStereoSound()) {
+    if ((flags & 1) || !GetSoundDriver()) {
         flags |= 1;
     } else {
-        fn_000e7910(GetStereoSound());
+        fn_000e7910(GetSoundDriver());
     }
     smk = SmackOpen(name, (flags & 1) ? 0 : SMACKTRACKS, SMACKAUTOEXTRA);
     if (smk == 0)

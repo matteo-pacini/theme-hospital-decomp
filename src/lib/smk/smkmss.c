@@ -327,7 +327,7 @@ void __pascal MSSLowSoundCheck(void)
     }
 }
 
-#pragma aux (__pascal) MSSCopyWrap "fn_000e7ec0_";
+#pragma aux (__pascal) MSSCopyWrap "SMACKWRAPCOPY";
 
 // FUNCTION: 0xe7ec0
 U8 *__pascal MSSCopyWrap(U8 *dst, U8 *src, U8 *start, U8 *end, U32 n)

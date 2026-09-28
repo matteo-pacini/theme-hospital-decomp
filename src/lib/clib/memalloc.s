@@ -85,15 +85,15 @@
     pop edi
     pop esi
     ret
-    .byte 0xe9; .long "fn_000ebc5c_"+0x106-.-4
+    .byte 0xe9; .long "__MemFree"+0x106-.-4
 .size "__MemAllocator",.-"__MemAllocator"
 
 // FUNCTION: 0x000ebc5c
 
 .section _TEXT,"ax",@progbits,unique,965724
-.globl "fn_000ebc5c_"
-.type "fn_000ebc5c_",@function
-"fn_000ebc5c_":
+.globl "__MemFree"
+.type "__MemFree",@function
+"__MemFree":
     push esi
     push edi
     push ecx
@@ -227,4 +227,4 @@
     pop edi
     pop esi
     ret
-.size "fn_000ebc5c_",.-"fn_000ebc5c_"
+.size "__MemFree",.-"__MemFree"

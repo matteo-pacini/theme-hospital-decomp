@@ -23,7 +23,7 @@ struct RT_TYPE_SIG {
 
 RT_TYPE_SIG *catBaseSig(RT_TYPE_SIG *sig);
 /* config/functions.txt has no name for catBaseSig. */
-#pragma aux catBaseSig "fn_000fb838_"
+#pragma aux catBaseSig "W?catBaseSig$n(pn$rt_type_sig$$)pn$1$"
 
 // FUNCTION: 0xfb838
 RT_TYPE_SIG *catBaseSig(RT_TYPE_SIG *sig)

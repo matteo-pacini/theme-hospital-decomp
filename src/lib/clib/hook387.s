@@ -103,9 +103,9 @@
 // FUNCTION: 0x000fa896
 
 .section _TEXT,"ax",@progbits,unique,1026198
-.globl "fn_000fa896_"
-.type "fn_000fa896_",@function
-"fn_000fa896_":
+.globl "__unhook387"
+.type "__unhook387",@function
+"__unhook387":
     push ebx
     push ecx
     push es
@@ -150,7 +150,7 @@
     pop ebx
     ret
     .byte 0xc3
-.size "fn_000fa896_",.-"fn_000fa896_"
+.size "__unhook387",.-"__unhook387"
 
 // FUNCTION: 0x000fa8f0
 

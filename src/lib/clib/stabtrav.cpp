@@ -52,8 +52,7 @@ void __wcpp_2_corrupted_stack_(void);
 }
 
 char testFlag(unsigned char *flags, unsigned index);
-/* config/functions.txt names the flag test after an unrelated demo function. */
-#pragma aux testFlag "W?arr_state_table$n(pn$ro_dtreg$$)pn$__7a4u3RO_STATE$$"
+#pragma aux testFlag "fn_000fb810_"
 
 extern "C" {
 

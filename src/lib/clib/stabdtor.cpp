@@ -208,7 +208,7 @@ extern THREAD_CTL _wint_thread_data;
 
 void __wcpp_2_destruct_all_(void);
 /* config/functions.txt has no name for __wcpp_2_destruct_all__. */
-#pragma aux __wcpp_2_destruct_all_ "fn_000ebb8e_"
+#pragma aux __wcpp_2_destruct_all_ "__wcpp_2_destruct_all__"
 
 // FUNCTION: 0xebb8e
 // NONMATCHING: the target clears eax before the register saves
@@ -219,7 +219,7 @@ void __wcpp_2_destruct_all_(void)
 
 void __wcpp_2_destruct_(void);
 /* config/functions.txt has no name for __wcpp_2_destruct__. */
-#pragma aux __wcpp_2_destruct_ "fn_000ebba2_"
+#pragma aux __wcpp_2_destruct_ "__wcpp_2_destruct_after_all__"
 
 // FUNCTION: 0xebba2
 // NONMATCHING: the target shares the call and epilogue of

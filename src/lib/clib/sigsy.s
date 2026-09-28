@@ -31,9 +31,9 @@
     test edi, edi
     jne .L000f4c2e
     mov eax, dword ptr ["___int23_exit"]
-    .byte 0x3d; .long "fn_000c2110_"  # cmp eax, 0xb2110
+    .byte 0x3d; .long "__null_int23_exit_"  # cmp eax, 0xb2110
     je .L000f4c2e
-    .byte 0x3d; .long "fn_000f4f21_"  # cmp eax, 0xe4f21
+    .byte 0x3d; .long "__restore_int_ctrl_break_"  # cmp eax, 0xe4f21
     je .L000f4c2e
     mov eax, 4
     sti
@@ -93,7 +93,7 @@
     test edi, edi
     jne .L000f4cc6
     mov eax, dword ptr ["___int23_exit"]
-    .byte 0x3d; .long "fn_000c2110_"  # cmp eax, 0xb2110
+    .byte 0x3d; .long "__null_int23_exit_"  # cmp eax, 0xb2110
     je .L000f4cc6
     .byte 0x3d; .long "__restore_int23_"  # cmp eax, 0xe4d6b
     je .L000f4cc6
@@ -188,12 +188,12 @@
     mov ebx, dword ptr ["___int23_exit"]
     .byte 0x81; .byte 0xfb; .long "__restore_int_"  # cmp ebx, 0xe4f1c
     jne .L000f4da0
-    .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "fn_000f4f21_"  # mov dword ptr [0x2db68], 0xe4f21
+    .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "__restore_int_ctrl_break_"  # mov dword ptr [0x2db68], 0xe4f21
     jmp .L000f4db2
 .L000f4da0:
     .byte 0x81; .byte 0xfb; .long "__restore_int23_"  # cmp ebx, 0xe4d6b
     jne .L000f4db2
-    .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "fn_000c2110_"  # mov dword ptr [0x2db68], 0xb2110
+    .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "__null_int23_exit_"  # mov dword ptr [0x2db68], 0xb2110
 .L000f4db2:
     xor eax, eax
     mov al, byte ptr ["__Extender"]
@@ -250,9 +250,9 @@
     pop ecx
     pop ebx
     ret
-    .byte 0x81; .byte 0xfb; .long "fn_000f4f21_"
+    .byte 0x81; .byte 0xfb; .long "__restore_int_ctrl_break_"
     .byte 0x75; .byte .L000f4e70-.-1
-    .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "fn_000c2110_"
+    .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "__null_int23_exit_"
 .L000f4e70:
     .byte 0x31; .byte 0xc0
     .byte 0xa0; .long "__Extender"
@@ -322,9 +322,9 @@
 // FUNCTION: 0x000f4f21
 
 .section _TEXT,"ax",@progbits,unique,1003297
-.globl "fn_000f4f21_"
-.type "fn_000f4f21_",@function
-"fn_000f4f21_":
+.globl "__restore_int_ctrl_break_"
+.type "__restore_int_ctrl_break_",@function
+"__restore_int_ctrl_break_":
     push ebx
     push ecx
     push edx
@@ -339,7 +339,7 @@
     jne "__restore_int23_"+0xf3
     .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "__restore_int23_"  # mov dword ptr [0x2db68], 0xe4d6b
     jmp "__restore_int23_"+0x105
-.size "fn_000f4f21_",.-"fn_000f4f21_"
+.size "__restore_int_ctrl_break_",.-"__restore_int_ctrl_break_"
 
 // FUNCTION: 0x000f4f59
 
@@ -418,7 +418,7 @@
     call "_dos_setvect_"
 .L000f5042:
     mov ebx, dword ptr ["___int23_exit"]
-    .byte 0x81; .byte 0xfb; .long "fn_000c2110_"  # cmp ebx, 0xb2110
+    .byte 0x81; .byte 0xfb; .long "__null_int23_exit_"  # cmp ebx, 0xb2110
     jne .L000f505e
     .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "__restore_int23_"  # mov dword ptr [0x2db68], 0xe4d6b
     pop edx
@@ -426,7 +426,7 @@
     pop ebx
     ret
 .L000f505e:
-    .byte 0x81; .byte 0xfb; .long "fn_000f4f21_"  # cmp ebx, 0xe4f21
+    .byte 0x81; .byte 0xfb; .long "__restore_int_ctrl_break_"  # cmp ebx, 0xe4f21
     jne .L000f5070
     .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "__restore_int_"  # mov dword ptr [0x2db68], 0xe4f1c
 .L000f5070:
@@ -513,9 +513,9 @@
     call "_dos_setvect_"
 .L000f515d:
     mov ebx, dword ptr ["___int23_exit"]
-    .byte 0x81; .byte 0xfb; .long "fn_000c2110_"  # cmp ebx, 0xb2110
+    .byte 0x81; .byte 0xfb; .long "__null_int23_exit_"  # cmp ebx, 0xb2110
     jne .L000f5179
-    .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "fn_000f4f21_"  # mov dword ptr [0x2db68], 0xe4f21
+    .byte 0xc7; .byte 0x05; .long "___int23_exit"; .long "__restore_int_ctrl_break_"  # mov dword ptr [0x2db68], 0xe4f21
     pop edx
     pop ecx
     pop ebx

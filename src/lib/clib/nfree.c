@@ -25,7 +25,7 @@ extern mheapptr D_0018ba94;
 extern unsigned char D_0018cfa8;
 
 void __MemFree(unsigned ptr, unsigned seg, unsigned heap);
-#pragma aux __MemFree "fn_000ebc5c_" parm [eax] [edx] [ebx];
+#pragma aux __MemFree "__MemFree" parm [eax] [edx] [ebx];
 
 unsigned short FP_SEG(const volatile void __far *);
 #pragma aux FP_SEG = parm caller [eax dx] value [dx];

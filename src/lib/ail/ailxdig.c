@@ -81,7 +81,7 @@ void fn_000e59e0(void);
 /* MIDI event trap: __pascal (callee pops), address-named. */
 S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2);
 #pragma aux (__pascal) fn_000e5a10 "*_";
-void fn_000e6090(void);
+void AILXDIG_end(void);
 
 void __cdecl XDIG_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2);
 #pragma aux (__cdecl) XDIG_write_log "fn_000e5660_";
@@ -93,7 +93,7 @@ void XDIG_MIDI_TRAP(HWAVESYNTH W, S32 voice);
 void AILXDIG_start(void)
 {
     if (!locked) {
-        AIL_vmm_lock_range(AILXDIG_start, fn_000e6090);
+        AIL_vmm_lock_range(AILXDIG_start, AILXDIG_end);
         locked = 1;
     }
 }

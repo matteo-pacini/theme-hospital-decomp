@@ -53,8 +53,8 @@ extern u8 D_00155e1d;
 extern TbCacheUsedBlock *D_00155dbe;
 int LbFilePosition(int handle);
 char IsSamplePlaying(s32 a, s32 b, void *handle);
-SampleInfo *GetNumberOfSongs(void);
-SampleInfo *GetCurrentSoundMasterVolume(void);
+SampleInfo *GetFirstSampleInfoStructure(void);
+SampleInfo *GetLastSampleInfoStructure(void);
 SampleInfo *PlaySampleFromAddress(u32 source, s16 sample, u32 volume, u32 pitch, u16 pan, s8 loop, u8 type, void *data, u32 length);
 void *fn_00022b60(TbCacheUsedBlock *block);
 void fn_000a2ed0(TbCacheUsedBlock *block);
@@ -136,8 +136,8 @@ void process_sound_heap(void)
         fn_000a2ed0(D_00155dbe);
     if (D_00155e1d)
         fn_000a2ed0(D_00155dbe);
-    end = GetCurrentSoundMasterVolume();
-    for (s = GetNumberOfSongs(); s <= end; s++) {
+    end = GetLastSampleInfoStructure();
+    for (s = GetFirstSampleInfoStructure(); s <= end; s++) {
         if (s->SampleHandle == 0 || !(s->flags & 1))
             continue;
         if (IsSamplePlaying(0, 0, s->SampleHandle)) {

@@ -26,7 +26,7 @@ extern __sig_func D_00152a94[];
 void __sigfpe_handler(int fpe_type);
 void __terminate(void);
 void __restore_int23(void);
-void fn_000f4f21(void);
+void __restore_int_ctrl_break(void);
 
 int raise(int sig);
 /* config/functions.txt has no name for raise. */
@@ -55,7 +55,7 @@ int raise(int sig)
     case SIGBREAK:
         if (func != SIG_IGN && func != SIG_DFL && func != SIG_ERR) {
             D_00152a94[sig] = SIG_DFL;
-            fn_000f4f21();
+            __restore_int_ctrl_break();
             (*func)(sig);
         }
         break;

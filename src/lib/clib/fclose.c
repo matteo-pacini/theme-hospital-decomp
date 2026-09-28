@@ -17,7 +17,7 @@ int __shutdown_stream(FILE *fp, int close_handle);
 
 int fclose(FILE *fp);
 /* config/functions.txt has no name for fclose. */
-#pragma aux fclose "fn_000f49cb_"
+#pragma aux fclose "fclose_"
 
 // FUNCTION: 0xf49cb
 int fclose(FILE *fp)

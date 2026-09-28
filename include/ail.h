@@ -682,8 +682,6 @@ void __cdecl AIL_API_lock(void);
 void __cdecl AIL_API_unlock(void);
 U32 __cdecl AIL_API_disable_interrupts(void);
 void __cdecl AIL_API_restore_interrupts(U32 FD_register);
-/* config/functions.txt names AIL_API_restore_interrupts _AIL_switch_stack. */
-#pragma aux (__cdecl) AIL_API_restore_interrupts "_AIL_switch_stack";
 U32 __cdecl AIL_ms_count(void);
 S32 __cdecl AIL_API_background(void);
 void __cdecl AILA_startup(void);
@@ -849,12 +847,12 @@ void __cdecl AIL_API_quick_halt(HAUDIO audio);
 S32 __cdecl AIL_API_quick_status(HAUDIO audio);
 HAUDIO __cdecl AIL_API_quick_load_and_play(char *filename, U32 loop_count, S32 wait_request);
 
-#pragma aux (__cdecl) AIL_API_register_EOF_callback "fn_000e1e80_";
-#pragma aux (__cdecl) AIL_API_send_sysex_message "AILXMIDI_end_";
+#pragma aux (__cdecl) AIL_API_register_EOF_callback "_AIL_API_register_EOF_callback";
+#pragma aux (__cdecl) AIL_API_send_sysex_message "_AIL_API_send_sysex_message";
 #pragma aux (__cdecl) AIL_API_redbook_track "rbpos_";
 #pragma aux (__cdecl) AIL_API_quick_shutdown "fn_000e6e50_";
 #pragma aux (__cdecl) AIL_API_quick_halt "fn_000e7330_";
-#pragma aux (__cdecl) AIL_API_quick_status "fn_000e7410_";
+#pragma aux (__cdecl) AIL_API_quick_status "_AIL_API_quick_status";
 #pragma aux (__cdecl) AIL_API_quick_load_and_play "fn_000e7380_";
 
 #endif

@@ -29,7 +29,7 @@ extern char D_00126c24[];
 
 void AIL_start(void);
 void AIL_end(void);
-#pragma aux AIL_end "fn_000df8e0_"
+#pragma aux AIL_end "AIL_end_"
 void __pascal fn_000dec50(U32 user);
 #pragma aux (__pascal) fn_000dec50 "fn_000dec50_"
 
@@ -228,7 +228,7 @@ S32 __cdecl AIL_API_set_preference(U32 number, S32 value)
 }
 
 // FUNCTION: 0x000df290
-char *__cdecl AIL_API_last_error(void)
+char *__cdecl AIL_last_error(void)
 {
     return AIL_error;
 }

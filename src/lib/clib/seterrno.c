@@ -22,15 +22,15 @@ void __set_errno(int err)
 }
 
 // FUNCTION: 0xec53d
-// NONMATCHING: config/functions.txt extends __set_EINVAL_ over __set_EBADF
+// NONMATCHING: config/functions.txt extends __set_EINVAL_ over __set_EINVAL
 // (0xec544)
-void __set_EINVAL(void)
+void __set_ERANGE(void)
 {
     __set_errno(EINVAL);
 }
 
 // FUNCTION: 0x000ec544
-int __set_EBADF(void)
+int __set_EINVAL(void)
 {
     __set_errno(EBADF);
     return -1;

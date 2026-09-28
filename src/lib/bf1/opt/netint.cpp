@@ -125,7 +125,7 @@ void fn_000bf7a0(u32 timeout);
 TbError fn_000c1458(void);
 #pragma aux fn_000c1458 "W?MultiPlayerCallback$n(ulululpnv)pnv"
 TbError fn_000c197c(TbNetworkPlayerEntry *player);
-#pragma aux fn_000c197c "W?MultiPlayerReqExDataMsgCallback$n(ululpnv)v"
+#pragma aux fn_000c197c "W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$"
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
 
