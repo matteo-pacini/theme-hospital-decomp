@@ -1089,8 +1089,6 @@ void fn_000dc440(IPXServiceProvider *sp, __1p5pi1IPXSYSTEMMESSAGE *msg)
 
 extern "C" {
 
-// NONMATCHING: config/functions.txt extends this function over two jmp thunks
-// (0xdc812, 0xdc817) that follow it
 // FUNCTION: 0xdc740
 TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid)
 {

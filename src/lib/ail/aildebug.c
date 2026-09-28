@@ -353,16 +353,12 @@ S32 __cdecl AIL_set_preference(U32 number, S32 value)
 }
 
 // FUNCTION: 0x000c2a50
-// NONMATCHING: config/functions.txt folds AIL_API_lock into _AIL_file_read, so
-// the target jumps to _AIL_file_read+0x208
 void __cdecl AIL_lock(void)
 {
     AIL_API_lock();
 }
 
 // FUNCTION: 0x000c2a60
-// NONMATCHING: config/functions.txt folds AIL_API_unlock into _AIL_file_read,
-// so the target jumps to _AIL_file_read+0x20f
 void __cdecl AIL_unlock(void)
 {
     AIL_API_unlock();
@@ -421,9 +417,6 @@ void __cdecl AIL_restore_USE16_ISR(S32 IRQ)
 }
 
 // FUNCTION: 0x000c2cc0
-// NONMATCHING: config/functions.txt folds AIL_API_disable_interrupts into
-// _AIL_API_restore_USE16_ISR, so the target jumps to
-// _AIL_API_restore_USE16_ISR+0x45
 U32 __cdecl AIL_disable_interrupts(void)
 {
     return AIL_API_disable_interrupts();

@@ -87,7 +87,9 @@ extern char D_00126e04[];
 extern char D_00126e24[];
 extern char D_00126e4c[];
 
-void fn_000e1a00(void);
+/* VOC end-of-sample callback (demo: AIL_VOC_EOS): __pascal, address-named. */
+void fn_000e1a00(HSAMPLE S);
+#pragma aux (__pascal) fn_000e1a00 "*_";
 /* WAV end-of-sample callback: __pascal (callee pops), address-named. */
 void fn_000e1b60(HSAMPLE S);
 #pragma aux (__pascal) fn_000e1b60 "*_";
@@ -109,8 +111,6 @@ U32 __cdecl AIL_VOC_block_len(void *block)
 }
 
 // FUNCTION: 0x000e1720
-// NONMATCHING: config/functions.txt sizes this function to also cover the
-// jump table of AIL_process_VOC_block, which follows it
 void __cdecl AIL_VOC_terminate(HSAMPLE S)
 {
     if (S->system_data[EOD_CALLBACK] != NULL) {
@@ -123,8 +123,6 @@ void __cdecl AIL_VOC_terminate(HSAMPLE S)
 }
 
 // FUNCTION: 0x000e1780
-// NONMATCHING: the target names the jump table _AIL_VOC_terminate+0x38
-// (see above)
 void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
 {
     S32 voice_block;
@@ -212,6 +210,12 @@ void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
         }
         S->system_data[VOC_BLK_PTR] = (S32)((U8 *)b + AIL_VOC_block_len(b) + 4);
     } while (!voice_block);
+}
+
+// FUNCTION: 0xe1a00
+void fn_000e1a00(HSAMPLE S)
+{
+    AIL_process_VOC_block(S, 1);
 }
 
 // FUNCTION: 0x000e1a20
@@ -333,4 +337,26 @@ S32 __cdecl AIL_API_set_sample_file(HSAMPLE S, void *file_image, S32 block)
         return 0;
     }
     return 1;
+}
+
+// FUNCTION: 0xe1e80
+AILSAMPLECB __cdecl AIL_API_register_EOF_callback(HSAMPLE S, AILSAMPLECB EOFILE)
+{
+    AILSAMPLECB old;
+
+    if (S == NULL) {
+        return NULL;
+    }
+    old = (AILSAMPLECB)S->system_data[EOD_CALLBACK];
+    S->system_data[EOD_CALLBACK] = (S32)EOFILE;
+    return old;
+}
+
+// FUNCTION: 0xe1ea0
+void AILSFILE_end(void)
+{
+    if (locked) {
+        AIL_vmm_unlock_range(AILSFILE_start, AILSFILE_end);
+        locked = 0;
+    }
 }

@@ -62,7 +62,7 @@ TbError StartTwoPlayerExchange(void *buf)
 }
 
 // FUNCTION: 0xd2e40
-// NONMATCHING: range also holds the two two-player receive callbacks
+// NONMATCHING: ours keeps requestExchangeDataBuffer in ebp where the target keeps the Receive argument 8; timeCount compare reads through registers
 TbError CompleteTwoPlayerExchange(void *buf)
 {
     TbError ret = Lb_FAIL;

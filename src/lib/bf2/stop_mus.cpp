@@ -1,7 +1,6 @@
 #include "snd.h"
 
 // FUNCTION: 0xfb730
-// NONMATCHING: constant stores go through registers instead of immediates
 void StopMusic(void)
 {
     if (MusicInstalled && MusicAble && MusicActive && SongCurrentlyPlaying) {

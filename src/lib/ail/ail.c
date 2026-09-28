@@ -107,8 +107,8 @@ U32 AIL_fgets(S32 file, INI_BUFFER *buf, char *dest, U32 maxlen)
     char ch;
     char *out;
 
-    out = dest;
     n = 0;
+    out = dest;
     while (n < maxlen) {
         if (buf->count == 0) {
             buf->ptr = buf->data;
@@ -411,8 +411,6 @@ void __cdecl AIL_API_shutdown(void)
 }
 
 // FUNCTION: 0x000df850
-// NONMATCHING: no config/symbols.txt entry covers AIL_driver_directory - 1,
-// so the target names that address _D_00151417
 char *__cdecl AIL_API_set_driver_directory(char *dir)
 {
     U32 len;

@@ -280,6 +280,72 @@ U32 rbstatus(U32 drive)
     return ((req->status & 0x200) == 0) + 1;
 }
 
+// FUNCTION: 0xe6730
+S32 rbsetvol(U32 drive, U8 vol)
+{
+    RQ_HDR *req;
+    IOCTL_RQ *ioctl;
+    U8 *buf;
+
+    req = (RQ_HDR *)ptrtoreal;
+    req->length = 0x1a;
+    req->subunit = 0;
+    req->command = 0xc;
+    ioctl = (IOCTL_RQ *)(ptrtoreal + 0xd);
+    req->status = 0;
+    ioctl->media = 0;
+    ioctl->start = 0;
+    buf = ptrtoreal + 0x1a;
+    ioctl->volid = 0;
+    buf[0] = 3;
+    buf[1] = 0;
+    buf[3] = 1;
+    buf[5] = 2;
+    buf[6] = 0;
+    buf[7] = 3;
+    buf[8] = 0;
+    buf[2] = vol;
+    buf[4] = vol;
+    ioctl->count = 9;
+    ioctl->transfer = segtoreal + (buf - ptrtoreal);
+    calldrv(drive, req, segtoreal, 0);
+    return 0;
+}
+
+// FUNCTION: 0xe67b0
+U32 rbgetvol(U32 drive)
+{
+    RQ_HDR *req;
+    IOCTL_RQ *ioctl;
+    U8 *buf;
+    U32 vol;
+
+    req = (RQ_HDR *)ptrtoreal;
+    req->length = 0x1a;
+    req->subunit = 0;
+    req->command = 3;
+    ioctl = (IOCTL_RQ *)(ptrtoreal + 0xd);
+    req->status = 0;
+    ioctl->media = 0;
+    ioctl->start = 0;
+    buf = ptrtoreal + 0x1a;
+    ioctl->volid = 0;
+    buf[0] = 4;
+    buf[1] = 0;
+    buf[2] = 0;
+    buf[3] = 1;
+    buf[4] = 0;
+    buf[5] = 2;
+    buf[6] = 0;
+    buf[7] = 3;
+    buf[8] = 0;
+    ioctl->count = 9;
+    ioctl->transfer = segtoreal + (buf - ptrtoreal);
+    calldrv(drive, req, segtoreal, 0);
+    vol = (buf[2] + buf[4]) / 2;
+    return vol / 2;
+}
+
 // FUNCTION: 0x000e6850
 // NONMATCHING: the target keeps rb in esi; ours spills it to the stack
 HREDBOOK __cdecl AIL_API_redbook_open(U32 which)

@@ -344,7 +344,7 @@ void IPXHandler::Send(__3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *dest, u8 *data
 {
     IPXPacket *p;
 
-    p = GetFreePacket();
+    p = GetNextSendPkt();
     memset(p, 0, sizeof(IPXPacket));
     p->link = 0;
     p->esr_off = send_esr;
@@ -363,13 +363,13 @@ void IPXHandler::Send(__3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *dest, u8 *data
     memcpy(p->hdr.dest_node, dest->node, 6);
     memcpy(p->hdr.dest_net, dest->net, 4);
     memcpy(p->data, data, len);
-    SendPacket(p);
+    SendEcb((ECB *)p);
 }
 
 // FUNCTION: 0xd4800
 void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
 {
-    IPXBatchCmd c;
+    __2aq9p8IPXPARAMS c;
 
     memset(p, 0, sizeof(IPXPacket));
     p->link = 0;
@@ -390,7 +390,6 @@ void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
 }
 
 // FUNCTION: 0xd48f0
-// NONMATCHING: range also holds GetFreePacket, SendPacket and AddBatch
 long IPXHandler::RecPkt(IPXPacket *p, __3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *from)
 {
     long len = 0;
@@ -405,7 +404,8 @@ long IPXHandler::RecPkt(IPXPacket *p, __3ljac5NETSOCKET *sock, __3ljac5NETSOCKET
     return len;
 }
 
-IPXPacket *IPXHandler::GetFreePacket(void)
+// FUNCTION: 0xd4964
+IPXPacket *IPXHandler::GetNextSendPkt(void)
 {
     IPXPacket *p;
 
@@ -418,17 +418,19 @@ IPXPacket *IPXHandler::GetFreePacket(void)
     return p;
 }
 
-void IPXHandler::SendPacket(IPXPacket *p)
+// FUNCTION: 0xd4998
+void IPXHandler::SendEcb(ECB *ecb)
 {
-    IPXBatchCmd c;
+    __2aq9p8IPXPARAMS c;
 
     c.cmd = 3;
-    c.seg = ((u32)p >> 4) & 0xffff;
-    c.off = (u16)(u32)p & 0xf;
+    c.seg = ((u32)ecb >> 4) & 0xffff;
+    c.off = (u16)(u32)ecb & 0xf;
     AddBatch(&c);
 }
 
-void IPXHandler::AddBatch(IPXBatchCmd *c)
+// FUNCTION: 0xd4a1c
+void IPXHandler::AddBatch(__2aq9p8IPXPARAMS *c)
 {
     if (++batch_count < 30) {
         memcpy(dosbuf + 0x90 + (batch_count - 1) * 6, c, 6);
@@ -442,7 +444,7 @@ void IPXHandler::AddBatch(IPXBatchCmd *c)
 void IPXHandler::BatchProcess(void)
 {
     RMREGS rm;
-    IPXBatchCmd c;
+    __2aq9p8IPXPARAMS c;
 
     if (batch_count) {
         if (++batch_count <= 31) {

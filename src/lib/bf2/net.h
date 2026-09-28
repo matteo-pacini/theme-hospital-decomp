@@ -144,7 +144,10 @@ struct CommHandler {
     long Init(long port);
     long DeInit(void);
     long ReadByte(void);
+    u32 ReadBytes(void *buf, u32 len);
     long WriteBytes(u8 *buf, long len);
+    long WriteBytesNoWait(u8 *buf, long len);
+    void EmptyOutputBuffer(void);
     long SetBaud(long baud);
     void SendModemString(char *str);
     long InitModem(void);
@@ -154,18 +157,41 @@ struct CommHandler {
     long GetModemResponse(long timeout);
     void SetInitModemFunc(long (*fn)(void));
     void SetDialModemFunc(long (*fn)(void));
+    void SetHangUpModemFunc(long (*fn)(void));
+    void SetAnswerModemFunc(long (*fn)(void));
+    void SetModemResponseTimeOut(long seconds);
     void SetDtr(void);
+    void SetRts(void);
+    void ClearDtr(void);
+    void ClearRts(void);
+};
+
+enum ParserState {
+    PS_HEADER,
+    PS_SEQUENCE,
+    PS_SIZE,
+    PS_DATA,
+    PS_CHECKSUM,
+    PS_COMPLETE
 };
 
 struct Parser {
     u32 active;
-    u8 state;
+    ParserState state;
     u32 count;
     u8 msg[0x407];
     u8 header[4];
     u8 seq;
     u32 size;
 
+    Parser();
+    void Init(void);
+    u32 InUse(void);
+    void TakeDown(void);
+    u8 *GetMessageBuffer(void);
+    u32 GotCompleteMessage(void);
+    u8 GetFirstHeaderByte(void);
+    u8 GetSequenceNumber(void);
     TbError InputByte(u8 c);
 };
 
@@ -262,6 +288,8 @@ struct __3ljac5NETSOCKET {
     u8 node[6];
 };
 
+struct ECB;
+
 struct IPXHeader {
     u16 checksum;
     u16 length;
@@ -292,7 +320,7 @@ struct IPXPacket {
     u8 data[0x222];
 };
 
-struct IPXBatchCmd {
+struct __2aq9p8IPXPARAMS {
     u16 cmd;
     u16 off;
     u16 seg;
@@ -408,9 +436,9 @@ struct IPXHandler {
     long AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock);
     void QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock);
     u32 SimulateInt(u16 intno, RMREGS *rm) { return fn_000d41c8(this, intno, rm); }
-    IPXPacket *GetFreePacket(void);
-    void SendPacket(IPXPacket *packet);
-    void AddBatch(IPXBatchCmd *cmd);
+    IPXPacket *GetNextSendPkt(void);
+    void SendEcb(ECB *ecb);
+    void AddBatch(__2aq9p8IPXPARAMS *cmd);
 };
 
 

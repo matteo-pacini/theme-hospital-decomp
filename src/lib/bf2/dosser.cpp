@@ -41,7 +41,9 @@ struct TbSerialDev {
     u16 irq;
     u16 rx_head;
     u16 rx_tail;
-    u8 unknown10a0[8];
+    u16 head;
+    u16 tail;
+    u8 unknown10a4[4];
     u8 port;
 };
 
@@ -73,13 +75,20 @@ struct SerialHandler {
     ~SerialHandler();
     long Init(long port);
     long DeInit(long port);
+    long ReadByte(long port);
     void WriteChar(TbSerialDev *dev, u8 c);
+    void WriteCharNoWait(TbSerialDev *dev, u8 c);
     void EmptyOutputBuffer(long port);
+    long WriteBytes(long port, u8 *buf, long len);
+    long WriteBytesNoWait(long port, u8 *buf, long len);
     long SetBaud(long port, long baud);
+    void SetDtr(long port);
+    void SetRts(long port);
+    void ClearDtr(long port);
+    void ClearRts(long port);
     void backup_serial_int_vectors(TbSerialDev *dev);
     void setup_serial_int_vectors(TbSerialDev *dev);
     void init_com_port(TbSerialDev *dev);
-    long Write(long port, u8 *buf, long len);
 };
 
 struct CommHandlerData {
@@ -154,7 +163,6 @@ void fn_000f5254(SerialHandler *self)
 }
 
 // FUNCTION: 0xf5544
-// NONMATCHING: range also holds the following function; register allocation differs
 long SerialHandler::DeInit(long port)
 {
     REGS r;
@@ -191,8 +199,26 @@ long SerialHandler::DeInit(long port)
     return 0;
 }
 
+// FUNCTION: 0xf5714
+long SerialHandler::ReadByte(long port)
+{
+    TbSerialDev *dev;
+    long c;
+
+    if (port < 4) {
+        dev = com_dev[port].dev;
+        if (dev->rx_head != dev->rx_tail) {
+            c = dev->rx_buf[dev->rx_head];
+            dev->rx_head++;
+            if (dev->rx_head > 0x7ff)
+                dev->rx_head = 0;
+            return c;
+        }
+    }
+    return -1;
+}
+
 // FUNCTION: 0xf5780
-// NONMATCHING: range also holds the following tx-buffer function
 void SerialHandler::WriteChar(TbSerialDev *dev, u8 c)
 {
     u32 busy = 1;
@@ -215,8 +241,18 @@ void SerialHandler::WriteChar(TbSerialDev *dev, u8 c)
     _enable();
 }
 
+// FUNCTION: 0xf5818
+void SerialHandler::WriteCharNoWait(TbSerialDev *dev, u8 c)
+{
+    ComHandlerInfo *info = &com_dev[dev->port];
+
+    info->tx_buf[info->tx_tail++] = c;
+    if (info->tx_tail >= 0x1000)
+        info->tx_tail = 0;
+}
+
 // FUNCTION: 0xf5864
-// NONMATCHING: range also holds two following functions
+// NONMATCHING: ours copies the line status to ecx and keeps the port in esi; target tests al directly
 void SerialHandler::EmptyOutputBuffer(long port)
 {
     TbSerialDev *dev;
@@ -248,8 +284,43 @@ void SerialHandler::EmptyOutputBuffer(long port)
     _enable();
 }
 
+// FUNCTION: 0xf5948
+long SerialHandler::WriteBytes(long port, u8 *buf, long len)
+{
+    TbSerialDev *dev;
+    long i;
+    long n = 0;
+
+    if (port >= 4)
+        return len ^ len;
+    dev = com_dev[port].dev;
+    for (i = 0; i < len; i++, buf++) {
+        WriteChar(dev, *buf);
+        n++;
+    }
+    return n;
+}
+
+// FUNCTION: 0xf59a8
+// NONMATCHING: loop counter and buffer pointer registers swapped (ebx/edx)
+long SerialHandler::WriteBytesNoWait(long port, u8 *buf, long len)
+{
+    TbSerialDev *dev;
+    long i;
+    long n;
+
+    if (port >= 4)
+        return 0;
+    dev = com_dev[port].dev;
+    n = 0;
+    for (i = 0; i < len; i++, buf++) {
+        WriteCharNoWait(dev, *buf);
+        n++;
+    }
+    return n;
+}
+
 // FUNCTION: 0xf5a3c
-// NONMATCHING: range also holds four following functions
 long SerialHandler::SetBaud(long port, long baud)
 {
     TbSerialDev *dev;
@@ -270,6 +341,50 @@ long SerialHandler::SetBaud(long port, long baud)
     outp(dev->base + 3, 3);
     _enable();
     return 0;
+}
+
+// FUNCTION: 0xf5ad0
+void SerialHandler::SetDtr(long port)
+{
+    TbSerialDev *dev;
+
+    if (port < 4) {
+        dev = com_dev[port].dev;
+        outp(dev->base + 4, inp(dev->base + 4) | 1);
+    }
+}
+
+// FUNCTION: 0xf5b0c
+void SerialHandler::SetRts(long port)
+{
+    TbSerialDev *dev;
+
+    if (port < 4) {
+        dev = com_dev[port].dev;
+        outp(dev->base + 4, inp(dev->base + 4) | 2);
+    }
+}
+
+// FUNCTION: 0xf5b48
+void SerialHandler::ClearDtr(long port)
+{
+    TbSerialDev *dev;
+
+    if (port < 4) {
+        dev = com_dev[port].dev;
+        outp(dev->base + 4, inp(dev->base + 4) & ~1);
+    }
+}
+
+// FUNCTION: 0xf5b84
+void SerialHandler::ClearRts(long port)
+{
+    TbSerialDev *dev;
+
+    if (port < 4) {
+        dev = com_dev[port].dev;
+        outp(dev->base + 4, inp(dev->base + 4) & ~2);
+    }
 }
 
 // FUNCTION: 0xf5c3c
@@ -343,7 +458,7 @@ void SerialHandler::setup_serial_int_vectors(TbSerialDev *dev)
 }
 
 // FUNCTION: 0xf5e74
-// NONMATCHING: range also holds the serial interrupt handlers; register allocation differs
+// NONMATCHING: target has no ret: it falls through into lock_code_start, which is a bare ret
 void SerialHandler::init_com_port(TbSerialDev *dev)
 {
     TbSerialDev *d;
@@ -379,20 +494,63 @@ void SerialHandler::init_com_port(TbSerialDev *dev)
     SetBaud(dev->port, 9600);
 }
 
-long SerialHandler::Write(long port, u8 *buf, long len)
+// FUNCTION: 0xf60d8
+void handle_com(TbSerialDev *dev)
 {
-    TbSerialDev *dev;
-    long i;
-    long n = 0;
+    u32 iir;
 
-    if (port >= 4)
-        return len ^ len;
-    dev = com_dev[port].dev;
-    for (i = 0; i < len; i++, buf++) {
-        WriteChar(dev, *buf);
-        n++;
+    for (;;) {
+        iir = inp(dev->base + 2) & 7;
+        if (iir & 4) {
+            u32 lsr = inp(dev->base + 5);
+            while (lsr & 1) {
+                u32 c = inp(dev->base);
+                dev->rx_buf[dev->rx_tail] = c;
+                dev->rx_tail++;
+                if (dev->rx_tail > 0x7ff)
+                    dev->rx_tail = 0;
+                lsr = inp(dev->base + 5);
+            }
+        }
+        if (!(iir & 6))
+            break;
+        inp(dev->base + 5);
     }
-    return n;
+    outp(0x20, 0x20);
+}
+
+// FUNCTION: 0xf6184
+void inc_head(TbSerialDev *dev)
+{
+    if (++dev->head > 0x7ff)
+        dev->head = 0;
+}
+
+// FUNCTION: 0xf61a8
+void inc_tail(TbSerialDev *dev)
+{
+    if (++dev->tail > 0x7ff)
+        dev->tail = 0;
+}
+
+// FUNCTION: 0xf61cc
+void inc_rec_head(TbSerialDev *dev)
+{
+    if (++dev->rx_head > 0x7ff)
+        dev->rx_head = 0;
+}
+
+// FUNCTION: 0xf61f0
+// NONMATCHING: target has no ret: it falls through (after a nop) into lock_code_end's ret
+void inc_rec_tail(TbSerialDev *dev)
+{
+    if (++dev->rx_tail > 0x7ff)
+        dev->rx_tail = 0;
+}
+
+// FUNCTION: 0xf6214
+void lock_code_end(void)
+{
 }
 
 // FUNCTION: 0xf6218
@@ -438,29 +596,51 @@ long CommHandler::DeInit(void)
 }
 
 // FUNCTION: 0xf6380
-// NONMATCHING: range also holds the following function
 long CommHandler::ReadByte(void)
 {
-    TbSerialDev *dev;
+    return SerialCommHandler.ReadByte(CH(this)->port);
+}
+
+// FUNCTION: 0xf63f4
+u32 CommHandler::ReadBytes(void *buf, u32 len)
+{
+    u8 *p = (u8 *)buf;
+    u32 n = 0;
+    u32 more = 1;
     long c;
 
-    if (CH(this)->port >= 4)
-        return -1;
-    dev = com_dev[CH(this)->port].dev;
-    if (dev->rx_head == dev->rx_tail)
-        return -1;
-    c = dev->rx_buf[dev->rx_head];
-    dev->rx_head++;
-    if (dev->rx_head > 0x7ff)
-        dev->rx_head = 0;
-    return c;
+    do {
+        if (n < len) {
+            c = ReadByte();
+            if (c == -1) {
+                more = 0;
+            } else {
+                *p++ = c;
+                n++;
+            }
+        } else {
+            more = 0;
+        }
+    } while (more);
+    return n;
 }
 
 // FUNCTION: 0xf64bc
-// NONMATCHING: range also holds two following functions; loop register allocation differs
 long CommHandler::WriteBytes(u8 *buf, long len)
 {
-    return SerialCommHandler.Write(CH(this)->port, buf, len);
+    return SerialCommHandler.WriteBytes(CH(this)->port, buf, len);
+}
+
+// FUNCTION: 0xf651c
+long CommHandler::WriteBytesNoWait(u8 *buf, long len)
+{
+    return SerialCommHandler.WriteBytesNoWait(CH(this)->port, buf, len);
+}
+
+// FUNCTION: 0xf65bc
+void CommHandler::EmptyOutputBuffer(void)
+{
+    SerialCommHandler.EmptyOutputBuffer(CH(this)->port);
 }
 
 // FUNCTION: 0xf65d0
@@ -477,7 +657,7 @@ void CommHandler::SendModemString(char *str)
 
     strcpy(buf, str);
     strcat(buf, D_00128709);
-    SerialCommHandler.Write(CH(this)->port, (u8 *)buf, strlen(buf));
+    SerialCommHandler.WriteBytes(CH(this)->port, (u8 *)buf, strlen(buf));
     strcpy(CH(this)->last_cmd, buf);
 }
 
@@ -526,11 +706,11 @@ long CommHandler::HangUpModem(void)
         ;
     if (CH(this)->port < 4) {
         dev = com_dev[CH(this)->port].dev;
-        outp(dev->base + 4, inp(dev->base + 4) & 0xfe);
+        outp(dev->base + 4, inp(dev->base + 4) & ~1);
     }
     delay(50);
     SetDtr();
-    SerialCommHandler.Write(CH(this)->port, (u8 *)D_0012870b, 3);
+    SerialCommHandler.WriteBytes(CH(this)->port, (u8 *)D_0012870b, 3);
     t = clock();
     while (clock() - t < 100)
         ;
@@ -546,18 +726,17 @@ long CommHandler::HangUpModem(void)
     CH(this)->online = 0;
     if (CH(this)->port < 4) {
         dev = com_dev[CH(this)->port].dev;
-        outp(dev->base + 4, inp(dev->base + 4) & 0xfe);
+        outp(dev->base + 4, inp(dev->base + 4) & ~1);
     }
     if (CH(this)->port < 4) {
         dev = com_dev[CH(this)->port].dev;
-        outp(dev->base + 4, inp(dev->base + 4) & 0xfd);
+        outp(dev->base + 4, inp(dev->base + 4) & ~2);
     }
     CH(this)->cur_func = 0;
     return ret;
 }
 
 // FUNCTION: 0xf6fb0
-// NONMATCHING: range also holds two following functions; SerialInitData layout guessed
 void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
 {
     char **strs;
@@ -590,7 +769,6 @@ void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
 }
 
 // FUNCTION: 0xf70f8
-// NONMATCHING: inlined byte read uses different registers; range also holds the following function
 long CommHandler::GetModemResponse(long timeout)
 {
     char buf[0xa0];
@@ -644,6 +822,12 @@ long CommHandler::GetModemResponse(long timeout)
     return ret;
 }
 
+// FUNCTION: 0xf72e8
+void CommHandler::SetModemResponseTimeOut(long seconds)
+{
+    CH(this)->unknown19c = seconds * 100;
+}
+
 // FUNCTION: 0xf7304
 void CommHandler::SetInitModemFunc(long (*fn)(void))
 {
@@ -651,10 +835,21 @@ void CommHandler::SetInitModemFunc(long (*fn)(void))
 }
 
 // FUNCTION: 0xf730c
-// NONMATCHING: range also holds two more modem callback setters
 void CommHandler::SetDialModemFunc(long (*fn)(void))
 {
     CH(this)->dial_func = fn;
+}
+
+// FUNCTION: 0xf7314
+void CommHandler::SetHangUpModemFunc(long (*fn)(void))
+{
+    CH(this)->hangup_func = fn;
+}
+
+// FUNCTION: 0xf731c
+void CommHandler::SetAnswerModemFunc(long (*fn)(void))
+{
+    CH(this)->other_func = fn;
 }
 
 // FUNCTION: 0xf7324
@@ -666,4 +861,22 @@ void CommHandler::SetDtr(void)
         dev = com_dev[CH(this)->port].dev;
         outp(dev->base + 4, inp(dev->base + 4) | 1);
     }
+}
+
+// FUNCTION: 0xf7368
+void CommHandler::SetRts(void)
+{
+    SerialCommHandler.SetRts(CH(this)->port);
+}
+
+// FUNCTION: 0xf73ac
+void CommHandler::ClearDtr(void)
+{
+    SerialCommHandler.ClearDtr(CH(this)->port);
+}
+
+// FUNCTION: 0xf73f0
+void CommHandler::ClearRts(void)
+{
+    SerialCommHandler.ClearRts(CH(this)->port);
 }

@@ -18,6 +18,7 @@ typedef struct _AUDIO_TYPE {
 extern HDIGDRIVER dig;
 extern HMDIDRIVER mdi;
 extern HAUDIO audios;
+extern S32 locked;
 
 extern char D_001270e8[];
 extern char D_001270f8[];
@@ -34,6 +35,20 @@ void fn_000e6d00(HSEQUENCE S);
 #pragma aux fn_000e6d00 "*_" parm routine [] modify [eax ebx ecx edx];
 void fn_000e6d40(HSAMPLE S);
 #pragma aux fn_000e6d40 "*_" parm routine [] modify [eax ebx ecx edx];
+
+void AILQAPI_end(void);
+
+// FUNCTION: 0xe6ca0
+void AILQAPI_start(void)
+{
+    if (!locked) {
+        AIL_vmm_lock_range(AILQAPI_start, AILQAPI_end);
+        AIL_vmm_lock(&mdi, sizeof(mdi));
+        AIL_vmm_lock(&dig, sizeof(dig));
+        AIL_vmm_lock(&audios, sizeof(audios));
+        locked = 1;
+    }
+}
 
 // FUNCTION: 0xe6d00
 void fn_000e6d00(HSEQUENCE S)
@@ -241,8 +256,6 @@ HAUDIO __cdecl AIL_API_quick_load_and_play(char *filename, U32 loop_count, S32 w
     return audio;
 }
 
-void AILQAPI_start(void);
-
 S32 __cdecl AIL_API_quick_startup(void (*startup)(void), S32 use_digital, S32 use_MIDI,
                                   U32 output_rate, S32 output_bits, S32 output_channels);
 #pragma aux (__cdecl) AIL_API_quick_startup "fn_000e6d80_";
@@ -282,4 +295,22 @@ S32 __cdecl AIL_API_quick_startup(void (*startup)(void), S32 use_digital, S32 us
         }
     }
     return 1;
+}
+
+// FUNCTION: 0xe7410
+S32 __cdecl AIL_API_quick_status(HAUDIO audio)
+{
+    if (audio == NULL) {
+        return QSTAT_LOADED;
+    }
+    return audio->status;
+}
+
+// FUNCTION: 0xe7430
+void AILQAPI_end(void)
+{
+    if (locked) {
+        AIL_vmm_unlock_range(AILQAPI_start, AILQAPI_end);
+        locked = 0;
+    }
 }

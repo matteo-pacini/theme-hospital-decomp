@@ -149,6 +149,7 @@ S32 __cdecl AIL_vmm_unlock(void *start, U32 size)
     return AIL_vmm_unlock_range(start, (U8 *)start + size - 1);
 }
 
+// FUNCTION: 0xddd10
 S32 __cdecl AIL_file_error(void)
 {
     return D_00150834;
@@ -240,6 +241,7 @@ S32 __cdecl AIL_file_write(char *filename, void *buf, U32 len)
     return 1;
 }
 
+// FUNCTION: 0xddf00
 S32 __cdecl AIL_file_append(char *filename, void *buf, U32 len)
 {
     S32 handle;

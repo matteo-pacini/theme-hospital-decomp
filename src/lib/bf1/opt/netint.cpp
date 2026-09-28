@@ -173,7 +173,6 @@ TbError GetCurrentPlayers(void)
     return ret;
 }
 
-// NONMATCHING: target range also covers the two following functions (0xbf854, 0xbf91c)
 // FUNCTION: 0x000bf818
 TbError LbNetwork_EnableNewPlayers(u32 allow)
 {
@@ -611,6 +610,23 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
         return ret;
     }
     return Lb_OK;
+}
+
+// FUNCTION: 0xc1130
+TbError GetPlayerInfo(void)
+{
+    TbError ret = Lb_OK;
+    u32 i;
+
+    for (i = 0; i < maximumPlayers; i++) {
+        if (clientDataTable[i].active) {
+            localPlayerInfoPtr[i].active = 1;
+            strcpy(localPlayerInfoPtr[i].name, clientDataTable[i].name);
+        } else {
+            localPlayerInfoPtr[i].active = clientDataTable[i].active;
+        }
+    }
+    return ret;
 }
 
 // NONMATCHING: register choice and block layout

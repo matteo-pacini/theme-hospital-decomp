@@ -104,7 +104,7 @@ void fn_000ccd30(u32 user)
     }
 }
 
-// NONMATCHING: jump table placement (target's lies before the function)
+// NONMATCHING: ours caches smp->SampleVolume in ecx for the fade direction compare; target re-reads it
 // FUNCTION: 0x000ccfb0
 void FadeSample(u32 source_id, s16 number, s16 volume, u8 stop_flag, u8 step)
 {

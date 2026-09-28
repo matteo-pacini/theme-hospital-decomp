@@ -1085,16 +1085,12 @@ void __cdecl AIL_API_set_digital_master_volume(HDIGDRIVER dig, S32 master_volume
 }
 
 // FUNCTION: 0x000e13f0
-// NONMATCHING: config/functions.txt sizes this function to also cover the
-// jump table of AIL_API_minimum_sample_buffer_size, which follows it
 S32 __cdecl AIL_API_digital_master_volume(HDIGDRIVER dig)
 {
     return dig->master_volume;
 }
 
 // FUNCTION: 0x000e1410
-// NONMATCHING: the target names the jump table
-// _AIL_API_digital_master_volume+0x8 (see above)
 S32 __cdecl AIL_API_minimum_sample_buffer_size(HDIGDRIVER dig, S32 playback_rate, S32 format)
 {
     S32 app_bytes_per_sample;
@@ -1196,4 +1192,22 @@ S32 __cdecl AIL_API_sample_buffer_info(HSAMPLE S, U32 *pos0, U32 *len0, U32 *pos
         *len1 = S->len[1];
     }
     return S->starved;
+}
+
+// FUNCTION: 0xe1620
+void AILSS_end(void)
+{
+    if (locked) {
+        AIL_vmm_unlock_range(AILSS_start, AILSS_end);
+        AIL_vmm_unlock(pan_graph, sizeof(pan_graph));
+        AIL_vmm_unlock(&entry, sizeof(entry));
+        AIL_vmm_unlock(&dig, sizeof(dig));
+        AIL_vmm_unlock(&VDI, sizeof(VDI));
+        AIL_vmm_unlock(&flags, sizeof(flags));
+        AIL_vmm_unlock(&cnt, sizeof(cnt));
+        AIL_vmm_unlock(&n, sizeof(n));
+        AIL_vmm_unlock(&current, sizeof(current));
+        AIL_vmm_unlock(&S, sizeof(S));
+        locked = 0;
+    }
 }

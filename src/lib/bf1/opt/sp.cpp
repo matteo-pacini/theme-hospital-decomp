@@ -83,7 +83,6 @@ ServiceProvider::~ServiceProvider()
     fn_000c20c0(D_00124e05);
 }
 
-// NONMATCHING: our loop is aligned with padding
 // FUNCTION: 0x000d13dc
 TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
 {
@@ -115,7 +114,17 @@ TbError ServiceProvider::Release(void)
     return Lb_OK;
 }
 
-// NONMATCHING: register choice, loop padding
+/* Copies at most size - 1 characters and always terminates. */
+inline void NameCopy(char *dst, char *src, u32 size)
+{
+    if (strlen(src) < size) {
+        strcpy(dst, src);
+    } else {
+        memcpy(dst, src, size - 1);
+        dst[size - 1] = 0;
+    }
+}
+
 // FUNCTION: 0x000d14a4
 TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 a, u32 b)
 {
@@ -134,19 +143,12 @@ TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 a, u32 b)
         ret = Lb_OK;
     } else if (num_players >= 32) {
         fn_000c20c0(D_00124ec3);
-        return ret;
     } else {
         i = num_players;
         players[i].id = id;
         dst = players[i].name;
-        if (dst && name) {
-            if (strlen(name) < 32) {
-                strcpy(dst, name);
-            } else {
-                memcpy(dst, name, 31);
-                dst[31] = 0;
-            }
-        }
+        if (dst && name)
+            NameCopy(dst, name, 32);
         players[i].unknown5 = a;
         players[i].unknown9 = b;
         ret = Lb_OK;
@@ -185,7 +187,6 @@ void ServiceProvider::ClearPlayers(void)
     num_players = 0;
 }
 
-// NONMATCHING: loop padding; target advances the copy pointer after truncating
 // FUNCTION: 0x000d1674
 TbNetworkSessionNameEntry *ServiceProvider::AddSession(u32 id, char *name)
 {
@@ -210,14 +211,8 @@ TbNetworkSessionNameEntry *ServiceProvider::AddSession(u32 id, char *name)
             if (!sessions[i].in_use) {
                 sessions[i].id = id;
                 dst = sessions[i].name;
-                if (dst && name) {
-                    if (strlen(name) < 32) {
-                        strcpy(dst, name);
-                    } else {
-                        memcpy(dst, name, 31);
-                        dst[31] = 0;
-                    }
-                }
+                if (dst && name)
+                    NameCopy(dst, name, 32);
                 session = &sessions[i];
                 sessions[i].in_use = 1;
                 more = 0;

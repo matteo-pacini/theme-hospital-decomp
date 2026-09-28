@@ -1654,7 +1654,6 @@ void __cdecl AIL_API_register_ICA_array(HSEQUENCE S, U8 *array)
 }
 
 // FUNCTION: 0x000e4ef0
-// NONMATCHING: eax/ebx swapped in the channel search loops
 S32 __cdecl AIL_API_lock_channel(HMDIDRIVER mdi)
 {
     S32 i;
@@ -1679,16 +1678,16 @@ S32 __cdecl AIL_API_lock_channel(HMDIDRIVER mdi)
         }
     }
     if (best == -1) {
-        for (i = MAX_LOCK_CHAN; i >= MIN_LOCK_CHAN; i--) {
-            if (i == PERCUSS_CHAN) {
+        for (j = MAX_LOCK_CHAN; j >= MIN_LOCK_CHAN; j--) {
+            if (j == PERCUSS_CHAN) {
                 continue;
             }
-            if (mdi->lock[i] == 1) {
+            if (mdi->lock[j] == 1) {
                 continue;
             }
-            if (mdi->notes[i] < min_notes) {
-                min_notes = mdi->notes[i];
-                best = i;
+            if (mdi->notes[j] < min_notes) {
+                min_notes = mdi->notes[j];
+                best = j;
             }
         }
     }
@@ -1721,7 +1720,6 @@ S32 __cdecl AIL_API_lock_channel(HMDIDRIVER mdi)
 }
 
 // FUNCTION: 0x000e5080
-// NONMATCHING: the target loads the owner's status into edi before comparing
 void __cdecl AIL_API_release_channel(HMDIDRIVER mdi, S32 channel)
 {
     S32 i;
@@ -1751,9 +1749,8 @@ void __cdecl AIL_API_release_channel(HMDIDRIVER mdi, S32 channel)
             S->note_chan[i] = -1;
         }
     }
-    S = mdi->owner[channel];
-    if (S != NULL && S->status != SEQ_FREE) {
-        XMI_refresh_channel(S, channel);
+    if (mdi->owner[channel] != NULL && mdi->owner[channel]->status != SEQ_FREE) {
+        XMI_refresh_channel(mdi->owner[channel], channel);
     }
     mdi->disable--;
 }
@@ -1822,4 +1819,27 @@ void __cdecl AIL_API_send_sysex_message(HMDIDRIVER mdi, void *buffer)
     len = XMI_read_VLN(&ptr);
     XMI_sysex_message(mdi, buffer, len + (ptr - (U8 *)buffer));
     mdi->disable--;
+}
+
+// FUNCTION: 0xe5320
+void AILXMIDI_end(void)
+{
+    if (locked) {
+        AIL_vmm_unlock_range(AILXMIDI_start, AILXMIDI_end);
+        AIL_vmm_unlock(GTL_prefix, sizeof(GTL_prefix));
+        AIL_vmm_unlock(&entry, sizeof(entry));
+        AIL_vmm_unlock(&S, sizeof(S));
+        AIL_vmm_unlock(&i, sizeof(i));
+        AIL_vmm_unlock(&n, sizeof(n));
+        AIL_vmm_unlock(&sequence_done, sizeof(sequence_done));
+        AIL_vmm_unlock(&q, sizeof(q));
+        AIL_vmm_unlock(&t, sizeof(t));
+        AIL_vmm_unlock(&channel, sizeof(channel));
+        AIL_vmm_unlock(&status, sizeof(status));
+        AIL_vmm_unlock(&type, sizeof(type));
+        AIL_vmm_unlock(&len, sizeof(len));
+        AIL_vmm_unlock(&ptr, sizeof(ptr));
+        AIL_vmm_unlock(&event, sizeof(event));
+        locked = 0;
+    }
 }

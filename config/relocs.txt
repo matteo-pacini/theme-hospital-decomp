@@ -9,3 +9,10 @@
 000f491f ___iob 0x208
 0006bc47 W?window$n$HospWindow$$ -4
 000927b1 W?window$n$HospWindow$$ -4
+000ac916 W?window$n$HospWindow$$ -4
+00035ab3 W?panel_popup_pos$n[]us -0x2
+00035747 W?panel_popup_pos$n[]us -0x2
+0008f281 W?myplayer$n$HospPlayerDetails$$ -0x1
+000508da W?diag_register$n[][8]s -0x4a
+0003c462 W?diag_register$n[][8]s -0x48
+000df88d _AIL_driver_directory -1

@@ -73,8 +73,8 @@
 0012d874 W?staff_unhappy$n[]xuc 40
 0012d8b4 W?illness_abilities$n[][1]uc 24
 0012d8ea W?$Wsi0dnew_line$n[]a$:.0$:?announce_new_illness_fax$n(xucpnpna)usnx[]a 2
-0012d900 W?expertise$n[]$Expertise$$ 474
-0012dd7c _D_0012dd7c 1c
+0012d900 W?expertise$n[]$Expertise$$ 380
+0012dc80 W?gbv$n$Balance$$ 160
 0012dde0 W?ins_control$n[]us 8
 0012dde8 W?panel_icons_over$n[]$Icons$$ 1dc
 0012dfc4 W?panel_icons_normal$n[]$Icons$$ 1dc
@@ -206,6 +206,7 @@
 00151644 _numopen 4
 00151648 _stupidhash 10
 00151658 _audios 4
+0015165c _locked 4
 00151660 W?sample_queue_handle_stopped$nuc 4
 00151674 _sounds 4
 00151678 _trackbuf 4
@@ -316,8 +317,7 @@
 00154b58 W?player$nul 4
 00154b5c W?net_text$n[]$NetText$$ fc
 00154c58 W?current_text$n$CurrentText$$ 5e8
-00155240 W?gamevar$n$Game$$ ed
-0015532d _D_0015532d 5
+00155240 W?gamevar$n$Game$$ 178
 001553e1 _D_001553e1 4
 00155c64 _D_00155c64 4
 00155e50 W?statvar$n$Statics$$ ff
@@ -381,6 +381,7 @@
 0015f1ac W?net_control$n$NetControl$$ 144
 0015f2f0 W?balance_file$n$TbFileFind$$ e4
 0015f3d4 W?balance_file_name$n[]a 20
+0015f3f4 W?resvars$n$ResolutionInfo$$ 6
 0015f464 W?text1$npna 4
 0015f468 W?display_text$npna 4
 0015f46c W?paragraphs$n[]pna 10
@@ -409,6 +410,7 @@
 0015f77f W?numtext$nuc 1
 0015f780 W?Gray$n[]uc 8
 0015f788 W?NRAdcounts$n$NonResettingAdvisorCounts$$ 14
+0015f79c W?award_counts$n$AwardCounts$$ 155
 0015f8f4 W?current_net_criteria$n$WinLoseNet$$ c
 0015f900 W?cd_install_path$n[]a 80
 0015f980 W?install_type$nuc 1
@@ -480,7 +482,7 @@
 00160470 W?buf$:.0$:?read_line_from_buf$n(pnalpna)pnanpna 4
 00160474 W?close_next_time$:.0$:?read_line_from_buf$n(pnalpna)pnanl 4
 00160478 W?filename$:.0$:?modify_data_load_filename$n(pn$TbLoadFiles$$)pnan[]a 74
-001604ec W?modem_dev$n$__1rdtuTbModemDev$$ 20
+001604ec W?modem_dev$n$__1rdtuTbModemDev$$ 1c
 0016050c W?PhoneNumber$n[]a 10
 001605f0 W?BookCount$nc 1
 001605f4 W?PhoneBook$n[][13]a c4
@@ -734,7 +736,6 @@
 0015eba0 _D_0015eba0 38
 0015eb94 _D_0015eb94 8
 0015fc3c _D_0015fc3c c8
-0015533d _D_0015533d 20
 0018cafc _D_0018cafc 18
 0018cb6c _D_0018cb6c 200
 00151634 _D_00151634 c

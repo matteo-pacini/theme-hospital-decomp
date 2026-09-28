@@ -11,7 +11,6 @@ void LbMemoryCopy(void *dst, void *src, u32 size)
     fast_memcpy(dst, src, size);
 }
 
-// NONMATCHING: target range also covers the next function (0xbc127)
 // FUNCTION: 0x000bc104
 void LbMemorySet(void *dst, u8 value, u32 size)
 {

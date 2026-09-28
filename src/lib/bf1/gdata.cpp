@@ -17,6 +17,12 @@ extern char D_00121e6d[];
 extern char D_00121e7e[];
 extern char D_00121ea7[];
 
+// FUNCTION: 0xbccf0
+void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *files))
+{
+    D_0014d5e4 = fn;
+}
+
 // NONMATCHING: register choice (target loads operands into registers before compares)
 // FUNCTION: 0x000bcd18
 int LbDataLoadAll(TbLoadFiles *files)

@@ -346,7 +346,6 @@ int LbTextDraw(s32 x, s32 y, char *text)
 
 }
 
-// NONMATCHING: register choice; jump table placement (target keeps it after LbTextDraw)
 // FUNCTION: 0x000c90f0
 void put_down_sprites(char *sbegin, char *send, long x, long y, long space_len)
 {

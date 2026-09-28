@@ -37,7 +37,6 @@ void vesa_set_window(u32 window, u32 position, u32 zero);
 #pragma aux vesa_set_window = 0xb8 0x05 0x4f 0x00 0x00 0x66 0x55 0xcd 0x10 0x66 0x5d \
     parm [ebx] [edx] [ecx] modify [eax];
 
-// NONMATCHING: zero-extension uses xor dh,dh instead of xor edx,edx
 // FUNCTION: 0x000ce630
 int LbVesaGetGran(s16 mode)
 {
@@ -60,10 +59,10 @@ int LbVesaGetGran(s16 mode)
     in.x.ebx = 0x10;
     in.x.edi = (u32)&rmi;
     int386x(0x31, &in, &out, &sregs);
-    lbVesaGran = (lbVesaData[5] << 8) + lbVesaData[4];
-    lbVesaBytesPerLine = (lbVesaData[0x11] << 8) + lbVesaData[0x10];
-    lbVesaHRes = (lbVesaData[0x13] << 8) + lbVesaData[0x12];
-    lbVesaVRes = (lbVesaData[0x15] << 8) + lbVesaData[0x14];
+    lbVesaGran = (s16)((lbVesaData[5] << 8) + lbVesaData[4]);
+    lbVesaBytesPerLine = (s16)((lbVesaData[0x11] << 8) + lbVesaData[0x10]);
+    lbVesaHRes = (s16)((lbVesaData[0x13] << 8) + lbVesaData[0x12]);
+    lbVesaVRes = (s16)((lbVesaData[0x15] << 8) + lbVesaData[0x14]);
     return 1;
 }
 

@@ -77,7 +77,9 @@ S32 note_freq[128] = {
 extern char D_00127090[];
 extern char D_001270bc[];
 
-void fn_000e59e0(void);
+/* Timbre trap (demo: XDIG_TIMB_TRAP): __pascal (callee pops), address-named. */
+S32 fn_000e59e0(HMDIDRIVER mdi, S32 bank, S32 patch);
+#pragma aux (__pascal) fn_000e59e0 "*_";
 /* MIDI event trap: __pascal (callee pops), address-named. */
 S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2);
 #pragma aux (__pascal) fn_000e5a10 "*_";
@@ -240,6 +242,14 @@ void XDIG_MIDI_TRAP(HWAVESYNTH W, S32 voice)
     AIL_set_sample_playback_rate(W->S[voice], rate);
 }
 
+// FUNCTION: 0xe59e0
+S32 fn_000e59e0(HMDIDRIVER mdi, S32 bank, S32 patch)
+{
+    HWAVESYNTH W = (HWAVESYNTH)mdi->system_data[0];
+
+    return WVL_search(W->library, bank, patch) != NULL;
+}
+
 // FUNCTION: 0xe5a10
 S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2)
 {
@@ -349,7 +359,6 @@ S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_
 }
 
 // FUNCTION: 0x000e5e30
-// NONMATCHING: the target loads dig before storing W->mdi
 HWAVESYNTH __cdecl AIL_API_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER mdi,
                                                    void *wave_lib, S32 polyphony)
 {
@@ -362,8 +371,8 @@ HWAVESYNTH __cdecl AIL_API_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER md
         strcpy(AIL_error, D_00127090);
         return NULL;
     }
-    W->mdi = mdi;
     W->dig = dig;
+    W->mdi = mdi;
     W->library = wave_lib;
     W->prev_event_fn = AIL_register_event_callback(mdi, (AILEVENTCB)fn_000e5a10);
     W->prev_timb_fn = AIL_register_timbre_callback(mdi, (AILTIMBRECB)fn_000e59e0);
@@ -415,4 +424,13 @@ void __cdecl AIL_API_destroy_wave_synthesizer(HWAVESYNTH W)
     AIL_register_event_callback(W->mdi, W->prev_event_fn);
     AIL_register_timbre_callback(W->mdi, W->prev_timb_fn);
     AIL_mem_free_lock(W);
+}
+
+// FUNCTION: 0xe6090
+void AILXDIG_end(void)
+{
+    if (locked) {
+        AIL_vmm_unlock_range(AILXDIG_start, AILXDIG_end);
+        locked = 0;
+    }
 }

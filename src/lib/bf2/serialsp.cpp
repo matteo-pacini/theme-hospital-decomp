@@ -31,8 +31,13 @@ extern char D_00127b7d[];
 extern char D_00127bbf[];
 }
 
+// FUNCTION: 0xed494
+TbError SerialSP::ChangeSettings(u32 setting, void *data)
+{
+    return Lb_OK;
+}
+
 // FUNCTION: 0xed498
-// NONMATCHING: operator delete relocation carries the target's misnamed symbol
 TbError SerialSP::Release(void)
 {
     u32 start;
@@ -200,10 +205,9 @@ TbError SerialSP::Stop(void)
 }
 
 // FUNCTION: 0xede60
-// NONMATCHING: register allocation differs
 void SerialSP::SendAck(u8 seq)
 {
-    u32 sum = 0;
+    u16 sum = 0;
     u32 len = 7;
     u32 i;
 
@@ -256,7 +260,7 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
                 p->InputByte(c);
             } else if (!found) {
                 found = 1;
-                p->state = 0;
+                p->state = PS_HEADER;
                 p->count = 0;
                 p->active = 1;
                 p->InputByte(c);
@@ -271,7 +275,6 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
 }
 
 // FUNCTION: 0xee050
-// NONMATCHING: range also holds two following functions; loop structure differs
 u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
 {
     Parser *p;
@@ -289,7 +292,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
     max_size = *size;
     *size = 0;
     for (i = 0, p = parsers; i < 10; i++, p++) {
-        if (!p->active || p->state != 5)
+        if (!p->active || p->state != PS_COMPLETE)
             continue;
         deliver = 0;
         for (j = 0, q = parsers; j < 10; j++, q++) {
@@ -365,17 +368,73 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
     return got;
 }
 
+// FUNCTION: 0xee308
+Parser::Parser()
+{
+    active = 0;
+    count = 0;
+    state = PS_HEADER;
+}
+
+// FUNCTION: 0xee31c
+void Parser::Init(void)
+{
+    state = PS_HEADER;
+    count = 0;
+    active = 1;
+}
+
+// FUNCTION: 0xee330
+u32 Parser::InUse(void)
+{
+    return active;
+}
+
+// FUNCTION: 0xee334
+void Parser::TakeDown(void)
+{
+    active = 0;
+}
+
+// FUNCTION: 0xee33c
+u8 *Parser::GetMessageBuffer(void)
+{
+    return msg;
+}
+
+// FUNCTION: 0xee340
+u32 Parser::GotCompleteMessage(void)
+{
+    u32 ret = 0;
+
+    if (state == PS_COMPLETE)
+        ret = 1;
+    return ret;
+}
+
+// FUNCTION: 0xee358
+u8 Parser::GetFirstHeaderByte(void)
+{
+    return header[0];
+}
+
+// FUNCTION: 0xee360
+u8 Parser::GetSequenceNumber(void)
+{
+    return seq;
+}
+
 // FUNCTION: 0xee380
 // NONMATCHING: return value kept in a register instead of its frame slot; checksum loop differs
 TbError Parser::InputByte(u8 c)
 {
     TbError ret = Lb_OK;
     u16 checksum;
-    u32 sum;
+    u16 sum;
     u32 i;
 
     switch (state) {
-    case 0:
+    case PS_HEADER:
         if (count == 0) {
             count++;
             switch (c) {
@@ -400,24 +459,24 @@ TbError Parser::InputByte(u8 c)
             count++;
             if (count >= 4) {
                 if (header[0] == 0x1e || header[0] == 4)
-                    state = 1;
+                    state = PS_SEQUENCE;
                 else
-                    state = 2;
+                    state = PS_SIZE;
                 count = 0;
             }
         }
         break;
-    case 1:
+    case PS_SEQUENCE:
         seq = c;
         if (header[0] == 0x1b || header[0] == 0x1e) {
-            state = 2;
+            state = PS_SIZE;
         } else {
-            state = 4;
+            state = PS_CHECKSUM;
             size = 0;
         }
         count = 0;
         break;
-    case 2:
+    case PS_SIZE:
         msg[count] = c;
         count++;
         if (count >= 4) {
@@ -426,19 +485,19 @@ TbError Parser::InputByte(u8 c)
                 active = 0;
                 return ret;
             }
-            state = 3;
+            state = PS_DATA;
             count = 0;
         }
         break;
-    case 3:
+    case PS_DATA:
         msg[4 + count] = c;
         count++;
         if (count >= size) {
-            state = 4;
+            state = PS_CHECKSUM;
             count = 0;
         }
         break;
-    case 4:
+    case PS_CHECKSUM:
         msg[4 + size + count] = c;
         count++;
         if (count >= 2) {
@@ -456,10 +515,10 @@ TbError Parser::InputByte(u8 c)
                 active = 0;
                 return ret;
             }
-            state = 5;
+            state = PS_COMPLETE;
         }
         break;
-    case 5:
+    case PS_COMPLETE:
         break;
     }
     return ret;
