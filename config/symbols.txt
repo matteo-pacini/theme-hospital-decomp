@@ -81,6 +81,7 @@
 0012e1a0 W?panel_icons_ratfest$n[]$Icons$$ 1dc
 0012e37c W?pmenu$n$menu$$ 1bf8
 00130b34 W?person_complex$n[]$Complex$$ 578
+001310ac _D_001310ac 24
 001310d8 W?wallhug_dirn_steps$n[]$wallhug_waypoint$$ 8
 001310e0 W?CurrentWindow$nl 4
 00136404 W?$Wsi0fcomplexes$n[]ul$:.15$:?doctor_carries_out_examination$n(pn$Thing$$)vnx[]ul c

@@ -34,6 +34,7 @@ struct FaceDirns {
 extern "C" {
 extern Complex D_001303cc[];
 extern u8 *D_00153f9c;
+extern ComplexAnims D_001310ac[];
 extern s8 D_001310d0[][5];
 void fn_00041c0c(Thing *w);
 }
@@ -86,8 +87,6 @@ u8 process_staff_complex(Thing *w)
     return 1;
 }
 
-// NONMATCHING: the two anim-table reads are relocated against person_complex; the target names a
-// separate table at 0x1310ac (_D_001310ac-0x3), which config/symbols.txt does not define
 // FUNCTION: 0x0003e724
 u8 fn_0003e724(Thing *w)
 {
@@ -237,8 +236,8 @@ u8 fn_0003e724(Thing *w)
         }
         break;
     case 16:
-        r = old_newrand() % ((ComplexAnims *)&person_complex[175])[entry->anim].count;
-        PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[((ComplexAnims *)&person_complex[175])[entry->anim].anims[r]]);
+        r = old_newrand() % D_001310ac[entry->anim].count;
+        PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[D_001310ac[entry->anim].anims[r]]);
         break;
     case 14:
         obj = find_door(w);
@@ -685,8 +684,8 @@ u8 process_person_complex(Thing *w)
     case 12:
         break;
     case 16:
-        r = old_newrand() % ((ComplexAnims *)&person_complex[175])[entry->anim].count;
-        PLAY_FRAME(w, anim_starts[w->subtype].anims[((ComplexAnims *)&person_complex[175])[entry->anim].anims[r]]);
+        r = old_newrand() % D_001310ac[entry->anim].count;
+        PLAY_FRAME(w, anim_starts[w->subtype].anims[D_001310ac[entry->anim].anims[r]]);
         break;
     case 14:
         obj = find_door(w);
