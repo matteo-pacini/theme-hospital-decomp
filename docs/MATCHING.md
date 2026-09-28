@@ -189,4 +189,12 @@ Stack frame layout is not fully understood. Observed so far:
   flags on top of `-s -d2` (and `-od`/`-d1`/`-d3` bases) changed nothing
   for the better, so the difference is most likely a 10.x patch build we
   do not have.
+
+  Minimal test case, `plot_bid_money` (0x68480): the original computes the
+  scaled index into a fresh register, which leaves `eax` for the value;
+  every available compiler shifts in place instead. Any `-o` flag produces
+  the `lea`, but also drops the dead loads that `-d2` keeps:
+
+      original:  lea edx,[eax*4]; mov eax,[price]; mov [edx+bids],eax
+      ours:      shl eax,2;       mov edx,[price]; mov [eax+bids],edx
 - Position of the return-value slot relative to locals in some functions.
