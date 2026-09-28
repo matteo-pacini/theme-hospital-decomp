@@ -88,7 +88,6 @@ void LbTextSetClipWindow(u32 x, u32 y, u32 w, u32 h);
 
 }
 
-// NONMATCHING: first ?: temporary placed above the arrays (target: below them)
 // FUNCTION: 0x00089df0
 void setup_menus(void)
 {
@@ -96,8 +95,8 @@ void setup_menus(void)
     u8 sub;
     u8 i;
     u8 j;
-    char sep[4];
-    char end[4];
+    char sep[2];
+    char end[3];
 
     pmenu.unknown0 = 0;
     pmenu.font = 1;

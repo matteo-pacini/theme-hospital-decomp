@@ -86,16 +86,17 @@ u8 process_staff_complex(Thing *w)
     return 1;
 }
 
-// NONMATCHING: frame slot order, register choice
+// NONMATCHING: the two anim-table reads are relocated against person_complex; the target names a
+// separate table at 0x1310ac (_D_001310ac-0x3), which config/symbols.txt does not define
 // FUNCTION: 0x0003e724
 u8 fn_0003e724(Thing *w)
 {
     u8 run_things;
     s8 r;
-    s8 dir;
+    MapPos x;
     s8 repeat;
     u8 op;
-    MapPos x;
+    s8 dir;
     u16 action;
     u16 arg;
     u16 tile;

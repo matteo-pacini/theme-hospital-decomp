@@ -129,17 +129,16 @@ void modify_person(Thing *w)
     change_health(w, -1);
 }
 
-// NONMATCHING: warmth and the return-value slot trade places ([ebp-0x18] / [ebp-0x14])
 // FUNCTION: 0x000712a8
 u16 check_warmth(Thing *w)
 {
-    u16 warmth;
-    u16 dy;
     u16 heat;
+    u16 dy;
+    Thing *t;
     u16 dx;
     u16 dist;
     RoomInfo *room;
-    Thing *t;
+    u16 warmth;
 
     warmth = 0;
     heat = allhosps[w->owner].fc94 * 10;

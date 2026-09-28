@@ -1287,11 +1287,10 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
     }
 }
 
-// NONMATCHING: frame layout (tile sits above mp in the target)
 // FUNCTION: 0x000aa67c
 void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
 {
-    u8 tile;
+    s32 cy;
     Map *mp;
     s32 rows;
     s32 f20;
@@ -1320,7 +1319,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
     s32 x;
     s32 c;
     s32 cx;
-    s32 cy;
+    u8 tile;
     s32 i;
     Map *m;
     TbSprite overlay;

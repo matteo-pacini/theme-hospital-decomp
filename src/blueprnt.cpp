@@ -397,17 +397,15 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
     }
 }
 
-// NONMATCHING: frame layout: target has h/w/x, build, return slot, room, y from [ebp-0x8] down;
-// here y sits above build
 // FUNCTION: 0x00046b54
 u8 commit_blueprint(u8 owner)
 {
-    u8 h;
+    BuildState *build;
     u8 w;
     u8 x;
-    BuildState *build;
-    RoomInfo *room;
     u8 y;
+    RoomInfo *room;
+    u8 h;
 
     build = &allhosps[owner].build;
     if (!is_valid_room(build->x0, build->y0, build->x1, build->y1, owner)) {
@@ -794,17 +792,15 @@ u8 move_peep_from_blueprint(Thing *w)
     return 0;
 }
 
-// NONMATCHING: frame layout: the target puts a switch byte temporary and the return-value slot
-// between the u8 locals and build ([ebp-0x18], [ebp-0x1c]); here they follow the array
 // FUNCTION: 0x00047ffc
 u8 try_move_peep_to_wall(Thing *w, u8 side)
 {
     u8 i;
+    BuildState *build;
     u8 count;
     u8 base;
     u8 idx;
     u8 cells[128];
-    BuildState *build;
 
     build = &allhosps[w->owner].build;
     if (side == 0 || side == 2) {

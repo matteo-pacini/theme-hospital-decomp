@@ -171,7 +171,6 @@ void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16
     D_00188c74 = 0;
 }
 
-// NONMATCHING: register choice; icon_draw_from_special_id_frame arguments are narrowed differently
 // FUNCTION: 0x0002e0ec
 void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -195,7 +194,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
-                            icon_draw_from_special_id_frame(w->unknown27, x, y, (s16)-(spr->width / 2 + (elem->x - 0x8d)), (s16)(elem->y - 0xca));
+                            icon_draw_from_special_id_frame(w->unknown27, x, y, (s16)-((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                     } else if (w->renderer == 6) {
                         icon = 1;
                         D_00155e0a = 1;
@@ -229,7 +228,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
-                            icon_draw_from_special_id_frame(w->unknown27, x, y, (s16)(spr->width / 2 + (elem->x - 0x8d)), (s16)(elem->y - 0xca));
+                            icon_draw_from_special_id_frame(w->unknown27, x, y, (s16)((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                     } else if (w->renderer == 6) {
                         icon = 1;
                         D_00155e0a = 1;
@@ -246,7 +245,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
                 D_00188c74 = elem->flags & 0xf;
-                LbSpriteDraw(elem->x - 0x8d + x, elem->y - 0xca + y, spr);
+                LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
                 if (D_001567b0.x > elem->x - 0x8d)
                     D_001567b0.x = elem->x - 0x8d;
                 if (D_001567b0.y > elem->y - 0xca)

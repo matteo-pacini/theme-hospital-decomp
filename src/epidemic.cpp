@@ -60,16 +60,15 @@ void spread_epidemic(Thing *w, u16 n)
     }
 }
 
-// NONMATCHING: frame layout (the target places a and b between buf2 and buf1)
 // FUNCTION: 0x000a0240
 void declare_epidemic(char **strs)
 {
-    u16 sep;
     int v;
     char buf2[1000];
     int a;
     int b;
     char buf1[200];
+    u16 sep;
 
     sep = *(u16 *)D_0014532c;
     v = lbFontPtr ? lbFontPtr[34].height : 0;

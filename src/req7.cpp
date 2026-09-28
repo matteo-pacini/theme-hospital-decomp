@@ -562,23 +562,20 @@ void display_queue_bar(u16 x, u16 y)
     }
 }
 
-// NONMATCHING: register choice; stack slot order of the saved-frame locals
 // FUNCTION: 0x00097904
 u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
 {
-    u16 n;
-    RoomInfo *room;
-    u16 size;
-    s32 step;
     u16 px;
-    u16 py;
-    u16 id;
-    Thing *w;
-    CompFrame *fr;
-    u16 x0;
     u16 x1;
-    u16 y0;
-    u16 y1;
+    CompFrame *fr;
+    Thing *w;
+    u16 size;
+    u16 id;
+    s32 step;
+    u16 py;
+    RoomInfo *room;
+    u16 n;
+    u16 x0;
 
     n = 1;
     room = &room_info[room_id];
@@ -589,8 +586,11 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
         py = y + D_0015f410->queue_y;
         id = room->queue_head;
         if (id) {
+            u16 y1;
+
             w = &thing[id];
             for (;;) {
+                u16 y0;
                 u8 old_17;
                 u16 old_sprite;
                 u8 old_palette;

@@ -158,11 +158,32 @@ Adding a table to `config/symbols.txt` renames references to its interior in
 every file. Check that no other source refers to an address it covers by its
 raw name, and re-run `tools/check.py` on all files afterwards.
 
-Stack frame layout is not fully understood. Observed so far:
+Stack frame layout (from the Open Watcom code generator, `temps.c`, and
+checked by simulation against 40 random functions): at the end of the
+function every named temporary is sorted once by declared size, ascending
+(`char[2]` before `int` before `char[5]`), with an unstable shell sort (gap
+n/2, then gap/2+1, down to bubble passes at gap 1), and slots are handed out
+from `ebp` downwards in the resulting order. The list being sorted holds,
+newest first: parameters, `.return`, the function-scope locals in
+declaration order, then everything codegen creates in code order (compiler
+temporaries, `?:` and switch temporaries, conversions, and inner-block
+locals when their block opens). Names that end up without a slot (homed
+parameters, register temporaries) still take part in the sort. So:
+
+- Interleaving declarations of different sizes changes the permutation, and
+  with it where the return slot and `?:`/switch temporaries land; permute
+  the whole declaration list, mixed types included.
+- A `char` array sorts by its declared length.
+- When register allocation gives up (reliably with a `u8`/`s8`/`u16`
+  parameter, sometimes without), slots instead follow first use in code
+  order, except for some byte/word names at the top of the frame, which
+  depends on register allocation and is not predictable.
+
+Observed consequences:
 
 - 4-byte locals are placed in reverse declaration order; with a 4-byte first
   parameter the whole frame (parameter spills included) is reversed, with a
-  `u16` first parameter it is in forward order.
+  `u16` first parameter it is in forward order (the first-use case above).
 - A 2-byte local gets a slot before the return-value slot; scope it in an
   inner block to place it after.
 - The return-value slot comes after the parameters; a local that must sit
@@ -179,13 +200,16 @@ Stack frame layout is not fully understood. Observed so far:
   not on names or how variables are used. Swapping two same-typed
   declarations swaps their slots, so read the target-to-ours slot pairs off
   `tools/check.py -v` and reorder declarations to match (this also settles
-  `u8` locals). The return-value slot does not move this way.
+  `u8` locals).
 - `switch (p->field)` without a local copy puts its first byte temporary
   among the locals and the second after them.
 
 ## Known unsolved
 
-- Position of the return-value slot relative to locals in some functions.
+- Frames laid out in first-use order where register allocation gave up:
+  which small locals still come first is not predictable.
+- Some `?:` versus switch temporary orders that no declaration order
+  reproduces (hidden compiler temporaries of other sizes).
 
 ## Libraries
 

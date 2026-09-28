@@ -63,15 +63,14 @@ void fn_000110b0(void);
 void delay(u32 ms);
 }
 
-// NONMATCHING: stack slots of the ?: temporaries
 // FUNCTION: 0x0009d5b0
 void draw_load_game(void)
 {
-    s32 level;
-    s32 map;
-    s32 handle;
-    u8 width;
     u8 height;
+    u8 width;
+    s32 handle;
+    s32 map;
+    s32 level;
 
     set_font_from_cache(1);
     height = lbFontPtr ? lbFontPtr[34].height : 0;

@@ -124,14 +124,13 @@ void calculate_currentbuttonstore(Window *w)
     }
 }
 
-// NONMATCHING: frame layout (target slots from the top: over, return value, pressed, notover)
 // FUNCTION: 0x0004cb80
 u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
 {
     u8 pressed;
-    u8 notover;
-    u8 over;
     s16 ox;
+    u8 over;
+    u8 notover;
     s16 oy;
     WindowButton *b;
     s32 val;

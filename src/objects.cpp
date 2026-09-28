@@ -648,16 +648,15 @@ u8 can_place_door(u16 tile, u16 kind, u8 dir)
     return 1;
 }
 
-// NONMATCHING: return slot placed below the locals; register choice
 // FUNCTION: 0x00038548
 s16 place_door(u16 tile, u16 kind)
 {
-    u8 i;
+    RoomInfo *room;
     Map *cell;
     ObjectControl *obj;
     Shapes *shape;
     Thing *w;
-    RoomInfo *room;
+    u8 i;
 
     cell = &map[tile];
     obj = &objects[kind];

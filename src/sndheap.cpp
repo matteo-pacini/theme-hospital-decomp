@@ -188,20 +188,19 @@ SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pitch
     return info;
 }
 
-// NONMATCHING: frame layout (target slots from the top: base, idx, entry, st, return value, i, table, pos)
 // FUNCTION: 0x000a2bd0
 s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate)
 {
     SampleTable *st;
     SoundBankEntry *entry;
-    s32 idx;
-    u32 base;
     s32 pos;
     u32 table;
     s32 i;
     u8 header[0x12];
     SoundBankEntry dir[9];
     SoundBankSample rec;
+    s32 idx;
+    u32 base;
 
     switch (rate) {
     case 0x66c:

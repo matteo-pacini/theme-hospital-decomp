@@ -98,7 +98,6 @@ void create_job_market(void)
     }
 }
 
-// NONMATCHING: register choice, u8 temp slot order
 // FUNCTION: 0x00029c4c
 u16 fn_00029c4c(u16 tile, u16 id, u8 flag, u8 owner)
 {
@@ -1184,14 +1183,13 @@ u8 overlapping_staff_check(Thing *w, s32 state)
     return 0;
 }
 
-// NONMATCHING: tile argument temp
 // FUNCTION: 0x0002d11c
 u8 fn_0002d11c(Thing *o)
 {
     Thing *e;
 
     if (o->subtype == 4) {
-        e = &thing[find_object((o->y.tile << 7) + o->x.tile, 0x23, 0, 0x97, o->owner)];
+        e = &thing[find_object(o->x.tile + (o->y.tile << 7), 0x23, 0, 0x97, o->owner)];
         if (e > thing) {
             if (e->unknown98 != 0) {
                 return 0;

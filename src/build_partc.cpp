@@ -318,13 +318,12 @@ u16 place_object_restrict_to_room(u16 pos, u16 offset, u8 kind, u8 dir)
     return newX + (newY << 7);
 }
 
-// NONMATCHING: register choice, u8 local slot order
 // FUNCTION: 0x000273bc
 u8 place_object_change_angle(s8 angle)
 {
+    Shapes *shape;
     s8 i;
     u8 changed;
-    Shapes *shape;
 
     if (angle == -1) {
         angle = next_angle[gamevar.f28];

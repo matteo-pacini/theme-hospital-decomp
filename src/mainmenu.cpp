@@ -630,14 +630,13 @@ void fn_0006310c(void)
     hosp_play_smk(0x17);
 }
 
-// NONMATCHING: slots of result and the first ?: temporary swapped
 // FUNCTION: 0x00063174
 u8 fn_00063174(void)
 {
     u8 aborted;
-    u8 result;
-    u8 active;
     char path[0x80];
+    u8 active;
+    u8 result;
 
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
     aborted = 0;

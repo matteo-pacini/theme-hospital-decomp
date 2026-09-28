@@ -503,16 +503,15 @@ u8 does_room_contain_compulsory_objects(RoomInfo *room)
     return 1;
 }
 
-// NONMATCHING: stack slots of ok, cell and shape rotated (target: ok highest)
 // FUNCTION: 0x000292d0
 u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
 {
-    u8 ok;
+    u16 pos2;
     Map *cell;
     Shapes *shape;
     Thing *w;
     Thing *other;
-    u16 pos2;
+    u8 ok;
 
     cell = &map[pos];
     shape = &shapes[objects[kind].shapes[dir]];

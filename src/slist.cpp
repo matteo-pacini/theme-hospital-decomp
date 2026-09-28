@@ -320,15 +320,14 @@ u16 get_slist_staff(const u8 dir)
     return slist.unknown0;
 }
 
-// NONMATCHING: slots of the font-height local and its ?: temporary swapped
 // FUNCTION: 0x00091dec
 void draw_slist_staff(const u16 selected)
 {
     u16 row;
-    u16 n;
+    char buf[100];
     Thing *w;
     u16 height;
-    char buf[100];
+    u16 n;
     int pages;
 
     n = 0;

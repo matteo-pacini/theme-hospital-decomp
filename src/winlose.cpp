@@ -137,14 +137,13 @@ void remove_newlines(char *s)
     }
 }
 
-// NONMATCHING: register choice, ?: temporary slot
 // FUNCTION: 0x0009e0d8
 void play_winlose(void)
 {
-    u8 done;
-    u8 pick;
     u8 had_screen;
+    u8 pick;
     s32 n;
+    u8 done;
     char buf[0x800];
 
     had_screen = lbDisplay.unknown4 ? (u8)1 : (u8)0;

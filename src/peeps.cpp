@@ -1155,18 +1155,17 @@ void expire_playercalls(void)
     }
 }
 
-// NONMATCHING: stack slots of the return value and ?: temporary; one imul register
 // FUNCTION: 0x00018b78
 u16 call_no_treatment(Thing *e, char **strs)
 {
     char buf3[0xc8];
     char buf2[0x7d0];
     char buf1[0xc8];
-    Expertise *info;
     int room;
     int unused30;
     int staff;
     int i;
+    Expertise *info;
     u16 b;
     u16 unused1c;
     s16 pct;

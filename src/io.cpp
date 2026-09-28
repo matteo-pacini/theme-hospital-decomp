@@ -2288,13 +2288,12 @@ void check_autosave(void)
     D_0015532d[2] = 0;
 }
 
-// NONMATCHING: frame layout (target: level, return value, h, then buf; ours puts h and the return value below buf)
 // FUNCTION: 0x000229b0
 s32 read_level_number(s32 n)
 {
     int h;
-    u8 level;
     char buf[64];
+    u8 level;
 
     sprintf(buf, D_001202f3, D_001563c5, statvar.f6c, n);
     h = LbFileOpen(buf, 2);
