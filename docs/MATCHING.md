@@ -214,3 +214,17 @@ Compiler and flags per source file come from `config/cflags.txt`.
   or bytes where as cannot express them). They match exactly.
 - **Bullfrog network library** (`sp.cpp`, `netint*.cpp`, `dosser.cpp`, ...):
   optimised C++ classes, flags not yet established.
+- **Watcom C runtime** (`src/lib/clib/`): the runtime's own assembly modules
+  (387 emulator, `*386`, `chipd32`, FP exception hooks) go through
+  `tools/asm2src.py` like the game's. For the C modules:
+  - The library does not seem to have been built with `-zm`: some functions
+    fall through into, or jump into the epilogue of, the next one, which
+    our per-function segments cannot reproduce.
+  - FP support routines that keep a frame pointer need `-of` (see
+    `config/cflags.txt`); `qsort` and `stat` were built for size.
+  - Character comparisons need explicit `(int)` casts: `(int)*p == 'x'`;
+    ctype tests `((int)(unsigned char)(_IsTable[c] & m) != 0)`.
+  - Callbacks into user code save `es`/`fs`/`gs`: declare the function
+    type with `#pragma aux ... modify [es fs gs]`.
+  - `#pragma aux abort aborts` drops the return and tail jump after it.
+  - Stack-argument FP functions: `#pragma aux f parm routine []`.
