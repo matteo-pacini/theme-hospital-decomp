@@ -117,3 +117,79 @@
     leave
     ret 4
 .size "LbDrawBoxClip_",.-"LbDrawBoxClip_"
+
+// FUNCTION: 0x000e7848
+
+.section _TEXT,"ax",@progbits,unique,948296
+.globl "LbDrawBoxNoClip_"
+.type "LbDrawBoxNoClip_",@function
+"LbDrawBoxNoClip_":
+    push ebp
+    {load} mov ebp, esp
+    add esp, -0x14
+    push eax
+    push ebx
+    push ecx
+    push edx
+    push edi
+    push esi
+    mov dword ptr [ebp - 4], eax
+    mov dword ptr [ebp - 8], edx
+    mov dword ptr [ebp - 0xc], ebx
+    mov dword ptr [ebp - 0x10], ecx
+    mov edi, dword ptr [ebp - 8]
+    imul edi, dword ptr ["W?research_names$npnpna"]
+    add edi, dword ptr [ebp - 4]
+    add edi, dword ptr ["_lbDisplay"+0x10]
+    mov edx, dword ptr [ebp - 0x10]
+    mov eax, dword ptr ["W?research_names$npnpna"]
+    sub eax, dword ptr [ebp - 0xc]
+    mov dword ptr [ebp - 0x14], eax
+    test word ptr [_D_00188c74], 4
+    je .L000e78ad
+    mov esi, dword ptr ["_lbDisplay"+0x8]
+    movzx ebx, byte ptr [ebp + 8]
+    shl ebx, 8
+.L000e7899:
+    mov ecx, dword ptr [ebp - 0xc]
+    mov bl, byte ptr [edi]
+    mov al, byte ptr [ebx + esi]
+    stosb byte ptr es:[edi], al
+    .byte 0xe2; .byte 0xf8  # loop 0xe789c
+    add edi, dword ptr [ebp - 0x14]
+    dec dx
+    jne .L000e7899
+    jmp .L000e78e6
+.L000e78ad:
+    test word ptr [_D_00188c74], 8
+    je .L000e78d6
+    mov esi, dword ptr ["_lbDisplay"+0x8]
+    movzx ebx, byte ptr [ebp + 8]
+.L000e78c2:
+    mov ecx, dword ptr [ebp - 0xc]
+    mov bh, byte ptr [edi]
+    mov al, byte ptr [ebx + esi]
+    stosb byte ptr es:[edi], al
+    .byte 0xe2; .byte 0xf8  # loop 0xe78c5
+    add edi, dword ptr [ebp - 0x14]
+    dec dx
+    jne .L000e78c2
+    jmp .L000e78e6
+.L000e78d6:
+    movzx eax, byte ptr [ebp + 8]
+.L000e78da:
+    mov ecx, dword ptr [ebp - 0xc]
+    rep stosb byte ptr es:[edi], al
+    add edi, dword ptr [ebp - 0x14]
+    dec dx
+    jne .L000e78da
+.L000e78e6:
+    pop esi
+    pop edi
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+    leave
+    ret 4
+.size "LbDrawBoxNoClip_",.-"LbDrawBoxNoClip_"

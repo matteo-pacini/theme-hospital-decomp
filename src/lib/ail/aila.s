@@ -1,5 +1,25 @@
 .intel_syntax noprefix
 
+// FUNCTION: 0x000ddf88
+
+.section _TEXT,"ax",@progbits,unique,909192
+.globl "_AIL_API_lock"
+.type "_AIL_API_lock",@function
+"_AIL_API_lock":
+    inc dword ptr [_D_001509fa]
+    ret
+.size "_AIL_API_lock",.-"_AIL_API_lock"
+
+// FUNCTION: 0x000ddf8f
+
+.section _TEXT,"ax",@progbits,unique,909199
+.globl "_AIL_API_unlock"
+.type "_AIL_API_unlock",@function
+"_AIL_API_unlock":
+    dec dword ptr [_D_001509fa]
+    ret
+.size "_AIL_API_unlock",.-"_AIL_API_unlock"
+
 // FUNCTION: 0x000ddf96
 
 .section _TEXT,"ax",@progbits,unique,909206
