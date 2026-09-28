@@ -2,6 +2,8 @@
 
 config/functions.txt       every function: address, size, symbol
 config/symbols.txt         named data: address, symbol, size
+config/relocs.txt          relocations the compiler names differently from
+                           the symbol containing their target: site, symbol, offset
 config/demo_map.txt        demo-build name and source module per function
 config/demo_data_map.txt   demo-build name per global
 src/**/*.{cpp,c,s}         `// FUNCTION: 0xADDRESS` above each function a file implements
@@ -106,6 +108,13 @@ class Project:
             addr, name, size = line.split()
             self.data_symbols.append(DataSymbol(int(addr, 16), name, int(size, 16)))
         self.data_symbols.sort(key=lambda s: s.addr)
+
+        # e.g. `a[i - 1]` addresses the byte before `a`, which belongs to the
+        # preceding variable, but the compiler relocates it against `a`.
+        self.reloc_overrides = {}  # fixup site -> (symbol, offset)
+        for line in _lines(os.path.join(cfg, "relocs.txt")):
+            site, name, off = line.split()
+            self.reloc_overrides[int(site, 16)] = (name, int(off, 0))
         self._data_addrs = [s.addr for s in self.data_symbols]
 
         self.units = []

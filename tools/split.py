@@ -94,7 +94,10 @@ def emit_function(le, proj, fn, n, out):
             continue
         if fx.kind != SRC_OFFSET32:
             raise NotImplementedError(f"{fn.name}: fixup kind {fx.kind} at {site:#x}")
-        if le.code.contains(fx.target):
+        if site in proj.reloc_overrides:
+            name, off = proj.reloc_overrides[site]
+            expr = f"{q(name)}{off:+#x}" if off else q(name)
+        elif le.code.contains(fx.target):
             expr = code_ref(proj, fn, label, start, fx.target)
         elif site in sign_reads:
             expr = sign_read_ref(proj, fx.target, sign_reads[site])

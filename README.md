@@ -63,6 +63,7 @@ register allocation). Library flags are in `config/cflags.txt`.
 | --- | --- |
 | `config/functions.txt` | every function: address, size, symbol (from `tools/discover.py`) |
 | `config/symbols.txt` | named data symbols |
+| `config/relocs.txt` | relocations named after a symbol other than the one containing their target |
 | `src/` | decompiled C++ |
 | `include/` | shared headers |
 | `tools/` | LE reader, splitter, compiler wrapper |

@@ -1,0 +1,5 @@
+# site      symbol  offset
+# Relocations the compiler names after a symbol other than the one containing
+# their target, such as `a[i - 1]` (the byte before `a`).
+00081ce9 W?PhoneNumber$n[]a -1
+00085fb2 W?net_text$n[]$NetText$$ -1

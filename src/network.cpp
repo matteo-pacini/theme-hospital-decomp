@@ -963,7 +963,6 @@ void report_message(char *message)
     network.unknown2 = 3;
 }
 
-// NONMATCHING: PhoneNumber[n - 1] is relocated against modem_dev+0x1f in the target
 // FUNCTION: 0x00081b38
 void process_keys_network_select(void)
 {
@@ -2740,7 +2739,6 @@ void net_text_keypress(u8 key, u8 who)
     }
 }
 
-// NONMATCHING: register choice; text[i - 1] is relocated against player+3 in the target
 // FUNCTION: 0x00085f3c
 void net_text_delete(u8 who)
 {

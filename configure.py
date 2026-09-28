@@ -32,7 +32,7 @@ def main():
     check_exe()
     proj = Project()
     tools = ["tools/lefile.py", "tools/project.py", "tools/split.py", "tools/x86scan.py"]
-    configs = ["config/functions.txt", "config/symbols.txt", "config/demo_map.txt", "config/demo_data_map.txt"]
+    configs = ["config/functions.txt", "config/symbols.txt", "config/demo_map.txt", "config/demo_data_map.txt", "config/relocs.txt"]
 
     n = []
     n.append("ninja_required_version = 1.10\n")
