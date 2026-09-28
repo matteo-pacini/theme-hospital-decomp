@@ -82,6 +82,7 @@ void __freefp(FILE *fp)
     link->next = next;
 }
 
+// FUNCTION: 0x000f49ad
 void __purgefp(void)
 {
     __stream_link *next;

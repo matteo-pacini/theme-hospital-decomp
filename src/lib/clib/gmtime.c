@@ -77,6 +77,7 @@ struct tm *_gmtime(const time_t *timer, struct tm *tm)
     return __brktime(25567, *timer, 0, tm);
 }
 
+// FUNCTION: 0x000f38d3
 struct tm *gmtime(const time_t *timer)
 {
     return _gmtime(timer, &D_0018d670);

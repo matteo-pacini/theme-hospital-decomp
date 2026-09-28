@@ -121,7 +121,7 @@ void *fn_000bf790(u32 size);
 void fn_000bf798(void *p);
 #pragma aux fn_000bf798 "W?$dln(pnv)v"
 void fn_000bf7a0(u32 timeout);
-#pragma aux fn_000bf7a0 "W?LbNetwork_LibraryVersion$n(pn$__ctcl4TbNetworkVersion$$)v"
+#pragma aux fn_000bf7a0 "W?LbNetwork_ChangeExchangeTimeout$n(ul)v"
 TbError fn_000c1458(void);
 #pragma aux fn_000c1458 "W?MultiPlayerCallback$n(ulululpnv)pnv"
 TbError fn_000c197c(TbNetworkPlayerEntry *player);
