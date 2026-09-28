@@ -30,7 +30,10 @@ def q(sym):
 
 def code_ref(proj, fn, section_label, addr):
     """Expression for a code address, as referenced from inside `fn`."""
-    if fn.addr <= addr < fn.end:
+    if addr == fn.addr:
+        # Taking a function's own address names its symbol.
+        return q(fn.name)
+    if fn.addr < addr < fn.end:
         return f"{section_label}+{addr - fn.addr:#x}"
     target = proj.function_at(addr)
     if target is None:

@@ -18,15 +18,74 @@ typedef unsigned char U8;
 #define NULL 0
 #endif
 
+typedef struct _SAMPLE *HSAMPLE;
+typedef struct _DIG_DRIVER *HDIGDRIVER;
+
+typedef void (__pascal *AILSAMPLECB)(HSAMPLE sample);
+
 typedef struct _SAMPLE {
-    U8 unknown0[0x4c];
+    char tag[4];
+    HDIGDRIVER driver;
+    U32 status;
+    void *start[2];
+    U32 len[2];
+    U32 pos[2];
+    U32 done[2];
+    S32 current_buffer;
+    S32 last_buffer;
+    S32 starved;
+    S32 loop_count;
+    S32 loop_start;
+    S32 loop_end;
+    S32 format;
+    U32 flags;
     S32 playback_rate;
     S32 volume;
-} SAMPLE, *HSAMPLE;
+    S32 pan;
+    S32 vol_scale[2][256];
+    S32 service_type;
+    AILSAMPLECB SOB;
+    AILSAMPLECB EOB;
+    AILSAMPLECB EOS;
+    S32 user_data[8];
+    S32 system_data[8];
+} SAMPLE;
+
+#define SMP_FREE 0x0001
+#define SMP_DONE 0x0002
+#define SMP_PLAYING 0x0004
+#define SMP_STOPPED 0x0008
+
+#define DIG_F_MONO_8 0
+#define DIG_F_MONO_16 1
+#define DIG_F_STEREO_8 2
+#define DIG_F_STEREO_16 3
+
+#define DIG_PCM_SIGN 0x0001
+
+#define DIG_SERVICE_RATE 0
+#define DIG_HARDWARE_SAMPLE_RATE 1
+#define DIG_DMA_RESERVE 2
+#define DIG_LATENCY 3
+#define DIG_MIXER_CHANNELS 4
+#define DIG_DEFAULT_VOLUME 5
+#define DIG_RESAMPLING_TOLERANCE 6
+#define DIG_USE_STEREO 7
+#define DIG_USE_16_BITS 8
+#define DIG_ALLOW_16_BIT_DMA 9
+#define MDI_SERVICE_RATE 11
+#define MDI_SEQUENCES 12
+#define MDI_DEFAULT_VOLUME 13
+#define MDI_QUANT_ADVANCE 14
+#define MDI_ALLOW_LOOP_BRANCHING 15
+#define MDI_DEFAULT_BEND_RANGE 16
+#define AIL_SCAN_FOR_HARDWARE 17
+#define AIL_ALLOW_VDM_EXECUTION 18
+#define MDI_DOUBLE_NOTE_OFF 19
 
 typedef U32 REALFAR;
 typedef S32 HTIMER;
-typedef U32 HREDBOOK;
+typedef struct _REDBOOK *HREDBOOK;
 
 typedef struct {
     S16 IO;
@@ -74,7 +133,14 @@ typedef struct _AIL_DRIVER {
     void *descriptor;
 } AIL_DRIVER;
 
-typedef struct _VDI_CALL VDI_CALL;
+typedef struct _VDI_CALL {
+    U16 AX;
+    U16 BX;
+    U16 CX;
+    U16 DX;
+    U16 SI;
+    U16 DI;
+} VDI_CALL;
 
 #define DIG_DRIVER 0
 #define MDI_DRIVER 1
@@ -83,22 +149,195 @@ typedef struct _VDI_CALL VDI_CALL;
 #define DRV_SERVE 0x302
 #define DRV_PARSE_ENV 0x303
 #define DRV_SHUTDOWN 0x306
+#define DRV_GET_INFO 0x301
+#define DRV_VERIFY_IO 0x304
+#define DRV_INIT_DEV 0x305
+#define DIG_START_P_CMD 0x401
+#define DIG_STOP_P_REQ 0x402
 
-typedef struct _DIG_DRIVER *HDIGDRIVER;
+#pragma pack(1)
+typedef struct {
+    U16 minimum_physical_sample_rate;
+    U16 nominal_physical_sample_rate;
+    U16 maximum_physical_sample_rate;
+    U16 minimum_DMA_half_buffer_size;
+    U16 maximum_DMA_half_buffer_size;
+    U32 flags;
+} DIG_MODE;
+
+typedef struct {
+    U8 format_supported[16];
+    DIG_MODE format_data[16];
+} DIG_DDT;
+
+typedef struct {
+    REALFAR DMA_buffer_A;
+    REALFAR DMA_buffer_B;
+    S16 active_buffer;
+} DIG_DST;
+#pragma pack()
+
+typedef struct _DIG_DRIVER {
+    char tag[4];
+    AIL_DRIVER *drvr;
+    DIG_DDT *DDT;
+    DIG_DST *DST;
+    HTIMER timer;
+    S32 half_buffer_size;
+    S32 DMA_rate;
+    S32 hw_format;
+    U32 hw_mode_flags;
+    REALFAR DMA_seg;
+    U32 DMA_sel;
+    void *DMA_buf;
+    void *DMA[2];
+    S16 *buffer_flag;
+    S32 last_buffer;
+    S32 channels_per_sample;
+    S32 bytes_per_channel;
+    S32 channels_per_buffer;
+    S32 samples_per_buffer;
+    S32 build_size;
+    S32 *build_buffer;
+    S32 playing;
+    S32 quiet;
+    HSAMPLE samples;
+    S32 n_samples;
+    S32 n_active_samples;
+    S32 master_volume;
+    U8 reserved[0x20];
+};
+
 typedef struct _MDI_DRIVER *HMDIDRIVER;
 typedef struct _SEQUENCE *HSEQUENCE;
 typedef struct _WAVE_SYNTH *HWAVESYNTH;
 typedef struct _AUDIO_TYPE *HAUDIO;
 
 typedef void (__pascal *AILTIMERCB)(U32 user);
-typedef void (*AILSAMPLECB)(HSAMPLE sample);
-typedef S32 (*AILPREFIXCB)(HSEQUENCE seq, S32 log, S32 data);
-typedef void (*AILTRIGGERCB)(HSEQUENCE seq, S32 log, S32 data);
-typedef void (*AILSEQUENCECB)(HSEQUENCE seq);
-typedef void (*AILBEATCB)(HMDIDRIVER mdi, HSEQUENCE seq, S32 beat, S32 measure);
-typedef S32 (*AILEVENTCB)(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1,
-                          S32 data_2);
-typedef S32 (*AILTIMBRECB)(HMDIDRIVER mdi, S32 bank, S32 patch);
+typedef S32 (__pascal *AILPREFIXCB)(HSEQUENCE seq, S32 log, S32 data);
+typedef void (__pascal *AILTRIGGERCB)(HSEQUENCE seq, S32 log, S32 data);
+typedef void (__pascal *AILSEQUENCECB)(HSEQUENCE seq);
+typedef void (__pascal *AILBEATCB)(HMDIDRIVER mdi, HSEQUENCE seq, S32 beat,
+                                   S32 measure);
+typedef S32 (__pascal *AILEVENTCB)(HMDIDRIVER mdi, HSEQUENCE seq, S32 status,
+                                   S32 data_1, S32 data_2);
+typedef S32 (__pascal *AILTIMBRECB)(HMDIDRIVER mdi, S32 bank, S32 patch);
+
+#define NUM_CHANS 16
+#define MAX_NOTES 32
+#define FOR_NEST 4
+
+#define SEQ_FREE 0x0001
+#define SEQ_DONE 0x0002
+#define SEQ_PLAYING 0x0004
+#define SEQ_STOPPED 0x0008
+
+#define MDI_MIDI_XMIT 0x502
+#define MDI_INIT_INS_MGR 0x501
+#define MDI_INSTALL_T_SET 0x503
+#define MDI_GET_T_STATUS 0x504
+#define MDI_PROT_UNPROT_T 0x505
+
+#pragma pack(1)
+typedef struct {
+    REALFAR library_environment;
+    REALFAR GTL_suffix;
+} MDI_DDT;
+
+typedef struct {
+    char library_directory[128];
+    char GTL_filename[128];
+    U8 MIDI_data[512];
+} MDI_DST;
+#pragma pack()
+
+typedef struct {
+    S32 program[NUM_CHANS];
+    S32 pitch_l[NUM_CHANS];
+    S32 pitch_h[NUM_CHANS];
+    S32 c_lock[NUM_CHANS];
+    S32 c_prot[NUM_CHANS];
+    S32 c_mute[NUM_CHANS];
+    S32 c_v_prot[NUM_CHANS];
+    S32 bank[NUM_CHANS];
+    S32 indirect[NUM_CHANS];
+    S32 callback[NUM_CHANS];
+    S32 mod[NUM_CHANS];
+    S32 vol[NUM_CHANS];
+    S32 pan[NUM_CHANS];
+    S32 exp[NUM_CHANS];
+    S32 sus[NUM_CHANS];
+    S32 reverb[NUM_CHANS];
+    S32 chorus[NUM_CHANS];
+    S32 bend_range[NUM_CHANS];
+} CTRL_LOG;
+
+typedef struct _SEQUENCE {
+    char tag[4];
+    HMDIDRIVER driver;
+    U32 status;
+    void *TIMB;
+    void *RBRN;
+    void *EVNT;
+    U8 *EVNT_ptr;
+    U8 *ICA;
+    AILPREFIXCB prefix_callback;
+    AILTRIGGERCB trigger_callback;
+    AILBEATCB beat_callback;
+    AILSEQUENCECB EOS;
+    S32 loop_count;
+    S32 interval_count;
+    S32 interval_num;
+    S32 volume;
+    S32 volume_target;
+    S32 volume_accum;
+    S32 volume_period;
+    S32 tempo_percent;
+    S32 tempo_target;
+    S32 tempo_accum;
+    S32 tempo_period;
+    S32 tempo_error;
+    S32 beat_count;
+    S32 measure_count;
+    S32 time_numerator;
+    S32 time_fraction;
+    S32 beat_fraction;
+    S32 time_per_beat;
+    U8 *FOR_ptrs[FOR_NEST];
+    S32 FOR_loop_count[FOR_NEST];
+    S32 chan_map[NUM_CHANS];
+    CTRL_LOG shadow;
+    S32 note_count;
+    S32 note_chan[MAX_NOTES];
+    S32 note_num[MAX_NOTES];
+    S32 note_time[MAX_NOTES];
+    S32 user_data[8];
+    S32 system_data[8];
+} SEQUENCE;
+
+typedef struct _MDI_DRIVER {
+    char tag[4];
+    AIL_DRIVER *drvr;
+    MDI_DDT *DDT;
+    MDI_DST *DST;
+    HTIMER timer;
+    S32 interval_time;
+    S32 disable;
+    HSEQUENCE sequences;
+    S32 n_sequences;
+    S32 lock[NUM_CHANS];
+    HSEQUENCE locker[NUM_CHANS];
+    HSEQUENCE owner[NUM_CHANS];
+    HSEQUENCE user[NUM_CHANS];
+    S32 state[NUM_CHANS];
+    S32 notes[NUM_CHANS];
+    AILEVENTCB event_trap;
+    AILTIMBRECB timbre_trap;
+    S32 message_count;
+    S32 offset;
+    S32 master_volume;
+    S32 system_data[8];
+};
 
 /* aildebug.c */
 /* aildebug.c and ail.c each keep a static lock flag; both are named _locked. */
@@ -389,6 +628,52 @@ S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr,
                               U32 *segment_far_ptr, U32 *selector);
 void __cdecl AIL_mem_free_DOS(void *protected_ptr, U32 segment_far_ptr,
                               U32 selector);
+void *__cdecl AIL_file_read(char *filename, void *dest);
+
+#define FILE_READ_WITH_SIZE ((void *)-1)
+
+/* Case-sensitive compare of n bytes, expanded inline by the original compiler. */
+char memcmp(void const *s1, void const *s2, unsigned n);
+#pragma aux memcmp = \
+    0xfc /* cld */ \
+    0xf3 0xa6 /* repe cmpsb */ \
+    0x0f 0x95 0xc0 /* setne al */ \
+    0x76 0x02 /* jbe L1 */ \
+    0xf6 0xd8 /* neg al */ \
+    parm [edi] [esi] [ecx] value [al] modify exact [eax ecx esi edi];
+
+/* Case-insensitive compare, expanded inline by the original compiler. */
+char stricmp(char const *s1, char const *s2);
+#pragma aux stricmp = \
+    0x8a 0x06 /* L1: mov al,[esi] */ \
+    0x8a 0x27 /* mov ah,[edi] */ \
+    0x3c 0x61 /* cmp al,'a' */ \
+    0x72 0x06 /* jb L2 */ \
+    0x3c 0x7a /* cmp al,'z' */ \
+    0x77 0x02 /* ja L2 */ \
+    0x2c 0x20 /* sub al,20h */ \
+    0x80 0xfc 0x61 /* L2: cmp ah,'a' */ \
+    0x72 0x08 /* jb L3 */ \
+    0x80 0xfc 0x7a /* cmp ah,'z' */ \
+    0x77 0x03 /* ja L3 */ \
+    0x80 0xec 0x20 /* sub ah,20h */ \
+    0x38 0xe0 /* L3: cmp al,ah */ \
+    0x75 0x08 /* jne L4 */ \
+    0x3c 0x00 /* cmp al,0 */ \
+    0x74 0x04 /* je L4 */ \
+    0x46 /* inc esi */ \
+    0x47 /* inc edi */ \
+    0xeb 0xd9 /* jmp L1 */ \
+    0x0f 0x95 0xc0 /* L4: setne al */ \
+    0x76 0x02 /* jbe L5 */ \
+    0xf6 0xd8 /* neg al */ \
+    parm [edi] [esi] value [al] modify exact [eax esi edi];
+
+/* ailssa.asm */
+void __cdecl AILSSA_VMM_lock(void);
+S32 __cdecl AILSSA_merge(HSAMPLE S, S32 amount, S32 dest_offset);
+void __cdecl AILSSA_flush_buffer(HDIGDRIVER dig);
+void __cdecl AILSSA_DMA_copy(HDIGDRIVER dig, S32 buffer);
 
 /* aila.asm */
 void __cdecl AIL_API_lock(void);
