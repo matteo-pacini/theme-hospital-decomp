@@ -41,7 +41,7 @@ def main():
     n.append("rule as\n  command = as --32 -o $out $in\n")
     n.append("rule cc\n  command = python3 tools/cc.py $in $out\n")
     n.append(
-        "rule report\n  command = objdiff-cli report generate -c functionRelocDiffs=name_address -o $out -f json-pretty"
+        "rule report\n  command = objdiff-cli report generate -c functionRelocDiffs=name_address -c combineTextSections=false -o $out -f json-pretty"
         " && python3 tools/progress.py $out && python3 tools/verify.py $out\n"
     )
     # Sources are listed so adding a FUNCTION marker regenerates the unit list.
