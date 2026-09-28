@@ -7,3 +7,4 @@ __pycache__/
 /.ninja_*
 /build.ninja
 /objdiff.json
+*.err
