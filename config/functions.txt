@@ -1447,9 +1447,9 @@
 000bee60    8fe LbScreenSwap_
 000bf760     18 LbScreenWaitVbi_
 000bf778      a LbDate_
-000bf790      5 W?$dln(pnv)v
-000bf798      5 W?LbNetwork_ChangeExchangeTimeout$n(ul)v
-000bf7a0     6e W?LbNetwork_LibraryVersion$n(pn$__ctcl4TbNetworkVersion$$)v
+000bf790      5 W?$nwn(ui)pnv
+000bf798      5 W?$dln(pnv)v
+000bf7a0     6e W?LbNetwork_ChangeExchangeTimeout$n(ul)v
 000bf810      5 fn_000bf810_
 000bf818    2a8 W?LbNetwork_EnableNewPlayers$n(ul)$TbError$$
 000bfac0    18b W?LbNetwork_Init$n($$TE$$$__tibcaGUID$$ulpnvulpn$__7308jnTbNetworkPlayerInfo$$pnv)$TbError$$
@@ -2261,7 +2261,7 @@
 000ed300     44 __wcpp_2_ctor_array__
 000ed344      5 fn_000ed344_
 000ed350     73 fn_000ed350_
-000ed3c4     d3 W?$nwn(ui)pnv
+000ed3c4     d3 fn_000ed3c4_
 000ed498     be W?Release$:SerialSP$n()$TbError$$
 000ed558    16f W?Init$:SerialSP$n($__tibcaGUID$$pn$2$pn$__ic76sReceiveCallbacks$$pnv)$TbError$$
 000ed6c8     cd W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$

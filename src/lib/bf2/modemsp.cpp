@@ -2,7 +2,6 @@
 
 extern "C" {
 SerialSP *fn_000ed3c4(SerialSP *self, void *init_data);
-#pragma aux fn_000ed3c4 "W?$nwn(ui)pnv"
 ModemSP *fn_000ee6b0(ModemSP *self, void *init_data);
 #pragma aux fn_000ee6b0 "W?Release$:ModemSP$n()$TbError$$"
 extern void *ModemSP_vftable[];

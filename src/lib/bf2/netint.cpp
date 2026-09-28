@@ -2,7 +2,6 @@
 
 extern "C" {
 SerialSP *fn_000ed3c4(SerialSP *self, void *init_data);
-#pragma aux fn_000ed3c4 "W?$nwn(ui)pnv"
 void *ServiceProvider_ct(void *self);
 #pragma aux ServiceProvider_ct "W?$ct:ServiceProvider$n()_"
 void *__wcpp_2_ctor_array_(void *array, unsigned count, void *sig);

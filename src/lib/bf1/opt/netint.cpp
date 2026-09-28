@@ -117,9 +117,9 @@ void *__stdcall fn_000c1518(u32 id, u32 size, u32 seq, void *data);
 void __stdcall fn_000c1b24(u32 id, u32 seq, void *data);
 
 void *fn_000bf790(u32 size);
-#pragma aux fn_000bf790 "W?$dln(pnv)v"
+#pragma aux fn_000bf790 "W?$nwn(ui)pnv"
 void fn_000bf798(void *p);
-#pragma aux fn_000bf798 "W?LbNetwork_ChangeExchangeTimeout$n(ul)v"
+#pragma aux fn_000bf798 "W?$dln(pnv)v"
 void fn_000bf7a0(u32 timeout);
 #pragma aux fn_000bf7a0 "W?LbNetwork_LibraryVersion$n(pn$__ctcl4TbNetworkVersion$$)v"
 TbError fn_000c1458(void);
