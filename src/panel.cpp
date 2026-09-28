@@ -16,16 +16,41 @@ struct PopupIconControl {
 };
 
 struct PanelLayout {
-    u8 unknown0[0x240];
+    u8 unknown0[0x150];
+    s32 unknown150;
+    s32 unknown154;
+    s32 unknown158;
+    u8 unknown15c[4];
+    s32 unknown160;
+    s32 unknown164;
+    s32 unknown168;
+    u8 unknown16c[0xd4];
     s32 unknown240;
-    u8 unknown244[0x14];
+    u8 unknown244[4];
+    s32 unknown248;
+    u8 unknown24c[4];
+    s32 unknown250;
+    s32 unknown254;
     s32 unknown258;
     s32 unknown25c;
     s32 unknown260;
-    u8 unknown264[0x1dc];
+    u8 unknown264[0x1bc];
+    s32 unknown420;
+    s32 unknown424;
+    u8 unknown428[8];
+    s32 unknown430;
+    s32 unknown434;
+    s32 unknown438;
+    s32 unknown43c;
     s32 unknown440;
     s32 unknown444;
-    u8 unknown448[0x78];
+    Point slots[9];
+    u8 unknown490[0x10];
+    s32 unknown4a0;
+    s32 unknown4a4;
+    s32 unknown4a8;
+    s32 unknown4ac;
+    u8 unknown4b0[0x10];
     s32 unknown4c0;
     s32 unknown4c4;
     s32 unknown4c8;
@@ -36,7 +61,11 @@ struct PanelLayout {
     s32 unknown57c;
     u8 unknown580[4];
     s32 unknown584;
-    u8 unknown588[0x58];
+    u8 unknown588[0xc];
+    s32 unknown594;
+    s32 unknown598;
+    s32 unknown59c;
+    u8 unknown5a0[0x40];
     s32 unknown5e0;
     s32 unknown5e4;
     s32 unknown5e8;
@@ -57,11 +86,13 @@ void display_panel_object_info(void);
 void display_panel_queue_info(void);
 void display_panel_mayor_info(void);
 void display_panel_usage_info(void);
+void maintain_panel_popup(void);
 
 extern Icons panel_icons_over[];
 extern Icons panel_icons_normal[];
 extern Icons panel_icons_ratfest[];
 extern PopupIconControl popup_icons[];
+extern u8 panel_emergency_spr[];
 
 extern "C" {
 
@@ -95,6 +126,31 @@ extern TbLoadFiles D_0013f680[];
 extern char D_00120310[];
 extern char D_00120327[];
 extern char D_0015544e[];
+extern u8 D_001553f7;
+extern u8 D_00155e1e;
+extern u16 D_00155e1f;
+extern char **D_001602a0;
+extern u8 D_001553b5;
+extern char D_00120323[];
+extern u8 D_00155d7a;
+extern u8 D_00155e0e;
+extern u8 D_00155e0f;
+extern u8 D_00155e10;
+extern Point *D_0015f428;
+extern char **D_00160298;
+extern char **D_00160318;
+extern char D_00120316[];
+extern char D_00120317[];
+extern char **D_001602a4;
+extern u16 D_0012dd7c[];
+extern u8 D_0015831b;
+extern u8 D_00155e23;
+extern u8 D_0012d778[];
+extern u16 D_0012ddd4;
+extern char D_00120300[];
+extern char D_00120304[];
+extern char D_00120308[];
+extern char D_0012030c[];
 
 void fn_000c93bf(char *dst, char *src);
 void fn_000bce44(TbLoadFiles *files);
@@ -102,6 +158,9 @@ void fn_00035824(void);
 void fn_00036594(s32 value, char *text);
 void fn_00036730(char *text, u8 *line, u8 lines);
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
+void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
+void fn_000ccac4(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
+#pragma aux fn_000ccac4 "__wcpp_2_undefed_cdtor__";
 
 }
 
@@ -270,6 +329,111 @@ void panel_ml_button(const u16 icon)
     }
 }
 
+// FUNCTION: 0x00032308
+void panel_l_button(const u16 icon)
+{
+    if (D_0015536e == 0xe) {
+        play_sound(10, 8, -1, -1);
+    } else if (icon != 0x63) {
+        switch (icon) {
+        case 0:
+            D_001549d0[player].type = 0x33;
+            D_001549d0[player].value = 6;
+            play_sound(10, 0x43, -1, -1);
+            break;
+        case 2:
+            if (!(D_0015536e == 1 || D_0015536e == 2 || D_0015536e == 3 || D_0015536e == 0xe || D_0015536e == 0x10)) {
+                set_mouse_mode(0);
+                D_001549d0[player].type = 0x37;
+                play_sound(10, 0x43, -1, -1);
+            } else {
+                play_sound(10, 8, -1, -1);
+            }
+            break;
+        case 5:
+            if (!(D_0015536e == 1 || D_0015536e == 2 || D_0015536e == 3 || D_0015536e == 0xe || D_0015536e == 0x10)) {
+                set_mouse_mode(0);
+                D_001549d0[player].type = 0x2e;
+                play_sound(10, 0x43, -1, -1);
+            } else {
+                play_sound(10, 8, -1, -1);
+            }
+            break;
+        case 4:
+            if (D_0015536e == 0 && crequester.unknown2 == 0x63) {
+                set_mouse_mode(0xc);
+                allhosps[player].unknown11b7 = 0;
+                play_sound(10, 0x43, -1, -1);
+            } else if (D_0015536e == 0xc && crequester.unknown2 == 0x63) {
+                set_mouse_mode(0);
+                allhosps[player].unknown11b7 = 0;
+                play_sound(10, 0x43, -1, -1);
+            } else {
+                play_sound(10, 8, -1, -1);
+            }
+            break;
+        case 3:
+            if (!(D_0015536e == 1 || D_0015536e == 2 || D_0015536e == 3 || D_0015536e == 0xe || D_0015536e == 0x10)) {
+                set_mouse_mode(0);
+                D_001549d0[player].type = 0x62;
+                play_sound(10, 0x43, -1, -1);
+            } else {
+                play_sound(10, 8, -1, -1);
+            }
+            break;
+        case 6:
+            D_001549d0[player].type = 0x33;
+            D_001549d0[player].value = 5;
+            play_sound(10, 0x43, -1, -1);
+            break;
+        case 7:
+            if (crequester.unknown2 != 5 && (crequester.unknown2 != 10 || crequester.unknown4 == 1)) {
+                display_mode = 4;
+                town.unknown2 = 0;
+                play_sound(10, 0x43, -1, -1);
+            } else {
+                play_sound(10, 8, -1, -1);
+            }
+            break;
+        case 8:
+            D_001549d0[player].type = 0x33;
+            D_001549d0[player].value = 1;
+            play_sound(10, 0x43, -1, -1);
+            break;
+        case 9:
+            if (listhead[player].rooms[0x1c]) {
+                D_001549d0[player].type = 0x33;
+                D_001549d0[player].value = 3;
+                play_sound(10, 0x43, -1, -1);
+            } else {
+                play_sound(10, 8, -1, -1);
+            }
+            break;
+        case 10:
+            D_001549d0[player].type = 0x33;
+            D_001549d0[player].value = 7;
+            play_sound(10, 0x43, -1, -1);
+            break;
+        case 11:
+            D_001549d0[player].type = 0x33;
+            D_001549d0[player].value = 4;
+            play_sound(10, 0x43, -1, -1);
+            break;
+        case 12:
+            D_001549d0[player].type = 0x33;
+            D_001549d0[player].value = 2;
+            play_sound(10, 0x43, -1, -1);
+            break;
+        case 1:
+        default:
+            play_sound(10, 8, -1, -1);
+            break;
+        }
+        D_00156910 = 1;
+    }
+}
+
+
 // FUNCTION: 0x000328c0
 void panel_r_button(const u16 icon)
 {
@@ -296,6 +460,57 @@ void panel_r_button(const u16 icon)
 }
 
 // NONMATCHING: register choice
+// NONMATCHING: register choice
+// FUNCTION: 0x000329d4
+void draw_money_on_panel(void)
+{
+    u8 digits;
+    u8 height;
+    u32 diff;
+    s32 div;
+    char buf[16];
+
+    digits = 0;
+    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetClipWindow(0, 0, D_00188c34, D_00188c38);
+    D_00188c74 = 0;
+    set_font_from_cache(5);
+    height = lbFontPtr ? lbFontPtr[18].height : 0;
+    if (D_001553f3 != myhosp->f35) {
+        diff = fn_000cb2db(D_001553f3 - myhosp->f35);
+        for (div = 1000000; div >= 0; div /= 10) {
+            if (diff >= div) {
+                digits++;
+                break;
+            }
+        }
+        LbTextSetClipWindow(D_0015f40c->unknown150 + D_0015f410->unknown248 * digits, D_0015f40c->unknown154,
+                            D_0015f40c->unknown158 - digits * D_0015f410->unknown248, height);
+        sprintf(buf, D_00120300, myhosp->f35);
+        LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254 - (height - D_001553f7 * 6), buf);
+        sprintf(buf, D_00120304, D_001553f3);
+        LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254 + D_001553f7 * 6, buf);
+        if (digits) {
+            LbTextSetClipWindow(D_0015f40c->unknown160, D_0015f40c->unknown164,
+                                D_0015f410->unknown248 * (digits - 3) + D_0015f40c->unknown168, height);
+            sprintf(buf, D_00120308, myhosp->f35);
+            LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254, buf);
+        }
+        D_001553f7++;
+        if (D_001553f7 == 4) {
+            D_001553f7 = 0;
+            D_001553f3 = myhosp->f35;
+            D_00156910 = 1;
+        }
+    } else {
+        LbTextSetClipWindow(D_0015f40c->unknown150, D_0015f40c->unknown154, D_0015f40c->unknown158, height);
+        sprintf(buf, D_0012030c, myhosp->f35);
+        LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254, buf);
+    }
+}
+
+
 // FUNCTION: 0x00032cc4
 void draw_date_on_panel(void)
 {
@@ -320,6 +535,277 @@ void draw_rep_on_panel(void)
     D_00188c74 = 0;
     reqspr_draw(D_0015f410->unknown258 + offset, D_0015f410->unknown25c, &game_panel[36]);
 }
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00032e20
+void draw_emergency(void)
+{
+    u8 height;
+    u8 off;
+
+    off = 0;
+    if (!D_001553b4) {
+        D_00188c74 = 0;
+        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        set_font_from_cache(6);
+        height = lbFontPtr ? lbFontPtr[25].height : 0;
+        if (myhosp->f1d9 || (myhosp->unknown1257 && !(D_0015831b & 1)) || myhosp->f207 || myhosp->f20e || (s8)myhosp->f1e2 > 1) {
+            reqspr_draw(D_0015f410->unknown420, D_0015f410->unknown424, &watch[13]);
+            set_all_refresh_zones_in_window(D_0015f410->unknown420, D_0015f410->unknown424,
+                                            watch[13].width + D_0015f410->unknown420, watch[13].height + D_0015f410->unknown424, 3);
+            if (myhosp->f1d9) {
+                if ((s16)myhosp->f1d9 / 8 >= 6) {
+                    reqspr_draw(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c, &watch[1]);
+                    set_all_refresh_zones_in_window(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                                                    watch[1].width + (D_0015f410->unknown420 + D_0015f410->unknown438),
+                                                    watch[1].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+                }
+                reqspr_draw(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                            &watch[D_0012d778[(s16)myhosp->f1d9 / 8]]);
+                set_all_refresh_zones_in_window(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                                                watch[D_0012d778[(s16)myhosp->f1d9 / 8]].width + (D_0015f410->unknown420 + D_0015f410->unknown438),
+                                                watch[D_0012d778[(s16)myhosp->f1d9 / 8]].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+            } else if (myhosp->f207) {
+                if (myhosp->f1d9)
+                    off = watch[15].width / 4 + watch[15].width;
+                if (myhosp->f20b && !myhosp->f207)
+                    D_00188c74 = 4;
+                reqspr_draw(off + D_0015f410->unknown430, D_0015f410->unknown434, &watch[14]);
+                set_all_refresh_zones_in_window(off + D_0015f410->unknown430, D_0015f410->unknown434,
+                                                watch[14].width + (D_0015f410->unknown430 + off), watch[14].height + D_0015f410->unknown434, 3);
+                D_00188c74 = 0;
+                if (over_hotspot(mouse_dx, mouse_dy, off + D_0015f410->unknown430, D_0015f410->unknown434, watch[14].width, watch[14].height)) {
+                    reqspr_draw(D_0015f410->unknown430 + off, D_0015f410->unknown434, &watch[15]);
+                    set_all_refresh_zones_in_window(D_0015f410->unknown430 + off, D_0015f410->unknown434,
+                                                    watch[15].width + (off + D_0015f410->unknown430), watch[15].height + D_0015f410->unknown434, 3);
+                    if (!D_00155e23)
+                        play_sound(10, 0x44, -1, -1);
+                    D_00155e23 = 1;
+                } else {
+                    D_00155e23 = 0;
+                }
+                if (myhosp->f20b && !myhosp->f207)
+                    D_00188c74 = 4;
+                if ((s16)myhosp->f207 / 8 >= 6) {
+                    reqspr_draw(D_0015f410->unknown420 + off + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c, &watch[1]);
+                    set_all_refresh_zones_in_window(D_0015f410->unknown420 + off + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                                                    watch[1].width + (off + D_0015f410->unknown420 + D_0015f410->unknown438),
+                                                    D_0015f410->unknown424 + D_0015f410->unknown43c + watch[1].height, 3);
+                }
+                reqspr_draw(D_0015f410->unknown420 + off + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                            &watch[D_0012d778[(s16)myhosp->f207 / 8]]);
+                set_all_refresh_zones_in_window(D_0015f410->unknown420 + off + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                                                watch[D_0012d778[(s16)myhosp->f207 / 8]].width + (D_0015f410->unknown420 + off + D_0015f410->unknown438),
+                                                watch[D_0012d778[(s16)myhosp->f207 / 8]].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+                D_00188c74 = 0;
+            } else if (myhosp->unknown1257) {
+                reqspr_draw(D_0015f410->unknown430, D_0015f410->unknown434, &watch[16]);
+                set_all_refresh_zones_in_window(D_0015f410->unknown430, D_0015f410->unknown434,
+                                                watch[16].width + D_0015f410->unknown430, watch[16].height + D_0015f410->unknown434, 3);
+                if (over_hotspot(mouse_dx, mouse_dy, D_0015f410->unknown430, D_0015f410->unknown434, watch[14].width, watch[14].height)) {
+                    reqspr_draw(D_0015f410->unknown430, D_0015f410->unknown434, &watch[17]);
+                    set_all_refresh_zones_in_window(D_0015f410->unknown430, D_0015f410->unknown434,
+                                                    watch[17].width + D_0015f410->unknown430, watch[17].height + D_0015f410->unknown434, 3);
+                    if (!D_00155e23)
+                        play_sound(10, 0x44, -1, -1);
+                    D_00155e23 = 1;
+                } else {
+                    D_00155e23 = 0;
+                }
+                if (myhosp->unknown1257 / (D_0012ddd4 / 13) >= 6) {
+                    reqspr_draw(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c, &watch[1]);
+                    set_all_refresh_zones_in_window(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                                                    watch[1].width + (D_0015f410->unknown420 + D_0015f410->unknown438),
+                                                    watch[1].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+                }
+                reqspr_draw(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                            &watch[D_0012d778[myhosp->unknown1257 / (D_0012ddd4 / 13)]]);
+                set_all_refresh_zones_in_window(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                                                watch[D_0012d778[myhosp->unknown1257 / (D_0012ddd4 / 13)]].width + (D_0015f410->unknown420 + D_0015f410->unknown438),
+                                                watch[D_0012d778[myhosp->unknown1257 / (D_0012ddd4 / 13)]].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+            }
+        }
+    }
+}
+
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00033a40
+void clear_panel_info_bar(void)
+{
+    u8 i;
+
+    if (!D_001553b4) {
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+        reqspr_draw(((PanelIcon *)panel)[13].x, ((PanelIcon *)panel)[13].y, &game_panel[((PanelIcon *)panel)[13].sprite]);
+        set_all_refresh_zones_in_window(((PanelIcon *)panel)[13].x, ((PanelIcon *)panel)[13].y,
+                                        ((PanelIcon *)panel)[13].x + game_panel[((PanelIcon *)panel)[13].sprite].width,
+                                        ((PanelIcon *)panel)[13].y + game_panel[((PanelIcon *)panel)[13].sprite].height, 3);
+        for (i = 0; ((PanelIcon *)panel)[i].sprite > 0; i++) {
+            if (((PanelIcon *)panel)[i].sprite == 0xd) {
+                reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y, &game_panel[((PanelIcon *)panel)[i].sprite]);
+                set_all_refresh_zones_in_window(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y,
+                                                ((PanelIcon *)panel)[i].x + game_panel[((PanelIcon *)panel)[i].sprite].width,
+                                                ((PanelIcon *)panel)[i].y + game_panel[((PanelIcon *)panel)[i].sprite].height, 3);
+            }
+        }
+    }
+}
+
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00033c8c
+void display_panel_person_info(void)
+{
+    u8 height;
+    u8 line;
+    u8 lines;
+    char *text;
+    RoomInfo *room;
+    Thing *w;
+    char buf[100];
+
+    w = &thing[D_00155436];
+    line = 0;
+    height = D_0015f410->unknown57c;
+    clear_panel_info_bar();
+    LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
+    set_font_from_cache(1);
+    text = 0;
+    if (w->unknown118 & 4)
+        text = info_bar_text[4];
+    else if (w->unknown118 & 8)
+        text = info_bar_text[15];
+    else if (w->unknown118 & 0x10)
+        text = info_bar_text[16];
+    else if (w->unknown118 & 0x80)
+        text = info_bar_text[19];
+    if (text) {
+        line = 1;
+        fn_00036730(text, &line, 3);
+        return;
+    }
+    if (D_0015f3f5 == SCREEN_MODE_13)
+        lines = 2;
+    else
+        lines = 1;
+    if (w->f74 & 0x10) {
+        fn_00036730(info_bar_text[5], &line, lines);
+    } else if (w->f74 & 0x80) {
+        if (w->f75 & 4)
+            fn_00036730(info_bar_text[17], &line, lines);
+        else
+            fn_00036730(info_bar_text[18], &line, lines);
+    } else {
+        room = &room_info[w->unknown140];
+        if (room > room_info && room < end_room_info) {
+            sprintf(buf, info_bar_text[6], D_001602cc[rooms[room->type].id]);
+            fn_00036730(buf, &line, lines);
+        }
+        room = &room_info[w->unknown89];
+        if (room > room_info && room < end_room_info && w->unknown89 != w->unknown140) {
+            sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
+            fn_00036730(buf, &line, lines);
+        }
+    }
+    if (w->f75 & 0x20)
+        fn_00036730(info_bar_text[8], &line, lines);
+    else if (w->f75 & 1)
+        fn_00036730(info_bar_text[24], &line, lines);
+    else if (w->f75 & 0x40)
+        fn_00036730(info_bar_text[9], &line, lines);
+    else if (w->f75 & 0x80)
+        fn_00036730(info_bar_text[10], &line, lines);
+    else if (w->unknown118 & 1)
+        fn_00036730(info_bar_text[11], &line, lines);
+    else if (w->f74 & 0x20)
+        fn_00036730(info_bar_text[25], &line, lines);
+    if (line < 3 && w->style != 0) {
+        if (w->f74 & 0x40) {
+            line = 2;
+            sprintf(buf, info_bar_text[22], D_001602a4[w->style]);
+            fn_00036730(buf, &line, 3);
+        } else if (w->flags32 & 0x21000) {
+            u8 k;
+
+            k = w->unknown169;
+            line = 2;
+            if (w->unknown118 & 2)
+                sprintf(buf, info_bar_text[12], D_001602a4[k]);
+            else
+                sprintf(buf, info_bar_text[13], D_001602a4[k]);
+            fn_00036730(buf, &line, 3);
+        } else {
+            fn_00036594(w->unknown146 * 100 / D_0012dd7c[0], info_bar_text[14]);
+        }
+    }
+}
+
+
+// NONMATCHING: register choice, u8 local slot order
+// FUNCTION: 0x00034118
+void display_panel_staff_info(void)
+{
+    u8 i;
+    u8 height;
+    u8 line;
+    u8 pct;
+    u8 n;
+    Thing *w;
+    RoomInfo *room;
+    char buf[100];
+    char names[4][50];
+
+    w = &thing[D_00155436];
+    line = 0;
+    height = D_0015f410->unknown57c;
+    if (w->owner != 0x63) {
+        clear_panel_info_bar();
+        LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
+        set_font_from_cache(1);
+        LbDataLoadSetModifyFilenameFunction(buf, D_00160298[w->subtype]);
+        if ((w->subtype == 1 || w->subtype == 4) && (w->unknown124 & 0x1e0)) {
+            LbDataLoadSetModifyFilenameFunction(buf, D_00120316);
+            n = 0;
+            if (w->unknown124 & 0x80)
+                LbDataLoadSetModifyFilenameFunction(names[n++], D_00160318[7]);
+            if (w->unknown124 & 0x100)
+                LbDataLoadSetModifyFilenameFunction(names[n++], D_00160318[8]);
+            if (w->unknown124 & 0x20)
+                LbDataLoadSetModifyFilenameFunction(names[n++], D_00160318[5]);
+            if (w->unknown124 & 0x40) {
+                if (n == 3)
+                    LbDataLoadSetModifyFilenameFunction(names[n++], info_bar_text[26]);
+                else
+                    LbDataLoadSetModifyFilenameFunction(names[n++], D_00160318[6]);
+            }
+            LbDataLoadSetModifyFilenameFunction(buf, names[0]);
+            for (i = 1; i < n; i++)
+                sprintf(buf, D_00120317, buf, names[i]);
+        }
+        fn_00036730(buf, &line, 2);
+        if (D_0015f3f5 == SCREEN_MODE_13) {
+            room = &room_info[w->unknown89];
+            if (room > room_info) {
+                sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
+                fn_00036730(buf, &line, 2);
+            } else if ((w->subtype == 1 && w->kind == 0x14) || w->state_b == 0x20) {
+                fn_00036730(info_bar_text[23], &line, 2);
+            } else if (w->kind == 0x34) {
+                fn_00036730(info_bar_text[27], &line, 2);
+            }
+        }
+        pct = allhosps[w->owner].f21d * 100 / 1000;
+        pct > 100 ? pct = 100 : 0;
+        fn_00036594(w->f78 * 100 / 1000, info_bar_text[28]);
+        fn_000ccac4((D_0015f40c->unknown5e8 - 2) * pct / 100 + (D_0015f40c->unknown5e0 + panel->x + 1),
+                    D_0015f40c->unknown5e4 + (D_0015f410->unknown584 + panel->y + D_0015f410->unknown57c * 2 + 1),
+                    panel->x + D_0015f40c->unknown5e0 + 1 + (D_0015f40c->unknown5e8 - 2) * pct / 100,
+                    D_0015f410->unknown584 + panel->y + D_0015f410->unknown57c * 2 + D_0015f40c->unknown5ec - 1 + D_0015f40c->unknown5e4,
+                    color.unknown7);
+    }
+}
+
 
 // NONMATCHING: register choice
 // FUNCTION: 0x000345e0
@@ -422,6 +908,221 @@ void display_panel_usage_info(void)
     fn_00036730(buf, &line, 3);
 }
 
+// NONMATCHING: register choice, local slot order
+// FUNCTION: 0x00034acc
+void draw_popup_icons(void)
+{
+    u8 redraw;
+    u8 no_flash;
+    u8 j;
+    PlayerCall *p;
+    TbSprite *spr;
+    s32 i;
+    s32 y;
+    s32 y1;
+    s32 x;
+    s32 x1;
+
+    redraw = 0;
+    no_flash = 1;
+    if (!D_001553b4) {
+        maintain_panel_popup();
+        D_00155d7a = 0;
+        if (D_0015f3f5 == SCREEN_MODE_13) {
+            LbScreenSetGraphicsWindow(0xb1, ((PanelIcon *)panel)[0].y, 100, 100);
+            LbDrawBox(0, 0, 0x1c, 3, color.unknown8);
+        }
+        D_00155e10++;
+        if (panel_emergency_spr[D_00155e10] == 0)
+            D_00155e10 = 0;
+        switch (D_00155e0d) {
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            redraw = 1;
+            break;
+        }
+        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height + D_0015f410->unknown4ac,
+                                  D_00188c34, game_panel[popup_icons[1].unknown0].height);
+        for (i = 1; popup_icons[i].unknown0 != 0; i++) {
+            if (listhead[player].first[i]) {
+                spr = &game_panel[popup_icons[i].unknown0];
+                p = &playercall[listhead[player].first[i]];
+                if (p->slot < 9) {
+                    if (p->flash) {
+                        if (p->flash > 0x22)
+                            x = D_0015f410->slots[p->slot].x + D_0015f410->unknown4a8;
+                        else
+                            x = D_0015f410->slots[0].x + D_0015f410->unknown4a8;
+                    } else {
+                        x = D_0015f410->slots[p->slot].x + D_0015f410->unknown4a8;
+                    }
+                    y = 0;
+                    if (p->flash) {
+                        x += D_0015f428[p->flash].x;
+                        y += D_0015f428[p->flash].y;
+                        if (D_0015f428[p->flash].x == 0 && D_0015f428[p->flash].y == 0) {
+                            p->flash = 0;
+                        } else {
+                            if (p->flash != 1 || D_00155e0d == 3)
+                                p->flash++;
+                            while (D_0015f428[p->flash].x < D_0015f410->slots[p->slot].x) {
+                                if (D_0015f428[p->flash].x == 0 && D_0015f428[p->flash].y == 0) {
+                                    if (p->flash > 0x22) {
+                                        p->flash = 0;
+                                    } else {
+                                        switch (p->slot) {
+                                        case 4:
+                                        case 5:
+                                        case 6:
+                                        case 7:
+                                            p->flash = 0;
+                                            break;
+                                        default:
+                                            p->flash = 0x22;
+                                            break;
+                                        }
+                                    }
+                                    break;
+                                }
+                                p->flash++;
+                            }
+                        }
+                    }
+                    x1 = x + spr->width;
+                    y1 = y + spr->height;
+                    if (y) {
+                        reqspr_draw(x, y, spr);
+                        if (popup_icons[i].unknown0 == 0x2b)
+                            reqspr_draw(x + D_0015f410->unknown598, y + D_0015f410->unknown59c, &game_panel[panel_emergency_spr[D_00155e10]]);
+                        D_00155e0d = 2;
+                        no_flash = 0;
+                    }
+                    redraw = 1;
+                    y += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
+                    y1 += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
+                    if (mouse_dx >= x && mouse_dx < x1 && mouse_dy >= y && mouse_dy < y1)
+                        D_00155d7a = i;
+                    set_all_refresh_zones_in_window(x, y, x1, y1, 3);
+                }
+            }
+        }
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+        if (no_flash)
+            D_00155e0d = 4;
+        if (redraw) {
+            reqspr_draw(((PanelIcon *)panel)[0].x, ((PanelIcon *)panel)[0].y, &game_panel[((PanelIcon *)panel)[0].sprite]);
+            reqspr_draw(((PanelIcon *)panel)[1].x, ((PanelIcon *)panel)[1].y, &game_panel[((PanelIcon *)panel)[1].sprite]);
+            draw_money_on_panel();
+            draw_date_on_panel();
+            draw_rep_on_panel();
+            set_all_refresh_zones_in_window(((PanelIcon *)panel)[0].x, ((PanelIcon *)panel)[0].y,
+                                            ((PanelIcon *)panel)[0].x2, ((PanelIcon *)panel)[0].y2, 3);
+        }
+        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height + D_0015f410->unknown4ac,
+                                  D_00188c34, game_panel[popup_icons[1].unknown0].height);
+        for (i = 1; popup_icons[i].unknown0 != 0; i++) {
+            if (listhead[player].first[i]) {
+                spr = &game_panel[popup_icons[i].unknown0];
+                p = &playercall[listhead[player].first[i]];
+                if (p->slot < 9) {
+                    if (p->flash) {
+                        if (p->flash > 0x22)
+                            x = D_0015f410->slots[p->slot].x + D_0015f410->unknown4a8;
+                        else
+                            x = D_0015f410->slots[0].x + D_0015f410->unknown4a8;
+                    } else {
+                        x = D_0015f410->slots[p->slot].x + D_0015f410->unknown4a8;
+                    }
+                    y = 0;
+                    if (p->flash) {
+                        x += D_0015f428[p->flash].x;
+                        y += D_0015f428[p->flash].y;
+                    }
+                    if (y == 0) {
+                        x1 = x + spr->width;
+                        y1 = y + spr->height;
+                        reqspr_draw(x, y, spr);
+                        if (popup_icons[i].unknown0 == 0x2b)
+                            reqspr_draw(x + D_0015f410->unknown598, y + D_0015f410->unknown59c, &game_panel[panel_emergency_spr[D_00155e10]]);
+                        y += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
+                        y1 += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
+                        set_all_refresh_zones_in_window(x, y, x1, y1, 3);
+                    }
+                }
+            }
+        }
+        if (D_0015f3f5 == SCREEN_MODE_13)
+            LbScreenSetGraphicsWindow(0xb1, ((PanelIcon *)panel)[0].y, 100, 100);
+        x = D_0015f410->unknown4a0;
+        y = D_0015f410->unknown4a4;
+        switch (D_00155e0d) {
+        case 2:
+            if (D_00155e0e - 2 >= 0)
+                D_00155e0e -= 2;
+            else
+                D_00155e0e = 0;
+            if (D_00155e0e == 0) {
+                D_00155e0d = 3;
+                D_00155e0f = 0;
+            } else {
+                for (j = 0; j < D_00155e0e; j++) {
+                    if (D_0015f3f5 == SCREEN_MODE_13)
+                        reqspr_draw(x, y, &game_panel[41]);
+                    x += game_panel[41].width;
+                }
+                if (D_0015f3f5 == SCREEN_MODE_13)
+                    reqspr_draw(x, y, &game_panel[42]);
+            }
+            break;
+        case 3:
+            D_00155e0e = 0;
+            D_00155e0f++;
+            if (D_00155e0f > 0x28)
+                D_00155e0d = 4;
+            break;
+        case 4:
+            if (D_00155e0f <= 0x28) {
+                D_00155e0f++;
+            } else {
+                if (D_00155e0e + 2 < 0x18)
+                    D_00155e0e += 2;
+                else
+                    D_00155e0e = 0x19;
+                for (j = 0; j < D_00155e0e; j++) {
+                    if (D_0015f3f5 == SCREEN_MODE_13)
+                        reqspr_draw(x, y, &game_panel[41]);
+                    x += game_panel[41].width;
+                }
+                if (D_0015f3f5 == SCREEN_MODE_13)
+                    reqspr_draw(x, y, &game_panel[42]);
+                if (D_00155e0e >= 0x18)
+                    D_00155e0d = 1;
+            }
+            break;
+        case 1:
+            if (D_0015f3f5 == SCREEN_MODE_13)
+                reqspr_draw(x, y, &game_panel[40]);
+            for (j = 0; j < 0x19; j++) {
+                if (D_0015f3f5 == SCREEN_MODE_13)
+                    reqspr_draw(x, y, &game_panel[41]);
+                x += game_panel[41].width;
+            }
+            if (D_0015f3f5 == SCREEN_MODE_13)
+                reqspr_draw(x, y, &game_panel[42]);
+            D_00155e0e = 0x18;
+            break;
+        default:
+            D_00155e0d = 1;
+            break;
+        }
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+        D_00188c74 = 0;
+    }
+}
+
+
 // FUNCTION: 0x00035624
 void delete_panel_popup(PlayerCall *p)
 {
@@ -492,6 +1193,68 @@ void fn_00035824(void)
     }
 }
 
+// NONMATCHING: register choice; target names panel_popup_pos[-1] as popup_id+0x10
+// FUNCTION: 0x00035914
+void maintain_panel_popup(void)
+{
+    u8 slot;
+    u8 found;
+    u16 j;
+    u16 k;
+    u16 i;
+    PlayerCall *p;
+    PlayerCall *q;
+
+    fn_00035824();
+    for (i = 0; i < 9; i++) {
+        if (panel_popup_pos[i]) {
+            p = &playercall[panel_popup_pos[i]];
+            found = 1;
+            for (j = 1; popup_icons[j].unknown0 != 0; j++) {
+                if (panel_popup_pos[i] == listhead[player].first[j])
+                    found = 0;
+            }
+            if (found)
+                remove_panel_popup(i);
+        } else {
+            remove_panel_popup(i);
+        }
+    }
+    for (j = 1; popup_icons[j].unknown0 != 0; j++) {
+        if (listhead[player].first[j]) {
+            p = &playercall[listhead[player].first[j]];
+            if (p->slot < 9 && p->slot > 0) {
+                if (!panel_popup_pos[p->slot - 1]) {
+                    remove_panel_popup(p->slot - 1);
+                    p->slot--;
+                    panel_popup_pos[p->slot] = p - playercall;
+                    p->flash = 1;
+                }
+            }
+        }
+    }
+    for (j = 1; popup_icons[j].unknown0 != 0; j++) {
+        if (listhead[player].first[j]) {
+            p = &playercall[listhead[player].first[j]];
+            if (p->slot < 9) {
+                slot = p->slot;
+                for (k = 1; popup_icons[k].unknown0 != 0; k++) {
+                    if (listhead[player].first[k]) {
+                        q = &playercall[listhead[player].first[k]];
+                        if (q->slot < 9) {
+                            if (q != p) {
+                                if (slot == q->slot)
+                                    q->slot++;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 // NONMATCHING: register choice
 // FUNCTION: 0x00035c68
 void panel_flash(void)
@@ -507,6 +1270,169 @@ void panel_flash(void)
         }
     }
 }
+
+// NONMATCHING: register choice, u8 local slot order
+// FUNCTION: 0x00035d5c
+void draw_ratfest_on_panel(void)
+{
+    u8 s3;
+    u8 s2;
+    u8 s1;
+    u8 s0;
+    u8 level;
+    char buf[100];
+
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    set_font_from_cache(0x29);
+    sprintf(buf, D_00120323, myhosp->fd27u);
+    LbTextDraw(0x5d, 0x1be, buf);
+    switch (D_001553b5) {
+    case 0:
+        reqspr_draw(((PanelIcon *)panel)[1].x, ((PanelIcon *)panel)[1].y + 0xb, &game_panel[((PanelIcon *)panel)[1].pressed]);
+        break;
+    case 1:
+        reqspr_draw(((PanelIcon *)panel)[2].x, ((PanelIcon *)panel)[2].y + 0xb, &game_panel[((PanelIcon *)panel)[2].pressed]);
+        break;
+    case 2:
+        reqspr_draw(((PanelIcon *)panel)[3].x, ((PanelIcon *)panel)[3].y + 0xb, &game_panel[((PanelIcon *)panel)[3].pressed]);
+        break;
+    case 3:
+        reqspr_draw(((PanelIcon *)panel)[4].x, ((PanelIcon *)panel)[4].y + 0xb, &game_panel[((PanelIcon *)panel)[4].pressed]);
+        break;
+    }
+    if (myhosp->fcaa < 100)
+        level = 10 - myhosp->fcaa / 8;
+    else
+        level = 10;
+    s0 = s1 = s2 = s3 = 0;
+    switch (level) {
+    case 0:
+        if (actual_game_turn & 3) {
+            s0 = 0x1a;
+            s1 = 0x1a;
+            s2 = 0x1a;
+            s3 = 0x1a;
+        } else {
+            s0 = 0x1b;
+            s1 = 0x1b;
+            s2 = 0x1b;
+            s3 = 0x1b;
+        }
+        break;
+    case 1:
+        s0 = 0x1a;
+        s1 = 0x1a;
+        s2 = 0x1a;
+        s3 = 0x1a;
+        break;
+    case 2:
+        s0 = 0x1a;
+        s1 = 0x1a;
+        s2 = 0x1a;
+        s3 = 0x19;
+        break;
+    case 3:
+        s0 = 0x1a;
+        s1 = 0x1a;
+        s2 = 0x1a;
+        s3 = 0x18;
+        break;
+    case 4:
+        s0 = 0x1a;
+        s1 = 0x1a;
+        s2 = 0x1a;
+        break;
+    case 5:
+        s0 = 0x1a;
+        s1 = 0x1a;
+        s2 = 0x19;
+        break;
+    case 6:
+        s0 = 0x1a;
+        s1 = 0x1a;
+        s2 = 0x18;
+        break;
+    case 7:
+        s0 = 0x1a;
+        s1 = 0x1a;
+        break;
+    case 8:
+        s0 = 0x1a;
+        s1 = 0x19;
+        break;
+    case 9:
+        s0 = 0x1a;
+        s1 = 0x18;
+        break;
+    case 10:
+        s0 = 0x1a;
+        break;
+    case 11:
+        s0 = 0x19;
+        break;
+    case 12:
+        s0 = 0x18;
+        break;
+    }
+    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c, ((PanelIcon *)panel)[5].y + 0xc, &game_panel[s0]);
+    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width, ((PanelIcon *)panel)[5].y + 0xc, &game_panel[s1]);
+    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width * 2, ((PanelIcon *)panel)[5].y + 0xc, &game_panel[s2]);
+    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width * 3, ((PanelIcon *)panel)[5].y + 0xc, &game_panel[s3]);
+}
+
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000361a4
+u8 display_panel_special_info(void)
+{
+    u8 i;
+    u8 line;
+    u8 y;
+    s16 x;
+    Thing *w;
+
+    w = &thing[D_00155436];
+    line = 0;
+    y = D_0015f410->unknown594;
+    i = 0;
+    x = 0;
+    D_00188c74 = 0;
+    if (gamevar.unknown21 || D_00155e1e) {
+        if (!D_00155e21) {
+            if (statvar.unknown6 <= mouse_dy && !D_001553b4 && !gamevar.unknown21) {
+                D_00155e1e = 0;
+                return 0;
+            }
+        } else {
+            D_00155e21--;
+        }
+        panel = panel_icons_normal;
+        while (((PanelIcon *)panel)[i].sprite > 0) {
+            ((PanelIcon *)panel)[i].y = lbDisplay.unknown1c - game_panel[((PanelIcon *)panel)[i].sprite].height;
+            ((PanelIcon *)panel)[i].y2 = lbDisplay.unknown1c;
+            ((PanelIcon *)panel)[i].x = x;
+            ((PanelIcon *)panel)[i].x2 = x + game_panel[((PanelIcon *)panel)[i].sprite].width;
+            x += game_panel[((PanelIcon *)panel)[i].sprite].width;
+            i++;
+        }
+        statvar.unknown6 = ((PanelIcon *)panel)[1].y;
+        clear_panel_info_bar();
+        LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
+        set_font_from_cache(0x2c);
+        if (gamevar.unknown21) {
+            LbTextDraw(D_0015f410->unknown570, y + D_0015f410->unknown584, D_001602a0[21]);
+        } else if (D_00155e1e) {
+            LbTextDraw(D_0015f410->unknown570, y + D_0015f410->unknown584, D_001602a0[D_00155e1e]);
+            D_00155e1f--;
+            if (D_00155e1f == 0)
+                D_00155e1e = 0;
+        }
+        return 1;
+    }
+    return 0;
+}
+
 
 // NONMATCHING: register choice
 // FUNCTION: 0x0003646c

@@ -711,3 +711,8 @@
 00195eec _The_time 24
 00195f10 _result 1c
 0012b9ee W?diag_register$n[][8]s 242
+0012c144 W?departments$n[]$DepartmentControl$$ 54
+001581fe _D_001581fe 4
+00158208 _D_00158208 4
+0012c9d4 W?rating$n[]$ScoreRatings$$ 68
+00158324 _D_00158324 4

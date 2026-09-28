@@ -1,0 +1,458 @@
+#include "hosp.h"
+
+s32 wall_in_way(u32 x, u32 y, u32 dir);
+s32 person_in_way(u32 x, u32 y, u32 dir);
+s32 person_overlap(void);
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000553e0
+void delete_first_path_entry(orthonav_path *path)
+{
+    s32 i;
+
+    path->x0 = path->unknown4[0];
+    path->y0 = path->unknown4[1];
+    path->result--;
+    for (i = 0; i < path->result; i++)
+        path->steps[i] = path->steps[i + 1];
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00055454
+void orthonav_init(orthonav_path *path, s8 x0, s8 y0, s8 x1, s8 y1)
+{
+    s32 i;
+    wallhug_path hug;
+
+    hug.x0 = x0;
+    hug.y0 = y0;
+    hug.x1 = x1;
+    hug.y1 = y1;
+    if (wallhug_tricky(&hug) == 0x70000000) {
+        path->result = 0;
+        return;
+    }
+    if (hug.count > 4)
+        path->result = 4;
+    else
+        path->result = hug.count;
+    path->x0 = x0;
+    path->y0 = y0;
+    path->x1 = x1;
+    path->y1 = y1;
+    for (i = 0; i < path->result; i++) {
+        path->steps[i].x = hug.points[i].x;
+        path->steps[i].y = hug.points[i].y;
+    }
+}
+
+// FUNCTION: 0x00055568
+s32 free_orthog_line(s32 x1, s32 y1, s32 x2, s32 y2)
+{
+    if (x1 == x2) {
+        if (y2 < y1) {
+            y2 ^= y1;
+            y1 ^= y2;
+            y2 ^= y1;
+        }
+        for (; y1 < y2; y1++) {
+            if (wall_in_way(x1, y1, 2))
+                return 0;
+        }
+    } else {
+        if (x2 < x1) {
+            x2 ^= x1;
+            x1 ^= x2;
+            x2 ^= x1;
+        }
+        for (; x1 < x2; x1++) {
+            if (wall_in_way(x1, y1, 1))
+                return 0;
+        }
+    }
+    return 1;
+}
+
+extern s32 other_wherefacing;
+
+// NONMATCHING: register choice in the fx/fy interpolation
+// FUNCTION: 0x0005562c
+s32 orthonav_wn(orthonav_path *path, s32 x, s32 y, s32 dir)
+{
+    s32 ldx;
+    s32 ldy;
+    s32 fx;
+    s32 fy;
+    s32 dx;
+    s32 dy;
+    s32 nx;
+    s32 ny;
+    s32 xdir;
+    s32 ydir;
+    s32 deleted;
+
+    deleted = 0;
+again:
+    if (path->steps[0].x == x && path->steps[0].y == y) {
+        if (path->result == 1)
+            return 4;
+        delete_first_path_entry(path);
+        deleted = 1;
+    }
+    ldx = (path->steps[0].x - path->x0) << 8;
+    ldy = (path->steps[0].y - path->y0) << 8;
+    dx = (path->steps[0].x - x) << 8;
+    dy = (path->steps[0].y - y) << 8;
+    if (dx > 0)
+        xdir = 1;
+    else if (dx < 0)
+        xdir = 3;
+    else if (dir == 3 || dir == 1)
+        xdir = dir;
+    else
+        xdir = 1;
+    if (dy > 0)
+        ydir = 2;
+    else if (dy < 0)
+        ydir = 0;
+    else if (dir == 2 || dir == 0)
+        ydir = dir;
+    else
+        ydir = 2;
+    if (dir != xdir && dir != ydir) {
+        switch (dir) {
+        case 1:
+        case 3:
+            dir = ydir;
+            other_wherefacing = xdir;
+            break;
+        default:
+            dir = xdir;
+            other_wherefacing = ydir;
+            break;
+        }
+    } else if (dir == xdir) {
+        other_wherefacing = ydir;
+    } else {
+        other_wherefacing = xdir;
+    }
+    if (path->result > 1) {
+        if (!deleted && !wall_in_way(x, y, dir)
+            && ((path->steps[0].x == x && dir == xdir) || (path->steps[0].y == y && dir == ydir))) {
+            s32 ex;
+            s32 ey;
+
+            ex = path->steps[1].x - x;
+            ey = path->steps[1].y - y;
+            switch (dir) {
+            case 0:
+                if (ey > 0)
+                    goto keep;
+                break;
+            case 2:
+                if (ey < 0)
+                    goto keep;
+                break;
+            case 3:
+                if (ex > 0)
+                    goto keep;
+                break;
+            case 1:
+                if (ex < 0)
+                    goto keep;
+                break;
+            }
+            delete_first_path_entry(path);
+            deleted = 1;
+            goto again;
+        }
+    keep:
+        if ((path->steps[0].x == x && dir == ydir) || (path->steps[0].y == y && dir == xdir))
+            return dir;
+    } else {
+        if (path->steps[0].x == x)
+            return path->steps[0].y < y ? 0 : 2;
+        if (path->steps[0].y == y)
+            return path->steps[0].x < x ? 3 : 1;
+    }
+    if (ldx == 0 && dx == 0)
+        return ydir;
+    if (ldy == 0 && dy == 0)
+        return xdir;
+    if (wall_in_way(x, y, dir))
+        return other_wherefacing;
+retry:
+    switch (dir) {
+    case 3:
+        nx = x - 1;
+        ny = y;
+        break;
+    case 1:
+        nx = x + 1;
+        ny = y;
+        break;
+    case 0:
+        nx = x;
+        ny = y - 1;
+        break;
+    case 2:
+        nx = x;
+        ny = y + 1;
+        break;
+    }
+    if ((s32)(old_newrand() % 0xffff) < 0xa000) {
+        if (wall_in_way(nx, ny, dir)) {
+            s32 t;
+
+            t = dir;
+            dir = other_wherefacing;
+            other_wherefacing = t;
+            switch (dir) {
+            case 3:
+                nx = x - 1;
+                ny = y;
+                break;
+            case 1:
+                nx = x + 1;
+                ny = y;
+                break;
+            case 0:
+                nx = x;
+                ny = y - 1;
+                break;
+            case 2:
+                nx = x;
+                ny = y + 1;
+                break;
+            }
+        } else if ((s32)(old_newrand() % 0xffff) < 0x8000) {
+            s32 nx2;
+            s32 ny2;
+
+            switch (dir) {
+            case 3:
+                nx2 = nx - 1;
+                ny2 = ny;
+                break;
+            case 1:
+                nx2 = nx + 1;
+                ny2 = ny;
+                break;
+            case 0:
+                nx2 = nx;
+                ny2 = ny - 1;
+                break;
+            case 2:
+                nx2 = nx;
+                ny2 = ny + 1;
+                break;
+            }
+            if (wall_in_way(nx2, ny2, dir)) {
+                s32 t;
+
+                t = dir;
+                dir = other_wherefacing;
+                other_wherefacing = t;
+                switch (dir) {
+                case 3:
+                    nx = x - 1;
+                    ny = y;
+                    break;
+                case 1:
+                    nx = x + 1;
+                    ny = y;
+                    break;
+                case 0:
+                    nx = x;
+                    ny = y - 1;
+                    break;
+                case 2:
+                    nx = x;
+                    ny = y + 1;
+                    break;
+                }
+            }
+        }
+    }
+    switch (dir) {
+    case 0:
+        if (path->y0 > ny && path->steps[0].y > ny)
+            return other_wherefacing;
+        break;
+    case 2:
+        if (path->y0 < ny && path->steps[0].y < ny)
+            return other_wherefacing;
+        break;
+    case 3:
+        if (path->x0 > nx && path->steps[0].x > nx)
+            return other_wherefacing;
+        break;
+    case 1:
+        if (path->x0 < nx && path->steps[0].x < nx)
+            return other_wherefacing;
+        break;
+    }
+    if (dir == ydir) {
+        if ((path->x0 > nx && ldx >= 0) || (path->x0 < nx && ldx <= 0))
+            goto swap;
+        if (ldx == 0)
+            return dir;
+        fy = (((nx - path->x0) << 8) * ldy + 0x80) / ldx + (path->y0 << 8) + 0x80;
+        if ((ny << 8 < fy && dir == 0) || (ny << 8 > fy && dir == 2))
+            goto swap;
+        fx = nx << 8;
+    } else {
+        if ((path->y0 > ny && ldy >= 0) || (path->y0 < ny && ldy <= 0))
+            goto swap;
+        if (ldy == 0)
+            return dir;
+        fx = (((ny - path->y0) << 8) * ldx + 0x80) / ldy + (path->x0 << 8) + 0x80;
+        if ((nx << 8 < fx && dir == 3) || (nx << 8 > fx && dir == 1))
+            goto swap;
+        fy = ny << 8;
+    }
+    if (free_orthog_line(nx, ny, fx >> 8, fy >> 8))
+        return dir;
+swap:
+    if ((s32)(old_newrand() % 0xffff) > 0xe000) {
+        dir ^= other_wherefacing;
+        other_wherefacing ^= dir;
+        dir ^= other_wherefacing;
+        goto retry;
+    }
+    if (dir == xdir) {
+        if ((path->x0 > nx && ldx > 0) || (path->x0 < nx && ldx < 0))
+            goto other;
+        if (ldx == 0)
+            fy = ny << 8;
+        else
+            fy = (((nx - path->x0) << 8) * ldy + 0x80) / ldx + (path->y0 << 8) + 0x80;
+        fx = nx << 8;
+    } else {
+        if ((path->y0 > ny && ldy > 0) || (path->y0 < ny && ldy < 0))
+            goto other;
+        if (ldy == 0)
+            fx = nx << 8;
+        else
+            fx = (((ny - path->y0) << 8) * ldx + 0x80) / ldy + (path->x0 << 8) + 0x80;
+        fy = ny << 8;
+    }
+    if (free_orthog_line(nx, ny, fx >> 8, fy >> 8))
+        return dir;
+other:
+    return other_wherefacing;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00056028
+s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
+{
+    s32 d;
+    s32 r;
+    s32 blocked;
+    s32 nd;
+
+    if (path->result == 0) {
+        if (wall_in_way(x, y, 0) && wall_in_way(x, y, 2) && wall_in_way(x, y, 3) && wall_in_way(x, y, 1))
+            return -2;
+        return -3;
+    }
+    d = orthonav_wn(path, x, y, dir);
+    if (d == 4) {
+        if (path->x1 != x || path->y1 != y) {
+            orthonav_init(path, x, y, (s8)path->x1, (s8)path->y1);
+            d = orthonav_wn(path, x, y, dir);
+        } else {
+            return 4;
+        }
+    }
+    if (wall_in_way(x, y, d)) {
+        orthonav_init(path, x, y, (s8)path->x1, (s8)path->y1);
+        d = orthonav_wn(path, x, y, dir);
+        if (wall_in_way(x, y, d)) {
+            d = -2;
+            r = old_newrand() % 0xffff + 0xffff;
+            do {
+                if (!wall_in_way(x, y, 0))
+                    d = 0;
+                if (path->steps[0].y <= y)
+                    r -= 0x4000;
+                if (r < 0)
+                    break;
+                if (!wall_in_way(x, y, 2))
+                    d = 2;
+                if (path->steps[0].y >= y)
+                    r -= 0x4000;
+                if (r < 0)
+                    break;
+                if (!wall_in_way(x, y, 3))
+                    d = 3;
+                if (path->steps[0].x <= x)
+                    r -= 0x4000;
+                if (r < 0)
+                    break;
+                if (!wall_in_way(x, y, 1))
+                    d = 1;
+                if (path->steps[0].x >= x)
+                    r -= 0x4000;
+            } while (r >= 0);
+            if (d == -2) {
+                path->x1 = 0xff;
+                return -2;
+            }
+        }
+    } else {
+        blocked = person_in_way(x, y, d) | person_overlap();
+        if (blocked == 0)
+            return d;
+        if (!wall_in_way(x, y, other_wherefacing) && !person_in_way(x, y, other_wherefacing)
+            && (s32)(old_newrand() % 0xffff) < blocked + 0x3000) {
+            d = other_wherefacing;
+        } else {
+            switch (other_wherefacing) {
+            case 3:
+                nd = 1;
+                break;
+            case 1:
+                nd = 3;
+                break;
+            case 0:
+                nd = 2;
+                break;
+            case 2:
+                nd = 0;
+                break;
+            }
+            if (!wall_in_way(x, y, nd) && !person_in_way(x, y, nd)
+                && (s32)(old_newrand() % 0xffff) < blocked + 0x3000) {
+                d = nd;
+            } else if ((s32)(old_newrand() % 0xffff) < blocked - 0x2000) {
+                return d;
+            } else {
+                switch (d) {
+                case 3:
+                    nd = 1;
+                    break;
+                case 1:
+                    nd = 3;
+                    break;
+                case 0:
+                    nd = 2;
+                    break;
+                case 2:
+                    nd = 0;
+                    break;
+                }
+                if (!wall_in_way(x, y, nd) && !person_in_way(x, y, nd) && blocked + 0xffff > 0x8000) {
+                    d = nd;
+                } else {
+                    path->x1 = 0xff;
+                    return -1;
+                }
+            }
+        }
+    }
+    path->x1 = 0xff;
+    return d;
+}
+

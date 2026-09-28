@@ -41,7 +41,11 @@ struct TbScreenModeInfo {
 struct TbDisplayStruct {
     u32 unknown0;
     u8 *unknown4;
-    u8 unknown8[0x10];
+    union {
+        u8 unknown8[0x10];
+        u8 *ghost;
+    };
+
     s32 unknown18;
     s32 unknown1c;
 };

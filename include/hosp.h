@@ -164,6 +164,10 @@ struct Thing {
             u16 unknown83w;
         };
         struct {
+            u8 unknown77s_[4];
+            s16 unknown81s;
+        };
+        struct {
             u16 room_prev;
             u16 room_next;
             u16 unknown81;
@@ -230,6 +234,13 @@ struct Thing {
             u16 unknown100__;
             u16 unknown102;
             u16 unknown104w;
+        };
+        struct {
+            u8 unknown100r_[8];
+            u16 next_sprite;
+            u16 gate;
+            u8 next_palette;
+            u8 next_kind;
         };
         struct {
             u16 unknown100;
@@ -374,6 +385,11 @@ struct RatHole {
     u8 side;
 };
 
+struct BuildPoint {
+    u8 x;
+    u8 y;
+};
+
 struct BuildState {
     union {
         u8 unknown0[8];
@@ -383,11 +399,21 @@ struct BuildState {
             u8 x1;
             u8 y1;
         };
+        struct {
+            BuildPoint start;
+            BuildPoint end;
+            BuildPoint anchor;
+            BuildPoint pivot;
+        };
     };
     u16 room;
     union {
         u8 unknownA[3];
         u16 edit_room;
+        struct {
+            u8 unknownA_[2];
+            u8 drag;
+        };
     };
     u8 unknownD;
     union {
@@ -409,14 +435,34 @@ struct AllHosps {
     u8 f29;
     u8 f2a;
     u8 f2b;
-    u8 unknown2c[9];
+    u8 f2c;
+    s32 f2d;
+    s32 f31;
     s32 f35;
     u8 unknown39[4];
     s32 f3d;
     s32 f41;
-    u8 unknown45[0x17a];
+    union {
+        u8 unknown45[0x176];
+        struct {
+            u8 unknown45_[0x90];
+            s32 fd5;
+            s32 fd9;
+        };
+        struct {
+            u8 unknown45a_[0x90];
+            s32 fd5s[2];
+        };
+        s32 f45[3][12];
+    };
+    s32 f1bb;
     s32 f1bf;
-    u8 unknown1c3[0xc];
+    u8 unknown1c3[8];
+    u16 f1cb;
+    union {
+        u8 unknown1cd[2];
+        s16 f1cd;
+    };
     s16 unknown1cf[4];
     u16 f1d7;
     u16 f1d9;
@@ -427,7 +473,7 @@ struct AllHosps {
     u8 unknown1e6[3];
     u16 f1e9;
     u16 f1eb;
-    u8 unknown1ed[2];
+    u16 f1ed;
     u16 f1ef;
     u16 f1f1;
     u32 f1f3;
@@ -443,7 +489,8 @@ struct AllHosps {
     u8 f20c;
     u8 f20d;
     u8 f20e;
-    u8 unknown20f[8];
+    u8 unknown20f[7];
+    u8 f216;
     u16 f217;
     u16 f219;
     u16 f21b;
@@ -468,7 +515,8 @@ struct AllHosps {
             ObjectStats object_stats[0x3e];
         };
     };
-    u8 unknownc8a[6];
+    u8 unknownc8a[4];
+    s16 fc8e;
     u16 fc90;
     u16 fc92;
     u8 fc94;
@@ -499,7 +547,10 @@ struct AllHosps {
         struct {
             u8 unknownf6e[0x249];
             u16 unknown11b7;
-            u8 unknown11b9[3];
+            union {
+                u8 unknown11b9[3];
+                u16 f11b9;
+            };
             u8 f11bc;
             u8 unknown11bd[5];
             u16 f11c2[0x14];
@@ -531,14 +582,48 @@ struct AllHosps {
     u16 unknown1257;
 };
 
+struct BankEntry {
+    s32 amount;
+    u8 type;
+    u8 day;
+    u8 month;
+    u8 extra;
+};
+
 struct GameControl {
-    u8 unknown0[0x10];
+    union {
+        u8 unknown0[0x10];
+        struct {
+            s32 f0;
+            s32 f4;
+            s32 f8;
+            s32 fc;
+        };
+    };
     u32 unknown10;
     union {
         u8 unknown14[0x63b];
         struct {
             u8 unknown14_[0x634];
             u16 f648;
+        };
+        struct {
+            u8 unknown14c_[0xc];
+            s32 history[8][3][12];
+        };
+        struct {
+            u8 unknown14b_[0x4a0];
+            s32 f4b4;
+            BankEntry entries[0x32];
+            u8 unknown648b_[4];
+            u16 f64c;
+            u8 f64e;
+        };
+        struct {
+            u8 unknown14a_[0x278];
+            s32 f28c;
+            u8 unknown290_[0x11c];
+            s32 f3ac;
         };
     };
     u8 unknown64f;
@@ -612,7 +697,10 @@ struct Window {
 
 struct Expertise {
     u16 unknown0;
-    u8 unknown2[2];
+    union {
+        u8 unknown2[2];
+        u16 f2;
+    };
     u8 kind;
     union {
         u8 unknown5[3];
@@ -646,7 +734,10 @@ struct ObjectControl {
     u8 unknown1c;
     u8 unknown1d;
     u16 unknown1e;
-    u8 unknown20[3];
+    union {
+        u8 unknown20[3];
+        u16 f20;
+    };
     u8 unknown23;
     u8 unknown24;
 };
@@ -665,13 +756,26 @@ struct RoomControl {
         };
     };
     u8 fc;
-    u8 objects[0x15];
+    union {
+        u8 objects[0x15];
+        struct {
+            u8 objects_[0xa];
+            u8 f17;
+            u8 f18[0xa];
+        };
+    };
     u8 unknown22;
     u8 unknown23;
     u8 unknown36;
     u8 unknown25;
     s8 f26;
     u8 unknown27[3];
+};
+
+struct DepartmentControl {
+    u8 count;
+    u8 unknown1;
+    u8 rooms[0xa];
 };
 
 struct Shapes {
@@ -788,8 +892,30 @@ struct ToDraw {
     int y;
 };
 
+/*
+ * The refresh box that follows refresh in memory is declared separately as
+ * D_001567b0; x0 is reached through refresh where the code loads it as the
+ * low half of a dword.
+ */
+struct Refresh {
+    u8 unknown0[4];
+    s16 x0;
+};
+
 struct PixBuffer {
-    u8 unknown0[0x2c];
+    s16 x;
+    s16 y;
+    s16 width;
+    s16 height;
+    s32 size;
+    s32 saved_width;
+    s32 saved_height;
+    u8 *saved_ptr;
+    s32 saved_x;
+    s32 saved_y;
+    s32 saved_w;
+    s32 saved_h;
+    u8 *data;
 };
 
 struct menu {
@@ -853,7 +979,13 @@ struct Game {
     u8 unknown1f;
     u8 unknown20;
     u8 unknown21;
-    u8 unknown22[3];
+    union {
+        u8 unknown22[3];
+        struct {
+            u8 unknown22_;
+            u16 f23;
+        };
+    };
     u8 unknown25;
     u8 unknown26;
     union {
@@ -880,11 +1012,20 @@ struct Game {
             u8 unknown71;
         };
     };
-    u8 unknown72[3];
+    union {
+        u8 unknown72[3];
+        struct {
+            u8 f72;
+            u16 f73;
+        };
+    };
     u16 unknown75;
     u16 unknown77;
     u16 unknown79;
-    u8 unknown7b[0x70];
+    union {
+        u8 unknown7b[0x70];
+        u16 announce[14][4];
+    };
     u32 feb;
 };
 
@@ -910,7 +1051,9 @@ struct Scroll {
 };
 
 struct Info {
-    u8 unknown0[0x5c];
+    u8 unknown0[0x54];
+    s32 unknown54;
+    s32 unknown58;
     s32 unknown5c;
     s32 unknown60;
     s32 unknown64;
@@ -923,7 +1066,13 @@ struct Info {
 };
 
 struct HospWindow {
-    u8 unknown0[0x30];
+    union {
+        u8 unknown0[0x30];
+        struct {
+            s32 f0[3];
+            s32 fc[3];
+        };
+    };
     s32 unknown30;
     u8 unknown34[8];
     s32 unknown3c;
@@ -953,7 +1102,10 @@ struct HospWindow {
 };
 
 struct Required {
-    u8 unknown0[3];
+    union {
+        u8 unknown0[3];
+        u16 flags;
+    };
     u8 unknown3;
     u8 unknown4;
     u8 unknown5;
@@ -970,7 +1122,13 @@ struct Debug {
     u8 unknownd4;
     u8 unknownd5[2];
     u8 unknownd7;
-    u8 unknownd8[0xa];
+    union {
+        u8 unknownd8[0xa];
+        struct {
+            u8 unknownd8_[2];
+            u32 thing_count;
+        };
+    };
     u8 unknowne2;
     u8 unknowne3[0x25];
     u16 unknown108;
@@ -981,7 +1139,14 @@ struct Debug {
     u8 unknown1df;
     s32 unknown1e0;
     u8 *unknown1e4;
-    u8 unknown1e8[0x12];
+    union {
+        u8 unknown1e8[0x12];
+        struct {
+            u8 unknown1e8_[0xd];
+            u16 bang_count;
+            u16 bang_max;
+        };
+    };
     u8 unknown1fa;
     u8 unknown1fb[0x1e];
     u8 f219;
@@ -1038,7 +1203,13 @@ struct Req {
 struct Level {
     u16 f0;
     u16 f2[4][4];
-    u8 unknown22[0x28002];
+    union {
+        u8 unknown22[0x28002];
+        struct {
+            u8 unknown22_[0x20000];
+            u16 plots[0x4000];
+        };
+    };
     u16 unknown28024[4];
     u16 f2802c[4];
     u16 f28034;
@@ -1052,7 +1223,15 @@ struct Icons {
 };
 
 struct ScreenInfo {
-    u8 unknown0[0xa];
+    union {
+        u8 unknown0[0xa];
+        struct {
+            u16 mode;
+            u8 unknown2[4];
+            s16 f6;
+            s16 f8;
+        };
+    };
 };
 
 struct NonResettingAdvisorCounts {
@@ -1072,6 +1251,10 @@ struct NonResettingAdvisorCounts {
 
 struct WinLoseNet {
     u16 unknown0;
+    u16 done;
+    s32 value;
+    u16 start;
+    u16 fa;
 };
 
 struct Trophies {
@@ -1089,20 +1272,154 @@ struct ResearchTasks {
 };
 
 struct AdvisorCounts {
-    u8 unknown0[0x8e];
+    union {
+        u8 unknown0[0x8e];
+        struct {
+            u16 f0;
+            s16 f2;
+            u8 unknown4_[6];
+            s16 fa;
+            u8 unknownc_[4];
+            s16 f10;
+            u8 unknown12_[2];
+            s16 f14;
+            s16 f16;
+            u8 unknown18_[4];
+            s16 f1c;
+            u8 unknown1e_[2];
+            u8 f20;
+            u8 f21;
+            u8 unknown22_[0x26];
+            u16 f48;
+            s32 f4a;
+            s32 f4e;
+            s32 f52;
+            u8 unknown56_[0xc];
+            s32 f62;
+            s32 f66;
+            u8 unknown6a_[0x10];
+            s16 f7a[4];
+            u8 unknown82_[0xc];
+        };
+    };
     u8 unknown8e;
-    u8 unknown8f[0x19];
+    union {
+        u8 unknown8f[0x19];
+        struct {
+            u8 f8f;
+            s32 f90;
+            u8 unknown94_[4];
+            u8 f98;
+            u8 f99;
+            u8 f9a;
+            u8 unknown9b_[3];
+            s32 f9e;
+            s32 fa2;
+            u8 unknowna6_[2];
+        };
+    };
+};
+
+struct PathStep {
+    u8 x;
+    u8 y;
+};
+
+struct WinLose {
+    u16 criterion;
+    u16 op;
+    s32 value;
+    s32 base;
+    u16 fc;
+    u16 fe;
+    s32 f10;
+    s16 f14;
+};
+
+struct ScoreRatings {
+    s16 threshold;
+    u16 f2;
+    u16 f4;
+};
+
+struct InsuranceCo {
+    union {
+        u8 unknown0[3];
+        struct {
+            u8 unknown0_;
+            u8 f1;
+        };
+    };
+    u8 f3;
+};
+
+struct Sector {
+    s32 start;
+    s32 end;
+    s32 radius;
+    u8 unknownc[9];
+    s32 text_x;
+    s32 text_y;
+    u8 unknown1d[4];
 };
 
 struct orthonav_path {
+
+
     u8 x0;
     u8 y0;
     u8 x1;
     u8 y1;
-    u8 unknown4[8];
+    union {
+        u8 unknown4[8];
+        PathStep steps[4];
+    };
     u8 result;
     u8 unknownd[3];
 };
+
+struct wallhug_waypoint {
+    u8 x;
+    u8 y;
+};
+
+struct wallhug_path {
+    u8 count;
+    u8 unknown1;
+    union {
+        struct {
+            s8 x0;
+            s8 y0;
+            s8 x1;
+            s8 y1;
+            PathStep points[0xfd];
+        };
+        struct {
+            wallhug_waypoint start;
+            wallhug_waypoint end;
+            wallhug_waypoint route[0xfd];
+        };
+    };
+};
+
+/* One of the two wall followers of wallhug_info; its route has room for 0xfc steps. */
+struct wallhug_hugger {
+    u8 count;
+    u8 unknown1;
+    wallhug_waypoint start;
+    wallhug_waypoint end;
+    wallhug_waypoint route[0xfc];
+    u32 dir;
+    s32 turn;
+    wallhug_waypoint pos;
+    wallhug_waypoint hit;
+};
+
+struct wallhug_info {
+    wallhug_hugger hugger[2];
+};
+
+u32 wallhug_tricky(wallhug_path *path);
 
 /*
  * Layouts of globals that are still named after their address (D_XXXXXXXX)
@@ -1155,6 +1472,37 @@ struct Button {
     u16 sprite;
 };
 
+struct ClickArea {
+    u8 unknown0[9];
+    u16 x;
+    u16 y;
+    u8 width;
+    u8 height;
+    u8 unknownf;
+};
+
+struct Background {
+    u8 unknown0;
+    u8 unknown1[2];
+};
+
+struct PlotAdjacent {
+    u8 level;
+    u8 plot;
+};
+
+struct Town {
+    u32 f0;
+    union {
+        u8 unknown4[0x19];
+        struct {
+            u8 unknown4_[0xc];
+            u16 f10;
+        };
+    };
+};
+
+extern Town towns[];
 extern Blocks blocks[];
 extern const u8 blocks_backup[];
 extern const u8 *pointer_second_frame_check;
@@ -1167,6 +1515,7 @@ extern ObjectControl objects[];
 extern Shapes shapes[];
 extern s8 change_person_who[][15];
 extern RoomControl rooms[];
+extern DepartmentControl departments[];
 extern const u8 ingame_pointer_second_frame[];
 extern const u8 screen_pointer_second_frame[];
 extern const u8 ingame_pointer_hotspots[];
@@ -1205,6 +1554,7 @@ extern TbSprite *game_panel;
 extern TbSprite *pulldv;
 extern ToDraw draw_cells[];
 extern PixBuffer pixBuf;
+extern Refresh refresh;
 extern u8 req_indices[];
 extern u8 bw_remap[];
 extern s32 loaded_requester;
@@ -1483,6 +1833,16 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y);
 void draw_energise_frame(Thing *w, const s16 x, const s16 y);
 void draw_a_frame_scaled(const u16 sprite, const s16 x, const s16 y, u8 flags, const u8 palette, s32 scale);
 void draw_hilight_frame(Thing *w, const s16 x, const s16 y);
+void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip);
+void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const u8 flip);
+void InitPixBuffer(s16 x, s16 y, s16 w, s16 h, u8 a, u8 b);
+void FillPixBuffer(u8 colour);
+void DrawIntoPixBuffer(void);
+void RestoreFromPixBuffer(void);
+void DrawPixBuffer(u8 colour, s32 a, s32 b, s32 c, s32 d);
+void FillBoxInPixBuffer(u8 colour, s32 x, s32 y, s32 w, s32 h);
+void draw_wibble(s32 x, s32 y, u8 *buf, s32 w, s32 h, s32 phase);
+s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow);
 void draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, u8 *a, u8 *label, const u8 palette);
 void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, const s16 dx, const s16 dy);
 void draw_text_on_map(char *text, const u8 font, const s32 x, const s32 y);
@@ -1713,6 +2073,7 @@ void goto_column_row_in_window(const u8 a, const s32 x, const s32 y);
 void find_cell_at_point(const u8 a, const s32 x, const s32 y);
 void open_new_window(const u8 a, const u8 b, const u8 c, const s32 x0, const s32 y0, const s32 x1, const s32 y1);
 void give_emergency_stats(u16 a, u8 b);
+void give_screen_xy_of_cell_at_column_row(const u8 a, const s32 x, const s32 y);
 u32 old_newrand(void);
 u16 saferand(void);
 void set_icon_value(Thing *const w, const s8 a);
@@ -1778,6 +2139,12 @@ Thing *fn_0003c154(RoomInfo *room, u8 kind);
 #pragma aux fn_0003c154 "W?find_waiting_surgeon$n(pn$RoomInfo$$)pn$Thing$$"
 u8 fn_0003c1e8(Thing *w, u16 action);
 #pragma aux fn_0003c1e8 "W?forget_about_my_slave$n(us)uc"
+void fn_0008493c(u8 fail, u8 active);
+#pragma aux fn_0008493c "W?swap_criteria_packets$n(uc)v"
+u16 fn_00073e64(u16 id, u16 flags);
+#pragma aux fn_00073e64 "W?find_next_emergency_person$n(us)us"
+
+
 }
 
 /*
