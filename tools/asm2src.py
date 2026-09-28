@@ -213,7 +213,10 @@ def emit(le, proj, fn, out):
     # Only addresses where an item starts can carry a label.
     starts = {it.addr for it in items}
     labels &= starts
-    label = lambda a: f".L{a:08x}"
+    # The function's own start is referenced by its symbol, as the compiler
+    # and linker would name it.
+    label = lambda a: q(fn.name) if a == fn.addr else f".L{a:08x}"
+    labels.discard(fn.addr)
     reachable = reachable_items(le, fn, items)
     known = {label(a) for a in labels}
 

@@ -265,7 +265,6 @@
 .globl "_AILSSA_VMM_lock"
 .type "_AILSSA_VMM_lock",@function
 "_AILSSA_VMM_lock":
-.L000f2e3c:
     push ebx
     push esi
     push edi
@@ -275,7 +274,7 @@
     .byte 0x68; .long "_locked"+0x4  # push 0x31b68
     call "_AIL_vmm_lock_range"
     add esp, 8
-    .byte 0x68; .long .L000f2e3c  # push 0xe2e3c
+    .byte 0x68; .long "_AILSSA_VMM_lock"  # push 0xe2e3c
     .byte 0x68; .long "fn_000f0d80_"+0x28  # push 0xe0da8
     call "_AIL_vmm_lock_range"
     add esp, 8
