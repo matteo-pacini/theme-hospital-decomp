@@ -310,6 +310,11 @@ void __pascal SmackSoundCheck(void)
         LowSoundCheckAddr();
 }
 
+#pragma aux (__pascal) SmackVolumePan "fn_000e8080_";
+
+// FUNCTION: 0xe8080
+// NONMATCHING: smk and pan swap esi/edi; the target indexes sounds with
+// shl/add instead of a scaled address
 void __pascal SmackVolumePan(Smack *smk, u32 trackflag, u32 volume, u32 pan)
 {
     u8 trk;
@@ -593,8 +598,7 @@ void __pascal SmackColorTrans(Smack *smk, const void *trans)
 }
 
 // FUNCTION: 0xe8890
-// NONMATCHING: config/functions.txt extends SMACKTOBUFFER over the next
-// Smacker entry point (0xe8ab0), which is not decompiled
+// NONMATCHING: stack frame layout and register allocation differ
 void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 destheight, const void *buf, u32 flags)
 {
     u32 bpl;
@@ -664,15 +668,180 @@ void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 desthe
     *p = height;
 }
 
+u16 *PutWidths(u16 *p, u32 width, u32 pitch, u32 height, u32 lines);
+
+void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 *wintbl, u32 banked);
+#pragma aux (__pascal) SmackToScreen "fn_000e8ab0_";
+
+// FUNCTION: 0xe8ab0
+// NONMATCHING: register allocation, stack slots and block order differ
+void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 *wintbl, u32 banked)
+{
+    u8 *prevbuf;
+    u32 bank;
+    u32 offset;
+    u32 extra;
+    u32 prevstep4;
+    u32 step4;
+    u32 prevstep;
+    u32 remaining;
+    u32 mult;
+    u32 bpl;
+    u32 rows;
+    u32 lines;
+    u8 *tmp;
+    u32 stride;
+    u32 height;
+    u32 w;
+    u32 i;
+    u16 n;
+    u8 *t;
+    u16 *p;
+
+    prevbuf = NULL;
+    if (smk == NULL)
+        return;
+    if (pitch == 320) {
+        banked = 0;
+        wintbl = (const u16 *)0xa0000;
+    }
+    t = smk->f3b0;
+    if (t != NULL) {
+        if (*t == 1) {
+            prevstep = *(u32 *)(t + 0x18);
+            prevbuf = *(u8 **)(t + 4);
+        }
+        RADFREE(smk->f3b0);
+        smk->f46c -= smk->f3b4;
+    }
+    height = smk->Height;
+    lines = 4;
+    mult = 3;
+    stride = pitch;
+    bpl = pitch;
+    extra = 0;
+    if (smk->OpenFlags & 0x100000) {
+        bpl = pitch * 2;
+        stride = pitch * 2;
+        height >>= 1;
+    } else if (smk->OpenFlags & 0x200000) {
+        lines = 8;
+        mult = 7;
+        extra = pitch;
+        stride = pitch * 2;
+        height >>= 1;
+    }
+    extra += stride * 3 + smk->Width;
+    smk->f3b4 = smk->Width * lines * ((top * pitch + stride * height) >> 16) + 0x400;
+    smk->f3b0 = smkmalloc(smk, smk->f3b4);
+    if (smk->f3b0 == NULL)
+        return;
+    left &= ~3;
+    smk->TopOfs = top;
+    smk->LeftOfs = left;
+    tmp = smk->f3b0 + 0x400;
+    t = smk->f3b0;
+    t[0] = 0;
+    t[1] = (smk->OpenFlags & 0x200000) != 0;
+    offset = left + pitch * top;
+    bank = offset >> 16;
+    *(u32 *)(t + 4) = banked;
+    *(u16 *)(t + 8) = bpl - smk->Width;
+    *(u16 *)(t + 10) = banked ? wintbl[bank++] : 0xfffe;
+    p = PutWidths((u16 *)(t + 12), bpl, smk->Width, mult, lines);
+    if (!banked) {
+        *(u32 *)p = (u32)wintbl + offset;
+        p[2] = height >> 2;
+        p[3] = 0xffff;
+        return;
+    }
+    offset &= 0xffff;
+    *(u32 *)p = offset + 0xa0000;
+    p += 2;
+    rows = 0;
+    remaining = smk->Width * height;
+    if (remaining > 0) {
+        step4 = stride * 4;
+        prevstep4 = prevstep * 4;
+        do {
+            if (offset > 0x10000) {
+                *p++ = rows;
+                rows = 0;
+                *p = wintbl[bank++];
+                p = PutWidths(p + 1, bpl, smk->Width, mult, lines);
+                offset &= 0xffff;
+                *(u32 *)p = offset + 0xa0000;
+                p += 2;
+                continue;
+            }
+            if (offset + extra > 0x10000) {
+                *p++ = rows;
+                *p = 0xfffe;
+                rows = 0;
+                p = PutWidths(p + 1, smk->Width, smk->Width, mult, lines);
+                *(u8 **)p = tmp;
+                p += 2;
+                *p++ = 1;
+                *p = 0xfffd;
+                *(u8 **)(p + 1) = tmp;
+                p++;
+                if (prevbuf != NULL) {
+                    for (i = 0; i < lines; i++) {
+                        radmemcpy(tmp, prevbuf, smk->Width);
+                        tmp += smk->Width;
+                        prevbuf += prevstep;
+                    }
+                } else {
+                    tmp += smk->Width * lines;
+                }
+                p += 4;
+                *(u32 *)(p - 2) = offset + 0xa0000;
+                n = 0;
+                while (offset + bpl <= 0x10000) {
+                    n++;
+                    offset += bpl;
+                }
+                *p++ = n;
+                if (offset > 0x10000) {
+                    *p++ = 0;
+                    *p++ = wintbl[bank++];
+                    *p++ = 0;
+                    *p++ = lines - n;
+                } else {
+                    w = 0x10000 - offset;
+                    if (w > smk->Width)
+                        w = smk->Width;
+                    p[0] = w >> 2;
+                    p[1] = wintbl[bank];
+                    p[2] = (smk->Width - w) >> 2;
+                    bank++;
+                    p[3] = lines - n - 1;
+                    p += 4;
+                }
+                offset = ((lines - n) * bpl + offset) & 0xffff;
+                p = PutWidths(p, bpl, smk->Width, mult, lines);
+            } else {
+                if (prevbuf != NULL)
+                    prevbuf += prevstep4;
+                rows++;
+                offset += step4;
+            }
+            remaining -= smk->Width * 4;
+        } while (remaining > 0);
+    }
+    *p++ = rows;
+    *p = 0xffff;
+}
+
 // FUNCTION: 0xe9010
-// NONMATCHING: register allocation and instruction scheduling differ
-void PutWidths(u16 *p, u32 width, u32 pitch, u32 height, u32 lines)
+u16 *PutWidths(u16 *p, u32 width, u32 pitch, u32 height, u32 lines)
 {
     *p++ = width;
     *p++ = pitch >> 2;
     *p++ = height * width - 4;
     *p++ = height * width;
     *p++ = width * lines - pitch;
+    return p;
 }
 
 // FUNCTION: 0xe9050

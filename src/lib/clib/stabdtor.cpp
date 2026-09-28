@@ -211,13 +211,19 @@ void __wcpp_2_destruct_all_(void);
 #pragma aux __wcpp_2_destruct_all_ "fn_000ebb8e_"
 
 // FUNCTION: 0xebb8e
-// NONMATCHING: config/functions.txt extends this function over
-// __wcpp_2_destruct__ (0xebba2), which jumps back into it
+// NONMATCHING: the target clears eax before the register saves
 void __wcpp_2_destruct_all_(void)
 {
     destruct_traverse(0, _wint_thread_data.registered, 0);
 }
 
+void __wcpp_2_destruct_(void);
+/* config/functions.txt has no name for __wcpp_2_destruct__. */
+#pragma aux __wcpp_2_destruct_ "fn_000ebba2_"
+
+// FUNCTION: 0xebba2
+// NONMATCHING: the target shares the call and epilogue of
+// __wcpp_2_destruct_all__ by jumping into it
 void __wcpp_2_destruct_(void)
 {
     destruct_traverse(0, _wint_thread_data.registered, 1);

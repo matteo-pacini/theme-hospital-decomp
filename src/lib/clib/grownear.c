@@ -196,6 +196,9 @@ void __FreeDPMIBlocks(void)
 frlptr __LinkUpNewMHeap(mheapptr p1);
 
 /* __ReAllocDPMIBlock; config/functions.txt gives its name to the function before it. */
+// FUNCTION: 0xebe14
+// NONMATCHING: register allocation (req_size is spilled; the target keeps
+// it in ebp)
 void *fn_000ebe14(frlptr p1, unsigned req_size)
 {
     mheapptr mhp;

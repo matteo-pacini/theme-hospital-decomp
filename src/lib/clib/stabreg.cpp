@@ -22,6 +22,7 @@ THREAD_CTL *__wcpp_2_base_register_(RW_DTREG *rw, void *ro, unsigned state_var)
     return &_wint_thread_data;
 }
 
+// FUNCTION: 0xec33d
 void __wcpp_2_base_deregister_(void)
 {
     _wint_thread_data.registered = _wint_thread_data.registered->prev;

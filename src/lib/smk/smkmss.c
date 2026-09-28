@@ -168,6 +168,11 @@ U32 __pascal MSSSmackTimerRead(void)
     return AIL_ms_count();
 }
 
+#pragma aux (__pascal) MSSLowSoundClose "fn_000e7a40_";
+
+// FUNCTION: 0xe7a40
+// NONMATCHING: the loop tail keeps p->next in a register; the target reloads
+// it from memory
 void __pascal MSSLowSoundClose(SmackSnd *snd)
 {
     SmackSnd *p;
@@ -183,11 +188,14 @@ void __pascal MSSLowSoundClose(SmackSnd *snd)
         D_00151664 = p->next;
         return;
     }
-    for (; p->next != NULL; p = p->next) {
-        if (snd == p->next) {
-            p->next = p->next->next;
-            break;
-        }
+    if (p->next != NULL) {
+        do {
+            if (snd == p->next) {
+                p->next = p->next->next;
+                break;
+            }
+            p = p->next;
+        } while (p->next != NULL);
     }
 }
 

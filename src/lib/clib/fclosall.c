@@ -5,6 +5,8 @@
 #define NUM_STD_STREAMS 5
 
 int __shutdown_stream(FILE *fp, int close_handle);
+void __purgefp(void);
+int docloseall(int exclude);
 
 /* config/functions.txt has no name for docloseall. */
 #pragma aux docloseall "fn_000ec460_"
@@ -35,4 +37,28 @@ int docloseall(int exclude)
         ++number_of_files_closed;
     }
     return number_of_files_closed;
+}
+
+void __full_io_exit(void);
+/* config/functions.txt has no name for __full_io_exit. */
+#pragma aux __full_io_exit "fn_000ec44f_"
+
+// FUNCTION: 0xec44f
+// NONMATCHING: __purgefp lies inside __freefp_ in config/functions.txt, so
+// the target names the jump target __freefp_+0x39
+void __full_io_exit(void)
+{
+    docloseall(0);
+    __purgefp();
+}
+
+int fcloseall(void);
+/* config/functions.txt has no name for fcloseall. */
+#pragma aux fcloseall "fn_000ec45b_"
+
+// FUNCTION: 0xec45b
+// NONMATCHING: the original falls through into docloseall, which follows it
+int fcloseall(void)
+{
+    return docloseall(NUM_STD_STREAMS);
 }

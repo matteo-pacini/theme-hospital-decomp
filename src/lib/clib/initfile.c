@@ -13,10 +13,12 @@ void *malloc(size_t size);
 void __fatal_runtime_error(char *msg, unsigned retcode);
 
 /* __InitFiles; config/functions.txt gives its name to the clock code before it. */
+// FUNCTION: 0xec3d8
 void fn_000ec3d8(void)
 {
     FILE *fp;
     __stream_link *link;
+    __stream_link *next;
 
     __iob[2]._flag &= ~(_IONBF | _IOLBF | _IOFBF);
     __iob[2]._flag |= _IONBF;
@@ -27,9 +29,10 @@ void fn_000ec3d8(void)
             if (link == NULL)
                 __fatal_runtime_error(D_001271e4, 1);
         }
+        next = __OpenStreams;
         link->stream = fp;
-        link->next = __OpenStreams;
         __OpenStreams = link;
+        link->next = next;
     }
     __ClosedStreams = NULL;
 }
