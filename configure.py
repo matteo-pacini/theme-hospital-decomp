@@ -67,7 +67,7 @@ def main():
         }
         if not u.auto:
             base = f"build/base/{u.name}.o"
-            n.append(f"build {base}: cc {u.source} | tools/cc.py tools/fixsyms.py\n")
+            n.append(f"build {base}: cc {u.source} | tools/cc.py tools/fixsyms.py config/cflags.txt\n")
             objects.append(base)
             unit["base_path"] = base
             unit["metadata"]["source_path"] = u.source
@@ -86,7 +86,7 @@ def main():
         "custom_make": "ninja",
         "build_target": False,
         "build_base": True,
-        "watch_patterns": ["*.cpp", "*.h", "*.hpp"],
+        "watch_patterns": ["*.cpp", "*.c", "*.h", "*.hpp"],
         "progress_categories": CATEGORIES,
         "units": units,
     }

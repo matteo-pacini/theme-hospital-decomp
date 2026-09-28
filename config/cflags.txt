@@ -1,0 +1,8 @@
+# First matching glob (relative to the repo root) decides how a source file
+# is compiled: glob, compiler, flags. -zq, -hd, -zm and -i=include are always
+# added.
+#
+# Game code: C++, full debug info (which also disables optimisation).
+src/*.cpp            wpp386  -s -d2
+# Miles Sound System (RAD Game Tools): C, optimised, functions are __cdecl.
+src/lib/ail/*.c      wcc386  -s -ox

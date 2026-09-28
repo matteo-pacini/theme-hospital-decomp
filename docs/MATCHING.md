@@ -198,3 +198,18 @@ Stack frame layout is not fully understood. Observed so far:
       original:  lea edx,[eax*4]; mov eax,[price]; mov [edx+bids],eax
       ours:      shl eax,2;       mov edx,[price]; mov [eax+bids],edx
 - Position of the return-value slot relative to locals in some functions.
+
+## Libraries
+
+Compiler and flags per source file come from `config/cflags.txt`.
+
+- **Miles Sound System** (`ail*.c`, `memfile.c`; RAD Game Tools): C,
+  `wcc386 -s -ox`, public functions declared `__cdecl` (symbols `_AIL_...`,
+  arguments on the stack). Matches exactly with every 10.x compiler. Sources
+  go in `src/lib/ail/`, shared declarations in `include/ail.h`.
+- **Bullfrog LIBRARY7** (`g*.cpp`, `s*.cpp`, ...): optimised C++ whose
+  leaf functions keep a frame (`push ebp; mov ebp,esp; ...; pop ebp`) but
+  without the `mov esp,ebp` every available compiler emits with `-of+`, so it
+  was likely built with an earlier Watcom than any we have.
+- **Bullfrog network library** (`sp.cpp`, `netint*.cpp`, `dosser.cpp`, ...):
+  optimised C++ classes, flags not yet established.
