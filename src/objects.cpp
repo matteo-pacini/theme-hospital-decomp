@@ -37,6 +37,7 @@ struct PagerSlots {
 
 extern NextPart next_part[];
 extern s16 door_to_room[];
+extern s16 special_around[];
 extern SlidingDoorControl sliding_doors[];
 extern ObjectWalls object_walls[];
 
@@ -529,7 +530,6 @@ u16 find_nearest_free_object(u16 id, u8 kind)
     return best - thing;
 }
 
-// NONMATCHING: register choice; tile y term zero-extended as u16 instead of int
 // FUNCTION: 0x0003800c
 u16 find_free_object_anywhere(u16 id, u8 kind)
 {
@@ -548,7 +548,7 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
     best = thing;
     best_dist = 9999;
     count = 0;
-    room = which_room((e->y.tile << 7) + (u16)e->x.tile);
+    room = which_room((s16)((e->y.tile << 7) + (u16)e->x.tile));
     if (room) {
         w = &thing[room->first_object];
         if (w > thing) {
@@ -695,7 +695,6 @@ s16 place_door(u16 tile, u16 kind)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00038788
 Thing *find_door(Thing *w)
 {
@@ -705,7 +704,7 @@ Thing *find_door(Thing *w)
 
     cell = &map[((s16)w->y.tile << 7) + (s16)w->x.tile];
     for (i = 0; i < 5; i++) {
-        door = fn_00019aac(&cell[door_to_room[i + 4]], 8);
+        door = fn_00019aac(&cell[special_around[i]], 8);
         if (door > thing) {
             if (w->room || (s16)w->x.tile + ((s16)w->y.tile << 7) == room_info[door->unknown89].unknown4) {
                 return door;

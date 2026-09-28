@@ -430,7 +430,6 @@ u16 call_person_to_room(Thing *w, u16 id, u16 action, u16 arg, u8 follow)
     return 0;
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00016cdc
 u8 call_person_again(Thing *w, u16 action, u16 arg)
 {
@@ -469,7 +468,7 @@ u8 call_person_again(Thing *w, u16 action, u16 arg)
                 }
             }
         } else {
-            tile = ((u16)other->unknown20 << 7) + (u16)other->unknown19;
+            tile = (u16)other->unknown19 + ((u16)other->unknown20 << 7);
             if (tile != arg) {
                 return 0;
             }

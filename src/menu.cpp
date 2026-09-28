@@ -88,7 +88,7 @@ void LbTextSetClipWindow(u32 x, u32 y, u32 w, u32 h);
 
 }
 
-// NONMATCHING: ternary temporaries placed below the arrays, register choice
+// NONMATCHING: first ?: temporary placed above the arrays (target: below them)
 // FUNCTION: 0x00089df0
 void setup_menus(void)
 {
@@ -150,7 +150,7 @@ void setup_menus(void)
         for (j = 0; j < pmenu.pulldowns[i].count; j++) {
             if (pmenu.pulldowns[i].items[j].submenu) {
                 pmenu.pulldowns[sub].parent = i;
-                pmenu.pulldowns[sub].y = pmenu.line_height + pmenu.line_height * j;
+                pmenu.pulldowns[sub].y = pmenu.line_height + j * pmenu.line_height;
                 pmenu.pulldowns[i].items[j].submenu = sub++;
             }
         }

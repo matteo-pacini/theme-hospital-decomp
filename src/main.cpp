@@ -45,13 +45,11 @@ void fn_0001bdf8(void);
 
 }
 
-// NONMATCHING: stack slots of i and the return value are swapped
 // FUNCTION: 0x00010010
 int main(u16 argc, char **argv)
 {
-    int i;
+    u16 i;
     char *arg;
-    s16 c;
 
     if (LbMemorySetup() == -1) {
         hosp_dos_printf(D_00120004, 4900000);
@@ -59,9 +57,11 @@ int main(u16 argc, char **argv)
     }
     init_game_vars();
     read_config_file();
-    for (i = 1; (u16)i < argc; i++) {
-        arg = argv[(u16)i];
+    for (i = 1; i < argc; i++) {
+        arg = argv[i];
         if (*arg == '-' || *arg == '/') {
+            s16 c;
+
             arg++;
             while (c = (s8)*arg++) {
                 switch (c) {

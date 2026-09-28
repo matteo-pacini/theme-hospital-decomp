@@ -123,7 +123,6 @@ void req10(Window *win)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009be80
 void req10_overdraw(Window *win)
 {
@@ -168,7 +167,7 @@ void req10_overdraw(Window *win)
                         break;
                     i++;
                 }
-                reqspr_draw(b->x + (s16)ox, b->y + (s16)oy, &button_sprite[D_0015f406[0x2f]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x2f]]);
                 break;
             case 0xb:
                 for (b = win->buttons; b; b = b->next) {
@@ -176,7 +175,7 @@ void req10_overdraw(Window *win)
                         break;
                     i++;
                 }
-                reqspr_draw(b->x + (s16)ox, b->y + (s16)oy, &button_sprite[D_0015f406[0x30]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x30]]);
                 break;
             }
             D_00155d74 = 0;

@@ -122,7 +122,6 @@ and comparing against the original.
 | each `&&` test jumping straight to the false label | nested `if`s; `a && b && c && d` may need `(a && b) && (c && d)` |
 | Watcom varargs prologue | `typedef char *va_list[1]` with a manual `va_start`/`va_end` (`ap[0] = 0`) |
 
-| `[prev_global]>>16` read for a 16-bit global | `s32` alias of the preceding global bound with `#pragma aux`, written `(alias >> 16)`; a struct-member alias changes evaluation order |
 | dword load and `sar` on a `u16` field | `(s16)p->field` |
 | `if (!x) break;` in a switch case: one `je` to the switch end | as written; an if-block then `break` adds a `jmp` stub |
 | `mov eax,[g]; xor eax,eax; mov [g],eax` | `g ^= g` |
@@ -137,6 +136,10 @@ and comparing against the original.
 | `test dl,0xff` after a 32-bit subtraction | `!((a - b) & 0xff)` |
 | `add byte ptr [x],0xf7` / `add dword ptr [x],-1` | `x += -9` / `--x` |
 | loop increment after the body, no initial jump to the test | `for (;;) { ...; i++; }` |
+| expression result in `eax` for `mem < expr` | write the comparison with memory on the left (`f35 < a + b`) |
+| single `jcc` to the epilogue for two conditions | nested `if (a) { if (b) return; }` |
+| word-width `or` on a `u16` global | `*(volatile u16 *)&g \|= 0x40` (plain source narrows to a byte `or`) |
+| loop tail jumping back to a decrement | the decrement is in the condition: `while (--q > start)` |
 | `ror eax,13` | `#pragma aux` inline code: `u32 ror13(u32); #pragma aux ror13 = "ror eax,13" parm [eax] value [eax];` (`_lrotr` gives `ror eax,cl`) |
 | `cmp X; jle; X = K; tmp = X; ... else tmp = 0` | discarded clamp `pct > 100 ? pct = 100 : 0;` |
 | or-chain whose true result jumps to the `else` block | `if (!(a == 1 \|\| a == 2 ...)) {...} else {...}` |
@@ -157,6 +160,8 @@ Stack frame layout is not fully understood. Observed so far:
 - 4-byte locals are placed in reverse declaration order; with a 4-byte first
   parameter the whole frame (parameter spills included) is reversed, with a
   `u16` first parameter it is in forward order.
+- A 2-byte local gets a slot before the return-value slot; scope it in an
+  inner block to place it after.
 - The return-value slot comes after the parameters; a local that must sit
   below it can be declared inside an inner block
   (`else { T x; ... }`).
@@ -166,8 +171,9 @@ Stack frame layout is not fully understood. Observed so far:
 - Locals of an inner block are allocated when codegen reaches the block, so
   they land below compiler temporaries created earlier; declaring a buffer
   inside the `if` that uses it moves it down.
-- Slot assignment is positional: it depends on the sequence of declared
-  types, not on names or how variables are used. Swapping two same-typed
+- Slot assignment is positional for same-typed locals when no `?:`
+  temporaries are involved: it depends on the sequence of declared types,
+  not on names or how variables are used. Swapping two same-typed
   declarations swaps their slots, so read the target-to-ours slot pairs off
   `tools/check.py -v` and reorder declarations to match (this also settles
   `u8` locals). The return-value slot does not move this way.

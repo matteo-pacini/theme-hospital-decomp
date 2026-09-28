@@ -143,19 +143,18 @@ void fn_000a6ca4(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a6cf0
 void fn_000a6cf0(u8 n)
 {
-    s32 x;
-    s32 y;
-    s32 w;
-    s32 h;
-    u8 flag;
-
     if ((((window.fd8[n] == 0 && window.fdb[n] == 0) && window.fe1[n] == window.fde[n]) && window.fde[n] == 0) && !D_001553c8) {
         refresh_wscreen();
     } else {
+        s32 x;
+        s32 y;
+        s32 w;
+        s32 h;
+        u8 flag;
+
         find_common_window(window.zone_x[n], window.zone_y[n], window.zone_w[n], window.zone_h[n],
                            window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
         x = info.unknown68;

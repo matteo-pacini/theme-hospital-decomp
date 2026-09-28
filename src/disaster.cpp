@@ -21,7 +21,6 @@ void restart_entire_queue(RoomInfo *room);
 u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim);
 void disaster_peeps(u8 mode, s8 owner);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00075010
 void machine_disaster(Thing *e)
 {
@@ -29,7 +28,7 @@ void machine_disaster(Thing *e)
     RoomInfo *room;
 
     room = &room_info[e->unknown89];
-    tile = e->x.tile + (e->y.tile << 7) + objects[e->subtype].f1a;
+    tile = (s16)(e->x.tile + (e->y.tile << 7)) + objects[e->subtype].f1a;
     create_explosion(tile, 0x97);
     blast_effect(tile, room);
     explosion_kills_dudes_in_room(room);

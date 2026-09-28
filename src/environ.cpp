@@ -92,13 +92,13 @@ void modify_person(Thing *w)
     w->unknown134--;
     if (old_newrand() % 3 == 0)
         w->unknown136++;
-    if (w->unknown81s > 80) {
+    if ((s16)w->unknown83w > 80) {
         w->unknown138w++;
         if ((s16)w->unknown138w < 0)
             w->unknown138w = 0;
         set_icon_value(w, 0x11);
         w->unknown81--;
-    } else if (w->unknown81s < 20) {
+    } else if ((s16)w->unknown83w < 20) {
         set_icon_value(w, 0x12);
         w->unknown81--;
     } else {
@@ -384,10 +384,10 @@ void modify_staff(Thing *w)
         reset_icon_value(w, 10);
         w->unknown81++;
     }
-    if (w->unknown81s > 80) {
+    if ((s16)w->unknown83w > 80) {
         w->unknown81--;
         set_icon_value(w, 0x11);
-    } else if (w->unknown81s < 20) {
+    } else if ((s16)w->unknown83w < 20) {
         w->unknown81--;
         set_icon_value(w, 0x12);
     }

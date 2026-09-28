@@ -74,7 +74,6 @@ u16 compute_object_pointed(RoomInfo *room)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00027e1c
 void pick_up_object(u16 id, u8 both)
 {
@@ -135,7 +134,7 @@ void pick_up_object(u16 id, u8 both)
     if (D_001553c7 == player) {
         gamevar.unknown33.unknown0[w->subtype]++;
         gamevar.f28 = w->unknown17;
-        init_place_object(w->subtype, gamevar.unknown26, room, (w->y.tile << 7) + w->x.tile - D_001553e0);
+        init_place_object(w->subtype, gamevar.unknown26, room, w->x.tile + (w->y.tile << 7) - D_001553e0);
         D_001553fb = 0;
     }
 }
@@ -279,7 +278,6 @@ s32 room_depreciation(void)
     return 50;
 }
 
-// NONMATCHING: register choice, inner if exits straight to the epilogue
 // FUNCTION: 0x00028758
 void clicked_for_edit(void)
 {
@@ -289,15 +287,17 @@ void clicked_for_edit(void)
     room = allhosps[player].build.edit_room;
     if (D_001553fb) {
         edit = crequester.unknown2 == 5 || (crequester.unknown2 == 10 && crequester.unknown4 != 1);
-        if (!edit || thing[D_001553fb].unknown89 == room) {
-            D_001549d0[player].arg = edit;
-            if (thing[D_001553fb].renderer == 6) {
-                D_001549d0[player].value = D_001553fb;
-            } else {
-                D_001549d0[player].value = thing[D_001553fb].unknown69;
-            }
-            D_001549d0[player].type = 0x44;
+        if (edit) {
+            if (thing[D_001553fb].unknown89 != room)
+                return;
         }
+        D_001549d0[player].arg = edit;
+        if (thing[D_001553fb].renderer == 6) {
+            D_001549d0[player].value = D_001553fb;
+        } else {
+            D_001549d0[player].value = thing[D_001553fb].unknown69;
+        }
+        D_001549d0[player].type = 0x44;
     } else if (room) {
         D_001549d0[player].type = 0x46;
         D_001549d0[player].value = room;
@@ -505,7 +505,7 @@ u8 does_room_contain_compulsory_objects(RoomInfo *room)
     return 1;
 }
 
-// NONMATCHING: u8 local slot order, register choice
+// NONMATCHING: stack slots of ok, cell and shape rotated (target: ok highest)
 // FUNCTION: 0x000292d0
 u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
 {
@@ -532,7 +532,7 @@ u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
                 pos2 = other->use_pos[4];
             }
         } else {
-            pos2 = ((u16)w->y.tile << 7) + (u16)w->x.tile;
+            pos2 = (u16)w->x.tile + ((u16)w->y.tile << 7);
         }
         if (!check_points_connected(pos2, room->unknown6)) {
             ok = 0;

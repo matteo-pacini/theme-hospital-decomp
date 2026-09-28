@@ -7,19 +7,11 @@ struct QuakeControl {
     u8 unknown5;
 };
 
-/*
- * The earthquake state at 0x15532d. The signed bytes at +5 and +7 are read
- * through the dword three bytes below them, so those reads go through this
- * overlay; their stores address them directly (D_00155332, D_00155334).
- */
 struct QuakeState {
     u8 unknown0[2];
     u8 state;
     u8 magnitude;
     u8 unknown4;
-    s8 unknown5;
-    u8 unknown6;
-    s8 unknown7;
 };
 
 extern QuakeControl quake_control[];
@@ -72,14 +64,14 @@ void generate_quake(void)
         }
         break;
     case 3:
-        if (D_0015532d.unknown5 >= D_0015532d.magnitude * 3 / 4 || actual_game_turn > gamevar.feb) {
+        if (D_00155332 >= D_0015532d.magnitude * 3 / 4 || actual_game_turn > gamevar.feb) {
             D_0015532d.state = 4;
             gamevar.feb = actual_game_turn + 100;
             do_earthquake();
         }
         break;
     case 4:
-        if ((D_0015532d.unknown7 == -1 && D_0015532d.unknown5 < 2) || actual_game_turn > gamevar.feb) {
+        if ((D_00155334 == -1 && D_00155332 < 2) || actual_game_turn > gamevar.feb) {
             disaster_peeps(2, -1);
             D_0015532d.state = 0;
             setup_next_quake();

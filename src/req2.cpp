@@ -189,11 +189,11 @@ void req2(Window *w)
 // FUNCTION: 0x00069d34
 void req2_overdraw(Window *w)
 {
-    s32 spr;
+    s32 x0;
     WindowButton *b;
     Thing *t;
     s32 y0;
-    s32 x0;
+    s32 spr;
     u8 i;
     u16 counts[4];
     char buf[200];
@@ -582,16 +582,16 @@ extern char **D_001602a0;
 void draw_window_not_using_bscreen(const u8 idx);
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
 
-// NONMATCHING: register choice
+// NONMATCHING: window.f0[n - 1] relocates against window-4 (target names it info+0x7c)
 // FUNCTION: 0x0006b464
 void req12_overdraw(Window *w)
 {
     u8 i;
-    u16 old_w;
-    u16 old_y;
-    u16 sub;
     u16 old_h;
+    u16 old_w;
+    u16 sub;
     u16 old_x;
+    u16 old_y;
     Thing *t;
     s32 y0;
     s32 x0;
@@ -675,8 +675,8 @@ void req12_overdraw(Window *w)
                                                                         : ((t->x.frac - t->y.frac) >> 4) + 0x10)
                                            + (info.unknown54 - D_0015f410[171].x);
         window.fc[window.unknown2ec - 1] = info.unknown58 - D_0015f410[171].y
-                                           + (D_0015f3f4 == SCREEN_MODE_13 ? (t->x.frac + t->y.frac) >> 4
-                                                                           : (t->x.frac + t->y.frac) >> 5);
+                                           + (D_0015f3f4 == SCREEN_MODE_13 ? (t->y.frac + t->x.frac) >> 4
+                                                                           : (t->y.frac + t->x.frac) >> 5);
         old_x = window.unknown2c3;
         old_y = window.unknown2c7;
         old_w = window.unknown2cb;

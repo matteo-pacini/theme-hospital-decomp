@@ -312,7 +312,7 @@ void display_plaque(void)
         break;
     }
     if (trophies_won[1].unknown0)
-        reqspr_draw(D_0015f43c[0x57].unknownC, D_0015f43c[0x57].unknownE, &screen_sprites_tab_start[13]);
+        reqspr_draw(D_0015f43c[0x56].unknownC, D_0015f43c[0x56].unknownE, &screen_sprites_tab_start[13]);
 }
 
 // FUNCTION: 0x000b5b38

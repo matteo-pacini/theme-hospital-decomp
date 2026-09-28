@@ -448,7 +448,6 @@ void draw_network_select(void)
     }
 }
 
-// NONMATCHING: register choice, buffer frame slot
 // FUNCTION: 0x000802c4
 void display_button_text(s32 mask)
 {
@@ -666,7 +665,7 @@ void display_button_text(s32 mask)
             draw_network_game_selection_screen();
             break;
         case 0x100: {
-            char buf[128];
+            char buf[100];
 
             sprintf(buf, D_001206e7, D_001602a0[30], balance_file_name);
             D_00188c74 = 0;

@@ -316,7 +316,6 @@ void display_area_select(void)
     D_00188c74 = 0;
 }
 
-// NONMATCHING: word-sized or on D_00188c74, register choice
 // FUNCTION: 0x000694e8
 void display_select_level(void)
 {
@@ -356,7 +355,7 @@ void display_select_level(void)
             }
             if (over_hotspot(mouse_dx, mouse_dy, col * 100, h * row, 100, h)) {
                 D_00188c85 = color.unknown8;
-                D_00188c74 |= 0x40;
+                *(volatile u16 *)&D_00188c74 |= 0x40;
                 if (D_00188c7b) {
                     D_00188c7b = 0;
                     area.unknown2 = 2;

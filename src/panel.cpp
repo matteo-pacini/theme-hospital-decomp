@@ -1259,15 +1259,14 @@ void panel_flash(void)
     }
 }
 
-// NONMATCHING: register choice, u8 local slot order
 // FUNCTION: 0x00035d5c
 void draw_ratfest_on_panel(void)
 {
-    u8 s3;
-    u8 s2;
-    u8 s1;
-    u8 s0;
     u8 level;
+    u8 s3;
+    u8 s0;
+    u8 s1;
+    u8 s2;
     char buf[100];
 
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);

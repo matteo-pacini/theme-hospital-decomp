@@ -107,6 +107,7 @@ extern char D_00120480[];
 extern u16 D_0012cdd4[];
 extern u16 D_0012cdea[];
 extern s16 D_0012dd7c[];
+extern s16 D_0012dd98;
 }
 
 // FUNCTION: 0x0005dbb0
@@ -181,7 +182,6 @@ void display_advisor(void)
     }
 }
 
-// NONMATCHING: register choice; sar-trick reads of D_00155e03, D_00158208 and D_0015820c named after the preceding symbol in the target
 // FUNCTION: 0x0005defc
 u8 find_advice(const u16 id)
 {
@@ -234,7 +234,7 @@ u8 find_advice(const u16 id)
                 u8 i;
 
                 for (i = 0; i < 4; i++) {
-                    if (lose_criteria[crit].value + (i + 1) * fn_000cb2db(lose_criteria[crit].value) / 10 > myhosp->f35
+                    if (myhosp->f35 < lose_criteria[crit].value + (i + 1) * fn_000cb2db(lose_criteria[crit].value) / 10
                         && myhosp->f35 > lose_criteria[crit].value) {
                         sprintf(D_0015820c, extra_advice[0x1c + i], myhosp->f35 - lose_criteria[crit].value);
                         found = 1;
@@ -292,7 +292,7 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x14:
-        if (myhosp->f3d && myhosp->f3d * 3 < myhosp->f35) {
+        if (myhosp->f3d && myhosp->f35 > myhosp->f3d * 3) {
             sprintf(D_0015820c, extra_advice[0x38]);
             found = 1;
         } else {
@@ -941,10 +941,11 @@ u8 find_advice(const u16 id)
     return found;
 }
 
-// NONMATCHING: register choice, frame size
 // FUNCTION: 0x000608bc
 void mouse_advice(void)
 {
+    s32 unused;
+
     switch (D_001581fe.f200) {
     default:
         LbDataLoadSetModifyFilenameFunction(D_0015820c, D_001602ec[D_001581fe.f200]);
@@ -1032,7 +1033,6 @@ void done_announcement(const u16 type)
     D_00158320 = 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00060c78
 u8 advisor_toilets(void)
 {
@@ -1051,11 +1051,11 @@ u8 advisor_toilets(void)
         sprintf(D_0015820c, extra_advice[11]);
         return 1;
     }
-    if (D_0012dd7c[14] < ratio && listhead[player].objects[0x33] == 0) {
+    if (D_0012dd98 < ratio && listhead[player].objects[0x33] == 0) {
         sprintf(D_0015820c, extra_advice[0x26]);
         return 1;
     }
-    if (D_0012dd7c[14] < ratio) {
+    if (D_0012dd98 < ratio) {
         sprintf(D_0015820c, extra_advice[12]);
         return 1;
     }

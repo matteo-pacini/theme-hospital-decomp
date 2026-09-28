@@ -86,7 +86,6 @@ u8 process_staff_complex(Thing *w)
     return 1;
 }
 
-
 // NONMATCHING: frame slot order, register choice
 // FUNCTION: 0x0003e724
 u8 fn_0003e724(Thing *w)

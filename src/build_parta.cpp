@@ -14,12 +14,13 @@ extern u8 D_001553c8;
 extern u16 D_001581fe;
 
 u8 fn_00029748(void);
-s16 place_door(u16 tile, u16 kind);
-char search_for_outer_color(Map *cell);
-void remove_blank_wall(Map *cell, u8 side);
 void fn_000228e0(void);
 
 }
+
+s16 place_door(u16 tile, u16 kind);
+s8 search_for_outer_color(Map *cell);
+void remove_blank_wall(Map *cell, u8 side);
 
 // FUNCTION: 0x00022854
 u8 fn_00022854(u8 warn)
@@ -238,7 +239,6 @@ s16 find_bluep_who(Map *cell)
     return id;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00023b64
 void build_all_rooms(void)
 {
@@ -321,7 +321,7 @@ void build_all_rooms(void)
                     if (col >= 0) {
                         tile = cell - map;
                         if (blueprint[bp].flags < 3) {
-                            (cell - 0x80)->flags |= 0x10;
+                            (cell - 0x81)->flags |= 0x10;
                         }
                         if ((blueprint[bp].flags & 1) && walls[0] == 0) {
                             flag = 1;
@@ -407,7 +407,7 @@ void build_all_rooms(void)
                         continue;
                     }
                     gamevar.f28 = saved;
-                    (cell - 0x80)->flags |= 0x10;
+                    (cell - 0x81)->flags |= 0x10;
                     break;
                 case 5:
                     if (col >= 0) {
@@ -417,7 +417,7 @@ void build_all_rooms(void)
                         if ((blueprint[bp].flags & 2) && walls[1] == 0) {
                             cell->unknown4 = 0x7f;
                         }
-                        (cell - 0x80)->flags |= 0x10;
+                        (cell - 0x81)->flags |= 0x10;
                     }
                     break;
                 case 10:

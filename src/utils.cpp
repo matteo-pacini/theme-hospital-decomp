@@ -537,17 +537,15 @@ void convert_MW_to_xy(u16 pos, s8 *x, s8 *y)
     *y = ly;
 }
 
-// NONMATCHING: stack slot order of shape/x/y; register allocation of bounds stores
+// NONMATCHING: slots of shape and maxY swapped
 // FUNCTION: 0x0001a854
 void measure_objects(void)
 {
-    s8 x;
-    s8 y;
-    s8 maxY;
+    Shapes *shape;
     s8 maxX;
     s8 minY;
     s8 minX;
-    Shapes *shape;
+    s8 maxY;
     u8 i;
     u8 j;
     u8 k;
@@ -560,6 +558,9 @@ void measure_objects(void)
             maxX = -100;
             maxY = -100;
             for (k = 0; k < shape->count; k++) {
+                s8 x;
+                s8 y;
+
                 convert_MW_to_xy(shape->points[k], &x, &y);
                 minX > x ? minX = x : 0;
                 minY > y ? minY = y : 0;

@@ -304,7 +304,7 @@ void person_dead(Thing *w)
     u16 tile;
 
     if (w->unknown103 < 0x1e) {
-        tile = (u16)w->x.tile + (w->y.tile << 7);
+        tile = (s16)((u16)w->x.tile + (w->y.tile << 7));
         right = &map[tile + 1];
         down = &map[tile + 0x80];
         if ((old_newrand() & 1) == 0) {

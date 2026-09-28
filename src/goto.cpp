@@ -317,7 +317,7 @@ s16 staff_goto_object(Thing *w)
             break;
         }
     }
-    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
     y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
     move_node(w, x, y);
     return 0;

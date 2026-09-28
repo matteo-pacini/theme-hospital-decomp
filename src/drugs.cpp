@@ -35,27 +35,26 @@ void fn_0001b7e0(void *dst, char *text, int flags);
 
 }
 
-// NONMATCHING: u8 local stack slot order and index/pointer register choice
 // FUNCTION: 0x00012690
 void display_drugs(void)
 {
-    u8 i;
-    u8 lowFee;
+    u8 unused30;
+    u8 count;
+    u8 unused18;
     u8 noStaff;
     u8 unavailable;
-    u8 unused18;
-    u8 unused1c;
-    u8 unused20;
-    u8 unused24;
+    u8 lowFee;
+    u8 i;
     u8 unused28;
-    u8 count;
-    u8 unused30;
+    u8 unused24;
+    u8 unused20;
+    u8 unused1c;
     u16 value;
     s16 offset;
     u16 room;
-    int n;
-    int result;
     Expertise *def;
+    int result;
+    int n;
     u8 list[18];
     char buf[100];
 

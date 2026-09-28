@@ -317,7 +317,7 @@ u16 get_slist_staff(const u8 dir)
     return slist.unknown0;
 }
 
-// NONMATCHING: register choice; slot of the font-height local
+// NONMATCHING: slots of the font-height local and its ?: temporary swapped
 // FUNCTION: 0x00091dec
 void draw_slist_staff(const u16 selected)
 {
@@ -353,7 +353,7 @@ void draw_slist_staff(const u16 selected)
                 if (n >= D_00155449 * 10 && n < (D_00155449 + 1) * 10) {
                     set_font_from_cache(1);
                     if (over_hotspot(mouse_dx, mouse_dy, D_0015f430->rows[row].x, D_0015f430->rows[row].y, D_0015f430->rows[row].w, D_0015f430->rows[row].h)) {
-                        if (D_00155e18 != D_00155449 * 10 + row + 1)
+                        if (D_00155e18 != row + D_00155449 * 10 + 1)
                             play_sound(10, 0x44, -1, -1);
                         set_font_from_cache(2);
                         D_00155e18 = D_00155449 * 10 + row + 1;

@@ -163,7 +163,6 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
     D_00155c50 > lbDisplay.unknown18 - D_00155c54 ? D_00155c50 = lbDisplay.unknown18 - D_00155c54 : 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009a1f8
 void draw_help_text(void)
 {
@@ -216,10 +215,9 @@ void draw_help_text(void)
         if ((D_00155c60 <= mouse_dx && D_00155c60 + pulldv[19].width > mouse_dx)
             && D_00155c62 <= mouse_dy && D_00155c62 + pulldv[19].height > mouse_dy) {
             reqspr_draw(D_00155c60, D_00155c62, &pulldv[20]);
-            if (!D_00161134) {
+            if (!D_00161134)
                 play_sound(10, 0x44, -1, -1);
-                D_00161134 = 1;
-            }
+            D_00161134 = 1;
         } else {
             reqspr_draw(D_00155c60, D_00155c62, &pulldv[19]);
             D_00161134 = 0;
@@ -265,7 +263,6 @@ void copy_and_format(char *dst, char *src)
     *dst = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009a86c
 void copy_and_format_composite(char *dst, char **strs)
 {
@@ -306,8 +303,7 @@ void copy_and_format_composite(char *dst, char **strs)
         for (p = *strs; *p; p++) {
             if (cur > limit) {
                 q = dst;
-                --q;
-                while (q > start) {
+                while (--q > start) {
                     if (*q == '\n')
                         break;
                     if (*q == ' ') {

@@ -293,7 +293,7 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
                 volume = myplayer.fd;
             } else {
                 half = lbDisplay.unknown18 / 2;
-                volume = myplayer.fd * (half - ABS(x - half)) / half;
+                volume = (half - ABS(x - half)) * myplayer.fd / half;
                 pan = x * 0x7f / lbDisplay.unknown18;
                 if (volume < 0)
                     volume = 0;
@@ -309,7 +309,6 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00089204
 void manage_sound(void)
 {
@@ -332,7 +331,7 @@ void manage_sound(void)
                         StopSample(s->SourceID, s->SampleNumber);
                 } else if (info.unknown54 > 0 && info.unknown54 < lbDisplay.unknown18 && info.unknown58 > 0 && info.unknown58 < lbDisplay.unknown1c) {
                     half = lbDisplay.unknown18 / 2;
-                    volume = myplayer.fd * (half - ABS(info.unknown54 - half)) / half;
+                    volume = (half - ABS(info.unknown54 - half)) * myplayer.fd / half;
                     pan = info.unknown54 * 0x7f / lbDisplay.unknown18;
                     if (volume < 0)
                         volume = 0;

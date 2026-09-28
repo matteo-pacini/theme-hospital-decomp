@@ -888,7 +888,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    set_all_refresh_zones_in_window(refresh.x0, D_001567b0.y0, D_001567b0.x1, D_001567b0.y1, 3);
+    set_all_refresh_zones_in_window(D_001567b0.x0, D_001567b0.y0, D_001567b0.x1, D_001567b0.y1, 3);
     D_00188c74 = 0;
 }
 
@@ -965,12 +965,11 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    set_all_refresh_zones_in_window(refresh.x0, D_001567b0.y0, D_001567b0.x1, D_001567b0.y1, 3);
+    set_all_refresh_zones_in_window(D_001567b0.x0, D_001567b0.y0, D_001567b0.x1, D_001567b0.y1, 3);
     D_00188c74 = 0;
 }
 
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00031434
 void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip)
 {
@@ -992,7 +991,7 @@ void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
                 if (!hidden) {
-                    D_00188c74 = flags | elem->flags & 0xf;
+                    D_00188c74 = elem->flags & 0xf | flags;
                     D_00188c74 ^= 1;
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
                 }

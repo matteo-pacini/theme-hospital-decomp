@@ -630,7 +630,7 @@ void fn_0006310c(void)
     hosp_play_smk(0x17);
 }
 
-// NONMATCHING: u8 local slot order
+// NONMATCHING: slots of result and the first ?: temporary swapped
 // FUNCTION: 0x00063174
 u8 fn_00063174(void)
 {

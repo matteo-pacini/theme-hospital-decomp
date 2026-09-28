@@ -490,7 +490,6 @@ u8 next_object_to_build(void)
     return 0;
 }
 
-// NONMATCHING: register choice, u8 to u16 argument narrowing
 // FUNCTION: 0x00027b44
 void open_room(u8 p)
 {
@@ -506,7 +505,7 @@ void open_room(u8 p)
         clear_pager_responses(room - room_info);
         for (x = build->x0; x <= build->x1 + 1; x++) {
             for (y = build->y0; y <= build->y1 + 1; y++) {
-                place_small_thing(x + (y << 7), 0, 0);
+                place_small_thing((s16)(x + (y << 7)), 0, 0);
             }
         }
         clear_build_objects(p);

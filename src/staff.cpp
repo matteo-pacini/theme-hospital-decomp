@@ -54,12 +54,8 @@ extern s16 D_0012dd7c[];
 }
 void change_surgeon_to_doc(Thing *w);
 extern s16 staff_states[][5];
-extern "C" {
-extern s32 D_001549ba;
-#pragma aux D_001549ba "W?cury$ns"
-extern s32 D_001549bc;
-#pragma aux D_001549bc "W?mcurx$ns"
-}
+extern s16 mcurx;
+extern s16 mcury;
 extern "C" {
 extern u16 D_001553e0;
 extern u8 D_001553e1[];
@@ -168,8 +164,8 @@ u16 fn_00029c4c(u16 tile, u16 id, u8 flag, u8 owner)
             } else if (w->subtype == 2) {
                 w->unknown150 = 0;
                 w->unknown148w = w->unknown150;
-                pager_arrival(w);
             }
+            pager_arrival(w);
             if (w->room) {
                 w->room->unknown29 = 1;
             }
@@ -650,7 +646,6 @@ void staff_nav_failure(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002b690
 void draw_staff_cursor(void)
 {
@@ -697,7 +692,7 @@ void draw_staff_cursor(void)
     if (w > thing) {
         D_001567b0[0] = D_001567b0[1] = 999;
         D_001567b0[2] = D_001567b0[3] = 0;
-        draw_from_special_id_frame(start[gamevar.f73].frame, (D_001549ba >> 16) + D_0015f3f8 / 2, (D_001549bc >> 16) - D_0015f3f7 / 2, remap, w->layers, start[gamevar.f73].flags);
+        draw_from_special_id_frame(start[gamevar.f73].frame, mcurx + D_0015f3f8 / 2, mcury - D_0015f3f7 / 2, remap, w->layers, start[gamevar.f73].flags);
     }
 }
 
