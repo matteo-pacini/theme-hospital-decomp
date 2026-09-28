@@ -112,6 +112,14 @@ and comparing against the original.
 | each `&&` test jumping straight to the false label | nested `if`s; `a && b && c && d` may need `(a && b) && (c && d)` |
 | Watcom varargs prologue | `typedef char *va_list[1]` with a manual `va_start`/`va_end` (`ap[0] = 0`) |
 
+| `ror eax,13` | `#pragma aux` inline code: `u32 ror13(u32); #pragma aux ror13 = "ror eax,13" parm [eax] value [eax];` (`_lrotr` gives `ror eax,cl`) |
+| `cmp X; jle; X = K; tmp = X; ... else tmp = 0` | discarded clamp `pct > 100 ? pct = 100 : 0;` |
+| or-chain whose true result jumps to the `else` block | `if (!(a == 1 \|\| a == 2 ...)) {...} else {...}` |
+| local stored directly from both arms | `if`/`else` assignment (a `?:` goes through a temporary) |
+
+C++ `inline` functions are unusable: with `-d2` Watcom emits them as COMDATs,
+which objconv rejects.
+
 Operand order of commutative operators decides the result register
 (`a + (b << 7)` and `(b << 7) + a` differ; `pos + D[i]` vs `D[i] + pos`).
 
