@@ -1395,7 +1395,7 @@
     call "_AIL_vmm_lock_range"
     add esp, 8
     .byte 0x68; .long .L000deb91  # push 0xceb91
-    .byte 0x68; .long "_AIL_file_read"+0x208  # push 0xcdf88
+    .byte 0x68; .long "fn_000ddf00_"+0x88  # push 0xcdf88
     call "_AIL_vmm_lock_range"
     add esp, 8
     ret

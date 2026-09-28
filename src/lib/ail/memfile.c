@@ -144,8 +144,6 @@ S32 __cdecl AIL_vmm_lock(void *start, U32 size)
 }
 
 // FUNCTION: 0x000ddcf0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_file_error and AIL_file_size, which follow it
 S32 __cdecl AIL_vmm_unlock(void *start, U32 size)
 {
     return AIL_vmm_unlock_range(start, (U8 *)start + size - 1);
@@ -156,6 +154,7 @@ S32 __cdecl AIL_file_error(void)
     return D_00150834;
 }
 
+// FUNCTION: 0x000ddd20
 S32 __cdecl AIL_file_size(char *filename)
 {
     S32 handle;
@@ -176,9 +175,6 @@ S32 __cdecl AIL_file_size(char *filename)
 }
 
 // FUNCTION: 0x000ddd80
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_file_write, AIL_file_append and two routines from aila.asm, which
-// follow it
 void *__cdecl AIL_file_read(char *filename, void *dest)
 {
     S32 handle;
@@ -219,6 +215,7 @@ void *__cdecl AIL_file_read(char *filename, void *dest)
     return buf;
 }
 
+// FUNCTION: 0x000dde70
 S32 __cdecl AIL_file_write(char *filename, void *buf, U32 len)
 {
     S32 handle;

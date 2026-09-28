@@ -56,6 +56,7 @@ s32 mouse_in_slice(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 h)
            || point_in_quad(mx, my, x1, y1, x1, y1 + h, x2, y2 + h, x2, y2);
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x000b7f48
 void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i)
 {
@@ -175,6 +176,7 @@ s32 sector_behind(Sector *s, s32 a, s32 b)
     return asin < bsin ? 1 : 0;
 }
 
+// NONMATCHING: frame slots of the ?: temporaries, register choice
 // FUNCTION: 0x000b86a8
 void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
 {
@@ -201,9 +203,8 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
         if (span < 0)
             span += 0x800;
         if (span > 0x400) {
-            if (lbSinTable[(s[i].start & 0x7ff) + 0x200] < 0 && lbSinTable[(s[i].end & 0x7ff) + 0x200] > 0)
-                break;
-            {
+            if (lbSinTable[(s[i].start & 0x7ff) + 0x200] < 0 && lbSinTable[(s[i].end & 0x7ff) + 0x200] > 0) {
+            } else {
                 sec = &s[i];
                 mid = s[i].start + (span >> 1);
                 ox = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * sec->radius) >> 8);

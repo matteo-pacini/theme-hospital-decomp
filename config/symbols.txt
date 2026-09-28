@@ -190,7 +190,7 @@
 0015083c _AIL_mem_free 4
 00150840 _AIL_getenv 4
 00150844 _AIL_int386 4
-00150848 _AIL_sprintf bd0
+00150848 _AIL_sprintf 4
 00151418 _AIL_driver_directory 100
 00151518 _entry 4
 0015151c _locked 4
@@ -653,7 +653,7 @@
 0018c830 _DangerMusicVolume 1
 0018c831 _DangerMusicFadeActive 1
 0018c832 _DangerMusicAble 2
-0018c834 _MusicInstallChoice 11c
+0018c834 _MusicInstallChoice 4
 0018c950 _AIL_driver 40
 0018c990 _AIL_error 100
 0018ca90 _AIL_preference 50
@@ -732,3 +732,5 @@
 0015eba0 _D_0015eba0 38
 0015eb94 _D_0015eb94 8
 0015fc3c _D_0015fc3c c8
+0015533d _D_0015533d 20
+0018cafc _D_0018cafc 18

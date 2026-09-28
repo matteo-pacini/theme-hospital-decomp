@@ -316,9 +316,9 @@ void __cdecl AIL_shutdown(void)
 }
 
 // FUNCTION: 0x000c28c0
-S32 __cdecl AIL_set_driver_directory(char const *dir)
+char *__cdecl AIL_set_driver_directory(char *dir)
 {
-    S32 result;
+    char *result;
 
     START
     {
@@ -328,7 +328,7 @@ S32 __cdecl AIL_set_driver_directory(char const *dir)
     RESULT
     {
         INDENT;
-        outreshex(result);
+        outreshex((U32)result);
     }
     END;
     return result;
@@ -389,8 +389,6 @@ REALFAR __cdecl AIL_get_real_vect(U32 vectnum)
 }
 
 // FUNCTION: 0x000c2b30
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_set_USE16_ISR, which follows it
 void __cdecl AIL_set_real_vect(U32 vectnum, REALFAR real_ptr)
 {
     START
@@ -401,6 +399,7 @@ void __cdecl AIL_set_real_vect(U32 vectnum, REALFAR real_ptr)
     END;
 }
 
+// FUNCTION: 0x000c2bb0
 void __cdecl AIL_set_USE16_ISR(S32 IRQ, REALFAR real_base, U32 ISR_offset)
 {
     START
@@ -560,8 +559,6 @@ void __cdecl AIL_set_timer_period(HTIMER timer, U32 microseconds)
 }
 
 // FUNCTION: 0x000c3280
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_set_timer_divisor, AIL_interrupt_divisor, which follow it
 void __cdecl AIL_set_timer_frequency(HTIMER timer, U32 hertz)
 {
     START
@@ -572,6 +569,7 @@ void __cdecl AIL_set_timer_frequency(HTIMER timer, U32 hertz)
     END;
 }
 
+// FUNCTION: 0x000c3300
 void __cdecl AIL_set_timer_divisor(HTIMER timer, U32 PIT_divisor)
 {
     START
@@ -582,6 +580,7 @@ void __cdecl AIL_set_timer_divisor(HTIMER timer, U32 PIT_divisor)
     END;
 }
 
+// FUNCTION: 0x000c3380
 S32 __cdecl AIL_interrupt_divisor(void)
 {
     S32 result;
@@ -601,8 +600,6 @@ S32 __cdecl AIL_interrupt_divisor(void)
 }
 
 // FUNCTION: 0x000c3440
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_start_all_timers, which follows it
 void __cdecl AIL_start_timer(HTIMER timer)
 {
     START
@@ -613,6 +610,7 @@ void __cdecl AIL_start_timer(HTIMER timer)
     END;
 }
 
+// FUNCTION: 0x000c34c0
 void __cdecl AIL_start_all_timers(void)
 {
     START
@@ -624,8 +622,6 @@ void __cdecl AIL_start_all_timers(void)
 }
 
 // FUNCTION: 0x000c3520
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_stop_all_timers, which follows it
 void __cdecl AIL_stop_timer(HTIMER timer)
 {
     START
@@ -636,6 +632,7 @@ void __cdecl AIL_stop_timer(HTIMER timer)
     END;
 }
 
+// FUNCTION: 0x000c35a0
 void __cdecl AIL_stop_all_timers(void)
 {
     START
@@ -767,8 +764,6 @@ void __cdecl AIL_uninstall_DIG_driver(HDIGDRIVER dig)
 }
 
 // FUNCTION: 0x000c3b00
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_allocate_file_sample, which follows it
 HSAMPLE __cdecl AIL_allocate_sample_handle(HDIGDRIVER dig)
 {
     HSAMPLE result;
@@ -787,6 +782,7 @@ HSAMPLE __cdecl AIL_allocate_sample_handle(HDIGDRIVER dig)
     return result;
 }
 
+// FUNCTION: 0x000c3bc0
 HSAMPLE __cdecl AIL_allocate_file_sample(HDIGDRIVER dig, void *file_image, S32 block)
 {
     HSAMPLE result;
@@ -869,8 +865,6 @@ void __cdecl AIL_set_sample_type(HSAMPLE S, S32 format, U32 flags)
 }
 
 // FUNCTION: 0x000c3f80
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_stop_sample, AIL_resume_sample, which follow it
 void __cdecl AIL_start_sample(HSAMPLE S)
 {
     START
@@ -881,6 +875,7 @@ void __cdecl AIL_start_sample(HSAMPLE S)
     END;
 }
 
+// FUNCTION: 0x000c4000
 void __cdecl AIL_stop_sample(HSAMPLE S)
 {
     START
@@ -891,6 +886,7 @@ void __cdecl AIL_stop_sample(HSAMPLE S)
     END;
 }
 
+// FUNCTION: 0x000c4080
 void __cdecl AIL_resume_sample(HSAMPLE S)
 {
     START
@@ -946,8 +942,6 @@ void __cdecl AIL_set_sample_pan(HSAMPLE S, S32 pan)
 }
 
 // FUNCTION: 0x000c4300
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_set_sample_loop_block, which follows it
 void __cdecl AIL_set_sample_loop_count(HSAMPLE S, S32 loop_count)
 {
     START
@@ -958,6 +952,7 @@ void __cdecl AIL_set_sample_loop_count(HSAMPLE S, S32 loop_count)
     END;
 }
 
+// FUNCTION: 0x000c4380
 void __cdecl AIL_set_sample_loop_block(HSAMPLE S, S32 loop_start_offset, S32 loop_end_offset)
 {
     START
@@ -969,9 +964,6 @@ void __cdecl AIL_set_sample_loop_block(HSAMPLE S, S32 loop_start_offset, S32 loo
 }
 
 // FUNCTION: 0x000c4410
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_sample_playback_rate, AIL_sample_volume, AIL_sample_pan,
-// AIL_sample_loop_count, which follow it
 U32 __cdecl AIL_sample_status(HSAMPLE S)
 {
     U32 result;
@@ -990,6 +982,7 @@ U32 __cdecl AIL_sample_status(HSAMPLE S)
     return result;
 }
 
+// FUNCTION: 0x000c44d0
 S32 __cdecl AIL_sample_playback_rate(HSAMPLE S)
 {
     S32 result;
@@ -1008,6 +1001,7 @@ S32 __cdecl AIL_sample_playback_rate(HSAMPLE S)
     return result;
 }
 
+// FUNCTION: 0x000c4590
 S32 __cdecl AIL_sample_volume(HSAMPLE S)
 {
     S32 result;
@@ -1026,6 +1020,7 @@ S32 __cdecl AIL_sample_volume(HSAMPLE S)
     return result;
 }
 
+// FUNCTION: 0x000c4650
 S32 __cdecl AIL_sample_pan(HSAMPLE S)
 {
     S32 result;
@@ -1044,6 +1039,7 @@ S32 __cdecl AIL_sample_pan(HSAMPLE S)
     return result;
 }
 
+// FUNCTION: 0x000c4710
 S32 __cdecl AIL_sample_loop_count(HSAMPLE S)
 {
     S32 result;
@@ -1063,8 +1059,6 @@ S32 __cdecl AIL_sample_loop_count(HSAMPLE S)
 }
 
 // FUNCTION: 0x000c47d0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_digital_master_volume, AIL_digital_configuration, which follow it
 void __cdecl AIL_set_digital_master_volume(HDIGDRIVER dig, S32 master_volume)
 {
     START
@@ -1075,6 +1069,7 @@ void __cdecl AIL_set_digital_master_volume(HDIGDRIVER dig, S32 master_volume)
     END;
 }
 
+// FUNCTION: 0x000c4850
 S32 __cdecl AIL_digital_master_volume(HDIGDRIVER dig)
 {
     S32 result;
@@ -1178,9 +1173,6 @@ void __cdecl AIL_load_sample_buffer(HSAMPLE S, U32 buff_num, void *buffer, U32 l
 }
 
 // FUNCTION: 0x000c4ce0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_set_sample_position, AIL_sample_position, AIL_register_SOB_callback,
-// AIL_register_EOB_callback, which follow it
 S32 __cdecl AIL_sample_buffer_info(HSAMPLE S, U32 *pos0, U32 *len0, U32 *pos1, U32 *len1)
 {
     S32 result;
@@ -1199,6 +1191,7 @@ S32 __cdecl AIL_sample_buffer_info(HSAMPLE S, U32 *pos0, U32 *len0, U32 *pos1, U
     return result;
 }
 
+// FUNCTION: 0x000c4dd0
 void __cdecl AIL_set_sample_position(HSAMPLE S, U32 pos)
 {
     START
@@ -1209,6 +1202,7 @@ void __cdecl AIL_set_sample_position(HSAMPLE S, U32 pos)
     END;
 }
 
+// FUNCTION: 0x000c4e50
 U32 __cdecl AIL_sample_position(HSAMPLE S)
 {
     U32 result;
@@ -1227,6 +1221,7 @@ U32 __cdecl AIL_sample_position(HSAMPLE S)
     return result;
 }
 
+// FUNCTION: 0x000c4f10
 AILSAMPLECB __cdecl AIL_register_SOB_callback(HSAMPLE S, AILSAMPLECB SOB)
 {
     AILSAMPLECB result;
@@ -1245,6 +1240,7 @@ AILSAMPLECB __cdecl AIL_register_SOB_callback(HSAMPLE S, AILSAMPLECB SOB)
     return result;
 }
 
+// FUNCTION: 0x000c4fe0
 AILSAMPLECB __cdecl AIL_register_EOB_callback(HSAMPLE S, AILSAMPLECB EOB)
 {
     AILSAMPLECB result;
@@ -1264,8 +1260,6 @@ AILSAMPLECB __cdecl AIL_register_EOB_callback(HSAMPLE S, AILSAMPLECB EOB)
 }
 
 // FUNCTION: 0x000c50b0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_register_EOF_callback, which follows it
 AILSAMPLECB __cdecl AIL_register_EOS_callback(HSAMPLE S, AILSAMPLECB EOS)
 {
     AILSAMPLECB result;
@@ -1284,6 +1278,7 @@ AILSAMPLECB __cdecl AIL_register_EOS_callback(HSAMPLE S, AILSAMPLECB EOS)
     return result;
 }
 
+// FUNCTION: 0x000c5180
 AILSAMPLECB __cdecl AIL_register_EOF_callback(HSAMPLE S, AILSAMPLECB EOFILE)
 {
     AILSAMPLECB result;
@@ -1314,8 +1309,6 @@ void __cdecl AIL_set_sample_user_data(HSAMPLE S, U32 index, S32 value)
 }
 
 // FUNCTION: 0x000c52e0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_active_sample_count, which follows it
 S32 __cdecl AIL_sample_user_data(HSAMPLE S, U32 index)
 {
     S32 result;
@@ -1334,6 +1327,7 @@ S32 __cdecl AIL_sample_user_data(HSAMPLE S, U32 index)
     return result;
 }
 
+// FUNCTION: 0x000c53b0
 S32 __cdecl AIL_active_sample_count(HDIGDRIVER dig)
 {
     S32 result;
@@ -1484,8 +1478,6 @@ void __cdecl AIL_resume_sequence(HSEQUENCE S)
 }
 
 // FUNCTION: 0x000c5a10
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_set_sequence_tempo, which follows it
 void __cdecl AIL_end_sequence(HSEQUENCE S)
 {
     START
@@ -1496,6 +1488,7 @@ void __cdecl AIL_end_sequence(HSEQUENCE S)
     END;
 }
 
+// FUNCTION: 0x000c5a90
 void __cdecl AIL_set_sequence_tempo(HSEQUENCE S, S32 tempo, S32 milliseconds)
 {
     START
@@ -1529,9 +1522,6 @@ void __cdecl AIL_set_sequence_loop_count(HSEQUENCE S, S32 loop_count)
 }
 
 // FUNCTION: 0x000c5c30
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_sequence_tempo, AIL_sequence_volume, AIL_sequence_loop_count, which
-// follow it
 U32 __cdecl AIL_sequence_status(HSEQUENCE S)
 {
     U32 result;
@@ -1550,6 +1540,7 @@ U32 __cdecl AIL_sequence_status(HSEQUENCE S)
     return result;
 }
 
+// FUNCTION: 0x000c5cf0
 S32 __cdecl AIL_sequence_tempo(HSEQUENCE S)
 {
     S32 result;
@@ -1568,6 +1559,7 @@ S32 __cdecl AIL_sequence_tempo(HSEQUENCE S)
     return result;
 }
 
+// FUNCTION: 0x000c5db0
 S32 __cdecl AIL_sequence_volume(HSEQUENCE S)
 {
     S32 result;
@@ -1586,6 +1578,7 @@ S32 __cdecl AIL_sequence_volume(HSEQUENCE S)
     return result;
 }
 
+// FUNCTION: 0x000c5e70
 S32 __cdecl AIL_sequence_loop_count(HSEQUENCE S)
 {
     S32 result;
@@ -1605,8 +1598,6 @@ S32 __cdecl AIL_sequence_loop_count(HSEQUENCE S)
 }
 
 // FUNCTION: 0x000c5f30
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_XMIDI_master_volume, AIL_install_MDI_driver_image, which follow it
 void __cdecl AIL_set_XMIDI_master_volume(HMDIDRIVER mdi, S32 master_volume)
 {
     START
@@ -1617,6 +1608,7 @@ void __cdecl AIL_set_XMIDI_master_volume(HMDIDRIVER mdi, S32 master_volume)
     END;
 }
 
+// FUNCTION: 0x000c5fb0
 S32 __cdecl AIL_XMIDI_master_volume(HMDIDRIVER mdi)
 {
     S32 result;
@@ -1635,6 +1627,7 @@ S32 __cdecl AIL_XMIDI_master_volume(HMDIDRIVER mdi)
     return result;
 }
 
+// FUNCTION: 0x000c6070
 HMDIDRIVER __cdecl AIL_install_MDI_driver_image(void *driver_image, U32 size, IO_PARMS *IO)
 {
     HMDIDRIVER result;
@@ -1673,10 +1666,6 @@ S32 __cdecl AIL_MDI_driver_type(HMDIDRIVER mdi)
 }
 
 // FUNCTION: 0x000c6200
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_timbre_status, AIL_install_timbre, AIL_protect_timbre,
-// AIL_unprotect_timbre, AIL_active_sequence_count, AIL_controller_value,
-// AIL_channel_notes, which follow it
 void __cdecl AIL_set_GTL_filename_prefix(char *prefix)
 {
     START
@@ -1687,6 +1676,7 @@ void __cdecl AIL_set_GTL_filename_prefix(char *prefix)
     END;
 }
 
+// FUNCTION: 0x000c6280
 S32 __cdecl AIL_timbre_status(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
     S32 result;
@@ -1705,6 +1695,7 @@ S32 __cdecl AIL_timbre_status(HMDIDRIVER mdi, S32 bank, S32 patch)
     return result;
 }
 
+// FUNCTION: 0x000c6350
 S32 __cdecl AIL_install_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
     S32 result;
@@ -1723,6 +1714,7 @@ S32 __cdecl AIL_install_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
     return result;
 }
 
+// FUNCTION: 0x000c6420
 void __cdecl AIL_protect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
     START
@@ -1733,6 +1725,7 @@ void __cdecl AIL_protect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
     END;
 }
 
+// FUNCTION: 0x000c64b0
 void __cdecl AIL_unprotect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
     START
@@ -1743,6 +1736,7 @@ void __cdecl AIL_unprotect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
     END;
 }
 
+// FUNCTION: 0x000c6540
 S32 __cdecl AIL_active_sequence_count(HMDIDRIVER mdi)
 {
     S32 result;
@@ -1761,6 +1755,7 @@ S32 __cdecl AIL_active_sequence_count(HMDIDRIVER mdi)
     return result;
 }
 
+// FUNCTION: 0x000c6600
 S32 __cdecl AIL_controller_value(HSEQUENCE S, S32 channel, S32 controller_num)
 {
     S32 result;
@@ -1779,6 +1774,7 @@ S32 __cdecl AIL_controller_value(HSEQUENCE S, S32 channel, S32 controller_num)
     return result;
 }
 
+// FUNCTION: 0x000c66d0
 S32 __cdecl AIL_channel_notes(HSEQUENCE S, S32 channel)
 {
     S32 result;
@@ -1814,8 +1810,6 @@ void __cdecl AIL_sequence_position(HSEQUENCE S, S32 *beat, S32 *measure)
 }
 
 // FUNCTION: 0x000c6870
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_register_prefix_callback, AIL_register_trigger_callback, which follow it
 void __cdecl AIL_branch_index(HSEQUENCE S, U32 marker)
 {
     START
@@ -1826,6 +1820,7 @@ void __cdecl AIL_branch_index(HSEQUENCE S, U32 marker)
     END;
 }
 
+// FUNCTION: 0x000c68f0
 AILPREFIXCB __cdecl AIL_register_prefix_callback(HSEQUENCE S, AILPREFIXCB callback)
 {
     AILPREFIXCB result;
@@ -1844,6 +1839,7 @@ AILPREFIXCB __cdecl AIL_register_prefix_callback(HSEQUENCE S, AILPREFIXCB callba
     return result;
 }
 
+// FUNCTION: 0x000c69c0
 AILTRIGGERCB __cdecl AIL_register_trigger_callback(HSEQUENCE S, AILTRIGGERCB callback)
 {
     AILTRIGGERCB result;
@@ -1863,8 +1859,6 @@ AILTRIGGERCB __cdecl AIL_register_trigger_callback(HSEQUENCE S, AILTRIGGERCB cal
 }
 
 // FUNCTION: 0x000c6a90
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_register_beat_callback, which follows it
 AILSEQUENCECB __cdecl AIL_register_sequence_callback(HSEQUENCE S, AILSEQUENCECB callback)
 {
     AILSEQUENCECB result;
@@ -1883,6 +1877,7 @@ AILSEQUENCECB __cdecl AIL_register_sequence_callback(HSEQUENCE S, AILSEQUENCECB 
     return result;
 }
 
+// FUNCTION: 0x000c6b60
 AILBEATCB __cdecl AIL_register_beat_callback(HSEQUENCE S, AILBEATCB callback)
 {
     AILBEATCB result;
@@ -1951,8 +1946,6 @@ void __cdecl AIL_set_sequence_user_data(HSEQUENCE S, U32 index, S32 value)
 }
 
 // FUNCTION: 0x000c6e60
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_register_ICA_array, which follows it
 S32 __cdecl AIL_sequence_user_data(HSEQUENCE S, U32 index)
 {
     S32 result;
@@ -1971,6 +1964,7 @@ S32 __cdecl AIL_sequence_user_data(HSEQUENCE S, U32 index)
     return result;
 }
 
+// FUNCTION: 0x000c6f30
 void __cdecl AIL_register_ICA_array(HSEQUENCE S, U8 *array)
 {
     START
@@ -2012,11 +2006,6 @@ void __cdecl AIL_release_channel(HMDIDRIVER mdi, S32 channel)
 }
 
 // FUNCTION: 0x000c70f0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_true_sequence_channel, AIL_send_channel_voice_message,
-// AIL_send_sysex_message, AIL_create_wave_synthesizer,
-// AIL_destroy_wave_synthesizer, AIL_redbook_open, AIL_redbook_close,
-// AIL_redbook_eject, AIL_redbook_retract, which follow it
 void __cdecl AIL_map_sequence_channel(HSEQUENCE S, S32 seq_channel, S32 new_channel)
 {
     START
@@ -2027,6 +2016,7 @@ void __cdecl AIL_map_sequence_channel(HSEQUENCE S, S32 seq_channel, S32 new_chan
     END;
 }
 
+// FUNCTION: 0x000c7180
 S32 __cdecl AIL_true_sequence_channel(HSEQUENCE S, S32 seq_channel)
 {
     S32 result;
@@ -2045,6 +2035,7 @@ S32 __cdecl AIL_true_sequence_channel(HSEQUENCE S, S32 seq_channel)
     return result;
 }
 
+// FUNCTION: 0x000c7250
 void __cdecl AIL_send_channel_voice_message(HMDIDRIVER mdi, HSEQUENCE S, S32 status, S32 data_1, S32 data_2)
 {
     START
@@ -2055,6 +2046,7 @@ void __cdecl AIL_send_channel_voice_message(HMDIDRIVER mdi, HSEQUENCE S, S32 sta
     END;
 }
 
+// FUNCTION: 0x000c72f0
 void __cdecl AIL_send_sysex_message(HMDIDRIVER mdi, void *buffer)
 {
     START
@@ -2065,6 +2057,7 @@ void __cdecl AIL_send_sysex_message(HMDIDRIVER mdi, void *buffer)
     END;
 }
 
+// FUNCTION: 0x000c7370
 HWAVESYNTH __cdecl AIL_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER mdi, void *wave_lib, S32 polyphony)
 {
     HWAVESYNTH result;
@@ -2083,6 +2076,7 @@ HWAVESYNTH __cdecl AIL_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER mdi, v
     return result;
 }
 
+// FUNCTION: 0x000c7450
 void __cdecl AIL_destroy_wave_synthesizer(HWAVESYNTH W)
 {
     START
@@ -2093,6 +2087,7 @@ void __cdecl AIL_destroy_wave_synthesizer(HWAVESYNTH W)
     END;
 }
 
+// FUNCTION: 0x000c74d0
 HREDBOOK __cdecl AIL_redbook_open(U32 which)
 {
     HREDBOOK result;
@@ -2111,6 +2106,7 @@ HREDBOOK __cdecl AIL_redbook_open(U32 which)
     return result;
 }
 
+// FUNCTION: 0x000c7590
 void __cdecl AIL_redbook_close(HREDBOOK hand)
 {
     START
@@ -2121,6 +2117,7 @@ void __cdecl AIL_redbook_close(HREDBOOK hand)
     END;
 }
 
+// FUNCTION: 0x000c7610
 void __cdecl AIL_redbook_eject(HREDBOOK hand)
 {
     START
@@ -2131,6 +2128,7 @@ void __cdecl AIL_redbook_eject(HREDBOOK hand)
     END;
 }
 
+// FUNCTION: 0x000c7690
 void __cdecl AIL_redbook_retract(HREDBOOK hand)
 {
     START
@@ -2180,8 +2178,6 @@ U32 __cdecl AIL_redbook_tracks(HREDBOOK hand)
 }
 
 // FUNCTION: 0x000c7890
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_redbook_id, which follows it
 void __cdecl AIL_redbook_track_info(HREDBOOK hand, U32 tracknum, U32 *startmsec, U32 *endmsec)
 {
     START
@@ -2192,6 +2188,7 @@ void __cdecl AIL_redbook_track_info(HREDBOOK hand, U32 tracknum, U32 *startmsec,
     END;
 }
 
+// FUNCTION: 0x000c7920
 U32 __cdecl AIL_redbook_id(HREDBOOK hand)
 {
     U32 result;
@@ -2211,8 +2208,6 @@ U32 __cdecl AIL_redbook_id(HREDBOOK hand)
 }
 
 // FUNCTION: 0x000c79e0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_redbook_track, which follows it
 U32 __cdecl AIL_redbook_position(HREDBOOK hand)
 {
     U32 result;
@@ -2231,6 +2226,7 @@ U32 __cdecl AIL_redbook_position(HREDBOOK hand)
     return result;
 }
 
+// FUNCTION: 0x000c7aa0
 U32 __cdecl AIL_redbook_track(HREDBOOK hand)
 {
     U32 result;
@@ -2250,9 +2246,6 @@ U32 __cdecl AIL_redbook_track(HREDBOOK hand)
 }
 
 // FUNCTION: 0x000c7b60
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_redbook_stop, AIL_redbook_pause, AIL_redbook_resume, AIL_quick_shutdown,
-// which follow it
 U32 __cdecl AIL_redbook_play(HREDBOOK hand, U32 startmsec, U32 endmsec)
 {
     U32 result;
@@ -2271,6 +2264,7 @@ U32 __cdecl AIL_redbook_play(HREDBOOK hand, U32 startmsec, U32 endmsec)
     return result;
 }
 
+// FUNCTION: 0x000c7c30
 U32 __cdecl AIL_redbook_stop(HREDBOOK hand)
 {
     U32 result;
@@ -2289,6 +2283,7 @@ U32 __cdecl AIL_redbook_stop(HREDBOOK hand)
     return result;
 }
 
+// FUNCTION: 0x000c7cf0
 U32 __cdecl AIL_redbook_pause(HREDBOOK hand)
 {
     U32 result;
@@ -2307,6 +2302,7 @@ U32 __cdecl AIL_redbook_pause(HREDBOOK hand)
     return result;
 }
 
+// FUNCTION: 0x000c7db0
 U32 __cdecl AIL_redbook_resume(HREDBOOK hand)
 {
     U32 result;
@@ -2325,6 +2321,7 @@ U32 __cdecl AIL_redbook_resume(HREDBOOK hand)
     return result;
 }
 
+// FUNCTION: 0x000c7e70
 void __cdecl AIL_quick_shutdown(void)
 {
     START
@@ -2385,8 +2382,6 @@ S32 __cdecl AIL_quick_play(HAUDIO audio, U32 loop_count)
 }
 
 // FUNCTION: 0x000c80e0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// AIL_quick_status, AIL_quick_load_and_play, AILDEBUG_END, which follow it
 void __cdecl AIL_quick_halt(HAUDIO audio)
 {
     START
@@ -2397,6 +2392,7 @@ void __cdecl AIL_quick_halt(HAUDIO audio)
     END;
 }
 
+// FUNCTION: 0x000c8160
 S32 __cdecl AIL_quick_status(HAUDIO audio)
 {
     S32 result;
@@ -2415,6 +2411,7 @@ S32 __cdecl AIL_quick_status(HAUDIO audio)
     return result;
 }
 
+// FUNCTION: 0x000c8220
 HAUDIO __cdecl AIL_quick_load_and_play(char *filename, U32 loop_count, S32 wait_request)
 {
     HAUDIO result;

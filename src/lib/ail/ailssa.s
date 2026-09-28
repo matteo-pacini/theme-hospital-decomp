@@ -116,7 +116,7 @@
     mov ecx, 0x80000000
     push ebp
     mov ebp, dword ptr ["_locked"+0x4]
-    call dword ptr cs:[ebp*4 + "AllocateMusicBankMemory_"+0x3e8]
+    call dword ptr cs:[ebp*4 + "fn_000f0d80_"+0x228]
     pop ebp
     mov ecx, dword ptr [ebp + 8]
     mov ebx, dword ptr [ecx + 0x2c]
@@ -191,7 +191,7 @@
     {load} add ebx, eax
 .L000f2db6:
     mov eax, dword ptr ["_locked"+0x4]
-    call dword ptr cs:[eax*4 + "AllocateMusicBankMemory_"+0x1e8]
+    call dword ptr cs:[eax*4 + "fn_000f0d80_"+0x28]
     pop es
     pop ds
     pop edi
@@ -276,7 +276,7 @@
     call "_AIL_vmm_lock_range"
     add esp, 8
     .byte 0x68; .long .L000f2e3c  # push 0xe2e3c
-    .byte 0x68; .long "AllocateMusicBankMemory_"+0x1e8  # push 0xe0da8
+    .byte 0x68; .long "fn_000f0d80_"+0x28  # push 0xe0da8
     call "_AIL_vmm_lock_range"
     add esp, 8
     pop es

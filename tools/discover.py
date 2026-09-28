@@ -17,7 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from lefile import LEFile  # noqa: E402
-from project import GAME_END  # noqa: E402
+from project import GAME_END, Project  # noqa: E402
 from x86scan import is_padding, scan, trimmed_end  # noqa: E402
 
 # Unoptimised Watcom frame: register saves, push ebp; mov ebp,esp; sub esp,imm32
@@ -66,6 +66,19 @@ def main(exe, out):
             if PROLOGUE.match(code.data, nxt - lo):
                 starts.add(nxt)
                 break
+
+    # Library code is aligned to 16 bytes: an aligned address reached through
+    # padding after a terminal instruction starts a function even when it is
+    # only called through a pointer.
+    # Hand-written assembly aligns loop bodies the same way, so its routines
+    # (modules named *.asm in the demo build) are left whole.
+    asm = [(f.addr, f.end) for f in Project().functions if f.source and f.source.endswith(".asm")]
+    for it in scan(le, GAME_END, hi):
+        if not it.terminal or it.end % 16 == 0:
+            continue
+        nxt = it.end + (-it.end % 16)
+        if nxt < hi and is_padding(code.data[it.end - lo : nxt - lo]) and not any(a < nxt < e for a, e in asm):
+            starts.add(nxt)
 
     names = read_names(out)
     starts |= set(names)

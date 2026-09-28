@@ -93,7 +93,10 @@ struct Thing {
     u8 owner;
     u8 unknown23;
     s8 unknown24;
-    u8 unknown25[2];
+    union {
+        u8 unknown25[2];
+        u16 unknown25w;
+    };
     u16 unknown27;
     union {
         u8 unknown29;
@@ -1042,7 +1045,13 @@ struct CompElement {
 struct IconTable {
     u8 unknown0;
     u16 unknown1;
-    u8 unknown3[3];
+    union {
+        u8 unknown3[3];
+        struct {
+            u16 f3;
+            s8 f5;
+        };
+    };
 };
 
 struct SfxDetail {
@@ -1558,10 +1567,71 @@ struct RatFestLevel {
 };
 
 struct TrophyBalance {
-    u8 unknown0;
-    u8 unknown1[0xd];
-    u8 unknowne;
-    u8 unknownf[0x51];
+    union {
+        struct {
+            u8 unknown0;
+            u8 unknown1[0xd];
+            u8 unknowne;
+            u8 unknownf[0x51];
+        };
+        struct {
+            u8 unknown0_;
+            s16 f1;
+            u8 f3;
+            s16 f4;
+            s16 f6;
+            s16 f8;
+            u8 fa;
+            u8 fb;
+            u8 fc;
+            u8 fd;
+            u8 unknowne_;
+            s16 ff;
+            s16 f11;
+            s16 f13;
+            u8 f15;
+            u8 f16;
+            u8 f17;
+            u8 f18;
+            u8 f19;
+            u8 f1a;
+            u8 f1b;
+            u8 f1c;
+            u8 f1d;
+            u8 f1e;
+            u16 f1f;
+            u16 f21;
+            s32 f23;
+            s32 f27;
+            u8 f2b;
+            u8 f2c;
+            u8 f2d;
+            u8 f2e;
+            u8 f2f;
+            u8 f30;
+            u8 f31;
+            u8 f32;
+            u8 f33;
+            u8 f34;
+            u8 f35;
+            u8 f36;
+            u32 f37;
+            u32 f3b;
+            s16 f3f;
+            s16 f41;
+            s16 f43;
+            s16 f45;
+            s8 f47;
+            s8 f48;
+            s16 f49;
+            s16 f4b;
+            s16 f4d;
+            s16 f4f;
+            s16 f51;
+            s16 f53;
+            s8 f55[11];
+        };
+    };
 };
 
 struct StaffLevels {
@@ -1655,10 +1725,17 @@ struct WinLoseNet {
 
 struct Trophies {
     u8 unknown0;
+    u8 f1;
+    s16 value;
+    u8 f4;
 };
 
 struct Awards {
     u8 unknown0;
+    u8 f1;
+    u8 f2;
+    s16 value;
+    u8 f5;
 };
 
 struct ResearchTasks {
@@ -1673,6 +1750,10 @@ struct AdvisorCounts {
         struct {
             u8 unknown0a_[4];
             u16 f4;
+        };
+        struct {
+            u8 unknown0s_[4];
+            s16 f4s;
         };
         struct {
             u16 f0;
