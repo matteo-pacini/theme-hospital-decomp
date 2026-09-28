@@ -80,7 +80,7 @@ and comparing against the original.
 | unsigned `jb`/`jae` against a constant | unsigned variable or comparison |
 | `if (a) X else Y` | Watcom keeps source order: the `then` block comes first, the jump goes to `else` |
 | `movsx r,word ptr [g]` on a global | the global is `volatile` (plain `s16` gives `mov r,[g-2]; sar r,16`) |
-| reloc at `g-2`/`g-3` from the `sar` trick | give `config/symbols.txt` a symbol starting there and access `g` as a member of it |
+| reloc at `g-2`/`g-3` from the `sar` trick | nothing special: the splitter names such reads after the variable read (`g-2`), as the compiler does |
 | `mov al,[eax+T]; and eax,0xff; test eax,eax` | explicit `T[i] != 0` / `== 0` (a plain truth test gives `cmp byte ptr`) |
 | `jne next; jmp fail` inside an `&&` chain | parenthesised sub-chain: `X && (P && E) && Q` |
 | outer condition jumping past the whole `if` | nested `if (A) { if (B && C) ... }` |
@@ -114,6 +114,13 @@ and comparing against the original.
 
 | `[prev_global]>>16` read for a 16-bit global | `s32` alias of the preceding global bound with `#pragma aux`, written `(alias >> 16)`; a struct-member alias changes evaluation order |
 | dword load and `sar` on a `u16` field | `(s16)p->field` |
+| `if (!x) break;` in a switch case: one `je` to the switch end | as written; an if-block then `break` adds a `jmp` stub |
+| `mov eax,[g]; xor eax,eax; mov [g],eax` | `g ^= g` |
+| `A \|\| (B \|\| C)`: tail jumps straight to the then-block | explicit grouping; `(A\|\|B)\|\|C` emits `jne next; jmp then` |
+| byte temporary for `c ? 1 : 0` | `c ? (u8)1 : (u8)0` (plain constants give a dword temporary) |
+| switch compare tree grouping | consecutive case values merge into a range only when their labels are adjacent in source |
+| nested `if (a) { if (b) { ...; break; } }` in a case | reproduces tests jumping straight to the next test; an else-if chain does not |
+| frame 8 bytes off with word stores | check array sizes (`char buf[500]`, not `[0x200]`) |
 | `ror eax,13` | `#pragma aux` inline code: `u32 ror13(u32); #pragma aux ror13 = "ror eax,13" parm [eax] value [eax];` (`_lrotr` gives `ror eax,cl`) |
 | `cmp X; jle; X = K; tmp = X; ... else tmp = 0` | discarded clamp `pct > 100 ? pct = 100 : 0;` |
 | or-chain whose true result jumps to the `else` block | `if (!(a == 1 \|\| a == 2 ...)) {...} else {...}` |

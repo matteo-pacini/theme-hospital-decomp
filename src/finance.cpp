@@ -13,10 +13,61 @@ void swap_month_end_packets(void);
 void monthly_update_of_award_counts(void);
 void monthly_update_of_adivsor_counts(void);
 void calc_pricing_factor(const u8 owner);
+void calculate_score(u8 owner);
+void computer_year(void);
+void swap_year_end_packets(void);
+void create_chart_data(void);
+void check_trophies_won(void);
+void annual_update_of_award_counts(void);
+void start_year_end(void);
+void check_awards_won(void);
+
+void process_stat_panel(void);
+
+struct StatPanelLayout {
+    u8 unknown0[0x40];
+    struct {
+        s32 x;
+        s32 y;
+        s32 w;
+        s32 h;
+    } boxes[6];
+};
+
+struct StatTextLayout {
+    u8 unknown0[0x238];
+    Point pos[7];
+};
+
+struct StatItem {
+    u8 type;
+    u16 x;
+    u16 y;
+    u8 unknown5[6];
+};
 
 extern "C" {
 extern u8 D_00158324;
 extern u16 D_00155d89;
+extern u16 D_00188c74;
+extern s32 D_00188c38;
+extern Event D_001549d0[];
+extern StatPanelLayout *D_0015f430;
+extern StatTextLayout *D_0015f434;
+extern StatItem D_00136388[];
+extern char **D_0016032c;
+extern char **D_001602b4;
+extern char **D_001602a4;
+extern char D_0012042c[];
+extern char D_0012042f[];
+extern char D_00120432[];
+extern char D_00120438[];
+extern char D_0012043e[];
+extern char D_00120444[];
+extern char D_00120447[];
+extern char D_0012044d[];
+extern char D_00120453[];
+extern char D_00120459[];
 }
 
 // NONMATCHING: register choice
@@ -209,6 +260,7 @@ void month_end(void)
     update_cure_costs();
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x00051a84
 void adjust_monthly_figures(void)
 {
@@ -236,4 +288,152 @@ void adjust_monthly_figures(void)
     mycontrol->f0 = 0;
     mycontrol->unknown10 = 0;
     mycontrol->fc = 0;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00051d98
+void year_end(void)
+{
+    u16 i;
+
+    calculate_value(player);
+    calculate_score(player);
+    for (i = mycontrol->f14 = mycontrol->f18 = 0; i < 12; i++) {
+        mycontrol->f14 += mycontrol->history[1][0][i];
+        mycontrol->f18 += mycontrol->history[2][0][i];
+    }
+    computer_year();
+    mycontrol->unknown650 = 0;
+    if (++mycontrol->f648 > 999)
+        mycontrol->f648 = 0;
+    D_00155d89 = mycontrol->f648 * 12 + mycontrol->unknown650;
+    mycontrol->f64e = 0;
+    swap_year_end_packets();
+    for (i = 0; i < 4; i++) {
+        allhosps[i].f1c3 = allhosps[i].f35;
+        allhosps[i].f1c7 = allhosps[i].f1ed;
+    }
+    mycontrol->f4b4 = myhosp->f1c3;
+    mycontrol->f4a0 = myhosp->unknownc7e;
+    mycontrol->f64a = myhosp->f1f1;
+    mycontrol->f4a4 = myhosp->f1e9;
+    mycontrol->f4a8 = myhosp->f1eb;
+    mycontrol->f4ac = myhosp->fc9c;
+    mycontrol->f4b0 = myhosp->fc9c;
+    create_chart_data();
+    check_trophies_won();
+    annual_update_of_award_counts();
+    start_year_end();
+    check_awards_won();
+    swap_year_end_packets();
+    mycontrol->f4b4 = myhosp->f1c3;
+    mycontrol->f4a0 = myhosp->unknownc7e;
+}
+
+// FUNCTION: 0x00052038
+void bank_statement(void)
+{
+    s32 balance;
+    u16 row;
+    u16 line_h;
+    u16 char_w;
+    u16 i;
+    u16 first;
+    u16 k;
+    char buf[100];
+
+    compute_help_text(0, 0, 0xf);
+    switch (bank.unknown2) {
+    case 0:
+        load_ingame_pic(3, 1, 0x1a, 0, (TbScreenMode)0xd);
+        bank.unknown2 = 1;
+        break;
+    case 1:
+        copy_screen_to_wscreen(bscreen);
+        process_stat_panel();
+        break;
+    case 2:
+        D_001549d0[player].type = 0x70;
+        D_001549d0[player].value = 0;
+        break;
+    }
+    set_font_from_cache(0x1c);
+    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    D_00188c74 = 0x100;
+    for (i = 0; i < 6; i++) {
+        LbTextSetWindow(D_0015f430->boxes[i].x, D_0015f430->boxes[i].y, D_0015f430->boxes[i].w,
+                        D_0015f430->boxes[i].h);
+        sprintf(buf, D_0012042c, D_0016032c[i]);
+        LbTextDraw(D_0015f434->pos[0].x, D_0015f434->pos[0].y * 2, buf);
+    }
+    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    D_00188c74 = 0;
+    line_h = lbFontPtr ? lbFontPtr[34].height : 0;
+    char_w = lbFontPtr ? lbFontPtr[34].width : 0;
+    for (i = 0; D_00136388[i].type; i++) {
+        switch (D_00136388[i].type) {
+        case 1:
+            sprintf(buf, D_0012042f, myhosp->unknown0 + 9);
+            LbTextDraw(D_00136388[i].x, D_00136388[i].y, buf);
+            break;
+        case 2:
+            break;
+        case 3:
+            row = 0;
+            first = (D_00136388[7].y - D_00136388[i].y) / line_h;
+            first = mycontrol->f64e - first > 0 ? mycontrol->f64e - first : 0;
+            balance = mycontrol->f4b4;
+            for (k = 0; k < first; k++)
+                balance += mycontrol->entries[k].amount;
+            for (; first < mycontrol->f64e && row < D_00136388[7].y - line_h; first++) {
+                if (row + D_0015f434->pos[1].y > D_0015f434->pos[1].y + line_h * 0x1b)
+                    break;
+                sprintf(buf, D_00120432, mycontrol->entries[first].day, month_text[mycontrol->entries[first].month]);
+                LbTextDraw(D_0015f434->pos[1].x, row + D_0015f434->pos[1].y, buf);
+                switch (mycontrol->entries[first].type) {
+                case 17:
+                    sprintf(buf, D_00120438, D_001602b4[mycontrol->entries[first].type],
+                            insurance_names[mycontrol->entries[first].extra]);
+                    break;
+                case 7:
+                case 8:
+                case 9:
+                case 11:
+                    sprintf(buf, D_0012043e, D_001602b4[mycontrol->entries[first].type],
+                            D_001602a4[mycontrol->entries[first].extra]);
+                    break;
+                default:
+                    sprintf(buf, D_00120444, D_001602b4[mycontrol->entries[first].type]);
+                    break;
+                }
+                LbTextDraw(D_0015f434->pos[2].x, row + D_0015f434->pos[2].y, buf);
+                if (mycontrol->entries[first].amount < 0) {
+                    sprintf(buf, D_00120447, -mycontrol->entries[first].amount);
+                    LbTextDraw(D_0015f434->pos[3].x, row + D_0015f434->pos[3].y, buf);
+                } else if (mycontrol->entries[first].amount != 0) {
+                    sprintf(buf, D_0012044d, mycontrol->entries[first].amount);
+                    LbTextDraw(D_0015f434->pos[4].x, row + D_0015f434->pos[4].y, buf);
+                }
+                balance += mycontrol->entries[first].amount;
+                sprintf(buf, D_00120453, balance);
+                if (balance < 0)
+                    LbTextDraw(D_0015f434->pos[5].x, row + D_0015f434->pos[5].y, buf);
+                else
+                    LbTextDraw(D_0015f434->pos[5].x, row + D_0015f434->pos[5].y, buf);
+                row += line_h;
+            }
+            break;
+        case 8:
+            sprintf(buf, D_00120459, balance);
+            if (balance < 0)
+                LbTextDraw(D_0015f434->pos[6].x, D_0015f434->pos[6].y, buf);
+            else
+                LbTextDraw(D_0015f434->pos[6].x, D_0015f434->pos[6].y, buf);
+            break;
+        }
+    }
+    D_00188c74 = 0;
+    if (exit_quick_requester())
+        bank.unknown2 = 2;
 }

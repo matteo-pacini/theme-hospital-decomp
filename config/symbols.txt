@@ -33,7 +33,7 @@
 0012bca0 W?towns$n[]$Town$$ 1d0
 0012be70 W?area_towns$n[]$ClickArea$$ 120
 0012bf90 W?adjacent_plot_numbers$n[][6]uc 144
-0012c0d4 W?adjacent_plots$n[]$PlotAdjacent$$ 80
+0012c0d4 W?adjacent_plots$n[]$PlotAdjacent$$ 70
 0012c198 W?rooms$n[]$RoomControl$$ 498
 0012c6b0 W?room_nav$n[]$RoomNavControl$$ 2aa
 0012c95a W?staff_states$n[][5]s 6e
@@ -716,3 +716,4 @@
 00158208 _D_00158208 4
 0012c9d4 W?rating$n[]$ScoreRatings$$ 68
 00158324 _D_00158324 4
+00136388 _D_00136388 7c

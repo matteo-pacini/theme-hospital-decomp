@@ -10,12 +10,17 @@ Usage: tools/split.py OUTDIR [UNIT...]   (default: every unit)
 """
 
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from lefile import SRC_OFFSET32, LEFile  # noqa: E402
 from project import EXE, Project  # noqa: E402
+from capstone import CS_ARCH_X86, CS_MODE_32, Cs  # noqa: E402
 from x86scan import scan  # noqa: E402
+
+_md = Cs(CS_ARCH_X86, CS_MODE_32)
+_SAR = re.compile(r"(e[a-d]x|e[sd]i), 0x(10|18)$")
 
 
 def q(sym):
@@ -34,13 +39,43 @@ def code_ref(proj, fn, section_label, addr):
     return f"{q(target.name)}+{off:#x}" if off else q(target.name)
 
 
+def sign_extending_reads(le, items):
+    """{fixup site: k} for Watcom's signed narrow reads: an s16 (s8) at g is
+    loaded as the dword at g-2 (g-3) and shifted down with sar 16 (24)."""
+    reads = {}
+    for it, nxt in zip(items, items[1:]):
+        if it.mnemonic != "mov" or nxt.mnemonic != "sar":
+            continue
+        sar = next(_md.disasm(le.read(nxt.addr, nxt.size), nxt.addr))
+        m = _SAR.match(sar.op_str)
+        if not m:
+            continue
+        for site in range(it.addr, it.end):
+            if site in le.fixups:
+                reads[site] = 2 if m.group(2) == "10" else 3
+    return reads
+
+
+def sign_read_ref(proj, target, k):
+    """The compiler names such a read after the variable it reads (`g-2`),
+    which differs from the symbol containing the loaded address when that
+    belongs to the preceding variable."""
+    value = target + k
+    if proj.data_symbol_at(target) is proj.data_symbol_at(value) is not None:
+        return proj.data_ref(target)
+    return f"{proj.data_ref(value)}-{k}"
+
+
 def emit_function(le, proj, fn, n, out):
     label = f".Lsec{n}"
     out.append(f'\n.section _TEXT,"ax",@progbits,unique,{n}')
     out.append(f".globl {q(fn.name)}\n.type {q(fn.name)},@function\n{q(fn.name)}:\n{label}:")
 
+    items = scan(le, fn.addr, fn.end)
+    sign_reads = sign_extending_reads(le, items)
+
     fields = {}  # field address -> (size, expression)
-    for it in scan(le, fn.addr, fn.end):
+    for it in items:
         if it.branch_target is None:
             continue
         if not fn.addr <= it.branch_target < fn.end:
@@ -57,6 +92,8 @@ def emit_function(le, proj, fn, n, out):
             raise NotImplementedError(f"{fn.name}: fixup kind {fx.kind} at {site:#x}")
         if le.code.contains(fx.target):
             expr = code_ref(proj, fn, label, fx.target)
+        elif site in sign_reads:
+            expr = sign_read_ref(proj, fx.target, sign_reads[site])
         else:
             expr = proj.data_ref(fx.target)
         fields[site] = (4, expr)

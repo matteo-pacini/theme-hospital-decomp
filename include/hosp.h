@@ -457,7 +457,13 @@ struct AllHosps {
     };
     s32 f1bb;
     s32 f1bf;
-    u8 unknown1c3[8];
+    union {
+        u8 unknown1c3[8];
+        struct {
+            s32 f1c3;
+            s32 f1c7;
+        };
+    };
     u16 f1cb;
     union {
         u8 unknown1cd[2];
@@ -612,10 +618,18 @@ struct GameControl {
             s32 history[8][3][12];
         };
         struct {
-            u8 unknown14b_[0x4a0];
+            s32 f14;
+            s32 f18;
+            u8 unknown1cb_[0x484];
+            s32 f4a0;
+            s32 f4a4;
+            s32 f4a8;
+            s32 f4ac;
+            s32 f4b0;
             s32 f4b4;
             BankEntry entries[0x32];
-            u8 unknown648b_[4];
+            u8 unknown648b_[2];
+            u16 f64a;
             u16 f64c;
             u8 f64e;
         };
@@ -1209,6 +1223,7 @@ struct Level {
             u8 unknown22_[0x20000];
             u16 plots[0x4000];
         };
+        Map tiles[0x4000];
     };
     u16 unknown28024[4];
     u16 f2802c[4];
@@ -1484,6 +1499,15 @@ struct ClickArea {
 struct Background {
     u8 unknown0;
     u8 unknown1[2];
+};
+
+struct PlotBid {
+    u32 timer;
+    s32 price;
+    s32 step;
+    s32 bids[4];
+    u8 bidder;
+    u8 unknown1d[3];
 };
 
 struct PlotAdjacent {
