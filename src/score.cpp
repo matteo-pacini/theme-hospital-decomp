@@ -172,7 +172,7 @@ void fn_00094a18(void)
     LbScreenSetGraphicsWindow(0, 0, D_00155d93, D_00155d97);
 }
 
-// NONMATCHING: register choice; post-decrement test (test ax,ax)
+// NONMATCHING: the D_00155da5-- test is test ax,ax in the target; here and eax,0xffff / test eax,eax
 // FUNCTION: 0x00094b28
 void fn_00094b28(void)
 {
@@ -222,7 +222,7 @@ void fn_00094b28(void)
         D_00155da5 = 1200;
         D_00155da3 = mouse_dx + mouse_dy;
     }
-    if (!D_00155da5--)
+    if (D_00155da5-- == 0)
         hall.unknown2 = 2;
 }
 

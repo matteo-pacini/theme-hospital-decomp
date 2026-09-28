@@ -114,7 +114,6 @@ void setup_overhead_map(void);
 void display_hospital_map_overhead(void);
 u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00063ae8
 void process_mouse_town_select(void)
 {
@@ -142,7 +141,7 @@ void process_mouse_town_select(void)
     if (D_00188c7b) {
         plot = check_for_sale();
         if (plot) {
-            if (*(u16 *)&expertise[53].unknown10[3] * land_amount[plot] < myhosp->f35) {
+            if (myhosp->f35 > land_amount[plot] * *(u16 *)&expertise[53].unknown10[3]) {
                 play_sound(10, 0x45, -1, -1);
                 if (statvar.unknownfd > 1) {
                     D_001549d0[player].type = 0x58;
@@ -259,7 +258,6 @@ void display_hospital_map_overhead(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00064338
 void display_hospital_map_sale(void)
 {
@@ -288,20 +286,20 @@ void display_hospital_map_sale(void)
             if (map[(s16)x + ((s16)y << 7)].unknown3) {
                 if ((blocks[map[(s16)x + ((s16)y << 7)].unknown3].width & 1) && !(blocks[map[(s16)x + ((s16)y << 7)].unknown3].width & 0x40))
                     LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                              area_towns[myhosp->f29].height * y + area_towns[myhosp->f29].y,
+                              area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
                               area_towns[myhosp->f29].width, area_towns[myhosp->f29].height / 2, color.unknown7);
             }
             if (map[(s16)x + ((s16)y << 7)].unknown4) {
                 if ((blocks[map[(s16)x + ((s16)y << 7)].unknown4].width & 1) && !(blocks[map[(s16)x + ((s16)y << 7)].unknown4].width & 0x40))
                     LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                              area_towns[myhosp->f29].height * y + area_towns[myhosp->f29].y,
+                              area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
                               area_towns[myhosp->f29].width / 2, area_towns[myhosp->f29].height, color.unknown7);
             }
             if (map[(s16)(x - 1) + ((s16)y << 7)].unknown3 && map[(s16)x + ((s16)(y - 1) << 7)].unknown4) {
                 if ((blocks[map[(s16)(x - 1) + ((s16)y << 7)].unknown3].width & 1) && !(blocks[map[(s16)(x - 1) + ((s16)y << 7)].unknown3].width & 0x40)) {
                     if ((blocks[map[(s16)x + ((s16)(y - 1) << 7)].unknown4].width & 1) && !(blocks[map[(s16)x + ((s16)(y - 1) << 7)].unknown4].width & 0x40))
                         LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                  area_towns[myhosp->f29].height * y + area_towns[myhosp->f29].y, 1, 1, color.unknown7);
+                                  area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 1, 1, color.unknown7);
                 }
             }
         }

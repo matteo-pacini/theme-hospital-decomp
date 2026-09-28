@@ -371,10 +371,7 @@ s32 next_map(void)
 // FUNCTION: 0x000b973c
 s16 glass_index(s32 mask)
 {
-    u32 bit;
-
-    bit = mask & -mask;
-    switch (bit) {
+    switch ((u32)(mask & -mask)) {
     case 4:
         return 1;
     case 0x80:
@@ -412,10 +409,7 @@ s16 glass_index(s32 mask)
 // FUNCTION: 0x000b991c
 s16 button_index(s32 mask)
 {
-    u32 bit;
-
-    bit = mask & -mask;
-    switch (bit) {
+    switch ((u32)(mask & -mask)) {
     case 0x80:
         return 0x59;
     case 0x100:

@@ -28,7 +28,6 @@ void doctor_in_office(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (pointer loads go directly into the destination register in target; tile expression uses movzx si)
 // FUNCTION: 0x0003a7a8
 void doctor_works_at_desk(Thing *w)
 {
@@ -52,7 +51,7 @@ void doctor_works_at_desk(Thing *w)
                             if (queue) {
                                 if (call_person_to_room(w, queue, 0x28, w->room->unknown4, 1)) {
                                     set_icon_value(w, 0x19);
-                                    if (find_object(((u16)w->y.tile << 7) + (u16)w->x.tile, 2, 1, 0x96, w->owner)) {
+                                    if (find_object((u16)w->x.tile + ((u16)w->y.tile << 7), 2, 1, 0x96, w->owner)) {
                                         w->state_b = 0x14;
                                         set_complex(w, 0x32, 0);
                                         fn_0003e724(w);
@@ -400,7 +399,6 @@ void doctor_in_machine_room(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (pointer loads go directly into the destination register in target; tile expression uses movzx si)
 // FUNCTION: 0x0003b9a0
 void doctor_researches(Thing *w)
 {
@@ -449,7 +447,7 @@ void doctor_researches(Thing *w)
                         }
                     } else {
                         for (i = 0; i < 4; i++) {
-                            obj = find_object(((u16)w->y.tile << 7) + (u16)w->x.tile, research_tasks[i].object, 1, 0x96, w->owner);
+                            obj = find_object((u16)w->x.tile + ((u16)w->y.tile << 7), research_tasks[i].object, 1, 0x96, w->owner);
                             if (obj) {
                                 o = fn_00019aac(&map[thing[obj].room_prev], 4);
                                 if (!(o == 0 || o == w)) {
@@ -519,7 +517,6 @@ u8 count_surgeons(RoomInfo *room)
     return count;
 }
 
-// NONMATCHING: register choice in the random position expression
 // FUNCTION: 0x0003bed0
 void doctor_in_theatre(Thing *w)
 {
@@ -560,7 +557,7 @@ void doctor_in_theatre(Thing *w)
         process_staff_complex(w);
         return;
     }
-    pos = ((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1) + room->pos;
+    pos = (s16)(old_newrand() % room->f1) + ((s16)(old_newrand() % room->f2) << 7) + room->pos;
     if (can_i_get_to(w, pos)) {
         w->state_b = 0x42;
         set_complex(w, 0xbe, pos);

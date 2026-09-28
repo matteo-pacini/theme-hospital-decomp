@@ -30,7 +30,6 @@ void fn_00024a34(u16 tile, u16 room, u8 side);
 #pragma aux fn_00024a34 "W?clear_cell_of_ratholes$n(ucus)v"
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00024a34
 void fn_00024a34(u16 tile, u16 room, u8 side)
 {
@@ -55,11 +54,11 @@ void fn_00024a34(u16 tile, u16 room, u8 side)
                 clear = 0;
             }
         }
-        if (blocks[map[(y << 7) + x].unknown3].width & 0x10) {
+        if (blocks[map[x + (y << 7)].unknown3].width & 0x10) {
             clear = 0;
         }
         if (clear) {
-            map[(y << 7) + x].unknown3 = 0;
+            map[x + (y << 7)].unknown3 = 0;
         }
         break;
     case 1:
@@ -74,11 +73,11 @@ void fn_00024a34(u16 tile, u16 room, u8 side)
                 clear = 0;
             }
         }
-        if (blocks[map[(y << 7) + x].unknown4].width & 0x10) {
+        if (blocks[map[x + (y << 7)].unknown4].width & 0x10) {
             clear = 0;
         }
         if (clear) {
-            map[(y << 7) + x].unknown4 = 0;
+            map[x + (y << 7)].unknown4 = 0;
         }
         break;
     }

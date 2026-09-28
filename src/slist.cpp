@@ -109,7 +109,6 @@ void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
 void draw_window_not_using_bscreen(const u8 n);
 void draw_face(Picture *pic, const u16 x, const u16 y);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000914e0
 void display_slist(void)
 {
@@ -163,8 +162,10 @@ void display_slist(void)
                 if (slist.unknown0 == D_00155e3a)
                     break;
                 if (D_00155e18 / 11 > 0 && D_00155e18 % 11 == 0) {
-                    if (D_00155449 < 150 && staff_on_page(D_00155449 + 1))
-                        D_00155449++;
+                    if (D_00155449 < 150) {
+                        if (staff_on_page(D_00155449 + 1))
+                            D_00155449++;
+                    }
                 }
             }
         }
@@ -200,8 +201,10 @@ void display_slist(void)
     }
     slist_keys();
     D_00188c74 = 0;
-    if (!staff_on_page(D_00155449) && D_00155449 > 0)
-        D_00155449--;
+    if (!staff_on_page(D_00155449)) {
+        if (D_00155449 > 0)
+            D_00155449--;
+    }
     D_00188c81 = D_00188c7b = 0;
     if (exit_quick_requester())
         slist.unknown2 = 3;
@@ -797,7 +800,7 @@ void slist_help_if_doctor(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: pct * 100 is computed before the divisor global is loaded in the target; here after
 // FUNCTION: 0x000940cc
 void slist_help_if_surgeon(void)
 {
@@ -817,7 +820,7 @@ void slist_help_if_surgeon(void)
     }
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: pct * 100 is computed before the divisor global is loaded in the target; here after
 // FUNCTION: 0x000941bc
 void slist_help_if_shrink(void)
 {
@@ -837,7 +840,7 @@ void slist_help_if_shrink(void)
     }
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: pct * 100 is computed before the divisor global is loaded in the target; here after
 // FUNCTION: 0x000942ac
 void slist_help_if_researcher(void)
 {

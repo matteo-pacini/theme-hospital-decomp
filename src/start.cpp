@@ -56,7 +56,7 @@ void read_variable_file(char *path);
 void evaluate_reputation(const u8 a, const u8 owner);
 void calc_pricing_factor(const u8 owner);
 
-// NONMATCHING: register choice
+// NONMATCHING: the target loads D_0015642d before calling LbTimerClock() for play_midi
 // FUNCTION: 0x00090804
 void fn_00090804(int level, u8 flag)
 {

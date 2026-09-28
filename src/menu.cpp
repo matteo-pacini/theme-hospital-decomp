@@ -224,7 +224,6 @@ void draw_menus(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008a618
 void draw_pulldown(u16 x, u16 y, u16 idx)
 {
@@ -233,27 +232,27 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
     u16 saved2;
 
     draw_pmenu_box(x, y, pmenu.pulldowns[idx].width * pmenu.char_width, pmenu.pulldowns[idx].count * pmenu.line_height);
-    set_all_refresh_zones_in_window(x, y, x + pmenu.char_width * pmenu.pulldowns[idx].width, y + pmenu.line_height * pmenu.pulldowns[idx].count, 3);
+    set_all_refresh_zones_in_window(x, y, x + pmenu.pulldowns[idx].width * pmenu.char_width, y + pmenu.pulldowns[idx].count * pmenu.line_height, 3);
     for (i = 0; i < pmenu.pulldowns[idx].count; i++) {
         if (!(pmenu.pulldowns[idx].items[i].flags & 1) || statvar.unknownfd <= 1) {
             if (pmenu.pulldowns[idx].items[i].check) {
                 if (*pmenu.pulldowns[idx].items[i].check)
-                    reqspr_draw(x, i * pmenu.line_height + y + D_0015f410->unknown54c, &pulldv[10]);
+                    reqspr_draw(x, y + i * pmenu.line_height + D_0015f410->unknown54c, &pulldv[10]);
             }
             if (pmenu.pulldowns[idx].items[i].check2) {
                 if (*pmenu.pulldowns[idx].items[i].check2)
-                    reqspr_draw(x, i * pmenu.line_height + y + D_0015f410->unknown54c, &pulldv[10]);
+                    reqspr_draw(x, y + i * pmenu.line_height + D_0015f410->unknown54c, &pulldv[10]);
             }
         }
         if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.unknownfd > 1) {
             saved = D_00188c74;
             D_00188c74 = 4;
-            LbTextDraw(x, i * pmenu.line_height + y + D_0015f410->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
+            LbTextDraw(x, y + i * pmenu.line_height + D_0015f410->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
             D_00188c74 = saved;
         } else {
-            LbTextDraw(x, i * pmenu.line_height + y + D_0015f410->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
+            LbTextDraw(x, y + i * pmenu.line_height + D_0015f410->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
         }
-        if (over_hotspot(mouse_dx, mouse_dy, x, i * pmenu.line_height + y, pmenu.char_width * pmenu.pulldowns[idx].width, pmenu.line_height)) {
+        if (over_hotspot(mouse_dx, mouse_dy, x, i * pmenu.line_height + y, pmenu.pulldowns[idx].width * pmenu.char_width, pmenu.line_height)) {
             set_font_from_cache(pmenu.font_hi);
             if (D_00160f1a != i + 1 || D_00160f18 != idx) {
                 D_00160f18 = idx;
@@ -263,10 +262,10 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
             if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.unknownfd > 1) {
                 saved2 = D_00188c74;
                 D_00188c74 = 4;
-                LbTextDraw(x, i * pmenu.line_height + y + D_0015f410->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
+                LbTextDraw(x, y + i * pmenu.line_height + D_0015f410->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
                 D_00188c74 = saved2;
             } else {
-                LbTextDraw(x, i * pmenu.line_height + y + D_0015f410->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
+                LbTextDraw(x, y + i * pmenu.line_height + D_0015f410->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
             }
             set_font_from_cache(pmenu.font);
         }
@@ -321,7 +320,6 @@ void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h)
     set_all_refresh_zones_in_window(x, y, dw + (x + w), dh + (y + h), 3);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008add8
 extern "C" void fn_0008add8(void)
 {
@@ -349,7 +347,7 @@ extern "C" void fn_0008add8(void)
             if (pmenu.pulldowns[i].active) {
                 if (pmenu.unknown0 == i) {
                     for (j = 0; j < pmenu.pulldowns[i].count; j++) {
-                        if (over_hotspot(D_00188c6c, D_00188c70, x, pmenu.line_height * j + y, pmenu.char_width * pmenu.pulldowns[i].width, pmenu.line_height)) {
+                        if (over_hotspot(D_00188c6c, D_00188c70, x, pmenu.line_height * j + y, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.line_height)) {
                             debug.unknown8 = n;
                             D_001553f8 = n;
                             if (!(((pmenu.pulldowns[i].items[j].flags & 1) && statvar.unknownfd > 1) || (!pmenu.pulldowns[i].items[j].f0 && gamevar.unknown21))) {
@@ -382,12 +380,12 @@ extern "C" void fn_0008add8(void)
                     n += pmenu.pulldowns[i].count;
                 }
                 if (pmenu.unknown0 < pmenu.count) {
-                    x += pmenu.char_width * pmenu.pulldowns[i].length;
+                    x += pmenu.pulldowns[i].length * pmenu.char_width;
                 } else {
                     x = 0;
                     for (j = 1; j < pmenu.pulldowns[pmenu.unknown0].parent; j++)
-                        x += pmenu.char_width * pmenu.pulldowns[j].length;
-                    x += pmenu.char_width * pmenu.pulldowns[j].width + pulldv[6].width;
+                        x += pmenu.pulldowns[j].length * pmenu.char_width;
+                    x += pmenu.pulldowns[j].width * pmenu.char_width + pulldv[6].width;
                 }
             }
         }
@@ -406,7 +404,7 @@ extern "C" void fn_0008add8(void)
                         break;
                     }
                     x2 += x;
-                    x = pmenu.char_width * pmenu.pulldowns[i + 1].length;
+                    x = pmenu.pulldowns[i + 1].length * pmenu.char_width;
                 }
             }
         } else {
@@ -414,28 +412,28 @@ extern "C" void fn_0008add8(void)
                 x = 0;
                 for (i = 1; i < pmenu.pulldowns[pmenu.unknown0].parent; i++) {
                     if (pmenu.pulldowns[i].active)
-                        x += pmenu.char_width * pmenu.pulldowns[i].length;
+                        x += pmenu.pulldowns[i].length * pmenu.char_width;
                 }
                 i = pmenu.pulldowns[pmenu.unknown0].parent;
-                if (over_hotspot(mouse_dx, mouse_dy, x, pmenu.line_height, pmenu.char_width * pmenu.pulldowns[i].width, pmenu.line_height * pmenu.pulldowns[i].count))
+                if (over_hotspot(mouse_dx, mouse_dy, x, pmenu.line_height, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.pulldowns[i].count * pmenu.line_height))
                     pmenu.unknown0 = pmenu.pulldowns[pmenu.unknown0].parent;
             }
             if (pmenu.unknown0 && pmenu.pulldowns[pmenu.unknown0].active) {
                 if (pmenu.pulldowns[pmenu.unknown0].parent) {
                     x = 0;
                     for (i = 1; i < pmenu.pulldowns[pmenu.unknown0].parent; i++)
-                        x += pmenu.char_width * pmenu.pulldowns[i].length;
+                        x += pmenu.pulldowns[i].length * pmenu.char_width;
                 } else {
                     x = 0;
                     for (i = 1; i < pmenu.unknown0; i++)
-                        x += pmenu.char_width * pmenu.pulldowns[i].length;
+                        x += pmenu.pulldowns[i].length * pmenu.char_width;
                 }
                 i = pmenu.unknown0;
                 for (j = 0; j < pmenu.pulldowns[i].count; j++) {
                     if ((pmenu.pulldowns[i].items[j].flags & 1) && statvar.unknownfd > 1)
                         continue;
                     if (pmenu.pulldowns[i].items[j].submenu) {
-                        if (over_hotspot(mouse_dx, mouse_dy, x, pmenu.line_height * j + pmenu.line_height, pmenu.char_width * pmenu.pulldowns[i].width, pmenu.line_height)) {
+                        if (over_hotspot(mouse_dx, mouse_dy, x, pmenu.line_height + pmenu.line_height * j, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.line_height)) {
                             pmenu.unknown0 = pmenu.pulldowns[i].items[j].submenu;
                             break;
                         }

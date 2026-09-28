@@ -129,6 +129,7 @@ void modify_person(Thing *w)
     change_health(w, -1);
 }
 
+// NONMATCHING: warmth and the return-value slot trade places ([ebp-0x18] / [ebp-0x14])
 // FUNCTION: 0x000712a8
 u16 check_warmth(Thing *w)
 {
@@ -143,7 +144,7 @@ u16 check_warmth(Thing *w)
     warmth = 0;
     heat = allhosps[w->owner].fc94 * 10;
     if (heat) {
-        room = which_room(((u16)w->y.tile << 7) + (u16)w->x.tile);
+        room = which_room((u16)w->x.tile + ((u16)w->y.tile << 7));
         if (room) {
             warmth = room->unknown26 * 1250 / (room->f1 * room->f2);
         } else {
@@ -226,12 +227,12 @@ s16 check_feelgood(Thing *w)
 // FUNCTION: 0x000717f0
 void check_around(Thing *w)
 {
-    u16 i;
     u16 floor;
+    u16 i;
     Map *m;
     Map *base;
 
-    if (!which_room(((u16)w->y.tile << 7) + (u16)w->x.tile)) {
+    if (!which_room((u16)w->x.tile + ((u16)w->y.tile << 7))) {
         base = &map[((s16)w->y.tile << 7) + (s16)w->x.tile];
         for (i = 0; i < 5; i++) {
             m = &base[around[i]];
@@ -255,22 +256,23 @@ void check_around(Thing *w)
     }
 }
 
+// NONMATCHING: the target loads D_0012dd9c before calling old_newrand() for chance
 // FUNCTION: 0x00071960
 u8 do_reaction(Thing *w)
 {
+    u16 pos;
+    u16 illness;
     u16 ok;
+    u16 n;
+    u16 pick;
     u16 i;
     u16 chance;
-    u16 n;
-    u16 illness;
-    u16 pos;
-    u16 pick;
     u16 list[5];
 
     n = 0;
     if (map[((s16)w->y.tile << 7) + (s16)w->x.tile].unknown7 & 0x10)
         return 0;
-    pos = ((u16)w->y.tile << 7) + (u16)w->x.tile;
+    pos = (u16)w->x.tile + ((u16)w->y.tile << 7);
     if (which_room(pos) == 0) {
         if (w->flags & 0x200) {
             w->flags &= ~0x200;
@@ -371,8 +373,10 @@ void modify_staff(Thing *w)
     calculate_speed(w);
     check_warmth(w);
     staff_check_around(w);
-    if (w->kind != 0x34 && (w->room == 0 || w->room->type != 0x19))
-        w->f78 += *(u16 *)((u8 *)&expertise[59] + 1);
+    if (w->kind != 0x34) {
+        if (w->room == 0 || w->room->type != 0x19)
+            w->f78 += *(u16 *)((u8 *)&expertise[59] + 1);
+    }
     if (w->f78 > *(u16 *)&expertise[59].unknown10[1]) {
         if (old_newrand() % 1000 == 0)
             doctor_cracks_up(w);
@@ -410,11 +414,11 @@ void modify_staff(Thing *w)
 // FUNCTION: 0x00072110
 s16 staff_check_around(Thing *w)
 {
-    u16 i;
     u16 floor;
-    Map *m;
-    Map *base;
+    u16 i;
     Thing *t;
+    Map *base;
+    Map *m;
 
     t = &thing[listhead[w->owner].objects[feely[0].kind]];
     if (t > thing) {
@@ -432,7 +436,7 @@ s16 staff_check_around(Thing *w)
             t = &thing[t->unknown75w];
         } while (t > thing);
     }
-    if (!which_room(((u16)w->y.tile << 7) + (u16)w->x.tile)) {
+    if (!which_room((u16)w->x.tile + ((u16)w->y.tile << 7))) {
         base = &map[((s16)w->y.tile << 7) + (s16)w->x.tile];
         for (i = 0; i < 5; i++) {
             m = &base[around[i]];

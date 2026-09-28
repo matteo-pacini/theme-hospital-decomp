@@ -188,7 +188,7 @@ void drug_researched(u16 illness, u8 owner)
         announce_this(6, illness);
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: case 4 builds the -= target address as item * 14 + h in ebx; here h + (item * 14)
 // FUNCTION: 0x0006d748
 void item_upgraded(u16 item, u8 owner)
 {
@@ -347,7 +347,6 @@ u8 send_doctor_to_research(Thing *w)
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006dfe8
 void person_autopsied(Thing *w)
 {
@@ -362,7 +361,7 @@ void person_autopsied(Thing *w)
         if ((t->renderer == 4 && t->kind != 0x2e) && t->owner == w->owner)
             count += t->unknown81s;
     }
-    do_illness_research(w->owner, w->style, expertise[w->style].cost * D_0012ddb8 / 100, 4);
+    do_illness_research(w->owner, w->style, D_0012ddb8 * expertise[w->style].cost / 100, 4);
     if ((count << 8) / h->fc9c < 0x1900)
         bad = old_newrand() % 3 != 0;
     else
@@ -421,7 +420,6 @@ s32 find_drug_improve_cost(u8 illness, u8 owner)
     return -1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006e4dc
 s32 find_hw_improve_cost(u8 illness, u8 owner)
 {
@@ -433,7 +431,7 @@ s32 find_hw_improve_cost(u8 illness, u8 owner)
         && (expertise[illness].unknown5[0] == 2 || expertise[illness].unknown5[0] == 3)
         && allhosps[owner].equipment[kind].unknown1[0] < 40) {
         level = allhosps[owner].equipment[kind].unknown1[0] / 2;
-        return (D_0012dddb * level + D_0012ddda) * expertise[illness].cost / 100;
+        return (D_0012ddda + D_0012dddb * level) * expertise[illness].cost / 100;
     }
     return -1;
 }
@@ -475,7 +473,7 @@ void research_category_exhausted(const u8 owner, const u8 category)
     }
 }
 
-// NONMATCHING: register choice; h and kind slots swapped
+// NONMATCHING: in the drug branch the target loads D_0012dddb (into ecx) before dividing rating by 25
 // FUNCTION: 0x0006e720
 void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category)
 {
@@ -483,14 +481,14 @@ void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category)
     s32 i;
     s32 cost;
     s32 rating;
-    s32 level;
     u8 kind;
+    s32 level;
 
     h = &allhosps[owner];
     kind = expertise[illness].kind;
     if (expertise[illness].unknown5[0] == 2 || expertise[illness].unknown5[0] == 3) {
         for (i = 0; i < 0x2f; i++) {
-            if (expertise[illness].kind == expertise[i].kind && expertise[i].cost != 0) {
+            if (expertise[i].kind == expertise[illness].kind && expertise[i].cost != 0) {
                 illness = i;
                 break;
             }
@@ -514,7 +512,7 @@ void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category)
     } else if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].unknown1D == 1)
                && allhosps[owner].rooms[illness].unknown1C == 1) {
         rating = find_best_drug_rating(illness, owner);
-        cost = (D_0012dddb * (rating / 25) + D_0012ddda) * expertise[illness].cost / 100;
+        cost = (D_0012ddda + D_0012dddb * (rating / 25)) * expertise[illness].cost / 100;
         if (h->illness_research[illness] >= cost) {
             h->illness_research[illness] -= cost;
             drug_improved(illness, owner);
@@ -523,7 +521,7 @@ void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category)
                 && (allhosps[owner].equipment[kind].unknown0 == 1 && objects[kind].unknown1c == 1))
                && h->equipment[kind].unknown1[0] < 40) {
         level = h->equipment[kind].unknown1[0] / 2;
-        cost = (D_0012dddb * level + D_0012ddda) * expertise[illness].cost / 100;
+        cost = (D_0012ddda + D_0012dddb * level) * expertise[illness].cost / 100;
         if (h->illness_research[illness] >= cost) {
             h->illness_research[illness] -= cost;
             item_upgraded(kind, owner);

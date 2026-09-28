@@ -34,8 +34,8 @@ extern volatile s32 D_00188c5c, D_00188c60;
 extern Slot D_001581b2[];
 extern u8 D_0015f3f7;
 extern u8 D_0015f3f8;
-extern s16 D_00155c5e[];
-extern s16 D_00155c60[];
+extern s16 D_00155c60;
+extern s16 D_00155c62;
 extern u16 D_0012cdea[];
 extern u16 D_00158321;
 extern u8 D_0015831a;
@@ -91,7 +91,6 @@ void compute_room_pointed(u16 tile);
 void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const u8 flip);
 
 
-// NONMATCHING: register choice, jump layout of two && conditions
 // FUNCTION: 0x00059d00
 void process_mouse(void)
 {
@@ -108,8 +107,8 @@ void process_mouse(void)
         if (D_00188c7b || D_00188c7c) {
             D_00188c7b = 0;
             D_00188c7c = 0;
-            if (D_00155c5e[1] <= D_00188c5c && pulldv[19].width + D_00155c5e[1] > D_00188c5c
-                && D_00155c60[1] <= D_00188c60 && pulldv[19].height + D_00155c60[1] > D_00188c60)
+            if (D_00155c60 <= D_00188c5c && D_00155c60 + pulldv[19].width > D_00188c5c
+                && D_00155c62 <= D_00188c60 && D_00155c62 + pulldv[19].height > D_00188c60)
                 finish_composite_help();
         }
         return;
@@ -149,8 +148,10 @@ void process_mouse(void)
     }
     if (statvar.unknown6 <= mouse_dy) {
         icon = which_icon_is_mouse_over();
-        if (D_0015536e == 0 && D_001553e8 != 1)
-            set_mouse_sprite(1);
+        if (D_0015536e == 0) {
+            if (D_001553e8 != 1)
+                set_mouse_sprite(1);
+        }
     } else if (D_0012cdea[D_0015831a] && D_00188c7c
                && ((mouse_dy >= D_0015f410[0x93].y && D_00158321 <= mouse_dx && mouse_dx <= D_0015f410[0x92].x
                     && mouse_dy <= D_0015f410[0x92].y)
@@ -195,26 +196,25 @@ void process_mouse(void)
             } else if (crequester.unknown2 == 0x63 && (w = &thing[D_001553f9]) > thing) {
                 if (D_001553b4)
                     return;
-                if (w->renderer == 2 || w->renderer == 4) {
-                    other = &thing[w->unknown69
-                                           && (thing[w->unknown69].renderer == 6 || thing[w->unknown69].renderer == 8)
-                                           && (u16)(w - thing) == thing[w->unknown69].unknown91
-                                       ? w->unknown69
-                                       : 0];
-                    if (other > thing) {
-                        if (other->subtype == 0xb) {
-                            D_00155435 = D_00155434;
-                            D_00155434 = 4;
-                            D_00155370 = 3;
-                            hit = 1;
-                            peep_icon(w);
-                            if (D_001553e8 != 0x13)
-                                set_mouse_sprite(0x13);
-                            goto done;
-                        }
-                        if (objects[other->subtype].f20)
-                            w = other;
+                if ((w->renderer == 2 || w->renderer == 4)
+                    && (other = &thing[w->unknown69
+                                               && (thing[w->unknown69].renderer == 6 || thing[w->unknown69].renderer == 8)
+                                               && (u16)(w - thing) == thing[w->unknown69].unknown91
+                                           ? w->unknown69
+                                           : 0])
+                           > thing) {
+                    if (other->subtype == 0xb) {
+                        D_00155435 = D_00155434;
+                        D_00155434 = 4;
+                        D_00155370 = 3;
+                        hit = 1;
+                        peep_icon(w);
+                        if (D_001553e8 != 0x13)
+                            set_mouse_sprite(0x13);
+                        goto done;
                     }
+                    if (objects[other->subtype].f20)
+                        w = other;
                 }
                 if (w->renderer == 6) {
                     if (w->group && objects[thing[w->group].subtype].unknown17 != -1)
@@ -324,7 +324,8 @@ void process_mouse(void)
     }
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: unknown128 vs D_0012dd7c[7] / 4 is compared as cmp edx,eax / jge in the target
+// (divisor first, field second); written either way round it differs
 // FUNCTION: 0x0005a750
 void process_left_button(u16 icon)
 {
@@ -456,7 +457,7 @@ void process_left_button(u16 icon)
                         if (w->f93) {
                             if (w->f93 != 1 << player)
                                 D_001581fe = 0xf;
-                        } else if ((s16)w->unknown128 < D_0012dd7c[7] / 4) {
+                        } else if (D_0012dd7c[7] / 4 > (s16)w->unknown128) {
                             D_001581fe = 0x10;
                         } else {
                             D_001549d0[player].type = 0x81;
@@ -545,10 +546,12 @@ void process_left_button(u16 icon)
                 break;
             case 0xb:
                 D_001553fb = compute_object_pointed(&room_info[allhosps[player].unknown11b7]);
-                if (D_001553fb && thing[D_001553fb].unknown89 == allhosps[player].unknown11b7) {
-                    D_001549d0[player].type = 0x44;
-                    D_001549d0[player].value = D_001553fb;
-                    D_001549d0[player].arg = 1;
+                if (D_001553fb) {
+                    if (thing[D_001553fb].unknown89 == allhosps[player].unknown11b7) {
+                        D_001549d0[player].type = 0x44;
+                        D_001549d0[player].value = D_001553fb;
+                        D_001549d0[player].arg = 1;
+                    }
                 }
                 break;
             case 0xc:
@@ -613,7 +616,6 @@ void process_left_button(u16 icon)
         break;
     }
 }
-// NONMATCHING: register choice, one missing jump after the D_00155e40 block
 // FUNCTION: 0x0005b70c
 void process_mleft_button(u16 icon)
 {
@@ -641,6 +643,7 @@ void process_mleft_button(u16 icon)
                                 D_001581b2[1].value = D_00155e40;
                                 D_001553c8 = 1;
                             }
+                            break;
                         }
                     }
                     break;
@@ -671,7 +674,6 @@ void process_mright_button(u16 icon)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0005b95c
 void process_right_button(u16 icon)
 {
@@ -762,8 +764,10 @@ void process_right_button(u16 icon)
                     D_001549d0[player].value = 1;
                     break;
                 case 5:
-                    if (gamevar.unknown26 != 1 && place_object_change_angle(-1))
-                        play_sound(10, 0x22, -1, -1);
+                    if (gamevar.unknown26 != 1) {
+                        if (place_object_change_angle(-1))
+                            play_sound(10, 0x22, -1, -1);
+                    }
                     draw_object_cursor();
                     break;
                 case 3:

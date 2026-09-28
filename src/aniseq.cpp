@@ -69,7 +69,7 @@ void choose_aniseq(Thing *w, u8 group, u8 mode)
 {
     u8 n;
 
-    for (n = 0; D_0012d320[n + group * 10]; n++)
+    for (n = 0; D_0012d320[group * 10 + n]; n++)
         ;
     setup_aniseq(w, D_0012d320[group * 10 + old_newrand() % n], mode);
 }

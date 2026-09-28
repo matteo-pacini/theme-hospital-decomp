@@ -511,7 +511,6 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000971f8
 void display_queue_bar(u16 x, u16 y)
 {
@@ -521,9 +520,9 @@ void display_queue_bar(u16 x, u16 y)
 
     reqspr_draw(x - D_0015f40c->r[4].x, y + D_0015f40c->r[4].y, &button_sprite[D_0015f406[0x28]]);
     if (over_hotspot(mouse_dx, mouse_dy, x - D_0015f40c->r[4].x + D_0015f40c->r[7].x, y + D_0015f40c->r[4].y + D_0015f40c->r[7].y, D_0015f40c->r[7].w, D_0015f40c->r[7].h))
-        reqspr_draw(D_0015f40c->r[7].x + (x - D_0015f40c->r[4].x), y + D_0015f40c->r[4].y + D_0015f40c->r[7].y, &button_sprite[D_0015f406[0x2c]]);
+        reqspr_draw(x - D_0015f40c->r[4].x + D_0015f40c->r[7].x, y + D_0015f40c->r[4].y + D_0015f40c->r[7].y, &button_sprite[D_0015f406[0x2c]]);
     else if (over_hotspot(mouse_dx, mouse_dy, x - D_0015f40c->r[4].x + D_0015f40c->r[8].x, y + D_0015f40c->r[4].y + D_0015f40c->r[8].y, D_0015f40c->r[8].w, D_0015f40c->r[8].h))
-        reqspr_draw(D_0015f40c->r[8].x + (x - D_0015f40c->r[4].x), y + D_0015f40c->r[4].y + D_0015f40c->r[8].y, &button_sprite[D_0015f406[0x2d]]);
+        reqspr_draw(x - D_0015f40c->r[4].x + D_0015f40c->r[8].x, y + D_0015f40c->r[4].y + D_0015f40c->r[8].y, &button_sprite[D_0015f406[0x2d]]);
     set_all_refresh_zones_in_window(x - D_0015f40c->r[4].x, y + D_0015f40c->r[4].y,
                                     button_sprite[D_0015f406[0x28]].width + (x - D_0015f40c->r[4].x),
                                     button_sprite[D_0015f406[0x28]].height + (y + D_0015f40c->r[4].y), 3);
@@ -538,11 +537,11 @@ void display_queue_bar(u16 x, u16 y)
             }
             reqspr_draw(x - D_0015f40c->r[4].x, y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y, &button_sprite[D_0015f406[0x2a]]);
             set_all_refresh_zones_in_window(x - D_0015f40c->r[4].x, y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y,
-                                            button_sprite[D_0015f406[0x2a]].width + (x - D_0015f40c->r[4].x),
-                                            D_0015f40c->r[4].y + (y + off) + D_0015f40c->r[5].y + button_sprite[D_0015f406[0x2a]].height, 3);
+                                            x - D_0015f40c->r[4].x + button_sprite[D_0015f406[0x2a]].width,
+                                            (y + off) + D_0015f40c->r[4].y + D_0015f40c->r[5].y + button_sprite[D_0015f406[0x2a]].height, 3);
             if (over_hotspot(mouse_dx, mouse_dy, x - D_0015f40c->r[4].x + D_0015f40c->r[9].x, y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y, D_0015f40c->r[9].w, D_0015f40c->r[9].h))
-                reqspr_draw(D_0015f40c->r[9].x + (x - D_0015f40c->r[4].x), y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y, &button_sprite[D_0015f406[0x2e]]);
-            LbTextSetWindow(D_0015f40c->r[23].x + (x - D_0015f40c->r[4].x), y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y + D_0015f40c->r[23].y, D_0015f40c->r[23].w, D_0015f40c->r[23].h);
+                reqspr_draw(x - D_0015f40c->r[4].x + D_0015f40c->r[9].x, y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y, &button_sprite[D_0015f406[0x2e]]);
+            LbTextSetWindow(x - D_0015f40c->r[4].x + D_0015f40c->r[23].x, y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y + D_0015f40c->r[23].y, D_0015f40c->r[23].w, D_0015f40c->r[23].h);
             D_00188c74 = 0x100;
             if (statvar.unknownfd > 1)
                 sprintf(buf, D_00120a2c, &allhosps[fn_000856c8(i + 1)]);
@@ -558,8 +557,8 @@ void display_queue_bar(u16 x, u16 y)
         off -= D_0015f40c->r[9].y;
         reqspr_draw(x - D_0015f40c->r[4].x, y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y, &button_sprite[D_0015f406[0x2b]]);
         set_all_refresh_zones_in_window(x - D_0015f40c->r[4].x, y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y,
-                                        button_sprite[D_0015f406[0x2a]].width + (x - D_0015f40c->r[4].x),
-                                        button_sprite[D_0015f406[0x2b]].height + (y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y), 3);
+                                        x - D_0015f40c->r[4].x + button_sprite[D_0015f406[0x2a]].width,
+                                        y + off + D_0015f40c->r[4].y + D_0015f40c->r[5].y + button_sprite[D_0015f406[0x2b]].height, 3);
     }
 }
 

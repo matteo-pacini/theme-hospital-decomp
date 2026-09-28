@@ -200,7 +200,8 @@ void check_fax_buttons(void)
     }
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: numbuttons and i are zero-extended with xor bh,bh / xor dh,dh (16-bit) in the
+// target, with xor ebx,ebx / xor edx,edx here
 // FUNCTION: 0x000a3a90
 void calculate_buttons(const u8 type)
 {
@@ -261,7 +262,7 @@ void calculate_buttons(const u8 type)
     for (i = 0; i < numbuttons; i++) {
         D_0015f43c[i + 0xae].x = D_0015f430[173].x + D_0015f430[173].w - D_0015f43c[0xae].width;
         D_0015f43c[i + 0xae].unknownC = D_0015f43c[i + 0xae].x;
-        D_0015f43c[i + 0xae].y = D_0015f430[173].y + D_0015f430[173].h - (D_0015f43c[0xae].height + 5) * (numbuttons - i);
+        D_0015f43c[i + 0xae].y = D_0015f430[173].y + D_0015f430[173].h - (numbuttons - i) * (D_0015f43c[0xae].height + 5);
         D_0015f43c[i + 0xae].unknownE = D_0015f43c[i + 0xae].y;
         D_0015f43c[i + 0xae].callback = handler;
     }

@@ -253,12 +253,11 @@ void play_ambient(u8 sound)
     }
 }
 
-// NONMATCHING: register choice, switch temporary slot
 // FUNCTION: 0x00088ebc
 void play_sound(u32 source, u16 sfx, s32 x, s32 y)
 {
-    s32 sample;
     u32 pitch;
+    u16 sample;
     s32 pan;
     s32 volume;
     s32 half;
@@ -284,7 +283,7 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
                 sample = sample_group[sfx_details[sfx].group].samples[saferand() % sample_group[sfx_details[sfx].group].count];
                 break;
             case 5:
-                pitch = saferand() % (pitch_group[sfx_details[sfx].group].values[1] - pitch_group[sfx_details[sfx].group].values[0]) + pitch_group[sfx_details[sfx].group].values[0];
+                pitch = pitch_group[sfx_details[sfx].group].values[0] + saferand() % (pitch_group[sfx_details[sfx].group].values[1] - pitch_group[sfx_details[sfx].group].values[0]);
                 sample = sfx_details[sfx].sample;
                 break;
             }
@@ -356,7 +355,7 @@ void manage_sound(void)
     }
 }
 
-// NONMATCHING: operand load order in the first multiply, register choice
+// NONMATCHING: D_00155e2a * myplayer.fd loads myplayer.fd first here, D_00155e2a first in the target
 // FUNCTION: 0x00089468
 void manage_background_sounds(void)
 {

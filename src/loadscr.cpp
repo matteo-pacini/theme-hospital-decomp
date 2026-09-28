@@ -186,7 +186,6 @@ void process_keys_load_game(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009da30
 void process_mouse_load_game(void)
 {
@@ -212,7 +211,7 @@ void process_mouse_load_game(void)
                 x = D_0015f43c[base + i].x;
                 y = D_0015f43c[base + i].y;
                 if (D_00188c81) {
-                    if (over_hotspot(D_00188c6c, D_00188c70, x, y, D_0015f43c[i + base].width - x + 1,
+                    if (over_hotspot(D_00188c6c, D_00188c70, x, y, D_0015f43c[base + i].width - x + 1,
                             D_0015f43c[base + i].height - y + 1)) {
                         play_sound(10, 0x41, -1, -1);
                         D_00188c81 = 0;
@@ -221,11 +220,11 @@ void process_mouse_load_game(void)
                         else
                             draw_button_edges(x, y, D_0015f43c[base + i].width - x, D_0015f43c[base + i].height - y, 1);
                         if (D_0015f43c[base + i].callback)
-                            D_0015f43c[i + base].callback(i);
+                            D_0015f43c[base + i].callback(i);
                         break;
                     }
                 }
-                if (over_hotspot(mouse_dx, mouse_dy, x, y, D_0015f43c[i + base].width - x + 1,
+                if (over_hotspot(mouse_dx, mouse_dy, x, y, D_0015f43c[base + i].width - x + 1,
                         D_0015f43c[base + i].height - y + 1)) {
                     if (D_0015f43c[base + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);

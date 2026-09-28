@@ -197,7 +197,7 @@ u8 create_an_illness(void)
     return illness;
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: the target loads D_0012ddbc before calling old_newrand() for the % test
 // FUNCTION: 0x00070458
 s8 who_owns_peep(u8 illness)
 {
@@ -235,7 +235,7 @@ s8 who_owns_peep(u8 illness)
                 if (D_001609c4[i].active == 0)
                     continue;
             }
-            bids[i].score += D_0012ddbe * allhosps[i].rooms[illness].unknown0;
+            bids[i].score += allhosps[i].rooms[illness].unknown0 * D_0012ddbe;
             update_single_cure_cost(illness, i);
             price[i] = max_price_for_treatment(illness, i);
             pct[i] = price[i] * 100 / allhosps[i].rooms[illness].unknownC;

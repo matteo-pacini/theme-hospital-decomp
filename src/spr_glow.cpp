@@ -9,7 +9,7 @@ extern u16 D_00188c74;
 }
 
 
-// NONMATCHING: register choice, clip expression evaluation order
+// NONMATCHING: right/bottom clip: the target sums the window globals before x + w (y + h)
 // FUNCTION: 0x0006ef70
 s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
 {
@@ -154,13 +154,14 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                                 dst -= *src;
                             src++;
                         } else {
-                            if (--rows == 0)
-                                return 1;
-                            dst = next;
-                            next += pitch;
-                            remaining = w;
-                            src++;
-                            goto glow_skip;
+                            if (--rows != 0) {
+                                dst = next;
+                                next += pitch;
+                                remaining = w;
+                                src++;
+                                goto glow_skip;
+                            }
+                            return 1;
                         }
                     } else {
                         if (--rows == 0)
@@ -256,13 +257,14 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                             dst += *src;
                             src++;
                         } else {
-                            if (--rows == 0)
-                                return 1;
-                            dst = next;
-                            next += pitch;
-                            remaining = w;
-                            src++;
-                            goto flip_skip;
+                            if (--rows != 0) {
+                                dst = next;
+                                next += pitch;
+                                remaining = w;
+                                src++;
+                                goto flip_skip;
+                            }
+                            return 1;
                         }
                     } else {
                         if (--rows == 0)
@@ -338,13 +340,14 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                         dst -= *src;
                         src++;
                     } else {
-                        if (--rows == 0)
-                            return 1;
-                        dst = next;
-                        next += pitch;
-                        remaining = w;
-                        src++;
-                        goto plain_skip;
+                        if (--rows != 0) {
+                            dst = next;
+                            next += pitch;
+                            remaining = w;
+                            src++;
+                            goto plain_skip;
+                        }
+                        return 1;
                     }
                 } else {
                     if (--rows == 0)

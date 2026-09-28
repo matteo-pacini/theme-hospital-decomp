@@ -144,6 +144,15 @@ and comparing against the original.
 | `cmp X; jle; X = K; tmp = X; ... else tmp = 0` | discarded clamp `pct > 100 ? pct = 100 : 0;` |
 | or-chain whose true result jumps to the `else` block | `if (!(a == 1 \|\| a == 2 ...)) {...} else {...}` |
 | local stored directly from both arms | `if`/`else` assignment (a `?:` goes through a temporary) |
+| pointer loaded before the `u16` operand | `x + p->field` with `x` a `u16` (operand order decides which is loaded first) |
+| extra temp slot for a returned `?:` | `if (a > b) return a; return b;` |
+| switch value computed without a named local | `switch ((u32)(mask & -mask))` |
+| value computed, stored, then compared | assignment in the condition: `if ((amount = expr) < lim)` |
+| `je` to a `return` placed after the loop tail | `if (--rows != 0) { ...; goto L; } return 1;` |
+| array index chosen by a condition, no local | `?:` in the subscript: `a[st == 4 ? 1 : st]--` |
+| range checks grouped within an `&&` chain | left-nested grouping `(((a && b) && c) && d)` |
+| `jmp` over the tail when one arm has a `goto` | `if`/`else` wrapping the whole tail |
+| multiplier global preloaded or not | operand position of a divide (`x / 25` first or second) |
 
 C++ `inline` functions are unusable: with `-d2` Watcom emits them as COMDATs,
 which objconv rejects.

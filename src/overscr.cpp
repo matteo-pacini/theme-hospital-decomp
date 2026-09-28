@@ -206,7 +206,6 @@ void draw_overview_screen(void)
     compute_help_text(0, 0, 0x18);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00057684
 void calculate_piechart(void)
 {
@@ -229,7 +228,7 @@ void calculate_piechart(void)
         if (total == 0) {
             for (i = 0; i < n; i++) {
                 slices[i].start = prev;
-                slices[i].end = ((100 / n << 11) / 100 + slices[i].start) & 0x7ff;
+                slices[i].end = (slices[i].start + (100 / n << 11) / 100) & 0x7ff;
                 prev = slices[i].end;
             }
             slices[3].end = 0x7ff;
@@ -237,7 +236,7 @@ void calculate_piechart(void)
             for (i = 0; i < n; i++) {
                 owner = fn_000856c8(i + 1);
                 slices[i].start = prev;
-                slices[i].end = ((allhosps[owner].f1cb << 11) / 100 + slices[i].start) & 0x7ff;
+                slices[i].end = (slices[i].start + (allhosps[owner].f1cb << 11) / 100) & 0x7ff;
                 prev = slices[i].end;
             }
             slices[3].end = 0x7ff;
@@ -266,7 +265,7 @@ void calculate_piechart(void)
                 if (allhosps[i].f1cb == 100)
                     slices[i].end = (slices[i].start + 0x7eb) & 0x7ff;
                 else
-                    slices[i].end = ((allhosps[i].f1cb << 11) / 100 + slices[i].start) & 0x7ff;
+                    slices[i].end = (slices[i].start + (allhosps[i].f1cb << 11) / 100) & 0x7ff;
                 prev = slices[i].end;
             }
             slices[3].end = 0x7ff;

@@ -924,7 +924,7 @@ s8 record_covering_cell(const s8 row, const s16 pos)
     return -1;
 }
 
-// NONMATCHING: frame layout, register choice
+// NONMATCHING: frame layout: v is at [ebp-0x28] in the target, after the case 4 block locals
 // FUNCTION: 0x000a9358
 s8 compute_cell_precedence(const s8 row, Thing *t)
 {
@@ -946,7 +946,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 
                 shape = objects[o->subtype].shapes[o->unknown17];
                 record_covering_cell(row, 0);
-                off = -(s8)shapes[shape].unknown1f[1] * 128 + -(s8)shapes[shape].unknown1f[0];
+                off = (s16)-(s8)shapes[shape].unknown1f[0] + -(s8)shapes[shape].unknown1f[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
                     pos = shapes[shape].points[k] + off;
                     v = record_covering_cell(row, pos);
@@ -971,7 +971,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 
                 shape = objects[o->subtype].shapes[o->unknown17];
                 record_covering_cell(row, 0);
-                off = -(s8)shapes[shape].unknown1f[1] * 128 + -(s8)shapes[shape].unknown1f[0];
+                off = (s16)-(s8)shapes[shape].unknown1f[0] + -(s8)shapes[shape].unknown1f[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
                     pos = shapes[shape].points[k] + off;
                     v = record_covering_cell(row, pos);

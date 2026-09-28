@@ -787,6 +787,7 @@ void best_guess_treatment(Thing *w)
     }
 }
 
+// NONMATCHING: frame layout: target has n, i, r, t, return slot, result, j from [ebp-0x8] down
 // FUNCTION: 0x0003e468
 u16 find_possible_diagnosis(Thing *w)
 {

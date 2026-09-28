@@ -332,6 +332,7 @@ extern CDosHeap _lbHeap;
 void LbPackHeap(void);
 s32 GetCDSpeed(char *path, void *buf, s32 size, u32 count);
 void LbNetwork_LibraryVersion(__ctcl4TbNetworkVersion *version);
+void LbNetwork_ChangeExchangeTimeout(u32 timeout);
 TbError LbNetwork_Stop(void);
 TbError LbNetwork_Exchange(void *buf);
 TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size);

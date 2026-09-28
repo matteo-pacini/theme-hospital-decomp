@@ -424,7 +424,6 @@ void restart_all_queue_peeps(RoomInfo *room)
     }
 }
 
-// NONMATCHING: second jbe to the epilogue is near instead of short
 // FUNCTION: 0x0004bbec
 void flag_all_queue_members(RoomInfo *room)
 {
@@ -440,11 +439,10 @@ void flag_all_queue_members(RoomInfo *room)
                 }
                 w = &thing[w->queue_next];
             }
-            if (game_turn - 1 != D_001603d0 || D_001603d4 != room) {
+            if (game_turn - 1 != D_001603d0 || D_001603d4 != room)
                 play_sound(10, 1, -1, -1);
-                D_001603d4 = room;
-                D_001603d0 = game_turn;
-            }
         }
     }
+    D_001603d4 = room;
+    D_001603d0 = game_turn;
 }

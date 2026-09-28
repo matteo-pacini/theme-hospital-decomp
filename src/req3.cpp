@@ -266,7 +266,6 @@ void draw_health_graph(Thing *w, u16 x, u16 y, u16 colour)
     }
 }
 
-// NONMATCHING: register choice for the layout loads, constant push
 // FUNCTION: 0x000738e8
 void draw_diagnosis(Thing *w, u16 x, u16 y)
 {
@@ -274,7 +273,7 @@ void draw_diagnosis(Thing *w, u16 x, u16 y)
     u16 dy;
     char buf[100];
 
-    LbDrawBox(D_0015f40c->diag.x + x, y + D_0015f40c->diag.y, D_0015f40c->diag.w, D_0015f40c->diag.h, 0xa9);
+    LbDrawBox(x + D_0015f40c->diag.x, y + D_0015f40c->diag.y, D_0015f40c->diag.w, D_0015f40c->diag.h, 0xa9);
     LbTextSetClipWindow(x + D_0015f40c->diag.x, y + D_0015f40c->diag.y, D_0015f40c->diag.w, D_0015f40c->diag.h);
     set_font_from_cache(3);
     dy = 0;
@@ -288,7 +287,7 @@ void draw_diagnosis(Thing *w, u16 x, u16 y)
             sprintf(buf, D_001205e4, D_001602a4[w->unknown148[i]]);
         }
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
-        LbTextDraw(D_0015f40c->diag.x + x, dy + y + D_0015f40c->diag.y, buf);
+        LbTextDraw(x + D_0015f40c->diag.x, dy + y + D_0015f40c->diag.y, buf);
     }
     if (w->flags & 0x2000) {
         if (D_0015f3f5 == SCREEN_MODE_13) {
@@ -298,7 +297,7 @@ void draw_diagnosis(Thing *w, u16 x, u16 y)
             sprintf(buf, D_001205eb, info_bar_text[8]);
         }
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
-        LbTextDraw(D_0015f40c->diag.x + x, dy + y + D_0015f40c->diag.y, buf);
+        LbTextDraw(x + D_0015f40c->diag.x, dy + y + D_0015f40c->diag.y, buf);
     }
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);

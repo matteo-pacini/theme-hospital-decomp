@@ -183,7 +183,6 @@ s16 person_head_for(Thing *w, u8 a)
     return orthonav_whatnext(THING_PATH(w), w->x.tile, w->y.tile, w->unknown17);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000442a0
 s32 person_in_way(u32 x, u32 y, u32 dir)
 {
@@ -206,7 +205,7 @@ s32 person_in_way(u32 x, u32 y, u32 dir)
         x--;
         break;
     }
-    cell = &map[((s16)y << 7) + (s16)x];
+    cell = &map[(s16)x + ((s16)y << 7)];
     id = cell->first;
     for (i = 0; i < 4; i++) {
         if (id > 0) {
@@ -214,8 +213,9 @@ s32 person_in_way(u32 x, u32 y, u32 dir)
         switch (t->renderer) {
         case 2:
         case 4:
-            if (t != nav_person && t->unknown17 == opposite_angle[nav_person->unknown17]) {
-                return 0x8000;
+            if (t != nav_person) {
+                if (t->unknown17 == opposite_angle[nav_person->unknown17])
+                    return 0x8000;
             }
             break;
         }

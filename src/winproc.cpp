@@ -327,7 +327,7 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
     return update_state;
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: operand evaluation order and registers in the drag-resize bound checks (case 1)
 // FUNCTION: 0x0004d740
 void process_buttons(Window **windows, Window *w)
 {

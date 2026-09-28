@@ -76,6 +76,7 @@ s16 person_goto_destination(Thing *w)
     return 0;
 }
 
+// NONMATCHING: the target loads D_001553e7 before each fn_000cb2db call in the distance test
 // FUNCTION: 0x00076768
 s16 person_goto_object(Thing *w)
 {
@@ -228,6 +229,7 @@ void person_goto_queue(Thing *w)
     move_node(w, x, y);
 }
 
+// NONMATCHING: the ?: height temporary and the switch temporary swap slots ([ebp-0x18] / [ebp-0x1c])
 // FUNCTION: 0x0007724c
 s16 reaper_goto_hell(Thing *w)
 {
@@ -335,7 +337,7 @@ u8 try_staff_wander(Thing *w, s8 dx, s8 dy, u8 state)
     y = w->y.tile + dy;
     tile = x + (y << 7);
     m = &map[tile];
-    if (!(m >= map && m < end_map && !(m->flags & 3) && x >= 0 && x < 0x80 && y >= 0 && y < 0x80)
+    if (!(m >= map && m < end_map && !(m->flags & 3) && (x >= 0 && x < 0x80 && y >= 0 && y < 0x80))
         || m->unknown7 != 1 << w->owner || which_room(tile)) {
         w->unknown103 = 6;
         return 0;
@@ -376,51 +378,53 @@ void staff_wanders(Thing *w)
         w->height--;
         if (w->height <= 0)
             goto decide;
-        return;
-    }
-    if (w->unknown103 == 6)
-        goto decide;
-    if (actual_game_turn % w->anim_speed == 0)
-        w->sprite = frame[w->sprite].next;
-    w->height--;
-    if (w->height <= 0) {
-        if (w->subtype == 3 && listhead[w->owner].rooms[4] && find_free_object_anywhere(w - thing, 0xb)) {
-            w->kind = 0xc;
-            return;
-        }
-        if (blocks[map[(s16)w->x.tile + ((s16)w->y.tile << 7)].overlay].width == 0x20 && move_peep_from_blueprint(w))
-            return;
-        if (shall_i_resign(w))
-            return;
-        w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
-        dir = person_head_for(w, 3);
-        switch (dir) {
-        case 4:
-        case -3:
-            w->height = 1;
+    } else {
+        if (w->unknown103 == 6)
             goto decide;
-        case -1:
-            PLAY_FRAME(w, staff_anim_starts[w->subtype].unknownA);
-            w->height = 0;
-            return;
-        case -2:
-            staff_nav_failure(w);
-            return;
-        case 0:
-        case 1:
-        case 2:
-        case 3:
-        default:
-            if (w->unknown17 != dir) {
-                w->unknown17 = dir;
-                PLAY_FRAME(w, staff_anim_starts[w->subtype].idle);
+        if (actual_game_turn % w->anim_speed == 0)
+            w->sprite = frame[w->sprite].next;
+        w->height--;
+        if (w->height <= 0) {
+            if (w->subtype == 3 && listhead[w->owner].rooms[4]) {
+                if (find_free_object_anywhere(w - thing, 0xb)) {
+                    w->kind = 0xc;
+                    return;
+                }
             }
-            break;
+            if (blocks[map[(s16)w->x.tile + ((s16)w->y.tile << 7)].overlay].width == 0x20 && move_peep_from_blueprint(w))
+                return;
+            if (shall_i_resign(w))
+                return;
+            w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
+            dir = person_head_for(w, 3);
+            switch (dir) {
+            case 4:
+            case -3:
+                w->height = 1;
+                goto decide;
+            case -1:
+                PLAY_FRAME(w, staff_anim_starts[w->subtype].unknownA);
+                w->height = 0;
+                return;
+            case -2:
+                staff_nav_failure(w);
+                return;
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+            default:
+                if (w->unknown17 != dir) {
+                    w->unknown17 = dir;
+                    PLAY_FRAME(w, staff_anim_starts[w->subtype].idle);
+                }
+                break;
+            }
         }
+        x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
+        y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
+        move_node(w, x, y);
     }
-    x.raw = w->x.raw + w->unknown18 * around_xy[w->unknown17][0];
-    y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
-    move_node(w, x, y);
     return;
 decide:
     w->f8e &= 0xaf;
@@ -430,8 +434,10 @@ decide:
         return;
     if (obey_pager(w))
         return;
-    if (w->f78 > allhosps[w->owner].f21d && take_a_break(w))
-        return;
+    if (w->f78 > allhosps[w->owner].f21d) {
+        if (take_a_break(w))
+            return;
+    }
     if (old_newrand() % 100 < 0x55) {
         switch (w->unknown103) {
         case 1:
@@ -537,7 +543,7 @@ void peep_bp_goto(Thing *w)
 
 void mayor_inspects(Thing *w);
 
-// NONMATCHING: register choice, temporary slot order
+// NONMATCHING: the ?: height temporary and the switch temporary swap slots ([ebp-0x18] / [ebp-0x1c])
 // FUNCTION: 0x00078640
 s16 mayor_goto(Thing *w)
 {

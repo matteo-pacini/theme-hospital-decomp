@@ -297,7 +297,6 @@ u16 shall_peep_pay(Thing *w)
     return pays;
 }
 
-// NONMATCHING: extra return-value temporary after the final ternary
 // FUNCTION: 0x00058e34
 s32 max_price_for_treatment(const u16 room, const u8 owner)
 {
@@ -321,7 +320,9 @@ s32 max_price_for_treatment(const u16 room, const u8 owner)
         }
     }
     price = base * rep / 500 + flag * base;
-    return base > price ? base : price;
+    if (base > price)
+        return base;
+    return price;
 }
 
 // FUNCTION: 0x00058f7c

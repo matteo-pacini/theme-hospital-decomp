@@ -331,8 +331,6 @@ s16 place_staff_in_struct(u16 kind, u16 flags)
 // FUNCTION: 0x0002a804
 void sack_staff(Thing *w, u16 mode)
 {
-    int kind;
-
     remove_person_from_room_list(w);
     set_icon_value(w, 9);
     if (w->owner == 0x63) {
@@ -366,12 +364,7 @@ void sack_staff(Thing *w, u16 mode)
     w->unknown128 = 0;
     fn_000b05f0(w);
     allhosps[w->owner].fc9c--;
-    if (w->subtype == 4) {
-        kind = 1;
-    } else {
-        kind = w->subtype;
-    }
-    allhosps[w->owner].fc9e[kind]--;
+    allhosps[w->owner].fc9e[w->subtype == 4 ? 1 : w->subtype]--;
     if (w->unknown124 & 0x20) {
         allhosps[w->owner].fca6--;
     }
@@ -743,7 +736,6 @@ s32 pay_staff_bonus(Thing *w, u16 amount, u16 percent, u16 morale, u8 owner)
     return total;
 }
 
-// NONMATCHING: register choice, tile argument temp
 // FUNCTION: 0x0002bbdc
 void staff_exit_room_check(Thing *w)
 {
@@ -754,7 +746,7 @@ void staff_exit_room_check(Thing *w)
             change_surgeon_to_doc(w);
         }
         if (w->room->type == 0x16 && &thing[w->room->staff[0]] == w) {
-            obj = &thing[find_object(((u16)w->y.tile << 7) + w->x.tile, 0x25, 0, 0x97, w->owner)];
+            obj = &thing[find_object((u16)w->x.tile + ((u16)w->y.tile << 7), 0x25, 0, 0x97, w->owner)];
             if (obj > thing && obj->fuse) {
                 w->unknown61 = 0;
                 w->unknown63 = 0;
@@ -775,13 +767,11 @@ void staff_exit_room_check(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002be14
 void rest_staff(Thing *w, s16 amount)
 {
     if (w->f78 > *(u16 *)&expertise[59].unknown10[3] / 2) {
-        amount = amount * *(u16 *)&expertise[59].unknown10[3] / w->f78;
-        if (amount < *(u16 *)&expertise[59].unknown10[5]) {
+        if ((amount = amount * *(u16 *)&expertise[59].unknown10[3] / w->f78) < *(u16 *)&expertise[59].unknown10[5]) {
             amount = *(u16 *)&expertise[59].unknown10[5];
         }
     }

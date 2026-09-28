@@ -148,7 +148,8 @@ void check_awards_won(void)
     }
 }
 
-// NONMATCHING: register choice, evaluation order of the two quotients in case 6
+// NONMATCHING: evaluation order: the two quotients compared in case 6, and D_0015f8d4 vs
+// awards_trophies.f3, are computed in the opposite order (either way round in source)
 // FUNCTION: 0x000b3ce4
 void check_trophies_won(void)
 {
@@ -278,12 +279,11 @@ void annual_update_of_award_counts(void)
     D_0015f8ed = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b43c0
 void set_trophy_value(const u8 t, const s16 value, u8 type)
 {
     trophy[t].unknown0 = t;
-    trophy[t].f1 = saferand() % 3 + t * 3 + 1;
+    trophy[t].f1 = t * 3 + saferand() % 3 + 1;
     if (type == 1) {
         s32 rep;
 

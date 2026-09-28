@@ -82,7 +82,6 @@ void draw_cell_no_editor(s32 x, s32 y, u8 colour)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b14f0
 void draw_object_cursor(void)
 {
@@ -188,8 +187,8 @@ draw:
         flip = 0;
         break;
     default:
-        frame = start[dir + objects[kind].unknownE].frame;
-        flip = start[dir + objects[kind].unknownE].flags;
+        frame = start[objects[kind].unknownE + dir].frame;
+        flip = start[objects[kind].unknownE + dir].flags;
         break;
     }
     init_object_drag_shape();

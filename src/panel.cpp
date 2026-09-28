@@ -262,7 +262,7 @@ void choose_panel_icons(void)
 void setup_panel_icons(const u8 mode)
 {
     u8 i;
-    s32 x;
+    u16 x;
     s8 pass;
 
     i = 0;
@@ -272,7 +272,7 @@ void setup_panel_icons(const u8 mode)
         panel = panel_icons_over;
     } else {
         panel = panel_icons_ratfest;
-        pass--;
+        --pass;
     }
     while (--pass >= 0) {
         if (pass == 0 && !D_001553b4) {

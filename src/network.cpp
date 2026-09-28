@@ -963,6 +963,7 @@ void report_message(char *message)
     network.unknown2 = 3;
 }
 
+// NONMATCHING: PhoneNumber[n - 1] is relocated against modem_dev+0x1f in the target
 // FUNCTION: 0x00081b38
 void process_keys_network_select(void)
 {
@@ -1048,7 +1049,7 @@ void process_keys_network_select(void)
             }
             break;
         case 1:
-            if (!(CurrentDisplay & 0x200) || login_control.players[player].len == 0) {
+            if (!(CurrentDisplay & 0x200) || !login_control.players[player].len) {
                 play_sound(10, 0x42, -1, -1);
                 network_button_quit();
                 BufferedInkey = 0;
@@ -1834,7 +1835,7 @@ void draw_message_box(void)
 
 void update_message_box(u8 c, u8 flag, u8 from);
 
-// NONMATCHING: register choice
+// NONMATCHING: case 8 loads i before modem_dev.unknown1c in i == modem_dev.unknown1c
 // FUNCTION: 0x00083a78
 void process_login_exchange(void)
 {
@@ -1871,7 +1872,7 @@ void process_login_exchange(void)
         case 2:
             login_control.f17 = 8;
             statvar.unknownfd = network_num_players();
-            LbNetwork_LibraryVersion((__ctcl4TbNetworkVersion *)0x1e);
+            LbNetwork_ChangeExchangeTimeout(0x1e);
             break;
         case 8:
             if (i == player || (!(DesiredDisplay & 0x40) && i == modem_dev.unknown1c)) {

@@ -59,7 +59,6 @@ void process_graph_panel(void);
 extern "C" {
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00078fc4
 void draw_graphs(u16 x, u16 y, u16 h, u16 step)
 {
@@ -187,16 +186,16 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             if (range == 0)
                 range = 1;
             if (graph[i].unknown0 == 0)
-                py = y - h * (values[D_001553e5][11] - min) / range;
+                py = y - (values[D_001553e5][11] - min) * h / range;
             else if (graph[i].unknown0 == 1)
-                py = y + h * (values[D_001553e5][11] - min) / range - h;
+                py = y + (values[D_001553e5][11] - min) * h / range - h;
             fn_00078d70(i, py - h1 / 2, values[D_001553e5][11]);
             for (k = 11; k > 0 && (12 - k) * 1500 * scale < actual_game_turn; k--) {
                 nx = x - (12 - k) * step;
                 if (graph[i].unknown0 == 0)
-                    ny = y - h * (values[D_001553e5][k - 1] - min) / range;
+                    ny = y - (values[D_001553e5][k - 1] - min) * h / range;
                 else if (graph[i].unknown0 == 1)
-                    ny = y + h * (values[D_001553e5][k - 1] - min) / range - h;
+                    ny = y + (values[D_001553e5][k - 1] - min) * h / range - h;
                 if (ny < y - h)
                     ny = y - h;
                 else if (ny > y)
@@ -220,7 +219,9 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     year = actual_game_turn / 0x4650;
     quarter = actual_game_turn / 0x4650 - (actual_game_turn / 0x4650 & 3);
     D_00188c74 = 0;
-    for (i = 0; i < 12 && i * 1500 * scale < actual_game_turn; i++) {
+    for (i = 0; i < 12; i++) {
+        if (i * 1500 * scale >= actual_game_turn)
+            break;
         px = x - i * step;
         switch (D_001553e5) {
         case 0:

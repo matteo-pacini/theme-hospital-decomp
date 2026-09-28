@@ -713,14 +713,13 @@ u8 fn_00063300(void)
     return aborted;
 }
 
-// NONMATCHING: u8 local slot order, register choice
 // FUNCTION: 0x0006344c
 u8 fn_0006344c(s16 *scroll, u16 *line)
 {
     u8 i;
-    u8 done;
     u8 height;
     s16 y;
+    u8 done;
     char text[0x64];
 
     done = 0;
@@ -732,7 +731,7 @@ u8 fn_0006344c(s16 *scroll, u16 *line)
     y = -*scroll;
     for (i = 0; y < D_00188c38; y += height, i++) {
         if (*scroll >= -0x32) {
-            sprintf(text, D_001204a4, D_0016033c[*line + i]);
+            sprintf(text, D_001204a4, D_0016033c[i + *line]);
             switch (text[0]) {
             case '!':
                 break;

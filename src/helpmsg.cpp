@@ -369,7 +369,7 @@ void help_hotspot_detected(u16 i, u8 c, s16 x, s16 y)
     }
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: the first D_0015f420[i] address builds i * 16 in edx; here in eax, then moved
 // FUNCTION: 0x0009ac70
 void set_help_from_index(u16 i, s16 x, s16 y)
 {

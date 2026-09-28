@@ -61,7 +61,7 @@ void remove_litter(u16 tile, u8 owner)
     }
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: frame layout (most locals sit at different slots)
 // FUNCTION: 0x0007a8a8
 void handyman_works(Thing *w)
 {
@@ -96,7 +96,7 @@ void handyman_works(Thing *w)
         room = w->room;
         if (room) {
             for (t = &thing[w->room->first_object]; t > thing; t = &thing[t->unknown71]) {
-                if (t->renderer == 6 && objects[t->subtype].unknown24 != 0) {
+                if (t->renderer == 6 && objects[t->subtype].unknown24) {
                     if (t->mode > 0) {
                         thingpage_request(&allhosps[t->owner].ff6d, t - thing, 100);
                         break;
@@ -140,10 +140,10 @@ void handyman_works(Thing *w)
         }
         dx = old_newrand() % 15 - 7;
         dy = old_newrand() % 15 - 7;
-        pos = ((u16)w->y.tile << 7) + (u16)w->x.tile + ((dy << 7) + dx);
+        pos = (u16)w->x.tile + ((u16)w->y.tile << 7) + ((dy << 7) + dx);
         if (map[pos].unknown7 == 1 << w->owner && can_i_get_to(w, pos) && !(map[pos].unknown7 & 0x10)) {
             w->state_b = w->unknown94 = 0x3c;
-            set_complex(w, 0xbe, ((u16)w->y.tile << 7) + (u16)w->x.tile + ((dy << 7) + dx));
+            set_complex(w, 0xbe, (u16)w->x.tile + ((u16)w->y.tile << 7) + ((dy << 7) + dx));
             fn_0003e724(w);
         }
         break;
@@ -163,7 +163,7 @@ void handyman_works(Thing *w)
         fn_0003e724(w);
         break;
     case 3:
-        remove_litter(((u16)w->y.tile << 7) + (u16)w->x.tile, w->owner);
+        remove_litter((u16)w->x.tile + ((u16)w->y.tile << 7), w->owner);
         set_complex(w, 0x30c, 0);
         w->state_b = 0x3c;
         fn_0003e724(w);
@@ -196,7 +196,7 @@ void handyman_works(Thing *w)
         fn_0003e724(w);
         plant->unknown100s < 0 ? plant->unknown100s = 0 : 0;
         level = (400 - plant->unknown100s) / 80;
-        anim = (u16)plant->unknown17 + check_frame(0x3d0, plant);
+        anim = check_frame(0x3d0, plant) + (u16)plant->unknown17;
         plant->sprite = start[anim].frame;
         plant->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
         for (i = 0; i < 5 - level - 1; i++)
@@ -210,7 +210,7 @@ void handyman_works(Thing *w)
             plant->sprite = frame[plant->sprite].next;
             if (frame[plant->sprite].flags & 1) {
                 plant->unknown98 = 0;
-                anim2 = (u16)plant->unknown17 + check_frame(0x3cf, plant);
+                anim2 = check_frame(0x3cf, plant) + (u16)plant->unknown17;
                 plant->sprite = start[anim2].frame;
                 plant->palette = start[anim2].flags > 0 ? (u8)1 : (u8)0;
                 plant->kind = 10;
@@ -270,8 +270,10 @@ void handyman_works(Thing *w)
         t = &thing[w->unknown69];
         if (t > thing) {
             thingpage_cancel(&allhosps[w->owner].ff6d, w->unknown69);
-            if (t->value > 2 && old_newrand() % t->value < t->mode)
-                t->value--;
+            if (t->value > 2) {
+                if (old_newrand() % t->value < t->mode)
+                    t->value--;
+            }
             t->mode = 0;
             t->icon = 0;
             t->smoke[0] = 0;
@@ -609,7 +611,6 @@ u8 is_next_to_plant(Thing *w, Thing *plant)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007cbdc
 u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner)
 {
@@ -619,7 +620,7 @@ u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner)
                 return 1;
         }
     } else {
-        u16 door;
+        s32 door;
 
         door = room_info[allhosps[owner].unknown1cf[0]].unknown4;
         if (check_points_connected(door, pos))

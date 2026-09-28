@@ -41,7 +41,7 @@ extern s16 D_001567b0[8];
 
 }
 
-// NONMATCHING: register choice, refresh-zone argument load order
+// NONMATCHING: sx + D_0015f3f8 refresh-zone argument: the target loads D_0015f3f8 before sx
 // FUNCTION: 0x00045890
 void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1, const u8 owner, const u8 mode)
 {
@@ -93,7 +93,7 @@ void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1,
             give_screen_xy_of_cell_at_column_row(window.unknown2eb, x, y);
             sx = info.unknown54;
             sy = info.unknown58;
-            set_all_refresh_zones_in_window(sx, sy - D_0015f3f7, D_0015f3f8 + sx, sy, 3);
+            set_all_refresh_zones_in_window(sx, sy - D_0015f3f7, sx + D_0015f3f8, sy, 3);
             if (!(is_room_size_valid(x0, y0, x1, y1, owner) && is_valid_no_room((y << 7) + x)
                   && is_tile_valid((y << 7) + x, owner))
                 || is_tile_near_half_wall(x, y, x0, y0, x1, y1)) {
@@ -397,7 +397,8 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
     }
 }
 
-// NONMATCHING: register choice, 16-bit tile arithmetic
+// NONMATCHING: frame layout: target has h/w/x, build, return slot, room, y from [ebp-0x8] down;
+// here y sits above build
 // FUNCTION: 0x00046b54
 u8 commit_blueprint(u8 owner)
 {
@@ -426,10 +427,10 @@ u8 commit_blueprint(u8 owner)
     room = &room_info[build->room];
     build->door_state = rooms[build->unknownD].unknown36;
     allhosps[owner].build.unknownE_ = 0;
-    build->unknown3c = map[((s16)build->y0 << 7) + (s16)build->x0].overlay;
+    build->unknown3c = map[(s16)build->x0 + ((s16)build->y0 << 7)].overlay;
     mark_blueprint_on_map(build->x0, build->y0, build->x1, build->y1, 1);
     room->unknown22 = actual_game_turn;
-    room->pos = (s16)((build->y0 << 7) + build->x0);
+    room->pos = (s16)(build->x0 + (build->y0 << 7));
     room->f1 = build->x1 - build->x0 + 1;
     room->f2 = build->y1 - build->y0 + 1;
     cleanse_area(room->owner, room->pos % 128, room->pos / 128, room->f1, room->f2);
@@ -509,7 +510,7 @@ u8 is_valid_room(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
     if (width < rooms[type].unknown27[0] || height < rooms[type].unknown27[1]) {
         return 0;
     }
-    if (which_room((y0 << 7) + x0) || which_room(((y1 - 1) << 7) + (x1 - 1))) {
+    if (which_room((y0 << 7) + x0) || which_room((x1 - 1) + ((y1 - 1) << 7))) {
         return 0;
     }
     for (y = y0; y < y0 + height; y++) {
@@ -793,7 +794,8 @@ u8 move_peep_from_blueprint(Thing *w)
     return 0;
 }
 
-// NONMATCHING: u8 local slot order, register choice
+// NONMATCHING: frame layout: the target puts a switch byte temporary and the return-value slot
+// between the u8 locals and build ([ebp-0x18], [ebp-0x1c]); here they follow the array
 // FUNCTION: 0x00047ffc
 u8 try_move_peep_to_wall(Thing *w, u8 side)
 {

@@ -123,7 +123,6 @@ void price_all_rooms(u16 type, u8 owner)
     D_001553c8 = 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00024c58
 void delete_room(RoomInfo *room)
 {
@@ -134,8 +133,8 @@ void delete_room(RoomInfo *room)
 
     id = which_room_number(((s16)(room->pos / 128 + room->f2 / 2) << 7) + (s16)(room->pos % 128 + room->f1 / 2));
     for (y = room->pos / 128; y < room->pos / 128 + room->f2; y++) {
-        for (x = room->pos % 128; x < room->f1 + room->pos % 128; x++) {
-            for (t = &thing[map[((s16)y << 7) + (s16)x].first]; t > thing; t = &thing[t->next]) {
+        for (x = room->pos % 128; x < room->pos % 128 + room->f1; x++) {
+            for (t = &thing[map[(s16)x + ((s16)y << 7)].first]; t > thing; t = &thing[t->next]) {
                 if (t->renderer == 6) {
                     fn_00038d04(t, D_001553c7);
                 }
@@ -144,22 +143,22 @@ void delete_room(RoomInfo *room)
     }
     for (y = room->pos / 128; y < room->pos / 128 + room->f2 + 1; y++) {
         for (x = room->pos % 128; x < room->pos % 128 + room->f1 + 1; x++) {
-            if (x < room->f1 + room->pos % 128) {
-                if (map[((s16)y << 7) + (s16)x].unknown3) {
+            if (x < room->pos % 128 + room->f1) {
+                if (map[(s16)x + ((s16)y << 7)].unknown3) {
                     fn_00024a34((y << 7) + x, id, 0);
                 }
             }
             if (y < room->pos / 128 + room->f2) {
-                if (map[((s16)y << 7) + (s16)x].unknown4) {
+                if (map[(s16)x + ((s16)y << 7)].unknown4) {
                     fn_00024a34((y << 7) + x, id, 1);
                 }
             }
-            for (t = &thing[map[((s16)y << 7) + (s16)x].first]; t > thing; t = &thing[t->next]) {
+            for (t = &thing[map[(s16)x + ((s16)y << 7)].first]; t > thing; t = &thing[t->next]) {
                 if (t->renderer == 8 || (t->renderer == 6 && (t->subtype == 0x34 || t->subtype == 0x35))) {
                     switch (t->unknown17) {
                     case 0:
                     case 2:
-                        if (x < room->f1 + room->pos % 128) {
+                        if (x < room->pos % 128 + room->f1) {
                             fn_00038d04(t, D_001553c7);
                         }
                         break;
@@ -297,7 +296,6 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
     }
 }
 
-// NONMATCHING: 31-case switches compile to a repne scasb scan table; the original uses a compare tree
 // FUNCTION: 0x0002583c
 void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
 {
@@ -305,16 +303,16 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
     u16 x;
     u16 y;
 
-    for (x = room->pos % 128; x < room->f1 + room->pos % 128; x++) {
+    for (x = room->pos % 128; x < room->pos % 128 + room->f1; x++) {
         ok = 1;
-        if (map[((s16)(room->pos / 128 + room->f2) << 7) + (s16)x].first) {
-            int n = map[((s16)(room->pos / 128) << 7) + (s16)x].first;
+        if (map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].first) {
+            int n = map[(s16)x + ((s16)(room->pos / 128) << 7)].first;
             if (n > 0 && thing[n].renderer == 3) {
                 ok = 0;
             }
         }
         if (ok) {
-            switch (map[((s16)(room->pos / 128 + room->f2) << 7) + (s16)x].unknown3) {
+            switch (map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3) {
             case 0x7e:
             case 0x80:
             case 0x82:
@@ -322,7 +320,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0x86:
             case 0x88:
             case 0x8a:
-                map[((s16)(room->pos / 128 + room->f2) << 7) + (s16)x].unknown3 = b;
+                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = b;
                 break;
             case 0x50:
             case 0x52:
@@ -332,7 +330,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0x5a:
             case 0x5c:
             case 0x5e:
-                map[((s16)(room->pos / 128 + room->f2) << 7) + (s16)x].unknown3 = a;
+                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = a;
                 break;
             case 0xc3:
             case 0xc5:
@@ -342,7 +340,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0xcd:
             case 0xcf:
             case 0xd1:
-                map[((s16)(room->pos / 128 + room->f2) << 7) + (s16)x].unknown3 = a + 0x73;
+                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = a + 0x73;
                 break;
             case 0x60:
             case 0x62:
@@ -352,21 +350,21 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0x6a:
             case 0x6c:
             case 0x6e:
-                map[((s16)(room->pos / 128 + room->f2) << 7) + (s16)x].unknown3 = a + 0x10;
+                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = a + 0x10;
                 break;
             }
         }
     }
     for (y = room->pos / 128; y < room->pos / 128 + room->f2; y++) {
         ok = 1;
-        if (map[((s16)y << 7) + (s16)(room->f1 + room->pos % 128)].first) {
-            int n = map[((s16)(room->pos / 128) << 7) + (s16)x].first;
+        if (map[((s16)y << 7) + (s16)(room->pos % 128 + room->f1)].first) {
+            int n = map[(s16)x + ((s16)(room->pos / 128) << 7)].first;
             if (n > 0 && thing[n].renderer == 3) {
                 ok = 0;
             }
         }
         if (ok) {
-            switch (map[((s16)y << 7) + (s16)(room->f1 + room->pos % 128)].unknown4) {
+            switch (map[((s16)y << 7) + (s16)(room->pos % 128 + room->f1)].unknown4) {
             case 0x7f:
             case 0x81:
             case 0x83:

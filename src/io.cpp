@@ -286,9 +286,8 @@ int fn_0001c318(s8 port, u32 base, int len)
     return 1;
 }
 
-// NONMATCHING: eax/edx swapped when comparing two table entries (register allocation); the
-// modem_dev.unknown1c index is also evaluated before the player index, where the target
-// orders it as it would a scalar global
+// NONMATCHING: in the else branch the target computes the player index (into ebx) before
+// the modem_dev.unknown1c index; ours computes it second
 // FUNCTION: 0x0001c5e4
 void fn_0001c5e4(void)
 {
@@ -345,7 +344,6 @@ void fn_0001c5e4(void)
     }
 }
 
-// NONMATCHING: eax/edx/ebx choice differs in many indexed loads and stores
 // FUNCTION: 0x0001c7c0
 void process_turn(void)
 {
@@ -410,7 +408,7 @@ void process_turn(void)
             }
             fn_0008debc(D_001202a4);
             if (game_turn == 4) {
-                LbNetwork_LibraryVersion(0);
+                LbNetwork_ChangeExchangeTimeout(0);
             }
             changed = 0;
             for (j = 0; j < 4; j++) {
@@ -461,7 +459,7 @@ void process_turn(void)
             case 0x7e:
                 goto dispatch;
             }
-            continue;
+            goto copy;
         }
     dispatch:
         switch (D_001549d0[i].type) {
@@ -1297,7 +1295,7 @@ void process_turn(void)
                 if (i == player) {
                     play_sound(10, 0x40, mouse_dx, mouse_dy);
                 }
-                create_numfx(0, ++allhosps[i].fd27, (o->y.tile << 7) + o->x.tile, color.unknown9, 0x20);
+                create_numfx(0, ++allhosps[i].fd27, o->x.tile + (o->y.tile << 7), color.unknown9, 0x20);
                 place_litter(o->x.tile + (o->y.tile << 7), (s8)o->owner, 4);
                 remove_thing(o);
             }
@@ -1890,6 +1888,7 @@ void process_turn(void)
         default:
             break;
         }
+    copy:
         D_00154a0c[i].type = D_001549d0[i].type;
         D_00154a0c[i].value = D_001549d0[i].value;
         D_00154a0c[i].arg = D_001549d0[i].arg;

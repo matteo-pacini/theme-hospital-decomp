@@ -430,15 +430,11 @@ void draw_balance_file_explanation(void)
 {
 }
 
-// NONMATCHING: argument evaluation order around the ternary (text copied to a temporary), register choice
 // FUNCTION: 0x0008fc48
 void draw_new_prefs_screen(void)
 {
     s16 x;
     s16 y;
-    char *text;
-    char *name;
-    s32 ty;
 
     LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
@@ -472,13 +468,11 @@ void draw_new_prefs_screen(void)
     y = 0x155;
     y += (0x176 - y - character_height()) >> 1;
     LbTextDraw(x, y, D_001602a0[0x1d]);
-    text = D_001602a0[0x1e];
     LbTextDraw(D_0015f430[122].x + (D_0015f430[122].w - LbTextStringWidth(D_001602a0[0x1e])) / 2,
-               D_0015f430[122].y + (D_0015f430[122].h - LbTextCharHeight('B') * 2) / 2, text);
-    name = balance_file_name;
-    ty = D_0015f430[122].y + (D_0015f430[122].h - LbTextCharHeight('B') * 2) / 2;
+               D_0015f430[122].y + (D_0015f430[122].h - LbTextCharHeight('B') * 2) / 2, D_001602a0[0x1e]);
     LbTextDraw(D_0015f430[122].x + (D_0015f430[122].w - LbTextStringWidth(balance_file_name)) / 2,
-               ty + LbTextCharHeight('B'), name);
+               D_0015f430[122].y + (D_0015f430[122].h - LbTextCharHeight('B') * 2) / 2 + LbTextCharHeight('B'),
+               balance_file_name);
     draw_balance_file_explanation();
 }
 

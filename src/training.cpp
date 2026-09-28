@@ -25,7 +25,6 @@ u8 fn_0002b400(Thing *w);
 
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00042a10
 void doctor_is_trained(Thing *w)
 {
@@ -70,10 +69,10 @@ void doctor_is_trained(Thing *w)
     room = w->room;
     x = old_newrand() % room->f1 + room->pos % 128;
     y = old_newrand() % room->f2 + room->pos / 128;
-    if (map[((s16)y << 7) + (s16)x].first == 0 && can_i_get_to(w, (u16)((y << 7) + x))) {
+    if (map[((s16)y << 7) + (s16)x].first == 0 && can_i_get_to(w, (s16)(x + (y << 7)))) {
         w->state_b = 0x46;
         w->state_a = 0x46;
-        set_complex(w, 0xbe, (u16)((y << 7) + x));
+        set_complex(w, 0xbe, (s16)(x + (y << 7)));
         fn_0003e724(w);
     }
 }
