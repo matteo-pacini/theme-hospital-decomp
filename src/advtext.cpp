@@ -1,5 +1,16 @@
 #include "hosp.h"
 
+struct FrameBox {
+    s16 x0;
+    s16 y0;
+    s16 x1;
+    s16 y1;
+    s16 x;
+    s16 y;
+    s16 w;
+    s16 h;
+};
+
 struct AdvisorLayout {
     u8 unknown0[0x49c];
     s32 f49c;
@@ -34,11 +45,25 @@ extern u8 D_0015f40a;
 extern u8 D_0015f40b;
 extern AdvisorLayout *D_0015f410;
 extern u16 D_00188c74;
+extern u16 D_001581fc;
+extern u8 D_0015831a;
+extern u16 D_00158202;
+extern s16 D_00158204;
+extern s16 D_00158206;
+extern u8 D_00158328;
+extern u8 D_00156910;
+extern u16 D_0012cdd0[];
+extern u16 D_0012cdd4[];
+extern FrameBox D_001567b0;
 char *strncpy(char *dst, const char *src, u32 n);
 char *strncat(char *dst, const char *src, u32 n);
 void fn_000b2124(void);
 void fn_000b2178(u8 n);
 }
+
+extern const u16 advisor_anims[];
+
+void get_advisor(void);
 
 // NONMATCHING: register choice
 // FUNCTION: 0x000b1e10
@@ -145,5 +170,69 @@ void fn_000b2178(u8 n)
         else
             D_0015831e = lines;
         D_0015831f = n - D_0015f40a;
+    }
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000b242c
+void advisor_character(void)
+{
+    CompFrame *f;
+    s32 loop;
+    u32 speed;
+
+    speed = 0;
+    if (D_001581fc)
+        get_advisor();
+    switch (D_0015831a) {
+    case 0:
+        break;
+    case 1:
+    case 4:
+    case 5:
+    case 6:
+    case 8:
+        D_00156910 = 1;
+        speed = 1;
+        loop = 1;
+        D_00158328 = 0;
+        break;
+    case 9:
+    case 10:
+        speed = 4;
+        loop = 1;
+        break;
+    case 2:
+        D_00158328 = 0;
+    case 3:
+        if (saferand() % 50 == 0) {
+            D_0015831a = D_0012cdd0[saferand() % 2];
+            D_00158202 = start[advisor_anims[D_0015831a + 1]].frame;
+        }
+    case 7:
+        speed = 2;
+        loop = 0;
+        break;
+    }
+    if (speed) {
+        draw_a_frame(D_00158202, D_00158204, D_00158206, 0, 0);
+        set_all_refresh_zones_in_window(D_001567b0.x, D_001567b0.y, D_001567b0.x + D_001567b0.w, D_001567b0.y + D_001567b0.h, 3);
+        if (actual_game_turn % speed == 0 && !gamevar.unknown21) {
+            D_00158202 = frame[D_00158202].next;
+            f = &frame[D_00158202];
+            if (loop && (f->flags & 1)) {
+                D_0015831a = D_0012cdd4[D_0015831a];
+                D_00158202 = start[advisor_anims[D_0015831a + 1]].frame;
+            }
+        }
+    }
+}
+
+// FUNCTION: 0x000b2678
+void get_advisor(void)
+{
+    if (D_0015831a == 0) {
+        D_0015831a = 1;
+        D_00158202 = start[advisor_anims[D_0015831a + 1]].frame;
     }
 }
