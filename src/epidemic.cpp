@@ -2,22 +2,18 @@
 
 extern "C" {
 extern s16 D_001553b8;
-extern u8 D_0012ddc5;
 extern u16 D_0015543f;
 extern u16 D_001553f1;
 extern char **D_001602a4;
 extern char D_0014532c[];
-extern u8 D_00158324[];
 extern u16 D_00158190;
 extern u8 D_00158192;
-extern u16 D_001581fe;
 void fn_000c93bf(char *dst, char *src);
 }
 
 extern char D_0014532e[];
 #pragma aux D_0014532e "W?$Wsi0dnew_line$n[]a$:.0$:?epidemic_over$n(xucpnpna)vnx[]a"
 
-// NONMATCHING: register choice (operand load order of the threshold, t/unknown174 store)
 // FUNCTION: 0x000a0040
 void spread_epidemic(Thing *w, u16 n)
 {
@@ -30,7 +26,7 @@ void spread_epidemic(Thing *w, u16 n)
     u8 other;
 
     D_001553b8 = old_newrand() % 100;
-    if (D_001553b8 < 0 || D_001553b8 >= D_0012ddc5 + n / 2)
+    if (D_001553b8 < 0 || D_001553b8 >= gbv.f145 + n / 2)
         return;
     illness = w->style;
     cell = &map[(s16)w->x.tile + ((s16)w->y.tile << 7)];
@@ -99,7 +95,7 @@ void process_epidemic_start_buttons(u8 n)
         break;
     case 1:
         packet_choice_result(11);
-        D_00158324[1] |= 1;
+        advisor.f128_u8a[1] |= 1;
         break;
     }
 }
@@ -116,7 +112,7 @@ void alert_epidemic(u8 illness, u8 owner)
         return;
     get_playercall(2, 0, owner);
     if (owner == player)
-        D_00158324[0] |= 8;
+        advisor.f128_u8a[0] |= 8;
     h->f20b = illness;
     make_a_playercall(3, 1, 0x14, owner);
 }
@@ -181,7 +177,7 @@ u32 epidemic_status(u8 owner)
     }
     if (over) {
         if (owner == player)
-            D_001581fe = 9;
+            advisor.f2 = 9;
         h->f207 = 0;
         h->f20d = 0;
         h->f20e = 1;

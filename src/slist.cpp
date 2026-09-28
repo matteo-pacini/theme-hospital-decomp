@@ -1,37 +1,5 @@
 #include "hosp.h"
 
-struct SlistRect {
-    s32 x;
-    s32 y;
-    s32 w;
-    s32 h;
-};
-
-struct SlistLayout {
-    u8 unknown0[0x3d0];
-    SlistRect titles[3];
-    SlistRect icons[7];
-    SlistRect gauge_a[10];
-    SlistRect gauge_b[10];
-    SlistRect gauge_c[10];
-    SlistRect overall[3];
-    SlistRect rows[10];
-    SlistRect scroll;
-    SlistRect bar;
-    SlistRect cover[2];
-};
-
-struct SlistText {
-    u8 unknown0[0x390];
-    Point num[10];
-    Point name[10];
-    Point salary[10];
-    Point counts[4];
-    Point unknown4a0;
-    Point raise;
-    Point bonus;
-};
-
 struct SlistArea {
     u16 x0;
     u16 y0;
@@ -64,10 +32,6 @@ extern u32 D_00188c38;
 extern u16 D_00188c74;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 D_00155401;
-extern SlistArea *D_0015f438;
-extern SlistLayout *D_0015f430;
-extern SlistText *D_0015f434;
-extern Button *D_0015f43c;
 extern u8 D_00155449;
 extern u16 D_00155e3a;
 extern u8 D_00155e18;
@@ -79,16 +43,12 @@ extern volatile s16 D_00188c6c, D_00188c70;
 extern char **D_001602f4;
 extern char D_001209c8[], D_001209cb[], D_001209d4[], D_001209d8[], D_001209db[];
 extern char D_001209de[], D_001209e2[];
-extern TbScreenMode D_0015f3f4, D_0015f3f5;
-extern u8 *D_0015f410;
-extern u16 D_0012ddc6, D_0012ddc8, D_0012ddca;
 extern u8 D_001553f0;
 extern u8 D_001553c8;
 extern Slot D_001581b2[];
 extern char D_00155ced[];
 extern u16 D_00155c64;
 extern char D_0015544e[];
-extern SlistMenuItem *D_0015f420;
 }
 
 u16 get_slist_staff(const u8 dir);
@@ -129,7 +89,7 @@ void display_slist(void)
         slist.unknown0 = 0;
         D_00155401 = 1;
         close_irequesters();
-        open_new_window(0, 0, 0, D_0015f438->x0, D_0015f438->y0, D_0015f438->x1, D_0015f438->y1);
+        open_new_window(0, 0, 0, resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y0, resvars.f44_SlistAreap->x1, resvars.f44_SlistAreap->y1);
         window.unknown2eb = window.unknown2ec - 1;
         D_00155449 = 0;
         if (D_00155e3a) {
@@ -336,8 +296,8 @@ void draw_slist_staff(const u16 selected)
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     for (row = 0; row < 3; row++) {
         D_00188c74 = 0x100;
-        LbTextSetWindow(D_0015f430->titles[row].x, D_0015f430->titles[row].y, D_0015f430->titles[row].w, D_0015f430->titles[row].h);
-        LbTextDraw(0, (D_0015f430->titles[row].h - height) / 2, D_001602f4[row + 2]);
+        LbTextSetWindow(resvars.f3c_Boxp[row + 61].x, resvars.f3c_Boxp[row + 61].y, resvars.f3c_Boxp[row + 61].w, resvars.f3c_Boxp[row + 61].h);
+        LbTextDraw(0, (resvars.f3c_Boxp[row + 61].h - height) / 2, D_001602f4[row + 2]);
         D_00188c74 = 0;
         LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     }
@@ -354,7 +314,7 @@ void draw_slist_staff(const u16 selected)
                 || (w->subtype == 2 && (D_00155401 & 4))) {
                 if (n >= D_00155449 * 10 && n < (D_00155449 + 1) * 10) {
                     set_font_from_cache(1);
-                    if (over_hotspot(mouse_dx, mouse_dy, D_0015f430->rows[row].x, D_0015f430->rows[row].y, D_0015f430->rows[row].w, D_0015f430->rows[row].h)) {
+                    if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
                         if (D_00155e18 != row + D_00155449 * 10 + 1)
                             play_sound(10, 0x44, -1, -1);
                         set_font_from_cache(2);
@@ -362,23 +322,23 @@ void draw_slist_staff(const u16 selected)
                     }
                     if (selected == (u16)(w - thing)) {
                         set_font_from_cache(2);
-                        draw_frame(D_0015f430->rows[row].x, D_0015f430->rows[row].y - 1, D_0015f430->rows[row].w, D_0015f430->rows[row].h, (u16)color.unknownD);
+                        draw_frame(resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y - 1, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h, (u16)color.unknownD);
                         draw_slist_button_overlays(w);
                     }
                     sprintf(buf, D_001209c8, n + 1);
-                    LbTextDraw(D_0015f434->num[row].x, D_0015f434->num[row].y, buf);
+                    LbTextDraw(resvars.f40[row + 114].x, resvars.f40[row + 114].y, buf);
                     sprintf(buf, D_001209cb, w->f84, staff_names_1[w->f85], staff_names_2[w->f86]);
-                    LbTextDraw(D_0015f434->name[row].x, D_0015f434->name[row].y, buf);
+                    LbTextDraw(resvars.f40[row + 124].x, resvars.f40[row + 124].y, buf);
                     sprintf(buf, D_001209d4, w->unknown108);
-                    LbTextDraw(D_0015f434->salary[row].x, D_0015f434->salary[row].y, buf);
-                    draw_gauge(w->unknown81s, D_0015f430->gauge_a[row].x, D_0015f430->gauge_a[row].y, D_0015f430->gauge_a[row].w,
-                               &screen_sprites_tab_start[D_0015f430->gauge_a[row].h], 100, 0, 100, 1);
-                    draw_gauge(w->f78, D_0015f430->gauge_b[row].x, D_0015f430->gauge_b[row].y, D_0015f430->gauge_b[row].w,
-                               &screen_sprites_tab_start[D_0015f430->gauge_b[row].h], 1000, 0, 1000, 0);
-                    draw_gauge(w->unknown126, D_0015f430->gauge_c[row].x, D_0015f430->gauge_c[row].y, D_0015f430->gauge_c[row].w,
-                               &screen_sprites_tab_start[D_0015f430->gauge_c[row].h], 1000, 30, 970, 1);
+                    LbTextDraw(resvars.f40[row + 134].x, resvars.f40[row + 134].y, buf);
+                    draw_gauge(w->unknown81s, resvars.f3c_Boxp[row + 71].x, resvars.f3c_Boxp[row + 71].y, resvars.f3c_Boxp[row + 71].w,
+                               &screen_sprites_tab_start[resvars.f3c_Boxp[row + 71].h], 100, 0, 100, 1);
+                    draw_gauge(w->f78, resvars.f3c_Boxp[row + 81].x, resvars.f3c_Boxp[row + 81].y, resvars.f3c_Boxp[row + 81].w,
+                               &screen_sprites_tab_start[resvars.f3c_Boxp[row + 81].h], 1000, 0, 1000, 0);
+                    draw_gauge(w->unknown126, resvars.f3c_Boxp[row + 91].x, resvars.f3c_Boxp[row + 91].y, resvars.f3c_Boxp[row + 91].w,
+                               &screen_sprites_tab_start[resvars.f3c_Boxp[row + 91].h], 1000, 30, 970, 1);
                     if (D_00188c7e) {
-                        if (over_hotspot(mouse_dx, mouse_dy, D_0015f430->rows[row].x, D_0015f430->rows[row].y, D_0015f430->rows[row].w, D_0015f430->rows[row].h)) {
+                        if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
                             if ((u16)(w - thing) != slist.unknown0)
                                 play_sound(10, 0x43, -1, -1);
                             slist.unknown0 = w - thing;
@@ -391,15 +351,15 @@ void draw_slist_staff(const u16 selected)
         }
     }
     if (row < 10)
-        LbDrawBox(D_0015f430->rows[row].x, D_0015f430->rows[row].y, D_0015f430->rows[row].w, (10 - row) * D_0015f430->rows[row].h, 0x77);
+        LbDrawBox(resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, (10 - row) * resvars.f3c_Boxp[row + 104].h, 0x77);
     D_00155e13 = row;
     for (pages = 0; staff_on_page(pages); pages++)
         ;
     if (pages > 1) {
         u8 pos;
 
-        pos = D_0015f430->scroll.h / (pages - 1) * D_00155449;
-        reqspr_draw(D_0015f430->scroll.x, pos + D_0015f430->scroll.y, &screen_sprites_tab_start[D_0015f430->scroll.w]);
+        pos = resvars.f3c_Boxp[114].h / (pages - 1) * D_00155449;
+        reqspr_draw(resvars.f3c_Boxp[114].x, pos + resvars.f3c_Boxp[114].y, &screen_sprites_tab_start[resvars.f3c_Boxp[114].w]);
     }
 }
 
@@ -421,26 +381,26 @@ void draw_slist_window(const u16 id)
     w = &thing[id];
     if (!id)
         return;
-    if (D_0015f3f5 == SCREEN_MODE_13) {
+    if (resvars.f1 == SCREEN_MODE_13) {
         give_absolute_xy_of_cell_at_column_row(w->x.tile, w->y.tile);
-        if (D_0015f3f4 == SCREEN_MODE_13)
+        if (resvars.f0 == SCREEN_MODE_13)
             dx = ((w->x.frac - w->y.frac) >> 3) + 32;
         else
             dx = ((w->x.frac - w->y.frac) >> 4) + 16;
-        window.f0[window.unknown2ec - 1] = dx + (info.unknown54 - *(s32 *)&D_0015f410[0x558]);
-        if (D_0015f3f4 == SCREEN_MODE_13)
+        window.f0[window.unknown2ec - 1] = dx + (info.unknown54 - *(s32 *)&resvars.f1c_u8p[0x558]);
+        if (resvars.f0 == SCREEN_MODE_13)
             dy = (w->y.frac + w->x.frac) >> 4;
         else
             dy = (w->y.frac + w->x.frac) >> 5;
-        window.fc[window.unknown2ec - 1] = info.unknown58 - *(s32 *)&D_0015f410[0x55c] + dy;
+        window.fc[window.unknown2ec - 1] = info.unknown58 - *(s32 *)&resvars.f1c_u8p[0x55c] + dy;
         save_x = window.unknown2c3;
         save_y = window.unknown2c7;
         save_w = window.unknown2cb;
         save_h = window.unknown2cf;
-        window.unknown2c3 = D_0015f438->x0;
-        window.unknown2c7 = D_0015f438->y0;
-        window.unknown2cb = D_0015f438->x1;
-        window.unknown2cf = D_0015f438->y1;
+        window.unknown2c3 = resvars.f44_SlistAreap->x0;
+        window.unknown2c7 = resvars.f44_SlistAreap->y0;
+        window.unknown2cb = resvars.f44_SlistAreap->x1;
+        window.unknown2cf = resvars.f44_SlistAreap->y1;
         draw_window_not_using_bscreen(window.unknown2ec - 1);
         window.unknown2c3 = save_x;
         window.unknown2c7 = save_y;
@@ -450,37 +410,37 @@ void draw_slist_window(const u16 id)
     LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c74 = 0;
-    draw_face((Picture *)&thing[id].f87, D_0015f438->face_x, D_0015f438->face_y);
+    draw_face((Picture *)&thing[id].f87, resvars.f44_SlistAreap->face_x, resvars.f44_SlistAreap->face_y);
     if (w->subtype == 1 || w->subtype == 4) {
         i = 0;
         if ((w->unknown124 & 8) && !(w->unknown124 & 0x80))
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h]);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
         if ((w->unknown124 & 0x10) && !(w->unknown124 & 0x80) && !(w->unknown124 & 8))
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h]);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
         if (w->unknown124 & 0x80)
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h]);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
         if (w->unknown124 & 0x20) {
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h]);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         } else if (w->unknown148[3]) {
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h - 3]);
-            draw_slist_training_bar(D_0015f430->icons[i].x, D_0015f430->icons[i].y, w->unknown148[3], D_0012ddc6);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
+            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, w->unknown148[3], gbv.f146);
         }
         i++;
         if (w->unknown124 & 0x40) {
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h]);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         } else if (w->unknown148[4]) {
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h - 3]);
-            draw_slist_training_bar(D_0015f430->icons[i].x, D_0015f430->icons[i].y, w->unknown148[4], D_0012ddc8);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
+            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, w->unknown148[4], gbv.f148);
         }
         i++;
         if (w->unknown124 & 0x100) {
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h]);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         } else if (w->unknown148[5]) {
-            reqspr_draw(D_0015f430->icons[i].x, D_0015f430->icons[i].y, &screen_sprites_tab_start[D_0015f430->icons[i].h - 3]);
-            draw_slist_training_bar(D_0015f430->icons[i].x, D_0015f430->icons[i].y, w->unknown148[5], D_0012ddca);
+            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
+            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, w->unknown148[5], gbv.f14a);
         }
     }
     ability = w->f8d;
@@ -490,7 +450,7 @@ void draw_slist_window(const u16 id)
         ability = 0;
     count = ability * 4200 / 1000;
     for (j = 0; j < count; j++)
-        reqspr_draw(D_0015f430->icons[6].x + j, D_0015f430->icons[6].y, &screen_sprites_tab_start[D_0015f430->icons[6].h]);
+        reqspr_draw(resvars.f3c_Boxp[70].x + j, resvars.f3c_Boxp[70].y, &screen_sprites_tab_start[resvars.f3c_Boxp[70].h]);
 }
 
 // FUNCTION: 0x00092e88
@@ -531,14 +491,14 @@ void draw_slist_overall(void)
         happiness /= count;
         tiredness /= count;
         count = 0;
-        draw_gauge(happiness, D_0015f430->overall[count].x, D_0015f430->overall[count].y, D_0015f430->overall[count].w,
-                   &screen_sprites_tab_start[D_0015f430->overall[count].h], 100, 0, 100, 1);
+        draw_gauge(happiness, resvars.f3c_Boxp[count + 101].x, resvars.f3c_Boxp[count + 101].y, resvars.f3c_Boxp[count + 101].w,
+                   &screen_sprites_tab_start[resvars.f3c_Boxp[count + 101].h], 100, 0, 100, 1);
         count++;
-        draw_gauge(tiredness, D_0015f430->overall[count].x, D_0015f430->overall[count].y, D_0015f430->overall[count].w,
-                   &screen_sprites_tab_start[D_0015f430->overall[count].h], 1000, 0, 1000, 0);
+        draw_gauge(tiredness, resvars.f3c_Boxp[count + 101].x, resvars.f3c_Boxp[count + 101].y, resvars.f3c_Boxp[count + 101].w,
+                   &screen_sprites_tab_start[resvars.f3c_Boxp[count + 101].h], 1000, 0, 1000, 0);
         count++;
-        draw_gauge(ability, D_0015f430->overall[count].x, D_0015f430->overall[count].y, D_0015f430->overall[count].w,
-                   &screen_sprites_tab_start[D_0015f430->overall[count].h], 1000, 30, 970, 1);
+        draw_gauge(ability, resvars.f3c_Boxp[count + 101].x, resvars.f3c_Boxp[count + 101].y, resvars.f3c_Boxp[count + 101].w,
+                   &screen_sprites_tab_start[resvars.f3c_Boxp[count + 101].h], 1000, 30, 970, 1);
     }
 }
 
@@ -548,13 +508,13 @@ void process_slist_panel(void)
     u8 i;
 
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i + 0x30].width != 0 && D_0015f43c[i + 0x30].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0x30].x, D_0015f43c[i + 0x30].y, D_0015f43c[i + 0x30].width, D_0015f43c[i + 0x30].height)) {
-                D_0015f43c[i + 0x30].callback(i);
-                reqspr_draw(D_0015f43c[i + 0x30].unknownC, D_0015f43c[i + 0x30].unknownE, &screen_sprites_tab_start[D_0015f43c[i + 0x30].sprite]);
+        for (i = 0; resvars.f48[i + 0x30].width != 0 && resvars.f48[i + 0x30].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x30].x, resvars.f48[i + 0x30].y, resvars.f48[i + 0x30].width, resvars.f48[i + 0x30].height)) {
+                resvars.f48[i + 0x30].callback(i);
+                reqspr_draw(resvars.f48[i + 0x30].unknownC, resvars.f48[i + 0x30].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0x30].sprite]);
             }
         }
-        if (over_hotspot(D_00188c6c, D_00188c70, D_0015f438->x0, D_0015f438->y0, D_0015f438->x1 - D_0015f438->x0, D_0015f438->y1 - D_0015f438->y0)) {
+        if (over_hotspot(D_00188c6c, D_00188c70, resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y0, resvars.f44_SlistAreap->x1 - resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y1 - resvars.f44_SlistAreap->y0)) {
             if (slist.unknown0) {
                 D_001553f0 = 2;
                 D_001581b2[2].value = slist.unknown0;
@@ -569,9 +529,9 @@ void process_slist_panel(void)
             draw_slist_button_overlays(&thing[slist.unknown0]);
     }
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 0x30].width != 0 && D_0015f43c[i + 0x30].height != 0; i++) {
-            if (over_hotspot(mouse_dx, mouse_dy, D_0015f43c[i + 0x30].x, D_0015f43c[i + 0x30].y, D_0015f43c[i + 0x30].width, D_0015f43c[i + 0x30].height)) {
-                reqspr_draw(D_0015f43c[i + 0x30].unknownC, D_0015f43c[i + 0x30].unknownE, &screen_sprites_tab_start[D_0015f43c[i + 0x30].sprite]);
+        for (i = 0; resvars.f48[i + 0x30].width != 0 && resvars.f48[i + 0x30].height != 0; i++) {
+            if (over_hotspot(mouse_dx, mouse_dy, resvars.f48[i + 0x30].x, resvars.f48[i + 0x30].y, resvars.f48[i + 0x30].width, resvars.f48[i + 0x30].height)) {
+                reqspr_draw(resvars.f48[i + 0x30].unknownC, resvars.f48[i + 0x30].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0x30].sprite]);
                 break;
             }
         }
@@ -724,13 +684,13 @@ void draw_slist_nums(void)
     char buf[100];
 
     if (D_00155401 & 1)
-        reqspr_draw(D_0015f43c[0x30].unknownC, D_0015f43c[0x30].unknownE, &screen_sprites_tab_start[D_0015f43c[0x30].sprite]);
+        reqspr_draw(resvars.f48[0x30].unknownC, resvars.f48[0x30].unknownE, &screen_sprites_tab_start[resvars.f48[0x30].sprite]);
     else if (D_00155401 & 2)
-        reqspr_draw(D_0015f43c[0x31].unknownC, D_0015f43c[0x31].unknownE, &screen_sprites_tab_start[D_0015f43c[0x31].sprite]);
+        reqspr_draw(resvars.f48[0x31].unknownC, resvars.f48[0x31].unknownE, &screen_sprites_tab_start[resvars.f48[0x31].sprite]);
     else if (D_00155401 & 8)
-        reqspr_draw(D_0015f43c[0x32].unknownC, D_0015f43c[0x32].unknownE, &screen_sprites_tab_start[D_0015f43c[0x32].sprite]);
+        reqspr_draw(resvars.f48[0x32].unknownC, resvars.f48[0x32].unknownE, &screen_sprites_tab_start[resvars.f48[0x32].sprite]);
     else if (D_00155401 & 4)
-        reqspr_draw(D_0015f43c[0x33].unknownC, D_0015f43c[0x33].unknownE, &screen_sprites_tab_start[D_0015f43c[0x33].sprite]);
+        reqspr_draw(resvars.f48[0x33].unknownC, resvars.f48[0x33].unknownE, &screen_sprites_tab_start[resvars.f48[0x33].sprite]);
     for (i = 0; i < 4; i++)
         counts[i] = 0;
     for (w = thing + 1; w < end_things; w++) {
@@ -752,42 +712,42 @@ void draw_slist_nums(void)
     D_00188c74 = 0;
     for (i = 0; i < 4; i++) {
         sprintf(buf, D_001209db, counts[i]);
-        LbTextDraw(D_0015f434->counts[i].x, D_0015f434->counts[i].y, buf);
+        LbTextDraw(resvars.f40[i + 144].x, resvars.f40[i + 144].y, buf);
     }
 }
 
 // FUNCTION: 0x00093eac
 void draw_slist_coverup(void)
 {
-    LbDrawBox(D_0015f430->cover[0].x, D_0015f430->cover[0].y, D_0015f430->cover[0].w, D_0015f430->cover[0].h, 0x76);
-    LbDrawBox(D_0015f430->cover[1].x, D_0015f430->cover[1].y, D_0015f430->cover[1].w, D_0015f430->cover[1].h, 0x76);
+    LbDrawBox(resvars.f3c_Boxp[116].x, resvars.f3c_Boxp[116].y, resvars.f3c_Boxp[116].w, resvars.f3c_Boxp[116].h, 0x76);
+    LbDrawBox(resvars.f3c_Boxp[117].x, resvars.f3c_Boxp[117].y, resvars.f3c_Boxp[117].w, resvars.f3c_Boxp[117].h, 0x76);
 }
 
 // FUNCTION: 0x00093f38
 void slist_salary_help_if_present(void)
 {
-    if (D_0015f420[D_00155c64].row < D_00155e13)
+    if (resvars.f2c_SlistMenuItemp[D_00155c64].row < D_00155e13)
         fn_000bbff0(D_0015544e, help_text[50]);
 }
 
 // FUNCTION: 0x00093f88
 void slist_happiness_help_if_present(void)
 {
-    if (D_0015f420[D_00155c64].row < D_00155e13)
+    if (resvars.f2c_SlistMenuItemp[D_00155c64].row < D_00155e13)
         fn_000bbff0(D_0015544e, help_text[51]);
 }
 
 // FUNCTION: 0x00093fd8
 void slist_tiredness_help_if_present(void)
 {
-    if (D_0015f420[D_00155c64].row < D_00155e13)
+    if (resvars.f2c_SlistMenuItemp[D_00155c64].row < D_00155e13)
         fn_000bbff0(D_0015544e, help_text[52]);
 }
 
 // FUNCTION: 0x00094028
 void slist_ability_help_if_present(void)
 {
-    if (D_0015f420[D_00155c64].row < D_00155e13)
+    if (resvars.f2c_SlistMenuItemp[D_00155c64].row < D_00155e13)
         fn_000bbff0(D_0015544e, help_text[53]);
 }
 
@@ -795,10 +755,9 @@ void slist_ability_help_if_present(void)
 void slist_help_if_doctor(void)
 {
     if (D_00155401 & 1)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c_SlistMenuItemp[D_00155c64].text]);
 }
 
-// NONMATCHING: pct * 100 is computed before the divisor global is loaded in the target; here after
 // FUNCTION: 0x000940cc
 void slist_help_if_surgeon(void)
 {
@@ -807,18 +766,17 @@ void slist_help_if_surgeon(void)
 
     w = &thing[slist.unknown0];
     if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x20)) {
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c_SlistMenuItemp[D_00155c64].text]);
     } else {
         pct = w->unknown148[3];
         if (pct != 0) {
-            pct = pct * 100 / D_0012ddc6;
+            pct = pct * 100 / gbv.f146;
             pct > 100 ? pct = 100 : 0;
             sprintf(D_0015544e, help_text[66], pct);
         }
     }
 }
 
-// NONMATCHING: pct * 100 is computed before the divisor global is loaded in the target; here after
 // FUNCTION: 0x000941bc
 void slist_help_if_shrink(void)
 {
@@ -827,18 +785,17 @@ void slist_help_if_shrink(void)
 
     w = &thing[slist.unknown0];
     if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x40)) {
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c_SlistMenuItemp[D_00155c64].text]);
     } else {
         pct = w->unknown148[4];
         if (pct != 0) {
-            pct = pct * 100 / D_0012ddc8;
+            pct = pct * 100 / gbv.f148;
             pct > 100 ? pct = 100 : 0;
             sprintf(D_0015544e, help_text[67], pct);
         }
     }
 }
 
-// NONMATCHING: pct * 100 is computed before the divisor global is loaded in the target; here after
 // FUNCTION: 0x000942ac
 void slist_help_if_researcher(void)
 {
@@ -847,11 +804,11 @@ void slist_help_if_researcher(void)
 
     w = &thing[slist.unknown0];
     if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x100)) {
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c_SlistMenuItemp[D_00155c64].text]);
     } else {
         pct = w->unknown148[5];
         if (pct != 0) {
-            pct = pct * 100 / D_0012ddca;
+            pct = pct * 100 / gbv.f14a;
             pct > 100 ? pct = 100 : 0;
             sprintf(D_0015544e, help_text[68], pct);
         }
@@ -865,9 +822,9 @@ void draw_slist_button_overlays(Thing *w)
 
     set_font_from_cache(1);
     sprintf(buf, D_001209de, w->unknown108 / 10 + w->unknown108);
-    LbTextDraw(D_0015f434->raise.x, D_0015f434->raise.y, buf);
+    LbTextDraw(resvars.f40[149].x, resvars.f40[149].y, buf);
     sprintf(buf, D_001209e2, w->unknown108 / 10);
-    LbTextDraw(D_0015f434->bonus.x, D_0015f434->bonus.y, buf);
+    LbTextDraw(resvars.f40[150].x, resvars.f40[150].y, buf);
 }
 
 // FUNCTION: 0x00094458
@@ -875,8 +832,8 @@ void draw_slist_training_bar(u16 x, u16 y, u16 value, u16 max)
 {
     u8 i;
 
-    for (i = 0; i < value / (max / D_0015f430->bar.w); i++) {
-        if (i < D_0015f430->bar.w)
-            reqspr_draw(x + D_0015f430->bar.x + i, y + D_0015f430->bar.y, &screen_sprites_tab_start[13]);
+    for (i = 0; i < value / (max / resvars.f3c_Boxp[115].w); i++) {
+        if (i < resvars.f3c_Boxp[115].w)
+            reqspr_draw(x + resvars.f3c_Boxp[115].x + i, y + resvars.f3c_Boxp[115].y, &screen_sprites_tab_start[13]);
     }
 }

@@ -30,16 +30,12 @@ extern "C" {
 
 extern FrameBox D_001567b0;
 extern u16 D_00188c74;
-extern u8 D_0015536d;
-extern TbScreenMode D_0015f3f4;
 extern s32 D_00156911;
 extern u8 D_00155e0a;
 extern u8 D_00188c85;
-extern TbScreenMode D_0015f3f5;
 extern u8 D_00155e45;
 extern TbSprite *D_00153f5c;
 extern char D_001202fc[];
-extern IconScreen *D_0015f410;
 extern s32 D_00188c40;
 extern s32 D_00188c48;
 extern u8 D_00130280[];
@@ -91,12 +87,12 @@ void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, cons
             }
         }
     }
-    if (f->sound && D_0015536d == 0)
+    if (f->sound && gamevar.f12d == 0)
         play_sound(10, f->sound, x, y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -154,7 +150,7 @@ void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -253,16 +249,16 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             }
         }
     }
-    if (f->sound && D_0015536d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
+    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
-    if (D_0015536d == 0)
+    if (gamevar.f12d == 0)
         w->unknown23 = f->sound;
     if (icon)
         icon_draw_from_special_id_frame(w->unknown27, x, y, f->width / 2 + D_001567b0.x, D_001567b0.y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -428,14 +424,14 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                     phase);
     }
     FillBoxInPixBuffer(0xfe, D_001567b0.x + 0x3a, D_001567b0.y + 0x74, f->width, f->length);
-    if (f->sound && D_0015536d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
+    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
-    if (D_0015536d == 0)
+    if (gamevar.f12d == 0)
         w->unknown23 = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -458,7 +454,6 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
     D_00155e0a = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002f47c
 void fn_0002f47c(Thing *w, s16 x, s16 y)
 {
@@ -484,9 +479,9 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
                             if (w->palette)
-                                icon_draw_from_special_id_frame(w->unknown27, x, y, -(spr->width / 2 + (elem->x - 0x8d)), (s16)(elem->y - 0xca));
+                                icon_draw_from_special_id_frame(w->unknown27, x, y, -((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                             else
-                                icon_draw_from_special_id_frame(w->unknown27, x, y, spr->width / 2 + (elem->x - 0x8d), (s16)(elem->y - 0xca));
+                                icon_draw_from_special_id_frame(w->unknown27, x, y, (elem->x - 0x8d) + spr->width / 2, (s16)(elem->y - 0xca));
                         }
                     }
                 } else {
@@ -523,14 +518,14 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
             }
         }
     }
-    if (f->sound && D_0015536d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
+    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
-    if (D_0015536d == 0)
+    if (gamevar.f12d == 0)
         w->unknown23 = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -587,14 +582,14 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         D_00188c40 = old_top;
         D_00188c48 = old_height;
         D_00188c74 = 0;
-        if (f->sound && D_0015536d == 0 && (sfx_details[f->sound].unknownC || w->unknown23 != f->sound))
+        if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->unknown23 != f->sound))
             play_sound((u32)w, f->sound, x, y);
-        if (D_0015536d == 0)
+        if (gamevar.f12d == 0)
             w->unknown23 = f->sound;
         D_001567b0.x += x;
         D_001567b0.y += y;
         D_001567b0.w = f->width;
-        if (D_0015f3f4 == SCREEN_MODE_13) {
+        if (resvars.f0 == SCREEN_MODE_13) {
             D_001567b0.h = f->length + D_00156911;
         } else {
             D_001567b0.w /= 2;
@@ -653,14 +648,14 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
         DrawPixBuffer(o->unknown104, 0, 0, 0x40, 0x40);
         FillPixBuffer(0xfe);
         InitPixBuffer(0, 0, 0xb4, 0xb4, 0, 0);
-        if (f->sound && D_0015536d == 0 && (sfx_details[f->sound].unknownC || w->unknown23 != f->sound))
+        if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->unknown23 != f->sound))
             play_sound((u32)w, f->sound, x, y);
-        if (D_0015536d == 0)
+        if (gamevar.f12d == 0)
             w->unknown23 = f->sound;
         D_001567b0.x += x;
         D_001567b0.y += y;
         D_001567b0.w = f->width;
-        if (D_0015f3f4 == SCREEN_MODE_13) {
+        if (resvars.f0 == SCREEN_MODE_13) {
             D_001567b0.h = f->length + D_00156911;
         } else {
             D_001567b0.w /= 2;
@@ -718,12 +713,12 @@ void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, con
             }
         }
     }
-    if (f->sound && D_0015536d == 0)
+    if (f->sound && gamevar.f12d == 0)
         play_sound(10, f->sound, x, y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -771,14 +766,14 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
         break;
     }
     full_draw_frame(w, w->sprite, x, y, colour, hidden, w->palette);
-    if (f->sound && D_0015536d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
+    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
-    if (D_0015536d == 0)
+    if (gamevar.f12d == 0)
         w->unknown23 = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -870,7 +865,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -947,7 +942,7 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -1042,7 +1037,6 @@ void draw_text_on_map(char *text, const u8 colour, const s32 x, const s32 y)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00031874
 void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, const s16 dx, const s16 dy)
 {
@@ -1057,12 +1051,13 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
         if (spr > sprite) {
             D_00188c74 = elem->flags & 0xf;
-            LbSpriteDraw(x + dx - spr->width / 2, elem->y - 0xca + (y + dy) - f->length - D_0015f410->unknown4fc, spr);
+            LbSpriteDraw(x + dx - spr->width / 2, (y + dy) + (elem->y - 0xca) - f->length - resvars.f1c_IconScreenp->unknown4fc, spr);
             if (D_001567b0.x > dx - spr->width / 2)
                 D_001567b0.x = dx - spr->width / 2;
-            if (D_001567b0.y > dy - f->length - D_0015f410->unknown4fc)
-                D_001567b0.y = dy - f->length - D_0015f410->unknown4fc;
-            D_00156911 = D_0015f410->unknown4fc + f->length;
+            if (D_001567b0.y > dy - f->length - resvars.f1c_IconScreenp->unknown4fc) {
+                D_001567b0.y = dy - f->length - resvars.f1c_IconScreenp->unknown4fc;
+                D_00156911 = resvars.f1c_IconScreenp->unknown4fc + f->length;
+            }
         }
     }
     D_00188c74 = 0;
@@ -1086,15 +1081,15 @@ void draw_money(s32 x, s32 y, s32 value)
     D_001567b0.y = y;
     D_001567b0.w = D_00153f5c[1].width;
     D_001567b0.h = D_00153f5c[1].height;
-    if (D_0015f3f5 == SCREEN_MODE_13 && !D_00155e45) {
+    if (resvars.f1 == SCREEN_MODE_13 && !D_00155e45) {
         sprintf(buf, D_001202fc, value);
         width = -1;
         for (p = buf; *p; p++) {
             digit = *p - '0';
             width += D_00153f5c[digit + 2].width + 1;
         }
-        px = x + D_0015f410->unknown568 + (D_0015f410->unknown560 - width) / 2;
-        py = y + D_0015f410->unknown564;
+        px = x + resvars.f1c_IconScreenp->unknown568 + (resvars.f1c_IconScreenp->unknown560 - width) / 2;
+        py = y + resvars.f1c_IconScreenp->unknown564;
         for (p = buf; *p; p++) {
             digit = *p - '0';
             LbSpriteDraw(px, py, &D_00153f5c[digit + 2]);

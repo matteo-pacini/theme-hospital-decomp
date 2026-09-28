@@ -6,10 +6,6 @@ void fn_00041a08(Thing *w, u16 arg);
 extern char D_001203a0[];
 extern char D_001203e0[];
 u8 fn_0003e6c0(Thing *w);
-extern u16 D_0015f8d4;
-extern s16 D_0012dd7c[];
-extern u8 D_0012ddcc;
-extern u8 D_0012ddce;
 }
 
 struct Complex {
@@ -1068,10 +1064,10 @@ void complex_success(Thing *w, u8 kind)
 {
     switch (kind) {
     case 2:
-        D_0015f8d4++;
+        award_counts.f138++;
         reset_icon_value(w, 12);
         w->unknown134 = 100;
-        w->unknown81 += D_0012dd7c[11];
+        w->unknown81 += gbv.f112;
         w->unknown128 += 10;
         w->unknown136 += 10;
         if ((s16)w->unknown83w > 60) {
@@ -1089,9 +1085,9 @@ void complex_success(Thing *w, u8 kind)
         break;
     case 6:
         reset_icon_value(w, 11);
-        w->unknown81 += D_0012dd7c[12];
+        w->unknown81 += gbv.f114;
         if (w->style == 0x1d) {
-            w->unknown136 = D_0012dd7c[13] / 2;
+            w->unknown136 = gbv.f116 / 2;
         } else {
             w->unknown136 = 0;
         }
@@ -1114,13 +1110,13 @@ void complex_success(Thing *w, u8 kind)
         research_contribution(w, 100);
         break;
     case 18:
-        rest_staff(w, *(s16 *)&expertise[58].unknown10[4]);
+        rest_staff(w, gbv.fdc);
         break;
     case 20:
-        rest_staff(w, *(s16 *)&expertise[58].unknown10[8]);
+        rest_staff(w, gbv.fe0);
         break;
     case 22:
-        rest_staff(w, *(s16 *)&expertise[58].unknown10[6]);
+        rest_staff(w, gbv.fde);
         break;
     case 24:
         thing[w->unknown69].mode++;
@@ -1178,8 +1174,8 @@ void interrupt_complex(Thing *w)
         } else {
             set_complex(w, 0xa0, 0);
             process_person_complex(w);
-            w->unknown18 = D_0012ddcc;
-            w->anim_speed = D_0012ddce;
+            w->unknown18 = gbv.f14c;
+            w->anim_speed = gbv.f14e;
         }
     }
 }

@@ -4,7 +4,6 @@ extern "C" {
 
 extern Event D_001549d0[];
 extern u16 D_00155419, D_0015541b;
-extern u16 D_0015537a;
 extern u32 D_001603d0;
 extern RoomInfo *D_001603d4;
 
@@ -221,7 +220,7 @@ void process_queue_button(u8 n)
         break;
     case 6:
         if (D_0015541b) {
-            D_0015537a = get_real_person_from_room(D_00155419, D_0015541b);
+            gamevar.f13a = get_real_person_from_room(D_00155419, D_0015541b);
             que.unknown2 = 3;
         }
         break;

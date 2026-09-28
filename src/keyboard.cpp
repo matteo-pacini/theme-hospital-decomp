@@ -26,22 +26,16 @@ void fn_00074220(u8 a, u8 b)
 
 
 extern "C" {
-extern u16 D_0015536e;
 extern u8 D_00155c68;
 extern u8 D_00155402;
 extern u8 D_00155404;
 extern Event D_001549d0[];
-extern u8 D_001553b4;
 extern u16 D_001553e0;
 extern u8 D_001553c7;
 extern u8 D_00155e46;
 extern char D_00155ced[];
 extern char D_001205f0[];
 extern char D_001205f3[];
-extern TbScreenMode D_0015f3f5;
-extern u8 D_00154819;
-extern u16 D_00155372;
-extern u16 D_00155374;
 s32 fn_00085660(s32 n);
 void fn_0001bab4(u8 slot);
 }
@@ -52,7 +46,7 @@ void make_a_rat(u8 owner);
 // FUNCTION: 0x0007424c
 void fn_0007424c(u8 shift, u8 key)
 {
-    if (D_0015536e == 0x25) {
+    if (gamevar.f12e == 0x25) {
         if (key == 0x39 || key == 1)
             finish_composite_help();
         lbInkey = 0;
@@ -90,7 +84,7 @@ void fn_0007424c(u8 shift, u8 key)
                     D_001549d0[player].type = 0x4e;
                 }
             }
-        } else if (!(shift & 1) && D_001553b4 == 0) {
+        } else if (!(shift & 1) && gamevar.f174 == 0) {
             D_001549d0[player].type = 0xe;
             D_001549d0[player].value = 10;
             lbInkey = 0;
@@ -113,7 +107,7 @@ void fn_0007424c(u8 shift, u8 key)
                     D_001549d0[player].type = 0x4e;
                 }
             }
-        } else if (D_001553b4 == 0) {
+        } else if (gamevar.f174 == 0) {
             D_001549d0[player].type = 0xe;
             D_001549d0[player].value = 0x14;
         }
@@ -201,7 +195,7 @@ void fn_0007424c(u8 shift, u8 key)
     case 0x24:
         if (!gamevar.unknown21) {
             if (!(shift & 1)) {
-                if (D_0015f3f5 == SCREEN_MODE_13)
+                if (resvars.f1 == SCREEN_MODE_13)
                     D_001549d0[player].type = 0x49;
                 lbInkey = 0;
             }
@@ -230,7 +224,7 @@ void fn_0007424c(u8 shift, u8 key)
     case 0x40:
     case 0x41:
     case 0x42:
-        if (!gamevar.unknown21 && D_001553b4 == 0) {
+        if (!gamevar.unknown21 && gamevar.f174 == 0) {
             if (shift & 4) {
                 play_sound(10, 0xda, -1, -1);
                 fn_0001bab4(key - 0x3b);
@@ -245,7 +239,7 @@ void fn_0007424c(u8 shift, u8 key)
         break;
     case 0x1e:
         if (shift & 1) {
-            D_00154819 = D_00154819 == 1 ? 0 : 1;
+            myplayer.f41[20] = myplayer.f41[20] == 1 ? 0 : 1;
             LbMemorySet(gamevar.unknown7b, 0, 0x70);
             lbInkey = 0;
         }
@@ -280,8 +274,8 @@ void fn_0007424c(u8 shift, u8 key)
     case 0x20:
         if ((shift & 4) && (shift & 2)) {
             if (D_00155e46) {
-                D_00155372 = 0;
-                D_00155374 = 0x3fff;
+                gamevar.f132 = 0;
+                gamevar.f134 = 0x3fff;
                 lbInkey = 0;
             }
         }

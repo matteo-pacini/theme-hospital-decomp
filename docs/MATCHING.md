@@ -153,6 +153,32 @@ and comparing against the original.
 
 Operand order of commutative operators decides the result register
 (`a + (b << 7)` and `(b << 7) + a` differ; `pos + D[i]` vs `D[i] + pos`).
+Evaluation order follows the code generator (Open Watcom `tree.c`,
+`TNBinary`/`TNCompare`): the left operand is evaluated first if and only
+if its expression tree has at least as many nodes as the right one's. A
+plain global is a leaf plus a conversion; a struct field or array element
+at a nonzero offset is a bigger tree (`POINTS(PLUS(leaf, c))`), offset 0
+behaves like a plain global, and every cast adds a node. So when a global is
+loaded before or after the "wrong" operand, it is often really a struct
+field (or the reverse), or the grouping is wrong:
+
+- Many `D_` globals are fields of the demo's structs, which the data map
+  had shrunk; `memset` sizes in initialisation code give the real sizes.
+  Decide field versus plain global from the evaluation order.
+- Layout-pointer tables are indexed as arrays of elements
+  (`resvars.f40[i + K].x`), not through invented structs; give per-file
+  pointer types through a union of pointer members, since casts add nodes.
+- The map index is `x + (y << 7)` (tile expressions too); `y` is evaluated
+  first.
+- `?:` in a subscript makes the index evaluate first.
+- `if (u16 local)` instead of `!= 0` changes register allocation across the
+  whole function.
+- `!x--` on a `u16` field or element gives `mov ax; dec; test ax,ax`; on a
+  plain global, `dec` then `cmp word ptr, 0xffff`.
+- A jump that lands one statement later than expected means that statement
+  belongs inside the `if`.
+- objdiff's alignment can hide an encoding difference; compare raw bytes and
+  lengths when only jumps differ.
 
 Adding a table to `config/symbols.txt` renames references to its interior in
 every file. Check that no other source refers to an address it covers by its

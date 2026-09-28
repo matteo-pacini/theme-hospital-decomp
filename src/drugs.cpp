@@ -15,18 +15,13 @@ extern u32 D_00155dab;
 extern u32 D_00155c5a;
 extern u16 D_00155e30;
 extern Event D_001549d0[];
-extern View *D_0015f430;
 extern u16 D_00188c74;
 extern u16 D_00155444;
 extern char D_0012017c[], D_0012017f[], D_00120182[], D_00120187[], D_0012018b[], D_0012018f[];
 extern char D_00120192[], D_00120195[], D_00120198[], D_0012019b[], D_0012019e[], D_001201a1[];
 extern char **D_00160304, **D_001602a4;
-extern Point *D_0015f434;
-extern Button *D_0015f43c;
 extern u8 D_00188c7b, D_00188c7e;
 extern volatile s16 D_00188c5c, D_00188c60;
-extern u16 D_00155376;
-extern MenuItem *D_0015f420;
 extern u16 D_00155c64;
 extern char D_0015544e[];
 extern char **D_00160318;
@@ -93,7 +88,7 @@ void display_drugs(void)
     }
     set_font_from_cache(0xe);
     offset = lbFontPtr ? lbFontPtr[34].height : 0;
-    LbTextSetWindow(D_0015f430->unknown0, D_0015f430->unknown4, D_0015f430->unknown8, D_0015f430->unknownC);
+    LbTextSetWindow(resvars.f3c->unknown0, resvars.f3c->unknown4, resvars.f3c->unknown8, resvars.f3c->unknownC);
     D_00188c74 = 0x100;
     room = D_00155444;
     def = &expertise[room];
@@ -132,7 +127,7 @@ void display_drugs(void)
             fn_0001b7e0(buf, buf, 1);
             break;
         }
-        LbTextDraw(D_0015f434[i + 0x11].x, D_0015f434[i + 0x11].y, buf);
+        LbTextDraw(resvars.f40[i + 0x11].x, resvars.f40[i + 0x11].y, buf);
     }
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c74 = 0;
@@ -184,15 +179,15 @@ void display_drugs(void)
             } else {
                 set_font_from_cache(0xe);
                 if (D_00188c7b) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, D_0015f434[i].x, D_0015f434[i].y,
-                                    D_00188c34 - D_0015f434[i].y, offset)) {
+                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f40[i].x, resvars.f40[i].y,
+                                    D_00188c34 - resvars.f40[i].y, offset)) {
                         D_00155444 = list[i];
                         play_sound(10, 0xa8, -1, -1);
                         D_00188c7b = 0;
                     }
                 }
             }
-            LbTextDraw(D_0015f434[i].x, D_0015f434[i].y, buf);
+            LbTextDraw(resvars.f40[i].x, resvars.f40[i].y, buf);
         }
     }
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
@@ -200,7 +195,7 @@ void display_drugs(void)
     D_00188c74 = 0;
     set_font_from_cache(0xe);
     D_00188c74 = 0x100;
-    LbTextSetWindow(D_0015f434[0x1e].x, D_0015f434[0x1e].y, 0x36, 0x1a);
+    LbTextSetWindow(resvars.f40[0x1e].x, resvars.f40[0x1e].y, 0x36, 0x1a);
     LbTextDraw(0, (0x1a - (lbFontPtr ? lbFontPtr[34].height : 0)) / 2, D_00160304[7]);
     D_00188c74 = 0;
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
@@ -208,10 +203,10 @@ void display_drugs(void)
         if (allhosps[player].rooms[room].unknown1C == 1) {
             if (def->kind == 0x27) {
                 value = allhosps[player].rooms[room].unknown1B;
-                reqspr_draw(D_0015f434[0x1f].x, D_0015f434[0x1f].y, screen_sprites_tab_start + 7);
+                reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 7);
                 set_font_from_cache(0x2e);
                 sprintf(buf, D_0012019e, value);
-                LbTextSetWindow(0x134, D_0015f434[0x21].y, 0x1c, 0x32);
+                LbTextSetWindow(0x134, resvars.f40[0x21].y, 0x1c, 0x32);
                 D_00188c74 = 0x100;
                 LbTextDraw(0, 0, buf);
                 if (value < 100) {
@@ -220,19 +215,19 @@ void display_drugs(void)
                 LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
                 D_00188c74 = 0;
             } else if (def->category == 10) {
-                reqspr_draw(D_0015f434[0x1f].x, D_0015f434[0x1f].y, screen_sprites_tab_start + 8);
+                reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 8);
             } else if (def->unknown8 != 1 && def->unknown8 != 5 && def->unknown8 != 4) {
-                reqspr_draw(D_0015f434[0x1f].x, D_0015f434[0x1f].y, screen_sprites_tab_start + 6);
+                reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 6);
             }
-            reqspr_draw(D_0015f434[0x20].x, D_0015f434[0x20].y, screen_sprites_tab_start + 11);
+            reqspr_draw(resvars.f40[0x20].x, resvars.f40[0x20].y, screen_sprites_tab_start + 11);
         } else {
-            reqspr_draw(D_0015f434[0x20].x, D_0015f434[0x20].y, screen_sprites_tab_start + 12);
+            reqspr_draw(resvars.f40[0x20].x, resvars.f40[0x20].y, screen_sprites_tab_start + 12);
             if (def->unknown8 != 1 && def->unknown8 != 5 && def->unknown8 != 4) {
                 if (def->kind == 0x27) {
-                    reqspr_draw(D_0015f434[0x1f].x, D_0015f434[0x1f].y, screen_sprites_tab_start + 7);
+                    reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 7);
                     set_font_from_cache(0x2e);
                     sprintf(buf, D_001201a1);
-                    LbTextSetWindow(0x134, D_0015f434[0x21].y, 0x1c, 0x32);
+                    LbTextSetWindow(0x134, resvars.f40[0x21].y, 0x1c, 0x32);
                     D_00188c74 = 0x100;
                     LbTextDraw(0, 0, buf);
                     unavailable = 1;
@@ -240,37 +235,37 @@ void display_drugs(void)
                     D_00188c74 = 0;
                 } else if (allhosps[player].equipment[def->kind].unknown0 == 1
                            && objects[def->kind].unknown1c == 1) {
-                    reqspr_draw(D_0015f434[0x1f].x, D_0015f434[0x1f].y, screen_sprites_tab_start + 6);
+                    reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 6);
                     if (listhead[player].rooms[def->category] == 0) {
                         noStaff = 1;
                     }
                     if (def->unknown0 == 0x40) {
-                        reqspr_draw(D_0015f434[0x1f].x, D_0015f434[0x1f].y, screen_sprites_tab_start + 10);
+                        reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 10);
                     }
                     if (def->category == 10) {
-                        reqspr_draw(D_0015f434[0x1f].x, D_0015f434[0x1f].y, screen_sprites_tab_start + 8);
+                        reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 8);
                     }
                 } else {
-                    reqspr_draw(D_0015f434[0x1f].x, D_0015f434[0x1f].y, screen_sprites_tab_start + 9);
+                    reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 9);
                     unavailable = 1;
                 }
             }
         }
     } else if (room >= 0x24) {
         if (allhosps[player].rooms[room].unknown1C == 1) {
-            reqspr_draw(D_0015f434[0x20].x, D_0015f434[0x20].y, screen_sprites_tab_start + 11);
+            reqspr_draw(resvars.f40[0x20].x, resvars.f40[0x20].y, screen_sprites_tab_start + 11);
         } else {
-            reqspr_draw(D_0015f434[0x20].x, D_0015f434[0x20].y, screen_sprites_tab_start + 12);
+            reqspr_draw(resvars.f40[0x20].x, resvars.f40[0x20].y, screen_sprites_tab_start + 12);
         }
     }
     if (expertise[room].unknown5[0] != 0) {
-        if (room == (statvar.unknownfd > 1 ? allhosps[player].unknown1256 : D_00155376)) {
+        if (room == (statvar.unknownfd > 1 ? allhosps[player].unknown1256 : gamevar.f136)) {
             set_font_from_cache(0xf);
         } else {
             set_font_from_cache(0xe);
         }
         fn_0001b7e0(buf, D_00160304[6], 1);
-        LbTextDraw(D_0015f434[0x1d].x, D_0015f434[0x1d].y, buf);
+        LbTextDraw(resvars.f40[0x1d].x, resvars.f40[0x1d].y, buf);
     }
     process_drug_panel();
     process_drug_keys();
@@ -288,13 +283,13 @@ void process_drug_panel(void)
 
     if (D_00188c7b) {
         drugs.unknown0 = 0;
-        for (i = 0; D_0015f43c[i + 0x12].width != 0 && D_0015f43c[i + 0x12].height != 0; i++) {
-            if (over_hotspot(D_00188c5c, D_00188c60, D_0015f43c[i + 0x12].x, D_0015f43c[i + 0x12].y,
-                            (s16)D_0015f43c[i + 0x12].width, (s16)D_0015f43c[i + 0x12].height)) {
-                D_0015f43c[i + 0x12].callback(i);
-                if (D_0015f43c[i + 0x12].sprite) {
-                    reqspr_draw(D_0015f43c[i + 0x12].unknownC, D_0015f43c[i + 0x12].unknownE,
-                                (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[i + 0x12].sprite * 6));
+        for (i = 0; resvars.f48[i + 0x12].width != 0 && resvars.f48[i + 0x12].height != 0; i++) {
+            if (over_hotspot(D_00188c5c, D_00188c60, resvars.f48[i + 0x12].x, resvars.f48[i + 0x12].y,
+                            (s16)resvars.f48[i + 0x12].width, (s16)resvars.f48[i + 0x12].height)) {
+                resvars.f48[i + 0x12].callback(i);
+                if (resvars.f48[i + 0x12].sprite) {
+                    reqspr_draw(resvars.f48[i + 0x12].unknownC, resvars.f48[i + 0x12].unknownE,
+                                (TbSprite *)((u32)screen_sprites_tab_start + resvars.f48[i + 0x12].sprite * 6));
                 }
                 break;
             }
@@ -303,15 +298,15 @@ void process_drug_panel(void)
         D_00155dab = D_00155c5a;
     }
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 0x12].width != 0 && D_0015f43c[i + 0x12].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0x12].x, D_0015f43c[i + 0x12].y,
-                            (s16)D_0015f43c[i + 0x12].width, (s16)D_0015f43c[i + 0x12].height)) {
+        for (i = 0; resvars.f48[i + 0x12].width != 0 && resvars.f48[i + 0x12].height != 0; i++) {
+            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0x12].x, resvars.f48[i + 0x12].y,
+                            (s16)resvars.f48[i + 0x12].width, (s16)resvars.f48[i + 0x12].height)) {
                 if (i == 0 || i == 1) {
-                    D_0015f43c[i + 0x12].callback(i);
+                    resvars.f48[i + 0x12].callback(i);
                 }
-                if (D_0015f43c[i + 0x12].sprite) {
-                    reqspr_draw(D_0015f43c[i + 0x12].unknownC, D_0015f43c[i + 0x12].unknownE,
-                                (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[i + 0x12].sprite * 6));
+                if (resvars.f48[i + 0x12].sprite) {
+                    reqspr_draw(resvars.f48[i + 0x12].unknownC, resvars.f48[i + 0x12].unknownE,
+                                (TbSprite *)((u32)screen_sprites_tab_start + resvars.f48[i + 0x12].sprite * 6));
                 }
                 break;
             }
@@ -480,8 +475,8 @@ u8 get_next_illness(const u8 forward, const u8 start)
 void setup_drug(u16 a, u16 b)
 {
     if (expertise[b].kind == 0x27) {
-        allhosps[a].rooms[b].unknown1B = expertise[57].unknown10[3];
-        allhosps[a].rooms[b].unknown18 = *(u16 *)&expertise[57].unknown10[5];
+        allhosps[a].rooms[b].unknown1B = gbv.fc8;
+        allhosps[a].rooms[b].unknown18 = gbv.fca;
     }
 }
 
@@ -489,7 +484,7 @@ void setup_drug(u16 a, u16 b)
 void drugs_help_concentrate(void)
 {
     if (D_00155c6e) {
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
     }
 }
 

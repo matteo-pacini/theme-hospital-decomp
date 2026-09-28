@@ -7,13 +7,11 @@ struct PossibleDiag {
 
 extern s16 dying_place[];
 extern PossibleDiag possible_diagnoses[];
+extern s16 diag_register[][8];
 
 extern "C" {
 
-extern s16 D_0012b9ee[][8];
-extern s16 D_0012dd7c[14];
 extern u16 D_0015543a;
-extern u8 D_00158324;
 extern char D_001303c8[];
 extern char D_00120330[];
 extern char **D_001602a4;
@@ -44,7 +42,7 @@ void affect_diagnosis(Thing *e, Thing *w)
         total = w->unknown146 - w->unknown144;
         total += calc_ability(e);
         if (w->unknown171 >= 0x24) {
-            bonus = D_0012b9ee[w->style][w->unknown171 - 0x24];
+            bonus = diag_register[w->style][w->unknown171 - 0x24];
         }
         total += bonus;
         if (w->unknown146 < total) {
@@ -138,7 +136,7 @@ void setup_next_treatment(Thing *e, Thing *w)
         pay_for_treatment(w, 2);
     }
     if (w->flags & 0x400) {
-        pct = w->unknown146 * 100 / *(u16 *)D_0012dd7c;
+        pct = w->unknown146 * 100 / gbv.ffc;
         if (allhosps[w->owner].f219 <= pct && allhosps[w->owner].rooms[w->style].unknown1D == 1 && pct > 0) {
             best_guess_treatment(w);
         } else if (allhosps[w->owner].f21b >= pct) {
@@ -162,7 +160,7 @@ void next_treatment_now_setup(Thing *w, u8 in_room)
             w->timer = D_0015543a;
             w->unknown91 = make_a_playercall(8, w - thing, 0, w->owner);
             if (w->owner == player) {
-                D_00158324 |= 4;
+                advisor.f128 |= 4;
             }
         } else {
             w->unknown171 = 0;
@@ -176,7 +174,7 @@ void next_treatment_now_setup(Thing *w, u8 in_room)
             w->timer = D_0015543a;
             w->unknown91 = make_a_playercall(4, w - thing, 0, w->owner);
             if (w->owner == player) {
-                D_00158324 |= 4;
+                advisor.f128 |= 4;
             }
         } else {
             w->unknown171 = 0;
@@ -281,7 +279,7 @@ void person_dies(Thing *w)
     allhosps[w->owner].rooms[w->style].unknown20++;
     allhosps[w->owner].f1eb++;
     if (w->owner == player) {
-        D_00158324 |= 0x80;
+        advisor.f128 |= 0x80;
     }
     reputation_affected(w->style, 3, 0, w->owner, 0);
     record_person_as_patient(w);
@@ -387,7 +385,6 @@ void add_health_to_history(Thing *w)
     }
 }
 
-// NONMATCHING: the target loads D_0012dd7c into eax before diag for the first comparison (cmp edx,eax; jl)
 // FUNCTION: 0x0003d28c
 void diagnose_patient(Thing *e, Thing *w)
 {
@@ -399,7 +396,7 @@ void diagnose_patient(Thing *e, Thing *w)
 
     guess = 1;
     diag = w->unknown146;
-    if (*(u16 *)D_0012dd7c <= diag) {
+    if (diag >= gbv.ffc) {
         guess = 0;
         illness = (u16)w->style;
         if (w->unknown169 != illness) {
@@ -435,7 +432,7 @@ void diagnose_patient(Thing *e, Thing *w)
                 w->unknown171 = w->style;
             }
         }
-    } else if (diag <= D_0012dd7c[1]) {
+    } else if (diag <= gbv.ffe) {
         r = old_newrand() & 1;
         if (r == 0) {
             if (allhosps[w->owner].rooms[0x2c].unknown1C == 1) {
@@ -488,11 +485,11 @@ s32 calc_ability(Thing *e)
     } else if (e->unknown124 & 8) {
         attitude = -100;
     }
-    if (e->f78 < *(u16 *)&expertise[59].unknown5[0]) {
+    if (e->f78 < gbv.fe6) {
         skill = 100;
-    } else if (e->f78 >= *(u16 *)&expertise[59].unknown5[2]) {
+    } else if (e->f78 >= gbv.fe8) {
         skill = -100;
-    } else if (e->f78 >= *(u16 *)&expertise[59].category) {
+    } else if (e->f78 >= gbv.fea) {
         skill = -200;
     }
     if (e->subtype == 1 && e->unknown148[2]) {
@@ -553,6 +550,7 @@ u8 treatment_already_done(Thing *w, u16 treatment)
     return found;
 }
 
+// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x0003d91c
 void person_go_for_treatment(Thing *w)
 {
@@ -697,7 +695,7 @@ void announce_new_illness(const u16 illness, const u16 owner)
 {
     if (allhosps[owner].rooms[illness].unknown1D == 0) {
         if (owner == player) {
-            D_00158324 |= 4;
+            advisor.f128 |= 4;
         }
         make_a_playercall(7, illness, 0xf, owner);
     }
@@ -720,7 +718,7 @@ u16 call_no_diagnosis(Thing *w, char **strs)
         return 0;
     }
     height = lbFontPtr ? lbFontPtr[34].height : 0;
-    pct = w->unknown146 * 100 / *(u16 *)D_0012dd7c;
+    pct = w->unknown146 * 100 / gbv.ffc;
     if (pct < 0) {
         pct = 0;
     } else if (pct > 99) {
@@ -776,7 +774,7 @@ void best_guess_treatment(Thing *w)
         w->flags |= 0x10;
         set_icon_value(w, 0x1b);
     }
-    pct = w->unknown146 * 100 / *(u16 *)D_0012dd7c;
+    pct = w->unknown146 * 100 / gbv.ffc;
     if (pct < 0) {
         pct = 0;
     } else if (pct > 99) {

@@ -10,25 +10,9 @@ struct HospScores {
     HighScore shame[10];
 };
 
-struct ScoreText {
-    union {
-        Point p[0xd0];
-        struct {
-            u8 unknown0[0x5f8];
-            Point fame[10];
-        };
-        struct {
-            u8 unknown0_[0x640];
-            Point hall[10];
-        };
-    };
-};
-
 extern "C" {
 extern u32 D_00188c38;
 extern u16 D_00188c74;
-extern ScoreText *D_0015f434;
-extern Button *D_0015f43c;
 extern u8 D_00155d9c;
 extern u8 *D_00155d8f;
 extern s32 D_00155d93;
@@ -119,7 +103,7 @@ void set_fame_pos(s32 *text, s32 *title)
     u8 c;
 
     for (i = 0; i < 10; i++)
-        text[i] = D_0015f434->fame[i].y << 16;
+        text[i] = resvars.f40[i + 191].y << 16;
     saved = TitleText;
     TitleText = hall_text[4];
     for (i = 0; i < 20; i++) {
@@ -140,7 +124,7 @@ void set_shame_pos(s32 *text, s32 *title)
     s16 i;
 
     for (i = 0; i < 10; i++)
-        text[i] = D_0015f434->p[200 - i].y << 16;
+        text[i] = resvars.f40[200 - i].y << 16;
     saved = TitleText;
     TitleText = hall_text[5];
     for (i = 0; i < 20; i++) {
@@ -164,15 +148,16 @@ void fn_00094a18(void)
     D_00188c34 = lbDisplay.unknown18;
     D_00188c38 = lbDisplay.unknown1c;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-    for (i = 1; D_0015f434->hall[i].y != 0; i++)
-        LbTextDraw(D_0015f434->hall[i].x, D_0015f434->hall[i].y, hall_text[i]);
+    for (i = 1; resvars.f40[i + 200].y != 0; i++)
+        LbTextDraw(resvars.f40[i + 200].x, resvars.f40[i + 200].y, hall_text[i]);
     lbDisplay.unknown4 = D_00155d8f;
     D_00188c34 = D_00155d93;
     D_00188c38 = D_00155d97;
     LbScreenSetGraphicsWindow(0, 0, D_00155d93, D_00155d97);
 }
 
-// NONMATCHING: the D_00155da5-- test is test ax,ax in the target; here and eax,0xffff / test eax,eax
+// NONMATCHING: the D_00155da5-- test is mov ax / dec / test ax,ax in the target, which only a
+// struct field (nonzero offset) reproduces; as a plain global it is and eax,0xffff / test eax,eax
 // FUNCTION: 0x00094b28
 void fn_00094b28(void)
 {
@@ -246,7 +231,7 @@ void fn_00094d34(void)
         x = (TitlePos[i] + 0x8000) >> 16;
         c = p[1];
         p[1] = 0;
-        LbTextDraw(x, D_0015f434->hall[5].y, p);
+        LbTextDraw(x, resvars.f40[205].y, p);
         x += LbTextStringWidth(p);
         p[1] = c;
         if (D_00155d9c)
@@ -257,15 +242,15 @@ void fn_00094d34(void)
     for (i = 0; i < 10; i++) {
         x = (TextPos[i] + 0x8000) >> 16;
         sprintf(buf, D_001209e8, i + 1);
-        LbTextDraw(D_0015f434->hall[1].x, x, buf);
+        LbTextDraw(resvars.f40[201].x, x, buf);
         if (D_00155d9c) {
-            LbTextDraw(D_0015f434->hall[2].x, x, hosp_scores.fame[i].name);
+            LbTextDraw(resvars.f40[202].x, x, hosp_scores.fame[i].name);
             sprintf(buf, D_001209ec, hosp_scores.fame[i].score);
-            LbTextDraw(D_0015f434->hall[3].x, x, buf);
+            LbTextDraw(resvars.f40[203].x, x, buf);
         } else {
-            LbTextDraw(D_0015f434->hall[2].x, x, hosp_scores.shame[9 - i].name);
+            LbTextDraw(resvars.f40[202].x, x, hosp_scores.shame[9 - i].name);
             sprintf(buf, D_001209f0, hosp_scores.shame[9 - i].score);
-            LbTextDraw(D_0015f434->hall[3].x, x, buf);
+            LbTextDraw(resvars.f40[203].x, x, buf);
         }
     }
 }
@@ -402,18 +387,18 @@ void check_hall_buttons(void)
     u8 i;
 
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 0xa9].width != 0 && D_0015f43c[i + 0xa9].height != 0; i++) {
-            if (over_hotspot(mouse_dx, mouse_dy, D_0015f43c[i + 0xa9].x, D_0015f43c[i + 0xa9].y, D_0015f43c[i + 0xa9].width, D_0015f43c[i + 0xa9].height)) {
-                reqspr_draw(D_0015f43c[i + 0xa9].unknownC, D_0015f43c[i + 0xa9].unknownE, &screen_sprites_tab_start[D_0015f43c[i + 0xa9].sprite]);
+        for (i = 0; resvars.f48[i + 0xa9].width != 0 && resvars.f48[i + 0xa9].height != 0; i++) {
+            if (over_hotspot(mouse_dx, mouse_dy, resvars.f48[i + 0xa9].x, resvars.f48[i + 0xa9].y, resvars.f48[i + 0xa9].width, resvars.f48[i + 0xa9].height)) {
+                reqspr_draw(resvars.f48[i + 0xa9].unknownC, resvars.f48[i + 0xa9].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0xa9].sprite]);
                 break;
             }
         }
     }
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i + 0xa9].width != 0 && D_0015f43c[i + 0xa9].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0xa9].x, D_0015f43c[i + 0xa9].y, D_0015f43c[i + 0xa9].width, D_0015f43c[i + 0xa9].height)) {
-                D_0015f43c[i + 0xa9].callback(i);
-                reqspr_draw(D_0015f43c[i + 0xa9].unknownC, D_0015f43c[i + 0xa9].unknownE, &screen_sprites_tab_start[D_0015f43c[i + 0xa9].sprite]);
+        for (i = 0; resvars.f48[i + 0xa9].width != 0 && resvars.f48[i + 0xa9].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0xa9].x, resvars.f48[i + 0xa9].y, resvars.f48[i + 0xa9].width, resvars.f48[i + 0xa9].height)) {
+                resvars.f48[i + 0xa9].callback(i);
+                reqspr_draw(resvars.f48[i + 0xa9].unknownC, resvars.f48[i + 0xa9].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0xa9].sprite]);
                 break;
             }
         }

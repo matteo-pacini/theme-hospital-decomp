@@ -7,19 +7,8 @@ struct Message {
 extern "C" {
 
 extern u8 D_0015f982;
-extern u8 D_0015f3f9;
-extern TbScreenMode D_0015f3f4, D_0015f3f5, D_0015f3f6;
-extern u8 D_0015f3f7, D_0015f3f8, D_0015f40a, D_0015f40b;
-extern u8 *D_0015f40c, *D_0015f410, *D_0015f414, *D_0015f418, *D_0015f438;
-extern u8 *D_0015f41c, *D_0015f428, *D_0015f3fa, *D_0015f402, *D_0015f406, *D_0015f42c;
-extern u8 *D_0015f444;
-extern int *D_0015f420;
-extern int *D_0015f3fe;
-extern View *D_0015f430;
 extern View D_0014619c;
-extern Point *D_0015f434;
 extern Point D_00146c8c[];
-extern Button *D_0015f43c;
 extern Button D_00145378[];
 extern u8 D_0013bb0c[], D_0013c0fc[], D_001361ac[], D_001310e4[], D_00145358[];
 extern u8 D_0013c6a4[], D_00130288[], D_0013e5fc[], D_0014a620[], D_0014a9fe[], D_0012cc3c[];
@@ -42,7 +31,6 @@ extern s32 D_001290cc;
 extern char *D_001289a0;
 extern Message D_00129004;
 extern void *D_00158334;
-extern u8 D_001547e5;
 extern u8 D_00155df8, D_00155df9;
 
 void fn_000bce44(TbLoadFiles *files);
@@ -63,7 +51,7 @@ u8 setup_host(void)
     char name[52];
 
     D_0015f982 = 0;
-    D_0015f3f9 = 0;
+    resvars.f5 = 0;
     fn_000bce44(D_0013e9c8);
     fn_000bce44(D_0013e7b4);
     if (!setup_any_screen(D_00153f34, SCREEN_MODE_13)) {
@@ -87,29 +75,29 @@ u8 setup_host(void)
     LbSpriteSetup(pointer, D_00153f30, D_00153f28);
     statvar.unknowne6 = 0x1c;
     statvar.unknowne7 = 0x1f;
-    D_0015f3f7 = 0x20;
-    D_0015f3f8 = 0x40;
-    D_0015f3f8 = 0x40;
-    D_0015f3f7 = 0x20;
-    D_0015f40c = D_0013bb0c;
-    D_0015f430 = &D_0014619c;
-    D_0015f410 = D_0013c0fc;
-    D_0015f434 = D_00146c8c;
-    D_0015f414 = D_001361ac;
-    D_0015f418 = D_001310e4;
-    D_0015f438 = D_00145358;
-    D_0015f41c = D_0013c6a4;
-    D_0015f420 = D_0013c77c;
-    D_0015f428 = D_00130288;
-    D_0015f3f5 = SCREEN_MODE_13;
-    D_0015f42c = D_0012cc3c;
-    D_0015f40a = 3;
-    D_0015f40b = 0x20;
-    D_0015f3f4 = SCREEN_MODE_13;
-    D_0015f3fe = D_0013e634;
-    D_0015f444 = D_00147314;
-    D_0015f43c = D_00145378;
-    D_0015f3f9 = 0;
+    resvars.f3 = 0x20;
+    resvars.f4 = 0x40;
+    resvars.f4 = 0x40;
+    resvars.f3 = 0x20;
+    resvars.f18_u8p = D_0013bb0c;
+    resvars.f3c = &D_0014619c;
+    resvars.f1c_u8p = D_0013c0fc;
+    resvars.f40 = D_00146c8c;
+    resvars.f20_u8p = D_001361ac;
+    resvars.f24 = D_001310e4;
+    resvars.f44 = D_00145358;
+    resvars.f28 = D_0013c6a4;
+    resvars.f2c_intp = D_0013c77c;
+    resvars.f34 = D_00130288;
+    resvars.f1 = SCREEN_MODE_13;
+    resvars.f38 = D_0012cc3c;
+    resvars.f16 = 3;
+    resvars.f17 = 0x20;
+    resvars.f0 = SCREEN_MODE_13;
+    resvars.fa = D_0013e634;
+    resvars.f50 = D_00147314;
+    resvars.f48 = D_00145378;
+    resvars.f5 = 0;
     if (!display_loading_screen()) {
         return 0;
     }
@@ -202,7 +190,7 @@ void reset_host(void)
     if (msg.text[0]) {
         hosp_dos_printf(msg.text);
     }
-    switch (D_0015f3f4) {
+    switch (resvars.f0) {
     case SCREEN_MODE_1:
         LbDataFreeAll(D_0013e2b8);
         break;
@@ -223,7 +211,7 @@ void reset_host(void)
     LbDataFreeAll(D_0013ea78);
     LbDataFreeAll(D_0013e944);
     LbDataFreeAll(D_0013e9c8);
-    LbDataFree(&langfile[D_001547e5]);
+    LbDataFree(&langfile[myplayer.f21]);
     LbDataFreeAll(D_0013e7b4);
     if (D_001290cc != -1) {
         LbFileClose(D_001290cc);
@@ -249,10 +237,10 @@ void get_input(void)
 // FUNCTION: 0x00010e24
 void load_game_files(void)
 {
-    if (D_0015f3f9 == 2) {
+    if (resvars.f5 == 2) {
         return;
     }
-    if (D_0015f3f5 == SCREEN_MODE_1) {
+    if (resvars.f1 == SCREEN_MODE_1) {
         fn_000bce44(loresblockfiles);
         fn_000bce44(mcgaspritefiles);
         fn_000bce44(mcgareqfiles);
@@ -267,16 +255,16 @@ void load_game_files(void)
         fn_000bce44(hiresanifiles);
         setup_panel_icons(13);
     }
-    D_0015f3f6 = D_0015f3f5;
+    resvars.f2 = resvars.f1;
     setup_game_sprites();
-    D_0015f3f9 = 2;
+    resvars.f5 = 2;
 }
 
 // FUNCTION: 0x00010ee0
 void unload_game_files(void)
 {
-    if (D_0015f3f9 == 2) {
-        if (D_0015f3f5 == SCREEN_MODE_1) {
+    if (resvars.f5 == 2) {
+        if (resvars.f1 == SCREEN_MODE_1) {
             LbDataFreeAll(loresblockfiles);
             LbDataFreeAll(mcgaspritefiles);
             LbDataFreeAll(mcgareqfiles);
@@ -287,7 +275,7 @@ void unload_game_files(void)
             LbDataFreeAll(reqfiles);
             LbDataFreeAll(hiresanifiles);
         }
-        D_0015f3f9 = 0;
+        resvars.f5 = 0;
         LbPackHeap();
     }
 }
@@ -297,7 +285,7 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
 {
     int variant;
 
-    if (mode == D_0015f3f4) {
+    if (mode == resvars.f0) {
         return 1;
     }
     if (mode == SCREEN_MODE_13) {
@@ -315,7 +303,7 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
         }
         return 0;
     }
-    D_0015f3f4 = mode;
+    resvars.f0 = mode;
     return 1;
 }
 
@@ -329,15 +317,15 @@ void fn_0001102c(void)
 // FUNCTION: 0x00011058
 void fn_00011058(void)
 {
-    D_0015f420 = D_0013c77c;
-    D_0015f3fe = D_0013e634;
+    resvars.f2c_intp = D_0013c77c;
+    resvars.fa = D_0013e634;
 }
 
 // FUNCTION: 0x00011084
 void fn_00011084(void)
 {
-    D_0015f420 = D_0014be34;
-    D_0015f3fe = D_0013e6f4;
+    resvars.f2c_intp = D_0014be34;
+    resvars.fa = D_0013e6f4;
 }
 
 // FUNCTION: 0x000110b0
@@ -346,27 +334,27 @@ void fn_000110b0(void)
     statvar.unknown4 = lbScreenModeInfo[SCREEN_MODE_13].height - 0x30;
     statvar.unknowne6 = 0x1c;
     statvar.unknowne7 = 0x1f;
-    D_0015f3f5 = SCREEN_MODE_13;
-    D_0015f3f4 = SCREEN_MODE_13;
-    D_0015f40c = D_0013bb0c;
-    D_0015f430 = &D_0014619c;
-    D_0015f410 = D_0013c0fc;
-    D_0015f434 = D_00146c8c;
-    D_0015f3f7 = 0x20;
-    D_0015f3f8 = 0x40;
-    D_0015f414 = D_001361ac;
-    D_0015f418 = D_001310e4;
-    D_0015f438 = D_00145358;
-    D_0015f41c = D_0013c6a4;
-    D_0015f420 = D_0013c77c;
-    D_0015f428 = D_00130288;
-    D_0015f3fa = D_0013e5fc;
-    D_0015f402 = D_0014a620;
-    D_0015f406 = D_0014a9fe;
-    D_0015f3fe = D_0013e634;
-    D_0015f40a = 3;
-    D_0015f40b = 0x20;
-    D_0015f42c = D_0012cc3c;
+    resvars.f1 = SCREEN_MODE_13;
+    resvars.f0 = SCREEN_MODE_13;
+    resvars.f18_u8p = D_0013bb0c;
+    resvars.f3c = &D_0014619c;
+    resvars.f1c_u8p = D_0013c0fc;
+    resvars.f40 = D_00146c8c;
+    resvars.f3 = 0x20;
+    resvars.f4 = 0x40;
+    resvars.f20_u8p = D_001361ac;
+    resvars.f24 = D_001310e4;
+    resvars.f44 = D_00145358;
+    resvars.f28 = D_0013c6a4;
+    resvars.f2c_intp = D_0013c77c;
+    resvars.f34 = D_00130288;
+    resvars.f6 = D_0013e5fc;
+    resvars.fe = D_0014a620;
+    resvars.f12_u8p = D_0014a9fe;
+    resvars.fa = D_0013e634;
+    resvars.f16 = 3;
+    resvars.f17 = 0x20;
+    resvars.f38 = D_0012cc3c;
     if (D_001290cc != -1) {
         LbFileClose(D_001290cc);
         D_001290cc = -1;

@@ -23,7 +23,7 @@ u8 is_next_to_plant(Thing *w, Thing *plant);
 void choose_aniseq(Thing *w, u8 anim, u8 speed);
 void remove_litter(u16 tile, u8 owner);
 
-#define TILE_POS(t) (((s16)(t)->y.tile << 7) + (s16)(t)->x.tile)
+#define TILE_POS(t) ((s16)(t)->x.tile + ((s16)(t)->y.tile << 7))
 
 // FUNCTION: 0x0007a710
 void place_litter(u16 tile, s8 owner, u8 type)
@@ -411,7 +411,6 @@ u8 thingpage_cancel(ThingPager *p, u16 id)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007bc4c
 u16 thingpage_respond(ThingPager *p, Thing *w, u16 room, u8 min)
 {
@@ -501,7 +500,6 @@ void thingpage_cancel_my_response(ThingPager *p, Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007c488
 u8 handyman_try_fix(Thing *w)
 {
@@ -509,7 +507,7 @@ u8 handyman_try_fix(Thing *w)
     RoomInfo *room;
 
     id = thingpage_respond(&allhosps[w->owner].ff6d, w, 0, (100 - w->fa0) * 3 / 4);
-    if (id != 0) {
+    if (id) {
         room = &room_info[thing[id].unknown89];
         if (room > room_info) {
             set_complex(w, 0x96, room->unknown4);
@@ -526,7 +524,6 @@ u8 handyman_try_fix(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007c5ac
 u8 handyman_try_plant(Thing *w)
 {
@@ -534,9 +531,9 @@ u8 handyman_try_plant(Thing *w)
     u16 room_id;
 
     id = thingpage_respond(&allhosps[w->owner].fd2b, w, 0, 0);
-    if (id != 0) {
+    if (id) {
         room_id = thing[id].unknown89;
-        if (room_id != 0) {
+        if (room_id) {
             w->unknown89 = room_id;
             set_complex(w, 0x96, room_info[room_id].unknown4);
             w->unknown103 = 4;
@@ -587,7 +584,6 @@ u8 handyman_try_litter(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007c884
 u8 is_next_to_plant(Thing *w, Thing *plant)
 {

@@ -26,13 +26,6 @@ struct SampleGroup {
     u8 samples[5];
 };
 
-struct QuakeState {
-    u8 unknown0[2];
-    u8 state;
-    u8 magnitude;
-    u8 unknown4;
-};
-
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 struct MidiFile {
@@ -84,18 +77,14 @@ extern char D_00120794[], D_0012079a[], D_001207a0[], D_001207b6[];
 extern s32 D_00156433;
 extern s32 D_0015642f;
 extern u8 *D_00158334;
-extern u8 D_001547e5;
 extern TbLoadFiles D_0013ecb4[], D_0013edbc[], D_0013ed64[];
-extern u8 D_001553b4;
 extern u8 D_00155dfa;
 extern u16 D_00155dfb;
 extern SampleInfo *D_00155dfd;
 extern ambient D_0014a468[];
-extern u8 D_0015f3f8, D_0015f3f7;
 extern u16 D_00155e2a;
 extern u8 D_00155e2c, D_00155e32;
 extern u16 D_00155e43;
-extern QuakeState D_0015532d;
 extern u8 D_00155d71, D_00155d72, D_00155e07, D_00155e08, D_0015642d;
 extern char D_001207ca[], D_001207d5[], D_001207e0[], D_001207eb[], D_001207f6[];
 extern char D_00120801[], D_00120812[], D_0012081d[], D_00120820[];
@@ -154,7 +143,7 @@ u8 setup_sound(void)
         LbDataLoadAll(&D_0013ecb4[D_00156433]);
         if (D_00158334) {
             loaded = 1;
-            sprintf(buf, D_001207a0, options.unknown0, D_001547e5);
+            sprintf(buf, D_001207a0, options.unknown0, myplayer.f21);
             if (init_sound_heap(D_00158334, D_0015642f, buf, options.unknownc)) {
                 window.unknown30 = 0;
                 window.unknown48 = lbDisplay.unknown18;
@@ -196,7 +185,7 @@ void do_ambients(void)
 {
     u8 i;
 
-    if (myplayer.f10 != 0 && !D_001553b4 && !gamevar.unknown21) {
+    if (myplayer.f10 != 0 && !gamevar.f174 && !gamevar.unknown21) {
         if (D_00155dfa) {
             if (!IsSamplePlaying(0, 0, D_00155dfd->SampleHandle))
                 D_00155dfa = 0;
@@ -323,8 +312,8 @@ void manage_sound(void)
             if ((Thing *)s->SourceID > thing && (Thing *)s->SourceID < end_things) {
                 w = (Thing *)s->SourceID;
                 give_screen_xy_of_cell_at_column_row(window.unknown2eb, w->x.tile, w->y.tile);
-                info.unknown54 += D_0015f3f8 / 2;
-                info.unknown58 += D_0015f3f7 / 2;
+                info.unknown54 += resvars.f4 / 2;
+                info.unknown58 += resvars.f3 / 2;
                 if (s->SourceID == 0xd) {
                     if (myhosp->f1d9s == 0)
                         StopSample(s->SourceID, s->SampleNumber);
@@ -393,7 +382,7 @@ void manage_background_sounds(void)
                 D_00155e32 = volume;
             }
         }
-        if (D_0015532d.magnitude)
+        if (gamevar.ff0)
             play_sample_using_heap(0xc, 0x48, myplayer.fd, 0x40, 100, -1, 2);
     }
 }

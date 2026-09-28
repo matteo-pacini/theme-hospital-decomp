@@ -9,8 +9,6 @@ extern volatile s32 D_00188c5c;
 extern volatile s32 D_00188c60;
 extern u8 D_00188c7e;
 extern u8 D_00188c7f;
-extern WindowButton *D_0015f418;
-extern u16 D_0015536e;
 extern u8 D_00155420;
 extern u8 D_00188c7b;
 extern u8 D_00188c7c;
@@ -397,26 +395,26 @@ void process_buttons(Window **windows, Window *w)
         if (D_00188c7e) {
             if (mdx || mdy) {
                 if (buttonstore->width > button_sprite[buttonstore->sprite18].width) {
-                    ox = w->x + buttonstore->x
+                    ox = buttonstore->x + w->x
                         + (buttonstore->width - button_sprite[buttonstore->sprite18].width)
                             * (*buttonstore->value - buttonstore->min) / (buttonstore->max - buttonstore->min)
                         + button_sprite[buttonstore->sprite18].width / 2;
                     ox = mouse_dx - D_00188c3c - ox;
-                    val = (buttonstore->max - buttonstore->min) * ox
+                    val = ox * (buttonstore->max - buttonstore->min)
                         / (buttonstore->width - button_sprite[buttonstore->sprite18].width);
                 }
                 if (buttonstore->height > button_sprite[buttonstore->sprite18].height) {
-                    oy = w->y + buttonstore->y + button_sprite[buttonstore->sprite18].height / 2
+                    oy = buttonstore->y + w->y + button_sprite[buttonstore->sprite18].height / 2
                         + (buttonstore->max - *buttonstore->value)
                             * (buttonstore->height - button_sprite[buttonstore->sprite18].height)
                             / (buttonstore->max - buttonstore->min);
                     oy = -(mouse_dy - D_00188c40 - oy);
                     if (val) {
-                        val += (buttonstore->max - buttonstore->min) * oy
+                        val += oy * (buttonstore->max - buttonstore->min)
                             / (buttonstore->height - button_sprite[buttonstore->sprite18].height);
                         val /= 2;
                     } else {
-                        val += (buttonstore->max - buttonstore->min) * oy
+                        val += oy * (buttonstore->max - buttonstore->min)
                             / (buttonstore->height - button_sprite[buttonstore->sprite18].height);
                     }
                 }
@@ -583,14 +581,14 @@ extern "C" void fn_0004e47c(Window **windows)
 
     w = windows[0];
     front = 0;
-    if (D_0015536e == 0x13)
+    if (gamevar.f12e == 0x13)
         return;
     CurrentWindow = -1;
     if (!w)
         return;
     if (MouseOnWindow(w)) {
         if (!mouse_was_on_window) {
-            D_00155420 = D_0015536e;
+            D_00155420 = gamevar.f12e;
             set_mouse_mode(0);
             mouse_was_on_window = 1;
         }
@@ -665,7 +663,7 @@ extern "C" s16 fn_0004e6f8(WindowButton *b)
     s32 i;
 
     for (i = 0; i < 500; i++) {
-        if (&D_0015f418[i] == b)
+        if (&resvars.f24_WindowButtonp[i] == b)
             break;
     }
     if (i == 500)

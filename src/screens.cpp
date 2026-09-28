@@ -18,8 +18,6 @@ extern const char *screenpalettes[];
 extern TbIffPalette ppalette;
 
 extern "C" {
-extern TbScreenMode D_0015f3f5;
-extern TbScreenMode D_0015f3f4;
 extern u8 D_00155e07;
 extern u8 D_00155e1d;
 extern TbSprite *D_00153f18;
@@ -62,7 +60,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
     u8 active;
 
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    if ((D_0015f3f5 == SCREEN_MODE_1 && in_game) || D_0015f3f4 == SCREEN_MODE_1) {
+    if ((resvars.f1 == SCREEN_MODE_1 && in_game) || resvars.f0 == SCREEN_MODE_1) {
         if (active)
             LbIsActive();
         if (in_game)
@@ -90,7 +88,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
     set_mouse_mode(mouse_mode);
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
     if (in_game) {
-        if (D_0015f3f5 == SCREEN_MODE_1)
+        if (resvars.f1 == SCREEN_MODE_1)
             setup_menus();
         D_001290d0 = 0xff;
         D_001290d1 = 0xff;
@@ -147,7 +145,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     u8 *p;
 
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    if (D_0015f3f4 != mode) {
+    if (resvars.f0 != mode) {
         if (active)
             LbIsActive();
         AIL_stop_sequence(GetSongHandle());
@@ -262,7 +260,7 @@ u8 display_loading_screen(void)
     if (active)
         LbIsActive();
     LbMouseChangeSprite(0);
-    if (D_0015f3f4 == SCREEN_MODE_1) {
+    if (resvars.f0 == SCREEN_MODE_1) {
         if (!change_res(SCREEN_MODE_13))
             return 0;
     }

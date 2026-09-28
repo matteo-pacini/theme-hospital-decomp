@@ -2,8 +2,6 @@
 
 extern "C" {
 extern u8 D_001567c0[][16];
-extern u8 D_0015f3f8;
-extern u8 D_0015f3f7;
 }
 
 void copy_region(const s16 x, const s16 y, const s16 dx, const s16 dy, const s16 w, const s16 h);
@@ -152,7 +150,7 @@ void draw_a_clipped_four_zone_wall_1(s32 x, s32 y, const s32 cell, s32 x0, s32 y
             }
         }
     }
-    if (x >= lbDisplay.unknown18 - D_0015f3f8 && blocks[mp->unknown4].info->height + lbDisplay.unknown1c > y) {
+    if (x >= lbDisplay.unknown18 - resvars.f4 && blocks[mp->unknown4].info->height + lbDisplay.unknown1c > y) {
         cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
         if (cx0 < 0)
             cx0 = 0;
@@ -194,7 +192,7 @@ void draw_a_clipped_four_zone_wall_1(s32 x, s32 y, const s32 cell, s32 x0, s32 y
             }
         }
     }
-    if (x >= lbDisplay.unknown18 - D_0015f3f8 && y >= lbDisplay.unknown1c) {
+    if (x >= lbDisplay.unknown18 - resvars.f4 && y >= lbDisplay.unknown1c) {
         cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
         if (cx0 < 0)
             cx0 = 0;
@@ -255,7 +253,7 @@ void draw_a_clipped_four_zone_wall_0(s32 x, s32 y, const TbSprite *const spr, s3
             }
         }
     }
-    if (x >= lbDisplay.unknown18 - D_0015f3f8 && spr->height + lbDisplay.unknown1c > y) {
+    if (x >= lbDisplay.unknown18 - resvars.f4 && spr->height + lbDisplay.unknown1c > y) {
         cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
         if (cx0 < 0)
             cx0 = 0;
@@ -297,7 +295,7 @@ void draw_a_clipped_four_zone_wall_0(s32 x, s32 y, const TbSprite *const spr, s3
             }
         }
     }
-    if (x >= lbDisplay.unknown18 - D_0015f3f8 && y >= lbDisplay.unknown1c) {
+    if (x >= lbDisplay.unknown18 - resvars.f4 && y >= lbDisplay.unknown1c) {
         cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
         if (cx0 < 0)
             cx0 = 0;
@@ -338,7 +336,7 @@ void draw_a_clipped_four_zone_floor_tile(s32 x, s32 y, const TbSprite *const spr
         y1 = window.zone_h[window.f2ea];
     x += refresh.f0;
     y += refresh.f2;
-    if (x < lbDisplay.unknown18 && D_0015f3f7 + lbDisplay.unknown1c > y) {
+    if (x < lbDisplay.unknown18 && resvars.f3 + lbDisplay.unknown1c > y) {
         cx0 = x0 + refresh.f0;
         if (cx0 < 0)
             cx0 = 0;
@@ -358,7 +356,7 @@ void draw_a_clipped_four_zone_floor_tile(s32 x, s32 y, const TbSprite *const spr
             }
         }
     }
-    if (x >= lbDisplay.unknown18 - D_0015f3f8 && D_0015f3f7 + lbDisplay.unknown1c > y) {
+    if (x >= lbDisplay.unknown18 - resvars.f4 && resvars.f3 + lbDisplay.unknown1c > y) {
         cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
         if (cx0 < 0)
             cx0 = 0;
@@ -400,7 +398,7 @@ void draw_a_clipped_four_zone_floor_tile(s32 x, s32 y, const TbSprite *const spr
             }
         }
     }
-    if (x >= lbDisplay.unknown18 - D_0015f3f8 && y >= lbDisplay.unknown1c) {
+    if (x >= lbDisplay.unknown18 - resvars.f4 && y >= lbDisplay.unknown1c) {
         cx0 = refresh.f0 + x0 - lbDisplay.unknown18;
         if (cx0 < 0)
             cx0 = 0;

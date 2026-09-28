@@ -10,8 +10,6 @@ struct Req13Layout {
 
 extern "C" {
 
-extern u8 *D_0015f402;
-extern Req13Layout *D_0015f40c;
 extern Event D_001549d0[];
 extern u8 D_00155d56;
 extern u16 D_00155d57;
@@ -40,10 +38,10 @@ void req13(Window *w)
     for (b = w->buttons, i = 1; b; b = b->next) {
         if (b->flags & 6) {
             debug.unknown4 = i;
-            if (i == D_0015f402[1]) {
+            if (i == resvars.fe[1]) {
                 req13_no_pressed();
                 play_sound(10, 0x42, -1, -1);
-            } else if (i == D_0015f402[0]) {
+            } else if (i == resvars.fe[0]) {
                 D_001549d0[player].type = D_00155d56;
                 D_001549d0[player].value = D_00155d57;
                 D_001549d0[player].arg = D_00155d5a;
@@ -67,7 +65,7 @@ void req13_overdraw(Window *w)
     y = w->y - D_00188c40;
     set_font_from_cache(1);
     D_00188c74 = 0x20;
-    LbTextSetWindow(D_0015f40c->text_x, D_0015f40c->text_y, D_0015f40c->text_w, D_0015f40c->text_h);
+    LbTextSetWindow(resvars.f18_Req13Layoutp->text_x, resvars.f18_Req13Layoutp->text_y, resvars.f18_Req13Layoutp->text_w, resvars.f18_Req13Layoutp->text_h);
     LbTextDraw(0, 0, D_00155ced);
     D_00188c74 = 0;
 }

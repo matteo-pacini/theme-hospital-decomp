@@ -10,22 +10,12 @@ struct EmergencyDef {
     u16 f8;
 };
 
-struct EmergencyCall {
-    u16 call;
-    u16 f2;
-    u8 used;
-    u8 illness;
-    u8 count;
-    u8 f7;
-};
-
 struct PlayerPopup {
     u16 call;
     u8 unknown2[0x6a];
 };
 
 extern "C" {
-extern EmergencyCall D_0015533d[];
 extern char D_00149628[];
 extern PlayerPopup D_0015f5c2[];
 extern char **D_001602a4;
@@ -33,19 +23,8 @@ extern char **D_001602cc;
 extern char **D_00160318;
 void fn_000c93bf(char *dst, char *src);
 extern u16 D_00155e40;
-extern u32 D_0015535d;
-extern u16 D_00155361;
-extern u8 D_00155363;
-extern u8 D_00155364;
-extern u8 D_00155365;
-extern u8 D_00155366;
-extern u8 D_0015537e;
-extern u8 D_0015539b[];
 extern u16 D_00158190;
 extern u8 D_00158192;
-extern u8 D_00158323;
-extern u16 D_00155335;
-extern u16 D_00155337;
 extern Event D_001549d0[];
 extern EmergencyDef D_0015fc3c[];
 }
@@ -94,7 +73,7 @@ void try_to_generate_emergency(void)
     if (check_emergency_criteria()) {
         for (j = 0; j < n; j++) {
             if (statvar.unknownfd <= 1 || D_001609c4[j].active != 0 || 0) {
-                if (allhosps[j].rooms[D_00155364].unknown1D == 1)
+                if (allhosps[j].rooms[gamevar.f124].unknown1D == 1)
                     found = 1;
             }
         }
@@ -126,7 +105,7 @@ u32 check_emergency_criteria(void)
         n = 4;
     if (statvar.unknownfd <= 1 && display_mode == 9 && D_00158190 == 5)
         return 0;
-    if (actual_game_turn >= D_0015535d && D_00155363) {
+    if (actual_game_turn >= gamevar.f11d && gamevar.f123) {
         for (i = 0; i < n; i++) {
             if (statvar.unknownfd <= 1 || D_001609c4[i].active != 0 || 0) {
                 if (check_playercall(3, 0, i))
@@ -139,7 +118,7 @@ u32 check_emergency_criteria(void)
                     return 0;
             }
         }
-        if (statvar.f6a && D_0015537e < 4)
+        if (statvar.f6a && gamevar.f13e < 4)
             return 1;
     }
     return 0;
@@ -153,19 +132,19 @@ void setup_next_emergency(void)
     u32 month;
 
     month = mycontrol->f648 * 12 + mycontrol->unknown650;
-    D_00155363 = 0;
+    gamevar.f123 = 0;
     for (i = 0; i < 20; i++) {
-        if (D_0015539b[i] == 0) {
-            D_0015539b[i] = 1;
+        if (gamevar.f15b[i] == 0) {
+            gamevar.f15b[i] = 1;
             if (D_0015fc3c[i].end > month && D_0015fc3c[i].end > D_0015fc3c[i].start) {
                 r = old_newrand() % ((D_0015fc3c[i].end + 1 - D_0015fc3c[i].start) * 0x5dc);
-                D_0015535d = r + D_0015fc3c[i].start * 0x5dc;
-                D_00155364 = D_0015fc3c[i].illness;
+                gamevar.f11d = r + D_0015fc3c[i].start * 0x5dc;
+                gamevar.f124 = D_0015fc3c[i].illness;
                 r = old_newrand() % (D_0015fc3c[i].max + 1 - D_0015fc3c[i].min);
-                D_00155365 = r + D_0015fc3c[i].min;
-                D_00155366 = D_0015fc3c[i].f7;
-                D_00155361 = D_0015fc3c[i].f8;
-                D_00155363 = 1;
+                gamevar.f125 = r + D_0015fc3c[i].min;
+                gamevar.f126 = D_0015fc3c[i].f7;
+                gamevar.f121 = D_0015fc3c[i].f8;
+                gamevar.f123 = 1;
                 break;
             }
         }
@@ -179,16 +158,16 @@ void setup_emergency_stats(u16 call, u8 owner)
 
     if (owner == player) {
         for (i = 0; i < 4; i++) {
-            if (D_0015533d[i].used == 0)
+            if (gamevar.ffd[i].used == 0)
                 break;
         }
-        D_0015533d[i].used = 1;
-        D_0015533d[i].call = call;
-        D_0015533d[i].f2 = D_00155361;
-        D_0015533d[i].illness = D_00155364;
-        D_0015533d[i].count = D_00155365;
-        D_0015533d[i].f7 = D_00155366;
-        D_0015537e++;
+        gamevar.ffd[i].used = 1;
+        gamevar.ffd[i].call = call;
+        gamevar.ffd[i].f2 = gamevar.f121;
+        gamevar.ffd[i].illness = gamevar.f124;
+        gamevar.ffd[i].count = gamevar.f125;
+        gamevar.ffd[i].f7 = gamevar.f126;
+        gamevar.f13e++;
         D_00155e40 = 0;
     }
 }
@@ -201,16 +180,16 @@ void give_emergency_stats(u16 call, u8 owner)
 
     h = &allhosps[owner];
     for (i = 0; i < 4; i++) {
-        if (D_0015533d[i].call == call && D_0015533d[i].used != 0)
+        if (gamevar.ffd[i].call == call && gamevar.ffd[i].used != 0)
             break;
     }
-    h->f1e4 = D_0015533d[i].illness;
-    h->f1e6 = D_0015533d[i].count;
+    h->f1e4 = gamevar.ffd[i].illness;
+    h->f1e6 = gamevar.ffd[i].count;
     h->f1e3 = h->f1e6;
-    h->f1dd = D_0015533d[i].f2;
-    h->f1e8 = D_0015533d[i].f7;
-    D_0015533d[i].used = 0;
-    D_0015537e--;
+    h->f1dd = gamevar.ffd[i].f2;
+    h->f1e8 = gamevar.ffd[i].f7;
+    gamevar.ffd[i].used = 0;
+    gamevar.f13e--;
 }
 
 // FUNCTION: 0x000af600
@@ -249,13 +228,13 @@ u32 announce_emergency(u8 owner, char **strs)
         available_buttons &= ~1;
     call = D_0015f5c2[owner].call;
     for (i = 0; i < 4; i++) {
-        if (D_0015533d[i].call == call && D_0015533d[i].used)
+        if (gamevar.ffd[i].call == call && gamevar.ffd[i].used)
             break;
     }
     staff_count = count_emergency_staff(owner);
-    patients = D_0015533d[i].count;
-    bonus = patients * D_0015533d[i].f2;
-    illness = D_0015533d[i].illness;
+    patients = gamevar.ffd[i].count;
+    bonus = patients * gamevar.ffd[i].f2;
+    illness = gamevar.ffd[i].illness;
     exp = &expertise[illness];
     if (allhosps[owner].rooms[illness].unknown1C == 1) {
         cured = 1;
@@ -407,7 +386,7 @@ void helicopter_lands(Thing *w)
             w->kind = 4;
             allhosps[w->owner].f1e1 = 1;
             if (w->owner == player)
-                D_00158323 = 1;
+                advisor.f127 = 1;
             break;
         case 1:
             w->sprite = start[0x7a8].frame;
@@ -435,8 +414,8 @@ void helicopter_leaves(Thing *w)
             h->f1df = 0;
             break;
         case 1:
-            D_00155335 = 0;
-            D_00155337 = 0;
+            gamevar.ff5 = 0;
+            gamevar.ff7 = 0;
             break;
         }
         if (w->f39)

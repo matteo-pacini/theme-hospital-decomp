@@ -36,21 +36,6 @@ void computer_action(void);
 
 void process_stat_panel(void);
 
-struct StatPanelLayout {
-    u8 unknown0[0x40];
-    struct {
-        s32 x;
-        s32 y;
-        s32 w;
-        s32 h;
-    } boxes[6];
-};
-
-struct StatTextLayout {
-    u8 unknown0[0x238];
-    Point pos[7];
-};
-
 struct StatItem {
     u8 type;
     u16 x;
@@ -59,13 +44,10 @@ struct StatItem {
 };
 
 extern "C" {
-extern u8 D_00158324;
 extern u16 D_00155d89;
 extern u16 D_00188c74;
 extern s32 D_00188c38;
 extern Event D_001549d0[];
-extern StatPanelLayout *D_0015f430;
-extern StatTextLayout *D_0015f434;
 extern StatItem D_00136388[];
 extern char **D_0016032c;
 extern char **D_001602b4;
@@ -82,7 +64,6 @@ extern char D_00120453[];
 extern char D_00120459[];
 extern volatile s16 D_00188c6c, D_00188c70;
 extern u8 D_00188c7e, D_00188c81;
-extern Button *D_0015f43c;
 extern u8 D_00156910;
 void StopSample(u32 a, u32 b);
 }
@@ -146,7 +127,7 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
                 mycontrol->f8 -= amount;
         }
         if ((towns[myhosp->f29].f0 - myhosp->f35) * 8 > towns[myhosp->f29].f0)
-            D_00158324 |= 0x20;
+            advisor.f128 |= 0x20;
     } else {
         allhosps[owner].f35 += amount;
     }
@@ -374,10 +355,10 @@ void bank_statement(void)
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c74 = 0x100;
     for (i = 0; i < 6; i++) {
-        LbTextSetWindow(D_0015f430->boxes[i].x, D_0015f430->boxes[i].y, D_0015f430->boxes[i].w,
-                        D_0015f430->boxes[i].h);
+        LbTextSetWindow(resvars.f3c_Boxp[i + 4].x, resvars.f3c_Boxp[i + 4].y, resvars.f3c_Boxp[i + 4].w,
+                        resvars.f3c_Boxp[i + 4].h);
         sprintf(buf, D_0012042c, D_0016032c[i]);
-        LbTextDraw(D_0015f434->pos[0].x, D_0015f434->pos[0].y * 2, buf);
+        LbTextDraw(resvars.f40[71].x, resvars.f40[71].y * 2, buf);
     }
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c74 = 0;
@@ -399,10 +380,10 @@ void bank_statement(void)
             for (k = 0; k < first; k++)
                 balance += mycontrol->entries[k].amount;
             for (; first < mycontrol->f64e && row < D_00136388[7].y - line_h; first++) {
-                if (row + D_0015f434->pos[1].y > D_0015f434->pos[1].y + line_h * 0x1b)
+                if (row + resvars.f40[72].y > resvars.f40[72].y + line_h * 0x1b)
                     break;
                 sprintf(buf, D_00120432, mycontrol->entries[first].day, month_text[mycontrol->entries[first].month]);
-                LbTextDraw(D_0015f434->pos[1].x, row + D_0015f434->pos[1].y, buf);
+                LbTextDraw(resvars.f40[72].x, row + resvars.f40[72].y, buf);
                 switch (mycontrol->entries[first].type) {
                 case 17:
                     sprintf(buf, D_00120438, D_001602b4[mycontrol->entries[first].type],
@@ -419,29 +400,29 @@ void bank_statement(void)
                     sprintf(buf, D_00120444, D_001602b4[mycontrol->entries[first].type]);
                     break;
                 }
-                LbTextDraw(D_0015f434->pos[2].x, row + D_0015f434->pos[2].y, buf);
+                LbTextDraw(resvars.f40[73].x, row + resvars.f40[73].y, buf);
                 if (mycontrol->entries[first].amount < 0) {
                     sprintf(buf, D_00120447, -mycontrol->entries[first].amount);
-                    LbTextDraw(D_0015f434->pos[3].x, row + D_0015f434->pos[3].y, buf);
+                    LbTextDraw(resvars.f40[74].x, row + resvars.f40[74].y, buf);
                 } else if (mycontrol->entries[first].amount != 0) {
                     sprintf(buf, D_0012044d, mycontrol->entries[first].amount);
-                    LbTextDraw(D_0015f434->pos[4].x, row + D_0015f434->pos[4].y, buf);
+                    LbTextDraw(resvars.f40[75].x, row + resvars.f40[75].y, buf);
                 }
                 balance += mycontrol->entries[first].amount;
                 sprintf(buf, D_00120453, balance);
                 if (balance < 0)
-                    LbTextDraw(D_0015f434->pos[5].x, row + D_0015f434->pos[5].y, buf);
+                    LbTextDraw(resvars.f40[76].x, row + resvars.f40[76].y, buf);
                 else
-                    LbTextDraw(D_0015f434->pos[5].x, row + D_0015f434->pos[5].y, buf);
+                    LbTextDraw(resvars.f40[76].x, row + resvars.f40[76].y, buf);
                 row += line_h;
             }
             break;
         case 8:
             sprintf(buf, D_00120459, balance);
             if (balance < 0)
-                LbTextDraw(D_0015f434->pos[6].x, D_0015f434->pos[6].y, buf);
+                LbTextDraw(resvars.f40[77].x, resvars.f40[77].y, buf);
             else
-                LbTextDraw(D_0015f434->pos[6].x, D_0015f434->pos[6].y, buf);
+                LbTextDraw(resvars.f40[77].x, resvars.f40[77].y, buf);
             break;
         case 4:
         case 5:
@@ -462,21 +443,21 @@ void process_stat_panel(void)
     u8 i;
 
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i].width != 0 && D_0015f43c[i].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i].x, D_0015f43c[i].y, D_0015f43c[i].width,
-                             D_0015f43c[i].height)) {
-                D_0015f43c[i].callback(i);
-                reqspr_draw(D_0015f43c[i].unknownC, D_0015f43c[i].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i].sprite]);
+        for (i = 0; resvars.f48[i].width != 0 && resvars.f48[i].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i].x, resvars.f48[i].y, resvars.f48[i].width,
+                             resvars.f48[i].height)) {
+                resvars.f48[i].callback(i);
+                reqspr_draw(resvars.f48[i].unknownC, resvars.f48[i].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i].sprite]);
             }
         }
     }
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i].width != 0 && D_0015f43c[i].height != 0; i++) {
-            if (over_hotspot(mouse_dx, mouse_dy, D_0015f43c[i].x, D_0015f43c[i].y, D_0015f43c[i].width,
-                             D_0015f43c[i].height)) {
-                reqspr_draw(D_0015f43c[i].unknownC, D_0015f43c[i].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i].sprite]);
+        for (i = 0; resvars.f48[i].width != 0 && resvars.f48[i].height != 0; i++) {
+            if (over_hotspot(mouse_dx, mouse_dy, resvars.f48[i].x, resvars.f48[i].y, resvars.f48[i].width,
+                             resvars.f48[i].height)) {
+                reqspr_draw(resvars.f48[i].unknownC, resvars.f48[i].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i].sprite]);
                 break;
             }
         }
@@ -598,7 +579,7 @@ void calculate_value(const u8 owner)
             total += rooms[room->type].cost;
     }
     count_hospital_area((u16)owner);
-    staff = h->f1f1 * *(u16 *)&expertise[53].unknown10[3];
+    staff = h->f1f1 * gbv.f7c;
     h->f1bb = staff + (base + bank + total) + 10000;
     if (h->f1bb < 0)
         h->f1bb = 0;

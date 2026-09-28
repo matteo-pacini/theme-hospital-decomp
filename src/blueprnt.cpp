@@ -27,21 +27,17 @@ void set_expertise_room(RoomInfo *room);
 
 extern "C" {
 
-extern u8 D_0015831b;
 extern u8 D_001553c7;
 extern u8 D_001553cf;
 extern u16 D_001553f9;
 extern u16 D_001553fb;
-extern u16 D_001581fe;
 extern u8 D_001553e8;
 extern u8 D_001553c8;
 extern u16 D_00188c74;
-extern u8 D_0015f3f7, D_0015f3f8;
 extern s16 D_001567b0[8];
 
 }
 
-// NONMATCHING: sx + D_0015f3f8 refresh-zone argument: the target loads D_0015f3f8 before sx
 // FUNCTION: 0x00045890
 void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1, const u8 owner, const u8 mode)
 {
@@ -93,7 +89,7 @@ void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1,
             give_screen_xy_of_cell_at_column_row(window.unknown2eb, x, y);
             sx = info.unknown54;
             sy = info.unknown58;
-            set_all_refresh_zones_in_window(sx, sy - D_0015f3f7, sx + D_0015f3f8, sy, 3);
+            set_all_refresh_zones_in_window(sx, sy - resvars.f3, sx + resvars.f4, sy, 3);
             if (!(is_room_size_valid(x0, y0, x1, y1, owner) && is_valid_no_room((y << 7) + x)
                   && is_tile_valid((y << 7) + x, owner))
                 || is_tile_near_half_wall(x, y, x0, y0, x1, y1)) {
@@ -410,14 +406,14 @@ u8 commit_blueprint(u8 owner)
     build = &allhosps[owner].build;
     if (!is_valid_room(build->x0, build->y0, build->x1, build->y1, owner)) {
         if (D_001553c7 == player) {
-            D_001581fe = 4;
+            advisor.f2 = 4;
             set_mouse_mode(1);
         }
         return 0;
     }
     if (!check_room_access_with_blueprint(owner)) {
         if (D_001553c7 == player) {
-            D_001581fe = 5;
+            advisor.f2 = 5;
             set_mouse_mode(1);
         }
         return 0;
@@ -479,7 +475,7 @@ u8 is_tile_valid(u16 tile, u8 owner)
 
     for (t = &thing[map[tile].first]; t > thing; t = &thing[t->next]) {
         if (t->renderer != 2 && t->renderer != 4) {
-            D_0015831b |= 2;
+            advisor.f11f |= 2;
             return 0;
         }
     }
@@ -489,7 +485,7 @@ u8 is_tile_valid(u16 tile, u8 owner)
     if (!(map[tile].unknown7 & 0x10) && (map[tile].unknown7 & (1 << owner))) {
         return 1;
     }
-    D_0015831b |= 2;
+    advisor.f11f |= 2;
     return 0;
 }
 
@@ -539,7 +535,7 @@ u8 is_valid_no_room(u16 tile)
     if (which_room(tile) == 0) {
         return 1;
     }
-    D_0015831b |= 2;
+    advisor.f11f |= 2;
     return 0;
 }
 
@@ -875,10 +871,10 @@ u8 is_room_size_valid(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
     height = y1 - y0 + 1;
     type = allhosps[owner].build.unknownD;
     if (width < rooms[type].unknown27[0] || height < rooms[type].unknown27[1]) {
-        D_0015831b |= 4;
+        advisor.f11f |= 4;
         return 0;
     }
-    D_0015831b &= ~4;
+    advisor.f11f &= ~4;
     return 1;
 }
 

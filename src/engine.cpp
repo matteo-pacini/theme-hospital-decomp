@@ -61,14 +61,10 @@ extern s32 D_00188c38;
 extern u16 D_001553f9;
 extern u16 D_00155427;
 extern u8 D_00155429;
-extern u16 D_0015536e;
 extern u16 D_001553e0;
 extern u8 D_001553c8;
-extern u8 D_0015f3f7;
-extern u8 D_0015f3f8;
 extern s16 D_001567b0[8];
 extern CellLink D_00157dc4[];
-extern u8 D_001547e0[];
 extern u8 *D_00155d8f;
 extern s32 D_00155d93;
 extern s32 D_00155d97;
@@ -103,7 +99,7 @@ void draw_it(void)
     draw_emergency();
     if (!debug.unknownd7)
         compute_help_text(0, 0, 3);
-    if (D_0015536e == 1)
+    if (gamevar.f12e == 1)
         draw_cell_no(D_001553e0, color.unknownD);
     LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
     set_map_cur_and_mcur_x_and_y();
@@ -342,62 +338,62 @@ void setup_stats_for_window_scan(const u8 n, s32 x, const s32 y, s32 w, const s3
     top = 1;
     right = 1;
     bottom = 1;
-    extra = D_0015f3f7 * 19 / 10;
-    x -= D_0015f3f8 / 2;
-    w += D_0015f3f8 / 2;
+    extra = resvars.f3 * 19 / 10;
+    x -= resvars.f4 / 2;
+    w += resvars.f4 / 2;
     find_cell_at_point(n, x, y);
     info.fc = info.unknown54;
     info.f14 = info.unknown58;
     info.f4 = info.unknown5c;
     info.f8 = info.unknown60;
     info.f0 = info.unknown64;
-    dx = x - info.fc - D_0015f3f8 / 2;
+    dx = x - info.fc - resvars.f4 / 2;
     if (dx >= 0)
         left = 0;
-    dy = y - info.f14 + D_0015f3f7 / 2;
+    dy = y - info.f14 + resvars.f3 / 2;
     if (dy >= 0)
         top = 0;
-    span = w - x + (dx - D_0015f3f8 / 2);
-    cnt = span / D_0015f3f8;
-    prod = cnt * D_0015f3f8;
+    span = w - x + (dx - resvars.f4 / 2);
+    cnt = span / resvars.f4;
+    prod = cnt * resvars.f4;
     if (prod < span) {
         rem = span - prod;
-        if (D_0015f3f8 / 2 >= rem)
+        if (resvars.f4 / 2 >= rem)
             odd = 0;
         cnt++;
     }
     info.f18 = cnt + 1;
-    dy -= D_0015f3f7 / 2;
+    dy -= resvars.f3 / 2;
     span = dy + (h - y);
-    cnt = span / D_0015f3f7;
-    prod = cnt * D_0015f3f7;
+    cnt = span / resvars.f3;
+    prod = cnt * resvars.f3;
     if (prod < span) {
         rem = span - prod;
-        if (D_0015f3f7 / 2 >= rem)
+        if (resvars.f3 / 2 >= rem)
             right = 0;
         cnt++;
     }
     info.f20 = cnt * 2 + 1;
     span = dy + (h + extra - y);
-    cnt = span / D_0015f3f7;
-    prod = cnt * D_0015f3f7;
+    cnt = span / resvars.f3;
+    prod = cnt * resvars.f3;
     if (prod < span) {
         rem = span - prod;
-        if (D_0015f3f7 / 2 >= rem)
+        if (resvars.f3 / 2 >= rem)
             bottom = 0;
         cnt++;
     }
     info.f24 = cnt * 2 + 1;
-    info.f10 = D_0015f3f8 / 2;
+    info.f10 = resvars.f4 / 2;
     info.f1c = -1;
     if (top) {
         info.f24++;
         info.f20++;
-        info.f14 -= D_0015f3f7 / 2;
+        info.f14 -= resvars.f3 / 2;
         if (left) {
             info.f4--;
             info.f0--;
-            info.fc -= D_0015f3f8 / 2;
+            info.fc -= resvars.f4 / 2;
             if (odd)
                 info.f18++;
             else
@@ -405,8 +401,8 @@ void setup_stats_for_window_scan(const u8 n, s32 x, const s32 y, s32 w, const s3
         } else {
             info.f8--;
             info.f0 -= 0x80;
-            info.fc += D_0015f3f8 / 2;
-            info.f10 = D_0015f3f8 / 2;
+            info.fc += resvars.f4 / 2;
+            info.f10 = resvars.f4 / 2;
             info.f10 = -info.f10;
             if (odd) {
                 info.f1c = 0;
@@ -416,7 +412,7 @@ void setup_stats_for_window_scan(const u8 n, s32 x, const s32 y, s32 w, const s3
             }
         }
     } else if (left) {
-        info.f10 = D_0015f3f8 / 2;
+        info.f10 = resvars.f4 / 2;
         info.f10 = -info.f10;
         if (odd)
             info.f1c = 1;
@@ -448,18 +444,18 @@ void do_cell(const u8 n, const s32 x, const s32 y, const s32 z, const s32 w, con
     m = &map[cell];
     if ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0)) {
         if (m->flags & 0x10) {
-            ox = 0x5a - D_0015f3f8 / 2;
-            oy = 0xb4 - D_0015f3f7 * 3 / 2;
+            ox = 0x5a - resvars.f4 / 2;
+            oy = 0xb4 - resvars.f3 * 3 / 2;
             DrawIntoPixBuffer();
             do_mapwho(m, ox, oy, cx0 + x - ox, cy0 + y - 0xb4);
             px = D_001567b0[0];
             py = D_001567b0[1];
             D_001567b0[0] += x - ox;
-            D_001567b0[1] += y - 0xb4 + D_0015f3f7 * 3 / 2 - D_0015f3f7;
+            D_001567b0[1] += y - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
             D_001567b0[2] += x - ox;
-            D_001567b0[3] += y - 0xb4 + D_0015f3f7 * 3 / 2 - D_0015f3f7;
+            D_001567b0[3] += y - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
             pixBuf.x = x - ox;
-            pixBuf.y = y - 0xb4 + D_0015f3f7 * 3 / 2 - D_0015f3f7;
+            pixBuf.y = y - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
             find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0, cx1, cy1);
             if (info.unknown78 == 0) {
                 bx0 = info.unknown68;
@@ -475,7 +471,7 @@ void do_cell(const u8 n, const s32 x, const s32 y, const s32 z, const s32 w, con
             FillBoxInPixBuffer(0xfe, px, py, D_001567b0[2] - D_001567b0[0], D_001567b0[3] - D_001567b0[1]);
         } else {
             LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
-            do_mapwho(m, x, y - D_0015f3f7, 0, 0);
+            do_mapwho(m, x, y - resvars.f3, 0, 0);
             find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0, cx1, cy1);
             if (info.unknown78 == 0) {
                 bx0 = info.unknown68;
@@ -489,7 +485,7 @@ void do_cell(const u8 n, const s32 x, const s32 y, const s32 z, const s32 w, con
     }
 }
 
-// NONMATCHING: register choice, byte local slots
+// NONMATCHING: frame layout (byte local slots)
 // FUNCTION: 0x000a8198
 void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -594,17 +590,17 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 n, s32 x0
                     x = bx + i;
                     y = by - i;
                     c = base - i * 0x7f;
-                    do_cell(n, px + D_0015f3f8 * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
+                    do_cell(n, px + resvars.f4 * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
                 }
             }
             for (i = last; i >= 0; i = D_00157dc4[i].next) {
                 x = bx + i;
                 y = by - i;
                 c = base - i * 0x7f;
-                do_cell(n, px + D_0015f3f8 * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
+                do_cell(n, px + resvars.f4 * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
             }
             px += dx;
-            py += D_0015f3f7 / 2;
+            py += resvars.f3 / 2;
             if (dx < 0) {
                 by++;
                 base += 0x80;
@@ -665,7 +661,7 @@ void draw_window_on_wscreen_mk2(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, cons
         px = info.fc;
         py = info.f14;
         dx = info.f10;
-        half = D_0015f3f7 / 2;
+        half = resvars.f3 / 2;
         sx = px;
         sy = py;
         LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
@@ -682,7 +678,7 @@ void draw_window_on_wscreen_mk2(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, cons
                 if ((((active == 1 && cx >= 0) && cx < 0x80) && cy >= 0) && cy < 0x80) {
                     m = &mp[c];
                     if (m->unknown3) {
-                        if (D_001547e0[1]) {
+                        if (myplayer.f1d) {
                             if (!(m->floor & 0x20))
                                 LbSpriteDraw(x, sy - blocks[m->unknown3].info->height, blocks[m->unknown3].info);
                             if (m->floor & 0x20) {
@@ -705,7 +701,7 @@ void draw_window_on_wscreen_mk2(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, cons
                 }
                 if (c == cell)
                     reached = 1;
-                x += D_0015f3f8;
+                x += resvars.f4;
                 cx++;
                 cy--;
                 c += -0x7f;
@@ -768,7 +764,7 @@ void draw_window_into_pix_buffer(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, con
     px = info.fc;
     py = info.f14;
     dx = info.f10;
-    half = D_0015f3f7 / 2;
+    half = resvars.f3 / 2;
     give_absolute_xy_of_cell_at_column_row(bx, by);
     ax = info.unknown54;
     ay = info.unknown58;
@@ -785,16 +781,16 @@ void draw_window_into_pix_buffer(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, con
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80) && (cx > lx || cy > ly)) {
                 m = &mp[c];
                 if (m->unknown3)
-                    LbDrawHVLine(0x5a - D_0015f3f8 / 2 + x,
-                                 ay - blocks[m->unknown3].info->height + 0xb4 - D_0015f3f7 * 3 / 2 + D_0015f3f7,
+                    LbDrawHVLine(0x5a - resvars.f4 / 2 + x,
+                                 ay - blocks[m->unknown3].info->height + 0xb4 - resvars.f3 * 3 / 2 + resvars.f3,
                                  blocks[m->unknown3].info, 0xfe);
                 if (m->unknown4)
-                    LbDrawHVLine(0x5a - D_0015f3f8 / 2 + x,
-                                 ay - blocks[m->unknown4].info->height + 0xb4 - D_0015f3f7 * 3 / 2 + D_0015f3f7,
+                    LbDrawHVLine(0x5a - resvars.f4 / 2 + x,
+                                 ay - blocks[m->unknown4].info->height + 0xb4 - resvars.f3 * 3 / 2 + resvars.f3,
                                  blocks[m->unknown4].info, 0xfe);
             }
-            x += D_0015f3f8;
-            sx += D_0015f3f8;
+            x += resvars.f4;
+            sx += resvars.f4;
             cx++;
             cy--;
             c += -0x7f;
@@ -1005,7 +1001,8 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
     return -1;
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: pixBuf.y: the target adds sy - 0xb4 into the register holding resvars.f3 * 3 / 2;
+// here the other way round
 // FUNCTION: 0x000a9744
 void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -1071,7 +1068,7 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
     px = info.fc;
     py = info.f14;
     dx = info.f10;
-    half = D_0015f3f7 / 2;
+    half = resvars.f3 / 2;
     sx = px;
     sy = py;
     LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
@@ -1107,7 +1104,7 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 tile = m->overlay;
-                if (D_001547e0[1]) {
+                if (myplayer.f1d) {
                     if (!(m->floor & 0x10) && !(m->floor & 0x40)) {
                         LbSpriteDraw(x, sy - blocks[tile].info->height, blocks[tile].info);
                     } else if (m->floor & 0x40) {
@@ -1153,8 +1150,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
             } else {
                 LbSpriteDraw(x, sy - blocks[4].info->height, blocks[4].info);
             }
-            x += D_0015f3f8;
-            wx += D_0015f3f8;
+            x += resvars.f4;
+            wx += resvars.f4;
             cx++;
             cy--;
             c += -0x7f;
@@ -1194,7 +1191,7 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 if (m->unknown3) {
-                    if (D_001547e0[1]) {
+                    if (myplayer.f1d) {
                         if (!(m->floor & 0x20)) {
                             LbSpriteDraw(x, sy - blocks[m->unknown3].info->height, blocks[m->unknown3].info);
                         } else if (m->floor & 0x20) {
@@ -1219,8 +1216,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
             } else {
                 break;
             }
-            x += D_0015f3f8;
-            wx += D_0015f3f8;
+            x += resvars.f4;
+            wx += resvars.f4;
             cx++;
             cy--;
             c += -0x7f;
@@ -1235,18 +1232,18 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
                 m = &mp[c];
                 if ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0)) {
                     if (!(m->flags & 0x10)) {
-                        do_mapwho(m, x, sy - D_0015f3f7, 0, 0);
+                        do_mapwho(m, x, sy - resvars.f3, 0, 0);
                     } else {
                         DrawIntoPixBuffer();
-                        do_mapwho(m, 0x5a - D_0015f3f8 / 2, 0xb4 - D_0015f3f7 * 3 / 2, 0, 0);
+                        do_mapwho(m, 0x5a - resvars.f4 / 2, 0xb4 - resvars.f3 * 3 / 2, 0, 0);
                         ppx = D_001567b0[0];
                         ppy = D_001567b0[1];
-                        D_001567b0[0] = (x - (0x5a - D_0015f3f8 / 2)) + D_001567b0[0];
-                        D_001567b0[1] = (sy - 0xb4 + D_0015f3f7 * 3 / 2 - D_0015f3f7) + D_001567b0[1];
-                        D_001567b0[2] = (x - (0x5a - D_0015f3f8 / 2)) + D_001567b0[2];
-                        D_001567b0[3] = (sy - 0xb4 + D_0015f3f7 * 3 / 2 - D_0015f3f7) + D_001567b0[3];
-                        pixBuf.x = x - 0x5a + D_0015f3f8 / 2;
-                        pixBuf.y = sy - 0xb4 + D_0015f3f7 * 3 / 2 - D_0015f3f7;
+                        D_001567b0[0] = (x - (0x5a - resvars.f4 / 2)) + D_001567b0[0];
+                        D_001567b0[1] = D_001567b0[1] + (sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3);
+                        D_001567b0[2] = (x - (0x5a - resvars.f4 / 2)) + D_001567b0[2];
+                        D_001567b0[3] = (sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3) + D_001567b0[3];
+                        pixBuf.x = x - 0x5a + resvars.f4 / 2;
+                        pixBuf.y = sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
                         find_common_window(D_001567b0[0] + minx, D_001567b0[1] + miny, D_001567b0[2] + minx, D_001567b0[3] + miny, x0, y0, x1, y1);
                         b0 = info.unknown68;
                         b1 = info.unknown6c;
@@ -1264,8 +1261,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
                     }
                 }
             }
-            x += D_0015f3f8;
-            wx += D_0015f3f8;
+            x += resvars.f4;
+            wx += resvars.f4;
             cx++;
             cy--;
             c += -0x7f;
@@ -1343,7 +1340,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
     px = info.fc;
     py = info.f14;
     dx = info.f10;
-    half = D_0015f3f7 / 2;
+    half = resvars.f3 / 2;
     sx = px;
     sy = py;
     LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
@@ -1375,7 +1372,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 tile = m->overlay;
-                if (D_001547e0[1]) {
+                if (myplayer.f1d) {
                     if (!(m->floor & 0x10) && !(m->floor & 0x40)) {
                         draw_a_clipped_four_zone_floor_tile(x, py, blocks[tile].info, x0, y0, x1, y1);
                     } else if (m->floor & 0x40) {
@@ -1421,7 +1418,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
             } else {
                 draw_a_clipped_four_zone_floor_tile(x, py, blocks[4].info, x0, y0, x1, y1);
             }
-            x += D_0015f3f8;
+            x += resvars.f4;
             cx++;
             cy--;
             c += -0x7f;
@@ -1458,7 +1455,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 if (m->unknown3) {
-                    if (D_001547e0[1]) {
+                    if (myplayer.f1d) {
                         if (!(m->floor & 0x20)) {
                             tile = blocks[m->unknown3].data;
                             draw_a_clipped_four_zone_wall_0(x, py, blocks[m->unknown3].info, x0, y0, x1, y1);
@@ -1483,7 +1480,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
                     tile = blocks[m->unknown4].data;
                     draw_a_clipped_four_zone_wall_1(x, py, c, x0, y0, x1, y1);
                 }
-                x += D_0015f3f8;
+                x += resvars.f4;
                 cx++;
                 cy--;
                 c += -0x7f;

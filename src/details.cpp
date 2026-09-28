@@ -1,19 +1,7 @@
 #include "hosp.h"
 
-struct GameSpeedPrefs {
-    u8 unknown0;
-    u8 f1;
-    u16 speed;
-};
-
 extern "C" {
 extern char D_001563c5[];
-extern GameSpeedPrefs D_001547e0;
-extern u8 D_001547e4;
-extern u8 D_001547e6;
-extern u8 D_001547e7[];
-extern u8 D_00154805[];
-extern u8 D_00154819;
 extern char D_00121be8[];
 extern char D_00121bef[];
 extern char D_00121c21[];
@@ -79,16 +67,16 @@ u8 load_player_details(void)
 // FUNCTION: 0x000baa28
 void set_default_player_details(void)
 {
-    D_001547e0.speed = 0x19;
-    D_001547e4 = 2;
+    myplayer.f1e = 0x19;
+    myplayer.f20 = 2;
     myplayer.f9 = 0;
     myplayer.fb = 0;
-    D_001547e0.f1 = 1;
-    D_001547e6 = 1;
-    LbMemorySet(D_001547e7, 0x1e, 0);
-    LbMemorySet(D_00154805, 0x14, 0);
+    myplayer.f1d = 1;
+    myplayer.f22 = 1;
+    LbMemorySet(myplayer.f23, 0x1e, 0);
+    LbMemorySet(myplayer.f41, 0x14, 0);
     LbMemorySet(myplayer.unknown12, 0xb, 0);
-    D_00154819 = 1;
+    myplayer.f41[20] = 1;
     myplayer.ff = 1;
     myplayer.fd = 0x7f;
     myplayer.unknown11 = 1;
@@ -102,7 +90,7 @@ void fn_000baad0(void)
 {
     FadeMusic(1000, myplayer.fc);
     fn_0008bdd4();
-    switch (D_001547e0.speed) {
+    switch (myplayer.f1e) {
     case 1:
         vary_speed(10);
         break;

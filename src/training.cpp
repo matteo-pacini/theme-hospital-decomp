@@ -15,11 +15,6 @@ void insert_skill(u16 skill, u8 owner);
 
 extern "C" {
 
-extern u16 D_0012dd76[];
-extern u16 D_0012ddc1;
-extern u16 D_0012ddc6;
-extern u16 D_0012ddc8;
-extern u16 D_0012ddca;
 
 u8 fn_0002b400(Thing *w);
 
@@ -264,7 +259,7 @@ void training_done(const Thing *w, const u8 kind)
     Thing *t;
     u32 learn;
 
-    base = D_0012dd76[kind];
+    base = gbv.ff6[kind];
     count = 1;
     students = 0;
     points = 0;
@@ -292,8 +287,8 @@ void training_done(const Thing *w, const u8 kind)
             } else if (learn == 0) {
             }
             if (t->unknown126 < limit) {
-                if (D_0012ddc1 / (students * count) > 0) {
-                    t->unknown126 += D_0012ddc1 / (count * students);
+                if (gbv.f141 / (students * count) > 0) {
+                    t->unknown126 += gbv.f141 / (count * students);
                     if (t->unknown126 < 30) {
                         t->unknown126 = 30;
                     } else if (t->unknown126 > 1000) {
@@ -313,7 +308,7 @@ void training_done(const Thing *w, const u8 kind)
                 }
                 if (learn & 0x20) {
                     t->unknown148[3] += points;
-                    if (t->unknown148[3] > D_0012ddc6) {
+                    if (t->unknown148[3] > gbv.f146) {
                         t->unknown124 |= 0x20;
                         allhosps[t->owner].fca6++;
                         if (t->owner == player) {
@@ -325,7 +320,7 @@ void training_done(const Thing *w, const u8 kind)
                 }
                 if (learn & 0x40) {
                     t->unknown148[4] += points;
-                    if (t->unknown148[4] > D_0012ddc8) {
+                    if (t->unknown148[4] > gbv.f148) {
                         t->unknown124 |= 0x40;
                         if (t->owner == player) {
                             announce_this(4, 6);
@@ -336,7 +331,7 @@ void training_done(const Thing *w, const u8 kind)
                 }
                 if (learn & 0x100) {
                     t->unknown148[5] += points;
-                    if (t->unknown148[5] > D_0012ddca) {
+                    if (t->unknown148[5] > gbv.f14a) {
                         t->unknown124 |= 0x100;
                         if (t->owner == player) {
                             announce_this(4, 8);

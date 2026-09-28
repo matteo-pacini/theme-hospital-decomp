@@ -21,8 +21,6 @@ extern volatile s16 D_00188c70;
 extern u16 D_00155da5;
 extern s16 D_00155da3;
 extern u8 D_0012ce18[];
-extern Point *D_0015f434;
-extern Button *D_0015f43c;
 extern char **D_001602fc;
 extern char **D_00160364;
 extern char **D_00160368;
@@ -31,7 +29,6 @@ extern char **D_00160390;
 extern Event D_001549d0[];
 extern u8 D_00155e11;
 extern u8 D_00155e12;
-extern s32 D_0015f8ed;
 extern char D_00121b04[];
 extern char D_00121b0d[];
 extern char D_00121b10[];
@@ -172,8 +169,8 @@ extern "C" void fn_000b4e88(void)
             }
             if (cat == 11)
                 break;
-            LbTextSetWindow(D_0015f434[i % 2 + 0x97].x, D_0015f434[i / 2 + 0x97].y, D_0015f434[0x99].x,
-                            D_0015f434[0x98].y - D_0015f434[0x97].y);
+            LbTextSetWindow(resvars.f40[i % 2 + 0x97].x, resvars.f40[i / 2 + 0x97].y, resvars.f40[0x99].x,
+                            resvars.f40[0x98].y - resvars.f40[0x97].y);
             x = 0;
             y = 0;
             D_00188c74 = 0x100;
@@ -260,9 +257,9 @@ void display_plaque(void)
             sprintf(text2, D_00121b1d, D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
         }
     case 2:
-        reqspr_draw(D_0015f434[0xa0].x, D_0015f434[0xa0].y, &screen_sprites_tab_start[16]);
-        reqspr_draw(D_0015f434[0xa1].x, D_0015f434[0xa1].y, &screen_sprites_tab_start[17]);
-        reqspr_draw(D_0015f434[0xa2].x, D_0015f434[0xa2].y, &screen_sprites_tab_start[18]);
+        reqspr_draw(resvars.f40[0xa0].x, resvars.f40[0xa0].y, &screen_sprites_tab_start[16]);
+        reqspr_draw(resvars.f40[0xa1].x, resvars.f40[0xa1].y, &screen_sprites_tab_start[17]);
+        reqspr_draw(resvars.f40[0xa2].x, resvars.f40[0xa2].y, &screen_sprites_tab_start[18]);
         if (current_display == 2) {
             if (awards_won[current_award].value > 0) {
                 sprintf(text1, D_00160368[awards_won[current_award].f2]);
@@ -271,7 +268,7 @@ void display_plaque(void)
                 sprintf(text1, D_00160368[awards_won[current_award].f2]);
                 sprintf(text2, D_00121b2a, D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
             }
-            reqspr_draw(D_0015f434[0xa6].x, D_0015f434[0xa6].y, &screen_sprites_tab_start[15]);
+            reqspr_draw(resvars.f40[0xa6].x, resvars.f40[0xa6].y, &screen_sprites_tab_start[15]);
         }
         set_font_from_cache(0x12);
         D_00188c74 = 0x100;
@@ -281,17 +278,17 @@ void display_plaque(void)
         LbTextDraw(0, 0, text2);
         break;
     case 3:
-        reqspr_draw(D_0015f434[0xa0].x, D_0015f434[0xa0].y, &screen_sprites_tab_start[19]);
-        reqspr_draw(D_0015f434[0xa3].x, D_0015f434[0xa3].y, &screen_sprites_tab_start[20]);
-        reqspr_draw(D_0015f434[0xa4].x, D_0015f434[0xa4].y, &screen_sprites_tab_start[21]);
-        reqspr_draw(D_0015f434[0xa5].x, D_0015f434[0xa5].y, &screen_sprites_tab_start[22]);
+        reqspr_draw(resvars.f40[0xa0].x, resvars.f40[0xa0].y, &screen_sprites_tab_start[19]);
+        reqspr_draw(resvars.f40[0xa3].x, resvars.f40[0xa3].y, &screen_sprites_tab_start[20]);
+        reqspr_draw(resvars.f40[0xa4].x, resvars.f40[0xa4].y, &screen_sprites_tab_start[21]);
+        reqspr_draw(resvars.f40[0xa5].x, resvars.f40[0xa5].y, &screen_sprites_tab_start[22]);
         set_font_from_cache(0x11);
         D_00188c74 = 0x100;
         if (trophies_won[current_award].unknown0 == 5) {
             sprintf(text1, D_00160364[trophies_won[current_award].f1], D_00155e11);
             sprintf(text2, D_00160390[trophies_won[current_award].f4]);
             sprintf(text3, D_00121b30, trophies_won[current_award].value);
-        } else if (trophies_won[current_award].unknown0 == 6 && D_0015f8ed > 0) {
+        } else if (trophies_won[current_award].unknown0 == 6 && award_counts.f151 > 0) {
             sprintf(text1, D_00160364[trophies_won[current_award].f1], D_00155e12);
             sprintf(text2, D_00160390[trophies_won[current_award].f4]);
             sprintf(text3, D_00121b34, trophies_won[current_award].value);
@@ -311,7 +308,7 @@ void display_plaque(void)
         break;
     }
     if (trophies_won[1].unknown0)
-        reqspr_draw(D_0015f43c[0x56].unknownC, D_0015f43c[0x56].unknownE, &screen_sprites_tab_start[13]);
+        reqspr_draw(resvars.f48[0x56].unknownC, resvars.f48[0x56].unknownE, &screen_sprites_tab_start[13]);
 }
 
 // FUNCTION: 0x000b5b38
@@ -383,25 +380,25 @@ void check_stats_buttons(void)
     u8 i;
 
     if (exit_the_yearend_screen)
-        reqspr_draw(D_0015f43c[0x48].unknownC, D_0015f43c[0x48].unknownE,
-                    &screen_sprites_tab_start[D_0015f43c[0x48].sprite]);
+        reqspr_draw(resvars.f48[0x48].unknownC, resvars.f48[0x48].unknownE,
+                    &screen_sprites_tab_start[resvars.f48[0x48].sprite]);
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 0x48].width != 0 && D_0015f43c[i + 0x48].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0x48].x, D_0015f43c[i + 0x48].y,
-                             (s16)D_0015f43c[i + 0x48].width, (s16)D_0015f43c[i + 0x48].height)) {
-                reqspr_draw(D_0015f43c[i + 0x48].unknownC, D_0015f43c[i + 0x48].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 0x48].sprite]);
+        for (i = 0; resvars.f48[i + 0x48].width != 0 && resvars.f48[i + 0x48].height != 0; i++) {
+            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0x48].x, resvars.f48[i + 0x48].y,
+                             (s16)resvars.f48[i + 0x48].width, (s16)resvars.f48[i + 0x48].height)) {
+                reqspr_draw(resvars.f48[i + 0x48].unknownC, resvars.f48[i + 0x48].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 0x48].sprite]);
                 break;
             }
         }
     }
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i + 0x48].width != 0 && D_0015f43c[i + 0x48].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0x48].x, D_0015f43c[i + 0x48].y,
-                             (s16)D_0015f43c[i + 0x48].width, (s16)D_0015f43c[i + 0x48].height)) {
-                D_0015f43c[i + 0x48].callback(i);
-                reqspr_draw(D_0015f43c[i + 0x48].unknownC, D_0015f43c[i + 0x48].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 0x48].sprite]);
+        for (i = 0; resvars.f48[i + 0x48].width != 0 && resvars.f48[i + 0x48].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x48].x, resvars.f48[i + 0x48].y,
+                             (s16)resvars.f48[i + 0x48].width, (s16)resvars.f48[i + 0x48].height)) {
+                resvars.f48[i + 0x48].callback(i);
+                reqspr_draw(resvars.f48[i + 0x48].unknownC, resvars.f48[i + 0x48].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 0x48].sprite]);
                 break;
             }
         }
@@ -442,28 +439,28 @@ void check_awards_buttons(void)
     u8 i;
 
     if (exit_the_yearend_screen)
-        reqspr_draw(D_0015f43c[0x4b].unknownC, D_0015f43c[0x4b].unknownE,
-                    &screen_sprites_tab_start[D_0015f43c[0x4b].sprite]);
+        reqspr_draw(resvars.f48[0x4b].unknownC, resvars.f48[0x4b].unknownE,
+                    &screen_sprites_tab_start[resvars.f48[0x4b].sprite]);
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 0x4b].width != 0 && D_0015f43c[i + 0x4b].height != 0; i++) {
+        for (i = 0; resvars.f48[i + 0x4b].width != 0 && resvars.f48[i + 0x4b].height != 0; i++) {
             if (button_available(i)) {
-                if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0x4b].x, D_0015f43c[i + 0x4b].y,
-                                 (s16)D_0015f43c[i + 0x4b].width, (s16)D_0015f43c[i + 0x4b].height)) {
-                    reqspr_draw(D_0015f43c[i + 0x4b].unknownC, D_0015f43c[i + 0x4b].unknownE,
-                                &screen_sprites_tab_start[D_0015f43c[i + 0x4b].sprite]);
+                if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0x4b].x, resvars.f48[i + 0x4b].y,
+                                 (s16)resvars.f48[i + 0x4b].width, (s16)resvars.f48[i + 0x4b].height)) {
+                    reqspr_draw(resvars.f48[i + 0x4b].unknownC, resvars.f48[i + 0x4b].unknownE,
+                                &screen_sprites_tab_start[resvars.f48[i + 0x4b].sprite]);
                     break;
                 }
             }
         }
     }
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i + 0x4b].width != 0 && D_0015f43c[i + 0x4b].height != 0; i++) {
+        for (i = 0; resvars.f48[i + 0x4b].width != 0 && resvars.f48[i + 0x4b].height != 0; i++) {
             if (button_available(i)) {
-                if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0x4b].x, D_0015f43c[i + 0x4b].y,
-                                 (s16)D_0015f43c[i + 0x4b].width, (s16)D_0015f43c[i + 0x4b].height)) {
-                    D_0015f43c[i + 0x4b].callback(i);
-                    reqspr_draw(D_0015f43c[i + 0x4b].unknownC, D_0015f43c[i + 0x4b].unknownE,
-                                &screen_sprites_tab_start[D_0015f43c[i + 0x4b].sprite]);
+                if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x4b].x, resvars.f48[i + 0x4b].y,
+                                 (s16)resvars.f48[i + 0x4b].width, (s16)resvars.f48[i + 0x4b].height)) {
+                    resvars.f48[i + 0x4b].callback(i);
+                    reqspr_draw(resvars.f48[i + 0x4b].unknownC, resvars.f48[i + 0x4b].unknownE,
+                                &screen_sprites_tab_start[resvars.f48[i + 0x4b].sprite]);
                     break;
                 }
             }
@@ -481,7 +478,7 @@ void display_awards(void)
 
     for (i = 0, t = 0, a = 0; i < 9 && t < 3; i++) {
         if (trophy[i].unknown0) {
-            reqspr_draw(D_0015f43c[t + 0x55].unknownC, D_0015f43c[t + 0x55].unknownE,
+            reqspr_draw(resvars.f48[t + 0x55].unknownC, resvars.f48[t + 0x55].unknownE,
                         &screen_sprites_tab_start[t + 12]);
             trophies_won[t].unknown0 = trophy[i].unknown0;
             trophies_won[t].f1 = trophy[i].f1;
@@ -492,15 +489,15 @@ void display_awards(void)
     for (i = 0; i < 13 && a < 6; i++) {
         if (all_awards[i].f2) {
             if (t == 3 && a == 5)
-                reqspr_draw(D_0015f43c[a + 0x4f].unknownC, D_0015f43c[a + 0x4f].unknownE, &screen_sprites_tab_start[24]);
+                reqspr_draw(resvars.f48[a + 0x4f].unknownC, resvars.f48[a + 0x4f].unknownE, &screen_sprites_tab_start[24]);
             else
-                reqspr_draw(D_0015f43c[a + 0x4f].unknownC, D_0015f43c[a + 0x4f].unknownE,
+                reqspr_draw(resvars.f48[a + 0x4f].unknownC, resvars.f48[a + 0x4f].unknownE,
                             (TbSprite *)((u32)screen_sprites_tab_start + (a + 4) * 6));
-            reqspr_draw(D_0015f43c[a + 0x4f].unknownC, D_0015f43c[a + 0x4f].unknownE, &screen_sprites_tab_start[23]);
+            reqspr_draw(resvars.f48[a + 0x4f].unknownC, resvars.f48[a + 0x4f].unknownE, &screen_sprites_tab_start[23]);
             if ((s8)all_awards[i].unknown0 == 1)
-                reqspr_draw(D_0015f434[a + 0x9a].x, D_0015f434[a + 0x9a].y, &screen_sprites_tab_start[10]);
+                reqspr_draw(resvars.f40[a + 0x9a].x, resvars.f40[a + 0x9a].y, &screen_sprites_tab_start[10]);
             else
-                reqspr_draw(D_0015f434[a + 0x9a].x, D_0015f434[a + 0x9a].y, &screen_sprites_tab_start[11]);
+                reqspr_draw(resvars.f40[a + 0x9a].x, resvars.f40[a + 0x9a].y, &screen_sprites_tab_start[11]);
             awards_won[a].f1 = all_awards[i].f1;
             awards_won[a].f2 = all_awards[i].f2;
             awards_won[a].unknown0 = all_awards[i].unknown0;

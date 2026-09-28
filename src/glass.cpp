@@ -66,7 +66,6 @@ extern u32 black_colour;
 extern u8 Gray[];
 
 extern "C" {
-extern GlassScreen *D_0015f444;
 extern s32 D_00188c38;
 extern u16 D_00188c74;
 extern volatile s16 D_00188c6c, D_00188c70;
@@ -101,7 +100,7 @@ void init_zoom_boxes(s32 mask)
         mask ^= bit;
         idx = glass_index(bit);
         if (idx) {
-            add_glass_frame((GlassFrame *)&D_0015f444[idx], bit);
+            add_glass_frame((GlassFrame *)&resvars.f50_GlassScreenp[idx], bit);
             DesiredDisplay |= bit;
         }
     }

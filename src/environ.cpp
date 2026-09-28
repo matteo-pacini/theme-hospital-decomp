@@ -27,18 +27,6 @@ extern "C" {
 extern u16 D_0015543a;
 extern u16 D_0015543c;
 extern u8 D_0015543e;
-extern u8 D_001553b4;
-extern u8 D_0015832c;
-extern s16 D_0012dd7c[];
-extern s16 D_0012dd98;
-extern s16 D_0012dd9a;
-extern u16 D_0012dd9c;
-extern u16 D_0012dd9e;
-extern u16 D_0012dda0;
-extern u8 D_0012ddc3;
-extern u8 D_0012ddc4;
-extern u16 D_0012ddd6;
-extern u16 D_0012ddd8;
 
 u8 fn_0007628c(Thing *w);
 
@@ -106,13 +94,13 @@ void modify_person(Thing *w)
         reset_icon_value(w, 0x12);
         w->unknown81++;
     }
-    if (w->unknown81s < D_0012dd7c[9]) {
+    if (w->unknown81s < gbv.f10e) {
         set_icon_value(w, 8);
         w->unknown124++;
     } else {
         reset_icon_value(w, 8);
     }
-    if (w->unknown136 > D_0012dd7c[13]) {
+    if (w->unknown136 > gbv.f116) {
         set_icon_value(w, 0xb);
         w->unknown124++;
     }
@@ -255,7 +243,6 @@ void check_around(Thing *w)
     }
 }
 
-// NONMATCHING: the target loads D_0012dd9c before calling old_newrand() for chance
 // FUNCTION: 0x00071960
 u8 do_reaction(Thing *w)
 {
@@ -278,18 +265,18 @@ u8 do_reaction(Thing *w)
             setup_showanim(w, 0x2d);
             return 1;
         }
-        if ((s16)w->unknown138w >= D_0012dd9a && old_newrand() % 5 == 0) {
+        if ((s16)w->unknown138w >= gbv.f11a && old_newrand() % 5 == 0) {
             setup_showanim(w, 0x4b);
             w->unknown138w = 5;
             w->flags |= 4;
             change_health(w, -10);
             return 1;
         }
-        if (w->unknown136 >= D_0012dd98 && old_newrand() % 5 == 0) {
+        if (w->unknown136 >= gbv.f118 && old_newrand() % 5 == 0) {
             reset_icon_value(w, 0xb);
             setup_showanim(w, 0x66);
             if (w->style == 0x1d)
-                w->unknown136 = D_0012dd7c[13] / 2;
+                w->unknown136 = gbv.f116 / 2;
             else
                 w->unknown136 = 0;
             w->flags |= 8;
@@ -310,15 +297,15 @@ u8 do_reaction(Thing *w)
                                 ok = 1;
                                 break;
                             case 1:
-                                if (w->unknown124 > D_0012dd7c[6] / 2)
+                                if (w->unknown124 > gbv.f108 / 2)
                                     ok = 1;
                                 break;
                             case 2:
-                                if (w->unknown124 > D_0012dd7c[6] * 3 / 4)
+                                if (w->unknown124 > gbv.f108 * 3 / 4)
                                     ok = 1;
                                 break;
                             case 3:
-                                if (w->unknown124 > D_0012dd7c[6] * 3 / 4)
+                                if (w->unknown124 > gbv.f108 * 3 / 4)
                                     ok = 1;
                                 break;
                             }
@@ -334,11 +321,11 @@ u8 do_reaction(Thing *w)
                 return 1;
             }
         }
-        if (D_0012dd9c > 0)
-            chance = old_newrand() % D_0012dd9c;
+        if (gbv.f11c > 0)
+            chance = old_newrand() % gbv.f11c;
         else
             chance = 1;
-        if (w->unknown128 > D_0012dd7c[5] || chance == 0) {
+        if (w->unknown128 > gbv.f106 || chance == 0) {
             if (old_newrand() % 10 == 0) {
                 place_litter(pos, (s8)w->owner, old_newrand() % 3 + 1);
                 w->unknown128 = 0;
@@ -365,7 +352,7 @@ void modify_staff(Thing *w)
     if (!(D_0015543a > w->unknown87w || w->unknown87w - D_0015543a > 0x7fff))
         return;
     w->unknown87w = D_0015543c;
-    if (w->owner >= 4 || D_001553b4)
+    if (w->owner >= 4 || gamevar.f174)
         return;
     if (w->subtype == 3)
         return;
@@ -374,16 +361,16 @@ void modify_staff(Thing *w)
     staff_check_around(w);
     if (w->kind != 0x34) {
         if (w->room == 0 || w->room->type != 0x19)
-            w->f78 += *(u16 *)((u8 *)&expertise[59] + 1);
+            w->f78 += gbv.fe2;
     }
-    if (w->f78 > *(u16 *)&expertise[59].unknown10[1]) {
+    if (w->f78 > gbv.fec) {
         if (old_newrand() % 1000 == 0)
             doctor_cracks_up(w);
     }
-    if (w->f78 > *(u16 *)&expertise[59].unknown10[1]) {
+    if (w->f78 > gbv.fec) {
         set_icon_value(w, 10);
         w->unknown81--;
-    } else if (w->f78 < *(u16 *)&expertise[59].unknown5[0]) {
+    } else if (w->f78 < gbv.fe6) {
         reset_icon_value(w, 10);
         w->unknown81++;
     }
@@ -394,9 +381,9 @@ void modify_staff(Thing *w)
         w->unknown81--;
         set_icon_value(w, 0x12);
     }
-    if (w->unknown81s < D_0012dd7c[9])
+    if (w->unknown81s < gbv.f10e)
         w->unknown128++;
-    else if (w->unknown81s > D_0012dd7c[8])
+    else if (w->unknown81s > gbv.f10c)
         w->unknown128--;
     if (w->unknown81s < 0)
         w->unknown81 = 0;
@@ -456,29 +443,29 @@ void appraise_staff(Thing *w)
 {
     s32 value;
 
-    value = w->unknown126 / *(u16 *)&expertise[57].category + *(u16 *)&staff[w->subtype].unknown0[2];
+    value = w->unknown126 / gbv.fc4 + *(u16 *)&staff[w->subtype].unknown0[2];
     if (w->unknown124 & 8)
-        value += ((s16 *)&expertise[56].unknown10[6])[0];
+        value += gbv.fb8[0];
     if (w->unknown124 & 0x10)
-        value += ((s16 *)&expertise[56].unknown10[6])[1];
+        value += gbv.fb8[1];
     if (w->unknown124 & 0x20)
-        value += ((s16 *)&expertise[56].unknown10[6])[2];
+        value += gbv.fb8[2];
     if (w->unknown124 & 0x40)
-        value += ((s16 *)&expertise[56].unknown10[6])[3];
+        value += gbv.fb8[3];
     if (w->unknown124 & 0x80)
-        value += ((s16 *)&expertise[56].unknown10[6])[4];
+        value += gbv.fb8[4];
     if (w->unknown124 & 0x100)
-        value += ((s16 *)&expertise[56].unknown10[6])[5];
+        value += gbv.fb8[5];
     w->f70 = value;
     if (w->unknown124 & 0x10) {
-        if ((w->unknown124 & 8) && w->unknown126 > D_0012ddd6) {
-            if (actual_game_turn - (u16)w->unknown130 >= D_0012ddc3 * 1500) {
+        if ((w->unknown124 & 8) && w->unknown126 > gbv.f156) {
+            if (actual_game_turn - (u16)w->unknown130 >= gbv.f143 * 1500) {
                 w->unknown124 &= ~8;
                 if (w->owner == player)
                     announce_this(10, 1);
             }
-        } else if (!(w->unknown124 & 0x80) && w->unknown126 > D_0012ddd8) {
-            if (actual_game_turn - (u16)w->unknown130 >= D_0012ddc4 * 1500) {
+        } else if (!(w->unknown124 & 0x80) && w->unknown126 > gbv.f158) {
+            if (actual_game_turn - (u16)w->unknown130 >= gbv.f144 * 1500) {
                 w->unknown124 |= 0x80;
                 if (w->owner == player)
                     announce_this(0xd, 1);
@@ -491,9 +478,9 @@ void appraise_staff(Thing *w)
         }
     }
     if (w->unknown108 < value)
-        w->unknown81 += D_0012dd9e;
+        w->unknown81 += gbv.f11e;
     else
-        w->unknown81 += D_0012dda0;
+        w->unknown81 += gbv.f120;
     if (w->unknown81s < 0)
         w->unknown81 = 0;
     else if (w->unknown81s > 100)
@@ -569,7 +556,7 @@ void person_count(Thing *w)
     s8 k = 5;
 
     if (D_0015543e) {
-        D_0015832c = 1;
+        advisor.f130 = 1;
         if (!(map[((s16)w->y.tile << 7) + (s16)w->x.tile].unknown7 & 0x10)) {
             if (w->owner == player) {
                 adcounts.f0++;
@@ -634,9 +621,13 @@ void object_count(const Thing *w)
                 adcounts.f8f++;
                 adcounts.f90 += (w->mode << 9) / (w->value * 3);
             }
-            if (w->mode > w->value && (w->mode << 9) / (w->value * 3) > adcounts.f94 && w->owner == player) {
-                adcounts.f94 = (w->mode << 9) / (w->value * 3);
-                adcounts.f98 = w->subtype;
+            if (w->mode > w->value) {
+                if ((w->mode << 9) / (w->value * 3) > adcounts.f94) {
+                    if (w->owner == player) {
+                        adcounts.f94 = (w->mode << 9) / (w->value * 3);
+                        adcounts.f98 = w->subtype;
+                    }
+                }
             }
         }
     }

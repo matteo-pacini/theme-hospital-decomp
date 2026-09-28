@@ -3,8 +3,6 @@
 extern "C" {
 
 extern s16 D_001553b8;
-extern u16 D_0012ddd6;
-extern u16 D_0012ddd8;
 
 u8 fn_0002b400(Thing *w);
 Thing *fn_00019aac(Map *t, u16 kind);
@@ -486,14 +484,14 @@ void doctor_cracks_up(Thing *w)
             w->unknown30[4] = 4;
         }
         w->unknown148[2] = 1;
-        mean = D_0012ddd6;
-        spread = D_0012ddd8;
+        mean = gbv.f156;
+        spread = gbv.f158;
         if (w->unknown124 & 0x80) {
-            mean = D_0012ddd8;
+            mean = gbv.f158;
             spread = 1000;
         } else if (w->unknown124 & 8) {
             mean = 30;
-            spread = D_0012ddd6;
+            spread = gbv.f156;
         }
         w->unknown126 = old_normal_rand(mean, spread);
         if (w->owner == player) {

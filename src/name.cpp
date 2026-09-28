@@ -24,14 +24,8 @@ struct NetBox {
     s32 h;
 };
 
-struct Settings {
-    u8 f0;
-    u8 f1;
-    u16 f2;
-};
-
 #define LbTextCharHeight(c) (lbFontPtr ? lbFontPtr[(c) - 31].height : 0)
-#define SLIST(n) ((SlistButton *)&D_0015f43c[n])
+#define SLIST(n) ((SlistButton *)&resvars.f48[n])
 
 extern Menu nickname;
 extern Menu area;
@@ -87,17 +81,11 @@ extern volatile s32 D_00188c6c, D_00188c70;
 extern u8 *D_00153f34;
 extern char **D_001602a0;
 extern char D_00120898[], D_001208a9[], D_001208bb[], D_001208c5[], D_001208d6[], D_001208e8[];
-extern Button *D_0015f43c;
-extern u8 D_0015831b;
-extern TbScreenMode D_0015f3f5;
 extern char *D_00138020, *D_00138024;
-extern NetBox *D_0015f430;
 extern u8 D_00155446;
-extern u8 D_001547e5;
 extern char D_001208f1[], D_00120904[], D_00120915[], D_00120926[], D_00120935[], D_00120937[], D_0012093c[];
 extern char D_00120941[], D_00120953[], D_00120963[], D_00120966[];
 extern u8 D_001581a6;
-extern Settings D_001547e0;
 extern char **D_0016037c, **D_00160374, **D_00160320, **D_00160398, **D_0016039c;
 extern u16 D_0015632f[], D_0015636d[], D_00156393[], D_001563ab[], D_001563bf[];
 extern u8 D_00156c04[], D_00157624[];
@@ -215,7 +203,6 @@ void draw_nickname(void)
     }
 }
 
-// NONMATCHING: register choice; target names myplayer-1 as mycontrol+3
 // FUNCTION: 0x0008f188
 void process_keys_nickname(void)
 {
@@ -287,7 +274,6 @@ void process_keys_nickname(void)
     BufferedInkey = 0;
 }
 
-// NONMATCHING: register choice; first reqspr_draw arguments read D_0015f43c[163] as u16
 // FUNCTION: 0x0008f448
 void process_mouse_nickname(void)
 {
@@ -299,7 +285,7 @@ void process_mouse_nickname(void)
     s32 bit;
 
     if ((CurrentDisplay & DesiredDisplay) & 1)
-        reqspr_draw((u16)D_0015f43c[163].x, (u16)D_0015f43c[163].y, &screen_sprites_tab_start[2]);
+        reqspr_draw((u16)resvars.f48[163].x, (u16)resvars.f48[163].y, &screen_sprites_tab_start[2]);
     if (nickname.unknown2 == 5) {
         mask = CurrentDisplay;
         while (mask) {
@@ -309,49 +295,51 @@ void process_mouse_nickname(void)
             if (!base)
                 continue;
             for (i = 0;; i++) {
-                if (current_balance_file == current_balance_file->prev && (base + i == 0xa4 || base + i == 0xa5))
-                    continue;
-                if (D_0015f43c[i + base].width == 0 || D_0015f43c[i + base].height == 0)
+                if (current_balance_file == current_balance_file->prev) {
+                    if (base + i == 0xa4 || base + i == 0xa5)
+                        continue;
+                }
+                if (resvars.f48[base + i].width == 0 || resvars.f48[base + i].height == 0)
                     break;
-                x = D_0015f43c[i + base].x;
-                y = D_0015f43c[i + base].y;
+                x = resvars.f48[base + i].x;
+                y = resvars.f48[base + i].y;
                 if (D_00188c81) {
-                    if (over_hotspot(D_00188c6c, D_00188c70, x, y, D_0015f43c[i + base].width - x + 1,
-                                     D_0015f43c[i + base].height - y + 1)) {
+                    if (over_hotspot(D_00188c6c, D_00188c70, x, y, resvars.f48[base + i].width - x + 1,
+                                     resvars.f48[base + i].height - y + 1)) {
                         D_00188c81 = 0;
-                        if (D_0015f43c[i + base].sprite)
+                        if (resvars.f48[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, D_0015f43c[i + base].width - x, D_0015f43c[i + base].height - y, 1);
-                        if (D_0015f43c[i + base].callback)
-                            D_0015f43c[i + base].callback(i);
+                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
+                        if (resvars.f48[base + i].callback)
+                            resvars.f48[base + i].callback(i);
                         continue;
                     }
                 }
-                if (D_00188c7e && over_hotspot(mouse_dx, mouse_dy, x, y, D_0015f43c[i + base].width - x + 1,
-                                               D_0015f43c[i + base].height - y + 1)) {
-                    if (D_0015f43c[i + base].sprite)
+                if (D_00188c7e && over_hotspot(mouse_dx, mouse_dy, x, y, resvars.f48[base + i].width - x + 1,
+                                               resvars.f48[base + i].height - y + 1)) {
+                    if (resvars.f48[base + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, D_0015f43c[i + base].width - x, D_0015f43c[i + base].height - y, 1);
+                        draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
                 }
                 if (base == 0xa0) {
                     switch (i) {
                     case 0:
-                        if (D_0015831b & 1)
-                            draw_button_edges(x, y, D_0015f43c[i + base].width - x, D_0015f43c[i + base].height - y, 1);
+                        if (advisor.f11f & 1)
+                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
                         break;
                     case 1:
-                        if (!(D_0015831b & 1))
-                            draw_button_edges(x, y, D_0015f43c[i + base].width - x, D_0015f43c[i + base].height - y, 1);
+                        if (!(advisor.f11f & 1))
+                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
                         break;
                     case 6:
-                        if (D_0015f3f5 == SCREEN_MODE_1)
-                            draw_button_edges(x, y, D_0015f43c[i + base].width - x, D_0015f43c[i + base].height - y, 1);
+                        if (resvars.f1 == SCREEN_MODE_1)
+                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
                         break;
                     case 7:
-                        if (D_0015f3f5 == SCREEN_MODE_13)
-                            draw_button_edges(x, y, D_0015f43c[i + base].width - x, D_0015f43c[i + base].height - y, 1);
+                        if (resvars.f1 == SCREEN_MODE_13)
+                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
                         break;
                     case 2:
                     case 3:
@@ -399,11 +387,11 @@ extern "C" void fn_0008fa90(u8 index)
         next_balance_file();
         break;
     case 0:
-        D_0015831b |= 1;
+        advisor.f11f |= 1;
         play_sound(10, 0x43, -1, -1);
         break;
     case 1:
-        D_0015831b &= ~1;
+        advisor.f11f &= ~1;
         play_sound(10, 0x43, -1, -1);
         break;
     case 2:
@@ -415,11 +403,11 @@ extern "C" void fn_0008fa90(u8 index)
         play_sound(10, 0x42, -1, -1);
         break;
     case 6:
-        D_0015f3f5 = SCREEN_MODE_1;
+        resvars.f1 = SCREEN_MODE_1;
         play_sound(10, 0x43, -1, -1);
         break;
     case 7:
-        D_0015f3f5 = SCREEN_MODE_13;
+        resvars.f1 = SCREEN_MODE_13;
         play_sound(10, 0x43, -1, -1);
         break;
     }
@@ -445,14 +433,14 @@ void draw_new_prefs_screen(void)
     }
     D_00188c74 = 0;
     draw_glass_text(SLIST(162), nickname_text[0x12]);
-    if (D_0015831b & 1) {
+    if (advisor.f11f & 1) {
         draw_glass_text_hilight(SLIST(160), nickname_text[0x10]);
         draw_glass_text(SLIST(161), nickname_text[0x11]);
     } else {
         draw_glass_text(SLIST(160), nickname_text[0x10]);
         draw_glass_text_hilight(SLIST(161), nickname_text[0x11]);
     }
-    if (D_0015f3f5 == SCREEN_MODE_1) {
+    if (resvars.f1 == SCREEN_MODE_1) {
         draw_glass_text_hilight(SLIST(166), nickname_text[0x10]);
         draw_glass_text(SLIST(167), nickname_text[0x11]);
     } else {
@@ -468,10 +456,10 @@ void draw_new_prefs_screen(void)
     y = 0x155;
     y += (0x176 - y - character_height()) >> 1;
     LbTextDraw(x, y, D_001602a0[0x1d]);
-    LbTextDraw(D_0015f430[122].x + (D_0015f430[122].w - LbTextStringWidth(D_001602a0[0x1e])) / 2,
-               D_0015f430[122].y + (D_0015f430[122].h - LbTextCharHeight('B') * 2) / 2, D_001602a0[0x1e]);
-    LbTextDraw(D_0015f430[122].x + (D_0015f430[122].w - LbTextStringWidth(balance_file_name)) / 2,
-               D_0015f430[122].y + (D_0015f430[122].h - LbTextCharHeight('B') * 2) / 2 + LbTextCharHeight('B'),
+    LbTextDraw(resvars.f3c_NetBoxp[122].x + (resvars.f3c_NetBoxp[122].w - LbTextStringWidth(D_001602a0[0x1e])) / 2,
+               resvars.f3c_NetBoxp[122].y + (resvars.f3c_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2, D_001602a0[0x1e]);
+    LbTextDraw(resvars.f3c_NetBoxp[122].x + (resvars.f3c_NetBoxp[122].w - LbTextStringWidth(balance_file_name)) / 2,
+               resvars.f3c_NetBoxp[122].y + (resvars.f3c_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2 + LbTextCharHeight('B'),
                balance_file_name);
     draw_balance_file_explanation();
 }
@@ -597,7 +585,7 @@ void prev_balance_file(void)
     }
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: frame layout (two s32 locals swap slots)
 // FUNCTION: 0x000903f0
 void balance_filename(char *name)
 {
@@ -635,14 +623,14 @@ void balance_filename(char *name)
     read_line_from_buf(0, 0, buf);
     i = found = 0;
     read_line_from_buf(line, 0x20, buf);
-    if (line[0] == '&' && (s8)line[1] - '0' == D_001547e5)
+    if (line[0] == '&' && (s8)line[1] - '0' == myplayer.f21)
         found = 1;
     else
         sprintf(balance_file_name, D_00120963, line);
     for (; !found && i < 5; i++) {
         read_line_from_buf(line, 0x20, buf);
         if (line[0] == '&') {
-            if ((s8)line[1] - '0' == D_001547e5)
+            if ((s8)line[1] - '0' == myplayer.f21)
                 found = 1;
         }
     }
@@ -666,7 +654,7 @@ extern "C" void fn_00090610(void)
     init_andys_variables();
     setup_req4_references();
     crequester.unknown2 = D_001581a6 = 0x63;
-    D_001547e0.f1 = 1;
+    myplayer.f1d = 1;
     setup_menus();
     fn_00054d60();
     setup_help_indices();
@@ -680,7 +668,7 @@ extern "C" void fn_00090610(void)
     init_midi();
     init_ambients();
     gamecounts.unknown14 = LbTimerClock();
-    D_001547e0.f2 = 0x19;
+    myplayer.f1e = 0x19;
     init_wibble(D_00156c04, D_00157624, pixBuf.width + 0x20, pixBuf.width + 0x20, pixBuf.width, 0x11, 2);
     measure_objects();
     choice_backup.mode = 0;

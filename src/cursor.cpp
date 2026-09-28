@@ -1,13 +1,10 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_0015f3f7;
-extern u8 D_0015f3f8;
 extern s32 D_00188c38;
 extern u8 D_001553c7;
 extern u16 D_001553e0;
 extern u8 D_001553e1[];
-extern u8 D_0015831b;
 void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 }
 
@@ -49,10 +46,10 @@ void draw_cell_no(s32 cell, u8 colour)
 
     row = cell / 128;
     col = cell % 128;
-    x = col * (D_0015f3f8 / 2) - D_0015f3f8 / 2 * row - window.f0[window.unknown2eb] + window.f90[window.unknown2eb]
-        + D_0015f3f8 / 2;
-    y = col * (D_0015f3f7 / 2) + D_0015f3f7 / 2 * row - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
-        - D_0015f3f7;
+    x = col * (resvars.f4 / 2) - resvars.f4 / 2 * row - window.f0[window.unknown2eb] + window.f90[window.unknown2eb]
+        + resvars.f4 / 2;
+    y = col * (resvars.f3 / 2) + resvars.f3 / 2 * row - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
+        - resvars.f3;
     find_common_window(0, 0, D_00188c34, lbDisplay.unknown1c - 0x5c, window.zone_x[window.unknown2eb],
                        window.zone_y[window.unknown2eb], window.zone_w[window.unknown2eb], window.zone_h[window.unknown2eb]);
     find_common_window(0, 0, D_00188c34, D_00188c38, window.zone_x[window.unknown2eb], window.zone_y[window.unknown2eb],
@@ -64,8 +61,8 @@ void draw_cell_no(s32 cell, u8 colour)
                                   info.unknown74 - info.unknown6c);
         x -= info.unknown68;
         y -= info.unknown6c;
-        a = x - D_0015f3f8 / 2;
-        b = y + D_0015f3f7;
+        a = x - resvars.f4 / 2;
+        b = y + resvars.f3;
         draw_cell_no_editor(a, b, colour);
     }
 }
@@ -73,12 +70,12 @@ void draw_cell_no(s32 cell, u8 colour)
 // FUNCTION: 0x000b1318
 void draw_cell_no_editor(s32 x, s32 y, u8 colour)
 {
-    if (-(D_0015f3f8 / 2) <= x && D_0015f3f8 / 2 + D_00188c34 > x && -D_0015f3f7 <= y && lbDisplay.unknown1c - 0x5c > y) {
-        fn_000c9be0(x, y, (D_0015f3f8 - 1) / 2 + x - 1, y + (D_0015f3f7 - 1) / 2, colour);
-        fn_000c9be0((D_0015f3f8 - 1) / 2 + x, y + (D_0015f3f7 - 1) / 2, x, y + (D_0015f3f7 - 1), colour);
-        fn_000c9be0(x, D_0015f3f7 - 1 + y, x - (D_0015f3f8 - 1) / 2, y + (D_0015f3f7 - 1) / 2, colour);
-        fn_000c9be0(x - (D_0015f3f8 - 1) / 2, y + (D_0015f3f7 - 1) / 2, x, y, colour);
-        set_all_refresh_zones_in_window(x - (D_0015f3f8 - 1) / 2, y, (D_0015f3f8 - 1) / 2 + x - 1, D_0015f3f7 - 1 + y, 3);
+    if (-(resvars.f4 / 2) <= x && resvars.f4 / 2 + D_00188c34 > x && -resvars.f3 <= y && lbDisplay.unknown1c - 0x5c > y) {
+        fn_000c9be0(x, y, (resvars.f4 - 1) / 2 + x - 1, y + (resvars.f3 - 1) / 2, colour);
+        fn_000c9be0((resvars.f4 - 1) / 2 + x, y + (resvars.f3 - 1) / 2, x, y + (resvars.f3 - 1), colour);
+        fn_000c9be0(x, resvars.f3 - 1 + y, x - (resvars.f4 - 1) / 2, y + (resvars.f3 - 1) / 2, colour);
+        fn_000c9be0(x - (resvars.f4 - 1) / 2, y + (resvars.f3 - 1) / 2, x, y, colour);
+        set_all_refresh_zones_in_window(x - (resvars.f4 - 1) / 2, y, (resvars.f4 - 1) / 2 + x - 1, resvars.f3 - 1 + y, 3);
     }
 }
 
@@ -167,16 +164,16 @@ draw:
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     if (gamevar.unknown2a) {
         remap = 0;
-        D_0015831b &= ~2;
+        advisor.f11f &= ~2;
     } else {
         remap = bw_remap;
-        D_0015831b |= 2;
+        advisor.f11f |= 2;
     }
     row = gamevar.f23 / 128;
     col = gamevar.f23 % 128;
-    x = D_0015f3f8 * col / 2 - D_0015f3f8 * row / 2 - window.f0[window.unknown2eb] + window.f90[window.unknown2eb];
-    y = D_0015f3f7 * col / 2 + D_0015f3f7 * row / 2 - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
-        + D_0015f3f7 / 2;
+    x = resvars.f4 * col / 2 - resvars.f4 * row / 2 - window.f0[window.unknown2eb] + window.f90[window.unknown2eb];
+    y = resvars.f3 * col / 2 + resvars.f3 * row / 2 - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
+        + resvars.f3 / 2;
     switch (kind) {
     case 0x11:
         frame = get_frame_for_placing_bomb();
@@ -202,9 +199,9 @@ draw:
         compute_object_drag_shape(tile3, kind, dir2);
         row = tile3 / 128;
         col = tile3 % 128;
-        x2 = D_0015f3f8 * col / 2 - D_0015f3f8 * row / 2 - window.f0[window.unknown2eb] + window.f90[window.unknown2eb];
-        y2 = D_0015f3f7 * col / 2 + D_0015f3f7 * row / 2 - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
-            + D_0015f3f7 / 2;
+        x2 = resvars.f4 * col / 2 - resvars.f4 * row / 2 - window.f0[window.unknown2eb] + window.f90[window.unknown2eb];
+        y2 = resvars.f3 * col / 2 + resvars.f3 * row / 2 - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
+            + resvars.f3 / 2;
         frame2 = start[objects[kind].unknownE + dir2].frame;
         flip2 = start[objects[kind].unknownE + dir2].flags;
         if (next_part[part].dirs[dir].unknown3[2]) {

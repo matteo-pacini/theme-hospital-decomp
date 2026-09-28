@@ -24,19 +24,12 @@ struct Bounds {
 extern "C" {
 
 extern u8 D_001553e8, D_001553e9;
-extern s16 D_001547e0[2];
-extern u8 D_00155378, D_00155379;
 extern s32 D_001290cc;
 extern char D_0015fde4[];
 extern Event D_001549d0[];
-extern TbScreenMode D_0015f3f4, D_0015f3f5;
-extern u16 D_0015536e;
 extern u8 D_0015f982;
-extern u32 D_0015f44c, D_0015f450, D_0015f454, D_0015f458, D_0015f45c, D_0015f460;
 extern u32 D_0014bcc4, D_0014bcd0, D_0014bcd8, D_0014bce0, D_0014bce4, D_0014bce8;
 extern u32 D_0013c60c, D_0013c618, D_0013c620, D_0013c628, D_0013c62c, D_0013c630;
-extern Window *D_0015f414;
-extern char **D_0015f3fa;
 extern u8 D_001581ec, D_001581ed, D_001581ef;
 extern Bounds D_00155f4f[][4];
 extern u8 D_00155df2[];
@@ -467,7 +460,7 @@ void set_mouse_mode(const u8 mode)
         D_001553e8 = 1;
         break;
     }
-    D_0015536e = mode;
+    gamevar.f12e = mode;
     if (!mouse_was_on_window) {
         set_mouse_sprite(D_001553e8);
     } else {
@@ -659,55 +652,55 @@ void vary_speed(s16 speed)
     }
     switch (speed) {
     case -1:
-        D_00155378 = 0;
-        D_001547e0[1]--;
-        D_00155379 = 0;
-        if (D_001547e0[1] < 1) {
-            D_001547e0[1] = 1;
-        } else if (D_001547e0[1] > 0x7d00) {
-            D_001547e0[1] = 0x7d00;
+        gamevar.f138 = 0;
+        myplayer.f1es--;
+        gamevar.f139 = 0;
+        if (myplayer.f1es < 1) {
+            myplayer.f1es = 1;
+        } else if (myplayer.f1es > 0x7d00) {
+            myplayer.f1es = 0x7d00;
         }
         D_00155df3 = 1;
         break;
     case 1:
-        D_00155378 = 0;
-        D_001547e0[1]++;
-        D_00155379 = 0;
-        if (D_001547e0[1] < 1) {
-            D_001547e0[1] = 1;
-        } else if (D_001547e0[1] > 0x7d00) {
-            D_001547e0[1] = 0x7d00;
+        gamevar.f138 = 0;
+        myplayer.f1es++;
+        gamevar.f139 = 0;
+        if (myplayer.f1es < 1) {
+            myplayer.f1es = 1;
+        } else if (myplayer.f1es > 0x7d00) {
+            myplayer.f1es = 0x7d00;
         }
         D_00155df5 = 1;
         break;
     case 10:
-        D_00155378 = 0;
-        D_001547e0[1] = 1;
-        D_00155379 = 0;
+        gamevar.f138 = 0;
+        myplayer.f1es = 1;
+        gamevar.f139 = 0;
         D_00155df2[0] = 1;
         break;
     case 20:
-        D_00155378 = 0;
-        D_001547e0[1] = 5;
-        D_00155379 = 0;
+        gamevar.f138 = 0;
+        myplayer.f1es = 5;
+        gamevar.f139 = 0;
         D_00155df3 = 1;
         break;
     case 30:
-        D_00155378 = 0;
-        D_001547e0[1] = 0x16;
-        D_00155379 = 0;
+        gamevar.f138 = 0;
+        myplayer.f1es = 0x16;
+        gamevar.f139 = 0;
         D_00155df4 = 1;
         break;
     case 40:
-        D_00155378 = 0;
-        D_001547e0[1] = 0x19;
-        D_00155379 = 0;
+        gamevar.f138 = 0;
+        myplayer.f1es = 0x19;
+        gamevar.f139 = 0;
         D_00155df5 = 1;
         break;
     case 50:
-        D_00155378 = 1;
-        D_001547e0[1] = 0x7d00;
-        D_00155379 = 1;
+        gamevar.f138 = 1;
+        myplayer.f1es = 0x7d00;
+        gamevar.f139 = 1;
         D_00155df6 = 1;
         break;
     }
@@ -768,7 +761,7 @@ Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
 // FUNCTION: 0x0001b1f8
 void setup_abort_all_requesters(void)
 {
-    if (D_0015536e == 0xe) {
+    if (gamevar.f12e == 0xe) {
         D_001549d0[player].type = 0x7b;
         return;
     }
@@ -806,7 +799,7 @@ void setup_abort_all_requesters(void)
     } else {
         D_001549d0[player].value = 0;
     }
-    D_001549d0[player].arg = D_0015536e;
+    D_001549d0[player].arg = gamevar.f12e;
 }
 
 // FUNCTION: 0x0001b388
@@ -878,7 +871,7 @@ u8 hosp_play_smk(const u8 idx)
     if (wasPlaying) {
         LbIsActive();
     }
-    if (D_0015f3f5 == SCREEN_MODE_1 && D_0015f3f4 == SCREEN_MODE_1 && idx != 0x16 && idx != 0x17) {
+    if (resvars.f1 == SCREEN_MODE_1 && resvars.f0 == SCREEN_MODE_1 && idx != 0x16 && idx != 0x17) {
         if (!change_res(SCREEN_MODE_13)) {
             reset_host();
             exit(1);
@@ -1061,9 +1054,9 @@ void fn_0001bc94(u8 idx, u8 flag)
     char path[20];
     int size;
 
-    name = D_0015f3fa[idx];
+    name = resvars.f6_charpp[idx];
 
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         if (idx != loaded_requester) {
             fn_000bbff0(path, name);
             fn_000c93bf(path, D_001201ca);
@@ -1088,14 +1081,14 @@ void fn_0001bc94(u8 idx, u8 flag)
         }
     }
     if (flag) {
-        OpenWindow(open_windows, D_0015f414, idx);
+        OpenWindow(open_windows, resvars.f20, idx);
     }
 }
 
 // FUNCTION: 0x0001bdb8
 void close_crequester(u8 i)
 {
-    remove_window(open_windows, D_0015f414 + i);
+    remove_window(open_windows, resvars.f20 + i);
     crequester.unknown2 = 0x63;
     cancel_helpmsg();
 }
@@ -1138,7 +1131,7 @@ void fn_0001bee4(void)
         LbFileClose(D_001290cc);
         D_001290cc = -1;
     }
-    if (D_0015f3f4 == SCREEN_MODE_1 || D_00155e45) {
+    if (resvars.f0 == SCREEN_MODE_1 || D_00155e45) {
         D_001290cc = LbFileOpen(D_001289a4, 2);
         if (D_001290cc == -1) {
             D_0015f982 = 9;
@@ -1146,13 +1139,13 @@ void fn_0001bee4(void)
             reset_host();
             exit(1);
         }
-        D_0015f454 = D_0014bcc4;
-        D_0015f458 = D_0014bcd0;
-        D_0015f45c = D_0014bcd8;
-        D_0015f460 = D_0014bce0;
-        D_0015f44c = D_0014bce4;
-        D_0015f450 = D_0014bce8;
-    } else if (D_0015f3f4 == SCREEN_MODE_13) {
+        resvars.f60_u32 = D_0014bcc4;
+        resvars.f64_u32 = D_0014bcd0;
+        resvars.f68_u32 = D_0014bcd8;
+        resvars.f6c_u32 = D_0014bce0;
+        resvars.f58_u32 = D_0014bce4;
+        resvars.f5c_u32 = D_0014bce8;
+    } else if (resvars.f0 == SCREEN_MODE_13) {
         D_001290cc = LbFileOpen(D_001289a0, 2);
         if (D_001290cc == -1) {
             D_0015f982 = 9;
@@ -1160,12 +1153,12 @@ void fn_0001bee4(void)
             reset_host();
             exit(1);
         }
-        D_0015f454 = D_0013c60c;
-        D_0015f458 = D_0013c618;
-        D_0015f45c = D_0013c620;
-        D_0015f460 = D_0013c628;
-        D_0015f44c = D_0013c62c;
-        D_0015f450 = D_0013c630;
+        resvars.f60_u32 = D_0013c60c;
+        resvars.f64_u32 = D_0013c618;
+        resvars.f68_u32 = D_0013c620;
+        resvars.f6c_u32 = D_0013c628;
+        resvars.f58_u32 = D_0013c62c;
+        resvars.f5c_u32 = D_0013c630;
     }
 }
 

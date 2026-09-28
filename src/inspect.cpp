@@ -2,9 +2,6 @@
 
 extern "C" {
 extern char D_00121ae0[];
-extern u16 D_0012ddae;
-extern u16 D_0012ddb0;
-extern u16 D_0012ddb2;
 }
 
 u16 create_inspector(u8 owner);
@@ -101,7 +98,7 @@ void inspector_pauses(Thing *w)
         else
             h->unknown209[0] = 3;
     }
-    h->f203 = D_0012ddae * n * 2;
+    h->f203 = gbv.f12e * n * 2;
     make_a_playercall(5, 3, 0x14, w->owner);
     h->f20c = h->f20b;
     h->f20b = 0;
@@ -109,7 +106,7 @@ void inspector_pauses(Thing *w)
     h->f20e = 0;
     switch (h->unknown209[0]) {
     case 0:
-        h->f203 = old_normal_rand(D_0012ddb0, D_0012ddb2);
+        h->f203 = old_normal_rand(gbv.f130, gbv.f132);
         change_balance(0x1f, h->f203, 0, (u16)w->owner);
         break;
     case 1:

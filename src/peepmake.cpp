@@ -32,20 +32,10 @@ struct PeepChoice {
 
 extern "C" {
 
-extern u16 D_00155385;
-extern u16 D_00155387;
-extern u16 D_00155389;
 extern u16 D_00155d89;
-extern u8 D_001553b4;
 extern u16 D_0012b8c8[];
 extern u16 D_0012b8e4[];
 extern u16 D_0015fc20[];
-extern u8 D_0012ddbc;
-extern u8 D_0012ddbe;
-extern u8 D_0012ddbf;
-extern u8 D_0012ddcc;
-extern u8 D_0012ddce;
-extern u16 D_0012dd7c[];
 extern PeepType D_0012b7d4[];
 extern PeepPalette D_0012b818[];
 extern u8 D_0012b878[][5];
@@ -71,15 +61,15 @@ void calc_visitors_this_month(void)
     unused = 0;
     for (i = 0; i < 30; i++) {
         if (popn[i].month == D_00155d89) {
-            D_00155385 = popn[i].count;
+            gamevar.f145 = popn[i].count;
             break;
         }
         if (popn[i].month > D_00155d89)
             break;
     }
-    D_00155387 += D_00155385;
-    if (D_00155387)
-        gamevar.f1c = 1500 / D_00155387;
+    gamevar.f147 += gamevar.f145;
+    if (gamevar.f147)
+        gamevar.f1c = 1500 / gamevar.f147;
     else
         gamevar.f1c = 0;
 }
@@ -98,7 +88,7 @@ void create_a_peep(void)
     n = 1;
     if (statvar.unknownfd > 1)
         n = 4;
-    if (D_001553b4)
+    if (gamevar.f174)
         return;
     for (i = 0; i < n; i++) {
         if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
@@ -168,9 +158,9 @@ u8 create_an_illness(void)
     ok = 0;
     if (towns[myhosp->f29].unknown4[3] && old_newrand() % towns[myhosp->f29].unknown4[3] == 0) {
         ok = 1;
-        if (*(u16 *)&expertise[58].unknown8 && D_00155d89 < *(u16 *)&expertise[58].unknown8)
+        if (gbv.fd6 && D_00155d89 < gbv.fd6)
             ok = 0;
-        else if (*(u16 *)&expertise[58].unknown10[0] && gamevar.f1a < *(u16 *)&expertise[58].unknown10[0])
+        else if (gbv.fd8 && gamevar.f1a < gbv.fd8)
             ok = 0;
     }
     if (ok && statvar.f8) {
@@ -197,7 +187,8 @@ u8 create_an_illness(void)
     return illness;
 }
 
-// NONMATCHING: the target loads D_0012ddbc before calling old_newrand() for the % test
+// NONMATCHING: D_00155d89 < gbv.f13f loads D_00155d89 first in the target, which needs it to be a
+// struct field (the othervar region); as a plain global it is loaded second
 // FUNCTION: 0x00070458
 s8 who_owns_peep(u8 illness)
 {
@@ -218,12 +209,12 @@ s8 who_owns_peep(u8 illness)
         players = network_num_players();
     else
         players = 4;
-    if (D_0012ddbf && D_00155d89 < D_0012ddbf) {
-        owner = D_00155389 % players;
-        D_00155389++;
+    if (gbv.f13f && D_00155d89 < gbv.f13f) {
+        owner = gamevar.f149 % players;
+        gamevar.f149++;
         if (statvar.unknownfd > 1)
             owner = fn_000856c8(owner + 1);
-    } else if (old_newrand() % D_0012ddbc == 0) {
+    } else if (old_newrand() % gbv.f13c == 0) {
         owner = old_newrand() % players;
         if (statvar.unknownfd > 1)
             owner = fn_000856c8(owner + 1);
@@ -235,7 +226,7 @@ s8 who_owns_peep(u8 illness)
                 if (D_001609c4[i].active == 0)
                     continue;
             }
-            bids[i].score += allhosps[i].rooms[illness].unknown0 * D_0012ddbe;
+            bids[i].score += allhosps[i].rooms[illness].unknown0 * gbv.f13e;
             update_single_cure_cost(illness, i);
             price[i] = max_price_for_treatment(illness, i);
             pct[i] = price[i] * 100 / allhosps[i].rooms[illness].unknownC;
@@ -281,16 +272,16 @@ void add_contagiousness(Thing *w)
         chance = expertise[w->style].unknown10[0];
         if (chance) {
             boost = 0;
-            if (expertise[58].f2 && D_00155d89 < expertise[58].f2)
+            if (gbv.fd0 && D_00155d89 < gbv.fd0)
                 boost = 1;
-            else if (*(u16 *)&expertise[58].kind && gamevar.f1a < *(u16 *)&expertise[58].kind)
+            else if (gbv.fd2 && gamevar.f1a < gbv.fd2)
                 boost = 1;
             if (boost)
-                chance = chance * *(u16 *)&expertise[58].unknown5[1] / 100;
+                chance = chance * gbv.fd4 / 100;
             if (allhosps[w->owner].f20d)
                 chance = 0;
             if (chance && old_newrand() % chance == 0)
-                w->unknown174 = old_newrand() % expertise[58].unknown0 + 1;
+                w->unknown174 = old_newrand() % gbv.fce + 1;
         }
     }
 }
@@ -319,8 +310,8 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         p->y.frac = 0x80;
         p->unknown19 = p->x.tile;
         p->unknown20 = p->y.tile;
-        p->unknown18 = D_0012ddcc;
-        p->anim_speed = D_0012ddce;
+        p->unknown18 = gbv.f14c;
+        p->anim_speed = gbv.f14e;
         if (illness >= 16) {
             total = 0;
             for (i = 4; i >= 0; i--)
@@ -373,7 +364,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         p->unknown83w = 50;
         p->unknown134 = 100;
         if (illness == 0x1d)
-            p->unknown136 = (s16)D_0012dd7c[13] / 2;
+            p->unknown136 = gbv.f116 / 2;
         else
             p->unknown136 = 0;
         p->unknown130 = old_normal_rand(200, 1000);

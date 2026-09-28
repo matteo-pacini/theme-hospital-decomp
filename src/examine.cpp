@@ -17,9 +17,7 @@ struct DoorAnim {
 };
 
 extern "C" {
-extern u8 D_00158324;
 extern s16 D_001553b8;
-extern u8 D_0012ddce;
 extern s16 D_001567b0[8];
 extern DoorAnim D_0012b598[];
 
@@ -87,7 +85,7 @@ void doctor_carries_out_examination(Thing *w)
                 } else {
                     D_001553b8 = old_newrand() % 100;
                     if (D_001553b8 >= 35 && D_001553b8 < 50) {
-                        o->anim_speed = D_0012ddce;
+                        o->anim_speed = gbv.f14e;
                         w->unknown103 = 33;
                         o->state_b = 0x20;
                         set_complex(o, 0xbe, 0);
@@ -560,7 +558,7 @@ void effect_illness(Thing *w, u8 illness, u8 cured)
     } else {
         allhosps[w->owner].f1e9++;
         if (w->owner == player)
-            D_00158324 |= 0x40;
+            advisor.f128 |= 0x40;
         allhosps[w->owner].rooms[w->style].unknown1E++;
         reputation_affected(w->style, 0, 0, w->owner, 0);
         w->unknown169 = w->style = 0;

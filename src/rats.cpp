@@ -13,18 +13,13 @@ extern Menu area;
 
 extern "C" {
 extern u8 D_00155da1;
-extern u8 D_001553b4;
-extern u8 D_001553b5;
 extern u16 D_00155d9d;
 extern u16 D_00155d9f;
-extern u16 D_0015537f;
 extern u8 D_00155e2f;
-extern u32 D_00155381;
 extern u8 D_00155e2d;
 extern u8 D_00155e07;
 extern Event D_001549d0[];
 extern u8 D_00155e2e;
-extern TbScreenMode D_0015f3f5;
 void fn_000444e0(Thing *w);
 void fn_00024a34(u16 tile, u16 room, u8 side);
 #pragma aux fn_00024a34 "W?clear_cell_of_ratholes$n(ucus)v"
@@ -377,13 +372,13 @@ void rat_fest_control(void)
     u8 count;
     u16 id;
 
-    if (D_001553b4) {
+    if (gamevar.f174) {
         D_00155d9d = 0x10;
-        if (myhosp->fd27u - D_0015537f > 10) {
-            D_0015537f = myhosp->fd27u;
+        if (myhosp->fd27u - gamevar.f13f > 10) {
+            gamevar.f13f = myhosp->fd27u;
             D_00155da1 = 1;
-            D_001553b5 = old_newrand() % 3 + 1;
-            switch (D_001553b5) {
+            gamevar.f175 = old_newrand() % 3 + 1;
+            switch (gamevar.f175) {
             case 1:
                 D_00155d9f = 4;
                 D_00155e2f = 10;
@@ -397,7 +392,7 @@ void rat_fest_control(void)
                 D_00155e2f = 3;
                 break;
             default:
-                D_001553b5 = 0;
+                gamevar.f175 = 0;
                 D_00155d9f = 2;
                 D_00155e2f = 0;
                 break;
@@ -406,7 +401,7 @@ void rat_fest_control(void)
         count = old_newrand() % 5 + 1;
         for (i = 0; i < count; i++) {
             make_a_rat(player);
-            D_00155381 += count;
+            gamevar.f141 += count;
         }
         if (myhosp->fcaa <= 4 || actual_game_turn >= 9000) {
             D_001549d0[player].type = 0x38;
@@ -466,8 +461,8 @@ void rat_fest_builder(u8 level)
             }
         }
     }
-    D_001553b4 = level;
-    D_001553b5 = 0;
+    gamevar.f174 = level;
+    gamevar.f175 = 0;
     D_00155d9d = 0x10;
     D_00155d9f = 4;
     vary_speed(0x1e);
@@ -476,7 +471,7 @@ void rat_fest_builder(u8 level)
 // FUNCTION: 0x0007e140
 void try_bonus_level(void)
 {
-    if (D_0015f3f5 == SCREEN_MODE_13) {
+    if (resvars.f1 == SCREEN_MODE_13) {
         if (debug.f219) {
             debug.f219 = 0;
             D_00155e2e = (old_newrand() & 1) + 13;

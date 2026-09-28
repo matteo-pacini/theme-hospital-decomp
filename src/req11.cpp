@@ -1,22 +1,7 @@
 #include "hosp.h"
 
-struct Box {
-    s32 x;
-    s32 y;
-    s32 w;
-    s32 h;
-};
-
 extern "C" {
-extern u8 *D_0015f402;
-extern u16 *D_0015f406;
-extern Box *D_0015f40c;
-extern Point *D_0015f410;
-extern HelpHotspot *D_0015f420;
 extern Event D_001549d0[];
-extern TbScreenMode D_0015f3f5;
-extern u8 D_0015831b;
-extern u16 D_0015831c;
 extern u8 D_00155d74;
 extern u16 D_00155c64;
 extern char D_0015544e[];
@@ -51,13 +36,13 @@ void req11(Window *win)
     for (i = 1; b; b = b->next) {
         if (b->flags & 6) {
             debug.unknown8 = i;
-            if (i >= D_0015f402[0x30] && i <= D_0015f402[0x39]) {
-                clicked_buy_objects(i - D_0015f402[0x30], OldLeftButton ? 1 : 2);
-            } else if (i >= D_0015f402[0x45] && i <= D_0015f402[0x4e]) {
-                clicked_buy_objects(i - D_0015f402[0x45], 1);
-            } else if (i >= D_0015f402[0x3b] && i <= D_0015f402[0x44]) {
-                clicked_buy_objects(i - D_0015f402[0x3b], 2);
-            } else if (i == D_0015f402[0x2f]) {
+            if (i >= resvars.fe[0x30] && i <= resvars.fe[0x39]) {
+                clicked_buy_objects(i - resvars.fe[0x30], OldLeftButton ? 1 : 2);
+            } else if (i >= resvars.fe[0x45] && i <= resvars.fe[0x4e]) {
+                clicked_buy_objects(i - resvars.fe[0x45], 1);
+            } else if (i >= resvars.fe[0x3b] && i <= resvars.fe[0x44]) {
+                clicked_buy_objects(i - resvars.fe[0x3b], 2);
+            } else if (i == resvars.fe[0x2f]) {
                 if (crequester.unknown4 == 1) {
                     D_001549d0[player].type = 0x2b;
                 } else if (crequester.unknown9) {
@@ -65,7 +50,7 @@ void req11(Window *win)
                     D_001549d0[player].value = 0;
                 }
                 play_sound(10, 0x41, -1, -1);
-            } else if (i == D_0015f402[0x3a]) {
+            } else if (i == resvars.fe[0x3a]) {
                 if (crequester.unknown9) {
                     D_001549d0[player].type = 0x5c;
                     D_001549d0[player].value = 1;
@@ -98,7 +83,7 @@ void req11_overdraw(Window *win)
 
     b = win->buttons;
     obj = crequester.unknown3;
-    if (D_0015f3f5 == SCREEN_MODE_13 && loaded_requester != 10)
+    if (resvars.f1 == SCREEN_MODE_13 && loaded_requester != 10)
         return;
     compute_help_text(0, 0, 5);
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
@@ -117,23 +102,23 @@ void req11_overdraw(Window *win)
             break;
         total += gamevar.buy_count[room] * myhosp->object_stats[room].cost;
     }
-    LbTextDraw(ox + D_0015f410[0x19].x, oy + D_0015f410[0x19].y, D_001602d4[3]);
+    LbTextDraw(ox + resvars.f1c[0x19].x, oy + resvars.f1c[0x19].y, D_001602d4[3]);
     sprintf(buf, D_00121a50, D_001602d4[5], myhosp->object_stats[obj].cost);
-    LbTextDraw(ox + D_0015f410[0x1a].x, oy + D_0015f410[0x1a].y, buf);
+    LbTextDraw(ox + resvars.f1c[0x1a].x, oy + resvars.f1c[0x1a].y, buf);
     sprintf(buf, D_00121a55, D_001602d4[6], total);
-    LbTextDraw(ox + D_0015f410[0x1b].x, oy + D_0015f410[0x1b].y, buf);
+    LbTextDraw(ox + resvars.f1c[0x1b].x, oy + resvars.f1c[0x1b].y, buf);
     if (obj) {
         fr = &frame[start[objects[obj].f10].frame];
         sx = 0x790000 / fr->width;
         sy = 0x790000 / fr->length;
         if (sy >= 0x10000 || sx >= 0x10000) {
-            draw_a_frame(start[objects[obj].f10].frame, ox + D_0015f410[0x1c].x, oy + D_0015f410[0x1c].y, 0,
+            draw_a_frame(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y, 0,
                 start[objects[obj].f10].flags);
         } else if (sy <= sx) {
-            draw_a_frame_scaled(start[objects[obj].f10].frame, ox + D_0015f410[0x1c].x, oy + D_0015f410[0x1c].y,
+            draw_a_frame_scaled(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y,
                 0, start[objects[obj].f10].flags, sy);
         } else {
-            draw_a_frame_scaled(start[objects[obj].f10].frame, ox + D_0015f410[0x1c].x, oy + D_0015f410[0x1c].y,
+            draw_a_frame_scaled(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y,
                 0, start[objects[obj].f10].flags, sx);
         }
     }
@@ -142,37 +127,37 @@ void req11_overdraw(Window *win)
         if (!room)
             break;
         set_font_from_cache(1);
-        if (over_hotspot(mouse_dx, mouse_dy, ox + D_0015f40c[i + 0xb].x, oy + D_0015f40c[i + 0xb].y,
-                D_0015f40c[i + 0xb].w, D_0015f40c[i + 0xb].h)) {
+        if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18[i + 0xb].x, oy + resvars.f18[i + 0xb].y,
+                resvars.f18[i + 0xb].w, resvars.f18[i + 0xb].h)) {
             set_font_from_cache(2);
             if (crequester.unknown3 != room)
                 play_sound(10, 0x44, -1, -1);
             crequester.unknown3 = room;
         }
-        LbTextDraw(ox + D_0015f410[i + 0x34].x, oy + D_0015f410[i + 0x34].y, D_0016029c[objects[room].name]);
+        LbTextDraw(ox + resvars.f1c[i + 0x34].x, oy + resvars.f1c[i + 0x34].y, D_0016029c[objects[room].name]);
         sprintf(buf, D_00121a5a, gamevar.buy_count[room]);
-        LbTextDraw(ox + D_0015f410[i + 0x3e].x, oy + D_0015f410[i + 0x3e].y, buf);
+        LbTextDraw(ox + resvars.f1c[i + 0x3e].x, oy + resvars.f1c[i + 0x3e].y, buf);
     }
-    if (D_0015831b & 1) {
+    if (advisor.f11f & 1) {
         i = 1;
         D_00155d74++;
         if (D_00155d74 % 10 == 0) {
-            switch (D_0015831c) {
+            switch (advisor.f120) {
             case 0xa:
                 for (b = win->buttons; b; b = b->next) {
-                    if (i == D_0015f402[0x30])
+                    if (i == resvars.fe[0x30])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x12]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x12]]);
                 break;
             case 9:
                 for (b = win->buttons; b; b = b->next) {
-                    if (i == D_0015f402[0x2f])
+                    if (i == resvars.fe[0x2f])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x13]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x13]]);
                 break;
             }
             D_00155d74 = 0;
@@ -235,7 +220,7 @@ void req11_help_object(void)
 {
     u8 idx;
 
-    idx = req_indices[D_0015f420[D_00155c64].unknownA];
+    idx = req_indices[resvars.f2c_HelpHotspotp[D_00155c64].unknownA];
     if (idx)
         fn_000bbff0(D_0015544e, object_help[idx]);
 }
@@ -245,7 +230,7 @@ void req11_help_plus(void)
 {
     u8 idx;
 
-    idx = req_indices[D_0015f420[D_00155c64].unknownA];
+    idx = req_indices[resvars.f2c_HelpHotspotp[D_00155c64].unknownA];
     if (idx)
         fn_000bbff0(D_0015544e, help_text[0x29]);
 }
@@ -255,7 +240,7 @@ void req11_help_minus(void)
 {
     u8 idx;
 
-    idx = req_indices[D_0015f420[D_00155c64].unknownA];
+    idx = req_indices[resvars.f2c_HelpHotspotp[D_00155c64].unknownA];
     if (idx)
         fn_000bbff0(D_0015544e, help_text[0x2a]);
 }

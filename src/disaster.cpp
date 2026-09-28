@@ -1,11 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_0015f8e0;
 extern u8 D_001553c8;
-extern u16 D_0012ddac;
-extern u16 D_0012dd9a;
-extern u16 D_001581fe;
 extern s32 lbSinTable[];
 s32 fn_00038d04(Thing *w, u8 owner);
 #pragma aux fn_00038d04 "W?remove_object$n(pn$Thing$$)s"
@@ -39,7 +35,7 @@ void machine_disaster(Thing *e)
     allhosps[e->owner].fc98++;
     reputation_affected(0, 0xb, 0, e->owner, 0);
     if (e->owner == player)
-        D_0015f8e0 = 1;
+        award_counts.f144 = 1;
     restart_entire_queue(room);
 }
 
@@ -280,7 +276,7 @@ void generate_disaster(u8 owner)
     switch (h->f213) {
     case 0:
         h->f20f++;
-        if (h->f20f > D_0012ddac) {
+        if (h->f20f > gbv.f12c) {
             h->f20f = 0;
             h->f213 = old_newrand() & 3;
             switch (h->f213) {
@@ -291,7 +287,7 @@ void generate_disaster(u8 owner)
                     h->f211 = h->fc94;
                     h->fc94 = 0;
                     h->fc95 = 1;
-                    D_001581fe = 0xb;
+                    advisor.f2 = 0xb;
                     h->f214 = old_normal_rand(10, 0x1e);
                 } else {
                     h->f213 = 0;
@@ -302,7 +298,7 @@ void generate_disaster(u8 owner)
                     h->f211 = h->fc94;
                     h->fc94 = 0xa;
                     h->fc95 = 1;
-                    D_001581fe = 0xa;
+                    advisor.f2 = 0xa;
                     h->f214 = old_normal_rand(10, 0x1e);
                 } else {
                     h->f213 = 0;
@@ -311,7 +307,7 @@ void generate_disaster(u8 owner)
             case 3:
                 if (h->fcaa > 10) {
                     disaster_peeps(0, owner);
-                    D_001581fe = 0xd;
+                    advisor.f2 = 0xd;
                     h->f214 = old_normal_rand(5, 10);
                 } else {
                     h->f213 = 0;
@@ -331,7 +327,7 @@ void generate_disaster(u8 owner)
             h->f213 = 0;
             h->fc94 = h->f211;
             h->fc95 = 0;
-            D_001581fe = 0xc;
+            advisor.f2 = 0xc;
         }
         break;
     case 3:
@@ -342,7 +338,7 @@ void generate_disaster(u8 owner)
         h->f214--;
         if (h->f214 <= 0) {
             h->f213 = 0;
-            D_001581fe = 0xe;
+            advisor.f2 = 0xe;
         }
         break;
     }
@@ -356,7 +352,7 @@ void disaster_peeps(u8 mode, s8 owner)
     for (w = thing + 1; w < end_things; w++) {
         if (w->renderer == 2 && (w->owner == owner || owner == -1)) {
             if (mode == 0)
-                w->unknown138w = D_0012dd9a + 10;
+                w->unknown138w = (u16)gbv.f11a + 10;
             else if (mode == 1 && abilities[w->subtype][5])
                 w->flags |= 0x200;
             else if (mode == 2 && abilities[w->subtype][5])

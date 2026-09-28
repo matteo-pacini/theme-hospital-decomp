@@ -15,7 +15,6 @@ struct TownView {
 };
 
 extern "C" {
-extern TownView *D_0015f430;
 extern Event D_001549d0[];
 extern char D_001204cc[];
 extern char D_001204cf[];
@@ -44,8 +43,6 @@ extern char D_00120525[];
 extern char **D_001602c4;
 extern u8 D_00155e42;
 extern char **D_001602c8;
-extern Point *D_0015f434;
-extern Button *D_0015f43c;
 extern u8 D_00155430;
 extern u8 D_00155431;
 extern u8 D_0012cc20[];
@@ -141,7 +138,7 @@ void process_mouse_town_select(void)
     if (D_00188c7b) {
         plot = check_for_sale();
         if (plot) {
-            if (myhosp->f35 > land_amount[plot] * *(u16 *)&expertise[53].unknown10[3]) {
+            if (myhosp->f35 > land_amount[plot] * gbv.f7c) {
                 play_sound(10, 0x45, -1, -1);
                 if (statvar.unknownfd > 1) {
                     D_001549d0[player].type = 0x58;
@@ -213,7 +210,6 @@ u16 check_for_sale(void)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00064030
 void display_hospital_map_overhead(void)
 {
@@ -232,7 +228,7 @@ void display_hospital_map_overhead(void)
                     break;
                 default:
                     LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                              area_towns[myhosp->f29].height * y + area_towns[myhosp->f29].y,
+                              area_towns[myhosp->f29].y + area_towns[myhosp->f29].height * y,
                               area_towns[myhosp->f29].width, area_towns[myhosp->f29].height / 2, color.unknown7);
                     break;
                 }
@@ -248,7 +244,7 @@ void display_hospital_map_overhead(void)
                     break;
                 default:
                     LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                              area_towns[myhosp->f29].height * y + area_towns[myhosp->f29].y,
+                              area_towns[myhosp->f29].y + area_towns[myhosp->f29].height * y,
                               area_towns[myhosp->f29].width / 2, area_towns[myhosp->f29].height, color.unknown7);
                     break;
                 }
@@ -306,26 +302,25 @@ void display_hospital_map_sale(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00064a60
 void draw_sale_area_outlines(u16 x, u16 y)
 {
     if (x) {
         if (level->plots[(s16)x + ((s16)y << 7)] != level->plots[(s16)(x - 1) + ((s16)y << 7)])
             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                      area_towns[myhosp->f29].height * y + area_towns[myhosp->f29].y,
+                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
                       area_towns[myhosp->f29].width / 2, area_towns[myhosp->f29].height, color.unknown7);
     }
     if (y) {
         if (level->plots[(s16)x + ((s16)y << 7)] != level->plots[(s16)x + ((s16)(y - 1) << 7)])
             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                      area_towns[myhosp->f29].height * y + area_towns[myhosp->f29].y,
+                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
                       area_towns[myhosp->f29].width, area_towns[myhosp->f29].height / 2, color.unknown7);
     }
     if (x > 1 && y > 1) {
         if (level->plots[(s16)x + ((s16)y << 7)] != level->plots[((s16)(y - 1) << 7) + (s16)(x - 1)])
             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                      area_towns[myhosp->f29].height * y + area_towns[myhosp->f29].y, 1, 1, color.unknown7);
+                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 1, 1, color.unknown7);
     }
 }
 
@@ -349,7 +344,7 @@ void buy_land(u16 plot)
             map[i].unknown7 = level->tiles[i].unknown7;
             map[i].unknown7 |= 1 << D_001553c7;
             level->plots[i] = 0;
-            total += *(u16 *)&expertise[53].unknown10[3];
+            total += gbv.f7c;
         }
     }
     remove_partition_walls();
@@ -624,31 +619,31 @@ void display_plot_under_mouse(void)
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c74 = 0;
     sprintf(buf, D_001204cf, D_001602c8[4]);
-    LbTextDraw(D_0015f434[46].x, D_0015f434[46].y, buf);
+    LbTextDraw(resvars.f40[46].x, resvars.f40[46].y, buf);
     sprintf(buf, D_001204d2, D_001602c8[5]);
-    LbTextDraw(D_0015f434[47].x, D_0015f434[47].y, buf);
+    LbTextDraw(resvars.f40[47].x, resvars.f40[47].y, buf);
     sprintf(buf, D_001204d5, D_001602c8[6]);
-    LbTextDraw(D_0015f434[48].x, D_0015f434[48].y, buf);
+    LbTextDraw(resvars.f40[48].x, resvars.f40[48].y, buf);
     sprintf(buf, D_001204d8, D_001602c8[7]);
-    LbTextDraw(D_0015f434[49].x, D_0015f434[49].y, buf);
+    LbTextDraw(resvars.f40[49].x, resvars.f40[49].y, buf);
     x = (mouse_dx - area_towns[myhosp->f29].x) / area_towns[myhosp->f29].width;
     y = (mouse_dy - area_towns[myhosp->f29].y) / area_towns[myhosp->f29].height;
     if ((x >= 0 && y >= 0) && (x < 128 && y < 128)) {
         plot = level->plots[x + (y << 7)];
         if (plot) {
-            price = land_amount[plot] * *(u16 *)&expertise[53].unknown10[3];
+            price = land_amount[plot] * gbv.f7c;
             sprintf(buf, D_001204db, plot);
-            LbTextDraw(D_0015f434[50].x, D_0015f434[50].y, buf);
+            LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
             sprintf(buf, D_001204e0, D_001602c8[2]);
-            LbTextDraw(D_0015f434[51].x, D_0015f434[51].y, buf);
+            LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
             sprintf(buf, D_001204e5, land_amount[plot]);
-            LbTextDraw(D_0015f434[52].x, D_0015f434[52].y, buf);
+            LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
             sprintf(buf, D_001204ea, price);
-            LbTextDraw(D_0015f434[53].x, D_0015f434[53].y, buf);
+            LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
         } else {
             m = &map[x + (y << 7)];
             sprintf(buf, D_001204f0);
-            LbTextDraw(D_0015f434[50].x, D_0015f434[50].y, buf);
+            LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
             sprintf(buf, D_001204f4, D_001602c8[3]);
             for (i = 0; i < 4; i++) {
                 if (m->unknown7 & (1 << i)) {
@@ -656,21 +651,21 @@ void display_plot_under_mouse(void)
                     break;
                 }
             }
-            LbTextDraw(D_0015f434[51].x, D_0015f434[51].y, buf);
+            LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
             sprintf(buf, D_001204fe);
-            LbTextDraw(D_0015f434[52].x, D_0015f434[52].y, buf);
+            LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
             sprintf(buf, D_00120502);
-            LbTextDraw(D_0015f434[53].x, D_0015f434[53].y, buf);
+            LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
         }
     } else {
         sprintf(buf, D_00120506);
-        LbTextDraw(D_0015f434[50].x, D_0015f434[50].y, buf);
+        LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
         sprintf(buf, D_0012050a);
-        LbTextDraw(D_0015f434[51].x, D_0015f434[51].y, buf);
+        LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
         sprintf(buf, D_0012050e);
-        LbTextDraw(D_0015f434[52].x, D_0015f434[52].y, buf);
+        LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
         sprintf(buf, D_00120512);
-        LbTextDraw(D_0015f434[53].x, D_0015f434[53].y, buf);
+        LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
     }
 }
 
@@ -747,7 +742,7 @@ extern "C" void fn_00066914(void)
     draw_things_on_map();
     for (i = 0; i < 5; i++) {
         if (!(town.unknown0 & (1 << i)))
-            reqspr_draw(D_0015f434[34 + i].x, D_0015f434[34 + i].y, &screen_sprites_tab_start[i + 1]);
+            reqspr_draw(resvars.f40[34 + i].x, resvars.f40[34 + i].y, &screen_sprites_tab_start[i + 1]);
     }
     display_plot_under_mouse();
 }
@@ -762,7 +757,6 @@ extern "C" void fn_000669fc(void)
     fn_00068194();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00066a34
 void draw_things_on_map(void)
 {
@@ -782,23 +776,23 @@ void draw_things_on_map(void)
                     case 0x2d:
                         if (town.unknown0 & 2)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 3, 3, color.unknown13);
+                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknown13);
                         break;
                     case 0x2b:
                         if (town.unknown0 & 4)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 3, 3, color.unknownD);
+                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknownD);
                         break;
                     case 0x2c:
                         if (town.unknown0 & 0x10) {
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 1, 1, color.unknownC);
+                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 1, 1, color.unknownC);
                             D_00188c74 = 4;
                             if (t->owner == player) {
                                 if (D_00155e42) {
                                     if (myhosp->fc94)
                                         reqspr_draw(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width - screen_sprites_tab_start[myhosp->fc94 + 9].width / 2,
-                                            area_towns[myhosp->f29].y + area_towns[myhosp->f29].height * y - screen_sprites_tab_start[myhosp->fc94 + 9].height / 2,
+                                            area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height - screen_sprites_tab_start[myhosp->fc94 + 9].height / 2,
                                             &screen_sprites_tab_start[myhosp->fc94 + 9]);
                                 }
                             }
@@ -809,22 +803,22 @@ void draw_things_on_map(void)
                     case 0x3b:
                         if (t->unknown17 == 0 || t->unknown17 == 2)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 7, 3, color.unknown11);
+                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 7, 3, color.unknown11);
                         else
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 3, 7, color.unknown11);
+                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 7, color.unknown11);
                         break;
                     case 3:
                     case 0x34:
                     case 0x35:
                         LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                  y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 3, 3, color.unknown11);
+                                  area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknown11);
                         break;
                     default:
                         if (objects[t->subtype].unknown14 == 1 || objects[t->subtype].unknown14 == 2) {
                             if (town.unknown0 & 8)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 3, 3, color.unknownE);
+                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknownE);
                         }
                         break;
                     }
@@ -834,12 +828,12 @@ void draw_things_on_map(void)
                 case 0x16:
                     if (town.unknown0 & 1)
                         LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                  y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 2, 2, color.unknown12);
+                                  area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 2, 2, color.unknown12);
                     break;
                 case 2:
                     if ((town.unknown0 & 1) && !(map[((s16)(u16)t->y.tile << 7) + (s16)(u16)t->x.tile].unknown7 & 0x10))
                         LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                  y * area_towns[myhosp->f29].height + area_towns[myhosp->f29].y, 2, 2, color.unknown7);
+                                  area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 2, 2, color.unknown7);
                     break;
                 }
             }
@@ -847,20 +841,20 @@ void draw_things_on_map(void)
     }
     set_font_from_cache(0x19);
     sprintf(buf, D_00120516, adcounts.f0);
-    LbTextDraw(D_0015f434[39].x, D_0015f434[39].y, buf);
+    LbTextDraw(resvars.f40[39].x, resvars.f40[39].y, buf);
     sprintf(buf, D_00120519, myhosp->object_stats[45].fA);
-    LbTextDraw(D_0015f434[40].x, D_0015f434[40].y, buf);
+    LbTextDraw(resvars.f40[40].x, resvars.f40[40].y, buf);
     sprintf(buf, D_0012051c, myhosp->object_stats[43].fA);
-    LbTextDraw(D_0015f434[41].x, D_0015f434[41].y, buf);
+    LbTextDraw(resvars.f40[41].x, resvars.f40[41].y, buf);
     sprintf(buf, D_0012051f, myhosp->fc97);
-    LbTextDraw(D_0015f434[42].x, D_0015f434[42].y, buf);
+    LbTextDraw(resvars.f40[42].x, resvars.f40[42].y, buf);
     sprintf(buf, D_00120522, myhosp->fc92);
-    LbTextDraw(D_0015f434[43].x, D_0015f434[43].y, buf);
+    LbTextDraw(resvars.f40[43].x, resvars.f40[43].y, buf);
     sprintf(buf, D_00120525, myhosp->fc92 * myhosp->fc94 * mycontrol->f64c / 100);
-    LbTextDraw(D_0015f434[44].x, D_0015f434[44].y, buf);
+    LbTextDraw(resvars.f40[44].x, resvars.f40[44].y, buf);
     if (myhosp->fc94) {
         for (i = 0; i < myhosp->fc94 * 6; i++)
-            reqspr_draw(D_0015f434[45].x + i, D_0015f434[45].y, &screen_sprites_tab_start[9]);
+            reqspr_draw(resvars.f40[45].x + i, resvars.f40[45].y, &screen_sprites_tab_start[9]);
     }
 }
 
@@ -872,27 +866,27 @@ u8 process_town_panel(void)
 
     hit = 0;
     if (D_00188c81 || D_00188c83) {
-        for (i = 0; D_0015f43c[i + 0x3b].width != 0 && D_0015f43c[i + 0x3b].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0x3b].x, D_0015f43c[i + 0x3b].y,
-                             (s16)D_0015f43c[i + 0x3b].width, (s16)D_0015f43c[i + 0x3b].height)) {
+        for (i = 0; resvars.f48[i + 0x3b].width != 0 && resvars.f48[i + 0x3b].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x3b].x, resvars.f48[i + 0x3b].y,
+                             (s16)resvars.f48[i + 0x3b].width, (s16)resvars.f48[i + 0x3b].height)) {
                 hit = 1;
-                D_0015f43c[i + 0x3b].callback(i);
-                if (D_0015f43c[i + 0x3b].sprite)
-                    reqspr_draw(D_0015f43c[i + 0x3b].unknownC, D_0015f43c[i + 0x3b].unknownE,
-                                &screen_sprites_tab_start[D_0015f43c[i + 0x3b].sprite]);
+                resvars.f48[i + 0x3b].callback(i);
+                if (resvars.f48[i + 0x3b].sprite)
+                    reqspr_draw(resvars.f48[i + 0x3b].unknownC, resvars.f48[i + 0x3b].unknownE,
+                                &screen_sprites_tab_start[resvars.f48[i + 0x3b].sprite]);
                 break;
             }
         }
         D_00188c81 = D_00188c83 = 0;
     }
     if (D_00188c7e || D_00188c7f) {
-        for (i = 0; D_0015f43c[i + 0x3b].width != 0 && D_0015f43c[i + 0x3b].height != 0; i++) {
-            if (over_hotspot(mouse_dx, mouse_dy, D_0015f43c[i + 0x3b].x, D_0015f43c[i + 0x3b].y,
-                             (s16)D_0015f43c[i + 0x3b].width, (s16)D_0015f43c[i + 0x3b].height)) {
+        for (i = 0; resvars.f48[i + 0x3b].width != 0 && resvars.f48[i + 0x3b].height != 0; i++) {
+            if (over_hotspot(mouse_dx, mouse_dy, resvars.f48[i + 0x3b].x, resvars.f48[i + 0x3b].y,
+                             (s16)resvars.f48[i + 0x3b].width, (s16)resvars.f48[i + 0x3b].height)) {
                 hit = 1;
-                if (D_0015f43c[i + 0x3b].sprite)
-                    reqspr_draw(D_0015f43c[i + 0x3b].unknownC, D_0015f43c[i + 0x3b].unknownE,
-                                &screen_sprites_tab_start[D_0015f43c[i + 0x3b].sprite]);
+                if (resvars.f48[i + 0x3b].sprite)
+                    reqspr_draw(resvars.f48[i + 0x3b].unknownC, resvars.f48[i + 0x3b].unknownE,
+                                &screen_sprites_tab_start[resvars.f48[i + 0x3b].sprite]);
                 D_00188c7b = D_00188c7c = 0;
                 break;
             }
@@ -970,22 +964,22 @@ void process_bid_panel(void)
     u8 i;
 
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i + 0x44].width != 0 && D_0015f43c[i + 0x44].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0x44].x, D_0015f43c[i + 0x44].y,
-                             (s16)D_0015f43c[i + 0x44].width, (s16)D_0015f43c[i + 0x44].height)) {
-                D_0015f43c[i + 0x44].callback(i);
-                reqspr_draw(D_0015f43c[i + 0x44].unknownC, D_0015f43c[i + 0x44].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 0x44].sprite]);
+        for (i = 0; resvars.f48[i + 0x44].width != 0 && resvars.f48[i + 0x44].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x44].x, resvars.f48[i + 0x44].y,
+                             (s16)resvars.f48[i + 0x44].width, (s16)resvars.f48[i + 0x44].height)) {
+                resvars.f48[i + 0x44].callback(i);
+                reqspr_draw(resvars.f48[i + 0x44].unknownC, resvars.f48[i + 0x44].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 0x44].sprite]);
             }
         }
         D_00188c81 = D_00188c7b = 0;
     }
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 0x44].width != 0 && D_0015f43c[i + 0x44].height != 0; i++) {
-            if (over_hotspot(mouse_dx, mouse_dy, D_0015f43c[i + 0x44].x, D_0015f43c[i + 0x44].y,
-                             (s16)D_0015f43c[i + 0x44].width, (s16)D_0015f43c[i + 0x44].height))
-                reqspr_draw(D_0015f43c[i + 0x44].unknownC, D_0015f43c[i + 0x44].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 0x44].sprite]);
+        for (i = 0; resvars.f48[i + 0x44].width != 0 && resvars.f48[i + 0x44].height != 0; i++) {
+            if (over_hotspot(mouse_dx, mouse_dy, resvars.f48[i + 0x44].x, resvars.f48[i + 0x44].y,
+                             (s16)resvars.f48[i + 0x44].width, (s16)resvars.f48[i + 0x44].height))
+                reqspr_draw(resvars.f48[i + 0x44].unknownC, resvars.f48[i + 0x44].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 0x44].sprite]);
         }
     }
 }
@@ -1025,16 +1019,16 @@ extern "C" void fn_00067ed4(void)
             if (map[(s16)x + ((s16)y << 7)].unknown7 & 8)
                 colour = color.unknownA;
             if (background[map[(s16)x + ((s16)y << 7)].overlay].unknown0)
-                LbDrawBox(D_0015f430->x + x * 2, D_0015f430->y + y * 2, 2, 2, colour);
+                LbDrawBox(resvars.f3c_TownViewp->x + x * 2, resvars.f3c_TownViewp->y + y * 2, 2, 2, colour);
             if (level->plots[(s16)x + ((s16)y << 7)] == D_00155430)
-                LbDrawBox(D_0015f430->x + x * 2, D_0015f430->y + y * 2, 2, 2, color.unknownD);
+                LbDrawBox(resvars.f3c_TownViewp->x + x * 2, resvars.f3c_TownViewp->y + y * 2, 2, 2, color.unknownD);
             if (map[(s16)x + ((s16)y << 7)].unknown3) {
                 if (map[(s16)x + ((s16)y << 7)].unknown3 < 0x95)
-                    LbDrawBox(D_0015f430->x + x * 2, D_0015f430->y + y * 2, 2, 1, 0);
+                    LbDrawBox(resvars.f3c_TownViewp->x + x * 2, resvars.f3c_TownViewp->y + y * 2, 2, 1, 0);
             }
             if (map[(s16)x + ((s16)y << 7)].unknown4) {
                 if (map[(s16)x + ((s16)y << 7)].unknown4 < 0x95)
-                    LbDrawBox(D_0015f430->x + x * 2, D_0015f430->y + y * 2, 1, 2, 0);
+                    LbDrawBox(resvars.f3c_TownViewp->x + x * 2, resvars.f3c_TownViewp->y + y * 2, 1, 2, 0);
             }
         }
     }
@@ -1058,7 +1052,7 @@ extern "C" void fn_00068194(void)
     set_font_from_cache(0xc);
     D_00188c74 = 0;
     sprintf(small, D_00120528, plotbid.price);
-    LbTextDraw(D_0015f434[67].x, D_0015f434[67].y, small);
+    LbTextDraw(resvars.f40[67].x, resvars.f40[67].y, small);
     row = 0;
     for (i = 0; i < 4; i++) {
         switch (i) {
@@ -1085,13 +1079,13 @@ extern "C" void fn_00068194(void)
             if (i == plotbid.bidder) {
                 LbDrawBox(0x10e, 0x187, 0xe, 0x19, colour);
                 draw_frame(0x10e, 0x187, 0xe, 0x19, (u16)color.unknown9);
-                LbTextDraw(D_0015f434[68].x, D_0015f434[68].y, big);
-                LbTextDraw(D_0015f434[69].x, D_0015f434[69].y, small);
+                LbTextDraw(resvars.f40[68].x, resvars.f40[68].y, big);
+                LbTextDraw(resvars.f40[69].x, resvars.f40[69].y, small);
             }
             LbDrawBox(0x10e, y, 0xe, 0x19, colour);
             draw_frame(0x10e, y, 0xe, 0x19, (u16)color.unknown9);
-            LbTextDraw(D_0015f434[56 + row].x, D_0015f434[56 + row].y, big);
-            LbTextDraw(D_0015f434[61 + row].x, D_0015f434[61 + row].y, small);
+            LbTextDraw(resvars.f40[56 + row].x, resvars.f40[56 + row].y, big);
+            LbTextDraw(resvars.f40[61 + row].x, resvars.f40[61 + row].y, small);
             row++;
         }
     }
@@ -1127,7 +1121,7 @@ void process_bid_time(void)
     }
     if (D_0012cfbc[plotbid.timer] == 3)
         play_sound(10, 0xa5, -1, -1);
-    reqspr_draw(D_0015f434[70].x, D_0015f434[70].y, &screen_sprites_tab_start[D_0012cfbc[plotbid.timer]]);
+    reqspr_draw(resvars.f40[70].x, resvars.f40[70].y, &screen_sprites_tab_start[D_0012cfbc[plotbid.timer]]);
 }
 
 // FUNCTION: 0x000685cc
@@ -1160,16 +1154,16 @@ void draw_money_on_town(void)
             digits = 5;
         else
             digits = 6;
-        LbTextSetClipWindow(D_0015f430->f20 + D_0015f434[54].x * digits, D_0015f430->f24,
-                            D_0015f430->f28 - D_0015f434[54].x * digits, h);
+        LbTextSetClipWindow(resvars.f3c_TownViewp->f20 + resvars.f40[54].x * digits, resvars.f3c_TownViewp->f24,
+                            resvars.f3c_TownViewp->f28 - resvars.f40[54].x * digits, h);
         sprintf(buf, D_00120533, myhosp->f35);
-        LbTextDraw(D_0015f434[55].x, D_0015f434[55].y - (h - D_001553f7 * 6), buf);
+        LbTextDraw(resvars.f40[55].x, resvars.f40[55].y - (h - D_001553f7 * 6), buf);
         sprintf(buf, D_00120537, D_001553f3);
-        LbTextDraw(D_0015f434[55].x, D_0015f434[55].y + D_001553f7 * 6, buf);
+        LbTextDraw(resvars.f40[55].x, resvars.f40[55].y + D_001553f7 * 6, buf);
         if (digits) {
-            LbTextSetClipWindow(D_0015f430->f30, D_0015f430->f34, D_0015f434[54].x * (digits - 3) + D_0015f430->f38, h);
+            LbTextSetClipWindow(resvars.f3c_TownViewp->f30, resvars.f3c_TownViewp->f34, resvars.f40[54].x * (digits - 3) + resvars.f3c_TownViewp->f38, h);
             sprintf(buf, D_0012053b, myhosp->f35);
-            LbTextDraw(D_0015f434[55].x, D_0015f434[55].y, buf);
+            LbTextDraw(resvars.f40[55].x, resvars.f40[55].y, buf);
         }
         D_001553f7++;
         if (D_001553f7 == 4) {
@@ -1178,9 +1172,9 @@ void draw_money_on_town(void)
             D_00156910 = 1;
         }
     } else {
-        LbTextSetClipWindow(D_0015f430->f20, D_0015f430->f24, D_0015f430->f28, h);
+        LbTextSetClipWindow(resvars.f3c_TownViewp->f20, resvars.f3c_TownViewp->f24, resvars.f3c_TownViewp->f28, h);
         sprintf(buf, D_0012053f, myhosp->f35);
-        LbTextDraw(D_0015f434[55].x, D_0015f434[55].y, buf);
+        LbTextDraw(resvars.f40[55].x, resvars.f40[55].y, buf);
     }
 }
 

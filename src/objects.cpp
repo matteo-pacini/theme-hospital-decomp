@@ -46,12 +46,6 @@ extern "C" {
 extern u8 D_00155d73;
 extern u8 D_001553c7;
 extern u8 D_001553ea;
-extern u16 D_001581fe;
-extern u16 D_0012dd7c[];
-extern u8 D_0012ddd0;
-extern u8 D_0012ddd1;
-extern u8 D_0012ddd2;
-extern u8 D_0012ddd3;
 
 }
 
@@ -220,7 +214,7 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
         remove_object_shape(&map[tile], &shapes[objects[kind].shapes[dir]], dir, &objects[kind]);
         if (blocked) {
             if (D_001553c7 == player) {
-                D_001581fe = 7;
+                advisor.f2 = 7;
             }
             return 0;
         }
@@ -617,8 +611,8 @@ u16 find_nearest_manned_reception(Thing *w, const u8 room, const u8 flag)
             if (free <= 0 && flag) {
                 continue;
             }
-            score = staff->room->unknown31 * D_0012dd7c[2];
-            score += (fn_000cb2db(desk->x.tile - w->x.tile) + fn_000cb2db(desk->y.tile - w->y.tile)) * D_0012dd7c[3];
+            score = staff->room->unknown31 * gbv.f100;
+            score += (fn_000cb2db(desk->x.tile - w->x.tile) + fn_000cb2db(desk->y.tile - w->y.tile)) * gbv.f102;
             score -= free;
             if (score < best_score) {
                 best_score = score;
@@ -1185,7 +1179,7 @@ void bomb_ticks(Thing *w)
 {
     if (D_001553ea) {
         w->fuse_tick++;
-        if (w->fuse_tick >= D_0012ddd2) {
+        if (w->fuse_tick >= gbv.f152) {
             w->fuse_tick = 0;
             w->fuse++;
             if (w->fuse >= 8) {
@@ -1216,8 +1210,8 @@ void litter_explosion(u32 pos, u8 owner)
     u32 x;
     u32 y;
 
-    count = D_0012ddd3;
-    for (r = 0; r <= D_0012ddd1; r++) {
+    count = gbv.f153;
+    for (r = 0; r <= gbv.f151; r++) {
         x0 = (pos & 0x7f) - r;
         x1 = x0 + r * 2;
         y0 = (pos >> 7) - r;
@@ -1249,7 +1243,7 @@ u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner)
 
     pos = (s16)x + ((s16)y << 7);
     cell = &map[pos];
-    if (old_newrand() % 100 > D_0012ddd0) {
+    if (old_newrand() % 100 > gbv.f150) {
         return 0;
     }
     if (which_room(pos) == 0 && !(cell->flags & 7) && !(cell->floor & 0xf)) {

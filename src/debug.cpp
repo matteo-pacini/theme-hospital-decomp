@@ -32,7 +32,7 @@ extern MidiFile midi_files[];
 u8 is_midi_playing(void);
 void play_last_midi(void);
 
-#define BSPR(i) (button_sprite + D_0015f406[i])
+#define BSPR(i) (button_sprite + resvars.f12[i])
 
 void note_in_error_log(char *text);
 void write_to_player_log(char *text);
@@ -43,10 +43,6 @@ u32 fn_000cd716(char *s);
 extern "C" {
 
 extern char D_0012083c[], D_0012085a[], D_00120861[], D_00120874[];
-extern TbScreenMode D_0015f3f4;
-extern u8 *D_0015f402;
-extern u16 *D_0015f406;
-extern IconScreen *D_0015f410;
 extern u8 D_00155e07, D_00155e08, D_00155d71, D_00155d72, D_0015642d;
 extern s32 D_00188c3c, D_00188c40, D_00188c38;
 extern volatile s32 D_00188c5c, D_00188c60;
@@ -105,8 +101,8 @@ void note_in_error_log(char *text)
 // FUNCTION: 0x0008de24
 extern "C" void fn_0008de24(void)
 {
-    if (D_0015f3f4 == SCREEN_MODE_13)
-        D_0015f3f4 = SCREEN_MODE_1;
+    if (resvars.f0 == SCREEN_MODE_13)
+        resvars.f0 = SCREEN_MODE_1;
     if (!change_res(SCREEN_MODE_13))
         exit(1);
 }
@@ -154,7 +150,7 @@ extern "C" void fn_0008dee0(Requester *req)
                 if (b->flags & 6) {
                     debug.unknown4 = idx;
                     song = GetSongHandle();
-                    if (idx == D_0015f402[0x55]) {
+                    if (idx == resvars.fe[0x55]) {
                         if (!D_00155e08) {
                             if (D_00155e07) {
                                 AIL_end_sequence(song);
@@ -162,13 +158,13 @@ extern "C" void fn_0008dee0(Requester *req)
                             }
                         }
                         play_sound(10, 0x43, -1, -1);
-                    } else if (idx == D_0015f402[0x57]) {
+                    } else if (idx == resvars.fe[0x57]) {
                         if (D_00155e07) {
                             stop_midi();
                             D_00155e07 = 0;
                         }
                         play_sound(10, 0x43, -1, -1);
-                    } else if (idx == D_0015f402[0x54]) {
+                    } else if (idx == resvars.fe[0x54]) {
                         if (D_00155e07) {
                             AIL_stop_sequence(song);
                             D_00155e07 = 0;
@@ -179,16 +175,16 @@ extern "C" void fn_0008dee0(Requester *req)
                                 play_midi(D_00155d72);
                         }
                         play_sound(10, 0x43, -1, -1);
-                    } else if (idx == D_0015f402[0x56]) {
+                    } else if (idx == resvars.fe[0x56]) {
                         if (!D_00155e08) {
                             if (D_00155e07)
                                 AIL_end_sequence(song);
                         }
                         play_sound(10, 0x43, -1, -1);
-                    } else if (idx == D_0015f402[0x53]) {
+                    } else if (idx == resvars.fe[0x53]) {
                         setup_abort_all_requesters();
                         play_sound(10, 0x42, -1, -1);
-                    } else if (idx == D_0015f402[0x58]) {
+                    } else if (idx == resvars.fe[0x58]) {
                         D_00155e08 = !D_00155e08 ? (u8)1 : (u8)0;
                         play_sound(10, 0x43, -1, -1);
                     }
@@ -212,7 +208,7 @@ extern "C" void fn_0008e184(Requester *req)
     s32 oy;
     s32 unused;
 
-    unused = D_0015f406[0x2e] + 0xd;
+    unused = resvars.f12[0x2e] + 0xd;
     compute_help_text(0, 0, 0x14);
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3, window.unknown2cf - window.unknown2c7);
     ox = req->x - D_00188c3c;
@@ -224,15 +220,15 @@ extern "C" void fn_0008e184(Requester *req)
     set_font_from_cache(2);
     D_00188c74 = 0;
     if (D_00155d71)
-        LbTextDraw(ox + D_0015f410->v[0xfe], oy + D_0015f410->v[0xff], midi_files[D_00155d72].title);
+        LbTextDraw(ox + resvars.f1c_IconScreenp->v[0xfe], oy + resvars.f1c_IconScreenp->v[0xff], midi_files[D_00155d72].title);
     if (D_00155e08)
-        reqspr_draw(ox + D_0015f410->v[0x140], oy + D_0015f410->v[0x141], BSPR(0x1f));
+        reqspr_draw(ox + resvars.f1c_IconScreenp->v[0x140], oy + resvars.f1c_IconScreenp->v[0x141], BSPR(0x1f));
     if (D_00155e07)
-        reqspr_draw(ox + D_0015f410->v[0x142], oy + D_0015f410->v[0x143], BSPR(0x27));
+        reqspr_draw(ox + resvars.f1c_IconScreenp->v[0x142], oy + resvars.f1c_IconScreenp->v[0x143], BSPR(0x27));
     i = 0;
-    for (y = D_0015f410->v[0x101]; y < BSPR(0x21)->height * D_0015642d + D_0015f410->v[0x101]; y += BSPR(0x21)->height, i++) {
+    for (y = resvars.f1c_IconScreenp->v[0x101]; y < BSPR(0x21)->height * D_0015642d + resvars.f1c_IconScreenp->v[0x101]; y += BSPR(0x21)->height, i++) {
         sel = 0xff;
-        x = D_0015f410->v[0x100];
+        x = resvars.f1c_IconScreenp->v[0x100];
         reqspr_draw(x + ox, y + oy, BSPR(0x20));
         set_all_refresh_zones_in_window(x + ox, y + oy, x + ox + BSPR(0x20)->width, y + oy + BSPR(0x20)->height, 3);
         for (; x < BSPR(0x21)->width * 7; x += BSPR(0x21)->width) {
@@ -276,10 +272,10 @@ extern "C" void fn_0008e184(Requester *req)
             set_font_from_cache(2);
         else
             set_font_from_cache(1);
-        LbTextDraw(ox + D_0015f410->v[0x104], y - BSPR(0x21)->height + oy + D_0015f410->v[0x105], midi_files[i].title);
+        LbTextDraw(ox + resvars.f1c_IconScreenp->v[0x104], y - BSPR(0x21)->height + oy + resvars.f1c_IconScreenp->v[0x105], midi_files[i].title);
     }
-    x = D_0015f410->v[0x102];
-    y -= D_0015f410->v[0x103];
+    x = resvars.f1c_IconScreenp->v[0x102];
+    y -= resvars.f1c_IconScreenp->v[0x103];
     reqspr_draw(x + ox, y + oy, BSPR(0x24));
     set_all_refresh_zones_in_window(x + ox, y + oy, x + ox + BSPR(0x24)->width, y + oy + BSPR(0x24)->height, 3);
     for (; x < BSPR(0x25)->width * 7; x += BSPR(0x25)->width) {

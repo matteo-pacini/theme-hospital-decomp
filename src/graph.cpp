@@ -10,7 +10,6 @@ struct Graphs {
 extern Graphs graph[];
 
 extern "C" {
-extern Button *D_0015f43c;
 extern u8 D_00188c7e;
 extern u8 D_00188c7f;
 extern u8 D_00188c81;
@@ -35,7 +34,6 @@ struct GraphRect {
 };
 
 extern "C" {
-extern GraphRect *D_0015f430;
 extern s32 D_00188c38;
 extern GraphLabel D_0015eba0[];
 extern s16 D_0015eb9c;
@@ -109,13 +107,13 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     D_0015eb94[7] = color.unknown14;
     for (i = 0; i < 8; i++) {
         if (!graph[i].visible)
-            reqspr_draw(D_0015f43c[i + 0x25].unknownC, D_0015f43c[i + 0x25].unknownE,
-                        &screen_sprites_tab_start[D_0015f43c[i + 0x25].sprite]);
-        LbTextSetWindow(D_0015f430[i + 47].x, D_0015f430[i + 47].y, D_0015f430[i + 47].w, D_0015f430[i + 47].h);
+            reqspr_draw(resvars.f48[i + 0x25].unknownC, resvars.f48[i + 0x25].unknownE,
+                        &screen_sprites_tab_start[resvars.f48[i + 0x25].sprite]);
+        LbTextSetWindow(resvars.f3c_GraphRectp[i + 47].x, resvars.f3c_GraphRectp[i + 47].y, resvars.f3c_GraphRectp[i + 47].w, resvars.f3c_GraphRectp[i + 47].h);
         D_00188c74 |= 0x140;
         D_00188c85 = D_0015eb94[graph[i].colour];
         D_00188c74 |= 0x40;
-        LbTextDraw(0, (D_0015f430[i + 47].h - h1) >> 1, D_001602b0[i + 3]);
+        LbTextDraw(0, (resvars.f3c_GraphRectp[i + 47].h - h1) >> 1, D_001602b0[i + 3]);
     }
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c74 = 0;
@@ -260,23 +258,23 @@ void process_graph_panel(void)
     u8 i;
 
     if (D_00188c81 || D_00188c83) {
-        for (i = 0; D_0015f43c[i + 0x25].width != 0 && D_0015f43c[i + 0x25].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0x25].x, D_0015f43c[i + 0x25].y,
-                             D_0015f43c[i + 0x25].width, D_0015f43c[i + 0x25].height)) {
-                D_0015f43c[i + 0x25].callback(i);
-                reqspr_draw(D_0015f43c[i + 0x25].unknownC, D_0015f43c[i + 0x25].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 0x25].sprite]);
+        for (i = 0; resvars.f48[i + 0x25].width != 0 && resvars.f48[i + 0x25].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x25].x, resvars.f48[i + 0x25].y,
+                             resvars.f48[i + 0x25].width, resvars.f48[i + 0x25].height)) {
+                resvars.f48[i + 0x25].callback(i);
+                reqspr_draw(resvars.f48[i + 0x25].unknownC, resvars.f48[i + 0x25].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 0x25].sprite]);
                 break;
             }
         }
         D_00188c81 = D_00188c83 = 0;
     }
     if (D_00188c7e || D_00188c7f) {
-        for (i = 0; D_0015f43c[i + 0x25].width != 0 && D_0015f43c[i + 0x25].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0x25].x, D_0015f43c[i + 0x25].y,
-                             D_0015f43c[i + 0x25].width, D_0015f43c[i + 0x25].height)) {
-                reqspr_draw(D_0015f43c[i + 0x25].unknownC, D_0015f43c[i + 0x25].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 0x25].sprite]);
+        for (i = 0; resvars.f48[i + 0x25].width != 0 && resvars.f48[i + 0x25].height != 0; i++) {
+            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0x25].x, resvars.f48[i + 0x25].y,
+                             resvars.f48[i + 0x25].width, resvars.f48[i + 0x25].height)) {
+                reqspr_draw(resvars.f48[i + 0x25].unknownC, resvars.f48[i + 0x25].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 0x25].sprite]);
                 break;
             }
         }

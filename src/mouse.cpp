@@ -10,9 +10,6 @@ struct Slot {
 };
 
 extern "C" {
-extern Point *D_0015f410;
-extern u16 D_0015536e;
-extern u16 D_00155370;
 extern Event D_001549d0[];
 extern u16 D_001553e0;
 extern u8 D_001553e1[];
@@ -24,7 +21,6 @@ extern u16 D_00155e40;
 extern u16 D_00155e48;
 extern u8 D_001553f0;
 extern u8 D_001553c8;
-extern u8 D_001553b4;
 extern u8 D_00155d70;
 extern u8 D_00155e0b;
 extern u8 D_00155e0c;
@@ -32,13 +28,9 @@ extern u8 D_00188c7b;
 extern u8 D_00188c7c;
 extern volatile s32 D_00188c5c, D_00188c60;
 extern Slot D_001581b2[];
-extern u8 D_0015f3f7;
-extern u8 D_0015f3f8;
 extern s16 D_00155c60;
 extern s16 D_00155c62;
 extern u16 D_0012cdea[];
-extern u16 D_00158321;
-extern u8 D_0015831a;
 extern u8 D_00155442;
 extern u8 D_00155443;
 extern u8 D_001553e8;
@@ -53,11 +45,7 @@ extern u8 D_00188c7e;
 extern u8 D_00188c7f;
 extern u16 D_00155432;
 extern u8 D_00155e2f;
-extern u8 D_001553b5;
 extern u16 D_00155d9f;
-extern u16 D_001581fe;
-extern u16 D_0015537a;
-extern s16 D_0012dd7c[];
 }
 
 extern u8 clicked_icon;
@@ -103,7 +91,7 @@ void process_mouse(void)
         D_00188c7b = D_00188c7c = 0;
         return;
     }
-    if (D_0015536e == 0x25) {
+    if (gamevar.f12e == 0x25) {
         if (D_00188c7b || D_00188c7c) {
             D_00188c7b = 0;
             D_00188c7c = 0;
@@ -115,13 +103,13 @@ void process_mouse(void)
     }
     if (debug.unknownd7) {}
     scroll = 0;
-    if (mouse_dx <= D_0015f410[0xa7].x)
+    if (mouse_dx <= resvars.f1c[0xa7].x)
         scroll |= 4;
-    else if (mouse_dx >= D_0015f410[0xa8].x)
+    else if (mouse_dx >= resvars.f1c[0xa8].x)
         scroll |= 8;
-    if (mouse_dy <= D_0015f410[0xa7].y)
+    if (mouse_dy <= resvars.f1c[0xa7].y)
         scroll |= 1;
-    else if (mouse_dy >= D_0015f410[0xa8].y)
+    else if (mouse_dy >= resvars.f1c[0xa8].y)
         scroll |= 2;
     if (scroll > 0)
         D_001549d0[player].flags = scroll;
@@ -148,27 +136,27 @@ void process_mouse(void)
     }
     if (statvar.unknown6 <= mouse_dy) {
         icon = which_icon_is_mouse_over();
-        if (D_0015536e == 0) {
+        if (gamevar.f12e == 0) {
             if (D_001553e8 != 1)
                 set_mouse_sprite(1);
         }
-    } else if (D_0012cdea[D_0015831a] && D_00188c7c
-               && ((mouse_dy >= D_0015f410[0x93].y && D_00158321 <= mouse_dx && mouse_dx <= D_0015f410[0x92].x
-                    && mouse_dy <= D_0015f410[0x92].y)
-                   || (mouse_dx >= D_0015f410[0x90].x && mouse_dy >= D_0015f410[0x90].y
-                       && mouse_dx <= D_0015f410[0x91].x && mouse_dy <= D_0015f410[0x91].y))) {
+    } else if (D_0012cdea[advisor.f11e] && D_00188c7c
+               && ((mouse_dy >= resvars.f1c[0x93].y && advisor.f125_u16 <= mouse_dx && mouse_dx <= resvars.f1c[0x92].x
+                    && mouse_dy <= resvars.f1c[0x92].y)
+                   || (mouse_dx >= resvars.f1c[0x90].x && mouse_dy >= resvars.f1c[0x90].y
+                       && mouse_dx <= resvars.f1c[0x91].x && mouse_dy <= resvars.f1c[0x91].y))) {
         D_00155e0b = 1;
-        D_00155370 = 8;
+        gamevar.f130 = 8;
         icon = 0x27;
     } else {
         icon = 0x27;
-        switch (D_0015536e) {
+        switch (gamevar.f12e) {
         case 0xf:
             if (is_person_highlighted_for_vaccination(1)) {
-                D_00155370 = 1;
+                gamevar.f130 = 1;
                 set_mouse_sprite(0xd);
             } else {
-                D_00155370 = 2;
+                gamevar.f130 = 2;
                 set_mouse_sprite(0xc);
             }
             break;
@@ -179,22 +167,22 @@ void process_mouse(void)
             hit = 0;
             set = 0;
             if (D_00155d7a) {
-                if (D_00155370 != 7)
+                if (gamevar.f130 != 7)
                     set_mouse_sprite(1);
-                D_00155370 = 7;
+                gamevar.f130 = 7;
                 set = 1;
             } else if (D_00155427) {
-                if (D_00155370 != 6)
+                if (gamevar.f130 != 6)
                     set_mouse_sprite(0xb);
-                D_00155370 = 6;
+                gamevar.f130 = 6;
                 set = 1;
             } else if (D_00155429) {
-                if (D_00155370 != 5)
+                if (gamevar.f130 != 5)
                     set_mouse_sprite(0xa);
-                D_00155370 = 5;
+                gamevar.f130 = 5;
                 set = 1;
             } else if (crequester.unknown2 == 0x63 && (w = &thing[D_001553f9]) > thing) {
-                if (D_001553b4)
+                if (gamevar.f174)
                     return;
                 if ((w->renderer == 2 || w->renderer == 4)
                     && (other = &thing[w->unknown69
@@ -206,7 +194,7 @@ void process_mouse(void)
                     if (other->subtype == 0xb) {
                         D_00155435 = D_00155434;
                         D_00155434 = 4;
-                        D_00155370 = 3;
+                        gamevar.f130 = 3;
                         hit = 1;
                         peep_icon(w);
                         if (D_001553e8 != 0x13)
@@ -222,7 +210,7 @@ void process_mouse(void)
                     if (objects[w->subtype].f20) {
                         D_00155435 = D_00155434;
                         D_00155434 = 3;
-                        D_00155370 = 3;
+                        gamevar.f130 = 3;
                         if (D_001553e8 != 0x11)
                             set_mouse_sprite(0x11);
                         hit = 1;
@@ -231,7 +219,7 @@ void process_mouse(void)
                     if (objects[w->subtype].unknown20[2] & 2) {
                         D_00155435 = D_00155434;
                         D_00155434 = 6;
-                        D_00155370 = 3;
+                        gamevar.f130 = 3;
                         hit = 1;
                         goto done;
                     }
@@ -242,19 +230,19 @@ void process_mouse(void)
                 if (w->renderer == 2) {
                     D_00155435 = D_00155434;
                     D_00155434 = 2;
-                    D_00155370 = 3;
+                    gamevar.f130 = 3;
                     peep_icon(w);
                     hit = 1;
                     if (D_001553e8 != 0x12)
                         set_mouse_sprite(0x12);
                     if (myhosp->f20d && is_person_highlighted_for_vaccination(0)) {
-                        D_00155370 = 1;
+                        gamevar.f130 = 1;
                         set_mouse_sprite(0xd);
                     }
                 } else if (w->renderer == 4) {
                     D_00155435 = D_00155434;
                     D_00155434 = 1;
-                    D_00155370 = 3;
+                    gamevar.f130 = 3;
                     peep_icon(w);
                     hit = 1;
                     if (D_001553e8 != 0x10)
@@ -266,7 +254,7 @@ void process_mouse(void)
                     if (rooms[room->type].unknown27[2]) {
                         D_00155435 = D_00155434;
                         D_00155434 = 4;
-                        D_00155370 = 4;
+                        gamevar.f130 = 4;
                         hit = 1;
                         if (D_001553e8 != 0x13)
                             set_mouse_sprite(0x13);
@@ -274,7 +262,7 @@ void process_mouse(void)
                 } else if (w->renderer == 0x14 || w->renderer == 0x16) {
                     D_00155435 = D_00155434;
                     D_00155434 = 5;
-                    D_00155370 = 3;
+                    gamevar.f130 = 3;
                     hit = 1;
                 }
             }
@@ -282,9 +270,9 @@ void process_mouse(void)
             if (hit) {
                 D_00155438 = 100;
                 D_00155436 = w - thing;
-            } else if (!set && (D_001553e8 != 1 || D_00155370 != 0)) {
+            } else if (!set && (D_001553e8 != 1 || gamevar.f130 != 0)) {
                 set_mouse_sprite(1);
-                D_00155370 = 0;
+                gamevar.f130 = 0;
             }
             if (D_00155438 != 0) {
                 D_00155438--;
@@ -324,8 +312,6 @@ void process_mouse(void)
     }
 }
 
-// NONMATCHING: unknown128 vs D_0012dd7c[7] / 4 is compared as cmp edx,eax / jge in the target
-// (divisor first, field second); written either way round it differs
 // FUNCTION: 0x0005a750
 void process_left_button(u16 icon)
 {
@@ -335,18 +321,18 @@ void process_left_button(u16 icon)
     switch (icon) {
     case 0x27:
         if (display_mode == 0) {
-            switch (D_0015536e) {
+            switch (gamevar.f12e) {
             case 0:
                 if (crequester.unknown2 != 0x63)
                     break;
                 if (myhosp->f207) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, D_0015f410[0x86].x, D_0015f410[0x86].y,
+                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                      watch[14].width, watch[14].height)) {
-                        D_0015536e = 0xf;
+                        gamevar.f12e = 0xf;
                         play_sound(10, 0x43, -1, -1);
                         break;
                     }
-                    if (over_hotspot(D_00188c5c, D_00188c60, D_0015f410[0x86].x, D_0015f410[0x86].y,
+                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                      watch[13].width, watch[13].height)) {
                         if (D_00155e48) {
                             D_001553f0 = 1;
@@ -358,7 +344,7 @@ void process_left_button(u16 icon)
                     }
                 }
                 if (myhosp->unknown1257) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, D_0015f410[0x86].x, D_0015f410[0x86].y,
+                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                      watch[14].width, watch[14].height)) {
                         D_001549d0[player].type = 0x8b;
                         play_sound(10, 0xd9, -1, -1);
@@ -366,7 +352,7 @@ void process_left_button(u16 icon)
                     }
                 }
                 if (myhosp->f1d9) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, D_0015f410[0x84].x, D_0015f410[0x84].y,
+                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
                                      watch[13].width, watch[13].height)) {
                         if (D_00155e40) {
                             D_001553f0 = 1;
@@ -377,7 +363,7 @@ void process_left_button(u16 icon)
                         break;
                     }
                 }
-                switch (D_00155370) {
+                switch (gamevar.f130) {
                 case 0:
                     break;
                 case 3:
@@ -456,13 +442,13 @@ void process_left_button(u16 icon)
                     } else if (statvar.unknownfd > 1 && w->renderer == 4 && w->owner != 0x63) {
                         if (w->f93) {
                             if (w->f93 != 1 << player)
-                                D_001581fe = 0xf;
-                        } else if (D_0012dd7c[7] / 4 > (s16)w->unknown128) {
-                            D_001581fe = 0x10;
+                                advisor.f2 = 0xf;
+                        } else if (w->unknown128s < gbv.f10a / 4) {
+                            advisor.f2 = 0x10;
                         } else {
                             D_001549d0[player].type = 0x81;
                             D_001549d0[player].value = w - thing;
-                            D_001581fe = 0x11;
+                            advisor.f2 = 0x11;
                         }
                     }
                     break;
@@ -479,7 +465,7 @@ void process_left_button(u16 icon)
                     if (!gamevar.unknown21) {
                         D_001549d0[player].type = 0x6a;
                         D_001549d0[player].value = D_00155427;
-                        D_001549d0[player].argb[0] = D_001553b5;
+                        D_001549d0[player].argb[0] = gamevar.f175;
                         if (D_00155427)
                             D_001549d0[player].argb[1] = 1;
                         else
@@ -487,7 +473,7 @@ void process_left_button(u16 icon)
                         if (D_00155e2f) {
                             D_00155e2f--;
                             if (D_00155e2f <= 0) {
-                                D_001553b5 = 0;
+                                gamevar.f175 = 0;
                                 D_00155d9f = 2;
                                 D_00155e2f = 0;
                             }
@@ -562,13 +548,13 @@ void process_left_button(u16 icon)
                 break;
             case 0xf:
                 if (myhosp->f207) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, D_0015f410[0x86].x, D_0015f410[0x86].y,
+                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                      watch[14].width, watch[14].height)) {
-                        D_0015536e = 0;
+                        gamevar.f12e = 0;
                         break;
                     }
                 }
-                if (D_00155370 == 1) {
+                if (gamevar.f130 == 1) {
                     D_001549d0[player].type = 0x82;
                     D_001549d0[player].value = D_00155432;
                 }
@@ -591,7 +577,7 @@ void process_left_button(u16 icon)
                 if (room) {
                     D_001549d0[player].type = 9;
                     D_001549d0[player].value = room - room_info;
-                    D_001549d0[player].arg = D_0015537a;
+                    D_001549d0[player].arg = gamevar.f13a;
                     set_mouse_mode(0);
                 }
                 break;
@@ -623,7 +609,7 @@ void process_mleft_button(u16 icon)
     case 0x27:
         if (display_mode == 0) {
             if (D_001549d0[player].type == 0) {
-                switch (D_0015536e) {
+                switch (gamevar.f12e) {
                 case 1:
                     D_001549d0[player].type = 2;
                     D_001549d0[player].value = D_001553e0;
@@ -631,12 +617,12 @@ void process_mleft_button(u16 icon)
                 case 0:
                 case 0xf:
                     if (myhosp->f207) {
-                        if (over_hotspot(mouse_dx, mouse_dy, D_0015f410[0x86].x, D_0015f410[0x86].y,
+                        if (over_hotspot(mouse_dx, mouse_dy, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                          watch[14].width, watch[14].height))
-                            reqspr_draw(D_0015f410[0x86].x, D_0015f410[0x86].y, &watch[15]);
+                            reqspr_draw(resvars.f1c[0x86].x, resvars.f1c[0x86].y, &watch[15]);
                     }
                     if (myhosp->f1d9) {
-                        if (over_hotspot(D_00188c5c, D_00188c60, D_0015f410[0x84].x, D_0015f410[0x84].y,
+                        if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
                                          watch[13].width, watch[13].height)) {
                             if (D_00155e40) {
                                 D_001553f0 = 1;
@@ -662,7 +648,7 @@ void process_mright_button(u16 icon)
 {
     switch (icon) {
     case 0x27:
-        switch (D_0015536e) {
+        switch (gamevar.f12e) {
         case 5:
             process_no_button(icon);
             break;
@@ -679,14 +665,14 @@ void process_right_button(u16 icon)
 {
     Thing *w;
 
-    if (!D_001553b4) {
+    if (!gamevar.f174) {
         switch (icon) {
         case 0x27:
             if (display_mode == 0) {
-                switch (D_0015536e) {
+                switch (gamevar.f12e) {
                 case 0:
                     if (myhosp->f207) {
-                        if (over_hotspot(D_00188c5c, D_00188c60, D_0015f410[0x86].x, D_0015f410[0x86].y,
+                        if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                          watch[13].width, watch[13].height)) {
                             D_00155e48 = fn_00073e64(D_00155e40, 0x20);
                             if (D_00155e48) {
@@ -702,7 +688,7 @@ void process_right_button(u16 icon)
                         }
                     }
                     if (myhosp->f1d9) {
-                        if (over_hotspot(D_00188c5c, D_00188c60, D_0015f410[0x84].x, D_0015f410[0x84].y,
+                        if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
                                          watch[13].width, watch[13].height)) {
                             D_00155e40 = fn_00073e64(D_00155e40, 0x40);
                             if (D_00155e40) {
@@ -718,7 +704,7 @@ void process_right_button(u16 icon)
                         }
                     }
                     {
-                        switch (D_00155370) {
+                        switch (gamevar.f130) {
                         case 0:
                         case 3:
                             if (!mouse_was_on_window
@@ -730,7 +716,7 @@ void process_right_button(u16 icon)
                                 if (w->owner == player) {
                                     if (allhosps[player].unknown11b7) {
                                         check_object_right_click_in_room_edit();
-                                    } else if (D_00155370 == 3 && w > thing && w->renderer == 4) {
+                                    } else if (gamevar.f130 == 3 && w > thing && w->renderer == 4) {
                                         D_001549d0[player].type = 0x68;
                                         D_001549d0[player].value = D_001553f9;
                                         play_sound(10, 0x99, -1, -1);
@@ -799,7 +785,7 @@ void process_no_button(u16 icon)
     switch (icon) {
     case 0x27:
         if (display_mode == 0) {
-            switch (D_0015536e) {
+            switch (gamevar.f12e) {
             case 0:
                 room = which_room(D_001553e0);
                 if (room && room->owner == player) {
@@ -832,8 +818,8 @@ void process_no_button(u16 icon)
             case 6:
                 LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
                 LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-                draw_from_frame(start[blueprint[gamevar.unknown1e].anim].frame, D_0015f3f8 / 2 + mcurx,
-                                mcury - D_0015f3f7 / 2, 0, start[blueprint[gamevar.unknown1e].anim].flags);
+                draw_from_frame(start[blueprint[gamevar.unknown1e].anim].frame, resvars.f4 / 2 + mcurx,
+                                mcury - resvars.f3 / 2, 0, start[blueprint[gamevar.unknown1e].anim].flags);
                 break;
             case 0xb:
                 D_001553fb = compute_object_pointed(&room_info[allhosps[player].unknown11b7]);

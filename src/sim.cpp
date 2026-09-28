@@ -16,13 +16,10 @@ extern u16 D_0015542a;
 extern u8 D_00155e17;
 extern u8 D_00155e02;
 extern u16 D_00158190[];
-extern u16 D_00158208;
-extern u8 D_00158324;
 extern u16 D_00155d89;
 extern u8 D_00155e15;
 extern u8 D_00155e4c;
 extern u8 D_00155e4d;
-extern u16 D_0012dda4;
 extern Event D_001549d0[];
 }
 
@@ -183,7 +180,7 @@ void calculate_score(u8 owner)
         if (rating[i].threshold >= score) {
             if (h->f2d > 1000000)
                 h->f2d += rating[i].f4 * h->f2d / 10000;
-            else if (D_0012dda4 * h->f31 / 100 < h->f2d)
+            else if (gbv.f124 * h->f31 / 100 < h->f2d)
                 h->f2d += rating[i].f4 * h->f2d / 10000;
             else
                 h->f2d += rating[i].f2 * h->f2d / 10000;
@@ -269,7 +266,7 @@ u16 shall_peep_pay(Thing *w)
     s32 max;
 
     room = w->unknown171;
-    D_00158208 = w->unknown171;
+    advisor.fc_u16 = w->unknown171;
     for (attempt = 0; attempt < 2; attempt++) {
         pays = 0;
         update_single_cure_cost(room, w->owner);
@@ -292,7 +289,7 @@ u16 shall_peep_pay(Thing *w)
         w->unknown118 |= 0x80;
         record_person_as_patient(w);
         if (w->owner == player)
-            D_00158324 |= 2;
+            advisor.f128 |= 2;
     }
     return pays;
 }

@@ -2,16 +2,13 @@
 
 extern "C" {
 
-extern u16 D_0015536e;
 extern u8 D_00155e1e;
 extern u16 D_00155e1f;
-extern u8 D_001547e6;
 extern u8 D_0015fe84;
 extern u8 D_0015fe85;
 extern u8 D_001553d0[];
 extern u8 D_001553c7;
 extern u8 D_001553c8;
-extern u16 D_001581fe;
 
 u8 fn_00029748(void);
 void fn_000228e0(void);
@@ -25,7 +22,7 @@ void remove_blank_wall(Map *cell, u8 side);
 // FUNCTION: 0x00022854
 u8 fn_00022854(u8 warn)
 {
-    if (D_0015536e != 0) {
+    if (gamevar.f12e != 0) {
         if (warn) {
             D_00155e1e = 0x19;
             D_00155e1f = 0x14;
@@ -45,7 +42,7 @@ u8 fn_00022854(u8 warn)
 // FUNCTION: 0x000228e0
 void fn_000228e0(void)
 {
-    if (D_001547e6) {
+    if (myplayer.f22) {
         if (statvar.unknownfd <= 1) {
             if (mycontrol->unknown64f == 0x1c || D_0015fe85) {
                 if (mycontrol->unknown650 + mycontrol->unknown64f != D_0015fe84 || D_0015fe85) {
@@ -90,7 +87,7 @@ void place_bp_door(u8 owner, u8 swap)
     }
     if (!check_room_access_with_blueprint(owner)) {
         if (owner == player) {
-            D_001581fe = 6;
+            advisor.f2 = 6;
             play_sound(10, 8, -1, -1);
         }
         return;

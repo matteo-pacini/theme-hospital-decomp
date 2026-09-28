@@ -57,9 +57,6 @@ extern u16 D_00158190;
 extern u8 *D_00155d8f;
 extern s32 D_00155d93;
 extern s32 D_00155d97;
-extern ChoiceBox *D_0015f430;
-extern Point *D_0015f434;
-extern Button *D_0015f43c;
 extern s16 D_0015f760;
 extern u32 D_001611f0;
 extern u8 D_001611f8[];
@@ -93,11 +90,11 @@ void display_choice(void)
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
         LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
         calculate_buttons(D_00158190);
-        LbTextSetWindow(D_0015f430[173].x, D_0015f430[173].y, D_0015f430[173].w, D_0015f430[173].h);
+        LbTextSetWindow(resvars.f3c_ChoiceBoxp[173].x, resvars.f3c_ChoiceBoxp[173].y, resvars.f3c_ChoiceBoxp[173].w, resvars.f3c_ChoiceBoxp[173].h);
         display_choice_text(D_00158190);
         display_buttons();
         if (!choice_time_out)
-            reqspr_draw(D_0015f434[0xbe].x, D_0015f434[0xbe].y, &screen_sprites_tab_start[20]);
+            reqspr_draw(resvars.f40[0xbe].x, resvars.f40[0xbe].y, &screen_sprites_tab_start[20]);
         lbDisplay.unknown4 = D_00155d8f;
         D_00188c34 = D_00155d93;
         D_00188c38 = D_00155d97;
@@ -139,25 +136,25 @@ void check_choice_buttons(void)
     u8 i;
 
     if (D_00188c7e) {
-        for (i = 0; (u16)D_0015f43c[i + 0xae].x != 0 && (u16)D_0015f43c[i + 0xae].y != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0xae].x, D_0015f43c[i + 0xae].y,
-                             (s16)D_0015f43c[i + 0xae].width, (s16)D_0015f43c[i + 0xae].height)) {
+        for (i = 0; (u16)resvars.f48[i + 0xae].x != 0 && (u16)resvars.f48[i + 0xae].y != 0; i++) {
+            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
+                             (s16)resvars.f48[i + 0xae].width, (s16)resvars.f48[i + 0xae].height)) {
                 if (available_buttons & (1 << i)) {
-                    reqspr_draw(D_0015f43c[i + 0xae].unknownC, D_0015f43c[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
+                    reqspr_draw(resvars.f48[i + 0xae].unknownC, resvars.f48[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
                     break;
                 }
             }
         }
     }
     if (D_00188c81) {
-        for (i = 0; (u16)D_0015f43c[i + 0xae].x != 0 && (u16)D_0015f43c[i + 0xae].y != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0xae].x, D_0015f43c[i + 0xae].y,
-                             (s16)D_0015f43c[i + 0xae].width, (s16)D_0015f43c[i + 0xae].height)) {
+        for (i = 0; (u16)resvars.f48[i + 0xae].x != 0 && (u16)resvars.f48[i + 0xae].y != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
+                             (s16)resvars.f48[i + 0xae].width, (s16)resvars.f48[i + 0xae].height)) {
                 if (available_buttons & (1 << i)) {
                     play_sound(10, 0x41, -1, -1);
-                    if (D_0015f43c[i + 0xae].callback)
-                        D_0015f43c[i + 0xae].callback(i);
-                    reqspr_draw(D_0015f43c[i + 0xae].unknownC, D_0015f43c[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
+                    if (resvars.f48[i + 0xae].callback)
+                        resvars.f48[i + 0xae].callback(i);
+                    reqspr_draw(resvars.f48[i + 0xae].unknownC, resvars.f48[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
                     D_00188c81 = D_00188c7b = 0;
                     break;
                 }
@@ -172,27 +169,27 @@ void check_fax_buttons(void)
     u8 i;
 
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 0xb8].width != 0 && D_0015f43c[i + 0xb8].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0xb8].x, D_0015f43c[i + 0xb8].y,
-                             (s16)D_0015f43c[i + 0xb8].width, (s16)D_0015f43c[i + 0xb8].height)) {
+        for (i = 0; resvars.f48[i + 0xb8].width != 0 && resvars.f48[i + 0xb8].height != 0; i++) {
+            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0xb8].x, resvars.f48[i + 0xb8].y,
+                             (s16)resvars.f48[i + 0xb8].width, (s16)resvars.f48[i + 0xb8].height)) {
                 if (i + 0xb8 == 0xc7 && !choice_time_out)
                     break;
-                reqspr_draw(D_0015f43c[i + 0xb8].unknownC, D_0015f43c[i + 0xb8].unknownE,
-                            (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[i + 0xb8].sprite * 6));
+                reqspr_draw(resvars.f48[i + 0xb8].unknownC, resvars.f48[i + 0xb8].unknownE,
+                            (TbSprite *)((u32)screen_sprites_tab_start + resvars.f48[i + 0xb8].sprite * 6));
                 break;
             }
         }
     }
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i + 0xb8].width != 0 && D_0015f43c[i + 0xb8].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0xb8].x, D_0015f43c[i + 0xb8].y,
-                             (s16)D_0015f43c[i + 0xb8].width, (s16)D_0015f43c[i + 0xb8].height)) {
+        for (i = 0; resvars.f48[i + 0xb8].width != 0 && resvars.f48[i + 0xb8].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0xb8].x, resvars.f48[i + 0xb8].y,
+                             (s16)resvars.f48[i + 0xb8].width, (s16)resvars.f48[i + 0xb8].height)) {
                 if (i + 0xb8 == 0xc7 && !choice_time_out)
                     break;
-                if (D_0015f43c[i + 0xb8].callback)
-                    D_0015f43c[i + 0xb8].callback((u8)(i + 0xb8));
-                reqspr_draw(D_0015f43c[i + 0xb8].unknownC, D_0015f43c[i + 0xb8].unknownE,
-                            (TbSprite *)((u32)screen_sprites_tab_start + D_0015f43c[i + 0xb8].sprite * 6));
+                if (resvars.f48[i + 0xb8].callback)
+                    resvars.f48[i + 0xb8].callback((u8)(i + 0xb8));
+                reqspr_draw(resvars.f48[i + 0xb8].unknownC, resvars.f48[i + 0xb8].unknownE,
+                            (TbSprite *)((u32)screen_sprites_tab_start + resvars.f48[i + 0xb8].sprite * 6));
                 break;
             }
         }
@@ -200,8 +197,6 @@ void check_fax_buttons(void)
     }
 }
 
-// NONMATCHING: numbuttons and i are zero-extended with xor bh,bh / xor dh,dh (16-bit) in the
-// target, with xor ebx,ebx / xor edx,edx here
 // FUNCTION: 0x000a3a90
 void calculate_buttons(const u8 type)
 {
@@ -260,14 +255,14 @@ void calculate_buttons(const u8 type)
     for (numtext = 0; strcmp(c_text[numtext], D_00121af8) != 0; numtext++)
         ;
     for (i = 0; i < numbuttons; i++) {
-        D_0015f43c[i + 0xae].x = D_0015f430[173].x + D_0015f430[173].w - D_0015f43c[0xae].width;
-        D_0015f43c[i + 0xae].unknownC = D_0015f43c[i + 0xae].x;
-        D_0015f43c[i + 0xae].y = D_0015f430[173].y + D_0015f430[173].h - (numbuttons - i) * (D_0015f43c[0xae].height + 5);
-        D_0015f43c[i + 0xae].unknownE = D_0015f43c[i + 0xae].y;
-        D_0015f43c[i + 0xae].callback = handler;
+        resvars.f48[i + 0xae].x = resvars.f3c_ChoiceBoxp[173].x + resvars.f3c_ChoiceBoxp[173].w - resvars.f48[0xae].width;
+        resvars.f48[i + 0xae].unknownC = resvars.f48[i + 0xae].x;
+        resvars.f48[i + 0xae].y = resvars.f3c_ChoiceBoxp[173].y + resvars.f3c_ChoiceBoxp[173].h - (u16)(numbuttons - i) * (u16)(resvars.f48[0xae].height + 5);
+        resvars.f48[i + 0xae].unknownE = resvars.f48[i + 0xae].y;
+        resvars.f48[i + 0xae].callback = handler;
     }
-    D_0015f43c[numbuttons + 0xae].x = 0;
-    D_0015f43c[numbuttons + 0xae].y = 0;
+    resvars.f48[numbuttons + 0xae].x = 0;
+    resvars.f48[numbuttons + 0xae].y = 0;
 }
 
 // FUNCTION: 0x000a3db4
@@ -278,19 +273,19 @@ void display_buttons(void)
     s16 y;
     s16 width;
 
-    width = D_0015f430[173].w - D_0015f43c[0xae].width;
+    width = resvars.f3c_ChoiceBoxp[173].w - resvars.f48[0xae].width;
     unused8 = 0;
-    LbTextSetWindow(D_0015f430[173].x, 0, width, D_00188c38);
+    LbTextSetWindow(resvars.f3c_ChoiceBoxp[173].x, 0, width, D_00188c38);
     set_font_from_cache(0x1e);
     D_00188c74 = 0x20;
-    for (i = 0; (u16)D_0015f43c[i + 0xae].x != 0; i++) {
+    for (i = 0; (u16)resvars.f48[i + 0xae].x != 0; i++) {
         if (available_buttons & (1 << i))
-            reqspr_draw((u16)D_0015f43c[i + 0xae].x, (u16)D_0015f43c[i + 0xae].y, &screen_sprites_tab_start[17]);
+            reqspr_draw((u16)resvars.f48[i + 0xae].x, (u16)resvars.f48[i + 0xae].y, &screen_sprites_tab_start[17]);
         else
-            reqspr_draw((u16)D_0015f43c[i + 0xae].x, (u16)D_0015f43c[i + 0xae].y, &screen_sprites_tab_start[19]);
+            reqspr_draw((u16)resvars.f48[i + 0xae].x, (u16)resvars.f48[i + 0xae].y, &screen_sprites_tab_start[19]);
         format_text(c_buttons[i], width);
-        y = D_0015f43c[i + 0xae].y;
-        y += (D_0015f43c[i + 0xae].width - LbTextStringHeight(c_buttons[i])) / 2;
+        y = resvars.f48[i + 0xae].y;
+        y += (resvars.f48[i + 0xae].width - LbTextStringHeight(c_buttons[i])) / 2;
         LbTextDraw(0, y, c_buttons[i]);
         remove_newlines(c_buttons[i]);
     }

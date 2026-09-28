@@ -53,25 +53,16 @@ struct Req2Layout {
 
 extern "C" {
 extern Event D_001549d0[];
-extern Req2Layout *D_0015f40c;
-extern MenuItem *D_0015f420;
 extern u16 D_00155c64;
 extern char D_0015544e[];
 extern s32 D_001290cc;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 *D_0015479c;
-extern s32 D_0015f44c, D_0015f450, D_0015f454, D_0015f458, D_0015f45c, D_0015f460;
 extern s32 D_00188c34;
 extern u16 D_00188c74;
 void fn_0001bee4(void);
-extern u8 *D_0015f402;
-extern u16 *D_0015f406;
-extern Point *D_0015f410;
 extern s32 D_00188c3c, D_00188c40;
-extern u8 D_0015831b;
-extern u16 D_0015831c;
 extern u8 D_00155d74;
-extern TbScreenMode D_0015f3f5;
 extern s32 D_00188c38;
 extern char D_001205b0[];
 extern char D_001205b3[];
@@ -103,27 +94,27 @@ void req2(Window *w)
     for (b = w->buttons, i = 1; b; b = b->next) {
         if (b->flags & 6) {
             debug.unknown4 = i;
-            if (i == D_0015f402[2]) {
+            if (i == resvars.fe[2]) {
                 D_001549d0[player].type = 0x2f;
                 D_001549d0[player].value = 1;
                 if (crequester.unknown4 != 1 || crequester.unknown0 != 2)
                     play_sound(10, 0x43, -1, -1);
-            } else if (i == D_0015f402[3]) {
+            } else if (i == resvars.fe[3]) {
                 D_001549d0[player].type = 0x2f;
                 D_001549d0[player].value = 0;
                 if (crequester.unknown4 != 0 || crequester.unknown0 != 2)
                     play_sound(10, 0x43, -1, -1);
-            } else if (i == D_0015f402[5]) {
+            } else if (i == resvars.fe[5]) {
                 D_001549d0[player].type = 0x2f;
                 D_001549d0[player].value = 3;
                 if (crequester.unknown4 != 3 || crequester.unknown0 != 2)
                     play_sound(10, 0x43, -1, -1);
-            } else if (i == D_0015f402[4]) {
+            } else if (i == resvars.fe[4]) {
                 D_001549d0[player].type = 0x2f;
                 D_001549d0[player].value = 2;
                 if (crequester.unknown4 != 2 || crequester.unknown0 != 2)
                     play_sound(10, 0x43, -1, -1);
-            } else if (i == D_0015f402[8]) {
+            } else if (i == resvars.fe[8]) {
                 if (crequester.unknown6) {
                     if (crequester.unknown0 == 2) {
                         if (allhosps[player].f35 >= thing[crequester.unknown6].unknown108 && allhosps[player].f35 > 0) {
@@ -140,7 +131,7 @@ void req2(Window *w)
                 } else {
                     play_sound(10, 8, -1, -1);
                 }
-            } else if (i == D_0015f402[6]) {
+            } else if (i == resvars.fe[6]) {
                 if (crequester.unknown6) {
                     old = crequester.unknown6;
                     id = req2_alter_staff(0, crequester.unknown6, crequester.unknown4);
@@ -158,7 +149,7 @@ void req2(Window *w)
                 } else {
                     play_sound(10, 8, -1, -1);
                 }
-            } else if (i == D_0015f402[7]) {
+            } else if (i == resvars.fe[7]) {
                 if (crequester.unknown6) {
                     old = crequester.unknown6;
                     id = req2_alter_staff(1, crequester.unknown6, crequester.unknown4);
@@ -176,7 +167,7 @@ void req2(Window *w)
                 } else {
                     play_sound(10, 8, -1, -1);
                 }
-            } else if (i == D_0015f402[9]) {
+            } else if (i == resvars.fe[9]) {
                 window.unknown2eb = 0;
                 setup_abort_all_requesters();
                 play_sound(10, 0x42, -1, -1);
@@ -199,7 +190,7 @@ void req2_overdraw(Window *w)
     char buf[200];
 
     spr = 0;
-    if (D_0015f3f5 == SCREEN_MODE_13 && loaded_requester != 0xb)
+    if (resvars.f1 == SCREEN_MODE_13 && loaded_requester != 0xb)
         return;
     compute_help_text(w->x, w->y, 4);
     if (crequester.unknown6 > end_things - thing)
@@ -218,19 +209,19 @@ void req2_overdraw(Window *w)
     D_00188c74 = 0;
     if (crequester.unknown6 && crequester.unknown0 == 2) {
         for (b = w->buttons, i = 1; b; b = b->next, i++) {
-            if (i == D_0015f402[2] && crequester.unknown4 == 1) {
-                spr = D_0015f406[0x35];
+            if (i == resvars.fe[2] && crequester.unknown4 == 1) {
+                spr = resvars.f12[0x35];
                 break;
             }
-            if (i == D_0015f402[3] && crequester.unknown4 == 0) {
+            if (i == resvars.fe[3] && crequester.unknown4 == 0) {
                 spr = 0x10b;
                 break;
             }
-            if (i == D_0015f402[5] && crequester.unknown4 == 3) {
-                spr = D_0015f406[0x31];
+            if (i == resvars.fe[5] && crequester.unknown4 == 3) {
+                spr = resvars.f12[0x31];
                 break;
             }
-            if (i == D_0015f402[4] && crequester.unknown4 == 2) {
+            if (i == resvars.fe[4] && crequester.unknown4 == 2) {
                 spr = 0x10d;
                 break;
             }
@@ -257,52 +248,52 @@ void req2_overdraw(Window *w)
     set_font_from_cache(0xd);
     for (i = 0; i < 4; i++) {
         sprintf(buf, D_001205b0, counts[i]);
-        LbTextDraw(x0 + D_0015f410[i + 78].x, y0 + D_0015f410[i + 78].y, buf);
+        LbTextDraw(x0 + resvars.f1c[i + 78].x, y0 + resvars.f1c[i + 78].y, buf);
     }
-    if (D_0015831b & 1) {
+    if (advisor.f11f & 1) {
         i = 1;
         D_00155d74++;
         if (D_00155d74 % 10 == 0) {
-            switch (D_0015831c) {
+            switch (advisor.f120) {
             case 3:
                 for (b = w->buttons; b; b = b->next) {
-                    if (i == D_0015f402[5])
+                    if (i == resvars.fe[5])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[D_0015f406[0x31]]);
+                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[resvars.f12[0x31]]);
                 break;
             case 5:
                 for (b = w->buttons; b; b = b->next) {
-                    if (i == D_0015f402[8])
+                    if (i == resvars.fe[8])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[D_0015f406[0x32]]);
+                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[resvars.f12[0x32]]);
                 break;
             case 6:
                 for (b = w->buttons; b; b = b->next) {
-                    if (i == D_0015f402[6])
+                    if (i == resvars.fe[6])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[D_0015f406[0x33]]);
+                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[resvars.f12[0x33]]);
                 break;
             case 7:
                 for (b = w->buttons; b; b = b->next) {
-                    if (i == D_0015f402[7])
+                    if (i == resvars.fe[7])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[D_0015f406[0x34]]);
+                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[resvars.f12[0x34]]);
                 break;
             case 4:
                 for (b = w->buttons; b; b = b->next) {
-                    if (i == D_0015f402[2])
+                    if (i == resvars.fe[2])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[D_0015f406[0x35]]);
+                reqspr_draw((s16)x0 + b->x, (s16)y0 + b->y, &button_sprite[resvars.f12[0x35]]);
                 break;
             }
             D_00155d74 = 0;
@@ -311,46 +302,46 @@ void req2_overdraw(Window *w)
     set_font_from_cache(1);
     switch (crequester.unknown0) {
     case 1:
-        LbDrawBox(x0 + D_0015f40c->box_x, y0 + D_0015f40c->box_y, D_0015f40c->box_w, D_0015f40c->box_h, 0x77);
+        LbDrawBox(x0 + resvars.f18_Req2Layoutp->box_x, y0 + resvars.f18_Req2Layoutp->box_y, resvars.f18_Req2Layoutp->box_w, resvars.f18_Req2Layoutp->box_h, 0x77);
         break;
     case 2:
         if (crequester.unknown6) {
             t = &thing[crequester.unknown6];
             sprintf(buf, D_001205b3, t->f84, staff_names_1[t->f85], staff_names_2[t->f86]);
-            LbTextDraw(x0 + D_0015f410[82].x, y0 + D_0015f410[82].y, buf);
+            LbTextDraw(x0 + resvars.f1c[82].x, y0 + resvars.f1c[82].y, buf);
             sprintf(buf, D_001205bc, t->unknown108);
-            LbTextDraw(x0 + D_0015f410[84].x, y0 + D_0015f410[84].y, buf);
-            draw_face((Picture *)&t->f87, x0 + D_0015f410[83].x, y0 + D_0015f410[83].y);
+            LbTextDraw(x0 + resvars.f1c[84].x, y0 + resvars.f1c[84].y, buf);
+            draw_face((Picture *)&t->f87, x0 + resvars.f1c[83].x, y0 + resvars.f1c[83].y);
             i = 0;
             if ((t->unknown124 & 8) && !(t->unknown124 & 0x80))
-                reqspr_draw(x0 + D_0015f410[i + 85].x, y0 + D_0015f410[i + 85].y, &button_sprite[D_0015f406[6]]);
+                reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
             if ((t->unknown124 & 0x10) && !(t->unknown124 & 0x80) && !(t->unknown124 & 8))
-                reqspr_draw(x0 + D_0015f410[i + 85].x, y0 + D_0015f410[i + 85].y, &button_sprite[D_0015f406[6]]);
+                reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
             if (t->unknown124 & 0x80)
-                reqspr_draw(x0 + D_0015f410[i + 85].x, y0 + D_0015f410[i + 85].y, &button_sprite[D_0015f406[6]]);
+                reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
             if (t->unknown124 & 0x20)
-                reqspr_draw(x0 + D_0015f410[i + 85].x, y0 + D_0015f410[i + 85].y, &button_sprite[D_0015f406[7]]);
+                reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[7]]);
             i++;
             if (t->unknown124 & 0x40)
-                reqspr_draw(x0 + D_0015f410[i + 85].x, y0 + D_0015f410[i + 85].y, &button_sprite[D_0015f406[8]]);
+                reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[8]]);
             i++;
             if (t->unknown124 & 0x100)
-                reqspr_draw(x0 + D_0015f410[i + 85].x, y0 + D_0015f410[i + 85].y, &button_sprite[D_0015f406[9]]);
+                reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[9]]);
             if (t->subtype != 1)
                 draw_req2_coverup(x0, y0);
-            draw_gauge(t->unknown126, x0 + D_0015f40c->gauge_x + i, y0 + D_0015f40c->gauge_y, D_0015f40c->gauge_w,
-                       &button_sprite[D_0015f406[2]], 1000, 30, 970, 1);
+            draw_gauge(t->unknown126, x0 + resvars.f18_Req2Layoutp->gauge_x + i, y0 + resvars.f18_Req2Layoutp->gauge_y, resvars.f18_Req2Layoutp->gauge_w,
+                       &button_sprite[resvars.f12[2]], 1000, 30, 970, 1);
             D_00188c74 = 0x20;
-            LbTextSetWindow(x0 + D_0015f40c->text_x, y0 + D_0015f40c->text_y, D_0015f40c->text_w, D_0015f40c->text_h);
-            if (D_0015f3f5 == SCREEN_MODE_13) {
+            LbTextSetWindow(x0 + resvars.f18_Req2Layoutp->text_x, y0 + resvars.f18_Req2Layoutp->text_y, resvars.f18_Req2Layoutp->text_w, resvars.f18_Req2Layoutp->text_h);
+            if (resvars.f1 == SCREEN_MODE_13) {
                 if (t->unknown126 > 500)
                     sprintf(buf, D_001205c0, ref_general_text[t->f8a], ref_good_text[t->f8b]);
                 else
                     sprintf(buf, D_001205c5, ref_general_text[t->f8a], ref_bad_text[t->f8c]);
-            } else if (D_0015f3f5 == SCREEN_MODE_1) {
+            } else if (resvars.f1 == SCREEN_MODE_1) {
                 if (t->unknown126 > 500)
                     sprintf(buf, D_001205ca, ref_good_text[t->f8b]);
                 else
@@ -359,14 +350,14 @@ void req2_overdraw(Window *w)
             LbTextDraw(0, 0, buf);
             D_00188c74 = 0;
         } else {
-            LbDrawBox(x0 + D_0015f40c->box_x, y0 + D_0015f40c->box_y, D_0015f40c->box_w, D_0015f40c->box_h, 0x77);
+            LbDrawBox(x0 + resvars.f18_Req2Layoutp->box_x, y0 + resvars.f18_Req2Layoutp->box_y, resvars.f18_Req2Layoutp->box_w, resvars.f18_Req2Layoutp->box_h, 0x77);
         }
         LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
         LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
         set_font_from_cache(0);
         break;
     default:
-        LbDrawBox(x0 + D_0015f40c->box_x, y0 + D_0015f40c->box_y, D_0015f40c->box_w, D_0015f40c->box_h, 0x77);
+        LbDrawBox(x0 + resvars.f18_Req2Layoutp->box_x, y0 + resvars.f18_Req2Layoutp->box_y, resvars.f18_Req2Layoutp->box_w, resvars.f18_Req2Layoutp->box_h, 0x77);
         break;
     }
 }
@@ -455,7 +446,6 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006ae00
 void draw_face(Picture *p, const u16 x, const u16 y)
 {
@@ -466,34 +456,34 @@ void draw_face(Picture *p, const u16 x, const u16 y)
 
     fn_0001bee4();
     if (p->head != D_001290d0) {
-        LbFileSeek(D_001290cc, D_0015f454 * D_0015f458 * (u8)p->head, 0);
-        LbFileRead(D_001290cc, D_0015479c, D_0015f454 * D_0015f458);
+        LbFileSeek(D_001290cc, p->head * (resvars.f60 * resvars.f64), 0);
+        LbFileRead(D_001290cc, D_0015479c, resvars.f60 * resvars.f64);
         D_001290d0 = p->head;
     }
     if (p->body != D_001290d1) {
-        LbFileSeek(D_001290cc, D_0015f454 * D_0015f45c * (u8)p->body + D_0015f454 * D_0015f458 * 18, 0);
-        LbFileRead(D_001290cc, D_0015479c + D_0015f454 * D_0015f458, D_0015f454 * D_0015f45c);
+        LbFileSeek(D_001290cc, resvars.f60 * resvars.f64 * 18 + p->body * (resvars.f60 * resvars.f68), 0);
+        LbFileRead(D_001290cc, D_0015479c + resvars.f60 * resvars.f64, resvars.f60 * resvars.f68);
         D_001290d1 = p->body;
     }
     if (p->legs != D_001290d2) {
-        LbFileSeek(D_001290cc, D_0015f454 * D_0015f458 * 18 + D_0015f454 * D_0015f45c * 18 + (u8)p->legs * (D_0015f454 * D_0015f460), 0);
-        LbFileRead(D_001290cc, D_0015f454 * D_0015f458 + D_0015f454 * D_0015f45c + D_0015479c, D_0015f454 * D_0015f460);
+        LbFileSeek(D_001290cc, resvars.f60 * resvars.f64 * 18 + resvars.f60 * resvars.f68 * 18 + (u8)p->legs * (resvars.f60 * resvars.f6c), 0);
+        LbFileRead(D_001290cc, resvars.f60 * resvars.f64 + resvars.f60 * resvars.f68 + D_0015479c, resvars.f60 * resvars.f6c);
         D_001290d2 = p->legs;
     }
     src = D_0015479c;
-    dst = x + D_0015f44c + lbDisplay.unknown4 + D_00188c34 * (y - (D_0015f458 + D_0015f45c + D_0015f460) - D_0015f450);
-    w = D_0015f454;
-    n = D_0015f458 + D_0015f45c + D_0015f460;
+    dst = x + resvars.f58 + lbDisplay.unknown4 + D_00188c34 * (y - (resvars.f64 + resvars.f68 + resvars.f6c) - resvars.f5c);
+    w = resvars.f60;
+    n = resvars.f64 + resvars.f68 + resvars.f6c;
     while (--n >= 0) {
         LbDrawBoxCoords(dst, src, w);
         src += w;
         dst += D_00188c34;
     }
     D_00188c74 = 0;
-    LbDrawBox(x, y - (D_0015f458 + D_0015f45c + D_0015f460) - D_0015f450 * 2, D_0015f44c * 2 + D_0015f454, D_0015f450, 0x9c);
-    LbDrawBox(x, y - (D_0015f458 + D_0015f45c + D_0015f460) - D_0015f450 * 2, D_0015f44c, D_0015f458 + D_0015f45c + D_0015f460 + D_0015f450 * 2, 0x9c);
-    LbDrawBox(x, y - D_0015f450, D_0015f44c * 2 + D_0015f454, D_0015f450, 0x9c);
-    LbDrawBox(x + D_0015f454 + D_0015f44c, y - (D_0015f458 + D_0015f45c + D_0015f460) - D_0015f450 * 2, D_0015f44c, D_0015f458 + D_0015f45c + D_0015f460 + D_0015f450 * 2, 0x9c);
+    LbDrawBox(x, y - (resvars.f64 + resvars.f68 + resvars.f6c) - resvars.f5c * 2, resvars.f58 * 2 + resvars.f60, resvars.f5c, 0x9c);
+    LbDrawBox(x, y - (resvars.f64 + resvars.f68 + resvars.f6c) - resvars.f5c * 2, resvars.f58, resvars.f64 + resvars.f68 + resvars.f6c + resvars.f5c * 2, 0x9c);
+    LbDrawBox(x, y - resvars.f5c, resvars.f58 * 2 + resvars.f60, resvars.f5c, 0x9c);
+    LbDrawBox(x + resvars.f60 + resvars.f58, y - (resvars.f64 + resvars.f68 + resvars.f6c) - resvars.f5c * 2, resvars.f58, resvars.f64 + resvars.f68 + resvars.f6c + resvars.f5c * 2, 0x9c);
 }
 
 // FUNCTION: 0x0006b174
@@ -529,7 +519,7 @@ void req12(Window *w)
     for (i = 1; b; b = b->next) {
         if (b->flags & 6) {
             debug.unknown4 = i;
-            if (i == D_0015f402[0x15]) {
+            if (i == resvars.fe[0x15]) {
                 play_sound(10, 0xb8, -1, -1);
                 switch (crequester.unknown8) {
                 case 2:
@@ -560,7 +550,7 @@ void req12(Window *w)
                     D_00188c7b = D_00188c81 = 0;
                     break;
                 }
-            } else if (i == D_0015f402[0x16]) {
+            } else if (i == resvars.fe[0x16]) {
                 play_sound(10, 0xaa, -1, -1);
                 req12_clicked_sack();
                 D_00188c7b = D_00188c81 = 0;
@@ -573,7 +563,6 @@ void req12(Window *w)
 
 extern "C" {
 extern u8 D_001553c8;
-extern TbScreenMode D_0015f3f4;
 extern char D_001205d0[];
 extern char D_001205d9[];
 extern char **D_001602a0;
@@ -608,43 +597,43 @@ void req12_overdraw(Window *w)
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     if (!crequester.unknown9) {
         close_irequesters();
-        open_new_window(0, 0, 0, x0 + D_0015f40c->win_x, y0 + D_0015f40c->win_y,
-                        x0 + D_0015f40c->win_x + D_0015f40c->win_w, y0 + D_0015f40c->win_y + D_0015f40c->win_h);
+        open_new_window(0, 0, 0, x0 + resvars.f18_Req2Layoutp->win_x, y0 + resvars.f18_Req2Layoutp->win_y,
+                        x0 + resvars.f18_Req2Layoutp->win_x + resvars.f18_Req2Layoutp->win_w, y0 + resvars.f18_Req2Layoutp->win_y + resvars.f18_Req2Layoutp->win_h);
         window.unknown2eb = 0;
         crequester.unknown9 = 1;
     }
     if (crequester.unknown4) {
         t = &thing[crequester.unknown4];
         sprintf(buf, D_001205d0, t->f84, staff_names_1[t->f85], staff_names_2[t->f86]);
-        LbTextDraw(x0 + D_0015f410[2].x, y0 + D_0015f410[2].y, buf);
+        LbTextDraw(x0 + resvars.f1c[2].x, y0 + resvars.f1c[2].y, buf);
         sprintf(buf, D_001205d9, t->unknown108);
-        LbTextDraw(x0 + D_0015f410[4].x, y0 + D_0015f410[4].y, buf);
-        draw_face((Picture *)&t->f87, x0 + D_0015f410[3].x, y0 + D_0015f410[3].y);
+        LbTextDraw(x0 + resvars.f1c[4].x, y0 + resvars.f1c[4].y, buf);
+        draw_face((Picture *)&t->f87, x0 + resvars.f1c[3].x, y0 + resvars.f1c[3].y);
         i = 0;
         if (t->unknown124 & 8)
-            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[6]]);
+            reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
         if ((t->unknown124 & 0x10) && !(t->unknown124 & 0x80) && !(t->unknown124 & 8))
-            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[6]]);
+            reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
         if (t->unknown124 & 0x80)
-            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[6]]);
+            reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
         if (t->unknown124 & 0x20)
-            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[7]]);
+            reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[7]]);
         i++;
         if (t->unknown124 & 0x40)
-            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[8]]);
+            reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[8]]);
         i++;
         if (t->unknown124 & 0x100)
-            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[9]]);
-        draw_gauge(t->unknown126, x0 + D_0015f410[0].x, y0 + D_0015f410[0].y, D_0015f40c->gauge_w,
-                   &button_sprite[D_0015f406[3]], 1000, 30, 970, 1);
+            reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[9]]);
+        draw_gauge(t->unknown126, x0 + resvars.f1c[0].x, y0 + resvars.f1c[0].y, resvars.f18_Req2Layoutp->gauge_w,
+                   &button_sprite[resvars.f12[3]], 1000, 30, 970, 1);
         if (t->subtype != 1 && t->subtype != 4) {
-            LbDrawBox(x0 + D_0015f40c->cover2_x, y0 + D_0015f40c->cover2_y, D_0015f40c->cover2_w,
-                      D_0015f40c->cover2_h, 0x77);
-            LbDrawBox(x0 + D_0015f40c->cover3_x, y0 + D_0015f40c->cover3_y, D_0015f40c->cover3_w,
-                      D_0015f40c->cover3_h, 0x77);
+            LbDrawBox(x0 + resvars.f18_Req2Layoutp->cover2_x, y0 + resvars.f18_Req2Layoutp->cover2_y, resvars.f18_Req2Layoutp->cover2_w,
+                      resvars.f18_Req2Layoutp->cover2_h, 0x77);
+            LbDrawBox(x0 + resvars.f18_Req2Layoutp->cover3_x, y0 + resvars.f18_Req2Layoutp->cover3_y, resvars.f18_Req2Layoutp->cover3_w,
+                      resvars.f18_Req2Layoutp->cover3_h, 0x77);
         }
         switch (crequester.unknown8) {
         case 2:
@@ -666,24 +655,24 @@ void req12_overdraw(Window *w)
             break;
         }
         D_00188c74 = 0x20;
-        LbTextSetWindow(x0 + D_0015f40c->msg_x, y0 + D_0015f40c->msg_y, D_0015f40c->msg_w, D_0015f40c->msg_h);
+        LbTextSetWindow(x0 + resvars.f18_Req2Layoutp->msg_x, y0 + resvars.f18_Req2Layoutp->msg_y, resvars.f18_Req2Layoutp->msg_w, resvars.f18_Req2Layoutp->msg_h);
         LbTextDraw(0, 0, buf);
         LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
         give_absolute_xy_of_cell_at_column_row(t->x.tile, t->y.tile);
-        window.f0[window.unknown2ec - 1] = (D_0015f3f4 == SCREEN_MODE_13 ? ((t->x.frac - t->y.frac) >> 3) + 0x20
+        window.f0[window.unknown2ec - 1] = (resvars.f0 == SCREEN_MODE_13 ? ((t->x.frac - t->y.frac) >> 3) + 0x20
                                                                         : ((t->x.frac - t->y.frac) >> 4) + 0x10)
-                                           + (info.unknown54 - D_0015f410[171].x);
-        window.fc[window.unknown2ec - 1] = info.unknown58 - D_0015f410[171].y
-                                           + (D_0015f3f4 == SCREEN_MODE_13 ? (t->y.frac + t->x.frac) >> 4
+                                           + (info.unknown54 - resvars.f1c[171].x);
+        window.fc[window.unknown2ec - 1] = info.unknown58 - resvars.f1c[171].y
+                                           + (resvars.f0 == SCREEN_MODE_13 ? (t->y.frac + t->x.frac) >> 4
                                                                            : (t->y.frac + t->x.frac) >> 5);
         old_x = window.unknown2c3;
         old_y = window.unknown2c7;
         old_w = window.unknown2cb;
         old_h = window.unknown2cf;
-        window.unknown2c3 = D_0015f40c->win_x;
-        window.unknown2c7 = D_0015f40c->win_y;
-        window.unknown2cb = D_0015f40c->win_x + D_0015f40c->win_w;
-        window.unknown2cf = D_0015f40c->win_y + D_0015f40c->win_h;
+        window.unknown2c3 = resvars.f18_Req2Layoutp->win_x;
+        window.unknown2c7 = resvars.f18_Req2Layoutp->win_y;
+        window.unknown2cb = resvars.f18_Req2Layoutp->win_x + resvars.f18_Req2Layoutp->win_w;
+        window.unknown2cf = resvars.f18_Req2Layoutp->win_y + resvars.f18_Req2Layoutp->win_h;
         draw_window_not_using_bscreen(window.unknown2ec - 1);
         window.unknown2c3 = old_x;
         window.unknown2c7 = old_y;
@@ -730,14 +719,14 @@ void open_staff_resign_requester(Thing *t)
         d = t->f70 - t->unknown108;
         crequester.unknown6 = t->f70 * 10 / 100 + d;
         crequester.unknown8 = 7;
-    } else if (t->f78 > *(u16 *)&expertise[59].category && saferand() % 2) {
+    } else if (t->f78 > gbv.fea && saferand() % 2) {
         i = safe_normal_rand(10, 30);
         if (saferand() % 2 == 0)
             crequester.unknown8 = 3;
         else
             crequester.unknown8 = 4;
         crequester.unknown6 = t->unknown108 * i / 100;
-    } else if (t->unknown81s > *(u16 *)&expertise[59].category) {
+    } else if (t->unknown81s > gbv.fea) {
         i = safe_normal_rand(10, 30);
         if (saferand() % 2 == 0)
             crequester.unknown8 = 5;
@@ -755,8 +744,8 @@ void open_staff_resign_requester(Thing *t)
 // FUNCTION: 0x0006c05c
 void draw_req2_coverup(const u16 x, const u16 y)
 {
-    LbDrawBox(D_0015f40c->cover0_x + x, y + D_0015f40c->cover0_y, D_0015f40c->cover0_w, D_0015f40c->cover0_h, 0x77);
-    LbDrawBox(D_0015f40c->cover1_x + x, y + D_0015f40c->cover1_y, D_0015f40c->cover1_w, D_0015f40c->cover1_h, 0x77);
+    LbDrawBox(x + resvars.f18_Req2Layoutp->cover0_x, y + resvars.f18_Req2Layoutp->cover0_y, resvars.f18_Req2Layoutp->cover0_w, resvars.f18_Req2Layoutp->cover0_h, 0x77);
+    LbDrawBox(x + resvars.f18_Req2Layoutp->cover1_x, y + resvars.f18_Req2Layoutp->cover1_y, resvars.f18_Req2Layoutp->cover1_w, resvars.f18_Req2Layoutp->cover1_h, 0x77);
 }
 
 // FUNCTION: 0x0006c108
@@ -766,7 +755,7 @@ void req2_help_if_doctor(void)
 
     w = &thing[crequester.unknown6];
     if (w > thing && (w->unknown124 & 0x10))
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c184
@@ -778,7 +767,7 @@ void req2_help_if_surgeon(void)
     w = &thing[crequester.unknown6];
     mask = 0x30;
     if (w > thing && (w->unknown124 & mask) == mask)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c214
@@ -790,7 +779,7 @@ void req2_help_if_psycho(void)
     w = &thing[crequester.unknown6];
     mask = 0x50;
     if (w > thing && (w->unknown124 & mask) == mask)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c2a4
@@ -802,14 +791,14 @@ void req2_help_if_researcher(void)
     w = &thing[crequester.unknown6];
     mask = 0x110;
     if (w > thing && (w->unknown124 & mask) == mask)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c334
 void req2_help_if_selected(void)
 {
     if (crequester.unknown6)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c38c
@@ -819,7 +808,7 @@ void req12_help_if_doctor(void)
 
     w = &thing[crequester.unknown4];
     if (w > thing && (w->unknown124 & 0x10))
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c408
@@ -831,7 +820,7 @@ void req12_help_if_surgeon(void)
     w = &thing[crequester.unknown4];
     mask = 0x30;
     if (w > thing && (w->unknown124 & mask) == mask)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c498
@@ -843,7 +832,7 @@ void req12_help_if_shrink(void)
     w = &thing[crequester.unknown4];
     mask = 0x50;
     if (w > thing && (w->unknown124 & mask) == mask)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c528
@@ -855,7 +844,7 @@ void req12_help_if_research(void)
     w = &thing[crequester.unknown4];
     mask = 0x110;
     if (w > thing && (w->unknown124 & mask) == mask)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x0006c5b8

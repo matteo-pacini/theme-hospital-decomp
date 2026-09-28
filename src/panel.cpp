@@ -96,7 +96,6 @@ extern u8 panel_emergency_spr[];
 
 extern "C" {
 
-extern u8 D_001553b4;
 extern u8 D_00155e01;
 extern u8 D_00155e0d;
 extern u8 D_00155d74;
@@ -107,19 +106,11 @@ extern u8 D_00155434;
 extern u8 D_00155435;
 extern u16 D_00155436;
 extern char **D_0016029c;
-extern TbScreenMode D_0015f3f5;
 extern char D_0012031d[];
-extern u16 D_0015831c;
-extern u16 D_0015536e;
 extern Event D_001549d0[];
-extern u16 D_00158204;
-extern u16 D_00158206;
 extern u8 D_00156910;
 extern u16 D_00188c74;
 extern s32 D_00188c38;
-extern PanelLayout *D_0015f40c;
-extern PanelLayout *D_0015f410;
-extern TbScreenMode D_0015f3f4;
 extern TbSprite *D_00153f80;
 extern TbSprite *D_00153f88;
 extern TbLoadFiles D_0013f680[];
@@ -130,23 +121,18 @@ extern u8 D_001553f7;
 extern u8 D_00155e1e;
 extern u16 D_00155e1f;
 extern char **D_001602a0;
-extern u8 D_001553b5;
 extern char D_00120323[];
 extern u8 D_00155d7a;
 extern u8 D_00155e0e;
 extern u8 D_00155e0f;
 extern u8 D_00155e10;
-extern Point *D_0015f428;
 extern char **D_00160298;
 extern char **D_00160318;
 extern char D_00120316[];
 extern char D_00120317[];
 extern char **D_001602a4;
-extern u16 D_0012dd7c[];
-extern u8 D_0015831b;
 extern u8 D_00155e23;
 extern u8 D_0012d778[];
-extern u16 D_0012ddd4;
 extern char D_00120300[];
 extern char D_00120304[];
 extern char D_00120308[];
@@ -172,11 +158,11 @@ void update_panel(void)
     drawn = 0;
     switch (D_00155e01) {
     case 1:
-        if (statvar.unknown6 <= mouse_dy && !D_001553b4)
+        if (statvar.unknown6 <= mouse_dy && !gamevar.f174)
             D_00156910 = 1;
         break;
     case 2:
-        if (statvar.unknown6 > mouse_dy || D_001553b4)
+        if (statvar.unknown6 > mouse_dy || gamevar.f174)
             D_00156910 = 1;
         break;
     }
@@ -190,7 +176,7 @@ void update_panel(void)
         draw_panel(1);
         set_all_refresh_zones_in_window(0, statvar.unknown4, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
     }
-    if (!D_001553b4) {
+    if (!gamevar.f174) {
         if (!display_panel_special_info() && D_00155e01 == 1) {
             switch (D_00155434) {
             case 0:
@@ -227,7 +213,7 @@ void draw_panel(u8 all)
     s32 i;
 
     unused = 0;
-    if (D_001553b4) {
+    if (gamevar.f174) {
         for (i = 0; ((PanelIcon *)panel)[i].sprite > 0; i++)
             reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y, &game_panel[((PanelIcon *)panel)[i].sprite]);
         draw_ratfest_on_panel();
@@ -244,18 +230,18 @@ void draw_panel(u8 all)
 // FUNCTION: 0x00031f5c
 void choose_panel_icons(void)
 {
-    if (statvar.unknown6 <= mouse_dy && !D_001553b4 && !gamevar.unknown21) {
+    if (statvar.unknown6 <= mouse_dy && !gamevar.f174 && !gamevar.unknown21) {
         panel = panel_icons_over;
         D_00155e01 = 2;
     } else {
         panel = panel_icons_normal;
         D_00155e01 = 1;
     }
-    if (D_001553b4)
+    if (gamevar.f174)
         panel = panel_icons_ratfest;
     statvar.unknown6 = ((PanelIcon *)panel)[1].y;
-    D_00158204 = D_0015f410->unknown240;
-    D_00158206 = statvar.unknown6;
+    advisor.f8_u16 = resvars.f1c_PanelLayoutp->unknown240;
+    advisor.fa_u16 = statvar.unknown6;
 }
 
 // FUNCTION: 0x00031ffc
@@ -268,14 +254,14 @@ void setup_panel_icons(const u8 mode)
     i = 0;
     x = 0;
     pass = 2;
-    if (!D_001553b4) {
+    if (!gamevar.f174) {
         panel = panel_icons_over;
     } else {
         panel = panel_icons_ratfest;
         --pass;
     }
     while (--pass >= 0) {
-        if (pass == 0 && !D_001553b4) {
+        if (pass == 0 && !gamevar.f174) {
             panel = panel_icons_normal;
             x = 0;
             i = 0;
@@ -301,7 +287,7 @@ u8 which_icon_is_mouse_over(void)
 
     i = 0;
     over = 0x63;
-    if (statvar.unknown6 <= mouse_dy && !D_001553b4) {
+    if (statvar.unknown6 <= mouse_dy && !gamevar.f174) {
         while (((PanelIcon *)panel)[i].sprite > 0) {
             if (((PanelIcon *)panel)[i].x <= mouse_dx && ((PanelIcon *)panel)[i].x2 >= mouse_dx) {
                 over = i;
@@ -328,7 +314,7 @@ void panel_ml_button(const u16 icon)
 // FUNCTION: 0x00032308
 void panel_l_button(const u16 icon)
 {
-    if (D_0015536e == 0xe) {
+    if (gamevar.f12e == 0xe) {
         play_sound(10, 8, -1, -1);
     } else if (icon != 0x63) {
         switch (icon) {
@@ -338,7 +324,7 @@ void panel_l_button(const u16 icon)
             play_sound(10, 0x43, -1, -1);
             break;
         case 2:
-            if (!(D_0015536e == 1 || D_0015536e == 2 || D_0015536e == 3 || D_0015536e == 0xe || D_0015536e == 0x10)) {
+            if (!(gamevar.f12e == 1 || gamevar.f12e == 2 || gamevar.f12e == 3 || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
                 set_mouse_mode(0);
                 D_001549d0[player].type = 0x37;
                 play_sound(10, 0x43, -1, -1);
@@ -347,7 +333,7 @@ void panel_l_button(const u16 icon)
             }
             break;
         case 5:
-            if (!(D_0015536e == 1 || D_0015536e == 2 || D_0015536e == 3 || D_0015536e == 0xe || D_0015536e == 0x10)) {
+            if (!(gamevar.f12e == 1 || gamevar.f12e == 2 || gamevar.f12e == 3 || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
                 set_mouse_mode(0);
                 D_001549d0[player].type = 0x2e;
                 play_sound(10, 0x43, -1, -1);
@@ -356,11 +342,11 @@ void panel_l_button(const u16 icon)
             }
             break;
         case 4:
-            if (D_0015536e == 0 && crequester.unknown2 == 0x63) {
+            if (gamevar.f12e == 0 && crequester.unknown2 == 0x63) {
                 set_mouse_mode(0xc);
                 allhosps[player].unknown11b7 = 0;
                 play_sound(10, 0x43, -1, -1);
-            } else if (D_0015536e == 0xc && crequester.unknown2 == 0x63) {
+            } else if (gamevar.f12e == 0xc && crequester.unknown2 == 0x63) {
                 set_mouse_mode(0);
                 allhosps[player].unknown11b7 = 0;
                 play_sound(10, 0x43, -1, -1);
@@ -369,7 +355,7 @@ void panel_l_button(const u16 icon)
             }
             break;
         case 3:
-            if (!(D_0015536e == 1 || D_0015536e == 2 || D_0015536e == 3 || D_0015536e == 0xe || D_0015536e == 0x10)) {
+            if (!(gamevar.f12e == 1 || gamevar.f12e == 2 || gamevar.f12e == 3 || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
                 set_mouse_mode(0);
                 D_001549d0[player].type = 0x62;
                 play_sound(10, 0x43, -1, -1);
@@ -433,7 +419,7 @@ void panel_l_button(const u16 icon)
 // FUNCTION: 0x000328c0
 void panel_r_button(const u16 icon)
 {
-    if (D_0015536e == 0xe) {
+    if (gamevar.f12e == 0xe) {
         play_sound(10, 8, -1, -1);
     } else if (icon != 0x63) {
         switch (icon) {
@@ -479,17 +465,17 @@ void draw_money_on_panel(void)
                 break;
             }
         }
-        LbTextSetClipWindow(D_0015f40c->unknown150 + D_0015f410->unknown248 * digits, D_0015f40c->unknown154,
-                            D_0015f40c->unknown158 - D_0015f410->unknown248 * digits, height);
+        LbTextSetClipWindow(resvars.f18_PanelLayoutp->unknown150 + resvars.f1c_PanelLayoutp->unknown248 * digits, resvars.f18_PanelLayoutp->unknown154,
+                            resvars.f18_PanelLayoutp->unknown158 - resvars.f1c_PanelLayoutp->unknown248 * digits, height);
         sprintf(buf, D_00120300, myhosp->f35);
-        LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254 - (height - D_001553f7 * 6), buf);
+        LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254 - (height - D_001553f7 * 6), buf);
         sprintf(buf, D_00120304, D_001553f3);
-        LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254 + D_001553f7 * 6, buf);
+        LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254 + D_001553f7 * 6, buf);
         if (digits) {
-            LbTextSetClipWindow(D_0015f40c->unknown160, D_0015f40c->unknown164,
-                                D_0015f410->unknown248 * (digits - 3) + D_0015f40c->unknown168, height);
+            LbTextSetClipWindow(resvars.f18_PanelLayoutp->unknown160, resvars.f18_PanelLayoutp->unknown164,
+                                resvars.f1c_PanelLayoutp->unknown248 * (digits - 3) + resvars.f18_PanelLayoutp->unknown168, height);
             sprintf(buf, D_00120308, myhosp->f35);
-            LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254, buf);
+            LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254, buf);
         }
         D_001553f7++;
         if (D_001553f7 == 4) {
@@ -498,9 +484,9 @@ void draw_money_on_panel(void)
             D_00156910 = 1;
         }
     } else {
-        LbTextSetClipWindow(D_0015f40c->unknown150, D_0015f40c->unknown154, D_0015f40c->unknown158, height);
+        LbTextSetClipWindow(resvars.f18_PanelLayoutp->unknown150, resvars.f18_PanelLayoutp->unknown154, resvars.f18_PanelLayoutp->unknown158, height);
         sprintf(buf, D_0012030c, myhosp->f35);
-        LbTextDraw(D_0015f410->unknown250, D_0015f410->unknown254, buf);
+        LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254, buf);
     }
 }
 
@@ -512,9 +498,9 @@ void draw_date_on_panel(void)
 
     set_font_from_cache(6);
     D_00188c74 = 0x100;
-    LbTextSetWindow(D_0015f40c->unknown4c0, D_0015f40c->unknown4c4, D_0015f40c->unknown4c8, D_0015f40c->unknown4cc);
+    LbTextSetWindow(resvars.f18_PanelLayoutp->unknown4c0, resvars.f18_PanelLayoutp->unknown4c4, resvars.f18_PanelLayoutp->unknown4c8, resvars.f18_PanelLayoutp->unknown4cc);
     sprintf(buf, D_00120310, mycontrol->unknown64f, month_text[mycontrol->unknown650]);
-    LbTextDraw(D_0015f410->unknown440, D_0015f410->unknown444, buf);
+    LbTextDraw(resvars.f1c_PanelLayoutp->unknown440, resvars.f1c_PanelLayoutp->unknown444, buf);
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c74 = 0;
 }
@@ -524,12 +510,13 @@ void draw_rep_on_panel(void)
 {
     s32 offset;
 
-    offset = (D_0015f410->unknown260 - D_0015f410->unknown258) * myhosp->unknownc7e / 1000;
+    offset = (resvars.f1c_PanelLayoutp->unknown260 - resvars.f1c_PanelLayoutp->unknown258) * myhosp->unknownc7e / 1000;
     D_00188c74 = 0;
-    reqspr_draw(D_0015f410->unknown258 + offset, D_0015f410->unknown25c, &game_panel[36]);
+    reqspr_draw(resvars.f1c_PanelLayoutp->unknown258 + offset, resvars.f1c_PanelLayoutp->unknown25c, &game_panel[36]);
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: in the watch[14] refresh-zone call the target loads unknown430 into a register and
+// adds off to it; here off is loaded first and unknown430 is added from memory
 // FUNCTION: 0x00032e20
 void draw_emergency(void)
 {
@@ -537,40 +524,40 @@ void draw_emergency(void)
     u8 off;
 
     off = 0;
-    if (!D_001553b4) {
+    if (!gamevar.f174) {
         D_00188c74 = 0;
         LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
         set_font_from_cache(6);
         height = lbFontPtr ? lbFontPtr[25].height : 0;
-        if (myhosp->f1d9 || (myhosp->unknown1257 && !(D_0015831b & 1)) || myhosp->f207 || myhosp->f20e || (s8)myhosp->f1e2 > 1) {
-            reqspr_draw(D_0015f410->unknown420, D_0015f410->unknown424, &watch[13]);
-            set_all_refresh_zones_in_window(D_0015f410->unknown420, D_0015f410->unknown424,
-                                            watch[13].width + D_0015f410->unknown420, watch[13].height + D_0015f410->unknown424, 3);
+        if (myhosp->f1d9 || (myhosp->unknown1257 && !(advisor.f11f & 1)) || myhosp->f207 || myhosp->f20e || (s8)myhosp->f1e2 > 1) {
+            reqspr_draw(resvars.f1c_PanelLayoutp->unknown420, resvars.f1c_PanelLayoutp->unknown424, &watch[13]);
+            set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown420, resvars.f1c_PanelLayoutp->unknown424,
+                                            watch[13].width + resvars.f1c_PanelLayoutp->unknown420, resvars.f1c_PanelLayoutp->unknown424 + watch[13].height, 3);
             if (myhosp->f1d9) {
                 if ((s16)myhosp->f1d9 / 8 >= 6) {
-                    reqspr_draw(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c, &watch[1]);
-                    set_all_refresh_zones_in_window(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
-                                                    watch[1].width + (D_0015f410->unknown420 + D_0015f410->unknown438),
-                                                    watch[1].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+                    reqspr_draw(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c, &watch[1]);
+                    set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
+                                                    resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438 + watch[1].width,
+                                                    resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c + watch[1].height, 3);
                 }
-                reqspr_draw(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                reqspr_draw(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
                             &watch[D_0012d778[(s16)myhosp->f1d9 / 8]]);
-                set_all_refresh_zones_in_window(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
-                                                watch[D_0012d778[(s16)myhosp->f1d9 / 8]].width + (D_0015f410->unknown420 + D_0015f410->unknown438),
-                                                watch[D_0012d778[(s16)myhosp->f1d9 / 8]].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+                set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
+                                                (resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438) + watch[D_0012d778[(s16)myhosp->f1d9 / 8]].width,
+                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[D_0012d778[(s16)myhosp->f1d9 / 8]].height, 3);
             } else if (myhosp->f207) {
                 if (myhosp->f1d9)
                     off = watch[15].width / 4 + watch[15].width;
                 if (myhosp->f20b && !myhosp->f207)
                     D_00188c74 = 4;
-                reqspr_draw(off + D_0015f410->unknown430, D_0015f410->unknown434, &watch[14]);
-                set_all_refresh_zones_in_window(off + D_0015f410->unknown430, D_0015f410->unknown434,
-                                                watch[14].width + (D_0015f410->unknown430 + off), watch[14].height + D_0015f410->unknown434, 3);
+                reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[14]);
+                set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
+                                                watch[14].width + (resvars.f1c_PanelLayoutp->unknown430 + off), watch[14].height + resvars.f1c_PanelLayoutp->unknown434, 3);
                 D_00188c74 = 0;
-                if (over_hotspot(mouse_dx, mouse_dy, off + D_0015f410->unknown430, D_0015f410->unknown434, watch[14].width, watch[14].height)) {
-                    reqspr_draw(D_0015f410->unknown430 + off, D_0015f410->unknown434, &watch[15]);
-                    set_all_refresh_zones_in_window(D_0015f410->unknown430 + off, D_0015f410->unknown434,
-                                                    watch[15].width + (off + D_0015f410->unknown430), watch[15].height + D_0015f410->unknown434, 3);
+                if (over_hotspot(mouse_dx, mouse_dy, off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
+                    reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[15]);
+                    set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
+                                                    watch[15].width + (off + resvars.f1c_PanelLayoutp->unknown430), watch[15].height + resvars.f1c_PanelLayoutp->unknown434, 3);
                     if (!D_00155e23)
                         play_sound(10, 0x44, -1, -1);
                     D_00155e23 = 1;
@@ -580,42 +567,42 @@ void draw_emergency(void)
                 if (myhosp->f20b && !myhosp->f207)
                     D_00188c74 = 4;
                 if ((s16)myhosp->f207 / 8 >= 6) {
-                    reqspr_draw(D_0015f410->unknown420 + off + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c, &watch[1]);
-                    set_all_refresh_zones_in_window(D_0015f410->unknown420 + off + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
-                                                    watch[1].width + (off + D_0015f410->unknown420 + D_0015f410->unknown438),
-                                                    D_0015f410->unknown424 + D_0015f410->unknown43c + watch[1].height, 3);
+                    reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c, &watch[1]);
+                    set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
+                                                    watch[1].width + (off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438),
+                                                    resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c + watch[1].height, 3);
                 }
-                reqspr_draw(D_0015f410->unknown420 + off + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
+                reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
                             &watch[D_0012d778[(s16)myhosp->f207 / 8]]);
-                set_all_refresh_zones_in_window(D_0015f410->unknown420 + off + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
-                                                watch[D_0012d778[(s16)myhosp->f207 / 8]].width + (D_0015f410->unknown420 + off + D_0015f410->unknown438),
-                                                watch[D_0012d778[(s16)myhosp->f207 / 8]].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+                set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
+                                                watch[D_0012d778[(s16)myhosp->f207 / 8]].width + (off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438),
+                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[D_0012d778[(s16)myhosp->f207 / 8]].height, 3);
                 D_00188c74 = 0;
             } else if (myhosp->unknown1257) {
-                reqspr_draw(D_0015f410->unknown430, D_0015f410->unknown434, &watch[16]);
-                set_all_refresh_zones_in_window(D_0015f410->unknown430, D_0015f410->unknown434,
-                                                watch[16].width + D_0015f410->unknown430, watch[16].height + D_0015f410->unknown434, 3);
-                if (over_hotspot(mouse_dx, mouse_dy, D_0015f410->unknown430, D_0015f410->unknown434, watch[14].width, watch[14].height)) {
-                    reqspr_draw(D_0015f410->unknown430, D_0015f410->unknown434, &watch[17]);
-                    set_all_refresh_zones_in_window(D_0015f410->unknown430, D_0015f410->unknown434,
-                                                    watch[17].width + D_0015f410->unknown430, watch[17].height + D_0015f410->unknown434, 3);
+                reqspr_draw(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[16]);
+                set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
+                                                watch[16].width + resvars.f1c_PanelLayoutp->unknown430, watch[16].height + resvars.f1c_PanelLayoutp->unknown434, 3);
+                if (over_hotspot(mouse_dx, mouse_dy, resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
+                    reqspr_draw(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[17]);
+                    set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
+                                                    watch[17].width + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434 + watch[17].height, 3);
                     if (!D_00155e23)
                         play_sound(10, 0x44, -1, -1);
                     D_00155e23 = 1;
                 } else {
                     D_00155e23 = 0;
                 }
-                if (myhosp->unknown1257 / (D_0012ddd4 / 13) >= 6) {
-                    reqspr_draw(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c, &watch[1]);
-                    set_all_refresh_zones_in_window(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
-                                                    watch[1].width + (D_0015f410->unknown420 + D_0015f410->unknown438),
-                                                    watch[1].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+                if (myhosp->unknown1257 / (gbv.f154 / 13) >= 6) {
+                    reqspr_draw(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c, &watch[1]);
+                    set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
+                                                    resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438 + watch[1].width,
+                                                    resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c + watch[1].height, 3);
                 }
-                reqspr_draw(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
-                            &watch[D_0012d778[myhosp->unknown1257 / (D_0012ddd4 / 13)]]);
-                set_all_refresh_zones_in_window(D_0015f410->unknown420 + D_0015f410->unknown438, D_0015f410->unknown424 + D_0015f410->unknown43c,
-                                                watch[D_0012d778[myhosp->unknown1257 / (D_0012ddd4 / 13)]].width + (D_0015f410->unknown420 + D_0015f410->unknown438),
-                                                watch[D_0012d778[myhosp->unknown1257 / (D_0012ddd4 / 13)]].height + (D_0015f410->unknown424 + D_0015f410->unknown43c), 3);
+                reqspr_draw(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
+                            &watch[D_0012d778[myhosp->unknown1257 / (gbv.f154 / 13)]]);
+                set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
+                                                (resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438) + watch[D_0012d778[myhosp->unknown1257 / (gbv.f154 / 13)]].width,
+                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[D_0012d778[myhosp->unknown1257 / (gbv.f154 / 13)]].height, 3);
             }
         }
     }
@@ -627,7 +614,7 @@ void clear_panel_info_bar(void)
 {
     u8 i;
 
-    if (!D_001553b4) {
+    if (!gamevar.f174) {
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
         reqspr_draw(((PanelIcon *)panel)[13].x, ((PanelIcon *)panel)[13].y, &game_panel[((PanelIcon *)panel)[13].sprite]);
         set_all_refresh_zones_in_window(((PanelIcon *)panel)[13].x, ((PanelIcon *)panel)[13].y,
@@ -658,7 +645,7 @@ void display_panel_person_info(void)
 
     w = &thing[D_00155436];
     line = 0;
-    height = D_0015f410->unknown57c;
+    height = resvars.f1c_PanelLayoutp->unknown57c;
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
@@ -676,7 +663,7 @@ void display_panel_person_info(void)
         fn_00036730(text, &line, 3);
         return;
     }
-    if (D_0015f3f5 == SCREEN_MODE_13)
+    if (resvars.f1 == SCREEN_MODE_13)
         lines = 2;
     else
         lines = 1;
@@ -727,7 +714,7 @@ void display_panel_person_info(void)
                 sprintf(buf, info_bar_text[13], D_001602a4[k]);
             fn_00036730(buf, &line, 3);
         } else {
-            fn_00036594(w->unknown146 * 100 / D_0012dd7c[0], info_bar_text[14]);
+            fn_00036594(w->unknown146 * 100 / gbv.ffc, info_bar_text[14]);
         }
     }
 }
@@ -749,7 +736,7 @@ void display_panel_staff_info(void)
 
     w = &thing[D_00155436];
     line = 0;
-    height = D_0015f410->unknown57c;
+    height = resvars.f1c_PanelLayoutp->unknown57c;
     if (w->owner != 0x63) {
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
@@ -775,7 +762,7 @@ void display_panel_staff_info(void)
                 sprintf(buf, D_00120317, buf, names[i]);
         }
         fn_00036730(buf, &line, 2);
-        if (D_0015f3f5 == SCREEN_MODE_13) {
+        if (resvars.f1 == SCREEN_MODE_13) {
             room = &room_info[w->unknown89];
             if (room > room_info) {
                 sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
@@ -789,10 +776,10 @@ void display_panel_staff_info(void)
         pct = allhosps[w->owner].f21d * 100 / 1000;
         pct > 100 ? pct = 100 : 0;
         fn_00036594(w->f78 * 100 / 1000, info_bar_text[28]);
-        fn_000ccac4((D_0015f40c->unknown5e8 - 2) * pct / 100 + (D_0015f40c->unknown5e0 + panel->x + 1),
-                    D_0015f40c->unknown5e4 + (D_0015f410->unknown584 + panel->y + D_0015f410->unknown57c * 2 + 1),
-                    panel->x + D_0015f40c->unknown5e0 + 1 + (D_0015f40c->unknown5e8 - 2) * pct / 100,
-                    D_0015f410->unknown584 + panel->y + D_0015f410->unknown57c * 2 + D_0015f40c->unknown5ec - 1 + D_0015f40c->unknown5e4,
+        fn_000ccac4((resvars.f18_PanelLayoutp->unknown5e8 - 2) * pct / 100 + (resvars.f18_PanelLayoutp->unknown5e0 + panel->x + 1),
+                    resvars.f18_PanelLayoutp->unknown5e4 + (resvars.f1c_PanelLayoutp->unknown584 + panel->y + resvars.f1c_PanelLayoutp->unknown57c * 2 + 1),
+                    panel->x + resvars.f18_PanelLayoutp->unknown5e0 + 1 + (resvars.f18_PanelLayoutp->unknown5e8 - 2) * pct / 100,
+                    resvars.f1c_PanelLayoutp->unknown584 + panel->y + resvars.f1c_PanelLayoutp->unknown57c * 2 + resvars.f18_PanelLayoutp->unknown5ec - 1 + resvars.f18_PanelLayoutp->unknown5e4,
                     color.unknown7);
     }
 }
@@ -812,7 +799,7 @@ void display_panel_object_info(void)
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
         fn_00036730(D_0016029c[w->subtype], &line, 3);
-        if (D_0015f3f5 == SCREEN_MODE_13) {
+        if (resvars.f1 == SCREEN_MODE_13) {
             sprintf(buf, info_bar_text[30], w->value);
             fn_00036730(buf, &line, 3);
             sprintf(buf, info_bar_text[31], w->mode);
@@ -837,7 +824,7 @@ void display_panel_queue_info(void)
 
     w = &thing[D_00155436];
     line = 0;
-    height = D_0015f410->unknown57c;
+    height = resvars.f1c_PanelLayoutp->unknown57c;
     if (w->renderer == 4)
         room = w->room;
     else
@@ -848,10 +835,10 @@ void display_panel_queue_info(void)
         set_font_from_cache(1);
         fn_00036730(D_001602cc[rooms[room->type].id], &line, 3);
         sprintf(buf, info_bar_text[32], room->unknown31);
-        if (D_0015f3f5 != SCREEN_MODE_13)
+        if (resvars.f1 != SCREEN_MODE_13)
             line = 2;
         fn_00036730(buf, &line, 3);
-        if (D_0015f3f5 == SCREEN_MODE_13) {
+        if (resvars.f1 == SCREEN_MODE_13) {
             sprintf(buf, info_bar_text[33], room->unknown32);
             fn_00036730(buf, &line, 3);
         }
@@ -890,7 +877,7 @@ void display_panel_usage_info(void)
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
     fn_00036730(D_0016029c[w->subtype], &line, 3);
-    if (D_0015f3f5 != SCREEN_MODE_13)
+    if (resvars.f1 != SCREEN_MODE_13)
         line = 2;
     sprintf(buf, info_bar_text[31], w->mode);
     fn_00036730(buf, &line, 3);
@@ -913,10 +900,10 @@ void draw_popup_icons(void)
 
     redraw = 0;
     no_flash = 1;
-    if (!D_001553b4) {
+    if (!gamevar.f174) {
         maintain_panel_popup();
         D_00155d7a = 0;
-        if (D_0015f3f5 == SCREEN_MODE_13) {
+        if (resvars.f1 == SCREEN_MODE_13) {
             LbScreenSetGraphicsWindow(0xb1, ((PanelIcon *)panel)[0].y, 100, 100);
             LbDrawBox(0, 0, 0x1c, 3, color.unknown8);
         }
@@ -931,7 +918,7 @@ void draw_popup_icons(void)
             redraw = 1;
             break;
         }
-        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height + D_0015f410->unknown4ac,
+        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height + resvars.f1c_PanelLayoutp->unknown4ac,
                                   D_00188c34, game_panel[popup_icons[1].unknown0].height);
         for (i = 1; popup_icons[i].unknown0 != 0; i++) {
             if (listhead[player].first[i]) {
@@ -940,23 +927,23 @@ void draw_popup_icons(void)
                 if (p->slot < 9) {
                     if (p->flash) {
                         if (p->flash > 0x22)
-                            x = D_0015f410->slots[p->slot].x + D_0015f410->unknown4a8;
+                            x = resvars.f1c_PanelLayoutp->slots[p->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
                         else
-                            x = D_0015f410->slots[0].x + D_0015f410->unknown4a8;
+                            x = resvars.f1c_PanelLayoutp->slots[0].x + resvars.f1c_PanelLayoutp->unknown4a8;
                     } else {
-                        x = D_0015f410->slots[p->slot].x + D_0015f410->unknown4a8;
+                        x = resvars.f1c_PanelLayoutp->slots[p->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
                     }
                     y = 0;
                     if (p->flash) {
-                        x += D_0015f428[p->flash].x;
-                        y += D_0015f428[p->flash].y;
-                        if (D_0015f428[p->flash].x == 0 && D_0015f428[p->flash].y == 0) {
+                        x += resvars.f34_Pointp[p->flash].x;
+                        y += resvars.f34_Pointp[p->flash].y;
+                        if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
                             p->flash = 0;
                         } else {
                             if (p->flash != 1 || D_00155e0d == 3)
                                 p->flash++;
-                            while (D_0015f428[p->flash].x < D_0015f410->slots[p->slot].x) {
-                                if (D_0015f428[p->flash].x == 0 && D_0015f428[p->flash].y == 0) {
+                            while (resvars.f34_Pointp[p->flash].x < resvars.f1c_PanelLayoutp->slots[p->slot].x) {
+                                if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
                                     if (p->flash > 0x22) {
                                         p->flash = 0;
                                     } else {
@@ -983,7 +970,7 @@ void draw_popup_icons(void)
                     if (y) {
                         reqspr_draw(x, y, spr);
                         if (popup_icons[i].unknown0 == 0x2b)
-                            reqspr_draw(x + D_0015f410->unknown598, y + D_0015f410->unknown59c, &game_panel[panel_emergency_spr[D_00155e10]]);
+                            reqspr_draw(x + resvars.f1c_PanelLayoutp->unknown598, y + resvars.f1c_PanelLayoutp->unknown59c, &game_panel[panel_emergency_spr[D_00155e10]]);
                         D_00155e0d = 2;
                         no_flash = 0;
                     }
@@ -1008,7 +995,7 @@ void draw_popup_icons(void)
             set_all_refresh_zones_in_window(((PanelIcon *)panel)[0].x, ((PanelIcon *)panel)[0].y,
                                             ((PanelIcon *)panel)[0].x2, ((PanelIcon *)panel)[0].y2, 3);
         }
-        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height + D_0015f410->unknown4ac,
+        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height + resvars.f1c_PanelLayoutp->unknown4ac,
                                   D_00188c34, game_panel[popup_icons[1].unknown0].height);
         for (i = 1; popup_icons[i].unknown0 != 0; i++) {
             if (listhead[player].first[i]) {
@@ -1017,23 +1004,23 @@ void draw_popup_icons(void)
                 if (p->slot < 9) {
                     if (p->flash) {
                         if (p->flash > 0x22)
-                            x = D_0015f410->slots[p->slot].x + D_0015f410->unknown4a8;
+                            x = resvars.f1c_PanelLayoutp->slots[p->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
                         else
-                            x = D_0015f410->slots[0].x + D_0015f410->unknown4a8;
+                            x = resvars.f1c_PanelLayoutp->slots[0].x + resvars.f1c_PanelLayoutp->unknown4a8;
                     } else {
-                        x = D_0015f410->slots[p->slot].x + D_0015f410->unknown4a8;
+                        x = resvars.f1c_PanelLayoutp->slots[p->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
                     }
                     y = 0;
                     if (p->flash) {
-                        x += D_0015f428[p->flash].x;
-                        y += D_0015f428[p->flash].y;
+                        x += resvars.f34_Pointp[p->flash].x;
+                        y += resvars.f34_Pointp[p->flash].y;
                     }
                     if (y == 0) {
                         x1 = x + spr->width;
                         y1 = y + spr->height;
                         reqspr_draw(x, y, spr);
                         if (popup_icons[i].unknown0 == 0x2b)
-                            reqspr_draw(x + D_0015f410->unknown598, y + D_0015f410->unknown59c, &game_panel[panel_emergency_spr[D_00155e10]]);
+                            reqspr_draw(x + resvars.f1c_PanelLayoutp->unknown598, y + resvars.f1c_PanelLayoutp->unknown59c, &game_panel[panel_emergency_spr[D_00155e10]]);
                         y += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
                         y1 += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
                         set_all_refresh_zones_in_window(x, y, x1, y1, 3);
@@ -1041,10 +1028,10 @@ void draw_popup_icons(void)
                 }
             }
         }
-        if (D_0015f3f5 == SCREEN_MODE_13)
+        if (resvars.f1 == SCREEN_MODE_13)
             LbScreenSetGraphicsWindow(0xb1, ((PanelIcon *)panel)[0].y, 100, 100);
-        x = D_0015f410->unknown4a0;
-        y = D_0015f410->unknown4a4;
+        x = resvars.f1c_PanelLayoutp->unknown4a0;
+        y = resvars.f1c_PanelLayoutp->unknown4a4;
         switch (D_00155e0d) {
         case 2:
             if (D_00155e0e - 2 >= 0)
@@ -1056,11 +1043,11 @@ void draw_popup_icons(void)
                 D_00155e0f = 0;
             } else {
                 for (j = 0; j < D_00155e0e; j++) {
-                    if (D_0015f3f5 == SCREEN_MODE_13)
+                    if (resvars.f1 == SCREEN_MODE_13)
                         reqspr_draw(x, y, &game_panel[41]);
                     x += game_panel[41].width;
                 }
-                if (D_0015f3f5 == SCREEN_MODE_13)
+                if (resvars.f1 == SCREEN_MODE_13)
                     reqspr_draw(x, y, &game_panel[42]);
             }
             break;
@@ -1079,25 +1066,25 @@ void draw_popup_icons(void)
                 else
                     D_00155e0e = 0x19;
                 for (j = 0; j < D_00155e0e; j++) {
-                    if (D_0015f3f5 == SCREEN_MODE_13)
+                    if (resvars.f1 == SCREEN_MODE_13)
                         reqspr_draw(x, y, &game_panel[41]);
                     x += game_panel[41].width;
                 }
-                if (D_0015f3f5 == SCREEN_MODE_13)
+                if (resvars.f1 == SCREEN_MODE_13)
                     reqspr_draw(x, y, &game_panel[42]);
                 if (D_00155e0e >= 0x18)
                     D_00155e0d = 1;
             }
             break;
         case 1:
-            if (D_0015f3f5 == SCREEN_MODE_13)
+            if (resvars.f1 == SCREEN_MODE_13)
                 reqspr_draw(x, y, &game_panel[40]);
             for (j = 0; j < 0x19; j++) {
-                if (D_0015f3f5 == SCREEN_MODE_13)
+                if (resvars.f1 == SCREEN_MODE_13)
                     reqspr_draw(x, y, &game_panel[41]);
                 x += game_panel[41].width;
             }
-            if (D_0015f3f5 == SCREEN_MODE_13)
+            if (resvars.f1 == SCREEN_MODE_13)
                 reqspr_draw(x, y, &game_panel[42]);
             D_00155e0e = 0x18;
             break;
@@ -1126,7 +1113,6 @@ void delete_panel_popup(PlayerCall *p)
     }
 }
 
-// NONMATCHING: register choice; target names panel_popup_pos[-1] as popup_id+0x10
 // FUNCTION: 0x000356c4
 void remove_panel_popup(const u8 slot)
 {
@@ -1180,7 +1166,6 @@ void fn_00035824(void)
     }
 }
 
-// NONMATCHING: register choice; target names panel_popup_pos[-1] as popup_id+0x10
 // FUNCTION: 0x00035914
 void maintain_panel_popup(void)
 {
@@ -1247,10 +1232,10 @@ void panel_flash(void)
 {
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
     LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    if (D_0015831c >= 0x10 && D_0015831c <= 0x1b) {
+    if (advisor.f120 >= 0x10 && advisor.f120 <= 0x1b) {
         D_00155d74++;
         if (D_00155d74 % 10 == 0) {
-            reqspr_draw(((PanelIcon *)panel)[D_0015831c - 0x10].x, ((PanelIcon *)panel)[D_0015831c - 0x10].y, &game_panel[((PanelIcon *)panel)[D_0015831c - 0x10].pressed]);
+            reqspr_draw(((PanelIcon *)panel)[advisor.f120 - 0x10].x, ((PanelIcon *)panel)[advisor.f120 - 0x10].y, &game_panel[((PanelIcon *)panel)[advisor.f120 - 0x10].pressed]);
             D_00155d74 = 0;
             D_00156910 = 1;
         }
@@ -1272,7 +1257,7 @@ void draw_ratfest_on_panel(void)
     set_font_from_cache(0x29);
     sprintf(buf, D_00120323, myhosp->fd27u);
     LbTextDraw(0x5d, 0x1be, buf);
-    switch (D_001553b5) {
+    switch (gamevar.f175) {
     case 0:
         reqspr_draw(((PanelIcon *)panel)[1].x, ((PanelIcon *)panel)[1].y + 0xb, &game_panel[((PanelIcon *)panel)[1].pressed]);
         break;
@@ -1378,13 +1363,13 @@ u8 display_panel_special_info(void)
 
     w = &thing[D_00155436];
     line = 0;
-    y = D_0015f410->unknown594;
+    y = resvars.f1c_PanelLayoutp->unknown594;
     i = 0;
     x = 0;
     D_00188c74 = 0;
     if (gamevar.unknown21 || D_00155e1e) {
         if (!D_00155e21) {
-            if (statvar.unknown6 <= mouse_dy && !D_001553b4 && !gamevar.unknown21) {
+            if (statvar.unknown6 <= mouse_dy && !gamevar.f174 && !gamevar.unknown21) {
                 D_00155e1e = 0;
                 return 0;
             }
@@ -1405,9 +1390,9 @@ u8 display_panel_special_info(void)
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(0x2c);
         if (gamevar.unknown21) {
-            LbTextDraw(D_0015f410->unknown570, y + D_0015f410->unknown584, D_001602a0[21]);
+            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, D_001602a0[21]);
         } else if (D_00155e1e) {
-            LbTextDraw(D_0015f410->unknown570, y + D_0015f410->unknown584, D_001602a0[D_00155e1e]);
+            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, D_001602a0[D_00155e1e]);
             D_00155e1f--;
             if (D_00155e1f == 0)
                 D_00155e1e = 0;
@@ -1448,30 +1433,28 @@ void panel_rep_help(void)
 void setup_rat_fest_panel(void)
 {
     LbSpriteReset(game_panel, D_00153f88, D_00153f80);
-    if (D_0015f3f4 != SCREEN_MODE_1) {
+    if (resvars.f0 != SCREEN_MODE_1) {
         fn_000bce44(D_0013f680);
         LbSpriteSetup(game_panel, D_00153f88, D_00153f80);
-        setup_panel_icons(D_0015f3f4);
+        setup_panel_icons(resvars.f0);
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00036594
 void fn_00036594(s32 value, char *text)
 {
     s32 x;
     s32 y;
 
-    x = D_0015f40c->unknown5e0 + panel->x;
-    y = D_0015f40c->unknown5e4 + (D_0015f410->unknown584 + panel->y + D_0015f410->unknown57c * 2);
+    x = resvars.f18_PanelLayoutp->unknown5e0 + panel->x;
+    y = resvars.f1c_PanelLayoutp->unknown584 + panel->y + resvars.f1c_PanelLayoutp->unknown57c * 2 + resvars.f18_PanelLayoutp->unknown5e4;
     value > 100 ? (value = 100) : 0;
-    LbTextDraw(D_0015f410->unknown570, D_0015f410->unknown57c * 2 + D_0015f410->unknown584, text);
-    LbDrawBox(x, y, D_0015f40c->unknown5e8, D_0015f40c->unknown5ec, color.unknown7);
-    LbDrawBox(x + 1, y + 1, (D_0015f40c->unknown5e8 - 2) * value / 100, D_0015f40c->unknown5ec - 2, color.unknownD);
-    LbDrawBox(x + 1 + (D_0015f40c->unknown5e8 - 2) * value / 100, y + 1, D_0015f40c->unknown5e8 - 2 - (D_0015f40c->unknown5e8 - 2) * value / 100, D_0015f40c->unknown5ec - 2, color.unknown8);
+    LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, resvars.f1c_PanelLayoutp->unknown57c * 2 + resvars.f1c_PanelLayoutp->unknown584, text);
+    LbDrawBox(x, y, resvars.f18_PanelLayoutp->unknown5e8, resvars.f18_PanelLayoutp->unknown5ec, color.unknown7);
+    LbDrawBox(x + 1, y + 1, (resvars.f18_PanelLayoutp->unknown5e8 - 2) * value / 100, resvars.f18_PanelLayoutp->unknown5ec - 2, color.unknownD);
+    LbDrawBox(x + 1 + (resvars.f18_PanelLayoutp->unknown5e8 - 2) * value / 100, y + 1, resvars.f18_PanelLayoutp->unknown5e8 - 2 - (resvars.f18_PanelLayoutp->unknown5e8 - 2) * value / 100, resvars.f18_PanelLayoutp->unknown5ec - 2, color.unknown8);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00036730
 void fn_00036730(char *text, u8 *line, u8 lines)
 {
@@ -1481,11 +1464,11 @@ void fn_00036730(char *text, u8 *line, u8 lines)
     char *p;
     char *last;
 
-    height = D_0015f410->unknown57c;
-    width = lbDisplay.unknown18 - panel->x - D_0015f410->unknown570 * 2;
+    height = resvars.f1c_PanelLayoutp->unknown57c;
+    width = lbDisplay.unknown18 - panel->x - resvars.f1c_PanelLayoutp->unknown570 * 2;
     if (LbTextStringWidth(text) < width) {
         if (*line + 1 <= lines) {
-            LbTextDraw(D_0015f410->unknown570, D_0015f410->unknown584 + *line * height, text);
+            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, resvars.f1c_PanelLayoutp->unknown584 + *line * height, text);
             (*line)++;
         }
     } else if (*line + 2 <= lines) {
@@ -1503,10 +1486,10 @@ void fn_00036730(char *text, u8 *line, u8 lines)
             }
         }
         last[-1] = 0;
-        LbTextDraw(D_0015f410->unknown570, D_0015f410->unknown584 + *line * height, text);
+        LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, resvars.f1c_PanelLayoutp->unknown584 + *line * height, text);
         last[-1] = ' ';
         (*line)++;
-        LbTextDraw(D_0015f410->unknown570, D_0015f410->unknown584 + *line * height, last);
+        LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, resvars.f1c_PanelLayoutp->unknown584 + *line * height, last);
         (*line)++;
     }
 }

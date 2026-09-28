@@ -13,30 +13,14 @@ struct AreaLayout {
     s16 y1;
 };
 
-struct AreaHotspot {
-    s32 x;
-    s32 y;
-    s32 w;
-    s32 h;
-};
-
-struct AreaReq {
-    u8 unknown0[0x2d0];
-    AreaHotspot spots[0x15];
-};
-
 extern "C" {
 extern Event D_001549d0[];
-extern AreaLayout *D_0015f444;
-extern AreaReq *D_0015f40c;
 extern u8 *D_00153f34;
 extern u8 *D_001553dc;
 extern u8 D_00155e14;
 extern u8 D_00155e1d;
-extern u8 D_0015832d;
 extern u8 D_001553eb;
 extern u8 D_00156910;
-extern TbScreenMode D_0015f3f5, D_0015f3f6;
 extern u8 D_00188c7b;
 extern u8 D_00188c81;
 extern u8 D_00188c85;
@@ -131,12 +115,12 @@ u8 draw_area_select(void)
             return 0;
         LbGhostTableGenerate(D_00153f34, 0x42, D_0012055a);
         area.unknown2 = 0;
-        D_0015832d = 0x1d;
+        advisor.f131 = 0x1d;
         display_mode = 0;
         D_001553eb = 0;
         LbScreenClear(0);
-        swap_game_sprites(D_0015f3f5);
-        if (D_0015f3f5 == SCREEN_MODE_1) {
+        swap_game_sprites(resvars.f1);
+        if (resvars.f1 == SCREEN_MODE_1) {
             active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
             if (active)
                 LbIsActive();
@@ -145,7 +129,7 @@ u8 draw_area_select(void)
             while (fn_000bed50() != 1)
                 ;
         }
-        D_0015f3f6 = D_0015f3f5;
+        resvars.f2 = resvars.f1;
         D_00156910 = 1;
         clear_loading_screen(D_00153f34);
         fn_00090804((u16)level_number, 1);
@@ -228,7 +212,7 @@ void process_mouse_area_select(void)
     case 5:
         if (D_00188c7b) {
             for (i = 0; i < 0x15; i++) {
-                if (over_hotspot(D_00188c5c, D_00188c60, D_0015f40c->spots[i].x, D_0015f40c->spots[i].y, D_0015f40c->spots[i].w, D_0015f40c->spots[i].h)) {
+                if (over_hotspot(D_00188c5c, D_00188c60, resvars.f18[i + 45].x, resvars.f18[i + 45].y, resvars.f18[i + 45].w, resvars.f18[i + 45].h)) {
                     set_mouse_mode(0x15);
                     play_area_smk(i + 1);
                     area.unknown2 = 2;
@@ -287,8 +271,8 @@ void display_area_select(void)
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     set_font_from_cache(0x27);
     D_00188c74 = 0;
-    LbTextSetJustifyWindow(D_0015f444->x, D_0015f444->y, D_0015f444->x1 - D_0015f444->x);
-    LbTextSetClipWindow(D_0015f444->x, D_0015f444->y, D_0015f444->x1 - D_0015f444->x, D_0015f444->y1 - D_0015f444->y);
+    LbTextSetJustifyWindow(resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y, resvars.f50_AreaLayoutp->x1 - resvars.f50_AreaLayoutp->x);
+    LbTextSetClipWindow(resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y, resvars.f50_AreaLayoutp->x1 - resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y1 - resvars.f50_AreaLayoutp->y);
     D_00188c74 |= 0x20;
     yofs_text = 0;
     for (i = 0; i < text_paragraph; i++) {

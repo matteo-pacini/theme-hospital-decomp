@@ -26,10 +26,6 @@ extern u8 D_00188c85;
 extern volatile s16 D_00188c6c;
 extern volatile s16 D_00188c70;
 extern Event D_001549d0[];
-extern ManagerBox *D_0015f430;
-extern Point *D_0015f434;
-extern Button *D_0015f43c;
-extern ManagerHelp *D_0015f420;
 extern u16 D_00155c64;
 extern char D_0015544e[];
 extern u8 D_00155daf;
@@ -38,7 +34,6 @@ extern u8 D_00155e04;
 extern u8 D_00155e05;
 extern u8 D_00155e06;
 extern s8 D_0012d748[];
-extern u16 D_0012ddde[];
 extern char D_00120654[];
 extern char D_00120657[];
 extern char D_0012065a[];
@@ -102,8 +97,8 @@ void display_manager(void)
         break;
     }
     if (D_00188c81) {
-        if (over_hotspot(D_00188c6c, D_00188c70, (s16)D_0015f430[31].x, (s16)D_0015f430[31].y,
-                         (s16)D_0015f430[31].w, (s16)D_0015f430[31].h))
+        if (over_hotspot(D_00188c6c, D_00188c70, (s16)resvars.f3c_ManagerBoxp[31].x, (s16)resvars.f3c_ManagerBoxp[31].y,
+                         (s16)resvars.f3c_ManagerBoxp[31].w, (s16)resvars.f3c_ManagerBoxp[31].h))
             fn_00074220(0, 0x3b);
         if (over_hotspot(D_00188c6c, D_00188c70, 0x15b, 0x198, 0x87, 0x45))
             fn_00074220(0, 0x14);
@@ -124,60 +119,60 @@ void display_manager_text(void)
     LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c74 = 0x100;
-    LbTextSetWindow(D_0015f430[11].x, D_0015f430[11].y, D_0015f430[11].w, D_0015f430[11].h);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[11].x, resvars.f3c_ManagerBoxp[11].y, resvars.f3c_ManagerBoxp[11].w, resvars.f3c_ManagerBoxp[11].h);
     sprintf(buf, D_00120654, bank_text[0]);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[12].x, D_0015f430[12].y, D_0015f430[12].w, D_0015f430[12].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[12].x, resvars.f3c_ManagerBoxp[12].y, resvars.f3c_ManagerBoxp[12].w, resvars.f3c_ManagerBoxp[12].h);
     sprintf(buf, D_00120657, bank_text[1]);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[13].x, D_0015f430[13].y, D_0015f430[13].w, D_0015f430[13].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[13].x, resvars.f3c_ManagerBoxp[13].y, resvars.f3c_ManagerBoxp[13].w, resvars.f3c_ManagerBoxp[13].h);
     sprintf(buf, D_0012065a, bank_text[2]);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[14].x, D_0015f430[14].y, D_0015f430[14].w, D_0015f430[14].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[14].x, resvars.f3c_ManagerBoxp[14].y, resvars.f3c_ManagerBoxp[14].w, resvars.f3c_ManagerBoxp[14].h);
     sprintf(buf, D_0012065d, bank_text[3]);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[15].x, D_0015f430[15].y, D_0015f430[15].w, D_0015f430[15].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[15].x, resvars.f3c_ManagerBoxp[15].y, resvars.f3c_ManagerBoxp[15].w, resvars.f3c_ManagerBoxp[15].h);
     sprintf(buf, D_00120660, bank_text[4]);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[19].x, D_0015f430[19].y, D_0015f430[19].w, D_0015f430[19].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[19].x, resvars.f3c_ManagerBoxp[19].y, resvars.f3c_ManagerBoxp[19].w, resvars.f3c_ManagerBoxp[19].h);
     sprintf(buf, D_00120663, bank_text[5]);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[20].x, D_0015f430[20].y, D_0015f430[20].w, D_0015f430[20].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[20].x, resvars.f3c_ManagerBoxp[20].y, resvars.f3c_ManagerBoxp[20].w, resvars.f3c_ManagerBoxp[20].h);
     sprintf(buf, D_00120666, bank_text[6]);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[21].x, D_0015f430[21].y, D_0015f430[21].w, D_0015f430[21].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[21].x, resvars.f3c_ManagerBoxp[21].y, resvars.f3c_ManagerBoxp[21].w, resvars.f3c_ManagerBoxp[21].h);
     sprintf(buf, D_00120669, myhosp->f1bb);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[22].x, D_0015f430[22].y, D_0015f430[22].w, D_0015f430[22].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[22].x, resvars.f3c_ManagerBoxp[22].y, resvars.f3c_ManagerBoxp[22].w, resvars.f3c_ManagerBoxp[22].h);
     sprintf(buf, D_0012066e, myhosp->f35);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[23].x, D_0015f430[23].y, D_0015f430[23].w, D_0015f430[23].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[23].x, resvars.f3c_ManagerBoxp[23].y, resvars.f3c_ManagerBoxp[23].w, resvars.f3c_ManagerBoxp[23].h);
     sprintf(buf, D_00120673, myhosp->f3d);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[24].x, D_0015f430[24].y, D_0015f430[24].w, D_0015f430[24].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[24].x, resvars.f3c_ManagerBoxp[24].y, resvars.f3c_ManagerBoxp[24].w, resvars.f3c_ManagerBoxp[24].h);
     sprintf(buf, D_00120678, towns[myhosp->f29].f10 * myhosp->f3d / 10000 / 12);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[25].x, D_0015f430[25].y, D_0015f430[25].w, D_0015f430[25].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[25].x, resvars.f3c_ManagerBoxp[25].y, resvars.f3c_ManagerBoxp[25].w, resvars.f3c_ManagerBoxp[25].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->f45[0][i];
     sprintf(buf, D_0012067d, sum);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[26].x, D_0015f430[26].y, D_0015f430[26].w, D_0015f430[26].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[26].x, resvars.f3c_ManagerBoxp[26].y, resvars.f3c_ManagerBoxp[26].w, resvars.f3c_ManagerBoxp[26].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->f45[1][i];
     sprintf(buf, D_00120682, sum);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[27].x, D_0015f430[27].y, D_0015f430[27].w, D_0015f430[27].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[27].x, resvars.f3c_ManagerBoxp[27].y, resvars.f3c_ManagerBoxp[27].w, resvars.f3c_ManagerBoxp[27].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->f45[2][i];
     sprintf(buf, D_00120687, sum);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[28].x, D_0015f430[28].y, D_0015f430[28].w, D_0015f430[28].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[28].x, resvars.f3c_ManagerBoxp[28].y, resvars.f3c_ManagerBoxp[28].w, resvars.f3c_ManagerBoxp[28].h);
     sprintf(buf, D_0012068c, towns[myhosp->f29].fe / 100, towns[myhosp->f29].fe % 100);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-    LbTextSetWindow(D_0015f430[29].x, D_0015f430[29].y, D_0015f430[29].w, D_0015f430[29].h);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+    LbTextSetWindow(resvars.f3c_ManagerBoxp[29].x, resvars.f3c_ManagerBoxp[29].y, resvars.f3c_ManagerBoxp[29].w, resvars.f3c_ManagerBoxp[29].h);
     sprintf(buf, D_00120694, towns[myhosp->f29].f10 / 100, towns[myhosp->f29].f10 % 100);
-    LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
+    LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     if (manager.unknown0) {
         s32 max;
         s32 end;
@@ -188,13 +183,13 @@ void display_manager_text(void)
         s32 py;
 
         max = 1;
-        reqspr_draw(D_0015f434[78].x, D_0015f434[78].y, &screen_sprites_tab_start[1]);
-        D_0015f43c[5].sprite = 0;
-        D_0015f43c[6].sprite = 0;
-        D_0015f43c[7].sprite = 2;
-        LbTextSetWindow(D_0015f430[16].x, D_0015f430[16].y, D_0015f430[16].w, D_0015f430[16].h);
-        sprintf(buf, D_0012069c, insurance_names[insurance_co[D_0012ddde[manager.unknown0]].unknown0[0]]);
-        LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
+        reqspr_draw(resvars.f40[78].x, resvars.f40[78].y, &screen_sprites_tab_start[1]);
+        resvars.f48[5].sprite = 0;
+        resvars.f48[6].sprite = 0;
+        resvars.f48[7].sprite = 2;
+        LbTextSetWindow(resvars.f3c_ManagerBoxp[16].x, resvars.f3c_ManagerBoxp[16].y, resvars.f3c_ManagerBoxp[16].w, resvars.f3c_ManagerBoxp[16].h);
+        sprintf(buf, D_0012069c, insurance_names[insurance_co[gbv.f15e[manager.unknown0]].unknown0[0]]);
+        LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
         for (i = 0; i < 12; i++) {
             if (max < myhosp->f45[manager.unknown0 - 1][i])
                 max = myhosp->f45[manager.unknown0 - 1][i];
@@ -206,18 +201,18 @@ void display_manager_text(void)
         LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
         if (max > 1) {
             sprintf(buf, D_0012069f, max);
-            LbTextDraw(D_0015f434[169].x, D_0015f434[169].y, buf);
+            LbTextDraw(resvars.f40[169].x, resvars.f40[169].y, buf);
         }
         i = mycontrol->unknown650;
         end = 12;
-        x = D_0015f430[30].x;
-        y = D_0015f430[30].y - myhosp->f45[manager.unknown0 - 1][i] * D_0015f430[30].h / max;
+        x = resvars.f3c_ManagerBoxp[30].x;
+        y = resvars.f3c_ManagerBoxp[30].y - myhosp->f45[manager.unknown0 - 1][i] * resvars.f3c_ManagerBoxp[30].h / max;
         for (pass = 0; pass < 2; pass++) {
             while (i < end) {
                 px = x;
                 py = y;
-                x += D_0015f430[30].w / 12;
-                y = D_0015f430[30].y - myhosp->f45[manager.unknown0 - 1][i] * D_0015f430[30].h / max;
+                x += resvars.f3c_ManagerBoxp[30].w / 12;
+                y = resvars.f3c_ManagerBoxp[30].y - myhosp->f45[manager.unknown0 - 1][i] * resvars.f3c_ManagerBoxp[30].h / max;
                 fn_000c9be0(px + 1, py + 1, x + 1, y + 1, D_00155db0);
                 fn_000c9be0(px, py, x, y, D_00155daf);
                 i++;
@@ -226,23 +221,23 @@ void display_manager_text(void)
             i = 0;
         }
         sprintf(buf, D_001206a2, month_text[mycontrol->unknown650]);
-        LbTextDraw(D_0015f434[170].x, D_0015f434[170].y, buf);
+        LbTextDraw(resvars.f40[170].x, resvars.f40[170].y, buf);
         compute_help_text(0, 0, 0x17);
         D_00188c74 = 0x100;
         set_font_from_cache(0x1b);
     } else {
-        D_0015f43c[5].sprite = 3;
-        D_0015f43c[6].sprite = 3;
-        D_0015f43c[7].sprite = 3;
-        LbTextSetWindow(D_0015f430[16].x, D_0015f430[16].y, D_0015f430[16].w, D_0015f430[16].h);
+        resvars.f48[5].sprite = 3;
+        resvars.f48[6].sprite = 3;
+        resvars.f48[7].sprite = 3;
+        LbTextSetWindow(resvars.f3c_ManagerBoxp[16].x, resvars.f3c_ManagerBoxp[16].y, resvars.f3c_ManagerBoxp[16].w, resvars.f3c_ManagerBoxp[16].h);
         sprintf(buf, D_001206a5, insurance_names[insurance_co[ins_control[0]].unknown0[0]]);
-        LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-        LbTextSetWindow(D_0015f430[17].x, D_0015f430[17].y, D_0015f430[17].w, D_0015f430[17].h);
+        LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+        LbTextSetWindow(resvars.f3c_ManagerBoxp[17].x, resvars.f3c_ManagerBoxp[17].y, resvars.f3c_ManagerBoxp[17].w, resvars.f3c_ManagerBoxp[17].h);
         sprintf(buf, D_001206a8, insurance_names[insurance_co[ins_control[1]].unknown0[0]]);
-        LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
-        LbTextSetWindow(D_0015f430[18].x, D_0015f430[18].y, D_0015f430[18].w, D_0015f430[18].h);
+        LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
+        LbTextSetWindow(resvars.f3c_ManagerBoxp[18].x, resvars.f3c_ManagerBoxp[18].y, resvars.f3c_ManagerBoxp[18].w, resvars.f3c_ManagerBoxp[18].h);
         sprintf(buf, D_001206ab, insurance_names[insurance_co[ins_control[2]].unknown0[0]]);
-        LbTextDraw(D_0015f434[71].x, D_0015f434[71].y, buf);
+        LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
         compute_help_text(0, 0, 0x16);
     }
     compute_help_text(0, 0, 0x15);
@@ -257,21 +252,21 @@ void process_bank_panel(void)
     u8 i;
 
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i + 3].width != 0 && D_0015f43c[i + 3].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 3].x, D_0015f43c[i + 3].y,
-                             (s16)D_0015f43c[i + 3].width, (s16)D_0015f43c[i + 3].height)) {
-                D_0015f43c[i + 3].callback(i);
-                reqspr_draw(D_0015f43c[i + 3].unknownC, D_0015f43c[i + 3].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 3].sprite]);
+        for (i = 0; resvars.f48[i + 3].width != 0 && resvars.f48[i + 3].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 3].x, resvars.f48[i + 3].y,
+                             (s16)resvars.f48[i + 3].width, (s16)resvars.f48[i + 3].height)) {
+                resvars.f48[i + 3].callback(i);
+                reqspr_draw(resvars.f48[i + 3].unknownC, resvars.f48[i + 3].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 3].sprite]);
             }
         }
     }
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 3].width != 0 && D_0015f43c[i + 3].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 3].x, D_0015f43c[i + 3].y,
-                             (s16)D_0015f43c[i + 3].width, (s16)D_0015f43c[i + 3].height)) {
-                reqspr_draw(D_0015f43c[i + 3].unknownC, D_0015f43c[i + 3].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 3].sprite]);
+        for (i = 0; resvars.f48[i + 3].width != 0 && resvars.f48[i + 3].height != 0; i++) {
+            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 3].x, resvars.f48[i + 3].y,
+                             (s16)resvars.f48[i + 3].width, (s16)resvars.f48[i + 3].height)) {
+                reqspr_draw(resvars.f48[i + 3].unknownC, resvars.f48[i + 3].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 3].sprite]);
                 break;
             }
         }
@@ -340,7 +335,7 @@ void display_manager_face(void)
             D_00155e06 = 1;
     }
     if (D_00155e04) {
-        reqspr_draw(D_0015f434[79].x, D_0015f434[79].y, &screen_sprites_tab_start[bank_manager_face1[D_00155e04]]);
+        reqspr_draw(resvars.f40[79].x, resvars.f40[79].y, &screen_sprites_tab_start[bank_manager_face1[D_00155e04]]);
         D_00155e04++;
         if (bank_manager_face1[D_00155e04] == -1) {
             D_00155e04 = 0;
@@ -349,13 +344,13 @@ void display_manager_face(void)
         }
     }
     if (D_00155e05) {
-        reqspr_draw(D_0015f434[80].x, D_0015f434[80].y, &screen_sprites_tab_start[bank_manager_face2[D_00155e05]]);
+        reqspr_draw(resvars.f40[80].x, resvars.f40[80].y, &screen_sprites_tab_start[bank_manager_face2[D_00155e05]]);
         D_00155e05++;
         if (bank_manager_face2[D_00155e05] == -1)
             D_00155e05 = 0;
     }
     if (D_00155e06) {
-        reqspr_draw(D_0015f434[81].x, D_0015f434[81].y, &screen_sprites_tab_start[D_0012d748[D_00155e06]]);
+        reqspr_draw(resvars.f40[81].x, resvars.f40[81].y, &screen_sprites_tab_start[D_0012d748[D_00155e06]]);
         D_00155e06++;
         if (D_0012d748[D_00155e06] == -1)
             D_00155e06 = 0;
@@ -368,8 +363,8 @@ void manager_help_pointed_ins(void)
     u32 text;
     u32 idx;
 
-    text = D_0015f420[D_00155c64].text;
-    idx = D_0015f420[D_00155c64].arg;
+    text = resvars.f2c_ManagerHelpp[D_00155c64].text;
+    idx = resvars.f2c_ManagerHelpp[D_00155c64].arg;
     sprintf(D_0015544e, help_text[text], insurance_names[insurance_co[ins_control[idx]].unknown0[0]]);
 }
 
@@ -378,6 +373,6 @@ void manager_help_displayed_ins(void)
 {
     u32 text;
 
-    text = D_0015f420[D_00155c64].text;
-    sprintf(D_0015544e, help_text[text], insurance_names[insurance_co[D_0012ddde[manager.unknown0]].unknown0[0]]);
+    text = resvars.f2c_ManagerHelpp[D_00155c64].text;
+    sprintf(D_0015544e, help_text[text], insurance_names[insurance_co[gbv.f15e[manager.unknown0]].unknown0[0]]);
 }

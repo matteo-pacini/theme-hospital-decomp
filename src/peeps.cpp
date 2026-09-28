@@ -8,12 +8,10 @@ struct SelectionState {
 
 extern "C" {
 
-extern s16 D_0012ccfe[];
-extern s16 D_0012dd7c[14];
+extern s16 D_0012cd00[];
 extern u16 D_0015543a;
 extern u8 D_00155441;
 extern SelectionState D_001581b2;
-extern u8 D_001553b4;
 extern PlayerCall D_0015f5a4[][9];
 extern u8 D_00158192;
 extern char **D_00160370;
@@ -46,14 +44,13 @@ void person_waits_for_busy(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation of the tile index expression
 // FUNCTION: 0x00015cc0
 void person_arrives_at_door(Thing *w)
 {
     u16 tile;
     RoomInfo *info;
 
-    tile = ((u16)w->y.tile << 7) + (u16)w->x.tile;
+    tile = w->x.tile + (w->y.tile << 7);
     info = is_this_a_door(tile);
     if (info != 0 && rooms[info->type].unknown36 != 0) {
         set_complex(w, 0x32, 0);
@@ -63,7 +60,7 @@ void person_arrives_at_door(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
+// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x00015d48
 void person_in_queue(Thing *w)
 {
@@ -128,7 +125,7 @@ void person_in_queue(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
+// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x000160a8
 void person_entertains_themself(Thing *w)
 {
@@ -151,7 +148,7 @@ void person_entertains_themself(Thing *w)
                     if (room > room_info) {
                         page_staff_i_need(w, room);
                     }
-                    if (w->unknown124 > D_0012dd7c[6] || (w->flags & 0x100)) {
+                    if (w->unknown124 > gbv.f108 || (w->flags & 0x100)) {
                         if (w->owner == player) {
                             D_00155441++;
                         }
@@ -169,7 +166,7 @@ void person_entertains_themself(Thing *w)
                             return;
                         }
                     }
-                    if (abilities[w->subtype][2] && w->unknown136 > D_0012dd7c[13] && w->icon != 90) {
+                    if (abilities[w->subtype][2] && w->unknown136 > gbv.f116 && w->icon != 90) {
                         room = get_nearest_room_info(w, 0x1d);
                         if (room != 0) {
                             leave_queue(w);
@@ -213,11 +210,10 @@ void person_entertains_themself(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x000164f4
 u16 find_standing_place(Thing *w)
 {
-    u16 base;
+    s16 base;
     u16 i;
     u16 tile;
     Map *target;
@@ -225,15 +221,15 @@ u16 find_standing_place(Thing *w)
 
     cell = &map[((s16)w->y.tile << 7) + (s16)w->x.tile];
     if (w->prev != 0 || (cell->flags & 7)) {
-        base = (w->y.tile << 7) + (u16)w->x.tile;
-        for (i = old_newrand() % 12 + 1; i <= D_0012ccfe[1]; i++) {
-            tile = base + D_0012ccfe[i + 1];
+        base = w->x.tile + (w->y.tile << 7);
+        for (i = old_newrand() % 12 + 1; i <= D_0012cd00[0]; i++) {
+            tile = base + D_0012cd00[i];
             target = &map[tile];
             if (target->first == 0 && !(target->flags & 7) && can_i_get_to(w, tile) > 0 && !(target->unknown7 & 0x10)) {
                 break;
             }
         }
-        if (D_0012ccfe[i + 1]) {
+        if (D_0012cd00[i]) {
             w->state_a = w->kind;
             w->state_b = w->kind;
             set_complex(w, 430, tile);
@@ -487,7 +483,7 @@ u8 call_person_again(Thing *w, u16 action, u16 arg)
     return 2;
 }
 
-// NONMATCHING: register allocation; stack slots of anim and the ternary temporary are swapped
+// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x00016eb0
 void send_person_to_bed(Thing *w)
 {
@@ -633,14 +629,13 @@ void start_person_going(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation of the tile index argument
 // FUNCTION: 0x0001752c
 void person_nav_failure(Thing *w)
 {
     RoomInfo *room;
 
     if (w->room == 0) {
-        room = which_room((u16)(((u16)w->unknown20 << 7) + (u16)w->unknown19));
+        room = which_room(w->unknown19 + (w->unknown20 << 7));
         if (room != 0 && actual_game_turn - 500 < room->unknown22) {
             start_person_going(w);
             return;
@@ -780,7 +775,6 @@ void return_to_queue_area(Thing *w)
     w->kind = 0x18;
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00017ae0
 void play_person_showanim(Thing *w)
 {
@@ -796,10 +790,10 @@ void play_person_showanim(Thing *w)
             w->palette = w->unknown104;
             w->unknown85 = w->unknown104 = w->unknown103 = 0;
             if (w->flags & 0x4) {
-                place_litter(((u16)w->y.tile << 7) + (u16)w->x.tile, (s8)w->owner, 5);
+                place_litter(w->x.tile + (w->y.tile << 7), (s8)w->owner, 5);
                 w->flags &= ~0x4;
             } else if (w->flags & 0x8) {
-                place_litter(((u16)w->y.tile << 7) + (u16)w->x.tile, (s8)w->owner, 6);
+                place_litter(w->x.tile + (w->y.tile << 7), (s8)w->owner, 6);
                 w->flags &= ~0x8;
             }
         } else {
@@ -868,7 +862,7 @@ void refer_patient(Thing *w, u8 owner)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
+// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x00017e30
 void person_waits_for_decision(Thing *w)
 {
@@ -955,7 +949,7 @@ u16 make_a_playercall(const u16 type, const u16 x, const s16 y, u8 owner)
 {
     PlayerCall *p;
 
-    if (D_001553b4) {
+    if (gamevar.f174) {
         return 0;
     }
     for (p = playercall + 1; p < end_playercall; p++) {
@@ -1207,7 +1201,7 @@ u16 call_no_treatment(Thing *e, char **strs)
     a = 0;
     b = 0;
     if (e->flags32 & 0x1000) {
-        pct = e->unknown146 * 100 / *(u16 *)D_0012dd7c;
+        pct = e->unknown146 * 100 / gbv.ffc;
         if (pct < 0) {
             pct = 0;
         } else if (pct > 99) {

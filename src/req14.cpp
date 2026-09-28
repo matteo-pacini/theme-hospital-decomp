@@ -1,22 +1,7 @@
 #include "hosp.h"
 
-struct Box {
-    s32 x;
-    s32 y;
-    s32 w;
-    s32 h;
-};
-
 extern "C" {
-extern u8 *D_0015f402;
-extern u16 *D_0015f406;
-extern Box *D_0015f40c;
-extern Point *D_0015f410;
 extern Event D_001549d0[];
-extern TbScreenMode D_0015f3f4;
-extern TbScreenMode D_0015f3f5;
-extern u8 D_0015831b;
-extern u16 D_0015831c;
 extern u8 D_00155d74;
 extern u16 D_00155d78;
 extern volatile u16 D_00188c74;
@@ -46,18 +31,18 @@ void req14(Window *win)
     for (b = win->buttons, i = 1; b; b = b->next, i++) {
         if (!(b->flags & 6) || (crequester.unknown4 & (1 << i)))
             continue;
-        if (D_0015f402[0x4f] == i) {
+        if (resvars.fe[0x4f] == i) {
             setup_abort_all_requesters();
             play_sound(10, 0x42, -1, -1);
-        } else if (D_0015f402[0x50] == i) {
+        } else if (resvars.fe[0x50] == i) {
             D_001549d0[player].type = 0x5b;
             play_sound(10, 0x43, -1, -1);
-        } else if (D_0015f402[0x51] == i) {
+        } else if (resvars.fe[0x51] == i) {
             set_mouse_mode(0xb);
             set_edit_room_requester_mode(8);
             crequester.unknown9 = 0;
             play_sound(10, 0x43, -1, -1);
-        } else if (D_0015f402[0x52] == i) {
+        } else if (resvars.fe[0x52] == i) {
             switch (crequester.unknown0) {
             case 0:
                 D_001549d0[player].type = 0x12;
@@ -107,40 +92,40 @@ void req14_overdraw(Window *win)
     ox = win->x;
     oy = win->y;
     n = 0;
-    bx = ox + D_0015f410[0x6e].x;
+    bx = ox + resvars.f1c[0x6e].x;
     hover = 0;
-    if (D_0015831b & 1) {
+    if (advisor.f11f & 1) {
         i = 1;
         D_00155d74++;
         if (D_00155d74 % 10 == 0) {
-            if (D_0015831c == D_0015f402[0x4f]) {
+            if (advisor.f120 == resvars.fe[0x4f]) {
                 for (b = win->buttons; b; b = b->next) {
-                    if (i == D_0015f402[0x4f])
+                    if (i == resvars.fe[0x4f])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x18]]);
-            } else if (D_0015831c == D_0015f402[0x50]) {
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x18]]);
+            } else if (advisor.f120 == resvars.fe[0x50]) {
                 for (b = win->buttons; b; b = b->next) {
-                    if (i == D_0015f402[0x50])
+                    if (i == resvars.fe[0x50])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x19]]);
-            } else if (D_0015831c == D_0015f402[0x51]) {
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x19]]);
+            } else if (advisor.f120 == resvars.fe[0x51]) {
                 for (b = win->buttons; b; b = b->next) {
-                    if (i == D_0015f402[0x51])
+                    if (i == resvars.fe[0x51])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x1a]]);
-            } else if (D_0015831c == D_0015f402[0x52]) {
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x1a]]);
+            } else if (advisor.f120 == resvars.fe[0x52]) {
                 for (b = win->buttons; b; b = b->next) {
-                    if (i == D_0015f402[0x52])
+                    if (i == resvars.fe[0x52])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[D_0015f406[0x1b]]);
+                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x1b]]);
             }
             D_00155d74 = 0;
         }
@@ -153,18 +138,18 @@ void req14_overdraw(Window *win)
         on = 0;
         if (!((crequester.unknown4 & (1 << j)) || (crequester.unknown6 & (1 << j))))
             continue;
-        if (D_0015f402[0x4f] == j) {
-            on = D_0015f406[0x14];
-            off = D_0015f406[0x18];
-        } else if (D_0015f402[0x50] == j) {
-            on = D_0015f406[0x15];
-            off = D_0015f406[0x19];
-        } else if (D_0015f402[0x51] == j) {
-            on = D_0015f406[0x16];
-            off = D_0015f406[0x1a];
-        } else if (D_0015f402[0x52] == j) {
-            on = D_0015f406[0x17];
-            off = D_0015f406[0x1b];
+        if (resvars.fe[0x4f] == j) {
+            on = resvars.f12[0x14];
+            off = resvars.f12[0x18];
+        } else if (resvars.fe[0x50] == j) {
+            on = resvars.f12[0x15];
+            off = resvars.f12[0x19];
+        } else if (resvars.fe[0x51] == j) {
+            on = resvars.f12[0x16];
+            off = resvars.f12[0x1a];
+        } else if (resvars.fe[0x52] == j) {
+            on = resvars.f12[0x17];
+            off = resvars.f12[0x1b];
         }
         if (crequester.unknown4 & (1 << j))
             reqspr_draw(b->x + ox, b->y + oy, &button_sprite[on]);
@@ -173,26 +158,26 @@ void req14_overdraw(Window *win)
     }
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-    LbTextSetJustifyWindow(ox + D_0015f40c[0x25].x, oy + D_0015f40c[0x25].y, D_0015f40c[0x25].w);
+    LbTextSetJustifyWindow(ox + resvars.f18[0x25].x, oy + resvars.f18[0x25].y, resvars.f18[0x25].w);
     set_font_from_cache(1);
     D_00188c74 = 0x100;
     LbTextDraw(0, 0, D_001602cc[rooms[crequester.unknown8].id]);
-    if (D_0015f3f4 == SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13) {
         D_00188c74 = 0x20;
-        LbTextSetJustifyWindow(ox + D_0015f40c[0x26].x, oy + D_0015f40c[0x26].y, D_0015f40c[0x26].w);
+        LbTextSetJustifyWindow(ox + resvars.f18[0x26].x, oy + resvars.f18[0x26].y, resvars.f18[0x26].w);
         LbTextDraw(0, 0, D_001602a0[D_00155d78]);
         D_00188c74 = 0;
     }
-    top = oy + D_0015f410[0x6e].y;
+    top = oy + resvars.f1c[0x6e].y;
     by = top;
     if (crequester.unknown0 >= 6) {
-        for (k = 0; k < 0x3e && n < (D_0015f3f5 == SCREEN_MODE_13 ? 8 : 6); k++) {
+        for (k = 0; k < 0x3e && n < (resvars.f1 == SCREEN_MODE_13 ? 8 : 6); k++) {
             count = gamevar.buy_count[k];
             if (count) {
-                reqspr_draw(bx, by, &button_sprite[D_0015f406[0x1d]]);
-                if ((ox + D_0015f40c[0x27].x <= mouse_dx && ox + D_0015f40c[0x27].x + D_0015f40c[0x27].w > mouse_dx)
-                    && by + D_0015f40c[0x29].y <= mouse_dy
-                    && by + D_0015f40c[0x27].y + D_0015f40c[0x27].h > mouse_dy) {
+                reqspr_draw(bx, by, &button_sprite[resvars.f12[0x1d]]);
+                if ((ox + resvars.f18[0x27].x <= mouse_dx && ox + resvars.f18[0x27].x + resvars.f18[0x27].w > mouse_dx)
+                    && by + resvars.f18[0x29].y <= mouse_dy
+                    && by + resvars.f18[0x27].y + resvars.f18[0x27].h > mouse_dy) {
                     if (D_00145328 != k)
                         play_sound(10, 0x44, -1, -1);
                     D_00145328 = k;
@@ -205,26 +190,26 @@ void req14_overdraw(Window *win)
                         set_edit_room_requester_mode(6);
                     }
                 }
-                by += D_0015f410[0x6f].y;
+                by += resvars.f1c[0x6f].y;
                 n++;
             }
         }
         if (!hover)
             D_00145328 = -1;
         if (n) {
-            reqspr_draw(bx, by + D_0015f410[0x71].y, &button_sprite[D_0015f406[0x1e]]);
-            reqspr_draw(bx, oy + D_0015f410[0x70].y, &button_sprite[D_0015f406[0x1c]]);
+            reqspr_draw(bx, by + resvars.f1c[0x71].y, &button_sprite[resvars.f12[0x1e]]);
+            reqspr_draw(bx, oy + resvars.f1c[0x70].y, &button_sprite[resvars.f12[0x1c]]);
         }
         gamevar.unknown71 = n;
         D_00188c74 = 0x100;
         by = top;
         n = 0;
-        for (k = 0; k < 0x3e && n < (D_0015f3f5 == SCREEN_MODE_13 ? 8 : 6); k++) {
+        for (k = 0; k < 0x3e && n < (resvars.f1 == SCREEN_MODE_13 ? 8 : 6); k++) {
             count = gamevar.buy_count[k];
             if (count) {
                 if (crequester.unknown9 == k) {
                     D_00188c74 |= 0x10;
-                    LbDrawBox(ox + D_0015f40c[0x27].x, by + D_0015f40c[0x27].y, D_0015f40c[0x27].w, D_0015f40c[0x27].h,
+                    LbDrawBox(ox + resvars.f18[0x27].x, by + resvars.f18[0x27].y, resvars.f18[0x27].w, resvars.f18[0x27].h,
                         color.unknownD);
                     D_00188c74 ^= 0x10;
                 }
@@ -232,14 +217,14 @@ void req14_overdraw(Window *win)
                     set_font_from_cache(2);
                 else
                     set_font_from_cache(1);
-                LbTextSetClipWindow(ox + D_0015f40c[0x27].x, by + D_0015f40c[0x27].y,
-                    D_0015f40c[0x29].w + D_0015f40c[0x28].w + 0x14, D_0015f40c[0x27].h);
-                LbTextSetJustifyWindow(ox + D_0015f40c[0x28].x, by + D_0015f40c[0x28].y, D_0015f40c[0x28].w);
+                LbTextSetClipWindow(ox + resvars.f18[0x27].x, by + resvars.f18[0x27].y,
+                    resvars.f18[0x29].w + resvars.f18[0x28].w + 0x14, resvars.f18[0x27].h);
+                LbTextSetJustifyWindow(ox + resvars.f18[0x28].x, by + resvars.f18[0x28].y, resvars.f18[0x28].w);
                 LbTextDraw(0, 0, D_0016029c[k]);
-                LbTextSetJustifyWindow(ox + D_0015f40c[0x29].x, by + D_0015f40c[0x29].y, D_0015f40c[0x29].w);
+                LbTextSetJustifyWindow(ox + resvars.f18[0x29].x, by + resvars.f18[0x29].y, resvars.f18[0x29].w);
                 sprintf(buf, D_00121ad8, count);
                 LbTextDraw(0, 0, buf);
-                by += D_0015f410[0x6f].y;
+                by += resvars.f1c[0x6f].y;
                 n++;
             }
         }
@@ -256,36 +241,36 @@ void set_edit_room_requester_mode(const u8 mode)
     crequester.unknown6 = 0;
     switch (mode) {
     case 0:
-        crequester.unknown4 = (1 << D_0015f402[0x50]) | (1 << D_0015f402[0x51]);
+        crequester.unknown4 = (1 << resvars.fe[0x50]) | (1 << resvars.fe[0x51]);
         D_00155d78 = 0xa;
         break;
     case 2:
-        crequester.unknown4 = (1 << D_0015f402[0x50]) | (1 << D_0015f402[0x51]) | (1 << D_0015f402[0x52]);
+        crequester.unknown4 = (1 << resvars.fe[0x50]) | (1 << resvars.fe[0x51]) | (1 << resvars.fe[0x52]);
         D_00155d78 = 0xb;
         break;
     case 4:
-        crequester.unknown4 = (1 << D_0015f402[0x50]) | (1 << D_0015f402[0x51]);
+        crequester.unknown4 = (1 << resvars.fe[0x50]) | (1 << resvars.fe[0x51]);
         D_00155d78 = 0xc;
         break;
     case 8:
-        crequester.unknown6 = 1 << D_0015f402[0x51];
+        crequester.unknown6 = 1 << resvars.fe[0x51];
     case 6:
         if (crequester.unknown8 == 3 || room_info[allhosps[player].unknown11b7].first_object == 0)
-            crequester.unknown4 |= 1 << D_0015f402[0x51];
+            crequester.unknown4 |= 1 << resvars.fe[0x51];
         if (crequester.unknown8 != 3) {
             if (does_room_contain_compulsory_objects(&room_info[allhosps[player].unknown11b7])) {
                 crequester.unknown4 = 0;
                 D_00155d78 = 0xe;
-                D_0015831b |= 0x10;
+                advisor.f11f |= 0x10;
             } else {
-                crequester.unknown4 = 1 << D_0015f402[0x52];
+                crequester.unknown4 = 1 << resvars.fe[0x52];
                 D_00155d78 = 0xd;
-                D_0015831b &= ~0x10;
+                advisor.f11f &= ~0x10;
             }
         }
         break;
     case 0xa:
-        crequester.unknown4 = (1 << D_0015f402[0x52]) | (1 << D_0015f402[0x50]) | (1 << D_0015f402[0x51]);
+        crequester.unknown4 = (1 << resvars.fe[0x52]) | (1 << resvars.fe[0x50]) | (1 << resvars.fe[0x51]);
         D_00155d78 = 0x10;
         crequester.unknown8 = 3;
         break;

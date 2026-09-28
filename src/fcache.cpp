@@ -20,8 +20,6 @@ extern u8 D_00161270[];
 extern u8 D_0016126c;
 extern u8 D_0016126d;
 extern u32 D_00155c5a;
-extern TbScreenMode D_0015f3f4;
-extern char **D_0015f3fe;
 extern char D_00121b3c[];
 extern char D_00121b8b[];
 extern char D_00121b92[];
@@ -296,15 +294,15 @@ void set_font_from_cache(const s32 font)
     char **names;
     s8 block;
 
-    if (D_0015f3f4 != D_0016126d)
+    if (resvars.f0 != D_0016126d)
         init_font_cache();
-    D_0016126d = D_0015f3f4;
+    D_0016126d = resvars.f0;
     if (cfonts[font]) {
         lbFontPtr = (TbSprite *)&D_00161270[font_memory[cfonts[font] - 1].offset];
         font_memory[font].used = D_00155c5a;
         return;
     }
-    names = D_0015f3fe;
+    names = resvars.fa_charpp;
     sprintf(name, D_00121b8b, names[font]);
     len1 = LbFileLengthRnc(name);
     if (len1 == -1)

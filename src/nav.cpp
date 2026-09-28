@@ -103,7 +103,6 @@ void fn_00041c0c(Thing *w)
 
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00043ff0
 s32 wall_in_way(u32 x, u32 y, u32 dir)
 {
@@ -121,7 +120,7 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
     if (dir == 3 && x == 0) {
         return 1;
     }
-    cell = &map[((s16)y << 7) + (s16)x];
+    cell = &map[(s16)x + ((s16)y << 7)];
     if ((cell->flags & 1) && !(cell->flags & 2)) {
         return 1;
     }
@@ -132,13 +131,13 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
         }
         break;
     case 1:
-        cell = &map[((s16)y << 7) + (s16)(x + 1)];
+        cell = &map[(s16)(x + 1) + ((s16)y << 7)];
         if (cell->unknown4) {
             return 1;
         }
         break;
     case 2:
-        cell = &map[((s16)(y + 1) << 7) + (s16)x];
+        cell = &map[(s16)x + ((s16)(y + 1) << 7)];
         if (cell->unknown3) {
             return 1;
         }
@@ -163,7 +162,7 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
         x--;
         break;
     }
-    cell = &map[((s16)y << 7) + (s16)x];
+    cell = &map[(s16)x + ((s16)y << 7)];
     if ((cell->flags & 1) && !(cell->flags & 2)) {
         return 1;
     }

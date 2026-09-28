@@ -11,7 +11,6 @@ u8 fn_0002b400(Thing *w);
 
 u16 find_unallocated_bed(RoomInfo *room);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c640
 void reinit_nurse(Thing *w)
 {
@@ -19,7 +18,7 @@ void reinit_nurse(Thing *w)
     u16 pos;
 
     fn_000168a0(w);
-    pos = (w->y.tile << 7) + w->x.tile;
+    pos = w->x.tile + (w->y.tile << 7);
     room = which_room(pos);
     if (room > 0) {
         if (room->type != 1)

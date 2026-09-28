@@ -5,11 +5,9 @@ extern const char *screenpalettes[];
 extern TbLoadFiles hiresratfestpanelfiles[];
 
 extern "C" {
-extern TbScreenMode D_0015f3f4;
 extern u8 D_00155e45;
 extern u8 *D_00153f34;
 extern u16 D_00188c74;
-extern u8 D_001547e5;
 extern u8 D_001553c8;
 extern char *D_0013e80c;
 extern char D_00120c60[];
@@ -36,7 +34,7 @@ void check_cd_available(char *path)
     char fname[0x80];
 
     had_screen = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    mode = D_0015f3f4;
+    mode = resvars.f0;
     flag = D_00155e45;
     unused = 0;
     if (*path == '*')
@@ -55,7 +53,7 @@ void check_cd_available(char *path)
     }
     if (had_screen)
         LbIsActive();
-    if (D_0015f3f4 != SCREEN_MODE_13 || D_00155e45)
+    if (resvars.f0 != SCREEN_MODE_13 || D_00155e45)
         setup_any_screen(D_00153f34, SCREEN_MODE_13);
     LbFileLoadAt((char *)screenpalettes[21], D_00153f34);
     while (fn_000bed50() != 1)
@@ -63,7 +61,7 @@ void check_cd_available(char *path)
     LbFileLoadAt((char *)hiresscreens[21], lbDisplay.unknown4);
     D_00188c74 = 0;
     set_font_from_cache(0x2f);
-    text = ((char **)((u8 *)hiresratfestpanelfiles + 0x66))[D_001547e5];
+    text = ((char **)((u8 *)hiresratfestpanelfiles + 0x66))[myplayer.f21];
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     LbTextDraw((lbDisplay.unknown18 - LbTextStringWidth(text)) / 2, 0x1a4, text);
@@ -79,7 +77,7 @@ void check_cd_available(char *path)
             exit(1);
         }
     }
-    if (D_0015f3f4 != mode)
+    if (resvars.f0 != mode)
         setup_any_screen(D_00153f34, mode);
     if (flag)
         fn_0001102c();

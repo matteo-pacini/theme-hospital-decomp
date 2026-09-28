@@ -69,12 +69,9 @@ u8 computer_buy_land(u8 player);
 
 extern "C" {
 
-extern u8 D_001553b4;
-extern u8 D_0015831b;
 extern u16 D_00155d89;
 extern char **D_001602a8;
 extern char D_00120424[];
-extern u16 D_0012dd7c[];
 
 }
 
@@ -87,7 +84,7 @@ void setup_computer_players(void)
     AllHosps *h;
     u8 used[20];
 
-    if (statvar.unknownfd > 1 || D_001553b4) {
+    if (statvar.unknownfd > 1 || gamevar.f174) {
         return;
     }
     for (i = 0; i < 20; i++) {
@@ -195,7 +192,7 @@ void computer_action(void)
     AllHosps *h;
     ComputerPlayer *c;
 
-    if (statvar.unknownfd > 1 || (D_0015831b & 1)) {
+    if (statvar.unknownfd > 1 || (advisor.f11f & 1)) {
         return;
     }
     for (i = 0; i < 4; i++) {
@@ -389,7 +386,7 @@ void process_computer_peep(Thing *w, u8 player)
             w->unknown171 = 1;
             computer_diag_progress(w, player);
             reputation_affected(1, 10, month % 12, w->owner, 0);
-            if (w->unknown146 > D_0012dd7c[0]) {
+            if (w->unknown146 > gbv.ffc) {
                 w->unknown171 = w->style;
                 reputation_affected(kind, 6, month % 12, w->owner, 0);
                 h->f1ef++;
@@ -425,7 +422,7 @@ void process_computer_peep(Thing *w, u8 player)
         find_possible_diagnosis(w);
         if (w->unknown171 == 0) {
             reputation_affected(kind, 7, month % 12, player, 0);
-            pct = w->unknown146 * 100 / D_0012dd7c[0];
+            pct = w->unknown146 * 100 / gbv.ffc;
             if (pct < 0) {
                 pct = 0;
             } else if (pct > 99) {
@@ -665,7 +662,6 @@ u8 computer_build(u8 type, u8 player)
     return 0;
 }
 
-// NONMATCHING: register choice; `|| free` tests with and+test instead of cmp byte ptr
 // FUNCTION: 0x0004fd6c
 u8 computer_place_object(u8 obj, u8 free, u8 player)
 {
@@ -673,7 +669,7 @@ u8 computer_place_object(u8 obj, u8 free, u8 player)
 
     h = &allhosps[player];
     if ((allhosps[player].f35 >= (u32)h->object_stats[obj].cost && allhosps[player].f35 > 0) || free) {
-        if (free == 0) {
+        if (!free) {
             h->f35 -= h->object_stats[obj].cost;
         }
         inc_hardware_stats(obj, player);
@@ -825,7 +821,6 @@ u8 computer_choose_room(u8 idx, u8 player)
     return 0;
 }
 
-// NONMATCHING: register choice; target reloc is change_person_who+0x98 rather than diag_register-0x4a
 // FUNCTION: 0x000507c4
 void computer_diag_progress(Thing *w, u8 player)
 {
@@ -983,8 +978,8 @@ u8 computer_buy_land(u8 player)
     c = &computer[h->f1245];
     if (myhosp->f1f1 > h->f1f1) {
         n = myhosp->f1f1 - h->f1f1;
-        if (*(u16 *)&expertise[53].unknown10[3] * n <= allhosps[player].f35 && allhosps[player].f35 > 0) {
-            h->f35 -= n * *(u16 *)&expertise[53].unknown10[3];
+        if (gbv.f7c * n <= allhosps[player].f35 && allhosps[player].f35 > 0) {
+            h->f35 -= n * gbv.f7c;
             h->f1f1 += n;
             return 1;
         }

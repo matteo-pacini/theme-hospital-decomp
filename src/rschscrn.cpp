@@ -22,7 +22,6 @@ extern "C" {
 extern s32 D_00188c38;
 extern u8 D_00155e3c;
 extern Event D_001549d0[];
-extern Point *D_0015f434;
 extern volatile u16 D_00188c74;
 extern u8 D_00188c7b;
 extern u8 D_00188c7c;
@@ -31,13 +30,11 @@ extern u8 D_00188c83;
 extern u8 D_00188c85;
 extern u8 D_00188c7e;
 extern volatile s16 D_00188c6c, D_00188c70;
-extern Button *D_0015f43c;
 extern u16 D_00155da9;
 extern u32 D_00155dab;
 extern u32 D_00155c5a;
 extern char **D_001602d8;
 extern char **D_001602a0;
-extern ChoiceBox *D_0015f430;
 extern char D_00121afc[];
 extern char D_00121aff[];
 void StopSample(u32 a, u32 b);
@@ -78,8 +75,8 @@ void display_research(void)
     default:
         break;
     }
-    reqspr_draw(D_0015f434[85].x, D_0015f434[85].y, &screen_sprites_tab_start[frame_no + 12]);
-    reqspr_draw(D_0015f434[86].x, D_0015f434[86].y, &screen_sprites_tab_start[frame_no + 4]);
+    reqspr_draw(resvars.f40[85].x, resvars.f40[85].y, &screen_sprites_tab_start[frame_no + 12]);
+    reqspr_draw(resvars.f40[86].x, resvars.f40[86].y, &screen_sprites_tab_start[frame_no + 4]);
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     D_00188c85 = color.unknown8;
     D_00188c74 |= 0x40;
@@ -108,10 +105,10 @@ void draw_research_text(void)
     set_font_from_cache(9);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     for (i = 0; i < 5; i++) {
-        LbTextDraw(D_0015f434[i + 0x57].x, D_0015f434[i + 0x57].y, D_001602d8[i]);
+        LbTextDraw(resvars.f40[i + 0x57].x, resvars.f40[i + 0x57].y, D_001602d8[i]);
         if (myhosp->research_alloc[i] >= 0) {
             sprintf(buf, D_00121afc, myhosp->research_alloc[i]);
-            LbTextDraw(D_0015f434[i + 0x61].x, D_0015f434[i + 0x61].y, buf);
+            LbTextDraw(resvars.f40[i + 0x61].x, resvars.f40[i + 0x61].y, buf);
             if (myhosp->research_cost[i] > 0) {
                 illness = choose_next_research_illness(player, find_new_cure_cost);
                 if (illness) {
@@ -121,13 +118,13 @@ void draw_research_text(void)
                     else if (len > 0x122)
                         len = 0x122;
                     for (x = 0; x < len; x += 5)
-                        reqspr_draw(D_0015f434[i + 0x5c].x + x, D_0015f434[i + 0x5c].y, &screen_sprites_tab_start[3]);
+                        reqspr_draw(resvars.f40[i + 0x5c].x + x, resvars.f40[i + 0x5c].y, &screen_sprites_tab_start[3]);
                 }
             }
         } else {
-            LbDrawBox(D_0015f430[i + 0x29].x, D_0015f430[i + 0x29].y, D_0015f430[i + 0x29].w, D_0015f430[i + 0x29].h,
+            LbDrawBox(resvars.f3c_ChoiceBoxp[i + 0x29].x, resvars.f3c_ChoiceBoxp[i + 0x29].y, resvars.f3c_ChoiceBoxp[i + 0x29].w, resvars.f3c_ChoiceBoxp[i + 0x29].h,
                       0xb);
-            LbTextDraw(D_0015f434[i + 0x61].x, D_0015f434[i + 0x61].y, D_001602a0[0x14]);
+            LbTextDraw(resvars.f40[i + 0x61].x, resvars.f40[i + 0x61].y, D_001602a0[0x14]);
         }
     }
     total = 0;
@@ -136,9 +133,9 @@ void draw_research_text(void)
             total += myhosp->research_alloc[i];
     }
     sprintf(buf, D_001602d8[6]);
-    LbTextDraw(D_0015f434[0x66].x, D_0015f434[0x66].y, buf);
+    LbTextDraw(resvars.f40[0x66].x, resvars.f40[0x66].y, buf);
     sprintf(buf, D_00121aff, total);
-    LbTextDraw(D_0015f434[0x67].x, D_0015f434[0x67].y, buf);
+    LbTextDraw(resvars.f40[0x67].x, resvars.f40[0x67].y, buf);
 }
 
 // FUNCTION: 0x000b2c74
@@ -169,13 +166,13 @@ void process_res_panel(void)
     u8 i;
 
     if (D_00188c81) {
-        for (i = 0; D_0015f43c[i + 0x19].width != 0 && D_0015f43c[i + 0x19].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i + 0x19].x, D_0015f43c[i + 0x19].y,
-                             D_0015f43c[i + 0x19].width, D_0015f43c[i + 0x19].height)) {
+        for (i = 0; resvars.f48[i + 0x19].width != 0 && resvars.f48[i + 0x19].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x19].x, resvars.f48[i + 0x19].y,
+                             resvars.f48[i + 0x19].width, resvars.f48[i + 0x19].height)) {
                 if (i == 0)
-                    D_0015f43c[i + 0x19].callback(i);
-                reqspr_draw(D_0015f43c[i + 0x19].unknownC, D_0015f43c[i + 0x19].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 0x19].sprite]);
+                    resvars.f48[i + 0x19].callback(i);
+                reqspr_draw(resvars.f48[i + 0x19].unknownC, resvars.f48[i + 0x19].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 0x19].sprite]);
             }
         }
         D_00155da9 = 0x100;
@@ -184,13 +181,13 @@ void process_res_panel(void)
         D_00188c81 = 0;
     }
     if (D_00188c7e) {
-        for (i = 0; D_0015f43c[i + 0x19].width != 0 && D_0015f43c[i + 0x19].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, D_0015f43c[i + 0x19].x, D_0015f43c[i + 0x19].y,
-                             D_0015f43c[i + 0x19].width, D_0015f43c[i + 0x19].height)) {
+        for (i = 0; resvars.f48[i + 0x19].width != 0 && resvars.f48[i + 0x19].height != 0; i++) {
+            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0x19].x, resvars.f48[i + 0x19].y,
+                             resvars.f48[i + 0x19].width, resvars.f48[i + 0x19].height)) {
                 if (i != 0)
-                    D_0015f43c[i + 0x19].callback(i);
-                reqspr_draw(D_0015f43c[i + 0x19].unknownC, D_0015f43c[i + 0x19].unknownE,
-                            &screen_sprites_tab_start[D_0015f43c[i + 0x19].sprite]);
+                    resvars.f48[i + 0x19].callback(i);
+                reqspr_draw(resvars.f48[i + 0x19].unknownC, resvars.f48[i + 0x19].unknownE,
+                            &screen_sprites_tab_start[resvars.f48[i + 0x19].sprite]);
                 break;
             }
         }

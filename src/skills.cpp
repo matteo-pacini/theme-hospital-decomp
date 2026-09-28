@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u16 D_0012dd7c[];
 }
 
 // NONMATCHING: shift count for bit: the target loads only cl (mov cl,[i]); (u8)i gets closer but adds xor ecx,ecx
@@ -178,13 +177,13 @@ RoomInfo *get_expertise_dest(u16 type, Thing *w)
             if (room->owner == owner && room->type == kind && room->unknown4 != 0) {
                 fallback = room;
                 if (spare_queue_capacity(0, 1, room, owner)) {
-                    score = room->unknown31 * D_0012dd7c[2];
+                    score = room->unknown31 * gbv.f100;
                     score += (fn_000cb2db(w->x.tile - room->unknown4 % 128)
-                            + fn_000cb2db(w->y.tile - room->unknown4 / 128)) * D_0012dd7c[3];
-                    score += D_0012dd7c[4];
+                            + fn_000cb2db(w->y.tile - room->unknown4 / 128)) * gbv.f102;
+                    score += gbv.f104;
                     for (t = &thing[room->first]; t > thing; t = &thing[t->room_next]) {
                         if (t->renderer == 4) {
-                            score -= D_0012dd7c[4];
+                            score -= gbv.f104;
                             break;
                         }
                     }

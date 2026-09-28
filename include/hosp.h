@@ -307,7 +307,10 @@ struct Thing {
             };
             u16 unknown124;
             u16 unknown126;
-            u16 unknown128;
+            union {
+                u16 unknown128;
+                s16 unknown128s;
+            };
             s16 unknown130;
             s16 unknown132;
             s16 unknown134;
@@ -1177,6 +1180,18 @@ struct HospPlayerDetails {
     };
     u8 unknown11;
     u8 unknown12[0xa];
+    u8 f1c;
+    u8 f1d;
+    union {
+        u16 f1e;
+        s16 f1es;
+    };
+    u8 f20;
+    u8 f21;
+    u8 f22;
+    u8 f23[0x1e];
+    u8 f41[0x15];
+    u8 f56[6];
 };
 
 struct Colors {
@@ -1216,6 +1231,15 @@ struct NetText {
 
 struct Blob63 {
     u8 unknown0[0x3f];
+};
+
+struct EmergencyCall {
+    u16 call;
+    u16 f2;
+    u8 used;
+    u8 illness;
+    u8 count;
+    u8 f7;
 };
 
 struct Game {
@@ -1285,6 +1309,58 @@ struct Game {
         u16 announce[14][4];
     };
     u32 feb;
+    u8 fef;
+    union {
+        u8 ff0;
+        s8 ff0s;
+    };
+    u8 ff1;
+    s8 ff2;
+    u8 ff3;
+    union {
+        s8 ff4;
+        u8 ff4u;
+    };
+    u16 ff5;
+    u16 ff7;
+    u8 unknownf9[4];
+    EmergencyCall ffd[4];
+    u32 f11d;
+    u16 f121;
+    u8 f123;
+    u8 f124;
+    u8 f125;
+    u8 f126;
+    u32 f127;
+    u8 f12b;
+    u8 f12c;
+    u8 f12d;
+    u16 f12e;
+    u16 f130;
+    u16 f132;
+    u16 f134;
+    u16 f136;
+    u8 f138;
+    u8 f139;
+    u16 f13a;
+    u8 unknown13c[2];
+    u8 f13e;
+    u16 f13f;
+    u32 f141;
+    u16 f145;
+    u16 f147;
+    u16 f149;
+    u8 f14b[16];
+    u8 f15b[20];
+    u8 f16f;
+    u8 f170;
+    u8 f171;
+    u8 f172;
+    u8 f173;
+    u8 f174;
+    u8 f175;
+    u8 f176;
+    u8 f177;
 };
 
 struct Statics {
@@ -1715,6 +1791,168 @@ struct NonResettingAdvisorCounts {
     u8 unknown10;
 };
 
+struct Advisor {
+    union {
+        s16 f0;
+        u16 f0_u16;
+        u8 f0_u8a[2];
+    };
+    union {
+        u16 f2;
+        s16 f2_s16;
+    };
+    s16 f4;
+    u16 f6;
+    union {
+        s16 f8;
+        u16 f8_u16;
+    };
+    union {
+        s16 fa;
+        u16 fa_u16;
+    };
+    union {
+        s16 fc;
+        u16 fc_u16;
+    };
+    s16 fe;
+    char f10[270];
+    u8 f11e;
+    u8 f11f;
+    u16 f120;
+    u8 f122;
+    u8 f123;
+    u8 f124;
+    union {
+        s16 f125;
+        u16 f125_u16;
+    };
+    u8 f127;
+    union {
+        u8 f128;
+        u32 f128_u32;
+        u8 f128_u8a[4];
+    };
+    u8 f12c;
+    u8 f12d;
+    u8 f12e;
+    u8 f12f;
+    u8 f130;
+    u8 f131;
+    u8 unknown132[0x2];
+};
+
+struct Balance {
+    u8 unknown0[0x7c];
+    u16 f7c;
+    u8 unknown7e[0x3a];
+    s16 fb8[6];
+    u16 fc4;
+    u8 unknownc6[2];
+    u8 fc8;
+    u8 unknownc9;
+    u16 fca;
+    u8 unknowncc[2];
+    u16 fce;
+    u16 fd0;
+    u16 fd2;
+    u16 fd4;
+    u16 fd6;
+    u16 fd8;
+    s16 fda;
+    s16 fdc;
+    s16 fde;
+    s16 fe0;
+    u16 fe2;
+    u16 fe4;
+    u16 fe6;
+    u16 fe8;
+    u16 fea;
+    u16 fec;
+    u16 fee;
+    u16 ff0;
+    u16 ff2;
+    u16 ff4;
+    u16 ff6[3];
+    u16 ffc;
+    s16 ffe;
+    u16 f100;
+    u16 f102;
+    u16 f104;
+    s16 f106;
+    s16 f108;
+    s16 f10a;
+    s16 f10c;
+    s16 f10e;
+    s16 f110;
+    s16 f112;
+    s16 f114;
+    s16 f116;
+    s16 f118;
+    s16 f11a;
+    u16 f11c;
+    u16 f11e;
+    u16 f120;
+    u8 unknown122[2];
+    u16 f124;
+    u16 f126;
+    u16 f128;
+    u8 unknown12a[2];
+    u16 f12c;
+    u16 f12e;
+    u16 f130;
+    u16 f132;
+    u8 unknown134[4];
+    u16 f138;
+    u8 unknown13a[2];
+    u8 f13c;
+    u8 unknown13d;
+    u8 f13e;
+    u8 f13f;
+    u8 f140;
+    u16 f141;
+    u8 f143;
+    u8 f144;
+    u8 f145;
+    u16 f146;
+    u16 f148;
+    u16 f14a;
+    u8 f14c;
+    u8 unknown14d;
+    u8 f14e;
+    u8 unknown14f;
+    u8 f150;
+    u8 f151;
+    u8 f152;
+    u8 f153;
+    u16 f154;
+    u16 f156;
+    u16 f158;
+    u8 f15a;
+    u8 f15b;
+    u8 unknown15c[2];
+    u16 f15e[1];
+};
+
+struct AwardCounts {
+    s32 f0[13];
+    s32 f34[13];
+    s32 f68[13];
+    s32 f9c[13];
+    s32 fd0[13];
+    s32 f104[13];
+    u16 f138;
+    s32 f13a;
+    u8 f13e;
+    u8 f13f;
+    s32 f140;
+    u8 f144;
+    s32 f145;
+    s32 f149;
+    s32 f14d;
+    s32 f151;
+};
+
 struct WinLoseNet {
     u16 unknown0;
     u16 done;
@@ -1996,6 +2234,175 @@ struct Button {
     u16 sprite;
 };
 
+struct AdvisorLayout;
+struct AreaLayout;
+struct Box {
+    s32 x;
+    s32 y;
+    s32 w;
+    s32 h;
+};
+
+struct Button;
+struct ChoiceBox;
+struct GlassFrame;
+struct GlassScreen;
+struct GraphRect;
+struct HelpHotspot;
+struct IconScreen;
+struct ManagerBox;
+struct ManagerHelp;
+struct MenuItem;
+struct NetBox;
+struct Offset;
+struct PanelLayout;
+struct Point;
+struct PolicyRect;
+struct QueueButtons;
+struct QueueLayout;
+struct QueuePanel;
+struct Rect;
+struct Req13Layout;
+struct Req2Layout;
+struct ReqLayout;
+struct ScreenBox;
+struct ScrollLayout;
+struct SlistArea;
+struct SlistMenuItem;
+struct Struct_0015f410;
+struct TownView;
+struct View;
+struct WindowButton;
+
+struct ResolutionInfo {
+    TbScreenMode f0;
+    TbScreenMode f1;
+    TbScreenMode f2;
+    u8 f3;
+    u8 f4;
+    u8 f5;
+    union {
+        u8 *f6;
+        char **f6_charpp;
+    };
+    union {
+        int *fa;
+        char **fa_charpp;
+    };
+    union {
+        u8 *fe;
+        QueueButtons *fe_QueueButtonsp;
+    };
+    union {
+        u16 *f12;
+        u8 *f12_u8p;
+    };
+    u8 f16;
+    u8 f17;
+    union {
+        Box *f18;
+        s32 *f18_s32p;
+        u8 *f18_u8p;
+        PanelLayout *f18_PanelLayoutp;
+        QueueLayout *f18_QueueLayoutp;
+        Rect *f18_Rectp;
+        Req13Layout *f18_Req13Layoutp;
+        Req2Layout *f18_Req2Layoutp;
+        ReqLayout *f18_ReqLayoutp;
+    };
+    union {
+        Point *f1c;
+        IconScreen *f1c_IconScreenp;
+        u8 *f1c_u8p;
+        AdvisorLayout *f1c_AdvisorLayoutp;
+        PanelLayout *f1c_PanelLayoutp;
+        QueuePanel *f1c_QueuePanelp;
+        ReqLayout *f1c_ReqLayoutp;
+        ScrollLayout *f1c_ScrollLayoutp;
+        Struct_0015f410 *f1c_Struct_0015f410p;
+    };
+    union {
+        Window *f20;
+        u8 *f20_u8p;
+    };
+    union {
+        u8 *f24;
+        WindowButton *f24_WindowButtonp;
+    };
+    u8 *f28;
+    union {
+        MenuItem *f2c;
+        HelpHotspot *f2c_HelpHotspotp;
+        int *f2c_intp;
+        ManagerHelp *f2c_ManagerHelpp;
+        SlistMenuItem *f2c_SlistMenuItemp;
+    };
+    u8 unknown30[0x4];
+    union {
+        u8 *f34;
+        Point *f34_Pointp;
+    };
+    union {
+        u8 *f38;
+        Offset *f38_Offsetp;
+    };
+    union {
+        View *f3c;
+        ChoiceBox *f3c_ChoiceBoxp;
+        GraphRect *f3c_GraphRectp;
+        NetBox *f3c_NetBoxp;
+        Box *f3c_Boxp;
+        ManagerBox *f3c_ManagerBoxp;
+        PolicyRect *f3c_PolicyRectp;
+        ScreenBox *f3c_ScreenBoxp;
+        TownView *f3c_TownViewp;
+        u8 *f3c_u8p;
+    };
+    union {
+        Point *f40;
+        s32 *f40_s32p;
+    };
+    union {
+        u8 *f44;
+        SlistArea *f44_SlistAreap;
+    };
+    Button *f48;
+    u8 unknown4c[0x4];
+    union {
+        u8 *f50;
+        AreaLayout *f50_AreaLayoutp;
+        GlassFrame *f50_GlassFramep;
+        GlassScreen *f50_GlassScreenp;
+    };
+    u8 unknown54[0x4];
+    union {
+        s32 f58;
+        u32 f58_u32;
+    };
+    union {
+        s32 f5c;
+        u32 f5c_u32;
+    };
+    union {
+        s32 f60;
+        u32 f60_u32;
+    };
+    union {
+        s32 f64;
+        u32 f64_u32;
+    };
+    union {
+        s32 f68;
+        u32 f68_u32;
+    };
+    union {
+        s32 f6c;
+        u32 f6c_u32;
+    };
+};
+
+extern ResolutionInfo resvars;
+
 struct ClickArea {
     u8 unknown0[4];
     u16 w;
@@ -2195,6 +2602,9 @@ extern s16 choice_time_out;
 extern ScreenInfo choice_backup;
 extern ScreenInfo year_end_backup;
 extern NonResettingAdvisorCounts NRAdcounts;
+extern AwardCounts award_counts;
+extern Balance gbv;
+extern Advisor advisor;
 extern AdvisorCounts adcounts;
 extern ResearchTasks research_tasks[];
 extern u8 illness_abilities[][1];
@@ -2713,6 +3123,8 @@ void fn_0008493c(u8 fail, u8 active);
 #pragma aux fn_0008493c "W?swap_criteria_packets$n(uc)v"
 u16 fn_00073e64(u16 id, u32 flags);
 #pragma aux fn_00073e64 "W?find_next_emergency_person$n(us)us"
+void fn_000b4510(const u8 a, const s8 dir, const u8 level, const s16 value, u8 type);
+#pragma aux fn_000b4510 "W?set_award_value$n(xucxucxucxsuc)v"
 
 
 }

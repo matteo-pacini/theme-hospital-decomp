@@ -22,9 +22,6 @@ extern u16 D_00155e2a;
 extern u8 D_001553d4;
 extern ToDraw *D_00153fa4[32];
 extern FloorDef D_001379f0[];
-extern Offset *D_0015f42c;
-extern u8 D_0015f3f7, D_0015f3f8;
-extern TbScreenMode D_0015f3f4;
 
 void fn_0002f47c(Thing *w, s16 x, s16 y);
 void fn_0002e804(Thing *w, s16 x, s16 y);
@@ -49,8 +46,8 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     D_001567b0[2] = D_001567b0[3] = 0;
     for (id = cell->first; id > 0; id = w->next) {
         w = &thing[id];
-        screen_x = D_0015f3f4 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 0x20 : ((w->x.frac - w->y.frac) >> 4) + 0x10;
-        screen_y = D_0015f3f4 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5;
+        screen_x = resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 0x20 : ((w->x.frac - w->y.frac) >> 4) + 0x10;
+        screen_y = resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5;
         bucket = ((w->y.frac + w->x.frac) >> 4) + w->depth;
         if (node < (ToDraw *)&pixBuf) {
             node->next = D_00153fa4[bucket];
@@ -66,12 +63,12 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 
         sprite = start[((cell->flags & 0xc0) >> 6) + 625].frame;
         if (cell->flags & 0x10) {
-            LbSpriteDraw(x, D_0015f3f7 + y - blocks[cell->overlay].info->height, blocks[cell->overlay].info);
+            LbSpriteDraw(x, resvars.f3 + y - blocks[cell->overlay].info->height, blocks[cell->overlay].info);
         }
-        draw_a_frame(sprite, D_0015f3f8 / 2 + x, D_0015f3f7 / 2 + y, 0, 0);
+        draw_a_frame(sprite, resvars.f4 / 2 + x, resvars.f3 / 2 + y, 0, 0);
     }
     if (id < 0) {
-        draw_a_frame(start[blueprint[-id].anim].frame, (D_0015f3f8 >> 1) + x, (D_0015f3f7 >> 1) + y, 0,
+        draw_a_frame(start[blueprint[-id].anim].frame, (resvars.f4 >> 1) + x, (resvars.f3 >> 1) + y, 0,
             start[blueprint[-id].anim].flags);
     }
     floor = cell->floor & 0xf;
@@ -82,12 +79,12 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
         frame = start[D_001379f0[floor].anim].frame;
         palette = start[D_001379f0[floor].anim].flags;
         if (D_001379f0[floor].animated) {
-            draw_a_frame(frame, x + (D_0015f3f4 == SCREEN_MODE_13 ? 32 : 16), y + (D_0015f3f4 == SCREEN_MODE_13 ? 16 : 8), 0, palette);
+            draw_a_frame(frame, x + (resvars.f0 == SCREEN_MODE_13 ? 32 : 16), y + (resvars.f0 == SCREEN_MODE_13 ? 16 : 8), 0, palette);
         } else {
             Offset *offset;
 
-            offset = &D_0015f42c[((u16)(cell - map) * 0x2e4a4321 >> 16) & 7];
-            draw_a_frame(frame, x + D_0015f3f8 / 2 + offset->x, y + D_0015f3f7 / 2 + offset->y, 0, palette);
+            offset = &resvars.f38_Offsetp[((u16)(cell - map) * 0x2e4a4321 >> 16) & 7];
+            draw_a_frame(frame, x + resvars.f4 / 2 + offset->x, y + resvars.f3 / 2 + offset->y, 0, palette);
         }
     }
     for (i = 0; i < 32; i++) {

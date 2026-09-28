@@ -147,6 +147,8 @@ s16 person_goto_object(Thing *w)
     return 0;
 }
 
+// NONMATCHING: D_001553c6 is loaded before each fn_000cb2db call (a struct field in the target, see
+// the othervar region), and the frame slots of the switch temporaries differ
 // FUNCTION: 0x00076c44
 void person_goto_queue(Thing *w)
 {
@@ -589,7 +591,6 @@ s32 wall_in_way(u32 x, u32 y, u32 dir);
 
 extern "C" {
 extern u8 D_00155441;
-extern u16 D_0012dd7c[];
 }
 
 // FUNCTION: 0x000788d8
@@ -623,7 +624,7 @@ void peep_stuck(Thing *w)
         }
         if (w->renderer == 2) {
             w->unknown124 += 0xf;
-            if (w->unknown124 > (s16)D_0012dd7c[6]) {
+            if (w->unknown124 > gbv.f108) {
                 w->unknown124 = 0;
                 if (!(w->flags & 0x4000)) {
                     if (w->owner == player)
@@ -668,7 +669,6 @@ struct GraphRect {
 extern "C" {
 extern GraphLabel D_0015eba0[];
 extern s16 D_0015eb9c;
-extern GraphRect *D_0015f430;
 void fn_00078d70(s16 kind, s16 value, s32 data);
 void fn_00078e38(u16 gap);
 }
@@ -703,12 +703,12 @@ void fn_00078e38(u16 gap)
             below = i > 0 && D_0015eba0[i].value - D_0015eba0[i - 1].value < gap ? (u8)1 : (u8)0;
             above = i < D_0015eb9c - 1 && D_0015eba0[i + 1].value - D_0015eba0[i].value < gap ? (u8)1 : (u8)0;
             if (below && !above) {
-                if (D_0015eba0[i].value < D_0015f430[46].y)
+                if (D_0015eba0[i].value < resvars.f3c_GraphRectp[46].y)
                     D_0015eba0[i].value++;
                 moved = 1;
             }
             if (!below && above) {
-                if (D_0015eba0[i].value > D_0015f430[46].y - D_0015f430[46].h - gap)
+                if (D_0015eba0[i].value > resvars.f3c_GraphRectp[46].y - resvars.f3c_GraphRectp[46].h - gap)
                     D_0015eba0[i].value--;
                 moved = 1;
             }

@@ -1,8 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern HelpHotspot *D_0015f420;
-extern u16 D_0015536e;
 extern u16 D_00155d75;
 extern u8 D_00155d77;
 extern u8 D_00155c5e;
@@ -21,7 +19,6 @@ extern char D_0015544e[];
 extern u16 D_00188c74;
 extern u8 D_00188c85;
 extern u8 D_0012d808[];
-extern u8 D_0015831b;
 extern u8 D_00156910;
 extern u8 D_00155e1d;
 extern u8 D_00161134;
@@ -36,7 +33,6 @@ extern u16 D_0015636d[];
 extern u16 D_001563ab[];
 extern u16 D_001563bd[];
 extern u16 D_00155d89;
-extern u8 D_001547e5;
 extern Event D_001549d0[];
 extern char D_00120c50[];
 extern char D_00120c53[];
@@ -68,9 +64,9 @@ void setup_help_indices(void)
     n = 0;
     done = 0;
     while (!done) {
-        while (D_0015f420[i].x0 >= 0)
+        while (resvars.f2c_HelpHotspotp[i].x0 >= 0)
             i++;
-        if (D_0015f420[i].x0 == -2)
+        if (resvars.f2c_HelpHotspotp[i].x0 == -2)
             done = 1;
         ++i;
         ++n;
@@ -88,16 +84,16 @@ void compute_help_text(s16 x, s16 y, u8 c)
 
     dx = mouse_dx - x;
     dy = mouse_dy - y;
-    if (D_0015536e == 0x25)
+    if (gamevar.f12e == 0x25)
         return;
     if (D_00155d75) {
         if (c == D_00155d77)
             set_help_from_index(D_00155d75, x, y);
         return;
     }
-    for (i = statvar.help_start[c]; D_0015f420[i].x0 >= 0; i++) {
-        if (dx >= D_0015f420[i].x0 && dx <= D_0015f420[i].x1 && dy >= D_0015f420[i].y0
-            && dy <= D_0015f420[i].y1) {
+    for (i = statvar.help_start[c]; resvars.f2c_HelpHotspotp[i].x0 >= 0; i++) {
+        if (dx >= resvars.f2c_HelpHotspotp[i].x0 && dx <= resvars.f2c_HelpHotspotp[i].x1 && dy >= resvars.f2c_HelpHotspotp[i].y0
+            && dy <= resvars.f2c_HelpHotspotp[i].y1) {
             help_hotspot_detected(i, c, x, y);
             return;
         }
@@ -173,7 +169,7 @@ void draw_help_text(void)
     s32 bottom;
     s32 border;
 
-    if (!(D_0015544e[0] && (D_0012d808[D_0015536e] || (D_0015831b & 1))))
+    if (!(D_0015544e[0] && (D_0012d808[gamevar.f12e] || (advisor.f11f & 1))))
         return;
     set_all_refresh_zones_in_window(D_00155c4e, D_00155c50, D_00155c4e + D_00155c52 + 0xc,
         D_00155c50 + D_00155c54 + 0xc, 3);
@@ -233,7 +229,7 @@ void draw_help_text(void)
     D_00188c85 = color.unknown8;
     LbTextDraw(D_00155c4e + border, D_00155c50 + border, D_0015544e);
     D_00188c74 = 0;
-    if (D_0015536e != 0x25)
+    if (gamevar.f12e != 0x25)
         D_0015544e[0] = 0;
 }
 
@@ -369,7 +365,6 @@ void help_hotspot_detected(u16 i, u8 c, s16 x, s16 y)
     }
 }
 
-// NONMATCHING: the first D_0015f420[i] address builds i * 16 in edx; here in eax, then moved
 // FUNCTION: 0x0009ac70
 void set_help_from_index(u16 i, s16 x, s16 y)
 {
@@ -377,14 +372,14 @@ void set_help_from_index(u16 i, s16 x, s16 y)
     s16 cx;
     char *text;
 
-    cx = (D_0015f420[i].x0 + D_0015f420[i].x1) / 2 + x;
-    cy = y + D_0015f420[i].y0;
-    if (D_0015f420[i].func) {
+    cx = x + (resvars.f2c_HelpHotspotp[i].x0 + resvars.f2c_HelpHotspotp[i].x1) / 2;
+    cy = y + resvars.f2c_HelpHotspotp[i].y0;
+    if (resvars.f2c_HelpHotspotp[i].func) {
         text = D_0015544e;
-        D_0015f420[i].func();
+        resvars.f2c_HelpHotspotp[i].func();
         set_help_text(1, cx, cy, &text);
     } else {
-        set_help_text(1, cx, cy, &help_text[D_0015f420[i].text]);
+        set_help_text(1, cx, cy, &help_text[resvars.f2c_HelpHotspotp[i].text]);
     }
 }
 
@@ -397,8 +392,8 @@ void set_force_help(u8 c, u16 id)
     i = 0;
     found = 0;
     D_00155d77 = c;
-    for (i = 0; D_0015f420[i].x0 != -2; i++) {
-        if (id == D_0015f420[i].text) {
+    for (i = 0; resvars.f2c_HelpHotspotp[i].x0 != -2; i++) {
+        if (id == resvars.f2c_HelpHotspotp[i].text) {
             D_00155d75 = i;
             break;
         }
@@ -444,7 +439,7 @@ void show_help_page(u32 page, u32 sub)
         case 6:
         case 5:
         case 7:
-            if (current_net_criteria.unknown0 == 7 && D_001547e5 == 2)
+            if (current_net_criteria.unknown0 == 7 && myplayer.f21 == 2)
                 sprintf(buf, D_00160398[D_001563ab[sub]], current_net_criteria.start - D_00155d89,
                     current_net_criteria.value);
             else
@@ -492,7 +487,7 @@ void finish_composite_help(void)
     D_00161134 = 0;
     D_00156910 = 1;
     D_0015544e[0] = 0;
-    if (D_0015536e == 0x25) {
+    if (gamevar.f12e == 0x25) {
         set_mouse_mode(0);
         play_sound(10, 0x41, -1, -1);
         switch (D_00155e4a) {

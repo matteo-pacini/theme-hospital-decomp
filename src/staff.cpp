@@ -2,19 +2,9 @@
 
 extern "C" {
 extern u16 D_00155d89;
-extern u8 D_001553af;
-extern u8 D_001553b0;
-extern u8 D_001553b1;
-extern u8 D_001553b2;
-extern u8 D_001553b3;
-extern u8 D_00158329;
-extern u8 D_0015832a;
-extern u8 D_0015832b;
 extern u8 D_001553c7;
 void fn_000b05f0(Thing *w);
 void fn_000168a0(Thing *w);
-extern u16 D_0012ddd6;
-extern u16 D_0012ddd8;
 extern u8 D_00156429;
 extern u8 D_0015642a;
 extern u8 D_0015642b;
@@ -49,8 +39,6 @@ void staff_abandon_pager_response(Thing *w);
 void receptionist_reset(Thing *w);
 void remove_node(Thing *w);
 extern "C" {
-extern u8 D_00158324;
-extern s16 D_0012dd7c[];
 }
 void change_surgeon_to_doc(Thing *w);
 extern s16 staff_states[][5];
@@ -60,7 +48,6 @@ extern "C" {
 extern u16 D_001553e0;
 extern u8 D_001553e1[];
 extern s16 D_001567b0[8];
-extern u8 D_0015f3f7, D_0015f3f8;
 }
 
 // FUNCTION: 0x00029ad0
@@ -77,11 +64,11 @@ void create_job_market(void)
             gamevar.f10[1] = staff_levels[i].counts[1];
             gamevar.f10[2] = staff_levels[i].counts[2];
             gamevar.f10[3] = staff_levels[i].counts[3];
-            D_001553af = staff_levels[i].f0a[0];
-            D_001553b0 = staff_levels[i].f0a[1];
-            D_001553b1 = staff_levels[i].f0a[2];
-            D_001553b2 = staff_levels[i].f0a[3];
-            D_001553b3 = staff_levels[i].f0a[4];
+            gamevar.f16f = staff_levels[i].f0a[0];
+            gamevar.f170 = staff_levels[i].f0a[1];
+            gamevar.f171 = staff_levels[i].f0a[2];
+            gamevar.f172 = staff_levels[i].f0a[3];
+            gamevar.f173 = staff_levels[i].f0a[4];
             break;
         }
         if (staff_levels[i].month > D_00155d89) {
@@ -132,9 +119,9 @@ u16 fn_00029c4c(u16 tile, u16 id, u8 flag, u8 owner)
                     }
                 } else if (w->subtype != 2) {
                     if (w->owner == player) {
-                        D_00158329 = 1;
-                        D_0015832a = w->subtype;
-                        D_0015832b = room->type;
+                        advisor.f12d = 1;
+                        advisor.f12e = w->subtype;
+                        advisor.f12f = room->type;
                     }
                 }
             } else {
@@ -179,18 +166,10 @@ u16 fn_00029c4c(u16 tile, u16 id, u8 flag, u8 owner)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002a094
 void inc_staff_stats(Thing *w, u8 owner)
 {
-    int kind;
-
-    if (w->subtype == 4) {
-        kind = 1;
-    } else {
-        kind = w->subtype;
-    }
-    allhosps[owner].fc9e[kind]++;
+    allhosps[owner].fc9e[w->subtype == 4 ? 1 : w->subtype]++;
     if (w->unknown124 & 0x20) {
         allhosps[owner].fca6++;
     }
@@ -248,26 +227,26 @@ s16 place_staff_in_struct(u16 kind, u16 flags)
             w->f89 = staffrand() % 5 + 10;
             break;
         case 1:
-            mean = D_0012ddd6;
-            spread = D_0012ddd8;
+            mean = gbv.f156;
+            spread = gbv.f158;
             w->unknown124 |= 0x10;
-            if (D_001553af > 0 && staffrand() % D_001553af == 0) {
+            if (gamevar.f16f > 0 && staffrand() % gamevar.f16f == 0) {
                 w->unknown124 |= 0x40;
             }
-            if (D_001553b0 > 0 && staffrand() % D_001553b0 == 0) {
+            if (gamevar.f170 > 0 && staffrand() % gamevar.f170 == 0) {
                 w->unknown124 |= 0x20;
             }
-            if (D_001553b1 > 0 && staffrand() % D_001553b1 == 0) {
+            if (gamevar.f171 > 0 && staffrand() % gamevar.f171 == 0) {
                 w->unknown124 |= 0x100;
             }
-            if (D_001553b2 > 0 && staffrand() % D_001553b2 == 0) {
+            if (gamevar.f172 > 0 && staffrand() % gamevar.f172 == 0) {
                 w->unknown124 |= 0x80;
-                mean = D_0012ddd8;
+                mean = gbv.f158;
                 spread = 1000;
-            } else if (D_001553b3 > 0 && staffrand() % D_001553b3 == 0) {
+            } else if (gamevar.f173 > 0 && staffrand() % gamevar.f173 == 0) {
                 w->unknown124 |= 8;
                 mean = 30;
-                spread = D_0012ddd6;
+                spread = gbv.f156;
             }
             if (staffrand() % 100 < 53) {
                 w->f90 = 1;
@@ -477,9 +456,9 @@ void staff_in_staff_room(Thing *w)
         if (f->flags & 1) {
             if (--w->height <= 0) {
                 if (w->icon == 0x2da) {
-                    rest_staff(w, *(s16 *)&expertise[58].unknown10[4]);
+                    rest_staff(w, gbv.fdc);
                 } else {
-                    rest_staff(w, *(s16 *)&expertise[58].unknown10[2]);
+                    rest_staff(w, gbv.fda);
                 }
                 w->f8e &= ~1;
                 if (w->f8e & 8) {
@@ -684,7 +663,7 @@ void draw_staff_cursor(void)
     if (w > thing) {
         D_001567b0[0] = D_001567b0[1] = 999;
         D_001567b0[2] = D_001567b0[3] = 0;
-        draw_from_special_id_frame(start[gamevar.f73].frame, mcurx + D_0015f3f8 / 2, mcury - D_0015f3f7 / 2, remap, w->layers, start[gamevar.f73].flags);
+        draw_from_special_id_frame(start[gamevar.f73].frame, mcurx + resvars.f4 / 2, mcury - resvars.f3 / 2, remap, w->layers, start[gamevar.f73].flags);
     }
 }
 
@@ -769,9 +748,9 @@ void staff_exit_room_check(Thing *w)
 // FUNCTION: 0x0002be14
 void rest_staff(Thing *w, s16 amount)
 {
-    if (w->f78 > *(u16 *)&expertise[59].unknown10[3] / 2) {
-        if ((amount = amount * *(u16 *)&expertise[59].unknown10[3] / w->f78) < *(u16 *)&expertise[59].unknown10[5]) {
-            amount = *(u16 *)&expertise[59].unknown10[5];
+    if (w->f78 > gbv.fee / 2) {
+        if ((amount = amount * gbv.fee / w->f78) < gbv.ff0) {
+            amount = gbv.ff0;
         }
     }
     w->f78 -= amount;
@@ -800,7 +779,6 @@ void staff_picked_up(Thing *w)
     w->kind = 0x44;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002bfc8
 u32 shall_i_resign(Thing *w)
 {
@@ -809,7 +787,7 @@ u32 shall_i_resign(Thing *w)
     if (w->f8e & 0x20) {
         set_icon_value(w, 9);
         if (w->owner == player) {
-            D_00158324 |= 1;
+            advisor.f128 |= 1;
         }
         if (actual_game_turn >= w->flags32) {
             get_playercall(1, w->unknown91, w->owner);
@@ -820,7 +798,7 @@ u32 shall_i_resign(Thing *w)
     } else {
         limit = ((old_newrand() & 3) + 6) * 1500;
         if (actual_game_turn - (u16)w->unknown130 > limit) {
-            if ((s16)w->unknown128 > D_0012dd7c[7]) {
+            if ((s16)w->unknown128 > gbv.f10a) {
         w->f8e |= 0x20;
         w->f8f++;
         w->flags32 = actual_game_turn + 1500;
@@ -829,7 +807,7 @@ u32 shall_i_resign(Thing *w)
             }
         }
         if (w->f93) {
-            if ((s16)w->unknown128 > D_0012dd7c[7] / 4) {
+            if (w->unknown128s > gbv.f10a / 4) {
             w->f8e |= 0x20;
             w->flags32 = actual_game_turn + 1500;
             w->unknown91 = make_a_playercall(1, w - thing, 0, w->owner);
@@ -850,7 +828,7 @@ u16 count_emergency_staff(u8 owner)
     count = 0;
     for (w = thing + 1; w < end_things; w++) {
         if ((w->renderer == 4 && w->subtype == 1) && w->owner == owner) {
-            if (w->f78 < *(u16 *)&expertise[59].unknown5[2]) {
+            if (w->f78 < gbv.fe8) {
                 count++;
             }
         }
@@ -865,14 +843,14 @@ void calculate_speed(Thing *w)
 
     speed = 3;
     if (w->x.frac == 0x80 && w->y.frac == 0x80) {
-        if (w->f78 > *(u16 *)&expertise[59].unknown10[1]) {
+        if (w->f78 > gbv.fec) {
             speed = 1;
-        } else if (w->f78 > *(u16 *)&expertise[59].category) {
+        } else if (w->f78 > gbv.fea) {
             speed = 2;
         }
-        if (w->unknown126 >= D_0012ddd8) {
+        if (w->unknown126 >= gbv.f158) {
             speed += 30;
-        } else if (w->unknown126 > D_0012ddd6) {
+        } else if (w->unknown126 > gbv.f156) {
             speed += 20;
         } else {
             speed += 10;
@@ -1118,22 +1096,22 @@ void training_builder(u8 level)
     for (m = map; m < end_map; m++) {
         if (m->unknown7 == 1 << player) {
             if (lvl->staff_max > count && saferand() % lvl->staff_chance == 0) {
-                D_001553b2 = 1;
-                D_001553af = 1;
-                D_001553b0 = 0;
-                D_001553b1 = 0;
+                gamevar.f172 = 1;
+                gamevar.f16f = 1;
+                gamevar.f170 = 0;
+                gamevar.f171 = 0;
                 id = place_staff_in_struct(1, 0);
                 if (id) {
                     fn_00029c4c(m - map, id, 0, player);
                 }
-                D_001553af = 0;
-                D_001553b0 = 1;
+                gamevar.f16f = 0;
+                gamevar.f170 = 1;
                 id = place_staff_in_struct(1, 0);
                 if (id) {
                     fn_00029c4c(m - map, id, 0, player);
                 }
-                D_001553b0 = 0;
-                D_001553b1 = 1;
+                gamevar.f170 = 0;
+                gamevar.f171 = 1;
                 id = place_staff_in_struct(1, 0);
                 if (id) {
                     fn_00029c4c(m - map, id, 0, player);

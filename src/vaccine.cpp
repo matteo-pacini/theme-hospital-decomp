@@ -3,7 +3,6 @@
 extern "C" {
 extern u16 D_001553f9;
 extern u16 D_00155432;
-extern u16 D_0012dda6;
 }
 
 u8 is_person_in_vaccine_queue(Thing *w);
@@ -140,7 +139,7 @@ void nurse_vaccinates(Thing *w)
         set_icon_value(p, 0x10);
         if ((s8)p->unknown174 > 0)
             p->unknown174 = 0xff;
-        change_balance(0x1d, -D_0012dda6, 0, p->owner);
+        change_balance(0x1d, -gbv.f126, 0, p->owner);
     } else {
         u16 pos = can_i_go_near_point(w, p->x.tile + (p->y.tile << 7));
         if (pos && !(map[pos].unknown7 & 0x10)) {

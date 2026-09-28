@@ -9,16 +9,8 @@ struct Slot {
     u8 unknown7[0x4];
 };
 
-struct Box {
-    s32 x;
-    s32 y;
-    s32 w;
-    s32 h;
-};
-
 extern "C" {
 extern Slot D_001581b2[];
-extern u8 *D_0015f402;
 extern Event D_001549d0[];
 extern char D_00155ced[];
 extern char **D_0016029c;
@@ -37,9 +29,6 @@ extern u8 D_00155e19;
 extern u8 D_00155434;
 extern u8 D_00155435;
 extern u16 D_00155436;
-extern u16 *D_0015f406;
-extern Box *D_0015f40c;
-extern Point *D_0015f410;
 }
 
 u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
@@ -56,15 +45,15 @@ void req5(Window *win)
     for (i = 1; b; b = b->next) {
         if (b->flags & 6) {
             debug.unknown4 = i;
-            if (i == D_0015f402[0x12]) {
+            if (i == resvars.fe[0x12]) {
                 D_001549d0[player].type = 0x43;
                 D_001549d0[player].value = 3;
                 play_sound(10, 0x42, -1, -1);
-            } else if (i == D_0015f402[0x13]) {
+            } else if (i == resvars.fe[0x13]) {
                 D_001549d0[player].type = 0x76;
                 D_001549d0[player].value = D_001581b2[3].value;
                 play_sound(10, 0x43, -1, -1);
-            } else if (i == D_0015f402[0x14]) {
+            } else if (i == resvars.fe[0x14]) {
                 u8 kind;
 
                 kind = thing[D_001581b2[3].value].subtype;
@@ -106,10 +95,10 @@ void req5_overdraw(Window *win)
         LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
         if (is_thing_paged(&allhosps[player].ff6d, D_001581b2[3].value)) {
             sprintf(buf, D_00120788, D_0016029c[w->subtype]);
-            LbTextDraw(x + D_0015f410[0x61].x, y + D_0015f410[0x61].y, buf);
+            LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
         } else {
             sprintf(buf, D_0012078d, D_0016029c[w->subtype]);
-            LbTextDraw(x + D_0015f410[0x61].x, y + D_0015f410[0x61].y, buf);
+            LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
         }
         {
             RoomInfo *room;
@@ -119,7 +108,7 @@ void req5_overdraw(Window *win)
             if (room > room_info) {
                 count = room->count;
                 sprintf(buf, D_00120790, count);
-                LbTextDraw(x + D_0015f410[0x62].x, y + D_0015f410[0x62].y, buf);
+                LbTextDraw(x + resvars.f1c[0x62].x, y + resvars.f1c[0x62].y, buf);
             }
             pct = (max - age) * 100 / max;
             req5_draw_machine_usage_bar(x, y, pct, 100);
@@ -127,15 +116,15 @@ void req5_overdraw(Window *win)
         LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
         set_font_from_cache(0);
         if (D_00188c7e) {
-            if (over_hotspot(mouse_dx, mouse_dy, x + D_0015f40c[0x54].x, y + D_0015f40c[0x54].y, D_0015f40c[0x54].w,
-                             D_0015f40c[0x54].h)) {
+            if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18[0x54].x, y + resvars.f18[0x54].y, resvars.f18[0x54].w,
+                             resvars.f18[0x54].h)) {
                 D_001553f0 = 3;
                 D_001553c8 = 1;
             }
         }
         if (D_00188c7f && !D_00155e19) {
-            if (over_hotspot(mouse_dx, mouse_dy, x + D_0015f40c[0x54].x, y + D_0015f40c[0x54].y, D_0015f40c[0x54].w,
-                             D_0015f40c[0x54].h)) {
+            if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18[0x54].x, y + resvars.f18[0x54].y, resvars.f18[0x54].w,
+                             resvars.f18[0x54].h)) {
                 D_001581b2[3].value = find_next_thing(w, 6, -1, -1);
                 D_001553f0 = 3;
                 D_001553c8 = 1;
@@ -157,8 +146,8 @@ void req5_draw_machine_usage_bar(long x, long y, long used, long total)
 {
     s32 i;
 
-    for (i = (used << 16) / ((total << 16) / D_0015f40c[0x53].w) - 1; i >= 0; i--)
-        reqspr_draw(x + D_0015f40c[0x53].x + i, y + D_0015f40c[0x53].y, &button_sprite[D_0015f406[4]]);
+    for (i = (used << 16) / ((total << 16) / resvars.f18[0x53].w) - 1; i >= 0; i--)
+        reqspr_draw(x + resvars.f18[0x53].x + i, y + resvars.f18[0x53].y, &button_sprite[resvars.f12[4]]);
 }
 
 // FUNCTION: 0x00088918

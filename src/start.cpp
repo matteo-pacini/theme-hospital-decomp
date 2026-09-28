@@ -4,8 +4,6 @@ extern "C" {
 extern char **D_001602a0;
 extern u8 D_00155e2d;
 extern u8 D_001553b8[];
-extern u8 D_001581fc[];
-extern u8 D_001553b4;
 extern u8 D_001553c8;
 extern u8 D_001553eb;
 extern char D_0012096c[];
@@ -25,9 +23,6 @@ extern char D_001209b2[];
 extern u16 D_0012b8c8[];
 extern u16 D_0012b8e4[];
 extern u16 D_00154834[];
-extern u16 D_0012ddd4;
-extern u8 D_0015538b[];
-extern u8 D_0015539b[];
 extern u8 D_00155e23;
 
 u32 fn_000cd716(char *s);
@@ -94,7 +89,7 @@ void fn_00090804(int level, u8 flag)
     LbMemorySet(&adcounts, 0, 0xa6);
     LbMemorySet(&NRAdcounts, 0, 0x11);
     if ((u16)level != 1)
-        LbMemorySet(D_001581fc, 0, 0x133);
+        LbMemorySet(advisor.f0_u8a, 0, 0x133);
     D_00155e2d = saved;
     for (i = 0; i < 9; i++)
         popup_id[i] = 1;
@@ -108,7 +103,7 @@ void fn_00090804(int level, u8 flag)
     free_level();
     clear_sound_heap();
     if (towns[myhosp->f29].unknown4[2] == 1) {
-        D_001553b4 = 1;
+        gamevar.f174 = 1;
         setup_rat_fest_panel();
         rat_fest_builder(towns[myhosp->f29].unknown4[1]);
     } else if (towns[myhosp->f29].unknown4[2] == 2) {
@@ -279,9 +274,9 @@ void init_player(u8 p)
     if (myhosp->f29 == 1 || statvar.unknownfd > 1 || h->f2d == 0)
         h->f2d = 10000;
     for (i = 0; i < 16; i++)
-        D_0015538b[i] = 0;
+        gamevar.f14b[i] = 0;
     for (i = 0; i < 20; i++)
-        D_0015539b[i] = 0;
+        gamevar.f15b[i] = 0;
     if (statvar.unknownfd > 1)
         h->f1cb = 100 / network_num_players();
     else
@@ -289,14 +284,14 @@ void init_player(u8 p)
     h->f217 = 1000;
     h->f219 = 90;
     h->f21b = 10;
-    h->f21d = *(u16 *)&expertise[59].unknown7;
+    h->f21d = gbv.fe8;
     h->f21f = 1;
     h->f216 = 7;
     h->unknown20f[6] = 1;
-    if (!(!D_0012ddd4 || statvar.unknownfd > 1 || D_001553b4)) {
+    if (!(!gbv.f154 || statvar.unknownfd > 1 || gamevar.f174)) {
         if (statvar.unknownfd <= 1)
             h->unknown1256 = 0;
-        h->unknown1257 = D_0012ddd4;
+        h->unknown1257 = gbv.f154;
     } else {
         if (statvar.unknownfd <= 1)
             h->unknown1256 = 1;

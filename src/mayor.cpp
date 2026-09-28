@@ -3,10 +3,6 @@
 extern "C" {
 extern u8 D_00156910;
 extern s16 D_001553b8;
-extern u16 D_0012dda8;
-extern u16 D_001581fe;
-extern s32 D_0015f8d6;
-extern u8 D_0015f8da;
 extern u8 D_001553c7;
 extern u8 D_00158192;
 extern char D_00121adc[];
@@ -79,7 +75,7 @@ void generate_mayors(void)
             if (&thing[listhead[i].objects[11]] > thing) {
                 h = &allhosps[i];
                 h->f1ff++;
-                if ((s16)h->f1ff >= D_0012dda8) {
+                if ((s16)h->f1ff >= gbv.f128) {
                     u8 r;
                     r = old_newrand() % 11;
                     h->f1f9 = r;
@@ -102,7 +98,7 @@ void generate_mayors(void)
                     if (h->f1f7) {}
                     h->f1fa = 3;
                     if (i == player) {
-                        D_001581fe = 8;
+                        advisor.f2 = 8;
                         if (h->f1f9 >= 0 && h->f1f9 < 6)
                             play_ambient(h->f1f9 + 0xb7);
                     }
@@ -251,9 +247,9 @@ u8 mayor_judges_hospital(u8 owner)
         --score;
     if (h->fc9c > 2) {
         avg = sum / h->fc9c;
-        if (*(u16 *)((u8 *)expertise + 0x46a) < max)
+        if (gbv.fea < max)
             score += 2;
-        else if (*(u16 *)((u8 *)expertise + 0x468) < avg)
+        else if (gbv.fe8 < avg)
             ++score;
         else
             --score;
@@ -292,8 +288,8 @@ u8 mayor_judges_hospital(u8 owner)
         ++score;
     score += 2 - old_normal_rand(0, 5);
     if (owner == player) {
-        D_0015f8d6 += score;
-        D_0015f8da++;
+        award_counts.f13a += score;
+        award_counts.f13e++;
     }
     {
         int i;

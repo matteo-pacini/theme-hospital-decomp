@@ -35,22 +35,8 @@ struct AdvisorLayout {
 };
 
 extern "C" {
-extern char D_0015820c[];
-extern u8 D_0015831e;
-extern u8 D_0015831f;
-extern u8 D_00158320;
-extern s16 D_00158321;
 extern u8 D_00161230;
-extern u8 D_0015f40a;
-extern u8 D_0015f40b;
-extern AdvisorLayout *D_0015f410;
 extern u16 D_00188c74;
-extern u16 D_001581fc;
-extern u8 D_0015831a;
-extern u16 D_00158202;
-extern s16 D_00158204;
-extern s16 D_00158206;
-extern u8 D_00158328;
 extern u8 D_00156910;
 extern u16 D_0012cdd0[];
 extern u16 D_0012cdd4[];
@@ -65,40 +51,41 @@ extern const u16 advisor_anims[];
 
 void get_advisor(void);
 
-// NONMATCHING: register choice
+// NONMATCHING: the LbTextDraw x argument widens advisor.f123 and resvars.f16 with xor ah,ah /
+// xor dh,dh (16-bit) in the target, with xor eax,eax / xor edx,edx here
 // FUNCTION: 0x000b1e10
 void advisor_text_box(void)
 {
     u32 i;
     s32 y;
 
-    if (D_0015820c[0]) {
+    if (advisor.f10[0]) {
         set_font_from_cache(0x1d);
-        if (D_00158320)
+        if (advisor.f124)
             fn_000b2124();
-        if (D_0015831e == 3)
-            y = D_0015f410->f4b4;
-        else if (D_0015831e == 2)
-            y = D_0015f410->f4bc;
-        else if (D_0015831e == 1)
-            y = D_0015f410->f4c4;
-        if (D_00161230 <= D_0015f40b) {
-            reqspr_draw(D_0015f410->f4f0, D_0015f410->f4f4, &game_panel[39]);
-            reqspr_draw(D_0015f410->f4f0 - game_panel[37].width - (D_0015831f + D_0015f40a) * game_panel[38].width,
-                        D_0015f410->f49c, &game_panel[37]);
-            for (i = 0; i < D_0015f40a + D_0015831f; i++)
-                reqspr_draw(D_0015f410->f4f0 - game_panel[38].width * (D_0015831f + D_0015f40a - i), D_0015f410->f49c,
+        if (advisor.f122 == 3)
+            y = resvars.f1c_AdvisorLayoutp->f4b4;
+        else if (advisor.f122 == 2)
+            y = resvars.f1c_AdvisorLayoutp->f4bc;
+        else if (advisor.f122 == 1)
+            y = resvars.f1c_AdvisorLayoutp->f4c4;
+        if (D_00161230 <= resvars.f17) {
+            reqspr_draw(resvars.f1c_AdvisorLayoutp->f4f0, resvars.f1c_AdvisorLayoutp->f4f4, &game_panel[39]);
+            reqspr_draw(resvars.f1c_AdvisorLayoutp->f4f0 - game_panel[37].width - (advisor.f123 + resvars.f16) * game_panel[38].width,
+                        resvars.f1c_AdvisorLayoutp->f49c, &game_panel[37]);
+            for (i = 0; i < resvars.f16 + advisor.f123; i++)
+                reqspr_draw(resvars.f1c_AdvisorLayoutp->f4f0 - (advisor.f123 + resvars.f16 - i) * game_panel[38].width, resvars.f1c_AdvisorLayoutp->f49c,
                             &game_panel[38]);
             set_all_refresh_zones_in_window(
-                D_0015f410->f4f0 - game_panel[38].width * (D_0015831f + D_0015f40a + 1) - game_panel[39].width,
-                D_0015f410->f4f4, D_0015f410->f4f0 + game_panel[39].width, D_0015f410->f4f4 + game_panel[39].height, 3);
-            D_00158321 = D_0015f410->f4f0 - game_panel[38].width * (D_0015831f + D_0015f40a + 1) - game_panel[39].width;
+                resvars.f1c_AdvisorLayoutp->f4f0 - (advisor.f123 + resvars.f16 + 1) * game_panel[38].width - game_panel[39].width,
+                resvars.f1c_AdvisorLayoutp->f4f4, resvars.f1c_AdvisorLayoutp->f4f0 + game_panel[39].width, resvars.f1c_AdvisorLayoutp->f4f4 + game_panel[39].height, 3);
+            advisor.f125 = resvars.f1c_AdvisorLayoutp->f4f0 - game_panel[38].width * (advisor.f123 + resvars.f16 + 1) - game_panel[39].width;
             LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
             LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
             D_00188c74 = 0;
-            LbTextDraw(D_0015f410->f4f0 - (D_0015831f + D_0015f40a) * game_panel[38].width + D_0015f410->f4c8
+            LbTextDraw(resvars.f1c_AdvisorLayoutp->f4f0 - (advisor.f123 + resvars.f16) * game_panel[38].width + resvars.f1c_AdvisorLayoutp->f4c8
                            - game_panel[37].width,
-                       y, D_0015820c);
+                       y, advisor.f10);
         }
     }
 }
@@ -106,12 +93,12 @@ void advisor_text_box(void)
 // FUNCTION: 0x000b2124
 void fn_000b2124(void)
 {
-    D_00161230 = D_0015f40a;
+    D_00161230 = resvars.f16;
     do {
         fn_000b2178(D_00161230);
         D_00161230++;
-    } while (D_00161230 <= D_0015f40b && !D_0015831e);
-    D_00158320 = 0;
+    } while (D_00161230 <= resvars.f17 && !advisor.f122);
+    advisor.f124 = 0;
 }
 
 // FUNCTION: 0x000b2178
@@ -127,13 +114,13 @@ void fn_000b2178(u8 n)
     char *brk;
     char *start;
 
-    max = n * D_0015f410->f4d8 + D_0015f410->f4e8 + D_0015f410->f4e0 - D_0015f410->f4c8 - D_0015f410->f4d0;
+    max = n * resvars.f1c_AdvisorLayoutp->f4d8 + resvars.f1c_AdvisorLayoutp->f4e8 + resvars.f1c_AdvisorLayoutp->f4e0 - resvars.f1c_AdvisorLayoutp->f4c8 - resvars.f1c_AdvisorLayoutp->f4d0;
     width = 0;
     lines = 0;
     out = buf2;
     LbMemorySet(buf1, 0, 0x118);
     LbMemorySet(buf2, 0, 0x10e);
-    fn_000bbff0(buf1, D_0015820c);
+    fn_000bbff0(buf1, advisor.f10);
     p = buf1;
     brk = buf1;
     start = buf1;
@@ -163,12 +150,12 @@ void fn_000b2178(u8 n)
         }
     } while (lines < 3 && *p != '\0');
     if (!*p) {
-        fn_000bbff0(D_0015820c, buf2);
+        fn_000bbff0(advisor.f10, buf2);
         if (lines < 3)
-            D_0015831e = lines;
+            advisor.f122 = lines;
         else
-            D_0015831e = lines;
-        D_0015831f = n - D_0015f40a;
+            advisor.f122 = lines;
+        advisor.f123 = n - resvars.f16;
     }
 }
 
@@ -180,9 +167,9 @@ void advisor_character(void)
     u32 speed;
 
     speed = 0;
-    if (D_001581fc)
+    if (advisor.f0_u16)
         get_advisor();
-    switch (D_0015831a) {
+    switch (advisor.f11e) {
     case 0:
         break;
     case 1:
@@ -193,7 +180,7 @@ void advisor_character(void)
         D_00156910 = 1;
         speed = 1;
         loop = 1;
-        D_00158328 = 0;
+        advisor.f12c = 0;
         break;
     case 9:
     case 10:
@@ -201,11 +188,11 @@ void advisor_character(void)
         loop = 1;
         break;
     case 2:
-        D_00158328 = 0;
+        advisor.f12c = 0;
     case 3:
         if (saferand() % 50 == 0) {
-            D_0015831a = D_0012cdd0[saferand() % 2];
-            D_00158202 = start[advisor_anims[D_0015831a + 1]].frame;
+            advisor.f11e = D_0012cdd0[saferand() % 2];
+            advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
         }
     case 7:
         speed = 2;
@@ -213,14 +200,14 @@ void advisor_character(void)
         break;
     }
     if (speed) {
-        draw_a_frame(D_00158202, D_00158204, D_00158206, 0, 0);
+        draw_a_frame(advisor.f6, advisor.f8, advisor.fa, 0, 0);
         set_all_refresh_zones_in_window(D_001567b0.x, D_001567b0.y, D_001567b0.x + D_001567b0.w, D_001567b0.y + D_001567b0.h, 3);
         if (actual_game_turn % speed == 0 && !gamevar.unknown21) {
-            D_00158202 = frame[D_00158202].next;
-            f = &frame[D_00158202];
+            advisor.f6 = frame[advisor.f6].next;
+            f = &frame[advisor.f6];
             if (loop && (f->flags & 1)) {
-                D_0015831a = D_0012cdd4[D_0015831a];
-                D_00158202 = start[advisor_anims[D_0015831a + 1]].frame;
+                advisor.f11e = D_0012cdd4[advisor.f11e];
+                advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
             }
         }
     }
@@ -229,8 +216,8 @@ void advisor_character(void)
 // FUNCTION: 0x000b2678
 void get_advisor(void)
 {
-    if (D_0015831a == 0) {
-        D_0015831a = 1;
-        D_00158202 = start[advisor_anims[D_0015831a + 1]].frame;
+    if (advisor.f11e == 0) {
+        advisor.f11e = 1;
+        advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
     }
 }

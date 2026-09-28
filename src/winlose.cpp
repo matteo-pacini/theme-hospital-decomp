@@ -1,12 +1,5 @@
 #include "hosp.h"
 
-struct Box {
-    s32 x;
-    s32 y;
-    s32 w;
-    s32 h;
-};
-
 extern s32 current_frame;
 extern char *text1;
 extern s16 text_ofs;
@@ -36,13 +29,9 @@ extern u8 D_00155e2d;
 extern u8 D_00155e2e;
 extern u8 D_00155d71;
 extern u8 D_00155d72;
-extern u8 D_001553b6;
-extern TbScreenMode D_0015f3f5;
 extern u8 *D_00153f34;
 extern s32 D_0015542c;
 extern char D_0015544e[];
-extern Box *D_0015f430;
-extern Point *D_0015f434;
 extern Event D_001549d0[];
 extern char **D_0016031c;
 extern char **D_00160320;
@@ -224,17 +213,17 @@ void play_winlose(void)
         if (level_number != 0xc) {
             safeseed = time(0);
             pick = saferand() % 4;
-            if (D_001553b6 % 2 == 1)
+            if (gamevar.f176 % 2 == 1)
                 pick += 4;
             concat_composite(D_0015544e, &D_00160320[D_00156393[pick]]);
             sprintf(buf, D_0015544e, myhosp, D_0015542c, D_001602c4[level_number + 1]);
-            letter_format_text(D_0015544e, buf, D_0015f430[0xae].w);
+            letter_format_text(D_0015544e, buf, resvars.f3c_Boxp[0xae].w);
             D_00188c81 = 0;
         } else {
             pick = saferand() % 4 + 8;
             concat_composite(D_0015544e, &D_00160320[D_00156393[pick]]);
             sprintf(buf, D_0015544e, myhosp, D_0015542c);
-            letter_format_text(D_0015544e, buf, D_0015f430[0xae].w);
+            letter_format_text(D_0015544e, buf, resvars.f3c_Boxp[0xae].w);
             D_00188c81 = 0;
         }
         break;
@@ -252,17 +241,17 @@ void play_winlose(void)
         break;
     case 5:
         LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        reqspr_draw(D_0015f434[0xcf].x, D_0015f434[0xcf].y, &screen_sprites_tab_start[1]);
-        reqspr_draw(D_0015f434[0xd0].x, D_0015f434[0xd0].y, &screen_sprites_tab_start[3]);
-        if (over_hotspot(mouse_dx, mouse_dy, D_0015f434[0xcf].x, D_0015f434[0xcf].y, screen_sprites_tab_start[1].width,
+        reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[1]);
+        reqspr_draw(resvars.f40[0xd0].x, resvars.f40[0xd0].y, &screen_sprites_tab_start[3]);
+        if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xcf].x, resvars.f40[0xcf].y, screen_sprites_tab_start[1].width,
                 screen_sprites_tab_start[1].height))
-            reqspr_draw(D_0015f434[0xcf].x, D_0015f434[0xcf].y, &screen_sprites_tab_start[2]);
-        if (over_hotspot(mouse_dx, mouse_dy, D_0015f434[0xd0].x, D_0015f434[0xd0].y, screen_sprites_tab_start[1].width,
+            reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[2]);
+        if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xd0].x, resvars.f40[0xd0].y, screen_sprites_tab_start[1].width,
                 screen_sprites_tab_start[1].height))
-            reqspr_draw(D_0015f434[0xd0].x, D_0015f434[0xd0].y, &screen_sprites_tab_start[4]);
+            reqspr_draw(resvars.f40[0xd0].x, resvars.f40[0xd0].y, &screen_sprites_tab_start[4]);
         if (!--text_delay) {
-            LbTextSetJustifyWindow(D_0015f430[0xae].x, D_0015f430[0xae].y, D_0015f430[0xae].w + 0x64);
-            LbTextSetClipWindow(D_0015f430[0xae].x, 0, D_0015f430[0xae].w, D_00188c34);
+            LbTextSetJustifyWindow(resvars.f3c_Boxp[0xae].x, resvars.f3c_Boxp[0xae].y, resvars.f3c_Boxp[0xae].w + 0x64);
+            LbTextSetClipWindow(resvars.f3c_Boxp[0xae].x, 0, resvars.f3c_Boxp[0xae].w, D_00188c34);
             set_font_from_cache(0x17);
             D_00188c74 |= 0x20;
             yofs_text = 0;
@@ -280,13 +269,13 @@ void play_winlose(void)
             }
         }
         if (D_00188c7b) {
-            if (over_hotspot(mouse_dx, mouse_dy, D_0015f434[0xcf].x, D_0015f434[0xcf].y,
+            if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
                     screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
                 if (level_number != 0xc) {
                     D_001549d0[player].type = 0x38;
                     area.unknown2 = 0;
                     level_number++;
-                    if (D_00155e2e && D_0015f3f5 == SCREEN_MODE_13) {
+                    if (D_00155e2e && resvars.f1 == SCREEN_MODE_13) {
                         D_00155e2d = level_number;
                         level_number = D_00155e2e;
                         D_00155e2e = 0;
@@ -308,9 +297,9 @@ void play_winlose(void)
                     display_mode = 2;
                     quit_game = 0;
                 }
-            } else if (over_hotspot(mouse_dx, mouse_dy, D_0015f434[0xd0].x, D_0015f434[0xd0].y,
+            } else if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xd0].x, resvars.f40[0xd0].y,
                            screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
-                D_001553b6++;
+                gamevar.f176++;
                 D_00155e17 = 1;
                 D_00155e2e = 0;
                 pick = display_loading_screen();
@@ -346,7 +335,7 @@ void play_winlose(void)
         pick = saferand() % 4 + 8;
         concat_composite(D_0015544e, &D_00160320[D_00156393[pick]]);
         sprintf(buf, D_0015544e, myhosp, 100000);
-        letter_format_text(D_0015544e, buf, D_0015f430[0xae].w);
+        letter_format_text(D_0015544e, buf, resvars.f3c_Boxp[0xae].w);
         D_00188c7b = 0;
         D_00188c81 = 0;
         if (had_screen)
@@ -355,13 +344,13 @@ void play_winlose(void)
             while (fn_000bed50() != 1)
                 ;
             LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-            reqspr_draw(D_0015f434[0xcf].x, D_0015f434[0xcf].y, &screen_sprites_tab_start[1]);
-            if (over_hotspot(mouse_dx, mouse_dy, D_0015f434[0xcf].x, D_0015f434[0xcf].y,
+            reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[1]);
+            if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
                     screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height))
-                reqspr_draw(D_0015f434[0xcf].x, D_0015f434[0xcf].y, &screen_sprites_tab_start[2]);
+                reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[2]);
             if (!--text_delay) {
-                LbTextSetJustifyWindow(D_0015f430[0xae].x, D_0015f430[0xae].y, D_0015f430[0xae].w + 0x64);
-                LbTextSetClipWindow(D_0015f430[0xae].x, 0, D_0015f430[0xae].w, D_00188c34);
+                LbTextSetJustifyWindow(resvars.f3c_Boxp[0xae].x, resvars.f3c_Boxp[0xae].y, resvars.f3c_Boxp[0xae].w + 0x64);
+                LbTextSetClipWindow(resvars.f3c_Boxp[0xae].x, 0, resvars.f3c_Boxp[0xae].w, D_00188c34);
                 set_font_from_cache(0x17);
                 D_00188c74 |= 0x20;
                 yofs_text = 0;
@@ -379,7 +368,7 @@ void play_winlose(void)
                 }
             }
             if (D_00188c7b) {
-                if (over_hotspot(mouse_dx, mouse_dy, D_0015f434[0xcf].x, D_0015f434[0xcf].y,
+                if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
                         screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
                     set_mouse_mode(9);
                     clear_loading_screen(0);

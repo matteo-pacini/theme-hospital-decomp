@@ -5,12 +5,6 @@ struct Settings {
     TbScreenMode mode;
 };
 
-struct Announcement {
-    u8 unknown0[3];
-    s8 unknown3;
-    u8 unknown4;
-};
-
 extern "C" {
 
 extern char D_00120174[];
@@ -20,10 +14,7 @@ extern Settings D_001553e1;
 extern u8 D_0012d8d8[];
 extern u32 D_001606bc;
 extern u16 D_0015542a;
-extern TbScreenMode D_0015f3f4;
 extern u8 D_00155e39;
-extern u8 D_0015536d;
-extern u8 D_00155378, D_00155379;
 extern u8 D_00155c68;
 extern u16 D_00155e1b;
 extern u8 *D_001553d7;
@@ -31,12 +22,10 @@ extern u8 D_001553db;
 extern u8 *D_001553dc;
 extern u8 D_00155e14, D_00155e15, D_00155e16;
 extern u8 D_00155d70;
-extern u16 D_0015536e;
 extern u8 D_00155e4c;
 extern u8 D_0015f99f;
 extern u8 D_001553c8;
 extern u16 D_00155e2a;
-extern s16 D_001547e0[2];
 extern u8 D_001553ea;
 extern u8 D_001553b8[];
 extern u8 D_001553c6, D_001553e7;
@@ -44,13 +33,10 @@ extern u16 D_0015543a, D_0015543c;
 extern u8 D_0015543e;
 extern s16 D_00155c64[2];
 extern u8 D_0012b7c8[];
-extern u8 D_0015831b;
-extern Announcement D_0015532d;
 extern Event D_001549d0[];
 extern u8 *D_00153f34;
 extern u8 D_00155e1d;
 extern u8 D_001553e8;
-extern View *D_0015f430;
 extern u16 D_00188c74;
 extern u32 D_00188c38;
 extern u8 D_00156910;
@@ -273,7 +259,7 @@ void game(void)
             LbMouseRemove();
         }
         limit_framerate();
-        if ((display_mode == 0 || display_mode == 11) && D_0015f3f4 == SCREEN_MODE_13 && D_00155e39 == 0) {
+        if ((display_mode == 0 || display_mode == 11) && resvars.f0 == SCREEN_MODE_13 && D_00155e39 == 0) {
             special_refresh();
         } else {
             if (D_00155e39) {
@@ -281,10 +267,10 @@ void game(void)
             }
             LbScreenSwap();
         }
-        if (redraw && !gamevar.unknown21 && D_0015536d == 0 && frame && quit_game != 1) {
+        if (redraw && !gamevar.unknown21 && gamevar.f12d == 0 && frame && quit_game != 1) {
             process_things(thing + 1, end_things);
             process_blueprint_zones();
-            if (D_00155379 || D_00155c68 || D_00155e1b) {
+            if (gamevar.f139 || D_00155c68 || D_00155e1b) {
                 for (i = 0; D_00155e1b + 2 > i; i++) {
                     process_things(thing + 1, end_things);
                     process_blueprint_zones();
@@ -311,8 +297,8 @@ void game(void)
             setup_colors();
         }
         if (D_00155e14 || D_00155e15 || D_00155e16) {
-            if (display_mode == 0 && crequester.unknown2 == 0x63 && D_00155d70 == 0 && D_0015536e != 0x25 && !D_00155e4c
-                && D_0015536e != 3) {
+            if (display_mode == 0 && crequester.unknown2 == 0x63 && D_00155d70 == 0 && gamevar.f12e != 0x25 && !D_00155e4c
+                && gamevar.f12e != 3) {
                 display_mission();
             }
         }
@@ -372,15 +358,15 @@ void start_turn(void)
     now = LbTimerClock();
     game_turn++;
     D_00155e2a = 0;
-    if (D_00155378) {
-        D_001547e0[1] = 0x7d00;
+    if (gamevar.f138) {
+        myplayer.f1es = 0x7d00;
     }
-    if (now - gamecounts.unknown14 < 1000 / D_001547e0[1] && D_00155c68 == 0 && statvar.unknownfd <= 1) {
-        D_0015536d = 1;
+    if (now - gamecounts.unknown14 < 1000 / myplayer.f1es && D_00155c68 == 0 && statvar.unknownfd <= 1) {
+        gamevar.f12d = 1;
         return;
     }
     gamecounts.unknown14 = now;
-    D_0015536d = 0;
+    gamevar.f12d = 0;
     if (gamevar.unknown21) {
         return;
     }
@@ -390,7 +376,7 @@ void start_turn(void)
     D_001553c6 = old_newrand() % 6;
     D_001553e7 = (old_newrand() & 3) + 1;
     D_0015543a = actual_game_turn;
-    D_0015543c = actual_game_turn + *(u16 *)((u8 *)expertise + 0x464);
+    D_0015543c = actual_game_turn + gbv.fe4;
     D_0015543e = (actual_game_turn & 0x1f) == 0;
     if (D_00155c64[1] > 0) {
         D_00155c64[1]--;
@@ -419,7 +405,7 @@ void start_turn(void)
         }
         allhosps[i].unknown11ee = allhosps[i].unknown11f0;
         allhosps[i].unknown11f0 = 0;
-        if ((statvar.unknownfd > 1 ? 1 : allhosps[i].unknown1256) != 0 || (D_0015831b & 1)) {
+        if ((statvar.unknownfd > 1 ? 1 : allhosps[i].unknown1256) != 0 || (advisor.f11f & 1)) {
             continue;
         }
         allhosps[i].unknown1257--;
@@ -435,13 +421,13 @@ void start_turn(void)
         }
     }
     compute_whether_user_not_busy();
-    if (D_0015532d.unknown3) {
-        earthquake(D_0015532d.unknown3, D_0015532d.unknown4);
+    if (gamevar.ff0s) {
+        earthquake(gamevar.ff0s, gamevar.ff1);
     }
     obj = &room_info[allhosps[player].unknown11b7];
     if (obj > room_info) {
         if (obj->f22 && fn_00029a54(&room_info[allhosps[player].unknown11b7])) {
-            if (D_0015536e == 0xe) {
+            if (gamevar.f12e == 0xe) {
                 if (room_info[allhosps[player].unknown11b7].first == 0) {
                     D_001549d0[player].type = 0x83;
                 }
@@ -471,10 +457,10 @@ u8 change_res(TbScreenMode mode)
     s32 width = mouse_dx;
     s32 height = mouse_dy;
 
-    if (D_0015f3f4 == SCREEN_MODE_13 && mode != SCREEN_MODE_13) {
+    if (resvars.f0 == SCREEN_MODE_13 && mode != SCREEN_MODE_13) {
         width = width / 2;
         height = height * 5 / 12;
-    } else if (D_0015f3f4 != SCREEN_MODE_13 && mode == SCREEN_MODE_13) {
+    } else if (resvars.f0 != SCREEN_MODE_13 && mode == SCREEN_MODE_13) {
         width <<= 1;
         height = height * 12 / 5;
     }
@@ -511,8 +497,8 @@ void do_charts(void)
         display_research();
         break;
     case 4:
-        draw_graphs((u16)D_0015f430->unknown2e0, (u16)D_0015f430->unknown2e4, (u16)D_0015f430->unknown2ec,
-                    (u16)D_0015f430->unknown2e8);
+        draw_graphs((u16)resvars.f3c->unknown2e0, (u16)resvars.f3c->unknown2e4, (u16)resvars.f3c->unknown2ec,
+                    (u16)resvars.f3c->unknown2e8);
         break;
     case 5:
         display_slist();
@@ -651,7 +637,7 @@ u8 process_lost_focus_display(u8 flag)
 // FUNCTION: 0x000125b8
 void display_mission(void)
 {
-    if (D_0015831b & 1) {
+    if (advisor.f11f & 1) {
         return;
     }
     D_00188c7b = D_00188c7c = 0;

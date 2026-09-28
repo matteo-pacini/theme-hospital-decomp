@@ -42,7 +42,7 @@
 0012ccce W?dying_place$n[]s 12
 0012cce0 W?reap_arrive$n[]s 10
 0012ccf0 W?gate_arrive$n[]s e
-0012ccfe _D_0012ccfe 30
+0012cd00 _D_0012cd00 2e
 0012cd80 W?insurance_co$n[]$InsuranceCo$$ 24
 0012cda4 W?fill_in_windows$n[]$FillInWindow$$ 14
 0012cdb8 W?advisor_anims$n[]xus 16
@@ -283,8 +283,7 @@
 001547b4 W?allhosps$npn$AllHosps$$ 4
 001547bc W?myhosp$npn$AllHosps$$ 4
 001547c0 W?mycontrol$npn$GameControl$$ 4
-001547c4 W?myplayer$n$HospPlayerDetails$$ 1c
-001547e0 _D_001547e0 4
+001547c4 W?myplayer$n$HospPlayerDetails$$ 5c
 00154820 W?listhead$npn$ListHead$$ 4
 00154824 W?playercall$npn$PlayerCall$$ 4
 00154828 W?end_playercall$npn$PlayerCall$$ 4
@@ -361,6 +360,7 @@
 001581b0 W?irequester$n[]$Req$$ 2
 001581b2 _D_001581b2 2c
 001581f4 W?music$n$HospMusic$$ 8
+001581fc W?advisor$n$Advisor$$ 134
 00158330 W?level$npn$Level$$ 4
 00158338 W?midi_buffer$npnv 4
 0015833c W?midi_files$n[]$MidiFile$$ 268
@@ -381,7 +381,7 @@
 0015f1ac W?net_control$n$NetControl$$ 144
 0015f2f0 W?balance_file$n$TbFileFind$$ e4
 0015f3d4 W?balance_file_name$n[]a 20
-0015f3f4 W?resvars$n$ResolutionInfo$$ 6
+0015f3f4 W?resvars$n$ResolutionInfo$$ 70
 0015f464 W?text1$npna 4
 0015f468 W?display_text$npna 4
 0015f46c W?paragraphs$n[]pna 10
@@ -716,14 +716,10 @@
 00195f10 _result 1c
 0012b9ee W?diag_register$n[][8]s 242
 0012c144 W?departments$n[]$DepartmentControl$$ 54
-001581fe _D_001581fe 4
-00158208 _D_00158208 4
 0012c9d4 W?rating$n[]$ScoreRatings$$ 68
-00158324 _D_00158324 4
 00136388 _D_00136388 7c
 0012b598 _D_0012b598 22e
 0012b7d4 _D_0012b7d4 41
-0015481a _D_0015481a 6
 0014a468 _D_0014a468 1b6
 0016051c _D_0016051c 20
 00160e34 _D_00160e34 80

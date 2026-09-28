@@ -15,13 +15,6 @@ struct MenuItem {
     u8 unknown1[6];
 };
 
-struct Box {
-    s32 x;
-    s32 y;
-    s32 w;
-    s32 h;
-};
-
 struct ReqLayout {
     u8 unknown0[0x230];
     s32 graph_x;
@@ -49,12 +42,8 @@ struct ReqLayout {
 
 extern "C" {
 extern Slot D_001581b2[];
-extern u8 *D_0015f402;
 extern Event D_001549d0[];
 extern u16 D_00155444;
-extern ReqLayout *D_0015f40c;
-extern ReqLayout *D_0015f410;
-extern u16 *D_0015f406;
 extern s32 D_00188c3c;
 extern s32 D_00188c40;
 extern u8 D_001553ed;
@@ -63,11 +52,8 @@ extern u8 D_00188c7f;
 extern u8 D_00155e19;
 extern u8 D_001553f0;
 extern u8 D_001553c8;
-extern MenuItem *D_0015f420;
 extern u16 D_00155c64;
 extern char D_0015544e[];
-extern u16 D_0012dd7c[];
-extern TbScreenMode D_0015f3f5;
 extern char **D_001602a4;
 extern char D_001205e0[];
 extern char D_001205e4[];
@@ -100,12 +86,12 @@ void req3(Window *win)
         if (b->flags & 6) {
             debug.unknown4 = i;
             debug.unknown8 = i;
-            if (i == D_0015f402[0xd]) {
+            if (i == resvars.fe[0xd]) {
                 D_001549d0[player].type = 0x43;
                 D_001549d0[player].value = 1;
                 play_sound(10, 0x42, -1, -1);
-            } else if (i == D_0015f402[0xe]) {
-                if (w->unknown146 >= D_0012dd7c[0]) {
+            } else if (i == resvars.fe[0xe]) {
+                if (w->unknown146 >= gbv.ffc) {
                     display_mode = 1;
                     chart_type = 1;
                     drugs.unknown2 = 0;
@@ -113,7 +99,7 @@ void req3(Window *win)
                     D_00155444 = w->style;
                     play_sound(10, 0x43, -1, -1);
                 }
-            } else if (i == D_0015f402[0xf]) {
+            } else if (i == resvars.fe[0xf]) {
                 if (!(w->flags & 0x2000 || w->flags & 0x8000)) {
                     if (w->unknown130 > 0) {
                         D_001549d0[player].type = 0x74;
@@ -121,16 +107,16 @@ void req3(Window *win)
                         play_sound(10, 0xaa, -1, -1);
                     }
                 }
-            } else if (i == D_0015f402[0x10]) {
+            } else if (i == resvars.fe[0x10]) {
                 if (w->unknown140) {
                     D_001549d0[player].type = 0x3b;
                     D_001549d0[player].value = w->unknown140;
                     D_001549d0[player].arg = 0;
                     play_sound(10, 0x43, -1, -1);
                 }
-            } else if (i == D_0015f402[0x11]) {
+            } else if (i == resvars.fe[0x11]) {
                 if (!(w->unknown171 == 0 || w->flags & 0x1000 || w->flags & 0x4000 || w->style == w->unknown169)
-                    && w->unknown146 >= D_0012dd7c[0]) {
+                    && w->unknown146 >= gbv.ffc) {
                     if (!(w->unknown171 == 0 || w->flags & 0x1000)) {
                         if (w->unknown130 > 0) {
                             D_001549d0[player].type = 0x86;
@@ -165,35 +151,35 @@ void req3_overdraw(Window *win)
     D_001553ed = window.unknown2ec - 1;
     if (D_001581b2[1].f6)
         D_001581b2[1].f6--;
-    if (w->unknown146 < D_0012dd7c[0]) {
-        LbDrawBox(x + D_0015f40c->box_a.x, y + D_0015f40c->box_a.y, D_0015f40c->box_a.w, D_0015f40c->box_a.h, 0x46);
-        LbDrawBox(x + D_0015f40c->box_c.x, y + D_0015f40c->box_c.y, D_0015f40c->box_c.w, D_0015f40c->box_c.h, 0x46);
+    if (w->unknown146 < gbv.ffc) {
+        LbDrawBox(x + resvars.f18_ReqLayoutp->box_a.x, y + resvars.f18_ReqLayoutp->box_a.y, resvars.f18_ReqLayoutp->box_a.w, resvars.f18_ReqLayoutp->box_a.h, 0x46);
+        LbDrawBox(x + resvars.f18_ReqLayoutp->box_c.x, y + resvars.f18_ReqLayoutp->box_c.y, resvars.f18_ReqLayoutp->box_c.w, resvars.f18_ReqLayoutp->box_c.h, 0x46);
     }
     if (!w->unknown140)
-        LbDrawBox(x + D_0015f40c->box_b.x, y + D_0015f40c->box_b.y, D_0015f40c->box_b.w, D_0015f40c->box_b.h, 0x46);
+        LbDrawBox(x + resvars.f18_ReqLayoutp->box_b.x, y + resvars.f18_ReqLayoutp->box_b.y, resvars.f18_ReqLayoutp->box_b.w, resvars.f18_ReqLayoutp->box_b.h, 0x46);
     if (w->unknown171 == 0 || w->flags & 0x1000 || w->flags & 0x4000 || w->style == w->unknown169
-        || w->unknown146 < D_0012dd7c[0]) {
-        LbDrawBox(x + D_0015f40c->box_c.x, y + D_0015f40c->box_c.y, D_0015f40c->box_c.w, D_0015f40c->box_c.h, 0x46);
+        || w->unknown146 < gbv.ffc) {
+        LbDrawBox(x + resvars.f18_ReqLayoutp->box_c.x, y + resvars.f18_ReqLayoutp->box_c.y, resvars.f18_ReqLayoutp->box_c.w, resvars.f18_ReqLayoutp->box_c.h, 0x46);
         if (w->flags & 0x2000 || w->flags & 0x8000)
-            LbDrawBox(x + D_0015f40c->box_d.x, y + D_0015f40c->box_d.y, D_0015f40c->box_d.w, D_0015f40c->box_d.h, 0x46);
+            LbDrawBox(x + resvars.f18_ReqLayoutp->box_d.x, y + resvars.f18_ReqLayoutp->box_d.y, resvars.f18_ReqLayoutp->box_d.w, resvars.f18_ReqLayoutp->box_d.h, 0x46);
     }
-    draw_gauge(w->unknown81s, x + D_0015f40c->gauge_x, y + D_0015f40c->gauge_y, (u16)D_0015f40c->gauge_len,
-               &button_sprite[D_0015f406[0]], 100, 0, 100, 1);
-    draw_gauge(w->unknown134, x + D_0015f410->gauge2_x, y + D_0015f410->gauge2_y, (u16)D_0015f40c->gauge_len,
-               &button_sprite[D_0015f406[0x10]], 100, 0, 100, 1);
-    draw_gauge((s16)w->unknown83w, x + D_0015f410->gauge3_x, y + D_0015f410->gauge3_y, (u16)D_0015f40c->gauge_len,
-               &button_sprite[D_0015f406[0x11]], 100, 0, 100, 1);
+    draw_gauge(w->unknown81s, x + resvars.f18_ReqLayoutp->gauge_x, y + resvars.f18_ReqLayoutp->gauge_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
+               &button_sprite[resvars.f12[0]], 100, 0, 100, 1);
+    draw_gauge(w->unknown134, x + resvars.f1c_ReqLayoutp->gauge2_x, y + resvars.f1c_ReqLayoutp->gauge2_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
+               &button_sprite[resvars.f12[0x10]], 100, 0, 100, 1);
+    draw_gauge((s16)w->unknown83w, x + resvars.f1c_ReqLayoutp->gauge3_x, y + resvars.f1c_ReqLayoutp->gauge3_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
+               &button_sprite[resvars.f12[0x11]], 100, 0, 100, 1);
     if (D_001581b2[1].f4)
         draw_health_graph(w, x, y, color.unknownD);
     else
         draw_diagnosis(w, x, y);
     if (D_00188c7e) {
-        if (over_hotspot(mouse_dx, mouse_dy, x + D_0015f40c->next.x, y + D_0015f40c->next.y, D_0015f40c->next.w,
-                         D_0015f40c->next.h)) {
+        if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18_ReqLayoutp->next.x, y + resvars.f18_ReqLayoutp->next.y, resvars.f18_ReqLayoutp->next.w,
+                         resvars.f18_ReqLayoutp->next.h)) {
             D_001553f0 = 1;
             D_001553c8 = 1;
-        } else if (over_hotspot(mouse_dx, mouse_dy, x + D_0015f40c->diag.x, y + D_0015f40c->diag.y,
-                                D_0015f40c->diag.w, D_0015f40c->diag.h)) {
+        } else if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18_ReqLayoutp->diag.x, y + resvars.f18_ReqLayoutp->diag.y,
+                                resvars.f18_ReqLayoutp->diag.w, resvars.f18_ReqLayoutp->diag.h)) {
             if (!D_001581b2[1].f6) {
                 D_001581b2[1].f4 = !D_001581b2[1].f4 ? 1 : 0;
                 D_001581b2[1].f6 = 5;
@@ -201,8 +187,8 @@ void req3_overdraw(Window *win)
         }
     }
     if (D_00188c7f && !D_00155e19) {
-        if (over_hotspot(mouse_dx, mouse_dy, x + D_0015f40c->next.x, y + D_0015f40c->next.y, D_0015f40c->next.w,
-                         D_0015f40c->next.h)) {
+        if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18_ReqLayoutp->next.x, y + resvars.f18_ReqLayoutp->next.y, resvars.f18_ReqLayoutp->next.w,
+                         resvars.f18_ReqLayoutp->next.h)) {
             u16 old;
 
             old = D_001581b2[1].value;
@@ -227,7 +213,6 @@ void close_query(u8 i)
     D_001581b2[i].kind = 0x63;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00073704
 void draw_health_graph(Thing *w, u16 x, u16 y, u16 colour)
 {
@@ -244,24 +229,24 @@ void draw_health_graph(Thing *w, u16 x, u16 y, u16 colour)
     h1 = 0;
     h2 = 0;
     n = 0;
-    step = D_0015f40c->graph_width / 10;
+    step = resvars.f18_ReqLayoutp->graph_width / 10;
     for (i = 1; i < 9; i++) {
         h1 = w->unknown158[i] * 10;
         h2 = w->unknown158[i + 1] * 10;
-        h1 = D_0015f40c->graph_height * h1 / 1000;
-        h2 = h2 * D_0015f40c->graph_height / 1000;
+        h1 = resvars.f18_ReqLayoutp->graph_height * h1 / 1000;
+        h2 = h2 * resvars.f18_ReqLayoutp->graph_height / 1000;
         if (h1 < 1)
             h1 = 1;
-        else if (h1 > D_0015f40c->graph_height)
-            h1 = D_0015f40c->graph_height;
+        else if (h1 > resvars.f18_ReqLayoutp->graph_height)
+            h1 = resvars.f18_ReqLayoutp->graph_height;
         if (h2 < 1)
             h2 = 1;
-        else if (h2 > D_0015f40c->graph_height)
-            h2 = D_0015f40c->graph_height;
-        y1 = D_0015f40c->graph_bottom - h1;
-        y2 = D_0015f40c->graph_bottom - h2;
-        x1 = n++ * step + D_0015f40c->graph_x;
-        x2 = D_0015f40c->graph_x + n * step;
+        else if (h2 > resvars.f18_ReqLayoutp->graph_height)
+            h2 = resvars.f18_ReqLayoutp->graph_height;
+        y1 = resvars.f18_ReqLayoutp->graph_bottom - h1;
+        y2 = resvars.f18_ReqLayoutp->graph_bottom - h2;
+        x1 = resvars.f18_ReqLayoutp->graph_x + n++ * step;
+        x2 = resvars.f18_ReqLayoutp->graph_x + n * step;
         fn_000c9be0(x + x1, y + y1, x + x2, y + y2, colour);
     }
 }
@@ -273,31 +258,31 @@ void draw_diagnosis(Thing *w, u16 x, u16 y)
     u16 dy;
     char buf[100];
 
-    LbDrawBox(x + D_0015f40c->diag.x, y + D_0015f40c->diag.y, D_0015f40c->diag.w, D_0015f40c->diag.h, 0xa9);
-    LbTextSetClipWindow(x + D_0015f40c->diag.x, y + D_0015f40c->diag.y, D_0015f40c->diag.w, D_0015f40c->diag.h);
+    LbDrawBox(x + resvars.f18_ReqLayoutp->diag.x, y + resvars.f18_ReqLayoutp->diag.y, resvars.f18_ReqLayoutp->diag.w, resvars.f18_ReqLayoutp->diag.h, 0xa9);
+    LbTextSetClipWindow(x + resvars.f18_ReqLayoutp->diag.x, y + resvars.f18_ReqLayoutp->diag.y, resvars.f18_ReqLayoutp->diag.w, resvars.f18_ReqLayoutp->diag.h);
     set_font_from_cache(3);
     dy = 0;
     for (i = 0; i < 10; i++) {
         if (!w->unknown148[i])
             break;
-        if (D_0015f3f5 == SCREEN_MODE_13) {
+        if (resvars.f1 == SCREEN_MODE_13) {
             sprintf(buf, D_001205e0, D_001602a4[w->unknown148[i]]);
             fn_0001b7e0(buf, buf, 0);
         } else {
             sprintf(buf, D_001205e4, D_001602a4[w->unknown148[i]]);
         }
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
-        LbTextDraw(x + D_0015f40c->diag.x, dy + y + D_0015f40c->diag.y, buf);
+        LbTextDraw(x + resvars.f18_ReqLayoutp->diag.x, dy + y + resvars.f18_ReqLayoutp->diag.y, buf);
     }
     if (w->flags & 0x2000) {
-        if (D_0015f3f5 == SCREEN_MODE_13) {
+        if (resvars.f1 == SCREEN_MODE_13) {
             sprintf(buf, D_001205e7, info_bar_text[8]);
             fn_0001b7e0(buf, buf, 0);
         } else {
             sprintf(buf, D_001205eb, info_bar_text[8]);
         }
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
-        LbTextDraw(x + D_0015f40c->diag.x, dy + y + D_0015f40c->diag.y, buf);
+        LbTextDraw(x + resvars.f18_ReqLayoutp->diag.x, dy + y + resvars.f18_ReqLayoutp->diag.y, buf);
     }
     LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
@@ -401,8 +386,8 @@ extern "C" void fn_00074064(void)
     Thing *w;
 
     w = &thing[D_001581b2[1].value];
-    if (w->unknown146 >= D_0012dd7c[0])
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+    if (w->unknown146 >= gbv.ffc)
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x000740e4
@@ -412,8 +397,8 @@ extern "C" void fn_000740e4(void)
 
     w = &thing[D_001581b2[1].value];
     if (w->unknown171 != 0 && !(w->flags & 0x1000) && !(w->flags & 0x4000) && w->style != w->unknown169
-        && w->unknown146 >= D_0012dd7c[0])
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        && w->unknown146 >= gbv.ffc)
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x000741a4
@@ -423,7 +408,7 @@ extern "C" void fn_000741a4(void)
 
     w = &thing[D_001581b2[1].value];
     if (w->unknown140)
-        fn_000bbff0(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
+        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
 }
 
 // FUNCTION: 0x00073e64

@@ -34,8 +34,6 @@ void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style);
 void draw_glass_text(SlistButton *b, char *text);
 
 extern "C" {
-extern Button *D_0015f43c;
-extern TbScreenMode D_0015f3f5;
 extern u8 *D_00153f34;
 extern u8 *D_001553dc;
 extern u8 D_00188c7b;
@@ -122,7 +120,7 @@ void draw_load_game(void)
         fade_out_menu();
         if (display_loading_screen()) {
             LbGhostTableGenerate(D_00153f34, 0x42, D_00121a80);
-            D_0015f3f5 = SCREEN_MODE_13;
+            resvars.f1 = SCREEN_MODE_13;
             load_game_files();
             level = read_level_number(load_game_number);
             if (level != -1) {
@@ -196,7 +194,7 @@ void process_mouse_load_game(void)
     s32 bit;
 
     if (loadgame.unknown2 == 4) {
-        reqspr_draw((u16)D_0015f43c[0x9e].x, (u16)D_0015f43c[0x9e].y, &screen_sprites_tab_start[2]);
+        reqspr_draw((u16)resvars.f48[0x9e].x, (u16)resvars.f48[0x9e].y, &screen_sprites_tab_start[2]);
         mask = CurrentDisplay;
         while (mask) {
             bit = mask & -mask;
@@ -205,30 +203,30 @@ void process_mouse_load_game(void)
             if (!base)
                 continue;
             for (i = 0;; i++) {
-                if (D_0015f43c[base + i].width == 0 || D_0015f43c[base + i].height == 0)
+                if (resvars.f48[base + i].width == 0 || resvars.f48[base + i].height == 0)
                     break;
-                x = D_0015f43c[base + i].x;
-                y = D_0015f43c[base + i].y;
+                x = resvars.f48[base + i].x;
+                y = resvars.f48[base + i].y;
                 if (D_00188c81) {
-                    if (over_hotspot(D_00188c6c, D_00188c70, x, y, D_0015f43c[base + i].width - x + 1,
-                            D_0015f43c[base + i].height - y + 1)) {
+                    if (over_hotspot(D_00188c6c, D_00188c70, x, y, resvars.f48[base + i].width - x + 1,
+                            resvars.f48[base + i].height - y + 1)) {
                         play_sound(10, 0x41, -1, -1);
                         D_00188c81 = 0;
-                        if (D_0015f43c[base + i].sprite)
+                        if (resvars.f48[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, D_0015f43c[base + i].width - x, D_0015f43c[base + i].height - y, 1);
-                        if (D_0015f43c[base + i].callback)
-                            D_0015f43c[base + i].callback(i);
+                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
+                        if (resvars.f48[base + i].callback)
+                            resvars.f48[base + i].callback(i);
                         break;
                     }
                 }
-                if (over_hotspot(mouse_dx, mouse_dy, x, y, D_0015f43c[base + i].width - x + 1,
-                        D_0015f43c[base + i].height - y + 1)) {
-                    if (D_0015f43c[base + i].sprite)
+                if (over_hotspot(mouse_dx, mouse_dy, x, y, resvars.f48[base + i].width - x + 1,
+                        resvars.f48[base + i].height - y + 1)) {
+                    if (resvars.f48[base + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, D_0015f43c[base + i].width - x, D_0015f43c[base + i].height - y, 1);
+                        draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
                     if (i != loadgame.unknown0) {
                         play_sound(10, 0x44, -1, -1);
                         loadgame.unknown0 = i;
@@ -245,12 +243,12 @@ void display_loadgame_screen(void)
 {
     s32 i;
 
-    for (i = 0; (!D_0015f43c[i + 0x95].sprite && D_0015f43c[i + 0x95].width != 0)
-                && D_0015f43c[i + 0x95].height != 0; i++) {
+    for (i = 0; (!resvars.f48[i + 0x95].sprite && resvars.f48[i + 0x95].width != 0)
+                && resvars.f48[i + 0x95].height != 0; i++) {
         if (loadable[i])
             sprintf(tmp, D_00121ac7, load_text[0], i);
         else
             sprintf(tmp, D_00121acd, load_text[1]);
-        draw_glass_text((SlistButton *)&D_0015f43c[i + 0x95], tmp);
+        draw_glass_text((SlistButton *)&resvars.f48[i + 0x95], tmp);
     }
 }

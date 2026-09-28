@@ -56,8 +56,6 @@ extern u8 D_00155e1d;
 extern u8 D_00155e3f;
 extern u8 D_00155e42;
 extern u8 D_00156910;
-extern s32 *D_0015f40c;
-extern Point *D_0015f434;
 extern u8 D_0015f489;
 extern char **D_0016033c;
 extern s32 D_00188c38;
@@ -79,7 +77,8 @@ s8 compare_products(s32 a, s32 b, s32 c, s32 d);
     0x74 0x08 0x0f 0x9c 0xc4 0x0f 0x9f 0xc0 0x28 0xe0 \
     parm [eax] [ebx] [ecx] [edx] value [al] modify [eax ebx ecx edx];
 
-// NONMATCHING: register choice
+// NONMATCHING: D_00188c7e and lbInkey are loaded in the opposite order; the target order is what a
+// struct-field D_00188c7e (0x188c7e lies inside the demo's 0x78-byte lbDisplay) would give
 // FUNCTION: 0x00061bd0
 void draw_main_menu(void)
 {
@@ -197,57 +196,57 @@ void draw_main_menu(void)
         break;
     case 3:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xb3].x, D_0015f434[0xb3].y, &screen_sprites_tab_start[2]);
+        reqspr_draw(resvars.f40[0xb3].x, resvars.f40[0xb3].y, &screen_sprites_tab_start[2]);
         draw_help_text();
         break;
     case 4:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xb4].x, D_0015f434[0xb4].y, &screen_sprites_tab_start[3]);
+        reqspr_draw(resvars.f40[0xb4].x, resvars.f40[0xb4].y, &screen_sprites_tab_start[3]);
         draw_help_text();
         break;
     case 5:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xb5].x, D_0015f434[0xb5].y, &screen_sprites_tab_start[1]);
+        reqspr_draw(resvars.f40[0xb5].x, resvars.f40[0xb5].y, &screen_sprites_tab_start[1]);
         draw_help_text();
         break;
     case 6:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xb6].x, D_0015f434[0xb6].y, &screen_sprites_tab_start[4]);
+        reqspr_draw(resvars.f40[0xb6].x, resvars.f40[0xb6].y, &screen_sprites_tab_start[4]);
         draw_help_text();
         break;
     case 7:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xb7].x, D_0015f434[0xb7].y, &screen_sprites_tab_start[5]);
+        reqspr_draw(resvars.f40[0xb7].x, resvars.f40[0xb7].y, &screen_sprites_tab_start[5]);
         draw_help_text();
         break;
     case 0x11:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xb8].x, D_0015f434[0xb8].y, &screen_sprites_tab_start[6]);
+        reqspr_draw(resvars.f40[0xb8].x, resvars.f40[0xb8].y, &screen_sprites_tab_start[6]);
         play_sound(10, 0x44, -1, -1);
         break;
     case 0x12:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xb9].x, D_0015f434[0xb9].y, &screen_sprites_tab_start[7]);
+        reqspr_draw(resvars.f40[0xb9].x, resvars.f40[0xb9].y, &screen_sprites_tab_start[7]);
         play_sound(10, 0x44, -1, -1);
         break;
     case 0x13:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xba].x, D_0015f434[0xba].y, &screen_sprites_tab_start[8]);
+        reqspr_draw(resvars.f40[0xba].x, resvars.f40[0xba].y, &screen_sprites_tab_start[8]);
         play_sound(10, 0x44, -1, -1);
         break;
     case 0x14:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xbb].x, D_0015f434[0xbb].y, &screen_sprites_tab_start[9]);
+        reqspr_draw(resvars.f40[0xbb].x, resvars.f40[0xbb].y, &screen_sprites_tab_start[9]);
         play_sound(10, 0x44, -1, -1);
         break;
     case 0x15:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xbc].x, D_0015f434[0xbc].y, &screen_sprites_tab_start[10]);
+        reqspr_draw(resvars.f40[0xbc].x, resvars.f40[0xbc].y, &screen_sprites_tab_start[10]);
         play_sound(10, 0x44, -1, -1);
         break;
     case 0x16:
         display_main_menu();
-        reqspr_draw(D_0015f434[0xbd].x, D_0015f434[0xbd].y, &screen_sprites_tab_start[11]);
+        reqspr_draw(resvars.f40[0xbd].x, resvars.f40[0xbd].y, &screen_sprites_tab_start[11]);
         play_sound(10, 0x44, -1, -1);
         break;
     case 0x17:
@@ -696,7 +695,7 @@ u8 fn_00063300(void)
         smack_draw_callback = 0;
         D_00155d82 = saferand();
         D_00155d83 = 0;
-        D_00155d85 = D_0015f40c[0xab] / 2 + 100;
+        D_00155d85 = resvars.f18_s32p[0xab] / 2 + 100;
         mainmenu.unknown0 = 0;
         aborted = 0;
         if (hosp_play_smk(0x1b) == 2)
@@ -843,7 +842,7 @@ void fn_00063680(void)
         total = 0;
         for (i = 0; i < 0x4000; i++) {
             if (level->plots[i] == D_00155430)
-                total += *(u16 *)&expertise[53].unknown10[3];
+                total += gbv.f7c;
         }
         plotbid.price = total;
         if (total > 0) {

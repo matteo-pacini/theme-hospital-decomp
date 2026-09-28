@@ -17,15 +17,9 @@ extern "C" {
 extern TrackSlot D_001581b2[];
 extern u8 D_001553ec[];
 extern u8 D_001553f0;
-extern TbScreenMode D_0015f3f4;
-extern ScrollLayout *D_0015f410;
 extern u16 D_001553e0;
 extern u8 D_001553e1[];
-extern u8 D_0015f3f7;
-extern u8 D_0015f3f8;
 extern u8 D_00156910;
-extern u16 D_00155372;
-extern u16 D_00155374;
 }
 
 extern s16 mapx;
@@ -55,15 +49,15 @@ void process_tracking_windows(void)
             w = &thing[D_001581b2[i].value];
             give_absolute_xy_of_cell_at_column_row(w->x.tile, w->y.tile);
             if (!check_if_point_beyond_scroll_limit(
-                    info.unknown54 - D_0015f410->unknown558
-                        + (D_0015f3f4 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16),
-                    (D_0015f3f4 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
-                        + (info.unknown58 - D_0015f410->unknown55c),
+                    info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558
+                        + (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16),
+                    (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+                        + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown55c),
                     1)) {
-                window.f0[D_001553ec[i]] = (D_0015f3f4 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16)
-                    + (info.unknown54 - D_0015f410->unknown558);
-                window.fc[D_001553ec[i]] = (D_0015f3f4 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
-                    + (info.unknown58 - D_0015f410->unknown55c);
+                window.f0[D_001553ec[i]] = (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16)
+                    + (info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558);
+                window.fc[D_001553ec[i]] = (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+                    + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown55c);
             } else {
                 close_irequesters();
             }
@@ -74,15 +68,15 @@ void process_tracking_windows(void)
         w = &thing[D_001581b2[D_001553f0].value];
         give_absolute_xy_of_cell_at_column_row(w->x.tile, w->y.tile);
         if (!check_if_point_beyond_scroll_limit(
-                info.unknown54 - D_0015f410->unknown558
-                    + (D_0015f3f4 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16),
-                (D_0015f3f4 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
-                    + (info.unknown58 - D_0015f410->unknown558),
+                info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558
+                    + (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16),
+                (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+                    + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown558),
                 0)) {
-            window.f0[0] = (D_0015f3f4 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16)
-                + (info.unknown54 - D_0015f410->unknown558);
-            window.fc[0] = (D_0015f3f4 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
-                + (info.unknown58 - D_0015f410->unknown55c);
+            window.f0[0] = (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16)
+                + (info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558);
+            window.fc[0] = (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+                + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown55c);
         } else {
             close_irequesters();
         }
@@ -178,14 +172,14 @@ void move_windows(void)
             dx = 0;
             dy = 0;
         }
-        if (D_0015f3f8 < dx)
-            dx = D_0015f3f8;
-        else if (-D_0015f3f8 > dx)
-            dx = -D_0015f3f8;
-        if (D_0015f3f7 < dy)
-            dy = D_0015f3f7;
-        else if (-D_0015f3f7 > dy)
-            dy = -D_0015f3f7;
+        if (resvars.f4 < dx)
+            dx = resvars.f4;
+        else if (-resvars.f4 > dx)
+            dx = -resvars.f4;
+        if (resvars.f3 < dy)
+            dy = resvars.f3;
+        else if (-resvars.f3 > dy)
+            dy = -resvars.f3;
         window.f0[i] += dx;
         window.fc[i] += dy;
         if (window.fa8[i] >= 0)
@@ -222,7 +216,6 @@ void move_windows(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000ac264
 void find_cell_at_point(const u8 a, const s32 x, const s32 y)
 {
@@ -232,33 +225,32 @@ void find_cell_at_point(const u8 a, const s32 x, const s32 y)
     s32 row;
     s32 col;
 
-    area = D_0015f3f8 * D_0015f3f7;
-    u = (x << 8) * D_0015f3f7;
-    v = (y << 8) * D_0015f3f8;
+    area = resvars.f4 * resvars.f3;
+    u = ((x + window.f0[a] - window.f90[a]) << 8) * resvars.f3;
+    v = ((y + window.fc[a] - window.f9c[a]) << 8) * resvars.f4;
     row = (v - u) / area >> 8;
     col = (u + v) / area >> 8;
     info.unknown64 = col + (row << 7);
     info.unknown5c = col;
     info.unknown60 = row;
-    info.unknown54 = window.f90[a] + (D_0015f3f8 * (col - row - 1) / 2 - window.f0[a]);
-    info.unknown58 = window.f9c[a] + (D_0015f3f7 * (col + row + 2) / 2 - window.fc[a]);
+    info.unknown54 = resvars.f4 * (col - row - 1) / 2 - window.f0[a] + window.f90[a];
+    info.unknown58 = resvars.f3 * (col + row + 2) / 2 - window.fc[a] + window.f9c[a];
 }
 
 // FUNCTION: 0x000ac3c4
 void give_screen_xy_of_cell_at_column_row(const u8 a, const s32 x, const s32 y)
 {
-    info.unknown54 = D_0015f3f8 * (x - y - 1) / 2 - window.f0[a] + window.f90[a];
-    info.unknown58 = (x + y + 2) * D_0015f3f7 / 2 - window.fc[a] + window.f9c[a];
+    info.unknown54 = resvars.f4 * (x - y - 1) / 2 - window.f0[a] + window.f90[a];
+    info.unknown58 = (x + y + 2) * resvars.f3 / 2 - window.fc[a] + window.f9c[a];
 }
 
 // FUNCTION: 0x000ac464
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y)
 {
-    info.unknown54 = (x - y) * D_0015f3f8 / 2;
-    info.unknown58 = (x + y) * D_0015f3f7 / 2;
+    info.unknown54 = (x - y) * resvars.f4 / 2;
+    info.unknown58 = (x + y) * resvars.f3 / 2;
 }
 
-// NONMATCHING: operand evaluation order in u/v and the limit compares
 // FUNCTION: 0x000ac4bc
 u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n)
 {
@@ -269,17 +261,17 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n)
     s32 row;
     s32 margin;
 
-    area = D_0015f3f8 * D_0015f3f7;
-    u = (x << 8) * D_0015f3f7;
-    v = (y << 8) * D_0015f3f8;
+    area = resvars.f4 * resvars.f3;
+    u = (x << 8) * resvars.f3;
+    v = (y << 8) * resvars.f4;
     col = (u + v) / area >> 8;
     row = (v - u) / area >> 8;
     margin = 0;
     if (n)
         margin = 10;
-    if (D_00155372 % 128 > col + margin || D_00155374 % 128 <= col - margin)
+    if (col + margin < gamevar.f132 % 128 || col - margin >= gamevar.f134 % 128)
         return 1;
-    if (D_00155372 / 128 > row + margin || D_00155374 / 128 <= row - margin)
+    if (row + margin < gamevar.f132 / 128 || row - margin >= gamevar.f134 / 128)
         return 1;
     return 0;
 }
@@ -342,7 +334,6 @@ void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s3
         info.unknown78 = 0;
 }
 
-// NONMATCHING: register choice; window.f0[n - 1] is relocated as info+0x7c in the target
 // FUNCTION: 0x000ac78c
 void open_new_window(const u8 a, const u8 b, const u8 c, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
 {

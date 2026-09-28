@@ -46,7 +46,6 @@ extern char **D_00160390;
 extern char **D_00160394;
 extern char **D_00160398;
 extern char **D_0016039c;
-extern u8 D_001547e5;
 
 }
 
@@ -331,7 +330,7 @@ s16 setup_lang(void)
     char **starts;
     char *p;
 
-    if (LbDataLoadAll(&langfile[D_001547e5]) != 1)
+    if (LbDataLoadAll(&langfile[myplayer.f21]) != 1)
         return 0;
     groups = *(s16 *)text_buffer;
     counts = (s16 *)(text_buffer + 2);

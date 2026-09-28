@@ -30,7 +30,6 @@ extern u8 D_001553c7;
 extern u8 D_001553c8;
 extern u8 D_00155d7d;
 extern u8 D_00155e03;
-extern u8 D_001547e7[];
 
 u8 fn_00029a54(RoomInfo *room);
 
@@ -88,33 +87,31 @@ void fill_in_window(u16 x, u16 y, u8 side)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000265e4
 void check_inside_w_wall(u16 x, u16 y)
 {
     u8 window;
 
-    window = search_fill_in_window(map[((s16)y << 7) + (s16)x].unknown4);
+    window = search_fill_in_window(map[(s16)x + ((s16)y << 7)].unknown4);
     if (window) {
-        if (map[((s16)y << 7) + (s16)x].unknown4 == 0x7d) {
-            map[((s16)y << 7) + (s16)x].unknown4 = window;
-            if (map[((s16)(y - 1) << 7) + (s16)x].unknown4 == 0x7b) {
-                map[((s16)(y - 1) << 7) + (s16)x].unknown4 = window;
+        if (map[(s16)x + ((s16)y << 7)].unknown4 == 0x7d) {
+            map[(s16)x + ((s16)y << 7)].unknown4 = window;
+            if (map[(s16)x + ((s16)(y - 1) << 7)].unknown4 == 0x7b) {
+                map[(s16)x + ((s16)(y - 1) << 7)].unknown4 = window;
             }
         }
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000266bc
 void check_inside_n_wall(u16 x, u16 y)
 {
     u8 window;
 
-    window = search_fill_in_window(map[((s16)y << 7) + (s16)x].unknown3);
+    window = search_fill_in_window(map[(s16)x + ((s16)y << 7)].unknown3);
     if (window) {
-        if (map[((s16)y << 7) + (s16)x].unknown3 == 0x7c) {
-            map[((s16)y << 7) + (s16)x].unknown3 = window;
+        if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x7c) {
+            map[(s16)x + ((s16)y << 7)].unknown3 = window;
             if (map[(s16)(x - 1) + ((s16)y << 7)].unknown3 == 0x7a) {
                 map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = window;
             }
@@ -122,7 +119,6 @@ void check_inside_n_wall(u16 x, u16 y)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00026798
 void check_outside_s_wall(u16 x, u16 y)
 {
@@ -132,51 +128,50 @@ void check_outside_s_wall(u16 x, u16 y)
     if (window) {
         if (map[(s16)(x - 1) + ((s16)y << 7)].unknown3 == 0x72) {
             map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = window;
-            if (map[((s16)y << 7) + (s16)x].unknown3 == 0x74) {
-                map[((s16)y << 7) + (s16)x].unknown3 = window;
+            if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x74) {
+                map[(s16)x + ((s16)y << 7)].unknown3 = window;
                 if (map[(s16)(x + 1) + ((s16)y << 7)].unknown3 == 0x76) {
                     map[(s16)(x + 1) + ((s16)y << 7)].unknown3 = window;
                 }
-            } else if (map[((s16)y << 7) + (s16)x].unknown3 == 0x76) {
-                map[((s16)y << 7) + (s16)x].unknown3 = window;
+            } else if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x76) {
+                map[(s16)x + ((s16)y << 7)].unknown3 = window;
             }
         } else if (map[(s16)(x - 1) + ((s16)y << 7)].unknown3 == 0x74) {
             map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = window;
             if (map[(s16)(x - 2) + ((s16)y << 7)].unknown3 == 0x72) {
                 map[(s16)(x - 2) + ((s16)y << 7)].unknown3 = window;
             }
-            if (map[((s16)y << 7) + (s16)x].unknown3 == 0x76) {
-                map[((s16)y << 7) + (s16)x].unknown3 = window;
+            if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x76) {
+                map[(s16)x + ((s16)y << 7)].unknown3 = window;
             }
         }
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000269e8
 void check_outside_e_wall(u16 x, u16 y)
 {
     u8 window;
 
-    window = search_fill_in_window(map[((s16)(y - 1) << 7) + (s16)x].unknown4);
+    window = search_fill_in_window(map[(s16)x + ((s16)(y - 1) << 7)].unknown4);
     if (window) {
-        if (map[((s16)(y - 1) << 7) + (s16)x].unknown4 == 0x73) {
-            map[((s16)(y - 1) << 7) + (s16)x].unknown4 = window;
-            if (map[((s16)y << 7) + (s16)x].unknown4 == 0x75) {
-                map[((s16)y << 7) + (s16)x].unknown4 = window;
-                if (map[((s16)(y + 1) << 7) + (s16)x].unknown4 == 0x77) {
-                    map[((s16)(y + 1) << 7) + (s16)x].unknown4 = window;
+        if (map[(s16)x + ((s16)(y - 1) << 7)].unknown4 == 0x73) {
+            map[(s16)x + ((s16)(y - 1) << 7)].unknown4 = window;
+            if (map[(s16)x + ((s16)y << 7)].unknown4 == 0x75) {
+                map[(s16)x + ((s16)y << 7)].unknown4 = window;
+                if (map[(s16)x + ((s16)(y + 1) << 7)].unknown4 == 0x77) {
+                    map[(s16)x + ((s16)(y + 1) << 7)].unknown4 = window;
                 }
-            } else if (map[((s16)y << 7) + (s16)x].unknown4 == 0x77) {
-                map[((s16)y << 7) + (s16)x].unknown4 = window;
+            } else if (map[(s16)x + ((s16)y << 7)].unknown4 == 0x77) {
+                map[(s16)x + ((s16)y << 7)].unknown4 = window;
             }
-        } else if (map[((s16)(y - 1) << 7) + (s16)x].unknown3 == 0x75) {
-            map[((s16)(y - 1) << 7) + (s16)x].unknown3 = window;
-            if (map[((s16)(y - 2) << 7) + (s16)x].unknown3 == 0x73) {
-                map[((s16)(y - 2) << 7) + (s16)x].unknown3 = window;
+        } else if (map[(s16)x + ((s16)(y - 1) << 7)].unknown3 == 0x75) {
+            map[(s16)x + ((s16)(y - 1) << 7)].unknown3 = window;
+            if (map[(s16)x + ((s16)(y - 2) << 7)].unknown3 == 0x73) {
+                map[(s16)x + ((s16)(y - 2) << 7)].unknown3 = window;
             }
-            if (map[((s16)y << 7) + (s16)x].unknown3 == 0x77) {
-                map[((s16)y << 7) + (s16)x].unknown3 = window;
+            if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x77) {
+                map[(s16)x + ((s16)y << 7)].unknown3 = window;
             }
         }
     }
@@ -521,9 +516,9 @@ void open_room(u8 p)
         if (D_001553c7 == player) {
             set_mouse_mode(0);
             close_crequester(5);
-            if (D_001547e7[room->type] == 0) {
+            if (myplayer.f23[room->type] == 0) {
                 show_help_page(0, room->type);
-                D_001547e7[room->type] = 1;
+                myplayer.f23[room->type] = 1;
             }
         }
         allhosps[p].unknown11b7 = 0;
