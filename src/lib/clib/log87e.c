@@ -5,8 +5,6 @@ double __math1err(unsigned err_info, double *arg1);
 double __log87_err(double x, unsigned code);
 #pragma aux __log87_err parm routine [];
 
-// NONMATCHING: the frame pragma adds lea esp,[ebp-0xc] to the epilogue; built
-// with -of (and without the pragma) it matches exactly
 // FUNCTION: 0xfcf2f
 double __log87_err(double x, unsigned code)
 {
