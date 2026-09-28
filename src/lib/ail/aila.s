@@ -75,137 +75,145 @@
     mov dword ptr [_D_001509d4], eax
 .L000de049:
     ret
-    .byte 0x1e
-    .byte 0x66; .byte 0x2e; .byte 0x8e; .byte 0x1d; .long _D_001509fe
-    .byte 0xff; .byte 0x05; .long _D_001509cc
-    .byte 0x83; .byte 0x3d; .long _D_001509f6; .byte 0x00
-    .byte 0x0f; .byte 0x87; .long .L000de1e5-.-4
-    .byte 0x60
-    .byte 0x06
-    .byte 0x0f; .byte 0xa0
-    .byte 0x0f; .byte 0xa8
-    .byte 0x8b; .byte 0xec
-    .byte 0xfc
-    .byte 0x66; .byte 0x8e; .byte 0x05; .long _D_001509fe
-    .byte 0xff; .byte 0x05; .long _D_001509f6
-    .byte 0x8c; .byte 0x15; .long _D_00151410
-    .byte 0x89; .byte 0x25; .long _D_00151414
-    .byte 0x66; .byte 0x8c; .byte 0xd8
-    .byte 0x66; .byte 0x8e; .byte 0xd0
-    .byte 0xbc; .long _D_00151410
-    .byte 0x83; .byte 0x3d; .long _D_001509dc; .byte 0x00
-    .byte 0x75; .byte .L000de0a6-.-1
-    .byte 0x66; .byte 0x83; .byte 0x3d; .long _D_001509e0; .byte 0x00
-    .byte 0x74; .byte .L000de0cc-.-1
-.L000de0a6:
-    .byte 0xb8; .byte 0x01; .byte 0x01; .byte 0x00; .byte 0x00
-    .byte 0xff; .byte 0x1d; .long _D_001509dc
-    .byte 0xb9; .byte 0xe8; .byte 0x03; .byte 0x00; .byte 0x00
-    .byte 0x83; .byte 0x3d; .long _D_001509d8; .byte 0x00
-    .byte 0x75; .byte .L000de0ed-.-1
-    .byte 0x8b; .byte 0x15; .long _D_001509f2
-    .byte 0xa3; .long _D_001509d8
-    .byte 0xeb; .byte .L000de10d-.-1
-.L000de0cc:
-    .byte 0xa1; .long _D_001509cc
-    .byte 0x83; .byte 0x3d; .long _D_001509d8; .byte 0x00
-    .byte 0x75; .byte .L000de0e7-.-1
-    .byte 0x8b; .byte 0x15; .long _D_001509f2
-    .byte 0xa3; .long _D_001509d8
-    .byte 0xeb; .byte .L000de10d-.-1
-.L000de0e7:
-    .byte 0x8b; .byte 0x0d; .long _D_001509f2
-.L000de0ed:
-    .byte 0x8b; .byte 0xd0
-    .byte 0x2b; .byte 0x05; .long _D_001509d8
-    .byte 0x89; .byte 0x15; .long _D_001509d8
-    .byte 0x33; .byte 0xd2
-    .byte 0xf7; .byte 0xe1
-    .byte 0x8b; .byte 0xd0
-    .byte 0x3d; .byte 0x40; .byte 0x42; .byte 0x0f; .byte 0x00
-    .byte 0x72; .byte .L000de10d-.-1
-    .byte 0xba; .byte 0x40; .byte 0x42; .byte 0x0f; .byte 0x00
-.L000de10d:
-    .byte 0xbf; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
-.L000de112:
-    .byte 0x83; .byte 0xbf; .long _D_0015088c; .byte 0x02
-    .byte 0x75; .byte .L000de13f-.-1
-    .byte 0x8b; .byte 0x87; .long _D_001508cc
-    .byte 0x03; .byte 0xc2
-.L000de123:
-    .byte 0x3b; .byte 0x87; .long _D_0015090c
-    .byte 0x72; .byte .L000de139-.-1
-    .byte 0x2b; .byte 0x87; .long _D_0015090c
-    .byte 0xff; .byte 0x87; .long _D_0015094c
-    .byte 0xeb; .byte .L000de123-.-1
-.L000de139:
-    .byte 0x89; .byte 0x87; .long _D_001508cc
-.L000de13f:
-    .byte 0x83; .byte 0xc7; .byte 0x04
-    .byte 0x83; .byte 0xff; .byte 0x40
-    .byte 0x72; .byte .L000de112-.-1
-    .byte 0xb0; .byte 0x20
-    .byte 0xe6; .byte 0x20
-    .byte 0xfb
-    .byte 0x83; .byte 0x3d; .long _D_001509fa; .byte 0x00
-    .byte 0x7f; .byte .L000de180-.-1
-    .byte 0xbf; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
-.L000de15a:
-    .byte 0x83; .byte 0xbf; .long _D_0015094c; .byte 0x00
-    .byte 0x74; .byte .L000de178-.-1
-    .byte 0xff; .byte 0x8f; .long _D_0015094c
-    .byte 0x8b; .byte 0x87; .long _D_0015098c
-    .byte 0x50
-    .byte 0xff; .byte 0x97; .long _D_0015084c
-    .byte 0xeb; .byte .L000de15a-.-1
-.L000de178:
-    .byte 0x83; .byte 0xc7; .byte 0x04
-    .byte 0x83; .byte 0xff; .byte 0x3c
-    .byte 0x72; .byte .L000de15a-.-1
-.L000de180:
-    .byte 0x83; .byte 0x3d; .long _D_00150988; .byte 0x00
-    .byte 0x74; .byte .L000de1c9-.-1
-    .byte 0xff; .byte 0x0d; .long _D_00150988
-    .byte 0x8e; .byte 0x15; .long _D_00151410
-    .byte 0x8b; .byte 0x25; .long _D_00151414
-    .byte 0xff; .byte 0x0d; .long _D_001509f6
-    .byte 0x8b; .byte 0x0d; .long _D_001509e2
-    .byte 0x0f; .byte 0xb7; .byte 0x05; .long _D_001509e6
-    .byte 0x8b; .byte 0xe5
-    .byte 0x8e; .byte 0x5d; .byte 0x2c
-    .byte 0x89; .byte 0x45; .byte 0x2c
-    .byte 0x8b; .byte 0x45; .byte 0x28
-    .byte 0x89; .byte 0x4d; .byte 0x28
-    .byte 0x0f; .byte 0xa9
-    .byte 0x0f; .byte 0xa1
-    .byte 0x07
-    .byte 0x5f
-    .byte 0x5e
-    .byte 0x5d
-    .byte 0x5b
-    .byte 0x5b
-    .byte 0x5a
-    .byte 0x59
-    .byte 0xcb
-.L000de1c9:
-    .byte 0x8e; .byte 0x15; .long _D_00151410
-    .byte 0x8b; .byte 0x25; .long _D_00151414
-    .byte 0xff; .byte 0x0d; .long _D_001509f6
-    .byte 0x8b; .byte 0xe5
-    .byte 0x0f; .byte 0xa9
-    .byte 0x0f; .byte 0xa1
-    .byte 0x07
-    .byte 0x61
-    .byte 0x1f
-    .byte 0xcf
-.L000de1e5:
-    .byte 0x50
-    .byte 0xb0; .byte 0x20
-    .byte 0xe6; .byte 0x20
-    .byte 0x58
-    .byte 0x1f
-    .byte 0xcf
 .size "_setup_ms_count",.-"_setup_ms_count"
+
+// FUNCTION: 0x000de04a
+
+.section _TEXT,"ax",@progbits,unique,909386
+.globl "_API_timer"
+.type "_API_timer",@function
+"_API_timer":
+    push ds
+    .byte 0x66; .byte 0x2e; .byte 0x8e; .byte 0x1d; .long _D_001509fe  # mov ds, word ptr cs:[0x309fe]
+    inc dword ptr [_D_001509cc]
+    cmp dword ptr [_D_001509f6], 0
+    ja .L000de1e5
+    .byte 0x60  # pushal
+    push es
+    push fs
+    push gs
+    {load} mov ebp, esp
+    cld
+    .byte 0x66; .byte 0x8e; .byte 0x05; .long _D_001509fe  # mov es, word ptr [0x309fe]
+    inc dword ptr [_D_001509f6]
+    mov word ptr [_D_00151410], ss
+    mov dword ptr [_D_00151414], esp
+    mov ax, ds
+    .byte 0x66; .byte 0x8e; .byte 0xd0  # mov ss, ax
+    .byte 0xbc; .long _D_00151410  # mov esp, 0x31410
+    cmp dword ptr [_D_001509dc], 0
+    jne .L000de0a6
+    cmp word ptr [_D_001509e0], 0
+    je .L000de0cc
+.L000de0a6:
+    mov eax, 0x101
+    .byte 0xff; .byte 0x1d; .long _D_001509dc  # call ptr [0x309dc]
+    mov ecx, 0x3e8
+    cmp dword ptr [_D_001509d8], 0
+    jne .L000de0ed
+    mov edx, dword ptr [_D_001509f2]
+    mov dword ptr [_D_001509d8], eax
+    jmp .L000de10d
+.L000de0cc:
+    mov eax, dword ptr [_D_001509cc]
+    cmp dword ptr [_D_001509d8], 0
+    jne .L000de0e7
+    mov edx, dword ptr [_D_001509f2]
+    mov dword ptr [_D_001509d8], eax
+    jmp .L000de10d
+.L000de0e7:
+    mov ecx, dword ptr [_D_001509f2]
+.L000de0ed:
+    {load} mov edx, eax
+    sub eax, dword ptr [_D_001509d8]
+    mov dword ptr [_D_001509d8], edx
+    {load} xor edx, edx
+    mul ecx
+    {load} mov edx, eax
+    cmp eax, 0xf4240
+    jb .L000de10d
+    mov edx, 0xf4240
+.L000de10d:
+    mov edi, 0
+.L000de112:
+    cmp dword ptr [edi + _D_0015088c], 2
+    jne .L000de13f
+    mov eax, dword ptr [edi + _D_001508cc]
+    {load} add eax, edx
+.L000de123:
+    cmp eax, dword ptr [edi + _D_0015090c]
+    jb .L000de139
+    sub eax, dword ptr [edi + _D_0015090c]
+    inc dword ptr [edi + _D_0015094c]
+    jmp .L000de123
+.L000de139:
+    mov dword ptr [edi + _D_001508cc], eax
+.L000de13f:
+    add edi, 4
+    cmp edi, 0x40
+    jb .L000de112
+    mov al, 0x20
+    out 0x20, al
+    sti
+    cmp dword ptr [_D_001509fa], 0
+    jg .L000de180
+    mov edi, 0
+.L000de15a:
+    cmp dword ptr [edi + _D_0015094c], 0
+    je .L000de178
+    dec dword ptr [edi + _D_0015094c]
+    mov eax, dword ptr [edi + _D_0015098c]
+    push eax
+    call dword ptr [edi + _D_0015084c]
+    jmp .L000de15a
+.L000de178:
+    add edi, 4
+    cmp edi, 0x3c
+    jb .L000de15a
+.L000de180:
+    cmp dword ptr [_D_00150988], 0
+    je .L000de1c9
+    dec dword ptr [_D_00150988]
+    mov ss, word ptr [_D_00151410]
+    mov esp, dword ptr [_D_00151414]
+    dec dword ptr [_D_001509f6]
+    mov ecx, dword ptr [_D_001509e2]
+    movzx eax, word ptr [_D_001509e6]
+    {load} mov esp, ebp
+    mov ds, word ptr [ebp + 0x2c]
+    mov dword ptr [ebp + 0x2c], eax
+    mov eax, dword ptr [ebp + 0x28]
+    mov dword ptr [ebp + 0x28], ecx
+    pop gs
+    pop fs
+    pop es
+    pop edi
+    pop esi
+    pop ebp
+    pop ebx
+    pop ebx
+    pop edx
+    pop ecx
+    retf
+.L000de1c9:
+    mov ss, word ptr [_D_00151410]
+    mov esp, dword ptr [_D_00151414]
+    dec dword ptr [_D_001509f6]
+    {load} mov esp, ebp
+    pop gs
+    pop fs
+    pop es
+    .byte 0x61  # popal
+    pop ds
+    iretd
+.L000de1e5:
+    push eax
+    mov al, 0x20
+    out 0x20, al
+    pop eax
+    pop ds
+    iretd
+.size "_API_timer",.-"_API_timer"
 
 // FUNCTION: 0x000de1ed
 
@@ -365,7 +373,7 @@
     .byte 0x66; .byte 0x89; .byte 0x15; .long _D_001509e6
     .byte 0x89; .byte 0x0d; .long _D_001509ea
     .byte 0xb8; .byte 0x08; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xba; .long "_setup_ms_count"+0x1e
+    .byte 0xba; .long "_API_timer"
     .byte 0x66; .byte 0x8c; .byte 0xcb
     .byte 0xb4; .byte 0x25
     .byte 0x1e
@@ -476,29 +484,37 @@
     pop ebx
     leave
     ret
-    .byte 0x1e
-    .byte 0x06
-    .byte 0x50
-    .byte 0x53
-    .byte 0x51
-    .byte 0x66; .byte 0xb8; .byte 0x99; .byte 0x99
-    .byte 0x66; .byte 0x8e; .byte 0xd8
-    .byte 0x66; .byte 0x8e; .byte 0xc0
-    .byte 0x66; .byte 0x8c; .byte 0xd3
-    .byte 0x8b; .byte 0xcc
-    .byte 0x66; .byte 0xb8; .byte 0x99; .byte 0x99
-    .byte 0x66; .byte 0x8e; .byte 0xd0
-    .byte 0xbc; .byte 0x99; .byte 0x99; .byte 0x99; .byte 0x99
-    .byte 0x66; .byte 0x9c
-    .byte 0x66; .byte 0x58
-    .byte 0x66; .byte 0x89; .byte 0x44; .byte 0x24; .byte 0xfe
-    .byte 0x8c; .byte 0x4c; .byte 0x24; .byte 0xfc
-    .byte 0x66; .byte 0xc7; .byte 0x44; .byte 0x24; .byte 0xfa; .byte 0x99; .byte 0x99
-    .byte 0x83; .byte 0xec; .byte 0x06
-    .byte 0x66; .byte 0xc7; .byte 0x44; .byte 0x24; .byte 0xfe; .byte 0x99; .byte 0x99
-    .byte 0x66; .byte 0xc7; .byte 0x44; .byte 0x24; .byte 0xfc; .byte 0x99; .byte 0x99
-    .byte 0x83; .byte 0xec; .byte 0x04
-    .byte 0x66; .byte 0xcb
+.size "_AIL_API_set_real_vect",.-"_AIL_API_set_real_vect"
+
+// FUNCTION: 0x000de444
+
+.section _TEXT,"ax",@progbits,unique,910404
+.globl "_thunk_proc"
+.type "_thunk_proc",@function
+"_thunk_proc":
+    push ds
+    push es
+    push eax
+    push ebx
+    push ecx
+    mov ax, 0x9999
+    .byte 0x66; .byte 0x8e; .byte 0xd8  # mov ds, ax
+    .byte 0x66; .byte 0x8e; .byte 0xc0  # mov es, ax
+    mov bx, ss
+    {load} mov ecx, esp
+    mov ax, 0x9999
+    .byte 0x66; .byte 0x8e; .byte 0xd0  # mov ss, ax
+    mov esp, 0x99999999
+    .byte 0x66; .byte 0x9c  # pushf
+    pop ax
+    mov word ptr [esp - 2], ax
+    mov word ptr [esp - 4], cs
+    mov word ptr [esp - 6], 0x9999
+    sub esp, 6
+    mov word ptr [esp - 2], 0x9999
+    mov word ptr [esp - 4], 0x9999
+    sub esp, 4
+    .byte 0x66; .byte 0xcb  # retf
     .byte 0x66; .byte 0x8e; .byte 0xd3
     .byte 0x8b; .byte 0xe1
     .byte 0x59
@@ -507,7 +523,7 @@
     .byte 0x07
     .byte 0x1f
     .byte 0xcf
-.size "_AIL_API_set_real_vect",.-"_AIL_API_set_real_vect"
+.size "_thunk_proc",.-"_thunk_proc"
 
 // FUNCTION: 0x000de499
 
@@ -609,9 +625,9 @@
     int 0x31
     and eax, 0xffff
     mov dword ptr [ebp - 0x18], eax
-    .byte 0xb9; .long "_AIL_API_set_real_vect"+0x23  # mov ecx, 0xce444
+    .byte 0xb9; .long "_thunk_proc"  # mov ecx, 0xce444
     and ecx, 0xfffffff0
-    .byte 0xb8; .long "_AIL_API_set_real_vect"+0x23  # mov eax, 0xce444
+    .byte 0xb8; .long "_thunk_proc"  # mov eax, 0xce444
     {load} sub eax, ecx
     mov dword ptr [ebp - 0x1c], eax
     mov eax, 7
@@ -635,18 +651,18 @@
     int 0x31
     mov eax, dword ptr [ebp - 0x14]
     add eax, 0x200
-    mov dword ptr ["_AIL_API_set_real_vect"+0x3f], eax
+    mov dword ptr ["_thunk_proc"+0x1c], eax
     mov eax, dword ptr [ebp - 0x10]
-    mov word ptr ["_AIL_API_set_real_vect"+0x39], ax
+    mov word ptr ["_thunk_proc"+0x16], ax
     mov eax, dword ptr [ebp - 0xc]
-    mov word ptr ["_AIL_API_set_real_vect"+0x2a], ax
+    mov word ptr ["_thunk_proc"+0x7], ax
     mov eax, dword ptr [ebp - 8]
-    mov word ptr ["_AIL_API_set_real_vect"+0x5f], ax
+    mov word ptr ["_thunk_proc"+0x3c], ax
     mov eax, dword ptr [ebp + 0x10]
-    mov word ptr ["_AIL_API_set_real_vect"+0x66], ax
+    mov word ptr ["_thunk_proc"+0x43], ax
     mov eax, 0x4a
     add eax, dword ptr [ebp - 0x1c]
-    mov word ptr ["_AIL_API_set_real_vect"+0x55], ax
+    mov word ptr ["_thunk_proc"+0x32], ax
     mov ebx, dword ptr [ebp + 8]
     mov dword ptr [_D_00150a02], ebx
     cmp ebx, 8
@@ -708,11 +724,19 @@
     pop ebx
     leave
     ret
-    .byte 0x9c
-    .byte 0x58
-    .byte 0xfa
-    .byte 0xc3
 .size "_AIL_API_restore_USE16_ISR",.-"_AIL_API_restore_USE16_ISR"
+
+// FUNCTION: 0x000de6f4
+
+.section _TEXT,"ax",@progbits,unique,911092
+.globl "_AIL_API_disable_interrupts"
+.type "_AIL_API_disable_interrupts",@function
+"_AIL_API_disable_interrupts":
+    pushfd
+    pop eax
+    cli
+    ret
+.size "_AIL_API_disable_interrupts",.-"_AIL_API_disable_interrupts"
 
 // FUNCTION: 0x000de6f8
 
@@ -734,38 +758,54 @@
     popfd
     leave
     ret
-    .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x10
-    .byte 0x89; .byte 0x20
-    .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x14
-    .byte 0x89; .byte 0x28
-    .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x0c
-    .byte 0x8c; .byte 0x10
-    .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x04
-    .byte 0x03; .byte 0x44; .byte 0x24; .byte 0x08
-    .byte 0x83; .byte 0xe0; .byte 0xfb
-    .byte 0x8b; .byte 0x14; .byte 0x24
-    .byte 0x83; .byte 0xc4; .byte 0x18
-    .byte 0x2b; .byte 0xec
-    .byte 0x8c; .byte 0xd9
-    .byte 0x8e; .byte 0xd1
-    .byte 0x8b; .byte 0xe0
-    .byte 0x8b; .byte 0xc5
-    .byte 0x8b; .byte 0xec
-    .byte 0x2b; .byte 0xe0
-    .byte 0x83; .byte 0xec; .byte 0x14
-    .byte 0xff; .byte 0xe2
-    .byte 0x55
-    .byte 0x8b; .byte 0xec
-    .byte 0x8b; .byte 0x4c; .byte 0x24; .byte 0x04
-    .byte 0x8b; .byte 0x45; .byte 0x08
-    .byte 0x8b; .byte 0x55; .byte 0x0c
-    .byte 0x8b; .byte 0x6d; .byte 0x10
-    .byte 0x83; .byte 0xc2; .byte 0x18
-    .byte 0x8e; .byte 0xd0
-    .byte 0x8b; .byte 0xe2
-    .byte 0x83; .byte 0xec; .byte 0x0c
-    .byte 0xff; .byte 0xe1
 .size "_AIL_switch_stack",.-"_AIL_switch_stack"
+
+// FUNCTION: 0x000de70d
+
+.section _TEXT,"ax",@progbits,unique,911117
+.globl "fn_000de70d_"
+.type "fn_000de70d_",@function
+"fn_000de70d_":
+    mov eax, dword ptr [esp + 0x10]
+    mov dword ptr [eax], esp
+    mov eax, dword ptr [esp + 0x14]
+    mov dword ptr [eax], ebp
+    mov eax, dword ptr [esp + 0xc]
+    mov word ptr [eax], ss
+    mov eax, dword ptr [esp + 4]
+    add eax, dword ptr [esp + 8]
+    and eax, 0xfffffffb
+    mov edx, dword ptr [esp]
+    add esp, 0x18
+    {load} sub ebp, esp
+    mov ecx, ds
+    mov ss, ecx
+    {load} mov esp, eax
+    {load} mov eax, ebp
+    {load} mov ebp, esp
+    {load} sub esp, eax
+    sub esp, 0x14
+    jmp edx
+.size "fn_000de70d_",.-"fn_000de70d_"
+
+// FUNCTION: 0x000de743
+
+.section _TEXT,"ax",@progbits,unique,911171
+.globl "_AIL_restore_stack"
+.type "_AIL_restore_stack",@function
+"_AIL_restore_stack":
+    push ebp
+    {load} mov ebp, esp
+    mov ecx, dword ptr [esp + 4]
+    mov eax, dword ptr [ebp + 8]
+    mov edx, dword ptr [ebp + 0xc]
+    mov ebp, dword ptr [ebp + 0x10]
+    add edx, 0x18
+    mov ss, eax
+    {load} mov esp, edx
+    sub esp, 0xc
+    jmp ecx
+.size "_AIL_restore_stack",.-"_AIL_restore_stack"
 
 // FUNCTION: 0x000de75f
 
@@ -1328,9 +1368,17 @@
     pop ebx
     pop ebp
     ret
-    .byte 0x66; .byte 0xb8; .byte 0x01; .byte 0x42
-    .byte 0xeb; .byte 0xda
 .size "_AIL_fseekcur",.-"_AIL_fseekcur"
+
+// FUNCTION: 0x000deb31
+
+.section _TEXT,"ax",@progbits,unique,912177
+.globl "fn_000deb31_"
+.type "fn_000deb31_",@function
+"fn_000deb31_":
+    mov ax, 0x4201
+    .byte 0xeb; .byte 0xda  # jmp 0xdeb11
+.size "fn_000deb31_",.-"fn_000deb31_"
 
 // FUNCTION: 0x000deb37
 
@@ -1393,7 +1441,7 @@
     call "_AIL_vmm_lock_range"
     add esp, 8
     .byte 0x68; .long "_AILA_VMM_lock"  # push 0xceb91
-    .byte 0x68; .long "fn_000ddf00_"+0x88  # push 0xcdf88
+    .byte 0x68; .long "_AIL_API_lock"  # push 0xcdf88
     call "_AIL_vmm_lock_range"
     add esp, 8
     ret

@@ -144,7 +144,7 @@ int strcmp(const char *a, const char *b);
 void fn_00074cd8(void);
 void fn_000110b0(void);
 u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "W?GetCurrentPlayersCallback$n(pn$TbNetworkCallbackData$$pnv)v"
+#pragma aux fn_000cd716 "fn_000cd716_"
 void fn_0007fbb8(s8 me);
 }
 

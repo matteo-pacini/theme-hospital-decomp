@@ -3,8 +3,11 @@
 
 Starts are the union of rizin's auto-analysis, rel32 call targets, Watcom
 unoptimised prologues that are only reached through pointers or that follow
-another function's padding, and every start already in config/functions.txt
-(so hand-added entries survive). Existing names are preserved.
+another function's padding, library functions placed from the demo build by
+their identical bytes (tools/demoident.py), and every start already in
+config/functions.txt (so hand-added entries survive). Inside a placed demo
+function, other starts are dropped unless something calls them or source
+code uses them (see tools/applynames.py). Existing names are preserved.
 
 Usage: tools/discover.py orig/HOSPITAL.EXE config/functions.txt
 """
@@ -16,6 +19,9 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
+from applynames import used_names  # noqa: E402
+from demoident import library_symbols, placements  # noqa: E402
+from demosyms import DEMO_EXE  # noqa: E402
 from lefile import LEFile  # noqa: E402
 from project import GAME_END, Project  # noqa: E402
 from x86scan import is_padding, leading_table, scan, trimmed_end  # noqa: E402
@@ -45,9 +51,11 @@ def main(exe, out):
     ).stdout
     starts = {f["offset"] for f in json.loads(afl) if lo <= f["offset"] < hi}
 
+    called = set()
     for it in scan(le, lo, hi):
         if it.mnemonic == "call" and it.branch_target is not None and lo <= it.branch_target < hi:
-            starts.add(it.branch_target)
+            called.add(it.branch_target)
+    starts |= called
 
     fixup_targets = {f.target for f in le.fixups.values() if f.target is not None}
     for m in PROLOGUE.finditer(code.data):
@@ -72,7 +80,8 @@ def main(exe, out):
     # only called through a pointer.
     # Hand-written assembly aligns loop bodies the same way, so its routines
     # (modules named *.asm in the demo build) are left whole.
-    asm = [(f.addr, f.end) for f in Project().functions if f.source and f.source.endswith(".asm")]
+    proj = Project()
+    asm = [(f.addr, f.end) for f in proj.functions if f.source and f.source.endswith(".asm")]
     for it in scan(le, GAME_END, hi):
         if not it.terminal or it.end % 16 == 0:
             continue
@@ -82,6 +91,16 @@ def main(exe, out):
 
     names = read_names(out)
     starts |= set(names)
+
+    known = {f.demo_addr: f.addr for f in proj.functions if f.demo_addr is not None}
+    placed = placements(LEFile(DEMO_EXE), le, library_symbols(le), known).values()
+    implemented = {f.addr for u in proj.units if not u.auto for f in u.functions}
+    used = used_names()
+    starts |= {r for r, _ in placed}
+    starts -= {
+        s for r, size in placed for s in range(r + 1, r + size)
+        if s in starts and s not in called and s not in implemented and names.get(s) not in used
+    }
     # Game functions are 4-byte aligned (-zm segments); an unaligned start
     # there is analysis noise inside another function.
     starts = sorted(s for s in starts if s >= GAME_END or s % 4 == 0)

@@ -13,7 +13,7 @@ extern char D_001563c5[];
 void fn_000c93bf(char *dst, char *src);
 void fn_000cd2cc(char *s, ...);
 int strcmp(const char *a, const char *b);
-void ___GETDSEnd(char *(*fn)(TbLoadFiles *));
+void fn_000bccf0(char *(*fn)(TbLoadFiles *));
 }
 
 extern s32 close_next_time;
@@ -111,7 +111,7 @@ s32 read_config_file(void)
         data[j++] = 0;
         if (!strcmp(data + key, D_00120622)) {
             LbDataLoadSetModifyFilenameFunction(cd_install_path, data + j);
-            ___GETDSEnd(modify_data_load_filename);
+            fn_000bccf0(modify_data_load_filename);
         } else if (!strcmp(data + key, D_0012062f)) {
             switch (tolower((s8)data[j + 1])) {
             case 'i':

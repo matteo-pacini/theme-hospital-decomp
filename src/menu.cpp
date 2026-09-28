@@ -19,7 +19,7 @@ void swap_game_sprites(TbScreenMode mode);
 void precalculate_shadow_blocks(void);
 
 u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "W?GetCurrentPlayersCallback$n(pn$TbNetworkCallbackData$$pnv)v"
+#pragma aux fn_000cd716 "fn_000cd716_"
 
 extern "C" {
 

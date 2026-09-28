@@ -35,6 +35,7 @@ class Function:
     size: int
     name: str
     demo_name: str | None = None  # mangled name in the demo build
+    demo_addr: int | None = None  # address in the demo build
     source: str | None = None  # source file in the demo build, e.g. "main.cpp"
     demo_category: str | None = None  # "game", "bflib" or "runtime"
 
@@ -93,10 +94,11 @@ class Project:
 
         by_addr = {f.addr: f for f in self.functions}
         for line in _lines(os.path.join(cfg, "demo_map.txt")):
-            retail, _, _, evidence, category, source, name = line.split()
+            retail, demo, _, evidence, category, source, name = line.split()
             fn = by_addr.get(int(retail, 16))
             if fn is not None and evidence != "conflict":
                 fn.demo_name, fn.source, fn.demo_category = name, source, category
+                fn.demo_addr = int(demo, 16)
 
         self.demo_data = {}  # retail address -> demo global name
         for line in _lines(os.path.join(cfg, "demo_data_map.txt")):

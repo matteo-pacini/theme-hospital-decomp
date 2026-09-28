@@ -50,7 +50,7 @@ char *strtok(char *s, const char *delim);
 s32 atol(const char *s);
 void fn_000c93bf(char *dst, char *src);
 u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "W?GetCurrentPlayersCallback$n(pn$TbNetworkCallbackData$$pnv)v"
+#pragma aux fn_000cd716 "fn_000cd716_"
 }
 
 s32 variable_address(char *name);

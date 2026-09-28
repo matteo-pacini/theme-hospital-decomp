@@ -239,8 +239,16 @@
     .byte 0xe8; .long "__InitRtns"-.-4
     .byte 0x29; .byte 0xed
     .byte 0xe8; .long "__CMain"-.-4
-    .byte 0xeb; .byte 0x23
 .size "_cstart_",.-"_cstart_"
+
+// FUNCTION: 0x000bcc9b
+
+.section _TEXT,"ax",@progbits,unique,773275
+.globl "__exit_"
+.type "__exit_",@function
+"__exit_":
+    .byte 0xeb; .byte 0x23  # jmp 0xbccc0
+.size "__exit_",.-"__exit_"
 
 // FUNCTION: 0x000bcc9d
 
@@ -287,28 +295,17 @@
     ret
 .size "__GETDS",.-"__GETDS"
 
-// FUNCTION: 0x000bccf0
+// FUNCTION: 0x000bcce3
 
-.section _TEXT,"ax",@progbits,unique,773360
+.section _TEXT,"ax",@progbits,unique,773347
 .globl "___GETDSEnd_"
 .type "___GETDSEnd_",@function
 "___GETDSEnd_":
-    push ebp
-    mov ebp, esp
-    sub esp, 4
-    mov dword ptr [ebp - 4], eax
-    mov eax, dword ptr [ebp - 4]
-    mov dword ptr [_D_0014d5e4], eax
-    mov esp, ebp
-    pop ebp
-    ret
-    .byte 0x8d; .byte 0x40; .byte 0x00
-    .byte 0x55
-    .byte 0x89; .byte 0xe5
-    .byte 0x83; .byte 0xec; .byte 0x04
-    .byte 0x89; .byte 0x45; .byte 0xfc
-    .byte 0x8b; .byte 0x45; .byte 0xfc
-    .byte 0x89; .byte 0xec
-    .byte 0x5d
-    .byte 0xc3
+    add byte ptr [eax], al
+    add byte ptr [eax], al
+    add byte ptr [eax], al
+    add byte ptr [eax], al
+    add byte ptr [eax], al
+    add byte ptr [eax], al
+    .byte 0x00
 .size "___GETDSEnd_",.-"___GETDSEnd_"

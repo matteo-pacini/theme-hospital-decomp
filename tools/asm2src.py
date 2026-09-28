@@ -64,6 +64,11 @@ def byte_form(le, proj, fn, addr, ins, raw, label, known_labels=None):
         disp = 4 if ins.size >= 5 else 1
         dest = int(ins.op_str, 16)
         inside = fn.addr <= dest < fn.end
+        if dest == fn.addr and disp == 4:
+            # A recursive call is relocated against the function's own symbol;
+            # as would resolve `sym-.-4` itself, so the relocation is explicit.
+            head = "; ".join(f".byte {b:#04x}" for b in raw[:-4])
+            return f"{head}; .long -4; .reloc .-4, R_386_PC32, {q(fn.name)}"
         if (disp == 1 and not inside) or (inside and label(dest) not in known_labels):
             # A short branch into another function carries no relocation.
             return "; ".join(f".byte {b:#04x}" for b in raw)

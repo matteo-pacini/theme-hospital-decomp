@@ -31,7 +31,7 @@ extern u8 D_0015539b[];
 extern u8 D_00155e23;
 
 u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "W?GetCurrentPlayersCallback$n(pn$TbNetworkCallbackData$$pnv)v"
+#pragma aux fn_000cd716 "fn_000cd716_"
 void fn_0008bdd4(void);
 }
 

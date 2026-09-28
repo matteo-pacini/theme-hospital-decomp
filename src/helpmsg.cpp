@@ -47,7 +47,7 @@ extern char D_00120c5d[];
 
 int strcmp(const char *a, const char *b);
 u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "W?GetCurrentPlayersCallback$n(pn$TbNetworkCallbackData$$pnv)v"
+#pragma aux fn_000cd716 "fn_000cd716_"
 void LbMouseSetWindow(s32 x, s32 y, s32 w, s32 h);
 }
 

@@ -43,7 +43,7 @@ extern char D_001209fa[], D_00120a0d[];
 extern char D_001563c5[];
 
 u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "W?GetCurrentPlayersCallback$n(pn$TbNetworkCallbackData$$pnv)v"
+#pragma aux fn_000cd716 "fn_000cd716_"
 int strcmp(const char *a, const char *b);
 void fn_00094a18(void);
 void fn_00094b28(void);

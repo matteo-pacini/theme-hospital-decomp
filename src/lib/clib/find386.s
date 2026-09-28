@@ -40,9 +40,17 @@
     call "_dos_findclose_"
     pop edx
     ret
-    .byte 0x31; .byte 0xc0
-    .byte 0xc3
 .size "_dos_findnext_",.-"_dos_findnext_"
+
+// FUNCTION: 0x000d1261
+
+.section _TEXT,"ax",@progbits,unique,856673
+.globl "fn_000d1261_"
+.type "fn_000d1261_",@function
+"fn_000d1261_":
+    xor eax, eax
+    ret
+.size "fn_000d1261_",.-"fn_000d1261_"
 
 // FUNCTION: 0x000d1264
 

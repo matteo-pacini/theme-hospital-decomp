@@ -5,7 +5,8 @@ extern char _Extender;
 
 void __GETDS(void);
 #pragma aux __GETDS "*";
-extern char C_000bcce3[];
+extern char __GETDSEnd[];
+#pragma aux __GETDSEnd "___GETDSEnd_"
 
 int __DPMI_hosted(void);
 
@@ -36,6 +37,6 @@ void __CommonInit(void)
         not_zero_based = 0;
     if (not_zero_based) {
         if (__DPMI_hosted() == 1)
-            DPMILockLinearRegion((long)__GETDS, C_000bcce3 - (char *)__GETDS);
+            DPMILockLinearRegion((long)__GETDS, __GETDSEnd - (char *)__GETDS);
     }
 }

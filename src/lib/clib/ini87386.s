@@ -272,7 +272,7 @@
     .byte 0x25; .byte 0xff; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x83; .byte 0xf8; .byte 0x03
     .byte 0x75; .byte .L000ef376-.-1
-    call "fn_000ef30c_"
+    .byte 0xe8; .long -4; .reloc .-4, R_386_PC32, "fn_000ef30c_"
     .byte 0x88; .byte 0xc2
 .L000ef376:
     .byte 0x80; .byte 0x3d; .long "__no87"; .byte 0x00

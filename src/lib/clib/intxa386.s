@@ -55,41 +55,49 @@
     mov edi, dword ptr [edi + 0x14]
     mov ds, ebp
     ret
-    .byte 0x60
-    .byte 0x0f; .byte 0xa8
-    .byte 0x0f; .byte 0xa0
-    .byte 0x06
-    .byte 0x1e
-    .byte 0x52
-    .byte 0xe8; .long "_DoINTR_"-.-4
-    .byte 0x53
-    .byte 0x1e
-    .byte 0x55
-    .byte 0x89; .byte 0xe5
-    .byte 0x8b; .byte 0x5d; .byte 0x0c
-    .byte 0x8e; .byte 0x5d; .byte 0x10
-    .byte 0x89; .byte 0x03
-    .byte 0x9c
-    .byte 0x58
-    .byte 0x66; .byte 0x89; .byte 0x43; .byte 0x24
-    .byte 0x89; .byte 0x4b; .byte 0x08
-    .byte 0x89; .byte 0x53; .byte 0x0c
-    .byte 0x89; .byte 0x73; .byte 0x14
-    .byte 0x89; .byte 0x7b; .byte 0x18
-    .byte 0x8f; .byte 0x43; .byte 0x10
-    .byte 0x58
-    .byte 0x66; .byte 0x89; .byte 0x43; .byte 0x1c
-    .byte 0x8f; .byte 0x43; .byte 0x04
-    .byte 0x66; .byte 0x8c; .byte 0x43; .byte 0x1e
-    .byte 0x66; .byte 0x8c; .byte 0x63; .byte 0x20
-    .byte 0x66; .byte 0x8c; .byte 0x6b; .byte 0x22
-    .byte 0x83; .byte 0xc4; .byte 0x08
-    .byte 0x07
-    .byte 0x0f; .byte 0xa1
-    .byte 0x0f; .byte 0xa9
-    .byte 0x61
-    .byte 0xc3
 .size "fn_000ecd9a_",.-"fn_000ecd9a_"
+
+// FUNCTION: 0x000ecdbf
+
+.section _TEXT,"ax",@progbits,unique,970175
+.globl "fn_000ecdbf_"
+.type "fn_000ecdbf_",@function
+"fn_000ecdbf_":
+    .byte 0x60  # pushal
+    push gs
+    push fs
+    push es
+    push ds
+    push edx
+    call "_DoINTR_"
+    push ebx
+    push ds
+    push ebp
+    mov ebp, esp
+    mov ebx, dword ptr [ebp + 0xc]
+    mov ds, word ptr [ebp + 0x10]
+    mov dword ptr [ebx], eax
+    pushfd
+    pop eax
+    mov word ptr [ebx + 0x24], ax
+    mov dword ptr [ebx + 8], ecx
+    mov dword ptr [ebx + 0xc], edx
+    mov dword ptr [ebx + 0x14], esi
+    mov dword ptr [ebx + 0x18], edi
+    pop dword ptr [ebx + 0x10]
+    pop eax
+    mov word ptr [ebx + 0x1c], ax
+    pop dword ptr [ebx + 4]
+    .byte 0x66; .byte 0x8c; .byte 0x43; .byte 0x1e  # mov word ptr [ebx + 0x1e], es
+    .byte 0x66; .byte 0x8c; .byte 0x63; .byte 0x20  # mov word ptr [ebx + 0x20], fs
+    .byte 0x66; .byte 0x8c; .byte 0x6b; .byte 0x22  # mov word ptr [ebx + 0x22], gs
+    add esp, 8
+    pop es
+    pop fs
+    pop gs
+    .byte 0x61  # popal
+    ret
+.size "fn_000ecdbf_",.-"fn_000ecdbf_"
 
 // FUNCTION: 0x000ece0c
 
