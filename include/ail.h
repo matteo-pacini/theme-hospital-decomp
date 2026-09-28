@@ -84,6 +84,10 @@ void oprintf5(char const *fmt, S32 a1, S32 a2, S32 a3, S32 a4, S32 a5);
 
 /* C library */
 unsigned strlen(char const *s);
+/*
+ * Inline strlen as the original compiler expanded it; Watcom 10.6's own
+ * strlen intrinsic loads the -1 with "sub ecx,ecx; dec ecx" instead.
+ */
 #pragma aux strlen = \
     "mov ecx,-1" \
     "xor eax,eax" \
@@ -91,6 +95,44 @@ unsigned strlen(char const *s);
     "not ecx" \
     "dec ecx" \
     parm [edi] value [ecx] modify exact [eax ecx edi];
+
+/* Watcom <i86.h> register block for int386(). */
+struct DWORDREGS {
+    unsigned int eax;
+    unsigned int ebx;
+    unsigned int ecx;
+    unsigned int edx;
+    unsigned int esi;
+    unsigned int edi;
+    unsigned int cflag;
+};
+
+union REGS {
+    struct DWORDREGS x;
+};
+
+/* As for strlen: the original compiler's inline memset, not Watcom 10.6's. */
+void memset(void *dst, int c, unsigned n);
+#pragma aux memset = \
+    "mov ah,al" \
+    "mov bx,ax" \
+    "shl eax,16" \
+    "mov ax,bx" \
+    "mov bl,cl" \
+    "shr ecx,2" \
+    "and bl,3" \
+    "rep stosd" \
+    "mov cl,bl" \
+    "rep stosb" \
+    parm [edi] [al] [ecx] modify exact [eax ebx ecx edx edi];
+
+/* memfile.c */
+extern void *(__pascal *AIL_mem_alloc)(U32 size);
+extern void (__pascal *AIL_mem_free)(void *ptr);
+extern int (__pascal *AIL_int386)(int intno, union REGS *in, union REGS *out);
+
+void *__cdecl AIL_mem_alloc_lock(U32 size);
+void __cdecl AIL_mem_free_lock(void *ptr);
 
 /* aila.asm */
 void __cdecl AIL_API_lock(void);
@@ -101,13 +143,19 @@ void __cdecl AIL_API_restore_interrupts(U32 FD_register);
 #pragma aux (__cdecl) AIL_API_restore_interrupts "_AIL_switch_stack";
 U32 __cdecl AIL_ms_count(void);
 S32 __cdecl AIL_API_background(void);
-S32 __cdecl AIL_fwrite(S32 file, void const *buf, U32 len);
+S32 __cdecl AIL_fopen(char const *filename, U32 access);
+S32 __cdecl AIL_fcreate(char const *filename);
+S32 __cdecl AIL_fappend(char const *filename);
+U32 __cdecl AIL_fread(S32 file, void *buf, U32 len);
+U32 __cdecl AIL_fwrite(S32 file, void const *buf, U32 len);
+S32 __cdecl AIL_fseekbegin(S32 file, S32 offset);
+S32 __cdecl AIL_fseekend(S32 file, S32 offset);
 void __cdecl AIL_fclose(S32 file);
 
-/* memfile.c */
-S32 __cdecl AIL_vmm_lock_range(void *start, void *end);
-S32 __cdecl AIL_vmm_unlock_range(void *start, void *end);
-S32 __cdecl AIL_vmm_lock(void *p, U32 size);
+S32 __cdecl AIL_vmm_lock_range(void *p1, void *p2);
+S32 __cdecl AIL_vmm_unlock_range(void *p1, void *p2);
+S32 __cdecl AIL_vmm_lock(void *start, U32 size);
+S32 __cdecl AIL_vmm_unlock(void *start, U32 size);
 
 /* ail.c */
 void __cdecl AIL_API_shutdown(void);

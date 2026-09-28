@@ -1163,6 +1163,7 @@ struct HospPlayerDetails {
         struct {
             u8 unknown0a_[9];
             u16 f9;
+            u8 fb;
         };
     };
     u8 unknown11;
@@ -1420,10 +1421,10 @@ struct HospWindow {
             s32 fc0[3];
             s32 fcc[3];
             u8 fd8_[12];
-            s32 fe4[5][4];
-            s32 f134[5][4];
-            s32 f184[5][4];
-            s32 f1d4[5][4];
+            s32 fe4[20];
+            s32 f134[20];
+            s32 f184[20];
+            s32 f1d4[20];
             s32 f224[3];
             s32 f230[3];
             s32 f23c[3];
@@ -1439,8 +1440,13 @@ struct HospWindow {
             s32 f2b4[3];
         };
     };
-    u8 unknown2c0;
-    u8 unknown2c1[2];
+    union {
+        struct {
+            u8 unknown2c0;
+            u8 unknown2c1[2];
+        };
+        u8 f2c0[3];
+    };
     s32 unknown2c3;
     s32 unknown2c7;
     s32 unknown2cb;
@@ -1499,7 +1505,23 @@ struct Debug {
         };
     };
     u8 unknowne2;
-    u8 unknowne3[0x25];
+    union {
+        u8 unknowne3[0x25];
+        struct {
+            u8 unknowne3_[0x19];
+            u8 ffc;
+            u8 ffd;
+            u8 ffe;
+            u8 fff;
+            u8 f100;
+            u8 f101;
+            u8 f102;
+            u8 f103;
+            u8 f104;
+            u8 f105;
+            u8 f106;
+        };
+    };
     u16 unknown108;
     u8 unknown10a;
     u8 unknown10b[0xb];

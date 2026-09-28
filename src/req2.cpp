@@ -517,7 +517,6 @@ void req2_exit_employing(const u16 id)
 }
 
 // NONMATCHING: register choice
-// NONMATCHING: register choice
 // FUNCTION: 0x0006b1f4
 void req12(Window *w)
 {

@@ -8,8 +8,8 @@ extern s32 D_00188c48;
 extern u16 D_00188c74;
 }
 
-#define GLOW(c) (D_00188c74 & 4 ? lbDisplay.ghost[(c << 8) + glow] : lbDisplay.ghost[(glow << 8) + c])
 
+// NONMATCHING: register choice, clip expression evaluation order
 // FUNCTION: 0x0006ef70
 s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
 {
@@ -31,9 +31,6 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
         s32 pitch;
         s8 *src;
         s32 rows;
-        u8 xflip;
-        u8 sw;
-        u8 tmp2;
         u8 *next;
         s32 remaining;
 
@@ -48,7 +45,7 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
         } else {
             left = 0;
         }
-        d = w + x - (D_00188c3c + D_00188c44);
+        d = x + w - (D_00188c3c + D_00188c44);
         if (d > 0) {
             if (w <= d)
                 return 1;
@@ -65,7 +62,7 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
         } else {
             top = 0;
         }
-        d = h + y - (D_00188c40 + D_00188c48);
+        d = y + h - (D_00188c40 + D_00188c48);
         if (d > 0) {
             if (h <= d)
                 return 1;
@@ -101,6 +98,10 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
             }
         }
         if (D_00188c74 & 0xd) {
+            u8 tmp2;
+            u8 sw;
+            u8 xflip;
+
             if (D_00188c74 & 1) {
                 dst += w - 1;
                 xflip = 1;
@@ -129,18 +130,18 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                             if (xflip) {
                                 if (D_00188c74 & 4) {
                                     for (i = 0; i < n; i++, p++, dst--)
-                                        *dst = lbDisplay.ghost[(*p << 8) + glow];
+                                        *dst = *(lbDisplay.ghost + (*p << 8) + glow);
                                 } else {
                                     for (i = 0; i < n; i++, p++, dst--)
-                                        *dst = lbDisplay.ghost[(glow << 8) + *p];
+                                        *dst = *(lbDisplay.ghost + (glow << 8) + *p);
                                 }
                             } else {
                                 if (D_00188c74 & 4) {
                                     for (i = 0; i < n; i++, p++, dst++)
-                                        *dst = lbDisplay.ghost[(*p << 8) + glow];
+                                        *dst = *(lbDisplay.ghost + (*p << 8) + glow);
                                 } else {
                                     for (i = 0; i < n; i++, p++, dst++)
-                                        *dst = lbDisplay.ghost[(glow << 8) + *p];
+                                        *dst = *(lbDisplay.ghost + (glow << 8) + *p);
                                 }
                             }
                             remaining -= *src;
@@ -192,18 +193,18 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                                         if (xflip) {
                                             if (D_00188c74 & 4) {
                                                 for (j = 0; j < len; j++, p++, dst--)
-                                                    *dst = lbDisplay.ghost[(*p << 8) + glow];
+                                                    *dst = *(lbDisplay.ghost + (*p << 8) + glow);
                                             } else {
                                                 for (j = 0; j < len; j++, p++, dst--)
-                                                    *dst = lbDisplay.ghost[(glow << 8) + *p];
+                                                    *dst = *(lbDisplay.ghost + (glow << 8) + *p);
                                             }
                                         } else {
                                             if (D_00188c74 & 4) {
                                                 for (j = 0; j < len; j++, p++, dst++)
-                                                    *dst = lbDisplay.ghost[(*p << 8) + glow];
+                                                    *dst = *(lbDisplay.ghost + (*p << 8) + glow);
                                             } else {
                                                 for (j = 0; j < len; j++, p++, dst++)
-                                                    *dst = lbDisplay.ghost[(glow << 8) + *p];
+                                                    *dst = *(lbDisplay.ghost + (glow << 8) + *p);
                                             }
                                         }
                                         src += *src + 1;

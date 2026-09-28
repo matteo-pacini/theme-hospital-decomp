@@ -1115,6 +1115,7 @@ void process_mouse_network_select(void)
     }
     D_00188c81 = 0;
 }
+
 struct NetInitData {
     s32 port;
     char *baud;

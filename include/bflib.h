@@ -77,9 +77,9 @@ extern TbScreenModeInfo lbScreenModeInfo[];
 extern __iobuf __iob[];
 
 int LbMemorySetup(void);
-void LbMemoryReset(void);
+int LbMemoryReset(void);
 void *LbMemoryAlloc(u32 size);
-void LbMemoryFree(void *p);
+int LbMemoryFree(void *p);
 void LbMemoryCopy(void *dst, void *src, u32 size);
 void LbMemorySet(void *dst, int value, u32 size);
 void LbDataLoadSetModifyFilenameFunction(char *dst, char *src);
@@ -91,10 +91,10 @@ int LbFileLoadAt(char *path, void *buf);
 void LbFileSaveAt(char *path, void *buf, u32 size);
 int LbFileExists(char *path);
 int LbFileOpen(char *name, int mode);
-void LbFileClose(int handle);
+int LbFileClose(int handle);
 int LbFileRead(int handle, void *buf, int len);
 int LbFileSeek(int handle, int offset, int origin);
-void LbFileWrite(int handle, void *buf, int len);
+int LbFileWrite(int handle, void *buf, int len);
 void LbSpriteSetup(TbSprite *start, TbSprite *end, void *data);
 void LbSpriteDraw(int x, int y, TbSprite *sprite);
 void LbMousePlace(void);
@@ -140,6 +140,29 @@ void fflush(__iobuf *fp);
 int tolower(int c);
 int toupper(int c);
 
+int printf(char *fmt, ...);
+u32 clock(void);
+void *malloc(u32 size);
+#pragma aux malloc "W?init$n()v"
+void free(void *p);
+#pragma aux free "__wcpp_2_mod_register__"
+
+struct DWORDREGS {
+    u32 eax;
+    u32 ebx;
+    u32 ecx;
+    u32 edx;
+    u32 esi;
+    u32 edi;
+    u32 cflag;
+};
+
+union REGS {
+    DWORDREGS x;
+};
+
+int int386(int intno, REGS *in, REGS *out);
+
 void AIL_stop_sequence(u32 handle, ...);
 #pragma aux AIL_stop_sequence "_*"
 void AIL_resume_sequence(u32 handle, ...);
@@ -184,6 +207,70 @@ struct TbCache {
 };
 
 extern TbCache cache;
+
+/* One allocation made through _CMemory, in conventional memory if seg != 0. */
+struct _CMemoryBlock {
+    _CMemoryBlock *next;
+    void *ptr;
+    u32 size;
+    u16 seg;
+    u16 pad;
+};
+
+struct _CMemory {
+    _CMemoryBlock blocks[100];
+    _CMemoryBlock *free_list;
+    _CMemoryBlock *used_list;
+
+    _CMemory();
+    ~_CMemory();
+    void *Alloc(u32 size, u32 low);
+};
+
+extern _CMemory _lbMemory;
+
+struct CDosHeapItem {
+    u32 size;
+    u8 *ptr;
+    CDosHeapItem *next;
+};
+
+struct CDosHeapStats {
+    u32 total;
+    u32 count;
+
+    void Init(void);
+    void RecordAlloc(CDosHeapItem *item);
+    void RecordFree(CDosHeapItem *item);
+    u32 GetTotalAllocation(void);
+    u32 GetAllocCount(void);
+};
+
+struct CDosHeap {
+    CDosHeapItem items[200];
+    CDosHeapItem *used_list;
+    CDosHeapItem *free_list;
+    CDosHeapStats stats;
+    u32 reporting;
+    u32 errors;
+
+    CDosHeap();
+    void *Alloc(u32 size);
+    CDosHeapItem *GetNextRecord(void);
+    void Error(char *fmt, ...);
+    void Init(void *mem, u32 size);
+    void Free(void *p);
+    CDosHeapItem *RemoveAllocMatch(void *p);
+    u32 ReleaseFreeBlock(CDosHeapItem *item);
+    u32 MergeRecord(CDosHeapItem *item);
+    void Repack(void);
+    void Report(char *fmt, ...);
+    void SetReporting(u32 on);
+    void SetErrors(u32 on);
+    void ReleaseRecord(CDosHeapItem *item);
+};
+
+extern CDosHeap _lbHeap;
 
 void LbPackHeap(void);
 s32 GetCDSpeed(char *path, void *buf, s32 size, u32 count);

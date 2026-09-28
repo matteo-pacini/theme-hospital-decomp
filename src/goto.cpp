@@ -665,13 +665,13 @@ extern "C" {
 extern GraphLabel D_0015eba0[];
 extern s16 D_0015eb9c;
 extern GraphRect *D_0015f430;
-void fn_00078d70(u16 kind, s16 value, s32 data);
+void fn_00078d70(s16 kind, s16 value, s32 data);
 void fn_00078e38(u16 gap);
 }
 
 // NONMATCHING: register choice
 // FUNCTION: 0x00078d70
-void fn_00078d70(u16 kind, s16 value, s32 data)
+void fn_00078d70(s16 kind, s16 value, s32 data)
 {
     u8 i;
 
