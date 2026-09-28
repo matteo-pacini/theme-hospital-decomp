@@ -197,8 +197,18 @@ struct Thing {
     union {
         char label[0x44];
         struct {
+            u8 f64;
+            s8 f65;
+        };
+        struct {
             u8 unknown100t_[0xc];
             s32 f70;
+        };
+        struct {
+            u8 unknown100h_[0x34];
+            u16 f98;
+            u16 f9a;
+            u16 f9c;
         };
         struct {
             u8 unknown100s_[0x20];
@@ -364,14 +374,25 @@ struct Equipment {
 
 struct ObjectStats {
     s32 cost;
-    u8 unknown4[4];
+    union {
+        u8 unknown4[4];
+        u32 available;
+    };
     u16 unknown8;
     u16 fA;
     u8 unknownC[2];
 };
 
+struct ThingPage {
+    u16 id;
+    u32 time;
+    u16 responder;
+    u8 priority;
+};
+
 struct ThingPager {
-    u8 unknown0[1];
+    u16 count;
+    ThingPage pages[0x40];
 };
 
 struct ComputerStrategy {
@@ -430,6 +451,17 @@ struct BuildState {
     u8 unknown3c;
 };
 
+struct ResearchWorkStations {
+    u8 count;
+    u16 kinds[11];
+    u8 unknown17;
+};
+
+struct Population {
+    u16 month;
+    u16 count;
+};
+
 struct AllHosps {
     u8 unknown0[0x29];
     u8 f29;
@@ -453,6 +485,13 @@ struct AllHosps {
             u8 unknown45a_[0x90];
             s32 fd5s[2];
         };
+        struct {
+            u8 unknown45r_[0x98];
+            s32 research_points;
+            s32 illness_research[0x2f];
+            s32 research_cost[5];
+            s16 research_alloc[5];
+        };
         s32 f45[3][12];
     };
     s32 f1bb;
@@ -471,12 +510,42 @@ struct AllHosps {
     };
     s16 unknown1cf[4];
     u16 f1d7;
-    u16 f1d9;
-    u8 unknown1db[7];
-    u8 f1e2;
-    u8 unknown1e3[2];
+    union {
+        u16 f1d9;
+        s16 f1d9s;
+    };
+    union {
+        u8 unknown1db[7];
+        struct {
+            u8 unknown1db_[2];
+            u16 f1dd;
+        };
+        struct {
+            u8 unknown1db__[4];
+            u16 f1df;
+            u8 f1e1;
+        };
+    };
+    union {
+        u8 f1e2;
+        s8 f1e2s;
+    };
+    union {
+        u8 unknown1e3[2];
+        struct {
+            s8 f1e3;
+            u8 f1e4;
+        };
+    };
     u8 f1e5;
-    u8 unknown1e6[3];
+    union {
+        u8 unknown1e6[3];
+        struct {
+            u8 f1e6;
+            u8 f1e7;
+            u8 f1e8;
+        };
+    };
     u16 f1e9;
     u16 f1eb;
     u16 f1ed;
@@ -551,7 +620,7 @@ struct AllHosps {
     ThingPager ff6d;
     union {
         struct {
-            u8 unknownf6e[0x249];
+            u8 unknownf6e[8];
             u16 unknown11b7;
             union {
                 u8 unknown11b9[3];
@@ -562,10 +631,7 @@ struct AllHosps {
             u16 f11c2[0x14];
             u8 unknown11ea[4];
         };
-        struct {
-            u8 unknownf6e_[0x241];
-            BuildState build;
-        };
+        BuildState build;
     };
     u16 unknown11ee;
     u16 unknown11f0;
@@ -725,7 +791,13 @@ struct Expertise {
     };
     u8 unknown8;
     u8 category;
-    u8 unknown10[9];
+    union {
+        u8 unknown10[9];
+        struct {
+            u8 unknown10_[2];
+            u32 cost;
+        };
+    };
 };
 
 struct ObjectControl {
@@ -739,7 +811,13 @@ struct ObjectControl {
         };
     };
     u16 unknownE;
-    u8 unknown10[4];
+    union {
+        u8 unknown10[4];
+        struct {
+            u8 unknown10_[2];
+            u16 f12;
+        };
+    };
     u8 unknown14;
     u8 unknown15[1];
     s8 walls;
@@ -987,6 +1065,9 @@ struct Game {
             u16 f6[4];
             u8 unknowne[2];
             u16 f10[4];
+            u8 unknown18_[2];
+            u16 f1a;
+            s16 f1c;
         };
     };
     u8 unknown1e;
@@ -1130,7 +1211,13 @@ struct Required {
 };
 
 struct Debug {
-    u8 unknown0[8];
+    union {
+        u8 unknown0[8];
+        struct {
+            u32 unknown0_;
+            u32 unknown4;
+        };
+    };
     u32 unknown8;
     u8 unknownc[0xc8];
     u8 unknownd4;
@@ -1523,6 +1610,10 @@ struct Town {
             u8 unknown4_[0xc];
             u16 f10;
         };
+        struct {
+            u8 unknown4e_[0xa];
+            u16 fe;
+        };
     };
 };
 
@@ -1546,6 +1637,8 @@ extern const u8 ingame_pointer_hotspots[];
 extern const u8 screen_pointer_hotspots[];
 extern u8 abilities[][6];
 extern Expertise expertise[];
+extern Population popn[];
+extern ResearchWorkStations research_workstations;
 extern menu pmenu;
 extern AnimStart anim_starts[];
 extern AnimStart staff_anim_starts[];
@@ -2143,7 +2236,7 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner);
 #pragma aux fn_00037098 "W?place_object$n(ususuc)us"
 void fn_0004195c(Thing *w, u16 a);
 #pragma aux fn_0004195c "W?nav_init$n(pn$Thing$$)v"
-void fn_00074220(int a, int b);
+void fn_00074220(u8 a, u8 b);
 #pragma aux fn_00074220 "W?keybuffer_clear$n()v"
 u8 fn_000c960c(u8 *palette, int r, int g, int b);
 #pragma aux fn_000c960c "W?draw_bdem_unavailable_message$n()v"
@@ -2165,7 +2258,7 @@ u8 fn_0003c1e8(Thing *w, u16 action);
 #pragma aux fn_0003c1e8 "W?forget_about_my_slave$n(us)uc"
 void fn_0008493c(u8 fail, u8 active);
 #pragma aux fn_0008493c "W?swap_criteria_packets$n(uc)v"
-u16 fn_00073e64(u16 id, u16 flags);
+u16 fn_00073e64(u16 id, u32 flags);
 #pragma aux fn_00073e64 "W?find_next_emergency_person$n(us)us"
 
 

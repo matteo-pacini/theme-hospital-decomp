@@ -21,6 +21,18 @@ void check_trophies_won(void);
 void annual_update_of_award_counts(void);
 void start_year_end(void);
 void check_awards_won(void);
+void try_to_generate_emergency(void);
+void generate_mayors(void);
+void generate_disaster(u8 owner);
+void generate_quake(void);
+void manage_rats(void);
+void computer_day(void);
+void do_research(void);
+u32 epidemic_status(u8 owner);
+void generate_inspector(u8 owner);
+void create_a_peep(void);
+void rat_fest_control(void);
+void computer_action(void);
 
 void process_stat_panel(void);
 
@@ -68,6 +80,11 @@ extern char D_00120447[];
 extern char D_0012044d[];
 extern char D_00120453[];
 extern char D_00120459[];
+extern volatile s16 D_00188c6c, D_00188c70;
+extern u8 D_00188c7e, D_00188c81;
+extern Button *D_0015f43c;
+extern u8 D_00156910;
+void StopSample(u32 a, u32 b);
 }
 
 // NONMATCHING: register choice
@@ -330,16 +347,17 @@ void year_end(void)
     mycontrol->f4a0 = myhosp->unknownc7e;
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x00052038
 void bank_statement(void)
 {
-    s32 balance;
     u16 row;
     u16 line_h;
     u16 char_w;
     u16 i;
     u16 first;
     u16 k;
+    s32 balance;
     char buf[100];
 
     compute_help_text(0, 0, 0xf);
@@ -431,9 +449,171 @@ void bank_statement(void)
             else
                 LbTextDraw(D_0015f434->pos[6].x, D_0015f434->pos[6].y, buf);
             break;
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        default:
+            break;
         }
     }
     D_00188c74 = 0;
     if (exit_quick_requester())
         bank.unknown2 = 2;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000528cc
+void process_stat_panel(void)
+{
+    u8 i;
+
+    if (D_00188c81) {
+        for (i = 0; D_0015f43c[i].width != 0 && D_0015f43c[i].height != 0; i++) {
+            if (over_hotspot(D_00188c6c, D_00188c70, D_0015f43c[i].x, D_0015f43c[i].y, D_0015f43c[i].width,
+                             D_0015f43c[i].height)) {
+                D_0015f43c[i].callback(i);
+                reqspr_draw(D_0015f43c[i].unknownC, D_0015f43c[i].unknownE,
+                            &screen_sprites_tab_start[D_0015f43c[i].sprite]);
+            }
+        }
+    }
+    if (D_00188c7e) {
+        for (i = 0; D_0015f43c[i].width != 0 && D_0015f43c[i].height != 0; i++) {
+            if (over_hotspot(mouse_dx, mouse_dy, D_0015f43c[i].x, D_0015f43c[i].y, D_0015f43c[i].width,
+                             D_0015f43c[i].height)) {
+                reqspr_draw(D_0015f43c[i].unknownC, D_0015f43c[i].unknownE,
+                            &screen_sprites_tab_start[D_0015f43c[i].sprite]);
+                break;
+            }
+        }
+    }
+    D_00188c81 = 0;
+}
+
+// FUNCTION: 0x00052b48
+void process_stat_button(u8 n)
+{
+    switch (n) {
+    case 0:
+        bank.unknown2 = 2;
+        play_sound(10, 0x42, -1, -1);
+        break;
+    case 1:
+        play_sound(10, 0x43, -1, -1);
+        fn_00074220(0, 0x41);
+        break;
+    }
+}
+
+// FUNCTION: 0x00052bcc
+u16 exit_quick_requester(void)
+{
+    if (lbInkey >= 0x80)
+        lbInkey = 0;
+    if (lbInkey == 1 || lbInkey == 0x39) {
+        lbInkey = 0;
+        play_sound(10, 0x42, -1, -1);
+        return 1;
+    }
+    return 0;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00052c44
+void daily_admin(void)
+{
+    s32 i;
+    s32 n;
+
+    mycontrol->unknown64f++;
+    D_00156910 = 1;
+    try_to_generate_emergency();
+    generate_mayors();
+    n = 1;
+    if (statvar.unknownfd > 1)
+        n = 4;
+    for (i = 0; i < n; i++) {
+        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+            continue;
+        if (allhosps[i].f1e2s == 2) {
+            if (allhosps[i].f1e7 == 0) {
+                allhosps[i].f1e2 = 1;
+                if (allhosps[i].f1e5 * 100 / allhosps[i].f1e6 >= allhosps[i].f1e8) {
+                    change_balance(0x1c, allhosps[i].f1dd * allhosps[i].f1e5, 0, i);
+                    reputation_affected(0, 0xc, 0, i, 0);
+                    satisfied_net_criteria(1, i);
+                } else {
+                    reputation_affected(0, 0xd, 0, i, allhosps[i].f1e6 - allhosps[i].f1e5);
+                }
+                make_a_playercall(5, 1, 0x14, i);
+            }
+        }
+        generate_disaster(i);
+    }
+    generate_quake();
+    expire_playercalls();
+    manage_rats();
+    computer_day();
+    do_research();
+}
+
+// FUNCTION: 0x00052e70
+void twice_daily_admin(void)
+{
+    u8 n;
+    u8 i;
+    AllHosps *h;
+
+    h = allhosps;
+    n = 1;
+    if (statvar.unknownfd > 1)
+        n = 4;
+    for (i = 0; i < n; i++, h++) {
+        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+            continue;
+        if (h->f1d9s > 0) {
+            h->f1d9--;
+            if (h->f1d9s == 0 && h->f1e2s > 0)
+                h->f1e2--;
+            if (myhosp->f1d9s == 0)
+                StopSample(0xd, 0xa9);
+        }
+        if (epidemic_status(i))
+            generate_inspector(i);
+    }
+    create_a_peep();
+    rat_fest_control();
+    computer_action();
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00052f7c
+void calculate_value(const u8 owner)
+{
+    s32 total;
+    AllHosps *h;
+    s32 base;
+    s32 bank;
+    RoomInfo *room;
+    s32 staff;
+
+    total = 0;
+    h = &allhosps[owner];
+    base = h->f1bf;
+    bank = h->unknownc7e / 50 * 1000;
+    for (room = room_info + 1; room < end_room_info; room++) {
+        if (room->owner == owner)
+            total += rooms[room->type].cost;
+    }
+    count_hospital_area((u16)owner);
+    staff = h->f1f1 * *(u16 *)&expertise[53].unknown10[3];
+    h->f1bb = staff + (base + bank + total) + 10000;
+    if (h->f1bb < 0)
+        h->f1bb = 0;
+    h->f41 = h->f1bb / 3 + 10000;
+    if (h->f41 < 0)
+        h->f41 = 0;
+    else if (h->f41 > 100000)
+        h->f41 = 100000;
 }

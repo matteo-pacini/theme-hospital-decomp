@@ -1,13 +1,5 @@
 #include "hosp.h"
 
-struct PlotBid {
-    s32 f0;
-    u32 total;
-    u32 minimum;
-    u32 bids[4];
-    u8 f1c;
-};
-
 extern Menu loadgame;
 extern Menu nickname;
 extern PlotBid plotbid;
@@ -856,16 +848,16 @@ void fn_00063680(void)
             if (level->plots[i] == D_00155430)
                 total += *(u16 *)&expertise[53].unknown10[3];
         }
-        plotbid.total = total;
+        plotbid.price = total;
         if (total > 0) {
-            plotbid.minimum = total / 10;
-            if (plotbid.minimum < 10)
-                plotbid.minimum = 10;
+            plotbid.step = total / 10;
+            if (plotbid.step < 10)
+                plotbid.step = 10;
         }
         for (i = 0; i < 4; i++)
             plotbid.bids[i] = 0;
-        plotbid.f1c = 0x63;
-        plotbid.f0 = 0x64;
+        plotbid.bidder = 0x63;
+        plotbid.timer = 0x64;
         break;
     default:
         town.unknown2 = 0;

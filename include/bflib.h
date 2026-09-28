@@ -115,7 +115,7 @@ void LbPaletteGet(u8 *palette, ...);
 void LbPaletteSet(u8 *palette, ...);
 u32 GetSongHandle(void);
 void StopAllSamples(void);
-void LbDrawBox(u32 x, u32 y, u32 w, u32 h, u32 colour);
+void LbDrawBox(u32 x, u32 y, u32 w, u32 h, u8 colour);
 void LbTextSetWindow(u32 x, u32 y, u32 w, u32 h);
 void LbTextDraw(int x, int y, char *text);
 u32 LbSqrL(u32 n);

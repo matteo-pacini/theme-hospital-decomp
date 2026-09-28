@@ -126,6 +126,12 @@ and comparing against the original.
 | switch compare tree grouping | consecutive case values merge into a range only when their labels are adjacent in source |
 | nested `if (a) { if (b) { ...; break; } }` in a case | reproduces tests jumping straight to the next test; an else-if chain does not |
 | frame 8 bytes off with word stores | check array sizes (`char buf[500]`, not `[0x200]`) |
+| map index `movsx y; shl 7; movsx x; add` | `&map[x + (y << 7)]`; with `u8` coordinates `map[(s16)x + ((s16)y << 7)]` |
+| u8 tile expression in 32-bit ops passed as `u16` | `(s16)(x + (y << 7))` (without the cast Watcom narrows to 16-bit arithmetic) |
+| `add eax,dword ptr [ptrglobal]` | integer addition `(T *)(off + (u32)ptr)`; `(u8 *)ptr + off` loads the pointer first |
+| `test dl,0xff` after a 32-bit subtraction | `!((a - b) & 0xff)` |
+| `add byte ptr [x],0xf7` / `add dword ptr [x],-1` | `x += -9` / `--x` |
+| loop increment after the body, no initial jump to the test | `for (;;) { ...; i++; }` |
 | `ror eax,13` | `#pragma aux` inline code: `u32 ror13(u32); #pragma aux ror13 = "ror eax,13" parm [eax] value [eax];` (`_lrotr` gives `ror eax,cl`) |
 | `cmp X; jle; X = K; tmp = X; ... else tmp = 0` | discarded clamp `pct > 100 ? pct = 100 : 0;` |
 | or-chain whose true result jumps to the `else` block | `if (!(a == 1 \|\| a == 2 ...)) {...} else {...}` |
@@ -149,7 +155,9 @@ Stack frame layout is not fully understood. Observed so far:
 - The return-value slot comes after the parameters; a local that must sit
   below it can be declared inside an inner block
   (`else { T x; ... }`).
-- Arrays go below scalars regardless of declaration order.
+- Arrays and structs are allocated after all scalars of their block, nested
+  blocks included; to place a scalar below an array, declare it in a block
+  entered after the array's block.
 - Locals of an inner block are allocated when codegen reaches the block, so
   they land below compiler temporaries created earlier; declaring a buffer
   inside the `if` that uses it moves it down.
