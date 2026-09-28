@@ -89,7 +89,6 @@
           wibo
           objdiff-cli
           open-watcom-v2 # wdis, for reading OMF objects
-          objconv
           owdemangle
           binutils
           (rizin.withPlugins (p: [ p.rz-ghidra ]))

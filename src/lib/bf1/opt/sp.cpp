@@ -11,9 +11,8 @@ struct TbNetworkPlayerEntry {
 };
 
 /*
- * The polymorphic class as seen from its own module. The vtable pointer is
- * spelled out: letting the compiler emit the vtable makes it a COMDAT, which
- * objconv cannot convert.
+ * The polymorphic class as seen from its own module, with the vtable pointer
+ * spelled out rather than compiler-emitted.
  */
 struct ServiceProvider {
     u32 unknown0;

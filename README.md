@@ -49,7 +49,6 @@ each function in its own segment. The flake provides:
 | --- | --- |
 | Watcom C/C++ 10.6 (`$WATCOM_10_6`) | period compiler, Win32 host binaries |
 | wibo 1.2.0 | runs the Win32 compiler on Linux |
-| objconv | converts Watcom OMF objects to ELF |
 | objdiff-cli 3.8.1 | diffing and progress reports |
 | rizin + rz-ghidra | disassembly and decompiler output (`pdg`) |
 | Open Watcom v2 | `wdis` for inspecting OMF objects |

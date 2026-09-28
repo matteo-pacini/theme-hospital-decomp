@@ -51,10 +51,9 @@ def function_relocs(path):
             label, value, _, kind, shndx, bind = sym
             target = label
             if kind == STT_SECTION or (bind == STB_LOCAL and shndx == target_sec):
-                # A reference into the function's own section: the assembler
-                # uses the section symbol, objconv a local ?NoName label.
-                # Both sides place each function at the start of its own
-                # section, so the offset identifies the target.
+                # A reference into the function's own section (a jump table
+                # or label): both sides lay out each function's section
+                # identically, so the offset identifies the target.
                 target = "<local>"
                 addend += value
             for name, (shndx, value, size) in funcs.items():

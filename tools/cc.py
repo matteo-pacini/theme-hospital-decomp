@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compile one source file with Watcom 10.6 into an ELF object objdiff can read.
 
-wpp386/wcc386 (run under wibo) -> OMF .obj -> objconv -> ELF .o -> fixsyms;
+wpp386/wcc386 (run under wibo) -> OMF .obj -> omf2elf -> ELF .o;
 assembly sources go through GNU as.
 The compiler and flags for each source come from config/cflags.txt.
 
@@ -11,19 +11,18 @@ Requires $WATCOM_10_6 (set by the flake devShell).
 
 import fnmatch
 import os
-import shutil
 import subprocess
 import sys
-import tempfile
 
 sys.path.insert(0, os.path.dirname(__file__))
-import fixsyms  # noqa: E402
+import omf2elf  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# -hd emits any debug info as DWARF, which objconv drops, unlike Watcom's own
-# format; -zm gives each function its own segment, as in the original.
-COMMON_FLAGS = ["-zq", "-hd", "-zm", "-i=include"]
+# -hd emits any debug info as DWARF segments, which omf2elf drops;
+# -zm gives each function its own segment, as in the original; -fr stops
+# the compiler writing .err files into the working directory.
+COMMON_FLAGS = ["-zq", "-hd", "-zm", "-fr", "-i=include"]
 
 
 def compiler_for(source):
@@ -53,18 +52,7 @@ def main(source, output, *extra):
         ["wibo", f"{watcom}/binnt/{compiler}.exe", *COMMON_FLAGS, *flags, *extra, f"-fo={dos_path(omf)}", dos_path(source)],
         check=True,
     )
-    # objconv 2.54.1 aborts (fortify buffer overflow) on long output basenames.
-    with tempfile.TemporaryDirectory() as tmpdir:
-        tmp = os.path.join(tmpdir, "o.o")
-        r = subprocess.run(["objconv", "-felf32", "-wd1211", omf, tmp], check=True, capture_output=True, text=True)
-        # objconv drops local public/external records (static symbols, $Wsi0
-        # initialiser templates); every later external index then shifts, so
-        # relocations silently name the wrong symbols.
-        if "Warning 1212" in r.stdout + r.stderr:
-            sys.exit(f"{source}: objconv dropped local symbol records (static or local "
-                     "initialiser); the object would have wrong relocations")
-        fixsyms.main(tmp)
-        shutil.move(tmp, output)
+    omf2elf.main(omf, output)
 
 
 if __name__ == "__main__":

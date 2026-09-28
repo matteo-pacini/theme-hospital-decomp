@@ -54,9 +54,6 @@ and comparing against the original.
 - One source file per original module (`src/<module>.cpp`, as named by the
   demo's debug info); shared types live in `include/hosp.h` (game) and
   `include/bflib.h` (Bullfrog library types, globals and functions).
-- Never declare functions or data `static`, even where the original did:
-  objconv drops Watcom's local-symbol records, so a static function would
-  vanish from the compiled object. The mangled name does not change.
 - Put `// FUNCTION: 0xXXXXXXXX` on the line above each function definition.
 - Reference string literals and other constant data through `extern`
   declarations rather than writing the literal: a literal would be emitted
@@ -154,9 +151,6 @@ and comparing against the original.
 | `jmp` over the tail when one arm has a `goto` | `if`/`else` wrapping the whole tail |
 | multiplier global preloaded or not | operand position of a divide (`x / 25` first or second) |
 
-C++ `inline` functions are unusable: with `-d2` Watcom emits them as COMDATs,
-which objconv rejects.
-
 Operand order of commutative operators decides the result register
 (`a + (b << 7)` and `(b << 7) + a` differ; `pos + D[i]` vs `D[i] + pos`).
 
@@ -210,12 +204,8 @@ Compiler and flags per source file come from `config/cflags.txt`.
   network library was probably built without `-zm` (one function jumps into
   another's epilogue). Game code stays plain `-d2`: every `-o` set scores far
   worse there.
-- Jump tables: these libraries place a switch's table before the function
-  using it, which our build cannot reproduce, so functions with jump tables
-  stay non-matching.
-- Compiler-emitted vtables and `$Wsi0` initialiser templates are COMDATs,
-  which objconv rejects: write classes with an explicit vtable pointer and bind
-  such symbols with `#pragma aux`.
+- Jump tables: these libraries place a switch's table at the head of the
+  function's segment, before its entry point; the splitter does the same.
 - **Assembly modules** (`*.asm` in the demo's debug info: `gspr`, `reqspr`,
   `spr_scl`, `hvline`, `tri_f`, `arctan`, `sqroot`, `box_clip`, `scr_copy`,
   `rnc_1fm`, Miles' `aila`/`ailssa`): kept as GNU as Intel-syntax source in
