@@ -33,7 +33,7 @@ def main():
         if new in taken:
             new = f"fn_{a:08x}_"
         taken[new] = a
-        lines.append(f"{addr} {size} {new}\n")
+        lines.append(f"{a:08x} {int(size, 16):6x} {new}\n")
     open(os.path.join(CFG, "functions.txt"), "w").writelines(lines)
 
     existing = {int(a, 16): (sym, int(sz, 16)) for a, sym, sz in rows("symbols.txt")}

@@ -17,6 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from lefile import LEFile  # noqa: E402
+from project import GAME_END  # noqa: E402
 from x86scan import is_padding, scan, trimmed_end  # noqa: E402
 
 # Unoptimised Watcom frame: register saves, push ebp; mov ebp,esp; sub esp,imm32
@@ -68,7 +69,9 @@ def main(exe, out):
 
     names = read_names(out)
     starts |= set(names)
-    starts = sorted(starts)
+    # Game functions are 4-byte aligned (-zm segments); an unaligned start
+    # there is analysis noise inside another function.
+    starts = sorted(s for s in starts if s >= GAME_END or s % 4 == 0)
     with open(out, "w") as f:
         f.write("# address  size  symbol\n")
         for i, s in enumerate(starts):
