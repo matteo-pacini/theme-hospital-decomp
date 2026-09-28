@@ -6,6 +6,11 @@ and comparing against the original.
 
 ## Toolchain facts
 
+- The 1997 demo build (optimised) is reproduced exactly by Watcom 10.5,
+  10.5a and 10.6 with `-s -oneatx`: our retail source recompiled that way
+  matched the demo byte for byte in 9 of 10 functions tested (11.0 matched
+  2), which confirms both the compiler family and that the decompiled
+  source is faithful to the original.
 - Compiler: Watcom C++ (`wpp386`) 10.5 or later. 10.0a is ruled out (it loads
   signed chars with `movsx` where the game uses a dword load and `sar`); 10.5,
   10.5a and 10.6 generate identical code for everything tested. The project
@@ -172,4 +177,8 @@ Stack frame layout is not fully understood. Observed so far:
   (7/34 matched in 0x10000-0x14000 with `-zp1`, versus 22/34 with 10.6),
   and the DOS-hosted 10.6 compiler (`binw`, run under DOSBox-X) generates the
   same code as the NT-hosted one.
+  Scoring 14 register-choice functions against retail with about 70 extra
+  flags on top of `-s -d2` (and `-od`/`-d1`/`-d3` bases) changed nothing
+  for the better, so the difference is most likely a 10.x patch build we
+  do not have.
 - Position of the return-value slot relative to locals in some functions.
