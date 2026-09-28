@@ -6,8 +6,6 @@
 void _nfree(void *ptr);
 #pragma aux _nfree "__wcpp_2_mod_register__"
 unsigned getpid(void);
-/* config/functions.txt names getpid default_handler_. */
-#pragma aux getpid "default_handler_"
 int unlink(const char *name);
 /* config/functions.txt has no name for unlink. */
 #pragma aux unlink "fn_000d12d8_"

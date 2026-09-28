@@ -23,7 +23,7 @@ typedef void (*__sig_func)(int);
 
 extern __sig_func D_00152a94[];
 
-void fn_000fbb05(int fpe_type);
+void __sigfpe_handler(int fpe_type);
 void __terminate(void);
 void __restore_int23(void);
 void fn_000f4f21(void);
@@ -40,7 +40,7 @@ int raise(int sig)
     func = D_00152a94[sig];
     switch (sig) {
     case SIGFPE:
-        fn_000fbb05(FPE_EXPLICITGEN);
+        __sigfpe_handler(FPE_EXPLICITGEN);
         break;
     case SIGABRT:
         if (func == SIG_DFL)

@@ -157,11 +157,9 @@ void __wcpp_2_push_exc_(thread_ctl *thr, active_exc *exc);
 char *ltoa(long value, char *buffer, int radix);
 
 int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero);
-/* config/functions.txt gives the type-signature comparison the name _setjmp_. */
-#pragma aux ts_equiv "_setjmp_"
+#pragma aux ts_equiv "__wcpp_2_ts_equiv__"
 void unexpected(void);
-/* config/functions.txt has no name for this function. */
-#pragma aux unexpected "fn_000fb880_"
+#pragma aux unexpected "__wcpp_2_call_unexpected__"
 void longjmp(void *env, int val);
 
 void callTerminate(thread_ctl *thr);

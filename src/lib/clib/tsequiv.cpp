@@ -36,8 +36,7 @@ RT_TYPE_SIG *catBaseSig(RT_TYPE_SIG *sig)
 extern "C" {
 
 int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero);
-/* config/functions.txt gives the type-signature comparison the name _setjmp_. */
-#pragma aux ts_equiv "_setjmp_"
+#pragma aux ts_equiv "__wcpp_2_ts_equiv__"
 
 // FUNCTION: 0xfb841
 int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero)

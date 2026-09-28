@@ -87,18 +87,26 @@
     or edx, edi
 .L000fcefd:
     ret
-    .byte 0x53
-    .byte 0x51
-    .byte 0x81; .byte 0x3d; .long "___FPE_handler_exit"; .long "fn_000fd8d8_"+0x5d
-    .byte 0x74; .byte .L000fcf27-.-1
-    .byte 0xbb; .long "fn_000fbb05_"
-    .byte 0xb9; .long "fn_000fd8d8_"+0x5d
-    .byte 0x89; .byte 0x1d; .long _D_001507c9
-    .byte 0xe8; .long "fn_000fd8d8_"-.-4
-    .byte 0x89; .byte 0x0d; .long "___FPE_handler_exit"
-.L000fcf27:
-    .byte 0xe8; .long "fn_000fd992_"-.-4
-    .byte 0x59
-    .byte 0x5b
-    .byte 0xc3
 .size "fn_000fcead_",.-"fn_000fcead_"
+
+// FUNCTION: 0x000fcefe
+
+.section _TEXT,"ax",@progbits,unique,1036030
+.globl "__GrabFP87"
+.type "__GrabFP87",@function
+"__GrabFP87":
+    push ebx
+    push ecx
+    .byte 0x81; .byte 0x3d; .long "___FPE_handler_exit"; .long "fn_000fd8d8_"+0x5d  # cmp dword ptr [0x2db6c], 0xed935
+    je .L000fcf27
+    .byte 0xbb; .long "__sigfpe_handler_"  # mov ebx, 0xebb05
+    .byte 0xb9; .long "fn_000fd8d8_"+0x5d  # mov ecx, 0xed935
+    mov dword ptr [_D_001507c9], ebx
+    call "fn_000fd8d8_"
+    mov dword ptr ["___FPE_handler_exit"], ecx
+.L000fcf27:
+    call "fn_000fd992_"
+    pop ecx
+    pop ebx
+    ret
+.size "__GrabFP87",.-"__GrabFP87"
