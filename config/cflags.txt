@@ -8,6 +8,9 @@ src/lib/bf1/opt/*.cpp  wpp386  -s -oneatx -4 -xs
 src/lib/bf1/*.cpp    wpp386  -s -d2 -otx
 src/lib/bf2/dbg/*.cpp    wpp386  -s -oneatx -d1+
 src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
+# Watcom C/C++ runtime (clib, C++ support); flags still being established.
+src/lib/clib/*.c     wcc386  -s -oxat
+src/lib/clib/*.cpp   wpp386  -s -oxat
 # Game code: C++, full debug info (which also disables optimisation).
 src/*.cpp            wpp386  -s -d2
 # Miles Sound System (RAD Game Tools): C, optimised for the 486, public
