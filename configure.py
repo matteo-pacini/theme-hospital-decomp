@@ -86,7 +86,7 @@ def main():
         "custom_make": "ninja",
         "build_target": False,
         "build_base": True,
-        "watch_patterns": ["*.cpp", "*.c", "*.h", "*.hpp"],
+        "watch_patterns": ["*.cpp", "*.c", "*.s", "*.h", "*.hpp"],
         "progress_categories": CATEGORIES,
         "units": units,
     }

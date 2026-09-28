@@ -7,7 +7,16 @@ struct MenuItem {
 };
 
 struct Req2Layout {
-    u8 unknown0[0x3b0];
+    u8 unknown0[0x170];
+    s32 win_x;
+    s32 win_y;
+    s32 win_w;
+    s32 win_h;
+    s32 msg_x;
+    s32 msg_y;
+    s32 msg_w;
+    s32 msg_h;
+    u8 unknown190[0x220];
     s32 cover0_x;
     s32 cover0_y;
     s32 cover0_w;
@@ -31,6 +40,15 @@ struct Req2Layout {
     u16 gauge_y;
     u8 unknown566[2];
     u16 gauge_w;
+    u8 unknown56a[6];
+    s32 cover2_x;
+    s32 cover2_y;
+    s32 cover2_w;
+    s32 cover2_h;
+    s32 cover3_x;
+    s32 cover3_y;
+    s32 cover3_w;
+    s32 cover3_h;
 };
 
 extern "C" {
@@ -554,6 +572,131 @@ void req12(Window *w)
         }
         i++;
     }
+}
+
+extern "C" {
+extern u8 D_001553c8;
+extern TbScreenMode D_0015f3f4;
+extern char D_001205d0[];
+extern char D_001205d9[];
+extern char **D_001602a0;
+}
+
+void draw_window_not_using_bscreen(const u8 idx);
+void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
+
+// NONMATCHING: register choice
+// FUNCTION: 0x0006b464
+void req12_overdraw(Window *w)
+{
+    u8 i;
+    u16 old_w;
+    u16 old_y;
+    u16 sub;
+    u16 old_h;
+    u16 old_x;
+    Thing *t;
+    s32 y0;
+    s32 x0;
+    char buf[200];
+
+    sub = crequester.unknown3;
+    D_001553c8 = 1;
+    set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+    LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
+                              window.unknown2cf - window.unknown2c7);
+    x0 = w->x - D_00188c3c;
+    y0 = w->y - D_00188c40;
+    D_00188c74 = 0;
+    set_font_from_cache(1);
+    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    if (!crequester.unknown9) {
+        close_irequesters();
+        open_new_window(0, 0, 0, x0 + D_0015f40c->win_x, y0 + D_0015f40c->win_y,
+                        x0 + D_0015f40c->win_x + D_0015f40c->win_w, y0 + D_0015f40c->win_y + D_0015f40c->win_h);
+        window.unknown2eb = 0;
+        crequester.unknown9 = 1;
+    }
+    if (crequester.unknown4) {
+        t = &thing[crequester.unknown4];
+        sprintf(buf, D_001205d0, t->f84, staff_names_1[t->f85], staff_names_2[t->f86]);
+        LbTextDraw(x0 + D_0015f410[2].x, y0 + D_0015f410[2].y, buf);
+        sprintf(buf, D_001205d9, t->unknown108);
+        LbTextDraw(x0 + D_0015f410[4].x, y0 + D_0015f410[4].y, buf);
+        draw_face((Picture *)&t->f87, x0 + D_0015f410[3].x, y0 + D_0015f410[3].y);
+        i = 0;
+        if (t->unknown124 & 8)
+            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[6]]);
+        i++;
+        if ((t->unknown124 & 0x10) && !(t->unknown124 & 0x80) && !(t->unknown124 & 8))
+            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[6]]);
+        i++;
+        if (t->unknown124 & 0x80)
+            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[6]]);
+        i++;
+        if (t->unknown124 & 0x20)
+            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[7]]);
+        i++;
+        if (t->unknown124 & 0x40)
+            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[8]]);
+        i++;
+        if (t->unknown124 & 0x100)
+            reqspr_draw(x0 + D_0015f410[i + 91].x, y0 + D_0015f410[i + 91].y, &button_sprite[D_0015f406[9]]);
+        draw_gauge(t->unknown126, x0 + D_0015f410[0].x, y0 + D_0015f410[0].y, D_0015f40c->gauge_w,
+                   &button_sprite[D_0015f406[3]], 1000, 30, 970, 1);
+        if (t->subtype != 1 && t->subtype != 4) {
+            LbDrawBox(x0 + D_0015f40c->cover2_x, y0 + D_0015f40c->cover2_y, D_0015f40c->cover2_w,
+                      D_0015f40c->cover2_h, 0x77);
+            LbDrawBox(x0 + D_0015f40c->cover3_x, y0 + D_0015f40c->cover3_y, D_0015f40c->cover3_w,
+                      D_0015f40c->cover3_h, 0x77);
+        }
+        switch (crequester.unknown8) {
+        case 2:
+            sprintf(buf, D_001602a0[crequester.unknown8]);
+            break;
+        case 3:
+        case 5:
+        case 7:
+        case 8:
+            sprintf(buf, D_001602a0[crequester.unknown8], crequester.unknown6);
+            break;
+        case 4:
+        case 6:
+            sprintf(buf, D_001602a0[crequester.unknown8], crequester.unknown6,
+                    crequester.unknown6 + t->unknown108);
+            break;
+        case 9:
+            sprintf(buf, D_001602a0[crequester.unknown8], t->unknown108 * 2, &allhosps[crequester.unknown6]);
+            break;
+        }
+        D_00188c74 = 0x20;
+        LbTextSetWindow(x0 + D_0015f40c->msg_x, y0 + D_0015f40c->msg_y, D_0015f40c->msg_w, D_0015f40c->msg_h);
+        LbTextDraw(0, 0, buf);
+        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+        give_absolute_xy_of_cell_at_column_row(t->x.tile, t->y.tile);
+        window.f0[window.unknown2ec - 1] = (D_0015f3f4 == SCREEN_MODE_13 ? ((t->x.frac - t->y.frac) >> 3) + 0x20
+                                                                        : ((t->x.frac - t->y.frac) >> 4) + 0x10)
+                                           + (info.unknown54 - D_0015f410[171].x);
+        window.fc[window.unknown2ec - 1] = info.unknown58 - D_0015f410[171].y
+                                           + (D_0015f3f4 == SCREEN_MODE_13 ? (t->x.frac + t->y.frac) >> 4
+                                                                           : (t->x.frac + t->y.frac) >> 5);
+        old_x = window.unknown2c3;
+        old_y = window.unknown2c7;
+        old_w = window.unknown2cb;
+        old_h = window.unknown2cf;
+        window.unknown2c3 = D_0015f40c->win_x;
+        window.unknown2c7 = D_0015f40c->win_y;
+        window.unknown2cb = D_0015f40c->win_x + D_0015f40c->win_w;
+        window.unknown2cf = D_0015f40c->win_y + D_0015f40c->win_h;
+        draw_window_not_using_bscreen(window.unknown2ec - 1);
+        window.unknown2c3 = old_x;
+        window.unknown2c7 = old_y;
+        window.unknown2cb = old_w;
+        window.unknown2cf = old_h;
+    }
+    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    set_font_from_cache(0);
+    compute_help_text(0, 0, 0x1a);
 }
 
 // NONMATCHING: register choice

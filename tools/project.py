@@ -4,7 +4,7 @@ config/functions.txt       every function: address, size, symbol
 config/symbols.txt         named data: address, symbol, size
 config/demo_map.txt        demo-build name and source module per function
 config/demo_data_map.txt   demo-build name per global
-src/**/*.cpp, src/**/*.c   `// FUNCTION: 0xADDRESS` above each function a file implements
+src/**/*.{cpp,c,s}         `// FUNCTION: 0xADDRESS` above each function a file implements
 
 Functions not claimed by a source file are grouped into auto units by their
 source module in the demo build, or by fixed address window when unknown, so
@@ -142,7 +142,7 @@ class Project:
         """Source files under src/, relative to root, in a stable order."""
         found = []
         for dirpath, _, files in os.walk(os.path.join(root, "src")):
-            found += [os.path.relpath(os.path.join(dirpath, f), root) for f in files if f.endswith((".cpp", ".c"))]
+            found += [os.path.relpath(os.path.join(dirpath, f), root) for f in files if f.endswith((".cpp", ".c", ".s"))]
         return sorted(found)
 
     def function_at(self, addr):

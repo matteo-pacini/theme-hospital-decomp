@@ -71,6 +71,8 @@ extern TbDisplayStruct lbDisplay;
 extern u8 lbKeyOn[];
 extern u8 lbInkey;
 extern TbSprite *lbFontPtr;
+extern s8 lbInkeyToAscii[];
+extern s8 lbInkeyToAsciiShift[];
 extern TbScreenModeInfo lbScreenModeInfo[];
 extern __iobuf __iob[];
 
@@ -149,13 +151,36 @@ void AIL_end_sequence(u32 handle, ...);
 
 extern __1rdtuTbModemDev modem_dev;
 
-struct TbCacheUsedBlock;
+/* A cache block's header; the block's data follows it. */
+struct TbCacheUsedBlock {
+    TbCacheUsedBlock *next;
+    TbCacheUsedBlock *prev;
+    u32 tag;
+    u32 locked;
+    u32 size;
+};
+
+struct TbCacheFreeBlock {
+    TbCacheFreeBlock *next;
+    u32 size;
+};
 
 struct TbCache {
-    u8 unknown0[0x1c];
+    s32 count;
+    TbCacheFreeBlock *free;
+    TbCacheUsedBlock *oldest;
+    TbCacheUsedBlock *newest;
+    u32 end;
+    void *mem;
+    u32 size;
 
+    void UsedAndLocked(long &used, long &locked);
+    int Initialise(void *mem, u32 size);
+    void UnlockAll(void);
     TbCacheUsedBlock *Allocate(u32 size, u32 tag);
     void Free(TbCacheUsedBlock *block);
+    void MakeNewest(TbCacheUsedBlock *block);
+    u32 ThrowOutOldest(void);
 };
 
 extern TbCache cache;
@@ -168,5 +193,44 @@ TbError LbNetwork_Exchange(void *buf);
 TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size);
 TbError LbNetwork_Send(u32 port, void *buf, u32 len);
 u32 LbNetwork_Receive(u32 port, void *buf, u32 len);
+
+/* The library's service enum has no tag: any typedef name mangles as $$TE$$. */
+typedef enum {
+    NS_IPX = 1,
+    NS_MODEM = 2,
+    NS_SERIAL = 3
+} TbNetworkService;
+
+struct __tibcaGUID {
+    u32 data[4];
+};
+
+struct __7308jnTbNetworkPlayerInfo {
+    char name[0x20];
+    s32 active;
+};
+
+extern __7308jnTbNetworkPlayerInfo player_info[];
+
+struct TbNetworkCallbackData;
+struct TbNetworkSessionNameEntry {
+    u8 unknown0[9];
+    char name[0x20];
+};
+
+struct TbNetworkPlayerNameEntry {
+    u8 unknown0[0xd];
+    char name[0x10];
+};
+
+typedef void (__stdcall *TbNetworkCallbackFunc)(TbNetworkCallbackData *, void *);
+
+TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *a, u32 b,
+                       __7308jnTbNetworkPlayerInfo *info, void *init_data);
+TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data);
+TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *player, void *data);
+TbError LbNetwork_EnableNewPlayers(u32 enable);
+TbError LbNetwork_EnumerateSessions(TbNetworkCallbackFunc callback, void *data);
+TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetworkCallbackFunc callback, void *data);
 
 #endif

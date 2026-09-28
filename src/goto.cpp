@@ -471,3 +471,245 @@ decide:
         try_staff_wander(w, dx, dy, 5);
     }
 }
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000781f8
+void peep_bp_goto(Thing *w)
+{
+    u8 vertical;
+    u8 retry;
+    u8 dir;
+    MapPos y;
+    MapPos x;
+
+    vertical = 0;
+    retry = 0;
+    if (actual_game_turn % w->anim_speed == 0)
+        w->sprite = frame[w->sprite].next;
+    w->height--;
+    if (w->height <= 0) {
+        if (blocks[map[(s16)w->x.tile + ((s16)w->y.tile << 7)].overlay].width != 0x20
+            || (w->x.tile == w->unknown106 && w->y.tile == w->unknown107)) {
+            w->kind = w->unknown105;
+            return;
+        }
+        if (w->x.tile == w->unknown106) {
+            vertical = 1;
+        } else if (w->y.tile == w->unknown107) {
+            vertical = 0;
+        } else {
+            vertical = old_newrand() % 1000 < 500 ? (u8)1 : (u8)0;
+            retry = 1;
+        }
+        for (;;) {
+            if (vertical) {
+                if (w->y.tile < w->unknown107)
+                    dir = 2;
+                else
+                    dir = 0;
+            } else {
+                if (w->x.tile < w->unknown106)
+                    dir = 1;
+                else
+                    dir = 3;
+            }
+            if (!retry || blocks[map[(s16)((u16)w->x.tile + ((u16)w->y.tile << 7)) + around[dir]].overlay].width == 0x20)
+                break;
+            vertical = !vertical;
+            retry = 0;
+        }
+        w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
+        if (w->renderer == 4) {
+            if (w->unknown17 != dir || start[staff_anim_starts[w->subtype].unknownA + w->unknown17].frame == w->sprite) {
+                w->unknown17 = dir;
+                PLAY_FRAME(w, staff_anim_starts[w->subtype].idle);
+            }
+        } else {
+            if (w->unknown17 != dir || start[anim_starts[w->subtype].unknown12 + w->unknown17].frame == w->sprite) {
+                w->unknown17 = dir;
+                PLAY_FRAME(w, anim_starts[w->subtype].idle);
+            }
+        }
+    }
+    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
+    move_node(w, x, y);
+}
+
+void mayor_inspects(Thing *w);
+
+// NONMATCHING: register choice, temporary slot order
+// FUNCTION: 0x00078640
+s16 mayor_goto(Thing *w)
+{
+    MapPos x;
+    MapPos y;
+    s16 dir;
+
+    if (actual_game_turn % w->anim_speed == 0)
+        w->sprite = frame[w->sprite].next;
+    w->height--;
+    if (w->height <= 0) {
+        w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
+        dir = person_head_for(w, 3);
+        switch (dir) {
+        case 4:
+            mayor_inspects(w);
+            w->kind = w->f6e;
+            w->height = 0;
+            return 0;
+        case -1:
+            PLAY_FRAME(w, 0x89);
+            w->height = 0;
+            return 0;
+        case -2:
+        case -3:
+            w->kind = 6;
+            return 0;
+        default:
+            if (w->unknown17 != dir) {
+                w->unknown17 = dir;
+                PLAY_FRAME(w, 0x85);
+            }
+            break;
+        }
+    }
+    x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+    y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
+    move_node(w, x, y);
+    return 0;
+}
+
+s32 wall_in_way(u32 x, u32 y, u32 dir);
+
+extern "C" {
+extern u8 D_00155441;
+extern u16 D_0012dd7c[];
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x000788d8
+void peep_stuck(Thing *w)
+{
+    u8 dir;
+    MapPos y;
+    MapPos x;
+    s32 dest;
+
+    if (actual_game_turn % w->anim_speed == 0)
+        w->sprite = frame[w->sprite].next;
+    w->height--;
+    if (w->height <= 0) {
+        if (w->unknown17 != 4) {
+            w->height = 100;
+            if (w->renderer == 2)
+                PLAY_FRAME(w, anim_starts[w->subtype].unknown12)
+            else
+                PLAY_FRAME(w, staff_anim_starts[w->subtype].unknownA)
+            w->unknown17 = 4;
+            return;
+        }
+        dest = (s16)w->unknown106 + ((s16)w->unknown107 << 7);
+        if ((w->renderer != 2 || !(w->flags & 0x4000))
+            && check_points_connected((u16)w->x.tile + ((u16)w->y.tile << 7), dest)) {
+            w->kind = w->unknown105;
+            w->unknown19 = w->unknown106;
+            w->unknown20 = w->unknown107;
+            return;
+        }
+        if (w->renderer == 2) {
+            w->unknown124 += 0xf;
+            if (w->unknown124 > (s16)D_0012dd7c[6]) {
+                w->unknown124 = 0;
+                if (!(w->flags & 0x4000)) {
+                    if (w->owner == player)
+                        D_00155441++;
+                }
+                set_icon_value(w, 7);
+                person_go_home(w);
+                w->flags |= 0x4000;
+                return;
+            }
+        }
+        dir = old_newrand() & 3;
+        if (!wall_in_way(w->x.tile, w->y.tile, dir)) {
+            w->unknown17 = dir;
+            w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
+            if (w->renderer == 2)
+                PLAY_FRAME(w, anim_starts[w->subtype].idle)
+            else
+                PLAY_FRAME(w, staff_anim_starts[w->subtype].idle)
+        }
+    }
+    if (w->unknown17 != 4) {
+        x.raw = w->x.raw + around_xy[w->unknown17][0] * w->unknown18;
+        y.raw = w->y.raw + around_xy[w->unknown17][1] * w->unknown18;
+        move_node(w, x, y);
+    }
+}
+
+struct GraphLabel {
+    u8 kind;
+    u16 value;
+    s32 data;
+};
+
+struct GraphRect {
+    s32 x;
+    s32 y;
+    s32 w;
+    s32 h;
+};
+
+extern "C" {
+extern GraphLabel D_0015eba0[];
+extern s16 D_0015eb9c;
+extern GraphRect *D_0015f430;
+void fn_00078d70(u16 kind, s16 value, s32 data);
+void fn_00078e38(u16 gap);
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00078d70
+void fn_00078d70(u16 kind, s16 value, s32 data)
+{
+    u8 i;
+
+    i = 0;
+    while (D_0015eba0[i].value <= value && i < D_0015eb9c)
+        i++;
+    memmove(&D_0015eba0[i + 1], &D_0015eba0[i], (D_0015eb9c - i) * 7);
+    D_0015eba0[i].kind = kind;
+    D_0015eba0[i].value = value;
+    D_0015eba0[i].data = data;
+    D_0015eb9c++;
+}
+
+// NONMATCHING: register choice
+// FUNCTION: 0x00078e38
+void fn_00078e38(u16 gap)
+{
+    u8 moved;
+    s16 i;
+    u8 below;
+    u8 above;
+
+    moved = 1;
+    while (moved) {
+        moved = 0;
+        for (i = 0; i < D_0015eb9c; i++) {
+            below = i > 0 && D_0015eba0[i].value - D_0015eba0[i - 1].value < gap ? (u8)1 : (u8)0;
+            above = i < D_0015eb9c - 1 && D_0015eba0[i + 1].value - D_0015eba0[i].value < gap ? (u8)1 : (u8)0;
+            if (below && !above) {
+                if (D_0015eba0[i].value < D_0015f430[46].y)
+                    D_0015eba0[i].value++;
+                moved = 1;
+            }
+            if (!below && above) {
+                if (D_0015eba0[i].value > D_0015f430[46].y - D_0015f430[46].h - gap)
+                    D_0015eba0[i].value--;
+                moved = 1;
+            }
+        }
+    }
+}

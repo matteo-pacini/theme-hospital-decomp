@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Compile one source file with Watcom 10.6 into an ELF object objdiff can read.
 
-wpp386/wcc386 (run under wibo) -> OMF .obj -> objconv -> ELF .o -> fixsyms.
+wpp386/wcc386 (run under wibo) -> OMF .obj -> objconv -> ELF .o -> fixsyms;
+assembly sources go through GNU as.
 The compiler and flags for each source come from config/cflags.txt.
 
 Usage: tools/cc.py SOURCE OUTPUT.o [extra wpp386 flags...]
@@ -44,6 +45,10 @@ def main(source, output, *extra):
     base = os.path.splitext(output)[0]
     omf = base + ".obj"
     compiler, flags = compiler_for(os.path.relpath(os.path.abspath(source), ROOT))
+    if compiler == "as":
+        # Modules that were hand-written assembly: GNU as emits ELF directly.
+        subprocess.run(["as", "--32", *flags, "-o", output, source], check=True)
+        return
     subprocess.run(
         ["wibo", f"{watcom}/binnt/{compiler}.exe", *COMMON_FLAGS, *flags, *extra, f"-fo={dos_path(omf)}", dos_path(source)],
         check=True,
