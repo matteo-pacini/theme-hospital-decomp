@@ -30,7 +30,6 @@ extern char **D_001602e0;
 extern char D_00121a48[];
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009b870
 void req10(Window *win)
 {
@@ -249,7 +248,6 @@ void req10_overdraw(Window *win)
     set_font_from_cache(0);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009c690
 void req10_help_room(void)
 {

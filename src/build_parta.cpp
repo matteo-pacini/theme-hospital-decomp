@@ -61,7 +61,6 @@ void fn_000228e0(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002341c
 void place_bp_door(u8 owner, u8 swap)
 {

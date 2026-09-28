@@ -23,7 +23,6 @@ void fn_0004195c(Thing *w, u16 pos)
     fn_000444e0(w);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000419bc
 void fn_000419bc(Thing *w, u16 pos)
 {
@@ -31,7 +30,6 @@ void fn_000419bc(Thing *w, u16 pos)
     w->unknown96 = pos / 128;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00041a08
 void fn_00041a08(Thing *w, u16 pos)
 {
@@ -39,7 +37,6 @@ void fn_00041a08(Thing *w, u16 pos)
     w->unknown98 = pos / 128;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00041a54
 void fn_00041a54(Thing *w)
 {
@@ -83,7 +80,6 @@ void fn_00041b08(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00041c0c
 void fn_00041c0c(Thing *w)
 {
@@ -174,7 +170,6 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00044210
 s16 person_head_for(Thing *w, u8 a)
 {
@@ -265,7 +260,6 @@ s32 person_overlap(void)
 
 extern "C" {
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000444e0
 void fn_000444e0(Thing *w)
 {

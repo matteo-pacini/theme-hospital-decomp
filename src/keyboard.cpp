@@ -49,7 +49,6 @@ void fn_0001bab4(u8 slot);
 void process_nettext_keys(u8 shift, u8 key);
 void make_a_rat(u8 owner);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007424c
 void fn_0007424c(u8 shift, u8 key)
 {

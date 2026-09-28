@@ -65,7 +65,6 @@ void display_policy(void)
 
 extern "C" {
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00044664
 void fn_00044664(void)
 {

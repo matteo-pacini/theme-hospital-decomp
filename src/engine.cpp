@@ -192,7 +192,6 @@ void fn_000a6cf0(u8 n)
     window.fd8[n] = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a70d0
 void fn_000a70d0(u8 n)
 {
@@ -203,7 +202,6 @@ void fn_000a70d0(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a71bc
 void draw_window_not_using_bscreen(const u8 n)
 {
@@ -223,7 +221,6 @@ void draw_window_not_using_bscreen(const u8 n)
     window.fd8[n] = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a73c0
 void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1, s32 ny1)
 {
@@ -734,7 +731,6 @@ void draw_window_on_wscreen_mk2(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, cons
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a8a8c
 void draw_window_into_pix_buffer(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, const s32 lx, const s32 ly)
 {
@@ -821,7 +817,6 @@ void draw_window_into_pix_buffer(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, con
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a8d98
 void draw_boundry(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -852,7 +847,6 @@ void draw_boundry(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
     fn_000c9be0(left, bottom, left, top, 3);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a8f78
 void adjust_big_cell_flag(const u16 cell)
 {

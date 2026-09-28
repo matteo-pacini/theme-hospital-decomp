@@ -88,7 +88,6 @@ void generate_quake(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00043d88
 void setup_next_quake(void)
 {
@@ -112,7 +111,6 @@ void setup_next_quake(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00043eac
 void do_earthquake(void)
 {

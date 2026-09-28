@@ -31,7 +31,6 @@ extern s32 D_00188c40;
 
 void req13_no_pressed(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006fbc0
 void req13(Window *w)
 {
@@ -55,7 +54,6 @@ void req13(Window *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006fcc4
 void req13_overdraw(Window *w)
 {
@@ -103,7 +101,6 @@ void close_yes_no_requester(u8 reopen)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006fe88
 void req13_no_pressed(void)
 {

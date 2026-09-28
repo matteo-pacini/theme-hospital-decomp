@@ -77,7 +77,6 @@ void copy_region(const s16 x, const s16 y, const s16 dx, const s16 dy, const s16
         LbDrawBoxCoords(dst, src, w);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000add58
 void refresh_wscreen(void)
 {
@@ -113,7 +112,6 @@ void refresh_wscreen(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000adf8c
 void draw_a_clipped_four_zone_wall_1(s32 x, s32 y, const s32 cell, s32 x0, s32 y0, s32 x1, s32 y1)
 {

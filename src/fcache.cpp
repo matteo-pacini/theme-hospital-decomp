@@ -55,7 +55,6 @@ s8 get_fontmem(void)
     return i;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b6870
 void put_fontmem(s8 i)
 {
@@ -65,7 +64,6 @@ void put_fontmem(s8 i)
     fontmem_head = i;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b68c8
 void init_font_cache(void)
 {
@@ -87,7 +85,6 @@ void init_font_cache(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b6988
 void insert_block_into_free_list(s8 i)
 {
@@ -117,7 +114,6 @@ void insert_block_into_free_list(s8 i)
     D_00175239 = i;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b6ac8
 void insert_block_into_used_list(s8 i)
 {
@@ -156,7 +152,6 @@ void realign_sprites(TbSprite *start, TbSprite *end, s32 delta)
         s->data += delta;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b6c34
 void defrag_cache(void)
 {
@@ -228,7 +223,6 @@ void throw_out(s32 size)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b6eec
 s8 get_block_from_free_list(s32 size)
 {
@@ -291,7 +285,6 @@ s8 get_block_from_free_list(s32 size)
     return -1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b714c
 void set_font_from_cache(const s32 font)
 {

@@ -36,7 +36,6 @@ void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
 void post_shop_readjust_build_palette(void);
 u8 does_room_contain_compulsory_objects(RoomInfo *room);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009f0c0
 void req14(Window *win)
 {
@@ -251,7 +250,6 @@ void req14_overdraw(Window *win)
     set_all_refresh_zones_in_window(ox, oy, win->width + ox, win->height + oy, 3);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009fcbc
 void set_edit_room_requester_mode(const u8 mode)
 {
@@ -316,7 +314,6 @@ void open_edit_room_requester(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009ffa8
 void go_back_to_place_object_requester(u8 flag)
 {

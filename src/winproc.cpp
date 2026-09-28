@@ -82,7 +82,6 @@ u8 mouse_pressed_over(s32 x1, s32 y1, s32 x2, s32 y2)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004c9dc
 u8 remove_window(Window **windows, Window *w)
 {
@@ -450,7 +449,6 @@ void process_buttons(Window **windows, Window *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004df88
 u8 insert_window(Window **windows, Window *w)
 {
@@ -467,7 +465,6 @@ u8 insert_window(Window **windows, Window *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004e024
 u8 make_front_window(Window **windows, Window *w)
 {
@@ -527,7 +524,6 @@ void GetWindowDimensions(Window *w, u16 *width, u16 *height)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004e240
 u8 MouseOnWindow(Window *w)
 {
@@ -541,7 +537,6 @@ u8 MouseOnWindow(Window *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004e2b4
 u8 MousePressedOnWindow(Window *w)
 {

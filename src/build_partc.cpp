@@ -211,7 +211,6 @@ u8 check_object_accessible(u16 pos, u16 other, u16 target)
     return check_points_connected(pos, target) && check_points_connected(other, target);
 }
 
-// NONMATCHING: room->unknown6 argument loaded via eax instead of ebx
 // FUNCTION: 0x00026d84
 u8 check_object_nav(u16 object, Shapes *shape, RoomInfo *room, u16 pos, u16 type)
 {
@@ -241,7 +240,6 @@ u8 check_object_nav(u16 object, Shapes *shape, RoomInfo *room, u16 pos, u16 type
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00026ef0
 u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 pos2, u8 kind2, u8 dir2)
 {
@@ -391,7 +389,6 @@ void init_place_object(u8 kind, u8 mode, u16 room, s16 offset)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00027694
 void init_double_doors(RoomInfo *room)
 {

@@ -150,7 +150,6 @@ void fn_00090804(int level, u8 flag)
     close_irequesters();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00090c8c
 void copy_my_hosp(AllHosps *dst, AllHosps *src)
 {
@@ -182,7 +181,6 @@ void load_balance(const u16 level)
     balance_control();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00090dd4
 void balance_control(void)
 {
@@ -221,7 +219,6 @@ void balance_control(void)
     statvar.f6a = count;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00090f70
 void setup_insurances(void)
 {
@@ -248,7 +245,6 @@ void setup_insurances(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000910a0
 void init_player(u8 p)
 {

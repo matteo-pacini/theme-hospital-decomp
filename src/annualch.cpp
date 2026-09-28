@@ -57,7 +57,6 @@ u8 button_available(const u8 b);
 void check_awards_buttons(void);
 void display_awards(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b4980
 void start_year_end(void)
 {
@@ -83,7 +82,6 @@ void start_year_end(void)
     LbMemorySet(trophies_won, 0, 0xf);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b4aac
 void create_chart_data(void)
 {
@@ -246,7 +244,6 @@ extern "C" void fn_000b4e88(void)
     D_00188c7b = D_00188c7c = D_00188c81 = D_00188c83 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b5460
 void display_plaque(void)
 {

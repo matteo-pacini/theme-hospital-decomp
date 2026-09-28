@@ -33,7 +33,6 @@ void reinit_nurse(Thing *w)
     w->unknown103 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c6f4
 u8 nurse_check_for_work(Thing *w)
 {

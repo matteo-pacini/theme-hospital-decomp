@@ -32,7 +32,6 @@ u8 choose_next_research_illness(u8 owner, s32 (*cost)(u8, u8));
 void research_category_exhausted(const u8 owner, const u8 category);
 void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006cf80
 void do_research(void)
 {
@@ -133,7 +132,6 @@ void item_researched(u16 item, u16 illness, u8 owner)
         announce_this(5, item);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006d428
 void drug_improved(u16 illness, u8 owner)
 {
@@ -177,7 +175,6 @@ void drug_improved(u16 illness, u8 owner)
         announce_this(7, illness);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006d6a0
 void drug_researched(u16 illness, u8 owner)
 {
@@ -240,7 +237,6 @@ void auto_available(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006da40
 void research_contribution(Thing *w, s16 amount)
 {
@@ -258,7 +254,6 @@ void research_contribution(Thing *w, s16 amount)
         allhosps[w->owner].research_points = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006db78
 void send_person_for_research(Thing *w)
 {
@@ -310,7 +305,6 @@ u16 emptiest_research_room(u8 owner)
     return found;
 }
 
-// NONMATCHING: register choice; list index computed with add instead of lea
 // FUNCTION: 0x0006ddf0
 u16 find_rand_research_room(u8 owner, u16 exclude)
 {
@@ -331,7 +325,6 @@ u16 find_rand_research_room(u8 owner, u16 exclude)
     return list[old_newrand() % n];
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006dedc
 u8 send_doctor_to_research(Thing *w)
 {

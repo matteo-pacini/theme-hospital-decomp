@@ -50,7 +50,6 @@ extern u8 D_0016121d;
 void set_force_help(u8 kind, u16 text);
 void clear_force_help(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a4830
 s8 tutorial(void)
 {

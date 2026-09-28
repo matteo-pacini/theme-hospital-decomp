@@ -242,7 +242,6 @@ u8 year_check(s32 *values, const s32 limit, const u8 above)
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b4170
 void monthly_update_of_award_counts(void)
 {
@@ -304,7 +303,6 @@ void set_trophy_value(const u8 t, const s16 value, u8 type)
     trophy[t].f4 = saferand() % 1 + type - 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b4510
 void set_award_value(const u8 a, const u8 dir, const u8 level, const s16 value, u8 type)
 {

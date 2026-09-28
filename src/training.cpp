@@ -78,7 +78,6 @@ void doctor_is_trained(Thing *w)
     }
 }
 
-// NONMATCHING: register choice in the find_object position argument
 // FUNCTION: 0x00042c90
 void consultant_trains(Thing *w)
 {
@@ -161,7 +160,6 @@ u8 check_training_command(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004303c
 u8 send_doctor_to_training(Thing *w)
 {

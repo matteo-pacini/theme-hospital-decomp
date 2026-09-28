@@ -140,7 +140,6 @@ void pick_up_object(u16 id, u8 both)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002812c
 void clear_build_objects(u8 owner)
 {
@@ -306,7 +305,6 @@ void clicked_for_edit(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000288ac
 void check_object_right_click_in_room_edit(void)
 {
@@ -425,7 +423,6 @@ void pixel_buffer_map(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00028f88
 u8 corridor_object_nav_check(u16 pos, u8 kind, u8 dir)
 {
@@ -546,7 +543,6 @@ u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
     return ok;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00029520
 void pick_up_object_right_click(void)
 {
@@ -562,7 +558,6 @@ void pick_up_object_right_click(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00029748
 extern "C" u8 fn_00029748(void)
 {

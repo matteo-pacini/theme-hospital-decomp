@@ -78,7 +78,6 @@ extern u16 D_0012dd7c[];
 
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004e760
 void setup_computer_players(void)
 {
@@ -171,7 +170,6 @@ void computer_day(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004eae0
 void computer_month(void)
 {
@@ -189,7 +187,6 @@ void computer_month(void)
     }
 }
 
-// NONMATCHING: register choice (u8 field loads, com_decide index)
 // FUNCTION: 0x0004eb5c
 void computer_action(void)
 {
@@ -258,7 +255,6 @@ void computer_action(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004eebc
 void computer_decision(u8 player)
 {
@@ -345,7 +341,6 @@ void computer_decision(u8 player)
         bucket = &comp_buckets[player][month];                 \
     }
 
-// NONMATCHING: register choice (u8 field loads through a pointer)
 // FUNCTION: 0x0004f15c
 void process_computer_peep(Thing *w, u8 player)
 {
@@ -486,7 +481,6 @@ void process_computer_peep(Thing *w, u8 player)
     bucket->f14++;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004f900
 void get_computer_bucket(u8 player)
 {
@@ -516,7 +510,6 @@ void get_computer_bucket(u8 player)
     memset(b, 0, 400);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004fa50
 u8 computer_employ(u8 type, u16 skills, u8 player)
 {
@@ -578,7 +571,6 @@ u32 find_strategy_start(u8 type)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00050528
 u8 make_a_note(u16 type, s16 arg, s16 count, u8 player)
 {
@@ -631,7 +623,6 @@ void remove_a_note(u16 type, u8 player)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000506f4
 void declass_a_note(u16 type, u8 player)
 {
@@ -651,7 +642,6 @@ void declass_a_note(u16 type, u8 player)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004fc48
 u8 computer_build(u8 type, u8 player)
 {
@@ -715,7 +705,6 @@ u8 computer_loan(s8 amount, u8 player)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004ff24
 u8 computer_recheck_actions(u8 a, u8 player)
 {
@@ -759,7 +748,6 @@ u8 computer_recheck_actions(u8 a, u8 player)
     return 0;
 }
 
-// NONMATCHING: register choice (u8 field loads through a pointer)
 // FUNCTION: 0x0005010c
 u8 computer_staff_levels(u8 player)
 {
@@ -799,7 +787,6 @@ u8 computer_staff_levels(u8 player)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00050360
 u8 computer_choose_room(u8 idx, u8 player)
 {
@@ -867,7 +854,6 @@ void computer_diag_progress(Thing *w, u8 player)
     }
 }
 
-// NONMATCHING: register choice (u8 field loads through a pointer)
 // FUNCTION: 0x0005090c
 u8 computer_free_build(u8 player)
 {
@@ -911,7 +897,6 @@ u8 computer_free_build(u8 player)
     return 0;
 }
 
-// NONMATCHING: register choice (u8 field loads through a pointer)
 // FUNCTION: 0x00050aa8
 u8 computer_maintain_loan(u8 player)
 {
@@ -948,7 +933,6 @@ u8 computer_maintain_loan(u8 player)
     return 0;
 }
 
-// NONMATCHING: register choice (u8 field loads through a pointer)
 // FUNCTION: 0x00050c44
 u8 computer_object_levels(u8 player)
 {
@@ -988,7 +972,6 @@ u8 computer_object_levels(u8 player)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00050de4
 u8 computer_buy_land(u8 player)
 {

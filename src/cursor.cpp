@@ -37,7 +37,6 @@ struct NextPart {
 
 extern NextPart next_part[];
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b10b0
 void draw_cell_no(s32 cell, u8 colour)
 {
@@ -221,7 +220,6 @@ draw:
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b1c68
 u32 get_frame_for_placing_bomb(void)
 {

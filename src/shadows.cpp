@@ -106,7 +106,6 @@ void precalculate_shadow_blocks(void)
     create_overlay_sprite(blocks[0x14].info, blocks[74].info, &RoomTileHalf[3].sprite);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b0d40
 void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSprite *dst)
 {
@@ -172,7 +171,6 @@ void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSpr
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b0f80
 void initialise_shadows(void)
 {

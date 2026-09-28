@@ -191,7 +191,6 @@ u8 setup_sound(void)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00088bdc
 void do_ambients(void)
 {
@@ -229,7 +228,6 @@ void init_ambients(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00088d90
 void play_ambient(u8 sound)
 {

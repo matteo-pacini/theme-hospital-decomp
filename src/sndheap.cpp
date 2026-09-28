@@ -122,7 +122,6 @@ void close_sound_heap(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a2960
 void process_sound_heap(void)
 {
@@ -151,7 +150,6 @@ void process_sound_heap(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a2a3c
 SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pitch, u32 pan, s8 loop, u8 type)
 {
@@ -263,7 +261,6 @@ s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate)
     return *count * sizeof(SampleTable);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a2e74
 void clear_sound_heap(void)
 {

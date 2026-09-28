@@ -31,7 +31,6 @@ void fn_0002e804(Thing *w, s16 x, s16 y);
 
 }
 
-// NONMATCHING: register allocation; also the D_00153fa4[bucket] store (index in edx), see MATCHING.md known unsolved
 // FUNCTION: 0x00014510
 void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, const s32 top)
 {
@@ -352,7 +351,6 @@ void mapwho_helicopter(Thing *w, s32 x, s32 y)
     draw_special_id_frame(w, x, y - w->offset);
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x000157f0
 void mapwho_numfx(Thing *w, s32 x, s32 y)
 {

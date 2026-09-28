@@ -46,7 +46,6 @@ u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
 void req5_draw_machine_usage_bar(long x, long y, long used, long total);
 u8 is_thing_paged(ThingPager *pager, u16 id);
 
-// NONMATCHING: register choice for the event stores
 // FUNCTION: 0x00088260
 void req5(Window *win)
 {
@@ -82,7 +81,6 @@ void req5(Window *win)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00088490
 void req5_overdraw(Window *win)
 {

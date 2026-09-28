@@ -66,7 +66,6 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
 void draw_face(Picture *p, const u16 x, const u16 y);
 void draw_staff_handyman_bars(const Thing *const w, const u16 x, const u16 y, TbSprite *spr);
 
-// NONMATCHING: register choice for the event stores
 // FUNCTION: 0x00086c10
 void req4(Window *win)
 {
@@ -137,7 +136,6 @@ void req4(Window *win)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008704c
 void req4_overdraw(Window *win)
 {
@@ -344,7 +342,6 @@ void adjust_handyman_values(const u16 id, const u8 button)
     w->f9c = 0;
 }
 
-// NONMATCHING: register choice for the coordinate sums
 // FUNCTION: 0x00087e7c
 void draw_staff_handyman_bars(const Thing *const w, const u16 x, const u16 y, TbSprite *spr)
 {
@@ -368,7 +365,6 @@ void setup_req4_references(void)
     D_0015642b = i;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00088068
 void req4_help_if_doctor(void)
 {
@@ -379,7 +375,6 @@ void req4_help_if_doctor(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000880e4
 void req4_help_if_surgeon(void)
 {
@@ -390,7 +385,6 @@ void req4_help_if_surgeon(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00088160
 void req4_help_if_shrink(void)
 {
@@ -401,7 +395,6 @@ void req4_help_if_shrink(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000881dc
 void req4_help_if_research(void)
 {

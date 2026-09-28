@@ -451,7 +451,6 @@ s16 button_index(s32 mask)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b9b04
 void draw_glass_text(SlistButton *b, char *text)
 {
@@ -474,7 +473,6 @@ void draw_glass_text(SlistButton *b, char *text)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b9d20
 void draw_glass_text_hilight(SlistButton *b, char *text)
 {
@@ -488,7 +486,6 @@ void draw_glass_text_hilight(SlistButton *b, char *text)
     LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b9e14
 void draw_glass_text_hilight_no_jump(SlistButton *b, char *text)
 {

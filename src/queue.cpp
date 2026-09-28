@@ -12,7 +12,6 @@ u16 fn_00085660(int n);
 
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004ace0
 void front_queue(const u16 room_id, const u16 pos)
 {
@@ -91,7 +90,6 @@ void back_queue(const u16 room_id, const u16 pos)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004af50
 void join_queue(Thing *w, RoomInfo *room)
 {
@@ -119,7 +117,6 @@ void join_queue(Thing *w, RoomInfo *room)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004b058
 void leave_queue(Thing *w)
 {
@@ -181,7 +178,6 @@ u16 which_queue(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004b2f4
 void process_queue_button(u8 n)
 {

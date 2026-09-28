@@ -271,7 +271,6 @@ void fn_0007fbb8(s8 me)
     }
 }
 
-// NONMATCHING: 16-bit multiply, register choice
 // FUNCTION: 0x0007fc14
 void set_glass_map(s32 mask)
 {
@@ -1300,7 +1299,6 @@ void process_message_buttons(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00082838
 void process_balance_buttons(u8 n)
 {
@@ -1724,7 +1722,6 @@ extern "C" {
 extern char D_0012070f[];
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00083684
 void draw_phone_numbers(void)
 {
@@ -1821,7 +1818,6 @@ void draw_level_selection_screen(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000839a0
 void draw_message_box(void)
 {
@@ -1926,7 +1922,6 @@ extern char D_00120713[];
 extern char D_00120719[];
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00083dc4
 void update_message_box(u8 key, u8 shift, u8 from)
 {
@@ -2026,7 +2021,6 @@ extern u16 D_001581fe;
 void draw_players_on_session(u32 session);
 void balance_filename(char *name);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000841b8
 void fn_000841b8(u8 flag)
 {
@@ -2056,7 +2050,6 @@ void fn_000841b8(u8 flag)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000842d4
 void fn_000842d4(TbNetworkCallbackData *data, void *arg)
 {
@@ -2068,7 +2061,6 @@ void fn_000842d4(TbNetworkCallbackData *data, void *arg)
     D_00160eb4++;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00084324
 void fn_00084324(SessionInfo *sessions)
 {
@@ -2169,7 +2161,6 @@ void __stdcall players_callback(TbNetworkCallbackData *data, void *arg)
     player_count++;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00084784
 void draw_players_on_session(u32 session)
 {
@@ -2212,7 +2203,6 @@ void swap_month_end_packets(void)
 {
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008493c
 void fn_0008493c(u8 fail, u8 active)
 {
@@ -2288,7 +2278,6 @@ extern YearEndPacket D_00154a48[];
 /* The exchanged packets start with a 4-byte header, which overlaps D_00154a0c. */
 #define YEAR_END_PACKETS ((u8 *)D_00154a0c + 0x38)
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00084a68
 void swap_year_end_packets(void)
 {
@@ -2376,7 +2365,6 @@ u8 setup_network(TbNetworkService service, void *data, u8 max_players)
 
 void reset_message_text(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00085198
 s32 create_session(void)
 {
@@ -2399,7 +2387,6 @@ s32 create_session(void)
     return res;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00085248
 s32 join_session(void)
 {
@@ -2452,7 +2439,6 @@ s16 character_height(void)
     return lbFontPtr ? lbFontPtr[34].height : 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00085420
 u8 send_message(void)
 {
@@ -2564,7 +2550,6 @@ void fn_000c93bf(char *dst, char *src);
 
 u8 cheat_mode(char *text);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00085724
 void process_nettext_keys(u8 shift, u8 key)
 {
@@ -2733,7 +2718,6 @@ void net_text_display(u8 from)
     D_00155403 = 0xc8;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00085e50
 void net_text_keypress(u8 key, u8 who)
 {
@@ -2851,7 +2835,6 @@ s32 network_button_join(void)
     return res;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000861c0
 void init_network_players(void)
 {
@@ -3165,7 +3148,6 @@ extern "C" {
 u8 fn_00086b60(void);
 }
 
-// NONMATCHING: register choice, near jump over the if body
 // FUNCTION: 0x00086b60
 u8 fn_00086b60(void)
 {

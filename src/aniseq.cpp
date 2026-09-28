@@ -35,7 +35,6 @@ void setup_aniseq(Thing *w, u8 seq, u8 mode)
     setup_next_aniseq(w);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009b3d8
 void setup_next_aniseq(Thing *w)
 {
@@ -51,7 +50,6 @@ void setup_next_aniseq(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009b498
 void play_aniseq(Thing *w)
 {

@@ -4,7 +4,6 @@ s32 wall_in_way(u32 x, u32 y, u32 dir);
 s32 person_in_way(u32 x, u32 y, u32 dir);
 s32 person_overlap(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000553e0
 void delete_first_path_entry(orthonav_path *path)
 {
@@ -17,7 +16,6 @@ void delete_first_path_entry(orthonav_path *path)
         path->steps[i] = path->steps[i + 1];
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00055454
 void orthonav_init(orthonav_path *path, s8 x0, s8 y0, s8 x1, s8 y1)
 {

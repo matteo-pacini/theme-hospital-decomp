@@ -44,7 +44,6 @@ void init_wibble(void *xoff, void *yoff, s32 w, s32 h, s32 width, s32 freq, s32 
     srcwidth = width;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006ed58
 void draw_wibble(s32 x, s32 y, u8 *buf, s32 w, s32 h, s32 phase)
 {

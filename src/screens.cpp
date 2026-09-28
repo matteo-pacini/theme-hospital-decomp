@@ -305,7 +305,6 @@ void clear_loading_screen(u8 *palette)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b7bf0
 void load_screen(const u8 idx)
 {

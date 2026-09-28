@@ -92,7 +92,6 @@ u32 line_of_sight(wallhug_waypoint from, wallhug_waypoint to)
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00048b64
 u32 fn_00048b64(wallhug_path *path, u32 first)
 {
@@ -132,7 +131,6 @@ u32 fn_00048b64(wallhug_path *path, u32 first)
     return changed;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00048c78
 u32 wallhug_cleanup(wallhug_path *path, u32 result)
 {
@@ -190,7 +188,6 @@ u32 wallhug_tricky(wallhug_path *path)
     return wallhug_cleanup(path, result);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00048ea4
 u32 fn_00048ea4(wallhug_path *path, wallhug_waypoint cur, u32 limit)
 {
@@ -275,7 +272,6 @@ fail:
     return 0x70000000;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000491d8
 u32 fn_000491d8(wallhug_path *path)
 {
@@ -286,7 +282,6 @@ u32 fn_000491d8(wallhug_path *path)
     return fn_00048ea4(path, path->start, 60000);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00049230
 u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger)
 {
@@ -321,7 +316,6 @@ u32 huggers_met_again(wallhug_info *info)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00049400
 void fn_00049400(wallhug_hugger *hugger)
 {

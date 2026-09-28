@@ -786,7 +786,6 @@ void process_right_button(u16 icon)
     }
 }
 
-// NONMATCHING: register choice; mcurx/mcury are read through the preceding global (sar trick)
 // FUNCTION: 0x0005be7c
 void process_no_button(u16 icon)
 {

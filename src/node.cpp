@@ -46,7 +46,6 @@ u16 move_node(Thing *w, MapPos x, MapPos y)
     return 0;
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00015b68
 void fn_00015b68(Thing *w)
 {

@@ -105,7 +105,6 @@ void doctor_works_at_desk(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (value in eax, address in edx; field arguments loaded into their own register)
 // FUNCTION: 0x0003aba4
 void doctor_waits_for_patient_to_arrive(Thing *w)
 {
@@ -294,7 +293,6 @@ void doctor_waits_for_patient_to_arrive(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (value in eax, address in edx for the call-result store)
 // FUNCTION: 0x0003b234
 void fn_0003b234(Thing *w)
 {
@@ -485,7 +483,6 @@ void doctor_researches(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (value in eax, address in edx for the call-result store)
 // FUNCTION: 0x0003bd34
 void doctor_cracks_up(Thing *w)
 {
@@ -621,7 +618,6 @@ Thing *fn_0003c154(RoomInfo *room, u8 kind)
     return 0;
 }
 
-// NONMATCHING: register choice (u16 field argument loaded through edx in target)
 // FUNCTION: 0x0003c1e8
 u8 fn_0003c1e8(Thing *w, u16 action)
 {

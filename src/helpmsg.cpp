@@ -57,7 +57,6 @@ void copy_and_format_composite(char *dst, char **strs);
 void help_hotspot_detected(u16 i, u8 c, s16 x, s16 y);
 void set_help_from_index(u16 i, s16 x, s16 y);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00099c70
 void setup_help_indices(void)
 {
@@ -80,7 +79,6 @@ void setup_help_indices(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00099d00
 void compute_help_text(s16 x, s16 y, u8 c)
 {
@@ -108,7 +106,6 @@ void compute_help_text(s16 x, s16 y, u8 c)
         D_00155c64 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00099e4c
 void set_help_text(u8 mode, s16 x, s16 y, char **strs)
 {
@@ -242,7 +239,6 @@ void draw_help_text(void)
         D_0015544e[0] = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009a7c8
 void copy_and_format(char *dst, char *src)
 {
@@ -396,7 +392,6 @@ void set_help_from_index(u16 i, s16 x, s16 y)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009ad68
 void set_force_help(u8 c, u16 id)
 {
@@ -420,7 +415,6 @@ void clear_force_help(void)
     D_00155d75 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009ae08
 void show_help_page(u32 page, u32 sub)
 {

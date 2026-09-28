@@ -48,7 +48,6 @@ void cancel_vaccination_request(Thing *w)
     reset_icon_value(w, 0xf);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00098844
 void insert_person_in_vaccination_queue(Thing *w)
 {
@@ -65,7 +64,6 @@ void insert_person_in_vaccination_queue(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00098950
 u8 remove_person_from_vaccination_queue(Thing *w)
 {
@@ -98,7 +96,6 @@ u8 is_person_in_vaccine_queue(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice; set_complex argument loaded with and ebx,0xffff
 // FUNCTION: 0x00098b2c
 u8 should_nurse_vaccinate(Thing *w)
 {
@@ -128,7 +125,6 @@ u8 should_nurse_vaccinate(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00098d0c
 void nurse_vaccinates(Thing *w)
 {

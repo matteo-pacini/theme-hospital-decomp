@@ -74,7 +74,6 @@ void display_manager_text(void);
 void display_manager_face(void);
 void process_bank_panel(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007e210
 void display_manager(void)
 {
@@ -115,7 +114,6 @@ void display_manager(void)
         manager.unknown2 = 2;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007e42c
 void display_manager_text(void)
 {
@@ -253,7 +251,6 @@ void display_manager_text(void)
     D_00188c74 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007f258
 void process_bank_panel(void)
 {
@@ -328,7 +325,6 @@ void process_bank_button(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007f6e4
 void display_manager_face(void)
 {
@@ -367,7 +363,6 @@ void display_manager_face(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007f8cc
 void manager_help_pointed_ins(void)
 {

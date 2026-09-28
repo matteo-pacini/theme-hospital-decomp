@@ -111,7 +111,6 @@ u16 check_pager(Thing *w)
     return room_id;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00049ce0
 void pager_arrival(Thing *w)
 {
@@ -155,7 +154,6 @@ void clear_pager_responses(u16 room_id)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00049e88
 RoomInfo *get_expertise_dest(u16 type, Thing *w)
 {
@@ -259,7 +257,6 @@ void room_deleted_update_listhead(RoomInfo *room)
     listhead[room->owner].rooms[room->type] = id;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004a2fc
 void set_expertise_staff(Thing *w)
 {
@@ -291,7 +288,6 @@ void set_expertise_staff(Thing *w)
         set_expertise_ward(w->owner);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004a520
 void set_expertise_room(RoomInfo *room)
 {
@@ -329,7 +325,6 @@ void set_expertise_room(RoomInfo *room)
         set_expertise_ward(room->owner);
 }
 
-// NONMATCHING: argument zero-extension
 // FUNCTION: 0x0004a754
 void remove_expertise_staff(Thing *w)
 {
@@ -357,7 +352,6 @@ void remove_expertise_staff(Thing *w)
         remove_expertise_ward(w->owner);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004a964
 void remove_expertise_room(RoomInfo *room)
 {
@@ -380,7 +374,6 @@ void remove_expertise_room(RoomInfo *room)
         remove_expertise_ward(room->owner);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004aae4
 void set_expertise_ward(u8 owner)
 {

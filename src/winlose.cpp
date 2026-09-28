@@ -64,7 +64,6 @@ void fn_000c93bf(char *dst, char *src);
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009ded0
 void __stdcall lose_call(void *buf, u32 a, u32 b)
 {
@@ -411,7 +410,6 @@ void play_winlose(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009ef00
 void letter_format_text(char *dst, char *src, s16 width)
 {
@@ -451,7 +449,6 @@ void letter_format_text(char *dst, char *src, s16 width)
     *dst = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009f06c
 void concat_composite(char *dst, char **strs)
 {

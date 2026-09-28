@@ -232,7 +232,6 @@ void clicked_buy_objects(const s32 idx, const u8 button)
     play_sound(10, 8, -1, -1);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009d36c
 void req11_help_object(void)
 {
@@ -243,7 +242,6 @@ void req11_help_object(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, object_help[idx]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009d3cc
 void req11_help_plus(void)
 {
@@ -254,7 +252,6 @@ void req11_help_plus(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[0x29]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009d424
 void req11_help_minus(void)
 {

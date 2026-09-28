@@ -13,7 +13,6 @@ u16 find_free_object_anywhere(u16 id, u8 kind);
 void staff_in_corridor(Thing *w);
 RoomInfo *allocate_reception_roominfo(u8 owner);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00097ce0
 void receptionist_finds_reception(Thing *w)
 {
@@ -43,7 +42,6 @@ void receptionist_finds_reception(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00097de0
 void receptionist_setup(Thing *w)
 {
@@ -74,7 +72,6 @@ void receptionist_setup(Thing *w)
     w->kind = 10;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00097fac
 void receptionist_works(Thing *w)
 {
@@ -138,7 +135,6 @@ void receptionist_works(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000982a8
 void recept_waits_for_patient(Thing *w)
 {

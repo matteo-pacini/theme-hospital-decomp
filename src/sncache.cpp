@@ -81,7 +81,6 @@ TbCacheUsedBlock *TbCache::Allocate(u32 size, u32 tag)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a24b0
 void TbCache::Free(TbCacheUsedBlock *block)
 {

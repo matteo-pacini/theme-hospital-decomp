@@ -274,7 +274,6 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008aaf8
 void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h)
 {
@@ -450,7 +449,6 @@ extern "C" void fn_0008add8(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008b6a0
 extern "C" void fn_0008b6a0(void)
 {
@@ -464,7 +462,6 @@ extern "C" void fn_0008b6a0(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008b6f8
 extern "C" void fn_0008b6f8(void)
 {
@@ -589,7 +586,6 @@ extern "C" void fn_0008bacc(void)
         myplayer.f10 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008bb10
 extern "C" void fn_0008bb10(void)
 {
@@ -633,7 +629,6 @@ extern "C" void fn_0008bb98(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008bcb4
 extern "C" void fn_0008bcb4(void)
 {
@@ -1126,7 +1121,6 @@ void mcga_coords(void)
     D_0015f40c[0x115] = 0xc;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008d77c
 void swap_game_sprites(TbScreenMode mode)
 {
@@ -1258,7 +1252,6 @@ extern "C" void fn_0008db38(TbScreenMode mode)
     goto_cell_in_window(window.unknown2eb, cell);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008dc7c
 extern "C" void fn_0008dc7c(void)
 {

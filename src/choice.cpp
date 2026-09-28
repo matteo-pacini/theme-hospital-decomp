@@ -73,7 +73,6 @@ int strcmp(const char *a, const char *b);
 void fn_000a3140(void);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a3158
 void display_choice(void)
 {
@@ -134,7 +133,6 @@ void display_choice(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a3430
 void check_choice_buttons(void)
 {
@@ -168,7 +166,6 @@ void check_choice_buttons(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a374c
 void check_fax_buttons(void)
 {
@@ -272,7 +269,6 @@ void calculate_buttons(const u8 type)
     D_0015f43c[numbuttons + 0xae].y = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a3db4
 void display_buttons(void)
 {
@@ -348,7 +344,6 @@ void display_choice_screen(const u8 owner, const u8 type, const s16 data, const 
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a4168
 void packet_choice_result(u8 n)
 {
@@ -398,7 +393,6 @@ void restore_display_screen(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a431c
 u8 fax_no_equal(FaxNo fax, u8 *pressed)
 {

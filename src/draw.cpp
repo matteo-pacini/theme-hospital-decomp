@@ -53,7 +53,6 @@ u32 ror13(u32 x);
 
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002d910
 void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, const u8 flip)
 {
@@ -555,7 +554,6 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
 
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002fa3c
 void draw_split_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -627,7 +625,6 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
 }
 
 
-// NONMATCHING: register choice; the target function table splits this function at 0x3000d (fn_0003000d)
 // FUNCTION: 0x0002fe18
 void draw_energise_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -748,7 +745,6 @@ void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, con
 }
 
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000305fc
 void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -1078,7 +1074,6 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
     D_00155e0a = 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00031a44
 void draw_money(s32 x, s32 y, s32 value)
 {

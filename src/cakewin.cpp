@@ -44,7 +44,6 @@ void copy_window_from_a_to_b(const u8 a, const u8 b);
 void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h);
 void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000ab610
 void process_tracking_windows(void)
 {
@@ -91,7 +90,6 @@ void process_tracking_windows(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000aba50
 void set_map_cur_and_mcur_x_and_y(void)
 {
@@ -128,7 +126,6 @@ void goto_cell_in_window(const u8 a, const s32 b)
     goto_column_row_in_window(a, b % 128, b / 128);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000abbc8
 void goto_column_row_in_window(const u8 a, const s32 x, const s32 y)
 {
@@ -139,7 +136,6 @@ void goto_column_row_in_window(const u8 a, const s32 x, const s32 y)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000abc44
 void move_windows(void)
 {
@@ -409,7 +405,6 @@ void open_new_window(const u8 a, const u8 b, const u8 c, const s32 x0, const s32
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000acc4c
 void set_window_animating(const u8 n, const u8 a, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
 {
@@ -497,7 +492,6 @@ void animate_single_window(const u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000ad284
 void copy_window_from_a_to_b(const u8 a, const u8 b)
 {
@@ -548,7 +542,6 @@ void remove_window_from_list(const u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000ad72c
 void init_andys_variables(void)
 {

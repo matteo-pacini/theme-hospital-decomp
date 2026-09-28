@@ -43,7 +43,6 @@ u8 check_net_criteria(const u8 owner);
 void setup_next_net_criteria(const u8 owner);
 void try_bonus_level(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00058370
 void reputation_affected(const u8 room, const u16 event, const u16 month, const u8 owner, const s32 amount)
 {
@@ -144,7 +143,6 @@ void reputation_affected(const u8 room, const u16 event, const u16 month, const 
         update_single_cure_cost(room, owner);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00058730
 void evaluate_reputation(const u8 room, const u8 owner)
 {
@@ -172,7 +170,6 @@ void evaluate_reputation(const u8 room, const u8 owner)
     }
 }
 
-// NONMATCHING: register choice; threshold is loaded through recept_tasks+0xa (sar trick)
 // FUNCTION: 0x000588a8
 void calculate_score(u8 owner)
 {
@@ -261,7 +258,6 @@ void check_quarterly_game_over(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00058c54
 u16 shall_peep_pay(Thing *w)
 {
@@ -328,7 +324,6 @@ s32 max_price_for_treatment(const u16 room, const u8 owner)
     return base > price ? base : price;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00058f7c
 void calc_pricing_factor(const u8 owner)
 {
@@ -392,7 +387,6 @@ s32 check_criteria(u16 mode, u8 owner)
     return result;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000591d4
 u32 check_criteria_values(const u32 mode, const u8 owner)
 {
@@ -472,7 +466,6 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000594d0
 s32 evaluate_criteria(const u8 owner)
 {
@@ -546,7 +539,6 @@ s32 evaluate_criteria(const u8 owner)
     return best;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000597c4
 u8 check_net_criteria(const u8 owner)
 {
@@ -652,7 +644,6 @@ u8 check_net_criteria(const u8 owner)
     return fail;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00059af8
 void setup_next_net_criteria(const u8 owner)
 {

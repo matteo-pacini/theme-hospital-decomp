@@ -84,7 +84,6 @@ void fn_00024a34(u16 tile, u16 room, u8 side)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007cd80
 void try_create_rathole(u8 owner)
 {
@@ -154,7 +153,6 @@ found:
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007d114
 void remove_rand_rathole(u8 owner)
 {
@@ -164,7 +162,6 @@ void remove_rand_rathole(u8 owner)
     remove_rathole(owner, old_newrand() % allhosps[owner].fcae);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007d184
 void remove_rathole(u8 owner, u8 idx)
 {
@@ -208,7 +205,6 @@ void manage_rats(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007d448
 void make_a_rat(u8 owner)
 {
@@ -264,7 +260,6 @@ void make_a_rat(u8 owner)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007d6cc
 void rat_scurries(Thing *w)
 {
@@ -281,7 +276,6 @@ void rat_scurries(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007d760
 void ratnav_init(Thing *w)
 {
@@ -358,7 +352,6 @@ void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007dc44
 void rat_arrives(Thing *w)
 {
@@ -370,7 +363,6 @@ void rat_arrives(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007dcb4
 void rat_leaves(Thing *w)
 {
@@ -380,7 +372,6 @@ void rat_leaves(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007dd18
 void rat_fest_control(void)
 {
@@ -441,7 +432,6 @@ void rat_fest_control(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007df1c
 void rat_fest_builder(u8 level)
 {
@@ -485,7 +475,6 @@ void rat_fest_builder(u8 level)
     vary_speed(0x1e);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007e140
 void try_bonus_level(void)
 {

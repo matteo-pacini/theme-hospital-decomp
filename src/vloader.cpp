@@ -157,7 +157,6 @@ s32 variable_address(char *name)
     return -1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000994f0
 void read_variable_file(char *name)
 {

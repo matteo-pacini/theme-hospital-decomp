@@ -19,7 +19,6 @@ void fn_000a30f0(s8 dx, s8 dy);
 void fn_000a3140(void);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a2f00
 u8 earthquake(const s8 magnitude, const u8 chance)
 {

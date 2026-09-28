@@ -1,6 +1,5 @@
 #include "hosp.h"
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009d480
 void create_numfx(u8 type, s16 value, u16 pos, u8 colour, u8 life)
 {

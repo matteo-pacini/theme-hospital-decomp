@@ -72,7 +72,6 @@ u16 get_queue_person(u16 room_id, u8 sel);
 void display_panel_person_info(void);
 void compute_room_pointed(u16 tile);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000957f0
 void req7(Window *w)
 {
@@ -105,7 +104,6 @@ void req7(Window *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000959c8
 void req7_overdraw(Window *w)
 {
@@ -328,7 +326,6 @@ void req7_overdraw(Window *w)
         D_00155e19 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000969f4
 u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
 {

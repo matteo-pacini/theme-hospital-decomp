@@ -197,7 +197,6 @@ u8 can_buy_plot(const u8 plot)
     return plot;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00063e54
 u16 check_for_sale(void)
 {
@@ -332,7 +331,6 @@ void draw_sale_area_outlines(u16 x, u16 y)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00064db0
 void buy_land(u16 plot)
 {
@@ -367,7 +365,6 @@ void buy_land(u16 plot)
     add_static_shadows();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00065014
 void mow_grass(void)
 {
@@ -410,7 +407,6 @@ void place_partition_walls(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00065248
 void remove_partition_walls(void)
 {
@@ -582,7 +578,6 @@ void recreate_map(const u8 flag)
         precalculate_shadow_blocks();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00065fc0
 void adjust_mapwho(u16 tile)
 {
@@ -679,7 +674,6 @@ void display_plot_under_mouse(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000666d4
 void calculate_land_amount(void)
 {
@@ -738,7 +732,6 @@ extern "C" void fn_0006680c(void)
     D_00155421 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00066914
 extern "C" void fn_00066914(void)
 {
@@ -871,7 +864,6 @@ void draw_things_on_map(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000675a8
 u8 process_town_panel(void)
 {
@@ -909,7 +901,6 @@ u8 process_town_panel(void)
     return hit;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000678dc
 void process_town_button(u8 n)
 {
@@ -973,7 +964,6 @@ void process_town_button(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00067b80
 void process_bid_panel(void)
 {
@@ -1018,7 +1008,6 @@ void process_bid_button(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00067ed4
 extern "C" void fn_00067ed4(void)
 {
@@ -1054,7 +1043,6 @@ extern "C" void fn_00067ed4(void)
         D_00155431 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00068194
 extern "C" void fn_00068194(void)
 {
@@ -1109,7 +1097,6 @@ extern "C" void fn_00068194(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00068480
 void plot_bid_money(u8 who)
 {
@@ -1119,7 +1106,6 @@ void plot_bid_money(u8 who)
     plotbid.timer = 100;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000684d0
 void process_bid_time(void)
 {

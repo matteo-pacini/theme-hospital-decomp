@@ -269,7 +269,6 @@ void send_peeps_home(u8 all, u8 owner)
     }
 }
 
-// NONMATCHING: register choice (first flags update goes through edx)
 // FUNCTION: 0x000a0ae8
 void clean_contagious_peep(Thing *w)
 {

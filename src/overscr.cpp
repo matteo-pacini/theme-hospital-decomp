@@ -56,7 +56,6 @@ s32 evaluate_criteria(const u8 owner);
 u32 check_criteria_values(const u32 mode, const u8 owner);
 void pie_render(s32 x, s32 y, s32 r, s32 h, s32 d, s32 n, Sector *s);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00056d50
 void display_peep_overview(void)
 {
@@ -325,7 +324,6 @@ void draw_piechart(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00057c70
 void display_overview_bars(u8 who)
 {
@@ -374,7 +372,6 @@ void display_overview_bars(u8 who)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00057f18
 void overscr_help_add_name(void)
 {
@@ -386,7 +383,6 @@ void overscr_help_add_name(void)
     sprintf(D_0015544e, help_text[text], &allhosps[owner]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00057f98
 void overscr_help_win_criteria(void)
 {

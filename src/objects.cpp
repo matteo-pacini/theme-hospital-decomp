@@ -198,7 +198,6 @@ void place_existing_object(Thing *w, u16 tile, u8 dir)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00037098
 u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
 {
@@ -276,7 +275,6 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0003749c
 void object_static(Thing *w)
 {
@@ -288,7 +286,6 @@ void object_static(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0003751c
 void fn_0003751c(Thing *w)
 {
@@ -310,7 +307,6 @@ void fn_0003751c(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000375ec
 void insert_object(u16 tile, Thing *w, u16 kind)
 {
@@ -339,7 +335,6 @@ void insert_object(u16 tile, Thing *w, u16 kind)
     listhead[w->owner].objects[kind] = id;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00037718
 void delete_object(u16 tile, Thing *w)
 {
@@ -381,7 +376,6 @@ void delete_object(u16 tile, Thing *w)
     }
 }
 
-// NONMATCHING: register choice; found[count++] evaluates the index first
 // FUNCTION: 0x0003791c
 u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
 {
@@ -440,7 +434,6 @@ u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
     return 0;
 }
 
-// NONMATCHING: register choice; target scales the found[] index with lea
 // FUNCTION: 0x00037bec
 u16 find_object_anywhere(u16 kind, u8 random, u16 after, u8 owner)
 {
@@ -475,7 +468,6 @@ u16 find_object_anywhere(u16 kind, u8 random, u16 after, u8 owner)
     return 0;
 }
 
-// NONMATCHING: register choice; found[count++] evaluates the index first
 // FUNCTION: 0x00037d28
 u16 find_nearest_free_object(u16 id, u8 kind)
 {
@@ -751,7 +743,6 @@ s16 place_small_thing(u16 tile, u16 id, u8 flag)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00038950
 s16 find_small_thing(u16 tile)
 {
@@ -764,7 +755,6 @@ s16 find_small_thing(u16 tile)
     return -id;
 }
 
-// NONMATCHING: register choice (target reloads the Thing pointer into the value register)
 // FUNCTION: 0x000389b8
 void remove_object_from_map(Thing *w)
 {
@@ -842,7 +832,6 @@ void remove_object_from_map(Thing *w)
     fn_00015b68(w);
 }
 
-// NONMATCHING: register choice in the 1 << owner comparison
 // FUNCTION: 0x00038d04
 s32 fn_00038d04(Thing *w, u8 owner)
 {
@@ -857,7 +846,6 @@ s32 fn_00038d04(Thing *w, u8 owner)
     return 1;
 }
 
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x00038db0
 u8 treatment_machine_used(const u16 illness, const u16 tile)
 {
@@ -888,7 +876,6 @@ u8 treatment_machine_used(const u16 illness, const u16 tile)
     return 0;
 }
 
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x00038f14
 u8 modify_machine(Thing *w)
 {
@@ -943,7 +930,6 @@ u8 modify_machine(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice (point address built in edx in target)
 // FUNCTION: 0x0003917c
 void mark_object_shape(Map *m, Shapes *shape, u8 dir, ObjectControl *obj, u8 cleanse)
 {
@@ -979,7 +965,6 @@ void mark_object_shape(Map *m, Shapes *shape, u8 dir, ObjectControl *obj, u8 cle
     }
 }
 
-// NONMATCHING: register choice (lea vs shl for the wall index, side load)
 // FUNCTION: 0x00039470
 void remove_object_shape(Map *m, Shapes *shape, u8 dir, ObjectControl *obj)
 {
@@ -1003,7 +988,6 @@ void remove_object_shape(Map *m, Shapes *shape, u8 dir, ObjectControl *obj)
     }
 }
 
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x000395b0
 void double_door_swings(Thing *w)
 {
@@ -1033,7 +1017,6 @@ void sliding_door_closed(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x00039734
 void sliding_door_opens(Thing *w)
 {
@@ -1050,7 +1033,6 @@ void sliding_door_opens(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x000397b4
 void sliding_door_open(Thing *w)
 {
@@ -1067,7 +1049,6 @@ void sliding_door_open(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x00039880
 void sliding_door_closes(Thing *w)
 {
@@ -1099,7 +1080,6 @@ void sliding_door_closes(Thing *w)
     }
 }
 
-// NONMATCHING: register choice (door index, lea vs shl for the map index)
 // FUNCTION: 0x00039a90
 u8 should_sliding_door_open(Thing *w)
 {
@@ -1122,7 +1102,6 @@ u8 should_sliding_door_open(Thing *w)
     }
     return 0;
 }
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x00039cb4
 u8 check_no_peeps_in_way(u16 tile, u8 kind, u8 dir)
 {
@@ -1204,7 +1183,6 @@ void inc_hardware_stats(u8 kind, u8 owner)
     h->object_stats[kind].fA++;
 }
 
-// NONMATCHING: register choice (target reloads the Thing pointer into the value register)
 // FUNCTION: 0x0003a098
 void bomb_ticks(Thing *w)
 {
@@ -1285,7 +1263,6 @@ u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner)
     return 0;
 }
 
-// NONMATCHING: register choice (value in eax, address in edx in target)
 // FUNCTION: 0x0003a3e0
 void replace_machine(Thing *e)
 {
@@ -1317,7 +1294,6 @@ void replace_machine(Thing *e)
     }
 }
 
-// NONMATCHING: lea vs shl for the wall index
 // FUNCTION: 0x0003a5e0
 void check_invis_walls_around_object(Thing *w)
 {

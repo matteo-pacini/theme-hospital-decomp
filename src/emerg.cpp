@@ -63,7 +63,6 @@ u16 saferand(void);
 u16 count_emergency_staff(u8 owner);
 u16 create_shadow(u16 tile, u16 height, u8 owner, u16 anim);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000aeec0
 void try_to_generate_emergency(void)
 {
@@ -116,7 +115,6 @@ void try_to_generate_emergency(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000af118
 u32 check_emergency_criteria(void)
 {
@@ -147,7 +145,6 @@ u32 check_emergency_criteria(void)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000af2c0
 void setup_next_emergency(void)
 {
@@ -175,7 +172,6 @@ void setup_next_emergency(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000af448
 void setup_emergency_stats(u16 call, u8 owner)
 {
@@ -197,7 +193,6 @@ void setup_emergency_stats(u16 call, u8 owner)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000af510
 void give_emergency_stats(u16 call, u8 owner)
 {
@@ -218,7 +213,6 @@ void give_emergency_stats(u16 call, u8 owner)
     D_0015537e--;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000af600
 u32 announce_emergency(u8 owner, char **strs)
 {
@@ -324,7 +318,6 @@ void process_emergency_start_buttons(u8 button)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000afb34
 void emergency_over(u8 owner, char **strs)
 {
@@ -367,7 +360,6 @@ void process_emergency_end_buttons(u8 button)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000afd0c
 u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 e)
 {
@@ -402,7 +394,6 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 e)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000afef4
 void helicopter_lands(Thing *w)
 {
@@ -428,7 +419,6 @@ void helicopter_lands(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b0000
 void helicopter_leaves(Thing *w)
 {

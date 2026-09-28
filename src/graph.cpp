@@ -253,7 +253,6 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     }
     D_00188c74 = 0;
 }
-// NONMATCHING: register choice
 // FUNCTION: 0x00079d30
 void process_graph_panel(void)
 {

@@ -70,7 +70,6 @@ void check_hall_buttons(void);
 void save_highscores(void);
 void load_highscores(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00094500
 void move_text(void)
 {
@@ -112,7 +111,6 @@ void move_text(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000947f0
 void set_fame_pos(s32 *text, s32 *title)
 {
@@ -135,7 +133,6 @@ void set_fame_pos(s32 *text, s32 *title)
     TitleText = saved;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00094914
 void set_shame_pos(s32 *text, s32 *title)
 {
@@ -154,7 +151,6 @@ void set_shame_pos(s32 *text, s32 *title)
     TitleText = saved;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00094a18
 void fn_00094a18(void)
 {
@@ -230,7 +226,6 @@ void fn_00094b28(void)
         hall.unknown2 = 2;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00094d34
 void fn_00094d34(void)
 {
@@ -275,7 +270,6 @@ void fn_00094d34(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00094f5c
 void fn_00094f5c(s8 slot)
 {
@@ -283,7 +277,6 @@ void fn_00094f5c(s8 slot)
     hosp_scores.fame[slot].score = allhosps[player].f2d;
 }
 
-// NONMATCHING: register choice in the struct copies
 // FUNCTION: 0x00094fc8
 void fn_00094fc8(void)
 {
@@ -307,7 +300,6 @@ void fn_00094fc8(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00095094
 void fn_00095094(s8 slot)
 {
@@ -315,7 +307,6 @@ void fn_00095094(s8 slot)
     hosp_scores.shame[slot].score = allhosps[player].f2d;
 }
 
-// NONMATCHING: register choice in the struct copies
 // FUNCTION: 0x00095100
 void fn_00095100(void)
 {
@@ -339,7 +330,6 @@ void fn_00095100(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000951c8
 void fn_000951c8(void)
 {
@@ -406,7 +396,6 @@ void process_hall_buttons(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009542c
 void check_hall_buttons(void)
 {

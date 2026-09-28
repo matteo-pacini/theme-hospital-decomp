@@ -242,7 +242,6 @@ void process_mouse_load_game(void)
     D_00188c81 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009dddc
 void display_loadgame_screen(void)
 {

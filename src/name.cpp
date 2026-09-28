@@ -118,7 +118,6 @@ void fn_00054d60(void);
 
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008ee50
 void draw_nickname(void)
 {
@@ -385,7 +384,6 @@ void display_nick_name_screen(void)
     LbTextDraw(x, y, buf);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0008fa90
 extern "C" void fn_0008fa90(u8 index)
 {
@@ -566,7 +564,6 @@ u8 setup_balance_files(u8 cd)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000902d0
 void free_balance_files(void)
 {
@@ -666,7 +663,6 @@ extern "C" void fn_000905f4(void)
 {
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00090610
 extern "C" void fn_00090610(void)
 {

@@ -497,7 +497,6 @@ void draw_slist_panel(void)
 {
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00092ea0
 void draw_slist_overall(void)
 {
@@ -542,7 +541,6 @@ void draw_slist_overall(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000931d4
 void process_slist_panel(void)
 {
@@ -581,7 +579,6 @@ void process_slist_panel(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00093574
 void process_slist_button(u8 n)
 {
@@ -717,7 +714,6 @@ u8 staff_on_page(const u8 page)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00093bb8
 void draw_slist_nums(void)
 {
@@ -759,7 +755,6 @@ void draw_slist_nums(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00093eac
 void draw_slist_coverup(void)
 {
@@ -767,7 +762,6 @@ void draw_slist_coverup(void)
     LbDrawBox(D_0015f430->cover[1].x, D_0015f430->cover[1].y, D_0015f430->cover[1].w, D_0015f430->cover[1].h, 0x76);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00093f38
 void slist_salary_help_if_present(void)
 {
@@ -775,7 +769,6 @@ void slist_salary_help_if_present(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[50]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00093f88
 void slist_happiness_help_if_present(void)
 {
@@ -783,7 +776,6 @@ void slist_happiness_help_if_present(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[51]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00093fd8
 void slist_tiredness_help_if_present(void)
 {
@@ -791,7 +783,6 @@ void slist_tiredness_help_if_present(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[52]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00094028
 void slist_ability_help_if_present(void)
 {
@@ -799,7 +790,6 @@ void slist_ability_help_if_present(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[53]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00094078
 void slist_help_if_doctor(void)
 {
@@ -867,7 +857,6 @@ void slist_help_if_researcher(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0009439c
 void draw_slist_button_overlays(Thing *w)
 {
@@ -880,7 +869,6 @@ void draw_slist_button_overlays(Thing *w)
     LbTextDraw(D_0015f434->bonus.x, D_0015f434->bonus.y, buf);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00094458
 void draw_slist_training_bar(u16 x, u16 y, u16 value, u16 max)
 {

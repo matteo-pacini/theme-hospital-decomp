@@ -11,11 +11,16 @@ and comparing against the original.
   matched the demo byte for byte in 9 of 10 functions tested (11.0 matched
   2), which confirms both the compiler family and that the decompiled
   source is faithful to the original.
-- Compiler: Watcom C++ (`wpp386`) 10.5 or later. 10.0a is ruled out (it loads
+- Compiler: Watcom C++ (`wpp386`) 10.5 or later; "register choice" near-misses
+  that predate the `-ot` discovery were recompiled and most now match. 10.0a is ruled out (it loads
   signed chars with `movsx` where the game uses a dword load and `sar`); 10.5,
   10.5a and 10.6 generate identical code for everything tested. The project
   uses 10.6.
-- Flags: `-d2 -zm -s` (see `tools/cc.py`). `-d2` both disables optimisation
+- Flags: `-s -ot -d2 -zm` (see `config/cflags.txt`). Order matters: `-d2`
+  turns optimisation off again, but the "optimise for time" preference set by
+  the earlier `-ot` survives and decides register allocation (the value of a
+  store in `eax`, a scaled index built with `lea` into a fresh register).
+  With `-d2` alone the allocator prefers the opposite registers. `-d2` both disables optimisation
   and keeps dead loads such as the value of a discarded `i++`, which the game
   has. `-zm` puts each function in its own segment; the linker then aligns
   every function to 4 bytes, padding with `nop`, `mov eax,eax` or
@@ -171,38 +176,6 @@ Stack frame layout is not fully understood. Observed so far:
 
 ## Known unsolved
 
-- Register choice when combining an index with a pointer or table: the
-  original computes the value in `eax` and the address in `edx`
-  (`imul eax,eax,K; mov edx,[p]; add eax,edx`, `imul edx,[i],6; mov
-  [edx+T],eax`), we get the reverse. It is common (about a third of the
-  non-matching functions in 0x10000-0x14000) and depends on earlier code in
-  the function: the same expression comes out right in some places. Watcom
-  10.5, 10.5a, 10.6 and 11.0 and ~40 flag combinations all behave the same.
-  Register allocation works per basic block: a later statement in the same
-  block changes earlier choices, and splitting the block (a label, `do {}
-  while (0)`) can flip them, but no plausible source form found so far
-  reproduces the original throughout. Open Watcom 1.9 is further off
-  (7/34 matched in 0x10000-0x14000 with `-zp1`, versus 22/34 with 10.6),
-  and the DOS-hosted 10.6 compiler (`binw`, run under DOSBox-X) generates the
-  same code as the NT-hosted one.
-  Scoring 14 register-choice functions against retail with about 70 extra
-  flags on top of `-s -d2` (and `-od`/`-d1`/`-d3` bases) changed nothing
-  for the better, so the difference is most likely a 10.x patch build we
-  do not have.
-
-  The "Sybase Watcom C++ 10.6a" package (archive.org
-  `watcom-c-cpp-compilers-collection`) has compiler binaries byte-identical
-  to decomp.me's 10.6, so it is the build already in use. Untested: 10.0b
-  (unlikely: 10.0a differs elsewhere), 10.6b (only QNX-hosted binaries
-  exist), 11.0c (unlikely: 11.0 is further off than 10.6).
-
-  Minimal test case, `plot_bid_money` (0x68480): the original computes the
-  scaled index into a fresh register, which leaves `eax` for the value;
-  every available compiler shifts in place instead. Any `-o` flag produces
-  the `lea`, but also drops the dead loads that `-d2` keeps:
-
-      original:  lea edx,[eax*4]; mov eax,[price]; mov [edx+bids],eax
-      ours:      shl eax,2;       mov edx,[price]; mov [eax+bids],edx
 - Position of the return-value slot relative to locals in some functions.
 
 ## Libraries

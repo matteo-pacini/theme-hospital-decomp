@@ -84,7 +84,6 @@ long keybuffer_get(void);
 u8 what_key_is_it_really(u8 key);
 void swap_game_sprites(TbScreenMode mode);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00068a80
 u8 draw_area_select(void)
 {
@@ -277,7 +276,6 @@ void process_mouse_area_select(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00069268
 void display_area_select(void)
 {

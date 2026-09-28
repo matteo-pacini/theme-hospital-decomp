@@ -282,7 +282,6 @@ void display_drugs(void)
     set_font_from_cache(0);
 }
 
-// NONMATCHING: index/pointer register choice (pointer in edx in target)
 // FUNCTION: 0x00013540
 void process_drug_panel(void)
 {
@@ -322,7 +321,6 @@ void process_drug_panel(void)
     D_00188c7b = 0;
 }
 
-// NONMATCHING: index/pointer register choice (value in eax, address in edx in target)
 // FUNCTION: 0x0001387c
 void price_up(void)
 {
@@ -344,7 +342,6 @@ void price_up(void)
     }
 }
 
-// NONMATCHING: index/pointer register choice (value in eax, address in edx in target)
 // FUNCTION: 0x0001397c
 void price_down(void)
 {
@@ -399,7 +396,6 @@ void process_drug_keys(void)
     }
 }
 
-// NONMATCHING: case 5 builds the event address in ecx instead of eax
 // FUNCTION: 0x00013bc4
 void process_drug_button(u8 action)
 {
@@ -447,7 +443,6 @@ void process_drug_button(u8 action)
     }
 }
 
-// NONMATCHING: index/pointer register choice (pointer in edx in target)
 // FUNCTION: 0x00013d8c
 u8 get_next_illness(const u8 forward, const u8 start)
 {
@@ -482,7 +477,6 @@ u8 get_next_illness(const u8 forward, const u8 start)
     return 0xfa;
 }
 
-// NONMATCHING: address built in edx and value in eax (known unsolved store pattern)
 // FUNCTION: 0x00013fb0
 void setup_drug(u16 a, u16 b)
 {
@@ -492,7 +486,6 @@ void setup_drug(u16 a, u16 b)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x0001403c
 void drugs_help_concentrate(void)
 {
@@ -501,7 +494,6 @@ void drugs_help_concentrate(void)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00014090
 void drugs_help_cure_type(void)
 {
@@ -523,7 +515,6 @@ void drugs_help_cure_type(void)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x000141f0
 void drugs_help_handled(void)
 {
@@ -564,7 +555,6 @@ void update_cure_costs(void)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x000143e0
 void update_single_cure_cost(u8 room, u8 hospital)
 {

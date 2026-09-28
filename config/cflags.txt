@@ -8,11 +8,16 @@ src/lib/bf1/opt/*.cpp  wpp386  -s -oneatx -4 -xs
 src/lib/bf1/*.cpp    wpp386  -s -d2 -otx
 src/lib/bf2/dbg/*.cpp    wpp386  -s -oneatx -d1+
 src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
-# Watcom C/C++ runtime (clib, C++ support); flags still being established.
-src/lib/clib/*.c     wcc386  -s -oxat
+# Watcom C/C++ runtime (clib, C++ support): small model, -ox without a/t.
+# -nd=clib only lengthens the data segment names: objconv 2.54 writes
+# section symbols pointing past a too-short COFF string table (objects with
+# only short symbol names) and aborts with "Pointer out of range".
+src/lib/clib/*.c     wcc386  -s -ox -ms -nd=clib
 src/lib/clib/*.cpp   wpp386  -s -oxat
-# Game code: C++, full debug info (which also disables optimisation).
-src/*.cpp            wpp386  -s -d2
+# Game code: C++, full debug info (which also disables optimisation). -ot
+# must come first: -d2 turns optimisation off but keeps the "optimise for
+# time" preference, which decides register allocation.
+src/*.cpp            wpp386  -s -ot -d2
 # Miles Sound System (RAD Game Tools): C, optimised for the 486, public
 # functions are __cdecl.
 src/lib/ail/*.c      wcc386  -s -oxat -4

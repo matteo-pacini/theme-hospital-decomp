@@ -77,7 +77,6 @@ void fn_00041b08(Thing *w);
 void fn_00054870(Thing *w);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0005cc70
 void process_things(Thing *first, Thing *last)
 {

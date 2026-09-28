@@ -135,7 +135,6 @@ _CMemory::~_CMemory()
     if (used_list) {}
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000baf94
 void *_CMemory::Alloc(u32 size, u32 low)
 {
@@ -175,7 +174,6 @@ void *_CMemory::Alloc(u32 size, u32 low)
 
 extern "C" {
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000bb0d0
 void fn_000bb0d0(_CMemory *mem)
 {

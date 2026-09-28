@@ -56,7 +56,6 @@ s32 mouse_in_slice(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 h)
            || point_in_quad(mx, my, x1, y1, x1, y1 + h, x2, y2 + h, x2, y2);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b7f48
 void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i)
 {

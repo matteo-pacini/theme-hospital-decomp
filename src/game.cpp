@@ -361,7 +361,6 @@ void limit_framerate(void)
     gamecounts.unknown18 = now;
 }
 
-// NONMATCHING: index/pointer register choice (pointer in edx in target)
 // FUNCTION: 0x00011b90
 void start_turn(void)
 {
@@ -495,7 +494,6 @@ u8 change_res(TbScreenMode mode)
     }
 }
 
-// NONMATCHING: call arguments load the pointer into the argument register itself in target
 // FUNCTION: 0x00012148
 void do_charts(void)
 {

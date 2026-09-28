@@ -50,7 +50,6 @@ void draw_research_text(void);
 s32 find_new_cure_cost(u8 illness, u8 owner);
 u8 choose_next_research_illness(u8 owner, s32 (*cost)(u8, u8));
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b26d0
 void display_research(void)
 {
@@ -165,7 +164,6 @@ void alter_research(u8 cat, u8 value, u8 owner)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b2d44
 void process_res_panel(void)
 {
@@ -203,7 +201,6 @@ void process_res_panel(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b3060
 void process_res_button(u8 n)
 {

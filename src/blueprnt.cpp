@@ -449,7 +449,6 @@ u8 commit_blueprint(u8 owner)
     return 1;
 }
 
-// NONMATCHING: 16-bit tile arithmetic, register choice
 // FUNCTION: 0x00046e50
 void uncommit_blueprint(u8 owner)
 {
@@ -545,7 +544,6 @@ u8 is_valid_no_room(u16 tile)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00047308
 void edit_blueprint(u8 owner)
 {
@@ -586,7 +584,6 @@ void edit_blueprint(u8 owner)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004750c
 void compute_room_pointed(u16 tile)
 {
@@ -624,7 +621,6 @@ void compute_room_pointed(u16 tile)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00047778
 u8 check_room_access(u8 owner)
 {
@@ -743,7 +739,6 @@ void process_blueprint_zones(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00047cf8
 void commit_doors(u8 owner)
 {
@@ -889,7 +884,6 @@ u8 is_room_size_valid(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000483c4
 void delete_blueprint_room(u8 owner)
 {
@@ -912,7 +906,6 @@ void delete_blueprint_room(u8 owner)
     memset(build, 0, sizeof(BuildState));
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00048504
 void draw_overdrawn_blueprints(void)
 {

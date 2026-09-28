@@ -103,7 +103,6 @@ u8 summon_the_reaper(Thing *w)
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0005c6f8
 void reaper_play_anim(Thing *w)
 {
@@ -126,7 +125,6 @@ void reaper_play_anim(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0005c7b4
 void reaper_calls_victim(Thing *w)
 {
@@ -151,7 +149,6 @@ void reaper_calls_victim(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0005c8e0
 void reaper_waits(Thing *w)
 {
@@ -190,7 +187,6 @@ void reaper_waits(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0005cb34
 void reaper_leaves_normally(Thing *w)
 {
@@ -203,7 +199,6 @@ void reaper_leaves_normally(Thing *w)
     w->next_palette = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0005cbe4
 void remove_reaper(Thing *w)
 {

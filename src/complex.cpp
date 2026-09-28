@@ -69,7 +69,6 @@ void rest_staff(Thing *w, s16 amount);
 void research_contribution(Thing *w, s16 amount);
 void person_autopsied(Thing *w);
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x0002ad8c
 u8 process_staff_complex(Thing *w)
 {
@@ -490,7 +489,6 @@ u8 fn_0003e724(Thing *w)
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004029c
 void play_complex_staff_anim(Thing *w)
 {
@@ -508,7 +506,6 @@ void play_complex_staff_anim(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004031c
 void staff_complex_retry(Thing *w)
 {
@@ -897,7 +894,6 @@ u8 set_complex(Thing *w, u16 action, u16 arg)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000418dc
 void person_complex_retry(Thing *w)
 {
@@ -915,7 +911,6 @@ void person_complex_retry(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00041d54
 void fail_person_complex(Thing *w)
 {
@@ -964,7 +959,6 @@ u8 check_room_mutex_on_entry(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00041f84
 void abandon_complex(Thing *w)
 {
@@ -1070,7 +1064,6 @@ void abandon_complex(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000423c8
 void complex_success(Thing *w, u8 kind)
 {
@@ -1157,7 +1150,6 @@ u8 staff_go_near_object(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000427d8
 void interrupt_complex(Thing *w)
 {

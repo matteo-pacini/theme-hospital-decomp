@@ -164,7 +164,6 @@ void fn_000ccac4(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
 
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00031c70
 void update_panel(void)
 {
@@ -221,7 +220,6 @@ void update_panel(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00031e20
 void draw_panel(u8 all)
 {
@@ -295,7 +293,6 @@ void setup_panel_icons(const u8 mode)
     D_00155e0d = 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000321b4
 u8 which_icon_is_mouse_over(void)
 {
@@ -317,7 +314,6 @@ u8 which_icon_is_mouse_over(void)
     return over;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00032268
 void panel_ml_button(const u16 icon)
 {
@@ -525,7 +521,6 @@ void draw_date_on_panel(void)
     D_00188c74 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00032da0
 void draw_rep_on_panel(void)
 {
@@ -629,7 +624,6 @@ void draw_emergency(void)
 }
 
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00033a40
 void clear_panel_info_bar(void)
 {
@@ -653,7 +647,6 @@ void clear_panel_info_bar(void)
 }
 
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00033c8c
 void display_panel_person_info(void)
 {
@@ -807,7 +800,6 @@ void display_panel_staff_info(void)
 }
 
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000345e0
 void display_panel_object_info(void)
 {
@@ -868,7 +860,6 @@ void display_panel_queue_info(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000348d4
 void display_panel_mayor_info(void)
 {
@@ -888,7 +879,6 @@ void display_panel_mayor_info(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000349e8
 void display_panel_usage_info(void)
 {
@@ -1175,7 +1165,6 @@ void add_panel_popup(PlayerCall *p)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00035824
 void fn_00035824(void)
 {
@@ -1255,7 +1244,6 @@ void maintain_panel_popup(void)
 }
 
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00035c68
 void panel_flash(void)
 {
@@ -1382,7 +1370,6 @@ void draw_ratfest_on_panel(void)
 }
 
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000361a4
 u8 display_panel_special_info(void)
 {
@@ -1434,7 +1421,6 @@ u8 display_panel_special_info(void)
 }
 
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0003646c
 void panel_watch_help(void)
 {
@@ -1451,7 +1437,6 @@ void panel_watch_help(void)
     LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000364e0
 void panel_rep_help(void)
 {

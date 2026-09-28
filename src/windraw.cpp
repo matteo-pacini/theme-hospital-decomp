@@ -8,7 +8,6 @@ extern u16 D_00188c74;
 
 }
 
-// NONMATCHING: register choice for the LbScreenSetGraphicsWindow arguments
 // FUNCTION: 0x0004bcc0
 void draw_buttons(Window *w)
 {
@@ -36,7 +35,6 @@ void draw_buttons(Window *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0004be18
 void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
 {

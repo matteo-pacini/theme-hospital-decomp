@@ -114,7 +114,6 @@ void fn_000b2124(void)
     D_00158320 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b2178
 void fn_000b2178(u8 n)
 {
@@ -173,7 +172,6 @@ void fn_000b2178(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b242c
 void advisor_character(void)
 {

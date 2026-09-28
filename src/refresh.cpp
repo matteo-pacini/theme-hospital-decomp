@@ -103,7 +103,6 @@ void refresh_to_VRAM(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000ab49c
 void set_all_refresh_zones_in_window(const s32 x1, const s32 y1, const s32 x2, const s32 y2, const u8 a)
 {

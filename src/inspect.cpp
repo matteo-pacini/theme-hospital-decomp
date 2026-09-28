@@ -10,7 +10,6 @@ extern u16 D_0012ddb2;
 u16 create_inspector(u8 owner);
 void send_peeps_home(u8 all, u8 owner);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a1c10
 u16 create_inspector(u8 owner)
 {
@@ -51,7 +50,6 @@ u16 create_inspector(u8 owner)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a1e3c
 void generate_inspector(u8 owner)
 {
@@ -63,7 +61,6 @@ void generate_inspector(u8 owner)
     allhosps[owner].unknown209[1] = 3;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a1ed4
 void inspector_pauses(Thing *w)
 {

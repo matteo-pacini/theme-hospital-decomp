@@ -141,7 +141,6 @@ void remove_thing(Thing *e)
     memset(e, 0, sizeof(Thing));
 }
 
-// NONMATCHING: register allocation around the shift mask
 // FUNCTION: 0x00019a1c
 void count_hospital_area(u16 player)
 {
@@ -188,7 +187,6 @@ Thing *search_mapwho_for_room_door(Map *t, u16 id)
     return 0;
 }
 
-// NONMATCHING: register allocation in the byte-swap stores
 // FUNCTION: 0x00019bec
 void screen_shot(void)
 {
@@ -258,7 +256,6 @@ void screen_shot(void)
     LbFileSaveAt(path, debug.unknown1e4, p - debug.unknown1e4);
 }
 
-// NONMATCHING: list index scaled with shl instead of lea (register allocation)
 // FUNCTION: 0x00019ef8
 RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner)
 {
@@ -340,7 +337,6 @@ RoomInfo *get_nearest_room_info(Thing *e, u8 kind)
     return best;
 }
 
-// NONMATCHING: register allocation in the first items[] address computation
 // FUNCTION: 0x0001a238
 void cheat(u32 flags)
 {
@@ -590,7 +586,6 @@ int ascend(const void *a, const void *b)
     return ((const SortEntry *)a)->key - ((const SortEntry *)b)->key;
 }
 
-// NONMATCHING: register allocation in the cursors[idx] address computations
 // FUNCTION: 0x0001aa8c
 void set_mouse_sprite(const u8 idx)
 {
@@ -769,7 +764,6 @@ Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
     return 0;
 }
 
-// NONMATCHING: register allocation: value/address registers swapped in two stores
 // FUNCTION: 0x0001b1f8
 void setup_abort_all_requesters(void)
 {
@@ -873,7 +867,6 @@ void draw_frame(const s16 x, const s16 y, const s16 w, const s16 h, const u16 co
     fn_000c9be0(x, y + h, x + w, y + h, color);
 }
 
-// NONMATCHING: register allocation in the animation_table loads
 // FUNCTION: 0x0001b610
 u8 hosp_play_smk(const u8 idx)
 {
@@ -925,7 +918,6 @@ void hosp_dos_printf(char *fmt, ...)
     fflush(&__iob[1]);
 }
 
-// NONMATCHING: register allocation: stored character kept in eax in target
 // FUNCTION: 0x0001b7e0
 void fn_0001b7e0(char *dst, s8 *src, u8 mode)
 {
@@ -1031,7 +1023,6 @@ void fn_0001bab4(u8 i)
     }
 }
 
-// NONMATCHING: register allocation in the key_mappos loads
 // FUNCTION: 0x0001bb8c
 void recall_mappos(u8 i)
 {
@@ -1062,7 +1053,6 @@ void hosp_fade_palette(u8 *palette, u8 steps, TbPaletteFadeFlag flag)
     }
 }
 
-// NONMATCHING: register allocation in the D_0015f3fa[idx] load
 // FUNCTION: 0x0001bc94
 void fn_0001bc94(u8 idx, u8 flag)
 {

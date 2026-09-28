@@ -92,7 +92,6 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
 extern "C" {
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000697e0
 void req2(Window *w)
 {
@@ -516,7 +515,6 @@ void req2_exit_employing(const u16 id)
     w->kind = 0x2e;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006b1f4
 void req12(Window *w)
 {
@@ -698,7 +696,6 @@ void req12_overdraw(Window *w)
     compute_help_text(0, 0, 0x1a);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006bda8
 void open_staff_resign_requester(Thing *t)
 {
@@ -763,7 +760,6 @@ void draw_req2_coverup(const u16 x, const u16 y)
     LbDrawBox(D_0015f40c->cover1_x + x, y + D_0015f40c->cover1_y, D_0015f40c->cover1_w, D_0015f40c->cover1_h, 0x77);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c108
 void req2_help_if_doctor(void)
 {
@@ -774,7 +770,6 @@ void req2_help_if_doctor(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c184
 void req2_help_if_surgeon(void)
 {
@@ -787,7 +782,6 @@ void req2_help_if_surgeon(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c214
 void req2_help_if_psycho(void)
 {
@@ -800,7 +794,6 @@ void req2_help_if_psycho(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c2a4
 void req2_help_if_researcher(void)
 {
@@ -813,7 +806,6 @@ void req2_help_if_researcher(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c334
 void req2_help_if_selected(void)
 {
@@ -821,7 +813,6 @@ void req2_help_if_selected(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c38c
 void req12_help_if_doctor(void)
 {
@@ -832,7 +823,6 @@ void req12_help_if_doctor(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c408
 void req12_help_if_surgeon(void)
 {
@@ -845,7 +835,6 @@ void req12_help_if_surgeon(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c498
 void req12_help_if_shrink(void)
 {
@@ -858,7 +847,6 @@ void req12_help_if_shrink(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c528
 void req12_help_if_research(void)
 {
@@ -871,7 +859,6 @@ void req12_help_if_research(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006c5b8
 void req12_clicked_sack(void)
 {

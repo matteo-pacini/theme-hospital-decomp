@@ -35,7 +35,6 @@ void fn_000c93bf(char *dst, char *src);
 
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00015c50
 void person_waits_for_busy(Thing *w)
 {
@@ -245,7 +244,6 @@ u16 find_standing_place(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x0001665c
 void person_go_home(Thing *w)
 {
@@ -297,7 +295,6 @@ void move_person_in_room_list(Thing *w, u16 id)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00016808
 void insert_person_in_room_list(RoomInfo *room, Thing *w)
 {
@@ -346,7 +343,6 @@ void fn_000168a0(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00016974
 void nav_debug_state(Thing *w)
 {
@@ -379,7 +375,6 @@ void nav_debug_state(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00016b30
 u8 transform_peep_who(Thing *w, u8 level)
 {
@@ -597,7 +592,6 @@ u16 find_peep(u16 room_id, u8 random, u8 renderer, u8 kind, u8 owner)
     return 0;
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x000173c0
 void start_person_going(Thing *w)
 {
@@ -667,7 +661,6 @@ void person_nav_failure(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00017620
 void person_fills(Thing *w)
 {
@@ -702,7 +695,6 @@ void person_fills(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00017780
 void person_energises(Thing *w)
 {
@@ -749,7 +741,6 @@ void person_in_bogs(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x000179a8
 void leave_toilets(Thing *w)
 {
@@ -759,7 +750,6 @@ void leave_toilets(Thing *w)
     process_person_complex(w);
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x000179f8
 void return_to_queue_area(Thing *w)
 {
@@ -832,7 +822,6 @@ void page_staff_i_need(Thing *w, RoomInfo *room)
     page_member_of_staff(expertise[w->unknown171].unknown0, room - room_info, 1, count, w->owner);
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00017cb0
 void fn_00017cb0(Thing *w)
 {
@@ -846,7 +835,6 @@ void fn_00017cb0(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x00017d2c
 void send_person_somewhere_else(Thing *w)
 {
@@ -963,7 +951,6 @@ void person_waits_for_decision(Thing *w)
     }
 }
 
-// NONMATCHING: register allocation: value/address registers swapped in two stores
 // FUNCTION: 0x0001824c
 u16 make_a_playercall(const u16 type, const u16 x, const s16 y, u8 owner)
 {
@@ -1006,7 +993,6 @@ u16 make_a_playercall(const u16 type, const u16 x, const s16 y, u8 owner)
     return 0;
 }
 
-// NONMATCHING: register allocation: address computation for first[] store
 // FUNCTION: 0x00018438
 void get_new_popup_head(u16 type, u8 owner)
 {
@@ -1077,7 +1063,6 @@ void restore_popup(u16 type)
     }
 }
 
-// NONMATCHING: register allocation: imul destination in first[] load
 // FUNCTION: 0x00018710
 u16 get_playercall(const u16 type, u16 id, u8 owner)
 {
@@ -1127,7 +1112,6 @@ u16 check_playercall(u16 type, u16 x, u8 owner)
     return count;
 }
 
-// NONMATCHING: register allocation in the first[] and allhosps address computations
 // FUNCTION: 0x00018908
 void expire_playercalls(void)
 {
@@ -1261,7 +1245,6 @@ void process_no_treatment_buttons(u8 n)
     }
 }
 
-// NONMATCHING: register allocation: e->room->unknown6 argument loaded via eax instead of ebx
 // FUNCTION: 0x00018f88
 void person_arrived_from_call(Thing *e)
 {
@@ -1294,7 +1277,6 @@ u32 person_ok_to_call(Thing *e)
     return 1;
 }
 
-// NONMATCHING: register allocation in the listhead/allhosps address computations
 // FUNCTION: 0x000190c4
 u16 announce_new_illness_fax(const u8 kind, char **strs)
 {
@@ -1382,7 +1364,6 @@ void force_peep_to_be_cured(Thing *e)
     next_treatment_now_setup(e, 0);
 }
 
-// NONMATCHING: one register choice
 // FUNCTION: 0x000194f0
 void interrupt_person(Thing *e)
 {
@@ -1428,7 +1409,6 @@ void interrupt_person(Thing *e)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002bb58
 void remove_person_from_room_list(Thing *w)
 {

@@ -2,7 +2,6 @@
 
 void reset_icon_value(Thing *const w, const s8 v);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b0300
 void set_icon_value(Thing *const w, const s8 v)
 {
@@ -33,7 +32,6 @@ void reset_icon_value(Thing *const w, const s8 v)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b0474
 void peep_icon(Thing *const w)
 {
@@ -46,7 +44,6 @@ void peep_icon(Thing *const w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000b0540
 void update_icon_counter(Thing *const w)
 {

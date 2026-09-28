@@ -35,7 +35,6 @@ void mayor_requester(u8 idx, char **strs)
     D_00156910 = 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a0c08
 void process_mayor_start_buttons(u8 n)
 {
@@ -51,7 +50,6 @@ void process_mayor_start_buttons(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a0cac
 void generate_mayors(void)
 {
@@ -115,7 +113,6 @@ void generate_mayors(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a0f6c
 u16 create_mayor(u8 owner)
 {
@@ -157,7 +154,6 @@ u16 create_mayor(u8 owner)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a11b8
 void mayor_pauses(Thing *w)
 {
@@ -308,7 +304,6 @@ u8 mayor_judges_hospital(u8 owner)
     return 14;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a1754
 void mayor_gone(Thing *w)
 {
@@ -321,7 +316,6 @@ void mayor_gone(Thing *w)
     remove_thing(w);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a17e8
 void report_mayor_result(u8 owner, char **strs)
 {
@@ -378,7 +372,6 @@ void process_mayor_end_buttons(u8 n)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000a1af0
 void mayor_inspects(Thing *w)
 {

@@ -133,7 +133,6 @@ int fn_0001c030(int n)
     return 0;
 }
 
-// NONMATCHING: register choice for two call arguments (history-dependent allocator)
 // FUNCTION: 0x0001c084
 void fn_0001c084(int n)
 {
@@ -179,7 +178,6 @@ u16 fn_0001c1b4(u16 *p, int len)
     return ~sum;
 }
 
-// NONMATCHING: stored checksum ends up in dx with the index in eax, the reverse of the original
 // FUNCTION: 0x0001c234
 void fn_0001c234(void)
 {
@@ -209,7 +207,6 @@ void fn_0001c234(void)
     D_00160288 <<= 1;
 }
 
-// NONMATCHING: checksum index scaled with add instead of lea (register allocation)
 // FUNCTION: 0x0001c318
 int fn_0001c318(s8 port, u32 base, int len)
 {
@@ -1938,7 +1935,6 @@ s16 save_game_valid(const s8 slot)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00021818
 u16 fn_00021818(s8 slot, s8 player)
 {
@@ -2032,7 +2028,6 @@ u16 fn_00021818(s8 slot, s8 player)
     return ok;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00021c38
 s16 fn_00021c38(s8 slot, s8 port)
 {
@@ -2176,7 +2171,6 @@ void setup_addresses(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000221fc
 s8 load_level(const u8 lvl, const u8 full)
 {
@@ -2318,7 +2312,6 @@ s32 read_level_number(s32 n)
     return -1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00022a58
 void fn_00022a58(void)
 {

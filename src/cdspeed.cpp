@@ -86,7 +86,6 @@ s32 fn_000bbce0(s8 *data, s32 len)
     return n;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000bbd70
 s32 fn_000bbd70(s8 *data, s32 len)
 {
@@ -158,7 +157,6 @@ s32 fn_000bbea0(s8 *data, s32 len)
     return n;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000bbf10
 s32 fn_000bbf10(s8 *data, s32 len)
 {

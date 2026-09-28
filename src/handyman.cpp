@@ -26,7 +26,6 @@ void remove_litter(u16 tile, u8 owner);
 
 #define TILE_POS(t) (((s16)(t)->y.tile << 7) + (s16)(t)->x.tile)
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007a710
 void place_litter(u16 tile, s8 owner, u8 type)
 {
@@ -49,7 +48,6 @@ void place_litter(u16 tile, s8 owner, u8 type)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007a814
 void remove_litter(u16 tile, u8 owner)
 {
@@ -332,7 +330,6 @@ void handyman_check_for_litter(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007b88c
 void plant_ages(Thing *w)
 {
@@ -361,7 +358,6 @@ void plant_ages(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007ba18
 u32 compute_plant_frame(Thing *w)
 {
@@ -376,7 +372,6 @@ u32 compute_plant_frame(Thing *w)
     return f;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007baac
 u8 thingpage_request(ThingPager *p, u16 id, u8 priority)
 {
@@ -464,7 +459,6 @@ u16 thingpage_respond(ThingPager *p, Thing *w, u16 room, u8 min)
     return p->pages[best].id;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007c2f8
 u8 thingpage_find_highest_priority(ThingPager *p)
 {
@@ -477,7 +471,6 @@ u8 thingpage_find_highest_priority(ThingPager *p)
     return best;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007c37c
 u16 thingpage_remind_me(ThingPager *p, Thing *w)
 {

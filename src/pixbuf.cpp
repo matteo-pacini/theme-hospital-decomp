@@ -73,7 +73,6 @@ void RestoreFromPixBuffer(void)
     D_001553d4 = 0;
 }
 
-// NONMATCHING: register choice in the ghost lookup; pixBuf.x is reached through draw_cells+0x63e
 // FUNCTION: 0x000567e8
 void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
 {

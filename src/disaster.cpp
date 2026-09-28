@@ -44,7 +44,6 @@ void machine_disaster(Thing *e)
     restart_entire_queue(room);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00075110
 void process_bang(Thing *w)
 {
@@ -85,7 +84,6 @@ die:
     remove_thing(w);
 }
 
-// NONMATCHING: return-value slot position, register choice
 // FUNCTION: 0x000752e8
 u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim)
 {
@@ -182,7 +180,6 @@ void blast_effect(u16 tile, RoomInfo *room)
     D_001553c8 = 1;
 }
 
-// NONMATCHING: map address computed with shl rather than lea
 // FUNCTION: 0x000757a0
 void blast_walls_and_floor(u16 tile)
 {
@@ -216,7 +213,6 @@ void blast_walls_and_floor(u16 tile)
     }
 }
 
-// NONMATCHING: register choice for the owner argument
 // FUNCTION: 0x000758b8
 void blast_things(Map *m)
 {
@@ -262,7 +258,6 @@ void explosion_kills_dudes_in_room(RoomInfo *room)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00075aac
 void restart_entire_queue(RoomInfo *room)
 {
@@ -277,7 +272,6 @@ void restart_entire_queue(RoomInfo *room)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00075b54
 void generate_disaster(u8 owner)
 {
@@ -374,7 +368,6 @@ void disaster_peeps(u8 mode, s8 owner)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00075fe4
 void what_is_required(u8 room, u8 owner)
 {
@@ -436,7 +429,6 @@ void saucer_abducts(Thing *w)
 {
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000762cc
 u16 create_shadow(u16 tile, u16 height, u8 owner, u16 anim)
 {

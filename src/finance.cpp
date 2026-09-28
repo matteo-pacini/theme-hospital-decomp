@@ -87,7 +87,6 @@ extern u8 D_00156910;
 void StopSample(u32 a, u32 b);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00050ef0
 void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 owner)
 {
@@ -155,7 +154,6 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
         allhosps[owner].f35 = 9999999;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00051280
 u16 pay_for_treatment(Thing *w, u16 kind)
 {
@@ -208,7 +206,6 @@ u16 pay_for_treatment(Thing *w, u16 kind)
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00051534
 void month_end(void)
 {
@@ -277,7 +274,6 @@ void month_end(void)
     update_cure_costs();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00051a84
 void adjust_monthly_figures(void)
 {
@@ -307,7 +303,6 @@ void adjust_monthly_figures(void)
     mycontrol->fc = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00051d98
 void year_end(void)
 {
@@ -347,7 +342,6 @@ void year_end(void)
     mycontrol->f4a0 = myhosp->unknownc7e;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00052038
 void bank_statement(void)
 {
@@ -462,7 +456,6 @@ void bank_statement(void)
         bank.unknown2 = 2;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000528cc
 void process_stat_panel(void)
 {
@@ -519,7 +512,6 @@ u16 exit_quick_requester(void)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00052c44
 void daily_admin(void)
 {
@@ -587,7 +579,6 @@ void twice_daily_admin(void)
     computer_action();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00052f7c
 void calculate_value(const u8 owner)
 {

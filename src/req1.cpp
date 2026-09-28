@@ -6,7 +6,6 @@ extern u8 D_00155cae[];
 
 void reset_dept_object(void);
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00054e50
 void adjust_build_palette_for_shop(RoomInfo *room)
 {
@@ -45,7 +44,6 @@ void clear_req_indices(void)
     memset(req_indices, 0, 10);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00054fc0
 void set_buyable_items(u16 room)
 {
@@ -82,7 +80,6 @@ void buy_compulsory_items(const u16 room)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00055164
 void req1_reset_rooms(u16 dept)
 {
@@ -100,7 +97,6 @@ void req1_reset_rooms(u16 dept)
         req_indices[n++] = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00055214
 u16 room_available(u16 room)
 {
@@ -123,7 +119,6 @@ void req1_buy_object(const u16 obj, const s32 n)
         gamevar.unknown33.unknown0[obj] = 0x63;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0005533c
 s32 cost_of_all_selected_objects(void)
 {

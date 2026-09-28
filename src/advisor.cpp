@@ -109,7 +109,6 @@ extern u16 D_0012cdea[];
 extern s16 D_0012dd7c[];
 }
 
-// NONMATCHING: register choice; D_001581fc read named music+6 in the target
 // FUNCTION: 0x0005dbb0
 void display_advisor(void)
 {
@@ -953,7 +952,6 @@ void mouse_advice(void)
     }
 }
 
-// NONMATCHING: register choice; D_001581fe read named D_001581fc in the target
 // FUNCTION: 0x00060904
 void forced_advice(void)
 {
@@ -1008,7 +1006,6 @@ void reset_advisor(void)
     reset_all_count();
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00060b54
 void announce_this(const u8 type, const u32 value)
 {
@@ -1024,7 +1021,6 @@ void announce_this(const u8 type, const u32 value)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00060bf4
 void done_announcement(const u16 type)
 {
@@ -1134,7 +1130,6 @@ u8 advisor_old_hardware(void)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00061188
 u8 advisor_thirsty_peeps(void)
 {
@@ -1227,7 +1222,6 @@ u8 advisor_peeps_warmth(void)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00061558
 u8 advisor_litter_problem(void)
 {
@@ -1317,7 +1311,6 @@ void monthly_update_of_adivsor_counts(void)
     advice[15].f6 = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000619bc
 u8 advisor_staff_tired(void)
 {

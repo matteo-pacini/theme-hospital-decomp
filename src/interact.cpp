@@ -4,7 +4,6 @@ extern "C" {
 void fn_000549bc(Thing *w);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00054dd4
 void start_new_interaction(Thing *w, u8 who)
 {

@@ -24,7 +24,6 @@ extern char filename[];
 #pragma aux filename "W?filename$:.0$:?modify_data_load_filename$n(pn$TbLoadFiles$$)pnan[]a"
 extern u8 install_language;
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007a190
 char *read_line_from_buf(char *line, s32 max, char *src)
 {
@@ -76,7 +75,6 @@ char *modify_data_load_filename(TbLoadFiles *file)
     return filename;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0007a318
 s32 read_config_file(void)
 {

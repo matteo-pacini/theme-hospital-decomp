@@ -67,7 +67,6 @@ extern s16 D_001567b0[8];
 extern u8 D_0015f3f7, D_0015f3f8;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00029ad0
 void create_job_market(void)
 {
@@ -203,7 +202,6 @@ void inc_staff_stats(Thing *w, u8 owner)
     allhosps[owner].fc9c++;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002a130
 void remove_staff_in_struct(Thing *w)
 {
@@ -212,7 +210,6 @@ void remove_staff_in_struct(Thing *w)
     memset(w, 0, 0xaf);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002a178
 s16 place_staff_in_struct(u16 kind, u16 flags)
 {
@@ -411,7 +408,6 @@ s16 staff_waits(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002abb0
 void staff_in_corridor(Thing *w)
 {
@@ -427,7 +423,6 @@ void staff_in_corridor(Thing *w)
     w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x0002ac70
 u8 obey_pager(Thing *w)
 {
@@ -454,7 +449,6 @@ u8 obey_pager(Thing *w)
     return 1;
 }
 
-// NONMATCHING: register allocation (target evaluates pointer/operand loads directly into the destination register)
 // FUNCTION: 0x0002adfc
 u8 take_a_break(Thing *w)
 {
@@ -483,7 +477,6 @@ u8 take_a_break(Thing *w)
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002af04
 void staff_in_staff_room(Thing *w)
 {
@@ -708,7 +701,6 @@ void draw_staff_cursor(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002b998
 s32 pay_staff_bonus(Thing *w, u16 amount, u16 percent, u16 morale, u8 owner)
 {
@@ -954,7 +946,6 @@ void interrupt_staff(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002c484
 void private_interrupt_staff(Thing *w)
 {
@@ -1085,7 +1076,6 @@ s16 get_state(const u16 type, const Thing *w)
     return state;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002cb2c
 void increase_staff_salaries(Thing *w, u16 amount, u16 percent, u8 owner)
 {
@@ -1185,7 +1175,6 @@ u8 is_staff_stepping_on_toes(Thing *w)
     return 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0002cf14
 u8 overlapping_staff_check(Thing *w, s32 state)
 {

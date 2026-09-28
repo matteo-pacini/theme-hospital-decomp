@@ -86,7 +86,6 @@ u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
 void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *spr, const long max, const long min,
                 const long range, const u8 up);
 
-// NONMATCHING: register choice for the event stores
 // FUNCTION: 0x00072d60
 void req3(Window *win)
 {
@@ -146,7 +145,6 @@ void req3(Window *win)
     }
 }
 
-// NONMATCHING: register choice for the layout loads and sprite address
 // FUNCTION: 0x0007308c
 void req3_overdraw(Window *win)
 {
@@ -307,7 +305,6 @@ void draw_diagnosis(Thing *w, u16 x, u16 y)
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
 }
 
-// NONMATCHING: register choice for the y argument
 // FUNCTION: 0x00073bb0
 u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2)
 {
@@ -399,7 +396,6 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
         reqspr_draw(x + i, y, spr);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00074064
 extern "C" void fn_00074064(void)
 {
@@ -410,7 +406,6 @@ extern "C" void fn_00074064(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000740e4
 extern "C" void fn_000740e4(void)
 {
@@ -422,7 +417,6 @@ extern "C" void fn_000740e4(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000741a4
 extern "C" void fn_000741a4(void)
 {
@@ -433,7 +427,6 @@ extern "C" void fn_000741a4(void)
         LbDataLoadSetModifyFilenameFunction(D_0015544e, help_text[D_0015f420[D_00155c64].text]);
 }
 
-// NONMATCHING: register choice for the y argument
 // FUNCTION: 0x00073e64
 u16 fn_00073e64(u16 id, u32 flags)
 {

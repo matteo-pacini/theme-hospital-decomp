@@ -84,7 +84,6 @@ void calc_visitors_this_month(void)
         gamevar.f1c = 0;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x0006ffec
 void create_a_peep(void)
 {
@@ -157,7 +156,6 @@ void create_a_peep(void)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000702c4
 u8 create_an_illness(void)
 {
@@ -273,7 +271,6 @@ s8 who_owns_peep(u8 illness)
     return -1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000707f4
 void add_contagiousness(Thing *w)
 {
@@ -298,7 +295,6 @@ void add_contagiousness(Thing *w)
     }
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x00070918
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
 {
