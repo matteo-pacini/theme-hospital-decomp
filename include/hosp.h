@@ -132,12 +132,20 @@ struct Thing {
         s16 offset;
         u16 link;
         RoomInfo *room;
+        struct {
+            s16 f37;
+            s16 f39;
+        };
     };
     union {
         s32 value;
         struct {
             s16 timer;
             u16 unknown61;
+        };
+        struct {
+            s16 f3b;
+            s16 f3d;
         };
     };
     union {
@@ -174,6 +182,10 @@ struct Thing {
             u8 unknown83[2];
             u16 unknown85;
             u8 unknown87[2];
+        };
+        struct {
+            u8 unknown77t_[10];
+            u16 unknown87w;
         };
     };
     u16 unknown89;
@@ -292,7 +304,10 @@ struct Thing {
             s16 unknown132;
             s16 unknown134;
             s16 unknown136;
-            u8 unknown138[2];
+            union {
+                u8 unknown138[2];
+                u16 unknown138w;
+            };
             union {
                 u16 unknown140;
                 struct {
@@ -564,7 +579,15 @@ struct AllHosps {
     u8 f20c;
     u8 f20d;
     u8 f20e;
-    u8 unknown20f[7];
+    union {
+        u8 unknown20f[7];
+        struct {
+            u16 f20f;
+            u16 f211;
+            u8 f213;
+            s8 f214;
+        };
+    };
     u8 f216;
     u16 f217;
     u16 f219;
@@ -590,7 +613,13 @@ struct AllHosps {
             ObjectStats object_stats[0x3e];
         };
     };
-    u8 unknownc8a[4];
+    union {
+        u8 unknownc8a[4];
+        struct {
+            s16 fc8a;
+            s16 fc8c;
+        };
+    };
     s16 fc8e;
     u16 fc90;
     u16 fc92;
@@ -801,7 +830,10 @@ struct Expertise {
 };
 
 struct ObjectControl {
-    u8 unknown0[2];
+    union {
+        u8 unknown0[2];
+        u16 name;
+    };
     u8 shapes[4];
     union {
         u8 unknown6[8];
@@ -822,7 +854,13 @@ struct ObjectControl {
     u8 unknown15[1];
     s8 walls;
     s8 unknown17;
-    u8 unknown18[4];
+    union {
+        u8 unknown18[4];
+        struct {
+            u16 unknown18w;
+            u16 f1a;
+        };
+    };
     u8 unknown1c;
     u8 unknown1d;
     u16 unknown1e;
@@ -1128,7 +1166,13 @@ struct Statics {
     s32 unknown0;
     u16 unknown4;
     s16 unknown6;
-    u8 unknown8[0x64];
+    union {
+        u8 unknown8[0x64];
+        struct {
+            u16 f8;
+            u16 fa;
+        };
+    };
     char f6c[0x79];
     u8 unknowne5;
     u8 unknowne6;
@@ -1168,14 +1212,34 @@ struct HospWindow {
             s32 fc[3];
         };
     };
-    s32 unknown30;
-    u8 unknown34[8];
-    s32 unknown3c;
-    u8 unknown40[8];
-    s32 unknown48;
-    u8 unknown4c[8];
-    s32 unknown54;
-    u8 unknown58[0x38];
+    union {
+        struct {
+            s32 unknown30;
+            u8 unknown34[8];
+        };
+        s32 zone_x[3];
+    };
+    union {
+        struct {
+            s32 unknown3c;
+            u8 unknown40[8];
+        };
+        s32 zone_y[3];
+    };
+    union {
+        struct {
+            s32 unknown48;
+            u8 unknown4c[8];
+        };
+        s32 zone_w[3];
+    };
+    union {
+        struct {
+            s32 unknown54;
+            u8 unknown58[0x38];
+        };
+        s32 zone_h[3];
+    };
     union {
         s32 unknown90;
         s32 f90[3];
@@ -1217,6 +1281,7 @@ struct Debug {
             u32 unknown0_;
             u32 unknown4;
         };
+        u16 f0;
     };
     u32 unknown8;
     u8 unknownc[0xc8];
@@ -1377,6 +1442,10 @@ struct AdvisorCounts {
     union {
         u8 unknown0[0x8e];
         struct {
+            u8 unknown0a_[4];
+            u16 f4;
+        };
+        struct {
             u16 f0;
             s16 f2;
             u8 unknown4_[6];
@@ -1403,6 +1472,30 @@ struct AdvisorCounts {
             s16 f7a[4];
             u8 unknown82_[0xc];
         };
+        struct {
+            u8 unknown0e_[6];
+            u16 f6;
+            s16 f8;
+            u8 unknownae_[2];
+            s16 fc;
+            s16 fe;
+            u8 unknown10e_[2];
+            s16 f12;
+            u8 unknown14e_[4];
+            s16 f18;
+            s16 f1a;
+            u8 unknown1ce_[2];
+            s16 f1e;
+            u8 unknown20e_[2];
+            u8 f22;
+            u8 f23;
+            u8 f24[0x26];
+            u8 unknown4ae_[4];
+            s32 f4e_arr[5];
+            s32 f62_arr[5];
+            u8 unknown76e_[0xe];
+            s16 f84[4];
+        };
     };
     u8 unknown8e;
     union {
@@ -1418,6 +1511,12 @@ struct AdvisorCounts {
             s32 f9e;
             s32 fa2;
             u8 unknowna6_[2];
+        };
+        struct {
+            u8 unknown8fe_[5];
+            s32 f94;
+            u8 unknown98e_;
+            u8 f99_arr[4];
         };
     };
 };
@@ -1575,7 +1674,10 @@ struct Button {
 };
 
 struct ClickArea {
-    u8 unknown0[9];
+    u8 unknown0[4];
+    u16 w;
+    u16 h;
+    u8 kind;
     u16 x;
     u16 y;
     u8 width;
@@ -1595,6 +1697,12 @@ struct PlotBid {
     s32 bids[4];
     u8 bidder;
     u8 unknown1d[3];
+};
+
+struct Picture {
+    u8 head;
+    u8 body;
+    u8 legs;
 };
 
 struct PlotAdjacent {

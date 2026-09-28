@@ -74,6 +74,7 @@ void display_manager_text(void);
 void display_manager_face(void);
 void process_bank_panel(void);
 
+// NONMATCHING: register choice
 // FUNCTION: 0x0007e210
 void display_manager(void)
 {
@@ -114,6 +115,7 @@ void display_manager(void)
         manager.unknown2 = 2;
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x0007e42c
 void display_manager_text(void)
 {
@@ -213,13 +215,14 @@ void display_manager_text(void)
         x = D_0015f430[30].x;
         y = D_0015f430[30].y - myhosp->f45[manager.unknown0 - 1][i] * D_0015f430[30].h / max;
         for (pass = 0; pass < 2; pass++) {
-            for (; i < end; i++) {
+            while (i < end) {
                 px = x;
                 py = y;
                 x += D_0015f430[30].w / 12;
                 y = D_0015f430[30].y - myhosp->f45[manager.unknown0 - 1][i] * D_0015f430[30].h / max;
                 fn_000c9be0(px + 1, py + 1, x + 1, y + 1, D_00155db0);
                 fn_000c9be0(px, py, x, y, D_00155daf);
+                i++;
             }
             end = mycontrol->unknown650;
             i = 0;
@@ -250,6 +253,7 @@ void display_manager_text(void)
     D_00188c74 = 0;
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x0007f258
 void process_bank_panel(void)
 {
@@ -277,6 +281,7 @@ void process_bank_panel(void)
     }
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x0007f50c
 void process_bank_button(u8 n)
 {
@@ -323,6 +328,7 @@ void process_bank_button(u8 n)
     }
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x0007f6e4
 void display_manager_face(void)
 {
@@ -361,6 +367,7 @@ void display_manager_face(void)
     }
 }
 
+// NONMATCHING: register choice
 // FUNCTION: 0x0007f8cc
 void manager_help_pointed_ins(void)
 {

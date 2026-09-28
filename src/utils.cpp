@@ -646,7 +646,7 @@ u8 am_i_near_point(Thing *e, u16 pos)
     u8 i;
 
     for (i = 0; i < 4; i++) {
-        if ((s16)e->x.tile + ((s16)e->y.tile << 7) == pos + (&around_vxy[1].y)[i + 1]) {
+        if ((s16)e->x.tile + ((s16)e->y.tile << 7) == pos + around[i]) {
             return 1;
         }
     }
