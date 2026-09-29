@@ -10,12 +10,11 @@ extern volatile u8 D_0018a57d;
 void fn_000ccd30(u32 user);
 #pragma aux (__pascal) fn_000ccd30 "fn_000ccd30_"
 
-// NONMATCHING: registers used to push smp->SampleHandle; the target range also
-// holds FadeSample's jump table
+// The target range also holds FadeSample's jump table.
 // FUNCTION: 0x000ccd30
 void fn_000ccd30(u32 user)
 {
-    volatile SampleInfo *smp;
+    SampleInfo *smp;
     volatile u8 i;
 
     if (SoundInstalled && SoundAble && SoundActive) {
@@ -43,8 +42,7 @@ void fn_000ccd30(u32 user)
                             ++smp->SampleVolume;
                             if (smp->SampleVolume >= 127) {
                                 smp->SampleVolume = 127;
-                                AIL_set_sample_volume(smp->SampleHandle, smp->SampleVolume);
-                                goto next;
+                                break;
                             }
                             if ((u16)smp->FadeToVolume <= smp->SampleVolume) {
                                 smp->SampleVolume = (u16)smp->FadeToVolume;
@@ -73,8 +71,7 @@ void fn_000ccd30(u32 user)
                             --smp->SampleVolume;
                             if (smp->SampleVolume <= 0) {
                                 smp->SampleVolume = 0;
-                                AIL_set_sample_volume(smp->SampleHandle, smp->SampleVolume);
-                                goto next;
+                                break;
                             }
                             if ((u16)smp->FadeToVolume >= smp->SampleVolume) {
                                 smp->SampleVolume = (u16)smp->FadeToVolume;
@@ -89,7 +86,6 @@ void fn_000ccd30(u32 user)
                 }
                 break;
             }
-        next:;
         }
         if (D_0018a57d == 0) {
             switch_off_sample_fade_timer = 1;

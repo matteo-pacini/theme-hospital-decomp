@@ -170,6 +170,7 @@ void *__stdcall UnidirectionalMsgCallback(u32 id, u32 size, void *data);
 void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data);
 void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data);
 static TbError GetCurrentPlayers(void);
+static TbError GetPlayerInfo(void);
 static TbError HostDataBroadcast(void);
 static TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size);
 static u32 IdToIndex(u32 &id);
@@ -486,11 +487,9 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     return ret;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000bff98
 TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
 {
-    u32 i;
     TbError ret;
 
     ret = Lb_FAIL;
@@ -504,14 +503,7 @@ TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
         if (GetCurrentPlayers() == Lb_OK) {
             *player = localPlayerIndex;
             ret = Lb_OK;
-            for (i = 0; i < maximumPlayers; i++) {
-                if (clientDataTable[i].active) {
-                    localPlayerInfoPtr[i].active = 1;
-                    strcpy(localPlayerInfoPtr[i].name, clientDataTable[i].name);
-                } else {
-                    localPlayerInfoPtr[i].active = clientDataTable[i].active;
-                }
-            }
+            GetPlayerInfo();
             LbNetwork_EnableNewPlayers(1);
         } else {
             fn_000c20c0(D_001221df);
@@ -522,13 +514,11 @@ TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
     return ret;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000c0110
 TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *player, void *data)
 {
     TbError ret;
     u32 start;
-    u32 i;
 
     ret = Lb_FAIL;
     start = LbTimerClock();
@@ -543,25 +533,20 @@ TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *play
         if (!runningTwoPlayerModel) {
             SendSystemUserMessage(0, MSG_TYPE_0, 0, 0);
             waitingForPlayerMapResponse = 1;
-            do {
+            while (waitingForPlayerMapResponse) {
                 spPtr->Receive(8);
-                if (waitingForPlayerMapResponse && LbTimerClock() - start > 10000) {
-                    waitingForPlayerMapResponse = 0;
-                    return ret;
+                if (waitingForPlayerMapResponse) {
+                    if (LbTimerClock() - start > 10000) {
+                        waitingForPlayerMapResponse = 0;
+                        return ret;
+                    }
                 }
-            } while (waitingForPlayerMapResponse);
+            }
         }
         if (GetCurrentPlayers() == Lb_OK) {
             *player = localPlayerIndex;
             ret = Lb_OK;
-            for (i = 0; i < maximumPlayers; i++) {
-                if (clientDataTable[i].active) {
-                    localPlayerInfoPtr[i].active = 1;
-                    strcpy(localPlayerInfoPtr[i].name, clientDataTable[i].name);
-                } else {
-                    localPlayerInfoPtr[i].active = clientDataTable[i].active;
-                }
-            }
+            GetPlayerInfo();
         } else {
             fn_000c20c0(D_001222ad);
         }
@@ -671,7 +656,7 @@ TbError LbNetwork_CompleteExchange(void *buf)
 }
 
 // FUNCTION: 0x000c08e4
-// NONMATCHING: register choice: the target computes the elapsed time in ebp and reloads timeCount
+// NONMATCHING: register choice: the target copies the elapsed time into ebp and tests timeCount in eax
 static TbError CompleteMultiPlayerExchange(void *buf)
 {
     TbError ret;
@@ -679,7 +664,6 @@ static TbError CompleteMultiPlayerExchange(void *buf)
     u32 retries;
     u32 host_changed;
     u32 old_host;
-    u32 elapsed;
 
     ret = Lb_FAIL;
     if (localPlayerId == hostId) {
@@ -698,9 +682,10 @@ static TbError CompleteMultiPlayerExchange(void *buf)
             if (!host_changed) {
                 if (gotCompositeData) {
                     if (!retries) {
-                        elapsed = LbTimerClock() - startTime;
-                        if (!timeCount || elapsed > maxTime)
-                            maxTime = elapsed;
+                        // keep_going, about to be cleared, holds the elapsed time.
+                        keep_going = LbTimerClock() - startTime;
+                        if (!timeCount || keep_going > maxTime)
+                            maxTime = keep_going;
                         if (++timeCount >= 50) {
                             timeCount = 0;
                             basicTimeout = maxTime * 4;
@@ -819,11 +804,7 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
     return ret;
 }
 
-static TbError GetPlayerInfo(void);
-
 // FUNCTION: 0x000c1028
-// NONMATCHING: stack slots of the return values of the two inlined calls, and register use in the
-// inlined GetPlayerInfo loop
 TbError LbNetwork_GetPlayerInfo(void)
 {
     TbError ret;
@@ -851,7 +832,7 @@ static TbError GetPlayerInfo(void)
             localPlayerInfoPtr[i].active = 1;
             strcpy(localPlayerInfoPtr[i].name, clientDataTable[i].name);
         } else {
-            localPlayerInfoPtr[i].active = clientDataTable[i].active;
+            localPlayerInfoPtr[i].active = 0;
         }
     }
     return ret;
@@ -932,7 +913,7 @@ static TbError HostDataCollection(void)
 }
 
 // FUNCTION: 0x000c1458
-// NONMATCHING: the target returns through GetPlayerInfo's epilogue (the module was built without -zm)
+// The target returns through GetPlayerInfo's epilogue (the module was built without -zm)
 static TbError HostDataBroadcast(void)
 {
     TbError ret;

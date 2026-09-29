@@ -120,6 +120,8 @@ and comparing against the original.
 | separate epilogues for early `return list[0]` versus one shared | nested `if/else` assigning a result, then a single `return` |
 | `lea r,[g*2]; imul r,g` | `p->g * 2 * p->g` (a `SQR(g) * 2` macro does not give it) |
 | `-oneatx`: load, then `add r,r` in place | `x *= 2` (`x += x` gives a `lea` into a fresh register) |
+| zero register compared against memory (`xor r,r; cmp r,[mem]`), then the loaded value stored | an `else` branch storing 0 where the value is known to be 0 |
+| the same call duplicated on a saturation path, jumping past the rest | one call after the loop, reached by `break` (`-oneatx` duplicates the tail) |
 | register copy of a call result after its `-1` test | `void *r = f(); if (r == (void *)-1) return 0; x = (unsigned)r;` |
 | first test, then `jmp` into the loop's shared `je` | `for (...;; ...) { if (x == 0) break; ... }` (`for (...; x; ...)` gives `jne body; jmp exit`) |
 | compare threading where the compiler knows eax=0 | call the real small helper and let it inline |
@@ -329,6 +331,14 @@ Observed consequences:
   `gotoframe`) differ in register or load order from their out-of-line
   copies; every source form and compiler version tried gives both the
   same, so one of them always misses.
+
+- The Bullfrog library has relatives on GitHub that show its source shape:
+  Dungeon Keeper's (`dkfans/keeperfx`, and the older `svn2github/keeperfx`
+  with the network code), Syndicate Wars' (`swfans/syndwarsfx`
+  `bflibrary`, `bfsoundlib` with Miles) and Gene Wars' (`mefistotelis/genewars`,
+  with `smacklib`). They are reimplementations, not matching sources;
+  read them for structure (e.g. `LbNetwork_Create` calling
+  `GetPlayerInfo()`), don't copy them.
 
 ## Known unsolved
 

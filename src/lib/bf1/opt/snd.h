@@ -4,7 +4,7 @@
 #include "bflib.h"
 
 /* One playing-sample slot; sample_id[] runs up to and including *end_sample_id. */
-/* The volatile fields are also written by the sample fade timer callback. */
+/* The volatile fields are shared with the sample fade timer callback. */
 struct SampleInfo {
     u32 SampleHandle;
     volatile s32 SampleVolume;
@@ -15,7 +15,7 @@ struct SampleInfo {
     s16 SampleNumber;
     volatile u8 FadeState;
     volatile u8 FadeStep;
-    u8 FadeStopFlag;
+    volatile u8 FadeStopFlag;
     u8 unknown17;
     u8 unknown18;
     u32 ExtraData;

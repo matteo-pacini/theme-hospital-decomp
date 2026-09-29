@@ -177,7 +177,8 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
     id = clientDataTable[player].id;
     do {
         spPtr->Receive(8);
-        if (unidirectionalMsgReceived) {            unidirectionalMsgReceived = 0;
+        if (unidirectionalMsgReceived) {
+            unidirectionalMsgReceived = 0;
             if (incomingUnidirectionalMessage.type == 0) {
                 total = incomingUnidirectionalMessage.block;
                 block_size = incomingUnidirectionalMessage.last;
