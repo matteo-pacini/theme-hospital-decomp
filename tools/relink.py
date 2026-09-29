@@ -128,7 +128,13 @@ def module_boundaries(proj, le):
     return out
 
 
-def main(verbose=False):
+def main(verbose=False, result=None):
+    """Print the comparison; return whether everything matches. `result`,
+    if given, receives what tools/lewrite.py builds the EXE from: the code
+    image and its owner per byte, the units whose objects are zero-padded,
+    and the code object's absolute fixups [(site, target)] in the order the
+    original linker processed them (objects in link order, each object's
+    fixups in FIXUPP record order)."""
     proj, le = Project(), LEFile(EXE)
     code = le.code
     fn_addr = {f.name: f.addr for f in proj.functions}
@@ -150,8 +156,10 @@ def main(verbose=False):
     problems = collections.Counter()
     notes = []
 
+    code_fixups = []
     for u in sorted(proj.units, key=lambda u: u.functions[0].addr):
         sections, symbols, externs, weak = unit_model(u)
+        unit_fixups = []
         seg_addr = {}  # a unit's own data segments, by name
         for segment, addr, size in proj.unit_data.get(u.source, []) if u.source else []:
             seg_addr.setdefault(segment, addr)
@@ -225,6 +233,9 @@ def main(verbose=False):
                         notes.append(f"{site:#x} ({u.name}): ours {value & 0xFFFFFFFF:#x}, EXE {fx.target if fx else None!s}")
                     # The EXE's raw bytes at a fixup are not the target.
                     image[site - code.base : site - code.base + 4] = code.data[site - code.base : site - code.base + 4]
+                    order = sec.reloc_records.get(at, 1 << 30)
+                    unit_fixups.append((order, len(unit_fixups), site, value & 0xFFFFFFFF))
+        code_fixups += [(site, target) for _, _, site, target in sorted(unit_fixups)]
 
         # The unit's own data (strings, initialised and uninitialised statics,
         # vtables, exception tables), where a name, config/sections.txt or a
@@ -349,6 +360,15 @@ def main(verbose=False):
     for n in unplaced_data[: 20 if not verbose else None]:
         print("  data not placed: " + n)
     boundaries = module_boundaries(proj, le)
+    if result is not None:
+        inside = collections.defaultdict(list)
+        fs = sorted(proj.functions, key=lambda f: f.addr)
+        unit_of = {f.addr: u.name for u in proj.units for f in u.functions}
+        for a, b in zip(fs, fs[1:]):
+            if 0 < b.addr - a.end < 16 and unit_of[a.addr] == unit_of[b.addr]:
+                inside[unit_of[a.addr]].append(not any(le.read(a.end, b.addr - a.end)))
+        result.update(image=image, owner=owner, code_fixups=code_fixups,
+                      zero_padded={u for u, z in inside.items() if all(z)})
     print(f"module boundary contradictions {len(boundaries)}")
     for kind, at, n, fa, ua, fb, ub in boundaries[: 40 if not verbose else None]:
         print(f"  {kind}: {at:#x} +{n}  {fa} [{ua}] -> {fb} [{ub}]")
