@@ -15,6 +15,7 @@ to a symbol become section-symbol relocations, as the assembler emits them.
 Usage: tools/omf2elf.py INPUT.obj OUTPUT.o
 """
 
+import os
 import struct
 import sys
 
@@ -104,7 +105,10 @@ def convert(obj):
     externs = [None]  # EXTDEF/LEXTDEF/CEXTDEF index -> (name, local)
     symbols = {}  # name -> (Section, offset, local)
     comdats = {}  # name -> Section
-    weak = set()  # COMDATs the linker may take from any module
+    # COMDATs the linker may take from any module (-> None), and weak or
+    # lazy externals (-> (the default the linker uses when nothing defines
+    # them, the COMENT class)).
+    weak = {}
     sections = []
     target_thread = [None] * 4
     last = None  # (Section, offset) of the last LEDATA/COMDAT, for FIXUPP
@@ -119,6 +123,11 @@ def convert(obj):
         kind = rtype & ~1
         if kind == 0x88 and obj[p - length + 1] == 0xAA:  # COMENT class
             easy_omf = True  # the assembler's objects (e.g. 386inite)
+        elif kind == 0x88 and obj[p - length + 1] in (0xA8, 0xA9):  # weak, lazy externals
+            cls, r.p = obj[p - length + 1], 2
+            while r.more():
+                name, default = r.index(), r.index()
+                weak[externs[name][0]] = (externs[default][0], cls)
         elif kind in (0x80, 0x88, 0x94, 0xC4, 0xCC, 0xCE):
             pass  # THEADR, COMENT, LINNUM, LINSYM, VERNUM, VENDEXT
         elif kind in (0x96, 0xCA):  # LNAMES, LLNAMES
@@ -190,7 +199,7 @@ def convert(obj):
                 sections.append(sec)
                 symbols[name] = (sec, 0, bool(flags & 4))
                 if attrs & 0xF0:
-                    weak.add(name)
+                    weak[name] = None
             sec.write(off, r.rest())
             last = (sec, off, kind)
         elif kind == 0x9C:  # FIXUPP
@@ -343,6 +352,127 @@ def write_elf(sections, symbols, externs, weak, path):
 
     ident = b"\x7fELF\x01\x01\x01" + bytes(9)
     struct.pack_into("<16sHHIIIIIHHHHHH", out, 0, ident, 1, 3, 1, 0, 0, shoff, 0, 52, 0, 0, 40, nsec, nsec - 1)
+    open(path, "wb").write(out)
+
+
+def write_omf(sections, symbols, externs, weak, path):
+    """Write the object model back as a 32-bit OMF object for Watcom's
+    linker, the inverse of convert: COMDAT sections become COMDAT records
+    (pick-any for `weak` names), so the linker keeps one copy of each."""
+    out = bytearray()
+
+    def record(kind, body):
+        rec = bytes([kind]) + struct.pack("<H", len(body) + 1) + bytes(body)
+        out.extend(rec + bytes([-sum(rec) & 0xFF]))
+
+    def index(i):
+        return bytes([i]) if i < 0x80 else bytes([0x80 | i >> 8, i & 0xFF])
+
+    def name(s):
+        b = s.encode("latin-1")
+        return bytes([len(b)]) + b
+
+    lnames = {}
+
+    def lname(s):
+        if s not in lnames:
+            lnames[s] = len(lnames) + 1
+            record(0x96, name(s))
+        return lnames[s]
+
+    record(0x80, name(os.path.basename(path)))
+    for s in ("", "CODE", "DATA", "BSS", "FLAT", "DGROUP"):
+        lname(s)
+
+    segs = {}  # id(section) -> SEGDEF index, for the plain (non-COMDAT) sections
+    for sec in sections:
+        if sec.comdat:
+            continue
+        cls = sec.cls if sec.cls in ("CODE", "DATA", "BSS") else ("CODE" if sec.code else "DATA")
+        length = max(len(sec.data), sec.length)
+        acbp = {1: 1, 2: 2, 4: 5, 16: 3, 256: 4}.get(sec.align, 3) << 5 | 2 << 2 | 1
+        record(0x99, bytes([acbp]) + struct.pack("<I", length) + index(lname(sec.name)) + index(lname(cls)) + index(1))
+        segs[id(sec)] = len(segs) + 1
+    code_seg = next((segs[id(s)] for s in sections if not s.comdat and s.code), None)
+    data_seg = next((segs[id(s)] for s in sections if not s.comdat and not s.code), None)
+    dgroup = [segs[id(s)] for s in sections if not s.comdat and not s.code]
+    record(0x9A, index(lnames["DGROUP"]) + b"".join(b"\xff" + index(i) for i in dgroup))
+    record(0x9A, index(lnames["FLAT"]))
+    DGROUP, FLAT = 1, 2
+
+    # Names the fixups reach through EXTDEF: externals and COMDAT symbols;
+    # symbols in plain segments are reached segment-relative.
+    comdat_of = {id(s): n for n, (s, o, _) in symbols.items() if s.comdat and o == 0}
+    ext = {}
+
+    def extern(n):
+        if n not in ext:
+            ext[n] = len(ext) + 1
+            record(0x8C, name(n) + index(0))
+        return ext[n]
+
+    def fixups(sec, lo, hi):
+        body = bytearray()
+        for at, rtype, target in sec.relocs:
+            if not lo <= at < hi:
+                continue
+            addend = struct.unpack_from("<i", sec.data, at)[0] + (4 if rtype == R_386_PC32 else 0)
+            if target[0] == "sym" and target[1] in symbols and not symbols[target[1]][0].comdat:
+                tsec, toff, _ = symbols[target[1]]
+                method, datum, addend = 0, segs[id(tsec)], addend + toff
+            elif target[0] == "sym":
+                method, datum = 2, extern(target[1])
+            elif target[1].comdat:
+                method, datum = 2, extern(comdat_of[id(target[1])])
+            else:
+                method, datum = 0, segs[id(target[1])]
+            locat = 0x8000 | (0x4000 if rtype == R_386_32 else 0) | 9 << 10 | (at - lo)
+            # Frame F1 (group FLAT), no displacement: the field holds the addend.
+            body += struct.pack(">H", locat) + bytes([0x10 | 4 | method]) + index(FLAT) + index(datum)
+            patched[at] = addend
+        return body
+
+    for sec in sections:
+        patched = {}
+        data = bytearray(sec.data)
+        lo = 0
+        while lo < len(data) and not sec.nobits:
+            hi = min(lo + 1024, len(data))
+            # Never split a relocated field across two records.
+            while any(lo < at < hi < at + 4 for at, _, _ in sec.relocs):
+                hi -= 1
+            fx = fixups(sec, lo, hi)
+            chunk = bytearray(data[lo:hi])
+            for at, value in patched.items():
+                if lo <= at < hi:
+                    struct.pack_into("<i", chunk, at - lo, value)
+            if sec.comdat:
+                cname = comdat_of[id(sec)]
+                local = symbols[cname][2]
+                flags = (1 if lo else 0) | (4 if local else 0)
+                attrs = 0x10 if cname in weak else 0x00  # pick-any; explicit allocation
+                base_seg = code_seg if sec.code else data_seg
+                grp = 0 if sec.code else DGROUP
+                record(0xC3, bytes([flags, attrs, 0]) + struct.pack("<I", lo) + index(0)
+                       + index(grp) + index(base_seg) + index(lname(cname)) + chunk)
+            else:
+                record(0xA1, index(segs[id(sec)]) + struct.pack("<I", lo) + chunk)
+            if fx:
+                record(0x9D, fx)
+            lo = hi
+    for name_, default in weak.items():
+        if default is not None and name_ in ext:
+            record(0x88, bytes([0x80, default[1]]) + index(ext[name_]) + index(extern(default[0])))
+    for local in (False, True):
+        for sec in sections:
+            if sec.comdat:
+                continue
+            names = [(n, o) for n, (s, o, l) in symbols.items() if s is sec and l == local and not n.endswith(".c")]
+            if names:
+                grp = FLAT if sec.code else DGROUP
+                record(0xB7 if local else 0x91, index(grp) + index(segs[id(sec)])
+                       + b"".join(name(n) + struct.pack("<I", o) + index(0) for n, o in names))
+    record(0x8B, b"\x00")
     open(path, "wb").write(out)
 
 

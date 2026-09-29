@@ -93,14 +93,15 @@ def read_elf(path, Section):
 
 def apply(source, model, Section):
     """Replace the functions of `source` that have stand-ins in the object
-    model (sections, symbols, externs, weak) produced by omf2elf.convert."""
+    model (sections, symbols, externs, weak) produced by omf2elf.convert;
+    return whether there were any."""
     path = os.path.join(ROOT, companion(os.path.relpath(os.path.abspath(source), ROOT)))
     if not os.path.exists(path) or os.environ.get("STANDIN_OFF"):
-        return  # STANDIN_OFF=1: build the C alone, to work on it
+        return False  # STANDIN_OFF=1: build the C alone, to work on it
     sections, symbols, externs, weak = model
     names = [function_names()[int(m.group(1), 16)] for m in MARKER.finditer(open(path).read())]
     if not names:
-        return
+        return False
     for name in names:
         if name not in symbols:
             sys.exit(f"{path}: {name} is not compiled from {source}")
@@ -127,6 +128,7 @@ def apply(source, model, Section):
             symbols[name] = (new_sec, new_off, False)
     known = {n for n, _ in externs[1:]}
     externs.extend((n, False) for n in undefined if n not in known and n not in symbols)
+    return True
 
 
 def sized(symbols, name):

@@ -120,7 +120,10 @@ def main(source, output, *extra):
         if "@" in compiler and os.path.exists(err):
             os.remove(err)
     model = omf2elf.convert(open(omf, "rb").read())
-    standin.apply(source, model, omf2elf.Section)
+    if standin.apply(source, model, omf2elf.Section):
+        # The compiler's object no longer matches the unit: tools/link.py
+        # links this one instead.
+        omf2elf.write_omf(*model, base + ".link.obj")
     omf2elf.write_elf(*model, output)
 
 

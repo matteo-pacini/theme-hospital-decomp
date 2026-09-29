@@ -3,9 +3,9 @@
 
 This tracks how close the sources are to linking; it is not the build of the
 game yet. Compiled units link from the compiler's own OMF objects (which keep
-its weak references and COMDATs); assembly units, units with assembly
-stand-ins and auto units (build/target, no sources yet) are converted from
-ELF to OMF with objconv. The EXE's data, 16-bit code and stack objects
+its weak references and COMDATs), or, with assembly stand-ins, from the OMF
+tools/cc.py writes after applying them; assembly units and auto units
+(build/target, no sources yet) are converted from ELF to OMF with objconv. The EXE's data, 16-bit code and stack objects
 become a generated data module that defines every name the code refers to
 at its original address and carries the data's own relocations. Open
 Watcom's wlink then links everything, in address order, and the unresolved
@@ -137,7 +137,9 @@ def main():
     for k, (u, path) in enumerate(list(zip(units, elfs)) + [(None, data_o)]):
         dst = os.path.join("objs", f"{k:03d}.obj")
         omf = os.path.splitext(path)[0] + ".obj"
-        if u is not None and not u.auto and os.path.exists(omf) and not os.path.exists(os.path.join(ROOT, companion(u.source))):
+        if u is not None and not u.auto and os.path.exists(os.path.join(ROOT, companion(u.source))):
+            omf = os.path.splitext(path)[0] + ".link.obj"  # with its stand-ins
+        if u is not None and not u.auto and os.path.exists(omf):
             shutil.copy(omf, os.path.join(OUT, dst))
         else:
             subprocess.run(["objconv", "-fomf", path, os.path.join(OUT, dst)], check=True, capture_output=True)
