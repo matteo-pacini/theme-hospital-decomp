@@ -321,6 +321,10 @@ Compiler and flags per source file come from `config/cflags.txt`.
     call), `-fpd` (the Pentium FDIV check in `scale`), `-of` for the FP
     formatting routines. 10.6 wraps each `-fpd` check in `pushfd`/`popfd`,
     which the original compiler did not, so `_Scale10V` cannot match.
+    Writing the check out as `#pragma aux` inline code does not help: any
+    inline code makes `-of` give the function an `ebp` frame, and without
+    `-of` (which `_Scale` in the same file needs) the inline result is
+    stored before, not after, the scheduled `n -= 216` (98.8% at best).
   - Tables read with a `cs:` override are `__based(__segname("_CODE"))`.
 - **Modules built without `-zm`**: without `-zm`, Watcom places a
   tail-called function's entry directly after its caller but leaves the
