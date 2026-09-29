@@ -113,6 +113,10 @@ and comparing against the original.
 | list walk comparing `[p+next]`, then reloading it twice (no CSE) | pointer to volatile: `volatile T *p` (a volatile struct field instead changes store order) |
 | `test eax,eax; je` then `mov ebx,eax` for a zero store | the source copies the tested variable (`last = rw` inside `if (rw == 0)`); `a = X; b = a;` vs `b = X; a = b;` picks which variable gets the load |
 | `and di,0xfffc` | plain `x & ~3` narrowed on a register with no byte form; separate `x += 3; x &= ~3;` gives a byte `and` on a spilled slot |
+| `-d2 -otx` loop that compares memory (`cmp [x],0`) at its head, but loads then tests (`mov r,[x]; test r,r`) inside | `for (;;) { if (cnt > 0) {...} else {...} }` rather than `while (cnt > 0)` plus a tail; `while (c)` and tests after a join compare memory |
+| separate epilogues for early `return list[0]` versus one shared | nested `if/else` assigning a result, then a single `return` |
+| `lea r,[g*2]; imul r,g` | `p->g * 2 * p->g` (a `SQR(g) * 2` macro does not give it) |
+| `-oneatx` network init taking a `void *` | a typed pointer cast into its own local, declared before `ret` |
 | `rep movsd` from a global into a local | struct copy from an extern struct (`Message msg = D_00129004;`) |
 | signed `jle` on two `u8` operands | `(int)a > (int)b` (without casts: byte compare, `jbe`) |
 | `u8`/`u16` field: `and`+`test` vs `cmp byte/word ptr ..,0` | `x == 0` vs `!x` / `if (x)` |
@@ -261,6 +265,14 @@ Observed consequences:
 - A `void *` parameter used through casts, instead of a `char *` local
   copy, moves the callee-saved copy of the parameter before the first call.
 
+- Reading our own frame slots: compile with `-hw` in place of `-hd` and
+  scan the OMF's local-symbol records (length, 0x11, 0x10/0x11/0x12 for a
+  1/2/4-byte BP offset, type index, name) to get each local's slot; pair
+  them with `check.py -v`'s slot pairs to read the target slot per name.
+  Block-scope locals take their slot from the declaring block. The demo's
+  debug dump (`orig/demo-1997-03/HOSPITAL.debug.txt`) also has line tables
+  for library modules, which show block structure.
+
 ## Known unsolved
 
 - Register allocation is global to the function even at `-d2`: a change
@@ -277,6 +289,10 @@ Observed consequences:
 - `jmp then; jmp skip` stubs after an or-test come from the empty-then form
   `if (!A && !B) {} else {...}`; `for (;;) { if (c) {...} else break; }`
   gives a loop whose exits go through `jmp` stubs.
+- `W?$dt:ModemSP$n()_` (0xeee20): only a trailing `mov eax,eax` pad
+  differs; our COMDAT keeps it because the SerialSP destructor COMDAT
+  follows, while `functions.txt` sizes the target without it. Needs
+  `omf2elf` to leave such padding out of the symbol size.
 - `netint` inlining: the original inlines `CompleteMultiPlayerExchange`
   (needs `-oe=400` here) but not `LbNetwork_Init(u32)` into its wrappers
   (inlined from `-oe=250`), so no single `-oe` reproduces both; declaring
@@ -294,8 +310,8 @@ count as matched, but not as decompiled source; keep this list complete.
 marker and is still compiled, and `<source>.standin.s` supplies the
 function's code in the object `tools/cc.py` produces (in place, when the
 module is built into one segment and the sizes agree, so jumps between
-neighbours stay as the original linker resolved them). The first two below
-predate the tool and use a separate file instead.
+neighbours stay as the original linker resolved them). The first below
+predates the tool and uses a separate file instead.
 
 - `_Scale10V` (0xfcad8), `src/lib/clib/scale10v.s`: FDIV checks without
   `pushfd`/`popfd` (C in `scale.c`).

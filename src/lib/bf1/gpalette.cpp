@@ -81,7 +81,6 @@ struct Rgb {
 
 #define SQR(x) ((x) * (x))
 
-// NONMATCHING: stack slot order, register choice
 // FUNCTION: 0x000c960c
 u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b)
 {
@@ -92,11 +91,11 @@ u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b)
     s32 ri;
     s32 gi;
     s32 bi;
-    s32 best;
-    u8 list2[256];
     u8 colour;
+    u8 list2[256];
     u16 count2;
     u16 count1;
+    s32 best;
     Rgb *p;
     u8 list1[256];
     u8 *out;
@@ -125,33 +124,37 @@ u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b)
             *out++ = i;
         }
     }
-    if (count1 == 1)
-        return list1[0];
-    for (i = 0, best = 999999; i < count1; i++) {
-        p = &base[list1[i]];
-        dist = abs(ri - p->r) + abs(gi - p->g) + abs(bi - p->b);
-        if (dist < best)
-            best = dist;
-    }
-    out = list2;
-    for (i = 0; i < count1; i++) {
-        p = &base[list1[i]];
-        dist = abs(ri - p->r) + abs(gi - p->g) + abs(bi - p->b);
-        if (dist == best) {
-            count2++;
-            *out++ = list1[i];
+    if (count1 == 1) {
+        colour = list1[0];
+    } else {
+        for (i = 0, best = 999999; i < count1; i++) {
+            p = &base[list1[i]];
+            dist = abs(ri - p->r) + abs(gi - p->g) + abs(bi - p->b);
+            if (dist < best)
+                best = dist;
         }
-    }
-    if (count2 == 1)
-        return list2[0];
-    count1 = 0;
-    out = list1;
-    for (i = 0, best = 999999; i < count2; i++) {
-        p = &base[list2[i]];
-        dist = SQR(p->g) * 2 + SQR(p->r) * 2 + SQR(p->b);
-        if (dist < best) {
-            best = dist;
-            colour = list2[i];
+        out = list2;
+        for (i = 0; i < count1; i++) {
+            p = &base[list1[i]];
+            dist = abs(ri - p->r) + abs(gi - p->g) + abs(bi - p->b);
+            if (dist == best) {
+                count2++;
+                *out++ = list1[i];
+            }
+        }
+        if (count2 == 1) {
+            colour = list2[0];
+        } else {
+            count1 = 0;
+            out = list1;
+            for (i = 0, best = 999999; i < count2; i++) {
+                p = &base[list2[i]];
+                dist = p->g * 2 * p->g + p->r * 2 * p->r + p->b * p->b;
+                if (dist < best) {
+                    best = dist;
+                    colour = list2[i];
+                }
+            }
         }
     }
     return colour;

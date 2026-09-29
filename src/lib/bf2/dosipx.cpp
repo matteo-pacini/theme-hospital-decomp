@@ -466,11 +466,11 @@ void IPXHandler::FreeIPXPackets(u32 sel)
 // NONMATCHING: register allocation differs in the inlined OpenSocket
 long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
 {
-    __3ljac5NETSOCKET s;
     SAPPacket pkt;
-    __3ljac5NETSOCKET dest;
-    u16 i;
+    __3ljac5NETSOCKET s;
     IPXPacket *pk;
+    u16 i;
+    __3ljac5NETSOCKET dest;
 
     if (!socket_open) {
         socket = 0x452;

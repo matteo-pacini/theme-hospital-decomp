@@ -109,7 +109,7 @@ int LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap)
             if (left)
                 goto t_left;
             for (;;) {
-                while (cnt > 0) {
+                if (cnt > 0) {
                     if (*sp > 0) {
                         u8 *s;
                         u8 n;
@@ -153,72 +153,73 @@ int LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap)
                         }
                         return 1;
                     }
-                }
-                if (!--rows)
-                    return 1;
-                do {
-                    while (*sp > 0)
-                        sp += *sp + 1;
-                } while (*sp++ != 0);
-                dst = next;
-                next += pitch;
-                cnt = w;
-            t_left:
-                if (left) {
-                    l = left;
+                } else {
+                    if (!--rows)
+                        return 1;
                     do {
-                        if (*sp > 0) {
-                            if (*sp > l) {
-                                u8 *s;
-                                u8 i;
-
-                                s = (u8 *)sp + 1 + l;
-                                run = *sp - l;
-                                if (run > w)
-                                    run = w;
-                                if (xflip) {
-                                    if (lbDisplay.draw_flags & 4) {
-                                        for (i = 0; i < run; i++, s++, dst--)
-                                            *dst = *(lbDisplay.ghost + (remap[*s] << 8) + *dst);
-                                    } else {
-                                        for (i = 0; i < run; i++, s++, dst--)
-                                            *dst = *(lbDisplay.ghost + (*dst << 8) + remap[*s]);
-                                    }
-                                } else {
-                                    if (lbDisplay.draw_flags & 4) {
-                                        for (i = 0; i < run; i++, s++, dst++)
-                                            *dst = *(lbDisplay.ghost + (remap[*s] << 8) + *dst);
-                                    } else {
-                                        for (i = 0; i < run; i++, s++, dst++)
-                                            *dst = *(lbDisplay.ghost + (*dst << 8) + remap[*s]);
-                                    }
-                                }
-                                sp += *sp + 1;
-                                cnt -= run;
-                                break;
-                            }
-                            l -= *sp;
+                        while (*sp > 0)
                             sp += *sp + 1;
-                        } else if (*sp == 0) {
-                            cnt = 0;
-                            break;
-                        } else {
-                            if (*sp < -l) {
-                                run = -*sp - l;
-                                if (run > w)
-                                    run = w;
-                                sp++;
-                                if (xflip)
-                                    dst -= run;
-                                else
-                                    dst += run;
-                                cnt -= run;
+                    } while (*sp++ != 0);
+                    dst = next;
+                    next += pitch;
+                    cnt = w;
+                t_left:
+                    if (left) {
+                        l = left;
+                        do {
+                            if (*sp > 0) {
+                                if (*sp > l) {
+                                    u8 *s;
+                                    u8 i;
+
+                                    s = (u8 *)sp + 1 + l;
+                                    run = *sp - l;
+                                    if (run > w)
+                                        run = w;
+                                    if (xflip) {
+                                        if (lbDisplay.draw_flags & 4) {
+                                            for (i = 0; i < run; i++, s++, dst--)
+                                                *dst = *(lbDisplay.ghost + (remap[*s] << 8) + *dst);
+                                        } else {
+                                            for (i = 0; i < run; i++, s++, dst--)
+                                                *dst = *(lbDisplay.ghost + (*dst << 8) + remap[*s]);
+                                        }
+                                    } else {
+                                        if (lbDisplay.draw_flags & 4) {
+                                            for (i = 0; i < run; i++, s++, dst++)
+                                                *dst = *(lbDisplay.ghost + (remap[*s] << 8) + *dst);
+                                        } else {
+                                            for (i = 0; i < run; i++, s++, dst++)
+                                                *dst = *(lbDisplay.ghost + (*dst << 8) + remap[*s]);
+                                        }
+                                    }
+                                    sp += *sp + 1;
+                                    cnt -= run;
+                                    break;
+                                }
+                                l -= *sp;
+                                sp += *sp + 1;
+                            } else if (*sp == 0) {
+                                cnt = 0;
                                 break;
+                            } else {
+                                if (*sp < -l) {
+                                    run = -*sp - l;
+                                    if (run > w)
+                                        run = w;
+                                    sp++;
+                                    if (xflip)
+                                        dst -= run;
+                                    else
+                                        dst += run;
+                                    cnt -= run;
+                                    break;
+                                }
+                                l += *sp;
+                                sp++;
                             }
-                            l += *sp;
-                            sp++;
-                        }
-                    } while (l);
+                        } while (l);
+                    }
                 }
             }
         } else {
@@ -227,7 +228,7 @@ int LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap)
             if (left)
                 goto f_left;
             for (;;) {
-                while (cnt > 0) {
+                if (cnt > 0) {
                     if (*sp > 0) {
                         u8 n;
                         u8 *s;
@@ -253,54 +254,55 @@ int LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap)
                         }
                         return 1;
                     }
-                }
-                if (!--rows)
-                    return 1;
-                do {
-                    while (*sp > 0)
-                        sp += *sp + 1;
-                } while (*sp++ != 0);
-                dst = next;
-                next += pitch;
-                cnt = w;
-            f_left:
-                if (left) {
-                    l = left;
+                } else {
+                    if (!--rows)
+                        return 1;
                     do {
-                        if (*sp > 0) {
-                            if (*sp > l) {
-                                u8 *s;
-                                u8 i;
-
-                                run = *sp - l;
-                                if (run > w)
-                                    run = w;
-                                s = (u8 *)sp + 1 + l;
-                                for (i = 0; i < run; i++, s++, dst--)
-                                    *dst = remap[*s];
-                                sp += *sp + 1;
-                                cnt -= run;
-                                break;
-                            }
-                            l -= *sp;
+                        while (*sp > 0)
                             sp += *sp + 1;
-                        } else if (*sp == 0) {
-                            cnt = 0;
-                            break;
-                        } else {
-                            if (*sp < -l) {
-                                run = -*sp - l;
-                                if (run > w)
-                                    run = w;
-                                sp++;
-                                dst -= run;
-                                cnt -= run;
+                    } while (*sp++ != 0);
+                    dst = next;
+                    next += pitch;
+                    cnt = w;
+                f_left:
+                    if (left) {
+                        l = left;
+                        do {
+                            if (*sp > 0) {
+                                if (*sp > l) {
+                                    u8 *s;
+                                    u8 i;
+
+                                    run = *sp - l;
+                                    if (run > w)
+                                        run = w;
+                                    s = (u8 *)sp + 1 + l;
+                                    for (i = 0; i < run; i++, s++, dst--)
+                                        *dst = remap[*s];
+                                    sp += *sp + 1;
+                                    cnt -= run;
+                                    break;
+                                }
+                                l -= *sp;
+                                sp += *sp + 1;
+                            } else if (*sp == 0) {
+                                cnt = 0;
                                 break;
+                            } else {
+                                if (*sp < -l) {
+                                    run = -*sp - l;
+                                    if (run > w)
+                                        run = w;
+                                    sp++;
+                                    dst -= run;
+                                    cnt -= run;
+                                    break;
+                                }
+                                l += *sp;
+                                sp++;
                             }
-                            l += *sp;
-                            sp++;
-                        }
-                    } while (l);
+                        } while (l);
+                    }
                 }
             }
         }
@@ -313,7 +315,7 @@ int LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap)
         if (left)
             goto n_left;
         for (;;) {
-            while (cnt > 0) {
+            if (cnt > 0) {
                 if (*sp > 0) {
                     u8 *end;
                     u8 *d;
@@ -339,58 +341,59 @@ int LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap)
                     }
                     return 1;
                 }
-            }
-            if (!--rows)
-                return 1;
-            do {
-                while (*sp > 0)
-                    sp += *sp + 1;
-            } while (*sp++ != 0);
-            dst = next;
-            next += pitch;
-            cnt = w;
-        n_left:
-            if (left) {
-                l = left;
+            } else {
+                if (!--rows)
+                    return 1;
                 do {
-                    if (*sp > 0) {
-                        if (*sp > l) {
-                            u8 *end;
-                            u8 *d;
-                            u8 *s;
-
-                            run = *sp - l;
-                            if (run > w)
-                                run = w;
-                            end = dst + run;
-                            d = dst;
-                            s = (u8 *)sp + 1 + l;
-                            for (; d < end; d++, s++)
-                                *d = remap[*s];
-                            dst += run;
-                            sp += *sp + 1;
-                            cnt -= run;
-                            break;
-                        }
-                        l -= *sp;
+                    while (*sp > 0)
                         sp += *sp + 1;
-                    } else if (*sp == 0) {
-                        cnt = 0;
-                        break;
-                    } else {
-                        if (*sp < -l) {
-                            run = -*sp - l;
-                            if (run > w)
-                                run = w;
-                            sp++;
-                            dst += run;
-                            cnt -= run;
+                } while (*sp++ != 0);
+                dst = next;
+                next += pitch;
+                cnt = w;
+            n_left:
+                if (left) {
+                    l = left;
+                    do {
+                        if (*sp > 0) {
+                            if (*sp > l) {
+                                u8 *end;
+                                u8 *d;
+                                u8 *s;
+
+                                run = *sp - l;
+                                if (run > w)
+                                    run = w;
+                                end = dst + run;
+                                d = dst;
+                                s = (u8 *)sp + 1 + l;
+                                for (; d < end; d++, s++)
+                                    *d = remap[*s];
+                                dst += run;
+                                sp += *sp + 1;
+                                cnt -= run;
+                                break;
+                            }
+                            l -= *sp;
+                            sp += *sp + 1;
+                        } else if (*sp == 0) {
+                            cnt = 0;
                             break;
+                        } else {
+                            if (*sp < -l) {
+                                run = -*sp - l;
+                                if (run > w)
+                                    run = w;
+                                sp++;
+                                dst += run;
+                                cnt -= run;
+                                break;
+                            }
+                            l += *sp;
+                            sp++;
                         }
-                        l += *sp;
-                        sp++;
-                    }
-                } while (l);
+                    } while (l);
+            }
             }
         }
     }

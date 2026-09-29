@@ -3,9 +3,9 @@
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 // FUNCTION: 0xd2ba0
-// NONMATCHING: callee and callback relocations carry the target's misnamed symbols; register allocation differs
 TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
 {
+    __4dn7ojSerialInitData *serial = (__4dn7ojSerialInitData *)init_data;
     TbError ret = Lb_FAIL;
 
     if (spPtr) {
@@ -17,8 +17,8 @@ TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
     receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
     receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
     if (init_data)
-        ((__4dn7ojSerialInitData *)init_data)->mode = 1;
-    spPtr = new SerialSP((__4dn7ojSerialInitData *)init_data);
+        serial->mode = 1;
+    spPtr = new SerialSP(serial);
     if (spPtr) {
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
             ret = Lb_OK;
@@ -142,9 +142,9 @@ TbError CompleteTwoPlayerExchange(void *buf)
 }
 
 // FUNCTION: 0xd33e0
-// NONMATCHING: callee and callback relocations carry the target's misnamed symbols; register allocation differs
 TbError GenericModemInit(__tibcaGUID guid, void *init_data)
 {
+    __4dn7ojSerialInitData *serial = (__4dn7ojSerialInitData *)init_data;
     TbError ret = Lb_FAIL;
 
     if (spPtr) {
@@ -156,8 +156,8 @@ TbError GenericModemInit(__tibcaGUID guid, void *init_data)
     receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
     receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
     if (init_data)
-        ((__4dn7ojSerialInitData *)init_data)->mode = 2;
-    spPtr = new ModemSP((__4dn7ojSerialInitData *)init_data);
+        serial->mode = 2;
+    spPtr = new ModemSP(serial);
     if (spPtr) {
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
             ret = Lb_OK;
