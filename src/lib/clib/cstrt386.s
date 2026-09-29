@@ -1,5 +1,14 @@
 .intel_syntax noprefix
 
+// BEGTEXT: the first bytes of the code object (0x10000), a trap for calls
+// through a null pointer, which _cstart_ also points at.
+.section BEGTEXT,"ax",@progbits
+.globl "_C_00010003"
+    int3
+    jmp . - 1
+"_C_00010003":
+    .byte 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90
+
 // FUNCTION: 0x000bca0c
 
 .section _TEXT,"ax",@progbits,unique,772620

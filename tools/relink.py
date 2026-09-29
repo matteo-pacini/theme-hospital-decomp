@@ -61,6 +61,9 @@ def main(verbose=False):
                     base[id(sec)] = seg_addr[sec.name]
                 continue
             known = [own[n] - o for n, (s, o, _) in symbols.items() if s is sec and n in own and not n.endswith(".c")]
+            # A section with only an address-named label (cstrt386's BEGTEXT).
+            known += [int(m.group(1), 16) - o for n, (s, o, _) in symbols.items()
+                      if s is sec and (m := ADDRESS_NAME.fullmatch(n))]
             if not known:
                 continue  # compiled code a stand-in replaced, or nothing to place
             if len(set(known)) > 1:
