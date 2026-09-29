@@ -8,7 +8,11 @@ against original addresses: functions by name, globals by
 config/symbols.txt, a unit's own data segments by config/sections.txt.
 Absolute references are compared with the EXE's fixup targets, and every
 other byte (relative branches included) with the EXE's raw bytes. Bytes of
-the code object that no unit places are reported as gaps.
+the code object that no unit places are reported as gaps. The units' own
+data is checked against the data object the same way. Finally, the gaps
+between functions show where the original objects began and ended (filler
+within one object, zeros between objects), which is compared with how the
+functions are divided into source files.
 
 Usage: tools/relink.py [-v]    (after `ninja`)
 """
@@ -93,6 +97,35 @@ def check_data(le, placed, symbol_address, problems, notes):
             runs.append([a, a])
     for lo, hi in runs[:20]:
         print(f"  data differs {lo:#x}..{hi:#x} ({owner[lo - data.base]})")
+
+
+def module_boundaries(proj, le):
+    """Gaps between functions that contradict the units: the original linker
+    filled alignment gaps between one object's segments with no-op filler,
+    and gaps between objects with zeros. Returns [(kind, gap address, gap
+    size, function before, its unit, function after, its unit)] for filler
+    between two units and zeros inside one, skipping units whose objects are
+    zero-padded throughout (Smacker, some assembly and runtime modules)."""
+    unit_of = {f.addr: u for u in proj.units for f in u.functions}
+    fs = sorted(proj.functions, key=lambda f: f.addr)
+    gaps = []
+    for a, b in zip(fs, fs[1:]):
+        n = b.addr - a.end
+        if 0 < n < 16:
+            gaps.append((a, b, n, not any(le.read(a.end, n))))
+    inside = collections.defaultdict(list)
+    for a, b, n, zero in gaps:
+        if unit_of[a.addr] is unit_of[b.addr]:
+            inside[unit_of[a.addr].name].append(zero)
+    zero_padded = {u for u, z in inside.items() if all(z)}
+    out = []
+    for a, b, n, zero in gaps:
+        ua, ub = unit_of[a.addr], unit_of[b.addr]
+        if ua is ub and zero and ua.name not in zero_padded:
+            out.append(("zeros inside a unit", a.end, n, a.name, ua.name, b.name, ub.name))
+        elif ua is not ub and not zero:
+            out.append(("filler between units", a.end, n, a.name, ua.name, b.name, ub.name))
+    return out
 
 
 def main(verbose=False):
@@ -315,7 +348,11 @@ def main(verbose=False):
         print("  " + n)
     for n in unplaced_data[: 20 if not verbose else None]:
         print("  data not placed: " + n)
-    return not diffs and not nonzero_gaps and not problems
+    boundaries = module_boundaries(proj, le)
+    print(f"module boundary contradictions {len(boundaries)}")
+    for kind, at, n, fa, ua, fb, ub in boundaries[: 40 if not verbose else None]:
+        print(f"  {kind}: {at:#x} +{n}  {fa} [{ua}] -> {fb} [{ub}]")
+    return not diffs and not nonzero_gaps and not problems and not boundaries
 
 
 if __name__ == "__main__":
