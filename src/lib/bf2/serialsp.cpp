@@ -50,13 +50,11 @@ extern TbNetworkPlayerEntry D_0018cfc4;
 }
 
 // FUNCTION: 0xed350
-// NONMATCHING: exception-table relocation (known tool gap: CONST2 never compares equal)
 SerialSP::SerialSP()
 {
 }
 
 // FUNCTION: 0xed3c4
-// NONMATCHING: exception-table relocation (known tool gap: CONST2 never compares equal)
 SerialSP::SerialSP(__4dn7ojSerialInitData *init_data)
 {
     memcpy(&serial_data, init_data, sizeof(serial_data));
@@ -740,5 +738,3 @@ TbError Parser::InputByte(u8 c)
  * the class's vtable (the constructors are defined here).
  */
 // FUNCTION: 0xee630
-// NONMATCHING: relocations only: the array-delete helpers at 0xeee94/0xeeeb4 are unnamed in
-// config/functions.txt, and the exception table is CONST2 (known tool gap)

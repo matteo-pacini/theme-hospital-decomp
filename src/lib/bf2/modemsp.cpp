@@ -41,7 +41,6 @@ struct ModemStartData {
 };
 
 // FUNCTION: 0xee6b0
-// NONMATCHING: exception-table relocation (known tool gap: CONST2 never compares equal)
 ModemSP::ModemSP(__4dn7ojSerialInitData *init_data) : SerialSP(init_data)
 {
 }
@@ -263,5 +262,4 @@ u32 ModemSP::PeekMessage(u32 *from, void *buf, u32 *size)
  * the class's vtable (the constructor is defined here).
  */
 // FUNCTION: 0xeee20
-// NONMATCHING: relocations only: the array-delete helpers at 0xeee94/0xeeeb4 are unnamed in
-// config/functions.txt, and the exception table is CONST2 (known tool gap)
+// NONMATCHING: the compiled destructor ends with two bytes of padding (mov eax,eax)

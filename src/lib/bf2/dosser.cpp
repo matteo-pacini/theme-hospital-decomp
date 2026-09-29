@@ -108,9 +108,6 @@ struct SerialHandler {
 
 /* The static initialiser for this object (.fn_init) is emitted ahead of SerialHandler's constructor. */
 // FUNCTION: 0xf51f0
-// NONMATCHING: relocations only: the module-registration block (_DATA) and exception table
-// (CONST2) are compiler-emitted locals (known tool gap), and __wcpp_2_mod_register__ (0xcf24f) is
-// unnamed in config/functions.txt
 SerialHandler SerialCommHandler;
 extern ComHandlerInfo com_dev[];
 extern ModemResponse modem_response[];

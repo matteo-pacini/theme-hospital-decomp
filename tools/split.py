@@ -73,12 +73,21 @@ def sign_read_ref(proj, target, k):
     return f"{proj.data_ref(value)}-{k}"
 
 
+def in_data_segment(proj, data_secs, addr):
+    """The unit's own data segment holding addr, unless a named symbol does:
+    compiler-emitted vtables and type signatures sit among that data but are
+    named objects of their own."""
+    if proj.data_symbol_at(addr) is not None:
+        return None
+    return next(((label, start) for label, start, size in data_secs if start <= addr < start + size), None)
+
+
 def data_expr(proj, data_secs, addr):
     """Expression for a data address, section-relative when it lies in one
     of the unit's own data segments (as the compiler refers to them)."""
-    for label, start, size in data_secs:
-        if start <= addr < start + size:
-            return f"{label}+{addr - start:#x}"
+    seg = in_data_segment(proj, data_secs, addr)
+    if seg is not None:
+        return f"{seg[0]}+{addr - seg[1]:#x}"
     return proj.data_ref(addr)
 
 
@@ -149,7 +158,7 @@ def emit_section(le, proj, fns, n, out, shared, data_secs=()):
             expr = f"{q(name)}{off:+#x}" if off else q(name)
         elif le.code.contains(fx.target):
             expr = code_ref(proj, starts, label, (start, end), fx.target)
-        elif any(start <= fx.target < start + size for _, start, size in data_secs):
+        elif in_data_segment(proj, data_secs, fx.target) is not None:
             expr = data_expr(proj, data_secs, fx.target)
         elif site in sign_reads:
             expr = sign_read_ref(proj, fx.target, sign_reads[site])

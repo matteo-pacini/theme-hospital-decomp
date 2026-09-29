@@ -317,8 +317,7 @@ TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_playe
     return ret;
 }
 
-// NONMATCHING: exception-table relocation (known tool gap: CONST2); the MultiPlayerCallback address
-// is held in esi, here in ebp
+// NONMATCHING: the target holds the MultiPlayerCallback address in esi, here in ebp
 // FUNCTION: 0x000bfc4c
 TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -1081,7 +1080,6 @@ void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *da
 }
 
 // FUNCTION: 0x000c1c20
-// NONMATCHING: exception-table relocation only (known tool gap: CONST2)
 TbError GenericIPXInit(__tibcaGUID guid)
 {
     TbError ret = Lb_FAIL;
@@ -1157,7 +1155,6 @@ void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
 }
 
 // FUNCTION: 0x000c2020
-// NONMATCHING: exception-table relocation only (known tool gap: CONST2)
 IPXServiceProvider::IPXServiceProvider()
 {
 }
