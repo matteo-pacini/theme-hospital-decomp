@@ -315,6 +315,10 @@ predates the tool and uses a separate file instead.
 
 - `_Scale10V` (0xfcad8), `src/lib/clib/scale10v.s`: FDIV checks without
   `pushfd`/`popfd` (C in `scale.c`).
+- `__FreeDPMIBlocks_` (0xebdb8), `RationalAlloc_` (0xebfd7) and
+  `__ExpandDGROUP_` (0xec158), `src/lib/clib/grownear.standin.s`: Watcom's
+  own code (identical in the 10.5 and 10.6 `CLIB3R`); the module as a whole
+  is in neither library (see Watcom library modules).
 
 ## Watcom library modules
 
@@ -339,7 +343,8 @@ so `tools/split.py` lays their units out as built without `-zm`.
 
 No CD's library (10.0a, 10.5, 10.6) has the EXE's `grownear` module as a
 whole: its `__AdjustAmount` rounds to 8 bytes where 10.6's rounds to 4 (the
-module's other functions do match 10.5's and 10.6's), so it stays C.
+module's other functions do match 10.5's and 10.6's), so it stays C, with
+stand-ins for the three functions its C does not reproduce.
 
 ## Libraries
 

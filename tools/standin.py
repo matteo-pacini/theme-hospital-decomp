@@ -191,7 +191,7 @@ def add(source, addr):
 
     docs = open(DOCS).read()
     entry = f"- `{name}` ({addr:#x}), `{companion(source)}`" + (f": {note.strip()}" if note.strip() else "") + "\n"
-    anchor = "\n## Libraries"
+    anchor = "\n## Watcom library modules"
     docs = docs.replace(anchor, entry + anchor, 1) if entry not in docs else docs
     open(DOCS, "w").write(docs)
     print(f"{name}: stand-in in {companion(source)}")

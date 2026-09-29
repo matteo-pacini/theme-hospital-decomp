@@ -44,6 +44,7 @@ src/lib/clib/gmtime.c    lib  DOS/CLIB3R.LIB gmtime
 src/lib/clib/tzset.c     lib  DOS/CLIB3R.LIB tzset
 src/lib/clib/scnf.c      lib  DOS/CLIB3R.LIB scnf
 src/lib/clib/strtod.c    lib  MATH387R.LIB strtod
+src/lib/clib/386inite.s  lib  DOS/EMU387.LIB 386inite
 src/lib/clib/allocexc.cpp  lib  PLIB3R.LIB allocexc
 src/lib/clib/stabthrw.cpp  lib  PLIB3R.LIB stabthrw
 # Watcom C/C++ runtime (clib, C++ support): small model, segment registers

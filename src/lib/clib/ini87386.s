@@ -3,9 +3,9 @@
 // FUNCTION: 0x000ef0a8
 
 .section _TEXT,"ax",@progbits,unique,979112
-.globl "fn_000ef0a8_"
-.type "fn_000ef0a8_",@function
-"fn_000ef0a8_":
+.globl "__sys_init_387_emulator"
+.type "__sys_init_387_emulator",@function
+"__sys_init_387_emulator":
     push es
     push ecx
     push ebx
@@ -34,7 +34,7 @@
     pop ecx
     pop es
     ret
-.size "fn_000ef0a8_",.-"fn_000ef0a8_"
+.size "__sys_init_387_emulator",.-"__sys_init_387_emulator"
 
 // FUNCTION: 0x000ef0d8
 
@@ -169,53 +169,61 @@
     inc ebx
     int 0x21
     ret
-    .byte 0x80; .byte 0x3d; .long _D_00151b54; .byte 0x01
-    .byte 0x74; .byte .L000ef237-.-1
-    .byte 0xc3
-.L000ef237:
-    .byte 0x51
-    .byte 0x53
-    .byte 0x52
-    .byte 0xa0; .long "__Extender"
-    .byte 0x80; .byte 0x3d; .long "__X32VM"; .byte 0x00
-    .byte 0x74; .byte .L000ef24f-.-1
-    .byte 0xe8; .long "fn_000ef2e2_"-.-4
-    .byte 0xeb; .byte .L000ef29c-.-1
-.L000ef24f:
-    .byte 0x3c; .byte 0x09
-    .byte 0x75; .byte .L000ef268-.-1
-    .byte 0xb8; .byte 0x02; .byte 0x0e; .byte 0x00; .byte 0x00
-    .byte 0xbb; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0x8b; .byte 0x0d; .long "__GDAptr"
-    .byte 0xff; .byte 0x51; .byte 0x30
-    .byte 0xeb; .byte .L000ef29c-.-1
-.L000ef268:
-    .byte 0x3c; .byte 0x00
-    .byte 0x75; .byte .L000ef278-.-1
-    .byte 0x66; .byte 0xa1; .long _D_00151b52
-    .byte 0xb4; .byte 0xf3
-    .byte 0xcd; .byte 0x21
-    .byte 0xeb; .byte .L000ef29c-.-1
-.L000ef278:
-    .byte 0x3c; .byte 0x01
-    .byte 0x75; .byte .L000ef28c-.-1
-    .byte 0x66; .byte 0x8b; .byte 0x15; .long "__D16Infoseg"
-    .byte 0x29; .byte 0xc0
-    .byte 0xe8; .long "__unhook387"-.-4
-    .byte 0xeb; .byte .L000ef29c-.-1
-.L000ef28c:
-    .byte 0x29; .byte 0xd2
-    .byte 0xe8; .long "__unhook387"-.-4
-    .byte 0x3c; .byte 0x01
-    .byte 0x74; .byte .L000ef29c-.-1
-    .byte 0xe8; .long "fn_000ef2a7_"-.-4
-.L000ef29c:
-    .byte 0xc6; .byte 0x05; .long _D_00151b54; .byte 0x00
-    .byte 0x5a
-    .byte 0x5b
-    .byte 0x59
-    .byte 0xc3
 .size "fn_000ef20d_",.-"fn_000ef20d_"
+
+// FUNCTION: 0x000ef22d
+
+.section _TEXT,"ax",@progbits,unique,979501
+.globl "__sys_fini_387_emulator"
+.type "__sys_fini_387_emulator",@function
+"__sys_fini_387_emulator":
+    cmp byte ptr [_D_00151b54], 1
+    je .L000ef237
+    ret
+.L000ef237:
+    push ecx
+    push ebx
+    push edx
+    mov al, byte ptr ["__Extender"]
+    cmp byte ptr ["__X32VM"], 0
+    je .L000ef24f
+    call "fn_000ef2e2_"
+    jmp .L000ef29c
+.L000ef24f:
+    cmp al, 9
+    jne .L000ef268
+    mov eax, 0xe02
+    mov ebx, 0
+    mov ecx, dword ptr ["__GDAptr"]
+    call dword ptr [ecx + 0x30]
+    jmp .L000ef29c
+.L000ef268:
+    cmp al, 0
+    jne .L000ef278
+    mov ax, word ptr [_D_00151b52]
+    mov ah, 0xf3
+    int 0x21
+    jmp .L000ef29c
+.L000ef278:
+    cmp al, 1
+    jne .L000ef28c
+    mov dx, word ptr ["__D16Infoseg"]
+    sub eax, eax
+    call "__unhook387"
+    jmp .L000ef29c
+.L000ef28c:
+    sub edx, edx
+    call "__unhook387"
+    cmp al, 1
+    je .L000ef29c
+    call "fn_000ef2a7_"
+.L000ef29c:
+    mov byte ptr [_D_00151b54], 0
+    pop edx
+    pop ebx
+    pop ecx
+    ret
+.size "__sys_fini_387_emulator",.-"__sys_fini_387_emulator"
 
 // FUNCTION: 0x000ef2a7
 

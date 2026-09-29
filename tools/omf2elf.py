@@ -105,14 +105,17 @@ def convert(obj):
     target_thread = [None] * 4
     last = None  # (Section, offset) of the last LEDATA/COMDAT, for FIXUPP
     backpatches = []
+    easy_omf = False  # Phar Lap Easy OMF-386: every record has 32-bit fields
 
     p = 0
     while p < len(obj):
         rtype, length = obj[p], struct.unpack_from("<H", obj, p + 1)[0]
-        r = Reader(obj[p + 3 : p + 3 + length - 1], rtype & 1)
+        r = Reader(obj[p + 3 : p + 3 + length - 1], rtype & 1 or easy_omf)
         p += 3 + length
         kind = rtype & ~1
-        if kind in (0x80, 0x88, 0x94, 0xC4, 0xCC, 0xCE):
+        if kind == 0x88 and obj[p - length + 1] == 0xAA:  # COMENT class
+            easy_omf = True  # the assembler's objects (e.g. 386inite)
+        elif kind in (0x80, 0x88, 0x94, 0xC4, 0xCC, 0xCE):
             pass  # THEADR, COMENT, LINNUM, LINSYM, VERNUM, VENDEXT
         elif kind in (0x96, 0xCA):  # LNAMES, LLNAMES
             while r.more():
@@ -198,6 +201,8 @@ def convert(obj):
                     continue
                 locat = (b << 8) | r.u8()
                 relative, loc, where = not locat & 0x4000, (locat >> 10) & 0xF, locat & 0x3FF
+                if easy_omf and loc == 5:
+                    loc = 9  # Easy OMF's 32-bit offset
                 fixdat = r.u8()
                 if fixdat & 0x80:
                     pass

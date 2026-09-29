@@ -2407,11 +2407,12 @@
 000ef026      8 strtol_
 000ef02e     5e radix_value_
 000ef08c     1b __setEFGfmt_
-000ef0a8     30 fn_000ef0a8_
+000ef0a8     30 __sys_init_387_emulator
 000ef0d8     cb fn_000ef0d8_
 000ef1a3     1d fn_000ef1a3_
 000ef1c0     4d fn_000ef1c0_
-000ef20d     9a fn_000ef20d_
+000ef20d     20 fn_000ef20d_
+000ef22d     7a __sys_fini_387_emulator
 000ef2a7     3b fn_000ef2a7_
 000ef2e2     2a fn_000ef2e2_
 000ef30c     81 fn_000ef30c_
