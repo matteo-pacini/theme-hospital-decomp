@@ -4,11 +4,8 @@
 #define _TMPFIL 0x0800
 
 void _nfree(void *ptr);
-#pragma aux _nfree "__wcpp_2_mod_register__"
 unsigned getpid(void);
-int unlink(const char *name);
-/* config/functions.txt has no name for unlink. */
-#pragma aux unlink "fn_000d12d8_"
+int remove(const char *name);
 long ftell(FILE *fp);
 int __close(int handle);
 void __freefp(FILE *fp);
@@ -99,7 +96,7 @@ int __doclose(FILE *fp, int close_handle)
     }
     if (fp->_flag & _TMPFIL) {
         __MkTmpFile(name, fp->_tmpfchar);
-        unlink(name);
+        remove(name);
     }
     return ret;
 }

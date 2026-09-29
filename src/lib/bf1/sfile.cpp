@@ -54,7 +54,7 @@ int write(int handle, void *buf, u32 len);
 int filelength(int handle);
 u32 _dos_findfirst(char *path, u32 attr, find_t *buf);
 u32 _dos_findnext(find_t *buf);
-int fn_000d12d8(char *path);
+int remove(const char *path);
 int rename(char *from, char *to);
 char *strcpy(char *dst, const char *src);
 #pragma intrinsic(strcpy)
@@ -218,7 +218,7 @@ int LbFileRename(char *from, char *to)
 // FUNCTION: 0x000be5d8
 int LbFileDelete(char *path)
 {
-    if (fn_000d12d8(path))
+    if (remove(path))
         return -1;
     return 1;
 }

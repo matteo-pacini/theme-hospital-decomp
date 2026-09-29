@@ -24,7 +24,7 @@ unsigned char _TinyGetCurrDrive(void);
 
 void *malloc(size_t size);
 /* config/functions.txt has malloc under a wrong demo name. */
-#pragma aux malloc "W?init$n()v"
+#pragma aux malloc "_nmalloc_"
 char *strncpy(char *dst, const char *src, size_t n);
 
 // FUNCTION: 0xec6c8

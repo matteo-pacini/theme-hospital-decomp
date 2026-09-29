@@ -1587,6 +1587,7 @@
 000d1245 000b2f81 align   consistent runtime find386        _dos_findnext_
 000d1261 000b2f9d bytes   confirmed  runtime find386        _dos_findclose_
 000d12aa 000b2fe6 align   consistent runtime renam          rename_
+000d12d8 000b3014 manual  confirmed  runtime remove         remove_
 000d12e0 000cc552 strings confirmed  runtime pure_err       __wcpp_2_pure_error__
 000d1310 000c8f60 calls   consistent bflib   sp.cpp         W?$ct:ServiceProvider$n()_
 000d13bc 000c9020 strings confirmed  bflib   sp.cpp         W?$dt:ServiceProvider$n()_
@@ -2042,6 +2043,7 @@
 000ed29d 000cf5bd bytes   confirmed  runtime stk386         __STK
 000ed2bb 000cf5db strings confirmed  runtime stk386         __STKOVERFLOW_
 000ed2ca 000cf5ea calls   consistent runtime error386       __doserror_
+000ed2dd 000cf5fd manual  confirmed  runtime unlink         unlink_
 000ed300 000d3698 calls   consistent runtime stabact        __wcpp_2_ctor_array__
 000ed350 000d36e0 manual  confirmed  bflib   serialsp.cpp   W?$ct:SerialSP$n()_
 000ed3c4 000d3754 manual  confirmed  bflib   serialsp.cpp   W?$ct:SerialSP$n(pn$__4dn7ojSerialInitData$$)_

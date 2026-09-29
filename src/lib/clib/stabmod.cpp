@@ -100,7 +100,7 @@ void fs_init(void)
 
 /* config/functions.txt gives __wcpp_2_mod_register__ to _nfree. */
 void __wcpp_2_mod_register__(RW_DTREG *rw);
-#pragma aux __wcpp_2_mod_register__ "fn_000cf24f_"
+#pragma aux __wcpp_2_mod_register__ "__wcpp_2_mod_register__"
 
 // FUNCTION: 0xcf24f
 void __wcpp_2_mod_register__(RW_DTREG *rw)

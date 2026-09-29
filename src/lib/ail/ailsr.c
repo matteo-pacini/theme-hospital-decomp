@@ -28,8 +28,8 @@ void AILDEBUG_START(void);
 void *malloc(U32 size);
 void free(void *ptr);
 /* config/functions.txt has malloc and free under wrong demo names. */
-#pragma aux malloc "W?init$n()v";
-#pragma aux free "__wcpp_2_mod_register__";
+#pragma aux malloc "_nmalloc_";
+#pragma aux free "_nfree_";
 
 /* __pascal (callee pops) with address names. */
 void *fn_000efba0(U32 size);

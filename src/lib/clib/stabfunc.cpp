@@ -54,12 +54,11 @@ void fun_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw)
     ctl->obj_type = 0;
 }
 
-/* config/functions.txt gives W?init$n()v to _nmalloc. */
-void fun_init(void);
-#pragma aux fun_init "fn_000cf3fa_"
+void init(void);
+#pragma aux init "W?init$n()v"
 
 // FUNCTION: 0xcf3fa
-void fun_init(void)
+void init(void)
 {
     __wcpp_2_data_dtreg_vfptrs_[0] = &fun_vftable;
 }

@@ -33,7 +33,6 @@ unsigned short FP_SEG(const volatile void __far *);
 
 void _nfree(void *stg);
 /* config/functions.txt has _nfree under a wrong demo name. */
-#pragma aux _nfree "__wcpp_2_mod_register__"
 
 // FUNCTION: 0x000cf342
 void _nfree(void *stg)

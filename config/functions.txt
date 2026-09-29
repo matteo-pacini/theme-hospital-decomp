@@ -1779,14 +1779,14 @@
 000cf238      7 W?fs_point_object$n(pn$rw_dtreg$$ui)pnv
 000cf23f      5 W?fs_init_traverse$n(pn$__1j2o3bSTAB_TRAVERSE$$pn$rw_dtreg$$)v
 000cf244      b fn_000cf244_
-000cf24f     10 fn_000cf24f_
-000cf25f     e3 W?init$n()v
-000cf342     82 __wcpp_2_mod_register__
+000cf24f     10 __wcpp_2_mod_register__
+000cf25f     e3 _nmalloc_
+000cf342     82 _nfree_
 000cf3c4     1d int386_
 000cf3e4      4 W?fun_state_table$n(pn$ro_dtreg$$)pn$__7a4u3RO_STATE$$
 000cf3e8      d W?fun_point_object$n(pn$rw_dtreg$$ui)pnv
 000cf3f5      5 W?fun_init_traverse$n(pn$__1j2o3bSTAB_TRAVERSE$$pn$rw_dtreg$$)v
-000cf3fa      b fn_000cf3fa_
+000cf3fa      b W?init$n()v
 000cf405      a __wcpp_2_fun_register__
 000cf40f     22 printf_
 000cf432      5 clock_
@@ -1838,7 +1838,7 @@
 000d1264     23 _dos_findclose_
 000d1287     23 fn_000d1287_
 000d12aa     2e rename_
-000d12d8      5 fn_000d12d8_
+000d12d8      5 remove_
 000d12e0      a __wcpp_2_pure_error__
 000d12ea     25 fn_000d12ea_
 000d1310     a9 W?$ct:ServiceProvider$n()_
@@ -1881,7 +1881,7 @@
 000d29e8    110 W?BroadcastSystemMessage$:ServiceProvider$n(pnuc)$TbError$$
 000d2af8     80 W?EnumeratePlayersForSessionRunning$:ServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$
 000d2b78      3 W?EnableNewPlayers$:ServiceProvider$n(ul)$TbError$$
-000d2b7b     25 fn_000d2b7b_
+000d2b7b     25 __wcpp_2_undef_vfun__
 000d2ba0    10d W?GenericSerialInit$n($__tibcaGUID$$pnv)$TbError$$
 000d2cb0    18e W?StartTwoPlayerExchange$n(pnv)$TbError$$
 000d2e40    259 W?CompleteTwoPlayerExchange$n(pnv)$TbError$$
@@ -2360,7 +2360,7 @@
 000ed29d     1e __STK
 000ed2bb      f __STKOVERFLOW_
 000ed2ca     13 __doserror_
-000ed2dd     21 fn_000ed2dd_
+000ed2dd     21 unlink_
 000ed300     44 __wcpp_2_ctor_array__
 000ed344      5 fn_000ed344_
 000ed350     73 W?$ct:SerialSP$n()_
@@ -2399,8 +2399,8 @@
 000eee0c      5 W?ReadMessage$:ModemSP$n(pnulpnvpnul)ul
 000eee14      5 W?PeekMessage$:ModemSP$n(pnulpnvpnul)ul
 000eee20     72 W?$dt:ModemSP$n()_
-000eee94     1f fn_000eee94_
-000eeeb4      5 fn_000eeeb4_
+000eee94     1f __wcpp_2_dtor_array_store__
+000eeeb4      5 W?$dan(pnv)v
 000eeeb9    163 _stol_
 000ef01c      a strtoul_
 000ef026      8 strtol_

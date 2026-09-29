@@ -37,7 +37,6 @@ unsigned short FP_SEG(const volatile void __far *);
 #define _DGroup() FP_SEG((void __far *)&__nheapbeg)
 
 void *_nmalloc(size_t amt);
-#pragma aux _nmalloc "W?init$n()v"
 
 // FUNCTION: 0x000cf25f
 void *_nmalloc(size_t amt)

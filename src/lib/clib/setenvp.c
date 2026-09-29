@@ -8,10 +8,8 @@ extern unsigned short _Envseg;
 void *memset(void *s, int c, size_t n);
 void *_nmalloc(size_t size);
 /* config/functions.txt names _nmalloc after a C++ runtime function. */
-#pragma aux _nmalloc "W?init$n()v"
 void _nfree(void *p);
 /* config/functions.txt names _nfree after a C++ runtime function. */
-#pragma aux _nfree "__wcpp_2_mod_register__"
 
 void __setenvp(void);
 #pragma aux __setenvp "*"

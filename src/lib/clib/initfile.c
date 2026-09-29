@@ -9,7 +9,7 @@ extern char D_001271e4[];
 
 void *malloc(size_t size);
 /* config/functions.txt has malloc under a wrong demo name. */
-#pragma aux malloc "W?init$n()v"
+#pragma aux malloc "_nmalloc_"
 void __fatal_runtime_error(char *msg, unsigned retcode);
 
 /* __InitFiles; config/functions.txt gives its name to the clock code before it. */

@@ -7,7 +7,7 @@
 #define BUFSIZ  4096
 
 void *malloc(size_t size);
-#pragma aux malloc "W?init$n()v"
+#pragma aux malloc "_nmalloc_"
 
 void __chktty(FILE *fp);
 

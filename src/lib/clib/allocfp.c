@@ -7,9 +7,8 @@
 extern __stream_link *__ClosedStreams;
 
 void *malloc(size_t size);
-#pragma aux malloc "W?init$n()v"
+#pragma aux malloc "_nmalloc_"
 void _nfree(void *ptr);
-#pragma aux _nfree "__wcpp_2_mod_register__"
 void *memset(void *s, int c, size_t n);
 
 // FUNCTION: 0xf48ce
