@@ -162,6 +162,43 @@ def nonmatching_note(text, marker):
     return note.split("NONMATCHING:", 1)[1].strip() if "NONMATCHING:" in note else ""
 
 
+def with_layout(body, addr, name):
+    """Add to a generated function what the target's section holds around
+    it: jump tables placed ahead of its entry, and in a module built into
+    one segment, the padding up to the next function."""
+    # Imported here: split imports cc, which imports this module.
+    from lefile import LEFile
+    from project import EXE, Project
+    from split import shared_segment
+    from x86scan import leading_table
+
+    proj, le = Project(), LEFile(EXE)
+    fn = proj.by_name[name]
+    unit = next(u for u in proj.units if fn in u.functions)
+    table = leading_table(le, fn.addr, fn.end)
+    if table is not None:
+        lines, a = [f".L{table:08x}:"], table
+        while a < fn.addr:
+            fx = le.fixups.get(a)
+            if fx is None:  # filler between the tables and the entry
+                lines.append(f"    .byte {le.read(a, 1)[0]:#04x}")
+                a += 1
+                continue
+            lines.append(f'    .long "{name}"+{fx.target - fn.addr:#x}')
+            a += 4
+        body = re.sub(r'^(\.type "[^"]*",@function)$', "\n".join(lines) + r"\n\1", body, count=1, flags=re.M)
+        body = re.sub(r"\b_C_([0-9a-f]{8})\b",
+                      lambda m: f".L{table:08x}+{int(m.group(1), 16) - table:#x}"
+                      if table <= int(m.group(1), 16) < fn.addr else m.group(0), body)
+    if shared_segment(proj, unit):
+        following = [f.addr for f in proj.functions if f.addr > fn.addr]
+        pad = le.read(fn.end, min(following) - fn.end) if following else b""
+        if pad:
+            line = "    .byte " + ", ".join(f"{b:#04x}" for b in pad)
+            body = body.replace(f'.size "{name}"', line + f'\n.size "{name}"', 1)
+    return body
+
+
 def add(source, addr):
     """Generate the stand-in for one function and list it in the docs."""
     source = os.path.relpath(os.path.abspath(source), ROOT)
@@ -177,6 +214,7 @@ def add(source, addr):
         subprocess.run([sys.executable, os.path.join(ROOT, "tools", "asm2src.py"), out, hex(addr)], check=True, cwd=ROOT)
         generated = open(out).read()
     body = re.sub(r"^// FUNCTION:\s*(0x[0-9a-fA-F]+)", r"// STANDIN: \1", generated.split("\n", 1)[1], flags=re.M)
+    body = with_layout(body, addr, name)
 
     path = os.path.join(ROOT, companion(source))
     if os.path.exists(path):

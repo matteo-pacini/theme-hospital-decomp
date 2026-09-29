@@ -340,6 +340,37 @@ predates the tool and uses a separate file instead.
   `__ExpandDGROUP_` (0xec158), `src/lib/clib/grownear.standin.s`: Watcom's
   own code (identical in the 10.5 and 10.6 `CLIB3R`); the module as a whole
   is in neither library (see Watcom library modules).
+- `AIL_fgets_` (0xded50), `src/lib/ail/ail.standin.s`
+- `rbplay_` (0xe6650), `src/lib/ail/ailcd.standin.s`
+- `_AIL_API_redbook_id` (0xe6a10), `src/lib/ail/ailcd.standin.s`
+- `fn_000efba0_` (0xefba0), `src/lib/ail/ailsr.standin.s`
+- `AIL_GETENV` (0xefbc0), `src/lib/ail/ailsr.standin.s`
+- `_AIL_startup_reg` (0xefcc0), `src/lib/ail/ailsr.standin.s`
+- `fn_000dff00_` (0xdff00), `src/lib/ail/ailss.standin.s`: register allocation around the VDI call (dig in edx, not eax)
+- `_SS_build_amplitude_tables` (0xdfbe0), `src/lib/ail/ailss.standin.s`
+- `_SS_construct_DIG_driver` (0xe06f0), `src/lib/ail/ailss.standin.s`
+- `_SS_configure_buffers` (0xe0120), `src/lib/ail/ailss.standin.s`
+- `_AIL_API_set_sequence_tempo` (0xe4900), `src/lib/ail/ailxmidi.standin.s`
+- `_AIL_API_set_sequence_volume` (0xe4970), `src/lib/ail/ailxmidi.standin.s`
+- `_AIL_API_branch_index` (0xe4d50), `src/lib/ail/ailxmidi.standin.s`
+- `_AIL_API_send_channel_voice_message` (0xe5200), `src/lib/ail/ailxmidi.standin.s`
+- `_AIL_API_init_sequence` (0xe43b0), `src/lib/ail/ailxmidi.standin.s`
+- `_XMI_send_channel_voice_message` (0xe26f0), `src/lib/ail/ailxmidi.standin.s`
+- `_XMI_construct_MDI_driver` (0xe37f0), `src/lib/ail/ailxmidi.standin.s`
+- `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`
+- `_FtoS_` (0xfc294), `src/lib/clib/ftos.standin.s`: the overflow test computes p - buf in edx and the digit count in eax, the other way round
+- `GetFirstTrack_` (0xea4f0), `src/lib/smk/smackinp.standin.s`
+- `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`
+- `SMACKSOUNDONOFF` (0xe9a20), `src/lib/smk/smackinp.standin.s`
+- `gotoframe_` (0xeab30), `src/lib/smk/smackinp.standin.s`
+- `fn_000e85b0_` (0xe85b0), `src/lib/smk/smackinp.standin.s`
+- `fn_000e8190_` (0xe8190), `src/lib/smk/smackinp.standin.s`
+- `blockread_` (0xeae00), `src/lib/smk/smackinp.standin.s`
+- `setuptheframe_` (0xea7a0), `src/lib/smk/smackinp.standin.s`
+- `soundnext_` (0xe94c0), `src/lib/smk/smackinp.standin.s`
+- `fn_000e8ab0_` (0xe8ab0), `src/lib/smk/smackinp.standin.s`
+- `SMACKOPEN` (0xe9c80), `src/lib/smk/smackinp.standin.s`
+- `fn_000e7910_` (0xe7910), `src/lib/smk/smkmss.standin.s`
 
 ## Watcom library modules
 
