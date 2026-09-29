@@ -40,7 +40,6 @@ char *parse_offset(char *tz, char *name, long *offset);
 char *parse_rule(char *tz, struct tm *timeptr);
 void __parse_tz(char *tz);
 
-// NONMATCHING: ours masks the setne result with 0xff before the bitfield insert
 // FUNCTION: 0xf38e0
 int __CacheOSTZ(int flag)
 {

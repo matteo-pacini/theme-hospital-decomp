@@ -1,5 +1,6 @@
 # First matching glob (relative to the repo root) decides how a source file
-# is compiled: glob, compiler, flags. -zq, -hd, -zm, -fr and -i=include are
+# is compiled: glob, compiler (optionally @version: 10.6 by default, or
+# 10.0a), flags. -zq, -hd, -zm, -fr and -i=include are
 # always added; the pseudo-flag -zm- drops -zm for a module built with all its
 # functions in one segment (tools/split.py then keeps them in one section).
 #
@@ -47,10 +48,10 @@ src/lib/clib/dosret.c    wcc386  -s -ox -ms -r -zm-
 src/lib/clib/ltoa.c      wcc386  -s -ox -ms -r -zm-
 src/lib/clib/itoa.c      wcc386  -s -ox -ms -r -zm-
 # prtf: far_other_strlen returns through far_strlen's epilogue.
-src/lib/clib/prtf.c      wcc386  -s -ox -ms -r -zm-
+src/lib/clib/prtf.c      wcc386@10.0a  -s -ox -ms -r -zm-
 # tzset tail-calls into its neighbours; __parse_tz is split around the
 # parsing helpers.
-src/lib/clib/tzset.c     wcc386  -s -ox -ms -r -zm-
+src/lib/clib/tzset.c     wcc386@10.0a  -s -ox -ms -r -zm-
 # grownear: __FreeDPMIBlocks and __CreateNewNHeap return through
 # RationalAlloc's epilogue.
 src/lib/clib/grownear.c  wcc386  -s -ox -ms -r -zm-
@@ -65,6 +66,10 @@ src/lib/clib/strtod.c  wcc386  -s -ox -ms -r -of
 src/lib/clib/math2err.c wcc386  -s -ox -ms -r -of
 # ftos: DoFFormat returns through DoEFormat's epilogue (built without -zm).
 src/lib/clib/ftos.c    wcc386  -s -ox -ms -r -of -zm-
+# The printf and stdio modules come from Watcom 10.0a: 10.6 keeps a dead
+# byte store in them that the original compiler removed.
+src/lib/clib/fprtf.c    wcc386@10.0a  -s -ox -ms -r
+src/lib/clib/fputs.c    wcc386@10.0a  -s -ox -ms -r
 src/lib/clib/*.c     wcc386  -s -ox -ms -r
 # stabdtor: __wcpp_2_destruct_all_ and __wcpp_2_destruct_after_all_ fall
 # through into the function after them.

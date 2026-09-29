@@ -82,12 +82,7 @@ class Scorer:
     def __init__(self, source, fn, unit):
         self.source, self.fn = source, fn
         self.target = target_object(unit)
-        self.compiler, flags = cc.compiler_for(source)
-        self.common = list(cc.COMMON_FLAGS) + ["-i=."]
-        if "-zm-" in flags:
-            flags = [f for f in flags if f != "-zm-"]
-            self.common.remove("-zm")
-        self.flags = flags
+        self.command = cc.command(*cc.compiler_for(source)) + ["-i=."]
 
     def __call__(self, job):
         n, text = job
@@ -98,8 +93,7 @@ class Scorer:
             open(os.path.join(ROOT, src), "w", encoding="latin-1").write(rebase_includes(text, self.source))
             omf, elf = os.path.join(d, "v.obj"), os.path.join(d, "v.o")
             r = subprocess.run(
-                ["wibo", f"{os.environ['WATCOM_10_6']}/binnt/{self.compiler}.exe", *self.common, *self.flags,
-                 f"-fo={cc.dos_path(omf)}", cc.dos_path(src)],
+                [*self.command, f"-fo={cc.dos_path(omf)}", cc.dos_path(src)],
                 capture_output=True, text=True, cwd=ROOT,
             )
             if r.returncode:

@@ -20,8 +20,6 @@ void file_putc(SPECS *specs, int op_char)
 }
 
 // FUNCTION: 0xeb23a
-// NONMATCHING: the _IONBF/_IOFBF updates store the flag byte twice instead of
-// once (10.6 keeps the dead store)
 int __fprtf(FILE *fp, const char *format, va_list arg)
 {
     int not_buffered;

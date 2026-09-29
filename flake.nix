@@ -64,6 +64,19 @@
           sourceRoot = ".";
           installPhase = "mkdir -p $out && cp -r binnt binw h $out/";
         };
+
+        # Watcom C/C++ 10.0a, which built part of the C runtime (see
+        # docs/MATCHING.md); as packaged by decomp.me.
+        watcom-10_0a = final.stdenvNoCC.mkDerivation {
+          pname = "watcom";
+          version = "10.0a";
+          src = final.fetchurl {
+            url = "https://github.com/decompme/compilers/releases/download/compilers/wcc10.0a.tar.gz";
+            hash = "sha256-kgqWdNGxDyJ65lFxwYchKwbX/DiyYzE5ImFcT16bJKY=";
+          };
+          sourceRoot = ".";
+          installPhase = "mkdir -p $out && cp -r binnt binb h $out/";
+        };
       };
 
       pkgs = import nixpkgs {
@@ -81,7 +94,7 @@
       overlays.default = overlay;
 
       packages.${system} = {
-        inherit (pkgs) wibo objdiff-cli watcom-10_6 owdemangle;
+        inherit (pkgs) wibo objdiff-cli watcom-10_6 watcom-10_0a owdemangle;
       };
 
       devShells.${system}.default = pkgs.mkShell {
@@ -98,6 +111,7 @@
           (python3.withPackages (ps: [ ps.capstone ]))
         ];
         WATCOM_10_6 = pkgs.watcom-10_6;
+        WATCOM_10_0A = pkgs.watcom-10_0a;
       };
     };
 }

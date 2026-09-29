@@ -212,7 +212,6 @@ const char *getprintspecs(const char *ctl, va_list *pargs, SPECS *specs)
 }
 
 // FUNCTION: 0xcf9db
-// NONMATCHING: the original stores the flags byte once for '+', 10.6 twice
 const char *evalflags(const char *ctl, SPECS *specs)
 {
     specs->_flags = 0;

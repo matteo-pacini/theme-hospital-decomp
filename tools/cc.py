@@ -39,25 +39,42 @@ def dos_path(path):
     return path.replace("/", "\\")
 
 
-def main(source, output, *extra):
-    watcom = os.environ["WATCOM_10_6"]
-    base = os.path.splitext(output)[0]
-    omf = base + ".obj"
-    compiler, flags = compiler_for(os.path.relpath(os.path.abspath(source), ROOT))
-    common = COMMON_FLAGS
+# Compiler versions a config/cflags.txt entry can name as `compiler@version`,
+# each with the environment variable the flake sets to its installation.
+VERSIONS = {"10.6": "WATCOM_10_6", "10.0a": "WATCOM_10_0A"}
+
+
+def command(compiler, flags):
+    """Command line up to the output and source arguments for a
+    config/cflags.txt entry's compiler (`wpp386`, `wcc386@10.0a`, ...)."""
+    name, _, version = compiler.partition("@")
+    watcom = os.environ[VERSIONS[version or "10.6"]]
+    common = list(COMMON_FLAGS)
     if "-zm-" in flags:
         # Not a compiler option: the module was built with all its functions
         # in one segment (see tools/split.py).
         flags = [f for f in flags if f != "-zm-"]
-        common = [f for f in common if f != "-zm"]
+        common.remove("-zm")
+    if version == "10.0a":
+        # 10.0a has no -fr; its error files are removed after the compile.
+        common.remove("-fr")
+    return ["wibo", f"{watcom}/binnt/{name}.exe", *common, *flags]
+
+
+def main(source, output, *extra):
+    base = os.path.splitext(output)[0]
+    omf = base + ".obj"
+    compiler, flags = compiler_for(os.path.relpath(os.path.abspath(source), ROOT))
     if compiler == "as":
         # Modules that were hand-written assembly: GNU as emits ELF directly.
         subprocess.run(["as", "--32", *flags, "-o", output, source], check=True)
         return
-    subprocess.run(
-        ["wibo", f"{watcom}/binnt/{compiler}.exe", *common, *flags, *extra, f"-fo={dos_path(omf)}", dos_path(source)],
-        check=True,
-    )
+    try:
+        subprocess.run([*command(compiler, flags), *extra, f"-fo={dos_path(omf)}", dos_path(source)], check=True)
+    finally:
+        err = os.path.splitext(os.path.basename(source))[0] + ".err"
+        if "@" in compiler and os.path.exists(err):
+            os.remove(err)
     omf2elf.main(omf, output)
 
 
