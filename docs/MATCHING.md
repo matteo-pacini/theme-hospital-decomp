@@ -299,17 +299,15 @@ predate the tool and use a separate file instead.
 
 - `_Scale10V` (0xfcad8), `src/lib/clib/scale10v.s`: FDIV checks without
   `pushfd`/`popfd` (C in `scale.c`).
-- `LbSpriteDrawOneColour` (0xcb2f0), `src/lib/bf1/gspr_col.s`: not yet
-  decompiled (the demo map had taken it for the `hvline.asm` routine).
 
 ## Watcom library modules
 
 Most of the runtime is Watcom 10.6's own library code (`CLIB3R.LIB`,
-`MATH387R.LIB`, `PLIB3R.LIB` from the 10.6 CD, extracted under
-`orig/watcom/cd10.6/`; 10.0a's are under `cd10.0a/`). A unit whose C does
-not reproduce its module is built from the library instead: its
-`config/cflags.txt` entry names compiler `lib` (`lib@10.0a` for the 10.0a
-CD), the library under `LIB386` and the module, and `tools/cc.py` takes that
+`MATH387R.LIB`, `PLIB3R.LIB` from the 10.6 CD's `LIB386`, which the flake
+downloads from WinWorld's archive of the CD and provides as
+`$WATCOM_LIBS_10_6`). A unit whose C does not reproduce its module is built
+from the library instead: its `config/cflags.txt` entry names compiler
+`lib`, the library under `LIB386` and the module, and `tools/cc.py` takes that
 module's object (and relocates its calls to its own functions, which the
 library resolved). The C stays as documentation. They count as matched, not
 as decompiled; the list is the `lib` block at the top of `config/cflags.txt`.

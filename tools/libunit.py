@@ -20,9 +20,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 import omf2elf  # noqa: E402
-from cc import LIBRARIES  # noqa: E402
+from cc import library_path  # noqa: E402
 from lefile import LEFile  # noqa: E402
-from project import EXE, ROOT, Project  # noqa: E402
+from project import EXE, Project  # noqa: E402
 
 
 def check(source, library, module, version="10.6"):
@@ -30,7 +30,7 @@ def check(source, library, module, version="10.6"):
     whether its code matches."""
     proj, le = Project(), LEFile(EXE)
     unit = next(u for u in proj.units if u.source == source)
-    path = os.path.join(ROOT, LIBRARIES[version], library)
+    path = library_path(version, library)
     sections, symbols, _, _ = omf2elf.convert(omf2elf.library_module(path, module))
     (text,) = [s for s in sections if s.code and s.data]
     # Align on a function the project already names as the library does,

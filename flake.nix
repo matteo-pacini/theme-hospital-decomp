@@ -77,6 +77,25 @@
           sourceRoot = ".";
           installPhase = "mkdir -p $out && cp -r binnt binb h $out/";
         };
+
+        # The 32-bit runtime libraries from the Watcom C/C++ 10.6 CD (as
+        # archived by WinWorld), which several runtime units are built from
+        # (see docs/MATCHING.md). Only LIB386 is kept from the 665 MB image.
+        watcom-10_6-libs = final.stdenvNoCC.mkDerivation {
+          pname = "watcom-libs";
+          version = "10.6";
+          src = final.fetchurl {
+            name = "watcom-cpp-10.6.7z";
+            url = "https://dl.winworldpc.com/Watcom%20CPP%2010.6.7z";
+            hash = "sha256-dDCcz1CPAVxGyf9HoWkVwVWjsTEDc1BEjsCIzkq0R0I=";
+          };
+          nativeBuildInputs = [ final.p7zip ];
+          unpackPhase = ''
+            7z x $src >/dev/null
+            7z x "Watcom CPP 10.6/watcom10.6.iso" -oiso LIB386 >/dev/null
+          '';
+          installPhase = "mkdir -p $out && cp -r iso/LIB386/. $out/";
+        };
       };
 
       pkgs = import nixpkgs {
@@ -94,7 +113,7 @@
       overlays.default = overlay;
 
       packages.${system} = {
-        inherit (pkgs) wibo objdiff-cli watcom-10_6 watcom-10_0a owdemangle;
+        inherit (pkgs) wibo objdiff-cli watcom-10_6 watcom-10_0a watcom-10_6-libs owdemangle;
       };
 
       devShells.${system}.default = pkgs.mkShell {
@@ -113,6 +132,7 @@
         ];
         WATCOM_10_6 = pkgs.watcom-10_6;
         WATCOM_10_0A = pkgs.watcom-10_0a;
+        WATCOM_LIBS_10_6 = pkgs.watcom-10_6-libs;
       };
     };
 }

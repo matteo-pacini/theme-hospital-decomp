@@ -45,9 +45,15 @@ def dos_path(path):
 # each with the environment variable the flake sets to its installation.
 VERSIONS = {"10.6": "WATCOM_10_6", "10.0a": "WATCOM_10_0A"}
 
-# The runtime libraries of each version's CD (not redistributable, so under
-# orig/), for config/cflags.txt entries built from a library module.
-LIBRARIES = {"10.6": "orig/watcom/cd10.6/iso/LIB386", "10.0a": "orig/watcom/cd10.0a/iso/WATCOM/LIB386"}
+# Versions whose CD runtime libraries (its LIB386 directory) the flake
+# provides, for config/cflags.txt entries built from a library module
+# (`lib@version`), with the environment variable that locates them.
+LIBRARIES = {"10.6": "WATCOM_LIBS_10_6"}
+
+
+def library_path(version, library):
+    """Path of a library (e.g. `DOS/CLIB3R.LIB`) of a version's CD."""
+    return os.path.join(os.environ[LIBRARIES[version or "10.6"]], library)
 
 
 def command(compiler, flags):
@@ -95,7 +101,7 @@ def main(source, output, *extra):
         # A module linked from Watcom's runtime library: its object is the
         # library's, and the source only documents it.
         library, module = flags
-        path = os.path.join(ROOT, LIBRARIES[version or "10.6"], library)
+        path = library_path(version, library)
         obj = omf2elf.library_module(path, module)
         # The module as the library has it, for tools/link.py.
         open(omf, "wb").write(obj)
