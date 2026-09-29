@@ -381,6 +381,42 @@ predates the tool and uses a separate file instead.
 - `fn_000e8ab0_` (0xe8ab0), `src/lib/smk/smackinp.standin.s`
 - `SMACKOPEN` (0xe9c80), `src/lib/smk/smackinp.standin.s`
 - `fn_000e7910_` (0xe7910), `src/lib/smk/smkmss.standin.s`
+- `W?RecPkt$:IPXHandler$n(pn$IPXPacket$$pn$__3ljac5NETSOCKET$$pn$3$)l` (0xd48f0), `src/lib/bf2/dosipx.standin.s`
+- `W?SetupVector$:IPXHandler$n()l` (0xd422c), `src/lib/bf2/dosipx.standin.s`
+- `W?Send$:IPXHandler$n(pn$__3ljac5NETSOCKET$$pn$2$pnucl)v` (0xd4634), `src/lib/bf2/dosipx.standin.s`
+- `W?Init$:IPXHandler$n()l` (0xd35a0), `src/lib/bf2/dosipx.standin.s`
+- `W?$dt:SerialHandler$n()_` (0xf534c), `src/lib/bf2/dosser.standin.s`: the entry also covers SerialHandler::Init's body, where the size _D_001100fe - _D_00110068 is computed in other registers
+- `W?ReadByte$:SerialHandler$n(l)l` (0xf5714), `src/lib/bf2/dosser.standin.s`
+- `W?ReadBytes$:CommHandler$n(pnvul)ul` (0xf63f4), `src/lib/bf2/dosser.standin.s`
+- `W?HangUpModem$:CommHandler$n()l` (0xf6940), `src/lib/bf2/dosser.standin.s`
+- `W?GetModemResponse$:CommHandler$n(l)l` (0xf70f8), `src/lib/bf2/dosser.standin.s`
+- `W?CheckIfPlayerWantingToJoinIsInSession$:IPXServiceProvider$n(pn$__35ct5sCLIENTJOINPACKET$$pn$__3ljac5NETSOCKET$$)ul` (0xd8c58), `src/lib/bf2/ipxsp.standin.s`
+- `W?SendPlayerInfo$:IPXServiceProvider$n(pn$__5303ctCLIENTINFOPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd82f4), `src/lib/bf2/ipxsp.standin.s`
+- `W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v` (0xdc440), `src/lib/bf2/ipxsp.standin.s`
+- `W?SendMessageToPlayerId$:IPXServiceProvider$n(ulpnvul)$TbError$$` (0xdb6d4), `src/lib/bf2/ipxsp.standin.s`
+- `W?BroadcastSystemMessage$:IPXServiceProvider$n(pn$__1p5pi1IPXSYSTEMMESSAGE$$)$TbError$$` (0xd9480), `src/lib/bf2/ipxsp.standin.s`
+- `W?EnumerateAndAddPlayers$:IPXServiceProvider$n(pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd8e34), `src/lib/bf2/ipxsp.standin.s`
+- `W?AddPlayerToSession$:IPXServiceProvider$n(pn$__35ct5sCLIENTJOINPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd852c), `src/lib/bf2/ipxsp.standin.s`
+- `W?Enumerate$:IPXServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd6668), `src/lib/bf2/ipxsp.standin.s`
+- `W?ProcessDataMessage$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)ul` (0xdbb58), `src/lib/bf2/ipxsp.standin.s`
+- `W?CheckForSystemMessages$:IPXServiceProvider$n()ul` (0xdac14), `src/lib/bf2/ipxsp.standin.s`
+- `W?ResponsedToSystemMessage$:IPXServiceProvider$n(pn$__1p5pi1IPXSYSTEMMESSAGE$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xda35c), `src/lib/bf2/ipxsp.standin.s`
+- `W?RemoveAbortedPlayer$:IPXServiceProvider$n()$TbError$$` (0xd9a98), `src/lib/bf2/ipxsp.standin.s`
+- `W?Enumerate$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd6e2c), `src/lib/bf2/ipxsp.standin.s`
+- `W?Update$:IPXServiceProvider$n()$TbError$$` (0xd7768), `src/lib/bf2/ipxsp.standin.s`
+- `W?Start$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xd59ec), `src/lib/bf2/ipxsp.standin.s`
+- `W?Start$:ModemSP$n(pnapnaulpnv)$TbError$$` (0xee77c), `src/lib/bf2/modemsp.standin.s`
+- `W?Start$:ModemSP$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xeea58), `src/lib/bf2/modemsp.standin.s`
+- `W?CompleteTwoPlayerExchange$n(pnv)$TbError$$` (0xd2e40), `src/lib/bf2/netint2.standin.s`
+- `fn_000d309c_` (0xd309c), `src/lib/bf2/netint2.standin.s`: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
+- `W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$` (0xed6c8), `src/lib/bf2/serialsp.standin.s`
+- `W?PrivateReceive$:SerialSP$n(pnvpnul$$TE$$)ul` (0xedf24), `src/lib/bf2/serialsp.standin.s`
+- `W?ProcessAvailableMsg$:SerialSP$n(pnvpnulul)ul` (0xee050), `src/lib/bf2/serialsp.standin.s`
+- `W?InputByte$:Parser$n(uc)$TbError$$` (0xee380), `src/lib/bf2/serialsp.standin.s`
+- `W?EnumeratePlayersForSessionRunning$:ServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd2af8), `src/lib/bf2/sp.standin.s`
+- `W?BroadcastSystemMessage$:ServiceProvider$n(pnuc)$TbError$$` (0xd29e8), `src/lib/bf2/sp.standin.s`
+- `W?CheckForDeletedHost$:ServiceProvider$n(pnuc)$TbError$$` (0xd1cc8), `src/lib/bf2/sp.standin.s`
+- `W?Receive$:ServiceProvider$n(ul)$TbError$$` (0xd1e24), `src/lib/bf2/sp.standin.s`
 
 ## Watcom library modules
 

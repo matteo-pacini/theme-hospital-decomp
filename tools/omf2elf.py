@@ -77,6 +77,7 @@ class Section:
         self.relocs = []  # (offset, type, target), target = ("sec", Section) | ("sym", name)
         self.nobits = cls in ("BSS", "STACK")
         self.code = cls.endswith("CODE")
+        self.comdat = False
 
     def write(self, off, data):
         if len(self.data) < off + len(data):
@@ -184,6 +185,7 @@ def convert(obj):
                     sec = Section("_TEXT", "CODE", ALIGN.get(align, 1))
                 else:
                     sec = Section("_DATA", "DATA", ALIGN.get(align, 1))
+                sec.comdat = True
                 comdats[name] = sec
                 sections.append(sec)
                 symbols[name] = (sec, 0, bool(flags & 4))
@@ -273,9 +275,9 @@ def write_elf(sections, symbols, externs, weak, path):
     def sized(name):
         sec, off, _ = symbols[name]
         ends = [o for n, (s, o, _) in symbols.items() if s is sec and o > off]
-        if not ends and sec.code:
-            # Alignment padding after a section's last function (as in some
-            # COMDATs) is not part of it, as the executable's sizes have it.
+        if not ends and sec.comdat and sec.code:
+            # Alignment padding at the end of a function's COMDAT is not part
+            # of it, as the executable's sizes have it.
             for pad in PADDING:
                 end = len(sec.data) - len(pad)
                 if sec.data.endswith(pad) and (sec.data[end - 1] == 0xC3 or sec.data[end - 3] == 0xC2):
