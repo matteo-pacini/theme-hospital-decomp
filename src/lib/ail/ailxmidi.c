@@ -112,6 +112,22 @@ void __syscall XMI_update_volume(HSEQUENCE S);
 #pragma aux (__syscall) XMI_update_volume "_XMI_update_volume";
 void __cdecl XMI_destroy_MDI_driver(HMDIDRIVER mdi);
 
+/* Linear address of real-mode seg:off, expanded inline. */
+void *real_to_linear(U32 off, U32 seg);
+#pragma aux real_to_linear = \
+    "shl eax,4" \
+    "add eax,edx" \
+    parm [edx] [eax] value [eax];
+
+/* abs() expanded inline; operand and result fixed to eax. */
+int abs(int x);
+#pragma aux abs = \
+    "test eax,eax" \
+    "jge L1" \
+    "neg eax" \
+    "L1:" \
+    parm [eax] value [eax];
+
 // FUNCTION: 0x000e1ed0
 void AILXMIDI_start(void)
 {
@@ -887,8 +903,6 @@ void __cdecl XMI_destroy_MDI_driver(HMDIDRIVER mdi)
 }
 
 // FUNCTION: 0x000e37f0
-// NONMATCHING: the DDT and DST segment:offset sums are built in edx instead of
-// eax (register choice)
 HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
 {
     IO_PARMS use;
@@ -915,8 +929,8 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         return NULL;
     }
     AIL_call_driver(mdi->drvr, DRV_GET_INFO, NULL, &out);
-    mdi->DDT = (MDI_DDT *)((U32)out.AX + ((U32)out.DX << 4));
-    mdi->DST = (MDI_DST *)((U32)out.BX + ((U32)out.CX << 4));
+    mdi->DDT = (MDI_DDT *)real_to_linear((U16)out.AX, (U16)out.DX);
+    mdi->DST = (MDI_DST *)real_to_linear((U16)out.BX, (U16)out.CX);
     env = (char *)(((mdi->DDT->library_environment >> 16) << 4)
                    + (mdi->DDT->library_environment & 0xffff));
     if (env != NULL && *env) {
@@ -1445,7 +1459,6 @@ void __cdecl AIL_API_set_sequence_loop_count(HSEQUENCE S, S32 loop_count)
 }
 
 // FUNCTION: 0x000e4900
-// NONMATCHING: the difference is computed in eax and copied to ecx
 void __cdecl AIL_API_set_sequence_tempo(HSEQUENCE S, S32 tempo, S32 milliseconds)
 {
     S32 diff;
@@ -1460,10 +1473,7 @@ void __cdecl AIL_API_set_sequence_tempo(HSEQUENCE S, S32 tempo, S32 milliseconds
             S->tempo_percent = S->tempo_target;
         } else {
             milliseconds *= 1000;
-            diff = S->tempo_percent - S->tempo_target;
-            if (diff < 0) {
-                diff = -diff;
-            }
+            diff = abs(S->tempo_percent - S->tempo_target);
             S->tempo_accum = 0;
             S->tempo_period = milliseconds / diff;
         }
@@ -1472,7 +1482,6 @@ void __cdecl AIL_API_set_sequence_tempo(HSEQUENCE S, S32 tempo, S32 milliseconds
 }
 
 // FUNCTION: 0x000e4970
-// NONMATCHING: the difference is computed in eax and copied to ecx
 void __cdecl AIL_API_set_sequence_volume(HSEQUENCE S, S32 volume, S32 milliseconds)
 {
     S32 diff;
@@ -1490,10 +1499,7 @@ void __cdecl AIL_API_set_sequence_volume(HSEQUENCE S, S32 volume, S32 millisecon
         S->volume = S->volume_target;
     } else {
         milliseconds *= 1000;
-        diff = S->volume - S->volume_target;
-        if (diff < 0) {
-            diff = -diff;
-        }
+        diff = abs(S->volume - S->volume_target);
         S->volume_accum = 0;
         S->volume_period = milliseconds / diff;
     }

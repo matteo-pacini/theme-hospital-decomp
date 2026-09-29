@@ -135,12 +135,12 @@ typedef struct _AIL_DRIVER {
 } AIL_DRIVER;
 
 typedef struct _VDI_CALL {
-    U16 AX;
-    U16 BX;
-    U16 CX;
-    U16 DX;
-    U16 SI;
-    U16 DI;
+    S16 AX;
+    S16 BX;
+    S16 CX;
+    S16 DX;
+    S16 SI;
+    S16 DI;
 } VDI_CALL;
 
 #define DIG_DRIVER 0

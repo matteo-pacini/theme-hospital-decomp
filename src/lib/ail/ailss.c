@@ -221,7 +221,6 @@ void __cdecl SS_build_amplitude_tables(HSAMPLE S)
     }
 }
 
-// NONMATCHING: register allocation around the VDI call (dig in edx, not eax)
 // FUNCTION: 0xdff00
 void fn_000dff00(U32 user)
 {
@@ -518,8 +517,8 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         return NULL;
     }
     AIL_call_driver(dig->drvr, DRV_GET_INFO, NULL, &out);
-    dig->DDT = (DIG_DDT *)(((U32)out.DX << 4) + (U32)out.AX);
-    dig->DST = (DIG_DST *)(((U32)out.CX << 4) + (U32)out.BX);
+    dig->DDT = (DIG_DDT *)(((U32)(U16)out.DX << 4) + (U32)(U16)out.AX);
+    dig->DST = (DIG_DST *)(((U32)(U16)out.CX << 4) + (U32)(U16)out.BX);
     dig->buffer_flag = &dig->DST->active_buffer;
     dig->last_buffer = -1;
     dig->master_volume = 127;

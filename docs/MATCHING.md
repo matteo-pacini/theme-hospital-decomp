@@ -348,9 +348,15 @@ Observed consequences:
   gives a loop whose exits go through `jmp` stubs.
 - Miles (`-s -oxat -4`, confirmed by a sweep of options, their order and
   10.0a): a value computed in eax and then copied to its home register
-  (`mov edx,eax; mov eax,edx` after a call in `ailsr`, the `abs` in
-  `set_sequence_tempo`/`_volume`, `branch_index`) is not reproduced by
-  any source form tried.
+  often comes from an inline `#pragma aux` helper with `value [eax]`: `abs`
+  is `"test eax,eax" "jge L1" "neg eax" "L1:" parm [eax] value [eax]`
+  (not the `abs` intrinsic, which gives cdq/xor/sub), and seg:off to linear
+  is `"shl eax,4" "add eax,edx" parm [edx] [eax] value [eax]` (the parm
+  order sets the order of the zero-extending `xor`s). The copy after a call
+  in `ailsr` (`mov edx,eax; mov eax,edx`) is still unexplained. A store's
+  destination field type (S16 versus U16) changes register allocation
+  though the bytes stored are the same; an address-taken stack parameter is
+  reloaded from its slot into a different register at each use.
 - (Solved) C++ `-oe=N` inlining follows OW's `procStaticFunction`
   (`plusplus/c/cgbkcgrf.c`, as its `#if 0` branch): a function is inlined
   when its opcode count is at most N, and a `static` function referenced
@@ -385,17 +391,13 @@ predates the tool and uses a separate file instead.
 - `fn_000efba0_` (0xefba0), `src/lib/ail/ailsr.standin.s`
 - `AIL_GETENV` (0xefbc0), `src/lib/ail/ailsr.standin.s`
 - `_AIL_startup_reg` (0xefcc0), `src/lib/ail/ailsr.standin.s`
-- `fn_000dff00_` (0xdff00), `src/lib/ail/ailss.standin.s`: register allocation around the VDI call (dig in edx, not eax)
 - `_SS_build_amplitude_tables` (0xdfbe0), `src/lib/ail/ailss.standin.s`
 - `_SS_construct_DIG_driver` (0xe06f0), `src/lib/ail/ailss.standin.s`
 - `_SS_configure_buffers` (0xe0120), `src/lib/ail/ailss.standin.s`
-- `_AIL_API_set_sequence_tempo` (0xe4900), `src/lib/ail/ailxmidi.standin.s`
-- `_AIL_API_set_sequence_volume` (0xe4970), `src/lib/ail/ailxmidi.standin.s`
 - `_AIL_API_branch_index` (0xe4d50), `src/lib/ail/ailxmidi.standin.s`
 - `_AIL_API_send_channel_voice_message` (0xe5200), `src/lib/ail/ailxmidi.standin.s`
 - `_AIL_API_init_sequence` (0xe43b0), `src/lib/ail/ailxmidi.standin.s`
 - `_XMI_send_channel_voice_message` (0xe26f0), `src/lib/ail/ailxmidi.standin.s`
-- `_XMI_construct_MDI_driver` (0xe37f0), `src/lib/ail/ailxmidi.standin.s`
 - `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`
 - `_FtoS_` (0xfc294), `src/lib/clib/ftos.standin.s`: the overflow test computes p - buf in edx and the digit count in eax, the other way round
 - `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`
