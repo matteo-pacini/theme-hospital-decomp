@@ -2,6 +2,8 @@
 
 config/functions.txt       every function: address, size, symbol
 config/symbols.txt         named data: address, symbol, size
+config/sections.txt        a module's own data segments (e.g. its exception
+                           tables in CONST2): source, segment, address, size
 config/relocs.txt          relocations the compiler names differently from
                            the symbol containing their target: site, symbol, offset
 config/demo_map.txt        demo-build name and source module per function
@@ -118,6 +120,11 @@ class Project:
 
         # e.g. `a[i - 1]` addresses the byte before `a`, which belongs to the
         # preceding variable, but the compiler relocates it against `a`.
+        self.unit_data = {}  # source -> [(segment, address, size)]
+        for line in _lines(os.path.join(cfg, "sections.txt")):
+            source, segment, addr, size = line.split()
+            self.unit_data.setdefault(source, []).append((segment, int(addr, 16), int(size, 16)))
+
         self.reloc_overrides = {}  # fixup site -> (symbol, offset)
         for line in _lines(os.path.join(cfg, "relocs.txt")):
             site, name, off = line.split()

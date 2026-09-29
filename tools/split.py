@@ -73,7 +73,41 @@ def sign_read_ref(proj, target, k):
     return f"{proj.data_ref(value)}-{k}"
 
 
-def emit_section(le, proj, fns, n, out, shared):
+def data_expr(proj, data_secs, addr):
+    """Expression for a data address, section-relative when it lies in one
+    of the unit's own data segments (as the compiler refers to them)."""
+    for label, start, size in data_secs:
+        if start <= addr < start + size:
+            return f"{label}+{addr - start:#x}"
+    return proj.data_ref(addr)
+
+
+def emit_data(le, proj, data_secs, segments, out):
+    """The unit's own data segments, with their relocated fields."""
+    for (label, start, size), (segment, _, _) in zip(data_secs, segments):
+        out.append(f'\n.section {segment},"aw",@progbits\n{label}:')
+        data = le.read(start, size)
+        a = start
+        while a < start + size:
+            fx = le.fixups.get(a)
+            if fx is not None and fx.kind == SRC_OFFSET32:
+                if le.code.contains(fx.target):
+                    f = proj.function_at(fx.target)
+                    if f is None:
+                        expr = f"_C_{fx.target:08x}"
+                    else:
+                        off = fx.target - f.addr
+                        expr = f"{q(f.name)}+{off:#x}" if off else q(f.name)
+                else:
+                    expr = data_expr(proj, data_secs, fx.target)
+                out.append(f".long {expr}")
+                a += 4
+                continue
+            out.append(f".byte {data[a - start]:#04x}")
+            a += 1
+
+
+def emit_section(le, proj, fns, n, out, shared, data_secs=()):
     """One _TEXT section holding `fns`: a single function (-zm), or every
     function of a module compiled into one segment (`shared`), laid out as
     in the executable."""
@@ -112,6 +146,8 @@ def emit_section(le, proj, fns, n, out, shared):
             expr = f"{q(name)}{off:+#x}" if off else q(name)
         elif le.code.contains(fx.target):
             expr = code_ref(proj, starts, label, (start, end), fx.target)
+        elif any(start <= fx.target < start + size for _, start, size in data_secs):
+            expr = data_expr(proj, data_secs, fx.target)
         elif site in sign_reads:
             expr = sign_read_ref(proj, fx.target, sign_reads[site])
         else:
@@ -163,11 +199,14 @@ def shared_segment(proj, unit):
 
 def write_unit(le, proj, unit, path):
     out = [".intel_syntax noprefix"]
+    segments = proj.unit_data.get(unit.source, [])
+    data_secs = [(f".Ldata{i}", addr, size) for i, (_, addr, size) in enumerate(segments)]
     if shared_segment(proj, unit):
-        emit_section(le, proj, unit.functions, 0, out, shared=True)
+        emit_section(le, proj, unit.functions, 0, out, shared=True, data_secs=data_secs)
     else:
         for n, fn in enumerate(unit.functions):
-            emit_section(le, proj, [fn], n, out, shared=False)
+            emit_section(le, proj, [fn], n, out, shared=False, data_secs=data_secs)
+    emit_data(le, proj, data_secs, segments, out)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     text = "\n".join(out) + "\n"
     # Leave unchanged files untouched so ninja only reassembles what moved.

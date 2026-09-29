@@ -3,7 +3,7 @@
 00128ad8 __IsTable 118
 00128bdc W?$Wts0tn$TbNetworkSessionNameEntry$$$nx[]uc 11
 00128bf0 W?$Wvf0lo2sm:ServiceProvider$$nx[]pn()v 60
-00128c94 __Bits 54
+00128c94 __Bits 8
 00128d00 W?$Wts0cn$SerialSP$$$nx[]uc 11
 00128d14 W?$Wts0an$Parser$$$nx[]uc 11
 00128d28 W?$Wvf0eo2sm:SerialSP$$nx[]pn()v 34

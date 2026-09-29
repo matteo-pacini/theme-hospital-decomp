@@ -1,0 +1,9 @@
+# source  segment  address  size
+# A module's own data segment (e.g. compiler-generated exception tables in
+# CONST2), emitted into its target object so references to it are
+# section-relative on both sides, as the compiler emits them.
+src/lib/bf2/serialsp.cpp CONST2 00128c9c 64
+src/lib/bf1/opt/netint.cpp CONST2 001289b4 10e
+src/lib/bf2/dosser.cpp CONST2 00128e28 10
+src/lib/bf2/dosser.cpp _DATA 00152310 c
+src/lib/bf2/modemsp.cpp CONST2 00128d5c 4e
