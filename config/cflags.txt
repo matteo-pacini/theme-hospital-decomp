@@ -26,6 +26,9 @@ src/lib/bf2/dosser.cpp  wpp386  -s -oneatx -xs -zm-
 src/lib/bf2/init_sou.cpp  wpp386  -s -oneatx -4 -xs
 # serialsp: inlines the small Parser accessors into ProcessAvailableMsg but not SendAck.
 src/lib/bf2/serialsp.cpp  wpp386  -s -oneatx -xs -oe=40
+# dosipx: RecPkt stays out of line in UpdateServer only below -oe=90 (the
+# network modules otherwise agree on plain -oe); ours is likely a few nodes smaller.
+src/lib/bf2/dosipx.cpp  wpp386  -s -oneatx -xs -oe=80
 src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
 # Runtime modules linked from Watcom's own libraries (compiler `lib`, or
 # `lib@10.5` for the 10.5 CD's; flags: library under LIB386, module), checked

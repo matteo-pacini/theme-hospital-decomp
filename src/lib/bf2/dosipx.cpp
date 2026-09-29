@@ -2,7 +2,10 @@
 
 u16 Swap16(u16 v)
 {
-    return (v >> 8) | (v << 8);
+    u16 r = v >> 8;
+
+    r |= v << 8;
+    return r;
 }
 
 // FUNCTION: 0xd3500
@@ -34,7 +37,8 @@ IPXHandler::~IPXHandler()
 }
 
 // FUNCTION: 0xd35a0
-// NONMATCHING: register allocation differs in the inlined DOS allocations
+// NONMATCHING: frame slots of the inlined DOS allocations' register blocks, and
+// register choice in them
 long IPXHandler::Init(void)
 {
     u8 addr[10];
@@ -282,7 +286,6 @@ long IPXHandler::GetAddress(u8 *addr)
 }
 
 // FUNCTION: 0xd44a4
-// NONMATCHING: byte swap of the socket number allocates registers differently
 long IPXHandler::OpenSocket(__3ljac5NETSOCKET *sock, u16 mode)
 {
     RMREGS rm;
@@ -363,7 +366,7 @@ void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
 
 // FUNCTION: 0xd48f0
 // NONMATCHING: register choice (the target keeps p in ebp, from in ebx and the
-// swapped length in edx)
+// swapped length in edx) and the flag bytes are loaded with movzx, not xor/mov
 long IPXHandler::RecPkt(IPXPacket *p, __3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *from)
 {
     long len;
@@ -463,14 +466,13 @@ void IPXHandler::FreeIPXPackets(u32 sel)
 }
 
 // FUNCTION: 0xd4c20
-// NONMATCHING: register allocation differs in the inlined OpenSocket
 long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
 {
-    SAPPacket pkt;
+    u16 i;
     __3ljac5NETSOCKET s;
     IPXPacket *pk;
-    u16 i;
     __3ljac5NETSOCKET dest;
+    SAPPacket pkt;
 
     if (!socket_open) {
         socket = 0x452;
@@ -492,21 +494,22 @@ long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
             }
         }
     }
-    if (!socket_open)
-        return 1;
-    memset(&dest, 0xff, sizeof(dest));
-    dest.socket = socket;
-    memset(&pkt, 0, sizeof(pkt));
-    pkt.op = 0x200;
-    pkt.type = type;
-    pkt.hops = 0x100;
-    pkt.socket = sock->socket;
-    memcpy(pkt.net, net, 4);
-    memcpy(pkt.node, node, 6);
-    strcpy(pkt.name, name);
-    Send(sock, &dest, (u8 *)&pkt, sizeof(pkt));
-    BatchProcess();
-    return 0;
+    if (socket_open) {
+        memset(&dest, 0xff, sizeof(dest));
+        dest.socket = socket;
+        memset(&pkt, 0, sizeof(pkt));
+        pkt.op = 0x200;
+        pkt.type = type;
+        pkt.hops = 0x100;
+        pkt.socket = sock->socket;
+        memcpy(pkt.net, net, 4);
+        memcpy(pkt.node, node, 6);
+        strcpy(pkt.name, name);
+        Send(sock, &dest, (u8 *)&pkt, sizeof(pkt));
+        BatchProcess();
+        return 0;
+    }
+    return 1;
 }
 
 // FUNCTION: 0xd5010
@@ -526,15 +529,15 @@ void IPXHandler::QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock)
 }
 
 // FUNCTION: 0xd508c
-// NONMATCHING: RecPkt is inlined here; the target calls it
 void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
 {
-    SAPPacket pkt;
-    __3ljac5NETSOCKET dest;
     __3ljac5NETSOCKET from;
+    u16 *d;
+    SAPPacket pkt;
     __3ljac5NETSOCKET s;
     IPXPacket *p;
     u16 count;
+    __3ljac5NETSOCKET dest;
 
     count = 0;
     if (socket_open) {
@@ -548,8 +551,9 @@ void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
         strcpy(pkt.name, name);
         for (p = recv_packets; p < recv_packets + 32; p++) {
             if (RecPkt(p, sock, &from)) {
+                d = (u16 *)p->data;
                 if (memcmp(p->hdr.src_node, node, 6) != 0
-                    && *(u16 *)p->data == 0x100 && type == *(u16 *)(p->data + 2)) {
+                    && d[0] == 0x100 && d[1] == type) {
                     dest.socket = p->hdr.src_socket;
                     memcpy(dest.net, p->hdr.src_net, 4);
                     memcpy(dest.node, p->hdr.src_node, 6);

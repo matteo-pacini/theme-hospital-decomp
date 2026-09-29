@@ -117,6 +117,9 @@ and comparing against the original.
 | separate epilogues for early `return list[0]` versus one shared | nested `if/else` assigning a result, then a single `return` |
 | `lea r,[g*2]; imul r,g` | `p->g * 2 * p->g` (a `SQR(g) * 2` macro does not give it) |
 | `-oneatx`: load, then `add r,r` in place | `x *= 2` (`x += x` gives a `lea` into a fresh register) |
+| byte swap loading into `bx`, then zero-extending into eax | `u16 r = v >> 8; r \|= v << 8; return r;` (`(v >> 8) \| (v << 8)` gives `movzx`/`and 0xffff`) |
+| loop strength-reducing `p->data` as its own induction pointer | a pointer local set inside the loop (`d = (u16 *)p->data;`) |
+| failure return placed after the main path | `if (ok) { ...; return 0; } return 1;` |
 | RAD `-ox` pointer plus byte count as an integer add | `(T *)((u32)p + n)` |
 | `-oneatx` network init taking a `void *` | a typed pointer cast into its own local, declared before `ret` |
 | `rep movsd` from a global into a local | struct copy from an extern struct (`Message msg = D_00129004;`) |
@@ -292,6 +295,13 @@ Observed consequences:
   narrowings (`u8` for a count); treat those as spill-slot hints only. A
   dead spill store sharing a slot with a later variable points to one
   variable reused in the original.
+
+- Network modules (`-oneatx`), swept over option letters and order, `-oe`
+  levels, CPU/FPU/packing options and 10.0a: letter order never matters,
+  and every module's best `-oe` window includes 90-100, so the original
+  likely used plain `-oe`. The two lower values in `cflags.txt`
+  (`serialsp` -oe=40, `dosipx` -oe=80) keep one small callee out of line
+  each, which ours probably makes a few nodes smaller than the original.
 
 ## Known unsolved
 
