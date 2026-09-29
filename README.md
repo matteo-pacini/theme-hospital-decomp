@@ -48,6 +48,7 @@ each function in its own segment. The flake provides:
 | Tool | Purpose |
 | --- | --- |
 | Watcom C/C++ 10.6 (`$WATCOM_10_6`) | period compiler, Win32 host binaries |
+| Watcom C/C++ 10.0a (`$WATCOM_10_0A`) | built the C runtime's printf/stdio modules |
 | wibo 1.2.0 | runs the Win32 compiler on Linux |
 | objdiff-cli 3.8.1 | diffing and progress reports |
 | rizin + rz-ghidra | disassembly and decompiler output (`pdg`) |
@@ -61,15 +62,15 @@ register allocation). Library flags are in `config/cflags.txt`.
 
 | Path | Contents |
 | --- | --- |
-| `config/functions.txt` | every function: address, size, symbol (from `tools/discover.py`) |
+| `config/functions.txt` | every function: address, size, symbol (from `tools/discover.py`; edit single entries with `tools/setfn.py`) |
+| `config/cflags.txt` | compiler, version and flags for each source file |
+| `config/demo_map.txt`, `config/demo_data_map.txt` | retail functions and globals paired with the demo's names |
 | `config/symbols.txt` | named data symbols |
 | `config/relocs.txt` | relocations named after a symbol other than the one containing their target |
 | `config/sections.txt` | a module's own data segments (compiler-generated tables), emitted into its target object |
 | `src/` | decompiled C++ |
 | `include/` | shared headers |
-| `tools/` | LE reader, splitter, compiler wrapper |
-
-so they count towards the total.
+| `tools/` | LE reader, splitter, compiler wrapper, OMF-to-ELF converter, matching aids |
 
 ## Matching a function
 
@@ -83,6 +84,9 @@ so they count towards the total.
 4. `tools/check.py src/<file>.cpp` for per-function results, `ninja report`
    for overall progress, or diff interactively:
    `objdiff-cli diff -p . -u game/<unit> fn_XXXXXXXX_`.
+5. For a near-miss, `tools/variants.py src/<file>.cpp 0xADDR` searches
+   operand orders, declaration orders and similar rewrites for a better
+   match.
 
 See [docs/MATCHING.md](docs/MATCHING.md) for compiler behaviour and the
 source idioms that reproduce it.
