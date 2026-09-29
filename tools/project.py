@@ -69,6 +69,11 @@ class Unit:
 
     @property
     def category(self):
+        # The demo's categories where it names any of the unit's functions:
+        # a unit's first function is not always one it names.
+        known = [f.demo_category for f in self.functions if f.demo_category]
+        if known:
+            return max(set(known), key=known.count)
         return self.functions[0].category
 
 
