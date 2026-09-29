@@ -50,8 +50,6 @@ typedef struct _WAVE_SYNTH {
 extern S32 locked;
 /* In the code segment, where the original's table sits between two functions. */
 #pragma data_seg("_TEXT", "CODE")
-// NONMATCHING: same bytes; the table's last bytes disassemble as a jmp whose
-// target lies past the section end here and in AILXDIG_start in the original
 // FUNCTION: 0xe5430
 S32 note_freq[128] = {
     8, 17, 18, 19, 20, 21, 23, 24,

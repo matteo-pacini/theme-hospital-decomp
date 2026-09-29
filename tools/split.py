@@ -120,7 +120,10 @@ def emit_section(le, proj, fns, n, out, shared, data_secs=()):
     ends = [g.addr for g in fns[1:]] + [end] if shared else [end]
     out.append(f'\n.section _TEXT,"ax",@progbits,unique,{n}\n{label}:')
 
-    items = [(fn, it) for fn, e in zip(fns, ends) for it in scan(le, fn.addr, e)]
+    # A table placed in the code segment (with a config/symbols.txt entry at
+    # its address) is data: decoding it would invent branches.
+    tables = {s.addr for s in map(proj.data_symbol_at, starts) if s is not None}
+    items = [(fn, it) for fn, e in zip(fns, ends) if fn.addr not in tables for it in scan(le, fn.addr, e)]
     sign_reads = sign_extending_reads(le, [it for _, it in items])
 
     fields = {}  # field address -> (size, expression)
