@@ -297,3 +297,13 @@ Compiler and flags per source file come from `config/cflags.txt`.
   0x78 bytes): mouse positions and button states are `volatile`; the
   retail code reads its 16-bit fields with `movsx word ptr`, never the
   `sar` trick.
+- **Bullfrog network code** (`sp`, `serialsp`, `modemsp`, `ipxsp`,
+  `netint*`): `-s -oneatx -xs` without `-4`. Watcom inlines small functions
+  defined later in the same module, and binding a function to another
+  symbol with `#pragma aux f "sym"` stops that: give it its real C++ or
+  member name instead. `__stdcall` member functions still mangle as
+  ordinary `W?` names. C functions whose caller pops stack arguments:
+  `#pragma aux f parm caller []`. A compiler-generated destructor, vtable
+  or type signature is emitted in the module that defines the class's
+  constructors; function-local statics are relocated as
+  `W?name$:.0$:?Fn$n(..)..`, which needs a `config/symbols.txt` entry.

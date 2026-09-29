@@ -209,9 +209,9 @@ int toupper(int c);
 int printf(char *fmt, ...);
 u32 clock(void);
 void *malloc(u32 size);
-#pragma aux malloc "W?init$n()v"
+#pragma aux malloc "_nmalloc_"
 void free(void *p);
-#pragma aux free "__wcpp_2_mod_register__"
+#pragma aux free "_nfree_"
 
 struct DWORDREGS {
     u32 eax;
