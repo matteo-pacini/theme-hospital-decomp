@@ -180,35 +180,35 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
     ClearPlayers();
     if (!comm) {
         fn_000c20c0(D_00127539);
-        return ret;
-    }
-    if (unknown528)
-        Stop();
-    local_id = 1;
-    is_host = 0;
-    if (GetAddPlayerMsgSize(name) > 0x28) {
-        fn_000c20c0(D_00127575);
-        return ret;
-    }
-    EncodeAddPlayerMsg(addPlayerBuffer, local_id, name);
-    if (SendMessage(is_host, addPlayerBuffer, (TbMessageType)1) != Lb_OK) {
-        fn_000c20c0(D_001275f5);
-        return ret;
-    }
-    start = LbTimerClock();
-    waiting = 1;
-    do {
-        LookForSystemMessages();
-        if (player_count) {
-            waiting = 0;
-            if (AddPlayer(local_id, name, 1, 0) != Lb_OK)
-                fn_000c20c0(D_001275b8);
-            unknown528 = 1;
-            ret = Lb_OK;
-        } else if (LbTimerClock() - start > 10000) {
-            waiting = 0;
+    } else {
+        if (unknown528)
+            Stop();
+        local_id = 1;
+        is_host = 0;
+        if (GetAddPlayerMsgSize(name) > 0x28) {
+            fn_000c20c0(D_00127575);
+            return ret;
         }
-    } while (waiting);
+        EncodeAddPlayerMsg(addPlayerBuffer, local_id, name);
+        if (SendMessage(is_host, addPlayerBuffer, (TbMessageType)1) == Lb_OK) {
+            start = LbTimerClock();
+            waiting = 1;
+            do {
+                LookForSystemMessages();
+                if (player_count > 0) {
+                    waiting = 0;
+                    if (AddPlayer(local_id, name, 1, 0) != Lb_OK)
+                        fn_000c20c0(D_001275b8);
+                    unknown528 = 1;
+                    ret = Lb_OK;
+                } else if (LbTimerClock() - start > 10000) {
+                    waiting = 0;
+                }
+            } while (waiting);
+        } else {
+            fn_000c20c0(D_001275f5);
+        }
+    }
     return ret;
 }
 

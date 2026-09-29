@@ -105,26 +105,6 @@ struct SerialHandler {
     void init_com_port(TbSerialDev *dev);
 };
 
-struct CommHandlerData {
-    char response[0x50];
-    long timeout;
-    long dial_timeout;
-    char init_str[0x50];
-    char dial_str[0x50];
-    char hangup_str[0x50];
-    char reset_str[0x50];
-    long port;
-    long unknown19c;
-    char last_cmd[0x50];
-    u8 online;
-    long (*init_func)(void);
-    long (*dial_func)(void);
-    long (*hangup_func)(void);
-    long (*other_func)(void);
-    long (*cur_func)(void);
-};
-
-#define CH(p) ((CommHandlerData *)(p))
 
 /* The static initialiser for this object (.fn_init) is emitted ahead of SerialHandler's constructor. */
 // FUNCTION: 0xf51f0

@@ -514,12 +514,12 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     }
     memcpy(dig->tag, D_00126c90, 4);
     dig->drvr = drvr;
-    if (drvr->type != DIG_DRIVER) {
+    if (dig->drvr->type != DIG_DRIVER) {
         strcpy(AIL_error, D_00126c98);
         AIL_mem_free_lock(dig);
         return NULL;
     }
-    AIL_call_driver(drvr, DRV_GET_INFO, NULL, &out);
+    AIL_call_driver(dig->drvr, DRV_GET_INFO, NULL, &out);
     dig->DDT = (DIG_DDT *)(((U32)out.DX << 4) + (U32)out.AX);
     dig->DST = (DIG_DST *)(((U32)out.CX << 4) + (U32)out.BX);
     dig->buffer_flag = &dig->DST->active_buffer;

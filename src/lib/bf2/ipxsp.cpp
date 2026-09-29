@@ -15,17 +15,6 @@
 #define MSG_BUSD 0x44535542
 #define MSG_BUSK 0x4b535542
 
-extern "C" {
-extern u8 bp_guard;
-#pragma aux bp_guard "W?$Wbi00$:.0$:?BatchProcess$n(uc)v:IPXServiceProvider$n[]uc"
-extern u32 bp_start_batch_time;
-#pragma aux bp_start_batch_time "W?start_batch_time$:.0$:?BatchProcess$n(uc)v:IPXServiceProvider$nul"
-extern u32 bp_start_time;
-#pragma aux bp_start_time "W?start_time$:.0$:?BatchProcess$n(uc)v:IPXServiceProvider$nul"
-extern u32 bp_no_batchs;
-#pragma aux bp_no_batchs "W?no_batchs$:.0$:?BatchProcess$n(uc)v:IPXServiceProvider$nul"
-}
-
 // FUNCTION: 0xd5340
 void IPXDebug(char *fmt, ...)
 {
@@ -35,9 +24,19 @@ extern "C" {
 extern char D_0012608c[];
 extern char D_001260d3[];
 extern char D_001261fa[];
+extern char D_00126145[];
+extern char D_001261b3[];
+extern char D_001261f3[];
+extern char D_001261fe[];
+extern char D_00126202[];
+extern char D_00126249[];
+extern char D_00126171[];
+extern char D_00126282[];
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 unsigned long strtoul(const char *s, char **end, int base);
+void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address);
+#pragma aux fn_000db4c8 "W?AddIPXSession$:IPXServiceProvider$n(pn$__1snc1aHOSTINFOPACKET$$pn$__3ljac5NETSOCKET$$)v"
 }
 
 // FUNCTION: 0xd5350
@@ -91,54 +90,27 @@ TbError IPXServiceProvider::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sRe
 
 void IPXServiceProvider::BatchProcess(u8 delay)
 {
+    static u32 start_batch_time = clock();
+    static u32 start_time = clock();
+    static u32 no_batchs;
     u32 now;
 
-    if (!(bp_guard & 1)) {
-        bp_guard |= 1;
-        bp_start_batch_time = clock();
-    }
-    if (!(bp_guard & 2)) {
-        bp_guard |= 2;
-        bp_start_time = clock();
-    }
     now = clock();
-    if (!delay || now - bp_start_time > 50) {
-        bp_start_time = now;
-        bp_no_batchs++;
+    if (delay) {
+        if (now - start_time > 50) {
+            start_time = now;
+            no_batchs++;
+            ipx.BatchProcess();
+        }
+    } else {
+        start_time = now;
+        no_batchs++;
         ipx.BatchProcess();
     }
-    if (now - bp_start_batch_time >= 100) {
-        bp_start_batch_time = now;
-        bp_no_batchs = 0;
+    if (now - start_batch_time >= 100) {
+        start_batch_time = now;
+        no_batchs = 0;
     }
-}
-
-TbError IPXServiceProvider::CheckMessage(u8 *data)
-{
-    TbError ret = Lb_FAIL;
-
-    switch (*(u32 *)data) {
-    case MSG_BUCJ:
-    case MSG_BUNP:
-    case MSG_BUQP:
-    case MSG_BUHP:
-    case MSG_BUCL:
-    case MSG_BUHL:
-    case MSG_BUSK:
-    case MSG_BUCI:
-    case MSG_BUHI:
-    case MSG_BUHQ:
-    case MSG_BUSA:
-    case MSG_BUSD:
-        if (memcmp(data + 0xc, &guid, sizeof(guid)) == 0)
-            ret = Lb_OK;
-        break;
-    case MSG_BUDN:
-    case MSG_BUDG:
-        ret = Lb_OK;
-        break;
-    }
-    return ret;
 }
 
 // FUNCTION: 0x000dc400
@@ -158,84 +130,8 @@ IPXQueueEntry *IPXServiceProvider::GetNextEmptyReceiveBuffer(void)
     return 0;
 }
 
-#define PROCESS_SYSTEM_MESSAGE(self, msg) \
-    { \
-        IPXQueueEntry *q; \
-        IPXPlayerEntry *p; \
-        u32 changed = 0; \
-        u32 size; \
-        u32 seq; \
-        u32 id; \
-        u32 host; \
-        u32 local; \
-        u32 max; \
-        u32 count; \
-        u8 type; \
-        q = self->GetNextEmptyReceiveBuffer(); \
-        switch (msg->magic) { \
-        case MSG_BUSD: \
-            if (q) { \
-                EncodeDeletePlayerMsg(q->data, msg->player.id); \
-                q->used = 1; \
-                q->from = msg->host; \
-            } \
-            memset(&self->players[msg->player.id], 0, sizeof(IPXPlayerEntry)); \
-            changed = 1; \
-            break; \
-        case MSG_BUSA: \
-            if (q) { \
-                self->EncodeAddPlayerMsg(q->data, msg->player.id, msg->player.name); \
-                q->used = 1; \
-                q->from = msg->host; \
-            } \
-            memcpy(&self->players[msg->player.id], &msg->player, sizeof(IPXPlayerEntry)); \
-            changed = 1; \
-            break; \
-        case MSG_BUDG: \
-        case MSG_BUDN: \
-            DecodeMessageStub((u8 *)msg + 0xc, &size, (TbMessageType *)&type, &seq); \
-            if (type == 2) { \
-                DecodeRequestExchangeDataMsg((u8 *)msg + 0xc, id); \
-                if (q) { \
-                    EncodeDeletePlayerMsg(q->data, id); \
-                    q->used = 1; \
-                    q->from = msg->host; \
-                } \
-                memset(&self->players[id], 0, sizeof(IPXPlayerEntry)); \
-                changed = 1; \
-            } else if (q) { \
-                memcpy(q->data, (u8 *)msg + 0xc, size + 4); \
-                q->used = 1; \
-                q->from = msg->host; \
-            } \
-            break; \
-        } \
-        if (changed == 1) { \
-            if (self->host_state == 1) { \
-                host = self->session.host_id; \
-                local = self->session.host_id; \
-                max = self->session.max_players; \
-            } else { \
-                host = self->remote.host_id; \
-                local = self->remote.local_id; \
-                max = self->remote.max_players; \
-            } \
-            count = 0; \
-            for (p = self->players; p < self->players + max; p++) { \
-                if (p->addr.socket) { \
-                    count++; \
-                    self->AddPlayer(p->id, p->name, host == p->id, local == p->id); \
-                } \
-            } \
-            if (self->host_state == 1) \
-                self->session.num_players = count; \
-            else \
-                self->remote.num_players = count; \
-        } \
-    }
-
 // FUNCTION: 0xd5510
-// NONMATCHING: register allocation and block layout of the inlined BatchProcess differ
+// NONMATCHING: ebx and edx swapped for no_batchs and the clock value in the inlined BatchProcess
 TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
 {
     TbError ret = Lb_FAIL;
@@ -250,8 +146,8 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
                 if (packets) {
                     for (p = packets; p < packets + 0x20; p++)
                         ipx.Listen(p, &socket);
-                    ret = Lb_OK;
                     BatchProcess(0);
+                    ret = Lb_OK;
                 } else {
                     ipx.CloseSocket(&socket);
                     ipx.DeInit();
@@ -268,6 +164,27 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
     return ret;
 }
 
+// FUNCTION: 0xd569c
+TbError IPXServiceProvider::Release(void)
+{
+    fn_000c20c0(D_00126145);
+    if (!started) {
+        fn_000c20c0(D_00126171);
+        return Lb_FAIL;
+    }
+    if (unknown528)
+        Stop();
+    memset(session_list, 0, sizeof(session_list));
+    host_state = 0;
+    ipx.CloseSocket(&socket);
+    ipx.DeInit();
+    started = 0;
+    if (packets)
+        ipx.FreeIPXPackets(packets_sel);
+    FreeAllocSpStuff();
+    return ServiceProvider::Release();
+}
+
 extern "C" {
 extern char D_00126267[];
 
@@ -277,6 +194,446 @@ u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
 #pragma aux fn_000d6588 "W?ReadMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
 u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
 #pragma aux fn_000d6590 "W?PeekMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
+
+// FUNCTION: 0xd5760
+TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max_players, void *data)
+{
+    u32 size;
+    TbError ret = Lb_FAIL;
+    u32 i;
+
+    if (!started) {
+        fn_000c20c0(D_001261b3);
+        return Lb_FAIL;
+    }
+    if (unknown528)
+        Stop();
+    if (max_players > 32)
+        return Lb_FAIL;
+    if (max_players > 5)
+        size = max_players * sizeof(IPXPlayerEntry);
+    else
+        size = 5 * sizeof(IPXPlayerEntry);
+    players = (IPXPlayerEntry *)LbMemoryAlloc(size);
+    if (!players)
+        return Lb_FAIL;
+    memset(players, 0, size);
+    strcpy(server_name, D_001261f3);
+    ConvertGuidToString(&guid, server_name + 6);
+    fn_000c20c0(D_001261fe, server_name);
+    if (ipx.AdvertiseServer(0xbe08, server_name, &socket) == 0) {
+        session.local_id = 0;
+        session.host_id = 0;
+        session.guid = guid;
+        session.num_players = 1;
+        local_id = 0;
+        for (i = 0; i < 32; i++) {
+            acked_a[i] = 0;
+            acked_b[i] = 0;
+        }
+        session.max_players = max_players;
+        sys_seq = 0;
+        StrCpyTrunc(session.name, session_name, 0x20);
+        host_state = 1;
+        players[0].id = 0;
+        strcpy(players[0].name, player_name);
+        memcpy(&players[0].addr, &socket, sizeof(__3ljac5NETSOCKET));
+        ret = Lb_OK;
+        ClearPlayers();
+        if (AddPlayer(local_id, player_name, 1, 1) != Lb_OK) {
+            fn_000c20c0(D_00126202);
+        } else {
+            unknown528 = 1;
+            accepting = 1;
+        }
+    } else {
+        LbMemoryFree(players);
+        players = 0;
+        fn_000c20c0(D_00126249);
+    }
+    return ret;
+}
+
+// FUNCTION: 0xd59ec
+// NONMATCHING: stack slots of compiler temporaries (hoisted member addresses)
+TbError IPXServiceProvider::Start(TbNetworkSessionNameEntry *entry, char *player_name, void *data)
+{
+    __35ct5sCLIENTJOINPACKET join;
+    __5303ctCLIENTINFOPACKET query;
+    __3ljac5NETSOCKET from;
+    __3ljac5NETSOCKET server;
+    u32 max;
+    IPXPacket *p;
+    u32 start;
+    u8 *info;
+    u32 num;
+    u32 begin;
+    u32 last;
+    u32 now;
+    u32 size;
+    u32 found = 0;
+    u32 done;
+    u32 i;
+    TbError ret = Lb_FAIL;
+    u8 *reply;
+
+    if (started && !unknown528) {
+        ret = Lb_OK;
+        if (entry->id < 32 && *(u16 *)session_list[entry->id].address) {
+            memcpy(&server, session_list[entry->id].address, sizeof(server));
+            memset(&query, 0, sizeof(query));
+            query.magic = MSG_BUHQ;
+            query.guid = guid;
+            ipx.Send(&socket, &server, (u8 *)&query, sizeof(query));
+            BatchProcess(0);
+            start = clock();
+            while (found == 0) {
+                if (clock() - start > 200)
+                    break;
+                for (p = packets; p < packets + 32; p++) {
+                    info = p->data;
+                    if (ipx.RecPkt(p, &socket, &server)) {
+                        if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)info, (__tibcaGUID *)(info + 0xc)) == Lb_OK
+                            && ((IPXSessionInfo *)info)->magic == MSG_BUHI) {
+                            found = 1;
+                            max = ((IPXSessionInfo *)info)->max_players;
+                            num = ((IPXSessionInfo *)info)->num_players;
+                            ipx.Listen(p, &socket);
+                            break;
+                        }
+                        ipx.Listen(p, &socket);
+                    }
+                }
+            }
+            if (found == 1) {
+                if (num >= max)
+                    return Lb_FAIL;
+                if (max > 5)
+                    size = max * sizeof(IPXPlayerEntry);
+                else
+                    size = 5 * sizeof(IPXPlayerEntry);
+                players = (IPXPlayerEntry *)LbMemoryAlloc(size);
+                if (!players)
+                    return Lb_FAIL;
+                memset(players, 0, size);
+                memset(&join, 0, sizeof(join));
+                join.magic = MSG_BUCJ;
+                join.guid = guid;
+                memcpy(&join.addr, &socket, sizeof(__3ljac5NETSOCKET));
+                StrCpyTrunc(join.name, player_name, 0x20);
+                ipx.Send(&socket, &server, (u8 *)&join, sizeof(join));
+                BatchProcess(0);
+                begin = last = clock();
+                done = 0;
+                while (done == 0) {
+                    now = clock();
+                    if (now - begin > 1000)
+                        break;
+                    if (now - last > 25) {
+                        last = now;
+                        ipx.Send(&socket, &server, (u8 *)&join, sizeof(join));
+                        BatchProcess(0);
+                    }
+                    for (p = packets; p < packets + 32; p++) {
+                        reply = p->data;
+                        if (ipx.RecPkt(p, &socket, &from)) {
+                            if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)reply, (__tibcaGUID *)(reply + 0xc)) == Lb_OK
+                                && *(u32 *)reply == MSG_BUNP && memcmp(&socket, reply + 0x74, sizeof(__3ljac5NETSOCKET)) == 0) {
+                                memset(&remote, 0, sizeof(remote));
+                                strcpy(remote.name, session_list[entry->id].name);
+                                remote.session_id = entry->id;
+                                remote.guid = guid;
+                                remote.host_id = *(u32 *)(reply + 0x50);
+                                remote.local_id = *(u32 *)(reply + 0x40);
+                                ipx.Listen(p, &socket);
+                                done = 1;
+                                break;
+                            }
+                            ipx.Listen(p, &socket);
+                        }
+                    }
+                }
+                if (done == 1) {
+                    ClearPlayers();
+                    if (EnumerateAndAddPlayers(&from) == Lb_OK) {
+                        host_state = 2;
+                        sys_seq = 0;
+                        unknown528 = 1;
+                        for (i = 0; i < 32; i++) {
+                            acked_a[i] = 0;
+                            acked_b[i] = 0;
+                        }
+                        ret = Lb_OK;
+                        local_id = remote.host_id;
+                        return ret;
+                    }
+                }
+                LbMemoryFree(players);
+            }
+        }
+    }
+    return ret;
+}
+
+// FUNCTION: 0xd63e4
+TbError IPXServiceProvider::Stop(void)
+{
+    __1p5pi1IPXSYSTEMMESSAGE msg;
+    u32 start;
+    u32 me;
+    u32 num;
+    u32 i;
+
+    if (started && unknown528) {
+        start = LbTimerClock();
+        while (LbTimerClock() - start < 700)
+            ;
+        accepting = 0;
+        if (host_state == 1 || host_state == 2) {
+            if (host_state == 1) {
+                me = session.host_id;
+                num = session.num_players;
+            } else {
+                me = remote.host_id;
+                num = remote.num_players;
+            }
+            if (num > 1) {
+                memset(&msg, 0, sizeof(msg));
+                msg.magic = MSG_BUSD;
+                msg.seq = sys_seq++;
+                msg.guid = guid;
+                msg.host = me;
+                memcpy(&msg.player, &players[me], sizeof(IPXPlayerEntry));
+                BroadcastSystemMessage(&msg);
+            }
+            if (players) {
+                LbMemoryFree(players);
+                players = 0;
+                host_state = 0;
+                sys_seq = 0;
+                for (i = 0; i < 32; i++) {
+                    acked_a[i] = 0;
+                    acked_b[i] = 0;
+                }
+            }
+        }
+        unknown528 = 0;
+        ClearSpStuff();
+    }
+    return Lb_FAIL;
+}
+
+// FUNCTION: 0xd6668
+// NONMATCHING: stack slots of locals and of the hoisted member addresses
+TbError IPXServiceProvider::Enumerate(TbNetworkCallbackFunc callback, void *data)
+{
+    __5303ctCLIENTINFOPACKET query;
+    __3ljac5NETSOCKET from;
+    IPXPacket *p;
+    u8 *sap;
+    u8 *info;
+    u32 now;
+    s32 i;
+    TbError ret = Lb_FAIL;
+
+    if (started) {
+        if (unknown528) {
+            if (host_state == 1) {
+                strcpy(entry.name, session.name);
+                entry.id = session.local_id;
+            } else if (host_state == 2) {
+                strcpy(entry.name, remote.name);
+                entry.id = remote.session_id;
+            }
+            callback((TbNetworkCallbackData *)&entry, data);
+            ret = Lb_OK;
+        } else {
+            ClearSessions();
+            now = clock();
+            ret = Lb_OK;
+            ipx.QueryServer(0x100, 0xbe08, &socket);
+            for (p = packets; p < packets + 32; p++) {
+                if (!ipx.RecPkt(p, &socket, &from))
+                    continue;
+                sap = p->data;
+                if (*(u16 *)sap == 0x200) {
+                    if (BullfrogIPXServer((char *)sap + 4) == Lb_OK) {
+                        memcpy(from.node, sap + 0x38, 6);
+                        memcpy(from.net, sap + 0x34, 4);
+                        from.socket = *(u16 *)(sap + 0x3e);
+                        memset(&query, 0, sizeof(query));
+                        query.magic = MSG_BUHQ;
+                        query.guid = guid;
+                        ipx.Send(&socket, &from, (u8 *)&query, sizeof(query));
+                    }
+                } else {
+                    info = p->data;
+                    if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)info, (__tibcaGUID *)(info + 0xc)) == Lb_OK
+                        && *(u32 *)info == MSG_BUHI) {
+                        for (i = 0; i <= session_count; i++) {
+                            if (memcmp(&session_list[i].address[10], from.node, 6) == 0) {
+                                session_list[i].time = now;
+                                memcpy(session_list[i].address, &from, 16);
+                                StrCpyTrunc(session_list[i].name, (char *)info + 0x1c, 0x20);
+                                i = -1;
+                                break;
+                            }
+                        }
+                        if (i != -1) {
+                            for (i = 0; i <= session_count; i++) {
+                                if (session_list[i].time == 0) {
+                                    memcpy(session_list[i].address, &from, 16);
+                                    StrCpyTrunc(session_list[i].name, (char *)info + 0x1c, 0x20);
+                                    session_list[i].time = now;
+                                    i = -1;
+                                    break;
+                                }
+                            }
+                            if (i != -1 && session_count < 32)
+                                session_count++;
+                        }
+                    }
+                }
+                ipx.Listen(p, &socket);
+            }
+            BatchProcess(0);
+            for (i = 0; i <= session_count; i++) {
+                if (session_list[i].time && now - session_list[i].time > 3000)
+                    memset(&session_list[i], 0, sizeof(IPXSessionEntry));
+            }
+            for (i = 0; i <= session_count; i++) {
+                if (session_list[i].time) {
+                    callback((TbNetworkCallbackData *)AddSession(i, session_list[i].name), data);
+                    ret = Lb_OK;
+                }
+            }
+        }
+    }
+    return ret;
+}
+
+// Player data handed to Enumerate's callback.
+struct IPXEnumPlayer {
+    u8 unknown0;
+    u32 id;
+    u32 host;
+    char name[0x20];
+};
+
+// FUNCTION: 0xd6e2c
+// NONMATCHING: frame 4 bytes smaller, stack slots and register choice; done is tested as a byte
+// here, the target loads it with the sar trick
+TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetworkCallbackFunc callback, void *data)
+{
+    __3ljac5NETSOCKET from;
+    __3ljac5NETSOCKET *server;
+    IPXPacket *p;
+    __5303ctCLIENTINFOPACKET query;
+    IPXPlayerEntry *e;
+    u8 *info;
+    u32 now;
+    u32 time;
+    u32 start;
+    u32 last;
+    u32 count;
+    u32 i;
+    u32 total = 32;
+    u32 max = 32;
+    IPXEnumPlayer player;
+    s8 done = 0;
+    TbError ret = Lb_FAIL;
+
+    if (started) {
+        if (unknown528) {
+            ret = EnumeratePlayersForSessionRunning(callback, data);
+        } else if (session->id < 32) {
+            if (session_list[session->id].time) {
+                memset(&query, 0, sizeof(query));
+                query.magic = MSG_BUQP;
+                query.guid = guid;
+                query.page = 0;
+                server = (__3ljac5NETSOCKET *)session_list[session->id].address;
+                last = clock();
+                start = clock();
+                ipx.Send(&socket, server, (u8 *)&query, sizeof(query));
+                BatchProcess(0);
+                while (!done) {
+                    now = clock();
+                    time = clock();
+                    if (time - start > 1000) {
+                        done = -1;
+                        break;
+                    }
+                    if (now - last > 25) {
+                        last = now;
+                        server = (__3ljac5NETSOCKET *)session_list[session->id].address;
+                        ipx.Send(&socket, server, (u8 *)&query, sizeof(query));
+                        BatchProcess(0);
+                    }
+                    for (p = packets; p < packets + 32; p++) {
+                        if (!ipx.RecPkt(p, &socket, &from))
+                            continue;
+                        info = p->data;
+                        if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)info, (__tibcaGUID *)(info + 0xc)) == Lb_OK) {
+                            switch (*(u32 *)info) {
+                            case MSG_BUHI:
+                                fn_000db4c8(this, info, (u8 *)&from);
+                                break;
+                            case MSG_BUHP:
+                                if (memcmp(&session_list[session->id].address[10], from.node, 6) != 0)
+                                    break;
+                                if (((IPXSessionInfo *)info)->num_players == total) {
+                                    if (query.page == ((IPXSessionInfo *)info)->page) {
+                                        start = time;
+                                        last = now;
+                                        player.id = 0;
+                                        for (i = 0, e = (IPXPlayerEntry *)(info + 0x50); i < 6; i++, e++) {
+                                            if (e->addr.socket) {
+                                                count++;
+                                                player.host = e->id == ((IPXSessionInfo *)info)->host_id;
+                                                strcpy(player.name, e->name);
+                                                player.id = e->id;
+                                                callback((TbNetworkCallbackData *)&player, data);
+                                            }
+                                        }
+                                        if (count >= total) {
+                                            done = 1;
+                                            ipx.Listen(p, &socket);
+                                        } else if (++query.page >= max * 6) {
+                                            done = -1;
+                                            ipx.Listen(p, &socket);
+                                        } else {
+                                            ipx.Send(&socket, server, (u8 *)&query, sizeof(query));
+                                            BatchProcess(0);
+                                        }
+                                    }
+                                } else {
+                                    total = ((IPXSessionInfo *)info)->num_players;
+                                    count = 0;
+                                    max = ((IPXSessionInfo *)info)->max_players;
+                                    query.page = 0;
+                                    now = time = start = last = clock();
+                                    ipx.Send(&socket, server, (u8 *)&query, sizeof(query));
+                                    BatchProcess(0);
+                                }
+                                break;
+                            }
+                            if (done)
+                                break;
+                        }
+                        ipx.Listen(p, &socket);
+                    }
+                }
+            }
+            if (done == -1) {
+                memset(&session_list[session->id], 0, sizeof(IPXSessionEntry));
+                return Lb_FAIL;
+            }
+            ret = Lb_OK;
+        }
+    }
+    return ret;
+}
 
 // FUNCTION: 0x000d6550
 TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
@@ -312,13 +669,10 @@ u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
 
 }
 
-// FUNCTION: 0xd6598
-u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
+static inline IPXQueueEntry *GetNextFullReceiveBuffer(IPXServiceProvider *self)
 {
     IPXQueueEntry *e;
     u32 found = 0;
-    u32 msg_size;
-    u32 ret = 0;
 
     for (e = self->queue; e < self->queue + 32; e++) {
         if (e->used) {
@@ -326,8 +680,19 @@ u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 pe
             break;
         }
     }
-    if (found != 1)
-        e = 0;
+    if (found == 1)
+        return e;
+    return 0;
+}
+
+// FUNCTION: 0xd6598
+u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
+{
+    IPXQueueEntry *e;
+    u32 msg_size;
+    u32 ret = 0;
+
+    e = GetNextFullReceiveBuffer(self);
     if (e) {
         *from = e->from;
         DecodeMessageStub(e, &msg_size, 0, 0);
@@ -340,135 +705,145 @@ u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 pe
         }
     } else {
         *size = 0;
-        fn_000d7768(self);
+        self->Update();
     }
     return ret;
 }
 
 // FUNCTION: 0xd7768
-TbError fn_000d7768(IPXServiceProvider *self)
+// NONMATCHING: stack slots of compiler temporaries, and register choice in the inlined
+// BatchProcess
+TbError IPXServiceProvider::Update(void)
 {
     u8 join[0x8c];
     u8 info[0x54];
     __3ljac5NETSOCKET from;
     IPXPacket *p;
     u8 *data;
+    TbError ret = Lb_FAIL;
 
-    if (!self->unknown528)
-        return Lb_FAIL;
-    if (self->host_state == 1) {
-        for (p = self->packets; p < self->packets + 32; p++) {
-            if (self->ipx.RecPkt(p, &self->socket, &from)) {
+    if (unknown528) {
+    if (host_state == 1) {
+        for (p = packets; p < packets + 32; p++) {
+            if (ipx.RecPkt(p, &socket, &from)) {
                 data = p->data;
-                if (self->CheckMessage(data) != Lb_OK)
-                    continue;
+                if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)data, (__tibcaGUID *)(data + 0xc)) == Lb_OK)
                 switch (*(u32 *)data) {
                 case MSG_BUHQ:
-                    if (self->accepting) {
-                        self->session.magic = MSG_BUHI;
-                        self->ipx.Listen(p, &self->socket);
-                        self->ipx.Send(&self->socket, &from, (u8 *)&self->session, sizeof(IPXSessionInfo));
-                        self->BatchProcess(0);
+                    if (accepting) {
+                        session.magic = MSG_BUHI;
+                        ipx.Listen(p, &socket);
+                        ipx.Send(&socket, &from, (u8 *)&session, sizeof(IPXSessionInfo));
+                        BatchProcess(0);
                     }
                     break;
                 case MSG_BUQP:
                     memcpy(info, data, sizeof(info));
-                    self->ipx.Listen(p, &self->socket);
-                    self->SendPlayerInfo((__5303ctCLIENTINFOPACKET *)info, &from);
-                    self->BatchProcess(0);
+                    ipx.Listen(p, &socket);
+                    SendPlayerInfo((__5303ctCLIENTINFOPACKET *)info, &from);
+                    BatchProcess(0);
                     break;
                 case MSG_BUCJ:
                     memcpy(join, data, sizeof(join));
-                    self->ipx.Listen(p, &self->socket);
-                    self->AddPlayerToSession((__35ct5sCLIENTJOINPACKET *)join, &from);
-                    self->BatchProcess(0);
+                    ipx.Listen(p, &socket);
+                    AddPlayerToSession((__35ct5sCLIENTJOINPACKET *)join, &from);
+                    BatchProcess(0);
                     break;
                 case MSG_BUSA:
                 case MSG_BUSD:
-                    self->ResponsedToSystemMessage((__1p5pi1IPXSYSTEMMESSAGE *)data, &from);
-                    self->ipx.Listen(p, &self->socket);
+                    ResponsedToSystemMessage((__1p5pi1IPXSYSTEMMESSAGE *)data, &from);
+                    ipx.Listen(p, &socket);
                     break;
                 case MSG_BUSK:
-                    self->ipx.Listen(p, &self->socket);
+                    ipx.Listen(p, &socket);
                     break;
                 default:
-                    self->ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
-                    self->ipx.Listen(p, &self->socket);
+                    ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
+                    ipx.Listen(p, &socket);
                     break;
                 }
             }
         }
-        if (self->accepting)
-            fn_000d508c(&self->ipx, 0xbe08, self->server_name, &self->socket);
-        self->BatchProcess(1);
-    } else if (self->host_state == 2) {
-        for (p = self->packets; p < self->packets + 32; p++) {
-            if (self->ipx.RecPkt(p, &self->socket, &from)) {
+        if (accepting)
+            fn_000d508c(&ipx, 0xbe08, server_name, &socket);
+        BatchProcess(1);
+    } else if (host_state == 2) {
+        for (p = packets; p < packets + 32; p++) {
+            if (ipx.RecPkt(p, &socket, &from)) {
                 data = p->data;
-                if (self->CheckMessage(data) != Lb_OK)
-                    continue;
+                if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)data, (__tibcaGUID *)(data + 0xc)) == Lb_OK)
                 switch (*(u32 *)data) {
                 case MSG_BUSA:
                 case MSG_BUSD:
-                    self->ResponsedToSystemMessage((__1p5pi1IPXSYSTEMMESSAGE *)data, &from);
-                    self->ipx.Listen(p, &self->socket);
+                    ResponsedToSystemMessage((__1p5pi1IPXSYSTEMMESSAGE *)data, &from);
+                    ipx.Listen(p, &socket);
                     break;
                 case MSG_BUSK:
-                    self->ipx.Listen(p, &self->socket);
+                    ipx.Listen(p, &socket);
                     break;
                 default:
-                    self->ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
-                    self->ipx.Listen(p, &self->socket);
+                    ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
+                    ipx.Listen(p, &socket);
                     break;
                 }
             }
         }
-        self->BatchProcess(1);
+        BatchProcess(1);
     }
-    return Lb_OK;
+    ret = Lb_OK;
+    }
+    return ret;
+}
+
+// FUNCTION: 0xd8138
+TbError IPXServiceProvider::BullfrogIPXServer(char *name)
+{
+    __tibcaGUID id;
+    TbError ret = Lb_FAIL;
+
+    if (memcmp(name, D_00126282, 6) == 0) {
+        ConvertStringToGuid(name + 6, &id);
+        if (memcmp(&guid, &id, sizeof(__tibcaGUID)) == 0)
+            ret = Lb_OK;
+    }
+    return ret;
 }
 
 // FUNCTION: 0xd8214
-// NONMATCHING: the target steps a byte counter to 16 alongside the GUID pointer; here the loop
-// runs to an end pointer
 void IPXServiceProvider::ConvertGuidToString(__tibcaGUID *guid, char *str)
 {
     char buf[0xc];
+    u32 *d = guid->data;
     u32 i;
 
     str[0] = 0;
-    for (i = 0; i < 4; i++) {
-        sprintf(buf, D_001261fa, guid->data[i]);
+    for (i = 0; i < 16; i += 4, d++) {
+        sprintf(buf, D_001261fa, *d);
         strcat(str, buf);
     }
 }
 
 // FUNCTION: 0xd8274
-// NONMATCHING: block layout: the target tests the outer loop at the top and places the strtoul
-// call after the inner loop
 void IPXServiceProvider::ConvertStringToGuid(char *str, __tibcaGUID *guid)
 {
     char buf[0x14];
-    char *p = str;
     u32 *d = guid->data;
+    char *p = str;
     u32 j;
     u8 i;
-    char c;
 
-    for (i = 0; i < 4; i++) {
+    i = 0;
+    while (i < 4) {
         memset(buf, 0, sizeof(buf));
-        j = 0;
-        while (j < strlen(str)) {
-            c = *p;
-            if (c == '.') {
+        for (j = 0; j < strlen(str); j++) {
+            if (*p == '.') {
                 p++;
                 break;
             }
-            j++;
-            p++;
-            buf[j - 1] = c;
+            buf[j] = *p++;
         }
         *d++ = strtoul(buf, 0, 16);
+        i++;
     }
 }
 
@@ -557,7 +932,7 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
                 msg.host = session.host_id;
                 msg.guid = guid;
                 memcpy(&msg.player, &players[i], sizeof(IPXPlayerEntry));
-                PROCESS_SYSTEM_MESSAGE(this, (&msg));
+                AddToReceiveBuffer((__6eas9nIPXDATAMESSAGE *)&msg);
                 BroadcastSystemMessage(&msg);
             }
         }
@@ -566,7 +941,7 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
 }
 
 // FUNCTION: 0xd8c58
-// NONMATCHING: frame layout and register allocation differ
+// NONMATCHING: stack slots of the parameters and register choice for the two table pointers
 u32 IPXServiceProvider::CheckIfPlayerWantingToJoinIsInSession(__35ct5sCLIENTJOINPACKET *join, __3ljac5NETSOCKET *from)
 {
     u8 buf[0x88];
@@ -590,7 +965,8 @@ u32 IPXServiceProvider::CheckIfPlayerWantingToJoinIsInSession(__35ct5sCLIENTJOIN
 }
 
 // FUNCTION: 0xd8e34
-// NONMATCHING: loop structure and frame layout differ
+// NONMATCHING: stack slots of locals and compiler temporaries, and register choice in the
+// inlined BatchProcess
 TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
 {
     __3ljac5NETSOCKET from;
@@ -604,75 +980,83 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
     u32 max = 32;
     u32 added = 0;
     u32 i;
+    u32 is_local;
+    u32 is_host;
     s32 done = 0;
     TbError ret = Lb_FAIL;
 
-    if (!started)
-        return ret;
-    remote.magic = MSG_BUQP;
-    remote.page = 0;
-    remote.unknown50 = 0;
-    last_send = clock();
-    start = clock();
-    for (;;) {
-        now = clock();
-        if (now - start > 3000)
-            break;
-        if (now - last_send > 25) {
-            last_send = now;
-            remote.magic = MSG_BUQP;
-            ipx.Send(&socket, server, (u8 *)&remote, sizeof(remote));
-            BatchProcess(0);
-        }
-        for (pk = packets; pk < packets + 32; pk++) {
-            if (!ipx.RecPkt(pk, &socket, &from))
-                continue;
-            msg = (IPXSessionInfo *)pk->data;
-            if (CheckMessage(pk->data) == Lb_OK && msg->magic == MSG_BUHP) {
-                if (msg->num_players == total) {
-                    if (msg->page == remote.page) {
-                        last_send = now;
-                        start = now;
-                        for (i = 0, e = (IPXPlayerEntry *)(msg + 1); i < 6; i++, e++) {
-                            if (e->addr.socket) {
-                                added++;
-                                if (AddPlayer(e->id, e->name, e->id == remote.host_id, e->id == msg->host_id) != Lb_OK)
-                                    fn_000c20c0(D_001262d0);
-                                memcpy(&players[e->id], e, sizeof(IPXPlayerEntry));
+    if (started) {
+        remote.magic = MSG_BUQP;
+        remote.page = 0;
+        remote.unknown50 = 0;
+        last_send = clock();
+        start = clock();
+        for (;;) {
+            now = clock();
+            if (now - start > 3000)
+                break;
+            if (now - last_send > 25) {
+                last_send = now;
+                remote.magic = MSG_BUQP;
+                ipx.Send(&socket, server, (u8 *)&remote, sizeof(remote));
+                BatchProcess(0);
+            }
+            for (pk = packets; pk < packets + 32; pk++) {
+                if (!ipx.RecPkt(pk, &socket, &from))
+                    continue;
+                msg = (IPXSessionInfo *)pk->data;
+                if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)pk->data, (__tibcaGUID *)(pk->data + 0xc)) == Lb_OK && msg->magic == MSG_BUHP) {
+                    if (msg->num_players == total) {
+                        if (msg->page == remote.page) {
+                            last_send = now;
+                            start = now;
+                            for (i = 0, e = (IPXPlayerEntry *)(msg + 1); i < 6; i++, e++) {
+                                if (e->addr.socket) {
+                                    added++;
+                                    is_local = 0;
+                                    is_host = 0;
+                                    if (e->id == remote.host_id)
+                                        is_local = 1;
+                                    if (e->id == msg->host_id)
+                                        is_host = 1;
+                                    if (AddPlayer(e->id, e->name, is_local, is_host) != Lb_OK)
+                                        fn_000c20c0(D_001262d0);
+                                    memcpy(&players[e->id], e, sizeof(IPXPlayerEntry));
+                                }
+                            }
+                            if (added >= total) {
+                                remote.num_players = msg->num_players;
+                                done = 1;
+                                remote.max_players = msg->max_players;
+                                ret = Lb_OK;
+                            } else if (++remote.page >= max * 6) {
+                                done = -1;
+                            } else {
+                                ipx.Send(&socket, server, (u8 *)&remote, sizeof(remote));
+                                BatchProcess(0);
+                                now = start = last_send = clock();
+                            }
+                            if (done) {
+                                ipx.Listen(pk, &socket);
+                                break;
                             }
                         }
-                        if (added >= total) {
-                            remote.num_players = msg->num_players;
-                            done = 1;
-                            remote.max_players = msg->max_players;
-                            ret = Lb_OK;
-                        } else if (++remote.page >= max * 6) {
-                            done = -1;
-                        } else {
-                            ipx.Send(&socket, server, (u8 *)&remote, sizeof(remote));
-                            BatchProcess(0);
-                            now = start = last_send = clock();
-                        }
-                        if (done) {
-                            ipx.Listen(pk, &socket);
-                            break;
-                        }
+                    } else {
+                        total = msg->num_players;
+                        max = msg->max_players;
+                        memset(players, 0, max * sizeof(IPXPlayerEntry));
+                        remote.page = 0;
+                        added = 0;
+                        now = start = last_send = clock();
+                        ipx.Send(&socket, server, (u8 *)&remote, sizeof(remote));
+                        BatchProcess(0);
                     }
-                } else {
-                    total = msg->num_players;
-                    max = msg->max_players;
-                    memset(players, 0, max * sizeof(IPXPlayerEntry));
-                    remote.page = 0;
-                    added = 0;
-                    now = start = last_send = clock();
-                    ipx.Send(&socket, server, (u8 *)&remote, sizeof(remote));
-                    BatchProcess(0);
                 }
+                ipx.Listen(pk, &socket);
             }
-            ipx.Listen(pk, &socket);
+            if (done)
+                break;
         }
-        if (done)
-            break;
     }
     return ret;
 }
@@ -783,7 +1167,7 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
 }
 
 // FUNCTION: 0xda35c
-// NONMATCHING: frame layout and register allocation differ
+// NONMATCHING: stack slots of from, ret and the inlined BatchProcess argument
 TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg, __3ljac5NETSOCKET *from)
 {
     __1p5pi1IPXSYSTEMMESSAGE ack;
@@ -806,10 +1190,10 @@ TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *m
         case MSG_BUSD:
             acked_a[msg->host] = 0;
             acked_b[msg->host] = 0;
-            PROCESS_SYSTEM_MESSAGE(this, msg);
+            AddToReceiveBuffer((__6eas9nIPXDATAMESSAGE *)msg);
             break;
         case MSG_BUSA:
-            PROCESS_SYSTEM_MESSAGE(this, msg);
+            AddToReceiveBuffer((__6eas9nIPXDATAMESSAGE *)msg);
             break;
         }
     }
@@ -817,31 +1201,32 @@ TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *m
 }
 
 // FUNCTION: 0xdba58
-// NONMATCHING: loop register allocation differs
 u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
 {
     __3ljac5NETSOCKET from;
+    u8 *data;
     IPXPacket *p;
     u32 got = 0;
 
     if (started && unknown528) {
         for (p = packets; p < packets + 32; p++) {
             if (ipx.RecPkt(p, &socket, &from)) {
-                switch (*(u32 *)p->data) {
+                data = p->data;
+                switch (*(u32 *)data) {
                 case 0x41445542:
-                    if (p->data[0xa] == seq && id == *(u32 *)(p->data + 4))
+                    if (data[0xa] == seq && id == *(u32 *)(data + 4))
                         got = 1;
                     ipx.Listen(p, &socket);
                     break;
                 case MSG_BUDG:
                 case MSG_BUDN:
-                    ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)p->data);
+                    ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
                     ipx.Listen(p, &socket);
                     break;
                 }
+                if (got == 1)
+                    break;
             }
-            if (got == 1)
-                break;
         }
     }
     return got;
@@ -1004,7 +1389,7 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
             if (!ipx.RecPkt(p, &socket, &from))
                 continue;
             data = p->data;
-            if (CheckMessage(data) != Lb_OK)
+            if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)data, (__tibcaGUID *)(data + 0xc)) != Lb_OK)
                 continue;
             switch (*(u32 *)data) {
             case MSG_BUHQ:
@@ -1052,7 +1437,7 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
             if (!ipx.RecPkt(p, &socket, &from))
                 continue;
             data = p->data;
-            if (CheckMessage(data) != Lb_OK)
+            if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)data, (__tibcaGUID *)(data + 0xc)) != Lb_OK)
                 continue;
             switch (*(u32 *)data) {
             case MSG_BUSA:
@@ -1194,12 +1579,12 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
     }
     switch (msg->magic) {
     case MSG_BUDN:
-        PROCESS_SYSTEM_MESSAGE(this, ((__1p5pi1IPXSYSTEMMESSAGE *)msg));
+        AddToReceiveBuffer(msg);
         break;
     case MSG_BUDG:
         if (msg->from < max) {
             if (msg->dseq == acked_b[msg->from]) {
-                PROCESS_SYSTEM_MESSAGE(this, ((__1p5pi1IPXSYSTEMMESSAGE *)msg));
+                AddToReceiveBuffer(msg);
                 acked_b[msg->from]++;
             }
             addr = &players[msg->from].addr;
@@ -1218,31 +1603,108 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
     return ret;
 }
 
-extern "C" {
-
-// NONMATCHING: frame pointer and register allocation differ
-void fn_000dc440(IPXServiceProvider *sp, __1p5pi1IPXSYSTEMMESSAGE *msg);
-#pragma aux fn_000dc440 "W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v"
-
 // FUNCTION: 0x000dc440
-void fn_000dc440(IPXServiceProvider *sp, __1p5pi1IPXSYSTEMMESSAGE *msg)
+// NONMATCHING: stack slots of msg, q, id, size, seq and changed
+void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
 {
-    PROCESS_SYSTEM_MESSAGE(sp, msg);
+    IPXQueueEntry *q;
+    IPXPlayerEntry *p;
+    u32 changed = 0;
+    u32 seq;
+    u32 id;
+    u32 size;
+    u32 host;
+    u32 local;
+    u32 max;
+    u32 count;
+    u32 is_host;
+    u32 is_local;
+    u8 type;
+
+    q = GetNextEmptyReceiveBuffer();
+    switch (msg->magic) {
+    case MSG_BUSD: {
+        __1p5pi1IPXSYSTEMMESSAGE *sys = (__1p5pi1IPXSYSTEMMESSAGE *)msg;
+        if (q) {
+            EncodeDeletePlayerMsg(q->data, sys->player.id);
+            q->from = sys->host;
+            q->used = 1;
+        }
+        memset(&players[sys->player.id], 0, sizeof(IPXPlayerEntry));
+        changed = 1;
+        break;
+    }
+    case MSG_BUSA: {
+        __1p5pi1IPXSYSTEMMESSAGE *sys = (__1p5pi1IPXSYSTEMMESSAGE *)msg;
+        if (q) {
+            EncodeAddPlayerMsg(q->data, sys->player.id, sys->player.name);
+            q->from = sys->host;
+            q->used = 1;
+        }
+        memcpy(&players[sys->player.id], &sys->player, sizeof(IPXPlayerEntry));
+        changed = 1;
+        break;
+    }
+    case MSG_BUDG:
+    case MSG_BUDN:
+        DecodeMessageStub(msg->data, &size, (TbMessageType *)&type, &seq);
+        switch (type) {
+        case 2:
+            DecodeRequestExchangeDataMsg(msg->data, id);
+            if (q) {
+                EncodeDeletePlayerMsg(q->data, id);
+                q->from = msg->from;
+                q->used = 1;
+            }
+            memset(&players[id], 0, sizeof(IPXPlayerEntry));
+            changed = 1;
+            break;
+        default:
+            if (q) {
+                memcpy(q->data, msg->data, size + 4);
+                q->from = msg->from;
+                q->used = 1;
+            }
+            break;
+        }
+        break;
+    }
+    if (changed == 1) {
+        if (host_state == 1) {
+            host = session.host_id;
+            local = session.host_id;
+            max = session.max_players;
+        } else {
+            host = remote.host_id;
+            local = remote.local_id;
+            max = remote.max_players;
+        }
+        count = 0;
+        for (p = players; p < players + max; p++) {
+            if (p->addr.socket) {
+                count++;
+                is_host = 0;
+                is_local = 0;
+                if (host == p->id)
+                    is_host = 1;
+                if (local == p->id)
+                    is_local = 1;
+                AddPlayer(p->id, p->name, is_host, is_local);
+            }
+        }
+        if (host_state == 1)
+            session.num_players = count;
+        else
+            remote.num_players = count;
+    }
 }
-
-}
-
-extern "C" {
-
-TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid);
-#pragma aux fn_000dc740 "W?BullfrogIPXMessage$:IPXServiceProvider$n(pn$__407tigIPXMESSAGEBLOCK$$pn$__tibcaGUID$$)$TbError$$"
 
 // FUNCTION: 0xdc740
-TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid)
+TbError IPXServiceProvider::BullfrogIPXMessage(__407tigIPXMESSAGEBLOCK *msg, __tibcaGUID *id)
 {
     TbError ret = Lb_FAIL;
 
-    switch (type->data[0]) {
+    switch (msg->magic) {
     case 0x4a435542:
     case 0x504e5542:
     case 0x50515542:
@@ -1255,7 +1717,7 @@ TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid
     case 0x48515542:
     case 0x41535542:
     case 0x44535542:
-        if (memcmp(&sp->guid, guid, sizeof(__tibcaGUID)) == 0)
+        if (memcmp(&guid, id, sizeof(__tibcaGUID)) == 0)
             ret = Lb_OK;
         break;
     case 0x4e445542:
@@ -1266,12 +1728,8 @@ TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid
     return ret;
 }
 
-}
-
 extern "C" {
 
-void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address);
-#pragma aux fn_000db4c8 "W?AddIPXSession$:IPXServiceProvider$n(pn$__1snc1aHOSTINFOPACKET$$pn$__3ljac5NETSOCKET$$)v"
 
 // FUNCTION: 0xdb4c8
 void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address)

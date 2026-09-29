@@ -29,3 +29,5 @@
 000df7e7 _AIL_driver -0x4
 # math2err.c: the name table is indexed from 1
 000fdc6a _D_00153cfc -0x4
+# netint LbNetwork_Init: clientDataTable[i].active cleared through a pointer stepped one entry ahead
+000bfd46 W?clientDataTable$n[]$__4kqpm7ClientDataEntry$$ -0x28

@@ -1,6 +1,18 @@
 #include "net.h"
 
+struct IPXHandler {
+    u8 unknown0[0x4a];
+
+    IPXHandler();
+    ~IPXHandler();
+};
+
 struct IPXServiceProvider : ServiceProvider {
+    IPXHandler ipx;
+    u8 unknownb4a[0x11e2 - 0xb4a];
+    TbNetworkSessionNameEntry entry;
+    u8 unknown120b[0x155e - 0x120b];
+
     IPXServiceProvider();
     ~IPXServiceProvider();
     TbError Start(TbNetworkSessionNameEntry *session, char *name, void *data);
@@ -60,13 +72,18 @@ extern u32 unidirectionalMsgReceived;
 
 TbError GenericSerialInit(__tibcaGUID guid, void *init_data);
 TbError GenericModemInit(__tibcaGUID guid, void *init_data);
+TbError GenericIPXInit(__tibcaGUID guid);
 TbError StartTwoPlayerExchange(void *buf);
 TbError CompleteTwoPlayerExchange(void *buf);
 u32 GetRequestCompositeExchangeDataMsgSize(void);
 void EncodeDeletePlayerMsg(u8 *buf, u32 id);
 void EncodeRequestExchangeDataMsg(u8 *buf, u32 id, u32 seq);
 void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq);
+// The original does not inline HostDataCollection or HostDataBroadcast into
+// CompleteMultiPlayerExchange although -oe=400 would; binding them to their symbols
+// with #pragma aux keeps them out of line. Why the original did not inline them is unknown.
 TbError HostDataCollection(void);
+#pragma aux HostDataCollection "W?HostDataCollection$n()$TbError$$"
 TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf, u32 exchange_size,
                        __7308jnTbNetworkPlayerInfo *info, void *init_data);
 
@@ -122,6 +139,20 @@ extern char D_001228e8[];
 extern char D_00122938[];
 extern char D_00122977[];
 extern char D_00122c70[];
+extern char D_001229be[];
+extern char D_00122a02[];
+extern char D_00122a5c[];
+extern char D_00122a95[];
+extern char D_00122ad2[];
+extern char D_00122b2c[];
+extern char D_00122b65[];
+extern char D_00122ba5[];
+extern char D_00122bfa[];
+extern char D_00122c33[];
+extern char D_00122263[];
+extern char D_00122ea6[];
+extern char D_00122ee2[];
+extern char D_00122f32[];
 extern char D_00122cb0[];
 extern char D_00122ced[];
 extern char D_00122d34[];
@@ -139,13 +170,12 @@ void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data);
 void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data);
 TbError GetCurrentPlayers(void);
 TbError HostDataBroadcast(void);
+#pragma aux HostDataBroadcast "W?HostDataBroadcast$n()$TbError$$"
+TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size);
+u32 IdToIndex(u32 &id);
 
 extern "C" {
 
-void *fn_000bf790(u32 size);
-#pragma aux fn_000bf790 "W?$nwn(ui)pnv"
-void fn_000bf798(void *p);
-#pragma aux fn_000bf798 "W?$dln(pnv)v"
 void fn_000bf7a0(u32 timeout);
 #pragma aux fn_000bf7a0 "W?LbNetwork_ChangeExchangeTimeout$n(ul)v"
 TbError fn_000c197c(TbNetworkPlayerEntry *player);
@@ -153,17 +183,21 @@ TbError fn_000c197c(TbNetworkPlayerEntry *player);
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
 
+}
+
 // FUNCTION: 0x000bf790
-void *fn_000bf790(u32 size)
+void *operator new(unsigned size)
 {
     return LbMemoryAlloc(size);
 }
 
 // FUNCTION: 0x000bf798
-void fn_000bf798(void *p)
+void operator delete(void *p)
 {
     LbMemoryFree(p);
 }
+
+extern "C" {
 
 // FUNCTION: 0x000bf7a0
 void fn_000bf7a0(u32 timeout)
@@ -250,8 +284,8 @@ TbError LbNetwork_EnumerateServices(TbNetworkCallbackFunc callback, void *data)
     return Lb_OK;
 }
 
-// NONMATCHING: exception-table relocation (known tool gap: CONST2), and two independent register
-// loads in the other order
+// NONMATCHING: the target calls LbNetwork_Init(u32, ...); with -oe=400 (needed to inline
+// CompleteMultiPlayerExchange into LbNetwork_CompleteExchange) it is inlined here
 // FUNCTION: 0x000bfac0
 TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -283,7 +317,8 @@ TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_playe
     return ret;
 }
 
-// NONMATCHING: target registers an exception frame and constructs IPXServiceProvider inline
+// NONMATCHING: exception-table relocation (known tool gap: CONST2); the MultiPlayerCallback address
+// is held in esi, here in ebp
 // FUNCTION: 0x000bfc4c
 TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -310,7 +345,7 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     localPlayerInfoPtr = info;
     receiveCallbacks.multiPlayer = MultiPlayerCallback;
     receiveCallbacks.mpReqExDataMsg = MultiPlayerReqExDataMsgCallback;
-    if (exchange_size) {
+    if (exchange_size > 0) {
         D_00188cb8 = max_players * exchange_size;
         compositeBuffer = LbMemoryAlloc(D_00188cb8);
         if (!compositeBuffer) {
@@ -341,21 +376,7 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
         break;
     case 2:
         fn_000c20c0(D_0012207d);
-        sp_ret = Lb_FAIL;
-        sp_guid = guid;
-        if (spPtr) {
-            spPtr->Release();
-            delete spPtr;
-            spPtr = 0;
-        }
-        spPtr = new IPXServiceProvider;
-        if (spPtr) {
-            if (spPtr->Init(sp_guid, 0, &receiveCallbacks, 0) == Lb_OK)
-                sp_ret = Lb_OK;
-            else
-                fn_000c20c0(D_00122093);
-        }
-        if (sp_ret == Lb_OK)
+        if (GenericIPXInit(guid) == Lb_OK)
             ret = Lb_OK;
         else
             fn_000c20c0(D_001220db);
@@ -425,9 +446,7 @@ TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *play
         return ret;
     }
     if (!runningTwoPlayerModel) {
-        EncodeMessageStub(systemUserBuffer, 1, (TbMessageType)4, 0);
-        systemUserBuffer[4] = 0;
-        spPtr->Send(0, systemUserBuffer);
+        SendSystemUserMessage(0, MSG_TYPE_0, 0, 0);
         waitingForPlayerMapResponse = 1;
         do {
             spPtr->Receive(8);
@@ -508,8 +527,6 @@ TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetwork
 TbError StartMultiPlayerExchange(void *buf);
 
 // FUNCTION: 0x000c03f8
-// NONMATCHING: the target inlines StartMultiPlayerExchange here; -oe=150 reproduces that, but
-// LbNetwork_Exchange, which is written with the exchange code expanded by hand, then diverges
 TbError LbNetwork_StartExchange(void *buf)
 {
     if (runningTwoPlayerModel)
@@ -546,86 +563,44 @@ TbError StartMultiPlayerExchange(void *buf)
     return ret;
 }
 
-// NONMATCHING: register choice and block layout
-// FUNCTION: 0x000c0b74
-TbError LbNetwork_Exchange(void *buf)
+TbError CompleteMultiPlayerExchange(void *buf);
+
+// FUNCTION: 0x000c0640
+// NONMATCHING: register choice in the inlined timeout bookkeeping, as in CompleteMultiPlayerExchange
+TbError LbNetwork_CompleteExchange(void *buf)
+{
+    if (runningTwoPlayerModel)
+        return CompleteTwoPlayerExchange(buf);
+    return CompleteMultiPlayerExchange(buf);
+}
+
+// FUNCTION: 0x000c08e4
+// NONMATCHING: register choice: the target computes the elapsed time in ebp and reloads timeCount
+TbError CompleteMultiPlayerExchange(void *buf)
 {
     TbError ret;
-    TbError start_ret;
-    TbError done_ret;
     u32 keep_going;
     u32 retries;
     u32 host_changed;
     u32 old_host;
     u32 elapsed;
-    u32 i;
 
     ret = Lb_FAIL;
-    if (runningTwoPlayerModel) {
-        start_ret = StartTwoPlayerExchange(buf);
+    if (localPlayerId == hostId) {
+        HostDataCollection();
+        ret = HostDataBroadcast();
     } else {
-        start_ret = Lb_FAIL;
-        localDataPtr = buf;
-        spPtr->Receive(6);
-        for (i = 0; i < maximumPlayers; i++) {
-            if (clientDataTable[i].active)
-                clientDataTable[i].got_data = 0;
-        }
-        memcpy(exchangeBuffer + localPlayerIndex * exchangeSize, buf, exchangeSize);
-        clientDataTable[localPlayerIndex].got_data = 1;
-        startTime = LbTimerClock();
-        actualTimeout = basicTimeout;
-        if (hostId == localPlayerId) {
-            start_ret = Lb_OK;
-        } else {
-            EncodeMessageStub(buf, exchangeSize - 4, MSG_TYPE_0, sequenceNumber);
-            if (spPtr->Send(hostId, buf) == Lb_OK)
-                start_ret = Lb_OK;
-            else
-                fn_000c20c0(D_001223eb);
-        }
-    }
-    if (start_ret != Lb_OK) {
-        fn_000c20c0(D_001226bb);
-        return ret;
-    }
-    if (runningTwoPlayerModel) {
-        done_ret = CompleteTwoPlayerExchange(buf);
-    } else {
-        done_ret = Lb_FAIL;
-        if (localPlayerId == hostId) {
-            HostDataCollection();
-            done_ret = HostDataBroadcast();
-        } else {
-            keep_going = 1;
-            host_changed = 0;
-            gotCompositeData = 0;
-            retries = 0;
-            do {
-                old_host = hostId;
-                spPtr->Receive(8);
-                if (old_host != hostId)
-                    host_changed = 1;
-                if (host_changed) {
-                    if (hostId == localPlayerId) {
-                        if (HostDataCollection() == Lb_OK) {
-                            if (HostDataBroadcast() == Lb_OK)
-                                done_ret = Lb_OK;
-                            else
-                                fn_000c20c0(D_0012242f);
-                        } else {
-                            fn_000c20c0(D_0012247f);
-                        }
-                        keep_going = 0;
-                    } else {
-                        EncodeMessageStub(buf, exchangeSize - 4, MSG_TYPE_0, sequenceNumber);
-                        if (spPtr->Send(hostId, buf) == Lb_OK)
-                            done_ret = Lb_OK;
-                        else
-                            fn_000c20c0(D_001224d0);
-                    }
-                    host_changed = 0;
-                } else if (gotCompositeData) {
+        keep_going = 1;
+        retries = 0;
+        host_changed = 0;
+        gotCompositeData = 0;
+        do {
+            old_host = hostId;
+            spPtr->Receive(8);
+            if (old_host != hostId)
+                host_changed = 1;
+            if (!host_changed) {
+                if (gotCompositeData) {
                     if (!retries) {
                         elapsed = LbTimerClock() - startTime;
                         if (!timeCount || elapsed > maxTime)
@@ -637,42 +612,75 @@ TbError LbNetwork_Exchange(void *buf)
                                 basicTimeout = 250;
                         }
                     }
-                    done_ret = Lb_OK;
+                    ret = Lb_OK;
                     keep_going = 0;
                 }
-                if (keep_going && LbTimerClock() - startTime > actualTimeout) {
-                    fn_000c20c0(D_00122517);
-                    retries++;
-                    if (retries > 10) {
-                        if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                            fn_000c20c0(D_00122532);
-                        } else {
-                            EncodeDeletePlayerMsg(deletePlayerBuffer, hostId);
-                            if (spPtr->Send(localPlayerId, deletePlayerBuffer) != Lb_OK)
-                                fn_000c20c0(D_00122583);
-                        }
-                        host_changed = 1;
-                    } else if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                        fn_000c20c0(D_001225c2);
+            } else {
+                if (hostId == localPlayerId) {
+                    if (HostDataCollection() == Lb_OK) {
+                        if (HostDataBroadcast() == Lb_OK)
+                            ret = Lb_OK;
+                        else
+                            fn_000c20c0(D_0012242f);
                     } else {
-                        EncodeRequestCompositeExchangeDataMsg(requestCompositeExchangeDataBuffer, localPlayerId, sequenceNumber);
-                        if (spPtr->Send(hostId, requestCompositeExchangeDataBuffer) != Lb_OK)
-                            fn_000c20c0(D_00122623);
+                        fn_000c20c0(D_0012247f);
                     }
-                    startTime = LbTimerClock();
-                    actualTimeout = basicTimeout * (retries + 1);
-                    basicTimeout += 100;
+                    keep_going = 0;
+                } else {
+                    EncodeMessageStub(buf, exchangeSize - 4, MSG_TYPE_0, sequenceNumber);
+                    if (spPtr->Send(hostId, buf) == Lb_OK)
+                        ret = Lb_OK;
+                    else
+                        fn_000c20c0(D_001224d0);
                 }
-            } while (keep_going);
-        }
-        localDataPtr = 0;
-        if (sequenceNumber != 15) {
-            sequenceNumber++;
-            if (sequenceNumber >= 15)
-                sequenceNumber = 0;
-        }
+                host_changed = 0;
+            }
+            if (keep_going && LbTimerClock() - startTime > actualTimeout) {
+                fn_000c20c0(D_00122517);
+                retries++;
+                if (retries > 10) {
+                    if (GetRequestCompositeExchangeDataMsgSize() > 8) {
+                        fn_000c20c0(D_00122532);
+                    } else {
+                        EncodeDeletePlayerMsg(deletePlayerBuffer, hostId);
+                        if (spPtr->Send(localPlayerId, deletePlayerBuffer) != Lb_OK)
+                            fn_000c20c0(D_00122583);
+                    }
+                    host_changed = 1;
+                } else if (GetRequestCompositeExchangeDataMsgSize() > 8) {
+                    fn_000c20c0(D_001225c2);
+                } else {
+                    EncodeRequestCompositeExchangeDataMsg(requestCompositeExchangeDataBuffer, localPlayerId, sequenceNumber);
+                    if (spPtr->Send(hostId, requestCompositeExchangeDataBuffer) != Lb_OK)
+                        fn_000c20c0(D_00122623);
+                }
+                startTime = LbTimerClock();
+                actualTimeout = basicTimeout * (retries + 1);
+                basicTimeout += 100;
+            }
+        } while (keep_going);
     }
-    if (done_ret == Lb_OK)
+    localDataPtr = 0;
+    if (sequenceNumber != 15) {
+        sequenceNumber++;
+        if (sequenceNumber >= 15)
+            sequenceNumber = 0;
+    }
+    return ret;
+}
+
+// FUNCTION: 0x000c0b74
+// NONMATCHING: register choice in the inlined exchange code
+TbError LbNetwork_Exchange(void *buf)
+{
+    TbError ret;
+
+    ret = Lb_FAIL;
+    if (LbNetwork_StartExchange(buf) != Lb_OK) {
+        fn_000c20c0(D_001226bb);
+        return ret;
+    }
+    if (LbNetwork_CompleteExchange(buf) == Lb_OK)
         ret = Lb_OK;
     else
         fn_000c20c0(D_0012266a);
@@ -846,6 +854,65 @@ TbError HostDataBroadcast(void)
     return ret;
 }
 
+// FUNCTION: 0x000c1518
+// NONMATCHING: register choice in the inlined IdToIndex loops
+void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
+{
+    void *ret = 0;
+    u32 ok;
+
+    if (localPlayerId == hostId) {
+        if (size == exchangeSize) {
+            if (id == localPlayerId) {
+                fn_000c20c0(D_001229be);
+            } else if (IdToIndex(id)) {
+                if (seq == sequenceNumber || seq == 15) {
+                    ret = exchangeBuffer + id * exchangeSize;
+                    clientDataTable[id].got_data = 1;
+                } else {
+                    fn_000c20c0(D_00122a02, seq, sequenceNumber);
+                }
+            } else {
+                fn_000c20c0(D_00122a5c, id);
+            }
+        } else {
+            fn_000c20c0(D_00122a95, size);
+        }
+    } else if (size == exchangeSize * maximumPlayers) {
+        if (hostId == id) {
+            if (IdToIndex(id)) {
+                ok = 1;
+                if (sequenceNumber == 15)
+                    sequenceNumber = seq;
+                else if (sequenceNumber != seq)
+                    ok = 0;
+                if (ok) {
+                    gotCompositeData = 1;
+                    ret = exchangeBuffer;
+                } else {
+                    fn_000c20c0(D_00122ad2, seq, sequenceNumber);
+                }
+            } else {
+                fn_000c20c0(D_00122b2c, id);
+            }
+        } else {
+            fn_000c20c0(D_00122b65);
+        }
+    } else if (size == exchangeSize) {
+        if (id == localPlayerId) {
+            fn_000c20c0(D_00122ba5);
+        } else if (IdToIndex(id)) {
+            ret = exchangeBuffer + id * exchangeSize;
+            clientDataTable[id].got_data = 1;
+        } else {
+            fn_000c20c0(D_00122bfa, id);
+        }
+    } else {
+        fn_000c20c0(D_00122c33, size);
+    }
+    return ret;
+}
+
 // FUNCTION: 0x000c1810
 void __stdcall AddMsgCallback(u32 id, char *name, void *data)
 {
@@ -1011,6 +1078,88 @@ void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *da
     } else {
         fn_000c20c0(D_00122e38, seq, sequenceNumber);
     }
+}
+
+// FUNCTION: 0x000c1c20
+// NONMATCHING: exception-table relocation only (known tool gap: CONST2)
+TbError GenericIPXInit(__tibcaGUID guid)
+{
+    TbError ret = Lb_FAIL;
+
+    if (spPtr) {
+        spPtr->Release();
+        delete spPtr;
+        spPtr = 0;
+    }
+    spPtr = new IPXServiceProvider;
+    if (spPtr) {
+        if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
+            ret = Lb_OK;
+        else
+            fn_000c20c0(D_00122093);
+    }
+    return ret;
+}
+
+// FUNCTION: 0x000c1d5c
+TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size)
+{
+    TbError ret = Lb_FAIL;
+
+    if (size + 5 > 0x404) {
+        fn_000c20c0(D_00122263, type);
+    } else {
+        EncodeMessageStub(systemUserBuffer, size + 1, (TbMessageType)4, 0);
+        systemUserBuffer[4] = type;
+        if (buf && size > 0)
+            memcpy(systemUserBuffer + 5, buf, size);
+        ret = spPtr->Send(id, systemUserBuffer);
+    }
+    return ret;
+}
+
+void PlayerMapMsgHandler(u32 id, void *buf, u32 size);
+
+// FUNCTION: 0x000c1de8
+// NONMATCHING: block layout: the target tests the message type inline and its early return
+// jumps into MultiPlayerCallback's epilogue (the module was built without -zm)
+void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
+{
+    if (!msg || !size)
+        return;
+    switch (*(TbMessageType *)msg) {
+    case MSG_TYPE_0:
+        PlayerMapMsgHandler(id, (u8 *)msg + 1, size - 1);
+        break;
+    default:
+        fn_000c20c0(D_00122f32, *(TbMessageType *)msg);
+        break;
+    }
+}
+
+// FUNCTION: 0x000c1f24
+void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
+{
+    u32 table_size = maximumPlayers * sizeof(__4kqpm7ClientDataEntry);
+
+    if (size == 0) {
+        SendSystemUserMessage(id, MSG_TYPE_0, clientDataTable, table_size);
+    } else if (waitingForPlayerMapResponse) {
+        if (size == table_size) {
+            memcpy(clientDataTable, buf, size);
+            waitingForPlayerMapResponse = 0;
+        } else {
+            fn_000c20c0(D_00122ea6, size);
+        }
+    } else {
+        fn_000c20c0(D_00122ee2);
+    }
+}
+
+// FUNCTION: 0x000c2020
+// NONMATCHING: exception-table relocation only (known tool gap: CONST2)
+IPXServiceProvider::IPXServiceProvider()
+{
 }
 
 // FUNCTION: 0x000c20d0

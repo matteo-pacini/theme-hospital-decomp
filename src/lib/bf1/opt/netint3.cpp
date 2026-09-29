@@ -184,7 +184,13 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
     id = clientDataTable[player].id;
     do {
         spPtr->Receive(8);
-        if (unidirectionalMsgReceived) {
+        if (!unidirectionalMsgReceived) {
+            elapsed = LbTimerClock() - start;
+            if ((elapsed < 0 ? -elapsed : elapsed) > 30000) {
+                fn_000c20c0(D_001244d4);
+                waiting = 0;
+            }
+        } else {
             unidirectionalMsgReceived = 0;
             if (incomingUnidirectionalMessage.type == 0) {
                 total = incomingUnidirectionalMessage.block;
@@ -205,12 +211,6 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
                         waiting = 0;
                     }
                 }
-            }
-        } else {
-            elapsed = LbTimerClock() - start;
-            if ((elapsed < 0 ? -elapsed : elapsed) > 30000) {
-                fn_000c20c0(D_001244d4);
-                waiting = 0;
             }
         }
     } while (waiting);

@@ -240,7 +240,8 @@ u32 __cdecl AIL_init_sequence(u32 sequence, u32 start, s32 track);
 void __cdecl AIL_shutdown(void);
 void __cdecl AIL_mem_use_malloc(void *(*fn)(u32));
 void __cdecl AIL_mem_use_free(int (*fn)(void *));
-void __cdecl AIL_startup(void);
+void __cdecl AIL_startup_reg(void);
+#define AIL_startup AIL_startup_reg
 s32 __cdecl AIL_set_preference(u32 number, s32 value);
 u32 __cdecl AIL_install_DIG_driver_file(char *filename, AILIOParms *io);
 s32 __cdecl AIL_read_INI(AILIni *ini, char *filename);
@@ -253,7 +254,6 @@ s32 __cdecl AIL_install_MDI_INI(u32 *driver);
 void __cdecl AIL_uninstall_MDI_driver(u32 driver);
 u32 __cdecl AIL_allocate_sequence_handle(u32 driver);
 s32 __cdecl AIL_MDI_driver_type(u32 driver);
-#pragma aux AIL_startup "_AIL_startup_reg"
 }
 
 extern u8 sample_queue_handle_initiated;

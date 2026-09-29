@@ -144,6 +144,27 @@ struct __4dn7ojSerialInitData {
 
 struct __iobuf;
 
+struct CommHandlerData {
+    char response[0x50];
+    long timeout;
+    long dial_timeout;
+    char init_str[0x50];
+    char dial_str[0x50];
+    char hangup_str[0x50];
+    char reset_str[0x50];
+    long port;
+    long unknown19c;
+    char last_cmd[0x50];
+    u8 online;
+    long (*init_func)(void);
+    long (*dial_func)(void);
+    long (*hangup_func)(void);
+    long (*other_func)(void);
+    long (*cur_func)(void);
+};
+
+#define CH(p) ((CommHandlerData *)(p))
+
 struct CommHandler {
     u8 unknown0[0x205];
 
@@ -246,6 +267,8 @@ struct ModemSP : SerialSP {
     TbError Init(__tibcaGUID guid, __ic76sReceiveCallbacks *callbacks, void *data);
     TbError SendMessage(u32 to, void *buf, TbMessageType type);
     TbError Stop(void);
+    TbError Start(char *session, char *name, u32 max_players, void *data);
+    TbError Start(TbNetworkSessionNameEntry *session, char *name, void *data);
     u32 ReadMessage(u32 *from, void *buf, u32 *size);
     u32 PeekMessage(u32 *from, void *buf, u32 *size);
 };
@@ -472,7 +495,8 @@ struct IPXSessionInfo {
     u32 magic;
     u8 unknown4[8];
     __tibcaGUID guid;
-    u8 unknown1c[0x24];
+    char name[0x20];
+    u32 local_id;
     u32 host_id;
     u16 num_players;
     u16 max_players;
@@ -484,7 +508,8 @@ struct __5303ctCLIENTINFOPACKET {
     u32 magic;
     u8 unknown4[8];
     __tibcaGUID guid;
-    u8 unknown1c[0x24];
+    char name[0x20];
+    u32 session_id;
     u32 local_id;
     u32 host_id;
     u16 num_players;
@@ -530,6 +555,12 @@ struct __6gjpddIPXSPDATAMESSAGE {
 
 typedef __6gjpddIPXSPDATAMESSAGE IPXQueueEntry;
 
+struct __407tigIPXMESSAGEBLOCK {
+    u32 magic;
+    u8 unknown4[8];
+    __tibcaGUID guid;
+};
+
 struct IPXSessionEntry {
     u8 address[16];
     char name[0x20];
@@ -542,7 +573,7 @@ struct IPXServiceProvider : ServiceProvider {
     IPXPlayerEntry *players;
     IPXSessionEntry session_list[32];
     __3ljac5NETSOCKET socket;
-    u8 unknown11e2[0x120b - 0x11e2];
+    TbNetworkSessionNameEntry entry;
     IPXSessionInfo session;
     __5303ctCLIENTINFOPACKET remote;
     __tibcaGUID guid;
@@ -570,7 +601,15 @@ struct IPXServiceProvider : ServiceProvider {
     TbError SendMessageToPlayerId(u32 id, void *buf, u32 size);
     u32 HaveIGotAckDataMessage(u8 seq, u32 id);
     u32 ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg);
+    inline void AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg);
     void BatchProcess(u8 delay);
+    TbError Update(void);
+    TbError Release(void);
+    TbError Stop(void);
+    TbError Start(char *session, char *name, u32 max_players, void *data);
+    TbError Start(TbNetworkSessionNameEntry *entry, char *name, void *data);
+    TbError Enumerate(TbNetworkCallbackFunc callback, void *data);
+    TbError Enumerate(TbNetworkSessionNameEntry *session, TbNetworkCallbackFunc callback, void *data);
     __6gjpddIPXSPDATAMESSAGE *GetNextEmptyReceiveBuffer(void);
     TbError ChangeSettings(u32 setting, void *data);
     TbError EnableNewPlayers(u32 allow);
@@ -580,7 +619,7 @@ struct IPXServiceProvider : ServiceProvider {
     TbError AllocateSpStuff(void);
     void FreeAllocSpStuff(void);
     void ClearSpStuff(void);
-    TbError CheckMessage(u8 *data);
+    TbError BullfrogIPXMessage(__407tigIPXMESSAGEBLOCK *msg, __tibcaGUID *id);
     void ProcessSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg);
     void SendToAll(u32 me, u32 max, __1p5pi1IPXSYSTEMMESSAGE *msg);
 };
@@ -588,8 +627,6 @@ struct IPXServiceProvider : ServiceProvider {
 extern "C" {
 u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek);
 #pragma aux fn_000d6598 "W?PrivateReceive$:IPXServiceProvider$n(pnulpnvpnul$$TE$$)ul"
-TbError fn_000d7768(IPXServiceProvider *self);
-#pragma aux fn_000d7768 "W?Update$:IPXServiceProvider$n()$TbError$$"
 void fn_000d508c(IPXHandler *ipx, u16 type, char *name, __3ljac5NETSOCKET *sock);
 extern char D_001260e9[];
 extern char D_00126118[];

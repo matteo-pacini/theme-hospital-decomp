@@ -307,3 +307,27 @@ Compiler and flags per source file come from `config/cflags.txt`.
   or type signature is emitted in the module that defines the class's
   constructors; function-local statics are relocated as
   `W?name$:.0$:?Fn$n(..)..`, which needs a `config/symbols.txt` entry.
+  Further idioms of this code (established on `ipxsp`, `netint`,
+  `modemsp`, `serialsp`):
+  - Code repeated across callers is an inlined member, not a macro:
+    `IPXServiceProvider::BatchProcess` (with real function-local statics
+    `static u32 t = clock();`, which give the `$Wbi00$` guard byte),
+    `GetNextEmptyReceiveBuffer`, `AddToReceiveBuffer`. `AddToReceiveBuffer`,
+    defined after its callers, is only inlined at any `-oe` once declared
+    `inline`; the original still emits it out of line.
+  - `for` loops are rotated (jump to the test at the bottom), `while`
+    loops are tested at the top: pick the loop kind from the layout.
+  - A local copy of a pointer (`data = p->data;`, a block-scoped cast
+    pointer per `case`) gets its own register or slot; the compiler does
+    not merge it back into the original.
+  - The `AddPlayer` flags in `AddToReceiveBuffer` and
+    `EnumerateAndAddPlayers` are set with `x = 0; if (a == b) x = 1;`;
+    `a == b` as the argument gives `sete` (and, in `AddToReceiveBuffer`,
+    an `ebp` frame). Other functions do use `sete`.
+  - Early `return`s produce separate epilogues; a single `ret` variable
+    with nested `if`s produces jumps to one epilogue. `if (!x) A else B`
+    and `if (x) B else A` order the blocks differently.
+  - `netint` needs `-oe=400` for `LbNetwork_Exchange` to inline
+    `LbNetwork_StartExchange`/`LbNetwork_CompleteExchange` and those to
+    inline their multi-player halves; `HostDataCollection`/`Broadcast`
+    must then be kept out of line with `#pragma aux`.

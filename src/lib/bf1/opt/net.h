@@ -34,6 +34,7 @@ struct ServiceProvider {
     u32 started;
     void *callback_data;
 
+    ServiceProvider();
     virtual ~ServiceProvider();
     virtual TbError Start(TbNetworkSessionNameEntry *session, char *name, void *data) = 0;
     virtual TbError Start(char *session, char *name, u32 max_players, void *data) = 0;

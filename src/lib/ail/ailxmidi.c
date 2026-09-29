@@ -737,12 +737,12 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     }
     memcpy(mdi->tag, D_00126ecc, 4);
     mdi->drvr = drvr;
-    if (drvr->type != MDI_DRIVER) {
+    if (mdi->drvr->type != MDI_DRIVER) {
         strcpy(AIL_error, D_00126ed4);
         AIL_mem_free_lock(mdi);
         return NULL;
     }
-    AIL_call_driver(drvr, DRV_GET_INFO, NULL, &out);
+    AIL_call_driver(mdi->drvr, DRV_GET_INFO, NULL, &out);
     mdi->DDT = (MDI_DDT *)(((U32)out.DX << 4) + (U32)out.AX);
     mdi->DST = (MDI_DST *)(((U32)out.CX << 4) + (U32)out.BX);
     env = (char *)(((mdi->DDT->library_environment >> 16) << 4)

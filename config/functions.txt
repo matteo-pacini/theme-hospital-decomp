@@ -1506,7 +1506,7 @@
 000c1d5c     8b W?SendSystemUserMessage$n(ul$$TE$$pnvul)$TbError$$
 000c1de8    13a W?SystemUserMsgCallback$n(ulpnvulpnv)v
 000c1f24     f8 W?PlayerMapMsgHandler$n(ulpnvul)v
-000c2020     91 fn_000c2020_
+000c2020     91 W?$ct:IPXServiceProvider$n()_
 000c20c0      1 fn_000c20c0_
 000c20d0     13 W?$ct:TbNetworkSessionNameEntry$n()_
 000c20f0     1d fn_000c20f0_
