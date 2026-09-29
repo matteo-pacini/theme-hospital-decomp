@@ -19,13 +19,9 @@ static int __update_buffer(long diff, FILE *fp)
     return 1;
 }
 
-// NONMATCHING: SEEK_SET computes the buffer offset in edx rather than edi
 // FUNCTION: 0xfc803
 int fseek(FILE *fp, long offset, int origin)
 {
-    long ptr_delta;
-    long file_ptr;
-
     if (fp->_flag & (_WRITE | _UNGET)) {
         if (fp->_flag & _DIRTY) {
             if (__flush(fp)) {
@@ -45,20 +41,25 @@ int fseek(FILE *fp, long offset, int origin)
     } else {
         switch (origin) {
         case SEEK_CUR:
-            ptr_delta = fp->_cnt;
+        {
+            long ptr_delta = fp->_cnt;
+
             if (__update_buffer(offset, fp)) {
-                if (lseek(fp->_handle, offset - ptr_delta, origin) == -1)
-                    return -1;
-            }
-            break;
-        case SEEK_SET:
-            file_ptr = tell(fp->_handle);
-            ptr_delta = fp->_cnt;
-            if (__update_buffer(offset - (file_ptr - ptr_delta), fp)) {
+                offset -= ptr_delta;
                 if (lseek(fp->_handle, offset, origin) == -1)
                     return -1;
             }
-            break;
+        }   break;
+        case SEEK_SET:
+        {
+            long file_ptr = tell(fp->_handle);
+
+            file_ptr -= fp->_cnt;
+            if (__update_buffer(offset - file_ptr, fp)) {
+                if (lseek(fp->_handle, offset, origin) == -1)
+                    return -1;
+            }
+        }   break;
         case SEEK_END:
             fp->_flag &= ~_EOF;
             fp->_ptr = fp->_base;

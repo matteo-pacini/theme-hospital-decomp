@@ -217,7 +217,7 @@ u32 __cdecl radopen(const char __far *name, u32 mode);
 void __cdecl radclose(u32 handle);
 void __cdecl radread(u32 handle, void __far *buf, u32 size, u32 *amount);
 void __cdecl radseekbegin(u32 handle, u32 pos);
-u32 __cdecl radseekend(u32 handle, u32 pos);
+u32 __cdecl radseekcur(u32 handle, u32 pos);
 
 void __cdecl Unsmack(u8 *data, void *addr32, u8 *deltas);
 void __cdecl SmackDoPCM(u32 *in, u32 insize, u8 *work, u8 *outbase, u8 *outend, u8 *outpos);
@@ -245,7 +245,9 @@ void *smkmalloc(Smack *smk, u32 bytes);
 #pragma aux nexttrack "GetFirstTrack_";
 
 // FUNCTION: 0xea4f0
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: the mask and the index swap registers (the target keeps the
+// mask in edx and the index in al, the return register); the copies inlined
+// into the callers match
 u8 nexttrack(u32 *flags)
 {
     u8 i;
@@ -313,12 +315,9 @@ void __pascal SmackSoundCheck(void)
 #pragma aux (__pascal) SmackVolumePan "SMACKVOLUMEPAN";
 
 // FUNCTION: 0xe8080
-// NONMATCHING: smk and pan swap esi/edi; the target indexes sounds with
-// shl/add instead of a scaled address
 void __pascal SmackVolumePan(Smack *smk, u32 trackflag, u32 volume, u32 pan)
 {
     u8 trk;
-    SmackSnd *snd;
 
     if (smk == NULL || smk->f430 == -1)
         return;
@@ -329,9 +328,8 @@ void __pascal SmackVolumePan(Smack *smk, u32 trackflag, u32 volume, u32 pan)
     while (trackflag & SMACKTRACKS) {
         trk = nexttrack(&trackflag);
         if (trk < 7) {
-            snd = smk->sounds[trk];
-            if (snd != NULL && D_00151690 != NULL)
-                D_00151690(snd, volume, pan);
+            if (smk->sounds[trk] != NULL && D_00151690 != NULL)
+                D_00151690(smk->sounds[trk], volume, pan);
         }
     }
 }
@@ -358,7 +356,8 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface);
 #pragma aux (__pascal) SmackToBufferRect "fn_000e8190_";
 
 // FUNCTION: 0xe8190
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: register allocation; the target computes &smk->f3f8 once before
+// the SmackSurface test and orders the spill slots differently
 u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
 {
     u32 left;
@@ -418,11 +417,7 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
         smk->f3f4 = 3;
     } else {
         area = (smk->f400 * smk->f404 * 5) >> 2;
-        for (;;) {
-            if (!fn_0010f440(smk->f3b0, &smk->f3f8)) {
-                smk->f3f4 = 3;
-                break;
-            }
+        while (fn_0010f440(smk->f3b0, &smk->f3f8)) {
             area += (smk->f400 * smk->f404 * 5) >> 2;
             nleft = smk->f3f8;
             if (left <= nleft)
@@ -432,12 +427,14 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
                 nright = right;
             nbottom = smk->f3fc + smk->f404;
             if (area < (nbottom - top) * (nright - nleft))
-                break;
+                goto rect;
             right = nright;
             left = nleft;
             bottom = nbottom;
         }
+        smk->f3f4 = 3;
     }
+rect:
     if (smk->OpenFlags & 0x300000) {
         top += top;
         bottom += bottom;
@@ -597,16 +594,18 @@ void __pascal SmackColorTrans(Smack *smk, const void *trans)
 }
 
 // FUNCTION: 0xe8890
-// NONMATCHING: stack frame layout and register allocation differ
+// NONMATCHING: register allocation: the target reads the delta header byte
+// into bl before comparing it, and multiplies pitch * row in a fresh register
 void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 destheight, const void *buf, u32 flags)
 {
     u32 bpl;
-    u32 mult;
     u32 height;
+    u32 mult;
     u32 step;
     u32 row;
     u8 *t;
     u32 *p;
+    u32 size;
 
     if (smk == NULL)
         return;
@@ -629,40 +628,42 @@ void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 desthe
         mult = 7;
     }
     t = smk->f3b0;
-    if (t == NULL || *t != 1) {
-        if (t != NULL) {
-            RADFREE(t);
-            smk->f46c -= smk->f3b4;
-        }
-        smk->f3b4 = SmackGetSizeDeltas(smk->Width, height) + 0x20;
-        smk->f3b0 = smkmalloc(smk, smk->f3b4);
-        if (smk->f3b0 == NULL)
-            return;
-        radmemset(smk->f3b0, 0, smk->f3b4);
+    if (t != NULL) {
+        if (*t == 1)
+            goto have;
+        RADFREE(t);
+        smk->f46c -= smk->f3b4;
     }
+    size = SmackGetSizeDeltas(smk->Width, height) + 0x20;
+    smk->f3b4 = size;
+    smk->f3b0 = smkmalloc(smk, size);
+    if (smk->f3b0 == NULL)
+        return;
+    radmemset(smk->f3b0, 0, size);
+have:
     smk->TopOfs = top;
     smk->LeftOfs = left;
     t = smk->f3b0;
     t[0] = 1;
-    t[1] = (smk->OpenFlags & 0x200000) != 0;
+    t[1] = (smk->OpenFlags & 0x200000) ? 1 : 0;
     p = (u32 *)(t + 4);
     row = flags ? destheight - top - 1 : top;
-    *p++ = (u32)buf + left + pitch * row;
+    *p++ = (u32)buf + (left + pitch * row);
     step = mult * bpl;
     *p++ = smk->Width >> 2;
     *p++ = height >> 2;
     if (flags) {
-        p[0] = -(step + 4);
-        p[1] = -step;
-        p[2] = -bpl;
-        p[3] = -((mult + 2) * bpl - (bpl - smk->Width));
+        *p++ = -(step + 4);
+        *p++ = -step;
+        *p++ = -bpl;
+        *p++ = -((mult + 2) * bpl - (bpl - smk->Width));
     } else {
-        p[0] = step - 4;
-        p[1] = step;
-        p[2] = bpl;
-        p[3] = step + (bpl - smk->Width);
+        *p++ = step - 4;
+        *p++ = step;
+        *p++ = bpl;
+        *p++ = step + (bpl - smk->Width);
     }
-    p += 4;
+    p++;
     *p++ = smk->Width;
     *p = height;
 }
@@ -844,24 +845,24 @@ u16 *PutWidths(u16 *p, u32 width, u32 pitch, u32 height, u32 lines)
 }
 
 // FUNCTION: 0xe9050
-// NONMATCHING: register allocation and instruction scheduling differ
 void __pascal SmackNextFrame(Smack *smk)
 {
     if (smk == NULL)
         return;
     if (smk->unknown39c) {
         smk->FrameNum++;
-        return;
+    } else {
+        if (sounds)
+            LowSoundCheckAddr();
+        timeframe(smk);
+        smk->f3c0 += smk->f3c8[smk->FrameNum];
+        smk->FrameNum++;
+        if (smk->FrameNum < smk->Frames)
+            readframe(smk);
+        setuptheframe(smk);
+        if (sounds)
+            LowSoundCheckAddr();
     }
-    if (sounds)
-        LowSoundCheckAddr();
-    timeframe(smk);
-    smk->f3c0 += smk->f3c8[smk->FrameNum++];
-    if (smk->FrameNum < smk->Frames)
-        readframe(smk);
-    setuptheframe(smk);
-    if (sounds)
-        LowSoundCheckAddr();
 }
 
 void __pascal SmackSummary(Smack *smk, SmackSum *sum);
@@ -999,7 +1000,8 @@ u8 doskip(Smack *smk)
 }
 
 // FUNCTION: 0xe94c0
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: register allocation; the target spills silence (one more
+// dword of frame) and keeps the inlined nexttrack's mask in edx
 void soundnext(Smack *smk)
 {
     SmackSnd *first;
@@ -1028,20 +1030,14 @@ void soundnext(Smack *smk)
     tracks = smk->OpenFlags;
     trk = nexttrack(&tracks);
     src = smk->trackbufs[trk];
-    if (src == NULL)
-        size = 0;
-    else if ((smk->TrackType[trk] >> 24) & 0x80)
-        size = src[1];
-    else
-        size = src[0] - 4;
-    smk->sounds[trk]->f4c = size == 0;
-    if (size == 0)
+    size = src == NULL ? 0 : (smk->TrackType[trk] & 0x80000000) ? src[1] : src[0] - 4;
+    if (smk->sounds[trk]->f4c = size == 0)
         goto done;
+    if (sounds)
+        LowSoundCheckAddr();
     for (;;) {
-        if (sounds)
-            LowSoundCheckAddr();
         snd = smk->sounds[trk];
-        if (snd->f10 + size > snd->bufsize) {
+        if (size + snd->f10 > snd->bufsize) {
             size = snd->bufsize - snd->f10;
             snd->f30++;
         }
@@ -1077,7 +1073,7 @@ void soundnext(Smack *smk)
                 fill = 0;
             }
         }
-        if ((smk->TrackType[trk] >> 24) & 0x80) {
+        if (smk->TrackType[trk] & 0x80000000) {
             SmackDoPCM(src + 2, size, trackbuf, snd->buf, snd->bufend, snd->writepos);
         } else if (size + (u32)snd->writepos > (u32)snd->bufend) {
             radmemcpy(snd->writepos, src + 1, snd->bufend - snd->writepos);
@@ -1095,12 +1091,7 @@ void soundnext(Smack *smk)
         if (trk == 0xff)
             break;
         src = smk->trackbufs[trk];
-        if (src == NULL)
-            size = 0;
-        else if ((smk->TrackType[trk] >> 24) & 0x80)
-            size = src[1];
-        else
-            size = src[0] - 4;
+        size = src == NULL ? 0 : (smk->TrackType[trk] & 0x80000000) ? src[1] : src[0] - 4;
     }
 done:
     if ((first->f20 >> 10) + first->f24 > first->f2c) {
@@ -1157,7 +1148,8 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on);
 #pragma aux (__pascal) SmackSoundOnOff "SMACKSOUNDONOFF";
 
 // FUNCTION: 0xe9a20
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: register allocation; the target has one more dword of frame
+// and loads D_0015168c into a register before testing it
 u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
 {
     u32 i;
@@ -1165,7 +1157,7 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
     u32 behind;
     u32 need;
     u32 fill;
-    u32 silence;
+    u8 silence;
 
     if (smk == NULL)
         return 0;
@@ -1238,7 +1230,9 @@ void __pascal SmackSimulate(u32 speed)
 }
 
 // FUNCTION: 0xe9c80
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: the spill slots of largest, start, handle, left, fps and
+// nextsize are ordered differently, and the inlined readframe loads FrameNum
+// before f3c8
 Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
 {
     Smack *smk;
@@ -1251,7 +1245,6 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     u32 fps;
     u32 *nextsize;
     u32 total;
-    u32 frames;
     u32 size;
     u8 *tables;
     u32 i;
@@ -1269,18 +1262,27 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     if (flags & 0x1000) {
         handle = (flags & 0x2000000) ? *(u32 *)name : (u32)name;
         if (handle != -1)
-            tmp = radseekend(handle, 0);
+            tmp = radseekcur(handle, 0);
     } else {
         handle = radopen(name, 0);
         tmp = 0;
     }
-    if (handle == -1)
-        goto fail;
+    if (handle == -1) {
+    fail:
+        SmackTimerDoneAddr();
+        return NULL;
+    }
     smk = (Smack *)name;
     if (!(flags & 0x2000000)) {
         smk = RADMALLOC(sizeof(Smack));
-        if (smk == NULL)
-            goto fail_close;
+        if (smk == NULL) {
+        fail_close:
+            if (flags & 0x1000)
+                goto fail;
+            radclose(smk->handle);
+            SmackTimerDoneAddr();
+            return NULL;
+        }
     }
     radmemset(smk, 0, sizeof(Smack));
     smk->f46c = sizeof(Smack);
@@ -1291,22 +1293,26 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     tmp = 0;
     smk->Version = 0;
     blockread(smk, (u8 *)smk, (u32)((u8 *)&smk->extra - (u8 *)smk) + 4);
-    if (smk->Version != 0x324b4d53)
-        goto fail_free;
+    if (smk->Version != 0x324b4d53) {
+    fail_free:
+        if (!(flags & 0x2000000))
+            RADFREE(smk);
+        goto fail_close;
+    }
     if (flags & 0x80)
         smk->MSPerFrame = forcerate;
     smk->f410 = (s32)smk->MSPerFrame < 0 ? -smk->MSPerFrame : smk->MSPerFrame * 100;
     fps = smk->f410 ? 100000 / smk->f410 : 100000;
     if (fps == 0)
-        fps = 1;
-    frames = smk->Frames + (smk->SmackerType & 1);
-    smk->f3cc = smkmalloc(smk, frames * 5 + 4);
+        ++fps;
+    tmp = smk->Frames + (smk->SmackerType & 1);
+    smk->f3cc = smkmalloc(smk, tmp * 5 + 4);
     if (smk->f3cc == NULL)
         goto fail_free;
-    smk->f3c8 = (u32 *)(smk->f3cc + frames);
-    blockread(smk, (u8 *)smk->f3c8, frames * 4);
-    blockread(smk, smk->f3cc, frames);
-    smk->f3b8 += frames * 4 + frames;
+    smk->f3c8 = (u32 *)(smk->f3cc + tmp);
+    blockread(smk, (u8 *)smk->f3c8, tmp * 4);
+    blockread(smk, smk->f3cc, tmp);
+    smk->f3b8 += tmp * 4 + tmp;
     size = SmackGetSizeTables() + smk->codesize + smk->absize + smk->detailsize + smk->typesize;
     smk->addr32 = smkmalloc(smk, size);
     if (smk->addr32 == NULL) {
@@ -1314,28 +1320,31 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
         goto fail_free;
     }
     size = (smk->tablesize + 0x1003) & ~3;
-    if (size < 0x2000)
-        size = 0x2000;
-    tables = smkmalloc(smk, size);
-    if (tables == NULL)
-        goto fail_tables;
+    tables = smkmalloc(smk, size < 0x2000 ? 0x2000 : size);
+    if (tables == NULL) {
+    fail_tables:
+        RADFREE(smk->addr32);
+        RADFREE(smk->f3cc);
+        goto fail_free;
+    }
     blockread(smk, tables + 0x1000, smk->tablesize);
     SmackDoTables(tables, smk->addr32, smk->codesize, smk->absize, smk->detailsize, smk->typesize);
     RADFREE(tables);
     smk->f46c -= smk->tablesize + 0x1000;
     smk->f3b8 += (u32)((u8 *)&smk->extra - (u8 *)smk) + 4 + smk->tablesize;
-    frames = smk->Frames - 1 + (smk->SmackerType & 1);
+    tmp = smk->Frames - 1 + (smk->SmackerType & 1);
     highest = 0;
     sz = smk->f3c8;
-    if (frames < fps) {
+    if (tmp < fps) {
         highframe = 0;
         i = 0;
         for (;;) {
             highest += *sz;
             if (*sz > largest)
                 largest = *sz;
-            total += *sz++;
-            if (++i > frames)
+            total += *sz;
+            sz++;
+            if (++i > tmp)
                 break;
         }
     } else {
@@ -1343,7 +1352,7 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
         for (i = 0; i < fps; i++)
             window += *sz++;
         sz = smk->f3c8;
-        left = frames - fps;
+        left = tmp - fps;
         i = 0;
         nextsize = sz + fps;
         for (;;) {
@@ -1355,16 +1364,17 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
             window += *nextsize;
             if (*sz > largest)
                 largest = *sz;
-            total += *sz++;
+            total += *sz;
+            sz++;
             nextsize++;
             if (++i > left)
                 break;
         }
-        while (i <= frames) {
+        for (; i <= tmp; i++) {
             if (*sz > largest)
                 largest = *sz;
-            total += *sz++;
-            i++;
+            total += *sz;
+            sz++;
         }
     }
     smk->f4b8 = highframe;
@@ -1390,7 +1400,7 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
             smk->f450 = extrabuf;
             smk->f3a8 = largest;
             if (extrabuf) {
-                smk->f43c = smk->f444 = smk->f448 = smkmalloc(smk, extrabuf + 0x1000);
+                smk->f448 = smk->f444 = smk->f43c = smkmalloc(smk, extrabuf + 0x1000);
                 if (smk->f43c == NULL)
                     goto fail_tables;
                 smk->f440 = smk->f43c + smk->f450;
@@ -1468,19 +1478,6 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     smk->f458 += smk->f460;
     smk->f484 = smk->f45c;
     return smk;
-
-fail_tables:
-    RADFREE(smk->addr32);
-    RADFREE(smk->f3cc);
-fail_free:
-    if (!(flags & 0x2000000))
-        RADFREE(smk);
-fail_close:
-    if (!(flags & 0x1000))
-        radclose(smk->handle);
-fail:
-    SmackTimerDoneAddr();
-    return NULL;
 }
 
 // FUNCTION: 0xea520
@@ -1533,13 +1530,15 @@ u8 soundopen(Smack *smk, u8 trk)
 }
 
 // FUNCTION: 0xea7a0
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: register allocation in the palette loop (the target keeps c in
+// cl, src in edx and dst in ebp)
 void setuptheframe(Smack *smk)
 {
     u8 oldpal[0x300];
     u32 n;
     u8 *prev;
     u16 i;
+    u8 cnt2;
     u8 cnt;
     s32 d;
     u8 *p;
@@ -1608,14 +1607,15 @@ frame:
                 i += cnt;
                 src++;
             } else if (c & 0x40) {
-                cnt = (c & 0x3f) + 1;
-                n = cnt * 3;
+                cnt2 = (c & 0x3f) + 1;
+                n = cnt2 * 3;
                 radmemcpy(dst, prev + src[1] * 3, n);
                 src += 2;
-                i += cnt;
+                i += cnt2;
                 dst += n;
             } else {
-                *dst++ = pallookup[*src++];
+                *dst++ = pallookup[c];
+                src++;
                 *dst++ = pallookup[*src++];
                 *dst++ = pallookup[*src++];
                 i++;
@@ -1630,7 +1630,9 @@ frame:
 }
 
 // FUNCTION: 0xeab30
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: in the else branch ours adds f450 to a copy of f43c (the target
+// adds in place after the two stores), and the inlined readframe loads f3c8
+// before FrameNum (the target loads FrameNum first)
 u32 gotoframe(Smack *smk)
 {
     u32 pos;
@@ -1653,8 +1655,8 @@ u32 gotoframe(Smack *smk)
                         LowSoundPurgeAddr(snd);
                         snd->f10 = 0;
                         snd->f24 = 0;
-                        snd->f2c = 0;
                         snd->readpos = snd->writepos = snd->buf;
+                        snd->f2c = 0;
                         snd->f28 -= snd->f20;
                         snd->f20 = 0;
                     }
@@ -1684,16 +1686,21 @@ u32 gotoframe(Smack *smk)
         smk->f444 = smk->f43c;
         smk->f440 = smk->f43c + smk->f450;
         radseekbegin(smk->handle, pos);
-        if (pos & 0xfff) {
+        n = pos & 0xfff;
+        if (n) {
             smk->f43c = NULL;
-            n = blockread(smk, smk->f444, 0x1000 - (pos & 0xfff));
+            n = blockread(smk, smk->f444, 0x1000 - n);
             smk->f44c = n;
             smk->f448 += n;
             smk->f43c = smk->f444;
         }
     }
     smk->f454 = pos;
-    return readframe(smk);
+    if (smk->OpenFlags & 0x200)
+        return 0;
+    smk->f3c0 = smk->f3bc;
+    smk->FrameSize = smk->f3c8[smk->FrameNum];
+    return blockread(smk, smk->f3bc, smk->FrameSize);
 }
 
 /* config/functions.txt has no name for readframe. */
@@ -1710,7 +1717,7 @@ u32 readframe(Smack *smk)
 }
 
 // FUNCTION: 0xeae00
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: stack slot assignment of the spilled locals
 u32 blockread(Smack *smk, u8 *buf, u32 size)
 {
     u32 amount;
@@ -1732,7 +1739,7 @@ u32 blockread(Smack *smk, u8 *buf, u32 size)
             n = smk->f440 - smk->f444;
             if (n > size)
                 n = size;
-            if (n > smk->f44c)
+            if (smk->f44c < n)
                 n = smk->f44c;
             radmemcpy(buf, smk->f444, n);
             smk->f44c -= n;

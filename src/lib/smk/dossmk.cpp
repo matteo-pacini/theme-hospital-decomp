@@ -70,7 +70,8 @@ u8 play_smk(char *name, u32 a2, u32 flags)
 }
 
 // FUNCTION: 0xca398
-// NONMATCHING: ebp frame here; the original keeps a local in ebp
+// NONMATCHING: ebp frame here (the original keeps a local in ebp); the original
+// also starts with a dead test of flags & 0x200 and preloads SMACKAUTOEXTRA
 long play_smk_direct(char *name, long a2, long flags)
 {
     Smack *smk;
@@ -78,12 +79,12 @@ long play_smk_direct(char *name, long a2, long flags)
     u8 new_palette;
     int i;
 
-    if ((flags & 1) || !GetSoundDriver()) {
-        flags |= 1;
-    } else {
+    if (!(flags & 1) && GetSoundDriver()) {
         fn_000e7910(GetSoundDriver());
+    } else {
+        flags |= 1;
     }
-    smk = SmackOpen(name, (flags & 1) ? 0 : SMACKTRACKS, SMACKAUTOEXTRA);
+    smk = SmackOpen(name, (flags & 1) == 0 ? SMACKTRACKS : 0, SMACKAUTOEXTRA);
     if (smk == 0)
         return 0;
     if (flags & 0x100) {
@@ -128,7 +129,8 @@ long play_smk_direct(char *name, long a2, long flags)
 }
 
 // FUNCTION: 0xca568
-// NONMATCHING: ebp frame here; the original keeps buf in ebp
+// NONMATCHING: ebp frame here (the original keeps buf in ebp); the original
+// also starts with a dead test of flags & 0x200 and preloads SMACKAUTOEXTRA
 long play_smk_via_buffer(char *name, long a2, long flags)
 {
     Smack *smk;
@@ -136,12 +138,12 @@ long play_smk_via_buffer(char *name, long a2, long flags)
     u32 frame;
     int i;
 
-    if ((flags & 1) || !GetSoundDriver()) {
-        flags |= 1;
-    } else {
+    if (!(flags & 1) && GetSoundDriver()) {
         fn_000e7910(GetSoundDriver());
+    } else {
+        flags |= 1;
     }
-    smk = SmackOpen(name, (flags & 1) ? 0 : SMACKTRACKS, SMACKAUTOEXTRA);
+    smk = SmackOpen(name, (flags & 1) == 0 ? SMACKTRACKS : 0, SMACKAUTOEXTRA);
     if (smk == 0)
         return 0;
     buf = (u8 *)LbMemoryAlloc(smk->Width * smk->Height);
@@ -229,7 +231,6 @@ void copy_line_double_width(u8 *dst, u8 *src, u32 width);
     0xd5 0x5d \
     parm [edi] [esi] [eax] modify [eax ebx ecx edx esi edi];
 
-// NONMATCHING: register choice for the loop counters and row steps
 // FUNCTION: 0xca6f8
 void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
 {
@@ -257,33 +258,51 @@ void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
         dst += (pitch - width) >> 1;
     if (flags & 4) {
         if (flags & 0x80) {
-            for (i = 0; i < height; i++, buf += width, dst += pitch * 2)
+            for (i = 0; i < height; i++) {
                 copy_line_double_both(dst, buf, width, pitch);
+                dst += pitch * 2;
+                buf += width;
+            }
         } else {
-            for (i = 0; i < height; i++, dst += pitch * 2, buf += width)
+            for (i = 0; i < height; i++) {
                 copy_line_double_rows(dst, buf, width, pitch);
+                dst += pitch * 2;
+                buf += width;
+            }
         }
     } else if (flags & 0x80) {
         if (flags & 8) {
-            for (i = 0; i < height; i++, buf += width, dst += pitch * 2)
+            for (i = 0; i < height; i++) {
                 copy_line_double_width(dst, buf, width);
+                dst += pitch * 2;
+                buf += width;
+            }
         } else {
-            for (i = 0; i < height; i++, buf += width, dst += pitch)
+            for (i = 0; i < height; i++) {
                 copy_line_double_width(dst, buf, width);
+                dst += pitch;
+                buf += width;
+            }
         }
     } else if (flags & 8) {
-        for (i = 0; i < height; i++, dst += pitch * 2, buf += width)
+        for (i = 0; i < height; i++) {
             memcpy(dst, buf, width);
+            dst += pitch * 2;
+            buf += width;
+        }
     } else {
-        for (i = 0; i < height; i++, buf += width, dst += pitch)
+        for (i = 0; i < height; i++) {
             memcpy(dst, buf, width);
+            dst += pitch;
+            buf += width;
+        }
     }
-    if (lbDisplay.screen_mode == 1 && !smack_draw_callback) {
-        if (smack_draw_callback)
-            ((SmackDrawCallback)smack_draw_callback)((u8 *)0xa0000, 320, 200);
-    } else {
+    if (lbDisplay.screen_mode != 1 || smack_draw_callback) {
         if (smack_draw_callback)
             ((SmackDrawCallback)smack_draw_callback)(lbDisplay.unknown4, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbScreenSwap();
+    } else {
+        if (smack_draw_callback)
+            ((SmackDrawCallback)smack_draw_callback)((u8 *)0xa0000, 320, 200);
     }
 }

@@ -17,7 +17,7 @@ typedef long time_t;
 #define SECONDS_PER_DAY (24UL * 60UL * 60UL)
 
 extern short const __diyr[];
-extern short const D_00128e0e[];
+extern short const __dilyr[];
 extern struct tm D_0018d670;
 
 int __leapyear(unsigned year);
@@ -58,7 +58,7 @@ struct tm *__brktime(unsigned long days, unsigned long wallclock, long gmtdelta,
     t->tm_yday = day_of_year;
     month_start = __diyr;
     if (__leapyear(year + 1900))
-        month_start = D_00128e0e;
+        month_start = __dilyr;
     month = day_of_year / 31;
     if (day_of_year >= month_start[month + 1])
         ++month;

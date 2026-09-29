@@ -214,7 +214,8 @@ void __pascal MSSLowSoundPurge(SmackSnd *snd)
 #pragma aux (__pascal) MSSLowSoundOpen "fn_000e7af0_";
 
 // FUNCTION: 0xe7af0
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: register choice: the target uses ecx/ebx for the -1 store, the
+// RADFREE argument and halves[1] where ours uses edx/eax
 U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
 {
     if (D_00151668 == NULL) {
@@ -274,16 +275,14 @@ void MSSInitSample(SmackSnd *snd)
 #pragma aux (__pascal) MSSLowSoundPlayed "fn_000e7d60_";
 
 // FUNCTION: 0xe7d60
-// NONMATCHING: register allocation and instruction scheduling differ
 U32 __pascal MSSLowSoundPlayed(SmackSnd *snd)
 {
     U32 played;
 
     MSSLowSoundCheck();
-    if (snd->loadtime == 0)
-        played = snd->loaded;
-    else
-        played = mult64anddiv(snd->bytespersec, SmackTimerReadAddr() - snd->loadtime, 1000);
+    played = snd->loadtime == 0
+        ? snd->loaded
+        : mult64anddiv(snd->bytespersec, SmackTimerReadAddr() - snd->loadtime, 1000);
     if (played > snd->loaded) {
         snd->loadtime = 0;
         played = snd->loaded;

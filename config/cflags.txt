@@ -73,8 +73,9 @@ src/lib/clib/stabdtor.cpp  wpp386  -s -ox -mf -r -3 -zm-
 # __wcpp_2_stab_trav_next_'s epilogue.
 src/lib/clib/stabtrav.cpp  wpp386  -s -ox -mf -r -3 -zm-
 src/lib/clib/*.cpp   wpp386  -s -ox -mf -r -3
-# Bullfrog's Smacker player wrapper: optimised C++.
-src/lib/smk/*.cpp    wpp386  -s -oneatx -4
+# Bullfrog's Smacker player wrapper: optimised C++ for the Pentium (-5: no loop
+# alignment padding, which -4 inserts).
+src/lib/smk/*.cpp    wpp386  -s -oneatx -5
 # RAD's Smacker library: C, same optimisation (-oe inlines its helpers).
 src/lib/smk/*.c      wcc386  -s -oneatx -oe=25 -5
 # Game code: C++, full debug info (which also disables optimisation). -ot

@@ -31,3 +31,6 @@
 000fdc6a _D_00153cfc -0x4
 # netint LbNetwork_Init: clientDataTable[i].active cleared through a pointer stepped one entry ahead
 000bfd46 W?clientDataTable$n[]$__4kqpm7ClientDataEntry$$ -0x28
+# timeutil: the leap-year table read at __dilyr-2 (its sar is after a jmp)
+000f33c5 ___dilyr -0x2
+000f351b ___dilyr -0x2

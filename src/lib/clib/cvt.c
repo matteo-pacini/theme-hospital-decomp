@@ -17,8 +17,6 @@ char *strcpy(char *dst, const char *src);
 char *__cvt(double value, int ndigits, int *dec, int *sign, int fmt, char *buf);
 #pragma aux __cvt parm routine [];
 
-// NONMATCHING: the zero test of bigint accumulates in edi instead of eax,
-// and exact is stored as an immediate rather than through al
 // FUNCTION: 0xfcbf5
 char *__cvt(double value, int ndigits, int *dec, int *sign, int fmt, char *buf)
 {
@@ -57,7 +55,7 @@ char *__cvt(double value, int ndigits, int *dec, int *sign, int fmt, char *buf)
                 ndigits = 16;
             exact = 0;
             if (modf(value, &ipart) == 0.0 && ndigits > n) {
-                exact = 1;
+                ++exact;
                 ndigits = n;
             }
             i = _Scale(*dec, value, ndigits, bigint);
@@ -76,7 +74,7 @@ char *__cvt(double value, int ndigits, int *dec, int *sign, int fmt, char *buf)
                 }
             }
         }
-        if ((bigint[0] | bigint[1] | bigint[2] | bigint[3]) == 0) {
+        if ((bigint[3] | (bigint[2] | (bigint[0] | bigint[1]))) == 0) {
             *sign = 0;
             *dec = 0;
             if (fmt == 'F')

@@ -15,7 +15,7 @@ struct tm {
 typedef long time_t;
 
 extern short const __diyr[];
-extern short const D_00128e0e[];
+extern short const __dilyr[];
 extern char *tzname[2];
 extern struct tm __start_dst;
 extern struct tm __end_dst;
@@ -35,18 +35,16 @@ int __leapyear(int year)
 }
 
 // FUNCTION: 0xf3394
-// NONMATCHING: register allocation; the target names the leap-year table
-// read at __dilyr-2 as ___diyr+0x18
 int calc_yday(const struct tm *timerule, int year)
 {
     struct tm tmbuf;
-    int n;
-    int first_wday;
     int month_days;
+    int first_wday;
+    int n;
 
     if (timerule->tm_isdst == 0) {
         if (__leapyear(year + 1900)) {
-            month_days = D_00128e0e[timerule->tm_mon + 1] - D_00128e0e[timerule->tm_mon];
+            month_days = __dilyr[timerule->tm_mon + 1] - __dilyr[timerule->tm_mon];
         } else {
             month_days = __diyr[timerule->tm_mon + 1] - __diyr[timerule->tm_mon];
         }
@@ -60,9 +58,11 @@ int calc_yday(const struct tm *timerule, int year)
         mktime(&tmbuf);
         first_wday = (timerule->tm_wday - tmbuf.tm_wday + 7) % 7;
         if (timerule->tm_mday == 5) {
-            n = timerule->tm_mday - 1;
-            if ((1 + first_wday + n * 7) > month_days)
+            if ((1 + first_wday + (timerule->tm_mday - 1) * 7) > month_days) {
                 n = timerule->tm_mday - 2;
+            } else {
+                n = timerule->tm_mday - 1;
+            }
         } else {
             n = timerule->tm_mday - 1;
         }
@@ -88,120 +88,120 @@ int check_order(const struct tm *start, const struct tm *end, int year)
 int time_less(const struct tm *t1, const struct tm *t2);
 
 // FUNCTION: 0xf34ad
-// NONMATCHING: register allocation and stack slots; the target names the
-// leap-year table read at __dilyr-2 as ___diyr+0x18
 int __isindst(struct tm *t)
 {
-    int month_days;
-    struct tm const *start;
     int month;
-    int swap;
     int dst;
-    struct tm const *end;
     int n1;
-    int time_check;
     int n2;
+    int month_days;
+    int time_check;
+    int south;
+    struct tm const *start;
+    struct tm const *end;
 
     dst = 0;
-    if (tzname[1][0] != '\0') {
-        swap = check_order(&__start_dst, &__end_dst, t->tm_year);
-        if (swap) {
-            start = &__end_dst;
-            end = &__start_dst;
-        } else {
-            start = &__start_dst;
-            end = &__end_dst;
-        }
-        month = t->tm_mon;
-        if (__leapyear(t->tm_year + 1900)) {
-            month_days = D_00128e0e[month + 1] - D_00128e0e[month];
-        } else {
-            month_days = __diyr[month + 1] - __diyr[month];
-        }
-        time_check = 0;
-        if (start->tm_isdst == 0) {
-            if (month > start->tm_mon) {
-                dst = 1;
-            } else if (month == start->tm_mon) {
-                n1 = t->tm_mday - (t->tm_wday + 7 - start->tm_wday) % 7;
-                n2 = t->tm_mday - 1 - (t->tm_wday + 6 - start->tm_wday) % 7;
-                if (start->tm_mday == 5) {
-                    if (n1 > month_days - 7) {
-                        dst = 1;
-                        if (n2 <= month_days - 7)
-                            time_check = 1;
-                    }
-                } else {
-                    if (n1 >= (start->tm_mday - 1) * 7 + 1) {
-                        dst = 1;
-                        if (n2 < (start->tm_mday - 1) * 7 + 1)
-                            time_check = 1;
-                    }
-                }
-            }
-        } else {
-            n1 = start->tm_yday;
-            if (start->tm_isdst == 1) {
-                if (__leapyear(t->tm_year + 1900)) {
-                    if (n1 > __diyr[2])
-                        n1++;
-                }
-                n1--;
-            }
-            if (t->tm_yday >= n1) {
-                dst = 1;
-                if (t->tm_yday == n1)
-                    time_check = 1;
-            }
-        }
-        if (time_check)
-            dst = !time_less(t, start);
-        if (dst) {
-            time_check = 0;
-            if (end->tm_isdst == 0) {
-                if (month > end->tm_mon) {
-                    dst = 0;
-                } else if (month == end->tm_mon) {
-                    dst = 0;
-                    n1 = t->tm_mday - (t->tm_wday + 7 - end->tm_wday) % 7;
-                    n2 = t->tm_mday - 1 - (t->tm_wday + 6 - end->tm_wday) % 7;
-                    if (end->tm_mday == 5) {
-                        if (n1 <= month_days - 7) {
-                            dst = 1;
-                        } else if (n2 <= month_days - 7) {
-                            time_check = 1;
-                        }
-                    } else {
-                        if (n1 < (end->tm_mday - 1) * 7 + 1) {
-                            dst = 1;
-                        } else if (n2 < (end->tm_mday - 1) * 7 + 1) {
-                            time_check = 1;
-                        }
-                    }
+    if (tzname[1][0] == '\0')
+        return t->tm_isdst = dst;
+    south = check_order(&__start_dst, &__end_dst, t->tm_year);
+    if (south) {
+        start = &__end_dst;
+        end = &__start_dst;
+    } else {
+        start = &__start_dst;
+        end = &__end_dst;
+    }
+    month = t->tm_mon;
+    if (__leapyear(t->tm_year + 1900)) {
+        month_days = __dilyr[month + 1] - __dilyr[month];
+    } else {
+        month_days = __diyr[month + 1] - __diyr[month];
+    }
+    time_check = 0;
+    if (start->tm_isdst == 0) {
+        if (month > start->tm_mon) {
+            dst = 1;
+        } else if (month == start->tm_mon) {
+            n1 = t->tm_mday - (t->tm_wday + 7 - start->tm_wday) % 7;
+            n2 = t->tm_mday - 1 - (t->tm_wday - 1 + 7 - start->tm_wday) % 7;
+            if (start->tm_mday == 5) {
+                if (n1 > month_days - 7) {
+                    dst = 1;
+                    if (n2 <= month_days - 7)
+                        time_check = 1;
                 }
             } else {
-                n1 = end->tm_yday;
-                if (end->tm_isdst == 1) {
-                    if (__leapyear(t->tm_year + 1900)) {
-                        if (n1 > __diyr[2])
-                            n1++;
-                    }
-                    n1--;
-                }
-                if (t->tm_yday >= n1) {
-                    dst = 0;
-                    if (t->tm_yday == n1)
+                if (n1 >= 7 * (start->tm_mday - 1) + 1) {
+                    dst = 1;
+                    if (n2 < 7 * (start->tm_mday - 1) + 1)
                         time_check = 1;
                 }
             }
-            if (time_check)
-                dst = time_less(t, end);
         }
-        if (swap)
-            dst = swap - dst;
+    } else {
+        n1 = start->tm_yday;
+        if (start->tm_isdst == 1) {
+            if (__leapyear(t->tm_year + 1900)) {
+                if (n1 > __diyr[2])
+                    n1++;
+            }
+            n1--;
+        }
+        if (t->tm_yday >= n1) {
+            dst = 1;
+            if (t->tm_yday == n1)
+                time_check = 1;
+        }
     }
-    t->tm_isdst = dst;
-    return dst;
+    if (time_check)
+        dst = !time_less(t, start);
+    if (dst == 0) {
+        if (south)
+            dst = south - dst;
+        return t->tm_isdst = dst;
+    }
+    time_check = 0;
+    if (end->tm_isdst == 0) {
+        if (month > end->tm_mon) {
+            dst = 0;
+        } else if (month == end->tm_mon) {
+            dst = 0;
+            n1 = t->tm_mday - (t->tm_wday + 7 - end->tm_wday) % 7;
+            n2 = t->tm_mday - 1 - (t->tm_wday - 1 + 7 - end->tm_wday) % 7;
+            if (end->tm_mday == 5) {
+                if (n1 <= month_days - 7) {
+                    dst = 1;
+                } else if (n2 <= month_days - 7) {
+                    time_check = 1;
+                }
+            } else {
+                if (n1 < 7 * (end->tm_mday - 1) + 1) {
+                    dst = 1;
+                } else if (n2 < 7 * (end->tm_mday - 1) + 1) {
+                    time_check = 1;
+                }
+            }
+        }
+    } else {
+        n1 = end->tm_yday;
+        if (end->tm_isdst == 1) {
+            if (__leapyear(t->tm_year + 1900)) {
+                if (n1 > __diyr[2])
+                    n1++;
+            }
+            n1--;
+        }
+        if (t->tm_yday >= n1) {
+            dst = 0;
+            if (t->tm_yday == n1)
+                time_check = 1;
+        }
+    }
+    if (time_check)
+        dst = time_less(t, end);
+    if (south)
+        dst = south - dst;
+    return t->tm_isdst = dst;
 }
 
 // FUNCTION: 0xf3770

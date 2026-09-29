@@ -21,7 +21,7 @@ typedef long time_t;
 #define SMALLEST_YEAR_VALUE (-184844639)
 
 extern short const __diyr[];
-extern short const D_00128e0e[];
+extern short const __dilyr[];
 extern long timezone;
 extern long __dst_adjust;
 
@@ -53,7 +53,7 @@ time_t mktime(struct tm *t)
     if (year < 0)
         return -1;
     if (__leapyear(year + 1900))
-        month_start = D_00128e0e;
+        month_start = __dilyr;
     days = year * DAY_YR + ((year + 3) >> 2) + month_start[month_index] + t->tm_mday - 1;
     if (year != 0)
         --days;
