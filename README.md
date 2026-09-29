@@ -50,7 +50,7 @@ each function in its own segment. The flake provides:
 | --- | --- |
 | Watcom C/C++ 10.6 (`$WATCOM_10_6`) | period compiler, Win32 host binaries |
 | Watcom C/C++ 10.0a (`$WATCOM_10_0A`) | built the C runtime's printf/stdio modules |
-| Watcom C/C++ 10.6 runtime libraries (`$WATCOM_LIBS_10_6`) | `LIB386` of the 10.6 CD (downloaded from WinWorld, 349 MB, on first `nix develop`); several runtime units are built from its modules |
+| Watcom C/C++ 10.5 and 10.6 runtime libraries (`$WATCOM_LIBS_10_5`, `$WATCOM_LIBS_10_6`) | `LIB386` of each CD (downloaded from WinWorld, 245 + 349 MB, on first `nix develop`); several runtime units are built from their modules |
 | wibo 1.2.0 | runs the Win32 compiler on Linux |
 | objdiff-cli 3.8.1 | diffing and progress reports |
 | rizin + rz-ghidra | disassembly and decompiler output (`pdg`) |

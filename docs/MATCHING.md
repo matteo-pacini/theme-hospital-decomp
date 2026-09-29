@@ -302,12 +302,14 @@ predate the tool and use a separate file instead.
 
 ## Watcom library modules
 
-Most of the runtime is Watcom 10.6's own library code (`CLIB3R.LIB`,
-`MATH387R.LIB`, `PLIB3R.LIB` from the 10.6 CD's `LIB386`, which the flake
-downloads from WinWorld's archive of the CD and provides as
-`$WATCOM_LIBS_10_6`). A unit whose C does not reproduce its module is built
-from the library instead: its `config/cflags.txt` entry names compiler
-`lib`, the library under `LIB386` and the module, and `tools/cc.py` takes that
+Most of the runtime is Watcom's own library code (`CLIB3R.LIB`,
+`MATH387R.LIB`, `PLIB3R.LIB`), mostly 10.6's but with some 10.5 modules
+(`prtf`). The flake downloads the `LIB386` of both CDs from WinWorld's
+archive and provides them as `$WATCOM_LIBS_10_6` and `$WATCOM_LIBS_10_5`. A
+unit whose C does not reproduce its module is built from the library
+instead: its `config/cflags.txt` entry names compiler `lib` (`lib@10.5` for
+the 10.5 CD), the library under `LIB386` and the module, and `tools/cc.py`
+takes that
 module's object (and relocates its calls to its own functions, which the
 library resolved). The C stays as documentation. They count as matched, not
 as decompiled; the list is the `lib` block at the top of `config/cflags.txt`.
@@ -319,10 +321,9 @@ and globals and the module's own segments that it refers to
 section-relative (`config/sections.txt`). Library modules are one segment,
 so `tools/split.py` lays their units out as built without `-zm`.
 
-Neither CD's library has the EXE's `prtf` (the frame and flag handling
-differ; parts match when compiled from C with 10.0a) or `grownear`
-(`__AdjustAmount` rounds to 8 bytes, the 10.6 library to 4), so those stay
-C.
+No CD's library (10.0a, 10.5, 10.6) has the EXE's `grownear` module as a
+whole: its `__AdjustAmount` rounds to 8 bytes where 10.6's rounds to 4 (the
+module's other functions do match 10.5's and 10.6's), so it stays C.
 
 ## Libraries
 

@@ -48,7 +48,7 @@ VERSIONS = {"10.6": "WATCOM_10_6", "10.0a": "WATCOM_10_0A"}
 # Versions whose CD runtime libraries (its LIB386 directory) the flake
 # provides, for config/cflags.txt entries built from a library module
 # (`lib@version`), with the environment variable that locates them.
-LIBRARIES = {"10.6": "WATCOM_LIBS_10_6"}
+LIBRARIES = {"10.5": "WATCOM_LIBS_10_5", "10.6": "WATCOM_LIBS_10_6"}
 
 
 def library_path(version, library):

@@ -27,10 +27,12 @@ src/lib/bf2/init_sou.cpp  wpp386  -s -oneatx -4 -xs
 # serialsp: inlines the small Parser accessors into ProcessAvailableMsg but not SendAck.
 src/lib/bf2/serialsp.cpp  wpp386  -s -oneatx -xs -oe=40
 src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
-# Runtime modules linked from Watcom 10.6's own libraries (compiler `lib`,
-# flags: library under LIB386, module), checked with tools/libunit.py: the
-# EXE has the library's code, which the C sources do not all reproduce. The
-# C stays as documentation; its flags are in the entries below.
+# Runtime modules linked from Watcom's own libraries (compiler `lib`, or
+# `lib@10.5` for the 10.5 CD's; flags: library under LIB386, module), checked
+# with tools/libunit.py: the EXE has the library's code, which the C sources
+# do not all reproduce. The C stays as documentation; its flags are in the
+# entries below.
+src/lib/clib/prtf.c      lib@10.5  DOS/CLIB3R.LIB prtf
 src/lib/clib/qsort.c     lib  DOS/CLIB3R.LIB qsort
 src/lib/clib/read.c      lib  DOS/CLIB3R.LIB read
 src/lib/clib/write.c     lib  DOS/CLIB3R.LIB write
