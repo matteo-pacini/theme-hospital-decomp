@@ -354,3 +354,15 @@ Compiler and flags per source file come from `config/cflags.txt`.
     `LbNetwork_StartExchange`/`LbNetwork_CompleteExchange` and those to
     inline their multi-player halves; `HostDataCollection`/`Broadcast`
     must then be kept out of line with `#pragma aux`.
+- **Bullfrog sound code** (`bf1/opt`, `bf2` sound modules): `SampleInfo`'s
+  volume and fade fields are `volatile`, since the fade timer callback
+  writes them; on a volatile, write `++x`/`--x` (`x++` leaves a dead load).
+  `-oneatx` includes `-oa`, so an apparent local copy of a global may be
+  the global cached in a register (a dead reload before each `ret` gives it
+  away). Which byte register a store picks can depend on the stored value
+  (`g = 0` versus `g = field`). `init_sou.cpp` is built with `-4`.
+- **Miles idioms**: an I/O configuration loop's `offset` is the compiler's
+  strength-reduced `i * sizeof(IO_PARMS)` (write the multiply) and its
+  `IO == NULL` test is really `i == 0`; `S16` fields compare as
+  `(S32)x < 0`, or the compare narrows to a word; a dead `cmp mem,0` after
+  a call is a no-op `if (p == NULL) p = NULL;`.
