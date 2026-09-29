@@ -5,8 +5,7 @@
 00128c94 00118eb8     4 runtime     54 __Bits
 00128dc0 00118f88     2 bflib       34 W?$Wvf0do2sm:ModemSP$$nx[]pn()v
 00128df4 00118fbc     7 runtime     1a ___diyr
-00128e32 00118fd6     6 runtime     56 ___dilyr
-00128e7c 00119044     6 bflib       34 W?$Wts0hn$SerialHandler$$$nx[]uc
+00128e0e 00118fd6     6 runtime     1a ___dilyr
 00128e88 0011902c     2 runtime     18 _lst_mask
 00128eb8 00119080     3 runtime     50 __BigPow10Table
 00128f08 001190d0     1 runtime     30 _Msgs
