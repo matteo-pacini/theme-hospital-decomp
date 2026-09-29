@@ -3637,7 +3637,7 @@
     pop ebx
     ret
     .byte 0x90
-    .byte 0xe9; .long _C_9ac58835-.-4
+    .byte 0xe9; .byte 0x46; .byte 0xe9; .byte 0xb5; .byte 0x9a
     .byte 0xad
     .byte 0x20; .byte 0xca
     .byte 0xfe

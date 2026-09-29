@@ -82,7 +82,10 @@ def scan(le, start, end):
         item = Item(a, ins.size, ins.mnemonic)
         b = ins.bytes
         rel32 = b[0] in (0xE8, 0xE9) or (b[0] == 0x0F and 0x80 <= b[1] <= 0x8F)
-        if rel32 and ins.size >= 5 and not any(f in le.fixups for f in range(a, a + ins.size)):
+        # A destination outside the code object means data decoded as code.
+        if rel32 and ins.size >= 5 and not any(f in le.fixups for f in range(a, a + ins.size)) and code.contains(
+            int(ins.op_str, 16)
+        ):
             item.branch_target = int(ins.op_str, 16)
             item.branch_field = a + ins.size - 4
         items.append(item)

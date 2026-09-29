@@ -69,8 +69,9 @@ def byte_form(le, proj, fn, addr, ins, raw, label, known_labels=None):
             # as would resolve `sym-.-4` itself, so the relocation is explicit.
             head = "; ".join(f".byte {b:#04x}" for b in raw[:-4])
             return f"{head}; .long -4; .reloc .-4, R_386_PC32, {q(fn.name)}"
-        if (disp == 1 and not inside) or (inside and label(dest) not in known_labels):
-            # A short branch into another function carries no relocation.
+        if (disp == 1 and not inside) or (inside and label(dest) not in known_labels) or not le.code.contains(dest):
+            # A short branch into another function carries no relocation, nor
+            # does data decoded as a branch out of the code object.
             return "; ".join(f".byte {b:#04x}" for b in raw)
         head = raw[: len(raw) - disp]
         directive = ".long" if disp == 4 else ".byte"
