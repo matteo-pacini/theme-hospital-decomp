@@ -743,8 +743,6 @@ void popCatches(dispatch_exc *dispatch, rw_dtreg *rw)
     dispatch->exc = exc;
 }
 
-// NONMATCHING: the first loop keeps the registration in ebx and its copy in
-// eax the other way round
 // FUNCTION: 0xf4605
 void __wcpp_2_lj_handler_(rw_dtreg *bound)
 {
@@ -753,13 +751,13 @@ void __wcpp_2_lj_handler_(rw_dtreg *bound)
     rw_dtreg *last;
 
     dispatch.thr = &_wint_thread_data;
-    last = _wint_thread_data.registered;
-    rw = last;
+    rw = _wint_thread_data.registered;
+    last = rw;
     for (;; rw = rw->prev) {
         if (rw == 0) {
             if (last == 0)
                 return;
-            last = 0;
+            last = rw;
             dispatch.state_var = 0;
             break;
         }

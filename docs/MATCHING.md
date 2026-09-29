@@ -108,6 +108,9 @@ and comparing against the original.
 | jump into a trampoline landing in an outer loop | `goto label` at the end of the outer loop body (`break`/`continue` add an extra `jmp`) |
 | jump table whose gaps point at `default` | list the gap values as explicit `case`s next to `default:` |
 | varargs call with `mov eax,N; push eax` rather than `push N` | fixed parameter declared `u8` |
+| list walk comparing `[p+next]`, then reloading it twice (no CSE) | pointer to volatile: `volatile T *p` (a volatile struct field instead changes store order) |
+| `test eax,eax; je` then `mov ebx,eax` for a zero store | the source copies the tested variable (`last = rw` inside `if (rw == 0)`); `a = X; b = a;` vs `b = X; a = b;` picks which variable gets the load |
+| `and di,0xfffc` | plain `x & ~3` narrowed on a register with no byte form; separate `x += 3; x &= ~3;` gives a byte `and` on a spilled slot |
 | `rep movsd` from a global into a local | struct copy from an extern struct (`Message msg = D_00129004;`) |
 | signed `jle` on two `u8` operands | `(int)a > (int)b` (without casts: byte compare, `jbe`) |
 | `u8`/`u16` field: `and`+`test` vs `cmp byte/word ptr ..,0` | `x == 0` vs `!x` / `if (x)` |
@@ -249,6 +252,12 @@ Observed consequences:
   `u8` locals).
 - `switch (p->field)` without a local copy puts its first byte temporary
   among the locals and the second after them.
+- In `-ox` functions spill-slot order need not follow declaration order
+  (all permutations can tie); it moves with expression shape instead: an
+  assignment inside a condition (`(c = *p) == K`) swapped two slots in
+  `__scnf`.
+- A `void *` parameter used through casts, instead of a `char *` local
+  copy, moves the callee-saved copy of the parameter before the first call.
 
 ## Known unsolved
 

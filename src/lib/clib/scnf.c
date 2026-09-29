@@ -51,7 +51,6 @@ static void uncget(int c, SCNF_SPECS *specs)
     (*specs->uncget_rtn)(c, specs);
 }
 
-// NONMATCHING: format and items_assigned swap stack slots
 // FUNCTION: 0xfab01
 int __scnf(SCNF_SPECS *specs, const char *format, va_list *args)
 {
@@ -136,10 +135,10 @@ int __scnf(SCNF_SPECS *specs, const char *format, va_list *args)
             break;
         }
     } while (!specs->eoinp);
-    if ((int)*format == '%') {
+    if ((c = *format) == '%') {
         ++format;
         format = get_opt(format, specs);
-        if ((int)*format == 'n')
+        if ((c = *format) == 'n')
             report_scan(specs, args, char_match);
     }
 fail:

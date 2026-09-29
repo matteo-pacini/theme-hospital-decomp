@@ -171,11 +171,10 @@ U32 __pascal MSSSmackTimerRead(void)
 #pragma aux (__pascal) MSSLowSoundClose "fn_000e7a40_";
 
 // FUNCTION: 0xe7a40
-// NONMATCHING: the loop tail keeps p->next in a register; the target reloads
-// it from memory
+// NONMATCHING: the loop keeps p->next in ebx where the target uses ecx
 void __pascal MSSLowSoundClose(SmackSnd *snd)
 {
-    SmackSnd *p;
+    volatile SmackSnd *p;
 
     if (D_00151664 == NULL)
         return;
@@ -191,7 +190,7 @@ void __pascal MSSLowSoundClose(SmackSnd *snd)
     if (p->next != NULL) {
         do {
             if (snd == p->next) {
-                p->next = p->next->next;
+                p->next = snd->next;
                 break;
             }
             p = p->next;
