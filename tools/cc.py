@@ -16,6 +16,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 import omf2elf  # noqa: E402
+import standin  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -75,7 +76,9 @@ def main(source, output, *extra):
         err = os.path.splitext(os.path.basename(source))[0] + ".err"
         if "@" in compiler and os.path.exists(err):
             os.remove(err)
-    omf2elf.main(omf, output)
+    model = omf2elf.convert(open(omf, "rb").read())
+    standin.apply(source, model, omf2elf.Section)
+    omf2elf.write_elf(*model, output)
 
 
 if __name__ == "__main__":
