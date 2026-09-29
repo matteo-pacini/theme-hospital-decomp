@@ -41,6 +41,10 @@ int AIL_INT386(int intno, union REGS *in, union REGS *out);
 void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args);
 void AILSR_end(void);
 
+/* Empty inline code that tells the register allocator ebx was clobbered. */
+void MarkEBXAsChanged(void);
+#pragma aux MarkEBXAsChanged = "" modify [ebx];
+
 // FUNCTION: 0x000efb60
 void AILSR_start(void)
 {
@@ -57,6 +61,7 @@ void *fn_000efba0(U32 size)
     void *ptr;
 
     ptr = malloc(size);
+    MarkEBXAsChanged();
     return ptr;
 }
 
@@ -64,15 +69,16 @@ void *fn_000efba0(U32 size)
 void fn_000efbb0(void *ptr)
 {
     free(ptr);
+    MarkEBXAsChanged();
 }
 
 // FUNCTION: 0x000efbc0
-// NONMATCHING: the target copies getenv's result to edx and back
 char *__pascal AIL_GETENV(char const *name)
 {
     char *value;
 
     value = getenv(name);
+    MarkEBXAsChanged();
     return value;
 }
 
@@ -108,11 +114,12 @@ void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args)
 }
 
 // FUNCTION: 0x000efcc0
-// NONMATCHING: the target copies localtime's result to esi and back
 void __cdecl AIL_startup_reg(void)
 {
     time_t t;
     char *debug;
+    struct tm *adjtime;
+    char *asc;
 
     if (AIL_started) {
         return;
@@ -141,7 +148,12 @@ void __cdecl AIL_startup_reg(void)
         return;
     }
     time(&t);
-    strcpy(D_0018d454, asctime(localtime(&t)));
+    MarkEBXAsChanged();
+    adjtime = localtime(&t);
+    MarkEBXAsChanged();
+    asc = asctime(adjtime);
+    MarkEBXAsChanged();
+    strcpy(D_0018d454, asc);
     D_0018d454[24] = 0;
     AIL_DEBUGOUTSTR(D_00128034);
     AIL_DEBUGOUTSTR(D_00128088);

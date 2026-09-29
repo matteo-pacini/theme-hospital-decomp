@@ -348,6 +348,17 @@ Observed consequences:
   `smacklib` has only stubs, but names 0xe8190 `SMACKTOBUFFERRECT`,
   0xe85b0 `SMACKCOLORREMAP` and 0xe8ab0 `SMACKTOSCREEN`.
 
+- A `void` versus value-returning function changes its own codegen
+  (`rbplay`: `lea` versus `mov`/`add`, and swapped registers). A `min()`
+  macro explains a call evaluated twice (`XMI_swap` in `init_sequence`).
+  Miles reuses parameters as loop variables (`IO`). Look for real code
+  differences among register noise: a stray `(S8)` cast in
+  `XMI_send_channel_voice_message` was a wrong `movsx`.
+- Bullfrog's RNC length is read as sequential statements
+  (`n = p[4]; n = (n << 8) + p[5]; ...` with a `u32 n`), not one
+  expression. The official Miles 6.5 SDK source (`sigmaco/milesss-v6.5c`,
+  leaked: read, don't copy) keeps many of Miles 3's function shapes.
+
 ## Known unsolved
 
 - Register allocation is global to the function even at `-d2`: a change
@@ -371,7 +382,9 @@ Observed consequences:
   (not the `abs` intrinsic, which gives cdq/xor/sub), and seg:off to linear
   is `"shl eax,4" "add eax,edx" parm [edx] [eax] value [eax]` (the parm
   order sets the order of the zero-extending `xor`s). The copy after a call
-  in `ailsr` (`mov edx,eax; mov eax,edx`) is still unexplained. A store's
+  in `ailsr` (`mov edx,eax; mov eax,edx`) is Miles' `MarkEBXAsChanged()`,
+  an empty `#pragma aux ... = "" modify [ebx]` placed after `malloc`,
+  `getenv`, `localtime` and the like. A store's
   destination field type (S16 versus U16) changes register allocation
   though the bytes stored are the same; an address-taken stack parameter is
   reloaded from its slot into a different register at each use.
@@ -403,19 +416,7 @@ predates the tool and uses a separate file instead.
 - `__FreeDPMIBlocks_` (0xebdb8), `src/lib/clib/grownear.standin.s`:
   Watcom's own code (identical in the 10.5 and 10.6 `CLIB3R`); the module as
   a whole is in neither library (see Watcom library modules).
-- `AIL_fgets_` (0xded50), `src/lib/ail/ail.standin.s`
-- `rbplay_` (0xe6650), `src/lib/ail/ailcd.standin.s`
-- `_AIL_API_redbook_id` (0xe6a10), `src/lib/ail/ailcd.standin.s`
-- `fn_000efba0_` (0xefba0), `src/lib/ail/ailsr.standin.s`
-- `AIL_GETENV` (0xefbc0), `src/lib/ail/ailsr.standin.s`
-- `_AIL_startup_reg` (0xefcc0), `src/lib/ail/ailsr.standin.s`
 - `_SS_build_amplitude_tables` (0xdfbe0), `src/lib/ail/ailss.standin.s`
-- `_SS_construct_DIG_driver` (0xe06f0), `src/lib/ail/ailss.standin.s`
-- `_SS_configure_buffers` (0xe0120), `src/lib/ail/ailss.standin.s`
-- `_AIL_API_branch_index` (0xe4d50), `src/lib/ail/ailxmidi.standin.s`
-- `_AIL_API_send_channel_voice_message` (0xe5200), `src/lib/ail/ailxmidi.standin.s`
-- `_AIL_API_init_sequence` (0xe43b0), `src/lib/ail/ailxmidi.standin.s`
-- `_XMI_send_channel_voice_message` (0xe26f0), `src/lib/ail/ailxmidi.standin.s`
 - `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`
 - `_FtoS_` (0xfc294), `src/lib/clib/ftos.standin.s`: the overflow test computes p - buf in edx and the digit count in eax, the other way round
 - `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`

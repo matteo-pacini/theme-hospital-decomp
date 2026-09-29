@@ -1,5 +1,7 @@
 #include "ail.h"
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+
 #define MODULATION 1
 #define DATA_MSB 6
 #define PART_VOLUME 7
@@ -39,16 +41,9 @@ typedef struct {
 } TIMB_chunk;
 
 typedef struct {
-    U16 offset;
-    U32 pos;
+    U16 bnum;
+    U32 offset;
 } RBRN_entry;
-
-typedef struct {
-    char tag[4];
-    U32 len;
-    S16 n_entries;
-    RBRN_entry entry[1];
-} RBRN_block;
 
 typedef struct {
     char tag[4];
@@ -406,42 +401,38 @@ void __cdecl XMI_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2)
 void __cdecl XMI_flush_channel_notes(HSEQUENCE S, S32 channel);
 
 // FUNCTION: 0x000e26f0
-// NONMATCHING: register allocation (the target keeps mdi on the stack and
-// data_1/data_2 in ebp/edi)
 void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
                                             S32 data_2, S32 ICA_enable)
 {
+    S32 st, i;
+    S32 phys, log;
     HMDIDRIVER mdi;
-    S32 ch;
-    S32 st;
-    S32 phys;
-    S32 i;
 
     mdi = S->driver;
     st = status & 0xf0;
-    ch = status & 0x0f;
-    phys = S->chan_map[ch];
+    log = status & 0x0f;
+    phys = S->chan_map[log];
     if (st == 0xb0 || st == 0xc0 || st == 0xe0) {
-        XMI_write_log(&S->shadow, ch | st, data_1, data_2);
+        XMI_write_log(&S->shadow, st | log, data_1, data_2);
     }
     if (st == 0xb0) {
-        if (ICA_enable && S->shadow.indirect[ch] != -1) {
-            data_2 = S->shadow.indirect[ch];
-            S->shadow.indirect[ch] = -1;
+        if (ICA_enable && S->shadow.indirect[log] != -1) {
+            data_2 = S->shadow.indirect[log];
+            S->shadow.indirect[log] = -1;
         }
         switch (data_1) {
         case INDIRECT_C_PFX:
-            S->shadow.indirect[ch] = S->ICA[data_2];
+            S->shadow.indirect[log] = S->ICA[data_2];
             break;
         case CALLBACK_PFX:
             if (S->prefix_callback != NULL) {
-                S->shadow.indirect[ch] = S->prefix_callback(S, ch, data_2);
+                S->shadow.indirect[log] = S->prefix_callback(S, log, data_2);
             }
             break;
         case DATA_MSB:
-            XMI_send_channel_voice_message(S, ch | 0xb0, RPN_LSB, 0, 0);
-            XMI_send_channel_voice_message(S, ch | 0xb0, RPN_MSB, 0, 0);
-            XMI_send_channel_voice_message(S, ch | 0xb0, DATA_LSB, 0, 0);
+            XMI_send_channel_voice_message(S, 0xb0 | log, RPN_LSB, 0, 0);
+            XMI_send_channel_voice_message(S, 0xb0 | log, RPN_MSB, 0, 0);
+            XMI_send_channel_voice_message(S, 0xb0 | log, DATA_LSB, 0, 0);
             break;
         case PART_VOLUME:
             data_2 = (S->volume * data_2 * mdi->master_volume) / (127 * 127);
@@ -463,7 +454,7 @@ void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
             return;
         case CALLBACK_TRIG:
             if (S->trigger_callback != NULL) {
-                S->trigger_callback(S, ch, data_2);
+                S->trigger_callback(S, log, data_2);
             }
             return;
         case FOR_LOOP:
@@ -475,7 +466,7 @@ void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
             if (i == FOR_NEST) {
                 return;
             }
-            S->FOR_loop_count[i] = (S8)data_2;
+            S->FOR_loop_count[i] = data_2;
             S->FOR_ptrs[i] = S->EVNT_ptr;
             return;
         case NEXT_LOOP:
@@ -519,18 +510,18 @@ void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
                     return;
                 }
                 i = AIL_lock_channel(mdi);
-                if (i == 0) {
+                if (!i) {
                     return;
                 }
-                AIL_map_sequence_channel(S, ch + 1, i);
+                AIL_map_sequence_channel(S, log + 1, i);
                 mdi->locker[i - 1] = S;
             } else {
                 if (mdi->lock[phys] != 1) {
                     return;
                 }
-                XMI_flush_channel_notes(S, ch);
+                XMI_flush_channel_notes(S, log);
                 AIL_release_channel(mdi, phys + 1);
-                AIL_map_sequence_channel(S, ch + 1, ch + 1);
+                AIL_map_sequence_channel(S, log + 1, log + 1);
             }
             return;
         }
@@ -539,18 +530,20 @@ void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
         return;
     }
     if (st == 0x90) {
-        mdi->notes[phys]++;
+        ++mdi->notes[phys];
     } else if (st == 0x80) {
-        mdi->notes[phys]--;
+        --mdi->notes[phys];
     }
     mdi->user[phys] = S;
-    if (st == 0x90 && S->shadow.c_mute[ch] >= 64) {
+    if (st == 0x90 && S->shadow.c_mute[log] >= 64) {
         return;
     }
-    if (mdi->event_trap != NULL && mdi->event_trap(mdi, S, phys | st, data_1, data_2)) {
-        return;
+    if (mdi->event_trap != NULL) {
+        if (mdi->event_trap(mdi, S, st | phys, data_1, data_2)) {
+            return;
+        }
     }
-    XMI_MIDI_message(mdi, phys | st, data_1, data_2);
+    XMI_MIDI_message(mdi, st | phys, data_1, data_2);
 }
 
 // FUNCTION: 0x000e2b80
@@ -1248,18 +1241,14 @@ void set_timbre_error(S32 bank, S32 patch)
 }
 
 // FUNCTION: 0x000e43b0
-// NONMATCHING: register allocation around the tempo/volume initialisation and
-// the timbre loop
 S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
 {
-    VDI_CALL out;
     U8 *image;
     U8 *end;
-    TIMB_chunk *timb;
-    U32 i;
-    U32 j;
-    U32 len;
-    U32 t;
+    U32 i, j, len;
+    VDI_CALL VDI;
+    TIMB_chunk *T;
+    U32 bank, patch;
 
     if (S == NULL) {
         return 0;
@@ -1270,12 +1259,12 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
         strcpy(AIL_error, D_0012704c);
         return 0;
     }
-    len = XMI_swap(*(U32 *)(image + 4)) + 8;
+    len = 8 + XMI_swap(*(U32 *)((U8 *)(image + 4)));
     end = image + len;
+    image += 12;
     S->TIMB = NULL;
     S->RBRN = NULL;
     S->EVNT = NULL;
-    image += 12;
     while (image < end) {
         if (!memcmp(image, D_00127064, 4)) {
             S->TIMB = image;
@@ -1286,7 +1275,7 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
         if (!memcmp(image, D_00127074, 4)) {
             S->EVNT = image;
         }
-        image += XMI_swap(*(U32 *)(image + 4)) + 8;
+        image += 8 + XMI_swap(*(U32 *)((U8 *)(image + 4)));
     }
     if (S->EVNT == NULL) {
         strcpy(AIL_error, D_0012704c);
@@ -1299,6 +1288,8 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
     S->EOS = NULL;
     S->loop_count = 1;
     XMI_rewind_sequence(S);
+    S->volume = AIL_preference[MDI_DEFAULT_VOLUME];
+    S->volume_target = AIL_preference[MDI_DEFAULT_VOLUME];
     S->volume_period = 0;
     S->volume_accum = 0;
     S->tempo_percent = 100;
@@ -1306,52 +1297,47 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
     S->tempo_period = 0;
     S->tempo_accum = 0;
     S->tempo_error = 0;
-    S->volume_target = S->volume = AIL_preference[MDI_DEFAULT_VOLUME];
     if (S->TIMB == NULL) {
         return 1;
     }
-    len = XMI_swap(*(U32 *)((U8 *)S->TIMB + 4)) + 8;
-    if (len > sizeof(D_0018cb6c)) {
-        len = sizeof(D_0018cb6c);
-    } else {
-        len = XMI_swap(*(U32 *)((U8 *)S->TIMB + 4)) + 8;
-    }
-    memcpy(D_0018cb6c, S->TIMB, len);
-    timb = (TIMB_chunk *)D_0018cb6c;
+    memcpy(D_0018cb6c, S->TIMB,
+           min(sizeof(S->driver->DST->MIDI_data),
+               8 + XMI_swap(*(U32 *)((S32 *)((U8 *)S->TIMB + 4)))));
+    T = (TIMB_chunk *)D_0018cb6c;
     if (S->driver->timbre_trap != NULL) {
         i = 0;
-        while (i < timb->n_entries) {
-            t = timb->timbre[i];
-            if (!S->driver->timbre_trap(S->driver, (t & 0xff00) >> 8, t & 0xff)) {
-                i++;
-                continue;
-            }
-            for (j = i + 1; j < timb->n_entries; j++) {
-                timb->timbre[j - 1] = timb->timbre[j];
-            }
-            --timb->n_entries;
-            if (timb->len_lsb < 2) {
-                timb->len_lsb -= 2;
-                timb->len_msb--;
+        while (i < (U32)T->n_entries) {
+            patch = ((U32)T->timbre[i]) & 0xff;
+            bank = (((U32)T->timbre[i]) & 0xff00) >> 8;
+            if (!S->driver->timbre_trap(S->driver, (S32)bank, (S32)patch)) {
+                ++i;
             } else {
-                timb->len_lsb -= 2;
+                for (j = i + 1; j < (U32)T->n_entries; j++) {
+                    T->timbre[j - 1] = T->timbre[j];
+                }
+                --T->n_entries;
+                if (T->len_lsb < 2) {
+                    T->len_lsb -= 2;
+                    T->len_msb--;
+                } else
+                    T->len_lsb -= 2;
             }
         }
     }
-    if (timb->n_entries == 0) {
+    if (T->n_entries == 0) {
         return 1;
     }
     if (AIL_background()) {
         strcpy(AIL_error, D_0012707c);
         return -1;
     }
-    S->driver->disable++;
+    ++S->driver->disable;
     XMI_flush_buffer(S->driver);
-    memcpy(S->driver->DST->MIDI_data, timb, sizeof(S->driver->DST->MIDI_data));
-    AIL_call_driver(S->driver->drvr, MDI_INSTALL_T_SET, NULL, &out);
-    S->driver->disable--;
-    if (out.AX == 0) {
-        set_timbre_error((S16)out.BX >> 8, (S16)(out.BX & 0xff));
+    memcpy(S->driver->DST->MIDI_data, T, sizeof(S->driver->DST->MIDI_data));
+    AIL_call_driver(S->driver->drvr, MDI_INSTALL_T_SET, NULL, &VDI);
+    --S->driver->disable;
+    if (!VDI.AX) {
+        set_timbre_error(VDI.BX >> 8, VDI.BX & 0xff);
         return -1;
     }
     return 1;
@@ -1698,37 +1684,32 @@ void __cdecl AIL_API_sequence_position(HSEQUENCE S, S32 *beat, S32 *measure)
 }
 
 // FUNCTION: 0x000e4d50
-// NONMATCHING: the target clears the loop index with mov eax,edx / xor eax,edx
-// and indexes the matching entry in ebp in place
 void __cdecl AIL_API_branch_index(HSEQUENCE S, U32 marker)
 {
-    RBRN_block *RBRN;
-    RBRN_entry *entry;
-    S32 i;
-    S32 n;
+    S32 n, i;
+    RBRN_entry *R;
 
     if (S == NULL) {
         return;
     }
-    RBRN = S->RBRN;
-    if (RBRN == NULL) {
+    if (S->RBRN == NULL) {
         return;
     }
-    n = RBRN->n_entries;
-    entry = RBRN->entry;
+    n = *(S16 *)((U8 *)S->RBRN + 8);
+    R = (RBRN_entry *)((U8 *)S->RBRN + 10);
     for (i = 0; i < n; i++) {
-        if (entry[i].offset == marker) {
+        if ((U32)(U16)R[i].bnum == marker) {
             break;
         }
     }
     if (i == n) {
         return;
     }
-    S->EVNT_ptr = (U8 *)S->EVNT + 8 + entry[i].pos;
+    S->EVNT_ptr = (U8 *)S->EVNT + 8 + R[i].offset;
     S->interval_count = 0;
-    if (!AIL_preference[MDI_ALLOW_LOOP_BRANCHING]) {
-        for (i = 0; i < FOR_NEST; i++) {
-            S->FOR_loop_count[i] = -1;
+    if (AIL_preference[MDI_ALLOW_LOOP_BRANCHING] == 0) {
+        for (n = 0; n < FOR_NEST; n++) {
+            S->FOR_loop_count[n] = -1;
         }
     }
 }
@@ -1956,20 +1937,22 @@ S32 __cdecl AIL_API_true_sequence_channel(HSEQUENCE S, S32 seq_channel)
 }
 
 // FUNCTION: 0x000e5200
-// NONMATCHING: register allocation of the parameters
 void __cdecl AIL_API_send_channel_voice_message(HMDIDRIVER mdi, HSEQUENCE S, S32 status,
                                                 S32 data_1, S32 data_2)
 {
-    if (mdi == NULL) {
+    HMDIDRIVER drvr;
+
+    drvr = mdi;
+    if (drvr == NULL) {
         if (S == NULL) {
             return;
         }
-        mdi = S->driver;
+        drvr = S->driver;
     }
-    mdi->disable++;
+    ++drvr->disable;
     if (S == NULL) {
-        if ((status & 0xf0) == 0xb0 && data_1 == PART_VOLUME) {
-            data_2 = (data_2 * mdi->master_volume) / 127;
+        if (((status & 0xf0) == 0xb0) && (data_1 == PART_VOLUME)) {
+            data_2 = (data_2 * drvr->master_volume) / 127;
             if (data_2 > 127) {
                 data_2 = 127;
             }
@@ -1977,14 +1960,15 @@ void __cdecl AIL_API_send_channel_voice_message(HMDIDRIVER mdi, HSEQUENCE S, S32
                 data_2 = 0;
             }
         }
-        if (mdi->event_trap == NULL || !mdi->event_trap(mdi, NULL, status, data_1, data_2)) {
-            XMI_MIDI_message(mdi, status, data_1, data_2);
+        if ((drvr->event_trap == NULL)
+            || (!drvr->event_trap(drvr, NULL, status, data_1, data_2))) {
+            XMI_MIDI_message(drvr, status, data_1, data_2);
         }
     } else {
         XMI_send_channel_voice_message(S, status, data_1, data_2, 0);
     }
-    XMI_flush_buffer(mdi);
-    mdi->disable--;
+    XMI_flush_buffer(drvr);
+    --drvr->disable;
 }
 
 // FUNCTION: 0x000e52d0

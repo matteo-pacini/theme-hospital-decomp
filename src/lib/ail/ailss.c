@@ -1,6 +1,15 @@
 #include "ail.h"
 
-#define ABS(x) ((x) < 0 ? -(x) : (x))
+#define REALPTR(x) ((void *)(U32)((((U32)(x)) >> 16 << 4) + ((x) & 0xffff)))
+
+/* abs() expanded inline; operand and result fixed to eax. */
+S32 AIL_abs(S32 x);
+#pragma aux AIL_abs = \
+    "test eax,eax" \
+    "jge L1" \
+    "neg eax" \
+    "L1:" \
+    parm [eax] value [eax];
 
 extern S32 locked;
 extern U8 pan_graph[128];
@@ -137,8 +146,8 @@ void SS_stream_to_buffer(HSAMPLE S)
 }
 
 // FUNCTION: 0x000dfbe0
-// NONMATCHING: register allocation (S in ecx, not ebx) and strength-reduced
-// loop temporaries
+// NONMATCHING: register allocation: pan and the loop counters get esi and
+// hw_format edi where the target has them the other way round
 void __cdecl SS_build_amplitude_tables(HSAMPLE S)
 {
     S32 val;
@@ -277,23 +286,17 @@ void fn_000dff00(U32 user)
 }
 
 // FUNCTION: 0x000e0120
-// NONMATCHING: the jump tables sit before the function (the target names them
-// fn_000dff00_+0x1f4/+0x204); register allocation, and the target recomputes
-// AIL_preference[DIG_DMA_RESERVE] / 2 on every iteration
 S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
 {
+    S32 i, min, max, hb_samples;
+    S32 n, match, delta;
     S32 pref[4];
-    S32 i;
-    S32 best;
-    S32 err;
-    S32 size;
-    S32 min_size;
-    S32 max_size;
-    S32 resume;
-    U32 DMA;
+    U32 linear;
+    S32 DMA_status;
 
-    resume = dig->playing;
-    if (resume) {
+    DMA_status = dig->playing;
+
+    if (DMA_status) {
         for (i = 0; i < dig->n_samples; i++) {
             dig->samples[i].system_data[7] = dig->samples[i].status;
             if (dig->samples[i].status == SMP_PLAYING) {
@@ -305,39 +308,43 @@ S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
         AILSSA_DMA_copy(dig, 0);
         AILSSA_DMA_copy(dig, 1);
     }
-    switch (AIL_preference[DIG_USE_STEREO] * 2 | AIL_preference[DIG_USE_16_BITS]) {
-    case 0:
+
+    switch ((AIL_preference[DIG_USE_STEREO] << 1) | (AIL_preference[DIG_USE_16_BITS])) {
+    case DIG_F_MONO_8:
         pref[0] = DIG_F_MONO_8;
         pref[1] = DIG_F_MONO_16;
         pref[2] = DIG_F_STEREO_8;
         pref[3] = DIG_F_STEREO_16;
         break;
-    case 1:
+    case DIG_F_MONO_16:
         pref[0] = DIG_F_MONO_16;
         pref[1] = DIG_F_MONO_8;
         pref[2] = DIG_F_STEREO_16;
         pref[3] = DIG_F_STEREO_8;
         break;
-    case 2:
+    case DIG_F_STEREO_8:
         pref[0] = DIG_F_STEREO_8;
         pref[1] = DIG_F_STEREO_16;
         pref[2] = DIG_F_MONO_8;
         pref[3] = DIG_F_MONO_16;
         break;
-    case 3:
+    case DIG_F_STEREO_16:
         pref[0] = DIG_F_STEREO_16;
         pref[1] = DIG_F_STEREO_8;
         pref[2] = DIG_F_MONO_16;
         pref[3] = DIG_F_MONO_8;
         break;
     }
+
     for (i = 0; i < 4; i++) {
         if (dig->DDT->format_supported[pref[i]]) {
             dig->hw_format = pref[i];
             break;
         }
     }
+
     dig->hw_mode_flags = dig->DDT->format_data[dig->hw_format].flags;
+
     switch (AIL_preference[DIG_HARDWARE_SAMPLE_RATE]) {
     case 0:
         dig->DMA_rate = dig->DDT->format_data[dig->hw_format].minimum_physical_sample_rate;
@@ -349,19 +356,21 @@ S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
         dig->DMA_rate = dig->DDT->format_data[dig->hw_format].maximum_physical_sample_rate;
         break;
     default:
+        n = AIL_preference[DIG_HARDWARE_SAMPLE_RATE];
         pref[0] = dig->DDT->format_data[dig->hw_format].minimum_physical_sample_rate;
         pref[1] = dig->DDT->format_data[dig->hw_format].nominal_physical_sample_rate;
         pref[2] = dig->DDT->format_data[dig->hw_format].maximum_physical_sample_rate;
-        err = 0x7fffffff;
+        delta = 0x7fffffff;
         for (i = 0; i < 3; i++) {
-            if (ABS(AIL_preference[DIG_HARDWARE_SAMPLE_RATE] - pref[i]) <= err) {
-                err = ABS(AIL_preference[DIG_HARDWARE_SAMPLE_RATE] - pref[i]);
-                best = i;
+            if (AIL_abs(n - pref[i]) <= delta) {
+                delta = AIL_abs(n - pref[i]);
+                match = i;
             }
         }
-        dig->DMA_rate = pref[best];
+        dig->DMA_rate = pref[match];
         break;
     }
+
     switch (dig->hw_format) {
     case DIG_F_MONO_8:
         dig->channels_per_sample = 1;
@@ -380,44 +389,61 @@ S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
         dig->bytes_per_channel = 2;
         break;
     }
-    dig->half_buffer_size = (dig->DMA_rate * AIL_preference[DIG_LATENCY]) / 1000
-                            * dig->bytes_per_channel * dig->channels_per_sample;
-    min_size = dig->DDT->format_data[dig->hw_format].minimum_DMA_half_buffer_size;
-    max_size = dig->DDT->format_data[dig->hw_format].maximum_DMA_half_buffer_size;
+
+    hb_samples = (dig->DMA_rate * AIL_preference[DIG_LATENCY]) / 1000;
+
+    dig->half_buffer_size = hb_samples * dig->bytes_per_channel * dig->channels_per_sample;
+
+    min = dig->DDT->format_data[dig->hw_format].minimum_DMA_half_buffer_size;
+    max = dig->DDT->format_data[dig->hw_format].maximum_DMA_half_buffer_size;
+
     if (AIL_preference[AIL_ALLOW_VDM_EXECUTION]) {
-        if (max_size > 2048) {
-            max_size = 2048;
+        if (max > 2048) {
+            max = 2048;
         }
-        if (min_size > 2048) {
+        if (min > 2048) {
             strcpy(AIL_error, D_00126c3c);
             return 0;
         }
     }
-    err = 0x7fffffff;
-    for (size = 8; size <= AIL_preference[DIG_DMA_RESERVE] / 2; size += size) {
-        if (ABS(size - dig->half_buffer_size) <= err) {
-            err = ABS(size - dig->half_buffer_size);
-            best = size;
+
+    delta = 0x7fffffff;
+
+    for (n = 8; n <= (AIL_preference[DIG_DMA_RESERVE] / 2); n <<= 1) {
+        if (AIL_abs(n - dig->half_buffer_size) <= delta) {
+            delta = AIL_abs(n - dig->half_buffer_size);
+            match = n;
         }
     }
-    dig->half_buffer_size = best;
-    if (best < min_size) {
-        dig->half_buffer_size = min_size;
+
+    dig->half_buffer_size = match;
+
+    if (dig->half_buffer_size < min) {
+        dig->half_buffer_size = min;
     }
-    if (max_size < dig->half_buffer_size) {
-        dig->half_buffer_size = max_size;
+
+    if (dig->half_buffer_size > max) {
+        dig->half_buffer_size = max;
     }
-    DMA = dig->DMA_seg;
+
+    linear = (U32)dig->DMA_seg;
+
     if (AIL_preference[AIL_ALLOW_VDM_EXECUTION]) {
-        DMA = (((DMA >> 12) + 0xfff) & 0xff000) << 12;
+        linear >>= 12;
+        linear += 4095;
+        linear &= 0xff000;
+        linear <<= 12;
     }
-    dig->DST->DMA_buffer_A = DMA;
-    dig->DST->DMA_buffer_B = DMA + dig->half_buffer_size;
+
+    dig->DST->DMA_buffer_A = linear;
+    dig->DST->DMA_buffer_B = linear + dig->half_buffer_size;
+
     dig->DMA[0] = (void *)(((dig->DST->DMA_buffer_A >> 16) << 4)
                            + (dig->DST->DMA_buffer_A & 0xffff));
     dig->DMA[1] = (void *)(((dig->DST->DMA_buffer_B >> 16) << 4)
                            + (dig->DST->DMA_buffer_B & 0xffff));
-    if (resume) {
+
+    if (DMA_status) {
         for (i = 0; i < dig->n_samples; i++) {
             dig->samples[i].status = dig->samples[i].system_data[7];
         }
@@ -426,6 +452,7 @@ S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
         AILSSA_DMA_copy(dig, 1);
         SS_start_DIG_driver_playback(dig);
     }
+
     return 1;
 }
 
@@ -487,21 +514,19 @@ void fn_000e0660(HDIGDRIVER dig)
 }
 
 // FUNCTION: 0x000e06f0
-// NONMATCHING: register allocation
 HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
 {
     IO_PARMS use;
+    S32 i;
+    S32 detected;
     VDI_CALL out;
+    HDIGDRIVER dig;
+    S32 DMA_bytes;
+    U32 start_pg, end_pg;
     void *buf;
     U32 seg;
     U32 sel;
-    S32 i;
-    S32 found;
-    HDIGDRIVER dig;
-    IO_PARMS *env;
-    IO_PARMS *IO_parms;
-    S32 size;
-    S32 paras;
+    U32 linear;
 
     AILSS_start();
     dig = AIL_mem_alloc_lock(sizeof(struct _DIG_DRIVER));
@@ -526,54 +551,52 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     dig->quiet = 0;
     dig->n_active_samples = 0;
     memset(&AIL_last_IO_attempt, -1, sizeof(AIL_last_IO_attempt));
-    found = 0;
+    detected = 0;
     if (IO != NULL) {
         AIL_last_IO_attempt = *IO;
         if (SS_attempt_DIG_detection(dig, IO)) {
-            found = 1;
+            detected = 1;
             use = *IO;
         }
     }
-    if (!found) {
-        env = AIL_get_IO_environment(dig->drvr);
-        if (env != NULL) {
-            AIL_last_IO_attempt = *env;
-            if (SS_attempt_DIG_detection(dig, env)) {
-                found = 1;
-                use = *env;
+    if (!detected) {
+        IO = AIL_get_IO_environment(dig->drvr);
+        if (IO != NULL) {
+            AIL_last_IO_attempt = *IO;
+            if (SS_attempt_DIG_detection(dig, IO)) {
+                detected = 1;
+                use = *IO;
             }
         }
     }
-    if (!found && AIL_preference[AIL_SCAN_FOR_HARDWARE] == 1) {
+    if ((!detected) && (AIL_preference[AIL_SCAN_FOR_HARDWARE] == 1)) {
         for (i = 0; i < dig->drvr->VHDR->num_IO_configurations; i++) {
-            IO_parms = (IO_PARMS *)(((dig->drvr->VHDR->common_IO_configurations >> 16) << 4)
-                                    + (dig->drvr->VHDR->common_IO_configurations & 0xffff)
-                                    + i * sizeof(IO_PARMS));
+            IO = &((IO_PARMS *)REALPTR(dig->drvr->VHDR->common_IO_configurations))[i];
             if (i == 0) {
-                AIL_last_IO_attempt = *IO_parms;
+                AIL_last_IO_attempt = *IO;
             }
-            if (SS_attempt_DIG_detection(dig, IO_parms)) {
-                found = 1;
-                use = *IO_parms;
+            if (SS_attempt_DIG_detection(dig, IO)) {
+                detected = 1;
+                use = *IO;
                 break;
             }
         }
     }
-    if (!found) {
+    if (detected) {
+        AIL_last_IO_attempt = use;
+    } else {
         strcpy(AIL_error, D_00126cb0);
         AIL_mem_free_lock(dig);
         return NULL;
     }
-    AIL_last_IO_attempt = use;
     if (AIL_preference[AIL_ALLOW_VDM_EXECUTION]) {
-        size = 0x2000;
+        DMA_bytes = 2 * 4096;
     } else {
-        size = AIL_preference[DIG_DMA_RESERVE];
+        DMA_bytes = AIL_preference[DIG_DMA_RESERVE];
     }
-    paras = (size + 15) / 16;
     dig->DMA_buf = NULL;
     do {
-        if (!AIL_mem_alloc_DOS(paras, &buf, &seg, &sel)) {
+        if (!AIL_mem_alloc_DOS((DMA_bytes + 15) / 16, &buf, &seg, &sel)) {
             strcpy(AIL_error, D_00126cd4);
             AIL_mem_free_lock(dig);
             return NULL;
@@ -584,7 +607,10 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         dig->DMA_buf = buf;
         dig->DMA_seg = seg;
         dig->DMA_sel = sel;
-    } while ((((seg >> 12) + size - 1) & 0xf0000) != ((seg >> 12) & 0xf0000));
+        linear = (U32)seg >> 12;
+        start_pg = ((U32)linear) & 0xf0000L;
+        end_pg = ((U32)((U8 *)linear + DMA_bytes - 1)) & 0xf0000L;
+    } while (start_pg != end_pg);
     if (!SS_configure_buffers(dig)) {
         AIL_mem_free_DOS(dig->DMA_buf, dig->DMA_seg, dig->DMA_sel);
         AIL_mem_free_lock(dig);

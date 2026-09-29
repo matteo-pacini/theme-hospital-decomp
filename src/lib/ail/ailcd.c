@@ -65,6 +65,7 @@ typedef struct _REDBOOK {
 
 extern S32 numopen;
 extern U32 stupidhash[4];
+#define rotate(val) ((((U32)(val)) << 8L) | (((U32)(val)) >> 24L))
 extern U8 *ptrtoreal;
 extern U32 segtoreal;
 extern U32 seltoreal;
@@ -254,23 +255,20 @@ U32 rbpos(U32 drive, S32 track)
 }
 
 // FUNCTION: 0x000e6650
-// NONMATCHING: drive and play swap esi/edi; the target adds start + len with mov/add, not lea
-S32 rbplay(U32 drive, U32 start, U32 len)
+void rbplay(U32 drive, U32 start, U32 len)
 {
-    RQ_HDR *req;
-    PLAY_RQ *play;
+    RQ_HDR *rh = (RQ_HDR *)ptrtoreal;
+    PLAY_RQ *pr = (PLAY_RQ *)(rh + 1);
     U32 first;
     U32 last;
 
-    req = (RQ_HDR *)ptrtoreal;
     first = MStoSector(start);
-    play = (PLAY_RQ *)(req + 1);
     last = MStoSector(start + len);
-    req->command = 0x84;
-    play->start = first;
-    play->count = last - first;
-    play->mode = 0;
-    return calldrv(drive, req, segtoreal, 0);
+    rh->command = 0x84;
+    pr->mode = 0;
+    pr->start = first;
+    pr->count = last - first;
+    calldrv(drive, rh, segtoreal, 0);
 }
 
 // FUNCTION: 0x000e66a0
@@ -472,30 +470,28 @@ void __cdecl AIL_API_redbook_track_info(HREDBOOK hand, U32 tracknum, U32 *startm
 }
 
 // FUNCTION: 0x000e6a10
-// NONMATCHING: the target keeps n in ebp and reloads hand from the stack
 U32 __cdecl AIL_API_redbook_id(HREDBOOK hand)
 {
-    U32 start;
-    U32 end;
-    U32 n;
-    U32 hash;
-    U32 i;
-    S32 k;
+    U32 count, hash, tracks, starts, ends, i;
 
-    if (!AIL_redbook_status(hand)) {
+    if (AIL_redbook_status(hand) == REDBOOK_ERROR)
         return 0;
+
+    count = 0;
+    hash = 0;
+
+    tracks = AIL_redbook_tracks(hand);
+    hash = hash ^ stupidhash[++count & 3] ^ tracks;
+    hash = rotate(hash);
+
+    for (i = 0; i < tracks; i++) {
+        AIL_redbook_track_info(hand, i + 1, &starts, &ends);
+        hash = hash ^ stupidhash[++count & 3] ^ starts;
+        hash = rotate(hash);
+        hash = hash ^ stupidhash[++count & 3] ^ ends;
+        hash = rotate(hash);
     }
-    n = AIL_redbook_tracks(hand);
-    hash = stupidhash[1] ^ n;
-    k = 1;
-    hash = (hash << 8) | (hash >> 24);
-    for (i = 0; i < n; i++) {
-        AIL_redbook_track_info(hand, i + 1, &start, &end);
-        hash = hash ^ stupidhash[++k & 3] ^ start;
-        hash = (hash << 8) | (hash >> 24);
-        hash = hash ^ stupidhash[++k & 3] ^ end;
-        hash = (hash << 8) | (hash >> 24);
-    }
+
     return hash;
 }
 

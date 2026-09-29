@@ -18,13 +18,15 @@ void format_music(void)
 }
 
 // FUNCTION: 0xf09c0
-// NONMATCHING: RNC length computation allocates registers differently
+// NONMATCHING: the tab_offset seek and the else branch compute head[bank] into
+// the argument register and load file into eax first; ours goes through eax
 u8 load_music_bank(long file, u8 bank)
 {
     BankHead head[4];
     u8 *data;
     u8 *tab;
     u8 i;
+    u32 n;
 
     LbFilePosition(file);
     LbFileRead(file, head, sizeof(head));
@@ -35,7 +37,11 @@ u8 load_music_bank(long file, u8 bank)
         LbFileSeek(file, head[bank].data_offset, 0);
         LbFileRead(file, data, 8);
         if (data[0] == 'R' && data[1] == 'N' && data[2] == 'C') {
-            LbFileRead(file, MusicData + 8, RNC_LENGTH(data) - 8);
+            n = data[4];
+            n = (n << 8) + data[5];
+            n = (n << 8) + data[6];
+            n = (n << 8) + data[7];
+            LbFileRead(file, MusicData + 8, n - 8);
             UnpackM1(data, data);
         } else {
             LbFileRead(file, MusicData + 8, head[bank].data_size - 8);
@@ -43,7 +49,11 @@ u8 load_music_bank(long file, u8 bank)
         LbFileSeek(file, head[bank].tab_offset, 0);
         LbFileRead(file, tab, 8);
         if (tab[0] == 'R' && tab[1] == 'N' && tab[2] == 'C') {
-            LbFileRead(file, (u8 *)Music + 8, RNC_LENGTH(tab) - 8);
+            n = tab[4];
+            n = (n << 8) + tab[5];
+            n = (n << 8) + tab[6];
+            n = (n << 8) + tab[7];
+            LbFileRead(file, (u8 *)Music + 8, n - 8);
             UnpackM1(tab, tab);
         } else {
             LbFileRead(file, (u8 *)Music + 8, head[bank].tab_size - 8);
