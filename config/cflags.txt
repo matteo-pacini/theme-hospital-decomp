@@ -59,7 +59,7 @@ src/lib/clib/grownear.c  wcc386  -s -ox -ms -r -zm-
 src/lib/clib/strtol.c    wcc386  -s -ox -ms -r -zm-
 # The FP support routines keep a frame pointer (-of); _Scale10V checks for
 # the Pentium FDIV bug (-fpd).
-src/lib/clib/scale.c   wcc386  -s -ox -ms -r -of -fpd
+src/lib/clib/scale.c   wcc386  -s -ox -ms -r -of
 src/lib/clib/log87e.c  wcc386  -s -ox -ms -r -of
 src/lib/clib/cvt.c     wcc386  -s -ox -ms -r -of
 src/lib/clib/strtod.c  wcc386  -s -ox -ms -r -of

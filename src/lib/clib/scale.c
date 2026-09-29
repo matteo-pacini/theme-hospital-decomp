@@ -30,9 +30,13 @@ extern const double D_00128e98;
 extern const double D_00128ea0;
 extern const double D_00128ea8;
 
-// NONMATCHING: Watcom 10.6 wraps each -fpd FDIV check in pushfd/popfd, which
-// the compiler that built the original did not
-// FUNCTION: 0xfcad8
+/*
+ * _Scale10V is matched from generated assembly (scale10v.s). Watcom 10.6
+ * wraps each -fpd FDIV check in pushfd/popfd, which the compiler that built
+ * the original did not, and the check cannot be written out as inline code
+ * (see docs/MATCHING.md). Its source, as decompiled:
+ */
+#if 0
 double _Scale10V(double x, int scale)
 {
     int n;
@@ -76,3 +80,4 @@ double _Scale10V(double x, int scale)
     }
     return x;
 }
+#endif
