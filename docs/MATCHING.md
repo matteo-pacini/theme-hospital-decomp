@@ -16,6 +16,12 @@ and comparing against the original.
   signed chars with `movsx` where the game uses a dword load and `sar`); 10.5,
   10.5a and 10.6 generate identical code for everything tested. The project
   uses 10.6.
+- Part of the C runtime was built with 10.0a: the printf and stdio modules
+  (`fprtf`, `fputs`, `prtf`, `tzset`) match only under it, since 10.6 keeps
+  a dead byte store and a `setne` mask that 10.0a does not. A
+  `config/cflags.txt` entry selects it as `wcc386@10.0a`. Everything else
+  in the runtime is as good or better under 10.6, and 11.0 is worse
+  throughout.
 - Flags: `-s -ot -d2 -zm` (see `config/cflags.txt`). Order matters: `-d2`
   turns optimisation off again, but the "optimise for time" preference set by
   the earlier `-ot` survives and decides register allocation (the value of a
