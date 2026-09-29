@@ -95,8 +95,8 @@ def apply(source, model, Section):
     """Replace the functions of `source` that have stand-ins in the object
     model (sections, symbols, externs, weak) produced by omf2elf.convert."""
     path = os.path.join(ROOT, companion(os.path.relpath(os.path.abspath(source), ROOT)))
-    if not os.path.exists(path):
-        return
+    if not os.path.exists(path) or os.environ.get("STANDIN_OFF"):
+        return  # STANDIN_OFF=1: build the C alone, to work on it
     sections, symbols, externs, weak = model
     names = [function_names()[int(m.group(1), 16)] for m in MARKER.finditer(open(path).read())]
     for name in names:
