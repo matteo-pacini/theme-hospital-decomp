@@ -415,3 +415,13 @@ Compiler and flags per source file come from `config/cflags.txt`.
   `_disable`/`_enable` intrinsics (10.6's `_enable` emits `sti; cld`). A
   helper inlined into an earlier function and also kept out of line is a
   plain, non-`inline` definition at its source position.
+- **Inlining (`-oe=N`)** counts expression-tree nodes in the front end,
+  and explicit casts count: Smacker's `PutWidths` is 20 nodes plain and 25
+  with its casts, which keeps it out of line at `-oe=25` as in the
+  original. Other runtime idioms (R8): duplicate a cleanup tail instead of
+  sharing it through `goto` to get a jump into another branch's call
+  sequence (`__brk`); separate `x += c; x &= ~m;` statements give byte-wide
+  masks where one expression gives `and reg,imm32`; write array loops with
+  an index (`a[i]`) and let the compiler strength-reduce them into
+  pointer loops; `x = C; if (flags & K) x = C;` is the source of a dead
+  `test` plus a preloaded constant.
