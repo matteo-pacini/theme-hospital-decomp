@@ -76,6 +76,9 @@ class Section:
         self.data = bytearray()
         self.length = 0
         self.relocs = []  # (offset, type, target), target = ("sec", Section) | ("sym", name)
+        # The FIXUPP record each relocation came from (convert only): the
+        # linker orders an EXE page's fixups by record.
+        self.reloc_records = {}
         self.nobits = cls in ("BSS", "STACK")
         self.code = cls.endswith("CODE")
         self.comdat = False
@@ -115,6 +118,7 @@ def convert(obj):
     last = None  # (Section, offset) of the last LEDATA/COMDAT, for FIXUPP
     backpatches = []
     easy_omf = False  # Phar Lap Easy OMF-386: every record has 32-bit fields
+    fixupp_records = 0
 
     p = 0
     while p < len(obj):
@@ -204,6 +208,7 @@ def convert(obj):
             sec.write(off, r.rest())
             last = (sec, off, kind)
         elif kind == 0x9C:  # FIXUPP
+            fixupp_records += 1
             while r.more():
                 b = r.u8()
                 if not b & 0x80:  # THREAD
@@ -249,6 +254,7 @@ def convert(obj):
                 addend = struct.unpack_from("<i", sec.data, at)[0] + disp - (4 if relative else 0)
                 struct.pack_into("<i", sec.data, at, addend)
                 sec.relocs.append((at, R_386_PC32 if relative else R_386_32, target))
+                sec.reloc_records[at] = fixupp_records
         elif kind == 0xB2:  # BAKPAT
             sec, loc = segments[r.index()], r.u8()
             while r.more():
