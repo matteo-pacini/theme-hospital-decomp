@@ -329,6 +329,26 @@ def write_elf(sections, symbols, externs, weak, path):
     open(path, "wb").write(out)
 
 
+def library_module(path, name):
+    """The OMF object of the module `name` (its THEADR name) in a library."""
+    b = open(path, "rb").read()
+    page = struct.unpack_from("<H", b, 1)[0] + 3
+    p = page
+    while p < len(b) and b[p] != 0xF1:  # library end record
+        start, module = p, None
+        while True:
+            kind, length = b[p], struct.unpack_from("<H", b, p + 1)[0]
+            if kind == 0x80 and module is None:  # THEADR
+                module = b[p + 4 : p + 4 + b[p + 3]].decode("latin-1")
+            p += 3 + length
+            if kind in (0x8A, 0x8B):  # MODEND
+                break
+        if module == name:
+            return b[start:p]
+        p = -(-p // page) * page
+    raise KeyError(f"{path}: no module {name}")
+
+
 def main(src, dst):
     write_elf(*convert(open(src, "rb").read()), dst)
 

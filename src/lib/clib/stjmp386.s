@@ -47,7 +47,7 @@
     push edx
     mov dx, word ptr [eax + 0x2a]
     mov eax, dword ptr [eax + 0x1c]
-    call dword ptr [_D_00152a90]
+    call dword ptr [___longjmp_handler]
     pop edx
     pop eax
     mov ss, word ptr [eax + 0x2a]

@@ -29,7 +29,7 @@ struct exception {
 
 /* Function names, indexed by the low five bits of err_info (from 1). */
 extern char *D_00153cfc[];
-extern const double D_00128eb0;
+extern const double _HugeValue;
 
 double _matherr(struct exception *excp);
 double __math2err(unsigned err_info, double *arg1, double *arg2);
@@ -64,13 +64,13 @@ double __math2err(unsigned err_info, double *arg1, double *arg2)
     exc.type = why;
     exc.name = D_00153cfc[(err_info & 0x1f) - 1];
     if (err_info & V_NEG_HUGEVAL) {
-        exc.retval = -D_00128eb0;
+        exc.retval = -_HugeValue;
     } else if (err_info & V_ZERO) {
         exc.retval = 0.0;
     } else if (err_info & V_ONE) {
         exc.retval = 1.0;
     } else if (err_info & V_HUGEVAL) {
-        exc.retval = D_00128eb0;
+        exc.retval = _HugeValue;
     } else {
         exc.retval = *arg2;
     }

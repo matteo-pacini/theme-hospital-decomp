@@ -61,13 +61,17 @@ def function_relocs(path):
                 # would shift every later offset.
                 target = "<local>"
                 addend += value
-                # A call within a section shared by several functions (a
-                # module built without -zm) lands on a function's entry;
-                # the target names it after that function.
+                # A call or function pointer within a section shared by
+                # several functions (a module built without -zm) lands on a
+                # function's entry; the target names it after that function.
                 if info & 0xFF == R_386_PC32:
                     callee = starts.get((shndx, addend + 4))
                     if callee:
                         target, addend = callee, -4
+                else:
+                    callee = starts.get((shndx, addend))
+                    if callee:
+                        target, addend = callee, 0
             for name, (shndx, value, size) in funcs.items():
                 if shndx == target_sec and value <= off < value + size:
                     local_addend = addend - value if target == "<local>" and shndx in shared else addend

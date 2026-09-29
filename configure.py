@@ -13,6 +13,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "tools"))
 from project import EXE, EXE_SHA1, ROOT, Project  # noqa: E402
 import standin  # noqa: E402
+from cc import LIBRARIES, compiler_for  # noqa: E402
 
 CATEGORIES = [
     {"id": "game", "name": "Game"},
@@ -80,6 +81,10 @@ def main():
             deps = ["tools/cc.py", "tools/omf2elf.py", "tools/standin.py", "config/cflags.txt", *headers]
             if os.path.exists(os.path.join(ROOT, standin.companion(u.source))):
                 deps.append(standin.companion(u.source))
+            compiler, flags = compiler_for(u.source)
+            name, _, version = compiler.partition("@")
+            if name == "lib":
+                deps.append(os.path.join(LIBRARIES[version or "10.6"], flags[0]))
             n.append(f"build {base}: cc {u.source} | {' '.join(deps)}\n")
             objects.append(base)
             unit["base_path"] = base

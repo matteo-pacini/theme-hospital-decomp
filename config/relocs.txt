@@ -35,3 +35,5 @@
 000ca48f W?palette$n[]uc -1
 000ca532 W?palette$n[]uc -1
 000ca622 W?palette$n[]uc -1
+# setenvp (library code) reads __Envseg as the segment of the far pointer __Envptr.
+000f329c __Envptr 0x4

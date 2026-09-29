@@ -11,6 +11,7 @@ Requires $WATCOM_10_6 (set by the flake devShell).
 
 import fnmatch
 import os
+import struct
 import subprocess
 import sys
 
@@ -44,6 +45,10 @@ def dos_path(path):
 # each with the environment variable the flake sets to its installation.
 VERSIONS = {"10.6": "WATCOM_10_6", "10.0a": "WATCOM_10_0A"}
 
+# The runtime libraries of each version's CD (not redistributable, so under
+# orig/), for config/cflags.txt entries built from a library module.
+LIBRARIES = {"10.6": "orig/watcom/cd10.6/iso/LIB386", "10.0a": "orig/watcom/cd10.0a/iso/WATCOM/LIB386"}
+
 
 def command(compiler, flags):
     """Command line up to the output and source arguments for a
@@ -62,10 +67,42 @@ def command(compiler, flags):
     return ["wibo", f"{watcom}/binnt/{name}.exe", *common, *flags]
 
 
+def relocate_local_calls(sections, symbols):
+    """Give a library module's calls to its own functions relocations: the
+    library resolved them, where the compiler (and the target) relocates a
+    call to a function's entry even within one segment."""
+    for sec in sections:
+        if not sec.code:
+            continue
+        entries = {off: name for name, (s, off, _) in symbols.items() if s is sec}
+        relocated = {at + k for at, _, _ in sec.relocs for k in range(4)}
+        for op in range(len(sec.data) - 4):
+            site = op + 1
+            if sec.data[op] != 0xE8 or site in relocated:
+                continue
+            callee = entries.get(site + 4 + struct.unpack_from("<i", sec.data, site)[0])
+            if callee is not None:
+                struct.pack_into("<i", sec.data, site, -4)
+                sec.relocs.append((site, omf2elf.R_386_PC32, ("sym", callee)))
+
+
 def main(source, output, *extra):
     base = os.path.splitext(output)[0]
     omf = base + ".obj"
     compiler, flags = compiler_for(os.path.relpath(os.path.abspath(source), ROOT))
+    name, _, version = compiler.partition("@")
+    if name == "lib":
+        # A module linked from Watcom's runtime library: its object is the
+        # library's, and the source only documents it.
+        library, module = flags
+        path = os.path.join(ROOT, LIBRARIES[version or "10.6"], library)
+        obj = omf2elf.library_module(path, module)
+        # The module as the library has it, for tools/link.py.
+        open(omf, "wb").write(obj)
+        model = omf2elf.convert(obj)
+        relocate_local_calls(*model[:2])
+        omf2elf.write_elf(*model, output)
+        return
     if compiler == "as":
         # Modules that were hand-written assembly: GNU as emits ELF directly.
         subprocess.run(["as", "--32", *flags, "-o", output, source], check=True)

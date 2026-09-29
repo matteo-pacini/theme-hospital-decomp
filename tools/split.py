@@ -232,9 +232,13 @@ def emit_section(le, proj, fns, n, out, shared, data_secs=()):
 
 def shared_segment(proj, unit):
     """Whether the unit's source was compiled without -zm (config/cflags.txt),
-    all its functions in one segment. Such a unit must implement every
-    function in its address range, or the layouts cannot agree."""
-    if unit.auto or "-zm-" not in compiler_for(unit.source)[1]:
+    all its functions in one segment, as are all library modules. Such a unit
+    must implement every function in its address range, or the layouts
+    cannot agree."""
+    if unit.auto:
+        return False
+    compiler, flags = compiler_for(unit.source)
+    if "-zm-" not in flags and compiler.partition("@")[0] != "lib":
         return False
     first, last = unit.functions[0], unit.functions[-1]
     mine = {f.addr for f in unit.functions}

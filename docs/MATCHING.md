@@ -77,6 +77,8 @@ and comparing against the original.
 - `tools/check.py src/FILE.cpp`: builds just that file's unit in a temporary
   directory and prints each function's match with differing instructions.
   Safe to run concurrently.
+- `tools/libunit.py SOURCE LIBRARY MODULE`: checks a Watcom library module
+  against a unit (see Watcom library modules).
 - `tools/setfn.py 0xADDR NAME` / `--remove`: add, rename or merge one entry
   in `config/functions.txt`, re-sizing only its neighbours.
 - `tools/variants.py src/FILE 0xADDR`: searches source variants of one
@@ -299,6 +301,30 @@ predate the tool and use a separate file instead.
   `pushfd`/`popfd` (C in `scale.c`).
 - `LbSpriteDrawOneColour` (0xcb2f0), `src/lib/bf1/gspr_col.s`: not yet
   decompiled (the demo map had taken it for the `hvline.asm` routine).
+
+## Watcom library modules
+
+Most of the runtime is Watcom 10.6's own library code (`CLIB3R.LIB`,
+`MATH387R.LIB`, `PLIB3R.LIB` from the 10.6 CD, extracted under
+`orig/watcom/cd10.6/`; 10.0a's are under `cd10.0a/`). A unit whose C does
+not reproduce its module is built from the library instead: its
+`config/cflags.txt` entry names compiler `lib` (`lib@10.0a` for the 10.0a
+CD), the library under `LIB386` and the module, and `tools/cc.py` takes that
+module's object (and relocates its calls to its own functions, which the
+library resolved). The C stays as documentation. They count as matched, not
+as decompiled; the list is the `lib` block at the top of `config/cflags.txt`.
+
+`tools/libunit.py SOURCE LIBRARY MODULE [VERSION]` checks a module against
+the EXE before switching a unit: code bytes, where each relocation lands,
+and the config objdiff then needs, namely the library's names for functions
+and globals and the module's own segments that it refers to
+section-relative (`config/sections.txt`). Library modules are one segment,
+so `tools/split.py` lays their units out as built without `-zm`.
+
+Neither CD's library has the EXE's `prtf` (the frame and flag handling
+differ; parts match when compiled from C with 10.0a) or `grownear`
+(`__AdjustAmount` rounds to 8 bytes, the 10.6 library to 4), so those stay
+C.
 
 ## Libraries
 
