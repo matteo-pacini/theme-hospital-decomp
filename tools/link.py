@@ -1,26 +1,30 @@
 #!/usr/bin/env python3
 """Link every unit into a DOS/4G executable and report what does not resolve.
 
-This tracks how close the sources are to linking; it is not the build of the
-game yet. Compiled units link from the compiler's own OMF objects (which keep
-its weak references and COMDATs), or, with assembly stand-ins, from the OMF
-tools/cc.py writes after applying them; assembly units and auto units
-(build/target, no sources yet) are converted from ELF to OMF with objconv. The EXE's data, 16-bit code and stack objects
-become a generated data module that defines every name the code refers to
-at its original address and carries the data's own relocations. Open
-Watcom's wlink then links everything, in address order, and the unresolved
-symbols are written to build/link/report.txt.
+This tracks how close the sources are to linking; it is not yet a faithful
+build of the game. Every unit is read into tools/omf2elf.py's object model:
+compiled units from the compiler's own OMF object (or, with assembly
+stand-ins, the one tools/cc.py writes after applying them), library units
+from their library module, and assembly and auto units from their ELF
+object. Each unit's static functions get a global alias, `unit::name`, so
+the EXE's data can point at them; references into the middle of a function
+(`_C_XXXXXXXX`) become the function's symbol plus an offset, and ones
+outside every function are defined with their gap's bytes. The EXE's
+data, 16-bit code and stack objects become a generated data module that
+defines every name the code refers to at its original address and carries
+the data's own relocations. Everything is written as OMF and linked in
+address order with Open Watcom's wlink; unresolved and duplicate symbols
+are written to build/link/report.txt.
 
 Known gaps: data the compiler emits itself (initialiser tables, module
-registration blocks, exception tables) is still copied from the EXE as
-well; data pointers into globals now defined by compiled units point at the
-EXE's copy instead; the 16-bit code object is not marked as a 16-bit
-segment; and Watcom 10.6's own wlink does not run under wibo.
+registration blocks, exception tables) is still copied from the EXE as well,
+and the EXE's copy is the one the runtime walks; its pointers into a unit's
+static data point at the EXE's copy; and Watcom 10.6's own wlink does not
+run under wibo.
 
 Usage: tools/link.py    (after `ninja`)
 """
 
-import collections
 import os
 import re
 import shutil
@@ -29,80 +33,88 @@ import subprocess
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-from elfrelocs import _sections  # noqa: E402
+import omf2elf  # noqa: E402
 from lefile import SRC_OFFSET32, LEFile  # noqa: E402
 from project import EXE, ROOT, Project  # noqa: E402
-from split import q  # noqa: E402
 from standin import companion  # noqa: E402
 
 OUT = os.path.join(ROOT, "build", "link")
+INTERIOR = re.compile(r"_C_([0-9a-f]{8})")
 
 
-def elf_symbols(path):
-    """(defined globals, undefined globals) of an ELF object."""
-    b = open(path, "rb").read()
-    secs, _ = _sections(b)
-    st = next(s for s in secs if s[1] == 2)
-    strtab = secs[st[6]][4]
-    defined, undefined = set(), set()
-    for i in range(1, st[5] // 16):
-        nm, _, _, info, _, shndx = struct.unpack_from("<IIIBBH", b, st[4] + i * 16)
-        if info >> 4 == 0:
-            continue
-        name = b[strtab + nm : b.index(b"\0", strtab + nm)].decode("latin-1")
-        (undefined if shndx == 0 else defined).add(name)
-    return defined, undefined
+def unit_model(u):
+    """The object model of a unit, from the object tools/link.py links."""
+    base = os.path.join(ROOT, "build", "target" if u.auto else "base", u.name)
+    if not u.auto:
+        with_standins = os.path.exists(os.path.join(ROOT, companion(u.source)))
+        omf = base + (".link.obj" if with_standins else ".obj")
+        if os.path.exists(omf):
+            return omf2elf.convert(open(omf, "rb").read())
+    return omf2elf.read_elf(base + ".o")
 
 
-def data_module(proj, le, resolved):
-    """GNU as source for the EXE's non-code objects, defining `resolved`
-    ({name: address}) and relocating the data's own fixups."""
-    names_at = collections.defaultdict(list)
-    for n, a in resolved.items():
-        names_at[a].append(n)
+def alias(unit, name):
+    return f"{unit.name}::{name}"
+
+
+def data_module(proj, le, resolved, code_name, defined, gaps):
+    """The EXE's non-code objects as an object model: `resolved` ({name:
+    address}) defined at their addresses, and the data's own relocations.
+    `gaps` ({name: address}) are places in the code object outside every
+    function, carried with the bytes of their gap."""
     data, code16, stack = le.objects[2], le.objects[1], le.objects[3]
+    sections, symbols = [], {}
+    starts = sorted(f.addr for f in proj.functions)
+    for lo in sorted({max((f.end for f in proj.functions if f.end <= a), default=le.code.base) for a in gaps.values()}):
+        hi = min(a for a in starts + [le.code.base + le.code.vsize] if a > lo)
+        sec = omf2elf.Section("_TEXT", "CODE", 1)
+        sec.write(0, bytes(le.read(lo, hi - lo)))
+        for n, a in gaps.items():
+            if lo <= a < hi:
+                symbols[n] = (sec, a - lo, False)
+        sections.append((None, sec))
+    gap_sections = [sec for _, sec in sections]
+    sections = []
+    for obj, name, cls in ((data, "_DATA", "DATA"), (code16, "CODE16", "CODE"), (stack, "STACK", "STACK")):
+        sec = omf2elf.Section(name, cls, 16)
+        if cls != "STACK":
+            sec.write(0, bytes(le.read(obj.base, obj.vsize)))
+        sec.length = obj.vsize
+        sec.use16 = name == "CODE16"
+        sections.append((obj, sec))
 
-    def target(t):
-        if le.code.contains(t):
-            f = proj.function_at(t)
-            return None if f is None else q(f.name) + (f"+{t - f.addr:#x}" if t != f.addr else "")
-        for obj, label in ((data, ".LDATA"), (code16, ".LCODE16")):
-            if obj.contains(t):
-                return f"{label}+{t - obj.base:#x}"
-        return None
+    missing = 0
+    for n, a in resolved.items():
+        for obj, sec in sections:
+            if obj.base <= a <= obj.base + obj.vsize:
+                symbols[n] = (sec, a - obj.base, False)
+                break
 
-    out, missing = [".intel_syntax noprefix"], 0
-    for obj, sec, label in ((data, "_DATA", ".LDATA"), (code16, "CODE16", ".LCODE16"), (stack, "STACK", ".LSTACK")):
-        flags = '"ax"' if sec == "CODE16" else '"aw"'
-        out.append(f"\n.section {sec},{flags},{'@nobits' if sec == 'STACK' else '@progbits'}\n{label}:")
-        pending = []
-
-        def flush():
-            if pending:
-                out.append(f".skip {len(pending)}" if sec == "STACK" else ".byte " + ",".join(f"{x:#04x}" for x in pending))
-                pending.clear()
-
-        a, end = obj.base, obj.base + obj.vsize
-        while a < end:
-            for n in names_at.get(a, []):
-                flush()
-                out.append(f".globl {q(n)}\n{q(n)}:")
-            fx = le.fixups.get(a)
-            if fx is not None and fx.kind == SRC_OFFSET32 and sec != "STACK":
-                flush()
-                e = target(fx.target)
-                missing += e is None
-                out.append(f".long {e or 0}")
-                a += 4
+    for obj, sec in sections[:2]:
+        for site, fx in le.fixups.items():
+            if not obj.contains(site) or fx.kind != SRC_OFFSET32:
                 continue
-            pending.append(0 if sec == "STACK" else le.read(a, 1)[0])
-            if len(pending) == 16:
-                flush()
-            a += 1
-        flush()
-        for n in names_at.get(end, []):
-            out.append(f".globl {q(n)}\n{q(n)}:")
-    return "\n".join(out) + "\n", missing
+            at, t = site - obj.base, fx.target
+            target = None
+            if le.code.contains(t):
+                f = proj.function_at(t)
+                if f is not None and code_name(f) is not None:
+                    target, addend = ("sym", code_name(f)), t - f.addr
+            else:
+                s = proj.data_symbol_at(t)
+                if s is not None and s.name in defined:
+                    # A global a unit now defines: its copy, not the EXE's.
+                    target, addend = ("sym", s.name), t - s.addr
+                else:
+                    for tobj, tsec in sections:
+                        if tobj.contains(t):
+                            target, addend = ("sec", tsec), t - tobj.base
+            if target is None:
+                missing += 1
+                continue
+            struct.pack_into("<i", sec.data, at, addend)
+            sec.relocs.append((at, omf2elf.R_386_32, target))
+    return [sec for _, sec in sections] + gap_sections, symbols, [None], {}, missing
 
 
 def main():
@@ -112,41 +124,60 @@ def main():
     os.makedirs(os.path.join(OUT, "objs"))
 
     units = sorted(proj.units, key=lambda u: u.functions[0].addr)
-    elfs = [os.path.join(ROOT, "build", "target" if u.auto else "base", u.name + ".o") for u in units]
+    models = [unit_model(u) for u in units]
+    unit_of = {f.addr: u for u in units for f in u.functions}
+    defined = {n for m in models for n, (_, _, local) in m[1].items() if not local}
+    local_names = {id(u): {n for n, (s, _, local) in m[1].items() if local and s.code} for u, m in zip(units, models)}
 
-    defined, undefined = collections.Counter(), set()
-    for path in elfs:
-        d, un = elf_symbols(path)
-        defined.update(d)
-        undefined |= un
-    need = sorted(undefined - set(defined))
+    def code_name(f):
+        u = unit_of.get(f.addr)
+        if f.name in defined:
+            return f.name
+        if u is not None and f.name in local_names[id(u)]:
+            return alias(u, f.name)
+        return None
+
+    gaps = {}
+    for u, (sections, symbols, externs, weak) in zip(units, models):
+        for n in local_names[id(u)]:
+            sec, off, _ = symbols[n]
+            symbols[alias(u, n)] = (sec, off, False)
+        for sec in sections:
+            for i, (at, rtype, target) in enumerate(sec.relocs):
+                m = target[0] == "sym" and target[1] not in symbols and INTERIOR.fullmatch(target[1])
+                if not m:
+                    continue
+                addr = int(m.group(1), 16)
+                f = proj.function_at(addr)
+                name = code_name(f) if f is not None else None
+                if name is None:
+                    gaps[target[1]] = addr  # outside every function
+                    continue
+                addend = struct.unpack_from("<i", sec.data, at)[0] + addr - f.addr
+                struct.pack_into("<i", sec.data, at, addend)
+                sec.relocs[i] = (at, rtype, ("sym", name))
+
+    needed = set()
+    for sections, symbols, externs, weak in models:
+        for sec in sections:
+            needed.update(t[1] for _, _, t in sec.relocs if t[0] == "sym" and t[1] not in symbols)
     by_name = {s.name: s.addr for s in proj.data_symbols}
     resolved = {}
-    for n in need:
+    for n in sorted(needed - defined):
         if n in by_name:
             resolved[n] = by_name[n]
         elif re.fullmatch(r"_D_[0-9a-f]{8}", n):
             resolved[n] = int(n[3:], 16)
-
-    source, missing = data_module(proj, le, resolved)
-    data_s, data_o = os.path.join(OUT, "data.s"), os.path.join(OUT, "data.o")
-    open(data_s, "w").write(source)
-    subprocess.run(["as", "--32", "-o", data_o, data_s], check=True)
+    *data, missing = data_module(proj, le, resolved, code_name, defined, gaps)
 
     files = []
-    for k, (u, path) in enumerate(list(zip(units, elfs)) + [(None, data_o)]):
+    for k, model in enumerate(models + [tuple(data)]):
         dst = os.path.join("objs", f"{k:03d}.obj")
-        omf = os.path.splitext(path)[0] + ".obj"
-        if u is not None and not u.auto and os.path.exists(os.path.join(ROOT, companion(u.source))):
-            omf = os.path.splitext(path)[0] + ".link.obj"  # with its stand-ins
-        if u is not None and not u.auto and os.path.exists(omf):
-            shutil.copy(omf, os.path.join(OUT, dst))
-        else:
-            subprocess.run(["objconv", "-fomf", path, os.path.join(OUT, dst)], check=True, capture_output=True)
+        omf2elf.write_omf(*model, os.path.join(OUT, dst))
         files.append(dst)
     with open(os.path.join(OUT, "hosp.lnk"), "w") as f:
         f.write("system dos4g\noption nodefaultlibs\noption undefsok\noption start=_cstart_\n"
-                "option map=hosp.map\noption stack=0x1000\nname hosp.exe\n")
+                "option map=hosp.map\nname hosp.exe\n")
         f.writelines(f"file {p}\n" for p in files)
     env = dict(os.environ, WATCOM=os.path.dirname(os.path.dirname(shutil.which("wlink"))))
     r = subprocess.run(["wlink", "@hosp.lnk"], cwd=OUT, env=env, capture_output=True, text=True)
@@ -155,8 +186,9 @@ def main():
     unresolved = sorted({m.group(1) for m in re.finditer(r"undefined symbol (.+)", r.stdout)})
     duplicates = sorted({m.group(1) for m in re.finditer(r"redefinition of (\S+)", r.stdout)})
     with open(os.path.join(OUT, "report.txt"), "w") as f:
-        f.write(f"objects {len(elfs)} (auto units {sum(u.auto for u in units)})\n")
+        f.write(f"objects {len(models) + 1} (auto units {sum(u.auto for u in units)})\n")
         f.write(f"data relocations without a target {missing}\n")
+        f.write(f"code references outside every function {len(gaps)}\n")
         f.write(f"unresolved {len(unresolved)}\n" + "".join(f"  {n}\n" for n in unresolved))
         f.write(f"duplicate {len(duplicates)}\n" + "".join(f"  {n}\n" for n in duplicates))
     print(open(os.path.join(OUT, "report.txt")).read(), end="")

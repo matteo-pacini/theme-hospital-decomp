@@ -79,6 +79,7 @@ class Section:
         self.nobits = cls in ("BSS", "STACK")
         self.code = cls.endswith("CODE")
         self.comdat = False
+        self.use16 = False
 
     def write(self, off, data):
         if len(self.data) < off + len(data):
@@ -355,6 +356,56 @@ def write_elf(sections, symbols, externs, weak, path):
     open(path, "wb").write(out)
 
 
+def read_elf(path):
+    """An ELF32 i386 relocatable object (GNU as output) in convert's model."""
+    b = open(path, "rb").read()
+    shoff = struct.unpack_from("<I", b, 0x20)[0]
+    shentsize, shnum, shstrndx = struct.unpack_from("<HHH", b, 0x2E)
+    secs = [struct.unpack_from("<10I", b, shoff + i * shentsize) for i in range(shnum)]
+    text = lambda tab, off: b[tab + off : b.index(b"\0", tab + off)].decode("latin-1")
+    shstr = secs[shstrndx][4]
+
+    sections, kept = [], {}
+    for i, (nm, kind, flags, _, off, size, _, _, align, _) in enumerate(secs):
+        if kind not in (SHT_PROGBITS, SHT_NOBITS) or not flags & SHF_ALLOC:
+            continue
+        name = text(shstr, nm)
+        cls = "CODE" if flags & SHF_EXECINSTR else "BSS" if kind == SHT_NOBITS else "DATA"
+        if name == "STACK":
+            cls = "STACK"
+        sec = Section(name, cls, max(align, 1))
+        if kind == SHT_PROGBITS:
+            sec.write(0, b[off : off + size])
+        sec.length = size
+        sections.append(sec)
+        kept[i] = sec
+
+    st = next(s for s in secs if s[1] == SHT_SYMTAB)
+    strtab = secs[st[6]][4]
+    syms, symbols, externs = [], {}, [None]
+    for k in range(st[5] // 16):
+        nm, value, _, info, _, shndx = struct.unpack_from("<IIIBBH", b, st[4] + k * 16)
+        name = text(strtab, nm)
+        syms.append((name, info, shndx))
+        if not name or info & 0xF == STT_SECTION or name.startswith(".L"):
+            continue
+        if shndx == 0:
+            externs.append((name, False))
+        elif shndx in kept:
+            symbols[name] = (kept[shndx], value, info >> 4 == STB_LOCAL)
+
+    for s in secs:
+        if s[1] != SHT_REL or s[7] not in kept:
+            continue
+        sec = kept[s[7]]
+        for k in range(s[5] // 8):
+            at, info = struct.unpack_from("<II", b, s[4] + k * 8)
+            name, sinfo, shndx = syms[info >> 8]
+            target = ("sec", kept[shndx]) if sinfo & 0xF == STT_SECTION else ("sym", name)
+            sec.relocs.append((at, info & 0xFF, target))
+    return sections, symbols, externs, {}
+
+
 def write_omf(sections, symbols, externs, weak, path):
     """Write the object model back as a 32-bit OMF object for Watcom's
     linker, the inverse of convert: COMDAT sections become COMDAT records
@@ -388,9 +439,10 @@ def write_omf(sections, symbols, externs, weak, path):
     for sec in sections:
         if sec.comdat:
             continue
-        cls = sec.cls if sec.cls in ("CODE", "DATA", "BSS") else ("CODE" if sec.code else "DATA")
+        cls = sec.cls if sec.cls in ("CODE", "DATA", "BSS", "STACK") else ("CODE" if sec.code else "DATA")
         length = max(len(sec.data), sec.length)
-        acbp = {1: 1, 2: 2, 4: 5, 16: 3, 256: 4}.get(sec.align, 3) << 5 | 2 << 2 | 1
+        combine = 5 if cls == "STACK" else 2  # stack or public
+        acbp = {1: 1, 2: 2, 4: 5, 16: 3, 256: 4}.get(sec.align, 3) << 5 | combine << 2 | (0 if sec.use16 else 1)
         record(0x99, bytes([acbp]) + struct.pack("<I", length) + index(lname(sec.name)) + index(lname(cls)) + index(1))
         segs[id(sec)] = len(segs) + 1
     code_seg = next((segs[id(s)] for s in sections if not s.comdat and s.code), None)
