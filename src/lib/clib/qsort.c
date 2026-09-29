@@ -79,8 +79,8 @@ void qsort(char *base, size_t n, size_t size, _compfn compar);
 // FUNCTION: 0xced9d
 void qsort(char *base, size_t n, size_t size, _compfn compar)
 {
-    char *p1;
     char *mid;
+    char *p1;
     char *pv;
     char *pc;
     char *pa;

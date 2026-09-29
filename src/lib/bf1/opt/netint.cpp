@@ -26,7 +26,7 @@ struct IPXServiceProvider : ServiceProvider {
     TbError EnableNewPlayers(u32 allow);
     u32 ReadMessage(u32 *from, void *buf, u32 *size);
     u32 PeekMessage(u32 *from, void *buf, u32 *size);
-    TbError SendMessage(u32 to, void *buf, u32 guaranteed);
+    TbError SendMessage(u32 to, void *buf, TbMessageType type);
 };
 
 struct __ic76sReceiveCallbacks {

@@ -262,4 +262,5 @@ u32 ModemSP::PeekMessage(u32 *from, void *buf, u32 *size)
  * the class's vtable (the constructor is defined here).
  */
 // FUNCTION: 0xeee20
-// NONMATCHING: the compiled destructor ends with two bytes of padding (mov eax,eax)
+// NONMATCHING: the code matches; only our symbol also covers 2 bytes of
+// padding (mov eax,eax) after the code, which the target's does not

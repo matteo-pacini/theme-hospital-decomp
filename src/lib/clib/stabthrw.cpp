@@ -713,6 +713,10 @@ void __wcpp_2_throw_(void *object, THROW_RO *ro)
     throwIt(object, ro, 0);
 }
 
+// FUNCTION: 0xf45b2
+// NONMATCHING: the target jumps into __wcpp_2_throw_'s call, so the module
+// was built in one segment; compiling it with -zm- reproduces this but moves
+// getActiveExc's jump table until dispatchable matches
 void __wcpp_2_throw_zero_(void *object, THROW_RO *ro)
 {
     throwIt(object, ro, 1);

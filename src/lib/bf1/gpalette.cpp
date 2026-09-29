@@ -18,7 +18,6 @@ u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b);
 
 extern "C" {
 
-// NONMATCHING: target range also covers the next function (0xc95f8)
 // FUNCTION: 0x000c9400
 s32 fn_000c9400(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
 {
@@ -41,7 +40,6 @@ s32 fn_000c9400(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
             LbPaletteSet(palette);
         }
         fade_started = 0;
-        return D_00189dd4;
     } else {
         if (!fade_started) {
             D_00189dd4 = 0;
@@ -62,8 +60,8 @@ s32 fn_000c9400(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
         }
         LbScreenWaitVbi();
         LbPaletteSet(palette);
-        return D_00189dd4;
     }
+    return D_00189dd4;
 }
 
 // FUNCTION: 0x000c95f8

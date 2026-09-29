@@ -22,6 +22,11 @@ struct TbNetworkPlayerEntry {
     char name[0x20];
 };
 
+typedef enum {
+    MSG_TYPE_0,
+    MSG_TYPE_UNIDIRECTIONAL = 7
+} TbMessageType;
+
 struct ServiceProvider {
     u32 local_id;
     TbNetworkSessionNameEntry sessions[32];
@@ -47,16 +52,11 @@ struct ServiceProvider {
     virtual TbError EnableNewPlayers(u32 allow);
     virtual u32 ReadMessage(u32 *from, void *buf, u32 *size) = 0;
     virtual u32 PeekMessage(u32 *from, void *buf, u32 *size) = 0;
-    virtual TbError SendMessage(u32 to, void *buf, u32 guaranteed) = 0;
+    virtual TbError SendMessage(u32 to, void *buf, TbMessageType type) = 0;
 
     TbError Receive(u32 flags);
     TbError Send(u32 to, void *buf);
 };
-
-typedef enum {
-    MSG_TYPE_0,
-    MSG_TYPE_UNIDIRECTIONAL = 7
-} TbMessageType;
 
 void EncodeMessageStub(void *buf, u32 size, TbMessageType type, u32 seq);
 
