@@ -431,8 +431,6 @@ S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
 }
 
 // FUNCTION: 0x000e0560
-// NONMATCHING: the target sign-extends the IO_PARMS words (movsx) before
-// testing them and duplicates the AIL_call_driver arguments per branch
 S32 __cdecl SS_attempt_DIG_detection(HDIGDRIVER dig, IO_PARMS *IO)
 {
     IO_PARMS use;
@@ -444,16 +442,16 @@ S32 __cdecl SS_attempt_DIG_detection(HDIGDRIVER dig, IO_PARMS *IO)
     if (dig->drvr->VHDR->num_IO_configurations > 0) {
         def = (IO_PARMS *)(((dig->drvr->VHDR->common_IO_configurations >> 16) << 4)
                            + (dig->drvr->VHDR->common_IO_configurations & 0xffff));
-        if (use.IO < 0) {
+        if ((S32)use.IO < 0) {
             use.IO = def->IO;
         }
-        if (use.IRQ < 0) {
+        if ((S32)use.IRQ < 0) {
             use.IRQ = def->IRQ;
         }
-        if (use.DMA_8_bit < 0) {
+        if ((S32)use.DMA_8_bit < 0) {
             use.DMA_8_bit = def->DMA_8_bit;
         }
-        if (use.DMA_16_bit < 0) {
+        if ((S32)use.DMA_16_bit < 0) {
             use.DMA_16_bit = def->DMA_16_bit;
         }
         for (i = 0; i < 4; i++) {
@@ -464,11 +462,12 @@ S32 __cdecl SS_attempt_DIG_detection(HDIGDRIVER dig, IO_PARMS *IO)
     }
     dig->drvr->VHDR->IO = use;
     if (AIL_preference[DIG_ALLOW_16_BIT_DMA] == 0) {
-        out.CX = 1;
+        out.DX = 1;
+        return AIL_call_driver(dig->drvr, DRV_VERIFY_IO, &out, NULL);
     } else {
-        out.CX = 3;
+        out.DX = 3;
+        return AIL_call_driver(dig->drvr, DRV_VERIFY_IO, &out, NULL);
     }
-    return AIL_call_driver(dig->drvr, DRV_VERIFY_IO, &out, NULL);
 }
 
 // FUNCTION: 0xe0660
@@ -499,7 +498,6 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     void *buf;
     S32 i;
     S32 found;
-    U32 offset;
     HDIGDRIVER dig;
     IO_PARMS *env;
     IO_PARMS *IO_parms;
@@ -548,12 +546,11 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         }
     }
     if (!found && AIL_preference[AIL_SCAN_FOR_HARDWARE] == 1) {
-        for (i = 0, offset = 0; i < dig->drvr->VHDR->num_IO_configurations;
-             i++, offset += sizeof(IO_PARMS)) {
+        for (i = 0; i < dig->drvr->VHDR->num_IO_configurations; i++) {
             IO_parms = (IO_PARMS *)(((dig->drvr->VHDR->common_IO_configurations >> 16) << 4)
                                     + (dig->drvr->VHDR->common_IO_configurations & 0xffff)
-                                    + offset);
-            if (IO == NULL) {
+                                    + i * sizeof(IO_PARMS));
+            if (i == 0) {
                 AIL_last_IO_attempt = *IO_parms;
             }
             if (SS_attempt_DIG_detection(dig, IO_parms)) {

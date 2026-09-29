@@ -62,9 +62,9 @@ int LbDataLoadAll(TbLoadFiles *files)
 // FUNCTION: 0x000bce44
 int fn_000bce44(TbLoadFiles *files)
 {
-    TbLoadFiles *t;
+    u16 count;
     int ret;
-    int count;
+    TbLoadFiles *t;
 
     count = 0;
     fn_000cd2cc(D_00121dfc);
@@ -92,7 +92,7 @@ int fn_000bce44(TbLoadFiles *files)
             count++;
         }
     }
-    return (u16)count;
+    return count;
 }
 
 // FUNCTION: 0x000bcf5c

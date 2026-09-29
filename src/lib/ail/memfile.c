@@ -85,8 +85,6 @@ S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr,
 }
 
 // FUNCTION: 0x000ddb50
-// NONMATCHING: the target compares protected_ptr and segment_far_ptr against 0
-// after the DPMI call and discards the result
 void __cdecl AIL_mem_free_DOS(void *protected_ptr, U32 segment_far_ptr,
                               U32 selector)
 {
@@ -95,9 +93,12 @@ void __cdecl AIL_mem_free_DOS(void *protected_ptr, U32 segment_far_ptr,
     inregs.x.eax = 0x101;
     inregs.x.edx = selector & 0xffff;
     AIL_int386(0x31, &inregs, &outregs);
+    /* No-ops that reference the otherwise unused parameters; they leave two dead compares. */
     if (protected_ptr == NULL) {
+        protected_ptr = NULL;
     }
     if (segment_far_ptr == 0) {
+        segment_far_ptr = 0;
     }
 }
 

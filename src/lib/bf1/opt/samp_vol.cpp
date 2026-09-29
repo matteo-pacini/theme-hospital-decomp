@@ -2,7 +2,6 @@
 
 extern "C" {
 
-// NONMATCHING: volume sign-extended once outside the loops; target shares the call tail
 // FUNCTION: 0x000ce0b0
 void SetSampleVolume(u32 source_id, s16 number, s16 volume, u32 handle)
 {
@@ -11,7 +10,7 @@ void SetSampleVolume(u32 source_id, s16 number, s16 volume, u32 handle)
     if (SoundInstalled && SoundAble && SoundActive) {
         if (number == 0 && source_id == 0) {
             for (smp = sample_id; smp <= end_sample_id; smp++) {
-                if (handle == smp->SampleHandle && AIL_sample_status(smp->SampleHandle) == 4
+                if (smp->SampleHandle == handle && AIL_sample_status(smp->SampleHandle) == 4
                     && volume >= 0 && volume <= 127 && volume != smp->SampleVolume) {
                     AIL_set_sample_volume(smp->SampleHandle, volume);
                     smp->SampleVolume = volume;

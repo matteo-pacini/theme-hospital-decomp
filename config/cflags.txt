@@ -21,6 +21,8 @@ src/lib/bf2/stop_mus.cpp  wpp386  -s -oneatli -xs
 # dosser: one segment; SerialHandler::Init's body follows the constructor while
 # its entry follows CommHandler::Init, which falls through into it.
 src/lib/bf2/dosser.cpp  wpp386  -s -oneatx -xs -zm-
+# init_sou: built for the 486 like the other sound modules (lea for the scaled index).
+src/lib/bf2/init_sou.cpp  wpp386  -s -oneatx -4 -xs
 src/lib/bf2/*.cpp    wpp386  -s -oneatx -xs
 # Watcom C/C++ runtime (clib, C++ support): small model, segment registers
 # saved (-r), -ox without a/t; the C++ support code for the 386 (-3) and flat

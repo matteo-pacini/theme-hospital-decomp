@@ -70,7 +70,6 @@ u8 load_sound_bank(long file, u8 bank)
 }
 
 // FUNCTION: 0xf04a0
-// NONMATCHING: register allocation differs around the file reads
 s32 AllocateSoundBankMemory(u16 type)
 {
     s32 file;
@@ -82,13 +81,13 @@ s32 AllocateSoundBankMemory(u16 type)
     file = LbFileOpen(D_0018d4c4, 2);
     if (file == -1)
         return -1;
+    tab_size = 0;
+    data_size = 0;
     length = LbFileLength(D_0018d4c4);
     memset(D_0018d474, 0, 0x48);
     LbFileSeek(file, 0, 2);
     LbFileSeek(file, length - 0x4c, 0);
-    data_size = 0;
     LbFileRead(file, D_0018d474, 0x48);
-    tab_size = 0;
     LbFileClose(file);
     switch (type) {
     case 0x66c:
@@ -128,22 +127,23 @@ s32 AllocateSoundBankMemory(u16 type)
         tab_size = D_0018d474[8].tab_size;
         break;
     }
-    if (data_size == 0 || tab_size == 0)
-        return -2;
-    SfxData = (u8 *)LbMemoryAlloc(data_size + 0x100);
-    sprintf(SoundProgressMessage, D_001282eb, data_size + 0x100);
-    SoundProgressLog(SoundProgressMessage);
-    Sfx = (SoundBankEntry *)LbMemoryAlloc(tab_size + 0x100);
-    if (!SfxData || !Sfx) {
-        LbMemoryFree(SfxData);
-        LbMemoryFree(Sfx);
-        return 0;
+    if (data_size != 0 && tab_size != 0) {
+        SfxData = (u8 *)LbMemoryAlloc(data_size + 0x100);
+        sprintf(SoundProgressMessage, D_001282eb, data_size + 0x100);
+        SoundProgressLog(SoundProgressMessage);
+        Sfx = (SoundBankEntry *)LbMemoryAlloc(tab_size + 0x100);
+        if (!SfxData || !Sfx) {
+            LbMemoryFree(SfxData);
+            LbMemoryFree(Sfx);
+            return 0;
+        }
+        largest_dat_size = data_size;
+        largest_tab_size = tab_size;
+        memset(SfxData, 0, data_size);
+        memset(Sfx, 0, largest_tab_size);
+        return 1;
     }
-    largest_dat_size = data_size;
-    largest_tab_size = tab_size;
-    memset(SfxData, 0, data_size);
-    memset(Sfx, 0, largest_tab_size);
-    return 1;
+    return -2;
 }
 
 extern "C" {

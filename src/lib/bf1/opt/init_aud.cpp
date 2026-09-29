@@ -81,7 +81,6 @@ void fn_000eb5b0(void);
 void fn_000bbb50(void);
 void fn_000bbb80(void);
 
-// NONMATCHING: byte register choice for the StereoSound/MusicAble/SoundAble stores
 // FUNCTION: 0x000cd840
 void InitAudio(AudioInitOptions *ao)
 {
@@ -194,7 +193,7 @@ void InitAudio(AudioInitOptions *ao)
     MaxNumberOfSamples = ao->MaxSamples;
     SoundType = ao->SoundType;
     if (!ao->AutoScan)
-        AutoScanForSoundHardware = ao->AutoScan;
+        AutoScanForSoundHardware = 0;
     if (!ao->StereoCheck)
         StereoSound = 0;
     if (ao->DisableDangerMusic == 1)

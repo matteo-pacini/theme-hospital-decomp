@@ -3,7 +3,6 @@
 extern "C" {
 extern char D_00124c90[];
 
-// NONMATCHING: order of the final field stores
 // FUNCTION: 0x000ce990
 SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan, u16 pitch,
                                   s8 loop, u8 type, void *address, u32 extra)

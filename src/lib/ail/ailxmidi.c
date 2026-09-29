@@ -678,20 +678,20 @@ S32 __cdecl XMI_attempt_MDI_detection(HMDIDRIVER mdi, IO_PARMS *IO)
     if (mdi->drvr->VHDR->num_IO_configurations > 0) {
         def = (IO_PARMS *)(((mdi->drvr->VHDR->common_IO_configurations >> 16) << 4)
                            + (mdi->drvr->VHDR->common_IO_configurations & 0xffff));
-        if (use.IO <= 0) {
+        if ((S32)use.IO < 1) {
             use.IO = def->IO;
         }
-        if (use.IRQ <= 0) {
+        if ((S32)use.IRQ < 1) {
             use.IRQ = def->IRQ;
         }
-        if (use.DMA_8_bit <= 0) {
+        if ((S32)use.DMA_8_bit < 1) {
             use.DMA_8_bit = def->DMA_8_bit;
         }
-        if (use.DMA_16_bit <= 0) {
+        if ((S32)use.DMA_16_bit < 1) {
             use.DMA_16_bit = def->DMA_16_bit;
         }
         for (i = 0; i < 4; i++) {
-            if (use.IO_reserved[i] <= 0) {
+            if (use.IO_reserved[i] < 1) {
                 use.IO_reserved[i] = def->IO_reserved[i];
             }
         }
@@ -721,7 +721,6 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     IO_PARMS use;
     VDI_CALL out;
     S32 found;
-    U32 offset;
     S32 i;
     char *env;
     char *str;
@@ -743,8 +742,8 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         return NULL;
     }
     AIL_call_driver(mdi->drvr, DRV_GET_INFO, NULL, &out);
-    mdi->DDT = (MDI_DDT *)(((U32)out.DX << 4) + (U32)out.AX);
-    mdi->DST = (MDI_DST *)(((U32)out.CX << 4) + (U32)out.BX);
+    mdi->DDT = (MDI_DDT *)((U32)out.AX + ((U32)out.DX << 4));
+    mdi->DST = (MDI_DST *)((U32)out.BX + ((U32)out.CX << 4));
     env = (char *)(((mdi->DDT->library_environment >> 16) << 4)
                    + (mdi->DDT->library_environment & 0xffff));
     if (env != NULL && *env) {
@@ -785,12 +784,11 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         }
     }
     if (!found && AIL_preference[AIL_SCAN_FOR_HARDWARE] == 1) {
-        for (i = 0, offset = 0; i < mdi->drvr->VHDR->num_IO_configurations;
-             i++, offset += sizeof(IO_PARMS)) {
+        for (i = 0; i < mdi->drvr->VHDR->num_IO_configurations; i++) {
             IO_parms = (IO_PARMS *)(((mdi->drvr->VHDR->common_IO_configurations >> 16) << 4)
                                     + (mdi->drvr->VHDR->common_IO_configurations & 0xffff)
-                                    + offset);
-            if (IO == NULL) {
+                                    + i * sizeof(IO_PARMS));
+            if (i == 0) {
                 AIL_last_IO_attempt = *IO_parms;
             }
             if (XMI_attempt_MDI_detection(mdi, IO_parms)) {
@@ -1121,7 +1119,7 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
     S->tempo_period = 0;
     S->tempo_accum = 0;
     S->tempo_error = 0;
-    S->volume = S->volume_target = AIL_preference[MDI_DEFAULT_VOLUME];
+    S->volume_target = S->volume = AIL_preference[MDI_DEFAULT_VOLUME];
     if (S->TIMB == NULL) {
         return 1;
     }

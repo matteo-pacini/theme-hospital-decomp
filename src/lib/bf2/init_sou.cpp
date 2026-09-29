@@ -4,14 +4,13 @@
 #pragma inline_depth(0)
 
 // FUNCTION: 0xdc970
-// NONMATCHING: register allocation and block order differ
+// NONMATCHING: byte registers holding the stored 0/1 constants
 void InitSound(void)
 {
     AILIOParms io;
     char name[0x10];
     u8 ok = 0;
     u8 extra = 5;
-    s32 rate = SampleRate;
     char *env;
     SampleInfo *p;
 
@@ -47,7 +46,10 @@ void InitSound(void)
     AIL_set_preference(4, MaxNumberOfSamples + extra);
     AIL_set_preference(5, 127);
     AIL_set_preference(6, 655);
-    AIL_set_preference(7, StereoSound ? 1 : 0);
+    if (StereoSound)
+        AIL_set_preference(7, 1);
+    else
+        AIL_set_preference(7, 0);
     if (!AutoScanForSoundHardware)
         AIL_set_preference(17, 0);
     env = getenv(D_00126433);
@@ -86,16 +88,18 @@ void InitSound(void)
             init_error = AIL_install_DIG_INI(&SoundDriver);
             if (init_error == 0) {
                 sprintf(SoundProgressMessage, D_00126562);
+                SoundProgressLog(SoundProgressMessage);
                 ok = 1;
             } else {
                 sprintf(SoundInstallChoice.driver_name, D_0012658f);
                 sprintf(SoundProgressMessage, D_00126594, init_error);
+                SoundProgressLog(SoundProgressMessage);
             }
         } else {
             sprintf(SoundInstallChoice.driver_name, D_001265c4);
             sprintf(SoundProgressMessage, D_001265c9);
+            SoundProgressLog(SoundProgressMessage);
         }
-        SoundProgressLog(SoundProgressMessage);
         if (!ok) {
             sprintf(SoundProgressMessage, D_001265ed, AIL_error);
             SoundProgressLog(SoundProgressMessage);
@@ -128,46 +132,45 @@ void InitSound(void)
     switch (SoundType) {
     case 0x66c:
         SixteenBit = 1;
-        rate = 44100;
+        SampleRate = 44100;
         break;
     case 0x668:
         SixteenBit = 1;
-        rate = 44100;
+        SampleRate = 44100;
         break;
     case 0x656:
         SixteenBit = 1;
-        rate = 22050;
+        SampleRate = 22050;
         break;
     case 0x654:
         SixteenBit = 1;
-        rate = 22050;
+        SampleRate = 22050;
         break;
     case 0x64b:
         SixteenBit = 1;
-        rate = 11025;
+        SampleRate = 11025;
         break;
     case 0x64a:
         SixteenBit = 1;
-        rate = 11025;
+        SampleRate = 11025;
         break;
     case 0x336:
         SixteenBit = 0;
-        rate = 22050;
+        SampleRate = 22050;
         break;
     case 0x32b:
         SixteenBit = 0;
-        rate = 11025;
+        SampleRate = 11025;
         break;
     case 0x320:
         SixteenBit = 0;
-        rate = 11025;
+        SampleRate = 11025;
         break;
     case 0:
         SoundAble = 0;
         SoundActive = 0;
         return;
     }
-    SampleRate = rate;
     if (SoundAble) {
         end_sample_id = &sample_id[MaxNumberOfSamples - 1];
         for (p = sample_id; p <= end_sample_id; p++) {

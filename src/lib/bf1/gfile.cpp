@@ -16,14 +16,13 @@ void *memcpy(void *dst, const void *src, u32 n);
 #pragma intrinsic(strlen, strcpy, strcat, memcpy)
 int fn_000bc75c(s8 *a, s8 *b, u32 len, int ignore_case);
 
-// NONMATCHING: stack slots of path/handle swapped
 // FUNCTION: 0x000bc170
 int LbFileLengthRnc(char *path)
 {
-    char rnc[5];
-    u8 header[8];
-    int length;
     int handle;
+    int length;
+    u8 header[8];
+    char rnc[5];
 
     length = -1;
     rnc[0] = 'R';
@@ -98,14 +97,14 @@ int LbFileSaveAt(char *path, void *buf, u32 size)
 // FUNCTION: 0x000bc328
 int fn_000bc328(int handle, char *string, u8 *buf, u32 buflen, u32 flags)
 {
-    s8 search[130];
+    int start;
     int i;
     int offset;
     int found;
     int len;
     int count;
     int got;
-    int start;
+    s8 search[130];
 
     if (buflen < 256)
         return -3;

@@ -10,7 +10,8 @@ extern volatile u8 D_0018a57d;
 void fn_000ccd30(u32 user);
 #pragma aux (__pascal) fn_000ccd30 "fn_000ccd30_"
 
-// NONMATCHING: target range also holds FadeSample's jump table
+// NONMATCHING: registers used to push smp->SampleHandle; the target range also
+// holds FadeSample's jump table
 // FUNCTION: 0x000ccd30
 void fn_000ccd30(u32 user)
 {
@@ -39,7 +40,7 @@ void fn_000ccd30(u32 user)
                     }
                     if (smp->FadeState == 1) {
                         for (i = 1; i <= smp->FadeStopFlag; i++) {
-                            smp->SampleVolume++;
+                            ++smp->SampleVolume;
                             if (smp->SampleVolume >= 127) {
                                 smp->SampleVolume = 127;
                                 AIL_set_sample_volume(smp->SampleHandle, smp->SampleVolume);
@@ -69,7 +70,7 @@ void fn_000ccd30(u32 user)
                     }
                     if (smp->FadeState == 2) {
                         for (i = 1; i <= smp->FadeStopFlag; i++) {
-                            smp->SampleVolume--;
+                            --smp->SampleVolume;
                             if (smp->SampleVolume <= 0) {
                                 smp->SampleVolume = 0;
                                 AIL_set_sample_volume(smp->SampleHandle, smp->SampleVolume);
@@ -104,7 +105,6 @@ void fn_000ccd30(u32 user)
     }
 }
 
-// NONMATCHING: ours caches smp->SampleVolume in ecx for the fade direction compare; target re-reads it
 // FUNCTION: 0x000ccfb0
 void FadeSample(u32 source_id, s16 number, s16 volume, u8 stop_flag, u8 step)
 {

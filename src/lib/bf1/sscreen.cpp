@@ -2,6 +2,7 @@
 
 extern u32 screen_initialised;
 extern u32 _lbScreenInitialised;
+extern u32 mouse_pos_change_saved;
 
 extern "C" {
 
@@ -18,6 +19,14 @@ void *memcpy(void *dst, const void *src, u32 n);
 
 void swap_clear(void *dst, void *src, u32 count, u32 fill);
 #pragma aux swap_clear = 0xa5 0x89 0x56 0xfc 0xe2 0xfa parm [edi] [esi] [ecx] [edx] modify [ecx esi edi];
+
+/* Adds 0x80 to each byte from p on (at least one) until p reaches end. */
+void invert_row(u8 *p, u8 *end);
+#pragma aux invert_row = 0x8a 0x07 0x04 0x80 0x88 0x07 0x47 0x39 0xf9 0x7f 0xf5 parm [edi] [ecx] modify [eax edi];
+
+/* Adds 0x80 to every stride-th byte from p on (at least one) until p reaches end; returns the final p. */
+u8 *invert_column(u8 *p, u8 *end, s32 stride);
+#pragma aux invert_column = 0x8a 0x07 0x04 0x80 0x88 0x07 0x01 0xdf 0x39 0xf9 0x7f 0xf4 parm [edi] [ecx] [ebx] value [edi] modify [eax];
 
 void wait_vbi(void);
 #pragma aux wait_vbi = 0xba 0xda 0x03 0x00 0x00 0x29 0xc0 0xec 0xa8 0x08 0x74 0xf4 modify [eax edx];
@@ -121,6 +130,57 @@ int LbScreenSwap(void)
     return 1;
 }
 
+// FUNCTION: 0x000bef14
+int LbScreenSwapBoxClear(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest_y, u32 width, u32 height, u8 colour, ...)
+{
+    u8 *src;
+    u32 dst;
+    u32 offset;
+    u32 end_offset;
+    u32 last_bank;
+    u32 bank;
+    u32 end_bank;
+    u32 first;
+    u32 rest;
+    u16 i;
+
+    LbMousePlace();
+    offset = dest_x + dest_y * lbDisplay.unknown18;
+    end_offset = dest_x + width + dest_y * lbDisplay.unknown18;
+    src = source + source_x + source_y * lbDisplay.graphics_screen_width;
+    last_bank = bank = (offset & 0xffff0000) >> 16;
+    if (lbDisplay.vesa_is_set_up)
+        LbVesaSetPage(bank);
+    for (i = 0; i < height;
+         i++, offset += lbDisplay.graphics_screen_width, end_offset += lbDisplay.unknown18,
+         src += lbDisplay.graphics_screen_width, dst += width) {
+        bank = (offset & 0xffff0000) >> 16;
+        if (bank != last_bank)
+            LbVesaSetPage(bank);
+        last_bank = bank;
+        end_bank = (end_offset & 0xffff0000) >> 16;
+        if (bank != end_bank) {
+            last_bank = end_bank;
+            first = 0x10000 - (offset & 0xffff);
+            rest = width - first;
+            dst = (offset & 0xffff) + 0xa0000;
+            memcpy((void *)dst, src, first);
+            /* Bullfrog passes the length as the fill value and the colour as the length. */
+            memset(src, first, colour);
+            dst = 0xa0000;
+            LbVesaSetPage(end_bank);
+            memcpy((void *)dst, src + first, rest);
+            memset(src + first, rest, colour);
+        } else {
+            dst = (offset & 0xffff) + 0xa0000;
+            memcpy((void *)dst, src, width);
+            memset(src, width, colour);
+        }
+    }
+    LbMouseRemove();
+    return 1;
+}
+
 // FUNCTION: 0x000bf0e4
 int LbScreenSwapClear(u8 colour, ...)
 {
@@ -148,7 +208,6 @@ int LbScreenSwapClear(u8 colour, ...)
 }
 
 // FUNCTION: 0x000bf1e8
-// NONMATCHING: register choice (loop counter zeroed through edx, bank compares through ebx/esi)
 int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest_y, u32 width, u32 height, ...)
 {
     u8 *src;
@@ -160,7 +219,7 @@ int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest
     u32 end_bank;
     u32 first;
     u32 rest;
-    u32 i;
+    u16 i;
 
     LbMousePlace();
     offset = dest_x + dest_y * lbDisplay.unknown18;
@@ -169,7 +228,7 @@ int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest
     last_bank = bank = (offset & 0xffff0000) >> 16;
     if (lbDisplay.vesa_is_set_up)
         LbVesaSetPage(bank);
-    for (i = 0; (u16)i < height;
+    for (i = 0; i < height;
          i++, offset += lbDisplay.graphics_screen_width, end_offset += lbDisplay.unknown18,
          src += lbDisplay.graphics_screen_width, dst += width) {
         bank = (offset & 0xffff0000) >> 16;
@@ -192,6 +251,131 @@ int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest
         }
     }
     LbMouseRemove();
+    return 1;
+}
+
+// FUNCTION: 0x000bf374
+int LbScreenDrawHVLineDirect(s32 x1, s32 y1, s32 x2, s32 y2, ...)
+{
+    u32 length;
+    u32 start;
+    u32 end;
+    u32 start_page;
+    u32 end_page;
+    u32 page = 0;
+    u8 *p;
+    u8 *pstart;
+    u8 *pend;
+    u8 *pbank_end;
+
+    if (x1 <= x2) {
+        if (x2 < 1)
+            return -1;
+        if (x1 > lbDisplay.graphics_window_width - 1)
+            return -1;
+        if (x1 < 0)
+            x1 = 0;
+        if (x2 > lbDisplay.graphics_window_width)
+            x2 = lbDisplay.graphics_window_width;
+    } else {
+        if (x1 < 0)
+            return -1;
+        if (x2 > lbDisplay.graphics_window_width)
+            return -1;
+        if (x2 < 0)
+            x2 = 0;
+        if (x1 > lbDisplay.graphics_window_width)
+            x1 = lbDisplay.graphics_window_width;
+    }
+    if (y1 <= y2) {
+        if (y2 < 0)
+            return -1;
+        if (y1 > lbDisplay.graphics_window_height)
+            return -1;
+        if (y1 < 0)
+            y1 = 0;
+        if (y2 > lbDisplay.graphics_window_height)
+            y2 = lbDisplay.graphics_window_height;
+    } else {
+        if (y1 < 0)
+            return -1;
+        if (y2 > lbDisplay.graphics_window_height)
+            return -1;
+        if (y2 < 0)
+            y2 = 0;
+        if (y1 > lbDisplay.graphics_window_height)
+            y1 = lbDisplay.graphics_window_height;
+    }
+    mouse_pos_change_saved = 1;
+    if (x1 != x2) {
+        if (x1 > x2) {
+            length = x1 - x2;
+            start = x2 + y1 * lbDisplay.graphics_window_width;
+        } else {
+            length = x2 - x1;
+            start = x1 + y1 * lbDisplay.graphics_window_width;
+        }
+        end = start + length;
+        start_page = start >> 16;
+        end_page = end >> 16;
+        if (!lbDisplay.vesa_is_set_up) {
+            pstart = lbDisplay.physical_screen + start;
+            pend = lbDisplay.physical_screen + end;
+            invert_row(pstart, pend);
+        } else if (start_page == end_page) {
+            LbVesaSetPage(start_page);
+            pstart = lbDisplay.physical_screen + (start - (start_page << 16));
+            pend = lbDisplay.physical_screen + (end - (end_page << 16));
+            p = pstart;
+            invert_row(p, pend);
+        } else {
+            LbVesaSetPage(start_page);
+            pstart = lbDisplay.physical_screen + (start - (start_page << 16));
+            pbank_end = lbDisplay.physical_screen + 0x10000;
+            p = pstart;
+            invert_row(p, pbank_end);
+            LbVesaSetPage(end_page);
+            pend = lbDisplay.physical_screen + (end - (end_page << 16));
+            p = lbDisplay.physical_screen;
+            invert_row(p, pend);
+        }
+    } else {
+        if (y1 > y2) {
+            length = y1 - y2;
+            start = x1 + y2 * lbDisplay.graphics_window_width;
+        } else {
+            length = y2 - y1;
+            start = x1 + y1 * lbDisplay.graphics_window_width;
+        }
+        end = start + lbDisplay.graphics_screen_width * length;
+        if (!lbDisplay.vesa_is_set_up) {
+            pstart = lbDisplay.physical_screen + start;
+            pend = lbDisplay.physical_screen + end;
+            p = invert_column(pstart, pend, lbDisplay.graphics_screen_width);
+        } else {
+            start_page = start >> 16;
+            end_page = end >> 16;
+            pstart = lbDisplay.physical_screen + (start - (start_page << 16));
+            pend = lbDisplay.physical_screen + (end - (end_page << 16));
+            pbank_end = lbDisplay.physical_screen + 0x10000;
+            if (start_page == end_page)
+                pbank_end = pend;
+            for (page = start_page; page <= end_page; page++) {
+                LbVesaSetPage(page);
+                if (page == start_page) {
+                    p = pstart;
+                    p = invert_column(p, pbank_end, lbDisplay.graphics_screen_width);
+                } else if (page == end_page) {
+                    p -= 0x10000;
+                    p = invert_column(p, pend, lbDisplay.graphics_screen_width);
+                } else {
+                    p -= 0x10000;
+                    p = invert_column(p, pbank_end, lbDisplay.graphics_screen_width);
+                }
+            }
+        }
+    }
+    mouse_pos_change_saved = 0;
     return 1;
 }
 

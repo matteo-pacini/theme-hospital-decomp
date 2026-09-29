@@ -58,7 +58,6 @@ u8 load_music_bank(long file, u8 bank)
 }
 
 // FUNCTION: 0xf0bc0
-// NONMATCHING: register allocation differs around the file reads
 s32 AllocateMusicBankMemory(void)
 {
     s32 file;
@@ -70,15 +69,15 @@ s32 AllocateMusicBankMemory(void)
     file = LbFileOpen(D_0018d5c4, 2);
     if (file == -1)
         return -1;
+    tab_size = 0;
+    data_size = 0;
     memset(D_0018d5a4, 0, 0x20);
     LbFileSeek(file, 0, 2);
     length = LbFilePosition(file);
     LbFileSeek(file, 0, 2);
     LbFileSeek(file, length - 0x24, 0);
     LbFileRead(file, D_0018d5a4, 0x20);
-    tab_size = 0;
     LbFileClose(file);
-    data_size = 0;
     switch (MusicType[0]) {
     case 'G':
     case 'g':
@@ -101,18 +100,19 @@ s32 AllocateMusicBankMemory(void)
         tab_size = D_0018d5a4[3].tab_size;
         break;
     }
-    if (data_size == 0 || tab_size == 0)
-        return -2;
-    MusicData = (u8 *)LbMemoryAlloc(data_size + 0x100);
-    Music = (SoundBankEntry *)LbMemoryAlloc(tab_size + 0x100);
-    if (!MusicData || !Music) {
-        LbMemoryFree(MusicData);
-        LbMemoryFree(Music);
-        return 0;
+    if (data_size != 0 && tab_size != 0) {
+        MusicData = (u8 *)LbMemoryAlloc(data_size + 0x100);
+        Music = (SoundBankEntry *)LbMemoryAlloc(tab_size + 0x100);
+        if (!MusicData || !Music) {
+            LbMemoryFree(MusicData);
+            LbMemoryFree(Music);
+            return 0;
+        }
+        memset(MusicData, 0, data_size);
+        memset(Music, 0, tab_size);
+        return 1;
     }
-    memset(MusicData, 0, data_size);
-    memset(Music, 0, tab_size);
-    return 1;
+    return -2;
 }
 
 extern "C" {

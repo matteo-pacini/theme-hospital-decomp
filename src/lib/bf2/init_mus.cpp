@@ -4,7 +4,7 @@
 #pragma inline_depth(0)
 
 // FUNCTION: 0xdd210
-// NONMATCHING: register allocation and block order differ
+// NONMATCHING: byte registers holding the stored 0/1 constants; the first five MusicType sprintf calls push through eax in the target
 void InitMusic(void)
 {
     char prefix[0x90];
@@ -70,14 +70,16 @@ void InitMusic(void)
             }
             if (AIL_install_MDI_INI(&MusicDriver) == 0) {
                 sprintf(SoundProgressMessage, D_00126869);
+                SoundProgressLog(SoundProgressMessage);
                 ok = 1;
             } else {
                 sprintf(SoundProgressMessage, D_00126896);
+                SoundProgressLog(SoundProgressMessage);
             }
         } else {
             sprintf(SoundProgressMessage, D_001268c3);
+            SoundProgressLog(SoundProgressMessage);
         }
-        SoundProgressLog(SoundProgressMessage);
         if (!ok) {
             sprintf(SoundProgressMessage, D_001268e7, AIL_error);
             SoundProgressLog(SoundProgressMessage);

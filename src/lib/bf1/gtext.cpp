@@ -162,17 +162,18 @@ s32 LbTextStringHeight(char *text)
     return 0;
 }
 
-// NONMATCHING: stack slots of y, duplicated line-break tails; jump table placement
+// NONMATCHING: the register zeroing count differs per line-break tail, so the
+// tails are merged differently; jump table placement
 // FUNCTION: 0x000c889c
 int LbTextDraw(s32 x, s32 y, char *text)
 {
+    TbGraphicsWindow grwnd;
     s16 count;
     s32 start_x;
     s32 dx;
     s32 dy;
     char *sbegin;
     s32 space_width;
-    TbGraphicsWindow grwnd;
 
     if (lbFontPtr) {
         sbegin = text;

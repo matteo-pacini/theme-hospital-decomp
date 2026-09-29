@@ -25,16 +25,17 @@ struct AILIni {
     AILIOParms IO;
 };
 
+/* The volatile fields are also written by the sample fade timer callback. */
 struct SampleInfo {
     u32 SampleHandle;
-    s32 SampleVolume;
+    volatile s32 SampleVolume;
     u16 SamplePitch;
     u16 SamplePan;
-    s16 FadeToVolume;
+    volatile s16 FadeToVolume;
     u32 SourceID;
     s16 SampleNumber;
-    u8 FadeState;
-    u8 FadeStep;
+    volatile u8 FadeState;
+    volatile u8 FadeStep;
     u8 FadeStopFlag;
     u8 unknown17;
     u8 unknown18;
@@ -265,6 +266,6 @@ extern u32 init_error;
 extern long music_allocated;
 extern u8 SixteenBit;
 
-#define RNC_LENGTH(p) ((((((p)[4] << 8) + (p)[5]) << 8) + (p)[6]) << 8) + (p)[7]
+#define RNC_LENGTH(p) (((((((p)[5] + ((p)[4] << 8)) << 8) + (p)[6]) << 8) + (p)[7]))
 
 #endif
