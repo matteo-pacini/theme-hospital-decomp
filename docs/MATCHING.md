@@ -268,8 +268,10 @@ Compiler and flags per source file come from `config/cflags.txt`.
   (387 emulator, `*386`, `chipd32`, FP exception hooks) go through
   `tools/asm2src.py` like the game's. For the C modules:
   - The library does not seem to have been built with `-zm`: some functions
-    fall through into, or jump into the epilogue of, the next one, which
-    our per-function segments cannot reproduce.
+    fall through into, or jump into the epilogue of, the next one. Give such
+    a module the pseudo-flag `-zm-` in `config/cflags.txt`; it is then
+    compiled into one segment and compared as one section, so its source
+    must implement every function in the module's address range.
   - FP support routines that keep a frame pointer need `-of` (see
     `config/cflags.txt`); `qsort` and `stat` were built for size.
   - Character comparisons need explicit `(int)` casts: `(int)*p == 'x'`;
