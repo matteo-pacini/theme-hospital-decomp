@@ -372,3 +372,14 @@ Compiler and flags per source file come from `config/cflags.txt`.
   `IO == NULL` test is really `i == 0`; `S16` fields compare as
   `(S32)x < 0`, or the compare narrows to a word; a dead `cmp mem,0` after
   a call is a no-op `if (p == NULL) p = NULL;`.
+- **Optimised library code (`-ox`, `-oneatx`)**: follow the Open Watcom
+  runtime source's statement structure. Declaration order changes register
+  choice but not spill slots. `shl i,2; add base` instead of a scaled
+  address is a repeated array expression the compiler shared
+  (`if (a[i] && f) g(a[i])`); `mov al,1`/`inc eax` stores after `x = 0` are
+  `++x`; an early `return` versus `if`/`else` changes which epilogue is
+  shared; `total += *sz; sz++` and `total += *sz++` load in different
+  orders; cleanup code written inline at the first failure, with later
+  failures jumping to it, reproduces cross-jumped tails. Bullfrog's
+  Smacker wrapper is built with `-5`, since `-4` inserts loop alignment
+  padding the original does not have.
