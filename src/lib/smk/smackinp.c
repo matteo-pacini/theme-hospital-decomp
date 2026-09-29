@@ -246,8 +246,8 @@ void *smkmalloc(Smack *smk, u32 bytes);
 
 // FUNCTION: 0xea4f0
 // NONMATCHING: the mask and the index swap registers (the target keeps the
-// mask in edx and the index in al, the return register); the copies inlined
-// into the callers match
+// mask in edx and the index in al, the return register); soundnext's inlined
+// copy has the same swap, the other callers' copies match
 u8 nexttrack(u32 *flags)
 {
     u8 i;
@@ -356,8 +356,9 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface);
 #pragma aux (__pascal) SmackToBufferRect "fn_000e8190_";
 
 // FUNCTION: 0xe8190
-// NONMATCHING: register allocation; the target computes &smk->f3f8 once before
-// the SmackSurface test and orders the spill slots differently
+// NONMATCHING: register allocation; the target computes &smk->f3f8 into ecx
+// once before loading left/top, and loads smk->NewPalette into eax so that its
+// return 0 jumps to the final epilogue
 u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
 {
     u32 left;
@@ -436,8 +437,8 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
     }
 rect:
     if (smk->OpenFlags & 0x300000) {
-        top += top;
-        bottom += bottom;
+        top *= 2;
+        bottom *= 2;
     }
     smk->LastRectx = left + smk->LeftOfs;
     smk->LastRecty = top + smk->TopOfs;
@@ -502,7 +503,9 @@ void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32
 #pragma aux (__pascal) SmackColorRemap "fn_000e85b0_";
 
 // FUNCTION: 0xe85b0
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: register allocation: ours spills p[bo] for b - p[bo] (one more
+// dword of frame, so every slot is 4 off) and loads r, g and b through
+// different registers
 void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32 paltype)
 {
     u8 remap[256];
@@ -546,10 +549,10 @@ void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32
         ro = j;
     }
     if (paltype & 1) {
-        size += size;
-        ro += ro;
-        go += go;
-        bo += bo;
+        size *= 2;
+        ro *= 2;
+        go *= 2;
+        bo *= 2;
     }
     pal = smk->Palette;
     end = remappal + numcolors * size;

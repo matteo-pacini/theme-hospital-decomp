@@ -171,30 +171,25 @@ U32 __pascal MSSSmackTimerRead(void)
 #pragma aux (__pascal) MSSLowSoundClose "fn_000e7a40_";
 
 // FUNCTION: 0xe7a40
-// NONMATCHING: the loop keeps p->next in ebx where the target uses ecx
 void __pascal MSSLowSoundClose(SmackSnd *snd)
 {
-    volatile SmackSnd *p;
-
     if (D_00151664 == NULL)
         return;
     AIL_end_sample(snd->sample);
     AIL_release_sample_handle(snd->sample);
     AIL_vmm_unlock(snd->halves[0], snd->halfsize * 2);
     RADFREE(snd->halves[0]);
-    p = D_00151664;
-    if (snd == p) {
-        D_00151664 = p->next;
-        return;
-    }
-    if (p->next != NULL) {
-        do {
+    if (snd == D_00151664) {
+        D_00151664 = snd->next;
+    } else {
+        volatile SmackSnd *p = D_00151664;
+        while (p->next != NULL) {
             if (snd == p->next) {
                 p->next = snd->next;
                 break;
             }
             p = p->next;
-        } while (p->next != NULL);
+        }
     }
 }
 
@@ -213,8 +208,6 @@ void __pascal MSSLowSoundPurge(SmackSnd *snd)
 #pragma aux (__pascal) MSSLowSoundOpen "fn_000e7af0_";
 
 // FUNCTION: 0xe7af0
-// NONMATCHING: register choice: the target uses ecx/ebx for the -1 store, the
-// RADFREE argument and halves[1] where ours uses edx/eax
 U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
 {
     if (D_00151668 == NULL) {
@@ -250,7 +243,7 @@ U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
         RADFREE(snd->halves[0]);
         return 0;
     }
-    snd->halves[1] = snd->halves[0] + snd->halfsize;
+    snd->halves[1] = (U8 *)((U32)snd->halves[0] + snd->halfsize);
     MSSInitSample(snd);
     snd->next = D_00151664;
     D_00151664 = snd;

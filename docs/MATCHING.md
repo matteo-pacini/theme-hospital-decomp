@@ -116,6 +116,8 @@ and comparing against the original.
 | `-d2 -otx` loop that compares memory (`cmp [x],0`) at its head, but loads then tests (`mov r,[x]; test r,r`) inside | `for (;;) { if (cnt > 0) {...} else {...} }` rather than `while (cnt > 0)` plus a tail; `while (c)` and tests after a join compare memory |
 | separate epilogues for early `return list[0]` versus one shared | nested `if/else` assigning a result, then a single `return` |
 | `lea r,[g*2]; imul r,g` | `p->g * 2 * p->g` (a `SQR(g) * 2` macro does not give it) |
+| `-oneatx`: load, then `add r,r` in place | `x *= 2` (`x += x` gives a `lea` into a fresh register) |
+| RAD `-ox` pointer plus byte count as an integer add | `(T *)((u32)p + n)` |
 | `-oneatx` network init taking a `void *` | a typed pointer cast into its own local, declared before `ret` |
 | `rep movsd` from a global into a local | struct copy from an extern struct (`Message msg = D_00129004;`) |
 | signed `jle` on two `u8` operands | `(int)a > (int)b` (without casts: byte compare, `jbe`) |
@@ -277,6 +279,19 @@ Observed consequences:
   pointer parameter's calling convention: a `__cdecl` pointer clobbers
   eax/ecx/edx at the call, which moves parameter loads after it
   (`AIL_API_quick_startup`).
+
+- A callee's declared convention decides the caller's registers: a
+  `__pascal` callee (`#pragma aux (__pascal) f "sym"` after a plain
+  declaration; inside `extern "C"` the pragma cannot precede a `__pascal`
+  declaration) clobbers eax-edx, so the caller cannot keep a value in edx
+  across the call (`play_smk_direct`). When a caller's allocation is off
+  around a call, check the callee's pragma.
+- `if (!ptr)` and `if (ptr == 0)` can move register choice elsewhere in
+  an `-oneatx` function.
+- `tools/variants.py`'s `types` kind often wins with semantically wrong
+  narrowings (`u8` for a count); treat those as spill-slot hints only. A
+  dead spill store sharing a slot with a later variable points to one
+  variable reused in the original.
 
 ## Known unsolved
 

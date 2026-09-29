@@ -32,7 +32,7 @@ extern void *smack_draw_callback;
 u32 GetSoundDriver(void);
 int LbScreenWaitVbi(void);
 void fn_000e7910(u32 digdriver);
-#pragma aux fn_000e7910 parm routine [];
+#pragma aux (__pascal) fn_000e7910 "fn_000e7910_";
 
 }
 
@@ -70,8 +70,6 @@ u8 play_smk(char *name, u32 a2, u32 flags)
 }
 
 // FUNCTION: 0xca398
-// NONMATCHING: register allocation: the original keeps name in edi and extra
-// in esi, and tests smk->NewPalette through edx with new_palette in al/ah
 long play_smk_direct(char *name, long a2, long flags)
 {
     Smack *smk;
@@ -142,8 +140,6 @@ long play_smk_direct(char *name, long a2, long flags)
 }
 
 // FUNCTION: 0xca568
-// NONMATCHING: register allocation: the original keeps name in edi, extra in
-// esi and the second copy of smk in edx
 long play_smk_via_buffer(char *name, long a2, long flags)
 {
     Smack *smk;
@@ -167,7 +163,7 @@ long play_smk_via_buffer(char *name, long a2, long flags)
     if (smk == 0)
         return 0;
     buf = (u8 *)LbMemoryAlloc(smk->Width * smk->Height);
-    if (buf == 0) {
+    if (!buf) {
         SmackClose(smk);
         return 0;
     }
