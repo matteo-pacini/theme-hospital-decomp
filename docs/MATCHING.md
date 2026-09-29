@@ -280,3 +280,18 @@ Compiler and flags per source file come from `config/cflags.txt`.
     type with `#pragma aux ... modify [es fs gs]`.
   - `#pragma aux abort aborts` drops the return and tail jump after it.
   - Stack-argument FP functions: `#pragma aux f parm routine []`.
+  - Other flags, per module in `config/cflags.txt`: `-fpc` (scanf's FP
+    call), `-fpd` (the Pentium FDIV check in `scale`), `-of` for the FP
+    formatting routines. 10.6 wraps each `-fpd` check in `pushfd`/`popfd`,
+    which the original compiler did not, so `_Scale10V` cannot match.
+  - Tables read with a `cs:` override are `__based(__segname("_CODE"))`.
+- **Modules built without `-zm`**: without `-zm`, Watcom places a
+  tail-called function's entry directly after its caller but leaves the
+  body at its source position, and merges empty functions into a
+  neighbour's `ret`; source order decides the layout. The serial driver
+  (`dosser.cpp`), Miles' CD code (`ailcd.c`) and many clib modules are
+  built this way.
+- **Graphics library display state** (`_lbDisplay`, `TbDisplayStruct`,
+  0x78 bytes): mouse positions and button states are `volatile`; the
+  retail code reads its 16-bit fields with `movsx word ptr`, never the
+  `sar` trick.
