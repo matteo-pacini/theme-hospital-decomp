@@ -240,10 +240,20 @@ Observed consequences:
 
 ## Known unsolved
 
-- `person_goto_queue`: the target places a 4-byte local between two 2-byte
-  names in one chunk, which the rule rules out for the present code shape;
-  the original source must differ.
-- A few functions still differ in register choice rather than slots.
+- Register allocation is global to the function even at `-d2`: a change
+  in one statement can move register choice in another while its own code
+  stays identical. When one statement's registers will not budge, vary the
+  others (operand order, `x op= e` versus `x = x op (e)`, grouping).
+- A local stored with dword instructions may still be `u16`/`s16`: `-d2`
+  stores 16-bit locals as dwords. Reads through `movsx word`, 16-bit
+  registers, or a bare `mov cl` shift count give it away; the declared type
+  also moves the local's frame slot (it sorts with the 2-byte names).
+- With evaluation order fixed by tree size, the textual order of a
+  commutative operator still decides which operand is the destination
+  register and which is folded as a memory operand.
+- `jmp then; jmp skip` stubs after an or-test come from the empty-then form
+  `if (!A && !B) {} else {...}`; `for (;;) { if (c) {...} else break; }`
+  gives a loop whose exits go through `jmp` stubs.
 - `netint` inlining: the original inlines `CompleteMultiPlayerExchange`
   (needs `-oe=400` here) but not `LbNetwork_Init(u32)` into its wrappers
   (inlined from `-oe=250`), so no single `-oe` reproduces both; declaring

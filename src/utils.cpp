@@ -92,13 +92,12 @@ void setup_colors(void)
     color.unknown14 = fn_000c960c(current_palette, 0x3f, 0x1e, 0x1e);
 }
 
-// NONMATCHING: stack slots of x/y and the return value; register choice for e loads
 // FUNCTION: 0x00019918
 u16 can_i_get_to(Thing *e, u16 pos)
 {
-    int x = pos % 128;
-    int y = pos / 128;
     orthonav_path path;
+    u16 x = pos % 128;
+    u16 y = pos / 128;
 
     if (e->renderer == 6) {
         orthonav_init(&path, e->room_next % 128, e->room_next / 128, x, y);

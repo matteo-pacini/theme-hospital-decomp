@@ -144,13 +144,11 @@ s16 person_goto_object(Thing *w)
     return 0;
 }
 
-// NONMATCHING: frame layout: unused and dir swap slots (target: unused [ebp-0x10], dir [ebp-0x14]); no
-// declaration order, nor scoping dir/room in the inner block, reproduces it
 // FUNCTION: 0x00076c44
 void person_goto_queue(Thing *w)
 {
+    u16 unused;
     MapPos x;
-    s32 unused;
     MapPos y;
     s16 dir;
     RoomInfo *room;

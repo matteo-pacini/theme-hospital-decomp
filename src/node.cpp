@@ -7,17 +7,15 @@ void fn_000168a0(Thing *w);
 
 }
 
-// NONMATCHING: map index: the target builds y << 7 in eax and moves it to edx before loading x,
-// then forms the cell pointer in edx; here y is built in edx and the pointer in eax
 // FUNCTION: 0x00015a20
 void insert_node(Thing *w, MapPos x, MapPos y)
 {
-    u16 first;
     Map *cell;
-    int id;
+    u16 first;
+    u16 id;
     Thing *other;
 
-    cell = &map[x.tile + (y.tile << 7)];
+    cell = &map[(y.tile << 7) + x.tile];
     id = w - thing;
     first = cell->first;
     if (first) {

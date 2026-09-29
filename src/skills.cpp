@@ -3,7 +3,6 @@
 extern "C" {
 }
 
-// NONMATCHING: shift count for bit: the target loads only cl (mov cl,[i]); (u8)i gets closer but adds xor ecx,ecx
 // FUNCTION: 0x00049820
 u16 page_member_of_staff(u16 a, u16 room_id, u8 b, s8 c, u8 owner)
 {
@@ -11,7 +10,7 @@ u16 page_member_of_staff(u16 a, u16 room_id, u8 b, s8 c, u8 owner)
     SkillPager *free;
     u16 count;
     u16 i;
-    u32 bit;
+    u16 bit;
     Thing *w;
     SkillPager *p;
 

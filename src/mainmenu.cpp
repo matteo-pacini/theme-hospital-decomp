@@ -376,22 +376,21 @@ void process_keys_main_menu(void)
     }
 }
 
-// NONMATCHING: switch compare tree splits the case ranges differently
 // FUNCTION: 0x000627cc
 void process_mouse_main_menu(void)
 {
     switch (mainmenu.unknown2) {
     case 0:
+    case 8:
+    case 0xa:
+    case 0xd:
+    case 0xf:
     case 1:
     case 2:
-    case 8:
     case 9:
-    case 0xa:
     case 0xb:
     case 0xc:
-    case 0xd:
     case 0xe:
-    case 0xf:
         return;
     case 0x19:
         if (lbDisplay.left_button + lbDisplay.right_button)

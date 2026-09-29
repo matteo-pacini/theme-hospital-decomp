@@ -178,7 +178,6 @@ void drug_researched(u16 illness, u8 owner)
         announce_this(6, illness);
 }
 
-// NONMATCHING: case 4 builds the -= target address as item * 14 + h in ebx; here h + (item * 14)
 // FUNCTION: 0x0006d748
 void item_upgraded(u16 item, u8 owner)
 {
@@ -195,7 +194,7 @@ void item_upgraded(u16 item, u8 owner)
     case 4:
         h->object_stats[item].cost = (u32)h->object_stats[item].cost * 7 / 8;
         h->object_stats[item].cost -= (u32)h->object_stats[item].cost % 10;
-        if (objects[item].cost / 3 > (u32)h->object_stats[item].cost)
+        if ((u32)h->object_stats[item].cost < objects[item].cost / 3)
             h->object_stats[item].cost = objects[item].cost / 3;
         break;
     }

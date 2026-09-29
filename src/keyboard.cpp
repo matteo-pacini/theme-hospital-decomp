@@ -7,8 +7,8 @@ extern u8 D_0018978d;
 extern u8 D_0018978e;
 extern u8 D_0018978f;
 void fn_0007424c(u8 shift, u8 key);
-u8 fn_000cd1bf(u16 port);
-void fn_000cd1c7(u16 port, u8 value);
+unsigned fn_000cd1bf(unsigned port);
+unsigned fn_000cd1c7(unsigned port, unsigned value);
 void (__interrupt __far *_dos_getvect(unsigned num))();
 void _dos_setvect(unsigned num, void (__interrupt __far *handler)());
 }
@@ -337,11 +337,9 @@ s32 SWIKeyboardClose(void)
 }
 
 // FUNCTION: 0x00074e08
-// NONMATCHING: stack slots of the locals differ; one extra zero-extension
 void __interrupt __far myKInt(void)
 {
     u32 key;
-    s32 next;
     s32 ctrl;
 
     lbInkey = fn_000cd1bf(0x60);
@@ -359,6 +357,8 @@ void __interrupt __far myKInt(void)
         key = (u16)(lbInkey & 0x7f);
         lbKeyOn[key] = lbInkey <= 0x7f ? (u8)1 : (u8)0;
         if (lbKeyOn[key]) {
+            s32 next;
+
             keybuffer[keybufferin] = key;
             next = (keybufferin + 1) & 0xf;
             if (next != keybufferout)

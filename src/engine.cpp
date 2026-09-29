@@ -991,8 +991,6 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
     return -1;
 }
 
-// NONMATCHING: pixBuf.y: the target adds sy - 0xb4 into the register holding resvars.f3 * 3 / 2;
-// here the other way round
 // FUNCTION: 0x000a9744
 void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -1228,10 +1226,10 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 n, s32 x0, s32 y0, s32 x1, 
                         do_mapwho(m, 0x5a - resvars.f4 / 2, 0xb4 - resvars.f3 * 3 / 2, 0, 0);
                         ppx = D_001567b0[0];
                         ppy = D_001567b0[1];
-                        D_001567b0[0] = (x - (0x5a - resvars.f4 / 2)) + D_001567b0[0];
-                        D_001567b0[1] = D_001567b0[1] + (sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3);
-                        D_001567b0[2] = (x - (0x5a - resvars.f4 / 2)) + D_001567b0[2];
-                        D_001567b0[3] = (sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3) + D_001567b0[3];
+                        D_001567b0[0] += x - (0x5a - resvars.f4 / 2);
+                        D_001567b0[1] += sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
+                        D_001567b0[2] += x - (0x5a - resvars.f4 / 2);
+                        D_001567b0[3] += sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
                         pixBuf.x = x - 0x5a + resvars.f4 / 2;
                         pixBuf.y = sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
                         find_common_window(D_001567b0[0] + minx, D_001567b0[1] + miny, D_001567b0[2] + minx, D_001567b0[3] + miny, x0, y0, x1, y1);

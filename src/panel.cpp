@@ -496,8 +496,6 @@ void draw_rep_on_panel(void)
     reqspr_draw(resvars.f1c_PanelLayoutp->unknown258 + offset, resvars.f1c_PanelLayoutp->unknown25c, &game_panel[36]);
 }
 
-// NONMATCHING: in the watch[14] refresh-zone call the target loads unknown430 into a register and
-// adds off to it; here off is loaded first and unknown430 is added from memory
 // FUNCTION: 0x00032e20
 void draw_emergency(void)
 {
@@ -533,7 +531,7 @@ void draw_emergency(void)
                     lbDisplay.draw_flags = 4;
                 reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[14]);
                 set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
-                                                watch[14].width + (resvars.f1c_PanelLayoutp->unknown430 + off), watch[14].height + resvars.f1c_PanelLayoutp->unknown434, 3);
+                                                off + resvars.f1c_PanelLayoutp->unknown430 + watch[14].width, watch[14].height + resvars.f1c_PanelLayoutp->unknown434, 3);
                 lbDisplay.draw_flags = 0;
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
                     reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[15]);
@@ -701,15 +699,14 @@ void display_panel_person_info(void)
 }
 
 
-// NONMATCHING: register choice, u8 local slot order
 // FUNCTION: 0x00034118
 void display_panel_staff_info(void)
 {
-    u8 i;
-    u8 height;
-    u8 line;
-    u8 pct;
     u8 n;
+    u8 height;
+    u8 i;
+    u8 pct;
+    u8 line;
     Thing *w;
     RoomInfo *room;
     char buf[100];
@@ -757,10 +754,10 @@ void display_panel_staff_info(void)
         pct = allhosps[w->owner].f21d * 100 / 1000;
         pct > 100 ? pct = 100 : 0;
         fn_00036594(w->f78 * 100 / 1000, info_bar_text[28]);
-        fn_000ccac4((resvars.f18_PanelLayoutp->unknown5e8 - 2) * pct / 100 + (resvars.f18_PanelLayoutp->unknown5e0 + panel->x + 1),
-                    resvars.f18_PanelLayoutp->unknown5e4 + (resvars.f1c_PanelLayoutp->unknown584 + panel->y + resvars.f1c_PanelLayoutp->unknown57c * 2 + 1),
-                    panel->x + resvars.f18_PanelLayoutp->unknown5e0 + 1 + (resvars.f18_PanelLayoutp->unknown5e8 - 2) * pct / 100,
-                    resvars.f1c_PanelLayoutp->unknown584 + panel->y + resvars.f1c_PanelLayoutp->unknown57c * 2 + resvars.f18_PanelLayoutp->unknown5ec - 1 + resvars.f18_PanelLayoutp->unknown5e4,
+        fn_000ccac4(pct * (resvars.f18_PanelLayoutp->unknown5e8 - 2) / 100 + (resvars.f18_PanelLayoutp->unknown5e0 + panel->x + 1),
+                    resvars.f18_PanelLayoutp->unknown5e4 + (panel->y + resvars.f1c_PanelLayoutp->unknown584 + resvars.f1c_PanelLayoutp->unknown57c * 2 + 1),
+                    panel->x + resvars.f18_PanelLayoutp->unknown5e0 + 1 + pct * (resvars.f18_PanelLayoutp->unknown5e8 - 2) / 100,
+                    panel->y + resvars.f1c_PanelLayoutp->unknown584 + resvars.f1c_PanelLayoutp->unknown57c * 2 + resvars.f18_PanelLayoutp->unknown5ec - 1 + resvars.f18_PanelLayoutp->unknown5e4,
                     color.unknown7);
     }
 }
@@ -864,7 +861,6 @@ void display_panel_usage_info(void)
     fn_00036730(buf, &line, 3);
 }
 
-// NONMATCHING: control flow of the p->flash update: the target routes the (flash != 1 || othervar.fa55 == 3) test and the following while loop's tail through jmp stubs
 // FUNCTION: 0x00034acc
 void draw_popup_icons(void)
 {
@@ -921,28 +917,34 @@ void draw_popup_icons(void)
                         if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
                             p->flash = 0;
                         } else {
-                            if (p->flash != 1 || othervar.fa55 == 3)
+                            if (p->flash == 1 && othervar.fa55 != 3) {
+                            } else {
                                 p->flash++;
-                            while (resvars.f34_Pointp[p->flash].x < resvars.f1c_PanelLayoutp->slots[p->slot].x) {
-                                if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
-                                    if (p->flash > 0x22) {
-                                        p->flash = 0;
-                                    } else {
-                                        switch (p->slot) {
-                                        case 4:
-                                        case 5:
-                                        case 6:
-                                        case 7:
+                            }
+                            for (;;) {
+                                if (resvars.f34_Pointp[p->flash].x < resvars.f1c_PanelLayoutp->slots[p->slot].x) {
+                                    if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
+                                        if (p->flash > 0x22) {
                                             p->flash = 0;
-                                            break;
-                                        default:
-                                            p->flash = 0x22;
-                                            break;
+                                        } else {
+                                            switch (p->slot) {
+                                            case 4:
+                                            case 5:
+                                            case 6:
+                                            case 7:
+                                                p->flash = 0;
+                                                break;
+                                            default:
+                                                p->flash = 0x22;
+                                                break;
+                                            }
                                         }
+                                        break;
                                     }
+                                    p->flash++;
+                                } else {
                                     break;
                                 }
-                                p->flash++;
                             }
                         }
                     }

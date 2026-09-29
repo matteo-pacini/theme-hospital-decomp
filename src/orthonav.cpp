@@ -73,7 +73,6 @@ s32 free_orthog_line(s32 x1, s32 y1, s32 x2, s32 y2)
 
 extern s32 other_wherefacing;
 
-// NONMATCHING: in the second fx/fy interpolation (after the ldx/ldy == 0 test) the target multiplies with imul eax,[ldy] and adds 0x80 with lea edx; ours loads ldy into edx first
 // FUNCTION: 0x0005562c
 s32 orthonav_wn(orthonav_path *path, s32 x, s32 y, s32 dir)
 {
@@ -324,7 +323,7 @@ swap:
         if (ldx == 0)
             fy = ny << 8;
         else
-            fy = (((nx - path->x0) << 8) * ldy + 0x80) / ldx + (path->y0 << 8) + 0x80;
+            fy = (path->y0 << 8) + (((nx - path->x0) << 8) * ldy + 0x80) / ldx + 0x80;
         fx = nx << 8;
     } else {
         if ((path->y0 > ny && ldy > 0) || (path->y0 < ny && ldy < 0))
@@ -332,7 +331,7 @@ swap:
         if (ldy == 0)
             fx = nx << 8;
         else
-            fx = (((ny - path->y0) << 8) * ldx + 0x80) / ldy + (path->x0 << 8) + 0x80;
+            fx = (path->x0 << 8) + (((ny - path->y0) << 8) * ldx + 0x80) / ldy + 0x80;
         fy = ny << 8;
     }
     if (free_orthog_line(nx, ny, fx >> 8, fy >> 8))
