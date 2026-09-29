@@ -6,7 +6,10 @@ rejects: local publics and externals (static functions, local initialiser
 templates) and COMDATs (vtables, inline functions). Debug segments are
 dropped. Every segment and every COMDAT becomes its own section; public
 symbols in code sections are typed FUNC and sized up to the next symbol in
-the same section, as objdiff needs. References into a segment rather than
+the same section, as objdiff needs. COMDATs with a selection criterion
+(pick-any copies of generated functions, vtables and type signatures,
+which every module using them emits) become weak symbols, so a link keeps
+one copy as the Watcom linker does. References into a segment rather than
 to a symbol become section-symbol relocations, as the assembler emits them.
 
 Usage: tools/omf2elf.py INPUT.obj OUTPUT.o
@@ -21,7 +24,7 @@ LOC_OFFSET32 = (9, 13)
 
 SHT_PROGBITS, SHT_SYMTAB, SHT_STRTAB, SHT_NOBITS, SHT_REL = 1, 2, 3, 8, 9
 SHF_WRITE, SHF_ALLOC, SHF_EXECINSTR = 1, 2, 4
-STB_LOCAL, STB_GLOBAL = 0, 1
+STB_LOCAL, STB_GLOBAL, STB_WEAK = 0, 1, 2
 STT_NOTYPE, STT_OBJECT, STT_FUNC, STT_SECTION = 0, 1, 2, 3
 R_386_32, R_386_PC32 = 1, 2
 
@@ -97,6 +100,7 @@ def convert(obj):
     externs = [None]  # EXTDEF/LEXTDEF/CEXTDEF index -> (name, local)
     symbols = {}  # name -> (Section, offset, local)
     comdats = {}  # name -> Section
+    weak = set()  # COMDATs the linker may take from any module
     sections = []
     target_thread = [None] * 4
     last = None  # (Section, offset) of the last LEDATA/COMDAT, for FIXUPP
@@ -177,6 +181,8 @@ def convert(obj):
                 comdats[name] = sec
                 sections.append(sec)
                 symbols[name] = (sec, 0, bool(flags & 4))
+                if attrs & 0xF0:
+                    weak.add(name)
             sec.write(off, r.rest())
             last = (sec, off, kind)
         elif kind == 0x9C:  # FIXUPP
@@ -236,10 +242,10 @@ def convert(obj):
         if sec is not None:
             fmt = {0: "<b", 1: "<h", 2: "<i"}[loc]
             struct.pack_into(fmt, sec.data, off, struct.unpack_from(fmt, sec.data, off)[0] + value)
-    return sections, symbols, externs
+    return sections, symbols, externs, weak
 
 
-def write_elf(sections, symbols, externs, path):
+def write_elf(sections, symbols, externs, weak, path):
     shstr, strtab = bytearray(b"\0"), bytearray(b"\0")
 
     def add(tab, s):
@@ -268,7 +274,7 @@ def write_elf(sections, symbols, externs, path):
         if not local and first_global is None:
             first_global = len(syms)
         kind = STT_FUNC if sec.code else STT_OBJECT
-        bind = STB_LOCAL if local else STB_GLOBAL
+        bind = STB_LOCAL if local else STB_WEAK if name in weak else STB_GLOBAL
         sym_index[name] = len(syms)
         syms.append((add(strtab, name), off, sized(name), (bind << 4) | kind, index[id(sec)]))
     if first_global is None:
