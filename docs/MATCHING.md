@@ -73,6 +73,12 @@ and comparing against the original.
   Safe to run concurrently.
 - `tools/setfn.py 0xADDR NAME` / `--remove`: add, rename or merge one entry
   in `config/functions.txt`, re-sizing only its neighbours.
+- `tools/variants.py src/FILE 0xADDR`: searches source variants of one
+  function (commutative operand swaps, declaration order, `x op= e` forms,
+  and with `--kinds ...,types` local integer types) with a beam search
+  scored by objdiff, and prints the best as a diff. It rediscovers, for
+  example, the fixes for `item_upgraded` and `can_i_get_to` from their
+  earlier source; review `types` results, which can change behaviour.
 
 ## Idioms
 
