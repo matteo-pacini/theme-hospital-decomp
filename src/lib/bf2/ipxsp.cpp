@@ -57,6 +57,13 @@ TbError IPXServiceProvider::EnableNewPlayers(u32 allow)
     return ret;
 }
 
+// FUNCTION: 0xd5374
+IPXServiceProvider::~IPXServiceProvider()
+{
+    ServiceProvider::~ServiceProvider();
+    session_count = 0;
+}
+
 // FUNCTION: 0xd5428
 TbError IPXServiceProvider::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallbacks *callbacks, void *data)
 {
@@ -764,7 +771,7 @@ TbError IPXServiceProvider::Update(void)
             }
         }
         if (accepting)
-            fn_000d508c(&ipx, 0xbe08, server_name, &socket);
+            ipx.UpdateServer(0xbe08, server_name, &socket);
         BatchProcess(1);
     } else if (host_state == 2) {
         for (p = packets; p < packets + 32; p++) {
@@ -964,13 +971,13 @@ u32 IPXServiceProvider::CheckIfPlayerWantingToJoinIsInSession(__35ct5sCLIENTJOIN
 }
 
 // FUNCTION: 0xd8e34
-// NONMATCHING: stack slots of locals and compiler temporaries, and register choice in the
-// inlined BatchProcess
+// NONMATCHING: stack slots, register choice in the inlined BatchProcess, and the
+// target shares one Listen-and-break tail between the done and give-up paths
 TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
 {
     u32 total = 32;
-    u32 max = 32;
     IPXSessionInfo *msg;
+    u32 max = 32;
     IPXPlayerEntry *e;
     u32 last_send;
     u32 start;
@@ -978,11 +985,11 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
     IPXPacket *pk;
     __3ljac5NETSOCKET from;
     u32 added = 0;
-    u32 i;
+    TbError ret = Lb_FAIL;
     u32 is_local;
     u32 is_host;
     s32 done = 0;
-    TbError ret = Lb_FAIL;
+    u32 i;
 
     if (started) {
         remote.magic = MSG_BUQP;
@@ -1014,7 +1021,7 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
                                     added++;
                                     is_local = 0;
                                     is_host = 0;
-                                    if (remote.host_id == e->id)
+                                    if (e->id == remote.host_id)
                                         is_local = 1;
                                     if (e->id == msg->host_id)
                                         is_host = 1;
@@ -1023,22 +1030,22 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
                                     memcpy(&players[e->id], e, sizeof(IPXPlayerEntry));
                                 }
                             }
-                            if (total <= added) {
+                            if (added >= total) {
                                 remote.num_players = msg->num_players;
                                 done = 1;
                                 remote.max_players = msg->max_players;
                                 ret = Lb_OK;
-                            } else if (++remote.page >= max * 6) {
-                                done = -1;
-                            } else {
-                                ipx.Send(&socket, server, (u8 *)&remote, sizeof(remote));
-                                BatchProcess(0);
-                                now = start = last_send = clock();
-                            }
-                            if (done) {
                                 ipx.Listen(pk, &socket);
                                 break;
                             }
+                            if (++remote.page >= max * 6) {
+                                done = -1;
+                                ipx.Listen(pk, &socket);
+                                break;
+                            }
+                            ipx.Send(&socket, server, (u8 *)&remote, sizeof(remote));
+                            BatchProcess(0);
+                            now = start = last_send = clock();
                         }
                     } else {
                         total = msg->num_players;
@@ -1564,7 +1571,7 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
 u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
 {
     __3ljac5NETSOCKET *addr;
-    __6eas9nIPXDATAMESSAGE ack;
+    IPXAckMessage ack;
     u32 me;
     u32 max;
     u32 ret = 0;
@@ -1588,11 +1595,11 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
             }
             addr = &players[msg->from].addr;
             if (addr->socket) {
-                memset(&ack, 0, 0xc);
+                memset(&ack, 0, sizeof(ack));
                 ack.magic = 0x41445542;
                 ack.from = me;
                 ack.seq = msg->seq;
-                ipx.Send(&socket, addr, (u8 *)&ack, 0xc);
+                ipx.Send(&socket, addr, (u8 *)&ack, sizeof(ack));
                 BatchProcess(0);
                 ret = 1;
             }

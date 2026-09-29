@@ -1,8 +1,5 @@
 #include "net.h"
 
-/* Built without inline expansion: callees in this file stay calls. */
-#pragma inline_depth(0)
-
 extern "C" {
 extern char D_00127244[];
 extern char D_00127266[];
@@ -483,95 +480,96 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
 }
 
 // FUNCTION: 0xee050
+// NONMATCHING: stack slots and register choice
 u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
 {
-    Parser *p;
-    u32 max_size;
+    u32 j;
+    TbMessageType type;
     Parser *q;
     u32 msg_size;
     u32 got = 0;
     u32 deliver;
     u32 i;
-    u32 j;
+    Parser *p;
     u32 k;
     char *name;
-    u8 type;
+    u32 max_size;
 
     max_size = *size;
     *size = 0;
     for (i = 0, p = parsers; i < 10; i++, p++) {
-        if (!p->active || PS_COMPLETE != p->state)
+        if (!p->InUse() || !p->GotCompleteMessage())
             continue;
         deliver = 0;
         for (j = 0, q = parsers; j < 10; j++, q++) {
-            if (q->active && j != i)
-                q->active = 0;
+            if (q->InUse() && j != i)
+                q->TakeDown();
         }
-        switch (p->header[0]) {
+        switch (p->GetFirstHeaderByte()) {
         case 0x1b:
             deliver = 1;
             break;
         case 0x1e:
-            if (recv_seq == p->seq) {
+            if (p->GetSequenceNumber() == recv_seq) {
                 deliver = 1;
             } else {
-                SendAck(p->seq);
-                p->active = 0;
+                SendAck(p->GetSequenceNumber());
+                p->TakeDown();
             }
             break;
         case 4:
-            if (send_seq == p->seq) {
+            if (p->GetSequenceNumber() == send_seq) {
                 if (awaiting_ack) {
                     awaiting_ack = 0;
                     send_seq++;
-                    p->active = 0;
+                    p->TakeDown();
                 } else {
-                    p->active = awaiting_ack;
+                    p->TakeDown();
                 }
             } else {
-                p->active = 0;
+                p->TakeDown();
             }
             break;
         }
-        if (!deliver) {
-            p->active = deliver;
-            continue;
-        }
-        DecodeMessageStub(p->msg, &msg_size, 0, 0);
-        *size = msg_size + 4;
-        if (*size > max_size)
-            continue;
-        memcpy(buf, p->msg, *size);
-        if (remove) {
-            if (p->header[0] == 0x1e) {
-                SendAck(recv_seq);
-                recv_seq++;
-            }
-            DecodeMessageStub(p->msg, 0, (TbMessageType *)&type, 0);
-            if (type == 2) {
-                send_seq = 0;
-                recv_seq = 0;
-                awaiting_ack = 0;
-            }
-            if (type == 1) {
-                p->active = 0;
-                name = 0;
-                for (k = 0; k < player_count; k++) {
-                    if (players[k].id == 0)
-                        name = players[k].name;
-                }
-                if (name) {
-                    if (GetAddPlayerMsgSize(name) > 0x28) {
-                        fn_000c20c0(D_00127bbf);
-                    } else {
-                        EncodeAddPlayerMsg(addPlayerBuffer, 0, name);
-                        Send(1, addPlayerBuffer);
+        if (deliver) {
+            DecodeMessageStub(p->GetMessageBuffer(), &msg_size, 0, 0);
+            *size = msg_size + 4;
+            if (*size <= max_size) {
+                memcpy(buf, p->GetMessageBuffer(), *size);
+                if (remove) {
+                    if (p->GetFirstHeaderByte() == 0x1e) {
+                        SendAck(recv_seq);
+                        recv_seq++;
                     }
+                    DecodeMessageStub(p->GetMessageBuffer(), 0, &type, 0);
+                    if (type == (TbMessageType)2) {
+                        send_seq = 0;
+                        recv_seq = 0;
+                        awaiting_ack = 0;
+                    }
+                    if (type == (TbMessageType)1) {
+                        name = 0;
+                        p->TakeDown();
+                        for (k = 0; k < player_count; k++) {
+                            if (players[k].id == 0)
+                                name = players[k].name;
+                        }
+                        if (name) {
+                            if (GetAddPlayerMsgSize(name) > 0x28) {
+                                fn_000c20c0(D_00127bbf);
+                            } else {
+                                EncodeAddPlayerMsg(addPlayerBuffer, 0, name);
+                                Send(1, addPlayerBuffer);
+                            }
+                        }
+                    }
+                    p->TakeDown();
                 }
+                got = 1;
             }
-            p->active = 0;
+        } else {
+            p->TakeDown();
         }
-        got = 1;
     }
     return got;
 }

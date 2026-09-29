@@ -115,6 +115,15 @@ s32 AllocateMusicBankMemory(void)
     return -2;
 }
 
+// FUNCTION: 0xf0d80
+void DeInitMusicBank(void)
+{
+    if (MusicData)
+        LbMemoryFree(MusicData);
+    if (Music)
+        LbMemoryFree(Music);
+}
+
 extern "C" {
 
 extern char D_00128304[];

@@ -362,16 +362,18 @@ void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
 }
 
 // FUNCTION: 0xd48f0
+// NONMATCHING: register choice (the target keeps p in ebp, from in ebx and the
+// swapped length in edx)
 long IPXHandler::RecPkt(IPXPacket *p, __3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *from)
 {
-    long len = 0;
+    long len;
 
+    len = 0;
     if (p->in_use == 0 && p->completion == 0) {
-        len = Swap16(p->hdr.length);
+        len = Swap16(p->hdr.length) - 0x1e;
         from->socket = p->hdr.src_socket;
         memcpy(from->net, p->hdr.src_net, 4);
         memcpy(from->node, p->hdr.src_node, 6);
-        len -= 0x1e;
     }
     return len;
 }
@@ -468,6 +470,7 @@ long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
     SAPPacket pkt;
     __3ljac5NETSOCKET dest;
     u16 i;
+    IPXPacket *pk;
 
     if (!socket_open) {
         socket = 0x452;
@@ -475,16 +478,16 @@ long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
         if (OpenSocket(&s, 0) == 0) {
             socket_open = 1;
             socket = s.socket;
-            for (i = 0; i < 32; i++)
-                Listen(&recv_packets[i], &s);
+            for (i = 0, pk = recv_packets; i < 32; i++, pk++)
+                Listen(pk, &s);
             BatchProcess();
         } else {
             socket = 0x4141;
             s.socket = 0x4141;
             if (OpenSocket(&s, 0) == 0) {
                 socket_open = 1;
-                for (i = 0; i < 32; i++)
-                    Listen(&recv_packets[i], &s);
+                for (i = 0, pk = recv_packets; i < 32; i++, pk++)
+                    Listen(pk, &s);
                 BatchProcess();
             }
         }
@@ -520,4 +523,49 @@ void IPXHandler::QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock)
     dest.socket = 0x4141;
     Send(sock, &dest, (u8 *)pkt, 4);
     BatchProcess();
+}
+
+// FUNCTION: 0xd508c
+// NONMATCHING: RecPkt is inlined here; the target calls it
+void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
+{
+    SAPPacket pkt;
+    __3ljac5NETSOCKET dest;
+    __3ljac5NETSOCKET from;
+    __3ljac5NETSOCKET s;
+    IPXPacket *p;
+    u16 count;
+
+    count = 0;
+    if (socket_open) {
+        memset(&pkt, 0, sizeof(pkt));
+        pkt.op = 0x200;
+        pkt.type = type;
+        pkt.hops = 0x100;
+        pkt.socket = sock->socket;
+        memcpy(pkt.net, net, 4);
+        memcpy(pkt.node, node, 6);
+        strcpy(pkt.name, name);
+        for (p = recv_packets; p < recv_packets + 32; p++) {
+            if (RecPkt(p, sock, &from)) {
+                if (memcmp(p->hdr.src_node, node, 6) != 0
+                    && *(u16 *)p->data == 0x100 && type == *(u16 *)(p->data + 2)) {
+                    dest.socket = p->hdr.src_socket;
+                    memcpy(dest.net, p->hdr.src_net, 4);
+                    memcpy(dest.node, p->hdr.src_node, 6);
+                    Send(sock, &dest, (u8 *)&pkt, sizeof(pkt));
+                }
+                s.socket = socket;
+                count++;
+                Listen(p, &s);
+            }
+        }
+        unknown4 = clock();
+        if (unknown4 - stamp > 4000) {
+            AdvertiseServer(type, name, sock);
+            stamp = unknown4;
+        } else if (count) {
+            BatchProcess();
+        }
+    }
 }

@@ -70,11 +70,11 @@ extern S32 sequence_done;
 extern S32 q;
 extern S32 t;
 extern S32 channel;
-extern S32 status;
-extern S32 type;
+extern U32 status;
+extern U32 type;
 extern S32 len;
 extern U8 *ptr;
-extern S32 event;
+extern U8 *event;
 
 extern TIMB_request D_00151634;
 extern U8 D_0018cb6c[512];
@@ -82,6 +82,7 @@ extern U8 D_0018cb6c[512];
 extern char D_00126e6c[];
 extern char D_00126e74[];
 extern char D_00126e7c[];
+extern char D_00126e84[];
 extern char D_00126ea4[];
 extern char D_00126ecc[];
 extern char D_00126ed4[];
@@ -105,7 +106,7 @@ extern char D_0012706c[];
 extern char D_00127074[];
 extern char D_0012707c[];
 
-void fn_000e2ff0(void);
+void __pascal XMI_serve(U32 user);
 void AILXMIDI_end(void);
 void __syscall XMI_update_volume(HSEQUENCE S);
 #pragma aux (__syscall) XMI_update_volume "_XMI_update_volume";
@@ -665,6 +666,180 @@ void __syscall XMI_update_volume(HSEQUENCE S)
     }
 }
 
+// FUNCTION: 0xe2ff0
+// NONMATCHING: register choice (the time signature case keeps q in eax and
+// t in edx, the sysex and note-on paths swap ebx/ecx/edx)
+void __pascal XMI_serve(U32 user)
+{
+    HMDIDRIVER mdi = (HMDIDRIVER)user;
+
+    if (mdi->disable)
+        return;
+    if (entry)
+        return;
+    entry = 1;
+    n = mdi->n_sequences;
+    S = mdi->sequences;
+    for (; n; n--, S++) {
+        if (S->status != SEQ_PLAYING)
+            continue;
+        S->interval_num++;
+        sequence_done = 0;
+        S->tempo_error += S->tempo_percent;
+        while (S->tempo_error >= 100) {
+            S->tempo_error -= 100;
+            if (S->note_count > 0) {
+                for (i = 0; i < MAX_NOTES; i++) {
+                    if (S->note_chan[i] == -1)
+                        continue;
+                    if (--S->note_time[i] > 0)
+                        continue;
+                    XMI_send_channel_voice_message(S, S->note_chan[i] | 0x80, S->note_num[i], 0, 0);
+                    S->note_chan[i] = -1;
+                    if (--S->note_count == 0)
+                        break;
+                }
+            }
+            if (--S->interval_count <= 0) {
+                while (!sequence_done) {
+                    status = *S->EVNT_ptr;
+                    if (status < 0x80)
+                        break;
+                    switch (status) {
+                    case 0xff:
+                        type = S->EVNT_ptr[1];
+                        S->EVNT_ptr += 2;
+                        len = XMI_read_VLN(&S->EVNT_ptr);
+                        switch (type) {
+                        case 0x2f:
+                            sequence_done = 1;
+                            if (S->loop_count == 0 || --S->loop_count != 0) {
+                                S->measure_count = -1;
+                                S->beat_count = 0;
+                                S->beat_fraction = 0;
+                                S->EVNT_ptr = (U8 *)S->EVNT + 8;
+                                if (S->beat_callback != NULL)
+                                    S->beat_callback(S->driver, S, 0, 0);
+                            } else {
+                                S->loop_count = 1;
+                                AIL_stop_sequence(S);
+                                S->status = SEQ_DONE;
+                                if (S->EOS != NULL)
+                                    S->EOS(S);
+                            }
+                            break;
+                        case 0x51:
+                            t = ((S32)S->EVNT_ptr[0] << 16) + ((S32)S->EVNT_ptr[1] << 8) + S->EVNT_ptr[2];
+                            S->time_per_beat = t << 4;
+                            break;
+                        case 0x58:
+                            S->time_numerator = S->EVNT_ptr[0];
+                            t = S->EVNT_ptr[1] - 2;
+                            q = 16000000L / AIL_preference[MDI_SERVICE_RATE];
+                            if (t < 0) {
+                                t = -t;
+                                S->time_fraction = q >> t;
+                            } else {
+                                S->time_fraction = q << t;
+                            }
+                            S->beat_fraction = 0;
+                            S->beat_count = 0;
+                            S->beat_fraction -= S->time_fraction;
+                            S->measure_count++;
+                            if (S->beat_callback != NULL)
+                                S->beat_callback(S->driver, S, S->beat_count, S->measure_count);
+                            break;
+                        }
+                        S->EVNT_ptr = S->EVNT_ptr + len;
+                        break;
+                    case 0xf0:
+                    case 0xf7:
+                        ptr = S->EVNT_ptr + 1;
+                        len = XMI_read_VLN(&ptr);
+                        len += ptr - S->EVNT_ptr;
+                        XMI_sysex_message(mdi, S->EVNT_ptr, len);
+                        S->EVNT_ptr += len;
+                        break;
+                    default:
+                        event = S->EVNT_ptr;
+                        channel = status & 0x0f;
+                        status &= 0xf0;
+                        XMI_send_channel_voice_message(S, S->EVNT_ptr[0], S->EVNT_ptr[1], S->EVNT_ptr[2], 1);
+                        if (status != 0x90) {
+                            if (event == S->EVNT_ptr)
+                                S->EVNT_ptr += XMI_message_size(*S->EVNT_ptr);
+                        } else {
+                            for (i = 0; i < MAX_NOTES; i++) {
+                                if (S->note_chan[i] == -1)
+                                    break;
+                            }
+                            if (i == MAX_NOTES) {
+                                strcpy(AIL_error, D_00126e84);
+                                AIL_stop_sequence(S);
+                                entry = 0;
+                                S->status = SEQ_DONE;
+                                return;
+                            }
+                            S->note_count++;
+                            S->note_chan[i] = channel;
+                            S->note_num[i] = S->EVNT_ptr[1];
+                            S->EVNT_ptr = S->EVNT_ptr + 3;
+                            S->note_time[i] = XMI_read_VLN(&S->EVNT_ptr);
+                        }
+                        break;
+                    }
+                }
+                if (!sequence_done)
+                    S->interval_count = *S->EVNT_ptr++;
+            }
+            if (sequence_done)
+                continue;
+            S->beat_fraction += S->time_fraction;
+            if (S->beat_fraction < S->time_per_beat)
+                continue;
+            S->beat_fraction -= S->time_per_beat;
+            if (++S->beat_count >= S->time_numerator) {
+                S->beat_count = 0;
+                S->measure_count++;
+            }
+            if (S->beat_callback != NULL) {
+                AIL_sequence_position(S, &i, &j);
+                S->beat_callback(S->driver, S, i, j);
+            }
+        }
+        if (sequence_done)
+            continue;
+        if (S->volume != S->volume_target) {
+            S->volume_accum += S->driver->interval_time;
+            while (S->volume_accum >= S->volume_period) {
+                S->volume_accum -= S->volume_period;
+                if (S->volume_target > S->volume)
+                    S->volume++;
+                else
+                    S->volume--;
+                if (S->volume == S->volume_target)
+                    break;
+            }
+            if (!(S->interval_num & 7))
+                XMI_update_volume(S);
+        }
+        if (S->tempo_percent != S->tempo_target) {
+            S->tempo_accum += S->driver->interval_time;
+            while (S->tempo_accum >= S->tempo_period) {
+                S->tempo_accum -= S->tempo_period;
+                if (S->tempo_target > S->tempo_percent)
+                    S->tempo_percent++;
+                else
+                    S->tempo_percent--;
+                if (S->tempo_percent == S->tempo_target)
+                    break;
+            }
+        }
+    }
+    XMI_flush_buffer(mdi);
+    entry = 0;
+}
+
 // FUNCTION: 0x000e36c0
 S32 __cdecl XMI_attempt_MDI_detection(HMDIDRIVER mdi, IO_PARMS *IO)
 {
@@ -841,7 +1016,7 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         mdi->state[i] = 0;
         mdi->notes[i] = 0;
     }
-    mdi->timer = AIL_register_timer((AILTIMERCB)fn_000e2ff0);
+    mdi->timer = AIL_register_timer(XMI_serve);
     if (mdi->timer == -1) {
         strcpy(AIL_error, D_00126f68);
         AIL_call_driver(mdi->drvr, DRV_SHUTDOWN, NULL, NULL);
@@ -1518,10 +1693,11 @@ void __cdecl AIL_API_sequence_position(HSEQUENCE S, S32 *beat, S32 *measure)
 
 // FUNCTION: 0x000e4d50
 // NONMATCHING: the target clears the loop index with mov eax,edx / xor eax,edx
-// and walks the RBRN entries through a pointer
+// and indexes the matching entry in ebp in place
 void __cdecl AIL_API_branch_index(HSEQUENCE S, U32 marker)
 {
     RBRN_block *RBRN;
+    RBRN_entry *entry;
     S32 i;
     S32 n;
 
@@ -1533,15 +1709,16 @@ void __cdecl AIL_API_branch_index(HSEQUENCE S, U32 marker)
         return;
     }
     n = RBRN->n_entries;
+    entry = RBRN->entry;
     for (i = 0; i < n; i++) {
-        if (RBRN->entry[i].offset == marker) {
+        if (entry[i].offset == marker) {
             break;
         }
     }
     if (i == n) {
         return;
     }
-    S->EVNT_ptr = (U8 *)S->EVNT + 8 + RBRN->entry[i].pos;
+    S->EVNT_ptr = (U8 *)S->EVNT + 8 + entry[i].pos;
     S->interval_count = 0;
     if (!AIL_preference[MDI_ALLOW_LOOP_BRANCHING]) {
         for (i = 0; i < FOR_NEST; i++) {

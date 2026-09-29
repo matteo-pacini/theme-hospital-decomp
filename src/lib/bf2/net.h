@@ -483,6 +483,7 @@ struct IPXHandler {
     void FreeIPXPackets(u32 sel);
     long AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock);
     void QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock);
+    void UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock);
     u32 SimulateInt(u16 intno, RMREGS *rm) { return fn_000d41c8(this, intno, rm); }
     IPXPacket *GetNextSendPkt(void);
     void SendEcb(ECB *ecb);
@@ -554,6 +555,14 @@ struct __6eas9nIPXDATAMESSAGE {
     u8 data[0x212];
 };
 
+struct IPXAckMessage {
+    u32 magic;
+    u32 from;
+    u8 unknown8[2];
+    u8 seq;
+    u8 unknownb;
+};
+
 struct __6gjpddIPXSPDATAMESSAGE {
     u8 data[0x216];
     u16 used;
@@ -595,6 +604,7 @@ struct IPXServiceProvider : ServiceProvider {
     u8 acked_b[0x20];
     u32 accepting;
 
+    virtual ~IPXServiceProvider();
     TbError Initialise(__ic76sReceiveCallbacks *callbacks, void *data);
     TbError BullfrogIPXServer(char *name);
     TbError SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3ljac5NETSOCKET *to);
@@ -621,6 +631,9 @@ struct IPXServiceProvider : ServiceProvider {
     TbError ChangeSettings(u32 setting, void *data);
     TbError EnableNewPlayers(u32 allow);
     TbError Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallbacks *callbacks, void *data);
+    u32 ReadMessage(u32 *from, void *buf, u32 *size);
+    u32 PeekMessage(u32 *from, void *buf, u32 *size);
+    TbError SendMessage(u32 to, void *buf, TbMessageType type);
     void ConvertGuidToString(__tibcaGUID *guid, char *str);
     void ConvertStringToGuid(char *str, __tibcaGUID *guid);
     TbError AllocateSpStuff(void);
@@ -634,7 +647,6 @@ struct IPXServiceProvider : ServiceProvider {
 extern "C" {
 u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek);
 #pragma aux fn_000d6598 "W?PrivateReceive$:IPXServiceProvider$n(pnulpnvpnul$$TE$$)ul"
-void fn_000d508c(IPXHandler *ipx, u16 type, char *name, __3ljac5NETSOCKET *sock);
 extern char D_001260e9[];
 extern char D_00126118[];
 extern char D_00126289[];

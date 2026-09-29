@@ -23,6 +23,18 @@ void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *files))
     D_0014d5e4 = fn;
 }
 
+}
+
+// FUNCTION: 0xbcd08
+// Not static, as the original is: only D_0014d5e4's initialiser refers to it, and
+// that data is not part of this unit, so a static copy would not be emitted.
+char *_defaultModifyDataLoadFilename(TbLoadFiles *files)
+{
+    return files->FName;
+}
+
+extern "C" {
+
 // NONMATCHING: register choice (target loads operands into registers before compares)
 // FUNCTION: 0x000bcd18
 int LbDataLoadAll(TbLoadFiles *files)

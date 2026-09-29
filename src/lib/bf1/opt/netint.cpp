@@ -386,12 +386,12 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     return ret;
 }
 
-// NONMATCHING: register choice and block layout
+// NONMATCHING: register choice
 // FUNCTION: 0x000bff98
 TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
 {
-    TbError ret;
     u32 i;
+    TbError ret;
 
     ret = Lb_FAIL;
     if (runningTwoPlayerModel) {
@@ -400,29 +400,29 @@ TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
         remotePlayerId = 1;
         remotePlayerIndex = 1;
     }
-    if (spPtr->Start(session, name, maximumPlayers, data) != Lb_OK) {
-        fn_000c20c0(D_00122225);
-        return ret;
-    }
-    if (GetCurrentPlayers() != Lb_OK) {
-        fn_000c20c0(D_001221df);
-        return ret;
-    }
-    *player = localPlayerIndex;
-    ret = Lb_OK;
-    for (i = 0; i < maximumPlayers; i++) {
-        if (clientDataTable[i].active) {
-            localPlayerInfoPtr[i].active = 1;
-            strcpy(localPlayerInfoPtr[i].name, clientDataTable[i].name);
+    if (spPtr->Start(session, name, maximumPlayers, data) == Lb_OK) {
+        if (GetCurrentPlayers() == Lb_OK) {
+            *player = localPlayerIndex;
+            ret = Lb_OK;
+            for (i = 0; i < maximumPlayers; i++) {
+                if (clientDataTable[i].active) {
+                    localPlayerInfoPtr[i].active = 1;
+                    strcpy(localPlayerInfoPtr[i].name, clientDataTable[i].name);
+                } else {
+                    localPlayerInfoPtr[i].active = clientDataTable[i].active;
+                }
+            }
+            LbNetwork_EnableNewPlayers(1);
         } else {
-            localPlayerInfoPtr[i].active = clientDataTable[i].active;
+            fn_000c20c0(D_001221df);
         }
+    } else {
+        fn_000c20c0(D_00122225);
     }
-    LbNetwork_EnableNewPlayers(1);
     return ret;
 }
 
-// NONMATCHING: register choice and block layout
+// NONMATCHING: register choice
 // FUNCTION: 0x000c0110
 TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *player, void *data)
 {
@@ -439,39 +439,38 @@ TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *play
         localPlayerIndex = 1;
     }
     sequenceNumber = 15;
-    if (spPtr->Start(session, name, data) != Lb_OK) {
-        fn_000c20c0(D_001222f1);
-        return ret;
-    }
-    if (!runningTwoPlayerModel) {
-        SendSystemUserMessage(0, MSG_TYPE_0, 0, 0);
-        waitingForPlayerMapResponse = 1;
-        do {
-            spPtr->Receive(8);
-            if (waitingForPlayerMapResponse && LbTimerClock() - start > 10000) {
-                waitingForPlayerMapResponse = 0;
-                return ret;
-            }
-        } while (waitingForPlayerMapResponse);
-    }
-    if (GetCurrentPlayers() != Lb_OK) {
-        fn_000c20c0(D_001222ad);
-        return ret;
-    }
-    *player = localPlayerIndex;
-    ret = Lb_OK;
-    for (i = 0; i < maximumPlayers; i++) {
-        if (clientDataTable[i].active) {
-            localPlayerInfoPtr[i].active = 1;
-            strcpy(localPlayerInfoPtr[i].name, clientDataTable[i].name);
-        } else {
-            localPlayerInfoPtr[i].active = clientDataTable[i].active;
+    if (spPtr->Start(session, name, data) == Lb_OK) {
+        if (!runningTwoPlayerModel) {
+            SendSystemUserMessage(0, MSG_TYPE_0, 0, 0);
+            waitingForPlayerMapResponse = 1;
+            do {
+                spPtr->Receive(8);
+                if (waitingForPlayerMapResponse && LbTimerClock() - start > 10000) {
+                    waitingForPlayerMapResponse = 0;
+                    return ret;
+                }
+            } while (waitingForPlayerMapResponse);
         }
+        if (GetCurrentPlayers() == Lb_OK) {
+            *player = localPlayerIndex;
+            ret = Lb_OK;
+            for (i = 0; i < maximumPlayers; i++) {
+                if (clientDataTable[i].active) {
+                    localPlayerInfoPtr[i].active = 1;
+                    strcpy(localPlayerInfoPtr[i].name, clientDataTable[i].name);
+                } else {
+                    localPlayerInfoPtr[i].active = clientDataTable[i].active;
+                }
+            }
+        } else {
+            fn_000c20c0(D_001222ad);
+        }
+    } else {
+        fn_000c20c0(D_001222f1);
     }
     return ret;
 }
 
-// NONMATCHING: register choice and block layout
 // FUNCTION: 0x000c02fc
 TbError LbNetwork_Stop(void)
 {
@@ -483,8 +482,7 @@ TbError LbNetwork_Stop(void)
             ret = Lb_OK;
         else
             fn_000c20c0(D_00122326);
-        if (spPtr)
-            delete spPtr;
+        delete spPtr;
         spPtr = 0;
     }
     if (compositeBuffer) {
@@ -991,14 +989,15 @@ TbError fn_000c197c(TbNetworkPlayerEntry *player)
         } else {
             searching = 1;
             i = 0;
-            do {
-                if (!clientDataTable[i].active) {
+            while (searching) {
+                if (clientDataTable[i].active) {
+                    if (++i >= maximumPlayers)
+                        searching = 0;
+                } else {
                     found = 1;
                     searching = 0;
-                } else if (++i >= maximumPlayers) {
-                    searching = 0;
                 }
-            } while (searching);
+            }
             if (found) {
                 clientDataTable[i].id = player->id;
                 clientDataTable[i].active = 1;

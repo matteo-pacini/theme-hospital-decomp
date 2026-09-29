@@ -1408,7 +1408,7 @@
 000bccd8      9 __GETDS
 000bcce3      d ___GETDSEnd_
 000bccf0     15 LbDataLoadSetModifyFilenameFunction_
-000bcd08     10 fn_000bcd08_
+000bcd08     10 W?_defaultModifyDataLoadFilename$n(pn$TbLoadFiles$$)pna
 000bcd18    12a LbDataLoadAll_
 000bce44    115 fn_000bce44_
 000bcf5c     33 LbDataFree_
@@ -1911,7 +1911,7 @@
 000d4bf8     28 W?FreeIPXPackets$:IPXHandler$n(ul)v
 000d4c20    3ef W?AdvertiseServer$:IPXHandler$n(uspnapn$__3ljac5NETSOCKET$$)l
 000d5010     7b W?QueryServer$:IPXHandler$n(ususpn$__3ljac5NETSOCKET$$)v
-000d508c    2a6 fn_000d508c_
+000d508c    2a6 W?UpdateServer$:IPXHandler$n(uspnapn$__3ljac5NETSOCKET$$)v
 000d5340      1 fn_000d5340_
 000d5350      3 W?ChangeSettings$:IPXServiceProvider$n(ulpnv)$TbError$$
 000d5354     1d W?EnableNewPlayers$:IPXServiceProvider$n(ul)$TbError$$
@@ -1950,8 +1950,8 @@
 000dc400     3e W?GetNextEmptyReceiveBuffer$:IPXServiceProvider$n()pn$__6gjpddIPXSPDATAMESSAGE$$
 000dc440    2ff W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v
 000dc740     d2 W?BullfrogIPXMessage$:IPXServiceProvider$n(pn$__407tigIPXMESSAGEBLOCK$$pn$__tibcaGUID$$)$TbError$$
-000dc812      5 fn_000dc812_
-000dc817      5 fn_000dc817_
+000dc812      5 __init_387_emulator
+000dc817      5 __fini_387_emulator
 000dc820     a6 fn_000dc820_
 000dc8d0     61 fn_000dc8d0_
 000dc932     1b fn_000dc932_
@@ -2111,7 +2111,7 @@
 000e2ec0     c7 _XMI_init_sequence_state
 000e2f90     19 _XMI_rewind_sequence
 000e2fb0     3d _XMI_update_volume
-000e2ff0    6ce fn_000e2ff0_
+000e2ff0    6ce XMI_SERVE
 000e36c0     d0 _XMI_attempt_MDI_detection
 000e3790     55 _XMI_destroy_MDI_driver
 000e37f0    6b3 _XMI_construct_MDI_driver
@@ -2450,7 +2450,8 @@
 000f0960     58 W?format_music$n()v
 000f09c0    1f4 W?load_music_bank$n(luc)uc
 000f0bc0    1b4 AllocateMusicBankMemory_
-000f0d80    428 fn_000f0d80_
+000f0d80     27 W?DeInitMusicBank$n()v
+000f0da8    400 fn_000f0da8_
 000f11a8     11 _DC_0
 000f11b9      c _DC_1
 000f11c5     1f _DC_16

@@ -1252,6 +1252,7 @@
 000bccd8 000a0a00 align   consistent runtime cstrt386       __GETDS
 000bcce3 000a0a0b bytes   confirmed  runtime cstrt386       ___GETDSEnd_
 000bccf0 000a0a10 manual  confirmed  bflib   gdata.cpp      LbDataLoadSetModifyFilenameFunction_
+000bcd08 000a0a18 manual  confirmed  bflib   gdata.cpp      W?_defaultModifyDataLoadFilename$n(pn$TbLoadFiles$$)pna
 000bcd18 000a0aec calls   consistent bflib   gdata.cpp      LbDataLoadAll_
 000bcf5c 000a0ba8 calls   consistent bflib   gdata.cpp      LbDataFree_
 000bcf90 000a0bd0 calls   consistent bflib   gdata.cpp      LbDataFreeAll_
@@ -1653,6 +1654,7 @@
 000d4bf8 000cbe18 order   consistent bflib   dosipx.cpp     W?FreeIPXPackets$:IPXHandler$n(ul)v
 000d4c20 000cbe40 order   confirmed  bflib   dosipx.cpp     W?AdvertiseServer$:IPXHandler$n(uspnapn$__3ljac5NETSOCKET$$)l
 000d5010 000cc230 calls   confirmed  bflib   dosipx.cpp     W?QueryServer$:IPXHandler$n(ususpn$__3ljac5NETSOCKET$$)v
+000d508c 000cc2ac manual  confirmed  bflib   dosipx.cpp     W?UpdateServer$:IPXHandler$n(uspnapn$__3ljac5NETSOCKET$$)v
 000d5350 000c1aa0 manual  confirmed  bflib   ipxsp.cpp      W?ChangeSettings$:IPXServiceProvider$n(ulpnv)$TbError$$
 000d5354 000c1aa4 manual  confirmed  bflib   ipxsp.cpp      W?EnableNewPlayers$:IPXServiceProvider$n(ul)$TbError$$
 000d5374 000c1ac0 manual  confirmed  bflib   ipxsp.cpp      W?$dt:IPXServiceProvider$n()_
@@ -1690,6 +1692,8 @@
 000dc400 000c8b20 manual  confirmed  bflib   ipxsp.cpp      W?GetNextEmptyReceiveBuffer$:IPXServiceProvider$n()pn$__6gjpddIPXSPDATAMESSAGE$$
 000dc440 000c8b60 manual  confirmed  bflib   ipxsp.cpp      W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v
 000dc740 000c8e60 manual  confirmed  bflib   ipxsp.cpp      W?BullfrogIPXMessage$:IPXServiceProvider$n(pn$__407tigIPXMESSAGEBLOCK$$pn$__tibcaGUID$$)$TbError$$
+000dc812 000bd69c manual  confirmed  runtime 386inite       __init_387_emulator
+000dc817 000bd6a1 manual  confirmed  runtime 386inite       __fini_387_emulator
 000dc970 000b3330 strings confirmed  bflib   init_sou.cpp   InitSound_
 000dd040 000b3a00 strings confirmed  bflib   init_sou.cpp   DetermineSoundType_
 000dd210 000b3ea0 strings confirmed  bflib   init_mus.cpp   InitMusic_
@@ -1838,6 +1842,7 @@
 000e2ec0 000b9b50 calls   consistent bflib   ailxmidi.c     _XMI_init_sequence_state
 000e2f90 000b9c20 calls   consistent bflib   ailxmidi.c     _XMI_rewind_sequence
 000e2fb0 000b9c40 bytes   confirmed  bflib   ailxmidi.c     _XMI_update_volume
+000e2ff0 000b9c80 manual  confirmed  bflib   ailxmidi.c     XMI_SERVE
 000e36c0 000ba350 calls   consistent bflib   ailxmidi.c     _XMI_attempt_MDI_detection
 000e37f0 000ba480 strings confirmed  bflib   ailxmidi.c     _XMI_construct_MDI_driver
 000e3eb0 000bab40 calls   confirmed  bflib   ailxmidi.c     _AIL_API_install_MDI_driver_file
@@ -2111,6 +2116,7 @@
 000f0960 000d0bf0 align   consistent bflib   load_mus.cpp   W?format_music$n()v
 000f09c0 000d0c50 align   confirmed  bflib   load_mus.cpp   W?load_music_bank$n(luc)uc
 000f0bc0 000d0e50 strings confirmed  bflib   load_mus.cpp   AllocateMusicBankMemory_
+000f0d80 000d1010 manual  confirmed  bflib   load_mus.cpp   W?DeInitMusicBank$n()v
 000f11a8 000d1438 bytes   confirmed  runtime ailssa.asm     _DC_0
 000f11b9 000d1449 bytes   confirmed  runtime ailssa.asm     _DC_1
 000f11c5 000d1455 bytes   confirmed  runtime ailssa.asm     _DC_16

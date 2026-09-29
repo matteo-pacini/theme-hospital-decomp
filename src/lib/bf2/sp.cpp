@@ -238,7 +238,7 @@ TbError ServiceProvider::CheckForDeletedHost(u8 *msg)
     u32 have;
     u32 lowest;
 
-    memcpy(&id, msg + 4, 4);
+    DecodeRequestCompositeExchangeDataMsg(msg, id);
     for (i = found = 0; i < player_count; i++) {
         if (id == players[i].id && players[i].host) {
             found = 1;
@@ -448,20 +448,14 @@ TbError ServiceProvider::Receive(u32 flags)
 }
 
 // FUNCTION: 0xd25ac
-// NONMATCHING: message type compared as a promoted int instead of a byte
 TbError ServiceProvider::Send(u32 to, void *buf)
 {
-    char name2[0x20];
-    char name[0x20];
-    u32 msg_size;
-    u32 seq;
-    u32 id2;
-    u32 id;
-    u32 id3;
-    void *self;
-    void *msg;
-    u8 type;
     TbError ret;
+    u32 msg_size;
+    TbMessageType type;
+    u32 id2;
+    u32 seq;
+    char name2[0x20];
     void *dst;
     s8 guaranteed;
 
@@ -470,14 +464,8 @@ TbError ServiceProvider::Send(u32 to, void *buf)
         fn_000c20c0(D_001254c9);
         return Lb_FAIL;
     }
-    DecodeMessageStub(buf, &msg_size, (TbMessageType *)&type, &seq);
-    if (to != local_id) {
-        guaranteed = (type == 0 || type == 5 || type == 6 || type == 8) ? (s8)0 : (s8)1;
-        if (SendMessage(to, buf, (TbMessageType)guaranteed) == Lb_OK)
-            ret = Lb_OK;
-        else
-            fn_000c20c0(D_001255f5);
-    } else {
+    DecodeMessageStub(buf, &msg_size, &type, &seq);
+    if (to == local_id) {
         dst = 0;
         switch (type) {
         case 8:
@@ -493,21 +481,14 @@ TbError ServiceProvider::Send(u32 to, void *buf)
                 memcpy(dst, buf, msg_size + 4);
             break;
         case 1:
-            memcpy(&id, (u8 *)buf + 4, 4);
-            if (name)
-                strcpy(name, (char *)buf + 8);
-            AddPlayer(id, name, 0, 0);
-            memcpy(&id2, (u8 *)buf + 4, 4);
-            if (name2)
-                strcpy(name2, (char *)buf + 8);
+            SystemAddPlayerHandler((u8 *)buf);
+            DecodeAddPlayerMsg((u8 *)buf, id2, name2);
             if (callbacks->addMsg)
                 callbacks->addMsg(id2, name2, callback_data);
             break;
         case 2:
-            CheckForDeletedHost((u8 *)buf);
-            memcpy(&id3, (u8 *)buf + 4, 4);
-            DeletePlayer(id3);
-            memcpy(&id2, (u8 *)buf + 4, 4);
+            SystemDeletePlayerHandler((u8 *)buf);
+            DecodeRequestCompositeExchangeDataMsg((u8 *)buf, id2);
             if (callbacks->deleteMsg)
                 callbacks->deleteMsg(id2, callback_data);
             break;
@@ -520,12 +501,12 @@ TbError ServiceProvider::Send(u32 to, void *buf)
                 fn_000c20c0(D_00125558);
             break;
         case 5:
-            memcpy(&id2, (u8 *)buf + 4, 4);
+            DecodeRequestExchangeDataMsg((u8 *)buf, id2);
             if (callbacks->mpReqExDataMsg)
                 callbacks->mpReqExDataMsg(id2, seq, callback_data);
             break;
         case 6:
-            memcpy(&id2, (u8 *)buf + 4, 4);
+            DecodeRequestCompositeExchangeDataMsg((u8 *)buf, id2);
             if (callbacks->mpReqCompsExDataMsg)
                 callbacks->mpReqCompsExDataMsg(id2, seq, callback_data);
             break;
@@ -534,6 +515,12 @@ TbError ServiceProvider::Send(u32 to, void *buf)
             break;
         }
         ret = Lb_OK;
+    } else {
+        guaranteed = (type == MSG_TYPE_0 || type == MSG_TYPE_5 || type == MSG_TYPE_6 || type == MSG_TYPE_8) ? (s8)0 : (s8)1;
+        if (SendMessage(to, buf, (TbMessageType)guaranteed) == Lb_OK)
+            ret = Lb_OK;
+        else
+            fn_000c20c0(D_001255f5);
     }
     return ret;
 }
@@ -542,8 +529,8 @@ TbError ServiceProvider::Send(u32 to, void *buf)
 // NONMATCHING: register allocation differs
 TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
 {
-    u8 *m;
     u32 i;
+    u8 *m;
     u32 id;
     TbError ret;
     u8 type;
@@ -555,8 +542,10 @@ TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
     DecodeMessageStub(m, 0, (TbMessageType *)&type, 0);
     switch (type) {
     case 1:
+        DecodeAddPlayerMsg(m, id, 0);
+        break;
     case 2:
-        memcpy(&id, m + 4, 4);
+        DecodeRequestCompositeExchangeDataMsg(m, id);
         break;
     default:
         invalid = 1;

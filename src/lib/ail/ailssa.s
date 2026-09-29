@@ -1,5 +1,269 @@
 .intel_syntax noprefix
 
+// FUNCTION: 0x000f0da8
+
+.section _TEXT,"ax",@progbits,unique,986536
+.globl "fn_000f0da8_"
+.type "fn_000f0da8_",@function
+"fn_000f0da8_":
+    .long "_DC_0"
+    .long "_DC_1"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_DC_16"
+    .long "_DC_17"
+    .long "_DC_18"
+    .long "_DC_19"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_DC_24"
+    .long "_DC_25"
+    .long "_DC_26"
+    .long "_DC_27"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_DC_32"
+    .long "_DC_33"
+    .long 0
+    .long 0
+    .long "_DC_36"
+    .long "_DC_37"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_DC_48"
+    .long "_DC_49"
+    .long "_DC_50"
+    .long "_DC_51"
+    .long "_DC_52"
+    .long "_DC_53"
+    .long "_DC_54"
+    .long "_DC_55"
+    .long "_DC_56"
+    .long "_DC_57"
+    .long "_DC_58"
+    .long "_DC_59"
+    .long "_DC_60"
+    .long "_DC_61"
+    .long "_DC_62"
+    .long "_DC_63"
+    .long "_DC_64"
+    .long "_DC_65"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_DC_80"
+    .long "_DC_81"
+    .long "_DC_82"
+    .long "_DC_83"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_DC_88"
+    .long "_DC_89"
+    .long "_DC_90"
+    .long "_DC_91"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_DC_96"
+    .long "_DC_97"
+    .long 0
+    .long 0
+    .long "_DC_100"
+    .long "_DC_101"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_DC_112"
+    .long "_DC_113"
+    .long "_DC_114"
+    .long "_DC_115"
+    .long "_DC_116"
+    .long "_DC_117"
+    .long "_DC_118"
+    .long "_DC_119"
+    .long "_DC_120"
+    .long "_DC_121"
+    .long "_DC_122"
+    .long "_DC_123"
+    .long "_DC_124"
+    .long "_DC_125"
+    .long "_DC_126"
+    .long "_DC_127"
+    .long "_M_0"
+    .long "_M_1"
+    .long 0
+    .long "_M_3"
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_7"
+    .long "_M_8"
+    .long "_M_9"
+    .long 0
+    .long "_M_11"
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_15"
+    .long "_M_16"
+    .long "_M_17"
+    .long 0
+    .long "_M_19"
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_23"
+    .long "_M_24"
+    .long "_M_25"
+    .long 0
+    .long "_M_27"
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_31"
+    .long "_M_32"
+    .long "_M_33"
+    .long 0
+    .long "_M_35"
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_39"
+    .long "_M_40"
+    .long "_M_41"
+    .long 0
+    .long "_M_43"
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_47"
+    .long "_M_48"
+    .long "_M_49"
+    .long 0
+    .long "_M_51"
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_55"
+    .long "_M_56"
+    .long "_M_57"
+    .long 0
+    .long "_M_59"
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_63"
+    .long "_M_64"
+    .long "_M_65"
+    .long "_M_66"
+    .long "_M_67"
+    .long 0
+    .long 0
+    .long "_M_70"
+    .long "_M_71"
+    .long "_M_72"
+    .long "_M_73"
+    .long "_M_74"
+    .long "_M_75"
+    .long 0
+    .long 0
+    .long "_M_78"
+    .long "_M_79"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_88"
+    .long "_M_89"
+    .long "_M_90"
+    .long "_M_91"
+    .long 0
+    .long 0
+    .long "_M_94"
+    .long "_M_95"
+    .long "_M_96"
+    .long "_M_97"
+    .long "_M_98"
+    .long "_M_99"
+    .long 0
+    .long 0
+    .long "_M_102"
+    .long "_M_103"
+    .long "_M_104"
+    .long "_M_105"
+    .long "_M_106"
+    .long "_M_107"
+    .long 0
+    .long 0
+    .long "_M_110"
+    .long "_M_111"
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long 0
+    .long "_M_120"
+    .long "_M_121"
+    .long "_M_122"
+    .long "_M_123"
+    .long 0
+    .long 0
+    .long "_M_126"
+    .long "_M_127"
+.size "fn_000f0da8_",.-"fn_000f0da8_"
+
 // FUNCTION: 0x000f11a8
 
 .section _TEXT,"ax",@progbits,unique,987560
@@ -3474,7 +3738,7 @@
     mov ecx, 0x80000000
     push ebp
     mov ebp, dword ptr ["_locked"+0x4]
-    call dword ptr cs:[ebp*4 + "fn_000f0d80_"+0x228]
+    call dword ptr cs:[ebp*4 + "fn_000f0da8_"+0x200]
     pop ebp
     mov ecx, dword ptr [ebp + 8]
     mov ebx, dword ptr [ecx + 0x2c]
@@ -3549,7 +3813,7 @@
     {load} add ebx, eax
 .L000f2db6:
     mov eax, dword ptr ["_locked"+0x4]
-    call dword ptr cs:[eax*4 + "fn_000f0d80_"+0x28]
+    call dword ptr cs:[eax*4 + "fn_000f0da8_"]
     pop es
     pop ds
     pop edi
@@ -3633,7 +3897,7 @@
     call "_AIL_vmm_lock_range"
     add esp, 8
     .byte 0x68; .long "_AILSSA_VMM_lock"  # push 0xe2e3c
-    .byte 0x68; .long "fn_000f0d80_"+0x28  # push 0xe0da8
+    .byte 0x68; .long "fn_000f0da8_"  # push 0xe0da8
     call "_AIL_vmm_lock_range"
     add esp, 8
     pop es
