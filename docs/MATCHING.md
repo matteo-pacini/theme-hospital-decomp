@@ -425,3 +425,14 @@ Compiler and flags per source file come from `config/cflags.txt`.
   an index (`a[i]`) and let the compiler strength-reduce them into
   pointer loops; `x = C; if (flags & K) x = C;` is the source of a dead
   `test` plus a preloaded constant.
+- **Bullfrog library idioms (L10)**: the compiler emits a deleting
+  destructor (`test cl,4` for `delete[]`, `test cl,2` for `delete`) only
+  for a class that is not abstract, so every virtual a class overrides
+  must be declared. `ServiceProvider` code calls its inline message
+  decoders rather than repeating them. A `TbMessageType` local compared
+  with enumerators gives `cmp byte`; a `u8` gives an int compare. netint
+  `Create`/`Join` put the success path first and the failure print in the
+  `else`, with one final `return`; `delete p;` needs no null test. In
+  loops, write offsets like `buf + (block << 9)` inside the loop body and
+  let the optimiser strength-reduce them. `serialsp.cpp` is built with
+  `-oe=40`: its small `Parser` accessors inline, `SendAck` does not.
