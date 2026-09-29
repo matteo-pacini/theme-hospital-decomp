@@ -289,10 +289,6 @@ Observed consequences:
 - `jmp then; jmp skip` stubs after an or-test come from the empty-then form
   `if (!A && !B) {} else {...}`; `for (;;) { if (c) {...} else break; }`
   gives a loop whose exits go through `jmp` stubs.
-- `W?$dt:ModemSP$n()_` (0xeee20): only a trailing `mov eax,eax` pad
-  differs; our COMDAT keeps it because the SerialSP destructor COMDAT
-  follows, while `functions.txt` sizes the target without it. Needs
-  `omf2elf` to leave such padding out of the symbol size.
 - `netint` inlining: the original inlines `CompleteMultiPlayerExchange`
   (needs `-oe=400` here) but not `LbNetwork_Init(u32)` into its wrappers
   (inlined from `-oe=250`), so no single `-oe` reproduces both; declaring

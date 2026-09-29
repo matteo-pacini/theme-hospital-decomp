@@ -21,6 +21,9 @@ import sys
 ALIGN = {0: 1, 1: 1, 2: 2, 3: 16, 4: 256, 5: 4, 6: 4096}
 DEBUG_CLASSES = {"DWARF", "DEBSYM", "DEBTYP"}
 LOC_OFFSET32 = (9, 13)
+# Watcom's code alignment fillers: nop, mov eax,eax (both encodings),
+# lea eax,[eax+0].
+PADDING = (b"\x90", b"\x8b\xc0", b"\x89\xc0", b"\x8d\x40\x00")
 
 SHT_PROGBITS, SHT_SYMTAB, SHT_STRTAB, SHT_NOBITS, SHT_REL = 1, 2, 3, 8, 9
 SHF_WRITE, SHF_ALLOC, SHF_EXECINSTR = 1, 2, 4
@@ -270,6 +273,13 @@ def write_elf(sections, symbols, externs, weak, path):
     def sized(name):
         sec, off, _ = symbols[name]
         ends = [o for n, (s, o, _) in symbols.items() if s is sec and o > off]
+        if not ends and sec.code:
+            # Alignment padding after a section's last function (as in some
+            # COMDATs) is not part of it, as the executable's sizes have it.
+            for pad in PADDING:
+                end = len(sec.data) - len(pad)
+                if sec.data.endswith(pad) and (sec.data[end - 1] == 0xC3 or sec.data[end - 3] == 0xC2):
+                    return end - off
         # A BSS segment has no data records: its end is the SEGDEF length.
         return min(ends, default=max(len(sec.data), sec.length)) - off
 
