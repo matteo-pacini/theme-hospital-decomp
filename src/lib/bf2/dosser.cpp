@@ -787,7 +787,6 @@ long CommHandler::DialModem(char *number)
 }
 
 // FUNCTION: 0xf6940
-// NONMATCHING: register allocation differs around the inlined ClearDtr/WriteBytes (port, loop counter)
 long CommHandler::HangUpModem(void)
 {
     u32 t;
@@ -797,9 +796,9 @@ long CommHandler::HangUpModem(void)
     t = clock();
     while (clock() - t < 100)
         ;
-    ClearDtr();
+    SerialCommHandler.ClearDtr(CH(this)->port);
     delay(50);
-    SetDtr();
+    SerialCommHandler.SetDtr(CH(this)->port);
     SerialCommHandler.WriteBytes(CH(this)->port, (u8 *)D_0012870b, 3);
     t = clock();
     while (clock() - t < 100)

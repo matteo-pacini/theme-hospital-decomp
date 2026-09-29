@@ -270,29 +270,23 @@ TbError ServiceProvider::CheckForDeletedHost(u8 *msg)
 }
 
 // FUNCTION: 0xd1e24
-// NONMATCHING: frame layout and register allocation differ; its jump table sits in the preceding range
+// NONMATCHING: the inlined DecodeMessageStub swaps ecx/edx (buffer and sequence pointer); its jump table sits in the preceding range
 TbError ServiceProvider::Receive(u32 flags)
 {
-    char buf[0x404];
+    char name2[0x20];
     u32 keep_going;
-    char name[0x20];
     u32 from;
     u32 size;
     u32 msg_size;
     u32 seq;
-    u32 unused;
-    u8 type;
-    u32 id5;
     u32 id;
+    u32 id5;
     u32 id3;
-    u32 id2;
-    u32 msg_size2;
-    void *self;
-    char *msg_name;
-    char *msg_data;
-    char name2[0x20];
-    TbError ret;
+    u8 type;
     u32 id4;
+    char buf[0x404];
+    TbError ret;
+    u32 msg_size2;
     void *dst;
 
     keep_going = 1;
@@ -301,8 +295,6 @@ TbError ServiceProvider::Receive(u32 flags)
         fn_000c20c0(D_00125189);
         return Lb_FAIL;
     }
-    msg_name = buf + 8;
-    msg_data = buf + 4;
     while (keep_going) {
         size = 0x404;
         if (PeekMessage(&from, buf, &size)) {
@@ -342,13 +334,8 @@ TbError ServiceProvider::Receive(u32 flags)
                 if (flags & 2) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
-                        memcpy(&id, msg_data, 4);
-                        if (name)
-                            strcpy(name, msg_name);
-                        AddPlayer(id, name, 0, 0);
-                        memcpy(&id, msg_data, 4);
-                        if (name2)
-                            strcpy(name2, msg_name);
+                        SystemAddPlayerHandler((u8 *)buf);
+                        DecodeAddPlayerMsg((u8 *)buf, id, name2);
                         if (callbacks->addMsg)
                             callbacks->addMsg(id, name2, callback_data);
                     } else {
@@ -362,10 +349,8 @@ TbError ServiceProvider::Receive(u32 flags)
                 if (flags & 4) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
-                        CheckForDeletedHost((u8 *)buf);
-                        memcpy(&id2, buf + 4, 4);
-                        DeletePlayer(id2);
-                        memcpy(&id3, msg_data, 4);
+                        SystemDeletePlayerHandler((u8 *)buf);
+                        DecodeRequestCompositeExchangeDataMsg((u8 *)buf, id3);
                         if (callbacks->deleteMsg)
                             callbacks->deleteMsg(id3, callback_data);
                     } else {
@@ -395,7 +380,7 @@ TbError ServiceProvider::Receive(u32 flags)
                 if (flags & 0x10) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
-                        memcpy(&id4, msg_data, 4);
+                        DecodeRequestExchangeDataMsg((u8 *)buf, id4);
                         if (callbacks->mpReqExDataMsg)
                             callbacks->mpReqExDataMsg(id4, seq, callback_data);
                     } else {
@@ -409,7 +394,7 @@ TbError ServiceProvider::Receive(u32 flags)
                 if (flags & 0x20) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
-                        memcpy(&id5, msg_data, 4);
+                        DecodeRequestCompositeExchangeDataMsg((u8 *)buf, id5);
                         if (callbacks->mpReqCompsExDataMsg)
                             callbacks->mpReqCompsExDataMsg(id5, seq, callback_data);
                     } else {
@@ -526,38 +511,35 @@ TbError ServiceProvider::Send(u32 to, void *buf)
 }
 
 // FUNCTION: 0xd29e8
-// NONMATCHING: register allocation differs
 TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
 {
     u32 i;
-    u8 *m;
     u32 id;
     TbError ret;
     u8 type;
     u32 invalid;
 
-    m = msg;
     ret = Lb_OK;
     invalid = 0;
-    DecodeMessageStub(m, 0, (TbMessageType *)&type, 0);
+    DecodeMessageStub(msg, 0, (TbMessageType *)&type, 0);
     switch (type) {
     case 1:
-        DecodeAddPlayerMsg(m, id, 0);
+        DecodeAddPlayerMsg(msg, id, 0);
         break;
     case 2:
-        DecodeRequestCompositeExchangeDataMsg(m, id);
+        DecodeRequestCompositeExchangeDataMsg(msg, id);
         break;
     default:
         invalid = 1;
         break;
     }
     if (invalid) {
-        fn_000c20c0(D_0012563a, *m);
+        fn_000c20c0(D_0012563a, *msg);
         ret = Lb_FAIL;
     } else {
         for (i = 0; i < player_count; i++) {
             if (players[i].id != local_id && players[i].id != id) {
-                if (SendMessage(players[i].id, m, (TbMessageType)1) != Lb_OK) {
+                if (SendMessage(players[i].id, msg, (TbMessageType)1) != Lb_OK) {
                     ret = Lb_FAIL;
                     fn_000c20c0(D_00125692);
                 }

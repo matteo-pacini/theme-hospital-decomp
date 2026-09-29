@@ -631,7 +631,7 @@ u8 Parser::GetSequenceNumber(void)
 }
 
 // FUNCTION: 0xee380
-// NONMATCHING: return value kept in a register instead of its frame slot; checksum loop differs
+// NONMATCHING: the inner switch's inline copy of the failure tail loads ret before clearing active
 TbError Parser::InputByte(u8 c)
 {
     TbError ret = Lb_OK;
@@ -654,14 +654,11 @@ TbError Parser::InputByte(u8 c)
                 memcpy(header, acknowledgementHeader, 4);
                 break;
             default:
-                active = 0;
-                return ret;
+                goto fail;
             }
         } else {
-            if (c != header[count]) {
-                active = 0;
-                return ret;
-            }
+            if (c != header[count])
+                goto fail;
             count++;
             if (count >= 4) {
                 if (header[0] == 0x1e || header[0] == 4)
@@ -688,6 +685,7 @@ TbError Parser::InputByte(u8 c)
         if (count >= 4) {
             DecodeMessageStub(msg, &size, 0, 0);
             if (size > 0x401) {
+            fail:
                 active = 0;
                 return ret;
             }
@@ -717,10 +715,8 @@ TbError Parser::InputByte(u8 c)
                 for (i = 0; i < size + 4; i++)
                     sum += msg[i];
             }
-            if ((u16)sum != checksum) {
-                active = 0;
-                return ret;
-            }
+            if ((u16)sum != checksum)
+                goto fail;
             state = PS_COMPLETE;
         }
         break;

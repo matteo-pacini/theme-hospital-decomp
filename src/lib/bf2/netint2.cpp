@@ -1,7 +1,5 @@
 #include "net.h"
 
-#define ABS(x) ((x) < 0 ? -(x) : (x))
-
 // FUNCTION: 0xd2ba0
 TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
 {
@@ -62,13 +60,12 @@ TbError StartTwoPlayerExchange(void *buf)
 }
 
 // FUNCTION: 0xd2e40
-// NONMATCHING: ours keeps requestExchangeDataBuffer in ebp where the target keeps the Receive argument 8; timeCount compare reads through registers
 TbError CompleteTwoPlayerExchange(void *buf)
 {
     TbError ret = Lb_FAIL;
     u32 keep_going = 1;
     u32 retries = 0;
-    u32 elapsed;
+    long elapsed;
 
     if (!clientDataTable[remotePlayerIndex].active)
         return Lb_OK;
@@ -78,7 +75,8 @@ TbError CompleteTwoPlayerExchange(void *buf)
             keep_going = 0;
             if (retries == 0) {
                 elapsed = LbTimerClock() - startTime;
-                elapsed = ABS((s32)elapsed);
+                if (elapsed < 0)
+                    elapsed = -elapsed;
                 if (timeCount == 0 || elapsed > D_0018ba9c)
                     D_0018ba9c = elapsed;
                 timeCount++;
@@ -92,7 +90,8 @@ TbError CompleteTwoPlayerExchange(void *buf)
             ret = Lb_OK;
         } else {
             elapsed = LbTimerClock() - startTime;
-            elapsed = ABS((s32)elapsed);
+            if (elapsed < 0)
+                elapsed = -elapsed;
             if (elapsed > actualTimeout) {
                 fn_000c20c0(D_0012587e, retries, sequenceNumber, actualTimeout);
                 retries++;
@@ -233,7 +232,7 @@ void *TwoPlayerMultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
                 ok = 0;
             }
             if (ok) {
-                gotCompositeData = 1;
+                gotCompositeData = ok;
                 ret = exchangeBuffer;
             } else {
                 fn_000c20c0(D_00125b96, seq, sequenceNumber);

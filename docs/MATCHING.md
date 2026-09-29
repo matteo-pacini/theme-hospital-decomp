@@ -371,6 +371,14 @@ Observed consequences:
   nothing. An early `return ret` whose value is known folds to a constant;
   a store-then-reload means the path falls through to a shared return.
 
+- Network code: `if (x < 0) x = -x;` on a signed local, not an `ABS` `?:`
+  macro (`CompleteTwoPlayerExchange`). A local copy of a pointer parameter
+  (`m = msg`) shifts inlined callees' registers; an inlined thin wrapper
+  (`CommHandler::ClearDtr` calling `SerialCommHandler.ClearDtr(port)`) adds
+  a `this` temp that reorders spill slots, so `HangUpModem` calls the
+  inner members directly. `ServiceProvider::Receive` decodes messages
+  through the same helpers as `Send`.
+
 ## Known unsolved
 
 - Register allocation is global to the function even at `-d2`: a change
@@ -447,7 +455,6 @@ predates the tool and uses a separate file instead.
 - `W?$dt:SerialHandler$n()_` (0xf534c), `src/lib/bf2/dosser.standin.s`: the entry also covers SerialHandler::Init's body, where the size _D_001100fe - _D_00110068 is computed in other registers
 - `W?ReadByte$:SerialHandler$n(l)l` (0xf5714), `src/lib/bf2/dosser.standin.s`
 - `W?ReadBytes$:CommHandler$n(pnvul)ul` (0xf63f4), `src/lib/bf2/dosser.standin.s`
-- `W?HangUpModem$:CommHandler$n()l` (0xf6940), `src/lib/bf2/dosser.standin.s`
 - `W?SendPlayerInfo$:IPXServiceProvider$n(pn$__5303ctCLIENTINFOPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd82f4), `src/lib/bf2/ipxsp.standin.s`
 - `W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v` (0xdc440), `src/lib/bf2/ipxsp.standin.s`
 - `W?SendMessageToPlayerId$:IPXServiceProvider$n(ulpnvul)$TbError$$` (0xdb6d4), `src/lib/bf2/ipxsp.standin.s`
@@ -463,14 +470,12 @@ predates the tool and uses a separate file instead.
 - `W?Start$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xd59ec), `src/lib/bf2/ipxsp.standin.s`
 - `W?Start$:ModemSP$n(pnapnaulpnv)$TbError$$` (0xee77c), `src/lib/bf2/modemsp.standin.s`
 - `W?Start$:ModemSP$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xeea58), `src/lib/bf2/modemsp.standin.s`
-- `W?CompleteTwoPlayerExchange$n(pnv)$TbError$$` (0xd2e40), `src/lib/bf2/netint2.standin.s`
 - `fn_000d309c_` (0xd309c), `src/lib/bf2/netint2.standin.s`: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
 - `W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$` (0xed6c8), `src/lib/bf2/serialsp.standin.s`
 - `W?PrivateReceive$:SerialSP$n(pnvpnul$$TE$$)ul` (0xedf24), `src/lib/bf2/serialsp.standin.s`
 - `W?ProcessAvailableMsg$:SerialSP$n(pnvpnulul)ul` (0xee050), `src/lib/bf2/serialsp.standin.s`
 - `W?InputByte$:Parser$n(uc)$TbError$$` (0xee380), `src/lib/bf2/serialsp.standin.s`
 - `W?EnumeratePlayersForSessionRunning$:ServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd2af8), `src/lib/bf2/sp.standin.s`
-- `W?BroadcastSystemMessage$:ServiceProvider$n(pnuc)$TbError$$` (0xd29e8), `src/lib/bf2/sp.standin.s`
 - `W?CheckForDeletedHost$:ServiceProvider$n(pnuc)$TbError$$` (0xd1cc8), `src/lib/bf2/sp.standin.s`
 - `W?Receive$:ServiceProvider$n(ul)$TbError$$` (0xd1e24), `src/lib/bf2/sp.standin.s`
 
