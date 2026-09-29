@@ -21,8 +21,12 @@ runtime (Watcom C library, Miles, Smacker). Of these:
 - 79, in 15 runtime modules, are built from Watcom's own 10.5/10.6 runtime
   libraries (`lib` entries in `config/cflags.txt`), which the EXE links.
 
-The rest are compiled from the C++/C in `src/`. The executable is not yet
-relinked from these objects (`ninja link` reports what does not resolve).
+The rest are compiled from the C++/C in `src/`. `ninja link` relinks all
+of them, with the EXE's data, into `build/link/hosp.exe` (Open Watcom's
+wlink; see `tools/link.py`). That executable runs: the menu, a game and the
+sound work in DOSBox-X alongside the game's data. It is not byte-identical
+to the original: segment layout and sizes differ, and the data the compiler
+emits itself is still carried over from the original.
 
 ## Setup
 
