@@ -120,6 +120,9 @@ and comparing against the original.
 | separate epilogues for early `return list[0]` versus one shared | nested `if/else` assigning a result, then a single `return` |
 | `lea r,[g*2]; imul r,g` | `p->g * 2 * p->g` (a `SQR(g) * 2` macro does not give it) |
 | `-oneatx`: load, then `add r,r` in place | `x *= 2` (`x += x` gives a `lea` into a fresh register) |
+| hoisted pointers in esi/edi or edx/ebx around a `memcmp` | `!memcmp(a, b, n)` versus `memcmp(a, b, n) == 0`, and the operand order |
+| `cmp r16,[field]` against a hoisted zero | a truth test `if (x)` / `!x` on the u16 field (`x != 0` loads and tests) |
+| rotated copy loop with no entry test | `end = dst + n; do { ... } while (dst < end);` |
 | zero register compared against memory (`xor r,r; cmp r,[mem]`), then the loaded value stored | an `else` branch storing 0 where the value is known to be 0 |
 | the same call duplicated on a saturation path, jumping past the rest | one call after the loop, reached by `break` (`-oneatx` duplicates the tail) |
 | register copy of a call result after its `-1` test | `void *r = f(); if (r == (void *)-1) return 0; x = (unsigned)r;` |
@@ -359,6 +362,15 @@ Observed consequences:
   expression. The official Miles 6.5 SDK source (`sigmaco/milesss-v6.5c`,
   leaked: read, don't copy) keeps many of Miles 3's function shapes.
 
+- Pure stack-slot orders in `-oneatx` code follow OW's temp list:
+  `RoughSortTemps` (`dataflo.c`) sorts by savings (uses weighted by loop
+  depth), then `AssignOtherLocals` (`temps.c`) shell-sorts by size, which
+  is unstable: byte temps move to the front and drag dwords across big
+  gaps, so one extra or missing byte temp reshuffles the dword order. The
+  first temp allocated gets the highest address; dead locals change
+  nothing. An early `return ret` whose value is known folds to a constant;
+  a store-then-reload means the path falls through to a shared return.
+
 ## Known unsolved
 
 - Register allocation is global to the function even at `-d2`: a change
@@ -436,7 +448,6 @@ predates the tool and uses a separate file instead.
 - `W?ReadByte$:SerialHandler$n(l)l` (0xf5714), `src/lib/bf2/dosser.standin.s`
 - `W?ReadBytes$:CommHandler$n(pnvul)ul` (0xf63f4), `src/lib/bf2/dosser.standin.s`
 - `W?HangUpModem$:CommHandler$n()l` (0xf6940), `src/lib/bf2/dosser.standin.s`
-- `W?CheckIfPlayerWantingToJoinIsInSession$:IPXServiceProvider$n(pn$__35ct5sCLIENTJOINPACKET$$pn$__3ljac5NETSOCKET$$)ul` (0xd8c58), `src/lib/bf2/ipxsp.standin.s`
 - `W?SendPlayerInfo$:IPXServiceProvider$n(pn$__5303ctCLIENTINFOPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd82f4), `src/lib/bf2/ipxsp.standin.s`
 - `W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v` (0xdc440), `src/lib/bf2/ipxsp.standin.s`
 - `W?SendMessageToPlayerId$:IPXServiceProvider$n(ulpnvul)$TbError$$` (0xdb6d4), `src/lib/bf2/ipxsp.standin.s`
