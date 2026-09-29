@@ -71,6 +71,8 @@ and comparing against the original.
 - `tools/check.py src/FILE.cpp`: builds just that file's unit in a temporary
   directory and prints each function's match with differing instructions.
   Safe to run concurrently.
+- `tools/setfn.py 0xADDR NAME` / `--remove`: add, rename or merge one entry
+  in `config/functions.txt`, re-sizing only its neighbours.
 
 ## Idioms
 
