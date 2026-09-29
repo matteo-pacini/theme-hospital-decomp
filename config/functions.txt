@@ -1827,7 +1827,8 @@
 000d0bb5     ac setmode_
 000d0c61      5 close_
 000d0c66     24 open_
-000d0c8a    24e sopen_
+000d0c8a    1e9 sopen_
+000d0e73     65 fn_000d0e73_
 000d0ed8     43 lseek_
 000d0f1b     fb read_
 000d1016    1d5 write_

@@ -102,8 +102,6 @@ void *fn_000f46ed(int increment)
 }
 
 // FUNCTION: 0xf47b5
-// NONMATCHING: the target shares one TinySetBlock call between both
-// branches and places the extender branch after the error exit
 void *__brk(unsigned brk_value)
 {
     unsigned old_brk_value;
@@ -132,8 +130,10 @@ error:
             seg_size = 0xfffff;
         if ((int)_Extender == 1 && (int)_ExtenderSubtype == 1)
             seg_size <<= 8;
-        if (TinySetBlock(GetDS(), seg_size) < 0)
-            goto error;
+        if (TinySetBlock(GetDS(), seg_size) < 0) {
+            *__get_errno_ptr() = ENOMEM;
+            return (void *)-1;
+        }
     }
     old_brk_value = _curbrk;
     _curbrk = brk_value;

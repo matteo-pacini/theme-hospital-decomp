@@ -674,7 +674,9 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
 #pragma aux (__pascal) SmackToScreen "fn_000e8ab0_";
 
 // FUNCTION: 0xe8ab0
-// NONMATCHING: register allocation, stack slots and block order differ
+// NONMATCHING: register allocation: the original keeps pitch in edi, stride
+// in esi and height (later p) in ebp, and spills prevbuf; ours spills p and
+// one more local, so the frame and most operands differ
 void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 *wintbl, u32 banked)
 {
     u8 *prevbuf;
@@ -732,7 +734,7 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
         height >>= 1;
     }
     extra += stride * 3 + smk->Width;
-    smk->f3b4 = smk->Width * lines * ((top * pitch + stride * height) >> 16) + 0x400;
+    smk->f3b4 = ((top * pitch + stride * height) >> 16) * (smk->Width * lines) + 0x400;
     smk->f3b0 = smkmalloc(smk, smk->f3b4);
     if (smk->f3b0 == NULL)
         return;
@@ -740,24 +742,24 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
     smk->TopOfs = top;
     smk->LeftOfs = left;
     tmp = smk->f3b0 + 0x400;
-    t = smk->f3b0;
-    t[0] = 0;
-    t[1] = (smk->OpenFlags & 0x200000) != 0;
+    p = (u16 *)smk->f3b0;
+    *(u8 *)p = 0;
+    ((u8 *)p)[1] = (smk->OpenFlags & 0x200000) != 0;
     offset = left + pitch * top;
     bank = offset >> 16;
-    *(u32 *)(t + 4) = banked;
-    *(u16 *)(t + 8) = bpl - smk->Width;
-    *(u16 *)(t + 10) = banked ? wintbl[bank++] : 0xfffe;
-    p = PutWidths((u16 *)(t + 12), bpl, smk->Width, mult, lines);
+    p += 2;
+    *(*(u32 **)&p)++ = banked;
+    *p++ = bpl - smk->Width;
+    *p++ = !banked ? 0xfffe : wintbl[bank++];
+    p = PutWidths(p, bpl, smk->Width, mult, lines);
     if (!banked) {
-        *(u32 *)p = (u32)wintbl + offset;
-        p[2] = height >> 2;
-        p[3] = 0xffff;
+        *(*(u32 **)&p)++ = (u32)wintbl + offset;
+        *p++ = height >> 2;
+        *p = 0xffff;
         return;
     }
     offset &= 0xffff;
-    *(u32 *)p = offset + 0xa0000;
-    p += 2;
+    *(*(u32 **)&p)++ = offset + 0xa0000;
     rows = 0;
     remaining = smk->Width * height;
     if (remaining > 0) {
@@ -782,9 +784,8 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
                 *(u8 **)p = tmp;
                 p += 2;
                 *p++ = 1;
-                *p = 0xfffd;
-                *(u8 **)(p + 1) = tmp;
-                p++;
+                *p++ = 0xfffd;
+                *(u8 **)p = tmp;
                 if (prevbuf != NULL) {
                     for (i = 0; i < lines; i++) {
                         radmemcpy(tmp, prevbuf, smk->Width);
@@ -794,8 +795,8 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
                 } else {
                     tmp += smk->Width * lines;
                 }
-                p += 4;
-                *(u32 *)(p - 2) = offset + 0xa0000;
+                p += 2;
+                *(*(u32 **)&p)++ = offset + 0xa0000;
                 n = 0;
                 while (offset + bpl <= 0x10000) {
                     n++;
@@ -811,12 +812,10 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
                     w = 0x10000 - offset;
                     if (w > smk->Width)
                         w = smk->Width;
-                    p[0] = w >> 2;
-                    p[1] = wintbl[bank];
-                    p[2] = (smk->Width - w) >> 2;
-                    bank++;
-                    p[3] = lines - n - 1;
-                    p += 4;
+                    *p++ = w >> 2;
+                    *p++ = wintbl[bank++];
+                    *p++ = (smk->Width - w) >> 2;
+                    *p++ = lines - n - 1;
                 }
                 offset = ((lines - n) * bpl + offset) & 0xffff;
                 p = PutWidths(p, bpl, smk->Width, mult, lines);
@@ -836,11 +835,13 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
 // FUNCTION: 0xe9010
 u16 *PutWidths(u16 *p, u32 width, u32 pitch, u32 height, u32 lines)
 {
-    *p++ = width;
-    *p++ = pitch >> 2;
-    *p++ = height * width - 4;
-    *p++ = height * width;
-    *p++ = width * lines - pitch;
+    // The casts add expression nodes that keep this function over the
+    // -oe=25 inlining limit: the original never inlines it.
+    *p++ = (u16)width;
+    *p++ = (u16)(pitch >> 2);
+    *p++ = (u16)((u16)(height * width) - 4);
+    *p++ = (u16)(height * width);
+    *p++ = (u16)(width * lines - pitch);
     return p;
 }
 

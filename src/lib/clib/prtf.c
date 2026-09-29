@@ -362,7 +362,10 @@ FAR_STRING float_format(char *buffer, va_list *pargs, SPECS *specs)
 }
 
 // FUNCTION: 0xcfbdb
-// NONMATCHING: the original keeps arg's segment in es, 10.6 spills it
+// NONMATCHING: flip_sign and the null_string spill swap stack slots; the
+// original merges the f/e/g far_strlen tails into no_zero's call (ours into
+// the 'f' case's), loads a far %s argument with two movs instead of les, and
+// picks other registers in the va_arg reads
 FAR_STRING formstring(char *buffer, va_list *pargs, SPECS *specs, char *null_string)
 {
     FAR_STRING arg;
@@ -370,6 +373,7 @@ FAR_STRING formstring(char *buffer, va_list *pargs, SPECS *specs, char *null_str
     int radix;
     unsigned long long_value;
     int flip_sign;
+    char *temp;
 
     arg = buffer;
     flip_sign = 1;
@@ -420,7 +424,15 @@ no_prec:
             *buffer++ = '0';
         }
         ltoa(long_value, buffer, radix);
-        goto check_zero;
+    check_zero:
+        if (specs->_prec == 0) {
+            if ((int)*buffer == '0') {
+                *arg = '\0';
+            }
+        }
+    no_zero:
+        length = far_strlen(arg, -1);
+        break;
     case 'd':
     case 'i':
         if (FLAG(specs, SPF_LONG)) {
@@ -435,15 +447,17 @@ no_prec:
     case 'S':
         if (FLAG(specs, SPF_FAR)) {
             arg = *(FAR_STRING *)(((*pargs)[0] += 8) - 8);
-            if (arg == NULL)
+            if (NULL == arg)
                 arg = null_string;
         } else if (FLAG(specs, SPF_NEAR)) {
-            arg = *(char **)(((*pargs)[0] += 4) - 4);
-            if (arg == NULL)
+            if ((temp = *(char **)(((*pargs)[0] += 4) - 4)) != NULL)
+                arg = temp;
+            else
                 arg = null_string;
         } else {
-            arg = *(char **)(((*pargs)[0] += 4) - 4);
-            if (arg == NULL)
+            if ((temp = *(char **)(((*pargs)[0] += 4) - 4)) != NULL)
+                arg = temp;
+            else
                 arg = null_string;
         }
         flip_sign = 0;
@@ -485,29 +499,25 @@ no_prec:
             }
         }
         specs->_flags &= ~(SPF_BLANK | SPF_FORCE_SIGN);
-        {
-            unsigned char far_ptr = specs->_flags & SPF_FAR;
-
-            long_value = *(unsigned long *)(((*pargs)[0] += 4) - 4);
-            if (far_ptr) {
-                fmt4hex(*(unsigned short *)(((*pargs)[0] += 4) - 4), buffer, 4);
-                buffer[4] = ':';
-                fmt4hex(long_value, buffer + 5, 8);
-            } else {
-                fmt4hex(long_value, buffer, 8);
-            }
+        long_value = *(unsigned long *)(((*pargs)[0] += 4) - 4);
+        if (FLAG(specs, SPF_FAR)) {
+            fmt4hex(*(unsigned *)(((*pargs)[0] += 4) - 4) & 0xffff, buffer, 4);
+            buffer[4] = ':';
+            fmt4hex(long_value, buffer + 5, 8);
+        } else {
+            fmt4hex(long_value, buffer, 8);
         }
         if ((int)specs->_character == 'P') {
             zupstr(buffer);
         }
         goto no_zero;
     case 'c':
-        length = 1;
         buffer[0] = *(int *)(((*pargs)[0] += 4) - 4);
         buffer[1] = '\0';
         specs->_prec = 1;
         flip_sign = 0;
         specs->_flags &= ~(SPF_BLANK | SPF_FORCE_SIGN);
+        length = 1;
         goto done;
     default:
         specs->_fld_width = 0;
@@ -519,15 +529,6 @@ no_prec:
         length = 1;
         goto done;
     }
-    goto done;
-check_zero:
-    if (specs->_prec == 0) {
-        if ((int)*buffer == '0') {
-            *arg = '\0';
-        }
-    }
-no_zero:
-    length = far_strlen(arg, -1);
 done:
     if (flip_sign) {
         if ((int)*arg == '-') {

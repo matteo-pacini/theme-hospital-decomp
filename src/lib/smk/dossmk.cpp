@@ -70,27 +70,40 @@ u8 play_smk(char *name, u32 a2, u32 flags)
 }
 
 // FUNCTION: 0xca398
-// NONMATCHING: ebp frame here (the original keeps a local in ebp); the original
-// also starts with a dead test of flags & 0x200 and preloads SMACKAUTOEXTRA
+// NONMATCHING: register allocation: the original keeps name in edi and extra
+// in esi, and tests smk->NewPalette through edx with new_palette in al/ah
 long play_smk_direct(char *name, long a2, long flags)
 {
     Smack *smk;
     u32 frame;
     u8 new_palette;
     int i;
+    u32 extra;
+    u32 tracks;
+    u32 x;
+    u32 y;
 
+    extra = SMACKAUTOEXTRA;
+    // Both settings are the same value; the original still tests the flag.
+    if (flags & 0x200)
+        extra = SMACKAUTOEXTRA;
     if (!(flags & 1) && GetSoundDriver()) {
         fn_000e7910(GetSoundDriver());
     } else {
         flags |= 1;
     }
-    smk = SmackOpen(name, (flags & 1) == 0 ? SMACKTRACKS : 0, SMACKAUTOEXTRA);
+    tracks = (flags & 1) == 0 ? SMACKTRACKS : 0;
+    smk = SmackOpen(name, tracks, extra);
     if (smk == 0)
         return 0;
     if (flags & 0x100) {
-        SmackToBuffer(smk, (320 - smk->Width) >> 1, (200 - smk->Height) >> 1, 320, 200, (void *)0xa0000, 0);
+        x = (320 - smk->Width) >> 1;
+        y = (200 - smk->Height) >> 1;
+        SmackToBuffer(smk, x, y, 320, 200, (void *)0xa0000, 0);
     } else {
-        SmackToBuffer(smk, (lbDisplay.graphics_screen_width - smk->Width) >> 1, (lbDisplay.graphics_screen_height - smk->Height) >> 1, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, lbDisplay.unknown4, 0);
+        x = (lbDisplay.graphics_screen_width - smk->Width) >> 1;
+        y = (lbDisplay.graphics_screen_height - smk->Height) >> 1;
+        SmackToBuffer(smk, x, y, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, lbDisplay.unknown4, 0);
     }
     for (frame = 0; (flags & 0x400) || frame < smk->Frames; frame++) {
         if (flags & 0x100) {
@@ -129,21 +142,28 @@ long play_smk_direct(char *name, long a2, long flags)
 }
 
 // FUNCTION: 0xca568
-// NONMATCHING: ebp frame here (the original keeps buf in ebp); the original
-// also starts with a dead test of flags & 0x200 and preloads SMACKAUTOEXTRA
+// NONMATCHING: register allocation: the original keeps name in edi, extra in
+// esi and the second copy of smk in edx
 long play_smk_via_buffer(char *name, long a2, long flags)
 {
     Smack *smk;
     u8 *buf;
     u32 frame;
     int i;
+    u32 extra;
+    u32 tracks;
 
+    extra = SMACKAUTOEXTRA;
+    // Both settings are the same value; the original still tests the flag.
+    if (flags & 0x200)
+        extra = SMACKAUTOEXTRA;
     if (!(flags & 1) && GetSoundDriver()) {
         fn_000e7910(GetSoundDriver());
     } else {
         flags |= 1;
     }
-    smk = SmackOpen(name, (flags & 1) == 0 ? SMACKTRACKS : 0, SMACKAUTOEXTRA);
+    tracks = (flags & 1) == 0 ? SMACKTRACKS : 0;
+    smk = SmackOpen(name, tracks, extra);
     if (smk == 0)
         return 0;
     buf = (u8 *)LbMemoryAlloc(smk->Width * smk->Height);

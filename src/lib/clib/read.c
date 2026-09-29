@@ -21,18 +21,18 @@ unsigned __IOMode(int handle);
 int __set_errno_dos(unsigned err);
 
 // FUNCTION: 0xd0f1b
-// NONMATCHING: register and stack slot assignment of rc/total_len differ
+// NONMATCHING: esi and edi are swapped (the original keeps total_len in esi),
+// and buf is copied to ebp before the __IOMode call rather than after
 int read(int handle, void *buf, unsigned len)
 {
     unsigned read_len;
     unsigned total_len;
+    unsigned amount_read;
     unsigned reduce_idx;
     unsigned finish_idx;
     tiny_ret_t rc;
     unsigned iomode_flags;
     char *buffer = buf;
-    char *p;
-    char *end;
 
     iomode_flags = __IOMode(handle);
     if (iomode_flags == 0) {
@@ -45,30 +45,30 @@ int read(int handle, void *buf, unsigned len)
     }
     if (iomode_flags & _BINARY) {
         rc = _TinyRead(handle, buffer, len);
+        total_len = rc;
         if (TINY_ERROR(rc)) {
             return __set_errno_dos(TINY_INFO(rc));
         }
-        total_len = rc;
     } else {
         total_len = 0;
         read_len = len;
         do {
             rc = _TinyRead(handle, buffer, read_len);
+            amount_read = rc;
             if (TINY_ERROR(rc)) {
                 return __set_errno_dos(TINY_INFO(rc));
             }
-            if (rc == 0)
+            if (amount_read == 0)
                 break;
             reduce_idx = 0;
             finish_idx = 0;
-            end = buffer + rc;
-            for (p = buffer; p < end; ++p, ++reduce_idx) {
-                if ((int)*p == 0x1a) {
-                    lseek(handle, ((long)reduce_idx - (long)rc) + 1L, SEEK_CUR);
+            for (; reduce_idx < amount_read; ++reduce_idx) {
+                if ((int)buffer[reduce_idx] == 0x1a) {
+                    lseek(handle, ((long)reduce_idx - (long)amount_read) + 1L, SEEK_CUR);
                     return total_len;
                 }
-                if ((int)*p != '\r') {
-                    buffer[finish_idx++] = *p;
+                if ((int)buffer[reduce_idx] != '\r') {
+                    buffer[finish_idx++] = buffer[reduce_idx];
                     ++total_len;
                 }
             }

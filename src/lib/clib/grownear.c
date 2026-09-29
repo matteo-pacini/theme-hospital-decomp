@@ -190,8 +190,6 @@ void __FreeDPMIBlocks(void)
 frlptr __LinkUpNewMHeap(mheapptr p1);
 
 // FUNCTION: 0xebe14
-// NONMATCHING: register allocation (req_size is spilled; the target keeps
-// it in ebp)
 void *__ReAllocDPMIBlock(frlptr p1, unsigned req_size)
 {
     mheapptr mhp;
@@ -209,8 +207,10 @@ void *__ReAllocDPMIBlock(frlptr p1, unsigned req_size)
             dpmi = (struct dpmi_hdr *)mhp - 1;
             if (dpmi->dos_seg_value != 0)
                 break;
-            size = mhp->len + sizeof(struct dpmi_hdr) + TAG_SIZE + (req_size - (p1->len - TAG_SIZE));
-            size = (size + 0xfff) & ~0xfff;
+            size = mhp->len + sizeof(struct dpmi_hdr) + TAG_SIZE;
+            size += req_size - (p1->len - TAG_SIZE);
+            size += 0xfff;
+            size &= ~0xfff;
             dpmi = _TinyDPMIRealloc(dpmi, size >> 16, size);
             if (dpmi == NULL)
                 return NULL;

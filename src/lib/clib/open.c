@@ -18,7 +18,7 @@ tiny_ret_t _TinyOpen(const char *name, unsigned char mode);
     "ror eax,1" \
     parm caller [edx] [al] value [eax];
 
-tiny_ret_t _TinyCreate(const char *name, unsigned attr);
+tiny_ret_t _TinyCreate(const char *name, unsigned char attr);
 #pragma aux _TinyCreate = \
     "mov ah,3ch" \
     "int 21h" \
@@ -41,6 +41,27 @@ tiny_ret_t _TinyWrite(int handle, const void *buffer, unsigned len);
     "rcl eax,1" \
     "ror eax,1" \
     parm caller [ebx] [edx] [ecx] value [eax];
+
+tiny_ret_t _TinyGetDeviceInfo(int handle);
+#pragma aux _TinyGetDeviceInfo = \
+    "mov al,0" \
+    "mov ah,44h" \
+    "int 21h" \
+    "rcl edx,1" \
+    "ror edx,1" \
+    parm caller [ebx] value [edx] modify [eax ecx];
+
+tiny_ret_t _TinySetDeviceInfo(int handle, unsigned char info);
+#pragma aux _TinySetDeviceInfo = \
+    "mov dh,0" \
+    "mov al,1" \
+    "mov ah,44h" \
+    "int 21h" \
+    "rcl edx,1" \
+    "ror edx,1" \
+    parm caller [ebx] [dl] value [edx] modify [eax ecx];
+
+#define TIO_RAW_MODE 0x20
 
 #define TINY_ERROR(rc) ((rc) < 0)
 #define TINY_INFO(rc) ((unsigned short)(rc))
@@ -66,13 +87,11 @@ int open(const char *name, int mode, ...)
 }
 
 // FUNCTION: 0xd0c8a
-// NONMATCHING: rc and rwmode swap stack slots; config/functions.txt also
-// runs sopen_ over the next function (0xd0e73)
 int sopen(const char *name, int mode, int shflag, ...)
 {
     int rwmode;
     int handle;
-    unsigned char attr;
+    unsigned attr;
     int permission;
     unsigned iomode_flags;
     tiny_ret_t rc;
@@ -145,4 +164,23 @@ int sopen(const char *name, int mode, int shflag, ...)
     }
     __SetIOMode(handle, iomode_flags);
     return handle;
+}
+
+// FUNCTION: 0xd0e73
+int fn_000d0e73(int handle)
+{
+    unsigned iomode_flags;
+    tiny_ret_t rc;
+
+    iomode_flags = __IOMode(handle) | _BINARY;
+    __SetIOMode(handle, iomode_flags);
+    if (iomode_flags & _ISTTY) {
+        rc = _TinyGetDeviceInfo(handle);
+        if (TINY_ERROR(rc))
+            return __set_errno_dos(TINY_INFO(rc));
+        rc = _TinySetDeviceInfo(handle, (unsigned char)rc | TIO_RAW_MODE);
+        if (TINY_ERROR(rc))
+            return __set_errno_dos(TINY_INFO(rc));
+    }
+    return 0;
 }

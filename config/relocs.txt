@@ -31,3 +31,7 @@
 000fdc6a _D_00153cfc -0x4
 # netint LbNetwork_Init: clientDataTable[i].active cleared through a pointer stepped one entry ahead
 000bfd46 W?clientDataTable$n[]$__4kqpm7ClientDataEntry$$ -0x28
+# dossmk play_smk_direct/play_smk_via_buffer: palette[i] stored after i is incremented
+000ca48f W?palette$n[]uc -1
+000ca532 W?palette$n[]uc -1
+000ca622 W?palette$n[]uc -1
