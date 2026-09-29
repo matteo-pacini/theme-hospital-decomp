@@ -121,17 +121,14 @@ void display_peep_overview(void)
         D_00158166 = 2;
 }
 
-// NONMATCHING: frame layout: the ?: temporary for height and height swap slots (target: temporary [ebp-0xc],
-// height [ebp-0x8]); no declaration order reproduces it
 // FUNCTION: 0x000571ec
 void draw_overview_screen(void)
 {
-    char buf[500];
+    s32 height;
+    u8 n;
     s32 i;
     s32 j;
     s32 pct;
-    s32 height;
-    u8 n;
 
 
     n = 4;
@@ -139,61 +136,65 @@ void draw_overview_screen(void)
     lbDisplay.draw_flags = 0;
     set_font_from_cache(0x24);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
-    sprintf(buf, D_00120460, D_00160378[0], mycontrol->f648 + 2000);
-    LbTextDraw(resvars.f40[0x6f].x, resvars.f40[0x6f].y, buf);
-    j = 0;
-    for (i = 0; i < n; i++) {
-        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
-            continue;
-        if (D_00158164 == i)
-            set_font_from_cache(0x25);
-        else
+    {
+        char buf[500];
+
+        sprintf(buf, D_00120460, D_00160378[0], mycontrol->f648 + 2000);
+        LbTextDraw(resvars.f40[0x6f].x, resvars.f40[0x6f].y, buf);
+        j = 0;
+        for (i = 0; i < n; i++) {
+            if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+                continue;
+            if (D_00158164 == i)
+                set_font_from_cache(0x25);
+            else
+                set_font_from_cache(0x24);
+            sprintf(buf, D_00120469, &allhosps[i]);
+            LbTextDraw(resvars.f40[0x68 + j].x, resvars.f40[0x68 + j].y, buf);
+            j++;
+        }
+        buf[0] = 0;
+        if (adcounts.f0 > 1) {
+            pct = adcounts.fa / adcounts.f0;
+            if (pct > 100)
+                pct = 100;
+            if (gbv.f110 > pct)
+                fn_000c93bf(buf, D_00160378[1]);
+            else if (gbv.f10e > pct)
+                fn_000c93bf(buf, D_00160378[2]);
+            reqspr_draw(resvars.f40[0x6c].x + pct, resvars.f40[0x6c].y, &screen_sprites_tab_start[5]);
+            pct = adcounts.f10 / adcounts.f0;
+            if (pct > 100)
+                pct = 100;
+            if (pct < 30)
+                fn_000c93bf(buf, D_00160378[3]);
+            reqspr_draw(resvars.f40[0x6d].x + pct, resvars.f40[0x6d].y, &screen_sprites_tab_start[5]);
+            pct = adcounts.f14 / adcounts.f0;
+            if (pct > 100)
+                pct = 100;
+            if (pct > 80)
+                fn_000c93bf(buf, D_00160378[4]);
+            else if (pct < 20)
+                fn_000c93bf(buf, D_00160378[5]);
+            reqspr_draw(resvars.f40[0x6e].x + pct, resvars.f40[0x6e].y, &screen_sprites_tab_start[5]);
+            reqspr_draw(0xf5, 0x12c, &screen_sprites_tab_start[7]);
             set_font_from_cache(0x24);
-        sprintf(buf, D_00120469, &allhosps[i]);
-        LbTextDraw(resvars.f40[0x68 + j].x, resvars.f40[0x68 + j].y, buf);
-        j++;
-    }
-    buf[0] = 0;
-    if (adcounts.f0 > 1) {
-        pct = adcounts.fa / adcounts.f0;
-        if (pct > 100)
-            pct = 100;
-        if (gbv.f110 > pct)
-            fn_000c93bf(buf, D_00160378[1]);
-        else if (gbv.f10e > pct)
-            fn_000c93bf(buf, D_00160378[2]);
-        reqspr_draw(resvars.f40[0x6c].x + pct, resvars.f40[0x6c].y, &screen_sprites_tab_start[5]);
-        pct = adcounts.f10 / adcounts.f0;
-        if (pct > 100)
-            pct = 100;
-        if (pct < 30)
-            fn_000c93bf(buf, D_00160378[3]);
-        reqspr_draw(resvars.f40[0x6d].x + pct, resvars.f40[0x6d].y, &screen_sprites_tab_start[5]);
-        pct = adcounts.f14 / adcounts.f0;
-        if (pct > 100)
-            pct = 100;
-        if (pct > 80)
-            fn_000c93bf(buf, D_00160378[4]);
-        else if (pct < 20)
-            fn_000c93bf(buf, D_00160378[5]);
-        reqspr_draw(resvars.f40[0x6e].x + pct, resvars.f40[0x6e].y, &screen_sprites_tab_start[5]);
-        reqspr_draw(0xf5, 0x12c, &screen_sprites_tab_start[7]);
+            lbDisplay.draw_flags = 0x20;
+            LbTextSetWindow(resvars.f3c_ScreenBoxp[0x3b].x, resvars.f3c_ScreenBoxp[0x3b].y, resvars.f3c_ScreenBoxp[0x3b].w, resvars.f3c_ScreenBoxp[0x3b].h);
+            LbTextDraw(0, 0, buf);
+        }
+        set_font_from_cache(0x26);
+        lbDisplay.draw_flags = 0;
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        sprintf(buf, D_0012046c, D_00160378[6], allhosps[D_00158164].f1cb);
+        fn_0001b7e0(buf, (s8 *)buf, 0);
+        LbTextDraw(resvars.f40[0x70].x, resvars.f40[0x70].y, buf);
+        sprintf(buf, D_00120476, D_00160378[7]);
+        LbTextDraw(resvars.f40[0x71].x, resvars.f40[0x71].y, buf);
         set_font_from_cache(0x24);
-        lbDisplay.draw_flags = 0x20;
-        LbTextSetWindow(resvars.f3c_ScreenBoxp[0x3b].x, resvars.f3c_ScreenBoxp[0x3b].y, resvars.f3c_ScreenBoxp[0x3b].w, resvars.f3c_ScreenBoxp[0x3b].h);
-        LbTextDraw(0, 0, buf);
+        display_overview_bars(D_00158164);
+        compute_help_text(0, 0, 0x18);
     }
-    set_font_from_cache(0x26);
-    lbDisplay.draw_flags = 0;
-    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    sprintf(buf, D_0012046c, D_00160378[6], allhosps[D_00158164].f1cb);
-    fn_0001b7e0(buf, (s8 *)buf, 0);
-    LbTextDraw(resvars.f40[0x70].x, resvars.f40[0x70].y, buf);
-    sprintf(buf, D_00120476, D_00160378[7]);
-    LbTextDraw(resvars.f40[0x71].x, resvars.f40[0x71].y, buf);
-    set_font_from_cache(0x24);
-    display_overview_bars(D_00158164);
-    compute_help_text(0, 0, 0x18);
 }
 
 // FUNCTION: 0x00057684

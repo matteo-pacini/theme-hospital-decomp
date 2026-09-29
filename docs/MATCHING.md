@@ -186,26 +186,32 @@ Adding a table to `config/symbols.txt` renames references to its interior in
 every file. Check that no other source refers to an address it covers by its
 raw name, and re-run `tools/check.py` on all files afterwards.
 
-Stack frame layout (from the Open Watcom code generator, `temps.c`, and
-checked by simulation against 40 random functions): at the end of the
-function every named temporary is sorted once by declared size, ascending
-(`char[2]` before `int` before `char[5]`), with an unstable shell sort (gap
-n/2, then gap/2+1, down to bubble passes at gap 1), and slots are handed out
-from `ebp` downwards in the resulting order. The list being sorted holds,
-newest first: parameters, `.return`, the function-scope locals in
-declaration order, then everything codegen creates in code order (compiler
-temporaries, `?:` and switch temporaries, conversions, and inner-block
-locals when their block opens). Names that end up without a slot (homed
-parameters, register temporaries) still take part in the sort. So:
+Stack frame layout (traced in the 10.6 compiler itself, `binw/wpp386.exe`,
+and confirmed by predicting layouts that then matched). `-d2` turns
+optimisation off (`-od` gives identical code), so every function is
+generated block by block and its code is flushed in chunks: after the
+parameters, at every control-flow statement (`if`, loop, label, `goto`,
+`case`), at a switch's selection and at `return`. At the start of each
+chunk the compiler takes the names created since the previous chunk
+(newest first: parameters, `.return`, function-scope locals in declaration
+order, then compiler, `?:`, switch and conversion temporaries and
+inner-block locals as their block opens), adds `LastTemp` (the first name
+of the previous chunk's sorted list that is still live: a named local, or a
+temporary used across blocks), and sorts them once by declared size,
+ascending (`char[2]` before `int` before `char[5]`), with an unstable shell
+sort (gap n/2, then gap/2+1, down to bubble passes at gap 1). Slots are
+handed out from `ebp` downwards in sorted order, but only up to `LastTemp`;
+names sorted after it get their slot at their first use in the code (in
+instruction order; operands last to first, then the result), in that chunk
+or a later one. Names that never get a slot still take part in the sort.
 
-- Interleaving declarations of different sizes changes the permutation, and
-  with it where the return slot and `?:`/switch temporaries land; permute
-  the whole declaration list, mixed types included.
-- A `char` array sorts by its declared length.
-- When register allocation gives up (reliably with a `u8`/`s8`/`u16`
-  parameter, sometimes without), slots instead follow first use in code
-  order, except for some byte/word names at the top of the frame, which
-  depends on register allocation and is not predictable.
+This one rule covers what looked like two layouts: with a 4-byte parameter
+as `LastTemp` it sorts last, so almost the whole frame is size-sorted; with a
+`u8`/`u16` parameter, or a 1-byte compiler temporary left over, it sorts
+first, so the frame follows first use. The levers are declaration order
+(the order of the list), the block a local is declared in (a block opened
+after a chunk boundary adds its locals to that chunk, as its oldest names)
+and where that block opens.
 
 Observed consequences:
 
@@ -234,10 +240,10 @@ Observed consequences:
 
 ## Known unsolved
 
-- Frames laid out in first-use order where register allocation gave up:
-  which small locals still come first is not predictable.
-- Some `?:` versus switch temporary orders that no declaration order
-  reproduces (hidden compiler temporaries of other sizes).
+- `person_goto_queue`: the target places a 4-byte local between two 2-byte
+  names in one chunk, which the rule rules out for the present code shape;
+  the original source must differ.
+- A few functions still differ in register choice rather than slots.
 
 ## Libraries
 

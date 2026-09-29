@@ -250,19 +250,16 @@ void init_blueprint(u8 owner, u8 type)
     build->unknownD = type;
 }
 
-// NONMATCHING: frame layout (build/on_y1 and dx/dy slots swapped; declaration order does not move them)
 // FUNCTION: 0x00046514
 void modify_blueprint(u8 owner, u8 dragging, u16 tile)
 {
-    u8 on_y1;
-    u8 on_x1;
+    BuildState *build;
     u8 x;
     u8 y;
     u8 on_x0;
     u8 on_y0;
-    u8 dx;
-    u8 dy;
-    BuildState *build;
+    u8 on_x1;
+    u8 on_y1;
 
     build = &allhosps[owner].build;
     x = tile % 128;
@@ -347,7 +344,10 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
                 build->y1 = build->pivot.y;
             }
             break;
-        case 3:
+        case 3: {
+            u8 dx;
+            u8 dy;
+
             dx = x - build->anchor.x;
             dy = y - build->anchor.y;
             build->x0 += dx;
@@ -357,6 +357,7 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
             build->anchor.x = x;
             build->anchor.y = y;
             break;
+        }
         }
     } else {
         switch (allhosps[owner].build.drag) {

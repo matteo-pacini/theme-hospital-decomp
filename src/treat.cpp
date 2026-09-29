@@ -785,18 +785,17 @@ void best_guess_treatment(Thing *w)
     }
 }
 
-// NONMATCHING: frame layout: target has n, i, r, t, return slot, result, j from [ebp-0x8] down
 // FUNCTION: 0x0003e468
 u16 find_possible_diagnosis(Thing *w)
 {
     u16 list[9];
-    PossibleDiag *diag;
-    u16 j;
-    u16 result;
     u16 t;
     u16 r;
-    u16 i;
+    PossibleDiag *diag;
     u16 n;
+    u16 j;
+    u16 i;
+    u16 result;
 
     result = 0;
     diag = &possible_diagnoses[expertise[w->style].unknown5[1]];
@@ -820,7 +819,7 @@ u16 find_possible_diagnosis(Thing *w)
                     for (j = r; j < n - 1; j++) {
                         list[j] = list[j + 1];
                     }
-                    n--;
+                    --n;
                     if (n == 0) {
                         break;
                     }

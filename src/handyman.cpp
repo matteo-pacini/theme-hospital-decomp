@@ -60,31 +60,26 @@ void remove_litter(u16 tile, u8 owner)
     }
 }
 
-// NONMATCHING: frame layout (most locals sit at different slots)
 // FUNCTION: 0x0007a8a8
 void handyman_works(Thing *w)
 {
-    u8 level;
-    u8 i;
-    u16 id;
-    u16 pos;
-    s32 dy;
-    s32 dx;
-    u32 best;
-    u32 idx;
-    u32 n;
-    s32 fix;
-    s32 plant_score;
-    s32 litter;
-    RoomInfo *room;
-    Thing *t;
-    u32 scores[3];
     u8 (*funcs[3])(Thing *);
     Thing *plant;
-    u16 anim;
-    u16 anim2;
-    u16 pos2;
-    u16 seq;
+    Thing *t;
+    RoomInfo *room;
+    u32 scores[3];
+    s32 litter;
+    s32 plant_score;
+    s32 fix;
+    u32 n;
+    u32 idx;
+    u32 best;
+    s32 dx;
+    s32 dy;
+    u16 pos;
+    u16 id;
+    u8 i;
+    u8 level;
 
     switch (w->unknown103) {
     case 0:
@@ -106,9 +101,9 @@ void handyman_works(Thing *w)
                 w->unknown103 = 8;
                 if (room->f3 != 6)
                     room->f3 = 5;
-            } else {
-                w->kind = 0x36;
+                break;
             }
+            w->kind = 0x36;
             break;
         }
         if (thingpage_find_highest_priority(&allhosps[w->owner].ff6d) && handyman_try_fix(w))
@@ -195,9 +190,13 @@ void handyman_works(Thing *w)
         fn_0003e724(w);
         plant->unknown100s < 0 ? plant->unknown100s = 0 : 0;
         level = (400 - plant->unknown100s) / 80;
-        anim = check_frame(0x3d0, plant) + (u16)plant->unknown17;
-        plant->sprite = start[anim].frame;
-        plant->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+        {
+            u16 anim;
+
+            anim = check_frame(0x3d0, plant) + (u16)plant->unknown17;
+            plant->sprite = start[anim].frame;
+            plant->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+        }
         for (i = 0; i < 5 - level - 1; i++)
             plant->sprite = frame[plant->sprite].next;
         plant->kind = 0xe;
@@ -209,9 +208,13 @@ void handyman_works(Thing *w)
             plant->sprite = frame[plant->sprite].next;
             if (frame[plant->sprite].flags & 1) {
                 plant->unknown98 = 0;
-                anim2 = check_frame(0x3cf, plant) + (u16)plant->unknown17;
-                plant->sprite = start[anim2].frame;
-                plant->palette = start[anim2].flags > 0 ? (u8)1 : (u8)0;
+                {
+                    u16 anim2;
+
+                    anim2 = check_frame(0x3cf, plant) + (u16)plant->unknown17;
+                    plant->sprite = start[anim2].frame;
+                    plant->palette = start[anim2].flags > 0 ? (u8)1 : (u8)0;
+                }
                 plant->kind = 10;
                 if (plant->owner == player) {
                     NRAdcounts.unknownb += 0x37 - (plant->unknown100s * 2 + 0x50) / 16;
@@ -239,6 +242,8 @@ void handyman_works(Thing *w)
                   || find_person_in_room(room, 4, 4))) {
                 room->f3 = 6;
             } else {
+                u16 pos2;
+
                 pos2 = room->pos + (((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1));
                 if (pos2 != TILE_POS(w) && can_i_get_to(w, pos2)) {
                     w->state_b = w->unknown94 = 0x3c;
@@ -255,7 +260,9 @@ void handyman_works(Thing *w)
             fn_0003e724(w);
         }
         break;
-    case 9:
+    case 9: {
+        u16 seq;
+
         seq = objects[thing[w->unknown69].subtype].f12;
         reset_icon_value(&thing[w->unknown69], 0x1c);
         if (seq)
@@ -265,6 +272,7 @@ void handyman_works(Thing *w)
             t->smoke[old_newrand() % 3] = 0;
         w->unknown103 = 10;
         break;
+    }
     case 10:
         t = &thing[w->unknown69];
         if (t > thing) {

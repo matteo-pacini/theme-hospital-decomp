@@ -312,13 +312,12 @@ u16 get_real_person_from_room(const u16 room_id, const u16 pos)
     return 0;
 }
 
-// NONMATCHING: register choice and frame slot order
 // FUNCTION: 0x0004b7e0
 void queue_person_to_new_queue(const u16 room_id, const u16 id)
 {
     RoomInfo *room;
     Thing *w;
-    u16 frame;
+    u8 reception;
 
     room = &room_info[room_id];
     if (room > room_info) {
@@ -328,7 +327,7 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                 leave_queue(w);
                 interrupt_person(w);
                 if (room->type == 4) {
-                    u8 reception = find_nearest_manned_reception(w, room - room_info, 0);
+                    reception = find_nearest_manned_reception(w, room - room_info, 0);
                     if (reception) {
                         fn_0004195c(w, thing[reception].room_next);
                     }
@@ -338,9 +337,13 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                     fn_0004195c(w, room->unknown4);
                 }
                 w->unknown89 = room - room_info;
-                frame = check_frame(anim_starts[w->subtype].idle, w) + (u16)w->unknown17;
-                w->sprite = start[frame].frame;
-                w->palette = start[frame].flags > 0 ? (u8)1 : (u8)0;
+                {
+                    u16 frame;
+
+                    frame = check_frame(anim_starts[w->subtype].idle, w) + (u16)w->unknown17;
+                    w->sprite = start[frame].frame;
+                    w->palette = start[frame].flags > 0 ? (u8)1 : (u8)0;
+                }
                 w->kind = 0x24;
             }
         }

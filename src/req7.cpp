@@ -363,17 +363,16 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
     return 0;
 }
 
-// NONMATCHING: frame layout (the target gives old_17 and old_palette the first slot of their blocks; ours places them after the wider locals)
 // FUNCTION: 0x00096c34
 void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
 {
-    u8 old_17;
     u16 n;
     RoomInfo *room;
     u16 size;
     s32 step;
     u16 px;
     u16 py;
+    u8 old_17;
     u16 id;
     Thing *w;
 
@@ -389,11 +388,8 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
             w = &thing[id];
             for (;;) {
                 u16 old_sprite;
-                u8 old_palette;
                 u16 anim;
-                CompFrame *fr;
-                u16 x0;
-                u16 x1;
+                u8 old_palette;
                 u16 y0;
                 u16 y1;
 
@@ -419,11 +415,17 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                 w->unknown17 = old_17;
                 w->sprite = old_sprite;
                 w->palette = old_palette;
-                fr = &frame[w->sprite];
-                x0 = px - fr->width / 2;
-                x1 = x0 + fr->width;
-                y0 = py - fr->length;
-                y1 = y0 + fr->length;
+                {
+                    CompFrame *fr;
+                    u16 x0;
+                    u16 x1;
+
+                    fr = &frame[w->sprite];
+                    x0 = px - fr->width / 2;
+                    x1 = x0 + fr->width;
+                    y0 = py - fr->length;
+                    y1 = y0 + fr->length;
+                }
                 px += step;
                 if (w->queue_next == 0)
                     break;

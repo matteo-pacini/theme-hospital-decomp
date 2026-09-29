@@ -476,7 +476,6 @@ void do_cell(const u8 n, const s32 x, const s32 y, const s32 z, const s32 w, con
     }
 }
 
-// NONMATCHING: frame layout (byte local slots)
 // FUNCTION: 0x000a8198
 void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -525,16 +524,15 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 n, s32 x0
         if (window.unknown2c7 > miny)
             miny = window.unknown2c7;
         for (j = 0; j < count; j++) {
-            s8 last;
-            s8 tail;
-            s8 head;
-            s8 k;
             s32 c;
             s32 x;
             s32 y;
+            s8 k;
+            s8 head;
+            s8 tail;
+            s8 last;
             s32 i;
             Map *m;
-            s8 prec;
 
             head = -1;
             tail = -1;
@@ -547,6 +545,8 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 n, s32 x0
                 m = &map[c];
                 if ((((x >= 0 && x < 0x80) && y >= 0) && y < 0x80) && ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0))) {
                     if (m->flags & 0x20) {
+                        s8 prec;
+
                         prec = compute_cell_precedence(i, &thing[m->first]);
                         if (prec >= 0) {
                             D_00157dc4[i].behind = D_00157dc4[prec].behind;
@@ -862,13 +862,12 @@ void adjust_big_cell_flag(const u16 cell)
     map[cell].flags &= ~0x20;
 }
 
-// NONMATCHING: frame layout (target: return value, col, idx, ?: temporary, v)
 // FUNCTION: 0x000a9100
 s8 check_obscuring_column(const s8 row, s8 x, s8 y)
 {
-    s8 col;
     s8 idx;
-    s8 v;
+    s8 col;
+    s32 unused;
 
     idx = row + (x - y >= 0 ? (x - y) / 2 : (x - y - 1) / 2);
     col = x + y;
@@ -876,6 +875,8 @@ s8 check_obscuring_column(const s8 row, s8 x, s8 y)
     if (((idx < 0 || idx > 14) || col < 0) || col > 4)
         return -1;
     for (; col >= 0; col += -2) {
+        s8 v;
+
         v = covers[idx][col];
         if (v == -1 || v == row)
             continue;
@@ -911,16 +912,14 @@ s8 record_covering_cell(const s8 row, const s16 pos)
     return -1;
 }
 
-// NONMATCHING: frame layout: v is at [ebp-0x28] in the target, after the case 4 block locals
 // FUNCTION: 0x000a9358
 s8 compute_cell_precedence(const s8 row, Thing *t)
 {
+    Thing *o;
     s8 v;
 
     for (; t > thing; t = &thing[t->next]) {
         switch (t->renderer) {
-            Thing *o;
-
         case 4:
             if (t->kind == 0x2a || t->kind == 0x2e)
                 break;

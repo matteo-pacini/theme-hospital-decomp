@@ -175,19 +175,13 @@ s32 sector_behind(Sector *s, s32 a, s32 b)
     return asin < bsin ? 1 : 0;
 }
 
-// NONMATCHING: frame layout (target puts the two ?: temporaries above tr, mid, sec, ox, oy, and swaps best and k)
 // FUNCTION: 0x000b86a8
 void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
 {
-    s32 best;
-    s32 k;
     s32 flag;
-    Sector copy;
     s32 oy;
     s32 ox;
-    Sector *sec;
-    s32 mid;
-    s32 tr;
+    Sector copy;
     s32 span;
     s32 split;
     s32 i;
@@ -204,6 +198,10 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
         if (span > 0x400) {
             if (lbSinTable[(s[i].start & 0x7ff) + 0x200] < 0 && lbSinTable[(s[i].end & 0x7ff) + 0x200] > 0) {
             } else {
+                Sector *sec;
+                s32 mid;
+                s32 tr;
+
                 sec = &s[i];
                 mid = s[i].start + (span >> 1);
                 ox = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * sec->radius) >> 8);
@@ -236,6 +234,9 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
     memset(done, 0, 0x101);
     j = n;
     while (--j >= 0) {
+        s32 best;
+        s32 k;
+
         best = -1;
         for (k = 0; k < n; k++) {
             if (done[k] == 0) {

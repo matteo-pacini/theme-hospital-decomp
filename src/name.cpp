@@ -457,7 +457,6 @@ void draw_new_prefs_screen(void)
     draw_balance_file_explanation();
 }
 
-// NONMATCHING: frame layout (target slots follow first use, arrays interleaved with scalars)
 // FUNCTION: 0x0008ffb0
 u8 setup_balance_files(u8 cd)
 {
@@ -468,8 +467,8 @@ u8 setup_balance_files(u8 cd)
     s32 handle;
     char fname[16];
     u8 len;
-    char num[4];
     u8 value;
+    char num[4];
 
     b = 0;
     last = 0;
@@ -527,8 +526,11 @@ u8 setup_balance_files(u8 cd)
         if (stricmp(current_balance_file->name, D_00120937) != 0) {
             b = current_balance_file;
             current_balance_file = b->next;
-            while (current_balance_file != b && stricmp(current_balance_file->name, D_0012093c) != 0)
+            while (current_balance_file != b) {
+                if (stricmp(current_balance_file->name, D_0012093c) == 0)
+                    break;
                 current_balance_file = current_balance_file->next;
+            }
         }
         balance_filename(current_balance_file->name);
         fn_000bbff0(balance_id, current_balance_file->name);
@@ -578,14 +580,13 @@ void prev_balance_file(void)
     }
 }
 
-// NONMATCHING: frame layout (two s32 locals swap slots)
 // FUNCTION: 0x000903f0
 void balance_filename(char *name)
 {
-    s32 found;
     s32 i;
-    char *buf;
+    s32 found;
     s32 len;
+    char *buf;
     char path[144];
     char line[36];
 
@@ -620,12 +621,13 @@ void balance_filename(char *name)
         found = 1;
     else
         sprintf(balance_file_name, D_00120963, line);
-    for (; !found && i < 5; i++) {
+    while (!found && i < 5) {
         read_line_from_buf(line, 0x20, buf);
         if (line[0] == '&') {
             if ((s8)line[1] - '0' == myplayer.f21)
                 found = 1;
         }
+        i++;
     }
     if (found)
         sprintf(balance_file_name, D_00120966, &line[2]);

@@ -158,32 +158,26 @@ void clear_build_objects(u8 owner)
     }
 }
 
-// NONMATCHING: frame layout (local slot order)
 // FUNCTION: 0x00028288
 u16 place_object_wall_hug(u16 pos, u8 kind)
 {
     RoomInfo *room;
+    Bounds *b;
+    u8 side;
+    u8 below2;
+    u8 sx;
+    u8 sy;
     u8 x;
     u8 y;
     u8 rx;
     u8 ry;
-    u8 corner;
     u8 rx2;
     u8 ry2;
+    u8 below;
+    u8 angle;
+    u8 corner;
     s8 dx;
     s8 dy;
-    u8 below;
-    u8 below2;
-    u8 side;
-    u8 sx;
-    u8 sy;
-    u8 angle;
-    Bounds *b;
-    u16 part_kind;
-    u8 part_angle;
-    u32 part_pos;
-    s8 ox;
-    s8 oy;
 
     room = &room_info[gamevar.unknown2f];
     x = pos % 128;
@@ -232,6 +226,12 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
         sy = ry2 - b->maxY - 1;
     }
     if (objects[kind].unknown17 != -1) {
+        u16 part_kind;
+        u8 part_angle;
+        u32 part_pos;
+        s8 ox;
+        s8 oy;
+
         part_kind = next_part[objects[kind].unknown17].kind;
         part_angle = next_part[objects[kind].unknown17].parts[angle].angle;
         part_pos = next_part[objects[kind].unknown17].parts[angle].pos;
