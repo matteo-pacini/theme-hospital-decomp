@@ -717,8 +717,6 @@ u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 pe
 }
 
 // FUNCTION: 0xd7768
-// NONMATCHING: stack slots of compiler temporaries, and register choice in the inlined
-// BatchProcess
 TbError IPXServiceProvider::Update(void)
 {
     u8 *data;
@@ -763,6 +761,8 @@ TbError IPXServiceProvider::Update(void)
                 case MSG_BUSK:
                     ipx.Listen(p, &socket);
                     break;
+                case MSG_BUDG:
+                case MSG_BUDN:
                 default:
                     ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
                     ipx.Listen(p, &socket);
@@ -787,6 +787,8 @@ TbError IPXServiceProvider::Update(void)
                 case MSG_BUSK:
                     ipx.Listen(p, &socket);
                     break;
+                case MSG_BUDG:
+                case MSG_BUDN:
                 default:
                     ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
                     ipx.Listen(p, &socket);
@@ -1067,19 +1069,8 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
     return ret;
 }
 
-void IPXServiceProvider::SendToAll(u32 me, u32 max, __1p5pi1IPXSYSTEMMESSAGE *msg)
-{
-    IPXPlayerEntry *p;
-
-    for (p = players; p < players + max; p++) {
-        if (p->addr.socket && me != p->id)
-            ipx.Send(&socket, &p->addr, (u8 *)msg, sizeof(*msg));
-    }
-    BatchProcess(0);
-}
-
 // FUNCTION: 0xd9480
-// NONMATCHING: frame layout and register allocation differ
+// NONMATCHING: stack slots of locals and hoisted member addresses
 TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg)
 {
     __3ljac5NETSOCKET from;
@@ -1109,7 +1100,11 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
         if (max > 1) {
             for (p = players; p < players + max; p++)
                 p->ack = 0;
-            SendToAll(me, max, msg);
+            for (p = players; p < players + max; p++) {
+                if (p->addr.socket && me != p->id)
+                    ipx.Send(&socket, &p->addr, (u8 *)msg, sizeof(*msg));
+            }
+            BatchProcess(0);
             last = clock();
             start = clock();
             while (!done) {
@@ -1118,7 +1113,11 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
                     break;
                 if (now - last > 50) {
                     last = now;
-                    SendToAll(me, max, msg);
+                    for (p = players; p < players + max; p++) {
+                        if (p->addr.socket && me != p->id)
+                            ipx.Send(&socket, &p->addr, (u8 *)msg, sizeof(*msg));
+                    }
+                    BatchProcess(0);
                 }
                 for (pk = packets; pk < packets + 32; pk++) {
                     if (!ipx.RecPkt(pk, &socket, &from))
@@ -1239,7 +1238,8 @@ u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
 }
 
 // FUNCTION: 0xd9a98
-// NONMATCHING: loop structure and frame layout differ
+// NONMATCHING: stack slots and register choice; the target places the packet loop's RecPkt
+// call ahead of the loop body, ours after it
 TbError IPXServiceProvider::RemoveAbortedPlayer(void)
 {
     IPXPlayerEntry *ap;
@@ -1268,7 +1268,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
         }
         ret = Lb_OK;
         for (ap = players; ap < players + max; ap++) {
-            if (ap->addr.socket == 0 || ap->id == me || ap->ack != 0)
+            if (!ap->addr.socket || ap->id == me || ap->ack)
                 continue;
             memset(&msg, 0, sizeof(msg));
             msg.magic = MSG_BUSD;
@@ -1291,13 +1291,8 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
             BatchProcess(0);
             remote.num_players = num;
             session.num_players = num;
-            if (num <= 1) {
-                for (p = players; players + max > p; p++) {
-                    if (p->addr.socket != 0 && me != p->id && p->ack == 0)
-                        memset(p, 0, sizeof(IPXPlayerEntry));
-                }
-                continue;
-            }
+            if (num <= 1)
+                goto none;
             start = last = clock();
             done = 0;
             do {
@@ -1319,12 +1314,12 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
                     switch (data->magic) {
                     case MSG_BUSK:
                         if (data->seq == msg.seq) {
+                            count = 1;
                             p = &players[data->player.id];
-                            if (p->ack != 0) {
+                            if (p->ack) {
                                 p->unknown36 = 1;
-                                count = 1;
                                 for (p = players; p < players + max; p++) {
-                                    if (p->unknown36 != 0)
+                                    if (p->unknown36)
                                         count++;
                                 }
                                 if (count >= num)
@@ -1372,13 +1367,20 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
                     p->ack = p->unknown36;
                 ap = players;
             }
+            continue;
+        none:
+            for (p = players; players + max > p; p++) {
+                if (p->addr.socket && me != p->id && !p->ack)
+                    memset(p, 0, sizeof(IPXPlayerEntry));
+            }
         }
     }
     return ret;
 }
 
 // FUNCTION: 0xdac14
-// NONMATCHING: frame layout and register allocation differ
+// NONMATCHING: stack slots of the hoisted member addresses, register choice in the
+// inlined BatchProcess
 u32 IPXServiceProvider::CheckForSystemMessages(void)
 {
     u8 join[0x8c];
@@ -1395,8 +1397,7 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
             if (!ipx.RecPkt(p, &socket, &from))
                 continue;
             data = p->data;
-            if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)data, (__tibcaGUID *)(data + 0xc)) != Lb_OK)
-                continue;
+            if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)data, (__tibcaGUID *)(data + 0xc)) == Lb_OK)
             switch (*(u32 *)data) {
             case MSG_BUHQ:
                 if (accepting) {
@@ -1443,8 +1444,7 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
             if (!ipx.RecPkt(p, &socket, &from))
                 continue;
             data = p->data;
-            if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)data, (__tibcaGUID *)(data + 0xc)) != Lb_OK)
-                continue;
+            if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)data, (__tibcaGUID *)(data + 0xc)) == Lb_OK)
             switch (*(u32 *)data) {
             case MSG_BUSA:
             case MSG_BUSD:

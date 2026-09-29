@@ -120,6 +120,8 @@ and comparing against the original.
 | separate epilogues for early `return list[0]` versus one shared | nested `if/else` assigning a result, then a single `return` |
 | `lea r,[g*2]; imul r,g` | `p->g * 2 * p->g` (a `SQR(g) * 2` macro does not give it) |
 | `-oneatx`: load, then `add r,r` in place | `x *= 2` (`x += x` gives a `lea` into a fresh register) |
+| first test, then `jmp` into the loop's shared `je` | `for (...;; ...) { if (x == 0) break; ... }` (`for (...; x; ...)` gives `jne body; jmp exit`) |
+| compare threading where the compiler knows eax=0 | call the real small helper and let it inline |
 | byte swap loading into `bx`, then zero-extending into eax | `u16 r = v >> 8; r \|= v << 8; return r;` (`(v >> 8) \| (v << 8)` gives `movzx`/`and 0xffff`) |
 | loop strength-reducing `p->data` as its own induction pointer | a pointer local set inside the loop (`d = (u16 *)p->data;`) |
 | failure return placed after the main path | `if (ok) { ...; return 0; } return 1;` |
@@ -306,6 +308,15 @@ Observed consequences:
   (`serialsp` -oe=40, `dosipx` -oe=80) keep one small callee out of line
   each, which ours probably makes a few nodes smaller than the original.
 
+- Switch compare trees (`cg/c/bldsel.c`) depend on case values listed
+  explicitly next to `default:`; brute-force which values the original
+  listed. `if (f() == OK) switch ...` and `if (f() != OK) continue;`
+  place the dispatch tree differently.
+- An invented inline helper that copies its arguments inflates the frame;
+  write its code out at the call sites instead. Stack-slot order comes
+  from OW `cg/c/temps.c` (temps sorted by savings, then size; the first
+  allocated gets the highest address).
+
 ## Known unsolved
 
 - Register allocation is global to the function even at `-d2`: a change
@@ -395,7 +406,6 @@ predates the tool and uses a separate file instead.
 - `W?ReadByte$:SerialHandler$n(l)l` (0xf5714), `src/lib/bf2/dosser.standin.s`
 - `W?ReadBytes$:CommHandler$n(pnvul)ul` (0xf63f4), `src/lib/bf2/dosser.standin.s`
 - `W?HangUpModem$:CommHandler$n()l` (0xf6940), `src/lib/bf2/dosser.standin.s`
-- `W?GetModemResponse$:CommHandler$n(l)l` (0xf70f8), `src/lib/bf2/dosser.standin.s`
 - `W?CheckIfPlayerWantingToJoinIsInSession$:IPXServiceProvider$n(pn$__35ct5sCLIENTJOINPACKET$$pn$__3ljac5NETSOCKET$$)ul` (0xd8c58), `src/lib/bf2/ipxsp.standin.s`
 - `W?SendPlayerInfo$:IPXServiceProvider$n(pn$__5303ctCLIENTINFOPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd82f4), `src/lib/bf2/ipxsp.standin.s`
 - `W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v` (0xdc440), `src/lib/bf2/ipxsp.standin.s`
@@ -409,7 +419,6 @@ predates the tool and uses a separate file instead.
 - `W?ResponsedToSystemMessage$:IPXServiceProvider$n(pn$__1p5pi1IPXSYSTEMMESSAGE$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xda35c), `src/lib/bf2/ipxsp.standin.s`
 - `W?RemoveAbortedPlayer$:IPXServiceProvider$n()$TbError$$` (0xd9a98), `src/lib/bf2/ipxsp.standin.s`
 - `W?Enumerate$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd6e2c), `src/lib/bf2/ipxsp.standin.s`
-- `W?Update$:IPXServiceProvider$n()$TbError$$` (0xd7768), `src/lib/bf2/ipxsp.standin.s`
 - `W?Start$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xd59ec), `src/lib/bf2/ipxsp.standin.s`
 - `W?Start$:ModemSP$n(pnapnaulpnv)$TbError$$` (0xee77c), `src/lib/bf2/modemsp.standin.s`
 - `W?Start$:ModemSP$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xeea58), `src/lib/bf2/modemsp.standin.s`

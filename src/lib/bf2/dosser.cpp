@@ -909,20 +909,18 @@ void CommHandler::read_a_line(FILE *f, char *p)
 // FUNCTION: 0xf70f8
 long CommHandler::GetModemResponse(long timeout)
 {
+    long c;
     u8 done = 0;
     u32 start;
     long ret = -1;
     u16 len = 0;
     char buf[0xa0];
-    long c;
     ModemResponse *m;
-    long (*fn)(void);
 
     memset(buf, 0, sizeof(buf));
     start = clock();
     do {
-        fn = CH(this)->cur_func;
-        if (fn && fn() == -7)
+        if (RunModemFunc(CH(this)->cur_func) == -7)
             return -7;
         if (clock() - start > timeout)
             break;
@@ -930,7 +928,9 @@ long CommHandler::GetModemResponse(long timeout)
         if (c == -1)
             continue;
         if (c == '\r' || len == 0x50) {
-            for (m = modem_response; m->code; m++) {
+            for (m = modem_response;; m++) {
+                if (m->code == 0)
+                    break;
                 if (!stricmp(buf, m->text)) {
                     done = 1;
                     ret = m->code;

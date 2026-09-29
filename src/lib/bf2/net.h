@@ -641,7 +641,6 @@ struct IPXServiceProvider : ServiceProvider {
     void ClearSpStuff(void);
     TbError BullfrogIPXMessage(__407tigIPXMESSAGEBLOCK *msg, __tibcaGUID *id);
     void ProcessSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg);
-    void SendToAll(u32 me, u32 max, __1p5pi1IPXSYSTEMMESSAGE *msg);
 };
 
 extern "C" {
