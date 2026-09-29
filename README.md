@@ -7,6 +7,23 @@ C++ source that, compiled with the original toolchain, reproduces the code in
 
 No game files are included. You need your own copy.
 
+## Status
+
+As of 2026-09-29, `ninja report` counts 2911 of 2938 functions matched (98.2%
+of code bytes): all 1385 game functions, 773 of 798 in Bullfrog's libraries
+and 753 of 755 in the runtime (Watcom C library, Miles, Smacker). Of the
+matched functions:
+
+- 71 are assembly stand-ins (`*.standin.s`, listed in
+  [docs/MATCHING.md](docs/MATCHING.md)): functions whose C no available
+  compiler reproduces, after flag sweeps and source attempts. They count as
+  matched, not as decompiled.
+- 79, in 15 runtime modules, are built from Watcom's own 10.5/10.6 runtime
+  libraries (`lib` entries in `config/cflags.txt`), which the EXE links.
+
+The rest are compiled from the C++/C in `src/`. The executable is not yet
+relinked from these objects (`ninja link` reports what does not resolve).
+
 ## Setup
 
 1. Extract the GOG installer into `orig/` (the game's `HOSPITAL.EXE` must end
@@ -71,6 +88,7 @@ register allocation). Library flags are in `config/cflags.txt`.
 | `config/relocs.txt` | relocations named after a symbol other than the one containing their target |
 | `config/sections.txt` | a module's own data segments (compiler-generated tables), emitted into its target object |
 | `src/` | decompiled C++ |
+| `src/**/*.standin.s` | assembly stand-ins for functions of the source file of the same name (see `tools/standin.py`) |
 | `include/` | shared headers |
 | `tools/` | LE reader, splitter, compiler wrapper, OMF-to-ELF converter, matching aids |
 
