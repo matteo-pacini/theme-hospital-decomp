@@ -120,6 +120,7 @@ and comparing against the original.
 | separate epilogues for early `return list[0]` versus one shared | nested `if/else` assigning a result, then a single `return` |
 | `lea r,[g*2]; imul r,g` | `p->g * 2 * p->g` (a `SQR(g) * 2` macro does not give it) |
 | `-oneatx`: load, then `add r,r` in place | `x *= 2` (`x += x` gives a `lea` into a fresh register) |
+| register copy of a call result after its `-1` test | `void *r = f(); if (r == (void *)-1) return 0; x = (unsigned)r;` |
 | first test, then `jmp` into the loop's shared `je` | `for (...;; ...) { if (x == 0) break; ... }` (`for (...; x; ...)` gives `jne body; jmp exit`) |
 | compare threading where the compiler knows eax=0 | call the real small helper and let it inline |
 | byte swap loading into `bx`, then zero-extending into eax | `u16 r = v >> 8; r \|= v << 8; return r;` (`(v >> 8) \| (v << 8)` gives `movzx`/`and 0xffff`) |
@@ -317,6 +318,18 @@ Observed consequences:
   from OW `cg/c/temps.c` (temps sorted by savings, then size; the first
   allocated gets the highest address).
 
+- A `#pragma aux` parameter's width (`[bx]` with an `unsigned short`
+  prototype versus `[ebx]`) changes register allocation across the whole
+  caller, e.g. whether a parameter lives in its stack slot or in ebp
+  (`RationalAlloc`).
+- An address-taken local reused for a later value keeps that value in
+  memory; a fresh local is what gives a register (`blockread`). A dword
+  store into a byte variable's slot means an earlier u32 local reused.
+- Smacker's inline copies of `nexttrack` and `readframe` (in `SMACKOPEN`,
+  `gotoframe`) differ in register or load order from their out-of-line
+  copies; every source form and compiler version tried gives both the
+  same, so one of them always misses.
+
 ## Known unsolved
 
 - Register allocation is global to the function even at `-d2`: a change
@@ -363,10 +376,9 @@ predates the tool and uses a separate file instead.
 
 - `_Scale10V` (0xfcad8), `src/lib/clib/scale10v.s`: FDIV checks without
   `pushfd`/`popfd` (C in `scale.c`).
-- `__FreeDPMIBlocks_` (0xebdb8), `RationalAlloc_` (0xebfd7) and
-  `__ExpandDGROUP_` (0xec158), `src/lib/clib/grownear.standin.s`: Watcom's
-  own code (identical in the 10.5 and 10.6 `CLIB3R`); the module as a whole
-  is in neither library (see Watcom library modules).
+- `__FreeDPMIBlocks_` (0xebdb8), `src/lib/clib/grownear.standin.s`:
+  Watcom's own code (identical in the 10.5 and 10.6 `CLIB3R`); the module as
+  a whole is in neither library (see Watcom library modules).
 - `AIL_fgets_` (0xded50), `src/lib/ail/ail.standin.s`
 - `rbplay_` (0xe6650), `src/lib/ail/ailcd.standin.s`
 - `_AIL_API_redbook_id` (0xe6a10), `src/lib/ail/ailcd.standin.s`
@@ -386,18 +398,15 @@ predates the tool and uses a separate file instead.
 - `_XMI_construct_MDI_driver` (0xe37f0), `src/lib/ail/ailxmidi.standin.s`
 - `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`
 - `_FtoS_` (0xfc294), `src/lib/clib/ftos.standin.s`: the overflow test computes p - buf in edx and the digit count in eax, the other way round
-- `GetFirstTrack_` (0xea4f0), `src/lib/smk/smackinp.standin.s`
 - `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`
 - `SMACKSOUNDONOFF` (0xe9a20), `src/lib/smk/smackinp.standin.s`
 - `gotoframe_` (0xeab30), `src/lib/smk/smackinp.standin.s`
 - `fn_000e85b0_` (0xe85b0), `src/lib/smk/smackinp.standin.s`
 - `fn_000e8190_` (0xe8190), `src/lib/smk/smackinp.standin.s`
-- `blockread_` (0xeae00), `src/lib/smk/smackinp.standin.s`
 - `setuptheframe_` (0xea7a0), `src/lib/smk/smackinp.standin.s`
 - `soundnext_` (0xe94c0), `src/lib/smk/smackinp.standin.s`
 - `fn_000e8ab0_` (0xe8ab0), `src/lib/smk/smackinp.standin.s`
 - `SMACKOPEN` (0xe9c80), `src/lib/smk/smackinp.standin.s`
-- `fn_000e7910_` (0xe7910), `src/lib/smk/smkmss.standin.s`
 - `W?RecPkt$:IPXHandler$n(pn$IPXPacket$$pn$__3ljac5NETSOCKET$$pn$3$)l` (0xd48f0), `src/lib/bf2/dosipx.standin.s`
 - `W?SetupVector$:IPXHandler$n()l` (0xd422c), `src/lib/bf2/dosipx.standin.s`
 - `W?Send$:IPXHandler$n(pn$__3ljac5NETSOCKET$$pn$2$pnucl)v` (0xd4634), `src/lib/bf2/dosipx.standin.s`
@@ -457,7 +466,7 @@ so `tools/split.py` lays their units out as built without `-zm`.
 No CD's library (10.0a, 10.5, 10.6) has the EXE's `grownear` module as a
 whole: its `__AdjustAmount` rounds to 8 bytes where 10.6's rounds to 4 (the
 module's other functions do match 10.5's and 10.6's), so it stays C, with
-stand-ins for the three functions its C does not reproduce.
+a stand-in for the function its C does not reproduce.
 
 ## Libraries
 

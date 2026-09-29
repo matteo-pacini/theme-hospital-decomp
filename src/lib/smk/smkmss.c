@@ -120,18 +120,16 @@ U8 __pascal SmackSoundUseMSS(void *digdriver);
 #pragma aux (__pascal) SmackSoundUseMSS "fn_000e7910_";
 
 // FUNCTION: 0xe7910
-// NONMATCHING: the handler addresses are loaded into five registers (10.6
-// also uses eax), so the stores are scheduled differently
 U8 __pascal SmackSoundUseMSS(void *digdriver)
 {
     if (SmackTimerReadAddr == NULL) {
-        D_0015168c = NULL;
         LowSoundCheckAddr = MSSLowSoundCheck;
         LowSoundOpenAddr = MSSLowSoundOpen;
         D_0018cdbc = MSSLowSoundClose;
         LowSoundPlayedAddr = MSSLowSoundPlayed;
         LowSoundPurgeAddr = MSSLowSoundPurge;
         D_00151688 = MSSLowSoundPurge;
+        D_0015168c = NULL;
         D_00151690 = MSSLowSoundVolPan;
         D_00151b98 = MSSSmackTimerSetup;
         SmackTimerReadAddr = MSSSmackTimerRead;

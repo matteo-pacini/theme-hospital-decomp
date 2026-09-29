@@ -86,7 +86,7 @@ tiny_ret_t _TinyAllocBlock(unsigned paras);
     "ror eax,1" \
     parm caller [ebx] value [eax];
 
-struct dpmi_hdr *_TinyDPMIAlloc(unsigned size_hi, unsigned size_lo);
+struct dpmi_hdr *_TinyDPMIAlloc(unsigned short size_hi, unsigned short size_lo);
 #pragma aux _TinyDPMIAlloc = \
     "mov ah,5" \
     "mov al,1" \
@@ -100,7 +100,7 @@ struct dpmi_hdr *_TinyDPMIAlloc(unsigned size_hi, unsigned size_lo);
     "mov [eax],di" \
     "mov [eax+2],si" \
     "L1:" \
-    parm caller [ebx] [ecx] value [eax] modify [ebx ecx esi edi];
+    parm caller [bx] [cx] value [eax] modify [ebx ecx esi edi];
 
 struct dpmi_hdr *_TinyDPMIRealloc(struct dpmi_hdr *dpmi, unsigned size_hi, unsigned size_lo);
 #pragma aux _TinyDPMIRealloc = \
@@ -120,7 +120,7 @@ struct dpmi_hdr *_TinyDPMIRealloc(struct dpmi_hdr *dpmi, unsigned size_hi, unsig
     "L1:" \
     parm caller [eax] [ebx] [ecx] value [eax] modify [ebx ecx esi edi];
 
-void *_TinyDPMIBase(unsigned seg);
+void *_TinyDPMIBase(unsigned short seg);
 #pragma aux _TinyDPMIBase = \
     "mov ah,0" \
     "mov al,6" \
@@ -128,7 +128,7 @@ void *_TinyDPMIBase(unsigned seg);
     "mov eax,ecx" \
     "shl eax,16" \
     "mov ax,dx" \
-    parm caller [ebx] value [eax] modify [ecx edx];
+    parm caller [bx] value [eax] modify [ecx edx];
 
 void *_TinyCBAlloc(unsigned size);
 #pragma aux _TinyCBAlloc = \
@@ -294,10 +294,7 @@ unsigned __LastFree(void)
 }
 
 // FUNCTION: 0xebfd7
-// NONMATCHING: the original keeps size in its stack slot (10.6 would use ebp);
-// volatile reproduces the slot, but orders the reloads of size differently
-// and keeps the DPMI block pointer in ebx instead of eax
-void *RationalAlloc(volatile size_t size)
+void *RationalAlloc(size_t size)
 {
     struct dpmi_hdr *dpmi;
     mheapptr mhp;
@@ -373,7 +370,6 @@ int __CreateNewNHeap(unsigned amount)
 }
 
 // FUNCTION: 0xec158
-// NONMATCHING: brk_value is copied to ebx before the -1 test instead of after
 int __ExpandDGROUP(unsigned amount)
 {
     mheapptr p1;
@@ -381,6 +377,7 @@ int __ExpandDGROUP(unsigned amount)
     unsigned brk_value;
     tag *last_tag;
     unsigned new_brk_value;
+    void *brk_ret;
 
     if (_IsRationalZeroBase() || _IsCodeBuilder())
         return __CreateNewNHeap(amount);
@@ -395,9 +392,10 @@ int __ExpandDGROUP(unsigned amount)
     new_brk_value = amount + _curbrk;
     if (new_brk_value < _curbrk)
         new_brk_value = ~1u;
-    brk_value = (unsigned)__brk(new_brk_value);
-    if (brk_value == -1)
+    brk_ret = __brk(new_brk_value);
+    if (brk_ret == (void *)-1)
         return 0;
+    brk_value = (unsigned)brk_ret;
     if (brk_value > (unsigned)-8)
         return 0;
     if (new_brk_value <= brk_value)

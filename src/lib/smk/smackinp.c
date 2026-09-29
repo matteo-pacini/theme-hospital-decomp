@@ -245,13 +245,10 @@ void *smkmalloc(Smack *smk, u32 bytes);
 #pragma aux nexttrack "GetFirstTrack_";
 
 // FUNCTION: 0xea4f0
-// NONMATCHING: the mask and the index swap registers (the target keeps the
-// mask in edx and the index in al, the return register); soundnext's inlined
-// copy has the same swap, the other callers' copies match
 u8 nexttrack(u32 *flags)
 {
-    u8 i;
     u32 bit;
+    u8 i;
 
     bit = SMACKTRACK1;
     for (i = 0; i < 7; i++) {
@@ -259,7 +256,7 @@ u8 nexttrack(u32 *flags)
             *flags &= ~bit;
             return i;
         }
-        bit += bit;
+        bit *= 2;
     }
     return 0xff;
 }
@@ -1152,8 +1149,10 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on);
 #pragma aux (__pascal) SmackSoundOnOff "SMACKSOUNDONOFF";
 
 // FUNCTION: 0xe9a20
-// NONMATCHING: register allocation; the target has one more dword of frame
-// and loads D_0015168c into a register before testing it
+// NONMATCHING: register allocation; the target keeps behind/fill in ebp and
+// spills the sounds[] cursor (one more dword of frame), loads D_0015168c into
+// a register before testing it, and does not keep 0 in a register in the
+// second loop
 u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
 {
     u32 i;
@@ -1161,7 +1160,6 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
     u32 behind;
     u32 need;
     u32 fill;
-    u8 silence;
 
     if (smk == NULL)
         return 0;
@@ -1187,13 +1185,13 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
                 if (snd->f10 + fill > snd->bufsize)
                     fill = snd->bufsize - snd->f10;
                 fill &= ~3;
-                silence = snd->f50 ? 0 : 0x80;
+                need = snd->f50 ? 0 : 0x80;
                 if (snd->writepos + fill >= snd->bufend) {
-                    radmemset(snd->writepos, silence, snd->bufend - snd->writepos);
-                    radmemset(snd->buf, silence, fill - (snd->bufend - snd->writepos));
+                    radmemset(snd->writepos, need, snd->bufend - snd->writepos);
+                    radmemset(snd->buf, need, fill - (snd->bufend - snd->writepos));
                     snd->writepos = snd->buf + fill - (snd->bufend - snd->writepos);
                 } else {
-                    radmemset(snd->writepos, silence, fill);
+                    radmemset(snd->writepos, need, fill);
                     snd->writepos += fill;
                 }
                 snd->f10 += fill;
@@ -1209,7 +1207,7 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
                 if (D_00151688 != NULL)
                     D_00151688(smk->sounds[i]);
                 snd = smk->sounds[i];
-                snd->writepos = snd->readpos = snd->buf;
+                snd->readpos = snd->writepos = snd->buf;
                 snd->f2c -= snd->f10;
                 snd->f10 = 0;
             }
@@ -1235,8 +1233,10 @@ void __pascal SmackSimulate(u32 speed)
 
 // FUNCTION: 0xe9c80
 // NONMATCHING: the spill slots of largest, start, handle, left, fps and
-// nextsize are ordered differently, and the inlined readframe loads FrameNum
-// before f3c8
+// nextsize are ordered differently, the inlined readframe loads FrameNum
+// before f3c8, and the target's inlined nexttrack keeps the mask in eax and
+// the index in dl, the reverse of its out-of-line GetFirstTrack (ours inlines
+// the GetFirstTrack allocation)
 Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
 {
     Smack *smk;
@@ -1721,14 +1721,14 @@ u32 readframe(Smack *smk)
 }
 
 // FUNCTION: 0xeae00
-// NONMATCHING: stack slot assignment of the spilled locals
 u32 blockread(Smack *smk, u8 *buf, u32 size)
 {
-    u32 amount;
     u32 n;
+    u32 amount;
     u32 start;
     u32 total;
     u32 chunk;
+    u32 now;
 
     total = 0;
     amount = 0;
@@ -1796,12 +1796,12 @@ timing:
     if (smk->f4b0) {
         amount = start + mult64anddiv(amount, 1000, smk->f4b0);
         do
-            n = SmackTimerReadAddr();
-        while (n < amount);
+            now = SmackTimerReadAddr();
+        while (now < amount);
     } else {
-        n = SmackTimerReadAddr();
+        now = SmackTimerReadAddr();
     }
-    smk->f45c += n - start;
+    smk->f45c += now - start;
     return total;
 }
 

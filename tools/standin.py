@@ -99,6 +99,8 @@ def apply(source, model, Section):
         return  # STANDIN_OFF=1: build the C alone, to work on it
     sections, symbols, externs, weak = model
     names = [function_names()[int(m.group(1), 16)] for m in MARKER.finditer(open(path).read())]
+    if not names:
+        return
     for name in names:
         if name not in symbols:
             sys.exit(f"{path}: {name} is not compiled from {source}")
