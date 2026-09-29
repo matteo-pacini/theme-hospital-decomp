@@ -478,6 +478,24 @@ predates the tool and uses a separate file instead.
 - `W?EnumeratePlayersForSessionRunning$:ServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd2af8), `src/lib/bf2/sp.standin.s`
 - `W?CheckForDeletedHost$:ServiceProvider$n(pnuc)$TbError$$` (0xd1cc8), `src/lib/bf2/sp.standin.s`
 - `W?Receive$:ServiceProvider$n(ul)$TbError$$` (0xd1e24), `src/lib/bf2/sp.standin.s`
+- `LbDataLoadAll_` (0xbce44), `src/lib/bf1/gdata.standin.s`
+- `LbDataLoad_` (0xbcd18), `src/lib/bf1/gdata.standin.s`: register choice (target loads operands into registers before compares)
+- `LbSpriteDrawRemap_` (0xcbe20), `src/lib/bf1/gspr_rmp.standin.s`
+- `LbTextDraw_` (0xc889c), `src/lib/bf1/gtext.standin.s`: the register zeroing count differs per line-break tail, so the tails are merged differently; jump table placement
+- `W?LbNetwork_CompleteExchange$n(pnv)$TbError$$` (0xc0640), `src/lib/bf1/opt/netint.standin.s`
+- `W?CompleteMultiPlayerExchange$n(pnv)$TbError$$` (0xc08e4), `src/lib/bf1/opt/netint.standin.s`
+- `W?LbNetwork_Exchange$n(pnv)$TbError$$` (0xc0b74), `src/lib/bf1/opt/netint.standin.s`
+- `W?HostDataCollection$n()$TbError$$` (0xc11b8), `src/lib/bf1/opt/netint.standin.s`: register choice and block layout
+- `W?MultiPlayerCallback$n(ulululpnv)pnv` (0xc1518), `src/lib/bf1/opt/netint.standin.s`
+- `W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$` (0xc197c), `src/lib/bf1/opt/netint.standin.s`: register choice and block layout
+- `W?SystemUserMsgCallback$n(ulpnvulpnv)v` (0xc1de8), `src/lib/bf1/opt/netint.standin.s`
+- `W?LbNetwork_Send$n(ulpnvul)$TbError$$` (0xcaac0), `src/lib/bf1/opt/netint3.standin.s`: stack slots of buf, len and msg, and register choice in the data loop
+- `W?LbNetwork_Receive$n(ulpnvul)ul` (0xcade4), `src/lib/bf1/opt/netint3.standin.s`: block layout (the target places the RTS handling of the first loop after the request loop's first test) and register choice (len stays in ebp)
+- `LbMouseSetup_` (0xbd4d0), `src/lib/bf1/smouse.standin.s`
+- `InitSound_` (0xdc970), `src/lib/bf2/init_sou.standin.s`
+- `W?load_music_bank$n(luc)uc` (0xf09c0), `src/lib/bf2/load_mus.standin.s`
+- `W?load_sound_bank$n(luc)uc` (0xf0280), `src/lib/bf2/load_sou.standin.s`
+- `fn_000eff70_` (0xeff70), `src/lib/bf2/load_sou.standin.s`: bank-offset multiply uses eax instead of ecx; volatile load order
 
 ## Watcom library modules
 

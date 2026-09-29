@@ -113,11 +113,13 @@ def apply(source, model, Section):
         new_sec, new_off, _ = defined.pop(name)
         sec, off, _ = symbols[name]
         size = sized(symbols, name)
-        if len(new_sec.data) == size and sum(s is sec for s, _, _ in symbols.values()) > 1:
-            # A module built into one segment: overwrite the compiled function
-            # in place, so jumps between it and its neighbours stay unrelocated
-            # displacements, as the original linker resolved them.
-            substitute(sec, off, size, new_sec, symbols)
+        if sum(s is sec for s, _, _ in symbols.values()) > 1:
+            # A module built into one segment: put the stand-in in the compiled
+            # function's place, so jumps between it and its neighbours stay
+            # unrelocated displacements, as the original linker resolved them.
+            if len(new_sec.data) != size:
+                resize(sec, off, size, len(new_sec.data), symbols, name)
+            substitute(sec, off, len(new_sec.data), new_sec, symbols)
         else:
             symbols[name + ".c"] = (sec, off, True)
             del symbols[name]
@@ -131,6 +133,74 @@ def sized(symbols, name):
     sec, off, _ = symbols[name]
     ends = [o for s, o, _ in symbols.values() if s is sec and o > off]
     return min(ends, default=len(sec.data)) - off
+
+
+def resize(sec, off, size, new_size, symbols, name):
+    """Make sec[off:off + size] new_size bytes long, moving what follows:
+    symbols, relocation sites, section-relative targets, and the resolved
+    branches of the other functions that cross the resized range."""
+    import capstone
+
+    delta, end = new_size - size, off + size
+    moved = lambda a: a + delta if a >= end else a
+    relocated = {at + k for at, _, _ in sec.relocs for k in range(4)}
+    # Runs of absolute relocations are jump tables, not code.
+    table = set()
+    abs_sites = sorted(at for at, rtype, _ in sec.relocs if rtype == 1)
+    for a, b in zip(abs_sites, abs_sites[1:]):
+        if b - a == 4:
+            table.update(range(a, b + 4))
+
+    md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+    starts = sorted({o for s, o, _ in symbols.values() if s is sec} | {len(sec.data)})
+    branches = []  # (field offset, field size, target), old positions
+    for lo, hi in zip(starts, starts[1:]):
+        if lo == off:
+            continue
+        a = lo
+        while a < hi:
+            if a in table:
+                a += 1
+                continue
+            ins = next(md.disasm(bytes(sec.data[a:hi]), a, 1), None)
+            if ins is None:
+                a += 1
+                continue
+            op = ins.bytes[0]
+            rel = op in (0xE8, 0xE9, 0xEB, 0xE3) or 0x70 <= op <= 0x7F or (op == 0x0F and 0x80 <= ins.bytes[1] <= 0x8F)
+            if rel:
+                width = 1 if op in (0xEB, 0xE3) or 0x70 <= op <= 0x7F else 4
+                field = a + ins.size - width
+                if field not in relocated:
+                    target = int(ins.op_str, 16)
+                    branches.append((field, width, a + ins.size, target))
+            a += ins.size
+
+    for field, width, next_ins, target in branches:
+        if off < target < end:
+            sys.exit(f"{name}: a neighbour branches into its middle at {target:#x}")
+    sec.data[off:end] = bytes(new_size)
+    sec.length += delta
+    for field, width, next_ins, target in branches:
+        disp = moved(target) - moved(next_ins)
+        if width == 1 and not -128 <= disp < 128:
+            sys.exit(f"{name}: a short branch at {field:#x} no longer reaches")
+        struct.pack_into("<b" if width == 1 else "<i", sec.data, moved(field), disp)
+
+    relocs = []
+    for at, rtype, target in sec.relocs:
+        if off <= at < end:
+            continue  # replaced with the stand-in's own
+        if target[0] == "sec" and target[1] is sec:
+            addend = struct.unpack_from("<i", sec.data, moved(at))[0]
+            aim = addend + 4 if rtype == 2 else addend
+            if aim >= end:
+                struct.pack_into("<i", sec.data, moved(at), addend + delta)
+        relocs.append((moved(at), rtype, target))
+    sec.relocs = relocs
+    for n, (s, o, local) in list(symbols.items()):
+        if s is sec and o >= end:
+            symbols[n] = (s, o + delta, local)
 
 
 def substitute(sec, off, size, new_sec, symbols):
