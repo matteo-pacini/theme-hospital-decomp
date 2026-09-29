@@ -500,9 +500,10 @@ void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32
 #pragma aux (__pascal) SmackColorRemap "fn_000e85b0_";
 
 // FUNCTION: 0xe85b0
-// NONMATCHING: register allocation: ours spills p[bo] for b - p[bo] (one more
-// dword of frame, so every slot is 4 off) and loads r, g and b through
-// different registers
+// NONMATCHING: register allocation: r, g, b and ro, bo get each other's spill
+// slots and are loaded through different registers; the target computes
+// b - p[bo], which written here spills p[bo] (one more dword of frame), so the
+// equal square(p[bo] - b) is used instead
 void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32 paltype)
 {
     u8 remap[256];
@@ -565,7 +566,7 @@ void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32
                 p = remappal;
             dist = square(r - p[ro]);
             dist += square(g - p[go]);
-            dist += square(b - p[bo]);
+            dist += square(p[bo] - b);
             if (dist < bestdist) {
                 best = (s32)(p - remappal) / (s32)size;
                 if (dist == 0)
@@ -1149,7 +1150,7 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on);
 #pragma aux (__pascal) SmackSoundOnOff "SMACKSOUNDONOFF";
 
 // FUNCTION: 0xe9a20
-// NONMATCHING: register allocation; the target keeps behind/fill in ebp and
+// NONMATCHING: register allocation; the target keeps behind in ebp and
 // spills the sounds[] cursor (one more dword of frame), loads D_0015168c into
 // a register before testing it, and does not keep 0 in a register in the
 // second loop
@@ -1159,7 +1160,6 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
     SmackSnd *snd;
     u32 behind;
     u32 need;
-    u32 fill;
 
     if (smk == NULL)
         return 0;
@@ -1181,21 +1181,21 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
                 need = (snd->f38 - ((snd->f20 >> 10) + snd->f24)) & ~3;
                 if (behind >= need)
                     continue;
-                fill = need - behind;
-                if (snd->f10 + fill > snd->bufsize)
-                    fill = snd->bufsize - snd->f10;
-                fill &= ~3;
+                behind = need - behind;
+                if (snd->f10 + behind > snd->bufsize)
+                    behind = snd->bufsize - snd->f10;
+                behind &= ~3;
                 need = snd->f50 ? 0 : 0x80;
-                if (snd->writepos + fill >= snd->bufend) {
+                if (snd->writepos + behind >= snd->bufend) {
                     radmemset(snd->writepos, need, snd->bufend - snd->writepos);
-                    radmemset(snd->buf, need, fill - (snd->bufend - snd->writepos));
-                    snd->writepos = snd->buf + fill - (snd->bufend - snd->writepos);
+                    radmemset(snd->buf, need, behind - (snd->bufend - snd->writepos));
+                    snd->writepos = snd->buf + behind - (snd->bufend - snd->writepos);
                 } else {
-                    radmemset(snd->writepos, need, fill);
-                    snd->writepos += fill;
+                    radmemset(snd->writepos, need, behind);
+                    snd->writepos += behind;
                 }
-                snd->f10 += fill;
-                snd->f2c += fill;
+                snd->f10 += behind;
+                snd->f2c += behind;
             }
             LowSoundCheckAddr();
             return 1;
@@ -1634,9 +1634,10 @@ frame:
 }
 
 // FUNCTION: 0xeab30
-// NONMATCHING: in the else branch ours adds f450 to a copy of f43c (the target
-// adds in place after the two stores), and the inlined readframe loads f3c8
-// before FrameNum (the target loads FrameNum first)
+// NONMATCHING: in the else branch the target stores f448 and f444 before f440
+// and adds f450 to f43c in place; written in that order, ours adds to a copy
+// of f43c and loads f450 late (further off than this order). The inlined
+// readframe loads f3c8 before FrameNum (the target loads FrameNum first)
 u32 gotoframe(Smack *smk)
 {
     u32 pos;
@@ -1686,9 +1687,9 @@ u32 gotoframe(Smack *smk)
         }
     } else {
         smk->f44c = 0;
+        smk->f440 = smk->f43c + smk->f450;
         smk->f448 = smk->f43c;
         smk->f444 = smk->f43c;
-        smk->f440 = smk->f43c + smk->f450;
         radseekbegin(smk->handle, pos);
         n = pos & 0xfff;
         if (n) {

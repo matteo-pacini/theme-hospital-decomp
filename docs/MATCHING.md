@@ -340,6 +340,14 @@ Observed consequences:
   read them for structure (e.g. `LbNetwork_Create` calling
   `GetPlayerInfo()`), don't copy them.
 
+- One register holding two values means one variable reused (Smacker's
+  `behind`/`fill` in `SMACKSOUNDONOFF`); merging them fixed its frame. The
+  dead `mov eax,reg` before a byte-register compare (`mov bl,[edi]; mov
+  eax,edi; cmp bl,1`) appears in both `SMACKTOBUFFER` and `SmackToScreen`
+  (0xe8ab0), so it is one shared source construct, not yet found. Gene Wars'
+  `smacklib` has only stubs, but names 0xe8190 `SMACKTOBUFFERRECT`,
+  0xe85b0 `SMACKCOLORREMAP` and 0xe8ab0 `SMACKTOSCREEN`.
+
 ## Known unsolved
 
 - Register allocation is global to the function even at `-d2`: a change
