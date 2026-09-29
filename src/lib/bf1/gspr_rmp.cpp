@@ -4,7 +4,7 @@ extern "C" {
 
 // FUNCTION: 0xcbe20
 // NONMATCHING: the byte locals' stack slots are permuted
-int fn_000cbe20(s32 x, s32 y, TbSprite *spr, u8 *remap)
+int LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap)
 {
     u8 *dst;
     u8 *next;

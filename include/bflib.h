@@ -147,7 +147,7 @@ void LbMemorySet(void *dst, u8 value, u32 size);
 /* The C library's strcpy. */
 void fn_000bbff0(char *dst, char *src);
 #pragma aux fn_000bbff0 "strcpy_"
-int LbDataLoadAll(TbLoadFiles *files);
+int LbDataLoad(TbLoadFiles *files);
 int LbDataFree(TbLoadFiles *files);
 int LbDataFreeAll(TbLoadFiles *files);
 int LbFileLengthRnc(char *path);

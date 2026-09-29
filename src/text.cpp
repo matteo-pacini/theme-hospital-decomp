@@ -330,7 +330,7 @@ s16 setup_lang(void)
     char **starts;
     char *p;
 
-    if (LbDataLoadAll(&langfile[myplayer.f21]) != 1)
+    if (LbDataLoad(&langfile[myplayer.f21]) != 1)
         return 0;
     groups = *(s16 *)text_buffer;
     counts = (s16 *)(text_buffer + 2);

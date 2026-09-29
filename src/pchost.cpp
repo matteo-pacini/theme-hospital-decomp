@@ -31,7 +31,7 @@ extern char *D_001289a0;
 extern Message D_00129004;
 extern void *D_00158334;
 
-void fn_000bce44(TbLoadFiles *files);
+void LbDataLoadAll(TbLoadFiles *files);
 void fn_0008bcb4(void);
 void fn_000c20f0(void);
 int fn_000bea80(int mode, ...);
@@ -50,8 +50,8 @@ u8 setup_host(void)
 
     D_0015f982 = 0;
     resvars.f5 = 0;
-    fn_000bce44(D_0013e9c8);
-    fn_000bce44(D_0013e7b4);
+    LbDataLoadAll(D_0013e9c8);
+    LbDataLoadAll(D_0013e7b4);
     if (!setup_any_screen(D_00153f34, SCREEN_MODE_13)) {
         return 1;
     }
@@ -69,7 +69,7 @@ u8 setup_host(void)
     if (debug.unknown1fa) {
         load_game_files();
     }
-    fn_000bce44(D_0013e22c);
+    LbDataLoadAll(D_0013e22c);
     LbSpriteSetup(pointer, D_00153f30, D_00153f28);
     statvar.unknowne6 = 0x1c;
     statvar.unknowne7 = 0x1f;
@@ -103,15 +103,15 @@ u8 setup_host(void)
     if (D_0015f982) {
         return 1;
     }
-    fn_000bce44(D_0013ea78);
-    fn_000bce44(D_0013e944);
+    LbDataLoadAll(D_0013ea78);
+    LbDataLoadAll(D_0013e944);
     SWIKeyboardOpen();
     if (LbMouseSetup(pointer + 1) != 1) {
         D_0015f982 = 2;
         return 1;
     }
     LbMouseChangeSprite(0);
-    LbDataLoadAll(D_0013ec5c);
+    LbDataLoad(D_0013ec5c);
     othervar.f1f = 0;
     D_001581ee = 0;
     if (D_001581ec) {
@@ -239,18 +239,18 @@ void load_game_files(void)
         return;
     }
     if (resvars.f1 == SCREEN_MODE_1) {
-        fn_000bce44(loresblockfiles);
-        fn_000bce44(mcgaspritefiles);
-        fn_000bce44(mcgareqfiles);
-        fn_000bce44(loresanifiles);
+        LbDataLoadAll(loresblockfiles);
+        LbDataLoadAll(mcgaspritefiles);
+        LbDataLoadAll(mcgareqfiles);
+        LbDataLoadAll(loresanifiles);
         setup_panel_icons(1);
         fn_0008bcb4();
     } else {
-        fn_000bce44(hiresspritefiles);
-        fn_000bce44(hiresblockfiles);
-        fn_000bce44(reqfiles);
+        LbDataLoadAll(hiresspritefiles);
+        LbDataLoadAll(hiresblockfiles);
+        LbDataLoadAll(reqfiles);
         loaded_requester = -1;
-        fn_000bce44(hiresanifiles);
+        LbDataLoadAll(hiresanifiles);
         setup_panel_icons(13);
     }
     resvars.f2 = resvars.f1;
@@ -376,6 +376,6 @@ void fn_000110b0(void)
     window.unknown2eb = 0;
     setup_menus();
     LbDataFreeAll(D_0013e2b8);
-    fn_000bce44(D_0013e22c);
+    LbDataLoadAll(D_0013e22c);
     LbSpriteSetup(pointer, D_00153f30, D_00153f28);
 }

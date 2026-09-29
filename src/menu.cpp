@@ -49,7 +49,7 @@ extern TbSprite *D_00153f44, *D_00153f48, *D_00153f24, *D_00153f88, *D_00153f94;
 extern u8 *D_00153f40, *D_00153f1c, *D_00153f80, *D_00153f8c;
 extern TbLoadFiles D_0013e22c[], D_0013e2b8[];
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
-int fn_000bce44(TbLoadFiles *files);
+int LbDataLoadAll(TbLoadFiles *files);
 
 int strcmp(const char *a, const char *b);
 void LbTextSetClipWindow(u32 x, u32 y, u32 w, u32 h);
@@ -1107,7 +1107,7 @@ void swap_game_sprites(TbScreenMode mode)
         statvar.unknowne7 = 0x1a;
         LbMouseChangeSprite(0);
         LbDataFreeAll(D_0013e22c);
-        fn_000bce44(D_0013e2b8);
+        LbDataLoadAll(D_0013e2b8);
         LbPackHeap();
         resvars.f1 = SCREEN_MODE_1;
         load_game_files();
@@ -1139,7 +1139,7 @@ void swap_game_sprites(TbScreenMode mode)
         statvar.unknowne7 = 0x1f;
         LbMouseChangeSprite(0);
         LbDataFreeAll(D_0013e2b8);
-        fn_000bce44(D_0013e22c);
+        LbDataLoadAll(D_0013e22c);
         LbPackHeap();
         resvars.f1 = SCREEN_MODE_13;
         load_game_files();

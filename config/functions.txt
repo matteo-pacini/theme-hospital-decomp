@@ -1409,8 +1409,8 @@
 000bcce3      d ___GETDSEnd_
 000bccf0     15 LbDataLoadSetModifyFilenameFunction_
 000bcd08     10 W?_defaultModifyDataLoadFilename$n(pn$TbLoadFiles$$)pna
-000bcd18    12a LbDataLoadAll_
-000bce44    115 fn_000bce44_
+000bcd18    12a LbDataLoad_
+000bce44    115 LbDataLoadAll_
 000bcf5c     33 LbDataFree_
 000bcf90     2c LbDataFreeAll_
 000bcfc0    155 LbMousePlace_
@@ -1725,8 +1725,8 @@
 000caac0    324 W?LbNetwork_Send$n(ulpnvul)$TbError$$
 000cade4    4f7 W?LbNetwork_Receive$n(ulpnvul)ul
 000cb2db      7 fn_000cb2db_
-000cb2f0    b2b LbDrawHVLine_
-000cbe20    ca2 fn_000cbe20_
+000cb2f0    b2b LbSpriteDrawOneColour_
+000cbe20    ca2 LbSpriteDrawRemap_
 000ccac4    1e1 LbDrawLine_
 000ccca8     12 __wcpp_2_undefed_cdtor__
 000cccc0     6d StopSample_

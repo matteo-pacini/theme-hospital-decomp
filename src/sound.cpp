@@ -94,7 +94,7 @@ char GetSoundAble(void);
 u8 GetMusicInstalled(void);
 u8 GetMusicAble(void);
 char IsSamplePlaying(s32 a, s32 b, void *handle);
-int fn_000bce44(TbLoadFiles *files);
+int LbDataLoadAll(TbLoadFiles *files);
 void StopSample(u32 source, s16 sample);
 void SetSamplePan(u32 source, s16 sample, u16 pan, void *handle);
 void SetSampleVolume(u32 source, s16 sample, s16 volume, void *handle);
@@ -133,7 +133,7 @@ u8 setup_sound(void)
     fn_000bbff0(statvar.fd0, options.unknown0);
     InitAudio(&options);
     if (GetSoundInstalled() && GetSoundAble()) {
-        LbDataLoadAll(&D_0013ecb4[D_00156433]);
+        LbDataLoad(&D_0013ecb4[D_00156433]);
         if (D_00158334) {
             loaded = 1;
             sprintf(buf, D_001207a0, options.unknown0, myplayer.f21);
@@ -157,10 +157,10 @@ u8 setup_sound(void)
         myplayer.ff = 1;
         myplayer.f10 = 1;
     }
-    if (statvar.unknowne5 && fn_000bce44(D_0013edbc) == 0)
+    if (statvar.unknowne5 && LbDataLoadAll(D_0013edbc) == 0)
         myplayer.unknown11 = 1;
     if (!loaded) {
-        fn_000bce44(D_0013ed64);
+        LbDataLoadAll(D_0013ed64);
         if (D_00158334) {
             sprintf(buf, D_001207b6, options.unknown0);
             if (!init_sound_heap(D_00158334, 0x32000, buf, options.unknownc))

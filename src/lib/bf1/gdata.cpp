@@ -37,7 +37,7 @@ extern "C" {
 
 // NONMATCHING: register choice (target loads operands into registers before compares)
 // FUNCTION: 0x000bcd18
-int LbDataLoadAll(TbLoadFiles *files)
+int LbDataLoad(TbLoadFiles *files)
 {
     void *(*alloc)(u32);
     char *fname;
@@ -72,7 +72,7 @@ int LbDataLoadAll(TbLoadFiles *files)
 }
 
 // FUNCTION: 0x000bce44
-int fn_000bce44(TbLoadFiles *files)
+int LbDataLoadAll(TbLoadFiles *files)
 {
     u16 count;
     int ret;
@@ -83,7 +83,7 @@ int fn_000bce44(TbLoadFiles *files)
     for (t = files; t->Start; t++)
         LbDataFree(t);
     for (t = files; t->Start; t++) {
-        ret = LbDataLoadAll(t);
+        ret = LbDataLoad(t);
         if (ret == -100) {
             fn_000d080c(D_00121e0a, t);
             {

@@ -120,7 +120,7 @@ extern char D_00120308[];
 extern char D_0012030c[];
 
 void fn_000c93bf(char *dst, char *src);
-void fn_000bce44(TbLoadFiles *files);
+void LbDataLoadAll(TbLoadFiles *files);
 void fn_00035824(void);
 void fn_00036594(s32 value, char *text);
 void fn_00036730(char *text, u8 *line, u8 lines);
@@ -1417,7 +1417,7 @@ void setup_rat_fest_panel(void)
 {
     LbSpriteReset(game_panel, D_00153f88, D_00153f80);
     if (resvars.f0 != SCREEN_MODE_1) {
-        fn_000bce44(D_0013f680);
+        LbDataLoadAll(D_0013f680);
         LbSpriteSetup(game_panel, D_00153f88, D_00153f80);
         setup_panel_icons(resvars.f0);
     }

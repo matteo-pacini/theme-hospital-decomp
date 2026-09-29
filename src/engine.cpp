@@ -60,7 +60,7 @@ extern "C" {
 extern s16 D_001567b0[8];
 extern CellLink D_00157dc4[];
 void fn_000c9be0(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
-void LbDrawHVLine(s32 x, s32 y, TbSprite *sprite, s32 colour);
+void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *sprite, s32 colour);
 void fn_000a6c08(void);
 void fn_000a6c7c(void);
 void fn_000a6ca4(void);
@@ -772,11 +772,11 @@ void draw_window_into_pix_buffer(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, con
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80) && (cx > lx || cy > ly)) {
                 m = &mp[c];
                 if (m->unknown3)
-                    LbDrawHVLine(0x5a - resvars.f4 / 2 + x,
+                    LbSpriteDrawOneColour(0x5a - resvars.f4 / 2 + x,
                                  ay - blocks[m->unknown3].info->height + 0xb4 - resvars.f3 * 3 / 2 + resvars.f3,
                                  blocks[m->unknown3].info, 0xfe);
                 if (m->unknown4)
-                    LbDrawHVLine(0x5a - resvars.f4 / 2 + x,
+                    LbSpriteDrawOneColour(0x5a - resvars.f4 / 2 + x,
                                  ay - blocks[m->unknown4].info->height + 0xb4 - resvars.f3 * 3 / 2 + resvars.f3,
                                  blocks[m->unknown4].info, 0xfe);
             }

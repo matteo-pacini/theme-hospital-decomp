@@ -34,9 +34,9 @@ extern TbSprite *D_00153f5c;
 extern char D_001202fc[];
 extern u8 D_00130280[];
 
-void LbDrawHVLine(s32 x, s32 y, TbSprite *spr, u8 colour);
+void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour);
 void LbSpriteDrawScaled(s32 x, s32 y, TbSprite *spr, s32 w, s32 h);
-void fn_000cbe20(s32 x, s32 y, TbSprite *spr, u8 *remap);
+void LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap);
 
 u32 ror13(u32 x);
 #pragma aux ror13 = "ror eax,13" parm [eax] value [eax];
@@ -120,7 +120,7 @@ void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16
             if (spr > sprite) {
                 lbDisplay.draw_flags = elem->flags;
                 lbDisplay.draw_flags ^= 1;
-                LbDrawHVLine(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, colour);
+                LbSpriteDrawOneColour(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, colour);
                 if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                     D_001567b0.x = -(elem->x - 0x8d + spr->width);
                 if (D_001567b0.y > elem->y - 0xca)
@@ -133,7 +133,7 @@ void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
                 lbDisplay.draw_flags = elem->flags;
-                LbDrawHVLine(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, colour);
+                LbSpriteDrawOneColour(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, colour);
                 if (D_001567b0.x > elem->x - 0x8d)
                     D_001567b0.x = elem->x - 0x8d;
                 if (D_001567b0.y > elem->y - 0xca)
@@ -805,7 +805,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
                 if (spr > sprite) {
                     lbDisplay.draw_flags = elem->flags;
                     lbDisplay.draw_flags ^= 1;
-                    fn_000cbe20(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, remap);
+                    LbSpriteDrawRemap(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, remap);
                     if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                         D_001567b0.x = -(elem->x - 0x8d + spr->width);
                     if (D_001567b0.y > elem->y - 0xca)
@@ -834,7 +834,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
                     lbDisplay.draw_flags = elem->flags;
-                    fn_000cbe20(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, remap);
+                    LbSpriteDrawRemap(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, remap);
                     if (D_001567b0.x > elem->x - 0x8d)
                         D_001567b0.x = elem->x - 0x8d;
                     if (D_001567b0.y > elem->y - 0xca)
@@ -902,7 +902,7 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
                 lbDisplay.draw_flags = elem->flags & 0xf;
                 lbDisplay.draw_flags ^= 1;
                 if (remap)
-                    fn_000cbe20(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, remap);
+                    LbSpriteDrawRemap(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, remap);
                 else
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
                 if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
@@ -923,7 +923,7 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
             if (spr > sprite) {
                 lbDisplay.draw_flags = elem->flags & 0xf;
                 if (remap)
-                    fn_000cbe20(x + (elem->x - 0x8d), y + (elem->y - 0xca), spr, remap);
+                    LbSpriteDrawRemap(x + (elem->x - 0x8d), y + (elem->y - 0xca), spr, remap);
                 else
                     LbSpriteDraw(x + (elem->x - 0x8d), y + (elem->y - 0xca), spr);
                 if (D_001567b0.x > elem->x - 0x8d)

@@ -1253,7 +1253,8 @@
 000bcce3 000a0a0b bytes   confirmed  runtime cstrt386       ___GETDSEnd_
 000bccf0 000a0a10 manual  confirmed  bflib   gdata.cpp      LbDataLoadSetModifyFilenameFunction_
 000bcd08 000a0a18 manual  confirmed  bflib   gdata.cpp      W?_defaultModifyDataLoadFilename$n(pn$TbLoadFiles$$)pna
-000bcd18 000a0aec calls   consistent bflib   gdata.cpp      LbDataLoadAll_
+000bcd18 000a0a1c manual  confirmed  bflib   gdata.cpp      LbDataLoad_
+000bce44 000a0aec manual  confirmed  bflib   gdata.cpp      LbDataLoadAll_
 000bcf5c 000a0ba8 calls   consistent bflib   gdata.cpp      LbDataFree_
 000bcf90 000a0bd0 calls   consistent bflib   gdata.cpp      LbDataFreeAll_
 000bcfc0 000a17d0 calls   consistent bflib   smouse.cpp     LbMousePlace_
@@ -1493,7 +1494,8 @@
 000caaa8 000ab05e calls   consistent runtime toupper        toupper_
 000caac0 000cce80 strings confirmed  bflib   netint3.cpp    W?LbNetwork_Send$n(ulpnvul)$TbError$$
 000cade4 000cd1a4 strings confirmed  bflib   netint3.cpp    W?LbNetwork_Receive$n(ulpnvul)ul
-000cb2f0 000aea00 calls   consistent runtime hvline.asm     LbDrawHVLine_
+000cb2f0 000ad770 manual  confirmed  bflib   gspr_col.cpp   LbSpriteDrawOneColour_
+000cbe20 000adfc0 manual  confirmed  bflib   gspr_rmp.cpp   LbSpriteDrawRemap_
 000ccac4 000aa400 manual  confirmed  bflib   gline.cpp      LbDrawLine_
 000ccca8 000b0fb0 manual  confirmed  runtime undefed        __wcpp_2_undefed_cdtor__
 000cccc0 000aebf0 calls   confirmed  bflib   stop_sam.cpp   StopSample_
