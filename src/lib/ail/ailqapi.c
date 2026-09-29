@@ -256,14 +256,14 @@ HAUDIO __cdecl AIL_API_quick_load_and_play(char *filename, U32 loop_count, S32 w
     return audio;
 }
 
-S32 __cdecl AIL_API_quick_startup(void (*startup)(void), S32 use_digital, S32 use_MIDI,
+S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital, S32 use_MIDI,
                                   U32 output_rate, S32 output_bits, S32 output_channels);
 #pragma aux (__cdecl) AIL_API_quick_startup "fn_000e6d80_";
 
-// NONMATCHING: register allocation (use_digital is loaded before AILQAPI_start
-// in the target); the target calls its first stack argument, hence startup
+// startup is __cdecl: the parameters are loaded after its call, which
+// clobbers eax, ecx and edx.
 // FUNCTION: 0xe6d80
-S32 __cdecl AIL_API_quick_startup(void (*startup)(void), S32 use_digital, S32 use_MIDI,
+S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital, S32 use_MIDI,
                                   U32 output_rate, S32 output_bits, S32 output_channels)
 {
     startup();

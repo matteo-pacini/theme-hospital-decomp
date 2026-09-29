@@ -273,6 +273,11 @@ Observed consequences:
   debug dump (`orig/demo-1997-03/HOSPITAL.debug.txt`) also has line tables
   for library modules, which show block structure.
 
+- Registers shifting around an indirect call can come from the function
+  pointer parameter's calling convention: a `__cdecl` pointer clobbers
+  eax/ecx/edx at the call, which moves parameter loads after it
+  (`AIL_API_quick_startup`).
+
 ## Known unsolved
 
 - Register allocation is global to the function even at `-d2`: a change
@@ -289,6 +294,11 @@ Observed consequences:
 - `jmp then; jmp skip` stubs after an or-test come from the empty-then form
   `if (!A && !B) {} else {...}`; `for (;;) { if (c) {...} else break; }`
   gives a loop whose exits go through `jmp` stubs.
+- Miles (`-s -oxat -4`, confirmed by a sweep of options, their order and
+  10.0a): a value computed in eax and then copied to its home register
+  (`mov edx,eax; mov eax,edx` after a call in `ailsr`, the `abs` in
+  `set_sequence_tempo`/`_volume`, `branch_index`) is not reproduced by
+  any source form tried.
 - `netint` inlining: the original inlines `CompleteMultiPlayerExchange`
   (needs `-oe=400` here) but not `LbNetwork_Init(u32)` into its wrappers
   (inlined from `-oe=250`), so no single `-oe` reproduces both; declaring

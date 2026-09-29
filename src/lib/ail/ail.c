@@ -100,11 +100,12 @@ S32 __cdecl ASC_val(char *str, S32 base, char **end)
 }
 
 // FUNCTION: 0x000ded50
-// NONMATCHING: register allocation (file in eax vs edx, ch in dl vs al)
+// NONMATCHING: register allocation (the target reads the buffer pointer into
+// eax and ch into dl; ours uses edx and al)
 U32 AIL_fgets(S32 file, INI_BUFFER *buf, char *dest, U32 maxlen)
 {
     U32 n;
-    char ch;
+    U8 ch;
     char *out;
 
     n = 0;
@@ -112,7 +113,7 @@ U32 AIL_fgets(S32 file, INI_BUFFER *buf, char *dest, U32 maxlen)
     while (n < maxlen) {
         if (buf->count == 0) {
             buf->ptr = buf->data;
-            buf->count = AIL_fread(file, buf->ptr, buf->size - 12);
+            buf->count = AIL_fread(file, buf->data, buf->size - 12);
             if (buf->count == 0) {
                 break;
             }
