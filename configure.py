@@ -89,6 +89,9 @@ def main():
     n.append(f"build all: phony {' '.join(objects)}\n")
     n.append("build build/report.json: report | all objdiff.json tools/progress.py tools/verify.py tools/elfrelocs.py\n")
     n.append("build report: phony build/report.json\n")
+    n.append("rule link\n  command = python3 tools/link.py\n")
+    n.append("build build/link/report.txt: link | all tools/link.py\n")
+    n.append("build link: phony build/link/report.txt\n")
     n.append("default all\n")
 
     with open(os.path.join(ROOT, "build.ninja"), "w") as f:

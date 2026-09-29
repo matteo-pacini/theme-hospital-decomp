@@ -23,6 +23,7 @@ No game files are included. You need your own copy.
    python3 configure.py
    ninja            # target + base objects
    ninja report     # build/report.json and a progress summary
+   ninja link       # trial link; unresolved symbols in build/link/report.txt
    ```
 
    `objdiff` (GUI) can open the project root directly; it reads `objdiff.json`.

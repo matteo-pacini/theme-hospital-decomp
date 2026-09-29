@@ -101,7 +101,8 @@
         packages = with pkgs; [
           wibo
           objdiff-cli
-          open-watcom-v2 # wdis, for reading OMF objects
+          open-watcom-v2 # wdis, for reading OMF objects; wlink for tools/link.py
+          objconv # ELF to OMF for tools/link.py
           owdemangle
           binutils
           (rizin.withPlugins (p: [ p.rz-ghidra ]))
