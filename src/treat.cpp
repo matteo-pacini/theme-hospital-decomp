@@ -549,7 +549,6 @@ u8 treatment_already_done(Thing *w, u16 treatment)
     return found;
 }
 
-// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x0003d91c
 void person_go_for_treatment(Thing *w)
 {
@@ -600,8 +599,6 @@ void person_go_for_treatment(Thing *w)
         send_person_for_research(w);
         break;
     default: {
-        u16 frame;
-
         if (allhosps[w->owner].rooms[treatment].unknown1C == 1) {
             room = get_expertise_dest(treatment, w);
         } else {
@@ -611,9 +608,13 @@ void person_go_for_treatment(Thing *w)
         pos = room->unknown4;
         page_staff_i_need(w, room);
         w->unknown89 = room - room_info;
-        frame = check_frame(anim_starts[w->subtype].idle, w) + (u16)w->unknown17;
-        w->sprite = start[frame].frame;
-        w->palette = start[frame].flags > 0 ? (u8)1 : (u8)0;
+        {
+            u16 frame;
+
+            frame = check_frame(anim_starts[w->subtype].idle, w) + (u16)w->unknown17;
+            w->sprite = start[frame].frame;
+            w->palette = start[frame].flags > 0 ? (u8)1 : (u8)0;
+        }
         w->kind = 0x24;
         fn_0004195c(w, pos);
         break;

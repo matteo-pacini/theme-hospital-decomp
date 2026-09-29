@@ -58,7 +58,6 @@ void person_arrives_at_door(Thing *w)
     }
 }
 
-// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x00015d48
 void person_in_queue(Thing *w)
 {
@@ -91,8 +90,6 @@ void person_in_queue(Thing *w)
                         }
                     }
                     if (w->icon != 70) {
-                        u16 anim;
-
                         if (abilities[w->subtype][1]) {
                             if (find_nearest_free_object(w - thing, 4)) {
                                 if (w->owner == player) {
@@ -108,9 +105,13 @@ void person_in_queue(Thing *w)
                                 NRAdcounts.unknown6++;
                             }
                         }
-                        anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->unknown17;
-                        w->sprite = start[anim].frame;
-                        w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                        {
+                            u16 anim;
+
+                            anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->unknown17;
+                            w->sprite = start[anim].frame;
+                            w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                        }
                         if (find_standing_place(w)) {
                             return;
                         }
@@ -123,7 +124,6 @@ void person_in_queue(Thing *w)
     }
 }
 
-// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x000160a8
 void person_entertains_themself(Thing *w)
 {
@@ -177,8 +177,6 @@ void person_entertains_themself(Thing *w)
                         }
                     }
                     if (w->icon != 70) {
-                        u16 anim;
-
                         if (abilities[w->subtype][1]) {
                             if (find_nearest_free_object(w - thing, 4)) {
                                 if (w->owner == player) {
@@ -194,9 +192,13 @@ void person_entertains_themself(Thing *w)
                                 NRAdcounts.unknown6++;
                             }
                         }
-                        anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->unknown17;
-                        w->sprite = start[anim].frame;
-                        w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                        {
+                            u16 anim;
+
+                            anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->unknown17;
+                            w->sprite = start[anim].frame;
+                            w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                        }
                         if (find_standing_place(w)) {
                             return;
                         }
@@ -481,7 +483,6 @@ u8 call_person_again(Thing *w, u16 action, u16 arg)
     return 2;
 }
 
-// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x00016eb0
 void send_person_to_bed(Thing *w)
 {
@@ -490,8 +491,6 @@ void send_person_to_bed(Thing *w)
 
     w->timer = old_newrand() % 300 + 300;
     for (room = room_info + 1; room < end_room_info; room++) {
-        u16 anim;
-
         if (room->owner != w->owner || room->type != 9) {
             continue;
         }
@@ -502,9 +501,13 @@ void send_person_to_bed(Thing *w)
             page_member_of_staff(4, room - room_info, 1, 1, w->owner);
             w->unknown89 = room - room_info;
             fn_0004195c(w, room->unknown4);
-            anim = check_frame(anim_starts[w->subtype].idle, w) + (u16)w->unknown17;
-            w->sprite = start[anim].frame;
-            w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+            {
+                u16 anim;
+
+                anim = check_frame(anim_starts[w->subtype].idle, w) + (u16)w->unknown17;
+                w->sprite = start[anim].frame;
+                w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+            }
             w->kind = 0x24;
             room->unknown32++;
             return;
@@ -860,7 +863,6 @@ void refer_patient(Thing *w, u8 owner)
     }
 }
 
-// NONMATCHING: frame layout: the u16 anim local and the ?: byte temporary swap slots
 // FUNCTION: 0x00017e30
 void person_waits_for_decision(Thing *w)
 {
@@ -875,8 +877,6 @@ void person_waits_for_decision(Thing *w)
         if (cur->flags & 1) {
             w->height--;
             if (w->height <= 0) {
-                u16 anim;
-
                 if (w->flags & 0x400) {
                     done = find_possible_diagnosis(w);
                     if (done || (u16)(othervar.f82 - w->timer) >= 1500) {
@@ -930,9 +930,13 @@ void person_waits_for_decision(Thing *w)
                     && move_peep_from_blueprint(w)) {
                     return;
                 }
-                anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->unknown17;
-                w->sprite = start[anim].frame;
-                w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                {
+                    u16 anim;
+
+                    anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->unknown17;
+                    w->sprite = start[anim].frame;
+                    w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                }
                 if (find_standing_place(w)) {
                     return;
                 }

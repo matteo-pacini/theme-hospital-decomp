@@ -231,7 +231,6 @@ void person_goto_queue(Thing *w)
     move_node(w, x, y);
 }
 
-// NONMATCHING: the ?: height temporary and the switch temporary swap slots ([ebp-0x18] / [ebp-0x1c])
 // FUNCTION: 0x0007724c
 s16 reaper_goto_hell(Thing *w)
 {
@@ -244,8 +243,7 @@ s16 reaper_goto_hell(Thing *w)
     w->height--;
     if (w->height <= 0) {
         w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
-        dir = person_head_for(w, 3);
-        switch (dir) {
+        switch (dir = person_head_for(w, 3)) {
         case 4:
             reaper_calls_victim(w);
             w->height = 0;
@@ -545,7 +543,6 @@ void peep_bp_goto(Thing *w)
 
 void mayor_inspects(Thing *w);
 
-// NONMATCHING: the ?: height temporary and the switch temporary swap slots ([ebp-0x18] / [ebp-0x1c])
 // FUNCTION: 0x00078640
 s16 mayor_goto(Thing *w)
 {
@@ -558,8 +555,7 @@ s16 mayor_goto(Thing *w)
     w->height--;
     if (w->height <= 0) {
         w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
-        dir = person_head_for(w, 3);
-        switch (dir) {
+        switch (dir = person_head_for(w, 3)) {
         case 4:
             mayor_inspects(w);
             w->kind = w->f6e;

@@ -511,21 +511,21 @@ void convert_MW_to_xy(u16 pos, s8 *x, s8 *y)
     *y = ly;
 }
 
-// NONMATCHING: slots of shape and maxY swapped
 // FUNCTION: 0x0001a854
 void measure_objects(void)
 {
-    Shapes *shape;
-    s8 maxX;
-    s8 minY;
-    s8 minX;
-    s8 maxY;
     u8 i;
     u8 j;
     u8 k;
 
     for (i = 0; i < 0x3e; i++) {
         for (j = 0; j < 4; j++) {
+            Shapes *shape;
+            s8 maxX;
+            s8 minY;
+            s8 minX;
+            s8 maxY;
+
             shape = shapes + objects[i].shapes[j];
             minX = 100;
             minY = 100;
