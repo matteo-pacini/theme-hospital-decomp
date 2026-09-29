@@ -8,7 +8,7 @@ src/lib/bf2/dosser.cpp CONST2 00128e28 10
 src/lib/bf2/dosser.cpp _DATA 00152310 c
 src/lib/bf2/modemsp.cpp CONST2 00128d5c 4e
 src/lib/bf2/netint2.cpp CONST2 00128c24 2c
-src/alloc.cpp CONST2 001289a8 c
+src/alloc.cpp CONST2 001289a8 10
 src/alloc.cpp _DATA 0014b1b8 c
 src/lib/bf2/ipxsp.cpp CONST2 00128c50 30
 src/lib/clib/tzset.c CONST 00128484 3

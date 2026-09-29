@@ -28,11 +28,81 @@ from project import EXE, Project  # noqa: E402
 ADDRESS_NAME = re.compile(r"_[CD]_([0-9a-f]{8})")
 
 
+def check_data(le, placed, symbol_address, problems, notes):
+    """Overlay the units' data on the EXE's data object and compare."""
+    data = le.objects[2]
+    image, owner = bytearray(data.data), [None] * data.vsize
+    # Relocated fields of every placed section: their raw bytes are addends.
+    reloc_bytes = {addr - data.base + at + j for _, sec, addr, _, _, _ in placed for at, _, _ in sec.relocs for j in range(4)}
+    late = []
+    queue = list(placed)
+    while queue:
+        u, sec, addr, syms, base, weak = queue.pop(0)
+        size = max(len(sec.data), sec.length)
+        if not data.contains(addr) or not data.contains(addr + size - 1):
+            problems["data placed outside the data object"] += 1
+            notes.append(f"{u.name}: {sec.name} at {addr:#x}")
+            continue
+        body = bytes(sec.data) + bytes(size - len(sec.data))
+        fields = {at + j for at, _, _ in sec.relocs for j in range(4)}
+        for k in range(size):
+            i = addr - data.base + k
+            if owner[i] is not None and owner[i] != u.name and image[i] != body[k] and k not in fields and i not in reloc_bytes:
+                problems["data bytes placed twice, differently"] += 1
+                if problems["data bytes placed twice, differently"] <= 3:
+                    notes.append(f"{addr + k:#x}: {u.name} {sec.name} over {owner[i]}")
+            image[i], owner[i] = body[k], u.name
+        for at, rtype, target in sec.relocs:
+            site = addr + at
+            addend = struct.unpack_from("<i", sec.data, at)[0]
+            if target[0] == "sec":
+                t = base.get(id(target[1]))
+            elif target[1] in syms and id(syms[target[1]][0]) in base:
+                t = base[id(syms[target[1]][0])] + syms[target[1]][1]
+            else:
+                t = symbol_address(target[1])
+                if t is None and isinstance(weak.get(target[1]), tuple):
+                    t = symbol_address(weak[target[1]][0])  # the weak default
+            fx = le.fixups.get(site)
+            if t is None and target[0] == "sym" and target[1] in syms and id(syms[target[1]][0]) in base:
+                t = base[id(syms[target[1]][0])] + syms[target[1]][1]
+            if t is None and target[0] == "sym" and target[1] in syms and fx is not None and id(syms[target[1]][0]) not in base:
+                # The unit's own data that only its data refers to: place it here.
+                tsec, toff, _ = syms[target[1]]
+                base[id(tsec)] = fx.target - addend - toff
+                late.append((u, tsec, base[id(tsec)], syms, base, weak))
+                t = base[id(tsec)] + toff
+            if t is None:
+                problems["data relocation target unknown"] += 1
+                notes.append(f"{site:#x} ({u.name} {sec.name}): target {getattr(target[1], 'name', target[1])} unknown")
+            elif fx is None or fx.target != ((t + addend) & 0xFFFFFFFF):
+                problems["data reference differs"] += 1
+                notes.append(f"{site:#x} ({u.name} {sec.name}): ours {(t + addend) & 0xFFFFFFFF:#x}, EXE {fx.target if fx else None!s}")
+            i = site - data.base
+            image[i : i + 4] = data.data[i : i + 4]
+        queue.extend(late)
+        late.clear()
+    diffs = [data.base + i for i in range(data.vsize) if owner[i] is not None and image[i] != data.data[i]]
+    owned = sum(o is not None for o in owner)
+    print(f"data object {data.vsize:#x} bytes, placed by units {owned:#x}, differing {len(diffs)}")
+    runs = []
+    for a in diffs:
+        if runs and a - runs[-1][1] <= 8:
+            runs[-1][1] = a
+        else:
+            runs.append([a, a])
+    for lo, hi in runs[:20]:
+        print(f"  data differs {lo:#x}..{hi:#x} ({owner[lo - data.base]})")
+
+
 def main(verbose=False):
     proj, le = Project(), LEFile(EXE)
     code = le.code
     fn_addr = {f.name: f.addr for f in proj.functions}
     data_addr = {s.name: s.addr for s in proj.data_symbols}
+    # Names several modules' statics share (.mod_init, ...) place nothing.
+    counts = collections.Counter(s.name for s in proj.data_symbols)
+    unique_data = {n: a for n, a in data_addr.items() if counts[n] == 1}
 
     def symbol_address(name):
         m = ADDRESS_NAME.fullmatch(name)
@@ -40,6 +110,7 @@ def main(verbose=False):
             return int(m.group(1), 16)
         return fn_addr.get(name, data_addr.get(name))
 
+    data_placed, unplaced_data, pending = [], [], []
     image = bytearray(code.vsize)
     owner = [None] * code.vsize  # unit name per placed byte
     placed = []  # (unit, section, address)
@@ -57,7 +128,7 @@ def main(verbose=False):
         base = {}
         for sec in sections:
             if not sec.code:
-                if sec.name in seg_addr:
+                if sec.name in seg_addr and not sec.comdat:
                     base[id(sec)] = seg_addr[sec.name]
                 continue
             known = [own[n] - o for n, (s, o, _) in symbols.items() if s is sec and n in own and not n.endswith(".c")]
@@ -122,6 +193,72 @@ def main(verbose=False):
                     # The EXE's raw bytes at a fixup are not the target.
                     image[site - code.base : site - code.base + 4] = code.data[site - code.base : site - code.base + 4]
 
+        # The unit's own data (strings, initialised and uninitialised statics,
+        # vtables, exception tables), where a name, config/sections.txt or a
+        # code reference places it.
+        for sec in sections:
+            if sec.code or not max(len(sec.data), sec.length):
+                continue
+            if id(sec) not in base:
+                # Global names only: statics repeat across modules (.mod_init).
+                named = [unique_data[n] - o for n, (s, o, local) in symbols.items() if s is sec and n in unique_data and not local]
+                if named:
+                    base[id(sec)] = named[0]
+            if id(sec) in base:
+                data_placed.append((u, sec, base[id(sec)], symbols, base, weak))
+            else:
+                pending.append((u, sec, symbols, base, weak))
+
+    # Code addresses of every placed symbol, for data that points at code.
+    code_syms = {}
+    for u, sec, addr, syms in placed:
+        for n, (s_, o, _) in syms.items():
+            if s_ is sec:
+                code_syms.setdefault(n, addr + o)
+    # A data section no name places (a module's init table entry, which every
+    # module names .mod_init): where the EXE points at the same code.
+    by_target = collections.defaultdict(list)
+    for site, fx in le.fixups.items():
+        if le.objects[2].contains(site) and fx.kind == SRC_OFFSET32:
+            by_target[fx.target].append(site)
+    for u, sec, syms, base, weak in pending:
+        own_code = {n: a + o for u2, sec2, a, syms2 in placed if u2 is u for n, (s2, o, _) in syms2.items() if s2 is sec2}
+        sites = None
+        for at, rtype, target in sec.relocs:
+            name = target[1] if target[0] == "sym" else None
+            if name is None:
+                where = base.get(id(target[1])) if target[1].code else None
+            else:
+                where = own_code.get(name, code_syms.get(name))
+            if where is not None:
+                addend = struct.unpack_from("<i", sec.data, at)[0]
+                here = {site - at for site in by_target.get(where + addend, [])}
+                sites = here if sites is None else sites & here
+        if sites and len(sites) == 1:
+            base[id(sec)] = sites.pop()
+            data_placed.append((u, sec, base[id(sec)], syms, base, weak))
+        else:
+            unplaced_data.append((u, sec, base))
+
+    def any_address(name):
+        a = symbol_address(name)
+        if a is None:
+            a = code_syms.get(name)
+        if a is None:
+            a = placed_data.get(name)
+        return a
+
+    placed_data = {}
+    for u, sec, addr, syms, base, weak in data_placed:
+        for n, (s_, o, _) in syms.items():
+            if s_ is sec:
+                placed_data.setdefault(n, addr + o)
+    check_data(le, data_placed, any_address, problems, notes)
+    unplaced_data = [f"{u.name}: {sec.name} {max(len(sec.data), sec.length):#x} bytes"
+                     for u, sec, base in unplaced_data if id(sec) not in base]
+    if unplaced_data:
+        problems["data sections not placed"] = len(unplaced_data)
+
     diffs, gaps = [], []
     i = 0
     while i < code.vsize:
@@ -176,6 +313,8 @@ def main(verbose=False):
         print(f"  gap {a:#x} +{n:#x}: {code.data[a - code.base : a - code.base + min(n, 16)].hex()}")
     for n in notes[: 20 if not verbose else None]:
         print("  " + n)
+    for n in unplaced_data[: 20 if not verbose else None]:
+        print("  data not placed: " + n)
     return not diffs and not nonzero_gaps and not problems
 
 
