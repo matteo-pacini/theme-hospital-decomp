@@ -7,3 +7,5 @@ src/lib/bf1/opt/netint.cpp CONST2 001289b4 10e
 src/lib/bf2/dosser.cpp CONST2 00128e28 10
 src/lib/bf2/dosser.cpp _DATA 00152310 c
 src/lib/bf2/modemsp.cpp CONST2 00128d5c 4e
+src/alloc.cpp CONST2 001289a8 c
+src/alloc.cpp _DATA 0014b1b8 c

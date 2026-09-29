@@ -11,6 +11,11 @@ u32 fn_000bb10c(_CMemory *mem, void *p);
 u32 fn_000bb2b0(void);
 }
 
+/* The static initialiser for these objects (.fn_init) constructs both. */
+// FUNCTION: 0xbabb0
+_CMemory _lbMemory;
+CDosHeap _lbHeap;
+
 u32 dos_alloc(u32 size);
 void dos_free(u16 seg);
 

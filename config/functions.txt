@@ -1331,7 +1331,7 @@
 000ba954     d4 W?load_player_details$n()uc
 000baa28     a7 W?set_default_player_details$n()v
 000baad0     d2 fn_000baad0_
-000babb0     6e fn_000babb0_
+000babb0     6e W?.fn_init$n()v
 000bac20     1f W?LbPackHeap$n()v
 000bac40     2d LbMemoryAlloc_
 000bac70     32 LbMemoryAllocLow_

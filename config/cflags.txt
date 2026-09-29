@@ -78,6 +78,9 @@ src/lib/smk/*.c      wcc386  -s -oneatx -oe=25 -5
 # Game code: C++, full debug info (which also disables optimisation). -ot
 # must come first: -d2 turns optimisation off but keeps the "optimise for
 # time" preference, which decides register allocation.
+# alloc.cpp holds global objects with constructors: its static initialiser
+# registers them for exception cleanup (-xs).
+src/alloc.cpp        wpp386  -s -ot -d2 -xs
 src/*.cpp            wpp386  -s -ot -d2
 # Miles Sound System (RAD Game Tools): C, optimised for the 486, public
 # functions are __cdecl.
