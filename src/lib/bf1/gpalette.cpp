@@ -22,9 +22,9 @@ extern "C" {
 // FUNCTION: 0x000c9400
 s32 fn_000c9400(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
 {
-    u8 palette[768];
-    s16 diff;
     s16 i;
+    s16 diff;
+    u8 palette[768];
 
     if (flag == Lb_PALETTE_FADE_CLOSED) {
         LbPaletteGet(D_00189ad4);
@@ -95,13 +95,13 @@ u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b)
     s32 gi;
     s32 bi;
     s32 best;
-    Rgb *p;
-    u8 *out;
+    u8 list2[256];
+    u8 colour;
     u16 count2;
     u16 count1;
-    u8 colour;
+    Rgb *p;
     u8 list1[256];
-    u8 list2[256];
+    u8 *out;
 
     ri = r;
     gi = g;
@@ -111,7 +111,7 @@ u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b)
     base = p = (Rgb *)palette;
     n = 0x100;
     for (i = 0, best = 999999; i < n; i++, p++) {
-        dist = SQR(gi - p->g) + SQR(ri - p->r) + SQR(bi - p->b);
+        dist = SQR(ri - p->r) + SQR(gi - p->g) + SQR(bi - p->b);
         if (dist < best) {
             best = dist;
             if (best == 0)
@@ -121,7 +121,7 @@ u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b)
     out = list1;
     p = (Rgb *)palette;
     for (i = 0; i < n; i++, p++) {
-        dist = SQR(gi - p->g) + SQR(ri - p->r) + SQR(bi - p->b);
+        dist = SQR(ri - p->r) + SQR(gi - p->g) + SQR(bi - p->b);
         if (dist == best) {
             count1++;
             *out++ = i;
@@ -164,11 +164,11 @@ extern "C" {
 // FUNCTION: 0x000c99d8
 int fn_000c99d8(s32 x, s32 y, s32 w, s32 h, u8 show_numbers)
 {
+    u16 old_flags;
     char text[8];
     u32 j;
     u32 i;
     s32 px;
-    u16 old_flags;
     u8 colour;
     u8 old_colour;
 

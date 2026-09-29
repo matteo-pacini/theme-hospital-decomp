@@ -131,11 +131,10 @@ IPXQueueEntry *IPXServiceProvider::GetNextEmptyReceiveBuffer(void)
 }
 
 // FUNCTION: 0xd5510
-// NONMATCHING: ebx and edx swapped for no_batchs and the clock value in the inlined BatchProcess
 TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
 {
-    TbError ret = Lb_FAIL;
     IPXPacket *p;
+    TbError ret = Lb_FAIL;
 
     fn_000c20c0(D_001260e9);
     if (ServiceProvider::Initialise(cb, data) == Lb_OK) {
@@ -259,23 +258,23 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
 TbError IPXServiceProvider::Start(TbNetworkSessionNameEntry *entry, char *player_name, void *data)
 {
     __35ct5sCLIENTJOINPACKET join;
-    __5303ctCLIENTINFOPACKET query;
+    u8 *info;
     __3ljac5NETSOCKET from;
     __3ljac5NETSOCKET server;
-    u32 max;
+    u8 *reply;
     IPXPacket *p;
-    u32 start;
-    u8 *info;
+    u32 max;
+    TbError ret = Lb_FAIL;
     u32 num;
-    u32 begin;
+    u32 start;
     u32 last;
     u32 now;
     u32 size;
     u32 found = 0;
     u32 done;
     u32 i;
-    TbError ret = Lb_FAIL;
-    u8 *reply;
+    __5303ctCLIENTINFOPACKET query;
+    u32 begin;
 
     if (started && !unknown528) {
         ret = Lb_OK;
@@ -427,14 +426,14 @@ TbError IPXServiceProvider::Stop(void)
 // NONMATCHING: stack slots of locals and of the hoisted member addresses
 TbError IPXServiceProvider::Enumerate(TbNetworkCallbackFunc callback, void *data)
 {
-    __5303ctCLIENTINFOPACKET query;
-    __3ljac5NETSOCKET from;
     IPXPacket *p;
-    u8 *sap;
-    u8 *info;
     u32 now;
-    s32 i;
     TbError ret = Lb_FAIL;
+    __5303ctCLIENTINFOPACKET query;
+    u8 *info;
+    s32 i;
+    __3ljac5NETSOCKET from;
+    u8 *sap;
 
     if (started) {
         if (unknown528) {
@@ -525,23 +524,23 @@ struct IPXEnumPlayer {
 // here, the target loads it with the sar trick
 TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetworkCallbackFunc callback, void *data)
 {
-    __3ljac5NETSOCKET from;
-    __3ljac5NETSOCKET *server;
-    IPXPacket *p;
-    __5303ctCLIENTINFOPACKET query;
-    IPXPlayerEntry *e;
-    u8 *info;
-    u32 now;
+    u32 count;
     u32 time;
+    IPXPacket *p;
+    __3ljac5NETSOCKET from;
+    u32 now;
+    u8 *info;
+    __3ljac5NETSOCKET *server;
+    IPXPlayerEntry *e;
     u32 start;
     u32 last;
-    u32 count;
-    u32 i;
+    __5303ctCLIENTINFOPACKET query;
+    TbError ret = Lb_FAIL;
     u32 total = 32;
     u32 max = 32;
     IPXEnumPlayer player;
     s8 done = 0;
-    TbError ret = Lb_FAIL;
+    u32 i;
 
     if (started) {
         if (unknown528) {
@@ -583,7 +582,7 @@ TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetw
                                 if (memcmp(&session_list[session->id].address[10], from.node, 6) != 0)
                                     break;
                                 if (((IPXSessionInfo *)info)->num_players == total) {
-                                    if (query.page == ((IPXSessionInfo *)info)->page) {
+                                    if (((IPXSessionInfo *)info)->page == query.page) {
                                         start = time;
                                         last = now;
                                         player.id = 0;
@@ -618,7 +617,7 @@ TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetw
                                 }
                                 break;
                             }
-                            if (done)
+                            if (done != 0)
                                 break;
                         }
                         ipx.Listen(p, &socket);
@@ -715,11 +714,11 @@ u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 pe
 // BatchProcess
 TbError IPXServiceProvider::Update(void)
 {
-    u8 join[0x8c];
-    u8 info[0x54];
-    __3ljac5NETSOCKET from;
-    IPXPacket *p;
     u8 *data;
+    IPXPacket *p;
+    __3ljac5NETSOCKET from;
+    u8 info[0x54];
+    u8 join[0x8c];
     TbError ret = Lb_FAIL;
 
     if (unknown528) {
@@ -893,10 +892,10 @@ TbError IPXServiceProvider::SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3lj
 // NONMATCHING: frame layout and register allocation differ
 TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, __3ljac5NETSOCKET *from)
 {
-    u8 buf[0x88];
     __1p5pi1IPXSYSTEMMESSAGE msg;
     IPXPlayerEntry *p;
     u32 i;
+    u8 buf[0x88];
     TbError ret = Lb_FAIL;
 
     if (started && unknown528 && host_state == 1) {
@@ -906,7 +905,7 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
                 return Lb_OK;
             if (accepting == 1) {
                 for (i = 0, p = players; p < players + session.max_players; i++, p++) {
-                    if (p->addr.socket == 0) {
+                    if (!p->addr.socket) {
                         memcpy(&p->addr, &join->addr, sizeof(p->addr));
                         strcpy(p->name, join->name);
                         p->id = i;
@@ -944,8 +943,8 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
 // NONMATCHING: stack slots of the parameters and register choice for the two table pointers
 u32 IPXServiceProvider::CheckIfPlayerWantingToJoinIsInSession(__35ct5sCLIENTJOINPACKET *join, __3ljac5NETSOCKET *from)
 {
-    u8 buf[0x88];
     IPXPlayerEntry *p;
+    u8 buf[0x88];
     u32 ret = 0;
 
     for (p = players; p < players + session.max_players; p++) {
@@ -969,15 +968,15 @@ u32 IPXServiceProvider::CheckIfPlayerWantingToJoinIsInSession(__35ct5sCLIENTJOIN
 // inlined BatchProcess
 TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
 {
-    __3ljac5NETSOCKET from;
-    IPXPacket *pk;
+    u32 total = 32;
+    u32 max = 32;
     IPXSessionInfo *msg;
     IPXPlayerEntry *e;
     u32 last_send;
     u32 start;
     u32 now;
-    u32 total = 32;
-    u32 max = 32;
+    IPXPacket *pk;
+    __3ljac5NETSOCKET from;
     u32 added = 0;
     u32 i;
     u32 is_local;
@@ -1015,7 +1014,7 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
                                     added++;
                                     is_local = 0;
                                     is_host = 0;
-                                    if (e->id == remote.host_id)
+                                    if (remote.host_id == e->id)
                                         is_local = 1;
                                     if (e->id == msg->host_id)
                                         is_host = 1;
@@ -1024,7 +1023,7 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
                                     memcpy(&players[e->id], e, sizeof(IPXPlayerEntry));
                                 }
                             }
-                            if (added >= total) {
+                            if (total <= added) {
                                 remote.num_players = msg->num_players;
                                 done = 1;
                                 remote.max_players = msg->max_players;
@@ -1079,16 +1078,16 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
     __3ljac5NETSOCKET from;
     IPXPacket *pk;
     IPXPlayerEntry *p;
-    __1p5pi1IPXSYSTEMMESSAGE *data;
-    u32 max;
+    u32 start;
+    u32 count;
     u32 me;
     u32 num;
-    u32 count;
+    TbError ret = Lb_FAIL;
     u32 last;
-    u32 start;
+    __1p5pi1IPXSYSTEMMESSAGE *data;
     u32 now;
     u32 done = 0;
-    TbError ret = Lb_FAIL;
+    u32 max;
 
     if (started && unknown528 && (host_state == 1 || host_state == 2)) {
         if (host_state == 1) {
@@ -1124,7 +1123,7 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
                             players[data->player.id].ack = 1;
                             count = 1;
                             for (p = players; p < players + max; p++) {
-                                if (p->ack)
+                                if (p->ack != 0)
                                     count++;
                             }
                             if (count >= num)
@@ -1170,9 +1169,9 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
 // NONMATCHING: stack slots of from, ret and the inlined BatchProcess argument
 TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg, __3ljac5NETSOCKET *from)
 {
+    TbError ret = Lb_FAIL;
     __1p5pi1IPXSYSTEMMESSAGE ack;
     u32 me;
-    TbError ret = Lb_FAIL;
 
     if (started && unknown528) {
         if (host_state == 1)
@@ -1236,20 +1235,20 @@ u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
 // NONMATCHING: loop structure and frame layout differ
 TbError IPXServiceProvider::RemoveAbortedPlayer(void)
 {
-    __1p5pi1IPXSYSTEMMESSAGE msg;
-    __3ljac5NETSOCKET from;
     IPXPlayerEntry *ap;
+    u32 count;
     IPXPlayerEntry *p;
+    __3ljac5NETSOCKET from;
     IPXPacket *pk;
-    __1p5pi1IPXSYSTEMMESSAGE *data;
-    u32 me;
+    u32 start;
     u32 max;
     u32 num;
-    u32 count;
-    u32 done;
-    u32 start;
     u32 last;
+    __1p5pi1IPXSYSTEMMESSAGE *data;
+    u32 me;
     u32 now;
+    __1p5pi1IPXSYSTEMMESSAGE msg;
+    u32 done;
     TbError ret = Lb_FAIL;
 
     if (started && unknown528 && (host_state == 1 || host_state == 2)) {
@@ -1262,7 +1261,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
         }
         ret = Lb_OK;
         for (ap = players; ap < players + max; ap++) {
-            if (ap->addr.socket == 0 || me == ap->id || ap->ack != 0)
+            if (ap->addr.socket == 0 || ap->id == me || ap->ack != 0)
                 continue;
             memset(&msg, 0, sizeof(msg));
             msg.magic = MSG_BUSD;
@@ -1274,7 +1273,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
             acked_b[ap->id] = 0;
             num = 1;
             for (p = players; p < players + max; p++) {
-                if (p->addr.socket && me != p->id) {
+                if (p->addr.socket && p->id != me) {
                     if (p->ack) {
                         ipx.Send(&socket, &p->addr, (u8 *)&msg, sizeof(msg));
                         num++;
@@ -1286,7 +1285,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
             remote.num_players = num;
             session.num_players = num;
             if (num <= 1) {
-                for (p = players; p < players + max; p++) {
+                for (p = players; players + max > p; p++) {
                     if (p->addr.socket != 0 && me != p->id && p->ack == 0)
                         memset(p, 0, sizeof(IPXPlayerEntry));
                 }
@@ -1301,7 +1300,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
                 if (now - last > 100) {
                     last = now;
                     for (p = players; p < players + max; p++) {
-                        if (p->addr.socket && me != p->id && p->ack && !p->unknown36)
+                        if (p->addr.socket && p->id != me && p->ack && !p->unknown36)
                             ipx.Send(&socket, &p->addr, (u8 *)&msg, sizeof(msg));
                     }
                     BatchProcess(0);
@@ -1314,11 +1313,11 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
                     case MSG_BUSK:
                         if (data->seq == msg.seq) {
                             p = &players[data->player.id];
-                            if (p->ack) {
+                            if (p->ack != 0) {
                                 p->unknown36 = 1;
                                 count = 1;
                                 for (p = players; p < players + max; p++) {
-                                    if (p->unknown36)
+                                    if (p->unknown36 != 0)
                                         count++;
                                 }
                                 if (count >= num)
@@ -1377,9 +1376,9 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
 {
     u8 join[0x8c];
     u8 info[0x54];
-    __3ljac5NETSOCKET from;
-    IPXPacket *p;
     u8 *data;
+    IPXPacket *p;
+    __3ljac5NETSOCKET from;
     u32 got = 0;
 
     if (!started || !unknown528)
@@ -1493,13 +1492,13 @@ void IPXServiceProvider::ClearSpStuff(void)
 // NONMATCHING: frame layout and register allocation differ
 TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
 {
-    __3ljac5NETSOCKET *addr;
+    u32 now;
     u32 size;
-    u32 me;
+    u32 last;
     u32 max;
     u32 start;
-    u32 last;
-    u32 now;
+    u32 me;
+    __3ljac5NETSOCKET *addr;
     TbError ret = Lb_FAIL;
 
     if (unknown528) {
@@ -1564,8 +1563,8 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
 // NONMATCHING: frame layout differs
 u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
 {
-    __6eas9nIPXDATAMESSAGE ack;
     __3ljac5NETSOCKET *addr;
+    __6eas9nIPXDATAMESSAGE ack;
     u32 me;
     u32 max;
     u32 ret = 0;

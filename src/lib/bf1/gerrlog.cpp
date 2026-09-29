@@ -20,7 +20,6 @@ int vsprintf(char *buf, char *fmt, va_list args);
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 
-// NONMATCHING: the constant 1 is kept in edi (saved) in the target, ecx here
 // FUNCTION: 0x000cd1e0
 int fn_000cd1e0(char *directory, char *filename, u8 append)
 {
@@ -31,7 +30,10 @@ int fn_000cd1e0(char *directory, char *filename, u8 append)
         return -1;
     if (fn_000bc504(1, directory, filename ? filename : D_00124714, path, 144) == -1)
         return -1;
-    flags = !append + 0x35;
+    if (append)
+        flags = 0x35;
+    else
+        flags = 0x36;
     if (LbLogSetup(D_0018a584, path, flags) != 1)
         return -1;
     LbLogSetPrefix(D_0018a584, D_0012471e);

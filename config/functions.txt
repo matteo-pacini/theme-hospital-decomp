@@ -2729,7 +2729,8 @@
 000f6940    3bf W?HangUpModem$:CommHandler$n()l
 000f6d00    119 W?AnswerModem$:CommHandler$n()l
 000f6e1c    193 W?ReadConfigFile$:CommHandler$n(pna)l
-000f6fb0    147 W?ReadSerialDev$:CommHandler$n(pn$__4dn7ojSerialInitData$$)v
+000f6fb0    127 W?ReadSerialDev$:CommHandler$n(pn$__4dn7ojSerialInitData$$)v
+000f70d8     1f W?read_a_line$:CommHandler$n(pn$__iobuf$$pna)v
 000f70f8    1ee W?GetModemResponse$:CommHandler$n(l)l
 000f72e8     1c W?SetModemResponseTimeOut$:CommHandler$n(l)v
 000f7304      7 W?SetInitModemFunc$:CommHandler$n(pn()l)v

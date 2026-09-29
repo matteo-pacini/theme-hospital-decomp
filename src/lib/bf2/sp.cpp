@@ -274,25 +274,25 @@ TbError ServiceProvider::CheckForDeletedHost(u8 *msg)
 TbError ServiceProvider::Receive(u32 flags)
 {
     char buf[0x404];
-    char name2[0x20];
+    u32 keep_going;
     char name[0x20];
     u32 from;
     u32 size;
     u32 msg_size;
     u32 seq;
     u32 unused;
-    u32 id;
-    u32 id2;
-    u32 id3;
-    u32 id4;
+    u8 type;
     u32 id5;
+    u32 id;
+    u32 id3;
+    u32 id2;
     u32 msg_size2;
     void *self;
     char *msg_name;
     char *msg_data;
-    u32 keep_going;
+    char name2[0x20];
     TbError ret;
-    u8 type;
+    u32 id4;
     void *dst;
 
     keep_going = 1;
@@ -451,8 +451,8 @@ TbError ServiceProvider::Receive(u32 flags)
 // NONMATCHING: message type compared as a promoted int instead of a byte
 TbError ServiceProvider::Send(u32 to, void *buf)
 {
-    char name[0x20];
     char name2[0x20];
+    char name[0x20];
     u32 msg_size;
     u32 seq;
     u32 id2;
@@ -542,9 +542,9 @@ TbError ServiceProvider::Send(u32 to, void *buf)
 // NONMATCHING: register allocation differs
 TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
 {
-    u32 id;
-    u32 i;
     u8 *m;
+    u32 i;
+    u32 id;
     TbError ret;
     u8 type;
     u32 invalid;

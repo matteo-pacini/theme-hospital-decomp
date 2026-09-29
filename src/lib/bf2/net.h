@@ -139,7 +139,12 @@ struct __4kqpm7ClientDataEntry {
 struct __4dn7ojSerialInitData {
     u32 port;
     u32 baud;
-    u8 unknown8[0x18];
+    s32 irq;
+    u32 mode;
+    char *init_str;
+    char *dial_str;
+    char *hangup_str;
+    char *reset_str;
 };
 
 struct __iobuf;
@@ -432,7 +437,9 @@ extern char ipxsendesr[];
 extern char ipxrecvesr[];
 
 struct IPXHandler;
+extern "C" u8 *fn_000d4150(IPXHandler *self, u32 size, u16 *sel);
 extern "C" u32 fn_000d41c8(IPXHandler *self, u16 intno, RMREGS *rm);
+extern "C" void fn_000d41a0(IPXHandler *self, u16 sel);
 
 struct IPXHandler {
     u32 stamp;

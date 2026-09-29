@@ -4,7 +4,7 @@
 #pragma inline_depth(0)
 
 // FUNCTION: 0xdc970
-// NONMATCHING: byte registers holding the stored 0/1 constants
+// NONMATCHING: MaxNumberOfSamples - 1 for end_sample_id is computed in ebx, not edx
 void InitSound(void)
 {
     AILIOParms io;
@@ -58,7 +58,7 @@ void InitSound(void)
         SoundProgressLog(SoundProgressMessage);
         sscanf(env, D_00126477, name, &io.IO, &io.IRQ, &io.DMA_8_bit, &io.DMA_16_bit);
         SoundDriver = AIL_install_DIG_driver_file(name, &io);
-        if (!SoundDriver) {
+        if (SoundDriver == 0) {
             sprintf(SoundProgressMessage, D_00126486);
             SoundProgressLog(SoundProgressMessage);
             if (!MusicAble)
@@ -76,7 +76,7 @@ void InitSound(void)
         if (AIL_read_INI(&SoundInstallChoice, D_00126500)) {
             sprintf(SoundProgressMessage, D_00126508);
             SoundProgressLog(SoundProgressMessage);
-            if (!stricmp(SoundInstallChoice.driver_name, D_0012652f)) {
+            if (stricmp(SoundInstallChoice.driver_name, D_0012652f) == 0) {
                 sprintf(SoundProgressMessage, D_00126534);
                 SoundProgressLog(SoundProgressMessage);
                 if (!MusicAble)

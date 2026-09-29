@@ -4,7 +4,6 @@
 #pragma inline_depth(0)
 
 // FUNCTION: 0xdd210
-// NONMATCHING: byte registers holding the stored 0/1 constants; the first five MusicType sprintf calls push through eax in the target
 void InitMusic(void)
 {
     char prefix[0x90];
@@ -43,7 +42,7 @@ void InitMusic(void)
         SoundProgressLog(SoundProgressMessage);
         sscanf(env, D_00126789, name, &io.IO, &io.IRQ, &io.DMA_8_bit, &io.DMA_16_bit);
         MusicDriver = AIL_install_MDI_driver_file(name, &io);
-        if (!MusicDriver) {
+        if (MusicDriver == 0) {
             sprintf(SoundProgressMessage, D_00126798);
             SoundProgressLog(SoundProgressMessage);
             if (!SoundAble)
@@ -59,7 +58,7 @@ void InitMusic(void)
         if (AIL_read_INI(&MusicInstallChoice, D_0012680d)) {
             sprintf(SoundProgressMessage, D_00126815);
             SoundProgressLog(SoundProgressMessage);
-            if (!stricmp(D_0018c8b4, D_00126839)) {
+            if (stricmp(D_0018c8b4, D_00126839) == 0) {
                 sprintf(SoundProgressMessage, D_0012683e);
                 SoundProgressLog(SoundProgressMessage);
                 if (!SoundAble)
@@ -92,25 +91,25 @@ void InitMusic(void)
     }
     SongHandle = AIL_allocate_sequence_handle(MusicDriver);
     if (MidiTypeOverride == 0) {
-        if (!stricmp(D_0018c8b4, D_00126922)) {
+        if (stricmp(D_0018c8b4, D_00126922) == 0) {
             sprintf(MusicType, D_0012692c);
-        } else if (!stricmp(D_0018c8b4, D_0012692e)) {
+        } else if (stricmp(D_0018c8b4, D_0012692e) == 0) {
             sprintf(MusicType, D_00126939);
-        } else if (!stricmp(D_0018c8b4, D_0012693b)) {
+        } else if (stricmp(D_0018c8b4, D_0012693b) == 0) {
             sprintf(MusicType, D_00126944);
-        } else if (!stricmp(D_0018c8b4, D_00126946)) {
+        } else if (stricmp(D_0018c8b4, D_00126946) == 0) {
             sprintf(MusicType, D_0012694e);
-        } else if (!stricmp(D_0018c8b4, D_00126950)) {
+        } else if (stricmp(D_0018c8b4, D_00126950) == 0) {
             sprintf(MusicType, D_0012695c);
-        } else if (!stricmp(D_0018c8b4, D_0012695e)) {
+        } else if (stricmp(D_0018c8b4, D_0012695e) == 0) {
             sprintf(MusicType, D_0012696b);
-        } else if (!stricmp(D_0018c8b4, D_0012696d)) {
+        } else if (stricmp(D_0018c8b4, D_0012696d) == 0) {
             sprintf(MusicType, D_00126978);
-        } else if (!stricmp(D_0018c8b4, D_0012697a)) {
+        } else if (stricmp(D_0018c8b4, D_0012697a) == 0) {
             sprintf(MusicType, D_00126985);
-        } else if (!stricmp(D_0018c8b4, D_00126987)) {
+        } else if (stricmp(D_0018c8b4, D_00126987) == 0) {
             sprintf(MusicType, D_00126990);
-        } else if (!stricmp(D_0018c8b4, D_00126992)) {
+        } else if (stricmp(D_0018c8b4, D_00126992) == 0) {
             sprintf(MusicType, D_0012699e);
             MusicInstalled = 1;
             LoadAwe32Soundfont(CurrentAwe32SoundfontPrefix);
@@ -123,13 +122,13 @@ void InitMusic(void)
                 sprintf(SoundProgressMessage, D_001269c5);
                 SoundProgressLog(SoundProgressMessage);
             }
-        } else if (!stricmp(D_0018c8b4, D_001269e4)) {
+        } else if (stricmp(D_0018c8b4, D_001269e4) == 0) {
             sprintf(MusicType, D_001269ef);
-        } else if (!stricmp(D_0018c8b4, D_001269f1)) {
+        } else if (stricmp(D_0018c8b4, D_001269f1) == 0) {
             sprintf(MusicType, D_001269fe);
-        } else if (!stricmp(D_0018c8b4, D_00126a00)) {
+        } else if (stricmp(D_0018c8b4, D_00126a00) == 0) {
             sprintf(MusicType, D_00126a0a);
-        } else if (!stricmp(D_0018c8b4, D_00126a0c)) {
+        } else if (stricmp(D_0018c8b4, D_00126a0c) == 0) {
             sprintf(MusicType, D_00126a18);
         } else if (AIL_MDI_driver_type(MusicDriver) == 0) {
             sprintf(MusicType, D_00126a1a);
@@ -150,7 +149,7 @@ void InitMusic(void)
         sprintf(SoundProgressMessage, D_00126a46, MusicType);
         SoundProgressLog(SoundProgressMessage);
         music_allocated = AllocateMusicBankMemory();
-        if (MidiTypeOverride == 0 && !stricmp(MusicType, D_00126a65) && music_allocated == -2) {
+        if (MidiTypeOverride == 0 && stricmp(MusicType, D_00126a65) == 0 && music_allocated == -2) {
             sprintf(SoundProgressMessage, D_00126a67);
             SoundProgressLog(SoundProgressMessage);
             sprintf(MusicType, D_00126a84);

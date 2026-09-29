@@ -5,9 +5,8 @@ unsigned inp(unsigned port);
 unsigned outp(unsigned port, unsigned value);
 #pragma intrinsic(inp, outp)
 void _disable(void);
-#pragma aux _disable = "cli";
 void _enable(void);
-#pragma aux _enable = "sti" "cld";
+#pragma intrinsic(_disable, _enable)
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 int stricmp(const char *a, const char *b);
@@ -37,6 +36,7 @@ extern char D_001287ea[];
 extern char D_00128767[];
 extern char D_00128783[];
 extern char D_00128786[];
+extern char D_001287b0[];
 typedef struct __iobuf FILE;
 FILE *fopen(const char *name, const char *mode);
 int fgetc(FILE *f);
@@ -162,6 +162,8 @@ SerialHandler::SerialHandler()
     }
 }
 
+// NONMATCHING: the entry also covers SerialHandler::Init's body, where the size
+// _D_001100fe - _D_00110068 is computed in other registers
 // FUNCTION: 0xf534c
 SerialHandler::~SerialHandler()
 {
@@ -205,9 +207,8 @@ long SerialHandler::Init(long port)
 // FUNCTION: 0xf5544
 long SerialHandler::DeInit(long port)
 {
-    REGS r;
-    REGS r2;
     TbSerialDev *dev;
+    REGS r;
 
     if (port >= 4)
         return -1;
@@ -231,9 +232,7 @@ long SerialHandler::DeInit(long port)
     r.x.eax = 0xf3;
     r.x.edx = dev->port;
     int386(0x14, &r, &r);
-    r2.x.eax = 0x101;
-    r2.x.edx = dos_sel[port];
-    int386(0x31, &r2, &r2);
+    FreeDosMem(dos_sel[port]);
     com_dev[port].dev = 0;
     com_dev[port].flags = 0;
     return 0;
@@ -292,12 +291,11 @@ void SerialHandler::WriteCharNoWait(TbSerialDev *dev, u8 c)
 }
 
 // FUNCTION: 0xf5864
-// NONMATCHING: ours copies the line status to ecx and keeps the port in esi; target tests al directly
 void SerialHandler::EmptyOutputBuffer(long port)
 {
     TbSerialDev *dev;
     ComHandlerInfo *info;
-    u32 lsr;
+    u8 lsr;
     u32 i;
 
     if (port >= 4)
@@ -364,21 +362,22 @@ long SerialHandler::SetBaud(long port, long baud)
     TbSerialDev *dev;
     long divisor;
 
-    if (port >= 4)
-        return -1;
-    dev = com_dev[port].dev;
-    if (baud < 300)
-        baud = 300;
-    else if (baud > 115200)
-        baud = 115200;
-    divisor = 115200 / baud;
-    _disable();
-    outp(dev->base + 3, 0x83);
-    outp(dev->base + 1, divisor >> 8);
-    outp(dev->base, divisor & 0xff);
-    outp(dev->base + 3, 3);
-    _enable();
-    return 0;
+    if (port < 4) {
+        dev = com_dev[port].dev;
+        if (baud < 300)
+            baud = 300;
+        else if (baud > 115200)
+            baud = 115200;
+        divisor = 115200 / baud;
+        _disable();
+        outp(dev->base + 3, 0x83);
+        outp(dev->base + 1, divisor >> 8);
+        outp(dev->base, divisor & 0xff);
+        outp(dev->base + 3, 3);
+        _enable();
+        return 0;
+    }
+    return -1;
 }
 
 // FUNCTION: 0xf5ad0
@@ -702,13 +701,15 @@ long CommHandler::ReadByte(void)
 // FUNCTION: 0xf63f4
 u32 CommHandler::ReadBytes(void *buf, u32 len)
 {
-    u8 *p = (u8 *)buf;
     u32 n = 0;
     u32 more = 1;
+    u8 *p = (u8 *)buf;
     long c;
 
     do {
-        if (n < len) {
+        if (n >= len) {
+            more = 0;
+        } else {
             c = ReadByte();
             if (c == -1) {
                 more = 0;
@@ -716,8 +717,6 @@ u32 CommHandler::ReadBytes(void *buf, u32 len)
                 *p++ = c;
                 n++;
             }
-        } else {
-            more = 0;
         }
     } while (more);
     return n;
@@ -791,18 +790,14 @@ long CommHandler::DialModem(char *number)
 // NONMATCHING: register allocation differs around the inlined ClearDtr/WriteBytes (port, loop counter)
 long CommHandler::HangUpModem(void)
 {
-    TbSerialDev *dev;
-    long ret = -1;
     u32 t;
+    long ret = -1;
 
     CH(this)->cur_func = CH(this)->hangup_func;
     t = clock();
     while (clock() - t < 100)
         ;
-    if (CH(this)->port < 4) {
-        dev = com_dev[CH(this)->port].dev;
-        outp(dev->base + 4, inp(dev->base + 4) & ~1);
-    }
+    ClearDtr();
     delay(50);
     SetDtr();
     SerialCommHandler.WriteBytes(CH(this)->port, (u8 *)D_0012870b, 3);
@@ -819,14 +814,8 @@ long CommHandler::HangUpModem(void)
     GetModemResponse(CH(this)->timeout);
     fn_000c20c0(D_0012874c, CH(this)->response);
     CH(this)->online = 0;
-    if (CH(this)->port < 4) {
-        dev = com_dev[CH(this)->port].dev;
-        outp(dev->base + 4, inp(dev->base + 4) & ~1);
-    }
-    if (CH(this)->port < 4) {
-        dev = com_dev[CH(this)->port].dev;
-        outp(dev->base + 4, inp(dev->base + 4) & ~2);
-    }
+    ClearDtr();
+    ClearRts();
     CH(this)->cur_func = 0;
     return ret;
 }
@@ -845,15 +834,6 @@ long CommHandler::AnswerModem(void)
         CH(this)->online = 1;
     CH(this)->cur_func = 0;
     return ret;
-}
-
-inline void CommHandler::read_a_line(FILE *f, char *p)
-{
-    int c;
-
-    while ((c = fgetc(f)) != '\r' && c != '\n')
-        *p++ = c;
-    *p = 0;
 }
 
 // FUNCTION: 0xf6e1c
@@ -888,64 +868,65 @@ long CommHandler::ReadConfigFile(char *filename)
 // FUNCTION: 0xf6fb0
 void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
 {
-    char **strs;
-
-    if (!data)
-        return;
-    if (data->port < 4 && *(s32 *)&data->unknown8[0] != -1) {
-        com_dev[data->port].irq = *(u16 *)&data->unknown8[0];
-        com_dev[data->port].vector = *(u16 *)&data->unknown8[0] + 8;
+    if (data) {
+        if (data->port < 4 && data->irq != -1) {
+            com_dev[data->port].irq = data->irq;
+            com_dev[data->port].vector = data->irq + 8;
+        }
+        if (data->mode == 2) {
+            if (data->init_str)
+                strcpy(CH(this)->init_str, data->init_str);
+            else
+                data->init_str = CH(this)->init_str;
+            if (data->dial_str)
+                strcpy(CH(this)->dial_str, data->dial_str);
+            else
+                data->dial_str = CH(this)->dial_str;
+            if (data->hangup_str)
+                strcpy(CH(this)->hangup_str, data->hangup_str);
+            else
+                data->hangup_str = CH(this)->hangup_str;
+            if (data->reset_str)
+                strcpy(CH(this)->reset_str, data->reset_str);
+            else
+                data->reset_str = CH(this)->reset_str;
+        }
+    } else {
+        fn_000c20c0(D_001287b0);
     }
-    if (*(u32 *)&data->unknown8[4] != 2)
-        return;
-    strs = (char **)&data->unknown8[8];
-    if (strs[0])
-        strcpy(CH(this)->init_str, strs[0]);
-    else
-        strs[0] = CH(this)->init_str;
-    if (strs[1])
-        strcpy(CH(this)->dial_str, strs[1]);
-    else
-        strs[1] = CH(this)->dial_str;
-    if (strs[2])
-        strcpy(CH(this)->hangup_str, strs[2]);
-    else
-        strs[2] = CH(this)->hangup_str;
-    if (strs[3])
-        strcpy(CH(this)->reset_str, strs[3]);
-    else
-        strs[3] = CH(this)->reset_str;
+}
+
+// FUNCTION: 0xf70d8
+void CommHandler::read_a_line(FILE *f, char *p)
+{
+    int c;
+
+    while ((c = fgetc(f)) != '\r' && c != '\n')
+        *p++ = c;
+    *p = 0;
 }
 
 // FUNCTION: 0xf70f8
 long CommHandler::GetModemResponse(long timeout)
 {
-    char buf[0xa0];
+    u8 done = 0;
     u32 start;
     long ret = -1;
-    long c;
     u16 len = 0;
-    u8 done = 0;
+    char buf[0xa0];
+    long c;
     ModemResponse *m;
-    TbSerialDev *dev;
+    long (*fn)(void);
 
     memset(buf, 0, sizeof(buf));
     start = clock();
     do {
-        if (CH(this)->cur_func && CH(this)->cur_func() == -7)
+        fn = CH(this)->cur_func;
+        if (fn && fn() == -7)
             return -7;
         if (clock() - start > timeout)
             break;
-        c = -1;
-        if (CH(this)->port < 4) {
-            dev = com_dev[CH(this)->port].dev;
-            if (dev->rx_head != dev->rx_tail) {
-                c = dev->rx_buf[dev->rx_head];
-                dev->rx_head++;
-                if (dev->rx_head > 0x7ff)
-                    dev->rx_head = 0;
-            }
-        }
+        c = ReadByte();
         if (c == -1)
             continue;
         if (c == '\r' || len == 0x50) {

@@ -17,7 +17,7 @@ TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
     receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
     receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
     if (init_data)
-        ((u32 *)init_data)[3] = 1;
+        ((__4dn7ojSerialInitData *)init_data)->mode = 1;
     spPtr = new SerialSP((__4dn7ojSerialInitData *)init_data);
     if (spPtr) {
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
@@ -156,7 +156,7 @@ TbError GenericModemInit(__tibcaGUID guid, void *init_data)
     receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
     receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
     if (init_data)
-        ((u32 *)init_data)[3] = 2;
+        ((__4dn7ojSerialInitData *)init_data)->mode = 2;
     spPtr = new ModemSP((__4dn7ojSerialInitData *)init_data);
     if (spPtr) {
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)

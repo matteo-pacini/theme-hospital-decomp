@@ -211,15 +211,14 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
 }
 
 // FUNCTION: 0xed8ec
-// NONMATCHING: stack slots of the buf spill and total swapped
 TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
 {
     u32 total;
     TbError ret = Lb_FAIL;
-    u16 sum = 0;
     u8 *data = (u8 *)buf;
     u32 guaranteed;
     u32 size;
+    u16 sum = 0;
     u32 retries;
     u32 start;
     u32 i;
@@ -487,8 +486,8 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
 u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
 {
     Parser *p;
-    Parser *q;
     u32 max_size;
+    Parser *q;
     u32 msg_size;
     u32 got = 0;
     u32 deliver;
@@ -501,7 +500,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
     max_size = *size;
     *size = 0;
     for (i = 0, p = parsers; i < 10; i++, p++) {
-        if (!p->active || p->state != PS_COMPLETE)
+        if (!p->active || PS_COMPLETE != p->state)
             continue;
         deliver = 0;
         for (j = 0, q = parsers; j < 10; j++, q++) {
@@ -513,7 +512,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
             deliver = 1;
             break;
         case 0x1e:
-            if (p->seq == recv_seq) {
+            if (recv_seq == p->seq) {
                 deliver = 1;
             } else {
                 SendAck(p->seq);
@@ -521,7 +520,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
             }
             break;
         case 4:
-            if (p->seq == send_seq) {
+            if (send_seq == p->seq) {
                 if (awaiting_ack) {
                     awaiting_ack = 0;
                     send_seq++;

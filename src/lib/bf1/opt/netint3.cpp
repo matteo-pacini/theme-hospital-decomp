@@ -103,7 +103,7 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
             switch (incomingUnidirectionalMessage.type) {
             case 1:
                 msg = &incomingUnidirectionalMessage;
-                if (msg->block > last_block || msg->last > last_block) {
+                if (msg->block > last_block || last_block < msg->last) {
                     fn_000c20c0(D_00124310, msg->block, msg->last);
                     running = 0;
                     break;

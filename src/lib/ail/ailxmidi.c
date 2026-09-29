@@ -405,7 +405,7 @@ void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
     ch = status & 0x0f;
     phys = S->chan_map[ch];
     if (st == 0xb0 || st == 0xc0 || st == 0xe0) {
-        XMI_write_log(&S->shadow, st | ch, data_1, data_2);
+        XMI_write_log(&S->shadow, ch | st, data_1, data_2);
     }
     if (st == 0xb0) {
         if (ICA_enable && S->shadow.indirect[ch] != -1) {
@@ -530,10 +530,10 @@ void __cdecl XMI_send_channel_voice_message(HSEQUENCE S, S32 status, S32 data_1,
     if (st == 0x90 && S->shadow.c_mute[ch] >= 64) {
         return;
     }
-    if (mdi->event_trap != NULL && mdi->event_trap(mdi, S, st | phys, data_1, data_2)) {
+    if (mdi->event_trap != NULL && mdi->event_trap(mdi, S, phys | st, data_1, data_2)) {
         return;
     }
-    XMI_MIDI_message(mdi, st | phys, data_1, data_2);
+    XMI_MIDI_message(mdi, phys | st, data_1, data_2);
 }
 
 // FUNCTION: 0x000e2b80
@@ -666,12 +666,10 @@ void __syscall XMI_update_volume(HSEQUENCE S)
 }
 
 // FUNCTION: 0x000e36c0
-// NONMATCHING: config/functions.txt sizes this function to also cover
-// XMI_destroy_MDI_driver, which follows it
 S32 __cdecl XMI_attempt_MDI_detection(HMDIDRIVER mdi, IO_PARMS *IO)
 {
-    IO_PARMS use;
     IO_PARMS *def;
+    IO_PARMS use;
     S32 i;
 
     use = *IO;
@@ -714,8 +712,8 @@ void __cdecl XMI_destroy_MDI_driver(HMDIDRIVER mdi)
 }
 
 // FUNCTION: 0x000e37f0
-// NONMATCHING: the target names XMI_destroy_MDI_driver
-// _XMI_attempt_MDI_detection+0xd0 (see above)
+// NONMATCHING: the DDT and DST segment:offset sums are built in edx instead of
+// eax (register choice)
 HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
 {
     IO_PARMS use;
@@ -1142,7 +1140,7 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
             for (j = i + 1; j < timb->n_entries; j++) {
                 timb->timbre[j - 1] = timb->timbre[j];
             }
-            timb->n_entries--;
+            --timb->n_entries;
             if (timb->len_lsb < 2) {
                 timb->len_lsb -= 2;
                 timb->len_msb--;

@@ -358,15 +358,14 @@ long LbMouseUpdatePosition(void)
 }
 
 // FUNCTION: 0x000bd8ac
-// NONMATCHING: the s16 page local gets the top frame slot; the target puts it below x and y
 void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
 {
     s32 dx;
     s32 dy;
     u32 force;
+    s16 x;
     s16 page;
-    s32 x;
-    s32 y;
+    s16 y;
 
     if (!D_00176bc0)
         return;
@@ -604,8 +603,6 @@ long screen_place(void)
     return 1;
 }
 
-// NONMATCHING: register choice: the target tests D_00176bc4 in memory; here it is loaded into edi (saved and
-// restored in the prologue/epilogue)
 // FUNCTION: 0x000be0cc
 long screen_remove(u32 force)
 {
@@ -622,41 +619,39 @@ long screen_remove(u32 force)
 
     if (!D_00176bc0)
         return -1;
-    if (lbDisplay.mmouse_x != D_00177bd4 || lbDisplay.mmouse_y != D_00177bd8 || force) {
-        if (D_00176bc4) {
-            save = D_00176bd4;
-            if (!lbDisplay.vesa_is_set_up) {
-                screen = lbDisplay.physical_screen + D_00176bd0;
-                for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18) {
-                    scr = screen;
-                    for (x = 0; x < D_00176bc8; x++)
-                        *scr++ = *save++;
-                }
-            } else {
-                page = D_00176bd0 >> 16;
-                LbVesaSetPage(page);
-                screen = lbDisplay.physical_screen + (D_00176bd0 & 0xffff);
-                for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18) {
-                    scr = screen;
-                    n = D_00176bc8;
-                    if ((u32)(scr + D_00176bc8) >= 0xb0000) {
-                        k = 0xb0000 - (u32)scr;
-                        if (k > 0) {
-                            for (i = 0; i < k; i++)
-                                *scr++ = *save++;
-                            n -= k;
-                        }
-                        ++page;
-                        LbVesaSetPage(page);
-                        scr -= 0x10000;
-                        screen -= 0x10000;
-                    }
-                    for (j = 0; j < n; j++)
-                        *scr++ = *save++;
-                }
+    if ((lbDisplay.mmouse_x != D_00177bd4 || lbDisplay.mmouse_y != D_00177bd8 || force) && D_00176bc4) {
+        save = D_00176bd4;
+        if (!lbDisplay.vesa_is_set_up) {
+            screen = lbDisplay.physical_screen + D_00176bd0;
+            for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18) {
+                scr = screen;
+                for (x = 0; x < D_00176bc8; x++)
+                    *scr++ = *save++;
             }
-            D_00176bc4 = 0;
+        } else {
+            page = D_00176bd0 >> 16;
+            LbVesaSetPage(page);
+            screen = lbDisplay.physical_screen + (D_00176bd0 & 0xffff);
+            for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18) {
+                scr = screen;
+                n = D_00176bc8;
+                if ((u32)(scr + D_00176bc8) >= 0xb0000) {
+                    k = 0xb0000 - (u32)scr;
+                    if (k > 0) {
+                        for (i = 0; i < k; i++)
+                            *scr++ = *save++;
+                        n -= k;
+                    }
+                    ++page;
+                    LbVesaSetPage(page);
+                    scr -= 0x10000;
+                    screen -= 0x10000;
+                }
+                for (j = 0; j < n; j++)
+                    *scr++ = *save++;
+            }
         }
+        D_00176bc4 = 0;
     }
     return 1;
 }

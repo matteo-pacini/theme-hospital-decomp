@@ -141,17 +141,18 @@ s32 LbTextWordWidth(char *text)
     return width;
 }
 
-// NONMATCHING: register choice; target range also holds LbTextDraw's jump table
 // FUNCTION: 0x000c8800
 s32 LbTextStringHeight(char *text)
 {
     s32 lines;
 
     lines = 1;
-    if (!text) {
-        if (fn_000d0848(D_0012425a, D_00124250, 198))
-            int3();
-    }
+    do {
+        if (!text) {
+            if (fn_000d0848(D_0012425a, D_00124250, 198))
+                int3();
+        }
+    } while (0);
     if (lbFontPtr && text) {
         for (; *text; text++) {
             if ((s8)*text == '\n')
@@ -198,7 +199,7 @@ int LbTextDraw(s32 x, s32 y, char *text)
                 x += lbFontPtr ? lbFontPtr[(u8)*text - 31].width : 0;
             } else if ((s8)*text == ' ') {
                 x += lbFontPtr ? lbFontPtr[1].width : 0;
-                if (LbTextWordWidth(text + 1) + (x - dx) > lbTextJustifyWindow.width) {
+                if ((x - dx) + LbTextWordWidth(text + 1) > lbTextJustifyWindow.width) {
                     space_width = lbFontPtr ? lbFontPtr[1].width : 0;
                     if (lbDisplay.draw_flags & 0x20) {
                         x = start_x;

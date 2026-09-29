@@ -317,7 +317,6 @@ TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_playe
     return ret;
 }
 
-// NONMATCHING: the target holds the MultiPlayerCallback address in esi, here in ebp
 // FUNCTION: 0x000bfc4c
 TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -339,10 +338,10 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     runningTwoPlayerModel = 0;
     waitingForPlayerMapResponse = 0;
     D_00188cb8 = 0;
-    D_0014da60 = 0;
     exchangeBuffer = (u8 *)exchange_buf;
     localPlayerInfoPtr = info;
     receiveCallbacks.multiPlayer = MultiPlayerCallback;
+    D_0014da60 = 0;
     receiveCallbacks.mpReqExDataMsg = MultiPlayerReqExDataMsgCallback;
     if (exchange_size > 0) {
         D_00188cb8 = max_players * exchange_size;
@@ -698,7 +697,7 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
     ret = Lb_FAIL;
     exchangeBuffer = (u8 *)buf;
     exchangeSize = size;
-    if (!compositeBuffer) {
+    if (compositeBuffer == 0) {
         compositeBuffer = LbMemoryAlloc(total);
         if (!compositeBuffer) {
             fn_000c20c0(D_00122709);
@@ -866,7 +865,7 @@ void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
                 fn_000c20c0(D_001229be);
             } else if (IdToIndex(id)) {
                 if (seq == sequenceNumber || seq == 15) {
-                    ret = exchangeBuffer + id * exchangeSize;
+                    ret = exchangeBuffer + exchangeSize * id;
                     clientDataTable[id].got_data = 1;
                 } else {
                     fn_000c20c0(D_00122a02, seq, sequenceNumber);
@@ -878,7 +877,7 @@ void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
             fn_000c20c0(D_00122a95, size);
         }
     } else if (size == exchangeSize * maximumPlayers) {
-        if (hostId == id) {
+        if (id == hostId) {
             if (IdToIndex(id)) {
                 ok = 1;
                 if (sequenceNumber == 15)
@@ -901,7 +900,7 @@ void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
         if (id == localPlayerId) {
             fn_000c20c0(D_00122ba5);
         } else if (IdToIndex(id)) {
-            ret = exchangeBuffer + id * exchangeSize;
+            ret = exchangeBuffer + exchangeSize * id;
             clientDataTable[id].got_data = 1;
         } else {
             fn_000c20c0(D_00122bfa, id);
@@ -972,11 +971,11 @@ extern "C" {
 // FUNCTION: 0x000c197c
 TbError fn_000c197c(TbNetworkPlayerEntry *player)
 {
-    TbError ret;
+    u32 i;
     u32 found;
     u32 searching;
     u32 index;
-    u32 i;
+    TbError ret;
 
     ret = Lb_FAIL;
     found = 0;

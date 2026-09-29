@@ -45,17 +45,17 @@ void fn_000d080c(char *fmt, ...)
 // FUNCTION: 0x000d0848
 int fn_000d0848(char *expr, char *file, int line)
 {
-    u8 palette[768];
-    char title[512];
     char text[512];
-    u8 old_colours[6];
     int cont;
+    u16 y;
+    u16 x;
     int screen;
+    u8 palette[768];
+    u8 old_colours[6];
+    u8 key;
+    char title[512];
     int keyboard;
     int restore;
-    u16 x;
-    u16 y;
-    u8 key;
 
     cont = 0;
     keyboard = LbIsIKeyboardInstalled();

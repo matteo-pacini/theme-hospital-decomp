@@ -1,33 +1,5 @@
 #include "net.h"
 
-u8 *AllocDOSParas(u16 paras, u16 *sel)
-{
-    DPMIREGS r;
-
-    r.x.eax = 0x100;
-    r.x.ebx = paras;
-    int386(0x31, (REGS *)&r, (REGS *)&r);
-    if (r.x.cflag)
-        return 0;
-    if (sel)
-        *sel = r.x.edx;
-    return (u8 *)((r.x.eax & 0xffff) << 4);
-}
-
-u8 *AllocDOSBytes(u32 size, u32 *sel)
-{
-    DPMIREGS r;
-
-    r.x.eax = 0x100;
-    r.x.ebx = (size + 15) >> 4;
-    int386(0x31, (REGS *)&r, (REGS *)&r);
-    if (r.x.cflag)
-        return 0;
-    if (sel)
-        *sel = r.x.edx;
-    return (u8 *)((r.x.eax & 0xffff) << 4);
-}
-
 u16 Swap16(u16 v)
 {
     return (v >> 8) | (v << 8);
@@ -65,11 +37,11 @@ IPXHandler::~IPXHandler()
 // NONMATCHING: register allocation differs in the inlined DOS allocations
 long IPXHandler::Init(void)
 {
-    RMREGS rm;
-    u32 entry;
     u8 addr[10];
+    u32 entry;
+    RMREGS rm;
 
-    dosbuf = AllocDOSParas(0x95, &dosbuf_sel);
+    dosbuf = fn_000d4150(this, 0x950, &dosbuf_sel);
     if (dosbuf) {
         memset(dosbuf, 0, 0x950);
         rm_ss = (s32)(dosbuf + 0x15f) >> 4;
@@ -83,35 +55,35 @@ long IPXHandler::Init(void)
         IPXDebug(D_00125e70, esr_size);
         send_packets = AllocIPXPackets(0x20, &send_sel);
         IPXDebug(D_00125e92, ((u32)send_packets >> 4) & 0xffff, (u32)send_packets & 0xf);
-        if (!send_packets) {
+        if (send_packets == 0) {
             strcpy(IPXDEBUGSTRING, D_00125eae);
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            FreeIPXPackets(dosbuf_sel);
+            fn_000d41a0(this, dosbuf_sel);
             dosbuf_sel = 0;
             return 1;
         }
-        addrbuf = AllocDOSParas(0xd, &addr_sel);
+        addrbuf = fn_000d4150(this, 0xd0, &addr_sel);
         if (!addrbuf) {
             strcpy(IPXDEBUGSTRING, D_00125ed2);
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            FreeIPXPackets(dosbuf_sel);
+            fn_000d41a0(this, dosbuf_sel);
             dosbuf_sel = 0;
-            FreeIPXPackets(send_sel);
+            fn_000d41a0(this, send_sel);
             send_sel = 0;
             return 1;
         }
         recv_packets = AllocIPXPackets(0x20, &recv_sel);
-        if (!recv_packets) {
+        if (recv_packets == 0) {
             strcpy(IPXDEBUGSTRING, D_00125ef0);
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            FreeIPXPackets(dosbuf_sel);
+            fn_000d41a0(this, dosbuf_sel);
             dosbuf_sel = 0;
-            FreeIPXPackets(send_sel);
+            fn_000d41a0(this, send_sel);
             send_sel = 0;
-            FreeIPXPackets(addr_sel);
+            fn_000d41a0(this, addr_sel);
             addr_sel = 0;
             return 1;
         }
@@ -124,13 +96,13 @@ long IPXHandler::Init(void)
             strcpy(IPXDEBUGSTRING, D_00125f12);
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            FreeIPXPackets(dosbuf_sel);
+            fn_000d41a0(this, dosbuf_sel);
             dosbuf_sel = 0;
-            FreeIPXPackets(send_sel);
+            fn_000d41a0(this, send_sel);
             send_sel = 0;
-            FreeIPXPackets(addr_sel);
+            fn_000d41a0(this, addr_sel);
             addr_sel = 0;
-            FreeIPXPackets(recv_sel);
+            fn_000d41a0(this, recv_sel);
             recv_sel = 0;
             return 1;
         }
@@ -141,13 +113,13 @@ long IPXHandler::Init(void)
             strcpy(IPXDEBUGSTRING, D_00125f3c);
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            FreeIPXPackets(dosbuf_sel);
+            fn_000d41a0(this, dosbuf_sel);
             dosbuf_sel = 0;
-            FreeIPXPackets(send_sel);
+            fn_000d41a0(this, send_sel);
             send_sel = 0;
-            FreeIPXPackets(addr_sel);
+            fn_000d41a0(this, addr_sel);
             addr_sel = 0;
-            FreeIPXPackets(recv_sel);
+            fn_000d41a0(this, recv_sel);
             recv_sel = 0;
             IPXDebug(D_00125f6a);
             return 1;
@@ -164,7 +136,6 @@ long IPXHandler::Init(void)
 }
 
 // FUNCTION: 0xd3eb8
-// NONMATCHING: free-selector temporaries are laid out in a different frame order
 void IPXHandler::DeInit(void)
 {
     DPMIREGS r;
@@ -186,13 +157,13 @@ void IPXHandler::DeInit(void)
             int386(0x31, (REGS *)&r, (REGS *)&r);
         }
         dosbuf = 0;
-        FreeIPXPackets(dosbuf_sel);
+        fn_000d41a0(this, dosbuf_sel);
         dosbuf_sel = 0;
-        FreeIPXPackets(send_sel);
+        fn_000d41a0(this, send_sel);
         send_sel = 0;
-        FreeIPXPackets(addr_sel);
+        fn_000d41a0(this, addr_sel);
         addr_sel = 0;
-        FreeIPXPackets(recv_sel);
+        fn_000d41a0(this, recv_sel);
         recv_sel = 0;
         IPXDebug(D_00125fe2);
         strcpy(IPXDEBUGSTRING, D_00125fef);
@@ -204,7 +175,8 @@ void IPXHandler::DeInit(void)
 }
 
 // FUNCTION: 0xd422c
-// NONMATCHING: vector-in-use test compares 16-bit halves differently
+// NONMATCHING: register choice: the target copies used to ebx and builds the
+// real-mode address in eax
 long IPXHandler::SetupVector(void)
 {
     DPMIREGS r;
@@ -216,10 +188,10 @@ long IPXHandler::SetupVector(void)
         r.w.ax = 0x200;
         r.h.bl = vec;
         int386(0x31, (REGS *)&r, (REGS *)&r);
-        if (r.w.cx == 0 && r.w.dx == 0)
-            used = 0;
-        else
+        if (r.w.cx || r.w.dx)
             used = 1;
+        else
+            used = 0;
         if (used) {
             if (*(s8 *)(((r.x.ecx & 0xffff) << 4) | (r.x.edx & 0xffff)) == 0xcf)
                 used = 0;
@@ -462,19 +434,18 @@ void IPXHandler::BatchProcess(void)
 }
 
 // FUNCTION: 0xd4b7c
-// NONMATCHING: register allocation differs
 IPXPacket *IPXHandler::AllocIPXPackets(long count, u32 *sel)
 {
+    u16 s;
     u32 size;
-    u32 s;
     IPXPacket *p;
 
     size = count * sizeof(IPXPacket);
     s = 0;
-    p = (IPXPacket *)AllocDOSBytes(size, &s);
+    p = (IPXPacket *)fn_000d4150(this, size, &s);
     if (p) {
         memset(p, 0, size);
-        *sel = (u16)s;
+        *sel = s;
     }
     return p;
 }
@@ -493,8 +464,8 @@ void IPXHandler::FreeIPXPackets(u32 sel)
 // NONMATCHING: register allocation differs in the inlined OpenSocket
 long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
 {
-    SAPPacket pkt;
     __3ljac5NETSOCKET s;
+    SAPPacket pkt;
     __3ljac5NETSOCKET dest;
     u16 i;
 

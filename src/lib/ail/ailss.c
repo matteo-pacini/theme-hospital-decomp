@@ -141,14 +141,14 @@ void SS_stream_to_buffer(HSAMPLE S)
 // loop temporaries
 void __cdecl SS_build_amplitude_tables(HSAMPLE S)
 {
-    S32 i;
+    S32 val;
     S32 vol;
     S32 pan;
-    S32 left_pan;
-    S32 right_pan;
-    S32 val;
-    S32 *left;
     S32 *right;
+    S32 right_pan;
+    S32 *left;
+    S32 i;
+    S32 left_pan;
 
     if (S->volume > 127) {
         S->volume = 127;
@@ -493,9 +493,9 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
 {
     IO_PARMS use;
     VDI_CALL out;
-    U32 sel;
-    U32 seg;
     void *buf;
+    U32 seg;
+    U32 sel;
     S32 i;
     S32 found;
     HDIGDRIVER dig;
@@ -585,7 +585,7 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         dig->DMA_buf = buf;
         dig->DMA_seg = seg;
         dig->DMA_sel = sel;
-    } while (((seg >> 12) & 0xf0000) != (((seg >> 12) + size - 1) & 0xf0000));
+    } while ((((seg >> 12) + size - 1) & 0xf0000) != ((seg >> 12) & 0xf0000));
     if (!SS_configure_buffers(dig)) {
         AIL_mem_free_DOS(dig->DMA_buf, dig->DMA_seg, dig->DMA_sel);
         AIL_mem_free_lock(dig);
