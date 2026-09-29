@@ -402,3 +402,16 @@ Compiler and flags per source file come from `config/cflags.txt`.
   failures jumping to it, reproduces cross-jumped tails. Bullfrog's
   Smacker wrapper is built with `-5`, since `-4` inserts loop alignment
   padding the original does not have.
+- **Bullfrog library idioms (L9)**: Bullfrog's `ASSERT` is
+  `do { if (!x) { if (fn_000d0848(..)) int3(); } } while (0);`, and the
+  loop makes `-d2 -otx` load the tested operands into registers. A nested
+  `if (A || B) { if (g) ... }` loads `g` into a register where
+  `if ((A || B) && g)` compares it in memory. In the sound modules the
+  0/1 byte registers rotate across the whole function, so writing an
+  unrelated test as `x == 0` instead of `!x` shifts them. Network and
+  serial code calls its small member functions (`ClearDtr`, `FreeDosMem`,
+  the DOS memory helpers) and lets the compiler inline them: hand-written
+  copies of their bodies compile differently. `dosser` uses the real
+  `_disable`/`_enable` intrinsics (10.6's `_enable` emits `sti; cld`). A
+  helper inlined into an earlier function and also kept out of line is a
+  plain, non-`inline` definition at its source position.
