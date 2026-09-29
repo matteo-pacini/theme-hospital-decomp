@@ -4,8 +4,6 @@ extern "C" {
 extern s8 D_0012d804;
 extern s8 D_0012d805;
 extern s8 D_0012d806;
-extern u8 D_00155e11;
-extern u8 D_00155e12;
 }
 
 u8 year_check(s32 *values, const s32 limit, const u8 above);
@@ -175,14 +173,14 @@ void check_trophies_won(void)
             case 5:
                 if (awards_trophies.unknown0 < award_counts.f14d) {
                     set_trophy_value(i, awards_trophies.f1, 1);
-                    D_00155e11 = award_counts.f14d;
+                    othervar.fa59 = award_counts.f14d;
                 }
                 break;
             case 6:
                 if (award_counts.f151 > 0 && awards_trophies.unknown0 / 2 < award_counts.f14d) {
                     if ((award_counts.f14d << 8) / award_counts.f151 > (awards_trophies.unknowne << 8) / 100) {
                         set_trophy_value(i, awards_trophies.ff, 2);
-                        D_00155e12 = award_counts.f14d * 100 / award_counts.f151;
+                        othervar.fa5a = award_counts.f14d * 100 / award_counts.f151;
                     }
                 }
                 break;

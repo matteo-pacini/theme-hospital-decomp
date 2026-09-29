@@ -24,14 +24,12 @@ extern char D_00120028[], D_0012002d[], D_0012003b[], D_00120049[];
 extern char D_0012005b[], D_00120073[], D_00120087[], D_001200a9[], D_001200ce[], D_001200e9[];
 extern char D_00120102[], D_00120129[], D_00120142[], D_0012015d[];
 extern char *D_0013e80c;
-extern u8 *D_001553d7;
 extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef;
 extern s32 D_001581e8;
 extern s32 D_001290cc;
 extern char *D_001289a0;
 extern Message D_00129004;
 extern void *D_00158334;
-extern u8 D_00155df8, D_00155df9;
 
 void fn_000bce44(TbLoadFiles *files);
 void fn_0008bcb4(void);
@@ -114,7 +112,7 @@ u8 setup_host(void)
     }
     LbMouseChangeSprite(0);
     LbDataLoadAll(D_0013ec5c);
-    D_001553d7 = 0;
+    othervar.f1f = 0;
     D_001581ee = 0;
     if (D_001581ec) {
         sprintf(name, D_0012002d, D_001581ef);
@@ -366,8 +364,8 @@ void fn_000110b0(void)
         reset_host();
         exit(1);
     }
-    D_00155df9 = 1;
-    D_00155df8 = 0;
+    othervar.fa41 = 1;
+    othervar.fa40 = 0;
     window.unknown30 = 0;
     window.unknown48 = lbScreenModeInfo[SCREEN_MODE_13].width;
     window.unknown3c = 0;

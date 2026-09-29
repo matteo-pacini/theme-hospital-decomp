@@ -12,8 +12,6 @@ void *malloc(size_t size);
 void __chktty(FILE *fp);
 
 // FUNCTION: 0xf320e
-// NONMATCHING: config/functions.txt extends __ioalloc_ over __setenvp
-// (0xf3285)
 void __ioalloc(FILE *fp)
 {
     __chktty(fp);

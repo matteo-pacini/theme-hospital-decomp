@@ -57,8 +57,6 @@ no_mem:
 }
 
 // FUNCTION: 0xf4974
-// NONMATCHING: config/functions.txt extends __freefp_ over __purgefp
-// (0xf49ad)
 void __freefp(FILE *fp)
 {
     __stream_link **owner;

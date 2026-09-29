@@ -1,11 +1,6 @@
 #include "bflib.h"
 
 extern "C" {
-extern s32 D_00188c34;
-#pragma aux D_00188c34 "W?research_names$npnpna"
-extern u16 D_00188c74;
-extern s32 D_00188c44;
-extern s32 D_00188c48;
 
 void fn_000ca028(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 
@@ -33,20 +28,20 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
             y1 -= d3;
             clipped = 1;
         }
-        if (x2 >= D_00188c44) {
+        if (x2 >= lbDisplay.graphics_window_width) {
             s32 d1;
             s32 d2;
             s32 d3;
 
             d1 = x2 - x1;
-            d2 = x2 - (D_00188c44 - 1);
+            d2 = x2 - (lbDisplay.graphics_window_width - 1);
             d3 = y2 - y1;
             d3 = d3 * d2 / d1;
-            x2 = D_00188c44 - 1;
+            x2 = lbDisplay.graphics_window_width - 1;
             y2 -= d3;
         }
-    } else if (x1 >= D_00188c44) {
-        if (x2 >= D_00188c44)
+    } else if (x1 >= lbDisplay.graphics_window_width) {
+        if (x2 >= lbDisplay.graphics_window_width)
             return 1;
         {
             s32 d1;
@@ -54,10 +49,10 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
             s32 d3;
 
             d1 = x1 - x2;
-            d2 = x1 - (D_00188c44 - 1);
+            d2 = x1 - (lbDisplay.graphics_window_width - 1);
             d3 = y1 - y2;
             d3 = d3 * d2 / d1;
-            x1 = D_00188c44 - 1;
+            x1 = lbDisplay.graphics_window_width - 1;
             y1 -= d3;
             clipped = 1;
         }
@@ -85,16 +80,16 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
         x2 = 0;
         y2 -= d3;
         clipped = 1;
-    } else if (x2 >= D_00188c44) {
+    } else if (x2 >= lbDisplay.graphics_window_width) {
         s32 d1;
         s32 d2;
         s32 d3;
 
         d1 = x2 - x1;
-        d2 = x2 - (D_00188c44 - 1);
+        d2 = x2 - (lbDisplay.graphics_window_width - 1);
         d3 = y2 - y1;
         d3 = d3 * d2 / d1;
-        x2 = D_00188c44 - 1;
+        x2 = lbDisplay.graphics_window_width - 1;
         y2 -= d3;
         clipped = 1;
     }
@@ -114,20 +109,20 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
             x1 -= d3;
             clipped = 1;
         }
-        if (y2 >= D_00188c48) {
+        if (y2 >= lbDisplay.graphics_window_height) {
             s32 d1;
             s32 d2;
             s32 d3;
 
             d1 = y2 - y1;
-            d2 = y2 - (D_00188c48 - 1);
+            d2 = y2 - (lbDisplay.graphics_window_height - 1);
             d3 = x2 - x1;
             d3 = d3 * d2 / d1;
-            y2 = D_00188c48 - 1;
+            y2 = lbDisplay.graphics_window_height - 1;
             x2 -= d3;
         }
-    } else if (y1 >= D_00188c48) {
-        if (y2 >= D_00188c48)
+    } else if (y1 >= lbDisplay.graphics_window_height) {
+        if (y2 >= lbDisplay.graphics_window_height)
             return 1;
         {
             s32 d1;
@@ -135,10 +130,10 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
             s32 d3;
 
             d1 = y1 - y2;
-            d2 = y1 - (D_00188c48 - 1);
+            d2 = y1 - (lbDisplay.graphics_window_height - 1);
             d3 = x1 - x2;
             d3 = d3 * d2 / d1;
-            y1 = D_00188c48 - 1;
+            y1 = lbDisplay.graphics_window_height - 1;
             x1 -= d3;
             clipped = 1;
         }
@@ -166,16 +161,16 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
         y2 = 0;
         x2 -= d3;
         clipped = 1;
-    } else if (y2 >= D_00188c48) {
+    } else if (y2 >= lbDisplay.graphics_window_height) {
         s32 d1;
         s32 d2;
         s32 d3;
 
         d1 = y2 - y1;
-        d2 = y2 - (D_00188c48 - 1);
+        d2 = y2 - (lbDisplay.graphics_window_height - 1);
         d3 = x2 - x1;
         d3 = d3 * d2 / d1;
-        y2 = D_00188c48 - 1;
+        y2 = lbDisplay.graphics_window_height - 1;
         x2 -= d3;
         clipped = 1;
     }
@@ -204,11 +199,11 @@ void fn_000ca028(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
     dy = y2 - y1;
     ay = abs(dy) * 2;
     sy = dy > 0 ? 1 : -1;
-    row = D_00188c34 * sy;
-    pos = x1 + y1 * D_00188c34;
+    row = lbDisplay.graphics_screen_width * sy;
+    pos = x1 + y1 * lbDisplay.graphics_screen_width;
     x = x1;
     y = y1;
-    if (D_00188c74 & 4) {
+    if (lbDisplay.draw_flags & 4) {
         if (ax > ay) {
             d = ay - (ax >> 1);
             for (;;) {
@@ -238,7 +233,7 @@ void fn_000ca028(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
                 d += ax;
             }
         }
-    } else if (D_00188c74 & 8) {
+    } else if (lbDisplay.draw_flags & 8) {
         if (ax > ay) {
             d = ay - (ax >> 1);
             for (;;) {

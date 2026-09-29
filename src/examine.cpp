@@ -17,7 +17,6 @@ struct DoorAnim {
 };
 
 extern "C" {
-extern s16 D_001553b8;
 extern s16 D_001567b0[8];
 extern DoorAnim D_0012b598[];
 
@@ -42,8 +41,8 @@ void doctor_carries_out_examination(Thing *w)
         break;
     case 30:
         if (o->kind != 0x20) {
-            D_001553b8 = old_newrand() % 100;
-            if (D_001553b8 >= 30 && D_001553b8 < 32) {
+            othervar.f0 = old_newrand() % 100;
+            if (othervar.f0 >= 30 && othervar.f0 < 32) {
                 w->state_b = 0x1c;
                 set_complex(w, 0x10e, 0);
                 fn_0003e724(w);
@@ -57,8 +56,8 @@ void doctor_carries_out_examination(Thing *w)
         break;
     case 31:
         if (o->kind != 0x20) {
-            D_001553b8 = old_newrand() % 100;
-            if (D_001553b8 >= 33 && D_001553b8 < 35) {
+            othervar.f0 = old_newrand() % 100;
+            if (othervar.f0 >= 33 && othervar.f0 < 35) {
                 w->state_b = 0x1c;
                 set_complex(w, 0x10e, 0);
                 fn_0003e724(w);
@@ -71,20 +70,20 @@ void doctor_carries_out_examination(Thing *w)
         fn_0003e724(w);
         break;
     case 32:
-        D_001553b8 = old_newrand() % 100;
-        if (D_001553b8 >= 0 && D_001553b8 < 5) {
+        othervar.f0 = old_newrand() % 100;
+        if (othervar.f0 >= 0 && othervar.f0 < 5) {
             o->anim_speed = 2;
         } else {
-            D_001553b8 = old_newrand() % 100;
-            if (D_001553b8 >= 5 && D_001553b8 < 30) {
+            othervar.f0 = old_newrand() % 100;
+            if (othervar.f0 >= 5 && othervar.f0 < 30) {
                 o->anim_speed = 1;
             } else {
-                D_001553b8 = old_newrand() % 100;
-                if (D_001553b8 >= 30 && D_001553b8 < 35) {
+                othervar.f0 = old_newrand() % 100;
+                if (othervar.f0 >= 30 && othervar.f0 < 35) {
                     o->anim_speed = 4;
                 } else {
-                    D_001553b8 = old_newrand() % 100;
-                    if (D_001553b8 >= 35 && D_001553b8 < 50) {
+                    othervar.f0 = old_newrand() % 100;
+                    if (othervar.f0 >= 35 && othervar.f0 < 50) {
                         o->anim_speed = gbv.f14e;
                         w->unknown103 = 33;
                         o->state_b = 0x20;

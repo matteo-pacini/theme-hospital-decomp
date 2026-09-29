@@ -1,10 +1,106 @@
 extern "C" {
 
-struct RW_DTREG {
-    RW_DTREG *prev;
+struct RO_DTREG {
+    unsigned kind;
 };
 
+struct RW_DTREG {
+    RW_DTREG *prev;
+    RO_DTREG *ro;
+    unsigned state_var;
+    void *extra;
+};
+
+struct RO_STATE;
+struct STAB_TRAVERSE;
+struct DTREG_VFPTRS;
+
+struct THREAD_CTL {
+    RW_DTREG *registered;
+};
+
+extern THREAD_CTL _wint_thread_data;
 extern RW_DTREG *D_00151700;
+extern DTREG_VFPTRS *__wcpp_2_data_dtreg_vfptrs_[];
+extern DTREG_VFPTRS D_001505d4;
+
+void __wcpp_2_destruct_all_(void);
+#pragma aux __wcpp_2_destruct_all_ "__wcpp_2_destruct_all__"
+
+/*
+ * config/functions.txt has no names for the module destructor and the file
+ * scope registration hooks (it gives their demo names to other functions).
+ */
+void module_dtor(void);
+#pragma aux module_dtor "fn_000cf1d8_"
+
+// FUNCTION: 0xcf1d8
+void module_dtor(void)
+{
+    THREAD_CTL *thr;
+    RW_DTREG *rw;
+    RW_DTREG local;
+
+    thr = &_wint_thread_data;
+    for (;;) {
+        rw = D_00151700;
+        if (rw != 0)
+            D_00151700 = rw->prev;
+        if (rw == 0)
+            break;
+        local.prev = thr->registered;
+        thr->registered = &local;
+        local.ro = rw->ro;
+        local.state_var = rw->state_var;
+        if (rw->ro->kind == 4)
+            local.extra = rw->extra;
+        __wcpp_2_destruct_all_();
+        rw->prev = 0;
+        thr->registered = thr->registered->prev;
+    }
+}
+
+RO_STATE *fs_state_table(RO_DTREG *ro);
+#pragma aux fs_state_table "fn_000cf234_"
+
+// FUNCTION: 0xcf234
+RO_STATE *fs_state_table(RO_DTREG *ro)
+{
+    return (RO_STATE *)(ro + 1);
+}
+
+void *fs_point_object(RW_DTREG *rw, unsigned index);
+#pragma aux fs_point_object "fn_000cf238_"
+
+// FUNCTION: 0xcf238
+void *fs_point_object(RW_DTREG *rw, unsigned index)
+{
+    return ((void **)rw->ro)[index * 2];
+}
+
+struct STAB_TRAVERSE {
+    void *rw;
+    unsigned state_var;
+    unsigned char obj_type;
+};
+
+void fs_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw);
+#pragma aux fs_init_traverse "fn_000cf23f_"
+
+// FUNCTION: 0xcf23f
+void fs_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw)
+{
+    ctl->obj_type = 0;
+}
+
+void fs_init(void);
+#pragma aux fs_init "fn_000cf244_"
+
+// FUNCTION: 0xcf244
+void fs_init(void)
+{
+    __wcpp_2_data_dtreg_vfptrs_[3] = &D_001505d4;
+}
 
 /* config/functions.txt has __wcpp_2_mod_register__ under a wrong demo name. */
 void __wcpp_2_mod_register__(RW_DTREG *rw);

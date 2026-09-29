@@ -161,6 +161,7 @@ int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero);
 void unexpected(void);
 #pragma aux unexpected "__wcpp_2_call_unexpected__"
 void longjmp(void *env, int val);
+#pragma aux longjmp aborts
 
 void callTerminate(thread_ctl *thr);
 #pragma aux callTerminate "W?callTerminate$n(pn$thread_ctl$$)v"
@@ -229,14 +230,14 @@ void __wcpp_2_corrupted_stack_(void)
 // NONMATCHING: register allocation and stack slots
 unsigned typesigIndex(dispatch_exc *dispatch, unsigned count, RT_TYPE_SIG **sigs)
 {
-    THROW_RO *throw_ro;
     int zero;
-    THROW_CNV *cnv_base;
-    RT_TYPE_SIG **end;
-    unsigned index;
     RT_TYPE_SIG *sig;
+    THROW_CNV *cnv_base;
+    unsigned index;
     unsigned ctr;
     THROW_CNV *cnv;
+    THROW_RO *throw_ro;
+    RT_TYPE_SIG **end;
 
     throw_ro = dispatch->ro;
     zero = dispatch->zero;
@@ -309,7 +310,6 @@ RT_TYPE_SIG *throwCnvSig(dispatch_exc *dispatch)
 }
 
 // FUNCTION: 0xf3f51
-// NONMATCHING: the target places the shared return 1 after the first test
 int excToBePopped(thread_ctl *thr)
 {
     rw_dtreg *rw;
@@ -324,8 +324,10 @@ int excToBePopped(thread_ctl *thr)
     if (state == 0)
         return 0;
     try_cmd = (char *)state->cmd + 2;
-    if (rw == exc->rw && try_cmd == exc->cmd)
+    if (rw == exc->rw && try_cmd == exc->cmd) {
+    pop:
         return 1;
+    }
     for (; rw != 0; rw = rw->prev) {
         if (rw == exc->rw) {
             for (__wcpp_2_stab_trav_init_(&ctl, rw); (state = __wcpp_2_stab_trav_move_(&ctl)) != 0;
@@ -334,15 +336,15 @@ int excToBePopped(thread_ctl *thr)
                     && (char *)state->cmd + 2 == (char *)exc->cmd)
                     return 0;
             }
-            return 1;
+            goto pop;
         }
     }
-    return 1;
+    goto pop;
 }
 
 // FUNCTION: 0xf3ff4
-// NONMATCHING: the switch's jump table is placed before the function, and
-// the tail jump to longjmp lands inside fn_000fb880_ in config/functions.txt
+// NONMATCHING: the original keeps rw in a stack slot and src/offset in
+// edx/esi; 10.6 allocates them differently
 void catchDispatch(dispatch_exc *dispatch)
 {
     rw_dtreg *rw;
@@ -366,10 +368,6 @@ void catchDispatch(dispatch_exc *dispatch)
         offset = dispatch->cnv->offset;
         src = exc->data + offset;
         switch (sig->type) {
-        case 0:
-            cnv_sig = throwCnvSig(dispatch);
-            ((void (*)(void *, void *))cnv_sig->clss.ctor)(dest, src);
-            break;
         case 1:
             if (dispatch->zero) {
                 *(void **)dest = 0;
@@ -377,13 +375,28 @@ void catchDispatch(dispatch_exc *dispatch)
                 *(char **)dest = *(char **)exc->data + offset;
             }
             break;
+        case 6:
+        case 7:
+        case 8:
+            if (dispatch->zero) {
+                memset(dest, 0, sig->size);
+            } else {
+                memcpy(dest, src, sig->size);
+            }
+            break;
+        case 3:
+            memcpy(dest, src, sig->size);
+            break;
+        case 0:
+            cnv_sig = throwCnvSig(dispatch);
+            ((void (*)(void *, void *))cnv_sig->clss.ctor)(dest, src);
+            break;
+        case 4:
+            cnv_sig = throwCnvSig(dispatch);
+            ((void (*)(void *, int, void *))cnv_sig->clss.ctor)(dest, 0, src);
+            break;
         case 2:
             switch (sig->base->type) {
-            case 0:
-            case 3:
-            case 4:
-                *(char **)dest = src;
-                break;
             case 1:
                 if (dispatch->zero) {
                     exc->extra_object = 0;
@@ -401,22 +414,11 @@ void catchDispatch(dispatch_exc *dispatch)
                 }
                 *(char **)dest = src;
                 break;
-            }
-            break;
-        case 3:
-            memcpy(dest, src, sig->size);
-            break;
-        case 4:
-            cnv_sig = throwCnvSig(dispatch);
-            ((void (*)(void *, int, void *))cnv_sig->clss.ctor)(dest, 0, src);
-            break;
-        case 6:
-        case 7:
-        case 8:
-            if (dispatch->zero) {
-                memset(dest, 0, sig->size);
-            } else {
-                memcpy(dest, src, sig->size);
+            case 4:
+            case 0:
+            case 3:
+                *(char **)dest = src;
+                break;
             }
             break;
         default:
@@ -561,7 +563,6 @@ done:
 }
 
 // FUNCTION: 0xf430c
-// NONMATCHING: the switch's jump table is placed before the function
 active_exc *getActiveExc(thread_ctl *thr)
 {
     active_exc *exc;
@@ -660,7 +661,6 @@ void __wcpp_2_save_exc_(dispatch_exc *dispatch, void *object)
 }
 
 // FUNCTION: 0xf44a0
-// NONMATCHING: the switch's jump table is placed before the function
 void __wcpp_2_dispatch_(dispatch_exc *dispatch, DISPATCHABLE kind)
 {
     char buf[40];

@@ -1,38 +1,13 @@
 #include "hosp.h"
 
 extern "C" {
-extern u16 D_00155d75;
-extern u8 D_00155d77;
-extern u8 D_00155c5e;
-extern u8 D_00155c5f;
-extern u16 D_00155c64;
-extern s16 D_00155c4e;
-extern s16 D_00155c50;
-extern s16 D_00155c52;
-extern s16 D_00155c54;
-extern s16 D_00155c60;
-extern s16 D_00155c62;
-extern u32 D_00155c56;
-extern u32 D_00155c5a;
-extern u32 D_0015544a;
-extern char D_0015544e[];
-extern u16 D_00188c74;
-extern u8 D_00188c85;
 extern u8 D_0012d808[];
 extern u8 D_00156910;
-extern u8 D_00155e1d;
 extern u8 D_00161134;
-extern u8 D_00155e4a;
-extern u8 D_00155e4b;
 extern char **D_0016037c;
 extern char **D_00160374;
 extern char **D_00160398;
 extern char **D_0016039c;
-extern u16 D_0015632f[];
-extern u16 D_0015636d[];
-extern u16 D_001563ab[];
-extern u16 D_001563bd[];
-extern u16 D_00155d89;
 extern Event D_001549d0[];
 extern char D_00120c50[];
 extern char D_00120c53[];
@@ -82,13 +57,13 @@ void compute_help_text(s16 x, s16 y, u8 c)
     s16 dy;
     u16 i;
 
-    dx = mouse_dx - x;
-    dy = mouse_dy - y;
+    dx = lbDisplay.mmouse_x - x;
+    dy = lbDisplay.mmouse_y - y;
     if (gamevar.f12e == 0x25)
         return;
-    if (D_00155d75) {
-        if (c == D_00155d77)
-            set_help_from_index(D_00155d75, x, y);
+    if (othervar.f9bd) {
+        if (c == othervar.f9bf)
+            set_help_from_index(othervar.f9bd, x, y);
         return;
     }
     for (i = statvar.help_start[c]; resvars.f2c_HelpHotspotp[i].x0 >= 0; i++) {
@@ -98,8 +73,8 @@ void compute_help_text(s16 x, s16 y, u8 c)
             return;
         }
     }
-    if (c == D_00155c5e)
-        D_00155c64 = 0;
+    if (c == othervar.f8a6)
+        othervar.f8ac = 0;
 }
 
 // FUNCTION: 0x00099e4c
@@ -113,34 +88,34 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
     s32 mx;
     s32 my;
 
-    D_00155c5f = mode;
+    othervar.f8a7 = mode;
     set_font_from_cache(display_mode == 2 ? 0x2d : 0);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     switch (mode) {
     case 1:
-        copy_and_format(D_0015544e, strs[0]);
+        copy_and_format(othervar.f96, strs[0]);
         border = 3;
-        D_00155c52 = LbTextStringWidth(D_0015544e) + border * 2;
-        D_00155c54 = LbTextStringHeight(D_0015544e) + border * 2;
+        othervar.f89a = LbTextStringWidth(othervar.f96) + border * 2;
+        othervar.f89c = LbTextStringHeight(othervar.f96) + border * 2;
         break;
     case 2:
-        copy_and_format_composite(D_0015544e, strs);
+        copy_and_format_composite(othervar.f96, strs);
         border = pulldv[12].height + 0xc;
-        D_00155c52 = LbTextStringWidth(D_0015544e) + border * 2;
-        D_00155c54 = LbTextStringHeight(D_0015544e) + border * 2 + pulldv[19].height;
+        othervar.f89a = LbTextStringWidth(othervar.f96) + border * 2;
+        othervar.f89c = LbTextStringHeight(othervar.f96) + border * 2 + pulldv[19].height;
         break;
     }
     if (x == -1 && y == -1) {
-        D_00155c4e = (lbDisplay.unknown18 - D_00155c52) / 2;
-        D_00155c50 = (lbDisplay.unknown1c - D_00155c54) / 2;
-        LbMouseSetWindow(D_00155c4e, D_00155c50, D_00155c52, D_00155c54);
-        x0 = D_00155c4e;
-        y0 = D_00155c50;
-        x1 = x0 + D_00155c52;
-        y1 = y0 + D_00155c54;
-        if (!((mouse_dx >= x0 && mouse_dx < x1) && mouse_dy >= y0 && mouse_dy < y1)) {
-            mx = mouse_dx;
-            my = mouse_dy;
+        othervar.f896 = (lbDisplay.unknown18 - othervar.f89a) / 2;
+        othervar.f898 = (lbDisplay.unknown1c - othervar.f89c) / 2;
+        LbMouseSetWindow(othervar.f896, othervar.f898, othervar.f89a, othervar.f89c);
+        x0 = othervar.f896;
+        y0 = othervar.f898;
+        x1 = x0 + othervar.f89a;
+        y1 = y0 + othervar.f89c;
+        if (!((lbDisplay.mmouse_x >= x0 && lbDisplay.mmouse_x < x1) && lbDisplay.mmouse_y >= y0 && lbDisplay.mmouse_y < y1)) {
+            mx = lbDisplay.mmouse_x;
+            my = lbDisplay.mmouse_y;
             mx < x0 ? mx = x0 : 0;
             mx > x1 ? mx = x1 : 0;
             my < y0 ? my = y0 : 0;
@@ -148,15 +123,15 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
             LbMouseSetPosition(mx, my);
         }
     } else {
-        D_00155c4e = x - border;
-        D_00155c50 = y - border;
-        D_00155c50 -= D_00155c54;
-        D_00155c50 += 6;
+        othervar.f896 = x - border;
+        othervar.f898 = y - border;
+        othervar.f898 -= othervar.f89c;
+        othervar.f898 += 6;
     }
-    D_00155c4e < 0 ? D_00155c4e = 0 : 0;
-    D_00155c50 < 0 ? D_00155c50 = 0 : 0;
-    D_00155c4e > lbDisplay.unknown18 - D_00155c52 ? D_00155c4e = lbDisplay.unknown18 - D_00155c52 : 0;
-    D_00155c50 > lbDisplay.unknown18 - D_00155c54 ? D_00155c50 = lbDisplay.unknown18 - D_00155c54 : 0;
+    othervar.f896 < 0 ? othervar.f896 = 0 : 0;
+    othervar.f898 < 0 ? othervar.f898 = 0 : 0;
+    othervar.f896 > lbDisplay.unknown18 - othervar.f89a ? othervar.f896 = lbDisplay.unknown18 - othervar.f89a : 0;
+    othervar.f898 > lbDisplay.unknown18 - othervar.f89c ? othervar.f898 = lbDisplay.unknown18 - othervar.f89c : 0;
 }
 
 // FUNCTION: 0x0009a1f8
@@ -169,68 +144,68 @@ void draw_help_text(void)
     s32 bottom;
     s32 border;
 
-    if (!(D_0015544e[0] && (D_0012d808[gamevar.f12e] || (advisor.f11f & 1))))
+    if (!(othervar.f96[0] && (D_0012d808[gamevar.f12e] || (advisor.f11f & 1))))
         return;
-    set_all_refresh_zones_in_window(D_00155c4e, D_00155c50, D_00155c4e + D_00155c52 + 0xc,
-        D_00155c50 + D_00155c54 + 0xc, 3);
-    if (D_00155c5e == 3)
+    set_all_refresh_zones_in_window(othervar.f896, othervar.f898, othervar.f896 + othervar.f89a + 0xc,
+        othervar.f898 + othervar.f89c + 0xc, 3);
+    if (othervar.f8a6 == 3)
         D_00156910 = 1;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown18);
-    D_00188c74 = 0;
-    LbDrawBox(D_00155c4e, D_00155c50, D_00155c52, D_00155c54, D_00155e1d ? color.unknown7 : 0xab);
-    switch (D_00155c5f) {
+    lbDisplay.draw_flags = 0;
+    LbDrawBox(othervar.f896, othervar.f898, othervar.f89a, othervar.f89c, othervar.fa65 ? color.unknown7 : 0xab);
+    switch (othervar.f8a7) {
     case 1:
-        D_00188c74 = 0x10;
-        LbDrawBox(D_00155c4e, D_00155c50, D_00155c52, D_00155c54, color.unknown8);
+        lbDisplay.draw_flags = 0x10;
+        LbDrawBox(othervar.f896, othervar.f898, othervar.f89a, othervar.f89c, color.unknown8);
         border = 3;
         break;
     case 2:
         step = pulldv[12].width;
-        j = D_00155c50;
-        bottom = D_00155c50 + D_00155c54 - pulldv[16].height;
-        for (i = D_00155c4e; D_00155c4e + D_00155c52 - step > i; i += step) {
+        j = othervar.f898;
+        bottom = othervar.f898 + othervar.f89c - pulldv[16].height;
+        for (i = othervar.f896; othervar.f896 + othervar.f89a - step > i; i += step) {
             reqspr_draw(i, j, &pulldv[12]);
             reqspr_draw(i, bottom, &pulldv[16]);
         }
         step = pulldv[18].height;
-        i = D_00155c4e;
-        right = D_00155c4e + D_00155c52 - pulldv[14].width;
-        for (j = D_00155c50; D_00155c50 + D_00155c54 - step > j; j += step) {
+        i = othervar.f896;
+        right = othervar.f896 + othervar.f89a - pulldv[14].width;
+        for (j = othervar.f898; othervar.f898 + othervar.f89c - step > j; j += step) {
             reqspr_draw(i, j, &pulldv[18]);
             reqspr_draw(right, j, &pulldv[14]);
         }
-        reqspr_draw(D_00155c4e, D_00155c50, &pulldv[11]);
-        reqspr_draw(D_00155c4e + D_00155c52 - pulldv[13].width, D_00155c50, &pulldv[13]);
-        reqspr_draw(D_00155c4e, D_00155c50 + D_00155c54 - pulldv[17].height, &pulldv[17]);
-        reqspr_draw(D_00155c4e + D_00155c52 - pulldv[15].width, D_00155c50 + D_00155c54 - pulldv[15].height,
+        reqspr_draw(othervar.f896, othervar.f898, &pulldv[11]);
+        reqspr_draw(othervar.f896 + othervar.f89a - pulldv[13].width, othervar.f898, &pulldv[13]);
+        reqspr_draw(othervar.f896, othervar.f898 + othervar.f89c - pulldv[17].height, &pulldv[17]);
+        reqspr_draw(othervar.f896 + othervar.f89a - pulldv[15].width, othervar.f898 + othervar.f89c - pulldv[15].height,
             &pulldv[15]);
         border = pulldv[12].height + 0xc;
-        D_00155c60 = D_00155c4e + D_00155c52 - 0xc - pulldv[19].width;
-        D_00155c62 = D_00155c50 + D_00155c54 - 0xc - pulldv[19].height;
-        if ((D_00155c60 <= mouse_dx && D_00155c60 + pulldv[19].width > mouse_dx)
-            && D_00155c62 <= mouse_dy && D_00155c62 + pulldv[19].height > mouse_dy) {
-            reqspr_draw(D_00155c60, D_00155c62, &pulldv[20]);
+        othervar.f8a8 = othervar.f896 + othervar.f89a - 0xc - pulldv[19].width;
+        othervar.f8aa = othervar.f898 + othervar.f89c - 0xc - pulldv[19].height;
+        if ((othervar.f8a8 <= lbDisplay.mmouse_x && othervar.f8a8 + pulldv[19].width > lbDisplay.mmouse_x)
+            && othervar.f8aa <= lbDisplay.mmouse_y && othervar.f8aa + pulldv[19].height > lbDisplay.mmouse_y) {
+            reqspr_draw(othervar.f8a8, othervar.f8aa, &pulldv[20]);
             if (!D_00161134)
                 play_sound(10, 0x44, -1, -1);
             D_00161134 = 1;
         } else {
-            reqspr_draw(D_00155c60, D_00155c62, &pulldv[19]);
+            reqspr_draw(othervar.f8a8, othervar.f8aa, &pulldv[19]);
             D_00161134 = 0;
         }
-        D_00188c74 = 4;
-        LbDrawBox(D_00155c4e + D_00155c52, D_00155c50 + 0xc, 0xc, D_00155c54, color.unknown8);
-        LbDrawBox(D_00155c4e + 0xc, D_00155c50 + D_00155c54, D_00155c52 - 0xc, 0xc, color.unknown8);
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 4;
+        LbDrawBox(othervar.f896 + othervar.f89a, othervar.f898 + 0xc, 0xc, othervar.f89c, color.unknown8);
+        LbDrawBox(othervar.f896 + 0xc, othervar.f898 + othervar.f89c, othervar.f89a - 0xc, 0xc, color.unknown8);
+        lbDisplay.draw_flags = 0;
         break;
     }
-    D_00188c74 = 0x40;
+    lbDisplay.draw_flags = 0x40;
     set_font_from_cache(display_mode == 2 ? 0x2d : 0);
-    D_00188c85 = color.unknown8;
-    LbTextDraw(D_00155c4e + border, D_00155c50 + border, D_0015544e);
-    D_00188c74 = 0;
+    lbDisplay.draw_colour = color.unknown8;
+    LbTextDraw(othervar.f896 + border, othervar.f898 + border, othervar.f96);
+    lbDisplay.draw_flags = 0;
     if (gamevar.f12e != 0x25)
-        D_0015544e[0] = 0;
+        othervar.f96[0] = 0;
 }
 
 // FUNCTION: 0x0009a7c8
@@ -333,9 +308,9 @@ void copy_and_format_composite(char *dst, char **strs)
 // FUNCTION: 0x0009ab54
 void cancel_helpmsg(void)
 {
-    D_00155c64 = 0;
-    D_00155c56 = 0;
-    D_0015544e[0] = 0;
+    othervar.f8ac = 0;
+    othervar.f89e = 0;
+    othervar.f96[0] = 0;
 }
 
 // FUNCTION: 0x0009ab84
@@ -350,17 +325,17 @@ void help_hotspot_detected(u16 i, u8 c, s16 x, s16 y)
                 return;
         }
     }
-    if (i == D_00155c64) {
-        if (D_0015544a + 0x2ee < D_00155c5a)
-            D_00155c56 = D_00155c5a;
+    if (i == othervar.f8ac) {
+        if (othervar.f92 + 0x2ee < othervar.f8a2)
+            othervar.f89e = othervar.f8a2;
     } else {
-        D_00155c5e = c;
-        D_00155c64 = i;
-        D_0015544a = D_00155c5a;
+        othervar.f8a6 = c;
+        othervar.f8ac = i;
+        othervar.f92 = othervar.f8a2;
     }
-    if (D_00155c56 + 0x1f4 > D_00155c5a) {
-        D_00155c56 = D_00155c5a;
-        D_00155c5e = c;
+    if (othervar.f89e + 0x1f4 > othervar.f8a2) {
+        othervar.f89e = othervar.f8a2;
+        othervar.f8a6 = c;
         set_help_from_index(i, x, y);
     }
 }
@@ -375,7 +350,7 @@ void set_help_from_index(u16 i, s16 x, s16 y)
     cx = x + (resvars.f2c_HelpHotspotp[i].x0 + resvars.f2c_HelpHotspotp[i].x1) / 2;
     cy = y + resvars.f2c_HelpHotspotp[i].y0;
     if (resvars.f2c_HelpHotspotp[i].func) {
-        text = D_0015544e;
+        text = othervar.f96;
         resvars.f2c_HelpHotspotp[i].func();
         set_help_text(1, cx, cy, &text);
     } else {
@@ -391,10 +366,10 @@ void set_force_help(u8 c, u16 id)
 
     i = 0;
     found = 0;
-    D_00155d77 = c;
+    othervar.f9bf = c;
     for (i = 0; resvars.f2c_HelpHotspotp[i].x0 != -2; i++) {
         if (id == resvars.f2c_HelpHotspotp[i].text) {
-            D_00155d75 = i;
+            othervar.f9bd = i;
             break;
         }
     }
@@ -403,7 +378,7 @@ void set_force_help(u8 c, u16 id)
 // FUNCTION: 0x0009ade8
 void clear_force_help(void)
 {
-    D_00155d75 = 0;
+    othervar.f9bd = 0;
 }
 
 // FUNCTION: 0x0009ae08
@@ -414,10 +389,10 @@ void show_help_page(u32 page, u32 sub)
     set_mouse_mode(0x25);
     switch (page) {
     case 0:
-        set_help_text(2, -1, -1, &D_0016037c[D_0015632f[sub]]);
+        set_help_text(2, -1, -1, &D_0016037c[statvar.f4df[sub]]);
         break;
     case 1:
-        set_help_text(2, -1, -1, &D_00160374[D_0015636d[sub]]);
+        set_help_text(2, -1, -1, &D_00160374[statvar.f51d[sub]]);
         break;
     case 2: {
         char buf[500];
@@ -431,34 +406,34 @@ void show_help_page(u32 page, u32 sub)
         case 2:
         case 8:
         case 3:
-            sprintf(buf, D_00160398[D_001563ab[sub]], current_net_criteria.start - D_00155d89);
-            saved = D_00160398[D_001563ab[sub]];
-            D_00160398[D_001563ab[sub]] = buf;
+            sprintf(buf, D_00160398[statvar.f55b[sub]], current_net_criteria.start - othervar.f9d1);
+            saved = D_00160398[statvar.f55b[sub]];
+            D_00160398[statvar.f55b[sub]] = buf;
             break;
         case 4:
         case 6:
         case 5:
         case 7:
             if (current_net_criteria.unknown0 == 7 && myplayer.f21 == 2)
-                sprintf(buf, D_00160398[D_001563ab[sub]], current_net_criteria.start - D_00155d89,
+                sprintf(buf, D_00160398[statvar.f55b[sub]], current_net_criteria.start - othervar.f9d1,
                     current_net_criteria.value);
             else
-                sprintf(buf, D_00160398[D_001563ab[sub]], current_net_criteria.value,
-                    current_net_criteria.start - D_00155d89);
-            saved = D_00160398[D_001563ab[sub]];
-            D_00160398[D_001563ab[sub]] = buf;
+                sprintf(buf, D_00160398[statvar.f55b[sub]], current_net_criteria.value,
+                    current_net_criteria.start - othervar.f9d1);
+            saved = D_00160398[statvar.f55b[sub]];
+            D_00160398[statvar.f55b[sub]] = buf;
             break;
         }
-        set_help_text(2, -1, -1, &D_00160398[D_001563ab[sub]]);
-        D_00160398[D_001563ab[sub]] = saved;
+        set_help_text(2, -1, -1, &D_00160398[statvar.f55b[sub]]);
+        D_00160398[statvar.f55b[sub]] = saved;
         break;
     }
     case 3:
-        set_help_text(2, -1, -1, &D_0016039c[D_001563bd[sub]]);
+        set_help_text(2, -1, -1, &D_0016039c[statvar.f56d[sub]]);
         break;
     }
-    D_00155e4a = page;
-    D_00155e4b = sub;
+    othervar.fa92 = page;
+    othervar.fa93 = sub;
 }
 
 // FUNCTION: 0x0009b144
@@ -486,21 +461,21 @@ void finish_composite_help(void)
     LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     D_00161134 = 0;
     D_00156910 = 1;
-    D_0015544e[0] = 0;
+    othervar.f96[0] = 0;
     if (gamevar.f12e == 0x25) {
         set_mouse_mode(0);
         play_sound(10, 0x41, -1, -1);
-        switch (D_00155e4a) {
+        switch (othervar.fa92) {
         case 1:
-            switch (D_00155e4b) {
+            switch (othervar.fa93) {
             case 0xf:
             case 0x10:
-                show_help_page(1, D_00155e4b + 1);
+                show_help_page(1, othervar.fa93 + 1);
                 break;
             }
             break;
         case 3:
-            if (D_00155e4b == 2) {
+            if (othervar.fa93 == 2) {
                 D_001549d0[player].type = 0x7e;
                 D_001549d0[player].value = 1;
             }

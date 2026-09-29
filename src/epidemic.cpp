@@ -1,9 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern s16 D_001553b8;
-extern u16 D_0015543f;
-extern u16 D_001553f1;
 extern char **D_001602a4;
 extern char D_0014532c[];
 extern u16 D_00158190;
@@ -25,8 +22,8 @@ void spread_epidemic(Thing *w, u16 n)
     u8 illness;
     u8 other;
 
-    D_001553b8 = old_newrand() % 100;
-    if (D_001553b8 < 0 || D_001553b8 >= gbv.f145 + n / 2)
+    othervar.f0 = old_newrand() % 100;
+    if (othervar.f0 < 0 || othervar.f0 >= gbv.f145 + n / 2)
         return;
     illness = w->style;
     cell = &map[(s16)w->x.tile + ((s16)w->y.tile << 7)];
@@ -41,12 +38,12 @@ void spread_epidemic(Thing *w, u16 n)
             other = t->style;
             if (expertise[other].unknown10[1] != 0 || (s8)t->unknown174 != 0 || old_newrand() & 1)
                 continue;
-            D_0015543f++;
+            othervar.f87++;
             if (other != illness) {
                 t->style = illness;
                 effect_illness(w, illness, 0);
             }
-            D_001553f1 = illness;
+            othervar.f39 = illness;
             t->unknown174 = (s8)w->unknown174 / 2;
             w->unknown174 -= t->unknown174;
             if (w->flags & 0x20)
@@ -274,6 +271,6 @@ void clean_contagious_peep(Thing *w)
     reset_icon_value(w, 0x10);
     reset_icon_value(w, 0xd);
     remove_person_from_vaccination_queue(w);
-    if (D_0015543f >= 1)
-        D_0015543f--;
+    if (othervar.f87 >= 1)
+        othervar.f87--;
 }

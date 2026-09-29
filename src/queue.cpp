@@ -3,7 +3,6 @@
 extern "C" {
 
 extern Event D_001549d0[];
-extern u16 D_00155419, D_0015541b;
 extern u32 D_001603d0;
 extern RoomInfo *D_001603d4;
 
@@ -183,44 +182,44 @@ void process_queue_button(u8 n)
     debug.unknown8 = n;
     switch (n) {
     case 0:
-        if (D_0015541b) {
+        if (othervar.f63) {
             D_001549d0[player].type = 0x3c;
-            D_001549d0[player].value = D_00155419;
-            D_001549d0[player].arg = D_0015541b;
+            D_001549d0[player].value = othervar.f61;
+            D_001549d0[player].arg = othervar.f63;
         }
         break;
     case 1:
-        if (D_0015541b) {
+        if (othervar.f63) {
             D_001549d0[player].type = 0x3d;
-            D_001549d0[player].value = D_00155419;
-            D_001549d0[player].arg = D_0015541b;
+            D_001549d0[player].value = othervar.f61;
+            D_001549d0[player].arg = othervar.f63;
         }
         break;
     case 2:
         D_001549d0[player].type = 0x53;
-        D_001549d0[player].value = D_00155419;
+        D_001549d0[player].value = othervar.f61;
         break;
     case 3:
         D_001549d0[player].type = 0x54;
-        D_001549d0[player].value = D_00155419;
+        D_001549d0[player].value = othervar.f61;
         break;
     case 4:
-        if (D_0015541b) {
+        if (othervar.f63) {
             D_001549d0[player].type = 0x51;
-            D_001549d0[player].value = D_00155419;
-            D_001549d0[player].arg = D_0015541b;
+            D_001549d0[player].value = othervar.f61;
+            D_001549d0[player].arg = othervar.f63;
         }
         break;
     case 5:
-        if (D_0015541b) {
+        if (othervar.f63) {
             D_001549d0[player].type = 0x55;
-            D_001549d0[player].value = D_00155419;
-            D_001549d0[player].arg = D_0015541b;
+            D_001549d0[player].value = othervar.f61;
+            D_001549d0[player].arg = othervar.f63;
         }
         break;
     case 6:
-        if (D_0015541b) {
-            gamevar.f13a = get_real_person_from_room(D_00155419, D_0015541b);
+        if (othervar.f63) {
+            gamevar.f13a = get_real_person_from_room(othervar.f61, othervar.f63);
             que.unknown2 = 3;
         }
         break;
@@ -229,31 +228,31 @@ void process_queue_button(u8 n)
         break;
     case 8:
         if (statvar.unknownfd > 1) {
-            if (D_0015541b) {
+            if (othervar.f63) {
                 D_001549d0[player].type = 0x7c;
-                D_001549d0[player].value = get_real_person_from_room(D_00155419, D_0015541b);
+                D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
                 D_001549d0[player].arg = fn_00085660(1);
-                D_0015541b = 0;
+                othervar.f63 = 0;
             }
         }
         break;
     case 9:
         if (statvar.unknownfd > 2) {
-            if (D_0015541b) {
+            if (othervar.f63) {
                 D_001549d0[player].type = 0x7c;
-                D_001549d0[player].value = get_real_person_from_room(D_00155419, D_0015541b);
+                D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
                 D_001549d0[player].arg = fn_00085660(2);
-                D_0015541b = 0;
+                othervar.f63 = 0;
             }
         }
         break;
     case 10:
         if (statvar.unknownfd > 3) {
-            if (D_0015541b) {
+            if (othervar.f63) {
                 D_001549d0[player].type = 0x7c;
-                D_001549d0[player].value = get_real_person_from_room(D_00155419, D_0015541b);
+                D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
                 D_001549d0[player].arg = fn_00085660(3);
-                D_0015541b = 0;
+                othervar.f63 = 0;
             }
         }
         break;

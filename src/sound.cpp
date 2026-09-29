@@ -78,14 +78,7 @@ extern s32 D_00156433;
 extern s32 D_0015642f;
 extern u8 *D_00158334;
 extern TbLoadFiles D_0013ecb4[], D_0013edbc[], D_0013ed64[];
-extern u8 D_00155dfa;
-extern u16 D_00155dfb;
-extern SampleInfo *D_00155dfd;
 extern ambient D_0014a468[];
-extern u16 D_00155e2a;
-extern u8 D_00155e2c, D_00155e32;
-extern u16 D_00155e43;
-extern u8 D_00155d71, D_00155d72, D_00155e07, D_00155e08, D_0015642d;
 extern char D_001207ca[], D_001207d5[], D_001207e0[], D_001207eb[], D_001207f6[];
 extern char D_00120801[], D_00120812[], D_0012081d[], D_00120820[];
 extern u8 __IsTable[];
@@ -186,22 +179,22 @@ void do_ambients(void)
     u8 i;
 
     if (myplayer.f10 != 0 && !gamevar.f174 && !gamevar.unknown21) {
-        if (D_00155dfa) {
-            if (!IsSamplePlaying(0, 0, D_00155dfd->SampleHandle))
-                D_00155dfa = 0;
+        if (othervar.fa42) {
+            if (!IsSamplePlaying(0, 0, othervar.fa45->SampleHandle))
+                othervar.fa42 = 0;
         } else if (AmbientQueue[0].sound) {
-            D_00155dfd = play_sample_using_heap(0xb, AmbientQueue[0].sound + 500, myplayer.fe, 0x40, 0x64, 0, 2);
-            if (D_00155dfd)
-                D_00155dfa = AmbientQueue[0].sound;
+            othervar.fa45 = play_sample_using_heap(0xb, AmbientQueue[0].sound + 500, myplayer.fe, 0x40, 0x64, 0, 2);
+            if (othervar.fa45)
+                othervar.fa42 = AmbientQueue[0].sound;
             for (i = 0; i < 3; i++)
                 AmbientQueue[i] = AmbientQueue[i + 1];
             AmbientQueue[i].sound = AmbientQueue[i].priority = 0;
-            D_00155dfb = 0;
+            othervar.fa43 = 0;
         }
-        D_00155dfb++;
-        if (D_00155dfb > 2000) {
+        othervar.fa43++;
+        if (othervar.fa43 > 2000) {
             play_ambient(saferand() % 34 + 0x89);
-            D_00155dfb = 0;
+            othervar.fa43 = 0;
         }
     }
 }
@@ -344,7 +337,6 @@ void manage_sound(void)
     }
 }
 
-// NONMATCHING: D_00155e2a * myplayer.fd loads myplayer.fd first here, D_00155e2a first in the target
 // FUNCTION: 0x00089468
 void manage_background_sounds(void)
 {
@@ -352,21 +344,21 @@ void manage_background_sounds(void)
     s32 volume;
 
     if (myplayer.ff && statvar.fe4 && !gamevar.unknown21) {
-        volume = D_00155e2a * myplayer.fd / 20;
+        volume = othervar.fa72 * myplayer.fd / 20;
         if (volume < 0)
             volume = 0;
         else if (volume > myplayer.fd)
             volume = myplayer.fd;
         play_sample_using_heap(0xc, 200, volume, 0x40, 100, -1, 2);
-        if (D_00155e2c != volume) {
+        if (othervar.fa74 != volume) {
             SetSampleVolume(0xc, 200, volume, 0);
-            D_00155e2c = volume;
+            othervar.fa74 = volume;
         }
-        D_00155e43++;
-        if (D_00155e43 > 400) {
+        othervar.fa8b++;
+        if (othervar.fa8b > 400) {
             sample = saferand() % 30 + 0x10e;
             play_sample_using_heap(0xa, sample, volume, 0x40, 100, 0, 2);
-            D_00155e43 = 0;
+            othervar.fa8b = 0;
         }
         if (myhosp->f1d9) {
             volume = myplayer.fd / 2;
@@ -377,9 +369,9 @@ void manage_background_sounds(void)
             else if (volume > myplayer.fd)
                 volume = myplayer.fd;
             play_sample_using_heap(0xd, 0xa9, volume, 0x40, 100, -1, 2);
-            if (D_00155e32 != volume) {
+            if (othervar.fa7a != volume) {
                 SetSampleVolume(0xd, 0xa9, volume, 0);
-                D_00155e32 = volume;
+                othervar.fa7a = volume;
             }
         }
         if (gamevar.ff0)
@@ -396,8 +388,8 @@ void init_midi(void)
     music.volume = myplayer.fc;
     for (i = 0; i < 10; i++)
         myplayer.unknown12[i] = 1;
-    D_00155d71 = 1;
-    D_00155d72 = 8;
+    othervar.f9b9 = 1;
+    othervar.f9ba = 8;
     load_midi();
 }
 
@@ -407,34 +399,34 @@ void play_next_midi(void)
     char buf[100];
     u8 i;
 
-    D_00155d71 = 1;
+    othervar.f9b9 = 1;
     if (!is_midi_playing()) {
-        if (D_00155e08) {
-            if (myplayer.unknown12[D_00155d72]) {
-                sprintf(buf, D_001207ca, statvar.fd0, midi_files[D_00155d72].name);
+        if (othervar.fa50) {
+            if (myplayer.unknown12[othervar.f9ba]) {
+                sprintf(buf, D_001207ca, statvar.fd0, midi_files[othervar.f9ba].name);
                 if (LbFileLoadAt(buf, midi_buffer) != -1) {
                     PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                    D_00155e07 = 1;
+                    othervar.fa4f = 1;
                 } else {
-                    D_00155d71 = 0;
+                    othervar.f9b9 = 0;
                 }
             }
         } else {
-            for (i = 0; i < D_0015642d; i++) {
-                D_00155d72++;
-                if (D_00155d72 > D_0015642d)
-                    D_00155d72 = 0;
-                if (myplayer.unknown12[D_00155d72]) {
-                    sprintf(buf, D_001207d5, statvar.fd0, midi_files[D_00155d72].name);
+            for (i = 0; i < statvar.f5dd; i++) {
+                othervar.f9ba++;
+                if (othervar.f9ba > statvar.f5dd)
+                    othervar.f9ba = 0;
+                if (myplayer.unknown12[othervar.f9ba]) {
+                    sprintf(buf, D_001207d5, statvar.fd0, midi_files[othervar.f9ba].name);
                     if (LbFileLoadAt(buf, midi_buffer) != -1) {
                         PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                        D_00155e07 = 1;
+                        othervar.fa4f = 1;
                         break;
                     }
                 }
             }
-            if (i == D_0015642d)
-                D_00155d71 = 0;
+            if (i == statvar.f5dd)
+                othervar.f9b9 = 0;
         }
     }
 }
@@ -445,13 +437,13 @@ void play_midi(u8 track)
     char buf[100];
 
     AIL_end_sequence(GetSongHandle());
-    if (myplayer.unknown11 && statvar.unknowne5 && D_00155d71) {
+    if (myplayer.unknown11 && statvar.unknowne5 && othervar.f9b9) {
         if (myplayer.unknown12[track]) {
             sprintf(buf, D_001207e0, statvar.fd0, midi_files[track].name);
             if (LbFileLoadAt(buf, midi_buffer) != -1) {
                 PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                D_00155d72 = track;
-                D_00155e07 = 1;
+                othervar.f9ba = track;
+                othervar.fa4f = 1;
             } else {
                 play_next_midi();
             }
@@ -467,35 +459,35 @@ void play_last_midi(void)
     char buf[100];
     u8 i;
 
-    D_00155d71 = 1;
+    othervar.f9b9 = 1;
     if (!is_midi_playing()) {
-        if (D_00155e08) {
-            if (myplayer.unknown12[D_00155d72]) {
-                sprintf(buf, D_001207eb, statvar.fd0, midi_files[D_00155d72].name);
+        if (othervar.fa50) {
+            if (myplayer.unknown12[othervar.f9ba]) {
+                sprintf(buf, D_001207eb, statvar.fd0, midi_files[othervar.f9ba].name);
                 if (LbFileLoadAt(buf, midi_buffer) != -1) {
                     PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                    D_00155e07 = 1;
+                    othervar.fa4f = 1;
                 } else {
-                    D_00155d71 = 0;
+                    othervar.f9b9 = 0;
                 }
             }
         } else {
-            for (i = 0; i < D_0015642d; i++) {
-                if (D_00155d72 == 0)
-                    D_00155d72 = D_0015642d;
+            for (i = 0; i < statvar.f5dd; i++) {
+                if (othervar.f9ba == 0)
+                    othervar.f9ba = statvar.f5dd;
                 else
-                    D_00155d72--;
-                if (myplayer.unknown12[D_00155d72]) {
-                    sprintf(buf, D_001207f6, statvar.fd0, midi_files[D_00155d72].name);
+                    othervar.f9ba--;
+                if (myplayer.unknown12[othervar.f9ba]) {
+                    sprintf(buf, D_001207f6, statvar.fd0, midi_files[othervar.f9ba].name);
                     if (LbFileLoadAt(buf, midi_buffer) != -1) {
                         PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                        D_00155e07 = 1;
+                        othervar.fa4f = 1;
                         break;
                     }
                 }
             }
-            if (i == D_0015642d)
-                D_00155d71 = 0;
+            if (i == statvar.f5dd)
+                othervar.f9b9 = 0;
         }
     }
 }
@@ -506,8 +498,8 @@ u8 is_midi_playing(void)
     if (gamevar.unknown21)
         return 1;
     if (myplayer.unknown11 && statvar.unknowne5) {
-        if (D_00155d71) {
-            if (D_00155e07) {
+        if (othervar.f9b9) {
+            if (othervar.fa4f) {
                 if (AIL_sequence_status(GetSongHandle()) != 4)
                     return 0;
             }
@@ -533,20 +525,20 @@ void load_midi(void)
     sprintf(name, D_00120801, statvar.fd0);
     len = LbFileLengthRnc(name);
     if (len == -1) {
-        D_00155d71 = 0;
+        othervar.f9b9 = 0;
         statvar.fe4 = 0;
         myplayer.ff = 0;
         return;
     }
     buf = (char *)LbMemoryAlloc(len + 1);
     if (buf == 0) {
-        D_00155d71 = 0;
+        othervar.f9b9 = 0;
         statvar.fe4 = 0;
         myplayer.ff = 0;
         return;
     }
     if (LbFileLoadAt(name, buf) == -1) {
-        D_00155d71 = 0;
+        othervar.f9b9 = 0;
         statvar.fe4 = 0;
         myplayer.ff = 0;
         LbMemoryFree(buf);
@@ -588,8 +580,8 @@ void load_midi(void)
                 break;
         }
     }
-    D_0015642d = i;
-    if (D_0015642d == 0) {
+    statvar.f5dd = i;
+    if (statvar.f5dd == 0) {
         statvar.fe4 = 0;
         myplayer.ff = 0;
     }

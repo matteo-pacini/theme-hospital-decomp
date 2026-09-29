@@ -11,19 +11,6 @@ struct Req13Layout {
 extern "C" {
 
 extern Event D_001549d0[];
-extern u8 D_00155d56;
-extern u16 D_00155d57;
-extern u16 D_00155d5a;
-extern u8 D_00155d65;
-extern u16 D_00155d66;
-extern u16 D_00155d69;
-extern u8 D_00155d7b;
-extern u8 D_00155d7c;
-extern char D_00155ced[];
-extern u16 D_00188c74;
-extern u8 D_00188c7c;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
 
 }
 
@@ -42,9 +29,9 @@ void req13(Window *w)
                 req13_no_pressed();
                 play_sound(10, 0x42, -1, -1);
             } else if (i == resvars.fe[0]) {
-                D_001549d0[player].type = D_00155d56;
-                D_001549d0[player].value = D_00155d57;
-                D_001549d0[player].arg = D_00155d5a;
+                D_001549d0[player].type = othervar.f99e;
+                D_001549d0[player].value = othervar.f99f;
+                D_001549d0[player].arg = othervar.f9a2;
                 play_sound(10, 0x41, -1, -1);
             }
         }
@@ -61,24 +48,24 @@ void req13_overdraw(Window *w)
     compute_help_text(0, 0, 8);
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                               window.unknown2cf - window.unknown2c7);
-    x = w->x - D_00188c3c;
-    y = w->y - D_00188c40;
+    x = w->x - lbDisplay.graphics_window_x;
+    y = w->y - lbDisplay.graphics_window_y;
     set_font_from_cache(1);
-    D_00188c74 = 0x20;
+    lbDisplay.draw_flags = 0x20;
     LbTextSetWindow(resvars.f18_Req13Layoutp->text_x, resvars.f18_Req13Layoutp->text_y, resvars.f18_Req13Layoutp->text_w, resvars.f18_Req13Layoutp->text_h);
-    LbTextDraw(0, 0, D_00155ced);
-    D_00188c74 = 0;
+    LbTextDraw(0, 0, othervar.f935);
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x0006fd98
 void open_yes_no_requester(u8 a, u16 b, u16 c, u8 d, u16 e, u16 f)
 {
-    D_00155d56 = a;
-    D_00155d57 = b;
-    D_00155d5a = c;
-    D_00155d65 = d;
-    D_00155d66 = e;
-    D_00155d69 = f;
+    othervar.f99e = a;
+    othervar.f99f = b;
+    othervar.f9a2 = c;
+    othervar.f9ad = d;
+    othervar.f9ae = e;
+    othervar.f9b1 = f;
     D_001549d0[player].type = 0x77;
 }
 
@@ -91,10 +78,10 @@ void close_yes_no_requester(u8 reopen)
         close_crequester(crequester.unknown2);
         close_irequesters();
         window.unknown2eb = 0;
-        if (reopen && D_00155d7b != 0x63) {
-            crequester.unknown2 = D_00155d7b;
+        if (reopen && othervar.f9c3 != 0x63) {
+            crequester.unknown2 = othervar.f9c3;
             fn_0001bc94(crequester.unknown2, 1);
-            set_mouse_mode(D_00155d7c);
+            set_mouse_mode(othervar.f9c4);
         }
     }
 }
@@ -102,18 +89,18 @@ void close_yes_no_requester(u8 reopen)
 // FUNCTION: 0x0006fe88
 void req13_no_pressed(void)
 {
-    D_001549d0[player].type = D_00155d65;
-    D_001549d0[player].value = D_00155d66;
-    D_001549d0[player].arg = D_00155d69;
+    D_001549d0[player].type = othervar.f9ad;
+    D_001549d0[player].value = othervar.f9ae;
+    D_001549d0[player].arg = othervar.f9b1;
 }
 
 // FUNCTION: 0x0006fed8
 void req13_cancel_check(void)
 {
     if (crequester.unknown2 == 4) {
-        if (lbInkey == 1 || (D_00188c7c && !mouse_was_on_window)) {
+        if (lbInkey == 1 || (lbDisplay.right_button && !mouse_was_on_window)) {
             req13_no_pressed();
-            D_00188c7c = 0;
+            lbDisplay.right_button = 0;
         }
     }
 }

@@ -29,15 +29,9 @@ struct FrameBox {
 extern "C" {
 
 extern FrameBox D_001567b0;
-extern u16 D_00188c74;
 extern s32 D_00156911;
-extern u8 D_00155e0a;
-extern u8 D_00188c85;
-extern u8 D_00155e45;
 extern TbSprite *D_00153f5c;
 extern char D_001202fc[];
-extern s32 D_00188c40;
-extern s32 D_00188c48;
 extern u8 D_00130280[];
 
 void LbDrawHVLine(s32 x, s32 y, TbSprite *spr, u8 colour);
@@ -64,8 +58,8 @@ void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, cons
             elem = &element[*el];
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags | flags;
-                D_00188c74 ^= 1;
+                lbDisplay.draw_flags = elem->flags | flags;
+                lbDisplay.draw_flags ^= 1;
                 LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
                 if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                     D_001567b0.x = -(elem->x - 0x8d + spr->width);
@@ -78,7 +72,7 @@ void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, cons
             elem = &element[*el];
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags | flags;
+                lbDisplay.draw_flags = elem->flags | flags;
                 LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
                 if (D_001567b0.x > elem->x - 0x8d)
                     D_001567b0.x = elem->x - 0x8d;
@@ -106,7 +100,7 @@ void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, cons
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x0002dd1c
@@ -124,8 +118,8 @@ void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16
             elem = &element[*el];
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags;
-                D_00188c74 ^= 1;
+                lbDisplay.draw_flags = elem->flags;
+                lbDisplay.draw_flags ^= 1;
                 LbDrawHVLine(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, colour);
                 if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                     D_001567b0.x = -(elem->x - 0x8d + spr->width);
@@ -138,7 +132,7 @@ void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16
             elem = &element[*el];
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags;
+                lbDisplay.draw_flags = elem->flags;
                 LbDrawHVLine(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, colour);
                 if (D_001567b0.x > elem->x - 0x8d)
                     D_001567b0.x = elem->x - 0x8d;
@@ -164,7 +158,7 @@ void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x0002e0ec
@@ -184,7 +178,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
     if (w->palette) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
-            if (!D_00155e0a) {
+            if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
                 if (w->unknown24 > 0) {
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
@@ -193,10 +187,10 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                             icon_draw_from_special_id_frame(w->unknown27, x, y, (s16)-((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                     } else if (w->renderer == 6) {
                         icon = 1;
-                        D_00155e0a = 1;
+                        othervar.fa52 = 1;
                     }
                 } else {
-                    D_00155e0a = 1;
+                    othervar.fa52 = 1;
                 }
             }
             if (elem->flags & 0xffb0) {
@@ -206,8 +200,8 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             }
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags & 0xf;
-                D_00188c74 ^= 1;
+                lbDisplay.draw_flags = elem->flags & 0xf;
+                lbDisplay.draw_flags ^= 1;
                 LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
                 if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                     D_001567b0.x = -(elem->x - 0x8d + spr->width);
@@ -218,7 +212,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
     } else {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
-            if (!D_00155e0a) {
+            if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
                 if (w->unknown24 > 0) {
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
@@ -227,10 +221,10 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                             icon_draw_from_special_id_frame(w->unknown27, x, y, (s16)((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                     } else if (w->renderer == 6) {
                         icon = 1;
-                        D_00155e0a = 1;
+                        othervar.fa52 = 1;
                     }
                 } else {
-                    D_00155e0a = 1;
+                    othervar.fa52 = 1;
                 }
             }
             if (elem->flags & 0xffb0) {
@@ -240,7 +234,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             }
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags & 0xf;
+                lbDisplay.draw_flags = elem->flags & 0xf;
                 LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
                 if (D_001567b0.x > elem->x - 0x8d)
                     D_001567b0.x = elem->x - 0x8d;
@@ -273,8 +267,8 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    D_00188c74 = 0;
-    D_00155e0a = 0;
+    lbDisplay.draw_flags = 0;
+    othervar.fa52 = 0;
 }
 
 extern "C" {
@@ -302,7 +296,7 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
     if (w->palette) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
-            if (!D_00155e0a) {
+            if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
                 if (w->unknown24 > 0) {
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
@@ -314,7 +308,7 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                         }
                     }
                 } else {
-                    D_00155e0a = 1;
+                    othervar.fa52 = 1;
                 }
             }
             if (elem->flags & 0xfff0) {
@@ -326,8 +320,8 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                 DrawIntoPixBuffer();
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
-                    D_00188c74 = elem->flags & 0xf;
-                    D_00188c74 ^= 1;
+                    lbDisplay.draw_flags = elem->flags & 0xf;
+                    lbDisplay.draw_flags ^= 1;
                     LbSpriteDraw(0x3a - (elem->x - 0x8d) - spr->width, elem->y - 0xca + 0x74, spr);
                     drawn = 1;
                     if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
@@ -348,8 +342,8 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                 }
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
-                    D_00188c74 = elem->flags & 0xf;
-                    D_00188c74 ^= 1;
+                    lbDisplay.draw_flags = elem->flags & 0xf;
+                    lbDisplay.draw_flags ^= 1;
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
                     if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                         D_001567b0.x = -(elem->x - 0x8d + spr->width);
@@ -361,7 +355,7 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
     } else {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
-            if (!D_00155e0a) {
+            if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
                 if (w->unknown24 > 0) {
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
@@ -373,7 +367,7 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                         }
                     }
                 } else {
-                    D_00155e0a = 1;
+                    othervar.fa52 = 1;
                 }
             }
             if (elem->flags & 0xfff0) {
@@ -385,7 +379,7 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                 DrawIntoPixBuffer();
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
-                    D_00188c74 = elem->flags & 0xf;
+                    lbDisplay.draw_flags = elem->flags & 0xf;
                     LbSpriteDraw(elem->x - 0x8d + 0x3a, elem->y - 0xca + 0x74, spr);
                     drawn = 1;
                     if (D_001567b0.x > elem->x - 0x8d)
@@ -406,7 +400,7 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                 }
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
-                    D_00188c74 = elem->flags & 0xf;
+                    lbDisplay.draw_flags = elem->flags & 0xf;
                     LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
                     if (D_001567b0.x > elem->x - 0x8d)
                         D_001567b0.x = elem->x - 0x8d;
@@ -450,8 +444,8 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    D_00188c74 = 0;
-    D_00155e0a = 0;
+    lbDisplay.draw_flags = 0;
+    othervar.fa52 = 0;
 }
 
 // FUNCTION: 0x0002f47c
@@ -472,7 +466,7 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
     for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
         elem = &element[*el];
         if (elem->flags & 0xfff0) {
-            if (!D_00155e0a) {
+            if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
                 if (w->unknown24 > 0) {
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
@@ -485,7 +479,7 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
                         }
                     }
                 } else {
-                    D_00155e0a = 1;
+                    othervar.fa52 = 1;
                 }
             }
             if (elem->flags & 0xffb0) {
@@ -499,11 +493,11 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
         }
         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
         if (spr > sprite) {
-            D_00188c74 = elem->flags & 0xf;
+            lbDisplay.draw_flags = elem->flags & 0xf;
             if (g)
-                D_00188c74 |= 4;
+                lbDisplay.draw_flags |= 4;
             if (w->palette) {
-                D_00188c74 ^= 1;
+                lbDisplay.draw_flags ^= 1;
                 sprite_draw_glow(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, g);
                 if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                     D_001567b0.x = -(elem->x - 0x8d + spr->width);
@@ -540,8 +534,8 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    D_00188c74 = 0;
-    D_00155e0a = 0;
+    lbDisplay.draw_flags = 0;
+    othervar.fa52 = 0;
 }
 
 }
@@ -556,8 +550,8 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
     u8 h;
     u8 rest;
 
-    old_top = D_00188c40;
-    old_height = D_00188c48;
+    old_top = lbDisplay.graphics_window_y;
+    old_height = lbDisplay.graphics_window_height;
     o = &thing[w->unknown69];
     if (o > thing) {
         if (w->subtype == 0xe)
@@ -569,19 +563,19 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         {
             s32 top = y - h;
 
-            D_00188c48 = top - D_00188c40 > D_00188c48 ? D_00188c48 : top - D_00188c40;
+            lbDisplay.graphics_window_height = top - lbDisplay.graphics_window_y > lbDisplay.graphics_window_height ? lbDisplay.graphics_window_height : top - lbDisplay.graphics_window_y;
         }
         full_draw_frame(w, w->sprite, x, y, 0, 0, w->palette);
         {
             s32 top = y - h;
 
-            D_00188c40 = top > old_top ? top : old_top;
+            lbDisplay.graphics_window_y = top > old_top ? top : old_top;
         }
-        D_00188c48 = old_height + old_top - D_00188c40;
-        full_draw_frame(w, o->unknown100, x, y - D_00188c40, 0, 0, o->state_b);
-        D_00188c40 = old_top;
-        D_00188c48 = old_height;
-        D_00188c74 = 0;
+        lbDisplay.graphics_window_height = old_height + old_top - lbDisplay.graphics_window_y;
+        full_draw_frame(w, o->unknown100, x, y - lbDisplay.graphics_window_y, 0, 0, o->state_b);
+        lbDisplay.graphics_window_y = old_top;
+        lbDisplay.graphics_window_height = old_height;
+        lbDisplay.draw_flags = 0;
         if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->unknown23 != f->sound))
             play_sound((u32)w, f->sound, x, y);
         if (gamevar.f12d == 0)
@@ -669,7 +663,7 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
             D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
         if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
             D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0;
     }
 }
 
@@ -688,8 +682,8 @@ void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, con
             elem = &element[*el];
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags | flags;
-                D_00188c74 ^= 1;
+                lbDisplay.draw_flags = elem->flags | flags;
+                lbDisplay.draw_flags ^= 1;
                 LbSpriteDrawScaled(x - ((elem->x - 0x8d + spr->width) * scale >> 16), y + ((elem->y - 0xca) * scale >> 16),
                                    spr, spr->width * scale >> 16, spr->height * scale >> 16);
                 if (D_001567b0.x > -(elem->x - 0x8d + spr->width))
@@ -703,7 +697,7 @@ void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, con
             elem = &element[*el];
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags | flags;
+                lbDisplay.draw_flags = elem->flags | flags;
                 LbSpriteDrawScaled(x + ((elem->x - 0x8d) * scale >> 16), y + ((elem->y - 0xca) * scale >> 16),
                                    spr, spr->width * scale >> 16, spr->height * scale >> 16);
                 if (D_001567b0.x > elem->x - 0x8d)
@@ -732,7 +726,7 @@ void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, con
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 
@@ -787,7 +781,7 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
         D_001567b0.x1 = D_001567b0.x + D_001567b0.w;
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 
@@ -809,8 +803,8 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
                 elem = &element[*el];
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
-                    D_00188c74 = elem->flags;
-                    D_00188c74 ^= 1;
+                    lbDisplay.draw_flags = elem->flags;
+                    lbDisplay.draw_flags ^= 1;
                     fn_000cbe20(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, remap);
                     if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                         D_001567b0.x = -(elem->x - 0x8d + spr->width);
@@ -823,8 +817,8 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
                 elem = &element[*el];
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
-                    D_00188c74 = elem->flags;
-                    D_00188c74 ^= 1;
+                    lbDisplay.draw_flags = elem->flags;
+                    lbDisplay.draw_flags ^= 1;
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
                     if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
                         D_001567b0.x = -(elem->x - 0x8d + spr->width);
@@ -839,7 +833,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
                 elem = &element[*el];
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
-                    D_00188c74 = elem->flags;
+                    lbDisplay.draw_flags = elem->flags;
                     fn_000cbe20(elem->x - 0x8d + x, y + (elem->y - 0xca), spr, remap);
                     if (D_001567b0.x > elem->x - 0x8d)
                         D_001567b0.x = elem->x - 0x8d;
@@ -852,7 +846,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
                 elem = &element[*el];
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
-                    D_00188c74 = elem->flags;
+                    lbDisplay.draw_flags = elem->flags;
                     LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
                     if (D_001567b0.x > elem->x - 0x8d)
                         D_001567b0.x = elem->x - 0x8d;
@@ -880,7 +874,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
     set_all_refresh_zones_in_window(D_001567b0.x0, D_001567b0.y0, D_001567b0.x1, D_001567b0.y1, 3);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 
@@ -905,8 +899,8 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
             }
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags & 0xf;
-                D_00188c74 ^= 1;
+                lbDisplay.draw_flags = elem->flags & 0xf;
+                lbDisplay.draw_flags ^= 1;
                 if (remap)
                     fn_000cbe20(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, remap);
                 else
@@ -927,7 +921,7 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
             }
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
-                D_00188c74 = elem->flags & 0xf;
+                lbDisplay.draw_flags = elem->flags & 0xf;
                 if (remap)
                     fn_000cbe20(x + (elem->x - 0x8d), y + (elem->y - 0xca), spr, remap);
                 else
@@ -957,7 +951,7 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
     set_all_refresh_zones_in_window(D_001567b0.x0, D_001567b0.y0, D_001567b0.x1, D_001567b0.y1, 3);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 
@@ -982,8 +976,8 @@ void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
                 if (!hidden) {
-                    D_00188c74 = elem->flags & 0xf | flags;
-                    D_00188c74 ^= 1;
+                    lbDisplay.draw_flags = elem->flags & 0xf | flags;
+                    lbDisplay.draw_flags ^= 1;
                     LbSpriteDraw(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr);
                 }
                 if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
@@ -1003,7 +997,7 @@ void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
                 if (!hidden) {
-                    D_00188c74 = elem->flags & 0xf | flags;
+                    lbDisplay.draw_flags = elem->flags & 0xf | flags;
                     LbSpriteDraw(elem->x - 0x8d + x, y + (elem->y - 0xca), spr);
                 }
                 if (D_001567b0.x > elem->x - 0x8d)
@@ -1018,10 +1012,10 @@ void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u
 // FUNCTION: 0x00031760
 void draw_text_on_map(char *text, const u8 colour, const s32 x, const s32 y)
 {
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     set_font_from_cache(0);
-    D_00188c85 = colour;
-    D_00188c74 |= 0x40;
+    lbDisplay.draw_colour = colour;
+    lbDisplay.draw_flags |= 0x40;
     LbTextDraw(x, y, text);
     D_001567b0.x = x;
     D_001567b0.y = y;
@@ -1050,7 +1044,7 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
         elem = &element[*el];
         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
         if (spr > sprite) {
-            D_00188c74 = elem->flags & 0xf;
+            lbDisplay.draw_flags = elem->flags & 0xf;
             LbSpriteDraw(x + dx - spr->width / 2, (y + dy) + (elem->y - 0xca) - f->length - resvars.f1c_IconScreenp->unknown4fc, spr);
             if (D_001567b0.x > dx - spr->width / 2)
                 D_001567b0.x = dx - spr->width / 2;
@@ -1060,8 +1054,8 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
             }
         }
     }
-    D_00188c74 = 0;
-    D_00155e0a = 1;
+    lbDisplay.draw_flags = 0;
+    othervar.fa52 = 1;
 }
 
 // FUNCTION: 0x00031a44
@@ -1075,13 +1069,13 @@ void draw_money(s32 x, s32 y, s32 value)
     u8 digit;
 
     x += -2;
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     LbSpriteDraw(x, y, D_00153f5c + 1);
     D_001567b0.x = x;
     D_001567b0.y = y;
     D_001567b0.w = D_00153f5c[1].width;
     D_001567b0.h = D_00153f5c[1].height;
-    if (resvars.f1 == SCREEN_MODE_13 && !D_00155e45) {
+    if (resvars.f1 == SCREEN_MODE_13 && !othervar.fa8d) {
         sprintf(buf, D_001202fc, value);
         width = -1;
         for (p = buf; *p; p++) {

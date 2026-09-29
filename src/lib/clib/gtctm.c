@@ -53,13 +53,12 @@ unsigned long __gettime(void);
     modify [eax edx];
 
 // FUNCTION: 0xeb7a7
-// NONMATCHING: date and tmp swap stack slots (esp+4/esp+8)
 int __getctime(struct tm *t)
 {
     dos_date date;
     dos_date tmp;
-    dos_time time;
     int milliseconds;
+    dos_time time;
 
     date.value = __getdate();
     t->tm_year = date.s.year;

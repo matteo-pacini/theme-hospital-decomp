@@ -27,6 +27,7 @@ extern const char D_00128e70[3][7];
 extern char result[];
 
 struct tm *_localtime(const time_t *timer, struct tm *tm);
+char *asctime(const struct tm *time);
 
 // FUNCTION: 0xfa9a7
 static void convDec(int num, int off, char *buf)
@@ -78,6 +79,14 @@ char *_ctime(const time_t *timer, char *buf)
     struct tm tm;
 
     return _asctime(_localtime(timer, &tm), buf);
+}
+
+struct tm *localtime(const time_t *timer);
+
+// FUNCTION: 0xfaae0
+char *ctime(const time_t *timer)
+{
+    return asctime(localtime(timer));
 }
 
 // FUNCTION: 0xfaae5

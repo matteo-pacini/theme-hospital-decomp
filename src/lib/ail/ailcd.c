@@ -212,9 +212,7 @@ void rbclose(void)
 }
 
 // FUNCTION: 0x000e65d0
-// NONMATCHING: config/functions.txt sizes this function to also cover the
-// tail of rbpos, which the target places after it
-S32 rbwrite(U32 drive, U8 cmd)
+S32 rbwrite(U32 drive, U32 cmd)
 {
     RQ_HDR *req;
     IOCTL_RQ *ioctl;
@@ -233,8 +231,30 @@ S32 rbwrite(U32 drive, U8 cmd)
     return calldrv(drive, req, segtoreal, 0);
 }
 
+// FUNCTION: 0x000e6b10
+U32 rbpos(U32 drive, S32 track)
+{
+    RQ_HDR *req;
+    IOCTL_RQ *ioctl;
+    U8 *buf;
+
+    req = (RQ_HDR *)ptrtoreal;
+    ioctl = (IOCTL_RQ *)(ptrtoreal + 0xd);
+    buf = ptrtoreal + 0x1a;
+    ioctl->count = 0xb;
+    ioctl->transfer = segtoreal + (buf - ptrtoreal);
+    buf[0] = 0xc;
+    if (!mscdexread(drive, req, segtoreal, 0)) {
+        return 0;
+    }
+    if (!track) {
+        return RBseptoMS(buf[8], buf[9], buf[10]);
+    }
+    return BCDtoBin(buf[2]);
+}
+
 // FUNCTION: 0x000e6650
-// NONMATCHING: drive and play swap esi/edi
+// NONMATCHING: drive and play swap esi/edi; the target adds start + len with mov/add, not lea
 S32 rbplay(U32 drive, U32 start, U32 len)
 {
     RQ_HDR *req;
@@ -347,24 +367,23 @@ U32 rbgetvol(U32 drive)
 }
 
 // FUNCTION: 0x000e6850
-// NONMATCHING: the target keeps rb in esi; ours spills it to the stack
 HREDBOOK __cdecl AIL_API_redbook_open(U32 which)
 {
     REDBOOK *rb;
 
     rb = AIL_mem_alloc_lock(sizeof(REDBOOK));
-    if (rb != NULL) {
-        which = rbopen(which);
-        if (which == 0xff) {
-            AIL_mem_free_lock(rb);
-            rb = NULL;
-        } else {
-            memset(rb, 0, sizeof(REDBOOK));
-            rb->dirty = 1;
-            rb->paused = 0;
-            rb->drive = which;
-        }
+    if (rb == NULL) {
+        return NULL;
     }
+    which = rbopen(which);
+    if (which == 0xff) {
+        AIL_mem_free_lock(rb);
+        return NULL;
+    }
+    memset(rb, 0, sizeof(REDBOOK));
+    rb->dirty = 1;
+    rb->paused = 0;
+    rb->drive = which;
     return rb;
 }
 
@@ -481,45 +500,21 @@ U32 __cdecl AIL_API_redbook_id(HREDBOOK hand)
 }
 
 // FUNCTION: 0x000e6ac0
-// NONMATCHING: the target reaches rbpos with a short jump (same segment)
 U32 __cdecl AIL_API_redbook_position(HREDBOOK hand)
 {
-    if (AIL_redbook_status(hand) != REDBOOK_PLAYING) {
-        return 0;
+    if (AIL_redbook_status(hand) == REDBOOK_PLAYING) {
+        return rbpos(hand->drive, 0);
     }
-    return rbpos(hand->drive, 0);
+    return 0;
 }
 
 // FUNCTION: 0x000e6ae0
-// NONMATCHING: the target jumps into the middle of rbpos (same segment)
 U32 __cdecl AIL_API_redbook_track(HREDBOOK hand)
 {
-    if (AIL_redbook_status(hand) != REDBOOK_PLAYING) {
-        return 0;
+    if (AIL_redbook_status(hand) == REDBOOK_PLAYING) {
+        return rbpos(hand->drive, 1);
     }
-    return rbpos(hand->drive, 1);
-}
-
-// FUNCTION: 0x000e6b10
-U32 rbpos(U32 drive, S32 track)
-{
-    RQ_HDR *req;
-    IOCTL_RQ *ioctl;
-    U8 *buf;
-
-    req = (RQ_HDR *)ptrtoreal;
-    ioctl = (IOCTL_RQ *)(ptrtoreal + 0xd);
-    buf = ptrtoreal + 0x1a;
-    ioctl->count = 0xb;
-    ioctl->transfer = segtoreal + (buf - ptrtoreal);
-    buf[0] = 0xc;
-    if (!mscdexread(drive, req, segtoreal, 0)) {
-        return 0;
-    }
-    if (track) {
-        return BCDtoBin(buf[2]);
-    }
-    return RBseptoMS(buf[8], buf[9], buf[10]);
+    return 0;
 }
 
 // FUNCTION: 0x000e6b90

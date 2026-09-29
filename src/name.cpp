@@ -74,22 +74,15 @@ u32 fn_000cd716(char *s);
 
 extern "C" {
 
-extern u8 D_00188c7b, D_00188c81, D_00188c7e;
-extern u16 D_00188c74;
-extern s32 D_00188c38;
-extern volatile s32 D_00188c6c, D_00188c70;
 extern u8 *D_00153f34;
 extern char **D_001602a0;
 extern char D_00120898[], D_001208a9[], D_001208bb[], D_001208c5[], D_001208d6[], D_001208e8[];
 extern char *D_00138020, *D_00138024;
-extern u8 D_00155446;
 extern char D_001208f1[], D_00120904[], D_00120915[], D_00120926[], D_00120935[], D_00120937[], D_0012093c[];
 extern char D_00120941[], D_00120953[], D_00120963[], D_00120966[];
 extern u8 D_001581a6;
 extern char **D_0016037c, **D_00160374, **D_00160320, **D_00160398, **D_0016039c;
-extern u16 D_0015632f[], D_0015636d[], D_00156393[], D_001563ab[], D_001563bf[];
 extern u8 D_00156c04[], D_00157624[];
-extern u8 *D_001553dc;
 extern u8 D_0015f99f;
 extern Event D_001549d0[];
 extern s8 __IsTable[];
@@ -113,7 +106,7 @@ void draw_nickname(void)
 
     switch (nickname.unknown2) {
     case 0:
-        D_00188c7b = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
         lbInkey = 0;
         LbGhostTableGenerate(ppalette.data, 0x1e, D_00120898);
         calculate_grey(ppalette.data);
@@ -121,7 +114,7 @@ void draw_nickname(void)
         BufferedInkey = 0;
         fn_00074cd8();
         nickname.unknown2 = 7;
-        D_00188c7b = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
         myplayer.unknown0[0] = 0;
         delay(800);
         init_zoom_boxes(2);
@@ -154,11 +147,11 @@ void draw_nickname(void)
         break;
     case 3:
         return_from_screen(9, 0, 1);
-        D_00188c7b = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
         load_ingame_pic(0xc, 1, 0x19, 0, SCREEN_MODE_13);
         LbGhostTableGenerate(ppalette.data, 0x1e, D_001208c5);
         calculate_grey(ppalette.data);
-        D_00188c7b = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
         setup_balance_files(0);
         nickname.unknown2 = 6;
         nickname.unknown0 = 0;
@@ -303,10 +296,10 @@ void process_mouse_nickname(void)
                     break;
                 x = resvars.f48[base + i].x;
                 y = resvars.f48[base + i].y;
-                if (D_00188c81) {
-                    if (over_hotspot(D_00188c6c, D_00188c70, x, y, resvars.f48[base + i].width - x + 1,
+                if (lbDisplay.rleft_button) {
+                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.f48[base + i].width - x + 1,
                                      resvars.f48[base + i].height - y + 1)) {
-                        D_00188c81 = 0;
+                        lbDisplay.rleft_button = 0;
                         if (resvars.f48[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
@@ -316,7 +309,7 @@ void process_mouse_nickname(void)
                         continue;
                     }
                 }
-                if (D_00188c7e && over_hotspot(mouse_dx, mouse_dy, x, y, resvars.f48[base + i].width - x + 1,
+                if (lbDisplay.mleft_button && over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.f48[base + i].width - x + 1,
                                                resvars.f48[base + i].height - y + 1)) {
                     if (resvars.f48[base + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
@@ -352,7 +345,7 @@ void process_mouse_nickname(void)
             }
         }
     }
-    D_00188c81 = 0;
+    lbDisplay.rleft_button = 0;
 }
 
 // FUNCTION: 0x0008f9d4
@@ -362,9 +355,9 @@ void display_nick_name_screen(void)
     s32 x;
     s32 y;
 
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     set_font_from_cache(0x23);
     sprintf(buf, D_001208e8, nickname_text[0], myplayer.unknown0);
     y = ((0x2c - character_height()) >> 1) + 0x1a6;
@@ -424,14 +417,14 @@ void draw_new_prefs_screen(void)
     s16 x;
     s16 y;
 
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     if (current_balance_file != current_balance_file->prev) {
         draw_glass_text(SLIST(164), D_00138020);
         draw_glass_text(SLIST(165), D_00138024);
     }
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     draw_glass_text(SLIST(162), nickname_text[0x12]);
     if (advisor.f11f & 1) {
         draw_glass_text_hilight(SLIST(160), nickname_text[0x10]);
@@ -447,7 +440,7 @@ void draw_new_prefs_screen(void)
         draw_glass_text(SLIST(166), nickname_text[0x10]);
         draw_glass_text_hilight(SLIST(167), nickname_text[0x11]);
     }
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x21);
     x = 0xaf;
     y = 0x12f;
@@ -523,14 +516,14 @@ u8 setup_balance_files(u8 cd)
             current_balance_file->prev = b;
             strncpy(b->name, fname, len - 2);
             b->name[len - 2] = 0;
-            D_00155446++;
+            othervar.f8e++;
             last = b;
         }
         handle = LbFileFindNext(&balance_file);
         if (handle == -1)
             done = 1;
     }
-    if (D_00155446 != 0) {
+    if (othervar.f8e != 0) {
         if (stricmp(current_balance_file->name, D_00120937) != 0) {
             b = current_balance_file;
             current_balance_file = b->next;
@@ -562,7 +555,7 @@ void free_balance_files(void)
         LbMemoryFree(current_balance_file);
         current_balance_file = next;
     }
-    D_00155446 = 0;
+    othervar.f8e = 0;
 }
 
 // FUNCTION: 0x00090360
@@ -650,7 +643,7 @@ extern "C" void fn_00090610(void)
 {
     init_mcga_coords();
     set_font_from_cache(0);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     init_andys_variables();
     setup_req4_references();
     crequester.unknown2 = D_001581a6 = 0x63;
@@ -659,11 +652,11 @@ extern "C" void fn_00090610(void)
     fn_00054d60();
     setup_help_indices();
     setup_aniseq_indices();
-    setup_indices_for_composite_help(D_0016037c, D_0015632f, 0x1f);
-    setup_indices_for_composite_help(D_00160374, D_0015636d, 0x13);
-    setup_indices_for_composite_help(D_00160320, D_00156393, 0xd);
-    setup_indices_for_composite_help(D_00160398, D_001563ab, 0xb);
-    setup_indices_for_composite_help(D_0016039c, D_001563bf, 4);
+    setup_indices_for_composite_help(D_0016037c, statvar.f4df, 0x1f);
+    setup_indices_for_composite_help(D_00160374, statvar.f51d, 0x13);
+    setup_indices_for_composite_help(D_00160320, statvar.f543, 0xd);
+    setup_indices_for_composite_help(D_00160398, statvar.f55b, 0xb);
+    setup_indices_for_composite_help(D_0016039c, statvar.f56f, 4);
     InitPixBuffer(0, 0, 0xb4, 0xb4, 0xfe, 1);
     init_midi();
     init_ambients();
@@ -678,7 +671,7 @@ extern "C" void fn_00090610(void)
             fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
         fn_00090804((u16)level_number, 1);
         load_player_details();
-        D_001553dc = D_00153f34;
+        othervar.f24 = D_00153f34;
         if (!D_0015f99f) {
             D_001549d0[player].type = 0x1e;
             D_001549d0[player].value = debug.unknown10a;

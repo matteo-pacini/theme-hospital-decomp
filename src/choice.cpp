@@ -45,24 +45,13 @@ void process_mayor_start_buttons(u8 n);
 void process_mayor_end_buttons(u8 n);
 
 extern "C" {
-extern s32 D_00188c38;
-extern u16 D_00188c74;
-extern u8 D_00188c7b;
-extern u8 D_00188c7e;
-extern u8 D_00188c81;
-extern volatile s16 D_00188c6c;
-extern volatile s16 D_00188c70;
 extern u8 D_00158192;
 extern u16 D_00158190;
-extern u8 *D_00155d8f;
-extern s32 D_00155d93;
-extern s32 D_00155d97;
 extern s16 D_0015f760;
 extern u32 D_001611f0;
 extern u8 D_001611f8[];
 extern Event D_001549d0[];
 extern FaxNo D_00149598[];
-extern u8 D_00155e46;
 extern char D_00121af4[];
 extern char D_00121af6[];
 extern char D_00121af8[];
@@ -73,32 +62,32 @@ void fn_000a3140(void);
 // FUNCTION: 0x000a3158
 void display_choice(void)
 {
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x1e);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     switch (D_00158192) {
     case 0x5a:
         available_buttons = 0xffff;
         load_ingame_pic(0x13, 1, 0x24, 0, (TbScreenMode)0xd);
-        D_00155d8f = lbDisplay.unknown4;
-        D_00155d93 = D_00188c34;
-        D_00155d97 = D_00188c38;
+        othervar.f9d7 = lbDisplay.unknown4;
+        othervar.f9db = lbDisplay.graphics_screen_width;
+        othervar.f9df = lbDisplay.graphics_screen_height;
         lbDisplay.unknown4 = bscreen;
-        D_00188c34 = lbDisplay.unknown18;
-        D_00188c38 = lbDisplay.unknown1c;
+        lbDisplay.graphics_screen_width = lbDisplay.unknown18;
+        lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         calculate_buttons(D_00158190);
         LbTextSetWindow(resvars.f3c_ChoiceBoxp[173].x, resvars.f3c_ChoiceBoxp[173].y, resvars.f3c_ChoiceBoxp[173].w, resvars.f3c_ChoiceBoxp[173].h);
         display_choice_text(D_00158190);
         display_buttons();
         if (!choice_time_out)
             reqspr_draw(resvars.f40[0xbe].x, resvars.f40[0xbe].y, &screen_sprites_tab_start[20]);
-        lbDisplay.unknown4 = D_00155d8f;
-        D_00188c34 = D_00155d93;
-        D_00188c38 = D_00155d97;
-        LbScreenSetGraphicsWindow(0, 0, D_00155d93, D_00155d97);
+        lbDisplay.unknown4 = othervar.f9d7;
+        lbDisplay.graphics_screen_width = othervar.f9db;
+        lbDisplay.graphics_screen_height = othervar.f9df;
+        LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
         D_00158192 = 0x5b;
         D_001611f0 = actual_game_turn;
         NumPressed = 0;
@@ -116,9 +105,9 @@ void display_choice(void)
                 play_sound(10, 0x42, -1, -1);
                 D_00158192 = 0x5c;
             }
-            if (D_0015f760 != mouse_dx + mouse_dy) {
+            if (D_0015f760 != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
                 D_001611f0 = actual_game_turn;
-                D_0015f760 = mouse_dx + mouse_dy;
+                D_0015f760 = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
             }
             if (actual_game_turn - D_001611f0 > choice_time_out || exit_quick_requester())
                 D_00158192 = 0x5c;
@@ -135,9 +124,9 @@ void check_choice_buttons(void)
 {
     u8 i;
 
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; (u16)resvars.f48[i + 0xae].x != 0 && (u16)resvars.f48[i + 0xae].y != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
                              (s16)resvars.f48[i + 0xae].width, (s16)resvars.f48[i + 0xae].height)) {
                 if (available_buttons & (1 << i)) {
                     reqspr_draw(resvars.f48[i + 0xae].unknownC, resvars.f48[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
@@ -146,16 +135,16 @@ void check_choice_buttons(void)
             }
         }
     }
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; (u16)resvars.f48[i + 0xae].x != 0 && (u16)resvars.f48[i + 0xae].y != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
                              (s16)resvars.f48[i + 0xae].width, (s16)resvars.f48[i + 0xae].height)) {
                 if (available_buttons & (1 << i)) {
                     play_sound(10, 0x41, -1, -1);
                     if (resvars.f48[i + 0xae].callback)
                         resvars.f48[i + 0xae].callback(i);
                     reqspr_draw(resvars.f48[i + 0xae].unknownC, resvars.f48[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
-                    D_00188c81 = D_00188c7b = 0;
+                    lbDisplay.rleft_button = lbDisplay.left_button = 0;
                     break;
                 }
             }
@@ -168,9 +157,9 @@ void check_fax_buttons(void)
 {
     u8 i;
 
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; resvars.f48[i + 0xb8].width != 0 && resvars.f48[i + 0xb8].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0xb8].x, resvars.f48[i + 0xb8].y,
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 0xb8].x, resvars.f48[i + 0xb8].y,
                              (s16)resvars.f48[i + 0xb8].width, (s16)resvars.f48[i + 0xb8].height)) {
                 if (i + 0xb8 == 0xc7 && !choice_time_out)
                     break;
@@ -180,9 +169,9 @@ void check_fax_buttons(void)
             }
         }
     }
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i + 0xb8].width != 0 && resvars.f48[i + 0xb8].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0xb8].x, resvars.f48[i + 0xb8].y,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0xb8].x, resvars.f48[i + 0xb8].y,
                              (s16)resvars.f48[i + 0xb8].width, (s16)resvars.f48[i + 0xb8].height)) {
                 if (i + 0xb8 == 0xc7 && !choice_time_out)
                     break;
@@ -193,7 +182,7 @@ void check_fax_buttons(void)
                 break;
             }
         }
-        D_00188c81 = 0;
+        lbDisplay.rleft_button = 0;
     }
 }
 
@@ -275,9 +264,9 @@ void display_buttons(void)
 
     width = resvars.f3c_ChoiceBoxp[173].w - resvars.f48[0xae].width;
     unused8 = 0;
-    LbTextSetWindow(resvars.f3c_ChoiceBoxp[173].x, 0, width, D_00188c38);
+    LbTextSetWindow(resvars.f3c_ChoiceBoxp[173].x, 0, width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x1e);
-    D_00188c74 = 0x20;
+    lbDisplay.draw_flags = 0x20;
     for (i = 0; (u16)resvars.f48[i + 0xae].x != 0; i++) {
         if (available_buttons & (1 << i))
             reqspr_draw((u16)resvars.f48[i + 0xae].x, (u16)resvars.f48[i + 0xae].y, &screen_sprites_tab_start[17]);
@@ -294,7 +283,7 @@ void display_buttons(void)
 // FUNCTION: 0x000a3fb0
 void display_choice_text(const u8 type)
 {
-    D_00188c74 = 0x100;
+    lbDisplay.draw_flags = 0x100;
     set_font_from_cache(0x1e);
     switch (type) {
     case 2:
@@ -476,7 +465,7 @@ void process_fax_buttons(u8 n)
                     play_sound(10, 0xac, -1, -1);
                     break;
                 case 0:
-                    D_00155e46 = !D_00155e46 ? (u8)1 : (u8)0;
+                    othervar.fa8e = !othervar.fa8e ? (u8)1 : (u8)0;
                     play_sound(10, 0xac, -1, -1);
                     break;
                 case 2:

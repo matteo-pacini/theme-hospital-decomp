@@ -6,15 +6,18 @@ typedef struct {
     int _output_count;
 } SPECS;
 
-void mem_putc(SPECS *specs, int op_char)
+static void mem_putc(SPECS *specs, char op_char);
+/* config/functions.txt has no name for mem_putc. */
+#pragma aux mem_putc "fn_000ce351_"
+
+// FUNCTION: 0xce351
+static void mem_putc(SPECS *specs, char op_char)
 {
     *(specs->_dest++) = op_char;
     specs->_output_count++;
 }
 
 // FUNCTION: 0xce364
-// NONMATCHING: mem_putc lies inside getenv_ in config/functions.txt, so the
-// target names its address getenv_+0x61
 int vsprintf(char *dest, const char *format, va_list arg)
 {
     int len;

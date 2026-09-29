@@ -40,6 +40,29 @@ extern DTREG_VFPTRS D_00152304;
 
 void *__wcpp_2_base_register_(RW_DTREG_ARRAY *rw, RO_DTREG_ARRAY *ro, unsigned state_var);
 
+struct RO_STATE;
+
+unsigned __wcpp_2_ts_size_(RT_TYPE_SIG *sig);
+
+RO_STATE *arr_state_table(RO_DTREG_ARRAY *ro);
+#pragma aux arr_state_table "W?arr_state_table$n(pn$ro_dtreg$$)pn$__7a4u3RO_STATE$$"
+
+// FUNCTION: 0xf5190
+RO_STATE *arr_state_table(RO_DTREG_ARRAY *ro)
+{
+    return (RO_STATE *)&ro->count;
+}
+
+void *arr_get_object(RW_DTREG_ARRAY *rw, unsigned state_var);
+/* config/functions.txt has no name for arr_get_object. */
+#pragma aux arr_get_object "fn_000f5194_"
+
+// FUNCTION: 0xf5194
+void *arr_get_object(RW_DTREG_ARRAY *rw, unsigned state_var)
+{
+    return (char *)rw->array + (state_var - 1) * __wcpp_2_ts_size_((RT_TYPE_SIG *)rw->ro->sig);
+}
+
 void arr_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG_ARRAY *rw);
 #pragma aux arr_init_traverse "W?arr_init_traverse$n(pn$__1j2o3bSTAB_TRAVERSE$$pn$rw_dtreg$$)v"
 

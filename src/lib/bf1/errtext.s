@@ -21,7 +21,7 @@
     mov byte ptr [ebp - 0xd], cl
     mov esi, dword ptr [ebp - 0xc]
     mov edi, dword ptr [ebp - 8]
-    imul edi, dword ptr ["W?research_names$npnpna"]
+    imul edi, dword ptr ["_lbDisplay"+0x20]
     add edi, dword ptr [ebp - 4]
     add edi, dword ptr ["_lbDisplay"+0x10]
     {load} xor edx, edx
@@ -71,9 +71,9 @@
 .L000ecd1f:
     mov word ptr [edi + 1], dx
 .L000ecd23:
-    add edi, dword ptr ["W?research_names$npnpna"]
+    add edi, dword ptr ["_lbDisplay"+0x20]
     .byte 0xe2; .byte 0xb3  # loop 0xeccde
-    mov esi, dword ptr ["W?research_names$npnpna"]
+    mov esi, dword ptr ["_lbDisplay"+0x20]
     imul esi, esi, 6
     {load} sub edi, esi
     add edi, 4

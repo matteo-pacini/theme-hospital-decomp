@@ -66,10 +66,6 @@ extern u32 black_colour;
 extern u8 Gray[];
 
 extern "C" {
-extern s32 D_00188c38;
-extern u16 D_00188c74;
-extern volatile s16 D_00188c6c, D_00188c70;
-extern u8 D_00188c7e, D_00188c81;
 extern char D_00121bd0[];
 
 void StopSample(u32 a, u32 b);
@@ -161,8 +157,8 @@ s8 add_glass_box(GlassBox *b, s32 id, s8 c1, s8 c2)
             ZoomBoxes[i].from[3] = 0;
             break;
         case 2:
-            ZoomBoxes[i].from[0] = D_00188c34 / 2;
-            ZoomBoxes[i].from[1] = D_00188c38 / 2;
+            ZoomBoxes[i].from[0] = lbDisplay.graphics_screen_width / 2;
+            ZoomBoxes[i].from[1] = lbDisplay.graphics_screen_height / 2;
             ZoomBoxes[i].from[2] = 0;
             ZoomBoxes[i].from[3] = 0;
             break;
@@ -203,9 +199,9 @@ void draw_a_box(u8 n)
     s16 w;
     s16 h;
 
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 4;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 4;
     from = ZoomBoxes[n].from;
     to = ZoomBoxes[n].to;
     step = ZoomBoxes[n].f1;
@@ -215,7 +211,7 @@ void draw_a_box(u8 n)
     w = ((total - step) * from[2] + to[2] * step) / total;
     h = ((total - step) * from[3] + to[3] * step) / total;
     if (step != 0) {
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0;
         if (ZoomBoxes[n].fb) {
             if (!((((s8)ZoomBoxes[n].type != 2 && display_mode == 10) || (to[0] == 0x213 && display_mode == 5))
                   && current_balance_file && current_balance_file == current_balance_file->next)) {
@@ -228,7 +224,7 @@ void draw_a_box(u8 n)
                 draw_background_box(x, y, w, h, 1);
                 break;
             case 0:
-                D_00188c74 = 4;
+                lbDisplay.draw_flags = 4;
                 draw_background_box(x, y, w, h, 0);
                 break;
             case 1:
@@ -448,13 +444,13 @@ void draw_glass_text(SlistButton *b, char *text)
 {
     s16 x;
 
-    D_00188c74 &= 4;
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    lbDisplay.draw_flags &= 4;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
-    if ((D_00188c7e
-         && over_hotspot((s16)mouse_dx, (s16)mouse_dy, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))
-        || (D_00188c81
-            && over_hotspot(D_00188c6c, D_00188c70, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))) {
+    if ((lbDisplay.mleft_button
+         && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))
+        || (lbDisplay.rleft_button
+            && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))) {
         set_font_from_cache(0x22);
         x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
         LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
@@ -470,8 +466,8 @@ void draw_glass_text_hilight(SlistButton *b, char *text)
 {
     s16 x;
 
-    D_00188c74 &= 4;
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    lbDisplay.draw_flags &= 4;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
     set_font_from_cache(0x22);
     x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
@@ -483,15 +479,15 @@ void draw_glass_text_hilight_no_jump(SlistButton *b, char *text)
 {
     s16 x;
 
-    D_00188c74 &= 4;
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    lbDisplay.draw_flags &= 4;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
     set_font_from_cache(0x22);
     x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
-    if ((D_00188c7e
-         && over_hotspot((s16)mouse_dx, (s16)mouse_dy, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))
-        || (D_00188c81
-            && over_hotspot(D_00188c6c, D_00188c70, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1)))
+    if ((lbDisplay.mleft_button
+         && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))
+        || (lbDisplay.rleft_button
+            && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1)))
         LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
     else
         LbTextDraw(x, (b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);
@@ -503,7 +499,7 @@ void draw_background_box(s16 x, s16 y, s16 w, s16 h, u8 style)
     u8 colour;
 
     LbDrawBox(x, y, w, h, white_colour);
-    D_00188c74 = 0x10;
+    lbDisplay.draw_flags = 0x10;
     LbDrawBox(x, y, w, h, black_colour);
     if (style)
         colour = 0xca;
@@ -512,47 +508,47 @@ void draw_background_box(s16 x, s16 y, s16 w, s16 h, u8 style)
     LbDrawBox(x + 1, y + 1, w - 2, h - 2, colour);
     LbDrawBox(x + 2, y + 2, w - 4, h - 4, colour);
     LbDrawBox(x + 3, y + 3, w - 6, h - 6, colour);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x000ba0ec
 void draw_foreground_box(s16 x, s16 y, s16 w, s16 h)
 {
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     LbDrawBox(x, y, w, h, white_colour);
-    D_00188c74 = 0x10;
+    lbDisplay.draw_flags = 0x10;
     LbDrawBox(x, y, w, h, 0xf8);
     LbDrawBox(x + 1, y + 1, w - 2, h - 2, b_b_colour);
     LbDrawBox(x + 2, y + 2, w - 4, h - 4, b_b_colour);
     LbDrawBox(x + 3, y + 3, w - 6, h - 6, b_b_colour);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x000ba1d4
 void draw_foreground_box2(s16 x, s16 y, s16 w, s16 h)
 {
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     LbDrawBox(x, y, w, h, white_colour);
-    D_00188c74 = 0x10;
+    lbDisplay.draw_flags = 0x10;
     LbDrawBox(x, y, w, h, b_b_colour);
     LbDrawBox(x + 1, y + 1, w - 2, h - 2, b_b_colour);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x000ba270
 void draw_button_box(s16 x, s16 y, s16 w, s16 h)
 {
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     LbDrawBox(x, y, w, h, white_colour);
-    D_00188c74 = 0x10;
+    lbDisplay.draw_flags = 0x10;
     LbDrawBox(x, y, w, h, 0xf8);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x000ba2e0
 void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style)
 {
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     if (!style) {
         fn_000c9be0(x + 1, y + 1, x + w - 1, y + 1, Gray[2]);
         fn_000c9be0(x + 2, y + 2, x + w - 2, y + 2, Gray[3]);

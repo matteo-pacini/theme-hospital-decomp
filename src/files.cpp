@@ -5,10 +5,7 @@ extern const char *screenpalettes[];
 extern TbLoadFiles hiresratfestpanelfiles[];
 
 extern "C" {
-extern u8 D_00155e45;
 extern u8 *D_00153f34;
-extern u16 D_00188c74;
-extern u8 D_001553c8;
 extern char *D_0013e80c;
 extern char D_00120c60[];
 
@@ -35,7 +32,7 @@ void check_cd_available(char *path)
 
     had_screen = lbDisplay.unknown4 ? (u8)1 : (u8)0;
     mode = resvars.f0;
-    flag = D_00155e45;
+    flag = othervar.fa8d;
     unused = 0;
     if (*path == '*')
         return;
@@ -53,13 +50,13 @@ void check_cd_available(char *path)
     }
     if (had_screen)
         LbIsActive();
-    if (resvars.f0 != SCREEN_MODE_13 || D_00155e45)
+    if (resvars.f0 != SCREEN_MODE_13 || othervar.fa8d)
         setup_any_screen(D_00153f34, SCREEN_MODE_13);
     LbFileLoadAt((char *)screenpalettes[21], D_00153f34);
     while (fn_000bed50() != 1)
         ;
     LbFileLoadAt((char *)hiresscreens[21], lbDisplay.unknown4);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     set_font_from_cache(0x2f);
     text = ((char **)((u8 *)hiresratfestpanelfiles + 0x66))[myplayer.f21];
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
@@ -86,7 +83,7 @@ void check_cd_available(char *path)
             ;
     }
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-    D_001553c8 = 1;
+    othervar.f10 = 1;
     if (install_type < 2) {
         sprintf(fname, D_00120c60, cd_install_path, D_0013e80c);
         check_cd_available(fname);

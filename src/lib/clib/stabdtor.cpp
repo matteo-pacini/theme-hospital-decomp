@@ -7,6 +7,7 @@ struct DTOR_CMD {
 struct RO_STATE {
     void (*dtor)(void *, unsigned);
     DTOR_CMD *cmd;
+    void *obj;
 };
 
 struct STAB_TRAVERSE {
@@ -23,7 +24,6 @@ RO_STATE *nextDtorPosn(STAB_TRAVERSE *ctl);
 #pragma aux nextDtorPosn "W?nextDtorPosn$n(pn$__1j2o3bSTAB_TRAVERSE$$)pn$__7a4u3RO_STATE$$"
 
 // FUNCTION: 0xeb9c0
-// NONMATCHING: the range check for code 5 is emitted as < 6 instead of <= 5
 RO_STATE *nextDtorPosn(STAB_TRAVERSE *ctl)
 {
     RO_STATE *state;
@@ -41,6 +41,9 @@ RO_STATE *nextDtorPosn(STAB_TRAVERSE *ctl)
         case 10:
         case 11:
             break;
+        case 0:
+        case 1:
+        case 5:
         default:
             __wcpp_2_corrupted_stack_();
             break;
@@ -100,7 +103,7 @@ extern DTREG_VFPTRS *__wcpp_2_data_dtreg_vfptrs_[];
 
 void __wcpp_2_stab_trav_init_(STAB_TRAVERSE *ctl, rw_dtreg *rw);
 void __wcpp_2_stab_trav_comp_(STAB_TRAVERSE *ctl);
-void __wcpp_2_stab_trav_next_(STAB_TRAVERSE *ctl, unsigned state_var);
+void __wcpp_2_stab_trav_next_(STAB_TRAVERSE *ctl);
 void __wcpp_2_dtor_array_(void *array, unsigned count, void *sig);
 
 void dtorComponent(DTOR_CMD_COMPONENT *cmd, unsigned dtor_flag, rw_dtreg *rw, unsigned mask);
@@ -109,8 +112,6 @@ void destruct_traverse(unsigned bound, rw_dtreg *rw, int partial);
 #pragma aux destruct_traverse "W?destruct_traverse$n(uipn$rw_dtreg$$i)v"
 
 // FUNCTION: 0xeba0a
-// NONMATCHING: config/functions.txt includes destruct_traverse's jump table
-// in dtorComponent
 void dtorComponent(DTOR_CMD_COMPONENT *cmd, unsigned dtor_flag, rw_dtreg *rw, unsigned mask)
 {
     COMPONENT_REG *comp;
@@ -121,17 +122,17 @@ void dtorComponent(DTOR_CMD_COMPONENT *cmd, unsigned dtor_flag, rw_dtreg *rw, un
 }
 
 // FUNCTION: 0xeba54
-// NONMATCHING: the switch's jump table is placed after the function; code
-// otherwise unverified
 void destruct_traverse(unsigned bound, rw_dtreg *rw, int partial)
 {
-    STAB_TRAVERSE ctl;
-    RO_STATE *state;
     RO_STATE *prev;
-    RO_DTREG *ro;
+    RO_STATE *state;
+    unsigned state_var;
+    DTOR_CMD *cmd;
+    ARRAY_REG *arr;
     void (*dtor)(void *, unsigned);
     void *obj;
-    ARRAY_REG *arr;
+    RO_DTREG *ro;
+    STAB_TRAVERSE ctl;
 
     __wcpp_2_stab_trav_init_(&ctl, rw);
     ctl.bound = bound;
@@ -142,55 +143,57 @@ void destruct_traverse(unsigned bound, rw_dtreg *rw, int partial)
     while (ctl.state_var != bound) {
         if (ctl.state_var < bound)
             __wcpp_2_corrupted_stack_();
-        __wcpp_2_stab_trav_next_(&ctl, ctl.state_var);
+        state_var = ctl.state_var;
+        __wcpp_2_stab_trav_next_(&ctl);
         prev = state;
         state = nextDtorPosn(&ctl);
         rw->state_var = ctl.state_var;
         dtor = prev->dtor;
-        if (dtor != 0) {
-            obj = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->get_object(rw, ctl.state_var);
-            dtor(obj, 0);
-            continue;
-        }
-        switch (prev->cmd->code) {
+        if (dtor == 0) {
+        cmd = prev->cmd;
+        switch (cmd->code) {
+        default:
+            __wcpp_2_corrupted_stack_();
         case 0:
-            obj = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->get_object(rw, ctl.state_var);
-            __wcpp_2_dtor_array_((char *)obj + ((DTOR_CMD_ARRAY *)prev->cmd)->offset,
-                ((DTOR_CMD_ARRAY *)prev->cmd)->count, ((DTOR_CMD_ARRAY *)prev->cmd)->sig);
+            obj = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->get_object(rw, state_var);
+            __wcpp_2_dtor_array_((char *)obj + ((DTOR_CMD_ARRAY *)cmd)->offset,
+                ((DTOR_CMD_ARRAY *)cmd)->count, ((DTOR_CMD_ARRAY *)cmd)->sig);
             break;
         case 2:
         case 3:
         case 4:
             break;
         case 6:
-            dtorComponent((DTOR_CMD_COMPONENT *)prev->cmd, 1, rw, 0x11);
+            dtorComponent((DTOR_CMD_COMPONENT *)cmd, 1, rw, 0x11);
             break;
         case 7:
-            dtorComponent((DTOR_CMD_COMPONENT *)prev->cmd, 1, rw, 0x10);
+            dtorComponent((DTOR_CMD_COMPONENT *)cmd, 1, rw, 0x10);
             break;
         case 8:
-            dtorComponent((DTOR_CMD_COMPONENT *)prev->cmd, 0, rw, 0x10);
+            dtorComponent((DTOR_CMD_COMPONENT *)cmd, 0, rw, 0x10);
             break;
         case 9:
-            arr = (ARRAY_REG *)((char *)rw + ((DTOR_CMD_ARRAY *)prev->cmd)->offset);
+            arr = (ARRAY_REG *)((char *)rw + ((DTOR_CMD_ARRAY *)cmd)->offset);
             __wcpp_2_dtor_array_(arr->array, arr->count, arr->sig);
             break;
         case 10:
-            ((DTOR_CMD_DELETE *)prev->cmd)->op_del(
-                *(void **)((char *)rw + ((DTOR_CMD_DELETE *)prev->cmd)->offset), 0);
+            ((void (*)(void *))((DTOR_CMD_DELETE *)cmd)->op_del)(
+                *(void **)((char *)rw + ((DTOR_CMD_DELETE *)cmd)->offset));
             break;
         case 11:
-            ((DTOR_CMD_DELETE *)prev->cmd)->op_del(
-                *(void **)((char *)rw + ((DTOR_CMD_DELETE *)prev->cmd)->offset),
-                ((DTOR_CMD_DELETE *)prev->cmd)->extra);
+            ((DTOR_CMD_DELETE *)cmd)->op_del(
+                *(void **)((char *)rw + ((DTOR_CMD_DELETE *)cmd)->offset),
+                ((DTOR_CMD_DELETE *)cmd)->extra);
             break;
-        default:
-            __wcpp_2_corrupted_stack_();
-            break;
+        }
+        } else {
+            obj = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->get_object(rw, state_var);
+            dtor(obj, 0);
         }
     }
     rw->state_var = ctl.state_var;
 }
+
 
 void __wcpp_2_destruct_internal_(unsigned bound, rw_dtreg *rw);
 
@@ -206,27 +209,31 @@ struct THREAD_CTL {
 
 extern THREAD_CTL _wint_thread_data;
 
-void __wcpp_2_destruct_all_(void);
-/* config/functions.txt has no name for __wcpp_2_destruct_all__. */
-#pragma aux __wcpp_2_destruct_all_ "__wcpp_2_destruct_all__"
+void __wcpp_2_destruct_(unsigned bound);
+void __wcpp_2_destruct_after_(unsigned bound);
 
 // FUNCTION: 0xebb8e
-// NONMATCHING: the target clears eax before the register saves
 void __wcpp_2_destruct_all_(void)
 {
-    destruct_traverse(0, _wint_thread_data.registered, 0);
+    __wcpp_2_destruct_(0);
 }
 
-void __wcpp_2_destruct_(void);
-/* config/functions.txt has no name for __wcpp_2_destruct__. */
-#pragma aux __wcpp_2_destruct_ "__wcpp_2_destruct_after_all__"
+// FUNCTION: 0xebb90
+void __wcpp_2_destruct_(unsigned bound)
+{
+    destruct_traverse(bound, _wint_thread_data.registered, 0);
+}
 
 // FUNCTION: 0xebba2
-// NONMATCHING: the target shares the call and epilogue of
-// __wcpp_2_destruct_all__ by jumping into it
-void __wcpp_2_destruct_(void)
+void __wcpp_2_destruct_after_all_(void)
 {
-    destruct_traverse(0, _wint_thread_data.registered, 1);
+    __wcpp_2_destruct_after_(0);
+}
+
+// FUNCTION: 0xebba4
+void __wcpp_2_destruct_after_(unsigned bound)
+{
+    destruct_traverse(bound, _wint_thread_data.registered, 1);
 }
 
 }

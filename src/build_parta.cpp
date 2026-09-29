@@ -2,13 +2,8 @@
 
 extern "C" {
 
-extern u8 D_00155e1e;
-extern u16 D_00155e1f;
 extern u8 D_0015fe84;
 extern u8 D_0015fe85;
-extern u8 D_001553d0[];
-extern u8 D_001553c7;
-extern u8 D_001553c8;
 
 u8 fn_00029748(void);
 void fn_000228e0(void);
@@ -24,15 +19,15 @@ u8 fn_00022854(u8 warn)
 {
     if (gamevar.f12e != 0) {
         if (warn) {
-            D_00155e1e = 0x19;
-            D_00155e1f = 0x14;
+            othervar.fa66 = 0x19;
+            othervar.fa67 = 0x14;
         }
         return 0;
     }
     if (fn_00029748() || allhosps[player].unknown11b7) {
         if (warn) {
-            D_00155e1e = 0x19;
-            D_00155e1f = 0x14;
+            othervar.fa66 = 0x19;
+            othervar.fa67 = 0x14;
         }
         return 0;
     }
@@ -75,8 +70,8 @@ void place_bp_door(u8 owner, u8 swap)
     room = &room_info[allhosps[owner].build.room];
     bs = &allhosps[owner].build;
     delta = 1;
-    if (D_001553d0[owner]) {
-        if (D_001553c7 == player) {
+    if (othervar.f18[owner]) {
+        if (othervar.ff == player) {
             play_sound(10, 8, -1, -1);
         }
         return;
@@ -128,12 +123,12 @@ void place_bp_door(u8 owner, u8 swap)
         place_small_thing(tile, (u16)sprite, 0);
         map[tile - doortype[type].offset].overlay = doortype[type].overlays[i];
     }
-    D_001553c8 = 1;
+    othervar.f10 = 1;
     if (bs->door_state == 2) {
         room->f1b += delta;
     }
     if (bs->door_state == 1 || bs->door_state == 0) {
-        if (D_001553c7 == player) {
+        if (othervar.ff == player) {
             set_edit_room_requester_mode(4);
         }
         bs->door_state = 2;
@@ -255,7 +250,7 @@ void build_all_rooms(void)
     color.unknown6 = -1;
     color.unknown5 = -1;
     if (statvar.unknownfd > 1) {
-        switch (D_001553c7) {
+        switch (othervar.ff) {
         case 0:
             mask = 1;
             break;
@@ -310,7 +305,7 @@ void build_all_rooms(void)
                 }
                 room = which_room(cell - map);
                 if (room) {
-                    room->owner = D_001553c7;
+                    room->owner = othervar.ff;
                 }
             again:
                 switch (blueprint[bp].unknown4) {
@@ -452,13 +447,13 @@ void build_all_rooms(void)
                     case 2:
                         place_small_thing(cell - map, 0, 0);
                         place_small_thing(cell + 1 - map, 0, 0);
-                        fn_00037098(cell - map, (u16)blueprint[bp].kind, saved, D_001553c7);
+                        fn_00037098(cell - map, (u16)blueprint[bp].kind, saved, othervar.ff);
                         break;
                     case 1:
                     case 3:
                         place_small_thing(cell - map, 0, 0);
                         place_small_thing(cell + 0x80 - map, 0, 0);
-                        fn_00037098(cell - map, (u16)blueprint[bp].kind, saved, D_001553c7);
+                        fn_00037098(cell - map, (u16)blueprint[bp].kind, saved, othervar.ff);
                         break;
                     }
                     break;
@@ -499,5 +494,5 @@ void build_all_rooms(void)
             room->f3 = 0;
         }
     }
-    D_001553c8 = 1;
+    othervar.f10 = 1;
 }

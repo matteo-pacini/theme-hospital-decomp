@@ -31,21 +31,8 @@ struct QueueButtons {
 };
 
 extern "C" {
-extern u32 D_00188c38;
-extern u16 D_00188c74;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
 extern char **D_00160354;
 extern Event D_001549d0[];
-extern u16 D_00155419;
-extern u16 D_0015541b;
-extern u8 D_0015541f;
-extern u16 D_001553e0;
-extern u16 D_001553fb, D_001553fd;
-extern u16 D_00155436;
-extern u8 D_001553d4;
-extern u8 D_00155e1a, D_00155e19;
-extern u8 D_00188c7e, D_00188c7f;
 extern s16 D_001567b0[8];
 extern char D_00120a20[], D_00120a23[], D_00120a26[], D_00120a29[];
 extern char D_00120a2c[], D_00120a2f[];
@@ -77,14 +64,14 @@ void req7(Window *w)
             debug.unknown4 = n;
             if (n == resvars.fe_QueueButtonsp->fb) {
                 D_001549d0[player].type = 0x54;
-                D_001549d0[player].value = D_00155419;
+                D_001549d0[player].value = othervar.f61;
                 if (room_info[D_001549d0[player].value].f1e)
                     play_sound(10, 0x43, -1, -1);
                 else
                     play_sound(10, 8, -1, -1);
             } else if (n == resvars.fe_QueueButtonsp->fa) {
                 D_001549d0[player].type = 0x53;
-                D_001549d0[player].value = D_00155419;
+                D_001549d0[player].value = othervar.f61;
                 if (room_info[D_001549d0[player].value].f1e < 30)
                     play_sound(10, 0x43, -1, -1);
                 else
@@ -121,8 +108,8 @@ void req7_overdraw(Window *w)
     unused10 = 0;
     compute_help_text(w->x, w->y, 7);
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3, window.unknown2cf - window.unknown2c7);
-    ox = w->x - D_00188c3c;
-    oy = w->y - D_00188c40;
+    ox = w->x - lbDisplay.graphics_window_x;
+    oy = w->y - lbDisplay.graphics_window_y;
     set_font_from_cache(1);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[0].x, oy + resvars.f1c_QueuePanelp->labels[0].y, D_00160354[0]);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[1].x, oy + resvars.f1c_QueuePanelp->labels[1].y, D_00160354[1]);
@@ -132,97 +119,97 @@ void req7_overdraw(Window *w)
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[3].x, oy + resvars.f1c_QueuePanelp->labels[3].y, D_00160354[3]);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-    sprintf(buf, D_00120a20, queue_size(&room_info[D_00155419]));
+    sprintf(buf, D_00120a20, queue_size(&room_info[othervar.f61]));
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[4].x, oy + resvars.f1c_QueuePanelp->labels[4].y, buf);
-    sprintf(buf, D_00120a23, room_info[D_00155419].unknown32);
+    sprintf(buf, D_00120a23, room_info[othervar.f61].unknown32);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[5].x, oy + resvars.f1c_QueuePanelp->labels[5].y, buf);
-    sprintf(buf, D_00120a26, room_info[D_00155419].count);
+    sprintf(buf, D_00120a26, room_info[othervar.f61].count);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[6].x, oy + resvars.f1c_QueuePanelp->labels[6].y, buf);
-    sprintf(buf, D_00120a29, room_info[D_00155419].f1e);
+    sprintf(buf, D_00120a29, room_info[othervar.f61].f1e);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[7].x, oy + resvars.f1c_QueuePanelp->labels[7].y, buf);
-    if (!queue_person_valid(D_00155419, D_0015541b) && D_0015541f != 0) {
-        D_0015541b = 0;
-        D_001553fd = 0;
+    if (!queue_person_valid(othervar.f61, othervar.f63) && othervar.f67 != 0) {
+        othervar.f63 = 0;
+        othervar.f45 = 0;
     } else {
-        D_001553fd = get_queue_person(D_00155419, D_0015541b);
+        othervar.f45 = get_queue_person(othervar.f61, othervar.f63);
     }
-    if (D_00188c7e) {
-        display_queue_people(ox, oy, D_00155419, D_0015541b);
-        display_queue_person(mouse_dx, mouse_dy, D_00155419, D_0015541b);
-        D_0015541f = 1;
-    } else if (D_00188c7f) {
-        display_queue_people(ox, oy, D_00155419, D_0015541b);
-        if (D_0015541b) {
-            qx = queue_person_x(ox, oy, D_00155419, D_0015541b);
+    if (lbDisplay.mleft_button) {
+        display_queue_people(ox, oy, othervar.f61, othervar.f63);
+        display_queue_person(lbDisplay.mmouse_x, lbDisplay.mmouse_y, othervar.f61, othervar.f63);
+        othervar.f67 = 1;
+    } else if (lbDisplay.mright_button) {
+        display_queue_people(ox, oy, othervar.f61, othervar.f63);
+        if (othervar.f63) {
+            qx = queue_person_x(ox, oy, othervar.f61, othervar.f63);
             qy = oy;
             display_queue_bar(qx, qy);
-            D_0015541f = 2;
+            othervar.f67 = 2;
             compute_help_text(qx - resvars.f18_QueueLayoutp->r[4].x, qy + resvars.f18_QueueLayoutp->r[4].y, 0x12);
         } else {
-            D_0015541f = 0;
+            othervar.f67 = 0;
         }
     }
-    if (D_0015541f && D_0015541b) {
-        if (!D_00188c7f) {
+    if (othervar.f67 && othervar.f63) {
+        if (!lbDisplay.mright_button) {
             if (MouseOnWindow(open_windows[0])) {
                 set_mouse_mode(0);
             } else {
                 RoomInfo *r;
 
-                r = which_room(D_001553e0);
+                r = which_room(othervar.f28);
                 set_mouse_mode(0x12);
-                gamevar.f13a = get_real_person_from_room(D_00155419, D_0015541b);
-                if (r && r->type == room_info[D_00155419].type)
-                    compute_room_pointed(D_001553e0);
+                gamevar.f13a = get_real_person_from_room(othervar.f61, othervar.f63);
+                if (r && r->type == room_info[othervar.f61].type)
+                    compute_room_pointed(othervar.f28);
             }
         }
-    } else if (D_00188c7e && !D_00155e1a) {
+    } else if (lbDisplay.mleft_button && !othervar.fa62) {
         RoomInfo *room;
 
-        room = &room_info[D_00155419];
+        room = &room_info[othervar.f61];
         if (room->type > 6) {
-            if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18_QueueLayoutp->r[25].x, oy + resvars.f18_QueueLayoutp->r[25].y, resvars.f18_QueueLayoutp->r[25].w, resvars.f18_QueueLayoutp->r[25].h)
-                || over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18_QueueLayoutp->r[26].x, oy + resvars.f18_QueueLayoutp->r[26].y, resvars.f18_QueueLayoutp->r[26].w, resvars.f18_QueueLayoutp->r[26].h))
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18_QueueLayoutp->r[25].x, oy + resvars.f18_QueueLayoutp->r[25].y, resvars.f18_QueueLayoutp->r[25].w, resvars.f18_QueueLayoutp->r[25].h)
+                || over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18_QueueLayoutp->r[26].x, oy + resvars.f18_QueueLayoutp->r[26].y, resvars.f18_QueueLayoutp->r[26].w, resvars.f18_QueueLayoutp->r[26].h))
                 goto_column_row_in_window(0, room->unknown4 % 128, room->unknown4 / 128);
         }
     }
-    if (D_00188c7e + D_00188c7f == 0) {
-        switch (D_0015541f) {
+    if (lbDisplay.mleft_button + lbDisplay.mright_button == 0) {
+        switch (othervar.f67) {
         case 0:
-            if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18_QueueLayoutp->r[1].x, oy + resvars.f18_QueueLayoutp->r[1].y, resvars.f18_QueueLayoutp->r[1].w, resvars.f18_QueueLayoutp->r[1].h)) {
-                i = over_queue_person(ox, oy, D_00155419, D_0015541b);
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18_QueueLayoutp->r[1].x, oy + resvars.f18_QueueLayoutp->r[1].y, resvars.f18_QueueLayoutp->r[1].w, resvars.f18_QueueLayoutp->r[1].h)) {
+                i = over_queue_person(ox, oy, othervar.f61, othervar.f63);
                 if (i)
-                    D_0015541b = i;
+                    othervar.f63 = i;
             } else {
-                D_0015541b = 0;
+                othervar.f63 = 0;
             }
-            display_queue_people(ox, oy, D_00155419, D_0015541b);
+            display_queue_people(ox, oy, othervar.f61, othervar.f63);
             break;
         case 1:
-            if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18_QueueLayoutp->r[3].x, oy + resvars.f18_QueueLayoutp->r[3].y, resvars.f18_QueueLayoutp->r[3].w, resvars.f18_QueueLayoutp->r[3].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18_QueueLayoutp->r[3].x, oy + resvars.f18_QueueLayoutp->r[3].y, resvars.f18_QueueLayoutp->r[3].w, resvars.f18_QueueLayoutp->r[3].h)) {
                 D_001549d0[player].type = 0x84;
                 play_sound(10, 0x42, -1, -1);
                 break;
             }
-            if (D_0015541b) {
-                if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18_QueueLayoutp->r[0].x, oy + resvars.f18_QueueLayoutp->r[0].y, resvars.f18_QueueLayoutp->r[0].w, resvars.f18_QueueLayoutp->r[0].h)) {
+            if (othervar.f63) {
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18_QueueLayoutp->r[0].x, oy + resvars.f18_QueueLayoutp->r[0].y, resvars.f18_QueueLayoutp->r[0].w, resvars.f18_QueueLayoutp->r[0].h)) {
                     D_001549d0[player].type = 0x3c;
-                    D_001549d0[player].value = D_00155419;
-                    D_001549d0[player].arg = D_0015541b;
-                    display_queue_people(ox, oy, D_00155419, D_0015541b);
+                    D_001549d0[player].value = othervar.f61;
+                    D_001549d0[player].arg = othervar.f63;
+                    display_queue_people(ox, oy, othervar.f61, othervar.f63);
                     play_sound(10, 0x43, -1, -1);
                     break;
                 }
-                if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18_QueueLayoutp->r[2].x, oy + resvars.f18_QueueLayoutp->r[2].y, resvars.f18_QueueLayoutp->r[2].w, resvars.f18_QueueLayoutp->r[2].h)) {
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18_QueueLayoutp->r[2].x, oy + resvars.f18_QueueLayoutp->r[2].y, resvars.f18_QueueLayoutp->r[2].w, resvars.f18_QueueLayoutp->r[2].h)) {
                     D_001549d0[player].type = 0x3d;
-                    D_001549d0[player].value = D_00155419;
-                    D_001549d0[player].arg = D_0015541b;
-                    display_queue_people(ox, oy, D_00155419, D_0015541b);
+                    D_001549d0[player].value = othervar.f61;
+                    D_001549d0[player].arg = othervar.f63;
+                    display_queue_people(ox, oy, othervar.f61, othervar.f63);
                     play_sound(10, 0x43, -1, -1);
                     break;
                 }
-                if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18_QueueLayoutp->r[1].x, oy + resvars.f18_QueueLayoutp->r[1].y, resvars.f18_QueueLayoutp->r[1].w, resvars.f18_QueueLayoutp->r[1].h)) {
-                    display_queue_people(ox, oy, D_00155419, D_0015541b);
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18_QueueLayoutp->r[1].x, oy + resvars.f18_QueueLayoutp->r[1].y, resvars.f18_QueueLayoutp->r[1].w, resvars.f18_QueueLayoutp->r[1].h)) {
+                    display_queue_people(ox, oy, othervar.f61, othervar.f63);
                     break;
                 }
                 {
@@ -231,7 +218,7 @@ void req7_overdraw(Window *w)
 
                     dest = &room_info[allhosps[player].f11b9];
                     if (dest == 0) {
-                        t = &thing[D_001553fb];
+                        t = &thing[othervar.f43];
                         if (t > thing) {
                             if (t->renderer == 4 && t->subtype == 3)
                                 dest = t->room;
@@ -248,25 +235,25 @@ void req7_overdraw(Window *w)
                     }
                 }
             } else {
-                display_queue_people(ox, oy, D_00155419, 0);
+                display_queue_people(ox, oy, othervar.f61, 0);
             }
             break;
         case 2:
-            if (D_0015541b) {
-                qx = queue_person_x(ox, oy, D_00155419, D_0015541b);
+            if (othervar.f63) {
+                qx = queue_person_x(ox, oy, othervar.f61, othervar.f63);
                 qy = oy;
-                display_queue_people(ox, oy, D_00155419, D_0015541b);
-                if (over_hotspot(mouse_dx, mouse_dy, qx - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[7].x, qy + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[7].y, resvars.f18_QueueLayoutp->r[7].w, resvars.f18_QueueLayoutp->r[7].h)) {
+                display_queue_people(ox, oy, othervar.f61, othervar.f63);
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, qx - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[7].x, qy + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[7].y, resvars.f18_QueueLayoutp->r[7].w, resvars.f18_QueueLayoutp->r[7].h)) {
                     D_001549d0[player].type = 0x55;
-                    D_001549d0[player].value = D_00155419;
-                    D_001549d0[player].arg = D_0015541b;
+                    D_001549d0[player].value = othervar.f61;
+                    D_001549d0[player].arg = othervar.f63;
                     play_sound(10, 0x43, -1, -1);
                     break;
                 }
-                if (over_hotspot(mouse_dx, mouse_dy, qx - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[8].x, qy + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[8].y, resvars.f18_QueueLayoutp->r[8].w, resvars.f18_QueueLayoutp->r[8].h)) {
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, qx - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[8].x, qy + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[8].y, resvars.f18_QueueLayoutp->r[8].w, resvars.f18_QueueLayoutp->r[8].h)) {
                     D_001549d0[player].type = 0x51;
-                    D_001549d0[player].value = D_00155419;
-                    D_001549d0[player].arg = D_0015541b;
+                    D_001549d0[player].value = othervar.f61;
+                    D_001549d0[player].arg = othervar.f63;
                     play_sound(10, 0xaa, -1, -1);
                     break;
                 }
@@ -280,16 +267,16 @@ void req7_overdraw(Window *w)
                             } else if (i >= 4) {
                                 break;
                             }
-                            if (over_hotspot(mouse_dx, mouse_dy, qx - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[24].x, qy + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y, resvars.f18_QueueLayoutp->r[24].w, resvars.f18_QueueLayoutp->r[24].h)) {
+                            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, qx - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[24].x, qy + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y, resvars.f18_QueueLayoutp->r[24].w, resvars.f18_QueueLayoutp->r[24].h)) {
                                 play_sound(10, 0xaa, -1, -1);
                                 if (statvar.unknownfd > 1) {
                                     D_001549d0[player].type = 0x57;
-                                    D_001549d0[player].value = get_queue_person(D_00155419, D_0015541b);
+                                    D_001549d0[player].value = get_queue_person(othervar.f61, othervar.f63);
                                     D_001549d0[player].arg = fn_000856c8(i + 1);
                                 } else {
                                     D_001549d0[player].type = 0x51;
-                                    D_001549d0[player].value = D_00155419;
-                                    D_001549d0[player].arg = D_0015541b;
+                                    D_001549d0[player].value = othervar.f61;
+                                    D_001549d0[player].arg = othervar.f63;
                                 }
                                 break;
                             }
@@ -298,26 +285,26 @@ void req7_overdraw(Window *w)
                     }
                 }
             } else {
-                display_queue_people(ox, oy, D_00155419, 0);
+                display_queue_people(ox, oy, othervar.f61, 0);
             }
             break;
         default:
             break;
         }
-        D_0015541f = 0;
+        othervar.f67 = 0;
         set_mouse_mode(0);
     }
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(1);
-    if (D_00188c7e)
-        D_00155e1a = 1;
+    if (lbDisplay.mleft_button)
+        othervar.fa62 = 1;
     else
-        D_00155e1a = 0;
-    if (D_00188c7f)
-        D_00155e19 = 1;
+        othervar.fa62 = 0;
+    if (lbDisplay.mright_button)
+        othervar.fa61 = 1;
     else
-        D_00155e19 = 0;
+        othervar.fa61 = 0;
 }
 
 // FUNCTION: 0x000969f4
@@ -349,22 +336,22 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
             w = &thing[id];
             for (;;) {
                 if (n == sel)
-                    px += D_00188c34 / resvars.f1c_QueuePanelp->f5a0;
+                    px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
                 fr = &frame[w->sprite];
                 x0 = px - fr->width / 2;
                 x1 = x0 + fr->width;
                 y0 = py - fr->length;
                 y1 = y0 + fr->length;
-                if (x0 < mouse_dx && x1 - D_00188c34 / 32 > mouse_dx) {
-                    if (y0 < mouse_dy && y1 > mouse_dy) {
-                        D_00155436 = id;
+                if (x0 < lbDisplay.mmouse_x && x1 - lbDisplay.graphics_screen_width / 32 > lbDisplay.mmouse_x) {
+                    if (y0 < lbDisplay.mmouse_y && y1 > lbDisplay.mmouse_y) {
+                        othervar.f7e = id;
                         display_panel_person_info();
                         return n;
                     }
                 }
                 px += step;
                 if (n == sel)
-                    px += D_00188c34 / resvars.f1c_QueuePanelp->f5a0;
+                    px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
                 if (w->queue_next == 0)
                     break;
                 id = w->queue_next;
@@ -418,17 +405,17 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                 w->sprite = start[anim].frame;
                 w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
                 if (n == sel)
-                    px += D_00188c34 / resvars.f1c_QueuePanelp->f5a0;
+                    px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
                 if (w->style == 6)
                     fn_0002f47c(w, px, py);
-                else if (w->style == 12 && D_001553d4 == 0)
+                else if (w->style == 12 && othervar.f1c == 0)
                     fn_0002e804(w, px, py);
-                else if ((u16)(w - thing) == D_001553fb)
+                else if ((u16)(w - thing) == othervar.f43)
                     draw_hilight_frame(w, px, py);
                 else
                     draw_special_id_frame(w, px, py);
                 if (n == sel)
-                    px += D_00188c34 / resvars.f1c_QueuePanelp->f5a0;
+                    px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
                 w->unknown17 = old_17;
                 w->sprite = old_sprite;
                 w->palette = old_palette;
@@ -487,7 +474,7 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                     DrawPixBuffer(1, 0, 0, 0x40, 0x40);
                     FillPixBuffer(0xfe);
                     InitPixBuffer(0, 0, 0xb4, 0xb4, 0, 0);
-                    D_00188c74 = 0;
+                    lbDisplay.draw_flags = 0;
                     fr = &frame[w->sprite];
                     set_all_refresh_zones_in_window(x + D_001567b0[4], y + D_001567b0[5], x + D_001567b0[4] + fr->width, y + D_001567b0[5] + fr->length, 3);
                     w->unknown17 = old_17;
@@ -513,9 +500,9 @@ void display_queue_bar(u16 x, u16 y)
     char buf[100];
 
     reqspr_draw(x - resvars.f18_QueueLayoutp->r[4].x, y + resvars.f18_QueueLayoutp->r[4].y, &button_sprite[resvars.f12[0x28]]);
-    if (over_hotspot(mouse_dx, mouse_dy, x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[7].x, y + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[7].y, resvars.f18_QueueLayoutp->r[7].w, resvars.f18_QueueLayoutp->r[7].h))
+    if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[7].x, y + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[7].y, resvars.f18_QueueLayoutp->r[7].w, resvars.f18_QueueLayoutp->r[7].h))
         reqspr_draw(x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[7].x, y + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[7].y, &button_sprite[resvars.f12[0x2c]]);
-    else if (over_hotspot(mouse_dx, mouse_dy, x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[8].x, y + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[8].y, resvars.f18_QueueLayoutp->r[8].w, resvars.f18_QueueLayoutp->r[8].h))
+    else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[8].x, y + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[8].y, resvars.f18_QueueLayoutp->r[8].w, resvars.f18_QueueLayoutp->r[8].h))
         reqspr_draw(x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[8].x, y + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[8].y, &button_sprite[resvars.f12[0x2d]]);
     set_all_refresh_zones_in_window(x - resvars.f18_QueueLayoutp->r[4].x, y + resvars.f18_QueueLayoutp->r[4].y,
                                     button_sprite[resvars.f12[0x28]].width + (x - resvars.f18_QueueLayoutp->r[4].x),
@@ -533,17 +520,17 @@ void display_queue_bar(u16 x, u16 y)
             set_all_refresh_zones_in_window(x - resvars.f18_QueueLayoutp->r[4].x, y + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y,
                                             x - resvars.f18_QueueLayoutp->r[4].x + button_sprite[resvars.f12[0x2a]].width,
                                             (y + off) + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y + button_sprite[resvars.f12[0x2a]].height, 3);
-            if (over_hotspot(mouse_dx, mouse_dy, x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[9].x, y + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y, resvars.f18_QueueLayoutp->r[9].w, resvars.f18_QueueLayoutp->r[9].h))
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[9].x, y + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y, resvars.f18_QueueLayoutp->r[9].w, resvars.f18_QueueLayoutp->r[9].h))
                 reqspr_draw(x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[9].x, y + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y, &button_sprite[resvars.f12[0x2e]]);
             LbTextSetWindow(x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[23].x, y + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y + resvars.f18_QueueLayoutp->r[23].y, resvars.f18_QueueLayoutp->r[23].w, resvars.f18_QueueLayoutp->r[23].h);
-            D_00188c74 = 0x100;
+            lbDisplay.draw_flags = 0x100;
             if (statvar.unknownfd > 1)
                 sprintf(buf, D_00120a2c, &allhosps[fn_000856c8(i + 1)]);
             else
                 sprintf(buf, D_00120a2f, &allhosps[i]);
             LbTextDraw(0, 0, buf);
-            D_00188c74 = 0;
-            LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+            lbDisplay.draw_flags = 0;
+            LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             off += button_sprite[resvars.f12[0x2a]].height;
         }
     }

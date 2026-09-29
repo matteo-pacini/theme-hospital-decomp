@@ -9,10 +9,6 @@ struct PolicyRect {
 
 extern "C" {
 
-extern u16 D_00188c74;
-extern s32 D_00188c38;
-extern u8 D_00188c7b, D_00188c7e, D_00188c81;
-extern volatile s16 D_00188c6c, D_00188c70;
 extern Event D_001549d0[];
 extern char **D_001602dc;
 extern char D_00120414[];
@@ -34,12 +30,12 @@ void display_policy(void)
         load_ingame_pic(5, 1, 0x1c, 0, SCREEN_MODE_13);
         pol.unknown2 = 1;
         pol.unknown0 = 0;
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0;
         fn_0004488c();
-        D_00188c7b = D_00188c7e = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.mleft_button = lbDisplay.rleft_button = 0;
         break;
     case 1:
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0;
         copy_screen_to_wscreen(bscreen);
         fn_00044664();
         fn_0004488c();
@@ -52,8 +48,8 @@ void display_policy(void)
         D_001549d0[player].value = 0;
         break;
     }
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     if (exit_quick_requester()) {
         pol.unknown2 = 2;
     }
@@ -67,14 +63,14 @@ void fn_00044664(void)
 {
     u8 i;
 
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i + 10].width != 0 && resvars.f48[i + 10].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 10].x, resvars.f48[i + 10].y,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 10].x, resvars.f48[i + 10].y,
                             (s16)resvars.f48[i + 10].width, (s16)resvars.f48[i + 10].height)) {
                 resvars.f48[i + 10].callback(i);
             }
         }
-        D_00188c81 = 0;
+        lbDisplay.rleft_button = 0;
     }
 }
 
@@ -102,8 +98,6 @@ void fn_0004477c(u8 action)
     }
 }
 
-// NONMATCHING: D_00188c34 / D_00188c38 passed as s16 are read with movsx word ptr in the target (as
-// volatile objects are); here with the dword load and sar of a plain s32
 // FUNCTION: 0x0004488c
 void fn_0004488c(void)
 {
@@ -111,16 +105,16 @@ void fn_0004488c(void)
     s32 x;
     char buf[200];
 
-    D_00188c74 = 0x100;
+    lbDisplay.draw_flags = 0x100;
     set_font_from_cache(7);
     for (i = 0; i < 5; i++) {
         LbTextSetWindow(resvars.f3c_PolicyRectp[i + 0x20].x, resvars.f3c_PolicyRectp[i + 0x20].y, resvars.f3c_PolicyRectp[i + 0x20].w, resvars.f3c_PolicyRectp[i + 0x20].h);
         sprintf(buf, D_00120414, D_001602dc[i]);
         LbTextDraw(0, 0, buf);
-        D_00188c74 = 0x20;
+        lbDisplay.draw_flags = 0x20;
     }
     set_font_from_cache(8);
-    D_00188c74 = 0x100;
+    lbDisplay.draw_flags = 0x100;
     x = allhosps[player].f219 * 3;
     if (x < 0)
         x = 0;
@@ -161,28 +155,28 @@ void fn_0004488c(void)
                     screen_sprites_tab_start[3].width, screen_sprites_tab_start[3].height);
     sprintf(buf, D_00120420, D_001602dc[i++]);
     LbTextDraw(0, 0, buf);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (allhosps[player].f21f)
         reqspr_draw(resvars.f40[0x52].x, resvars.f40[0x52].y, &screen_sprites_tab_start[4]);
     else
         reqspr_draw(resvars.f40[0x53].x, resvars.f40[0x53].y, &screen_sprites_tab_start[5]);
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         if (pol.unknown0 == 0) {
-            if (over_hotspot(mouse_dx, mouse_dy, 0, resvars.f3c_PolicyRectp[0x25].y, D_00188c34, resvars.f3c_PolicyRectp[0x25].h))
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, resvars.f3c_PolicyRectp[0x25].y, lbDisplay.graphics_screen_width, resvars.f3c_PolicyRectp[0x25].h))
                 pol.unknown0 = 2;
-            else if (over_hotspot(mouse_dx, mouse_dy, 0, resvars.f3c_PolicyRectp[0x26].y, D_00188c34, resvars.f3c_PolicyRectp[0x26].h))
+            else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, resvars.f3c_PolicyRectp[0x26].y, lbDisplay.graphics_screen_width, resvars.f3c_PolicyRectp[0x26].h))
                 pol.unknown0 = 1;
-            else if (over_hotspot(mouse_dx, mouse_dy, 0, resvars.f3c_PolicyRectp[0x27].y, D_00188c34, resvars.f3c_PolicyRectp[0x27].h))
+            else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, resvars.f3c_PolicyRectp[0x27].y, lbDisplay.graphics_screen_width, resvars.f3c_PolicyRectp[0x27].h))
                 pol.unknown0 = 3;
-            else if (over_hotspot(mouse_dx, mouse_dy, 0, resvars.f3c_PolicyRectp[0x28].y, D_00188c34, resvars.f3c_PolicyRectp[0x28].h))
+            else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, resvars.f3c_PolicyRectp[0x28].y, lbDisplay.graphics_screen_width, resvars.f3c_PolicyRectp[0x28].h))
                 pol.unknown0 = 4;
             else
                 pol.unknown0 = 0x63;
         }
         if (pol.unknown0 == 2) {
-            if (over_hotspot(mouse_dx, mouse_dy, screen_sprites_tab_start[2].width / 2 + resvars.f3c_PolicyRectp[0x25].x, 0,
-                             screen_sprites_tab_start[2].width / 2 + resvars.f3c_PolicyRectp[0x25].w, D_00188c38)) {
-                x = (mouse_dx - screen_sprites_tab_start[2].width / 2 - resvars.f3c_PolicyRectp[0x25].x) / 3;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, screen_sprites_tab_start[2].width / 2 + resvars.f3c_PolicyRectp[0x25].x, 0,
+                             screen_sprites_tab_start[2].width / 2 + resvars.f3c_PolicyRectp[0x25].w, lbDisplay.graphics_screen_height)) {
+                x = (lbDisplay.mmouse_x - screen_sprites_tab_start[2].width / 2 - resvars.f3c_PolicyRectp[0x25].x) / 3;
                 if (x < 0)
                     x = 0;
                 else if (x > 100)
@@ -192,14 +186,14 @@ void fn_0004488c(void)
                 D_001549d0[player].arg = x;
                 pol.unknown0 = 2;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, 0, 0, resvars.f3c_PolicyRectp[0x25].x, D_00188c38)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.f3c_PolicyRectp[0x25].x, lbDisplay.graphics_screen_height)) {
                 D_001549d0[player].type = 0x71;
                 D_001549d0[player].value = 2;
                 D_001549d0[player].arg = 0;
                 pol.unknown0 = 2;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_PolicyRectp[0x25].x + resvars.f3c_PolicyRectp[0x25].w + screen_sprites_tab_start[2].width / 2, 0,
-                             D_00188c34 - (screen_sprites_tab_start[2].width / 2 + resvars.f3c_PolicyRectp[0x25].w), D_00188c38)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_PolicyRectp[0x25].x + resvars.f3c_PolicyRectp[0x25].w + screen_sprites_tab_start[2].width / 2, 0,
+                             lbDisplay.graphics_screen_width - (screen_sprites_tab_start[2].width / 2 + resvars.f3c_PolicyRectp[0x25].w), lbDisplay.graphics_screen_height)) {
                 D_001549d0[player].type = 0x71;
                 D_001549d0[player].value = 2;
                 D_001549d0[player].arg = 100;
@@ -207,9 +201,9 @@ void fn_0004488c(void)
             }
         }
         if (pol.unknown0 == 1) {
-            if (over_hotspot(mouse_dx, mouse_dy, screen_sprites_tab_start[1].width / 2 + resvars.f3c_PolicyRectp[0x26].x, 0,
-                             screen_sprites_tab_start[1].width / 2 + resvars.f3c_PolicyRectp[0x26].w, D_00188c38)) {
-                x = (mouse_dx - screen_sprites_tab_start[1].width / 2 - resvars.f3c_PolicyRectp[0x26].x) / 3;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, screen_sprites_tab_start[1].width / 2 + resvars.f3c_PolicyRectp[0x26].x, 0,
+                             screen_sprites_tab_start[1].width / 2 + resvars.f3c_PolicyRectp[0x26].w, lbDisplay.graphics_screen_height)) {
+                x = (lbDisplay.mmouse_x - screen_sprites_tab_start[1].width / 2 - resvars.f3c_PolicyRectp[0x26].x) / 3;
                 if (x < 0)
                     x = 0;
                 else if (x > 100)
@@ -219,14 +213,14 @@ void fn_0004488c(void)
                 D_001549d0[player].arg = x;
                 pol.unknown0 = 1;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, 0, 0, resvars.f3c_PolicyRectp[0x26].x, D_00188c38)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.f3c_PolicyRectp[0x26].x, lbDisplay.graphics_screen_height)) {
                 D_001549d0[player].type = 0x71;
                 D_001549d0[player].value = 1;
                 D_001549d0[player].arg = 0;
                 pol.unknown0 = 1;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_PolicyRectp[0x26].x + resvars.f3c_PolicyRectp[0x26].w + screen_sprites_tab_start[1].width / 2, 0,
-                             D_00188c34 - (screen_sprites_tab_start[1].width / 2 + resvars.f3c_PolicyRectp[0x26].w), D_00188c38)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_PolicyRectp[0x26].x + resvars.f3c_PolicyRectp[0x26].w + screen_sprites_tab_start[1].width / 2, 0,
+                             lbDisplay.graphics_screen_width - (screen_sprites_tab_start[1].width / 2 + resvars.f3c_PolicyRectp[0x26].w), lbDisplay.graphics_screen_height)) {
                 D_001549d0[player].type = 0x71;
                 D_001549d0[player].value = 1;
                 D_001549d0[player].arg = 100;
@@ -234,9 +228,9 @@ void fn_0004488c(void)
             }
         }
         if (pol.unknown0 == 3) {
-            if (over_hotspot(mouse_dx, mouse_dy, screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x27].x, 0,
-                             screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x27].w, D_00188c38)) {
-                x = (mouse_dx - screen_sprites_tab_start[3].width / 2 - resvars.f3c_PolicyRectp[0x27].x) / 20 * 0x42;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x27].x, 0,
+                             screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x27].w, lbDisplay.graphics_screen_height)) {
+                x = (lbDisplay.mmouse_x - screen_sprites_tab_start[3].width / 2 - resvars.f3c_PolicyRectp[0x27].x) / 20 * 0x42;
                 if (x < 0)
                     x = 0;
                 else if (x > 1000)
@@ -246,14 +240,14 @@ void fn_0004488c(void)
                 D_001549d0[player].arg = x + 1000;
                 pol.unknown0 = 3;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, 0, 0, resvars.f3c_PolicyRectp[0x27].x, D_00188c38)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.f3c_PolicyRectp[0x27].x, lbDisplay.graphics_screen_height)) {
                 D_001549d0[player].type = 0x71;
                 D_001549d0[player].value = 3;
                 D_001549d0[player].arg = 1000;
                 pol.unknown0 = 3;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_PolicyRectp[0x27].x + resvars.f3c_PolicyRectp[0x27].w + screen_sprites_tab_start[3].width / 2, 0,
-                             D_00188c34 - (screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x27].w), D_00188c38)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_PolicyRectp[0x27].x + resvars.f3c_PolicyRectp[0x27].w + screen_sprites_tab_start[3].width / 2, 0,
+                             lbDisplay.graphics_screen_width - (screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x27].w), lbDisplay.graphics_screen_height)) {
                 D_001549d0[player].type = 0x71;
                 D_001549d0[player].value = 3;
                 D_001549d0[player].arg = 2000;
@@ -261,9 +255,9 @@ void fn_0004488c(void)
             }
         }
         if (pol.unknown0 == 4) {
-            if (over_hotspot(mouse_dx, mouse_dy, screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x28].x, 0,
-                             screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x28].w, D_00188c38)) {
-                x = (mouse_dx - screen_sprites_tab_start[3].width / 2 - resvars.f3c_PolicyRectp[0x28].x) / 10 * 0x27;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x28].x, 0,
+                             screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x28].w, lbDisplay.graphics_screen_height)) {
+                x = (lbDisplay.mmouse_x - screen_sprites_tab_start[3].width / 2 - resvars.f3c_PolicyRectp[0x28].x) / 10 * 0x27;
                 if (x < 0)
                     x = 0;
                 else if (x > 1000)
@@ -273,14 +267,14 @@ void fn_0004488c(void)
                 D_001549d0[player].arg = x;
                 pol.unknown0 = 4;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, 0, 0, resvars.f3c_PolicyRectp[0x28].x, D_00188c38)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.f3c_PolicyRectp[0x28].x, lbDisplay.graphics_screen_height)) {
                 D_001549d0[player].type = 0x71;
                 D_001549d0[player].value = 4;
                 D_001549d0[player].arg = 0;
                 pol.unknown0 = 4;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_PolicyRectp[0x28].x + resvars.f3c_PolicyRectp[0x28].w + screen_sprites_tab_start[3].width / 2, 0,
-                             D_00188c34 - (screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x28].w), D_00188c38)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_PolicyRectp[0x28].x + resvars.f3c_PolicyRectp[0x28].w + screen_sprites_tab_start[3].width / 2, 0,
+                             lbDisplay.graphics_screen_width - (screen_sprites_tab_start[3].width / 2 + resvars.f3c_PolicyRectp[0x28].w), lbDisplay.graphics_screen_height)) {
                 D_001549d0[player].type = 0x71;
                 D_001549d0[player].value = 4;
                 D_001549d0[player].arg = 1000;
@@ -290,7 +284,7 @@ void fn_0004488c(void)
     } else {
         pol.unknown0 = 0;
     }
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
 }
 
 }

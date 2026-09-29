@@ -1,12 +1,5 @@
 #include "hosp.h"
 
-struct Bounds {
-    s8 minX;
-    s8 minY;
-    s8 maxX;
-    s8 maxY;
-};
-
 struct WallHug {
     u8 kind;
     u8 angle[4];
@@ -41,14 +34,9 @@ extern s16 around24[];
 
 extern "C" {
 
-extern u16 D_001553f9;
-extern u8 D_00155d7e, D_00155d7f, D_00155d80, D_00155d81;
 
 Thing *fn_00019aac(Map *t, u16 kind);
 
-extern u8 D_001553c7, D_001553c8;
-extern u16 D_001553e0, D_001553fb;
-extern Bounds D_00155f4f[][4];
 extern Event D_001549d0[];
 
 }
@@ -58,16 +46,16 @@ u16 compute_object_pointed(RoomInfo *room)
 {
     Thing *w;
 
-    w = &thing[D_001553f9];
+    w = &thing[othervar.f41];
     if (w->owner == player) {
         if (room) {
             if (!(!(w->renderer == 6 && (u16)(room - room_info) == w->unknown89) || w->subtype == 0x34 || w->subtype == 0x35)) {
-                return D_001553f9;
+                return othervar.f41;
             } else {
                 return 0;
             }
         } else {
-            return D_001553f9;
+            return othervar.f41;
         }
     } else {
         return 0;
@@ -126,16 +114,16 @@ void pick_up_object(u16 id, u8 both)
             }
         }
         remove_object_from_map(w);
-        if (D_001553c7 == player) {
+        if (othervar.ff == player) {
             gamevar.unknown26 = 2;
             crequester.unknown8 = 3;
         }
     }
-    if (D_001553c7 == player) {
+    if (othervar.ff == player) {
         gamevar.unknown33.unknown0[w->subtype]++;
         gamevar.f28 = w->unknown17;
-        init_place_object(w->subtype, gamevar.unknown26, room, w->x.tile + (w->y.tile << 7) - D_001553e0);
-        D_001553fb = 0;
+        init_place_object(w->subtype, gamevar.unknown26, room, w->x.tile + (w->y.tile << 7) - othervar.f28);
+        othervar.f43 = 0;
     }
 }
 
@@ -230,7 +218,7 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
     if (angle != gamevar.f28)
         play_sound(10, 0x22, -1, -1);
     gamevar.f28 = angle;
-    b = &D_00155f4f[kind][angle];
+    b = &statvar.fff[kind][angle];
     if (sx + b->minX < rx) {
         sx = rx - b->minX;
     }
@@ -247,7 +235,7 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
         part_kind = next_part[objects[kind].unknown17].kind;
         part_angle = next_part[objects[kind].unknown17].parts[angle].angle;
         part_pos = next_part[objects[kind].unknown17].parts[angle].pos;
-        b = &D_00155f4f[part_kind][part_angle];
+        b = &statvar.fff[part_kind][part_angle];
         convert_MW_to_xy(next_part[objects[kind].unknown17].parts[angle].pos, &ox, &oy);
         if (sx + b->minX + ox < rx) {
             sx = rx - b->minX - ox;
@@ -284,17 +272,17 @@ void clicked_for_edit(void)
     u16 room;
 
     room = allhosps[player].build.edit_room;
-    if (D_001553fb) {
+    if (othervar.f43) {
         edit = crequester.unknown2 == 5 || (crequester.unknown2 == 10 && crequester.unknown4 != 1);
         if (edit) {
-            if (thing[D_001553fb].unknown89 != room)
+            if (thing[othervar.f43].unknown89 != room)
                 return;
         }
         D_001549d0[player].arg = edit;
-        if (thing[D_001553fb].renderer == 6) {
-            D_001549d0[player].value = D_001553fb;
+        if (thing[othervar.f43].renderer == 6) {
+            D_001549d0[player].value = othervar.f43;
         } else {
-            D_001549d0[player].value = thing[D_001553fb].unknown69;
+            D_001549d0[player].value = thing[othervar.f43].unknown69;
         }
         D_001549d0[player].type = 0x44;
     } else if (room) {
@@ -309,10 +297,10 @@ void check_object_right_click_in_room_edit(void)
 {
     Thing *w;
 
-    w = &thing[D_001553f9];
+    w = &thing[othervar.f41];
     if (w > thing && w->renderer == 6 && w->unknown89 == allhosps[player].unknown11b7) {
         D_001549d0[player].type = 0x44;
-        D_001549d0[player].value = D_001553f9;
+        D_001549d0[player].value = othervar.f41;
         D_001549d0[player].arg = 1;
     }
 }
@@ -320,10 +308,10 @@ void check_object_right_click_in_room_edit(void)
 // FUNCTION: 0x00028950
 void init_object_drag_shape(void)
 {
-    D_00155d7e = 0xff;
-    D_00155d7f = 0xff;
-    D_00155d80 = 0;
-    D_00155d81 = 0;
+    othervar.f9c6 = 0xff;
+    othervar.f9c7 = 0xff;
+    othervar.f9c8 = 0;
+    othervar.f9c9 = 0;
 }
 
 #define LINKED_OBJECT(w) ((w)->unknown69 && (thing[(w)->unknown69].renderer == 6 || thing[(w)->unknown69].renderer == 8) && (u16)((w) - thing) == thing[(w)->unknown69].unknown91 ? (w)->unknown69 : 0)
@@ -345,10 +333,10 @@ void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
     for (i = shape->count - 1; i >= 0; i--) {
         x = (pos + (s16)shape->points[i]) % 128;
         y = (pos + (s16)shape->points[i]) / 128;
-        DRAG_MIN(D_00155d7e, x);
-        DRAG_MIN(D_00155d7f, y);
-        DRAG_MAX(D_00155d80, x);
-        DRAG_MAX(D_00155d81, y);
+        DRAG_MIN(othervar.f9c6, x);
+        DRAG_MIN(othervar.f9c7, y);
+        DRAG_MAX(othervar.f9c8, x);
+        DRAG_MAX(othervar.f9c9, y);
         if (map[pos + (s16)shape->points[i]].flags & 7) {
             map[pos + (s16)shape->points[i]].flags |= 0x80;
         } else {
@@ -358,10 +346,10 @@ void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
     for (i = 2; i >= 0; i--) {
         x = (pos + shape->unknown13[i]) % 128;
         y = (pos + shape->unknown13[i]) / 128;
-        DRAG_MIN(D_00155d7e, x);
-        DRAG_MIN(D_00155d7f, y);
-        DRAG_MAX(D_00155d80, x);
-        DRAG_MAX(D_00155d81, y);
+        DRAG_MIN(othervar.f9c6, x);
+        DRAG_MIN(othervar.f9c7, y);
+        DRAG_MAX(othervar.f9c8, x);
+        DRAG_MAX(othervar.f9c9, y);
         if (map[pos + shape->unknown13[i]].flags & 7) {
             map[pos + shape->unknown13[i]].flags |= 0x80;
         } else {
@@ -369,10 +357,10 @@ void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
         }
         x = (pos + shape->unknown19[i]) % 128;
         y = (pos + shape->unknown19[i]) / 128;
-        DRAG_MIN(D_00155d7e, x);
-        DRAG_MIN(D_00155d7f, y);
-        DRAG_MAX(D_00155d80, x);
-        DRAG_MAX(D_00155d81, y);
+        DRAG_MIN(othervar.f9c6, x);
+        DRAG_MIN(othervar.f9c7, y);
+        DRAG_MAX(othervar.f9c8, x);
+        DRAG_MAX(othervar.f9c9, y);
         if (map[pos + shape->unknown19[i]].flags & 7) {
             map[pos + shape->unknown19[i]].flags |= 0x80;
         } else {
@@ -387,8 +375,8 @@ void clear_object_drag_shape(void)
     int x;
     int y;
 
-    for (x = D_00155d7e; x <= D_00155d80; x++) {
-        for (y = D_00155d7f; y <= D_00155d81; y++) {
+    for (x = othervar.f9c6; x <= othervar.f9c8; x++) {
+        for (y = othervar.f9c7; y <= othervar.f9c9; y++) {
             map[(s16)x + ((s16)y << 7)].flags &= 0x3f;
         }
     }
@@ -545,12 +533,12 @@ void pick_up_object_right_click(void)
 {
     Thing *w;
 
-    w = &thing[D_001553f9];
+    w = &thing[othervar.f41];
     if (w->renderer == 2 && LINKED_OBJECT(w)) {
         w = &thing[LINKED_OBJECT(w)];
     }
     if (w->renderer == 6 && w->owner == player && (!w->unknown89 || (objects[w->subtype].unknown20[2] & 8)) && !(objects[w->subtype].unknown20[2] & 1)) {
-        D_001553fb = D_001553f9;
+        othervar.f43 = othervar.f41;
         clicked_for_edit();
     }
 }
@@ -621,7 +609,7 @@ extern "C" void fn_0002994c(u8 owner)
                 place_small_thing((s16)(x + (y << 7)), 0, 0);
             }
         }
-        D_001553c8 = 1;
+        othervar.f10 = 1;
         allhosps[owner].unknown11b7 = 0;
     }
 }

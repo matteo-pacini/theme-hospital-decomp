@@ -1,10 +1,8 @@
 #include "hosp.h"
 
 extern "C" {
-extern s16 D_001553b8;
 extern u16 D_0012c9c8;
 extern u16 D_0012c9ca[];
-extern u16 D_00155c64[];
 }
 
 extern s16 opposite_angle[];
@@ -115,8 +113,8 @@ void receptionist_works(Thing *w)
                     }
                 } else {
                     reset_icon_value(w, 0x19);
-                    D_001553b8 = old_newrand() % 100;
-                    if (D_001553b8 >= 0 && D_001553b8 < 30) {
+                    othervar.f0 = old_newrand() % 100;
+                    if (othervar.f0 >= 0 && othervar.f0 < 30) {
                         w->state_b = 10;
                         action = D_0012c9ca[old_newrand() % D_0012c9c8];
                         set_complex(w, action, 0);
@@ -153,7 +151,7 @@ void recept_waits_for_patient(Thing *w)
             p->unknown17 = opposite_angle[w->unknown17];
             w->state_b = 0x22;
             fn_0003e724(w);
-            D_00155c64[1] = 0;
+            othervar.f8ac_u16a[1] = 0;
         } else {
             w->timer--;
             if (w->timer <= 0) {
@@ -170,7 +168,7 @@ void recept_waits_for_patient(Thing *w)
                         interrupt_person(p);
                         start_person_going(p);
                         w->unknown73 = 0;
-                        D_00155c64[1] = 0;
+                        othervar.f8ac_u16a[1] = 0;
                     }
                 }
             } else if (fn_0003c1e8(w, 0x6e)) {
@@ -182,7 +180,7 @@ void recept_waits_for_patient(Thing *w)
         reset_icon_value(w, 0x19);
         w->unknown73 = 0;
         w->kind = 10;
-        D_00155c64[1] = 0;
+        othervar.f8ac_u16a[1] = 0;
     }
 }
 

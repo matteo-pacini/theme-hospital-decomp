@@ -2,9 +2,6 @@
 
 extern "C" {
 
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern u16 D_00188c74;
 
 }
 
@@ -24,8 +21,8 @@ void draw_buttons(Window *w)
     for (; b; b = b->next) {
         if (b->flags & 0x20001000)
             continue;
-        x = w->x - D_00188c3c;
-        y = w->y - D_00188c40;
+        x = w->x - lbDisplay.graphics_window_x;
+        y = w->y - lbDisplay.graphics_window_y;
         if (b->flags & 1)
             reqspr_draw((s16)x + b->x20, (s16)y + b->y22, &button_sprite[b->sprite1c]);
         else if ((b->flags & 6) && (!(b->flags & 2) || !(b->flags & 4)))
@@ -74,8 +71,8 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
         dx += x0 - info.unknown68;
         dy += y0 - info.unknown6c;
         len = dx;
-        saved = D_00188c74;
-        D_00188c74 = 8;
+        saved = lbDisplay.draw_flags;
+        lbDisplay.draw_flags = 8;
         for (i = 0; i < ny; i++) {
             for (j = 0; j < nx; j++) {
                 LbSpriteDraw(dx, dy, bord + 17);
@@ -84,7 +81,7 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
             dx = len;
             dy += bord[17].height;
         }
-        D_00188c74 = saved;
+        lbDisplay.draw_flags = saved;
     }
 
     dx = 0;
@@ -166,7 +163,7 @@ void draw_window(Window *w)
     x = w->x;
     y = w->y;
     if (w->flags & 1) {
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0;
         set_all_refresh_zones_in_window(x, y, x + width, y + height, 3);
     } else if (w->flags & 2) {
         draw_a_window(x, y, width, height, 0);

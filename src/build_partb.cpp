@@ -2,8 +2,6 @@
 
 extern "C" {
 
-extern u8 D_001553c7;
-extern u8 D_001553c8;
 
 s32 fn_00038d04(Thing *w, u8 owner);
 #pragma aux fn_00038d04 "W?remove_object$n(pn$Thing$$)s"
@@ -111,7 +109,7 @@ void price_all_rooms(u16 type, u8 owner)
         }
         recolour_all_rooms();
         if (room->owner == player) {
-            if (D_001553c7 == player) {
+            if (othervar.ff == player) {
                 init_place_object(next_object_to_build(), 0, room - room_info, 0);
             }
             gamevar.unknown20 = 1;
@@ -120,7 +118,7 @@ void price_all_rooms(u16 type, u8 owner)
         }
         break;
     }
-    D_001553c8 = 1;
+    othervar.f10 = 1;
 }
 
 // FUNCTION: 0x00024c58
@@ -136,7 +134,7 @@ void delete_room(RoomInfo *room)
         for (x = room->pos % 128; x < room->pos % 128 + room->f1; x++) {
             for (t = &thing[map[(s16)x + ((s16)y << 7)].first]; t > thing; t = &thing[t->next]) {
                 if (t->renderer == 6) {
-                    fn_00038d04(t, D_001553c7);
+                    fn_00038d04(t, othervar.ff);
                 }
             }
         }
@@ -159,13 +157,13 @@ void delete_room(RoomInfo *room)
                     case 0:
                     case 2:
                         if (x < room->pos % 128 + room->f1) {
-                            fn_00038d04(t, D_001553c7);
+                            fn_00038d04(t, othervar.ff);
                         }
                         break;
                     case 1:
                     case 3:
                         if (y < room->pos / 128 + room->f2) {
-                            fn_00038d04(t, D_001553c7);
+                            fn_00038d04(t, othervar.ff);
                         }
                         break;
                     }
@@ -488,5 +486,5 @@ void recolour_all_rooms(void)
         }
     }
     pixel_buffer_map();
-    D_001553c8 = 1;
+    othervar.f10 = 1;
 }

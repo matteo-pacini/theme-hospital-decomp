@@ -6,15 +6,16 @@ typedef struct {
     int _output_count;
 } SPECS;
 
-void mem_putc(SPECS *specs, int op_char)
+static void mem_putc(SPECS *specs, char op_char);
+
+// FUNCTION: 0xbc127
+static void mem_putc(SPECS *specs, char op_char)
 {
     *(specs->_dest++) = op_char;
     specs->_output_count++;
 }
 
 // FUNCTION: 0xbc13a
-// NONMATCHING: mem_putc lies inside LbMemorySet_ in config/functions.txt, so
-// the target names its address LbMemorySet_+0x23
 int sprintf(char *dest, const char *format, ...)
 {
     va_list args;

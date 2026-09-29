@@ -27,13 +27,6 @@ void set_expertise_room(RoomInfo *room);
 
 extern "C" {
 
-extern u8 D_001553c7;
-extern u8 D_001553cf;
-extern u16 D_001553f9;
-extern u16 D_001553fb;
-extern u8 D_001553e8;
-extern u8 D_001553c8;
-extern u16 D_00188c74;
 extern s16 D_001567b0[8];
 
 }
@@ -56,11 +49,11 @@ void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1,
     s32 tx;
     s32 ty;
 
-    saved = D_00188c74;
+    saved = lbDisplay.draw_flags;
     palette = 0;
     if (owner != player)
         return;
-    D_00188c74 = 4;
+    lbDisplay.draw_flags = 4;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     block = 0x17;
@@ -94,7 +87,7 @@ void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1,
                   && is_tile_valid((y << 7) + x, owner))
                 || is_tile_near_half_wall(x, y, x0, y0, x1, y1)) {
                 LbSpriteDraw(sx, sy - blocks[66].info->height, blocks[66].info);
-                D_001553cf = 1;
+                othervar.f17 = 1;
             } else if ((height % 2 == 0 && width % 2 == 0) && width > 3 && height > 3) {
                 if (y == (height - 1) / 2 + y0 && x == (width - 1) / 2 + x0)
                     LbSpriteDraw(sx, sy - blocks[38].info->height, blocks[38].info);
@@ -178,7 +171,7 @@ outline:
             }
         }
     }
-    D_00188c74 = saved;
+    lbDisplay.draw_flags = saved;
 }
 
 // FUNCTION: 0x00046174
@@ -193,7 +186,7 @@ void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 flag)
     u8 piece;
     Map *cell;
 
-    D_001553c8 = 1;
+    othervar.f10 = 1;
     block = 0x17;
     base = 0;
     width = x1 - x0 + 1;
@@ -368,18 +361,18 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
     } else {
         switch (allhosps[owner].build.drag) {
         case 0:
-            if (D_001553c7 == player) {
+            if (othervar.ff == player) {
                 if (!(x >= build->x0 && x <= build->x1 && y >= build->y0 && y <= build->y1))
-                    D_001553e8 = 3;
+                    othervar.f30 = 3;
                 else if ((((on_x0 && on_y0) || (on_x0 && on_y1)) || (on_x1 && on_y0)) || (on_x1 && on_y1))
-                    D_001553e8 = 7;
+                    othervar.f30 = 7;
                 else if (on_x0 || on_x1)
-                    D_001553e8 = 6;
+                    othervar.f30 = 6;
                 else if (on_y0 || on_y1)
-                    D_001553e8 = 5;
+                    othervar.f30 = 5;
                 else
-                    D_001553e8 = 8;
-                set_mouse_sprite(D_001553e8);
+                    othervar.f30 = 8;
+                set_mouse_sprite(othervar.f30);
             }
             break;
         case 1:
@@ -405,14 +398,14 @@ u8 commit_blueprint(u8 owner)
 
     build = &allhosps[owner].build;
     if (!is_valid_room(build->x0, build->y0, build->x1, build->y1, owner)) {
-        if (D_001553c7 == player) {
+        if (othervar.ff == player) {
             advisor.f2 = 4;
             set_mouse_mode(1);
         }
         return 0;
     }
     if (!check_room_access_with_blueprint(owner)) {
-        if (D_001553c7 == player) {
+        if (othervar.ff == player) {
             advisor.f2 = 5;
             set_mouse_mode(1);
         }
@@ -430,7 +423,7 @@ u8 commit_blueprint(u8 owner)
     cleanse_area(room->owner, room->pos % 128, room->pos / 128, room->f1, room->f2);
     blank_wall_around_blueprint(owner, 1);
     build->state = 1;
-    if (D_001553c7 == player) {
+    if (othervar.ff == player) {
         set_edit_room_requester_mode(2);
         set_mouse_mode(2);
     }
@@ -465,7 +458,7 @@ void uncommit_blueprint(u8 owner)
     }
     build->unknownE_ = 1;
     allhosps[owner].build.state = 0;
-    D_001553c8 = 1;
+    othervar.f10 = 1;
 }
 
 // FUNCTION: 0x00046f88
@@ -551,7 +544,7 @@ void edit_blueprint(u8 owner)
     room = &room_info[allhosps[owner].build.room];
     i = 0;
     while ((t = &thing[room->first_object]) > thing) {
-        if (D_001553c7 == player && (!t->group || objects[thing[t->group].subtype].unknown17 == -1))
+        if (othervar.ff == player && (!t->group || objects[thing[t->group].subtype].unknown17 == -1))
             gamevar.unknown33.unknown0[t->subtype]++;
         remove_object_from_map(t);
         for (; i < 20; i++) {
@@ -573,7 +566,7 @@ void edit_blueprint(u8 owner)
     room->f1 = 0;
     room->f2 = 0;
     room->f3 = 3;
-    if (D_001553c7 == player) {
+    if (othervar.ff == player) {
         set_edit_room_requester_mode(0);
         set_mouse_mode(1);
     }
@@ -598,18 +591,18 @@ void compute_room_pointed(u16 tile)
     } else {
         build->edit_room = 0;
         build->unknownE_ = 0;
-        t = &thing[D_001553f9];
+        t = &thing[othervar.f41];
         if (t > thing) {
             switch (t->renderer) {
             case 6:
                 if (t->unknown89 == 0 && !(objects[t->subtype].unknown20[2] & 1) && t->owner == player)
-                    D_001553fb = D_001553f9;
+                    othervar.f43 = othervar.f41;
                 break;
             case 2:
             case 4:
                 if (t->unknown69 && (u16)(t - thing) == thing[t->unknown69].unknown91
                     && thing[t->unknown69].unknown89 == 0 && t->owner == player)
-                    D_001553fb = D_001553f9;
+                    othervar.f43 = othervar.f41;
                 break;
             }
         }
@@ -727,7 +720,7 @@ void process_blueprint_zones(void)
         if (statvar.unknownfd > 1 && D_001609c4[i].active == 0) {
             continue;
         }
-        D_001553c7 = i;
+        othervar.ff = i;
         if (allhosps[i].build.state == 2) {
             commit_doors(i);
         }

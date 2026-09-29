@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_001553d0[];
 }
 
 void give_screen_xy_of_cell_at_column_row(const u8 view, const s32 column, const s32 row);
@@ -34,7 +33,7 @@ void temp_place_door(u16 pos, u8 owner)
 
     b = &allhosps[owner].build;
     blocked = 0;
-    D_001553d0[owner] = 0;
+    othervar.f18[owner] = 0;
     room = &room_info[b->room];
     switch (b->door_state) {
     case 0:
@@ -151,7 +150,7 @@ void temp_place_door(u16 pos, u8 owner)
                 if (owner == player) {
                     draw_a_one_colour_frame(start[doortype[type].tiles[3]].frame, d, i, (u16)color.unknownD, start[doortype[type].tiles[3]].flags);
                 }
-                D_001553d0[owner] = 1;
+                othervar.f18[owner] = 1;
             } else if (owner == player) {
                 draw_a_frame(start[doortype[type].tiles[3]].frame, d, i, 0, start[doortype[type].tiles[3]].flags);
             }

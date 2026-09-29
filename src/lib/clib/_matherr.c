@@ -38,7 +38,6 @@ void __rterrmsg(int errcode, char *funcname)
     fputc('\n', fp);
 }
 
-// NONMATCHING: the target has a stray jmp into fputs after the epilogue
 // FUNCTION: 0xfdf61
 double _matherr(struct exception *excp)
 {
@@ -50,4 +49,13 @@ double _matherr(struct exception *excp)
             __set_ERANGE();
     }
     return excp->retval;
+}
+
+int matherr(struct exception *excp);
+
+/* The default _RWD_matherr: the user's matherr, or the library's stub. */
+// FUNCTION: 0xfdf90
+int fn_000fdf90(struct exception *excp)
+{
+    return matherr(excp);
 }

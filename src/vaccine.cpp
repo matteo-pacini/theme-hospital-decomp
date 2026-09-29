@@ -1,8 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u16 D_001553f9;
-extern u16 D_00155432;
 }
 
 u8 is_person_in_vaccine_queue(Thing *w);
@@ -13,16 +11,16 @@ u8 is_person_highlighted_for_vaccination(u8 flag)
 {
     Thing *w;
 
-    w = &thing[D_001553f9];
+    w = &thing[othervar.f41];
     flag = 0;
     if (w > thing && w->renderer == 2 && w->owner == player && (s8)w->unknown174 > 0
         && myhosp->f20b == w->style) {
         if (flag || is_person_in_vaccine_queue(w) == 0) {
-            D_00155432 = D_001553f9;
+            othervar.f7a = othervar.f41;
             return 1;
         }
     }
-    D_00155432 = 0;
+    othervar.f7a = 0;
     return 0;
 }
 

@@ -1363,6 +1363,13 @@ struct Game {
     u8 f177;
 };
 
+struct Bounds {
+    s8 minX;
+    s8 minY;
+    s8 maxX;
+    s8 maxY;
+};
+
 struct Statics {
     s32 unknown0;
     u16 unknown4;
@@ -1400,6 +1407,21 @@ struct Statics {
     u8 unknowne8[0x14];
     u8 unknownfc;
     u8 unknownfd;
+    u8 unknownfe;
+    Bounds fff[62][4];
+    u16 f4df[31];
+    u16 f51d[19];
+    u16 f543[12];
+    u16 f55b[9];
+    u16 f56d[1];
+    u16 f56f[3];
+    char f575[100];
+    u8 f5d9;
+    u8 f5da;
+    u8 f5db;
+    u8 f5dc;
+    u8 f5dd;
+    u8 f5de;
 };
 
 struct Scroll {
@@ -1840,6 +1862,261 @@ struct Advisor {
     u8 f130;
     u8 f131;
     u8 unknown132[0x2];
+};
+
+struct SampleInfo;
+
+struct General {
+    s16 f0;
+    u8 unknown2[0xc];
+    u8 fe;
+    u8 ff;
+    u8 f10;
+    u8 unknown11[0x5];
+    u8 f16;
+    u8 f17;
+    u8 f18[4];
+    u8 f1c;
+    u8 unknown1d[0x2];
+    u8 *f1f;
+    u8 f23;
+    u8 *f24;
+    u16 f28;
+    u16 f2a;
+    TbScreenMode f2c;
+    u16 f2d;
+    u8 f2f;
+    u8 f30;
+    u8 f31;
+    u8 f32;
+    u8 f33;
+    u8 f34[1];
+    u8 f35;
+    u8 f36;
+    u8 unknown37[0x1];
+    u8 f38;
+    u16 f39;
+    s32 f3b;
+    u8 f3f;
+    u8 f40;
+    union {
+        u16 f41;
+        s16 f41_s16;
+    };
+    u16 f43;
+    u16 f45;
+    u8 unknown47[0x2];
+    u8 f49;
+    u8 f4a;
+    u8 f4b;
+    u8 f4c;
+    union {
+        s32 f4d;
+        struct {
+            u16 unknown4d;
+            s16 f4f;
+        };
+    };
+    u8 unknown51[0x10];
+    u16 f61;
+    u16 f63;
+    u16 f65;
+    u8 f67;
+    u8 f68;
+    u8 f69;
+    u8 f6a;
+    union {
+        s32 f6b;
+        u32 f6b_u32;
+    };
+    union {
+        u16 f6f;
+        s16 f6f_s16;
+    };
+    u8 f71;
+    u16 f72;
+    union {
+        u32 f74;
+        s32 f74_s32;
+    };
+    u8 f78;
+    u8 f79;
+    u16 f7a;
+    u8 f7c;
+    u8 f7d;
+    u16 f7e;
+    u16 f80;
+    u16 f82;
+    u16 f84;
+    u8 f86;
+    u16 f87;
+    u8 f89;
+    u8 f8a;
+    u8 f8b;
+    u16 f8c;
+    u8 f8e;
+    s8 f8f;
+    u8 f90;
+    u8 f91;
+    u32 f92;
+    char f96[2048];
+    s16 f896;
+    s16 f898;
+    s16 f89a;
+    s16 f89c;
+    u32 f89e;
+    union {
+        u32 f8a2;
+        s32 f8a2_s32;
+    };
+    u8 f8a6;
+    u8 f8a7;
+    s16 f8a8;
+    s16 f8aa;
+    union {
+        u16 f8ac;
+        s16 f8ac_s16a[2];
+        u16 f8ac_u16a[2];
+    };
+    u8 f8b0;
+    u8 f8b1;
+    u32 f8b2;
+    u8 f8b6;
+    Blob63 f8b7;
+    u8 f8f6[63];
+    char f935[105];
+    u8 f99e;
+    u16 f99f;
+    u8 unknown9a1[0x1];
+    u16 f9a2;
+    u8 unknown9a4[0x9];
+    u8 f9ad;
+    u16 f9ae;
+    u8 unknown9b0[0x1];
+    u16 f9b1;
+    u8 unknown9b3[0x4];
+    u8 f9b7;
+    u8 f9b8;
+    u8 f9b9;
+    u8 f9ba;
+    u8 f9bb;
+    u8 f9bc;
+    u16 f9bd;
+    u8 f9bf;
+    u16 f9c0;
+    u8 f9c2;
+    u8 f9c3;
+    u8 f9c4;
+    u8 f9c5;
+    u8 f9c6;
+    u8 f9c7;
+    u8 f9c8;
+    u8 f9c9;
+    u8 f9ca;
+    u16 f9cb;
+    u16 f9cd;
+    u8 unknown9cf[0x2];
+    u16 f9d1;
+    u8 unknown9d3[0x4];
+    u8 *f9d7;
+    s32 f9db;
+    union {
+        s32 f9df;
+        u32 f9df_u32;
+    };
+    u8 unknown9e3[0x1];
+    u8 f9e4;
+    u16 f9e5;
+    u16 f9e7;
+    u8 f9e9;
+    u8 unknown9ea[0x1];
+    s16 f9eb;
+    u16 f9ed;
+    u16 f9ef;
+    u16 f9f1;
+    u32 f9f3;
+    u8 f9f7;
+    u8 f9f8;
+    u8 f9f9;
+    u8 unknown9fa[0xc];
+    TbCacheUsedBlock *fa06;
+    u8 unknowna0a[0x4];
+    u8 fa0e[11];
+    u8 fa19[11];
+    u8 fa24[11];
+    u8 fa2f[11];
+    u8 fa3a[1];
+    u8 fa3b;
+    u8 fa3c;
+    u8 fa3d;
+    u8 fa3e;
+    u8 unknowna3f[0x1];
+    u8 fa40;
+    u8 fa41;
+    u8 fa42;
+    u16 fa43;
+    SampleInfo *fa45;
+    u8 fa49;
+    u8 fa4a;
+    union {
+        u8 fa4b;
+        s8 fa4b_s8;
+    };
+    u8 fa4c;
+    u8 fa4d;
+    u8 fa4e;
+    u8 fa4f;
+    u8 fa50;
+    u8 fa51;
+    u8 fa52;
+    u8 fa53;
+    u8 fa54;
+    u8 fa55;
+    u8 fa56;
+    u8 fa57;
+    u8 fa58;
+    u8 fa59;
+    u8 fa5a;
+    u8 fa5b;
+    u8 fa5c;
+    u8 fa5d;
+    u8 fa5e;
+    u8 fa5f;
+    u8 fa60;
+    u8 fa61;
+    u8 fa62;
+    u16 fa63;
+    u8 fa65;
+    u8 fa66;
+    u16 fa67;
+    u16 fa69;
+    u8 fa6b;
+    u8 fa6c[6];
+    u16 fa72;
+    u8 fa74;
+    u8 fa75;
+    u8 fa76;
+    u8 fa77;
+    u16 fa78;
+    u8 fa7a;
+    u8 fa7b[4];
+    u16 fa7f;
+    u8 fa81;
+    u16 fa82;
+    u8 fa84;
+    u16 fa85;
+    u8 fa87;
+    u16 fa88;
+    u8 fa8a;
+    u16 fa8b;
+    u8 fa8d;
+    u8 fa8e;
+    u8 unknowna8f[0x1];
+    u16 fa90;
+    u8 fa92;
+    u8 fa93;
+    u8 fa94;
+    u8 fa95;
 };
 
 struct Balance {
@@ -2604,6 +2881,7 @@ extern ScreenInfo year_end_backup;
 extern NonResettingAdvisorCounts NRAdcounts;
 extern AwardCounts award_counts;
 extern Balance gbv;
+extern General othervar;
 extern Advisor advisor;
 extern AdvisorCounts adcounts;
 extern ResearchTasks research_tasks[];
@@ -2650,8 +2928,6 @@ extern s32 CurrentWindow;
 extern u8 OldLeftButton;
 extern u8 OldRightButton;
 extern WindowButton *buttonstore;
-extern volatile s32 mouse_dx;
-extern volatile s32 mouse_dy;
 
 void init_game_vars(void);
 void get_cd_speed(void);
@@ -3134,8 +3410,6 @@ void fn_000b4510(const u8 a, const s8 dir, const u8 level, const s16 value, u8 t
  * demo global that config/symbols.txt places at their address.
  */
 extern "C" {
-extern s32 D_00188c34;
-#pragma aux D_00188c34 "W?research_names$npnpna"
 
 struct PlayerSlot {
     s32 active;

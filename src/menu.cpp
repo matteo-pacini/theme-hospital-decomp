@@ -25,39 +25,20 @@ extern "C" {
 
 extern char **D_001602f0;
 extern char D_00120824[], D_00120826[];
-extern u8 D_00155442;
-extern u16 D_00188c74;
-extern s32 D_00188c38;
-extern u8 D_00188c7e;
 extern u16 D_00160f18, D_00160f1a;
-extern u8 D_00155448;
-extern u8 D_00155dc6[];
-extern char D_00155ced[];
 extern char D_00120829[];
 extern Event D_001549d0[];
-extern u8 D_001553c8;
-extern u8 D_00155dd1[];
-extern u8 D_00155de7[], D_00155ddc[];
-extern u8 D_00155d72;
 void FadeMusic(u32 time, u8 volume);
-extern u8 D_00155df2[];
-extern s8 D_00155447;
-extern u8 D_00155e07;
 extern CompElement *D_00153f70;
-extern char D_001563c5[], D_0012082c[], D_00120834[];
-extern u8 D_00155df8, D_00155df9;
+extern char D_0012082c[], D_00120834[];
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 D_0015f982;
 extern TbSprite *D_00153f30;
 extern u8 *D_00153f28;
-extern u8 D_001553e8;
 extern u8 D_00156910;
 void fn_000c93bf(char *dst, char *src);
 int fn_000bed50(void);
 void fn_0008db38(TbScreenMode mode);
-extern u8 D_00188c81;
-extern volatile s32 D_00188c6c, D_00188c70;
-extern u8 D_001553f8;
 extern s32 D_0014b1c4[], D_0013bb0c[], D_00146c8c[];
 extern IconScreen D_0014b7b4, D_0013c0fc;
 extern u8 D_0014619c[], D_00145108[], D_0013fd80[], D_00145358[], D_0014bd5c[], D_0014d414[];
@@ -160,19 +141,19 @@ void draw_menus(void)
     h1 = pulldv[1].height;
     h2 = pulldv[4].height;
     h3 = pulldv[7].height * 2;
-    if ((y0 + h1 + h2 + h3 > mouse_dy || pmenu.unknown0) && !pmenu.unknown7) {
-        D_00155442 = 1;
-        D_00188c74 = 0;
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetClipWindow(0, 0, D_00188c34, D_00188c38);
+    if ((y0 + h1 + h2 + h3 > lbDisplay.mmouse_y || pmenu.unknown0) && !pmenu.unknown7) {
+        othervar.f8a = 1;
+        lbDisplay.draw_flags = 0;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetClipWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         w = pulldv[1].width;
-        last = D_00188c34 - w;
+        last = lbDisplay.graphics_screen_width - w;
         reqspr_draw(0, y0, &pulldv[1]);
         reqspr_draw(0, h1, &pulldv[4]);
         reqspr_draw(0, h1 + h2, &pulldv[7]);
-        for (i = w; i < D_00188c34 - w; i += w) {
+        for (i = w; i < lbDisplay.graphics_screen_width - w; i += w) {
             reqspr_draw(i, y0, &pulldv[2]);
             reqspr_draw(i, h1, &pulldv[5]);
             reqspr_draw(i, h1 + h2, &pulldv[8]);
@@ -180,14 +161,14 @@ void draw_menus(void)
         reqspr_draw(last, y0, &pulldv[3]);
         reqspr_draw(last, h1, &pulldv[6]);
         reqspr_draw(last, h1 + h2, &pulldv[9]);
-        set_all_refresh_zones_in_window(0, 0, D_00188c34, pmenu.line_height, 3);
+        set_all_refresh_zones_in_window(0, 0, lbDisplay.graphics_screen_width, pmenu.line_height, 3);
         set_font_from_cache(pmenu.font);
         x = 0;
         for (i = 1; i < pmenu.count; i++) {
-            D_00188c74 = 0;
+            lbDisplay.draw_flags = 0;
             if (pmenu.pulldowns[i].active) {
                 LbTextDraw(x, resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[i].text]);
-                if (D_00188c7e) {
+                if (lbDisplay.mleft_button) {
                     if (pmenu.unknown0 == i)
                         draw_pulldown(x, (u16)pmenu.line_height, i);
                 }
@@ -195,7 +176,7 @@ void draw_menus(void)
             }
         }
         if (pmenu.unknown0 >= pmenu.count) {
-            if (D_00188c7e) {
+            if (lbDisplay.mleft_button) {
             x = 0;
             for (i = 1; i < pmenu.pulldowns[pmenu.unknown0].parent; i++)
                 x += pmenu.pulldowns[i].length * pmenu.char_width;
@@ -206,7 +187,7 @@ void draw_menus(void)
         }
         set_font_from_cache(0);
     } else {
-        D_00155442 = 0;
+        othervar.f8a = 0;
     }
 }
 
@@ -231,14 +212,14 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
             }
         }
         if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.unknownfd > 1) {
-            saved = D_00188c74;
-            D_00188c74 = 4;
+            saved = lbDisplay.draw_flags;
+            lbDisplay.draw_flags = 4;
             LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
-            D_00188c74 = saved;
+            lbDisplay.draw_flags = saved;
         } else {
             LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
         }
-        if (over_hotspot(mouse_dx, mouse_dy, x, i * pmenu.line_height + y, pmenu.pulldowns[idx].width * pmenu.char_width, pmenu.line_height)) {
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, i * pmenu.line_height + y, pmenu.pulldowns[idx].width * pmenu.char_width, pmenu.line_height)) {
             set_font_from_cache(pmenu.font_hi);
             if (D_00160f1a != i + 1 || D_00160f18 != idx) {
                 D_00160f18 = idx;
@@ -246,10 +227,10 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
             }
             D_00160f1a = i + 1;
             if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.unknownfd > 1) {
-                saved2 = D_00188c74;
-                D_00188c74 = 4;
+                saved2 = lbDisplay.draw_flags;
+                lbDisplay.draw_flags = 4;
                 LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
-                D_00188c74 = saved2;
+                lbDisplay.draw_flags = saved2;
             } else {
                 LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
             }
@@ -269,8 +250,8 @@ void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h)
     u16 cx;
     u16 cy;
 
-    saved = D_00188c74;
-    D_00188c74 = 8;
+    saved = lbDisplay.draw_flags;
+    lbDisplay.draw_flags = 8;
     dw = 0;
     dh = 0;
     sw = pulldv[5].width;
@@ -302,7 +283,7 @@ void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h)
     dh = 0;
     dw += pulldv[3].width;
     dh += pulldv[3].height;
-    D_00188c74 = saved;
+    lbDisplay.draw_flags = saved;
     set_all_refresh_zones_in_window(x, y, dw + (x + w), dh + (y + h), 3);
 }
 
@@ -322,7 +303,7 @@ extern "C" void fn_0008add8(void)
     y0 = 0;
     h1 = pulldv[1].height;
     h2 = pulldv[4].height;
-    if (D_00188c81 && !pmenu.unknown7) {
+    if (lbDisplay.rleft_button && !pmenu.unknown7) {
         x = 0;
         if (pmenu.unknown0 >= pmenu.count)
             y = pmenu.pulldowns[pmenu.unknown0].y;
@@ -333,9 +314,9 @@ extern "C" void fn_0008add8(void)
             if (pmenu.pulldowns[i].active) {
                 if (pmenu.unknown0 == i) {
                     for (j = 0; j < pmenu.pulldowns[i].count; j++) {
-                        if (over_hotspot(D_00188c6c, D_00188c70, x, pmenu.line_height * j + y, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.line_height)) {
+                        if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, pmenu.line_height * j + y, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.line_height)) {
                             debug.unknown8 = n;
-                            D_001553f8 = n;
+                            othervar.f40 = n;
                             if (!(((pmenu.pulldowns[i].items[j].flags & 1) && statvar.unknownfd > 1) || (!pmenu.pulldowns[i].items[j].f0 && gamevar.unknown21))) {
                                 if (gamevar.f174 && !pmenu.pulldowns[i].items[j].f1) {
                                     play_sound(10, 8, -1, -1);
@@ -349,8 +330,8 @@ extern "C" void fn_0008add8(void)
                                     if (pmenu.pulldowns[i].items[j].key)
                                         fn_00074220(pmenu.pulldowns[i].items[j].shift, pmenu.pulldowns[i].items[j].key);
                                     if (pmenu.pulldowns[i].items[j].callback) {
-                                        D_00155447 = pmenu.pulldowns[i].items[j].arg;
-                                        D_00155448 = j;
+                                        othervar.f8f = pmenu.pulldowns[i].items[j].arg;
+                                        othervar.f90 = j;
                                         pmenu.pulldowns[i].items[j].callback();
                                     }
                                     play_sound(10, 0x43, -1, -1);
@@ -375,15 +356,15 @@ extern "C" void fn_0008add8(void)
                 }
             }
         }
-        D_00188c81 = 0;
+        lbDisplay.rleft_button = 0;
     }
-    if (D_00188c7e && !pmenu.unknown7) {
-        if (y0 + h1 + h2 > mouse_dy) {
+    if (lbDisplay.mleft_button && !pmenu.unknown7) {
+        if (y0 + h1 + h2 > lbDisplay.mmouse_y) {
             x2 = 0;
             x = pmenu.char_width * pmenu.pulldowns[1].length;
             for (i = 1; i < pmenu.count; i++) {
                 if (pmenu.pulldowns[i].active) {
-                    if (over_hotspot(mouse_dx, mouse_dy, x2, 0, x, pmenu.line_height)) {
+                    if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x2, 0, x, pmenu.line_height)) {
                         if (pmenu.unknown0 != i)
                             play_sound(10, 0x44, -1, -1);
                         pmenu.unknown0 = i;
@@ -401,7 +382,7 @@ extern "C" void fn_0008add8(void)
                         x += pmenu.pulldowns[i].length * pmenu.char_width;
                 }
                 i = pmenu.pulldowns[pmenu.unknown0].parent;
-                if (over_hotspot(mouse_dx, mouse_dy, x, pmenu.line_height, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.pulldowns[i].count * pmenu.line_height))
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, pmenu.line_height, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.pulldowns[i].count * pmenu.line_height))
                     pmenu.unknown0 = pmenu.pulldowns[pmenu.unknown0].parent;
             }
             if (pmenu.unknown0 && pmenu.pulldowns[pmenu.unknown0].active) {
@@ -419,7 +400,7 @@ extern "C" void fn_0008add8(void)
                     if ((pmenu.pulldowns[i].items[j].flags & 1) && statvar.unknownfd > 1)
                         continue;
                     if (pmenu.pulldowns[i].items[j].submenu) {
-                        if (over_hotspot(mouse_dx, mouse_dy, x, pmenu.line_height + pmenu.line_height * j, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.line_height)) {
+                        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, pmenu.line_height + pmenu.line_height * j, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.line_height)) {
                             pmenu.unknown0 = pmenu.pulldowns[i].items[j].submenu;
                             break;
                         }
@@ -437,7 +418,7 @@ extern "C" void fn_0008b6a0(void)
 {
     u8 n;
 
-    n = D_00155448 + 1;
+    n = othervar.f90 + 1;
     if (n < 10) {
         debug.unknown8 = n;
         D_001549d0[player].type = 0xd;
@@ -450,16 +431,16 @@ extern "C" void fn_0008b6f8(void)
 {
     u8 n;
 
-    n = D_00155448 + 1;
+    n = othervar.f90 + 1;
     debug.unknown8 = n;
-    if (D_00155dc6[n] == 1) {
-        sprintf(D_00155ced, D_00120829, yesno_text[3]);
+    if (othervar.fa0e[n] == 1) {
+        sprintf(othervar.f935, D_00120829, yesno_text[3]);
         open_yes_no_requester(0xc, (u16)n, 0, 0x8c, 0x63, 0);
     } else {
         D_001549d0[player].type = 0xc;
         D_001549d0[player].value = n;
         if (n < 10)
-            D_00155dc6[n] = 1;
+            othervar.fa0e[n] = 1;
     }
 }
 
@@ -480,12 +461,12 @@ extern "C" void fn_0008b824(void)
     if (myplayer.f1d > 0) {
         myplayer.f1d = 0;
         set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-        D_001553c8 = 1;
+        othervar.f10 = 1;
     } else {
         myplayer.f1d = 1;
         add_static_shadows();
         set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-        D_001553c8 = 1;
+        othervar.f10 = 1;
     }
 }
 
@@ -495,11 +476,11 @@ extern "C" void fn_0008b8a0(void)
     u8 sel;
     u8 i;
 
-    sel = D_00155448;
+    sel = othervar.f90;
     if (sel < 11) {
         for (i = 0; i < 10; i++)
-            D_00155dd1[i] = 0;
-        D_00155dd1[sel] = 1;
+            othervar.fa19[i] = 0;
+        othervar.fa19[sel] = 1;
         myplayer.fd = (10 - sel) * 0x7f / 10;
     }
 }
@@ -510,11 +491,11 @@ extern "C" void fn_0008b91c(void)
     u8 i;
     u32 sel;
 
-    sel = D_00155448;
+    sel = othervar.f90;
     if (sel < 11) {
         for (i = 0; i < 10; i++)
-            D_00155de7[i] = 0;
-        D_00155de7[sel] = 1;
+            othervar.fa2f[i] = 0;
+        othervar.fa2f[sel] = 1;
         myplayer.fc = (10 - sel) * 0x7f / 10;
         FadeMusic(1000, myplayer.fc);
     }
@@ -526,11 +507,11 @@ extern "C" void fn_0008b99c(void)
     u8 sel;
     u8 i;
 
-    sel = D_00155448;
+    sel = othervar.f90;
     if (sel < 11) {
         for (i = 0; i < 10; i++)
-            D_00155ddc[i] = 0;
-        D_00155ddc[sel] = 1;
+            othervar.fa24[i] = 0;
+        othervar.fa24[sel] = 1;
         myplayer.fe = (10 - sel) * 0x7f / 10;
     }
 }
@@ -541,7 +522,7 @@ extern "C" void fn_0008ba18(void)
     if (statvar.unknowne5) {
         myplayer.unknown11 = !myplayer.unknown11 ? (u8)1 : (u8)0;
         if (myplayer.unknown11)
-            play_midi(D_00155d72);
+            play_midi(othervar.f9ba);
         else
             stop_midi();
     } else {
@@ -575,37 +556,37 @@ extern "C" void fn_0008bb10(void)
     u8 sel;
     u8 i;
 
-    sel = D_00155448;
+    sel = othervar.f90;
     if (sel < 5) {
         for (i = 0; i < 5; i++)
-            D_00155df2[i] = 0;
-        D_00155df2[sel] = 1;
+            othervar.fa3a[i] = 0;
+        othervar.fa3a[sel] = 1;
         myplayer.f20 = sel;
         D_001549d0[player].type = 0xe;
-        D_001549d0[player].value = D_00155447;
+        D_001549d0[player].value = othervar.f8f;
     }
 }
 
 // FUNCTION: 0x0008bb98
 extern "C" void fn_0008bb98(void)
 {
-    if (!((resvars.f0 == SCREEN_MODE_1 && D_00155448 == 1) || (resvars.f0 == SCREEN_MODE_13 && D_00155448 == 0))) {
+    if (!((resvars.f0 == SCREEN_MODE_1 && othervar.f90 == 1) || (resvars.f0 == SCREEN_MODE_13 && othervar.f90 == 0))) {
         if (!(crequester.unknown2 == 5 || (crequester.unknown2 == 10 && crequester.unknown4 != 1))) {
             if (crequester.unknown2 != 0x63)
                 close_crequester(crequester.unknown2);
             close_irequesters();
             advisor.f0 = 0;
             if (resvars.f1 == SCREEN_MODE_13) {
-                if (D_00155e07)
+                if (othervar.fa4f)
                     AIL_stop_sequence(GetSongHandle());
                 fn_0008db38(SCREEN_MODE_1);
-                if (D_00155e07)
+                if (othervar.fa4f)
                     AIL_resume_sequence(GetSongHandle());
             } else if (resvars.f1 == SCREEN_MODE_1) {
-                if (D_00155e07)
+                if (othervar.fa4f)
                     AIL_stop_sequence(GetSongHandle());
                 fn_0008db38(SCREEN_MODE_13);
-                if (D_00155e07)
+                if (othervar.fa4f)
                     AIL_resume_sequence(GetSongHandle());
             }
         }
@@ -633,13 +614,13 @@ void check_save_games(void)
     u8 i;
 
     for (i = 0; i < 10; i++) {
-        D_00155dc6[i] = 0;
-        sprintf(buf, D_0012082c, D_001563c5);
+        othervar.fa0e[i] = 0;
+        sprintf(buf, D_0012082c, statvar.f575);
         fn_000c93bf(buf, myplayer.unknown0);
         sprintf(buf, D_00120834, buf, i);
         handle = LbFileOpen(buf, 2);
         if (handle != -1) {
-            D_00155dc6[i] = 1;
+            othervar.fa0e[i] = 1;
             LbFileClose(handle);
         }
     }
@@ -652,28 +633,28 @@ extern "C" void fn_0008bdd4(void)
 
     switch (resvars.f0) {
     case SCREEN_MODE_1:
-        D_00155df9 = 0;
-        D_00155df8 = 1;
+        othervar.fa41 = 0;
+        othervar.fa40 = 1;
         break;
     case SCREEN_MODE_13:
-        D_00155df8 = 0;
-        D_00155df9 = 1;
+        othervar.fa40 = 0;
+        othervar.fa41 = 1;
         break;
     default:
         break;
     }
     check_save_games();
     for (i = 0; i < 10; i++) {
-        D_00155dd1[i] = 0;
-        D_00155ddc[i] = 0;
-        D_00155de7[i] = 0;
+        othervar.fa19[i] = 0;
+        othervar.fa24[i] = 0;
+        othervar.fa2f[i] = 0;
     }
-    D_00155dd1[9 - myplayer.fd * 10 / 128] = 1;
-    D_00155ddc[9 - myplayer.fe * 10 / 128] = 1;
-    D_00155de7[9 - myplayer.fc * 10 / 128] = 1;
+    othervar.fa19[9 - myplayer.fd * 10 / 128] = 1;
+    othervar.fa24[9 - myplayer.fe * 10 / 128] = 1;
+    othervar.fa2f[9 - myplayer.fc * 10 / 128] = 1;
     for (i = 0; i < 5; i++)
-        D_00155df2[i] = 0;
-    D_00155df2[myplayer.f20] = 1;
+        othervar.fa3a[i] = 0;
+    othervar.fa3a[myplayer.f20] = 1;
 }
 
 
@@ -1149,8 +1130,8 @@ void swap_game_sprites(TbScreenMode mode)
         resvars.f17 = 0x21;
         resvars.f38 = D_0012cc7c;
         mcga_coords();
-        D_00155df8 = 1;
-        D_00155df9 = 0;
+        othervar.fa40 = 1;
+        othervar.fa41 = 0;
         break;
     case SCREEN_MODE_13:
         statvar.unknown4 = lbScreenModeInfo[SCREEN_MODE_13].height - 0x30;
@@ -1181,8 +1162,8 @@ void swap_game_sprites(TbScreenMode mode)
         resvars.f16 = 3;
         resvars.f17 = 0x20;
         resvars.f38 = D_0012cc3c;
-        D_00155df9 = 1;
-        D_00155df8 = 0;
+        othervar.fa41 = 1;
+        othervar.fa40 = 0;
         break;
     default:
         break;
@@ -1222,9 +1203,9 @@ extern "C" void fn_0008db38(TbScreenMode mode)
     }
     swap_game_sprites(mode);
     LbSpriteSetup(pointer, D_00153f30, D_00153f28);
-    LbMouseSetup(&pointer[D_001553e8]);
+    LbMouseSetup(&pointer[othervar.f30]);
     D_00156910 = 1;
-    D_001553c8 = 1;
+    othervar.f10 = 1;
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
     if (active) {
         while (fn_000bed50() != 1)
@@ -1239,7 +1220,7 @@ extern "C" void fn_0008db38(TbScreenMode mode)
 extern "C" void fn_0008dc7c(void)
 {
     if (statvar.unknownfd <= 1) {
-        fn_000bbff0(D_00155ced, yesno_text[6]);
+        fn_000bbff0(othervar.f935, yesno_text[6]);
         open_yes_no_requester(0x91, 0, 0, 0x78, 1, 0);
     }
 }

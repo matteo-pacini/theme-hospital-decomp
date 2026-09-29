@@ -6,8 +6,8 @@
 void __ioalloc(FILE *fp);
 int fputc(int c, FILE *fp);
 
-// NONMATCHING: ours stores the flags byte between the and and the or; the
-// target range also includes the next function (0xfe02f)
+// NONMATCHING: ours stores the flags byte between the and and the or (10.6
+// keeps the dead store)
 // FUNCTION: 0xfdfb4
 int fputs(const char *s, FILE *fp)
 {

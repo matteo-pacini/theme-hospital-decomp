@@ -16,3 +16,18 @@
 000508da W?diag_register$n[][8]s -0x4a
 0003c462 W?diag_register$n[][8]s -0x48
 000df88d _AIL_driver_directory -1
+# dosser SerialHandler::SerialHandler: com_dev[i] fields addressed after the pointer steps to com_dev[i + 1]
+000f527d W?com_dev$n[]$ComHandlerInfo$$ -0x101a
+000f5283 W?com_dev$n[]$ComHandlerInfo$$ -0x1018
+000f5289 W?com_dev$n[]$ComHandlerInfo$$ -0x1012
+000f5290 W?com_dev$n[]$ComHandlerInfo$$ -0x100e
+000f5297 W?com_dev$n[]$ComHandlerInfo$$ -0x100c
+000f529e W?com_dev$n[]$ComHandlerInfo$$ -0x100a
+000f52a7 W?com_dev$n[]$ComHandlerInfo$$ -0x4
+000f52af W?com_dev$n[]$ComHandlerInfo$$ -0x8
+000f52b7 W?com_dev$n[]$ComHandlerInfo$$ -0x1014
+000df7e7 _AIL_driver -0x4
+# itoa.c: the digit table lies inside __set_doserrno_ in config/functions.txt
+000ec5ac _D_000ec560 0
+# math2err.c: the name table is indexed from 1
+000fdc6a _D_00153cfc -0x4

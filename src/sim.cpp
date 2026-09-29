@@ -10,16 +10,7 @@ struct ComputerBucket {
 };
 
 extern "C" {
-extern u8 D_00155d6f;
-extern u32 D_0015542c;
-extern u16 D_0015542a;
-extern u8 D_00155e17;
-extern u8 D_00155e02;
 extern u16 D_00158190[];
-extern u16 D_00155d89;
-extern u8 D_00155e15;
-extern u8 D_00155e4c;
-extern u8 D_00155e4d;
 extern Event D_001549d0[];
 }
 
@@ -202,21 +193,21 @@ void check_game_over(void)
     } else {
         score = evaluate_criteria(player);
         if (score >= 100) {
-            D_00155d6f = 1;
+            othervar.f9b7 = 1;
             pct = myhosp->f2c / 2;
             pct += old_normal_rand(0x37, 0x3c);
-            D_0015542c = myhosp->f2d * pct / 100;
-            if (D_0015542c > 200000000)
-                D_0015542c = 200000000;
+            othervar.f74 = myhosp->f2d * pct / 100;
+            if (othervar.f74 > 200000000)
+                othervar.f74 = 200000000;
             year_end_type = 5;
-            D_0015542a = 1;
-            winlose.unknown2 = D_0015542a;
-            D_00155e17 = 0;
+            othervar.f72 = 1;
+            winlose.unknown2 = othervar.f72;
+            othervar.fa5f = 0;
             try_bonus_level();
         } else if (check_criteria(1, player)) {
             year_end_type = 7;
-            D_0015542a = 2;
-            winlose.unknown2 = D_0015542a;
+            othervar.f72 = 2;
+            winlose.unknown2 = othervar.f72;
         }
     }
 }
@@ -231,13 +222,13 @@ void check_quarterly_game_over(void)
     } else if (myhosp->f29 < 12) {
         if (evaluate_criteria(player) < 100)
             return;
-        if (!D_00155e17) {
-            D_00155d6f = 1;
+        if (!othervar.fa5f) {
+            othervar.f9b7 = 1;
             pct = myhosp->f2c / 2;
             pct += old_normal_rand(0x37, 0x3c);
-            D_0015542c = myhosp->f2d * pct / 100;
-            if (D_0015542c > 200000000)
-                D_0015542c = 200000000;
+            othervar.f74 = myhosp->f2d * pct / 100;
+            if (othervar.f74 > 200000000)
+                othervar.f74 = 200000000;
             if (display_mode == 9) {
                 fn_000c21e6(&year_end_backup.unknown2, D_00158190, 10);
                 year_end_backup.mode = display_mode;
@@ -251,7 +242,7 @@ void check_quarterly_game_over(void)
             winlose.unknown2 = 1;
             try_bonus_level();
         }
-        D_00155e17 = 0;
+        othervar.fa5f = 0;
     }
 }
 
@@ -507,7 +498,7 @@ s32 evaluate_criteria(const u8 owner)
             } else {
                 pct = 0;
             }
-            if (D_00155d6f == 0) {
+            if (othervar.f9b7 == 0) {
                 if (pct < 0)
                     pct = 0;
                 else if (pct > 100)
@@ -533,7 +524,7 @@ s32 evaluate_criteria(const u8 owner)
     adcounts.f9e = total;
     h->f2c = best;
     if (owner == player)
-        D_00155e02 = best_group;
+        othervar.fa4a = best_group;
     return best;
 }
 
@@ -554,7 +545,7 @@ u8 check_net_criteria(const u8 owner)
     better = 0;
     active = 0;
     if (current_net_criteria.unknown0) {
-        if (D_00155d89 >= current_net_criteria.start) {
+        if (othervar.f9d1 >= current_net_criteria.start) {
             active = 1;
             switch (current_net_criteria.unknown0) {
             case 0:
@@ -628,14 +619,14 @@ u8 check_net_criteria(const u8 owner)
     if (owner == player) {
         if (evaluate_criteria(owner) >= 100) {
             D_001549d0[player].type = 0x90;
-            D_00155e4c = 2;
-            D_00155e4d = 1;
+            othervar.fa94 = 2;
+            othervar.fa95 = 1;
             return 0;
         }
         if (check_criteria(1, owner)) {
             D_001549d0[player].type = 0x7e;
             D_001549d0[player].value = 1;
-            D_00155e4c = 1;
+            othervar.fa94 = 1;
             return 0;
         }
     }
@@ -651,15 +642,15 @@ void setup_next_net_criteria(const u8 owner)
         current_net_criteria.unknown0 = 0;
         for (i = 0; i < 20; i++) {
             if (net_criteria[i].done == 0 && net_criteria[i].unknown0) {
-                if (D_00155d89 >= net_criteria[i].start) {
+                if (othervar.f9d1 >= net_criteria[i].start) {
                     net_criteria[i].done = 1;
                     current_net_criteria.unknown0 = net_criteria[i].unknown0;
                     current_net_criteria.value = net_criteria[i].value;
-                    current_net_criteria.start = D_00155d89 + net_criteria[i].fa;
+                    current_net_criteria.start = othervar.f9d1 + net_criteria[i].fa;
                     if (current_net_criteria.unknown0 == 4)
                         current_net_criteria.fa = allhosps[owner].f1e9;
                     current_net_criteria.done = 0;
-                    D_00155e15 = 1;
+                    othervar.fa5d = 1;
                     break;
                 }
             }

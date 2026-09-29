@@ -2,8 +2,6 @@
 
 extern "C" {
 
-extern u8 D_00155e3c;
-extern u16 D_00155e3d;
 
 }
 
@@ -459,8 +457,8 @@ void research_category_exhausted(const u8 owner, const u8 category)
     h->research_alloc[category] = -1;
     if (owner == player) {
         announce_this(3, category);
-        D_00155e3c = 1;
-        D_00155e3d = 10;
+        othervar.fa84 = 1;
+        othervar.fa85 = 10;
         play_sound(10, 0xdb, -1, -1);
     }
 }

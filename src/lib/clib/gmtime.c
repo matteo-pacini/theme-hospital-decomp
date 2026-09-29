@@ -69,8 +69,6 @@ struct tm *__brktime(unsigned long days, unsigned long wallclock, long gmtdelta,
 }
 
 // FUNCTION: 0xf38b5
-// NONMATCHING: config/functions.txt extends _gmtime_ over gmtime (0xf38d3)
-// and two functions of the next module (0xf38e0, 0xf3934)
 struct tm *_gmtime(const time_t *timer, struct tm *tm)
 {
     tm->tm_isdst = 0;

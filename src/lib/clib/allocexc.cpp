@@ -1,5 +1,8 @@
 extern "C" {
 
+void *memcpy(void *dst, const void *src, unsigned n);
+#pragma intrinsic(memcpy)
+
 struct FREE_AREA {
     FREE_AREA *next;
     unsigned size;
@@ -8,14 +11,55 @@ struct FREE_AREA {
 struct EXC_AREA {
     unsigned size;
     FREE_AREA *freed;
+    FREE_AREA first;
+};
+
+enum TS_TYPE {
+    TS_CLASS,
+    TS_POINTER_SCALAR,
+    TS_POINTER,
+    TS_SCALAR,
+    TS_CLASS_ARRAY,
+    TS_ANY,
+    TS_UNUSED6,
+    TS_UNUSED7,
+    TS_UNUSED8
+};
+
+struct RT_TYPE_SIG {
+    TS_TYPE type;
+    union {
+        RT_TYPE_SIG *base;
+        unsigned char size;
+        struct {
+            unsigned size;
+            void (*ctor)();
+            void (*dtor)(void *, unsigned);
+        } clss;
+    };
+};
+
+struct THROW_CNV {
+    RT_TYPE_SIG *sig;
+    unsigned offset;
+};
+
+struct THROW_RO {
+    unsigned count;
+    THROW_CNV cnvs[1];
 };
 
 struct active_exc {
     active_exc *prev;
-    void *throw_ro;
-    void *sig;
+    THROW_RO *throw_ro;
+    RT_TYPE_SIG *sig;
     void *extra_object;
     EXC_AREA *area;
+    void *rw;
+    void *cmd;
+    unsigned char state;
+    unsigned char zero_thrown : 1;
+    char data[1];
 };
 
 struct EXC_HDR {
@@ -29,6 +73,91 @@ struct thread_ctl {
     char pad[3];
     active_exc *excepts;
 };
+
+extern EXC_AREA __EXC_AREA;
+extern char D_00128804[];
+
+unsigned __wcpp_2_ts_size_(RT_TYPE_SIG *sig);
+void __wcpp_2_fatal_runtime_error_(char *msg, int code);
+
+#define EXCSTATE_CTOR 5
+
+// NONMATCHING: size and the hoisted size + 8 swap edi/ebp, the found block
+// stays in ebx instead of moving to ebp, and the rounding mask is applied
+// as and di,0xfffc in the original
+// FUNCTION: 0xfb940
+active_exc *__wcpp_2_alloc_exc_(void *object, THROW_RO *ro, thread_ctl *thr)
+{
+    RT_TYPE_SIG *sig;
+    unsigned size;
+    FREE_AREA **prev;
+    FREE_AREA *cur;
+    FREE_AREA *next;
+    EXC_HDR *hdr;
+    active_exc *exc;
+
+    if (__EXC_AREA.freed == 0) {
+        __EXC_AREA.first.next = 0;
+        __EXC_AREA.freed = &__EXC_AREA.first;
+        __EXC_AREA.first.size = __EXC_AREA.size - sizeof(FREE_AREA);
+    }
+    sig = ro->cnvs[0].sig;
+    if (sig->type == TS_POINTER)
+        sig = sig->base;
+    size = __wcpp_2_ts_size_(sig) + (sizeof(EXC_HDR) - 1);
+    if (size < sizeof(FREE_AREA))
+        size = sizeof(FREE_AREA);
+    size = (size + 3) & ~3;
+    for (prev = &__EXC_AREA.freed;; prev = &cur->next) {
+        cur = *prev;
+        if (cur == 0)
+            __wcpp_2_fatal_runtime_error_(D_00128804, 1);
+        for (;;) {
+            next = cur->next;
+            if ((FREE_AREA *)((char *)cur + cur->size) != next)
+                break;
+            cur->size += next->size;
+            cur->next = next->next;
+        }
+        if (size == cur->size) {
+            hdr = (EXC_HDR *)cur;
+            *prev = next;
+            break;
+        }
+        if (size + sizeof(FREE_AREA) < cur->size) {
+            cur->size -= size;
+            hdr = (EXC_HDR *)((char *)cur + cur->size);
+            break;
+        }
+    }
+    hdr->size = size;
+    hdr->exc.area = &__EXC_AREA;
+    exc = &hdr->exc;
+    exc->prev = thr->excepts;
+    thr->excepts = exc;
+    exc->sig = ro->cnvs[0].sig;
+    exc->state = EXCSTATE_CTOR;
+    exc->zero_thrown = 0;
+    exc->throw_ro = ro;
+    switch (sig->type) {
+    case TS_SCALAR:
+    case TS_UNUSED8:
+        memcpy(exc->data, object, sig->size);
+        break;
+    case TS_CLASS:
+        ((void (*)(void *, void *))sig->clss.ctor)(exc->data, object);
+        break;
+    case TS_CLASS_ARRAY:
+        ((void (*)(void *, int, void *))sig->clss.ctor)(exc->data, 0, object);
+        break;
+    case TS_POINTER_SCALAR:
+    case TS_UNUSED6:
+    case TS_UNUSED7:
+        memcpy(exc->data, object, sizeof(void *));
+        break;
+    }
+    return exc;
+}
 
 // FUNCTION: 0xfba7b
 void __wcpp_2_free_exc_(thread_ctl *thr)
@@ -60,8 +189,6 @@ active_exc *__wcpp_2_pop_exc_(thread_ctl *thr)
     return exc;
 }
 
-// NONMATCHING: config/functions.txt extends this function over the next one
-// (0xfbac4, a lone ret)
 // FUNCTION: 0xfbab7
 active_exc *__wcpp_2_push_exc_(thread_ctl *thr, active_exc *exc)
 {

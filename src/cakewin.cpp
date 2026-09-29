@@ -15,10 +15,6 @@ struct ScrollLayout {
 
 extern "C" {
 extern TrackSlot D_001581b2[];
-extern u8 D_001553ec[];
-extern u8 D_001553f0;
-extern u16 D_001553e0;
-extern u8 D_001553e1[];
 extern u8 D_00156910;
 }
 
@@ -45,7 +41,7 @@ void process_tracking_windows(void)
     Thing *w;
 
     for (i = 0; i < 4; i++) {
-        if (D_001553ec[i]) {
+        if (othervar.f34[i]) {
             w = &thing[D_001581b2[i].value];
             give_absolute_xy_of_cell_at_column_row(w->x.tile, w->y.tile);
             if (!check_if_point_beyond_scroll_limit(
@@ -54,18 +50,18 @@ void process_tracking_windows(void)
                     (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
                         + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown55c),
                     1)) {
-                window.f0[D_001553ec[i]] = (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16)
+                window.f0[othervar.f34[i]] = (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16)
                     + (info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558);
-                window.fc[D_001553ec[i]] = (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+                window.fc[othervar.f34[i]] = (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
                     + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown55c);
             } else {
                 close_irequesters();
             }
-            D_001553ec[i] = 0;
+            othervar.f34[i] = 0;
         }
     }
-    if (D_001553f0) {
-        w = &thing[D_001581b2[D_001553f0].value];
+    if (othervar.f38) {
+        w = &thing[D_001581b2[othervar.f38].value];
         give_absolute_xy_of_cell_at_column_row(w->x.tile, w->y.tile);
         if (!check_if_point_beyond_scroll_limit(
                 info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558
@@ -80,7 +76,7 @@ void process_tracking_windows(void)
         } else {
             close_irequesters();
         }
-        D_001553f0 = 0;
+        othervar.f38 = 0;
     }
 }
 
@@ -93,7 +89,7 @@ void set_map_cur_and_mcur_x_and_y(void)
     find_cell_at_point(window.unknown2eb, window.zone_x[window.unknown2eb], window.zone_y[window.unknown2eb]);
     mapx = info.unknown5c;
     mapy = info.unknown60;
-    find_cell_at_point(window.unknown2eb, mouse_dx, mouse_dy);
+    find_cell_at_point(window.unknown2eb, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
     curx = info.unknown5c - mapx;
     cury = info.unknown60 - mapy;
     mcurx = info.unknown54;
@@ -110,8 +106,8 @@ void set_map_cur_and_mcur_x_and_y(void)
         y = 0;
     else
         y = info.unknown60;
-    *(u16 *)&D_001553e1[1] = D_001553e0;
-    D_001553e0 = x + (y << 7);
+    othervar.f2a = othervar.f28;
+    othervar.f28 = x + (y << 7);
 }
 
 // FUNCTION: 0x000abb80
@@ -350,10 +346,10 @@ void open_new_window(const u8 a, const u8 b, const u8 c, const s32 x0, const s32
         window.f6c[window.unknown2ec - 1] = 0;
         window.f78[window.unknown2ec - 1] = 0;
         window.f84[window.unknown2ec - 1] = 0;
-        window.zone_x[window.unknown2ec - 1] = mouse_dx - 5;
-        window.zone_w[window.unknown2ec - 1] = mouse_dx + 5;
-        window.zone_y[window.unknown2ec - 1] = mouse_dy - 5;
-        window.zone_h[window.unknown2ec - 1] = mouse_dy + 5;
+        window.zone_x[window.unknown2ec - 1] = lbDisplay.mmouse_x - 5;
+        window.zone_w[window.unknown2ec - 1] = lbDisplay.mmouse_x + 5;
+        window.zone_y[window.unknown2ec - 1] = lbDisplay.mmouse_y - 5;
+        window.zone_h[window.unknown2ec - 1] = lbDisplay.mmouse_y + 5;
         window.f90[window.unknown2ec - 1] = (window.zone_x[window.unknown2ec - 1] + window.zone_w[window.unknown2ec - 1]) / 2;
         window.f9c[window.unknown2ec - 1] = (window.zone_y[window.unknown2ec - 1] + window.zone_h[window.unknown2ec - 1]) / 2;
         window.f0[window.unknown2ec - 1] = window.f0[window.unknown2eb];

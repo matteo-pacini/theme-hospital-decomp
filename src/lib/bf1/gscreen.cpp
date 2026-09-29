@@ -4,21 +4,9 @@ extern u32 _lbScreenInitialised;
 extern u32 screen_initialised;
 
 extern "C" {
-extern s32 D_00188c34;
-#pragma aux D_00188c34 "W?research_names$npnpna"
-extern s32 D_00188c38;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern s32 D_00188c44;
-extern s32 D_00188c48;
 extern s32 D_00188c0c;
 
 int fn_000beda8(void);
-extern u16 D_00188c74;
-extern u16 D_00188c76;
-extern s16 D_00188c78;
-extern u8 D_00188c7a;
-extern u8 D_00188c85;
 extern s32 D_001507d4;
 s32 fn_000d12e0(void);
 /* config/functions.txt has this function under a wrong demo name. */
@@ -67,19 +55,19 @@ int LbScreenSetGraphicsWindow(s32 x, s32 y, s32 w, s32 h)
         y1 = 0;
     if (y2 < 0)
         y2 = 0;
-    if (x1 > D_00188c34)
-        x1 = D_00188c34;
-    if (x2 > D_00188c34)
-        x2 = D_00188c34;
-    if (y1 > D_00188c38)
-        y1 = D_00188c38;
-    if (y2 > D_00188c38)
-        y2 = D_00188c38;
-    D_00188c3c = x1;
-    D_00188c40 = y1;
-    D_00188c44 = x2 - x1;
-    D_00188c48 = y2 - y1;
-    lbDisplay.graphics_window = x + (lbDisplay.unknown4 + D_00188c34 * y);
+    if (x1 > lbDisplay.graphics_screen_width)
+        x1 = lbDisplay.graphics_screen_width;
+    if (x2 > lbDisplay.graphics_screen_width)
+        x2 = lbDisplay.graphics_screen_width;
+    if (y1 > lbDisplay.graphics_screen_height)
+        y1 = lbDisplay.graphics_screen_height;
+    if (y2 > lbDisplay.graphics_screen_height)
+        y2 = lbDisplay.graphics_screen_height;
+    lbDisplay.graphics_window_x = x1;
+    lbDisplay.graphics_window_y = y1;
+    lbDisplay.graphics_window_width = x2 - x1;
+    lbDisplay.graphics_window_height = y2 - y1;
+    lbDisplay.graphics_window = x + (lbDisplay.unknown4 + lbDisplay.graphics_screen_width * y);
     return 1;
 }
 
@@ -105,27 +93,27 @@ int fn_000bea80(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
     if (!fn_000be900(mode))
         return -1;
     LbMouseSuspend();
-    if (!D_00188c76) {
+    if (!lbDisplay.old_video_mode) {
         in.x.eax = 0xf00;
         int386(0x10, &in, &out);
-        D_00188c76 = out.h.al;
+        lbDisplay.old_video_mode = out.h.al;
     }
     if (lbScreenModeInfo[mode].VideoMode >= 256) {
-        D_00188c7a = 1;
+        lbDisplay.vesa_is_set_up = 1;
         LbVesaSetMode(lbScreenModeInfo[mode].VideoMode);
     } else {
-        D_00188c7a = 0;
+        lbDisplay.vesa_is_set_up = 0;
         in.x.eax = lbScreenModeInfo[mode].VideoMode;
         int386(0x10, &in, &out);
     }
     lbDisplay.physical_screen = (u8 *)0xa0000;
     lbDisplay.unknown18 = lbScreenModeInfo[mode].width;
     lbDisplay.unknown1c = lbScreenModeInfo[mode].height;
-    D_00188c34 = width;
-    D_00188c38 = height;
-    D_00188c78 = mode;
-    D_00188c74 = 0;
-    D_00188c85 = 0;
+    lbDisplay.graphics_screen_width = width;
+    lbDisplay.graphics_screen_height = height;
+    lbDisplay.screen_mode = mode;
+    lbDisplay.draw_flags = 0;
+    lbDisplay.draw_colour = 0;
     LbScreenSetGraphicsWindow(0, 0, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height);
     LbTextSetWindow(0, 0, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height);
     if (palette)
@@ -142,10 +130,10 @@ int fn_000bec84(u8 colour, ...)
     u8 *p;
 
     p = lbDisplay.graphics_window;
-    h = D_00188c48;
+    h = lbDisplay.graphics_window_height;
     while (--h != -1) {
-        LbMemorySet(p, colour, D_00188c44);
-        p += D_00188c34;
+        LbMemorySet(p, colour, lbDisplay.graphics_window_width);
+        p += lbDisplay.graphics_screen_width;
     }
     return 1;
 }

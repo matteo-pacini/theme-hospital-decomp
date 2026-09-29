@@ -5,7 +5,6 @@ extern char **environ;
 int strnicmp(const char *s, const char *t, size_t n);
 
 // FUNCTION: 0xce2f0
-// NONMATCHING: vsprintf's mem_putc (0xce351) is counted as part of getenv_
 char *getenv(const char *name)
 {
     char **envp;

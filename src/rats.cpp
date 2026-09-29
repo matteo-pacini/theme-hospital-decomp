@@ -12,14 +12,7 @@ s16 place_staff_in_struct(u16 a, u16 b);
 extern Menu area;
 
 extern "C" {
-extern u8 D_00155da1;
-extern u16 D_00155d9d;
-extern u16 D_00155d9f;
-extern u8 D_00155e2f;
-extern u8 D_00155e2d;
-extern u8 D_00155e07;
 extern Event D_001549d0[];
-extern u8 D_00155e2e;
 void fn_000444e0(Thing *w);
 void fn_00024a34(u16 tile, u16 room, u8 side);
 #pragma aux fn_00024a34 "W?clear_cell_of_ratholes$n(ucus)v"
@@ -217,9 +210,9 @@ void make_a_rat(u8 owner)
     }
     rat->renderer = 0xc;
     rat->owner = owner;
-    if (D_00155da1) {
-        rat->unknown29 = D_00155da1;
-        D_00155da1 = 0;
+    if (othervar.f9e9) {
+        rat->unknown29 = othervar.f9e9;
+        othervar.f9e9 = 0;
     }
     from = old_newrand() % count;
     rat->x.tile = allhosps[owner].fcaf[from].tile % 128;
@@ -373,28 +366,28 @@ void rat_fest_control(void)
     u16 id;
 
     if (gamevar.f174) {
-        D_00155d9d = 0x10;
+        othervar.f9e5 = 0x10;
         if (myhosp->fd27u - gamevar.f13f > 10) {
             gamevar.f13f = myhosp->fd27u;
-            D_00155da1 = 1;
+            othervar.f9e9 = 1;
             gamevar.f175 = old_newrand() % 3 + 1;
             switch (gamevar.f175) {
             case 1:
-                D_00155d9f = 4;
-                D_00155e2f = 10;
+                othervar.f9e7 = 4;
+                othervar.fa77 = 10;
                 break;
             case 2:
-                D_00155d9f = 8;
-                D_00155e2f = 5;
+                othervar.f9e7 = 8;
+                othervar.fa77 = 5;
                 break;
             case 3:
-                D_00155d9f = 0x10;
-                D_00155e2f = 3;
+                othervar.f9e7 = 0x10;
+                othervar.fa77 = 3;
                 break;
             default:
                 gamevar.f175 = 0;
-                D_00155d9f = 2;
-                D_00155e2f = 0;
+                othervar.f9e7 = 2;
+                othervar.fa77 = 0;
                 break;
             }
         }
@@ -405,23 +398,23 @@ void rat_fest_control(void)
         }
         if (myhosp->fcaa <= 4 || actual_game_turn >= 9000) {
             D_001549d0[player].type = 0x38;
-            level_number = D_00155e2d;
+            level_number = othervar.fa75;
             myhosp->f29 = level_number;
             area.unknown2 = 6;
             display_mode = 3;
-            if (D_00155e07) {
+            if (othervar.fa4f) {
                 stop_midi();
             }
         }
-        if (actual_game_turn % (200 - D_00155e2d * 2) == 0) {
+        if (actual_game_turn % (200 - othervar.fa75 * 2) == 0) {
             id = place_staff_in_struct(2, 0);
             if (id) {
                 fn_00029c4c(0x1a32, id, 0, player);
             }
         }
     } else {
-        D_00155d9d = 0x10;
-        D_00155d9f = 4;
+        othervar.f9e5 = 0x10;
+        othervar.f9e7 = 4;
     }
 }
 
@@ -463,8 +456,8 @@ void rat_fest_builder(u8 level)
     }
     gamevar.f174 = level;
     gamevar.f175 = 0;
-    D_00155d9d = 0x10;
-    D_00155d9f = 4;
+    othervar.f9e5 = 0x10;
+    othervar.f9e7 = 4;
     vary_speed(0x1e);
 }
 
@@ -474,10 +467,10 @@ void try_bonus_level(void)
     if (resvars.f1 == SCREEN_MODE_13) {
         if (debug.f219) {
             debug.f219 = 0;
-            D_00155e2e = (old_newrand() & 1) + 13;
+            othervar.fa76 = (old_newrand() & 1) + 13;
         } else if (myhosp->fd29 > 0 && myhosp->fd27u > awards_trophies.unknown0 / 2) {
             if ((myhosp->fd27u << 8) / myhosp->fd29 > (awards_trophies.unknowne << 8) / 100) {
-                D_00155e2e = (old_newrand() & 1) + 13;
+                othervar.fa76 = (old_newrand() & 1) + 13;
             }
         }
     }

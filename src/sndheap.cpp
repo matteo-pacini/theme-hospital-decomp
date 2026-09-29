@@ -48,9 +48,6 @@ extern SampleTable *sample_table;
 s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate);
 
 extern "C" {
-extern u8 D_00155db1;
-extern u8 D_00155e1d;
-extern TbCacheUsedBlock *D_00155dbe;
 int LbFilePosition(int handle);
 char IsSamplePlaying(s32 a, s32 b, void *handle);
 SampleInfo *GetFirstSampleInfoStructure(void);
@@ -132,10 +129,10 @@ void process_sound_heap(void)
     if (!myplayer.unknown0[0xf] || !statvar.f6c[0x78])
         return;
     cache.UnlockAll();
-    if (D_00155db1)
-        fn_000a2ed0(D_00155dbe);
-    if (D_00155e1d)
-        fn_000a2ed0(D_00155dbe);
+    if (othervar.f9f9)
+        fn_000a2ed0(othervar.fa06);
+    if (othervar.fa65)
+        fn_000a2ed0(othervar.fa06);
     end = GetLastSampleInfoStructure();
     for (s = GetFirstSampleInfoStructure(); s <= end; s++) {
         if (s->SampleHandle == 0 || !(s->flags & 1))

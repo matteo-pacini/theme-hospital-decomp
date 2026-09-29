@@ -65,7 +65,7 @@ int fn_000c2180(TbTime *curr_time)
 }
 
 // FUNCTION: 0x000c21c0
-u32 LbTimerClock(void)
+s32 LbTimerClock(void)
 {
     return clock() * 1000 / 100;
 }

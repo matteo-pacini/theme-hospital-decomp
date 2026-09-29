@@ -120,8 +120,8 @@ U8 __pascal SmackSoundUseMSS(void *digdriver);
 #pragma aux (__pascal) SmackSoundUseMSS "fn_000e7910_";
 
 // FUNCTION: 0xe7910
-// NONMATCHING: the target names the timer and close handlers
-// fn_000e7a20_+0x10 and fn_000e7a20_+0x20
+// NONMATCHING: the handler addresses are loaded into five registers (10.6
+// also uses eax), so the stores are scheduled differently
 U8 __pascal SmackSoundUseMSS(void *digdriver)
 {
     if (SmackTimerReadAddr == NULL) {
@@ -295,7 +295,6 @@ U32 __pascal MSSLowSoundPlayed(SmackSnd *snd)
 #pragma aux (__pascal) MSSLowSoundCheck "fn_000e7db0_";
 
 // FUNCTION: 0xe7db0
-// NONMATCHING: register allocation and instruction scheduling differ
 void __pascal MSSLowSoundCheck(void)
 {
     SmackSnd *snd;

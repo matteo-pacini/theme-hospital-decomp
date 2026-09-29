@@ -19,20 +19,7 @@ struct PanelIcon {
 };
 
 extern "C" {
-extern s32 D_00188c38;
-extern u8 D_00155e3c;
 extern Event D_001549d0[];
-extern volatile u16 D_00188c74;
-extern u8 D_00188c7b;
-extern u8 D_00188c7c;
-extern u8 D_00188c81;
-extern u8 D_00188c83;
-extern u8 D_00188c85;
-extern u8 D_00188c7e;
-extern volatile s16 D_00188c6c, D_00188c70;
-extern u16 D_00155da9;
-extern u32 D_00155dab;
-extern u32 D_00155c5a;
 extern char **D_001602d8;
 extern char **D_001602a0;
 extern char D_00121afc[];
@@ -60,7 +47,7 @@ void display_research(void)
         research.unknown2 = 1;
         research.unknown0 = 0;
         play_sound(0xc, 0x75, -1, -1);
-        D_00155e3c = 0;
+        othervar.fa84 = 0;
         panel = panel_icons_over;
         ((PanelIcon *)panel)[9].sprite = 0x15;
         break;
@@ -77,14 +64,14 @@ void display_research(void)
     }
     reqspr_draw(resvars.f40[85].x, resvars.f40[85].y, &screen_sprites_tab_start[frame_no + 12]);
     reqspr_draw(resvars.f40[86].x, resvars.f40[86].y, &screen_sprites_tab_start[frame_no + 4]);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c85 = color.unknown8;
-    D_00188c74 |= 0x40;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_colour = color.unknown8;
+    *(volatile u16 *)&lbDisplay.draw_flags |= 0x40;
     set_font_from_cache(1);
     process_res_panel();
     draw_research_text();
-    D_00188c7b = D_00188c7c = D_00188c81 = D_00188c83 = 0;
-    D_00188c74 = 0;
+    lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = lbDisplay.rright_button = 0;
+    lbDisplay.draw_flags = 0;
     if (exit_quick_requester())
         research.unknown2 = 2;
 }
@@ -100,8 +87,8 @@ void draw_research_text(void)
     s16 len;
     char buf[100];
 
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     set_font_from_cache(9);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     for (i = 0; i < 5; i++) {
@@ -165,9 +152,9 @@ void process_res_panel(void)
 {
     u8 i;
 
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i + 0x19].width != 0 && resvars.f48[i + 0x19].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x19].x, resvars.f48[i + 0x19].y,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0x19].x, resvars.f48[i + 0x19].y,
                              resvars.f48[i + 0x19].width, resvars.f48[i + 0x19].height)) {
                 if (i == 0)
                     resvars.f48[i + 0x19].callback(i);
@@ -175,14 +162,14 @@ void process_res_panel(void)
                             &screen_sprites_tab_start[resvars.f48[i + 0x19].sprite]);
             }
         }
-        D_00155da9 = 0x100;
-        D_00155dab = D_00155c5a;
+        othervar.f9f1 = 0x100;
+        othervar.f9f3 = othervar.f8a2;
         research.unknown0 = 0;
-        D_00188c81 = 0;
+        lbDisplay.rleft_button = 0;
     }
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; resvars.f48[i + 0x19].width != 0 && resvars.f48[i + 0x19].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0x19].x, resvars.f48[i + 0x19].y,
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 0x19].x, resvars.f48[i + 0x19].y,
                              resvars.f48[i + 0x19].width, resvars.f48[i + 0x19].height)) {
                 if (i != 0)
                     resvars.f48[i + 0x19].callback(i);
@@ -192,8 +179,8 @@ void process_res_panel(void)
             }
         }
     } else {
-        D_00155da9 = 0x100;
-        D_00155dab = D_00155c5a;
+        othervar.f9f1 = 0x100;
+        othervar.f9f3 = othervar.f8a2;
     }
 }
 
@@ -216,15 +203,15 @@ void process_res_button(u8 n)
         if (myhosp->research_alloc[n - 1] >= 0) {
             i = myhosp->research_alloc[n - 1];
             if (i > 0) {
-                if (D_00155c5a - D_00155dab > 0xfa || D_00155da9 == 0x100) {
+                if (othervar.f8a2 - othervar.f9f3 > 0xfa || othervar.f9f1 == 0x100) {
                     D_001549d0[player].type = 0x50;
                     D_001549d0[player].value = n - 1;
                     D_001549d0[player].arg = myhosp->research_alloc[n - 1];
-                    if (D_00155da9 < 0xa00)
-                        D_00155da9 += 0x10;
+                    if (othervar.f9f1 < 0xa00)
+                        othervar.f9f1 += 0x10;
                     else
-                        D_00155da9 = 0xa00;
-                    D_001549d0[player].arg -= D_00155da9 >> 8;
+                        othervar.f9f1 = 0xa00;
+                    D_001549d0[player].arg -= othervar.f9f1 >> 8;
                     if ((s16)D_001549d0[player].arg < 0)
                         D_001549d0[player].arg = 0;
                     play_sound(10, 0x43, -1, -1);
@@ -250,15 +237,15 @@ void process_res_button(u8 n)
             }
             i = myhosp->research_alloc[n - 6];
             if (i + total < 100) {
-                if (D_00155c5a - D_00155dab > 0xfa || D_00155da9 == 0x100) {
+                if (othervar.f8a2 - othervar.f9f3 > 0xfa || othervar.f9f1 == 0x100) {
                     D_001549d0[player].type = 0x50;
                     D_001549d0[player].value = n - 6;
                     D_001549d0[player].arg = myhosp->research_alloc[n - 6];
-                    if (D_00155da9 < 0xa00)
-                        D_00155da9 += 0x10;
+                    if (othervar.f9f1 < 0xa00)
+                        othervar.f9f1 += 0x10;
                     else
-                        D_00155da9 = 0xa00;
-                    D_001549d0[player].arg += D_00155da9 >> 8;
+                        othervar.f9f1 = 0xa00;
+                    D_001549d0[player].arg += othervar.f9f1 >> 8;
                     if (D_001549d0[player].arg + total > 100)
                         D_001549d0[player].arg = 100 - total;
                     play_sound(10, 0x43, -1, -1);

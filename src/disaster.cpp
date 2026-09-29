@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_001553c8;
 extern s32 lbSinTable[];
 s32 fn_00038d04(Thing *w, u8 owner);
 #pragma aux fn_00038d04 "W?remove_object$n(pn$Thing$$)s"
@@ -172,7 +171,7 @@ void blast_effect(u16 tile, RoomInfo *room)
             }
         }
     }
-    D_001553c8 = 1;
+    othervar.f10 = 1;
 }
 
 // FUNCTION: 0x000757a0

@@ -17,9 +17,9 @@
     push ebx
     {load} mov esi, eax
     {load} mov edi, edx
-    mov eax, dword ptr ["W?research_names$npnpna"]
+    mov eax, dword ptr ["_lbDisplay"+0x20]
     mov dword ptr [ebp - 0x10], eax
-    mov eax, dword ptr [_D_00188c44]
+    mov eax, dword ptr ["_lbDisplay"+0x30]
     sub dword ptr [ebp - 0x10], eax
     shr eax, 2
 .L000c9b63:
@@ -50,17 +50,17 @@
     .byte 0x89; .byte 0x55; .byte 0xf8
     .byte 0x89; .byte 0x5d; .byte 0xf4
     .byte 0x89; .byte 0x4d; .byte 0xf0
-    .byte 0x8b; .byte 0x35; .long "W?research_names$npnpna"
+    .byte 0x8b; .byte 0x35; .long "_lbDisplay"+0x20
     .byte 0x0f; .byte 0xaf; .byte 0x75; .byte 0xf0
     .byte 0x03; .byte 0x75; .byte 0xf4
     .byte 0x03; .byte 0x75; .byte 0xfc
-    .byte 0x8b; .byte 0x3d; .long "W?research_names$npnpna"
+    .byte 0x8b; .byte 0x3d; .long "_lbDisplay"+0x20
     .byte 0x0f; .byte 0xaf; .byte 0x7d; .byte 0x0c
     .byte 0x03; .byte 0x7d; .byte 0x08
     .byte 0x03; .byte 0x7d; .byte 0xf8
     .byte 0x8b; .byte 0x55; .byte 0x10
     .byte 0xc1; .byte 0xea; .byte 0x02
-    .byte 0xa1; .long "W?research_names$npnpna"
+    .byte 0xa1; .long "_lbDisplay"+0x20
     .byte 0x2b; .byte 0x45; .byte 0x10
     .byte 0x8b; .byte 0x5d; .byte 0x14
 .L000c9bc0:

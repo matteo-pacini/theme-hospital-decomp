@@ -15,7 +15,7 @@ tiny_ret_t _TinyGetDeviceInfo(int handle);
 
 // FUNCTION: 0xed25b
 // NONMATCHING: config/functions.txt extends isatty_ over stack-check code
-// (0xed282..0xed29d); info is tested as a word instead of widened first
+// (0xed282..0xed29d); the code itself matches
 int isatty(int handle)
 {
     tiny_ret_t rc;
@@ -24,5 +24,5 @@ int isatty(int handle)
     rc = _TinyGetDeviceInfo(handle);
     info = (unsigned short)rc & 0x00ff;
     info &= TIO_CTL_DEVICE;
-    return info != 0;
+    return (int)info != 0;
 }

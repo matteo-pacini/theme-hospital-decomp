@@ -8,22 +8,7 @@ int tolower(int c);
 /* Indexed by radix: the largest value that can take another digit. */
 extern const unsigned long D_00151a78[];
 
-// FUNCTION: 0xef02e
-// NONMATCHING: config/functions.txt extends radix_value_ over the
-// __EFG_printf setup (0xef08c) and the 8087 initialisation (0xef0a8)
-int radix_value(char c)
-{
-    if ((int)c >= '0' && (int)c <= '9')
-        return c - '0';
-    c = tolower(c);
-    if ((int)c >= 'a' && (int)c <= 'i')
-        return c - 'a' + 10;
-    if ((int)c >= 'j' && (int)c <= 'r')
-        return c - 'j' + 19;
-    if ((int)c >= 's' && (int)c <= 'z')
-        return c - 's' + 28;
-    return 37;
-}
+int radix_value(char c);
 
 // FUNCTION: 0xeeeb9
 unsigned long _stol(const char *nptr, char **endptr, int base, int who)
@@ -102,14 +87,28 @@ unsigned long _stol(const char *nptr, char **endptr, int base, int who)
 }
 
 // FUNCTION: 0xef01c
-// NONMATCHING: config/functions.txt extends strtoul_ over strtol (0xef026),
-// which jumps back into it
 unsigned long strtoul(const char *nptr, char **endptr, int base)
 {
     return _stol(nptr, endptr, base, 0);
 }
 
+// FUNCTION: 0xef026
 long strtol(const char *nptr, char **endptr, int base)
 {
     return _stol(nptr, endptr, base, 1);
+}
+
+// FUNCTION: 0xef02e
+int radix_value(char c)
+{
+    if ((int)c >= '0' && (int)c <= '9')
+        return c - '0';
+    c = tolower(c);
+    if ((int)c >= 'a' && (int)c <= 'i')
+        return c - 'a' + 10;
+    if ((int)c >= 'j' && (int)c <= 'r')
+        return c - 'j' + 19;
+    if ((int)c >= 's' && (int)c <= 'z')
+        return c - 's' + 28;
+    return 37;
 }

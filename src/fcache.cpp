@@ -19,7 +19,6 @@ extern s8 D_00175239;
 extern u8 D_00161270[];
 extern u8 D_0016126c;
 extern u8 D_0016126d;
-extern u32 D_00155c5a;
 extern char D_00121b3c[];
 extern char D_00121b8b[];
 extern char D_00121b92[];
@@ -118,7 +117,7 @@ void insert_block_into_used_list(s8 i)
     s8 p;
 
     p = used_head;
-    font_memory[i].used = D_00155c5a;
+    font_memory[i].used = othervar.f8a2;
     if (p == -1) {
         font_memory[i].next = -1;
         used_head = i;
@@ -299,7 +298,7 @@ void set_font_from_cache(const s32 font)
     D_0016126d = resvars.f0;
     if (cfonts[font]) {
         lbFontPtr = (TbSprite *)&D_00161270[font_memory[cfonts[font] - 1].offset];
-        font_memory[font].used = D_00155c5a;
+        font_memory[font].used = othervar.f8a2;
         return;
     }
     names = resvars.fa_charpp;

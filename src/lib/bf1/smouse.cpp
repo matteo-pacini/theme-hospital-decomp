@@ -21,21 +21,6 @@ extern s32 D_00178bf8;
 extern s32 D_00178c00;
 extern s32 D_00178c04;
 extern s32 D_00178c08;
-extern s32 D_00188c34;
-#pragma aux D_00188c34 "W?research_names$npnpna"
-extern s32 D_00188c38;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern s32 D_00188c44;
-extern s32 D_00188c48;
-extern s32 D_00188c4c;
-extern s32 D_00188c50;
-extern s32 D_00188c54;
-extern s32 D_00188c58;
-extern s32 D_00188c5c;
-extern s32 D_00188c60;
-extern u16 D_00188c74;
-extern u8 D_00188c7a;
 
 int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height);
 int LbMouseSetPointerHotspot(s32 x, s32 y);
@@ -45,8 +30,6 @@ u16 FP_SEG(const volatile void __far *p);
 #pragma aux FP_SEG = parm caller [eax dx] value [dx];
 }
 
-extern volatile s32 mouse_dx;
-extern volatile s32 mouse_dy;
 extern u32 mouse_pos_change_saved;
 
 u32 adjust_point(long *x, long *y);
@@ -57,7 +40,6 @@ long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y);
 
 extern "C" {
 
-// NONMATCHING: register choice (mouse_sprite test, D_00177be0 reload)
 // FUNCTION: 0x000bcfc0
 int LbMousePlace(void)
 {
@@ -71,13 +53,13 @@ int LbMousePlace(void)
 
     D_00178bf4 = 1;
     if (lbDisplay.mouse_sprite) {
-        D_00177bd4 = mouse_dx + D_00177bec;
-        D_00177bd8 = mouse_dy + D_00177bf0;
+        D_00177bd4 = lbDisplay.mmouse_x + D_00177bec;
+        D_00177bd8 = lbDisplay.mmouse_y + D_00177bf0;
         D_00176bc4 = mouse_setup_range();
         if (D_00176bc4 == 1) {
             save = D_00176bd4;
             sprite = D_00177bf4 + D_00177bdc + D_00177be0 * lbDisplay.mouse_sprite->width;
-            D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * D_00188c34;
+            D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * lbDisplay.graphics_screen_width;
             screen = lbDisplay.unknown4 + D_00176bd0;
             for (y = 0; y < D_00176bcc; y++) {
                 scr = screen;
@@ -87,7 +69,7 @@ int LbMousePlace(void)
                     if (*mask != 0xfe)
                         *scr = *mask;
                 }
-                screen += D_00188c34;
+                screen += lbDisplay.graphics_screen_width;
                 sprite += lbDisplay.mouse_sprite->width;
             }
         }
@@ -111,13 +93,13 @@ int LbMouseRemove(void)
             scr = screen;
             for (x = 0; x < D_00176bc8; x++)
                 *scr++ = *save++;
-            screen += D_00188c34;
+            screen += lbDisplay.graphics_screen_width;
         }
     }
     if (D_00178c08) {
-        mouse_dx += D_00178c00;
-        mouse_dy += D_00178c04;
-        adjust_point((long *)&mouse_dx, (long *)&mouse_dy);
+        lbDisplay.mmouse_x += D_00178c00;
+        lbDisplay.mmouse_y += D_00178c04;
+        adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
         if (!mouse_pos_change_saved) {
             screen_remove(0);
             screen_place();
@@ -171,19 +153,19 @@ int LbMouseChangeSprite(TbSprite *sprite)
     if (sprite) {
         screen = lbDisplay.unknown4;
         lbDisplay.unknown4 = D_00177bf4;
-        win_x = D_00188c3c;
-        win_y = D_00188c40;
-        win_width = D_00188c44;
-        win_height = D_00188c48;
-        screen_width = D_00188c34;
-        flags = D_00188c74;
-        D_00188c34 = sprite->width;
-        D_00188c74 = 0;
+        win_x = lbDisplay.graphics_window_x;
+        win_y = lbDisplay.graphics_window_y;
+        win_width = lbDisplay.graphics_window_width;
+        win_height = lbDisplay.graphics_window_height;
+        screen_width = lbDisplay.graphics_screen_width;
+        flags = lbDisplay.draw_flags;
+        lbDisplay.graphics_screen_width = sprite->width;
+        lbDisplay.draw_flags = 0;
         LbScreenSetGraphicsWindow(0, 0, sprite->width, sprite->height);
         LbSpriteDraw(0, 0, sprite);
         lbDisplay.unknown4 = screen;
-        D_00188c34 = screen_width;
-        D_00188c74 = flags;
+        lbDisplay.graphics_screen_width = screen_width;
+        lbDisplay.draw_flags = flags;
         LbScreenSetGraphicsWindow(win_x, win_y, win_width, win_height);
     }
     if (!mouse_pos_change_saved)
@@ -251,7 +233,7 @@ int LbMouseSetup(TbSprite *sprite)
     lbDisplay.mouse_sprite = 0;
     D_00178bf4 = 0;
     memset(&D_00176bc4, 0, 0x1020);
-    if (LbMouseSetWindow(0, 0, D_00188c34, D_00188c38) != 1) {
+    if (LbMouseSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height) != 1) {
         D_00176bc0 = 0;
         return -1;
     }
@@ -259,7 +241,7 @@ int LbMouseSetup(TbSprite *sprite)
         D_00176bc0 = 0;
         return -1;
     }
-    if (LbMouseSetPosition(D_00188c34 >> 1, D_00188c38 >> 1) != 1) {
+    if (LbMouseSetPosition(lbDisplay.graphics_screen_width >> 1, lbDisplay.graphics_screen_height >> 1) != 1) {
         D_00176bc0 = 0;
         return -1;
     }
@@ -319,12 +301,12 @@ int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height)
 {
     if (!D_00176bc0)
         return -1;
-    D_00188c4c = x;
-    D_00188c50 = y;
-    D_00188c54 = width;
-    D_00188c58 = height;
-    adjust_point((long *)&mouse_dx, (long *)&mouse_dy);
-    adjust_point(&D_00188c5c, &D_00188c60);
+    lbDisplay.mouse_window_x = x;
+    lbDisplay.mouse_window_y = y;
+    lbDisplay.mouse_window_width = width;
+    lbDisplay.mouse_window_height = height;
+    adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
+    adjust_point((long *)&lbDisplay.mouse_x, (long *)&lbDisplay.mouse_y);
     return 1;
 }
 
@@ -338,8 +320,8 @@ int LbMouseSetPosition(s32 x, s32 y)
     if (!mouse_pos_change_saved)
         screen_remove(1);
     adjust_point(&x, &y);
-    D_00188c5c = mouse_dx = x;
-    D_00188c60 = mouse_dy = y;
+    lbDisplay.mouse_x = lbDisplay.mmouse_x = x;
+    lbDisplay.mouse_y = lbDisplay.mmouse_y = y;
     if (!mouse_pos_change_saved)
         screen_place();
     D_00178bf4 = 0;
@@ -357,19 +339,19 @@ u32 adjust_point(long *x, long *y)
 
     changed = 0;
     vx = *x;
-    if (vx < D_00188c4c) {
-        *x = D_00188c4c;
+    if (vx < lbDisplay.mouse_window_x) {
+        *x = lbDisplay.mouse_window_x;
         changed = 1;
-    } else if (D_00188c4c + D_00188c54 <= vx) {
-        *x = D_00188c4c + D_00188c54 - 1;
+    } else if (lbDisplay.mouse_window_x + lbDisplay.mouse_window_width <= vx) {
+        *x = lbDisplay.mouse_window_x + lbDisplay.mouse_window_width - 1;
         changed = 1;
     }
     vy = *y;
-    if (vy < D_00188c50) {
-        *y = D_00188c50;
+    if (vy < lbDisplay.mouse_window_y) {
+        *y = lbDisplay.mouse_window_y;
         changed = 1;
-    } else if (D_00188c50 + D_00188c58 <= vy) {
-        *y = D_00188c50 + D_00188c58 - 1;
+    } else if (lbDisplay.mouse_window_y + lbDisplay.mouse_window_height <= vy) {
+        *y = lbDisplay.mouse_window_y + lbDisplay.mouse_window_height - 1;
         changed = 1;
     }
     return changed;
@@ -382,28 +364,27 @@ u32 mouse_setup_range(void)
     D_00176bcc = lbDisplay.mouse_sprite->height;
     D_00177bdc = 0;
     D_00177be0 = 0;
-    if (!(-D_00176bc8 < D_00177bd4 && D_00177bd4 < D_00188c34))
+    if (!(-D_00176bc8 < D_00177bd4 && D_00177bd4 < lbDisplay.graphics_screen_width))
         return 0;
-    if (!(-D_00176bcc < D_00177bd8 && D_00177bd8 < D_00188c38))
+    if (!(-D_00176bcc < D_00177bd8 && D_00177bd8 < lbDisplay.graphics_screen_height))
         return 0;
     if (D_00177bd4 < 0) {
         D_00177bdc = D_00177bd4;
         D_00177bdc = -D_00177bdc;
         D_00176bc8 -= D_00177bdc;
     }
-    if (D_00177bd4 + D_00176bc8 > D_00188c34)
-        D_00176bc8 = D_00188c34 - D_00177bd4;
+    if (D_00177bd4 + D_00176bc8 > lbDisplay.graphics_screen_width)
+        D_00176bc8 = lbDisplay.graphics_screen_width - D_00177bd4;
     if (D_00177bd8 < 0) {
         D_00177be0 = D_00177bd8;
         D_00177be0 = -D_00177be0;
         D_00176bcc -= D_00177be0;
     }
-    if (D_00177bd8 + D_00176bcc > D_00188c38)
-        D_00176bcc = D_00188c38 - D_00177bd8;
+    if (D_00177bd8 + D_00176bcc > lbDisplay.graphics_screen_height)
+        D_00176bcc = lbDisplay.graphics_screen_height - D_00177bd8;
     return 1;
 }
 
-// NONMATCHING: register choice
 // FUNCTION: 0x000bde14
 long screen_place(void)
 {
@@ -423,14 +404,14 @@ long screen_place(void)
     if (!D_00176bc0)
         return -1;
     if (lbDisplay.mouse_sprite) {
-        D_00177bd4 = mouse_dx + D_00177bec;
-        D_00177bd8 = mouse_dy + D_00177bf0;
+        D_00177bd4 = lbDisplay.mmouse_x + D_00177bec;
+        D_00177bd8 = lbDisplay.mmouse_y + D_00177bf0;
         D_00176bc4 = mouse_setup_range();
         if (D_00176bc4 == 1) {
             save = D_00176bd4;
             sprite = D_00177bf4 + D_00177bdc + lbDisplay.mouse_sprite->width * D_00177be0;
             D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * lbDisplay.unknown18;
-            if (!D_00188c7a) {
+            if (!lbDisplay.vesa_is_set_up) {
                 screen = lbDisplay.physical_screen + D_00176bd0;
                 for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18, sprite += lbDisplay.mouse_sprite->width) {
                     scr = screen;
@@ -459,7 +440,7 @@ long screen_place(void)
                             }
                             n -= k;
                         }
-                        page++;
+                        ++page;
                         LbVesaSetPage(page);
                         scr -= 0x10000;
                         screen -= 0x10000;
@@ -476,7 +457,8 @@ long screen_place(void)
     return 1;
 }
 
-// NONMATCHING: register choice
+// NONMATCHING: register choice: the target tests D_00176bc4 in memory; here it is loaded into edi (saved and
+// restored in the prologue/epilogue)
 // FUNCTION: 0x000be0cc
 long screen_remove(u32 force)
 {
@@ -493,10 +475,10 @@ long screen_remove(u32 force)
 
     if (!D_00176bc0)
         return -1;
-    if (mouse_dx != D_00177bd4 || mouse_dy != D_00177bd8 || force) {
+    if (lbDisplay.mmouse_x != D_00177bd4 || lbDisplay.mmouse_y != D_00177bd8 || force) {
         if (D_00176bc4) {
             save = D_00176bd4;
-            if (!D_00188c7a) {
+            if (!lbDisplay.vesa_is_set_up) {
                 screen = lbDisplay.physical_screen + D_00176bd0;
                 for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18) {
                     scr = screen;
@@ -517,7 +499,7 @@ long screen_remove(u32 force)
                                 *scr++ = *save++;
                             n -= k;
                         }
-                        page++;
+                        ++page;
                         LbVesaSetPage(page);
                         scr -= 0x10000;
                         screen -= 0x10000;

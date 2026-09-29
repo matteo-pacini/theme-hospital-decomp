@@ -1,6 +1,7 @@
 #include "clib.h"
 
-const char D_000ec5fc[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+// FUNCTION: 0xec5fc
+const char __based(__segname("_CODE")) Alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 unsigned long __uldiv(unsigned long value, unsigned long __near *radix);
 #pragma aux __uldiv = \
@@ -12,9 +13,6 @@ unsigned long __uldiv(unsigned long value, unsigned long __near *radix);
     modify exact [eax edx];
 
 // FUNCTION: 0xec621
-// NONMATCHING: the digit table sits in the code segment (read with a cs:
-// override), which -zm cannot reproduce; the target names it
-// _no_support_loaded_+0x2d
 char *ultoa(unsigned long value, char *buffer, int radix)
 {
     char *p = buffer;
@@ -27,7 +25,7 @@ char *ultoa(unsigned long value, char *buffer, int radix)
     do {
         rem = radix;
         value = __uldiv(value, (unsigned long __near *)&rem);
-        *q = D_000ec5fc[rem];
+        *q = Alphabet[rem];
         ++q;
     } while (value != 0);
     while ((*p++ = *--q) != '\0')

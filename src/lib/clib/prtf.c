@@ -37,6 +37,8 @@ extern FAR_STRING (*__EFG_printf)(char *buffer, va_list *pargs, SPECS *specs);
 char *ltoa(long value, char *buffer, int radix);
 char *ultoa(unsigned long value, char *buffer, int radix);
 char *itoa(int value, char *buffer, int radix);
+/* config/functions.txt gives itoa the name of the function that follows it. */
+#pragma aux itoa "_no_support_loaded_"
 int toupper(int c);
 
 const char *getprintspecs(const char *ctl, va_list *pargs, SPECS *specs);
@@ -252,13 +254,13 @@ int far_strlen(FAR_STRING s, int precision)
 }
 
 // FUNCTION: 0xcfa5e
-// NONMATCHING: the original shares far_strlen's epilogue, impossible with -zm
 int far_other_strlen(FAR_STRING s, int precision)
 {
     int len;
-    unsigned short __far *ptr = (unsigned short __far *)s;
+    unsigned short __far *ptr;
 
     len = 0;
+    ptr = (unsigned short __far *)s;
     while (*ptr++ != 0) {
         if (len == precision)
             break;
@@ -268,7 +270,6 @@ int far_other_strlen(FAR_STRING s, int precision)
 }
 
 // FUNCTION: 0xcfa81
-// NONMATCHING: config/functions.txt names itoa's address _no_support_loaded_
 void fmt4hex(unsigned value, char *buf, int maxlen)
 {
     int i;
@@ -303,7 +304,6 @@ typedef union {
 } T32;
 
 // FUNCTION: 0xcfadf
-// NONMATCHING: config/functions.txt names itoa's address _no_support_loaded_
 void FixedPoint_Format(char *buf, long value, SPECS *specs)
 {
     T32 at;

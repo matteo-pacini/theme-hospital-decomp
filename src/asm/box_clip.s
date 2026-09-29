@@ -20,7 +20,7 @@
     mov dword ptr [ebp - 0xc], ebx
     mov dword ptr [ebp - 0x10], ecx
     mov edi, dword ptr [ebp - 8]
-    cmp edi, dword ptr [_D_00188c48]
+    cmp edi, dword ptr ["_lbDisplay"+0x34]
     jge .L000e783e
     cmp edi, 0
     jge .L000e775d
@@ -29,17 +29,17 @@
 .L000e775d:
     {load} mov edx, edi
     add edx, dword ptr [ebp - 0x10]
-    cmp edx, dword ptr [_D_00188c48]
+    cmp edx, dword ptr ["_lbDisplay"+0x34]
     jle .L000e7773
-    sub edx, dword ptr [_D_00188c48]
+    sub edx, dword ptr ["_lbDisplay"+0x34]
     sub dword ptr [ebp - 0x10], edx
 .L000e7773:
     cmp dword ptr [ebp - 0x10], 0
     jle .L000e783e
-    add edi, dword ptr [_D_00188c40]
-    imul edi, dword ptr ["W?research_names$npnpna"]
+    add edi, dword ptr ["_lbDisplay"+0x2c]
+    imul edi, dword ptr ["_lbDisplay"+0x20]
     mov eax, dword ptr [ebp - 4]
-    cmp eax, dword ptr [_D_00188c44]
+    cmp eax, dword ptr ["_lbDisplay"+0x30]
     jge .L000e783e
     cmp eax, 0
     jge .L000e77a3
@@ -48,20 +48,20 @@
 .L000e77a3:
     {load} mov edx, eax
     add edx, dword ptr [ebp - 0xc]
-    cmp edx, dword ptr [_D_00188c44]
+    cmp edx, dword ptr ["_lbDisplay"+0x30]
     jle .L000e77b9
-    sub edx, dword ptr [_D_00188c44]
+    sub edx, dword ptr ["_lbDisplay"+0x30]
     sub dword ptr [ebp - 0xc], edx
 .L000e77b9:
     cmp dword ptr [ebp - 0xc], 0
     jle .L000e783e
     {load} add edi, eax
-    add edi, dword ptr [_D_00188c3c]
+    add edi, dword ptr ["_lbDisplay"+0x28]
     add edi, dword ptr ["_lbDisplay"+0x4]
     mov edx, dword ptr [ebp - 0x10]
-    mov ebx, dword ptr ["W?research_names$npnpna"]
+    mov ebx, dword ptr ["_lbDisplay"+0x20]
     sub ebx, dword ptr [ebp - 0xc]
-    test word ptr [_D_00188c74], 4
+    test word ptr ["_lbDisplay"+0x60], 4
     je .L000e7804
     mov esi, dword ptr ["_lbDisplay"+0x8]
     movzx eax, byte ptr [ebp + 8]
@@ -79,7 +79,7 @@
     jne .L000e77f1
     jmp .L000e783e
 .L000e7804:
-    test word ptr [_D_00188c74], 8
+    test word ptr ["_lbDisplay"+0x60], 8
     je .L000e782f
     mov esi, dword ptr ["_lbDisplay"+0x8]
     movzx eax, byte ptr [ebp + 8]
@@ -138,14 +138,14 @@
     mov dword ptr [ebp - 0xc], ebx
     mov dword ptr [ebp - 0x10], ecx
     mov edi, dword ptr [ebp - 8]
-    imul edi, dword ptr ["W?research_names$npnpna"]
+    imul edi, dword ptr ["_lbDisplay"+0x20]
     add edi, dword ptr [ebp - 4]
     add edi, dword ptr ["_lbDisplay"+0x10]
     mov edx, dword ptr [ebp - 0x10]
-    mov eax, dword ptr ["W?research_names$npnpna"]
+    mov eax, dword ptr ["_lbDisplay"+0x20]
     sub eax, dword ptr [ebp - 0xc]
     mov dword ptr [ebp - 0x14], eax
-    test word ptr [_D_00188c74], 4
+    test word ptr ["_lbDisplay"+0x60], 4
     je .L000e78ad
     mov esi, dword ptr ["_lbDisplay"+0x8]
     movzx ebx, byte ptr [ebp + 8]
@@ -161,7 +161,7 @@
     jne .L000e7899
     jmp .L000e78e6
 .L000e78ad:
-    test word ptr [_D_00188c74], 8
+    test word ptr ["_lbDisplay"+0x60], 8
     je .L000e78d6
     mov esi, dword ptr ["_lbDisplay"+0x8]
     movzx ebx, byte ptr [ebp + 8]

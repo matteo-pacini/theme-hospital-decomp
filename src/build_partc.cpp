@@ -16,20 +16,8 @@ struct RoomNavControl {
 
 extern RoomNavControl room_nav[];
 
-struct Bounds {
-    s8 minX;
-    s8 minY;
-    s8 maxX;
-    s8 maxY;
-};
-
 extern "C" {
 
-extern Bounds D_00155f4f[][4];
-extern u8 D_001553c7;
-extern u8 D_001553c8;
-extern u8 D_00155d7d;
-extern u8 D_00155e03;
 
 u8 fn_00029a54(RoomInfo *room);
 
@@ -291,7 +279,7 @@ u16 place_object_restrict_to_room(u16 pos, u16 offset, u8 kind, u8 dir)
     RoomInfo *room;
 
     room = &room_info[gamevar.unknown2f];
-    bounds = &D_00155f4f[kind][dir];
+    bounds = &statvar.fff[kind][dir];
     x = (pos + offset) % 128;
     y = (pos + offset) / 128;
     roomX = room->pos % 128;
@@ -438,18 +426,18 @@ void init_edit_room(RoomInfo *room)
     build->y0 = y;
     build->x1 = x1;
     build->y1 = y1;
-    if (D_001553c7 == player) {
+    if (othervar.ff == player) {
         crequester.unknown8 = room->type;
         gamevar.unknown26 = 0;
     }
     if (fn_00029a54(room)) {
         room->f3 = 4;
-        if (D_001553c7 == player) {
+        if (othervar.ff == player) {
             setup_place_object_requester();
         }
     } else {
         room->f22 = 1;
-        if (D_001553c7 == player) {
+        if (othervar.ff == player) {
             set_mouse_mode(14);
         }
     }
@@ -507,13 +495,13 @@ void open_room(u8 p)
             change_balance(4, -rooms[room->type].cost, 0, (u16)p);
             room->unknown33 = 1;
         }
-        if (p == player && D_00155d7d == 0) {
-            D_00155e03 = room->type;
+        if (p == player && othervar.f9c5 == 0) {
+            othervar.fa4b = room->type;
         }
         add_static_shadows();
-        D_001553c8 = 1;
-        D_00155d7d = 0;
-        if (D_001553c7 == player) {
+        othervar.f10 = 1;
+        othervar.f9c5 = 0;
+        if (othervar.ff == player) {
             set_mouse_mode(0);
             close_crequester(5);
             if (myplayer.f23[room->type] == 0) {

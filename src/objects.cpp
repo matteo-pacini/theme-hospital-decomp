@@ -43,9 +43,6 @@ extern ObjectWalls object_walls[];
 
 extern "C" {
 
-extern u8 D_00155d73;
-extern u8 D_001553c7;
-extern u8 D_001553ea;
 
 }
 
@@ -86,7 +83,7 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     Shapes *shape;
     u8 i;
 
-    if (D_00155d73) {
+    if (othervar.f9bb) {
         return 1;
     }
     cell = &map[tile];
@@ -205,7 +202,7 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
     if (!(kind == 0x30 || can_place_object(tile, kind, dir, owner))) {
         return 0;
     }
-    D_00155d73 = 0;
+    othervar.f9bb = 0;
     if (!which_room(tile)) {
         u8 blocked;
 
@@ -213,7 +210,7 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
         blocked = !check_room_access(owner);
         remove_object_shape(&map[tile], &shapes[objects[kind].shapes[dir]], dir, &objects[kind]);
         if (blocked) {
-            if (D_001553c7 == player) {
+            if (othervar.ff == player) {
                 advisor.f2 = 7;
             }
             return 0;
@@ -247,7 +244,7 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
         w->anim_speed = 2;
         w->unknown97 = obj->unknown15[0];
         w->owner = owner;
-        w->value = allhosps[D_001553c7].object_stats[kind].unknown8;
+        w->value = allhosps[othervar.ff].object_stats[kind].unknown8;
         w->mode = 0;
         w->unknown39 = 0;
         w->unknown40 = old_newrand() & 3;
@@ -1177,7 +1174,7 @@ void inc_hardware_stats(u8 kind, u8 owner)
 // FUNCTION: 0x0003a098
 void bomb_ticks(Thing *w)
 {
-    if (D_001553ea) {
+    if (othervar.f32) {
         w->fuse_tick++;
         if (w->fuse_tick >= gbv.f152) {
             w->fuse_tick = 0;
@@ -1261,10 +1258,10 @@ void replace_machine(Thing *e)
     s32 cost;
     s32 i;
 
-    cost = allhosps[D_001553c7].object_stats[e->subtype].cost;
+    cost = allhosps[othervar.ff].object_stats[e->subtype].cost;
     if (allhosps[player].f35 >= cost && allhosps[player].f35 > 0) {
         change_balance(0x24, -cost, 0, e->owner);
-        e->value = allhosps[D_001553c7].object_stats[e->subtype].unknown8;
+        e->value = allhosps[othervar.ff].object_stats[e->subtype].unknown8;
         e->mode = 0;
         e->icon = 0;
         e->smoke[0] = 0;

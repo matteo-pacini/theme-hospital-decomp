@@ -34,7 +34,7 @@ static int scan_white(SCNF_SPECS *specs);
 static int scan_char(SCNF_SPECS *specs, va_list *arg);
 static int scan_string(SCNF_SPECS *specs, va_list *arg);
 static int scan_arb(SCNF_SPECS *specs, va_list *arg, const char **format);
-int scan_float(SCNF_SPECS *specs, va_list *arg);
+static int scan_float(SCNF_SPECS *specs, va_list *arg);
 static int scan_int(SCNF_SPECS *specs, va_list *arg, int base, int sign_flag);
 static const char *get_opt(const char *opt_str, SCNF_SPECS *specs);
 static void report_scan(SCNF_SPECS *specs, va_list *arg, int match);
@@ -257,7 +257,6 @@ static int scan_char(SCNF_SPECS *specs, va_list *arg)
     return len;
 }
 
-// NONMATCHING: the target jumps into scan_char's epilogue (built without -zm)
 // FUNCTION: 0xfaf11
 static int scan_string(SCNF_SPECS *specs, va_list *arg)
 {
@@ -400,6 +399,154 @@ static int scan_arb(SCNF_SPECS *specs, va_list *arg, const char **format)
     }
     if (specs->assign && len > 0)
         *str = '\0';
+    return len;
+}
+
+typedef union {
+    unsigned long uWhole;
+    long sWhole;
+    struct {
+        unsigned short lo;
+        unsigned short hi;
+    } wd;
+    struct {
+        unsigned char b1;
+        unsigned char b2;
+        unsigned char b3;
+        unsigned char b4;
+    } bt;
+} T32;
+
+extern void (*__EFG_scanf)(char *buf, double *ld);
+
+// NONMATCHING: the sign branch counts pref_len in ecx instead of ebp, and
+// at is cleared through ebp (shared with digit_found) instead of eax
+// FUNCTION: 0xfb1cf
+static int scan_float(SCNF_SPECS *specs, va_list *arg)
+{
+    T32 at;
+    double ld;
+    char *p;
+    T32 ft;
+    char buf[80];
+    int c;
+    int pref_len;
+    int len;
+    int digit_found;
+    float __far *fptr;
+    char *num_str;
+
+    num_str = buf;
+    pref_len = len = 0;
+    for (;;) {
+        c = cget(specs);
+        if (!isspace(c))
+            break;
+        ++pref_len;
+    }
+    if (specs->eoinp)
+        goto done;
+    if (specs->width-- == 0)
+        goto ugdone;
+    if (c == '+' || c == '-') {
+        *num_str++ = c;
+        ++pref_len;
+        if ((c = cgetw(specs)) == EOF)
+            goto done;
+    }
+    if (!(isdigit(c) || c == '.'))
+        goto ugdone;
+    at.uWhole = 0;
+    digit_found = 0;
+    if (isdigit(c)) {
+        digit_found = 1;
+        do {
+            *num_str++ = c;
+            if (specs->short_var)
+                at.wd.hi = at.wd.hi * 10 + c - '0';
+            ++len;
+            if ((c = cgetw(specs)) == EOF)
+                goto done;
+        } while (isdigit(c));
+    }
+    if (c == '.') {
+        *num_str++ = c;
+        if ((c = cgetw(specs)) == EOF)
+            goto done;
+        if (!(digit_found || isdigit(c)))
+            goto ugdone;
+        ++len;
+        while (isdigit(c)) {
+            ++len;
+            *num_str++ = c;
+            if ((c = cgetw(specs)) == EOF)
+                break;
+        }
+        if (specs->short_var) {
+            p = num_str;
+            ft.uWhole = 0;
+            while ((int)*--p != '.') {
+                ft.bt.b3 = *p - '0';
+                ft.uWhole /= 10;
+            }
+            at.wd.lo = ft.wd.lo;
+        }
+        if (c == EOF)
+            goto done;
+    }
+    if (specs->short_var)
+        goto ugdone;
+    if (c == 'e' || c == 'E') {
+        ++len;
+        *num_str++ = c;
+        if ((c = cgetw(specs)) == EOF)
+            goto done;
+        if (c == '+' || c == '-') {
+            ++len;
+            *num_str++ = c;
+            if ((c = cgetw(specs)) == EOF)
+                goto done;
+        }
+        if (!isdigit(c)) {
+            len = 0;
+            goto ugdone;
+        }
+        do {
+            ++len;
+            *num_str++ = c;
+            if ((c = cgetw(specs)) == EOF)
+                goto done;
+        } while (isdigit(c));
+    }
+ugdone:
+    uncget(c, specs);
+done:
+    if (len > 0) {
+        len += pref_len;
+        if (specs->assign) {
+            *num_str = '\0';
+            if (specs->short_var) {
+                if ((int)buf[0] == '-')
+                    at.sWhole = -at.sWhole;
+            } else {
+                (*__EFG_scanf)(buf, &ld);
+            }
+            if (specs->far_ptr) {
+                fptr = va_arg(*arg, float __far *);
+            } else if (specs->near_ptr) {
+                fptr = va_arg(*arg, float *);
+            } else {
+                fptr = va_arg(*arg, float *);
+            }
+            if (specs->short_var) {
+                *(long __far *)fptr = at.uWhole;
+            } else if (specs->long_var || specs->long_double_var) {
+                *(double __far *)fptr = ld;
+            } else {
+                *fptr = ld;
+            }
+        }
+    }
     return len;
 }
 

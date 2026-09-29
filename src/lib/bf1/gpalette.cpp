@@ -6,8 +6,6 @@ extern "C" {
 extern u8 D_00189ad4[];
 extern u8 D_001897d4[];
 extern s32 D_00189dd4;
-extern u16 D_00188c74;
-extern u8 D_00188c85;
 extern char D_001242c4[];
 
 int LbScreenWaitVbi(void);
@@ -175,22 +173,22 @@ int fn_000c99d8(s32 x, s32 y, s32 w, s32 h, u8 show_numbers)
     u8 old_colour;
 
     colour = 0;
-    old_flags = D_00188c74;
-    old_colour = D_00188c85;
-    D_00188c74 = 0x40;
+    old_flags = lbDisplay.draw_flags;
+    old_colour = lbDisplay.draw_colour;
+    lbDisplay.draw_flags = 0x40;
     for (i = 0; i < 16; i++, y += h) {
         for (j = 0, px = x; j < 16; j++, px += w) {
             LbDrawBox(px, y, w, h, colour);
             if (show_numbers) {
                 sprintf(text, D_001242c4, colour);
-                D_00188c85 = 255 - colour;
+                lbDisplay.draw_colour = 255 - colour;
                 LbTextDraw(px, y, text);
             }
             colour++;
         }
     }
-    D_00188c74 = old_flags;
-    D_00188c85 = old_colour;
+    lbDisplay.draw_flags = old_flags;
+    lbDisplay.draw_colour = old_colour;
     return 1;
 }
 

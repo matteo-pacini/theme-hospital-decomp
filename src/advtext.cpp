@@ -36,7 +36,6 @@ struct AdvisorLayout {
 
 extern "C" {
 extern u8 D_00161230;
-extern u16 D_00188c74;
 extern u8 D_00156910;
 extern u16 D_0012cdd0[];
 extern u16 D_0012cdd4[];
@@ -51,8 +50,6 @@ extern const u16 advisor_anims[];
 
 void get_advisor(void);
 
-// NONMATCHING: the LbTextDraw x argument widens advisor.f123 and resvars.f16 with xor ah,ah /
-// xor dh,dh (16-bit) in the target, with xor eax,eax / xor edx,edx here
 // FUNCTION: 0x000b1e10
 void advisor_text_box(void)
 {
@@ -79,10 +76,10 @@ void advisor_text_box(void)
             set_all_refresh_zones_in_window(
                 resvars.f1c_AdvisorLayoutp->f4f0 - (advisor.f123 + resvars.f16 + 1) * game_panel[38].width - game_panel[39].width,
                 resvars.f1c_AdvisorLayoutp->f4f4, resvars.f1c_AdvisorLayoutp->f4f0 + game_panel[39].width, resvars.f1c_AdvisorLayoutp->f4f4 + game_panel[39].height, 3);
-            advisor.f125 = resvars.f1c_AdvisorLayoutp->f4f0 - game_panel[38].width * (advisor.f123 + resvars.f16 + 1) - game_panel[39].width;
+            advisor.f125 = resvars.f1c_AdvisorLayoutp->f4f0 - game_panel[38].width * (u16)(advisor.f123 + resvars.f16 + 1) - game_panel[39].width;
             LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
             LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-            D_00188c74 = 0;
+            lbDisplay.draw_flags = 0;
             LbTextDraw(resvars.f1c_AdvisorLayoutp->f4f0 - (advisor.f123 + resvars.f16) * game_panel[38].width + resvars.f1c_AdvisorLayoutp->f4c8
                            - game_panel[37].width,
                        y, advisor.f10);

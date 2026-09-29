@@ -2,13 +2,6 @@
 
 extern "C" {
 extern Event D_001549d0[];
-extern u8 D_00155d74;
-extern u16 D_00155c64;
-extern char D_0015544e[];
-extern u16 D_00188c74;
-extern s32 D_00188c38;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
 extern char **D_001602cc;
 extern char **D_001602d4;
 extern char **D_001602e0;
@@ -136,15 +129,15 @@ void req10_overdraw(Window *win)
         compute_help_text(0, 0, 2);
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
         window.unknown2cf - window.unknown2c7);
-    ox = win->x - D_00188c3c;
-    oy = win->y - D_00188c40;
-    D_00188c74 = 0;
+    ox = win->x - lbDisplay.graphics_window_x;
+    oy = win->y - lbDisplay.graphics_window_y;
+    lbDisplay.draw_flags = 0;
     set_font_from_cache(1);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (advisor.f11f & 1) {
         i = 1;
-        D_00155d74++;
-        if (D_00155d74 % 10 == 0) {
+        othervar.f9bc++;
+        if (othervar.f9bc % 10 == 0) {
             switch (advisor.f120) {
             case 8:
                 for (b = win->buttons; b; b = b->next) {
@@ -163,7 +156,7 @@ void req10_overdraw(Window *win)
                 reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x30]]);
                 break;
             }
-            D_00155d74 = 0;
+            othervar.f9bc = 0;
         }
     }
     switch (crequester.unknown0) {
@@ -191,7 +184,7 @@ void req10_overdraw(Window *win)
         for (i = 0; i < 10; i++) {
             room = req_indices[i];
             set_font_from_cache(1);
-            if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18[i + 1].x, oy + resvars.f18[i + 1].y,
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18[i + 1].x, oy + resvars.f18[i + 1].y,
                     resvars.f18[i + 1].w, resvars.f18[i + 1].h)) {
                 if (crequester.unknown8 != room)
                     play_sound(10, 0x44, -1, -1);
@@ -228,7 +221,7 @@ void req10_overdraw(Window *win)
             row++;
         }
     }
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0);
 }
 
@@ -237,7 +230,7 @@ void req10_help_room(void)
 {
     u8 idx;
 
-    idx = req_indices[resvars.f2c_HelpHotspotp[D_00155c64].unknownA];
+    idx = req_indices[resvars.f2c_HelpHotspotp[othervar.f8ac].unknownA];
     if (idx)
-        fn_000bbff0(D_0015544e, room_help[idx]);
+        fn_000bbff0(othervar.f96, room_help[idx]);
 }

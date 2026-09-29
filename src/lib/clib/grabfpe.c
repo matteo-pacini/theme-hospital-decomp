@@ -1,9 +1,8 @@
 #include "clib.h"
 
 void __GrabFP87(void);
+#pragma aux __GrabFP87 "__GrabFP87"
 
-// NONMATCHING: jumps to __GrabFP87 (0xfcefe), which config/functions.txt
-// includes in fn_000fcead_
 // FUNCTION: 0xfc7bc
 void __grab_fpe(void)
 {

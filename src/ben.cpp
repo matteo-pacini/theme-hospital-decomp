@@ -7,7 +7,6 @@ extern char D_00120622[];
 extern char D_0012062f[];
 extern char D_0012063c[];
 extern char D_00120645[];
-extern char D_001563c5[];
 
 void fn_000c93bf(char *dst, char *src);
 void fn_000cd2cc(char *s, ...);
@@ -147,7 +146,7 @@ s32 read_config_file(void)
             }
             myplayer.f21 = install_language;
         } else if (!strcmp(data + key, D_00120645)) {
-            fn_000bbff0(D_001563c5, data + j);
+            fn_000bbff0(statvar.f575, data + j);
         } else {
             LbMemoryFree(data);
             return -1;

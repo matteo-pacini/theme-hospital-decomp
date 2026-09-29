@@ -2,7 +2,6 @@
 
 extern "C" {
 
-extern u8 D_00155e07, D_00155e08;
 
 }
 
@@ -12,7 +11,7 @@ void stop_midi(void)
     u32 song;
 
     song = GetSongHandle();
-    D_00155e07 = 0;
+    othervar.fa4f = 0;
     AIL_end_sequence(song);
-    D_00155e08 = 0;
+    othervar.fa50 = 0;
 }

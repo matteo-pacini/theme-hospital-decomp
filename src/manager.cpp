@@ -15,24 +15,7 @@ struct ManagerHelp {
 };
 
 extern "C" {
-extern s32 D_00188c38;
-extern u16 D_00188c74;
-extern u8 D_00188c7b;
-extern u8 D_00188c7c;
-extern u8 D_00188c7e;
-extern u8 D_00188c81;
-extern u8 D_00188c83;
-extern u8 D_00188c85;
-extern volatile s16 D_00188c6c;
-extern volatile s16 D_00188c70;
 extern Event D_001549d0[];
-extern u16 D_00155c64;
-extern char D_0015544e[];
-extern u8 D_00155daf;
-extern u8 D_00155db0;
-extern u8 D_00155e04;
-extern u8 D_00155e05;
-extern u8 D_00155e06;
 extern s8 D_0012d748[];
 extern char D_00120654[];
 extern char D_00120657[];
@@ -72,14 +55,14 @@ void process_bank_panel(void);
 // FUNCTION: 0x0007e210
 void display_manager(void)
 {
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x1b);
     switch (manager.unknown2) {
     case 0:
         load_ingame_pic(7, 1, 0x17, 0, SCREEN_MODE_13);
-        D_00155daf = fn_000c960c(current_palette, 0x15, 0x15, 0x18);
-        D_00155db0 = fn_000c960c(current_palette, 0x2c, 0x2c, 0x2c);
+        othervar.f9f7 = fn_000c960c(current_palette, 0x15, 0x15, 0x18);
+        othervar.f9f8 = fn_000c960c(current_palette, 0x2c, 0x2c, 0x2c);
         manager.unknown2 = 1;
         manager.unknown0 = 0;
         copy_screen_to_wscreen(bscreen);
@@ -96,15 +79,15 @@ void display_manager(void)
         D_001549d0[player].value = 0;
         break;
     }
-    if (D_00188c81) {
-        if (over_hotspot(D_00188c6c, D_00188c70, (s16)resvars.f3c_ManagerBoxp[31].x, (s16)resvars.f3c_ManagerBoxp[31].y,
+    if (lbDisplay.rleft_button) {
+        if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, (s16)resvars.f3c_ManagerBoxp[31].x, (s16)resvars.f3c_ManagerBoxp[31].y,
                          (s16)resvars.f3c_ManagerBoxp[31].w, (s16)resvars.f3c_ManagerBoxp[31].h))
             fn_00074220(0, 0x3b);
-        if (over_hotspot(D_00188c6c, D_00188c70, 0x15b, 0x198, 0x87, 0x45))
+        if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0x15b, 0x198, 0x87, 0x45))
             fn_00074220(0, 0x14);
     }
-    D_00188c7b = D_00188c7c = D_00188c81 = D_00188c83 = 0;
-    D_00188c74 = 0;
+    lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = lbDisplay.rright_button = 0;
+    lbDisplay.draw_flags = 0;
     if (exit_quick_requester())
         manager.unknown2 = 2;
 }
@@ -116,9 +99,9 @@ void display_manager_text(void)
     s32 sum;
     char buf[100];
 
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0x100;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0x100;
     LbTextSetWindow(resvars.f3c_ManagerBoxp[11].x, resvars.f3c_ManagerBoxp[11].y, resvars.f3c_ManagerBoxp[11].w, resvars.f3c_ManagerBoxp[11].h);
     sprintf(buf, D_00120654, bank_text[0]);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
@@ -195,10 +178,10 @@ void display_manager_text(void)
                 max = myhosp->f45[manager.unknown0 - 1][i];
         }
         set_font_from_cache(3);
-        D_00188c74 = 0x40;
-        D_00188c85 = color.unknown8;
-        D_00188c74 |= 0x40;
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        lbDisplay.draw_flags = 0x40;
+        lbDisplay.draw_colour = color.unknown8;
+        lbDisplay.draw_flags |= 0x40;
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         if (max > 1) {
             sprintf(buf, D_0012069f, max);
             LbTextDraw(resvars.f40[169].x, resvars.f40[169].y, buf);
@@ -213,8 +196,8 @@ void display_manager_text(void)
                 py = y;
                 x += resvars.f3c_ManagerBoxp[30].w / 12;
                 y = resvars.f3c_ManagerBoxp[30].y - myhosp->f45[manager.unknown0 - 1][i] * resvars.f3c_ManagerBoxp[30].h / max;
-                fn_000c9be0(px + 1, py + 1, x + 1, y + 1, D_00155db0);
-                fn_000c9be0(px, py, x, y, D_00155daf);
+                fn_000c9be0(px + 1, py + 1, x + 1, y + 1, othervar.f9f8);
+                fn_000c9be0(px, py, x, y, othervar.f9f7);
                 i++;
             }
             end = mycontrol->unknown650;
@@ -223,7 +206,7 @@ void display_manager_text(void)
         sprintf(buf, D_001206a2, month_text[mycontrol->unknown650]);
         LbTextDraw(resvars.f40[170].x, resvars.f40[170].y, buf);
         compute_help_text(0, 0, 0x17);
-        D_00188c74 = 0x100;
+        lbDisplay.draw_flags = 0x100;
         set_font_from_cache(0x1b);
     } else {
         resvars.f48[5].sprite = 3;
@@ -241,9 +224,9 @@ void display_manager_text(void)
         compute_help_text(0, 0, 0x16);
     }
     compute_help_text(0, 0, 0x15);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x0007f258
@@ -251,9 +234,9 @@ void process_bank_panel(void)
 {
     u8 i;
 
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i + 3].width != 0 && resvars.f48[i + 3].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 3].x, resvars.f48[i + 3].y,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 3].x, resvars.f48[i + 3].y,
                              (s16)resvars.f48[i + 3].width, (s16)resvars.f48[i + 3].height)) {
                 resvars.f48[i + 3].callback(i);
                 reqspr_draw(resvars.f48[i + 3].unknownC, resvars.f48[i + 3].unknownE,
@@ -261,9 +244,9 @@ void process_bank_panel(void)
             }
         }
     }
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; resvars.f48[i + 3].width != 0 && resvars.f48[i + 3].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 3].x, resvars.f48[i + 3].y,
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 3].x, resvars.f48[i + 3].y,
                              (s16)resvars.f48[i + 3].width, (s16)resvars.f48[i + 3].height)) {
                 reqspr_draw(resvars.f48[i + 3].unknownC, resvars.f48[i + 3].unknownE,
                             &screen_sprites_tab_start[resvars.f48[i + 3].sprite]);
@@ -323,37 +306,37 @@ void process_bank_button(u8 n)
 void display_manager_face(void)
 {
     if (saferand() % 45 == 1) {
-        if (D_00155e04 == 0)
-            D_00155e04 = 1;
+        if (othervar.fa4c == 0)
+            othervar.fa4c = 1;
     }
     if (saferand() % 300 == 1) {
-        if (D_00155e05 == 0)
-            D_00155e05 = 1;
+        if (othervar.fa4d == 0)
+            othervar.fa4d = 1;
     }
     if (saferand() % 300 == 1) {
-        if (D_00155e06 == 0)
-            D_00155e06 = 1;
+        if (othervar.fa4e == 0)
+            othervar.fa4e = 1;
     }
-    if (D_00155e04) {
-        reqspr_draw(resvars.f40[79].x, resvars.f40[79].y, &screen_sprites_tab_start[bank_manager_face1[D_00155e04]]);
-        D_00155e04++;
-        if (bank_manager_face1[D_00155e04] == -1) {
-            D_00155e04 = 0;
+    if (othervar.fa4c) {
+        reqspr_draw(resvars.f40[79].x, resvars.f40[79].y, &screen_sprites_tab_start[bank_manager_face1[othervar.fa4c]]);
+        othervar.fa4c++;
+        if (bank_manager_face1[othervar.fa4c] == -1) {
+            othervar.fa4c = 0;
             if (saferand() % 5 == 1)
-                D_00155e04 = 1;
+                othervar.fa4c = 1;
         }
     }
-    if (D_00155e05) {
-        reqspr_draw(resvars.f40[80].x, resvars.f40[80].y, &screen_sprites_tab_start[bank_manager_face2[D_00155e05]]);
-        D_00155e05++;
-        if (bank_manager_face2[D_00155e05] == -1)
-            D_00155e05 = 0;
+    if (othervar.fa4d) {
+        reqspr_draw(resvars.f40[80].x, resvars.f40[80].y, &screen_sprites_tab_start[bank_manager_face2[othervar.fa4d]]);
+        othervar.fa4d++;
+        if (bank_manager_face2[othervar.fa4d] == -1)
+            othervar.fa4d = 0;
     }
-    if (D_00155e06) {
-        reqspr_draw(resvars.f40[81].x, resvars.f40[81].y, &screen_sprites_tab_start[D_0012d748[D_00155e06]]);
-        D_00155e06++;
-        if (D_0012d748[D_00155e06] == -1)
-            D_00155e06 = 0;
+    if (othervar.fa4e) {
+        reqspr_draw(resvars.f40[81].x, resvars.f40[81].y, &screen_sprites_tab_start[D_0012d748[othervar.fa4e]]);
+        othervar.fa4e++;
+        if (D_0012d748[othervar.fa4e] == -1)
+            othervar.fa4e = 0;
     }
 }
 
@@ -363,9 +346,9 @@ void manager_help_pointed_ins(void)
     u32 text;
     u32 idx;
 
-    text = resvars.f2c_ManagerHelpp[D_00155c64].text;
-    idx = resvars.f2c_ManagerHelpp[D_00155c64].arg;
-    sprintf(D_0015544e, help_text[text], insurance_names[insurance_co[ins_control[idx]].unknown0[0]]);
+    text = resvars.f2c_ManagerHelpp[othervar.f8ac].text;
+    idx = resvars.f2c_ManagerHelpp[othervar.f8ac].arg;
+    sprintf(othervar.f96, help_text[text], insurance_names[insurance_co[ins_control[idx]].unknown0[0]]);
 }
 
 // FUNCTION: 0x0007f968
@@ -373,6 +356,6 @@ void manager_help_displayed_ins(void)
 {
     u32 text;
 
-    text = resvars.f2c_ManagerHelpp[D_00155c64].text;
-    sprintf(D_0015544e, help_text[text], insurance_names[insurance_co[gbv.f15e[manager.unknown0]].unknown0[0]]);
+    text = resvars.f2c_ManagerHelpp[othervar.f8ac].text;
+    sprintf(othervar.f96, help_text[text], insurance_names[insurance_co[gbv.f15e[manager.unknown0]].unknown0[0]]);
 }

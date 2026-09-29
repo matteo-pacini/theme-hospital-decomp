@@ -2,7 +2,6 @@
 
 extern "C" {
 
-extern s16 D_001553b8;
 
 u8 fn_0002b400(Thing *w);
 Thing *fn_00019aac(Map *t, u16 kind);
@@ -43,8 +42,8 @@ void doctor_works_at_desk(Thing *w)
                         process_staff_complex(w);
                     } else if ((w->f8e & 1) && take_a_break(w)) {
                     } else {
-                        D_001553b8 = old_newrand() % 100;
-                        if (D_001553b8 >= 0 && D_001553b8 < 25) {
+                        othervar.f0 = old_newrand() % 100;
+                        if (othervar.f0 >= 0 && othervar.f0 < 25) {
                             queue = w->room->queue_head;
                             if (queue) {
                                 if (call_person_to_room(w, queue, 0x28, w->room->unknown4, 1)) {
@@ -59,8 +58,8 @@ void doctor_works_at_desk(Thing *w)
                                 }
                             }
                         } else {
-                            D_001553b8 = old_newrand() % 100;
-                            if (D_001553b8 >= 25 && D_001553b8 < 32) {
+                            othervar.f0 = old_newrand() % 100;
+                            if (othervar.f0 >= 25 && othervar.f0 < 32) {
                                 if (find_object(((u16)w->y.tile << 7) + (u16)w->x.tile, 2, 1, 0x96, w->owner)) {
                                     w->state_a = 6;
                                     set_complex(w, 0x14, 0);
@@ -320,8 +319,8 @@ void doctor_in_machine_room(Thing *w)
                             if (w->room->f3 == 5) {
                                 w->room->f3 = 6;
                             }
-                            D_001553b8 = old_newrand() % 100;
-                            if (D_001553b8 >= 0 && D_001553b8 < 25) {
+                            othervar.f0 = old_newrand() % 100;
+                            if (othervar.f0 >= 0 && othervar.f0 < 25) {
                                 if (w->room->f3 != 6 && (queue = w->room->queue_head)) {
                                     if (w->room->type == 10) {
                                         if (am_i_lead_staff(w)) {
@@ -351,8 +350,8 @@ void doctor_in_machine_room(Thing *w)
                                     }
                                 }
                             } else {
-                                D_001553b8 = old_newrand() % 100;
-                                if ((D_001553b8 >= 25 && D_001553b8 < 27)
+                                othervar.f0 = old_newrand() % 100;
+                                if ((othervar.f0 >= 25 && othervar.f0 < 27)
                                     || ((s16)w->y.tile << 7) + (s16)w->x.tile == w->room->unknown6) {
                                     u16 tile;
                                     RoomInfo *r;
@@ -360,8 +359,8 @@ void doctor_in_machine_room(Thing *w)
 
                                     tile = (u16)w->x.tile + ((u16)w->y.tile << 7);
                                     r = which_room(tile);
-                                    D_001553b8 = old_newrand() % 100;
-                                    if (D_001553b8 >= 25 && D_001553b8 < 26) {
+                                    othervar.f0 = old_newrand() % 100;
+                                    if (othervar.f0 >= 25 && othervar.f0 < 26) {
                                         pos = ((s16)(r->f2 / 2) << 7) + (s16)(r->f1 / 2) + r->pos;
                                     } else {
                                         pos = ((s16)(old_newrand() % r->f2) << 7) + (s16)(old_newrand() % r->f1) + r->pos;
@@ -423,8 +422,8 @@ void doctor_researches(Thing *w)
                     process_staff_complex(w);
                 } else if (((w->f8e & 1) || w->f78 > allhosps[w->owner].f21d) && take_a_break(w)) {
                 } else {
-                    D_001553b8 = old_newrand() % 100;
-                    if (D_001553b8 >= 0 && D_001553b8 < 25) {
+                    othervar.f0 = old_newrand() % 100;
+                    if (othervar.f0 >= 0 && othervar.f0 < 25) {
                         queue = w->room->queue_head;
                         if (queue) {
                             ok = 1;

@@ -14,16 +14,8 @@ struct SortEntry {
     signed int key : 27;
 };
 
-struct Bounds {
-    s8 minX;
-    s8 minY;
-    s8 maxX;
-    s8 maxY;
-};
-
 extern "C" {
 
-extern u8 D_001553e8, D_001553e9;
 extern s32 D_001290cc;
 extern char D_0015fde4[];
 extern Event D_001549d0[];
@@ -31,17 +23,6 @@ extern u8 D_0015f982;
 extern u32 D_0014bcc4, D_0014bcd0, D_0014bcd8, D_0014bce0, D_0014bce4, D_0014bce8;
 extern u32 D_0013c60c, D_0013c618, D_0013c620, D_0013c628, D_0013c62c, D_0013c630;
 extern u8 D_001581ec, D_001581ed, D_001581ef;
-extern Bounds D_00155f4f[][4];
-extern u8 D_00155df2[];
-extern u8 D_00155df3, D_00155df4, D_00155df5, D_00155df6;
-extern u8 D_00155d7d;
-extern u8 D_00155c69;
-extern u32 D_00155c5a, D_00155c6a;
-extern u8 D_00188c7b, D_00188c7c, D_00188c7e, D_00188c7f, D_00188c81, D_00188c83;
-extern s32 D_00188c38;
-extern u8 D_00155e1d, D_00155e45, D_00155e46;
-extern char D_00155ced[];
-extern u8 D_001553c7;
 extern char *D_001289a0, *D_001289a4;
 extern char D_001201ac[], D_001201c2[], D_001201c5[], D_001201ca[], D_001201cf[];
 extern char D_001201d4[], D_00120202[], D_00120218[], D_0012022d[], D_0012023e[];
@@ -338,7 +319,7 @@ void cheat(u32 flags)
     u32 i;
 
     if (statvar.unknownfd <= 1) {
-        if (D_00155e46 != 0) {
+        if (othervar.fa8e != 0) {
             play_ambient(saferand() % 2 + 0xc4);
             if (flags & 2) {
                 for (i = 1; i < 0x3e; i++) {
@@ -368,101 +349,101 @@ void set_mouse_mode(const u8 mode)
 {
     switch (mode) {
     case 0:
-        D_001553e8 = 1;
+        othervar.f30 = 1;
         break;
     case 1:
     case 2:
     case 7:
-        D_001553e8 = 3;
+        othervar.f30 = 3;
         break;
     case 10:
-        D_001553e8 = 0xd;
+        othervar.f30 = 0xd;
         break;
     case 9:
-        D_001553e8 = 0;
+        othervar.f30 = 0;
         break;
     case 11:
-        D_001553e8 = 0xe;
+        othervar.f30 = 0xe;
         break;
     case 12:
-        D_001553e8 = 4;
+        othervar.f30 = 4;
         break;
     case 14:
-        D_001553e8 = 9;
+        othervar.f30 = 9;
         break;
     case 15:
-        D_001553e8 = 0xc;
+        othervar.f30 = 0xc;
         break;
     case 16:
-        D_001553e8 = 9;
+        othervar.f30 = 9;
         break;
     case 18:
-        D_001553e8 = 0xf;
+        othervar.f30 = 0xf;
         break;
     case 20:
-        D_001553e8 = 0xf;
+        othervar.f30 = 0xf;
         break;
     case 21:
-        D_001553e8 = 1;
+        othervar.f30 = 1;
         break;
     case 22:
-        D_001553e8 = 0x1a;
+        othervar.f30 = 0x1a;
         break;
     case 23:
-        D_001553e8 = 0x10;
+        othervar.f30 = 0x10;
         break;
     case 24:
-        D_001553e8 = 0xb;
+        othervar.f30 = 0xb;
         break;
     case 25:
-        D_001553e8 = 3;
+        othervar.f30 = 3;
         break;
     case 26:
-        D_001553e8 = 0x18;
+        othervar.f30 = 0x18;
         break;
     case 27:
-        D_001553e8 = 5;
+        othervar.f30 = 5;
         break;
     case 28:
-        D_001553e8 = 0x12;
+        othervar.f30 = 0x12;
         break;
     case 29:
-        D_001553e8 = 1;
+        othervar.f30 = 1;
         break;
     case 30:
-        D_001553e8 = 0x16;
+        othervar.f30 = 0x16;
         break;
     case 31:
-        D_001553e8 = 9;
+        othervar.f30 = 9;
         break;
     case 32:
-        D_001553e8 = 9;
+        othervar.f30 = 9;
         break;
     case 33:
-        D_001553e8 = 0x20;
+        othervar.f30 = 0x20;
         break;
     case 34:
-        D_001553e8 = 9;
+        othervar.f30 = 9;
         break;
     case 36:
-        D_001553e8 = 7;
+        othervar.f30 = 7;
         break;
     case 38:
-        D_001553e8 = 0x14;
+        othervar.f30 = 0x14;
         break;
     case 40:
-        D_001553e8 = 0x1c;
+        othervar.f30 = 0x1c;
         break;
     case 41:
-        D_001553e8 = 0x1e;
+        othervar.f30 = 0x1e;
         break;
     default:
-        D_001553e8 = 1;
+        othervar.f30 = 1;
         break;
     }
     gamevar.f12e = mode;
     if (!mouse_was_on_window) {
-        set_mouse_sprite(D_001553e8);
+        set_mouse_sprite(othervar.f30);
     } else {
         mouse_was_on_window = 0;
     }
@@ -560,10 +541,10 @@ void measure_objects(void)
                 maxX < x ? maxX = x : 0;
                 maxY < y ? maxY = y : 0;
             }
-            D_00155f4f[i][j].minX = minX;
-            D_00155f4f[i][j].minY = minY;
-            D_00155f4f[i][j].maxX = maxX;
-            D_00155f4f[i][j].maxY = maxY;
+            statvar.fff[i][j].minX = minX;
+            statvar.fff[i][j].minY = minY;
+            statvar.fff[i][j].maxX = maxX;
+            statvar.fff[i][j].maxY = maxY;
         }
     }
 }
@@ -586,7 +567,7 @@ void set_mouse_sprite(const u8 idx)
     const u8 *kinds;
     TbSprite *cursors;
 
-    if (D_00155e1d) {
+    if (othervar.fa65) {
         kinds = screen_pointer_hotspots;
         cursors = screen_pointers_tab_start;
         pointer_second_frame_check = screen_pointer_second_frame;
@@ -595,14 +576,14 @@ void set_mouse_sprite(const u8 idx)
         cursors = pointer;
         pointer_second_frame_check = ingame_pointer_second_frame;
     }
-    D_001553e9 = D_001553e8;
-    D_001553e8 = idx;
+    othervar.f31 = othervar.f30;
+    othervar.f30 = idx;
     switch (kinds[idx]) {
     case 1:
-        LbMouseChangeSpriteAndHotspot(cursors + D_001553e8, 0, 0);
+        LbMouseChangeSpriteAndHotspot(cursors + othervar.f30, 0, 0);
         break;
     case 2:
-        LbMouseChangeSpriteAndHotspot(cursors + D_001553e8, cursors[idx].width / 2, cursors[idx].height / 2);
+        LbMouseChangeSpriteAndHotspot(cursors + othervar.f30, cursors[idx].width / 2, cursors[idx].height / 2);
         break;
     }
 }
@@ -648,7 +629,7 @@ void vary_speed(s16 speed)
     u8 i;
 
     for (i = 0; i < 5; i++) {
-        D_00155df2[i] = 0;
+        othervar.fa3a[i] = 0;
     }
     switch (speed) {
     case -1:
@@ -660,7 +641,7 @@ void vary_speed(s16 speed)
         } else if (myplayer.f1es > 0x7d00) {
             myplayer.f1es = 0x7d00;
         }
-        D_00155df3 = 1;
+        othervar.fa3b = 1;
         break;
     case 1:
         gamevar.f138 = 0;
@@ -671,37 +652,37 @@ void vary_speed(s16 speed)
         } else if (myplayer.f1es > 0x7d00) {
             myplayer.f1es = 0x7d00;
         }
-        D_00155df5 = 1;
+        othervar.fa3d = 1;
         break;
     case 10:
         gamevar.f138 = 0;
         myplayer.f1es = 1;
         gamevar.f139 = 0;
-        D_00155df2[0] = 1;
+        othervar.fa3a[0] = 1;
         break;
     case 20:
         gamevar.f138 = 0;
         myplayer.f1es = 5;
         gamevar.f139 = 0;
-        D_00155df3 = 1;
+        othervar.fa3b = 1;
         break;
     case 30:
         gamevar.f138 = 0;
         myplayer.f1es = 0x16;
         gamevar.f139 = 0;
-        D_00155df4 = 1;
+        othervar.fa3c = 1;
         break;
     case 40:
         gamevar.f138 = 0;
         myplayer.f1es = 0x19;
         gamevar.f139 = 0;
-        D_00155df5 = 1;
+        othervar.fa3d = 1;
         break;
     case 50:
         gamevar.f138 = 1;
         myplayer.f1es = 0x7d00;
         gamevar.f139 = 1;
-        D_00155df6 = 1;
+        othervar.fa3e = 1;
         break;
     }
 }
@@ -711,10 +692,10 @@ void compute_whether_user_not_busy(void)
 {
     u8 idle = CountWindows(open_windows) == 0 && display_mode == 0 && !debug.unknownd7;
 
-    if (idle && !D_00155c69) {
-        D_00155c6a = D_00155c5a;
+    if (idle && !othervar.f8b1) {
+        othervar.f8b2 = othervar.f8a2;
     }
-    D_00155c69 = idle;
+    othervar.f8b1 = idle;
 }
 
 // FUNCTION: 0x0001b050
@@ -770,14 +751,14 @@ void setup_abort_all_requesters(void)
         if (crequester.unknown9) {
             D_001549d0[player].type = 0x5c;
             D_001549d0[player].value = 1;
-            D_00155d7d = 1;
+            othervar.f9c5 = 1;
             return;
         }
         break;
     case 5:
         if (crequester.unknown0 == 0) {
-            if (D_00155d7d == 1) {
-                sprintf(D_00155ced, D_001201c2, yesno_text[4]);
+            if (othervar.f9c5 == 1) {
+                sprintf(othervar.f935, D_001201c2, yesno_text[4]);
                 open_yes_no_requester(0x79, 0, 0, 0x78, 1, 1);
                 return;
             }
@@ -825,7 +806,7 @@ void cancel_top_level_requesters(s32 n)
             break;
         case 10:
             if (!crequester.unknown9) {
-                clear_build_objects(D_001553c7);
+                clear_build_objects(othervar.ff);
                 close_crequester(crequester.unknown2);
             }
             break;
@@ -895,9 +876,9 @@ u8 hosp_play_smk(const u8 idx)
         while (fn_000bed50() != 1) {
         }
     }
-    D_00188c7b = D_00188c81 = 0;
-    D_00188c7c = D_00188c83 = 0;
-    D_00188c7e = D_00188c7f = 0;
+    lbDisplay.left_button = lbDisplay.rleft_button = 0;
+    lbDisplay.right_button = lbDisplay.rright_button = 0;
+    lbDisplay.mleft_button = lbDisplay.mright_button = 0;
     return ok;
 }
 
@@ -998,7 +979,7 @@ void fn_0001bab4(u8 i)
     int x;
 
     if (i < 12) {
-        find_cell_at_point(window.unknown2eb, D_00188c34 / 2, D_00188c38 / 2);
+        find_cell_at_point(window.unknown2eb, lbDisplay.graphics_screen_width / 2, lbDisplay.graphics_screen_height / 2);
         if (info.unknown5c < 0) {
             x = 0;
         } else if (info.unknown5c >= 0x80) {
@@ -1131,7 +1112,7 @@ void fn_0001bee4(void)
         LbFileClose(D_001290cc);
         D_001290cc = -1;
     }
-    if (resvars.f0 == SCREEN_MODE_1 || D_00155e45) {
+    if (resvars.f0 == SCREEN_MODE_1 || othervar.fa8d) {
         D_001290cc = LbFileOpen(D_001289a4, 2);
         if (D_001290cc == -1) {
             D_0015f982 = 9;

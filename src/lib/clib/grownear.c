@@ -167,9 +167,7 @@ void __unlink(mheapptr heap)
 #pragma aux __FreeDPMIBlocks "__FreeDPMIBlocks_"
 
 // FUNCTION: 0xebdb8
-// NONMATCHING: config/functions.txt extends this function over
-// __FreeDPMIBlocks (0xebe14), and the original returns through
-// RationalAlloc's epilogue
+// NONMATCHING: next is kept in esi instead of ecx
 void __FreeDPMIBlocks(void)
 {
     mheapptr mhp;
@@ -301,8 +299,10 @@ unsigned __LastFree(void)
 }
 
 // FUNCTION: 0xebfd7
-// NONMATCHING: size is kept in a register instead of its stack slot
-void *RationalAlloc(size_t size)
+// NONMATCHING: the original keeps size in its stack slot (10.6 would use ebp);
+// volatile reproduces the slot and the shared epilogue, but orders the
+// reloads of size differently
+void *RationalAlloc(volatile size_t size)
 {
     struct dpmi_hdr *dpmi;
     mheapptr mhp;
@@ -339,7 +339,6 @@ void *RationalAlloc(size_t size)
 int __AdjustAmount(unsigned *amount);
 
 // FUNCTION: 0xec0a8
-// NONMATCHING: returns through RationalAlloc's epilogue in the original
 int __CreateNewNHeap(unsigned amount)
 {
     mheapptr p1;

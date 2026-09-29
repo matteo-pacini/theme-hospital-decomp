@@ -28,11 +28,6 @@ void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 desthe
 extern void *(*smack_malloc)(u32 bytes);
 extern void (*smack_free)(void *ptr);
 extern void *smack_draw_callback;
-extern u8 D_00188c7b;
-extern u16 D_00188c78;
-extern u32 D_00188c34;
-#pragma aux D_00188c34 "W?research_names$npnpna"
-extern u32 D_00188c38;
 
 u32 GetSoundDriver(void);
 int LbScreenWaitVbi(void);
@@ -62,12 +57,12 @@ void set_smack_free(void (*fn)(void *ptr))
 // FUNCTION: 0xca360
 u8 play_smk(char *name, u32 a2, u32 flags)
 {
-    D_00188c7b = 0;
+    lbDisplay.left_button = 0;
     if (smack_draw_callback != 0 || (flags & 0x8c)) {
         flags &= ~0x100;
         return play_smk_via_buffer(name, a2, flags);
     }
-    if (D_00188c78 != 1)
+    if (lbDisplay.screen_mode != 1)
         flags &= ~0x100;
     return play_smk_direct(name, a2, flags);
 }
@@ -94,7 +89,7 @@ long play_smk_direct(char *name, long a2, long flags)
     if (flags & 0x100) {
         SmackToBuffer(smk, (320 - smk->Width) >> 1, (200 - smk->Height) >> 1, 320, 200, (void *)0xa0000, 0);
     } else {
-        SmackToBuffer(smk, (D_00188c34 - smk->Width) >> 1, (D_00188c38 - smk->Height) >> 1, D_00188c34, D_00188c38, lbDisplay.unknown4, 0);
+        SmackToBuffer(smk, (lbDisplay.graphics_screen_width - smk->Width) >> 1, (lbDisplay.graphics_screen_height - smk->Height) >> 1, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, lbDisplay.unknown4, 0);
     }
     for (frame = 0; (flags & 0x400) || frame < smk->Frames; frame++) {
         if (flags & 0x100) {
@@ -121,7 +116,7 @@ long play_smk_direct(char *name, long a2, long flags)
         SmackNextFrame(smk);
         do {
             if (!(flags & 2)) {
-                if (lbKeyOn[1] || lbKeyOn[0x1c] || lbKeyOn[0x39] || D_00188c7b) {
+                if (lbKeyOn[1] || lbKeyOn[0x1c] || lbKeyOn[0x39] || lbDisplay.left_button) {
                     SmackClose(smk);
                     return 2;
                 }
@@ -168,7 +163,7 @@ long play_smk_via_buffer(char *name, long a2, long flags)
         SmackNextFrame(smk);
         while (SmackWait(smk)) {
             if (!(flags & 2)) {
-                if (lbKeyOn[1] || lbKeyOn[0x1c] || lbKeyOn[0x39] || D_00188c7b) {
+                if (lbKeyOn[1] || lbKeyOn[0x1c] || lbKeyOn[0x39] || lbDisplay.left_button) {
                     SmackClose(smk);
                     LbMemoryFree(buf);
                     return 2;
@@ -243,14 +238,14 @@ void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
     u32 screen_height;
     u32 i;
 
-    if (D_00188c78 == 1 && !smack_draw_callback) {
+    if (lbDisplay.screen_mode == 1 && !smack_draw_callback) {
         dst = (u8 *)0xa0000;
         pitch = 320;
         screen_height = 200;
     } else {
-        pitch = D_00188c34;
+        pitch = lbDisplay.graphics_screen_width;
         dst = lbDisplay.unknown4;
-        screen_height = D_00188c38;
+        screen_height = lbDisplay.graphics_screen_height;
     }
     if ((flags & 4) || (flags & 8))
         dst += ((screen_height - height * 2) >> 1) * pitch;
@@ -283,12 +278,12 @@ void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
         for (i = 0; i < height; i++, buf += width, dst += pitch)
             memcpy(dst, buf, width);
     }
-    if (D_00188c78 == 1 && !smack_draw_callback) {
+    if (lbDisplay.screen_mode == 1 && !smack_draw_callback) {
         if (smack_draw_callback)
             ((SmackDrawCallback)smack_draw_callback)((u8 *)0xa0000, 320, 200);
     } else {
         if (smack_draw_callback)
-            ((SmackDrawCallback)smack_draw_callback)(lbDisplay.unknown4, D_00188c34, D_00188c38);
+            ((SmackDrawCallback)smack_draw_callback)(lbDisplay.unknown4, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbScreenSwap();
     }
 }

@@ -1,8 +1,6 @@
 #include "bflib.h"
 
 extern "C" {
-extern u8 D_00188c75;
-extern u8 D_00188c84;
 extern u8 *lbSpriteReMapPtr;
 
 u32 LbSpriteSetScalingData(int x, int y, int width, int height, int dest_width, int dest_height);
@@ -49,8 +47,8 @@ int LbSpriteDrawScaled(int x, int y, TbSprite *sprite, int dest_width, int dest_
 {
     if (dest_width <= 0 || dest_height <= 0)
         return 1;
-    if (D_00188c75 & 8)
-        lbSpriteReMapPtr = &(*(u8 **)&lbDisplay.unknown8[4])[(D_00188c84 & 0x3f) * 256];
+    if (lbDisplay.draw_flags & 0x800)
+        lbSpriteReMapPtr = &(*(u8 **)&lbDisplay.unknown8[4])[(lbDisplay.fade_step & 0x3f) * 256];
     LbSpriteSetScalingData(x, y, sprite->width, sprite->height, dest_width, dest_height);
     return LbSpriteDrawUsingScalingData(0, 0, sprite);
 }

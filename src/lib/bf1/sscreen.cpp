@@ -4,11 +4,6 @@ extern u32 screen_initialised;
 extern u32 _lbScreenInitialised;
 
 extern "C" {
-extern s32 D_00188c34;
-#pragma aux D_00188c34 "W?research_names$npnpna"
-extern s32 D_00188c38;
-extern u16 D_00188c76;
-extern u8 D_00188c7a;
 
 int LbMouseSuspend(void);
 int LbVesaGetInfo(void);
@@ -24,7 +19,7 @@ void wait_vbi(void);
 // FUNCTION: 0x000becd0
 int LbScreenClear(u8 colour, ...)
 {
-    LbMemorySet(lbDisplay.unknown4, colour, D_00188c34 * D_00188c38);
+    LbMemorySet(lbDisplay.unknown4, colour, lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height);
     return 1;
 }
 
@@ -37,7 +32,7 @@ int LbScreenReset(void)
     if (!screen_initialised)
         return -1;
     LbMouseSuspend();
-    in.x.eax = D_00188c76;
+    in.x.eax = lbDisplay.old_video_mode;
     int386(0x10, &in, &out);
     screen_initialised = 0;
     _lbScreenInitialised = 0;
@@ -81,10 +76,10 @@ int LbScreenSwap(void)
     s16 page;
 
     LbMousePlace();
-    if (!D_00188c7a) {
-        rep_movsd(lbDisplay.physical_screen, lbDisplay.unknown4, (D_00188c34 * D_00188c38) >> 2);
+    if (!lbDisplay.vesa_is_set_up) {
+        rep_movsd(lbDisplay.physical_screen, lbDisplay.unknown4, (lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height) >> 2);
     } else {
-        remaining = D_00188c34 * D_00188c38;
+        remaining = lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height;
         src = lbDisplay.unknown4;
         for (page = 0; remaining != 0; src += 0x10000) {
             chunk = remaining < 0x10000 ? remaining : 0x10000;

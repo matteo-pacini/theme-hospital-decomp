@@ -65,6 +65,38 @@ struct TbDisplayStruct {
 
     s32 unknown18;
     s32 unknown1c;
+    s32 graphics_screen_width;
+    s32 graphics_screen_height;
+    s32 graphics_window_x;
+    s32 graphics_window_y;
+    s32 graphics_window_width;
+    s32 graphics_window_height;
+    s32 mouse_window_x;
+    s32 mouse_window_y;
+    s32 mouse_window_width;
+    s32 mouse_window_height;
+    volatile s32 mouse_x;
+    volatile s32 mouse_y;
+    volatile s32 mmouse_x;
+    volatile s32 mmouse_y;
+    volatile s32 rmouse_x;
+    volatile s32 rmouse_y;
+    u16 draw_flags;
+    u16 old_video_mode;
+    u16 screen_mode;
+    u8 vesa_is_set_up;
+    volatile u8 left_button;
+    volatile u8 right_button;
+    volatile u8 middle_button;
+    volatile u8 mleft_button;
+    volatile u8 mright_button;
+    volatile u8 mmiddle_button;
+    volatile u8 rleft_button;
+    volatile u8 rmiddle_button;
+    volatile u8 rright_button;
+    u8 fade_step;
+    u8 draw_colour;
+    u8 unknown72[6];
 };
 
 struct TbLoadFiles {
@@ -140,7 +172,7 @@ int LbScreenReset(void);
 int LbIsActive(void);
 int LbScreenSwap(void);
 int LbDate(void);
-u32 LbTimerClock(void);
+s32 LbTimerClock(void);
 /* The C library's memcpy. */
 void fn_000c21e6(void *a, void *b, int c);
 #pragma aux fn_000c21e6 "memcpy_"

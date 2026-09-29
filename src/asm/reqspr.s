@@ -17,9 +17,9 @@
     {load} or cl, cl
     je .L000fe0d1
     mov esi, dword ptr [ebx]
-    add eax, dword ptr [_D_00188c3c]
-    add edx, dword ptr [_D_00188c40]
-    mov ecx, dword ptr ["W?research_names$npnpna"]
+    add eax, dword ptr ["_lbDisplay"+0x28]
+    add edx, dword ptr ["_lbDisplay"+0x2c]
+    mov ecx, dword ptr ["_lbDisplay"+0x20]
     mov dword ptr [esp + 8], ecx
     imul edx, ecx
     {load} add edx, eax

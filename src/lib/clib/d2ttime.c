@@ -15,8 +15,6 @@ typedef long time_t;
 time_t mktime(struct tm *t);
 
 // FUNCTION: 0xf4b64
-// NONMATCHING: config/functions.txt extends _d2ttime_ over the int 23h and
-// Ctrl-Break handlers of the next module (0xf4bca, 0xf4c5f)
 time_t _d2ttime(unsigned date, unsigned time)
 {
     struct tm t;

@@ -2,19 +2,8 @@
 
 extern "C" {
 extern char **D_001602a0;
-extern u8 D_00155e2d;
-extern u8 D_001553b8[];
-extern u8 D_001553c8;
-extern u8 D_001553eb;
 extern char D_0012096c[];
 extern u8 D_00161200[];
-extern u16 D_00155444;
-extern u8 D_00155e0d;
-extern u8 D_00155e10;
-extern u8 D_0015642d;
-extern u8 D_00155d71;
-extern u8 D_00155e07;
-extern u8 D_00155402;
 extern char D_00120976[];
 extern char D_0012097b[];
 extern char D_0012098d[];
@@ -23,7 +12,6 @@ extern char D_001209b2[];
 extern u16 D_0012b8c8[];
 extern u16 D_0012b8e4[];
 extern u16 D_00154834[];
-extern u8 D_00155e23;
 
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
@@ -51,7 +39,6 @@ void read_variable_file(char *path);
 void evaluate_reputation(const u8 a, const u8 owner);
 void calc_pricing_factor(const u8 owner);
 
-// NONMATCHING: the target loads D_0015642d before calling LbTimerClock() for play_midi
 // FUNCTION: 0x00090804
 void fn_00090804(int level, u8 flag)
 {
@@ -71,7 +58,7 @@ void fn_00090804(int level, u8 flag)
     if (flag)
         load_balance(level);
     copy_my_hosp(&backup, myhosp);
-    saved = D_00155e2d;
+    saved = othervar.fa75;
     myplayer.f9 += mycontrol->f648;
     memset(thing, 0, 0x40164);
     memset(map, 0, 0x20000);
@@ -80,7 +67,7 @@ void fn_00090804(int level, u8 flag)
     memset(allhosps, 0, 0x4964);
     memset(mycontrol, 0, 0x651);
     memset(listhead, 0, 0x3a8);
-    memset(D_001553b8, 0, 0xa96);
+    memset(&othervar, 0, sizeof(othervar));
     memset(&gamevar, 0, 0x178);
     memset(playercall, 0, 0x258);
     memset(&current_net_criteria, 0, 0xc);
@@ -90,7 +77,7 @@ void fn_00090804(int level, u8 flag)
     LbMemorySet(&NRAdcounts, 0, 0x11);
     if ((u16)level != 1)
         LbMemorySet(advisor.f0_u8a, 0, 0x133);
-    D_00155e2d = saved;
+    othervar.fa75 = saved;
     for (i = 0; i < 9; i++)
         popup_id[i] = 1;
     mycontrol->unknown64f = 1;
@@ -112,8 +99,8 @@ void fn_00090804(int level, u8 flag)
     create_job_market();
     for (i = 0; i < 4; i++)
         init_player(i);
-    D_001553c8 = 1;
-    D_001553eb = 1;
+    othervar.f10 = 1;
+    othervar.f33 = 1;
     calc_visitors_this_month();
     adcounts.f0 = 1;
     mycontrol->f4b4 = myhosp->f1c3;
@@ -125,23 +112,23 @@ void fn_00090804(int level, u8 flag)
     setup_next_quake();
     reset_advisor();
     LbMemorySet(D_00161200, 0, 0x26);
-    D_00155444 = get_next_illness(1, 0);
+    othervar.f8c = get_next_illness(1, 0);
     check_save_games();
-    D_00155e0d = 1;
-    D_00155e10 = 0x39;
+    othervar.fa55 = 1;
+    othervar.fa58 = 0x39;
     fn_0008bdd4();
     setup_key_mappos();
     setup_next_net_criteria(player);
-    if (D_0015642d) {
-        D_00155d71 = 1;
+    if (statvar.f5dd) {
+        othervar.f9b9 = 1;
         if (myplayer.unknown11) {
-            D_00155e07 = 1;
-            play_midi((s32)LbTimerClock() % D_0015642d);
+            othervar.fa4f = 1;
+            play_midi(LbTimerClock() % statvar.f5dd);
         }
     }
     LbMemorySet(&current_text, 0, 0x5e7);
     LbMemorySet(net_text, 0, 0xfa);
-    D_00155402 = 0;
+    othervar.f4a = 0;
     close_irequesters();
 }
 
@@ -231,7 +218,7 @@ void setup_insurances(void)
             pick = old_newrand() % left;
             ins_control[i] = pool[pick];
         } else {
-            pick = (s32)LbTimerClock() % left;
+            pick = LbTimerClock() % left;
             ins_control[i] = pool[pick];
         }
         left--;
@@ -296,7 +283,7 @@ void init_player(u8 p)
         if (statvar.unknownfd <= 1)
             h->unknown1256 = 1;
     }
-    D_00155e23 = 0;
+    othervar.fa6b = 0;
     h->f1c3 = h->f35;
     h->f41 = 15000;
     h->f31 = h->f2d;

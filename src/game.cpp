@@ -1,49 +1,16 @@
 #include "hosp.h"
 
-struct Settings {
-    u8 unknown0[3];
-    TbScreenMode mode;
-};
-
 extern "C" {
 
 extern char D_00120174[];
 extern char D_0013f486[];
-extern u32 D_00155c5a;
-extern Settings D_001553e1;
 extern u8 D_0012d8d8[];
 extern u32 D_001606bc;
-extern u16 D_0015542a;
-extern u8 D_00155e39;
-extern u8 D_00155c68;
-extern u16 D_00155e1b;
-extern u8 *D_001553d7;
-extern u8 D_001553db;
-extern u8 *D_001553dc;
-extern u8 D_00155e14, D_00155e15, D_00155e16;
-extern u8 D_00155d70;
-extern u8 D_00155e4c;
 extern u8 D_0015f99f;
-extern u8 D_001553c8;
-extern u16 D_00155e2a;
-extern u8 D_001553ea;
-extern u8 D_001553b8[];
-extern u8 D_001553c6, D_001553e7;
-extern u16 D_0015543a, D_0015543c;
-extern u8 D_0015543e;
-extern s16 D_00155c64[2];
 extern u8 D_0012b7c8[];
 extern Event D_001549d0[];
 extern u8 *D_00153f34;
-extern u8 D_00155e1d;
-extern u8 D_001553e8;
-extern u16 D_00188c74;
-extern u32 D_00188c38;
 extern u8 D_00156910;
-extern u8 D_00155e33[];
-extern u8 D_00155e07;
-extern u16 D_00155e37;
-extern u8 D_00188c7b, D_00188c7c, D_00188c7e, D_00188c7f;
 
 void fn_00090610(void);
 void fn_000110b0(void);
@@ -83,13 +50,13 @@ void game(void)
     }
     process_turn();
     while (quit_game == 0) {
-        D_00155c5a = LbTimerClock();
+        othervar.f8a2 = LbTimerClock();
         get_input();
-        if (D_001553e1.mode) {
-            if (!change_res(D_001553e1.mode)) {
+        if (othervar.f2c) {
+            if (!change_res(othervar.f2c)) {
                 break;
             }
-            D_001553e1.mode = (TbScreenMode)0;
+            othervar.f2c = (TbScreenMode)0;
         }
         check_if_active();
         if (fn_000bed50() != 1) {
@@ -171,14 +138,14 @@ void game(void)
                 manage_sound();
                 break;
             case 7:
-                if (D_0015542a != 0) {
-                    switch (D_0015542a) {
+                if (othervar.f72 != 0) {
+                    switch (othervar.f72) {
                     case 1:
                     case 2:
                         play_winlose();
                         break;
                     default:
-                        D_0015542a = 0;
+                        othervar.f72 = 0;
                         break;
                     }
                 }
@@ -259,45 +226,45 @@ void game(void)
             LbMouseRemove();
         }
         limit_framerate();
-        if ((display_mode == 0 || display_mode == 11) && resvars.f0 == SCREEN_MODE_13 && D_00155e39 == 0) {
+        if ((display_mode == 0 || display_mode == 11) && resvars.f0 == SCREEN_MODE_13 && othervar.fa81 == 0) {
             special_refresh();
         } else {
-            if (D_00155e39) {
-                D_00155e39--;
+            if (othervar.fa81) {
+                othervar.fa81--;
             }
             LbScreenSwap();
         }
         if (redraw && !gamevar.unknown21 && gamevar.f12d == 0 && frame && quit_game != 1) {
             process_things(thing + 1, end_things);
             process_blueprint_zones();
-            if (gamevar.f139 || D_00155c68 || D_00155e1b) {
-                for (i = 0; D_00155e1b + 2 > i; i++) {
+            if (gamevar.f139 || othervar.f8b0 || othervar.fa63) {
+                for (i = 0; othervar.fa63 + 2 > i; i++) {
                     process_things(thing + 1, end_things);
                     process_blueprint_zones();
                     start_turn();
                 }
-                D_00155c68 = 0;
-                D_00155e1b = 0;
+                othervar.f8b0 = 0;
+                othervar.fa63 = 0;
             }
         }
-        if (D_001553d7) {
-            hosp_fade_palette(D_001553d7, 10, Lb_PALETTE_FADE_CLOSED);
-            current_palette = D_001553d7;
-            D_001553d7 = 0;
+        if (othervar.f1f) {
+            hosp_fade_palette(othervar.f1f, 10, Lb_PALETTE_FADE_CLOSED);
+            current_palette = othervar.f1f;
+            othervar.f1f = 0;
             setup_colors();
         }
-        if (D_001553db) {
+        if (othervar.f23) {
             hosp_fade_palette(0, 10, Lb_PALETTE_FADE_CLOSED);
-            D_001553db = 0;
+            othervar.f23 = 0;
         }
-        if (D_001553dc) {
-            LbPaletteSet(D_001553dc);
-            current_palette = D_001553dc;
-            D_001553dc = 0;
+        if (othervar.f24) {
+            LbPaletteSet(othervar.f24);
+            current_palette = othervar.f24;
+            othervar.f24 = 0;
             setup_colors();
         }
-        if (D_00155e14 || D_00155e15 || D_00155e16) {
-            if (display_mode == 0 && crequester.unknown2 == 0x63 && D_00155d70 == 0 && gamevar.f12e != 0x25 && !D_00155e4c
+        if (othervar.fa5c || othervar.fa5d || othervar.fa5e) {
+            if (display_mode == 0 && crequester.unknown2 == 0x63 && othervar.f9b8 == 0 && gamevar.f12e != 0x25 && !othervar.fa94
                 && gamevar.f12e != 3) {
                 display_mission();
             }
@@ -323,7 +290,7 @@ void game(void)
         case 2:
             D_0015f99f = 1;
             quit_game = 0;
-            D_001553c8 = 1;
+            othervar.f10 = 1;
             break;
         default:
             break;
@@ -357,11 +324,11 @@ void start_turn(void)
 
     now = LbTimerClock();
     game_turn++;
-    D_00155e2a = 0;
+    othervar.fa72 = 0;
     if (gamevar.f138) {
         myplayer.f1es = 0x7d00;
     }
-    if (now - gamecounts.unknown14 < 1000 / myplayer.f1es && D_00155c68 == 0 && statvar.unknownfd <= 1) {
+    if (now - gamecounts.unknown14 < 1000 / myplayer.f1es && othervar.f8b0 == 0 && statvar.unknownfd <= 1) {
         gamevar.f12d = 1;
         return;
     }
@@ -371,15 +338,15 @@ void start_turn(void)
         return;
     }
     actual_game_turn++;
-    D_001553ea = (actual_game_turn & 0xf) == 0;
-    *(u16 *)D_001553b8 = old_newrand() % 100;
-    D_001553c6 = old_newrand() % 6;
-    D_001553e7 = (old_newrand() & 3) + 1;
-    D_0015543a = actual_game_turn;
-    D_0015543c = actual_game_turn + gbv.fe4;
-    D_0015543e = (actual_game_turn & 0x1f) == 0;
-    if (D_00155c64[1] > 0) {
-        D_00155c64[1]--;
+    othervar.f32 = (actual_game_turn & 0xf) == 0;
+    othervar.f0 = old_newrand() % 100;
+    othervar.fe = old_newrand() % 6;
+    othervar.f2f = (old_newrand() & 3) + 1;
+    othervar.f82 = actual_game_turn;
+    othervar.f84 = actual_game_turn + gbv.fe4;
+    othervar.f86 = (actual_game_turn & 0x1f) == 0;
+    if (othervar.f8ac_s16a[1] > 0) {
+        othervar.f8ac_s16a[1]--;
     }
     if (actual_game_turn % 25 == 0) {
         twice_daily_admin();
@@ -437,7 +404,7 @@ void start_turn(void)
         }
     }
     if (statvar.unknownfd > 1) {
-        switch (D_00155e4c) {
+        switch (othervar.fa94) {
         case 1:
             D_001549d0[player].type = 0x7e;
             D_001549d0[player].value = 1;
@@ -454,8 +421,8 @@ void start_turn(void)
 // FUNCTION: 0x00012068
 u8 change_res(TbScreenMode mode)
 {
-    s32 width = mouse_dx;
-    s32 height = mouse_dy;
+    s32 width = lbDisplay.mmouse_x;
+    s32 height = lbDisplay.mmouse_y;
 
     if (resvars.f0 == SCREEN_MODE_13 && mode != SCREEN_MODE_13) {
         width = width / 2;
@@ -469,12 +436,12 @@ u8 change_res(TbScreenMode mode)
     } else {
         TbSprite *font;
 
-        if (D_00155e1d) {
+        if (othervar.fa65) {
             font = screen_pointers_tab_start;
         } else {
             font = pointer;
         }
-        LbMouseSetup(font + D_001553e8);
+        LbMouseSetup(font + othervar.f30);
         LbMouseSetPosition(width, height);
         return 1;
     }
@@ -570,10 +537,10 @@ void do_year_end(void)
 void draw_pause_mode(void)
 {
     if (gamevar.unknown21) {
-        D_00188c74 = 4;
-        LbDrawBox(0, 0, D_00188c34, D_00188c38, color.unknown9);
+        lbDisplay.draw_flags = 4;
+        LbDrawBox(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, color.unknown9);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0;
         D_00156910 = 1;
     }
 }
@@ -582,24 +549,24 @@ void draw_pause_mode(void)
 void check_if_active(void)
 {
     if (statvar.unknownfd > 1) {
-        if (LbDate() && D_00155e33[player] != 0) {
-            D_00155e39 = 0xf;
+        if (LbDate() && othervar.fa7b[player] != 0) {
+            othervar.fa81 = 0xf;
             D_001549d0[player].type = 0x8e;
-            if (D_00155e07) {
+            if (othervar.fa4f) {
                 AIL_resume_sequence(GetSongHandle());
             }
-        } else if (!LbDate() && D_00155e33[player] == 0) {
+        } else if (!LbDate() && othervar.fa7b[player] == 0) {
             D_001549d0[player].type = 0x8d;
             if (has_any_player_lost_focus()) {
-                D_00155e33[player] = 2;
+                othervar.fa7b[player] = 2;
             } else {
-                D_00155e33[player] = 1;
+                othervar.fa7b[player] = 1;
             }
             if (display_mode != 0xd) {
-                D_00155e37 = display_mode;
+                othervar.fa7f = display_mode;
                 display_mode = 0xd;
             }
-            if (D_00155e07) {
+            if (othervar.fa4f) {
                 AIL_end_sequence(GetSongHandle());
             }
         }
@@ -611,14 +578,14 @@ u8 process_lost_focus_display(u8 flag)
 {
     u8 result;
 
-    if (D_00155e33[player] == 1) {
+    if (othervar.fa7b[player] == 1) {
         start_turn();
         result = 1;
     } else {
         result = 0;
     }
     if (flag) {
-        switch (D_00155e37) {
+        switch (othervar.fa7f) {
         case 0:
         case 11:
             draw_it();
@@ -640,19 +607,19 @@ void display_mission(void)
     if (advisor.f11f & 1) {
         return;
     }
-    D_00188c7b = D_00188c7c = 0;
-    D_00188c7e = D_00188c7f = 0;
+    lbDisplay.left_button = lbDisplay.right_button = 0;
+    lbDisplay.mleft_button = lbDisplay.mright_button = 0;
     if (statvar.unknownfd <= 1) {
         show_help_page(1, level_number);
-        D_00155e14 = 0;
-    } else if (D_00155e16) {
-        if (D_00155e16 == 3) {
+        othervar.fa5c = 0;
+    } else if (othervar.fa5e) {
+        if (othervar.fa5e == 3) {
             play_sound(10, 0xaf, -1, -1);
         }
-        show_help_page(3, D_00155e16);
-        D_00155e16 = 0;
+        show_help_page(3, othervar.fa5e);
+        othervar.fa5e = 0;
     } else {
         show_help_page(2, current_net_criteria.unknown0);
-        D_00155e15 = 0;
+        othervar.fa5d = 0;
     }
 }

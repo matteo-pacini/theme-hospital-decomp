@@ -3,10 +3,6 @@
 extern "C" {
 
 extern s32 lbSinTable[];
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern s32 D_00188c44;
-extern s32 D_00188c48;
 
 }
 
@@ -58,15 +54,15 @@ void draw_wibble(s32 x, s32 y, u8 *buf, s32 w, s32 h, s32 phase)
     s32 skipx;
     s32 skipy;
 
-    dst = lbDisplay.unknown4 + D_00188c3c + D_00188c40 * D_00188c34;
+    dst = lbDisplay.unknown4 + lbDisplay.graphics_window_x + lbDisplay.graphics_window_y * lbDisplay.graphics_screen_width;
     src = buf + (yoffptr[phase] - aamp) * srcwidth;
     if (x >= 0) {
-        if (x >= D_00188c44)
+        if (x >= lbDisplay.graphics_window_width)
             return;
         skipx = 0;
         dst += x;
-        if (x + w > D_00188c44)
-            w = D_00188c44 - x;
+        if (x + w > lbDisplay.graphics_window_width)
+            w = lbDisplay.graphics_window_width - x;
     } else {
         w += x;
         if (w <= 0)
@@ -74,11 +70,11 @@ void draw_wibble(s32 x, s32 y, u8 *buf, s32 w, s32 h, s32 phase)
         skipx = -x;
     }
     if (y >= 0) {
-        if (y >= D_00188c48)
+        if (y >= lbDisplay.graphics_window_height)
             return;
-        dst += D_00188c34 * y;
-        if (y + h > D_00188c48)
-            h = D_00188c48 - y;
+        dst += lbDisplay.graphics_screen_width * y;
+        if (y + h > lbDisplay.graphics_window_height)
+            h = lbDisplay.graphics_window_height - y;
         skipy = 0;
         yp = &yoffptr[phase];
     } else {
@@ -89,7 +85,7 @@ void draw_wibble(s32 x, s32 y, u8 *buf, s32 w, s32 h, s32 phase)
         src += srcwidth * skipy;
         yp = &yoffptr[phase + skipy];
     }
-    dstskip = D_00188c34 - w;
+    dstskip = lbDisplay.graphics_screen_width - w;
     src -= aamp;
     for (rows = h; rows; dst += dstskip, yp++, src += srcwidth, rows--) {
         s = src + *yp;

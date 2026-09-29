@@ -40,8 +40,8 @@ int __leapyear(int year)
 int calc_yday(const struct tm *timerule, int year)
 {
     struct tm tmbuf;
-    int first_wday;
     int n;
+    int first_wday;
     int month_days;
 
     if (timerule->tm_isdst == 0) {
@@ -92,15 +92,15 @@ int time_less(const struct tm *t1, const struct tm *t2);
 // leap-year table read at __dilyr-2 as ___diyr+0x18
 int __isindst(struct tm *t)
 {
-    int month;
-    int dst;
-    int n1;
-    int n2;
     int month_days;
-    int time_check;
-    int swap;
     struct tm const *start;
+    int month;
+    int swap;
+    int dst;
     struct tm const *end;
+    int n1;
+    int time_check;
+    int n2;
 
     dst = 0;
     if (tzname[1][0] != '\0') {

@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_001553ea;
 extern u8 D_00129234[];
 u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner);
 #pragma aux fn_0007cbdc "W?trapped_plant_check$n(pn$RoomInfo$$l)uc"
@@ -339,7 +338,7 @@ void plant_ages(Thing *w)
     u8 level;
     u32 next;
 
-    if (!D_001553ea || (old_newrand() & 1))
+    if (!othervar.f32 || (old_newrand() & 1))
         return;
     w->unknown100s--;
     if (w->unknown100s > 0) {

@@ -9,8 +9,6 @@ struct SelectionState {
 extern "C" {
 
 extern s16 D_0012cd00[];
-extern u16 D_0015543a;
-extern u8 D_00155441;
 extern SelectionState D_001581b2;
 extern PlayerCall D_0015f5a4[][9];
 extern u8 D_00158192;
@@ -150,7 +148,7 @@ void person_entertains_themself(Thing *w)
                     }
                     if (w->unknown124 > gbv.f108 || (w->flags & 0x100)) {
                         if (w->owner == player) {
-                            D_00155441++;
+                            othervar.f89++;
                         }
                         set_icon_value(w, 7);
                         person_go_home(w);
@@ -881,7 +879,7 @@ void person_waits_for_decision(Thing *w)
 
                 if (w->flags & 0x400) {
                     done = find_possible_diagnosis(w);
-                    if (done || (u16)(D_0015543a - w->timer) >= 1500) {
+                    if (done || (u16)(othervar.f82 - w->timer) >= 1500) {
                         w->flags &= ~0x10;
                         reset_icon_value(w, 0x1b);
                         if (!(w->flags & 0x80)) {
@@ -907,7 +905,7 @@ void person_waits_for_decision(Thing *w)
                     category = expertise[style].category;
                     done = allhosps[w->owner].rooms[style].unknown1C == 1 && listhead[w->owner].rooms[category]
                         ? (u8)1 : (u8)0;
-                    if (done || (u16)(D_0015543a - w->timer) >= 1500) {
+                    if (done || (u16)(othervar.f82 - w->timer) >= 1500) {
                         w->flags &= ~0x10;
                         reset_icon_value(w, 0x1b);
                         if (w->flags & 0x80) {

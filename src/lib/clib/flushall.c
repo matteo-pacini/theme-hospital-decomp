@@ -1,7 +1,6 @@
 #include "clib.h"
 
 // FUNCTION: 0xbc07c
-// NONMATCHING: the original falls through into __flushall; -zm gives a jmp
 int flushall(void)
 {
     return __flushall(~0);

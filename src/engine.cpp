@@ -57,17 +57,8 @@ void draw_window_into_pix_buffer(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, con
 void draw_window_on_wscreen_mk2(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1, const s32 cell);
 
 extern "C" {
-extern s32 D_00188c38;
-extern u16 D_001553f9;
-extern u16 D_00155427;
-extern u8 D_00155429;
-extern u16 D_001553e0;
-extern u8 D_001553c8;
 extern s16 D_001567b0[8];
 extern CellLink D_00157dc4[];
-extern u8 *D_00155d8f;
-extern s32 D_00155d93;
-extern s32 D_00155d97;
 void fn_000c9be0(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
 void LbDrawHVLine(s32 x, s32 y, TbSprite *sprite, s32 colour);
 void fn_000a6c08(void);
@@ -85,8 +76,8 @@ void draw_it(void)
     window.unknown2c7 = 0;
     window.unknown2cb = lbDisplay.unknown18;
     process_tracking_windows();
-    D_001553f9 = 0;
-    D_00155427 = D_00155429 = 0;
+    othervar.f41 = 0;
+    othervar.f6f = othervar.f71 = 0;
     if (window.unknown2ec > 0) {
         animate_windows();
         move_windows();
@@ -100,8 +91,8 @@ void draw_it(void)
     if (!debug.unknownd7)
         compute_help_text(0, 0, 3);
     if (gamevar.f12e == 1)
-        draw_cell_no(D_001553e0, color.unknownD);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+        draw_cell_no(othervar.f28, color.unknownD);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_map_cur_and_mcur_x_and_y();
 }
 
@@ -142,7 +133,7 @@ void fn_000a6ca4(void)
 // FUNCTION: 0x000a6cf0
 void fn_000a6cf0(u8 n)
 {
-    if ((((window.fd8[n] == 0 && window.fdb[n] == 0) && window.fe1[n] == window.fde[n]) && window.fde[n] == 0) && !D_001553c8) {
+    if ((((window.fd8[n] == 0 && window.fdb[n] == 0) && window.fe1[n] == window.fde[n]) && window.fde[n] == 0) && !othervar.f10) {
         refresh_wscreen();
     } else {
         s32 x;
@@ -175,7 +166,7 @@ void fn_000a6cf0(u8 n)
             copy_bscreen_window_to_wscreen_mk1(x, y, w, h, refresh.f0, refresh.f2);
     }
     draw_all_sprites_on_wscreen_selectively_using_pix_buffer(0, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    D_001553c8 = 0;
+    othervar.f10 = 0;
     window.f18[n] = window.f0[n];
     window.f24[n] = window.fc[n];
     window.f60[n] = window.zone_x[n];
@@ -232,7 +223,7 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
     ny0 = info.unknown6c;
     nx1 = info.unknown70;
     ny1 = info.unknown74;
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (y1 > y0) {
         if (x0 < nx0) {
             LbDrawBox(x0, y0, nx0 - x0, y1 - y0, colour);
@@ -291,7 +282,7 @@ void remove_old_window_image_from_wscreen(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx
     ny0 = info.unknown6c;
     nx1 = info.unknown70;
     ny1 = info.unknown74;
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (y1 > y1) {
         if (x0 < nx0)
             LbDrawBox(x0, y0, nx0 - x0, y1 - y0, colour);
@@ -312,7 +303,7 @@ void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h)
     find_common_window(x, y, w, h, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
     if (info.unknown78 == 0) {
         set_all_refresh_zones_in_window(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, 3);
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbDrawBox(info.unknown68, info.unknown6c, info.unknown70 - info.unknown68, info.unknown74 - info.unknown6c, color.unknown8);
     }
 }
@@ -1356,12 +1347,12 @@ void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
     bx0 = bx;
     by0 = by;
     base0 = base;
-    D_00155d8f = lbDisplay.unknown4;
-    D_00155d93 = D_00188c34;
-    D_00155d97 = D_00188c38;
+    othervar.f9d7 = lbDisplay.unknown4;
+    othervar.f9db = lbDisplay.graphics_screen_width;
+    othervar.f9df = lbDisplay.graphics_screen_height;
     lbDisplay.unknown4 = bscreen;
-    D_00188c34 = lbDisplay.unknown18;
-    D_00188c38 = lbDisplay.unknown1c;
+    lbDisplay.graphics_screen_width = lbDisplay.unknown18;
+    lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     for (j = f20; --j >= 0;) {
         x = px;
@@ -1501,8 +1492,8 @@ void draw_all_mk7_no_sprites_bscreen(const u8 n, s32 x0, s32 y0, s32 x1, s32 y1)
         }
         dx = -dx;
     }
-    lbDisplay.unknown4 = D_00155d8f;
-    D_00188c34 = D_00155d93;
-    D_00188c38 = D_00155d97;
-    LbScreenSetGraphicsWindow(0, 0, D_00155d93, D_00155d97);
+    lbDisplay.unknown4 = othervar.f9d7;
+    lbDisplay.graphics_screen_width = othervar.f9db;
+    lbDisplay.graphics_screen_height = othervar.f9df;
+    LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
 }

@@ -28,27 +28,12 @@ struct Slot {
 };
 
 extern "C" {
-extern u32 D_00188c38;
-extern u16 D_00188c74;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
-extern u8 D_00155401;
-extern u8 D_00155449;
-extern u16 D_00155e3a;
-extern u8 D_00155e18;
-extern u8 D_00155e13;
 extern Event D_001549d0[];
-extern u8 D_00188c7b, D_00188c7c, D_00188c7e, D_00188c81, D_00188c83;
-extern s32 D_00188c5c, D_00188c60;
-extern volatile s16 D_00188c6c, D_00188c70;
 extern char **D_001602f4;
 extern char D_001209c8[], D_001209cb[], D_001209d4[], D_001209d8[], D_001209db[];
 extern char D_001209de[], D_001209e2[];
-extern u8 D_001553f0;
-extern u8 D_001553c8;
 extern Slot D_001581b2[];
-extern char D_00155ced[];
-extern u16 D_00155c64;
-extern char D_0015544e[];
 }
 
 u16 get_slist_staff(const u8 dir);
@@ -74,10 +59,10 @@ void display_slist(void)
 {
     u16 prev;
 
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(1);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     switch (slist.unknown2) {
     case 0:
         load_ingame_pic(8, 1, 0x21, 0, SCREEN_MODE_13);
@@ -87,27 +72,27 @@ void display_slist(void)
         set_mouse_mode(0x21);
         slist.unknown2 = 1;
         slist.unknown0 = 0;
-        D_00155401 = 1;
+        othervar.f49 = 1;
         close_irequesters();
         open_new_window(0, 0, 0, resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y0, resvars.f44_SlistAreap->x1, resvars.f44_SlistAreap->y1);
         window.unknown2eb = window.unknown2ec - 1;
-        D_00155449 = 0;
-        if (D_00155e3a) {
-            switch ((thing + D_00155e3a)->subtype) {
+        othervar.f91 = 0;
+        if (othervar.fa82) {
+            switch ((thing + othervar.fa82)->subtype) {
             case 0:
-                D_00155401 = 2;
+                othervar.f49 = 2;
                 break;
             case 1:
-                D_00155401 = 1;
+                othervar.f49 = 1;
                 break;
             case 2:
-                D_00155401 = 4;
+                othervar.f49 = 4;
                 break;
             case 3:
-                D_00155401 = 8;
+                othervar.f49 = 8;
                 break;
             case 4:
-                D_00155401 = 1;
+                othervar.f49 = 1;
                 break;
             default:
                 break;
@@ -119,12 +104,12 @@ void display_slist(void)
                     slist.unknown0 = 0;
                     break;
                 }
-                if (slist.unknown0 == D_00155e3a)
+                if (slist.unknown0 == othervar.fa82)
                     break;
-                if (D_00155e18 / 11 > 0 && D_00155e18 % 11 == 0) {
-                    if (D_00155449 < 150) {
-                        if (staff_on_page(D_00155449 + 1))
-                            D_00155449++;
+                if (othervar.fa60 / 11 > 0 && othervar.fa60 % 11 == 0) {
+                    if (othervar.f91 < 150) {
+                        if (staff_on_page(othervar.f91 + 1))
+                            othervar.f91++;
                     }
                 }
             }
@@ -160,12 +145,12 @@ void display_slist(void)
         break;
     }
     slist_keys();
-    D_00188c74 = 0;
-    if (!staff_on_page(D_00155449)) {
-        if (D_00155449 > 0)
-            D_00155449--;
+    lbDisplay.draw_flags = 0;
+    if (!staff_on_page(othervar.f91)) {
+        if (othervar.f91 > 0)
+            othervar.f91--;
     }
-    D_00188c81 = D_00188c7b = 0;
+    lbDisplay.rleft_button = lbDisplay.left_button = 0;
     if (exit_quick_requester())
         slist.unknown2 = 3;
     compute_help_text(0, 0, 6);
@@ -179,22 +164,22 @@ void slist_keys(void)
 
     prev = 0;
     if (lbInkey == 0x4d || lbKeyOn[0xcd]) {
-        if (D_00155401 != 8) {
-            D_00155401 <<= 1;
+        if (othervar.f49 != 8) {
+            othervar.f49 <<= 1;
             slist.unknown0 = 0;
-            D_00188c5c = 0;
-            D_00188c60 = 0;
-            D_00155e18 = 0;
+            lbDisplay.mouse_x = 0;
+            lbDisplay.mouse_y = 0;
+            othervar.fa60 = 0;
             play_sound(10, 0x43, -1, -1);
         }
         lbInkey = 0;
     } else if (lbInkey == 0x4b || lbKeyOn[0xcb]) {
-        if (D_00155401 != 1) {
-            D_00155401 >>= 1;
+        if (othervar.f49 != 1) {
+            othervar.f49 >>= 1;
             slist.unknown0 = 0;
-            D_00188c5c = 0;
-            D_00188c60 = 0;
-            D_00155e18 = 0;
+            lbDisplay.mouse_x = 0;
+            lbDisplay.mouse_y = 0;
+            othervar.fa60 = 0;
             play_sound(10, 0x43, -1, -1);
         }
         lbInkey = 0;
@@ -204,13 +189,13 @@ void slist_keys(void)
         slist.unknown0 = get_slist_staff(0);
         if (prev != slist.unknown0) {
             play_sound(10, 0x43, -1, -1);
-            D_00188c5c = 0;
-            D_00188c60 = 0;
+            lbDisplay.mouse_x = 0;
+            lbDisplay.mouse_y = 0;
             lbInkey = 0;
-            if (D_00155e18 / 11 > 0 && D_00155e18 % 11 == 0) {
-                if (D_00155449 < 150) {
-                    if (staff_on_page(D_00155449 + 1)) {
-                        D_00155449++;
+            if (othervar.fa60 / 11 > 0 && othervar.fa60 % 11 == 0) {
+                if (othervar.f91 < 150) {
+                    if (staff_on_page(othervar.f91 + 1)) {
+                        othervar.f91++;
                         play_sound(10, 0x43, -1, -1);
                     } else {
                         play_sound(10, 0x43, -1, -1);
@@ -225,18 +210,18 @@ void slist_keys(void)
         slist.unknown0 = get_slist_staff(1);
         if (prev != slist.unknown0) {
             play_sound(10, 0x43, -1, -1);
-            if (D_00155e18 / 10 > 0 && D_00155e18 % 10 == 0) {
-                if (D_00155449 > 0) {
+            if (othervar.fa60 / 10 > 0 && othervar.fa60 % 10 == 0) {
+                if (othervar.f91 > 0) {
                     play_sound(10, 0x43, -1, -1);
-                    D_00155449--;
+                    othervar.f91--;
                     for (i = 0; i < 10; i++)
                         slist.unknown0 = get_slist_staff(1);
                 } else {
                     play_sound(10, 0x43, -1, -1);
                 }
             }
-            D_00188c5c = 0;
-            D_00188c60 = 0;
+            lbDisplay.mouse_x = 0;
+            lbDisplay.mouse_y = 0;
             lbInkey = 0;
         }
     }
@@ -252,11 +237,11 @@ u16 get_slist_staff(const u8 dir)
         while (++w < end_things) {
             if (w->renderer == 4 && w->owner == player) {
                 if (w->kind != 0x2e) {
-                    if (((w->subtype == 1 || w->subtype == 4) && (D_00155401 & 1))
-                        || (w->subtype == 0 && (D_00155401 & 2))
-                        || (w->subtype == 3 && (D_00155401 & 8))
-                        || (w->subtype == 2 && (D_00155401 & 4))) {
-                        D_00155e18++;
+                    if (((w->subtype == 1 || w->subtype == 4) && (othervar.f49 & 1))
+                        || (w->subtype == 0 && (othervar.f49 & 2))
+                        || (w->subtype == 3 && (othervar.f49 & 8))
+                        || (w->subtype == 2 && (othervar.f49 & 4))) {
+                        othervar.fa60++;
                         return w - thing;
                     }
                 }
@@ -266,11 +251,11 @@ u16 get_slist_staff(const u8 dir)
         while (thing + 1 <= --w) {
             if (w->renderer == 4 && w->owner == player) {
                 if (w->kind != 0x2e) {
-                    if (((w->subtype == 1 || w->subtype == 4) && (D_00155401 & 1))
-                        || (w->subtype == 0 && (D_00155401 & 2))
-                        || (w->subtype == 3 && (D_00155401 & 8))
-                        || (w->subtype == 2 && (D_00155401 & 4))) {
-                        D_00155e18--;
+                    if (((w->subtype == 1 || w->subtype == 4) && (othervar.f49 & 1))
+                        || (w->subtype == 0 && (othervar.f49 & 2))
+                        || (w->subtype == 3 && (othervar.f49 & 8))
+                        || (w->subtype == 2 && (othervar.f49 & 4))) {
+                        othervar.fa60--;
                         return w - thing;
                     }
                 }
@@ -291,15 +276,15 @@ void draw_slist_staff(const u16 selected)
     int pages;
 
     n = 0;
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(1);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     for (row = 0; row < 3; row++) {
-        D_00188c74 = 0x100;
+        lbDisplay.draw_flags = 0x100;
         LbTextSetWindow(resvars.f3c_Boxp[row + 61].x, resvars.f3c_Boxp[row + 61].y, resvars.f3c_Boxp[row + 61].w, resvars.f3c_Boxp[row + 61].h);
         LbTextDraw(0, (resvars.f3c_Boxp[row + 61].h - height) / 2, D_001602f4[row + 2]);
-        D_00188c74 = 0;
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        lbDisplay.draw_flags = 0;
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     }
     row = 0;
     for (w = thing + 1; w < end_things; w++) {
@@ -308,17 +293,17 @@ void draw_slist_staff(const u16 selected)
                 continue;
             if (row >= 10)
                 break;
-            if (((w->subtype == 1 || w->subtype == 4) && (D_00155401 & 1))
-                || (w->subtype == 0 && (D_00155401 & 2))
-                || (w->subtype == 3 && (D_00155401 & 8))
-                || (w->subtype == 2 && (D_00155401 & 4))) {
-                if (n >= D_00155449 * 10 && n < (D_00155449 + 1) * 10) {
+            if (((w->subtype == 1 || w->subtype == 4) && (othervar.f49 & 1))
+                || (w->subtype == 0 && (othervar.f49 & 2))
+                || (w->subtype == 3 && (othervar.f49 & 8))
+                || (w->subtype == 2 && (othervar.f49 & 4))) {
+                if (n >= othervar.f91 * 10 && n < (othervar.f91 + 1) * 10) {
                     set_font_from_cache(1);
-                    if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
-                        if (D_00155e18 != row + D_00155449 * 10 + 1)
+                    if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
+                        if (othervar.fa60 != row + othervar.f91 * 10 + 1)
                             play_sound(10, 0x44, -1, -1);
                         set_font_from_cache(2);
-                        D_00155e18 = D_00155449 * 10 + row + 1;
+                        othervar.fa60 = othervar.f91 * 10 + row + 1;
                     }
                     if (selected == (u16)(w - thing)) {
                         set_font_from_cache(2);
@@ -337,8 +322,8 @@ void draw_slist_staff(const u16 selected)
                                &screen_sprites_tab_start[resvars.f3c_Boxp[row + 81].h], 1000, 0, 1000, 0);
                     draw_gauge(w->unknown126, resvars.f3c_Boxp[row + 91].x, resvars.f3c_Boxp[row + 91].y, resvars.f3c_Boxp[row + 91].w,
                                &screen_sprites_tab_start[resvars.f3c_Boxp[row + 91].h], 1000, 30, 970, 1);
-                    if (D_00188c7e) {
-                        if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
+                    if (lbDisplay.mleft_button) {
+                        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
                             if ((u16)(w - thing) != slist.unknown0)
                                 play_sound(10, 0x43, -1, -1);
                             slist.unknown0 = w - thing;
@@ -352,13 +337,13 @@ void draw_slist_staff(const u16 selected)
     }
     if (row < 10)
         LbDrawBox(resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, (10 - row) * resvars.f3c_Boxp[row + 104].h, 0x77);
-    D_00155e13 = row;
+    othervar.fa5b = row;
     for (pages = 0; staff_on_page(pages); pages++)
         ;
     if (pages > 1) {
         u8 pos;
 
-        pos = resvars.f3c_Boxp[114].h / (pages - 1) * D_00155449;
+        pos = resvars.f3c_Boxp[114].h / (pages - 1) * othervar.f91;
         reqspr_draw(resvars.f3c_Boxp[114].x, pos + resvars.f3c_Boxp[114].y, &screen_sprites_tab_start[resvars.f3c_Boxp[114].w]);
     }
 }
@@ -407,9 +392,9 @@ void draw_slist_window(const u16 id)
         window.unknown2cb = save_w;
         window.unknown2cf = save_h;
     }
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     draw_face((Picture *)&thing[id].f87, resvars.f44_SlistAreap->face_x, resvars.f44_SlistAreap->face_y);
     if (w->subtype == 1 || w->subtype == 4) {
         i = 0;
@@ -472,10 +457,10 @@ void draw_slist_overall(void)
     for (w = thing + 1; w < end_things; w++) {
         if (w->renderer == 4 && w->owner == player) {
             if (w->kind != 0x2e) {
-                if (((w->subtype == 1 || w->subtype == 4) && (D_00155401 & 1))
-                    || (w->subtype == 0 && (D_00155401 & 2))
-                    || (w->subtype == 3 && (D_00155401 & 8))
-                    || (w->subtype == 2 && (D_00155401 & 4))) {
+                if (((w->subtype == 1 || w->subtype == 4) && (othervar.f49 & 1))
+                    || (w->subtype == 0 && (othervar.f49 & 2))
+                    || (w->subtype == 3 && (othervar.f49 & 8))
+                    || (w->subtype == 2 && (othervar.f49 & 4))) {
                     happiness += w->unknown81s;
                     tiredness += w->f78;
                     ability += w->unknown126;
@@ -484,7 +469,7 @@ void draw_slist_overall(void)
             }
         }
     }
-    if (!(D_00155401 & 1))
+    if (!(othervar.f49 & 1))
         draw_slist_coverup();
     if (count) {
         ability /= count;
@@ -507,18 +492,18 @@ void process_slist_panel(void)
 {
     u8 i;
 
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i + 0x30].width != 0 && resvars.f48[i + 0x30].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x30].x, resvars.f48[i + 0x30].y, resvars.f48[i + 0x30].width, resvars.f48[i + 0x30].height)) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0x30].x, resvars.f48[i + 0x30].y, resvars.f48[i + 0x30].width, resvars.f48[i + 0x30].height)) {
                 resvars.f48[i + 0x30].callback(i);
                 reqspr_draw(resvars.f48[i + 0x30].unknownC, resvars.f48[i + 0x30].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0x30].sprite]);
             }
         }
-        if (over_hotspot(D_00188c6c, D_00188c70, resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y0, resvars.f44_SlistAreap->x1 - resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y1 - resvars.f44_SlistAreap->y0)) {
+        if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y0, resvars.f44_SlistAreap->x1 - resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y1 - resvars.f44_SlistAreap->y0)) {
             if (slist.unknown0) {
-                D_001553f0 = 2;
+                othervar.f38 = 2;
                 D_001581b2[2].value = slist.unknown0;
-                D_001553c8 = 1;
+                othervar.f10 = 1;
                 slist.unknown2 = 2;
                 close_irequesters();
                 window.unknown2eb = 0;
@@ -528,9 +513,9 @@ void process_slist_panel(void)
         if (slist.unknown0)
             draw_slist_button_overlays(&thing[slist.unknown0]);
     }
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; resvars.f48[i + 0x30].width != 0 && resvars.f48[i + 0x30].height != 0; i++) {
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f48[i + 0x30].x, resvars.f48[i + 0x30].y, resvars.f48[i + 0x30].width, resvars.f48[i + 0x30].height)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f48[i + 0x30].x, resvars.f48[i + 0x30].y, resvars.f48[i + 0x30].width, resvars.f48[i + 0x30].height)) {
                 reqspr_draw(resvars.f48[i + 0x30].unknownC, resvars.f48[i + 0x30].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0x30].sprite]);
                 break;
             }
@@ -548,40 +533,40 @@ void process_slist_button(u8 n)
 
     switch (n) {
     case 0:
-        if (D_00155401 != 1)
+        if (othervar.f49 != 1)
             play_sound(10, 0x43, -1, -1);
-        D_00155401 = 1;
+        othervar.f49 = 1;
         slist.unknown0 = 0;
-        D_00155e18 = 0;
+        othervar.fa60 = 0;
         break;
     case 1:
-        if (D_00155401 != 2)
+        if (othervar.f49 != 2)
             play_sound(10, 0x43, -1, -1);
-        D_00155401 = 2;
+        othervar.f49 = 2;
         slist.unknown0 = 0;
-        D_00155e18 = 0;
+        othervar.fa60 = 0;
         break;
     case 2:
-        if (D_00155401 != 8)
+        if (othervar.f49 != 8)
             play_sound(10, 0x43, -1, -1);
-        D_00155401 = 8;
+        othervar.f49 = 8;
         slist.unknown0 = 0;
-        D_00155e18 = 0;
+        othervar.fa60 = 0;
         break;
     case 3:
-        if (D_00155401 != 4)
+        if (othervar.f49 != 4)
             play_sound(10, 0x43, -1, -1);
-        D_00155401 = 4;
+        othervar.f49 = 4;
         slist.unknown0 = 0;
-        D_00155e18 = 0;
+        othervar.fa60 = 0;
         break;
     case 4:
         if (slist.unknown0) {
             play_sound(10, 0x43, -1, -1);
             close_irequesters();
-            D_00188c81 = D_00188c83 = D_00188c7b = D_00188c7c = 0;
+            lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
             set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-            sprintf(D_00155ced, D_001209d8, yesno_text[5]);
+            sprintf(othervar.f935, D_001209d8, yesno_text[5]);
             open_yes_no_requester(0x47, slist.unknown0, 0, 0x88, slist.unknown0, 0);
             slist.unknown0 = 0;
         }
@@ -610,9 +595,9 @@ void process_slist_button(u8 n)
         break;
     case 8:
         sound = 8;
-        if (D_00155449 > 0) {
-            if (staff_on_page(D_00155449 - 1)) {
-                D_00155449--;
+        if (othervar.f91 > 0) {
+            if (staff_on_page(othervar.f91 - 1)) {
+                othervar.f91--;
                 for (i = 0; i < 10; i++)
                     slist.unknown0 = get_slist_staff(1);
                 sound = 0x43;
@@ -622,9 +607,9 @@ void process_slist_button(u8 n)
         break;
     case 9:
         sound = 8;
-        if (D_00155449 < 150) {
-            if (staff_on_page(D_00155449 + 1)) {
-                D_00155449++;
+        if (othervar.f91 < 150) {
+            if (staff_on_page(othervar.f91 + 1)) {
+                othervar.f91++;
                 for (i = 0; i < 10; i++)
                     slist.unknown0 = get_slist_staff(0);
                 sound = 0x43;
@@ -661,10 +646,10 @@ u8 staff_on_page(const u8 page)
     for (w = thing + 1; w < end_things; w++) {
         if (w->renderer == 4) {
             if (w->kind != 0x2e && w->owner == player) {
-                if (((w->subtype == 1 || w->subtype == 4) && (D_00155401 & 1))
-                    || (w->subtype == 0 && (D_00155401 & 2))
-                    || (w->subtype == 3 && (D_00155401 & 8))
-                    || (w->subtype == 2 && (D_00155401 & 4))) {
+                if (((w->subtype == 1 || w->subtype == 4) && (othervar.f49 & 1))
+                    || (w->subtype == 0 && (othervar.f49 & 2))
+                    || (w->subtype == 3 && (othervar.f49 & 8))
+                    || (w->subtype == 2 && (othervar.f49 & 4))) {
                     if (n >= page * 10 && n < (page + 1) * 10)
                         return 1;
                     n++;
@@ -683,13 +668,13 @@ void draw_slist_nums(void)
     u16 counts[4];
     char buf[100];
 
-    if (D_00155401 & 1)
+    if (othervar.f49 & 1)
         reqspr_draw(resvars.f48[0x30].unknownC, resvars.f48[0x30].unknownE, &screen_sprites_tab_start[resvars.f48[0x30].sprite]);
-    else if (D_00155401 & 2)
+    else if (othervar.f49 & 2)
         reqspr_draw(resvars.f48[0x31].unknownC, resvars.f48[0x31].unknownE, &screen_sprites_tab_start[resvars.f48[0x31].sprite]);
-    else if (D_00155401 & 8)
+    else if (othervar.f49 & 8)
         reqspr_draw(resvars.f48[0x32].unknownC, resvars.f48[0x32].unknownE, &screen_sprites_tab_start[resvars.f48[0x32].sprite]);
-    else if (D_00155401 & 4)
+    else if (othervar.f49 & 4)
         reqspr_draw(resvars.f48[0x33].unknownC, resvars.f48[0x33].unknownE, &screen_sprites_tab_start[resvars.f48[0x33].sprite]);
     for (i = 0; i < 4; i++)
         counts[i] = 0;
@@ -708,8 +693,8 @@ void draw_slist_nums(void)
         }
     }
     set_font_from_cache(0xd);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     for (i = 0; i < 4; i++) {
         sprintf(buf, D_001209db, counts[i]);
         LbTextDraw(resvars.f40[i + 144].x, resvars.f40[i + 144].y, buf);
@@ -726,36 +711,36 @@ void draw_slist_coverup(void)
 // FUNCTION: 0x00093f38
 void slist_salary_help_if_present(void)
 {
-    if (resvars.f2c_SlistMenuItemp[D_00155c64].row < D_00155e13)
-        fn_000bbff0(D_0015544e, help_text[50]);
+    if (resvars.f2c_SlistMenuItemp[othervar.f8ac].row < othervar.fa5b)
+        fn_000bbff0(othervar.f96, help_text[50]);
 }
 
 // FUNCTION: 0x00093f88
 void slist_happiness_help_if_present(void)
 {
-    if (resvars.f2c_SlistMenuItemp[D_00155c64].row < D_00155e13)
-        fn_000bbff0(D_0015544e, help_text[51]);
+    if (resvars.f2c_SlistMenuItemp[othervar.f8ac].row < othervar.fa5b)
+        fn_000bbff0(othervar.f96, help_text[51]);
 }
 
 // FUNCTION: 0x00093fd8
 void slist_tiredness_help_if_present(void)
 {
-    if (resvars.f2c_SlistMenuItemp[D_00155c64].row < D_00155e13)
-        fn_000bbff0(D_0015544e, help_text[52]);
+    if (resvars.f2c_SlistMenuItemp[othervar.f8ac].row < othervar.fa5b)
+        fn_000bbff0(othervar.f96, help_text[52]);
 }
 
 // FUNCTION: 0x00094028
 void slist_ability_help_if_present(void)
 {
-    if (resvars.f2c_SlistMenuItemp[D_00155c64].row < D_00155e13)
-        fn_000bbff0(D_0015544e, help_text[53]);
+    if (resvars.f2c_SlistMenuItemp[othervar.f8ac].row < othervar.fa5b)
+        fn_000bbff0(othervar.f96, help_text[53]);
 }
 
 // FUNCTION: 0x00094078
 void slist_help_if_doctor(void)
 {
-    if (D_00155401 & 1)
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c_SlistMenuItemp[D_00155c64].text]);
+    if (othervar.f49 & 1)
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
 }
 
 // FUNCTION: 0x000940cc
@@ -765,14 +750,14 @@ void slist_help_if_surgeon(void)
     s32 pct;
 
     w = &thing[slist.unknown0];
-    if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x20)) {
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c_SlistMenuItemp[D_00155c64].text]);
+    if ((othervar.f49 & 1) && w > thing && (w->unknown124 & 0x20)) {
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
         pct = w->unknown148[3];
         if (pct != 0) {
             pct = pct * 100 / gbv.f146;
             pct > 100 ? pct = 100 : 0;
-            sprintf(D_0015544e, help_text[66], pct);
+            sprintf(othervar.f96, help_text[66], pct);
         }
     }
 }
@@ -784,14 +769,14 @@ void slist_help_if_shrink(void)
     s32 pct;
 
     w = &thing[slist.unknown0];
-    if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x40)) {
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c_SlistMenuItemp[D_00155c64].text]);
+    if ((othervar.f49 & 1) && w > thing && (w->unknown124 & 0x40)) {
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
         pct = w->unknown148[4];
         if (pct != 0) {
             pct = pct * 100 / gbv.f148;
             pct > 100 ? pct = 100 : 0;
-            sprintf(D_0015544e, help_text[67], pct);
+            sprintf(othervar.f96, help_text[67], pct);
         }
     }
 }
@@ -803,14 +788,14 @@ void slist_help_if_researcher(void)
     s32 pct;
 
     w = &thing[slist.unknown0];
-    if ((D_00155401 & 1) && w > thing && (w->unknown124 & 0x100)) {
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c_SlistMenuItemp[D_00155c64].text]);
+    if ((othervar.f49 & 1) && w > thing && (w->unknown124 & 0x100)) {
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
         pct = w->unknown148[5];
         if (pct != 0) {
             pct = pct * 100 / gbv.f14a;
             pct > 100 ? pct = 100 : 0;
-            sprintf(D_0015544e, help_text[68], pct);
+            sprintf(othervar.f96, help_text[68], pct);
         }
     }
 }

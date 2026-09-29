@@ -1,10 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern s32 D_00188c38;
-extern u8 D_001553c7;
-extern u16 D_001553e0;
-extern u8 D_001553e1[];
 void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 }
 
@@ -50,9 +46,9 @@ void draw_cell_no(s32 cell, u8 colour)
         + resvars.f4 / 2;
     y = col * (resvars.f3 / 2) + resvars.f3 / 2 * row - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
         - resvars.f3;
-    find_common_window(0, 0, D_00188c34, lbDisplay.unknown1c - 0x5c, window.zone_x[window.unknown2eb],
+    find_common_window(0, 0, lbDisplay.graphics_screen_width, lbDisplay.unknown1c - 0x5c, window.zone_x[window.unknown2eb],
                        window.zone_y[window.unknown2eb], window.zone_w[window.unknown2eb], window.zone_h[window.unknown2eb]);
-    find_common_window(0, 0, D_00188c34, D_00188c38, window.zone_x[window.unknown2eb], window.zone_y[window.unknown2eb],
+    find_common_window(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, window.zone_x[window.unknown2eb], window.zone_y[window.unknown2eb],
                        window.zone_w[window.unknown2eb], window.zone_h[window.unknown2eb]);
     find_common_window(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, window.unknown2c3, window.unknown2c7,
                        window.unknown2cb, window.unknown2cf);
@@ -70,7 +66,7 @@ void draw_cell_no(s32 cell, u8 colour)
 // FUNCTION: 0x000b1318
 void draw_cell_no_editor(s32 x, s32 y, u8 colour)
 {
-    if (-(resvars.f4 / 2) <= x && resvars.f4 / 2 + D_00188c34 > x && -resvars.f3 <= y && lbDisplay.unknown1c - 0x5c > y) {
+    if (-(resvars.f4 / 2) <= x && resvars.f4 / 2 + lbDisplay.graphics_screen_width > x && -resvars.f3 <= y && lbDisplay.unknown1c - 0x5c > y) {
         fn_000c9be0(x, y, (resvars.f4 - 1) / 2 + x - 1, y + (resvars.f3 - 1) / 2, colour);
         fn_000c9be0((resvars.f4 - 1) / 2 + x, y + (resvars.f3 - 1) / 2, x, y + (resvars.f3 - 1), colour);
         fn_000c9be0(x, resvars.f3 - 1 + y, x - (resvars.f4 - 1) / 2, y + (resvars.f3 - 1) / 2, colour);
@@ -110,22 +106,22 @@ void draw_object_cursor(void)
     dir = gamevar.f28;
     part = objects[gamevar.unknown25].unknown17;
     flag = gamevar.f29;
-    if (D_001553e0 == *(u16 *)&D_001553e1[1] && !flag)
+    if (othervar.f28 == othervar.f2a && !flag)
         goto draw;
     gamevar.f29 = 0;
     switch (gamevar.unknown26) {
     case 1:
-        tile = place_object_wall_hug(D_001553e0 + gamevar.f31, kind);
+        tile = place_object_wall_hug(othervar.f28 + gamevar.f31, kind);
         dir = gamevar.f28;
         break;
     case 0:
-        tile = place_object_restrict_to_room(D_001553e0 + gamevar.f31, 0, kind, dir);
+        tile = place_object_restrict_to_room(othervar.f28 + gamevar.f31, 0, kind, dir);
         if (part != -1)
             tile = place_object_restrict_to_room(tile, next_part[part].dirs[dir].offset, next_part[part].kind,
                                                  next_part[part].dirs[dir].dir);
         break;
     case 2:
-        tile = D_001553e0 + gamevar.f31;
+        tile = othervar.f28 + gamevar.f31;
         break;
     default:
         break;
@@ -223,7 +219,7 @@ u32 get_frame_for_placing_bomb(void)
     BuildState *bs;
     Thing *w;
 
-    bs = &allhosps[D_001553c7].build;
+    bs = &allhosps[othervar.ff].build;
     for (i = 0; i < 20; i++) {
         w = &thing[bs->objects[i]];
         if (w > thing) {
@@ -241,7 +237,7 @@ u32 get_frame_for_placing_plant(void)
     BuildState *bs;
     Thing *w;
 
-    bs = &allhosps[D_001553c7].build;
+    bs = &allhosps[othervar.ff].build;
     for (i = 0; i < 20; i++) {
         w = &thing[bs->objects[i]];
         if (w > thing) {

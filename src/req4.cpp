@@ -20,29 +20,12 @@ struct MenuItem {
 extern "C" {
 extern Slot D_001581b2[];
 extern Event D_001549d0[];
-extern char D_00155ced[];
 extern char D_00120770[];
 extern char D_00120773[];
 extern char D_00120776[];
 extern char D_00120779[];
 extern char D_0012077c[];
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern s32 D_00188c38;
-extern u8 D_001553ee;
-extern u8 D_001553f0;
-extern u8 D_001553c8;
-extern u8 D_00188c7e;
-extern u8 D_00188c7f;
-extern u8 D_00155e19;
-extern u16 D_00155e3a;
-extern u8 D_00155d70;
 extern char D_00120785[];
-extern u8 D_00156429;
-extern u8 D_0015642a;
-extern u8 D_0015642b;
-extern char D_0015544e[];
-extern u16 D_00155c64;
 }
 
 void remove_window_from_list(const u8 n);
@@ -87,7 +70,7 @@ void req4(Window *win)
                 } else if (i == resvars.fe[0x2a]) {
                     close_query(2);
                     play_sound(10, 0x43, -1, -1);
-                    sprintf(D_00155ced, D_00120770, yesno_text[5]);
+                    sprintf(othervar.f935, D_00120770, yesno_text[5]);
                     open_yes_no_requester(0x47, D_001581b2[2].value, 0, 0x88, D_001581b2[2].value, 0);
                 } else if (i == resvars.fe[0x2b]) {
                     D_001549d0[player].type = 0x68;
@@ -109,7 +92,7 @@ void req4(Window *win)
                 } else if (i == resvars.fe[0x2d]) {
                     close_query(2);
                     play_sound(10, 0x43, -1, -1);
-                    sprintf(D_00155ced, D_00120773, yesno_text[5]);
+                    sprintf(othervar.f935, D_00120773, yesno_text[5]);
                     open_yes_no_requester(0x47, D_001581b2[2].value, 0, 0x88, D_001581b2[2].value, 0);
                 } else if (i == resvars.fe[0x2e]) {
                     D_001549d0[player].type = 0x68;
@@ -140,48 +123,48 @@ void req4_overdraw(Window *win)
     c = 0;
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                               window.unknown2cf - window.unknown2c7);
-    x = win->x - D_00188c3c;
-    y = win->y - D_00188c40;
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    x = win->x - lbDisplay.graphics_window_x;
+    y = win->y - lbDisplay.graphics_window_y;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     w = &thing[D_001581b2[2].value];
     switch (w->subtype) {
     case 2:
         compute_help_text(0, 0, 0xc);
         set_font_from_cache(1);
-        D_001553ee = window.unknown2ec - 1;
+        othervar.f36 = window.unknown2ec - 1;
         sprintf(buf, D_00120776, w->unknown108);
         LbTextDraw(x + resvars.f1c[0x6b].x, y + resvars.f1c[0x6b].y, buf);
         draw_staff_handyman_bars(w, x, y, &button_sprite[resvars.f12[3]]);
-        if (D_00188c7e) {
-            if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18[0x4e].x, y + resvars.f18[0x4e].y, resvars.f18[0x4e].w,
+        if (lbDisplay.mleft_button) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x4e].x, y + resvars.f18[0x4e].y, resvars.f18[0x4e].w,
                              resvars.f18[0x4e].h)) {
-                D_001553f0 = 2;
-                D_001553c8 = 1;
+                othervar.f38 = 2;
+                othervar.f10 = 1;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18[0x5d].x, y + resvars.f18[0x5d].y, resvars.f18[0x5d].w,
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x5d].x, y + resvars.f18[0x5d].y, resvars.f18[0x5d].w,
                              resvars.f18[0x5d].h)) {
-                D_00155e3a = w - thing;
+                othervar.fa82 = w - thing;
                 D_001549d0[player].type = 0x33;
                 D_001549d0[player].value = 5;
                 play_sound(10, 0x43, -1, -1);
             }
         }
-        if (D_00188c7f && !D_00155e19) {
-            if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18[0x4e].x, y + resvars.f18[0x4e].y, resvars.f18[0x4e].w,
+        if (lbDisplay.mright_button && !othervar.fa61) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x4e].x, y + resvars.f18[0x4e].y, resvars.f18[0x4e].w,
                              resvars.f18[0x4e].h)) {
                 D_001581b2[2].value = find_next_thing(w, 4, w->subtype, -1);
                 play_sound(10, 0xbb, -1, -1);
             }
         }
-        if (D_00188c7f)
-            D_00155e19 = 1;
+        if (lbDisplay.mright_button)
+            othervar.fa61 = 1;
         else
-            D_00155e19 = 0;
+            othervar.fa61 = 0;
         break;
     default:
         compute_help_text(0, 0, 10);
         set_font_from_cache(1);
-        D_001553ee = window.unknown2ec - 1;
+        othervar.f36 = window.unknown2ec - 1;
         sprintf(buf, D_00120779, w->unknown108);
         LbTextDraw(x + resvars.f1c[0x66].x, y + resvars.f1c[0x66].y, buf);
         n = 0;
@@ -205,22 +188,22 @@ void req4_overdraw(Window *win)
             reqspr_draw(x + resvars.f18[n + 0x19].x, y + resvars.f18[n + 0x19].y, &button_sprite[resvars.f12[13]]);
         if (!(w->subtype == 1 || w->subtype == 4))
             LbDrawBox(x + resvars.f18[0x40].x, y + resvars.f18[0x40].y, resvars.f18[0x40].w, resvars.f18[0x40].h, 0x7a);
-        if (D_00188c7e) {
-            if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18[0x4d].x, y + resvars.f18[0x4d].y, resvars.f18[0x4d].w,
+        if (lbDisplay.mleft_button) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x4d].x, y + resvars.f18[0x4d].y, resvars.f18[0x4d].w,
                              resvars.f18[0x4d].h)) {
-                D_001553f0 = 2;
-                D_001553c8 = 1;
+                othervar.f38 = 2;
+                othervar.f10 = 1;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18[0x5d].x, y + resvars.f18[0x5d].y, resvars.f18[0x5d].w,
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x5d].x, y + resvars.f18[0x5d].y, resvars.f18[0x5d].w,
                              resvars.f18[0x5d].h)) {
-                D_00155e3a = w - thing;
+                othervar.fa82 = w - thing;
                 D_001549d0[player].type = 0x33;
                 D_001549d0[player].value = 5;
                 play_sound(10, 0x43, -1, -1);
             }
         }
-        if (D_00188c7f && !D_00155e19) {
-            if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18[0x4d].x, y + resvars.f18[0x4d].y, resvars.f18[0x4d].w,
+        if (lbDisplay.mright_button && !othervar.fa61) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x4d].x, y + resvars.f18[0x4d].y, resvars.f18[0x4d].w,
                              resvars.f18[0x4d].h)) {
                 if (w->subtype == 1 || w->subtype == 4)
                     D_001581b2[2].value = find_next_thing(w, 4, 1, 4);
@@ -229,10 +212,10 @@ void req4_overdraw(Window *win)
                 play_sound(10, 0xbb, -1, -1);
             }
         }
-        if (D_00188c7f)
-            D_00155e19 = 1;
+        if (lbDisplay.mright_button)
+            othervar.fa61 = 1;
         else
-            D_00155e19 = 0;
+            othervar.fa61 = 0;
         break;
     }
     draw_face((Picture *)&w->f87, x + resvars.f1c[0x65].x, y + resvars.f1c[0x65].y);
@@ -244,8 +227,8 @@ void req4_overdraw(Window *win)
                &button_sprite[resvars.f12[2]], 1000, 30, 970, 1);
     sprintf(buf, D_0012077c, w->f84, staff_names_1[w->f85], staff_names_2[w->f86]);
     LbTextDraw(x + resvars.f1c[0x64].x, y + resvars.f1c[0x64].y, buf);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0);
 }
 
@@ -271,7 +254,7 @@ void close_irequesters(void)
     }
     window.unknown2eb = 0;
     cancel_helpmsg();
-    D_00155d70 = 0;
+    othervar.f9b8 = 0;
 }
 
 // FUNCTION: 0x00087c44
@@ -345,11 +328,11 @@ void setup_req4_references(void)
 
     sprintf(buf, D_00120785);
     for (i = 0; ref_general_text[i][0] != buf[0]; i++) {}
-    D_00156429 = i;
+    statvar.f5d9 = i;
     for (i = 0; ref_good_text[i][0] != buf[0]; i++) {}
-    D_0015642a = i;
+    statvar.f5da = i;
     for (i = 0; ref_bad_text[i][0] != buf[0]; i++) {}
-    D_0015642b = i;
+    statvar.f5db = i;
 }
 
 // FUNCTION: 0x00088068
@@ -359,7 +342,7 @@ void req4_help_if_doctor(void)
 
     w = &thing[D_001581b2[2].value];
     if (w > thing && w->unknown124 & 0x10)
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
 // FUNCTION: 0x000880e4
@@ -369,7 +352,7 @@ void req4_help_if_surgeon(void)
 
     w = &thing[D_001581b2[2].value];
     if (w > thing && w->unknown124 & 0x20)
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
 // FUNCTION: 0x00088160
@@ -379,7 +362,7 @@ void req4_help_if_shrink(void)
 
     w = &thing[D_001581b2[2].value];
     if (w > thing && w->unknown124 & 0x40)
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
 // FUNCTION: 0x000881dc
@@ -389,5 +372,5 @@ void req4_help_if_research(void)
 
     w = &thing[D_001581b2[2].value];
     if (w > thing && w->unknown124 & 0x100)
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }

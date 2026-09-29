@@ -24,9 +24,6 @@ extern WinLose lose_criteria[];
 
 extern "C" {
 
-extern u16 D_0015543a;
-extern u16 D_0015543c;
-extern u8 D_0015543e;
 
 u8 fn_0007628c(Thing *w);
 
@@ -65,9 +62,9 @@ void modify_person(Thing *w)
         else if ((s8)w->unknown174 < 0)
             set_icon_value(w, 0x10);
     }
-    if (!(D_0015543a > w->unknown87w || w->unknown87w - D_0015543a > 0x7fff))
+    if (!(othervar.f82 > w->unknown87w || w->unknown87w - othervar.f82 > 0x7fff))
         return;
-    w->unknown87w = D_0015543c;
+    w->unknown87w = othervar.f84;
     if (map[((s16)w->y.tile << 7) + (s16)w->x.tile].unknown7 & 0x10)
         return;
     check_warmth(w);
@@ -349,9 +346,9 @@ void setup_showanim(Thing *w, u16 anim)
 // FUNCTION: 0x00071eb8
 void modify_staff(Thing *w)
 {
-    if (!(D_0015543a > w->unknown87w || w->unknown87w - D_0015543a > 0x7fff))
+    if (!(othervar.f82 > w->unknown87w || w->unknown87w - othervar.f82 > 0x7fff))
         return;
-    w->unknown87w = D_0015543c;
+    w->unknown87w = othervar.f84;
     if (w->owner >= 4 || gamevar.f174)
         return;
     if (w->subtype == 3)
@@ -492,7 +489,7 @@ void reset_all_count(void)
 {
     u8 i;
 
-    if (D_0015543e) {
+    if (othervar.f86) {
         memset(&adcounts, 0, 0xa6);
         adcounts.f0 = 1;
         adcounts.fe = 999;
@@ -508,7 +505,7 @@ void reset_all_count(void)
 // FUNCTION: 0x00072684
 void staff_count(Thing *w)
 {
-    if (D_0015543e) {
+    if (othervar.f86) {
         if (w->kind != 0x2e && w->owner == player) {
             switch (w->subtype) {
             case 4:
@@ -555,7 +552,7 @@ void person_count(Thing *w)
 {
     s8 k = 5;
 
-    if (D_0015543e) {
+    if (othervar.f86) {
         advisor.f130 = 1;
         if (!(map[((s16)w->y.tile << 7) + (s16)w->x.tile].unknown7 & 0x10)) {
             if (w->owner == player) {
@@ -603,7 +600,7 @@ void person_count(Thing *w)
 // FUNCTION: 0x00072b20
 void final_count(void)
 {
-    if (D_0015543e) {
+    if (othervar.f86) {
         myhosp->fc8a = adcounts.fa / adcounts.f0;
         if (adcounts.f6)
             myhosp->fc8c = (s16)adcounts.f4 / (s16)adcounts.f6;
@@ -615,7 +612,7 @@ void final_count(void)
 // FUNCTION: 0x00072ba4
 void object_count(const Thing *w)
 {
-    if (D_0015543e) {
+    if (othervar.f86) {
         if (objects[w->subtype].unknown24) {
             if (w->owner == player) {
                 adcounts.f8f++;
@@ -636,7 +633,7 @@ void object_count(const Thing *w)
 // FUNCTION: 0x00072c8c
 void check_win_status(void)
 {
-    if (D_0015543e) {
+    if (othervar.f86) {
         evaluate_criteria(player);
         adcounts.fa2 = losing();
     }

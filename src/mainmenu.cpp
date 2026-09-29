@@ -37,31 +37,10 @@ u8 fn_0006344c(s16 *scroll, u16 *line);
 void fn_00063680(void);
 void fn_00063a64(void);
 
-extern u8 D_001553e1[];
-extern u8 D_001553e8;
-extern u8 *D_001553d7;
-extern u8 *D_001553dc;
 extern u8 *D_00153f34;
-extern u8 D_00155421;
-extern u8 D_00155422;
-extern u32 D_00155423;
-extern u8 D_00155430;
-extern u8 D_00155d82;
-extern u16 D_00155d83;
-extern u16 D_00155d85;
-extern u8 *D_00155d8f;
-extern s32 D_00155d93;
-extern s32 D_00155d97;
-extern u8 D_00155e1d;
-extern u8 D_00155e3f;
-extern u8 D_00155e42;
 extern u8 D_00156910;
 extern u8 D_0015f489;
 extern char **D_0016033c;
-extern s32 D_00188c38;
-extern volatile s16 D_00188c6c, D_00188c70;
-extern u16 D_00188c74;
-extern u8 D_00188c7b, D_00188c7c, D_00188c7e, D_00188c7f, D_00188c81, D_00188c83;
 extern char D_00120488[];
 extern char D_0012049a[];
 extern char D_0012049f[];
@@ -77,8 +56,6 @@ s8 compare_products(s32 a, s32 b, s32 c, s32 d);
     0x74 0x08 0x0f 0x9c 0xc4 0x0f 0x9f 0xc0 0x28 0xe0 \
     parm [eax] [ebx] [ecx] [edx] value [al] modify [eax ebx ecx edx];
 
-// NONMATCHING: D_00188c7e and lbInkey are loaded in the opposite order; the target order is what a
-// struct-field D_00188c7e (0x188c7e lies inside the demo's 0x78-byte lbDisplay) would give
 // FUNCTION: 0x00061bd0
 void draw_main_menu(void)
 {
@@ -95,7 +72,7 @@ void draw_main_menu(void)
     case 0:
         return_from_screen(9, 0, 0);
     case 0x1f:
-        D_00188c7b = D_00188c7c = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         unload_game_files();
         mainmenu.unknown2 = 0xe;
         break;
@@ -105,7 +82,7 @@ void draw_main_menu(void)
         LbMouseChangeSprite(0);
         fn_0001102c();
         fn_00011058();
-        D_00188c7b = D_00188c7c = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         load_ingame_pic(0xd, 1, 0x14, 0, SCREEN_MODE_1);
         LbIsActive();
         LbScreenClear(0);
@@ -114,7 +91,7 @@ void draw_main_menu(void)
         }
         play_main_menu_intro();
         set_mouse_mode(0x14);
-        LbMouseSetup(&screen_pointers_tab_start[D_001553e8]);
+        LbMouseSetup(&screen_pointers_tab_start[othervar.f30]);
         setup_colors();
         mainmenu.unknown2 = 3;
         break;
@@ -122,7 +99,7 @@ void draw_main_menu(void)
         LbMouseChangeSprite(0);
         fn_0006310c();
         fade_out_menu();
-        D_001553e1[3] = 0xd;
+        othervar.f2c = SCREEN_MODE_13;
         display_mode = 6;
         mainmenu.unknown2 = 0;
         loadgame.unknown2 = 0;
@@ -134,7 +111,7 @@ void draw_main_menu(void)
         display_mode = 0xa;
         nickname.unknown2 = 3;
         mainmenu.unknown2 = 0;
-        D_001553e1[3] = 0xd;
+        othervar.f2c = SCREEN_MODE_13;
         level_number = 0;
         break;
     case 9:
@@ -145,7 +122,7 @@ void draw_main_menu(void)
         }
         fn_0006310c();
         fade_out_menu();
-        D_001553e1[3] = 0xd;
+        othervar.f2c = SCREEN_MODE_13;
         mainmenu.unknown2 = 0xd;
         break;
     case 0xd:
@@ -159,7 +136,7 @@ void draw_main_menu(void)
             load_game_files();
             fn_00090804((u16)level_number, 1);
             if (fn_00021c38(0x63, -1)) {
-                D_00155e1d = 0;
+                othervar.fa65 = 0;
                 set_mouse_mode(0);
                 LbGhostTableGenerate(D_00153f34, 0x42, D_00120488);
                 display_mode = 0;
@@ -169,7 +146,7 @@ void draw_main_menu(void)
                 D_00156910 = 1;
                 set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
                 draw_it();
-                D_001553dc = D_00153f34;
+                othervar.f24 = D_00153f34;
                 break;
             }
         }
@@ -185,7 +162,7 @@ void draw_main_menu(void)
         fade_out_menu();
         display_mode = 5;
         mainmenu.unknown2 = 0;
-        D_001553e1[3] = 0xd;
+        othervar.f2c = SCREEN_MODE_13;
         break;
     case 0xb:
     case 0xc:
@@ -250,33 +227,33 @@ void draw_main_menu(void)
         play_sound(10, 0x44, -1, -1);
         break;
     case 0x17:
-        D_00188c7b = D_00188c7c = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         LbMouseChangeSprite(0);
         fn_00063174();
         fade_out_menu();
-        D_001553e1[3] = 0xd;
+        othervar.f2c = SCREEN_MODE_13;
         mainmenu.unknown2 = 0x18;
         break;
     case 0x18:
         load_ingame_pic(0x12, 1, 9, 0, SCREEN_MODE_13);
-        D_00155d8f = lbDisplay.unknown4;
-        D_00155d93 = D_00188c34;
-        D_00155d97 = D_00188c38;
+        othervar.f9d7 = lbDisplay.unknown4;
+        othervar.f9db = lbDisplay.graphics_screen_width;
+        othervar.f9df = lbDisplay.graphics_screen_height;
         lbDisplay.unknown4 = bscreen;
-        D_00188c34 = 0x280;
-        D_00188c38 = 0x1e0;
+        lbDisplay.graphics_screen_width = 0x280;
+        lbDisplay.graphics_screen_height = 0x1e0;
         LbScreenSetGraphicsWindow(0, 0, 0x280, 0x1e0);
         fn_000905f4();
-        lbDisplay.unknown4 = D_00155d8f;
-        D_00188c34 = D_00155d93;
-        D_00188c38 = D_00155d97;
-        LbScreenSetGraphicsWindow(0, 0, D_00155d93, D_00155d97);
+        lbDisplay.unknown4 = othervar.f9d7;
+        lbDisplay.graphics_screen_width = othervar.f9db;
+        lbDisplay.graphics_screen_height = othervar.f9df;
+        LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
         fn_000905f4();
         mainmenu.unknown2 = 0x19;
         break;
     case 0x19:
-        while (D_00188c7e + lbInkey + D_00188c7f) {
-            D_00188c7b = D_00188c7c = lbInkey = 0;
+        while (lbInkey + lbDisplay.mleft_button + lbDisplay.mright_button) {
+            lbDisplay.left_button = lbDisplay.right_button = lbInkey = 0;
         }
         done = 0;
         timer = 0x3e8;
@@ -287,8 +264,8 @@ void draw_main_menu(void)
                 done = 1;
             } else if (LbFileExists(path)) {
                 if (--timer == 0) {
-                    while (D_00188c7e + lbInkey + D_00188c7f) {
-                        D_00188c7b = D_00188c7c = lbInkey = 0;
+                    while (lbInkey + lbDisplay.mleft_button + lbDisplay.mright_button) {
+                        lbDisplay.left_button = lbDisplay.right_button = lbInkey = 0;
                     }
                     fade_out_menu();
                     count++;
@@ -298,31 +275,31 @@ void draw_main_menu(void)
                         done = fn_00063174();
                     fade_out_menu();
                     load_ingame_pic(0x12, 1, 9, 0, SCREEN_MODE_13);
-                    D_00155d8f = lbDisplay.unknown4;
-                    D_00155d93 = D_00188c34;
-                    D_00155d97 = D_00188c38;
+                    othervar.f9d7 = lbDisplay.unknown4;
+                    othervar.f9db = lbDisplay.graphics_screen_width;
+                    othervar.f9df = lbDisplay.graphics_screen_height;
                     lbDisplay.unknown4 = bscreen;
-                    D_00188c34 = 0x280;
-                    D_00188c38 = 0x1e0;
+                    lbDisplay.graphics_screen_width = 0x280;
+                    lbDisplay.graphics_screen_height = 0x1e0;
                     LbScreenSetGraphicsWindow(0, 0, 0x280, 0x1e0);
                     fn_000905f4();
-                    lbDisplay.unknown4 = D_00155d8f;
-                    D_00188c34 = D_00155d93;
-                    D_00188c38 = D_00155d97;
-                    LbScreenSetGraphicsWindow(0, 0, D_00155d93, D_00155d97);
+                    lbDisplay.unknown4 = othervar.f9d7;
+                    lbDisplay.graphics_screen_width = othervar.f9db;
+                    lbDisplay.graphics_screen_height = othervar.f9df;
+                    LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
                     fn_000905f4();
                     timer = 0x3e8;
                     if (!done)
-                        hosp_fade_palette(D_001553d7, 10, Lb_PALETTE_FADE_CLOSED);
+                        hosp_fade_palette(othervar.f1f, 10, Lb_PALETTE_FADE_CLOSED);
                 }
             }
-            if (D_00188c7e + D_00188c7f + lbInkey + D_00188c7b + D_00188c7c) {
-                D_00188c7b = D_00188c81 = D_00188c7c = lbInkey = 0;
+            if (lbDisplay.mleft_button + lbDisplay.mright_button + lbInkey + lbDisplay.left_button + lbDisplay.right_button) {
+                lbDisplay.left_button = lbDisplay.rleft_button = lbDisplay.right_button = lbInkey = 0;
                 done = 1;
             }
             if (done) {
                 mainmenu.unknown2 = 0x1a;
-                D_00188c7b = D_00188c7c = 0;
+                lbDisplay.left_button = lbDisplay.right_button = 0;
             }
             LbIsActive();
             LbScreenSwap();
@@ -339,14 +316,14 @@ void draw_main_menu(void)
     case 0x1c:
         load_ingame_pic(0x17, 1, 9, 0, SCREEN_MODE_13);
         mainmenu.unknown2 = 0x1d;
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0x72, D_00188c34, D_00188c38);
-        D_00188c74 = 0;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0x72, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        lbDisplay.draw_flags = 0;
         set_mouse_mode(9);
         break;
     case 0x1d:
-        D_00188c7b = D_00188c7c = D_00188c81 = D_00188c83 = 0;
+        lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = lbDisplay.rright_button = 0;
         lbInkey = 0;
         scroll = 0;
         line = 0;
@@ -417,7 +394,7 @@ void process_mouse_main_menu(void)
     case 0xf:
         return;
     case 0x19:
-        if (D_00188c7b + D_00188c7c)
+        if (lbDisplay.left_button + lbDisplay.right_button)
             mainmenu.unknown2 = 0x1a;
     case 0x17:
     case 0x18:
@@ -426,22 +403,22 @@ void process_mouse_main_menu(void)
     default:
         break;
     }
-    if (D_00188c81) {
-        D_00188c81 = 0;
-        if (check_tri(0x2c, 0x13, 0x55, 0x3a, 0x7f, 0x13, D_00188c6c, D_00188c70))
+    if (lbDisplay.rleft_button) {
+        lbDisplay.rleft_button = 0;
+        if (check_tri(0x2c, 0x13, 0x55, 0x3a, 0x7f, 0x13, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
             mainmenu.unknown2 = 8;
-        if (check_tri(0x55, 0x3a, 0x7f, 0x68, 0x7f, 0x13, D_00188c6c, D_00188c70))
+        if (check_tri(0x55, 0x3a, 0x7f, 0x68, 0x7f, 0x13, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
             mainmenu.unknown2 = 0xf;
-        if (check_tri(0x2c, 0x13, 0x2c, 0x68, 0x55, 0x3a, D_00188c6c, D_00188c70))
+        if (check_tri(0x2c, 0x13, 0x2c, 0x68, 0x55, 0x3a, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
             mainmenu.unknown2 = 9;
-        if (check_tri(0x2c, 0x68, 0x7f, 0x68, 0x55, 0x3a, D_00188c6c, D_00188c70))
+        if (check_tri(0x2c, 0x68, 0x7f, 0x68, 0x55, 0x3a, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
             mainmenu.unknown2 = 0xa;
-        if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, D_00188c6c, D_00188c70))
+        if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
             mainmenu.unknown2 = 0xc;
-        if (check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, D_00188c6c, D_00188c70))
+        if (check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
             mainmenu.unknown2 = 0xc;
     }
-    D_00188c7b = D_00188c81 = D_00188c7c = D_00188c83 = 0;
+    lbDisplay.left_button = lbDisplay.rleft_button = lbDisplay.right_button = lbDisplay.rright_button = 0;
 }
 
 // FUNCTION: 0x00062a50
@@ -458,7 +435,7 @@ void tri_test(void)
     u8 unused;
 
     unused = 0;
-    if (check_tri(0x2c, 0x13, 0x55, 0x3a, 0x7f, 0x13, mouse_dx, mouse_dy)) {
+    if (check_tri(0x2c, 0x13, 0x55, 0x3a, 0x7f, 0x13, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
         if (mainmenu.unknown2 != 5) {
             switch (mainmenu.unknown2) {
             case 3:
@@ -480,7 +457,7 @@ void tri_test(void)
         } else {
             help_hotspot_detected(1, 1, 0, 0);
         }
-    } else if (check_tri(0x55, 0x3a, 0x7f, 0x68, 0x7f, 0x13, mouse_dx, mouse_dy)) {
+    } else if (check_tri(0x55, 0x3a, 0x7f, 0x68, 0x7f, 0x13, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
         if (mainmenu.unknown2 != 4) {
             switch (mainmenu.unknown2) {
             case 5:
@@ -502,7 +479,7 @@ void tri_test(void)
         } else {
             help_hotspot_detected(2, 1, 0, 0);
         }
-    } else if (check_tri(0x2c, 0x13, 0x2c, 0x68, 0x55, 0x3a, mouse_dx, mouse_dy)) {
+    } else if (check_tri(0x2c, 0x13, 0x2c, 0x68, 0x55, 0x3a, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
         if (mainmenu.unknown2 != 3) {
             switch (mainmenu.unknown2) {
             case 5:
@@ -524,7 +501,7 @@ void tri_test(void)
         } else {
             help_hotspot_detected(3, 1, 0, 0);
         }
-    } else if (check_tri(0x2c, 0x68, 0x7f, 0x68, 0x55, 0x3a, mouse_dx, mouse_dy)) {
+    } else if (check_tri(0x2c, 0x68, 0x7f, 0x68, 0x55, 0x3a, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
         if (mainmenu.unknown2 != 6) {
             switch (mainmenu.unknown2) {
             case 5:
@@ -546,8 +523,8 @@ void tri_test(void)
         } else {
             help_hotspot_detected(4, 1, 0, 0);
         }
-    } else if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, mouse_dx, mouse_dy)
-               || check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, mouse_dx, mouse_dy)) {
+    } else if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, lbDisplay.mmouse_x, lbDisplay.mmouse_y)
+               || check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
         if (mainmenu.unknown2 != 7) {
             switch (mainmenu.unknown2) {
             case 5:
@@ -610,9 +587,9 @@ u8 check_tri(u16 x1, u16 y1, u16 x2, u16 y2, u16 x3, u16 y3, u16 x, u16 y)
 // FUNCTION: 0x000630a4
 void play_main_menu_intro(void)
 {
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     set_mouse_mode(9);
     smack_draw_callback = 0;
     hosp_play_smk(0x16);
@@ -621,9 +598,9 @@ void play_main_menu_intro(void)
 // FUNCTION: 0x0006310c
 void fn_0006310c(void)
 {
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     set_mouse_mode(9);
     smack_draw_callback = 0;
     hosp_play_smk(0x17);
@@ -639,7 +616,7 @@ u8 fn_00063174(void)
 
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
     aborted = 0;
-    sprintf(path, D_0012049f, cd_install_path, animation_table[D_00155e3f > 4 ? 0x1a : 0x19].name);
+    sprintf(path, D_0012049f, cd_install_path, animation_table[othervar.fa87 > 4 ? 0x1a : 0x19].name);
     if (!LbFileExists(path))
         return aborted;
     fade_out_menu();
@@ -647,12 +624,12 @@ u8 fn_00063174(void)
         LbIsActive();
     LbScreenClear(0);
     fn_0001102c();
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     set_mouse_mode(9);
     smack_draw_callback = 0;
-    if (D_00155e3f > 4)
+    if (othervar.fa87 > 4)
         result = hosp_play_smk(0x1a);
     else
         result = hosp_play_smk(0x19);
@@ -686,16 +663,16 @@ u8 fn_00063300(void)
     if (change_res(SCREEN_MODE_13)) {
         LbScreenClear(0);
         LbScreenSwap();
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        D_00188c74 = 0;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        lbDisplay.draw_flags = 0;
         set_mouse_mode(9);
         D_0015f489 = 0;
         current_frame = 0;
         smack_draw_callback = 0;
-        D_00155d82 = saferand();
-        D_00155d83 = 0;
-        D_00155d85 = resvars.f18_s32p[0xab] / 2 + 100;
+        othervar.f9ca = saferand();
+        othervar.f9cb = 0;
+        othervar.f9cd = resvars.f18_s32p[0xab] / 2 + 100;
         mainmenu.unknown0 = 0;
         aborted = 0;
         if (hosp_play_smk(0x1b) == 2)
@@ -723,11 +700,11 @@ u8 fn_0006344c(s16 *scroll, u16 *line)
     done = 0;
     set_font_from_cache(0x2a);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
-    D_00188c74 = 0x100;
+    lbDisplay.draw_flags = 0x100;
     if (height % 3)
         height = (height / 3 + 1) * 3;
     y = -*scroll;
-    for (i = 0; y < D_00188c38; y += height, i++) {
+    for (i = 0; y < lbDisplay.graphics_screen_height; y += height, i++) {
         if (*scroll >= -0x32) {
             sprintf(text, D_001204a4, D_0016033c[i + *line]);
             switch (text[0]) {
@@ -750,9 +727,9 @@ u8 fn_0006344c(s16 *scroll, u16 *line)
             }
         }
     }
-    if (D_00188c81 + D_00188c83) {
+    if (lbDisplay.rleft_button + lbDisplay.rright_button) {
         done = 1;
-        D_00188c7b = D_00188c7c = D_00188c81 = D_00188c83 = 0;
+        lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = lbDisplay.rright_button = 0;
         lbInkey = 0;
     }
     *scroll += 3;
@@ -771,13 +748,13 @@ void fn_00063680(void)
 
     switch (town.unknown2) {
     case 0:
-        D_00188c7b = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
         setup_abort_all_requesters();
-        D_00155422 = myhosp->fc94;
-        D_00155423 = 0x32;
+        othervar.f6a = myhosp->fc94;
+        othervar.f6b_u32 = 0x32;
         load_ingame_pic(1, 1, 0xa, level_number, SCREEN_MODE_13);
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         if (!town.unknown0)
             town.unknown0 = 0x1f;
         calculate_land_amount();
@@ -785,15 +762,15 @@ void fn_00063680(void)
         set_font_from_cache(0);
         setup_overhead_map();
         town.unknown2 = 7;
-        D_00155421 = 1;
+        othervar.f69 = 1;
         fn_00066914();
         draw_money_on_town();
         set_font_from_cache(0);
-        D_00155e42 = 0x1e;
+        othervar.fa8a = 0x1e;
         LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
         break;
     case 1:
-        D_00188c7b = D_00188c81 = 0;
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
         LbGhostTableGenerate(D_00153f34, 0x42, D_001204a8);
         display_mode = 0;
         fn_000688e4();
@@ -808,8 +785,8 @@ void fn_00063680(void)
         set_font_from_cache(0);
         draw_help_text();
         set_mouse_mode(0xa);
-        if (D_00188c81) {
-            if (over_hotspot(D_00188c6c, D_00188c70, 0xd, 0x1a6, 0xc0, 0x2e)) {
+        if (lbDisplay.rleft_button) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0xd, 0x1a6, 0xc0, 0x2e)) {
                 fn_00074220(0, 0x41);
                 LbGhostTableGenerate(D_00153f34, 0x42, D_001204ba);
                 town.unknown2 = 0;
@@ -817,13 +794,13 @@ void fn_00063680(void)
         }
         break;
     case 0xb:
-        D_00188c7b = D_00188c81 = 0;
-        D_00155422 = 1;
-        D_00155423 = 0;
-        D_00155422 = myhosp->fc94;
-        D_00155423 = 0x32;
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
+        othervar.f6a = 1;
+        othervar.f6b_u32 = 0;
+        othervar.f6a = myhosp->fc94;
+        othervar.f6b_u32 = 0x32;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         town.unknown0 = 3;
         town.unknown2 = 0xc;
         calculate_land_amount();
@@ -836,12 +813,12 @@ void fn_00063680(void)
         process_bid_time();
         break;
     case 0xc:
-        D_00155421 = 1;
+        othervar.f69 = 1;
         fn_0006680c();
         town.unknown2 = 0x45;
         total = 0;
         for (i = 0; i < 0x4000; i++) {
-            if (level->plots[i] == D_00155430)
+            if (level->plots[i] == othervar.f78)
                 total += gbv.f7c;
         }
         plotbid.price = total;
@@ -859,8 +836,8 @@ void fn_00063680(void)
         town.unknown2 = 0;
         break;
     }
-    if (D_00155e42)
-        D_00155e42--;
+    if (othervar.fa8a)
+        othervar.fa8a--;
 }
 
 // FUNCTION: 0x00063a64

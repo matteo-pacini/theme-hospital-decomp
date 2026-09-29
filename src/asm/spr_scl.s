@@ -13,15 +13,15 @@
     mov dword ptr [esp + 0x24], ecx
     mov cl, byte ptr [ebx + 5]
     mov dword ptr [esp + 0x28], ecx
-    mov esi, dword ptr ["W?research_names$npnpna"]
+    mov esi, dword ptr ["_lbDisplay"+0x20]
     mov edi, 8
-    mov cx, word ptr [_D_00188c74]
+    mov cx, word ptr ["_lbDisplay"+0x60]
     and cx, 1
     je .L00109424
     add eax, dword ptr [esp + 0x24]
     dec eax
 .L00109424:
-    mov cx, word ptr [_D_00188c74]
+    mov cx, word ptr ["_lbDisplay"+0x60]
     and cx, 2
     je .L0010943a
     add edx, dword ptr [esp + 0x28]
@@ -39,17 +39,17 @@
     mov ecx, dword ptr [esp + 0x28]
     mov edx, dword ptr [ebx]
     mov esi, dword ptr [edi]
-    mov ax, word ptr [_D_00188c74]
+    mov ax, word ptr ["_lbDisplay"+0x60]
     and ax, 2
     je .L00109475
     add esi, dword ptr [edi + 4]
     dec esi
 .L00109475:
-    mov eax, dword ptr ["W?research_names$npnpna"]
+    mov eax, dword ptr ["_lbDisplay"+0x20]
     imul esi, eax
     add esi, dword ptr ["_lbDisplay"+0x10]
     add esi, dword ptr [ebp]
-    mov ax, word ptr [_D_00188c74]
+    mov ax, word ptr ["_lbDisplay"+0x60]
     and ax, 1
     je .L00109496
     add esi, dword ptr [ebp + 4]
@@ -58,7 +58,7 @@
     mov eax, dword ptr [_D_001a0000]
     {load} or eax, eax
     jne .L0010a308
-    mov ax, word ptr [_D_00188c74]
+    mov ax, word ptr ["_lbDisplay"+0x60]
     test ax, 0x800
     jne .L00109f98
     test ax, 4
@@ -1578,7 +1578,7 @@
     .byte 0x61  # popal
     ret
 .L0010a308:
-    mov ax, word ptr [_D_00188c74]
+    mov ax, word ptr ["_lbDisplay"+0x60]
     test ax, 0x800
     jne .L0010ae18
     test ax, 4
@@ -3331,9 +3331,9 @@
     {load} xor ebp, ebp
 .L0010b343:
     mov dword ptr [_D_001a0000], ebp
-    mov ebp, dword ptr [_D_00188c44]
+    mov ebp, dword ptr ["_lbDisplay"+0x30]
     mov dword ptr [esp + 0x18], ebp
-    mov ebp, dword ptr [_D_00188c48]
+    mov ebp, dword ptr ["_lbDisplay"+0x34]
     mov dword ptr [esp + 0x1c], ebp
     mov dword ptr [esp], eax
     mov dword ptr [esp + 4], edx

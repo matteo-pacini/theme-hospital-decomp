@@ -17,10 +17,6 @@ struct ScreenBox {
 extern "C" {
 extern u16 D_00158164;
 extern u8 D_00158166;
-extern volatile s16 D_00188c6c, D_00188c70;
-extern u16 D_00188c74;
-extern u8 D_00188c7e, D_00188c81;
-extern s32 D_00188c38;
 extern Event D_001549d0[];
 extern char **D_00160378;
 extern char **D_00160394;
@@ -30,9 +26,6 @@ extern char D_0012046c[];
 extern char D_00120476[];
 extern char D_00120479[];
 extern char D_0012047c[];
-extern u8 D_00155e02;
-extern u16 D_00155c64;
-extern char D_0015544e[];
 
 void fn_000c93bf(char *dst, char *src);
 void fn_0001b7e0(char *dst, s8 *src, u8 mode);
@@ -75,26 +68,26 @@ void display_peep_overview(void)
         if (statvar.unknownfd > 1 && D_001609c4[D_00158164].active == 0)
             D_00158164 = player;
         copy_screen_to_wscreen(bscreen);
-        if (D_00188c7e) {
+        if (lbDisplay.mleft_button) {
             j = 0;
             for (i = 0; i < n; i++) {
                 if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                     continue;
-                if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_ScreenBoxp[0x37 + j].x, resvars.f3c_ScreenBoxp[0x37 + j].y,
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_ScreenBoxp[0x37 + j].x, resvars.f3c_ScreenBoxp[0x37 + j].y,
                                  resvars.f3c_ScreenBoxp[0x37 + j].w, resvars.f3c_ScreenBoxp[0x37 + j].h))
                     reqspr_draw(resvars.f3c_ScreenBoxp[0x37 + j].x + 0x13, resvars.f3c_ScreenBoxp[0x37 + j].y, &screen_sprites_tab_start[9]);
                 j++;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, resvars.f3c_ScreenBoxp[0x3c].w,
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, resvars.f3c_ScreenBoxp[0x3c].w,
                              resvars.f3c_ScreenBoxp[0x3c].h))
                 reqspr_draw(resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, &screen_sprites_tab_start[8]);
         }
-        if (D_00188c81) {
+        if (lbDisplay.rleft_button) {
             j = 0;
             for (i = 0; i < n; i++) {
                 if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                     continue;
-                if (over_hotspot(D_00188c6c, D_00188c70, resvars.f3c_ScreenBoxp[0x37 + j].x, resvars.f3c_ScreenBoxp[0x37 + j].y,
+                if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f3c_ScreenBoxp[0x37 + j].x, resvars.f3c_ScreenBoxp[0x37 + j].y,
                                  resvars.f3c_ScreenBoxp[0x37 + j].w, resvars.f3c_ScreenBoxp[0x37 + j].h)) {
                     D_00158164 = i;
                     play_sound(10, 0x43, -1, -1);
@@ -102,13 +95,13 @@ void display_peep_overview(void)
                 }
                 j++;
             }
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, resvars.f3c_ScreenBoxp[0x3c].w,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, resvars.f3c_ScreenBoxp[0x3c].w,
                              resvars.f3c_ScreenBoxp[0x3c].h)) {
                 D_00158166 = 2;
                 play_sound(10, 0x42, -1, -1);
                 reqspr_draw(resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, &screen_sprites_tab_start[8]);
             }
-            D_00188c81 = 0;
+            lbDisplay.rleft_button = 0;
         }
         calculate_value(D_00158164);
         evaluate_criteria(D_00158164);
@@ -123,12 +116,13 @@ void display_peep_overview(void)
         cancel_helpmsg();
         break;
     }
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     if (exit_quick_requester())
         D_00158166 = 2;
 }
 
-// NONMATCHING: register choice, ternary temporary placed above height
+// NONMATCHING: frame layout: the ?: temporary for height and height swap slots (target: temporary [ebp-0xc],
+// height [ebp-0x8]); no declaration order reproduces it
 // FUNCTION: 0x000571ec
 void draw_overview_screen(void)
 {
@@ -141,8 +135,8 @@ void draw_overview_screen(void)
 
 
     n = 4;
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     set_font_from_cache(0x24);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     sprintf(buf, D_00120460, D_00160378[0], mycontrol->f648 + 2000);
@@ -185,13 +179,13 @@ void draw_overview_screen(void)
         reqspr_draw(resvars.f40[0x6e].x + pct, resvars.f40[0x6e].y, &screen_sprites_tab_start[5]);
         reqspr_draw(0xf5, 0x12c, &screen_sprites_tab_start[7]);
         set_font_from_cache(0x24);
-        D_00188c74 = 0x20;
+        lbDisplay.draw_flags = 0x20;
         LbTextSetWindow(resvars.f3c_ScreenBoxp[0x3b].x, resvars.f3c_ScreenBoxp[0x3b].y, resvars.f3c_ScreenBoxp[0x3b].w, resvars.f3c_ScreenBoxp[0x3b].h);
         LbTextDraw(0, 0, buf);
     }
     set_font_from_cache(0x26);
-    D_00188c74 = 0;
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    lbDisplay.draw_flags = 0;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     sprintf(buf, D_0012046c, D_00160378[6], allhosps[D_00158164].f1cb);
     fn_0001b7e0(buf, (s8 *)buf, 0);
     LbTextDraw(resvars.f40[0x70].x, resvars.f40[0x70].y, buf);
@@ -349,7 +343,7 @@ void display_overview_bars(u8 who)
         }
         if (!found) {
             for (i = 0; i < 10; i++) {
-                if (win_criteria[i].criterion == crit && win_criteria[i].fc == D_00155e02) {
+                if (win_criteria[i].criterion == crit && win_criteria[i].fc == othervar.fa4a) {
                     for (j = 0; j < 50; j++) {
                         if (win_criteria[i].f14 / 2 >= j) {
                             reqspr_draw(col * 30 + 0x10d, 0xed - j, &screen_sprites_tab_start[1]);
@@ -373,9 +367,9 @@ void overscr_help_add_name(void)
     s32 text;
     s32 owner;
 
-    text = resvars.f2c[D_00155c64].text;
-    owner = resvars.f2c[D_00155c64].arg;
-    sprintf(D_0015544e, help_text[text], &allhosps[owner]);
+    text = resvars.f2c[othervar.f8ac].text;
+    owner = resvars.f2c[othervar.f8ac].arg;
+    sprintf(othervar.f96, help_text[text], &allhosps[owner]);
 }
 
 // FUNCTION: 0x00057f98
@@ -392,7 +386,7 @@ void overscr_help_win_criteria(void)
     s32 count;
 
 
-    idx = resvars.f2c[D_00155c64].arg;
+    idx = resvars.f2c[othervar.f8ac].arg;
     count = 0;
     found = 0;
     hit = 0;
@@ -412,7 +406,7 @@ void overscr_help_win_criteria(void)
         }
         if (!found) {
             for (i = 0; i < 10; i++) {
-                if (win_criteria[i].criterion == crit && win_criteria[i].fc == D_00155e02) {
+                if (win_criteria[i].criterion == crit && win_criteria[i].fc == othervar.fa4a) {
                     if (count++ == idx) {
                         hit = 1;
                         which = crit;
@@ -425,28 +419,28 @@ void overscr_help_win_criteria(void)
         if (hit) {
             switch (which) {
             case 1:
-                sprintf(D_0015544e, D_00160394[0], value, allhosps[owner].unknownc7e);
+                sprintf(othervar.f96, D_00160394[0], value, allhosps[owner].unknownc7e);
                 break;
             case 2:
-                sprintf(D_0015544e, D_00160394[1], value, allhosps[owner].f35 - allhosps[owner].f3d);
+                sprintf(othervar.f96, D_00160394[1], value, allhosps[owner].f35 - allhosps[owner].f3d);
                 break;
             case 3:
                 if (allhosps[owner].f1ed > 10)
-                    sprintf(D_0015544e, D_00160394[6], value, allhosps[owner].f1ef * 100 / allhosps[owner].f1ed);
+                    sprintf(othervar.f96, D_00160394[6], value, allhosps[owner].f1ef * 100 / allhosps[owner].f1ed);
                 else
-                    sprintf(D_0015544e, D_00160394[6], value, 0);
+                    sprintf(othervar.f96, D_00160394[6], value, 0);
                 break;
             case 4:
-                sprintf(D_0015544e, D_00160394[3], value, allhosps[owner].f1e9);
+                sprintf(othervar.f96, D_00160394[3], value, allhosps[owner].f1e9);
                 break;
             case 5:
                 if (allhosps[owner].f1ed > 10)
-                    sprintf(D_0015544e, D_00160394[4], value, allhosps[owner].f1eb * 100 / allhosps[owner].f1ed);
+                    sprintf(othervar.f96, D_00160394[4], value, allhosps[owner].f1eb * 100 / allhosps[owner].f1ed);
                 else
-                    sprintf(D_0015544e, D_00160394[4], value, 0);
+                    sprintf(othervar.f96, D_00160394[4], value, 0);
                 break;
             case 6:
-                sprintf(D_0015544e, D_00160394[5], value, allhosps[owner].f1bb);
+                sprintf(othervar.f96, D_00160394[5], value, allhosps[owner].f1bb);
                 break;
             }
             break;

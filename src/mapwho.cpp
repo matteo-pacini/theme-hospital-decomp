@@ -14,12 +14,6 @@ extern "C" {
 
 extern char D_001201a4[];
 extern s16 D_001567b0[8];
-extern u16 D_00155d9d, D_00155d9f;
-extern s16 D_001553f9, D_00155427;
-extern u8 D_00155429;
-extern u16 D_001553fb, D_001553fd;
-extern u16 D_00155e2a;
-extern u8 D_001553d4;
 extern ToDraw *D_00153fa4[32];
 extern FloorDef D_001379f0[];
 
@@ -134,7 +128,7 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 // FUNCTION: 0x00014b88
 void mapwho_person(Thing *w, s32 x, s32 y, s32 left, s32 top)
 {
-    D_00155e2a++;
+    othervar.fa72++;
     switch (w->kind) {
     case 4:
     case 6:
@@ -164,11 +158,11 @@ void mapwho_person(Thing *w, s32 x, s32 y, s32 left, s32 top)
     case 240:
         if (w->style == 6) {
             fn_0002f47c(w, x, y);
-        } else if (w->style == 12 && D_001553d4 == 0 && w->unknown69 == 0) {
+        } else if (w->style == 12 && othervar.f1c == 0 && w->unknown69 == 0) {
             fn_0002e804(w, x, y);
-        } else if ((u16)(w - thing) == D_001553fb) {
+        } else if ((u16)(w - thing) == othervar.f43) {
             draw_hilight_frame(w, x, y);
-        } else if ((u16)(w - thing) == D_001553fd) {
+        } else if ((u16)(w - thing) == othervar.f45) {
             draw_hilight_frame(w, x, y);
         } else {
             draw_special_id_frame(w, x, y);
@@ -178,7 +172,7 @@ void mapwho_person(Thing *w, s32 x, s32 y, s32 left, s32 top)
         draw_split_frame(w, x, y);
         break;
     case 48:
-        if (D_001553d4 == 0) {
+        if (othervar.f1c == 0) {
             draw_energise_frame(w, x, y);
         } else {
             draw_special_id_frame(w, x, y);
@@ -197,16 +191,16 @@ void mapwho_person(Thing *w, s32 x, s32 y, s32 left, s32 top)
     default:
         break;
     }
-    if (D_001567b0[4] + left < mouse_dx && D_001567b0[4] + D_001567b0[6] + left > mouse_dx
-        && D_001567b0[5] + top < mouse_dy && D_001567b0[5] + D_001567b0[7] + top > mouse_dy) {
-        D_001553f9 = w - thing;
+    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
+        && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+        othervar.f41_s16 = w - thing;
     }
 }
 
 // FUNCTION: 0x00014fbc
 void mapwho_staff(Thing *w, s32 x, s32 y, s32 left, s32 top)
 {
-    D_00155e2a++;
+    othervar.fa72++;
     switch (w->kind) {
     case 2:
     case 4:
@@ -243,7 +237,7 @@ void mapwho_staff(Thing *w, s32 x, s32 y, s32 left, s32 top)
     case 78:
     case 80:
     case 240:
-        if ((u16)(w - thing) == D_001553fb) {
+        if ((u16)(w - thing) == othervar.f43) {
             draw_hilight_frame(w, x, y);
         } else {
             draw_special_id_frame(w, x, y);
@@ -256,9 +250,9 @@ void mapwho_staff(Thing *w, s32 x, s32 y, s32 left, s32 top)
     default:
         break;
     }
-    if (D_001567b0[4] + left < mouse_dx && D_001567b0[4] + D_001567b0[6] + left > mouse_dx
-        && D_001567b0[5] + top < mouse_dy && D_001567b0[5] + D_001567b0[7] + top > mouse_dy) {
-        D_001553f9 = w - thing;
+    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
+        && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+        othervar.f41_s16 = w - thing;
     }
 }
 
@@ -276,14 +270,14 @@ void mapwho_object(Thing *w, const s32 x, const s32 y, const s32 left, const s32
     case 24:
     case 26:
     case 28:
-        if ((u16)(w - thing) == D_001553fb || (w->group && w->group == D_001553fb)) {
+        if ((u16)(w - thing) == othervar.f43 || (w->group && w->group == othervar.f43)) {
             draw_hilight_frame(w, x, y);
         } else {
             draw_special_id_frame(w, x, y);
         }
-        if (D_001567b0[4] + left < mouse_dx && D_001567b0[4] + D_001567b0[6] + left > mouse_dx
-            && D_001567b0[5] + top < mouse_dy && D_001567b0[5] + D_001567b0[7] + top > mouse_dy) {
-            D_001553f9 = w - thing;
+        if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
+            && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+            othervar.f41_s16 = w - thing;
         }
         if (w->icon) {
             draw_from_special_id_frame(w->icon, x, y, 0, (u8 *)w->label, w->palette);
@@ -318,20 +312,20 @@ void mapwho_rat(Thing *w, const s32 x, const s32 y, const s32 left0, const s32 t
     int top;
     int bottom;
 
-    mouse_x = mouse_dx;
-    mouse_y = mouse_dy;
+    mouse_x = lbDisplay.mmouse_x;
+    mouse_y = lbDisplay.mmouse_y;
     draw_special_id_frame(w, x, y);
-    left = left0 + D_001567b0[4] - D_00155d9d;
-    right = left + D_001567b0[6] + D_00155d9d * 2;
-    top = top0 + D_001567b0[5] - D_00155d9d;
-    bottom = top + D_001567b0[7] + D_00155d9d * 2;
+    left = left0 + D_001567b0[4] - othervar.f9e5;
+    right = left + D_001567b0[6] + othervar.f9e5 * 2;
+    top = top0 + D_001567b0[5] - othervar.f9e5;
+    bottom = top + D_001567b0[7] + othervar.f9e5 * 2;
     if (mouse_x > left && mouse_x < right && mouse_y > top && mouse_y < bottom) {
-        if (left + D_00155d9d - D_00155d9f < mouse_x && right - D_00155d9d + D_00155d9f > mouse_x
-            && top + D_00155d9d - D_00155d9f < mouse_y && bottom - D_00155d9d + D_00155d9f > mouse_y) {
-            D_001553f9 = w - thing;
-            D_00155427 = w - thing;
+        if (left + othervar.f9e5 - othervar.f9e7 < mouse_x && right - othervar.f9e5 + othervar.f9e7 > mouse_x
+            && top + othervar.f9e5 - othervar.f9e7 < mouse_y && bottom - othervar.f9e5 + othervar.f9e7 > mouse_y) {
+            othervar.f41_s16 = w - thing;
+            othervar.f6f_s16 = w - thing;
         } else {
-            D_00155429 = 1;
+            othervar.f71 = 1;
         }
     }
 }
@@ -374,9 +368,9 @@ void mapwho_numfx(Thing *w, s32 x, s32 y)
 void mapwho_mayor(Thing *w, s32 x, s32 y, s32 left, s32 top)
 {
     draw_special_id_frame(w, x, y);
-    if (D_001567b0[4] + left < mouse_dx && D_001567b0[4] + D_001567b0[6] + left > mouse_dx
-        && D_001567b0[5] + top < mouse_dy && D_001567b0[5] + D_001567b0[7] + top > mouse_dy) {
-        D_001553f9 = w - thing;
+    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
+        && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+        othervar.f41_s16 = w - thing;
     }
 }
 

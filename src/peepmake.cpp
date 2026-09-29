@@ -32,7 +32,6 @@ struct PeepChoice {
 
 extern "C" {
 
-extern u16 D_00155d89;
 extern u16 D_0012b8c8[];
 extern u16 D_0012b8e4[];
 extern u16 D_0015fc20[];
@@ -60,11 +59,11 @@ void calc_visitors_this_month(void)
 
     unused = 0;
     for (i = 0; i < 30; i++) {
-        if (popn[i].month == D_00155d89) {
+        if (popn[i].month == othervar.f9d1) {
             gamevar.f145 = popn[i].count;
             break;
         }
-        if (popn[i].month > D_00155d89)
+        if (popn[i].month > othervar.f9d1)
             break;
     }
     gamevar.f147 += gamevar.f145;
@@ -158,7 +157,7 @@ u8 create_an_illness(void)
     ok = 0;
     if (towns[myhosp->f29].unknown4[3] && old_newrand() % towns[myhosp->f29].unknown4[3] == 0) {
         ok = 1;
-        if (gbv.fd6 && D_00155d89 < gbv.fd6)
+        if (gbv.fd6 && othervar.f9d1 < gbv.fd6)
             ok = 0;
         else if (gbv.fd8 && gamevar.f1a < gbv.fd8)
             ok = 0;
@@ -167,7 +166,7 @@ u8 create_an_illness(void)
         r = old_newrand() % statvar.f8;
         for (i = 0; i < 14; i++) {
             if (r < D_0012b8c8[i]) {
-                if (D_00155d89 < D_0015fc20[i])
+                if (othervar.f9d1 < D_0015fc20[i])
                     ok = 0;
                 else
                     illness = i + 2;
@@ -187,8 +186,6 @@ u8 create_an_illness(void)
     return illness;
 }
 
-// NONMATCHING: D_00155d89 < gbv.f13f loads D_00155d89 first in the target, which needs it to be a
-// struct field (the othervar region); as a plain global it is loaded second
 // FUNCTION: 0x00070458
 s8 who_owns_peep(u8 illness)
 {
@@ -209,7 +206,7 @@ s8 who_owns_peep(u8 illness)
         players = network_num_players();
     else
         players = 4;
-    if (gbv.f13f && D_00155d89 < gbv.f13f) {
+    if (gbv.f13f && othervar.f9d1 < gbv.f13f) {
         owner = gamevar.f149 % players;
         gamevar.f149++;
         if (statvar.unknownfd > 1)
@@ -272,7 +269,7 @@ void add_contagiousness(Thing *w)
         chance = expertise[w->style].unknown10[0];
         if (chance) {
             boost = 0;
-            if (gbv.fd0 && D_00155d89 < gbv.fd0)
+            if (gbv.fd0 && othervar.f9d1 < gbv.fd0)
                 boost = 1;
             else if (gbv.fd2 && gamevar.f1a < gbv.fd2)
                 boost = 1;

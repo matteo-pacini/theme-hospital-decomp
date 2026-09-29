@@ -11,20 +11,8 @@ struct HospScores {
 };
 
 extern "C" {
-extern u32 D_00188c38;
-extern u16 D_00188c74;
-extern u8 D_00155d9c;
-extern u8 *D_00155d8f;
-extern s32 D_00155d93;
-extern u32 D_00155d97;
-extern s16 D_00155da3;
-extern u16 D_00155da5;
-extern u8 D_001553c8;
-extern u8 D_00188c7e, D_00188c81;
-extern volatile s16 D_00188c6c, D_00188c70;
 extern char D_001209e8[], D_001209ec[], D_001209f0[], D_001209f4[], D_001209f7[];
 extern char D_001209fa[], D_00120a0d[];
-extern char D_001563c5[];
 
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
@@ -71,10 +59,10 @@ void move_text(void)
                 TextPos[i] = DesiredTextPos[i];
         }
     }
-    old = D_00155d9c;
-    D_00155d9c = TextPos[0] < TextPos[5] ? (u8)1 : (u8)0;
-    if (D_00155d9c != old) {
-        if (D_00155d9c) {
+    old = othervar.f9e4;
+    othervar.f9e4 = TextPos[0] < TextPos[5] ? (u8)1 : (u8)0;
+    if (othervar.f9e4 != old) {
+        if (othervar.f9e4) {
             TitleText = hall_text[4];
             TitleLen = fn_000cd716(TitleText);
         } else {
@@ -108,7 +96,7 @@ void set_fame_pos(s32 *text, s32 *title)
     TitleText = hall_text[4];
     for (i = 0; i < 20; i++) {
         c = TitleText[i];
-        title[i] = (D_00188c34 - LbTextStringWidth(TitleText)) / 2;
+        title[i] = (lbDisplay.graphics_screen_width - LbTextStringWidth(TitleText)) / 2;
         TitleText[i] = 0;
         title[i] += LbTextStringWidth(TitleText);
         TitleText[i] = c;
@@ -128,7 +116,7 @@ void set_shame_pos(s32 *text, s32 *title)
     saved = TitleText;
     TitleText = hall_text[5];
     for (i = 0; i < 20; i++) {
-        title[i] = (D_00188c34 + LbTextStringWidth(TitleText)) / 2;
+        title[i] = (lbDisplay.graphics_screen_width + LbTextStringWidth(TitleText)) / 2;
         title[i] -= LbTextStringWidth(&TitleText[fn_000cd716(TitleText) - 1 - i]);
         title[i] = title[i] << 16;
     }
@@ -141,42 +129,40 @@ void fn_00094a18(void)
     s16 i;
 
     set_font_from_cache(0x10);
-    D_00155d8f = lbDisplay.unknown4;
-    D_00155d93 = D_00188c34;
-    D_00155d97 = D_00188c38;
+    othervar.f9d7 = lbDisplay.unknown4;
+    othervar.f9db = lbDisplay.graphics_screen_width;
+    othervar.f9df_u32 = lbDisplay.graphics_screen_height;
     lbDisplay.unknown4 = bscreen;
-    D_00188c34 = lbDisplay.unknown18;
-    D_00188c38 = lbDisplay.unknown1c;
+    lbDisplay.graphics_screen_width = lbDisplay.unknown18;
+    lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     for (i = 1; resvars.f40[i + 200].y != 0; i++)
         LbTextDraw(resvars.f40[i + 200].x, resvars.f40[i + 200].y, hall_text[i]);
-    lbDisplay.unknown4 = D_00155d8f;
-    D_00188c34 = D_00155d93;
-    D_00188c38 = D_00155d97;
-    LbScreenSetGraphicsWindow(0, 0, D_00155d93, D_00155d97);
+    lbDisplay.unknown4 = othervar.f9d7;
+    lbDisplay.graphics_screen_width = othervar.f9db;
+    lbDisplay.graphics_screen_height = othervar.f9df_u32;
+    LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df_u32);
 }
 
-// NONMATCHING: the D_00155da5-- test is mov ax / dec / test ax,ax in the target, which only a
-// struct field (nonzero offset) reproduces; as a plain global it is and eax,0xffff / test eax,eax
 // FUNCTION: 0x00094b28
 void fn_00094b28(void)
 {
     s8 i;
 
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x10);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     switch (hall.unknown2) {
     case 0:
         load_ingame_pic(0xe, 1, 0x16, 0, SCREEN_MODE_13);
         load_highscores();
         fn_00094a18();
         hall.unknown2 = 1;
-        D_00155da5 = 1200;
+        othervar.f9ed = 1200;
         for (i = 0; i < 20; i++)
-            TitlePos[i] = DesiredTitlePos[i] = D_00188c34 / 2;
-        if (D_00155d9c) {
+            TitlePos[i] = DesiredTitlePos[i] = lbDisplay.graphics_screen_width / 2;
+        if (othervar.f9e4) {
             set_fame_pos(DesiredTextPos, DesiredTitlePos);
             set_fame_pos(TextPos, TitlePos);
             TitleText = hall_text[4];
@@ -196,18 +182,18 @@ void fn_00094b28(void)
         break;
     case 2:
         set_font_from_cache(1);
-        D_001553c8 = 1;
+        othervar.f10 = 1;
         year_end_type++;
         break;
     default:
         break;
     }
     check_hall_buttons();
-    if (D_00155da3 != mouse_dx + mouse_dy) {
-        D_00155da5 = 1200;
-        D_00155da3 = mouse_dx + mouse_dy;
+    if (othervar.f9eb != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
+        othervar.f9ed = 1200;
+        othervar.f9eb = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
     }
-    if (D_00155da5-- == 0)
+    if (!othervar.f9ed--)
         hall.unknown2 = 2;
 }
 
@@ -223,7 +209,7 @@ void fn_00094d34(void)
 
     set_font_from_cache(0x10);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
-    if (D_00155d9c)
+    if (othervar.f9e4)
         p = TitleText;
     else
         p = &TitleText[TitleLen - 1];
@@ -234,7 +220,7 @@ void fn_00094d34(void)
         LbTextDraw(x, resvars.f40[205].y, p);
         x += LbTextStringWidth(p);
         p[1] = c;
-        if (D_00155d9c)
+        if (othervar.f9e4)
             p++;
         else
             p--;
@@ -243,7 +229,7 @@ void fn_00094d34(void)
         x = (TextPos[i] + 0x8000) >> 16;
         sprintf(buf, D_001209e8, i + 1);
         LbTextDraw(resvars.f40[201].x, x, buf);
-        if (D_00155d9c) {
+        if (othervar.f9e4) {
             LbTextDraw(resvars.f40[202].x, x, hosp_scores.fame[i].name);
             sprintf(buf, D_001209ec, hosp_scores.fame[i].score);
             LbTextDraw(resvars.f40[203].x, x, buf);
@@ -336,7 +322,7 @@ void fn_000951c8(void)
             fn_00094fc8();
             save_highscores();
         }
-        D_00155d9c = 1;
+        othervar.f9e4 = 1;
     } else {
         if (allhosps[player].f2d > hosp_scores.shame[0].score) {
             for (i = 0; i < 10; i++) {
@@ -354,7 +340,7 @@ void fn_000951c8(void)
                 save_highscores();
             }
         }
-        D_00155d9c = 0;
+        othervar.f9e4 = 0;
     }
 }
 
@@ -364,7 +350,7 @@ void process_hall_buttons(u8 n)
     switch (n) {
     case 0:
     case 1:
-        if (D_00155d9c) {
+        if (othervar.f9e4) {
             play_sound(10, 0x47, -1, -1);
             set_shame_pos(DesiredTextPos, DesiredTitlePos);
         } else {
@@ -386,23 +372,23 @@ void check_hall_buttons(void)
 {
     u8 i;
 
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; resvars.f48[i + 0xa9].width != 0 && resvars.f48[i + 0xa9].height != 0; i++) {
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f48[i + 0xa9].x, resvars.f48[i + 0xa9].y, resvars.f48[i + 0xa9].width, resvars.f48[i + 0xa9].height)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f48[i + 0xa9].x, resvars.f48[i + 0xa9].y, resvars.f48[i + 0xa9].width, resvars.f48[i + 0xa9].height)) {
                 reqspr_draw(resvars.f48[i + 0xa9].unknownC, resvars.f48[i + 0xa9].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0xa9].sprite]);
                 break;
             }
         }
     }
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i + 0xa9].width != 0 && resvars.f48[i + 0xa9].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0xa9].x, resvars.f48[i + 0xa9].y, resvars.f48[i + 0xa9].width, resvars.f48[i + 0xa9].height)) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0xa9].x, resvars.f48[i + 0xa9].y, resvars.f48[i + 0xa9].width, resvars.f48[i + 0xa9].height)) {
                 resvars.f48[i + 0xa9].callback(i);
                 reqspr_draw(resvars.f48[i + 0xa9].unknownC, resvars.f48[i + 0xa9].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0xa9].sprite]);
                 break;
             }
         }
-        D_00188c81 = 0;
+        lbDisplay.rleft_button = 0;
     }
 }
 
@@ -413,7 +399,7 @@ void save_highscores(void)
     char path[100];
 
     if (statvar.unknownfd <= 1 || (statvar.unknownfd > 1 && player == 0)) {
-        sprintf(path, D_001209fa, D_001563c5);
+        sprintf(path, D_001209fa, statvar.f575);
         fh = LbFileOpen(path, 0);
         if (fh != -1) {
             LbFileWrite(fh, &hosp_scores, 0x2d0);
@@ -428,7 +414,7 @@ void load_highscores(void)
     int fh;
     char path[100];
 
-    sprintf(path, D_00120a0d, D_001563c5);
+    sprintf(path, D_00120a0d, statvar.f575);
     fh = LbFileOpen(path, 2);
     if (fh != -1) {
         LbFileRead(fh, &hosp_scores, 0x2d0);

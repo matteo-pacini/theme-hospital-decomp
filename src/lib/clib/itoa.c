@@ -1,6 +1,6 @@
 #include "clib.h"
 
-const char D_000ec560[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+const char __based(__segname("_CODE")) D_000ec560[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 unsigned __udiv(unsigned value, unsigned __near *radix);
 #pragma aux __udiv = \
@@ -15,9 +15,6 @@ unsigned __udiv(unsigned value, unsigned __near *radix);
 #pragma aux utoa "fn_000ec585_"
 
 // FUNCTION: 0xec585
-// NONMATCHING: the digit table sits in the code segment (read with a cs:
-// override), which -zm cannot reproduce; the target names it
-// __set_doserrno_+0xc
 char *utoa(unsigned value, char *buffer, int radix)
 {
     char *p = buffer;

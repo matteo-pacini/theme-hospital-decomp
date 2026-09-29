@@ -13,6 +13,9 @@ char *strcat(char *dst, const char *src);
 int stricmp(const char *a, const char *b);
 int strnicmp(const char *a, const char *b, unsigned n);
 void delay(unsigned ms);
+unsigned short FP_SEG(const volatile void __far *p);
+#pragma aux FP_SEG = parm caller [eax dx] value [dx];
+#define FP_OFF(p) ((unsigned)(p))
 extern u8 D_00110068[];
 extern u8 D_001100fe[];
 extern char D_00128690[];
@@ -31,6 +34,13 @@ extern char D_00128745[];
 extern char D_0012874c[];
 extern char D_001287e2[];
 extern char D_001287ea[];
+extern char D_00128767[];
+extern char D_00128783[];
+extern char D_00128786[];
+typedef struct __iobuf FILE;
+FILE *fopen(const char *name, const char *mode);
+int fgetc(FILE *f);
+int fclose(FILE *f);
 }
 
 struct TbSerialDev {
@@ -53,7 +63,7 @@ struct ComHandlerInfo {
     u16 vector;
     u16 irq;
     u16 flags;
-    u8 unknownc[6];
+    void (__interrupt __far *old_handler)(void);
     u32 old_pm_off;
     u16 old_pm_sel;
     u16 old_rm_seg;
@@ -72,9 +82,11 @@ struct SerialHandler {
     u8 unknown0[0x4334];
     u16 dos_sel[4];
 
+    SerialHandler();
     ~SerialHandler();
     long Init(long port);
     long DeInit(long port);
+    long TerminateInputIO(long port);
     long ReadByte(long port);
     void WriteChar(TbSerialDev *dev, u8 c);
     void WriteCharNoWait(TbSerialDev *dev, u8 c);
@@ -116,15 +128,22 @@ extern SerialHandler SerialCommHandler;
 extern ComHandlerInfo com_dev[];
 extern ModemResponse modem_response[];
 
+void handle_com(TbSerialDev *dev);
+
 extern "C" {
-void fn_000f5254(SerialHandler *self);
-#pragma aux fn_000f5254 "W?$ct:SerialHandler$n()_"
+u32 fn_000f5bc4(SerialHandler *self, u32 size, u16 *sel);
+void fn_000f5c14(SerialHandler *self, u16 sel);
+void __interrupt __loadds fn_000f6028(void);
+void __interrupt __loadds fn_000f6054(void);
+void __interrupt __loadds fn_000f6080(void);
+void __interrupt __loadds fn_000f60ac(void);
+long fn_000f6d00(CommHandler *self);
 }
 
 // FUNCTION: 0xf5254
-// NONMATCHING: the range is the com_dev table initialisation (SerialHandler constructor) followed by
-// the tail of SerialHandler::Init
-void fn_000f5254(SerialHandler *self)
+// NONMATCHING: the range also holds ~SerialHandler (0xf534c), which is followed by the body of
+// SerialHandler::Init
+SerialHandler::SerialHandler()
 {
     long i;
 
@@ -153,13 +172,53 @@ void fn_000f5254(SerialHandler *self)
             break;
         }
         com_dev[i].flags = 0;
+        com_dev[i].old_handler = 0;
         com_dev[i].old_pm_off = 0;
         com_dev[i].old_pm_sel = 0;
         com_dev[i].old_rm_seg = 0;
         com_dev[i].old_rm_off = 0;
-        com_dev[i].tx_head = 0;
         com_dev[i].tx_tail = 0;
+        com_dev[i].tx_head = 0;
     }
+}
+
+SerialHandler::~SerialHandler()
+{
+}
+
+// FUNCTION: 0xf6348
+long SerialHandler::Init(long port)
+{
+    TbSerialDev *dev;
+    u32 size;
+
+    if (port >= 4)
+        return 0;
+    if (com_dev[port].flags & 1)
+        dev = com_dev[port].dev;
+    else
+        dev = (TbSerialDev *)fn_000f5bc4(this, 0x10c9, &dos_sel[port]);
+    if (!dev)
+        return 0;
+    size = D_001100fe - D_00110068;
+    memcpy(dev, D_00110068, size);
+    *(u16 *)&dev->unknown0[2] = com_dev[port].base;
+    fn_000c20c0(D_00128690, size, *(u16 *)&dev->unknown0[2], com_dev[port].irq, com_dev[port].vector);
+    dev->port = port;
+    dev->base = com_dev[dev->port].base;
+    dev->vector = com_dev[dev->port].vector;
+    dev->irq = com_dev[dev->port].irq;
+    dev->head = 0;
+    dev->tail = 0;
+    dev->rx_head = 0;
+    dev->rx_tail = 0;
+    com_dev[dev->port].dev = dev;
+    com_dev[dev->port].flags = 1;
+    backup_serial_int_vectors(dev);
+    setup_serial_int_vectors(dev);
+    init_com_port(dev);
+    *(u32 *)dev->unknown10a4 = 9600;
+    return (long)dev;
 }
 
 // FUNCTION: 0xf5544
@@ -288,35 +347,33 @@ void SerialHandler::EmptyOutputBuffer(long port)
 long SerialHandler::WriteBytes(long port, u8 *buf, long len)
 {
     TbSerialDev *dev;
-    long i;
-    long n = 0;
-
-    if (port >= 4)
-        return len ^ len;
-    dev = com_dev[port].dev;
-    for (i = 0; i < len; i++, buf++) {
-        WriteChar(dev, *buf);
-        n++;
-    }
-    return n;
-}
-
-// FUNCTION: 0xf59a8
-// NONMATCHING: loop counter and buffer pointer registers swapped (ebx/edx)
-long SerialHandler::WriteBytesNoWait(long port, u8 *buf, long len)
-{
-    TbSerialDev *dev;
-    long i;
+    u8 *p;
     long n;
+    long i;
 
     if (port >= 4)
         return 0;
     dev = com_dev[port].dev;
-    n = 0;
-    for (i = 0; i < len; i++, buf++) {
-        WriteCharNoWait(dev, *buf);
-        n++;
-    }
+    p = buf;
+    for (i = 0, n = 0; i < len; i++, p++, n++)
+        WriteChar(dev, *p);
+    return n;
+}
+
+// FUNCTION: 0xf59a8
+long SerialHandler::WriteBytesNoWait(long port, u8 *buf, long len)
+{
+    TbSerialDev *dev;
+    u8 *p;
+    long n;
+    long i;
+
+    if (port >= 4)
+        return 0;
+    dev = com_dev[port].dev;
+    p = buf;
+    for (i = 0, n = 0; i < len; i++, p++, n++)
+        WriteCharNoWait(dev, *p);
     return n;
 }
 
@@ -387,6 +444,37 @@ void SerialHandler::ClearRts(long port)
     }
 }
 
+// FUNCTION: 0xf5bc0
+long SerialHandler::TerminateInputIO(long port)
+{
+    return 0;
+}
+
+// FUNCTION: 0xf5bc4
+u32 fn_000f5bc4(SerialHandler *self, u32 size, u16 *sel)
+{
+    REGS r;
+
+    r.x.eax = 0x100;
+    r.x.ebx = (size + 15) >> 4;
+    int386(0x31, &r, &r);
+    if (r.x.cflag)
+        return 0;
+    if (sel)
+        *sel = r.x.edx;
+    return (r.x.eax & 0xffff) << 4;
+}
+
+// FUNCTION: 0xf5c14
+void fn_000f5c14(SerialHandler *self, u16 sel)
+{
+    REGS r;
+
+    r.x.eax = 0x101;
+    r.x.edx = sel;
+    int386(0x31, &r, &r);
+}
+
 // FUNCTION: 0xf5c3c
 void SerialHandler::backup_serial_int_vectors(TbSerialDev *dev)
 {
@@ -406,59 +494,58 @@ void SerialHandler::backup_serial_int_vectors(TbSerialDev *dev)
     com_dev[dev->port].old_pm_off = r.x.edx;
 }
 
-extern "C" {
-extern u8 D_000f6028[];
-extern u8 D_000f6054[];
-extern u8 D_000f6080[];
-extern u8 D_000f60ac[];
-extern u8 D_000f6024[];
-extern u8 D_000f6214[];
+void lock_code_start(void);
+void lock_code_end(void);
+
+static inline void lock_region(REGS *r, u32 addr, u32 len)
+{
+    memset(r, 0, sizeof(*r));
+    r->x.eax = 0x600;
+    r->x.ebx = addr >> 16;
+    r->x.ecx = addr & 0xffff;
+    r->x.esi = 0;
+    r->x.edi = len;
+    int386(0x31, r, r);
 }
 
 // FUNCTION: 0xf5d40
-// NONMATCHING: handler addresses are far code labels the target names by containing function; no cs selector load
+// NONMATCHING: the target names the address of fn_000f60ac as fn_000f6080+0x2c
 void SerialHandler::setup_serial_int_vectors(TbSerialDev *dev)
 {
     REGS r;
-    u8 *handler;
+    void (__interrupt __far *handler)(void);
 
     switch (dev->port) {
     case 0:
-        handler = D_000f6028;
+        handler = fn_000f6028;
         break;
     case 1:
-        handler = D_000f6054;
+        handler = fn_000f6054;
         break;
     case 2:
-        handler = D_000f6080;
+        handler = fn_000f6080;
         break;
     case 3:
-        handler = D_000f60ac;
+        handler = fn_000f60ac;
         break;
     }
     memset(&r, 0, sizeof(r));
     r.x.eax = 0x205;
     r.x.ebx = dev->vector;
-    r.x.ecx = 0;
-    r.x.edx = (u32)handler;
+    r.x.ecx = FP_SEG(handler);
+    r.x.edx = FP_OFF(handler);
     int386(0x31, &r, &r);
     memset(&r, 0, sizeof(r));
     r.x.eax = 0x201;
     r.x.ebx = dev->vector;
     r.x.ecx = ((u32)dev >> 4) & 0xffff;
-    r.x.edx = (u32)dev - ((((u32)dev >> 4) & 0xffff) << 4);
+    r.x.edx = (u32)dev & 0xf;
+    r.x.edx = (u32)dev - (r.x.ecx << 4);
     int386(0x31, &r, &r);
-    memset(&r, 0, sizeof(r));
-    r.x.eax = 0x600;
-    r.x.ebx = (u32)D_000f6024 >> 16;
-    r.x.ecx = (u32)D_000f6024 & 0xffff;
-    r.x.esi = 0;
-    r.x.edi = D_000f6214 - D_000f6024;
-    int386(0x31, &r, &r);
+    lock_region(&r, (u32)lock_code_start, (u32)lock_code_end - (u32)lock_code_start);
 }
 
 // FUNCTION: 0xf5e74
-// NONMATCHING: target has no ret: it falls through into lock_code_start, which is a bare ret
 void SerialHandler::init_com_port(TbSerialDev *dev)
 {
     TbSerialDev *d;
@@ -492,6 +579,39 @@ void SerialHandler::init_com_port(TbSerialDev *dev)
         outp(d->base + 4, inp(d->base + 4) | 1);
     }
     SetBaud(dev->port, 9600);
+}
+
+// FUNCTION: 0xf6024
+void lock_code_start(void)
+{
+}
+
+// FUNCTION: 0xf6028
+void __interrupt __loadds fn_000f6028(void)
+{
+    handle_com(com_dev[0].dev);
+    outp(0x20, 0x20);
+}
+
+// FUNCTION: 0xf6054
+void __interrupt __loadds fn_000f6054(void)
+{
+    handle_com(com_dev[1].dev);
+    outp(0x20, 0x20);
+}
+
+// FUNCTION: 0xf6080
+// NONMATCHING: the range also holds the next handler (0xf60ac)
+void __interrupt __loadds fn_000f6080(void)
+{
+    handle_com(com_dev[2].dev);
+    outp(0x20, 0x20);
+}
+
+void __interrupt __loadds fn_000f60ac(void)
+{
+    handle_com(com_dev[3].dev);
+    outp(0x20, 0x20);
 }
 
 // FUNCTION: 0xf60d8
@@ -541,7 +661,6 @@ void inc_rec_head(TbSerialDev *dev)
 }
 
 // FUNCTION: 0xf61f0
-// NONMATCHING: target has no ret: it falls through (after a nop) into lock_code_end's ret
 void inc_rec_tail(TbSerialDev *dev)
 {
     if (++dev->rx_tail > 0x7ff)
@@ -582,7 +701,6 @@ CommHandler::~CommHandler()
 }
 
 // FUNCTION: 0xf633c
-// NONMATCHING: target falls through into SerialHandler::Init placed after it; ours emits the tail jump
 long CommHandler::Init(long port)
 {
     CH(this)->port = port;
@@ -650,7 +768,6 @@ long CommHandler::SetBaud(long baud)
 }
 
 // FUNCTION: 0xf65e8
-// NONMATCHING: port and buffer pointer registers swapped in the inlined write loop
 void CommHandler::SendModemString(char *str)
 {
     char buf[0x50];
@@ -662,7 +779,6 @@ void CommHandler::SendModemString(char *str)
 }
 
 // FUNCTION: 0xf66bc
-// NONMATCHING: port and buffer pointer registers swapped in the inlined write loop
 long CommHandler::InitModem(void)
 {
     long ret;
@@ -675,7 +791,6 @@ long CommHandler::InitModem(void)
 }
 
 // FUNCTION: 0xf67c0
-// NONMATCHING: stack store scheduling differs in the inlined write loop
 long CommHandler::DialModem(char *number)
 {
     char buf[0x50];
@@ -693,7 +808,7 @@ long CommHandler::DialModem(char *number)
 }
 
 // FUNCTION: 0xf6940
-// NONMATCHING: register allocation differs in the inlined write loops
+// NONMATCHING: register allocation differs around the inlined ClearDtr/WriteBytes (port, loop counter)
 long CommHandler::HangUpModem(void)
 {
     TbSerialDev *dev;
@@ -734,6 +849,60 @@ long CommHandler::HangUpModem(void)
     }
     CH(this)->cur_func = 0;
     return ret;
+}
+
+// FUNCTION: 0xf6d00
+// NONMATCHING: AnswerModem; the range also holds CommHandler::ReadConfigFile (0xf6e1c)
+long fn_000f6d00(CommHandler *self)
+{
+    long ret;
+
+    CH(self)->cur_func = CH(self)->other_func;
+    self->SendModemString(CH(self)->reset_str);
+    ret = 3;
+    while (ret == 3 || ret == 1)
+        ret = self->GetModemResponse(CH(self)->dial_timeout);
+    if (ret == 2)
+        CH(self)->online = 1;
+    CH(self)->cur_func = 0;
+    return ret;
+}
+
+inline void CommHandler::read_a_line(FILE *f, char *p)
+{
+    int c;
+
+    while ((c = fgetc(f)) != '\r' && c != '\n')
+        *p++ = c;
+    *p = 0;
+}
+
+long CommHandler::ReadConfigFile(char *filename)
+{
+    char buf[0x50];
+    FILE *f;
+    s16 i;
+
+    fn_000c20c0(D_00128767, filename);
+    if (filename) {
+        f = fopen(filename, D_00128783);
+        if (f) {
+            fn_000c20c0(D_00128786, filename);
+            for (i = 0; i < 4; i++) {
+                read_a_line(f, buf);
+                read_a_line(f, buf);
+                read_a_line(f, buf);
+            }
+            read_a_line(f, buf);
+            read_a_line(f, CH(this)->init_str);
+            read_a_line(f, CH(this)->dial_str);
+            read_a_line(f, CH(this)->hangup_str);
+            read_a_line(f, CH(this)->reset_str);
+            fclose(f);
+            return 0;
+        }
+    }
+    return -1;
 }
 
 // FUNCTION: 0xf6fb0
@@ -879,4 +1048,12 @@ void CommHandler::ClearDtr(void)
 void CommHandler::ClearRts(void)
 {
     SerialCommHandler.ClearRts(CH(this)->port);
+}
+
+// FUNCTION: 0xf7434
+long CommHandler::RunModemFunc(long (*fn)(void))
+{
+    if (fn)
+        return fn();
+    return 0;
 }

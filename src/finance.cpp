@@ -44,9 +44,6 @@ struct StatItem {
 };
 
 extern "C" {
-extern u16 D_00155d89;
-extern u16 D_00188c74;
-extern s32 D_00188c38;
 extern Event D_001549d0[];
 extern StatItem D_00136388[];
 extern char **D_0016032c;
@@ -62,8 +59,6 @@ extern char D_00120447[];
 extern char D_0012044d[];
 extern char D_00120453[];
 extern char D_00120459[];
-extern volatile s16 D_00188c6c, D_00188c70;
-extern u8 D_00188c7e, D_00188c81;
 extern u8 D_00156910;
 void StopSample(u32 a, u32 b);
 }
@@ -247,7 +242,7 @@ void month_end(void)
     calc_visitors_this_month();
     mycontrol->unknown64f = 1;
     mycontrol->unknown650++;
-    D_00155d89 = mycontrol->f648 * 12 + mycontrol->unknown650;
+    othervar.f9d1 = mycontrol->f648 * 12 + mycontrol->unknown650;
     create_job_market();
     swap_month_end_packets();
     monthly_update_of_award_counts();
@@ -299,7 +294,7 @@ void year_end(void)
     mycontrol->unknown650 = 0;
     if (++mycontrol->f648 > 999)
         mycontrol->f648 = 0;
-    D_00155d89 = mycontrol->f648 * 12 + mycontrol->unknown650;
+    othervar.f9d1 = mycontrol->f648 * 12 + mycontrol->unknown650;
     mycontrol->f64e = 0;
     swap_year_end_packets();
     for (i = 0; i < 4; i++) {
@@ -351,17 +346,17 @@ void bank_statement(void)
         break;
     }
     set_font_from_cache(0x1c);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0x100;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0x100;
     for (i = 0; i < 6; i++) {
         LbTextSetWindow(resvars.f3c_Boxp[i + 4].x, resvars.f3c_Boxp[i + 4].y, resvars.f3c_Boxp[i + 4].w,
                         resvars.f3c_Boxp[i + 4].h);
         sprintf(buf, D_0012042c, D_0016032c[i]);
         LbTextDraw(resvars.f40[71].x, resvars.f40[71].y * 2, buf);
     }
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     line_h = lbFontPtr ? lbFontPtr[34].height : 0;
     char_w = lbFontPtr ? lbFontPtr[34].width : 0;
     for (i = 0; D_00136388[i].type; i++) {
@@ -432,7 +427,7 @@ void bank_statement(void)
             break;
         }
     }
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     if (exit_quick_requester())
         bank.unknown2 = 2;
 }
@@ -442,9 +437,9 @@ void process_stat_panel(void)
 {
     u8 i;
 
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i].width != 0 && resvars.f48[i].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i].x, resvars.f48[i].y, resvars.f48[i].width,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i].x, resvars.f48[i].y, resvars.f48[i].width,
                              resvars.f48[i].height)) {
                 resvars.f48[i].callback(i);
                 reqspr_draw(resvars.f48[i].unknownC, resvars.f48[i].unknownE,
@@ -452,9 +447,9 @@ void process_stat_panel(void)
             }
         }
     }
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; resvars.f48[i].width != 0 && resvars.f48[i].height != 0; i++) {
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f48[i].x, resvars.f48[i].y, resvars.f48[i].width,
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f48[i].x, resvars.f48[i].y, resvars.f48[i].width,
                              resvars.f48[i].height)) {
                 reqspr_draw(resvars.f48[i].unknownC, resvars.f48[i].unknownE,
                             &screen_sprites_tab_start[resvars.f48[i].sprite]);
@@ -462,7 +457,7 @@ void process_stat_panel(void)
             }
         }
     }
-    D_00188c81 = 0;
+    lbDisplay.rleft_button = 0;
 }
 
 // FUNCTION: 0x00052b48

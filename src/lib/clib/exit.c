@@ -19,8 +19,6 @@ void exit(int status)
 }
 
 // FUNCTION: 0xc2129
-// NONMATCHING: __exit is a label inside _cstart_ in config/functions.txt
-// (_cstart_+0x28f)
 void _exit(int status)
 {
     (*__int23_exit)();

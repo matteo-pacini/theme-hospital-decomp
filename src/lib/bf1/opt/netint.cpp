@@ -54,6 +54,9 @@ extern u8 deletePlayerBuffer[];
 extern u8 requestExchangeDataBuffer[];
 extern u8 requestCompositeExchangeDataBuffer[];
 extern u8 systemUserBuffer[];
+struct __2unp93UnidirectionalDataMessage;
+extern __2unp93UnidirectionalDataMessage incomingUnidirectionalMessage;
+extern u32 unidirectionalMsgReceived;
 
 TbError GenericSerialInit(__tibcaGUID guid, void *init_data);
 TbError GenericModemInit(__tibcaGUID guid, void *init_data);
@@ -72,6 +75,9 @@ extern u32 D_00188cb8;
 extern u32 D_0014da60;
 extern char D_00121ef4[];
 extern char D_00121f15[];
+extern char D_00121f3a[];
+extern char D_00121f41[];
+extern char D_00121f47[];
 extern char D_00121f4b[];
 extern char D_00121f79[];
 extern char D_00121fc4[];
@@ -111,10 +117,21 @@ extern char D_001228a9[];
 extern char D_001228e8[];
 extern char D_00122938[];
 extern char D_00122977[];
+extern char D_00122c70[];
+extern char D_00122cb0[];
+extern char D_00122ced[];
+extern char D_00122d34[];
+extern char D_00122d7f[];
+extern char D_00122de4[];
+extern char D_00122e38[];
 
-void __stdcall fn_000c1934(TbNetworkCallbackData *data, void *arg);
 void *__stdcall fn_000c1518(u32 id, u32 size, u32 seq, void *data);
-void __stdcall fn_000c1b24(u32 id, u32 seq, void *data);
+#pragma aux (__stdcall) stdcall_fn "*_";
+void __pragma("stdcall_fn") fn_000c1810(u32 id, char *name, void *data);
+void *__pragma("stdcall_fn") fn_000c1940(u32 id, u32 size, void *data);
+void __pragma("stdcall_fn") fn_000c1b24(u32 id, u32 seq, void *data);
+void __pragma("stdcall_fn") fn_000c1bc8(u32 id, u32 seq, void *data);
+TbError fn_000c18d0(void);
 
 void *fn_000bf790(u32 size);
 #pragma aux fn_000bf790 "W?$nwn(ui)pnv"
@@ -156,13 +173,18 @@ TbError fn_000bf810(u32 a, u32 b, u32 c, u32 d, u32 e)
 
 }
 
-TbError GetCurrentPlayers(void)
+void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg);
+
+extern "C" {
+
+// FUNCTION: 0x000c18d0
+TbError fn_000c18d0(void)
 {
     TbError ret;
 
     ret = Lb_FAIL;
     localPlayerIndex = maximumPlayers;
-    if (spPtr->Enumerate(0, fn_000c1934, 0) == Lb_OK) {
+    if (spPtr->Enumerate(0, GetCurrentPlayersCallback, 0) == Lb_OK) {
         if (localPlayerIndex < maximumPlayers)
             ret = Lb_OK;
         else
@@ -171,6 +193,8 @@ TbError GetCurrentPlayers(void)
         fn_000c20c0(D_0012218f);
     }
     return ret;
+}
+
 }
 
 // FUNCTION: 0x000bf818
@@ -187,6 +211,25 @@ TbError LbNetwork_EnableNewPlayers(u32 allow)
         ret = spPtr->EnableNewPlayers(allow);
     }
     return ret;
+}
+
+struct ServiceEntry {
+    u8 flags;
+    char name[0x43];
+};
+
+// FUNCTION: 0x000bf854
+TbError LbNetwork_EnumerateServices(TbNetworkCallbackFunc callback, void *data)
+{
+    ServiceEntry service;
+
+    strcpy(service.name, D_00121f3a);
+    callback((TbNetworkCallbackData *)&service, data);
+    strcpy(service.name, D_00121f41);
+    callback((TbNetworkCallbackData *)&service, data);
+    strcpy(service.name, D_00121f47);
+    callback((TbNetworkCallbackData *)&service, data);
+    return Lb_OK;
 }
 
 // NONMATCHING: target registers an exception frame
@@ -247,7 +290,7 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     exchangeBuffer = (u8 *)exchange_buf;
     localPlayerInfoPtr = info;
     receiveCallbacks.multiPlayer = fn_000c1518;
-    receiveCallbacks.mpReqExDataMsg = fn_000c1b24;
+    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))fn_000c1b24;
     if (exchange_size) {
         D_00188cb8 = max_players * exchange_size;
         compositeBuffer = LbMemoryAlloc(D_00188cb8);
@@ -323,7 +366,7 @@ TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
         fn_000c20c0(D_00122225);
         return ret;
     }
-    if (GetCurrentPlayers() != Lb_OK) {
+    if (fn_000c18d0() != Lb_OK) {
         fn_000c20c0(D_001221df);
         return ret;
     }
@@ -375,7 +418,7 @@ TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *play
             }
         } while (waitingForPlayerMapResponse);
     }
-    if (GetCurrentPlayers() != Lb_OK) {
+    if (fn_000c18d0() != Lb_OK) {
         fn_000c20c0(D_001222ad);
         return ret;
     }
@@ -725,6 +768,64 @@ TbError fn_000c1458(void)
     return ret;
 }
 
+// FUNCTION: 0x000c1810
+// NONMATCHING: the range also holds DeleteMsgCallback (0xc1858)
+void __pragma("stdcall_fn") fn_000c1810(u32 id, char *name, void *data)
+{
+    TbNetworkPlayerEntry player;
+
+    player.id = id;
+    strcpy(player.name, name);
+    player.unknown5 = 0;
+    player.host = 0;
+    fn_000c197c(&player);
+}
+
+void __pragma("stdcall_fn") DeleteMsgCallback(u32 id, void *data)
+{
+    u32 i;
+
+    for (i = 0; i < maximumPlayers; i++) {
+        if (clientDataTable[i].active && clientDataTable[i].id == id) {
+            clientDataTable[i].active = 0;
+            if (localPlayerInfoPtr)
+                localPlayerInfoPtr[i].active = 0;
+            else
+                fn_000c20c0(D_00122c70);
+        }
+    }
+}
+
+}
+
+// FUNCTION: 0x000c18c4
+void __stdcall HostMsgCallback(u32 id, void *data)
+{
+    hostId = id;
+}
+
+// FUNCTION: 0x000c1934
+void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg)
+{
+    fn_000c197c((TbNetworkPlayerEntry *)data);
+}
+
+extern "C" {
+
+// FUNCTION: 0x000c1940
+void *__pragma("stdcall_fn") fn_000c1940(u32 id, u32 size, void *data)
+{
+    void *ret = 0;
+
+    if (size > 0x20c) {
+        fn_000c20c0(D_00122cb0, size, 0x20c);
+    } else {
+        ret = &incomingUnidirectionalMessage;
+        unidirectionalMsgReceived = 1;
+    }
+    return ret;
+}
+
 // NONMATCHING: register choice and block layout
 // FUNCTION: 0x000c197c
 TbError fn_000c197c(TbNetworkPlayerEntry *player)
@@ -777,6 +878,65 @@ TbError fn_000c197c(TbNetworkPlayerEntry *player)
         }
     }
     return ret;
+}
+
+}
+
+// FUNCTION: 0x000c1ad0
+u32 IdToIndex(u32 &id)
+{
+    u32 found = 0;
+    u32 more = 1;
+    u32 i = 0;
+
+    while (more) {
+        if (i >= maximumPlayers) {
+            more = 0;
+        } else {
+            if (clientDataTable[i].active && clientDataTable[i].id == id) {
+                found = 1;
+                id = i;
+            }
+            i++;
+        }
+    }
+    return found;
+}
+
+extern "C" {
+
+// FUNCTION: 0x000c1b24
+void __pragma("stdcall_fn") fn_000c1b24(u32 id, u32 seq, void *data)
+{
+    u32 ok;
+
+    if (!localDataPtr) {
+        fn_000c20c0(D_00122ced);
+        return;
+    }
+    ok = 1;
+    if (sequenceNumber == 15)
+        sequenceNumber = seq;
+    else if (seq != sequenceNumber)
+        ok = 0;
+    if (ok) {
+        EncodeMessageStub(localDataPtr, exchangeSize - 4, MSG_TYPE_0, sequenceNumber);
+        if (spPtr->Send(id, localDataPtr) != Lb_OK)
+            fn_000c20c0(D_00122d34);
+    } else {
+        fn_000c20c0(D_00122d7f, seq, sequenceNumber);
+    }
+}
+
+// FUNCTION: 0x000c1bc8
+void __pragma("stdcall_fn") fn_000c1bc8(u32 id, u32 seq, void *data)
+{
+    if (seq == sequenceNumber || seq == ((sequenceNumber - 1) & 0xf)) {
+        if (spPtr->Send(id, compositeBuffer) != Lb_OK)
+            fn_000c20c0(D_00122de4);
+    } else {
+        fn_000c20c0(D_00122e38, seq, sequenceNumber);
+    }
 }
 
 // FUNCTION: 0x000c20c0

@@ -19,9 +19,9 @@
     mov dword ptr [ebp - 8], edx
     mov dword ptr [ebp - 0xc], ebx
     mov dword ptr [ebp - 0x10], ecx
-    mov eax, dword ptr [_D_00188c44]
+    mov eax, dword ptr ["_lbDisplay"+0x30]
     dec eax
-    mov ebx, dword ptr [_D_00188c48]
+    mov ebx, dword ptr ["_lbDisplay"+0x34]
     dec ebx
     mov edi, dword ptr [ebp - 4]
     mov esi, dword ptr [ebp - 0xc]
@@ -160,7 +160,7 @@
     mov dword ptr [ebp - 0x10], edi
 .L000ccbc7:
     mov edi, dword ptr [ebp - 8]
-    imul edi, dword ptr ["W?research_names$npnpna"]
+    imul edi, dword ptr ["_lbDisplay"+0x20]
     add edi, dword ptr [ebp - 4]
     add edi, dword ptr ["_lbDisplay"+0x10]
     mov ecx, dword ptr [ebp - 0xc]
@@ -169,7 +169,7 @@
     mov ecx, dword ptr [ebp - 0x10]
     sub ecx, dword ptr [ebp - 8]
     inc ecx
-    test word ptr [_D_00188c74], 4
+    test word ptr ["_lbDisplay"+0x60], 4
     je .L000ccc15
     mov esi, dword ptr ["_lbDisplay"+0x8]
     movzx eax, byte ptr [ebp + 8]
@@ -177,29 +177,29 @@
     mov al, byte ptr [edi]
     mov bl, byte ptr [eax + esi]
     mov byte ptr [edi], bl
-    add edi, dword ptr ["W?research_names$npnpna"]
+    add edi, dword ptr ["_lbDisplay"+0x20]
     .byte 0xe2; .byte 0xf1  # loop 0xccc01
     jmp .L000ccc9b
 .L000ccc15:
-    test word ptr [_D_00188c74], 8
+    test word ptr ["_lbDisplay"+0x60], 8
     je .L000ccc3b
     mov esi, dword ptr ["_lbDisplay"+0x8]
     movzx eax, byte ptr [ebp + 8]
     mov ah, byte ptr [edi]
     mov bl, byte ptr [eax + esi]
     mov byte ptr [edi], bl
-    add edi, dword ptr ["W?research_names$npnpna"]
+    add edi, dword ptr ["_lbDisplay"+0x20]
     .byte 0xe2; .byte 0xf1  # loop 0xccc2a
     jmp .L000ccc9b
 .L000ccc3b:
     movzx eax, byte ptr [ebp + 8]
     mov byte ptr [edi], al
-    add edi, dword ptr ["W?research_names$npnpna"]
+    add edi, dword ptr ["_lbDisplay"+0x20]
     .byte 0xe2; .byte 0xf6  # loop 0xccc3f
     jmp .L000ccc9b
 .L000ccc4b:
     inc ecx
-    test word ptr [_D_00188c74], 4
+    test word ptr ["_lbDisplay"+0x60], 4
     je .L000ccc72
     mov esi, dword ptr ["_lbDisplay"+0x8]
     movzx eax, byte ptr [ebp + 8]
@@ -211,7 +211,7 @@
     .byte 0xe2; .byte 0xf4  # loop 0xccc64
     jmp .L000ccc9b
 .L000ccc72:
-    test word ptr [_D_00188c74], 8
+    test word ptr ["_lbDisplay"+0x60], 8
     je .L000ccc95
     mov esi, dword ptr ["_lbDisplay"+0x8]
     movzx eax, byte ptr [ebp + 8]

@@ -11,7 +11,6 @@ extern s16 diag_register[][8];
 
 extern "C" {
 
-extern u16 D_0015543a;
 extern char D_001303c8[];
 extern char D_00120330[];
 extern char **D_001602a4;
@@ -157,7 +156,7 @@ void next_treatment_now_setup(Thing *w, u8 in_room)
             w->flags |= 0x10;
             set_icon_value(w, 0x1b);
             w->state_b = 0x44;
-            w->timer = D_0015543a;
+            w->timer = othervar.f82;
             w->unknown91 = make_a_playercall(8, w - thing, 0, w->owner);
             if (w->owner == player) {
                 advisor.f128 |= 4;
@@ -171,7 +170,7 @@ void next_treatment_now_setup(Thing *w, u8 in_room)
     } else if (w->flags & 0x10) {
         if (check_playercall(4, (u16)w->style, w->owner) <= 5) {
             w->state_b = 0x44;
-            w->timer = D_0015543a;
+            w->timer = othervar.f82;
             w->unknown91 = make_a_playercall(4, w - thing, 0, w->owner);
             if (w->owner == player) {
                 advisor.f128 |= 4;
@@ -575,7 +574,7 @@ void person_go_for_treatment(Thing *w)
     }
     if (treatment != 0 && listhead[w->owner].rooms[exp->category] == 0) {
         w->flags |= 0x80;
-        w->timer = D_0015543a;
+        w->timer = othervar.f82;
         set_complex(w, 0xf0, 0);
         w->state_b = 0x44;
         process_person_complex(w);

@@ -22,7 +22,6 @@ extern char **D_001602a4;
 extern char **D_001602cc;
 extern char **D_00160318;
 void fn_000c93bf(char *dst, char *src);
-extern u16 D_00155e40;
 extern u16 D_00158190;
 extern u8 D_00158192;
 extern Event D_001549d0[];
@@ -168,7 +167,7 @@ void setup_emergency_stats(u16 call, u8 owner)
         gamevar.ffd[i].count = gamevar.f125;
         gamevar.ffd[i].f7 = gamevar.f126;
         gamevar.f13e++;
-        D_00155e40 = 0;
+        othervar.fa88 = 0;
     }
 }
 

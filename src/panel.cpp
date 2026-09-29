@@ -96,42 +96,23 @@ extern u8 panel_emergency_spr[];
 
 extern "C" {
 
-extern u8 D_00155e01;
-extern u8 D_00155e0d;
-extern u8 D_00155d74;
-extern u16 D_00155e21;
 extern char **D_001602cc;
-extern s32 D_001553f3;
-extern u8 D_00155434;
-extern u8 D_00155435;
-extern u16 D_00155436;
 extern char **D_0016029c;
 extern char D_0012031d[];
 extern Event D_001549d0[];
 extern u8 D_00156910;
-extern u16 D_00188c74;
-extern s32 D_00188c38;
 extern TbSprite *D_00153f80;
 extern TbSprite *D_00153f88;
 extern TbLoadFiles D_0013f680[];
 extern char D_00120310[];
 extern char D_00120327[];
-extern char D_0015544e[];
-extern u8 D_001553f7;
-extern u8 D_00155e1e;
-extern u16 D_00155e1f;
 extern char **D_001602a0;
 extern char D_00120323[];
-extern u8 D_00155d7a;
-extern u8 D_00155e0e;
-extern u8 D_00155e0f;
-extern u8 D_00155e10;
 extern char **D_00160298;
 extern char **D_00160318;
 extern char D_00120316[];
 extern char D_00120317[];
 extern char **D_001602a4;
-extern u8 D_00155e23;
 extern u8 D_0012d778[];
 extern char D_00120300[];
 extern char D_00120304[];
@@ -156,31 +137,31 @@ void update_panel(void)
     u8 drawn;
 
     drawn = 0;
-    switch (D_00155e01) {
+    switch (othervar.fa49) {
     case 1:
-        if (statvar.unknown6 <= mouse_dy && !gamevar.f174)
+        if (statvar.unknown6 <= lbDisplay.mmouse_y && !gamevar.f174)
             D_00156910 = 1;
         break;
     case 2:
-        if (statvar.unknown6 > mouse_dy || gamevar.f174)
+        if (statvar.unknown6 > lbDisplay.mmouse_y || gamevar.f174)
             D_00156910 = 1;
         break;
     }
-    if (D_001553f3 != myhosp->f35)
+    if (othervar.f3b != myhosp->f35)
         D_00156910 = 1;
     if (D_00156910 == 1) {
         choose_panel_icons();
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         D_00156910 = 0;
         drawn = 1;
         draw_panel(1);
         set_all_refresh_zones_in_window(0, statvar.unknown4, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
     }
     if (!gamevar.f174) {
-        if (!display_panel_special_info() && D_00155e01 == 1) {
-            switch (D_00155434) {
+        if (!display_panel_special_info() && othervar.fa49 == 1) {
+            switch (othervar.f7c) {
             case 0:
-                if (D_00155435 != 0 || drawn)
+                if (othervar.f7d != 0 || drawn)
                     clear_panel_info_bar();
                 break;
             case 2:
@@ -230,12 +211,12 @@ void draw_panel(u8 all)
 // FUNCTION: 0x00031f5c
 void choose_panel_icons(void)
 {
-    if (statvar.unknown6 <= mouse_dy && !gamevar.f174 && !gamevar.unknown21) {
+    if (statvar.unknown6 <= lbDisplay.mmouse_y && !gamevar.f174 && !gamevar.unknown21) {
         panel = panel_icons_over;
-        D_00155e01 = 2;
+        othervar.fa49 = 2;
     } else {
         panel = panel_icons_normal;
-        D_00155e01 = 1;
+        othervar.fa49 = 1;
     }
     if (gamevar.f174)
         panel = panel_icons_ratfest;
@@ -275,8 +256,8 @@ void setup_panel_icons(const u8 mode)
             i++;
         }
     }
-    D_00155e21 = 0;
-    D_00155e0d = 1;
+    othervar.fa69 = 0;
+    othervar.fa55 = 1;
 }
 
 // FUNCTION: 0x000321b4
@@ -287,9 +268,9 @@ u8 which_icon_is_mouse_over(void)
 
     i = 0;
     over = 0x63;
-    if (statvar.unknown6 <= mouse_dy && !gamevar.f174) {
+    if (statvar.unknown6 <= lbDisplay.mmouse_y && !gamevar.f174) {
         while (((PanelIcon *)panel)[i].sprite > 0) {
-            if (((PanelIcon *)panel)[i].x <= mouse_dx && ((PanelIcon *)panel)[i].x2 >= mouse_dx) {
+            if (((PanelIcon *)panel)[i].x <= lbDisplay.mmouse_x && ((PanelIcon *)panel)[i].x2 >= lbDisplay.mmouse_x) {
                 over = i;
                 break;
             }
@@ -451,14 +432,14 @@ void draw_money_on_panel(void)
     char buf[16];
 
     digits = 0;
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetClipWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetClipWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     set_font_from_cache(5);
     height = lbFontPtr ? lbFontPtr[18].height : 0;
-    if (D_001553f3 != myhosp->f35) {
-        diff = fn_000cb2db(D_001553f3 - myhosp->f35);
+    if (othervar.f3b != myhosp->f35) {
+        diff = fn_000cb2db(othervar.f3b - myhosp->f35);
         for (div = 1000000; div >= 0; div /= 10) {
             if (diff >= div) {
                 digits++;
@@ -468,19 +449,19 @@ void draw_money_on_panel(void)
         LbTextSetClipWindow(resvars.f18_PanelLayoutp->unknown150 + resvars.f1c_PanelLayoutp->unknown248 * digits, resvars.f18_PanelLayoutp->unknown154,
                             resvars.f18_PanelLayoutp->unknown158 - resvars.f1c_PanelLayoutp->unknown248 * digits, height);
         sprintf(buf, D_00120300, myhosp->f35);
-        LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254 - (height - D_001553f7 * 6), buf);
-        sprintf(buf, D_00120304, D_001553f3);
-        LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254 + D_001553f7 * 6, buf);
+        LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254 - (height - othervar.f3f * 6), buf);
+        sprintf(buf, D_00120304, othervar.f3b);
+        LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254 + othervar.f3f * 6, buf);
         if (digits) {
             LbTextSetClipWindow(resvars.f18_PanelLayoutp->unknown160, resvars.f18_PanelLayoutp->unknown164,
                                 resvars.f1c_PanelLayoutp->unknown248 * (digits - 3) + resvars.f18_PanelLayoutp->unknown168, height);
             sprintf(buf, D_00120308, myhosp->f35);
             LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254, buf);
         }
-        D_001553f7++;
-        if (D_001553f7 == 4) {
-            D_001553f7 = 0;
-            D_001553f3 = myhosp->f35;
+        othervar.f3f++;
+        if (othervar.f3f == 4) {
+            othervar.f3f = 0;
+            othervar.f3b = myhosp->f35;
             D_00156910 = 1;
         }
     } else {
@@ -497,12 +478,12 @@ void draw_date_on_panel(void)
     char buf[12];
 
     set_font_from_cache(6);
-    D_00188c74 = 0x100;
+    lbDisplay.draw_flags = 0x100;
     LbTextSetWindow(resvars.f18_PanelLayoutp->unknown4c0, resvars.f18_PanelLayoutp->unknown4c4, resvars.f18_PanelLayoutp->unknown4c8, resvars.f18_PanelLayoutp->unknown4cc);
     sprintf(buf, D_00120310, mycontrol->unknown64f, month_text[mycontrol->unknown650]);
     LbTextDraw(resvars.f1c_PanelLayoutp->unknown440, resvars.f1c_PanelLayoutp->unknown444, buf);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x00032da0
@@ -511,7 +492,7 @@ void draw_rep_on_panel(void)
     s32 offset;
 
     offset = (resvars.f1c_PanelLayoutp->unknown260 - resvars.f1c_PanelLayoutp->unknown258) * myhosp->unknownc7e / 1000;
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     reqspr_draw(resvars.f1c_PanelLayoutp->unknown258 + offset, resvars.f1c_PanelLayoutp->unknown25c, &game_panel[36]);
 }
 
@@ -525,8 +506,8 @@ void draw_emergency(void)
 
     off = 0;
     if (!gamevar.f174) {
-        D_00188c74 = 0;
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        lbDisplay.draw_flags = 0;
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         set_font_from_cache(6);
         height = lbFontPtr ? lbFontPtr[25].height : 0;
         if (myhosp->f1d9 || (myhosp->unknown1257 && !(advisor.f11f & 1)) || myhosp->f207 || myhosp->f20e || (s8)myhosp->f1e2 > 1) {
@@ -549,23 +530,23 @@ void draw_emergency(void)
                 if (myhosp->f1d9)
                     off = watch[15].width / 4 + watch[15].width;
                 if (myhosp->f20b && !myhosp->f207)
-                    D_00188c74 = 4;
+                    lbDisplay.draw_flags = 4;
                 reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[14]);
                 set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
                                                 watch[14].width + (resvars.f1c_PanelLayoutp->unknown430 + off), watch[14].height + resvars.f1c_PanelLayoutp->unknown434, 3);
-                D_00188c74 = 0;
-                if (over_hotspot(mouse_dx, mouse_dy, off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
+                lbDisplay.draw_flags = 0;
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
                     reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[15]);
                     set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
                                                     watch[15].width + (off + resvars.f1c_PanelLayoutp->unknown430), watch[15].height + resvars.f1c_PanelLayoutp->unknown434, 3);
-                    if (!D_00155e23)
+                    if (!othervar.fa6b)
                         play_sound(10, 0x44, -1, -1);
-                    D_00155e23 = 1;
+                    othervar.fa6b = 1;
                 } else {
-                    D_00155e23 = 0;
+                    othervar.fa6b = 0;
                 }
                 if (myhosp->f20b && !myhosp->f207)
-                    D_00188c74 = 4;
+                    lbDisplay.draw_flags = 4;
                 if ((s16)myhosp->f207 / 8 >= 6) {
                     reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c, &watch[1]);
                     set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
@@ -577,20 +558,20 @@ void draw_emergency(void)
                 set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
                                                 watch[D_0012d778[(s16)myhosp->f207 / 8]].width + (off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438),
                                                 (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[D_0012d778[(s16)myhosp->f207 / 8]].height, 3);
-                D_00188c74 = 0;
+                lbDisplay.draw_flags = 0;
             } else if (myhosp->unknown1257) {
                 reqspr_draw(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[16]);
                 set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
                                                 watch[16].width + resvars.f1c_PanelLayoutp->unknown430, watch[16].height + resvars.f1c_PanelLayoutp->unknown434, 3);
-                if (over_hotspot(mouse_dx, mouse_dy, resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
                     reqspr_draw(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[17]);
                     set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
                                                     watch[17].width + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434 + watch[17].height, 3);
-                    if (!D_00155e23)
+                    if (!othervar.fa6b)
                         play_sound(10, 0x44, -1, -1);
-                    D_00155e23 = 1;
+                    othervar.fa6b = 1;
                 } else {
-                    D_00155e23 = 0;
+                    othervar.fa6b = 0;
                 }
                 if (myhosp->unknown1257 / (gbv.f154 / 13) >= 6) {
                     reqspr_draw(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c, &watch[1]);
@@ -643,7 +624,7 @@ void display_panel_person_info(void)
     Thing *w;
     char buf[100];
 
-    w = &thing[D_00155436];
+    w = &thing[othervar.f7e];
     line = 0;
     height = resvars.f1c_PanelLayoutp->unknown57c;
     clear_panel_info_bar();
@@ -734,7 +715,7 @@ void display_panel_staff_info(void)
     char buf[100];
     char names[4][50];
 
-    w = &thing[D_00155436];
+    w = &thing[othervar.f7e];
     line = 0;
     height = resvars.f1c_PanelLayoutp->unknown57c;
     if (w->owner != 0x63) {
@@ -792,7 +773,7 @@ void display_panel_object_info(void)
     u8 line;
     char buf[100];
 
-    w = &thing[D_00155436];
+    w = &thing[othervar.f7e];
     line = 0;
     clear_panel_info_bar();
     if (w->renderer == 6) {
@@ -822,7 +803,7 @@ void display_panel_queue_info(void)
     u8 height;
     char buf[100];
 
-    w = &thing[D_00155436];
+    w = &thing[othervar.f7e];
     line = 0;
     height = resvars.f1c_PanelLayoutp->unknown57c;
     if (w->renderer == 4)
@@ -851,7 +832,7 @@ void display_panel_mayor_info(void)
     Thing *w;
     u8 line;
 
-    w = &thing[D_00155436];
+    w = &thing[othervar.f7e];
     line = 0;
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
@@ -871,7 +852,7 @@ void display_panel_usage_info(void)
     u8 line;
     char buf[100];
 
-    w = &thing[D_00155436];
+    w = &thing[othervar.f7e];
     line = 0;
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
@@ -883,7 +864,7 @@ void display_panel_usage_info(void)
     fn_00036730(buf, &line, 3);
 }
 
-// NONMATCHING: control flow of the p->flash update: the target routes the (flash != 1 || D_00155e0d == 3) test and the following while loop's tail through jmp stubs
+// NONMATCHING: control flow of the p->flash update: the target routes the (flash != 1 || othervar.fa55 == 3) test and the following while loop's tail through jmp stubs
 // FUNCTION: 0x00034acc
 void draw_popup_icons(void)
 {
@@ -902,15 +883,15 @@ void draw_popup_icons(void)
     no_flash = 1;
     if (!gamevar.f174) {
         maintain_panel_popup();
-        D_00155d7a = 0;
+        othervar.f9c2 = 0;
         if (resvars.f1 == SCREEN_MODE_13) {
             LbScreenSetGraphicsWindow(0xb1, ((PanelIcon *)panel)[0].y, 100, 100);
             LbDrawBox(0, 0, 0x1c, 3, color.unknown8);
         }
-        D_00155e10++;
-        if (panel_emergency_spr[D_00155e10] == 0)
-            D_00155e10 = 0;
-        switch (D_00155e0d) {
+        othervar.fa58++;
+        if (panel_emergency_spr[othervar.fa58] == 0)
+            othervar.fa58 = 0;
+        switch (othervar.fa55) {
         case 1:
         case 2:
         case 3:
@@ -919,7 +900,7 @@ void draw_popup_icons(void)
             break;
         }
         LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height + resvars.f1c_PanelLayoutp->unknown4ac,
-                                  D_00188c34, game_panel[popup_icons[1].unknown0].height);
+                                  lbDisplay.graphics_screen_width, game_panel[popup_icons[1].unknown0].height);
         for (i = 1; popup_icons[i].unknown0 != 0; i++) {
             if (listhead[player].first[i]) {
                 spr = &game_panel[popup_icons[i].unknown0];
@@ -940,7 +921,7 @@ void draw_popup_icons(void)
                         if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
                             p->flash = 0;
                         } else {
-                            if (p->flash != 1 || D_00155e0d == 3)
+                            if (p->flash != 1 || othervar.fa55 == 3)
                                 p->flash++;
                             while (resvars.f34_Pointp[p->flash].x < resvars.f1c_PanelLayoutp->slots[p->slot].x) {
                                 if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
@@ -970,22 +951,22 @@ void draw_popup_icons(void)
                     if (y) {
                         reqspr_draw(x, y, spr);
                         if (popup_icons[i].unknown0 == 0x2b)
-                            reqspr_draw(x + resvars.f1c_PanelLayoutp->unknown598, y + resvars.f1c_PanelLayoutp->unknown59c, &game_panel[panel_emergency_spr[D_00155e10]]);
-                        D_00155e0d = 2;
+                            reqspr_draw(x + resvars.f1c_PanelLayoutp->unknown598, y + resvars.f1c_PanelLayoutp->unknown59c, &game_panel[panel_emergency_spr[othervar.fa58]]);
+                        othervar.fa55 = 2;
                         no_flash = 0;
                     }
                     redraw = 1;
                     y += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
                     y1 += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
-                    if (mouse_dx >= x && mouse_dx < x1 && mouse_dy >= y && mouse_dy < y1)
-                        D_00155d7a = i;
+                    if (lbDisplay.mmouse_x >= x && lbDisplay.mmouse_x < x1 && lbDisplay.mmouse_y >= y && lbDisplay.mmouse_y < y1)
+                        othervar.f9c2 = i;
                     set_all_refresh_zones_in_window(x, y, x1, y1, 3);
                 }
             }
         }
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
         if (no_flash)
-            D_00155e0d = 4;
+            othervar.fa55 = 4;
         if (redraw) {
             reqspr_draw(((PanelIcon *)panel)[0].x, ((PanelIcon *)panel)[0].y, &game_panel[((PanelIcon *)panel)[0].sprite]);
             reqspr_draw(((PanelIcon *)panel)[1].x, ((PanelIcon *)panel)[1].y, &game_panel[((PanelIcon *)panel)[1].sprite]);
@@ -996,7 +977,7 @@ void draw_popup_icons(void)
                                             ((PanelIcon *)panel)[0].x2, ((PanelIcon *)panel)[0].y2, 3);
         }
         LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height + resvars.f1c_PanelLayoutp->unknown4ac,
-                                  D_00188c34, game_panel[popup_icons[1].unknown0].height);
+                                  lbDisplay.graphics_screen_width, game_panel[popup_icons[1].unknown0].height);
         for (i = 1; popup_icons[i].unknown0 != 0; i++) {
             if (listhead[player].first[i]) {
                 spr = &game_panel[popup_icons[i].unknown0];
@@ -1020,7 +1001,7 @@ void draw_popup_icons(void)
                         y1 = y + spr->height;
                         reqspr_draw(x, y, spr);
                         if (popup_icons[i].unknown0 == 0x2b)
-                            reqspr_draw(x + resvars.f1c_PanelLayoutp->unknown598, y + resvars.f1c_PanelLayoutp->unknown59c, &game_panel[panel_emergency_spr[D_00155e10]]);
+                            reqspr_draw(x + resvars.f1c_PanelLayoutp->unknown598, y + resvars.f1c_PanelLayoutp->unknown59c, &game_panel[panel_emergency_spr[othervar.fa58]]);
                         y += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
                         y1 += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].unknown0].height;
                         set_all_refresh_zones_in_window(x, y, x1, y1, 3);
@@ -1032,17 +1013,17 @@ void draw_popup_icons(void)
             LbScreenSetGraphicsWindow(0xb1, ((PanelIcon *)panel)[0].y, 100, 100);
         x = resvars.f1c_PanelLayoutp->unknown4a0;
         y = resvars.f1c_PanelLayoutp->unknown4a4;
-        switch (D_00155e0d) {
+        switch (othervar.fa55) {
         case 2:
-            if (D_00155e0e - 2 >= 0)
-                D_00155e0e -= 2;
+            if (othervar.fa56 - 2 >= 0)
+                othervar.fa56 -= 2;
             else
-                D_00155e0e = 0;
-            if (D_00155e0e == 0) {
-                D_00155e0d = 3;
-                D_00155e0f = 0;
+                othervar.fa56 = 0;
+            if (othervar.fa56 == 0) {
+                othervar.fa55 = 3;
+                othervar.fa57 = 0;
             } else {
-                for (j = 0; j < D_00155e0e; j++) {
+                for (j = 0; j < othervar.fa56; j++) {
                     if (resvars.f1 == SCREEN_MODE_13)
                         reqspr_draw(x, y, &game_panel[41]);
                     x += game_panel[41].width;
@@ -1052,28 +1033,28 @@ void draw_popup_icons(void)
             }
             break;
         case 3:
-            D_00155e0e = 0;
-            D_00155e0f++;
-            if (D_00155e0f > 0x28)
-                D_00155e0d = 4;
+            othervar.fa56 = 0;
+            othervar.fa57++;
+            if (othervar.fa57 > 0x28)
+                othervar.fa55 = 4;
             break;
         case 4:
-            if (D_00155e0f <= 0x28) {
-                D_00155e0f++;
+            if (othervar.fa57 <= 0x28) {
+                othervar.fa57++;
             } else {
-                if (D_00155e0e + 2 < 0x18)
-                    D_00155e0e += 2;
+                if (othervar.fa56 + 2 < 0x18)
+                    othervar.fa56 += 2;
                 else
-                    D_00155e0e = 0x19;
-                for (j = 0; j < D_00155e0e; j++) {
+                    othervar.fa56 = 0x19;
+                for (j = 0; j < othervar.fa56; j++) {
                     if (resvars.f1 == SCREEN_MODE_13)
                         reqspr_draw(x, y, &game_panel[41]);
                     x += game_panel[41].width;
                 }
                 if (resvars.f1 == SCREEN_MODE_13)
                     reqspr_draw(x, y, &game_panel[42]);
-                if (D_00155e0e >= 0x18)
-                    D_00155e0d = 1;
+                if (othervar.fa56 >= 0x18)
+                    othervar.fa55 = 1;
             }
             break;
         case 1:
@@ -1086,14 +1067,14 @@ void draw_popup_icons(void)
             }
             if (resvars.f1 == SCREEN_MODE_13)
                 reqspr_draw(x, y, &game_panel[42]);
-            D_00155e0e = 0x18;
+            othervar.fa56 = 0x18;
             break;
         default:
-            D_00155e0d = 1;
+            othervar.fa55 = 1;
             break;
         }
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0;
     }
 }
 
@@ -1141,7 +1122,7 @@ void add_panel_popup(PlayerCall *p)
             p->slot = i;
             panel_popup_pos[i] = p - playercall;
             p->flash = 1;
-            D_00155e0d = 2;
+            othervar.fa55 = 2;
         } else {
             p->slot = 9;
         }
@@ -1231,12 +1212,12 @@ void maintain_panel_popup(void)
 void panel_flash(void)
 {
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (advisor.f120 >= 0x10 && advisor.f120 <= 0x1b) {
-        D_00155d74++;
-        if (D_00155d74 % 10 == 0) {
+        othervar.f9bc++;
+        if (othervar.f9bc % 10 == 0) {
             reqspr_draw(((PanelIcon *)panel)[advisor.f120 - 0x10].x, ((PanelIcon *)panel)[advisor.f120 - 0x10].y, &game_panel[((PanelIcon *)panel)[advisor.f120 - 0x10].pressed]);
-            D_00155d74 = 0;
+            othervar.f9bc = 0;
             D_00156910 = 1;
         }
     }
@@ -1253,7 +1234,7 @@ void draw_ratfest_on_panel(void)
     char buf[100];
 
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x29);
     sprintf(buf, D_00120323, myhosp->fd27u);
     LbTextDraw(0x5d, 0x1be, buf);
@@ -1361,20 +1342,20 @@ u8 display_panel_special_info(void)
     s16 x;
     Thing *w;
 
-    w = &thing[D_00155436];
+    w = &thing[othervar.f7e];
     line = 0;
     y = resvars.f1c_PanelLayoutp->unknown594;
     i = 0;
     x = 0;
-    D_00188c74 = 0;
-    if (gamevar.unknown21 || D_00155e1e) {
-        if (!D_00155e21) {
-            if (statvar.unknown6 <= mouse_dy && !gamevar.f174 && !gamevar.unknown21) {
-                D_00155e1e = 0;
+    lbDisplay.draw_flags = 0;
+    if (gamevar.unknown21 || othervar.fa66) {
+        if (!othervar.fa69) {
+            if (statvar.unknown6 <= lbDisplay.mmouse_y && !gamevar.f174 && !gamevar.unknown21) {
+                othervar.fa66 = 0;
                 return 0;
             }
         } else {
-            D_00155e21--;
+            othervar.fa69--;
         }
         panel = panel_icons_normal;
         while (((PanelIcon *)panel)[i].sprite > 0) {
@@ -1391,11 +1372,11 @@ u8 display_panel_special_info(void)
         set_font_from_cache(0x2c);
         if (gamevar.unknown21) {
             LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, D_001602a0[21]);
-        } else if (D_00155e1e) {
-            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, D_001602a0[D_00155e1e]);
-            D_00155e1f--;
-            if (D_00155e1f == 0)
-                D_00155e1e = 0;
+        } else if (othervar.fa66) {
+            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, D_001602a0[othervar.fa66]);
+            othervar.fa67--;
+            if (othervar.fa67 == 0)
+                othervar.fa66 = 0;
         }
         return 1;
     }
@@ -1416,7 +1397,7 @@ void panel_watch_help(void)
         text = 0xed;
     else
         return;
-    fn_000bbff0(D_0015544e, help_text[text]);
+    fn_000bbff0(othervar.f96, help_text[text]);
 }
 
 // FUNCTION: 0x000364e0
@@ -1424,9 +1405,9 @@ void panel_rep_help(void)
 {
     char buf[12];
 
-    fn_000bbff0(D_0015544e, help_text[9]);
+    fn_000bbff0(othervar.f96, help_text[9]);
     sprintf(buf, D_00120327, myhosp->unknownc7e);
-    fn_000c93bf(D_0015544e, buf);
+    fn_000c93bf(othervar.f96, buf);
 }
 
 // FUNCTION: 0x00036534

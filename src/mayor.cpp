@@ -2,8 +2,6 @@
 
 extern "C" {
 extern u8 D_00156910;
-extern s16 D_001553b8;
-extern u8 D_001553c7;
 extern u8 D_00158192;
 extern char D_00121adc[];
 void fn_000c93bf(char *dst, char *src);
@@ -37,7 +35,7 @@ void process_mayor_start_buttons(u8 n)
     switch (n) {
     case 1:
         packet_choice_result(0x15);
-        if (++allhosps[player].f1fd <= 5 || D_001553b8 >= 10)
+        if (++allhosps[player].f1fd <= 5 || othervar.f0 >= 10)
             break;
     case 0:
         packet_choice_result(0x14);
@@ -330,7 +328,7 @@ void report_mayor_result(u8 owner, char **strs)
     text[0] = 0;
     a = 0;
     b = 0;
-    sprintf(buf, strs[0], allhosps[D_001553c7].unknown0);
+    sprintf(buf, strs[0], allhosps[othervar.ff].unknown0);
     fn_000c93bf(text, buf);
     sprintf(buf, strs[1], mayor_names[allhosps[owner].f1f9]);
     fn_000c93bf(text, (char *)&sep);

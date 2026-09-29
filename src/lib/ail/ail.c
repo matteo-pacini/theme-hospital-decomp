@@ -359,9 +359,8 @@ IO_PARMS *__cdecl AIL_API_get_IO_environment(AIL_DRIVER *drvr)
 }
 
 // FUNCTION: 0x000df6e0
-// NONMATCHING: no config/symbols.txt entry covers AIL_driver - 4 (the target
-// names it _D_0018c94c), and AILA_startup has no config/functions.txt entry
-// (the target names it _program_timers+0x62)
+// NONMATCHING: AILA_startup (0xde2ac) has no config/functions.txt entry; the
+// target names the tail jump _program_timers+0x66
 void __cdecl AIL_API_startup(void)
 {
     S32 i;

@@ -18,25 +18,12 @@ void __stdcall lose_call(void *buf, u32 a, u32 b);
 extern "C" {
 extern s8 D_0015f489;
 extern s8 D_0015f48a;
-extern s32 D_00188c38;
-extern volatile u16 D_00188c74;
 extern void *smack_draw_callback;
-extern u8 D_00188c7b;
-extern u8 D_00188c81;
-extern u8 D_00155e07;
-extern u8 D_00155e17;
-extern u8 D_00155e2d;
-extern u8 D_00155e2e;
-extern u8 D_00155d71;
-extern u8 D_00155d72;
 extern u8 *D_00153f34;
-extern s32 D_0015542c;
-extern char D_0015544e[];
 extern Event D_001549d0[];
 extern char **D_0016031c;
 extern char **D_00160320;
 extern char **D_001602c4;
-extern u16 D_00156393[];
 extern char D_00121ad0[];
 extern char D_00121ad2[];
 extern char D_00121ad4[];
@@ -78,10 +65,10 @@ void __stdcall lose_call(void *buf, u32 a, u32 b)
                 width = LbTextStringWidth(text1);
                 y = 4;
             }
-            x = (D_00188c34 - width) / 2;
+            x = (lbDisplay.graphics_screen_width - width) / 2;
             LbTextDraw(x, y + 0x83, text1);
-            for (y = 1; y < D_00188c38 / 2; y += 2)
-                fn_000c9be0(0, y, D_00188c34, y, color.unknown8);
+            for (y = 1; y < lbDisplay.graphics_screen_height / 2; y += 2)
+                fn_000c9be0(0, y, lbDisplay.graphics_screen_width, y, color.unknown8);
         }
     }
 }
@@ -138,7 +125,7 @@ void play_winlose(void)
     had_screen = lbDisplay.unknown4 ? (u8)1 : (u8)0;
     unload_game_files();
     stop_midi();
-    D_00155e07 = 0;
+    othervar.fa4f = 0;
     switch (winlose.unknown2) {
     case 2:
         finish_composite_help();
@@ -150,7 +137,7 @@ void play_winlose(void)
             D_0015f489 = 1;
             n = D_0015f489;
         }
-        if (D_00155e07)
+        if (othervar.fa4f)
             stop_midi();
         D_0015f48a = 0;
         for (; n != 0; n--) {
@@ -161,9 +148,9 @@ void play_winlose(void)
             n++;
         D_0015f48a += saferand() % n;
         text1 = D_0016031c[D_0015f48a];
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        D_00188c74 = 0;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        lbDisplay.draw_flags = 0;
         current_frame = 0;
         set_mouse_mode(9);
         smack_draw_callback = (void *)lose_call;
@@ -175,15 +162,15 @@ void play_winlose(void)
             quit_game = 0;
         } else {
             winlose.unknown2 = 4;
-            D_00188c7b = 0;
+            lbDisplay.left_button = 0;
             fn_000951c8();
-            D_00188c81 = 0;
+            lbDisplay.rleft_button = 0;
             lbInkey = 0;
         }
         break;
     case 4:
-        if (D_00188c81 || lbInkey) {
-            D_00188c7b = 0;
+        if (lbDisplay.rleft_button || lbInkey) {
+            lbDisplay.left_button = 0;
             lbInkey = 0;
             mainmenu.unknown2 = 0x1f;
             display_mode = 2;
@@ -197,42 +184,42 @@ void play_winlose(void)
         finish_composite_help();
         clear_loading_screen(0);
         set_mouse_mode(0x2a);
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        D_00188c74 = 0;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        lbDisplay.draw_flags = 0;
         current_frame = 0;
         smack_draw_callback = 0;
         hosp_play_smk(6);
         load_ingame_pic(0x18, 0, 0x29, 0, SCREEN_MODE_13);
         winlose.unknown2 = 5;
-        D_00188c7b = 0;
+        lbDisplay.left_button = 0;
         fn_000951c8();
         set_font_from_cache(0x17);
-        D_00188c74 = text_ofs = text_paragraph = 0;
+        lbDisplay.draw_flags = text_ofs = text_paragraph = 0;
         text_delay = 1;
         if (level_number != 0xc) {
             safeseed = time(0);
             pick = saferand() % 4;
             if (gamevar.f176 % 2 == 1)
                 pick += 4;
-            concat_composite(D_0015544e, &D_00160320[D_00156393[pick]]);
-            sprintf(buf, D_0015544e, myhosp, D_0015542c, D_001602c4[level_number + 1]);
-            letter_format_text(D_0015544e, buf, resvars.f3c_Boxp[0xae].w);
-            D_00188c81 = 0;
+            concat_composite(othervar.f96, &D_00160320[statvar.f543[pick]]);
+            sprintf(buf, othervar.f96, myhosp, othervar.f74_s32, D_001602c4[level_number + 1]);
+            letter_format_text(othervar.f96, buf, resvars.f3c_Boxp[0xae].w);
+            lbDisplay.rleft_button = 0;
         } else {
             pick = saferand() % 4 + 8;
-            concat_composite(D_0015544e, &D_00160320[D_00156393[pick]]);
-            sprintf(buf, D_0015544e, myhosp, D_0015542c);
-            letter_format_text(D_0015544e, buf, resvars.f3c_Boxp[0xae].w);
-            D_00188c81 = 0;
+            concat_composite(othervar.f96, &D_00160320[statvar.f543[pick]]);
+            sprintf(buf, othervar.f96, myhosp, othervar.f74_s32);
+            letter_format_text(othervar.f96, buf, resvars.f3c_Boxp[0xae].w);
+            lbDisplay.rleft_button = 0;
         }
         break;
     case 3:
         finish_composite_help();
         clear_loading_screen(0);
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        D_00188c74 = 0;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        lbDisplay.draw_flags = 0;
         current_frame = 0;
         set_mouse_mode(9);
         smack_draw_callback = 0;
@@ -240,22 +227,22 @@ void play_winlose(void)
         quit_game = 1;
         break;
     case 5:
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[1]);
         reqspr_draw(resvars.f40[0xd0].x, resvars.f40[0xd0].y, &screen_sprites_tab_start[3]);
-        if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xcf].x, resvars.f40[0xcf].y, screen_sprites_tab_start[1].width,
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f40[0xcf].x, resvars.f40[0xcf].y, screen_sprites_tab_start[1].width,
                 screen_sprites_tab_start[1].height))
             reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[2]);
-        if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xd0].x, resvars.f40[0xd0].y, screen_sprites_tab_start[1].width,
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f40[0xd0].x, resvars.f40[0xd0].y, screen_sprites_tab_start[1].width,
                 screen_sprites_tab_start[1].height))
             reqspr_draw(resvars.f40[0xd0].x, resvars.f40[0xd0].y, &screen_sprites_tab_start[4]);
         if (!--text_delay) {
             LbTextSetJustifyWindow(resvars.f3c_Boxp[0xae].x, resvars.f3c_Boxp[0xae].y, resvars.f3c_Boxp[0xae].w + 0x64);
-            LbTextSetClipWindow(resvars.f3c_Boxp[0xae].x, 0, resvars.f3c_Boxp[0xae].w, D_00188c34);
+            LbTextSetClipWindow(resvars.f3c_Boxp[0xae].x, 0, resvars.f3c_Boxp[0xae].w, lbDisplay.graphics_screen_width);
             set_font_from_cache(0x17);
-            D_00188c74 |= 0x20;
+            lbDisplay.draw_flags |= 0x20;
             yofs_text = 0;
-            display_text = D_0015544e;
+            display_text = othervar.f96;
             if (display_text) {
                 if (display_text[text_ofs]) {
                     text_buf = display_text[text_ofs];
@@ -268,25 +255,25 @@ void play_winlose(void)
                 }
             }
         }
-        if (D_00188c7b) {
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
+        if (lbDisplay.left_button) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
                     screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
                 if (level_number != 0xc) {
                     D_001549d0[player].type = 0x38;
                     area.unknown2 = 0;
                     level_number++;
-                    if (D_00155e2e && resvars.f1 == SCREEN_MODE_13) {
-                        D_00155e2d = level_number;
-                        level_number = D_00155e2e;
-                        D_00155e2e = 0;
+                    if (othervar.fa76 && resvars.f1 == SCREEN_MODE_13) {
+                        othervar.fa75 = level_number;
+                        level_number = othervar.fa76;
+                        othervar.fa76 = 0;
                     }
                     myhosp->f29 = level_number;
-                    myhosp->f2d = D_0015542c;
+                    myhosp->f2d = othervar.f74_s32;
                     display_mode = 3;
                 } else {
                     D_001549d0[player].type = 0x38;
                     level_number = myhosp->f29 = 0;
-                    myhosp->f2d = D_0015542c;
+                    myhosp->f2d = othervar.f74_s32;
                     display_mode = 3;
                     set_mouse_mode(9);
                     fade_out_menu();
@@ -297,64 +284,64 @@ void play_winlose(void)
                     display_mode = 2;
                     quit_game = 0;
                 }
-            } else if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xd0].x, resvars.f40[0xd0].y,
+            } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f40[0xd0].x, resvars.f40[0xd0].y,
                            screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
                 gamevar.f176++;
-                D_00155e17 = 1;
-                D_00155e2e = 0;
+                othervar.fa5f = 1;
+                othervar.fa76 = 0;
                 pick = display_loading_screen();
                 load_game_files();
                 if (pick)
                     clear_loading_screen(D_00153f34);
                 restore_display_screen();
-                if (D_00155d71 && myplayer.unknown11)
-                    play_midi(D_00155d72);
+                if (othervar.f9b9 && myplayer.unknown11)
+                    play_midi(othervar.f9ba);
             } else {
                 do {
                     text_ofs++;
                 } while (display_text[text_ofs]);
                 text_ofs--;
             }
-            D_00188c7b = 0;
+            lbDisplay.left_button = 0;
         }
         break;
     case 6:
         finish_composite_help();
         set_mouse_mode(0x2a);
-        LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-        D_00188c74 = 0;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+        lbDisplay.draw_flags = 0;
         current_frame = 0;
         smack_draw_callback = 0;
         hosp_play_smk(6);
         load_ingame_pic(0x18, 0, 0x29, 0, SCREEN_MODE_13);
         winlose.unknown2 = 5;
         set_font_from_cache(0x17);
-        D_00188c74 = text_ofs = text_paragraph = 0;
+        lbDisplay.draw_flags = text_ofs = text_paragraph = 0;
         text_delay = 1;
         pick = saferand() % 4 + 8;
-        concat_composite(D_0015544e, &D_00160320[D_00156393[pick]]);
-        sprintf(buf, D_0015544e, myhosp, 100000);
-        letter_format_text(D_0015544e, buf, resvars.f3c_Boxp[0xae].w);
-        D_00188c7b = 0;
-        D_00188c81 = 0;
+        concat_composite(othervar.f96, &D_00160320[statvar.f543[pick]]);
+        sprintf(buf, othervar.f96, myhosp, 100000);
+        letter_format_text(othervar.f96, buf, resvars.f3c_Boxp[0xae].w);
+        lbDisplay.left_button = 0;
+        lbDisplay.rleft_button = 0;
         if (had_screen)
             LbIsActive();
         for (done = 0; !done;) {
             while (fn_000bed50() != 1)
                 ;
-            LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+            LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[1]);
-            if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
                     screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height))
                 reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[2]);
             if (!--text_delay) {
                 LbTextSetJustifyWindow(resvars.f3c_Boxp[0xae].x, resvars.f3c_Boxp[0xae].y, resvars.f3c_Boxp[0xae].w + 0x64);
-                LbTextSetClipWindow(resvars.f3c_Boxp[0xae].x, 0, resvars.f3c_Boxp[0xae].w, D_00188c34);
+                LbTextSetClipWindow(resvars.f3c_Boxp[0xae].x, 0, resvars.f3c_Boxp[0xae].w, lbDisplay.graphics_screen_width);
                 set_font_from_cache(0x17);
-                D_00188c74 |= 0x20;
+                lbDisplay.draw_flags |= 0x20;
                 yofs_text = 0;
-                display_text = D_0015544e;
+                display_text = othervar.f96;
                 if (display_text) {
                     if (display_text[text_ofs]) {
                         text_buf = display_text[text_ofs];
@@ -367,8 +354,8 @@ void play_winlose(void)
                     }
                 }
             }
-            if (D_00188c7b) {
-                if (over_hotspot(mouse_dx, mouse_dy, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
+            if (lbDisplay.left_button) {
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f40[0xcf].x, resvars.f40[0xcf].y,
                         screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
                     set_mouse_mode(9);
                     clear_loading_screen(0);
@@ -384,7 +371,7 @@ void play_winlose(void)
                     } while (display_text[text_ofs]);
                     text_ofs--;
                 }
-                D_00188c7b = 0;
+                lbDisplay.left_button = 0;
             }
             LbIsActive();
             LbScreenSwap();
@@ -393,7 +380,7 @@ void play_winlose(void)
             while (fn_000bed50() != 1)
                 ;
         }
-        D_0015544e[0] = 0;
+        othervar.f96[0] = 0;
         break;
     }
 }

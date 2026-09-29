@@ -69,7 +69,6 @@ u8 computer_buy_land(u8 player);
 
 extern "C" {
 
-extern u16 D_00155d89;
 extern char **D_001602a8;
 extern char D_00120424[];
 
@@ -117,7 +116,7 @@ void setup_computer_players(void)
                 h->f2a = 2;
                 fn_000bbff0((char *)h, D_00120424);
                 for (i = 0; i < 1000; i++) {
-                    j = (mouse_dx + mouse_dy + old_newrand()) % 20;
+                    j = (lbDisplay.mmouse_x + lbDisplay.mmouse_y + old_newrand()) % 20;
                     h->f1245 = j;
                     if (used[j] == 0) {
                         fn_000bbff0((char *)h, D_001602a8[j]);
@@ -486,7 +485,7 @@ void get_computer_bucket(u8 player)
     AllHosps *h;
     u32 i;
 
-    month = D_00155d89 % 12;
+    month = othervar.f9d1 % 12;
     b = &comp_buckets[player][month];
     h = &allhosps[player];
     h->f35 += b->f0;

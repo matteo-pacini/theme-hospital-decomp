@@ -20,9 +20,8 @@ void file_putc(SPECS *specs, int op_char)
 }
 
 // FUNCTION: 0xeb23a
-// NONMATCHING: file_putc lies inside smkmalloc_ in config/functions.txt
-// (target names it smkmalloc_+0x29); the _IONBF/_IOFBF updates store the
-// flag byte twice instead of once
+// NONMATCHING: the _IONBF/_IOFBF updates store the flag byte twice instead of
+// once (10.6 keeps the dead store)
 int __fprtf(FILE *fp, const char *format, va_list arg)
 {
     int not_buffered;

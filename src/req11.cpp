@@ -2,14 +2,7 @@
 
 extern "C" {
 extern Event D_001549d0[];
-extern u8 D_00155d74;
-extern u16 D_00155c64;
-extern char D_0015544e[];
 extern u8 D_00156910;
-extern u16 D_00188c74;
-extern s32 D_00188c38;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
 extern char **D_0016029c;
 extern char **D_001602d4;
 extern char D_00121a50[];
@@ -88,13 +81,13 @@ void req11_overdraw(Window *win)
     compute_help_text(0, 0, 5);
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
         window.unknown2cf - window.unknown2c7);
-    ox = win->x - D_00188c3c;
-    oy = win->y - D_00188c40;
-    set_all_refresh_zones_in_window(ox, oy, win->width + ox, D_00188c38, 3);
+    ox = win->x - lbDisplay.graphics_window_x;
+    oy = win->y - lbDisplay.graphics_window_y;
+    set_all_refresh_zones_in_window(ox, oy, win->width + ox, lbDisplay.graphics_screen_height, 3);
     D_00156910 = 1;
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     set_font_from_cache(1);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     total = 0;
     for (i = 0; i < 10; i++) {
         room = req_indices[i];
@@ -127,7 +120,7 @@ void req11_overdraw(Window *win)
         if (!room)
             break;
         set_font_from_cache(1);
-        if (over_hotspot(mouse_dx, mouse_dy, ox + resvars.f18[i + 0xb].x, oy + resvars.f18[i + 0xb].y,
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18[i + 0xb].x, oy + resvars.f18[i + 0xb].y,
                 resvars.f18[i + 0xb].w, resvars.f18[i + 0xb].h)) {
             set_font_from_cache(2);
             if (crequester.unknown3 != room)
@@ -140,8 +133,8 @@ void req11_overdraw(Window *win)
     }
     if (advisor.f11f & 1) {
         i = 1;
-        D_00155d74++;
-        if (D_00155d74 % 10 == 0) {
+        othervar.f9bc++;
+        if (othervar.f9bc % 10 == 0) {
             switch (advisor.f120) {
             case 0xa:
                 for (b = win->buttons; b; b = b->next) {
@@ -160,10 +153,10 @@ void req11_overdraw(Window *win)
                 reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x13]]);
                 break;
             }
-            D_00155d74 = 0;
+            othervar.f9bc = 0;
         }
     }
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0);
 }
 
@@ -220,9 +213,9 @@ void req11_help_object(void)
 {
     u8 idx;
 
-    idx = req_indices[resvars.f2c_HelpHotspotp[D_00155c64].unknownA];
+    idx = req_indices[resvars.f2c_HelpHotspotp[othervar.f8ac].unknownA];
     if (idx)
-        fn_000bbff0(D_0015544e, object_help[idx]);
+        fn_000bbff0(othervar.f96, object_help[idx]);
 }
 
 // FUNCTION: 0x0009d3cc
@@ -230,9 +223,9 @@ void req11_help_plus(void)
 {
     u8 idx;
 
-    idx = req_indices[resvars.f2c_HelpHotspotp[D_00155c64].unknownA];
+    idx = req_indices[resvars.f2c_HelpHotspotp[othervar.f8ac].unknownA];
     if (idx)
-        fn_000bbff0(D_0015544e, help_text[0x29]);
+        fn_000bbff0(othervar.f96, help_text[0x29]);
 }
 
 // FUNCTION: 0x0009d424
@@ -240,7 +233,7 @@ void req11_help_minus(void)
 {
     u8 idx;
 
-    idx = req_indices[resvars.f2c_HelpHotspotp[D_00155c64].unknownA];
+    idx = req_indices[resvars.f2c_HelpHotspotp[othervar.f8ac].unknownA];
     if (idx)
-        fn_000bbff0(D_0015544e, help_text[0x2a]);
+        fn_000bbff0(othervar.f96, help_text[0x2a]);
 }

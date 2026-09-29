@@ -164,19 +164,20 @@ void DecodeMessageStub(void *buf, u32 *size, u8 *type, u32 *seq)
 }
 
 // FUNCTION: 0xd1b90
-// NONMATCHING: register allocation (the target copies buf, not seq, into esi)
 void fn_000d1b90(void *buf, u32 *size, u8 *type, u32 *seq)
 {
-    if (buf == 0) {
+    u32 *p = (u32 *)buf;
+
+    if (p == 0) {
         fn_000c20c0(D_00124f4b);
         return;
     }
     if (size)
-        *size = *(u32 *)buf & 0xfffff;
+        *size = *p & 0xfffff;
     if (seq)
-        *seq = (*(u32 *)buf >> 20) & 0xf;
+        *seq = (*p >> 20) & 0xf;
     if (type)
-        *type = (*(u32 *)buf >> 24) & 0xff;
+        *type = (*p >> 24) & 0xff;
 }
 
 extern "C" {

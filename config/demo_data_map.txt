@@ -530,9 +530,6 @@
 00176b9c 0017393c     3 runtime     14 ___wcpp_2_data_dtreg_vfptrs_
 00188c10 00173958     2 bflib        4 W?_lbScreenInitialised$nul
 00188c14 0017395c   428 bflib       78 _lbDisplay
-00188c34 00157684     1 game         4 W?research_names$npnpna
-00188c64 00175a30     1 bflib        4 W?mouse_dx$nyl
-00188c68 00175a34     1 bflib        4 W?mouse_dy$nyl
 00188c94 00175a38     1 bflib        4 W?mouse_pos_change_saved$nul
 00188c98 001739e0     1 bflib        4 W?screen_initialised$nul
 00188c9c 001864ec     2 bflib        4 W?localPlayerInfoPtr$npn$__7308jnTbNetworkPlayerInfo$$

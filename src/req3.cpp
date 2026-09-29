@@ -43,23 +43,11 @@ struct ReqLayout {
 extern "C" {
 extern Slot D_001581b2[];
 extern Event D_001549d0[];
-extern u16 D_00155444;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern u8 D_001553ed;
-extern u8 D_00188c7e;
-extern u8 D_00188c7f;
-extern u8 D_00155e19;
-extern u8 D_001553f0;
-extern u8 D_001553c8;
-extern u16 D_00155c64;
-extern char D_0015544e[];
 extern char **D_001602a4;
 extern char D_001205e0[];
 extern char D_001205e4[];
 extern char D_001205e7[];
 extern char D_001205eb[];
-extern s32 D_00188c38;
 void fn_0001b7e0(char *dst, char *src, u8 mode);
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
@@ -96,7 +84,7 @@ void req3(Window *win)
                     chart_type = 1;
                     drugs.unknown2 = 0;
                     set_mouse_mode(9);
-                    D_00155444 = w->style;
+                    othervar.f8c = w->style;
                     play_sound(10, 0x43, -1, -1);
                 }
             } else if (i == resvars.fe[0xf]) {
@@ -144,11 +132,11 @@ void req3_overdraw(Window *win)
     n = 0x3e;
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                               window.unknown2cf - window.unknown2c7);
-    x = win->x - D_00188c3c;
-    y = win->y - D_00188c40;
+    x = win->x - lbDisplay.graphics_window_x;
+    y = win->y - lbDisplay.graphics_window_y;
     set_font_from_cache(1);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_001553ed = window.unknown2ec - 1;
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    othervar.f35 = window.unknown2ec - 1;
     if (D_001581b2[1].f6)
         D_001581b2[1].f6--;
     if (w->unknown146 < gbv.ffc) {
@@ -173,12 +161,12 @@ void req3_overdraw(Window *win)
         draw_health_graph(w, x, y, color.unknownD);
     else
         draw_diagnosis(w, x, y);
-    if (D_00188c7e) {
-        if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18_ReqLayoutp->next.x, y + resvars.f18_ReqLayoutp->next.y, resvars.f18_ReqLayoutp->next.w,
+    if (lbDisplay.mleft_button) {
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18_ReqLayoutp->next.x, y + resvars.f18_ReqLayoutp->next.y, resvars.f18_ReqLayoutp->next.w,
                          resvars.f18_ReqLayoutp->next.h)) {
-            D_001553f0 = 1;
-            D_001553c8 = 1;
-        } else if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18_ReqLayoutp->diag.x, y + resvars.f18_ReqLayoutp->diag.y,
+            othervar.f38 = 1;
+            othervar.f10 = 1;
+        } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18_ReqLayoutp->diag.x, y + resvars.f18_ReqLayoutp->diag.y,
                                 resvars.f18_ReqLayoutp->diag.w, resvars.f18_ReqLayoutp->diag.h)) {
             if (!D_001581b2[1].f6) {
                 D_001581b2[1].f4 = !D_001581b2[1].f4 ? 1 : 0;
@@ -186,8 +174,8 @@ void req3_overdraw(Window *win)
             }
         }
     }
-    if (D_00188c7f && !D_00155e19) {
-        if (over_hotspot(mouse_dx, mouse_dy, x + resvars.f18_ReqLayoutp->next.x, y + resvars.f18_ReqLayoutp->next.y, resvars.f18_ReqLayoutp->next.w,
+    if (lbDisplay.mright_button && !othervar.fa61) {
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18_ReqLayoutp->next.x, y + resvars.f18_ReqLayoutp->next.y, resvars.f18_ReqLayoutp->next.w,
                          resvars.f18_ReqLayoutp->next.h)) {
             u16 old;
 
@@ -197,11 +185,11 @@ void req3_overdraw(Window *win)
                 play_sound(10, 0xbb, -1, -1);
         }
     }
-    if (D_00188c7f)
-        D_00155e19 = 1;
+    if (lbDisplay.mright_button)
+        othervar.fa61 = 1;
     else
-        D_00155e19 = 0;
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
+        othervar.fa61 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0);
     compute_help_text(0, 0, 9);
 }
@@ -284,7 +272,7 @@ void draw_diagnosis(Thing *w, u16 x, u16 y)
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
         LbTextDraw(x + resvars.f18_ReqLayoutp->diag.x, dy + y + resvars.f18_ReqLayoutp->diag.y, buf);
     }
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
 }
@@ -387,7 +375,7 @@ extern "C" void fn_00074064(void)
 
     w = &thing[D_001581b2[1].value];
     if (w->unknown146 >= gbv.ffc)
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
 // FUNCTION: 0x000740e4
@@ -398,7 +386,7 @@ extern "C" void fn_000740e4(void)
     w = &thing[D_001581b2[1].value];
     if (w->unknown171 != 0 && !(w->flags & 0x1000) && !(w->flags & 0x4000) && w->style != w->unknown169
         && w->unknown146 >= gbv.ffc)
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
 // FUNCTION: 0x000741a4
@@ -408,7 +396,7 @@ extern "C" void fn_000741a4(void)
 
     w = &thing[D_001581b2[1].value];
     if (w->unknown140)
-        fn_000bbff0(D_0015544e, help_text[resvars.f2c[D_00155c64].text]);
+        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
 // FUNCTION: 0x00073e64

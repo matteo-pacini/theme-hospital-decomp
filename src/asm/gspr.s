@@ -16,17 +16,17 @@
     je .L00107871
     mov esi, dword ptr [ebx]
     {load} xor ecx, ecx
-    mov cx, word ptr [_D_00188c74]
+    mov cx, word ptr ["_lbDisplay"+0x60]
     test ecx, 2
     jne .L00102d0b
     push eax
-    mov eax, dword ptr ["W?research_names$npnpna"]
+    mov eax, dword ptr ["_lbDisplay"+0x20]
     mov dword ptr [esp + 0xc], eax
     {load} xor eax, eax
     mov al, byte ptr [ebx + 5]
     {load} mov ebp, eax
     {load} add eax, edx
-    mov ecx, dword ptr [_D_00188c48]
+    mov ecx, dword ptr ["_lbDisplay"+0x34]
     {load} cmp eax, ecx
     jle .L00102cd4
     {load} sub ebp, eax
@@ -68,7 +68,7 @@
     jmp .L00102d74
 .L00102d0b:
     push eax
-    mov eax, dword ptr ["W?research_names$npnpna"]
+    mov eax, dword ptr ["_lbDisplay"+0x20]
     neg eax
     mov dword ptr [esp + 0xc], eax
     {load} xor eax, eax
@@ -84,7 +84,7 @@
     jle .L0010786c
     .byte 0x2e; .byte 0x8b; .byte 0xc0  # mov eax, eax
 .L00102d34:
-    mov ecx, dword ptr [_D_00188c48]
+    mov ecx, dword ptr ["_lbDisplay"+0x34]
     dec ecx
     {load} cmp edx, ecx
     jle .L00102d70
@@ -123,13 +123,13 @@
     .byte 0x2e; .byte 0x8b; .byte 0xc0  # mov eax, eax
 .L00102d74:
     {load} xor ecx, ecx
-    mov cx, word ptr [_D_00188c74]
+    mov cx, word ptr ["_lbDisplay"+0x60]
     test ecx, 1
     jne .L001050c0
     push edx
     {load} xor edx, edx
     mov dword ptr [esp + 8], edx
-    mov ecx, dword ptr [_D_00188c44]
+    mov ecx, dword ptr ["_lbDisplay"+0x30]
     {load} cmp eax, ecx
     jge .L0010786c
     {load} xor edx, edx
@@ -142,16 +142,16 @@
     {load} or eax, eax
     js .L00104d74
     pop edx
-    add eax, dword ptr [_D_00188c3c]
-    add edx, dword ptr [_D_00188c40]
-    mov ecx, dword ptr ["W?research_names$npnpna"]
+    add eax, dword ptr ["_lbDisplay"+0x28]
+    add edx, dword ptr ["_lbDisplay"+0x2c]
+    mov ecx, dword ptr ["_lbDisplay"+0x20]
     imul edx, ecx
     {load} add edx, eax
     add edx, dword ptr ["_lbDisplay"+0x4]
     {load} mov edi, edx
     {load} xor eax, eax
     {load} xor ebx, ebx
-    mov bx, word ptr [_D_00188c74]
+    mov bx, word ptr ["_lbDisplay"+0x60]
     test ebx, 4
     jne .L00104cf4
     test ebx, 8
@@ -3268,16 +3268,16 @@
     {load} xor eax, eax
 .L00104d90:
     pop edx
-    add eax, dword ptr [_D_00188c3c]
-    add edx, dword ptr [_D_00188c40]
-    mov ecx, dword ptr ["W?research_names$npnpna"]
+    add eax, dword ptr ["_lbDisplay"+0x28]
+    add edx, dword ptr ["_lbDisplay"+0x2c]
+    mov ecx, dword ptr ["_lbDisplay"+0x20]
     imul edx, ecx
     {load} add edx, eax
     add edx, dword ptr ["_lbDisplay"+0x4]
     {load} mov edi, edx
     {load} xor eax, eax
     {load} xor ebx, ebx
-    mov bx, word ptr [_D_00188c74]
+    mov bx, word ptr ["_lbDisplay"+0x60]
     test ebx, 4
     jne .L00104f08
     test ebx, 8
@@ -3696,7 +3696,7 @@
     push edx
     {load} xor edx, edx
     mov dword ptr [esp + 8], edx
-    mov ecx, dword ptr [_D_00188c44]
+    mov ecx, dword ptr ["_lbDisplay"+0x30]
     {load} cmp eax, ecx
     jge .L0010786c
     {load} xor edx, edx
@@ -3710,16 +3710,16 @@
     {load} cmp eax, edx
     jl .L00107520
     pop edx
-    add eax, dword ptr [_D_00188c3c]
-    add edx, dword ptr [_D_00188c40]
-    mov ecx, dword ptr ["W?research_names$npnpna"]
+    add eax, dword ptr ["_lbDisplay"+0x28]
+    add edx, dword ptr ["_lbDisplay"+0x2c]
+    mov ecx, dword ptr ["_lbDisplay"+0x20]
     imul edx, ecx
     {load} add edx, eax
     add edx, dword ptr ["_lbDisplay"+0x4]
     {load} mov edi, edx
     {load} xor eax, eax
     {load} xor ebx, ebx
-    mov bx, word ptr [_D_00188c74]
+    mov bx, word ptr ["_lbDisplay"+0x60]
     test ebx, 4
     jne .L001074a0
     test ebx, 8
@@ -7383,9 +7383,9 @@
     {load} mov eax, eax
 .L0010753c:
     pop edx
-    add eax, dword ptr [_D_00188c3c]
-    add edx, dword ptr [_D_00188c40]
-    mov ecx, dword ptr ["W?research_names$npnpna"]
+    add eax, dword ptr ["_lbDisplay"+0x28]
+    add edx, dword ptr ["_lbDisplay"+0x2c]
+    mov ecx, dword ptr ["_lbDisplay"+0x20]
     imul edx, ecx
     {load} add edx, eax
     add edx, dword ptr ["_lbDisplay"+0x4]
@@ -7393,7 +7393,7 @@
     {load} xor eax, eax
     {load} mov ebx, ebp
     {load} xor ebx, ebx
-    mov bx, word ptr [_D_00188c74]
+    mov bx, word ptr ["_lbDisplay"+0x60]
     test ebx, 4
     jne .L001076b4
     test ebx, 8

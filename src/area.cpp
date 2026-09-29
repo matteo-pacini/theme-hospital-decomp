@@ -16,20 +16,7 @@ struct AreaLayout {
 extern "C" {
 extern Event D_001549d0[];
 extern u8 *D_00153f34;
-extern u8 *D_001553dc;
-extern u8 D_00155e14;
-extern u8 D_00155e1d;
-extern u8 D_001553eb;
 extern u8 D_00156910;
-extern u8 D_00188c7b;
-extern u8 D_00188c81;
-extern u8 D_00188c85;
-extern u16 D_00188c74;
-extern volatile s32 D_00188c5c, D_00188c60;
-extern s16 D_00155da3;
-extern u16 D_00155da5;
-extern s32 D_00188c34;
-extern s32 D_00188c38;
 extern char D_00120544[];
 extern char D_00120549[];
 extern char D_0012055a[];
@@ -88,7 +75,7 @@ u8 draw_area_select(void)
         else
             play_sound(10, 0xd2, -1, -1);
         play_area_smk(level_number);
-        D_00188c7b = 0;
+        lbDisplay.left_button = 0;
         LbPaletteGet(ppalette.data);
         LbGhostTableGenerate(ppalette.data, 0x19, D_00120549);
         calculate_grey(ppalette.data);
@@ -96,8 +83,8 @@ u8 draw_area_select(void)
         fn_00074cd8();
         area.unknown0 = 0;
         area.unknown2 = 1;
-        D_00188c7b = D_00188c81 = 0;
-        D_00155e1d = 0;
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
+        othervar.fa65 = 0;
         set_mouse_mode(9);
         break;
     case 1:
@@ -117,7 +104,7 @@ u8 draw_area_select(void)
         area.unknown2 = 0;
         advisor.f131 = 0x1d;
         display_mode = 0;
-        D_001553eb = 0;
+        othervar.f33 = 0;
         LbScreenClear(0);
         swap_game_sprites(resvars.f1);
         if (resvars.f1 == SCREEN_MODE_1) {
@@ -135,9 +122,9 @@ u8 draw_area_select(void)
         fn_00090804((u16)level_number, 1);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
         goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
-        D_00155e14 = 1;
+        othervar.fa5c = 1;
         draw_it();
-        D_001553dc = D_00153f34;
+        othervar.f24 = D_00153f34;
         init_ambients();
         break;
     case 3:
@@ -163,7 +150,7 @@ u8 draw_area_select(void)
         else
             play_sound(10, 0xd2, -1, -1);
         play_area_smk(level_number);
-        D_00188c7b = 0;
+        lbDisplay.left_button = 0;
         LbPaletteGet(ppalette.data);
         LbGhostTableGenerate(ppalette.data, 0x19, D_00120571);
         calculate_grey(ppalette.data);
@@ -171,8 +158,8 @@ u8 draw_area_select(void)
         fn_00074cd8();
         area.unknown0 = 0;
         area.unknown2 = 1;
-        D_00188c7b = D_00188c81 = 0;
-        D_00155e1d = 0;
+        lbDisplay.left_button = lbDisplay.rleft_button = 0;
+        othervar.fa65 = 0;
         set_mouse_mode(9);
         break;
     default:
@@ -210,9 +197,9 @@ void process_mouse_area_select(void)
     case 3:
         break;
     case 5:
-        if (D_00188c7b) {
+        if (lbDisplay.left_button) {
             for (i = 0; i < 0x15; i++) {
-                if (over_hotspot(D_00188c5c, D_00188c60, resvars.f18[i + 45].x, resvars.f18[i + 45].y, resvars.f18[i + 45].w, resvars.f18[i + 45].h)) {
+                if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f18[i + 45].x, resvars.f18[i + 45].y, resvars.f18[i + 45].w, resvars.f18[i + 45].h)) {
                     set_mouse_mode(0x15);
                     play_area_smk(i + 1);
                     area.unknown2 = 2;
@@ -221,7 +208,7 @@ void process_mouse_area_select(void)
                     break;
                 }
             }
-            D_00188c7b = 0;
+            lbDisplay.left_button = 0;
         }
         break;
     case 0:
@@ -236,21 +223,21 @@ void process_mouse_area_select(void)
     kind = 0x63;
     while (area_towns[i].w > 0 && area_towns[i].h > 0) {
         kind = area_towns[i].kind;
-        if (D_00188c7b) {
+        if (lbDisplay.left_button) {
             if (allhosps->f29 == 0 || level_number == 0) {
                 level_number = 1;
                 allhosps->f29 = level_number;
             }
             area.unknown2 = 2;
-            D_00188c7b = 0;
+            lbDisplay.left_button = 0;
         }
         i++;
     }
-    if (D_00155da3 != mouse_dx + mouse_dy) {
-        D_00155da5 = 600;
-        D_00155da3 = mouse_dx + mouse_dy;
+    if (othervar.f9eb != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
+        othervar.f9ed = 600;
+        othervar.f9eb = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
     }
-    if (!(s16)D_00155da5--) {
+    if (!(s16)othervar.f9ed--) {
         if (allhosps->f29 == 0 || level_number == 0) {
             level_number = 1;
             allhosps->f29 = level_number;
@@ -268,12 +255,12 @@ void display_area_select(void)
     char buf[500];
 
     unused = 0;
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x27);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     LbTextSetJustifyWindow(resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y, resvars.f50_AreaLayoutp->x1 - resvars.f50_AreaLayoutp->x);
     LbTextSetClipWindow(resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y, resvars.f50_AreaLayoutp->x1 - resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y1 - resvars.f50_AreaLayoutp->y);
-    D_00188c74 |= 0x20;
+    lbDisplay.draw_flags |= 0x20;
     yofs_text = 0;
     for (i = 0; i < text_paragraph; i++) {
         LbTextDraw(0, yofs_text, paragraphs[i]);
@@ -296,7 +283,7 @@ void display_area_select(void)
             text_delay = 0x1e;
         }
     }
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
 }
 
 // FUNCTION: 0x000694e8
@@ -312,9 +299,9 @@ void display_select_level(void)
 
     setup_colors();
     LbScreenClear(color.unknown9);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x27);
-    D_00188c74 = 0;
+    lbDisplay.draw_flags = 0;
     h = lbFontPtr ? lbFontPtr[34].height : 0;
     w = lbFontPtr ? lbFontPtr[34].width : 0;
     for (col = 0; col < 6; col++) {
@@ -328,19 +315,19 @@ void display_select_level(void)
             }
             fh = LbFileOpen(buf, 2);
             if (fh != -1) {
-                D_00188c85 = color.unknown9;
-                D_00188c74 |= 0x40;
+                lbDisplay.draw_colour = color.unknown9;
+                lbDisplay.draw_flags |= 0x40;
                 found = 1;
                 LbFileClose(fh);
             } else {
-                D_00188c85 = color.unknownA;
-                D_00188c74 |= 0x40;
+                lbDisplay.draw_colour = color.unknownA;
+                lbDisplay.draw_flags |= 0x40;
             }
-            if (over_hotspot(mouse_dx, mouse_dy, col * 100, h * row, 100, h)) {
-                D_00188c85 = color.unknown8;
-                *(volatile u16 *)&D_00188c74 |= 0x40;
-                if (D_00188c7b) {
-                    D_00188c7b = 0;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, col * 100, h * row, 100, h)) {
+                lbDisplay.draw_colour = color.unknown8;
+                *(volatile u16 *)&lbDisplay.draw_flags |= 0x40;
+                if (lbDisplay.left_button) {
+                    lbDisplay.left_button = 0;
                     area.unknown2 = 2;
                     level_number = (u8)col * 20 + (u8)row;
                     if (level_number > 14)
@@ -358,9 +345,9 @@ void display_select_level(void)
 // FUNCTION: 0x00069770
 void play_area_smk(const u8 n)
 {
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     smack_draw_callback = 0;
     hosp_play_smk(n + 7);
     copy_screen_from_wscreen(bscreen);

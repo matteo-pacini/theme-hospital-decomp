@@ -2,7 +2,6 @@
 
 extern "C" {
 
-extern s16 D_001553b8;
 
 void fn_000168a0(Thing *w);
 u8 fn_0002b400(Thing *w);
@@ -139,8 +138,8 @@ void nurse_in_ward(Thing *w)
         }
         cur = (s16)w->x.tile + ((s16)w->y.tile << 7);
         room = which_room(cur);
-        D_001553b8 = old_newrand() % 100;
-        if (D_001553b8 >= 15 && D_001553b8 < 20)
+        othervar.f0 = old_newrand() % 100;
+        if (othervar.f0 >= 15 && othervar.f0 < 20)
             target = room->pos + (((s16)(room->f2 / 2) << 7) + (s16)(room->f1 / 2));
         else
             target = room->pos + (((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1));
@@ -150,8 +149,8 @@ void nurse_in_ward(Thing *w)
             fn_0003e724(w);
             return;
         }
-        D_001553b8 = old_newrand() % 100;
-        if (D_001553b8 >= 0x46 && D_001553b8 < 0x50)
+        othervar.f0 = old_newrand() % 100;
+        if (othervar.f0 >= 0x46 && othervar.f0 < 0x50)
             w->unknown148w = 0;
         break;
     case 1:

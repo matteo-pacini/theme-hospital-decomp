@@ -42,7 +42,7 @@ struct STAB_TRAVERSE {
 struct DTREG_VFPTRS {
     RO_STATE *(*state_table)(RO_DTREG *ro);
     void *(*get_object)(rw_dtreg *rw, unsigned state_var);
-    void (*trav_init)(STAB_TRAVERSE *ctl);
+    void (*trav_init)(STAB_TRAVERSE *ctl, rw_dtreg *rw);
 };
 
 extern DTREG_VFPTRS *__wcpp_2_data_dtreg_vfptrs_[];
@@ -72,13 +72,12 @@ RO_STATE *__wcpp_2_stab_entry_(RO_DTREG *ro, unsigned state_var)
 }
 
 // FUNCTION: 0xf3cde
-// NONMATCHING: register allocation (the target walks rw->ro in ebx)
 void __wcpp_2_stab_trav_init_(STAB_TRAVERSE *ctl, rw_dtreg *rw)
 {
     ctl->rw = rw;
     ctl->state_var = rw->state_var;
     ctl->bound = 0;
-    __wcpp_2_data_dtreg_vfptrs_[rw->ro->kind]->trav_init(ctl);
+    __wcpp_2_data_dtreg_vfptrs_[rw->ro->kind]->trav_init(ctl, rw);
 }
 
 // FUNCTION: 0xf3cff
@@ -133,19 +132,19 @@ RO_STATE *__wcpp_2_stab_trav_next_(STAB_TRAVERSE *ctl)
 }
 
 // FUNCTION: 0xf3d89
-// NONMATCHING: the original shares __wcpp_2_stab_trav_next__'s epilogue and
-// addresses rw->ro through rw->flags
 RO_STATE *__wcpp_2_stab_trav_move_(STAB_TRAVERSE *ctl)
 {
-    rw_dtreg *rw;
-    RO_STATE *state;
-    DTOR_CMD *cmd;
+    RO_DTREG *ro;
     unsigned state_var;
+    unsigned char *flags;
+    DTOR_CMD *cmd;
+    RO_STATE *state;
 
-    rw = ctl->rw;
+    ro = ctl->rw->ro;
+    flags = ctl->rw->flags;
     state_var = ctl->state_var;
     for (;;) {
-        state = __wcpp_2_stab_entry_(rw->ro, state_var);
+        state = __wcpp_2_stab_entry_(ro, state_var);
         if (state == 0)
             break;
         if (ctl->state_var == ctl->bound)
@@ -159,7 +158,7 @@ RO_STATE *__wcpp_2_stab_trav_move_(STAB_TRAVERSE *ctl)
         case 4:
             break;
         case 5:
-            if (testFlag(rw->flags, ((DTOR_CMD_TEST_FLAG *)cmd)->index)) {
+            if (testFlag(flags, ((DTOR_CMD_TEST_FLAG *)cmd)->index)) {
                 state_var = ((DTOR_CMD_TEST_FLAG *)cmd)->state_var_init;
             } else {
                 state_var = ((DTOR_CMD_TEST_FLAG *)cmd)->state_var_noinit;

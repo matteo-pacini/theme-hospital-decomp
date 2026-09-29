@@ -136,6 +136,8 @@ struct __4dn7ojSerialInitData {
     u8 unknown8[0x18];
 };
 
+struct __iobuf;
+
 struct CommHandler {
     u8 unknown0[0x205];
 
@@ -153,6 +155,9 @@ struct CommHandler {
     long InitModem(void);
     long DialModem(char *number);
     long HangUpModem(void);
+    long ReadConfigFile(char *filename);
+    void read_a_line(__iobuf *f, char *p);
+    long RunModemFunc(long (*fn)(void));
     void ReadSerialDev(__4dn7ojSerialInitData *data);
     long GetModemResponse(long timeout);
     void SetInitModemFunc(long (*fn)(void));

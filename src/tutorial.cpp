@@ -1,10 +1,8 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_001553d0[];
 extern Event D_001549d0[];
 extern Event D_00154a0c[];
-extern char D_0015544e[];
 extern u8 D_00161200;
 extern u8 D_00161201;
 extern u8 D_00161202;
@@ -507,7 +505,7 @@ s8 tutorial(void)
                     advisor.f122 = 0;
                     advisor.f123 = 0;
                     advisor.f120 = 0xb;
-                    fn_000bbff0(D_0015544e, room_help[7]);
+                    fn_000bbff0(othervar.f96, room_help[7]);
                     set_force_help(2, 0xed);
                     D_0016120e = 1;
                     if (resvars.f1 == SCREEN_MODE_13)
@@ -674,7 +672,7 @@ s8 tutorial(void)
             advisor.f131 = 0x38;
             clear_force_help();
             advisor.f120 = 0;
-        } else if (D_00154a0c[player].type == 3 && D_001553d0[player] == 1) {
+        } else if (D_00154a0c[player].type == 3 && othervar.f18[player] == 1) {
             sprintf(advisor.f10, advisor_text[53]);
             advisor.f124 = 1;
             advisor.f122 = 0;
@@ -710,14 +708,14 @@ s8 tutorial(void)
             advisor.f131 = 0x38;
             clear_force_help();
             advisor.f120 = 0;
-        } else if (D_00154a0c[player].type == 3 && D_001553d0[player] == 1) {
+        } else if (D_00154a0c[player].type == 3 && othervar.f18[player] == 1) {
             sprintf(advisor.f10, advisor_text[54]);
             advisor.f124 = 1;
             advisor.f122 = 0;
             advisor.f123 = 0;
             D_00161219 = 1;
             return 1;
-        } else if (D_00154a0c[player].type == 3 && D_001553d0[player] == 0) {
+        } else if (D_00154a0c[player].type == 3 && othervar.f18[player] == 0) {
             sprintf(advisor.f10, advisor_text[49]);
             advisor.f124 = 1;
             advisor.f122 = 0;

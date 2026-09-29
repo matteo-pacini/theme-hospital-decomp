@@ -70,8 +70,8 @@ void copy_region(const s16 x, const s16 y, const s16 dx, const s16 dy, const s16
 
     i = 0;
     src = bscreen + y * lbDisplay.unknown18 + x;
-    dst = lbDisplay.unknown4 + dy * D_00188c34 + dx;
-    for (; i < h; i++, src += lbDisplay.unknown18, dst += D_00188c34)
+    dst = lbDisplay.unknown4 + dy * lbDisplay.graphics_screen_width + dx;
+    for (; i < h; i++, src += lbDisplay.unknown18, dst += lbDisplay.graphics_screen_width)
         fn_000c21e6(dst, src, w);
 }
 

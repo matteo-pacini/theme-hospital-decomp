@@ -8,8 +8,6 @@ int *__get_errno_ptr(void);
 int *__get_doserrno_ptr(void);
 
 // FUNCTION: 0xec52c
-// NONMATCHING: the original falls through into __set_errno, which follows
-// it in the same segment; -zm keeps the tail jump
 void __set_EDOM(void)
 {
     __set_errno(EDOM);
@@ -22,8 +20,6 @@ void __set_errno(int err)
 }
 
 // FUNCTION: 0xec53d
-// NONMATCHING: config/functions.txt extends __set_EINVAL_ over __set_EINVAL
-// (0xec544)
 void __set_ERANGE(void)
 {
     __set_errno(EINVAL);

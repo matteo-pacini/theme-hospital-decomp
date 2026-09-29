@@ -39,16 +39,10 @@ u8 advisor_staff_tired(void);
 u8 advisor_staff_warmth(void);
 
 extern "C" {
-extern u16 D_0015543f;
-extern s8 D_00155e03;
 extern char **D_0016029c;
 extern char **D_001602a4;
 extern char **D_001602d8;
 extern char **D_00160370;
-extern u8 D_0015543e;
-extern u8 D_00155441;
-extern u8 D_00155e0c;
-extern u8 D_00155e24[];
 extern u8 D_00156910;
 extern char **D_001602e8;
 extern char **D_001602ec;
@@ -84,9 +78,9 @@ void display_advisor(void)
             if (advisor.f0) {
                 if (resvars.f1 != SCREEN_MODE_1 || (crequester.unknown2 == 0x63 || crequester.unknown2 == 5)) {
                     elapsed = actual_game_turn - advice[advisor.f0].time;
-                    if (elapsed > 0x64 || D_00155e0c == 1)
+                    if (elapsed > 0x64 || othervar.fa54 == 1)
                         flag = 1;
-                    if (elapsed >= advice[advisor.f0].f2 || D_00155e0c == 1)
+                    if (elapsed >= advice[advisor.f0].f2 || othervar.fa54 == 1)
                         advisor.f0 = 0;
                 } else {
                     advice[advisor.f0].time = actual_game_turn - advice[advisor.f0].f2 / 4;
@@ -106,11 +100,11 @@ void display_advisor(void)
             }
             advisor_character();
             if (D_0012cdea[advisor.f11e]) {
-                if (advisor.f0 && !D_00155e0c) {
+                if (advisor.f0 && !othervar.fa54) {
                     advisor_text_box();
                     D_00156910 = 1;
-                } else if (--advisor.fe <= 0 || D_00155e0c) {
-                    D_00155e0c = 0;
+                } else if (--advisor.fe <= 0 || othervar.fa54) {
+                    othervar.fa54 = 0;
                     advisor.fe = -1;
                     advisor.f11e = D_0012cdd4[advisor.f11e];
                     advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
@@ -119,7 +113,7 @@ void display_advisor(void)
                     advisor.f11e = D_0012cdd4[advisor.f11e];
                     advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
                     advisor.f12c = 1;
-                    D_00155e0c = 0;
+                    othervar.fa54 = 0;
                 }
             }
         }
@@ -337,7 +331,7 @@ u8 find_advice(const u16 id)
         break;
     case 0xa:
         if (mycontrol->unknown650 > 4 && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256) && advice[id].f6 < 1
-            && mycontrol->f3ac == 0 && mycontrol->f28c > 0 && myhosp->f1ed > D_00155441) {
+            && mycontrol->f3ac == 0 && mycontrol->f28c > 0 && myhosp->f1ed > othervar.f89) {
             sprintf(advisor.f10, advisor_text[10]);
             found = 1;
         }
@@ -364,10 +358,10 @@ u8 find_advice(const u16 id)
         break;
     case 0xd:
         if (advisor.f128_u32 & 8) {
-            if (D_0015543f >= 4) {
+            if (othervar.f87 >= 4) {
                 sprintf(advisor.f10, extra_advice[1]);
                 found = 1;
-            } else if (D_0015543f >= 8) {
+            } else if (othervar.f87 >= 8) {
                 sprintf(advisor.f10, extra_advice[2]);
                 found = 1;
             }
@@ -593,14 +587,14 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x50:
-        if (listhead[player].rooms[0x16] != 0 && adcounts.f20 == 0 && D_00155e03 == 0x16 && advisor.f130) {
+        if (listhead[player].rooms[0x16] != 0 && adcounts.f20 == 0 && othervar.fa4b_s8 == 0x16 && advisor.f130) {
             sprintf(advisor.f10, advisor_text[0x50]);
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x53:
-        if (listhead[player].rooms[0x1c] != 0 && adcounts.f21 == 0 && D_00155e03 == 0x1c && advisor.f130) {
+        if (listhead[player].rooms[0x1c] != 0 && adcounts.f21 == 0 && othervar.fa4b_s8 == 0x1c && advisor.f130) {
             if (!myplayer.f41[1]) {
                 sprintf(advisor.f10, advisor_situations[2]);
                 myplayer.f41[1] = 1;
@@ -608,12 +602,12 @@ u8 find_advice(const u16 id)
                 sprintf(advisor.f10, advisor_text[0x53]);
             }
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x66:
         what_is_required(0x13, player);
-        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 2 && D_00155e03 == 10
+        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 2 && othervar.fa4b_s8 == 10
             && required.unknown8) {
             if (!myplayer.f41[2]) {
                 sprintf(advisor.f10, advisor_situations[3]);
@@ -622,12 +616,12 @@ u8 find_advice(const u16 id)
                 sprintf(advisor.f10, advisor_text[0x66]);
             }
             found = 1;
-            D_00155e03 = 1;
+            othervar.fa4b_s8 = 1;
         }
         break;
     case 0x54:
         what_is_required(0x13, player);
-        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 2 && D_00155e03 == 10) {
+        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 2 && othervar.fa4b_s8 == 10) {
             if (!myplayer.f41[2]) {
                 sprintf(advisor.f10, advisor_situations[3]);
                 myplayer.f41[2] = 1;
@@ -635,12 +629,12 @@ u8 find_advice(const u16 id)
                 sprintf(advisor.f10, advisor_text[0x54]);
             }
             found = 1;
-            D_00155e03 = 1;
+            othervar.fa4b_s8 = 1;
         }
         break;
     case 0x67:
         what_is_required(0x13, player);
-        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 1 && D_00155e03 == 10
+        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 1 && othervar.fa4b_s8 == 10
             && required.unknown8) {
             sprintf(advisor.f10, advisor_text[0x67]);
             found = 1;
@@ -648,38 +642,38 @@ u8 find_advice(const u16 id)
         break;
     case 0x55:
         what_is_required(0x13, player);
-        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 1 && D_00155e03 == 10) {
+        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 1 && othervar.fa4b_s8 == 10) {
             sprintf(advisor.f10, advisor_text[0x55]);
             found = 1;
         }
         break;
     case 0x56:
         what_is_required(0x13, player);
-        if (!required.flags && required.unknown6 != 10 && required.unknown8 && D_00155e03 == 10) {
+        if (!required.flags && required.unknown6 != 10 && required.unknown8 && othervar.fa4b_s8 == 10) {
             sprintf(advisor.f10, advisor_text[0x56]);
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x57:
         what_is_required(0x13, player);
-        if (!required.unknown8 && required.unknown9 && D_00155e03 == 9) {
+        if (!required.unknown8 && required.unknown9 && othervar.fa4b_s8 == 9) {
             sprintf(advisor.f10, advisor_text[0x57]);
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x4f:
         what_is_required(5, player);
-        if ((required.unknown0[0] & 4) && required.unknown6 != 0xb && D_00155e03 == 0xb) {
+        if ((required.unknown0[0] & 4) && required.unknown6 != 0xb && othervar.fa4b_s8 == 0xb) {
             sprintf(advisor.f10, advisor_text[0x4f]);
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x4e:
         what_is_required(4, player);
-        if ((required.unknown0[0] & 0x40) && required.unknown6 != 8 && D_00155e03 == 8) {
+        if ((required.unknown0[0] & 0x40) && required.unknown6 != 8 && othervar.fa4b_s8 == 8) {
             if (!myplayer.f41[3]) {
                 sprintf(advisor.f10, advisor_situations[4]);
                 myplayer.f41[3] = 1;
@@ -687,14 +681,14 @@ u8 find_advice(const u16 id)
                 sprintf(advisor.f10, advisor_text[0x4e]);
             }
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x5d:
-        if (adcounts.f8f > 0 && myhosp->fc9e[2] == 0 && D_00155e03 > 0 && advisor.f130) {
+        if (adcounts.f8f > 0 && myhosp->fc9e[2] == 0 && othervar.fa4b_s8 > 0 && advisor.f130) {
             sprintf(advisor.f10, advisor_text[0x5d]);
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x4c:
@@ -718,17 +712,17 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x68:
-        if (listhead[player].rooms[7] != 0 && myhosp->fc9e[1] == 0 && D_00155e03 == 7 && myhosp->f29 == 1) {
+        if (listhead[player].rooms[7] != 0 && myhosp->fc9e[1] == 0 && othervar.fa4b_s8 == 7 && myhosp->f29 == 1) {
             sprintf(advisor.f10, advisor_text[0x68]);
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x69:
         if (listhead[player].rooms[4] != 0 && myhosp->fc9e[3] == 0 && myhosp->f29 == 1) {
             sprintf(advisor.f10, advisor_text[0x69]);
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     case 0x6b:
@@ -864,11 +858,11 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x8c:
-        if (!myplayer.f41[0] && D_00155e03 == 0x1c) {
+        if (!myplayer.f41[0] && othervar.fa4b_s8 == 0x1c) {
             sprintf(advisor.f10, advisor_situations[1]);
             myplayer.f41[0] = 1;
             found = 1;
-            D_00155e03 = 0;
+            othervar.fa4b_s8 = 0;
         }
         break;
     default:
@@ -909,9 +903,9 @@ void forced_advice(void)
     case 2:
         fn_000bbff0(advisor.f10, D_001602e8[advisor.f2_s16]);
         for (i = 0; i < 4; i++) {
-            if (D_00155e24[i]) {
+            if (othervar.fa6c[i]) {
                 sprintf(advisor.f10, D_00120480, advisor.f10, allhosps[i].unknown0);
-                D_00155e24[i] = 0;
+                othervar.fa6c[i] = 0;
             }
         }
         break;
@@ -948,7 +942,7 @@ void reset_advisor(void)
     advisor.f2_s16 = 0;
     advisor.f4 = 0;
     advisor.f10[0] = 0;
-    D_0015543e = 1;
+    othervar.f86 = 1;
     advisor.f130 = 0;
     advisor.f128_u32 ^= advisor.f128_u32;
     reset_all_count();
@@ -1113,12 +1107,12 @@ u8 advisor_peeps_unhappy(void)
     s32 happiness;
 
     happiness = (adcounts.fa << 10) / adcounts.f0;
-    if (D_00155441) {
-        if (D_00155441 > 1)
+    if (othervar.f89) {
+        if (othervar.f89 > 1)
             sprintf(advisor.f10, extra_advice[7]);
         else
             sprintf(advisor.f10, extra_advice[0x31]);
-        D_00155441 = 0;
+        othervar.f89 = 0;
         return 1;
     } else if ((gbv.f110 << 10) > happiness) {
         sprintf(advisor.f10, extra_advice[6]);

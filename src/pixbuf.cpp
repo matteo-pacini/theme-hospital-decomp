@@ -1,12 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern s32 D_00188c38;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern s32 D_00188c44;
-extern s32 D_00188c48;
-extern u8 D_001553d4;
 }
 
 // FUNCTION: 0x000564f0
@@ -49,28 +43,28 @@ void FillBoxInPixBuffer(u8 colour, s32 x, s32 y, s32 w, s32 h)
 // FUNCTION: 0x000566ec
 void DrawIntoPixBuffer(void)
 {
-    pixBuf.saved_width = D_00188c34;
-    pixBuf.saved_height = D_00188c38;
+    pixBuf.saved_width = lbDisplay.graphics_screen_width;
+    pixBuf.saved_height = lbDisplay.graphics_screen_height;
     pixBuf.saved_ptr = lbDisplay.unknown4;
-    pixBuf.saved_x = D_00188c3c;
-    pixBuf.saved_y = D_00188c40;
-    pixBuf.saved_w = D_00188c44;
-    pixBuf.saved_h = D_00188c48;
-    D_00188c34 = pixBuf.width;
-    D_00188c38 = pixBuf.height;
+    pixBuf.saved_x = lbDisplay.graphics_window_x;
+    pixBuf.saved_y = lbDisplay.graphics_window_y;
+    pixBuf.saved_w = lbDisplay.graphics_window_width;
+    pixBuf.saved_h = lbDisplay.graphics_window_height;
+    lbDisplay.graphics_screen_width = pixBuf.width;
+    lbDisplay.graphics_screen_height = pixBuf.height;
     lbDisplay.unknown4 = pixBuf.data;
     LbScreenSetGraphicsWindow(0, 0, pixBuf.width, pixBuf.height);
-    D_001553d4 = 1;
+    othervar.f1c = 1;
 }
 
 // FUNCTION: 0x00056790
 void RestoreFromPixBuffer(void)
 {
-    D_00188c34 = pixBuf.saved_width;
-    D_00188c38 = pixBuf.saved_height;
+    lbDisplay.graphics_screen_width = pixBuf.saved_width;
+    lbDisplay.graphics_screen_height = pixBuf.saved_height;
     lbDisplay.unknown4 = pixBuf.saved_ptr;
     LbScreenSetGraphicsWindow(pixBuf.saved_x, pixBuf.saved_y, pixBuf.saved_w, pixBuf.saved_h);
-    D_001553d4 = 0;
+    othervar.f1c = 0;
 }
 
 // FUNCTION: 0x000567e8
@@ -100,7 +94,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
         sx = x + pixBuf.x;
         sy = y + pixBuf.y;
         src = x + (pixBuf.width * y + pixBuf.data);
-        dst = sx + ((D_00188c40 + sy) * D_00188c34 + lbDisplay.unknown4 + D_00188c3c);
+        dst = sx + ((lbDisplay.graphics_window_y + sy) * lbDisplay.graphics_screen_width + lbDisplay.unknown4 + lbDisplay.graphics_window_x);
         if (sx < 0) {
             cols = sx + w;
             if (cols < 0)
@@ -108,10 +102,10 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
             src += -sx;
             dst += -sx;
         }
-        if (sx + w > D_00188c44) {
-            if (sx >= D_00188c44)
+        if (sx + w > lbDisplay.graphics_window_width) {
+            if (sx >= lbDisplay.graphics_window_width)
                 return;
-            cols -= sx + w - D_00188c44;
+            cols -= sx + w - lbDisplay.graphics_window_width;
         }
         width = cols;
         if (sy < 0) {
@@ -119,15 +113,15 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
             if (rows < 0)
                 return;
             src += -(pixBuf.width * sy);
-            dst += -(sy * D_00188c34);
+            dst += -(sy * lbDisplay.graphics_screen_width);
         }
-        if (sy + h > D_00188c48) {
-            if (sy >= D_00188c48)
+        if (sy + h > lbDisplay.graphics_window_height) {
+            if (sy >= lbDisplay.graphics_window_height)
                 return;
-            rows -= sy + h - D_00188c48;
+            rows -= sy + h - lbDisplay.graphics_window_height;
         }
         next_src = src + pixBuf.width;
-        next_dst = dst + D_00188c34;
+        next_dst = dst + lbDisplay.graphics_screen_width;
         if (flags & 1) {
             if (flags & 4) {
                 if (flags & 2) {
@@ -135,7 +129,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
                         for (cols = width; cols > 0; cols--, src++, dst++)
                             *dst = *(lbDisplay.ghost + (*src << 8) + *dst);
                         dst = next_dst;
-                        next_dst += D_00188c34;
+                        next_dst += lbDisplay.graphics_screen_width;
                         src = next_src;
                         next_src += pixBuf.width;
                     }
@@ -146,7 +140,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
                                 *dst = *(lbDisplay.ghost + (*src << 8) + *dst);
                         }
                         dst = next_dst;
-                        next_dst += D_00188c34;
+                        next_dst += lbDisplay.graphics_screen_width;
                         src = next_src;
                         next_src += pixBuf.width;
                     }
@@ -157,7 +151,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
                         for (cols = width; cols > 0; cols--, src++, dst++)
                             *dst = *(lbDisplay.ghost + (*dst << 8) + *src);
                         dst = next_dst;
-                        next_dst += D_00188c34;
+                        next_dst += lbDisplay.graphics_screen_width;
                         src = next_src;
                         next_src += pixBuf.width;
                     }
@@ -168,7 +162,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
                                 *dst = *(lbDisplay.ghost + (*dst << 8) + *src);
                         }
                         dst = next_dst;
-                        next_dst += D_00188c34;
+                        next_dst += lbDisplay.graphics_screen_width;
                         src = next_src;
                         next_src += pixBuf.width;
                     }
@@ -179,7 +173,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
                 for (; rows > 0; rows--) {
                     fn_000c21e6(dst, src, cols);
                     dst = next_dst;
-                    next_dst += D_00188c34;
+                    next_dst += lbDisplay.graphics_screen_width;
                     src = next_src;
                     next_src += pixBuf.width;
                 }
@@ -190,7 +184,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
                             *dst = *src;
                     }
                     dst = next_dst;
-                    next_dst += D_00188c34;
+                    next_dst += lbDisplay.graphics_screen_width;
                     src = next_src;
                     next_src += pixBuf.width;
                 }

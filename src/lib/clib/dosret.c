@@ -6,10 +6,9 @@ extern const signed char D_001519f0[20];
 void __set_doserrno(int err);
 
 int _dosretax(int ax, int carry);
+int __set_errno_dos(unsigned err);
 
 // FUNCTION: 0xed140
-// NONMATCHING: the original's tail jump to _dosretax is a fall-through and
-// _dosretax reuses this function's ret, which -zm cannot reproduce
 int _dosret0(int ax, int carry)
 {
     if (carry)
@@ -18,12 +17,11 @@ int _dosret0(int ax, int carry)
 }
 
 // FUNCTION: 0xed147
-// NONMATCHING: see _dosret0
 int _dosretax(int ax, int carry)
 {
-    if (!carry)
-        return ax;
-    return __set_errno_dos(ax);
+    if (carry)
+        return __set_errno_dos(ax);
+    return ax;
 }
 
 // FUNCTION: 0xed14b

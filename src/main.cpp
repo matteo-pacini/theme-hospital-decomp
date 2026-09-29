@@ -5,10 +5,8 @@ extern "C" {
 extern char D_00120004[];
 extern char D_00120021[];
 extern char D_0013f486[];
-extern u8 D_0015642e;
 extern u8 D_0015f99f;
 extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef, D_001581f0;
-extern u8 D_001553b8[];
 extern View D_0014619c;
 extern Point D_00146c8c[];
 extern Button D_00145378[];
@@ -17,9 +15,7 @@ extern u8 D_0013c6a4[], D_00130288[], D_0013e5fc[], D_0014a620[], D_0014a9fe[], 
 extern u8 D_00147314[];
 extern int D_0013c77c[];
 extern int D_0013e634[];
-extern u8 D_00155e03, D_00155d7d, D_001553ce, D_0015642c;
 extern MemRegion D_001290d4[];
-extern u8 D_00155e3f;
 extern TbSprite *D_00153f44, *D_00153f48;
 extern u8 *D_00153f40;
 extern TbSprite *D_00153f88, *D_00153f94, *D_00153f24, *D_00153f54;
@@ -61,7 +57,7 @@ int main(u16 argc, char **argv)
                     goto next_arg;
                 case 'E':
                 case 'e':
-                    D_0015642e = 1;
+                    statvar.f5de = 1;
                     break;
                 case 'G':
                 case 'g':
@@ -122,7 +118,7 @@ void init_game_vars(void)
     int i;
 
     memset(&gamevar, 0, 0x178);
-    memset(D_001553b8, 0, 0xa96);
+    memset(&othervar, 0, sizeof(othervar));
     memset(&debug, 0, 0x21c);
     memset(packet, 0, 0x3c);
     memset(&myplayer, 0, 0x5c);
@@ -156,8 +152,8 @@ void init_game_vars(void)
     NRAdcounts.unknown2 = 0;
     NRAdcounts.unknown0 = 0;
     NRAdcounts.unknown6 = 0;
-    D_00155e03 = 0;
-    D_00155d7d = 0;
+    othervar.fa4b = 0;
+    othervar.f9c5 = 0;
     D_001581ed = D_001581ec = D_001581ee = D_001581ef = 0;
     D_001581f0 = 0;
     statvar.unknownfd = 1;
@@ -166,8 +162,8 @@ void init_game_vars(void)
     for (i = 0; D_001290d4[i].size != 0; i++) {
         statvar.unknown0 += D_001290d4[i].size;
     }
-    D_001553ce = 1;
-    D_0015642c = 0x40;
+    othervar.f16 = 1;
+    statvar.f5dc = 0x40;
     advisor.f2 = 0;
     advisor.f0_u16 = 0;
     advisor.f11e = 0;
@@ -187,10 +183,10 @@ void get_cd_speed(void)
     if (buf != 0) {
         sprintf(path, D_00120021, cd_install_path, D_0013f486);
         count = LbFileLengthRnc(path) / 12;
-        D_00155e3f = GetCDSpeed(path, buf, 0x10000, count);
+        othervar.fa87 = GetCDSpeed(path, buf, 0x10000, count);
         LbMemoryFree(buf);
     } else {
-        D_00155e3f = 2;
+        othervar.fa87 = 2;
     }
 }
 

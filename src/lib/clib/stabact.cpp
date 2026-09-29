@@ -24,10 +24,9 @@ struct TYPE_SIG_CLASS {
     unsigned size;
 };
 
-THREAD_CTL *__wcpp_2_arr_register_(void *array, RW_DTREG_ARRAY *rw);
+THREAD_CTL *__wcpp_2_arr_register_(void *array, RW_DTREG_ARRAY *rw, TYPE_SIG_CLASS *sig);
 
 // FUNCTION: 0xed300
-// NONMATCHING: sig and the registration list swap registers (edi/ebx)
 void *__wcpp_2_ctor_array_(void *array, unsigned count, TYPE_SIG_CLASS *sig)
 {
     void (*ctor)(void *);
@@ -35,7 +34,7 @@ void *__wcpp_2_ctor_array_(void *array, unsigned count, TYPE_SIG_CLASS *sig)
     THREAD_CTL *thr;
     RW_DTREG_ARRAY rw;
 
-    thr = __wcpp_2_arr_register_(array, &rw);
+    thr = __wcpp_2_arr_register_(array, &rw, sig);
     ctor = sig->ctor;
     size = sig->size;
     for (;;) {

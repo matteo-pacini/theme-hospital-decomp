@@ -1,13 +1,8 @@
 #include "hosp.h"
 
 extern "C" {
-extern u16 D_00155d89;
-extern u8 D_001553c7;
 void fn_000b05f0(Thing *w);
 void fn_000168a0(Thing *w);
-extern u8 D_00156429;
-extern u8 D_0015642a;
-extern u8 D_0015642b;
 }
 
 s16 place_staff_in_struct(u16 a, u16 b);
@@ -45,8 +40,6 @@ extern s16 staff_states[][5];
 extern s16 mcurx;
 extern s16 mcury;
 extern "C" {
-extern u16 D_001553e0;
-extern u8 D_001553e1[];
 extern s16 D_001567b0[8];
 }
 
@@ -58,7 +51,7 @@ void create_job_market(void)
     u32 j;
 
     for (i = 0; i < 30; i++) {
-        if (staff_levels[i].month == D_00155d89) {
+        if (staff_levels[i].month == othervar.f9d1) {
             gamevar.f0 = staff_levels[i].fund;
             gamevar.f10[0] = staff_levels[i].counts[0];
             gamevar.f10[1] = staff_levels[i].counts[1];
@@ -71,7 +64,7 @@ void create_job_market(void)
             gamevar.f173 = staff_levels[i].f0a[4];
             break;
         }
-        if (staff_levels[i].month > D_00155d89) {
+        if (staff_levels[i].month > othervar.f9d1) {
             break;
         }
     }
@@ -155,7 +148,7 @@ u16 fn_00029c4c(u16 tile, u16 id, u8 flag, u8 owner)
             if (w->room) {
                 w->room->unknown29 = 1;
             }
-            if (D_001553c7 == player) {
+            if (othervar.ff == player) {
                 gamevar.unknown75 = 0;
             }
             allhosps[w->owner].f11f4 = 0;
@@ -298,9 +291,9 @@ s16 place_staff_in_struct(u16 kind, u16 flags)
         w->f84 = staffrand() % 26 + 0x41;
         w->f85 = staffrand() % 33;
         w->f86 = staffrand() % 26;
-        w->f8a = staffrand() % D_00156429;
-        w->f8b = staffrand() % D_0015642a;
-        w->f8c = staffrand() % D_0015642b;
+        w->f8a = staffrand() % statvar.f5d9;
+        w->f8b = staffrand() % statvar.f5da;
+        w->f8c = staffrand() % statvar.f5db;
         return w - thing;
     }
     return 0;
@@ -626,12 +619,12 @@ void draw_staff_cursor(void)
     Thing *w;
     u8 *remap;
 
-    if (D_001553e0 != *(u16 *)&D_001553e1[1] || gamevar.unknown77 != gamevar.unknown79) {
-        room = which_room(D_001553e0);
+    if (othervar.f28 != othervar.f2a || gamevar.unknown77 != gamevar.unknown79) {
+        room = which_room(othervar.f28);
         if (room > 0) {
             state = staff_states[rooms[room->type].unknown2[1]][gamevar.unknown77];
             bad = 0;
-            if (check_points_connected(D_001553e0, room->unknown6) == 0) {
+            if (check_points_connected(othervar.f28, room->unknown6) == 0) {
                 bad = 1;
             }
             if ((room->f3 != 0 && room->f3 != 1) && gamevar.unknown77 != 2) {
@@ -639,7 +632,7 @@ void draw_staff_cursor(void)
             }
         } else {
             state = staff_states[rooms[0].unknown2[1]][gamevar.unknown77];
-            bad = !check_points_connected(D_001553e0, room_info[allhosps[player].unknown1cf[0]].unknown4) ? (u8)1 : (u8)0;
+            bad = !check_points_connected(othervar.f28, room_info[allhosps[player].unknown1cf[0]].unknown4) ? (u8)1 : (u8)0;
         }
         if (state == -1 || bad == 1) {
             gamevar.f72 = 0;
@@ -648,7 +641,7 @@ void draw_staff_cursor(void)
         }
         gamevar.f73 = staff_anim_starts[gamevar.unknown77].anims[staff[gamevar.unknown77].anim] + 1;
         gamevar.unknown79 = gamevar.unknown77;
-        if (map[D_001553e0].unknown7 != 1 << player) {
+        if (map[othervar.f28].unknown7 != 1 << player) {
             gamevar.f72 = 0;
         }
     }
@@ -768,7 +761,7 @@ void staff_picked_up(Thing *w)
     staff_exit_room_check(w);
     abandon_complex(w);
     allhosps[w->owner].f11f6 = w->x.tile + (w->y.tile << 7);
-    if (D_001553c7 == player) {
+    if (othervar.ff == player) {
         gamevar.unknown77 = w->subtype;
         gamevar.unknown75 = w - thing;
         gamevar.unknown79 = 0xffff;

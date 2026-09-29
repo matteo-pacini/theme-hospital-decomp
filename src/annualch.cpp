@@ -13,13 +13,6 @@ extern u8 current_award;
 
 extern "C" {
 extern u16 D_00158190;
-extern s32 D_00188c38;
-extern u16 D_00188c74;
-extern u8 D_00188c7b, D_00188c7c, D_00188c7e, D_00188c81, D_00188c83;
-extern volatile s16 D_00188c6c;
-extern volatile s16 D_00188c70;
-extern u16 D_00155da5;
-extern s16 D_00155da3;
 extern u8 D_0012ce18[];
 extern char **D_001602fc;
 extern char **D_00160364;
@@ -27,8 +20,6 @@ extern char **D_00160368;
 extern char **D_0016036c;
 extern char **D_00160390;
 extern Event D_001549d0[];
-extern u8 D_00155e11;
-extern u8 D_00155e12;
 extern char D_00121b04[];
 extern char D_00121b0d[];
 extern char D_00121b10[];
@@ -138,7 +129,7 @@ extern "C" void fn_000b4e88(void)
     char buf[100];
 
     LbScreenClear(color.unknown9);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x10);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     if (yearend.unknown0 == 0)
@@ -150,7 +141,7 @@ extern "C" void fn_000b4e88(void)
         current_display = 0;
         load_ingame_pic(15, 1, 0x16, 0, SCREEN_MODE_13);
         current_award = 0;
-        D_00155da5 = 0x4b0;
+        othervar.f9ed = 0x4b0;
         yearend.unknown2 = 3;
         break;
     case 0:
@@ -158,9 +149,9 @@ extern "C" void fn_000b4e88(void)
         load_ingame_pic(16, 1, 0x16, 0, SCREEN_MODE_13);
         copy_screen_to_wscreen(bscreen);
         yearend.unknown2 = 2;
-        D_00155da5 = 0x4b0;
+        othervar.f9ed = 0x4b0;
         LbTextSetWindow(0xe0, 0x24 - height / 2, 0xc0, 0x16);
-        D_00188c74 = 0x100;
+        lbDisplay.draw_flags = 0x100;
         sprintf(buf, D_00121b04, help_text[20], mycontrol->f648 + 0x7cf);
         fn_0001b7e0(buf, buf, 0);
         LbTextDraw(0, 0, buf);
@@ -173,7 +164,7 @@ extern "C" void fn_000b4e88(void)
                             resvars.f40[0x98].y - resvars.f40[0x97].y);
             x = 0;
             y = 0;
-            D_00188c74 = 0x100;
+            lbDisplay.draw_flags = 0x100;
             LbTextDraw(x, y, D_001602fc[cat]);
             y += height;
             for (j = 0; j < count; j++) {
@@ -181,19 +172,19 @@ extern "C" void fn_000b4e88(void)
                     continue;
                 if (allhosps[chart[cat][j].hosp].f2a != 0) {
                     y += height;
-                    D_00188c74 = 0x20;
+                    lbDisplay.draw_flags = 0x20;
                     LbTextDraw(x, y, (char *)allhosps[chart[cat][j].hosp].unknown0);
-                    D_00188c74 = 0x80;
+                    lbDisplay.draw_flags = 0x80;
                     sprintf(buf, D_00121b0d, chart[cat][j].value);
                     LbTextDraw(x, y, buf);
                 }
             }
         }
-        LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
+        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         x = 0;
         y = height;
-        D_00188c74 = 0x20;
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0x20;
+        lbDisplay.draw_flags = 0;
         copy_screen_from_wscreen(bscreen);
         yearend.unknown2 = 2;
         break;
@@ -231,13 +222,13 @@ extern "C" void fn_000b4e88(void)
     default:
         break;
     }
-    if (D_00155da3 != mouse_dx + mouse_dy) {
-        D_00155da5 = 0x4b0;
-        D_00155da3 = mouse_dx + mouse_dy;
+    if (othervar.f9eb != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
+        othervar.f9ed = 0x4b0;
+        othervar.f9eb = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
     }
-    if (!(s16)D_00155da5--)
+    if (!(s16)othervar.f9ed--)
         process_yearend_buttons(0);
-    D_00188c7b = D_00188c7c = D_00188c81 = D_00188c83 = 0;
+    lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = lbDisplay.rright_button = 0;
 }
 
 // FUNCTION: 0x000b5460
@@ -271,7 +262,7 @@ void display_plaque(void)
             reqspr_draw(resvars.f40[0xa6].x, resvars.f40[0xa6].y, &screen_sprites_tab_start[15]);
         }
         set_font_from_cache(0x12);
-        D_00188c74 = 0x100;
+        lbDisplay.draw_flags = 0x100;
         LbTextSetWindow(0xee, 0x73, 0x9a, 0xbb);
         LbTextDraw(0, 0, text1);
         LbTextSetWindow(0xee, 0x12e, 0x9a, 0x26);
@@ -283,13 +274,13 @@ void display_plaque(void)
         reqspr_draw(resvars.f40[0xa4].x, resvars.f40[0xa4].y, &screen_sprites_tab_start[21]);
         reqspr_draw(resvars.f40[0xa5].x, resvars.f40[0xa5].y, &screen_sprites_tab_start[22]);
         set_font_from_cache(0x11);
-        D_00188c74 = 0x100;
+        lbDisplay.draw_flags = 0x100;
         if (trophies_won[current_award].unknown0 == 5) {
-            sprintf(text1, D_00160364[trophies_won[current_award].f1], D_00155e11);
+            sprintf(text1, D_00160364[trophies_won[current_award].f1], othervar.fa59);
             sprintf(text2, D_00160390[trophies_won[current_award].f4]);
             sprintf(text3, D_00121b30, trophies_won[current_award].value);
         } else if (trophies_won[current_award].unknown0 == 6 && award_counts.f151 > 0) {
-            sprintf(text1, D_00160364[trophies_won[current_award].f1], D_00155e12);
+            sprintf(text1, D_00160364[trophies_won[current_award].f1], othervar.fa5a);
             sprintf(text2, D_00160390[trophies_won[current_award].f4]);
             sprintf(text3, D_00121b34, trophies_won[current_award].value);
         } else {
@@ -382,9 +373,9 @@ void check_stats_buttons(void)
     if (exit_the_yearend_screen)
         reqspr_draw(resvars.f48[0x48].unknownC, resvars.f48[0x48].unknownE,
                     &screen_sprites_tab_start[resvars.f48[0x48].sprite]);
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; resvars.f48[i + 0x48].width != 0 && resvars.f48[i + 0x48].height != 0; i++) {
-            if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0x48].x, resvars.f48[i + 0x48].y,
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 0x48].x, resvars.f48[i + 0x48].y,
                              (s16)resvars.f48[i + 0x48].width, (s16)resvars.f48[i + 0x48].height)) {
                 reqspr_draw(resvars.f48[i + 0x48].unknownC, resvars.f48[i + 0x48].unknownE,
                             &screen_sprites_tab_start[resvars.f48[i + 0x48].sprite]);
@@ -392,9 +383,9 @@ void check_stats_buttons(void)
             }
         }
     }
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i + 0x48].width != 0 && resvars.f48[i + 0x48].height != 0; i++) {
-            if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x48].x, resvars.f48[i + 0x48].y,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0x48].x, resvars.f48[i + 0x48].y,
                              (s16)resvars.f48[i + 0x48].width, (s16)resvars.f48[i + 0x48].height)) {
                 resvars.f48[i + 0x48].callback(i);
                 reqspr_draw(resvars.f48[i + 0x48].unknownC, resvars.f48[i + 0x48].unknownE,
@@ -402,7 +393,7 @@ void check_stats_buttons(void)
                 break;
             }
         }
-        D_00188c81 = 0;
+        lbDisplay.rleft_button = 0;
     }
 }
 
@@ -441,10 +432,10 @@ void check_awards_buttons(void)
     if (exit_the_yearend_screen)
         reqspr_draw(resvars.f48[0x4b].unknownC, resvars.f48[0x4b].unknownE,
                     &screen_sprites_tab_start[resvars.f48[0x4b].sprite]);
-    if (D_00188c7e) {
+    if (lbDisplay.mleft_button) {
         for (i = 0; resvars.f48[i + 0x4b].width != 0 && resvars.f48[i + 0x4b].height != 0; i++) {
             if (button_available(i)) {
-                if (over_hotspot((s16)mouse_dx, (s16)mouse_dy, resvars.f48[i + 0x4b].x, resvars.f48[i + 0x4b].y,
+                if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 0x4b].x, resvars.f48[i + 0x4b].y,
                                  (s16)resvars.f48[i + 0x4b].width, (s16)resvars.f48[i + 0x4b].height)) {
                     reqspr_draw(resvars.f48[i + 0x4b].unknownC, resvars.f48[i + 0x4b].unknownE,
                                 &screen_sprites_tab_start[resvars.f48[i + 0x4b].sprite]);
@@ -453,10 +444,10 @@ void check_awards_buttons(void)
             }
         }
     }
-    if (D_00188c81) {
+    if (lbDisplay.rleft_button) {
         for (i = 0; resvars.f48[i + 0x4b].width != 0 && resvars.f48[i + 0x4b].height != 0; i++) {
             if (button_available(i)) {
-                if (over_hotspot(D_00188c6c, D_00188c70, resvars.f48[i + 0x4b].x, resvars.f48[i + 0x4b].y,
+                if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0x4b].x, resvars.f48[i + 0x4b].y,
                                  (s16)resvars.f48[i + 0x4b].width, (s16)resvars.f48[i + 0x4b].height)) {
                     resvars.f48[i + 0x4b].callback(i);
                     reqspr_draw(resvars.f48[i + 0x4b].unknownC, resvars.f48[i + 0x4b].unknownE,
@@ -465,7 +456,7 @@ void check_awards_buttons(void)
                 }
             }
         }
-        D_00188c81 = 0;
+        lbDisplay.rleft_button = 0;
     }
 }
 

@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_00155cae[];
 }
 
 void reset_dept_object(void);
@@ -17,12 +16,12 @@ void adjust_build_palette_for_shop(RoomInfo *room)
     memset(counts, 0, 0x3f);
     for (w = &thing[room->first_object]; w > thing; w = &thing[w->unknown71])
         counts[w->subtype]++;
-    memset(D_00155cae, 0, 0x3f);
+    memset(othervar.f8f6, 0, 0x3f);
     for (i = rooms[room->type].fc - 1; i >= 0; i--) {
         obj = rooms[room->type].objects[i];
         if (counts[obj] == 0) {
             gamevar.unknown33.unknown0[obj]--;
-            D_00155cae[obj]++;
+            othervar.f8f6[obj]++;
         } else {
             counts[obj]--;
         }
@@ -35,7 +34,7 @@ void post_shop_readjust_build_palette(void)
     s32 i;
 
     for (i = 0x3d; i >= 0; i--)
-        gamevar.unknown33.unknown0[i] += D_00155cae[i];
+        gamevar.unknown33.unknown0[i] += othervar.f8f6[i];
 }
 
 // FUNCTION: 0x00054f98

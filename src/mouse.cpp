@@ -11,41 +11,8 @@ struct Slot {
 
 extern "C" {
 extern Event D_001549d0[];
-extern u16 D_001553e0;
-extern u8 D_001553e1[];
-extern u16 D_001553f9;
-extern u16 D_001553fb;
-extern u16 D_00155436;
-extern u16 D_00155419;
-extern u16 D_00155e40;
-extern u16 D_00155e48;
-extern u8 D_001553f0;
-extern u8 D_001553c8;
-extern u8 D_00155d70;
-extern u8 D_00155e0b;
-extern u8 D_00155e0c;
-extern u8 D_00188c7b;
-extern u8 D_00188c7c;
-extern volatile s32 D_00188c5c, D_00188c60;
 extern Slot D_001581b2[];
-extern s16 D_00155c60;
-extern s16 D_00155c62;
 extern u16 D_0012cdea[];
-extern u8 D_00155442;
-extern u8 D_00155443;
-extern u8 D_001553e8;
-extern u8 D_001553e9;
-extern u8 D_00155d7a;
-extern u16 D_00155427;
-extern u8 D_00155429;
-extern u8 D_00155434;
-extern u8 D_00155435;
-extern u16 D_00155438;
-extern u8 D_00188c7e;
-extern u8 D_00188c7f;
-extern u16 D_00155432;
-extern u8 D_00155e2f;
-extern u16 D_00155d9f;
 }
 
 extern u8 clicked_icon;
@@ -88,64 +55,64 @@ void process_mouse(void)
     u8 icon;
 
     if (gamevar.unknown21) {
-        D_00188c7b = D_00188c7c = 0;
+        lbDisplay.left_button = lbDisplay.right_button = 0;
         return;
     }
     if (gamevar.f12e == 0x25) {
-        if (D_00188c7b || D_00188c7c) {
-            D_00188c7b = 0;
-            D_00188c7c = 0;
-            if (D_00155c60 <= D_00188c5c && D_00155c60 + pulldv[19].width > D_00188c5c
-                && D_00155c62 <= D_00188c60 && D_00155c62 + pulldv[19].height > D_00188c60)
+        if (lbDisplay.left_button || lbDisplay.right_button) {
+            lbDisplay.left_button = 0;
+            lbDisplay.right_button = 0;
+            if (othervar.f8a8 <= lbDisplay.mouse_x && othervar.f8a8 + pulldv[19].width > lbDisplay.mouse_x
+                && othervar.f8aa <= lbDisplay.mouse_y && othervar.f8aa + pulldv[19].height > lbDisplay.mouse_y)
                 finish_composite_help();
         }
         return;
     }
     if (debug.unknownd7) {}
     scroll = 0;
-    if (mouse_dx <= resvars.f1c[0xa7].x)
+    if (lbDisplay.mmouse_x <= resvars.f1c[0xa7].x)
         scroll |= 4;
-    else if (mouse_dx >= resvars.f1c[0xa8].x)
+    else if (lbDisplay.mmouse_x >= resvars.f1c[0xa8].x)
         scroll |= 8;
-    if (mouse_dy <= resvars.f1c[0xa7].y)
+    if (lbDisplay.mmouse_y <= resvars.f1c[0xa7].y)
         scroll |= 1;
-    else if (mouse_dy >= resvars.f1c[0xa8].y)
+    else if (lbDisplay.mmouse_y >= resvars.f1c[0xa8].y)
         scroll |= 2;
     if (scroll > 0)
         D_001549d0[player].flags = scroll;
-    D_001553fb = 0;
-    D_00155e0b = 0;
-    if (D_00155442 && !D_00155d7a) {
-        D_00188c7b = 0;
-        if (!D_00155443) {
+    othervar.f43 = 0;
+    othervar.fa53 = 0;
+    if (othervar.f8a && !othervar.f9c2) {
+        lbDisplay.left_button = 0;
+        if (!othervar.f8b) {
             set_mouse_sprite(1);
-            D_00155443 = 1;
+            othervar.f8b = 1;
         }
         return;
     }
-    if (D_00155443) {
-        if (D_001553e8 == 1)
-            set_mouse_sprite(D_001553e9);
-        D_00155443 = 0;
+    if (othervar.f8b) {
+        if (othervar.f30 == 1)
+            set_mouse_sprite(othervar.f31);
+        othervar.f8b = 0;
     }
     if (CountWindows(open_windows)) {
         if (MouseOnWindow(open_windows[0])) {
-            D_00188c7b = D_00188c7c = 0;
+            lbDisplay.left_button = lbDisplay.right_button = 0;
             return;
         }
     }
-    if (statvar.unknown6 <= mouse_dy) {
+    if (statvar.unknown6 <= lbDisplay.mmouse_y) {
         icon = which_icon_is_mouse_over();
         if (gamevar.f12e == 0) {
-            if (D_001553e8 != 1)
+            if (othervar.f30 != 1)
                 set_mouse_sprite(1);
         }
-    } else if (D_0012cdea[advisor.f11e] && D_00188c7c
-               && ((mouse_dy >= resvars.f1c[0x93].y && advisor.f125_u16 <= mouse_dx && mouse_dx <= resvars.f1c[0x92].x
-                    && mouse_dy <= resvars.f1c[0x92].y)
-                   || (mouse_dx >= resvars.f1c[0x90].x && mouse_dy >= resvars.f1c[0x90].y
-                       && mouse_dx <= resvars.f1c[0x91].x && mouse_dy <= resvars.f1c[0x91].y))) {
-        D_00155e0b = 1;
+    } else if (D_0012cdea[advisor.f11e] && lbDisplay.right_button
+               && ((lbDisplay.mmouse_y >= resvars.f1c[0x93].y && advisor.f125_u16 <= lbDisplay.mmouse_x && lbDisplay.mmouse_x <= resvars.f1c[0x92].x
+                    && lbDisplay.mmouse_y <= resvars.f1c[0x92].y)
+                   || (lbDisplay.mmouse_x >= resvars.f1c[0x90].x && lbDisplay.mmouse_y >= resvars.f1c[0x90].y
+                       && lbDisplay.mmouse_x <= resvars.f1c[0x91].x && lbDisplay.mmouse_y <= resvars.f1c[0x91].y))) {
+        othervar.fa53 = 1;
         gamevar.f130 = 8;
         icon = 0x27;
     } else {
@@ -166,22 +133,22 @@ void process_mouse(void)
 
             hit = 0;
             set = 0;
-            if (D_00155d7a) {
+            if (othervar.f9c2) {
                 if (gamevar.f130 != 7)
                     set_mouse_sprite(1);
                 gamevar.f130 = 7;
                 set = 1;
-            } else if (D_00155427) {
+            } else if (othervar.f6f) {
                 if (gamevar.f130 != 6)
                     set_mouse_sprite(0xb);
                 gamevar.f130 = 6;
                 set = 1;
-            } else if (D_00155429) {
+            } else if (othervar.f71) {
                 if (gamevar.f130 != 5)
                     set_mouse_sprite(0xa);
                 gamevar.f130 = 5;
                 set = 1;
-            } else if (crequester.unknown2 == 0x63 && (w = &thing[D_001553f9]) > thing) {
+            } else if (crequester.unknown2 == 0x63 && (w = &thing[othervar.f41]) > thing) {
                 if (gamevar.f174)
                     return;
                 if ((w->renderer == 2 || w->renderer == 4)
@@ -192,12 +159,12 @@ void process_mouse(void)
                                            : 0])
                            > thing) {
                     if (other->subtype == 0xb) {
-                        D_00155435 = D_00155434;
-                        D_00155434 = 4;
+                        othervar.f7d = othervar.f7c;
+                        othervar.f7c = 4;
                         gamevar.f130 = 3;
                         hit = 1;
                         peep_icon(w);
-                        if (D_001553e8 != 0x13)
+                        if (othervar.f30 != 0x13)
                             set_mouse_sprite(0x13);
                         goto done;
                     }
@@ -208,77 +175,77 @@ void process_mouse(void)
                     if (w->group && objects[thing[w->group].subtype].unknown17 != -1)
                         w = &thing[w->group];
                     if (objects[w->subtype].f20) {
-                        D_00155435 = D_00155434;
-                        D_00155434 = 3;
+                        othervar.f7d = othervar.f7c;
+                        othervar.f7c = 3;
                         gamevar.f130 = 3;
-                        if (D_001553e8 != 0x11)
+                        if (othervar.f30 != 0x11)
                             set_mouse_sprite(0x11);
                         hit = 1;
                         goto done;
                     }
                     if (objects[w->subtype].unknown20[2] & 2) {
-                        D_00155435 = D_00155434;
-                        D_00155434 = 6;
+                        othervar.f7d = othervar.f7c;
+                        othervar.f7c = 6;
                         gamevar.f130 = 3;
                         hit = 1;
                         goto done;
                     }
                 }
-                w = &thing[D_001553f9];
+                w = &thing[othervar.f41];
                 if (w->renderer == 6 && (w->subtype == 0x34 || w->subtype == 0x35) && w->unknown102)
                     w = &thing[w->unknown102];
                 if (w->renderer == 2) {
-                    D_00155435 = D_00155434;
-                    D_00155434 = 2;
+                    othervar.f7d = othervar.f7c;
+                    othervar.f7c = 2;
                     gamevar.f130 = 3;
                     peep_icon(w);
                     hit = 1;
-                    if (D_001553e8 != 0x12)
+                    if (othervar.f30 != 0x12)
                         set_mouse_sprite(0x12);
                     if (myhosp->f20d && is_person_highlighted_for_vaccination(0)) {
                         gamevar.f130 = 1;
                         set_mouse_sprite(0xd);
                     }
                 } else if (w->renderer == 4) {
-                    D_00155435 = D_00155434;
-                    D_00155434 = 1;
+                    othervar.f7d = othervar.f7c;
+                    othervar.f7c = 1;
                     gamevar.f130 = 3;
                     peep_icon(w);
                     hit = 1;
-                    if (D_001553e8 != 0x10)
+                    if (othervar.f30 != 0x10)
                         set_mouse_sprite(0x10);
                 } else if (w->renderer == 8) {
                     RoomInfo *room;
 
                     room = &room_info[w->unknown89];
                     if (rooms[room->type].unknown27[2]) {
-                        D_00155435 = D_00155434;
-                        D_00155434 = 4;
+                        othervar.f7d = othervar.f7c;
+                        othervar.f7c = 4;
                         gamevar.f130 = 4;
                         hit = 1;
-                        if (D_001553e8 != 0x13)
+                        if (othervar.f30 != 0x13)
                             set_mouse_sprite(0x13);
                     }
                 } else if (w->renderer == 0x14 || w->renderer == 0x16) {
-                    D_00155435 = D_00155434;
-                    D_00155434 = 5;
+                    othervar.f7d = othervar.f7c;
+                    othervar.f7c = 5;
                     gamevar.f130 = 3;
                     hit = 1;
                 }
             }
         done:
             if (hit) {
-                D_00155438 = 100;
-                D_00155436 = w - thing;
-            } else if (!set && (D_001553e8 != 1 || gamevar.f130 != 0)) {
+                othervar.f80 = 100;
+                othervar.f7e = w - thing;
+            } else if (!set && (othervar.f30 != 1 || gamevar.f130 != 0)) {
                 set_mouse_sprite(1);
                 gamevar.f130 = 0;
             }
-            if (D_00155438 != 0) {
-                D_00155438--;
-                if (D_00155438 == 0) {
-                    D_00155435 = D_00155434;
-                    D_00155434 = 0;
+            if (othervar.f80 != 0) {
+                othervar.f80--;
+                if (othervar.f80 == 0) {
+                    othervar.f7d = othervar.f7c;
+                    othervar.f7c = 0;
                 }
             }
             break;
@@ -287,24 +254,24 @@ void process_mouse(void)
             break;
         }
     }
-    if (D_00188c7b + D_00188c7e + D_00188c7c + D_00188c7f != 0) {
+    if (lbDisplay.left_button + lbDisplay.mleft_button + lbDisplay.right_button + lbDisplay.mright_button != 0) {
         if (icon == 0x27) {
-            if (D_00188c7b) {
+            if (lbDisplay.left_button) {
                 process_left_button((u16)icon);
-                D_00188c7b = 0;
-            } else if (D_00188c7e) {
+                lbDisplay.left_button = 0;
+            } else if (lbDisplay.mleft_button) {
                 process_mleft_button((u16)icon);
             }
-        } else if (D_00188c7e) {
+        } else if (lbDisplay.mleft_button) {
             process_mleft_button((u16)icon);
-        } else if (D_00188c7b) {
+        } else if (lbDisplay.left_button) {
             process_left_button((u16)icon);
-            D_00188c7b = 0;
+            lbDisplay.left_button = 0;
         }
-        if (D_00188c7c) {
+        if (lbDisplay.right_button) {
             process_right_button((u16)icon);
-            D_00188c7c = 0;
-        } else if (D_00188c7f) {
+            lbDisplay.right_button = 0;
+        } else if (lbDisplay.mright_button) {
             process_mright_button((u16)icon);
         }
     } else {
@@ -326,25 +293,25 @@ void process_left_button(u16 icon)
                 if (crequester.unknown2 != 0x63)
                     break;
                 if (myhosp->f207) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                      watch[14].width, watch[14].height)) {
                         gamevar.f12e = 0xf;
                         play_sound(10, 0x43, -1, -1);
                         break;
                     }
-                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                      watch[13].width, watch[13].height)) {
-                        if (D_00155e48) {
-                            D_001553f0 = 1;
-                            D_001581b2[1].value = D_00155e48;
-                            D_001553c8 = 1;
+                        if (othervar.fa90) {
+                            othervar.f38 = 1;
+                            D_001581b2[1].value = othervar.fa90;
+                            othervar.f10 = 1;
                             play_sound(10, 0xbb, -1, -1);
                         }
                         break;
                     }
                 }
                 if (myhosp->unknown1257) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                      watch[14].width, watch[14].height)) {
                         D_001549d0[player].type = 0x8b;
                         play_sound(10, 0xd9, -1, -1);
@@ -352,12 +319,12 @@ void process_left_button(u16 icon)
                     }
                 }
                 if (myhosp->f1d9) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
                                      watch[13].width, watch[13].height)) {
-                        if (D_00155e40) {
-                            D_001553f0 = 1;
-                            D_001581b2[1].value = D_00155e40;
-                            D_001553c8 = 1;
+                        if (othervar.fa88) {
+                            othervar.f38 = 1;
+                            D_001581b2[1].value = othervar.fa88;
+                            othervar.f10 = 1;
                             play_sound(10, 0xbb, -1, -1);
                         }
                         break;
@@ -367,7 +334,7 @@ void process_left_button(u16 icon)
                 case 0:
                     break;
                 case 3:
-                    w = &thing[D_00155436];
+                    w = &thing[othervar.f7e];
                     if (w->owner == player) {
                         switch (w->renderer) {
                         case 6:
@@ -387,7 +354,7 @@ void process_left_button(u16 icon)
                             default:
                                 if (!(objects[w->subtype].unknown20[2] & 4)) {
                                     D_001549d0[player].type = 0x42;
-                                    D_001549d0[player].value = D_00155436;
+                                    D_001549d0[player].value = othervar.f7e;
                                 }
                                 break;
                             }
@@ -395,10 +362,10 @@ void process_left_button(u16 icon)
                         case 4:
                             switch (w->subtype) {
                             case 3:
-                                if (PARTNER(&thing[D_00155436]) && thing[PARTNER(&thing[D_00155436])].subtype == 0xb) {
-                                    if (thing[D_00155436].room) {
+                                if (PARTNER(&thing[othervar.f7e]) && thing[PARTNER(&thing[othervar.f7e])].subtype == 0xb) {
+                                    if (thing[othervar.f7e].room) {
                                         D_001549d0[player].type = 0x3b;
-                                        D_001549d0[player].value = thing[D_00155436].room - room_info;
+                                        D_001549d0[player].value = thing[othervar.f7e].room - room_info;
                                         break;
                                     }
                                 }
@@ -411,7 +378,7 @@ void process_left_button(u16 icon)
                                         D_001549d0[player].arg = w->unknown91;
                                     } else {
                                         D_001549d0[player].type = 0x42;
-                                        D_001549d0[player].value = D_00155436;
+                                        D_001549d0[player].value = othervar.f7e;
                                     }
                                 }
                                 break;
@@ -430,13 +397,13 @@ void process_left_button(u16 icon)
                                     D_001549d0[player].arg = w->unknown91;
                                 } else {
                                     D_001549d0[player].type = 0x42;
-                                    D_001549d0[player].value = D_00155436;
+                                    D_001549d0[player].value = othervar.f7e;
                                 }
                             }
                             break;
                         default:
                             D_001549d0[player].type = 0x42;
-                            D_001549d0[player].value = D_00155436;
+                            D_001549d0[player].value = othervar.f7e;
                             break;
                         }
                     } else if (statvar.unknownfd > 1 && w->renderer == 4 && w->owner != 0x63) {
@@ -453,29 +420,29 @@ void process_left_button(u16 icon)
                     }
                     break;
                 case 4:
-                    if (thing[D_00155436].owner == player) {
+                    if (thing[othervar.f7e].owner == player) {
                         D_001549d0[player].type = 0x3b;
-                        D_001549d0[player].value = thing[D_00155436].unknown89;
-                        D_001549d0[player].arg = (thing[D_00155436].y.tile << 7) + thing[D_00155436].x.tile;
-                        compute_room_pointed(D_001553e0);
+                        D_001549d0[player].value = thing[othervar.f7e].unknown89;
+                        D_001549d0[player].arg = (thing[othervar.f7e].y.tile << 7) + thing[othervar.f7e].x.tile;
+                        compute_room_pointed(othervar.f28);
                     }
                     break;
                 case 5:
                 case 6:
                     if (!gamevar.unknown21) {
                         D_001549d0[player].type = 0x6a;
-                        D_001549d0[player].value = D_00155427;
+                        D_001549d0[player].value = othervar.f6f;
                         D_001549d0[player].argb[0] = gamevar.f175;
-                        if (D_00155427)
+                        if (othervar.f6f)
                             D_001549d0[player].argb[1] = 1;
                         else
                             D_001549d0[player].argb[1] = 0;
-                        if (D_00155e2f) {
-                            D_00155e2f--;
-                            if (D_00155e2f <= 0) {
+                        if (othervar.fa77) {
+                            othervar.fa77--;
+                            if (othervar.fa77 <= 0) {
                                 gamevar.f175 = 0;
-                                D_00155d9f = 2;
-                                D_00155e2f = 0;
+                                othervar.f9e7 = 2;
+                                othervar.fa77 = 0;
                             }
                         }
                     }
@@ -483,17 +450,17 @@ void process_left_button(u16 icon)
                 case 7:
                     if (crequester.unknown2 == 0x63) {
                         close_irequesters();
-                        if (D_00155d7a) {
+                        if (othervar.f9c2) {
                             D_001549d0[player].type = 0xa;
-                            D_001549d0[player].value = (u16)D_00155d7a;
+                            D_001549d0[player].value = (u16)othervar.f9c2;
                             D_001549d0[player].arg = 0;
                         }
                     }
-                    D_00188c7b = D_00188c7c = 0;
+                    lbDisplay.left_button = lbDisplay.right_button = 0;
                     break;
                 case 1:
                     D_001549d0[player].type = 0x82;
-                    D_001549d0[player].value = D_00155432;
+                    D_001549d0[player].value = othervar.f7a;
                     break;
                 case 2:
                 default:
@@ -502,7 +469,7 @@ void process_left_button(u16 icon)
                 break;
             case 1:
                 D_001549d0[player].type = 2;
-                D_001549d0[player].value = D_001553e0;
+                D_001549d0[player].value = othervar.f28;
                 break;
             case 2:
                 D_001549d0[player].type = 3;
@@ -512,7 +479,7 @@ void process_left_button(u16 icon)
                 draw_staff_cursor();
                 if (gamevar.unknown72[0]) {
                     D_001549d0[player].type = 5;
-                    D_001549d0[player].value = D_001553e0;
+                    D_001549d0[player].value = othervar.f28;
                     D_001549d0[player].arg = gamevar.unknown75;
                 }
                 break;
@@ -527,28 +494,28 @@ void process_left_button(u16 icon)
                 break;
             case 6:
                 D_001549d0[player].type = 0xb;
-                D_001549d0[player].value = D_001553e0;
+                D_001549d0[player].value = othervar.f28;
                 D_001549d0[player].arg = (u16)gamevar.unknown1e;
                 break;
             case 0xb:
-                D_001553fb = compute_object_pointed(&room_info[allhosps[player].unknown11b7]);
-                if (D_001553fb) {
-                    if (thing[D_001553fb].unknown89 == allhosps[player].unknown11b7) {
+                othervar.f43 = compute_object_pointed(&room_info[allhosps[player].unknown11b7]);
+                if (othervar.f43) {
+                    if (thing[othervar.f43].unknown89 == allhosps[player].unknown11b7) {
                         D_001549d0[player].type = 0x44;
-                        D_001549d0[player].value = D_001553fb;
+                        D_001549d0[player].value = othervar.f43;
                         D_001549d0[player].arg = 1;
                     }
                 }
                 break;
             case 0xc:
-                if (map[D_001553e0].unknown7 == 1 << player) {
-                    compute_room_pointed(D_001553e0);
+                if (map[othervar.f28].unknown7 == 1 << player) {
+                    compute_room_pointed(othervar.f28);
                     clicked_for_edit();
                 }
                 break;
             case 0xf:
                 if (myhosp->f207) {
-                    if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                      watch[14].width, watch[14].height)) {
                         gamevar.f12e = 0;
                         break;
@@ -556,7 +523,7 @@ void process_left_button(u16 icon)
                 }
                 if (gamevar.f130 == 1) {
                     D_001549d0[player].type = 0x82;
-                    D_001549d0[player].value = D_00155432;
+                    D_001549d0[player].value = othervar.f7a;
                 }
                 break;
             case 0x12: {
@@ -566,7 +533,7 @@ void process_left_button(u16 icon)
                 if (room == 0) {
                     Thing *t;
 
-                    t = &thing[D_001553fb];
+                    t = &thing[othervar.f43];
                     if (t > thing) {
                         if (t->renderer == 4 && t->subtype == 3)
                             room = t->room;
@@ -612,22 +579,22 @@ void process_mleft_button(u16 icon)
                 switch (gamevar.f12e) {
                 case 1:
                     D_001549d0[player].type = 2;
-                    D_001549d0[player].value = D_001553e0;
+                    D_001549d0[player].value = othervar.f28;
                     break;
                 case 0:
                 case 0xf:
                     if (myhosp->f207) {
-                        if (over_hotspot(mouse_dx, mouse_dy, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
+                        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                          watch[14].width, watch[14].height))
                             reqspr_draw(resvars.f1c[0x86].x, resvars.f1c[0x86].y, &watch[15]);
                     }
                     if (myhosp->f1d9) {
-                        if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
+                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
                                          watch[13].width, watch[13].height)) {
-                            if (D_00155e40) {
-                                D_001553f0 = 1;
-                                D_001581b2[1].value = D_00155e40;
-                                D_001553c8 = 1;
+                            if (othervar.fa88) {
+                                othervar.f38 = 1;
+                                D_001581b2[1].value = othervar.fa88;
+                                othervar.f10 = 1;
                             }
                             break;
                         }
@@ -672,12 +639,12 @@ void process_right_button(u16 icon)
                 switch (gamevar.f12e) {
                 case 0:
                     if (myhosp->f207) {
-                        if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
+                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                          watch[13].width, watch[13].height)) {
-                            D_00155e48 = fn_00073e64(D_00155e40, 0x20);
-                            if (D_00155e48) {
+                            othervar.fa90 = fn_00073e64(othervar.fa88, 0x20);
+                            if (othervar.fa90) {
                                 D_001549d0[player].type = 0x42;
-                                D_001549d0[player].value = D_00155e48;
+                                D_001549d0[player].value = othervar.fa90;
                                 play_sound(10, 0xbb, -1, -1);
                             } else {
                                 D_001549d0[player].type = 0x43;
@@ -688,12 +655,12 @@ void process_right_button(u16 icon)
                         }
                     }
                     if (myhosp->f1d9) {
-                        if (over_hotspot(D_00188c5c, D_00188c60, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
+                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
                                          watch[13].width, watch[13].height)) {
-                            D_00155e40 = fn_00073e64(D_00155e40, 0x40);
-                            if (D_00155e40) {
+                            othervar.fa88 = fn_00073e64(othervar.fa88, 0x40);
+                            if (othervar.fa88) {
                                 D_001549d0[player].type = 0x42;
-                                D_001549d0[player].value = D_00155e40;
+                                D_001549d0[player].value = othervar.fa88;
                                 play_sound(10, 0xbb, -1, -1);
                             } else {
                                 D_001549d0[player].type = 0x43;
@@ -709,16 +676,16 @@ void process_right_button(u16 icon)
                         case 3:
                             if (!mouse_was_on_window
                                 && (!allhosps[player].unknown11b7 || crequester.unknown2 != 5)
-                                && (crequester.unknown2 != 0x63 || D_00155d70 != 0)) {
+                                && (crequester.unknown2 != 0x63 || othervar.f9b8 != 0)) {
                                 fn_00074220(0, 1);
                             } else {
-                                w = &thing[D_001553f9];
+                                w = &thing[othervar.f41];
                                 if (w->owner == player) {
                                     if (allhosps[player].unknown11b7) {
                                         check_object_right_click_in_room_edit();
                                     } else if (gamevar.f130 == 3 && w > thing && w->renderer == 4) {
                                         D_001549d0[player].type = 0x68;
-                                        D_001549d0[player].value = D_001553f9;
+                                        D_001549d0[player].value = othervar.f41;
                                         play_sound(10, 0x99, -1, -1);
                                     } else {
                                         pick_up_object_right_click();
@@ -727,12 +694,12 @@ void process_right_button(u16 icon)
                             }
                             break;
                         case 7:
-                            D_00188c7b = D_00188c7c = 0;
+                            lbDisplay.left_button = lbDisplay.right_button = 0;
                             break;
                         case 8:
-                            if (D_00155e0b) {
-                                D_00155e0b = 0;
-                                D_00155e0c = 1;
+                            if (othervar.fa53) {
+                                othervar.fa53 = 0;
+                                othervar.fa54 = 1;
                             }
                             break;
                         case 1:
@@ -787,26 +754,26 @@ void process_no_button(u16 icon)
         if (display_mode == 0) {
             switch (gamevar.f12e) {
             case 0:
-                room = which_room(D_001553e0);
+                room = which_room(othervar.f28);
                 if (room && room->owner == player) {
                     flag_all_queue_members(room);
                 } else {
-                    w = &thing[D_001553f9];
+                    w = &thing[othervar.f41];
                     if (w > thing && w->owner == player) {
                         if ((w->renderer == 6 && w->subtype == 0xb) || (w->renderer == 4 && w->subtype == 3))
-                            flag_all_queue_members(thing[D_00155436].room);
+                            flag_all_queue_members(thing[othervar.f7e].room);
                     }
                 }
                 break;
             case 1:
                 if (D_001549d0[player].type == 0) {
                     D_001549d0[player].type = 8;
-                    D_001549d0[player].value = D_001553e0;
+                    D_001549d0[player].value = othervar.f28;
                 }
                 break;
             case 2:
                 D_001549d0[player].type = 0x1a;
-                D_001549d0[player].value = *(u16 *)&D_001553e1[1];
+                D_001549d0[player].value = othervar.f2a;
                 D_001549d0[player].arg = 0;
                 break;
             case 3:
@@ -822,15 +789,15 @@ void process_no_button(u16 icon)
                                 mcury - resvars.f3 / 2, 0, start[blueprint[gamevar.unknown1e].anim].flags);
                 break;
             case 0xb:
-                D_001553fb = compute_object_pointed(&room_info[allhosps[player].unknown11b7]);
+                othervar.f43 = compute_object_pointed(&room_info[allhosps[player].unknown11b7]);
                 break;
             case 0x12:
-                room = which_room(D_001553e0);
-                if (room && room->type == room_info[D_00155419].type)
-                    compute_room_pointed(D_001553e0);
+                room = which_room(othervar.f28);
+                if (room && room->type == room_info[othervar.f61].type)
+                    compute_room_pointed(othervar.f28);
                 break;
             case 0xc:
-                compute_room_pointed(D_001553e0);
+                compute_room_pointed(othervar.f28);
                 break;
             default:
                 break;

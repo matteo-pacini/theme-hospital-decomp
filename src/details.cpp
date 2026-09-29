@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern char D_001563c5[];
 extern char D_00121be8[];
 extern char D_00121bef[];
 extern char D_00121c21[];
@@ -23,7 +22,7 @@ u8 save_player_details(void)
     s32 handle;
     s32 written;
 
-    sprintf(name, D_00121be8, D_001563c5, statvar.f6c);
+    sprintf(name, D_00121be8, statvar.f575, statvar.f6c);
     handle = LbFileOpen(name, 0);
     if (handle == -1) {
         debug_msg(D_00121bef, name);
@@ -44,7 +43,7 @@ u8 load_player_details(void)
     char name[256];
     s32 handle;
 
-    sprintf(name, D_00121c21, D_001563c5, statvar.f6c);
+    sprintf(name, D_00121c21, statvar.f575, statvar.f6c);
     if (!LbFileExists(name)) {
         set_default_player_details();
         fn_000baad0();

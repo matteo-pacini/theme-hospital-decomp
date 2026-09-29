@@ -2,16 +2,6 @@
 
 extern "C" {
 
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern s32 D_00188c38;
-extern volatile s32 D_00188c5c;
-extern volatile s32 D_00188c60;
-extern u8 D_00188c7e;
-extern u8 D_00188c7f;
-extern u8 D_00155420;
-extern u8 D_00188c7b;
-extern u8 D_00188c7c;
 
 }
 
@@ -65,8 +55,8 @@ void clear_buttons(Window *w)
 // FUNCTION: 0x0004c8fc
 u8 mouse_over(s32 x1, s32 y1, s32 x2, s32 y2)
 {
-    if (mouse_dx - D_00188c3c >= x1 && mouse_dx - D_00188c3c <= x2 && mouse_dy - D_00188c40 >= y1
-        && mouse_dy - D_00188c40 <= y2)
+    if (lbDisplay.mmouse_x - lbDisplay.graphics_window_x >= x1 && lbDisplay.mmouse_x - lbDisplay.graphics_window_x <= x2 && lbDisplay.mmouse_y - lbDisplay.graphics_window_y >= y1
+        && lbDisplay.mmouse_y - lbDisplay.graphics_window_y <= y2)
         return 1;
     return 0;
 }
@@ -74,8 +64,8 @@ u8 mouse_over(s32 x1, s32 y1, s32 x2, s32 y2)
 // FUNCTION: 0x0004c96c
 u8 mouse_pressed_over(s32 x1, s32 y1, s32 x2, s32 y2)
 {
-    if (D_00188c5c - D_00188c3c >= x1 && D_00188c5c - D_00188c3c <= x2 && D_00188c60 - D_00188c40 >= y1
-        && D_00188c60 - D_00188c40 <= y2)
+    if (lbDisplay.mouse_x - lbDisplay.graphics_window_x >= x1 && lbDisplay.mouse_x - lbDisplay.graphics_window_x <= x2 && lbDisplay.mouse_y - lbDisplay.graphics_window_y >= y1
+        && lbDisplay.mouse_y - lbDisplay.graphics_window_y <= y2)
         return 1;
     return 0;
 }
@@ -146,7 +136,7 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                     buttonstore = b;
             }
             if (over
-                && ((b->flags & 8) || ((b->flags & 0x10) && D_00188c7e) || ((b->flags & 0x20) && D_00188c7f))) {
+                && ((b->flags & 8) || ((b->flags & 0x10) && lbDisplay.mleft_button) || ((b->flags & 0x20) && lbDisplay.mright_button))) {
                 if (!(b->flags & 2))
                     b->flags |= 2;
             } else {
@@ -154,11 +144,11 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                     b->flags &= ~2;
             }
             if (over
-                    && ((b->flags & 0x40) || (pressed = (b->flags & 0x80) && D_00188c7e)
-                        || (pressed = (b->flags & 0x8000000) && D_00188c7b)
-                        || (pressed = (b->flags & 0x200) && (OldLeftButton && !D_00188c7e))
-                        || ((b->flags & 0x100) && D_00188c7f) || ((b->flags & 0x10000000) && D_00188c7c)
-                        || ((b->flags & 0x400) && (OldRightButton && !D_00188c7f)))
+                    && ((b->flags & 0x40) || (pressed = (b->flags & 0x80) && lbDisplay.mleft_button)
+                        || (pressed = (b->flags & 0x8000000) && lbDisplay.left_button)
+                        || (pressed = (b->flags & 0x200) && (OldLeftButton && !lbDisplay.mleft_button))
+                        || ((b->flags & 0x100) && lbDisplay.mright_button) || ((b->flags & 0x10000000) && lbDisplay.right_button)
+                        || ((b->flags & 0x400) && (OldRightButton && !lbDisplay.mright_button)))
                 || lbKeyOn[0x20]) {
                 tool_tip_count = 0;
                 if (b->flags & 0x4000000)
@@ -179,12 +169,12 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                             w->y = w->y6;
                             if (w->x < 0)
                                 w->x = 0;
-                            else if (w->x > D_00188c34 - w->widthC)
-                                w->x = D_00188c34 - w->widthC;
+                            else if (w->x > lbDisplay.graphics_screen_width - w->widthC)
+                                w->x = lbDisplay.graphics_screen_width - w->widthC;
                             if (w->y < 0)
                                 w->y = 0;
-                            else if (w->y > D_00188c38 - w->heightE)
-                                w->y = D_00188c38 - w->heightE;
+                            else if (w->y > lbDisplay.graphics_screen_height - w->heightE)
+                                w->y = lbDisplay.graphics_screen_height - w->heightE;
                             ox = -(w->width10 - w->widthC);
                             oy = -(w->height12 - w->heightE);
                         } else {
@@ -193,12 +183,12 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                             w->y6 = w->y;
                             if (w->x < 0)
                                 w->x = 0;
-                            else if (w->x > D_00188c34 - w->width10)
-                                w->x = D_00188c34 - w->width10;
+                            else if (w->x > lbDisplay.graphics_screen_width - w->width10)
+                                w->x = lbDisplay.graphics_screen_width - w->width10;
                             if (w->y < 0)
                                 w->y = 0;
-                            else if (w->y > D_00188c38 - w->height12)
-                                w->y = D_00188c38 - w->height12;
+                            else if (w->y > lbDisplay.graphics_screen_height - w->height12)
+                                w->y = lbDisplay.graphics_screen_height - w->height12;
                             ox = w->width10 - w->width;
                             oy = w->height12 - w->height;
                         }
@@ -207,12 +197,12 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                             w->flags = w->flags & ~0x80 | 0x100;
                             if (w->x < 0)
                                 w->x = 0;
-                            else if (w->x > D_00188c34 - w->width10)
-                                w->x = D_00188c34 - w->width10;
+                            else if (w->x > lbDisplay.graphics_screen_width - w->width10)
+                                w->x = lbDisplay.graphics_screen_width - w->width10;
                             if (w->y < 0)
                                 w->y = 0;
-                            else if (w->y > D_00188c38 - w->height12)
-                                w->y = D_00188c38 - w->height12;
+                            else if (w->y > lbDisplay.graphics_screen_height - w->height12)
+                                w->y = lbDisplay.graphics_screen_height - w->height12;
                             ox = w->width10 - w->widthC;
                             oy = w->height12 - w->heightE;
                         } else if (w->flags & 0x100) {
@@ -229,12 +219,12 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                             oy = -(w->height - w->heightE);
                             if (w->x < 0)
                                 w->x = 0;
-                            else if (w->x > D_00188c34 - w->widthC)
-                                w->x = D_00188c34 - w->widthC;
+                            else if (w->x > lbDisplay.graphics_screen_width - w->widthC)
+                                w->x = lbDisplay.graphics_screen_width - w->widthC;
                             if (w->y < 0)
                                 w->y = 0;
-                            else if (w->y > D_00188c38 - w->heightE)
-                                w->y = D_00188c38 - w->heightE;
+                            else if (w->y > lbDisplay.graphics_screen_height - w->heightE)
+                                w->y = lbDisplay.graphics_screen_height - w->heightE;
                         }
                     }
                     reposition_buttons(w, ox, oy);
@@ -261,14 +251,14 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
                         ox = b->x + w->x
                             + (b->width - button_sprite[b->sprite18].width) * (*b->value - b->min) / (b->max - b->min)
                             + button_sprite[b->sprite18].width / 2;
-                        ox = mouse_dx - D_00188c3c - ox;
+                        ox = lbDisplay.mmouse_x - lbDisplay.graphics_window_x - ox;
                         val = ox * (b->max - b->min) / (b->width - button_sprite[b->sprite18].width);
                     }
                     if (b->height > button_sprite[b->sprite18].height) {
                         oy = b->y + w->y + button_sprite[b->sprite18].height / 2
                             + (b->height - button_sprite[b->sprite18].height) * (b->max - *b->value)
                                 / (b->max - b->min);
-                        oy = -(mouse_dy - D_00188c40 - oy);
+                        oy = -(lbDisplay.mmouse_y - lbDisplay.graphics_window_y - oy);
                         if (val) {
                             val += oy * (b->max - b->min) / (b->height - button_sprite[b->sprite18].height);
                             val /= 2;
@@ -316,7 +306,7 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
         }
     }
     if (notover) {
-        if ((D_00188c7b || D_00188c7c) && (w->flags & 0x10)) {
+        if ((lbDisplay.left_button || lbDisplay.right_button) && (w->flags & 0x10)) {
             if (MousePressedOnWindow(w))
                 update_state = 2;
         }
@@ -324,7 +314,6 @@ u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos)
     return update_state;
 }
 
-// NONMATCHING: operand evaluation order and registers in the drag-resize bound checks (case 1)
 // FUNCTION: 0x0004d740
 void process_buttons(Window **windows, Window *w)
 {
@@ -335,19 +324,19 @@ void process_buttons(Window **windows, Window *w)
     s32 val;
 
     val = 0;
-    mdx = mouse_dx - D_00188c3c - old_mousex;
-    mdy = mouse_dy - D_00188c40 - old_mousey;
-    old_mousex = mouse_dx - D_00188c3c;
-    old_mousey = mouse_dy - D_00188c40;
+    mdx = lbDisplay.mmouse_x - lbDisplay.graphics_window_x - old_mousex;
+    mdy = lbDisplay.mmouse_y - lbDisplay.graphics_window_y - old_mousey;
+    old_mousex = lbDisplay.mmouse_x - lbDisplay.graphics_window_x;
+    old_mousey = lbDisplay.mmouse_y - lbDisplay.graphics_window_y;
     if (mdx || mdy)
         tool_tip_count = 0;
     else
         tool_tip_count++;
     switch (update_state) {
     case 1:
-        if ((buttonstore->flags & 0x80) && D_00188c7e || (buttonstore->flags & 0x100) && D_00188c7f) {
-            if ((mdx > 0 && mouse_dx - D_00188c3c <= w->x + buttonstore->x)
-                || (mdx < 0 && mouse_dx - D_00188c3c >= w->x + buttonstore->x + buttonstore->width)) {
+        if ((buttonstore->flags & 0x80) && lbDisplay.mleft_button || (buttonstore->flags & 0x100) && lbDisplay.mright_button) {
+            if ((mdx > 0 && lbDisplay.mmouse_x - lbDisplay.graphics_window_x <= w->x + buttonstore->x)
+                || (mdx < 0 && lbDisplay.mmouse_x - lbDisplay.graphics_window_x >= w->x + buttonstore->x + buttonstore->width)) {
                 ox = 0;
             } else if (w->flags & 0x20) {
                 ox = mdx * 2;
@@ -355,11 +344,11 @@ void process_buttons(Window **windows, Window *w)
                 ox = mdx;
                 if (ox < -(w->x + buttonstore->x + buttonstore->width - 3))
                     ox = -(w->x + buttonstore->x + buttonstore->width - 3);
-                else if (ox > D_00188c34 - 3 - fn_000cb2db(w->x + buttonstore->x))
-                    ox = D_00188c34 - 3 - fn_000cb2db(w->x + buttonstore->x);
+                else if (ox > lbDisplay.graphics_screen_width - 3 - fn_000cb2db(w->x + buttonstore->x))
+                    ox = lbDisplay.graphics_screen_width - 3 - fn_000cb2db(w->x + buttonstore->x);
             }
-            if ((mdy > 0 && mouse_dy - D_00188c40 <= w->y + buttonstore->y)
-                || (mdy < 0 && mouse_dy - D_00188c40 >= w->y + buttonstore->y + buttonstore->height)) {
+            if ((mdy > 0 && lbDisplay.mmouse_y - lbDisplay.graphics_window_y <= w->y + buttonstore->y)
+                || (mdy < 0 && lbDisplay.mmouse_y - lbDisplay.graphics_window_y >= w->y + buttonstore->y + buttonstore->height)) {
                 oy = 0;
             } else if (w->flags & 0x40) {
                 oy = mdy * 2;
@@ -367,8 +356,8 @@ void process_buttons(Window **windows, Window *w)
                 oy = mdy;
                 if (oy < -(w->y + buttonstore->y + buttonstore->height - 3))
                     oy = -(w->y + buttonstore->y + buttonstore->height - 3);
-                else if (oy > D_00188c38 - 3 - fn_000cb2db(w->y + buttonstore->y))
-                    oy = D_00188c38 - 3 - fn_000cb2db(w->y + buttonstore->y);
+                else if (oy > lbDisplay.graphics_screen_height - 3 - fn_000cb2db(w->y + buttonstore->y))
+                    oy = lbDisplay.graphics_screen_height - 3 - fn_000cb2db(w->y + buttonstore->y);
             }
             if (ox < -(w->width - w->widthC))
                 ox = -(w->width - w->widthC);
@@ -392,14 +381,14 @@ void process_buttons(Window **windows, Window *w)
         }
         break;
     case 3:
-        if (D_00188c7e) {
+        if (lbDisplay.mleft_button) {
             if (mdx || mdy) {
                 if (buttonstore->width > button_sprite[buttonstore->sprite18].width) {
                     ox = buttonstore->x + w->x
                         + (buttonstore->width - button_sprite[buttonstore->sprite18].width)
                             * (*buttonstore->value - buttonstore->min) / (buttonstore->max - buttonstore->min)
                         + button_sprite[buttonstore->sprite18].width / 2;
-                    ox = mouse_dx - D_00188c3c - ox;
+                    ox = lbDisplay.mmouse_x - lbDisplay.graphics_window_x - ox;
                     val = ox * (buttonstore->max - buttonstore->min)
                         / (buttonstore->width - button_sprite[buttonstore->sprite18].width);
                 }
@@ -408,7 +397,7 @@ void process_buttons(Window **windows, Window *w)
                         + (buttonstore->max - *buttonstore->value)
                             * (buttonstore->height - button_sprite[buttonstore->sprite18].height)
                             / (buttonstore->max - buttonstore->min);
-                    oy = -(mouse_dy - D_00188c40 - oy);
+                    oy = -(lbDisplay.mmouse_y - lbDisplay.graphics_window_y - oy);
                     if (val) {
                         val += oy * (buttonstore->max - buttonstore->min)
                             / (buttonstore->height - button_sprite[buttonstore->sprite18].height);
@@ -551,23 +540,23 @@ u8 MousePressedOnWindow(Window *w)
 void process_window(Window **windows, Window *w)
 {
     process_buttons(windows, w);
-    OldLeftButton = D_00188c7e;
-    OldRightButton = D_00188c7f;
+    OldLeftButton = lbDisplay.mleft_button;
+    OldRightButton = lbDisplay.mright_button;
     if (w->flags & 0x100) {
         if (w->flags & 0x20)
-            w->x = (D_00188c34 - w->width10) / 2;
+            w->x = (lbDisplay.graphics_screen_width - w->width10) / 2;
         if (w->flags & 0x40)
-            w->y = (D_00188c38 - w->height12) / 2;
+            w->y = (lbDisplay.graphics_screen_height - w->height12) / 2;
     } else if (w->flags & 0x80) {
         if (w->flags & 0x20)
-            w->x = (D_00188c34 - w->widthC) / 2;
+            w->x = (lbDisplay.graphics_screen_width - w->widthC) / 2;
         if (w->flags & 0x40)
-            w->y = (D_00188c38 - w->heightE) / 2;
+            w->y = (lbDisplay.graphics_screen_height - w->heightE) / 2;
     } else {
         if (w->flags & 0x20)
-            w->x = (D_00188c34 - w->width) / 2;
+            w->x = (lbDisplay.graphics_screen_width - w->width) / 2;
         if (w->flags & 0x40)
-            w->y = (D_00188c38 - w->height) / 2;
+            w->y = (lbDisplay.graphics_screen_height - w->height) / 2;
     }
 }
 
@@ -588,13 +577,13 @@ extern "C" void fn_0004e47c(Window **windows)
         return;
     if (MouseOnWindow(w)) {
         if (!mouse_was_on_window) {
-            D_00155420 = gamevar.f12e;
+            othervar.f68 = gamevar.f12e;
             set_mouse_mode(0);
             mouse_was_on_window = 1;
         }
     } else if (mouse_was_on_window) {
         mouse_was_on_window = 0;
-        set_mouse_mode(D_00155420);
+        set_mouse_mode(othervar.f68);
     }
     if (w->flags & 0x600) {
         count = CountWindows(windows);
@@ -609,7 +598,7 @@ extern "C" void fn_0004e47c(Window **windows)
             CurrentWindow = 0;
         process_window(windows, w);
     } else {
-        if (D_00188c7b || D_00188c7c) {
+        if (lbDisplay.left_button || lbDisplay.right_button) {
             for (i = 0; w; i++) {
                 w = windows[i];
                 if (w) {

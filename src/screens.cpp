@@ -18,22 +18,13 @@ extern const char *screenpalettes[];
 extern TbIffPalette ppalette;
 
 extern "C" {
-extern u8 D_00155e07;
-extern u8 D_00155e1d;
 extern TbSprite *D_00153f18;
 extern u8 *D_00153f10;
 extern u8 *D_00153f04;
 extern TbSprite *D_00153f0c;
-extern TbCacheUsedBlock *D_00155dbe;
-extern u8 D_00155db1;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 *D_00153f34;
-extern u8 *D_001553d7;
-extern u8 *D_001553dc;
-extern u8 D_001553c8;
 extern u8 D_00156910;
-extern s32 D_00188c38;
-extern u16 D_00188c74;
 extern PicLengths D_0017526c;
 extern char *D_0013e2b0;
 extern char *D_0013e2b4;
@@ -69,19 +60,19 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
             reset_host();
             exit(1);
         }
-        if (in_game && D_00155e07)
+        if (in_game && othervar.fa4f)
             AIL_resume_sequence(GetSongHandle());
         while (fn_000bed50() != 1) {
         }
     }
-    D_00155e1d = 0;
+    othervar.fa65 = 0;
     if (sprites)
         LbSpriteReset(screen_sprites_tab_start, D_00153f18, D_00153f10);
     LbMouseChangeSprite(0);
     StopAllSamples();
-    if (D_00155dbe)
-        cache.Free(D_00155dbe);
-    D_00155db1 = 0;
+    if (othervar.fa06)
+        cache.Free(othervar.fa06);
+    othervar.f9f9 = 0;
     hosp_fade_palette(0, 5, Lb_PALETTE_FADE_CLOSED);
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
     LbMouseSetup(0);
@@ -93,9 +84,9 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
         D_001290d0 = 0xff;
         D_001290d1 = 0xff;
         D_001290d2 = 0xff;
-        D_001553d7 = D_00153f34;
+        othervar.f1f = D_00153f34;
         display_mode = 0;
-        D_001553c8 = 1;
+        othervar.f10 = 1;
         D_00156910 = 1;
         set_font_from_cache(1);
         close_irequesters();
@@ -153,7 +144,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
             reset_host();
             exit(1);
         }
-        if (D_00155e07)
+        if (othervar.fa4f)
             AIL_resume_sequence(GetSongHandle());
         while (fn_000bed50() != 1) {
         }
@@ -174,9 +165,9 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         len.map += LbFileLengthRnc(name);
     }
     clear_sound_heap();
-    D_00155dbe = cache.Allocate(len.palette + len.pointers + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
-    if (D_00155dbe)
-        p = fn_00022b60(D_00155dbe);
+    othervar.fa06 = cache.Allocate(len.palette + len.pointers + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
+    if (othervar.fa06)
+        p = fn_00022b60(othervar.fa06);
     else
         return;
     if (fade)
@@ -197,12 +188,12 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
             while (fn_000bed50() != 1) {
             }
         }
-        D_00155e1d = 1;
+        othervar.fa65 = 1;
     }
     if (LbFileLoadAt(D_0013e2b0, p) == len.palette) {
         D_00153f04 = p;
         p += len.palette;
-        D_00155e1d = 1;
+        othervar.fa65 = 1;
     } else {
         return;
     }
@@ -233,7 +224,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     if (map) {
         level = (Level *)p;
         if (LbFileLoadAt(name, level) == len.map) {
-            D_00155db1 = map;
+            othervar.f9f9 = map;
             recreate_map(1);
         } else {
             return;
@@ -254,9 +245,9 @@ u8 display_loading_screen(void)
     u8 active;
 
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     if (active)
         LbIsActive();
     LbMouseChangeSprite(0);
@@ -271,7 +262,7 @@ u8 display_loading_screen(void)
     copy_screen_to_wscreen(bscreen);
     LbIsActive();
     LbScreenSwap();
-    hosp_fade_palette(D_001553d7, 10, Lb_PALETTE_FADE_CLOSED);
+    hosp_fade_palette(othervar.f1f, 10, Lb_PALETTE_FADE_CLOSED);
     if (active) {
         while (fn_000bed50() != 1) {
         }
@@ -285,9 +276,9 @@ void clear_loading_screen(u8 *palette)
     u8 active;
 
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    LbScreenSetGraphicsWindow(0, 0, D_00188c34, D_00188c38);
-    LbTextSetWindow(0, 0, D_00188c34, D_00188c38);
-    D_00188c74 = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+    lbDisplay.draw_flags = 0;
     if (!active) {
         while (fn_000bed50() != 1) {
         }
@@ -296,7 +287,7 @@ void clear_loading_screen(u8 *palette)
     LbIsActive();
     LbScreenClear(0);
     LbScreenSwap();
-    D_001553d7 = palette;
+    othervar.f1f = palette;
     if (active) {
         while (fn_000bed50() != 1) {
         }
@@ -308,8 +299,8 @@ void load_screen(const u8 idx)
 {
     if (LbFileLoadAt((char *)hiresscreens[idx], bscreen) == LbFileLengthRnc((char *)hiresscreens[idx])) {
         if (LbFileLoadAt((char *)screenpalettes[idx], ppalette.data) == LbFileLengthRnc((char *)screenpalettes[idx])) {
-            D_001553dc = 0;
-            D_001553d7 = ppalette.data;
+            othervar.f24 = 0;
+            othervar.f1f = ppalette.data;
         }
     }
 }

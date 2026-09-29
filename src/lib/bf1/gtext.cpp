@@ -22,9 +22,6 @@ extern "C" {
 extern TbTextWindow lbTextJustifyWindow;
 extern TbTextWindow lbTextClipWindow;
 extern u8 lbSpacesPerTab;
-extern s32 D_00188c34;
-#pragma aux D_00188c34 "W?research_names$npnpna"
-extern s32 D_00188c38;
 extern char D_00124250[];
 extern char D_0012425a[];
 
@@ -32,13 +29,6 @@ int fn_000d0848(char *expr, char *file, int line);
 void int3(void);
 #pragma aux int3 = 0xcc;
 
-extern u16 D_00188c74;
-extern u8 D_00188c75;
-extern u8 D_00188c85;
-extern s32 D_00188c3c;
-extern s32 D_00188c40;
-extern s32 D_00188c44;
-extern s32 D_00188c48;
 
 void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 #pragma aux LbDrawLine "__wcpp_2_undefed_cdtor__"
@@ -62,7 +52,7 @@ int LbTextSetJustifyWindow(s32 x, s32 y, s32 width)
     lbTextJustifyWindow.x = x;
     lbTextJustifyWindow.y = y;
     lbTextJustifyWindow.width = width;
-    lbTextJustifyWindow.ptr = x + (lbDisplay.unknown4 + y * D_00188c34);
+    lbTextJustifyWindow.ptr = x + (lbDisplay.unknown4 + y * lbDisplay.graphics_screen_width);
     return 1;
 }
 
@@ -96,19 +86,19 @@ int LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height)
         y1 = 0;
     if (y2 < 0)
         y2 = 0;
-    if (x1 > D_00188c34)
-        x1 = D_00188c34;
-    if (x2 > D_00188c34)
-        x2 = D_00188c34;
-    if (y1 > D_00188c38)
-        y1 = D_00188c38;
-    if (y2 > D_00188c38)
-        y2 = D_00188c38;
+    if (x1 > lbDisplay.graphics_screen_width)
+        x1 = lbDisplay.graphics_screen_width;
+    if (x2 > lbDisplay.graphics_screen_width)
+        x2 = lbDisplay.graphics_screen_width;
+    if (y1 > lbDisplay.graphics_screen_height)
+        y1 = lbDisplay.graphics_screen_height;
+    if (y2 > lbDisplay.graphics_screen_height)
+        y2 = lbDisplay.graphics_screen_height;
     lbTextClipWindow.x = x1;
     lbTextClipWindow.y = y1;
     lbTextClipWindow.width = x2 - x1;
     lbTextClipWindow.height = y2 - y1;
-    lbTextClipWindow.ptr = x + (lbDisplay.unknown4 + y * D_00188c34);
+    lbTextClipWindow.ptr = x + (lbDisplay.unknown4 + y * lbDisplay.graphics_screen_width);
     return 1;
 }
 
@@ -188,15 +178,15 @@ int LbTextDraw(s32 x, s32 y, char *text)
     if (lbFontPtr) {
         sbegin = text;
         count = 0;
-        grwnd.x = D_00188c3c;
-        grwnd.y = D_00188c40;
-        grwnd.width = D_00188c44;
-        grwnd.height = D_00188c48;
+        grwnd.x = lbDisplay.graphics_window_x;
+        grwnd.y = lbDisplay.graphics_window_y;
+        grwnd.width = lbDisplay.graphics_window_width;
+        grwnd.height = lbDisplay.graphics_window_height;
         grwnd.ptr = lbDisplay.graphics_window;
-        D_00188c3c = lbTextClipWindow.x;
-        D_00188c40 = lbTextClipWindow.y;
-        D_00188c44 = lbTextClipWindow.width;
-        D_00188c48 = lbTextClipWindow.height;
+        lbDisplay.graphics_window_x = lbTextClipWindow.x;
+        lbDisplay.graphics_window_y = lbTextClipWindow.y;
+        lbDisplay.graphics_window_width = lbTextClipWindow.width;
+        lbDisplay.graphics_window_height = lbTextClipWindow.height;
         lbDisplay.graphics_window = lbTextClipWindow.ptr;
         dx = lbTextJustifyWindow.x - lbTextClipWindow.x;
         dy = lbTextJustifyWindow.y - lbTextClipWindow.y;
@@ -210,27 +200,27 @@ int LbTextDraw(s32 x, s32 y, char *text)
                 x += lbFontPtr ? lbFontPtr[1].width : 0;
                 if (LbTextWordWidth(text + 1) + (x - dx) > lbTextJustifyWindow.width) {
                     space_width = lbFontPtr ? lbFontPtr[1].width : 0;
-                    if (D_00188c74 & 0x20) {
+                    if (lbDisplay.draw_flags & 0x20) {
                         x = start_x;
                         put_down_sprites(sbegin, text, x, y, space_width);
                         sbegin = text + 1;
                         y += lbFontPtr ? lbFontPtr[1].height : 0;
                         count = 0;
-                    } else if (D_00188c74 & 0x80) {
+                    } else if (lbDisplay.draw_flags & 0x80) {
                         x = start_x + (lbTextJustifyWindow.width - (x - (lbFontPtr ? lbFontPtr[1].width : 0) - dx));
                         put_down_sprites(sbegin, text, x, y, space_width);
                         sbegin = text + 1;
                         x = start_x;
                         y += lbFontPtr ? lbFontPtr[1].height : 0;
                         count = 0;
-                    } else if (D_00188c75 & 1) {
+                    } else if (lbDisplay.draw_flags & 0x100) {
                         x = start_x + (lbTextJustifyWindow.width - (x - (lbFontPtr ? lbFontPtr[1].width : 0) - dx)) / 2;
                         put_down_sprites(sbegin, text, x, y, space_width);
                         sbegin = text + 1;
                         x = start_x;
                         y += lbFontPtr ? lbFontPtr[1].height : 0;
                         count = 0;
-                    } else if (D_00188c75 & 2) {
+                    } else if (lbDisplay.draw_flags & 0x200) {
                         if (count > 0)
                             space_width += (u32)(lbTextJustifyWindow.width - (x - (lbFontPtr ? lbFontPtr[1].width : 0) - dx)) / count;
                         x = start_x;
@@ -245,10 +235,10 @@ int LbTextDraw(s32 x, s32 y, char *text)
                     count++;
                 }
             } else if ((s8)*text == '\n') {
-                if (!(D_00188c74 & 0x20)) {
-                    if (D_00188c74 & 0x80)
+                if (!(lbDisplay.draw_flags & 0x20)) {
+                    if (lbDisplay.draw_flags & 0x80)
                         x = start_x + (lbTextJustifyWindow.width - (x - dx));
-                    else if (D_00188c75 & 1)
+                    else if (lbDisplay.draw_flags & 0x100)
                         x = start_x + (lbTextJustifyWindow.width - (x - dx)) / 2;
                     else
                         x = start_x;
@@ -264,27 +254,27 @@ int LbTextDraw(s32 x, s32 y, char *text)
                 x += (lbFontPtr ? lbFontPtr[1].width : 0) * lbSpacesPerTab;
                 if (LbTextWordWidth(text + 1) + (x - dx) > lbTextJustifyWindow.width) {
                     space_width = lbFontPtr ? lbFontPtr[1].width : 0;
-                    if (D_00188c74 & 0x20) {
+                    if (lbDisplay.draw_flags & 0x20) {
                         x = start_x;
                         put_down_sprites(sbegin, text, x, y, space_width);
                         sbegin = text + 1;
                         y += lbFontPtr ? lbFontPtr[1].height : 0;
                         count = 0;
-                    } else if (D_00188c74 & 0x80) {
+                    } else if (lbDisplay.draw_flags & 0x80) {
                         x = start_x + (lbTextJustifyWindow.width - (x - (lbFontPtr ? lbFontPtr[1].width : 0) * lbSpacesPerTab - dx));
                         put_down_sprites(sbegin, text, x, y, space_width);
                         sbegin = text + 1;
                         x = start_x;
                         y += lbFontPtr ? lbFontPtr[1].height : 0;
                         count = 0;
-                    } else if (D_00188c75 & 1) {
+                    } else if (lbDisplay.draw_flags & 0x100) {
                         x = start_x + (lbTextJustifyWindow.width - (x - lbSpacesPerTab * (lbFontPtr ? lbFontPtr[1].width : 0) - dx)) / 2;
                         put_down_sprites(sbegin, text, x, y, space_width);
                         sbegin = text + 1;
                         x = start_x;
                         y += lbFontPtr ? lbFontPtr[1].height : 0;
                         count = 0;
-                    } else if (D_00188c75 & 2) {
+                    } else if (lbDisplay.draw_flags & 0x200) {
                         if (count > 0)
                             space_width += (u32)(lbTextJustifyWindow.width - (x - (lbFontPtr ? lbFontPtr[1].width : 0) - dx)) / count;
                         x = start_x;
@@ -308,26 +298,26 @@ int LbTextDraw(s32 x, s32 y, char *text)
                 }
                 switch ((u8)*text) {
                 case 6:
-                    D_00188c74 ^= 0x20;
+                    lbDisplay.draw_flags ^= 0x20;
                     break;
                 case 7:
-                    D_00188c74 ^= 0x80;
+                    lbDisplay.draw_flags ^= 0x80;
                     break;
                 case 8:
-                    D_00188c75 ^= 1;
+                    lbDisplay.draw_flags ^= 0x100;
                     break;
                 case 9:
-                    D_00188c75 ^= 2;
+                    lbDisplay.draw_flags ^= 0x200;
                     break;
                 }
             } else if ((s8)*text == 14) {
                 text++;
             }
         }
-        if (!(D_00188c74 & 0x20)) {
-            if (D_00188c74 & 0x80)
+        if (!(lbDisplay.draw_flags & 0x20)) {
+            if (lbDisplay.draw_flags & 0x80)
                 x = start_x + (lbTextJustifyWindow.width - (x - dx));
-            else if (D_00188c75 & 1)
+            else if (lbDisplay.draw_flags & 0x100)
                 x = start_x + (lbTextJustifyWindow.width - (x - dx)) / 2;
             else
                 x = start_x;
@@ -335,10 +325,10 @@ int LbTextDraw(s32 x, s32 y, char *text)
             x = start_x;
         }
         put_down_sprites(sbegin, text, x, y, lbFontPtr ? lbFontPtr[1].width : 0);
-        D_00188c3c = grwnd.x;
-        D_00188c40 = grwnd.y;
-        D_00188c44 = grwnd.width;
-        D_00188c48 = grwnd.height;
+        lbDisplay.graphics_window_x = grwnd.x;
+        lbDisplay.graphics_window_y = grwnd.y;
+        lbDisplay.graphics_window_width = grwnd.width;
+        lbDisplay.graphics_window_height = grwnd.height;
         lbDisplay.graphics_window = grwnd.ptr;
     }
     return 1;
@@ -354,50 +344,50 @@ void put_down_sprites(char *sbegin, char *send, long x, long y, long space_len)
     for (; sbegin < send; sbegin++) {
         if ((u8)*sbegin > 32) {
             spr = lbFontPtr + (u8)*sbegin - 31;
-            if (D_00188c74 & 0x40)
-                LbSpriteDrawOneColour(x, y, spr, D_00188c85);
+            if (lbDisplay.draw_flags & 0x40)
+                LbSpriteDrawOneColour(x, y, spr, lbDisplay.draw_colour);
             else
                 LbSpriteDraw(x, y, spr);
-            if (D_00188c75 & 4)
+            if (lbDisplay.draw_flags & 0x400)
                 LbDrawLine(x, y + (lbFontPtr ? lbFontPtr[1].height : 0), spr->width + x,
-                           y + (lbFontPtr ? lbFontPtr[1].height : 0), D_00188c85);
+                           y + (lbFontPtr ? lbFontPtr[1].height : 0), lbDisplay.draw_colour);
             x += spr->width;
         } else if ((s8)*sbegin == ' ') {
-            if (D_00188c75 & 4)
+            if (lbDisplay.draw_flags & 0x400)
                 LbDrawLine(x, (lbFontPtr ? lbFontPtr[1].height : 0) + y, x + space_len,
-                           (lbFontPtr ? lbFontPtr[1].height : 0) + y, D_00188c85);
+                           (lbFontPtr ? lbFontPtr[1].height : 0) + y, lbDisplay.draw_colour);
             x += space_len;
         } else if ((s8)*sbegin == '\t') {
-            if (D_00188c75 & 4)
+            if (lbDisplay.draw_flags & 0x400)
                 LbDrawLine(x, (lbFontPtr ? lbFontPtr[1].height : 0) + y, x + lbSpacesPerTab * space_len,
-                           (lbFontPtr ? lbFontPtr[1].height : 0) + y, D_00188c85);
+                           (lbFontPtr ? lbFontPtr[1].height : 0) + y, lbDisplay.draw_colour);
             x += lbSpacesPerTab * space_len;
         } else {
             switch ((u8)*sbegin) {
             case 1:
-                D_00188c74 ^= 0x04;
+                lbDisplay.draw_flags ^= 0x04;
                 break;
             case 2:
-                D_00188c74 ^= 0x08;
+                lbDisplay.draw_flags ^= 0x08;
                 break;
             case 3:
-                D_00188c74 ^= 0x10;
+                lbDisplay.draw_flags ^= 0x10;
                 break;
             case 4:
-                D_00188c74 ^= 0x01;
+                lbDisplay.draw_flags ^= 0x01;
                 break;
             case 5:
-                D_00188c74 ^= 0x02;
+                lbDisplay.draw_flags ^= 0x02;
                 break;
             case 11:
-                D_00188c75 ^= 4;
+                lbDisplay.draw_flags ^= 0x400;
                 break;
             case 12:
-                D_00188c74 ^= 0x40;
+                lbDisplay.draw_flags ^= 0x40;
                 break;
             case 14:
                 sbegin++;
-                D_00188c85 = *sbegin;
+                lbDisplay.draw_colour = *sbegin;
                 break;
             }
         }

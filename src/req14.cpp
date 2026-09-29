@@ -2,13 +2,7 @@
 
 extern "C" {
 extern Event D_001549d0[];
-extern u8 D_00155d74;
-extern u16 D_00155d78;
-extern volatile u16 D_00188c74;
-extern u8 D_00188c7e;
 extern s32 D_00145328;
-extern u8 D_001553c7;
-extern Blob63 D_00155c6f;
 extern char **D_0016029c;
 extern char **D_001602a0;
 extern char **D_001602cc;
@@ -96,8 +90,8 @@ void req14_overdraw(Window *win)
     hover = 0;
     if (advisor.f11f & 1) {
         i = 1;
-        D_00155d74++;
-        if (D_00155d74 % 10 == 0) {
+        othervar.f9bc++;
+        if (othervar.f9bc % 10 == 0) {
             if (advisor.f120 == resvars.fe[0x4f]) {
                 for (b = win->buttons; b; b = b->next) {
                     if (i == resvars.fe[0x4f])
@@ -127,7 +121,7 @@ void req14_overdraw(Window *win)
                 }
                 reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x1b]]);
             }
-            D_00155d74 = 0;
+            othervar.f9bc = 0;
         }
     }
     compute_help_text(ox, oy, 0xd);
@@ -160,13 +154,13 @@ void req14_overdraw(Window *win)
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetJustifyWindow(ox + resvars.f18[0x25].x, oy + resvars.f18[0x25].y, resvars.f18[0x25].w);
     set_font_from_cache(1);
-    D_00188c74 = 0x100;
+    lbDisplay.draw_flags = 0x100;
     LbTextDraw(0, 0, D_001602cc[rooms[crequester.unknown8].id]);
     if (resvars.f0 == SCREEN_MODE_13) {
-        D_00188c74 = 0x20;
+        lbDisplay.draw_flags = 0x20;
         LbTextSetJustifyWindow(ox + resvars.f18[0x26].x, oy + resvars.f18[0x26].y, resvars.f18[0x26].w);
-        LbTextDraw(0, 0, D_001602a0[D_00155d78]);
-        D_00188c74 = 0;
+        LbTextDraw(0, 0, D_001602a0[othervar.f9c0]);
+        lbDisplay.draw_flags = 0;
     }
     top = oy + resvars.f1c[0x6e].y;
     by = top;
@@ -175,14 +169,14 @@ void req14_overdraw(Window *win)
             count = gamevar.buy_count[k];
             if (count) {
                 reqspr_draw(bx, by, &button_sprite[resvars.f12[0x1d]]);
-                if ((ox + resvars.f18[0x27].x <= mouse_dx && ox + resvars.f18[0x27].x + resvars.f18[0x27].w > mouse_dx)
-                    && by + resvars.f18[0x29].y <= mouse_dy
-                    && by + resvars.f18[0x27].y + resvars.f18[0x27].h > mouse_dy) {
+                if ((ox + resvars.f18[0x27].x <= lbDisplay.mmouse_x && ox + resvars.f18[0x27].x + resvars.f18[0x27].w > lbDisplay.mmouse_x)
+                    && by + resvars.f18[0x29].y <= lbDisplay.mmouse_y
+                    && by + resvars.f18[0x27].y + resvars.f18[0x27].h > lbDisplay.mmouse_y) {
                     if (D_00145328 != k)
                         play_sound(10, 0x44, -1, -1);
                     D_00145328 = k;
                     hover = 1;
-                    if (D_00188c7e) {
+                    if (lbDisplay.mleft_button) {
                         if (crequester.unknown9 != k)
                             play_sound(10, 0x43, -1, -1);
                         crequester.unknown9 = k;
@@ -201,17 +195,17 @@ void req14_overdraw(Window *win)
             reqspr_draw(bx, oy + resvars.f1c[0x70].y, &button_sprite[resvars.f12[0x1c]]);
         }
         gamevar.unknown71 = n;
-        D_00188c74 = 0x100;
+        lbDisplay.draw_flags = 0x100;
         by = top;
         n = 0;
         for (k = 0; k < 0x3e && n < (resvars.f1 == SCREEN_MODE_13 ? 8 : 6); k++) {
             count = gamevar.buy_count[k];
             if (count) {
                 if (crequester.unknown9 == k) {
-                    D_00188c74 |= 0x10;
+                    lbDisplay.draw_flags |= 0x10;
                     LbDrawBox(ox + resvars.f18[0x27].x, by + resvars.f18[0x27].y, resvars.f18[0x27].w, resvars.f18[0x27].h,
                         color.unknownD);
-                    D_00188c74 ^= 0x10;
+                    lbDisplay.draw_flags ^= 0x10;
                 }
                 if (k == D_00145328)
                     set_font_from_cache(2);
@@ -228,7 +222,7 @@ void req14_overdraw(Window *win)
                 n++;
             }
         }
-        D_00188c74 = 0;
+        lbDisplay.draw_flags = 0;
     }
     win->height = by;
     set_all_refresh_zones_in_window(ox, oy, win->width + ox, win->height + oy, 3);
@@ -242,15 +236,15 @@ void set_edit_room_requester_mode(const u8 mode)
     switch (mode) {
     case 0:
         crequester.unknown4 = (1 << resvars.fe[0x50]) | (1 << resvars.fe[0x51]);
-        D_00155d78 = 0xa;
+        othervar.f9c0 = 0xa;
         break;
     case 2:
         crequester.unknown4 = (1 << resvars.fe[0x50]) | (1 << resvars.fe[0x51]) | (1 << resvars.fe[0x52]);
-        D_00155d78 = 0xb;
+        othervar.f9c0 = 0xb;
         break;
     case 4:
         crequester.unknown4 = (1 << resvars.fe[0x50]) | (1 << resvars.fe[0x51]);
-        D_00155d78 = 0xc;
+        othervar.f9c0 = 0xc;
         break;
     case 8:
         crequester.unknown6 = 1 << resvars.fe[0x51];
@@ -260,18 +254,18 @@ void set_edit_room_requester_mode(const u8 mode)
         if (crequester.unknown8 != 3) {
             if (does_room_contain_compulsory_objects(&room_info[allhosps[player].unknown11b7])) {
                 crequester.unknown4 = 0;
-                D_00155d78 = 0xe;
+                othervar.f9c0 = 0xe;
                 advisor.f11f |= 0x10;
             } else {
                 crequester.unknown4 = 1 << resvars.fe[0x52];
-                D_00155d78 = 0xd;
+                othervar.f9c0 = 0xd;
                 advisor.f11f &= ~0x10;
             }
         }
         break;
     case 0xa:
         crequester.unknown4 = (1 << resvars.fe[0x52]) | (1 << resvars.fe[0x50]) | (1 << resvars.fe[0x51]);
-        D_00155d78 = 0x10;
+        othervar.f9c0 = 0x10;
         crequester.unknown8 = 3;
         break;
     case 1:
@@ -283,7 +277,7 @@ void set_edit_room_requester_mode(const u8 mode)
         break;
     }
     if (mode == 8)
-        D_00155d78 = 0xf;
+        othervar.f9c0 = 0xf;
     if (crequester.unknown2 != 5)
         open_edit_room_requester();
 }
@@ -307,12 +301,12 @@ void go_back_to_place_object_requester(u8 flag)
     close_crequester(10);
     open_edit_room_requester();
     if (flag)
-        gamevar.unknown33 = D_00155c6f;
+        gamevar.unknown33 = othervar.f8b7;
     else
         post_shop_readjust_build_palette();
     obj = next_object_to_build();
     if (obj) {
-        init_place_object(obj, 0, allhosps[D_001553c7].unknown11b7, 0);
+        init_place_object(obj, 0, allhosps[othervar.ff].unknown11b7, 0);
     } else {
         set_mouse_mode(0);
         setup_place_object_requester();

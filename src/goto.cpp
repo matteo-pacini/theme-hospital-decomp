@@ -1,8 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_001553e7;
-extern u8 D_001553c6;
 extern s8 around_xy[][2];
 #pragma aux around_xy "W?around_vxy$n[]$VXY$$"
 }
@@ -76,13 +74,12 @@ s16 person_goto_destination(Thing *w)
     return 0;
 }
 
-// NONMATCHING: the target loads D_001553e7 before each fn_000cb2db call in the distance test
 // FUNCTION: 0x00076768
 s16 person_goto_object(Thing *w)
 {
     u8 save;
-    MapPos y;
     MapPos x;
+    MapPos y;
     s16 dir;
     Thing *obj;
 
@@ -100,7 +97,7 @@ s16 person_goto_object(Thing *w)
         w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
         dir = person_head_for(w, 1);
         if (dir >= 0 && dir <= 3) {
-            if (fn_000cb2db(w->x.tile - w->unknown19) < D_001553e7 && fn_000cb2db(w->y.tile - w->unknown20) < D_001553e7) {
+            if (fn_000cb2db(w->x.tile - w->unknown19) < othervar.f2f && fn_000cb2db(w->y.tile - w->unknown20) < othervar.f2f) {
                 obj = &thing[w->unknown69];
                 if (obj->unknown98 == 1 || obj->kind == 0x12 || (obj->renderer != 8 && obj->renderer != 6))
                     dir = 4;
@@ -147,14 +144,14 @@ s16 person_goto_object(Thing *w)
     return 0;
 }
 
-// NONMATCHING: D_001553c6 is loaded before each fn_000cb2db call (a struct field in the target, see
-// the othervar region), and the frame slots of the switch temporaries differ
+// NONMATCHING: frame layout: unused and dir swap slots (target: unused [ebp-0x10], dir [ebp-0x14]); no
+// declaration order, nor scoping dir/room in the inner block, reproduces it
 // FUNCTION: 0x00076c44
 void person_goto_queue(Thing *w)
 {
     MapPos x;
-    MapPos y;
     s32 unused;
+    MapPos y;
     s16 dir;
     RoomInfo *room;
 
@@ -173,9 +170,12 @@ void person_goto_queue(Thing *w)
         w->height = w->unknown18 == 0 ? div_err() : 0x100 / w->unknown18;
         room = &room_info[w->unknown89];
         dir = person_head_for(w, 3);
-        if (dir >= 0 && dir <= 3 && fn_000cb2db(w->x.tile - w->unknown19) <= D_001553c6
-            && fn_000cb2db(w->y.tile - w->unknown20) <= D_001553c6 && (room->type == 4 || queue_size(room) > 0))
-            dir = 4;
+        if (dir >= 0 && dir <= 3) {
+            if (fn_000cb2db(w->x.tile - w->unknown19) <= othervar.fe && fn_000cb2db(w->y.tile - w->unknown20) <= othervar.fe) {
+                if (room->type == 4 || queue_size(room) > 0)
+                    dir = 4;
+            }
+        }
         switch (dir) {
         case 4:
             if (room->type != 4) {
@@ -189,8 +189,8 @@ void person_goto_queue(Thing *w)
                     start_person_going(w);
                     return;
                 }
-                if (fn_000cb2db(w->x.tile - room->unknown4 % 128) > D_001553c6
-                    || fn_000cb2db(w->y.tile - room->unknown4 / 128) > D_001553c6) {
+                if (fn_000cb2db(w->x.tile - room->unknown4 % 128) > othervar.fe
+                    || fn_000cb2db(w->y.tile - room->unknown4 / 128) > othervar.fe) {
                     fn_0004195c(w, room->unknown4);
                     w->height = 0;
                     return;
@@ -590,7 +590,6 @@ s16 mayor_goto(Thing *w)
 s32 wall_in_way(u32 x, u32 y, u32 dir);
 
 extern "C" {
-extern u8 D_00155441;
 }
 
 // FUNCTION: 0x000788d8
@@ -628,7 +627,7 @@ void peep_stuck(Thing *w)
                 w->unknown124 = 0;
                 if (!(w->flags & 0x4000)) {
                     if (w->owner == player)
-                        D_00155441++;
+                        othervar.f89++;
                 }
                 set_icon_value(w, 7);
                 person_go_home(w);

@@ -248,8 +248,8 @@ void *smkmalloc(Smack *smk, u32 bytes);
 // NONMATCHING: register allocation and instruction scheduling differ
 u8 nexttrack(u32 *flags)
 {
-    u32 bit;
     u8 i;
+    u32 bit;
 
     bit = SMACKTRACK1;
     for (i = 0; i < 7; i++) {
@@ -340,7 +340,6 @@ u32 __pascal SmackSoundInTrack(Smack *smk, u32 trackflags);
 #pragma aux (__pascal) SmackSoundInTrack "SMACKSOUNDINTRACK";
 
 // FUNCTION: 0xe8120
-// NONMATCHING: register allocation and instruction scheduling differ
 u32 __pascal SmackSoundInTrack(Smack *smk, u32 trackflags)
 {
     u8 trk;
@@ -348,7 +347,7 @@ u32 __pascal SmackSoundInTrack(Smack *smk, u32 trackflags)
     if (smk != NULL) {
         while (trackflags & SMACKTRACKS) {
             trk = nexttrack(&trackflags);
-            if (((u8)(smk->TrackType[trk] >> 24) & 0x40) && (smk->TrackType[trk] & 0xffffff))
+            if (((smk->TrackType[trk] >> 24) & 0x40) && (smk->TrackType[trk] & 0xffffff))
                 return 1;
         }
     }
@@ -486,7 +485,7 @@ u32 __pascal SmackGetTrackData(Smack *smk, u8 *dest, u32 trackflag)
     src = smk->trackbufs[trk];
     if (src == NULL)
         return 0;
-    if ((u8)(smk->TrackType[trk] >> 24) & 0x80) {
+    if ((smk->TrackType[trk] >> 24) & 0x80) {
         if (src[1] != 0 && src[1] != -1) {
             if (trackbuf == NULL) {
                 trackbuf = smkmalloc(smk, 0x2000);
@@ -1031,7 +1030,7 @@ void soundnext(Smack *smk)
     src = smk->trackbufs[trk];
     if (src == NULL)
         size = 0;
-    else if ((u8)(smk->TrackType[trk] >> 24) & 0x80)
+    else if ((smk->TrackType[trk] >> 24) & 0x80)
         size = src[1];
     else
         size = src[0] - 4;
@@ -1078,7 +1077,7 @@ void soundnext(Smack *smk)
                 fill = 0;
             }
         }
-        if ((u8)(smk->TrackType[trk] >> 24) & 0x80) {
+        if ((smk->TrackType[trk] >> 24) & 0x80) {
             SmackDoPCM(src + 2, size, trackbuf, snd->buf, snd->bufend, snd->writepos);
         } else if (size + (u32)snd->writepos > (u32)snd->bufend) {
             radmemcpy(snd->writepos, src + 1, snd->bufend - snd->writepos);
@@ -1098,7 +1097,7 @@ void soundnext(Smack *smk)
         src = smk->trackbufs[trk];
         if (src == NULL)
             size = 0;
-        else if ((u8)(smk->TrackType[trk] >> 24) & 0x80)
+        else if ((smk->TrackType[trk] >> 24) & 0x80)
             size = src[1];
         else
             size = src[0] - 4;
@@ -1485,7 +1484,8 @@ fail:
 }
 
 // FUNCTION: 0xea520
-// NONMATCHING: register allocation and instruction scheduling differ
+// NONMATCHING: &TrackType[trk] is kept in ecx instead of edi, and bufend
+// reloads readpos instead of reusing the stored value
 u8 soundopen(Smack *smk, u8 trk)
 {
     u32 rate;
@@ -1495,7 +1495,7 @@ u8 soundopen(Smack *smk, u8 trk)
 
     if (LowSoundOpenAddr == NULL)
         return 0;
-    rate = ((u8)(smk->TrackType[trk] >> 24) & 0x40) ? smk->TrackType[trk] & 0xffffff : 0;
+    rate = ((smk->TrackType[trk] >> 24) & 0x40) ? smk->TrackType[trk] & 0xffffff : 0;
     if (rate == 0)
         return 0;
     stereo = (smk->TrackType[trk] >> 28) & 1;
@@ -1514,7 +1514,7 @@ u8 soundopen(Smack *smk, u8 trk)
         smk->sounds[trk]->bufsize = 0x2000;
     smk->sounds[trk]->buf = smk->sounds[trk]->writepos = smk->sounds[trk]->readpos =
         smkmalloc(smk, smk->sounds[trk]->bufsize);
-    smk->sounds[trk]->bufend = smk->sounds[trk]->buf + smk->sounds[trk]->bufsize;
+    smk->sounds[trk]->bufend = smk->sounds[trk]->readpos + smk->sounds[trk]->bufsize;
     if (smk->sounds[trk]->buf == NULL)
         return 0;
     smk->sounds[trk]->f14 = bps;
