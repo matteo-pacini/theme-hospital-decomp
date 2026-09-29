@@ -56,7 +56,7 @@ extern u8 *exchangeBuffer;
 extern void *localDataPtr;
 extern void *compositeBuffer;
 extern u32 startTime;
-extern u32 actualTimeout;
+static u32 actualTimeout;
 extern u32 basicTimeout;
 extern u32 timeCount;
 extern u32 maxTime;

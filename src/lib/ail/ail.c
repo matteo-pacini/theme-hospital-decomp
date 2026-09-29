@@ -7,9 +7,11 @@ typedef struct {
     U8 data[256];
 } INI_BUFFER;
 
-extern S32 entry;
-extern U32 flags;
-extern IO_PARMS D_0018cafc;
+// Module state, in the order the original lays it out.
+static S32 entry = 0;
+static S32 locked = 0;
+IO_PARMS AIL_last_IO_attempt;
+static U32 flags;
 
 extern char D_00126b3c[];
 extern char D_00126b50[];
@@ -327,6 +329,7 @@ void __cdecl AIL_API_uninstall_driver(AIL_DRIVER *drvr)
 // FUNCTION: 0x000df630
 IO_PARMS *__cdecl AIL_API_get_IO_environment(AIL_DRIVER *drvr)
 {
+    static IO_PARMS IO;
     char *env;
     S32 len;
     U32 name;
@@ -349,8 +352,8 @@ IO_PARMS *__cdecl AIL_API_get_IO_environment(AIL_DRIVER *drvr)
     if (AIL_call_driver(drvr, DRV_PARSE_ENV, NULL, NULL) == -1) {
         return NULL;
     }
-    D_0018cafc = drvr->VHDR->IO;
-    return &D_0018cafc;
+    IO = drvr->VHDR->IO;
+    return &IO;
 }
 
 // FUNCTION: 0x000df6e0

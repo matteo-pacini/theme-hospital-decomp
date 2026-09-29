@@ -10,7 +10,7 @@ char *asctime(struct tm const *tm);
 int int386(int intno, union REGS *in, union REGS *out);
 int sprintf(char *buf, char const *fmt, ...);
 
-extern S32 locked;
+static S32 locked = 0;
 extern char D_0018d454[32];
 
 extern char D_00128018[];

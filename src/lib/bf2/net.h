@@ -294,7 +294,6 @@ extern u32 hostId;
 extern u32 exchangeTimeout;
 extern s32 startTime;
 extern u32 basicTimeout;
-extern u32 actualTimeout;
 extern u32 timeCount;
 extern u8 lastMessage[];
 extern u8 lastButOneMessage[];

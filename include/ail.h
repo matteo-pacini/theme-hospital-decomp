@@ -343,7 +343,6 @@ typedef struct _MDI_DRIVER {
 
 /* aildebug.c */
 /* aildebug.c and ail.c each keep a static lock flag; both are named _locked. */
-extern S32 locked;
 extern S32 AIL_started;
 extern U32 AIL_indent;
 extern S32 AIL_debug;

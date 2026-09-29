@@ -76,7 +76,7 @@ typedef struct {
 } DATA;
 #pragma pack()
 
-extern S32 locked;
+static S32 locked = 0;
 
 extern char D_00126db8[];
 extern char D_00126dc0[];

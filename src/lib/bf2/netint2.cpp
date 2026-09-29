@@ -1,5 +1,7 @@
 #include "net.h"
 
+static u32 actualTimeout;
+
 // FUNCTION: 0xd2ba0
 TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
 {

@@ -47,7 +47,7 @@ typedef struct _WAVE_SYNTH {
     U32 event;
 } WAVE_SYNTH;
 
-extern S32 locked;
+static S32 locked = 0;
 /* In the code segment, where the original's table sits between two functions. */
 #pragma data_seg("_TEXT", "CODE")
 // FUNCTION: 0xe5430

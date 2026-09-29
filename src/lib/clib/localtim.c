@@ -18,7 +18,7 @@ typedef long time_t;
 
 extern long timezone;
 extern long __dst_adjust;
-extern struct tm The_time;
+static struct tm The_time;
 
 struct tm *__brktime(unsigned long days, time_t wallclock, long gmtdelta, struct tm *t);
 int __isindst(struct tm *t);

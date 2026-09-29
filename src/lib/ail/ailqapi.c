@@ -15,10 +15,10 @@ typedef struct _AUDIO_TYPE {
     struct _AUDIO_TYPE *next;
 } AUDIO_TYPE;
 
-extern HDIGDRIVER dig;
+static HDIGDRIVER dig;
 extern HMDIDRIVER mdi;
 extern HAUDIO audios;
-extern S32 locked;
+static S32 locked = 0;
 
 extern char D_001270e8[];
 extern char D_001270f8[];

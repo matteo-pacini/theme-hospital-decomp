@@ -8,6 +8,7 @@ these lists closes that gap.
 import struct
 
 SHT_SYMTAB, SHT_REL = 2, 9
+SHF_EXECINSTR = 4
 STT_FUNC, STT_SECTION = 2, 3
 STB_LOCAL = 0
 R_386_PC32 = 2
@@ -54,7 +55,15 @@ def function_relocs(path):
             label, value, _, kind, target_shndx, bind = sym
             shndx = target_shndx
             target = label
-            if kind == STT_SECTION or (bind == STB_LOCAL and shndx == target_sec):
+            if kind == STT_SECTION and not secs[shndx][2] & SHF_EXECINSTR:
+                # A reference into a data section: named after the symbol that
+                # covers it, as objdiff shows it (a function's local static
+                # after a named variable is that variable plus an offset).
+                covering = [(v, n) for n, v, z, k, i, _ in syms if i == shndx and k != STT_SECTION and v <= addend < v + max(z, 1)]
+                if covering:
+                    v, target = max(covering)
+                    addend -= v
+            elif kind == STT_SECTION or (bind == STB_LOCAL and shndx == target_sec):
                 # A reference into the function's own section (a jump table
                 # or label), identified by its offset in the section; in a
                 # section shared by several functions, by its offset from the

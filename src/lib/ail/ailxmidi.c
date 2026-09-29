@@ -54,25 +54,26 @@ typedef struct {
 } TIMB_request;
 #pragma pack()
 
-extern S32 locked;
 extern char GTL_prefix[128];
-extern S32 entry;
-extern HSEQUENCE S;
-extern S32 i;
-extern S32 j;
-extern S32 n;
-extern S32 sequence_done;
-extern S32 q;
-extern S32 t;
-extern S32 channel;
-extern U32 status;
-extern U32 type;
-extern S32 len;
-extern U8 *ptr;
-extern U8 *event;
+
+// Module state, in the order the original lays it out.
+static S32 entry = 0;
+static S32 locked = 0;
+static U8 *ptr;
+static U8 *event;
+static S32 channel;
+static HSEQUENCE S;
+static S32 i;
+static S32 j;
+static S32 n;
+static S32 q;
+static S32 t;
+static U32 status;
+static S32 sequence_done;
+static S32 len;
+static U32 type;
 
 extern TIMB_request D_00151634;
-extern U8 D_0018cb6c[512];
 
 extern char D_00126e6c[];
 extern char D_00126e74[];
@@ -1243,6 +1244,7 @@ void set_timbre_error(S32 bank, S32 patch)
 // FUNCTION: 0x000e43b0
 S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
 {
+    static U8 TIMB[512];
     U8 *image;
     U8 *end;
     U32 i, j, len;
@@ -1300,10 +1302,10 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
     if (S->TIMB == NULL) {
         return 1;
     }
-    memcpy(D_0018cb6c, S->TIMB,
+    memcpy(TIMB, S->TIMB,
            min(sizeof(S->driver->DST->MIDI_data),
                8 + XMI_swap(*(U32 *)((S32 *)((U8 *)S->TIMB + 4)))));
-    T = (TIMB_chunk *)D_0018cb6c;
+    T = (TIMB_chunk *)TIMB;
     if (S->driver->timbre_trap != NULL) {
         i = 0;
         while (i < (U32)T->n_entries) {

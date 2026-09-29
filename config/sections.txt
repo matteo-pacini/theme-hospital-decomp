@@ -14,3 +14,4 @@ src/lib/bf2/ipxsp.cpp CONST2 00128c50 30
 src/lib/clib/tzset.c CONST 00128484 3
 src/lib/clib/allocexc.cpp CONST 00128804 2b
 src/lib/clib/stabthrw.cpp CONST 00128488 207
+src/lib/ail/ail.c _BSS 0018cae0 34

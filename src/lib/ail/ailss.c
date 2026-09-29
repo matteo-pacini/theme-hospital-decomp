@@ -11,16 +11,18 @@ S32 AIL_abs(S32 x);
     "L1:" \
     parm [eax] value [eax];
 
-extern S32 locked;
 extern U8 pan_graph[128];
-extern S32 entry;
-extern HDIGDRIVER dig;
-extern VDI_CALL VDI;
-extern U32 flags;
-extern S32 cnt;
-extern S32 n;
-extern S32 current;
-extern HSAMPLE S;
+
+// Module state, in the order the original lays it out.
+static S32 entry = 0;
+static S32 locked = 0;
+static VDI_CALL VDI;
+static HSAMPLE S;
+static S32 n;
+static HDIGDRIVER dig;
+static S32 current;
+static U32 flags;
+static S32 cnt;
 
 extern char D_00126c3c[];
 extern char D_00126c68[];

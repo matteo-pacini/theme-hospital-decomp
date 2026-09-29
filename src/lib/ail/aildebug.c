@@ -1,5 +1,7 @@
 #include "ail.h"
 
+static S32 locked = 0;
+
 #define START                                                            \
     AIL_indent++;                                                        \
     if ((AIL_debug && (AIL_indent == 1 || AIL_sys_debug)                 \
