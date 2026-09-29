@@ -8,10 +8,11 @@
 # precede the game rule, which would also match these paths.
 # The network modules (ServiceProvider, netint) are built like the other network code (no -4).
 src/lib/bf1/opt/sp.cpp  wpp386  -s -oneatx -xs
-# netint: -oe=400 inlines Start/CompleteMultiPlayerExchange, GenericIPXInit and the exchange
-# functions into LbNetwork_Exchange as the original does; the original value is not established
-# (it also inlines LbNetwork_Init(u32, ...), which the original does not).
-src/lib/bf1/opt/netint.cpp  wpp386  -s -oneatx -xs -oe=400
+# netint: -oe=100 (94..103 all match) with the module's internal functions static, as the
+# demo marks them: a static function called once is inlined whatever its size, so
+# Start/CompleteMultiPlayerExchange and GenericIPXInit inline, while LbNetwork_Init(u32, ...)
+# and HostData* stay out of line by size.
+src/lib/bf1/opt/netint.cpp  wpp386  -s -oneatx -xs -oe=100
 src/lib/bf1/opt/netint3.cpp  wpp386  -s -oneatx -xs
 src/lib/bf1/opt/*.cpp  wpp386  -s -oneatx -4 -xs
 src/lib/bf1/*.cpp    wpp386  -s -d2 -otx

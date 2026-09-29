@@ -72,18 +72,19 @@ extern u32 unidirectionalMsgReceived;
 
 TbError GenericSerialInit(__tibcaGUID guid, void *init_data);
 TbError GenericModemInit(__tibcaGUID guid, void *init_data);
-TbError GenericIPXInit(__tibcaGUID guid);
+// The module's internal functions are static, as the demo's debug info has them. Under -oe,
+// Watcom inlines a static function called from one place whatever its size
+// (GenericIPXInit, Start/CompleteMultiPlayerExchange); others are inlined only below the
+// -oe size, which keeps HostDataCollection, HostDataBroadcast and LbNetwork_Init(u32, ...)
+// out of line.
+static TbError GenericIPXInit(__tibcaGUID guid);
 TbError StartTwoPlayerExchange(void *buf);
 TbError CompleteTwoPlayerExchange(void *buf);
 u32 GetRequestCompositeExchangeDataMsgSize(void);
 void EncodeDeletePlayerMsg(u8 *buf, u32 id);
 void EncodeRequestExchangeDataMsg(u8 *buf, u32 id, u32 seq);
 void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq);
-// The original does not inline HostDataCollection or HostDataBroadcast into
-// CompleteMultiPlayerExchange although -oe=400 would; binding them to their symbols
-// with #pragma aux keeps them out of line. Why the original did not inline them is unknown.
-TbError HostDataCollection(void);
-#pragma aux HostDataCollection "W?HostDataCollection$n()$TbError$$"
+static TbError HostDataCollection(void);
 TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf, u32 exchange_size,
                        __7308jnTbNetworkPlayerInfo *info, void *init_data);
 
@@ -162,17 +163,16 @@ extern char D_00122e38[];
 
 }
 
-void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data);
+static void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data);
 void __stdcall AddMsgCallback(u32 id, char *name, void *data);
 void __stdcall DeleteMsgCallback(u32 id, void *data);
 void *__stdcall UnidirectionalMsgCallback(u32 id, u32 size, void *data);
 void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data);
 void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data);
-TbError GetCurrentPlayers(void);
-TbError HostDataBroadcast(void);
-#pragma aux HostDataBroadcast "W?HostDataBroadcast$n()$TbError$$"
-TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size);
-u32 IdToIndex(u32 &id);
+static TbError GetCurrentPlayers(void);
+static TbError HostDataBroadcast(void);
+static TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size);
+static u32 IdToIndex(u32 &id);
 
 extern "C" {
 
@@ -231,24 +231,6 @@ TbError fn_000bf810(u32 a, u32 b, u32 c, u32 d, u32 e)
 
 void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg);
 
-// FUNCTION: 0x000c18d0
-TbError GetCurrentPlayers(void)
-{
-    TbError ret;
-
-    ret = Lb_FAIL;
-    localPlayerIndex = maximumPlayers;
-    if (spPtr->Enumerate(0, GetCurrentPlayersCallback, 0) == Lb_OK) {
-        if (localPlayerIndex < maximumPlayers)
-            ret = Lb_OK;
-        else
-            fn_000c20c0(D_0012214a);
-    } else {
-        fn_000c20c0(D_0012218f);
-    }
-    return ret;
-}
-
 // FUNCTION: 0x000bf818
 TbError LbNetwork_EnableNewPlayers(u32 allow)
 {
@@ -284,8 +266,89 @@ TbError LbNetwork_EnumerateServices(TbNetworkCallbackFunc callback, void *data)
     return Lb_OK;
 }
 
-// NONMATCHING: the target calls LbNetwork_Init(u32, ...); with -oe=400 (needed to inline
-// CompleteMultiPlayerExchange into LbNetwork_CompleteExchange) it is inlined here
+struct __4dn7ojSerialInitData {
+    u32 port;
+    u32 baud;
+    s32 irq;
+    u32 mode;
+    char *init_str;
+    char *dial_str;
+    char *hangup_str;
+    char *reset_str;
+};
+
+struct TbSerialInitParams {
+    u8 unknown0;
+    u32 port;
+    u32 baud;
+    s32 irq;
+};
+
+struct TbModemInitParams {
+    u8 unknown0;
+    u32 port;
+    u32 baud;
+    char *init_str;
+    char *dial_str;
+    char *hangup_str;
+    char *reset_str;
+    s32 irq;
+};
+
+union TbNetworkInitParams {
+    TbSerialInitParams serial;
+    TbModemInitParams modem;
+};
+
+extern "C" {
+
+// FUNCTION: 0x000bf91c
+TbError fn_000bf91c(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
+                    u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, TbNetworkInitParams *params)
+{
+    __4dn7ojSerialInitData data;
+    void *init_data = &data;
+
+    if (!params) {
+        init_data = 0;
+    } else {
+        switch (service) {
+        case NS_SERIAL:
+            data.port = params->serial.port;
+            data.baud = params->serial.baud;
+            data.irq = params->serial.irq;
+            break;
+        case (TbNetworkService)4:
+            data.port = params->serial.port;
+            data.baud = params->serial.baud;
+            break;
+        case NS_MODEM:
+            data.port = params->modem.port;
+            data.baud = params->modem.baud;
+            data.irq = params->modem.irq;
+            data.init_str = params->modem.init_str;
+            data.dial_str = params->modem.dial_str;
+            data.hangup_str = params->modem.hangup_str;
+            data.reset_str = params->modem.reset_str;
+            break;
+        case (TbNetworkService)5:
+            data.port = params->modem.port;
+            data.baud = params->modem.baud;
+            data.init_str = params->modem.init_str;
+            data.dial_str = params->modem.dial_str;
+            data.hangup_str = params->modem.hangup_str;
+            data.reset_str = params->modem.reset_str;
+            break;
+        default:
+            init_data = params;
+            break;
+        }
+    }
+    return LbNetwork_Init(service, guid, max_players, exchange_buf, exchange_size, info, init_data);
+}
+
+}
+
 // FUNCTION: 0x000bfac0
 TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -295,17 +358,17 @@ TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_playe
 
     ret = Lb_OK;
     switch (service) {
-    case (TbNetworkService)1:
-    case (TbNetworkService)6:
-        index = 2;
+    case NS_SERIAL:
+    case (TbNetworkService)4:
+        index = 0;
         break;
-    case (TbNetworkService)2:
+    case NS_MODEM:
     case (TbNetworkService)5:
         index = 1;
         break;
-    case (TbNetworkService)3:
-    case (TbNetworkService)4:
-        index = 0;
+    case NS_IPX:
+    case (TbNetworkService)6:
+        index = 2;
         break;
     default:
         fn_000c20c0(D_00121f4b, (s32)service);
@@ -315,6 +378,43 @@ TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_playe
     if (ret == Lb_OK)
         ret = LbNetwork_Init(index, guid, max_players, exchange_buf, exchange_size, info, init_data);
     return ret;
+}
+
+extern "C" {
+
+// FUNCTION: 0x000bfb78
+TbError fn_000bfb78(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
+                    u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, TbNetworkInitParams *params)
+{
+    __4dn7ojSerialInitData data;
+    void *init_data = &data;
+
+    if (!params) {
+        init_data = 0;
+    } else {
+        switch (index) {
+        case 0:
+            data.port = params->serial.port;
+            data.baud = params->serial.baud;
+            data.irq = params->serial.irq;
+            break;
+        case 1:
+            data.port = params->modem.port;
+            data.baud = params->modem.baud;
+            data.irq = params->modem.irq;
+            data.init_str = params->modem.init_str;
+            data.dial_str = params->modem.dial_str;
+            data.hangup_str = params->modem.hangup_str;
+            data.reset_str = params->modem.reset_str;
+            break;
+        default:
+            init_data = params;
+            break;
+        }
+    }
+    return LbNetwork_Init(index, guid, max_players, exchange_buf, exchange_size, info, init_data);
+}
+
 }
 
 // FUNCTION: 0x000bfc4c
@@ -520,7 +620,7 @@ TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetwork
     return ret;
 }
 
-TbError StartMultiPlayerExchange(void *buf);
+static TbError StartMultiPlayerExchange(void *buf);
 
 // FUNCTION: 0x000c03f8
 TbError LbNetwork_StartExchange(void *buf)
@@ -531,7 +631,7 @@ TbError LbNetwork_StartExchange(void *buf)
 }
 
 // FUNCTION: 0x000c0524
-TbError StartMultiPlayerExchange(void *buf)
+static TbError StartMultiPlayerExchange(void *buf)
 {
     TbError ret;
     u32 i;
@@ -559,7 +659,7 @@ TbError StartMultiPlayerExchange(void *buf)
     return ret;
 }
 
-TbError CompleteMultiPlayerExchange(void *buf);
+static TbError CompleteMultiPlayerExchange(void *buf);
 
 // FUNCTION: 0x000c0640
 // NONMATCHING: register choice in the inlined timeout bookkeeping, as in CompleteMultiPlayerExchange
@@ -572,7 +672,7 @@ TbError LbNetwork_CompleteExchange(void *buf)
 
 // FUNCTION: 0x000c08e4
 // NONMATCHING: register choice: the target computes the elapsed time in ebp and reloads timeCount
-TbError CompleteMultiPlayerExchange(void *buf)
+static TbError CompleteMultiPlayerExchange(void *buf)
 {
     TbError ret;
     u32 keep_going;
@@ -684,7 +784,6 @@ TbError LbNetwork_Exchange(void *buf)
 }
 
 // FUNCTION: 0x000c0f68
-// NONMATCHING: the target keeps ret in bl throughout; here the failure returns are folded to constants
 TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
 {
     TbError ret;
@@ -699,26 +798,28 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
         compositeBuffer = LbMemoryAlloc(total);
         if (!compositeBuffer) {
             fn_000c20c0(D_00122709);
-            return ret;
+        } else {
+            D_00188cb8 = total;
+            ret = Lb_OK;
         }
-        D_00188cb8 = total;
     } else if (total > D_00188cb8) {
         new_buf = LbMemoryAlloc(total);
         if (!new_buf) {
             fn_000c20c0(D_0012275b);
-            return ret;
+        } else {
+            memcpy(new_buf, compositeBuffer, D_00188cb8);
+            ret = Lb_OK;
+            LbMemoryFree(compositeBuffer);
+            compositeBuffer = new_buf;
+            D_00188cb8 = total;
         }
-        memcpy(new_buf, compositeBuffer, D_00188cb8);
+    } else {
         ret = Lb_OK;
-        LbMemoryFree(compositeBuffer);
-        compositeBuffer = new_buf;
-        D_00188cb8 = total;
-        return ret;
     }
-    return Lb_OK;
+    return ret;
 }
 
-TbError GetPlayerInfo(void);
+static TbError GetPlayerInfo(void);
 
 // FUNCTION: 0x000c1028
 // NONMATCHING: stack slots of the return values of the two inlined calls, and register use in the
@@ -740,7 +841,7 @@ TbError LbNetwork_GetPlayerInfo(void)
 }
 
 // FUNCTION: 0xc1130
-TbError GetPlayerInfo(void)
+static TbError GetPlayerInfo(void)
 {
     TbError ret = Lb_OK;
     u32 i;
@@ -758,7 +859,7 @@ TbError GetPlayerInfo(void)
 
 // NONMATCHING: register choice and block layout
 // FUNCTION: 0x000c11b8
-TbError HostDataCollection(void)
+static TbError HostDataCollection(void)
 {
     TbError ret;
     u32 keep_going;
@@ -832,7 +933,7 @@ TbError HostDataCollection(void)
 
 // FUNCTION: 0x000c1458
 // NONMATCHING: the target returns through GetPlayerInfo's epilogue (the module was built without -zm)
-TbError HostDataBroadcast(void)
+static TbError HostDataBroadcast(void)
 {
     TbError ret;
     u32 i;
@@ -852,7 +953,7 @@ TbError HostDataBroadcast(void)
 
 // FUNCTION: 0x000c1518
 // NONMATCHING: register choice in the inlined IdToIndex loops
-void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
+static void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
 {
     void *ret = 0;
     u32 ok;
@@ -943,6 +1044,24 @@ void __stdcall HostMsgCallback(u32 id, void *data)
     hostId = id;
 }
 
+// FUNCTION: 0x000c18d0
+static TbError GetCurrentPlayers(void)
+{
+    TbError ret;
+
+    ret = Lb_FAIL;
+    localPlayerIndex = maximumPlayers;
+    if (spPtr->Enumerate(0, GetCurrentPlayersCallback, 0) == Lb_OK) {
+        if (localPlayerIndex < maximumPlayers)
+            ret = Lb_OK;
+        else
+            fn_000c20c0(D_0012214a);
+    } else {
+        fn_000c20c0(D_0012218f);
+    }
+    return ret;
+}
+
 // FUNCTION: 0x000c1934
 void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg)
 {
@@ -1023,7 +1142,7 @@ TbError fn_000c197c(TbNetworkPlayerEntry *player)
 }
 
 // FUNCTION: 0x000c1ad0
-u32 IdToIndex(u32 &id)
+static u32 IdToIndex(u32 &id)
 {
     u32 found = 0;
     u32 more = 1;
@@ -1078,7 +1197,7 @@ void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *da
 }
 
 // FUNCTION: 0x000c1c20
-TbError GenericIPXInit(__tibcaGUID guid)
+static TbError GenericIPXInit(__tibcaGUID guid)
 {
     TbError ret = Lb_FAIL;
 
@@ -1098,7 +1217,7 @@ TbError GenericIPXInit(__tibcaGUID guid)
 }
 
 // FUNCTION: 0x000c1d5c
-TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size)
+static TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size)
 {
     TbError ret = Lb_FAIL;
 
@@ -1114,7 +1233,7 @@ TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size)
     return ret;
 }
 
-void PlayerMapMsgHandler(u32 id, void *buf, u32 size);
+static void PlayerMapMsgHandler(u32 id, void *buf, u32 size);
 
 // FUNCTION: 0x000c1de8
 // NONMATCHING: block layout: the target tests the message type inline and its early return
@@ -1134,7 +1253,7 @@ void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
 }
 
 // FUNCTION: 0x000c1f24
-void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
+static void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
 {
     u32 table_size = maximumPlayers * sizeof(__4kqpm7ClientDataEntry);
 
@@ -1152,24 +1271,28 @@ void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
     }
 }
 
-// FUNCTION: 0x000c2020
-IPXServiceProvider::IPXServiceProvider()
-{
-}
+// The last three are inline functions: the original has each in its own segment after the
+// module's code. In the module's segment (built without -zm), the empty fn_000c20c0 would let
+// the optimiser drop every call to it.
 
-// FUNCTION: 0x000c20d0
-TbNetworkSessionNameEntry::TbNetworkSessionNameEntry()
+// FUNCTION: 0x000c2020
+inline IPXServiceProvider::IPXServiceProvider()
 {
-    id = 0;
-    in_use = 0;
-    name[0] = 0;
 }
 
 extern "C" {
 
 // FUNCTION: 0x000c20c0
-void fn_000c20c0(char *fmt, ...)
+inline void fn_000c20c0(char *fmt, ...)
 {
 }
 
+}
+
+// FUNCTION: 0x000c20d0
+inline TbNetworkSessionNameEntry::TbNetworkSessionNameEntry()
+{
+    id = 0;
+    in_use = 0;
+    name[0] = 0;
 }

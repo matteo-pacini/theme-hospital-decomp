@@ -324,13 +324,16 @@ Observed consequences:
   (`mov edx,eax; mov eax,edx` after a call in `ailsr`, the `abs` in
   `set_sequence_tempo`/`_volume`, `branch_index`) is not reproduced by
   any source form tried.
-- `netint` inlining: the original inlines `CompleteMultiPlayerExchange`
-  (needs `-oe=400` here) but not `LbNetwork_Init(u32)` into its wrappers
-  (inlined from `-oe=250`), so no single `-oe` reproduces both; declaring
-  the exchange halves `inline` instead drops their out-of-line copies,
-  which the original keeps. The two unnamed `LbNetwork_Init` wrappers at
-  0xbf91c/0xbfb78 wait on this, and with them building the module
-  without `-zm`.
+- (Solved) C++ `-oe=N` inlining follows OW's `procStaticFunction`
+  (`plusplus/c/cgbkcgrf.c`, as its `#if 0` branch): a function is inlined
+  when its opcode count is at most N, and a `static` function referenced
+  once is inlined whatever its size (a non-static one is not). The demo's
+  debug info marks internal functions `(static pubdef)`: use that to decide
+  `static`. No-op casts count one node each; definition order does not
+  matter. An inline function the original emits out of line is a COMDAT
+  segment placed after the module. Measured sizes in `netint`: Init32 219,
+  CompleteMulti 365, StartMulti 136, GenericIPXInit 132, HostDataBroadcast
+  103, GetPlayerInfo 93, AddAPlayer 262; the module uses `-oe=100`.
 
 ## Assembly stand-ins
 
