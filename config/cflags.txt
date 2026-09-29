@@ -1,6 +1,7 @@
 # First matching glob (relative to the repo root) decides how a source file
-# is compiled: glob, compiler, flags. -zq, -hd, -zm and -i=include are always
-# added.
+# is compiled: glob, compiler, flags. -zq, -hd, -zm, -fr and -i=include are
+# always added; the pseudo-flag -zm- drops -zm for a module built with all its
+# functions in one segment (tools/split.py then keeps them in one section).
 #
 # Bullfrog libraries (optimised C++); flags still being established. Must
 # precede the game rule, which would also match these paths.

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Write one GNU as source per unit reproducing its functions from HOSPITAL.EXE.
 
-Each function goes in its own _TEXT section, mirroring wpp386 -zm output.
-LE fixups become R_386_32 relocations; rel32 branches leaving the function,
-and recursive calls, become R_386_PC32 relocations, as the compiler emits for
-any call across -zm segments.
+Each function goes in its own _TEXT section, mirroring wpp386 -zm output;
+a unit whose source is built without -zm gets one section for all its
+functions instead. LE fixups become R_386_32 relocations; rel32 branches
+leaving the section, and calls to a function's entry, become R_386_PC32
+relocations, as the compiler emits them.
 
 Usage: tools/split.py OUTDIR [UNIT...]   (default: every unit)
 """
@@ -17,6 +18,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from lefile import SRC_OFFSET32, LEFile  # noqa: E402
 from project import EXE, Project  # noqa: E402
 from capstone import CS_ARCH_X86, CS_MODE_32, Cs  # noqa: E402
+from cc import compiler_for  # noqa: E402
 from x86scan import leading_table, scan  # noqa: E402
 
 _md = Cs(CS_ARCH_X86, CS_MODE_32)
@@ -28,14 +30,15 @@ def q(sym):
     return f'"{sym}"'
 
 
-def code_ref(proj, fn, section_label, section_start, addr):
-    """Expression for a code address, as referenced from inside `fn`, whose
-    section starts at `section_start`."""
-    if addr == fn.addr:
-        # Taking a function's own address names its symbol.
-        return q(fn.name)
-    if section_start <= addr < fn.end:
-        return f"{section_label}+{addr - section_start:#x}"
+def code_ref(proj, starts, section_label, section, addr):
+    """Expression for a code address, as referenced from inside a section
+    spanning `section` = (start, end) whose functions start at `starts`
+    ({address: function})."""
+    if addr in starts:
+        # Taking a function's address names its symbol.
+        return q(starts[addr].name)
+    if section[0] <= addr < section[1]:
+        return f"{section_label}+{addr - section[0]:#x}"
     target = proj.function_at(addr)
     if target is None:
         return f"_C_{addr:08x}"
@@ -70,42 +73,52 @@ def sign_read_ref(proj, target, k):
     return f"{proj.data_ref(value)}-{k}"
 
 
-def emit_function(le, proj, fn, n, out):
+def emit_section(le, proj, fns, n, out, shared):
+    """One _TEXT section holding `fns`: a single function (-zm), or every
+    function of a module compiled into one segment (`shared`), laid out as
+    in the executable."""
     label = f".Lsec{n}"
-    start = leading_table(le, fn.addr, fn.end) or fn.addr
+    start = leading_table(le, fns[0].addr, fns[0].end) or fns[0].addr
+    end = fns[-1].end
+    starts = {f.addr: f for f in fns}
+    # Each function's bytes run to the next one's start in a shared segment:
+    # jump tables and padding between them belong to the preceding function.
+    ends = [g.addr for g in fns[1:]] + [end] if shared else [end]
     out.append(f'\n.section _TEXT,"ax",@progbits,unique,{n}\n{label}:')
 
-    items = scan(le, fn.addr, fn.end)
-    sign_reads = sign_extending_reads(le, items)
+    items = [(fn, it) for fn, e in zip(fns, ends) for it in scan(le, fn.addr, e)]
+    sign_reads = sign_extending_reads(le, [it for _, it in items])
 
     fields = {}  # field address -> (size, expression)
-    for it in items:
-        if it.branch_target is None:
+    for fn, it in items:
+        t = it.branch_target
+        if t is None:
             continue
-        if not fn.addr <= it.branch_target < fn.end:
-            fields[it.branch_field] = (4, f"{code_ref(proj, fn, label, start, it.branch_target)}-.-4")
-        elif it.mnemonic == "call" and it.branch_target == fn.addr:
-            # A recursive call is relocated against the function's own symbol;
-            # as would resolve `sym-.-4` itself, so the relocation is explicit.
-            fields[it.branch_field] = (4, f'-4\n.reloc .-4, R_386_PC32, {q(fn.name)}')
-    for site in range(start, fn.end):
+        if not start <= t < end:
+            fields[it.branch_field] = (4, f"{code_ref(proj, starts, label, (start, end), t)}-.-4")
+        elif t in starts and (it.mnemonic == "call" or t != fn.addr):
+            # Calls, and jumps to another function's entry, are relocated
+            # against the target's symbol even within one segment; as would
+            # resolve `sym-.-4` itself, so the relocation is explicit.
+            fields[it.branch_field] = (4, f'-4\n.reloc .-4, R_386_PC32, {q(starts[t].name)}')
+    for site in range(start, end):
         fx = le.fixups.get(site)
         if fx is None:
             continue
         if fx.kind != SRC_OFFSET32:
-            raise NotImplementedError(f"{fn.name}: fixup kind {fx.kind} at {site:#x}")
+            raise NotImplementedError(f"{fns[0].name}: fixup kind {fx.kind} at {site:#x}")
         if site in proj.reloc_overrides:
             name, off = proj.reloc_overrides[site]
             expr = f"{q(name)}{off:+#x}" if off else q(name)
         elif le.code.contains(fx.target):
-            expr = code_ref(proj, fn, label, start, fx.target)
+            expr = code_ref(proj, starts, label, (start, end), fx.target)
         elif site in sign_reads:
             expr = sign_read_ref(proj, fx.target, sign_reads[site])
         else:
             expr = proj.data_ref(fx.target)
         fields[site] = (4, expr)
 
-    data = le.read(start, fn.end - start)
+    data = le.read(start, end - start)
     pending = []
 
     def flush():
@@ -113,11 +126,13 @@ def emit_function(le, proj, fn, n, out):
             out.append(".byte " + ",".join(f"{b:#04x}" for b in pending))
             pending.clear()
 
+    sizes = {fn.addr: e - fn.addr for fn, e in zip(fns, ends)}
     a = start
-    while a < fn.end:
-        if a == fn.addr:
+    while a < end:
+        if a in starts:
             flush()
-            out.append(f".globl {q(fn.name)}\n.type {q(fn.name)},@function\n{q(fn.name)}:")
+            name = q(starts[a].name)
+            out.append(f".globl {name}\n.type {name},@function\n.size {name},{sizes[a]:#x}\n{name}:")
         if a in fields:
             flush()
             size, expr = fields[a]
@@ -129,13 +144,30 @@ def emit_function(le, proj, fn, n, out):
             flush()
         a += 1
     flush()
-    out.append(f".size {q(fn.name)},.-{q(fn.name)}")
+
+
+def shared_segment(proj, unit):
+    """Whether the unit's source was compiled without -zm (config/cflags.txt),
+    all its functions in one segment. Such a unit must implement every
+    function in its address range, or the layouts cannot agree."""
+    if unit.auto or "-zm-" not in compiler_for(unit.source)[1]:
+        return False
+    first, last = unit.functions[0], unit.functions[-1]
+    mine = {f.addr for f in unit.functions}
+    missing = [f for f in proj.functions if first.addr < f.addr < last.addr and f.addr not in mine]
+    if missing:
+        raise ValueError(f"{unit.source}: built without -zm but does not implement "
+                         + ", ".join(f"{f.addr:#x}" for f in missing))
+    return True
 
 
 def write_unit(le, proj, unit, path):
     out = [".intel_syntax noprefix"]
-    for n, fn in enumerate(unit.functions):
-        emit_function(le, proj, fn, n, out)
+    if shared_segment(proj, unit):
+        emit_section(le, proj, unit.functions, 0, out, shared=True)
+    else:
+        for n, fn in enumerate(unit.functions):
+            emit_section(le, proj, [fn], n, out, shared=False)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     text = "\n".join(out) + "\n"
     # Leave unchanged files untouched so ninja only reassembles what moved.

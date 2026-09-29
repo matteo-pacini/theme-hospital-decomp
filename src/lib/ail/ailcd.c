@@ -500,6 +500,7 @@ U32 __cdecl AIL_API_redbook_track(HREDBOOK hand)
     return rbpos(hand->drive, 1);
 }
 
+// FUNCTION: 0x000e6b10
 U32 rbpos(U32 drive, S32 track)
 {
     RQ_HDR *req;

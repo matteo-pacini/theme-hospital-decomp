@@ -44,12 +44,18 @@ def main(source, output, *extra):
     base = os.path.splitext(output)[0]
     omf = base + ".obj"
     compiler, flags = compiler_for(os.path.relpath(os.path.abspath(source), ROOT))
+    common = COMMON_FLAGS
+    if "-zm-" in flags:
+        # Not a compiler option: the module was built with all its functions
+        # in one segment (see tools/split.py).
+        flags = [f for f in flags if f != "-zm-"]
+        common = [f for f in common if f != "-zm"]
     if compiler == "as":
         # Modules that were hand-written assembly: GNU as emits ELF directly.
         subprocess.run(["as", "--32", *flags, "-o", output, source], check=True)
         return
     subprocess.run(
-        ["wibo", f"{watcom}/binnt/{compiler}.exe", *COMMON_FLAGS, *flags, *extra, f"-fo={dos_path(omf)}", dos_path(source)],
+        ["wibo", f"{watcom}/binnt/{compiler}.exe", *common, *flags, *extra, f"-fo={dos_path(omf)}", dos_path(source)],
         check=True,
     )
     omf2elf.main(omf, output)
