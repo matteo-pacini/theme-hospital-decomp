@@ -23,6 +23,7 @@ from x86scan import leading_table, scan  # noqa: E402
 
 _md = Cs(CS_ARCH_X86, CS_MODE_32)
 _SAR = re.compile(r"(e[a-d]x|e[sd]i), 0x(10|18)$")
+_REG = re.compile(r"\b(?:e?([a-d])x|([a-d])[lh]|e?([sd])i)\b")
 
 
 def q(sym):
@@ -46,20 +47,55 @@ def code_ref(proj, starts, section_label, section, addr):
     return f"{q(target.name)}+{off:#x}" if off else q(target.name)
 
 
+def _reg_ids(text):
+    """The general registers text mentions, any width (`al` and `eax` alike)."""
+    return {a or b or c + "i" for a, b, c in _REG.findall(text)}
+
+
+def _shift_of(le, items, at, i, reg):
+    """k for the `sar reg, 16` (k=2) or `sar reg, 24` (k=3) that consumes the
+    load items[i] made into reg, following the flow through instructions
+    that leave reg alone and direct jmps; None if reg is used otherwise
+    first, or control flow branches."""
+    j = i + 1
+    for _ in range(16):
+        if j >= len(items) or items[j].mnemonic is None:
+            return None
+        ins = next(_md.disasm(le.read(items[j].addr, items[j].size), items[j].addr))
+        if ins.mnemonic == "jmp" and ins.op_str.startswith("0x") and int(ins.op_str, 16) in at:
+            j = at[int(ins.op_str, 16)]
+            continue
+        if ins.mnemonic.startswith(("j", "call", "ret", "loop")):
+            return None
+        if _reg_ids(reg) & _reg_ids(ins.op_str):
+            m = _SAR.match(ins.op_str)
+            if ins.mnemonic != "sar" or not m or m.group(1) != reg:
+                return None
+            return 2 if m.group(2) == "10" else 3
+        j += 1
+    return None
+
+
 def sign_extending_reads(le, items):
     """{fixup site: k} for Watcom's signed narrow reads: an s16 (s8) at g is
-    loaded as the dword at g-2 (g-3) and shifted down with sar 16 (24)."""
+    loaded as the dword at g-2 (g-3) and shifted down with sar 16 (24),
+    possibly after other instructions or a jmp (both arms of a `?:`)."""
+    at = {it.addr: i for i, it in enumerate(items)}
     reads = {}
-    for it, nxt in zip(items, items[1:]):
-        if it.mnemonic != "mov" or nxt.mnemonic != "sar":
+    for i, it in enumerate(items):
+        if it.mnemonic != "mov":
             continue
-        sar = next(_md.disasm(le.read(nxt.addr, nxt.size), nxt.addr))
-        m = _SAR.match(sar.op_str)
-        if not m:
+        sites = [site for site in range(it.addr, it.end) if site in le.fixups]
+        if not sites:
             continue
-        for site in range(it.addr, it.end):
-            if site in le.fixups:
-                reads[site] = 2 if m.group(2) == "10" else 3
+        ins = next(_md.disasm(le.read(it.addr, it.size), it.addr))
+        reg = ins.op_str.split(",")[0]
+        if "[" not in ins.op_str or not re.fullmatch(r"e[a-d]x|e[sd]i", reg):
+            continue
+        k = _shift_of(le, items, at, i, reg)
+        if k is not None:
+            for site in sites:
+                reads[site] = k
     return reads
 
 

@@ -27,8 +27,6 @@ extern u16 lbVesaVRes;
 extern u8 *lbVesaData;
 extern s16 lbVesaPage;
 extern s16 lbVesaGran;
-extern s32 lbVesaPage32;
-#pragma aux lbVesaPage32 "_lbVesaPage"
 extern char D_00124c88[];
 
 int strncmp(const char *a, const char *b, u32 n);
@@ -86,8 +84,8 @@ int LbVesaSetMode(s16 mode)
 int LbVesaSetPage(s16 page)
 {
     if (lbVesaPage != page) {
-        vesa_set_window(0, (page << 6) / (lbVesaPage32 >> 16), 0);
-        vesa_set_window(1, (page << 6) / (lbVesaPage32 >> 16), 0);
+        vesa_set_window(0, (page << 6) / lbVesaGran, 0);
+        vesa_set_window(1, (page << 6) / lbVesaGran, 0);
         lbVesaPage = page;
     }
     return 1;
