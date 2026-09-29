@@ -10,6 +10,7 @@ import struct
 SHT_SYMTAB, SHT_REL = 2, 9
 STT_FUNC, STT_SECTION = 2, 3
 STB_LOCAL = 0
+R_386_PC32 = 2
 
 
 def _sections(b):
@@ -38,6 +39,8 @@ def function_relocs(path):
         syms.append((label, value, size, kind, shndx, info >> 4))
 
     funcs = {label: (shndx, value, size) for label, value, size, kind, shndx, _ in syms if kind == STT_FUNC}
+    starts = {(shndx, value): name for name, (shndx, value, _) in funcs.items()}
+    shared = {shndx for shndx, _ in starts if sum(s == shndx for s, _ in starts) > 1}
     relocs = {name: [] for name in funcs}
     for rel in secs:
         if rel[1] != SHT_REL or rel[6] != symtab_i:
@@ -52,11 +55,21 @@ def function_relocs(path):
             target = label
             if kind == STT_SECTION or (bind == STB_LOCAL and shndx == target_sec):
                 # A reference into the function's own section (a jump table
-                # or label): both sides lay out each function's section
-                # identically, so the offset identifies the target.
+                # or label), identified by its offset in the section; in a
+                # section shared by several functions, by its offset from the
+                # function instead, since a size difference in an earlier one
+                # would shift every later offset.
                 target = "<local>"
                 addend += value
+                # A call within a section shared by several functions (a
+                # module built without -zm) lands on a function's entry;
+                # the target names it after that function.
+                if info & 0xFF == R_386_PC32:
+                    callee = starts.get((shndx, addend + 4))
+                    if callee:
+                        target, addend = callee, -4
             for name, (shndx, value, size) in funcs.items():
                 if shndx == target_sec and value <= off < value + size:
-                    relocs[name].append((off - value, info & 0xFF, target, addend))
+                    local_addend = addend - value if target == "<local>" and shndx in shared else addend
+                    relocs[name].append((off - value, info & 0xFF, target, local_addend))
     return {name: sorted(r) for name, r in relocs.items()}
