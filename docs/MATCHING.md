@@ -244,6 +244,13 @@ Observed consequences:
   names in one chunk, which the rule rules out for the present code shape;
   the original source must differ.
 - A few functions still differ in register choice rather than slots.
+- `netint` inlining: the original inlines `CompleteMultiPlayerExchange`
+  (needs `-oe=400` here) but not `LbNetwork_Init(u32)` into its wrappers
+  (inlined from `-oe=250`), so no single `-oe` reproduces both; declaring
+  the exchange halves `inline` instead drops their out-of-line copies,
+  which the original keeps. The two unnamed `LbNetwork_Init` wrappers at
+  0xbf91c/0xbfb78 wait on this, and with them building the module
+  without `-zm`.
 
 ## Libraries
 
