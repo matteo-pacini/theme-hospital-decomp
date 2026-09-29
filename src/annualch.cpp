@@ -34,8 +34,7 @@ extern char D_00121b38[];
 
 void fn_0001b7e0(void *dst, char *text, int flags);
 
-void fs_qsort(void *base, u32 n, u32 size, int (*cmp)(const void *, const void *));
-#pragma aux fs_qsort "W?fs_point_object$n(pn$rw_dtreg$$ui)pnv"
+void qsort(void *base, u32 n, u32 size, int (*cmp)(const void *, const void *));
 }
 
 void display_plaque(void);
@@ -106,14 +105,14 @@ void create_chart_data(void)
         chart[10][i].hosp = i;
         chart[10][i].value = h->f1bb;
     }
-    fs_qsort(chart[0], n, 5, descend);
-    fs_qsort(chart[1], n, 5, descend);
-    fs_qsort(chart[3], n, 5, descend);
-    fs_qsort(chart[4], n, 5, ascend);
-    fs_qsort(chart[5], n, 5, descend);
-    fs_qsort(chart[8], n, 5, descend);
-    fs_qsort(chart[9], n, 5, descend);
-    fs_qsort(chart[10], n, 5, descend);
+    qsort(chart[0], n, 5, descend);
+    qsort(chart[1], n, 5, descend);
+    qsort(chart[3], n, 5, descend);
+    qsort(chart[4], n, 5, ascend);
+    qsort(chart[5], n, 5, descend);
+    qsort(chart[8], n, 5, descend);
+    qsort(chart[9], n, 5, descend);
+    qsort(chart[10], n, 5, descend);
 }
 
 // FUNCTION: 0x000b4e88

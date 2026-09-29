@@ -18,14 +18,20 @@ extern s32 D_00177bf0;
 extern u8 D_00177bf4[];
 extern s32 D_00178bf4;
 extern s32 D_00178bf8;
-extern s32 D_00178c00;
-extern s32 D_00178c04;
+extern volatile s32 D_00178c00;
+extern volatile s32 D_00178c04;
 extern s32 D_00178c08;
+extern s16 D_00176bb4;
+extern s16 D_00176bb6;
+extern s32 D_00176bb8;
+extern s32 D_00176bbc;
+extern volatile s16 D_00178bfc;
+extern volatile s16 D_00178bfe;
+extern s16 lbVesaPage;
 
 int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height);
 int LbMouseSetPointerHotspot(s32 x, s32 y);
 void LbVesaSetPage(s16 page);
-void fn_000bd8ac(void);
 u16 FP_SEG(const volatile void __far *p);
 #pragma aux FP_SEG = parm caller [eax dx] value [dx];
 }
@@ -37,6 +43,9 @@ u32 mouse_setup_range(void);
 long screen_place(void);
 long screen_remove(u32 force);
 long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y);
+long LbMouseUpdatePosition(void);
+void __interrupt __far MouseHandler256(int max, int mcx, int mdx);
+#pragma aux MouseHandler256 parm [eax] [esi] [edi]
 
 extern "C" {
 
@@ -186,7 +195,6 @@ int LbMouseChangeSpriteAndHotspot(TbSprite *sprite, s32 x, s32 y)
 
 }
 
-// NONMATCHING: target range also covers the next function (0xbd4b4)
 // FUNCTION: 0x000bd43c
 long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y)
 {
@@ -203,8 +211,16 @@ long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y)
 
 extern "C" {
 
-// NONMATCHING: the interrupt handler is referenced as LbMouseSetPosition_+0xd0 in the target
+// FUNCTION: 0x000bd4b4
+int LbMouseIsInstalled(void)
+{
+    if (D_00176bc0)
+        return 1;
+    return -1;
+}
+
 // FUNCTION: 0x000bd4d0
+// NONMATCHING: register choice for the zero stores (the target rematerialises zero per store)
 int LbMouseSetup(TbSprite *sprite)
 {
     SREGS sregs;
@@ -252,8 +268,8 @@ int LbMouseSetup(TbSprite *sprite)
     if (!D_00178bf8) {
         in.w.ax = 0xc;
         in.w.cx = 0x7f;
-        in.x.edx = (u32)fn_000bd8ac;
-        sregs.es = FP_SEG(fn_000bd8ac);
+        in.x.edx = (u32)MouseHandler256;
+        sregs.es = FP_SEG(MouseHandler256);
         int386x(0x33, &in, &out, &sregs);
         D_00178bf8 = 1;
     }
@@ -310,7 +326,6 @@ int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height)
     return 1;
 }
 
-// NONMATCHING: target range also covers the next two functions (0xbd868, interrupt handler 0xbd8ac)
 // FUNCTION: 0x000bd7dc
 int LbMouseSetPosition(s32 x, s32 y)
 {
@@ -328,6 +343,138 @@ int LbMouseSetPosition(s32 x, s32 y)
     return 1;
 }
 
+}
+
+// FUNCTION: 0x000bd868
+long LbMouseUpdatePosition(void)
+{
+    if (D_00178c08) {
+        lbDisplay.mmouse_x += D_00178c00;
+        lbDisplay.mmouse_y += D_00178c04;
+        adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
+        D_00178c08 = 0;
+    }
+    return 1;
+}
+
+// FUNCTION: 0x000bd8ac
+// NONMATCHING: the s16 page local gets the top frame slot; the target puts it below x and y
+void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
+{
+    s32 dx;
+    s32 dy;
+    u32 force;
+    s16 page;
+    s32 x;
+    s32 y;
+
+    if (!D_00176bc0)
+        return;
+    if (max != 1) {
+        if (max & 2) {
+            lbDisplay.mleft_button = 1;
+            if (!lbDisplay.left_button) {
+                lbDisplay.left_button = 1;
+                lbDisplay.mouse_x = lbDisplay.mmouse_x;
+                lbDisplay.mouse_y = lbDisplay.mmouse_y;
+                lbDisplay.rleft_button = 0;
+            }
+        }
+        if (max & 4) {
+            lbDisplay.mleft_button = 0;
+            if (!lbDisplay.rleft_button) {
+                lbDisplay.rleft_button = 1;
+                lbDisplay.rmouse_x = lbDisplay.mmouse_x;
+                lbDisplay.rmouse_y = lbDisplay.mmouse_y;
+            }
+        }
+        if (max & 8) {
+            lbDisplay.mright_button = 1;
+            if (!lbDisplay.right_button) {
+                lbDisplay.right_button = 1;
+                lbDisplay.mouse_x = lbDisplay.mmouse_x;
+                lbDisplay.mouse_y = lbDisplay.mmouse_y;
+                lbDisplay.rright_button = 0;
+            }
+        }
+        if (max & 0x10) {
+            lbDisplay.mright_button = 0;
+            if (!lbDisplay.rright_button) {
+                lbDisplay.rright_button = 1;
+                lbDisplay.rmouse_x = lbDisplay.mmouse_x;
+                lbDisplay.rmouse_y = lbDisplay.mmouse_y;
+            }
+        }
+        if (max & 0x20) {
+            lbDisplay.mmiddle_button = 1;
+            if (!lbDisplay.middle_button) {
+                lbDisplay.middle_button = 1;
+                lbDisplay.mouse_x = lbDisplay.mmouse_x;
+                lbDisplay.mouse_y = lbDisplay.mmouse_y;
+                lbDisplay.rmiddle_button = 0;
+            }
+        }
+        if (max & 0x40) {
+            lbDisplay.mmiddle_button = 0;
+            if (!lbDisplay.rmiddle_button) {
+                lbDisplay.rmiddle_button = 1;
+                lbDisplay.rmouse_x = lbDisplay.mmouse_x;
+                lbDisplay.rmouse_y = lbDisplay.mmouse_y;
+            }
+        }
+    }
+    if (!(max & 1))
+        return;
+    x = mcx;
+    y = mdx;
+    D_00176bb4 = D_00178bfc;
+    D_00176bb6 = D_00178bfe;
+    D_00178bfc = x;
+    D_00178bfe = y;
+    D_00178c00 = D_00178c04 = 0;
+    dx = D_00178bfc - D_00176bb4;
+    if (dx != 0) {
+        if (dx > 0) {
+            dx += D_00176bb8;
+            D_00176bb8 = dx % D_00177be4;
+            D_00178c00 = dx / D_00177be4;
+        } else {
+            D_00178c00 = dx / D_00177be4;
+            D_00176bb8 += dx % D_00177be4;
+            if (D_00176bb8 < 0) {
+                D_00178c00--;
+                D_00176bb8 = D_00177be4 + D_00176bb8 % D_00177be4;
+            }
+        }
+        D_00178c08 = 1;
+    }
+    dy = D_00178bfe - D_00176bb6;
+    if (dy != 0) {
+        if (dy > 0) {
+            dy += D_00176bbc;
+            D_00176bbc = dy % D_00177be8;
+            D_00178c04 = dy / D_00177be8;
+        } else {
+            D_00178c04 = dy / D_00177be8;
+            D_00176bbc += dy % D_00177be8;
+            if (D_00176bbc < 0) {
+                D_00178c04--;
+                D_00176bbc = D_00177be8 + D_00176bbc % D_00177be8;
+            }
+        }
+        D_00178c08 = 1;
+    }
+    if (!D_00178bf4 && !mouse_pos_change_saved) {
+        lbDisplay.mmouse_x += D_00178c00;
+        lbDisplay.mmouse_y += D_00178c04;
+        force = adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
+        page = lbVesaPage;
+        screen_remove(force);
+        screen_place();
+        if (lbDisplay.vesa_is_set_up)
+            LbVesaSetPage(page);
+        D_00178c08 = 0;
+    }
 }
 
 // FUNCTION: 0x000bdc58

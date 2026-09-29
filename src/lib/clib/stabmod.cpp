@@ -27,15 +27,11 @@ extern DTREG_VFPTRS D_001505d4;
 void __wcpp_2_destruct_all_(void);
 #pragma aux __wcpp_2_destruct_all_ "__wcpp_2_destruct_all__"
 
-/*
- * config/functions.txt has no names for the module destructor and the file
- * scope registration hooks (it gives their demo names to other functions).
- */
-void module_dtor(void);
-#pragma aux module_dtor "fn_000cf1d8_"
+void __wcpp_2_module_dtor__(void);
+#pragma aux __wcpp_2_module_dtor__ "*"
 
 // FUNCTION: 0xcf1d8
-void module_dtor(void)
+void __wcpp_2_module_dtor__(void)
 {
     THREAD_CTL *thr;
     RW_DTREG *rw;
@@ -61,7 +57,7 @@ void module_dtor(void)
 }
 
 RO_STATE *fs_state_table(RO_DTREG *ro);
-#pragma aux fs_state_table "fn_000cf234_"
+#pragma aux fs_state_table "W?fs_state_table$n(pn$ro_dtreg$$)pn$__7a4u3RO_STATE$$"
 
 // FUNCTION: 0xcf234
 RO_STATE *fs_state_table(RO_DTREG *ro)
@@ -70,7 +66,7 @@ RO_STATE *fs_state_table(RO_DTREG *ro)
 }
 
 void *fs_point_object(RW_DTREG *rw, unsigned index);
-#pragma aux fs_point_object "fn_000cf238_"
+#pragma aux fs_point_object "W?fs_point_object$n(pn$rw_dtreg$$ui)pnv"
 
 // FUNCTION: 0xcf238
 void *fs_point_object(RW_DTREG *rw, unsigned index)
@@ -85,7 +81,7 @@ struct STAB_TRAVERSE {
 };
 
 void fs_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw);
-#pragma aux fs_init_traverse "fn_000cf23f_"
+#pragma aux fs_init_traverse "W?fs_init_traverse$n(pn$__1j2o3bSTAB_TRAVERSE$$pn$rw_dtreg$$)v"
 
 // FUNCTION: 0xcf23f
 void fs_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw)
@@ -102,9 +98,9 @@ void fs_init(void)
     __wcpp_2_data_dtreg_vfptrs_[3] = &D_001505d4;
 }
 
-/* config/functions.txt has __wcpp_2_mod_register__ under a wrong demo name. */
+/* config/functions.txt gives __wcpp_2_mod_register__ to _nfree. */
 void __wcpp_2_mod_register__(RW_DTREG *rw);
-#pragma aux __wcpp_2_mod_register__ "W?fs_init_traverse$n(pn$__1j2o3bSTAB_TRAVERSE$$pn$rw_dtreg$$)v"
+#pragma aux __wcpp_2_mod_register__ "fn_000cf24f_"
 
 // FUNCTION: 0xcf24f
 void __wcpp_2_mod_register__(RW_DTREG *rw)

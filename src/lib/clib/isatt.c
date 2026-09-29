@@ -14,8 +14,6 @@ tiny_ret_t _TinyGetDeviceInfo(int handle);
 #define TIO_CTL_DEVICE 0x80
 
 // FUNCTION: 0xed25b
-// NONMATCHING: config/functions.txt extends isatty_ over stack-check code
-// (0xed282..0xed29d); the code itself matches
 int isatty(int handle)
 {
     tiny_ret_t rc;

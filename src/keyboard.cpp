@@ -318,19 +318,17 @@ long keybuffer_get(void)
     return key;
 }
 
-void __interrupt __far myKeyboardInt(void);
+void __interrupt __far myKInt(void);
 
-// NONMATCHING: handler relocation (the target names it SWIKeyboardClose+0x40)
 // FUNCTION: 0x00074d60
 s32 SWIKeyboardOpen(void)
 {
     memset(lbKeyOn, 0, 0x100);
     myOldInt = _dos_getvect(9);
-    _dos_setvect(9, myKeyboardInt);
+    _dos_setvect(9, myKInt);
     return 1;
 }
 
-// NONMATCHING: the target symbol also covers myKeyboardInt, which follows it
 // FUNCTION: 0x00074dc8
 s32 SWIKeyboardClose(void)
 {
@@ -338,7 +336,9 @@ s32 SWIKeyboardClose(void)
     return 1;
 }
 
-void __interrupt __far myKeyboardInt(void)
+// FUNCTION: 0x00074e08
+// NONMATCHING: stack slots of the locals differ; one extra zero-extension
+void __interrupt __far myKInt(void)
 {
     u32 key;
     s32 next;

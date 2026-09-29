@@ -87,6 +87,8 @@ struct SerialHandler {
     long Init(long port);
     long DeInit(long port);
     long TerminateInputIO(long port);
+    void *AllocDosMem(u32 size, u16 *sel);
+    void FreeDosMem(u16 sel);
     long ReadByte(long port);
     void WriteChar(TbSerialDev *dev, u8 c);
     void WriteCharNoWait(TbSerialDev *dev, u8 c);
@@ -124,25 +126,26 @@ struct CommHandlerData {
 
 #define CH(p) ((CommHandlerData *)(p))
 
-extern SerialHandler SerialCommHandler;
+/* The static initialiser for this object (.fn_init) is emitted ahead of SerialHandler's constructor. */
+// FUNCTION: 0xf51f0
+// NONMATCHING: relocations only: the module-registration block (_DATA) and exception table
+// (CONST2) are compiler-emitted locals (known tool gap), and __wcpp_2_mod_register__ (0xcf24f) is
+// unnamed in config/functions.txt
+SerialHandler SerialCommHandler;
 extern ComHandlerInfo com_dev[];
 extern ModemResponse modem_response[];
 
 void handle_com(TbSerialDev *dev);
 
 extern "C" {
-u32 fn_000f5bc4(SerialHandler *self, u32 size, u16 *sel);
-void fn_000f5c14(SerialHandler *self, u16 sel);
-void __interrupt __loadds fn_000f6028(void);
-void __interrupt __loadds fn_000f6054(void);
-void __interrupt __loadds fn_000f6080(void);
-void __interrupt __loadds fn_000f60ac(void);
-long fn_000f6d00(CommHandler *self);
 }
 
+void __interrupt __loadds com_handler0(void);
+void __interrupt __loadds com_handler1(void);
+void __interrupt __loadds com_handler2(void);
+void __interrupt __loadds com_handler3(void);
+
 // FUNCTION: 0xf5254
-// NONMATCHING: the range also holds ~SerialHandler (0xf534c), which is followed by the body of
-// SerialHandler::Init
 SerialHandler::SerialHandler()
 {
     long i;
@@ -182,6 +185,7 @@ SerialHandler::SerialHandler()
     }
 }
 
+// FUNCTION: 0xf534c
 SerialHandler::~SerialHandler()
 {
 }
@@ -197,7 +201,7 @@ long SerialHandler::Init(long port)
     if (com_dev[port].flags & 1)
         dev = com_dev[port].dev;
     else
-        dev = (TbSerialDev *)fn_000f5bc4(this, 0x10c9, &dos_sel[port]);
+        dev = (TbSerialDev *)AllocDosMem(0x10c9, &dos_sel[port]);
     if (!dev)
         return 0;
     size = D_001100fe - D_00110068;
@@ -451,7 +455,7 @@ long SerialHandler::TerminateInputIO(long port)
 }
 
 // FUNCTION: 0xf5bc4
-u32 fn_000f5bc4(SerialHandler *self, u32 size, u16 *sel)
+void *SerialHandler::AllocDosMem(u32 size, u16 *sel)
 {
     REGS r;
 
@@ -462,11 +466,11 @@ u32 fn_000f5bc4(SerialHandler *self, u32 size, u16 *sel)
         return 0;
     if (sel)
         *sel = r.x.edx;
-    return (r.x.eax & 0xffff) << 4;
+    return (void *)((r.x.eax & 0xffff) << 4);
 }
 
 // FUNCTION: 0xf5c14
-void fn_000f5c14(SerialHandler *self, u16 sel)
+void SerialHandler::FreeDosMem(u16 sel)
 {
     REGS r;
 
@@ -509,7 +513,6 @@ static inline void lock_region(REGS *r, u32 addr, u32 len)
 }
 
 // FUNCTION: 0xf5d40
-// NONMATCHING: the target names the address of fn_000f60ac as fn_000f6080+0x2c
 void SerialHandler::setup_serial_int_vectors(TbSerialDev *dev)
 {
     REGS r;
@@ -517,16 +520,16 @@ void SerialHandler::setup_serial_int_vectors(TbSerialDev *dev)
 
     switch (dev->port) {
     case 0:
-        handler = fn_000f6028;
+        handler = com_handler0;
         break;
     case 1:
-        handler = fn_000f6054;
+        handler = com_handler1;
         break;
     case 2:
-        handler = fn_000f6080;
+        handler = com_handler2;
         break;
     case 3:
-        handler = fn_000f60ac;
+        handler = com_handler3;
         break;
     }
     memset(&r, 0, sizeof(r));
@@ -587,28 +590,28 @@ void lock_code_start(void)
 }
 
 // FUNCTION: 0xf6028
-void __interrupt __loadds fn_000f6028(void)
+void __interrupt __loadds com_handler0(void)
 {
     handle_com(com_dev[0].dev);
     outp(0x20, 0x20);
 }
 
 // FUNCTION: 0xf6054
-void __interrupt __loadds fn_000f6054(void)
+void __interrupt __loadds com_handler1(void)
 {
     handle_com(com_dev[1].dev);
     outp(0x20, 0x20);
 }
 
 // FUNCTION: 0xf6080
-// NONMATCHING: the range also holds the next handler (0xf60ac)
-void __interrupt __loadds fn_000f6080(void)
+void __interrupt __loadds com_handler2(void)
 {
     handle_com(com_dev[2].dev);
     outp(0x20, 0x20);
 }
 
-void __interrupt __loadds fn_000f60ac(void)
+// FUNCTION: 0xf60ac
+void __interrupt __loadds com_handler3(void)
 {
     handle_com(com_dev[3].dev);
     outp(0x20, 0x20);
@@ -852,19 +855,18 @@ long CommHandler::HangUpModem(void)
 }
 
 // FUNCTION: 0xf6d00
-// NONMATCHING: AnswerModem; the range also holds CommHandler::ReadConfigFile (0xf6e1c)
-long fn_000f6d00(CommHandler *self)
+long CommHandler::AnswerModem(void)
 {
     long ret;
 
-    CH(self)->cur_func = CH(self)->other_func;
-    self->SendModemString(CH(self)->reset_str);
+    CH(this)->cur_func = CH(this)->other_func;
+    SendModemString(CH(this)->reset_str);
     ret = 3;
     while (ret == 3 || ret == 1)
-        ret = self->GetModemResponse(CH(self)->dial_timeout);
+        ret = GetModemResponse(CH(this)->dial_timeout);
     if (ret == 2)
-        CH(self)->online = 1;
-    CH(self)->cur_func = 0;
+        CH(this)->online = 1;
+    CH(this)->cur_func = 0;
     return ret;
 }
 
@@ -877,6 +879,7 @@ inline void CommHandler::read_a_line(FILE *f, char *p)
     *p = 0;
 }
 
+// FUNCTION: 0xf6e1c
 long CommHandler::ReadConfigFile(char *filename)
 {
     char buf[0x50];

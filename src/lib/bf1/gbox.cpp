@@ -2,11 +2,9 @@
 
 extern "C" {
 void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
-#pragma aux LbDrawLine "__wcpp_2_undefed_cdtor__"
 void LbDrawBoxClip(s32 x, s32 y, s32 w, s32 h, u8 colour);
 
 
-// NONMATCHING: target range also covers the next function (0xc8474)
 // FUNCTION: 0x000c8390
 int LbDrawBox(s32 x, s32 y, s32 w, s32 h, u8 colour)
 {
@@ -22,6 +20,23 @@ int LbDrawBox(s32 x, s32 y, s32 w, s32 h, u8 colour)
     } else {
         LbDrawBoxClip(x, y, w, h, colour);
     }
+    return 1;
+}
+
+// FUNCTION: 0x000c8474
+int LbDrawBoxCoords(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
+{
+    if (x1 > x2) {
+        x1 ^= x2;
+        x2 ^= x1;
+        x1 ^= x2;
+    }
+    if (y1 > y2) {
+        y1 ^= y2;
+        y2 ^= y1;
+        y1 ^= y2;
+    }
+    LbDrawBox(x1, y1, x2 - x1 + 1, y2 - y1 + 1, colour);
     return 1;
 }
 

@@ -57,7 +57,6 @@ void *memcpy(void *dst, const void *src, u32 n);
 #pragma intrinsic(memcpy)
 }
 
-// NONMATCHING: target builds the sessions with __wcpp_2_ctor_array__
 // FUNCTION: 0x000d1310
 ServiceProvider::ServiceProvider()
 {

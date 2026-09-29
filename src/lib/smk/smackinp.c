@@ -1484,8 +1484,6 @@ fail:
 }
 
 // FUNCTION: 0xea520
-// NONMATCHING: &TrackType[trk] is kept in ecx instead of edi, and bufend
-// reloads readpos instead of reusing the stored value
 u8 soundopen(Smack *smk, u8 trk)
 {
     u32 rate;
@@ -1512,9 +1510,10 @@ u8 soundopen(Smack *smk, u8 trk)
     smk->sounds[trk]->bufsize = ((smk->sounds[trk]->f1c >> 9) + bps + 0xfff) & ~0xfff;
     if (smk->sounds[trk]->bufsize < 0x2000)
         smk->sounds[trk]->bufsize = 0x2000;
-    smk->sounds[trk]->buf = smk->sounds[trk]->writepos = smk->sounds[trk]->readpos =
-        smkmalloc(smk, smk->sounds[trk]->bufsize);
-    smk->sounds[trk]->bufend = smk->sounds[trk]->readpos + smk->sounds[trk]->bufsize;
+    smk->sounds[trk]->bufend =
+        (smk->sounds[trk]->buf = smk->sounds[trk]->writepos = smk->sounds[trk]->readpos =
+             smkmalloc(smk, smk->sounds[trk]->bufsize))
+        + smk->sounds[trk]->bufsize;
     if (smk->sounds[trk]->buf == NULL)
         return 0;
     smk->sounds[trk]->f14 = bps;

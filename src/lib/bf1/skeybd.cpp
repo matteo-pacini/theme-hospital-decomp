@@ -38,8 +38,69 @@ void read_key(void);
     "skip:" \
     modify [eax];
 
+}
+
+void __interrupt __far KInt(void);
+extern void (__interrupt __far *OldInt)(void);
+
+extern "C" {
+
+void (__interrupt __far *_dos_getvect(unsigned num))();
+void _dos_setvect(unsigned num, void (__interrupt __far *handler)());
+void LbDosKeyboard(void);
+
+// FUNCTION: 0xec9a0
+int LbIsIKeyboardInstalled(void)
+{
+    if (OldInt)
+        return 1;
+    return 0;
+}
+
+// FUNCTION: 0xec9c4
+int LbKeyboardOpen(void)
+{
+    return 1;
+}
+
+// FUNCTION: 0xec9d0
+int LbKeyboardClose(void)
+{
+    return 1;
+}
+
+// FUNCTION: 0xec9dc
+int LbKeyboard(void)
+{
+    LbDosKeyboard();
+    if (INKEY < 0x80)
+        return (u8)lbInkeyToAscii[INKEY];
+    return 0;
+}
+
+// FUNCTION: 0xeca0c
+int LbIKeyboardOpen(void)
+{
+    if (!OldInt) {
+        memset(lbKeyOn, 0, 0x100);
+        OldInt = _dos_getvect(9);
+        _dos_setvect(9, KInt);
+    }
+    return 1;
+}
+
+// FUNCTION: 0xeca68
+int LbIKeyboardClose(void)
+{
+    if (OldInt) {
+        _dos_setvect(9, OldInt);
+        OldInt = 0;
+    }
+    return 1;
+}
+
 // FUNCTION: 0xecab4
-void fn_000ecab4(void)
+void LbDosKeyboard(void)
 {
     REGS r;
 
@@ -58,10 +119,8 @@ void fn_000ecab4(void)
 
 }
 
-extern "C" {
-
 // FUNCTION: 0xecb20
-void __interrupt __far fn_000ecb20(void)
+void __interrupt __far KInt(void)
 {
     s32 key;
     s32 old;
@@ -101,6 +160,4 @@ void __interrupt __far fn_000ecb20(void)
         D_0018978f = D_0018978d;
     }
     out_port_b(0x20, 0x20);
-}
-
 }

@@ -71,33 +71,6 @@ void tzset(void)
     }
 }
 
-// NONMATCHING: the original places everything after the first test
-// (0xf3be2..) behind parse_rule; 10.6 keeps the function contiguous
-// FUNCTION: 0xf395a
-void __parse_tz(char *tz)
-{
-    long dayzone;
-
-    daylight = 0;
-    tz = parse_offset(tz, D_00152294, &timezone);
-    if (*tz == '\0') {
-        dtzone[0] = '\0';
-        return;
-    }
-    daylight = 1;
-    dayzone = timezone - (60 * 60);
-    tz = parse_offset(tz, dtzone, &dayzone);
-    __dst_adjust = timezone - dayzone;
-    if ((int)*tz == ',')
-        tz = parse_rule(tz + 1, &__start_dst);
-    if ((int)*tz == ',') {
-        parse_rule(tz + 1, &__end_dst);
-        __end_dst.tm_hour -= __dst_adjust / 3600;
-        __end_dst.tm_min -= (__dst_adjust / 60) % 60;
-        __end_dst.tm_sec -= __dst_adjust % 60;
-    }
-}
-
 // FUNCTION: 0xf3991
 char *parse_time(char *tz, int *val)
 {
@@ -113,7 +86,8 @@ char *parse_time(char *tz, int *val)
 }
 
 // FUNCTION: 0xf39b5
-// NONMATCHING: name and len swap stack slots
+// NONMATCHING: name and len swap stack slots, and the digit test after the
+// sign zero-extends *tz with xor/mov instead of and
 char *parse_offset(char *tz, char *name, long *offset)
 {
     int len;
@@ -158,8 +132,6 @@ char *parse_offset(char *tz, char *name, long *offset)
 }
 
 // FUNCTION: 0xf3ade
-// NONMATCHING: config/functions.txt extends parse_rule_ over the tail of
-// __parse_tz (0xf3be2), which the original placed after this function
 char *parse_rule(char *tz, struct tm *timeptr)
 {
     int date_form;
@@ -207,4 +179,29 @@ char *parse_rule(char *tz, struct tm *timeptr)
     timeptr->tm_min = minutes;
     timeptr->tm_hour = hours;
     return tz;
+}
+
+// FUNCTION: 0xf395a
+void __parse_tz(char *tz)
+{
+    long dayzone;
+
+    daylight = 0;
+    tz = parse_offset(tz, D_00152294, &timezone);
+    if (*tz == '\0') {
+        dtzone[0] = '\0';
+        return;
+    }
+    daylight = 1;
+    dayzone = timezone - (60 * 60);
+    tz = parse_offset(tz, dtzone, &dayzone);
+    __dst_adjust = timezone - dayzone;
+    if ((int)*tz == ',')
+        tz = parse_rule(tz + 1, &__start_dst);
+    if ((int)*tz == ',') {
+        parse_rule(tz + 1, &__end_dst);
+        __end_dst.tm_hour -= __dst_adjust / 3600;
+        __end_dst.tm_min -= (__dst_adjust / 60) % 60;
+        __end_dst.tm_sec -= __dst_adjust % 60;
+    }
 }

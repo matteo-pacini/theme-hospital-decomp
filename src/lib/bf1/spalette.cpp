@@ -20,7 +20,6 @@ int LbPaletteGet(u8 *palette, ...)
     return 1;
 }
 
-// NONMATCHING: target range also covers the next two functions (0xc22d8, 0xc2350)
 // FUNCTION: 0x000c2274
 int LbPaletteSet(u8 *palette, ...)
 {
@@ -30,6 +29,38 @@ int LbPaletteSet(u8 *palette, ...)
     p = palette;
     outp_(0x3c6, 0xff);
     for (i = 0; (u16)i < 256; ++i) {
+        outp_(0x3c8, i);
+        outp_(0x3c9, *p++);
+        outp_(0x3c9, *p++);
+        outp_(0x3c9, *p++);
+    }
+    return 1;
+}
+
+// FUNCTION: 0x000c22d8
+int LbPaletteGetRange(u8 *palette, u32 start, u32 count)
+{
+    u32 i;
+
+    outp_(0x3c7, start);
+    count *= 3;
+    for (i = 0; i < count;) {
+        palette[i++] = inp_(0x3c9);
+        palette[i++] = inp_(0x3c9);
+        palette[i++] = inp_(0x3c9);
+    }
+    return 1;
+}
+
+// FUNCTION: 0x000c2350
+int LbPaletteSetRange(u8 *palette, u32 start, u32 count)
+{
+    u8 *p;
+    u32 i;
+
+    p = palette;
+    outp_(0x3c6, 0xff);
+    for (i = start; (u16)i < count + start; ++i) {
         outp_(0x3c8, i);
         outp_(0x3c9, *p++);
         outp_(0x3c9, *p++);

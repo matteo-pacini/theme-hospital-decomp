@@ -78,15 +78,11 @@ void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq)
     memcpy(buf + 4, &id, 4);
 }
 
-extern "C" {
-
 // FUNCTION: 0x000d1a10
-u32 fn_000d1a10(u8 *buf, u32 &id)
+u32 DecodeRequestCompositeExchangeDataMsg(u8 *buf, u32 &id)
 {
     memcpy(&id, buf + 4, 4);
     return 1;
-}
-
 }
 
 // FUNCTION: 0xd189c
@@ -100,34 +96,30 @@ u32 ServiceProvider::DecodeAddPlayerMsg(u8 *buf, u32 &id, char *name)
     return ret;
 }
 
-extern "C" {
-
 // FUNCTION: 0xd1a38
-TbError fn_000d1a38(ServiceProvider *sp, u8 *msg)
+TbError ServiceProvider::SystemAddPlayerHandler(u8 *msg)
 {
     TbError ret = Lb_FAIL;
     u32 id;
     char name[32];
 
-    sp->DecodeAddPlayerMsg(msg, id, name);
-    if (sp->AddPlayer(id, name, 0, 0) == Lb_OK)
+    DecodeAddPlayerMsg(msg, id, name);
+    if (AddPlayer(id, name, 0, 0) == Lb_OK)
         ret = Lb_OK;
     return ret;
 }
 
 // FUNCTION: 0xd1ab4
-TbError fn_000d1ab4(ServiceProvider *sp, u8 *msg)
+TbError ServiceProvider::SystemDeletePlayerHandler(u8 *msg)
 {
     TbError ret = Lb_FAIL;
     u32 id;
 
-    sp->CheckForDeletedHost(msg);
-    fn_000d1a10(msg, id);
-    if (sp->DeletePlayer(id) == Lb_OK)
+    CheckForDeletedHost(msg);
+    DecodeRequestCompositeExchangeDataMsg(msg, id);
+    if (DeletePlayer(id) == Lb_OK)
         ret = Lb_OK;
     return ret;
-}
-
 }
 
 // FUNCTION: 0xd1b04
@@ -149,22 +141,8 @@ TbError ServiceProvider::LookForSystemMessages(void)
     return Receive(0xb6);
 }
 
-void DecodeMessageStub(void *buf, u32 *size, u8 *type, u32 *seq)
-{
-    if (buf == 0) {
-        fn_000c20c0(D_00124f4b);
-        return;
-    }
-    if (size)
-        *size = *(u32 *)buf & 0xfffff;
-    if (seq)
-        *seq = (*(u32 *)buf >> 20) & 0xf;
-    if (type)
-        *type = (*(u32 *)buf >> 24) & 0xff;
-}
-
 // FUNCTION: 0xd1b90
-void fn_000d1b90(void *buf, u32 *size, u8 *type, u32 *seq)
+void DecodeMessageStub(void *buf, u32 *size, TbMessageType *type, u32 *seq)
 {
     u32 *p = (u32 *)buf;
 
@@ -177,41 +155,75 @@ void fn_000d1b90(void *buf, u32 *size, u8 *type, u32 *seq)
     if (seq)
         *seq = (*p >> 20) & 0xf;
     if (type)
-        *type = (*p >> 24) & 0xff;
+        *type = (TbMessageType)((*p >> 24) & 0xff);
 }
 
 extern "C" {
-
 extern char D_00124f8d[];
 extern char D_00124fbf[];
 extern char D_00124ff0[];
-
-/* __stdcall callbacks (arguments on the stack, callee pops) named after their address. */
-void fn_000d1bd4(u32 id, char *name, void *data);
-#pragma aux fn_000d1bd4 "fn_000d1bd4_" parm routine [] modify [eax ecx edx]
-void fn_000d1bf0(u32 id, void *data);
-#pragma aux fn_000d1bf0 "fn_000d1bf0_" parm routine [] modify [eax ecx edx]
-void fn_000d1c08(u32 id, void *data);
-#pragma aux fn_000d1c08 "fn_000d1c08_" parm routine [] modify [eax ecx edx]
+extern char D_0012501f[];
+extern char D_0012504f[];
+extern char D_00125089[];
+extern char D_001250ca[];
+extern char D_00125114[];
+extern char D_00125151[];
+}
 
 // FUNCTION: 0xd1bd4
-void fn_000d1bd4(u32 id, char *name, void *data)
+void __stdcall NilAddMsgCallback(u32 id, char *name, void *data)
 {
     fn_000c20c0(D_00124f8d, id, name);
 }
 
 // FUNCTION: 0xd1bf0
-void fn_000d1bf0(u32 id, void *data)
+void __stdcall NilDeleteMsgCallback(u32 id, void *data)
 {
     fn_000c20c0(D_00124fbf, id);
 }
 
 // FUNCTION: 0xd1c08
-void fn_000d1c08(u32 id, void *data)
+void __stdcall NilHostMsgCallback(u32 id, void *data)
 {
     fn_000c20c0(D_00124ff0, id);
 }
 
+// FUNCTION: 0xd1c20
+void __stdcall NilUserSysMsgCallback(void *data)
+{
+    fn_000c20c0(D_0012501f);
+}
+
+// FUNCTION: 0xd1c30
+void *__stdcall NilUserDataMsgCallback(u32 id, u32 size, u32 seq, void *data)
+{
+    fn_000c20c0(D_0012504f, id, size, seq);
+    return 0;
+}
+
+// FUNCTION: 0xd1c54
+void __stdcall NilRequestExchangeDataMsgCallback(u32 id, u32 seq, void *data)
+{
+    fn_000c20c0(D_00125089, id, seq);
+}
+
+// FUNCTION: 0xd1c70
+void __stdcall NilRequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data)
+{
+    fn_000c20c0(D_001250ca, id, seq);
+}
+
+// FUNCTION: 0xd1c8c
+void *__stdcall NilUnidirectionalMsgCallback(u32 id, u32 size, void *data)
+{
+    fn_000c20c0(D_00125114, id, size);
+    return 0;
+}
+
+// FUNCTION: 0xd1cac
+void __stdcall NilSystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
+{
+    fn_000c20c0(D_00125151, id, size);
 }
 
 // FUNCTION: 0xd1cc8
@@ -295,7 +307,7 @@ TbError ServiceProvider::Receive(u32 flags)
         size = 0x404;
         if (PeekMessage(&from, buf, &size)) {
             dst = 0;
-            DecodeMessageStub(buf, &msg_size, &type, &seq);
+            DecodeMessageStub(buf, &msg_size, (TbMessageType *)&type, &seq);
             if (flags & 8)
                 flags = 0xffffffff;
             switch (type) {
@@ -458,10 +470,10 @@ TbError ServiceProvider::Send(u32 to, void *buf)
         fn_000c20c0(D_001254c9);
         return Lb_FAIL;
     }
-    DecodeMessageStub(buf, &msg_size, &type, &seq);
+    DecodeMessageStub(buf, &msg_size, (TbMessageType *)&type, &seq);
     if (to != local_id) {
         guaranteed = (type == 0 || type == 5 || type == 6 || type == 8) ? (s8)0 : (s8)1;
-        if (SendMessage(to, buf, guaranteed) == Lb_OK)
+        if (SendMessage(to, buf, (TbMessageType)guaranteed) == Lb_OK)
             ret = Lb_OK;
         else
             fn_000c20c0(D_001255f5);
@@ -540,7 +552,7 @@ TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
     m = msg;
     ret = Lb_OK;
     invalid = 0;
-    DecodeMessageStub(m, 0, &type, 0);
+    DecodeMessageStub(m, 0, (TbMessageType *)&type, 0);
     switch (type) {
     case 1:
     case 2:
@@ -556,7 +568,7 @@ TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
     } else {
         for (i = 0; i < player_count; i++) {
             if (players[i].id != local_id && players[i].id != id) {
-                if (SendMessage(players[i].id, m, 1) != Lb_OK) {
+                if (SendMessage(players[i].id, m, (TbMessageType)1) != Lb_OK) {
                     ret = Lb_FAIL;
                     fn_000c20c0(D_00125692);
                 }
@@ -564,4 +576,30 @@ TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
         }
     }
     return ret;
+}
+
+// FUNCTION: 0xd2af8
+// NONMATCHING: register allocation: the target keeps this in esi and copies it to ebp for the
+// inlined EnumeratePlayers
+TbError ServiceProvider::EnumeratePlayersForSessionRunning(void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data)
+{
+    TbError ret = Lb_FAIL;
+    TbError r;
+
+    if (Receive(0xb6) == Lb_OK) {
+        r = EnumeratePlayers(callback, data);
+        if (r == Lb_OK)
+            ret = r;
+        else
+            fn_000c20c0(D_001256e7);
+    } else {
+        fn_000c20c0(D_0012574e);
+    }
+    return ret;
+}
+
+// FUNCTION: 0xd2b78
+TbError ServiceProvider::EnableNewPlayers(u32 allow)
+{
+    return Lb_OK;
 }

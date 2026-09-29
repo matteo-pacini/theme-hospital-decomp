@@ -73,6 +73,8 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
 extern "C" {
 extern u32 D_00188cb8;
 extern u32 D_0014da60;
+extern char D_00121eb4[];
+extern char D_00121eb8[];
 extern char D_00121ef4[];
 extern char D_00121f15[];
 extern char D_00121f3a[];
@@ -111,6 +113,8 @@ extern char D_0012266a[];
 extern char D_001226bb[];
 extern char D_00122709[];
 extern char D_0012275b[];
+extern char D_001227ad[];
+extern char D_001227f6[];
 extern char D_00122843[];
 extern char D_00122860[];
 extern char D_001228a9[];
@@ -125,13 +129,18 @@ extern char D_00122d7f[];
 extern char D_00122de4[];
 extern char D_00122e38[];
 
-void *__stdcall fn_000c1518(u32 id, u32 size, u32 seq, void *data);
-#pragma aux (__stdcall) stdcall_fn "*_";
-void __pragma("stdcall_fn") fn_000c1810(u32 id, char *name, void *data);
-void *__pragma("stdcall_fn") fn_000c1940(u32 id, u32 size, void *data);
-void __pragma("stdcall_fn") fn_000c1b24(u32 id, u32 seq, void *data);
-void __pragma("stdcall_fn") fn_000c1bc8(u32 id, u32 seq, void *data);
-TbError fn_000c18d0(void);
+}
+
+void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data);
+void __stdcall AddMsgCallback(u32 id, char *name, void *data);
+void __stdcall DeleteMsgCallback(u32 id, void *data);
+void *__stdcall UnidirectionalMsgCallback(u32 id, u32 size, void *data);
+void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data);
+void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data);
+TbError GetCurrentPlayers(void);
+TbError HostDataBroadcast(void);
+
+extern "C" {
 
 void *fn_000bf790(u32 size);
 #pragma aux fn_000bf790 "W?$nwn(ui)pnv"
@@ -139,8 +148,6 @@ void fn_000bf798(void *p);
 #pragma aux fn_000bf798 "W?$dln(pnv)v"
 void fn_000bf7a0(u32 timeout);
 #pragma aux fn_000bf7a0 "W?LbNetwork_ChangeExchangeTimeout$n(ul)v"
-TbError fn_000c1458(void);
-#pragma aux fn_000c1458 "W?MultiPlayerCallback$n(ulululpnv)pnv"
 TbError fn_000c197c(TbNetworkPlayerEntry *player);
 #pragma aux fn_000c197c "W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$"
 u32 fn_000cd716(char *s);
@@ -158,12 +165,27 @@ void fn_000bf798(void *p)
     LbMemoryFree(p);
 }
 
-// NONMATCHING: target range also covers LbNetwork_LibraryVersion (0xbf7b8)
 // FUNCTION: 0x000bf7a0
 void fn_000bf7a0(u32 timeout)
 {
     exchangeTimeout = timeout * 1000;
 }
+
+}
+
+// FUNCTION: 0x000bf7b8
+void LbNetwork_LibraryVersion(__ctcl4TbNetworkVersion *version)
+{
+    char os[0x28];
+
+    if (version) {
+        strcpy(os, D_00121eb4);
+        sprintf(version->text, D_00121eb8, 1.1, os);
+        version->version = 1.1f;
+    }
+}
+
+extern "C" {
 
 // FUNCTION: 0x000bf810
 TbError fn_000bf810(u32 a, u32 b, u32 c, u32 d, u32 e)
@@ -175,10 +197,8 @@ TbError fn_000bf810(u32 a, u32 b, u32 c, u32 d, u32 e)
 
 void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg);
 
-extern "C" {
-
 // FUNCTION: 0x000c18d0
-TbError fn_000c18d0(void)
+TbError GetCurrentPlayers(void)
 {
     TbError ret;
 
@@ -193,8 +213,6 @@ TbError fn_000c18d0(void)
         fn_000c20c0(D_0012218f);
     }
     return ret;
-}
-
 }
 
 // FUNCTION: 0x000bf818
@@ -232,7 +250,8 @@ TbError LbNetwork_EnumerateServices(TbNetworkCallbackFunc callback, void *data)
     return Lb_OK;
 }
 
-// NONMATCHING: target registers an exception frame
+// NONMATCHING: exception-table relocation (known tool gap: CONST2), and two independent register
+// loads in the other order
 // FUNCTION: 0x000bfac0
 TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -289,8 +308,8 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     D_0014da60 = 0;
     exchangeBuffer = (u8 *)exchange_buf;
     localPlayerInfoPtr = info;
-    receiveCallbacks.multiPlayer = fn_000c1518;
-    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))fn_000c1b24;
+    receiveCallbacks.multiPlayer = MultiPlayerCallback;
+    receiveCallbacks.mpReqExDataMsg = MultiPlayerReqExDataMsgCallback;
     if (exchange_size) {
         D_00188cb8 = max_players * exchange_size;
         compositeBuffer = LbMemoryAlloc(D_00188cb8);
@@ -366,7 +385,7 @@ TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
         fn_000c20c0(D_00122225);
         return ret;
     }
-    if (fn_000c18d0() != Lb_OK) {
+    if (GetCurrentPlayers() != Lb_OK) {
         fn_000c20c0(D_001221df);
         return ret;
     }
@@ -418,7 +437,7 @@ TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *play
             }
         } while (waitingForPlayerMapResponse);
     }
-    if (fn_000c18d0() != Lb_OK) {
+    if (GetCurrentPlayers() != Lb_OK) {
         fn_000c20c0(D_001222ad);
         return ret;
     }
@@ -473,7 +492,6 @@ TbError LbNetwork_EnumerateSessions(TbNetworkCallbackFunc callback, void *data)
     return ret;
 }
 
-// NONMATCHING: target range also covers the following exchange function (0xc03f8)
 // FUNCTION: 0x000c03b8
 TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetworkCallbackFunc callback, void *data)
 {
@@ -484,6 +502,47 @@ TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetwork
         ret = Lb_OK;
     else
         fn_000c20c0(D_001223a5);
+    return ret;
+}
+
+TbError StartMultiPlayerExchange(void *buf);
+
+// FUNCTION: 0x000c03f8
+// NONMATCHING: the target inlines StartMultiPlayerExchange here; -oe=150 reproduces that, but
+// LbNetwork_Exchange, which is written with the exchange code expanded by hand, then diverges
+TbError LbNetwork_StartExchange(void *buf)
+{
+    if (runningTwoPlayerModel)
+        return StartTwoPlayerExchange(buf);
+    return StartMultiPlayerExchange(buf);
+}
+
+// FUNCTION: 0x000c0524
+TbError StartMultiPlayerExchange(void *buf)
+{
+    TbError ret;
+    u32 i;
+
+    ret = Lb_FAIL;
+    localDataPtr = buf;
+    spPtr->Receive(6);
+    for (i = 0; i < maximumPlayers; i++) {
+        if (clientDataTable[i].active)
+            clientDataTable[i].got_data = 0;
+    }
+    memcpy(exchangeBuffer + localPlayerIndex * exchangeSize, buf, exchangeSize);
+    clientDataTable[localPlayerIndex].got_data = 1;
+    startTime = LbTimerClock();
+    actualTimeout = basicTimeout;
+    if (localPlayerId == hostId) {
+        ret = Lb_OK;
+    } else {
+        EncodeMessageStub(buf, exchangeSize - 4, MSG_TYPE_0, sequenceNumber);
+        if (spPtr->Send(hostId, buf) == Lb_OK)
+            ret = Lb_OK;
+        else
+            fn_000c20c0(D_001223eb);
+    }
     return ret;
 }
 
@@ -536,7 +595,7 @@ TbError LbNetwork_Exchange(void *buf)
         done_ret = Lb_FAIL;
         if (localPlayerId == hostId) {
             HostDataCollection();
-            done_ret = fn_000c1458();
+            done_ret = HostDataBroadcast();
         } else {
             keep_going = 1;
             host_changed = 0;
@@ -550,7 +609,7 @@ TbError LbNetwork_Exchange(void *buf)
                 if (host_changed) {
                     if (hostId == localPlayerId) {
                         if (HostDataCollection() == Lb_OK) {
-                            if (fn_000c1458() == Lb_OK)
+                            if (HostDataBroadcast() == Lb_OK)
                                 done_ret = Lb_OK;
                             else
                                 fn_000c20c0(D_0012242f);
@@ -620,8 +679,8 @@ TbError LbNetwork_Exchange(void *buf)
     return ret;
 }
 
-// NONMATCHING: target range also covers the following function (0xc1028)
 // FUNCTION: 0x000c0f68
+// NONMATCHING: the target keeps ret in bl throughout; here the failure returns are folded to constants
 TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
 {
     TbError ret;
@@ -653,6 +712,27 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
         return ret;
     }
     return Lb_OK;
+}
+
+TbError GetPlayerInfo(void);
+
+// FUNCTION: 0x000c1028
+// NONMATCHING: stack slots of the return values of the two inlined calls, and register use in the
+// inlined GetPlayerInfo loop
+TbError LbNetwork_GetPlayerInfo(void)
+{
+    TbError ret;
+
+    ret = Lb_FAIL;
+    if (GetCurrentPlayers() == Lb_OK) {
+        if (GetPlayerInfo() == Lb_OK)
+            ret = Lb_OK;
+        else
+            fn_000c20c0(D_001227ad);
+    } else {
+        fn_000c20c0(D_001227f6);
+    }
+    return ret;
 }
 
 // FUNCTION: 0xc1130
@@ -746,11 +826,9 @@ TbError HostDataCollection(void)
     return ret;
 }
 
-extern "C" {
-
-// NONMATCHING: shares its epilogue with the function at 0xc1028; range also covers MultiPlayerCallback (0xc1518)
 // FUNCTION: 0x000c1458
-TbError fn_000c1458(void)
+// NONMATCHING: the target returns through GetPlayerInfo's epilogue (the module was built without -zm)
+TbError HostDataBroadcast(void)
 {
     TbError ret;
     u32 i;
@@ -769,8 +847,7 @@ TbError fn_000c1458(void)
 }
 
 // FUNCTION: 0x000c1810
-// NONMATCHING: the range also holds DeleteMsgCallback (0xc1858)
-void __pragma("stdcall_fn") fn_000c1810(u32 id, char *name, void *data)
+void __stdcall AddMsgCallback(u32 id, char *name, void *data)
 {
     TbNetworkPlayerEntry player;
 
@@ -781,21 +858,20 @@ void __pragma("stdcall_fn") fn_000c1810(u32 id, char *name, void *data)
     fn_000c197c(&player);
 }
 
-void __pragma("stdcall_fn") DeleteMsgCallback(u32 id, void *data)
+// FUNCTION: 0x000c1858
+void __stdcall DeleteMsgCallback(u32 id, void *data)
 {
     u32 i;
 
     for (i = 0; i < maximumPlayers; i++) {
         if (clientDataTable[i].active && clientDataTable[i].id == id) {
             clientDataTable[i].active = 0;
-            if (localPlayerInfoPtr)
-                localPlayerInfoPtr[i].active = 0;
-            else
+            if (!localPlayerInfoPtr)
                 fn_000c20c0(D_00122c70);
+            else
+                localPlayerInfoPtr[i].active = 0;
         }
     }
-}
-
 }
 
 // FUNCTION: 0x000c18c4
@@ -810,10 +886,8 @@ void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg)
     fn_000c197c((TbNetworkPlayerEntry *)data);
 }
 
-extern "C" {
-
 // FUNCTION: 0x000c1940
-void *__pragma("stdcall_fn") fn_000c1940(u32 id, u32 size, void *data)
+void *__stdcall UnidirectionalMsgCallback(u32 id, u32 size, void *data)
 {
     void *ret = 0;
 
@@ -825,6 +899,8 @@ void *__pragma("stdcall_fn") fn_000c1940(u32 id, u32 size, void *data)
     }
     return ret;
 }
+
+extern "C" {
 
 // NONMATCHING: register choice and block layout
 // FUNCTION: 0x000c197c
@@ -903,10 +979,8 @@ u32 IdToIndex(u32 &id)
     return found;
 }
 
-extern "C" {
-
 // FUNCTION: 0x000c1b24
-void __pragma("stdcall_fn") fn_000c1b24(u32 id, u32 seq, void *data)
+void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
 {
     u32 ok;
 
@@ -929,7 +1003,7 @@ void __pragma("stdcall_fn") fn_000c1b24(u32 id, u32 seq, void *data)
 }
 
 // FUNCTION: 0x000c1bc8
-void __pragma("stdcall_fn") fn_000c1bc8(u32 id, u32 seq, void *data)
+void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data)
 {
     if (seq == sequenceNumber || seq == ((sequenceNumber - 1) & 0xf)) {
         if (spPtr->Send(id, compositeBuffer) != Lb_OK)
@@ -938,6 +1012,16 @@ void __pragma("stdcall_fn") fn_000c1bc8(u32 id, u32 seq, void *data)
         fn_000c20c0(D_00122e38, seq, sequenceNumber);
     }
 }
+
+// FUNCTION: 0x000c20d0
+TbNetworkSessionNameEntry::TbNetworkSessionNameEntry()
+{
+    id = 0;
+    in_use = 0;
+    name[0] = 0;
+}
+
+extern "C" {
 
 // FUNCTION: 0x000c20c0
 void fn_000c20c0(char *fmt, ...)

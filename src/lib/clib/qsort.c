@@ -32,17 +32,13 @@ void inline_swap(char *p, char *q, size_t size);
     0x07                    /* done: pop es */ \
     parm [esi] [edi] [ecx] modify [eax ecx edx esi edi];
 
-/* config/functions.txt has swap under a wrong demo name. */
-#pragma aux swap "__wcpp_2_module_dtor__" parm [esi] [edi] [ecx] modify [eax ecx edx esi edi];
+#pragma aux byteswap parm [esi] [edi] [ecx] modify [eax ecx edx esi edi];
 
 // FUNCTION: 0xced1f
-void swap(char *p, char *q, size_t size)
+void byteswap(char *p, char *q, size_t size)
 {
     inline_swap(p, q, size);
 }
-
-/* config/functions.txt has med3 under a wrong demo name. */
-#pragma aux med3 "W?fs_state_table$n(pn$ro_dtreg$$)pn$__7a4u3RO_STATE$$"
 
 // FUNCTION: 0xced45
 char *med3(char *a, char *b, char *c, _compfn cmp)
@@ -68,7 +64,7 @@ typedef int WORD;
 
 #define SWAP(a, b)                          \
     if (swaptype != 0) {                    \
-        swap(a, b, size);                   \
+        byteswap(a, b, size);               \
     } else {                                \
         WORD tmp = *(WORD *)(a);            \
         *(WORD *)(a) = *(WORD *)(b);        \
@@ -76,8 +72,6 @@ typedef int WORD;
     }
 
 void qsort(char *base, size_t n, size_t size, _compfn compar);
-/* config/functions.txt has qsort under a wrong demo name. */
-#pragma aux qsort "W?fs_point_object$n(pn$rw_dtreg$$ui)pnv"
 
 // NONMATCHING: the stack slots of the shell-sort step constants and of pv/pn
 // are swapped; the pb/pc exchange and the first min() pick the other

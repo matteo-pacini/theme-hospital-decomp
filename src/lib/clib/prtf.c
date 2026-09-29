@@ -37,8 +37,6 @@ extern FAR_STRING (*__EFG_printf)(char *buffer, va_list *pargs, SPECS *specs);
 char *ltoa(long value, char *buffer, int radix);
 char *ultoa(unsigned long value, char *buffer, int radix);
 char *itoa(int value, char *buffer, int radix);
-/* config/functions.txt gives itoa the name of the function that follows it. */
-#pragma aux itoa "_no_support_loaded_"
 int toupper(int c);
 
 const char *getprintspecs(const char *ctl, va_list *pargs, SPECS *specs);

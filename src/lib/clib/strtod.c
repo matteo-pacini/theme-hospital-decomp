@@ -10,15 +10,12 @@
 extern const double D_00128eb0;
 
 void __ZBuf2F(char *buf, double *value);
-/* config/functions.txt has no name for __ZBuf2F. */
-#pragma aux __ZBuf2F "fn_000fce62_" parm [eax] [edx];
+#pragma aux __ZBuf2F "*" parm [eax] [edx];
 void __set_ERANGE(void);
 double _Scale10V(double x, int scale);
 #pragma aux _Scale10V parm routine [];
 
 double strtod(const char *s, char **endptr);
-/* config/functions.txt has no name for strtod. */
-#pragma aux strtod "fn_000fc4e3_"
 
 // NONMATCHING: the exponent sign is read with movzx into edi instead of into
 // dl, and the exponent digit is accumulated in esi rather than edx

@@ -31,7 +31,6 @@ void int3(void);
 
 
 void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
-#pragma aux LbDrawLine "__wcpp_2_undefed_cdtor__"
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *sprite, u8 colour);
 #pragma aux LbSpriteDrawOneColour "LbDrawHVLine_"
 

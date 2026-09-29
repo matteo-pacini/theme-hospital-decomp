@@ -55,6 +55,7 @@ int filelength(int handle);
 u32 _dos_findfirst(char *path, u32 attr, find_t *buf);
 u32 _dos_findnext(find_t *buf);
 int fn_000d12d8(char *path);
+int rename(char *from, char *to);
 char *strcpy(char *dst, const char *src);
 #pragma intrinsic(strcpy)
 }
@@ -191,7 +192,6 @@ int LbFileFindFirst(char *path, TbFileFind *ff, u32 attr)
     return 1;
 }
 
-// NONMATCHING: target range also covers the next two functions (0xbe594, 0xbe5a8)
 // FUNCTION: 0x000be560
 int LbFileFindNext(TbFileFind *ff)
 {
@@ -201,8 +201,22 @@ int LbFileFindNext(TbFileFind *ff)
     return 1;
 }
 
+// FUNCTION: 0x000be594
+int LbFileFindEnd(TbFileFind *ff)
+{
+    return 1;
+}
+
+// FUNCTION: 0x000be5a8
+int LbFileRename(char *from, char *to)
+{
+    if (rename(from, to))
+        return -1;
+    return 1;
+}
+
 // FUNCTION: 0x000be5d8
-int LbFileRename(char *path)
+int LbFileDelete(char *path)
 {
     if (fn_000d12d8(path))
         return -1;

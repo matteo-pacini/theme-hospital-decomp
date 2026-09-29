@@ -33,8 +33,6 @@ int __set_EINVAL(void)
 }
 
 // FUNCTION: 0xec554
-// NONMATCHING: config/functions.txt extends __set_doserrno_ over utoa's
-// digit table (0xec560)
 void __set_doserrno(int err)
 {
     *__get_doserrno_ptr() = err;

@@ -27,7 +27,5 @@
 000f52af W?com_dev$n[]$ComHandlerInfo$$ -0x8
 000f52b7 W?com_dev$n[]$ComHandlerInfo$$ -0x1014
 000df7e7 _AIL_driver -0x4
-# itoa.c: the digit table lies inside __set_doserrno_ in config/functions.txt
-000ec5ac _D_000ec560 0
 # math2err.c: the name table is indexed from 1
 000fdc6a _D_00153cfc -0x4

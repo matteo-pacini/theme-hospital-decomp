@@ -6,7 +6,7 @@ extern u32 screen_initialised;
 extern "C" {
 extern s32 D_00188c0c;
 
-int fn_000beda8(void);
+int LbScreenFindVideoModes(void);
 extern s32 D_001507d4;
 s32 fn_000d12e0(void);
 /* config/functions.txt has this function under a wrong demo name. */
@@ -18,7 +18,7 @@ int LbVesaSetMode(s16 mode);
 s32 fn_000be900(TbScreenMode mode)
 {
     if (!D_00188c0c) {
-        if (fn_000beda8() != 1)
+        if (LbScreenFindVideoModes() != 1)
             return 0;
         D_00188c0c = 1;
     }

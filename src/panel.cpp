@@ -127,7 +127,7 @@ void fn_00036730(char *text, u8 *line, u8 lines);
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 void fn_000ccac4(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
-#pragma aux fn_000ccac4 "__wcpp_2_undefed_cdtor__";
+#pragma aux fn_000ccac4 "LbDrawLine_";
 
 }
 

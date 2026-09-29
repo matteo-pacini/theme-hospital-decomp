@@ -22,8 +22,6 @@ typedef char __far *FAR_STRING;
 void _FtoS(char *buf, double *value, int digits, char plus, int width,
            int scale, int exp_digits, char exp_char, char fmt);
 double strtod(const char *s, char **endptr);
-/* config/functions.txt has no name for strtod. */
-#pragma aux strtod "fn_000fc4e3_"
 
 static void forcedecpt(char *p, SPECS *specs);
 
@@ -89,8 +87,6 @@ static void forcedecpt(char *p, SPECS *specs)
 }
 
 void __cnvs2d(char *buf, double *value);
-/* config/functions.txt has no name for __cnvs2d. */
-#pragma aux __cnvs2d "fn_000f758e_"
 
 // FUNCTION: 0xf758e
 void __cnvs2d(char *buf, double *value)

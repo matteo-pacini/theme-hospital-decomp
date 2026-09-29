@@ -16,8 +16,8 @@ extern char D_00124ddf[];
 
 int vsprintf(char *buf, char *fmt, va_list args);
 u32 LbScreenIsInitialised(void);
-int fn_000ec9a0(void);
-void fn_000ec9d0(void);
+int LbIsIKeyboardInstalled(void);
+void LbKeyboardClose(void);
 void fn_000ecc8c(int x, int y, char *text, int colour);
 int getch(void);
 char *strcat(char *dst, const char *src);
@@ -58,7 +58,7 @@ int fn_000d0848(char *expr, char *file, int line)
     u8 key;
 
     cont = 0;
-    keyboard = fn_000ec9a0();
+    keyboard = LbIsIKeyboardInstalled();
     screen = LbScreenIsInitialised();
     restore = 0;
     if (screen) {
@@ -103,7 +103,7 @@ int fn_000d0848(char *expr, char *file, int line)
             cont = 1;
         } else if (key == 'k' || key == 'K') {
             if (keyboard)
-                fn_000ec9d0();
+                LbKeyboardClose();
             if (screen)
                 LbScreenReset();
             exit(1);

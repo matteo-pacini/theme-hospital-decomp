@@ -336,89 +336,97 @@
     pop es
     pop edi
     ret
-    .byte 0x53
-    .byte 0x57
-    .byte 0x06
-    .byte 0x9c
-    .byte 0xfa
-    .byte 0x1e
-    .byte 0x07
-    .byte 0xfc
-    .byte 0x66; .byte 0x8c; .byte 0x1d; .long _D_001509fe
-    .byte 0x66; .byte 0x8e; .byte 0x05; .long _D_001509fe
-    .byte 0xe8; .long "_AILA_VMM_lock"-.-4
-    .byte 0xc7; .byte 0x05; .long _D_001509f6; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xc7; .byte 0x05; .long _D_001509fa; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xc7; .byte 0x05; .long _D_001509f2; .byte 0xff; .byte 0xff; .byte 0xff; .byte 0xff
-    .byte 0xc7; .byte 0x05; .long _D_00150a02; .byte 0xff; .byte 0xff; .byte 0xff; .byte 0xff
-    .byte 0xb8; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xbf; .long _D_0015088c
-    .byte 0xb9; .byte 0x10; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xf3; .byte 0xab
-    .byte 0xbf; .long _D_001508cc
-    .byte 0xb9; .byte 0x10; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xf3; .byte 0xab
-    .byte 0xbf; .long _D_0015090c
-    .byte 0xb9; .byte 0x10; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xf3; .byte 0xab
-    .byte 0xbf; .long _D_0015094c
-    .byte 0xb9; .byte 0x10; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xf3; .byte 0xab
-    .byte 0x06
-    .byte 0xb8; .byte 0x84; .byte 0x16; .byte 0x00; .byte 0x00
-    .byte 0xbb; .byte 0x05; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0x33; .byte 0xff
-    .byte 0x66; .byte 0x8e; .byte 0xc7
-    .byte 0xcd; .byte 0x2f
-    .byte 0x66; .byte 0x89; .byte 0x3d; .long _D_001509dc
-    .byte 0x66; .byte 0xc7; .byte 0x05; .long _D_001509de; .byte 0x00; .byte 0x00
-    .byte 0x66; .byte 0x8c; .byte 0x05; .long _D_001509e0
-    .byte 0x07
-    .byte 0xb8; .byte 0x08; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0x50
-    .byte 0x8b; .byte 0xd8
-    .byte 0xb8; .byte 0x00; .byte 0x02; .byte 0x00; .byte 0x00
-    .byte 0xcd; .byte 0x31
-    .byte 0xc1; .byte 0xe1; .byte 0x10
-    .byte 0x66; .byte 0x8b; .byte 0xca
-    .byte 0x58
-    .byte 0x51
-    .byte 0xb4; .byte 0x35
-    .byte 0x06
-    .byte 0xcd; .byte 0x21
-    .byte 0x66; .byte 0x8c; .byte 0xc2
-    .byte 0x07
-    .byte 0x59
-    .byte 0x89; .byte 0x1d; .long _D_001509e2
-    .byte 0x66; .byte 0x89; .byte 0x15; .long _D_001509e6
-    .byte 0x89; .byte 0x0d; .long _D_001509ea
-    .byte 0xb8; .byte 0x08; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xba; .long "_API_timer"
-    .byte 0x66; .byte 0x8c; .byte 0xcb
-    .byte 0xb4; .byte 0x25
-    .byte 0x1e
-    .byte 0x66; .byte 0x8e; .byte 0xdb
-    .byte 0xcd; .byte 0x21
-    .byte 0x1f
-    .byte 0xc7; .byte 0x05; .long _D_001508c8; .byte 0x02; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0x68; .byte 0x8d; .byte 0xd6; .byte 0x00; .byte 0x00
-    .byte 0x6a; .byte 0x3c
-    .byte 0xe8; .long "_AIL_set_timer_period"-.-4
-    .byte 0x83; .byte 0xc4; .byte 0x08
-    .byte 0x55
-    .byte 0x8b; .byte 0xec
-    .byte 0xf6; .byte 0x45; .byte 0x05; .byte 0x02
-    .byte 0xfa
-    .byte 0x74; .byte .L000de3bc-.-1
-    .byte 0xfb
-.L000de3bc:
-    .byte 0x5d
-    .byte 0x9d
-    .byte 0x07
-    .byte 0x5f
-    .byte 0x5b
-    .byte 0xc3
 .size "_program_timers",.-"_program_timers"
+
+// FUNCTION: 0x000de2ac
+
+.section _TEXT,"ax",@progbits,unique,909996
+.globl "_AILA_startup"
+.type "_AILA_startup",@function
+"_AILA_startup":
+    push ebx
+    push edi
+    push es
+    pushfd
+    cli
+    push ds
+    pop es
+    cld
+    .byte 0x66; .byte 0x8c; .byte 0x1d; .long _D_001509fe  # mov word ptr [0x309fe], ds
+    .byte 0x66; .byte 0x8e; .byte 0x05; .long _D_001509fe  # mov es, word ptr [0x309fe]
+    call "_AILA_VMM_lock"
+    mov dword ptr [_D_001509f6], 0
+    mov dword ptr [_D_001509fa], 0
+    mov dword ptr [_D_001509f2], 0xffffffff
+    mov dword ptr [_D_00150a02], 0xffffffff
+    mov eax, 0
+    .byte 0xbf; .long _D_0015088c  # mov edi, 0x3088c
+    mov ecx, 0x10
+    rep stosd dword ptr es:[edi], eax
+    .byte 0xbf; .long _D_001508cc  # mov edi, 0x308cc
+    mov ecx, 0x10
+    rep stosd dword ptr es:[edi], eax
+    .byte 0xbf; .long _D_0015090c  # mov edi, 0x3090c
+    mov ecx, 0x10
+    rep stosd dword ptr es:[edi], eax
+    .byte 0xbf; .long _D_0015094c  # mov edi, 0x3094c
+    mov ecx, 0x10
+    rep stosd dword ptr es:[edi], eax
+    push es
+    mov eax, 0x1684
+    mov ebx, 5
+    {load} xor edi, edi
+    .byte 0x66; .byte 0x8e; .byte 0xc7  # mov es, di
+    int 0x2f
+    mov word ptr [_D_001509dc], di
+    mov word ptr [_D_001509de], 0
+    .byte 0x66; .byte 0x8c; .byte 0x05; .long _D_001509e0  # mov word ptr [0x309e0], es
+    pop es
+    mov eax, 8
+    push eax
+    {load} mov ebx, eax
+    mov eax, 0x200
+    int 0x31
+    shl ecx, 0x10
+    {load} mov cx, dx
+    pop eax
+    push ecx
+    mov ah, 0x35
+    push es
+    int 0x21
+    mov dx, es
+    pop es
+    pop ecx
+    mov dword ptr [_D_001509e2], ebx
+    mov word ptr [_D_001509e6], dx
+    mov dword ptr [_D_001509ea], ecx
+    mov eax, 8
+    .byte 0xba; .long "_API_timer"  # mov edx, 0xce04a
+    mov bx, cs
+    mov ah, 0x25
+    push ds
+    .byte 0x66; .byte 0x8e; .byte 0xdb  # mov ds, bx
+    int 0x21
+    pop ds
+    mov dword ptr [_D_001508c8], 2
+    push 0xd68d
+    push 0x3c
+    call "_AIL_set_timer_period"
+    add esp, 8
+    push ebp
+    {load} mov ebp, esp
+    test byte ptr [ebp + 5], 2
+    cli
+    je .L000de3bc
+    sti
+.L000de3bc:
+    pop ebp
+    popfd
+    pop es
+    pop edi
+    pop ebx
+    ret
+.size "_AILA_startup",.-"_AILA_startup"
 
 // FUNCTION: 0x000de3c2
 

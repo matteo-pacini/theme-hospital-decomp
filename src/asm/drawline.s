@@ -3,9 +3,9 @@
 // FUNCTION: 0x000ccac4
 
 .section _TEXT,"ax",@progbits,unique,838340
-.globl "__wcpp_2_undefed_cdtor__"
-.type "__wcpp_2_undefed_cdtor__",@function
-"__wcpp_2_undefed_cdtor__":
+.globl "LbDrawLine_"
+.type "LbDrawLine_",@function
+"LbDrawLine_":
     push ebp
     {load} mov ebp, esp
     add esp, -0x10
@@ -233,12 +233,4 @@
     pop eax
     leave
     ret 4
-    .byte 0x00; .byte 0x00
-    .byte 0x00; .byte 0x52; .byte 0xba
-    .byte 0x01; .byte 0x00
-    .byte 0x00; .byte 0x00
-    .byte 0xb8; .long _D_001246e8
-    .byte 0xe8; .long "__wcpp_2_fatal_runtime_error__"-.-4
-    .byte 0x5a
-    .byte 0xc3
-.size "__wcpp_2_undefed_cdtor__",.-"__wcpp_2_undefed_cdtor__"
+.size "LbDrawLine_",.-"LbDrawLine_"

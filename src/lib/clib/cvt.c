@@ -17,9 +17,8 @@ char *strcpy(char *dst, const char *src);
 char *__cvt(double value, int ndigits, int *dec, int *sign, int fmt, char *buf);
 #pragma aux __cvt parm routine [];
 
-// NONMATCHING: config/functions.txt extends __cvt_ over the assembly routine
-// that follows it (0xfcdd2..0xfce62); the zero test of bigint accumulates in
-// edi instead of eax, and exact is stored as an immediate
+// NONMATCHING: the zero test of bigint accumulates in edi instead of eax,
+// and exact is stored as an immediate rather than through al
 // FUNCTION: 0xfcbf5
 char *__cvt(double value, int ndigits, int *dec, int *sign, int fmt, char *buf)
 {

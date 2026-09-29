@@ -1,5 +1,15 @@
 .intel_syntax noprefix
 
+// FUNCTION: 0x000ed282
+
+.section _TEXT,"ax",@progbits,unique,971394
+.globl "fn_000ed282_"
+.type "fn_000ed282_",@function
+"fn_000ed282_":
+    .byte 0x66; .byte 0x8c; .byte 0x15; .long "___umaskval"+0x4  # mov word ptr [0x31a60], ss
+    ret
+.size "fn_000ed282_",.-"fn_000ed282_"
+
 // FUNCTION: 0x000ed28a
 
 .section _TEXT,"ax",@progbits,unique,971402

@@ -122,7 +122,10 @@ struct __1rdtuTbModemDev {
     u8 unknown1c;
 };
 
-struct __ctcl4TbNetworkVersion;
+struct __ctcl4TbNetworkVersion {
+    char text[0x50];
+    float version;
+};
 
 extern "C" {
 
@@ -404,6 +407,8 @@ struct TbNetworkSessionNameEntry {
         };
     };
     char name[0x20];
+
+    TbNetworkSessionNameEntry();
 };
 
 struct TbNetworkPlayerNameEntry {

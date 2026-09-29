@@ -501,8 +501,8 @@ void unwindStack(dispatch_exc *dispatch)
 }
 
 // FUNCTION: 0xf420b
-// NONMATCHING: config/functions.txt includes getActiveExc's jump table; the
-// target places the command compare tree before the case bodies
+// NONMATCHING: the target places the command compare tree before the case
+// bodies; 10.6 emits it after them
 DISPATCHABLE dispatchable(dispatch_exc *dispatch, rw_dtreg *rw)
 {
     int rethrow;

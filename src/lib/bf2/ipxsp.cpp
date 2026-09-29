@@ -31,6 +31,64 @@ void IPXDebug(char *fmt, ...)
 {
 }
 
+extern "C" {
+extern char D_0012608c[];
+extern char D_001260d3[];
+extern char D_001261fa[];
+char *strcat(char *dst, const char *src);
+#pragma intrinsic(strcat)
+unsigned long strtoul(const char *s, char **end, int base);
+}
+
+// FUNCTION: 0xd5350
+TbError IPXServiceProvider::ChangeSettings(u32 setting, void *data)
+{
+    return Lb_OK;
+}
+
+// FUNCTION: 0xd5354
+TbError IPXServiceProvider::EnableNewPlayers(u32 allow)
+{
+    TbError ret = Lb_FAIL;
+
+    if (unknown528) {
+        ret = Lb_OK;
+        accepting = allow;
+    }
+    return ret;
+}
+
+// FUNCTION: 0xd5428
+TbError IPXServiceProvider::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallbacks *callbacks, void *data)
+{
+    TbError ret = Lb_FAIL;
+    u32 ok = 0;
+    TbError alloc;
+
+    alloc = AllocateSpStuff();
+    if (alloc == Lb_FAIL)
+        return alloc;
+    if (Initialise(callbacks, data) == Lb_OK) {
+        ok = 1;
+        ret = Lb_OK;
+    } else {
+        fn_000c20c0(D_0012608c);
+    }
+    if (ok) {
+        fn_000c20c0(D_001260d3, 0x212);
+        started = 1;
+        this->guid = guid;
+        session_count = 0;
+        memset(session_list, 0, sizeof(session_list));
+        host_state = 0;
+        players = 0;
+        accepting = 1;
+    } else {
+        started = ok;
+    }
+    return ret;
+}
+
 void IPXServiceProvider::BatchProcess(u8 delay)
 {
     u32 now;
@@ -83,15 +141,13 @@ TbError IPXServiceProvider::CheckMessage(u8 *data)
     return ret;
 }
 
-extern "C" {
-
 // FUNCTION: 0x000dc400
-IPXQueueEntry *fn_000dc400(IPXServiceProvider *sp)
+IPXQueueEntry *IPXServiceProvider::GetNextEmptyReceiveBuffer(void)
 {
     IPXQueueEntry *e;
     u32 found = 0;
 
-    for (e = sp->queue; e < sp->queue + 32; e++) {
+    for (e = queue; e < queue + 32; e++) {
         if (!e->used) {
             found = 1;
             break;
@@ -100,8 +156,6 @@ IPXQueueEntry *fn_000dc400(IPXServiceProvider *sp)
     if (found == 1)
         return e;
     return 0;
-}
-
 }
 
 #define PROCESS_SYSTEM_MESSAGE(self, msg) \
@@ -117,7 +171,7 @@ IPXQueueEntry *fn_000dc400(IPXServiceProvider *sp)
         u32 max; \
         u32 count; \
         u8 type; \
-        q = fn_000dc400(self); \
+        q = self->GetNextEmptyReceiveBuffer(); \
         switch (msg->magic) { \
         case MSG_BUSD: \
             if (q) { \
@@ -139,7 +193,7 @@ IPXQueueEntry *fn_000dc400(IPXServiceProvider *sp)
             break; \
         case MSG_BUDG: \
         case MSG_BUDN: \
-            fn_000d1b90((u8 *)msg + 0xc, &size, &type, &seq); \
+            DecodeMessageStub((u8 *)msg + 0xc, &size, (TbMessageType *)&type, &seq); \
             if (type == 2) { \
                 DecodeRequestExchangeDataMsg((u8 *)msg + 0xc, id); \
                 if (q) { \
@@ -181,7 +235,7 @@ IPXQueueEntry *fn_000dc400(IPXServiceProvider *sp)
     }
 
 // FUNCTION: 0xd5510
-// NONMATCHING: range also holds Release, both Start overloads and Stop
+// NONMATCHING: register allocation and block layout of the inlined BatchProcess differ
 TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
 {
     TbError ret = Lb_FAIL;
@@ -217,7 +271,13 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
 extern "C" {
 extern char D_00126267[];
 
-// NONMATCHING: target range also covers the two following thunks (0xd6588, 0xd6590)
+TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed);
+#pragma aux fn_000d6550 "W?SendMessage$:IPXServiceProvider$n(ulpnv$$TE$$)$TbError$$"
+u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
+#pragma aux fn_000d6588 "W?ReadMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
+u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
+#pragma aux fn_000d6590 "W?PeekMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
+
 // FUNCTION: 0x000d6550
 TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
 {
@@ -238,10 +298,21 @@ TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
     return ret;
 }
 
+// FUNCTION: 0xd6588
+u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
+{
+    return fn_000d6598(sp, from, buf, size, 0);
+}
+
+// FUNCTION: 0xd6590
+u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
+{
+    return fn_000d6598(sp, from, buf, size, 1);
+}
+
 }
 
 // FUNCTION: 0xd6598
-// NONMATCHING: range is the private message-queue read (misnamed Enumerate) followed by both Enumerate overloads
 u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
 {
     IPXQueueEntry *e;
@@ -259,7 +330,7 @@ u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 pe
         e = 0;
     if (e) {
         *from = e->from;
-        fn_000d1b90(e, &msg_size, 0, 0);
+        DecodeMessageStub(e, &msg_size, 0, 0);
         if (msg_size + 4 <= *size) {
             ret = 1;
             memcpy(buf, e, msg_size + 4);
@@ -275,7 +346,6 @@ u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 pe
 }
 
 // FUNCTION: 0xd7768
-// NONMATCHING: range is the packet pump (misnamed BullfrogIPXServer) followed by three more functions
 TbError fn_000d7768(IPXServiceProvider *self)
 {
     u8 join[0x8c];
@@ -356,6 +426,50 @@ TbError fn_000d7768(IPXServiceProvider *self)
         self->BatchProcess(1);
     }
     return Lb_OK;
+}
+
+// FUNCTION: 0xd8214
+// NONMATCHING: the target steps a byte counter to 16 alongside the GUID pointer; here the loop
+// runs to an end pointer
+void IPXServiceProvider::ConvertGuidToString(__tibcaGUID *guid, char *str)
+{
+    char buf[0xc];
+    u32 i;
+
+    str[0] = 0;
+    for (i = 0; i < 4; i++) {
+        sprintf(buf, D_001261fa, guid->data[i]);
+        strcat(str, buf);
+    }
+}
+
+// FUNCTION: 0xd8274
+// NONMATCHING: block layout: the target tests the outer loop at the top and places the strtoul
+// call after the inner loop
+void IPXServiceProvider::ConvertStringToGuid(char *str, __tibcaGUID *guid)
+{
+    char buf[0x14];
+    char *p = str;
+    u32 *d = guid->data;
+    u32 j;
+    u8 i;
+    char c;
+
+    for (i = 0; i < 4; i++) {
+        memset(buf, 0, sizeof(buf));
+        j = 0;
+        while (j < strlen(str)) {
+            c = *p;
+            if (c == '.') {
+                p++;
+                break;
+            }
+            j++;
+            p++;
+            buf[j - 1] = c;
+        }
+        *d++ = strtoul(buf, 0, 16);
+    }
 }
 
 // FUNCTION: 0xd82f4
@@ -962,6 +1076,34 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
     return got;
 }
 
+// FUNCTION: 0xdb668
+TbError IPXServiceProvider::AllocateSpStuff(void)
+{
+    TbError ret = Lb_FAIL;
+
+    queue = (IPXQueueEntry *)LbMemoryAlloc(0x4380);
+    if (queue) {
+        memset(queue, 0, 0x4380);
+        ret = Lb_OK;
+    }
+    return ret;
+}
+
+// FUNCTION: 0xdb698
+void IPXServiceProvider::FreeAllocSpStuff(void)
+{
+    if (queue) {
+        LbMemoryFree(queue);
+        queue = 0;
+    }
+}
+
+// FUNCTION: 0xdb6bc
+void IPXServiceProvider::ClearSpStuff(void)
+{
+    memset(queue, 0, 0x4380);
+}
+
 // FUNCTION: 0xdb6d4
 // NONMATCHING: frame layout and register allocation differ
 TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
@@ -986,7 +1128,7 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
         if (id < max) {
             addr = &players[id].addr;
             if (addr->socket) {
-                fn_000d1b90(buf, &size, 0, 0);
+                DecodeMessageStub(buf, &size, 0, 0);
                 if (size <= 0x212) {
                     out.magic = magic;
                     out.from = me;
@@ -1034,7 +1176,7 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
 }
 
 // FUNCTION: 0xdbb58
-// NONMATCHING: range also holds the following function; frame layout differs
+// NONMATCHING: frame layout differs
 u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
 {
     __6eas9nIPXDATAMESSAGE ack;
@@ -1079,6 +1221,9 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
 extern "C" {
 
 // NONMATCHING: frame pointer and register allocation differ
+void fn_000dc440(IPXServiceProvider *sp, __1p5pi1IPXSYSTEMMESSAGE *msg);
+#pragma aux fn_000dc440 "W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v"
+
 // FUNCTION: 0x000dc440
 void fn_000dc440(IPXServiceProvider *sp, __1p5pi1IPXSYSTEMMESSAGE *msg)
 {
@@ -1088,6 +1233,9 @@ void fn_000dc440(IPXServiceProvider *sp, __1p5pi1IPXSYSTEMMESSAGE *msg)
 }
 
 extern "C" {
+
+TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid);
+#pragma aux fn_000dc740 "W?BullfrogIPXMessage$:IPXServiceProvider$n(pn$__407tigIPXMESSAGEBLOCK$$pn$__tibcaGUID$$)$TbError$$"
 
 // FUNCTION: 0xdc740
 TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid)
@@ -1121,6 +1269,9 @@ TbError fn_000dc740(IPXServiceProvider *sp, __tibcaGUID *type, __tibcaGUID *guid
 }
 
 extern "C" {
+
+void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address);
+#pragma aux fn_000db4c8 "W?AddIPXSession$:IPXServiceProvider$n(pn$__1snc1aHOSTINFOPACKET$$pn$__3ljac5NETSOCKET$$)v"
 
 // FUNCTION: 0xdb4c8
 void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address)

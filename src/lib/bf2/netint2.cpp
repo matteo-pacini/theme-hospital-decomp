@@ -18,7 +18,7 @@ TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
     receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
     if (init_data)
         ((u32 *)init_data)[3] = 1;
-    spPtr = new SerialSP(init_data);
+    spPtr = new SerialSP((__4dn7ojSerialInitData *)init_data);
     if (spPtr) {
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
             ret = Lb_OK;
@@ -157,7 +157,7 @@ TbError GenericModemInit(__tibcaGUID guid, void *init_data)
     receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
     if (init_data)
         ((u32 *)init_data)[3] = 2;
-    spPtr = new ModemSP(init_data);
+    spPtr = new ModemSP((__4dn7ojSerialInitData *)init_data);
     if (spPtr) {
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
             ret = Lb_OK;
@@ -227,7 +227,7 @@ void *TwoPlayerMultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
             ok = 1;
             if (sequenceNumber == 15) {
                 sequenceNumber = seq;
-                fn_000d1b90(lastMessage, &msg_size, (u8 *)&msg_type, 0);
+                DecodeMessageStub(lastMessage, &msg_size, &msg_type, 0);
                 EncodeMessageStub(lastMessage, msg_size, msg_type, sequenceNumber);
             } else if (seq != sequenceNumber) {
                 ok = 0;
@@ -269,10 +269,10 @@ void TwoPlayerReqExDataCallback(u32 id, u32 seq, void *data)
     if (sequenceNumber == 15) {
         msg = lastMessage;
     } else {
-        fn_000d1b90(lastMessage, 0, 0, &msg_seq);
+        DecodeMessageStub(lastMessage, 0, 0, &msg_seq);
         if (seq == msg_seq)
             msg = lastMessage;
-        fn_000d1b90(lastButOneMessage, 0, 0, &msg_seq);
+        DecodeMessageStub(lastButOneMessage, 0, 0, &msg_seq);
         if (seq == msg_seq)
             msg = lastButOneMessage;
     }

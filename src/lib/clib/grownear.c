@@ -163,9 +163,6 @@ void __unlink(mheapptr heap)
         next_heap->prev = prev_heap;
 }
 
-/* config/functions.txt gives __FreeDPMIBlocks the name of the next function. */
-#pragma aux __FreeDPMIBlocks "__FreeDPMIBlocks_"
-
 // FUNCTION: 0xebdb8
 // NONMATCHING: next is kept in esi instead of ecx
 void __FreeDPMIBlocks(void)
@@ -193,11 +190,10 @@ void __FreeDPMIBlocks(void)
 
 frlptr __LinkUpNewMHeap(mheapptr p1);
 
-/* __FreeDPMIBlocks; config/functions.txt gives its name to the function before it. */
 // FUNCTION: 0xebe14
 // NONMATCHING: register allocation (req_size is spilled; the target keeps
 // it in ebp)
-void *fn_000ebe14(frlptr p1, unsigned req_size)
+void *__ReAllocDPMIBlock(frlptr p1, unsigned req_size)
 {
     mheapptr mhp;
     struct dpmi_hdr *dpmi;
@@ -300,8 +296,8 @@ unsigned __LastFree(void)
 
 // FUNCTION: 0xebfd7
 // NONMATCHING: the original keeps size in its stack slot (10.6 would use ebp);
-// volatile reproduces the slot and the shared epilogue, but orders the
-// reloads of size differently
+// volatile reproduces the slot, but orders the reloads of size differently
+// and keeps the DPMI block pointer in ebx instead of eax
 void *RationalAlloc(volatile size_t size)
 {
     struct dpmi_hdr *dpmi;
@@ -322,18 +318,18 @@ void *RationalAlloc(volatile size_t size)
     if (size > 0x10000)
         return NULL;
     save_DOS_block = _TinyAllocBlock((__minreal >> 4) | 1);
-    if (TINY_ERROR(save_DOS_block))
-        return NULL;
-    DOS_block = _TinyAllocBlock(size >> 4);
-    _TinyFreeBlock(save_DOS_block);
-    if (TINY_ERROR(DOS_block))
-        return NULL;
-    dpmi = _TinyDPMIBase(DOS_block);
-    dpmi++;
-    dpmi[-1].dos_seg_value = DOS_block;
-    mhp = (mheapptr)dpmi;
-    mhp->len = size - sizeof(struct dpmi_hdr);
-    return mhp;
+    if (!TINY_ERROR(save_DOS_block)) {
+        DOS_block = _TinyAllocBlock(size >> 4);
+        _TinyFreeBlock(save_DOS_block);
+        if (!TINY_ERROR(DOS_block)) {
+            dpmi = _TinyDPMIBase(DOS_block);
+            dpmi->dos_seg_value = DOS_block;
+            mhp = (mheapptr)(dpmi + 1);
+            mhp->len = size - sizeof(struct dpmi_hdr);
+            return mhp;
+        }
+    }
+    return NULL;
 }
 
 int __AdjustAmount(unsigned *amount);

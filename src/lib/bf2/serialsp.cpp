@@ -29,6 +29,42 @@ extern char D_00127a26[];
 extern char D_00127b32[];
 extern char D_00127b7d[];
 extern char D_00127bbf[];
+extern char D_00127632[];
+extern char D_00127671[];
+extern char D_001276b9[];
+extern char D_001276f6[];
+extern char D_00127747[];
+extern char D_00127798[];
+extern char D_001277e9[];
+extern char D_0012783a[];
+extern char D_0012788b[];
+extern char D_001278c5[];
+extern char D_001278d4[];
+extern char D_0012790e[];
+extern char D_00127956[];
+extern char D_001279a3[];
+extern char D_00127a6b[];
+extern char D_00127aaf[];
+extern u8 D_0018d01c[];
+extern TbNetworkPlayerEntry D_0018cfc4;
+}
+
+// FUNCTION: 0xed350
+// NONMATCHING: exception-table relocation (known tool gap: CONST2 never compares equal)
+SerialSP::SerialSP()
+{
+}
+
+// FUNCTION: 0xed3c4
+// NONMATCHING: exception-table relocation (known tool gap: CONST2 never compares equal)
+SerialSP::SerialSP(__4dn7ojSerialInitData *init_data)
+{
+    memcpy(&serial_data, init_data, sizeof(serial_data));
+    port = init_data->port;
+    baud = init_data->baud;
+    send_seq = 0;
+    recv_seq = 0;
+    awaiting_ack = 0;
 }
 
 // FUNCTION: 0xed494
@@ -131,7 +167,6 @@ TbError SerialSP::Start(char *session, char *name, u32 max_players, void *data)
 }
 
 // FUNCTION: 0xed798
-// NONMATCHING: range also holds six following functions
 TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *data)
 {
     TbError ret = Lb_FAIL;
@@ -156,7 +191,7 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
         return ret;
     }
     EncodeAddPlayerMsg(addPlayerBuffer, local_id, name);
-    if (SendMessage(is_host, addPlayerBuffer, 1) != Lb_OK) {
+    if (SendMessage(is_host, addPlayerBuffer, (TbMessageType)1) != Lb_OK) {
         fn_000c20c0(D_001275f5);
         return ret;
     }
@@ -177,8 +212,139 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
     return ret;
 }
 
+// FUNCTION: 0xed8ec
+// NONMATCHING: stack slots of the buf spill and total swapped
+TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
+{
+    u32 total;
+    TbError ret = Lb_FAIL;
+    u16 sum = 0;
+    u8 *data = (u8 *)buf;
+    u32 guaranteed;
+    u32 size;
+    u32 retries;
+    u32 start;
+    u32 i;
+
+    switch (type) {
+    case 1:
+        guaranteed = 1;
+        break;
+    case 0:
+        guaranteed = 0;
+        break;
+    default:
+        fn_000c20c0(D_00127632);
+        return ret;
+    }
+    DecodeMessageStub(buf, &size, 0, 0);
+    if (guaranteed) {
+        total = size + 0xb;
+        retries = 0;
+        if (total > 0x40b) {
+            fn_000c20c0(D_00127671);
+            return ret;
+        }
+        memcpy(D_0018d01c, D_00151a78, 4);
+        memcpy(D_0018d01c + 4, &send_seq, 1);
+        memcpy(D_0018d01c + 5, buf, size + 4);
+        for (i = 0; i < 4; i++)
+            sum += D_00151a78[i];
+        sum += send_seq;
+        for (i = 0; i < size + 4; i++)
+            sum += data[i];
+        memcpy(&D_0018d01c[size + 9], &sum, 2);
+        if (comm->WriteBytes(D_0018d01c, total) == total) {
+            awaiting_ack = 1;
+            start = LbTimerClock();
+            while (awaiting_ack) {
+                Receive(8);
+                if (awaiting_ack) {
+                    if (LbTimerClock() - start > 2500) {
+                        if (++retries > 8) {
+                            fn_000c20c0(D_001276b9);
+                            awaiting_ack = 0;
+                        } else if (comm->WriteBytes(D_0018d01c, total) == total) {
+                            start = LbTimerClock();
+                        } else {
+                            fn_000c20c0(D_001276f6);
+                            awaiting_ack = 0;
+                        }
+                    }
+                } else {
+                    ret = Lb_OK;
+                }
+            }
+        } else {
+            fn_000c20c0(D_00127747);
+        }
+    } else {
+        if (comm->WriteBytes(D_00151a74, 4) == 4) {
+            if (comm->WriteBytes((u8 *)buf, size + 4) == size + 4) {
+                for (i = 0; i < 4; i++)
+                    sum += D_00151a74[i];
+                for (i = 0; i < size + 4; i++)
+                    sum += data[i];
+                if (comm->WriteBytes((u8 *)&sum, 2) == 2)
+                    ret = Lb_OK;
+                else
+                    fn_000c20c0(D_00127798);
+            } else {
+                fn_000c20c0(D_001277e9);
+            }
+        } else {
+            fn_000c20c0(D_0012783a);
+        }
+    }
+    return ret;
+}
+
+// FUNCTION: 0xedc2c
+TbError SerialSP::Enumerate(void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data)
+{
+    TbNetworkSessionNameEntry *session;
+
+    if (!started) {
+        fn_000c20c0(D_0012788b);
+        return Lb_FAIL;
+    }
+    ClearSessions();
+    session = AddSession(0, D_001278c5);
+    if (callback)
+        callback((TbNetworkCallbackData *)session, data);
+    return Lb_OK;
+}
+
+// FUNCTION: 0xedc7c
+TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data)
+{
+    TbError ret;
+
+    if (!started) {
+        fn_000c20c0(D_001278d4);
+        return Lb_FAIL;
+    }
+    ret = Lb_OK;
+    if (unknown528) {
+        if (LookForSystemMessages() == Lb_OK) {
+            if (EnumeratePlayers(callback, data) != Lb_OK) {
+                ret = Lb_FAIL;
+                fn_000c20c0(D_0012790e);
+            }
+        } else {
+            fn_000c20c0(D_00127956);
+        }
+    } else {
+        D_0018cfc4.unknown5 = 0;
+        D_0018cfc4.host = 0;
+        D_0018cfc4.id = 0;
+        strcpy(D_0018cfc4.name, D_001279a3);
+        callback((TbNetworkCallbackData *)&D_0018cfc4, data);
+    }
+    return ret;
+}
+
 // FUNCTION: 0xedd3c
-// NONMATCHING: range also holds ReadMessage and PeekMessage
 TbError SerialSP::Stop(void)
 {
     u32 size;
@@ -187,21 +353,66 @@ TbError SerialSP::Stop(void)
     size = GetRequestCompositeExchangeDataMsgSize();
     if (!started) {
         fn_000c20c0(D_001279b1);
-        return ret;
+    } else {
+        if (!unknown528) {
+            fn_000c20c0(D_001279e6);
+            return ret;
+        }
+        if (size > 8) {
+            fn_000c20c0(D_00127a26);
+            return ret;
+        }
+        EncodeDeletePlayerMsg(D_0018d428, local_id);
+        BroadcastSystemMessage(D_0018d428);
+        unknown528 = 0;
+        ClearPlayers();
+        ret = Lb_OK;
     }
-    if (!unknown528) {
-        fn_000c20c0(D_001279e6);
-        return ret;
+    return ret;
+}
+
+// FUNCTION: 0xeddc8
+u32 SerialSP::ReadMessage(u32 *from, void *buf, u32 *size)
+{
+    u32 ret = 0;
+
+    if (PrivateReceive(buf, size, (TbMessageType)0)) {
+        switch (local_id) {
+        case 0:
+            *from = 1;
+            break;
+        case 1:
+            *from = 0;
+            break;
+        default:
+            fn_000c20c0(D_00127a6b);
+            break;
+        }
+        ret = 1;
     }
-    if (size > 8) {
-        fn_000c20c0(D_00127a26);
-        return ret;
+    return ret;
+}
+
+// FUNCTION: 0xede14
+u32 SerialSP::PeekMessage(u32 *from, void *buf, u32 *size)
+{
+    u32 ret = 0;
+
+    if (PrivateReceive(buf, size, (TbMessageType)1)) {
+        switch (local_id) {
+        case 0:
+            *from = 1;
+            break;
+        case 1:
+            *from = 0;
+            break;
+        default:
+            fn_000c20c0(D_00127aaf);
+            break;
+        }
+        ret = 1;
     }
-    EncodeDeletePlayerMsg(D_0018d428, local_id);
-    BroadcastSystemMessage(D_0018d428);
-    unknown528 = 0;
-    ClearPlayers();
-    return Lb_OK;
+    return ret;
 }
 
 // FUNCTION: 0xede60
@@ -329,7 +540,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
             p->active = deliver;
             continue;
         }
-        fn_000d1b90(p->msg, &msg_size, 0, 0);
+        DecodeMessageStub(p->msg, &msg_size, 0, 0);
         *size = msg_size + 4;
         if (*size > max_size)
             continue;
@@ -339,7 +550,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
                 SendAck(recv_seq);
                 recv_seq++;
             }
-            fn_000d1b90(p->msg, 0, &type, 0);
+            DecodeMessageStub(p->msg, 0, (TbMessageType *)&type, 0);
             if (type == 2) {
                 send_seq = 0;
                 recv_seq = 0;
@@ -480,7 +691,7 @@ TbError Parser::InputByte(u8 c)
         msg[count] = c;
         count++;
         if (count >= 4) {
-            fn_000d1b90(msg, &size, 0, 0);
+            DecodeMessageStub(msg, &size, 0, 0);
             if (size > 0x401) {
                 active = 0;
                 return ret;
@@ -523,3 +734,11 @@ TbError Parser::InputByte(u8 c)
     }
     return ret;
 }
+
+/*
+ * SerialSP::~SerialSP() is compiler-generated in this module, together with
+ * the class's vtable (the constructors are defined here).
+ */
+// FUNCTION: 0xee630
+// NONMATCHING: relocations only: the array-delete helpers at 0xeee94/0xeeeb4 are unnamed in
+// config/functions.txt, and the exception table is CONST2 (known tool gap)

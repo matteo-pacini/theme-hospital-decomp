@@ -1,5 +1,6 @@
 #include "clib.h"
 
+// FUNCTION: 0xec560
 const char __based(__segname("_CODE")) D_000ec560[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 unsigned __udiv(unsigned value, unsigned __near *radix);
@@ -11,8 +12,6 @@ unsigned __udiv(unsigned value, unsigned __near *radix);
     value [edx] \
     modify exact [eax edx];
 
-/* config/functions.txt has no name for utoa. */
-#pragma aux utoa "fn_000ec585_"
 
 // FUNCTION: 0xec585
 char *utoa(unsigned value, char *buffer, int radix)
@@ -37,8 +36,6 @@ char *utoa(unsigned value, char *buffer, int radix)
     return buffer;
 }
 
-/* config/functions.txt gives itoa the name of the function that follows it. */
-#pragma aux itoa "_no_support_loaded_"
 
 // FUNCTION: 0xec5cf
 char *itoa(int value, char *buffer, int radix)

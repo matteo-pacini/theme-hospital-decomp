@@ -1,11 +1,87 @@
 .intel_syntax noprefix
 
+// FUNCTION: 0x000fcdd2
+
+.section _TEXT,"ax",@progbits,unique,1035730
+.globl "__ModF"
+.type "__ModF",@function
+"__ModF":
+    push ebp
+    push esi
+    push edi
+    push ecx
+    push ebx
+    mov esi, edx
+    mov ebp, eax
+    mov eax, dword ptr [ebp]
+    mov edx, dword ptr [ebp + 4]
+    xchg esi, ebp
+    mov dword ptr [ebp], eax
+    mov dword ptr [ebp + 4], edx
+    mov ecx, edx
+    and ecx, 0x7ff00000
+    je .L000fcdfd
+    cmp ecx, 0x43300000
+    jb .L000fce0b
+    xchg ebp, esi
+.L000fcdfd:
+    sub eax, eax
+    mov dword ptr [ebp + 4], eax
+    mov dword ptr [ebp], eax
+    pop ebx
+    pop ecx
+    pop edi
+    pop esi
+    pop ebp
+    ret
+.L000fce0b:
+    mov edi, ecx
+    shr ecx, 0x14
+    sub cx, 0x3ff
+    jb .L000fcdfd
+    push edx
+    sub eax, eax
+    mov edx, 0xfff00000
+    cmp cl, 0x14
+    jbe .L000fce30
+    sar edx, 0x15
+    rcr eax, 1
+    sub cl, 0x15
+    sar eax, cl
+    jmp .L000fce32
+.L000fce30:
+    sar edx, cl
+.L000fce32:
+    and dword ptr [ebp + 4], edx
+    and dword ptr [ebp], eax
+    not edx
+    not eax
+    mov ebp, esi
+    and edx, dword ptr [ebp + 4]
+    and eax, dword ptr [ebp]
+    call "fn_000fcead_"
+    pop esi
+    or edx, edx
+    je .L000fce56
+    and esi, 0x80000000
+    or edx, esi
+.L000fce56:
+    mov dword ptr [ebp + 4], edx
+    mov dword ptr [ebp], eax
+    pop ebx
+    pop ecx
+    pop edi
+    pop esi
+    pop ebp
+    ret
+.size "__ModF",.-"__ModF"
+
 // FUNCTION: 0x000fce62
 
 .section _TEXT,"ax",@progbits,unique,1035874
-.globl "fn_000fce62_"
-.type "fn_000fce62_",@function
-"fn_000fce62_":
+.globl "__ZBuf2F"
+.type "__ZBuf2F",@function
+"__ZBuf2F":
     push ebp
     push esi
     push edi
@@ -48,7 +124,7 @@
     pop esi
     pop ebp
     ret
-.size "fn_000fce62_",.-"fn_000fce62_"
+.size "__ZBuf2F",.-"__ZBuf2F"
 
 // FUNCTION: 0x000fcead
 
@@ -88,25 +164,3 @@
 .L000fcefd:
     ret
 .size "fn_000fcead_",.-"fn_000fcead_"
-
-// FUNCTION: 0x000fcefe
-
-.section _TEXT,"ax",@progbits,unique,1036030
-.globl "__GrabFP87"
-.type "__GrabFP87",@function
-"__GrabFP87":
-    push ebx
-    push ecx
-    .byte 0x81; .byte 0x3d; .long "___FPE_handler_exit"; .long "fn_000fd8d8_"+0x5d  # cmp dword ptr [0x2db6c], 0xed935
-    je .L000fcf27
-    .byte 0xbb; .long "__sigfpe_handler_"  # mov ebx, 0xebb05
-    .byte 0xb9; .long "fn_000fd8d8_"+0x5d  # mov ecx, 0xed935
-    mov dword ptr [_D_001507c9], ebx
-    call "fn_000fd8d8_"
-    mov dword ptr ["___FPE_handler_exit"], ecx
-.L000fcf27:
-    call "fn_000fd992_"
-    pop ecx
-    pop ebx
-    ret
-.size "__GrabFP87",.-"__GrabFP87"

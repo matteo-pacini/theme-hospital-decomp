@@ -67,6 +67,7 @@ class Section:
     def __init__(self, name, cls, align):
         self.name, self.cls, self.align = name, cls, align
         self.data = bytearray()
+        self.length = 0
         self.relocs = []  # (offset, type, target), target = ("sec", Section) | ("sym", name)
         self.nobits = cls in ("BSS", "STACK")
         self.code = cls.endswith("CODE")
@@ -116,12 +117,13 @@ def convert(obj):
             acbp = r.u8()
             if acbp >> 5 == 0:
                 raise NotImplementedError("absolute segment")
-            r.off()
+            length = r.off()
             name, cls = lnames[r.index()], lnames[r.index()]
             if cls in DEBUG_CLASSES or name.startswith((".debug", "$$")):
                 segments.append(None)
             else:
                 sec = Section(name, cls, ALIGN[acbp >> 5])
+                sec.length = length
                 segments.append(sec)
                 sections.append(sec)
         elif kind == 0x9A:  # GRPDEF
@@ -257,7 +259,8 @@ def write_elf(sections, symbols, externs, path):
     def sized(name):
         sec, off, _ = symbols[name]
         ends = [o for n, (s, o, _) in symbols.items() if s is sec and o > off]
-        return min(ends, default=len(sec.data)) - off
+        # A BSS segment has no data records: its end is the SEGDEF length.
+        return min(ends, default=max(len(sec.data), sec.length)) - off
 
     ordered = sorted(symbols.items(), key=lambda kv: (not kv[1][2], index[id(kv[1][0])], kv[1][1]))
     first_global = None

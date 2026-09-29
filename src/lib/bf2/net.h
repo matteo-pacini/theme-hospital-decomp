@@ -30,10 +30,19 @@ extern char D_001255ad[];
 extern char D_001255f5[];
 extern char D_0012563a[];
 extern char D_00125692[];
+extern char D_001256e7[];
+extern char D_0012574e[];
 void *fn_000ed344(u32 size);
 }
 
 struct TbNetworkCallbackData;
+
+typedef enum {
+    MSG_TYPE_0,
+    MSG_TYPE_5 = 5,
+    MSG_TYPE_6,
+    MSG_TYPE_8 = 8
+} TbMessageType;
 
 struct TbNetworkSessionSlot {
     u8 unknown0[5];
@@ -74,6 +83,7 @@ struct ServiceProvider {
     u32 started;
     void *callback_data;
 
+    ServiceProvider();
     virtual ~ServiceProvider();
     virtual TbError Start(TbNetworkSessionNameEntry *session, char *name, void *data) = 0;
     virtual TbError Start(char *session, char *name, u32 max_players, void *data) = 0;
@@ -86,7 +96,7 @@ struct ServiceProvider {
     virtual TbError EnableNewPlayers(u32 allow);
     virtual u32 ReadMessage(u32 *from, void *buf, u32 *size) = 0;
     virtual u32 PeekMessage(u32 *from, void *buf, u32 *size) = 0;
-    virtual TbError SendMessage(u32 to, void *buf, u32 guaranteed) = 0;
+    virtual TbError SendMessage(u32 to, void *buf, TbMessageType type) = 0;
 
     TbError Initialise(__ic76sReceiveCallbacks *callbacks, void *data);
     TbError AddPlayer(u32 id, char *name, u32 a, u32 b);
@@ -103,24 +113,20 @@ struct ServiceProvider {
     TbError Send(u32 to, void *buf);
     TbError LookForSystemMessages(void);
     TbError BroadcastSystemMessage(u8 *msg);
+    TbError SystemAddPlayerHandler(u8 *msg);
+    TbError SystemDeletePlayerHandler(u8 *msg);
+    TbError EnumeratePlayersForSessionRunning(void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data);
 };
 
 u32 GetRequestCompositeExchangeDataMsgSize(void);
 void EncodeDeletePlayerMsg(u8 *buf, u32 id);
 u32 DecodeRequestExchangeDataMsg(u8 *buf, u32 &id);
+u32 DecodeRequestCompositeExchangeDataMsg(u8 *buf, u32 &id);
 void EncodeRequestExchangeDataMsg(u8 *buf, u32 id, u32 seq);
 void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq);
 void StrCpyTrunc(char *dst, char *src, u32 size);
-typedef enum {
-    MSG_TYPE_0,
-    MSG_TYPE_5 = 5,
-    MSG_TYPE_6,
-    MSG_TYPE_8 = 8
-} TbMessageType;
 void EncodeMessageStub(void *buf, u32 size, TbMessageType type, u32 seq);
-void DecodeMessageStub(void *buf, u32 *size, u8 *type, u32 *seq);
-extern "C" void fn_000d1b90(void *buf, u32 *size, u8 *type, u32 *seq);
-#pragma aux fn_000d1b90 "W?NilAddMsgCallback$n(ulpnapnv)v"
+void DecodeMessageStub(void *buf, u32 *size, TbMessageType *type, u32 *seq);
 
 
 
@@ -155,6 +161,7 @@ struct CommHandler {
     long InitModem(void);
     long DialModem(char *number);
     long HangUpModem(void);
+    long AnswerModem(void);
     long ReadConfigFile(char *filename);
     void read_a_line(__iobuf *f, char *p);
     long RunModemFunc(long (*fn)(void));
@@ -213,7 +220,8 @@ struct SerialSP : ServiceProvider {
     u8 unknownb46[4];
     Parser parsers[10];
 
-    SerialSP(void *init_data);
+    SerialSP();
+    SerialSP(__4dn7ojSerialInitData *init_data);
     TbError Release(void);
     TbError Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallbacks *callbacks, void *data);
     TbError Start(char *session, char *name, u32 max_players, void *data);
@@ -227,14 +235,19 @@ struct SerialSP : ServiceProvider {
     TbError ChangeSettings(u32 setting, void *data);
     u32 ReadMessage(u32 *from, void *buf, u32 *size);
     u32 PeekMessage(u32 *from, void *buf, u32 *size);
-    TbError SendMessage(u32 to, void *buf, u32 guaranteed);
+    TbError SendMessage(u32 to, void *buf, TbMessageType type);
 };
 
 struct ModemSP : SerialSP {
     u8 unknown3444[0x34d4 - 0x3444];
 
-    ModemSP(void *init_data);
+    ModemSP(__4dn7ojSerialInitData *init_data);
     TbError Release(void);
+    TbError Init(__tibcaGUID guid, __ic76sReceiveCallbacks *callbacks, void *data);
+    TbError SendMessage(u32 to, void *buf, TbMessageType type);
+    TbError Stop(void);
+    u32 ReadMessage(u32 *from, void *buf, u32 *size);
+    u32 PeekMessage(u32 *from, void *buf, u32 *size);
 };
 
 extern ServiceProvider *spPtr;
@@ -365,7 +378,7 @@ typedef REGS DPMIREGS;
 
 extern "C" {
 void IPXDebug(char *fmt, ...);
-#pragma aux IPXDebug "W?Init$:IPXServiceProvider$n($__tibcaGUID$$pn$2$pn$__ic76sReceiveCallbacks$$pnv)$TbError$$"
+#pragma aux IPXDebug "fn_000d5340_"
 extern u8 D_00110000[];
 extern u8 D_00110068[];
 extern char D_00125e70[];
@@ -509,11 +522,13 @@ struct __6eas9nIPXDATAMESSAGE {
     u8 data[0x212];
 };
 
-struct IPXQueueEntry {
+struct __6gjpddIPXSPDATAMESSAGE {
     u8 data[0x216];
     u16 used;
     u32 from;
 };
+
+typedef __6gjpddIPXSPDATAMESSAGE IPXQueueEntry;
 
 struct IPXSessionEntry {
     u8 address[16];
@@ -556,6 +571,15 @@ struct IPXServiceProvider : ServiceProvider {
     u32 HaveIGotAckDataMessage(u8 seq, u32 id);
     u32 ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg);
     void BatchProcess(u8 delay);
+    __6gjpddIPXSPDATAMESSAGE *GetNextEmptyReceiveBuffer(void);
+    TbError ChangeSettings(u32 setting, void *data);
+    TbError EnableNewPlayers(u32 allow);
+    TbError Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallbacks *callbacks, void *data);
+    void ConvertGuidToString(__tibcaGUID *guid, char *str);
+    void ConvertStringToGuid(char *str, __tibcaGUID *guid);
+    TbError AllocateSpStuff(void);
+    void FreeAllocSpStuff(void);
+    void ClearSpStuff(void);
     TbError CheckMessage(u8 *data);
     void ProcessSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg);
     void SendToAll(u32 me, u32 max, __1p5pi1IPXSYSTEMMESSAGE *msg);
@@ -563,9 +587,9 @@ struct IPXServiceProvider : ServiceProvider {
 
 extern "C" {
 u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek);
-#pragma aux fn_000d6598 "W?Enumerate$:IPXServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$"
+#pragma aux fn_000d6598 "W?PrivateReceive$:IPXServiceProvider$n(pnulpnvpnul$$TE$$)ul"
 TbError fn_000d7768(IPXServiceProvider *self);
-#pragma aux fn_000d7768 "W?BullfrogIPXServer$:IPXServiceProvider$n(pna)$TbError$$"
+#pragma aux fn_000d7768 "W?Update$:IPXServiceProvider$n()$TbError$$"
 void fn_000d508c(IPXHandler *ipx, u16 type, char *name, __3ljac5NETSOCKET *sock);
 extern char D_001260e9[];
 extern char D_00126118[];

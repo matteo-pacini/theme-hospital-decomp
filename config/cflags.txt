@@ -5,8 +5,10 @@
 #
 # Bullfrog libraries (optimised C++); flags still being established. Must
 # precede the game rule, which would also match these paths.
-# The network ServiceProvider module is built like the other network code (no -4).
+# The network modules (ServiceProvider, netint) are built like the other network code (no -4).
 src/lib/bf1/opt/sp.cpp  wpp386  -s -oneatx -xs
+src/lib/bf1/opt/netint.cpp  wpp386  -s -oneatx -xs
+src/lib/bf1/opt/netint3.cpp  wpp386  -s -oneatx -xs
 src/lib/bf1/opt/*.cpp  wpp386  -s -oneatx -4 -xs
 src/lib/bf1/*.cpp    wpp386  -s -d2 -otx
 src/lib/bf2/dbg/*.cpp    wpp386  -s -oneatx -d1+
