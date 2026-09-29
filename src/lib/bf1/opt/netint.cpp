@@ -1275,21 +1275,21 @@ static void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
 // module's code. In the module's segment (built without -zm), the empty fn_000c20c0 would let
 // the optimiser drop every call to it.
 
-// FUNCTION: 0x000c2020
+// FUNCTION: 0x000c2020 COMDAT
 inline IPXServiceProvider::IPXServiceProvider()
 {
 }
 
 extern "C" {
 
-// FUNCTION: 0x000c20c0
+// FUNCTION: 0x000c20c0 COMDAT
 inline void fn_000c20c0(char *fmt, ...)
 {
 }
 
 }
 
-// FUNCTION: 0x000c20d0
+// FUNCTION: 0x000c20d0 COMDAT
 inline TbNetworkSessionNameEntry::TbNetworkSessionNameEntry()
 {
     id = 0;

@@ -77,6 +77,9 @@ and comparing against the original.
 - `tools/check.py src/FILE.cpp`: builds just that file's unit in a temporary
   directory and prints each function's match with differing instructions.
   Safe to run concurrently.
+- `// FUNCTION: 0xADDR COMDAT` marks an inline function that a module built
+  without `-zm` emitted out of line in its own segment after the module's
+  code; `tools/split.py` gives it its own section.
 - `tools/libunit.py SOURCE LIBRARY MODULE`: checks a Watcom library module
   against a unit (see Watcom library modules).
 - `tools/setfn.py 0xADDR NAME` / `--remove`: add, rename or merge one entry

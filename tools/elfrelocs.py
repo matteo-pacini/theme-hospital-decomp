@@ -51,7 +51,8 @@ def function_relocs(path):
             off, info = struct.unpack_from("<II", b, rel[4] + j * 8)
             sym = syms[info >> 8]
             addend = struct.unpack_from("<i", b, data_off + off)[0]
-            label, value, _, kind, shndx, bind = sym
+            label, value, _, kind, target_shndx, bind = sym
+            shndx = target_shndx
             target = label
             if kind == STT_SECTION or (bind == STB_LOCAL and shndx == target_sec):
                 # A reference into the function's own section (a jump table
@@ -74,6 +75,10 @@ def function_relocs(path):
                         target, addend = callee, 0
             for name, (shndx, value, size) in funcs.items():
                 if shndx == target_sec and value <= off < value + size:
-                    local_addend = addend - value if target == "<local>" and shndx in shared else addend
+                    # Only a reference into the function's own shared section
+                    # moves with it; one into another section (CONST2) keeps
+                    # its offset there.
+                    own = target_shndx == shndx and shndx in shared
+                    local_addend = addend - value if target == "<local>" and own else addend
                     relocs[name].append((off - value, info & 0xFF, target, local_addend))
     return {name: sorted(r) for name, r in relocs.items()}

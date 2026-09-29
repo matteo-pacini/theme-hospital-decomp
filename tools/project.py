@@ -28,7 +28,7 @@ EXE_SHA1 = "d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae"
 # below it is game code, above it libraries and runtime.
 GAME_END = 0xBBFF0
 AUTO_WINDOW = 0x4000
-FUNCTION_MARKER = re.compile(r"^\s*//\s*FUNCTION:\s*(0x[0-9a-fA-F]+)", re.M)
+FUNCTION_MARKER = re.compile(r"^\s*//\s*FUNCTION:\s*(0x[0-9a-fA-F]+)[ \t]*(COMDAT)?", re.M)
 
 
 @dataclass
@@ -64,6 +64,10 @@ class Unit:
     name: str
     functions: list = field(default_factory=list)
     source: str | None = None  # None for auto units
+    # Addresses of functions marked `// FUNCTION: 0x... COMDAT`: inline
+    # functions the original emitted out of line, each in its own segment
+    # after the module's code.
+    comdats: set = field(default_factory=set)
 
     @property
     def auto(self):
@@ -134,9 +138,11 @@ class Project:
         self.units = []
         claimed = {}
         for source in self.sources(root):
-            fns = []
+            fns, comdats = [], set()
             for m in FUNCTION_MARKER.finditer(open(os.path.join(root, source)).read()):
                 addr = int(m.group(1), 16)
+                if m.group(2):
+                    comdats.add(addr)
                 if addr not in by_addr:
                     raise KeyError(f"{source}: no function at {addr:#x} in config/functions.txt")
                 if addr in claimed:
@@ -145,7 +151,7 @@ class Project:
                 fns.append(by_addr[addr])
             if fns:
                 name = os.path.splitext(os.path.relpath(source, "src"))[0]
-                self.units.append(Unit(name, sorted(fns, key=lambda f: f.addr), source))
+                self.units.append(Unit(name, sorted(fns, key=lambda f: f.addr), source, comdats))
 
         auto = {}
         for f in self.functions:

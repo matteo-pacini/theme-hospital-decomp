@@ -240,8 +240,9 @@ def shared_segment(proj, unit):
     compiler, flags = compiler_for(unit.source)
     if "-zm-" not in flags and compiler.partition("@")[0] != "lib":
         return False
-    first, last = unit.functions[0], unit.functions[-1]
-    mine = {f.addr for f in unit.functions}
+    module = [f for f in unit.functions if f.addr not in unit.comdats]
+    first, last = module[0], module[-1]
+    mine = {f.addr for f in module}
     missing = [f for f in proj.functions if first.addr < f.addr < last.addr and f.addr not in mine]
     if missing:
         raise ValueError(f"{unit.source}: built without -zm but does not implement "
@@ -254,10 +255,13 @@ def write_unit(le, proj, unit, path):
     segments = proj.unit_data.get(unit.source, [])
     data_secs = [(f".Ldata{i}", addr, size) for i, (_, addr, size) in enumerate(segments)]
     if shared_segment(proj, unit):
-        emit_section(le, proj, unit.functions, 0, out, shared=True, data_secs=data_secs)
+        module = [f for f in unit.functions if f.addr not in unit.comdats]
+        emit_section(le, proj, module, 0, out, shared=True, data_secs=data_secs)
+        separate = [f for f in unit.functions if f.addr in unit.comdats]
     else:
-        for n, fn in enumerate(unit.functions):
-            emit_section(le, proj, [fn], n, out, shared=False, data_secs=data_secs)
+        separate = unit.functions
+    for n, fn in enumerate(separate, 1 if separate is not unit.functions else 0):
+        emit_section(le, proj, [fn], n, out, shared=False, data_secs=data_secs)
     emit_data(le, proj, data_secs, segments, out)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     text = "\n".join(out) + "\n"

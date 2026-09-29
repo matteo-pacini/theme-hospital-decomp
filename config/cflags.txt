@@ -12,7 +12,7 @@ src/lib/bf1/opt/sp.cpp  wpp386  -s -oneatx -xs
 # demo marks them: a static function called once is inlined whatever its size, so
 # Start/CompleteMultiPlayerExchange and GenericIPXInit inline, while LbNetwork_Init(u32, ...)
 # and HostData* stay out of line by size.
-src/lib/bf1/opt/netint.cpp  wpp386  -s -oneatx -xs -oe=100
+src/lib/bf1/opt/netint.cpp  wpp386  -s -oneatx -xs -oe=100 -zm-
 src/lib/bf1/opt/netint3.cpp  wpp386  -s -oneatx -xs
 src/lib/bf1/opt/*.cpp  wpp386  -s -oneatx -4 -xs
 src/lib/bf1/*.cpp    wpp386  -s -d2 -otx
