@@ -24,12 +24,13 @@ The DOS/4GW stub before the LE header is BINW/WSTUB.EXE of the Watcom
 C/C++ 10.5 CD ($WATCOM_LIBS_10_5/binw/wstub.exe; 10.6's is a different
 build), with the MZ header wlink writes.
 
-Still taken from the original EXE:
-- the data no unit places (nonzero bytes below the units' initialised
-  extent) and the fixups in it, ordered with the unit placed before them;
-- the addresses of the unit data sections that relink.py places only where
-  the original's fixups point.
-Both are reported; with --strict the run fails if there are any.
+The data no unit places is left zero. Two fallbacks take from the
+original EXE instead, and are reported: nonzero bytes no unit places (below
+the units' initialised extent) and the fixups in them, ordered with the unit
+placed before them; and the addresses of unit data sections that relink.py
+places only where the original's fixups point, for want of a
+config/sections.txt or config/symbols.txt entry. With --strict the run
+fails if either takes anything.
 Constants that came from the original rather than from a unit: CODE_BASE,
 DATA_VSIZE, OBJECT4_VSIZE and LINKED_AFTER.
 

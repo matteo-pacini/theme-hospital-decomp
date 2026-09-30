@@ -29,11 +29,11 @@
     cmp ax, 0x143
     jne .L000d0288
     call "read_long"
-    mov dword ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x18c], eax
+    mov dword ptr [.Ldata+0x180], eax
     call "read_long"
-    mov dword ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x190], eax
+    mov dword ptr [.Ldata+0x184], eax
     mov bl, byte ptr [esi + 5]
-    mov byte ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19c], bl
+    mov byte ptr [.Ldata+0x190], bl
     add esi, 6
     add eax, 0x12
     mov edx, dword ptr [ebp - 4]
@@ -44,7 +44,7 @@
     mov edi, dword ptr [ebp - 4]
     {load} xor eax, eax
     mov al, byte ptr [edi + 0x10]
-    add eax, dword ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x18c]
+    add eax, dword ptr [.Ldata+0x180]
     {load} add ebx, eax
     {load} cmp ebx, edx
     jbe .L000d01af
@@ -52,13 +52,13 @@
     {load} mov edi, ebx
     sub esi, 4
     sub edi, 4
-    mov ecx, dword ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x190]
+    mov ecx, dword ptr [.Ldata+0x184]
     shr ecx, 2
     std
     rep movsd dword ptr es:[edi], dword ptr [esi]
     add esi, 4
     add edi, 4
-    mov cx, word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x190]
+    mov cx, word ptr [.Ldata+0x184]
     and cx, 3
     .byte 0x67; .byte 0xe3; .byte 0x06  # jcxz 0xd01ac
     dec esi
@@ -70,27 +70,27 @@
     {load} mov esi, edi
 .L000d01af:
     mov edi, dword ptr [ebp - 8]
-    mov byte ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19d], 0
+    mov byte ptr [.Ldata+0x191], 0
     mov ax, word ptr [esi]
-    mov word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x198], ax
+    mov word ptr [.Ldata+0x18c], ax
     mov al, 2
     call "input_bits"
 .L000d01c9:
-    .byte 0xba; .long "W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0xc  # mov edx, 0x305f8
+    .byte 0xba; .long .Ldata  # mov edx, 0x305f8
     call "make_huftable"
-    .byte 0xba; .long "W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x8c  # mov edx, 0x30678
+    .byte 0xba; .long .Ldata+0x80  # mov edx, 0x30678
     call "make_huftable"
-    .byte 0xba; .long "W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x10c  # mov edx, 0x306f8
+    .byte 0xba; .long .Ldata+0x100  # mov edx, 0x306f8
     call "make_huftable"
     mov al, 0x10
     call "input_bits"
-    mov word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x196], ax
+    mov word ptr [.Ldata+0x18a], ax
     jmp .L000d0220
 .L000d01f6:
-    .byte 0xba; .long "W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x8c  # mov edx, 0x30678
+    .byte 0xba; .long .Ldata+0x80  # mov edx, 0x30678
     call "input_value"
     push cx
-    .byte 0xba; .long "W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x10c  # mov edx, 0x306f8
+    .byte 0xba; .long .Ldata+0x100  # mov edx, 0x306f8
     call "input_value"
     add cx, 2
     {load} xor eax, eax
@@ -102,30 +102,30 @@
     rep movsb byte ptr es:[edi], byte ptr [esi]
     {load} mov esi, edx
 .L000d0220:
-    .byte 0xba; .long "W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0xc  # mov edx, 0x305f8
+    .byte 0xba; .long .Ldata  # mov edx, 0x305f8
     call "input_value"
     .byte 0x67; .byte 0xe3; .byte 0x3e  # jcxz 0xd026b
     rep movsb byte ptr es:[edi], byte ptr [esi]
-    mov cl, byte ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19d]
+    mov cl, byte ptr [.Ldata+0x191]
     mov ax, word ptr [esi]
     {load} mov bx, ax
     rol ax, cl
     mov dx, 1
     shl dx, cl
     dec dx
-    and word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x198], dx
+    and word ptr [.Ldata+0x18c], dx
     {load} and dx, ax
     mov ax, word ptr [esi + 2]
     shl bx, cl
     shl ax, cl
     {load} or ax, dx
-    or word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x198], bx
-    mov word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19a], ax
-    dec word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x196]
+    or word ptr [.Ldata+0x18c], bx
+    mov word ptr [.Ldata+0x18e], ax
+    dec word ptr [.Ldata+0x18a]
     jne .L000d01f6
-    dec byte ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19c]
+    dec byte ptr [.Ldata+0x190]
     jne .L000d01c9
-    mov eax, dword ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x18c]
+    mov eax, dword ptr [.Ldata+0x180]
     clc
     jmp .L000d029c
 .L000d0288:
@@ -168,7 +168,7 @@
 .type "input_value",@function
 "input_value":
     xchg esi, edx
-    mov cx, word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x198]
+    mov cx, word ptr [.Ldata+0x18c]
 .L000d02b7:
     lodsw ax, word ptr [esi]
     {load} mov bx, ax
@@ -202,9 +202,9 @@
 "input_bits":
     push cx
     {load} mov cl, al
-    mov ax, word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19a]
-    mov bx, word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x198]
-    mov ch, byte ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19d]
+    mov ax, word ptr [.Ldata+0x18e]
+    mov bx, word ptr [.Ldata+0x18c]
+    mov ch, byte ptr [.Ldata+0x191]
     mov dx, 1
     shl dx, cl
     dec dx
@@ -237,9 +237,9 @@
     shr ax, cl
     shr bx, cl
     {load} or bx, dx
-    mov word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19a], ax
-    mov word ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x198], bx
-    mov byte ptr ["W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"+0x19d], ch
+    mov word ptr [.Ldata+0x18e], ax
+    mov word ptr [.Ldata+0x18c], bx
+    mov byte ptr [.Ldata+0x191], ch
     pop ax
     pop cx
     ret
@@ -361,3 +361,9 @@
 .size "make_huftable",.-"make_huftable"
     // The original object ends with a nop that pads it to a dword.
     .byte 0x90
+
+// The module's data: three 0x80-byte Huffman tables that make_huftable
+// fills, then the unpacker's pointers and bit-reader state.
+.section _DATA,"aw",@progbits
+.Ldata:
+    .zero 0x192

@@ -40,6 +40,7 @@ src/icons.cpp _DATA 0014962c b4
 src/cdspeed.cpp _DATA 0014d554 40
 # String literals: each module's CONST segment, in link order.
 src/main.cpp CONST 00120004 22
+src/main.cpp _DATA 00128f24 dd
 src/pchost.cpp CONST 00120028 14a
 src/game.cpp CONST 00120174 5
 src/drugs.cpp CONST 0012017c 27
@@ -70,7 +71,7 @@ src/req4.cpp CONST 00120770 17
 src/req5.cpp CONST 00120788 b
 src/sound.cpp CONST 00120794 8f
 src/menu.cpp CONST 00120824 17
-src/debug.cpp CONST 0012083c 42
+src/debug.cpp CONST 0012083c 5a
 src/name.cpp CONST 00120898 d1
 src/start.cpp CONST 0012096c 59
 src/slist.cpp CONST 001209c8 1e
@@ -194,6 +195,7 @@ src/lib/clib/bits.c CONST2 00128c94 8
 src/lib/clib/timeutil.c CONST2 00128df4 34
 src/lib/clib/scnf.c CONST2 00128e88 8
 src/lib/clib/cstrt386.s _DATA 0014d5d4 8
+src/lib/clib/cstrt386.s _NULL 00120000 4
 src/lib/bf1/gdata.cpp _DATA 0014d5e4 4
 src/lib/bf1/gscreen.cpp _DATA 0014d5e8 44e
 src/lib/bf1/opt/netint.cpp _DATA 0014da38 2c
@@ -204,6 +206,7 @@ src/lib/smk/dossmk.cpp _DATA 0014db9c 8
 src/lib/bf1/opt/init_aud.cpp _DATA 001505b8 8
 src/lib/clib/stabmod.cpp _DATA 001505d4 c
 src/lib/clib/stabfunc.cpp _DATA 001505ec c
+src/asm/rnc_1fm.s _DATA 001505f8 192
 src/lib/bf1/gexe_key.cpp _DATA 001507d0 c
 src/lib/bf2/sp.cpp _DATA 001507dc 28
 src/lib/bf2/dosipx.cpp _DATA 00150804 10
@@ -223,6 +226,7 @@ src/lib/clib/tzset.c _DATA 00152240 9e
 src/lib/clib/heapen.c _DATA 001522e0 4
 src/lib/clib/stabarr.cpp _DATA 00152304 c
 src/lib/clib/abort.c _DATA 00153acc 4
+src/alloc.cpp XI 00153d64 6
 src/lib/clib/inirt386.s XI 00153d6a 6
 src/lib/clib/delay386.c XI 00153d70 6
 src/lib/clib/stabmod.cpp XI 00153d76 6

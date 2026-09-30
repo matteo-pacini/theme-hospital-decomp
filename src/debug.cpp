@@ -15,6 +15,10 @@ extern "C" {
 
 char *getenv(char *name);
 int vsprintf(char *buf, char *fmt, va_list args);
+typedef struct __iobuf FILE;
+FILE *fopen(const char *name, const char *mode);
+int fprintf(FILE *fp, const char *format, ...);
+int fclose(FILE *fp);
 
 }
 
@@ -85,6 +89,19 @@ void debug_msg(char *fmt, ...)
 // FUNCTION: 0x0008dea0
 extern "C" void fn_0008dea0(char *text)
 {
+    // Dead code: the compiler still emits its string literals, in this
+    // order, and nothing else. The statements are reconstructed from those
+    // literals; the extern names are placeholders, which dead code never
+    // refers to (a static would take space in _BSS, a local in the frame).
+    if (0) {
+        extern char log_name[], log_path[];
+        extern FILE *log_file;
+
+        sprintf(log_path, "N:\\HOSP\\LOG\\%s.txt", log_name);
+        log_file = fopen(log_path, "a");
+        fprintf(log_file, "%s", text);
+        fclose(log_file);
+    }
 }
 
 // FUNCTION: 0x0008debc

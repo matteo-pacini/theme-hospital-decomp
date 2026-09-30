@@ -84,6 +84,18 @@ and comparing against the original.
   interior are named `symbol+offset` in the target, as the compiler names
   them. `tools/fn.py` shows `_D_XXXXXXXX` names for interior addresses when
   the entry is missing.
+- Every data section a unit emits is placed by config, never by the EXE: a
+  `config/sections.txt` entry places the unit's first non-COMDAT section of
+  that segment name, and a `config/symbols.txt` entry naming a global
+  symbol in a section places that section. COMDAT data (`$Wvf...` vtables,
+  `$Wts...` type signatures, `$Wcm...`) and a second section of one segment
+  name (`fpeint.s`'s `_D_00153ae0`) need the latter; a section with only
+  statics (`.mod_init` in `XI`) the former. Otherwise `tools/relink.py`
+  places it where the EXE's fixups point and counts it ("data segments
+  placed from a reference"), and `tools/lewrite.py --strict` fails.
+- An assembly module's own data is a section of its own in the `.s`,
+  referred to through local labels (section-relative, as the original
+  assembler emitted it), with a `config/sections.txt` entry (`rnc_1fm.s`).
 
 ## Tools
 
@@ -695,7 +707,13 @@ Compiler and flags per source file come from `config/cflags.txt`.
 
 C++ (`wpp386`) lays out `_DATA` in declaration order; the statics it
 generates for local aggregate initialisers (`$Wsi0t...`) come after the
-module's own. The rest of this section is about C.
+module's own. A zero initialiser (`= {0}`) puts a global in `_BSS`; zeros
+in `_DATA` come from a string initialiser (`char buf[0xdc] = "";`, as in
+`main.cpp`). Dead code (`if (0) {...}`) still emits its string literals to
+`CONST`, in evaluation order (a call's arguments right to left), and no
+code; its locals still take frame space and its statics `_BSS`, while
+`extern` declarations cost nothing (`debug.cpp`'s `fn_0008dea0`). The rest
+of this section is about C.
 
 Watcom C (`wcc386` 10.6, the file-scope pass of `FreeSym`/`GetSymList` in
 Open Watcom's `cc/c/csym.c`, which still has it) does not lay out a

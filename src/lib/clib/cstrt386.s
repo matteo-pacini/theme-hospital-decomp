@@ -329,3 +329,10 @@
 .globl "__x386_zero_base_selector"
 "__x386_zero_base_selector":
     .word 0
+
+// _NULL (class BEGDATA): the first bytes of DGROUP, where a null data
+// pointer points.
+.section _NULL,"aw",@progbits
+.globl "__nullarea"
+"__nullarea":
+    .byte 0x01, 0x01, 0x01, 0x00

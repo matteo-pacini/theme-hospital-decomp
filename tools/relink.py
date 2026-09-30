@@ -5,7 +5,10 @@ and compare it with the original byte for byte.
 Each unit's code sections (read as tools/link.py reads them) are placed
 where their functions are in config/functions.txt; relocations are resolved
 against original addresses: functions by name, globals by
-config/symbols.txt, a unit's own data segments by config/sections.txt.
+config/symbols.txt, a unit's own data sections by config/sections.txt
+(segment name) or by a global symbol in them that config/symbols.txt names
+(COMDAT data). A data section neither places is placed where the EXE's
+fixups point at it, and counted.
 Absolute references are compared with the EXE's fixup targets, and every
 other byte (relative branches included) with the EXE's raw bytes. Bytes of
 the code object that no unit places are reported as gaps. The units' own
@@ -247,6 +250,12 @@ def main(verbose=False, result=None):
             if not sec.code:
                 if sec.name in seg_addr and not sec.comdat:
                     base[id(sec)] = seg_addr[sec.name]
+                else:
+                    # Global names only: statics repeat across modules (.mod_init).
+                    named = [unique_data[n] - o for n, (s, o, local) in symbols.items()
+                             if s is sec and n in unique_data and not local]
+                    if named:
+                        base[id(sec)] = named[0]
                 continue
             known = [own[n] - o for n, (s, o, _) in symbols.items() if s is sec and n in own and not n.endswith(".c")]
             # A section with only an address-named label (cstrt386's BEGTEXT).
@@ -320,11 +329,6 @@ def main(verbose=False, result=None):
         for sec in sections:
             if sec.code or not max(len(sec.data), sec.length):
                 continue
-            if id(sec) not in base:
-                # Global names only: statics repeat across modules (.mod_init).
-                named = [unique_data[n] - o for n, (s, o, local) in symbols.items() if s is sec and n in unique_data and not local]
-                if named:
-                    base[id(sec)] = named[0]
             if id(sec) in base:
                 data_placed.append((u, sec, base[id(sec)], symbols, base, weak))
             else:

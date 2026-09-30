@@ -22,7 +22,14 @@ extern u8 *D_00153f80, *D_00153f8c, *D_00153f1c, *D_00153f4c, *D_00153f58;
 void fn_0001b7e0(void *dst, char *text, int flags);
 void fn_0001bdf8(void);
 
+// No code refers to it, and its type is unknown: its zeros are in _DATA,
+// where a string initialiser puts them (a zero initialiser puts them in
+// _BSS).
+char D_00128f24[0xdc] = "";
+
 }
+
+u8 no_cd = 1;
 
 // FUNCTION: 0x00010010
 int main(u16 argc, char **argv)
