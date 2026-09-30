@@ -23,7 +23,7 @@ unsigned char _TinyGetCurrDrive(void);
 #define TINY_ERROR(rc) ((rc) < 0)
 
 void *malloc(size_t size);
-/* config/functions.txt has malloc under a wrong demo name. */
+/* malloc_ is an alias of _nmalloc_, the name config/functions.txt uses. */
 #pragma aux malloc "_nmalloc_"
 char *strncpy(char *dst, const char *src, size_t n);
 

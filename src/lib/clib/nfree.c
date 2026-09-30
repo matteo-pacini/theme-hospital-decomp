@@ -32,7 +32,6 @@ unsigned short FP_SEG(const volatile void __far *);
 #define _DGroup() FP_SEG((void __far *)&__nheapbeg)
 
 void _nfree(void *stg);
-/* config/functions.txt has _nfree under a wrong demo name. */
 
 // FUNCTION: 0x000cf342
 void _nfree(void *stg)

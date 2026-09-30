@@ -49,7 +49,6 @@ extern unsigned char _X32VM;
 
 void *__brk(unsigned brk_value);
 void _nfree(void *p);
-/* config/functions.txt has _nfree under a wrong demo name. */
 
 unsigned _SegmentLimit(void);
 #pragma aux _SegmentLimit = \

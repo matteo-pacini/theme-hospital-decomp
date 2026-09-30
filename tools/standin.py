@@ -132,30 +132,7 @@ def apply(source, model, Section):
             symbols[name] = (new_sec, new_off, False)
     known = {n for n, _ in externs[1:]}
     externs.extend((n, False) for n in undefined if n not in known and n not in symbols)
-    end_before_padding(symbols)
     return True
-
-
-def end_before_padding(symbols):
-    """Give the last function of each code section that ends in alignment
-    padding (a stand-in's, or the compiler's before a COMDAT that follows a
-    module built into one segment) a local symbol at the padding, so that
-    tools/omf2elf.py sizes the function as the executable does."""
-    from omf2elf import PADDING
-
-    sizes = {}
-    for line in open(os.path.join(ROOT, "config", "functions.txt")):
-        line = line.split("#", 1)[0].split()
-        if line:
-            sizes[line[2]] = int(line[1], 16)
-    last = {}
-    for name, (sec, off, local) in symbols.items():
-        if sec.code and not sec.comdat and not local and off >= last.get(id(sec), (None, -1))[1]:
-            last[id(sec)] = (name, off, sec)
-    for name, off, sec in last.values():
-        end = off + sizes.get(name, len(sec.data))
-        if bytes(sec.data[end:]) in PADDING:
-            symbols[name + ".pad"] = (sec, end, True)
 
 
 def sized(symbols, name):

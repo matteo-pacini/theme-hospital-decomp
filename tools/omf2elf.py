@@ -298,12 +298,15 @@ def write_elf(sections, symbols, externs, weak, path):
     def sized(name):
         sec, off, _ = symbols[name]
         ends = [o for n, (s, o, _) in symbols.items() if s is sec and o > off]
-        if not ends and sec.comdat and sec.code:
-            # Alignment padding at the end of a function's COMDAT is not part
-            # of it, as the executable's sizes have it.
+        if not ends and sec.code and len(sec.data) % 4 == 0:
+            # Filler padding a section's last function to Watcom's 4-byte code
+            # alignment is not part of the function, as the executable's sizes
+            # have it. It is recognised only after what ends like a ret, ret n
+            # or jmp rel32.
             for pad in PADDING:
                 end = len(sec.data) - len(pad)
-                if sec.data.endswith(pad) and (sec.data[end - 1] == 0xC3 or sec.data[end - 3] == 0xC2):
+                code = sec.data[:end]
+                if sec.data.endswith(pad) and (code[-1:] == b"\xc3" or code[-3:-2] == b"\xc2" or code[-5:-4] == b"\xe9"):
                     return end - off
         # A BSS segment has no data records: its end is the SEGDEF length.
         return min(ends, default=max(len(sec.data), sec.length)) - off

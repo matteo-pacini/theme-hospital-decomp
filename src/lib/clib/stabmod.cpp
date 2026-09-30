@@ -98,7 +98,6 @@ void fs_init(void)
     __wcpp_2_data_dtreg_vfptrs_[3] = &D_001505d4;
 }
 
-/* config/functions.txt gives __wcpp_2_mod_register__ to _nfree. */
 void __wcpp_2_mod_register__(RW_DTREG *rw);
 #pragma aux __wcpp_2_mod_register__ "__wcpp_2_mod_register__"
 

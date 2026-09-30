@@ -8,7 +8,7 @@ extern __stream_link *__ClosedStreams;
 extern char D_001271e4[];
 
 void *malloc(size_t size);
-/* config/functions.txt has malloc under a wrong demo name. */
+/* malloc_ is an alias of _nmalloc_, the name config/functions.txt uses. */
 #pragma aux malloc "_nmalloc_"
 void __fatal_runtime_error(char *msg, unsigned retcode);
 

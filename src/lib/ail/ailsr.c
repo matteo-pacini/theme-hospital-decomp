@@ -27,7 +27,8 @@ void AILDEBUG_START(void);
 
 void *malloc(U32 size);
 void free(void *ptr);
-/* config/functions.txt has malloc and free under wrong demo names. */
+/* malloc_ and free_ are aliases of _nmalloc_ and _nfree_, the names
+   config/functions.txt uses. */
 #pragma aux malloc "_nmalloc_";
 #pragma aux free "_nfree_";
 
