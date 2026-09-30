@@ -720,3 +720,13 @@ many declarations precede it (a block boundary between two statics puts the
 later one first). `ailss` had its `VDI` alone in the block before the other
 BSS statics; declaring the module's externs before the statics moves all of
 them into one block, where the names already hash in the original's order.
+
+## COMDAT placement
+
+wlink 10.6 places a module's COMDAT pieces in reverse generation (record)
+order, so the lowest-addressed inline function was generated last. With the
+padding rule (an inline function is padded to a dword only when the next
+function generated is also inline), the original's zero or filler tails
+tell which functions were generated next to each other. netint defines two
+of its inline functions before PlayerMapMsgHandler and the
+IPXServiceProvider constructor after it for this reason.

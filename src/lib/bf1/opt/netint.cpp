@@ -1167,6 +1167,31 @@ void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
     }
 }
 
+// The module's three inline functions are each emitted in their own segment after the
+// module's code, and the linker places those segments in reverse order of generation. The
+// compiler pads an inline function's segment for the next function's alignment only when that
+// function is inline too, so the original's padding (the session entry's constructor alone
+// padded) needs the generation order below: these two before PlayerMapMsgHandler, the
+// IPXServiceProvider constructor last. In the module's segment (built without -zm), the empty
+// fn_000c20c0 would let the optimiser drop every call to it.
+
+// FUNCTION: 0x000c20d0 COMDAT
+inline TbNetworkSessionNameEntry::TbNetworkSessionNameEntry()
+{
+    id = 0;
+    in_use = 0;
+    name[0] = 0;
+}
+
+extern "C" {
+
+// FUNCTION: 0x000c20c0 COMDAT
+inline void fn_000c20c0(char *fmt, ...)
+{
+}
+
+}
+
 // FUNCTION: 0x000c1f24
 static void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
 {
@@ -1186,28 +1211,7 @@ static void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
     }
 }
 
-// The last three are inline functions: the original has each in its own segment after the
-// module's code. In the module's segment (built without -zm), the empty fn_000c20c0 would let
-// the optimiser drop every call to it.
-
 // FUNCTION: 0x000c2020 COMDAT
 inline IPXServiceProvider::IPXServiceProvider()
 {
-}
-
-extern "C" {
-
-// FUNCTION: 0x000c20c0 COMDAT
-inline void fn_000c20c0(char *fmt, ...)
-{
-}
-
-}
-
-// FUNCTION: 0x000c20d0 COMDAT
-inline TbNetworkSessionNameEntry::TbNetworkSessionNameEntry()
-{
-    id = 0;
-    in_use = 0;
-    name[0] = 0;
 }
