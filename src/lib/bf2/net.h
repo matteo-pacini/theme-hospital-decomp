@@ -10,28 +10,6 @@ char *strcpy(char *dst, const char *src);
 int memcmp(const void *a, const void *b, unsigned size);
 #pragma intrinsic(memcpy, strlen, strcpy, memcmp)
 void fn_000c20c0(char *fmt, ...);
-extern char D_00124f09[];
-extern char D_00124f4b[];
-extern char D_00125189[];
-extern char D_001251c8[];
-extern char D_0012521e[];
-extern char D_0012526d[];
-extern char D_001252bf[];
-extern char D_00125304[];
-extern char D_00125349[];
-extern char D_0012538e[];
-extern char D_001253d3[];
-extern char D_0012542f[];
-extern char D_0012547e[];
-extern char D_001254c9[];
-extern char D_00125505[];
-extern char D_00125558[];
-extern char D_001255ad[];
-extern char D_001255f5[];
-extern char D_0012563a[];
-extern char D_00125692[];
-extern char D_001256e7[];
-extern char D_0012574e[];
 void *fn_000ed344(u32 size);
 }
 
@@ -607,16 +585,6 @@ struct IPXServiceProvider : ServiceProvider {
 extern "C" {
 u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek);
 #pragma aux fn_000d6598 "W?PrivateReceive$:IPXServiceProvider$n(pnulpnvpnul$$TE$$)ul"
-extern char D_001260e9[];
-extern char D_00126118[];
-extern char D_00126289[];
-extern char D_001262d0[];
-extern char D_00126317[];
-extern char D_0012632a[];
-extern char D_00126344[];
-extern char D_00126362[];
-extern char D_00126378[];
-extern char D_00126394[];
 }
 
 #endif

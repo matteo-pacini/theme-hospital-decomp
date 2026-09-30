@@ -150,7 +150,9 @@ def main():
     shutil.rmtree(OUT, ignore_errors=True)
     os.makedirs(os.path.join(OUT, "objs"))
 
-    units = sorted(proj.units, key=lambda u: u.functions[0].addr)
+    # Data-only units have no code to order them by; wlink places their data
+    # after the others' in each segment.
+    units = sorted(proj.units, key=lambda u: u.functions[0].addr if u.functions else 1 << 32)
     models = [unit_model(u) for u in units]
     unit_of = {f.addr: u for u in units for f in u.functions}
     defined = {n for m in models for n, (_, _, local) in m[1].items() if not local}

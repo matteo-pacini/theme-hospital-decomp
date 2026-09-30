@@ -101,15 +101,20 @@ struct TbDisplayStruct {
 
 struct TbLoadFiles {
     union {
-        u8 unknown[0x2c];
         struct {
             char FName[0x1c];
             u8 **Start;
             u8 **SEnd;
             s32 SLength;
             u16 Flags;
-            u16 Spare;
+            /* A u16 (modify_data_load_filename reads it as one), split
+               because wpp386 10.6 fails with "segment too large" when an
+               initialiser reaches the last member of an anonymous struct
+               in a union. */
+            u8 Spare;
+            u8 Spare_hi;
         };
+        u8 unknown[0x2c];
     };
 };
 

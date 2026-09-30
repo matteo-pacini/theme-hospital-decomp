@@ -109,6 +109,7 @@ def apply(source, model, Section):
         obj = os.path.join(tmp, "s.o")
         subprocess.run(["as", "--32", "-o", obj, path], check=True)
         new_sections, defined, undefined = read_elf(obj, Section)
+    undefined = own_data(os.path.relpath(os.path.abspath(source), ROOT), sections, new_sections, undefined)
 
     for name in names:
         new_sec, new_off, _ = defined.pop(name)
@@ -133,6 +134,37 @@ def apply(source, model, Section):
     known = {n for n, _ in externs[1:]}
     externs.extend((n, False) for n in undefined if n not in known and n not in symbols)
     return True
+
+
+def own_data(source, sections, new_sections, undefined):
+    """Make the stand-ins' references to `_D_XXXXXXXX` addresses in one of the
+    source's own data segments (config/sections.txt) section-relative to the
+    compiled object's segment, as the compiler refers to its string literals
+    and as tools/split.py names them in the target; return the undefined
+    names still referenced."""
+    from project import Project
+    from split import in_data_segment  # split imports cc, which imports this module
+
+    proj = Project()
+    segments = proj.unit_data.get(source, [])
+    data_secs = [(segment, addr, size) for segment, addr, size in segments]
+    by_name = {s.name: s for s in sections if not s.code}
+    for new_sec in new_sections:
+        relocs = []
+        for at, rtype, target in new_sec.relocs:
+            m = re.fullmatch(r"_D_([0-9a-f]{8})", target[1]) if target[0] == "sym" else None
+            if m and rtype == 1:
+                addr = int(m.group(1), 16) + struct.unpack_from("<i", new_sec.data, at)[0]
+                seg = in_data_segment(proj, data_secs, addr)
+                if seg is not None:
+                    if seg[0] not in by_name:
+                        sys.exit(f"{source}: the stand-ins refer to {addr:#x} in {seg[0]}, which the source does not emit")
+                    struct.pack_into("<i", new_sec.data, at, addr - seg[1])
+                    target = ("sec", by_name[seg[0]])
+            relocs.append((at, rtype, target))
+        new_sec.relocs = relocs
+    used = {t[1] for s in new_sections for _, _, t in s.relocs if t[0] == "sym"}
+    return [n for n in undefined if n in used]
 
 
 def sized(symbols, name):
@@ -227,7 +259,7 @@ def substitute(sec, off, size, new_sec, symbols):
     for at, rtype, target in new_sec.relocs:
         site = off + at
         addend = struct.unpack_from("<i", sec.data, site)[0]
-        if target[0] == "sec":
+        if target[0] == "sec" and target[1] is new_sec:
             # A reference into the stand-in itself: now at off in sec.
             struct.pack_into("<i", sec.data, site, addend + off)
             sec.relocs.append((site, rtype, ("sec", sec)))

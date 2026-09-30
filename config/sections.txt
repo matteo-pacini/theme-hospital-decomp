@@ -10,11 +10,13 @@ src/lib/bf2/modemsp.cpp CONST2 00128d5c 4e
 src/lib/bf2/netint2.cpp CONST2 00128c24 2c
 src/alloc.cpp CONST2 001289a8 10
 src/alloc.cpp _DATA 0014b1b8 c
+src/files.cpp CONST2 001289a0 8
 src/lib/bf2/ipxsp.cpp CONST2 00128c50 30
 src/lib/clib/tzset.c CONST 00128484 3
 src/lib/clib/allocexc.cpp CONST 00128804 2b
 src/lib/clib/stabthrw.cpp CONST 00128488 207
 src/lib/ail/ail.c _BSS 0018cae0 34
+src/overscr.cpp _DATA 00137a30 88
 # String literals: each module's CONST segment, in link order.
 src/main.cpp CONST 00120004 22
 src/pchost.cpp CONST 00120028 14a
@@ -42,7 +44,7 @@ src/keyboard.cpp CONST 001205f0 6
 src/graph.cpp CONST 001205f8 f
 src/ben.cpp CONST 00120608 4b
 src/manager.cpp CONST 00120654 5a
-src/network.cpp CONST 001206b0 bb
+src/network.cpp CONST 001206b0 bf
 src/req4.cpp CONST 00120770 17
 src/req5.cpp CONST 00120788 b
 src/sound.cpp CONST 00120794 8f
@@ -55,7 +57,7 @@ src/score.cpp CONST 001209e8 38
 src/req7.cpp CONST 00120a20 12
 src/vloader.cpp CONST 00120a34 219
 src/helpmsg.cpp CONST 00120c50 10
-src/files.cpp CONST 00120c60 5
+src/files.cpp CONST 00120c60 de8
 src/req10.cpp CONST 00121a48 5
 src/req11.cpp CONST 00121a50 d
 src/loadscr.cpp CONST 00121a60 70
@@ -73,6 +75,7 @@ src/details.cpp CONST 00121be8 9c
 src/dosheap.cpp CONST 00121c84 160
 src/lib/bf1/gfile.cpp CONST 00121de4 18
 src/lib/bf1/gdata.cpp CONST 00121dfc b5
+src/lib/bf1/opt/netint.cpp CONST 00121eb4 10c0
 src/lib/ail/aildebug.c CONST 00122f74 12dc
 src/lib/bf1/gtext.cpp CONST 00124250 37
 src/lib/clib/undefmbd.cpp CONST 00124288 3c
@@ -86,9 +89,11 @@ src/lib/bf1/svesa.cpp CONST 00124c88 5
 src/lib/bf1/opt/playsadd.cpp CONST 00124c90 5d
 src/lib/bf1/serror.cpp CONST 00124cf0 f3
 src/lib/clib/pure_err.cpp CONST 00124de4 1e
+src/lib/bf2/sp.cpp CONST 00124e04 9b6
 src/lib/clib/vfun_err.cpp CONST 001257bc 32
 src/lib/bf2/netint2.cpp CONST 001257f0 680
 src/lib/bf2/dosipx.cpp CONST 00125e70 21a
+src/lib/bf2/ipxsp.cpp CONST 0012608c 327
 src/lib/bf2/init_sou.cpp CONST 001263b4 36c
 src/lib/bf2/init_mus.cpp CONST 00126720 41a
 src/lib/ail/ail.c CONST 00126b3c fe
@@ -110,6 +115,9 @@ src/lib/bf2/dosser.cpp CONST 00128690 162
 src/lib/clib/termnate.cpp CONST 00128830 22
 src/lib/clib/unexpect.cpp CONST 00128854 23
 src/lib/clib/abort.c CONST 00128878 17
+# Data-only modules (no functions): their segments place them.
+src/data.cpp _DATA 001291c4 4
+src/comtable.cpp _DATA 001384a0 1fe
 # The 16-bit code object's modules: the interrupt handlers dosipx and dosser
 # copy into DOS memory.
 src/lib/bf2/ipxasm.s CODE16 00110000 68

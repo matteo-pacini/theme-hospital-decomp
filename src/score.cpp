@@ -31,7 +31,32 @@ extern s32 TitlePos[];
 extern s32 DesiredTitlePos[];
 extern char *TitleText;
 extern u8 TitleLen;
-extern HospScores hosp_scores;
+HospScores hosp_scores = {
+    {
+        {"WEBLEY", 250000},
+        {"SAMUEL", 210000},
+        {"JAYNE", 200000},
+        {"GAZZA", 190000},
+        {"CHIVERS", 175000},
+        {"RAJ", 165000},
+        {"WAZ", 145000},
+        {"BEN", 99000},
+        {"LORD RIDER", 79000},
+        {"BASSEY", 40000},
+    },
+    {
+        {"JAN SV.", 8000},
+        {"COGGY", 10000},
+        {"BRUTUS", 11000},
+        {"NUTTERS", 12500},
+        {"ROBBO", 16000},
+        {"NATS", 16500},
+        {"MR MAT", 17000},
+        {"JON", 18000},
+        {"ADIE", 19000},
+        {"RUSS", 25000},
+    },
+};
 
 void move_text(void);
 void set_fame_pos(s32 *text, s32 *title);

@@ -80,7 +80,8 @@ def main():
             base = f"build/base/{u.name}.o"
             deps = ["tools/cc.py", "tools/omf2elf.py", "tools/standin.py", "config/cflags.txt", *headers]
             if os.path.exists(os.path.join(ROOT, standin.companion(u.source))):
-                deps.append(standin.companion(u.source))
+                # Stand-ins' references into the unit's own data segments.
+                deps += [standin.companion(u.source), "config/sections.txt", "config/symbols.txt", "tools/project.py", "tools/split.py"]
             compiler, flags = compiler_for(u.source)
             name, _, version = compiler.partition("@")
             if name == "lib":

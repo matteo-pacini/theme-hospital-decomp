@@ -1,13 +1,6 @@
 #include "net.h"
 
 extern "C" {
-extern char D_00124e04[];
-extern char D_00124e05[];
-extern char D_00124e30[];
-extern char D_00124e5c[];
-extern char D_00124e7d[];
-extern char D_00124ea6[];
-extern char D_00124ec3[];
 extern __ic76sReceiveCallbacks *D_001507dc;
 }
 
@@ -23,15 +16,6 @@ inline void NameCopy(char *dst, char *src, u32 size)
 }
 
 extern "C" {
-extern char D_00124f8d[];
-extern char D_00124fbf[];
-extern char D_00124ff0[];
-extern char D_0012501f[];
-extern char D_0012504f[];
-extern char D_00125089[];
-extern char D_001250ca[];
-extern char D_00125114[];
-extern char D_00125151[];
 }
 
 // FUNCTION: 0x000d1310
@@ -45,7 +29,7 @@ ServiceProvider::ServiceProvider()
     init_count = 0;
     unknown528 = 0;
     player_count = 0;
-    strcpy(name, D_00124e04);
+    strcpy(name, "");
     started = 0;
     callback_data = 0;
     callbacks = (__ic76sReceiveCallbacks *)&D_001507dc;
@@ -54,7 +38,7 @@ ServiceProvider::ServiceProvider()
 // FUNCTION: 0x000d13bc
 ServiceProvider::~ServiceProvider()
 {
-    fn_000c20c0(D_00124e05);
+    fn_000c20c0("  LbNETWORK : Destructing ServiceProvider\n");
 }
 
 // FUNCTION: 0x000d13dc
@@ -62,9 +46,9 @@ TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
 {
     u32 i;
 
-    fn_000c20c0(D_00124e30);
+    fn_000c20c0("  LbNETWORK : Initialising ServiceProvider\n");
     if (init_count)
-        fn_000c20c0(D_00124e5c);
+        fn_000c20c0("Service Provider already setup!\n");
     player_count = 0;
     for (i = 0; i < 32; i++)
         sessions[i].in_use = 0;
@@ -80,10 +64,10 @@ TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
 // FUNCTION: 0x000d145c
 TbError ServiceProvider::Release(void)
 {
-    fn_000c20c0(D_00124e7d);
+    fn_000c20c0("  LbNETWORK : Releasing ServiceProvider\n");
     unknown528 = 0;
     if (init_count != 1)
-        fn_000c20c0(D_00124ea6);
+        fn_000c20c0("Service Provider not setup!\n");
     init_count--;
     return Lb_OK;
 }
@@ -105,7 +89,7 @@ TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 a, u32 b)
     if (found) {
         ret = Lb_OK;
     } else if (player_count >= 32) {
-        fn_000c20c0(D_00124ec3);
+        fn_000c20c0("  WARNING network: ServiceProvider::AddPlayer() player table is full\n");
     } else {
         i = player_count;
         players[i].id = id;
@@ -318,7 +302,7 @@ void StrCpyTrunc(char *dst, char *src, u32 size)
 void EncodeMessageStub(void *buf, u32 size, TbMessageType type, u32 seq)
 {
     if (buf == 0) {
-        fn_000c20c0(D_00124f09);
+        fn_000c20c0("  WARNING network: ServiceProvider::EncodeMessageStub() NULL ptr\n");
         return;
     }
     *(u32 *)buf = (size & 0xfffff) | ((seq & 0xf) << 20) | (type << 24);
@@ -330,7 +314,7 @@ void DecodeMessageStub(void *buf, u32 *size, TbMessageType *type, u32 *seq)
     u32 *p = (u32 *)buf;
 
     if (p == 0) {
-        fn_000c20c0(D_00124f4b);
+        fn_000c20c0("  WARNING network: ServiceProvider::DecodeMessageStub() NULL ptr\n");
         return;
     }
     if (size)
@@ -344,57 +328,57 @@ void DecodeMessageStub(void *buf, u32 *size, TbMessageType *type, u32 *seq)
 // FUNCTION: 0xd1bd4
 void __stdcall NilAddMsgCallback(u32 id, char *name, void *data)
 {
-    fn_000c20c0(D_00124f8d, id, name);
+    fn_000c20c0("  WARNING network: NilAddMsgCallback(%d, %s) hit\n", id, name);
 }
 
 // FUNCTION: 0xd1bf0
 void __stdcall NilDeleteMsgCallback(u32 id, void *data)
 {
-    fn_000c20c0(D_00124fbf, id);
+    fn_000c20c0("  WARNING network: NilDeleteMsgCallback(%d) hit\n", id);
 }
 
 // FUNCTION: 0xd1c08
 void __stdcall NilHostMsgCallback(u32 id, void *data)
 {
-    fn_000c20c0(D_00124ff0, id);
+    fn_000c20c0("  WARNING network: NilHostMsgCallback(%d) hit\n", id);
 }
 
 // FUNCTION: 0xd1c20
 void __stdcall NilUserSysMsgCallback(void *data)
 {
-    fn_000c20c0(D_0012501f);
+    fn_000c20c0("  WARNING network: NilUserSysMsgCallback() hit\n");
 }
 
 // FUNCTION: 0xd1c30
 void *__stdcall NilUserDataMsgCallback(u32 id, u32 size, u32 seq, void *data)
 {
-    fn_000c20c0(D_0012504f, id, size, seq);
+    fn_000c20c0("  WARNING network: NilUserDataMsgCallback(%d, %d %d) hit\n", id, size, seq);
     return 0;
 }
 
 // FUNCTION: 0xd1c54
 void __stdcall NilRequestExchangeDataMsgCallback(u32 id, u32 seq, void *data)
 {
-    fn_000c20c0(D_00125089, id, seq);
+    fn_000c20c0("  WARNING network: NilRequestExchangeDataMsgCallback(%d %d) hit\n", id, seq);
 }
 
 // FUNCTION: 0xd1c70
 void __stdcall NilRequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data)
 {
-    fn_000c20c0(D_001250ca, id, seq);
+    fn_000c20c0("  WARNING network: NilRequestCompositeExchangeDataMsgCallback(%d %d) hit\n", id, seq);
 }
 
 // FUNCTION: 0xd1c8c
 void *__stdcall NilUnidirectionalMsgCallback(u32 id, u32 size, void *data)
 {
-    fn_000c20c0(D_00125114, id, size);
+    fn_000c20c0("  WARNING network: NilUnidirectionalMsgCallback(%d, %d) hit\n", id, size);
     return 0;
 }
 
 // FUNCTION: 0xd1cac
 void __stdcall NilSystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
 {
-    fn_000c20c0(D_00125151, id, size);
+    fn_000c20c0("  WARNING network: NilSystemUserMsgCallback(%d %d) hit\n", id, size);
 }
 
 // FUNCTION: 0xd1cc8
@@ -463,7 +447,7 @@ TbError ServiceProvider::Receive(u32 flags)
     keep_going = 1;
     ret = Lb_OK;
     if (!started) {
-        fn_000c20c0(D_00125189);
+        fn_000c20c0("  WARNING network: ServiceProvider::Receive() not initialised\n");
         return Lb_FAIL;
     }
     while (keep_going) {
@@ -489,13 +473,13 @@ TbError ServiceProvider::Receive(u32 flags)
                     if (callbacks->multiPlayer)
                         dst = callbacks->multiPlayer(from, msg_size + 4, seq, callback_data);
                     else
-                        fn_000c20c0(D_001251c8);
+                        fn_000c20c0("  WARNING network: ServiceProvider::Receive() NIL target for userDataMsgCallbackProc\n");
                     if (!dst) {
                         dst = buf;
                         size = 0x404;
                     }
                     if (!ReadMessage(&from, dst, &size)) {
-                        fn_000c20c0(D_0012521e);
+                        fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() Inconsistancy between reads\n");
                         ret = Lb_FAIL;
                     }
                 }
@@ -510,7 +494,7 @@ TbError ServiceProvider::Receive(u32 flags)
                         if (callbacks->addMsg)
                             callbacks->addMsg(id, name2, callback_data);
                     } else {
-                        fn_000c20c0(D_0012526d);
+                        fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error on Receive()\n");
                     }
                 } else {
                     keep_going = 0;
@@ -525,7 +509,7 @@ TbError ServiceProvider::Receive(u32 flags)
                         if (callbacks->deleteMsg)
                             callbacks->deleteMsg(id3, callback_data);
                     } else {
-                        fn_000c20c0(D_001252bf);
+                        fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error\n");
                     }
                 } else {
                     keep_going = 0;
@@ -541,7 +525,7 @@ TbError ServiceProvider::Receive(u32 flags)
                         if (callbacks->systemUserMsg)
                             callbacks->systemUserMsg(from, buf + 4, msg_size2, callback_data);
                     } else {
-                        fn_000c20c0(D_00125304);
+                        fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error\n");
                     }
                 } else {
                     keep_going = 0;
@@ -555,7 +539,7 @@ TbError ServiceProvider::Receive(u32 flags)
                         if (callbacks->mpReqExDataMsg)
                             callbacks->mpReqExDataMsg(id4, seq, callback_data);
                     } else {
-                        fn_000c20c0(D_00125349);
+                        fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error\n");
                     }
                 } else {
                     keep_going = 0;
@@ -569,7 +553,7 @@ TbError ServiceProvider::Receive(u32 flags)
                         if (callbacks->mpReqCompsExDataMsg)
                             callbacks->mpReqCompsExDataMsg(id5, seq, callback_data);
                     } else {
-                        fn_000c20c0(D_0012538e);
+                        fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error\n");
                     }
                 } else {
                     keep_going = 0;
@@ -580,20 +564,20 @@ TbError ServiceProvider::Receive(u32 flags)
                     if (callbacks->unidirectionalMsg)
                         dst = callbacks->unidirectionalMsg(from, msg_size + 4, callback_data);
                     else
-                        fn_000c20c0(D_001253d3);
+                        fn_000c20c0("  WARNING network: ServiceProvider::Receive() NIL target for unidirectionalMsgCallbackProc\n");
                     if (!dst) {
                         dst = buf;
                         size = 0x404;
                     }
                     if (!ReadMessage(&from, dst, &size)) {
-                        fn_000c20c0(D_0012542f);
+                        fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() Inconsistancy between reads\n");
                         ret = Lb_FAIL;
                     }
                 }
                 keep_going = 0;
                 break;
             default:
-                fn_000c20c0(D_0012547e);
+                fn_000c20c0("  WARNING network: ServiceProvider::Receive() messageType is out of range\n");
                 break;
             }
         } else {
@@ -617,7 +601,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
 
     ret = Lb_FAIL;
     if (!started) {
-        fn_000c20c0(D_001254c9);
+        fn_000c20c0("  WARNING network: ServiceProvider::Send() not initialised\n");
         return Lb_FAIL;
     }
     DecodeMessageStub(buf, &msg_size, &type, &seq);
@@ -632,7 +616,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
             if (callbacks->multiPlayer)
                 dst = callbacks->multiPlayer(local_id, msg_size + 4, seq, callback_data);
             else
-                fn_000c20c0(D_00125505);
+                fn_000c20c0("  WARNING network: ServiceProvider::Send() NIL target for userDataMsgCallbackProc\n");
             if (dst)
                 memcpy(dst, buf, msg_size + 4);
             break;
@@ -654,7 +638,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
             if (callbacks->systemUserMsg)
                 callbacks->systemUserMsg(local_id, (u8 *)buf + 4, msg_size, callback_data);
             else
-                fn_000c20c0(D_00125558);
+                fn_000c20c0("  WARNING network: ServiceProvider::Send() NIL target for systemUserMsgCallbackProc\n");
             break;
         case 5:
             DecodeRequestExchangeDataMsg((u8 *)buf, id2);
@@ -667,7 +651,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
                 callbacks->mpReqCompsExDataMsg(id2, seq, callback_data);
             break;
         default:
-            fn_000c20c0(D_001255ad);
+            fn_000c20c0("  WARNING network: ServiceProvider::Send() messageType is out of range\n");
             break;
         }
         ret = Lb_OK;
@@ -676,7 +660,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
         if (SendMessage(to, buf, (TbMessageType)guaranteed) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0(D_001255f5);
+            fn_000c20c0("  WARNING network: ServiceProvider::Send() failure on SendMessage()\n");
     }
     return ret;
 }
@@ -711,14 +695,14 @@ TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
         break;
     }
     if (invalid) {
-        fn_000c20c0(D_0012563a, *msg);
+        fn_000c20c0("  WARNING network: ServiceProvider::BroadcastSystemMessage() invalid MessageType: %02X\n", *msg);
         ret = Lb_FAIL;
     } else {
         for (i = 0; i < player_count; i++) {
             if (players[i].id != local_id && players[i].id != id) {
                 if (SendMessage(players[i].id, msg, (TbMessageType)1) != Lb_OK) {
                     ret = Lb_FAIL;
-                    fn_000c20c0(D_00125692);
+                    fn_000c20c0("  WARNING network: ServiceProvider::BroadcastSystemMessage() failure on SendMessage\n");
                 }
             }
         }
@@ -739,9 +723,9 @@ TbError ServiceProvider::EnumeratePlayersForSessionRunning(void (__stdcall *call
         if (r == Lb_OK)
             ret = r;
         else
-            fn_000c20c0(D_001256e7);
+            fn_000c20c0("  WARNING network: ServiceProvider::EnumeratePlayersForSessionRunning() failure on EnumeratePlayers()\n");
     } else {
-        fn_000c20c0(D_0012574e);
+        fn_000c20c0("  WARNING network: ServiceProvider::EnumeratePlayersForSessionRunning() failure on LookForSystemMessages()\n");
     }
     return ret;
 }

@@ -1,21 +1,5 @@
 #include "hosp.h"
 
-struct ComputerPlayer {
-    u8 f0;
-    u8 f1;
-    u8 unknown2;
-    u8 f3;
-    u8 f4;
-    u8 f5;
-    u8 f6;
-    u8 unknown7;
-    u8 f8;
-};
-
-struct ComputerDecisions {
-    u16 delay;
-};
-
 struct ComputerBucket {
     s32 f0;
     s32 f4;
@@ -27,13 +11,7 @@ struct ComputerBucket {
     s32 fd4[47];
 };
 
-extern ComputerPlayer computer[];
-extern ComputerDecisions com_decide[];
-extern ComputerStrategy com_strategy[];
 extern ComputerBucket (*comp_buckets)[12];
-extern u16 staff_max_nbs[][10];
-extern u16 object_nbs[][11];
-extern u8 com_room_orders[][14];
 extern u8 skillnb_to_who[];
 extern s16 diag_register[][8];
 u32 old_normal_rand(u32 a, u32 b);

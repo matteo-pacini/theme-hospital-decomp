@@ -192,6 +192,8 @@ def module_boundaries(proj, le):
         elif ua is not ub and not zero and b.addr % 16:
             out.append(("filler between units", a.end, n, a.name, ua.name, b.name, ub.name))
     for u in proj.units:
+        if not u.functions:
+            continue  # a data-only unit
         f = u.functions[0]
         if f.addr % 16 and not dword_aligned(u):
             out.append(("object start not 16-aligned", f.addr, 0, "", "", f.name, u.name))
@@ -227,7 +229,9 @@ def main(verbose=False, result=None):
     notes = []
 
     code_fixups = []
-    for u in sorted(proj.units, key=lambda u: u.functions[0].addr):
+    # Data-only units last: they have no code, and config/sections.txt
+    # places their data.
+    for u in sorted(proj.units, key=lambda u: u.functions[0].addr if u.functions else 1 << 32):
         sections, symbols, externs, weak = unit_model(u)
         unit_fixups = []
         seg_addr = {}  # a unit's own data segments, by name

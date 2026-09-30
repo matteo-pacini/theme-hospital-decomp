@@ -4,13 +4,18 @@ config/functions.txt       every function: address, size, symbol
 config/symbols.txt         named data: address, symbol, size
 config/sections.txt        a module's own data segments (e.g. its exception
                            tables in CONST2): source, segment, address, size;
-                           and the assembly modules of the 16-bit code object
-                           (segment CODE16), which have no functions
+                           the segments of data-only modules; and the assembly
+                           modules of the 16-bit code object (segment CODE16),
+                           which have no functions
 config/relocs.txt          relocations the compiler names differently from
                            the symbol containing their target: site, symbol, offset
 config/demo_map.txt        demo-build name and source module per function
 config/demo_data_map.txt   demo-build name per global
 src/**/*.{cpp,c,s}         `// FUNCTION: 0xADDRESS` above each function a file implements
+
+A source file without functions whose config/sections.txt entries name data
+segments is a data-only unit (a module of tables): its functions are empty,
+and its segments place it.
 
 Functions not claimed by a source file are grouped into auto units by their
 source module in the demo build, or by fixed address window when unknown, so
@@ -70,6 +75,8 @@ class Unit:
     # functions the original emitted out of line, each in its own segment
     # after the module's code.
     comdats: set = field(default_factory=set)
+    # A data-only unit's category (it has no functions to take one from).
+    data_category: str | None = None
 
     @property
     def auto(self):
@@ -77,6 +84,8 @@ class Unit:
 
     @property
     def category(self):
+        if not self.functions:
+            return self.data_category
         # The demo's categories where it names any of the unit's functions:
         # a unit's first function is not always one it names.
         known = [f.demo_category for f in self.functions if f.demo_category]
@@ -129,9 +138,11 @@ class Project:
                 fn.demo_addr = int(demo, 16)
 
         self.demo_data = {}  # retail address -> demo global name
+        demo_data_category = {}
         for line in _lines(os.path.join(cfg, "demo_data_map.txt")):
-            retail, _, _, _, _, name = line.split()
+            retail, _, _, category, _, name = line.split()
             self.demo_data[int(retail, 16)] = name
+            demo_data_category[int(retail, 16)] = category
 
         self.data_symbols = []
         for line in _lines(os.path.join(cfg, "symbols.txt")):
@@ -172,9 +183,14 @@ class Project:
                     raise KeyError(f"{source}: {addr:#x} already implemented in {claimed[addr]}")
                 claimed[addr] = source
                 fns.append(by_addr[addr])
+            name = os.path.splitext(os.path.relpath(source, "src"))[0]
             if fns:
-                name = os.path.splitext(os.path.relpath(source, "src"))[0]
                 self.units.append(Unit(name, sorted(fns, key=lambda f: f.addr), source, comdats))
+            elif any(segment != "CODE16" for segment, _, _ in self.unit_data.get(source, [])):
+                known = [c for a, c in demo_data_category.items()
+                         for _, addr, size in self.unit_data[source] if addr <= a < addr + size]
+                category = max(set(known), key=known.count) if known else "game"
+                self.units.append(Unit(name, [], source, data_category=category))
 
         auto = {}
         for f in self.functions:

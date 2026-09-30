@@ -432,6 +432,30 @@ struct ComputerStrategy {
     s16 count;
 };
 
+struct ComputerPlayer {
+    u8 f0;
+    u8 f1;
+    u8 unknown2;
+    u8 f3;
+    u8 f4;
+    u8 f5;
+    u8 f6;
+    u8 unknown7;
+    u8 f8;
+};
+
+struct ComputerDecisions {
+    u16 delay;
+};
+
+// The computer players' tables (comtable.cpp).
+extern ComputerPlayer computer[];
+extern ComputerDecisions com_decide[];
+extern ComputerStrategy com_strategy[];
+extern u16 staff_max_nbs[][10];
+extern u16 object_nbs[][11];
+extern u8 com_room_orders[][14];
+
 struct RatHole {
     u16 tile;
     u8 side;
@@ -1018,13 +1042,9 @@ struct StaffControl {
 struct AnimTable {
     char name[0x28];
     u16 f28;
-    union {
-        u8 unknown2a[8];
-        struct {
-            u8 unknown2a_[4];
-            u32 f2e;
-        };
-    };
+    u16 f2a;
+    u16 f2c;
+    u32 f2e;
     u32 f32;
     u32 f36;
 };
@@ -2383,23 +2403,15 @@ struct Sector {
     s32 start;
     s32 end;
     s32 radius;
-    union {
-        u8 unknownc[9];
-        struct {
-            u8 top_colour;
-            u8 side_colour1;
-            u8 side_colour2;
-            u8 rim_colour;
-            u8 edge_colour;
-            s32 text_offset;
-        };
-    };
+    u8 top_colour;
+    u8 side_colour1;
+    u8 side_colour2;
+    u8 rim_colour;
+    u8 edge_colour;
+    s32 text_offset;
     s32 text_x;
     s32 text_y;
-    union {
-        u8 unknown1d[4];
-        s32 text_right;
-    };
+    s32 text_right;
 };
 
 struct orthonav_path {

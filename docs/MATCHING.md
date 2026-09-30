@@ -61,9 +61,24 @@ and comparing against the original.
   demo's debug info); shared types live in `include/hosp.h` (game) and
   `include/bflib.h` (Bullfrog library types, globals and functions).
 - Put `// FUNCTION: 0xXXXXXXXX` on the line above each function definition.
-- Reference string literals and other constant data through `extern`
-  declarations rather than writing the literal: a literal would be emitted
-  into this object's own `CONST` segment, and the reloc would not match.
+- Write string literals once the module's `CONST` segment has a
+  `config/sections.txt` entry (source, `CONST`, address, size): the target
+  then refers to it section-relative, as the compiler does. The compiler
+  emits literals in the order the code uses them, so the source's statement
+  order must reproduce the target's string order (`LbNetwork_Exchange` tests
+  `== Lb_OK` and prints its failures in the `else` branches). Until the
+  segment has an entry, reference its strings through `extern` declarations
+  (`D_XXXXXXXX`). An assembly stand-in's `_D_XXXXXXXX` references into the
+  segment are made section-relative by `tools/standin.py`, so they need no
+  `config/symbols.txt` entry.
+- A module with no functions (tables, `comtable.cpp`, `data.cpp`) is a
+  data-only unit: its source defines the globals, initialised, in the
+  target's order, and a `config/sections.txt` entry per segment (usually
+  `_DATA`; the compiled segment's size, before the next module's alignment
+  padding) places it. `tools/relink.py` compares its bytes and relocations,
+  objdiff its data by the `config/symbols.txt` names, and `tools/lewrite.py`
+  orders its fixups as it does the data no unit places. Put the types and
+  `extern` declarations the users of the tables need in a header.
 - If code indexes into a table or struct, the table needs an entry in
   `config/symbols.txt` (`address symbol size`, hex) so that references to its
   interior are named `symbol+offset` in the target, as the compiler names
@@ -677,6 +692,10 @@ Compiler and flags per source file come from `config/cflags.txt`.
   `-oe=40`: its small `Parser` accessors inline, `SendAck` does not.
 
 ## Static data layout
+
+C++ (`wpp386`) lays out `_DATA` in declaration order; the statics it
+generates for local aggregate initialisers (`$Wsi0t...`) come after the
+module's own. The rest of this section is about C.
 
 Watcom C (`wcc386` 10.6, the file-scope pass of `FreeSym`/`GetSymList` in
 Open Watcom's `cc/c/csym.c`, which still has it) does not lay out a

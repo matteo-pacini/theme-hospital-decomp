@@ -152,8 +152,8 @@ def data_image(result, data, vsize):
     """The data object's bytes from the units' sections, which bytes they
     own, and their fixups {offset: (order, target object index, target
     offset)}, where order is the unit's place in link order and the fixup's
-    place in its FIXUPP records; of a field several units place (a COMDAT
-    vtable), the first unit's. `data` is the built data object; target
+    place in its FIXUPP records (None for a data-only unit); of a field
+    several units place (a COMDAT vtable), the first unit's. `data` is the built data object; target
     objects are looked up in result['objects']."""
     image, owner, fixups, unknown = bytearray(vsize), [False] * vsize, {}, 0
     placed, symbol_address = list(result["data_placed"]), result["symbol_address"]
@@ -165,7 +165,10 @@ def data_image(result, data, vsize):
             if not s.code and id(s) in base and id(s) not in seen:
                 seen.add(id(s))
                 placed.append((u, s, base[id(s)], syms, base, weak))
-    rank = {u.name: i for i, u in enumerate(sorted({p[0].name: p[0] for p in placed}.values(), key=lambda u: u.functions[0].addr))}
+    # A data-only unit has no code to give its place in link order; main
+    # orders its fixups as it does those of the data no unit places.
+    with_code = {p[0].name: p[0] for p in placed if p[0].functions}
+    rank = {u.name: i for i, u in enumerate(sorted(with_code.values(), key=lambda u: u.functions[0].addr))}
     for u, sec, addr, syms, base, weak in placed:
         size = max(len(sec.data), sec.length)
         at0 = addr - data.base
@@ -187,8 +190,8 @@ def data_image(result, data, vsize):
             value = (t + addend) & 0xFFFFFFFF
             tobj = next(o for o in result["objects"] if o.base <= value <= o.base + o.vsize)
             struct.pack_into("<I", image, at0 + at, value - tobj.base)
-            order = (rank[u.name], sec.reloc_records.get(at, 1 << 30), n)
-            if at0 + at not in fixups or order < fixups[at0 + at][0]:
+            order = (rank[u.name], sec.reloc_records.get(at, 1 << 30), n) if u.functions else None
+            if at0 + at not in fixups or order is not None and (fixups[at0 + at][0] is None or order < fixups[at0 + at][0]):
                 fixups[at0 + at] = (order, tobj.index, value - tobj.base)
     return image, owner, fixups, unknown
 
@@ -258,12 +261,15 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
         dimage[i] = orig_data.data[i]
     unowned_fixups = [(site - orig_data.base, fx) for site, fx in le.fixups.items()
                       if orig_data.contains(site) and not downer[site - orig_data.base]]
-    # Data no unit places was processed with the unit placed before it.
-    owned_at = sorted(dfixups)
-    for rel, fx in unowned_fixups:
+    # Data no unit places, and a data-only unit's, was processed with the
+    # unit placed before it.
+    unordered = [(rel, tobj, off) for rel, (order, tobj, off) in dfixups.items() if order is None]
+    unordered += [(rel, fx.target_obj, fx.target - le.objects[fx.target_obj - 1].base) for rel, fx in unowned_fixups]
+    owned_at = sorted(rel for rel, (order, _, _) in dfixups.items() if order is not None)
+    for rel, tobj, off in unordered:
         k = bisect.bisect(owned_at, rel)
         order = dfixups[owned_at[k - 1]][0] + (rel,) if k else (-1, rel)
-        dfixups[rel] = (order, fx.target_obj, fx.target - le.objects[fx.target_obj - 1].base)
+        dfixups[rel] = (order, tobj, off)
     init = max(orig_init, max((i + 1 for i in range(len(downer)) if downer[i] and dimage[i]), default=0))
     data.image = bytes(dimage[:init])
     data_pages = collections.defaultdict(list)

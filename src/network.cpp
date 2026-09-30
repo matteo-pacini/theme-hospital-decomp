@@ -88,9 +88,6 @@ extern Event D_001549d0[];
 extern u8 *D_00153f34;
 extern u8 D_0015f1aa;
 extern u8 D_0015f1ab;
-extern char *D_00138020;
-extern char *D_00138024;
-extern s32 D_0013804c;
 extern char **D_001602a0;
 extern char **D_00160308;
 extern u32 D_001606bc;
@@ -106,7 +103,6 @@ void fn_00081408(u8 flag);
 void fn_000841b8(u8 a);
 void fn_00081588(void);
 #pragma aux fn_00081588 "W?draw_available_bauds$n(uc)v"
-extern char *D_00138028[];
 
 char *strchr(char *s, int c);
 int strcmp(const char *a, const char *b);
@@ -117,6 +113,19 @@ u32 fn_000cd716(char *s);
 void fn_0007fbb8(s8 me);
 }
 
+extern "C" __tibcaGUID D_0013800c = {0x1e8b2240, 0x11d037fe, 0xa0002b8d, 0xc96a00c9};
+s8 BookHilight = -1;
+extern "C" char *D_00138020 = "{";
+extern "C" char *D_00138024 = "|";
+extern "C" u32 D_00138028[] = {4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200};
+u8 TopIRQ = 1;
+extern "C" s32 D_0013804c = -1;
+extern "C" char D_00138050[0x20] = "";
+char init_str[0x54] = "ATZ";
+char dial_str[0x54] = "ATDT";
+char hangup_str[0x54] = "ATH";
+char auto_ans_str[0x54] = "ATS0=1";
+
 extern Menu network;
 extern s32 DesiredDisplay;
 extern s32 CurrentDisplay;
@@ -126,13 +135,7 @@ extern LoginControl login_control;
 extern TbIffPalette ppalette;
 extern u8 BufferedInkey;
 extern ScreenPacket screen_packet[];
-extern char init_str[];
-extern char dial_str[];
-extern char hangup_str[];
-extern char auto_ans_str[];
 extern s8 BookCount;
-extern s8 BookHilight;
-extern u8 TopIRQ;
 extern u8 TopMessage;
 extern u8 NumMessages;
 extern char *MessageText;
@@ -1087,7 +1090,7 @@ void process_mouse_network_select(void)
 
 struct NetInitData {
     s32 port;
-    char *baud;
+    u32 baud;
     s32 irq;
     u8 unknownC[4];
     char *init;
@@ -1101,7 +1104,6 @@ struct NetInitData {
 
 extern "C" {
 extern NetInitData D_0016051c;
-extern char D_00138050[];
 extern char D_00160594[];
 extern s32 D_001605e4;
 extern s32 (*D_001605e8)(void);
@@ -2306,7 +2308,6 @@ void swap_year_end_packets(void)
 
 extern "C" {
 extern u8 D_0016053c[];
-extern __tibcaGUID D_0013800c;
 }
 
 // FUNCTION: 0x000850f4
@@ -2569,13 +2570,6 @@ struct Coord {
     s32 y;
 };
 
-/* do_net_text's const local initialisers: {504, 70} and {40, 40} */
-extern "C" {
-extern const Coord D_001381c0;
-#pragma aux D_001381c0 "W?$Wsi0tpager_text_recieved$n$Coord$$$:.0$:?do_net_text$n()vnx$Coord$$"
-extern const Coord D_001381c8;
-#pragma aux D_001381c8 "W?$Wsi0tpager_text_entering$n$Coord$$$:.0$:?do_net_text$n()vnx$Coord$$"
-}
 extern u32 TimeStamp;
 extern u32 TimeLapse;
 
@@ -2586,12 +2580,10 @@ void do_net_text(void)
     s16 len;
     u16 saved;
     s32 k;
-    Coord pager_text_recieved;
-    Coord pager_text_entering;
+    Coord pager_text_recieved = {504, 70};
+    Coord pager_text_entering = {40, 40};
     char buf[100];
 
-    pager_text_recieved = D_001381c0;
-    pager_text_entering = D_001381c8;
     TimeLapse = othervar.f8a2_s32 - TimeStamp;
     TimeStamp = othervar.f8a2_s32;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);

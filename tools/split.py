@@ -128,13 +128,20 @@ def data_expr(proj, data_secs, addr):
     return proj.data_ref(addr)
 
 
-def emit_data(le, proj, data_secs, segments, out):
-    """The unit's own data segments, with their relocated fields."""
+def emit_data(le, proj, data_secs, segments, out, named=False):
+    """The unit's own data segments, with their relocated fields; `named`
+    also defines the config/symbols.txt globals inside them (a data-only
+    unit's, which objdiff compares by name)."""
+    starts = {s.addr: s for s in proj.data_symbols} if named else {}
     for (label, start, size), (segment, _, _) in zip(data_secs, segments):
         out.append(f'\n.section {segment},"aw",@progbits\n{label}:')
         data = le.read(start, size)
         a = start
         while a < start + size:
+            if a in starts:
+                sym = starts[a]
+                name = q(sym.name)
+                out.append(f".globl {name}\n.type {name},@object\n.size {name},{min(sym.size, start + size - a):#x}\n{name}:")
             fx = le.fixups.get(a)
             if fx is not None and fx.kind == SRC_OFFSET32:
                 if le.code.contains(fx.target):
@@ -266,7 +273,7 @@ def write_unit(le, proj, unit, path):
         separate = unit.functions
     for n, fn in enumerate(separate, 1 if separate is not unit.functions else 0):
         emit_section(le, proj, [fn], n, out, shared=False, data_secs=data_secs, comdat=fn.addr in unit.comdats)
-    emit_data(le, proj, data_secs, segments, out)
+    emit_data(le, proj, data_secs, segments, out, named=not unit.functions)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     text = "\n".join(out) + "\n"
     # Leave unchanged files untouched so ninja only reassembles what moved.

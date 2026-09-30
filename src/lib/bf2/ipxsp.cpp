@@ -16,17 +16,6 @@
 #define MSG_BUSK 0x4b535542
 
 extern "C" {
-extern char D_0012608c[];
-extern char D_001260d3[];
-extern char D_001261fa[];
-extern char D_00126145[];
-extern char D_001261b3[];
-extern char D_001261f3[];
-extern char D_001261fe[];
-extern char D_00126202[];
-extern char D_00126249[];
-extern char D_00126171[];
-extern char D_00126282[];
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 unsigned long strtoul(const char *s, char **end, int base);
@@ -73,10 +62,10 @@ TbError IPXServiceProvider::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sRe
         ok = 1;
         ret = Lb_OK;
     } else {
-        fn_000c20c0(D_0012608c);
+        fn_000c20c0("  WARNING network: IPXServiceProvider::Init() failure on Initialise()\n");
     }
     if (ok) {
-        fn_000c20c0(D_001260d3, 0x212);
+        fn_000c20c0("MAX PACKET SIZE = %d\n", 0x212);
         started = 1;
         this->guid = guid;
         session_count = 0;
@@ -121,7 +110,7 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
     IPXPacket *p;
     TbError ret = Lb_FAIL;
 
-    fn_000c20c0(D_001260e9);
+    fn_000c20c0("  LbNETWORK : Initialising IPXServiceProvider\n");
     if (ServiceProvider::Initialise(cb, data) == Lb_OK) {
         if (ipx.Init() == 0) {
             socket.socket = 0;
@@ -143,7 +132,7 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
             ServiceProvider::Release();
         }
     } else {
-        fn_000c20c0(D_00126118);
+        fn_000c20c0("  WARNING network: SERVICE PROVIDER FAILURE\n");
     }
     return ret;
 }
@@ -151,9 +140,9 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
 // FUNCTION: 0xd569c
 TbError IPXServiceProvider::Release(void)
 {
-    fn_000c20c0(D_00126145);
+    fn_000c20c0("  LbNETWORK : Releasing IPXServiceProvider\n");
     if (!started) {
-        fn_000c20c0(D_00126171);
+        fn_000c20c0("  WARNING network: IPXServiceProvider::Release() not initialised\n");
         return Lb_FAIL;
     }
     if (unknown528)
@@ -170,7 +159,6 @@ TbError IPXServiceProvider::Release(void)
 }
 
 extern "C" {
-extern char D_00126267[];
 
 TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed);
 #pragma aux fn_000d6550 "W?SendMessage$:IPXServiceProvider$n(ulpnv$$TE$$)$TbError$$"
@@ -187,7 +175,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
     u32 i;
 
     if (!started) {
-        fn_000c20c0(D_001261b3);
+        fn_000c20c0("  WARNING network: IPXServiceProvider::Start() not initialised\n");
         return Lb_FAIL;
     }
     if (unknown528)
@@ -202,9 +190,9 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
     if (!players)
         return Lb_FAIL;
     memset(players, 0, size);
-    strcpy(server_name, D_001261f3);
+    strcpy(server_name, "BU.GI.");
     ConvertGuidToString(&guid, server_name + 6);
-    fn_000c20c0(D_001261fe, server_name);
+    fn_000c20c0("%s\n", server_name);
     if (ipx.AdvertiseServer(0xbe08, server_name, &socket) == 0) {
         session.local_id = 0;
         session.host_id = 0;
@@ -225,7 +213,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
         ret = Lb_OK;
         ClearPlayers();
         if (AddPlayer(local_id, player_name, 1, 1) != Lb_OK) {
-            fn_000c20c0(D_00126202);
+            fn_000c20c0("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
         } else {
             unknown528 = 1;
             accepting = 1;
@@ -233,7 +221,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
     } else {
         LbMemoryFree(players);
         players = 0;
-        fn_000c20c0(D_00126249);
+        fn_000c20c0(" COULD NOT ADVERTISE SERVICE\n");
     }
     return ret;
 }
@@ -426,7 +414,7 @@ TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
     }
     ret = sp->SendMessageToPlayerId(to, buf, magic);
     if (ret == Lb_FAIL)
-        fn_000c20c0(D_00126267);
+        fn_000c20c0("ERROR SendMessageToPlayer\n");
     return ret;
 }
 
@@ -793,7 +781,7 @@ TbError IPXServiceProvider::BullfrogIPXServer(char *name)
     __tibcaGUID id;
     TbError ret = Lb_FAIL;
 
-    if (memcmp(name, D_00126282, 6) == 0) {
+    if (memcmp(name, "BU.GI.", 6) == 0) {
         ConvertStringToGuid(name + 6, &id);
         if (memcmp(&guid, &id, sizeof(__tibcaGUID)) == 0)
             ret = Lb_OK;
@@ -810,7 +798,7 @@ void IPXServiceProvider::ConvertGuidToString(__tibcaGUID *guid, char *str)
 
     str[0] = 0;
     for (i = 0; i < 16; i += 4, d++) {
-        sprintf(buf, D_001261fa, *d);
+        sprintf(buf, "%x.", *d);
         strcat(str, buf);
     }
 }
@@ -907,7 +895,7 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
                         strcpy(p->name, join->name);
                         p->id = i;
                         if (AddPlayer(i, p->name, 0, 0) != Lb_OK) {
-                            fn_000c20c0(D_00126289);
+                            fn_000c20c0("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
                             return Lb_FAIL;
                         }
                         session.num_players++;
@@ -1015,7 +1003,7 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
                                     if (e->id == msg->host_id)
                                         is_host = 1;
                                     if (AddPlayer(e->id, e->name, is_local, is_host) != Lb_OK)
-                                        fn_000c20c0(D_001262d0);
+                                        fn_000c20c0("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
                                     memcpy(&players[e->id], e, sizeof(IPXPlayerEntry));
                                 }
                             }
@@ -1536,24 +1524,24 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
                             CheckForSystemMessages();
                         }
                         if (ret == Lb_FAIL)
-                            fn_000c20c0(D_00126317);
+                            fn_000c20c0("DIDN'T GET AN ACK\n");
                     } else {
                         ret = Lb_OK;
                     }
                 } else {
-                    fn_000c20c0(D_0012632a, size, 0x212);
+                    fn_000c20c0("Invalid length: %d vs %d\n", size, 0x212);
                 }
             } else {
-                fn_000c20c0(D_00126344);
+                fn_000c20c0("sender->SocketNumber = FALSE\n");
             }
         } else {
-            fn_000c20c0(D_00126362, id);
+            fn_000c20c0("Invalid player id %d\n", id);
         }
     } else {
-        fn_000c20c0(D_00126378);
+        fn_000c20c0("m_connectToSession = FALSE\n");
     }
     if (ret == Lb_FAIL)
-        fn_000c20c0(D_00126394);
+        fn_000c20c0("Ended up with ret == LB_ERROR\n");
     return ret;
 }
 

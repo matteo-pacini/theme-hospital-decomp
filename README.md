@@ -90,7 +90,7 @@ register allocation). Library flags are in `config/cflags.txt`.
 | `config/demo_map.txt`, `config/demo_data_map.txt` | retail functions and globals paired with the demo's names |
 | `config/symbols.txt` | named data symbols |
 | `config/relocs.txt` | relocations named after a symbol other than the one containing their target |
-| `config/sections.txt` | a module's own data segments (compiler-generated tables), emitted into its target object |
+| `config/sections.txt` | a module's own data segments (compiler-generated tables, string literals, the data of data-only modules), emitted into its target object |
 | `src/` | decompiled C++ |
 | `src/**/*.standin.s` | assembly stand-ins for functions of the source file of the same name (see `tools/standin.py`) |
 | `include/` | shared headers |
