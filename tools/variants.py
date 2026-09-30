@@ -14,11 +14,18 @@ does:
   opassign `x op= e` <-> `x = x op (e)`
   types    a local's integer type (any width or signedness: review these,
            since a different type can change behaviour)
+  blocks   a declaration moved into an inner block that holds every use,
+           or out of a nested block to the function's top-level
+           declarations (the compiler sorts a block's locals separately)
+  zero     `!x` <-> `x == 0`, `x` <-> `x != 0` in conditions
+  adjacent two neighbouring simple statements swapped (review these: the
+           order can matter)
+  ifelse   `if (c) {A} else {B}` -> `if (!c) {B} else {A}`
 
 Nothing under src/ is written: the best variant is printed as a diff, and
 --out saves the whole file.
 
-Usage: tools/variants.py SOURCE 0xADDR [--kinds swaps,decls,opassign]
+Usage: tools/variants.py SOURCE 0xADDR [--kinds swaps,decls,opassign,blocks,zero]
                          [--rounds N] [--beam N] [--out FILE] [--from FILE]
 
 --from starts from another copy of SOURCE (a draft kept outside the tree);
@@ -26,6 +33,7 @@ SOURCE still decides the unit and the compiler flags.
 """
 
 import argparse
+import bisect
 import concurrent.futures
 import difflib
 import hashlib
@@ -317,7 +325,119 @@ def types(body):
             yield f"types {line.strip()} -> {w}", "\n".join(lines[:i] + [repl] + lines[i + 1 :])
 
 
-KINDS = {"swaps": swaps, "decls": decls, "opassign": opassign, "types": types}
+def brace_pairs(body):
+    """(open, close) offsets of every brace pair in body."""
+    stack, pairs = [], []
+    for a, _, t in tokens(body):
+        if t == "{":
+            stack.append(a)
+        elif t == "}" and stack:
+            pairs.append((stack.pop(), a))
+    return pairs
+
+
+def blocks(body):
+    lines = body.split("\n")
+    starts = [0]
+    for line in lines:
+        starts.append(starts[-1] + len(line) + 1)
+    pairs = brace_pairs(body)
+    for i, line in enumerate(lines):
+        m = DECL.match(line)
+        if not m or m.group(2).split()[0] in KEYWORDS:
+            continue
+        name, decl = m.group(3), line.strip()
+        lo, hi = starts[i], starts[i + 1]
+        uses = [u.start() for u in re.finditer(rf"(?<![\w.>]){re.escape(name)}\b", body) if not lo <= u.start() < hi]
+        if not uses:
+            continue
+        enclosing = max((a for a, c in pairs if a < lo and c >= hi), default=-1)
+        rest = lines[:i] + lines[i + 1 :]
+        for a, c in pairs:
+            if not (a > enclosing and a < min(uses) and c > max(uses)):
+                continue
+            # Insert after the line holding the `{` (numbered in `rest`).
+            j = bisect.bisect_right(starts, a) - 1
+            k = j + 1 if j < i else j
+            if k >= len(rest):
+                continue
+            indent = rest[k][: len(rest[k]) - len(rest[k].lstrip())]
+            if not indent:
+                continue
+            yield f"blocks {name} -> line {k}", "\n".join(rest[:k] + [indent + decl] + rest[k:])
+        if enclosing >= 0:
+            top = 0
+            while top < len(rest) and DECL.match(rest[top]) and len(DECL.match(rest[top]).group(1)) == 4:
+                top += 1
+            for k in range(top + 1):
+                yield f"blocks {name} -> top {k}", "\n".join(rest[:k] + ["    " + decl] + rest[k:])
+
+
+LVALUE = r"[A-Za-z_][\w.\[\]>\-]*"
+ZERO_TESTS = [
+    (re.compile(rf"\b(if|while) \(!({LVALUE})\)"), lambda m: f"{m[1]} ({m[2]} == 0)"),
+    (re.compile(rf"\b(if|while) \(({LVALUE}) == 0\)"), lambda m: f"{m[1]} (!{m[2]})"),
+    (re.compile(rf"\b(if|while) \(({LVALUE})\)"), lambda m: f"{m[1]} ({m[2]} != 0)"),
+    (re.compile(rf"\b(if|while) \(({LVALUE}) != 0\)"), lambda m: f"{m[1]} ({m[2]})"),
+    (re.compile(rf"([(&|] *)!({LVALUE})(?=\s*[)&|])"), lambda m: f"{m[1]}{m[2]} == 0"),
+]
+
+
+def zero(body):
+    for rx, repl in ZERO_TESTS:
+        for m in rx.finditer(body):
+            yield f"zero {m[0]}", body[: m.start()] + repl(m) + body[m.end() :]
+
+
+SIMPLE = re.compile(r"^(\s+)(?!(?:return|break|goto|continue|case|default|if|else|for|while|do|switch)\b)[^{}]*;\s*$")
+
+
+def adjacent(body):
+    lines = body.split("\n")
+    for i in range(len(lines) - 1):
+        a, b = SIMPLE.match(lines[i]), SIMPLE.match(lines[i + 1])
+        if a and b and a.group(1) == b.group(1) and not DECL.match(lines[i]) and not DECL.match(lines[i + 1]):
+            new = list(lines)
+            new[i], new[i + 1] = new[i + 1], new[i]
+            yield f"adjacent {lines[i].strip()} <-> {lines[i + 1].strip()}", "\n".join(new)
+
+
+NEGATED = {"==": "!=", "!=": "==", "<": ">=", ">=": "<", ">": "<=", "<=": ">"}
+
+
+def negate(cond):
+    cond = cond.strip()
+    if m := re.fullmatch(rf"!({LVALUE})", cond):
+        return m[1]
+    if re.fullmatch(LVALUE, cond):
+        return "!" + cond
+    m = re.fullmatch(r"([^()&|?]+?) (==|!=|<=|>=|<|>) ([^()&|?]+)", cond)
+    return f"{m[1]} {NEGATED[m[2]]} {m[3]}" if m else f"!({cond})"
+
+
+def ifelse(body):
+    lines = body.split("\n")
+    for i, line in enumerate(lines):
+        m = re.match(r"^(\s*)(\} else )?if \((.*)\) \{$", line)
+        if not m:
+            continue
+        indent, els, end = m[1], None, None
+        for k in range(i + 1, len(lines)):
+            if lines[k].startswith(indent + "}"):
+                if lines[k].strip() == "} else {":
+                    els = k
+                    continue
+                end = k if lines[k].strip() == "}" else None
+                break
+        if els is None or end is None:
+            continue
+        head = f"{indent}{m[2] or ''}if ({negate(m[3])}) {{"
+        new = lines[:i] + [head] + lines[els + 1 : end] + [indent + "} else {"] + lines[i + 1 : els] + lines[end:]
+        yield f"ifelse {line.strip()}", "\n".join(new)
+
+
+KINDS = {"swaps": swaps, "decls": decls, "opassign": opassign, "types": types,
+         "blocks": blocks, "zero": zero, "adjacent": adjacent, "ifelse": ifelse}
 
 # ---------------------------------------------------------------- search
 
