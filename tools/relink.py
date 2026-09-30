@@ -206,7 +206,9 @@ def main(verbose=False, result=None):
     image and its owner per byte, the units whose objects are zero-padded,
     and the code object's absolute fixups [(site, target)] in the order the
     original linker processed them (objects in link order, each object's
-    fixups in FIXUPP record order)."""
+    fixups in FIXUPP record order), and the ids of the data sections that
+    only the EXE's fixup targets place ('placed_from_exe'; check_data
+    places more that way, which it adds to their units' `base`)."""
     proj, le = Project(), LEFile(EXE)
     code = le.code
     fn_addr = {f.name: f.addr for f in proj.functions}
@@ -221,7 +223,7 @@ def main(verbose=False, result=None):
             return int(m.group(1), 16)
         return fn_addr.get(name, data_addr.get(name))
 
-    data_placed, unplaced_data, pending = [], [], []
+    data_placed, unplaced_data, pending, placed_from_exe = [], [], [], set()
     image = bytearray(code.vsize)
     owner = [None] * code.vsize  # unit name per placed byte
     placed = []  # (unit, section, address)
@@ -291,6 +293,7 @@ def main(verbose=False, result=None):
                     off = 0 if target[0] == "sec" else syms[name][1]
                     if fx is not None and rtype == omf2elf.R_386_32 and not dsec.code:
                         base[id(dsec)] = fx.target - addend - off
+                        placed_from_exe.add(id(dsec))
                         problems["data segments placed from a reference"] += 1
                         t = base[id(dsec)] + off
                 if t is None:
@@ -354,6 +357,7 @@ def main(verbose=False, result=None):
                 sites = here if sites is None else sites & here
         if sites and len(sites) == 1:
             base[id(sec)] = sites.pop()
+            placed_from_exe.add(id(sec))
             data_placed.append((u, sec, base[id(sec)], syms, base, weak))
         else:
             unplaced_data.append((u, sec, base))
@@ -437,7 +441,8 @@ def main(verbose=False, result=None):
     boundaries, zero_padded = module_boundaries(proj, le)
     if result is not None:
         result.update(image=image, owner=owner, code_fixups=code_fixups, zero_padded=zero_padded,
-                      code16_image=code16_image, code16_fixups=code16_fixups)
+                      code16_image=code16_image, code16_fixups=code16_fixups,
+                      placed_from_exe=placed_from_exe)
     print(f"module boundary contradictions {len(boundaries)}")
     for kind, at, n, fa, ua, fb, ub in boundaries[: 40 if not verbose else None]:
         print(f"  {kind}: {at:#x} +{n}  {fa} [{ua}] -> {fb} [{ub}]")

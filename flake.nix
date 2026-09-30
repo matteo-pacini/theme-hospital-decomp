@@ -92,9 +92,10 @@
           nativeBuildInputs = [ final.p7zip ];
           unpackPhase = ''
             7z x $src >/dev/null
-            7z x "Watcom CPP 10.5 (ISO)/Watcom_C++_10.5.iso" -oiso LIB386 >/dev/null
+            7z x "Watcom CPP 10.5 (ISO)/Watcom_C++_10.5.iso" -oiso LIB386 BINW/WSTUB.EXE >/dev/null
           '';
-          installPhase = "mkdir -p $out && cp -r iso/LIB386/. $out/";
+          # BINW/WSTUB.EXE: the DOS/4GW stub wlink put in front of HOSPITAL.EXE.
+          installPhase = "mkdir -p $out/binw && cp -r iso/LIB386/. $out/ && cp iso/BINW/WSTUB.EXE $out/binw/wstub.exe";
         };
 
         watcom-10_6-libs = final.stdenvNoCC.mkDerivation {

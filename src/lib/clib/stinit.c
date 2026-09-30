@@ -9,5 +9,5 @@ __stream_link *__OpenStreams;
 void __InitFiles(void);
 void __full_io_exit(void);
 
-AXI(__InitFiles, 0x20)
 AYI(__full_io_exit, 0x20)
+AXI(__InitFiles, 0x20)

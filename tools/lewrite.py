@@ -11,21 +11,30 @@ The data object comes from the units' data sections where relink.py places
 them. A relocated field holds the target's offset within its object, as LE
 pages do. Each page's fixup records are
 generated in the order the original linker processed them (objects in link
-order, each object's fixups in FIXUPP record order), packed into 512-byte
-blocks written newest first. The LE header, object table, page map, name
+order, see link_order; each object's fixups in FIXUPP record order), packed
+into 512-byte blocks written newest first. The initialised data ends with
+the units' last nonzero byte. The LE header, object table, page map, name
 tables, fixup page table and import tables are computed from the objects so
 built.
 
 The 16-bit code object and its fixups (16-bit offsets within it) come from
 its assembly modules where relink.py places them.
 
-Still taken from the original: the DOS/4GW stub; the data no unit places (most
-globals are still extern at their addresses, and runtime tables) with the
-fixups inside it, and the record order of the one data page whose order
-depends on it (DATA_PAGES_IN_ORIGINAL_ORDER); and the sizes of what lies
-past the last unit's data (DATA_VSIZE, OBJECT4_VSIZE).
+The DOS/4GW stub before the LE header is BINW/WSTUB.EXE of the Watcom
+C/C++ 10.5 CD ($WATCOM_LIBS_10_5/binw/wstub.exe; 10.6's is a different
+build), with the MZ header wlink writes.
 
-Usage: tools/lewrite.py [OUTPUT]    (default build/hospital.exe; after `ninja`)
+Still taken from the original EXE:
+- the data no unit places (nonzero bytes below the units' initialised
+  extent) and the fixups in it, ordered with the unit placed before them;
+- the addresses of the unit data sections that relink.py places only where
+  the original's fixups point.
+Both are reported; with --strict the run fails if there are any.
+Constants that came from the original rather than from a unit: CODE_BASE,
+DATA_VSIZE, OBJECT4_VSIZE and LINKED_AFTER.
+
+Usage: tools/lewrite.py [--strict] [OUTPUT]
+    (default build/hospital.exe; after `ninja`)
 """
 
 import bisect
@@ -57,15 +66,19 @@ MODULE_NAME = b"MAIN"
 # 16:16 alias 0x1000, 32-bit 0x2000.
 CODE_FLAGS, CODE16_FLAGS, DATA_FLAGS = 0x2045, 0x1045, 0x2043
 
+# The code object's address, where the units' addresses put it.
+CODE_BASE = 0x10000
 # Sizes no unit determines: DGROUP's end (the stack, after the last unit's
 # BSS) and the fourth object, which no unit places anything in.
 DATA_VSIZE = 0x79F30
 OBJECT4_VSIZE = 0x1004
-# Data pages whose fixups were processed in an order no unit gives: the last
-# page's init/fini tables and runtime tables come from runtime modules whose
-# data no unit places, so their link order is unknown. Their records keep the
-# original's order.
-DATA_PAGES_IN_ORIGINAL_ORDER = {0x33}
+# Data-only units with no init table entry, and the unit each was linked
+# right after. moddtorr's only data is a fini table (YI) entry; the YI
+# entries' order (moddtorr, stinit, 386inite) does not fix its place among
+# the XI objects. The routine its entry calls, __wcpp_2_module_dtor__, is
+# stabmod's first function, and the original processed moddtorr's fixup
+# right after stabmod's.
+LINKED_AFTER = {"lib/clib/moddtorr": "lib/clib/stabmod"}
 
 
 def fixup_record(page_offset, target_obj, target_off, kind=SRC_OFFSET32):
@@ -87,14 +100,6 @@ def page_records(entries):
     if cur:
         blocks.append(cur)
     return b"".join(r for blk in reversed(blocks) for r in blk)
-
-
-def original_order(entries, sites, page_addr):
-    """A page's records in the file order of the original's `sites` (linear
-    addresses); records it lacks follow in page offset order."""
-    by_offset = dict(entries)
-    out = [by_offset.pop(s - page_addr) for s in sites if s - page_addr in by_offset]
-    return b"".join(out + [by_offset[k] for k in sorted(by_offset)])
 
 
 def add_fixup(per_page, rel, tobj, off, kind=SRC_OFFSET32):
@@ -148,27 +153,58 @@ def code_image(result, vsize, base, proj):
     return image, unfilled
 
 
+def link_order(placed):
+    """{unit name: place in the original's link order} for the units of
+    `placed` (relink.py's data placements) whose place is known.
+
+    Code order is link order, except among the objects with an init table
+    (XI) entry: the linker laid out the XI segment in link order, and some
+    runtime objects' code lies out of that order (argcv386's, in inirt386.s,
+    after delay386's; ini87386's after stk386's). Those units take the code
+    order places they hold between them in the order of their XI entries; a
+    data-only unit with one follows the unit whose entry precedes its own.
+    Other data-only units follow the unit LINKED_AFTER names, or are not
+    ranked (see main)."""
+    units = {p[0].name: p[0] for p in placed}
+    order = sorted((u for u in units.values() if u.functions), key=lambda u: u.functions[0].addr)
+    xi = sorted((addr, u.name) for u, sec, addr, *_ in placed if sec.name == "XI")
+    chain = list(dict.fromkeys(name for _, name in xi))
+    coded = [n for n in chain if units[n].functions]
+    slots = sorted(i for i, u in enumerate(order) if u.name in coded)
+    for i, name in zip(slots, coded):
+        order[i] = units[name]
+    names = [u.name for u in order]
+    for prev, name in zip(chain, chain[1:]):
+        if name not in names:
+            names.insert(names.index(prev) + 1, name)
+    for name, after in LINKED_AFTER.items():
+        if name in units and name not in names:
+            names.insert(names.index(after) + 1, name)
+    return {n: i for i, n in enumerate(names)}
+
+
 def data_image(result, data, vsize):
     """The data object's bytes from the units' sections, which bytes they
     own, and their fixups {offset: (order, target object index, target
     offset)}, where order is the unit's place in link order and the fixup's
-    place in its FIXUPP records (None for a data-only unit); of a field
-    several units place (a COMDAT vtable), the first unit's. `data` is the built data object; target
-    objects are looked up in result['objects']."""
+    place in its FIXUPP records (None for a unit link_order does not rank);
+    of a field several units place (a COMDAT vtable), the first unit's; and
+    the sections whose place only the EXE's fixup targets give. `data` is
+    the built data object; target objects are looked up in
+    result['objects']."""
     image, owner, fixups, unknown = bytearray(vsize), [False] * vsize, {}, 0
     placed, symbol_address = list(result["data_placed"]), result["symbol_address"]
     # relink.py places a unit's data that only its own data refers to while
     # checking; that section's base is in the unit's `base` afterwards.
     seen = {id(p[1]) for p in placed}
+    from_exe = [(u.name, sec.name) for u, sec, *_ in placed if id(sec) in result["placed_from_exe"]]
     for u, sec, addr, syms, base, weak in placed:
         for s, _, _ in syms.values():
             if not s.code and id(s) in base and id(s) not in seen:
                 seen.add(id(s))
                 placed.append((u, s, base[id(s)], syms, base, weak))
-    # A data-only unit has no code to give its place in link order; main
-    # orders its fixups as it does those of the data no unit places.
-    with_code = {p[0].name: p[0] for p in placed if p[0].functions}
-    rank = {u.name: i for i, u in enumerate(sorted(with_code.values(), key=lambda u: u.functions[0].addr))}
+                from_exe.append((u.name, s.name))
+    rank = link_order(placed)
     for u, sec, addr, syms, base, weak in placed:
         size = max(len(sec.data), sec.length)
         at0 = addr - data.base
@@ -190,10 +226,10 @@ def data_image(result, data, vsize):
             value = (t + addend) & 0xFFFFFFFF
             tobj = next(o for o in result["objects"] if o.base <= value <= o.base + o.vsize)
             struct.pack_into("<I", image, at0 + at, value - tobj.base)
-            order = (rank[u.name], sec.reloc_records.get(at, 1 << 30), n) if u.functions else None
+            order = (rank[u.name], sec.reloc_records.get(at, 1 << 30), n) if u.name in rank else None
             if at0 + at not in fixups or order is not None and (fixups[at0 + at][0] is None or order < fixups[at0 + at][0]):
                 fixups[at0 + at] = (order, tobj.index, value - tobj.base)
-    return image, owner, fixups, unknown
+    return image, owner, fixups, unknown, from_exe
 
 
 class Obj:
@@ -207,13 +243,38 @@ class Obj:
         return (len(self.image) + PAGE - 1) // PAGE
 
 
+def linked_stub(w):
+    """The stub `w` (an MZ executable) as wlink puts it before an LE header:
+    the MZ header widened to 0x40 bytes with the relocations after it, the
+    header padded to a paragraph, the image padded to 16 bytes, and the LE
+    header's offset at 0x3C."""
+    h = list(struct.unpack_from("<14H", w, 0))
+    nrel, rel_at, body_at = h[3], h[12], h[4] * 16
+    size = (h[2] - 1) * 512 + h[1] if h[1] else h[2] * 512
+    rel = w[rel_at : rel_at + 4 * nrel]
+    header_len = (0x40 + len(rel) + 15) // 16 * 16
+    body = w[body_at:size]
+    total = header_len + len(body)
+    h[1], h[2], h[4], h[12] = total % 512, (total + 511) // 512, header_len // 16, 0x40
+    out = bytearray(struct.pack("<14H", *h)) + bytes(0x40 - 28) + rel
+    out += bytes(header_len - len(out)) + body
+    out += bytes(-len(out) % 16)
+    struct.pack_into("<I", out, 0x3C, len(out))
+    return bytes(out)
+
+
 def next_base(obj):
     return (obj.base + obj.vsize + OBJECT_ALIGN - 1) // OBJECT_ALIGN * OBJECT_ALIGN
 
 
-def main(output=os.path.join(ROOT, "build", "hospital.exe")):
+def main(output=os.path.join(ROOT, "build", "hospital.exe"), strict=False):
+    """Write the EXE to `output` and compare it with the original. Returns
+    whether it is identical and, if `strict`, nothing came from the
+    original."""
     le, proj = LEFile(EXE), Project()
     d = le.raw
+    stub = linked_stub(open(os.path.join(os.environ["WATCOM_LIBS_10_5"], "binw", "wstub.exe"), "rb").read())
+    lh = len(stub)
     result = relink_all()
 
     # Objects. Every unit is placed at its original address, so the code
@@ -221,9 +282,10 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
     code_vsize = max(i for i, o in enumerate(result["owner"]) if o is not None) + 1
     # CODE16: its assembly modules as relink.py placed them; it ends where
     # the last one does.
-    code16_bytes = bytes(result["code16_image"][: max(m.end for m in proj.code16) - le.objects[1].base])
-    objects = [Obj(1, le.code.base, code_vsize, CODE_FLAGS, b"")]
-    objects.append(Obj(2, next_base(objects[0]), len(code16_bytes), CODE16_FLAGS, code16_bytes))
+    objects = [Obj(1, CODE_BASE, code_vsize, CODE_FLAGS, b"")]
+    code16_base = next_base(objects[0])
+    code16_bytes = bytes(result["code16_image"][: max(m.end for m in proj.code16) - code16_base])
+    objects.append(Obj(2, code16_base, len(code16_bytes), CODE16_FLAGS, code16_bytes))
     objects.append(Obj(3, next_base(objects[1]), DATA_VSIZE, DATA_FLAGS, b""))
     objects.append(Obj(4, next_base(objects[2]), OBJECT4_VSIZE, DATA_FLAGS, b""))
     code, code16, data, _ = objects
@@ -242,21 +304,17 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
 
     # CODE16's fixups: its modules' 16-bit offsets within the object.
     code16_pages = collections.defaultdict(list)
-    placed_at = le.objects[1].base  # relink.py places at the original addresses
     for site, target in result["code16_fixups"]:
-        add_fixup(code16_pages, site - placed_at, code16.index, target - placed_at, SRC_OFFSET16)
+        add_fixup(code16_pages, site - code16.base, code16.index, target - code16.base, SRC_OFFSET16)
 
     # Data object: the units' sections over the bytes no unit places.
-    dimage, downer, dfixups, unknown = data_image(result, data, DATA_VSIZE)
+    dimage, downer, dfixups, unknown, from_exe = data_image(result, data, DATA_VSIZE)
     orig_data = le.objects[2]
-    lh = struct.unpack_from("<I", d, 0x3C)[0]
-    orig_table = lh + struct.unpack_from("<I", d, lh + 0x40)[0]
-    _, _, _, orig_first, orig_pages, _ = struct.unpack_from("<6I", d, orig_table + 2 * 24)
-    orig_init = PAGE * (orig_pages - 1) + struct.unpack_from("<I", d, lh + 0x2C)[0]
-    # Bytes no unit places are the original's, up to the end of its
-    # initialised data (the last segment there is no unit's either), and so
-    # are the fixups among them.
-    unowned = [i for i in range(orig_init) if not downer[i] and orig_data.data[i]]
+    # The initialised data ends with the last nonzero byte a unit places.
+    init = max((i + 1 for i in range(len(downer)) if downer[i] and dimage[i]), default=0)
+    # Bytes no unit places are the original's, and so are the fixups among
+    # them.
+    unowned = [i for i in range(init) if not downer[i] and orig_data.data[i]]
     for i in unowned:
         dimage[i] = orig_data.data[i]
     unowned_fixups = [(site - orig_data.base, fx) for site, fx in le.fixups.items()
@@ -270,7 +328,6 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
         k = bisect.bisect(owned_at, rel)
         order = dfixups[owned_at[k - 1]][0] + (rel,) if k else (-1, rel)
         dfixups[rel] = (order, tobj, off)
-    init = max(orig_init, max((i + 1 for i in range(len(downer)) if downer[i] and dimage[i]), default=0))
     data.image = bytes(dimage[:init])
     data_pages = collections.defaultdict(list)
     for rel, (_, tobj, off) in sorted(dfixups.items(), key=lambda f: f[1][0]):
@@ -284,10 +341,7 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
     records, page_table, origin = bytearray(), [0], []
     for o, per_page in ((code, code_pages), (code16, code16_pages), (data, data_pages)):
         for pg in range(o.pages):
-            if o is data and pg in DATA_PAGES_IN_ORIGINAL_ORDER:
-                records += original_order(per_page[pg], le.page_order[orig_first - 1 + pg], orig_data.base + pg * PAGE)
-            else:
-                records += page_records(per_page[pg])
+            records += page_records(per_page[pg])
             page_table.append(len(records))
             origin.append(o.index)
     last_page_size = len(data.image) - (data.pages - 1) * PAGE
@@ -325,9 +379,6 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
     struct.pack_into("<I", header, 0x80, pages_at)
     struct.pack_into("<I", header, 0x94, data.index)
 
-    # The DOS/4GW stub is the original's: everything before the LE header,
-    # whose offset its 0x3C field holds.
-    stub = d[:lh]
     out = bytearray(stub + header + loader + fixup_section)
     out += bytes(pages_at - len(out))
     for o in (code, code16, data):
@@ -341,7 +392,9 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
           f" {len(dfixups) - len(unowned_fixups)} fixups"
           f" ({unknown} unit relocations unresolved)")
     print(f"data from the original: {len(unowned):#x} nonzero bytes of {init - sum(downer[:init]):#x} unowned,"
-          f" {len(unowned_fixups)} fixups")
+          f" {len(unowned_fixups)} fixups; {len(from_exe)} unit data sections placed only by its fixups")
+    for u, s in from_exe[:10]:
+        print(f"  placed by the original's fixups: {u} {s}")
     rec_at = lh + off_frt
     areas = [("DOS stub", 0, lh), ("LE header", lh, lh + off_obj), ("object table", lh + off_obj, lh + off_map),
              ("page map", lh + off_map, lh + off_res), ("names and entry table", lh + off_res, lh + off_fpt),
@@ -362,8 +415,13 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
         print(f"  {a}: {n}")
     for a, n in unfilled[:10]:
         print(f"  unfilled gap {code.base + a:#x} +{n:#x}")
-    return not diff
+    from_original = unowned or unowned_fixups or from_exe
+    if strict and from_original:
+        print("--strict: not built from the units alone")
+    return not diff and not (strict and from_original)
 
 
 if __name__ == "__main__":
-    sys.exit(0 if main(*sys.argv[1:]) else 1)
+    args = sys.argv[1:]
+    strict = "--strict" in args
+    sys.exit(0 if main(*[a for a in args if a != "--strict"], strict=strict) else 1)
