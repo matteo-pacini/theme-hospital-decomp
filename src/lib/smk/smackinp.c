@@ -224,10 +224,10 @@ void __cdecl SmackDoPCM(u32 *in, u32 insize, u8 *work, u8 *outbase, u8 *outend, 
 u32 __cdecl SmackGetSizeTables(void);
 void __cdecl SmackDoTables(u8 *tables, void *addr32, u32 codesize, u32 absize, u32 detailsize, u32 typesize);
 u32 __cdecl SmackGetSizeDeltas(u32 width, u32 height);
-void fn_0010f560(void *addr32, const void *trans);
-#pragma aux fn_0010f560 "fn_0010f560_" parm caller [] modify [eax ecx edx];
-u8 fn_0010f440(u8 *deltas, u32 *rect);
-#pragma aux fn_0010f440 "fn_0010f440_" parm caller [] value [al] modify [eax ecx edx];
+void SmackRemapTables(void *addr32, const void *trans);
+#pragma aux SmackRemapTables "_SmackRemapTables" parm caller [] modify [eax ecx edx];
+u8 SmackGetRect(u8 *deltas, u32 *rect);
+#pragma aux SmackGetRect "_SmackGetRect" parm caller [] value [al] modify [eax ecx edx];
 
 u8 nexttrack(u32 *flags);
 void timeframe(Smack *smk);
@@ -250,24 +250,24 @@ u32 __pascal SmackSoundInTrack(Smack *smk, u32 trackflags);
 #pragma aux (__pascal) SmackSoundInTrack "SMACKSOUNDINTRACK";
 
 u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface);
-#pragma aux (__pascal) SmackToBufferRect "fn_000e8190_";
+#pragma aux (__pascal) SmackToBufferRect "SMACKTOBUFFERRECT";
 
 void __pascal SmackGoto(Smack *smk, u32 frame);
 #pragma aux (__pascal) SmackGoto "SMACKGOTO";
 
 u32 __pascal SmackGetTrackData(Smack *smk, u8 *dest, u32 trackflag);
-#pragma aux (__pascal) SmackGetTrackData "fn_000e8480_";
+#pragma aux (__pascal) SmackGetTrackData "SMACKGETTRACKDATA";
 
 void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32 paltype);
-#pragma aux (__pascal) SmackColorRemap "fn_000e85b0_";
+#pragma aux (__pascal) SmackColorRemap "SMACKCOLORREMAP";
 
 void __pascal SmackColorTrans(Smack *smk, const void *trans);
-#pragma aux (__pascal) SmackColorTrans "fn_000e8840_";
+#pragma aux (__pascal) SmackColorTrans "SMACKCOLORTRANS";
 
 u16 *PutWidths(u16 *p, u32 width, u32 pitch, u32 height, u32 lines);
 
 void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 *wintbl, u32 banked);
-#pragma aux (__pascal) SmackToScreen "fn_000e8ab0_";
+#pragma aux (__pascal) SmackToScreen "SMACKTOSCREEN";
 
 void __pascal SmackSummary(Smack *smk, SmackSum *sum);
 #pragma aux (__pascal) SmackSummary "SMACKSUMMARY";
@@ -1542,7 +1542,7 @@ void __pascal SmackColorTrans(Smack *smk, const void *trans)
     if (smk != NULL) {
         if (sounds)
             LowSoundCheckAddr();
-        fn_0010f560(smk->addr32, trans);
+        SmackRemapTables(smk->addr32, trans);
         if (sounds)
             LowSoundCheckAddr();
     }
@@ -1625,7 +1625,7 @@ void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32
         }
         remap[i++] = best;
     } while (i < 256);
-    fn_0010f560(smk->addr32, remap);
+    SmackRemapTables(smk->addr32, remap);
 }
 
 // FUNCTION: 0xe8480
@@ -1709,7 +1709,7 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
         }
     }
     if (smk->f3f4 == 1) {
-        if (!fn_0010f440(smk->f3b0, &smk->f3f8)) {
+        if (!SmackGetRect(smk->f3b0, &smk->f3f8)) {
             smk->f3f4 = 0;
             if (!smk->NewPalette)
                 return 0;
@@ -1727,7 +1727,7 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
     right = smk->f400 + left;
     bottom = top + smk->f404;
     if (SmackSurface == 1) {
-        while (fn_0010f440(smk->f3b0, &smk->f3f8)) {
+        while (SmackGetRect(smk->f3b0, &smk->f3f8)) {
             if (left > smk->f3f8)
                 left = smk->f3f8;
             if (smk->f3f8 + smk->f400 > right)
@@ -1737,7 +1737,7 @@ u32 __pascal SmackToBufferRect(Smack *smk, u32 SmackSurface)
         smk->f3f4 = 3;
     } else {
         area = (smk->f400 * smk->f404 * 5) >> 2;
-        while (fn_0010f440(smk->f3b0, &smk->f3f8)) {
+        while (SmackGetRect(smk->f3b0, &smk->f3f8)) {
             area += (smk->f400 * smk->f404 * 5) >> 2;
             nleft = smk->f3f8;
             if (left <= nleft)

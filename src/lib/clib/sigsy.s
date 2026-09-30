@@ -3,9 +3,9 @@
 // FUNCTION: 0x000f4bca
 
 .section _TEXT,"ax",@progbits,unique,1002442
-.globl "fn_000f4bca_"
-.type "fn_000f4bca_",@function
-"fn_000f4bca_":
+.globl "__int23_handler_"
+.type "__int23_handler_",@function
+"__int23_handler_":
     .byte 0x60  # pushal
     push ds
     push es
@@ -38,12 +38,12 @@
     mov eax, 4
     sti
     cld
-    call "fn_000fbbef_"
+    call "raise_"
     jmp .L000f4c3f
 .L000f4c2e:
     mov dx, word ptr ["___old_int23"+0x4]
     mov eax, dword ptr ["___old_int23"]
-    call "fn_000fbcb2_"
+    call "_chain_intr_"
 .L000f4c3f:
     mov edx, ecx
     mov eax, ebx
@@ -60,14 +60,14 @@
     pop ds
     .byte 0x61  # popal
     iretd
-.size "fn_000f4bca_",.-"fn_000f4bca_"
+.size "__int23_handler_",.-"__int23_handler_"
 
 // FUNCTION: 0x000f4c5f
 
 .section _TEXT,"ax",@progbits,unique,1002591
-.globl "fn_000f4c5f_"
-.type "fn_000f4c5f_",@function
-"fn_000f4c5f_":
+.globl "__int_ctrl_break_handler_"
+.type "__int_ctrl_break_handler_",@function
+"__int_ctrl_break_handler_":
     .byte 0x60  # pushal
     push ds
     push es
@@ -100,13 +100,13 @@
     mov eax, 7
     sti
     cld
-    call "fn_000fbbef_"
-    jmp "fn_000f4bca_"+0x75
+    call "raise_"
+    jmp "__int23_handler_"+0x75
 .L000f4cc6:
     mov dx, word ptr ["___old_int_ctrl_break"+0x4]
     mov eax, dword ptr ["___old_int_ctrl_break"]
-    jmp "fn_000f4bca_"+0x70
-.size "fn_000f4c5f_",.-"fn_000f4c5f_"
+    jmp "__int23_handler_"+0x70
+.size "__int_ctrl_break_handler_",.-"__int_ctrl_break_handler_"
 
 // FUNCTION: 0x000f4cd7
 
@@ -369,7 +369,7 @@
     mov word ptr ["___old_int23"+0x4], cx
     mov dword ptr ["___old_int23"], edx
     mov cl, 0x23
-    .byte 0xba; .long "fn_000f4bca_"  # mov edx, 0xe4bca
+    .byte 0xba; .long "__int23_handler_"  # mov edx, 0xe4bca
     push es
     mov ax, 0x2502
     int 0x21
@@ -402,14 +402,14 @@
     mov bl, 0x23
     mov word ptr ["___old_pm_int23"+0x4], cx
     mov dword ptr ["___old_pm_int23"], edx
-    .byte 0xba; .long "fn_000f4bca_"  # mov edx, 0xe4bca
+    .byte 0xba; .long "__int23_handler_"  # mov edx, 0xe4bca
     mov ecx, cs
     mov ax, 0x205
     int 0x31
     jmp .L000f5042
 .L000f501b:
     mov eax, 0x23
-    .byte 0xbb; .long "fn_000f4bca_"  # mov ebx, 0xe4bca
+    .byte 0xbb; .long "__int23_handler_"  # mov ebx, 0xe4bca
     call "_dos_getvect_"
     mov ecx, cs
     mov dword ptr ["___old_int23"], eax
@@ -464,7 +464,7 @@
     mov word ptr ["___old_int_ctrl_break"+0x4], cx
     mov dword ptr ["___old_int_ctrl_break"], edx
     mov cl, 0x1b
-    .byte 0xba; .long "fn_000f4c5f_"  # mov edx, 0xe4c5f
+    .byte 0xba; .long "__int_ctrl_break_handler_"  # mov edx, 0xe4c5f
     push es
     mov ax, 0x2502
     int 0x21
@@ -497,14 +497,14 @@
     mov bl, 0x1b
     mov word ptr ["___old_pm_int_ctrl_break"+0x4], cx
     mov dword ptr ["___old_pm_int_ctrl_break"], edx
-    .byte 0xba; .long "fn_000f4c5f_"  # mov edx, 0xe4c5f
+    .byte 0xba; .long "__int_ctrl_break_handler_"  # mov edx, 0xe4c5f
     mov ecx, cs
     mov ax, 0x205
     int 0x31
     jmp .L000f515d
 .L000f5136:
     mov eax, 0x1b
-    .byte 0xbb; .long "fn_000f4c5f_"  # mov ebx, 0xe4c5f
+    .byte 0xbb; .long "__int_ctrl_break_handler_"  # mov ebx, 0xe4c5f
     call "_dos_getvect_"
     mov ecx, cs
     mov dword ptr ["___old_int_ctrl_break"], eax

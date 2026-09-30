@@ -14,7 +14,7 @@ extern u8 D_00156910;
 
 void fn_00090610(void);
 void fn_000110b0(void);
-int fn_000bed50(void);
+int LbScreenLock(void);
 void fn_0008add8(void);
 void fn_0004e47c(Window **windows);
 void fn_000a6ca4(void);
@@ -59,7 +59,7 @@ void game(void)
             othervar.f2c = (TbScreenMode)0;
         }
         check_if_active();
-        if (fn_000bed50() != 1) {
+        if (LbScreenLock() != 1) {
             redraw = D_0012d8d8[display_mode];
             if (display_mode == 13) {
                 redraw = process_lost_focus_display(0);
@@ -212,17 +212,17 @@ void game(void)
             default:
                 break;
             }
-            LbIsActive();
+            LbScreenUnlock();
         }
         if (debug.unknownd4 != 0) {
             if (debug.unknownd4 == 1) {
                 debug.unknownd4 = 0;
             }
             LbMousePlace();
-            while (fn_000bed50() != 1) {
+            while (LbScreenLock() != 1) {
             }
             screen_shot();
-            LbIsActive();
+            LbScreenUnlock();
             LbMouseRemove();
         }
         limit_framerate();
@@ -549,13 +549,13 @@ void draw_pause_mode(void)
 void check_if_active(void)
 {
     if (statvar.unknownfd > 1) {
-        if (LbDate() && othervar.fa7b[player] != 0) {
+        if (LbIsActive() && othervar.fa7b[player] != 0) {
             othervar.fa81 = 0xf;
             D_001549d0[player].type = 0x8e;
             if (othervar.fa4f) {
                 AIL_resume_sequence(GetSongHandle());
             }
-        } else if (!LbDate() && othervar.fa7b[player] == 0) {
+        } else if (!LbIsActive() && othervar.fa7b[player] == 0) {
             D_001549d0[player].type = 0x8d;
             if (has_any_player_lost_focus()) {
                 othervar.fa7b[player] = 2;

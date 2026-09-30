@@ -31,13 +31,13 @@ void free(void *ptr);
 #pragma aux malloc "_nmalloc_";
 #pragma aux free "_nfree_";
 
-/* __pascal (callee pops) with address names. */
-void *fn_000efba0(U32 size);
-void fn_000efbb0(void *ptr);
+/* __pascal (callee pops). */
+void *AIL_MALLOC(U32 size);
+void AIL_FREE(void *ptr);
 int AIL_INT386(int intno, union REGS *in, union REGS *out);
-#pragma aux (__pascal) fn_000efba0 "*_";
-#pragma aux (__pascal) fn_000efbb0 "*_";
-#pragma aux (__pascal) AIL_INT386 "fn_000efbd0_";
+#pragma aux (__pascal) AIL_MALLOC "*";
+#pragma aux (__pascal) AIL_FREE "*";
+#pragma aux (__pascal) AIL_INT386 "AIL_INT386";
 void __pascal AIL_SPRINTF(char *dest, char const *fmt, S32 nargs, S32 *args);
 void AILSR_end(void);
 
@@ -56,7 +56,7 @@ void AILSR_start(void)
 }
 
 // FUNCTION: 0xefba0
-void *fn_000efba0(U32 size)
+void *AIL_MALLOC(U32 size)
 {
     void *ptr;
 
@@ -66,7 +66,7 @@ void *fn_000efba0(U32 size)
 }
 
 // FUNCTION: 0xefbb0
-void fn_000efbb0(void *ptr)
+void AIL_FREE(void *ptr)
 {
     free(ptr);
     MarkEBXAsChanged();
@@ -124,8 +124,8 @@ void __cdecl AIL_startup_reg(void)
     if (AIL_started) {
         return;
     }
-    AIL_mem_alloc = (void *(__pascal *)(U32))fn_000efba0;
-    AIL_mem_free = (void (__pascal *)(void *))fn_000efbb0;
+    AIL_mem_alloc = (void *(__pascal *)(U32))AIL_MALLOC;
+    AIL_mem_free = (void (__pascal *)(void *))AIL_FREE;
     AIL_getenv = AIL_GETENV;
     AIL_int386 = (int (__pascal *)(int, union REGS *, union REGS *))AIL_INT386;
     AIL_sprintf = AIL_SPRINTF;

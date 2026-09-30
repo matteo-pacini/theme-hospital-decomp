@@ -30,11 +30,11 @@ extern char D_0012712c[];
 extern char D_00127140[];
 extern char D_0012715c[];
 
-/* End-of-sequence/sample callbacks: __pascal (callee pops), address-named. */
-void fn_000e6d00(HSEQUENCE S);
-#pragma aux fn_000e6d00 "*_" parm routine [] modify [eax ebx ecx edx];
-void fn_000e6d40(HSAMPLE S);
-#pragma aux fn_000e6d40 "*_" parm routine [] modify [eax ebx ecx edx];
+/* End-of-sequence/sample callbacks: __pascal (callee pops). */
+void END_OF_SEQUENCE(HSEQUENCE S);
+#pragma aux END_OF_SEQUENCE "*" parm routine [] modify [eax ebx ecx edx];
+void END_OF_SAMPLE(HSAMPLE S);
+#pragma aux END_OF_SAMPLE "*" parm routine [] modify [eax ebx ecx edx];
 
 void AILQAPI_end(void);
 
@@ -51,7 +51,7 @@ void AILQAPI_start(void)
 }
 
 // FUNCTION: 0xe6d00
-void fn_000e6d00(HSEQUENCE S)
+void END_OF_SEQUENCE(HSEQUENCE S)
 {
     ((HAUDIO)AIL_sequence_user_data(S, 0))->handle = NULL;
     ((HAUDIO)AIL_sequence_user_data(S, 0))->status = QSTAT_LOADED;
@@ -59,7 +59,7 @@ void fn_000e6d00(HSEQUENCE S)
 }
 
 // FUNCTION: 0xe6d40
-void fn_000e6d40(HSAMPLE S)
+void END_OF_SAMPLE(HSAMPLE S)
 {
     ((HAUDIO)AIL_sample_user_data(S, 0))->handle = NULL;
     ((HAUDIO)AIL_sample_user_data(S, 0))->status = QSTAT_LOADED;
@@ -68,7 +68,7 @@ void fn_000e6d40(HSAMPLE S)
 
 S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital, S32 use_MIDI,
                                   U32 output_rate, S32 output_bits, S32 output_channels);
-#pragma aux (__cdecl) AIL_API_quick_startup "fn_000e6d80_";
+#pragma aux (__cdecl) AIL_API_quick_startup "_AIL_quick_startup_with_start";
 
 // startup is __cdecl: the parameters are loaded after its call, which
 // clobbers eax, ecx and edx.
@@ -223,7 +223,7 @@ S32 __cdecl AIL_API_quick_play(HAUDIO audio, U32 loop_count)
             return 0;
         }
         AIL_set_sequence_user_data(audio->handle, 0, (S32)audio);
-        AIL_register_sequence_callback(audio->handle, (AILSEQUENCECB)fn_000e6d00);
+        AIL_register_sequence_callback(audio->handle, (AILSEQUENCECB)END_OF_SEQUENCE);
         AIL_set_sequence_loop_count(audio->handle, loop_count);
         audio->status = QSTAT_PLAYING;
         AIL_start_sequence(audio->handle);
@@ -239,7 +239,7 @@ S32 __cdecl AIL_API_quick_play(HAUDIO audio, U32 loop_count)
             return 0;
         }
         AIL_set_sample_user_data(audio->handle, 0, (S32)audio);
-        AIL_register_EOS_callback(audio->handle, (AILSAMPLECB)fn_000e6d40);
+        AIL_register_EOS_callback(audio->handle, (AILSAMPLECB)END_OF_SAMPLE);
         AIL_set_sample_loop_count(audio->handle, loop_count);
         audio->status = QSTAT_PLAYING;
         AIL_start_sample(audio->handle);

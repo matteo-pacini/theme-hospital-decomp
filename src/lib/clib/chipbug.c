@@ -6,7 +6,7 @@ extern const double D_0012890c;
 
 /* Sets bit 0 of _chipbug on a Pentium with the FDIV bug (387 or later only). */
 // FUNCTION: 0xfdcd7
-void fn_000fdcd7(void)
+void verify_pentium_fdiv_bug(void)
 {
     volatile double num;
     volatile double den;

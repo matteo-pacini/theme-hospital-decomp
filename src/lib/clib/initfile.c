@@ -12,9 +12,8 @@ void *malloc(size_t size);
 #pragma aux malloc "_nmalloc_"
 void __fatal_runtime_error(char *msg, unsigned retcode);
 
-/* __InitFiles; config/functions.txt gives its name to the clock code before it. */
 // FUNCTION: 0xec3d8
-void fn_000ec3d8(void)
+void __InitFiles(void)
 {
     FILE *fp;
     __stream_link *link;

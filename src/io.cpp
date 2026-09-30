@@ -61,7 +61,7 @@ extern u8 D_0012b7c8[];
 extern Stride6c D_0015f5c2[];
 extern char D_001202ba[], D_001202c1[], D_001202c8[], D_001202cf[], D_001202e2[], D_001202f3[];
 
-int fn_000bed50(void);
+int LbScreenLock(void);
 u32 fn_00022790(void);
 u8 fn_00086b60(void);
 void fn_0008debc(char *s);
@@ -99,7 +99,7 @@ void fn_0001c084(int n)
         char buf[32];
 
         if (!flag) {
-            while (fn_000bed50() != 1) {
+            while (LbScreenLock() != 1) {
             }
         }
         sprintf(buf, D_00120260, D_001602a0->f6c, n);
@@ -108,10 +108,10 @@ void fn_0001c084(int n)
         set_font_from_cache(0x2c);
         LbTextDraw(resvars.f1c_Struct_0015f410p->f570, resvars.f1c_Struct_0015f410p->f584 + resvars.f1c_Struct_0015f410p->f594, buf);
         set_all_refresh_zones_in_window(0, lbDisplay.unknown1c - 0x5c, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-        LbIsActive();
+        LbScreenUnlock();
         special_refresh();
         if (flag) {
-            while (fn_000bed50() != 1) {
+            while (LbScreenLock() != 1) {
             }
         }
     }

@@ -76,7 +76,7 @@ unsigned GetDSLimit(void);
 void *__brk(unsigned brk_value);
 
 // FUNCTION: 0xf46ed
-void *fn_000f46ed(int increment)
+void *sbrk(int increment)
 {
     void *p;
 

@@ -3,9 +3,9 @@
 // FUNCTION: 0x000fbcb2
 
 .section _TEXT,"ax",@progbits,unique,1031346
-.globl "fn_000fbcb2_"
-.type "fn_000fbcb2_",@function
-"fn_000fbcb2_":
+.globl "_chain_intr_"
+.type "_chain_intr_",@function
+"_chain_intr_":
     mov ecx, eax
     mov eax, edx
     mov esp, ebp
@@ -22,4 +22,4 @@
     pop ebx
     pop edx
     retf
-.size "fn_000fbcb2_",.-"fn_000fbcb2_"
+.size "_chain_intr_",.-"_chain_intr_"

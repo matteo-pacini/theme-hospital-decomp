@@ -19,8 +19,7 @@ void __wcpp_2_fatal_runtime_error_(char *msg, int code);
 
 void terminate(void);
 void unexpected(void);
-/* config/functions.txt has no name for unexpected. */
-#pragma aux unexpected "fn_000fc770_"
+#pragma aux unexpected "W?unexpected$n()v"
 
 // FUNCTION: 0xfc770
 void unexpected(void)

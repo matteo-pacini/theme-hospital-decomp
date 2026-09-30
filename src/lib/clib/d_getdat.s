@@ -3,9 +3,9 @@
 // FUNCTION: 0x000dc932
 
 .section _TEXT,"ax",@progbits,unique,903474
-.globl "fn_000dc932_"
-.type "fn_000dc932_",@function
-"fn_000dc932_":
+.globl "_dos_getdate_"
+.type "_dos_getdate_",@function
+"_dos_getdate_":
     push edx
     push ecx
     push ebx
@@ -21,4 +21,4 @@
     pop ecx
     pop edx
     ret
-.size "fn_000dc932_",.-"fn_000dc932_"
+.size "_dos_getdate_",.-"_dos_getdate_"

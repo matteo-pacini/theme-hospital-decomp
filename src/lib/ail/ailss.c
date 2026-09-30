@@ -45,12 +45,12 @@ static S32 cnt;
 
 #define DIG_BUFFER_SERVICE 0x0010
 
-/* Timer callback: __pascal (callee pops), address-named. */
-void fn_000dff00(U32 user);
-#pragma aux (__pascal) fn_000dff00 "*_";
-/* Driver destructor: __cdecl, address-named. */
-void fn_000e0660(HDIGDRIVER dig);
-#pragma aux (__cdecl) fn_000e0660 "*_";
+/* Timer callback: __pascal (callee pops). */
+void SS_SERVE(U32 user);
+#pragma aux (__pascal) SS_SERVE "SS_SERVE";
+/* Driver destructor: __cdecl. */
+void SS_destroy_DIG_driver(HDIGDRIVER dig);
+#pragma aux (__cdecl) SS_destroy_DIG_driver "_SS_destroy_DIG_driver";
 void AILSS_end(void);
 
 // FUNCTION: 0x000df970
@@ -237,7 +237,7 @@ void __cdecl SS_build_amplitude_tables(HSAMPLE S)
 }
 
 // FUNCTION: 0xdff00
-void fn_000dff00(U32 user)
+void SS_SERVE(U32 user)
 {
     if (entry) {
         return;
@@ -503,7 +503,7 @@ S32 __cdecl SS_attempt_DIG_detection(HDIGDRIVER dig, IO_PARMS *IO)
 }
 
 // FUNCTION: 0xe0660
-void fn_000e0660(HDIGDRIVER dig)
+void SS_destroy_DIG_driver(HDIGDRIVER dig)
 {
     if (dig->playing) {
         SS_stop_DIG_driver_playback(dig);
@@ -659,7 +659,7 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         dig->samples[i].status = SMP_FREE;
         dig->samples[i].driver = dig;
     }
-    dig->timer = AIL_register_timer((AILTIMERCB)fn_000dff00);
+    dig->timer = AIL_register_timer((AILTIMERCB)SS_SERVE);
     if (dig->timer == -1) {
         strcpy(AIL_error, D_00126d48);
         if (drvr->PM_ISR != -1) {
@@ -676,7 +676,7 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     AIL_set_timer_user(dig->timer, (U32)dig);
     AIL_set_timer_frequency(dig->timer, AIL_preference[DIG_SERVICE_RATE]);
     AIL_start_timer(dig->timer);
-    dig->drvr->destructor = (void (__cdecl *)(void *))fn_000e0660;
+    dig->drvr->destructor = (void (__cdecl *)(void *))SS_destroy_DIG_driver;
     dig->drvr->descriptor = dig;
     AILSSA_flush_buffer(dig);
     AILSSA_DMA_copy(dig, 0);

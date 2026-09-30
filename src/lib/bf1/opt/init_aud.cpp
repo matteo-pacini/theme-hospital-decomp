@@ -77,7 +77,7 @@ char *strcpy(char *dst, const char *src);
 #pragma intrinsic(strcpy)
 void InitSound(void);
 void InitMusic(void);
-void fn_000eb5b0(void);
+void InitAllBullfrogSoundTimers(void);
 void fn_000bbb50(void);
 void fn_000bbb80(void);
 
@@ -216,7 +216,7 @@ void InitAudio(AudioInitOptions *ao)
         SoundAble = 0;
     InitSound();
     InitMusic();
-    fn_000eb5b0();
+    InitAllBullfrogSoundTimers();
     if (ao->unknown18 == 1)
         fn_000bbb50();
     if (ao->unknown19 == 1)

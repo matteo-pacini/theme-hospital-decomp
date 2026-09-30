@@ -1376,9 +1376,9 @@
 // FUNCTION: 0x000deb11
 
 .section _TEXT,"ax",@progbits,unique,912145
-.globl "_AIL_fseekcur"
-.type "_AIL_fseekcur",@function
-"_AIL_fseekcur":
+.globl "fn_000deb11_"
+.type "fn_000deb11_",@function
+"fn_000deb11_":
     push ebp
     {load} mov ebp, esp
     push ebx
@@ -1396,17 +1396,17 @@
     pop ebx
     pop ebp
     ret
-.size "_AIL_fseekcur",.-"_AIL_fseekcur"
+.size "fn_000deb11_",.-"fn_000deb11_"
 
 // FUNCTION: 0x000deb31
 
 .section _TEXT,"ax",@progbits,unique,912177
-.globl "fn_000deb31_"
-.type "fn_000deb31_",@function
-"fn_000deb31_":
+.globl "_AIL_fseekcur"
+.type "_AIL_fseekcur",@function
+"_AIL_fseekcur":
     mov ax, 0x4201
     .byte 0xeb; .byte 0xda  # jmp 0xdeb11
-.size "fn_000deb31_",.-"fn_000deb31_"
+.size "_AIL_fseekcur",.-"_AIL_fseekcur"
 
 // FUNCTION: 0x000deb37
 

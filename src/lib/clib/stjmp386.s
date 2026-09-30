@@ -6,7 +6,7 @@
 .globl "__wcpp_2_call_unexpected__"
 .type "__wcpp_2_call_unexpected__",@function
 "__wcpp_2_call_unexpected__":
-    jmp "fn_000fc770_"
+    jmp "W?unexpected$n()v"
 .size "__wcpp_2_call_unexpected__",.-"__wcpp_2_call_unexpected__"
 
 // FUNCTION: 0x000fb886

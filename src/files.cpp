@@ -13,7 +13,7 @@ int __far fn_0009b590(unsigned deverr, unsigned errcode, unsigned __far *devhdr)
 void fn_000ce546(int (__far *handler)(unsigned, unsigned, unsigned __far *));
 char *strchr(const char *s, int c);
 int LbFileFindFirst(char *spec, void *find, u32 attributes);
-int fn_000bed50(void);
+int LbScreenLock(void);
 void fn_0001102c(void);
 }
 
@@ -55,11 +55,11 @@ void check_cd_available(char *path)
             return;
     }
     if (had_screen)
-        LbIsActive();
+        LbScreenUnlock();
     if (resvars.f0 != SCREEN_MODE_13 || othervar.fa8d)
         setup_any_screen(D_00153f34, SCREEN_MODE_13);
     LbFileLoadAt((char *)screenpalettes[21], D_00153f34);
-    while (fn_000bed50() != 1)
+    while (LbScreenLock() != 1)
         ;
     LbFileLoadAt((char *)hiresscreens[21], lbDisplay.unknown4);
     lbDisplay.draw_flags = 0;
@@ -70,7 +70,7 @@ void check_cd_available(char *path)
     LbTextDraw((lbDisplay.unknown18 - LbTextStringWidth(text)) / 2, 0x1a4, text);
     if (lbKeyOn[0x21] && lbKeyOn[0x38])
         LbTextDraw(0, 0x1c2, path);
-    LbIsActive();
+    LbScreenUnlock();
     LbMouseChangeSprite(0);
     LbScreenSwap();
     LbPaletteSet(D_00153f34);
@@ -85,7 +85,7 @@ void check_cd_available(char *path)
     if (flag)
         fn_0001102c();
     if (had_screen) {
-        while (fn_000bed50() != 1)
+        while (LbScreenLock() != 1)
             ;
     }
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);

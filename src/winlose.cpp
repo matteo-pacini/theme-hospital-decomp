@@ -31,7 +31,7 @@ extern char D_00121ad4[];
 u32 time(u32 *t);
 void fn_0001102c(void);
 void fn_000951c8(void);
-int fn_000bed50(void);
+int LbScreenLock(void);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
 
@@ -326,9 +326,9 @@ void play_winlose(void)
         lbDisplay.left_button = 0;
         lbDisplay.rleft_button = 0;
         if (had_screen)
-            LbIsActive();
+            LbScreenUnlock();
         for (done = 0; !done;) {
-            while (fn_000bed50() != 1)
+            while (LbScreenLock() != 1)
                 ;
             LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             reqspr_draw(resvars.f40[0xcf].x, resvars.f40[0xcf].y, &screen_sprites_tab_start[1]);
@@ -373,11 +373,11 @@ void play_winlose(void)
                 }
                 lbDisplay.left_button = 0;
             }
-            LbIsActive();
+            LbScreenUnlock();
             LbScreenSwap();
         }
         if (had_screen) {
-            while (fn_000bed50() != 1)
+            while (LbScreenLock() != 1)
                 ;
         }
         othervar.f96[0] = 0;

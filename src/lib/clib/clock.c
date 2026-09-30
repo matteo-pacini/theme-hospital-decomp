@@ -26,11 +26,8 @@ int intdos(union REGS *in_regs, union REGS *out_regs);
 
 extern clock_t D_0018cfac;
 
-/* config/functions.txt names this function after __InitFiles. */
-#pragma aux __get_ticks "__InitFiles_"
-
 // FUNCTION: 0xec34a
-clock_t __get_ticks(void)
+clock_t clock_value(void)
 {
     union REGS regs;
 
@@ -42,7 +39,7 @@ clock_t __get_ticks(void)
 // FUNCTION: 0x000ec3a5
 void __clock_init(void)
 {
-    D_0018cfac = __get_ticks();
+    D_0018cfac = clock_value();
 }
 
 // FUNCTION: 0x000ec3b0
@@ -50,7 +47,7 @@ clock_t __clock(void)
 {
     clock_t ticks;
 
-    ticks = __get_ticks();
+    ticks = clock_value();
     if (ticks < D_0018cfac)
         ticks += 24UL * 60 * 60 * 100;
     return ticks - D_0018cfac;

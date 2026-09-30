@@ -3,9 +3,9 @@
 // FUNCTION: 0x000ecc8c
 
 .section _TEXT,"ax",@progbits,unique,969868
-.globl "fn_000ecc8c_"
-.type "fn_000ecc8c_",@function
-"fn_000ecc8c_":
+.globl "LbDrawCheapText_"
+.type "LbDrawCheapText_",@function
+"LbDrawCheapText_":
     push ebp
     {load} mov ebp, esp
     add esp, -0x10
@@ -88,4 +88,4 @@
     pop eax
     leave
     ret
-.size "fn_000ecc8c_",.-"fn_000ecc8c_"
+.size "LbDrawCheapText_",.-"LbDrawCheapText_"

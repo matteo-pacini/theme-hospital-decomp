@@ -3377,8 +3377,7 @@ void fn_0004195c(Thing *w, u16 a);
 #pragma aux fn_0004195c "W?nav_init$n(pn$Thing$$)v"
 void fn_00074220(u8 a, u8 b);
 #pragma aux fn_00074220 "W?keybuffer_clear$n()v"
-u8 fn_000c960c(u8 *palette, int r, int g, int b);
-#pragma aux fn_000c960c "W?draw_bdem_unavailable_message$n()v"
+u8 LbPaletteFindColour(u8 *palette, int r, int g, int b);
 void fn_0001bc94(u8 idx, u8 flag);
 u8 fn_0003e724(Thing *w);
 #pragma aux fn_0003e724 "W?fail_staff_complex$n(pn$Thing$$)v"

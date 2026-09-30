@@ -18,7 +18,7 @@
     int 0x21
     call "__doserror_"
     mov edx, ebx
-    call "_dos_findclose_"
+    call "fn_000d1264_"
     pop ecx
     ret
 .size "_dos_findfirst_",.-"_dos_findfirst_"
@@ -37,7 +37,7 @@
     mov ah, 0x4f
     int 0x21
     call "__doserror_"
-    call "_dos_findclose_"
+    call "fn_000d1264_"
     pop edx
     ret
 .size "_dos_findnext_",.-"_dos_findnext_"
@@ -45,19 +45,19 @@
 // FUNCTION: 0x000d1261
 
 .section _TEXT,"ax",@progbits,unique,856673
-.globl "fn_000d1261_"
-.type "fn_000d1261_",@function
-"fn_000d1261_":
+.globl "_dos_findclose_"
+.type "_dos_findclose_",@function
+"_dos_findclose_":
     xor eax, eax
     ret
-.size "fn_000d1261_",.-"fn_000d1261_"
+.size "_dos_findclose_",.-"_dos_findclose_"
 
 // FUNCTION: 0x000d1264
 
 .section _TEXT,"ax",@progbits,unique,856676
-.globl "_dos_findclose_"
-.type "_dos_findclose_",@function
-"_dos_findclose_":
+.globl "fn_000d1264_"
+.type "fn_000d1264_",@function
+"fn_000d1264_":
     cmp byte ptr ["__Extender"], 9
     jne .L000d1286
     push eax
@@ -78,7 +78,7 @@
     pop eax
 .L000d1286:
     ret
-.size "_dos_findclose_",.-"_dos_findclose_"
+.size "fn_000d1264_",.-"fn_000d1264_"
 
 // FUNCTION: 0x000d1287
 

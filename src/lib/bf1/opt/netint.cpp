@@ -222,8 +222,11 @@ void LbNetwork_LibraryVersion(__ctcl4TbNetworkVersion *version)
 
 extern "C" {
 
+TbError LbNetwork_AreWeBeingLobbied(u32 a, u32 b, u32 c, u32 d, u32 e);
+#pragma aux LbNetwork_AreWeBeingLobbied "W?LbNetwork_AreWeBeingLobbied$n(ulpnvulpn$__7308jnTbNetworkPlayerInfo$$pnul)$TbError$$"
+
 // FUNCTION: 0x000bf810
-TbError fn_000bf810(u32 a, u32 b, u32 c, u32 d, u32 e)
+TbError LbNetwork_AreWeBeingLobbied(u32 a, u32 b, u32 c, u32 d, u32 e)
 {
     return Lb_FAIL;
 }

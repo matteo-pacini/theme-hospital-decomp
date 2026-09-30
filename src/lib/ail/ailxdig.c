@@ -75,19 +75,17 @@ S32 note_freq[128] = {
 extern char D_00127090[];
 extern char D_001270bc[];
 
-/* Timbre trap (demo: XDIG_TIMB_TRAP): __pascal (callee pops), address-named. */
-S32 fn_000e59e0(HMDIDRIVER mdi, S32 bank, S32 patch);
-#pragma aux (__pascal) fn_000e59e0 "*_";
-/* MIDI event trap: __pascal (callee pops), address-named. */
-S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2);
-#pragma aux (__pascal) fn_000e5a10 "*_";
+/* Timbre and MIDI event traps: __pascal (callee pops). */
+S32 XDIG_TIMB_TRAP(HMDIDRIVER mdi, S32 bank, S32 patch);
+#pragma aux (__pascal) XDIG_TIMB_TRAP "*";
+S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2);
+#pragma aux (__pascal) XDIG_MIDI_TRAP "*";
 void AILXDIG_end(void);
 
 void __cdecl XDIG_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2);
 #pragma aux (__cdecl) XDIG_write_log "fn_000e5660_";
 
-void XDIG_MIDI_TRAP(HWAVESYNTH W, S32 voice);
-#pragma aux XDIG_MIDI_TRAP "XDIG_MIDI_TRAP";
+void XDIG_set_pitch(HWAVESYNTH W, S32 voice);
 
 // FUNCTION: 0x000e5630
 void AILXDIG_start(void)
@@ -194,7 +192,7 @@ void XDIG_set_volume(HWAVESYNTH W, S32 voice)
 }
 
 // FUNCTION: 0x000e58d0
-void XDIG_MIDI_TRAP(HWAVESYNTH W, S32 voice)
+void XDIG_set_pitch(HWAVESYNTH W, S32 voice)
 {
     S32 ch;
     S32 root;
@@ -241,7 +239,7 @@ void XDIG_MIDI_TRAP(HWAVESYNTH W, S32 voice)
 }
 
 // FUNCTION: 0xe59e0
-S32 fn_000e59e0(HMDIDRIVER mdi, S32 bank, S32 patch)
+S32 XDIG_TIMB_TRAP(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
     HWAVESYNTH W = (HWAVESYNTH)mdi->system_data[0];
 
@@ -249,7 +247,7 @@ S32 fn_000e59e0(HMDIDRIVER mdi, S32 bank, S32 patch)
 }
 
 // FUNCTION: 0xe5a10
-S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2)
+S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2)
 {
     HWAVESYNTH W;
     S32 st;
@@ -283,7 +281,7 @@ S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_
         case DATA_MSB:
             for (i = 0; i < W->n_voices; i++) {
                 if (W->chan[i] == ch && AIL_sample_status(W->S[i]) == SMP_PLAYING) {
-                    XDIG_MIDI_TRAP(W, i);
+                    XDIG_set_pitch(W, i);
                 }
             }
             break;
@@ -302,7 +300,7 @@ S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_
     case 0xe0:
         for (i = 0; i < W->n_voices; i++) {
             if (W->chan[i] == ch && AIL_sample_status(W->S[i]) == SMP_PLAYING) {
-                XDIG_MIDI_TRAP(W, i);
+                XDIG_set_pitch(W, i);
             }
         }
         break;
@@ -337,7 +335,7 @@ S32 fn_000e5a10(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_
         AIL_init_sample(W->S[i]);
         AIL_set_sample_type(W->S[i], W->wave[ch]->format, W->wave[ch]->flags);
         AIL_set_sample_address(W->S[i], (U8 *)W->library + W->wave[ch]->file_offset, W->wave[ch]->size);
-        XDIG_MIDI_TRAP(W, i);
+        XDIG_set_pitch(W, i);
         XDIG_set_volume(W, i);
         AIL_start_sample(W->S[i]);
         return 1;
@@ -372,8 +370,8 @@ HWAVESYNTH __cdecl AIL_API_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER md
     W->dig = dig;
     W->mdi = mdi;
     W->library = wave_lib;
-    W->prev_event_fn = AIL_register_event_callback(mdi, (AILEVENTCB)fn_000e5a10);
-    W->prev_timb_fn = AIL_register_timbre_callback(mdi, (AILTIMBRECB)fn_000e59e0);
+    W->prev_event_fn = AIL_register_event_callback(mdi, (AILEVENTCB)XDIG_MIDI_TRAP);
+    W->prev_timb_fn = AIL_register_timbre_callback(mdi, (AILTIMBRECB)XDIG_TIMB_TRAP);
     mdi->system_data[0] = (S32)W;
     for (i = 0; i < NUM_CHANS; i++) {
         W->controls.pitch_h[i] = 0x40;

@@ -581,9 +581,9 @@ void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style)
 // FUNCTION: 0x000ba800
 void calculate_grey(u8 *palette)
 {
-    b_b_colour = fn_000c960c(palette, 3, 0x2f, 0x3b);
-    white_colour = fn_000c960c(palette, 0x3f, 0x3f, 0x3f);
-    black_colour = fn_000c960c(palette, 0, 0, 0);
+    b_b_colour = LbPaletteFindColour(palette, 3, 0x2f, 0x3b);
+    white_colour = LbPaletteFindColour(palette, 0x3f, 0x3f, 0x3f);
+    black_colour = LbPaletteFindColour(palette, 0, 0, 0);
     Gray[0] = 0;
     Gray[1] = 0xff;
     Gray[2] = 0xf5;

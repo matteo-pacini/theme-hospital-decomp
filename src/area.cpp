@@ -27,7 +27,7 @@ extern char D_00120595[];
 extern char D_001205a6[];
 extern void *smack_draw_callback;
 void fn_00074cd8(void);
-int fn_000bed50(void);
+int LbScreenLock(void);
 void FadeSample(int a, int b, int c, int d, u8 e);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
@@ -110,10 +110,10 @@ u8 draw_area_select(void)
         if (resvars.f1 == SCREEN_MODE_1) {
             active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
             if (active)
-                LbIsActive();
+                LbScreenUnlock();
             change_res(SCREEN_MODE_1);
             setup_menus();
-            while (fn_000bed50() != 1)
+            while (LbScreenLock() != 1)
                 ;
         }
         resvars.f2 = resvars.f1;

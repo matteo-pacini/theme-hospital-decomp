@@ -43,7 +43,7 @@
 .type "fn_000ecd9a_",@function
 "fn_000ecd9a_":
     lea esi, [esi + esi*2]
-    lea eax, cs:[esi + "_DoINTR_"+0x34]
+    lea eax, cs:[esi + "fn_000ece0c_"+0x34]
     push eax
     mov es, word ptr [ebx]
     mov bp, word ptr [ebx + 6]
@@ -60,16 +60,16 @@
 // FUNCTION: 0x000ecdbf
 
 .section _TEXT,"ax",@progbits,unique,970175
-.globl "fn_000ecdbf_"
-.type "fn_000ecdbf_",@function
-"fn_000ecdbf_":
+.globl "_DoINTR_"
+.type "_DoINTR_",@function
+"_DoINTR_":
     .byte 0x60  # pushal
     push gs
     push fs
     push es
     push ds
     push edx
-    call "_DoINTR_"
+    call "fn_000ece0c_"
     push ebx
     push ds
     push ebp
@@ -97,14 +97,14 @@
     pop gs
     .byte 0x61  # popal
     ret
-.size "fn_000ecdbf_",.-"fn_000ecdbf_"
+.size "_DoINTR_",.-"_DoINTR_"
 
 // FUNCTION: 0x000ece0c
 
 .section _TEXT,"ax",@progbits,unique,970252
-.globl "_DoINTR_"
-.type "_DoINTR_",@function
-"_DoINTR_":
+.globl "fn_000ece0c_"
+.type "fn_000ece0c_",@function
+"fn_000ece0c_":
     and eax, 0xff
     lea eax, [eax + eax*2]
     lea eax, cs:[eax + .L000ece40]
@@ -637,4 +637,4 @@
     .byte 0xc3
     .byte 0xcd; .byte 0xff
     .byte 0xc3
-.size "_DoINTR_",.-"_DoINTR_"
+.size "fn_000ece0c_",.-"fn_000ece0c_"

@@ -39,8 +39,6 @@ void __grab_fpe(void);
 void __set_errno(int err);
 
 int raise(int sig);
-/* config/functions.txt has no name for raise. */
-#pragma aux raise "fn_000fbbef_"
 
 // FUNCTION: 0xfbafb
 void __sigabort(void)

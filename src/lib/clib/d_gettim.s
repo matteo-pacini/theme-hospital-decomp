@@ -3,9 +3,9 @@
 // FUNCTION: 0x000dc94d
 
 .section _TEXT,"ax",@progbits,unique,903501
-.globl "fn_000dc94d_"
-.type "fn_000dc94d_",@function
-"fn_000dc94d_":
+.globl "_dos_gettime_"
+.type "_dos_gettime_",@function
+"_dos_gettime_":
     push edx
     push ecx
     push ebx
@@ -21,4 +21,4 @@
     pop ecx
     pop edx
     ret
-.size "fn_000dc94d_",.-"fn_000dc94d_"
+.size "_dos_gettime_",.-"_dos_gettime_"

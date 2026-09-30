@@ -117,25 +117,23 @@ U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags);
 U32 __pascal MSSLowSoundPlayed(SmackSnd *snd);
 
 U8 __pascal SmackSoundUseMSS(void *digdriver);
-#pragma aux (__pascal) SmackSoundUseMSS "fn_000e7910_";
+#pragma aux (__pascal) SmackSoundUseMSS "SMACKSOUNDUSEMSS";
 
-#pragma aux (__pascal) MSSLowSoundVolPan "fn_000e79b0_";
+#pragma aux (__pascal) MSSLowSoundVolPan "MSSLOWSOUNDVOLPAN";
 
-#pragma aux (__pascal) MSSSmackTimerSetup "fn_000e7a20_";
+#pragma aux (__pascal) MSSSmackTimerSetup "MSSSMACKTIMERSETUPDONE";
 
-#pragma aux (__pascal) MSSLowSoundClose "fn_000e7a40_";
+#pragma aux (__pascal) MSSLowSoundClose "MSSLOWSOUNDCLOSE";
 
-#pragma aux (__pascal) MSSLowSoundPurge "fn_000e7ac0_";
+#pragma aux (__pascal) MSSLowSoundPurge "MSSLOWSOUNDPURGE";
 
-#pragma aux (__pascal) MSSLowSoundOpen "fn_000e7af0_";
+#pragma aux (__pascal) MSSLowSoundOpen "MSSLOWSOUNDOPEN";
 
-/* config/functions.txt has no name for MSSInitSample. */
-#pragma aux MSSInitSample "fn_000e7cd0_";
+#pragma aux MSSInitSample "doinit_";
 
-#pragma aux (__pascal) MSSLowSoundPlayed "fn_000e7d60_";
+#pragma aux (__pascal) MSSLowSoundPlayed "MSSLOWSOUNDPLAYED";
 
-/* config/functions.txt has no name for MSSLowSoundCheck. */
-#pragma aux (__pascal) MSSLowSoundCheck "fn_000e7db0_";
+#pragma aux (__pascal) MSSLowSoundCheck "MSSLOWSOUNDCHECK";
 
 #pragma aux (__pascal) MSSCopyWrap "SMACKWRAPCOPY";
 

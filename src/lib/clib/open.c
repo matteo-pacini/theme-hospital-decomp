@@ -167,7 +167,7 @@ int sopen(const char *name, int mode, int shflag, ...)
 }
 
 // FUNCTION: 0xd0e73
-int fn_000d0e73(int handle)
+int __set_binary(int handle)
 {
     unsigned iomode_flags;
     tiny_ret_t rc;

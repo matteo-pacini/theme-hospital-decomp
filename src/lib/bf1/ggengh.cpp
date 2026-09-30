@@ -4,7 +4,6 @@ extern "C" {
 extern u8 D_00178c0c[];
 
 u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b);
-#pragma aux LbPaletteFindColour "W?draw_bdem_unavailable_message$n()v"
 
 // FUNCTION: 0x000be7a0
 int LbGhostTableGenerate(u8 *palette, u8 intensity, char *name)

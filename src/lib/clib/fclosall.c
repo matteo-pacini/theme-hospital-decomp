@@ -8,12 +8,8 @@ int __shutdown_stream(FILE *fp, int close_handle);
 void __purgefp(void);
 int docloseall(int exclude);
 
-/* config/functions.txt has no name for docloseall. */
-#pragma aux docloseall "fn_000ec460_"
 
 void __full_io_exit(void);
-/* config/functions.txt has no name for __full_io_exit. */
-#pragma aux __full_io_exit "fn_000ec44f_"
 
 // FUNCTION: 0xec44f
 void __full_io_exit(void)
@@ -23,8 +19,6 @@ void __full_io_exit(void)
 }
 
 int fcloseall(void);
-/* config/functions.txt has no name for fcloseall. */
-#pragma aux fcloseall "fn_000ec45b_"
 
 // FUNCTION: 0xec45b
 int fcloseall(void)

@@ -34,7 +34,7 @@ extern void *D_00158334;
 void LbDataLoadAll(TbLoadFiles *files);
 void fn_0008bcb4(void);
 void fn_000c20f0(void);
-int fn_000bea80(int mode, ...);
+int LbScreenSetupAnyMode(int mode, ...);
 void fn_0001102c(void);
 void fn_00011058(void);
 void fn_00011084(void);
@@ -147,7 +147,7 @@ void reset_host(void)
     Message msg = D_00129004;
 
     if (lbDisplay.unknown4) {
-        LbIsActive();
+        LbScreenUnlock();
     }
     LbNetwork_Stop();
     LbMouseReset();
@@ -293,7 +293,7 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
         variant = 2;
         fn_00011084();
     }
-    if (fn_000bea80(mode, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height, palette, variant, 0) != 1) {
+    if (LbScreenSetupAnyMode(mode, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height, palette, variant, 0) != 1) {
         if (mode == SCREEN_MODE_13) {
             D_0015f982 = 4;
         } else {

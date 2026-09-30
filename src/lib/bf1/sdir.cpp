@@ -50,7 +50,7 @@ int fn_000d0460(char *buf, u32 size)
 }
 
 // FUNCTION: 0x000d04f0
-int fn_000d04f0(char *path)
+int LbDirectoryExists(char *path)
 {
     struct stat st;
 
@@ -60,7 +60,7 @@ int fn_000d04f0(char *path)
 }
 
 // FUNCTION: 0x000d0538
-int fn_000d0538(char *path)
+int LbDirectoryRemove(char *path)
 {
     if (rmdir(path) == 0)
         return 1;

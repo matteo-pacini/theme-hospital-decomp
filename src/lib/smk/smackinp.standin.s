@@ -600,9 +600,9 @@
 // STANDIN: 0x000e85b0
 
 .section _TEXT,"ax",@progbits,unique,951728
-.globl "fn_000e85b0_"
-.type "fn_000e85b0_",@function
-"fn_000e85b0_":
+.globl "SMACKCOLORREMAP"
+.type "SMACKCOLORREMAP",@function
+"SMACKCOLORREMAP":
     push esi
     push edi
     push ebp
@@ -753,7 +753,7 @@
     mov eax, dword ptr [esp + 0x148]
     mov esi, dword ptr [eax + 0x3ac]
     push esi
-    call "fn_0010f560_"
+    call "_SmackRemapTables"
     add esp, 8
 .L000e8833:
     add esp, 0x128
@@ -761,14 +761,14 @@
     pop edi
     pop esi
     ret 0x10
-.size "fn_000e85b0_",.-"fn_000e85b0_"
+.size "SMACKCOLORREMAP",.-"SMACKCOLORREMAP"
 
 // STANDIN: 0x000e8190
 
 .section _TEXT,"ax",@progbits,unique,950672
-.globl "fn_000e8190_"
-.type "fn_000e8190_",@function
-"fn_000e8190_":
+.globl "SMACKTOBUFFERRECT"
+.type "SMACKTOBUFFERRECT",@function
+"SMACKTOBUFFERRECT":
     push esi
     push edi
     push ebp
@@ -830,7 +830,7 @@
     push eax
     mov edi, dword ptr [esi + 0x3b0]
     push edi
-    call "fn_0010f440_"
+    call "_SmackGetRect"
     add esp, 8
     test al, al
     jne .L000e82a3
@@ -868,7 +868,7 @@
     push ebp
     mov ecx, dword ptr [esi + 0x3b0]
     push ecx
-    call "fn_0010f440_"
+    call "_SmackGetRect"
     add esp, 8
     test al, al
     je .L000e83cc
@@ -900,7 +900,7 @@
     push edx
     mov ecx, dword ptr [esi + 0x3b0]
     push ecx
-    call "fn_0010f440_"
+    call "_SmackGetRect"
     add esp, 8
     test al, al
     je .L000e83cc
@@ -969,7 +969,7 @@
     pop edi
     pop esi
     ret 8
-.size "fn_000e8190_",.-"fn_000e8190_"
+.size "SMACKTOBUFFERRECT",.-"SMACKTOBUFFERRECT"
 
 // STANDIN: 0x000ea7a0
 
@@ -1654,9 +1654,9 @@
 // STANDIN: 0x000e8ab0
 
 .section _TEXT,"ax",@progbits,unique,953008
-.globl "fn_000e8ab0_"
-.type "fn_000e8ab0_",@function
-"fn_000e8ab0_":
+.globl "SMACKTOSCREEN"
+.type "SMACKTOSCREEN",@function
+"SMACKTOSCREEN":
     push esi
     push edi
     push ebp
@@ -2086,7 +2086,7 @@
     pop edi
     pop esi
     ret 0x18
-.size "fn_000e8ab0_",.-"fn_000e8ab0_"
+.size "SMACKTOSCREEN",.-"SMACKTOSCREEN"
 
 // STANDIN: 0x000e9c80
 

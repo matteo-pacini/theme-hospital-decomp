@@ -52,7 +52,7 @@ void __wcpp_2_corrupted_stack_(void);
 }
 
 char testFlag(unsigned char *flags, unsigned index);
-#pragma aux testFlag "fn_000fb810_"
+#pragma aux testFlag "__wcpp_2_bit_test__"
 
 extern "C" {
 

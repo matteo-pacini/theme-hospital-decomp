@@ -6,8 +6,9 @@ extern u32 D_0015642f;
 extern u32 D_00156433;
 
 void fn_000bb0d0(_CMemory *mem);
-#pragma aux fn_000bb0d0 "W?Free$:_CMemory$n(pnv)ul"
+#pragma aux fn_000bb0d0 "W?ReleaseAll$:_CMemory$n()v"
 u32 fn_000bb10c(_CMemory *mem, void *p);
+#pragma aux fn_000bb10c "W?Free$:_CMemory$n(pnv)ul"
 u32 fn_000bb2b0(void);
 }
 

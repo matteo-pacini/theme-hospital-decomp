@@ -2980,7 +2980,7 @@ u8 cheat_mode(char *text)
 extern u8 aborted_net;
 
 extern "C" {
-int fn_000bed50(void);
+int LbScreenLock(void);
 }
 
 // FUNCTION: 0x000866cc
@@ -2991,9 +2991,9 @@ s32 network_service_function(void)
     first = 1;
     while (network.unknown2 != 2 || first) {
         process_sound_heap();
-        LbIsActive();
+        LbScreenUnlock();
         LbScreenSwap();
-        while (fn_000bed50() != 1)
+        while (LbScreenLock() != 1)
             ;
         get_input();
         draw_network_select();

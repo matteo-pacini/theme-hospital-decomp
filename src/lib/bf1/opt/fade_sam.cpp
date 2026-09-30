@@ -7,12 +7,12 @@ extern long sample_fade_handle;
 extern "C" {
 extern volatile u8 D_0018a57d;
 
-void fn_000ccd30(u32 user);
-#pragma aux (__pascal) fn_000ccd30 "fn_000ccd30_"
+void cbfadesample(u32 user);
+#pragma aux (__pascal) cbfadesample "W?cbfadesample$n(ul)v"
 
 // The target range also holds FadeSample's jump table.
 // FUNCTION: 0x000ccd30
-void fn_000ccd30(u32 user)
+void cbfadesample(u32 user)
 {
     SampleInfo *smp;
     volatile u8 i;
@@ -139,7 +139,7 @@ void FadeSample(u32 source_id, s16 number, s16 volume, u8 stop_flag, u8 step)
                 if (samples_currently_fading == 0) {
                     switch_off_sample_fade_timer = 0;
                     samples_currently_fading = 1;
-                    sample_fade_handle = AIL_register_timer((void *)fn_000ccd30);
+                    sample_fade_handle = AIL_register_timer((void *)cbfadesample);
                     AIL_set_timer_frequency(sample_fade_handle, 20);
                     AIL_start_timer(sample_fade_handle);
                 }

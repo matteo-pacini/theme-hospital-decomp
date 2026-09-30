@@ -37,7 +37,7 @@ extern TbSprite *D_00153f30;
 extern u8 *D_00153f28;
 extern u8 D_00156910;
 void fn_000c93bf(char *dst, char *src);
-int fn_000bed50(void);
+int LbScreenLock(void);
 void fn_0008db38(TbScreenMode mode);
 extern s32 D_0014b1c4[], D_0013bb0c[], D_00146c8c[];
 extern IconScreen D_0014b7b4, D_0013c0fc;
@@ -1194,7 +1194,7 @@ extern "C" void fn_0008db38(TbScreenMode mode)
     D_001290d1 = 0xff;
     D_001290d2 = 0xff;
     if (active)
-        LbIsActive();
+        LbScreenUnlock();
     if (!change_res(mode)) {
         D_0015f982 = 10;
         sub_error_number = resvars.f0;
@@ -1208,7 +1208,7 @@ extern "C" void fn_0008db38(TbScreenMode mode)
     othervar.f10 = 1;
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
     if (active) {
-        while (fn_000bed50() != 1)
+        while (LbScreenLock() != 1)
             ;
     }
     LbScreenClear(0);

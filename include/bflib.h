@@ -172,9 +172,9 @@ int LbGhostTableGenerate(u8 *palette, u8 intensity, char *name);
 int LbScreenSetGraphicsWindow(s32 x, s32 y, s32 w, s32 h);
 int LbScreenClear(u8 colour, ...);
 int LbScreenReset(void);
-int LbIsActive(void);
+int LbScreenUnlock(void);
 int LbScreenSwap(void);
-int LbDate(void);
+int LbIsActive(void);
 s32 LbTimerClock(void);
 /* The C library's memcpy. */
 void fn_000c21e6(void *a, void *b, int c);

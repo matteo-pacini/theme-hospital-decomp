@@ -32,8 +32,8 @@ extern char D_00126c24[];
 void AIL_start(void);
 void AIL_end(void);
 #pragma aux AIL_end "AIL_end_"
-void __pascal fn_000dec50(U32 user);
-#pragma aux (__pascal) fn_000dec50 "fn_000dec50_"
+void __pascal AIL_DRIVER_SERVER(U32 user);
+#pragma aux (__pascal) AIL_DRIVER_SERVER "AIL_DRIVER_SERVER"
 
 // FUNCTION: 0x000debc0
 void AIL_start(void)
@@ -51,7 +51,7 @@ void AIL_start(void)
 }
 
 // FUNCTION: 0x000dec50
-void __pascal fn_000dec50(U32 user)
+void __pascal AIL_DRIVER_SERVER(U32 user)
 {
     if (!entry) {
         entry = 1;
@@ -284,7 +284,7 @@ AIL_DRIVER *__cdecl AIL_API_install_driver(U8 *driver_image, U32 n_bytes)
     if (drvr->VHDR->service_rate <= 0) {
         drvr->server = -1;
     } else {
-        drvr->server = AIL_register_timer(fn_000dec50);
+        drvr->server = AIL_register_timer(AIL_DRIVER_SERVER);
         if (drvr->server == -1) {
             strcpy(AIL_error, D_00126c24);
             AIL_set_real_vect(0x66, drvr->VHDR->prev_ISR);

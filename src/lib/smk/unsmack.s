@@ -5943,9 +5943,9 @@
 // FUNCTION: 0x0010f440
 
 .section _TEXT,"ax",@progbits,unique,1111104
-.globl "fn_0010f440_"
-.type "fn_0010f440_",@function
-"fn_0010f440_":
+.globl "_SmackGetRect"
+.type "_SmackGetRect",@function
+"_SmackGetRect":
     push ebp
     {load} mov ebp, esp
     push esi
@@ -6064,14 +6064,14 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x90
-.size "fn_0010f440_",.-"fn_0010f440_"
+.size "_SmackGetRect",.-"_SmackGetRect"
 
 // FUNCTION: 0x0010f560
 
 .section _TEXT,"ax",@progbits,unique,1111392
-.globl "fn_0010f560_"
-.type "fn_0010f560_",@function
-"fn_0010f560_":
+.globl "_SmackRemapTables"
+.type "_SmackRemapTables",@function
+"_SmackRemapTables":
     push ebp
     {load} mov ebp, esp
     push edi
@@ -6197,4 +6197,4 @@
     .byte 0x08; .byte 0x87; .byte 0xdb; .byte 0x87; .byte 0xc9; .byte 0x87
     .byte 0xdb
     .byte 0x87; .byte 0xc9
-.size "fn_0010f560_",.-"fn_0010f560_"
+.size "_SmackRemapTables",.-"_SmackRemapTables"

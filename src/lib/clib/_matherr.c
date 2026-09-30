@@ -52,10 +52,12 @@ double _matherr(struct exception *excp)
 }
 
 int matherr(struct exception *excp);
+int __matherr(struct exception *excp);
+#pragma aux __matherr "__matherr"
 
 /* The default _RWD_matherr: the user's matherr, or the library's stub. */
 // FUNCTION: 0xfdf90
-int fn_000fdf90(struct exception *excp)
+int __matherr(struct exception *excp)
 {
     return matherr(excp);
 }

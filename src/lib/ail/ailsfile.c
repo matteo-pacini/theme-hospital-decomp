@@ -87,12 +87,11 @@ extern char D_00126e04[];
 extern char D_00126e24[];
 extern char D_00126e4c[];
 
-/* VOC end-of-sample callback (demo: AIL_VOC_EOS): __pascal, address-named. */
-void fn_000e1a00(HSAMPLE S);
-#pragma aux (__pascal) fn_000e1a00 "*_";
-/* WAV end-of-sample callback: __pascal (callee pops), address-named. */
-void fn_000e1b60(HSAMPLE S);
-#pragma aux (__pascal) fn_000e1b60 "*_";
+/* VOC and WAV end-of-sample callbacks: __pascal (callee pops). */
+void AIL_VOC_EOS(HSAMPLE S);
+#pragma aux (__pascal) AIL_VOC_EOS "*";
+void AIL_WAV_EOS(HSAMPLE S);
+#pragma aux (__pascal) AIL_WAV_EOS "*";
 void AILSFILE_end(void);
 
 // FUNCTION: 0x000e16e0
@@ -213,7 +212,7 @@ void __cdecl AIL_process_VOC_block(HSAMPLE S, S32 play_flag)
 }
 
 // FUNCTION: 0xe1a00
-void fn_000e1a00(HSAMPLE S)
+void AIL_VOC_EOS(HSAMPLE S)
 {
     AIL_process_VOC_block(S, 1);
 }
@@ -246,7 +245,7 @@ void __cdecl AIL_process_WAV_image(void *image, HSAMPLE S)
 }
 
 // FUNCTION: 0xe1b60
-void fn_000e1b60(HSAMPLE S)
+void AIL_WAV_EOS(HSAMPLE S)
 {
     if (S->system_data[EOD_CALLBACK] != NULL) {
         ((AILSAMPLECB)S->system_data[EOD_CALLBACK])(S);
@@ -287,12 +286,12 @@ HSAMPLE __cdecl AIL_API_allocate_file_sample(HDIGDRIVER dig, void *file_image, S
         S->system_data[VOC_MARKER] = block;
         S->system_data[VOC_MARKER_FOUND] = (block == -1);
         S->system_data[SSD_RELEASE] = 1;
-        AIL_register_EOS_callback(S, (AILSAMPLECB)fn_000e1a00);
+        AIL_register_EOS_callback(S, (AILSAMPLECB)AIL_VOC_EOS);
         AIL_process_VOC_block(S, 0);
         break;
     case FILE_WAV:
         S->system_data[SSD_RELEASE] = 1;
-        AIL_register_EOS_callback(S, (AILSAMPLECB)fn_000e1b60);
+        AIL_register_EOS_callback(S, (AILSAMPLECB)AIL_WAV_EOS);
         AIL_process_WAV_image(file_image, S);
         break;
     }

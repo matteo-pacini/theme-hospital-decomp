@@ -9,7 +9,7 @@ extern s32 D_00188c0c;
 int LbScreenFindVideoModes(void);
 
 // FUNCTION: 0x000be900
-s32 fn_000be900(TbScreenMode mode)
+s32 LbScreenIsModeAvailable(TbScreenMode mode)
 {
     if (!D_00188c0c) {
         if (LbScreenFindVideoModes() != 1)

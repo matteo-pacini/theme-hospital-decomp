@@ -3,9 +3,9 @@
 // FUNCTION: 0x000eb701
 
 .section _TEXT,"ax",@progbits,unique,964353
-.globl "fn_000eb701_"
-.type "fn_000eb701_",@function
-"fn_000eb701_":
+.globl "__delay_init_"
+.type "__delay_init_",@function
+"__delay_init_":
     push ebx
     push ecx
     push edx
@@ -36,14 +36,14 @@
     pop ecx
     pop ebx
     ret
-.size "fn_000eb701_",.-"fn_000eb701_"
+.size "__delay_init_",.-"__delay_init_"
 
 // FUNCTION: 0x000eb733
 
 .section _TEXT,"ax",@progbits,unique,964403
-.globl "fn_000eb733_"
-.type "fn_000eb733_",@function
-"fn_000eb733_":
+.globl "__delay_"
+.type "__delay_",@function
+"__delay_":
     push ebx
     push ecx
     push edx
@@ -74,4 +74,4 @@
     pop ecx
     pop ebx
     ret
-.size "fn_000eb733_",.-"fn_000eb733_"
+.size "__delay_",.-"__delay_"

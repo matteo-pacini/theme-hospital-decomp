@@ -38,9 +38,9 @@ void fn_0001bdf8(void);
 void fn_0001be78(u8 dir);
 void fn_0001bee4(void);
 u8 fn_000856c8(int player);
-int fn_000bed50(void);
+int LbScreenLock(void);
 void fn_000c93bf(char *dst, char *src);
-void fn_000c9400(u8 *palette, int steps, int flag);
+void LbPaletteFade(u8 *palette, int steps, int flag);
 void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 
 }
@@ -76,20 +76,20 @@ u16 div_err(void)
 void setup_colors(void)
 {
     color.unknown0 = current_palette;
-    color.unknown7 = fn_000c960c(current_palette, 0x3f, 0x3f, 0x3f);
-    color.unknown8 = fn_000c960c(current_palette, 0, 0, 0);
-    color.unknown9 = fn_000c960c(current_palette, 0, 0, 0x10);
-    color.unknownA = fn_000c960c(current_palette, 0, 0x3f, 0);
-    color.unknownB = fn_000c960c(current_palette, 0x3f, 0x30, 0x17);
-    color.unknownC = fn_000c960c(current_palette, 0x3f, 0x17, 0x17);
-    color.unknownD = fn_000c960c(current_palette, 0x3f, 0, 0);
-    color.unknownE = fn_000c960c(current_palette, 0x1b, 0x37, 0x39);
-    color.unknownF = fn_000c960c(current_palette, 0x35, 0x1f, 0x42);
-    color.unknown10 = fn_000c960c(current_palette, 0x17, 0x43, 0x10);
-    color.unknown11 = fn_000c960c(current_palette, 0x26, 0x29, 0x2f);
-    color.unknown12 = fn_000c960c(current_palette, 0, 0x26, 0x56);
-    color.unknown13 = fn_000c960c(current_palette, 0x24, 0x50, 0x2f);
-    color.unknown14 = fn_000c960c(current_palette, 0x3f, 0x1e, 0x1e);
+    color.unknown7 = LbPaletteFindColour(current_palette, 0x3f, 0x3f, 0x3f);
+    color.unknown8 = LbPaletteFindColour(current_palette, 0, 0, 0);
+    color.unknown9 = LbPaletteFindColour(current_palette, 0, 0, 0x10);
+    color.unknownA = LbPaletteFindColour(current_palette, 0, 0x3f, 0);
+    color.unknownB = LbPaletteFindColour(current_palette, 0x3f, 0x30, 0x17);
+    color.unknownC = LbPaletteFindColour(current_palette, 0x3f, 0x17, 0x17);
+    color.unknownD = LbPaletteFindColour(current_palette, 0x3f, 0, 0);
+    color.unknownE = LbPaletteFindColour(current_palette, 0x1b, 0x37, 0x39);
+    color.unknownF = LbPaletteFindColour(current_palette, 0x35, 0x1f, 0x42);
+    color.unknown10 = LbPaletteFindColour(current_palette, 0x17, 0x43, 0x10);
+    color.unknown11 = LbPaletteFindColour(current_palette, 0x26, 0x29, 0x2f);
+    color.unknown12 = LbPaletteFindColour(current_palette, 0, 0x26, 0x56);
+    color.unknown13 = LbPaletteFindColour(current_palette, 0x24, 0x50, 0x2f);
+    color.unknown14 = LbPaletteFindColour(current_palette, 0x3f, 0x1e, 0x1e);
 }
 
 // FUNCTION: 0x00019918
@@ -460,7 +460,7 @@ void generate_bw_remap(u8 *palette, u8 *out)
         v = LbSqrL(src[0] * src[0] + src[1] * src[1]);
         v = LbSqrL(v * v + src[2] * src[2]);
         v = (v * 0x3f + 0x36) / 0x6d;
-        c = fn_000c960c(palette, (u8)v, (u8)v, (u8)v);
+        c = LbPaletteFindColour(palette, (u8)v, (u8)v, (u8)v);
         *out++ = c;
     }
 }
@@ -849,7 +849,7 @@ u8 hosp_play_smk(const u8 idx)
 
     ok = 1;
     if (wasPlaying) {
-        LbIsActive();
+        LbScreenUnlock();
     }
     if (resvars.f1 == SCREEN_MODE_1 && resvars.f0 == SCREEN_MODE_1 && idx != 0x16 && idx != 0x17) {
         if (!change_res(SCREEN_MODE_13)) {
@@ -872,7 +872,7 @@ u8 hosp_play_smk(const u8 idx)
     }
     LbPackHeap();
     if (wasPlaying) {
-        while (fn_000bed50() != 1) {
+        while (LbScreenLock() != 1) {
         }
     }
     lbDisplay.left_button = lbDisplay.rleft_button = 0;
@@ -1021,9 +1021,9 @@ void setup_key_mappos(void)
 void hosp_fade_palette(u8 *palette, u8 steps, TbPaletteFadeFlag flag)
 {
     if (statvar.unknownfd > 1) {
-        fn_000c9400(palette, 1, flag);
+        LbPaletteFade(palette, 1, flag);
     } else {
-        fn_000c9400(palette, steps, flag);
+        LbPaletteFade(palette, steps, flag);
     }
 }
 

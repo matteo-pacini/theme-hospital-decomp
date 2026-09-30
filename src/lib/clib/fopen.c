@@ -123,7 +123,7 @@ FILE *fopen(const char *name, const char *access_mode)
 }
 
 // FUNCTION: 0xfbf09
-static FILE *fn_000fbf09(FILE *fp)
+static FILE *close_file(FILE *fp)
 {
     __stream_link *link;
     __stream_link **owner;
@@ -166,7 +166,7 @@ FILE *freopen(const char *name, const char *access_mode, FILE *fp)
     file_flags = __open_flags(access_mode);
     if (file_flags == 0)
         return NULL;
-    fp = fn_000fbf09(fp);
+    fp = close_file(fp);
     if (fp != NULL) {
         fp->_flag &= _DYNAMIC;
         fp = __doopen(name, *access_mode, file_flags, 0, fp);

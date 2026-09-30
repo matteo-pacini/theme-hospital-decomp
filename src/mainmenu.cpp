@@ -13,7 +13,7 @@ void play_main_menu_intro(void);
 extern "C" {
 extern void *smack_draw_callback;
 
-int fn_000bed50(void);
+int LbScreenLock(void);
 void fn_0001102c(void);
 void fn_00011058(void);
 void fn_000110b0(void);
@@ -68,10 +68,10 @@ void draw_main_menu(void)
         fn_00011058();
         lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         load_ingame_pic(0xd, 1, 0x14, 0, SCREEN_MODE_1);
-        LbIsActive();
+        LbScreenUnlock();
         LbScreenClear(0);
         LbScreenSwap();
-        while (fn_000bed50() != 1) {
+        while (LbScreenLock() != 1) {
         }
         play_main_menu_intro();
         set_mouse_mode(0x14);
@@ -285,9 +285,9 @@ void draw_main_menu(void)
                 mainmenu.unknown2 = 0x1a;
                 lbDisplay.left_button = lbDisplay.right_button = 0;
             }
-            LbIsActive();
+            LbScreenUnlock();
             LbScreenSwap();
-            while (fn_000bed50() != 1) {
+            while (LbScreenLock() != 1) {
             }
         }
         set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
@@ -317,9 +317,9 @@ void draw_main_menu(void)
             copy_screen_to_wscreen(bscreen);
             if (fn_0006344c(&scroll, &line))
                 done = 1;
-            LbIsActive();
+            LbScreenUnlock();
             LbScreenSwap();
-            while (fn_000bed50() != 1) {
+            while (LbScreenLock() != 1) {
             }
         }
         mainmenu.unknown2 = 0x1e;
@@ -604,7 +604,7 @@ u8 fn_00063174(void)
         return aborted;
     fade_out_menu();
     if (active)
-        LbIsActive();
+        LbScreenUnlock();
     LbScreenClear(0);
     fn_0001102c();
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -625,7 +625,7 @@ u8 fn_00063174(void)
         return 1;
     }
     if (active) {
-        while (fn_000bed50() != 1) {
+        while (LbScreenLock() != 1) {
         }
     }
     set_mouse_mode(9);
@@ -641,7 +641,7 @@ u8 fn_00063300(void)
     aborted = 0;
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
     if (active)
-        LbIsActive();
+        LbScreenUnlock();
     fade_out_menu();
     if (change_res(SCREEN_MODE_13)) {
         LbScreenClear(0);
@@ -665,7 +665,7 @@ u8 fn_00063300(void)
         LbScreenClear(0);
     }
     if (active) {
-        while (fn_000bed50() != 1) {
+        while (LbScreenLock() != 1) {
         }
     }
     return aborted;

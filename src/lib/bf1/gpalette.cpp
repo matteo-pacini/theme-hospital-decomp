@@ -12,14 +12,13 @@ int LbScreenWaitVbi(void);
 int abs(int n);
 #pragma intrinsic(abs)
 
-u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b);
-#pragma aux fn_000c960c "W?draw_bdem_unavailable_message$n()v"
+u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b);
 }
 
 extern "C" {
 
 // FUNCTION: 0x000c9400
-s32 fn_000c9400(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
+s32 LbPaletteFade(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
 {
     s16 i;
     s16 diff;
@@ -65,7 +64,7 @@ s32 fn_000c9400(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
 }
 
 // FUNCTION: 0x000c95f8
-int fn_000c95f8(void)
+int LbPaletteStopOpenFade(void)
 {
     fade_started = 0;
     return 1;
@@ -82,7 +81,7 @@ struct Rgb {
 #define SQR(x) ((x) * (x))
 
 // FUNCTION: 0x000c960c
-u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b)
+u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b)
 {
     s32 dist;
     Rgb *base;
@@ -163,7 +162,7 @@ u8 fn_000c960c(u8 *palette, u8 r, u8 g, u8 b)
 extern "C" {
 
 // FUNCTION: 0x000c99d8
-int fn_000c99d8(s32 x, s32 y, s32 w, s32 h, u8 show_numbers)
+int LbPaletteDraw(s32 x, s32 y, s32 w, s32 h, u8 show_numbers)
 {
     u16 old_flags;
     char text[8];

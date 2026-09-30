@@ -61,8 +61,8 @@ void display_manager(void)
     switch (manager.unknown2) {
     case 0:
         load_ingame_pic(7, 1, 0x17, 0, SCREEN_MODE_13);
-        othervar.f9f7 = fn_000c960c(current_palette, 0x15, 0x15, 0x18);
-        othervar.f9f8 = fn_000c960c(current_palette, 0x2c, 0x2c, 0x2c);
+        othervar.f9f7 = LbPaletteFindColour(current_palette, 0x15, 0x15, 0x18);
+        othervar.f9f8 = LbPaletteFindColour(current_palette, 0x2c, 0x2c, 0x2c);
         manager.unknown2 = 1;
         manager.unknown0 = 0;
         copy_screen_to_wscreen(bscreen);

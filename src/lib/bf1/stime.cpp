@@ -29,15 +29,15 @@ struct dostime_t {
 };
 
 extern "C" {
-void fn_000dc932(dosdate_t *date);
-void fn_000dc94d(dostime_t *time);
+void _dos_getdate(dosdate_t *date);
+void _dos_gettime(dostime_t *time);
 
 // FUNCTION: 0x000c2140
-int fn_000c2140(TbDate *curr_date)
+int LbDate(TbDate *curr_date)
 {
     dosdate_t date;
 
-    fn_000dc932(&date);
+    _dos_getdate(&date);
     curr_date->Day = date.day;
     curr_date->Month = date.month;
     curr_date->Year = date.year;
@@ -46,11 +46,11 @@ int fn_000c2140(TbDate *curr_date)
 }
 
 // FUNCTION: 0x000c2180
-int fn_000c2180(TbTime *curr_time)
+int LbTime(TbTime *curr_time)
 {
     dostime_t time;
 
-    fn_000dc94d(&time);
+    _dos_gettime(&time);
     curr_time->Hour = time.hour;
     curr_time->Minute = time.minute;
     curr_time->Second = time.second;

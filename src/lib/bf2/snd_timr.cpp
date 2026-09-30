@@ -14,14 +14,14 @@ void __cdecl AIL_set_timer_frequency(s32 timer, u32 hertz);
 void __cdecl AIL_start_timer(s32 timer);
 
 // FUNCTION: 0xeb5b0
-void fn_000eb5b0(void)
+void InitAllBullfrogSoundTimers(void)
 {
     if (MusicInstalled || SoundInstalled)
         memset(D_0018cf88, 0, sizeof(D_0018cf88));
 }
 
 // FUNCTION: 0xeb5e0
-u32 fn_000eb5e0(u16 frequency, void *callback)
+u32 SetupBullfrogSoundTimer(u16 frequency, void *callback)
 {
     SndTimer *timer;
     u32 i;
@@ -41,7 +41,7 @@ u32 fn_000eb5e0(u16 frequency, void *callback)
 }
 
 // FUNCTION: 0xeb660
-void fn_000eb660(s32 number)
+void ReleaseBullfrogSoundTimer(s32 number)
 {
     if (MusicInstalled || SoundInstalled) {
         if (number <= 5 && D_0018cf88[number - 1].used == 1) {

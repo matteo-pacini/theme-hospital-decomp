@@ -8,8 +8,8 @@ extern "C" {
 
 int LbMouseSuspend(void);
 int LbVesaSetMode(s16 mode);
-s32 fn_000be900(TbScreenMode mode);
-s32 fn_000d12e0(void);
+s32 LbScreenIsModeAvailable(TbScreenMode mode);
+s32 LbExeReferenceNumber(void);
 int LbVesaGetInfo(void);
 int LbVesaIsModeAvailable(u16 mode);
 void LbVesaSetPage(s16 page);
@@ -35,13 +35,13 @@ void wait_vbi(void);
 #pragma aux wait_vbi = 0xba 0xda 0x03 0x00 0x00 0x29 0xc0 0xec 0xa8 0x08 0x74 0xf4 modify [eax edx];
 
 // FUNCTION: 0x000bea80
-int fn_000bea80(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
+int LbScreenSetupAnyMode(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
 {
     REGS out;
     REGS in;
 
-    fn_000d12e0();
-    if (!fn_000be900(mode))
+    LbExeReferenceNumber();
+    if (!LbScreenIsModeAvailable(mode))
         return -1;
     LbMouseSuspend();
     if (!lbDisplay.old_video_mode) {
@@ -75,7 +75,7 @@ int fn_000bea80(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
 }
 
 // FUNCTION: 0x000bec84
-int fn_000bec84(u8 colour, ...)
+int LbScreenClearGraphicsWindow(u8 colour, ...)
 {
     s32 h;
     u8 *p;
@@ -113,13 +113,13 @@ int LbScreenReset(void)
 }
 
 // FUNCTION: 0x000bed50
-int fn_000bed50(void)
+int LbScreenLock(void)
 {
     return 1;
 }
 
 // FUNCTION: 0x000bed5c
-int LbIsActive(void)
+int LbScreenUnlock(void)
 {
     return 1;
 }
@@ -445,7 +445,7 @@ int LbScreenWaitVbi(void)
 }
 
 // FUNCTION: 0x000bf778
-int LbDate(void)
+int LbIsActive(void)
 {
     return 1;
 }

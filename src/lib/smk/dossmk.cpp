@@ -31,8 +31,8 @@ extern void *smack_draw_callback;
 
 u32 GetSoundDriver(void);
 int LbScreenWaitVbi(void);
-void fn_000e7910(u32 digdriver);
-#pragma aux (__pascal) fn_000e7910 "fn_000e7910_";
+void SmackSoundUseMSS(u32 digdriver);
+#pragma aux (__pascal) SmackSoundUseMSS "SMACKSOUNDUSEMSS";
 
 }
 
@@ -86,7 +86,7 @@ long play_smk_direct(char *name, long a2, long flags)
     if (flags & 0x200)
         extra = SMACKAUTOEXTRA;
     if (!(flags & 1) && GetSoundDriver()) {
-        fn_000e7910(GetSoundDriver());
+        SmackSoundUseMSS(GetSoundDriver());
     } else {
         flags |= 1;
     }
@@ -154,7 +154,7 @@ long play_smk_via_buffer(char *name, long a2, long flags)
     if (flags & 0x200)
         extra = SMACKAUTOEXTRA;
     if (!(flags & 1) && GetSoundDriver()) {
-        fn_000e7910(GetSoundDriver());
+        SmackSoundUseMSS(GetSoundDriver());
     } else {
         flags |= 1;
     }
