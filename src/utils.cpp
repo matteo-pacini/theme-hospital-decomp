@@ -1141,20 +1141,3 @@ void fn_0001bee4(void)
         resvars.f5c_u32 = D_0013c630;
     }
 }
-
-// FUNCTION: 0x000b0630
-u8 fn_000b0630(u16 tile, u8 parity)
-{
-    Map *cell = &map[(u16)tile];
-    Thing *e = fn_00019aac(cell, 8);
-
-    if (e == 0) {
-        return 0;
-    } else if (e->unknown17 % 2 == parity) {
-        return 1;
-    } else if (e->unknown17 % 2 != parity) {
-        return 0;
-    } else {
-        return 0;
-    }
-}

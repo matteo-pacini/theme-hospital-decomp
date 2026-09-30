@@ -410,6 +410,81 @@ TbError IPXServiceProvider::Stop(void)
     return Lb_FAIL;
 }
 
+// FUNCTION: 0x000d6550
+TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
+{
+    u32 magic;
+    TbError ret;
+
+    switch (guaranteed) {
+    case 0:
+        magic = MSG_BUDN;
+        break;
+    case 1:
+        magic = MSG_BUDG;
+        break;
+    }
+    ret = sp->SendMessageToPlayerId(to, buf, magic);
+    if (ret == Lb_FAIL)
+        fn_000c20c0(D_00126267);
+    return ret;
+}
+
+// FUNCTION: 0xd6588
+u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
+{
+    return fn_000d6598(sp, from, buf, size, 0);
+}
+
+// FUNCTION: 0xd6590
+u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
+{
+    return fn_000d6598(sp, from, buf, size, 1);
+}
+
+}
+
+static inline IPXQueueEntry *GetNextFullReceiveBuffer(IPXServiceProvider *self)
+{
+    IPXQueueEntry *e;
+    u32 found = 0;
+
+    for (e = self->queue; e < self->queue + 32; e++) {
+        if (e->used) {
+            found = 1;
+            break;
+        }
+    }
+    if (found == 1)
+        return e;
+    return 0;
+}
+
+// FUNCTION: 0xd6598
+u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
+{
+    IPXQueueEntry *e;
+    u32 msg_size;
+    u32 ret = 0;
+
+    e = GetNextFullReceiveBuffer(self);
+    if (e) {
+        *from = e->from;
+        DecodeMessageStub(e, &msg_size, 0, 0);
+        if (msg_size + 4 <= *size) {
+            ret = 1;
+            memcpy(buf, e, msg_size + 4);
+            *size = msg_size + 4;
+            if (!peek)
+                e->used = 0;
+        }
+    } else {
+        *size = 0;
+        self->Update();
+    }
+    return ret;
+}
+
 // FUNCTION: 0xd6668
 // NONMATCHING: stack slots; the session-expiry loop keeps the memset size 0x34 in ebp where
 // ours keeps 0, and the AddSession name pointer is built in another register
@@ -621,81 +696,6 @@ TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetw
             }
             ret = Lb_OK;
         }
-    }
-    return ret;
-}
-
-// FUNCTION: 0x000d6550
-TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
-{
-    u32 magic;
-    TbError ret;
-
-    switch (guaranteed) {
-    case 0:
-        magic = MSG_BUDN;
-        break;
-    case 1:
-        magic = MSG_BUDG;
-        break;
-    }
-    ret = sp->SendMessageToPlayerId(to, buf, magic);
-    if (ret == Lb_FAIL)
-        fn_000c20c0(D_00126267);
-    return ret;
-}
-
-// FUNCTION: 0xd6588
-u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
-{
-    return fn_000d6598(sp, from, buf, size, 0);
-}
-
-// FUNCTION: 0xd6590
-u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
-{
-    return fn_000d6598(sp, from, buf, size, 1);
-}
-
-}
-
-static inline IPXQueueEntry *GetNextFullReceiveBuffer(IPXServiceProvider *self)
-{
-    IPXQueueEntry *e;
-    u32 found = 0;
-
-    for (e = self->queue; e < self->queue + 32; e++) {
-        if (e->used) {
-            found = 1;
-            break;
-        }
-    }
-    if (found == 1)
-        return e;
-    return 0;
-}
-
-// FUNCTION: 0xd6598
-u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
-{
-    IPXQueueEntry *e;
-    u32 msg_size;
-    u32 ret = 0;
-
-    e = GetNextFullReceiveBuffer(self);
-    if (e) {
-        *from = e->from;
-        DecodeMessageStub(e, &msg_size, 0, 0);
-        if (msg_size + 4 <= *size) {
-            ret = 1;
-            memcpy(buf, e, msg_size + 4);
-            *size = msg_size + 4;
-            if (!peek)
-                e->used = 0;
-        }
-    } else {
-        *size = 0;
-        self->Update();
     }
     return ret;
 }
@@ -1159,73 +1159,6 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
     return ret;
 }
 
-// FUNCTION: 0xda35c
-// NONMATCHING: stack slots of msg, ret, the inlined BatchProcess argument and the inlined
-// AddToReceiveBuffer temporaries
-TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg, __3ljac5NETSOCKET *from)
-{
-    TbError ret = Lb_FAIL;
-    __1p5pi1IPXSYSTEMMESSAGE ack;
-    u32 me;
-
-    if (started && unknown528) {
-        if (host_state == 1)
-            me = session.host_id;
-        else
-            me = remote.host_id;
-        memset(&ack, 0, sizeof(ack));
-        ack.magic = MSG_BUSK;
-        ack.guid = guid;
-        ack.seq = msg->seq;
-        memcpy(&ack.player, &players[me], sizeof(IPXPlayerEntry));
-        ipx.Send(&socket, from, (u8 *)&ack, sizeof(ack));
-        BatchProcess(0);
-        switch (msg->magic) {
-        case MSG_BUSD:
-            acked_a[msg->host] = 0;
-            acked_b[msg->host] = 0;
-            AddToReceiveBuffer((__6eas9nIPXDATAMESSAGE *)msg);
-            break;
-        case MSG_BUSA:
-            AddToReceiveBuffer((__6eas9nIPXDATAMESSAGE *)msg);
-            break;
-        }
-    }
-    return ret;
-}
-
-// FUNCTION: 0xdba58
-u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
-{
-    __3ljac5NETSOCKET from;
-    u8 *data;
-    IPXPacket *p;
-    u32 got = 0;
-
-    if (started && unknown528) {
-        for (p = packets; p < packets + 32; p++) {
-            if (ipx.RecPkt(p, &socket, &from)) {
-                data = p->data;
-                switch (*(u32 *)data) {
-                case 0x41445542:
-                    if (data[0xa] == seq && id == *(u32 *)(data + 4))
-                        got = 1;
-                    ipx.Listen(p, &socket);
-                    break;
-                case MSG_BUDG:
-                case MSG_BUDN:
-                    ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
-                    ipx.Listen(p, &socket);
-                    break;
-                }
-                if (got == 1)
-                    break;
-            }
-        }
-    }
-    return got;
-}
-
 // FUNCTION: 0xd9a98
 // NONMATCHING: stack slots and register choice; the target places the packet loop's RecPkt
 // call ahead of the loop body, ours after it
@@ -1365,6 +1298,73 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
         }
     }
     return ret;
+}
+
+// FUNCTION: 0xda35c
+// NONMATCHING: stack slots of msg, ret, the inlined BatchProcess argument and the inlined
+// AddToReceiveBuffer temporaries
+TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg, __3ljac5NETSOCKET *from)
+{
+    TbError ret = Lb_FAIL;
+    __1p5pi1IPXSYSTEMMESSAGE ack;
+    u32 me;
+
+    if (started && unknown528) {
+        if (host_state == 1)
+            me = session.host_id;
+        else
+            me = remote.host_id;
+        memset(&ack, 0, sizeof(ack));
+        ack.magic = MSG_BUSK;
+        ack.guid = guid;
+        ack.seq = msg->seq;
+        memcpy(&ack.player, &players[me], sizeof(IPXPlayerEntry));
+        ipx.Send(&socket, from, (u8 *)&ack, sizeof(ack));
+        BatchProcess(0);
+        switch (msg->magic) {
+        case MSG_BUSD:
+            acked_a[msg->host] = 0;
+            acked_b[msg->host] = 0;
+            AddToReceiveBuffer((__6eas9nIPXDATAMESSAGE *)msg);
+            break;
+        case MSG_BUSA:
+            AddToReceiveBuffer((__6eas9nIPXDATAMESSAGE *)msg);
+            break;
+        }
+    }
+    return ret;
+}
+
+// FUNCTION: 0xdba58
+u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
+{
+    __3ljac5NETSOCKET from;
+    u8 *data;
+    IPXPacket *p;
+    u32 got = 0;
+
+    if (started && unknown528) {
+        for (p = packets; p < packets + 32; p++) {
+            if (ipx.RecPkt(p, &socket, &from)) {
+                data = p->data;
+                switch (*(u32 *)data) {
+                case 0x41445542:
+                    if (data[0xa] == seq && id == *(u32 *)(data + 4))
+                        got = 1;
+                    ipx.Listen(p, &socket);
+                    break;
+                case MSG_BUDG:
+                case MSG_BUDN:
+                    ProcessDataMessage((__6eas9nIPXDATAMESSAGE *)data);
+                    ipx.Listen(p, &socket);
+                    break;
+                }
+                if (got == 1)
+                    break;
+            }
+        }
+    }
+    return got;
 }
 
 // FUNCTION: 0xdac14

@@ -142,32 +142,6 @@ TbError CompleteTwoPlayerExchange(void *buf)
     return ret;
 }
 
-// FUNCTION: 0xd33e0
-TbError GenericModemInit(__tibcaGUID guid, void *init_data)
-{
-    __4dn7ojSerialInitData *serial = (__4dn7ojSerialInitData *)init_data;
-    TbError ret = Lb_FAIL;
-
-    if (spPtr) {
-        spPtr->Release();
-        delete spPtr;
-        spPtr = 0;
-    }
-    runningTwoPlayerModel = 1;
-    receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
-    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
-    if (init_data)
-        serial->mode = 2;
-    spPtr = new ModemSP(serial);
-    if (spPtr) {
-        if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
-            ret = Lb_OK;
-        else
-            fn_000c20c0(D_00125e26);
-    }
-    return ret;
-}
-
 extern "C" {
 extern char D_00125d04[];
 extern char D_00125d2b[];
@@ -291,4 +265,30 @@ void TwoPlayerReqExDataCallback(u32 id, u32 seq, void *data)
         fn_000c20c0(D_00125ddc);
     }
     startTime = LbTimerClock();
+}
+
+// FUNCTION: 0xd33e0
+TbError GenericModemInit(__tibcaGUID guid, void *init_data)
+{
+    __4dn7ojSerialInitData *serial = (__4dn7ojSerialInitData *)init_data;
+    TbError ret = Lb_FAIL;
+
+    if (spPtr) {
+        spPtr->Release();
+        delete spPtr;
+        spPtr = 0;
+    }
+    runningTwoPlayerModel = 1;
+    receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
+    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
+    if (init_data)
+        serial->mode = 2;
+    spPtr = new ModemSP(serial);
+    if (spPtr) {
+        if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
+            ret = Lb_OK;
+        else
+            fn_000c20c0(D_00125e26);
+    }
+    return ret;
 }

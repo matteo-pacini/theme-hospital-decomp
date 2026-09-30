@@ -551,93 +551,6 @@ u8 computer_employ(u8 type, u16 skills, u8 player)
     return 0;
 }
 
-// FUNCTION: 0x000502e0
-u32 find_strategy_start(u8 type)
-{
-    int i;
-
-    for (i = 0;; i++) {
-        if (com_strategy[i].type == 9) {
-            break;
-        }
-        if (com_strategy[i].type == 5 && com_strategy[i].arg == type) {
-            return i + 1;
-        }
-    }
-    return 0;
-}
-
-// FUNCTION: 0x00050528
-u8 make_a_note(u16 type, s16 arg, s16 count, u8 player)
-{
-    AllHosps *h;
-    int i;
-
-    h = &allhosps[player];
-    for (i = 0; i < 8; i++) {
-        if (h->notes[i].type == 0) {
-            h->notes[i].type = type;
-            h->notes[i].arg = arg;
-            h->notes[i].count = count;
-            return 1;
-        }
-    }
-    return 0;
-}
-
-// FUNCTION: 0x000505d0
-u8 find_a_note(u16 type, u8 player)
-{
-    AllHosps *h;
-    int i;
-
-    h = &allhosps[player];
-    for (i = 0; i < 8; i++) {
-        if (h->notes[i].type == type) {
-            h->action.type = type;
-            h->action.arg = h->notes[i].arg;
-            h->action.count = h->notes[i].count;
-            h->f1202 = 1;
-            return 1;
-        }
-    }
-    return 0;
-}
-
-// FUNCTION: 0x00050684
-void remove_a_note(u16 type, u8 player)
-{
-    AllHosps *h;
-    int i;
-
-    h = &allhosps[player];
-    for (i = 0; i < 8; i++) {
-        if (h->notes[i].type == type) {
-            h->notes[i].type = 0;
-            break;
-        }
-    }
-}
-
-// FUNCTION: 0x000506f4
-void declass_a_note(u16 type, u8 player)
-{
-    AllHosps *h;
-    int i;
-
-    h = &allhosps[player];
-    find_a_note(type, player);
-    remove_a_note(type, player);
-    for (i = 7; i >= 0; i--) {
-        if (h->notes[i].type == 0) {
-            h->notes[i].type = h->action.type;
-            h->notes[i].arg = h->action.arg;
-            h->notes[i].count = h->action.count;
-            break;
-        }
-    }
-}
-
 // FUNCTION: 0x0004fc48
 u8 computer_build(u8 type, u8 player)
 {
@@ -782,6 +695,22 @@ u8 computer_staff_levels(u8 player)
     return 0;
 }
 
+// FUNCTION: 0x000502e0
+u32 find_strategy_start(u8 type)
+{
+    int i;
+
+    for (i = 0;; i++) {
+        if (com_strategy[i].type == 9) {
+            break;
+        }
+        if (com_strategy[i].type == 5 && com_strategy[i].arg == type) {
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
 // FUNCTION: 0x00050360
 u8 computer_choose_room(u8 idx, u8 player)
 {
@@ -818,6 +747,77 @@ u8 computer_choose_room(u8 idx, u8 player)
         make_a_note(4, 0, 0, player);
     }
     return 0;
+}
+
+// FUNCTION: 0x00050528
+u8 make_a_note(u16 type, s16 arg, s16 count, u8 player)
+{
+    AllHosps *h;
+    int i;
+
+    h = &allhosps[player];
+    for (i = 0; i < 8; i++) {
+        if (h->notes[i].type == 0) {
+            h->notes[i].type = type;
+            h->notes[i].arg = arg;
+            h->notes[i].count = count;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// FUNCTION: 0x000505d0
+u8 find_a_note(u16 type, u8 player)
+{
+    AllHosps *h;
+    int i;
+
+    h = &allhosps[player];
+    for (i = 0; i < 8; i++) {
+        if (h->notes[i].type == type) {
+            h->action.type = type;
+            h->action.arg = h->notes[i].arg;
+            h->action.count = h->notes[i].count;
+            h->f1202 = 1;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// FUNCTION: 0x00050684
+void remove_a_note(u16 type, u8 player)
+{
+    AllHosps *h;
+    int i;
+
+    h = &allhosps[player];
+    for (i = 0; i < 8; i++) {
+        if (h->notes[i].type == type) {
+            h->notes[i].type = 0;
+            break;
+        }
+    }
+}
+
+// FUNCTION: 0x000506f4
+void declass_a_note(u16 type, u8 player)
+{
+    AllHosps *h;
+    int i;
+
+    h = &allhosps[player];
+    find_a_note(type, player);
+    remove_a_note(type, player);
+    for (i = 7; i >= 0; i--) {
+        if (h->notes[i].type == 0) {
+            h->notes[i].type = h->action.type;
+            h->notes[i].arg = h->action.arg;
+            h->notes[i].count = h->action.count;
+            break;
+        }
+    }
 }
 
 // FUNCTION: 0x000507c4

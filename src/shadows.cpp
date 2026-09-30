@@ -20,6 +20,24 @@ extern s8 RoomTileHalfData[][32][64];
 
 void reset_precalculated_shadows(void);
 void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSprite *dst);
+extern "C" Thing *fn_00019aac(Map *t, u16 kind);
+
+// FUNCTION: 0x000b0630
+u8 fn_000b0630(u16 tile, u8 parity)
+{
+    Map *cell = &map[(u16)tile];
+    Thing *e = fn_00019aac(cell, 8);
+
+    if (e == 0) {
+        return 0;
+    } else if (e->unknown17 % 2 == parity) {
+        return 1;
+    } else if (e->unknown17 % 2 != parity) {
+        return 0;
+    } else {
+        return 0;
+    }
+}
 
 // FUNCTION: 0x000b06d0
 void add_static_shadows(void)

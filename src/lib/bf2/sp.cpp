@@ -11,6 +11,29 @@ extern char D_00124ec3[];
 extern __ic76sReceiveCallbacks *D_001507dc;
 }
 
+/* Copies at most size - 1 characters and always terminates. */
+inline void NameCopy(char *dst, char *src, u32 size)
+{
+    if (strlen(src) < size) {
+        strcpy(dst, src);
+    } else {
+        memcpy(dst, src, size - 1);
+        dst[size - 1] = 0;
+    }
+}
+
+extern "C" {
+extern char D_00124f8d[];
+extern char D_00124fbf[];
+extern char D_00124ff0[];
+extern char D_0012501f[];
+extern char D_0012504f[];
+extern char D_00125089[];
+extern char D_001250ca[];
+extern char D_00125114[];
+extern char D_00125151[];
+}
+
 // FUNCTION: 0x000d1310
 ServiceProvider::ServiceProvider()
 {
@@ -63,17 +86,6 @@ TbError ServiceProvider::Release(void)
         fn_000c20c0(D_00124ea6);
     init_count--;
     return Lb_OK;
-}
-
-/* Copies at most size - 1 characters and always terminates. */
-inline void NameCopy(char *dst, char *src, u32 size)
-{
-    if (strlen(src) < size) {
-        strcpy(dst, src);
-    } else {
-        memcpy(dst, src, size - 1);
-        dst[size - 1] = 0;
-    }
 }
 
 // FUNCTION: 0x000d14a4
@@ -203,6 +215,25 @@ u32 ServiceProvider::GetAddPlayerMsgSize(char *name)
     return strlen(name) + 9;
 }
 
+// FUNCTION: 0xd1820
+void ServiceProvider::EncodeAddPlayerMsg(u8 *buf, u32 id, char *name)
+{
+    EncodeMessageStub(buf, strlen(name) + 5, (TbMessageType)1, 0);
+    memcpy(buf + 4, &id, 4);
+    strcpy((char *)buf + 8, name);
+}
+
+// FUNCTION: 0xd189c
+u32 ServiceProvider::DecodeAddPlayerMsg(u8 *buf, u32 &id, char *name)
+{
+    u32 ret = 1;
+
+    memcpy(&id, buf + 4, 4);
+    if (name)
+        strcpy(name, (char *)buf + 8);
+    return ret;
+}
+
 // FUNCTION: 0xd18f8
 u32 GetRequestCompositeExchangeDataMsgSize(void)
 {
@@ -221,24 +252,6 @@ u32 DecodeRequestExchangeDataMsg(u8 *buf, u32 &id)
 {
     memcpy(&id, buf + 4, 4);
     return 1;
-}
-
-// FUNCTION: 0xd1b64
-void EncodeMessageStub(void *buf, u32 size, TbMessageType type, u32 seq)
-{
-    if (buf == 0) {
-        fn_000c20c0(D_00124f09);
-        return;
-    }
-    *(u32 *)buf = (size & 0xfffff) | ((seq & 0xf) << 20) | (type << 24);
-}
-
-// FUNCTION: 0xd1820
-void ServiceProvider::EncodeAddPlayerMsg(u8 *buf, u32 id, char *name)
-{
-    EncodeMessageStub(buf, strlen(name) + 5, (TbMessageType)1, 0);
-    memcpy(buf + 4, &id, 4);
-    strcpy((char *)buf + 8, name);
 }
 
 // FUNCTION: 0xd1970
@@ -260,17 +273,6 @@ u32 DecodeRequestCompositeExchangeDataMsg(u8 *buf, u32 &id)
 {
     memcpy(&id, buf + 4, 4);
     return 1;
-}
-
-// FUNCTION: 0xd189c
-u32 ServiceProvider::DecodeAddPlayerMsg(u8 *buf, u32 &id, char *name)
-{
-    u32 ret = 1;
-
-    memcpy(&id, buf + 4, 4);
-    if (name)
-        strcpy(name, (char *)buf + 8);
-    return ret;
 }
 
 // FUNCTION: 0xd1a38
@@ -312,10 +314,14 @@ void StrCpyTrunc(char *dst, char *src, u32 size)
     }
 }
 
-// FUNCTION: 0xd29d8
-TbError ServiceProvider::LookForSystemMessages(void)
+// FUNCTION: 0xd1b64
+void EncodeMessageStub(void *buf, u32 size, TbMessageType type, u32 seq)
 {
-    return Receive(0xb6);
+    if (buf == 0) {
+        fn_000c20c0(D_00124f09);
+        return;
+    }
+    *(u32 *)buf = (size & 0xfffff) | ((seq & 0xf) << 20) | (type << 24);
 }
 
 // FUNCTION: 0xd1b90
@@ -333,18 +339,6 @@ void DecodeMessageStub(void *buf, u32 *size, TbMessageType *type, u32 *seq)
         *seq = (*p >> 20) & 0xf;
     if (type)
         *type = (TbMessageType)((*p >> 24) & 0xff);
-}
-
-extern "C" {
-extern char D_00124f8d[];
-extern char D_00124fbf[];
-extern char D_00124ff0[];
-extern char D_0012501f[];
-extern char D_0012504f[];
-extern char D_00125089[];
-extern char D_001250ca[];
-extern char D_00125114[];
-extern char D_00125151[];
 }
 
 // FUNCTION: 0xd1bd4
@@ -685,6 +679,12 @@ TbError ServiceProvider::Send(u32 to, void *buf)
             fn_000c20c0(D_001255f5);
     }
     return ret;
+}
+
+// FUNCTION: 0xd29d8
+TbError ServiceProvider::LookForSystemMessages(void)
+{
+    return Receive(0xb6);
 }
 
 // FUNCTION: 0xd29e8

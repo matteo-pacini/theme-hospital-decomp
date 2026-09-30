@@ -66,6 +66,47 @@ void fn_000e6d40(HSAMPLE S)
     AIL_release_sample_handle(S);
 }
 
+S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital, S32 use_MIDI,
+                                  U32 output_rate, S32 output_bits, S32 output_channels);
+#pragma aux (__cdecl) AIL_API_quick_startup "fn_000e6d80_";
+
+// startup is __cdecl: the parameters are loaded after its call, which
+// clobbers eax, ecx and edx.
+// FUNCTION: 0xe6d80
+S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital, S32 use_MIDI,
+                                  U32 output_rate, S32 output_bits, S32 output_channels)
+{
+    startup();
+    AILQAPI_start();
+    if (!use_digital && !use_MIDI) {
+        return 0;
+    }
+    mdi = NULL;
+    dig = NULL;
+    if (use_MIDI) {
+        if (AIL_install_MDI_INI(&mdi)) {
+            AIL_shutdown();
+            return 0;
+        }
+    }
+    if (output_rate) {
+        AIL_set_preference(DIG_HARDWARE_SAMPLE_RATE, output_rate);
+    }
+    if (output_bits) {
+        AIL_set_preference(DIG_USE_16_BITS, output_bits == 16);
+    }
+    if (output_channels) {
+        AIL_set_preference(DIG_USE_STEREO, output_channels == 2);
+    }
+    if (use_digital) {
+        if (AIL_install_DIG_INI(&dig)) {
+            AIL_shutdown();
+            return 0;
+        }
+    }
+    return 1;
+}
+
 // FUNCTION: 0xe6e50
 void __cdecl AIL_API_quick_shutdown(void)
 {
@@ -254,47 +295,6 @@ HAUDIO __cdecl AIL_API_quick_load_and_play(char *filename, U32 loop_count, S32 w
         }
     }
     return audio;
-}
-
-S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital, S32 use_MIDI,
-                                  U32 output_rate, S32 output_bits, S32 output_channels);
-#pragma aux (__cdecl) AIL_API_quick_startup "fn_000e6d80_";
-
-// startup is __cdecl: the parameters are loaded after its call, which
-// clobbers eax, ecx and edx.
-// FUNCTION: 0xe6d80
-S32 __cdecl AIL_API_quick_startup(void (__cdecl *startup)(void), S32 use_digital, S32 use_MIDI,
-                                  U32 output_rate, S32 output_bits, S32 output_channels)
-{
-    startup();
-    AILQAPI_start();
-    if (!use_digital && !use_MIDI) {
-        return 0;
-    }
-    mdi = NULL;
-    dig = NULL;
-    if (use_MIDI) {
-        if (AIL_install_MDI_INI(&mdi)) {
-            AIL_shutdown();
-            return 0;
-        }
-    }
-    if (output_rate) {
-        AIL_set_preference(DIG_HARDWARE_SAMPLE_RATE, output_rate);
-    }
-    if (output_bits) {
-        AIL_set_preference(DIG_USE_16_BITS, output_bits == 16);
-    }
-    if (output_channels) {
-        AIL_set_preference(DIG_USE_STEREO, output_channels == 2);
-    }
-    if (use_digital) {
-        if (AIL_install_DIG_INI(&dig)) {
-            AIL_shutdown();
-            return 0;
-        }
-    }
-    return 1;
 }
 
 // FUNCTION: 0xe7410

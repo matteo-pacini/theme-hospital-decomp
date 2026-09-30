@@ -92,29 +92,7 @@ char *getcwd(char *buf, size_t size);
 int chdir(const char *path);
 time_t _d2ttime(unsigned date, unsigned time);
 
-// FUNCTION: 0xec89a
-unsigned short at2mode(int attr, char *fname)
-{
-    unsigned short mode;
-    char *ext;
-
-    if (attr & _A_SUBDIR) {
-        mode = S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH;
-    } else if (attr & AT_ISCHR) {
-        mode = S_IFCHR;
-    } else {
-        mode = S_IFREG;
-        if ((ext = strchr(fname, '.')) != NULL) {
-            ++ext;
-            if (strcmp(ext, D_0012723b) == 0 || strcmp(ext, D_0012723f) == 0)
-                mode |= S_IXUSR | S_IXGRP | S_IXOTH;
-        }
-    }
-    mode |= S_IRUSR | S_IRGRP | S_IROTH;
-    if (!(attr & _A_RDONLY))
-        mode |= S_IWUSR | S_IWGRP | S_IWOTH;
-    return mode;
-}
+unsigned short at2mode(int attr, char *fname);
 
 // FUNCTION: 0xec750
 int stat(const char *path, struct stat *buf)
@@ -166,4 +144,28 @@ int stat(const char *path, struct stat *buf)
     buf->st_originatingNameSpace = 0;
     strncpy(buf->st_name, dta.name, 13);
     return 0;
+}
+
+// FUNCTION: 0xec89a
+unsigned short at2mode(int attr, char *fname)
+{
+    unsigned short mode;
+    char *ext;
+
+    if (attr & _A_SUBDIR) {
+        mode = S_IFDIR | S_IXUSR | S_IXGRP | S_IXOTH;
+    } else if (attr & AT_ISCHR) {
+        mode = S_IFCHR;
+    } else {
+        mode = S_IFREG;
+        if ((ext = strchr(fname, '.')) != NULL) {
+            ++ext;
+            if (strcmp(ext, D_0012723b) == 0 || strcmp(ext, D_0012723f) == 0)
+                mode |= S_IXUSR | S_IXGRP | S_IXOTH;
+        }
+    }
+    mode |= S_IRUSR | S_IRGRP | S_IROTH;
+    if (!(attr & _A_RDONLY))
+        mode |= S_IWUSR | S_IWGRP | S_IWOTH;
+    return mode;
 }

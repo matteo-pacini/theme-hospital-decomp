@@ -108,7 +108,9 @@ src/lib/clib/*.cpp   wpp386  -s -ox -mf -r -3
 # Bullfrog's Smacker player wrapper: optimised C++ for the Pentium (-5: no loop
 # alignment padding, which -4 inserts).
 src/lib/smk/*.cpp    wpp386  -s -oneatx -5
-# RAD's Smacker library: C, same optimisation (-oe inlines its helpers).
+# RAD's Smacker library: C, same optimisation (-oe inlines its helpers). Its
+# functions are defined in descending address order, the order of the
+# original objects' fixup records.
 src/lib/smk/*.c      wcc386  -s -oneatx -oe=25 -5
 # Game code: C++, full debug info (which also disables optimisation). -ot
 # must come first: -d2 turns optimisation off but keeps the "optimise for
@@ -116,6 +118,9 @@ src/lib/smk/*.c      wcc386  -s -oneatx -oe=25 -5
 # alloc.cpp holds global objects with constructors: its static initialiser
 # registers them for exception cleanup (-xs).
 src/alloc.cpp        wpp386  -s -ot -d2 -xs
+# wallhug: one segment (no-op filler between its functions); fn_00049400 is an
+# inline COMDAT emitted before wallhug_tricky, which takes its alignment filler.
+src/wallhug.cpp      wpp386  -s -ot -d2 -zm-
 src/*.cpp            wpp386  -s -ot -d2
 # Miles Sound System (RAD Game Tools): C, optimised for the 486, public
 # functions are __cdecl.

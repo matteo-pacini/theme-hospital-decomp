@@ -179,6 +179,101 @@ restart:
     return result;
 }
 
+// FUNCTION: 0x00049400 COMDAT
+inline void fn_00049400(wallhug_hugger *hugger)
+{
+    u32 dir;
+
+    if (hugger->dir == 0x33)
+        return;
+    if (wall_in_way(hugger->pos.x, hugger->pos.y, hugger->dir)) {
+        hugger->dir = (-hugger->turn + hugger->dir) & 3;
+        hugger->route[hugger->count] = hugger->pos;
+        hugger->count++;
+        if (hugger->count > 0xfb) {
+            hugger->dir = 0x33;
+            return;
+        }
+    } else {
+        if (hugger->dir == 0 || hugger->dir == 1 || hugger->dir == 2 || hugger->dir == 3) {}
+        hugger->pos.x += wallhug_dirn_steps[hugger->dir].x;
+        hugger->pos.y += wallhug_dirn_steps[hugger->dir].y;
+        dir = (hugger->dir + hugger->turn) & 3;
+        if (!wall_in_way(hugger->pos.x, hugger->pos.y, dir)) {
+            hugger->dir = dir;
+            hugger->route[hugger->count] = hugger->pos;
+            hugger->count++;
+            if (hugger->count > 0xfb) {
+                hugger->dir = 0x33;
+                return;
+            }
+        }
+    }
+    switch ((hugger->dir + hugger->turn) & 3) {
+    case 0:
+        if (hugger->end.y < hugger->pos.y)
+            return;
+        break;
+    case 1:
+        if (hugger->end.x > hugger->pos.x)
+            return;
+        break;
+    case 2:
+        if (hugger->end.y > hugger->pos.y)
+            return;
+        break;
+    case 3:
+        if (hugger->end.x < hugger->pos.x)
+            return;
+        break;
+    }
+    switch (hugger->dir) {
+    case 0:
+        if (hugger->end.y > hugger->pos.y)
+            return;
+        break;
+    case 1:
+        if (hugger->end.x < hugger->pos.x)
+            return;
+        break;
+    case 2:
+        if (hugger->end.y < hugger->pos.y)
+            return;
+        break;
+    case 3:
+        if (hugger->end.x > hugger->pos.x)
+            return;
+        break;
+    }
+    if (hugger->hit.x <= hugger->end.x) {
+        if (hugger->pos.x < hugger->hit.x)
+            return;
+        if (hugger->pos.x > hugger->end.x)
+            return;
+    }
+    if (hugger->hit.x >= hugger->end.x) {
+        if (hugger->pos.x > hugger->hit.x)
+            return;
+        if (hugger->pos.x < hugger->end.x)
+            return;
+    }
+    if (hugger->hit.y <= hugger->end.y) {
+        if (hugger->pos.y < hugger->hit.y)
+            return;
+        if (hugger->pos.y > hugger->end.y)
+            return;
+    }
+    if (hugger->hit.y >= hugger->end.y) {
+        if (hugger->pos.y > hugger->hit.y)
+            return;
+        if (hugger->pos.y < hugger->end.y)
+            return;
+    }
+    if (hugger->hit.x == hugger->pos.x && hugger->hit.y == hugger->pos.y)
+        return;
+    hugger->dir = 0x32;
+}
+
 // FUNCTION: 0x00048e6c
 u32 wallhug_tricky(wallhug_path *path)
 {
@@ -186,6 +281,40 @@ u32 wallhug_tricky(wallhug_path *path)
 
     result = fn_000491d8(path);
     return wallhug_cleanup(path, result);
+}
+
+// FUNCTION: 0x000492f0 COMDAT
+inline u32 huggers_met_again(wallhug_info *info)
+{
+    wallhug_waypoint next;
+
+    if (info->hugger[0].dir == 0x33 || info->hugger[0].dir == 0x32)
+        return 0;
+    next = info->hugger[0].pos;
+    if (info->hugger[0].dir == 0 || info->hugger[0].dir == 1 || info->hugger[0].dir == 2
+        || info->hugger[0].dir == 3) {}
+    next.x += wallhug_dirn_steps[info->hugger[0].dir].x;
+    next.y += wallhug_dirn_steps[info->hugger[0].dir].y;
+    if (!((info->hugger[1].pos.x - next.x) & 0xff) && !((info->hugger[1].pos.y - next.y) & 0xff)
+        && ((info->hugger[0].dir + 2) & 3) == info->hugger[1].dir)
+        return 1;
+    return 0;
+}
+
+// FUNCTION: 0x00049230 COMDAT
+inline u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger)
+{
+    u32 i;
+
+    if (hugger->count + path->count + 2 > 0xfc)
+        return 0;
+    for (i = 0; i < hugger->count; i++) {
+        path->route[path->count] = hugger->route[i];
+        path->count++;
+    }
+    path->route[path->count] = hugger->pos;
+    path->count++;
+    return 1;
 }
 
 // FUNCTION: 0x00048ea4
@@ -280,133 +409,4 @@ u32 fn_000491d8(wallhug_path *path)
     if (D_001603cc)
         D_001603c4 = 0xff;
     return fn_00048ea4(path, path->start, 60000);
-}
-
-// FUNCTION: 0x000492f0 COMDAT
-inline u32 huggers_met_again(wallhug_info *info)
-{
-    wallhug_waypoint next;
-
-    if (info->hugger[0].dir == 0x33 || info->hugger[0].dir == 0x32)
-        return 0;
-    next = info->hugger[0].pos;
-    if (info->hugger[0].dir == 0 || info->hugger[0].dir == 1 || info->hugger[0].dir == 2
-        || info->hugger[0].dir == 3) {}
-    next.x += wallhug_dirn_steps[info->hugger[0].dir].x;
-    next.y += wallhug_dirn_steps[info->hugger[0].dir].y;
-    if (!((info->hugger[1].pos.x - next.x) & 0xff) && !((info->hugger[1].pos.y - next.y) & 0xff)
-        && ((info->hugger[0].dir + 2) & 3) == info->hugger[1].dir)
-        return 1;
-    return 0;
-}
-
-// FUNCTION: 0x00049230 COMDAT
-inline u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger)
-{
-    u32 i;
-
-    if (hugger->count + path->count + 2 > 0xfc)
-        return 0;
-    for (i = 0; i < hugger->count; i++) {
-        path->route[path->count] = hugger->route[i];
-        path->count++;
-    }
-    path->route[path->count] = hugger->pos;
-    path->count++;
-    return 1;
-}
-
-// FUNCTION: 0x00049400
-void fn_00049400(wallhug_hugger *hugger)
-{
-    u32 dir;
-
-    if (hugger->dir == 0x33)
-        return;
-    if (wall_in_way(hugger->pos.x, hugger->pos.y, hugger->dir)) {
-        hugger->dir = (-hugger->turn + hugger->dir) & 3;
-        hugger->route[hugger->count] = hugger->pos;
-        hugger->count++;
-        if (hugger->count > 0xfb) {
-            hugger->dir = 0x33;
-            return;
-        }
-    } else {
-        if (hugger->dir == 0 || hugger->dir == 1 || hugger->dir == 2 || hugger->dir == 3) {}
-        hugger->pos.x += wallhug_dirn_steps[hugger->dir].x;
-        hugger->pos.y += wallhug_dirn_steps[hugger->dir].y;
-        dir = (hugger->dir + hugger->turn) & 3;
-        if (!wall_in_way(hugger->pos.x, hugger->pos.y, dir)) {
-            hugger->dir = dir;
-            hugger->route[hugger->count] = hugger->pos;
-            hugger->count++;
-            if (hugger->count > 0xfb) {
-                hugger->dir = 0x33;
-                return;
-            }
-        }
-    }
-    switch ((hugger->dir + hugger->turn) & 3) {
-    case 0:
-        if (hugger->end.y < hugger->pos.y)
-            return;
-        break;
-    case 1:
-        if (hugger->end.x > hugger->pos.x)
-            return;
-        break;
-    case 2:
-        if (hugger->end.y > hugger->pos.y)
-            return;
-        break;
-    case 3:
-        if (hugger->end.x < hugger->pos.x)
-            return;
-        break;
-    }
-    switch (hugger->dir) {
-    case 0:
-        if (hugger->end.y > hugger->pos.y)
-            return;
-        break;
-    case 1:
-        if (hugger->end.x < hugger->pos.x)
-            return;
-        break;
-    case 2:
-        if (hugger->end.y < hugger->pos.y)
-            return;
-        break;
-    case 3:
-        if (hugger->end.x > hugger->pos.x)
-            return;
-        break;
-    }
-    if (hugger->hit.x <= hugger->end.x) {
-        if (hugger->pos.x < hugger->hit.x)
-            return;
-        if (hugger->pos.x > hugger->end.x)
-            return;
-    }
-    if (hugger->hit.x >= hugger->end.x) {
-        if (hugger->pos.x > hugger->hit.x)
-            return;
-        if (hugger->pos.x < hugger->end.x)
-            return;
-    }
-    if (hugger->hit.y <= hugger->end.y) {
-        if (hugger->pos.y < hugger->hit.y)
-            return;
-        if (hugger->pos.y > hugger->end.y)
-            return;
-    }
-    if (hugger->hit.y >= hugger->end.y) {
-        if (hugger->pos.y > hugger->hit.y)
-            return;
-        if (hugger->pos.y < hugger->end.y)
-            return;
-    }
-    if (hugger->hit.x == hugger->pos.x && hugger->hit.y == hugger->pos.y)
-        return;
-    hugger->dir = 0x32;
 }

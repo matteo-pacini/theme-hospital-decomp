@@ -56,6 +56,35 @@ u32 __pascal BIOSSmackTimerRead(void);
 void __pascal DOSSmackTimerSetup(void);
 #pragma aux (__pascal) DOSSmackTimerSetup "fn_000f2ec0_";
 
+// FUNCTION: 0xf2fa0
+u32 __pascal BIOSSmackTimerRead(void)
+{
+    u32 t;
+
+    t = *(u32 *)0x46c;
+    if (t < D_00151b94)
+        D_00151b90 += D_00151b94 - t;
+    D_00151b94 = t;
+    return mult64anddiv(t + D_00151b90, 2746, 50);
+}
+
+// FUNCTION: 0xf2f80
+u32 __pascal VTDSmackTimerRead(void)
+{
+    u32 t;
+
+    t = vtdread();
+    if (t < D_00151b94)
+        return D_00151b94;
+    D_00151b94 = t;
+    return t;
+}
+
+// FUNCTION: 0xf2f70
+void __pascal DOSSmackTimerDone(void)
+{
+}
+
 // FUNCTION: 0xf2ec0
 void __pascal DOSSmackTimerSetup(void)
 {
@@ -72,33 +101,4 @@ void __pascal DOSSmackTimerSetup(void)
         D_00151b90 = -D_00151b90;
         setpit(0);
     }
-}
-
-// FUNCTION: 0xf2f70
-void __pascal DOSSmackTimerDone(void)
-{
-}
-
-// FUNCTION: 0xf2f80
-u32 __pascal VTDSmackTimerRead(void)
-{
-    u32 t;
-
-    t = vtdread();
-    if (t < D_00151b94)
-        return D_00151b94;
-    D_00151b94 = t;
-    return t;
-}
-
-// FUNCTION: 0xf2fa0
-u32 __pascal BIOSSmackTimerRead(void)
-{
-    u32 t;
-
-    t = *(u32 *)0x46c;
-    if (t < D_00151b94)
-        D_00151b90 += D_00151b94 - t;
-    D_00151b94 = t;
-    return mult64anddiv(t + D_00151b90, 2746, 50);
 }

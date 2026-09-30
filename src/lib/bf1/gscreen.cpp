@@ -7,8 +7,6 @@ extern "C" {
 extern s32 D_00188c0c;
 
 int LbScreenFindVideoModes(void);
-extern s32 D_001507d4;
-s32 fn_000d12e0(void);
 
 // FUNCTION: 0x000be900
 s32 fn_000be900(TbScreenMode mode)
@@ -71,12 +69,6 @@ int LbScreenSetGraphicsWindow(s32 x, s32 y, s32 w, s32 h)
 u32 LbScreenIsInitialised(void)
 {
     return _lbScreenInitialised;
-}
-
-// FUNCTION: 0x000d12e0
-s32 fn_000d12e0(void)
-{
-    return D_001507d4;
 }
 
 }

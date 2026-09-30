@@ -119,91 +119,105 @@ U32 __pascal MSSLowSoundPlayed(SmackSnd *snd);
 U8 __pascal SmackSoundUseMSS(void *digdriver);
 #pragma aux (__pascal) SmackSoundUseMSS "fn_000e7910_";
 
-// FUNCTION: 0xe7910
-U8 __pascal SmackSoundUseMSS(void *digdriver)
-{
-    if (SmackTimerReadAddr == NULL) {
-        LowSoundCheckAddr = MSSLowSoundCheck;
-        LowSoundOpenAddr = MSSLowSoundOpen;
-        D_0018cdbc = MSSLowSoundClose;
-        LowSoundPlayedAddr = MSSLowSoundPlayed;
-        LowSoundPurgeAddr = MSSLowSoundPurge;
-        D_00151688 = MSSLowSoundPurge;
-        D_0015168c = NULL;
-        D_00151690 = MSSLowSoundVolPan;
-        D_00151b98 = MSSSmackTimerSetup;
-        SmackTimerReadAddr = MSSSmackTimerRead;
-        SmackTimerDoneAddr = MSSSmackTimerSetup;
-    }
-    if (D_00151664 == NULL) {
-        D_00151668 = digdriver;
-        return 1;
-    }
-    return 0;
-}
-
 #pragma aux (__pascal) MSSLowSoundVolPan "fn_000e79b0_";
-
-// FUNCTION: 0xe79b0
-void __pascal MSSLowSoundVolPan(SmackSnd *snd, U32 volume, U32 pan)
-{
-    if (volume > 0x8000)
-        volume = 0x8000;
-    AIL_set_sample_volume(snd->sample, (mult64anddiv(volume, 1270, 0x8000) + 5) / 10);
-    AIL_set_sample_pan(snd->sample, (mult64anddiv(pan, 1270, 0x10000) + 5) / 10);
-}
 
 #pragma aux (__pascal) MSSSmackTimerSetup "fn_000e7a20_";
 
-// FUNCTION: 0xe7a20
-void __pascal MSSSmackTimerSetup(void)
-{
-}
-
-// FUNCTION: 0x000e7a30
-U32 __pascal MSSSmackTimerRead(void)
-{
-    return AIL_ms_count();
-}
-
 #pragma aux (__pascal) MSSLowSoundClose "fn_000e7a40_";
 
-// FUNCTION: 0xe7a40
-void __pascal MSSLowSoundClose(SmackSnd *snd)
+#pragma aux (__pascal) MSSLowSoundPurge "fn_000e7ac0_";
+
+#pragma aux (__pascal) MSSLowSoundOpen "fn_000e7af0_";
+
+/* config/functions.txt has no name for MSSInitSample. */
+#pragma aux MSSInitSample "fn_000e7cd0_";
+
+#pragma aux (__pascal) MSSLowSoundPlayed "fn_000e7d60_";
+
+/* config/functions.txt has no name for MSSLowSoundCheck. */
+#pragma aux (__pascal) MSSLowSoundCheck "fn_000e7db0_";
+
+#pragma aux (__pascal) MSSCopyWrap "SMACKWRAPCOPY";
+
+// FUNCTION: 0xe7ec0
+U8 *__pascal MSSCopyWrap(U8 *dst, U8 *src, U8 *start, U8 *end, U32 n)
 {
-    if (D_00151664 == NULL)
-        return;
-    AIL_end_sample(snd->sample);
-    AIL_release_sample_handle(snd->sample);
-    AIL_vmm_unlock(snd->halves[0], snd->halfsize * 2);
-    RADFREE(snd->halves[0]);
-    if (snd == D_00151664) {
-        D_00151664 = snd->next;
-    } else {
-        volatile SmackSnd *p = D_00151664;
-        while (p->next != NULL) {
-            if (snd == p->next) {
-                p->next = snd->next;
-                break;
+    U32 tail;
+
+    tail = end - src;
+    if (tail <= n) {
+        if (tail) {
+            radmemcpy(dst, src, tail);
+            dst += tail;
+            n -= tail;
+        }
+        src = start;
+    }
+    if (n) {
+        radmemcpy(dst, src, n);
+        src += n;
+    }
+    return src;
+}
+
+// FUNCTION: 0xe7db0
+void __pascal MSSLowSoundCheck(void)
+{
+    SmackSnd *snd;
+    U32 half;
+    U32 n;
+    U32 now;
+
+    for (snd = D_00151664; snd != NULL; snd = snd->next) {
+        if (AIL_sample_buffer_info(snd->sample, NULL, NULL, NULL, NULL))
+            snd->starved = 1;
+        if (snd->pending > snd->minbuf || (snd->flush && snd->pending > 3)) {
+            half = AIL_sample_buffer_ready(snd->sample);
+            if (half <= 1) {
+                now = SmackTimerReadAddr();
+                n = snd->pending & ~3;
+                if (n > snd->halfsize)
+                    n = snd->halfsize & ~3;
+                snd->readpos = MSSCopyWrap(snd->halves[half], snd->readpos, snd->buf, snd->bufend, n);
+                if (snd->loadtime == 0 || AIL_sample_buffer_info(snd->sample, NULL, NULL, NULL, NULL)) {
+                    snd->loadtime = now;
+                    snd->played += snd->loaded;
+                    snd->loaded = 0;
+                }
+                AIL_load_sample_buffer(snd->sample, half, snd->halves[half], n);
+                snd->loaded += n;
+                snd->pending -= n;
             }
-            p = p->next;
         }
     }
 }
 
-#pragma aux (__pascal) MSSLowSoundPurge "fn_000e7ac0_";
-
-// FUNCTION: 0xe7ac0
-void __pascal MSSLowSoundPurge(SmackSnd *snd)
+// FUNCTION: 0xe7d60
+U32 __pascal MSSLowSoundPlayed(SmackSnd *snd)
 {
-    AIL_end_sample(snd->sample);
-    snd->played = 0;
-    snd->loaded = 0;
-    snd->loadtime = 0;
-    MSSInitSample(snd);
+    U32 played;
+
+    MSSLowSoundCheck();
+    played = snd->loadtime == 0
+        ? snd->loaded
+        : mult64anddiv(snd->bytespersec, SmackTimerReadAddr() - snd->loadtime, 1000);
+    if (played > snd->loaded) {
+        snd->loadtime = 0;
+        played = snd->loaded;
+    }
+    return snd->played + played;
 }
 
-#pragma aux (__pascal) MSSLowSoundOpen "fn_000e7af0_";
+// FUNCTION: 0xe7cd0
+void MSSInitSample(SmackSnd *snd)
+{
+    AIL_init_sample(snd->sample);
+    AIL_set_sample_type(snd->sample,
+        snd->bits16 ? (snd->stereo ? 3 : 1) : (snd->stereo ? 2 : 0), snd->bits16 != 0);
+    AIL_set_sample_playback_rate(snd->sample, snd->rate);
+    AIL_set_sample_user_data(snd->sample, 0, (S32)snd);
+    AIL_set_sample_volume(snd->sample, 0x7f);
+}
 
 // FUNCTION: 0xe7af0
 U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
@@ -248,92 +262,78 @@ U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
     return 1;
 }
 
-/* config/functions.txt has no name for MSSInitSample. */
-#pragma aux MSSInitSample "fn_000e7cd0_";
-
-// FUNCTION: 0xe7cd0
-void MSSInitSample(SmackSnd *snd)
+// FUNCTION: 0xe7ac0
+void __pascal MSSLowSoundPurge(SmackSnd *snd)
 {
-    AIL_init_sample(snd->sample);
-    AIL_set_sample_type(snd->sample,
-        snd->bits16 ? (snd->stereo ? 3 : 1) : (snd->stereo ? 2 : 0), snd->bits16 != 0);
-    AIL_set_sample_playback_rate(snd->sample, snd->rate);
-    AIL_set_sample_user_data(snd->sample, 0, (S32)snd);
-    AIL_set_sample_volume(snd->sample, 0x7f);
+    AIL_end_sample(snd->sample);
+    snd->played = 0;
+    snd->loaded = 0;
+    snd->loadtime = 0;
+    MSSInitSample(snd);
 }
 
-#pragma aux (__pascal) MSSLowSoundPlayed "fn_000e7d60_";
-
-// FUNCTION: 0xe7d60
-U32 __pascal MSSLowSoundPlayed(SmackSnd *snd)
+// FUNCTION: 0xe7a40
+void __pascal MSSLowSoundClose(SmackSnd *snd)
 {
-    U32 played;
-
-    MSSLowSoundCheck();
-    played = snd->loadtime == 0
-        ? snd->loaded
-        : mult64anddiv(snd->bytespersec, SmackTimerReadAddr() - snd->loadtime, 1000);
-    if (played > snd->loaded) {
-        snd->loadtime = 0;
-        played = snd->loaded;
-    }
-    return snd->played + played;
-}
-
-/* config/functions.txt has no name for MSSLowSoundCheck. */
-#pragma aux (__pascal) MSSLowSoundCheck "fn_000e7db0_";
-
-// FUNCTION: 0xe7db0
-void __pascal MSSLowSoundCheck(void)
-{
-    SmackSnd *snd;
-    U32 half;
-    U32 n;
-    U32 now;
-
-    for (snd = D_00151664; snd != NULL; snd = snd->next) {
-        if (AIL_sample_buffer_info(snd->sample, NULL, NULL, NULL, NULL))
-            snd->starved = 1;
-        if (snd->pending > snd->minbuf || (snd->flush && snd->pending > 3)) {
-            half = AIL_sample_buffer_ready(snd->sample);
-            if (half <= 1) {
-                now = SmackTimerReadAddr();
-                n = snd->pending & ~3;
-                if (n > snd->halfsize)
-                    n = snd->halfsize & ~3;
-                snd->readpos = MSSCopyWrap(snd->halves[half], snd->readpos, snd->buf, snd->bufend, n);
-                if (snd->loadtime == 0 || AIL_sample_buffer_info(snd->sample, NULL, NULL, NULL, NULL)) {
-                    snd->loadtime = now;
-                    snd->played += snd->loaded;
-                    snd->loaded = 0;
-                }
-                AIL_load_sample_buffer(snd->sample, half, snd->halves[half], n);
-                snd->loaded += n;
-                snd->pending -= n;
+    if (D_00151664 == NULL)
+        return;
+    AIL_end_sample(snd->sample);
+    AIL_release_sample_handle(snd->sample);
+    AIL_vmm_unlock(snd->halves[0], snd->halfsize * 2);
+    RADFREE(snd->halves[0]);
+    if (snd == D_00151664) {
+        D_00151664 = snd->next;
+    } else {
+        volatile SmackSnd *p = D_00151664;
+        while (p->next != NULL) {
+            if (snd == p->next) {
+                p->next = snd->next;
+                break;
             }
+            p = p->next;
         }
     }
 }
 
-#pragma aux (__pascal) MSSCopyWrap "SMACKWRAPCOPY";
-
-// FUNCTION: 0xe7ec0
-U8 *__pascal MSSCopyWrap(U8 *dst, U8 *src, U8 *start, U8 *end, U32 n)
+// FUNCTION: 0x000e7a30
+U32 __pascal MSSSmackTimerRead(void)
 {
-    U32 tail;
+    return AIL_ms_count();
+}
 
-    tail = end - src;
-    if (tail <= n) {
-        if (tail) {
-            radmemcpy(dst, src, tail);
-            dst += tail;
-            n -= tail;
-        }
-        src = start;
+// FUNCTION: 0xe7a20
+void __pascal MSSSmackTimerSetup(void)
+{
+}
+
+// FUNCTION: 0xe79b0
+void __pascal MSSLowSoundVolPan(SmackSnd *snd, U32 volume, U32 pan)
+{
+    if (volume > 0x8000)
+        volume = 0x8000;
+    AIL_set_sample_volume(snd->sample, (mult64anddiv(volume, 1270, 0x8000) + 5) / 10);
+    AIL_set_sample_pan(snd->sample, (mult64anddiv(pan, 1270, 0x10000) + 5) / 10);
+}
+
+// FUNCTION: 0xe7910
+U8 __pascal SmackSoundUseMSS(void *digdriver)
+{
+    if (SmackTimerReadAddr == NULL) {
+        LowSoundCheckAddr = MSSLowSoundCheck;
+        LowSoundOpenAddr = MSSLowSoundOpen;
+        D_0018cdbc = MSSLowSoundClose;
+        LowSoundPlayedAddr = MSSLowSoundPlayed;
+        LowSoundPurgeAddr = MSSLowSoundPurge;
+        D_00151688 = MSSLowSoundPurge;
+        D_0015168c = NULL;
+        D_00151690 = MSSLowSoundVolPan;
+        D_00151b98 = MSSSmackTimerSetup;
+        SmackTimerReadAddr = MSSSmackTimerRead;
+        SmackTimerDoneAddr = MSSSmackTimerSetup;
     }
-    if (n) {
-        radmemcpy(dst, src, n);
-        src += n;
+    if (D_00151664 == NULL) {
+        D_00151668 = digdriver;
+        return 1;
     }
-    return src;
+    return 0;
 }
