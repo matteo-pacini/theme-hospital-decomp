@@ -113,8 +113,10 @@ and comparing against the original.
   in `config/functions.txt`, re-sizing only its neighbours.
 - `tools/variants.py src/FILE 0xADDR`: searches source variants of one
   function (commutative operand swaps, declaration order, `x op= e` forms,
-  and with `--kinds ...,types` local integer types) with a beam search
-  scored by objdiff, and prints the best as a diff. It rediscovers, for
+  and with `--kinds ...` local integer types, declarations moved into or
+  out of blocks, `!x`/`x == 0` tests, adjacent statement swaps and
+  inverted if/else) with a beam search scored by objdiff, and prints the
+  best as a diff. It rediscovers, for
   example, the fixes for `item_upgraded` and `can_i_get_to` from their
   earlier source; review `types` results, which can change behaviour.
 
@@ -396,7 +398,11 @@ Observed consequences:
   A variable in two roles is presumably allocated with its combined
   savings, so earlier than either role alone would be; when a whole
   function's registers are a consistent permutation of the target's, look
-  for such sharing. Look for real code
+  for such sharing. The runtime does the same: `_FtoS` uses one double `x`
+  for both the `G` format's log10 and the scaled value (as Open Watcom's
+  `mathlib/old/ftos.c` still does), and computes `len = p - buf` before
+  the `width < dec + 1 + ndigits + len` test; either change alone leaves
+  the frame 8 bytes off or the sum in the wrong registers. Look for real code
   differences among register noise: a stray `(S8)` cast in
   `XMI_send_channel_voice_message` was a wrong `movsx`.
 - Bullfrog's RNC length is read as sequential statements
@@ -492,17 +498,16 @@ predates the tool and uses a separate file instead.
 
 - `_Scale10V` (0xfcad8), `src/lib/clib/scale10v.s`: FDIV checks without
   `pushfd`/`popfd` (C in `scale.c`).
-- `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`
-- `_FtoS_` (0xfc294), `src/lib/clib/ftos.standin.s`: the overflow test computes p - buf in edx and the digit count in eax, the other way round
-- `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`
-- `SMACKSOUNDONOFF` (0xe9a20), `src/lib/smk/smackinp.standin.s`
-- `gotoframe_` (0xeab30), `src/lib/smk/smackinp.standin.s`
-- `fn_000e85b0_` (0xe85b0), `src/lib/smk/smackinp.standin.s`
-- `fn_000e8190_` (0xe8190), `src/lib/smk/smackinp.standin.s`
-- `setuptheframe_` (0xea7a0), `src/lib/smk/smackinp.standin.s`
-- `soundnext_` (0xe94c0), `src/lib/smk/smackinp.standin.s`
-- `fn_000e8ab0_` (0xe8ab0), `src/lib/smk/smackinp.standin.s`
-- `SMACKOPEN` (0xe9c80), `src/lib/smk/smackinp.standin.s`
+- `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`: temporaries' registers (98.8%): the `S->EVNT_ptr += len` tails load `len` into edx (ours ebx), the time-signature case keeps `q` in eax and loads `t` into edx (ours reloads `q`), the sysex and note-on paths swap ebx/edx, and the queue-overflow exit rematerialises 0 into esi before `AIL_stop_sequence` (ours ecx after it)
+- `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`: the delta-buffer test reads the byte into bl and copies the pointer to eax (`mov bl,[edi]; mov eax,edi; cmp bl,1`), and `pitch * row` is multiplied in a fresh register
+- `SMACKSOUNDONOFF` (0xe9a20), `src/lib/smk/smackinp.standin.s`: the target keeps `behind` in ebp, spills the `sounds[]` cursor (frame 0xc, ours 8) and loads `LowSoundOnAddr` into a register before testing it
+- `gotoframe_` (0xeab30), `src/lib/smk/smackinp.standin.s`: the reset branch stores f448/f444 before f440 with `f43c` kept in eax, and the readframe tail loads `FrameNum` into edx and `f3c8` into eax (`[eax+edx*4]`, ours the reverse)
+- `SMACKCOLORREMAP` (0xe85b0), `src/lib/smk/smackinp.standin.s`: stack slots of the palette loop locals (e.g. `[esp+0x110]` vs `[esp+0x114]`) and the registers that follow
+- `SMACKTOBUFFERRECT` (0xe8190), `src/lib/smk/smackinp.standin.s`: `NewPalette` is loaded into eax so its `return 0` threads to the shared epilogue (ours edi and a separate return), and `&smk->f3f8` is computed into ecx before left/top are loaded (ours edx, later)
+- `setuptheframe_` (0xea7a0), `src/lib/smk/smackinp.standin.s`: the inlined readframe loads `FrameNum` before `f3c8` (result in the base register), and in the palette loop the target keeps c in cl, src in edx and dst in ebp
+- `soundnext_` (0xe94c0), `src/lib/smk/smackinp.standin.s`: the target spills `silence` (frame 0x1c, ours 0x18) and keeps the inlined nexttrack's mask in edx
+- `SMACKTOSCREEN` (0xe8ab0), `src/lib/smk/smackinp.standin.s`: register allocation throughout (66%): the target keeps pitch in edi, stride in esi and height/p in ebp and spills prevbuf; ours spills p and one more local
+- `SMACKOPEN` (0xe9c80), `src/lib/smk/smackinp.standin.s`: spill slots of largest/start/handle/left/fps/nextsize, the inlined readframe's `FrameNum`/`f3c8` load order, and the inlined nexttrack's mask/index registers (eax/dl, ours edx/al)
 - `W?RecPkt$:IPXHandler$n(pn$IPXPacket$$pn$__3ljac5NETSOCKET$$pn$3$)l` (0xd48f0), `src/lib/bf2/dosipx.standin.s`
 - `W?SetupVector$:IPXHandler$n()l` (0xd422c), `src/lib/bf2/dosipx.standin.s`
 - `W?Send$:IPXHandler$n(pn$__3ljac5NETSOCKET$$pn$2$pnucl)v` (0xd4634), `src/lib/bf2/dosipx.standin.s`

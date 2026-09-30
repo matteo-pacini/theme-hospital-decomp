@@ -152,8 +152,6 @@ double floor(double x);
 double fabs(double x);
 #pragma intrinsic(fabs)
 
-// NONMATCHING: the overflow test computes p - buf in edx and the digit count
-// in eax, the other way round
 // FUNCTION: 0xfc294
 void _FtoS(char *buf, double *value, int digits, char plus, int width,
            int scale, int exp_digits, char exp_char, char fmt)
@@ -162,11 +160,10 @@ void _FtoS(char *buf, double *value, int digits, char plus, int width,
     char cfmt;
     int ndigits;
     char tmp[20];
-    double v;
+    double x;
     int len;
     int exp;
     int dec;
-    double x;
     int sign;
 
     if (__Nan_Inf(*value, tmp)) {
@@ -213,10 +210,10 @@ void _FtoS(char *buf, double *value, int digits, char plus, int width,
                 ndigits = scale + digits;
             }
         }
-        v = *value;
-        if (v != 0.0 && (int)cfmt != 'E' && scale != 0)
-            v = _Scale10V(v, scale);
-        __cvt(v, ndigits, &dec, &sign, cfmt, tmp);
+        x = *value;
+        if (x != 0.0 && (int)cfmt != 'E' && scale != 0)
+            x = _Scale10V(x, scale);
+        __cvt(x, ndigits, &dec, &sign, cfmt, tmp);
         p = buf;
         if (sign) {
             *p++ = '-';
@@ -230,14 +227,17 @@ void _FtoS(char *buf, double *value, int digits, char plus, int width,
                 *p++ = exp_char;
                 ++len;
             }
-            if (v != 0.0)
+            if (x != 0.0)
                 dec -= scale;
             len += DoEFormat(p, dec, exp_digits, width - len);
-        } else if (width < (dec + 1 + ndigits) + (p - buf)) {
-            len = width + 1;
         } else {
-            p = DoFFormat(p, tmp, dec, ndigits);
             len = p - buf;
+            if (width < dec + 1 + ndigits + len) {
+                len = width + 1;
+            } else {
+                p = DoFFormat(p, tmp, dec, ndigits);
+                len = p - buf;
+            }
         }
     }
     if (len > width)
