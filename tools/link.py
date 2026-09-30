@@ -40,6 +40,7 @@ from standin import companion  # noqa: E402
 
 OUT = os.path.join(ROOT, "build", "link")
 INTERIOR = re.compile(r"_C_([0-9a-f]{8})")
+TABLE_RECORDS = re.compile(r"^//\s*TABLE RECORDS:\s*(\S+)", re.M)
 
 
 def unit_model(u):
@@ -50,7 +51,31 @@ def unit_model(u):
         omf = base + (".link.obj" if with_standins else ".obj")
         if os.path.exists(omf):
             return omf2elf.convert(open(omf, "rb").read())
-    return omf2elf.read_elf(base + ".o")
+    model = omf2elf.read_elf(base + ".o")
+    if not u.auto and u.source.endswith(".s"):
+        table_records(model, open(os.path.join(ROOT, u.source)).read())
+    return model
+
+
+def table_records(model, source):
+    """Record order of an assembly unit (GNU as keeps none): its sections'
+    relocations in section order, except in a table that a
+    `// TABLE RECORDS: SYMBOL` line in the source names: the original
+    assembler emitted each entry of such a table right after the routine
+    it points at, so the linker processed an entry's fixup after that
+    routine's own fixups."""
+    tables = TABLE_RECORDS.findall(source)
+    if not tables:
+        return
+    sections, symbols = model[0], model[1]
+    rank = {id(sec): 2 * i for i, sec in enumerate(sections)}
+    for sec in sections:
+        sec.reloc_records = {at: rank[id(sec)] for at, _, _ in sec.relocs}
+    for name in tables:
+        table = symbols[name][0]
+        for at, _, target in table.relocs:
+            if target[0] == "sym" and target[1] in symbols:
+                table.reloc_records[at] = rank[id(symbols[target[1]][0])] + 1
 
 
 def alias(unit, name):

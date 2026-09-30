@@ -1,5 +1,8 @@
 .intel_syntax noprefix
 
+// The dispatch table's entries were each assembled after the routine they point at:
+// TABLE RECORDS: fn_000f0da8_
+
 // FUNCTION: 0x000f0da8
 
 .section _TEXT,"ax",@progbits,unique,986536

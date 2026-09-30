@@ -359,3 +359,5 @@
     .byte 0x5d
     .byte 0xc3
 .size "make_huftable",.-"make_huftable"
+    // The original object ends with a nop that pads it to a dword.
+    .byte 0x90

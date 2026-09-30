@@ -495,7 +495,7 @@
 .L000dd01a:
     mov eax, dword ptr [_D_00150824]
 .L000dd01f:
-    call "LoadSounds_"
+    call "SetSoundMasterVolume_"
 .L000dd024:
     mov esi, dword ptr ["_SampleRate"]
     add esp, 0x28

@@ -181,7 +181,7 @@ void InitSound(void)
         SoundInstalled = 1;
         sprintf(SoundProgressMessage, D_0012669d);
         SoundProgressLog(SoundProgressMessage);
-        LoadSounds(SoundMasterVolumeOverride ? SoundMasterVolumeOverride : D_00150824);
+        SetSoundMasterVolume(SoundMasterVolumeOverride ? SoundMasterVolumeOverride : D_00150824);
     }
 }
 

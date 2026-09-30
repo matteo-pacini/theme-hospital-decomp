@@ -226,7 +226,7 @@ void SoundProgressLog(char *msg);
 void StopMusic(void);
 void SetMusicMasterVolume(s32 volume);
 void StopSampleQueueList(void);
-void LoadSounds(s32 volume);
+void SetSoundMasterVolume(s32 volume);
 s32 AllocateSoundBankMemory(u16 type);
 s32 AllocateMusicBankMemory(void);
 

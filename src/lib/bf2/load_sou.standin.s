@@ -181,9 +181,9 @@
 // STANDIN: 0x000eff70
 
 .section _TEXT,"ax",@progbits,unique,982896
-.globl "fn_000eff70_"
-.type "fn_000eff70_",@function
-"fn_000eff70_":
+.globl "LoadSounds_"
+.type "LoadSounds_",@function
+"LoadSounds_":
     push ebx
     push ecx
     push edx
@@ -380,4 +380,4 @@
     pop ecx
     pop ebx
     ret
-.size "fn_000eff70_",.-"fn_000eff70_"
+.size "LoadSounds_",.-"LoadSounds_"

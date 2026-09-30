@@ -34,10 +34,10 @@
 .L000cf550:
     ret
 .size "__STOSB",.-"__STOSB"
+    .byte 0x90, 0x90, 0x90, 0x90, 0x90, 0x90
 
 // FUNCTION: 0x000cf557
 
-.section _TEXT,"ax",@progbits,unique,849239
 .globl "__STOSD"
 .type "__STOSD",@function
 "__STOSD":

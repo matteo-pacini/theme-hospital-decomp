@@ -2441,13 +2441,13 @@
 000efe87     27 vsscanf_
 000efeae     21 sscanf_
 000efed0     4d SetMusicMasterVolume_
-000eff20     4d LoadSounds_
-000eff70    2a8 fn_000eff70_
+000eff20     4d SetSoundMasterVolume_
+000eff70    2a8 LoadSounds_
 000f0220     58 W?format_sounds$n()v
 000f0280    211 W?load_sound_bank$n(luc)uc
 000f04a0    26d AllocateSoundBankMemory_
-000f0710     27 fn_000f0710_
-000f0740    212 fn_000f0740_
+000f0710     27 W?DeInitSoundBank$n()v
+000f0740    212 LoadMusic_
 000f0960     58 W?format_music$n()v
 000f09c0    1f4 W?load_music_bank$n(luc)uc
 000f0bc0    1b4 AllocateMusicBankMemory_

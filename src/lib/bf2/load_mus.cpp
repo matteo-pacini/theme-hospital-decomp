@@ -3,6 +3,92 @@
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
 
+u8 load_music_bank(long file, u8 bank);
+
+extern "C" {
+
+extern char D_00128304[];
+extern char D_0012831f[];
+extern char D_00128351[];
+extern char D_00128384[];
+extern char D_001283a5[];
+extern char D_001283d5[];
+extern char D_0012840c[];
+extern char D_0012843d[];
+
+// FUNCTION: 0xf0740
+u32 LoadMusic(u16 bank)
+{
+    u16 counts[4];
+    u32 offset;
+    s32 type;
+    s32 file;
+
+    sprintf(SoundProgressMessage, D_00128304, bank);
+    SoundProgressLog(SoundProgressMessage);
+    if (MusicInstalled && MusicAble && DisableLoadMusic == 0) {
+        StopMusic();
+        file = LbFileOpen(D_0018d5c4, 2);
+        if (file != -1) {
+            LbFileSeek(file, 0, 2);
+            LbFileSeek(file, LbFilePosition(file) - 4, 0);
+            LbFileRead(file, &offset, 4);
+            LbFileSeek(file, offset, 0);
+            LbFileRead(file, counts, sizeof(counts));
+            bank++;
+            switch (MusicType[0]) {
+            case 'G':
+            case 'g':
+                type = 0;
+                break;
+            case 'R':
+            case 'r':
+                type = 1;
+                break;
+            case 'F':
+            case 'f':
+                type = 2;
+                break;
+            case 'W':
+            case 'w':
+                type = 3;
+                break;
+            }
+            if (bank > counts[type]) {
+                LbFileClose(file);
+                sprintf(SoundProgressMessage, D_0012831f);
+                SoundProgressLog(SoundProgressMessage);
+                return 1;
+            }
+            bank--;
+            LbFileSeek(file, bank * 64, 1);
+            if (!load_music_bank(file, type)) {
+                LbFileClose(file);
+                sprintf(SoundProgressMessage, D_00128351);
+                SoundProgressLog(SoundProgressMessage);
+                return 1;
+            }
+            LbFileClose(file);
+            sprintf(SoundProgressMessage, D_00128384);
+            SoundProgressLog(SoundProgressMessage);
+            return 0;
+        }
+        sprintf(SoundProgressMessage, D_001283a5);
+    } else if (!MusicInstalled) {
+        sprintf(SoundProgressMessage, D_001283d5);
+    } else if (!MusicAble) {
+        sprintf(SoundProgressMessage, D_0012840c);
+    } else if (DisableLoadMusic) {
+        sprintf(SoundProgressMessage, D_0012843d);
+    } else {
+        return 1;
+    }
+    SoundProgressLog(SoundProgressMessage);
+    return 1;
+}
+
+}
+
 // FUNCTION: 0xf0960
 void format_music(void)
 {
@@ -132,88 +218,4 @@ void DeInitMusicBank(void)
         LbMemoryFree(MusicData);
     if (Music)
         LbMemoryFree(Music);
-}
-
-extern "C" {
-
-extern char D_00128304[];
-extern char D_0012831f[];
-extern char D_00128351[];
-extern char D_00128384[];
-extern char D_001283a5[];
-extern char D_001283d5[];
-extern char D_0012840c[];
-extern char D_0012843d[];
-
-// FUNCTION: 0xf0740
-u32 fn_000f0740(u16 bank)
-{
-    u16 counts[4];
-    u32 offset;
-    s32 type;
-    s32 file;
-
-    sprintf(SoundProgressMessage, D_00128304, bank);
-    SoundProgressLog(SoundProgressMessage);
-    if (MusicInstalled && MusicAble && DisableLoadMusic == 0) {
-        StopMusic();
-        file = LbFileOpen(D_0018d5c4, 2);
-        if (file != -1) {
-            LbFileSeek(file, 0, 2);
-            LbFileSeek(file, LbFilePosition(file) - 4, 0);
-            LbFileRead(file, &offset, 4);
-            LbFileSeek(file, offset, 0);
-            LbFileRead(file, counts, sizeof(counts));
-            bank++;
-            switch (MusicType[0]) {
-            case 'G':
-            case 'g':
-                type = 0;
-                break;
-            case 'R':
-            case 'r':
-                type = 1;
-                break;
-            case 'F':
-            case 'f':
-                type = 2;
-                break;
-            case 'W':
-            case 'w':
-                type = 3;
-                break;
-            }
-            if (bank > counts[type]) {
-                LbFileClose(file);
-                sprintf(SoundProgressMessage, D_0012831f);
-                SoundProgressLog(SoundProgressMessage);
-                return 1;
-            }
-            bank--;
-            LbFileSeek(file, bank * 64, 1);
-            if (!load_music_bank(file, type)) {
-                LbFileClose(file);
-                sprintf(SoundProgressMessage, D_00128351);
-                SoundProgressLog(SoundProgressMessage);
-                return 1;
-            }
-            LbFileClose(file);
-            sprintf(SoundProgressMessage, D_00128384);
-            SoundProgressLog(SoundProgressMessage);
-            return 0;
-        }
-        sprintf(SoundProgressMessage, D_001283a5);
-    } else if (!MusicInstalled) {
-        sprintf(SoundProgressMessage, D_001283d5);
-    } else if (!MusicAble) {
-        sprintf(SoundProgressMessage, D_0012840c);
-    } else if (DisableLoadMusic) {
-        sprintf(SoundProgressMessage, D_0012843d);
-    } else {
-        return 1;
-    }
-    SoundProgressLog(SoundProgressMessage);
-    return 1;
-}
-
 }
