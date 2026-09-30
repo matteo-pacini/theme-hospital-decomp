@@ -69,6 +69,7 @@ class LEFile:
             self.objects.append(LEObject(i + 1, base, vsize, flags, bytes(buf)))
 
         self.fixups = {}  # site -> Fixup
+        self.page_order = {}  # page index -> the page's fixup sites in record order
         fpt = le + hdr(0x68)
         frt = le + hdr(0x6C)
         for obj in self.objects:
@@ -79,9 +80,10 @@ class LEFile:
                 if page >= n_pages:
                     break
                 start, end = struct.unpack_from("<2I", d, fpt + page * 4)
-                self._parse_page_fixups(d, frt + start, frt + end, obj.base + p * page_size)
+                self.page_order[page] = self._parse_page_fixups(d, frt + start, frt + end, obj.base + p * page_size)
 
     def _parse_page_fixups(self, d, i, end, page_addr):
+        sites = []
         while i < end:
             src, flags = d[i], d[i + 1]
             i += 2
@@ -112,6 +114,8 @@ class LEFile:
             site = page_addr + site_off
             # A field straddling a page boundary is recorded on both pages.
             self.fixups[site] = Fixup(site, kind, target, obj)
+            sites.append(site)
+        return sites
 
     def object_at(self, addr):
         for obj in self.objects:
