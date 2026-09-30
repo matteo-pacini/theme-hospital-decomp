@@ -573,3 +573,8 @@ void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
         }
     }
 }
+
+// FUNCTION: 0xd5340 COMDAT
+inline void IPXDebug(char *fmt, ...)
+{
+}

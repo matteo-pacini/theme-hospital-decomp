@@ -2326,8 +2326,8 @@ void fn_00022a58(void)
     }
 }
 
-// FUNCTION: 0x00022b60
-void *fn_00022b60(TbCacheUsedBlock *block)
+// FUNCTION: 0x00022b60 COMDAT
+inline void *fn_00022b60(TbCacheUsedBlock *block)
 {
     return (u8 *)block + 0x14;
 }

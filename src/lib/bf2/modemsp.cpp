@@ -261,6 +261,4 @@ u32 ModemSP::PeekMessage(u32 *from, void *buf, u32 *size)
  * ModemSP::~ModemSP() is compiler-generated in this module, together with
  * the class's vtable (the constructor is defined here).
  */
-// FUNCTION: 0xeee20
-// NONMATCHING: the code matches; only our symbol also covers 2 bytes of
-// padding (mov eax,eax) after the code, which the target's does not
+// FUNCTION: 0xeee20 COMDAT

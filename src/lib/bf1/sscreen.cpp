@@ -444,4 +444,10 @@ int LbScreenWaitVbi(void)
     return 1;
 }
 
+// FUNCTION: 0x000bf778
+int LbDate(void)
+{
+    return 1;
+}
+
 }

@@ -268,8 +268,8 @@ void clear_sound_heap(void)
         sample_table[tag - 1].block = 0;
 }
 
-// FUNCTION: 0x000a2ed0
-void fn_000a2ed0(TbCacheUsedBlock *block)
+// FUNCTION: 0x000a2ed0 COMDAT
+inline void fn_000a2ed0(TbCacheUsedBlock *block)
 {
     block->locked = 1;
 }

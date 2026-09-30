@@ -32,12 +32,6 @@ extern "C" {
 void fn_000dc932(dosdate_t *date);
 void fn_000dc94d(dostime_t *time);
 
-// FUNCTION: 0x000bf778
-int LbDate(void)
-{
-    return 1;
-}
-
 // FUNCTION: 0x000c2140
 int fn_000c2140(TbDate *curr_date)
 {

@@ -250,8 +250,8 @@ void dos_free(u16 seg)
     }
 }
 
-// FUNCTION: 0x000bb2b0
-extern "C" u32 fn_000bb2b0(void)
+// FUNCTION: 0x000bb2b0 COMDAT
+extern "C" inline u32 fn_000bb2b0(void)
 {
     return 0;
 }

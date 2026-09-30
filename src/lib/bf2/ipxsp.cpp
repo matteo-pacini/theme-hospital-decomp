@@ -15,11 +15,6 @@
 #define MSG_BUSD 0x44535542
 #define MSG_BUSK 0x4b535542
 
-// FUNCTION: 0xd5340
-void IPXDebug(char *fmt, ...)
-{
-}
-
 extern "C" {
 extern char D_0012608c[];
 extern char D_001260d3[];
@@ -118,23 +113,6 @@ void IPXServiceProvider::BatchProcess(u8 delay)
         start_batch_time = now;
         no_batchs = 0;
     }
-}
-
-// FUNCTION: 0x000dc400
-IPXQueueEntry *IPXServiceProvider::GetNextEmptyReceiveBuffer(void)
-{
-    IPXQueueEntry *e;
-    u32 found = 0;
-
-    for (e = queue; e < queue + 32; e++) {
-        if (!e->used) {
-            found = 1;
-            break;
-        }
-    }
-    if (found == 1)
-        return e;
-    return 0;
 }
 
 // FUNCTION: 0xd5510
@@ -1624,7 +1602,7 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
     return ret;
 }
 
-// FUNCTION: 0x000dc440
+// FUNCTION: 0x000dc440 COMDAT
 // NONMATCHING: stack slots of msg, q, id, size, seq and changed
 void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
 {
@@ -1718,6 +1696,23 @@ void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
         else
             remote.num_players = count;
     }
+}
+
+// FUNCTION: 0x000dc400 COMDAT
+inline IPXQueueEntry *IPXServiceProvider::GetNextEmptyReceiveBuffer(void)
+{
+    IPXQueueEntry *e;
+    u32 found = 0;
+
+    for (e = queue; e < queue + 32; e++) {
+        if (!e->used) {
+            found = 1;
+            break;
+        }
+    }
+    if (found == 1)
+        return e;
+    return 0;
 }
 
 // FUNCTION: 0xdc740

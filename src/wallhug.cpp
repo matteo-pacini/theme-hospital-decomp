@@ -282,24 +282,8 @@ u32 fn_000491d8(wallhug_path *path)
     return fn_00048ea4(path, path->start, 60000);
 }
 
-// FUNCTION: 0x00049230
-u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger)
-{
-    u32 i;
-
-    if (hugger->count + path->count + 2 > 0xfc)
-        return 0;
-    for (i = 0; i < hugger->count; i++) {
-        path->route[path->count] = hugger->route[i];
-        path->count++;
-    }
-    path->route[path->count] = hugger->pos;
-    path->count++;
-    return 1;
-}
-
-// FUNCTION: 0x000492f0
-u32 huggers_met_again(wallhug_info *info)
+// FUNCTION: 0x000492f0 COMDAT
+inline u32 huggers_met_again(wallhug_info *info)
 {
     wallhug_waypoint next;
 
@@ -314,6 +298,22 @@ u32 huggers_met_again(wallhug_info *info)
         && ((info->hugger[0].dir + 2) & 3) == info->hugger[1].dir)
         return 1;
     return 0;
+}
+
+// FUNCTION: 0x00049230 COMDAT
+inline u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger)
+{
+    u32 i;
+
+    if (hugger->count + path->count + 2 > 0xfc)
+        return 0;
+    for (i = 0; i < hugger->count; i++) {
+        path->route[path->count] = hugger->route[i];
+        path->count++;
+    }
+    path->route[path->count] = hugger->pos;
+    path->count++;
+    return 1;
 }
 
 // FUNCTION: 0x00049400

@@ -168,8 +168,8 @@ u32 TbCache::ThrowOutOldest(void)
     return 0;
 }
 
-// FUNCTION: 0x000a2770
-void fn_000a2770(TbCacheUsedBlock *block)
+// FUNCTION: 0x000a2770 COMDAT
+inline void fn_000a2770(TbCacheUsedBlock *block)
 {
     block->locked = 0;
 }

@@ -730,4 +730,4 @@ TbError Parser::InputByte(u8 c)
  * SerialSP::~SerialSP() is compiler-generated in this module, together with
  * the class's vtable (the constructors are defined here).
  */
-// FUNCTION: 0xee630
+// FUNCTION: 0xee630 COMDAT
