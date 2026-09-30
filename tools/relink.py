@@ -99,20 +99,32 @@ def check_data(le, placed, symbol_address, problems, notes):
         print(f"  data differs {lo:#x}..{hi:#x} ({owner[lo - data.base]})")
 
 
+# The linker's filler up to a dword, before zeros up to the next object.
+DWORD_FILLER = {1: b"\x90", 2: b"\x8b\xc0", 3: b"\x8d\x40\x00"}
+
+
 def module_boundaries(proj, le):
     """Gaps between functions that contradict the units: the original linker
     filled alignment gaps between one object's segments with no-op filler,
-    and gaps between objects with zeros. Returns [(kind, gap address, gap
-    size, function before, its unit, function after, its unit)] for filler
-    between two units and zeros inside one, skipping units whose objects are
-    zero-padded throughout (Smacker, some assembly and runtime modules)."""
+    and gaps between objects with zeros (after filler up to a dword, when
+    the object ends unaligned). Returns (contradictions, zero-padded units):
+    contradictions are [(kind, gap address, gap size, function before, its
+    unit, function after, its unit)] for filler between two units, zeros
+    inside one, and a compiled game or library object (not the dword-aligned
+    C runtime) that starts off a 16-byte boundary. Zero-padded units are
+    those whose objects are zero-padded throughout (Smacker, some assembly
+    and runtime modules); they and inline COMDATs, which are zero-padded
+    like separate objects, report no zeros inside. Filler that reaches a
+    16-byte boundary between units is not reported: it can be an assembly
+    `align` or the end of the object before."""
     unit_of = {f.addr: u for u in proj.units for f in u.functions}
     fs = sorted(proj.functions, key=lambda f: f.addr)
     gaps = []
     for a, b in zip(fs, fs[1:]):
         n = b.addr - a.end
         if 0 < n < 16:
-            gaps.append((a, b, n, not any(le.read(a.end, n))))
+            gap, k = le.read(a.end, n), -a.end % 4
+            gaps.append((a, b, n, not any(gap) or k < n and gap[:k] == DWORD_FILLER.get(k, b"") and not any(gap[k:])))
     inside = collections.defaultdict(list)
     for a, b, n, zero in gaps:
         if unit_of[a.addr] is unit_of[b.addr]:
@@ -121,11 +133,16 @@ def module_boundaries(proj, le):
     out = []
     for a, b, n, zero in gaps:
         ua, ub = unit_of[a.addr], unit_of[b.addr]
-        if ua is ub and zero and ua.name not in zero_padded:
+        comdat = a.addr in ua.comdats or b.addr in ub.comdats
+        if ua is ub and zero and ua.name not in zero_padded and not comdat:
             out.append(("zeros inside a unit", a.end, n, a.name, ua.name, b.name, ub.name))
-        elif ua is not ub and not zero:
+        elif ua is not ub and not zero and b.addr % 16:
             out.append(("filler between units", a.end, n, a.name, ua.name, b.name, ub.name))
-    return out
+    for u in proj.units:
+        f = u.functions[0]
+        if f.addr % 16 and not u.source.endswith(".s") and not u.source.startswith("src/lib/clib/"):
+            out.append(("object start not 16-aligned", f.addr, 0, "", "", f.name, u.name))
+    return sorted(out, key=lambda c: c[1]), zero_padded
 
 
 def main(verbose=False, result=None):
@@ -359,16 +376,9 @@ def main(verbose=False, result=None):
         print("  " + n)
     for n in unplaced_data[: 20 if not verbose else None]:
         print("  data not placed: " + n)
-    boundaries = module_boundaries(proj, le)
+    boundaries, zero_padded = module_boundaries(proj, le)
     if result is not None:
-        inside = collections.defaultdict(list)
-        fs = sorted(proj.functions, key=lambda f: f.addr)
-        unit_of = {f.addr: u.name for u in proj.units for f in u.functions}
-        for a, b in zip(fs, fs[1:]):
-            if 0 < b.addr - a.end < 16 and unit_of[a.addr] == unit_of[b.addr]:
-                inside[unit_of[a.addr]].append(not any(le.read(a.end, b.addr - a.end)))
-        result.update(image=image, owner=owner, code_fixups=code_fixups,
-                      zero_padded={u for u, z in inside.items() if all(z)})
+        result.update(image=image, owner=owner, code_fixups=code_fixups, zero_padded=zero_padded)
     print(f"module boundary contradictions {len(boundaries)}")
     for kind, at, n, fa, ua, fb, ub in boundaries[: 40 if not verbose else None]:
         print(f"  {kind}: {at:#x} +{n}  {fa} [{ua}] -> {fb} [{ub}]")
