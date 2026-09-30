@@ -18,12 +18,13 @@ struct TbGraphicsWindow {
 
 void put_down_sprites(char *sbegin, char *send, long x, long y, long space_len);
 
+int LbAssertMessage(const char *expr, const char *file, unsigned long line);
+
 extern "C" {
 extern TbTextWindow lbTextJustifyWindow;
 extern TbTextWindow lbTextClipWindow;
 u8 lbSpacesPerTab = 4;
 
-int fn_000d0848(char *expr, char *file, int line);
 void int3(void);
 #pragma aux int3 = 0xcc;
 
@@ -146,7 +147,7 @@ s32 LbTextStringHeight(char *text)
     lines = 1;
     do {
         if (!text) {
-            if (fn_000d0848("LbTextStringHeight was passed a NULL pointer", "gtext.cpp", 198))
+            if (LbAssertMessage("LbTextStringHeight was passed a NULL pointer", "gtext.cpp", 198))
                 int3();
         }
     } while (0);

@@ -10,10 +10,8 @@ void fn_000444e0(Thing *w);
 }
 
 extern "C" {
-extern Complex D_001303cc[];
 extern u8 *D_00153f9c;
 extern ComplexAnims D_001310ac[];
-extern s8 D_001310d0[][5];
 void fn_00041c0c(Thing *w);
 }
 
@@ -92,7 +90,7 @@ u8 fn_0003e724(Thing *w)
         return 2;
     }
     tile = w->x.tile + (w->y.tile << 7);
-    entry = &D_001303cc[op];
+    entry = &staff_complex[op];
     if (entry->object) {
         obj_id = find_nearest_free_object(w - thing, entry->object);
         if (obj_id) {
@@ -322,7 +320,7 @@ u8 fn_0003e724(Thing *w)
         s8 *list;
         u8 n;
 
-        list = D_001310d0[entry->anim];
+        list = group_ia[entry->anim];
         n = 0;
         while (list[n] != -1 && n < 5) {
             n++;

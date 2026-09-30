@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_00129234[];
 u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner);
 #pragma aux fn_0007cbdc "W?trapped_plant_check$n(pn$RoomInfo$$l)uc"
 u8 fn_0007cc88(Thing *w);
@@ -150,7 +149,7 @@ void handyman_works(Thing *w)
         }
         if (w->unknown148w == TILE_POS(w))
             w->unknown148w = 0;
-        w->unknown17 = D_00129234[w->unknown17 * 2];
+        w->unknown17 = showanim_angle[w->unknown17];
         w->state_b = 0x3c;
         w->unknown103 = 3;
         set_complex(w, 0x46, 0);

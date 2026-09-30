@@ -99,16 +99,16 @@ struct DTREG_VFPTRS {
 static DTREG_VFPTRS fs_vftable = { fs_state_table, fs_point_object, fs_init_traverse };
 #pragma aux fs_vftable "W?fs_vftable$n$__6rq0qbDTREG_VFTBL$$"
 
-void fs_init(void);
-#pragma aux fs_init "fn_000cf244_"
+static void init(void);
+#pragma aux init "W?init$n()v"
 
 // FUNCTION: 0xcf244
-void fs_init(void)
+static void init(void)
 {
     __wcpp_2_data_dtreg_vfptrs_[3] = &fs_vftable;
 }
 
-AXI(fs_init, 10)
+AXI(init, 10)
 
 void __wcpp_2_mod_register__(RW_DTREG *rw);
 #pragma aux __wcpp_2_mod_register__ "__wcpp_2_mod_register__"

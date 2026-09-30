@@ -15,12 +15,9 @@ struct PeepChoice {
 
 extern "C" {
 
-extern u16 D_0012b8c8[];
-extern u16 D_0012b8e4[];
 extern u16 D_0015fc20[];
 extern PeepType D_0012b7d4[];
 extern PeepPalette D_0012b818[];
-extern u8 D_0012b878[][5];
 
 s8 fn_000856c8(int player);
 void fn_00070e50(PeepBid *bids);
@@ -148,7 +145,7 @@ u8 create_an_illness(void)
     if (ok && statvar.f8) {
         r = old_newrand() % statvar.f8;
         for (i = 0; i < 14; i++) {
-            if (r < D_0012b8c8[i]) {
+            if (r < visuals[i]) {
                 if (othervar.f9d1 < D_0015fc20[i])
                     ok = 0;
                 else
@@ -160,7 +157,7 @@ u8 create_an_illness(void)
     if (ok == 0) {
         r = old_newrand() % statvar.fa;
         for (i = 0; i < 20; i++) {
-            if (r < D_0012b8e4[i]) {
+            if (r < non_visuals[i]) {
                 illness = i + 0x10;
                 break;
             }
@@ -309,7 +306,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         } else {
             n = 0;
             for (i = 4; i >= 0; i--) {
-                if (illness >= 16 || D_0012b878[illness][i]) {
+                if (illness >= 16 || suitable_illness[illness][i]) {
                     for (k = D_0012b7d4[i].count - 1; k >= 0; k--) {
                         choices[n].kind = D_0012b7d4[i].kind;
                         choices[n].head = D_0012b7d4[i].head[k];

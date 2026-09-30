@@ -37,8 +37,6 @@ struct AdvisorLayout {
 extern "C" {
 extern u8 D_00161230;
 extern u8 D_00156910;
-extern u16 D_0012cdd0[];
-extern u16 D_0012cdd4[];
 extern FrameBox D_001567b0;
 char *strncpy(char *dst, const char *src, u32 n);
 char *strncat(char *dst, const char *src, u32 n);
@@ -188,7 +186,7 @@ void advisor_character(void)
         advisor.f12c = 0;
     case 3:
         if (saferand() % 50 == 0) {
-            advisor.f11e = D_0012cdd0[saferand() % 2];
+            advisor.f11e = advisor_specials[saferand() % 2];
             advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
         }
     case 7:
@@ -203,7 +201,7 @@ void advisor_character(void)
             advisor.f6 = frame[advisor.f6].next;
             f = &frame[advisor.f6];
             if (loop && (f->flags & 1)) {
-                advisor.f11e = D_0012cdd4[advisor.f11e];
+                advisor.f11e = next_advisor_state[advisor.f11e];
                 advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
             }
         }

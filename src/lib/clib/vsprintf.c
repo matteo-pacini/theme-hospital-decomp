@@ -7,8 +7,6 @@ typedef struct {
 } SPECS;
 
 static void mem_putc(SPECS *specs, char op_char);
-/* config/functions.txt has no name for mem_putc. */
-#pragma aux mem_putc "fn_000ce351_"
 
 // FUNCTION: 0xce351
 static void mem_putc(SPECS *specs, char op_char)

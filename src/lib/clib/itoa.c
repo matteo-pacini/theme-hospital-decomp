@@ -1,7 +1,7 @@
 #include "clib.h"
 
 // FUNCTION: 0xec560
-const char __based(__segname("_CODE")) D_000ec560[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+static const char __based(__segname("_CODE")) Alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 unsigned __udiv(unsigned value, unsigned __near *radix);
 #pragma aux __udiv = \
@@ -27,7 +27,7 @@ char *utoa(unsigned value, char *buffer, int radix)
     do {
         quot = radix;
         rem = __udiv(value, (unsigned __near *)&quot);
-        *q = D_000ec560[rem];
+        *q = Alphabet[rem];
         ++q;
         value = quot;
     } while (value != 0);

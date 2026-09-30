@@ -4,12 +4,13 @@ static char *_defaultModifyDataLoadFilename(TbLoadFiles *files);
 
 static char *(*modify_data_load_filename_function)(TbLoadFiles *files) = _defaultModifyDataLoadFilename;
 
+void LbDebugString(char *fmt, ...);
+int LbAssertMessage(const char *expr, const char *file, unsigned long line);
+
 extern "C" {
 
 void *LbMemoryAllocLow(u32 size);
 void fn_000cd2cc(char *s, ...);
-void fn_000d080c(char *fmt, ...);
-int fn_000d0848(char *expr, char *file, int line);
 void int3(void);
 #pragma aux int3 = 0xcc;
 
@@ -79,20 +80,20 @@ int LbDataLoadAll(TbLoadFiles *files)
     for (t = files; t->Start; t++) {
         ret = LbDataLoad(t);
         if (ret == -100) {
-            fn_000d080c("ERROR: Allocation %s.\n", t);
+            LbDebugString("ERROR: Allocation %s.\n", t);
             {
                 char msg[150];
                 sprintf(msg, "LbDataLoadAll() : Memory alloaction error before loading file: %s", t);
-                if (fn_000d0848(msg, "gdata.cpp", 102))
+                if (LbAssertMessage(msg, "gdata.cpp", 102))
                     int3();
             }
             count++;
         } else if (ret == -101) {
-            fn_000d080c("ERROR: File %s.\n", t);
+            LbDebugString("ERROR: File %s.\n", t);
             {
                 char msg[150];
                 sprintf(msg, "LbDataLoadAll() : Error loading file: %s", t);
-                if (fn_000d0848(msg, "gdata.cpp", 110))
+                if (LbAssertMessage(msg, "gdata.cpp", 110))
                     int3();
             }
             count++;

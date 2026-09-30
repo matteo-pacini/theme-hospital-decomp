@@ -62,29 +62,19 @@ TbLoadFiles loresblockfiles[] = {
     { 0 },
 };
 
-extern "C" {
-TbLoadFiles D_0013e22c[] = {
+TbLoadFiles hiresgamepointerfiles[] = {
     { "data/mpointer.dat", (u8 **)&D_00153f28, 0, 0, 0, 2 },
     { "data/mpointer.tab", (u8 **)&pointer, (u8 **)&D_00153f30, 0, 0, 2 },
     { 0 },
 };
-}
 
-extern "C" {
-char *D_0013e2b0 = "qdata/spointer.dat";
-}
+char *hiresscreenpointerfiles[] = { "qdata/spointer.dat", "qdata/spointer.tab" };
 
-extern "C" {
-char *D_0013e2b4 = "qdata/spointer.tab";
-}
-
-extern "C" {
-TbLoadFiles D_0013e2b8[] = {
+TbLoadFiles lorespointerfiles[] = {
     { "datam/mpointer.dat", (u8 **)&D_00153f28, 0, 0, 0, 2 },
     { "datam/mpointer.tab", (u8 **)&pointer, (u8 **)&D_00153f30, 0, 0, 2 },
     { 0 },
 };
-}
 
 TbLoadFiles hiresanifiles[] = {
     { "data/vfra-1.ani", (u8 **)&frame, (u8 **)&D_00153f68, 0, 0, 2 },
@@ -114,8 +104,7 @@ TbLoadFiles mcgareqfiles[] = {
     { 0 },
 };
 
-extern "C" {
-char *D_0013e5fc[] = {
+const char *const hires_req_filenames[] = {
     "qdata/req00v",
     "qdata/req01v",
     "qdata/req02v",
@@ -131,18 +120,12 @@ char *D_0013e5fc[] = {
     "qdata/req12v",
     "qdata/req13v",
 };
-}
 
-extern "C" {
-extern const char *const D_001289a0 = "qdata/face01v.dat";
-}
+const char *const hires_faces = "qdata/face01v.dat";
 
-extern "C" {
-extern const char *const D_001289a4 = "qdatam/face01m.dat";
-}
+const char *const lores_faces = "qdatam/face01m.dat";
 
-extern "C" {
-char *D_0013e634[] = {
+char *hires_font_filenames[] = {
     "qdata/font00v",
     "qdata/font01v",
     "qdata/font02v",
@@ -192,10 +175,8 @@ char *D_0013e634[] = {
     "qdata/font502v",
     "qdata/font250v",
 };
-}
 
-extern "C" {
-char *D_0013e6f4[] = {
+char *lores_font_filenames[] = {
     "qdatam/font130m",
     "qdatam/font132m",
     "qdatam/font131m",
@@ -245,14 +226,11 @@ char *D_0013e6f4[] = {
     "qdata/font502v",
     "qdata/font250v",
 };
-}
 
-extern "C" {
-TbLoadFiles D_0013e7b4[] = {
+TbLoadFiles palettefile[] = {
     { "qdata/load01v.pal", (u8 **)&D_00153f34, 0, 0, 0, 1 },
     { 0 },
 };
-}
 
 extern "C" {
 char *D_0013e80c = "data/mpalette.dat";
@@ -268,25 +246,20 @@ TbLoadFiles langfile[] = {
     { 0 },
 };
 
-extern "C" {
-TbLoadFiles D_0013e944[] = {
+TbLoadFiles complexfiles[] = {
     { "data/s_comp.lex", (u8 **)&D_00153f9c, 0, 0, 0, 2 },
     { "data/p_comp.lex", (u8 **)&person_complex_group, 0, 0, 0, 2 },
     { 0 },
 };
-}
 
-extern "C" {
-TbLoadFiles D_0013e9c8[] = {
+TbLoadFiles screenfiles[] = {
     { "*W_SCREEN", (u8 **)&lbDisplay.unknown4, 0, 0x4b000 },
     { "*B_SCREEN", (u8 **)&bscreen, 0, 0x4b000 },
     { "*VESA", (u8 **)&lbVesaData, 0, 0x200, 1 },
     { 0 },
 };
-}
 
-extern "C" {
-TbLoadFiles D_0013ea78[] = {
+TbLoadFiles memfiles[] = {
     { "*MAP", (u8 **)&map, (u8 **)&end_map, 0x20000 },
     { "*ROOMS", (u8 **)&room_info, (u8 **)&end_room_info, 0xdac },
     { "*PAGERS", (u8 **)&pagers, (u8 **)&end_pagers, 0x14a },
@@ -299,37 +272,28 @@ TbLoadFiles D_0013ea78[] = {
     { "*FACEBUFFER", (u8 **)&D_0015479c, 0, 0x130b },
     { 0 },
 };
-}
 
-extern "C" {
-TbLoadFiles D_0013ec5c[] = {
+TbLoadFiles thingfiles[] = {
     { "*THING", (u8 **)&thing, (u8 **)&end_things, 0x40164 },
     { 0 },
 };
-}
 
-extern "C" {
-TbLoadFiles D_0013ecb4[] = {
+TbLoadFiles soundfiles[] = {
     { "*HEAPBUFFER1", (u8 **)&D_00158334, 0, 0x70800 },
     { "*HEAPBUFFER2", (u8 **)&D_00158334, 0, 0x96000 },
     { "*HEAPBUFFER3", (u8 **)&D_00158334, 0, 0xc8000 },
     { 0 },
 };
-}
 
-extern "C" {
-TbLoadFiles D_0013ed64[] = {
+TbLoadFiles nosoundfiles[] = {
     { "*HEAPBUFFER", (u8 **)&D_00158334, 0, 0x32000 },
     { 0 },
 };
-}
 
-extern "C" {
-TbLoadFiles D_0013edbc[] = {
+TbLoadFiles midifiles[] = {
     { "*MIDIBUFFER", (u8 **)&midi_buffer, 0, 0xc000 },
     { 0 },
 };
-}
 
 const char *hiresscreens[] = {
     "qdata/area01v.dat",
@@ -418,8 +382,7 @@ AnimTable animation_table[] = {
     { "intro/attract.smk", 4, 0x280, 0x12c, 0x0, 0xe, 0x0 },
 };
 
-extern "C" {
-char *D_0013f534[] = {
+const char *const hiresscreen_sprites_data[] = {
     "",
     "qdata/town02v.dat",
     "qdata/drugn02v.dat",
@@ -446,10 +409,8 @@ char *D_0013f534[] = {
     "",
     "qdata/lettr02v.dat",
 };
-}
 
-extern "C" {
-char *D_0013f598[] = {
+const char *const hiresscreen_sprites_tabs[] = {
     "",
     "qdata/town02v.tab",
     "qdata/drugn02v.tab",
@@ -476,7 +437,6 @@ char *D_0013f598[] = {
     "",
     "qdata/lettr02v.tab",
 };
-}
 
 TbLoadFiles mcgaratfestpanelfiles[] = {
     { "datam/panel04m.dat", (u8 **)&D_00153f80, 0, 0, 0, 2 },
@@ -484,13 +444,11 @@ TbLoadFiles mcgaratfestpanelfiles[] = {
     { 0 },
 };
 
-extern "C" {
-TbLoadFiles D_0013f680[] = {
+TbLoadFiles hiresratfestpanelfiles[] = {
     { "data/panel04v.dat", (u8 **)&D_00153f80, 0, 0, 0, 2 },
     { "data/panel04v.tab", (u8 **)&game_panel, (u8 **)&D_00153f88, 0, 0, 2 },
     { 0 },
 };
-}
 
 extern "C" {
 char *D_0013f704[] = {

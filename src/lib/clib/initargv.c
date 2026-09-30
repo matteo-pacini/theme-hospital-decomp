@@ -1,7 +1,7 @@
 #include "clib.h"
 
 // FUNCTION: 0xd070c
-int fn_000d070c(char *p, char **argv, char **endptr)
+int _SplitParms(char *p, char **argv, char **endptr)
 {
     int argc;
     char *start;

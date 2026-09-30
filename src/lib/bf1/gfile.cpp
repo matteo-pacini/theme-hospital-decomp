@@ -7,7 +7,7 @@ int UnpackM1(void *src, void *dst);
 int LbFileLength(char *path);
 int LbFilePosition(int handle);
 void fn_000cd2cc(char *s, ...);
-int fn_000d0460(char *buf, u32 size);
+int LbDirectoryCurrent(char *buf, u32 size);
 unsigned strlen(const char *s);
 char *strcpy(char *dst, const char *src);
 char *strcat(char *dst, const char *src);
@@ -155,7 +155,7 @@ int fn_000bc504(int current_dir, char *directory, char *filename, char *buf, u32
 
     len = 0;
     if (current_dir) {
-        if (fn_000d0460(buf, buflen - 2) == -1)
+        if (LbDirectoryCurrent(buf, buflen - 2) == -1)
             return -1;
         len = strlen(buf);
         buf[len] = '\\';

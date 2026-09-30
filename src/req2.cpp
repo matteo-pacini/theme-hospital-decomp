@@ -53,7 +53,6 @@ struct Req2Layout {
 
 extern "C" {
 extern Event D_001549d0[];
-extern s32 D_001290cc;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 *D_0015479c;
 void fn_0001bee4(void);
@@ -441,18 +440,18 @@ void draw_face(Picture *p, const u16 x, const u16 y)
 
     fn_0001bee4();
     if (p->head != D_001290d0) {
-        LbFileSeek(D_001290cc, p->head * (resvars.f60 * resvars.f64), 0);
-        LbFileRead(D_001290cc, D_0015479c, resvars.f60 * resvars.f64);
+        LbFileSeek(face_file, p->head * (resvars.f60 * resvars.f64), 0);
+        LbFileRead(face_file, D_0015479c, resvars.f60 * resvars.f64);
         D_001290d0 = p->head;
     }
     if (p->body != D_001290d1) {
-        LbFileSeek(D_001290cc, resvars.f60 * resvars.f64 * 18 + p->body * (resvars.f60 * resvars.f68), 0);
-        LbFileRead(D_001290cc, D_0015479c + resvars.f60 * resvars.f64, resvars.f60 * resvars.f68);
+        LbFileSeek(face_file, resvars.f60 * resvars.f64 * 18 + p->body * (resvars.f60 * resvars.f68), 0);
+        LbFileRead(face_file, D_0015479c + resvars.f60 * resvars.f64, resvars.f60 * resvars.f68);
         D_001290d1 = p->body;
     }
     if (p->legs != D_001290d2) {
-        LbFileSeek(D_001290cc, resvars.f60 * resvars.f64 * 18 + resvars.f60 * resvars.f68 * 18 + (u8)p->legs * (resvars.f60 * resvars.f6c), 0);
-        LbFileRead(D_001290cc, resvars.f60 * resvars.f64 + resvars.f60 * resvars.f68 + D_0015479c, resvars.f60 * resvars.f6c);
+        LbFileSeek(face_file, resvars.f60 * resvars.f64 * 18 + resvars.f60 * resvars.f68 * 18 + (u8)p->legs * (resvars.f60 * resvars.f6c), 0);
+        LbFileRead(face_file, resvars.f60 * resvars.f64 + resvars.f60 * resvars.f68 + D_0015479c, resvars.f60 * resvars.f6c);
         D_001290d2 = p->legs;
     }
     src = D_0015479c;

@@ -16,7 +16,6 @@ struct ManagerHelp {
 
 extern "C" {
 extern Event D_001549d0[];
-extern s8 D_0012d748[];
 
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 }
@@ -311,9 +310,9 @@ void display_manager_face(void)
             othervar.fa4d = 0;
     }
     if (othervar.fa4e) {
-        reqspr_draw(resvars.f40[81].x, resvars.f40[81].y, &screen_sprites_tab_start[D_0012d748[othervar.fa4e]]);
+        reqspr_draw(resvars.f40[81].x, resvars.f40[81].y, &screen_sprites_tab_start[bank_manager_face3[othervar.fa4e]]);
         othervar.fa4e++;
-        if (D_0012d748[othervar.fa4e] == -1)
+        if (bank_manager_face3[othervar.fa4e] == -1)
             othervar.fa4e = 0;
     }
 }

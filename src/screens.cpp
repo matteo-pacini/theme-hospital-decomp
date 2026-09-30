@@ -26,10 +26,6 @@ extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 *D_00153f34;
 extern u8 D_00156910;
 extern PicLengths D_0017526c;
-extern char *D_0013e2b0;
-extern char *D_0013e2b4;
-extern char *D_0013f534[];
-extern char *D_0013f598[];
 
 int LbScreenLock(void);
 u8 *fn_00022b60(TbCacheUsedBlock *block);
@@ -144,11 +140,11 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         while (LbScreenLock() != 1) {
         }
     }
-    len.palette = LbFileLengthRnc(D_0013e2b0);
-    len.pointers = LbFileLengthRnc(D_0013e2b4);
-    if (strcmp(D_0013f534[idx], "")) {
-        len.sprites = LbFileLengthRnc(D_0013f534[idx]);
-        len.sprite_tab = LbFileLengthRnc(D_0013f598[idx]);
+    len.palette = LbFileLengthRnc(hiresscreenpointerfiles[0]);
+    len.pointers = LbFileLengthRnc(hiresscreenpointerfiles[1]);
+    if (strcmp(hiresscreen_sprites_data[idx], "")) {
+        len.sprites = LbFileLengthRnc((char *)hiresscreen_sprites_data[idx]);
+        len.sprite_tab = LbFileLengthRnc((char *)hiresscreen_sprites_tabs[idx]);
     }
     if (map) {
         if (install_type < 3) {
@@ -185,14 +181,14 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         }
         othervar.fa65 = 1;
     }
-    if (LbFileLoadAt(D_0013e2b0, p) == len.palette) {
+    if (LbFileLoadAt(hiresscreenpointerfiles[0], p) == len.palette) {
         D_00153f04 = p;
         p += len.palette;
         othervar.fa65 = 1;
     } else {
         return;
     }
-    if (LbFileLoadAt(D_0013e2b4, p) == len.pointers) {
+    if (LbFileLoadAt(hiresscreenpointerfiles[1], p) == len.pointers) {
         screen_pointers_tab_start = (TbSprite *)p;
         p += len.pointers;
         D_00153f0c = (TbSprite *)p;
@@ -200,12 +196,12 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     } else {
         return;
     }
-    if (strcmp(D_0013f534[idx], "")) {
-        if (LbFileLoadAt(D_0013f598[idx], p) == len.sprite_tab) {
+    if (strcmp(hiresscreen_sprites_data[idx], "")) {
+        if (LbFileLoadAt((char *)hiresscreen_sprites_tabs[idx], p) == len.sprite_tab) {
             screen_sprites_tab_start = (TbSprite *)p;
             p += len.sprite_tab;
             D_00153f18 = (TbSprite *)p;
-            if (LbFileLoadAt(D_0013f534[idx], p) == len.sprites) {
+            if (LbFileLoadAt((char *)hiresscreen_sprites_data[idx], p) == len.sprites) {
                 D_00153f10 = p;
                 LbSpriteSetup(screen_sprites_tab_start, D_00153f18, D_00153f10);
                 p += len.sprites;

@@ -8,7 +8,6 @@ struct SelectionState {
 
 extern "C" {
 
-extern s16 D_0012cd00[];
 extern SelectionState D_001581b2;
 extern PlayerCall D_0015f5a4[][9];
 extern u8 D_00158192;
@@ -216,14 +215,14 @@ u16 find_standing_place(Thing *w)
     cell = &map[((s16)w->y.tile << 7) + (s16)w->x.tile];
     if (w->prev != 0 || (cell->flags & 7)) {
         base = w->x.tile + (w->y.tile << 7);
-        for (i = old_newrand() % 12 + 1; i <= D_0012cd00[0]; i++) {
-            tile = base + D_0012cd00[i];
+        for (i = old_newrand() % 12 + 1; i <= standing_place[0]; i++) {
+            tile = base + standing_place[i];
             target = &map[tile];
             if (target->first == 0 && !(target->flags & 7) && can_i_get_to(w, tile) > 0 && !(target->unknown7 & 0x10)) {
                 break;
             }
         }
-        if (D_0012cd00[i]) {
+        if (standing_place[i]) {
             w->state_a = w->kind;
             w->state_b = w->kind;
             set_complex(w, 430, tile);

@@ -87,12 +87,10 @@ extern Event D_001549d0[];
 extern u8 D_00156910;
 extern TbSprite *D_00153f80;
 extern TbSprite *D_00153f88;
-extern TbLoadFiles D_0013f680[];
 extern char **D_001602a0;
 extern char **D_00160298;
 extern char **D_00160318;
 extern char **D_001602a4;
-extern u8 D_0012d778[];
 
 void fn_000c93bf(char *dst, char *src);
 void LbDataLoadAll(TbLoadFiles *files);
@@ -541,10 +539,10 @@ void draw_emergency(void)
                                                     resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c + watch[1].height, 3);
                 }
                 reqspr_draw(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
-                            &watch[D_0012d778[(s16)myhosp->f1d9 / 8]]);
+                            &watch[watch_face[(s16)myhosp->f1d9 / 8]]);
                 set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
-                                                (resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438) + watch[D_0012d778[(s16)myhosp->f1d9 / 8]].width,
-                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[D_0012d778[(s16)myhosp->f1d9 / 8]].height, 3);
+                                                (resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438) + watch[watch_face[(s16)myhosp->f1d9 / 8]].width,
+                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[watch_face[(s16)myhosp->f1d9 / 8]].height, 3);
             } else if (myhosp->f207) {
                 if (myhosp->f1d9)
                     off = watch[15].width / 4 + watch[15].width;
@@ -573,10 +571,10 @@ void draw_emergency(void)
                                                     resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c + watch[1].height, 3);
                 }
                 reqspr_draw(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
-                            &watch[D_0012d778[(s16)myhosp->f207 / 8]]);
+                            &watch[watch_face[(s16)myhosp->f207 / 8]]);
                 set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
-                                                watch[D_0012d778[(s16)myhosp->f207 / 8]].width + (off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438),
-                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[D_0012d778[(s16)myhosp->f207 / 8]].height, 3);
+                                                watch[watch_face[(s16)myhosp->f207 / 8]].width + (off + resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438),
+                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[watch_face[(s16)myhosp->f207 / 8]].height, 3);
                 lbDisplay.draw_flags = 0;
             } else if (myhosp->unknown1257) {
                 reqspr_draw(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434, &watch[16]);
@@ -599,10 +597,10 @@ void draw_emergency(void)
                                                     resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c + watch[1].height, 3);
                 }
                 reqspr_draw(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
-                            &watch[D_0012d778[myhosp->unknown1257 / (gbv.f154 / 13)]]);
+                            &watch[watch_face[myhosp->unknown1257 / (gbv.f154 / 13)]]);
                 set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438, resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c,
-                                                (resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438) + watch[D_0012d778[myhosp->unknown1257 / (gbv.f154 / 13)]].width,
-                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[D_0012d778[myhosp->unknown1257 / (gbv.f154 / 13)]].height, 3);
+                                                (resvars.f1c_PanelLayoutp->unknown420 + resvars.f1c_PanelLayoutp->unknown438) + watch[watch_face[myhosp->unknown1257 / (gbv.f154 / 13)]].width,
+                                                (resvars.f1c_PanelLayoutp->unknown424 + resvars.f1c_PanelLayoutp->unknown43c) + watch[watch_face[myhosp->unknown1257 / (gbv.f154 / 13)]].height, 3);
             }
         }
     }
@@ -1438,7 +1436,7 @@ void setup_rat_fest_panel(void)
 {
     LbSpriteReset(game_panel, D_00153f88, D_00153f80);
     if (resvars.f0 != SCREEN_MODE_1) {
-        LbDataLoadAll(D_0013f680);
+        LbDataLoadAll(hiresratfestpanelfiles);
         LbSpriteSetup(game_panel, D_00153f88, D_00153f80);
         setup_panel_icons(resvars.f0);
     }

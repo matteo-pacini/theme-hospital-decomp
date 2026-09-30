@@ -14,8 +14,8 @@ TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
         spPtr = 0;
     }
     runningTwoPlayerModel = 1;
-    receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
-    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
+    receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerCallback;
+    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataMsgCallback;
     if (init_data)
         serial->mode = 1;
     spPtr = new SerialSP(serial);
@@ -151,7 +151,7 @@ extern "C" {
 
 // NONMATCHING: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
 // FUNCTION: 0xd309c
-void *TwoPlayerMultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
+void *TwoPlayerCallback(u32 id, u32 size, u32 seq, void *data)
 {
     u8 *ret = 0;
     u32 ok;
@@ -221,7 +221,7 @@ void *TwoPlayerMultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
 }
 
 // FUNCTION: 0xd32fc
-void TwoPlayerReqExDataCallback(u32 id, u32 seq, void *data)
+void TwoPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
 {
     u8 *msg = 0;
     u32 msg_seq;
@@ -265,8 +265,8 @@ TbError GenericModemInit(__tibcaGUID guid, void *init_data)
         spPtr = 0;
     }
     runningTwoPlayerModel = 1;
-    receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerMultiPlayerCallback;
-    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataCallback;
+    receiveCallbacks.multiPlayer = (void *(__stdcall *)(u32, u32, u32, void *))TwoPlayerCallback;
+    receiveCallbacks.mpReqExDataMsg = (void (__stdcall *)(u32, u32, void *))TwoPlayerReqExDataMsgCallback;
     if (init_data)
         serial->mode = 2;
     spPtr = new ModemSP(serial);

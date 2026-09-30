@@ -5,9 +5,9 @@
 // STANDIN: 0x000d309c
 
 .section _TEXT,"ax",@progbits,unique,864412
-.globl "fn_000d309c_"
-.type "fn_000d309c_",@function
-"fn_000d309c_":
+.globl "W?TwoPlayerCallback$n(ulululpnv)pnv"
+.type "W?TwoPlayerCallback$n(ulululpnv)pnv",@function
+"W?TwoPlayerCallback$n(ulululpnv)pnv":
     push ebx
     push esi
     push edi
@@ -205,4 +205,4 @@
     pop esi
     pop ebx
     ret 0x10
-.size "fn_000d309c_",.-"fn_000d309c_"
+.size "W?TwoPlayerCallback$n(ulululpnv)pnv",.-"W?TwoPlayerCallback$n(ulululpnv)pnv"

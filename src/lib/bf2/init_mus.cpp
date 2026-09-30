@@ -200,14 +200,10 @@ void InitMusic(void)
     SetMusicMasterVolume(MidiMasterVolumeOverride ? MidiMasterVolumeOverride : CurrentMusicMasterVolume);
 }
 
-extern "C" {
-
-int access(const char *path, int mode);
+extern "C" int access(const char *path, int mode);
 
 // FUNCTION: 0xdda20
-int fn_000dda20(char *path)
+int fm_instrument_file_exists(u8 *path)
 {
-    return access(path, 0) == 0;
-}
-
+    return access((char *)path, 0) == 0;
 }

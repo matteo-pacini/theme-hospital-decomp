@@ -32,7 +32,7 @@ char *strcpy(char *dst, const char *src);
 #pragma intrinsic(strlen, strcpy)
 
 // FUNCTION: 0x000d0460
-int fn_000d0460(char *buf, u32 size)
+int LbDirectoryCurrent(char *buf, u32 size)
 {
     s32 len;
 

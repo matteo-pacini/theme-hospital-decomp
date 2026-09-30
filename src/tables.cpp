@@ -153,14 +153,6 @@ struct NextPart {
 extern const u16 advisor_anims[];
 extern const u8 staff_unhappy[];
 
-extern "C" {
-extern const u8 D_0012b7c8[];
-extern const u16 D_0012cdd0[];
-extern const u16 D_0012cdd4[];
-extern const u16 D_0012cdea[];
-extern const u8 D_0012ce18[];
-}
-
 VXY around_vxy[2] = {
     { -256, 1 }, { 256, 255 },
 };
@@ -190,12 +182,9 @@ s16 next_angle[4] = {
     1, 2, 3,
 };
 
-extern "C" {
-// demo: showanim_angle
-s16 D_00129234[4] = {
+s16 showanim_angle[4] = {
     1, 1, 2, 2,
 };
-}
 
 BlueprintData blueprint_data[107] = {
     { 0 },
@@ -697,11 +686,13 @@ DoorAnim D_0012b598[93] = {
     { 27, 0, 1 }, { -1 }, { 58, 87, 25 }, { -1 }, { -99 },
 };
 
-// demo: calendar
-const u8 D_0012b7c8[12] = {
+}
+
+const u8 calendar[12] = {
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
 };
 
+extern "C" {
 // demo: generate_person, of type PersonGen
 PeepType D_0012b7d4[5] = {
     { 0, 3, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 33 },
@@ -719,8 +710,9 @@ PeepPalette D_0012b818[4] = {
     { 4, 0, 1, 2, 3, 0, 4, 0, 1, 2, 0, 0, 4, 0, 1, 2, 3, 0, 4, 0, 1, 2, 3 },
 };
 
-// demo: suitable_illness
-u8 D_0012b878[16][5] = {
+}
+
+u8 suitable_illness[16][5] = {
     { 0 },
     { 0 },
     { 1 },
@@ -739,16 +731,13 @@ u8 D_0012b878[16][5] = {
     { 1, 1, 1, 1, 1 },
 };
 
-// demo: visuals
-u16 D_0012b8c8[14] = {
+u16 visuals[14] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
 
-// demo: non_visuals
-u16 D_0012b8e4[20] = {
+u16 non_visuals[20] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 };
-}
 
 s8 change_person_who[15][15] = {
     { 4, 5, -1, 4, -1, -1, -1, 4, -1, -1, -1, -1, -1, -1, -1 },
@@ -1115,12 +1104,9 @@ s16 staff_states[11][5] = {
     { -1, -1, -1, -1, -1 },
 };
 
-extern "C" {
-// demo: recept_tasks
-u16 D_0012c9c8[6] = {
+u16 recept_tasks[6] = {
     5, 90, 100, 110, 120, 130,
 };
-}
 
 ScoreRatings rating[17] = {
     { 10 },
@@ -1163,12 +1149,11 @@ Background background[161] = {
     { 0, 16 }, { 0, 16 }, { 0, 16 }, { 0, 16 }, { 0, 16 },
 };
 
-extern "C" {
-// demo: hilight_plot
-u8 D_0012cc20[0x1c] = {
+u8 hilight_plot[0x1c] = {
     10, 10, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 20, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11,
 };
 
+extern "C" {
 // demo: litter_pos
 Coord D_0012cc3c[8] = {
     { 0 }, { 10, 4 }, { -21, -2 }, { 9, -8 }, { -10, 5 }, { -16, -3 }, { 0, 9 }, { 16, 3 },
@@ -1197,15 +1182,12 @@ s16 gate_arrive[8] = {
     7, 384, 385, 383, 256, 255, 257, 128,
 };
 
-extern "C" {
-// demo: standing_place
-s16 D_0012cd00[64] = {
+s16 standing_place[64] = {
     62, 128, 1, -128, -1, 129, -256, -2, -127, -129, 2, 127, 256, 257, 126, -126, -384, -257, 384,
     130, -3, 255, -255, -130, 3, 383, 258, -385, -131, -125, 254, 131, -258, -254, 385, 125, -383,
     512, -4, 4, -512, 386, -253, 382, -259, 513, 132, 253, -513, -124, -386, 124, 259, 511, -511,
     5, -132, 640, -5, -640, -382,
 };
-}
 
 InsuranceCoData insurance_co_data[9] = {
     { 0 },
@@ -1229,33 +1211,25 @@ const u16 advisor_anims[11] = {
     0, 219, 230, 2374, 220, 1647, 1648, 1680, 1649, 2374, 2374,
 };
 
-extern "C" {
-// demo: advisor_specials
-const u16 D_0012cdd0[2] = {
+const u16 advisor_specials[2] = {
     9, 10,
 };
 
-// demo: next_advisor_state
-const u16 D_0012cdd4[11] = {
+const u16 next_advisor_state[11] = {
     1, 2, 3, 4, 0, 6, 7, 8, 0, 2, 2,
 };
 
-// demo: advisor_up_states
-const u16 D_0012cdea[11] = {
+const u16 advisor_up_states[11] = {
     0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1,
 };
-}
 
 ResearchTasks research_tasks[4] = {
     { 8, 40, 670 }, { 8, 41, 680 }, { 12, 1, 1190 }, { 12, 2, 1200 },
 };
 
-extern "C" {
-// demo: chart_in_use
-const u8 D_0012ce18[12] = {
+const u8 chart_in_use[12] = {
     1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1,
 };
-}
 
 SlidingDoorControl sliding_doors[2] = {
     { 158, 166, 1, 128, 1, 128 },
@@ -1315,15 +1289,12 @@ u8 staff_abilities[6][2] = {
     { 1 }, { 1, 1 }, { 0, 1 },
 };
 
-extern "C" {
-// demo: bid_hammer
-u8 D_0012cfbc[0x70] = {
+u8 bid_hammer[0x70] = {
     4, 4, 4, 3, 6, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9, 9, 9, 9, 9, 9, 9,
     9, 9, 9, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 6, 6, 6, 6, 6, 6, 6, 6, 6,
     6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
 };
-}
 
 WinLose win_criteria[10] = {
     { 1, 1, 500, 0, 1 },
@@ -1358,13 +1329,10 @@ s16 ani_seq[38] = {
     1751, -1, 1745, -1, 1742, -1, 1740, -1, 445, 447, -1, 282, -1, 332, -1, 284, -1, 330, -1, -2,
 };
 
-extern "C" {
-// demo: ani_seq_choice
-u8 D_0012d320[15][10] = {
+u8 ani_seq_choice[15][10] = {
     { 0 }, { 7 }, { 1 }, { 2 }, { 3 }, { 4, 9 }, { 5 }, { 6 }, { 8 }, { 10 }, { 11 }, { 12 },
     { 13 }, { 14 }, { 15 },
 };
-}
 
 ShowAnim show_anims[5] = {
     { 98, 1, 1, 1, 1, 0, 0, 2, 4 },
@@ -1402,18 +1370,14 @@ s8 bank_manager_face2[0x14] = {
     0, 9, 9, 9, 10, 10, 10, 11, 11, 11, 11, 11, 11, 10, 10, 10, 9, 9, 9, -1,
 };
 
-extern "C" {
-// demo: bank_manager_face3
-s8 D_0012d748[0x30] = {
+s8 bank_manager_face3[0x30] = {
     0, 12, 12, 13, 13, 13, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14,
     14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 14, 13, 13, 13, 12, 12, -1,
 };
 
-// demo: watch_face
-u8 D_0012d778[0x10] = {
+u8 watch_face[0x10] = {
     0, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2,
 };
-}
 
 u8 skillnb_to_who[0xc] = {
     3, 2, 0, 1, 1, 1, 1, 1, 1, 1,
@@ -1431,13 +1395,10 @@ TrophyBalanceData awards_trophies_data = {
 };
 #pragma aux awards_trophies_data "W?awards_trophies$n$TrophyBalance$$"
 
-extern "C" {
-// demo: mouse_mode_help_allowed
-u8 D_0012d808[0x2c] = {
+u8 mouse_mode_help_allowed[0x2c] = {
     1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1,
     0, 1, 0, 0, 0, 1, 1,
 };
-}
 
 RatFestLevel rat_fest_level[4] = {
     { 0 },
@@ -1457,9 +1418,6 @@ u8 illness_abilities[0x24][1] = {
     { 1 }, { 1 }, { 1 }, { 1 }, { 1 }, { 1 }, { 1 }, { 1 }, { 1 }, { 1 },
 };
 
-extern "C" {
-// demo: display_mode_control
-u8 D_0012d8d8[0x10] = {
+u8 display_mode_control[0x10] = {
     1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1,
 };
-}

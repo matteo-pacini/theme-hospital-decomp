@@ -80,8 +80,7 @@ S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 da
 #pragma aux (__pascal) XDIG_MIDI_TRAP "*";
 void AILXDIG_end(void);
 
-void __cdecl XDIG_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2);
-#pragma aux (__cdecl) XDIG_write_log "fn_000e5660_";
+static void __cdecl XMI_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2);
 
 void XDIG_set_pitch(HWAVESYNTH W, S32 voice);
 
@@ -95,7 +94,7 @@ void AILXDIG_start(void)
 }
 
 // FUNCTION: 0x000e5660
-void __cdecl XDIG_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2)
+static void __cdecl XMI_write_log(CTRL_LOG *log, S32 status, S32 data_1, S32 data_2)
 {
     S32 st;
     S32 ch;
@@ -259,7 +258,7 @@ S32 XDIG_MIDI_TRAP(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 da
     ch = status & 0x0f;
     W = (HWAVESYNTH)mdi->system_data[0];
     if (st == 0xb0 || st == 0xc0 || st == 0xe0) {
-        XDIG_write_log(&W->controls, status, data_1, data_2);
+        XMI_write_log(&W->controls, status, data_1, data_2);
     }
     if (st == 0x90 && data_2 == 0) {
         st = 0x80;

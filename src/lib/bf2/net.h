@@ -278,11 +278,11 @@ extern u32 D_0018ba9c;
 extern u8 D_0018d428[];
 }
 
-/* __stdcall (arguments on the stack, callee pops) under their address names. */
-void *TwoPlayerMultiPlayerCallback(u32 id, u32 size, u32 seq, void *data);
-#pragma aux TwoPlayerMultiPlayerCallback "fn_000d309c_" parm routine [] modify [eax ecx edx]
-void TwoPlayerReqExDataCallback(u32 id, u32 seq, void *data);
-#pragma aux TwoPlayerReqExDataCallback "fn_000d32fc_" parm routine [] modify [eax ecx edx]
+/* __stdcall (arguments on the stack, callee pops). */
+void *TwoPlayerCallback(u32 id, u32 size, u32 seq, void *data);
+#pragma aux TwoPlayerCallback parm routine [] modify [eax ecx edx]
+void TwoPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data);
+#pragma aux TwoPlayerReqExDataMsgCallback parm routine [] modify [eax ecx edx]
 
 struct __3ljac5NETSOCKET {
     u16 socket;
@@ -339,7 +339,7 @@ struct SAPPacket {
     u16 hops;
 };
 
-struct RMREGS {
+struct __1epnl9RMREGS {
     u32 edi;
     u32 esi;
     u32 ebp;
@@ -358,6 +358,7 @@ struct RMREGS {
     u16 sp;
     u16 ss;
 };
+typedef __1epnl9RMREGS RMREGS;
 
 typedef REGS DPMIREGS;
 
@@ -369,11 +370,6 @@ extern u8 D_00110068[];
 }
 
 extern char IPXDEBUGSTRING[];
-
-struct IPXHandler;
-extern "C" u8 *fn_000d4150(IPXHandler *self, u32 size, u16 *sel);
-extern "C" u32 fn_000d41c8(IPXHandler *self, u16 intno, RMREGS *rm);
-extern "C" void fn_000d41a0(IPXHandler *self, u16 sel);
 
 struct IPXHandler {
     u32 stamp;
@@ -405,6 +401,9 @@ struct IPXHandler {
     ~IPXHandler();
     long Init(void);
     void DeInit(void);
+    void *AllocDosMem(u32 size, u16 *sel);
+    void FreeDosMem(u16 sel);
+    long CallRealModeInterrupt(u16 intno, RMREGS *rm);
     long SetupVector(void);
     long GetAddress(u8 *addr);
     long OpenSocket(__3ljac5NETSOCKET *sock, u16 mode);
@@ -418,7 +417,6 @@ struct IPXHandler {
     long AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock);
     void QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock);
     void UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock);
-    u32 SimulateInt(u16 intno, RMREGS *rm) { return fn_000d41c8(this, intno, rm); }
     IPXPacket *GetNextSendPkt(void);
     void SendEcb(ECB *ecb);
     void AddBatch(__2aq9p8IPXPARAMS *cmd);

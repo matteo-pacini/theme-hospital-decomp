@@ -132,8 +132,6 @@ extern char **D_00160370;
 extern u8 D_00156910;
 extern char **D_001602e8;
 extern char **D_001602ec;
-extern u16 D_0012cdd4[];
-extern u16 D_0012cdea[];
 }
 
 // FUNCTION: 0x0005dbb0
@@ -151,7 +149,7 @@ void display_advisor(void)
             if (tutorial() && advisor.f10[0]) {
                 advisor.f0 = 1;
                 advisor_character();
-                if (D_0012cdea[advisor.f11e]) {
+                if (advisor_up_states[advisor.f11e]) {
                     advisor_text_box();
                     D_00156910 = 1;
                 }
@@ -184,18 +182,18 @@ void display_advisor(void)
                 }
             }
             advisor_character();
-            if (D_0012cdea[advisor.f11e]) {
+            if (advisor_up_states[advisor.f11e]) {
                 if (advisor.f0 && !othervar.fa54) {
                     advisor_text_box();
                     D_00156910 = 1;
                 } else if (--advisor.fe <= 0 || othervar.fa54) {
                     othervar.fa54 = 0;
                     advisor.fe = -1;
-                    advisor.f11e = D_0012cdd4[advisor.f11e];
+                    advisor.f11e = next_advisor_state[advisor.f11e];
                     advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
                     advisor.f12c = 0;
                 } else if (!advisor.f12c) {
-                    advisor.f11e = D_0012cdd4[advisor.f11e];
+                    advisor.f11e = next_advisor_state[advisor.f11e];
                     advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
                     advisor.f12c = 1;
                     othervar.fa54 = 0;

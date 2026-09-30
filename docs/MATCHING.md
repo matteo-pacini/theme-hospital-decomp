@@ -497,7 +497,7 @@ predates the tool and uses a separate file instead.
 - `W?Start$:IPXServiceProvider$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xd59ec), `src/lib/bf2/ipxsp.standin.s`
 - `W?Start$:ModemSP$n(pnapnaulpnv)$TbError$$` (0xee77c), `src/lib/bf2/modemsp.standin.s`
 - `W?Start$:ModemSP$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$` (0xeea58), `src/lib/bf2/modemsp.standin.s`
-- `fn_000d309c_` (0xd309c), `src/lib/bf2/netint2.standin.s`: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
+- `W?TwoPlayerCallback$n(ulululpnv)pnv` (0xd309c), `src/lib/bf2/netint2.standin.s`: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
 - `W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$` (0xed6c8), `src/lib/bf2/serialsp.standin.s`
 - `W?PrivateReceive$:SerialSP$n(pnvpnul$$TE$$)ul` (0xedf24), `src/lib/bf2/serialsp.standin.s`
 - `W?ProcessAvailableMsg$:SerialSP$n(pnvpnulul)ul` (0xee050), `src/lib/bf2/serialsp.standin.s`
@@ -669,7 +669,7 @@ Compiler and flags per source file come from `config/cflags.txt`.
   Smacker wrapper is built with `-5`, since `-4` inserts loop alignment
   padding the original does not have.
 - **Bullfrog library idioms (L9)**: Bullfrog's `ASSERT` is
-  `do { if (!x) { if (fn_000d0848(..)) int3(); } } while (0);`, and the
+  `do { if (!x) { if (LbAssertMessage(..)) int3(); } } while (0);`, and the
   loop makes `-d2 -otx` load the tested operands into registers. A nested
   `if (A || B) { if (g) ... }` loads `g` into a register where
   `if ((A || B) && g)` compares it in memory. In the sound modules the

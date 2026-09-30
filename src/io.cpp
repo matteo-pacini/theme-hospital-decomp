@@ -56,7 +56,6 @@ extern u8 D_0015fe84;
 extern u8 D_0015fe85;
 extern u8 D_00158166;
 extern Slot D_001581b2[];
-extern u8 D_0012b7c8[];
 extern Stride6c D_0015f5c2[];
 
 int LbScreenLock(void);
@@ -1178,7 +1177,7 @@ void process_turn(void)
             }
             break;
         case 0x65:
-            mycontrol->unknown64f = D_0012b7c8[mycontrol->unknown650] - 1;
+            mycontrol->unknown64f = calendar[mycontrol->unknown650] - 1;
             break;
         case 0x66:
             change_balance(0x12, 5000, 0, i);
@@ -1797,7 +1796,7 @@ void process_turn(void)
             break;
         case 0x89:
             mycontrol->unknown650 = 0xb;
-            mycontrol->unknown64f = D_0012b7c8[mycontrol->unknown650] - 2;
+            mycontrol->unknown64f = calendar[mycontrol->unknown650] - 2;
             break;
         case 0x8a:
             if (i == player) {

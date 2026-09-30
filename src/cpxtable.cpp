@@ -3,9 +3,7 @@
 // The staff and patient action sequences ("complexes"). Data only:
 // config/sections.txt places the module's _DATA.
 
-extern "C" {
-// demo: staff_complex
-Complex D_001303cc[237] = {
+Complex staff_complex[237] = {
     { 0, 0, 0, 0, 255 },
     { 0, 0, 0, 0, 255 },
     { 0, 0, 0, 0, 255 },
@@ -244,7 +242,6 @@ Complex D_001303cc[237] = {
     { 0, 52, 16, 0, 255 },
     { 0, 99, 0, 0, 255 },
 };
-}
 
 Complex person_complex[175] = {
     { 0, 0, 0, 0, 255 },
@@ -431,8 +428,8 @@ ComplexAnims D_001310ac[3] = {
     { 4, 53, 54, 55, 53 },
 };
 
-// demo: group_ia
-s8 D_001310d0[1][5] = {
+}
+
+s8 group_ia[1][5] = {
     { 9, 10, 11, -1, -1 },
 };
-}

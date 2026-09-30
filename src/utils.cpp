@@ -16,14 +16,12 @@ struct SortEntry {
 
 extern "C" {
 
-extern s32 D_001290cc;
 extern char D_0015fde4[];
 extern Event D_001549d0[];
 extern u8 D_0015f982;
 extern u32 D_0014bcc4, D_0014bcd0, D_0014bcd8, D_0014bce0, D_0014bce4, D_0014bce8;
 extern u32 D_0013c60c, D_0013c618, D_0013c620, D_0013c628, D_0013c62c, D_0013c630;
 extern u8 D_001581ec, D_001581ed, D_001581ef;
-extern char *D_001289a0, *D_001289a4;
 extern u8 D_0015fe74;
 
 void fn_00015b68(Thing *w);
@@ -1106,13 +1104,13 @@ void fn_0001be78(u8 dir)
 // FUNCTION: 0x0001bee4
 void fn_0001bee4(void)
 {
-    if (D_001290cc != -1) {
-        LbFileClose(D_001290cc);
-        D_001290cc = -1;
+    if (face_file != -1) {
+        LbFileClose(face_file);
+        face_file = -1;
     }
     if (resvars.f0 == SCREEN_MODE_1 || othervar.fa8d) {
-        D_001290cc = LbFileOpen(D_001289a4, 2);
-        if (D_001290cc == -1) {
+        face_file = LbFileOpen((char *)lores_faces, 2);
+        if (face_file == -1) {
             D_0015f982 = 9;
             sub_error_number = 8;
             reset_host();
@@ -1125,8 +1123,8 @@ void fn_0001bee4(void)
         resvars.f58_u32 = D_0014bce4;
         resvars.f5c_u32 = D_0014bce8;
     } else if (resvars.f0 == SCREEN_MODE_13) {
-        D_001290cc = LbFileOpen(D_001289a0, 2);
-        if (D_001290cc == -1) {
+        face_file = LbFileOpen((char *)hires_faces, 2);
+        if (face_file == -1) {
             D_0015f982 = 9;
             sub_error_number = 7;
             reset_host();

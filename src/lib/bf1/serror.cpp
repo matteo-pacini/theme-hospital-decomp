@@ -17,13 +17,15 @@ void *memcpy(void *dst, const void *src, u32 n);
 #pragma intrinsic(strcat, memcpy)
 
 // FUNCTION: 0x000d0800
-int fn_000d0800(void)
+int LbWindowsControl(void)
 {
     return 1;
 }
 
+}
+
 // FUNCTION: 0x000d080c
-void fn_000d080c(char *fmt, ...)
+void LbDebugString(char *fmt, ...)
 {
     char buf[512];
     va_list args;
@@ -35,7 +37,7 @@ void fn_000d080c(char *fmt, ...)
 }
 
 // FUNCTION: 0x000d0848
-int fn_000d0848(char *expr, char *file, int line)
+int LbAssertMessage(const char *expr, const char *file, unsigned long line)
 {
     char text[512];
     int cont;
@@ -106,6 +108,4 @@ int fn_000d0848(char *expr, char *file, int line)
         LbPaletteSet(palette);
     }
     return 0;
-}
-
 }

@@ -2,9 +2,9 @@
 
 // Data only: config/sections.txt places the module's _DATA.
 
+long face_file = -1;
+
 extern "C" {
-// demo: face_file
-s32 D_001290cc = -1;
 // demo: loaded_face (a Picture)
 u8 D_001290d0 = 0xff, D_001290d1 = 0xff, D_001290d2 = 0xff;
 // demo: save. The entries with no address are filled in by setup_addresses.

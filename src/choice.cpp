@@ -52,8 +52,9 @@ extern u32 D_001611f0;
 extern u8 D_001611f8[];
 extern Event D_001549d0[];
 
-// demo: cheat_numbers
-FaxNo D_00149598[] = {
+}
+
+FaxNo cheat_numbers[] = {
     { { 0xc2, 0xc2, 0xc2 }, 3, 1 },
     { { 0xc2, 0xba, 0xba }, 3, 1 },
     { { 0xc2, 0xba, 0xbb }, 3, 1 },
@@ -72,6 +73,7 @@ FaxNo D_00149598[] = {
     { { 0 }, 0, 0 },
 };
 
+extern "C" {
 int strcmp(const char *a, const char *b);
 void fn_000a3140(void);
 }
@@ -479,10 +481,10 @@ void process_fax_buttons(u8 n)
     case 0xc5:
     case 0xc6:
         i = found = 0;
-        while (D_00149598[i].digits[0]) {
-            if (fax_no_equal(D_00149598[i], D_001611f8)) {
+        while (cheat_numbers[i].digits[0]) {
+            if (fax_no_equal(cheat_numbers[i], D_001611f8)) {
                 found = 1;
-                switch (D_00149598[i].action) {
+                switch (cheat_numbers[i].action) {
                 case 1:
                     play_sound(10, 0xac, -1, -1);
                     break;

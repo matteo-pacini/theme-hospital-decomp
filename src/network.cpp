@@ -113,13 +113,13 @@ u32 fn_000cd716(char *s);
 void fn_0007fbb8(s8 me);
 }
 
-extern "C" __tibcaGUID D_0013800c = {0x1e8b2240, 0x11d037fe, 0xa0002b8d, 0xc96a00c9};
+__tibcaGUID theme_hospital_guid = {0x1e8b2240, 0x11d037fe, 0xa0002b8d, 0xc96a00c9};
 s8 BookHilight = -1;
-extern "C" char *D_00138020 = "{";
-extern "C" char *D_00138024 = "|";
-extern "C" u32 D_00138028[] = {4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200};
+char *upstr = "{";
+char *downstr = "|";
+u32 Bauds[] = {4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200};
 u8 TopIRQ = 1;
-extern "C" s32 D_0013804c = -1;
+long hilighted_session = -1;
 extern "C" char D_00138050[0x20] = "";
 char init_str[0x54] = "ATZ";
 char dial_str[0x54] = "ATDT";
@@ -459,11 +459,11 @@ void display_button_text(s32 mask)
             lbDisplay.draw_flags = 0;
             if (D_001606c8 == 0)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(106), D_00138020);
+            draw_glass_text(SLIST(106), upstr);
             lbDisplay.draw_flags = 0;
             if (D_001606c8 >= 5)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(107), D_00138024);
+            draw_glass_text(SLIST(107), downstr);
             if (login_control.f17 == 5) {
                 lbDisplay.draw_flags = 0;
                 draw_glass_text(SLIST(104), D_00160308[11]);
@@ -507,7 +507,7 @@ void display_button_text(s32 mask)
                 if (login_control.f1f == 0)
                     lbDisplay.draw_flags |= 4;
             }
-            draw_glass_text(SLIST(101), D_00138020);
+            draw_glass_text(SLIST(101), upstr);
             lbDisplay.draw_flags = 0;
             if (login_control.f17 != 5) {
                 if (D_001605f1 >= BookCount - 3)
@@ -516,7 +516,7 @@ void display_button_text(s32 mask)
                 if (login_control.f1f >= player_count - 3)
                     lbDisplay.draw_flags |= 4;
             }
-            draw_glass_text(SLIST(102), D_00138024);
+            draw_glass_text(SLIST(102), downstr);
             lbDisplay.draw_flags = 0;
             fn_000817c4();
             break;
@@ -529,7 +529,7 @@ void display_button_text(s32 mask)
                 if (login_control.f1f == 0)
                     lbDisplay.draw_flags |= 4;
             }
-            draw_glass_text(SLIST(109), D_00138020);
+            draw_glass_text(SLIST(109), upstr);
             lbDisplay.draw_flags = 0;
             if (login_control.f17 != 5) {
                 if (D_001606c8 >= 5)
@@ -538,15 +538,15 @@ void display_button_text(s32 mask)
                 if (login_control.f1f >= player_count - 3)
                     lbDisplay.draw_flags |= 4;
             }
-            draw_glass_text(SLIST(110), D_00138024);
+            draw_glass_text(SLIST(110), downstr);
             lbDisplay.draw_flags = 0;
             if (!D_001606c9)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(113), D_00138020);
+            draw_glass_text(SLIST(113), upstr);
             lbDisplay.draw_flags = 0;
             if (D_001606c9)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(114), D_00138024);
+            draw_glass_text(SLIST(114), downstr);
             lbDisplay.draw_flags = 0;
             switch (login_control.f17) {
             case 5:
@@ -583,19 +583,19 @@ void display_button_text(s32 mask)
             lbDisplay.draw_flags = 0;
             if (login_control.f1f == 0)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(120), D_00138020);
+            draw_glass_text(SLIST(120), upstr);
             lbDisplay.draw_flags = 0;
             if (login_control.f1f >= player_count - 3)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(121), D_00138024);
+            draw_glass_text(SLIST(121), downstr);
             lbDisplay.draw_flags = 0;
             if (D_001606cc == 0 || login_control.f17 == 5)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(118), D_00138020);
+            draw_glass_text(SLIST(118), upstr);
             lbDisplay.draw_flags = 0;
             if (D_001606cc >= D_0015f1aa - 3 || login_control.f17 == 5)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(119), D_00138024);
+            draw_glass_text(SLIST(119), downstr);
             lbDisplay.draw_flags = 0;
             switch (login_control.f17) {
             case 5:
@@ -623,7 +623,7 @@ void display_button_text(s32 mask)
                 }
                 break;
             case 6:
-                if (D_0013804c == -1) {
+                if (hilighted_session == -1) {
                     lbDisplay.draw_flags |= 4;
                     draw_glass_text(SLIST(117), D_00160308[2]);
                 } else if ((D_001606bc & 7) > 3) {
@@ -642,8 +642,8 @@ void display_button_text(s32 mask)
             sprintf(buf, "%s %s", D_001602a0[30], balance_file_name);
             lbDisplay.draw_flags = 0;
             if (current_balance_file != current_balance_file->next) {
-                draw_glass_text(SLIST(94), D_00138020);
-                draw_glass_text(SLIST(95), D_00138024);
+                draw_glass_text(SLIST(94), upstr);
+                draw_glass_text(SLIST(95), downstr);
             }
             LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             set_font_from_cache(0x21);
@@ -658,11 +658,11 @@ void display_button_text(s32 mask)
             lbDisplay.draw_flags = 0;
             if (TopMessage == 0)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(98), D_00138020);
+            draw_glass_text(SLIST(98), upstr);
             lbDisplay.draw_flags = 0;
             if (TopMessage >= NumMessages - 3)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(99), D_00138024);
+            draw_glass_text(SLIST(99), downstr);
             break;
         case 0x400:
             draw_glass_text(SLIST(128), "1");
@@ -700,11 +700,11 @@ void display_button_text(s32 mask)
             lbDisplay.draw_flags = 0;
             if (TopIRQ == 0)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(123), D_00138020);
+            draw_glass_text(SLIST(123), upstr);
             lbDisplay.draw_flags = 0;
             if (TopIRQ >= 4)
                 lbDisplay.draw_flags |= 4;
-            draw_glass_text(SLIST(124), D_00138024);
+            draw_glass_text(SLIST(124), downstr);
             lbDisplay.draw_flags = 0;
             break;
         }
@@ -754,7 +754,7 @@ void fn_00081408(u8 flag)
         idx = 0x81;
     y = resvars.f3c_NetBoxp[idx].y + 4;
     for (i = 0; i < 3; i++, y += character_height()) {
-        sprintf(buf, "%d", D_00138028[i + D_001606c8]);
+        sprintf(buf, "%d", Bauds[i + D_001606c8]);
         if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[idx].x, y, (s16)resvars.f3c_NetBoxp[idx].w,
                          character_height())) {
             if (lbDisplay.mleft_button) {
@@ -1235,7 +1235,7 @@ void process_ipx_buttons(u8 n)
             break;
         case 6:
             play_sound(10, 0x43, -1, -1);
-            if (D_0013804c != -1) {
+            if (hilighted_session != -1) {
                 if (network_button_join() == -1)
                     report_message(D_00160308[28]);
             }
@@ -1380,7 +1380,7 @@ void process_serial_buttons(u8 n)
                     bits >>= 1;
                     D_0016051c.port++;
                 }
-                D_0016051c.baud = D_00138028[myplayer.f56[5]];
+                D_0016051c.baud = Bauds[myplayer.f56[5]];
                 D_0016051c.irq = myplayer.f56[D_0016051c.port];
                 D_0016051c.init = init_str;
                 D_0016051c.dial = dial_str;
@@ -1395,7 +1395,7 @@ void process_serial_buttons(u8 n)
                     } else {
                         D_00160eb4 = 0;
                         if (LbNetwork_EnumerateSessions((TbNetworkCallbackFunc)fn_000842d4, 0) == Lb_OK) {
-                            D_0013804c = 0;
+                            hilighted_session = 0;
                             fn_000bbff0(D_00138050, SESSION_NAME);
                             if (network_button_join() == -1) {
                                 LbNetwork_Stop();
@@ -1508,7 +1508,7 @@ void process_modem_buttons(u8 n)
                         bits >>= 1;
                         D_0016051c.port++;
                     }
-                    D_0016051c.baud = D_00138028[myplayer.f56[5]];
+                    D_0016051c.baud = Bauds[myplayer.f56[5]];
                     D_0016051c.irq = myplayer.f56[D_0016051c.port];
                     D_0016051c.init = init_str;
                     D_0016051c.dial = dial_str;
@@ -1572,7 +1572,7 @@ void process_modem_buttons(u8 n)
                         } else {
                             D_00160eb4 = 0;
                             if (LbNetwork_EnumerateSessions((TbNetworkCallbackFunc)fn_000842d4, 0) == Lb_OK) {
-                                D_0013804c = 0;
+                                hilighted_session = 0;
                                 fn_000bbff0(D_00138050, SESSION_NAME);
                                 D_001605e8 = network_service_function_init;
                                 D_001605ec = network_service_function_connect;
@@ -2057,35 +2057,35 @@ void fn_00084324(SessionInfo *sessions)
         }
     }
     if (D_00160eb4 == 0) {
-        D_0013804c = -1;
+        hilighted_session = -1;
         D_00138050[0] = 0;
-    } else if (D_0013804c == -1) {
-        D_0013804c = 0;
+    } else if (hilighted_session == -1) {
+        hilighted_session = 0;
         fn_000bbff0(D_00138050, SESSION_NAMES[0]);
     }
-    if (D_0013804c >= 0) {
-        if (strcmp(D_00138050, SESSION_NAMES[D_0013804c])) {
+    if (hilighted_session >= 0) {
+        if (strcmp(D_00138050, SESSION_NAMES[hilighted_session])) {
             for (i = 0; i < D_00160eb4; i++) {
             if (!strcmp(SESSION_NAMES[i], D_00138050)) {
                 if (i < 0) {
-                    D_0013804c = i;
+                    hilighted_session = i;
                     D_00138050[0] = 0;
                 } else {
-                    D_0013804c = i;
+                    hilighted_session = i;
                     fn_000bbff0(D_00138050, SESSION_NAMES[i]);
                 }
                 break;
             }
         }
         if (i == D_00160eb4) {
-            D_0013804c = -1;
+            hilighted_session = -1;
             D_00138050[0] = 0;
         }
         }
     }
     y = resvars.f3c_NetBoxp[125].y + 4;
     for (i = D_001606cc; D_001606cc + D_00160eb4 > i && D_001606cc + 3 > i; i++, y += character_height()) {
-        if (i == D_0013804c && !found) {
+        if (i == hilighted_session && !found) {
             draw_small_highlight_centre_text(resvars.f3c_NetBoxp[125].x, resvars.f3c_NetBoxp[125].w, y, SESSION_NAMES[i]);
             draw_players_on_session(i);
             found = 1;
@@ -2098,15 +2098,15 @@ void fn_00084324(SessionInfo *sessions)
         if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[125].x, y, (s16)resvars.f3c_NetBoxp[125].w,
                          character_height())) {
             if (lbDisplay.mleft_button) {
-                if (D_0013804c != i) {
+                if (hilighted_session != i) {
                     memset(player_info, 0, 0x90);
                     memset(player_names, 0, 0x28);
                 }
                 if (i < 0) {
-                    D_0013804c = i;
+                    hilighted_session = i;
                     D_00138050[0] = 0;
                 } else {
-                    D_0013804c = i;
+                    hilighted_session = i;
                     fn_000bbff0(D_00138050, SESSION_NAMES[i]);
                 }
                 lbDisplay.mleft_button = lbDisplay.left_button = 0;
@@ -2318,7 +2318,7 @@ u8 setup_network(TbNetworkService service, void *data, u8 max_players)
     login_control.f17 = 6;
     memset(D_0016053c, 0, 0xb4);
     memset(player_info, 0, 0x90);
-    res = LbNetwork_Init(service, D_0013800c, max_players, 0, 0, player_info, data);
+    res = LbNetwork_Init(service, theme_hospital_guid, max_players, 0, 0, player_info, data);
     if (res == Lb_OK) {
         memset(login_control.players, 0, 0x540);
         return 1;
@@ -2360,13 +2360,13 @@ s32 join_session(void)
     unused = 0;
     reset_message_text();
     res = 0;
-    if (D_0013804c >= 0 && D_0013804c < D_00160eb4) {
+    if (hilighted_session >= 0 && hilighted_session < D_00160eb4) {
         if (strcmp(myplayer.unknown0, D_001602a0[1]) == 0) {
             res = fn_000cd716(myplayer.unknown0);
             myplayer.unknown0[res] = player_count + 'A';
             myplayer.unknown0[res + 1] = 0;
         }
-        res = LbNetwork_Join(D_00160e34[D_0013804c], myplayer.unknown0, &player, D_0016053c);
+        res = LbNetwork_Join(D_00160e34[hilighted_session], myplayer.unknown0, &player, D_0016053c);
         if (res == Lb_OK) {
             login_control.f17 = 5;
             reset_glass_map(0x80);

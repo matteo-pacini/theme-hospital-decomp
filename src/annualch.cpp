@@ -13,7 +13,6 @@ extern u8 current_award;
 
 extern "C" {
 extern u16 D_00158190;
-extern u8 D_0012ce18[];
 extern char **D_001602fc;
 extern char **D_00160364;
 extern char **D_00160368;
@@ -144,7 +143,7 @@ extern "C" void fn_000b4e88(void)
         fn_0001b7e0(buf, buf, 0);
         LbTextDraw(0, 0, buf);
         for (i = 0, cat = -1; i < 6; i++) {
-            for (cat++; cat < 11 && !D_0012ce18[cat]; cat++) {
+            for (cat++; cat < 11 && !chart_in_use[cat]; cat++) {
             }
             if (cat == 11)
                 break;

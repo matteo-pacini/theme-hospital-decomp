@@ -19,8 +19,6 @@ extern QuakeControl quake_control[];
 extern ComputerPlayer computer[];
 
 extern "C" {
-extern u16 D_0012b8c8[];
-extern u16 D_0012b8e4[];
 extern u16 D_0015fc20[];
 extern u8 D_0015fc3c[];
 }
@@ -222,8 +220,8 @@ VariableTable balance_variables[0xcb] = {
     { "awards_trophies.NewTechPoor", 0x14, (u32)((u8 *)&awards_trophies + 0x3b), 4, 1, 0, 4000000 },
     { "awards_trophies.ResearchBonus", 0x9, (u32)((u8 *)&awards_trophies + 0x61), 1, 1, -127, 127 },
     { "awards_trophies.ResearchPenalty", 0x9, (u32)((u8 *)&awards_trophies + 0x62), 1, 1, -127, 127 },
-    { "non_visuals", 0x12, (u32)D_0012b8e4, 2, 20, 0, 10000 },
-    { "visuals", 0x12, (u32)D_0012b8c8, 2, 14, 0, 10000 },
+    { "non_visuals", 0x12, (u32)non_visuals, 2, 20, 0, 10000 },
+    { "visuals", 0x12, (u32)visuals, 2, 14, 0, 10000 },
     { "visuals_available", 0x12, (u32)D_0015fc20, 2, 14, 0, 1000 },
     { "gbv.AbilityThreshold", 0x12, (u32)((u8 *)&gbv + 0x146), 2, 3, 0, 1000 },
     { "gbv.RschImproveCostPercent", 0x11, (u32)((u8 *)&gbv + 0x15a), 1, 1, 0, 100 },

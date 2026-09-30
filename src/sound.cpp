@@ -61,8 +61,6 @@ extern "C" {
 extern s32 D_00156433;
 extern s32 D_0015642f;
 extern u8 *D_00158334;
-extern TbLoadFiles D_0013ecb4[], D_0013edbc[], D_0013ed64[];
-extern ambient D_0014a468[];
 extern u8 __IsTable[];
 #pragma aux __IsTable "*"
 void PlayMidiFromAddress(u8 volume, void *data);
@@ -115,7 +113,7 @@ u8 setup_sound(void)
     fn_000bbff0(statvar.fd0, options.unknown0);
     InitAudio(&options);
     if (GetSoundInstalled() && GetSoundAble()) {
-        LbDataLoad(&D_0013ecb4[D_00156433]);
+        LbDataLoad(&soundfiles[D_00156433]);
         if (D_00158334) {
             loaded = 1;
             sprintf(buf, "%s\\data\\sound-%1d.dat", options.unknown0, myplayer.f21);
@@ -139,10 +137,10 @@ u8 setup_sound(void)
         myplayer.ff = 1;
         myplayer.f10 = 1;
     }
-    if (statvar.unknowne5 && LbDataLoadAll(D_0013edbc) == 0)
+    if (statvar.unknowne5 && LbDataLoadAll(midifiles) == 0)
         myplayer.unknown11 = 1;
     if (!loaded) {
-        LbDataLoadAll(D_0013ed64);
+        LbDataLoadAll(nosoundfiles);
         if (D_00158334) {
             sprintf(buf, "%s\\data\\minheap.dat", options.unknown0);
             if (!init_sound_heap(D_00158334, 0x32000, buf, options.unknownc))
@@ -198,22 +196,22 @@ void play_ambient(u8 sound)
     u8 i;
     u8 slot;
 
-    if (myplayer.f10 != 0 && D_0014a468[sound].sound && myhosp->fc9e[3] != 0 && !gamevar.unknown21) {
+    if (myplayer.f10 != 0 && Ambients[sound].sound && myhosp->fc9e[3] != 0 && !gamevar.unknown21) {
         for (i = 0; i < 4; i++) {
             if (!AmbientQueue[i].sound) {
-                AmbientQueue[i] = D_0014a468[sound];
+                AmbientQueue[i] = Ambients[sound];
                 return;
             }
         }
         if (i == 4) {
             slot = 0;
             for (i = 1; i < 4; i++) {
-                if (AmbientQueue[i].priority < D_0014a468[sound].priority)
+                if (AmbientQueue[i].priority < Ambients[sound].priority)
                     slot = i;
             }
         }
         if (slot)
-            AmbientQueue[slot] = D_0014a468[sound];
+            AmbientQueue[slot] = Ambients[sound];
     }
 }
 

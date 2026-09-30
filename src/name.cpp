@@ -60,6 +60,7 @@ char *read_line_from_buf(char *line, s32 max, char *src);
 
 extern TbFileFind balance_file;
 extern char balance_file_name[];
+extern char *upstr, *downstr;
 
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
@@ -68,7 +69,6 @@ extern "C" {
 
 extern u8 *D_00153f34;
 extern char **D_001602a0;
-extern char *D_00138020, *D_00138024;
 extern s8 __IsTable[];
 #pragma aux __IsTable "*"
 
@@ -404,8 +404,8 @@ void draw_new_prefs_screen(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     if (current_balance_file != current_balance_file->prev) {
-        draw_glass_text(SLIST(164), D_00138020);
-        draw_glass_text(SLIST(165), D_00138024);
+        draw_glass_text(SLIST(164), upstr);
+        draw_glass_text(SLIST(165), downstr);
     }
     lbDisplay.draw_flags = 0;
     draw_glass_text(SLIST(162), nickname_text[0x12]);

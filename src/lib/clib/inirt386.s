@@ -117,7 +117,7 @@
     .byte 0x89; .byte 0xe3
     .byte 0xa1; .long "__LpCmdLine"
     .byte 0x31; .byte 0xd2
-    .byte 0xe8; .long "fn_000d070c_"-.-4
+    .byte 0xe8; .long "_SplitParms_"-.-4
     .byte 0x8b; .byte 0x0c; .byte 0x24
     .byte 0x40
     .byte 0x8b; .byte 0x15; .long "__LpCmdLine"
@@ -155,7 +155,7 @@
     .byte 0x89; .byte 0x01
     .byte 0x89; .byte 0xe8
     .byte 0x8b; .byte 0x74; .byte 0x24; .byte 0x04
-    .byte 0xe8; .long "fn_000d070c_"-.-4
+    .byte 0xe8; .long "_SplitParms_"-.-4
     .byte 0x8b; .byte 0x0d; .long _D_0014d5e0
     .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x08
     .byte 0x01; .byte 0xf1

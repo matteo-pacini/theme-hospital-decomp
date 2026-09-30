@@ -1,7 +1,7 @@
 #include "clib.h"
 
 // FUNCTION: 0xec5fc
-const char __based(__segname("_CODE")) Alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+static const char __based(__segname("_CODE")) Alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 unsigned long __uldiv(unsigned long value, unsigned long __near *radix);
 #pragma aux __uldiv = \

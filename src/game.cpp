@@ -2,10 +2,8 @@
 
 extern "C" {
 
-extern u8 D_0012d8d8[];
 extern u32 D_001606bc;
 extern u8 D_0015f99f;
-extern u8 D_0012b7c8[];
 extern Event D_001549d0[];
 extern u8 *D_00153f34;
 extern u8 D_00156910;
@@ -58,17 +56,17 @@ void game(void)
         }
         check_if_active();
         if (LbScreenLock() != 1) {
-            redraw = D_0012d8d8[display_mode];
+            redraw = display_mode_control[display_mode];
             if (display_mode == 13) {
                 redraw = process_lost_focus_display(0);
             } else {
                 set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
             }
         } else {
-            if (D_0012d8d8[display_mode]) {
+            if (display_mode_control[display_mode]) {
                 start_turn();
             }
-            redraw = D_0012d8d8[display_mode];
+            redraw = display_mode_control[display_mode];
             D_001606bc++;
             switch (display_mode) {
             case 0:
@@ -350,7 +348,7 @@ void start_turn(void)
         twice_daily_admin();
         if (actual_game_turn % 50 == 0) {
             daily_admin();
-            if ((int)mycontrol->unknown64f > (int)D_0012b7c8[mycontrol->unknown650]) {
+            if ((int)mycontrol->unknown64f > (int)calendar[mycontrol->unknown650]) {
                 month_end();
                 if (mycontrol->unknown650 >= 12) {
                     year_end();

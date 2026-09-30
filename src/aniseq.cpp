@@ -2,10 +2,6 @@
 
 extern s16 ani_seq[];
 
-extern "C" {
-extern u8 D_0012d320[];
-}
-
 void setup_next_aniseq(Thing *w);
 
 // FUNCTION: 0x0009b300
@@ -69,7 +65,7 @@ void choose_aniseq(Thing *w, u8 group, u8 mode)
 {
     u8 n;
 
-    for (n = 0; D_0012d320[group * 10 + n]; n++)
+    for (n = 0; ani_seq_choice[group][n]; n++)
         ;
-    setup_aniseq(w, D_0012d320[group * 10 + old_newrand() % n], mode);
+    setup_aniseq(w, ani_seq_choice[group][old_newrand() % n], mode);
 }

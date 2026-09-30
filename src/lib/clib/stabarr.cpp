@@ -54,12 +54,11 @@ RO_STATE *arr_state_table(RO_DTREG_ARRAY *ro)
     return (RO_STATE *)&ro->count;
 }
 
-void *arr_get_object(RW_DTREG_ARRAY *rw, unsigned state_var);
-/* config/functions.txt has no name for arr_get_object. */
-#pragma aux arr_get_object "fn_000f5194_"
+void *arr_point_object(RW_DTREG_ARRAY *rw, unsigned state_var);
+#pragma aux arr_point_object "W?arr_point_object$n(pn$rw_dtreg$$ui)pnv"
 
 // FUNCTION: 0xf5194
-void *arr_get_object(RW_DTREG_ARRAY *rw, unsigned state_var)
+void *arr_point_object(RW_DTREG_ARRAY *rw, unsigned state_var)
 {
     return (char *)rw->array + (state_var - 1) * __wcpp_2_ts_size_((RT_TYPE_SIG *)rw->ro->sig);
 }
@@ -75,20 +74,23 @@ void arr_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG_ARRAY *rw)
 
 struct DTREG_VFPTRS {
     RO_STATE *(*state_table)(RO_DTREG_ARRAY *ro);
-    void *(*get_object)(RW_DTREG_ARRAY *rw, unsigned state_var);
+    void *(*point_object)(RW_DTREG_ARRAY *rw, unsigned state_var);
     void (*init_traverse)(STAB_TRAVERSE *ctl, RW_DTREG_ARRAY *rw);
 };
 
-static DTREG_VFPTRS arr_vftable = { arr_state_table, arr_get_object, arr_init_traverse };
+static DTREG_VFPTRS arr_vftable = { arr_state_table, arr_point_object, arr_init_traverse };
 #pragma aux arr_vftable "W?arr_vftable$n$__6rq0qbDTREG_VFTBL$$"
 
+static void init(void);
+#pragma aux init "W?init$n()v"
+
 // FUNCTION: 0xf51b2
-void fn_000f51b2(void)
+static void init(void)
 {
     __wcpp_2_data_dtreg_vfptrs_[2] = &arr_vftable;
 }
 
-AXI(fn_000f51b2, 10)
+AXI(init, 10)
 
 // FUNCTION: 0xf51bd
 void __wcpp_2_arr_register_(void *array, RW_DTREG_ARRAY *rw, RT_ARRAY_SIG *sig)

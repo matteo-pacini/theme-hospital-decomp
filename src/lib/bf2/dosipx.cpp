@@ -50,7 +50,7 @@ long IPXHandler::Init(void)
     u32 entry;
     RMREGS rm;
 
-    dosbuf = fn_000d4150(this, 0x950, &dosbuf_sel);
+    dosbuf = (u8 *)AllocDosMem(0x950, &dosbuf_sel);
     if (dosbuf) {
         memset(dosbuf, 0, 0x950);
         rm_ss = (s32)(dosbuf + 0x15f) >> 4;
@@ -68,18 +68,18 @@ long IPXHandler::Init(void)
             strcpy(IPXDEBUGSTRING, "COULDN'T ALLOCATE FOR SEND PACKETS\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            fn_000d41a0(this, dosbuf_sel);
+            FreeDosMem(dosbuf_sel);
             dosbuf_sel = 0;
             return 1;
         }
-        addrbuf = fn_000d4150(this, 0xd0, &addr_sel);
+        addrbuf = (u8 *)AllocDosMem(0xd0, &addr_sel);
         if (!addrbuf) {
             strcpy(IPXDEBUGSTRING, "COULDN'T ALLOCATE FOR BUFFER\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            fn_000d41a0(this, dosbuf_sel);
+            FreeDosMem(dosbuf_sel);
             dosbuf_sel = 0;
-            fn_000d41a0(this, send_sel);
+            FreeDosMem(send_sel);
             send_sel = 0;
             return 1;
         }
@@ -88,30 +88,30 @@ long IPXHandler::Init(void)
             strcpy(IPXDEBUGSTRING, "COULDN'T ALLOCATE FOR SAP BUFFER\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            fn_000d41a0(this, dosbuf_sel);
+            FreeDosMem(dosbuf_sel);
             dosbuf_sel = 0;
-            fn_000d41a0(this, send_sel);
+            FreeDosMem(send_sel);
             send_sel = 0;
-            fn_000d41a0(this, addr_sel);
+            FreeDosMem(addr_sel);
             addr_sel = 0;
             return 1;
         }
         memset(&rm, 0, sizeof(rm));
         rm.eax = 0x7a00;
-        SimulateInt(0x2f, &rm);
+        CallRealModeInterrupt(0x2f, &rm);
         *(u16 *)(dosbuf + 0x8a) = rm.edi;
         *(u16 *)(dosbuf + 0x8c) = rm.es;
         if ((rm.eax & 0xff) != 0xff) {
             strcpy(IPXDEBUGSTRING, "IPX DRIVER NOT INSTALLED\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            fn_000d41a0(this, dosbuf_sel);
+            FreeDosMem(dosbuf_sel);
             dosbuf_sel = 0;
-            fn_000d41a0(this, send_sel);
+            FreeDosMem(send_sel);
             send_sel = 0;
-            fn_000d41a0(this, addr_sel);
+            FreeDosMem(addr_sel);
             addr_sel = 0;
-            fn_000d41a0(this, recv_sel);
+            FreeDosMem(recv_sel);
             recv_sel = 0;
             return 1;
         }
@@ -122,13 +122,13 @@ long IPXHandler::Init(void)
             strcpy(IPXDEBUGSTRING, "COULD NOT FIND FREE VECTOR FROM 0x60 to 0x66\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
-            fn_000d41a0(this, dosbuf_sel);
+            FreeDosMem(dosbuf_sel);
             dosbuf_sel = 0;
-            fn_000d41a0(this, send_sel);
+            FreeDosMem(send_sel);
             send_sel = 0;
-            fn_000d41a0(this, addr_sel);
+            FreeDosMem(addr_sel);
             addr_sel = 0;
-            fn_000d41a0(this, recv_sel);
+            FreeDosMem(recv_sel);
             recv_sel = 0;
             IPXDebug("FAILED\n");
             return 1;
@@ -166,13 +166,13 @@ void IPXHandler::DeInit(void)
             int386(0x31, (REGS *)&r, (REGS *)&r);
         }
         dosbuf = 0;
-        fn_000d41a0(this, dosbuf_sel);
+        FreeDosMem(dosbuf_sel);
         dosbuf_sel = 0;
-        fn_000d41a0(this, send_sel);
+        FreeDosMem(send_sel);
         send_sel = 0;
-        fn_000d41a0(this, addr_sel);
+        FreeDosMem(addr_sel);
         addr_sel = 0;
-        fn_000d41a0(this, recv_sel);
+        FreeDosMem(recv_sel);
         recv_sel = 0;
         IPXDebug("DEALLOCATED\n");
         strcpy(IPXDEBUGSTRING, "DEINIT SUCCESSFULL\n");
@@ -222,10 +222,8 @@ long IPXHandler::SetupVector(void)
     return 0;
 }
 
-extern "C" {
-
 // FUNCTION: 0x000d4150
-u8 *fn_000d4150(IPXHandler *self, u32 size, u16 *sel)
+void *IPXHandler::AllocDosMem(u32 size, u16 *sel)
 {
     DPMIREGS r;
 
@@ -236,11 +234,11 @@ u8 *fn_000d4150(IPXHandler *self, u32 size, u16 *sel)
         return 0;
     if (sel)
         *sel = r.x.edx;
-    return (u8 *)((r.x.eax & 0xffff) << 4);
+    return (void *)((r.x.eax & 0xffff) << 4);
 }
 
 // FUNCTION: 0x000d41a0
-void fn_000d41a0(IPXHandler *self, u16 sel)
+void IPXHandler::FreeDosMem(u16 sel)
 {
     DPMIREGS r;
 
@@ -249,12 +247,8 @@ void fn_000d41a0(IPXHandler *self, u16 sel)
     int386(0x31, (REGS *)&r, (REGS *)&r);
 }
 
-}
-
-extern "C" {
-
 // FUNCTION: 0xd41c8
-u32 fn_000d41c8(IPXHandler *self, u16 intno, RMREGS *rm)
+long IPXHandler::CallRealModeInterrupt(u16 intno, RMREGS *rm)
 {
     DPMIREGS r;
     SREGS s;
@@ -263,13 +257,11 @@ u32 fn_000d41c8(IPXHandler *self, u16 intno, RMREGS *rm)
     r.x.eax = 0x300;
     r.x.ebx = intno;
     segread(&s);
-    rm->ss = self->rm_ss;
-    rm->sp = self->rm_sp;
+    rm->ss = rm_ss;
+    rm->sp = rm_sp;
     r.x.edi = (u32)rm;
     int386x(0x31, (REGS *)&r, (REGS *)&r, &s);
     return rm->eax;
-}
-
 }
 
 // FUNCTION: 0xd4348
@@ -281,7 +273,7 @@ long IPXHandler::GetAddress(u8 *addr)
     rm.ebx = 9;
     rm.es = ((u32)addrbuf >> 4) & 0xffff;
     rm.esi = (u32)addrbuf & 0xf;
-    SimulateInt(vector, &rm);
+    CallRealModeInterrupt(vector, &rm);
     memcpy(addr, addrbuf, 10);
     memcpy(net, addr, 4);
     memcpy(node, addr + 4, 6);
@@ -298,7 +290,7 @@ long IPXHandler::OpenSocket(__3ljac5NETSOCKET *sock, u16 mode)
     memset(&rm, 0, sizeof(rm));
     rm.eax = mode;
     rm.edx = Swap16(sock->socket);
-    SimulateInt(vector, &rm);
+    CallRealModeInterrupt(vector, &rm);
     sock->socket = rm.edx;
     memcpy(sock->net, net, 10);
     IPXDebug("OPEN SOCKET 0x%x, RETURN CODE 0x%x\n", rm.edx, rm.eax);
@@ -314,7 +306,7 @@ void IPXHandler::CloseSocket(__3ljac5NETSOCKET *sock)
     memset(&rm, 0, sizeof(rm));
     rm.ebx = 1;
     rm.edx = sock->socket;
-    SimulateInt(vector, &rm);
+    CallRealModeInterrupt(vector, &rm);
     IPXDebug("SOCKET CLOSED\n");
 }
 
@@ -438,7 +430,7 @@ void IPXHandler::BatchProcess(void)
         memset(&rm, 0, sizeof(rm));
         rm.ebx = 0xffff;
         rm.eax = batch_count;
-        SimulateInt(vector, &rm);
+        CallRealModeInterrupt(vector, &rm);
         batch_count = 0;
     }
 }
@@ -452,7 +444,7 @@ IPXPacket *IPXHandler::AllocIPXPackets(long count, u32 *sel)
 
     size = count * sizeof(IPXPacket);
     s = 0;
-    p = (IPXPacket *)fn_000d4150(this, size, &s);
+    p = (IPXPacket *)AllocDosMem(size, &s);
     if (p) {
         memset(p, 0, size);
         *sel = s;

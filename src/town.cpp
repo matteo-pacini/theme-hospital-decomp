@@ -18,8 +18,6 @@ extern "C" {
 extern Event D_001549d0[];
 extern char **D_001602c4;
 extern char **D_001602c8;
-extern u8 D_0012cc20[];
-extern u8 D_0012cfbc[];
 extern u8 D_00156910;
 extern u8 D_00158166;
 extern u8 D_00158192;
@@ -1118,7 +1116,7 @@ extern "C" void fn_00067ed4(void)
         }
     }
     othervar.f79++;
-    if (!D_0012cc20[othervar.f79])
+    if (!hilight_plot[othervar.f79])
         othervar.f79 = 0;
 }
 
@@ -1204,9 +1202,9 @@ void process_bid_time(void)
             town.unknown2 = 1;
         }
     }
-    if (D_0012cfbc[plotbid.timer] == 3)
+    if (bid_hammer[plotbid.timer] == 3)
         play_sound(10, 0xa5, -1, -1);
-    reqspr_draw(resvars.f40[70].x, resvars.f40[70].y, &screen_sprites_tab_start[D_0012cfbc[plotbid.timer]]);
+    reqspr_draw(resvars.f40[70].x, resvars.f40[70].y, &screen_sprites_tab_start[bid_hammer[plotbid.timer]]);
 }
 
 // FUNCTION: 0x000685cc

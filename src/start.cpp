@@ -3,8 +3,6 @@
 extern "C" {
 extern char **D_001602a0;
 extern u8 D_00161200[];
-extern u16 D_0012b8c8[];
-extern u16 D_0012b8e4[];
 extern u16 D_00154834[];
 
 u32 fn_000cd716(char *s);
@@ -230,16 +228,16 @@ void balance_control(void)
     all = 1;
     statvar.f8 = 0;
     for (i = 0; i < 14; i++) {
-        if (D_0012b8c8[i]) {
+        if (visuals[i]) {
             D_00154834[count++] = i + 2;
             kind = expertise[i + 2].kind;
             objects[kind].unknown1c = 1;
         }
-        statvar.f8 += D_0012b8c8[i];
-        D_0012b8c8[i] = statvar.f8;
+        statvar.f8 += visuals[i];
+        visuals[i] = statvar.f8;
     }
     for (i = 0; i < 20; i++) {
-        if (D_0012b8e4[i]) {
+        if (non_visuals[i]) {
             all = 0;
             break;
         }
@@ -247,10 +245,10 @@ void balance_control(void)
     statvar.fa = 0;
     for (i = 0; i < 20; i++) {
         if (all)
-            D_0012b8e4[i] = 1;
+            non_visuals[i] = 1;
         D_00154834[count++] = i + 16;
-        statvar.fa += D_0012b8e4[i];
-        D_0012b8e4[i] = statvar.fa;
+        statvar.fa += non_visuals[i];
+        non_visuals[i] = statvar.fa;
     }
     expertise[1].unknown10[8] = 1;
     statvar.f6a = count;

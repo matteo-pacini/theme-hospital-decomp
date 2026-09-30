@@ -1,10 +1,5 @@
 #include "hosp.h"
 
-extern "C" {
-extern u16 D_0012c9c8;
-extern u16 D_0012c9ca[];
-}
-
 extern s16 opposite_angle[];
 
 u16 find_free_object_anywhere(u16 id, u8 kind);
@@ -116,7 +111,7 @@ void receptionist_works(Thing *w)
                     othervar.f0 = old_newrand() % 100;
                     if (othervar.f0 >= 0 && othervar.f0 < 30) {
                         w->state_b = 10;
-                        action = D_0012c9ca[old_newrand() % D_0012c9c8];
+                        action = recept_tasks[old_newrand() % recept_tasks[0] + 1];
                         set_complex(w, action, 0);
                         fn_0003e724(w);
                     } else {

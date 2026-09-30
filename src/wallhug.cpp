@@ -6,6 +6,9 @@ u32 bresenham(void);
 u32 line_of_sight(wallhug_waypoint from, wallhug_waypoint to);
 u32 wallhug_cleanup(wallhug_path *path, u32 result);
 u32 huggers_met_again(wallhug_info *info);
+u32 line_of_sight_cleanup(wallhug_path *path, u32 first);
+u32 wallhug_continue_trivial(wallhug_path *path, wallhug_waypoint cur, u32 limit);
+u32 wallhug_trivial(wallhug_path *path);
 
 wallhug_waypoint wallhug_dirn_steps[] = { { 0, 0xff }, { 1, 0 }, { 0, 1 }, { 0xff, 0 } };
 extern s32 dx;
@@ -14,18 +17,14 @@ extern s32 bresval;
 extern u32 y_dirn;
 extern u32 x_dirn;
 extern u32 x_longer;
+extern u32 wallhug_current_count;
+extern u8 wallhug_last_hugstart;
+extern u8 wallhug_last_handed;
+extern u8 wallhug_last_dirn;
+extern u32 wallhug_last_hug_count;
+extern u32 wallhug_looking_for_last;
 
 extern "C" {
-extern u32 D_001603c0;
-extern u8 D_001603c4;
-extern u8 D_001603c5;
-extern u8 D_001603c6;
-extern u32 D_001603c8;
-extern s32 D_001603cc;
-
-u32 fn_00048b64(wallhug_path *path, u32 first);
-u32 fn_00048ea4(wallhug_path *path, wallhug_waypoint cur, u32 limit);
-u32 fn_000491d8(wallhug_path *path);
 u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger);
 void fn_00049400(wallhug_hugger *hugger);
 }
@@ -93,7 +92,7 @@ u32 line_of_sight(wallhug_waypoint from, wallhug_waypoint to)
 }
 
 // FUNCTION: 0x00048b64
-u32 fn_00048b64(wallhug_path *path, u32 first)
+u32 line_of_sight_cleanup(wallhug_path *path, u32 first)
 {
     u32 progress;
     u32 changed;
@@ -145,7 +144,7 @@ u32 wallhug_cleanup(wallhug_path *path, u32 result)
     tries = 10;
     from = 0;
 restart:
-    fn_00048b64(path, from);
+    line_of_sight_cleanup(path, from);
     if (--tries == 0)
         return result;
     {
@@ -157,7 +156,7 @@ restart:
             else
                 sub.start = path->route[i - 1];
             sub.end = path->route[i + 1];
-            if (fn_000491d8(&sub) == 0x70000000)
+            if (wallhug_trivial(&sub) == 0x70000000)
                 continue;
             for (k = 0; k + 1 < sub.count; k++) {
                 if (sub.route[k].x == path->route[i].x && sub.route[k].y == path->route[i].y)
@@ -279,7 +278,7 @@ u32 wallhug_tricky(wallhug_path *path)
 {
     u32 result;
 
-    result = fn_000491d8(path);
+    result = wallhug_trivial(path);
     return wallhug_cleanup(path, result);
 }
 
@@ -318,7 +317,7 @@ inline u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger)
 }
 
 // FUNCTION: 0x00048ea4
-u32 fn_00048ea4(wallhug_path *path, wallhug_waypoint cur, u32 limit)
+u32 wallhug_continue_trivial(wallhug_path *path, wallhug_waypoint cur, u32 limit)
 {
     wallhug_waypoint from;
     u32 dir;
@@ -326,13 +325,13 @@ u32 fn_00048ea4(wallhug_path *path, wallhug_waypoint cur, u32 limit)
 
     from = cur;
     bresenham_start(from, path->end);
-    for (; D_001603c0 < limit && (cur.x != path->end.x || cur.y != path->end.y); D_001603c0++) {
+    for (; wallhug_current_count < limit && (cur.x != path->end.x || cur.y != path->end.y); wallhug_current_count++) {
         dir = bresenham();
         if (wall_in_way(cur.x, cur.y, dir)) {
-            if (D_001603cc) {
-                D_001603c4 = path->count;
-                D_001603c8 = D_001603c0;
-                D_001603c6 = dir;
+            if (wallhug_looking_for_last) {
+                wallhug_last_hugstart = path->count;
+                wallhug_last_hug_count = wallhug_current_count;
+                wallhug_last_dirn = dir;
             }
             path->route[path->count] = cur;
             path->count++;
@@ -350,7 +349,7 @@ u32 fn_00048ea4(wallhug_path *path, wallhug_waypoint cur, u32 limit)
             info.hugger[1].end = path->end;
             info.hugger[0].count = 0;
             info.hugger[1].count = 0;
-            while (D_001603c0 < limit) {
+            while (wallhug_current_count < limit) {
                 fn_00049400(&info.hugger[0]);
                 if (huggers_met_again(&info))
                     goto fail;
@@ -360,24 +359,24 @@ u32 fn_00048ea4(wallhug_path *path, wallhug_waypoint cur, u32 limit)
                 if (info.hugger[0].dir == 0x32) {
                     if (!fn_00049230(path, &info.hugger[0]))
                         goto fail;
-                    if (D_001603cc)
-                        D_001603c5 = 0xff;
+                    if (wallhug_looking_for_last)
+                        wallhug_last_handed = 0xff;
                     break;
                 }
                 if (info.hugger[1].dir == 0x32) {
                     if (!fn_00049230(path, &info.hugger[1]))
                         goto fail;
-                    if (D_001603cc)
-                        D_001603c5 = 1;
+                    if (wallhug_looking_for_last)
+                        wallhug_last_handed = 1;
                     break;
                 }
                 if (info.hugger[0].dir == 0x33 && info.hugger[1].dir == 0x33)
                     goto fail;
-                D_001603c0++;
+                wallhug_current_count++;
             }
-            if (D_001603c0 == limit)
+            if (wallhug_current_count == limit)
                 goto fail;
-            fn_00048b64(path, 0);
+            line_of_sight_cleanup(path, 0);
             cur = path->route[path->count - 1];
             from = cur;
             bresenham_start(from, path->end);
@@ -392,7 +391,7 @@ u32 fn_00048ea4(wallhug_path *path, wallhug_waypoint cur, u32 limit)
     if (cur.x == path->end.x && cur.y == path->end.y) {
         path->route[path->count] = cur;
         path->count++;
-        return D_001603c0;
+        return wallhug_current_count;
     }
     return 0x70000000;
 fail:
@@ -402,11 +401,11 @@ fail:
 }
 
 // FUNCTION: 0x000491d8
-u32 fn_000491d8(wallhug_path *path)
+u32 wallhug_trivial(wallhug_path *path)
 {
     path->count = 0;
-    D_001603c0 = 0;
-    if (D_001603cc)
-        D_001603c4 = 0xff;
-    return fn_00048ea4(path, path->start, 60000);
+    wallhug_current_count = 0;
+    if (wallhug_looking_for_last)
+        wallhug_last_hugstart = 0xff;
+    return wallhug_continue_trivial(path, path->start, 60000);
 }

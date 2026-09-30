@@ -12,7 +12,6 @@ struct Slot {
 extern "C" {
 extern Event D_001549d0[];
 extern Slot D_001581b2[];
-extern u16 D_0012cdea[];
 }
 
 extern u8 clicked_icon;
@@ -107,7 +106,7 @@ void process_mouse(void)
             if (othervar.f30 != 1)
                 set_mouse_sprite(1);
         }
-    } else if (D_0012cdea[advisor.f11e] && lbDisplay.right_button
+    } else if (advisor_up_states[advisor.f11e] && lbDisplay.right_button
                && ((lbDisplay.mmouse_y >= resvars.f1c[0x93].y && advisor.f125_u16 <= lbDisplay.mmouse_x && lbDisplay.mmouse_x <= resvars.f1c[0x92].x
                     && lbDisplay.mmouse_y <= resvars.f1c[0x92].y)
                    || (lbDisplay.mmouse_x >= resvars.f1c[0x90].x && lbDisplay.mmouse_y >= resvars.f1c[0x90].y

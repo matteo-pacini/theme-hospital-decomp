@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_0012d808[];
 extern u8 D_00156910;
 extern u8 D_00161134;
 extern char **D_0016037c;
@@ -138,7 +137,7 @@ void draw_help_text(void)
     s32 bottom;
     s32 border;
 
-    if (!(othervar.f96[0] && (D_0012d808[gamevar.f12e] || (advisor.f11f & 1))))
+    if (!(othervar.f96[0] && (mouse_mode_help_allowed[gamevar.f12e] || (advisor.f11f & 1))))
         return;
     set_all_refresh_zones_in_window(othervar.f896, othervar.f898, othervar.f896 + othervar.f89a + 0xc,
         othervar.f898 + othervar.f89c + 0xc, 3);

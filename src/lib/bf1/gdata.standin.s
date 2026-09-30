@@ -45,7 +45,7 @@
     mov eax, dword ptr [ebp + 0x76]
     push eax
     .byte 0x68; .long _D_00121e6d  # push 0x1e6d
-    call "fn_000d080c_"
+    call "W?LbDebugString$n(pnae)v"
     add esp, 8
     mov eax, dword ptr [ebp + 0x76]
     push eax
@@ -57,7 +57,7 @@
     add esp, 0xc
     .byte 0xba; .long _D_00121ea7  # mov edx, 0x1ea7
     lea eax, [ebp - 0x26]
-    call "fn_000d0848_"
+    call "W?LbAssertMessage$n(pnxapnxaul)i"
     test eax, eax
     je .L000bceda
     int3
@@ -80,7 +80,7 @@
     mov eax, dword ptr [ebp + 0x76]
     push eax
     .byte 0x68; .long _D_00121e0a  # push 0x1e0a
-    call "fn_000d080c_"
+    call "W?LbDebugString$n(pnae)v"
     add esp, 8
     mov eax, dword ptr [ebp + 0x76]
     push eax
@@ -92,7 +92,7 @@
     add esp, 0xc
     .byte 0xba; .long _D_00121e63  # mov edx, 0x1e63
     lea eax, [ebp - 0xbe]
-    call "fn_000d0848_"
+    call "W?LbAssertMessage$n(pnxapnxaul)i"
     test eax, eax
     je .L000bceda
     int3
