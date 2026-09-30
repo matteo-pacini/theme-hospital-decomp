@@ -220,7 +220,6 @@ int LbMouseIsInstalled(void)
 }
 
 // FUNCTION: 0x000bd4d0
-// NONMATCHING: register choice for the zero stores (the target rematerialises zero per store)
 int LbMouseSetup(TbSprite *sprite)
 {
     SREGS sregs;
@@ -242,9 +241,9 @@ int LbMouseSetup(TbSprite *sprite)
     }
     D_00176bc0 = 1;
     D_00177be4 = 1;
+    D_00177be8 = 1;
     D_00177bec = 0;
     D_00177bf0 = 0;
-    D_00177be8 = 1;
     memset(D_00177bf4, 0xfe, 0x1000);
     lbDisplay.mouse_sprite = 0;
     D_00178bf4 = 0;
