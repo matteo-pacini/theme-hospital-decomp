@@ -9,8 +9,8 @@ No game files are included. You need your own copy.
 
 ## Status
 
-As of 2026-09-29, `ninja report` counts all 2938 functions matched (100% of
-code bytes): 1385 in the game, 800 in Bullfrog's libraries and 753 in the
+As of 2026-09-30, `ninja report` counts all 2938 functions matched (100% of
+code bytes): 1381 in the game, 813 in Bullfrog's libraries and 744 in the
 runtime (Watcom C library, Miles, Smacker). Of these:
 
 - 62 are assembly stand-ins (`*.standin.s`, listed in
@@ -21,12 +21,13 @@ runtime (Watcom C library, Miles, Smacker). Of these:
 - 79, in 15 runtime modules, are built from Watcom's own 10.5/10.6 runtime
   libraries (`lib` entries in `config/cflags.txt`), which the EXE links.
 
-The rest are compiled from the C++/C in `src/`. `ninja link` relinks all
-of them, with the EXE's data, into `build/link/hosp.exe` (Open Watcom's
-wlink; see `tools/link.py`). That executable runs: the menu, a game and the
-sound work in DOSBox-X alongside the game's data. It is not byte-identical
-to the original: segment layout and sizes differ, and the data the compiler
-emits itself is still carried over from the original.
+The rest are compiled from the C++/C in `src/`, which also defines the
+EXE's data. `tools/lewrite.py --strict` writes `build/hospital.exe` from
+the built units alone, placed as `tools/relink.py` checks them, with the
+DOS/4GW stub from the Watcom 10.5 toolchain: it is byte-identical to the
+original `HOSPITAL.EXE`. `ninja link` also links the units with Open
+Watcom's wlink into `build/link/hosp.exe` (see `tools/link.py`), which runs
+in DOSBox-X but does not reproduce the original's layout.
 
 ## Setup
 
