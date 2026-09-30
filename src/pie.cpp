@@ -8,7 +8,6 @@ extern u8 done[];
 #pragma aux done "W?done$:.0$:?pie_render$n(llllllpn$Sector$$)vn[]uc"
 
 extern "C" {
-extern s32 lbSinTable[];
 
 void LbDrawTriangleFilled(s32 x1, s32 y1, s32 x2, s32 y2, s32 x3, s32 y3, u8 colour);
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);

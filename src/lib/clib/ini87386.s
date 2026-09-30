@@ -24,7 +24,7 @@
 .L000ef0c2:
     wait
     fninit
-    fldcw word ptr [_D_00152a7c]
+    fldcw word ptr ["__8087cw"]
     fldz
     fldz
     fldz
@@ -289,11 +289,11 @@
     je .L000ef32d
     .byte 0xba; .long "fn_000ef2e2_"+0x21  # mov edx, 0xdf303
     .byte 0xbb; .long "fn_000ef2e2_"+0x26  # mov ebx, 0xdf308
-    mov dword ptr [_D_00152a80], edx
-    mov dword ptr [_D_00152a84], ebx
+    mov dword ptr ["___Save8087"], edx
+    mov dword ptr ["___Rest8087"], ebx
 .L000ef32d:
     xor eax, eax
-    mov ax, word ptr [_D_00152a7c]
+    mov ax, word ptr ["__8087cw"]
     call "fn_000fa8f0_"
     pop edx
     pop ebx
@@ -301,6 +301,7 @@
     .byte 0x80; .byte 0x3d; .long _D_00150815; .byte 0x00
     .byte 0x75; .byte 0xc6
     .byte 0xc3
+.L000ef347:
     .byte 0x52
     .byte 0x8a; .byte 0x25; .long _D_00150814
     .byte 0x84; .byte 0xe4
@@ -327,3 +328,8 @@
     .byte 0x5a
     .byte 0xc3
 .size "fn_000ef30c_",.-"fn_000ef30c_"
+
+// _8087386's XI entry: __chk8087 (0xef347) at priority 2.
+.section XI,"aw",@progbits
+    .byte 0x00, 0x02
+    .long .L000ef347

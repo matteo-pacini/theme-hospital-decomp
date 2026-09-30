@@ -1,7 +1,7 @@
 #include "clib.h"
 
-extern const char D_00128890[4];
-extern const char D_00128894[4];
+char *strcpy(char *dst, const char *src);
+#pragma intrinsic(strcpy)
 
 int __Nan_Inf(double value, char *buf);
 #pragma aux __Nan_Inf parm routine [];
@@ -21,9 +21,9 @@ int __Nan_Inf(double value, char *buf)
         if ((int)(unsigned short)(u.w[3] & 0x8000) != 0)
             *p++ = '-';
         if ((u.w[0] | u.w[1] | u.w[2] | (u.w[3] & 0x000f)) == 0) {
-            *(long *)p = *(const long *)D_00128890;
+            strcpy(p, "inf");
         } else {
-            *(long *)p = *(const long *)D_00128894;
+            strcpy(p, "nan");
         }
         return 1;
     }

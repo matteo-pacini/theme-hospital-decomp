@@ -842,6 +842,27 @@ struct WindowButton {
     s32 max;
 };
 
+// WindowButton's layout without the unions: Watcom 10.6 cannot initialise a
+// union holding an anonymous struct, so the button tables (wininfo.cpp,
+// mwininfo.cpp) are defined with this type.
+struct WindowButtonData {
+    s16 x;
+    s16 y;
+    u16 width;
+    u16 height;
+    u32 flags;
+    WindowButton *next;
+    void (*callback)(Window *w);
+    s32 sprite;
+    s32 sprite18;
+    s32 sprite1c;
+    s16 x20;
+    s16 y22;
+    s16 x24;
+    s16 y26;
+    s32 max;
+};
+
 struct Window {
     s16 x;
     s16 y;
@@ -1176,8 +1197,7 @@ struct menu {
         };
     };
     u8 unknown7;
-    Pulldown pulldowns[11];
-    u8 unknown1a2e[0x1ca];
+    Pulldown pulldowns[13];
 };
 
 struct HospPlayerDetails {
@@ -1690,7 +1710,7 @@ struct TrophyBalance {
             u8 unknown0;
             u8 unknown1[0xd];
             u8 unknowne;
-            u8 unknownf[0x51];
+            u8 unknownf[0x54];
         };
         struct {
             u8 unknown0_;
@@ -1747,7 +1767,7 @@ struct TrophyBalance {
             s16 f4f;
             s16 f51;
             s16 f53;
-            s8 f55[11];
+            s8 f55[14];
         };
     };
 };
@@ -2760,6 +2780,146 @@ struct Town {
     };
 };
 
+struct FaceDirns {
+    s8 dirs[8];
+};
+
+struct ObjectWalls {
+    u8 count;
+    u16 pos[4];
+    u8 side[4];
+};
+
+struct WallHug {
+    u8 kind;
+    u8 angle[4];
+};
+
+struct PossibleDiag {
+    u8 count;
+    u8 ids[9];
+};
+
+struct RoomNavControl {
+    u8 door_count;
+    u8 door_objects[10];
+    u8 count;
+    u8 objects[10];
+};
+
+struct FeelGoodies {
+    u16 kind;
+    u8 range;
+    u8 valid;
+    u16 unknown4;
+};
+
+struct FillInWindow {
+    u8 wall;
+    u8 window;
+};
+
+struct SlidingDoorControl {
+    u16 open_anim;
+    u16 close_anim;
+    s16 offset[4];
+};
+
+struct Graphs {
+    u8 unknown0;
+    u8 visible;
+    u8 colour;
+    u8 unknown3;
+};
+
+struct ShowAnim {
+    u16 anim;
+    u8 subtypes[4];
+    u8 any_subtype;
+    u8 illness;
+    u16 condition;
+    u8 ability;
+};
+
+struct PopupIconControl {
+    u32 unknown0;
+};
+
+struct DoorAnim {
+    s16 v;
+    s16 other;
+    u8 count;
+    u8 unknown5;
+};
+
+struct PeepType {
+    u8 kind;
+    u8 count;
+    u8 head[5];
+    u8 palette[5];
+    u8 weight;
+};
+
+struct Coord {
+    s32 x;
+    s32 y;
+};
+
+struct PeepPalette {
+    u8 count1;
+    u8 layer1[5];
+    u8 count2;
+    u8 layer2[5];
+    u8 count3;
+    u8 layer3[11];
+};
+
+struct FloorDef {
+    u16 anim;
+    u16 animated;
+};
+
+struct Complex {
+    u8 object;
+    u8 action;
+    u16 anim;
+    u8 kind;
+    u8 unknown5;
+    s8 repeat;
+    u8 chain;
+};
+
+struct ComplexAnims {
+    s8 count;
+    s16 anims[5];
+};
+
+struct PanelIcon {
+    s16 x;
+    s16 y;
+    s16 x2;
+    s16 y2;
+    u8 sprite;
+    u8 unknown9[2];
+    u16 unknownB;
+    u8 pressed;
+};
+
+struct ambient {
+    u8 sound;
+    u8 priority;
+};
+
+struct PitchGroup {
+    u8 count;
+    u8 values[5];
+};
+
+struct SampleGroup {
+    u8 count;
+    u8 samples[5];
+};
+
 extern Town towns[];
 extern MayorPoints mayor_result[];
 extern s16 opposite_angle[];
@@ -2781,6 +2941,7 @@ extern const u8 screen_pointer_second_frame[];
 extern const u8 ingame_pointer_hotspots[];
 extern const u8 screen_pointer_hotspots[];
 extern u8 abilities[][6];
+extern u8 staff_abilities[][2];
 extern Expertise expertise[];
 extern Population popn[];
 extern ResearchWorkStations research_workstations;

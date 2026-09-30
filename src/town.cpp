@@ -68,6 +68,8 @@ void setup_overhead_map(void);
 void display_hospital_map_overhead(void);
 u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
 
+u8 testcol = 0x94;
+
 // FUNCTION: 0x00063680
 void fn_00063680(void)
 {

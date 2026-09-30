@@ -188,19 +188,19 @@
     .byte 0x80; .byte 0xf9; .byte 0x00
     .byte 0x74; .byte .L000fdaa0-.-1
     .byte 0xff; .byte 0x35; .long "__STACKLOW"
-    .byte 0x66; .byte 0x8c; .byte 0x15; .long "___RMAddr"+0x21c
-    .byte 0x89; .byte 0x25; .long "___RMAddr"+0x21e
+    .byte 0x66; .byte 0x8c; .byte 0x15; .long _D_00153ae0+0x216
+    .byte 0x89; .byte 0x25; .long _D_00153ae0+0x218
     .byte 0x1e
     .byte 0x17
-    .byte 0x8d; .byte 0x25; .long "___RMAddr"+0x21c
-    .byte 0x8d; .byte 0x05; .long "___RMAddr"+0x1c
+    .byte 0x8d; .byte 0x25; .long _D_00153ae0+0x216
+    .byte 0x8d; .byte 0x05; .long _D_00153ae0+0x16
     .byte 0xa3; .long "__STACKLOW"
     .byte 0x0f; .byte 0xb6; .byte 0xc1
     .byte 0xff; .byte 0x15; .long _D_001507c9
-    .byte 0x66; .byte 0x8e; .byte 0x15; .long "___RMAddr"+0x21c
-    .byte 0x8b; .byte 0x25; .long "___RMAddr"+0x21e
+    .byte 0x66; .byte 0x8e; .byte 0x15; .long _D_00153ae0+0x216
+    .byte 0x8b; .byte 0x25; .long _D_00153ae0+0x218
     .byte 0x8f; .byte 0x05; .long "__STACKLOW"
-    .byte 0x66; .byte 0xc7; .byte 0x05; .long "___RMAddr"+0x21c; .byte 0x00; .byte 0x00
+    .byte 0x66; .byte 0xc7; .byte 0x05; .long _D_00153ae0+0x216; .byte 0x00; .byte 0x00
 .L000fdaa0:
     .byte 0x9b
     .byte 0xdb; .byte 0xe2
@@ -318,7 +318,7 @@
     and dl, 0xc0
     cmp dl, 0xc0
     jne .L000fdb93
-    lea esi, ["___RMAddr"+0x6]
+    lea esi, [_D_00153ae0]
     call "fn_000fdbbf_"
     jmp .L000fdb98
 .L000fdb93:
@@ -339,10 +339,10 @@
     fstp st(0)
     test bh, 4
     je .L000fdbae
-    fld qword ptr ["___RMAddr"+0x10]
+    fld qword ptr [_D_00153ae0+0xa]
     jmp .L000fdbb4
 .L000fdbae:
-    fld dword ptr ["___RMAddr"+0x18]
+    fld dword ptr [_D_00153ae0+0x12]
 .L000fdbb4:
     test word ptr [ebp + 0x14], 0x100
     je .L000fdbbe
@@ -399,3 +399,32 @@
 .L000fdbf1:
     ret
 .size "fn_000fdbe4_",.-"fn_000fdbe4_"
+
+// The 80x87 exception interrupt and the interrupt controllers' layout.
+.section _DATA,"aw",@progbits
+.globl "___FPE_int"
+"___FPE_int":
+    .byte 0x02
+.globl "___IRQ_num"
+"___IRQ_num":
+    .byte 0x0d
+.globl "___IRQ_int"
+"___IRQ_int":
+    .byte 0x75
+.globl "___MST_pic"
+"___MST_pic":
+    .byte 0x20
+.globl "___SLV_pic"
+"___SLV_pic":
+    .byte 0xa0
+
+// fpeinth's data, a segment of its own: the constants its exception
+// handler loads (extended-precision infinity, DBL_MAX, FLT_MAX), and the
+// handler's stack (0x200 bytes, then the saved ss:esp).
+.section _DATA,"aw",@progbits,unique,1
+.globl _D_00153ae0
+_D_00153ae0:
+    .byte 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80
+    .byte 0xff, 0x7f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
+    .byte 0xef, 0x7f, 0xff, 0xff, 0x7f, 0x7f, 0x00, 0x00
+    .zero 0x206

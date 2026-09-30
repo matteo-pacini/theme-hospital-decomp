@@ -17,6 +17,8 @@ src/lib/clib/allocexc.cpp CONST 00128804 2b
 src/lib/clib/stabthrw.cpp CONST 00128488 207
 src/lib/ail/ail.c _BSS 0018cae0 34
 src/overscr.cpp _DATA 00137a30 88
+src/town.cpp _DATA 00138008 1
+src/vaccine.cpp _DATA 001386a0 14
 # String literals: each module's CONST segment, in link order.
 src/main.cpp CONST 00120004 22
 src/pchost.cpp CONST 00120028 14a
@@ -112,12 +114,55 @@ src/lib/ail/ailsr.c CONST 00128018 124
 src/lib/bf2/load_sou.cpp CONST 0012813c 1c8
 src/lib/bf2/load_mus.cpp CONST 00128304 180
 src/lib/bf2/dosser.cpp CONST 00128690 162
+src/lib/clib/hook387.s CONST 001287f4 10
 src/lib/clib/termnate.cpp CONST 00128830 22
 src/lib/clib/unexpect.cpp CONST 00128854 23
 src/lib/clib/abort.c CONST 00128878 17
+src/lib/clib/nan_inf.c CONST 00128890 8
+src/lib/clib/floor.c CONST 00128898 8
+src/lib/clib/math2err.c CONST 001288a0 6c
+src/lib/clib/chipbug.c CONST 0012890c 8
+src/lib/clib/_matherr.c CONST 00128914 8a
+# Runtime modules: read-only (CONST2) and initialised (_DATA) data.
+src/lib/clib/asctime.c CONST2 00128e4c 39
+src/lib/clib/scale10v.s CONST2 00128e90 20
+src/lib/clib/_matherr.c CONST2 00128f08 1c
+src/lib/clib/stk386.s _DATA 00151a60 14
+src/lib/clib/strtol.c _DATA 00151a80 8c
+src/lib/clib/hook387.s _DATA 00152a80 8
+src/lib/clib/bittest.cpp _DATA 00152a88 8
+src/lib/clib/signl.c _DATA 00152a94 34
+src/lib/clib/ftos.c _DATA 00152ac8 4
+src/lib/clib/math2err.c _DATA 00153cfc 5c
+src/lib/clib/_matherr.c _DATA 00153d58 4
+src/lib/clib/chipd32.s DATA32 00153dd8 11c
 # Data-only modules (no functions): their segments place them.
 src/data.cpp _DATA 001291c4 4
+src/tables.cpp _DATA 001291c8 4720
+src/array.cpp _DATA 0012d900 297e
+src/cpxtable.cpp _DATA 001303cc d09
+src/windata.cpp _DATA 001310e0 4
+src/wininfo.cpp _DATA 001310e4 52a4
+src/anitable.cpp _DATA 00136410 1620
 src/comtable.cpp _DATA 001384a0 1fe
+src/coords.cpp _DATA 0013bb0c 2250
+src/blocks.cpp _DATA 0013f71c 664
+src/mwininfo.cpp _DATA 0013fd80 55a8
+src/scoords.cpp _DATA 00145358 423f
+src/sfxtable.cpp _DATA 001496e0 f3e
+src/lcoords.cpp _DATA 0014b1c4 2390
+src/lib/bf1/gtrig.cpp _DATA 0014ddb8 2800
+src/lib/clib/istable.c CONST2 00128ad8 101
+src/lib/clib/hugeval.c CONST2 00128eb0 8
+src/lib/clib/fpow10.c CONST2 00128eb8 50
+src/lib/clib/environ.c _DATA 001516f4 8
+src/lib/clib/amblksiz.c _DATA 001522e4 4
+src/lib/clib/8087cw.c _DATA 00152a7c 2
+src/lib/clib/areaexc.c _DATA 00152acc 1000
+src/lib/clib/stinit.c XI 00153d88 6
+src/lib/clib/fltused.s XI 00153d8e 6
+src/lib/clib/moddtorr.c YI 00153dc4 6
+src/lib/clib/stinit.c YI 00153dca 6
 # The 16-bit code object's modules: the interrupt handlers dosipx and dosser
 # copy into DOS memory.
 src/lib/bf2/ipxasm.s CODE16 00110000 68

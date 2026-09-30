@@ -28,7 +28,31 @@ struct exception {
 #define V_HUGEVAL     0x8000
 
 /* Function names, indexed by the low five bits of err_info (from 1). */
-extern char *D_00153cfc[];
+static char *MathFuncNames[] = {
+    "acos",
+    "asin",
+    "sqrt",
+    "exp",
+    "cosh",
+    "sinh",
+    "pow",
+    "acosh",
+    "log2",
+    "log",
+    "log10",
+    "atanh",
+    "atan2",
+    "ipow",
+    "dpowi",
+    "cos",
+    "sin",
+    "tan",
+    "y0",
+    "y1",
+    "yn",
+    "mod",
+    "cotan"
+};
 extern const double _HugeValue;
 
 double _matherr(struct exception *excp);
@@ -62,7 +86,7 @@ double __math2err(unsigned err_info, double *arg1, double *arg2)
         why = TLOSS;
     }
     exc.type = why;
-    exc.name = D_00153cfc[(err_info & 0x1f) - 1];
+    exc.name = MathFuncNames[(err_info & 0x1f) - 1];
     if (err_info & V_NEG_HUGEVAL) {
         exc.retval = -_HugeValue;
     } else if (err_info & V_ZERO) {

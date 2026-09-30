@@ -4,14 +4,17 @@ typedef void abort_handler(void);
 void abort(void);
 #pragma aux abort aborts;
 
-extern abort_handler *D_00153acc;
+void __terminate(void);
+
+/* What abort calls; signal(SIGABRT, ...) replaces it. */
+abort_handler *__abort = __terminate;
 
 void __fatal_runtime_error(const char *msg, unsigned retcode);
 
 // FUNCTION: 0xfc7a4
 void abort(void)
 {
-    D_00153acc();
+    __abort();
 }
 
 // FUNCTION: 0xfc7aa

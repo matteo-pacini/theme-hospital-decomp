@@ -9,25 +9,6 @@ void fn_00041b08(Thing *w);
 void fn_000444e0(Thing *w);
 }
 
-struct Complex {
-    u8 object;
-    u8 action;
-    u16 anim;
-    u8 kind;
-    u8 unknown5;
-    s8 repeat;
-    u8 chain;
-};
-
-struct ComplexAnims {
-    s8 count;
-    s16 anims[5];
-};
-
-struct FaceDirns {
-    s8 dirs[8];
-};
-
 extern "C" {
 extern Complex D_001303cc[];
 extern u8 *D_00153f9c;

@@ -2565,11 +2565,6 @@ void process_nettext_keys(u8 shift, u8 key)
     BufferedInkey = 0;
 }
 
-struct Coord {
-    s32 x;
-    s32 y;
-};
-
 extern u32 TimeStamp;
 extern u32 TimeLapse;
 

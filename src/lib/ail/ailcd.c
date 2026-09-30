@@ -63,8 +63,8 @@ typedef struct _REDBOOK {
     RB_CONTENTS contents;
 } REDBOOK;
 
-extern S32 numopen;
-extern U32 stupidhash[4];
+S32 numopen = 0;
+U32 stupidhash[4] = { 0xb16eade1, 0x471f295a, 0x38bca4d5, 0xe41926fc };
 #define rotate(val) ((((U32)(val)) << 8L) | (((U32)(val)) >> 24L))
 extern U8 *ptrtoreal;
 extern U32 segtoreal;

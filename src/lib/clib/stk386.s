@@ -6,7 +6,7 @@
 .globl "fn_000ed282_"
 .type "fn_000ed282_",@function
 "fn_000ed282_":
-    .byte 0x66; .byte 0x8c; .byte 0x15; .long "___umaskval"+0x4  # mov word ptr [0x31a60], ss
+    .byte 0x66; .byte 0x8c; .byte 0x15; .long .Lstk_ss  # mov word ptr [0x31a60], ss
     ret
 .size "fn_000ed282_",.-"fn_000ed282_"
 
@@ -46,7 +46,7 @@
     ret
 .L000ed2ae:
     mov ax, ss
-    cmp ax, word ptr ["___umaskval"+0x4]
+    cmp ax, word ptr [.Lstk_ss]
     .byte 0x74; .byte 0x01  # je 0xed2bb
     ret
 .size "__STK",.-"__STK"
@@ -57,7 +57,17 @@
 .globl "__STKOVERFLOW_"
 .type "__STKOVERFLOW_",@function
 "__STKOVERFLOW_":
-    .byte 0xb8; .long "___umaskval"+0x6  # mov eax, 0x31a62
+    .byte 0xb8; .long .Lstk_msg  # mov eax, 0x31a62
     mov edx, 1
     call "__fatal_runtime_error_"
 .size "__STKOVERFLOW_",.-"__STKOVERFLOW_"
+
+.section _DATA,"aw",@progbits
+.Lstk_ss:
+    .word 0
+.Lstk_msg:
+    .asciz "Stack Overflow!\r\n"
+
+.section XI,"aw",@progbits
+    .byte 0x00, 0x20
+    .long "fn_000ed282_"

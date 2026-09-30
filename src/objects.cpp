@@ -11,18 +11,6 @@ struct NextPart {
     NextPartDir dirs[4];
 };
 
-struct SlidingDoorControl {
-    u16 open_anim;
-    u16 close_anim;
-    s16 offset[4];
-};
-
-struct ObjectWalls {
-    u8 count;
-    u16 pos[4];
-    u8 side[4];
-};
-
 struct PagerSlot {
     u16 thing;
     u8 unknown2[4];

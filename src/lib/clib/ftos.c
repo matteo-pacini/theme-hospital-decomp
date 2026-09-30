@@ -1,11 +1,11 @@
 #include "clib.h"
 
-extern int D_00152ac8;
+static int MaxPrec = 17;
 
 // FUNCTION: 0xfc117
 void _SetMaxPrec(int max_prec)
 {
-    D_00152ac8 = max_prec;
+    MaxPrec = max_prec;
 }
 
 // FUNCTION: 0xfc11d

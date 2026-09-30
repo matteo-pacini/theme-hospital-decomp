@@ -1,3 +1,5 @@
+#include "rtinit.h"
+
 extern "C" {
 
 struct RO_DTREG {
@@ -62,6 +64,8 @@ void init(void)
 {
     __wcpp_2_data_dtreg_vfptrs_[0] = &fun_vftable;
 }
+
+AXI(init, 10)
 
 // FUNCTION: 0xcf405
 void __wcpp_2_fun_register_(RW_DTREG *rw, void *ro)

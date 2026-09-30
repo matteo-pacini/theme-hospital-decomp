@@ -189,7 +189,7 @@ void advisor_character(void)
     case 3:
         if (saferand() % 50 == 0) {
             advisor.f11e = D_0012cdd0[saferand() % 2];
-            advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
+            advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
         }
     case 7:
         speed = 2;
@@ -204,7 +204,7 @@ void advisor_character(void)
             f = &frame[advisor.f6];
             if (loop && (f->flags & 1)) {
                 advisor.f11e = D_0012cdd4[advisor.f11e];
-                advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
+                advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
             }
         }
     }
@@ -215,6 +215,6 @@ void get_advisor(void)
 {
     if (advisor.f11e == 0) {
         advisor.f11e = 1;
-        advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
+        advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
     }
 }

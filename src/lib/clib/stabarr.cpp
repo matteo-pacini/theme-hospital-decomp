@@ -1,3 +1,5 @@
+#include "rtinit.h"
+
 extern "C" {
 
 struct RT_TYPE_SIG;
@@ -36,7 +38,6 @@ struct STAB_TRAVERSE {
 struct DTREG_VFPTRS;
 
 extern DTREG_VFPTRS *__wcpp_2_data_dtreg_vfptrs_[];
-extern DTREG_VFPTRS D_00152304;
 
 void *__wcpp_2_base_register_(RW_DTREG_ARRAY *rw, RO_DTREG_ARRAY *ro, unsigned state_var);
 
@@ -72,11 +73,22 @@ void arr_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG_ARRAY *rw)
     ctl->obj_type = 0;
 }
 
+struct DTREG_VFPTRS {
+    RO_STATE *(*state_table)(RO_DTREG_ARRAY *ro);
+    void *(*get_object)(RW_DTREG_ARRAY *rw, unsigned state_var);
+    void (*init_traverse)(STAB_TRAVERSE *ctl, RW_DTREG_ARRAY *rw);
+};
+
+static DTREG_VFPTRS arr_vftable = { arr_state_table, arr_get_object, arr_init_traverse };
+#pragma aux arr_vftable "W?arr_vftable$n$__6rq0qbDTREG_VFTBL$$"
+
 // FUNCTION: 0xf51b2
 void fn_000f51b2(void)
 {
-    __wcpp_2_data_dtreg_vfptrs_[2] = &D_00152304;
+    __wcpp_2_data_dtreg_vfptrs_[2] = &arr_vftable;
 }
+
+AXI(fn_000f51b2, 10)
 
 // FUNCTION: 0xf51bd
 void __wcpp_2_arr_register_(void *array, RW_DTREG_ARRAY *rw, RT_ARRAY_SIG *sig)

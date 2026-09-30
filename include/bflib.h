@@ -141,6 +141,7 @@ extern TbSprite *lbFontPtr;
 extern s8 lbInkeyToAscii[];
 extern s8 lbInkeyToAsciiShift[];
 extern TbScreenModeInfo lbScreenModeInfo[];
+extern s32 lbSinTable[];
 extern __iobuf __iob[];
 
 int LbMemorySetup(void);

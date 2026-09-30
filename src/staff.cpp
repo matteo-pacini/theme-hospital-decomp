@@ -484,7 +484,7 @@ void staff_in_staff_room(Thing *w)
                 }
                 r = old_newrand() % 10;
                 if ((find_object(w->x.tile + (w->y.tile << 7), 10, 1, 0x96, w->owner) && w->icon != 0x2ee) && r == 1) {
-                    if (((u8 (*)[2])&abilities[15][2])[w->subtype][1]) {
+                    if (staff_abilities[w->subtype][1]) {
                         w->state_a = 0x30;
                         w->state_b = 0x30;
                         set_complex(w, 0x2ee, 0);
@@ -493,7 +493,7 @@ void staff_in_staff_room(Thing *w)
                     }
                 }
                 if ((find_object((u16)w->x.tile + ((u16)w->y.tile << 7), 0x39, 1, 0x96, w->owner) && w->icon != 0x2f8) && r == 2) {
-                    if (((u8 (*)[2])&abilities[15][2])[w->subtype][0]) {
+                    if (staff_abilities[w->subtype][0]) {
                         w->state_a = 0x30;
                         w->state_b = 0x30;
                         set_complex(w, 0x2f8, 0);

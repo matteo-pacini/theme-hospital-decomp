@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern s32 lbSinTable[];
 s32 fn_00038d04(Thing *w, u8 owner);
 #pragma aux fn_00038d04 "W?remove_object$n(pn$Thing$$)s"
 }

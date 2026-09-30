@@ -6,6 +6,8 @@ extern "C" {
 u8 is_person_in_vaccine_queue(Thing *w);
 void insert_person_in_vaccination_queue(Thing *w);
 
+char fingchk3[20] = { 0xad, 0xa9, 0xdd, 0xc9, 0x91, 0xad, 0xa9, 0x99 };
+
 // FUNCTION: 0x000986a0
 u8 is_person_highlighted_for_vaccination(u8 flag)
 {

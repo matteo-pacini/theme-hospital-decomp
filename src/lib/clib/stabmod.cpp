@@ -1,3 +1,5 @@
+#include "rtinit.h"
+
 extern "C" {
 
 struct RO_DTREG {
@@ -97,6 +99,8 @@ void fs_init(void)
 {
     __wcpp_2_data_dtreg_vfptrs_[3] = &D_001505d4;
 }
+
+AXI(fs_init, 10)
 
 void __wcpp_2_mod_register__(RW_DTREG *rw);
 #pragma aux __wcpp_2_mod_register__ "__wcpp_2_mod_register__"

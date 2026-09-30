@@ -1,7 +1,5 @@
 #include "clib.h"
 
-extern const double D_00128898;
-
 double modf(double value, double *iptr);
 #pragma aux modf parm routine [];
 double floor(double x);
@@ -13,6 +11,6 @@ double floor(double x)
     double ipart;
 
     if (modf(x, &ipart) < 0.0)
-        ipart += D_00128898;
+        ipart += -1.0;
     return ipart;
 }

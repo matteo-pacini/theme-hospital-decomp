@@ -1,10 +1,5 @@
 #include "hosp.h"
 
-struct ambient {
-    u8 sound;
-    u8 priority;
-};
-
 struct SampleInfo {
     void *SampleHandle;
     s32 SampleVolume;
@@ -14,16 +9,6 @@ struct SampleInfo {
     u32 SourceID;
     s16 SampleNumber;
     u8 unknown14[9];
-};
-
-struct PitchGroup {
-    u8 count;
-    u8 values[5];
-};
-
-struct SampleGroup {
-    u8 count;
-    u8 samples[5];
 };
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))

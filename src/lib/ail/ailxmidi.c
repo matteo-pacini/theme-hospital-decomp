@@ -54,7 +54,7 @@ typedef struct {
 } TIMB_request;
 #pragma pack()
 
-extern char GTL_prefix[128];
+char GTL_prefix[128] = "SAMPLE";
 
 // Module state, in the order the original lays it out.
 static S32 entry = 0;
@@ -73,7 +73,9 @@ static S32 sequence_done;
 static S32 len;
 static U32 type;
 
-extern TIMB_request D_00151634;
+/* The MIDI_data a timbre request sends: an IFF "TIMB" chunk of 4 bytes
+   (big-endian length), one entry, patch and bank filled in per request. */
+static TIMB_request TIMB = { { 'T', 'I', 'M', 'B' }, 0x04000000, 1, 0xff, 0xff };
 
 
 void __pascal XMI_serve(U32 user);
@@ -1547,11 +1549,11 @@ S32 __cdecl AIL_API_install_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
     if (mdi->timbre_trap != NULL && mdi->timbre_trap(mdi, bank, patch)) {
         return 1;
     }
-    D_00151634.patch = patch;
-    D_00151634.bank = bank;
+    TIMB.patch = patch;
+    TIMB.bank = bank;
     mdi->disable++;
     XMI_flush_buffer(mdi);
-    memcpy(mdi->DST->MIDI_data, &D_00151634, sizeof(D_00151634));
+    memcpy(mdi->DST->MIDI_data, &TIMB, sizeof(TIMB));
     AIL_call_driver(mdi->drvr, MDI_INSTALL_T_SET, NULL, &out);
     mdi->disable--;
     if (out.AX == 0) {

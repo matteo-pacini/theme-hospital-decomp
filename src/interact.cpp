@@ -1,12 +1,5 @@
 #include "hosp.h"
 
-struct DoorAnim {
-    s16 v;
-    s16 other;
-    u8 count;
-    u8 unknown5;
-};
-
 extern "C" {
 extern DoorAnim D_0012b598[];
 

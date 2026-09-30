@@ -27,7 +27,6 @@ extern u8 *D_00153f34;
 extern u8 D_00156910;
 extern u8 D_0015f489;
 extern char **D_0016033c;
-extern char D_0013f4fa[];
 }
 
 s8 compare_products(s32 a, s32 b, s32 c, s32 d);
@@ -237,7 +236,7 @@ void draw_main_menu(void)
         }
         done = 0;
         timer = 0x3e8;
-        sprintf(path, "%s%s", cd_install_path, D_0013f4fa);
+        sprintf(path, "%s%s", cd_install_path, animation_table[27].name);
         while (!done) {
             copy_screen_to_wscreen(bscreen);
             if (exit_quick_requester()) {

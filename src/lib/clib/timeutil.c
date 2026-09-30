@@ -14,8 +14,9 @@ struct tm {
 
 typedef long time_t;
 
-extern short const __diyr[];
-extern short const __dilyr[];
+/* Days before each month (and the year's length) in a common and a leap year. */
+short const __diyr[] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
+short const __dilyr[] = { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
 extern char *tzname[2];
 extern struct tm __start_dst;
 extern struct tm __end_dst;

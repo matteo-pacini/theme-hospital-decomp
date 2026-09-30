@@ -192,11 +192,11 @@ void display_advisor(void)
                     othervar.fa54 = 0;
                     advisor.fe = -1;
                     advisor.f11e = D_0012cdd4[advisor.f11e];
-                    advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
+                    advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
                     advisor.f12c = 0;
                 } else if (!advisor.f12c) {
                     advisor.f11e = D_0012cdd4[advisor.f11e];
-                    advisor.f6 = start[advisor_anims[advisor.f11e + 1]].frame;
+                    advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
                     advisor.f12c = 1;
                     othervar.fa54 = 0;
                 }

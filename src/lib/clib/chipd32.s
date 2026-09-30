@@ -19,7 +19,7 @@
     ret
 .L000fd16f:
     shr eax, 0x1c
-    cmp byte ptr [eax + "___wcpp_2_data_module_dtor_ref_"+0x14], 0
+    cmp byte ptr [eax + .Ldata32], 0
     jne .L000fd17e
     fdivp st(1)
     ret
@@ -39,17 +39,17 @@
     and eax, 0x7fff
     cmp eax, 1
     je .L000fd1cf
-    fmul dword ptr ["___wcpp_2_data_module_dtor_ref_"+0x24]
+    fmul dword ptr [.Ldata32+0x10]
     fxch st(1)
-    fmul dword ptr ["___wcpp_2_data_module_dtor_ref_"+0x24]
+    fmul dword ptr [.Ldata32+0x10]
     fxch st(1)
     fldcw word ptr [esp + 0x1c]
     fdivp st(1)
     ret
 .L000fd1cf:
-    fmul dword ptr ["___wcpp_2_data_module_dtor_ref_"+0x28]
+    fmul dword ptr [.Ldata32+0x14]
     fxch st(1)
-    fmul dword ptr ["___wcpp_2_data_module_dtor_ref_"+0x28]
+    fmul dword ptr [.Ldata32+0x14]
     fxch st(1)
     fldcw word ptr [esp + 0x1c]
     fdivp st(1)
@@ -88,7 +88,7 @@
     fxch st(1)
     fstp st(0)
     fld st(0)
-    fmul dword ptr ["___wcpp_2_data_module_dtor_ref_"+0x2c]
+    fmul dword ptr [.Ldata32+0x18]
     .byte 0xdb; .byte 0x7c; .byte 0x24; .byte 0x04  # fstp xword ptr [esp + 4]
     .byte 0xdb; .byte 0x6c; .byte 0x24; .byte 0x10  # fld xword ptr [esp + 0x10]
     fxch st(1)
@@ -108,7 +108,7 @@
 .type "__fdiv_fpr",@function
 "__fdiv_fpr":
     sub esp, 0x2c
-    jmp dword ptr [eax*4 + "___wcpp_2_data_module_dtor_ref_"+0x30]
+    jmp dword ptr [eax*4 + .Ldata32+0x1c]
     .byte 0xd8; .byte 0xf0
     .byte 0x83; .byte 0xc4; .byte 0x2c
     .byte 0xc3
@@ -701,3 +701,77 @@
     pop eax
     ret 8
 .size "__fdiv_m64r",.-"__fdiv_m64r"
+
+// FDIV check tables: the upper mantissa nibbles of the divisors the
+// Pentium FDIV bug affects, the scale factors 15/16, 17/16 and 2^63, and
+// __fdiv_fpr's jump table (indexed by eax).
+.section DATA32,"aw",@progbits
+.Ldata32:
+    .byte 0x00, 0x01, 0x00, 0x00, 0x04, 0x00, 0x00, 0x07, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x0d, 0x00, 0x00
+    .long 0x3f700000
+    .long 0x3f880000
+    .long 0x5f000000
+    .long "__fdiv_fpr"+0xa
+    .long "__fdiv_fpr"+0x10
+    .long "__fdiv_fpr"+0x15
+    .long "__fdiv_fpr"+0x1b
+    .long "__fdiv_fpr"+0x20
+    .long "__fdiv_fpr"+0x26
+    .long "__fdiv_fpr"+0x2c
+    .long "__fdiv_fpr"+0x32
+    .long "__fdiv_fpr"+0x38
+    .long "__fdiv_fpr"+0x54
+    .long "__fdiv_fpr"+0x59
+    .long "__fdiv_fpr"+0x6f
+    .long "__fdiv_fpr"+0x74
+    .long "__fdiv_fpr"+0x90
+    .long "__fdiv_fpr"+0xa0
+    .long "__fdiv_fpr"+0xb4
+    .long "__fdiv_fpr"+0xc4
+    .long "__fdiv_fpr"+0xe4
+    .long "__fdiv_fpr"+0xe9
+    .long "__fdiv_fpr"+0x103
+    .long "__fdiv_fpr"+0x108
+    .long "__fdiv_fpr"+0x128
+    .long "__fdiv_fpr"+0x13c
+    .long "__fdiv_fpr"+0x154
+    .long "__fdiv_fpr"+0x168
+    .long "__fdiv_fpr"+0x188
+    .long "__fdiv_fpr"+0x18d
+    .long "__fdiv_fpr"+0x1a7
+    .long "__fdiv_fpr"+0x1ac
+    .long "__fdiv_fpr"+0x1cc
+    .long "__fdiv_fpr"+0x1e0
+    .long "__fdiv_fpr"+0x1f8
+    .long "__fdiv_fpr"+0x20c
+    .long "__fdiv_fpr"+0x22c
+    .long "__fdiv_fpr"+0x231
+    .long "__fdiv_fpr"+0x24b
+    .long "__fdiv_fpr"+0x250
+    .long "__fdiv_fpr"+0x270
+    .long "__fdiv_fpr"+0x284
+    .long "__fdiv_fpr"+0x29c
+    .long "__fdiv_fpr"+0x2b0
+    .long "__fdiv_fpr"+0x2d0
+    .long "__fdiv_fpr"+0x2d5
+    .long "__fdiv_fpr"+0x2ef
+    .long "__fdiv_fpr"+0x2f4
+    .long "__fdiv_fpr"+0x314
+    .long "__fdiv_fpr"+0x328
+    .long "__fdiv_fpr"+0x340
+    .long "__fdiv_fpr"+0x354
+    .long "__fdiv_fpr"+0x374
+    .long "__fdiv_fpr"+0x379
+    .long "__fdiv_fpr"+0x393
+    .long "__fdiv_fpr"+0x398
+    .long "__fdiv_fpr"+0x3b8
+    .long "__fdiv_fpr"+0x3cc
+    .long "__fdiv_fpr"+0x3e4
+    .long "__fdiv_fpr"+0x3f8
+    .long "__fdiv_fpr"+0x418
+    .long "__fdiv_fpr"+0x41d
+    .long "__fdiv_fpr"+0x437
+    .long "__fdiv_fpr"+0x43c
+    .long "__fdiv_fpr"+0x45c
+    .long "__fdiv_fpr"+0x470
+    .long "__fdiv_fpr"+0x488

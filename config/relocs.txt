@@ -5,7 +5,6 @@
 00085fb2 W?net_text$n[]$NetText$$ -1
 000eb601 _D_0018cf88 0x19
 000eb60f _D_0018cf88 0x19
-000fa9fb _D_00128e70 0xe
 000f491f ___iob 0x208
 0006bc47 W?window$n$HospWindow$$ -4
 000927b1 W?window$n$HospWindow$$ -4
@@ -28,7 +27,9 @@
 000f52b7 W?com_dev$n[]$ComHandlerInfo$$ -0x1014
 000df7e7 _AIL_driver -0x4
 # math2err.c: the name table is indexed from 1
-000fdc6a _D_00153cfc -0x4
+000fdc6a _MathFuncNames -0x4
+# strtol.c: the overflow table is indexed from radix 2
+000eef8e _nearly_overflowing -0x8
 # netint LbNetwork_Init: clientDataTable[i].active cleared through a pointer stepped one entry ahead
 000bfd46 W?clientDataTable$n[]$__4kqpm7ClientDataEntry$$ -0x28
 # dossmk play_smk_direct/play_smk_via_buffer: palette[i] stored after i is incremented

@@ -33,7 +33,7 @@
     je .L000ecd3c
     sub al, 0x20
     push esi
-    .byte 0xbe; .long "___EFG_scanf"+0x4  # mov esi, 0x3170c
+    .byte 0xbe; .long _D_0015170c  # mov esi, 0x3170c
     movzx eax, al
     {load} add eax, eax
     {load} add esi, eax

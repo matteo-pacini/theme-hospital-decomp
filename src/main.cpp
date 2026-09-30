@@ -2,7 +2,6 @@
 
 extern "C" {
 
-extern char D_0013f486[];
 extern u8 D_0015f99f;
 extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef, D_001581f0;
 extern View D_0014619c;
@@ -179,7 +178,7 @@ void get_cd_speed(void)
 
     buf = LbMemoryAlloc(0x10000);
     if (buf != 0) {
-        sprintf(path, "%s%s", cd_install_path, D_0013f486);
+        sprintf(path, "%s%s", cd_install_path, animation_table[25].name);
         count = LbFileLengthRnc(path) / 12;
         othervar.fa87 = GetCDSpeed(path, buf, 0x10000, count);
         LbMemoryFree(buf);

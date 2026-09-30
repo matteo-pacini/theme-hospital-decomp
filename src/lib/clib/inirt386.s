@@ -66,7 +66,7 @@
     mov dl, al
 .L000d0603:
     .byte 0x3e; .byte 0xbe; .long "___wcpp_2_data_module_dtor_ref_"  # mov esi, 0x33dc4
-    .byte 0x3e; .byte 0xbf; .long "___wcpp_2_data_module_dtor_ref_"+0x12  # mov edi, 0x33dd6
+    .byte 0x3e; .byte 0xbf; .long _D_00153dd6  # mov edi, 0x33dd6
     mov ebx, edi
     mov al, dl
 .L000d0613:
@@ -104,6 +104,7 @@
     pop esi
     ret
     .byte 0xc3
+.L000d064b:
     .byte 0x53
     .byte 0x51
     .byte 0x52
@@ -176,3 +177,8 @@
     .byte 0x5b
     .byte 0xc3
 .size "__FiniRtns",.-"__FiniRtns"
+
+// argcv386's XI entry: __Init_Argv (0xd064b) at priority 0x20.
+.section XI,"aw",@progbits
+    .byte 0x00, 0x20
+    .long .L000d064b

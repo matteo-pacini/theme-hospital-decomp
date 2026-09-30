@@ -64,7 +64,7 @@
     je .L000fa88a
 .L000fa83e:
     mov eax, 0xa00
-    .byte 0xbe; .long _D_001287f4  # mov esi, 0x87f4
+    .byte 0xbe; .long .Lconst  # mov esi, 0x87f4
     push es
     int 0x31
     sbb eax, eax
@@ -149,6 +149,7 @@
     pop ecx
     pop ebx
     ret
+.L000fa8ef:
     .byte 0xc3
 .size "__unhook387",.-"__unhook387"
 
@@ -180,3 +181,18 @@
     pop ax
     ret
 .size "fn_000fa8f0_",.-"fn_000fa8f0_"
+
+.section CONST,"aw",@progbits
+.Lconst:
+    .asciz "RATIONAL DOS/4G"
+
+// save8087's hooks for saving and restoring the 80x87 state: its
+// do-nothing routine (0xfa8ef) until fn_000ef30c installs the real ones
+// when a coprocessor is present.
+.section _DATA,"aw",@progbits
+.globl "___Save8087"
+"___Save8087":
+    .long .L000fa8ef
+.globl "___Rest8087"
+"___Rest8087":
+    .long .L000fa8ef

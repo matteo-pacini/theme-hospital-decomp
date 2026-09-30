@@ -10,9 +10,24 @@ struct exception {
 
 #define DOMAIN 1
 
-extern int (*_RWD_matherr)(struct exception *);
-extern char *Msgs[];
-extern const char D_00128999[];
+int __matherr(struct exception *excp);
+#pragma aux __matherr "__matherr"
+
+int (*_RWD_matherr)(struct exception *) = __matherr;
+
+/* The library's compiler put this read-only table in CONST2; 10.6 puts
+   data with relocations in _DATA unless told otherwise. */
+#pragma data_seg("CONST2", "DATA")
+static const char * const Msgs[] = {
+    0,
+    "Domain error",
+    "Argument singularity",
+    "Overflow range error",
+    "Underflow range error",
+    "Total loss of significance",
+    "Partial loss of significance"
+};
+#pragma data_seg()
 
 FILE *__get_std_stream(unsigned handle);
 int fputs(const char *s, FILE *fp);
@@ -33,7 +48,7 @@ void __rterrmsg(int errcode, char *funcname)
 
     fp = __get_std_stream(2);
     fputs(Msgs[errcode], fp);
-    fputs(D_00128999, fp);
+    fputs(" in ", fp);
     fputs(funcname, fp);
     fputc('\n', fp);
 }
@@ -52,8 +67,6 @@ double _matherr(struct exception *excp)
 }
 
 int matherr(struct exception *excp);
-int __matherr(struct exception *excp);
-#pragma aux __matherr "__matherr"
 
 /* The default _RWD_matherr: the user's matherr, or the library's stub. */
 // FUNCTION: 0xfdf90

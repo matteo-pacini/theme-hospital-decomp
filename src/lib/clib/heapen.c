@@ -1,6 +1,6 @@
 #include "clib.h"
 
-extern int __heap_enabled;
+int __heap_enabled = 1;
 
 // FUNCTION: 0xf46dd
 int _heapenable(int new)

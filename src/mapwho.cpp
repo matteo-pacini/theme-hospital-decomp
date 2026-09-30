@@ -1,10 +1,5 @@
 #include "hosp.h"
 
-struct FloorDef {
-    u16 anim;
-    u16 animated;
-};
-
 struct Offset {
     s32 x;
     s32 y;

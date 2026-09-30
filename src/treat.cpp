@@ -1,10 +1,5 @@
 #include "hosp.h"
 
-struct PossibleDiag {
-    u8 count;
-    u8 ids[9];
-};
-
 extern s16 dying_place[];
 extern PossibleDiag possible_diagnoses[];
 extern s16 diag_register[][8];

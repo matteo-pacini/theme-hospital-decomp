@@ -2,22 +2,6 @@
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
-struct FeelGoodies {
-    u16 kind;
-    u8 range;
-    u8 valid;
-    u16 unknown4;
-};
-
-struct ShowAnim {
-    u16 anim;
-    u8 subtypes[4];
-    u8 any_subtype;
-    u8 illness;
-    u16 condition;
-    u8 ability;
-};
-
 extern FeelGoodies feely[];
 extern ShowAnim show_anims[];
 extern WinLose lose_criteria[];

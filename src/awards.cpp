@@ -1,11 +1,5 @@
 #include "hosp.h"
 
-extern "C" {
-extern s8 D_0012d804;
-extern s8 D_0012d805;
-extern s8 D_0012d806;
-}
-
 u8 year_check(s32 *values, const s32 limit, const u8 above);
 void set_trophy_value(const u8 t, const s16 value, u8 type);
 void general_award(s32 *p, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
@@ -108,16 +102,16 @@ void check_awards_won(void)
             case 11:
                 if (award_counts.f149 > 100) {
                     if (award_counts.f149 > awards_trophies.f37)
-                        fn_000b4510(i, 1, 0, D_0012d805, 1);
+                        fn_000b4510(i, 1, 0, awards_trophies.f55[12], 1);
                     else if (award_counts.f149 < awards_trophies.f3b)
-                        fn_000b4510(i, -1, 0, D_0012d806, 1);
+                        fn_000b4510(i, -1, 0, awards_trophies.f55[13], 1);
                 }
                 break;
             case 12:
                 if (year_check(award_counts.f104, 1, 1) && year_check(award_counts.fd0, awards_trophies.f35, 0))
                     fn_000b4510(i, 1, 0, awards_trophies.f55[10], 1);
                 else if (award_counts.f144 || (year_check(award_counts.f104, 1, 1) && year_check(award_counts.fd0, awards_trophies.f36, 1)))
-                    fn_000b4510(i, -1, 0, D_0012d804, 1);
+                    fn_000b4510(i, -1, 0, awards_trophies.f55[11], 1);
                 break;
             default:
                 break;

@@ -21,13 +21,27 @@ typedef void (*__sig_func)(int);
 #define SIG_DFL ((__sig_func)2)
 #define SIG_ERR ((__sig_func)3)
 
-extern __sig_func D_00152a94[];
+static __sig_func SignalTable[] = {
+    SIG_IGN,
+    SIG_DFL,    /* SIGABRT */
+    SIG_IGN,    /* SIGFPE */
+    SIG_IGN,    /* SIGILL */
+    SIG_IGN,    /* SIGINT */
+    SIG_IGN,    /* SIGSEGV */
+    SIG_IGN,    /* SIGTERM */
+    SIG_IGN,    /* SIGBREAK */
+    SIG_IGN,    /* SIGUSR1 */
+    SIG_IGN,    /* SIGUSR2 */
+    SIG_IGN,    /* SIGUSR3 */
+    SIG_IGN,    /* SIGIDIVZ */
+    SIG_IGN     /* SIGIOVFL */
+};
 
 #define EINVAL 9
 
 typedef void (*__fpe_func)(int sig, int fpe_type);
 
-extern void (*D_00153acc)(void);
+extern void (*__abort)(void);
 
 void __sigfpe_handler(int fpe_type);
 void __terminate(void);
@@ -51,9 +65,9 @@ void __sigfpe_handler(int fpe_type)
 {
     __sig_func func;
 
-    func = D_00152a94[SIGFPE];
+    func = SignalTable[SIGFPE];
     if (func != SIG_IGN && func != SIG_DFL && func != SIG_ERR) {
-        D_00152a94[SIGFPE] = SIG_DFL;
+        SignalTable[SIGFPE] = SIG_DFL;
         (*(__fpe_func)func)(SIGFPE, fpe_type);
     }
 }
@@ -67,7 +81,7 @@ __sig_func signal(int sig, __sig_func func)
         __set_errno(EINVAL);
         return SIG_ERR;
     }
-    D_00153acc = __sigabort;
+    __abort = __sigabort;
     if (sig == SIGINT) {
         if (func == SIG_DFL) {
             __restore_int23();
@@ -84,8 +98,8 @@ __sig_func signal(int sig, __sig_func func)
         if (func != SIG_DFL && func != SIG_ERR)
             __grab_fpe();
     }
-    prev_func = D_00152a94[sig];
-    D_00152a94[sig] = func;
+    prev_func = SignalTable[sig];
+    SignalTable[sig] = func;
     return prev_func;
 }
 
@@ -94,7 +108,7 @@ int raise(int sig)
 {
     __sig_func func;
 
-    func = D_00152a94[sig];
+    func = SignalTable[sig];
     switch (sig) {
     case SIGFPE:
         __sigfpe_handler(FPE_EXPLICITGEN);
@@ -104,14 +118,14 @@ int raise(int sig)
             __terminate();
     case SIGINT:
         if (func != SIG_IGN && func != SIG_DFL && func != SIG_ERR) {
-            D_00152a94[sig] = SIG_DFL;
+            SignalTable[sig] = SIG_DFL;
             __restore_int23();
             (*func)(sig);
         }
         break;
     case SIGBREAK:
         if (func != SIG_IGN && func != SIG_DFL && func != SIG_ERR) {
-            D_00152a94[sig] = SIG_DFL;
+            SignalTable[sig] = SIG_DFL;
             __restore_int_ctrl_break();
             (*func)(sig);
         }
@@ -125,7 +139,7 @@ int raise(int sig)
     case SIGIDIVZ:
     case SIGIOVFL:
         if (func != SIG_IGN && func != SIG_DFL && func != SIG_ERR) {
-            D_00152a94[sig] = SIG_DFL;
+            SignalTable[sig] = SIG_DFL;
             (*func)(sig);
         }
         break;

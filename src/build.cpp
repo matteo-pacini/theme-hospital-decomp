@@ -1,25 +1,8 @@
 #include "hosp.h"
 
-struct FillInWindow {
-    u8 wall;
-    u8 window;
-};
-
 extern FillInWindow fill_in_windows[];
 
-struct RoomNavControl {
-    u8 door_count;
-    u8 door_objects[10];
-    u8 count;
-    u8 objects[10];
-};
-
 extern RoomNavControl room_nav[];
-
-struct WallHug {
-    u8 kind;
-    u8 angle[4];
-};
 
 struct NextPartEntry {
     u8 angle;

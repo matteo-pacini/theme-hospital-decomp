@@ -7,23 +7,6 @@ struct PeepBid {
 };
 
 /* A kind of visitor: its sprite set, head and palette choices, and weight. */
-struct PeepType {
-    u8 kind;
-    u8 count;
-    u8 head[5];
-    u8 palette[5];
-    u8 weight;
-};
-
-struct PeepPalette {
-    u8 count1;
-    u8 layer1[5];
-    u8 count2;
-    u8 layer2[5];
-    u8 count3;
-    u8 layer3[11];
-};
-
 struct PeepChoice {
     u8 kind;
     u8 head;

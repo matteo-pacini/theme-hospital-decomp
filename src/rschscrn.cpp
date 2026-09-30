@@ -7,17 +7,6 @@ struct ChoiceBox {
     s32 h;
 };
 
-struct PanelIcon {
-    s16 x;
-    s16 y;
-    s16 x2;
-    s16 y2;
-    u8 sprite;
-    u8 unknown9[2];
-    u16 unknownB;
-    u8 pressed;
-};
-
 extern "C" {
 extern Event D_001549d0[];
 extern char **D_001602d8;

@@ -1,12 +1,5 @@
 #include "hosp.h"
 
-struct Graphs {
-    u8 unknown0;
-    u8 visible;
-    u8 colour;
-    u8 unknown3;
-};
-
 extern Graphs graph[];
 
 extern "C" {

@@ -5,8 +5,16 @@
 
 int tolower(int c);
 
-/* Indexed by radix: the largest value that can take another digit. */
-extern const unsigned long D_00151a78[];
+/* Indexed by radix - 2: the largest value that can take another digit. */
+static unsigned long nearly_overflowing[] = {
+    0xffffffffUL / 2, 0xffffffffUL / 3, 0xffffffffUL / 4, 0xffffffffUL / 5, 0xffffffffUL / 6,
+    0xffffffffUL / 7, 0xffffffffUL / 8, 0xffffffffUL / 9, 0xffffffffUL / 10, 0xffffffffUL / 11,
+    0xffffffffUL / 12, 0xffffffffUL / 13, 0xffffffffUL / 14, 0xffffffffUL / 15, 0xffffffffUL / 16,
+    0xffffffffUL / 17, 0xffffffffUL / 18, 0xffffffffUL / 19, 0xffffffffUL / 20, 0xffffffffUL / 21,
+    0xffffffffUL / 22, 0xffffffffUL / 23, 0xffffffffUL / 24, 0xffffffffUL / 25, 0xffffffffUL / 26,
+    0xffffffffUL / 27, 0xffffffffUL / 28, 0xffffffffUL / 29, 0xffffffffUL / 30, 0xffffffffUL / 31,
+    0xffffffffUL / 32, 0xffffffffUL / 33, 0xffffffffUL / 34, 0xffffffffUL / 35, 0xffffffffUL / 36
+};
 
 int radix_value(char c);
 
@@ -53,7 +61,7 @@ unsigned long _stol(const char *nptr, char **endptr, int base, int who)
         digit = radix_value(*p);
         if (digit >= base)
             break;
-        if (value > D_00151a78[base])
+        if (value > nearly_overflowing[base - 2])
             overflow = 1;
         prev_value = value;
         value = value * base + digit;

@@ -22,8 +22,16 @@ typedef struct {
 div_t div(int numer, int denom);
 #pragma intrinsic(div)
 
-extern const char D_00128e4c[3][12];
-extern const char D_00128e70[3][7];
+static const unsigned char Months[3][12] = {
+    "JFMAMJJASOND",
+    "aeapauuuecoe",
+    "nbrrynlgptvc"
+};
+static const unsigned char Days[3][7] = {
+    "SMTWTFS",
+    "uouehra",
+    "nneduit"
+};
 extern char result[];
 
 struct tm *_localtime(const time_t *timer, struct tm *tm);
@@ -46,14 +54,14 @@ char *_asctime(const struct tm *time, char *buf)
     int i;
 
     i = time->tm_wday;
-    buf[0] = D_00128e70[0][i];
-    buf[1] = D_00128e70[1][i];
-    buf[2] = D_00128e70[2][i];
+    buf[0] = Days[0][i];
+    buf[1] = Days[1][i];
+    buf[2] = Days[2][i];
     buf[3] = ' ';
     i = time->tm_mon;
-    buf[4] = D_00128e4c[0][i];
-    buf[5] = D_00128e4c[1][i];
-    buf[6] = D_00128e4c[2][i];
+    buf[4] = Months[0][i];
+    buf[5] = Months[1][i];
+    buf[6] = Months[2][i];
     buf[7] = ' ';
     convDec(time->tm_mday, 8, buf);
     if ((int)buf[8] == '0')

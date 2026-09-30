@@ -25,16 +25,14 @@ typedef struct {
 } BIGPOW10;
 
 extern const BIGPOW10 _BigPow10Table[];
-extern const double D_00128e90;
-extern const double D_00128e98;
-extern const double D_00128ea0;
-extern const double D_00128ea8;
 
 /*
  * _Scale10V is matched from generated assembly (scale10v.s). Watcom 10.6
  * wraps each -fpd FDIV check in pushfd/popfd, which the compiler that built
  * the original did not, and the check cannot be written out as inline code
- * (see docs/MATCHING.md). Its source, as decompiled:
+ * (see docs/MATCHING.md). Its source, as decompiled (INF is +infinity; the
+ * four constants it compares with and substitutes are the module's CONST2,
+ * defined in scale10v.s):
  */
 #if 0
 double _Scale10V(double x, int scale)
@@ -43,10 +41,10 @@ double _Scale10V(double x, int scale)
     double factor;
     const BIGPOW10 *table;
 
-    if (x == D_00128e90) {
-        x = D_00128ea0;
-    } else if (x == D_00128e98) {
-        x = D_00128ea8;
+    if (x == INF) {
+        x = DBL_MAX;
+    } else if (x == -INF) {
+        x = -DBL_MAX;
     }
     table = _BigPow10Table;
     if (scale < 0) {

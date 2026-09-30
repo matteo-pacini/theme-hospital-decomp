@@ -16,23 +16,23 @@
     sub esp, 8
     mov ecx, dword ptr [esp + 0x28]
     fld qword ptr [esp + 0x20]
-    fcomp qword ptr ["_D_00128e90"]
+    fcomp qword ptr [.Lconst2]
     fnstsw ax
     sahf
     jne .L000fcb03
-    mov eax, dword ptr ["_D_00128ea0"]
+    mov eax, dword ptr [.Lconst2+0x10]
     mov dword ptr [esp + 0x20], eax
-    mov eax, dword ptr ["_D_00128ea0"+0x4]
+    mov eax, dword ptr [.Lconst2+0x14]
     jmp .L000fcb20
 .L000fcb03:
     fld qword ptr [esp + 0x20]
-    fcomp qword ptr ["_D_00128e98"]
+    fcomp qword ptr [.Lconst2+0x8]
     fnstsw ax
     sahf
     jne .L000fcb24
-    mov eax, dword ptr ["_D_00128ea8"]
+    mov eax, dword ptr [.Lconst2+0x18]
     mov dword ptr [esp + 0x20], eax
-    mov eax, dword ptr ["_D_00128ea8"+0x4]
+    mov eax, dword ptr [.Lconst2+0x1c]
 .L000fcb20:
     mov dword ptr [esp + 0x24], eax
 .L000fcb24:
@@ -112,3 +112,12 @@
     pop eax
     ret 0xc
 .size "_Scale10V_",.-"_Scale10V_"
+
+// The scale module's constants: +-infinity, and the +-DBL_MAX they are
+// replaced by.
+.section CONST2,"aw",@progbits
+.Lconst2:
+    .long 0x00000000, 0x7ff00000
+    .long 0x00000000, 0xfff00000
+    .long 0xffffffff, 0x7fefffff
+    .long 0xffffffff, 0xffefffff
