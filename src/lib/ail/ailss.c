@@ -13,17 +13,6 @@ S32 AIL_abs(S32 x);
 
 extern U8 pan_graph[128];
 
-// Module state, in the order the original lays it out.
-static S32 entry = 0;
-static S32 locked = 0;
-static VDI_CALL VDI;
-static HSAMPLE S;
-static S32 n;
-static HDIGDRIVER dig;
-static S32 current;
-static U32 flags;
-static S32 cnt;
-
 extern char D_00126c3c[];
 extern char D_00126c68[];
 extern char D_00126c90[];
@@ -38,6 +27,21 @@ extern char D_00126d60[];
 extern char D_00126d78[];
 extern char D_00126d80[];
 extern char D_00126da0[];
+
+// Module state. The BSS layout follows symbol handles and name hashes, not
+// declaration order (docs/MATCHING.md, "Static data layout"): the externs
+// above put VDI in the same 25-symbol block as S..cnt, and the names hash in
+// the original's order. Adding or removing a declaration before this point
+// can split them again.
+static S32 entry = 0;
+static S32 locked = 0;
+static VDI_CALL VDI;
+static HSAMPLE S;
+static S32 n;
+static HDIGDRIVER dig;
+static S32 current;
+static U32 flags;
+static S32 cnt;
 
 #define DIG_BUFFER_SERVICE 0x0010
 

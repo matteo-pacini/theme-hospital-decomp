@@ -675,3 +675,29 @@ Compiler and flags per source file come from `config/cflags.txt`.
   loops, write offsets like `buf + (block << 9)` inside the loop body and
   let the optimiser strength-reduce them. `serialsp.cpp` is built with
   `-oe=40`: its small `Parser` accessors inline, `SendAck` does not.
+
+## Static data layout
+
+Watcom C (`wcc386` 10.6, the file-scope pass of `FreeSym`/`GetSymList` in
+Open Watcom's `cc/c/csym.c`, which still has it) does not lay out a
+module's file-scope variables in declaration order. Established by
+compiling test files and confirmed on `ailss`:
+
+- Every declared identifier (typedefs, externs, prototypes, statics, ...)
+  takes the next symbol handle; the first user symbol is handle 20. Handles
+  are grouped in blocks of 25 (`1024 / sizeof(SYM_ENTRY)`).
+- Variables are then divided by size: 8-byte multiples first, then 4-byte
+  multiples (4, 12, ...), other even sizes, 2-byte, odd sizes, 1-byte.
+  Within one size class, and separately for `_DATA` and `_BSS`, blocks come
+  last block first; within a block, by ascending name hash, and the later
+  declaration first on equal hashes.
+- The hash is the old OW `hashpjw` (name without the `_` prefix) modulo
+  241: `h = c0`; `h = (h << 4) + c1`; then alternately
+  `h &= 0xfff; h = (h << 4) + c; h = (h ^ (h >> 12)) & 0xfff` and
+  `h = (h << 4) + c; h ^= h >> 12` per further character.
+
+So a static's position depends on its name (free for statics) and on how
+many declarations precede it (a block boundary between two statics puts the
+later one first). `ailss` had its `VDI` alone in the block before the other
+BSS statics; declaring the module's externs before the statics moves all of
+them into one block, where the names already hash in the original's order.
