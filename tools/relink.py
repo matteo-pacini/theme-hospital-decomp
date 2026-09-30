@@ -9,7 +9,9 @@ config/symbols.txt, a unit's own data segments by config/sections.txt.
 Absolute references are compared with the EXE's fixup targets, and every
 other byte (relative branches included) with the EXE's raw bytes. Bytes of
 the code object that no unit places are reported as gaps. The units' own
-data is checked against the data object the same way. Finally, the gaps
+data is checked against the data object the same way, and the 16-bit code
+object's assembly modules (config/sections.txt, segment CODE16) against
+that object, their 16-bit offset relocations against its fixups. Finally, the gaps
 between functions show where the original objects began and ended (filler
 within one object, zeros between objects), which is compared with how the
 functions are divided into source files.
@@ -25,9 +27,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 import omf2elf  # noqa: E402
-from lefile import SRC_OFFSET32, LEFile  # noqa: E402
+from lefile import SRC_OFFSET16, SRC_OFFSET32, LEFile  # noqa: E402
 from link import unit_model  # noqa: E402
-from project import EXE, Project  # noqa: E402
+from project import EXE, ROOT, Project  # noqa: E402
 
 ADDRESS_NAME = re.compile(r"_[CD]_([0-9a-f]{8})")
 
@@ -97,6 +99,53 @@ def check_data(le, placed, symbol_address, problems, notes):
             runs.append([a, a])
     for lo, hi in runs[:20]:
         print(f"  data differs {lo:#x}..{hi:#x} ({owner[lo - data.base]})")
+
+
+def check_code16(proj, le, problems, notes):
+    """Place the 16-bit code object's modules at their config/sections.txt
+    addresses and compare with the EXE's object. Returns the object's bytes
+    (a relocated field holds the target's offset within the object, as the
+    EXE's does), its fixups [(site, target)] in link order, and the
+    addresses where it differs from the EXE's or no module placed."""
+    obj = le.objects[1]
+    image, owner, fixups = bytearray(obj.vsize), [None] * obj.vsize, []
+    for m in proj.code16:
+        sections, symbols, _, _ = omf2elf.read_elf(os.path.join(ROOT, "build", "base", m.name + ".o"))
+        sec = next(s for s in sections if s.name == "CODE16")
+        if len(sec.data) != m.size or not obj.contains(m.addr) or m.end > obj.base + obj.vsize:
+            problems["16-bit module size or place differs"] += 1
+            notes.append(f"{m.name}: {len(sec.data):#x} bytes at {m.addr:#x}, config/sections.txt {m.size:#x}")
+            continue
+        at0 = m.addr - obj.base
+        image[at0 : at0 + m.size] = sec.data
+        owner[at0 : at0 + m.size] = [m.name] * m.size
+        for at, rtype, target in sec.relocs:
+            site = m.addr + at
+            if target[0] == "sec" and target[1] is sec:
+                t = m.addr
+            elif target[0] == "sym" and target[1] in symbols and symbols[target[1]][0] is sec:
+                t = m.addr + symbols[target[1]][1]
+            else:
+                t = None  # nothing else is in this object's reach
+            if rtype != omf2elf.R_386_16 or t is None:
+                problems["16-bit relocation not within its module"] += 1
+                notes.append(f"{site:#x} ({m.name}): type {rtype}, target {getattr(target[1], 'name', target[1])}")
+                continue
+            value = t + struct.unpack_from("<h", sec.data, at)[0]
+            fx = le.fixups.get(site)
+            if fx is None or fx.kind != SRC_OFFSET16 or fx.target != value:
+                problems["16-bit reference differs"] += 1
+                notes.append(f"{site:#x} ({m.name}): ours {value:#x}, EXE {fx.target if fx else None!s}")
+            struct.pack_into("<H", image, site - obj.base, value - obj.base)
+            fixups.append((site, value))
+    ours = {s for s, _ in fixups}
+    missing = [s for s, fx in le.fixups.items() if obj.contains(s) and s not in ours]
+    if missing:
+        problems["16-bit fixups no module makes"] += len(missing)
+    diffs = [obj.base + i for i in range(obj.vsize) if owner[i] is None or image[i] != obj.data[i]]
+    print(f"16-bit code object {obj.vsize:#x} bytes, placed {sum(o is not None for o in owner):#x}"
+          f" by {len(proj.code16)} modules, fixups {len(fixups)}, bytes differing or unplaced {len(diffs)}")
+    return image, fixups, diffs
 
 
 # The linker's filler up to a dword, before zeros up to the next object.
@@ -319,6 +368,7 @@ def main(verbose=False, result=None):
             if s_ is sec:
                 placed_data.setdefault(n, addr + o)
     check_data(le, data_placed, any_address, problems, notes)
+    code16_image, code16_fixups, code16_diffs = check_code16(proj, le, problems, notes)
     unplaced_data = [f"{u.name}: {sec.name} {max(len(sec.data), sec.length):#x} bytes"
                      for u, sec, base in unplaced_data if id(sec) not in base]
     if unplaced_data:
@@ -382,11 +432,12 @@ def main(verbose=False, result=None):
         print("  data not placed: " + n)
     boundaries, zero_padded = module_boundaries(proj, le)
     if result is not None:
-        result.update(image=image, owner=owner, code_fixups=code_fixups, zero_padded=zero_padded)
+        result.update(image=image, owner=owner, code_fixups=code_fixups, zero_padded=zero_padded,
+                      code16_image=code16_image, code16_fixups=code16_fixups)
     print(f"module boundary contradictions {len(boundaries)}")
     for kind, at, n, fa, ua, fb, ub in boundaries[: 40 if not verbose else None]:
         print(f"  {kind}: {at:#x} +{n}  {fa} [{ua}] -> {fb} [{ub}]")
-    return not diffs and not nonzero_gaps and not problems and not boundaries
+    return not diffs and not code16_diffs and not nonzero_gaps and not problems and not boundaries
 
 
 if __name__ == "__main__":

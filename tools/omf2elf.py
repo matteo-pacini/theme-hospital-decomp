@@ -30,7 +30,7 @@ SHT_PROGBITS, SHT_SYMTAB, SHT_STRTAB, SHT_NOBITS, SHT_REL = 1, 2, 3, 8, 9
 SHF_WRITE, SHF_ALLOC, SHF_EXECINSTR = 1, 2, 4
 STB_LOCAL, STB_GLOBAL, STB_WEAK = 0, 1, 2
 STT_NOTYPE, STT_OBJECT, STT_FUNC, STT_SECTION = 0, 1, 2, 3
-R_386_32, R_386_PC32 = 1, 2
+R_386_32, R_386_PC32, R_386_16 = 1, 2, 20
 
 
 class Reader:
@@ -481,7 +481,8 @@ def write_omf(sections, symbols, externs, weak, path):
         for at, rtype, target in sorted(sec.relocs, key=lambda r: r[0]):
             if not lo <= at < hi:
                 continue
-            addend = struct.unpack_from("<i", sec.data, at)[0] + (4 if rtype == R_386_PC32 else 0)
+            fmt = "<h" if rtype == R_386_16 else "<i"
+            addend = struct.unpack_from(fmt, sec.data, at)[0] + (4 if rtype == R_386_PC32 else 0)
             if target[0] == "sym" and target[1] in symbols and not symbols[target[1]][0].comdat:
                 tsec, toff, _ = symbols[target[1]]
                 method, datum, addend = 0, segs[id(tsec)], addend + toff
@@ -491,10 +492,16 @@ def write_omf(sections, symbols, externs, weak, path):
                 method, datum = 2, extern(comdat_of[id(target[1])])
             else:
                 method, datum = 0, segs[id(target[1])]
-            locat = 0x8000 | (0x4000 if rtype == R_386_32 else 0) | 9 << 10 | (at - lo)
-            # Frame F1 (group FLAT), no displacement: the field holds the addend.
-            body += struct.pack(">H", locat) + bytes([0x10 | 4 | method]) + index(FLAT) + index(datum)
-            patched[at] = addend
+            if rtype == R_386_16:
+                # A 16-bit offset within its target's segment: frame F5 (the
+                # target's), location type 1.
+                locat = 0x8000 | 0x4000 | 1 << 10 | (at - lo)
+                body += struct.pack(">H", locat) + bytes([0x50 | 4 | method]) + index(datum)
+            else:
+                locat = 0x8000 | (0x4000 if rtype == R_386_32 else 0) | 9 << 10 | (at - lo)
+                # Frame F1 (group FLAT), no displacement: the field holds the addend.
+                body += struct.pack(">H", locat) + bytes([0x10 | 4 | method]) + index(FLAT) + index(datum)
+            patched[at] = (fmt, addend)
         return body
 
     # Each of convert's data records becomes one or more records here, in
@@ -518,9 +525,9 @@ def write_omf(sections, symbols, externs, weak, path):
                 hi -= 1
             fx = fixups(sec, lo, hi)
             chunk = bytearray(sec.data[lo:hi])
-            for at, value in patched.items():
+            for at, (fmt, value) in patched.items():
                 if lo <= at < hi:
-                    struct.pack_into("<i", chunk, at - lo, value)
+                    struct.pack_into(fmt, chunk, at - lo, value)
             if sec.comdat:
                 cname = comdat_of[id(sec)]
                 local = symbols[cname][2]

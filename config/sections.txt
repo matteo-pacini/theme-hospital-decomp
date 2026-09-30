@@ -15,3 +15,7 @@ src/lib/clib/tzset.c CONST 00128484 3
 src/lib/clib/allocexc.cpp CONST 00128804 2b
 src/lib/clib/stabthrw.cpp CONST 00128488 207
 src/lib/ail/ail.c _BSS 0018cae0 34
+# The 16-bit code object's modules: the interrupt handlers dosipx and dosser
+# copy into DOS memory.
+src/lib/bf2/ipxasm.s CODE16 00110000 68
+src/lib/bf2/serasm.s CODE16 00110068 96

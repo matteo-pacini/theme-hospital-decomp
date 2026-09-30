@@ -9,6 +9,7 @@ import struct
 from dataclasses import dataclass
 
 # Fixup source types (low nibble of the source byte).
+SRC_OFFSET16 = 0x05
 SRC_OFFSET32 = 0x07
 SRC_SELF_REL32 = 0x08
 SRC_SELECTOR16 = 0x02

@@ -90,6 +90,11 @@ def main():
             unit["base_path"] = base
             unit["metadata"]["source_path"] = u.source
         units.append(unit)
+    # No objdiff unit: nothing to compare them with but the EXE's 16-bit
+    # object, which tools/relink.py checks.
+    for m in proj.code16:
+        n.append(f"build build/base/{m.name}.o: as {m.source}\n")
+        objects.append(f"build/base/{m.name}.o")
 
     n.append(f"build all: phony {' '.join(objects)}\n")
     n.append("build build/report.json: report | all objdiff.json tools/progress.py tools/verify.py tools/elfrelocs.py\n")

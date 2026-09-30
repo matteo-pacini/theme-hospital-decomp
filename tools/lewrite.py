@@ -16,8 +16,10 @@ blocks written newest first. The LE header, object table, page map, name
 tables, fixup page table and import tables are computed from the objects so
 built.
 
-Still taken from the original: the DOS/4GW stub; the 16-bit code object (no
-unit has a CODE16 segment) and its two fixups; the data no unit places (most
+The 16-bit code object and its fixups (16-bit offsets within it) come from
+its assembly modules where relink.py places them.
+
+Still taken from the original: the DOS/4GW stub; the data no unit places (most
 globals are still extern at their addresses, and runtime tables) with the
 fixups inside it, and the record order of the one data page whose order
 depends on it (DATA_PAGES_IN_ORIGINAL_ORDER); and the sizes of what lies
@@ -34,7 +36,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 import relink  # noqa: E402
-from lefile import SRC_OFFSET32, LEFile  # noqa: E402
+from lefile import SRC_OFFSET16, SRC_OFFSET32, LEFile  # noqa: E402
 from project import EXE, ROOT, Project  # noqa: E402
 
 # The no-op sequences the original linker filled a gap of each length with.
@@ -54,7 +56,6 @@ MODULE_NAME = b"MAIN"
 # Object flags: readable 0x1, writable 0x2, executable 0x4, preload 0x40,
 # 16:16 alias 0x1000, 32-bit 0x2000.
 CODE_FLAGS, CODE16_FLAGS, DATA_FLAGS = 0x2045, 0x1045, 0x2043
-SRC_OFFSET16 = 0x05
 
 # Sizes no unit determines: DGROUP's end (the stack, after the last unit's
 # BSS) and the fourth object, which no unit places anything in.
@@ -215,9 +216,9 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
     # Objects. Every unit is placed at its original address, so the code
     # object ends where the last unit's code does.
     code_vsize = max(i for i, o in enumerate(result["owner"]) if o is not None) + 1
-    # CODE16: the interrupt handlers dosipx and dosser install; no unit has
-    # this segment, so its bytes are the original's.
-    code16_bytes = le.objects[1].data
+    # CODE16: its assembly modules as relink.py placed them; it ends where
+    # the last one does.
+    code16_bytes = bytes(result["code16_image"][: max(m.end for m in proj.code16) - le.objects[1].base])
     objects = [Obj(1, le.code.base, code_vsize, CODE_FLAGS, b"")]
     objects.append(Obj(2, next_base(objects[0]), len(code16_bytes), CODE16_FLAGS, code16_bytes))
     objects.append(Obj(3, next_base(objects[1]), DATA_VSIZE, DATA_FLAGS, b""))
@@ -236,13 +237,11 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
         add_fixup(code_pages, rel, tobj.index, target - tobj.base)
     code.image = bytes(image)
 
-    # CODE16's fixups (16-bit offsets within itself), from the original.
+    # CODE16's fixups: its modules' 16-bit offsets within the object.
     code16_pages = collections.defaultdict(list)
-    orig_code16 = le.objects[1]
-    for site, fx in sorted(le.fixups.items()):
-        if orig_code16.contains(site):
-            tbase = le.objects[fx.target_obj - 1].base
-            add_fixup(code16_pages, site - orig_code16.base, fx.target_obj, fx.target - tbase, fx.kind)
+    placed_at = le.objects[1].base  # relink.py places at the original addresses
+    for site, target in result["code16_fixups"]:
+        add_fixup(code16_pages, site - placed_at, code16.index, target - placed_at, SRC_OFFSET16)
 
     # Data object: the units' sections over the bytes no unit places.
     dimage, downer, dfixups, unknown = data_image(result, data, DATA_VSIZE)

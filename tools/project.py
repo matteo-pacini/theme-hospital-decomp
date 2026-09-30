@@ -3,7 +3,9 @@
 config/functions.txt       every function: address, size, symbol
 config/symbols.txt         named data: address, symbol, size
 config/sections.txt        a module's own data segments (e.g. its exception
-                           tables in CONST2): source, segment, address, size
+                           tables in CONST2): source, segment, address, size;
+                           and the assembly modules of the 16-bit code object
+                           (segment CODE16), which have no functions
 config/relocs.txt          relocations the compiler names differently from
                            the symbol containing their target: site, symbol, offset
 config/demo_map.txt        demo-build name and source module per function
@@ -83,6 +85,21 @@ class Unit:
         return self.functions[0].category
 
 
+@dataclass
+class Code16Module:
+    """An assembly module of the 16-bit code object: its one CODE16 section,
+    `size` bytes at `addr`, built to build/base/<name>.o."""
+
+    name: str
+    source: str
+    addr: int
+    size: int
+
+    @property
+    def end(self):
+        return self.addr + self.size
+
+
 def _lines(path):
     if not os.path.exists(path):
         return
@@ -128,6 +145,12 @@ class Project:
         for line in _lines(os.path.join(cfg, "sections.txt")):
             source, segment, addr, size = line.split()
             self.unit_data.setdefault(source, []).append((segment, int(addr, 16), int(size, 16)))
+
+        # The 16-bit code object's modules, in address (link) order.
+        self.code16 = sorted(
+            (Code16Module(os.path.splitext(os.path.relpath(source, "src"))[0], source, addr, size)
+             for source, segs in self.unit_data.items() for segment, addr, size in segs if segment == "CODE16"),
+            key=lambda m: m.addr)
 
         self.reloc_overrides = {}  # fixup site -> (symbol, offset)
         for line in _lines(os.path.join(cfg, "relocs.txt")):

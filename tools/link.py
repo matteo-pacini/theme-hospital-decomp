@@ -9,10 +9,13 @@ from their library module, and assembly and auto units from their ELF
 object. Each unit's static functions get a global alias, `unit::name`, so
 the EXE's data can point at them; references into the middle of a function
 (`_C_XXXXXXXX`) become the function's symbol plus an offset, and ones
-outside every function are defined with their gap's bytes. The EXE's
-data, 16-bit code and stack objects become a generated data module that
-defines every name the code refers to at its original address and carries
-the data's own relocations. Everything is written as OMF and linked in
+outside every function are defined with their gap's bytes. The 16-bit
+code object's assembly modules (config/sections.txt, segment CODE16) are
+read from their ELF objects as 16-bit segments, and a name the code refers
+to by an address inside one is defined there. The EXE's data and stack
+objects become a generated data module that defines every other name the
+code refers to at its original address and carries the data's own
+relocations. Everything is written as OMF and linked in
 address order with Open Watcom's wlink; unresolved and duplicate symbols
 are written to build/link/report.txt.
 
@@ -87,7 +90,7 @@ def data_module(proj, le, resolved, code_name, defined, gaps):
     address}) defined at their addresses, and the data's own relocations.
     `gaps` ({name: address}) are places in the code object outside every
     function, carried with the bytes of their gap."""
-    data, code16, stack = le.objects[2], le.objects[1], le.objects[3]
+    data, stack = le.objects[2], le.objects[3]
     sections, symbols = [], {}
     starts = sorted(f.addr for f in proj.functions)
     for lo in sorted({max((f.end for f in proj.functions if f.end <= a), default=le.code.base) for a in gaps.values()}):
@@ -100,12 +103,11 @@ def data_module(proj, le, resolved, code_name, defined, gaps):
         sections.append((None, sec))
     gap_sections = [sec for _, sec in sections]
     sections = []
-    for obj, name, cls in ((data, "_DATA", "DATA"), (code16, "CODE16", "CODE"), (stack, "STACK", "STACK")):
+    for obj, name, cls in ((data, "_DATA", "DATA"), (stack, "STACK", "STACK")):
         sec = omf2elf.Section(name, cls, 16)
         if cls != "STACK":
             sec.write(0, bytes(le.read(obj.base, obj.vsize)))
         sec.length = obj.vsize
-        sec.use16 = name == "CODE16"
         sections.append((obj, sec))
 
     missing = 0
@@ -115,7 +117,7 @@ def data_module(proj, le, resolved, code_name, defined, gaps):
                 symbols[n] = (sec, a - obj.base, False)
                 break
 
-    for obj, sec in sections[:2]:
+    for obj, sec in sections[:1]:
         for site, fx in le.fixups.items():
             if not obj.contains(site) or fx.kind != SRC_OFFSET32:
                 continue
@@ -193,10 +195,23 @@ def main():
             resolved[n] = by_name[n]
         elif re.fullmatch(r"_D_[0-9a-f]{8}", n):
             resolved[n] = int(n[3:], 16)
+    # The 16-bit code object's modules. A name the code refers to by its
+    # address there (the C knows the handlers only as bounds to copy) is an
+    # alias of the place in the module that covers it, or ends there.
+    code16 = []
+    for m in proj.code16:
+        sections, symbols, externs, weak = omf2elf.read_elf(os.path.join(ROOT, "build", "base", m.name + ".o"))
+        sec = next(s for s in sections if s.name == "CODE16")  # not the assembler's empty .text
+        sec.use16 = True
+        code16.append((m, ([sec], symbols, externs, weak)))
+        for n, a in list(resolved.items()):
+            if m.addr <= a < m.end or a == m.end and not any(o.addr == a for o in proj.code16):
+                symbols[n] = (sec, a - m.addr, False)
+                del resolved[n]
     *data, missing = data_module(proj, le, resolved, code_name, defined, gaps)
 
     files = []
-    for k, model in enumerate(models + [tuple(data)]):
+    for k, model in enumerate(models + [model for _, model in code16] + [tuple(data)]):
         dst = os.path.join("objs", f"{k:03d}.obj")
         omf2elf.write_omf(*model, os.path.join(OUT, dst))
         files.append(dst)
@@ -211,7 +226,7 @@ def main():
     unresolved = sorted({m.group(1) for m in re.finditer(r"undefined symbol (.+)", r.stdout)})
     duplicates = sorted({m.group(1) for m in re.finditer(r"redefinition of (\S+)", r.stdout)})
     with open(os.path.join(OUT, "report.txt"), "w") as f:
-        f.write(f"objects {len(models) + 1} (auto units {sum(u.auto for u in units)})\n")
+        f.write(f"objects {len(models) + len(code16) + 1} (auto units {sum(u.auto for u in units)})\n")
         f.write(f"data relocations without a target {missing}\n")
         f.write(f"code references outside every function {len(gaps)}\n")
         f.write(f"unresolved {len(unresolved)}\n" + "".join(f"  {n}\n" for n in unresolved))
