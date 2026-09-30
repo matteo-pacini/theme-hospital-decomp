@@ -1,5 +1,182 @@
 #include "net.h"
 
+extern "C" {
+extern char D_00124e04[];
+extern char D_00124e05[];
+extern char D_00124e30[];
+extern char D_00124e5c[];
+extern char D_00124e7d[];
+extern char D_00124ea6[];
+extern char D_00124ec3[];
+extern __ic76sReceiveCallbacks *D_001507dc;
+}
+
+// FUNCTION: 0x000d1310
+ServiceProvider::ServiceProvider()
+{
+    u32 i;
+
+    local_id = 0;
+    for (i = 0; i < 32; i++)
+        sessions[i].in_use = 0;
+    init_count = 0;
+    unknown528 = 0;
+    player_count = 0;
+    strcpy(name, D_00124e04);
+    started = 0;
+    callback_data = 0;
+    callbacks = (__ic76sReceiveCallbacks *)&D_001507dc;
+}
+
+// FUNCTION: 0x000d13bc
+ServiceProvider::~ServiceProvider()
+{
+    fn_000c20c0(D_00124e05);
+}
+
+// FUNCTION: 0x000d13dc
+TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
+{
+    u32 i;
+
+    fn_000c20c0(D_00124e30);
+    if (init_count)
+        fn_000c20c0(D_00124e5c);
+    player_count = 0;
+    for (i = 0; i < 32; i++)
+        sessions[i].in_use = 0;
+    callback_data = data;
+    if (cbs)
+        callbacks = cbs;
+    unknown528 = 0;
+    started = 0;
+    init_count++;
+    return Lb_OK;
+}
+
+// FUNCTION: 0x000d145c
+TbError ServiceProvider::Release(void)
+{
+    fn_000c20c0(D_00124e7d);
+    unknown528 = 0;
+    if (init_count != 1)
+        fn_000c20c0(D_00124ea6);
+    init_count--;
+    return Lb_OK;
+}
+
+/* Copies at most size - 1 characters and always terminates. */
+inline void NameCopy(char *dst, char *src, u32 size)
+{
+    if (strlen(src) < size) {
+        strcpy(dst, src);
+    } else {
+        memcpy(dst, src, size - 1);
+        dst[size - 1] = 0;
+    }
+}
+
+// FUNCTION: 0x000d14a4
+TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 a, u32 b)
+{
+    u32 i;
+    u32 found;
+    TbError ret;
+    char *dst;
+
+    ret = Lb_FAIL;
+    found = 0;
+    for (i = 0; i < player_count; i++) {
+        if (id == players[i].id)
+            found = 1;
+    }
+    if (found) {
+        ret = Lb_OK;
+    } else if (player_count >= 32) {
+        fn_000c20c0(D_00124ec3);
+    } else {
+        i = player_count;
+        players[i].id = id;
+        dst = players[i].name;
+        if (dst && name)
+            NameCopy(dst, name, 32);
+        players[i].unknown5 = a;
+        players[i].host = b;
+        ret = Lb_OK;
+        player_count++;
+    }
+    return ret;
+}
+
+// FUNCTION: 0x000d15d8
+TbError ServiceProvider::DeletePlayer(u32 id)
+{
+    u32 i;
+    u32 found;
+    u32 index;
+
+    found = 0;
+    for (i = 0; i < player_count; i++) {
+        if (id == players[i].id) {
+            found = 1;
+            index = i;
+        }
+    }
+    if (found) {
+        if (index != player_count - 1) {
+            for (i = index; i < player_count - 1; i++)
+                players[i] = players[i + 1];
+        }
+        player_count--;
+    }
+    return Lb_OK;
+}
+
+// FUNCTION: 0x000d1668
+void ServiceProvider::ClearPlayers(void)
+{
+    player_count = 0;
+}
+
+// FUNCTION: 0x000d1674
+TbNetworkSessionNameEntry *ServiceProvider::AddSession(u32 id, char *name)
+{
+    TbNetworkSessionNameEntry *session;
+    u32 found;
+    u32 i;
+    u32 more;
+    char *dst;
+
+    found = 0;
+    session = 0;
+    for (i = 0; i < 32; i++) {
+        if (sessions[i].in_use && sessions[i].id == id) {
+            found = 1;
+            session = &sessions[i];
+        }
+    }
+    if (!found) {
+        i = 0;
+        more = 1;
+        do {
+            if (!sessions[i].in_use) {
+                sessions[i].id = id;
+                dst = sessions[i].name;
+                if (dst && name)
+                    NameCopy(dst, name, 32);
+                session = &sessions[i];
+                sessions[i].in_use = 1;
+                more = 0;
+            } else {
+                i++;
+                if (i >= 32)
+                    more = 0;
+            }
+        } while (more);
+    }
+    return session;
+}
+
 // FUNCTION: 0xd17a8
 void ServiceProvider::ClearSessions(void)
 {

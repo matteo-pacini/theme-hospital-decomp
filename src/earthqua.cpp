@@ -6,7 +6,6 @@ extern "C" {
 extern s8 D_00145338[16][2];
 void ReleaseLoopedSample(u32 source, s16 sample);
 void fn_000a30f0(s8 dx, s8 dy);
-void fn_000a3140(void);
 }
 
 // FUNCTION: 0x000a2f00
@@ -52,9 +51,4 @@ void fn_000a30f0(s8 dx, s8 dy)
         window.f0[0] += dx;
         window.fc[0] += dy;
     }
-}
-
-// FUNCTION: 0x000a3140
-void fn_000a3140(void)
-{
 }

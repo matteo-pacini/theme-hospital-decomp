@@ -1840,8 +1840,8 @@
 000d1287     23 fn_000d1287_
 000d12aa     2e rename_
 000d12d8      5 remove_
-000d12e0      a __wcpp_2_pure_error__
-000d12ea     25 fn_000d12ea_
+000d12e0      a fn_000d12e0_
+000d12ea     25 __wcpp_2_pure_error__
 000d1310     a9 W?$ct:ServiceProvider$n()_
 000d13bc     1e W?$dt:ServiceProvider$n()_
 000d13dc     80 W?Initialise$:ServiceProvider$n(pn$__ic76sReceiveCallbacks$$pnv)$TbError$$

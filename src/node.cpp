@@ -3,7 +3,6 @@
 extern "C" {
 
 void fn_00015b68(Thing *w);
-void fn_000168a0(Thing *w);
 
 }
 
@@ -66,13 +65,4 @@ void fn_00015b68(Thing *w)
     }
     w->next = 0;
     w->prev = 0;
-}
-
-// FUNCTION: 0x0002bf94
-void remove_node(Thing *w)
-{
-    if (w->room) {
-        fn_000168a0(w);
-    }
-    fn_00015b68(w);
 }

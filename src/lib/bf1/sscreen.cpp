@@ -7,6 +7,9 @@ extern u32 mouse_pos_change_saved;
 extern "C" {
 
 int LbMouseSuspend(void);
+int LbVesaSetMode(s16 mode);
+s32 fn_000be900(TbScreenMode mode);
+s32 fn_000d12e0(void);
 int LbVesaGetInfo(void);
 int LbVesaIsModeAvailable(u16 mode);
 void LbVesaSetPage(s16 page);
@@ -30,6 +33,61 @@ u8 *invert_column(u8 *p, u8 *end, s32 stride);
 
 void wait_vbi(void);
 #pragma aux wait_vbi = 0xba 0xda 0x03 0x00 0x00 0x29 0xc0 0xec 0xa8 0x08 0x74 0xf4 modify [eax edx];
+
+// FUNCTION: 0x000bea80
+int fn_000bea80(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
+{
+    REGS out;
+    REGS in;
+
+    fn_000d12e0();
+    if (!fn_000be900(mode))
+        return -1;
+    LbMouseSuspend();
+    if (!lbDisplay.old_video_mode) {
+        in.x.eax = 0xf00;
+        int386(0x10, &in, &out);
+        lbDisplay.old_video_mode = out.h.al;
+    }
+    if (lbScreenModeInfo[mode].VideoMode >= 256) {
+        lbDisplay.vesa_is_set_up = 1;
+        LbVesaSetMode(lbScreenModeInfo[mode].VideoMode);
+    } else {
+        lbDisplay.vesa_is_set_up = 0;
+        in.x.eax = lbScreenModeInfo[mode].VideoMode;
+        int386(0x10, &in, &out);
+    }
+    lbDisplay.physical_screen = (u8 *)0xa0000;
+    lbDisplay.unknown18 = lbScreenModeInfo[mode].width;
+    lbDisplay.unknown1c = lbScreenModeInfo[mode].height;
+    lbDisplay.graphics_screen_width = width;
+    lbDisplay.graphics_screen_height = height;
+    lbDisplay.screen_mode = mode;
+    lbDisplay.draw_flags = 0;
+    lbDisplay.draw_colour = 0;
+    LbScreenSetGraphicsWindow(0, 0, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height);
+    LbTextSetWindow(0, 0, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height);
+    if (palette)
+        LbPaletteSet(palette);
+    screen_initialised = 1;
+    _lbScreenInitialised = 1;
+    return 1;
+}
+
+// FUNCTION: 0x000bec84
+int fn_000bec84(u8 colour, ...)
+{
+    s32 h;
+    u8 *p;
+
+    p = lbDisplay.graphics_window;
+    h = lbDisplay.graphics_window_height;
+    while (--h != -1) {
+        LbMemorySet(p, colour, lbDisplay.graphics_window_width);
+        p += lbDisplay.graphics_screen_width;
+    }
+    return 1;
+}
 
 // FUNCTION: 0x000becd0
 int LbScreenClear(u8 colour, ...)

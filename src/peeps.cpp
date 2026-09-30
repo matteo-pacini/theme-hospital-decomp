@@ -1402,18 +1402,3 @@ void interrupt_person(Thing *e)
         e->kind = state;
     }
 }
-
-// FUNCTION: 0x0002bb58
-void remove_person_from_room_list(Thing *w)
-{
-    u16 *staff;
-
-    if (w->room) {
-        staff = w->room->staff;
-        if (staff[0] == (u16)(w - thing)) {
-            staff[0] = 0;
-        } else if (staff[1] == (u16)(w - thing)) {
-            staff[1] = 0;
-        }
-    }
-}

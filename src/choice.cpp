@@ -59,6 +59,11 @@ int strcmp(const char *a, const char *b);
 void fn_000a3140(void);
 }
 
+// FUNCTION: 0x000a3140
+void fn_000a3140(void)
+{
+}
+
 // FUNCTION: 0x000a3158
 void display_choice(void)
 {

@@ -14,61 +14,6 @@ extern Menu area;
 extern "C" {
 extern Event D_001549d0[];
 void fn_000444e0(Thing *w);
-void fn_00024a34(u16 tile, u16 room, u8 side);
-#pragma aux fn_00024a34 "W?clear_cell_of_ratholes$n(ucus)v"
-}
-
-// FUNCTION: 0x00024a34
-void fn_00024a34(u16 tile, u16 room, u8 side)
-{
-    s16 x;
-    s16 y;
-    u16 a;
-    u16 b;
-    u8 clear;
-
-    x = tile % 128;
-    y = tile / 128;
-    switch (side) {
-    case 0:
-        a = which_room_number((y - 1) * 128 + x);
-        b = which_room_number((y + 1) * 128 + x);
-        clear = 1;
-        if (a > 0 && a != room) {
-            clear = 0;
-        }
-        if (b > 0 && b != room) {
-            if (which_room_number(y * 128 + x) != 0) {
-                clear = 0;
-            }
-        }
-        if (blocks[map[x + (y << 7)].unknown3].width & 0x10) {
-            clear = 0;
-        }
-        if (clear) {
-            map[x + (y << 7)].unknown3 = 0;
-        }
-        break;
-    case 1:
-        a = which_room_number(x - 1 + y * 128);
-        b = which_room_number((x + 1) + y * 128);
-        clear = 1;
-        if (a > 0 && a != room) {
-            clear = 0;
-        }
-        if (b > 0 && b != room) {
-            if (which_room_number(y * 128 + x) != 0) {
-                clear = 0;
-            }
-        }
-        if (blocks[map[x + (y << 7)].unknown4].width & 0x10) {
-            clear = 0;
-        }
-        if (clear) {
-            map[x + (y << 7)].unknown4 = 0;
-        }
-        break;
-    }
 }
 
 // FUNCTION: 0x0007cd80
@@ -164,6 +109,23 @@ void remove_rathole(u8 owner, u8 idx)
     fn_000c21e6(hole, last, 3);
     memset(last, 0, 3);
     allhosps[owner].fcae--;
+}
+
+// FUNCTION: 0x0007d2a8
+extern "C" void fn_0007d2a8(u8 owner, u16 tile)
+{
+    RatHole *first;
+    RatHole *last;
+    RatHole *hole;
+
+    first = allhosps[owner].fcaf;
+    last = allhosps[owner].fcaf + (allhosps[owner].fcae - 1);
+    for (hole = first; hole < last; hole++) {
+        if (tile == hole->tile) {
+            remove_rathole(owner, hole - first);
+            break;
+        }
+    }
 }
 
 // FUNCTION: 0x0007d364

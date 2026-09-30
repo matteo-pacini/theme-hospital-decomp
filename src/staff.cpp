@@ -34,6 +34,8 @@ void staff_abandon_pager_response(Thing *w);
 void receptionist_reset(Thing *w);
 void remove_node(Thing *w);
 extern "C" {
+void fn_00015b68(Thing *w);
+void fn_000168a0(Thing *w);
 }
 void change_surgeon_to_doc(Thing *w);
 extern s16 staff_states[][5];
@@ -409,6 +411,23 @@ u8 obey_pager(Thing *w)
     return 1;
 }
 
+// FUNCTION: 0x0002ad8c
+u8 process_staff_complex(Thing *w)
+{
+    RoomInfo *room;
+
+    room = w->room;
+    if (room > room_info) {
+        staff_exit_room_check(w);
+        set_complex(w, 0x136, room->unknown6);
+        w->state_b = 0x28;
+        fn_0003e724(w);
+    } else {
+        w->kind = 0x28;
+    }
+    return 1;
+}
+
 // FUNCTION: 0x0002adfc
 u8 take_a_break(Thing *w)
 {
@@ -707,6 +726,21 @@ s32 pay_staff_bonus(Thing *w, u16 amount, u16 percent, u16 morale, u8 owner)
     return total;
 }
 
+// FUNCTION: 0x0002bb58
+void remove_person_from_room_list(Thing *w)
+{
+    u16 *staff;
+
+    if (w->room) {
+        staff = w->room->staff;
+        if (staff[0] == (u16)(w - thing)) {
+            staff[0] = 0;
+        } else if (staff[1] == (u16)(w - thing)) {
+            staff[1] = 0;
+        }
+    }
+}
+
 // FUNCTION: 0x0002bbdc
 void staff_exit_room_check(Thing *w)
 {
@@ -770,6 +804,15 @@ void staff_picked_up(Thing *w)
     remove_person_from_room_list(w);
     remove_node(w);
     w->kind = 0x44;
+}
+
+// FUNCTION: 0x0002bf94
+void remove_node(Thing *w)
+{
+    if (w->room) {
+        fn_000168a0(w);
+    }
+    fn_00015b68(w);
 }
 
 // FUNCTION: 0x0002bfc8

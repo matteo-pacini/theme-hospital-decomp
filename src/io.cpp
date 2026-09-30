@@ -53,6 +53,8 @@ extern s32 D_001581e8;
 extern u8 D_001581ef, D_001581f0;
 extern u8 *D_00153f34;
 extern u8 D_00156910;
+extern u8 D_0015fe84;
+extern u8 D_0015fe85;
 extern u8 D_00158166;
 extern Slot D_001581b2[];
 extern u8 D_0012b7c8[];
@@ -63,6 +65,7 @@ int fn_000bed50(void);
 u32 fn_00022790(void);
 u8 fn_00086b60(void);
 void fn_0008debc(char *s);
+u8 fn_00029748(void);
 void fn_000228e0(void);
 void fn_00022a58(void);
 void fn_0007fbb8(int a);
@@ -2238,6 +2241,46 @@ void check_autosave(void)
     gamevar.ff3 = 0;
     gamevar.ff4u = 1;
     gamevar.fef = 0;
+}
+
+// FUNCTION: 0x00022854
+u8 fn_00022854(u8 warn)
+{
+    if (gamevar.f12e != 0) {
+        if (warn) {
+            othervar.fa66 = 0x19;
+            othervar.fa67 = 0x14;
+        }
+        return 0;
+    }
+    if (fn_00029748() || allhosps[player].unknown11b7) {
+        if (warn) {
+            othervar.fa66 = 0x19;
+            othervar.fa67 = 0x14;
+        }
+        return 0;
+    }
+    return 1;
+}
+
+// FUNCTION: 0x000228e0
+void fn_000228e0(void)
+{
+    if (myplayer.f22) {
+        if (statvar.unknownfd <= 1) {
+            if (mycontrol->unknown64f == 0x1c || D_0015fe85) {
+                if (mycontrol->unknown650 + mycontrol->unknown64f != D_0015fe84 || D_0015fe85) {
+                    if (fn_00022854(0)) {
+                        fn_00021818(8, -1);
+                        D_0015fe84 = mycontrol->unknown650 + mycontrol->unknown64f;
+                        D_0015fe85 = 0;
+                    } else {
+                        D_0015fe85 = 1;
+                    }
+                }
+            }
+        }
+    }
 }
 
 // FUNCTION: 0x000229b0

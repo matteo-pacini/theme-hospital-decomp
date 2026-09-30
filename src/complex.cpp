@@ -6,6 +6,10 @@ void fn_00041a08(Thing *w, u16 arg);
 extern char D_001203a0[];
 extern char D_001203e0[];
 u8 fn_0003e6c0(Thing *w);
+void fn_00041a54(Thing *w);
+void fn_00041b08(Thing *w);
+void fn_000444e0(Thing *w);
+extern char D_001203c0[];
 }
 
 struct Complex {
@@ -53,6 +57,7 @@ void merge_slave(Thing *w);
 void complex_success(Thing *w, u8 kind);
 u8 staff_go_near_object(Thing *w);
 void fail_person_complex(Thing *w);
+void thingpage_cancel_my_response(ThingPager *p, Thing *w);
 
 #define PLAY_FRAME(t, a) \
     { \
@@ -66,21 +71,16 @@ void rest_staff(Thing *w, s16 amount);
 void research_contribution(Thing *w, s16 amount);
 void person_autopsied(Thing *w);
 
-// FUNCTION: 0x0002ad8c
-u8 process_staff_complex(Thing *w)
+// FUNCTION: 0x0003e6c0
+extern "C" u8 fn_0003e6c0(Thing *w)
 {
-    RoomInfo *room;
-
-    room = w->room;
-    if (room > room_info) {
-        staff_exit_room_check(w);
-        set_complex(w, 0x136, room->unknown6);
-        w->state_b = 0x28;
-        fn_0003e724(w);
-    } else {
-        w->kind = 0x28;
+    switch (w->renderer) {
+    case 4:
+        return fn_0003e724(w);
+    case 2:
+        return process_person_complex(w);
     }
-    return 1;
+    return 0;
 }
 
 // FUNCTION: 0x0003e724
@@ -903,6 +903,93 @@ void person_complex_retry(Thing *w)
         } else {
             w->sprite = next;
         }
+    }
+}
+
+// FUNCTION: 0x0004195c
+void fn_0004195c(Thing *w, u16 pos)
+{
+    w->unknown19 = pos % 128;
+    w->unknown20 = pos / 128;
+    w->height = 0;
+    fn_000444e0(w);
+}
+
+// FUNCTION: 0x000419bc
+void fn_000419bc(Thing *w, u16 pos)
+{
+    w->unknown95 = pos % 128;
+    w->unknown96 = pos / 128;
+}
+
+// FUNCTION: 0x00041a08
+void fn_00041a08(Thing *w, u16 pos)
+{
+    w->unknown97 = pos % 128;
+    w->unknown98 = pos / 128;
+}
+
+// FUNCTION: 0x00041a54
+void fn_00041a54(Thing *w)
+{
+    CompFrame *f;
+
+    if (actual_game_turn % w->anim_speed == 0) {
+        w->sprite = frame[w->sprite].next;
+        f = &frame[w->sprite];
+        if (f->flags & 1) {
+            process_person_complex(w);
+            sprintf((char *)&debug.unknownc[0x64], D_001203c0, (u16)(w - thing), 0);
+        }
+    }
+}
+
+// FUNCTION: 0x00041b08
+void fn_00041b08(Thing *w)
+{
+    Thing *other;
+    Thing *src;
+
+    other = &thing[w->unknown73];
+    if (other > thing) {
+        if (other->kind == 0x18) {
+        w->kind = w->state_b;
+        w->state_b = 0;
+        process_person_complex(w);
+        other->kind = 0x2a;
+        src = &thing[w->unknown69];
+        if (src > thing) {
+            w->unknown30[4] = other->unknown30[4];
+            w->unknown30[5] = other->unknown30[5];
+            w->unknown30[6] = other->unknown30[6];
+            w->unknown30[7] = other->unknown30[7];
+            w->unknown30[8] = other->unknown30[8];
+        }
+        w->unknown30[9] = src->unknown30[9];
+        w->unknown30[0xa] = src->unknown30[0xa];
+        w->unknown30[0xb] = src->unknown30[0xb];
+        }
+    }
+}
+
+// FUNCTION: 0x00041c0c
+void fn_00041c0c(Thing *w)
+{
+    if (w->state_a) {
+        u16 anim;
+
+        w->kind = w->state_a;
+        w->unknown61 = w->unknown63 = w->unknown75w = 0;
+        w->icon = w->unknown65 = 0;
+        anim = check_frame(staff_anim_starts[w->subtype].unknownA, w) + (u16)w->unknown17;
+        w->sprite = start[anim].frame;
+        w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+        if (w->subtype == 2) {
+            thingpage_cancel_my_response(&allhosps[w->owner].fd2b, w);
+            thingpage_cancel_my_response(&allhosps[w->owner].ff6d, w);
+        }
+    } else {
+        w->kind = 0x2c;
     }
 }
 

@@ -47,6 +47,49 @@ void process_graph_panel(void);
 extern "C" {
 }
 
+// FUNCTION: 0x00078d70
+void fn_00078d70(s16 kind, s16 value, s32 data)
+{
+    u8 i;
+
+    i = 0;
+    while (D_0015eba0[i].value <= value && i < D_0015eb9c)
+        i++;
+    memmove(&D_0015eba0[i + 1], &D_0015eba0[i], (D_0015eb9c - i) * 7);
+    D_0015eba0[i].kind = kind;
+    D_0015eba0[i].value = value;
+    D_0015eba0[i].data = data;
+    D_0015eb9c++;
+}
+
+// FUNCTION: 0x00078e38
+void fn_00078e38(u16 gap)
+{
+    u8 moved;
+    s16 i;
+    u8 below;
+    u8 above;
+
+    moved = 1;
+    while (moved) {
+        moved = 0;
+        for (i = 0; i < D_0015eb9c; i++) {
+            below = i > 0 && D_0015eba0[i].value - D_0015eba0[i - 1].value < gap ? (u8)1 : (u8)0;
+            above = i < D_0015eb9c - 1 && D_0015eba0[i + 1].value - D_0015eba0[i].value < gap ? (u8)1 : (u8)0;
+            if (below && !above) {
+                if (D_0015eba0[i].value < resvars.f3c_GraphRectp[46].y)
+                    D_0015eba0[i].value++;
+                moved = 1;
+            }
+            if (!below && above) {
+                if (D_0015eba0[i].value > resvars.f3c_GraphRectp[46].y - resvars.f3c_GraphRectp[46].h - gap)
+                    D_0015eba0[i].value--;
+                moved = 1;
+            }
+        }
+    }
+}
+
 // FUNCTION: 0x00078fc4
 void draw_graphs(u16 x, u16 y, u16 h, u16 step)
 {

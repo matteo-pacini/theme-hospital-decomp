@@ -17,6 +17,12 @@ int fn_000bed50(void);
 void fn_0001102c(void);
 }
 
+// FUNCTION: 0x0009b590
+extern "C" int __far fn_0009b590(unsigned deverr, unsigned errcode, unsigned __far *devhdr)
+{
+    return 3;
+}
+
 // FUNCTION: 0x0009b5b8
 void check_cd_available(char *path)
 {

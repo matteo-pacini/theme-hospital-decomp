@@ -6,7 +6,7 @@ extern short D_001516fc;
 void __wcpp_2_fatal_runtime_error_(char *msg, int code);
 
 // FUNCTION: 0xd12ea
-void fn_000d12ea(void)
+void __wcpp_2_pure_error_(void)
 {
     if (!D_001516fc) {
         D_001516fc = 1;

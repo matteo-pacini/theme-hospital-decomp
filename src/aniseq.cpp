@@ -73,9 +73,3 @@ void choose_aniseq(Thing *w, u8 group, u8 mode)
         ;
     setup_aniseq(w, D_0012d320[group * 10 + old_newrand() % n], mode);
 }
-
-// FUNCTION: 0x0009b590
-extern "C" int __far fn_0009b590(unsigned deverr, unsigned errcode, unsigned __far *devhdr)
-{
-    return 3;
-}

@@ -44,12 +44,6 @@ typedef enum {
     MSG_TYPE_8 = 8
 } TbMessageType;
 
-struct TbNetworkSessionSlot {
-    u8 unknown0[5];
-    u32 in_use;
-    u8 unknown9[0x20];
-};
-
 struct TbNetworkPlayerEntry {
     u8 unknown0;
     u32 id;
@@ -73,7 +67,7 @@ struct __ic76sReceiveCallbacks {
 
 struct ServiceProvider {
     u32 local_id;
-    TbNetworkSessionSlot sessions[32];
+    TbNetworkSessionNameEntry sessions[32];
     u32 init_count;
     u32 unknown528;
     u32 player_count;

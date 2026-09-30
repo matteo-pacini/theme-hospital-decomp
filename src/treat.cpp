@@ -839,15 +839,3 @@ void record_person_as_patient(Thing *w)
         w->unknown118 |= 0x40;
     }
 }
-
-// FUNCTION: 0x0003e6c0
-extern "C" u8 fn_0003e6c0(Thing *w)
-{
-    switch (w->renderer) {
-    case 4:
-        return fn_0003e724(w);
-    case 2:
-        return process_person_complex(w);
-    }
-    return 0;
-}

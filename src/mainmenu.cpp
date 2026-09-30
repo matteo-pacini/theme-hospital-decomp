@@ -2,15 +2,9 @@
 
 extern Menu loadgame;
 extern Menu nickname;
-extern PlotBid plotbid;
 extern s32 current_frame;
 
 void help_hotspot_detected(u16 id, u8 a, s16 b, s16 c);
-void calculate_land_amount(void);
-void setup_overhead_map(void);
-void draw_money_on_town(void);
-void process_bid_panel(void);
-void process_bid_time(void);
 void tri_test(void);
 u8 check_tri(u16 x1, u16 y1, u16 x2, u16 y2, u16 x3, u16 y3, u16 x, u16 y);
 void display_main_menu(void);
@@ -18,24 +12,16 @@ void play_main_menu_intro(void);
 
 extern "C" {
 extern void *smack_draw_callback;
-void LbMouseSetWindow(s32 x, s32 y, s32 w, s32 h);
 
 int fn_000bed50(void);
 void fn_0001102c(void);
 void fn_00011058(void);
 void fn_000110b0(void);
 void fn_000905f4(void);
-void fn_00066914(void);
-void fn_000688e4(void);
-void fn_00068a14(void);
-void fn_000669fc(void);
-void fn_0006680c(void);
 void fn_0006310c(void);
 u8 fn_00063174(void);
 u8 fn_00063300(void);
 u8 fn_0006344c(s16 *scroll, u16 *line);
-void fn_00063680(void);
-void fn_00063a64(void);
 
 extern u8 *D_00153f34;
 extern u8 D_00156910;
@@ -45,8 +31,6 @@ extern char D_00120488[];
 extern char D_0012049a[];
 extern char D_0012049f[];
 extern char D_001204a4[];
-extern char D_001204a8[];
-extern char D_001204ba[];
 extern char D_0013f4fa[];
 }
 
@@ -737,130 +721,4 @@ u8 fn_0006344c(s16 *scroll, u16 *line)
         (*line)++;
     }
     return done;
-}
-
-// FUNCTION: 0x00063680
-void fn_00063680(void)
-{
-    u32 i;
-    u32 total;
-
-    switch (town.unknown2) {
-    case 0:
-        lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        setup_abort_all_requesters();
-        othervar.f6a = myhosp->fc94;
-        othervar.f6b_u32 = 0x32;
-        load_ingame_pic(1, 1, 0xa, level_number, SCREEN_MODE_13);
-        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        if (!town.unknown0)
-            town.unknown0 = 0x1f;
-        calculate_land_amount();
-        set_mouse_mode(0xa);
-        set_font_from_cache(0);
-        setup_overhead_map();
-        town.unknown2 = 7;
-        othervar.f69 = 1;
-        fn_00066914();
-        draw_money_on_town();
-        set_font_from_cache(0);
-        othervar.fa8a = 0x1e;
-        LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-        break;
-    case 1:
-        lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, D_001204a8);
-        display_mode = 0;
-        fn_000688e4();
-        town.unknown2 = 0;
-        LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-        fn_00068a14();
-        break;
-    case 7:
-        compute_help_text(0, 0, 0x13);
-        fn_00066914();
-        draw_money_on_town();
-        set_font_from_cache(0);
-        draw_help_text();
-        set_mouse_mode(0xa);
-        if (lbDisplay.rleft_button) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0xd, 0x1a6, 0xc0, 0x2e)) {
-                fn_00074220(0, 0x41);
-                LbGhostTableGenerate(D_00153f34, 0x42, D_001204ba);
-                town.unknown2 = 0;
-            }
-        }
-        break;
-    case 0xb:
-        lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        othervar.f6a = 1;
-        othervar.f6b_u32 = 0;
-        othervar.f6a = myhosp->fc94;
-        othervar.f6b_u32 = 0x32;
-        LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        town.unknown0 = 3;
-        town.unknown2 = 0xc;
-        calculate_land_amount();
-        set_font_from_cache(0xc);
-        LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-        break;
-    case 0x45:
-        fn_000669fc();
-        process_bid_panel();
-        process_bid_time();
-        break;
-    case 0xc:
-        othervar.f69 = 1;
-        fn_0006680c();
-        town.unknown2 = 0x45;
-        total = 0;
-        for (i = 0; i < 0x4000; i++) {
-            if (level->plots[i] == othervar.f78)
-                total += gbv.f7c;
-        }
-        plotbid.price = total;
-        if (total > 0) {
-            plotbid.step = total / 10;
-            if ((u32)plotbid.step < 10)
-                plotbid.step = 10;
-        }
-        for (i = 0; i < 4; i++)
-            plotbid.bids[i] = 0;
-        plotbid.bidder = 0x63;
-        plotbid.timer = 0x64;
-        break;
-    default:
-        town.unknown2 = 0;
-        break;
-    }
-    if (othervar.fa8a)
-        othervar.fa8a--;
-}
-
-// FUNCTION: 0x00063a64
-void fn_00063a64(void)
-{
-    switch (town.unknown2) {
-    case 0:
-    case 1:
-    case 4:
-    case 5:
-    case 6:
-    case 0xb:
-    case 0xc:
-    case 0x45:
-        return;
-    default:
-        break;
-    }
-    switch (lbInkey) {
-    case 1:
-        town.unknown2 = 1;
-        break;
-    default:
-        break;
-    }
-    lbInkey = 0;
 }

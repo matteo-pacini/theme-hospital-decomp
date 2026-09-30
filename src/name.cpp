@@ -57,14 +57,6 @@ void balance_filename(char *name);
 void draw_glass_text(SlistButton *b, char *text);
 void draw_glass_text_hilight(SlistButton *b, char *text);
 char *read_line_from_buf(char *line, s32 max, char *src);
-void init_mcga_coords(void);
-void init_midi(void);
-void init_andys_variables(void);
-void setup_req4_references(void);
-void setup_help_indices(void);
-void setup_aniseq_indices(void);
-void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n);
-void init_wibble(void *xoff, void *yoff, s32 w, s32 h, s32 width, s32 freq, s32 amp);
 
 extern TbFileFind balance_file;
 extern char balance_file_name[];
@@ -80,11 +72,6 @@ extern char D_00120898[], D_001208a9[], D_001208bb[], D_001208c5[], D_001208d6[]
 extern char *D_00138020, *D_00138024;
 extern char D_001208f1[], D_00120904[], D_00120915[], D_00120926[], D_00120935[], D_00120937[], D_0012093c[];
 extern char D_00120941[], D_00120953[], D_00120963[], D_00120966[];
-extern u8 D_001581a6;
-extern char **D_0016037c, **D_00160374, **D_00160320, **D_00160398, **D_0016039c;
-extern u8 D_00156c04[], D_00157624[];
-extern u8 D_0015f99f;
-extern Event D_001549d0[];
 extern s8 __IsTable[];
 #pragma aux __IsTable "*"
 
@@ -95,7 +82,6 @@ int LbFileFindNext(void *find);
 char *strtok(char *s, char *delim);
 char *strncpy(char *dst, char *src, u32 n);
 int stricmp(char *a, char *b);
-void fn_00054d60(void);
 
 }
 
@@ -638,49 +624,4 @@ void balance_filename(char *name)
 // FUNCTION: 0x000905f4
 extern "C" void fn_000905f4(void)
 {
-}
-
-// FUNCTION: 0x00090610
-extern "C" void fn_00090610(void)
-{
-    init_mcga_coords();
-    set_font_from_cache(0);
-    LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    init_andys_variables();
-    setup_req4_references();
-    crequester.unknown2 = D_001581a6 = 0x63;
-    myplayer.f1d = 1;
-    setup_menus();
-    fn_00054d60();
-    setup_help_indices();
-    setup_aniseq_indices();
-    setup_indices_for_composite_help(D_0016037c, statvar.f4df, 0x1f);
-    setup_indices_for_composite_help(D_00160374, statvar.f51d, 0x13);
-    setup_indices_for_composite_help(D_00160320, statvar.f543, 0xd);
-    setup_indices_for_composite_help(D_00160398, statvar.f55b, 0xb);
-    setup_indices_for_composite_help(D_0016039c, statvar.f56f, 4);
-    InitPixBuffer(0, 0, 0xb4, 0xb4, 0xfe, 1);
-    init_midi();
-    init_ambients();
-    gamecounts.unknown14 = LbTimerClock();
-    myplayer.f1e = 0x19;
-    init_wibble(D_00156c04, D_00157624, pixBuf.width + 0x20, pixBuf.width + 0x20, pixBuf.width, 0x11, 2);
-    measure_objects();
-    choice_backup.mode = 0;
-    current_text.text[0] = 0;
-    if (debug.unknown1fa) {
-        if (fn_000cd716(myplayer.unknown0) == 0)
-            fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
-        fn_00090804((u16)level_number, 1);
-        load_player_details();
-        othervar.f24 = D_00153f34;
-        if (!D_0015f99f) {
-            D_001549d0[player].type = 0x1e;
-            D_001549d0[player].value = debug.unknown10a;
-        } else {
-            D_001549d0[player].type = 0x1d;
-        }
-    } else {
-        D_001549d0[player].type = 0x1d;
-    }
 }
