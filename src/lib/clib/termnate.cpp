@@ -11,7 +11,6 @@ struct thread_ctl {
 };
 
 extern thread_ctl _wint_thread_data;
-extern char D_00128830[];
 
 void __wcpp_2_fatal_runtime_error_(char *msg, int code);
 void __exit(int status);
@@ -33,6 +32,6 @@ void terminate(void)
         __wcpp_2_fatal_runtime_error_(thr->abort_msg, 1);
     } else {
         handler();
-        __wcpp_2_fatal_runtime_error_(D_00128830, 1);
+        __wcpp_2_fatal_runtime_error_("return from \"terminate\" function!", 1);
     }
 }

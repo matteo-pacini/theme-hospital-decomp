@@ -13,21 +13,6 @@ static S32 locked = 0;
 IO_PARMS AIL_last_IO_attempt;
 static U32 flags;
 
-extern char D_00126b3c[];
-extern char D_00126b50[];
-extern char D_00126b58[];
-extern char D_00126b60[];
-extern char D_00126b68[];
-extern char D_00126b6c[];
-extern char D_00126b78[];
-extern char D_00126b84[];
-extern char D_00126b9c[];
-extern char D_00126bc8[];
-extern char D_00126be4[];
-extern char D_00126bec[];
-extern char D_00126bf4[];
-extern char D_00126c0c[];
-extern char D_00126c24[];
 
 void AIL_start(void);
 void AIL_end(void);
@@ -86,7 +71,7 @@ S32 __cdecl ASC_val(char *str, S32 base, char **end)
             continue;
         }
         for (j = 0; j < base; j++) {
-            if (ch == D_00126b3c[j]) {
+            if (ch == "0123456789ABCDEF"[j]) {
                 total = total * base + j;
                 break;
             }
@@ -191,23 +176,23 @@ S32 __cdecl AIL_API_read_INI(AIL_INI *INI, char *filename)
         if (key[0] == ';') {
             continue;
         }
-        if (!strnicmp(key, D_00126b50, 7)) {
+        if (!strnicmp(key, "DRIVER", 7)) {
             strcpy(work.driver_name, value);
-        } else if (!strnicmp(key, D_00126b58, 7)) {
+        } else if (!strnicmp(key, "DEVICE", 7)) {
             strcpy(work.device_name, value);
-        } else if (!strnicmp(key, D_00126b60, 8)) {
+        } else if (!strnicmp(key, "IO_ADDR", 8)) {
             work.IO.IO = ASC_val(value, 16, NULL);
-        } else if (!strnicmp(key, D_00126b68, 4)) {
+        } else if (!strnicmp(key, "IRQ", 4)) {
             work.IO.IRQ = ASC_val(value, 10, NULL);
-        } else if (!strnicmp(key, D_00126b6c, 10)) {
+        } else if (!strnicmp(key, "DMA_8_bit", 10)) {
             work.IO.DMA_8_bit = ASC_val(value, 10, NULL);
-        } else if (!strnicmp(key, D_00126b78, 11)) {
+        } else if (!strnicmp(key, "DMA_16_bit", 11)) {
             work.IO.DMA_16_bit = ASC_val(value, 10, NULL);
         }
     }
     AIL_fclose(file);
     if (strlen(work.driver_name) == 0 || strlen(work.device_name) == 0) {
-        strcpy(AIL_error, D_00126b84);
+        strcpy(AIL_error, "Corrupted .INI file\n");
         return 0;
     }
     *INI = work;
@@ -238,24 +223,24 @@ AIL_DRIVER *__cdecl AIL_API_install_driver(U8 *driver_image, U32 n_bytes)
 
     drvr = AIL_mem_alloc_lock(sizeof(AIL_DRIVER));
     if (drvr == NULL) {
-        strcpy(AIL_error, D_00126b9c);
+        strcpy(AIL_error, "Insufficient memory for driver descriptor\n");
         return NULL;
     }
     drvr->size = n_bytes;
     if (!AIL_mem_alloc_DOS((n_bytes + 15) / 16, &drvr->buf, &drvr->seg,
                            &drvr->sel)) {
-        strcpy(AIL_error, D_00126bc8);
+        strcpy(AIL_error, "Insufficient low memory\n");
         AIL_mem_free_lock(drvr);
         return NULL;
     }
     memcpy(drvr->buf, driver_image, n_bytes);
     drvr->VHDR = drvr->buf;
-    if (!strnicmp(drvr->VHDR->ID, D_00126be4, 7)) {
+    if (!strnicmp(drvr->VHDR->ID, "AIL3DIG", 7)) {
         drvr->type = DIG_DRIVER;
-    } else if (!strnicmp(drvr->VHDR->ID, D_00126bec, 7)) {
+    } else if (!strnicmp(drvr->VHDR->ID, "AIL3MDI", 7)) {
         drvr->type = MDI_DRIVER;
     } else {
-        strcpy(AIL_error, D_00126bf4);
+        strcpy(AIL_error, "Invalid driver type\n");
         AIL_mem_free_DOS(drvr->buf, drvr->seg, drvr->sel);
         AIL_mem_free_lock(drvr);
         return NULL;
@@ -268,7 +253,7 @@ AIL_DRIVER *__cdecl AIL_API_install_driver(U8 *driver_image, U32 n_bytes)
         }
     }
     if (i == 16) {
-        strcpy(AIL_error, D_00126c0c);
+        strcpy(AIL_error, "Out of driver handles\n");
         AIL_mem_free_DOS(drvr->buf, drvr->seg, drvr->sel);
         AIL_mem_free_lock(drvr);
         return NULL;
@@ -286,7 +271,7 @@ AIL_DRIVER *__cdecl AIL_API_install_driver(U8 *driver_image, U32 n_bytes)
     } else {
         drvr->server = AIL_register_timer(AIL_DRIVER_SERVER);
         if (drvr->server == -1) {
-            strcpy(AIL_error, D_00126c24);
+            strcpy(AIL_error, "Out of timer handles\n");
             AIL_set_real_vect(0x66, drvr->VHDR->prev_ISR);
             AIL_mem_free_DOS(drvr->buf, drvr->seg, drvr->sel);
             AIL_mem_free_lock(drvr);

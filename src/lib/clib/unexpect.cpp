@@ -11,7 +11,6 @@ struct thread_ctl {
 };
 
 extern thread_ctl _wint_thread_data;
-extern char D_00128854[];
 
 void __wcpp_2_fatal_runtime_error_(char *msg, int code);
 
@@ -31,6 +30,6 @@ void unexpected(void)
         terminate();
     } else {
         handler();
-        __wcpp_2_fatal_runtime_error_(D_00128854, 1);
+        __wcpp_2_fatal_runtime_error_("return from \"unexpected\" function!", 1);
     }
 }

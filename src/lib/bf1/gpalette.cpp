@@ -6,7 +6,6 @@ extern "C" {
 extern u8 D_00189ad4[];
 extern u8 D_001897d4[];
 extern s32 D_00189dd4;
-extern char D_001242c4[];
 
 int LbScreenWaitVbi(void);
 int abs(int n);
@@ -180,7 +179,7 @@ int LbPaletteDraw(s32 x, s32 y, s32 w, s32 h, u8 show_numbers)
         for (j = 0, px = x; j < 16; j++, px += w) {
             LbDrawBox(px, y, w, h, colour);
             if (show_numbers) {
-                sprintf(text, D_001242c4, colour);
+                sprintf(text, "%d", colour);
                 lbDisplay.draw_colour = 255 - colour;
                 LbTextDraw(px, y, text);
             }

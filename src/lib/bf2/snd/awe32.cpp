@@ -43,11 +43,6 @@ extern u8 UseCurrentAwe32Soundfont;
 extern u8 Awe32SoundfontLoaded;
 extern char CurrentAwe32SoundfontPrefix[];
 extern char D_0018c8b4[];
-extern char D_00127ff0[];
-extern char D_00127ffc[];
-extern char D_00127ffe[];
-extern char D_00128008[];
-extern char D_00128014[];
 
 int stricmp(const char *a, const char *b);
 char *strcpy(char *dst, const char *src);
@@ -240,14 +235,14 @@ void LoadAwe32Soundfont(char *prefix)
         Awe32SoundfontLoaded = 1;
         return;
     }
-    if (!MusicInstalled || !MusicAble || stricmp(D_0018c8b4, D_00127ff0) || stricmp(MusicType, D_00127ffc))
+    if (!MusicInstalled || !MusicAble || stricmp(D_0018c8b4, "SBAWE32.MDI") || stricmp(MusicType, "w"))
         return;
     if (Awe32SoundfontLoaded == 1) {
         FreeAwe32Soundfont();
         Awe32SoundfontLoaded = 0;
     }
     strcpy(CurrentAwe32SoundfontPrefix, prefix);
-    sprintf(path, D_00127ffe, MusicDataPath, CurrentAwe32SoundfontPrefix);
+    sprintf(path, "%s/%s.sbk", MusicDataPath, CurrentAwe32SoundfontPrefix);
     sbkHandle = LbFileOpen(path, 2);
     if (sbkHandle == -1)
         return;
@@ -289,8 +284,8 @@ void LoadAwe32Soundfont(char *prefix)
 // FUNCTION: 0xefad0
 void FreeAwe32Soundfont(void)
 {
-    if (!UseCurrentAwe32Soundfont && MusicInstalled && MusicAble && !stricmp(D_0018c8b4, D_00128008)
-        && !stricmp(MusicType, D_00128014)) {
+    if (!UseCurrentAwe32Soundfont && MusicInstalled && MusicAble && !stricmp(D_0018c8b4, "SBAWE32.MDI")
+        && !stricmp(MusicType, "w")) {
         AWEFreeMem((AWEDriver *)MusicDriver, 1);
         FreeDOSmem(buffer);
         FreeDOSmem(preset);

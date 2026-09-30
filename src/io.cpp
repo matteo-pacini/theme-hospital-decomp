@@ -47,7 +47,6 @@ extern u32 D_0015fe78, D_0015fe7c, D_0015fe80;
 extern u32 D_0016028c, D_00160290;
 extern u8 D_00160294;
 extern Struct_001602a0 *D_001602a0;
-extern char D_00120260[], D_0012026a[], D_0012027f[], D_0012028f[], D_001202a4[], D_001202aa[];
 extern u8 D_001581ee;
 extern s32 D_001581e8;
 extern u8 D_001581ef, D_001581f0;
@@ -59,7 +58,6 @@ extern u8 D_00158166;
 extern Slot D_001581b2[];
 extern u8 D_0012b7c8[];
 extern Stride6c D_0015f5c2[];
-extern char D_001202ba[], D_001202c1[], D_001202c8[], D_001202cf[], D_001202e2[], D_001202f3[];
 
 int LbScreenLock(void);
 u32 fn_00022790(void);
@@ -102,7 +100,7 @@ void fn_0001c084(int n)
             while (LbScreenLock() != 1) {
             }
         }
-        sprintf(buf, D_00120260, D_001602a0->f6c, n);
+        sprintf(buf, "%s (%d%%)", D_001602a0->f6c, n);
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(0x2c);
@@ -321,7 +319,7 @@ void process_turn(void)
         LbFileRead(D_001581e8, &gamevar, 0x178);
         LbFileRead(D_001581e8, &version, 4);
         if (seed != version) {
-            fn_000bbff0(debug.unknown116, D_0012026a);
+            fn_000bbff0(debug.unknown116, "PLAYBACK OUT OF SYNC");
             debug.unknown1de = 200;
         }
         LbMouseSetPosition(w, h);
@@ -355,13 +353,13 @@ void process_turn(void)
     }
     if (statvar.unknownfd > 1) {
         D_001549d0[player].checksum = fn_00022790();
-        sprintf(buf, D_0012027f, 0xf);
+        sprintf(buf, "size of pac %ld", 0xf);
         if (!fn_00086b60()) {
             LbNetwork_ChangeExchangeBuffer(packet, 0xf);
-            fn_0008debc(D_0012028f);
+            fn_0008debc("Entering net xchg...");
             if (LbNetwork_Exchange((u8 *)packet + player * 0xf) == -1) {
             }
-            fn_0008debc(D_001202a4);
+            fn_0008debc("done\n");
             if (game_turn == 4) {
                 LbNetwork_ChangeExchangeTimeout(0);
             }
@@ -646,7 +644,7 @@ void process_turn(void)
                             D_001581ef = 1;
                         }
                         LbFileClose(D_001581e8);
-                        sprintf(name, D_001202aa, statvar.f575, D_001581ef);
+                        sprintf(name, "%ssave/hosp.r%d", statvar.f575, D_001581ef);
                         D_001581e8 = LbFileOpen(name, 2);
                         if (D_001581e8 > 0) {
                             D_001581ee |= 2;
@@ -1862,7 +1860,7 @@ s16 save_game_valid(const s8 slot)
     char buf[64];
     int h;
 
-    sprintf(buf, D_001202ba, statvar.f575, statvar.f6c, slot);
+    sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
     if (LbFileLengthRnc(buf) == statvar.unknown0) {
         h = LbFileOpen(buf, 2);
         if (h != -1) {
@@ -1928,7 +1926,7 @@ u16 fn_00021818(s8 slot, s8 player)
         }
     }
     if (player == -1) {
-        sprintf(buf, D_001202c1, statvar.f575, statvar.f6c, slot);
+        sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
         h = LbFileOpen(buf, 0);
         if (h != -1) {
             for (i = 0; D_001290d4[i].addr; i++) {
@@ -2012,7 +2010,7 @@ s16 fn_00021c38(s8 slot, s8 port)
         if (load_level(level_number, 1)) {
             ok = 1;
             setup_addresses();
-            sprintf(buf, D_001202c8, statvar.f575, statvar.f6c, slot);
+            sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
             h = LbFileOpen(buf, 2);
             if (h != -1) {
                 for (i = 0; D_001290d4[i].addr; i++) {
@@ -2149,10 +2147,10 @@ s8 load_level(const u8 lvl, const u8 full)
         return 0;
     }
     if (install_type < 3) {
-        sprintf(buf, D_001202cf, cd_install_path, lvl);
+        sprintf(buf, "%slevels/level.l%d", cd_install_path, lvl);
         check_cd_available(buf);
     } else {
-        sprintf(buf, D_001202e2, lvl);
+        sprintf(buf, "levels/level.l%d", lvl);
     }
     if (LbFileLoadAt(buf, level) == LbFileLengthRnc(buf)) {
         if (!full) {
@@ -2290,7 +2288,7 @@ s32 read_level_number(s32 n)
     char buf[64];
     u8 level;
 
-    sprintf(buf, D_001202f3, statvar.f575, statvar.f6c, n);
+    sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, n);
     h = LbFileOpen(buf, 2);
     if (h == -1) {
         return -1;

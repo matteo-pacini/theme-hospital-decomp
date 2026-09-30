@@ -12,7 +12,6 @@ struct Offset {
 
 extern "C" {
 
-extern char D_001201a4[];
 extern s16 D_001567b0[8];
 extern ToDraw *D_00153fa4[32];
 extern FloorDef D_001379f0[];
@@ -353,7 +352,7 @@ void mapwho_numfx(Thing *w, s32 x, s32 y)
         break;
     default:
         if (w->mode == 0) {
-            sprintf(buf, D_001201a4, w->value);
+            sprintf(buf, "%d", w->value);
         } else if (w->mode == 1) {
             fn_000bbff0(buf, w->text);
         } else if (w->mode == 2) {

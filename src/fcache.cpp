@@ -19,11 +19,6 @@ extern s8 D_00175239;
 extern u8 D_00161270[];
 extern u8 D_0016126c;
 extern u8 D_0016126d;
-extern char D_00121b3c[];
-extern char D_00121b8b[];
-extern char D_00121b92[];
-extern char D_00121b99[];
-extern char D_00121ba0[];
 }
 
 s8 get_fontmem(void);
@@ -43,7 +38,7 @@ s8 get_fontmem(void)
 
     i = fontmem_head;
     if (i == -1) {
-        hosp_dos_printf(D_00121b3c);
+        hosp_dos_printf("FONT CACHE IS PANICKED! Increase MAX_NB_FONTS (number of FontMem structures)!\n");
         return -1;
     }
     i = fontmem_head;
@@ -302,11 +297,11 @@ void set_font_from_cache(const s32 font)
         return;
     }
     names = resvars.fa_charpp;
-    sprintf(name, D_00121b8b, names[font]);
+    sprintf(name, "%s.tab", names[font]);
     len1 = LbFileLengthRnc(name);
     if (len1 == -1)
         return;
-    sprintf(name, D_00121b92, names[font]);
+    sprintf(name, "%s.dat", names[font]);
     len2 = LbFileLengthRnc(name);
     if (len2 == -1)
         return;
@@ -314,11 +309,11 @@ void set_font_from_cache(const s32 font)
     block = get_block_from_free_list(total);
     if (block == -1)
         return;
-    sprintf(name, D_00121b99, names[font]);
+    sprintf(name, "%s.tab", names[font]);
     loaded = LbFileLoadAt(name, &D_00161270[font_memory[block].offset]);
     if (loaded != -1) {
         font_memory[block].end = font_memory[block].offset + loaded;
-        sprintf(name, D_00121ba0, names[font]);
+        sprintf(name, "%s.dat", names[font]);
         loaded = LbFileLoadAt(name, &D_00161270[font_memory[block].end]);
         if (loaded != -1) {
             realign_sprites((TbSprite *)&D_00161270[font_memory[block].offset],

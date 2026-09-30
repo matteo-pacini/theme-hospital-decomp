@@ -9,13 +9,6 @@ void fn_000d080c(char *fmt, ...);
 int fn_000d0848(char *expr, char *file, int line);
 void int3(void);
 #pragma aux int3 = 0xcc;
-extern char D_00121dfc[];
-extern char D_00121e0a[];
-extern char D_00121e21[];
-extern char D_00121e63[];
-extern char D_00121e6d[];
-extern char D_00121e7e[];
-extern char D_00121ea7[];
 
 // FUNCTION: 0xbccf0
 void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *files))
@@ -79,26 +72,26 @@ int LbDataLoadAll(TbLoadFiles *files)
     TbLoadFiles *t;
 
     count = 0;
-    fn_000cd2cc(D_00121dfc);
+    fn_000cd2cc("LbDataLoadAll");
     for (t = files; t->Start; t++)
         LbDataFree(t);
     for (t = files; t->Start; t++) {
         ret = LbDataLoad(t);
         if (ret == -100) {
-            fn_000d080c(D_00121e0a, t);
+            fn_000d080c("ERROR: Allocation %s.\n", t);
             {
                 char msg[150];
-                sprintf(msg, D_00121e21, t);
-                if (fn_000d0848(msg, D_00121e63, 102))
+                sprintf(msg, "LbDataLoadAll() : Memory alloaction error before loading file: %s", t);
+                if (fn_000d0848(msg, "gdata.cpp", 102))
                     int3();
             }
             count++;
         } else if (ret == -101) {
-            fn_000d080c(D_00121e6d, t);
+            fn_000d080c("ERROR: File %s.\n", t);
             {
                 char msg[150];
-                sprintf(msg, D_00121e7e, t);
-                if (fn_000d0848(msg, D_00121ea7, 110))
+                sprintf(msg, "LbDataLoadAll() : Error loading file: %s", t);
+                if (fn_000d0848(msg, "gdata.cpp", 110))
                     int3();
             }
             count++;

@@ -24,9 +24,6 @@ extern Event D_001549d0[];
 extern char **D_0016031c;
 extern char **D_00160320;
 extern char **D_001602c4;
-extern char D_00121ad0[];
-extern char D_00121ad2[];
-extern char D_00121ad4[];
 
 u32 time(u32 *t);
 void fn_0001102c(void);
@@ -141,10 +138,10 @@ void play_winlose(void)
             stop_midi();
         D_0015f48a = 0;
         for (; n != 0; n--) {
-            while (strcmp(D_0016031c[D_0015f48a++], D_00121ad0))
+            while (strcmp(D_0016031c[D_0015f48a++], "."))
                 ;
         }
-        while (strcmp(D_0016031c[D_0015f48a + n], D_00121ad2) != 0)
+        while (strcmp(D_0016031c[D_0015f48a + n], ".") != 0)
             n++;
         D_0015f48a += saferand() % n;
         text1 = D_0016031c[D_0015f48a];
@@ -427,6 +424,6 @@ void letter_format_text(char *dst, char *src, s16 width)
 // FUNCTION: 0x0009f06c
 void concat_composite(char *dst, char **strs)
 {
-    for (; strcmp(*strs, D_00121ad4) != 0; strs++)
+    for (; strcmp(*strs, ".") != 0; strs++)
         fn_000c93bf(dst, *strs);
 }

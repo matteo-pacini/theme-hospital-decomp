@@ -13,9 +13,6 @@ extern "C" {
 extern Slot D_001581b2[];
 extern Event D_001549d0[];
 extern char **D_0016029c;
-extern char D_00120788[];
-extern char D_0012078d[];
-extern char D_00120790[];
 }
 
 u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
@@ -81,10 +78,10 @@ void req5_overdraw(Window *win)
         set_font_from_cache(1);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         if (is_thing_paged(&allhosps[player].ff6d, D_001581b2[3].value)) {
-            sprintf(buf, D_00120788, D_0016029c[w->subtype]);
+            sprintf(buf, "(%s)", D_0016029c[w->subtype]);
             LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
         } else {
-            sprintf(buf, D_0012078d, D_0016029c[w->subtype]);
+            sprintf(buf, "%s", D_0016029c[w->subtype]);
             LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
         }
         {
@@ -94,7 +91,7 @@ void req5_overdraw(Window *win)
             room = &room_info[w->unknown89];
             if (room > room_info) {
                 count = room->count;
-                sprintf(buf, D_00120790, count);
+                sprintf(buf, "%d", count);
                 LbTextDraw(x + resvars.f1c[0x62].x, y + resvars.f1c[0x62].y, buf);
             }
             pct = (max - age) * 100 / max;

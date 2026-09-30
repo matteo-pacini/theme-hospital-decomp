@@ -31,8 +31,6 @@ extern "C" {
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern Event D_001549d0[];
 extern char **D_001602f4;
-extern char D_001209c8[], D_001209cb[], D_001209d4[], D_001209d8[], D_001209db[];
-extern char D_001209de[], D_001209e2[];
 extern Slot D_001581b2[];
 }
 
@@ -310,11 +308,11 @@ void draw_slist_staff(const u16 selected)
                         draw_frame(resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y - 1, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h, (u16)color.unknownD);
                         draw_slist_button_overlays(w);
                     }
-                    sprintf(buf, D_001209c8, n + 1);
+                    sprintf(buf, "%d", n + 1);
                     LbTextDraw(resvars.f40[row + 114].x, resvars.f40[row + 114].y, buf);
-                    sprintf(buf, D_001209cb, w->f84, staff_names_1[w->f85], staff_names_2[w->f86]);
+                    sprintf(buf, "%c. %s%s", w->f84, staff_names_1[w->f85], staff_names_2[w->f86]);
                     LbTextDraw(resvars.f40[row + 124].x, resvars.f40[row + 124].y, buf);
-                    sprintf(buf, D_001209d4, w->unknown108);
+                    sprintf(buf, "$%d", w->unknown108);
                     LbTextDraw(resvars.f40[row + 134].x, resvars.f40[row + 134].y, buf);
                     draw_gauge(w->unknown81s, resvars.f3c_Boxp[row + 71].x, resvars.f3c_Boxp[row + 71].y, resvars.f3c_Boxp[row + 71].w,
                                &screen_sprites_tab_start[resvars.f3c_Boxp[row + 71].h], 100, 0, 100, 1);
@@ -566,7 +564,7 @@ void process_slist_button(u8 n)
             close_irequesters();
             lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
             set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-            sprintf(othervar.f935, D_001209d8, yesno_text[5]);
+            sprintf(othervar.f935, "%s", yesno_text[5]);
             open_yes_no_requester(0x47, slist.unknown0, 0, 0x88, slist.unknown0, 0);
             slist.unknown0 = 0;
         }
@@ -696,7 +694,7 @@ void draw_slist_nums(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     for (i = 0; i < 4; i++) {
-        sprintf(buf, D_001209db, counts[i]);
+        sprintf(buf, "%d", counts[i]);
         LbTextDraw(resvars.f40[i + 144].x, resvars.f40[i + 144].y, buf);
     }
 }
@@ -806,9 +804,9 @@ void draw_slist_button_overlays(Thing *w)
     char buf[100];
 
     set_font_from_cache(1);
-    sprintf(buf, D_001209de, w->unknown108 / 10 + w->unknown108);
+    sprintf(buf, "$%d", w->unknown108 / 10 + w->unknown108);
     LbTextDraw(resvars.f40[149].x, resvars.f40[149].y, buf);
-    sprintf(buf, D_001209e2, w->unknown108 / 10);
+    sprintf(buf, "$%d", w->unknown108 / 10);
     LbTextDraw(resvars.f40[150].x, resvars.f40[150].y, buf);
 }
 

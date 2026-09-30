@@ -6,7 +6,6 @@ extern s32 D_00145328;
 extern char **D_0016029c;
 extern char **D_001602a0;
 extern char **D_001602cc;
-extern char D_00121ad8[];
 
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
@@ -216,7 +215,7 @@ void req14_overdraw(Window *win)
                 LbTextSetJustifyWindow(ox + resvars.f18[0x28].x, by + resvars.f18[0x28].y, resvars.f18[0x28].w);
                 LbTextDraw(0, 0, D_0016029c[k]);
                 LbTextSetJustifyWindow(ox + resvars.f18[0x29].x, by + resvars.f18[0x29].y, resvars.f18[0x29].w);
-                sprintf(buf, D_00121ad8, count);
+                sprintf(buf, "%d", count);
                 LbTextDraw(0, 0, buf);
                 by += resvars.f1c[0x6f].y;
                 n++;

@@ -12,7 +12,6 @@ u32 fn_000cd716(char *s);
 
 extern "C" {
 
-extern char D_0012083c[], D_0012085a[], D_00120861[], D_00120874[];
 
 char *getenv(char *name);
 int vsprintf(char *buf, char *fmt, va_list args);
@@ -25,7 +24,7 @@ u16 check_frame(u16 anim, Thing *w)
     char buf[100];
 
     if (anim == 9999) {
-        sprintf(buf, D_0012083c, (u16)(w - thing));
+        sprintf(buf, "Invalid Frame Lookup. Peep %d", (u16)(w - thing));
         note_in_error_log(buf);
         return 0;
     }
@@ -45,7 +44,7 @@ void write_to_player_log(char *text)
     char path[64];
     s32 handle;
 
-    sprintf(path, D_00120861, getenv(D_0012085a));
+    sprintf(path, "N:\\hosp\\log\\%s.txt", getenv("USERID"));
     handle = LbFileOpen(path, 1);
     if (handle != -1) {
         LbFileSeek(handle, 0, 2);
@@ -59,7 +58,7 @@ void note_in_error_log(char *text)
 {
     char buf[128];
 
-    sprintf(buf, D_00120874, text);
+    sprintf(buf, "NOTE: %s\n", text);
     write_to_player_log(buf);
 }
 

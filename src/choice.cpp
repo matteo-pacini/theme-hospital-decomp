@@ -52,9 +52,6 @@ extern u32 D_001611f0;
 extern u8 D_001611f8[];
 extern Event D_001549d0[];
 extern FaxNo D_00149598[];
-extern char D_00121af4[];
-extern char D_00121af6[];
-extern char D_00121af8[];
 int strcmp(const char *a, const char *b);
 void fn_000a3140(void);
 }
@@ -239,14 +236,14 @@ void calculate_buttons(const u8 type)
     }
     c_buttons = choice_text;
     while (--skip != (u8)0xff) {
-        while (strcmp(*c_buttons, D_00121af4) != 0)
+        while (strcmp(*c_buttons, ".") != 0)
             c_buttons++;
         c_buttons++;
     }
-    for (numbuttons = 0; strcmp(c_buttons[numbuttons], D_00121af6) != 0; numbuttons++)
+    for (numbuttons = 0; strcmp(c_buttons[numbuttons], "!") != 0; numbuttons++)
         ;
     c_text = &c_buttons[numbuttons + 1];
-    for (numtext = 0; strcmp(c_text[numtext], D_00121af8) != 0; numtext++)
+    for (numtext = 0; strcmp(c_text[numtext], ".") != 0; numtext++)
         ;
     for (i = 0; i < numbuttons; i++) {
         resvars.f48[i + 0xae].x = resvars.f3c_ChoiceBoxp[173].x + resvars.f3c_ChoiceBoxp[173].w - resvars.f48[0xae].width;

@@ -88,23 +88,6 @@ extern Event D_001549d0[];
 extern u8 *D_00153f34;
 extern u8 D_0015f1aa;
 extern u8 D_0015f1ab;
-extern char D_001206b0[];
-extern char D_001206ba[];
-extern char D_001206c4[];
-extern char D_001206d5[];
-extern char D_001206e7[];
-extern char D_001206ed[];
-extern char D_001206ef[];
-extern char D_001206f1[];
-extern char D_001206f3[];
-extern char D_001206f5[];
-extern char D_001206f7[];
-extern char D_001206f9[];
-extern char D_001206fb[];
-extern char D_001206fd[];
-extern char D_001206ff[];
-extern char D_00120701[];
-extern char D_00120703[];
 extern char *D_00138020;
 extern char *D_00138024;
 extern s32 D_0013804c;
@@ -124,8 +107,6 @@ void fn_000841b8(u8 a);
 void fn_00081588(void);
 #pragma aux fn_00081588 "W?draw_available_bauds$n(uc)v"
 extern char *D_00138028[];
-extern char D_00120705[];
-extern char D_00120708[];
 
 char *strchr(char *s, int c);
 int strcmp(const char *a, const char *b);
@@ -213,13 +194,13 @@ void read_modem_ini_file(void)
 
     len = 0;
     buf = 0;
-    len = LbFileLengthRnc(D_001206b0);
+    len = LbFileLengthRnc("modem.ini");
     if (len == -1)
         return;
     buf = (char *)LbMemoryAlloc(len + 1);
     if (buf == 0)
         return;
-    if (LbFileLoadAt(D_001206ba, buf) == -1) {
+    if (LbFileLoadAt("modem.ini", buf) == -1) {
         LbMemoryFree(buf);
         return;
     }
@@ -351,7 +332,7 @@ void draw_network_select(void)
         player = 0;
         return_from_screen(9, 0, 1);
         load_ingame_pic(0xc, 1, 0x19, 0, SCREEN_MODE_13);
-        LbGhostTableGenerate(ppalette.data, 0x1e, D_001206c4);
+        LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         calculate_grey(ppalette.data);
         fn_00074cd8();
         BufferedInkey = 0;
@@ -395,7 +376,7 @@ void draw_network_select(void)
         start_session();
         network.unknown2 = 0;
         swap_level_number();
-        LbGhostTableGenerate(D_00153f34, 0x42, D_001206d5);
+        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
         fn_000110b0();
         LbPackHeap();
         load_balance((u16)level_number);
@@ -655,7 +636,7 @@ void display_button_text(s32 mask)
         case 0x100: {
             char buf[100];
 
-            sprintf(buf, D_001206e7, D_001602a0[30], balance_file_name);
+            sprintf(buf, "%s %s", D_001602a0[30], balance_file_name);
             lbDisplay.draw_flags = 0;
             if (current_balance_file != current_balance_file->next) {
                 draw_glass_text(SLIST(94), D_00138020);
@@ -681,20 +662,20 @@ void display_button_text(s32 mask)
             draw_glass_text(SLIST(99), D_00138024);
             break;
         case 0x400:
-            draw_glass_text(SLIST(128), D_001206ed);
-            draw_glass_text(SLIST(129), D_001206ef);
-            draw_glass_text(SLIST(130), D_001206f1);
-            draw_glass_text(SLIST(131), D_001206f3);
-            draw_glass_text(SLIST(132), D_001206f5);
-            draw_glass_text(SLIST(133), D_001206f7);
-            draw_glass_text(SLIST(134), D_001206f9);
-            draw_glass_text(SLIST(135), D_001206fb);
-            draw_glass_text(SLIST(136), D_001206fd);
-            draw_glass_text(SLIST(137), D_001206ff);
+            draw_glass_text(SLIST(128), "1");
+            draw_glass_text(SLIST(129), "2");
+            draw_glass_text(SLIST(130), "3");
+            draw_glass_text(SLIST(131), "4");
+            draw_glass_text(SLIST(132), "5");
+            draw_glass_text(SLIST(133), "6");
+            draw_glass_text(SLIST(134), "7");
+            draw_glass_text(SLIST(135), "8");
+            draw_glass_text(SLIST(136), "9");
+            draw_glass_text(SLIST(137), "0");
             if ((D_001606bc & 7) > 3)
-                draw_glass_text_hilight_no_jump(SLIST(138), D_00120701);
+                draw_glass_text_hilight_no_jump(SLIST(138), "+");
             else
-                draw_glass_text(SLIST(138), D_00120703);
+                draw_glass_text(SLIST(138), "+");
             lbDisplay.draw_flags = 0;
             LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             break;
@@ -770,7 +751,7 @@ void fn_00081408(u8 flag)
         idx = 0x81;
     y = resvars.f3c_NetBoxp[idx].y + 4;
     for (i = 0; i < 3; i++, y += character_height()) {
-        sprintf(buf, D_00120705, D_00138028[i + D_001606c8]);
+        sprintf(buf, "%d", D_00138028[i + D_001606c8]);
         if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[idx].x, y, (s16)resvars.f3c_NetBoxp[idx].w,
                          character_height())) {
             if (lbDisplay.mleft_button) {
@@ -805,7 +786,7 @@ void fn_00081588(void)
         idx = 0x85;
         y = resvars.f3c_NetBoxp[idx].y + 10;
         for (i = 0; i < 4; i++, y += character_height()) {
-            sprintf(buf, D_00120708, i + TopIRQ);
+            sprintf(buf, "IRQ %d", i + TopIRQ);
             if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[idx].x, y, (s16)resvars.f3c_NetBoxp[idx].w,
                              character_height())) {
                 if (lbDisplay.mleft_button) {
@@ -1708,7 +1689,6 @@ void process_number_buttons(u8 n)
 }
 
 extern "C" {
-extern char D_0012070f[];
 }
 
 // FUNCTION: 0x00083684
@@ -1738,7 +1718,7 @@ void draw_phone_numbers(void)
             draw_small_centre_text(resvars.f3c_NetBoxp[127].x, resvars.f3c_NetBoxp[127].w, y, PhoneBook[i + D_001605f1]);
     }
     if (DesiredDisplay & 0x400) {
-        sprintf(buf, D_0012070f, PhoneNumber);
+        sprintf(buf, "%s*", PhoneNumber);
         draw_small_centre_text(resvars.f3c_NetBoxp[127].x, resvars.f3c_NetBoxp[127].w, y, buf);
     }
 }
@@ -1906,8 +1886,6 @@ u8 start_session(void)
 }
 
 extern "C" {
-extern char D_00120713[];
-extern char D_00120719[];
 }
 
 // FUNCTION: 0x00083dc4
@@ -1936,7 +1914,7 @@ void update_message_box(u8 key, u8 shift, u8 from)
                     fn_000c21e6(NetMessageText[j], NetMessageText[j + 1], 40);
                 i--;
             }
-            sprintf(NetMessageText[i], D_00120713, &player_info[from], login_control.players[from].text);
+            sprintf(NetMessageText[i], "%s:%s", &player_info[from], login_control.players[from].text);
             login_control.players[from].len = 0;
             login_control.players[from].text[0] = 0;
             if (from == player)
@@ -1971,7 +1949,7 @@ void update_message_box(u8 key, u8 shift, u8 from)
                 play_sound(10, 0xc, -1, -1);
             if (login_control.players[from].len < 0x1e &&
                 LbTextStringWidth(login_control.players[from].text) < resvars.f3c_NetBoxp[120].w - 0x28) {
-                sprintf(buf, D_00120719, &player_info[from], login_control.players[from].text);
+                sprintf(buf, "%s:%s", &player_info[from], login_control.players[from].text);
                 if (LbTextStringWidth(buf) < resvars.f3c_NetBoxp[121].w - 0x14) {
                     login_control.players[from].text[login_control.players[from].len++] = c;
                     login_control.players[from].text[login_control.players[from].len] = 0;
@@ -2329,7 +2307,6 @@ void swap_year_end_packets(void)
 extern "C" {
 extern u8 D_0016053c[];
 extern __tibcaGUID D_0013800c;
-extern char D_0012071f[];
 }
 
 // FUNCTION: 0x000850f4
@@ -2363,7 +2340,7 @@ s32 create_session(void)
         myplayer.unknown0[len] = 'A';
         myplayer.unknown0[len + 1] = 0;
     }
-    sprintf(name, D_0012071f, myplayer.unknown0);
+    sprintf(name, "%s", myplayer.unknown0);
     res = LbNetwork_Create(name, myplayer.unknown0, &player, D_0016053c);
     if (res == Lb_OK) {
         login_control.f17 = 5;
@@ -2452,7 +2429,6 @@ extern s32 LastClock;
 extern s32 ClockTick;
 
 extern "C" {
-extern char D_00120722[];
 }
 
 // FUNCTION: 0x00085538
@@ -2475,7 +2451,7 @@ void draw_current_message(char *text)
         ClockTick = 0;
     if (!(ClockTick & 0x40)) {
         x += LbTextStringWidth(text);
-        LbTextDraw(x, y, D_00120722);
+        LbTextDraw(x, y, "*");
     }
 }
 
@@ -2519,10 +2495,6 @@ s32 fn_000856c8(s32 n)
 #define NET_TEXT(i) ((char *)&net_text[i])
 
 extern "C" {
-extern char D_00120724[];
-extern char D_00120728[];
-extern char D_0012072d[];
-extern char D_00120730[];
 void fn_000c93bf(char *dst, char *src);
 }
 
@@ -2652,12 +2624,12 @@ void do_net_text(void)
             k = 0;
             while (othervar.f4c >> (k + 1))
                 k++;
-            sprintf(buf, D_00120724, &allhosps[k]);
+            sprintf(buf, "%s:", &allhosps[k]);
         } else {
-            sprintf(buf, D_00120728);
+            sprintf(buf, "ALL:");
         }
         fn_000c93bf(buf, NET_TEXT(player));
-        fn_000c93bf(buf, D_0012072d);
+        fn_000c93bf(buf, "  ");
         lbDisplay.draw_flags = 4;
         LbDrawBox(0, pager_text_entering.y - 1, lbDisplay.graphics_screen_width, h, color.unknown8);
         lbDisplay.draw_flags = 0;
@@ -2689,7 +2661,7 @@ void net_text_display(u8 from)
     } else {
         othervar.f4d = lbDisplay.graphics_screen_width << 16;
     }
-    sprintf(buf, D_00120730, &allhosps[from], NET_TEXT(from));
+    sprintf(buf, "%s:%s", &allhosps[from], NET_TEXT(from));
     if (fn_000cd716(buf) + len < sizeof(current_text.text))
         fn_000c93bf(current_text.text, buf);
     net_text[from].unknown0 = 0;
@@ -2827,13 +2799,6 @@ void init_network_players(void)
 extern char current_line[];
 
 extern "C" {
-extern char D_00120736[];
-extern char D_00120749[];
-extern char D_0012075a[];
-extern char D_0012075c[];
-extern char D_0012075f[];
-extern char D_00120762[];
-extern char D_00120765[];
 char *strstr(char *s, char *sub);
 }
 
@@ -2852,10 +2817,10 @@ void network_read_control(u8 n)
     len = 0;
     buf = 0;
     if (install_type < 3) {
-        sprintf(path, D_00120736, cd_install_path, n);
+        sprintf(path, "%slevels/net%d.dat", cd_install_path, n);
         check_cd_available(path);
     } else {
-        sprintf(path, D_00120749, n);
+        sprintf(path, "levels/net%d.dat", n);
     }
     len = LbFileLengthRnc(path);
     if (len == -1)
@@ -2872,27 +2837,27 @@ void network_read_control(u8 n)
     read_line_from_buf(0, 0, buf);
     count = 0;
     while (read_line_from_buf(current_line, 0x100, buf)) {
-        p = strstr(current_line, D_0012075a);
+        p = strstr(current_line, "#");
         if (p) {
             LbMemorySet(num, 0, 3);
             LbMemorySet(title, 0, 0x20);
             LbMemorySet(name, 0, 0x20);
             fn_000c21e6(num, current_line + 1, 2);
             read_line_from_buf(current_line, 0x100, buf);
-            sprintf(title, D_0012075c, current_line);
+            sprintf(title, "%s", current_line);
             current_line[0] = '&';
             while (current_line[0] == '&') {
                 read_line_from_buf(current_line, 0x100, buf);
                 if (current_line[0] == '&') {
                     if ((s8)current_line[1] - '0' == myplayer.f21) {
-                        sprintf(name, D_0012075f, current_line + 2);
+                        sprintf(name, "%s", current_line + 2);
                         break;
                     }
                 }
             }
             net_control.players[count].level = atoi(num);
-            sprintf(net_control.players[count].title, D_00120762, title);
-            sprintf(net_control.players[count].name, D_00120765, name);
+            sprintf(net_control.players[count].title, "%s", title);
+            sprintf(net_control.players[count].name, "%s", name);
             count++;
             if (count == 6)
                 break;
@@ -2924,7 +2889,6 @@ u8 network_num_players(void)
 }
 
 extern "C" {
-extern char D_00120768[];
 }
 
 // FUNCTION: 0x00086544
@@ -2934,7 +2898,7 @@ u8 cheat_mode(char *text)
     u8 found;
 
     found = 0;
-    for (i = 0; strcmp(cheat_text[i], D_00120768) != 0; i++) {
+    for (i = 0; strcmp(cheat_text[i], "..") != 0; i++) {
         if (strcmp(cheat_text[i], text) == 0) {
             debug.unknown4 = debug.unknown8 = i;
             found = 1;

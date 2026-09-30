@@ -25,52 +25,6 @@ extern u8 DisableLoadMusic;
 extern u8 DisableDangerMusic;
 extern char SoundInstallChoice[];
 extern char D_0018c8b4[];
-extern char D_0012473c[];
-extern char D_0012474b[];
-extern char D_00124761[];
-extern char D_00124776[];
-extern char D_001247a4[];
-extern char D_001247b8[];
-extern char D_001247dd[];
-extern char D_001247f4[];
-extern char D_0012481a[];
-extern char D_00124831[];
-extern char D_00124857[];
-extern char D_00124870[];
-extern char D_00124898[];
-extern char D_001248b6[];
-extern char D_001248e1[];
-extern char D_001248fe[];
-extern char D_00124928[];
-extern char D_00124944[];
-extern char D_0012496d[];
-extern char D_0012498d[];
-extern char D_001249ba[];
-extern char D_001249d7[];
-extern char D_00124a04[];
-extern char D_00124a20[];
-extern char D_00124a4c[];
-extern char D_00124a64[];
-extern char D_00124a8d[];
-extern char D_00124a9b[];
-extern char D_00124ab8[];
-extern char D_00124ad6[];
-extern char D_00124b04[];
-extern char D_00124b1f[];
-extern char D_00124b4a[];
-extern char D_00124b63[];
-extern char D_00124b8c[];
-extern char D_00124ba5[];
-extern char D_00124bce[];
-extern char D_00124be1[];
-extern char D_00124c05[];
-extern char D_00124c0b[];
-extern char D_00124c11[];
-extern char D_00124c21[];
-extern char D_00124c31[];
-extern char D_00124c41[];
-extern char D_00124c51[];
-extern char D_00124c6b[];
 
 char *getenv(const char *name);
 char *strcpy(char *dst, const char *src);
@@ -87,105 +41,105 @@ void InitAudio(AudioInitOptions *ao)
     char *env;
     s32 value;
 
-    if (getenv(D_0012473c))
+    if (getenv("BF_DEBUG_AUDIO"))
         DebugAudio = 1;
-    sprintf(SoundProgressMessage, D_0012474b, build_number, build_date);
+    sprintf(SoundProgressMessage, "BUILD %d compiled %d\n", build_number, build_date);
     SoundProgressLog(SoundProgressMessage);
-    if ((env = getenv(D_00124761)) != 0) {
+    if ((env = getenv("BF_FORCE_MAX_SAMPLES")) != 0) {
         ao->MaxSamples = atoi(env);
-        sprintf(SoundProgressMessage, D_00124776, ao->MaxSamples);
+        sprintf(SoundProgressMessage, "System override - ForceMaxNumberOfSamples %d\n", ao->MaxSamples);
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_001247a4)) != 0) {
+    if ((env = getenv("BF_FORCE_SOUND_TYPE")) != 0) {
         ao->SoundType = atoi(env);
-        sprintf(SoundProgressMessage, D_001247b8, ao->SoundType);
+        sprintf(SoundProgressMessage, "System override - ForceSoundType %d\n", ao->SoundType);
         SoundProgressLog(SoundProgressMessage);
     }
-    if (getenv(D_001247dd)) {
+    if (getenv("BF_FORCE_SOUND_DISABLE")) {
         SoundAble = 0;
-        sprintf(SoundProgressMessage, D_001247f4);
+        sprintf(SoundProgressMessage, "System override - ForceSoundDisable \n");
         SoundProgressLog(SoundProgressMessage);
     }
-    if (getenv(D_0012481a)) {
+    if (getenv("BF_FORCE_MUSIC_DISABLE")) {
         MusicAble = 0;
-        sprintf(SoundProgressMessage, D_00124831);
+        sprintf(SoundProgressMessage, "System override - ForceMusicDisable \n");
         SoundProgressLog(SoundProgressMessage);
     }
-    if (getenv(D_00124857)) {
+    if (getenv("BF_FORCE_REDBOOK_DISABLE")) {
         ao->unknown19 = 0;
-        sprintf(SoundProgressMessage, D_00124870);
+        sprintf(SoundProgressMessage, "System override - ForceRedbookDisable \n");
         SoundProgressLog(SoundProgressMessage);
     }
-    if (getenv(D_00124898)) {
+    if (getenv("BF_FORCE_DANGER_MUSIC_DISABLE")) {
         ao->DisableDangerMusic = 1;
-        sprintf(SoundProgressMessage, D_001248b6);
+        sprintf(SoundProgressMessage, "System override - ForceDangerMusicDisable\n");
         SoundProgressLog(SoundProgressMessage);
     }
-    if (getenv(D_001248e1)) {
+    if (getenv("BF_FORCE_LOAD_SOUNDS_DISABLE")) {
         ao->DisableLoadSounds = 1;
-        sprintf(SoundProgressMessage, D_001248fe);
+        sprintf(SoundProgressMessage, "System override - ForceLoadSoundsDisable\n");
         SoundProgressLog(SoundProgressMessage);
     }
-    if (getenv(D_00124928)) {
+    if (getenv("BF_FORCE_LOAD_MUSIC_DISABLE")) {
         ao->DisableLoadMusic = 1;
-        sprintf(SoundProgressMessage, D_00124944);
+        sprintf(SoundProgressMessage, "System override - ForceLoadMusicDisable\n");
         SoundProgressLog(SoundProgressMessage);
     }
-    if (getenv(D_0012496d)) {
+    if (getenv("BF_FORCE_SOUNDFONT_LOAD_DISABLE")) {
         ao->UseCurrentAwe32Soundfont = 1;
-        sprintf(SoundProgressMessage, D_0012498d);
+        sprintf(SoundProgressMessage, "System override - ForceSoundfontLoadDisable\n");
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_001249ba)) != 0) {
+    if ((env = getenv("BF_FORCE_SOUND_MASTER_VOLUME")) != 0) {
         SoundMasterVolumeOverride = value = atoi(env);
-        sprintf(SoundProgressMessage, D_001249d7, value);
+        sprintf(SoundProgressMessage, "System override - ForceSoundMasterVolume %d\n", value);
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_00124a04)) != 0) {
+    if ((env = getenv("BF_FORCE_MIDI_MASTER_VOLUME")) != 0) {
         MidiMasterVolumeOverride = value = atoi(env);
-        sprintf(SoundProgressMessage, D_00124a20, value);
+        sprintf(SoundProgressMessage, "System override - ForceMidiMasterVolume %d\n", value);
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_00124a4c)) != 0) {
+    if ((env = getenv("BF_FORCE_REDBOOK_VOLUME")) != 0) {
         RedbookVolumeOverride = value = atoi(env);
-        sprintf(SoundProgressMessage, D_00124a64, value);
+        sprintf(SoundProgressMessage, "System override - ForceRedbookVolume %d\n", value);
         SoundProgressLog(SoundProgressMessage);
     }
-    if (getenv(D_00124a8d)) {
+    if (getenv("BF_FORCE_MONO")) {
         ao->StereoCheck = 0;
-        sprintf(SoundProgressMessage, D_00124a9b);
+        sprintf(SoundProgressMessage, "System override - ForceMono\n");
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_00124ab8)) != 0) {
+    if ((env = getenv("BF_FORCE_SYSTEM_PLAYBACK_RATE")) != 0) {
         SystemPlaybackRate = value = atoi(env);
-        sprintf(SoundProgressMessage, D_00124ad6, value);
+        sprintf(SoundProgressMessage, "System override - ForceSystemPlaybackRate %d\n", value);
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_00124b04)) != 0) {
+    if ((env = getenv("BF_FORCE_SOUND_DRIVER_PATH")) != 0) {
         strcpy(ao->SoundDriverPath, env);
-        sprintf(SoundProgressMessage, D_00124b1f, env);
+        sprintf(SoundProgressMessage, "System override - ForceSoundDriverPath %s\n", env);
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_00124b4a)) != 0) {
+    if ((env = getenv("BF_FORCE_SOUND_DATA_PATH")) != 0) {
         strcpy(ao->SoundDataPath, env);
-        sprintf(SoundProgressMessage, D_00124b63, env);
+        sprintf(SoundProgressMessage, "System override - ForceSoundDataPath %s\n", env);
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_00124b8c)) != 0) {
+    if ((env = getenv("BF_FORCE_MUSIC_DATA_PATH")) != 0) {
         strcpy(ao->MusicDataPath, env);
-        sprintf(SoundProgressMessage, D_00124ba5, env);
+        sprintf(SoundProgressMessage, "System override - ForceMusicDataPath %s\n", env);
         SoundProgressLog(SoundProgressMessage);
     }
-    if ((env = getenv(D_00124bce)) != 0) {
+    if ((env = getenv("BF_FORCE_MIDI_TYPE")) != 0) {
         MidiTypeOverride = 1;
         strcpy(MusicType, env);
-        sprintf(SoundProgressMessage, D_00124be1, env);
+        sprintf(SoundProgressMessage, "System override - ForceMidiType %s\n", env);
         SoundProgressLog(SoundProgressMessage);
     }
     if (ao->SoundDriverPath)
         AIL_set_driver_directory(ao->SoundDriverPath);
-    strcpy(MusicDataPath, D_00124c05);
-    strcpy(SoundDataPath, D_00124c0b);
+    strcpy(MusicDataPath, "sound");
+    strcpy(SoundDataPath, "sound");
     if (ao->SoundDataPath)
         strcpy(SoundDataPath, ao->SoundDataPath);
     if (ao->MusicDataPath)
@@ -206,9 +160,9 @@ void InitAudio(AudioInitOptions *ao)
         UseCurrentAwe32Soundfont = 1;
     if (ao->UseMultiMediaExtensions == 1)
         UseMultiMediaExtensions = 1;
-    sprintf(SoundProgressMessage, D_00124c11, MusicAble);
+    sprintf(SoundProgressMessage, "BF1  - MA   %d\n", MusicAble);
     SoundProgressLog(SoundProgressMessage);
-    sprintf(SoundProgressMessage, D_00124c21, SoundAble);
+    sprintf(SoundProgressMessage, "BF2  - SA   %d\n", SoundAble);
     SoundProgressLog(SoundProgressMessage);
     if (!(ao->InitRedbookAudio & 1) && !ForceMidiPlaybackOverride)
         MusicAble = 0;
@@ -221,13 +175,13 @@ void InitAudio(AudioInitOptions *ao)
         fn_000bbb50();
     if (ao->unknown19 == 1)
         fn_000bbb80();
-    sprintf(SoundProgressMessage, D_00124c31, MusicAble);
+    sprintf(SoundProgressMessage, "BF54 - MA   %d\n", MusicAble);
     SoundProgressLog(SoundProgressMessage);
-    sprintf(SoundProgressMessage, D_00124c41, SoundAble);
+    sprintf(SoundProgressMessage, "BF55 - SA   %d\n", SoundAble);
     SoundProgressLog(SoundProgressMessage);
-    sprintf(SoundProgressMessage, D_00124c51, D_0018c8b4);
+    sprintf(SoundProgressMessage, "BF56 - music driver = %s\n", D_0018c8b4);
     SoundProgressLog(SoundProgressMessage);
-    sprintf(SoundProgressMessage, D_00124c6b, &SoundInstallChoice[0x80]);
+    sprintf(SoundProgressMessage, "BF57 - sound driver = %s\n", &SoundInstallChoice[0x80]);
     SoundProgressLog(SoundProgressMessage);
 }
 

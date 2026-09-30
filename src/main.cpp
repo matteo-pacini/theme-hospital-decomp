@@ -2,8 +2,6 @@
 
 extern "C" {
 
-extern char D_00120004[];
-extern char D_00120021[];
 extern char D_0013f486[];
 extern u8 D_0015f99f;
 extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef, D_001581f0;
@@ -34,7 +32,7 @@ int main(u16 argc, char **argv)
     char *arg;
 
     if (LbMemorySetup() == -1) {
-        hosp_dos_printf(D_00120004, 4900000);
+        hosp_dos_printf("Could not allocate %d Bytes\n", 4900000);
         return 1;
     }
     init_game_vars();
@@ -181,7 +179,7 @@ void get_cd_speed(void)
 
     buf = LbMemoryAlloc(0x10000);
     if (buf != 0) {
-        sprintf(path, D_00120021, cd_install_path, D_0013f486);
+        sprintf(path, "%s%s", cd_install_path, D_0013f486);
         count = LbFileLengthRnc(path) / 12;
         othervar.fa87 = GetCDSpeed(path, buf, 0x10000, count);
         LbMemoryFree(buf);

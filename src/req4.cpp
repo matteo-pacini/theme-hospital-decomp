@@ -20,12 +20,6 @@ struct MenuItem {
 extern "C" {
 extern Slot D_001581b2[];
 extern Event D_001549d0[];
-extern char D_00120770[];
-extern char D_00120773[];
-extern char D_00120776[];
-extern char D_00120779[];
-extern char D_0012077c[];
-extern char D_00120785[];
 }
 
 void remove_window_from_list(const u8 n);
@@ -70,7 +64,7 @@ void req4(Window *win)
                 } else if (i == resvars.fe[0x2a]) {
                     close_query(2);
                     play_sound(10, 0x43, -1, -1);
-                    sprintf(othervar.f935, D_00120770, yesno_text[5]);
+                    sprintf(othervar.f935, "%s", yesno_text[5]);
                     open_yes_no_requester(0x47, D_001581b2[2].value, 0, 0x88, D_001581b2[2].value, 0);
                 } else if (i == resvars.fe[0x2b]) {
                     D_001549d0[player].type = 0x68;
@@ -92,7 +86,7 @@ void req4(Window *win)
                 } else if (i == resvars.fe[0x2d]) {
                     close_query(2);
                     play_sound(10, 0x43, -1, -1);
-                    sprintf(othervar.f935, D_00120773, yesno_text[5]);
+                    sprintf(othervar.f935, "%s", yesno_text[5]);
                     open_yes_no_requester(0x47, D_001581b2[2].value, 0, 0x88, D_001581b2[2].value, 0);
                 } else if (i == resvars.fe[0x2e]) {
                     D_001549d0[player].type = 0x68;
@@ -132,7 +126,7 @@ void req4_overdraw(Window *win)
         compute_help_text(0, 0, 0xc);
         set_font_from_cache(1);
         othervar.f36 = window.unknown2ec - 1;
-        sprintf(buf, D_00120776, w->unknown108);
+        sprintf(buf, "%d", w->unknown108);
         LbTextDraw(x + resvars.f1c[0x6b].x, y + resvars.f1c[0x6b].y, buf);
         draw_staff_handyman_bars(w, x, y, &button_sprite[resvars.f12[3]]);
         if (lbDisplay.mleft_button) {
@@ -165,7 +159,7 @@ void req4_overdraw(Window *win)
         compute_help_text(0, 0, 10);
         set_font_from_cache(1);
         othervar.f36 = window.unknown2ec - 1;
-        sprintf(buf, D_00120779, w->unknown108);
+        sprintf(buf, "%d", w->unknown108);
         LbTextDraw(x + resvars.f1c[0x66].x, y + resvars.f1c[0x66].y, buf);
         n = 0;
         n++;
@@ -225,7 +219,7 @@ void req4_overdraw(Window *win)
                &button_sprite[resvars.f12[1]], 1000, 0, 1000, 0);
     draw_gauge(w->unknown126, x + resvars.f1c[0x6a].x, y + resvars.f1c[0x6a].y, resvars.f1c[0x76].x,
                &button_sprite[resvars.f12[2]], 1000, 30, 970, 1);
-    sprintf(buf, D_0012077c, w->f84, staff_names_1[w->f85], staff_names_2[w->f86]);
+    sprintf(buf, "%c. %s%s", w->f84, staff_names_1[w->f85], staff_names_2[w->f86]);
     LbTextDraw(x + resvars.f1c[0x64].x, y + resvars.f1c[0x64].y, buf);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -326,7 +320,7 @@ void setup_req4_references(void)
     u8 i;
     char buf[4];
 
-    sprintf(buf, D_00120785);
+    sprintf(buf, ".");
     for (i = 0; ref_general_text[i][0] != buf[0]; i++) {}
     statvar.f5d9 = i;
     for (i = 0; ref_good_text[i][0] != buf[0]; i++) {}

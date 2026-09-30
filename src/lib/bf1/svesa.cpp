@@ -27,7 +27,6 @@ extern u16 lbVesaVRes;
 extern u8 *lbVesaData;
 extern s16 lbVesaPage;
 extern s16 lbVesaGran;
-extern char D_00124c88[];
 
 int strncmp(const char *a, const char *b, u32 n);
 
@@ -113,7 +112,7 @@ int LbVesaGetInfo(void)
     in.x.ebx = 0x10;
     in.x.edi = (u32)&rmi;
     int386x(0x31, &in, &out, &sregs);
-    if (strncmp((char *)lbVesaData, D_00124c88, 4) == 0)
+    if (strncmp((char *)lbVesaData, "VESA", 4) == 0)
         return 1;
     else
         return -1;

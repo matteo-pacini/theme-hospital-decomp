@@ -1,16 +1,13 @@
 #include "snd.h"
 
 extern "C" {
-extern char D_00124728[];
-extern char D_0012472e[];
-extern char D_00124734[];
 
 // FUNCTION: 0x000cd7f0
 void SetupAudioOptionDefaults(AudioInitOptions *ao)
 {
-    ao->SoundDataPath = D_00124728;
-    ao->MusicDataPath = D_0012472e;
-    ao->SoundDriverPath = D_00124734;
+    ao->SoundDataPath = "Sound";
+    ao->MusicDataPath = "Sound";
+    ao->SoundDriverPath = "Sound";
     ao->InitRedbookAudio = 3;
     ao->AutoScan = 1;
     ao->StereoCheck = 1;

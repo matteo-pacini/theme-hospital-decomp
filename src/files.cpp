@@ -7,7 +7,6 @@ extern TbLoadFiles hiresratfestpanelfiles[];
 extern "C" {
 extern u8 *D_00153f34;
 extern char *D_0013e80c;
-extern char D_00120c60[];
 
 int __far fn_0009b590(unsigned deverr, unsigned errcode, unsigned __far *devhdr);
 void fn_000ce546(int (__far *handler)(unsigned, unsigned, unsigned __far *));
@@ -91,7 +90,7 @@ void check_cd_available(char *path)
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
     othervar.f10 = 1;
     if (install_type < 2) {
-        sprintf(fname, D_00120c60, cd_install_path, D_0013e80c);
+        sprintf(fname, "%s%s", cd_install_path, D_0013e80c);
         check_cd_available(fname);
         LbFileLoadAt(fname, D_00153f34);
     } else {

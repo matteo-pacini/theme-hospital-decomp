@@ -73,14 +73,11 @@ SampleInfo *play_sample_using_heap(u32 a, s16 b, u32 c, u32 d, u32 e, s8 f, u8 g
 
 extern "C" {
 
-extern char D_00120794[], D_0012079a[], D_001207a0[], D_001207b6[];
 extern s32 D_00156433;
 extern s32 D_0015642f;
 extern u8 *D_00158334;
 extern TbLoadFiles D_0013ecb4[], D_0013edbc[], D_0013ed64[];
 extern ambient D_0014a468[];
-extern char D_001207ca[], D_001207d5[], D_001207e0[], D_001207eb[], D_001207f6[];
-extern char D_00120801[], D_00120812[], D_0012081d[], D_00120820[];
 extern u8 __IsTable[];
 #pragma aux __IsTable "*"
 void PlayMidiFromAddress(u8 volume, void *data);
@@ -114,8 +111,8 @@ u8 setup_sound(void)
 
     loaded = 0;
     SetupAudioOptionDefaults(&options);
-    options.unknown0 = D_00120794;
-    options.unknown8 = D_0012079a;
+    options.unknown0 = "Sound";
+    options.unknown8 = "Sound";
     options.unknowne = 3;
     options.unknown12 = 1;
     options.unknown11 = 1;
@@ -136,7 +133,7 @@ u8 setup_sound(void)
         LbDataLoad(&D_0013ecb4[D_00156433]);
         if (D_00158334) {
             loaded = 1;
-            sprintf(buf, D_001207a0, options.unknown0, myplayer.f21);
+            sprintf(buf, "%s\\data\\sound-%1d.dat", options.unknown0, myplayer.f21);
             if (init_sound_heap(D_00158334, D_0015642f, buf, options.unknownc)) {
                 window.unknown30 = 0;
                 window.unknown48 = lbDisplay.unknown18;
@@ -162,7 +159,7 @@ u8 setup_sound(void)
     if (!loaded) {
         LbDataLoadAll(D_0013ed64);
         if (D_00158334) {
-            sprintf(buf, D_001207b6, options.unknown0);
+            sprintf(buf, "%s\\data\\minheap.dat", options.unknown0);
             if (!init_sound_heap(D_00158334, 0x32000, buf, options.unknownc))
                 return 7;
         } else {
@@ -403,7 +400,7 @@ void play_next_midi(void)
     if (!is_midi_playing()) {
         if (othervar.fa50) {
             if (myplayer.unknown12[othervar.f9ba]) {
-                sprintf(buf, D_001207ca, statvar.fd0, midi_files[othervar.f9ba].name);
+                sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[othervar.f9ba].name);
                 if (LbFileLoadAt(buf, midi_buffer) != -1) {
                     PlayMidiFromAddress(myplayer.fc, midi_buffer);
                     othervar.fa4f = 1;
@@ -417,7 +414,7 @@ void play_next_midi(void)
                 if (othervar.f9ba > statvar.f5dd)
                     othervar.f9ba = 0;
                 if (myplayer.unknown12[othervar.f9ba]) {
-                    sprintf(buf, D_001207d5, statvar.fd0, midi_files[othervar.f9ba].name);
+                    sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[othervar.f9ba].name);
                     if (LbFileLoadAt(buf, midi_buffer) != -1) {
                         PlayMidiFromAddress(myplayer.fc, midi_buffer);
                         othervar.fa4f = 1;
@@ -439,7 +436,7 @@ void play_midi(u8 track)
     AIL_end_sequence(GetSongHandle());
     if (myplayer.unknown11 && statvar.unknowne5 && othervar.f9b9) {
         if (myplayer.unknown12[track]) {
-            sprintf(buf, D_001207e0, statvar.fd0, midi_files[track].name);
+            sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[track].name);
             if (LbFileLoadAt(buf, midi_buffer) != -1) {
                 PlayMidiFromAddress(myplayer.fc, midi_buffer);
                 othervar.f9ba = track;
@@ -463,7 +460,7 @@ void play_last_midi(void)
     if (!is_midi_playing()) {
         if (othervar.fa50) {
             if (myplayer.unknown12[othervar.f9ba]) {
-                sprintf(buf, D_001207eb, statvar.fd0, midi_files[othervar.f9ba].name);
+                sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[othervar.f9ba].name);
                 if (LbFileLoadAt(buf, midi_buffer) != -1) {
                     PlayMidiFromAddress(myplayer.fc, midi_buffer);
                     othervar.fa4f = 1;
@@ -478,7 +475,7 @@ void play_last_midi(void)
                 else
                     othervar.f9ba--;
                 if (myplayer.unknown12[othervar.f9ba]) {
-                    sprintf(buf, D_001207f6, statvar.fd0, midi_files[othervar.f9ba].name);
+                    sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[othervar.f9ba].name);
                     if (LbFileLoadAt(buf, midi_buffer) != -1) {
                         PlayMidiFromAddress(myplayer.fc, midi_buffer);
                         othervar.fa4f = 1;
@@ -522,7 +519,7 @@ void load_midi(void)
 
     len = 0;
     buf = 0;
-    sprintf(name, D_00120801, statvar.fd0);
+    sprintf(name, "%s\\midi/midi.txt", statvar.fd0);
     len = LbFileLengthRnc(name);
     if (len == -1) {
         othervar.f9b9 = 0;
@@ -560,11 +557,11 @@ void load_midi(void)
             }
         }
         line[0x1d] = 0;
-        sprintf(path, D_00120812, statvar.fd0, line);
+        sprintf(path, "%s\\midi/%s", statvar.fd0, line);
         handle = LbFileOpen(path, 2);
         if (handle != -1) {
             LbFileClose(handle);
-            sprintf(midi_files[i].name, D_0012081d, line);
+            sprintf(midi_files[i].name, "%s", line);
             read_line_from_buf(line, 0x80, buf);
             for (j = 0; j < 26; j++) {
                 if (!isprint(line[j])) {
@@ -573,7 +570,7 @@ void load_midi(void)
                 }
             }
             line[0x19] = 0;
-            sprintf(midi_files[i].title, D_00120820, line);
+            sprintf(midi_files[i].title, "%s", line);
             LbMemorySet(line, 0, 0x80);
             i++;
             if (i >= 10)

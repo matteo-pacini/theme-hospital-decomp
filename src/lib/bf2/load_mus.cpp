@@ -7,14 +7,6 @@ u8 load_music_bank(long file, u8 bank);
 
 extern "C" {
 
-extern char D_00128304[];
-extern char D_0012831f[];
-extern char D_00128351[];
-extern char D_00128384[];
-extern char D_001283a5[];
-extern char D_001283d5[];
-extern char D_0012840c[];
-extern char D_0012843d[];
 
 // FUNCTION: 0xf0740
 u32 LoadMusic(u16 bank)
@@ -24,7 +16,7 @@ u32 LoadMusic(u16 bank)
     s32 type;
     s32 file;
 
-    sprintf(SoundProgressMessage, D_00128304, bank);
+    sprintf(SoundProgressMessage, "BF48 - load music bank %d\n", bank);
     SoundProgressLog(SoundProgressMessage);
     if (MusicInstalled && MusicAble && DisableLoadMusic == 0) {
         StopMusic();
@@ -56,7 +48,7 @@ u32 LoadMusic(u16 bank)
             }
             if (bank > counts[type]) {
                 LbFileClose(file);
-                sprintf(SoundProgressMessage, D_0012831f);
+                sprintf(SoundProgressMessage, "BF49 - load music bank - failed - bank not found\n");
                 SoundProgressLog(SoundProgressMessage);
                 return 1;
             }
@@ -64,22 +56,22 @@ u32 LoadMusic(u16 bank)
             LbFileSeek(file, bank * 64, 1);
             if (!load_music_bank(file, type)) {
                 LbFileClose(file);
-                sprintf(SoundProgressMessage, D_00128351);
+                sprintf(SoundProgressMessage, "BF50 - load music bank - failed - cannot allocate\n");
                 SoundProgressLog(SoundProgressMessage);
                 return 1;
             }
             LbFileClose(file);
-            sprintf(SoundProgressMessage, D_00128384);
+            sprintf(SoundProgressMessage, "BF51 - load music bank - passed\n");
             SoundProgressLog(SoundProgressMessage);
             return 0;
         }
-        sprintf(SoundProgressMessage, D_001283a5);
+        sprintf(SoundProgressMessage, "BF52 - load music bank - failed - no music.dat\n");
     } else if (!MusicInstalled) {
-        sprintf(SoundProgressMessage, D_001283d5);
+        sprintf(SoundProgressMessage, "BF53 - load music bank - failed - music not installed\n");
     } else if (!MusicAble) {
-        sprintf(SoundProgressMessage, D_0012840c);
+        sprintf(SoundProgressMessage, "BF53 - load music bank - failed - MusicAble = 0\n");
     } else if (DisableLoadMusic) {
-        sprintf(SoundProgressMessage, D_0012843d);
+        sprintf(SoundProgressMessage, "BF53 - load music bank - failed - LoadMusic Disabled = 0\n");
     } else {
         return 1;
     }
@@ -161,7 +153,7 @@ s32 AllocateMusicBankMemory(void)
     s32 data_size;
     s32 tab_size;
 
-    sprintf(D_0018d5c4, D_00128477, MusicDataPath);
+    sprintf(D_0018d5c4, "%s/MUSIC.DAT", MusicDataPath);
     file = LbFileOpen(D_0018d5c4, 2);
     if (file == -1)
         return -1;

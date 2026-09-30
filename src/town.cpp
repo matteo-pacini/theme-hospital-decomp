@@ -16,32 +16,6 @@ struct TownView {
 
 extern "C" {
 extern Event D_001549d0[];
-extern char D_001204a8[];
-extern char D_001204ba[];
-extern char D_001204cc[];
-extern char D_001204cf[];
-extern char D_001204d2[];
-extern char D_001204d5[];
-extern char D_001204d8[];
-extern char D_001204db[];
-extern char D_001204e0[];
-extern char D_001204e5[];
-extern char D_001204ea[];
-extern char D_001204f0[];
-extern char D_001204f4[];
-extern char D_001204f9[];
-extern char D_001204fe[];
-extern char D_00120502[];
-extern char D_00120506[];
-extern char D_0012050a[];
-extern char D_0012050e[];
-extern char D_00120512[];
-extern char D_00120516[];
-extern char D_00120519[];
-extern char D_0012051c[];
-extern char D_0012051f[];
-extern char D_00120522[];
-extern char D_00120525[];
 extern char **D_001602c4;
 extern char **D_001602c8;
 extern u8 D_0012cc20[];
@@ -49,15 +23,8 @@ extern u8 D_0012cfbc[];
 extern u8 D_00156910;
 extern u8 D_00158166;
 extern u8 D_00158192;
-extern char D_00120533[];
-extern char D_00120537[];
-extern char D_0012053b[];
-extern char D_0012053f[];
 void LbMouseSetWindow(s32 x, s32 y, s32 w, s32 h);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
-extern char D_00120528[];
-extern char D_0012052c[];
-extern char D_0012052f[];
 void fn_0001b7e0(char *dst, s8 *src, u8 mode);
 void fn_0006680c(void);
 void fn_00067ed4(void);
@@ -132,7 +99,7 @@ void fn_00063680(void)
         break;
     case 1:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, D_001204a8);
+        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
         display_mode = 0;
         fn_000688e4();
         town.unknown2 = 0;
@@ -149,7 +116,7 @@ void fn_00063680(void)
         if (lbDisplay.rleft_button) {
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0xd, 0x1a6, 0xc0, 0x2e)) {
                 fn_00074220(0, 0x41);
-                LbGhostTableGenerate(D_00153f34, 0x42, D_001204ba);
+                LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
                 town.unknown2 = 0;
             }
         }
@@ -729,18 +696,18 @@ void display_plot_under_mouse(void)
     h = lbFontPtr ? lbFontPtr[34].height : 0;
     LbTextSetWindow(0xe6, 0x30 - h / 2, 0x180, 0x18);
     lbDisplay.draw_flags = 0x100;
-    sprintf(buf, D_001204cc, D_001602c4[myhosp->f29]);
+    sprintf(buf, "%s", D_001602c4[myhosp->f29]);
     fn_0001b7e0(buf, (s8 *)buf, 0);
     LbTextDraw(0, 0, buf);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
-    sprintf(buf, D_001204cf, D_001602c8[4]);
+    sprintf(buf, "%s", D_001602c8[4]);
     LbTextDraw(resvars.f40[46].x, resvars.f40[46].y, buf);
-    sprintf(buf, D_001204d2, D_001602c8[5]);
+    sprintf(buf, "%s", D_001602c8[5]);
     LbTextDraw(resvars.f40[47].x, resvars.f40[47].y, buf);
-    sprintf(buf, D_001204d5, D_001602c8[6]);
+    sprintf(buf, "%s", D_001602c8[6]);
     LbTextDraw(resvars.f40[48].x, resvars.f40[48].y, buf);
-    sprintf(buf, D_001204d8, D_001602c8[7]);
+    sprintf(buf, "%s", D_001602c8[7]);
     LbTextDraw(resvars.f40[49].x, resvars.f40[49].y, buf);
     x = (lbDisplay.mmouse_x - area_towns[myhosp->f29].x) / area_towns[myhosp->f29].width;
     y = (lbDisplay.mmouse_y - area_towns[myhosp->f29].y) / area_towns[myhosp->f29].height;
@@ -748,39 +715,39 @@ void display_plot_under_mouse(void)
         plot = level->plots[x + (y << 7)];
         if (plot) {
             price = land_amount[plot] * gbv.f7c;
-            sprintf(buf, D_001204db, plot);
+            sprintf(buf, ": %d", plot);
             LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
-            sprintf(buf, D_001204e0, D_001602c8[2]);
+            sprintf(buf, ": %s", D_001602c8[2]);
             LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
-            sprintf(buf, D_001204e5, land_amount[plot]);
+            sprintf(buf, ": %d", land_amount[plot]);
             LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
-            sprintf(buf, D_001204ea, price);
+            sprintf(buf, ": $%d", price);
             LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
         } else {
             m = &map[x + (y << 7)];
-            sprintf(buf, D_001204f0);
+            sprintf(buf, ": -");
             LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
-            sprintf(buf, D_001204f4, D_001602c8[3]);
+            sprintf(buf, ": %s", D_001602c8[3]);
             for (i = 0; i < 4; i++) {
                 if (m->unknown7 & (1 << i)) {
-                    sprintf(buf, D_001204f9, allhosps[i].unknown0);
+                    sprintf(buf, ": %s", allhosps[i].unknown0);
                     break;
                 }
             }
             LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
-            sprintf(buf, D_001204fe);
+            sprintf(buf, ": -");
             LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
-            sprintf(buf, D_00120502);
+            sprintf(buf, ": -");
             LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
         }
     } else {
-        sprintf(buf, D_00120506);
+        sprintf(buf, ": -");
         LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
-        sprintf(buf, D_0012050a);
+        sprintf(buf, ": -");
         LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
-        sprintf(buf, D_0012050e);
+        sprintf(buf, ": -");
         LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
-        sprintf(buf, D_00120512);
+        sprintf(buf, ": -");
         LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
     }
 }
@@ -956,17 +923,17 @@ void draw_things_on_map(void)
         }
     }
     set_font_from_cache(0x19);
-    sprintf(buf, D_00120516, adcounts.f0);
+    sprintf(buf, "%d", adcounts.f0);
     LbTextDraw(resvars.f40[39].x, resvars.f40[39].y, buf);
-    sprintf(buf, D_00120519, myhosp->object_stats[45].fA);
+    sprintf(buf, "%d", myhosp->object_stats[45].fA);
     LbTextDraw(resvars.f40[40].x, resvars.f40[40].y, buf);
-    sprintf(buf, D_0012051c, myhosp->object_stats[43].fA);
+    sprintf(buf, "%d", myhosp->object_stats[43].fA);
     LbTextDraw(resvars.f40[41].x, resvars.f40[41].y, buf);
-    sprintf(buf, D_0012051f, myhosp->fc97);
+    sprintf(buf, "%d", myhosp->fc97);
     LbTextDraw(resvars.f40[42].x, resvars.f40[42].y, buf);
-    sprintf(buf, D_00120522, myhosp->fc92);
+    sprintf(buf, "%d", myhosp->fc92);
     LbTextDraw(resvars.f40[43].x, resvars.f40[43].y, buf);
-    sprintf(buf, D_00120525, myhosp->fc92 * myhosp->fc94 * mycontrol->f64c / 100);
+    sprintf(buf, "%d", myhosp->fc92 * myhosp->fc94 * mycontrol->f64c / 100);
     LbTextDraw(resvars.f40[44].x, resvars.f40[44].y, buf);
     if (myhosp->fc94) {
         for (i = 0; i < myhosp->fc94 * 6; i++)
@@ -1167,7 +1134,7 @@ extern "C" void fn_00068194(void)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0xc);
     lbDisplay.draw_flags = 0;
-    sprintf(small, D_00120528, plotbid.price);
+    sprintf(small, "%ld", plotbid.price);
     LbTextDraw(resvars.f40[67].x, resvars.f40[67].y, small);
     row = 0;
     for (i = 0; i < 4; i++) {
@@ -1190,8 +1157,8 @@ extern "C" void fn_00068194(void)
             break;
         }
         if (D_001609c4[i].active) {
-            sprintf(big, D_0012052c, allhosps[i].unknown0);
-            sprintf(small, D_0012052f, plotbid.bids[i]);
+            sprintf(big, "%s", allhosps[i].unknown0);
+            sprintf(small, "%ld", plotbid.bids[i]);
             if (i == plotbid.bidder) {
                 LbDrawBox(0x10e, 0x187, 0xe, 0x19, colour);
                 draw_frame(0x10e, 0x187, 0xe, 0x19, (u16)color.unknown9);
@@ -1272,13 +1239,13 @@ void draw_money_on_town(void)
             digits = 6;
         LbTextSetClipWindow(resvars.f3c_TownViewp->f20 + resvars.f40[54].x * digits, resvars.f3c_TownViewp->f24,
                             resvars.f3c_TownViewp->f28 - resvars.f40[54].x * digits, h);
-        sprintf(buf, D_00120533, myhosp->f35);
+        sprintf(buf, "%7d", myhosp->f35);
         LbTextDraw(resvars.f40[55].x, resvars.f40[55].y - (h - othervar.f3f * 6), buf);
-        sprintf(buf, D_00120537, othervar.f3b);
+        sprintf(buf, "%7d", othervar.f3b);
         LbTextDraw(resvars.f40[55].x, resvars.f40[55].y + othervar.f3f * 6, buf);
         if (digits) {
             LbTextSetClipWindow(resvars.f3c_TownViewp->f30, resvars.f3c_TownViewp->f34, resvars.f40[54].x * (digits - 3) + resvars.f3c_TownViewp->f38, h);
-            sprintf(buf, D_0012053b, myhosp->f35);
+            sprintf(buf, "%7d", myhosp->f35);
             LbTextDraw(resvars.f40[55].x, resvars.f40[55].y, buf);
         }
         othervar.f3f++;
@@ -1289,7 +1256,7 @@ void draw_money_on_town(void)
         }
     } else {
         LbTextSetClipWindow(resvars.f3c_TownViewp->f20, resvars.f3c_TownViewp->f24, resvars.f3c_TownViewp->f28, h);
-        sprintf(buf, D_0012053f, myhosp->f35);
+        sprintf(buf, "%7d", myhosp->f35);
         LbTextDraw(resvars.f40[55].x, resvars.f40[55].y, buf);
     }
 }

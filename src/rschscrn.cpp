@@ -22,8 +22,6 @@ extern "C" {
 extern Event D_001549d0[];
 extern char **D_001602d8;
 extern char **D_001602a0;
-extern char D_00121afc[];
-extern char D_00121aff[];
 void StopSample(u32 a, u32 b);
 }
 
@@ -94,7 +92,7 @@ void draw_research_text(void)
     for (i = 0; i < 5; i++) {
         LbTextDraw(resvars.f40[i + 0x57].x, resvars.f40[i + 0x57].y, D_001602d8[i]);
         if (myhosp->research_alloc[i] >= 0) {
-            sprintf(buf, D_00121afc, myhosp->research_alloc[i]);
+            sprintf(buf, "%d", myhosp->research_alloc[i]);
             LbTextDraw(resvars.f40[i + 0x61].x, resvars.f40[i + 0x61].y, buf);
             if (myhosp->research_cost[i] > 0) {
                 illness = choose_next_research_illness(player, find_new_cure_cost);
@@ -121,7 +119,7 @@ void draw_research_text(void)
     }
     sprintf(buf, D_001602d8[6]);
     LbTextDraw(resvars.f40[0x66].x, resvars.f40[0x66].y, buf);
-    sprintf(buf, D_00121aff, total);
+    sprintf(buf, "%d", total);
     LbTextDraw(resvars.f40[0x67].x, resvars.f40[0x67].y, buf);
 }
 

@@ -13,26 +13,19 @@ S32 AIL_abs(S32 x);
 
 extern U8 pan_graph[128];
 
-extern char D_00126c3c[];
-extern char D_00126c68[];
-extern char D_00126c90[];
-extern char D_00126c98[];
-extern char D_00126cb0[];
-extern char D_00126cd4[];
-extern char D_00126cf4[];
-extern char D_00126d18[];
-extern char D_00126d40[];
-extern char D_00126d48[];
-extern char D_00126d60[];
-extern char D_00126d78[];
-extern char D_00126d80[];
-extern char D_00126da0[];
+/* Timer callback: __pascal (callee pops). */
+void SS_SERVE(U32 user);
+#pragma aux (__pascal) SS_SERVE "SS_SERVE";
+/* Driver destructor: __cdecl. */
+void SS_destroy_DIG_driver(HDIGDRIVER dig);
+#pragma aux (__cdecl) SS_destroy_DIG_driver "_SS_destroy_DIG_driver";
+void AILSS_end(void);
 
 // Module state. The BSS layout follows symbol handles and name hashes, not
-// declaration order (docs/MATCHING.md, "Static data layout"): the externs
-// above put VDI in the same 25-symbol block as S..cnt, and the names hash in
-// the original's order. Adding or removing a declaration before this point
-// can split them again.
+// declaration order (docs/MATCHING.md, "Static data layout"): the
+// declarations above put VDI in the same 25-symbol block as S..cnt, and the
+// names hash in the original's order. Adding or removing a declaration
+// before this point can split them again.
 static S32 entry = 0;
 static S32 locked = 0;
 static VDI_CALL VDI;
@@ -44,14 +37,6 @@ static U32 flags;
 static S32 cnt;
 
 #define DIG_BUFFER_SERVICE 0x0010
-
-/* Timer callback: __pascal (callee pops). */
-void SS_SERVE(U32 user);
-#pragma aux (__pascal) SS_SERVE "SS_SERVE";
-/* Driver destructor: __cdecl. */
-void SS_destroy_DIG_driver(HDIGDRIVER dig);
-#pragma aux (__cdecl) SS_destroy_DIG_driver "_SS_destroy_DIG_driver";
-void AILSS_end(void);
 
 // FUNCTION: 0x000df970
 void AILSS_start(void)
@@ -408,7 +393,7 @@ S32 __cdecl SS_configure_buffers(HDIGDRIVER dig)
             max = 2048;
         }
         if (min > 2048) {
-            strcpy(AIL_error, D_00126c3c);
+            strcpy(AIL_error, "Minimum DMA buffer size too large for VDM\n");
             return 0;
         }
     }
@@ -537,13 +522,13 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     AILSS_start();
     dig = AIL_mem_alloc_lock(sizeof(struct _DIG_DRIVER));
     if (dig == NULL) {
-        strcpy(AIL_error, D_00126c68);
+        strcpy(AIL_error, "Could not allocate memory for driver\n");
         return NULL;
     }
-    memcpy(dig->tag, D_00126c90, 4);
+    memcpy(dig->tag, "HDIG", 4);
     dig->drvr = drvr;
     if (dig->drvr->type != DIG_DRIVER) {
-        strcpy(AIL_error, D_00126c98);
+        strcpy(AIL_error, ".DIG driver required\n");
         AIL_mem_free_lock(dig);
         return NULL;
     }
@@ -591,7 +576,7 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     if (detected) {
         AIL_last_IO_attempt = use;
     } else {
-        strcpy(AIL_error, D_00126cb0);
+        strcpy(AIL_error, "Digital sound hardware not found\n");
         AIL_mem_free_lock(dig);
         return NULL;
     }
@@ -603,7 +588,7 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     dig->DMA_buf = NULL;
     do {
         if (!AIL_mem_alloc_DOS((DMA_bytes + 15) / 16, &buf, &seg, &sel)) {
-            strcpy(AIL_error, D_00126cd4);
+            strcpy(AIL_error, "Could not allocate DMA buffers\n");
             AIL_mem_free_lock(dig);
             return NULL;
         }
@@ -630,7 +615,7 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     dig->build_size = dig->channels_per_buffer * sizeof(S32);
     dig->build_buffer = AIL_mem_alloc_lock(dig->build_size);
     if (dig->build_buffer == NULL) {
-        strcpy(AIL_error, D_00126cf4);
+        strcpy(AIL_error, "Could not allocate build buffer\n");
         if (drvr->PM_ISR != -1) {
             AIL_restore_USE16_ISR(drvr->PM_ISR);
         }
@@ -643,7 +628,7 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     dig->n_samples = AIL_preference[DIG_MIXER_CHANNELS];
     dig->samples = AIL_mem_alloc_lock(sizeof(SAMPLE) * dig->n_samples);
     if (dig->samples == NULL) {
-        strcpy(AIL_error, D_00126d18);
+        strcpy(AIL_error, "Could not allocate SAMPLE structures\n");
         if (drvr->PM_ISR != -1) {
             AIL_restore_USE16_ISR(drvr->PM_ISR);
         }
@@ -655,13 +640,13 @@ HDIGDRIVER __cdecl SS_construct_DIG_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         return NULL;
     }
     for (i = 0; i < dig->n_samples; i++) {
-        memcpy(dig->samples[i].tag, D_00126d40, 4);
+        memcpy(dig->samples[i].tag, "HSAM", 4);
         dig->samples[i].status = SMP_FREE;
         dig->samples[i].driver = dig;
     }
     dig->timer = AIL_register_timer((AILTIMERCB)SS_SERVE);
     if (dig->timer == -1) {
-        strcpy(AIL_error, D_00126d48);
+        strcpy(AIL_error, "Out of timer handles\n");
         if (drvr->PM_ISR != -1) {
             AIL_restore_USE16_ISR(drvr->PM_ISR);
         }
@@ -696,7 +681,7 @@ HDIGDRIVER __cdecl AIL_API_install_DIG_driver_file(char *filename, IO_PARMS *IO)
     if (driver_image == NULL) {
         if (AIL_driver_directory[0] == 0) {
         error:
-            strcpy(AIL_error, D_00126d60);
+            strcpy(AIL_error, "Driver file not found\n");
             return NULL;
         }
         strcpy(fn, AIL_driver_directory);
@@ -740,8 +725,8 @@ S32 __cdecl AIL_API_install_DIG_INI(HDIGDRIVER *dig)
 {
     AIL_INI INI;
 
-    if (!AIL_read_INI(&INI, D_00126d78)) {
-        strcpy(AIL_error, D_00126d80);
+    if (!AIL_read_INI(&INI, "DIG.INI")) {
+        strcpy(AIL_error, "Unable to open file DIG.INI\n");
         return 1;
     }
     *dig = AIL_install_DIG_driver_file(INI.driver_name, &INI.IO);
@@ -785,7 +770,7 @@ HSAMPLE __cdecl AIL_API_allocate_sample_handle(HDIGDRIVER dig)
         }
     }
     if (i == dig->n_samples) {
-        strcpy(AIL_error, D_00126da0);
+        strcpy(AIL_error, "Out of sample handles\n");
         AIL_unlock();
         return NULL;
     }

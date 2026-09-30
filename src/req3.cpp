@@ -44,10 +44,6 @@ extern "C" {
 extern Slot D_001581b2[];
 extern Event D_001549d0[];
 extern char **D_001602a4;
-extern char D_001205e0[];
-extern char D_001205e4[];
-extern char D_001205e7[];
-extern char D_001205eb[];
 void fn_0001b7e0(char *dst, char *src, u8 mode);
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
@@ -254,20 +250,20 @@ void draw_diagnosis(Thing *w, u16 x, u16 y)
         if (!w->unknown148[i])
             break;
         if (resvars.f1 == SCREEN_MODE_13) {
-            sprintf(buf, D_001205e0, D_001602a4[w->unknown148[i]]);
+            sprintf(buf, " %s", D_001602a4[w->unknown148[i]]);
             fn_0001b7e0(buf, buf, 0);
         } else {
-            sprintf(buf, D_001205e4, D_001602a4[w->unknown148[i]]);
+            sprintf(buf, "%s", D_001602a4[w->unknown148[i]]);
         }
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
         LbTextDraw(x + resvars.f18_ReqLayoutp->diag.x, dy + y + resvars.f18_ReqLayoutp->diag.y, buf);
     }
     if (w->flags & 0x2000) {
         if (resvars.f1 == SCREEN_MODE_13) {
-            sprintf(buf, D_001205e7, info_bar_text[8]);
+            sprintf(buf, " %s", info_bar_text[8]);
             fn_0001b7e0(buf, buf, 0);
         } else {
-            sprintf(buf, D_001205eb, info_bar_text[8]);
+            sprintf(buf, "%s", info_bar_text[8]);
         }
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
         LbTextDraw(x + resvars.f18_ReqLayoutp->diag.x, dy + y + resvars.f18_ReqLayoutp->diag.y, buf);

@@ -32,10 +32,6 @@ extern s16 D_0015eb9c;
 extern u8 D_0015eb94[];
 extern Event D_001549d0[];
 extern char **D_001602b0;
-extern char D_001205f8[];
-extern char D_001205fe[];
-extern char D_00120601[];
-extern char D_00120604[];
 void fn_00078d70(s16 kind, s16 value, s32 data);
 void fn_00078e38(u16 gap);
 void fn_000c9be0(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
@@ -241,7 +237,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     fn_00078e38(h1);
     for (k = 0; k < D_0015eb9c; k++) {
         i = D_0015eba0[k].kind;
-        sprintf(buf, D_001205f8, D_001602b0[graph[i].unknown3], D_0015eba0[k].data);
+        sprintf(buf, "%s:%d", D_001602b0[graph[i].unknown3], D_0015eba0[k].data);
         lbDisplay.draw_colour = D_0015eb94[graph[i].colour];
         lbDisplay.draw_flags |= 0x40;
         LbTextDraw(x + 4, D_0015eba0[k].value, buf);
@@ -256,7 +252,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         px = x - i * step;
         switch (othervar.f2d) {
         case 0:
-            sprintf(buf, D_001205fe, month_text[m]);
+            sprintf(buf, "%s", month_text[m]);
             lbDisplay.draw_colour = color.unknown8;
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
@@ -266,7 +262,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             fn_000c9be0(px, y + 2, px, y + 6, color.unknown8);
             break;
         case 1:
-            sprintf(buf, D_00120601, year);
+            sprintf(buf, "%d", year);
             lbDisplay.draw_colour = color.unknown8;
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
@@ -274,7 +270,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             fn_000c9be0(px, y + 2, px, y + 6, color.unknown8);
             break;
         case 2:
-            sprintf(buf, D_00120604, quarter);
+            sprintf(buf, "%d", quarter);
             lbDisplay.draw_colour = color.unknown8;
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);

@@ -80,9 +80,6 @@ unsigned char _TinyGetCurrDrive(void);
 
 #pragma function(strchr)
 
-extern const char D_00127238[];
-extern const char D_0012723b[];
-extern const char D_0012723f[];
 
 char *strpbrk(const char *s, const char *set);
 int strcmp(const char *s, const char *t);
@@ -102,7 +99,7 @@ int stat(const char *path, struct stat *buf)
     const char *ptr;
     tiny_ret_t rc;
 
-    if (*path == '\0' || strpbrk(path, D_00127238) != NULL) {
+    if (*path == '\0' || strpbrk(path, "*?") != NULL) {
         __set_errno(ENOENT);
         return -1;
     }
@@ -160,7 +157,7 @@ unsigned short at2mode(int attr, char *fname)
         mode = S_IFREG;
         if ((ext = strchr(fname, '.')) != NULL) {
             ++ext;
-            if (strcmp(ext, D_0012723b) == 0 || strcmp(ext, D_0012723f) == 0)
+            if (strcmp(ext, "EXE") == 0 || strcmp(ext, "COM") == 0)
                 mode |= S_IXUSR | S_IXGRP | S_IXOTH;
         }
     }

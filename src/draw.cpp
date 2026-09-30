@@ -31,7 +31,6 @@ extern "C" {
 extern FrameBox D_001567b0;
 extern s32 D_00156911;
 extern TbSprite *D_00153f5c;
-extern char D_001202fc[];
 extern u8 D_00130280[];
 
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour);
@@ -1076,7 +1075,7 @@ void draw_money(s32 x, s32 y, s32 value)
     D_001567b0.w = D_00153f5c[1].width;
     D_001567b0.h = D_00153f5c[1].height;
     if (resvars.f1 == SCREEN_MODE_13 && !othervar.fa8d) {
-        sprintf(buf, D_001202fc, value);
+        sprintf(buf, "%d", value);
         width = -1;
         for (p = buf; *p; p++) {
             digit = *p - '0';

@@ -2,7 +2,6 @@
 
 extern "C" {
 
-extern char D_00120174[];
 extern char D_0013f486[];
 extern u8 D_0012d8d8[];
 extern u32 D_001606bc;
@@ -36,7 +35,7 @@ void game(void)
     char path[128];
 
     quit = 0;
-    sprintf(path, D_00120174, cd_install_path, D_0013f486);
+    sprintf(path, "%s%s", cd_install_path, D_0013f486);
     check_cd_available(path);
     get_cd_speed();
     fn_00090610();

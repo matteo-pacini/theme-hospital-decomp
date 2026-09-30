@@ -7,9 +7,6 @@ typedef char *va_list[1];
 extern "C" {
 extern u32 D_0018a580;
 extern u8 D_0018a584[];
-extern char D_00124714[];
-extern char D_0012471e[];
-extern char D_00124726[];
 
 int fn_000bc504(int current_dir, char *directory, char *filename, char *buf, u32 buflen);
 int LbLogSetup(void *log, char *filename, u32 flags);
@@ -28,7 +25,7 @@ int fn_000cd1e0(char *directory, char *filename, u8 append)
 
     if (D_0018a580)
         return -1;
-    if (fn_000bc504(1, directory, filename ? filename : D_00124714, path, 144) == -1)
+    if (fn_000bc504(1, directory, filename ? filename : "ERROR.LOG", path, 144) == -1)
         return -1;
     if (append)
         flags = 0x35;
@@ -36,7 +33,7 @@ int fn_000cd1e0(char *directory, char *filename, u8 append)
         flags = 0x36;
     if (LbLogSetup(D_0018a584, path, flags) != 1)
         return -1;
-    LbLogSetPrefix(D_0018a584, D_0012471e);
+    LbLogSetPrefix(D_0018a584, "Error: ");
     D_0018a580 = 1;
     return 1;
 }
@@ -63,7 +60,7 @@ int fn_000cd2cc(char *fmt, ...)
     va_start(args, fmt);
     vsprintf(buf, fmt, args);
     va_end(args);
-    strcat(buf, D_00124726);
+    strcat(buf, "\n");
     return LbLog(D_0018a584, buf);
 }
 

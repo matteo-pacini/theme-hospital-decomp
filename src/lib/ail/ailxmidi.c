@@ -75,32 +75,6 @@ static U32 type;
 
 extern TIMB_request D_00151634;
 
-extern char D_00126e6c[];
-extern char D_00126e74[];
-extern char D_00126e7c[];
-extern char D_00126e84[];
-extern char D_00126ea4[];
-extern char D_00126ecc[];
-extern char D_00126ed4[];
-extern char D_00126eec[];
-extern char D_00126f0c[];
-extern char D_00126f38[];
-extern char D_00126f60[];
-extern char D_00126f68[];
-extern char D_00126f80[];
-extern char D_00126f98[];
-extern char D_00126fa0[];
-extern char D_00126fc0[];
-extern char D_00126fd4[];
-extern char D_00126ff0[];
-extern char D_00126ff4[];
-extern char D_00126ffc[];
-extern char D_00127018[];
-extern char D_0012704c[];
-extern char D_00127064[];
-extern char D_0012706c[];
-extern char D_00127074[];
-extern char D_0012707c[];
 
 void __pascal XMI_serve(U32 user);
 void AILXMIDI_end(void);
@@ -256,12 +230,12 @@ U8 *__cdecl XMI_find_sequence(U8 *image, S32 sequence)
     len = 0;
     do {
         image += len;
-        if (memcmp(image, D_00126e6c, 4) && memcmp(image, D_00126e74, 4)) {
+        if (memcmp(image, "FORM", 4) && memcmp(image, "CAT ", 4)) {
             return NULL;
         }
         len = XMI_swap(*(U32 *)(image + 4)) + 8;
-    } while (memcmp(image + 8, D_00126e7c, 4));
-    if (!memcmp(image, D_00126e6c, 4)) {
+    } while (memcmp(image + 8, "XMID", 4));
+    if (!memcmp(image, "FORM", 4)) {
         if (sequence == 0) {
             return image;
         }
@@ -270,7 +244,7 @@ U8 *__cdecl XMI_find_sequence(U8 *image, S32 sequence)
     end = image + len;
     image += 12;
     while (image < end) {
-        if (!memcmp(image + 8, D_00126e7c, 4)) {
+        if (!memcmp(image + 8, "XMID", 4)) {
             if (sequence-- == 0) {
                 return image;
             }
@@ -784,7 +758,7 @@ void __pascal XMI_serve(U32 user)
                                     break;
                             }
                             if (i == MAX_NOTES) {
-                                strcpy(AIL_error, D_00126e84);
+                                strcpy(AIL_error, "Internal note queue overflow\n");
                                 AIL_stop_sequence(S);
                                 entry = 0;
                                 S->status = SEQ_DONE;
@@ -912,13 +886,13 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     AILXMIDI_start();
     mdi = AIL_mem_alloc_lock(sizeof(struct _MDI_DRIVER));
     if (mdi == NULL) {
-        strcpy(AIL_error, D_00126ea4);
+        strcpy(AIL_error, "Could not allocate memory for driver\n");
         return NULL;
     }
-    memcpy(mdi->tag, D_00126ecc, 4);
+    memcpy(mdi->tag, "HMDI", 4);
     mdi->drvr = drvr;
     if (mdi->drvr->type != MDI_DRIVER) {
-        strcpy(AIL_error, D_00126ed4);
+        strcpy(AIL_error, ".MDI driver required\n");
         AIL_mem_free_lock(mdi);
         return NULL;
     }
@@ -980,7 +954,7 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
         }
     }
     if (!found) {
-        strcpy(AIL_error, D_00126eec);
+        strcpy(AIL_error, "XMIDI sound hardware not found\n");
         AIL_mem_free_lock(mdi);
         return NULL;
     }
@@ -989,7 +963,7 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     mdi->drvr->initialized = 1;
     AIL_call_driver(mdi->drvr, MDI_INIT_INS_MGR, NULL, &out);
     if (out.AX == 0) {
-        strcpy(AIL_error, D_00126f0c);
+        strcpy(AIL_error, "Could not initialize instrument manager\n");
         AIL_call_driver(mdi->drvr, DRV_SHUTDOWN, NULL, NULL);
         mdi->drvr->initialized = 0;
         AIL_mem_free_lock(mdi);
@@ -998,14 +972,14 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     mdi->n_sequences = AIL_preference[MDI_SEQUENCES];
     mdi->sequences = AIL_mem_alloc_lock(mdi->n_sequences * sizeof(SEQUENCE));
     if (mdi->sequences == NULL) {
-        strcpy(AIL_error, D_00126f38);
+        strcpy(AIL_error, "Could not allocate SEQUENCE structures\n");
         AIL_call_driver(mdi->drvr, DRV_SHUTDOWN, NULL, NULL);
         mdi->drvr->initialized = 0;
         AIL_mem_free_lock(mdi);
         return NULL;
     }
     for (i = 0; i < mdi->n_sequences; i++) {
-        memcpy(mdi->sequences[i].tag, D_00126f60, 4);
+        memcpy(mdi->sequences[i].tag, "HSEQ", 4);
         mdi->sequences[i].status = SEQ_FREE;
         mdi->sequences[i].driver = mdi;
     }
@@ -1026,7 +1000,7 @@ HMDIDRIVER __cdecl XMI_construct_MDI_driver(AIL_DRIVER *drvr, IO_PARMS *IO)
     }
     mdi->timer = AIL_register_timer(XMI_serve);
     if (mdi->timer == -1) {
-        strcpy(AIL_error, D_00126f68);
+        strcpy(AIL_error, "Out of timer handles\n");
         AIL_call_driver(mdi->drvr, DRV_SHUTDOWN, NULL, NULL);
         mdi->drvr->initialized = 0;
         AIL_mem_free_lock(mdi->sequences);
@@ -1086,7 +1060,7 @@ HMDIDRIVER __cdecl AIL_API_install_MDI_driver_file(char *filename, IO_PARMS *IO)
                 goto install;
             }
         }
-        strcpy(AIL_error, D_00126f80);
+        strcpy(AIL_error, "Driver file not found\n");
         goto done;
     }
 install:
@@ -1127,8 +1101,8 @@ S32 __cdecl AIL_API_install_MDI_INI(HMDIDRIVER *mdi)
 {
     AIL_INI INI;
 
-    if (!AIL_read_INI(&INI, D_00126f98)) {
-        strcpy(AIL_error, D_00126fa0);
+    if (!AIL_read_INI(&INI, "MDI.INI")) {
+        strcpy(AIL_error, "Unable to open file MDI.INI\n");
         return 1;
     }
     *mdi = AIL_install_MDI_driver_file(INI.driver_name, &INI.IO);
@@ -1153,10 +1127,10 @@ S32 __cdecl AIL_API_MDI_driver_type(HMDIDRIVER mdi)
     VHDR = mdi->drvr->VHDR;
     if (VHDR->driver_version >= 0x112) {
         name = (char *)VHDR->dev_name;
-        if (!stricmp(name, D_00126fc0)) {
+        if (!stricmp(name, "Tandy 3-voice music")) {
             return 3;
         }
-        if (!stricmp(name, D_00126fd4)) {
+        if (!stricmp(name, "IBM internal speaker music")) {
             return 3;
         }
     }
@@ -1164,13 +1138,13 @@ S32 __cdecl AIL_API_MDI_driver_type(HMDIDRIVER mdi)
     if (name == NULL || !*name) {
         return 0;
     }
-    if (!stricmp(name, D_00126ff0)) {
+    if (!stricmp(name, ".AD")) {
         if (mdi->drvr->size > 0x5000) {
             return 0;
         }
         return 1;
     }
-    if (!stricmp(name, D_00126ff4)) {
+    if (!stricmp(name, ".OPL")) {
         return 2;
     }
     return 0;
@@ -1209,7 +1183,7 @@ HSEQUENCE __cdecl AIL_API_allocate_sequence_handle(HMDIDRIVER mdi)
         }
     }
     if (i == mdi->n_sequences) {
-        strcpy(AIL_error, D_00126ffc);
+        strcpy(AIL_error, "Out of sequence handles\n");
         AIL_unlock();
         return NULL;
     }
@@ -1238,7 +1212,7 @@ void set_timbre_error(S32 bank, S32 patch)
 
     args[0] = bank;
     args[1] = patch;
-    AIL_sprintf(AIL_error, D_00127018, 2, args);
+    AIL_sprintf(AIL_error, "Driver could not install timbre bank %d, patch %d\n", 2, args);
 }
 
 // FUNCTION: 0x000e43b0
@@ -1258,7 +1232,7 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
     S->status = SEQ_DONE;
     image = XMI_find_sequence(start, sequence_num);
     if (image == NULL) {
-        strcpy(AIL_error, D_0012704c);
+        strcpy(AIL_error, "Invalid XMIDI sequence\n");
         return 0;
     }
     len = 8 + XMI_swap(*(U32 *)((U8 *)(image + 4)));
@@ -1268,19 +1242,19 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
     S->RBRN = NULL;
     S->EVNT = NULL;
     while (image < end) {
-        if (!memcmp(image, D_00127064, 4)) {
+        if (!memcmp(image, "TIMB", 4)) {
             S->TIMB = image;
         }
-        if (!memcmp(image, D_0012706c, 4)) {
+        if (!memcmp(image, "RBRN", 4)) {
             S->RBRN = image;
         }
-        if (!memcmp(image, D_00127074, 4)) {
+        if (!memcmp(image, "EVNT", 4)) {
             S->EVNT = image;
         }
         image += 8 + XMI_swap(*(U32 *)((U8 *)(image + 4)));
     }
     if (S->EVNT == NULL) {
-        strcpy(AIL_error, D_0012704c);
+        strcpy(AIL_error, "Invalid XMIDI sequence\n");
         return 0;
     }
     S->ICA = NULL;
@@ -1330,7 +1304,7 @@ S32 __cdecl AIL_API_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
         return 1;
     }
     if (AIL_background()) {
-        strcpy(AIL_error, D_0012707c);
+        strcpy(AIL_error, "No timbres loaded\n");
         return -1;
     }
     ++S->driver->disable;

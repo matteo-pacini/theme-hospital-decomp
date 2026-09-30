@@ -27,10 +27,6 @@ extern u8 *D_00153f34;
 extern u8 D_00156910;
 extern u8 D_0015f489;
 extern char **D_0016033c;
-extern char D_00120488[];
-extern char D_0012049a[];
-extern char D_0012049f[];
-extern char D_001204a4[];
 extern char D_0013f4fa[];
 }
 
@@ -122,7 +118,7 @@ void draw_main_menu(void)
             if (fn_00021c38(0x63, -1)) {
                 othervar.fa65 = 0;
                 set_mouse_mode(0);
-                LbGhostTableGenerate(D_00153f34, 0x42, D_00120488);
+                LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
                 display_mode = 0;
                 mainmenu.unknown2 = 0;
                 load_game_files();
@@ -241,7 +237,7 @@ void draw_main_menu(void)
         }
         done = 0;
         timer = 0x3e8;
-        sprintf(path, D_0012049a, cd_install_path, D_0013f4fa);
+        sprintf(path, "%s%s", cd_install_path, D_0013f4fa);
         while (!done) {
             copy_screen_to_wscreen(bscreen);
             if (exit_quick_requester()) {
@@ -599,7 +595,7 @@ u8 fn_00063174(void)
 
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
     aborted = 0;
-    sprintf(path, D_0012049f, cd_install_path, animation_table[othervar.fa87 > 4 ? 0x1a : 0x19].name);
+    sprintf(path, "%s%s", cd_install_path, animation_table[othervar.fa87 > 4 ? 0x1a : 0x19].name);
     if (!LbFileExists(path))
         return aborted;
     fade_out_menu();
@@ -689,7 +685,7 @@ u8 fn_0006344c(s16 *scroll, u16 *line)
     y = -*scroll;
     for (i = 0; y < lbDisplay.graphics_screen_height; y += height, i++) {
         if (*scroll >= -0x32) {
-            sprintf(text, D_001204a4, D_0016033c[i + *line]);
+            sprintf(text, "%s", D_0016033c[i + *line]);
             switch (text[0]) {
             case '!':
                 break;

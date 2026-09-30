@@ -24,9 +24,6 @@ extern u32 D_0014bcc4, D_0014bcd0, D_0014bcd8, D_0014bce0, D_0014bce4, D_0014bce
 extern u32 D_0013c60c, D_0013c618, D_0013c620, D_0013c628, D_0013c62c, D_0013c630;
 extern u8 D_001581ec, D_001581ed, D_001581ef;
 extern char *D_001289a0, *D_001289a4;
-extern char D_001201ac[], D_001201c2[], D_001201c5[], D_001201ca[], D_001201cf[];
-extern char D_001201d4[], D_00120202[], D_00120218[], D_0012022d[], D_0012023e[];
-extern char D_0012024e[];
 extern u8 D_0015fe74;
 
 void fn_00015b68(Thing *w);
@@ -173,7 +170,7 @@ void screen_shot(void)
     char *fmt;
     u8 tmp;
 
-    fmt = D_001201ac;
+    fmt = "scrshots\\hosp%04d.lbm";
     if (debug.unknown1e4 == 0) {
         debug.unknown1e4 = (u8 *)LbMemoryAlloc(400000);
         if (debug.unknown1e4 == 0) {
@@ -757,7 +754,7 @@ void setup_abort_all_requesters(void)
     case 5:
         if (crequester.unknown0 == 0) {
             if (othervar.f9c5 == 1) {
-                sprintf(othervar.f935, D_001201c2, yesno_text[4]);
+                sprintf(othervar.f935, "%s", yesno_text[4]);
                 open_yes_no_requester(0x79, 0, 0, 0x78, 1, 1);
                 return;
             }
@@ -860,7 +857,7 @@ u8 hosp_play_smk(const u8 idx)
         LbScreenSwap();
     }
     if (animation_table[idx].f28 > install_type) {
-        sprintf(D_0015fde4, D_001201c5, cd_install_path, animation_table[idx].name);
+        sprintf(D_0015fde4, "%s%s", cd_install_path, animation_table[idx].name);
         check_cd_available(D_0015fde4);
     } else {
         fn_000bbff0(D_0015fde4, animation_table[idx].name);
@@ -1039,7 +1036,7 @@ void fn_0001bc94(u8 idx, u8 flag)
     if (resvars.f0 == SCREEN_MODE_13) {
         if (idx != loaded_requester) {
             fn_000bbff0(path, name);
-            fn_000c93bf(path, D_001201ca);
+            fn_000c93bf(path, ".tab");
             size = LbFileLengthRnc(path);
             if ((s32)end_button_sprites - (s32)button_sprite < size) {
                 return;
@@ -1048,7 +1045,7 @@ void fn_0001bc94(u8 idx, u8 flag)
                 return;
             }
             fn_000bbff0(path, name);
-            fn_000c93bf(path, D_001201cf);
+            fn_000c93bf(path, ".dat");
             size = LbFileLengthRnc(path);
             if ((s32)end_button_sprite_data - (s32)button_sprite_data < size) {
                 return;
@@ -1076,14 +1073,14 @@ void close_crequester(u8 i)
 // FUNCTION: 0x0001bdf8
 void fn_0001bdf8(void)
 {
-    hosp_dos_printf(D_001201d4);
-    hosp_dos_printf(D_00120202);
-    hosp_dos_printf(D_00120218, 3);
+    hosp_dos_printf("Copyright (c) 1997 Bullfrog Productions Ltd.\n");
+    hosp_dos_printf("All rights reserved.\n");
+    hosp_dos_printf("Theme Hospital v%d \n", 3);
     if (D_001581ec) {
-        hosp_dos_printf(D_0012022d, D_001581ef);
+        hosp_dos_printf("Recording..%d..\n", D_001581ef);
     }
     if (D_001581ed) {
-        hosp_dos_printf(D_0012023e, D_001581ef);
+        hosp_dos_printf("PlayBack..%d..\n", D_001581ef);
     }
 }
 
@@ -1100,7 +1097,7 @@ void fn_0001be78(u8 dir)
     default:
         break;
     }
-    hosp_dos_printf(D_0012024e, D_0015fe74);
+    hosp_dos_printf("MOUSE_POINTER %d\n", D_0015fe74);
     set_mouse_sprite(D_0015fe74);
 }
 

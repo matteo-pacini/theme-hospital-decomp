@@ -1,12 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern char D_00120608[];
-extern char D_00120615[];
-extern char D_00120622[];
-extern char D_0012062f[];
-extern char D_0012063c[];
-extern char D_00120645[];
 
 void fn_000c93bf(char *dst, char *src);
 void fn_000cd2cc(char *s, ...);
@@ -83,13 +77,13 @@ s32 read_config_file(void)
     char *data;
     s32 len;
 
-    len = LbFileLengthRnc(D_00120608);
+    len = LbFileLengthRnc("hospital.cfg");
     if (len == -1)
         return -1;
     data = (char *)LbMemoryAlloc(len);
     if (data == 0)
         return -1;
-    if (LbFileLoadAt(D_00120615, data) == -1) {
+    if (LbFileLoadAt("hospital.cfg", data) == -1) {
         LbMemoryFree(data);
         return -1;
     }
@@ -107,10 +101,10 @@ s32 read_config_file(void)
         if (data[j] != '=')
             return -1;
         data[j++] = 0;
-        if (!strcmp(data + key, D_00120622)) {
+        if (!strcmp(data + key, "INSTALL_PATH")) {
             fn_000bbff0(cd_install_path, data + j);
             LbDataLoadSetModifyFilenameFunction(modify_data_load_filename);
-        } else if (!strcmp(data + key, D_0012062f)) {
+        } else if (!strcmp(data + key, "INSTALL_TYPE")) {
             switch (tolower((s8)data[j + 1])) {
             case 'i':
                 install_type = 1;
@@ -122,7 +116,7 @@ s32 read_config_file(void)
                 install_type = 3;
                 break;
             }
-        } else if (!strcmp(data + key, D_0012063c)) {
+        } else if (!strcmp(data + key, "LANGUAGE")) {
             install_language = 0;
             switch (tolower((s8)data[j])) {
             case 'e':
@@ -145,7 +139,7 @@ s32 read_config_file(void)
                 break;
             }
             myplayer.f21 = install_language;
-        } else if (!strcmp(data + key, D_00120645)) {
+        } else if (!strcmp(data + key, "SAVE_OVERRIDE")) {
             fn_000bbff0(statvar.f575, data + j);
         } else {
             LbMemoryFree(data);

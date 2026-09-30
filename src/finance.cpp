@@ -49,16 +49,6 @@ extern StatItem D_00136388[];
 extern char **D_0016032c;
 extern char **D_001602b4;
 extern char **D_001602a4;
-extern char D_0012042c[];
-extern char D_0012042f[];
-extern char D_00120432[];
-extern char D_00120438[];
-extern char D_0012043e[];
-extern char D_00120444[];
-extern char D_00120447[];
-extern char D_0012044d[];
-extern char D_00120453[];
-extern char D_00120459[];
 extern u8 D_00156910;
 void StopSample(u32 a, u32 b);
 }
@@ -352,7 +342,7 @@ void bank_statement(void)
     for (i = 0; i < 6; i++) {
         LbTextSetWindow(resvars.f3c_Boxp[i + 4].x, resvars.f3c_Boxp[i + 4].y, resvars.f3c_Boxp[i + 4].w,
                         resvars.f3c_Boxp[i + 4].h);
-        sprintf(buf, D_0012042c, D_0016032c[i]);
+        sprintf(buf, "%s", D_0016032c[i]);
         LbTextDraw(resvars.f40[71].x, resvars.f40[71].y * 2, buf);
     }
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -362,7 +352,7 @@ void bank_statement(void)
     for (i = 0; D_00136388[i].type; i++) {
         switch (D_00136388[i].type) {
         case 1:
-            sprintf(buf, D_0012042f, myhosp->unknown0 + 9);
+            sprintf(buf, "%s", myhosp->unknown0 + 9);
             LbTextDraw(D_00136388[i].x, D_00136388[i].y, buf);
             break;
         case 2:
@@ -377,34 +367,34 @@ void bank_statement(void)
             for (; first < mycontrol->f64e && row < D_00136388[7].y - line_h; first++) {
                 if (row + resvars.f40[72].y > resvars.f40[72].y + line_h * 0x1b)
                     break;
-                sprintf(buf, D_00120432, mycontrol->entries[first].day, month_text[mycontrol->entries[first].month]);
+                sprintf(buf, "%d %s", mycontrol->entries[first].day, month_text[mycontrol->entries[first].month]);
                 LbTextDraw(resvars.f40[72].x, row + resvars.f40[72].y, buf);
                 switch (mycontrol->entries[first].type) {
                 case 17:
-                    sprintf(buf, D_00120438, D_001602b4[mycontrol->entries[first].type],
+                    sprintf(buf, "%s %s", D_001602b4[mycontrol->entries[first].type],
                             insurance_names[mycontrol->entries[first].extra]);
                     break;
                 case 7:
                 case 8:
                 case 9:
                 case 11:
-                    sprintf(buf, D_0012043e, D_001602b4[mycontrol->entries[first].type],
+                    sprintf(buf, "%s %s", D_001602b4[mycontrol->entries[first].type],
                             D_001602a4[mycontrol->entries[first].extra]);
                     break;
                 default:
-                    sprintf(buf, D_00120444, D_001602b4[mycontrol->entries[first].type]);
+                    sprintf(buf, "%s", D_001602b4[mycontrol->entries[first].type]);
                     break;
                 }
                 LbTextDraw(resvars.f40[73].x, row + resvars.f40[73].y, buf);
                 if (mycontrol->entries[first].amount < 0) {
-                    sprintf(buf, D_00120447, -mycontrol->entries[first].amount);
+                    sprintf(buf, "$ %7d", -mycontrol->entries[first].amount);
                     LbTextDraw(resvars.f40[74].x, row + resvars.f40[74].y, buf);
                 } else if (mycontrol->entries[first].amount != 0) {
-                    sprintf(buf, D_0012044d, mycontrol->entries[first].amount);
+                    sprintf(buf, "$ %7d", mycontrol->entries[first].amount);
                     LbTextDraw(resvars.f40[75].x, row + resvars.f40[75].y, buf);
                 }
                 balance += mycontrol->entries[first].amount;
-                sprintf(buf, D_00120453, balance);
+                sprintf(buf, "$ %7d", balance);
                 if (balance < 0)
                     LbTextDraw(resvars.f40[76].x, row + resvars.f40[76].y, buf);
                 else
@@ -413,7 +403,7 @@ void bank_statement(void)
             }
             break;
         case 8:
-            sprintf(buf, D_00120459, balance);
+            sprintf(buf, "$ %7d", balance);
             if (balance < 0)
                 LbTextDraw(resvars.f40[77].x, resvars.f40[77].y, buf);
             else

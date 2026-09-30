@@ -22,8 +22,6 @@ extern "C" {
 extern TbTextWindow lbTextJustifyWindow;
 extern TbTextWindow lbTextClipWindow;
 extern u8 lbSpacesPerTab;
-extern char D_00124250[];
-extern char D_0012425a[];
 
 int fn_000d0848(char *expr, char *file, int line);
 void int3(void);
@@ -148,7 +146,7 @@ s32 LbTextStringHeight(char *text)
     lines = 1;
     do {
         if (!text) {
-            if (fn_000d0848(D_0012425a, D_00124250, 198))
+            if (fn_000d0848("LbTextStringHeight was passed a NULL pointer", "gtext.cpp", 198))
                 int3();
         }
     } while (0);

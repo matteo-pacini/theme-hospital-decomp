@@ -1,7 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern char D_00121ae0[];
 }
 
 u16 create_inspector(u8 owner);
@@ -53,7 +52,7 @@ void generate_inspector(u8 owner)
     if (allhosps[owner].unknown209[1] != 0)
         return;
     if (allhosps[owner].f201 = create_inspector(owner)) {}
-    fn_000bbff0(debug.unknown116, D_00121ae0);
+    fn_000bbff0(debug.unknown116, "Inspector Generated");
     debug.unknown1de = 0xc8;
     allhosps[owner].unknown209[1] = 3;
 }

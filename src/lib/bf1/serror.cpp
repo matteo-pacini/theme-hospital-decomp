@@ -5,14 +5,6 @@ typedef char *va_list[1];
 #define va_end(ap) ((ap)[0] = 0)
 
 extern "C" {
-extern char D_00124cf0[];
-extern char D_00124d15[];
-extern char D_00124d18[];
-extern char D_00124d2c[];
-extern char D_00124d64[];
-extern char D_00124d8a[];
-extern char D_00124da5[];
-extern char D_00124ddf[];
 
 int vsprintf(char *buf, char *fmt, va_list args);
 u32 LbScreenIsInitialised(void);
@@ -72,22 +64,22 @@ int fn_000d0848(char *expr, char *file, int line)
         y = 0;
         LbDrawBox(0, 0, lbDisplay.unknown18, 72, 0);
         y += 12;
-        LbDrawCheapText(x, y, D_00124cf0, 1);
-        sprintf(text, D_00124d15, expr);
+        LbDrawCheapText(x, y, "Warning a library assertion occured:", 1);
+        sprintf(text, "%s", expr);
         y += 12;
         LbDrawCheapText(x, y, text, 1);
-        sprintf(text, D_00124d18, file, line);
+        sprintf(text, "In   : %s\nline : %u", file, line);
         y += 12;
         LbDrawCheapText(x, y, text, 1);
-        sprintf(text, D_00124d2c);
+        sprintf(text, "Enter 'K' to Kill the Application or 'C' to Continue : ");
         y += 12;
         LbDrawCheapText(x, y, text, 1);
         LbScreenSwap();
     } else {
-        sprintf(title, D_00124d64);
-        sprintf(text, D_00124d8a, title, expr, file, line);
-        strcat(text, D_00124da5);
-        printf(D_00124ddf, text);
+        sprintf(title, "\nWarning a library assertion occured:");
+        sprintf(text, "%s\n%s\n\nIn   : %s\nline : %u", title, expr, file, line);
+        strcat(text, "\n\nEnter 'K' to Kill the Application or 'C' to Continue : ");
+        printf("%s\n", text);
     }
     key = 0;
     while (!cont) {

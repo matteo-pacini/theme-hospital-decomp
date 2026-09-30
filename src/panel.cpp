@@ -98,26 +98,16 @@ extern "C" {
 
 extern char **D_001602cc;
 extern char **D_0016029c;
-extern char D_0012031d[];
 extern Event D_001549d0[];
 extern u8 D_00156910;
 extern TbSprite *D_00153f80;
 extern TbSprite *D_00153f88;
 extern TbLoadFiles D_0013f680[];
-extern char D_00120310[];
-extern char D_00120327[];
 extern char **D_001602a0;
-extern char D_00120323[];
 extern char **D_00160298;
 extern char **D_00160318;
-extern char D_00120316[];
-extern char D_00120317[];
 extern char **D_001602a4;
 extern u8 D_0012d778[];
-extern char D_00120300[];
-extern char D_00120304[];
-extern char D_00120308[];
-extern char D_0012030c[];
 
 void fn_000c93bf(char *dst, char *src);
 void LbDataLoadAll(TbLoadFiles *files);
@@ -448,14 +438,14 @@ void draw_money_on_panel(void)
         }
         LbTextSetClipWindow(resvars.f18_PanelLayoutp->unknown150 + resvars.f1c_PanelLayoutp->unknown248 * digits, resvars.f18_PanelLayoutp->unknown154,
                             resvars.f18_PanelLayoutp->unknown158 - resvars.f1c_PanelLayoutp->unknown248 * digits, height);
-        sprintf(buf, D_00120300, myhosp->f35);
+        sprintf(buf, "%7d", myhosp->f35);
         LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254 - (height - othervar.f3f * 6), buf);
-        sprintf(buf, D_00120304, othervar.f3b);
+        sprintf(buf, "%7d", othervar.f3b);
         LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254 + othervar.f3f * 6, buf);
         if (digits) {
             LbTextSetClipWindow(resvars.f18_PanelLayoutp->unknown160, resvars.f18_PanelLayoutp->unknown164,
                                 resvars.f1c_PanelLayoutp->unknown248 * (digits - 3) + resvars.f18_PanelLayoutp->unknown168, height);
-            sprintf(buf, D_00120308, myhosp->f35);
+            sprintf(buf, "%7d", myhosp->f35);
             LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254, buf);
         }
         othervar.f3f++;
@@ -466,7 +456,7 @@ void draw_money_on_panel(void)
         }
     } else {
         LbTextSetClipWindow(resvars.f18_PanelLayoutp->unknown150, resvars.f18_PanelLayoutp->unknown154, resvars.f18_PanelLayoutp->unknown158, height);
-        sprintf(buf, D_0012030c, myhosp->f35);
+        sprintf(buf, "%7d", myhosp->f35);
         LbTextDraw(resvars.f1c_PanelLayoutp->unknown250, resvars.f1c_PanelLayoutp->unknown254, buf);
     }
 }
@@ -480,7 +470,7 @@ void draw_date_on_panel(void)
     set_font_from_cache(6);
     lbDisplay.draw_flags = 0x100;
     LbTextSetWindow(resvars.f18_PanelLayoutp->unknown4c0, resvars.f18_PanelLayoutp->unknown4c4, resvars.f18_PanelLayoutp->unknown4c8, resvars.f18_PanelLayoutp->unknown4cc);
-    sprintf(buf, D_00120310, mycontrol->unknown64f, month_text[mycontrol->unknown650]);
+    sprintf(buf, "%d %s", mycontrol->unknown64f, month_text[mycontrol->unknown650]);
     LbTextDraw(resvars.f1c_PanelLayoutp->unknown440, resvars.f1c_PanelLayoutp->unknown444, buf);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
@@ -721,7 +711,7 @@ void display_panel_staff_info(void)
         set_font_from_cache(1);
         fn_000bbff0(buf, D_00160298[w->subtype]);
         if ((w->subtype == 1 || w->subtype == 4) && (w->unknown124 & 0x1e0)) {
-            fn_000bbff0(buf, D_00120316);
+            fn_000bbff0(buf, "");
             n = 0;
             if (w->unknown124 & 0x80)
                 fn_000bbff0(names[n++], D_00160318[7]);
@@ -737,7 +727,7 @@ void display_panel_staff_info(void)
             }
             fn_000bbff0(buf, names[0]);
             for (i = 1; i < n; i++)
-                sprintf(buf, D_00120317, buf, names[i]);
+                sprintf(buf, "%s %s", buf, names[i]);
         }
         fn_00036730(buf, &line, 2);
         if (resvars.f1 == SCREEN_MODE_13) {
@@ -784,7 +774,7 @@ void display_panel_object_info(void)
             fn_00036730(buf, &line, 3);
         } else {
             sprintf(buf, info_bar_text[31], w->mode);
-            sprintf(buf, D_0012031d, buf, w->value);
+            sprintf(buf, "%s/%d", buf, w->value);
             line = 2;
             fn_00036730(buf, &line, 3);
         }
@@ -1238,7 +1228,7 @@ void draw_ratfest_on_panel(void)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x29);
-    sprintf(buf, D_00120323, myhosp->fd27u);
+    sprintf(buf, "%5d", myhosp->fd27u);
     LbTextDraw(0x5d, 0x1be, buf);
     switch (gamevar.f175) {
     case 0:
@@ -1408,7 +1398,7 @@ void panel_rep_help(void)
     char buf[12];
 
     fn_000bbff0(othervar.f96, help_text[9]);
-    sprintf(buf, D_00120327, myhosp->unknownc7e);
+    sprintf(buf, " (%d)", myhosp->unknownc7e);
     fn_000c93bf(othervar.f96, buf);
 }
 

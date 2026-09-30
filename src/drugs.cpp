@@ -9,8 +9,6 @@ struct MenuItem {
 extern "C" {
 
 extern Event D_001549d0[];
-extern char D_0012017c[], D_0012017f[], D_00120182[], D_00120187[], D_0012018b[], D_0012018f[];
-extern char D_00120192[], D_00120195[], D_00120198[], D_0012019b[], D_0012019e[], D_001201a1[];
 extern char **D_00160304, **D_001602a4;
 extern char **D_00160318;
 
@@ -85,33 +83,33 @@ void display_drugs(void)
         switch (i) {
         case 6:
             if (room >= 0x24 || room == 1) {
-                sprintf(buf, D_0012017c, myhosp->unknownc7e);
+                sprintf(buf, "%d", myhosp->unknownc7e);
             } else {
-                sprintf(buf, D_0012017f, myhosp->rooms[room].unknown0);
+                sprintf(buf, "%d", myhosp->rooms[room].unknown0);
             }
             break;
         case 7:
             if (othervar.fa78) {
                 othervar.fa78--;
-                sprintf(buf, D_00120182, myhosp->rooms[room].unknown10 / 100);
+                sprintf(buf, "%d%%", myhosp->rooms[room].unknown10 / 100);
             } else {
-                sprintf(buf, D_00120187, myhosp->rooms[room].unknownC);
+                sprintf(buf, "$%d", myhosp->rooms[room].unknownC);
             }
             break;
         case 8:
-            sprintf(buf, D_0012018b, myhosp->rooms[room].unknown14);
+            sprintf(buf, "$%d", myhosp->rooms[room].unknown14);
             break;
         case 9:
-            sprintf(buf, D_0012018f, myhosp->rooms[room].unknown1E);
+            sprintf(buf, "%d", myhosp->rooms[room].unknown1E);
             break;
         case 10:
-            sprintf(buf, D_00120192, myhosp->rooms[room].unknown20);
+            sprintf(buf, "%d", myhosp->rooms[room].unknown20);
             break;
         case 11:
-            sprintf(buf, D_00120195, myhosp->rooms[room].unknown24);
+            sprintf(buf, "%d", myhosp->rooms[room].unknown24);
             break;
         default:
-            sprintf(buf, D_00120198, D_00160304[i]);
+            sprintf(buf, "%s", D_00160304[i]);
             fn_0001b7e0(buf, buf, 1);
             break;
         }
@@ -160,7 +158,7 @@ void display_drugs(void)
     n = 0;
     for (i = 0; i < 0x11; i++) {
         if (list[i]) {
-            sprintf(buf, D_0012019b, D_001602a4[list[i]]);
+            sprintf(buf, "%s", D_001602a4[list[i]]);
             fn_0001b7e0(buf, buf, 0);
             if (i == 8) {
                 set_font_from_cache(0xf);
@@ -193,7 +191,7 @@ void display_drugs(void)
                 value = allhosps[player].rooms[room].unknown1B;
                 reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 7);
                 set_font_from_cache(0x2e);
-                sprintf(buf, D_0012019e, value);
+                sprintf(buf, "%d", value);
                 LbTextSetWindow(0x134, resvars.f40[0x21].y, 0x1c, 0x32);
                 lbDisplay.draw_flags = 0x100;
                 LbTextDraw(0, 0, buf);
@@ -214,7 +212,7 @@ void display_drugs(void)
                 if (def->kind == 0x27) {
                     reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 7);
                     set_font_from_cache(0x2e);
-                    sprintf(buf, D_001201a1);
+                    sprintf(buf, "?");
                     LbTextSetWindow(0x134, resvars.f40[0x21].y, 0x1c, 0x32);
                     lbDisplay.draw_flags = 0x100;
                     LbTextDraw(0, 0, buf);

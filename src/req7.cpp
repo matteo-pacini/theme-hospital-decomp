@@ -34,8 +34,6 @@ extern "C" {
 extern char **D_00160354;
 extern Event D_001549d0[];
 extern s16 D_001567b0[8];
-extern char D_00120a20[], D_00120a23[], D_00120a26[], D_00120a29[];
-extern char D_00120a2c[], D_00120a2f[];
 
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 void fn_0002f47c(Thing *w, s16 x, s16 y);
@@ -119,13 +117,13 @@ void req7_overdraw(Window *w)
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[3].x, oy + resvars.f1c_QueuePanelp->labels[3].y, D_00160354[3]);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-    sprintf(buf, D_00120a20, queue_size(&room_info[othervar.f61]));
+    sprintf(buf, "%d", queue_size(&room_info[othervar.f61]));
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[4].x, oy + resvars.f1c_QueuePanelp->labels[4].y, buf);
-    sprintf(buf, D_00120a23, room_info[othervar.f61].unknown32);
+    sprintf(buf, "%d", room_info[othervar.f61].unknown32);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[5].x, oy + resvars.f1c_QueuePanelp->labels[5].y, buf);
-    sprintf(buf, D_00120a26, room_info[othervar.f61].count);
+    sprintf(buf, "%d", room_info[othervar.f61].count);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[6].x, oy + resvars.f1c_QueuePanelp->labels[6].y, buf);
-    sprintf(buf, D_00120a29, room_info[othervar.f61].f1e);
+    sprintf(buf, "%d", room_info[othervar.f61].f1e);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[7].x, oy + resvars.f1c_QueuePanelp->labels[7].y, buf);
     if (!queue_person_valid(othervar.f61, othervar.f63) && othervar.f67 != 0) {
         othervar.f63 = 0;
@@ -527,9 +525,9 @@ void display_queue_bar(u16 x, u16 y)
             LbTextSetWindow(x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[23].x, y + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y + resvars.f18_QueueLayoutp->r[23].y, resvars.f18_QueueLayoutp->r[23].w, resvars.f18_QueueLayoutp->r[23].h);
             lbDisplay.draw_flags = 0x100;
             if (statvar.unknownfd > 1)
-                sprintf(buf, D_00120a2c, &allhosps[fn_000856c8(i + 1)]);
+                sprintf(buf, "%s", &allhosps[fn_000856c8(i + 1)]);
             else
-                sprintf(buf, D_00120a2f, &allhosps[i]);
+                sprintf(buf, "%s", &allhosps[i]);
             LbTextDraw(0, 0, buf);
             lbDisplay.draw_flags = 0;
             LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);

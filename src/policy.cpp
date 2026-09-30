@@ -11,11 +11,6 @@ extern "C" {
 
 extern Event D_001549d0[];
 extern char **D_001602dc;
-extern char D_00120414[];
-extern char D_00120417[];
-extern char D_0012041a[];
-extern char D_0012041d[];
-extern char D_00120420[];
 
 void fn_00044664(void);
 void fn_0004488c(void);
@@ -109,7 +104,7 @@ void fn_0004488c(void)
     set_font_from_cache(7);
     for (i = 0; i < 5; i++) {
         LbTextSetWindow(resvars.f3c_PolicyRectp[i + 0x20].x, resvars.f3c_PolicyRectp[i + 0x20].y, resvars.f3c_PolicyRectp[i + 0x20].w, resvars.f3c_PolicyRectp[i + 0x20].h);
-        sprintf(buf, D_00120414, D_001602dc[i]);
+        sprintf(buf, "%s", D_001602dc[i]);
         LbTextDraw(0, 0, buf);
         lbDisplay.draw_flags = 0x20;
     }
@@ -123,7 +118,7 @@ void fn_0004488c(void)
     reqspr_draw(resvars.f3c_PolicyRectp[0x25].x + x, resvars.f3c_PolicyRectp[0x25].y, &screen_sprites_tab_start[2]);
     LbTextSetWindow((resvars.f3c_PolicyRectp[0x25].x + x) + resvars.f40[0x54].x, resvars.f3c_PolicyRectp[0x25].y + resvars.f40[0x54].y,
                     screen_sprites_tab_start[2].width, screen_sprites_tab_start[2].height);
-    sprintf(buf, D_00120417, D_001602dc[i++]);
+    sprintf(buf, "%s", D_001602dc[i++]);
     LbTextDraw(0, 0, buf);
     x = allhosps[player].f21b * 3;
     if (x < 0)
@@ -133,7 +128,7 @@ void fn_0004488c(void)
     reqspr_draw(resvars.f3c_PolicyRectp[0x26].x + x, resvars.f3c_PolicyRectp[0x26].y, &screen_sprites_tab_start[1]);
     LbTextSetWindow((resvars.f3c_PolicyRectp[0x26].x + x) + resvars.f40[0x54].x, resvars.f3c_PolicyRectp[0x26].y + resvars.f40[0x54].y,
                     screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height);
-    sprintf(buf, D_0012041a, D_001602dc[i++]);
+    sprintf(buf, "%s", D_001602dc[i++]);
     LbTextDraw(0, 0, buf);
     x = (allhosps[player].f217 - 1000) / 0x42 * 20;
     if (x < 0)
@@ -143,7 +138,7 @@ void fn_0004488c(void)
     reqspr_draw(resvars.f3c_PolicyRectp[0x27].x + x, resvars.f3c_PolicyRectp[0x27].y, &screen_sprites_tab_start[3]);
     LbTextSetWindow((resvars.f3c_PolicyRectp[0x27].x + x) + resvars.f40[0x54].x, resvars.f3c_PolicyRectp[0x27].y + resvars.f40[0x54].y,
                     screen_sprites_tab_start[3].width, screen_sprites_tab_start[3].height);
-    sprintf(buf, D_0012041d, D_001602dc[i++]);
+    sprintf(buf, "%s", D_001602dc[i++]);
     LbTextDraw(0, 0, buf);
     x = allhosps[player].f21d / 0x27 * 10;
     if (x < 0)
@@ -153,7 +148,7 @@ void fn_0004488c(void)
     reqspr_draw(resvars.f3c_PolicyRectp[0x28].x + x, resvars.f3c_PolicyRectp[0x28].y, &screen_sprites_tab_start[3]);
     LbTextSetWindow((resvars.f3c_PolicyRectp[0x28].x + x) + resvars.f40[0x54].x, resvars.f3c_PolicyRectp[0x28].y + resvars.f40[0x54].y,
                     screen_sprites_tab_start[3].width, screen_sprites_tab_start[3].height);
-    sprintf(buf, D_00120420, D_001602dc[i++]);
+    sprintf(buf, "%s", D_001602dc[i++]);
     LbTextDraw(0, 0, buf);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (allhosps[player].f21f)

@@ -78,14 +78,6 @@ typedef struct {
 
 static S32 locked = 0;
 
-extern char D_00126db8[];
-extern char D_00126dc0[];
-extern char D_00126dc8[];
-extern char D_00126dd4[];
-extern char D_00126ddc[];
-extern char D_00126e04[];
-extern char D_00126e24[];
-extern char D_00126e4c[];
 
 /* VOC and WAV end-of-sample callbacks: __pascal (callee pops). */
 void AIL_VOC_EOS(HSAMPLE S);
@@ -224,7 +216,7 @@ void __cdecl AIL_process_WAV_image(void *image, HSAMPLE S)
     DATA *d;
 
     f = (FMT *)((U8 *)image + 12);
-    while (strnicmp(f->FMT_string, D_00126db8, 4)) {
+    while (strnicmp(f->FMT_string, "fmt ", 4)) {
         f = (FMT *)((U8 *)f + f->chunk_size + 8 + (f->chunk_size & 1));
     }
     if (f->channels == 1 && f->bits_per_sample == 8) {
@@ -238,7 +230,7 @@ void __cdecl AIL_process_WAV_image(void *image, HSAMPLE S)
     }
     AIL_set_sample_playback_rate(S, f->sample_rate);
     d = (DATA *)((U8 *)image + 12);
-    while (strnicmp(d->DATA_string, D_00126dc0, 4)) {
+    while (strnicmp(d->DATA_string, "data", 4)) {
         d = (DATA *)((U8 *)d + d->chunk_size + 8 + (d->chunk_size & 1));
     }
     AIL_set_sample_address(S, d->data, d->chunk_size);
@@ -266,12 +258,12 @@ HSAMPLE __cdecl AIL_API_allocate_file_sample(HDIGDRIVER dig, void *file_image, S
     if (file_image == NULL) {
         return NULL;
     }
-    if (!strnicmp(file_image, D_00126dc8, 8)) {
+    if (!strnicmp(file_image, "Creative", 8)) {
         type = FILE_VOC;
-    } else if (!strnicmp((char *)file_image + 8, D_00126dd4, 4)) {
+    } else if (!strnicmp((char *)file_image + 8, "WAVE", 4)) {
         type = FILE_WAV;
     } else {
-        strcpy(AIL_error, D_00126ddc);
+        strcpy(AIL_error, "Unrecognized digital audio file type\n");
         return NULL;
     }
     S = AIL_allocate_sample_handle(dig);
@@ -296,7 +288,7 @@ HSAMPLE __cdecl AIL_API_allocate_file_sample(HDIGDRIVER dig, void *file_image, S
         break;
     }
     if (S->system_data[SSD_RELEASE] == -1) {
-        strcpy(AIL_error, D_00126e04);
+        strcpy(AIL_error, "Invalid or missing data block\n");
         return NULL;
     }
     return S;
@@ -310,12 +302,12 @@ S32 __cdecl AIL_API_set_sample_file(HSAMPLE S, void *file_image, S32 block)
     if (file_image == NULL) {
         return 0;
     }
-    if (!strnicmp(file_image, D_00126dc8, 8)) {
+    if (!strnicmp(file_image, "Creative", 8)) {
         type = FILE_VOC;
-    } else if (!strnicmp((char *)file_image + 8, D_00126dd4, 4)) {
+    } else if (!strnicmp((char *)file_image + 8, "WAVE", 4)) {
         type = FILE_WAV;
     } else {
-        strcpy(AIL_error, D_00126e24);
+        strcpy(AIL_error, "Unrecognized digital audio file type\n");
         return 0;
     }
     switch (type) {
@@ -332,7 +324,7 @@ S32 __cdecl AIL_API_set_sample_file(HSAMPLE S, void *file_image, S32 block)
         break;
     }
     if (S->system_data[SSD_RELEASE] == -1) {
-        strcpy(AIL_error, D_00126e4c);
+        strcpy(AIL_error, "Invalid or missing data block\n");
         return 0;
     }
     return 1;

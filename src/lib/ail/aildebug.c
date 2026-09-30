@@ -15,154 +15,6 @@ static S32 locked = 0;
 
 #define END AIL_indent--
 
-extern char D_00122f74[];
-extern char D_00122f84[];
-extern char D_00122f94[];
-extern char D_00122fb0[];
-extern char D_00122fc0[];
-extern char D_00122fd4[];
-extern char D_00122fe8[];
-extern char D_00123008[];
-extern char D_001230d4[];
-extern char D_001230f0[];
-extern char D_00123100[];
-extern char D_00123110[];
-extern char D_00123120[];
-extern char D_00123130[];
-extern char D_00123140[];
-extern char D_00123678[];
-extern char D_001236b0[];
-extern char D_00123cd0[];
-extern char D_00123cf8[];
-extern char D_00123024[];
-extern char D_00123040[];
-extern char D_00123060[];
-extern char D_00123080[];
-extern char D_0012309c[];
-extern char D_001230c4[];
-extern char D_00123150[];
-extern char D_0012316c[];
-extern char D_00123188[];
-extern char D_001231a8[];
-extern char D_001231cc[];
-extern char D_001231ec[];
-extern char D_00123208[];
-extern char D_00123220[];
-extern char D_0012323c[];
-extern char D_00123254[];
-extern char D_0012326c[];
-extern char D_0012328c[];
-extern char D_001232a8[];
-extern char D_001232c8[];
-extern char D_001232e8[];
-extern char D_00123308[];
-extern char D_00123324[];
-extern char D_0012334c[];
-extern char D_00123370[];
-extern char D_00123394[];
-extern char D_001233c0[];
-extern char D_001233e4[];
-extern char D_001233fc[];
-extern char D_00123420[];
-extern char D_00123448[];
-extern char D_0012346c[];
-extern char D_00123488[];
-extern char D_001234a0[];
-extern char D_001234bc[];
-extern char D_001234d4[];
-extern char D_001234fc[];
-extern char D_00123520[];
-extern char D_00123540[];
-extern char D_00123568[];
-extern char D_00123594[];
-extern char D_001235b0[];
-extern char D_001235d4[];
-extern char D_001235f0[];
-extern char D_00123608[];
-extern char D_00123628[];
-extern char D_00123654[];
-extern char D_001236c8[];
-extern char D_001236f8[];
-extern char D_00123728[];
-extern char D_00123748[];
-extern char D_00123774[];
-extern char D_001237a8[];
-extern char D_001237cc[];
-extern char D_001237e8[];
-extern char D_00123810[];
-extern char D_00123838[];
-extern char D_00123860[];
-extern char D_00123888[];
-extern char D_001238b0[];
-extern char D_001238d0[];
-extern char D_001238f0[];
-extern char D_0012390c[];
-extern char D_00123934[];
-extern char D_00123958[];
-extern char D_00123980[];
-extern char D_001239a4[];
-extern char D_001239c8[];
-extern char D_001239e4[];
-extern char D_00123a00[];
-extern char D_00123a1c[];
-extern char D_00123a38[];
-extern char D_00123a60[];
-extern char D_00123a88[];
-extern char D_00123ab0[];
-extern char D_00123acc[];
-extern char D_00123ae8[];
-extern char D_00123b04[];
-extern char D_00123b24[];
-extern char D_00123b4c[];
-extern char D_00123b6c[];
-extern char D_00123b9c[];
-extern char D_00123bb8[];
-extern char D_00123bdc[];
-extern char D_00123bfc[];
-extern char D_00123c20[];
-extern char D_00123c44[];
-extern char D_00123c68[];
-extern char D_00123c8c[];
-extern char D_00123cb0[];
-extern char D_00123d0c[];
-extern char D_00123d28[];
-extern char D_00123d54[];
-extern char D_00123d80[];
-extern char D_00123dac[];
-extern char D_00123dd4[];
-extern char D_00123e00[];
-extern char D_00123e2c[];
-extern char D_00123e58[];
-extern char D_00123e7c[];
-extern char D_00123ea0[];
-extern char D_00123ebc[];
-extern char D_00123edc[];
-extern char D_00123f04[];
-extern char D_00123f2c[];
-extern char D_00123f68[];
-extern char D_00123f8c[];
-extern char D_00123fc0[];
-extern char D_00123fe8[];
-extern char D_00124000[];
-extern char D_0012401c[];
-extern char D_00124038[];
-extern char D_00124058[];
-extern char D_00124074[];
-extern char D_00124090[];
-extern char D_001240c4[];
-extern char D_001240dc[];
-extern char D_001240fc[];
-extern char D_00124118[];
-extern char D_0012413c[];
-extern char D_00124158[];
-extern char D_00124174[];
-extern char D_00124190[];
-extern char D_001241a8[];
-extern char D_001241c0[];
-extern char D_001241dc[];
-extern char D_001241f8[];
-extern char D_00124210[];
-extern char D_0012422c[];
 
 void __pascal AILDEBUG_START(void);
 void __pascal AILDEBUG_END(void);
@@ -196,7 +48,7 @@ void outresint(S32 value)
     S32 args[1];
 
     args[0] = value;
-    AIL_sprintf(buf, D_00122f74, 1, args);
+    AIL_sprintf(buf, "Result = %d\r\n", 1, args);
     AIL_DEBUGOUTSTR(buf);
 }
 
@@ -207,7 +59,7 @@ void outreshex(U32 value)
     S32 args[1];
 
     args[0] = value;
-    AIL_sprintf(buf, D_00122f84, 1, args);
+    AIL_sprintf(buf, "Result = 0x%X\r\n", 1, args);
     AIL_DEBUGOUTSTR(buf);
 }
 
@@ -288,12 +140,12 @@ S32 __pascal TIME_WRITE(void)
     sec = t / 1000 % 60;
     ms = t % 1000;
     if (AIL_indent == 1) {
-        oprintf4(D_00122f94, h, m, sec, ms);
+        oprintf4("[%.02u:%.02u:%.02u.%.03u] ", h, m, sec, ms);
     } else {
-        AIL_DEBUGOUTSTR(D_00122fb0);
+        AIL_DEBUGOUTSTR("               ");
     }
     if (AIL_indent > 1) {
-        AIL_fwrite(AIL_debugfile, D_00122fc0, AIL_indent - 1);
+        AIL_fwrite(AIL_debugfile, "\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372\372", AIL_indent - 1);
     }
     return 1;
 }
@@ -304,7 +156,7 @@ void __cdecl AIL_shutdown(void)
     if (AIL_started) {
         START
         {
-            AIL_DEBUGOUTSTR(D_00122fd4);
+            AIL_DEBUGOUTSTR("AIL_shutdown()\r\n");
         }
         AIL_API_shutdown();
         RESULT
@@ -323,7 +175,7 @@ char *__cdecl AIL_set_driver_directory(char *dir)
 
     START
     {
-        oprintf1(D_00122fe8, (S32)dir);
+        oprintf1("AIL_set_driver_directory(%s)\r\n", (S32)dir);
     }
     result = AIL_API_set_driver_directory(dir);
     RESULT
@@ -342,7 +194,7 @@ S32 __cdecl AIL_set_preference(U32 number, S32 value)
 
     START
     {
-        oprintf2(D_00123008, number, value);
+        oprintf2("AIL_set_preference(%d,%d)\r\n", number, value);
     }
     result = AIL_API_set_preference(number, value);
     RESULT
@@ -373,7 +225,7 @@ REALFAR __cdecl AIL_get_real_vect(U32 vectnum)
 
     START
     {
-        oprintf1(D_00123024, vectnum);
+        oprintf1("AIL_get_real_vect(0x%X)\r\n", vectnum);
     }
     result = AIL_API_get_real_vect(vectnum);
     RESULT
@@ -390,7 +242,7 @@ void __cdecl AIL_set_real_vect(U32 vectnum, REALFAR real_ptr)
 {
     START
     {
-        oprintf2(D_00123040, vectnum, (S32)real_ptr);
+        oprintf2("AIL_set_real_vect(0x%X,0x%X)\r\n", vectnum, (S32)real_ptr);
     }
     AIL_API_set_real_vect(vectnum, real_ptr);
     END;
@@ -401,7 +253,7 @@ void __cdecl AIL_set_USE16_ISR(S32 IRQ, REALFAR real_base, U32 ISR_offset)
 {
     START
     {
-        oprintf3(D_00123060, IRQ, (S32)real_base, ISR_offset);
+        oprintf3("AIL_set_USE16_ISR(%d,0x%X,%u)\r\n", IRQ, (S32)real_base, ISR_offset);
     }
     AIL_API_set_USE16_ISR(IRQ, real_base, ISR_offset);
     END;
@@ -412,7 +264,7 @@ void __cdecl AIL_restore_USE16_ISR(S32 IRQ)
 {
     START
     {
-        oprintf1(D_00123080, IRQ);
+        oprintf1("AIL_restore_USE16_ISR(%d)\r\n", IRQ);
     }
     AIL_API_restore_USE16_ISR(IRQ);
     END;
@@ -437,7 +289,7 @@ S32 __cdecl AIL_call_driver(AIL_DRIVER *drvr, S32 fn, VDI_CALL *in, VDI_CALL *ou
 
     START
     {
-        oprintf4(D_0012309c, (S32)drvr, fn, (S32)in, (S32)out);
+        oprintf4("AIL_call_driver(0x%X,0x%X,0x%X,0x%X)\r\n", (S32)drvr, fn, (S32)in, (S32)out);
     }
     result = AIL_API_call_driver(drvr, fn, in, out);
     RESULT
@@ -454,7 +306,7 @@ void __cdecl AIL_delay(S32 intervals)
 {
     START
     {
-        oprintf1(D_001230c4, intervals);
+        oprintf1("AIL_delay(%d)\r\n", intervals);
     }
     AIL_API_delay(intervals);
     END;
@@ -473,24 +325,24 @@ S32 __cdecl AIL_read_INI(AIL_INI *INI, char *filename)
 
     START
     {
-        oprintf2(D_001230d4, (S32)INI, (S32)filename);
+        oprintf2("AIL_API_read_INI(0x%X,%s)\r\n", (S32)INI, (S32)filename);
     }
     result = AIL_API_read_INI(INI, filename);
     if (result) {
         RESULT
         {
             INDENT;
-            oprintf1(D_001230f0, (S32)INI->driver_name);
+            oprintf1("Driver = %s\r\n", (S32)INI->driver_name);
             INDENT;
-            oprintf1(D_00123100, (S32)INI->device_name);
+            oprintf1("Device = %s\r\n", (S32)INI->device_name);
             INDENT;
-            oprintf1(D_00123110, INI->IO.IO);
+            oprintf1("IO     = %X\r\n", INI->IO.IO);
             INDENT;
-            oprintf1(D_00123120, INI->IO.IRQ);
+            oprintf1("IRQ    = %d\r\n", INI->IO.IRQ);
             INDENT;
-            oprintf1(D_00123130, INI->IO.DMA_8_bit);
+            oprintf1("DMA_8  = %d\r\n", INI->IO.DMA_8_bit);
             INDENT;
-            oprintf1(D_00123140, INI->IO.DMA_16_bit);
+            oprintf1("DMA_16 = %d\r\n", INI->IO.DMA_16_bit);
         }
     } else {
         RESULT
@@ -510,7 +362,7 @@ HTIMER __cdecl AIL_register_timer(AILTIMERCB callback_fn)
 
     START
     {
-        oprintf1(D_00123150, (S32)callback_fn);
+        oprintf1("AIL_register_timer(0x%X)\r\n", (S32)callback_fn);
     }
     result = AIL_API_register_timer(callback_fn);
     RESULT
@@ -529,7 +381,7 @@ U32 __cdecl AIL_set_timer_user(HTIMER timer, U32 user)
 
     START
     {
-        oprintf2(D_0012316c, (S32)timer, user);
+        oprintf2("AIL_set_timer_user(%u,%u)\r\n", (S32)timer, user);
     }
     result = AIL_API_set_timer_user(timer, user);
     RESULT
@@ -546,7 +398,7 @@ void __cdecl AIL_set_timer_period(HTIMER timer, U32 microseconds)
 {
     START
     {
-        oprintf2(D_00123188, (S32)timer, microseconds);
+        oprintf2("AIL_set_timer_period(%u,%u)\r\n", (S32)timer, microseconds);
     }
     AIL_API_set_timer_period(timer, microseconds);
     END;
@@ -557,7 +409,7 @@ void __cdecl AIL_set_timer_frequency(HTIMER timer, U32 hertz)
 {
     START
     {
-        oprintf2(D_001231a8, (S32)timer, hertz);
+        oprintf2("AIL_set_timer_frequency(%u,%u)\r\n", (S32)timer, hertz);
     }
     AIL_API_set_timer_frequency(timer, hertz);
     END;
@@ -568,7 +420,7 @@ void __cdecl AIL_set_timer_divisor(HTIMER timer, U32 PIT_divisor)
 {
     START
     {
-        oprintf2(D_001231cc, (S32)timer, PIT_divisor);
+        oprintf2("AIL_set_timer_divisor(%u,%u)\r\n", (S32)timer, PIT_divisor);
     }
     AIL_API_set_timer_divisor(timer, PIT_divisor);
     END;
@@ -581,7 +433,7 @@ S32 __cdecl AIL_interrupt_divisor(void)
 
     START
     {
-        AIL_DEBUGOUTSTR(D_001231ec);
+        AIL_DEBUGOUTSTR("AIL_interrupt_divisor()\r\n");
     }
     result = AIL_API_interrupt_divisor();
     RESULT
@@ -598,7 +450,7 @@ void __cdecl AIL_start_timer(HTIMER timer)
 {
     START
     {
-        oprintf1(D_00123208, (S32)timer);
+        oprintf1("AIL_start_timer(%u)\r\n", (S32)timer);
     }
     AIL_API_start_timer(timer);
     END;
@@ -609,7 +461,7 @@ void __cdecl AIL_start_all_timers(void)
 {
     START
     {
-        AIL_DEBUGOUTSTR(D_00123220);
+        AIL_DEBUGOUTSTR("AIL_start_all_timers()\r\n");
     }
     AIL_API_start_all_timers();
     END;
@@ -620,7 +472,7 @@ void __cdecl AIL_stop_timer(HTIMER timer)
 {
     START
     {
-        oprintf1(D_0012323c, (S32)timer);
+        oprintf1("AIL_stop_timer(%u)\r\n", (S32)timer);
     }
     AIL_API_stop_timer(timer);
     END;
@@ -631,7 +483,7 @@ void __cdecl AIL_stop_all_timers(void)
 {
     START
     {
-        AIL_DEBUGOUTSTR(D_00123254);
+        AIL_DEBUGOUTSTR("AIL_stop_all_timers()\r\n");
     }
     AIL_API_stop_all_timers();
     END;
@@ -642,7 +494,7 @@ void __cdecl AIL_release_timer_handle(HTIMER timer)
 {
     START
     {
-        oprintf1(D_0012326c, (S32)timer);
+        oprintf1("AIL_release_timer_handle(%u)\r\n", (S32)timer);
     }
     AIL_API_release_timer_handle(timer);
     END;
@@ -653,7 +505,7 @@ void __cdecl AIL_release_all_timers(void)
 {
     START
     {
-        AIL_DEBUGOUTSTR(D_0012328c);
+        AIL_DEBUGOUTSTR("AIL_release_all_timers()\r\n");
     }
     AIL_API_release_all_timers();
     END;
@@ -666,7 +518,7 @@ IO_PARMS *__cdecl AIL_get_IO_environment(AIL_DRIVER *drvr)
 
     START
     {
-        oprintf1(D_001232a8, (S32)drvr);
+        oprintf1("AIL_get_IO_environment(0x%X)\r\n", (S32)drvr);
     }
     result = AIL_API_get_IO_environment(drvr);
     RESULT
@@ -685,7 +537,7 @@ AIL_DRIVER *__cdecl AIL_install_driver(U8 *driver_image, U32 n_bytes)
 
     START
     {
-        oprintf2(D_001232c8, (S32)driver_image, n_bytes);
+        oprintf2("AIL_install_driver(0x%X,%u)\r\n", (S32)driver_image, n_bytes);
     }
     result = AIL_API_install_driver(driver_image, n_bytes);
     RESULT
@@ -702,7 +554,7 @@ void __cdecl AIL_uninstall_driver(AIL_DRIVER *drvr)
 {
     START
     {
-        oprintf1(D_001232e8, (S32)drvr);
+        oprintf1("AIL_uninstall_driver(0x%X)\r\n", (S32)drvr);
     }
     AIL_API_uninstall_driver(drvr);
     END;
@@ -715,7 +567,7 @@ S32 __cdecl AIL_install_DIG_INI(HDIGDRIVER *dig)
 
     START
     {
-        oprintf1(D_00123308, (S32)dig);
+        oprintf1("AIL_install_DIG_INI(0x%X)\r\n", (S32)dig);
     }
     result = AIL_API_install_DIG_INI(dig);
     RESULT
@@ -734,7 +586,7 @@ HDIGDRIVER __cdecl AIL_install_DIG_driver_file(char *filename, IO_PARMS *IO)
 
     START
     {
-        oprintf2(D_00123324, (S32)filename, (S32)IO);
+        oprintf2("AIL_install_DIG_driver_file(%s,0x%X)\r\n", (S32)filename, (S32)IO);
     }
     result = AIL_API_install_DIG_driver_file(filename, IO);
     RESULT
@@ -751,7 +603,7 @@ void __cdecl AIL_uninstall_DIG_driver(HDIGDRIVER dig)
 {
     START
     {
-        oprintf1(D_0012334c, (S32)dig);
+        oprintf1("AIL_uninstall_DIG_driver(0x%X)\r\n", (S32)dig);
     }
     AIL_API_uninstall_DIG_driver(dig);
     END;
@@ -764,7 +616,7 @@ HSAMPLE __cdecl AIL_allocate_sample_handle(HDIGDRIVER dig)
 
     START
     {
-        oprintf1(D_00123370, (S32)dig);
+        oprintf1("AIL_allocate_sample_handle(0x%X)\r\n", (S32)dig);
     }
     result = AIL_API_allocate_sample_handle(dig);
     RESULT
@@ -783,7 +635,7 @@ HSAMPLE __cdecl AIL_allocate_file_sample(HDIGDRIVER dig, void *file_image, S32 b
 
     START
     {
-        oprintf3(D_00123394, (S32)dig, (S32)file_image, block);
+        oprintf3("AIL_allocate_file_sample(0x%X,0x%X,%d)\r\n", (S32)dig, (S32)file_image, block);
     }
     result = AIL_API_allocate_file_sample(dig, file_image, block);
     RESULT
@@ -800,7 +652,7 @@ void __cdecl AIL_release_sample_handle(HSAMPLE S)
 {
     START
     {
-        oprintf1(D_001233c0, (S32)S);
+        oprintf1("AIL_release_sample_handle(0x%X)\r\n", (S32)S);
     }
     AIL_API_release_sample_handle(S);
     END;
@@ -811,7 +663,7 @@ void __cdecl AIL_init_sample(HSAMPLE S)
 {
     START
     {
-        oprintf1(D_001233e4, (S32)S);
+        oprintf1("AIL_init_sample(0x%X)\r\n", (S32)S);
     }
     AIL_API_init_sample(S);
     END;
@@ -824,7 +676,7 @@ S32 __cdecl AIL_set_sample_file(HSAMPLE S, void *file_image, S32 block)
 
     START
     {
-        oprintf3(D_001233fc, (S32)S, (S32)file_image, block);
+        oprintf3("AIL_set_sample_file(0x%X,0x%X,%d)\r\n", (S32)S, (S32)file_image, block);
     }
     result = AIL_API_set_sample_file(S, file_image, block);
     RESULT
@@ -841,7 +693,7 @@ void __cdecl AIL_set_sample_address(HSAMPLE S, void *start, U32 len)
 {
     START
     {
-        oprintf3(D_00123420, (S32)S, (S32)start, len);
+        oprintf3("AIL_set_sample_address(0x%X,0x%X,%u)\r\n", (S32)S, (S32)start, len);
     }
     AIL_API_set_sample_address(S, start, len);
     END;
@@ -852,7 +704,7 @@ void __cdecl AIL_set_sample_type(HSAMPLE S, S32 format, U32 flags)
 {
     START
     {
-        oprintf3(D_00123448, (S32)S, format, flags);
+        oprintf3("AIL_set_sample_type(0x%X,%d,%u)\r\n", (S32)S, format, flags);
     }
     AIL_API_set_sample_type(S, format, flags);
     END;
@@ -863,7 +715,7 @@ void __cdecl AIL_start_sample(HSAMPLE S)
 {
     START
     {
-        oprintf1(D_0012346c, (S32)S);
+        oprintf1("AIL_start_sample(0x%X)\r\n", (S32)S);
     }
     AIL_API_start_sample(S);
     END;
@@ -874,7 +726,7 @@ void __cdecl AIL_stop_sample(HSAMPLE S)
 {
     START
     {
-        oprintf1(D_00123488, (S32)S);
+        oprintf1("AIL_stop_sample(0x%X)\r\n", (S32)S);
     }
     AIL_API_stop_sample(S);
     END;
@@ -885,7 +737,7 @@ void __cdecl AIL_resume_sample(HSAMPLE S)
 {
     START
     {
-        oprintf1(D_001234a0, (S32)S);
+        oprintf1("AIL_resume_sample(0x%X)\r\n", (S32)S);
     }
     AIL_API_resume_sample(S);
     END;
@@ -896,7 +748,7 @@ void __cdecl AIL_end_sample(HSAMPLE S)
 {
     START
     {
-        oprintf1(D_001234bc, (S32)S);
+        oprintf1("AIL_end_sample(0x%X)\r\n", (S32)S);
     }
     AIL_API_end_sample(S);
     END;
@@ -907,7 +759,7 @@ void __cdecl AIL_set_sample_playback_rate(HSAMPLE S, S32 playback_rate)
 {
     START
     {
-        oprintf2(D_001234d4, (S32)S, playback_rate);
+        oprintf2("AIL_set_sample_playback_rate(0x%X,%d)\r\n", (S32)S, playback_rate);
     }
     AIL_API_set_sample_playback_rate(S, playback_rate);
     END;
@@ -918,7 +770,7 @@ void __cdecl AIL_set_sample_volume(HSAMPLE S, S32 volume)
 {
     START
     {
-        oprintf2(D_001234fc, (S32)S, volume);
+        oprintf2("AIL_set_sample_volume(0x%X,%d)\r\n", (S32)S, volume);
     }
     AIL_API_set_sample_volume(S, volume);
     END;
@@ -929,7 +781,7 @@ void __cdecl AIL_set_sample_pan(HSAMPLE S, S32 pan)
 {
     START
     {
-        oprintf2(D_00123520, (S32)S, pan);
+        oprintf2("AIL_set_sample_pan(0x%X,%d)\r\n", (S32)S, pan);
     }
     AIL_API_set_sample_pan(S, pan);
     END;
@@ -940,7 +792,7 @@ void __cdecl AIL_set_sample_loop_count(HSAMPLE S, S32 loop_count)
 {
     START
     {
-        oprintf2(D_00123540, (S32)S, loop_count);
+        oprintf2("AIL_set_sample_loop_count(0x%X,%d)\r\n", (S32)S, loop_count);
     }
     AIL_API_set_sample_loop_count(S, loop_count);
     END;
@@ -951,7 +803,7 @@ void __cdecl AIL_set_sample_loop_block(HSAMPLE S, S32 loop_start_offset, S32 loo
 {
     START
     {
-        oprintf3(D_00123568, (S32)S, loop_start_offset, loop_end_offset);
+        oprintf3("AIL_set_sample_loop_block(0x%lX,%ld,%ld)\r\n", (S32)S, loop_start_offset, loop_end_offset);
     }
     AIL_API_set_sample_loop_block(S, loop_start_offset, loop_end_offset);
     END;
@@ -964,7 +816,7 @@ U32 __cdecl AIL_sample_status(HSAMPLE S)
 
     START
     {
-        oprintf1(D_00123594, (S32)S);
+        oprintf1("AIL_sample_status(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sample_status(S);
     RESULT
@@ -983,7 +835,7 @@ S32 __cdecl AIL_sample_playback_rate(HSAMPLE S)
 
     START
     {
-        oprintf1(D_001235b0, (S32)S);
+        oprintf1("AIL_sample_playback_rate(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sample_playback_rate(S);
     RESULT
@@ -1002,7 +854,7 @@ S32 __cdecl AIL_sample_volume(HSAMPLE S)
 
     START
     {
-        oprintf1(D_001235d4, (S32)S);
+        oprintf1("AIL_sample_volume(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sample_volume(S);
     RESULT
@@ -1021,7 +873,7 @@ S32 __cdecl AIL_sample_pan(HSAMPLE S)
 
     START
     {
-        oprintf1(D_001235f0, (S32)S);
+        oprintf1("AIL_sample_pan(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sample_pan(S);
     RESULT
@@ -1040,7 +892,7 @@ S32 __cdecl AIL_sample_loop_count(HSAMPLE S)
 
     START
     {
-        oprintf1(D_00123608, (S32)S);
+        oprintf1("AIL_sample_loop_count(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sample_loop_count(S);
     RESULT
@@ -1057,7 +909,7 @@ void __cdecl AIL_set_digital_master_volume(HDIGDRIVER dig, S32 master_volume)
 {
     START
     {
-        oprintf2(D_00123628, (S32)dig, master_volume);
+        oprintf2("AIL_set_digital_master_volume(0x%X,%d)\r\n", (S32)dig, master_volume);
     }
     AIL_API_set_digital_master_volume(dig, master_volume);
     END;
@@ -1070,7 +922,7 @@ S32 __cdecl AIL_digital_master_volume(HDIGDRIVER dig)
 
     START
     {
-        oprintf1(D_00123654, (S32)dig);
+        oprintf1("AIL_digital_master_volume(0x%X)\r\n", (S32)dig);
     }
     result = AIL_API_digital_master_volume(dig);
     RESULT
@@ -1088,13 +940,13 @@ void __cdecl AIL_digital_configuration(HDIGDRIVER dig, S32 *rate, S32 *format,
 {
     START
     {
-        oprintf4(D_00123678, (S32)dig, (S32)rate, (S32)format, (S32)string);
+        oprintf4("AIL_digital_configuration(0x%lX,0x%lX,0x%lX,0x%lX)\r\n", (S32)dig, (S32)rate, (S32)format, (S32)string);
     }
     AIL_API_digital_configuration(dig, rate, format, string);
     RESULT
     {
         INDENT;
-        oprintf3(D_001236b0, *rate, *format, *string);
+        oprintf3("Result = %ld, %lX, %s\r\n", *rate, *format, *string);
     }
     END;
 }
@@ -1106,7 +958,7 @@ HDIGDRIVER __cdecl AIL_install_DIG_driver_image(void *driver_image, U32 size, IO
 
     START
     {
-        oprintf3(D_001236c8, (S32)driver_image, size, (S32)IO);
+        oprintf3("AIL_install_DIG_driver_image(0x%X,%u,0x%X)\r\n", (S32)driver_image, size, (S32)IO);
     }
     result = AIL_API_install_DIG_driver_image(driver_image, size, IO);
     RESULT
@@ -1125,7 +977,7 @@ S32 __cdecl AIL_minimum_sample_buffer_size(HDIGDRIVER dig, S32 playback_rate, S3
 
     START
     {
-        oprintf3(D_001236f8, (S32)dig, playback_rate, format);
+        oprintf3("AIL_minimum_sample_buffer_size(0x%X,%d,%d)\r\n", (S32)dig, playback_rate, format);
     }
     result = AIL_API_minimum_sample_buffer_size(dig, playback_rate, format);
     RESULT
@@ -1144,7 +996,7 @@ S32 __cdecl AIL_sample_buffer_ready(HSAMPLE S)
 
     START
     {
-        oprintf1(D_00123728, (S32)S);
+        oprintf1("AIL_sample_buffer_ready(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sample_buffer_ready(S);
     RESULT
@@ -1161,7 +1013,7 @@ void __cdecl AIL_load_sample_buffer(HSAMPLE S, U32 buff_num, void *buffer, U32 l
 {
     START
     {
-        oprintf4(D_00123748, (S32)S, buff_num, (S32)buffer, len);
+        oprintf4("AIL_load_sample_buffer(0x%X,%u,0x%X,%u)\r\n", (S32)S, buff_num, (S32)buffer, len);
     }
     AIL_API_load_sample_buffer(S, buff_num, buffer, len);
     END;
@@ -1174,7 +1026,7 @@ S32 __cdecl AIL_sample_buffer_info(HSAMPLE S, U32 *pos0, U32 *len0, U32 *pos1, U
 
     START
     {
-        oprintf5(D_00123774, (S32)S, (S32)pos0, (S32)len0, (S32)pos1, (S32)len1);
+        oprintf5("AIL_sample_buffer_info(0x%X,0x%X,0x%X,0x%X,0x%X)\r\n", (S32)S, (S32)pos0, (S32)len0, (S32)pos1, (S32)len1);
     }
     result = AIL_API_sample_buffer_info(S, pos0, len0, pos1, len1);
     RESULT
@@ -1191,7 +1043,7 @@ void __cdecl AIL_set_sample_position(HSAMPLE S, U32 pos)
 {
     START
     {
-        oprintf2(D_001237a8, (S32)S, pos);
+        oprintf2("AIL_set_sample_position(0x%X,%u)\r\n", (S32)S, pos);
     }
     AIL_API_set_sample_position(S, pos);
     END;
@@ -1204,7 +1056,7 @@ U32 __cdecl AIL_sample_position(HSAMPLE S)
 
     START
     {
-        oprintf1(D_001237cc, (S32)S);
+        oprintf1("AIL_sample_position(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sample_position(S);
     RESULT
@@ -1223,7 +1075,7 @@ AILSAMPLECB __cdecl AIL_register_SOB_callback(HSAMPLE S, AILSAMPLECB SOB)
 
     START
     {
-        oprintf2(D_001237e8, (S32)S, (S32)SOB);
+        oprintf2("AIL_register_SOB_callback(0x%X,0x%X)\r\n", (S32)S, (S32)SOB);
     }
     result = AIL_API_register_SOB_callback(S, SOB);
     RESULT
@@ -1242,7 +1094,7 @@ AILSAMPLECB __cdecl AIL_register_EOB_callback(HSAMPLE S, AILSAMPLECB EOB)
 
     START
     {
-        oprintf2(D_00123810, (S32)S, (S32)EOB);
+        oprintf2("AIL_register_EOB_callback(0x%X,0x%X)\r\n", (S32)S, (S32)EOB);
     }
     result = AIL_API_register_EOB_callback(S, EOB);
     RESULT
@@ -1261,7 +1113,7 @@ AILSAMPLECB __cdecl AIL_register_EOS_callback(HSAMPLE S, AILSAMPLECB EOS)
 
     START
     {
-        oprintf2(D_00123838, (S32)S, (S32)EOS);
+        oprintf2("AIL_register_EOS_callback(0x%X,0x%X)\r\n", (S32)S, (S32)EOS);
     }
     result = AIL_API_register_EOS_callback(S, EOS);
     RESULT
@@ -1280,7 +1132,7 @@ AILSAMPLECB __cdecl AIL_register_EOF_callback(HSAMPLE S, AILSAMPLECB EOFILE)
 
     START
     {
-        oprintf2(D_00123860, (S32)S, (S32)EOFILE);
+        oprintf2("AIL_register_EOF_callback(0x%X,0x%X)\r\n", (S32)S, (S32)EOFILE);
     }
     result = AIL_API_register_EOF_callback(S, EOFILE);
     RESULT
@@ -1297,7 +1149,7 @@ void __cdecl AIL_set_sample_user_data(HSAMPLE S, U32 index, S32 value)
 {
     START
     {
-        oprintf3(D_00123888, (S32)S, index, value);
+        oprintf3("AIL_set_sample_user_data(0x%X,%u,%d)\r\n", (S32)S, index, value);
     }
     AIL_API_set_sample_user_data(S, index, value);
     END;
@@ -1310,7 +1162,7 @@ S32 __cdecl AIL_sample_user_data(HSAMPLE S, U32 index)
 
     START
     {
-        oprintf2(D_001238b0, (S32)S, index);
+        oprintf2("AIL_sample_user_data(0x%X,%u)\r\n", (S32)S, index);
     }
     result = AIL_API_sample_user_data(S, index);
     RESULT
@@ -1329,7 +1181,7 @@ S32 __cdecl AIL_active_sample_count(HDIGDRIVER dig)
 
     START
     {
-        oprintf1(D_001238d0, (S32)dig);
+        oprintf1("AIL_active_sample_count(0x%X)\r\n", (S32)dig);
     }
     result = AIL_API_active_sample_count(dig);
     RESULT
@@ -1348,7 +1200,7 @@ S32 __cdecl AIL_install_MDI_INI(HMDIDRIVER *mdi)
 
     START
     {
-        oprintf1(D_001238f0, (S32)mdi);
+        oprintf1("AIL_install_MDI_INI(0x%X)\r\n", (S32)mdi);
     }
     result = AIL_API_install_MDI_INI(mdi);
     RESULT
@@ -1367,7 +1219,7 @@ HMDIDRIVER __cdecl AIL_install_MDI_driver_file(char *filename, IO_PARMS *IO)
 
     START
     {
-        oprintf2(D_0012390c, (S32)filename, (S32)IO);
+        oprintf2("AIL_install_MDI_driver_file(%s,0x%X)\r\n", (S32)filename, (S32)IO);
     }
     result = AIL_API_install_MDI_driver_file(filename, IO);
     RESULT
@@ -1384,7 +1236,7 @@ void __cdecl AIL_uninstall_MDI_driver(HMDIDRIVER mdi)
 {
     START
     {
-        oprintf1(D_00123934, (S32)mdi);
+        oprintf1("AIL_uninstall_MDI_driver(0x%X)\r\n", (S32)mdi);
     }
     AIL_API_uninstall_MDI_driver(mdi);
     END;
@@ -1397,7 +1249,7 @@ HSEQUENCE __cdecl AIL_allocate_sequence_handle(HMDIDRIVER mdi)
 
     START
     {
-        oprintf1(D_00123958, (S32)mdi);
+        oprintf1("AIL_allocate_sequence_handle(0x%X)\r\n", (S32)mdi);
     }
     result = AIL_API_allocate_sequence_handle(mdi);
     RESULT
@@ -1414,7 +1266,7 @@ void __cdecl AIL_release_sequence_handle(HSEQUENCE S)
 {
     START
     {
-        oprintf1(D_00123980, (S32)S);
+        oprintf1("AIL_release_sequence_handle(0x%X)\r\n", (S32)S);
     }
     AIL_API_release_sequence_handle(S);
     END;
@@ -1427,7 +1279,7 @@ S32 __cdecl AIL_init_sequence(HSEQUENCE S, void *start, S32 sequence_num)
 
     START
     {
-        oprintf3(D_001239a4, (S32)S, (S32)start, sequence_num);
+        oprintf3("AIL_init_sequence(0x%X,0x%X,%d)\r\n", (S32)S, (S32)start, sequence_num);
     }
     result = AIL_API_init_sequence(S, start, sequence_num);
     RESULT
@@ -1444,7 +1296,7 @@ void __cdecl AIL_start_sequence(HSEQUENCE S)
 {
     START
     {
-        oprintf1(D_001239c8, (S32)S);
+        oprintf1("AIL_start_sequence(0x%X)\r\n", (S32)S);
     }
     AIL_API_start_sequence(S);
     END;
@@ -1455,7 +1307,7 @@ void __cdecl AIL_stop_sequence(HSEQUENCE S)
 {
     START
     {
-        oprintf1(D_001239e4, (S32)S);
+        oprintf1("AIL_stop_sequence(0x%X)\r\n", (S32)S);
     }
     AIL_API_stop_sequence(S);
     END;
@@ -1466,7 +1318,7 @@ void __cdecl AIL_resume_sequence(HSEQUENCE S)
 {
     START
     {
-        oprintf1(D_00123a00, (S32)S);
+        oprintf1("AIL_resume_sequence(0x%X)\r\n", (S32)S);
     }
     AIL_API_resume_sequence(S);
     END;
@@ -1477,7 +1329,7 @@ void __cdecl AIL_end_sequence(HSEQUENCE S)
 {
     START
     {
-        oprintf1(D_00123a1c, (S32)S);
+        oprintf1("AIL_end_sequence(0x%X)\r\n", (S32)S);
     }
     AIL_API_end_sequence(S);
     END;
@@ -1488,7 +1340,7 @@ void __cdecl AIL_set_sequence_tempo(HSEQUENCE S, S32 tempo, S32 milliseconds)
 {
     START
     {
-        oprintf3(D_00123a38, (S32)S, tempo, milliseconds);
+        oprintf3("AIL_set_sequence_tempo(0x%X,%d,%d)\r\n", (S32)S, tempo, milliseconds);
     }
     AIL_API_set_sequence_tempo(S, tempo, milliseconds);
     END;
@@ -1499,7 +1351,7 @@ void __cdecl AIL_set_sequence_volume(HSEQUENCE S, S32 volume, S32 milliseconds)
 {
     START
     {
-        oprintf3(D_00123a60, (S32)S, volume, milliseconds);
+        oprintf3("AIL_set_sequence_volume(0x%X,%d,%d)\r\n", (S32)S, volume, milliseconds);
     }
     AIL_API_set_sequence_volume(S, volume, milliseconds);
     END;
@@ -1510,7 +1362,7 @@ void __cdecl AIL_set_sequence_loop_count(HSEQUENCE S, S32 loop_count)
 {
     START
     {
-        oprintf2(D_00123a88, (S32)S, loop_count);
+        oprintf2("AIL_set_sequence_loop_count(0x%X,%d)\r\n", (S32)S, loop_count);
     }
     AIL_API_set_sequence_loop_count(S, loop_count);
     END;
@@ -1523,7 +1375,7 @@ U32 __cdecl AIL_sequence_status(HSEQUENCE S)
 
     START
     {
-        oprintf1(D_00123ab0, (S32)S);
+        oprintf1("AIL_sequence_status(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sequence_status(S);
     RESULT
@@ -1542,7 +1394,7 @@ S32 __cdecl AIL_sequence_tempo(HSEQUENCE S)
 
     START
     {
-        oprintf1(D_00123acc, (S32)S);
+        oprintf1("AIL_sequence_tempo(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sequence_tempo(S);
     RESULT
@@ -1561,7 +1413,7 @@ S32 __cdecl AIL_sequence_volume(HSEQUENCE S)
 
     START
     {
-        oprintf1(D_00123ae8, (S32)S);
+        oprintf1("AIL_sequence_volume(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sequence_volume(S);
     RESULT
@@ -1580,7 +1432,7 @@ S32 __cdecl AIL_sequence_loop_count(HSEQUENCE S)
 
     START
     {
-        oprintf1(D_00123b04, (S32)S);
+        oprintf1("AIL_sequence_loop_count(0x%X)\r\n", (S32)S);
     }
     result = AIL_API_sequence_loop_count(S);
     RESULT
@@ -1597,7 +1449,7 @@ void __cdecl AIL_set_XMIDI_master_volume(HMDIDRIVER mdi, S32 master_volume)
 {
     START
     {
-        oprintf2(D_00123b24, (S32)mdi, master_volume);
+        oprintf2("AIL_set_XMIDI_master_volume(0x%X,%d)\r\n", (S32)mdi, master_volume);
     }
     AIL_API_set_XMIDI_master_volume(mdi, master_volume);
     END;
@@ -1610,7 +1462,7 @@ S32 __cdecl AIL_XMIDI_master_volume(HMDIDRIVER mdi)
 
     START
     {
-        oprintf1(D_00123b4c, (S32)mdi);
+        oprintf1("AIL_XMIDI_master_volume(0x%X)\r\n", (S32)mdi);
     }
     result = AIL_API_XMIDI_master_volume(mdi);
     RESULT
@@ -1629,7 +1481,7 @@ HMDIDRIVER __cdecl AIL_install_MDI_driver_image(void *driver_image, U32 size, IO
 
     START
     {
-        oprintf3(D_00123b6c, (S32)driver_image, size, (S32)IO);
+        oprintf3("AIL_install_MDI_driver_image(0x%X,%u,0x%X)\r\n", (S32)driver_image, size, (S32)IO);
     }
     result = AIL_API_install_MDI_driver_image(driver_image, size, IO);
     RESULT
@@ -1648,7 +1500,7 @@ S32 __cdecl AIL_MDI_driver_type(HMDIDRIVER mdi)
 
     START
     {
-        oprintf1(D_00123b9c, (S32)mdi);
+        oprintf1("AIL_MDI_driver_type(0x%X)\r\n", (S32)mdi);
     }
     result = AIL_API_MDI_driver_type(mdi);
     RESULT
@@ -1665,7 +1517,7 @@ void __cdecl AIL_set_GTL_filename_prefix(char *prefix)
 {
     START
     {
-        oprintf1(D_00123bb8, (S32)prefix);
+        oprintf1("AIL_set_GTL_filename_prefix(%s)\r\n", (S32)prefix);
     }
     AIL_API_set_GTL_filename_prefix(prefix);
     END;
@@ -1678,7 +1530,7 @@ S32 __cdecl AIL_timbre_status(HMDIDRIVER mdi, S32 bank, S32 patch)
 
     START
     {
-        oprintf3(D_00123bdc, (S32)mdi, bank, patch);
+        oprintf3("AIL_timbre_status(0x%X,%d,%d)\r\n", (S32)mdi, bank, patch);
     }
     result = AIL_API_timbre_status(mdi, bank, patch);
     RESULT
@@ -1697,7 +1549,7 @@ S32 __cdecl AIL_install_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 
     START
     {
-        oprintf3(D_00123bfc, (S32)mdi, bank, patch);
+        oprintf3("AIL_install_timbre(0x%X,%d,%d)\r\n", (S32)mdi, bank, patch);
     }
     result = AIL_API_install_timbre(mdi, bank, patch);
     RESULT
@@ -1714,7 +1566,7 @@ void __cdecl AIL_protect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
     START
     {
-        oprintf3(D_00123c20, (S32)mdi, bank, patch);
+        oprintf3("AIL_protect_timbre(0x%X,%d,%d)\r\n", (S32)mdi, bank, patch);
     }
     AIL_API_protect_timbre(mdi, bank, patch);
     END;
@@ -1725,7 +1577,7 @@ void __cdecl AIL_unprotect_timbre(HMDIDRIVER mdi, S32 bank, S32 patch)
 {
     START
     {
-        oprintf3(D_00123c44, (S32)mdi, bank, patch);
+        oprintf3("AIL_unprotect_timbre(0x%X,%d,%d)\r\n", (S32)mdi, bank, patch);
     }
     AIL_API_unprotect_timbre(mdi, bank, patch);
     END;
@@ -1738,7 +1590,7 @@ S32 __cdecl AIL_active_sequence_count(HMDIDRIVER mdi)
 
     START
     {
-        oprintf1(D_00123c68, (S32)mdi);
+        oprintf1("AIL_active_sequence_count(0x%X)\r\n", (S32)mdi);
     }
     result = AIL_API_active_sequence_count(mdi);
     RESULT
@@ -1757,7 +1609,7 @@ S32 __cdecl AIL_controller_value(HSEQUENCE S, S32 channel, S32 controller_num)
 
     START
     {
-        oprintf3(D_00123c8c, (S32)S, channel, controller_num);
+        oprintf3("AIL_controller_value(0x%X,%d,%d)\r\n", (S32)S, channel, controller_num);
     }
     result = AIL_API_controller_value(S, channel, controller_num);
     RESULT
@@ -1776,7 +1628,7 @@ S32 __cdecl AIL_channel_notes(HSEQUENCE S, S32 channel)
 
     START
     {
-        oprintf2(D_00123cb0, (S32)S, channel);
+        oprintf2("AIL_channel_notes(0x%X,%d)\r\n", (S32)S, channel);
     }
     result = AIL_API_channel_notes(S, channel);
     RESULT
@@ -1793,13 +1645,13 @@ void __cdecl AIL_sequence_position(HSEQUENCE S, S32 *beat, S32 *measure)
 {
     START
     {
-        oprintf3(D_00123cd0, (S32)S, (S32)beat, (S32)measure);
+        oprintf3("AIL_sequence_position(0x%X,0x%X,0x%X)\r\n", (S32)S, (S32)beat, (S32)measure);
     }
     AIL_API_sequence_position(S, beat, measure);
     RESULT
     {
         INDENT;
-        oprintf2(D_00123cf8, *measure + 1, *beat + 1);
+        oprintf2("Result = %d:%d\r\n", *measure + 1, *beat + 1);
     }
     END;
 }
@@ -1809,7 +1661,7 @@ void __cdecl AIL_branch_index(HSEQUENCE S, U32 marker)
 {
     START
     {
-        oprintf2(D_00123d0c, (S32)S, marker);
+        oprintf2("AIL_branch_index(0x%X,%u)\r\n", (S32)S, marker);
     }
     AIL_API_branch_index(S, marker);
     END;
@@ -1822,7 +1674,7 @@ AILPREFIXCB __cdecl AIL_register_prefix_callback(HSEQUENCE S, AILPREFIXCB callba
 
     START
     {
-        oprintf2(D_00123d28, (S32)S, (S32)callback);
+        oprintf2("AIL_register_prefix_callback(0x%X,0x%X)\r\n", (S32)S, (S32)callback);
     }
     result = AIL_API_register_prefix_callback(S, callback);
     RESULT
@@ -1841,7 +1693,7 @@ AILTRIGGERCB __cdecl AIL_register_trigger_callback(HSEQUENCE S, AILTRIGGERCB cal
 
     START
     {
-        oprintf2(D_00123d54, (S32)S, (S32)callback);
+        oprintf2("AIL_register_trigger_callback(0x%X,0x%X)\r\n", (S32)S, (S32)callback);
     }
     result = AIL_API_register_trigger_callback(S, callback);
     RESULT
@@ -1860,7 +1712,7 @@ AILSEQUENCECB __cdecl AIL_register_sequence_callback(HSEQUENCE S, AILSEQUENCECB 
 
     START
     {
-        oprintf2(D_00123d80, (S32)S, (S32)callback);
+        oprintf2("AIL_register_sequence_callback(0x%X,0x%X)\r\n", (S32)S, (S32)callback);
     }
     result = AIL_API_register_sequence_callback(S, callback);
     RESULT
@@ -1879,7 +1731,7 @@ AILBEATCB __cdecl AIL_register_beat_callback(HSEQUENCE S, AILBEATCB callback)
 
     START
     {
-        oprintf2(D_00123dac, (S32)S, (S32)callback);
+        oprintf2("AIL_register_beat_callback(0x%X,0x%X)\r\n", (S32)S, (S32)callback);
     }
     result = AIL_API_register_beat_callback(S, callback);
     RESULT
@@ -1898,7 +1750,7 @@ AILEVENTCB __cdecl AIL_register_event_callback(HMDIDRIVER mdi, AILEVENTCB callba
 
     START
     {
-        oprintf2(D_00123dd4, (S32)mdi, (S32)callback);
+        oprintf2("AIL_register_event_callback(0x%X,0x%X)\r\n", (S32)mdi, (S32)callback);
     }
     result = AIL_API_register_event_callback(mdi, callback);
     RESULT
@@ -1917,7 +1769,7 @@ AILTIMBRECB __cdecl AIL_register_timbre_callback(HMDIDRIVER mdi, AILTIMBRECB cal
 
     START
     {
-        oprintf2(D_00123e00, (S32)mdi, (S32)callback);
+        oprintf2("AIL_register_timbre_callback(0x%X,0x%X)\r\n", (S32)mdi, (S32)callback);
     }
     result = AIL_API_register_timbre_callback(mdi, callback);
     RESULT
@@ -1934,7 +1786,7 @@ void __cdecl AIL_set_sequence_user_data(HSEQUENCE S, U32 index, S32 value)
 {
     START
     {
-        oprintf3(D_00123e2c, (S32)S, index, value);
+        oprintf3("AIL_set_sequence_user_data(0x%X,%u,%d)\r\n", (S32)S, index, value);
     }
     AIL_API_set_sequence_user_data(S, index, value);
     END;
@@ -1947,7 +1799,7 @@ S32 __cdecl AIL_sequence_user_data(HSEQUENCE S, U32 index)
 
     START
     {
-        oprintf2(D_00123e58, (S32)S, index);
+        oprintf2("AIL_sequence_user_data(0x%X,%u)\r\n", (S32)S, index);
     }
     result = AIL_API_sequence_user_data(S, index);
     RESULT
@@ -1964,7 +1816,7 @@ void __cdecl AIL_register_ICA_array(HSEQUENCE S, U8 *array)
 {
     START
     {
-        oprintf2(D_00123e7c, (S32)S, (S32)array);
+        oprintf2("AIL_register_ICA_array(0x%X,0x%X)\r\n", (S32)S, (S32)array);
     }
     AIL_API_register_ICA_array(S, array);
     END;
@@ -1977,7 +1829,7 @@ S32 __cdecl AIL_lock_channel(HMDIDRIVER mdi)
 
     START
     {
-        oprintf1(D_00123ea0, (S32)mdi);
+        oprintf1("AIL_lock_channel(0x%X)\r\n", (S32)mdi);
     }
     result = AIL_API_lock_channel(mdi);
     RESULT
@@ -1994,7 +1846,7 @@ void __cdecl AIL_release_channel(HMDIDRIVER mdi, S32 channel)
 {
     START
     {
-        oprintf2(D_00123ebc, (S32)mdi, channel);
+        oprintf2("AIL_release_channel(0x%X,%d)\r\n", (S32)mdi, channel);
     }
     AIL_API_release_channel(mdi, channel);
     END;
@@ -2005,7 +1857,7 @@ void __cdecl AIL_map_sequence_channel(HSEQUENCE S, S32 seq_channel, S32 new_chan
 {
     START
     {
-        oprintf3(D_00123edc, (S32)S, seq_channel, new_channel);
+        oprintf3("AIL_map_sequence_channel(0x%X,%d,%d)\r\n", (S32)S, seq_channel, new_channel);
     }
     AIL_API_map_sequence_channel(S, seq_channel, new_channel);
     END;
@@ -2018,7 +1870,7 @@ S32 __cdecl AIL_true_sequence_channel(HSEQUENCE S, S32 seq_channel)
 
     START
     {
-        oprintf2(D_00123f04, (S32)S, seq_channel);
+        oprintf2("AIL_true_sequence_channel(0x%X,%d)\r\n", (S32)S, seq_channel);
     }
     result = AIL_API_true_sequence_channel(S, seq_channel);
     RESULT
@@ -2035,7 +1887,7 @@ void __cdecl AIL_send_channel_voice_message(HMDIDRIVER mdi, HSEQUENCE S, S32 sta
 {
     START
     {
-        oprintf5(D_00123f2c, (S32)mdi, (S32)S, status, data_1, data_2);
+        oprintf5("AIL_send_channel_voice_message(0x%X,0x%X,0x%X,0x%X,0x%X)\r\n", (S32)mdi, (S32)S, status, data_1, data_2);
     }
     AIL_API_send_channel_voice_message(mdi, S, status, data_1, data_2);
     END;
@@ -2046,7 +1898,7 @@ void __cdecl AIL_send_sysex_message(HMDIDRIVER mdi, void *buffer)
 {
     START
     {
-        oprintf2(D_00123f68, (S32)mdi, (S32)buffer);
+        oprintf2("AIL_send_sysex_message(0x%X,0x%X)\r\n", (S32)mdi, (S32)buffer);
     }
     AIL_API_send_sysex_message(mdi, buffer);
     END;
@@ -2059,7 +1911,7 @@ HWAVESYNTH __cdecl AIL_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER mdi, v
 
     START
     {
-        oprintf4(D_00123f8c, (S32)dig, (S32)mdi, (S32)wave_lib, polyphony);
+        oprintf4("AIL_create_wave_synthesizer(0x%X,0x%X,0x%X,%d)\r\n", (S32)dig, (S32)mdi, (S32)wave_lib, polyphony);
     }
     result = AIL_API_create_wave_synthesizer(dig, mdi, wave_lib, polyphony);
     RESULT
@@ -2076,7 +1928,7 @@ void __cdecl AIL_destroy_wave_synthesizer(HWAVESYNTH W)
 {
     START
     {
-        oprintf1(D_00123fc0, (S32)W);
+        oprintf1("AIL_destroy_wave_synthesizer(0x%X)\r\n", (S32)W);
     }
     AIL_API_destroy_wave_synthesizer(W);
     END;
@@ -2089,7 +1941,7 @@ HREDBOOK __cdecl AIL_redbook_open(U32 which)
 
     START
     {
-        oprintf1(D_00123fe8, which);
+        oprintf1("AIL_redbook_open(%ld)\r\n", which);
     }
     result = AIL_API_redbook_open(which);
     RESULT
@@ -2106,7 +1958,7 @@ void __cdecl AIL_redbook_close(HREDBOOK hand)
 {
     START
     {
-        oprintf1(D_00124000, (S32)hand);
+        oprintf1("AIL_redbook_close(0x%lX)\r\n", (S32)hand);
     }
     AIL_API_redbook_close(hand);
     END;
@@ -2117,7 +1969,7 @@ void __cdecl AIL_redbook_eject(HREDBOOK hand)
 {
     START
     {
-        oprintf1(D_0012401c, (S32)hand);
+        oprintf1("AIL_redbook_eject(0x%lX)\r\n", (S32)hand);
     }
     AIL_API_redbook_eject(hand);
     END;
@@ -2128,7 +1980,7 @@ void __cdecl AIL_redbook_retract(HREDBOOK hand)
 {
     START
     {
-        oprintf1(D_00124038, (S32)hand);
+        oprintf1("AIL_redbook_retract(0x%lX)\r\n", (S32)hand);
     }
     AIL_API_redbook_retract(hand);
     END;
@@ -2141,7 +1993,7 @@ U32 __cdecl AIL_redbook_status(HREDBOOK hand)
 
     START
     {
-        oprintf1(D_00124058, (S32)hand);
+        oprintf1("AIL_redbook_status(0x%lX)\r\n", (S32)hand);
     }
     result = AIL_API_redbook_status(hand);
     RESULT
@@ -2160,7 +2012,7 @@ U32 __cdecl AIL_redbook_tracks(HREDBOOK hand)
 
     START
     {
-        oprintf1(D_00124074, (S32)hand);
+        oprintf1("AIL_redbook_tracks(0x%lX)\r\n", (S32)hand);
     }
     result = AIL_API_redbook_tracks(hand);
     RESULT
@@ -2177,7 +2029,7 @@ void __cdecl AIL_redbook_track_info(HREDBOOK hand, U32 tracknum, U32 *startmsec,
 {
     START
     {
-        oprintf4(D_00124090, (S32)hand, tracknum, (S32)startmsec, (S32)endmsec);
+        oprintf4("AIL_redbook_track_info(0x%lX, %ld, 0x%lX, 0x%lX)\r\n", (S32)hand, tracknum, (S32)startmsec, (S32)endmsec);
     }
     AIL_API_redbook_track_info(hand, tracknum, startmsec, endmsec);
     END;
@@ -2190,7 +2042,7 @@ U32 __cdecl AIL_redbook_id(HREDBOOK hand)
 
     START
     {
-        oprintf1(D_001240c4, (S32)hand);
+        oprintf1("AIL_redbook_id(0x%lX)\r\n", (S32)hand);
     }
     result = AIL_API_redbook_id(hand);
     RESULT
@@ -2209,7 +2061,7 @@ U32 __cdecl AIL_redbook_position(HREDBOOK hand)
 
     START
     {
-        oprintf1(D_001240dc, (S32)hand);
+        oprintf1("AIL_redbook_position(0x%lX)\r\n", (S32)hand);
     }
     result = AIL_API_redbook_position(hand);
     RESULT
@@ -2228,7 +2080,7 @@ U32 __cdecl AIL_redbook_track(HREDBOOK hand)
 
     START
     {
-        oprintf1(D_001240fc, (S32)hand);
+        oprintf1("AIL_redbook_track(0x%lX)\r\n", (S32)hand);
     }
     result = AIL_API_redbook_track(hand);
     RESULT
@@ -2247,7 +2099,7 @@ U32 __cdecl AIL_redbook_play(HREDBOOK hand, U32 startmsec, U32 endmsec)
 
     START
     {
-        oprintf3(D_00124118, (S32)hand, startmsec, endmsec);
+        oprintf3("AIL_redbook_play(0x%lX, %ld, %ld)\r\n", (S32)hand, startmsec, endmsec);
     }
     result = AIL_API_redbook_play(hand, startmsec, endmsec);
     RESULT
@@ -2266,7 +2118,7 @@ U32 __cdecl AIL_redbook_stop(HREDBOOK hand)
 
     START
     {
-        oprintf1(D_0012413c, (S32)hand);
+        oprintf1("AIL_redbook_stop(0x%lX)\r\n", (S32)hand);
     }
     result = AIL_API_redbook_stop(hand);
     RESULT
@@ -2285,7 +2137,7 @@ U32 __cdecl AIL_redbook_pause(HREDBOOK hand)
 
     START
     {
-        oprintf1(D_00124158, (S32)hand);
+        oprintf1("AIL_redbook_pause(0x%lX)\r\n", (S32)hand);
     }
     result = AIL_API_redbook_pause(hand);
     RESULT
@@ -2304,7 +2156,7 @@ U32 __cdecl AIL_redbook_resume(HREDBOOK hand)
 
     START
     {
-        oprintf1(D_00124174, (S32)hand);
+        oprintf1("AIL_redbook_resume(0x%lX)\r\n", (S32)hand);
     }
     result = AIL_API_redbook_resume(hand);
     RESULT
@@ -2321,7 +2173,7 @@ void __cdecl AIL_quick_shutdown(void)
 {
     START
     {
-        AIL_DEBUGOUTSTR(D_00124190);
+        AIL_DEBUGOUTSTR("AIL_quick_shutdown()\r\n");
     }
     AIL_API_quick_shutdown();
     END;
@@ -2334,7 +2186,7 @@ HAUDIO __cdecl AIL_quick_load(char *filename)
 
     START
     {
-        oprintf1(D_001241a8, (S32)filename);
+        oprintf1("AIL_quick_load(%s)\r\n", (S32)filename);
     }
     result = AIL_API_quick_load(filename);
     RESULT
@@ -2351,7 +2203,7 @@ void __cdecl AIL_quick_unload(HAUDIO audio)
 {
     START
     {
-        oprintf1(D_001241c0, (S32)audio);
+        oprintf1("AIL_quick_unload(0x%X)\r\n", (S32)audio);
     }
     AIL_API_quick_unload(audio);
     END;
@@ -2364,7 +2216,7 @@ S32 __cdecl AIL_quick_play(HAUDIO audio, U32 loop_count)
 
     START
     {
-        oprintf2(D_001241dc, (S32)audio, loop_count);
+        oprintf2("AIL_quick_play(0x%X,%d)\r\n", (S32)audio, loop_count);
     }
     result = AIL_API_quick_play(audio, loop_count);
     RESULT
@@ -2381,7 +2233,7 @@ void __cdecl AIL_quick_halt(HAUDIO audio)
 {
     START
     {
-        oprintf1(D_001241f8, (S32)audio);
+        oprintf1("AIL_quick_halt(0x%X)\r\n", (S32)audio);
     }
     AIL_API_quick_halt(audio);
     END;
@@ -2394,7 +2246,7 @@ S32 __cdecl AIL_quick_status(HAUDIO audio)
 
     START
     {
-        oprintf1(D_00124210, (S32)audio);
+        oprintf1("AIL_quick_status(0x%X)\r\n", (S32)audio);
     }
     result = AIL_API_quick_status(audio);
     RESULT
@@ -2413,7 +2265,7 @@ HAUDIO __cdecl AIL_quick_load_and_play(char *filename, U32 loop_count, S32 wait_
 
     START
     {
-        oprintf3(D_0012422c, (S32)filename, loop_count, wait_request);
+        oprintf3("AIL_quick_load_and_play(%s,%d,%d)\r\n", (S32)filename, loop_count, wait_request);
     }
     result = AIL_API_quick_load_and_play(filename, loop_count, wait_request);
     RESULT

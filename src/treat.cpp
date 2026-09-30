@@ -12,7 +12,6 @@ extern s16 diag_register[][8];
 extern "C" {
 
 extern char D_001303c8[];
-extern char D_00120330[];
 extern char **D_001602a4;
 
 void fn_000c93bf(char *dst, char *src);
@@ -504,7 +503,7 @@ s32 calc_ability(Thing *e)
     {
         char buf[200];
 
-        sprintf(buf, D_00120330, total, e->unknown126, luck, attitude, skill, madness, room);
+        sprintf(buf, "Diag Ability %d      Staff Ability %3d    Random %3d    Skill %3d    Tired %3d   QuackDoc %3d    RoomAdd %3d", total, e->unknown126, luck, attitude, skill, madness, room);
     }
     return total;
 }

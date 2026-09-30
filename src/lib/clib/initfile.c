@@ -5,7 +5,6 @@
 #define _IONBF 0x0400
 
 extern __stream_link *__ClosedStreams;
-extern char D_001271e4[];
 
 void *malloc(size_t size);
 /* malloc_ is an alias of _nmalloc_, the name config/functions.txt uses. */
@@ -26,7 +25,7 @@ void __InitFiles(void)
         if (link == NULL) {
             link = malloc(sizeof(__stream_link));
             if (link == NULL)
-                __fatal_runtime_error(D_001271e4, 1);
+                __fatal_runtime_error("Not enough memory to allocate file structures\r\n", 1);
         }
         next = __OpenStreams;
         link->stream = fp;

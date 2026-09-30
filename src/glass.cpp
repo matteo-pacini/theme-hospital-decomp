@@ -66,7 +66,6 @@ extern u32 black_colour;
 extern u8 Gray[];
 
 extern "C" {
-extern char D_00121bd0[];
 
 void StopSample(u32 a, u32 b);
 void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
@@ -170,7 +169,7 @@ s8 add_glass_box(GlassBox *b, s32 id, s8 c1, s8 c2)
         ZoomBoxes[i].to[2] = b->x1 - b->x + 1;
         ZoomBoxes[i].to[3] = b->y1 - b->y + 1;
     } else {
-        hosp_dos_printf(D_00121bd0);
+        hosp_dos_printf("Not enough ZoomBoxes!\n");
     }
     return i;
 }

@@ -30,11 +30,6 @@ extern char *D_0013e2b0;
 extern char *D_0013e2b4;
 extern char *D_0013f534[];
 extern char *D_0013f598[];
-extern char D_00121ba8[];
-extern char D_00121ba9[];
-extern char D_00121bbc[];
-extern char D_00121bcd[];
-extern char D_00121bce[];
 
 int LbScreenLock(void);
 u8 *fn_00022b60(TbCacheUsedBlock *block);
@@ -151,16 +146,16 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     }
     len.palette = LbFileLengthRnc(D_0013e2b0);
     len.pointers = LbFileLengthRnc(D_0013e2b4);
-    if (strcmp(D_0013f534[idx], D_00121ba8)) {
+    if (strcmp(D_0013f534[idx], "")) {
         len.sprites = LbFileLengthRnc(D_0013f534[idx]);
         len.sprite_tab = LbFileLengthRnc(D_0013f598[idx]);
     }
     if (map) {
         if (install_type < 3) {
-            sprintf(name, D_00121ba9, cd_install_path, map);
+            sprintf(name, "%slevels/level.l%d", cd_install_path, map);
             check_cd_available(name);
         } else {
-            sprintf(name, D_00121bbc, map);
+            sprintf(name, "levels/level.l%d", map);
         }
         len.map += LbFileLengthRnc(name);
     }
@@ -172,7 +167,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         return;
     if (fade)
         fade_out_menu();
-    if (strcmp(hiresscreens[idx], D_00121bcd)) {
+    if (strcmp(hiresscreens[idx], "")) {
         u8 active2;
 
         active2 = lbDisplay.unknown4 ? (u8)1 : (u8)0;
@@ -205,7 +200,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     } else {
         return;
     }
-    if (strcmp(D_0013f534[idx], D_00121bce)) {
+    if (strcmp(D_0013f534[idx], "")) {
         if (LbFileLoadAt(D_0013f598[idx], p) == len.sprite_tab) {
             screen_sprites_tab_start = (TbSprite *)p;
             p += len.sprite_tab;

@@ -5,15 +5,6 @@ typedef char *va_list[1];
 #define va_end(ap) ((ap)[0] = 0)
 
 extern "C" {
-extern char D_00121c84[];
-extern char D_00121cc0[];
-extern char D_00121cee[];
-extern char D_00121d01[];
-extern char D_00121d16[];
-extern char D_00121d4e[];
-extern char D_00121d8f[];
-extern char D_00121db7[];
-extern char D_00121dd4[];
 
 int vsprintf(char *buf, char *fmt, va_list args);
 void fn_000bb5cc(CDosHeapStats *stats);
@@ -61,11 +52,11 @@ void *CDosHeap::Alloc(u32 size)
             rec->next = used_list;
             used_list = rec;
             stats.RecordAlloc(rec);
-            Report(D_00121c84, stats.GetAllocCount(), fn_000bbaf4(this), size, stats.GetTotalAllocation());
+            Report("Allocated block (Count%d,Frags%d)of %d bytes, \t%d allocated", stats.GetAllocCount(), fn_000bbaf4(this), size, stats.GetTotalAllocation());
             return rec->ptr;
         }
     }
-    Error(D_00121cc0, size);
+    Error("-*-*-*-*-> allocation failed! (%d) <-*-*-*-*-", size);
     return 0;
 }
 
@@ -78,7 +69,7 @@ CDosHeapItem *CDosHeap::GetNextRecord(void)
         if (items[i].ptr == 0)
             return &items[i];
     }
-    Error(D_00121cee);
+    Error("ran out of records");
     return 0;
 }
 
@@ -92,7 +83,7 @@ void CDosHeap::Error(char *fmt, ...)
         va_start(args, fmt);
         vsprintf(buf, fmt, args);
         va_end(args);
-        printf(D_00121d01, buf);
+        printf("Dos Heap Error : %s\n", buf);
     }
 }
 
@@ -130,13 +121,13 @@ void CDosHeap::Free(void *p)
         if (!MergeRecord(rec)) {
             rec->next = free_list;
             free_list = rec;
-            Report(D_00121d16, stats.GetAllocCount(), fn_000bbaf4(this), rec->size, stats.GetTotalAllocation());
+            Report("freed block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(), fn_000bbaf4(this), rec->size, stats.GetTotalAllocation());
         } else {
             ReleaseRecord(rec);
-            Report(D_00121d4e, stats.GetAllocCount(), fn_000bbaf4(this), rec->size, stats.GetTotalAllocation());
+            Report("freed & merged block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(), fn_000bbaf4(this), rec->size, stats.GetTotalAllocation());
         }
     } else
-        Error(D_00121d8f, rec->ptr);
+        Error("Free failed to free block at address %d", rec->ptr);
 }
 
 // FUNCTION: 0x000bb708
@@ -222,7 +213,7 @@ void CDosHeap::Repack(void)
             f = f->next;
         }
     }
-    Report(D_00121db7, before, fn_000bbaf4(this));
+    Report("Repacking the heap, %d to %d", before, fn_000bbaf4(this));
 }
 
 // FUNCTION: 0x000bb97c
@@ -235,7 +226,7 @@ void CDosHeap::Report(char *fmt, ...)
         va_start(args, fmt);
         vsprintf(buf, fmt, args);
         va_end(args);
-        printf(D_00121dd4, buf);
+        printf("Dos Heap -- %s\n", buf);
     }
 }
 

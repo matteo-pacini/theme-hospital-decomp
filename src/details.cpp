@@ -1,11 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-extern char D_00121be8[];
-extern char D_00121bef[];
-extern char D_00121c21[];
-extern char D_00121c28[];
-extern char D_00121c5a[];
 
 void fn_000baad0(void);
 void fn_0008bdd4(void);
@@ -22,10 +17,10 @@ u8 save_player_details(void)
     s32 handle;
     s32 written;
 
-    sprintf(name, D_00121be8, statvar.f575, statvar.f6c);
+    sprintf(name, "%s%sdt", statvar.f575, statvar.f6c);
     handle = LbFileOpen(name, 0);
     if (handle == -1) {
-        debug_msg(D_00121bef, name);
+        debug_msg("Cannot open player details file for writing - %s\n", name);
         return -1;
     }
     written = LbFileWrite(handle, &myplayer, 0x5c);
@@ -43,7 +38,7 @@ u8 load_player_details(void)
     char name[256];
     s32 handle;
 
-    sprintf(name, D_00121c21, statvar.f575, statvar.f6c);
+    sprintf(name, "%s%sdt", statvar.f575, statvar.f6c);
     if (!LbFileExists(name)) {
         set_default_player_details();
         fn_000baad0();
@@ -51,12 +46,12 @@ u8 load_player_details(void)
     }
     handle = LbFileOpen(name, 2);
     if (handle == -1) {
-        debug_msg(D_00121c28, name);
+        debug_msg("Cannot open an existing player details file - %s\n", name);
         return 0;
     }
     LbFileRead(handle, &myplayer, 0x5c);
     if (LbFileClose(handle) == -1) {
-        debug_msg(D_00121c5a, name);
+        debug_msg("Error closing file after reading from it\n", name);
         return 0;
     }
     fn_000baad0();

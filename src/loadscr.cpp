@@ -37,15 +37,6 @@ extern "C" {
 extern u8 *D_00153f34;
 extern u16 D_00161138;
 extern u8 D_00156910;
-extern char D_00121a60[];
-extern char D_00121a71[];
-extern char D_00121a79[];
-extern char D_00121a80[];
-extern char D_00121a92[];
-extern char D_00121aa4[];
-extern char D_00121ab5[];
-extern char D_00121ac7[];
-extern char D_00121acd[];
 
 void fn_000c93bf(char *dst, char *src);
 void fn_00074cd8(void);
@@ -70,14 +61,14 @@ void draw_load_game(void)
         return_from_screen(9, 0, 1);
         lbDisplay.left_button = 0;
         load_ingame_pic(0x11, 1, 0x19, 0, SCREEN_MODE_13);
-        LbGhostTableGenerate(ppalette.data, 0x1e, D_00121a60);
+        LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         calculate_grey(ppalette.data);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         for (D_00161138 = 0; D_00161138 < 0x1e; D_00161138++) {
             loadable[D_00161138] = 0;
-            sprintf(tmp, D_00121a71, statvar.f575);
+            sprintf(tmp, "%ssave\\", statvar.f575);
             fn_000c93bf(tmp, myplayer.unknown0);
-            sprintf(tmp, D_00121a79, tmp, D_00161138);
+            sprintf(tmp, "%s.h%d", tmp, D_00161138);
             handle = LbFileOpen(tmp, 2);
             if (handle != -1) {
                 if (LbFileLengthRnc(tmp) == statvar.unknown0)
@@ -111,7 +102,7 @@ void draw_load_game(void)
     case 1:
         fade_out_menu();
         if (display_loading_screen()) {
-            LbGhostTableGenerate(D_00153f34, 0x42, D_00121a80);
+            LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
             resvars.f1 = SCREEN_MODE_13;
             load_game_files();
             level = read_level_number(load_game_number);
@@ -123,7 +114,7 @@ void draw_load_game(void)
                     fn_000110b0();
                     load_game_files();
                     set_mouse_mode(0);
-                    LbGhostTableGenerate(D_00153f34, 0x42, D_00121a92);
+                    LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
                     display_mode = 0;
                     D_00156910 = 1;
                     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
@@ -134,13 +125,13 @@ void draw_load_game(void)
             }
         }
         othervar.f24 = D_00153f34;
-        LbGhostTableGenerate(ppalette.data, 0x1e, D_00121aa4);
+        LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         loadgame.unknown2 = 4;
         break;
     case 2:
         loadgame.unknown0 = 0;
         fade_out_menu();
-        LbGhostTableGenerate(D_00153f34, 0x42, D_00121ab5);
+        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
         display_mode = 2;
         mainmenu.unknown2 = 0;
         set_mouse_mode(0);
@@ -238,9 +229,9 @@ void display_loadgame_screen(void)
     for (i = 0; (!resvars.f48[i + 0x95].sprite && resvars.f48[i + 0x95].width != 0)
                 && resvars.f48[i + 0x95].height != 0; i++) {
         if (loadable[i])
-            sprintf(tmp, D_00121ac7, load_text[0], i);
+            sprintf(tmp, "%s %d", load_text[0], i);
         else
-            sprintf(tmp, D_00121acd, load_text[1]);
+            sprintf(tmp, "%s", load_text[1]);
         draw_glass_text((SlistButton *)&resvars.f48[i + 0x95], tmp);
     }
 }

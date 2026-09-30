@@ -27,8 +27,6 @@ void fn_00074220(u8 a, u8 b)
 
 extern "C" {
 extern Event D_001549d0[];
-extern char D_001205f0[];
-extern char D_001205f3[];
 s32 fn_00085660(s32 n);
 void fn_0001bab4(u8 slot);
 }
@@ -150,7 +148,7 @@ void fn_0007424c(u8 shift, u8 key)
     case 0x10:
     case 0x2d:
         if (((shift & 1) || (shift & 4)) || (shift & 2)) {
-            sprintf(othervar.f935, D_001205f0, yesno_text[0]);
+            sprintf(othervar.f935, "%s", yesno_text[0]);
             if (statvar.unknownfd > 1)
                 open_yes_no_requester(0x7e, 1, 0, 0x78, 1, 0);
             else
@@ -167,7 +165,7 @@ void fn_0007424c(u8 shift, u8 key)
             D_001549d0[player].value = 0;
             D_001549d0[player].arg = 0;
         } else if (shift & 1) {
-            sprintf(othervar.f935, D_001205f3, yesno_text[0]);
+            sprintf(othervar.f935, "%s", yesno_text[0]);
             if (statvar.unknownfd > 1)
                 open_yes_no_requester(0x7e, 1, 0, 0x78, 1, 0);
             else

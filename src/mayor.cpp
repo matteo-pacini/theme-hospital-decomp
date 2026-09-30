@@ -3,7 +3,6 @@
 extern "C" {
 extern u8 D_00156910;
 extern u8 D_00158192;
-extern char D_00121adc[];
 void fn_000c93bf(char *dst, char *src);
 }
 
@@ -333,7 +332,7 @@ void report_mayor_result(u8 owner, char **strs)
     sprintf(buf, strs[1], mayor_names[allhosps[owner].f1f9]);
     fn_000c93bf(text, (char *)&sep);
     fn_000c93bf(text, buf);
-    sprintf(buf, D_00121adc, strs[allhosps[owner].f1fb + 5]);
+    sprintf(buf, "%s", strs[allhosps[owner].f1fb + 5]);
     fn_000c93bf(text, (char *)&sep);
     fn_000c93bf(text, (char *)&sep);
     fn_000c93bf(text, buf);

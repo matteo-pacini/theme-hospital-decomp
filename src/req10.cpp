@@ -5,7 +5,6 @@ extern Event D_001549d0[];
 extern char **D_001602cc;
 extern char **D_001602d4;
 extern char **D_001602e0;
-extern char D_00121a48[];
 }
 
 // FUNCTION: 0x0009b870
@@ -205,7 +204,7 @@ void req10_overdraw(Window *win)
             char buf[100];
 
             set_font_from_cache(1);
-            sprintf(buf, D_00121a48, D_001602d4[4], rooms[croom].cost + total);
+            sprintf(buf, "%s%d", D_001602d4[4], rooms[croom].cost + total);
             LbTextDraw(ox + resvars.f1c[0x17].x, oy + resvars.f1c[0x17].y, buf);
         }
         break;

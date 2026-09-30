@@ -2,13 +2,7 @@
 
 extern "C" {
 extern char **D_001602a0;
-extern char D_0012096c[];
 extern u8 D_00161200[];
-extern char D_00120976[];
-extern char D_0012097b[];
-extern char D_0012098d[];
-extern char D_001209a2[];
-extern char D_001209b2[];
 extern u16 D_0012b8c8[];
 extern u16 D_0012b8e4[];
 extern u16 D_00154834[];
@@ -166,7 +160,7 @@ void fn_00090804(int level, u8 flag)
     adcounts.f0 = 1;
     mycontrol->f4b4 = myhosp->f1c3;
     mycontrol->f64c = 750;
-    sprintf(statvar.f6c, D_0012096c, &myplayer);
+    sprintf(statvar.f6c, "save/%s.h", &myplayer);
     setup_insurances();
     setup_computer_players();
     setup_next_emergency();
@@ -209,15 +203,15 @@ void load_balance(const u16 level)
     char level_path[0x90];
 
     if (fn_000cd716(balance_id) == 0)
-        fn_000bbff0(balance_id, D_00120976);
+        fn_000bbff0(balance_id, "FULL");
     if (install_type < 3) {
-        sprintf(path, D_0012097b, cd_install_path, balance_id);
+        sprintf(path, "%slevels/%s00.sam", cd_install_path, balance_id);
         check_cd_available(path);
-        sprintf(level_path, D_0012098d, cd_install_path, balance_id, level);
+        sprintf(level_path, "%slevels/%s%2.2d.sam", cd_install_path, balance_id, level);
         check_cd_available(path);
     } else {
-        sprintf(path, D_001209a2, balance_id);
-        sprintf(level_path, D_001209b2, balance_id, level);
+        sprintf(path, "levels/%s00.sam", balance_id);
+        sprintf(level_path, "levels/%s%2.2d.sam", balance_id, level);
     }
     read_variable_file(path);
     read_variable_file(level_path);

@@ -18,25 +18,6 @@ extern "C" {
 extern s32 D_00160f2c;
 extern char D_00161034[];
 extern char D_001610b4[];
-extern char D_00120a34[];
-extern char D_00120a68[];
-extern char D_00120a9c[];
-extern char D_00120ad0[];
-extern char D_00120b04[];
-extern char D_00120b38[];
-extern char D_00120b6c[];
-extern char D_00120b86[];
-extern char D_00120bc2[];
-extern char D_00120bf9[];
-extern char D_00120c10[];
-extern char D_00120c28[];
-extern char D_00120c3f[];
-extern char D_00120c41[];
-extern char D_00120c43[];
-extern char D_00120c45[];
-extern char D_00120c47[];
-extern char D_00120c49[];
-extern char D_00120c4b[];
 extern u8 __IsTable[];
 #pragma aux __IsTable "*"
 
@@ -79,7 +60,7 @@ s8 assign_value(char *name, u32 value, u16 index)
                     *(u8 *)addr = value;
                     return 1;
                 }
-                sprintf(buf, D_00120a34, value, balance_variables[var].name,
+                sprintf(buf, "Value %d for %s - Outside Specified Bounds (%d,%d)\n", value, balance_variables[var].name,
                     balance_variables[var].min, balance_variables[var].max);
                 return -1;
             }
@@ -88,7 +69,7 @@ s8 assign_value(char *name, u32 value, u16 index)
                     *(u8 *)addr = value;
                     return 1;
                 }
-                sprintf(buf, D_00120a68, value, balance_variables[var].name,
+                sprintf(buf, "Value %d for %s - Outside Specified Bounds (%d,%d)\n", value, balance_variables[var].name,
                     balance_variables[var].min, balance_variables[var].max);
                 return -1;
             }
@@ -97,7 +78,7 @@ s8 assign_value(char *name, u32 value, u16 index)
                     *(u16 *)addr = value;
                     return 1;
                 }
-                sprintf(buf, D_00120a9c, value, balance_variables[var].name,
+                sprintf(buf, "Value %d for %s - Outside Specified Bounds (%d,%d)\n", value, balance_variables[var].name,
                     balance_variables[var].min, balance_variables[var].max);
                 return -1;
             }
@@ -107,7 +88,7 @@ s8 assign_value(char *name, u32 value, u16 index)
                     *(u16 *)addr = value;
                     return 1;
                 }
-                sprintf(buf, D_00120ad0, value, balance_variables[var].name,
+                sprintf(buf, "Value %d for %s - Outside Specified Bounds (%d,%d)\n", value, balance_variables[var].name,
                     balance_variables[var].min, balance_variables[var].max);
                 return -1;
             }
@@ -116,7 +97,7 @@ s8 assign_value(char *name, u32 value, u16 index)
                     *(u32 *)addr = value;
                     return 1;
                 }
-                sprintf(buf, D_00120b04, value, balance_variables[var].name,
+                sprintf(buf, "Value %d for %s - Outside Specified Bounds (%d,%d)\n", value, balance_variables[var].name,
                     balance_variables[var].min, balance_variables[var].max);
                 return -1;
             }
@@ -126,18 +107,18 @@ s8 assign_value(char *name, u32 value, u16 index)
                     *(u32 *)addr = value;
                     return 1;
                 }
-                sprintf(buf, D_00120b38, value, balance_variables[var].name,
+                sprintf(buf, "Value %d for %s - Outside Specified Bounds (%d,%d)\n", value, balance_variables[var].name,
                     balance_variables[var].min, balance_variables[var].max);
                 return -1;
             }
-            sprintf(buf, D_00120b6c, name);
+            sprintf(buf, "TYPE NOT Recognised - %s\n", name);
             return -1;
         } else {
-            sprintf(buf, D_00120b86, balance_variables[var].max_index, balance_variables[var].name);
+            sprintf(buf, "ERROR - Index too big. Must be between less than %d for %s\n", balance_variables[var].max_index, balance_variables[var].name);
             return -1;
         }
     } else {
-        sprintf(buf, D_00120bc2, name);
+        sprintf(buf, "ERROR - Table checking variable - %s not in the table\n", name);
         return -1;
     }
 }
@@ -174,16 +155,16 @@ void read_variable_file(char *name)
     value = 0;
     D_00160f2c = LbFileLengthRnc(name);
     if (D_00160f2c == -1) {
-        hosp_dos_printf(D_00120bf9, name);
+        hosp_dos_printf("rvf failed to read %s\n", name);
         return;
     }
     file_buffer = (char *)LbMemoryAlloc(D_00160f2c + 1);
     if (file_buffer == 0) {
-        hosp_dos_printf(D_00120c10, D_00160f2c + 1);
+        hosp_dos_printf("rvf failed to alloc %d\n", D_00160f2c + 1);
         return;
     }
     if (LbFileLoadAt(name, file_buffer) == -1) {
-        hosp_dos_printf(D_00120c28, name);
+        hosp_dos_printf("rvf failed to load %s\n", name);
         LbMemoryFree(file_buffer);
         return;
     }
@@ -191,7 +172,7 @@ void read_variable_file(char *name)
     LbMemorySet(current_line, 0, 0x100);
     read_line_from_buf(0, 0, file_buffer);
     while (read_line_from_buf(current_line, 0x100, file_buffer)) {
-        p = strstr(current_line, D_00120c3f);
+        p = strstr(current_line, "#");
         if (p) {
             LbMemorySet(var, 0, 0x80);
             LbMemorySet(num, 0, 0x10);
@@ -212,7 +193,7 @@ void read_variable_file(char *name)
             if (strchr(var, '.')) {
                 LbMemorySet(full, 0, 0x80);
                 LbMemorySet(D_001610b4, 0, 0x80);
-                strtok(D_00161034, D_00120c41);
+                strtok(D_00161034, ".");
                 p = strchr(var, '.');
                 members = number_of_members(var);
                 while (members-- > 0) {
@@ -287,11 +268,11 @@ u16 array_index(char *name)
     LbMemorySet(buf3, 0, 0x80);
     LbMemorySet(num, 0, 8);
     strncpy(buf, name, fn_000cd716(name) + 1);
-    p = strstr(name, D_00120c43);
+    p = strstr(name, "[");
     if (p) {
-        strtok(buf, D_00120c45);
+        strtok(buf, "[");
         strncpy(buf2, name, fn_000cd716(name) + 1);
-        p = strstr(buf2, D_00120c47);
+        p = strstr(buf2, "[");
         ++p;
         start = p;
         while (*p != ']') {
@@ -340,8 +321,8 @@ void strip_formatting(char *s)
     char *p;
 
     n = 0;
-    p = strstr(current_line, D_00120c49);
-    if (p != 0 && (p = strstr(current_line, D_00120c4b)) != 0) {
+    p = strstr(current_line, "\t");
+    if (p != 0 && (p = strstr(current_line, " ")) != 0) {
         for (p = s; *p != '\t' && *p != ' ';) {
             p++;
             n++;

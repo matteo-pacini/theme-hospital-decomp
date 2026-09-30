@@ -16,7 +16,6 @@ extern char **D_00160370;
 extern char **D_00160318;
 extern char **D_001602a4;
 extern char D_0012d8e8[];
-extern char D_001201a8[];
 
 // Initialiser data the compiler emits for a local char array in announce_new_illness_fax.
 extern char D_0012d8ea[];
@@ -1316,7 +1315,7 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     } else if (staff) {
         sprintf(buf1, strs[3], D_00160318[staff]);
     } else {
-        sprintf(buf1, D_001201a8);
+        sprintf(buf1, "");
     }
     buf2[0] = 0;
     a = 0;

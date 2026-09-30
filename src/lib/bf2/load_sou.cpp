@@ -8,15 +8,6 @@ u8 load_sound_bank(long file, u8 bank);
 extern "C" {
 
 extern volatile s8 D_00150821;
-extern char D_0012813c[];
-extern char D_00128157[];
-extern char D_00128189[];
-extern char D_001281bc[];
-extern char D_001281dd[];
-extern char D_0012820d[];
-extern char D_00128244[];
-extern char D_00128275[];
-extern char D_001282ac[];
 
 // NONMATCHING: bank-offset multiply uses eax instead of ecx; volatile load order
 // FUNCTION: 0xeff70
@@ -29,7 +20,7 @@ u32 LoadSounds(u8 bank)
     u16 number;
 
     number = bank;
-    sprintf(SoundProgressMessage, D_0012813c, bank);
+    sprintf(SoundProgressMessage, "BF42 - load sound bank %d\n", bank);
     SoundProgressLog(SoundProgressMessage);
     if (SoundInstalled && SoundAble && D_00150821 != number && !DisableLoadSounds) {
         StopAllSamples();
@@ -71,7 +62,7 @@ u32 LoadSounds(u8 bank)
             }
             if (number > counts[type]) {
                 LbFileClose(file);
-                sprintf(SoundProgressMessage, D_00128157);
+                sprintf(SoundProgressMessage, "BF43 - load sound bank - failed - bank not found\n");
                 SoundProgressLog(SoundProgressMessage);
                 return 1;
             }
@@ -79,25 +70,25 @@ u32 LoadSounds(u8 bank)
             LbFileSeek(file, number * 0x90, 1);
             if (!load_sound_bank(file, type)) {
                 LbFileClose(file);
-                sprintf(SoundProgressMessage, D_00128189);
+                sprintf(SoundProgressMessage, "BF44 - load sound bank - failed - cannot allocate\n");
                 SoundProgressLog(SoundProgressMessage);
                 return 1;
             }
             D_00150821 = bank;
             LbFileClose(file);
-            sprintf(SoundProgressMessage, D_001281bc);
+            sprintf(SoundProgressMessage, "BF45 - load sound bank - passed\n");
             SoundProgressLog(SoundProgressMessage);
             return 0;
         }
-        sprintf(SoundProgressMessage, D_001281dd);
+        sprintf(SoundProgressMessage, "BF46 - load sound bank - failed - no sound.dat\n");
     } else if (!SoundInstalled) {
-        sprintf(SoundProgressMessage, D_0012820d);
+        sprintf(SoundProgressMessage, "BF47 - load sound bank - failed - Sound not installed\n");
     } else if (!SoundAble) {
-        sprintf(SoundProgressMessage, D_00128244);
+        sprintf(SoundProgressMessage, "BF47 - load sound bank - failed - SoundAble = 0\n");
     } else if (DisableLoadSounds) {
-        sprintf(SoundProgressMessage, D_00128275);
+        sprintf(SoundProgressMessage, "BF47 - load sound bank - failed - LoadSounds disabled\n");
     } else {
-        sprintf(SoundProgressMessage, D_001282ac);
+        sprintf(SoundProgressMessage, "BF47 - load sound bank - failed - already loaded\n");
     }
     SoundProgressLog(SoundProgressMessage);
     return 1;
@@ -179,7 +170,7 @@ s32 AllocateSoundBankMemory(u16 type)
     s32 data_size;
     s32 tab_size;
 
-    sprintf(D_0018d4c4, D_001282de, SoundDataPath);
+    sprintf(D_0018d4c4, "%s/SOUND.DAT", SoundDataPath);
     file = LbFileOpen(D_0018d4c4, 2);
     if (file == -1)
         return -1;
@@ -231,7 +222,7 @@ s32 AllocateSoundBankMemory(u16 type)
     }
     if (data_size != 0 && tab_size != 0) {
         SfxData = (u8 *)LbMemoryAlloc(data_size + 0x100);
-        sprintf(SoundProgressMessage, D_001282eb, data_size + 0x100);
+        sprintf(SoundProgressMessage, "  Sound Data size = %d  ", data_size + 0x100);
         SoundProgressLog(SoundProgressMessage);
         Sfx = (SoundBankEntry *)LbMemoryAlloc(tab_size + 0x100);
         if (!SfxData || !Sfx) {

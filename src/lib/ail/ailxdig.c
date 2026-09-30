@@ -72,8 +72,6 @@ S32 note_freq[128] = {
 #pragma data_seg()
 #pragma aux note_freq "fn_000e5430_";
 
-extern char D_00127090[];
-extern char D_001270bc[];
 
 /* Timbre and MIDI event traps: __pascal (callee pops). */
 S32 XDIG_TIMB_TRAP(HMDIDRIVER mdi, S32 bank, S32 patch);
@@ -364,7 +362,7 @@ HWAVESYNTH __cdecl AIL_API_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER md
     AILXDIG_start();
     W = AIL_mem_alloc_lock(sizeof(WAVE_SYNTH));
     if (W == NULL) {
-        strcpy(AIL_error, D_00127090);
+        strcpy(AIL_error, "Insufficient memory for HWAVE descriptor\n");
         return NULL;
     }
     W->dig = dig;
@@ -388,7 +386,7 @@ HWAVESYNTH __cdecl AIL_API_create_wave_synthesizer(HDIGDRIVER dig, HMDIDRIVER md
          W->n_voices++) {
         W->S[W->n_voices] = AIL_allocate_sample_handle(W->dig);
         if (W->S[W->n_voices] == NULL) {
-            strcpy(AIL_error, D_001270bc);
+            strcpy(AIL_error, "Could not allocate enough SAMPLE handles\n");
             for (--W->n_voices; W->n_voices >= 0; W->n_voices--) {
                 AIL_release_sample_handle(W->S[W->n_voices]);
             }

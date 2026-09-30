@@ -56,11 +56,11 @@ long IPXHandler::Init(void)
         memcpy(dosbuf, D_00110000, esr_size);
         memcpy(dosbuf + 0x78, ipxsendesr, 8);
         memcpy(dosbuf + 0x80, ipxrecvesr, 8);
-        IPXDebug(D_00125e70, esr_size);
+        IPXDebug("ALLOCATED FINE HANDLER SIZE = %d\n", esr_size);
         send_packets = AllocIPXPackets(0x20, &send_sel);
-        IPXDebug(D_00125e92, ((u32)send_packets >> 4) & 0xffff, (u32)send_packets & 0xf);
+        IPXDebug("IPXSEND SEG = %x, OFF = %x\n", ((u32)send_packets >> 4) & 0xffff, (u32)send_packets & 0xf);
         if (send_packets == 0) {
-            strcpy(IPXDEBUGSTRING, D_00125eae);
+            strcpy(IPXDEBUGSTRING, "COULDN'T ALLOCATE FOR SEND PACKETS\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
             fn_000d41a0(this, dosbuf_sel);
@@ -69,7 +69,7 @@ long IPXHandler::Init(void)
         }
         addrbuf = fn_000d4150(this, 0xd0, &addr_sel);
         if (!addrbuf) {
-            strcpy(IPXDEBUGSTRING, D_00125ed2);
+            strcpy(IPXDEBUGSTRING, "COULDN'T ALLOCATE FOR BUFFER\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
             fn_000d41a0(this, dosbuf_sel);
@@ -80,7 +80,7 @@ long IPXHandler::Init(void)
         }
         recv_packets = AllocIPXPackets(0x20, &recv_sel);
         if (recv_packets == 0) {
-            strcpy(IPXDEBUGSTRING, D_00125ef0);
+            strcpy(IPXDEBUGSTRING, "COULDN'T ALLOCATE FOR SAP BUFFER\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
             fn_000d41a0(this, dosbuf_sel);
@@ -97,7 +97,7 @@ long IPXHandler::Init(void)
         *(u16 *)(dosbuf + 0x8a) = rm.edi;
         *(u16 *)(dosbuf + 0x8c) = rm.es;
         if ((rm.eax & 0xff) != 0xff) {
-            strcpy(IPXDEBUGSTRING, D_00125f12);
+            strcpy(IPXDEBUGSTRING, "IPX DRIVER NOT INSTALLED\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
             fn_000d41a0(this, dosbuf_sel);
@@ -112,9 +112,9 @@ long IPXHandler::Init(void)
         }
         entry = rm.edi | ((u32)rm.es << 16);
         memcpy(dosbuf + 2, &entry, 4);
-        IPXDebug(D_00125f2c, dosbuf[2]);
+        IPXDebug("IPX ENTRY = %x\n", dosbuf[2]);
         if (!SetupVector()) {
-            strcpy(IPXDEBUGSTRING, D_00125f3c);
+            strcpy(IPXDEBUGSTRING, "COULD NOT FIND FREE VECTOR FROM 0x60 to 0x66\n");
             IPXDebug(IPXDEBUGSTRING);
             dosbuf = 0;
             fn_000d41a0(this, dosbuf_sel);
@@ -125,16 +125,16 @@ long IPXHandler::Init(void)
             addr_sel = 0;
             fn_000d41a0(this, recv_sel);
             recv_sel = 0;
-            IPXDebug(D_00125f6a);
+            IPXDebug("FAILED\n");
             return 1;
         }
-        sprintf(IPXDEBUGSTRING, D_00125f72, *(u16 *)(dosbuf + 0x8c), *(u16 *)(dosbuf + 0x8a));
-        IPXDebug(D_00125f9f, IPXDEBUGSTRING);
+        sprintf(IPXDEBUGSTRING, "INITSUCCESSFULL IPX ADDRESS = SEG %x OFF %x\n", *(u16 *)(dosbuf + 0x8c), *(u16 *)(dosbuf + 0x8a));
+        IPXDebug("%s", IPXDEBUGSTRING);
         GetAddress(addr);
         batch_count = 0;
         return 0;
     } else {
-        strcpy(IPXDEBUGSTRING, D_00125fa2);
+        strcpy(IPXDEBUGSTRING, "COULDN'T ALLOCATE FOR DRIVER\n");
         return 1;
     }
 }
@@ -169,12 +169,12 @@ void IPXHandler::DeInit(void)
         addr_sel = 0;
         fn_000d41a0(this, recv_sel);
         recv_sel = 0;
-        IPXDebug(D_00125fe2);
-        strcpy(IPXDEBUGSTRING, D_00125fef);
+        IPXDebug("DEALLOCATED\n");
+        strcpy(IPXDEBUGSTRING, "DEINIT SUCCESSFULL\n");
         stamp = clock();
         batch_count = 0;
     } else {
-        strcpy(IPXDEBUGSTRING, D_00126003);
+        strcpy(IPXDEBUGSTRING, "DEINIT FAILED\n");
     }
 }
 
@@ -201,7 +201,7 @@ long IPXHandler::SetupVector(void)
                 used = 0;
         }
         if (!used) {
-            IPXDebug(D_00126012, vec);
+            IPXDebug("CAN USE THIS VECTOR 0x%x\n", vec);
             vector = vec;
             old_seg = r.w.cx;
             old_off = r.w.dx;
@@ -280,8 +280,8 @@ long IPXHandler::GetAddress(u8 *addr)
     memcpy(addr, addrbuf, 10);
     memcpy(net, addr, 4);
     memcpy(node, addr + 4, 6);
-    IPXDebug(D_0012602c, net[0], net[1], net[2], net[3], node[0], node[1], node[2], node[3], node[4], node[5]);
-    IPXDebug(D_0012605c, rm.eax);
+    IPXDebug("NETWORK %x%x%x%x\nNODE %02x%02x%02x%02x%02x%02x\n", net[0], net[1], net[2], net[3], node[0], node[1], node[2], node[3], node[4], node[5]);
+    IPXDebug("RET = %x\n", rm.eax);
     return rm.eax;
 }
 
@@ -296,7 +296,7 @@ long IPXHandler::OpenSocket(__3ljac5NETSOCKET *sock, u16 mode)
     SimulateInt(vector, &rm);
     sock->socket = rm.edx;
     memcpy(sock->net, net, 10);
-    IPXDebug(D_00126066, rm.edx, rm.eax);
+    IPXDebug("OPEN SOCKET 0x%x, RETURN CODE 0x%x\n", rm.edx, rm.eax);
     return rm.eax;
 }
 
@@ -305,12 +305,12 @@ void IPXHandler::CloseSocket(__3ljac5NETSOCKET *sock)
 {
     RMREGS rm;
 
-    IPXDebug(D_00125fc0, sock->socket);
+    IPXDebug("CLOSING SOCKET %x\n", sock->socket);
     memset(&rm, 0, sizeof(rm));
     rm.ebx = 1;
     rm.edx = sock->socket;
     SimulateInt(vector, &rm);
-    IPXDebug(D_00125fd3);
+    IPXDebug("SOCKET CLOSED\n");
 }
 
 // FUNCTION: 0xd4634

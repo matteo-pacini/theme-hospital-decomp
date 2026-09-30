@@ -9,12 +9,6 @@ extern char **D_00160374;
 extern char **D_00160398;
 extern char **D_0016039c;
 extern Event D_001549d0[];
-extern char D_00120c50[];
-extern char D_00120c53[];
-extern char D_00120c55[];
-extern char D_00120c58[];
-extern char D_00120c5b[];
-extern char D_00120c5d[];
 
 int strcmp(const char *a, const char *b);
 u32 fn_000cd716(char *s);
@@ -252,7 +246,7 @@ void copy_and_format_composite(char *dst, char **strs)
     count = 0;
     for (pp = strs; **pp != '.'; pp++) {
         for (p = *pp; *p; p++) {
-            if (strcmp(p, D_00120c50) == 0) {
+            if (strcmp(p, "//") == 0) {
                 most < count ? most = count : 0;
                 count = 0;
                 p++;
@@ -270,7 +264,7 @@ void copy_and_format_composite(char *dst, char **strs)
     limit > lbDisplay.unknown18 * 3 / 4 ? limit = lbDisplay.unknown18 * 3 / 4 : 0;
     start = dst;
     cur = 0;
-    for (; strcmp(*strs, D_00120c53) != 0; strs++) {
+    for (; strcmp(*strs, ".") != 0; strs++) {
         for (p = *strs; *p; p++) {
             if (cur > limit) {
                 q = dst;
@@ -286,7 +280,7 @@ void copy_and_format_composite(char *dst, char **strs)
                     }
                 }
             }
-            if (strcmp(p, D_00120c55) == 0) {
+            if (strcmp(p, "//") == 0) {
                 *dst++ = '\n';
                 *dst++ = '\n';
                 p++;
@@ -445,14 +439,14 @@ void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n)
     count = 0;
     i = 0;
     if (strs) {}
-    for (; strcmp(*strs, D_00120c58) != 0 && count < n; count++) {
+    for (; strcmp(*strs, "..") != 0 && count < n; count++) {
         *idx++ = i;
-        for (; strcmp(*strs, D_00120c5b) != 0; i++)
+        for (; strcmp(*strs, ".") != 0; i++)
             strs++;
         strs++;
         i++;
     }
-    if (count == n && strcmp(*strs, D_00120c5d) != 0) {}
+    if (count == n && strcmp(*strs, "..") != 0) {}
 }
 
 // FUNCTION: 0x0009b1f0

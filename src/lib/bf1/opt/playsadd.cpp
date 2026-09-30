@@ -1,7 +1,6 @@
 #include "snd.h"
 
 extern "C" {
-extern char D_00124c90[];
 
 // FUNCTION: 0x000ce990
 SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan, u16 pitch,
@@ -13,7 +12,7 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
     u8 found;
 
     if (SoundInstalled && SoundAble && SoundActive) {
-        sprintf(SoundProgressMessage, D_00124c90, source_id, (s32)number, volume, pan, pitch, type, extra);
+        sprintf(SoundProgressMessage, "PLAYSADD    id-%08d    num-%03d    vol-%03d    pan-%03d    ptch-%03d    type-%d    pri-%03d\n", source_id, (s32)number, volume, pan, pitch, type, extra);
         SoundProgressLog(SoundProgressMessage);
         switch (type) {
         case 1:

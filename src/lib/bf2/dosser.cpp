@@ -17,26 +17,6 @@ unsigned short FP_SEG(const volatile void __far *p);
 #define FP_OFF(p) ((unsigned)(p))
 extern u8 D_00110068[];
 extern u8 D_001100fe[];
-extern char D_00128690[];
-extern char D_001286c2[];
-extern char D_001286db[];
-extern char D_001286f5[];
-extern char D_001286f9[];
-extern char D_001286fe[];
-extern char D_00128702[];
-extern char D_00128709[];
-extern char D_0012870b[];
-extern char D_0012870f[];
-extern char D_00128712[];
-extern char D_0012872a[];
-extern char D_00128745[];
-extern char D_0012874c[];
-extern char D_001287e2[];
-extern char D_001287ea[];
-extern char D_00128767[];
-extern char D_00128783[];
-extern char D_00128786[];
-extern char D_001287b0[];
 typedef struct __iobuf FILE;
 FILE *fopen(const char *name, const char *mode);
 int fgetc(FILE *f);
@@ -186,7 +166,7 @@ long SerialHandler::Init(long port)
     size = D_001100fe - D_00110068;
     memcpy(dev, D_00110068, size);
     *(u16 *)&dev->unknown0[2] = com_dev[port].base;
-    fn_000c20c0(D_00128690, size, *(u16 *)&dev->unknown0[2], com_dev[port].irq, com_dev[port].vector);
+    fn_000c20c0("SERIALHANDLER size %d Port %x IRQ %x INT VECT %x\n", size, *(u16 *)&dev->unknown0[2], com_dev[port].irq, com_dev[port].vector);
     dev->port = port;
     dev->base = com_dev[dev->port].base;
     dev->vector = com_dev[dev->port].vector;
@@ -535,10 +515,10 @@ void SerialHandler::init_com_port(TbSerialDev *dev)
     outp(dev->base + 2, 0);
     outp(dev->base + 2, 0xc1);
     if ((inp(dev->base + 2) & 0xf8) == 0xc0) {
-        fn_000c20c0(D_001286c2);
+        fn_000c20c0("COM PORT HAS 16550 FIFO\n");
         outp(dev->base + 2, 0x41);
     } else {
-        fn_000c20c0(D_001286db);
+        fn_000c20c0("COM PORT HAS A 8250 PORT\n");
         outp(dev->base + 2, 0);
     }
     outp(dev->base + 1, 1);
@@ -663,10 +643,10 @@ CommHandler::CommHandler()
     CH(this)->unknown19c = 6000;
     CH(this)->timeout = 1000;
     CH(this)->dial_timeout = 4000;
-    strcpy(CH(this)->init_str, D_001286f5);
-    strcpy(CH(this)->dial_str, D_001286f9);
-    strcpy(CH(this)->hangup_str, D_001286fe);
-    strcpy(CH(this)->reset_str, D_00128702);
+    strcpy(CH(this)->init_str, "ATZ");
+    strcpy(CH(this)->dial_str, "ATDT");
+    strcpy(CH(this)->hangup_str, "ATH");
+    strcpy(CH(this)->reset_str, "ATS0=1");
 }
 
 // FUNCTION: 0xf630c
@@ -752,7 +732,7 @@ void CommHandler::SendModemString(char *str)
     char buf[0x50];
 
     strcpy(buf, str);
-    strcat(buf, D_00128709);
+    strcat(buf, "\r");
     SerialCommHandler.WriteBytes(CH(this)->port, (u8 *)buf, strlen(buf));
     strcpy(CH(this)->last_cmd, buf);
 }
@@ -799,19 +779,19 @@ long CommHandler::HangUpModem(void)
     SerialCommHandler.ClearDtr(CH(this)->port);
     delay(50);
     SerialCommHandler.SetDtr(CH(this)->port);
-    SerialCommHandler.WriteBytes(CH(this)->port, (u8 *)D_0012870b, 3);
+    SerialCommHandler.WriteBytes(CH(this)->port, (u8 *)"+++", 3);
     t = clock();
     while (clock() - t < 100)
         ;
-    strcpy(CH(this)->response, D_0012870f);
+    strcpy(CH(this)->response, "OK");
     GetModemResponse(CH(this)->timeout);
-    fn_000c20c0(D_00128712, CH(this)->response);
+    fn_000c20c0("+++ RESPONSE CODE = %s\n", CH(this)->response);
     SendModemString(CH(this)->hangup_str);
     GetModemResponse(CH(this)->timeout);
-    fn_000c20c0(D_0012872a, CH(this)->response);
-    SendModemString(D_00128745);
+    fn_000c20c0("HangUP RESPONSE CODE = %s\n", CH(this)->response);
+    SendModemString("ATS0=0");
     GetModemResponse(CH(this)->timeout);
-    fn_000c20c0(D_0012874c, CH(this)->response);
+    fn_000c20c0("ATS0=0 RESPONSE CODE = %s\n", CH(this)->response);
     CH(this)->online = 0;
     ClearDtr();
     ClearRts();
@@ -842,11 +822,11 @@ long CommHandler::ReadConfigFile(char *filename)
     FILE *f;
     s16 i;
 
-    fn_000c20c0(D_00128767, filename);
+    fn_000c20c0("ATTEMPTING TO OPEN FILE %s\n", filename);
     if (filename) {
-        f = fopen(filename, D_00128783);
+        f = fopen(filename, "rt");
         if (f) {
-            fn_000c20c0(D_00128786, filename);
+            fn_000c20c0("CommHandler::ReadConfigFile with file %s\n", filename);
             for (i = 0; i < 4; i++) {
                 read_a_line(f, buf);
                 read_a_line(f, buf);
@@ -891,7 +871,7 @@ void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
                 data->reset_str = CH(this)->reset_str;
         }
     } else {
-        fn_000c20c0(D_001287b0);
+        fn_000c20c0("CommHandler::ReadSerialDev NULL parameter passed\n");
     }
 }
 
@@ -937,7 +917,7 @@ long CommHandler::GetModemResponse(long timeout)
                     break;
                 }
             }
-            if (!done && !strnicmp(buf, D_001287ea, strlen(D_001287e2))) {
+            if (!done && !strnicmp(buf, "CONNECT", strlen("CONNECT"))) {
                 strcpy(CH(this)->response, buf);
                 ret = 2;
                 break;

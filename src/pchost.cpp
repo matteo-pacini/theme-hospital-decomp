@@ -20,9 +20,6 @@ extern TbLoadFiles D_0013ea78[], D_0013e944[], D_0013ec5c[];
 extern u8 *D_00153f34;
 extern TbSprite *D_00153f30;
 extern u8 *D_00153f28;
-extern char D_00120028[], D_0012002d[], D_0012003b[], D_00120049[];
-extern char D_0012005b[], D_00120073[], D_00120087[], D_001200a9[], D_001200ce[], D_001200e9[];
-extern char D_00120102[], D_00120129[], D_00120142[], D_0012015d[];
 extern char *D_0013e80c;
 extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef;
 extern s32 D_001581e8;
@@ -60,7 +57,7 @@ u8 setup_host(void)
         return 1;
     }
     if (install_type < 2) {
-        sprintf(path, D_00120028, cd_install_path, D_0013e80c);
+        sprintf(path, "%s%s", cd_install_path, D_0013e80c);
         check_cd_available(path);
         LbFileLoadAt(path, D_00153f34);
     } else {
@@ -115,20 +112,20 @@ u8 setup_host(void)
     othervar.f1f = 0;
     D_001581ee = 0;
     if (D_001581ec) {
-        sprintf(name, D_0012002d, D_001581ef);
+        sprintf(name, "SAVE/PLAY.R%d", D_001581ef);
         D_001581e8 = LbFileOpen(name, 0);
         if (D_001581e8) {
             D_001581ee |= 1;
         }
     } else if (D_001581ed) {
-        sprintf(name, D_0012003b, D_001581ef);
+        sprintf(name, "SAVE/PLAY.R%d", D_001581ef);
         D_001581e8 = LbFileOpen(name, 2);
         if (D_001581e8) {
             D_001581ee |= 2;
         }
     }
     debug.unknown1e0 = -1;
-    LbGhostTableGenerate(D_00153f34, 0x42, D_00120049);
+    LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
     generate_bw_remap(D_00153f34, bw_remap);
     clear_loading_screen(D_00153f34);
     D_001290cc = LbFileOpen(D_001289a0, 2);
@@ -155,35 +152,35 @@ void reset_host(void)
     LbScreenReset();
     switch (D_0015f982) {
     case 1:
-        fn_000bbff0(msg.text, D_0012005b);
+        fn_000bbff0(msg.text, "Language Setup Failed.\n");
         break;
     case 2:
-        fn_000bbff0(msg.text, D_00120073);
+        fn_000bbff0(msg.text, "No Mouse Detected.\n");
         break;
     case 3:
-        fn_000bbff0(msg.text, D_00120087);
+        fn_000bbff0(msg.text, "Failed to initialise MCGA screen\n");
         break;
     case 4:
-        fn_000bbff0(msg.text, D_001200a9);
+        fn_000bbff0(msg.text, "Failed to initialise VRES256 screen\n");
         break;
     case 5:
-        fn_000bbff0(msg.text, D_001200ce);
+        fn_000bbff0(msg.text, "Memory allocation failure\n");
         break;
     case 6:
-        fn_000bbff0(msg.text, D_001200e9);
+        fn_000bbff0(msg.text, "Heap allocation failure\n");
         break;
     case 8:
-        hosp_dos_printf(D_00120102);
+        hosp_dos_printf("Speech Setup Failed. Sample too Large\n");
         break;
     case 9:
-        hosp_dos_printf(D_00120129);
+        hosp_dos_printf("Error loading data file\n");
         break;
     case 10:
-        hosp_dos_printf(D_00120142);
+        hosp_dos_printf("Error couldn't change res\n");
         break;
     }
     if (sub_error_number) {
-        sprintf(msg.text, D_0012015d, msg.text, sub_error_number);
+        sprintf(msg.text, "%s(Reason code: %d)\n", msg.text, sub_error_number);
     }
     if (msg.text[0]) {
         hosp_dos_printf(msg.text);

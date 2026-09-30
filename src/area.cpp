@@ -17,14 +17,6 @@ extern "C" {
 extern Event D_001549d0[];
 extern u8 *D_00153f34;
 extern u8 D_00156910;
-extern char D_00120544[];
-extern char D_00120549[];
-extern char D_0012055a[];
-extern char D_0012056c[];
-extern char D_00120571[];
-extern char D_00120582[];
-extern char D_00120595[];
-extern char D_001205a6[];
 extern void *smack_draw_callback;
 void fn_00074cd8(void);
 int LbScreenLock(void);
@@ -67,7 +59,7 @@ u8 draw_area_select(void)
         return_from_screen(9, 0, 1);
         unload_game_files();
         if (animation_table[level_number + 7].f28 > install_type) {
-            sprintf(buf, D_00120544, cd_install_path, animation_table[level_number + 7].name);
+            sprintf(buf, "%s%s", cd_install_path, animation_table[level_number + 7].name);
             check_cd_available(buf);
         }
         if (level_number >= 12)
@@ -77,7 +69,7 @@ u8 draw_area_select(void)
         play_area_smk(level_number);
         lbDisplay.left_button = 0;
         LbPaletteGet(ppalette.data);
-        LbGhostTableGenerate(ppalette.data, 0x19, D_00120549);
+        LbGhostTableGenerate(ppalette.data, 0x19, "qdata/ghost2.dat");
         calculate_grey(ppalette.data);
         BufferedInkey = 0;
         fn_00074cd8();
@@ -100,7 +92,7 @@ u8 draw_area_select(void)
         LbScreenClear(0);
         if (!display_loading_screen())
             return 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, D_0012055a);
+        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
         area.unknown2 = 0;
         advisor.f131 = 0x1d;
         display_mode = 0;
@@ -142,7 +134,7 @@ u8 draw_area_select(void)
     case 6:
         unload_game_files();
         if (animation_table[level_number + 7].f28 > install_type) {
-            sprintf(buf, D_0012056c, cd_install_path, animation_table[level_number + 7].name);
+            sprintf(buf, "%s%s", cd_install_path, animation_table[level_number + 7].name);
             check_cd_available(buf);
         }
         if (level_number >= 12)
@@ -152,7 +144,7 @@ u8 draw_area_select(void)
         play_area_smk(level_number);
         lbDisplay.left_button = 0;
         LbPaletteGet(ppalette.data);
-        LbGhostTableGenerate(ppalette.data, 0x19, D_00120571);
+        LbGhostTableGenerate(ppalette.data, 0x19, "qdata/ghost2.dat");
         calculate_grey(ppalette.data);
         BufferedInkey = 0;
         fn_00074cd8();
@@ -308,10 +300,10 @@ void display_select_level(void)
         for (row = 0; row < 20; row++) {
             found = 0;
             if (install_type < 3) {
-                sprintf(buf, D_00120582, cd_install_path, col * 20 + row);
+                sprintf(buf, "%slevels/level.l%d", cd_install_path, col * 20 + row);
                 check_cd_available(buf);
             } else {
-                sprintf(buf, D_00120595, col * 20 + row);
+                sprintf(buf, "levels/level.l%d", col * 20 + row);
             }
             fh = LbFileOpen(buf, 2);
             if (fh != -1) {
@@ -336,7 +328,7 @@ void display_select_level(void)
                         allhosps->f29 = level_number;
                 }
             }
-            sprintf(buf, D_001205a6, col * 20 + row);
+            sprintf(buf, "level-%d", col * 20 + row);
             LbTextDraw(col * 100, h * row, buf);
         }
     }

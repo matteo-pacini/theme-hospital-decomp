@@ -46,7 +46,6 @@ extern char **D_00160370;
 extern u8 D_00156910;
 extern char **D_001602e8;
 extern char **D_001602ec;
-extern char D_00120480[];
 extern u16 D_0012cdd4[];
 extern u16 D_0012cdea[];
 }
@@ -904,7 +903,7 @@ void forced_advice(void)
         fn_000bbff0(advisor.f10, D_001602e8[advisor.f2_s16]);
         for (i = 0; i < 4; i++) {
             if (othervar.fa6c[i]) {
-                sprintf(advisor.f10, D_00120480, advisor.f10, allhosps[i].unknown0);
+                sprintf(advisor.f10, "%s %s", advisor.f10, allhosps[i].unknown0);
                 othervar.fa6c[i] = 0;
             }
         }

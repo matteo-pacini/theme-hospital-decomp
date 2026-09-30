@@ -11,8 +11,6 @@ struct HospScores {
 };
 
 extern "C" {
-extern char D_001209e8[], D_001209ec[], D_001209f0[], D_001209f4[], D_001209f7[];
-extern char D_001209fa[], D_00120a0d[];
 
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
@@ -227,15 +225,15 @@ void fn_00094d34(void)
     }
     for (i = 0; i < 10; i++) {
         x = (TextPos[i] + 0x8000) >> 16;
-        sprintf(buf, D_001209e8, i + 1);
+        sprintf(buf, "%2d", i + 1);
         LbTextDraw(resvars.f40[201].x, x, buf);
         if (othervar.f9e4) {
             LbTextDraw(resvars.f40[202].x, x, hosp_scores.fame[i].name);
-            sprintf(buf, D_001209ec, hosp_scores.fame[i].score);
+            sprintf(buf, "%6d", hosp_scores.fame[i].score);
             LbTextDraw(resvars.f40[203].x, x, buf);
         } else {
             LbTextDraw(resvars.f40[202].x, x, hosp_scores.shame[9 - i].name);
-            sprintf(buf, D_001209f0, hosp_scores.shame[9 - i].score);
+            sprintf(buf, "%6d", hosp_scores.shame[9 - i].score);
             LbTextDraw(resvars.f40[203].x, x, buf);
         }
     }
@@ -244,7 +242,7 @@ void fn_00094d34(void)
 // FUNCTION: 0x00094f5c
 void fn_00094f5c(s8 slot)
 {
-    sprintf(hosp_scores.fame[slot].name, D_001209f4, &allhosps[player]);
+    sprintf(hosp_scores.fame[slot].name, "%s", &allhosps[player]);
     hosp_scores.fame[slot].score = allhosps[player].f2d;
 }
 
@@ -274,7 +272,7 @@ void fn_00094fc8(void)
 // FUNCTION: 0x00095094
 void fn_00095094(s8 slot)
 {
-    sprintf(hosp_scores.shame[slot].name, D_001209f7, &allhosps[player]);
+    sprintf(hosp_scores.shame[slot].name, "%s", &allhosps[player]);
     hosp_scores.shame[slot].score = allhosps[player].f2d;
 }
 
@@ -399,7 +397,7 @@ void save_highscores(void)
     char path[100];
 
     if (statvar.unknownfd <= 1 || (statvar.unknownfd > 1 && player == 0)) {
-        sprintf(path, D_001209fa, statvar.f575);
+        sprintf(path, "%ssave/hiscore.dat", statvar.f575);
         fh = LbFileOpen(path, 0);
         if (fh != -1) {
             LbFileWrite(fh, &hosp_scores, 0x2d0);
@@ -414,7 +412,7 @@ void load_highscores(void)
     int fh;
     char path[100];
 
-    sprintf(path, D_00120a0d, statvar.f575);
+    sprintf(path, "%ssave/hiscore.dat", statvar.f575);
     fh = LbFileOpen(path, 2);
     if (fh != -1) {
         LbFileRead(fh, &hosp_scores, 0x2d0);

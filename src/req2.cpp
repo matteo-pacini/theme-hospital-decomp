@@ -57,13 +57,6 @@ extern s32 D_001290cc;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 *D_0015479c;
 void fn_0001bee4(void);
-extern char D_001205b0[];
-extern char D_001205b3[];
-extern char D_001205bc[];
-extern char D_001205c0[];
-extern char D_001205c5[];
-extern char D_001205ca[];
-extern char D_001205cd[];
 }
 
 u32 safe_normal_rand(u32 a, u32 b);
@@ -239,7 +232,7 @@ void req2_overdraw(Window *w)
     }
     set_font_from_cache(0xd);
     for (i = 0; i < 4; i++) {
-        sprintf(buf, D_001205b0, counts[i]);
+        sprintf(buf, "%d", counts[i]);
         LbTextDraw(x0 + resvars.f1c[i + 78].x, y0 + resvars.f1c[i + 78].y, buf);
     }
     if (advisor.f11f & 1) {
@@ -299,9 +292,9 @@ void req2_overdraw(Window *w)
     case 2:
         if (crequester.unknown6) {
             t = &thing[crequester.unknown6];
-            sprintf(buf, D_001205b3, t->f84, staff_names_1[t->f85], staff_names_2[t->f86]);
+            sprintf(buf, "%c. %s%s", t->f84, staff_names_1[t->f85], staff_names_2[t->f86]);
             LbTextDraw(x0 + resvars.f1c[82].x, y0 + resvars.f1c[82].y, buf);
-            sprintf(buf, D_001205bc, t->unknown108);
+            sprintf(buf, "$%d", t->unknown108);
             LbTextDraw(x0 + resvars.f1c[84].x, y0 + resvars.f1c[84].y, buf);
             draw_face((Picture *)&t->f87, x0 + resvars.f1c[83].x, y0 + resvars.f1c[83].y);
             i = 0;
@@ -330,14 +323,14 @@ void req2_overdraw(Window *w)
             LbTextSetWindow(x0 + resvars.f18_Req2Layoutp->text_x, y0 + resvars.f18_Req2Layoutp->text_y, resvars.f18_Req2Layoutp->text_w, resvars.f18_Req2Layoutp->text_h);
             if (resvars.f1 == SCREEN_MODE_13) {
                 if (t->unknown126 > 500)
-                    sprintf(buf, D_001205c0, ref_general_text[t->f8a], ref_good_text[t->f8b]);
+                    sprintf(buf, "%s%s", ref_general_text[t->f8a], ref_good_text[t->f8b]);
                 else
-                    sprintf(buf, D_001205c5, ref_general_text[t->f8a], ref_bad_text[t->f8c]);
+                    sprintf(buf, "%s%s", ref_general_text[t->f8a], ref_bad_text[t->f8c]);
             } else if (resvars.f1 == SCREEN_MODE_1) {
                 if (t->unknown126 > 500)
-                    sprintf(buf, D_001205ca, ref_good_text[t->f8b]);
+                    sprintf(buf, "%s", ref_good_text[t->f8b]);
                 else
-                    sprintf(buf, D_001205cd, ref_bad_text[t->f8c]);
+                    sprintf(buf, "%s", ref_bad_text[t->f8c]);
             }
             LbTextDraw(0, 0, buf);
             lbDisplay.draw_flags = 0;
@@ -554,8 +547,6 @@ void req12(Window *w)
 }
 
 extern "C" {
-extern char D_001205d0[];
-extern char D_001205d9[];
 extern char **D_001602a0;
 }
 
@@ -595,9 +586,9 @@ void req12_overdraw(Window *w)
     }
     if (crequester.unknown4) {
         t = &thing[crequester.unknown4];
-        sprintf(buf, D_001205d0, t->f84, staff_names_1[t->f85], staff_names_2[t->f86]);
+        sprintf(buf, "%c. %s%s", t->f84, staff_names_1[t->f85], staff_names_2[t->f86]);
         LbTextDraw(x0 + resvars.f1c[2].x, y0 + resvars.f1c[2].y, buf);
-        sprintf(buf, D_001205d9, t->unknown108);
+        sprintf(buf, "$%d", t->unknown108);
         LbTextDraw(x0 + resvars.f1c[4].x, y0 + resvars.f1c[4].y, buf);
         draw_face((Picture *)&t->f87, x0 + resvars.f1c[3].x, y0 + resvars.f1c[3].y);
         i = 0;

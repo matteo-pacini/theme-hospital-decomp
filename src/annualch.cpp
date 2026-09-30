@@ -20,17 +20,6 @@ extern char **D_00160368;
 extern char **D_0016036c;
 extern char **D_00160390;
 extern Event D_001549d0[];
-extern char D_00121b04[];
-extern char D_00121b0d[];
-extern char D_00121b10[];
-extern char D_00121b13[];
-extern char D_00121b1a[];
-extern char D_00121b1d[];
-extern char D_00121b23[];
-extern char D_00121b2a[];
-extern char D_00121b30[];
-extern char D_00121b34[];
-extern char D_00121b38[];
 
 void fn_0001b7e0(void *dst, char *text, int flags);
 
@@ -151,7 +140,7 @@ extern "C" void fn_000b4e88(void)
         othervar.f9ed = 0x4b0;
         LbTextSetWindow(0xe0, 0x24 - height / 2, 0xc0, 0x16);
         lbDisplay.draw_flags = 0x100;
-        sprintf(buf, D_00121b04, help_text[20], mycontrol->f648 + 0x7cf);
+        sprintf(buf, "%s %4.4d", help_text[20], mycontrol->f648 + 0x7cf);
         fn_0001b7e0(buf, buf, 0);
         LbTextDraw(0, 0, buf);
         for (i = 0, cat = -1; i < 6; i++) {
@@ -174,7 +163,7 @@ extern "C" void fn_000b4e88(void)
                     lbDisplay.draw_flags = 0x20;
                     LbTextDraw(x, y, (char *)allhosps[chart[cat][j].hosp].unknown0);
                     lbDisplay.draw_flags = 0x80;
-                    sprintf(buf, D_00121b0d, chart[cat][j].value);
+                    sprintf(buf, "%d", chart[cat][j].value);
                     LbTextDraw(x, y, buf);
                 }
             }
@@ -240,11 +229,11 @@ void display_plaque(void)
     switch (current_display) {
     case 1:
         if (awards_won[current_award].value > 0) {
-            sprintf(text1, D_00121b10, D_0016036c[awards_won[current_award].f2]);
-            sprintf(text2, D_00121b13, D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
+            sprintf(text1, "%s", D_0016036c[awards_won[current_award].f2]);
+            sprintf(text2, "%s\n+%d", D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
         } else {
-            sprintf(text1, D_00121b1a, D_0016036c[awards_won[current_award].f2]);
-            sprintf(text2, D_00121b1d, D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
+            sprintf(text1, "%s", D_0016036c[awards_won[current_award].f2]);
+            sprintf(text2, "%s\n%d", D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
         }
     case 2:
         reqspr_draw(resvars.f40[0xa0].x, resvars.f40[0xa0].y, &screen_sprites_tab_start[16]);
@@ -253,10 +242,10 @@ void display_plaque(void)
         if (current_display == 2) {
             if (awards_won[current_award].value > 0) {
                 sprintf(text1, D_00160368[awards_won[current_award].f2]);
-                sprintf(text2, D_00121b23, D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
+                sprintf(text2, "%s\n+%d", D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
             } else {
                 sprintf(text1, D_00160368[awards_won[current_award].f2]);
-                sprintf(text2, D_00121b2a, D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
+                sprintf(text2, "%s\n%d", D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
             }
             reqspr_draw(resvars.f40[0xa6].x, resvars.f40[0xa6].y, &screen_sprites_tab_start[15]);
         }
@@ -277,15 +266,15 @@ void display_plaque(void)
         if (trophies_won[current_award].unknown0 == 5) {
             sprintf(text1, D_00160364[trophies_won[current_award].f1], othervar.fa59);
             sprintf(text2, D_00160390[trophies_won[current_award].f4]);
-            sprintf(text3, D_00121b30, trophies_won[current_award].value);
+            sprintf(text3, "+%d", trophies_won[current_award].value);
         } else if (trophies_won[current_award].unknown0 == 6 && award_counts.f151 > 0) {
             sprintf(text1, D_00160364[trophies_won[current_award].f1], othervar.fa5a);
             sprintf(text2, D_00160390[trophies_won[current_award].f4]);
-            sprintf(text3, D_00121b34, trophies_won[current_award].value);
+            sprintf(text3, "+%d", trophies_won[current_award].value);
         } else {
             sprintf(text1, D_00160364[trophies_won[current_award].f1]);
             sprintf(text2, D_00160390[trophies_won[current_award].f4]);
-            sprintf(text3, D_00121b38, trophies_won[current_award].value);
+            sprintf(text3, "+%d", trophies_won[current_award].value);
         }
         LbTextSetWindow(0xe1, 0x6a, 0xb4, 0xe0);
         LbTextDraw(0, 0, text1);

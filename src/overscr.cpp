@@ -20,12 +20,6 @@ extern u8 D_00158166;
 extern Event D_001549d0[];
 extern char **D_00160378;
 extern char **D_00160394;
-extern char D_00120460[];
-extern char D_00120469[];
-extern char D_0012046c[];
-extern char D_00120476[];
-extern char D_00120479[];
-extern char D_0012047c[];
 
 void fn_000c93bf(char *dst, char *src);
 void fn_0001b7e0(char *dst, s8 *src, u8 mode);
@@ -139,7 +133,7 @@ void draw_overview_screen(void)
     {
         char buf[500];
 
-        sprintf(buf, D_00120460, D_00160378[0], mycontrol->f648 + 2000);
+        sprintf(buf, "%s %4.4d", D_00160378[0], mycontrol->f648 + 2000);
         LbTextDraw(resvars.f40[0x6f].x, resvars.f40[0x6f].y, buf);
         j = 0;
         for (i = 0; i < n; i++) {
@@ -149,7 +143,7 @@ void draw_overview_screen(void)
                 set_font_from_cache(0x25);
             else
                 set_font_from_cache(0x24);
-            sprintf(buf, D_00120469, &allhosps[i]);
+            sprintf(buf, "%s", &allhosps[i]);
             LbTextDraw(resvars.f40[0x68 + j].x, resvars.f40[0x68 + j].y, buf);
             j++;
         }
@@ -186,10 +180,10 @@ void draw_overview_screen(void)
         set_font_from_cache(0x26);
         lbDisplay.draw_flags = 0;
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        sprintf(buf, D_0012046c, D_00160378[6], allhosps[D_00158164].f1cb);
+        sprintf(buf, "%s (%d%%)", D_00160378[6], allhosps[D_00158164].f1cb);
         fn_0001b7e0(buf, (s8 *)buf, 0);
         LbTextDraw(resvars.f40[0x70].x, resvars.f40[0x70].y, buf);
-        sprintf(buf, D_00120476, D_00160378[7]);
+        sprintf(buf, "%s", D_00160378[7]);
         LbTextDraw(resvars.f40[0x71].x, resvars.f40[0x71].y, buf);
         set_font_from_cache(0x24);
         display_overview_bars(D_00158164);
@@ -297,7 +291,7 @@ void draw_piechart(void)
 
             tx = slices[i].text_x;
             ty = slices[i].text_y;
-            sprintf(buf, D_00120479, &allhosps[fn_000856c8(i + 1)]);
+            sprintf(buf, "%s", &allhosps[fn_000856c8(i + 1)]);
             LbTextDraw(tx, ty, buf);
         }
     } else {
@@ -308,7 +302,7 @@ void draw_piechart(void)
 
             tx = slices[i].text_x;
             ty = slices[i].text_y;
-            sprintf(buf, D_0012047c, &allhosps[i]);
+            sprintf(buf, "%s", &allhosps[i]);
             LbTextDraw(tx, ty, buf);
         }
     }

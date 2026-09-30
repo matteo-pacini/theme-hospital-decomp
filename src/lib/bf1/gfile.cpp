@@ -1,7 +1,6 @@
 #include "bflib.h"
 
 extern "C" {
-extern char D_00121de4[];
 
 int strncmp(const char *a, const char *b, u32 n);
 int UnpackM1(void *src, void *dst);
@@ -67,7 +66,7 @@ int LbFileLoadAt(char *path, void *buf)
                 LbFileClose(handle);
                 result = UnpackM1(buf, buf);
                 if (result < 0) {
-                    fn_000cd2cc(D_00121de4, path);
+                    fn_000cd2cc("ERROR decompressing %s\n", path);
                     return -1;
                 }
                 if (result == 0)

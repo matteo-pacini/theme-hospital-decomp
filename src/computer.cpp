@@ -70,7 +70,6 @@ u8 computer_buy_land(u8 player);
 extern "C" {
 
 extern char **D_001602a8;
-extern char D_00120424[];
 
 }
 
@@ -114,7 +113,7 @@ void setup_computer_players(void)
             h = &allhosps[k];
             if (h->f2a == 0) {
                 h->f2a = 2;
-                fn_000bbff0((char *)h, D_00120424);
+                fn_000bbff0((char *)h, "DEF 64");
                 for (i = 0; i < 1000; i++) {
                     j = (lbDisplay.mmouse_x + lbDisplay.mmouse_y + old_newrand()) % 20;
                     h->f1245 = j;

@@ -68,10 +68,7 @@ extern "C" {
 
 extern u8 *D_00153f34;
 extern char **D_001602a0;
-extern char D_00120898[], D_001208a9[], D_001208bb[], D_001208c5[], D_001208d6[], D_001208e8[];
 extern char *D_00138020, *D_00138024;
-extern char D_001208f1[], D_00120904[], D_00120915[], D_00120926[], D_00120935[], D_00120937[], D_0012093c[];
-extern char D_00120941[], D_00120953[], D_00120963[], D_00120966[];
 extern s8 __IsTable[];
 #pragma aux __IsTable "*"
 
@@ -94,7 +91,7 @@ void draw_nickname(void)
     case 0:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         lbInkey = 0;
-        LbGhostTableGenerate(ppalette.data, 0x1e, D_00120898);
+        LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost2.dat");
         calculate_grey(ppalette.data);
         nickname.unknown0 = 0;
         BufferedInkey = 0;
@@ -116,12 +113,12 @@ void draw_nickname(void)
     case 1:
         fade_out_menu();
         nickname.unknown2 = 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, D_001208a9);
+        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
         mainmenu.unknown2 = 0;
         display_mode = 2;
         if (fn_000cd716(myplayer.unknown0) == 0)
             fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
-        sprintf(statvar.f6c, D_001208bb, myplayer.unknown0);
+        sprintf(statvar.f6c, "save/%s.h", myplayer.unknown0);
         load_player_details();
         break;
     case 2:
@@ -135,7 +132,7 @@ void draw_nickname(void)
         return_from_screen(9, 0, 1);
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         load_ingame_pic(0xc, 1, 0x19, 0, SCREEN_MODE_13);
-        LbGhostTableGenerate(ppalette.data, 0x1e, D_001208c5);
+        LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         calculate_grey(ppalette.data);
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         setup_balance_files(0);
@@ -166,7 +163,7 @@ void draw_nickname(void)
             display_mode = 2;
         }
         nickname.unknown2 = 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, D_001208d6);
+        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
         free_balance_files();
         break;
     case 5:
@@ -345,7 +342,7 @@ void display_nick_name_screen(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     set_font_from_cache(0x23);
-    sprintf(buf, D_001208e8, nickname_text[0], myplayer.unknown0);
+    sprintf(buf, "%s : %s*", nickname_text[0], myplayer.unknown0);
     y = ((0x2c - character_height()) >> 1) + 0x1a6;
     x = ((0x1cb - LbTextStringWidth(nickname_text[0]) - 0x70) >> 1) + 0x5a;
     LbTextDraw(x, y, buf);
@@ -463,22 +460,22 @@ u8 setup_balance_files(u8 cd)
     done = 0;
     if (install_type < 3) {
         if (cd) {
-            sprintf(path, D_001208f1, cd_install_path);
+            sprintf(path, "%slevels/net00.sam", cd_install_path);
             check_cd_available(path);
         } else {
-            sprintf(path, D_00120904, cd_install_path);
+            sprintf(path, "%slevels/*00.sam", cd_install_path);
         }
     } else if (cd) {
-        sprintf(path, D_00120915);
+        sprintf(path, "levels/net00.sam");
     } else {
-        sprintf(path, D_00120926);
+        sprintf(path, "levels/*00.sam");
     }
     handle = LbFileFindFirst(path, &balance_file, 0x21);
     if (handle == -1)
         done = 1;
     while (!done) {
         fn_000bbff0(fname, balance_file.Filename);
-        strtok(fname, D_00120935);
+        strtok(fname, ".");
         len = fn_000cd716(fname);
         strncpy(num, &fname[len] - 2, 2);
         num[2] = 0;
@@ -509,11 +506,11 @@ u8 setup_balance_files(u8 cd)
             done = 1;
     }
     if (othervar.f8e != 0) {
-        if (stricmp(current_balance_file->name, D_00120937) != 0) {
+        if (stricmp(current_balance_file->name, "full") != 0) {
             b = current_balance_file;
             current_balance_file = b->next;
             while (current_balance_file != b) {
-                if (stricmp(current_balance_file->name, D_0012093c) == 0)
+                if (stricmp(current_balance_file->name, "full") == 0)
                     break;
                 current_balance_file = current_balance_file->next;
             }
@@ -579,10 +576,10 @@ void balance_filename(char *name)
     len = 0;
     buf = 0;
     if (install_type < 3) {
-        sprintf(path, D_00120941, cd_install_path, name);
+        sprintf(path, "%slevels\\%s00.sam", cd_install_path, name);
         check_cd_available(path);
     } else {
-        sprintf(path, D_00120953, name);
+        sprintf(path, "levels\\%s00.sam", name);
     }
     len = LbFileLengthRnc(path);
     if (len == -1) {
@@ -606,7 +603,7 @@ void balance_filename(char *name)
     if (line[0] == '&' && (s8)line[1] - '0' == myplayer.f21)
         found = 1;
     else
-        sprintf(balance_file_name, D_00120963, line);
+        sprintf(balance_file_name, "%s", line);
     while (!found && i < 5) {
         read_line_from_buf(line, 0x20, buf);
         if (line[0] == '&') {
@@ -616,7 +613,7 @@ void balance_filename(char *name)
         i++;
     }
     if (found)
-        sprintf(balance_file_name, D_00120966, &line[2]);
+        sprintf(balance_file_name, "%s", &line[2]);
     read_line_from_buf(0, 1, 0);
     LbMemoryFree(buf);
 }

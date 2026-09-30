@@ -24,13 +24,10 @@ u32 fn_000cd716(char *s);
 extern "C" {
 
 extern char **D_001602f0;
-extern char D_00120824[], D_00120826[];
 extern u16 D_00160f18, D_00160f1a;
-extern char D_00120829[];
 extern Event D_001549d0[];
 void FadeMusic(u32 time, u8 volume);
 extern CompElement *D_00153f70;
-extern char D_0012082c[], D_00120834[];
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 D_0015f982;
 extern TbSprite *D_00153f30;
@@ -74,8 +71,8 @@ void setup_menus(void)
     pmenu.line_height = LbTextCharHeight('A') + resvars.f1c_IconScreenp->unknown54c;
     pmenu.char_width = LbTextCharWidth('A');
     set_font_from_cache(0);
-    sprintf(sep, D_00120824);
-    sprintf(end, D_00120826);
+    sprintf(sep, ".");
+    sprintf(end, "..");
     for (i = 1; (pmenu.pulldowns[i].length = fn_000cd716(D_001602f0[i])), strcmp(sep, D_001602f0[i]); i++)
         ;
     pmenu.count = i;
@@ -434,7 +431,7 @@ extern "C" void fn_0008b6f8(void)
     n = othervar.f90 + 1;
     debug.unknown8 = n;
     if (othervar.fa0e[n] == 1) {
-        sprintf(othervar.f935, D_00120829, yesno_text[3]);
+        sprintf(othervar.f935, "%s", yesno_text[3]);
         open_yes_no_requester(0xc, (u16)n, 0, 0x8c, 0x63, 0);
     } else {
         D_001549d0[player].type = 0xc;
@@ -615,9 +612,9 @@ void check_save_games(void)
 
     for (i = 0; i < 10; i++) {
         othervar.fa0e[i] = 0;
-        sprintf(buf, D_0012082c, statvar.f575);
+        sprintf(buf, "%ssave\\", statvar.f575);
         fn_000c93bf(buf, myplayer.unknown0);
-        sprintf(buf, D_00120834, buf, i);
+        sprintf(buf, "%s.h%d", buf, i);
         handle = LbFileOpen(buf, 2);
         if (handle != -1) {
             othervar.fa0e[i] = 1;

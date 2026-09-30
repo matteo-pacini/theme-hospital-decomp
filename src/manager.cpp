@@ -17,28 +17,6 @@ struct ManagerHelp {
 extern "C" {
 extern Event D_001549d0[];
 extern s8 D_0012d748[];
-extern char D_00120654[];
-extern char D_00120657[];
-extern char D_0012065a[];
-extern char D_0012065d[];
-extern char D_00120660[];
-extern char D_00120663[];
-extern char D_00120666[];
-extern char D_00120669[];
-extern char D_0012066e[];
-extern char D_00120673[];
-extern char D_00120678[];
-extern char D_0012067d[];
-extern char D_00120682[];
-extern char D_00120687[];
-extern char D_0012068c[];
-extern char D_00120694[];
-extern char D_0012069c[];
-extern char D_0012069f[];
-extern char D_001206a2[];
-extern char D_001206a5[];
-extern char D_001206a8[];
-extern char D_001206ab[];
 
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 }
@@ -103,58 +81,58 @@ void display_manager_text(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0x100;
     LbTextSetWindow(resvars.f3c_ManagerBoxp[11].x, resvars.f3c_ManagerBoxp[11].y, resvars.f3c_ManagerBoxp[11].w, resvars.f3c_ManagerBoxp[11].h);
-    sprintf(buf, D_00120654, bank_text[0]);
+    sprintf(buf, "%s", bank_text[0]);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[12].x, resvars.f3c_ManagerBoxp[12].y, resvars.f3c_ManagerBoxp[12].w, resvars.f3c_ManagerBoxp[12].h);
-    sprintf(buf, D_00120657, bank_text[1]);
+    sprintf(buf, "%s", bank_text[1]);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[13].x, resvars.f3c_ManagerBoxp[13].y, resvars.f3c_ManagerBoxp[13].w, resvars.f3c_ManagerBoxp[13].h);
-    sprintf(buf, D_0012065a, bank_text[2]);
+    sprintf(buf, "%s", bank_text[2]);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[14].x, resvars.f3c_ManagerBoxp[14].y, resvars.f3c_ManagerBoxp[14].w, resvars.f3c_ManagerBoxp[14].h);
-    sprintf(buf, D_0012065d, bank_text[3]);
+    sprintf(buf, "%s", bank_text[3]);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[15].x, resvars.f3c_ManagerBoxp[15].y, resvars.f3c_ManagerBoxp[15].w, resvars.f3c_ManagerBoxp[15].h);
-    sprintf(buf, D_00120660, bank_text[4]);
+    sprintf(buf, "%s", bank_text[4]);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[19].x, resvars.f3c_ManagerBoxp[19].y, resvars.f3c_ManagerBoxp[19].w, resvars.f3c_ManagerBoxp[19].h);
-    sprintf(buf, D_00120663, bank_text[5]);
+    sprintf(buf, "%s", bank_text[5]);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[20].x, resvars.f3c_ManagerBoxp[20].y, resvars.f3c_ManagerBoxp[20].w, resvars.f3c_ManagerBoxp[20].h);
-    sprintf(buf, D_00120666, bank_text[6]);
+    sprintf(buf, "%s", bank_text[6]);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[21].x, resvars.f3c_ManagerBoxp[21].y, resvars.f3c_ManagerBoxp[21].w, resvars.f3c_ManagerBoxp[21].h);
-    sprintf(buf, D_00120669, myhosp->f1bb);
+    sprintf(buf, "$ %d", myhosp->f1bb);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[22].x, resvars.f3c_ManagerBoxp[22].y, resvars.f3c_ManagerBoxp[22].w, resvars.f3c_ManagerBoxp[22].h);
-    sprintf(buf, D_0012066e, myhosp->f35);
+    sprintf(buf, "$ %d", myhosp->f35);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[23].x, resvars.f3c_ManagerBoxp[23].y, resvars.f3c_ManagerBoxp[23].w, resvars.f3c_ManagerBoxp[23].h);
-    sprintf(buf, D_00120673, myhosp->f3d);
+    sprintf(buf, "$ %d", myhosp->f3d);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[24].x, resvars.f3c_ManagerBoxp[24].y, resvars.f3c_ManagerBoxp[24].w, resvars.f3c_ManagerBoxp[24].h);
-    sprintf(buf, D_00120678, towns[myhosp->f29].f10 * myhosp->f3d / 10000 / 12);
+    sprintf(buf, "$ %d", towns[myhosp->f29].f10 * myhosp->f3d / 10000 / 12);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[25].x, resvars.f3c_ManagerBoxp[25].y, resvars.f3c_ManagerBoxp[25].w, resvars.f3c_ManagerBoxp[25].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->f45[0][i];
-    sprintf(buf, D_0012067d, sum);
+    sprintf(buf, "$ %d", sum);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[26].x, resvars.f3c_ManagerBoxp[26].y, resvars.f3c_ManagerBoxp[26].w, resvars.f3c_ManagerBoxp[26].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->f45[1][i];
-    sprintf(buf, D_00120682, sum);
+    sprintf(buf, "$ %d", sum);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[27].x, resvars.f3c_ManagerBoxp[27].y, resvars.f3c_ManagerBoxp[27].w, resvars.f3c_ManagerBoxp[27].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->f45[2][i];
-    sprintf(buf, D_00120687, sum);
+    sprintf(buf, "$ %d", sum);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[28].x, resvars.f3c_ManagerBoxp[28].y, resvars.f3c_ManagerBoxp[28].w, resvars.f3c_ManagerBoxp[28].h);
-    sprintf(buf, D_0012068c, towns[myhosp->f29].fe / 100, towns[myhosp->f29].fe % 100);
+    sprintf(buf, "%d.%d%%", towns[myhosp->f29].fe / 100, towns[myhosp->f29].fe % 100);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     LbTextSetWindow(resvars.f3c_ManagerBoxp[29].x, resvars.f3c_ManagerBoxp[29].y, resvars.f3c_ManagerBoxp[29].w, resvars.f3c_ManagerBoxp[29].h);
-    sprintf(buf, D_00120694, towns[myhosp->f29].f10 / 100, towns[myhosp->f29].f10 % 100);
+    sprintf(buf, "%d.%d%%", towns[myhosp->f29].f10 / 100, towns[myhosp->f29].f10 % 100);
     LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
     if (manager.unknown0) {
         s32 max;
@@ -171,7 +149,7 @@ void display_manager_text(void)
         resvars.f48[6].sprite = 0;
         resvars.f48[7].sprite = 2;
         LbTextSetWindow(resvars.f3c_ManagerBoxp[16].x, resvars.f3c_ManagerBoxp[16].y, resvars.f3c_ManagerBoxp[16].w, resvars.f3c_ManagerBoxp[16].h);
-        sprintf(buf, D_0012069c, insurance_names[insurance_co[gbv.f15e[manager.unknown0]].unknown0[0]]);
+        sprintf(buf, "%s", insurance_names[insurance_co[gbv.f15e[manager.unknown0]].unknown0[0]]);
         LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
         for (i = 0; i < 12; i++) {
             if (max < myhosp->f45[manager.unknown0 - 1][i])
@@ -183,7 +161,7 @@ void display_manager_text(void)
         lbDisplay.draw_flags |= 0x40;
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         if (max > 1) {
-            sprintf(buf, D_0012069f, max);
+            sprintf(buf, "%d", max);
             LbTextDraw(resvars.f40[169].x, resvars.f40[169].y, buf);
         }
         i = mycontrol->unknown650;
@@ -203,7 +181,7 @@ void display_manager_text(void)
             end = mycontrol->unknown650;
             i = 0;
         }
-        sprintf(buf, D_001206a2, month_text[mycontrol->unknown650]);
+        sprintf(buf, "%s", month_text[mycontrol->unknown650]);
         LbTextDraw(resvars.f40[170].x, resvars.f40[170].y, buf);
         compute_help_text(0, 0, 0x17);
         lbDisplay.draw_flags = 0x100;
@@ -213,13 +191,13 @@ void display_manager_text(void)
         resvars.f48[6].sprite = 3;
         resvars.f48[7].sprite = 3;
         LbTextSetWindow(resvars.f3c_ManagerBoxp[16].x, resvars.f3c_ManagerBoxp[16].y, resvars.f3c_ManagerBoxp[16].w, resvars.f3c_ManagerBoxp[16].h);
-        sprintf(buf, D_001206a5, insurance_names[insurance_co[ins_control[0]].unknown0[0]]);
+        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[0]].unknown0[0]]);
         LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
         LbTextSetWindow(resvars.f3c_ManagerBoxp[17].x, resvars.f3c_ManagerBoxp[17].y, resvars.f3c_ManagerBoxp[17].w, resvars.f3c_ManagerBoxp[17].h);
-        sprintf(buf, D_001206a8, insurance_names[insurance_co[ins_control[1]].unknown0[0]]);
+        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[1]].unknown0[0]]);
         LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
         LbTextSetWindow(resvars.f3c_ManagerBoxp[18].x, resvars.f3c_ManagerBoxp[18].y, resvars.f3c_ManagerBoxp[18].w, resvars.f3c_ManagerBoxp[18].h);
-        sprintf(buf, D_001206ab, insurance_names[insurance_co[ins_control[2]].unknown0[0]]);
+        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[2]].unknown0[0]]);
         LbTextDraw(resvars.f40[71].x, resvars.f40[71].y, buf);
         compute_help_text(0, 0, 0x16);
     }

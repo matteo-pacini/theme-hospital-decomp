@@ -3,13 +3,10 @@
 extern "C" {
 void fn_000419bc(Thing *w, u16 arg);
 void fn_00041a08(Thing *w, u16 arg);
-extern char D_001203a0[];
-extern char D_001203e0[];
 u8 fn_0003e6c0(Thing *w);
 void fn_00041a54(Thing *w);
 void fn_00041b08(Thing *w);
 void fn_000444e0(Thing *w);
-extern char D_001203c0[];
 }
 
 struct Complex {
@@ -511,7 +508,7 @@ void staff_complex_retry(Thing *w)
         f = &frame[w->sprite];
         if (f->flags & 1) {
             fn_0003e724(w);
-            sprintf((char *)&debug.unknownc[0x64], D_001203a0, (u16)(w - thing), 0);
+            sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(w - thing), 0);
         }
     }
 }
@@ -939,7 +936,7 @@ void fn_00041a54(Thing *w)
         f = &frame[w->sprite];
         if (f->flags & 1) {
             process_person_complex(w);
-            sprintf((char *)&debug.unknownc[0x64], D_001203c0, (u16)(w - thing), 0);
+            sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(w - thing), 0);
         }
     }
 }
@@ -1140,7 +1137,7 @@ void abandon_complex(Thing *w)
     default: {
         char buf[100];
 
-        sprintf(buf, D_001203e0, (u16)(w - thing));
+        sprintf(buf, "Invalid model for abandon_complex thing number = %d", (u16)(w - thing));
         break;
     }
     }

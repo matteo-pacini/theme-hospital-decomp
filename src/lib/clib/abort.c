@@ -5,7 +5,6 @@ void abort(void);
 #pragma aux abort aborts;
 
 extern abort_handler *D_00153acc;
-extern const char D_00128878[];
 
 void __fatal_runtime_error(const char *msg, unsigned retcode);
 
@@ -18,5 +17,5 @@ void abort(void)
 // FUNCTION: 0xfc7aa
 void __terminate(void)
 {
-    __fatal_runtime_error(D_00128878, 0xff);
+    __fatal_runtime_error("ABNORMAL TERMINATION\r\n", 0xff);
 }

@@ -20,15 +20,6 @@ extern HMDIDRIVER mdi;
 extern HAUDIO audios;
 static S32 locked = 0;
 
-extern char D_001270e8[];
-extern char D_001270f8[];
-extern char D_00127108[];
-extern char D_00127114[];
-extern char D_0012711c[];
-extern char D_00127124[];
-extern char D_0012712c[];
-extern char D_00127140[];
-extern char D_0012715c[];
 
 /* End-of-sequence/sample callbacks: __pascal (callee pops). */
 void END_OF_SEQUENCE(HSEQUENCE S);
@@ -128,36 +119,36 @@ HAUDIO __cdecl AIL_API_quick_load(char *filename)
 
     audio = AIL_mem_alloc_lock(sizeof(AUDIO_TYPE));
     if (audio == NULL) {
-        strcpy(AIL_error, D_001270e8);
+        strcpy(AIL_error, "Out of memory\n");
         return NULL;
     }
     memset(audio, 0, sizeof(AUDIO_TYPE));
     audio->data = AIL_file_read(filename, NULL);
     if (audio->data == NULL) {
         AIL_quick_unload(audio);
-        strcpy(AIL_error, D_001270f8);
+        strcpy(AIL_error, "File not found\n");
         return NULL;
     }
-    if (!strnicmp(audio->data, D_00127108, 8)) {
+    if (!strnicmp(audio->data, "Creative", 8)) {
         audio->type = AUDIO_TYPE_DIGITAL;
-    } else if (!strnicmp((char *)audio->data + 8, D_00127114, 4)) {
+    } else if (!strnicmp((char *)audio->data + 8, "WAVE", 4)) {
         audio->type = AUDIO_TYPE_DIGITAL;
-    } else if (!strnicmp(audio->data, D_0012711c, 4)
-               && !strnicmp((char *)audio->data + 8, D_00127124, 4)) {
+    } else if (!strnicmp(audio->data, "FORM", 4)
+               && !strnicmp((char *)audio->data + 8, "XDIR", 4)) {
         audio->type = AUDIO_TYPE_MIDI;
     } else {
         AIL_quick_unload(audio);
-        strcpy(AIL_error, D_0012712c);
+        strcpy(AIL_error, "Unknown file type\n");
         return NULL;
     }
     if (audio->type == AUDIO_TYPE_MIDI && mdi == NULL) {
         AIL_quick_unload(audio);
-        strcpy(AIL_error, D_00127140);
+        strcpy(AIL_error, "XMIDI support not enabled\n");
         return NULL;
     }
     if (audio->type == AUDIO_TYPE_DIGITAL && dig == NULL) {
         AIL_quick_unload(audio);
-        strcpy(AIL_error, D_0012715c);
+        strcpy(AIL_error, "Digital support not enabled\n");
         return NULL;
     }
     audio->status = QSTAT_DONE;
