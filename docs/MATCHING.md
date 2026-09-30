@@ -114,9 +114,11 @@ and comparing against the original.
 - `tools/variants.py src/FILE 0xADDR`: searches source variants of one
   function (commutative operand swaps, declaration order, `x op= e` forms,
   and with `--kinds ...` local integer types, declarations moved into or
-  out of blocks, `!x`/`x == 0` tests, adjacent statement swaps and
-  inverted if/else) with a beam search scored by objdiff, and prints the
-  best as a diff. It rediscovers, for
+  out of blocks, `!x`/`x == 0` tests, adjacent statement swaps, inverted
+  if/else, and one local reused for another of its type) with a beam
+  search scored by objdiff, and prints the best as a diff. From ailss's
+  earlier source, `--kinds reuse,decls` finds `_SS_build_amplitude_tables`'
+  fix in about a minute. It rediscovers, for
   example, the fixes for `item_upgraded` and `can_i_get_to` from their
   earlier source; review `types` results, which can change behaviour.
 

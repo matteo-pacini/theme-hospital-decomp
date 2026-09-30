@@ -21,6 +21,9 @@ does:
   adjacent two neighbouring simple statements swapped (review these: the
            order can matter)
   ifelse   `if (c) {A} else {B}` -> `if (!c) {B} else {A}`
+  reuse    one local of the same type standing in for another, in the
+           whole body (dropping the other's declaration) or in one block
+           (review these: a merge can change behaviour)
 
 Nothing under src/ is written: the best variant is printed as a diff, and
 --out saves the whole file.
@@ -436,8 +439,28 @@ def ifelse(body):
         yield f"ifelse {line.strip()}", "\n".join(new)
 
 
+def reuse(body):
+    lines = body.split("\n")
+    scalars = []
+    for i, line in enumerate(lines):
+        m = DECL.match(line)
+        if m and m.group(2).split()[0] not in KEYWORDS and not m.group(4):
+            scalars.append((i, m.group(2).strip(), m.group(3)))
+    pairs = brace_pairs(body)
+    for _, type_a, a in scalars:
+        for j, type_b, b in scalars:
+            if a == b or type_a != type_b:
+                continue
+            name = re.compile(rf"(?<![\w.>]){re.escape(b)}\b")
+            yield f"reuse {b} -> {a}", name.sub(a, "\n".join(lines[:j] + lines[j + 1 :]))
+            for lo, hi in pairs:
+                block = body[lo : hi + 1]
+                if name.search(block):
+                    yield f"reuse {b} -> {a} in block at {lo}", body[:lo] + name.sub(a, block) + body[hi + 1 :]
+
+
 KINDS = {"swaps": swaps, "decls": decls, "opassign": opassign, "types": types,
-         "blocks": blocks, "zero": zero, "adjacent": adjacent, "ifelse": ifelse}
+         "blocks": blocks, "zero": zero, "adjacent": adjacent, "ifelse": ifelse, "reuse": reuse}
 
 # ---------------------------------------------------------------- search
 
