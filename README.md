@@ -31,11 +31,19 @@ in DOSBox-X but does not reproduce the original's layout.
 
 ## Setup
 
-1. Extract the GOG installer into `orig/` (the game's `HOSPITAL.EXE` must end
-   up at `orig/HOSPITAL.EXE`, sha1 `d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae`):
+1. Extract the game from GOG's installer into `orig/`. The app checks the
+   installer's name and sha256 and the game's `HOSPITAL.EXE` (sha1
+   `d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae`):
 
    ```sh
-   nix develop -c innoextract -d orig setup_theme_hospital_v3_(28027).exe
+   nix run .#gog-unpack -- 'PATH/setup_theme_hospital_v3_(28027).exe'
+   ```
+
+   To build, rebuild `HOSPITAL.EXE` and play it in DOSBox in one step:
+
+   ```sh
+   nix run .                # DOSBox Staging; --dosbox-x or --dosbox for the others
+   nix run . -- --wlink     # play the wlink-linked build/link/hosp.exe instead
    ```
 
 2. Enter the dev shell and build:

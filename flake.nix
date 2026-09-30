@@ -125,6 +125,41 @@
             "open-watcom-v2-unwrapped"
           ];
       };
+
+      buildTools = with pkgs; [
+        wibo
+        objdiff-cli
+        open-watcom-v2 # wdis, for reading OMF objects; wlink for tools/link.py
+        objconv # ELF to OMF for tools/link.py
+        owdemangle
+        binutils
+        ninja
+        (python3.withPackages (ps: [ ps.capstone ]))
+      ];
+
+      watcomEnv = {
+        WATCOM_10_6 = pkgs.watcom-10_6;
+        WATCOM_10_0A = pkgs.watcom-10_0a;
+        WATCOM_LIBS_10_5 = pkgs.watcom-10_5-libs;
+        WATCOM_LIBS_10_6 = pkgs.watcom-10_6-libs;
+      };
+
+      # `nix run`: build, rebuild HOSPITAL.EXE byte-identical from the units,
+      # and play it in DOSBox with the game data in orig/.
+      play = pkgs.writeShellApplication {
+        name = "theme-hospital";
+        runtimeInputs = buildTools ++ (with pkgs; [ dosbox-staging dosbox-x dosbox coreutils gnused diffutils ]);
+        runtimeEnv = watcomEnv;
+        text = builtins.readFile ./tools/play.sh;
+      };
+
+      # `nix run .#gog-unpack -- PATH/setup_theme_hospital_v3_(28027).exe`:
+      # check GOG's installer and extract the game into orig/.
+      gog-unpack = pkgs.writeShellApplication {
+        name = "gog-unpack";
+        runtimeInputs = with pkgs; [ innoextract coreutils ];
+        text = builtins.readFile ./tools/gog-unpack.sh;
+      };
     in
     {
       overlays.default = overlay;
@@ -133,24 +168,28 @@
         inherit (pkgs) wibo objdiff-cli watcom-10_6 watcom-10_0a watcom-10_5-libs watcom-10_6-libs owdemangle;
       };
 
-      devShells.${system}.default = pkgs.mkShell {
-        packages = with pkgs; [
-          wibo
-          objdiff-cli
-          open-watcom-v2 # wdis, for reading OMF objects; wlink for tools/link.py
-          objconv # ELF to OMF for tools/link.py
-          owdemangle
-          binutils
-          (rizin.withPlugins (p: [ p.rz-ghidra ]))
-          ninja
-          jq
-          innoextract
-          (python3.withPackages (ps: [ ps.capstone ]))
-        ];
-        WATCOM_10_6 = pkgs.watcom-10_6;
-        WATCOM_10_0A = pkgs.watcom-10_0a;
-        WATCOM_LIBS_10_5 = pkgs.watcom-10_5-libs;
-        WATCOM_LIBS_10_6 = pkgs.watcom-10_6-libs;
+      apps.${system} = {
+        default = {
+          type = "app";
+          program = "${play}/bin/theme-hospital";
+        };
+        gog-unpack = {
+          type = "app";
+          program = "${gog-unpack}/bin/gog-unpack";
+        };
       };
+
+      devShells.${system}.default = pkgs.mkShell (
+        {
+          packages =
+            buildTools
+            ++ (with pkgs; [
+              (rizin.withPlugins (p: [ p.rz-ghidra ]))
+              jq
+              innoextract
+            ]);
+        }
+        // watcomEnv
+      );
     };
 }
