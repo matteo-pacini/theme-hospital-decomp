@@ -315,6 +315,14 @@ Observed consequences:
   Block-scope locals take their slot from the declaring block. The demo's
   debug dump (`orig/demo-1997-03/HOSPITAL.debug.txt`) also has line tables
   for library modules, which show block structure.
+- The same line tables give the source order of statements the scheduler
+  interleaves: map each line entry's offset (relative to the module's
+  lowest demo code address) onto the demo's disassembly. `LbMouseSetup`
+  stores `XMoveRatio = 1; YMoveRatio = 1; XSpriteOffset = 0;
+  YSpriteOffset = 0;` in that line order; with the zero stores written
+  between the one stores, the compiler keeps 0 in a register across the
+  `memset` calls and every later zero store reuses it, where the original
+  rematerialises zero per block.
 
 - Registers shifting around an indirect call can come from the function
   pointer parameter's calling convention: a `__cdecl` pointer clobbers
@@ -381,7 +389,14 @@ Observed consequences:
 - A `void` versus value-returning function changes its own codegen
   (`rbplay`: `lea` versus `mov`/`add`, and swapped registers). A `min()`
   macro explains a call evaluated twice (`XMI_swap` in `init_sequence`).
-  Miles reuses parameters as loop variables (`IO`). Look for real code
+  Miles reuses parameters as loop variables (`IO`), and locals too:
+  `SS_build_amplitude_tables` counts every loop with `pan` once the pan
+  table entries are read, and fills the mono tables through `right`
+  (separate `i` and `left` gave esi/edi and eax/edx swapped throughout).
+  A variable in two roles is presumably allocated with its combined
+  savings, so earlier than either role alone would be; when a whole
+  function's registers are a consistent permutation of the target's, look
+  for such sharing. Look for real code
   differences among register noise: a stray `(S8)` cast in
   `XMI_send_channel_voice_message` was a wrong `movsx`.
 - Bullfrog's RNC length is read as sequential statements
@@ -405,6 +420,23 @@ Observed consequences:
   a `this` temp that reorders spill slots, so `HangUpModem` calls the
   inner members directly. `ServiceProvider::Receive` decodes messages
   through the same helpers as `Send`.
+
+- `-oneatx` locals declared in an inner block (`if (...) { u32 ok = 1; ...}`,
+  a loop's end pointer declared just before the loop) take their spill slot
+  and register after the function-scope ones: this fixed swapped stack slots
+  (`SendPlayerInfo`'s `end`, `SendMessageToPlayerId`'s `last`) and a swapped
+  register pair in an inlined loop (`MultiPlayerCallback`'s `ok`).
+  Declaration order at function scope often changes nothing where the block
+  does.
+- An early `return` in a `-zm-` module: `if (msg == 0 || size == 0) return;`
+  keeps the following `switch` dispatch inline and cross-jumps the return
+  into the previous function's epilogue; `if (!msg || !size)` moves the
+  dispatch after the function's code (`SystemUserMsgCallback`).
+- A failure label that ends in `break` to the function's single `return ret`
+  stores before loading the return value (`active = 0; mov al,[ret]`) in
+  every tail-duplicated copy; `return ret;` at the label lets the scheduler
+  hoist the load (`Parser::InputByte`). An initialisation (`sum = 0;`) placed
+  before a `memcpy` is scheduled into it and takes a different register.
 
 ## Known unsolved
 
@@ -460,10 +492,6 @@ predates the tool and uses a separate file instead.
 
 - `_Scale10V` (0xfcad8), `src/lib/clib/scale10v.s`: FDIV checks without
   `pushfd`/`popfd` (C in `scale.c`).
-- `__FreeDPMIBlocks_` (0xebdb8), `src/lib/clib/grownear.standin.s`:
-  Watcom's own code (identical in the 10.5 and 10.6 `CLIB3R`); the module as
-  a whole is in neither library (see Watcom library modules).
-- `_SS_build_amplitude_tables` (0xdfbe0), `src/lib/ail/ailss.standin.s`
 - `XMI_SERVE` (0xe2ff0), `src/lib/ail/ailxmidi.standin.s`
 - `_FtoS_` (0xfc294), `src/lib/clib/ftos.standin.s`: the overflow test computes p - buf in edx and the digit count in eax, the other way round
 - `SMACKTOBUFFER` (0xe8890), `src/lib/smk/smackinp.standin.s`
@@ -482,9 +510,7 @@ predates the tool and uses a separate file instead.
 - `W?$dt:SerialHandler$n()_` (0xf534c), `src/lib/bf2/dosser.standin.s`: the entry also covers SerialHandler::Init's body, where the size _D_001100fe - _D_00110068 is computed in other registers
 - `W?ReadByte$:SerialHandler$n(l)l` (0xf5714), `src/lib/bf2/dosser.standin.s`
 - `W?ReadBytes$:CommHandler$n(pnvul)ul` (0xf63f4), `src/lib/bf2/dosser.standin.s`
-- `W?SendPlayerInfo$:IPXServiceProvider$n(pn$__5303ctCLIENTINFOPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd82f4), `src/lib/bf2/ipxsp.standin.s`
 - `W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v` (0xdc440), `src/lib/bf2/ipxsp.standin.s`
-- `W?SendMessageToPlayerId$:IPXServiceProvider$n(ulpnvul)$TbError$$` (0xdb6d4), `src/lib/bf2/ipxsp.standin.s`
 - `W?BroadcastSystemMessage$:IPXServiceProvider$n(pn$__1p5pi1IPXSYSTEMMESSAGE$$)$TbError$$` (0xd9480), `src/lib/bf2/ipxsp.standin.s`
 - `W?EnumerateAndAddPlayers$:IPXServiceProvider$n(pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd8e34), `src/lib/bf2/ipxsp.standin.s`
 - `W?AddPlayerToSession$:IPXServiceProvider$n(pn$__35ct5sCLIENTJOINPACKET$$pn$__3ljac5NETSOCKET$$)$TbError$$` (0xd852c), `src/lib/bf2/ipxsp.standin.s`
@@ -501,28 +527,24 @@ predates the tool and uses a separate file instead.
 - `W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$` (0xed6c8), `src/lib/bf2/serialsp.standin.s`
 - `W?PrivateReceive$:SerialSP$n(pnvpnul$$TE$$)ul` (0xedf24), `src/lib/bf2/serialsp.standin.s`
 - `W?ProcessAvailableMsg$:SerialSP$n(pnvpnulul)ul` (0xee050), `src/lib/bf2/serialsp.standin.s`
-- `W?InputByte$:Parser$n(uc)$TbError$$` (0xee380), `src/lib/bf2/serialsp.standin.s`
 - `W?EnumeratePlayersForSessionRunning$:ServiceProvider$n(pn(pn$TbNetworkCallbackData$$pnv)vpnv)$TbError$$` (0xd2af8), `src/lib/bf2/sp.standin.s`
 - `W?CheckForDeletedHost$:ServiceProvider$n(pnuc)$TbError$$` (0xd1cc8), `src/lib/bf2/sp.standin.s`
 - `W?Receive$:ServiceProvider$n(ul)$TbError$$` (0xd1e24), `src/lib/bf2/sp.standin.s`
-- `LbDataLoadAll_` (0xbce44), `src/lib/bf1/gdata.standin.s`
-- `LbDataLoad_` (0xbcd18), `src/lib/bf1/gdata.standin.s`: register choice (target loads operands into registers before compares)
-- `LbSpriteDrawRemap_` (0xcbe20), `src/lib/bf1/gspr_rmp.standin.s`
-- `LbTextDraw_` (0xc889c), `src/lib/bf1/gtext.standin.s`: the register zeroing count differs per line-break tail, so the tails are merged differently; jump table placement
+- `LbDataLoadAll_` (0xbce44), `src/lib/bf1/gdata.standin.s`: the slots of `files` and `ret` are swapped. Any extra local declared first gives the target's order (the size sort then puts `files` second), but it also takes a slot, so the original has one more name in the first chunk that never needs memory
+- `LbDataLoad_` (0xbcd18), `src/lib/bf1/gdata.standin.s`: register choice (target loads operands into registers before compares: ebx for `SLength` in the `LbFileLoadAt` compare, esi in the `SEnd` sum) and the second branch's failed allocation jumps to the first branch's `return -100` block. `do { } while (0);` around the `LbFileLoadAt` `if` alone reproduces the ebx compare (89.55%); no form found for the rest
+- `LbSpriteDrawRemap_` (0xcbe20), `src/lib/bf1/gspr_rmp.standin.s`: 12 byte-local slots permuted. The demo's line table puts the function at lines 16-499 with declarations on lines 17-24, so our source's structure (about 400 lines) is not the original's
+- `LbTextDraw_` (0xc889c), `src/lib/bf1/gtext.standin.s`: the register that zeroes `count` differs per line-break tail, so the tails are merged differently; jump table placement. The target zeroes in ebx in consecutive tails, which lets them cross-jump; ours takes a different register in each tail. No single statement swap or truth-test form changes this
 - `W?LbNetwork_CompleteExchange$n(pnv)$TbError$$` (0xc0640), `src/lib/bf1/opt/netint.standin.s`
 - `W?CompleteMultiPlayerExchange$n(pnv)$TbError$$` (0xc08e4), `src/lib/bf1/opt/netint.standin.s`
 - `W?LbNetwork_Exchange$n(pnv)$TbError$$` (0xc0b74), `src/lib/bf1/opt/netint.standin.s`
 - `W?HostDataCollection$n()$TbError$$` (0xc11b8), `src/lib/bf1/opt/netint.standin.s`: register choice and block layout
-- `W?MultiPlayerCallback$n(ulululpnv)pnv` (0xc1518), `src/lib/bf1/opt/netint.standin.s`
 - `W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$` (0xc197c), `src/lib/bf1/opt/netint.standin.s`: register choice and block layout
-- `W?SystemUserMsgCallback$n(ulpnvulpnv)v` (0xc1de8), `src/lib/bf1/opt/netint.standin.s`
 - `W?LbNetwork_Send$n(ulpnvul)$TbError$$` (0xcaac0), `src/lib/bf1/opt/netint3.standin.s`: stack slots of buf, len and msg, and register choice in the data loop
 - `W?LbNetwork_Receive$n(ulpnvul)ul` (0xcade4), `src/lib/bf1/opt/netint3.standin.s`: block layout (the target places the RTS handling of the first loop after the request loop's first test) and register choice (len stays in ebp)
-- `LbMouseSetup_` (0xbd4d0), `src/lib/bf1/smouse.standin.s`
-- `InitSound_` (0xdc970), `src/lib/bf2/init_sou.standin.s`
-- `W?load_music_bank$n(luc)uc` (0xf09c0), `src/lib/bf2/load_mus.standin.s`
-- `W?load_sound_bank$n(luc)uc` (0xf0280), `src/lib/bf2/load_sou.standin.s`
-- `fn_000eff70_` (0xeff70), `src/lib/bf2/load_sou.standin.s`: bank-offset multiply uses eax instead of ecx; volatile load order
+- `InitSound_` (0xdc970), `src/lib/bf2/init_sou.standin.s`: `MaxNumberOfSamples - 1` for `end_sample_id` is computed in ebx, not edx
+- `W?load_music_bank$n(luc)uc` (0xf09c0), `src/lib/bf2/load_mus.standin.s`: the `tab_offset` seek and the `tab_size` read compute `head[bank]`'s offset into the argument register (edx, ebx) where ours uses eax, so `file` moves into eax earlier
+- `W?load_sound_bank$n(luc)uc` (0xf0280), `src/lib/bf2/load_sou.standin.s`: the same for the `data_size` read (ebx)
+- `LoadSounds_` (0xeff70), `src/lib/bf2/load_sou.standin.s`: bank-offset multiply uses eax instead of ecx, and the `xor eax,eax` for `number` comes before the `CurrentSoundBank` load. The flags (`-3`/`-4`/`-5`, `-oe`, `-oa`/`-or`/`-ol`, 10.0a), statement swaps, declaration orders, local types, `BankHead` field signedness and the `n` variable's scope all leave these four sound functions as they are
 
 ## Watcom library modules
 
@@ -547,8 +569,16 @@ so `tools/split.py` lays their units out as built without `-zm`.
 
 No CD's library (10.0a, 10.5, 10.6) has the EXE's `grownear` module as a
 whole: its `__AdjustAmount` rounds to 8 bytes where 10.6's rounds to 4 (the
-module's other functions do match 10.5's and 10.6's), so it stays C, with
-a stand-in for the function its C does not reproduce.
+module's other functions do match 10.5's and 10.6's), so it stays C. Its
+`__FreeDPMIBlocks` never keeps a value in esi across its call to
+`__unlink`, although `__unlink` saves esi: no flag, compiler version or
+source shape reproduces that, and the C calls `__unlink` through a second
+declaration bound to the same symbol with `modify [esi]` (a `modify` on
+`__unlink` itself would drop its `push esi`). A call's zap set is a lever
+on the caller's register choice: OW's `GiveBestReg` (`cg/c/regalloc.c`)
+skips every register that conflicts with the variable's live range (the
+call's zap set included) and takes the best of the rest by move savings,
+then by already-used registers, then by list order.
 
 ## Libraries
 

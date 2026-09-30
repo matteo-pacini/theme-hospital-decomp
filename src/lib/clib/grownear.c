@@ -161,8 +161,16 @@ void __unlink(mheapptr heap)
         next_heap->prev = prev_heap;
 }
 
+/*
+ * __unlink under a second name whose calls treat esi as clobbered. __unlink
+ * itself saves esi, but the original caller never keeps a value in esi
+ * across the call (next lives in ecx); how the original arrived at that is
+ * unknown, and a modify list on __unlink itself would drop its push esi.
+ */
+void __unlink_esi(mheapptr heap);
+#pragma aux __unlink_esi "__unlink_" modify [esi]
+
 // FUNCTION: 0xebdb8
-// NONMATCHING: next is kept in esi instead of ecx
 void __FreeDPMIBlocks(void)
 {
     mheapptr mhp;
@@ -174,7 +182,7 @@ void __FreeDPMIBlocks(void)
         if (mhp->freehead.prev->len + sizeof(heapblkp) == mhp->len) {
             dpmi = (struct dpmi_hdr *)mhp - 1;
             next = mhp->next;
-            __unlink(mhp);
+            __unlink_esi(mhp);
             mhp = next;
             if (dpmi->dos_seg_value == 0)
                 _TinyDPMIFree(dpmi->dpmi_handle, dpmi->dpmi_handle);

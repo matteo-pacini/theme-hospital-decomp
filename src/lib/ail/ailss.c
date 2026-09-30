@@ -146,17 +146,16 @@ void SS_stream_to_buffer(HSAMPLE S)
 }
 
 // FUNCTION: 0x000dfbe0
-// NONMATCHING: register allocation: pan and the loop counters get esi and
-// hw_format edi where the target has them the other way round
+// pan doubles as every loop counter, and the mono tables are filled through
+// right: the register assignment depends on those variables being shared.
 void __cdecl SS_build_amplitude_tables(HSAMPLE S)
 {
+    S32 pan;
     S32 val;
     S32 vol;
-    S32 pan;
     S32 *right;
     S32 right_pan;
     S32 *left;
-    S32 i;
     S32 left_pan;
 
     if (S->volume > 127) {
@@ -196,35 +195,35 @@ void __cdecl SS_build_amplitude_tables(HSAMPLE S)
         left_pan = pan_graph[127 - pan];
         right_pan = pan_graph[pan];
         if (S->flags & DIG_PCM_SIGN) {
-            for (i = 0; i < 32768; i += 256) {
-                val = (i * vol) >> 7;
+            for (pan = 0; pan < 32768; pan += 256) {
+                val = (pan * vol) >> 7;
                 *left++ = (val * left_pan) >> 7;
                 *right++ = (val * right_pan) >> 7;
             }
-            for (i = -32768; i < 0; i += 256) {
-                val = (i * vol) >> 7;
+            for (pan = -32768; pan < 0; pan += 256) {
+                val = (pan * vol) >> 7;
                 *left++ = (val * left_pan) >> 7;
                 *right++ = (val * right_pan) >> 7;
             }
         } else {
-            for (i = -32768; i < 32768; i += 256) {
-                val = (i * vol) >> 7;
+            for (pan = -32768; pan < 32768; pan += 256) {
+                val = (pan * vol) >> 7;
                 *left++ = (val * left_pan) >> 7;
                 *right++ = (val * right_pan) >> 7;
             }
         }
     } else {
-        left = S->vol_scale[0];
+        right = S->vol_scale[0];
         if (S->flags & DIG_PCM_SIGN) {
-            for (i = 0; i < 32768; i += 256) {
-                *left++ = (i * vol) >> 7;
+            for (pan = 0; pan < 32768; pan += 256) {
+                *right++ = (pan * vol) >> 7;
             }
-            for (i = -32768; i < 0; i += 256) {
-                *left++ = (i * vol) >> 7;
+            for (pan = -32768; pan < 0; pan += 256) {
+                *right++ = (pan * vol) >> 7;
             }
         } else {
-            for (i = -32768; i < 32768; i += 256) {
-                *left++ = (i * vol) >> 7;
+            for (pan = -32768; pan < 32768; pan += 256) {
+                *right++ = (pan * vol) >> 7;
             }
         }
     }
