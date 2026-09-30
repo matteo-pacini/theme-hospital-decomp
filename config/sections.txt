@@ -254,5 +254,6 @@ src/lib/bf2/serialsp.cpp _DATA 00151a74 c
 src/lib/bf2/snd/awe32.cpp _DATA 00151b58 9
 src/lib/ail/ailssa.s _DATA 00151b68 20
 src/lib/smk/radtimer.c _DATA 00151b8c 10
+src/lib/smk/unsmack.s _DATA 00151c00 634
 src/lib/bf1/glog.s CONST 0012717c 67
 src/lib/clib/crwd386.s _DATA 0015078c 41

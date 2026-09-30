@@ -114,11 +114,11 @@
     push -1
     push -2
 .L0010b709:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010b71d
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010b71d:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jae .L0010b737
@@ -139,17 +139,17 @@
     cmp ecx, -1
     je .L0010b793
     push ecx
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010b757
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010b77d
 .L0010b757:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -186,17 +186,17 @@
 .globl "fn_0010b7a0_"
 .type "fn_0010b7a0_",@function
 "fn_0010b7a0_":
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010b7b9
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010b7df
 .L0010b7b9:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -209,17 +209,17 @@
     shr ebp, cl
 .L0010b7df:
     {load} mov ah, al
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010b7fa
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010b820
 .L0010b7fa:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -232,18 +232,18 @@
     shr ebp, cl
 .L0010b820:
     xchg al, ah
-    mov word ptr [_D_00151de0], ax
-    cmp byte ptr [_D_00151cc0], 9
+    mov word ptr [.Ldata+0x1e0], ax
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010b841
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010b867
 .L0010b841:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -256,17 +256,17 @@
     shr ebp, cl
 .L0010b867:
     {load} mov ah, al
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010b882
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010b8a8
 .L0010b882:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -279,18 +279,18 @@
     shr ebp, cl
 .L0010b8a8:
     xchg al, ah
-    mov word ptr [_D_00151de2], ax
-    cmp byte ptr [_D_00151cc0], 9
+    mov word ptr [.Ldata+0x1e2], ax
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010b8c9
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010b8ef
 .L0010b8c9:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -303,17 +303,17 @@
     shr ebp, cl
 .L0010b8ef:
     {load} mov ah, al
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010b90a
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010b930
 .L0010b90a:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -326,7 +326,7 @@
     shr ebp, cl
 .L0010b930:
     xchg al, ah
-    mov word ptr [_D_00151de4], ax
+    mov word ptr [.Ldata+0x1e4], ax
     mov dword ptr [edx], 0
     mov dword ptr [edx + 4], 0
     mov dword ptr [edx + 8], 0
@@ -334,11 +334,11 @@
     push -1
     push -2
 .L0010b957:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010b96b
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010b96b:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jae .L0010b985
@@ -360,16 +360,16 @@
     je .L0010ba62
     push edx
     push ecx
-    mov edx, dword ptr [_D_00151c8c]
+    mov edx, dword ptr [.Ldata+0x8c]
     mov ecx, dword ptr [edx]
     test ecx, 0x80000000
     jne .L0010b9cb
 .L0010b9a1:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010b9b5
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010b9b5:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010b9bf
@@ -382,16 +382,16 @@
 .L0010b9cb:
     {load} mov ax, cx
     shl eax, 0x18
-    mov edx, dword ptr [_D_00151c90]
+    mov edx, dword ptr [.Ldata+0x90]
     mov ecx, dword ptr [edx]
     test ecx, 0x80000000
     jne .L0010ba0b
 .L0010b9e1:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010b9f5
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010b9f5:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010b9ff
@@ -406,19 +406,19 @@
     pop ecx
     pop edx
     rol eax, 8
-    cmp word ptr [_D_00151de0], ax
+    cmp word ptr [.Ldata+0x1e0], ax
     jne .L0010ba23
     {load} xor eax, eax
     mov dword ptr [edx + 4], edi
     jmp .L0010ba41
 .L0010ba23:
-    cmp word ptr [_D_00151de2], ax
+    cmp word ptr [.Ldata+0x1e2], ax
     jne .L0010ba33
     {load} xor eax, eax
     mov dword ptr [edx + 8], edi
     jmp .L0010ba41
 .L0010ba33:
-    cmp word ptr [_D_00151de4], ax
+    cmp word ptr [.Ldata+0x1e4], ax
     jne .L0010ba41
     {load} xor eax, eax
     mov dword ptr [edx + 0xc], edi
@@ -464,15 +464,15 @@
 .globl "fn_0010ba90_"
 .type "fn_0010ba90_",@function
 "fn_0010ba90_":
-    mov dword ptr [_D_00151c78], edx
+    mov dword ptr [.Ldata+0x78], edx
     push ebp
-    mov ebp, dword ptr [_D_00151cb4]
+    mov ebp, dword ptr [.Ldata+0xb4]
 .L0010ba9d:
     push ebp
     {load} mov ax, bp
     dec ax
-    mov cl, byte ptr [_D_00151cb0]
-    mov edx, dword ptr [_D_00151c78]
+    mov cl, byte ptr [.Ldata+0xb0]
+    mov edx, dword ptr [.Ldata+0x78]
     mov ebp, dword ptr [edx]
     test ebp, 0xffff
     jne .L0010badf
@@ -492,9 +492,9 @@
     je .L0010bab9
 .L0010badf:
     pop ebp
-    sub edx, dword ptr [_D_00151ca4]
+    sub edx, dword ptr [.Ldata+0xa4]
     shl edx, 8
-    sub cl, byte ptr [_D_00151cb0]
+    sub cl, byte ptr [.Ldata+0xb0]
     neg cl
     {load} mov dl, cl
     mov dword ptr [edi + ebp*4 - 4], edx
@@ -512,11 +512,11 @@
 .globl "fn_0010bb00_"
 .type "fn_0010bb00_",@function
 "fn_0010bb00_":
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010bb14
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010bb14:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010bb2a
@@ -530,26 +530,26 @@
     push eax
     push edx
     push eax
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010bb42
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010bb42:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jae .L0010bb52
-    mov edi, dword ptr [_D_00151c8c]
+    mov edi, dword ptr [.Ldata+0x8c]
     call "fn_0010b700_"
 .L0010bb52:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010bb66
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010bb66:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jae .L0010bb76
-    mov edi, dword ptr [_D_00151c90]
+    mov edi, dword ptr [.Ldata+0x90]
     call "fn_0010b700_"
 .L0010bb76:
     pop edi
@@ -601,91 +601,91 @@
     mov es, eax
     cld
     mov eax, dword ptr [ebp + 8]
-    mov dword ptr [_D_00152200], eax
+    mov dword ptr [.Ldata+0x600], eax
     mov eax, dword ptr [ebp + 0xc]
-    mov dword ptr [_D_00152204], eax
+    mov dword ptr [.Ldata+0x604], eax
     mov eax, dword ptr [ebp + 0x10]
-    mov dword ptr [_D_00152208], eax
+    mov dword ptr [.Ldata+0x608], eax
     mov eax, dword ptr [ebp + 0x14]
-    mov dword ptr [_D_0015220c], eax
+    mov dword ptr [.Ldata+0x60c], eax
     mov eax, dword ptr [ebp + 0x18]
-    mov dword ptr [_D_00152210], eax
+    mov dword ptr [.Ldata+0x610], eax
     mov eax, dword ptr [ebp + 0x1c]
-    mov dword ptr [_D_00152214], eax
-    mov esi, dword ptr [_D_00152200]
-    mov dword ptr [_D_00151c8c], esi
+    mov dword ptr [.Ldata+0x614], eax
+    mov esi, dword ptr [.Ldata+0x600]
+    mov dword ptr [.Ldata+0x8c], esi
     add esi, 0x800
-    mov dword ptr [_D_00151c90], esi
+    mov dword ptr [.Ldata+0x90], esi
     add esi, 0x800
     {load} xor ebp, ebp
-    mov byte ptr [_D_00151cc0], 1
-    mov dword ptr [_D_00151cb0], 0xb
-    mov dword ptr [_D_00151cb4], 0x800
-    .byte 0xba; .long _D_00151c10  # mov edx, 0x31c10
-    mov edi, dword ptr [_D_00152204]
+    mov byte ptr [.Ldata+0xc0], 1
+    mov dword ptr [.Ldata+0xb0], 0xb
+    mov dword ptr [.Ldata+0xb4], 0x800
+    .byte 0xba; .long .Ldata+0x10  # mov edx, 0x31c10
+    mov edi, dword ptr [.Ldata+0x604]
     lea eax, [edi + 0x7468]
-    mov dword ptr [_D_00151ca4], edi
+    mov dword ptr [.Ldata+0xa4], edi
     add edi, 0x10
     call "fn_0010bb00_"
-    mov dword ptr [_D_00151cb0], 0xa
-    mov dword ptr [_D_00151cb4], 0x400
-    .byte 0xba; .long _D_00151c20  # mov edx, 0x31c20
-    mov edi, dword ptr [_D_00152204]
+    mov dword ptr [.Ldata+0xb0], 0xa
+    mov dword ptr [.Ldata+0xb4], 0x400
+    .byte 0xba; .long .Ldata+0x20  # mov edx, 0x31c20
+    mov edi, dword ptr [.Ldata+0x604]
     lea eax, [edi + 0x7468]
     add edi, 0x2010
-    add eax, dword ptr [_D_00152208]
+    add eax, dword ptr [.Ldata+0x608]
     call "fn_0010bb00_"
-    mov dword ptr [_D_00151cb0], 0xc
-    mov dword ptr [_D_00151cb4], 0x1000
-    .byte 0xba; .long _D_00151c30  # mov edx, 0x31c30
-    mov edi, dword ptr [_D_00152204]
+    mov dword ptr [.Ldata+0xb0], 0xc
+    mov dword ptr [.Ldata+0xb4], 0x1000
+    .byte 0xba; .long .Ldata+0x30  # mov edx, 0x31c30
+    mov edi, dword ptr [.Ldata+0x604]
     lea eax, [edi + 0x7468]
     add edi, 0x3010
-    add eax, dword ptr [_D_00152208]
-    add eax, dword ptr [_D_0015220c]
+    add eax, dword ptr [.Ldata+0x608]
+    add eax, dword ptr [.Ldata+0x60c]
     call "fn_0010bb00_"
-    mov dword ptr [_D_00151cb0], 8
-    mov dword ptr [_D_00151cb4], 0x100
-    .byte 0xba; .long _D_00151c40  # mov edx, 0x31c40
-    mov edi, dword ptr [_D_00152204]
+    mov dword ptr [.Ldata+0xb0], 8
+    mov dword ptr [.Ldata+0xb4], 0x100
+    .byte 0xba; .long .Ldata+0x40  # mov edx, 0x31c40
+    mov edi, dword ptr [.Ldata+0x604]
     lea eax, [edi + 0x7468]
     add edi, 0x7010
-    add eax, dword ptr [_D_00152208]
-    add eax, dword ptr [_D_0015220c]
-    add eax, dword ptr [_D_00152210]
+    add eax, dword ptr [.Ldata+0x608]
+    add eax, dword ptr [.Ldata+0x60c]
+    add eax, dword ptr [.Ldata+0x610]
     call "fn_0010bb00_"
-    mov edi, dword ptr [_D_00152204]
-    mov eax, dword ptr [_D_00152208]
+    mov edi, dword ptr [.Ldata+0x604]
+    mov eax, dword ptr [.Ldata+0x608]
     mov dword ptr [edi], eax
-    mov eax, dword ptr [_D_0015220c]
+    mov eax, dword ptr [.Ldata+0x60c]
     mov dword ptr [edi + 4], eax
-    mov eax, dword ptr [_D_00152210]
+    mov eax, dword ptr [.Ldata+0x610]
     mov dword ptr [edi + 8], eax
-    mov eax, dword ptr [_D_00152214]
+    mov eax, dword ptr [.Ldata+0x614]
     mov dword ptr [edi + 0xc], eax
     add edi, 0x7414
-    .byte 0xbe; .long _D_00151c10  # mov esi, 0x31c10
+    .byte 0xbe; .long .Ldata+0x10  # mov esi, 0x31c10
     mov ecx, 0x10
     rep movsd dword ptr es:[edi], dword ptr [esi]
-    mov edi, dword ptr [_D_00152200]
+    mov edi, dword ptr [.Ldata+0x600]
     {load} xor eax, eax
     mov ecx, 0x800
     rep stosd dword ptr es:[edi], eax
-    mov edi, dword ptr [_D_00152200]
-    mov esi, dword ptr [_D_00152204]
+    mov edi, dword ptr [.Ldata+0x600]
+    mov esi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [esi]
     call "fn_0010bee0_"
-    mov esi, dword ptr [_D_00152204]
+    mov esi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [esi + 4]
     add esi, dword ptr [esi]
     call "fn_0010bee0_"
-    mov esi, dword ptr [_D_00152204]
+    mov esi, dword ptr [.Ldata+0x604]
     mov ecx, dword ptr [esi + 4]
     mov eax, dword ptr [esi + 8]
     add esi, dword ptr [esi]
     {load} add esi, ecx
     call "fn_0010bee0_"
-    mov esi, dword ptr [_D_00152204]
+    mov esi, dword ptr [.Ldata+0x604]
     mov edx, dword ptr [esi + 4]
     mov ecx, dword ptr [esi + 8]
     mov eax, dword ptr [esi + 0xc]
@@ -698,29 +698,29 @@
     repe scasd eax, dword ptr es:[edi]
     sub edi, 4
     mov eax, dword ptr [edi]
-    sub edi, dword ptr [_D_00152200]
+    sub edi, dword ptr [.Ldata+0x600]
     xor eax, 0xffffffff
     shl edi, 3
     bsf edx, eax
     {load} add edi, edx
-    mov word ptr [_D_00151cd0], di
-    mov esi, dword ptr [_D_00152204]
+    mov word ptr [.Ldata+0xd0], di
+    mov esi, dword ptr [.Ldata+0x604]
     add esi, 0x7410
     mov word ptr [esi], di
-    mov esi, dword ptr [_D_00152204]
+    mov esi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [esi]
     call "fn_0010bf10_"
-    mov esi, dword ptr [_D_00152204]
+    mov esi, dword ptr [.Ldata+0x604]
     mov eax, dword ptr [esi + 4]
     add esi, dword ptr [esi]
     call "fn_0010bf10_"
-    mov esi, dword ptr [_D_00152204]
+    mov esi, dword ptr [.Ldata+0x604]
     mov ecx, dword ptr [esi + 4]
     mov eax, dword ptr [esi + 8]
     add esi, dword ptr [esi]
     {load} add esi, ecx
     call "fn_0010bf10_"
-    mov esi, dword ptr [_D_00152204]
+    mov esi, dword ptr [.Ldata+0x604]
     mov edx, dword ptr [esi + 4]
     mov ecx, dword ptr [esi + 8]
     mov eax, dword ptr [esi + 0xc]
@@ -755,48 +755,48 @@
     .byte 0x83; .byte 0xfb; .byte 0x00
     .byte 0x74; .byte .L0010be45-.-1
 .L0010be34:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c74
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x74
     .byte 0xf3; .byte 0xa5
-    .byte 0x03; .byte 0x3d; .long _D_00151c80
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x80
     .byte 0x4b
     .byte 0x75; .byte .L0010be34-.-1
 .L0010be45:
     .byte 0x0f; .byte 0xb7; .byte 0x4a; .byte 0x0c
     .byte 0xf3; .byte 0xa5
     .byte 0x66; .byte 0x8b; .byte 0x42; .byte 0x0e
-    .byte 0xff; .byte 0x15; .long _D_00151c9c
+    .byte 0xff; .byte 0x15; .long .Ldata+0x9c
     .byte 0x81; .byte 0xef; .byte 0x00; .byte 0x00; .byte 0x01; .byte 0x00
     .byte 0x0f; .byte 0xb7; .byte 0x4a; .byte 0x10
     .byte 0xf3; .byte 0xa5
-    .byte 0x03; .byte 0x3d; .long _D_00151c80
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x80
     .byte 0x0f; .byte 0xb7; .byte 0x5a; .byte 0x12
     .byte 0x83; .byte 0xfb; .byte 0x00
     .byte 0x74; .byte .L0010be81-.-1
 .L0010be70:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c74
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x74
     .byte 0xf3; .byte 0xa5
-    .byte 0x03; .byte 0x3d; .long _D_00151c80
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x80
     .byte 0x4b
     .byte 0x75; .byte .L0010be70-.-1
 .L0010be81:
     .byte 0x87; .byte 0xd7
     .byte 0x83; .byte 0xc7; .byte 0x14
     .byte 0x0f; .byte 0xb7; .byte 0x07
-    .byte 0xa3; .long _D_00151c60
+    .byte 0xa3; .long .Ldata+0x60
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x02
-    .byte 0xa3; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa3; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c6c
+    .byte 0xa3; .long .Ldata+0x6c
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x06
-    .byte 0xa3; .long _D_00151c84
+    .byte 0xa3; .long .Ldata+0x84
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x08
-    .byte 0xa3; .long _D_00151c88
+    .byte 0xa3; .long .Ldata+0x88
     .byte 0x83; .byte 0xc7; .byte 0x0a
     .byte 0x0f; .byte 0xb7; .byte 0x07
     .byte 0x83; .byte 0xc7; .byte 0x02
-    .byte 0xa3; .long _D_00151c70
-    .byte 0x89; .byte 0x3d; .long _D_00151ca0
+    .byte 0xa3; .long .Ldata+0x70
+    .byte 0x89; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x8b; .byte 0xfa
     .byte 0x5a
     .byte 0x59
@@ -851,7 +851,7 @@
     add esi, 0x7468
     shr eax, 2
     push ebp
-    mov bp, word ptr [_D_00151cd0]
+    mov bp, word ptr [.Ldata+0xd0]
 .L0010bf21:
     test byte ptr [esi], 1
     jne .L0010bf31
@@ -869,33 +869,33 @@
 .L0010bf3e:
     pop ebp
     ret
-    .byte 0x01; .byte 0x15; .long _D_00151df4
-    .byte 0x8b; .byte 0x0d; .long _D_00151df4
-    .byte 0x39; .byte 0x0d; .long _D_00151df0
+    .byte 0x01; .byte 0x15; .long .Ldata+0x1f4
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1f4
+    .byte 0x39; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x77; .byte .L0010bf90-.-1
-    .byte 0x8b; .byte 0x1d; .long _D_00151df0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x1f0
     .byte 0x83; .byte 0xc1; .byte 0x0f
     .byte 0xc1; .byte 0xe9; .byte 0x04
     .byte 0xc1; .byte 0xeb; .byte 0x04
     .byte 0x3b; .byte 0xd9
     .byte 0x74; .byte .L0010bf81-.-1
-    .byte 0x03; .byte 0x1d; .long _D_00151df8
-    .byte 0x03; .byte 0x0d; .long _D_00151df8
+    .byte 0x03; .byte 0x1d; .long .Ldata+0x1f8
+    .byte 0x03; .byte 0x0d; .long .Ldata+0x1f8
 .L0010bf73:
     .byte 0xc6; .byte 0x03; .byte 0x01
     .byte 0x43
     .byte 0x3b; .byte 0xd9
     .byte 0x75; .byte .L0010bf73-.-1
-    .byte 0x2b; .byte 0x0d; .long _D_00151df8
+    .byte 0x2b; .byte 0x0d; .long .Ldata+0x1f8
 .L0010bf81:
     .byte 0xc1; .byte 0xe1; .byte 0x04
-    .byte 0x89; .byte 0x0d; .long _D_00151df0
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
 .L0010bf90:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0a
     .byte 0x77; .byte .L0010bfe0-.-1
     .byte 0x8a; .byte 0xc8
@@ -903,7 +903,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c04
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x4
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x03; .byte 0x00; .byte 0x00
@@ -912,7 +912,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c02c-.-1
@@ -925,13 +925,13 @@
     .byte 0x90
 .L0010bfe0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c04
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x4
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x03; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c02c-.-1
@@ -953,23 +953,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c005-.-1
 .L0010c02c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c24
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x24
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c05d-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c28
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x28
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c2c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x2c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c05d:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0b
     .byte 0x77; .byte .L0010c0b0-.-1
     .byte 0x8a; .byte 0xc8
@@ -977,7 +977,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c00
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x0
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x07; .byte 0x00; .byte 0x00
@@ -986,7 +986,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c0fc-.-1
@@ -1000,13 +1000,13 @@
     .byte 0x87; .byte 0xc9
 .L0010c0b0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c00
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x0
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x07; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c0fc-.-1
@@ -1028,21 +1028,21 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c0d5-.-1
 .L0010c0fc:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c14
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x14
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c134-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c18
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x18
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c1c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c134:
     .byte 0x8b; .byte 0xd0
@@ -1051,29 +1051,29 @@
     .byte 0x66; .byte 0x8b; .byte 0xd0
     .byte 0x8b; .byte 0xc1
     .byte 0x25; .byte 0xff; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xff; .byte 0x14; .byte 0x85; .long _D_00151e00
+    .byte 0xff; .byte 0x14; .byte 0x85; .long .Ldata+0x200
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x8a; .byte 0xc5
     .byte 0x89; .byte 0x1f
     .byte 0x25; .byte 0xff; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x1f
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
-    .byte 0xff; .byte 0x14; .byte 0x85; .long _D_00151e00
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
+    .byte 0xff; .byte 0x14; .byte 0x85; .long .Ldata+0x200
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x1f
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x1f
-    .byte 0x2b; .byte 0x3d; .long _D_00151c6c
-    .byte 0xff; .byte 0x0d; .long _D_00151c68
+    .byte 0x2b; .byte 0x3d; .long .Ldata+0x6c
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x68
     .byte 0x74; .byte .L0010c1c0-.-1
-    .byte 0xff; .byte 0x0d; .long _D_00151c64
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x64
     .byte 0x0f; .byte 0x85; .long .L0010bf90-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010c1c0-.-1
@@ -1084,13 +1084,13 @@
     .byte 0x87; .byte 0xdb
     .byte 0x90
 .L0010c1c0:
-    .byte 0xff; .byte 0x0d; .long _D_00151c70
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x70
     .byte 0x74; .byte .L0010c1f0-.-1
-    .byte 0x03; .byte 0x3d; .long _D_00151c88
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x88
 .L0010c1ce:
-    .byte 0xa1; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
-    .byte 0xff; .byte 0x0d; .long _D_00151c64
+    .byte 0xa1; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x64
     .byte 0x0f; .byte 0x85; .long .L0010bf90-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010c1f0-.-1
@@ -1098,11 +1098,11 @@
     .byte 0x87; .byte 0xc9
     .byte 0x90
 .L0010c1f0:
-    .byte 0xf7; .byte 0x05; .long _D_00151cac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
+    .byte 0xf7; .byte 0x05; .long .Ldata+0xac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x0f; .byte 0x84; .long "_Unsmack"+0x3a0-.-4
     .byte 0x50
 .L0010c201:
-    .byte 0x8b; .byte 0x3d; .long _D_00151ca0
+    .byte 0x8b; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x66; .byte 0x8b; .byte 0x07
     .byte 0x66; .byte 0x3d; .byte 0xfd; .byte 0xff
     .byte 0x72; .byte .L0010c230-.-1
@@ -1117,29 +1117,29 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010c230:
-    .byte 0xff; .byte 0x15; .long _D_00151c9c
+    .byte 0xff; .byte 0x15; .long .Ldata+0x9c
 .L0010c236:
     .byte 0x83; .byte 0xc7; .byte 0x02
     .byte 0x0f; .byte 0xb7; .byte 0x07
-    .byte 0xa3; .long _D_00151c60
+    .byte 0xa3; .long .Ldata+0x60
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x02
-    .byte 0xa3; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa3; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c6c
+    .byte 0xa3; .long .Ldata+0x6c
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x06
-    .byte 0xa3; .long _D_00151c84
+    .byte 0xa3; .long .Ldata+0x84
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x08
-    .byte 0xa3; .long _D_00151c88
+    .byte 0xa3; .long .Ldata+0x88
     .byte 0x83; .byte 0xc7; .byte 0x0a
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c70
+    .byte 0xa3; .long .Ldata+0x70
     .byte 0x8b; .byte 0x07
     .byte 0x83; .byte 0xc7; .byte 0x06
-    .byte 0x89; .byte 0x3d; .long _D_00151ca0
+    .byte 0x89; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x8b; .byte 0xf8
 .L0010c283:
-    .byte 0x83; .byte 0x3d; .long _D_00151c70; .byte 0x00
+    .byte 0x83; .byte 0x3d; .long .Ldata+0x70; .byte 0x00
     .byte 0x0f; .byte 0x84; .long .L0010c201-.-4
     .byte 0x58
     .byte 0xe9; .long .L0010c1ce-.-4
@@ -1149,33 +1149,33 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010c2a0:
-    .byte 0x01; .byte 0x15; .long _D_00151df4
-    .byte 0x8b; .byte 0x0d; .long _D_00151df4
-    .byte 0x39; .byte 0x0d; .long _D_00151df0
+    .byte 0x01; .byte 0x15; .long .Ldata+0x1f4
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1f4
+    .byte 0x39; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x77; .byte .L0010c2f0-.-1
-    .byte 0x8b; .byte 0x1d; .long _D_00151df0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x1f0
     .byte 0x83; .byte 0xc1; .byte 0x0f
     .byte 0xc1; .byte 0xe9; .byte 0x04
     .byte 0xc1; .byte 0xeb; .byte 0x04
     .byte 0x3b; .byte 0xd9
     .byte 0x74; .byte .L0010c2e1-.-1
-    .byte 0x03; .byte 0x1d; .long _D_00151df8
-    .byte 0x03; .byte 0x0d; .long _D_00151df8
+    .byte 0x03; .byte 0x1d; .long .Ldata+0x1f8
+    .byte 0x03; .byte 0x0d; .long .Ldata+0x1f8
 .L0010c2d3:
     .byte 0xc6; .byte 0x03; .byte 0x01
     .byte 0x43
     .byte 0x3b; .byte 0xd9
     .byte 0x75; .byte .L0010c2d3-.-1
-    .byte 0x2b; .byte 0x0d; .long _D_00151df8
+    .byte 0x2b; .byte 0x0d; .long .Ldata+0x1f8
 .L0010c2e1:
     .byte 0xc1; .byte 0xe1; .byte 0x04
-    .byte 0x89; .byte 0x0d; .long _D_00151df0
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
 .L0010c2f0:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010c340-.-1
     .byte 0x8a; .byte 0xc8
@@ -1183,7 +1183,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -1192,7 +1192,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c38c-.-1
@@ -1205,13 +1205,13 @@
     .byte 0x90
 .L0010c340:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c38c-.-1
@@ -1233,23 +1233,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c365-.-1
 .L0010c38c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c3bd-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c3bd:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010c410-.-1
     .byte 0x8a; .byte 0xc8
@@ -1257,7 +1257,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -1266,7 +1266,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c45c-.-1
@@ -1280,13 +1280,13 @@
     .byte 0x87; .byte 0xc9
 .L0010c410:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c45c-.-1
@@ -1308,29 +1308,29 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c435-.-1
 .L0010c45c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c494-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c494:
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010c4f0-.-1
     .byte 0x8a; .byte 0xc8
@@ -1338,7 +1338,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -1347,7 +1347,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c53c-.-1
@@ -1358,13 +1358,13 @@
     .byte 0x90
 .L0010c4f0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c53c-.-1
@@ -1386,23 +1386,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c515-.-1
 .L0010c53c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c56d-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c56d:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010c5c0-.-1
     .byte 0x8a; .byte 0xc8
@@ -1410,7 +1410,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -1419,7 +1419,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c60c-.-1
@@ -1433,13 +1433,13 @@
     .byte 0x87; .byte 0xc9
 .L0010c5c0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c60c-.-1
@@ -1461,29 +1461,29 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c5e5-.-1
 .L0010c60c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c644-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c644:
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010c6a0-.-1
     .byte 0x8a; .byte 0xc8
@@ -1491,7 +1491,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -1500,7 +1500,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c6ec-.-1
@@ -1511,13 +1511,13 @@
     .byte 0x90
 .L0010c6a0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c6ec-.-1
@@ -1539,23 +1539,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c6c5-.-1
 .L0010c6ec:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c71d-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c71d:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010c770-.-1
     .byte 0x8a; .byte 0xc8
@@ -1563,7 +1563,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -1572,7 +1572,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c7bc-.-1
@@ -1586,13 +1586,13 @@
     .byte 0x87; .byte 0xc9
 .L0010c770:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c7bc-.-1
@@ -1614,29 +1614,29 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c795-.-1
 .L0010c7bc:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c7f4-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c7f4:
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010c850-.-1
     .byte 0x8a; .byte 0xc8
@@ -1644,7 +1644,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -1653,7 +1653,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c89c-.-1
@@ -1664,13 +1664,13 @@
     .byte 0x90
 .L0010c850:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c89c-.-1
@@ -1692,23 +1692,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c875-.-1
 .L0010c89c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c8cd-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c8cd:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010c920-.-1
     .byte 0x8a; .byte 0xc8
@@ -1716,7 +1716,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -1725,7 +1725,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c96c-.-1
@@ -1739,13 +1739,13 @@
     .byte 0x87; .byte 0xc9
 .L0010c920:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010c96c-.-1
@@ -1767,42 +1767,42 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010c945-.-1
 .L0010c96c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010c9a4-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010c9a4:
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x07
-    .byte 0x2b; .byte 0x3d; .long _D_00151c6c
-    .byte 0xff; .byte 0x0d; .long _D_00151c68
+    .byte 0x2b; .byte 0x3d; .long .Ldata+0x6c
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x68
     .byte 0x74; .byte .L0010c9d0-.-1
-    .byte 0xff; .byte 0x0d; .long _D_00151c64
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x64
     .byte 0x0f; .byte 0x85; .long .L0010c2f0-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0x87; .byte 0xdb
     .byte 0x90
 .L0010c9d0:
-    .byte 0xff; .byte 0x0d; .long _D_00151c70
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x70
     .byte 0x74; .byte .L0010ca00-.-1
-    .byte 0x03; .byte 0x3d; .long _D_00151c88
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x88
 .L0010c9de:
-    .byte 0xa1; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
-    .byte 0xff; .byte 0x0d; .long _D_00151c64
+    .byte 0xa1; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x64
     .byte 0x0f; .byte 0x85; .long .L0010c2f0-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010ca00-.-1
@@ -1810,11 +1810,11 @@
     .byte 0x87; .byte 0xc9
     .byte 0x90
 .L0010ca00:
-    .byte 0xf7; .byte 0x05; .long _D_00151cac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
+    .byte 0xf7; .byte 0x05; .long .Ldata+0xac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x0f; .byte 0x84; .long "_Unsmack"+0x3a0-.-4
     .byte 0x50
 .L0010ca11:
-    .byte 0x8b; .byte 0x3d; .long _D_00151ca0
+    .byte 0x8b; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x66; .byte 0x8b; .byte 0x07
     .byte 0x66; .byte 0x3d; .byte 0xfd; .byte 0xff
     .byte 0x72; .byte .L0010ca40-.-1
@@ -1829,29 +1829,29 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010ca40:
-    .byte 0xff; .byte 0x15; .long _D_00151c9c
+    .byte 0xff; .byte 0x15; .long .Ldata+0x9c
 .L0010ca46:
     .byte 0x83; .byte 0xc7; .byte 0x02
     .byte 0x0f; .byte 0xb7; .byte 0x07
-    .byte 0xa3; .long _D_00151c60
+    .byte 0xa3; .long .Ldata+0x60
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x02
-    .byte 0xa3; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa3; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c6c
+    .byte 0xa3; .long .Ldata+0x6c
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x06
-    .byte 0xa3; .long _D_00151c84
+    .byte 0xa3; .long .Ldata+0x84
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x08
-    .byte 0xa3; .long _D_00151c88
+    .byte 0xa3; .long .Ldata+0x88
     .byte 0x83; .byte 0xc7; .byte 0x0a
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c70
+    .byte 0xa3; .long .Ldata+0x70
     .byte 0x8b; .byte 0x07
     .byte 0x83; .byte 0xc7; .byte 0x06
-    .byte 0x89; .byte 0x3d; .long _D_00151ca0
+    .byte 0x89; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x8b; .byte 0xf8
 .L0010ca93:
-    .byte 0x83; .byte 0x3d; .long _D_00151c70; .byte 0x00
+    .byte 0x83; .byte 0x3d; .long .Ldata+0x70; .byte 0x00
     .byte 0x0f; .byte 0x84; .long .L0010ca11-.-4
     .byte 0x58
     .byte 0xe9; .long .L0010c9de-.-4
@@ -1861,27 +1861,27 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010cab0:
-    .byte 0x01; .byte 0x15; .long _D_00151df4
-    .byte 0x8b; .byte 0x0d; .long _D_00151df4
-    .byte 0x39; .byte 0x0d; .long _D_00151df0
+    .byte 0x01; .byte 0x15; .long .Ldata+0x1f4
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1f4
+    .byte 0x39; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x77; .byte .L0010cb00-.-1
-    .byte 0x8b; .byte 0x1d; .long _D_00151df0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x1f0
     .byte 0x83; .byte 0xc1; .byte 0x0f
     .byte 0xc1; .byte 0xe9; .byte 0x04
     .byte 0xc1; .byte 0xeb; .byte 0x04
     .byte 0x3b; .byte 0xd9
     .byte 0x74; .byte .L0010caf1-.-1
-    .byte 0x03; .byte 0x1d; .long _D_00151df8
-    .byte 0x03; .byte 0x0d; .long _D_00151df8
+    .byte 0x03; .byte 0x1d; .long .Ldata+0x1f8
+    .byte 0x03; .byte 0x0d; .long .Ldata+0x1f8
 .L0010cae3:
     .byte 0xc6; .byte 0x03; .byte 0x01
     .byte 0x43
     .byte 0x3b; .byte 0xd9
     .byte 0x75; .byte .L0010cae3-.-1
-    .byte 0x2b; .byte 0x0d; .long _D_00151df8
+    .byte 0x2b; .byte 0x0d; .long .Ldata+0x1f8
 .L0010caf1:
     .byte 0xc1; .byte 0xe1; .byte 0x04
-    .byte 0x89; .byte 0x0d; .long _D_00151df0
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
@@ -1891,12 +1891,12 @@
     .byte 0xc1; .byte 0xe0; .byte 0x10
     .byte 0x66; .byte 0x8b; .byte 0xc1
 .L0010cb0a:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c68
-    .byte 0x39; .byte 0x0d; .long _D_00151c64
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x68
+    .byte 0x39; .byte 0x0d; .long .Ldata+0x64
     .byte 0x73; .byte .L0010cb1e-.-1
-    .byte 0x8b; .byte 0x0d; .long _D_00151c64
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x64
 .L0010cb1e:
-    .byte 0x8b; .byte 0x1d; .long _D_00151c60
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x60
     .byte 0x8d; .byte 0x14; .byte 0x8d; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x2b; .byte 0xda
     .byte 0x8b; .byte 0xd1
@@ -1922,10 +1922,10 @@
     .byte 0x03; .byte 0xfb
     .byte 0x8b; .byte 0xca
     .byte 0xf3; .byte 0xab
-    .byte 0x2b; .byte 0x3d; .long _D_00151c84
-    .byte 0x29; .byte 0x15; .long _D_00151c68
+    .byte 0x2b; .byte 0x3d; .long .Ldata+0x84
+    .byte 0x29; .byte 0x15; .long .Ldata+0x68
     .byte 0x74; .byte .L0010cb80-.-1
-    .byte 0x29; .byte 0x15; .long _D_00151c64
+    .byte 0x29; .byte 0x15; .long .Ldata+0x64
     .byte 0x75; .byte .L0010cb0a-.-1
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010cb80-.-1
@@ -1934,24 +1934,24 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010cb80:
-    .byte 0xff; .byte 0x0d; .long _D_00151c70
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x70
     .byte 0x74; .byte .L0010cbb0-.-1
-    .byte 0x03; .byte 0x3d; .long _D_00151c88
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x88
 .L0010cb8e:
-    .byte 0x29; .byte 0x15; .long _D_00151c64
-    .byte 0x8b; .byte 0x0d; .long _D_00151c74
-    .byte 0x89; .byte 0x0d; .long _D_00151c68
+    .byte 0x29; .byte 0x15; .long .Ldata+0x64
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x74
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x68
     .byte 0x0f; .byte 0x85; .long .L0010cb0a-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x90
 .L0010cbb0:
-    .byte 0xf7; .byte 0x05; .long _D_00151cac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
+    .byte 0xf7; .byte 0x05; .long .Ldata+0xac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x0f; .byte 0x84; .long "_Unsmack"+0x3a0-.-4
     .byte 0x50
 .L0010cbc1:
-    .byte 0x8b; .byte 0x3d; .long _D_00151ca0
+    .byte 0x8b; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x66; .byte 0x8b; .byte 0x07
     .byte 0x66; .byte 0x3d; .byte 0xfd; .byte 0xff
     .byte 0x72; .byte .L0010cbf0-.-1
@@ -1966,29 +1966,29 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010cbf0:
-    .byte 0xff; .byte 0x15; .long _D_00151c9c
+    .byte 0xff; .byte 0x15; .long .Ldata+0x9c
 .L0010cbf6:
     .byte 0x83; .byte 0xc7; .byte 0x02
     .byte 0x0f; .byte 0xb7; .byte 0x07
-    .byte 0xa3; .long _D_00151c60
+    .byte 0xa3; .long .Ldata+0x60
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x02
-    .byte 0xa3; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa3; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c6c
+    .byte 0xa3; .long .Ldata+0x6c
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x06
-    .byte 0xa3; .long _D_00151c84
+    .byte 0xa3; .long .Ldata+0x84
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x08
-    .byte 0xa3; .long _D_00151c88
+    .byte 0xa3; .long .Ldata+0x88
     .byte 0x83; .byte 0xc7; .byte 0x0a
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c70
+    .byte 0xa3; .long .Ldata+0x70
     .byte 0x8b; .byte 0x07
     .byte 0x83; .byte 0xc7; .byte 0x06
-    .byte 0x89; .byte 0x3d; .long _D_00151ca0
+    .byte 0x89; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x8b; .byte 0xf8
 .L0010cc43:
-    .byte 0x83; .byte 0x3d; .long _D_00151c70; .byte 0x00
+    .byte 0x83; .byte 0x3d; .long .Ldata+0x70; .byte 0x00
     .byte 0x0f; .byte 0x84; .long .L0010cbc1-.-4
     .byte 0x58
     .byte 0xe9; .long .L0010cb8e-.-4
@@ -3732,33 +3732,33 @@
     .byte 0x8a; .byte 0xe6
     .byte 0x8b; .byte 0xd8
     .byte 0xc3
-    .byte 0x01; .byte 0x15; .long _D_00151df4
-    .byte 0x8b; .byte 0x0d; .long _D_00151df4
-    .byte 0x39; .byte 0x0d; .long _D_00151df0
+    .byte 0x01; .byte 0x15; .long .Ldata+0x1f4
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1f4
+    .byte 0x39; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x77; .byte .L0010da40-.-1
-    .byte 0x8b; .byte 0x1d; .long _D_00151df0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x1f0
     .byte 0x83; .byte 0xc1; .byte 0x0f
     .byte 0xc1; .byte 0xe9; .byte 0x04
     .byte 0xc1; .byte 0xeb; .byte 0x04
     .byte 0x3b; .byte 0xd9
     .byte 0x74; .byte .L0010da31-.-1
-    .byte 0x03; .byte 0x1d; .long _D_00151df8
-    .byte 0x03; .byte 0x0d; .long _D_00151df8
+    .byte 0x03; .byte 0x1d; .long .Ldata+0x1f8
+    .byte 0x03; .byte 0x0d; .long .Ldata+0x1f8
 .L0010da23:
     .byte 0xc6; .byte 0x03; .byte 0x01
     .byte 0x43
     .byte 0x3b; .byte 0xd9
     .byte 0x75; .byte .L0010da23-.-1
-    .byte 0x2b; .byte 0x0d; .long _D_00151df8
+    .byte 0x2b; .byte 0x0d; .long .Ldata+0x1f8
 .L0010da31:
     .byte 0xc1; .byte 0xe1; .byte 0x04
-    .byte 0x89; .byte 0x0d; .long _D_00151df0
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
 .L0010da40:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0a
     .byte 0x77; .byte .L0010da90-.-1
     .byte 0x8a; .byte 0xc8
@@ -3766,7 +3766,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c04
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x4
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x03; .byte 0x00; .byte 0x00
@@ -3775,7 +3775,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010dadc-.-1
@@ -3788,13 +3788,13 @@
     .byte 0x90
 .L0010da90:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c04
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x4
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x03; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010dadc-.-1
@@ -3816,23 +3816,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010dab5-.-1
 .L0010dadc:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c24
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x24
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010db0d-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c28
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x28
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c2c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x2c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010db0d:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0b
     .byte 0x77; .byte .L0010db60-.-1
     .byte 0x8a; .byte 0xc8
@@ -3840,7 +3840,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c00
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x0
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x07; .byte 0x00; .byte 0x00
@@ -3849,7 +3849,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010dbac-.-1
@@ -3863,13 +3863,13 @@
     .byte 0x87; .byte 0xc9
 .L0010db60:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c00
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x0
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x07; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010dbac-.-1
@@ -3891,21 +3891,21 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010db85-.-1
 .L0010dbac:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c14
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x14
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010dbe4-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c18
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x18
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c1c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010dbe4:
     .byte 0x8b; .byte 0xd0
@@ -3914,21 +3914,21 @@
     .byte 0x66; .byte 0x8b; .byte 0xd0
     .byte 0x8b; .byte 0xc1
     .byte 0x25; .byte 0xff; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xff; .byte 0x14; .byte 0x85; .long _D_00151e00
+    .byte 0xff; .byte 0x14; .byte 0x85; .long .Ldata+0x200
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x8a; .byte 0xc5
     .byte 0x89; .byte 0x1f
     .byte 0x25; .byte 0xff; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
-    .byte 0xff; .byte 0x14; .byte 0x85; .long _D_00151e00
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
+    .byte 0xff; .byte 0x14; .byte 0x85; .long .Ldata+0x200
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
     .byte 0x89; .byte 0x1f
-    .byte 0x2b; .byte 0x3d; .long _D_00151c6c
-    .byte 0xff; .byte 0x0d; .long _D_00151c68
+    .byte 0x2b; .byte 0x3d; .long .Ldata+0x6c
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x68
     .byte 0x74; .byte .L0010dc50-.-1
-    .byte 0xff; .byte 0x0d; .long _D_00151c64
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x64
     .byte 0x0f; .byte 0x85; .long .L0010da40-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010dc50-.-1
@@ -3939,13 +3939,13 @@
     .byte 0x87; .byte 0xdb
     .byte 0x90
 .L0010dc50:
-    .byte 0xff; .byte 0x0d; .long _D_00151c70
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x70
     .byte 0x74; .byte .L0010dc80-.-1
-    .byte 0x03; .byte 0x3d; .long _D_00151c88
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x88
 .L0010dc5e:
-    .byte 0xa1; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
-    .byte 0xff; .byte 0x0d; .long _D_00151c64
+    .byte 0xa1; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x64
     .byte 0x0f; .byte 0x85; .long .L0010da40-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010dc80-.-1
@@ -3953,11 +3953,11 @@
     .byte 0x87; .byte 0xc9
     .byte 0x90
 .L0010dc80:
-    .byte 0xf7; .byte 0x05; .long _D_00151cac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
+    .byte 0xf7; .byte 0x05; .long .Ldata+0xac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x0f; .byte 0x84; .long "_Unsmack"+0x3a0-.-4
     .byte 0x50
 .L0010dc91:
-    .byte 0x8b; .byte 0x3d; .long _D_00151ca0
+    .byte 0x8b; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x66; .byte 0x8b; .byte 0x07
     .byte 0x66; .byte 0x3d; .byte 0xfd; .byte 0xff
     .byte 0x72; .byte .L0010dcc0-.-1
@@ -3972,29 +3972,29 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010dcc0:
-    .byte 0xff; .byte 0x15; .long _D_00151c9c
+    .byte 0xff; .byte 0x15; .long .Ldata+0x9c
 .L0010dcc6:
     .byte 0x83; .byte 0xc7; .byte 0x02
     .byte 0x0f; .byte 0xb7; .byte 0x07
-    .byte 0xa3; .long _D_00151c60
+    .byte 0xa3; .long .Ldata+0x60
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x02
-    .byte 0xa3; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa3; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c6c
+    .byte 0xa3; .long .Ldata+0x6c
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x06
-    .byte 0xa3; .long _D_00151c84
+    .byte 0xa3; .long .Ldata+0x84
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x08
-    .byte 0xa3; .long _D_00151c88
+    .byte 0xa3; .long .Ldata+0x88
     .byte 0x83; .byte 0xc7; .byte 0x0a
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c70
+    .byte 0xa3; .long .Ldata+0x70
     .byte 0x8b; .byte 0x07
     .byte 0x83; .byte 0xc7; .byte 0x06
-    .byte 0x89; .byte 0x3d; .long _D_00151ca0
+    .byte 0x89; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x8b; .byte 0xf8
 .L0010dd13:
-    .byte 0x83; .byte 0x3d; .long _D_00151c70; .byte 0x00
+    .byte 0x83; .byte 0x3d; .long .Ldata+0x70; .byte 0x00
     .byte 0x0f; .byte 0x84; .long .L0010dc91-.-4
     .byte 0x58
     .byte 0xe9; .long .L0010dc5e-.-4
@@ -4004,33 +4004,33 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010dd30:
-    .byte 0x01; .byte 0x15; .long _D_00151df4
-    .byte 0x8b; .byte 0x0d; .long _D_00151df4
-    .byte 0x39; .byte 0x0d; .long _D_00151df0
+    .byte 0x01; .byte 0x15; .long .Ldata+0x1f4
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1f4
+    .byte 0x39; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x77; .byte .L0010dd80-.-1
-    .byte 0x8b; .byte 0x1d; .long _D_00151df0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x1f0
     .byte 0x83; .byte 0xc1; .byte 0x0f
     .byte 0xc1; .byte 0xe9; .byte 0x04
     .byte 0xc1; .byte 0xeb; .byte 0x04
     .byte 0x3b; .byte 0xd9
     .byte 0x74; .byte .L0010dd71-.-1
-    .byte 0x03; .byte 0x1d; .long _D_00151df8
-    .byte 0x03; .byte 0x0d; .long _D_00151df8
+    .byte 0x03; .byte 0x1d; .long .Ldata+0x1f8
+    .byte 0x03; .byte 0x0d; .long .Ldata+0x1f8
 .L0010dd63:
     .byte 0xc6; .byte 0x03; .byte 0x01
     .byte 0x43
     .byte 0x3b; .byte 0xd9
     .byte 0x75; .byte .L0010dd63-.-1
-    .byte 0x2b; .byte 0x0d; .long _D_00151df8
+    .byte 0x2b; .byte 0x0d; .long .Ldata+0x1f8
 .L0010dd71:
     .byte 0xc1; .byte 0xe1; .byte 0x04
-    .byte 0x89; .byte 0x0d; .long _D_00151df0
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
 .L0010dd80:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010ddd0-.-1
     .byte 0x8a; .byte 0xc8
@@ -4038,7 +4038,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -4047,7 +4047,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010de1c-.-1
@@ -4060,13 +4060,13 @@
     .byte 0x90
 .L0010ddd0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010de1c-.-1
@@ -4088,23 +4088,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010ddf5-.-1
 .L0010de1c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010de4d-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010de4d:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010dea0-.-1
     .byte 0x8a; .byte 0xc8
@@ -4112,7 +4112,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -4121,7 +4121,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010deec-.-1
@@ -4135,13 +4135,13 @@
     .byte 0x87; .byte 0xc9
 .L0010dea0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010deec-.-1
@@ -4163,27 +4163,27 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010dec5-.-1
 .L0010deec:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010df24-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010df24:
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010df80-.-1
     .byte 0x8a; .byte 0xc8
@@ -4191,7 +4191,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -4200,7 +4200,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010dfcc-.-1
@@ -4215,13 +4215,13 @@
     .byte 0x90
 .L0010df80:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010dfcc-.-1
@@ -4243,23 +4243,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010dfa5-.-1
 .L0010dfcc:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010dffd-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010dffd:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010e050-.-1
     .byte 0x8a; .byte 0xc8
@@ -4267,7 +4267,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -4276,7 +4276,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e09c-.-1
@@ -4290,13 +4290,13 @@
     .byte 0x87; .byte 0xc9
 .L0010e050:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e09c-.-1
@@ -4318,27 +4318,27 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010e075-.-1
 .L0010e09c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010e0d4-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010e0d4:
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010e130-.-1
     .byte 0x8a; .byte 0xc8
@@ -4346,7 +4346,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -4355,7 +4355,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e17c-.-1
@@ -4370,13 +4370,13 @@
     .byte 0x90
 .L0010e130:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e17c-.-1
@@ -4398,23 +4398,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010e155-.-1
 .L0010e17c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010e1ad-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010e1ad:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010e200-.-1
     .byte 0x8a; .byte 0xc8
@@ -4422,7 +4422,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -4431,7 +4431,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e24c-.-1
@@ -4445,13 +4445,13 @@
     .byte 0x87; .byte 0xc9
 .L0010e200:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e24c-.-1
@@ -4473,27 +4473,27 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010e225-.-1
 .L0010e24c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010e284-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010e284:
     .byte 0x89; .byte 0x07
-    .byte 0x03; .byte 0x3d; .long _D_00151c60
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x60
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010e2e0-.-1
     .byte 0x8a; .byte 0xc8
@@ -4501,7 +4501,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -4510,7 +4510,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e32c-.-1
@@ -4525,13 +4525,13 @@
     .byte 0x90
 .L0010e2e0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e32c-.-1
@@ -4553,23 +4553,23 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010e305-.-1
 .L0010e32c:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x8b; .byte 0xc2
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010e35d-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010e35d:
-    .byte 0xa0; .long _D_00151cc0
-    .byte 0x8b; .byte 0x1d; .long _D_00151cd0
+    .byte 0xa0; .long .Ldata+0xc0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0xd0
     .byte 0x3c; .byte 0x0c
     .byte 0x77; .byte .L0010e3b0-.-1
     .byte 0x8a; .byte 0xc8
@@ -4577,7 +4577,7 @@
     .byte 0xfe; .byte 0xc9
     .byte 0x83; .byte 0xc6; .byte 0x02
     .byte 0xd3; .byte 0xe2
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x0b; .byte 0xd5
     .byte 0x8b; .byte 0xea
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
@@ -4586,7 +4586,7 @@
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e3fc-.-1
@@ -4600,13 +4600,13 @@
     .byte 0x87; .byte 0xc9
 .L0010e3b0:
     .byte 0x8b; .byte 0xd5
-    .byte 0x8b; .byte 0x0d; .long _D_00151c08
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x8
     .byte 0x81; .byte 0xe2; .byte 0xff; .byte 0x0f; .byte 0x00; .byte 0x00
     .byte 0x8b; .byte 0x0c; .byte 0x91
     .byte 0xd3; .byte 0xed
     .byte 0x2a; .byte 0xc1
     .byte 0xc1; .byte 0xe9; .byte 0x08
-    .byte 0x03; .byte 0x0d; .long _D_00151ca4
+    .byte 0x03; .byte 0x0d; .long .Ldata+0xa4
     .byte 0x8b; .byte 0x11
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x75; .byte .L0010e3fc-.-1
@@ -4628,28 +4628,28 @@
     .byte 0x66; .byte 0x3b; .byte 0xda
     .byte 0x74; .byte .L0010e3d5-.-1
 .L0010e3fc:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c34
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x34
     .byte 0xc1; .byte 0xca; .byte 0x10
-    .byte 0xa2; .long _D_00151cc0
+    .byte 0xa2; .long .Ldata+0xc0
     .byte 0x66; .byte 0x8b; .byte 0xc2
     .byte 0xc1; .byte 0xca; .byte 0x10
     .byte 0x39; .byte 0x11
     .byte 0x74; .byte .L0010e434-.-1
-    .byte 0xa3; .long _D_00151c78
+    .byte 0xa3; .long .Ldata+0x78
     .byte 0x8b; .byte 0x01
-    .byte 0x8b; .byte 0x1d; .long _D_00151c38
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x38
     .byte 0x89; .byte 0x11
-    .byte 0x8b; .byte 0x0d; .long _D_00151c3c
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x3c
     .byte 0x8b; .byte 0x13
     .byte 0x89; .byte 0x03
-    .byte 0xa1; .long _D_00151c78
+    .byte 0xa1; .long .Ldata+0x78
     .byte 0x89; .byte 0x11
 .L0010e434:
     .byte 0x89; .byte 0x07
-    .byte 0x2b; .byte 0x3d; .long _D_00151c6c
-    .byte 0xff; .byte 0x0d; .long _D_00151c68
+    .byte 0x2b; .byte 0x3d; .long .Ldata+0x6c
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x68
     .byte 0x74; .byte .L0010e460-.-1
-    .byte 0xff; .byte 0x0d; .long _D_00151c64
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x64
     .byte 0x0f; .byte 0x85; .long .L0010dd80-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010e460-.-1
@@ -4659,13 +4659,13 @@
     .byte 0x87; .byte 0xc9
     .byte 0x90
 .L0010e460:
-    .byte 0xff; .byte 0x0d; .long _D_00151c70
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x70
     .byte 0x74; .byte .L0010e490-.-1
-    .byte 0x03; .byte 0x3d; .long _D_00151c88
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x88
 .L0010e46e:
-    .byte 0xa1; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
-    .byte 0xff; .byte 0x0d; .long _D_00151c64
+    .byte 0xa1; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x64
     .byte 0x0f; .byte 0x85; .long .L0010dd80-.-4
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010e490-.-1
@@ -4673,11 +4673,11 @@
     .byte 0x87; .byte 0xc9
     .byte 0x90
 .L0010e490:
-    .byte 0xf7; .byte 0x05; .long _D_00151cac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
+    .byte 0xf7; .byte 0x05; .long .Ldata+0xac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x0f; .byte 0x84; .long "_Unsmack"+0x3a0-.-4
     .byte 0x50
 .L0010e4a1:
-    .byte 0x8b; .byte 0x3d; .long _D_00151ca0
+    .byte 0x8b; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x66; .byte 0x8b; .byte 0x07
     .byte 0x66; .byte 0x3d; .byte 0xfd; .byte 0xff
     .byte 0x72; .byte .L0010e4d0-.-1
@@ -4692,29 +4692,29 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010e4d0:
-    .byte 0xff; .byte 0x15; .long _D_00151c9c
+    .byte 0xff; .byte 0x15; .long .Ldata+0x9c
 .L0010e4d6:
     .byte 0x83; .byte 0xc7; .byte 0x02
     .byte 0x0f; .byte 0xb7; .byte 0x07
-    .byte 0xa3; .long _D_00151c60
+    .byte 0xa3; .long .Ldata+0x60
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x02
-    .byte 0xa3; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa3; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c6c
+    .byte 0xa3; .long .Ldata+0x6c
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x06
-    .byte 0xa3; .long _D_00151c84
+    .byte 0xa3; .long .Ldata+0x84
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x08
-    .byte 0xa3; .long _D_00151c88
+    .byte 0xa3; .long .Ldata+0x88
     .byte 0x83; .byte 0xc7; .byte 0x0a
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c70
+    .byte 0xa3; .long .Ldata+0x70
     .byte 0x8b; .byte 0x07
     .byte 0x83; .byte 0xc7; .byte 0x06
-    .byte 0x89; .byte 0x3d; .long _D_00151ca0
+    .byte 0x89; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x8b; .byte 0xf8
 .L0010e523:
-    .byte 0x83; .byte 0x3d; .long _D_00151c70; .byte 0x00
+    .byte 0x83; .byte 0x3d; .long .Ldata+0x70; .byte 0x00
     .byte 0x0f; .byte 0x84; .long .L0010e4a1-.-4
     .byte 0x58
     .byte 0xe9; .long .L0010e46e-.-4
@@ -4724,35 +4724,35 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010e540:
-    .byte 0x8b; .byte 0x0d; .long _D_00151df4
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1f4
     .byte 0x03; .byte 0xca
-    .byte 0x89; .byte 0x0d; .long _D_00151df4
-    .byte 0xa1; .long _D_00151df0
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x1f4
+    .byte 0xa1; .long .Ldata+0x1f0
     .byte 0x3b; .byte 0xc1
     .byte 0x77; .byte .L0010e584-.-1
     .byte 0xc1; .byte 0xe9; .byte 0x04
     .byte 0xc1; .byte 0xe8; .byte 0x04
     .byte 0x3b; .byte 0xc1
     .byte 0x73; .byte .L0010e57b-.-1
-    .byte 0x03; .byte 0x05; .long _D_00151df8
-    .byte 0x03; .byte 0x0d; .long _D_00151df8
+    .byte 0x03; .byte 0x05; .long .Ldata+0x1f8
+    .byte 0x03; .byte 0x0d; .long .Ldata+0x1f8
 .L0010e56d:
     .byte 0xc6; .byte 0x00; .byte 0x00
     .byte 0x40
     .byte 0x3b; .byte 0xc1
     .byte 0x75; .byte .L0010e56d-.-1
-    .byte 0x2b; .byte 0x0d; .long _D_00151df8
+    .byte 0x2b; .byte 0x0d; .long .Ldata+0x1f8
 .L0010e57b:
     .byte 0xc1; .byte 0xe1; .byte 0x04
-    .byte 0x89; .byte 0x0d; .long _D_00151df0
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x1f0
 .L0010e584:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c68
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x68
     .byte 0x3b; .byte 0xd1
     .byte 0x73; .byte .L0010e590-.-1
     .byte 0x8b; .byte 0xca
 .L0010e590:
     .byte 0x8d; .byte 0x3c; .byte 0x8f
-    .byte 0x29; .byte 0x0d; .long _D_00151c68
+    .byte 0x29; .byte 0x0d; .long .Ldata+0x68
     .byte 0x74; .byte .L0010e5b0-.-1
     .byte 0x2b; .byte 0xd1
     .byte 0x75; .byte .L0010e584-.-1
@@ -4764,12 +4764,12 @@
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
 .L0010e5b0:
-    .byte 0xff; .byte 0x0d; .long _D_00151c70
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x70
     .byte 0x74; .byte .L0010e5e0-.-1
-    .byte 0x03; .byte 0x3d; .long _D_00151c88
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x88
 .L0010e5be:
-    .byte 0xa1; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa1; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x2b; .byte 0xd1
     .byte 0x75; .byte .L0010e584-.-1
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
@@ -4782,11 +4782,11 @@
     .byte 0x87; .byte 0xc9
     .byte 0x90
 .L0010e5e0:
-    .byte 0xf7; .byte 0x05; .long _D_00151cac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
+    .byte 0xf7; .byte 0x05; .long .Ldata+0xac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x0f; .byte 0x84; .long "_Unsmack"+0x3a0-.-4
     .byte 0x50
 .L0010e5f1:
-    .byte 0x8b; .byte 0x3d; .long _D_00151ca0
+    .byte 0x8b; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x66; .byte 0x8b; .byte 0x07
     .byte 0x66; .byte 0x3d; .byte 0xfd; .byte 0xff
     .byte 0x72; .byte .L0010e620-.-1
@@ -4801,29 +4801,29 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010e620:
-    .byte 0xff; .byte 0x15; .long _D_00151c9c
+    .byte 0xff; .byte 0x15; .long .Ldata+0x9c
 .L0010e626:
     .byte 0x83; .byte 0xc7; .byte 0x02
     .byte 0x0f; .byte 0xb7; .byte 0x07
-    .byte 0xa3; .long _D_00151c60
+    .byte 0xa3; .long .Ldata+0x60
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x02
-    .byte 0xa3; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa3; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c6c
+    .byte 0xa3; .long .Ldata+0x6c
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x06
-    .byte 0xa3; .long _D_00151c84
+    .byte 0xa3; .long .Ldata+0x84
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x08
-    .byte 0xa3; .long _D_00151c88
+    .byte 0xa3; .long .Ldata+0x88
     .byte 0x83; .byte 0xc7; .byte 0x0a
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c70
+    .byte 0xa3; .long .Ldata+0x70
     .byte 0x8b; .byte 0x07
     .byte 0x83; .byte 0xc7; .byte 0x06
-    .byte 0x89; .byte 0x3d; .long _D_00151ca0
+    .byte 0x89; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x8b; .byte 0xf8
 .L0010e673:
-    .byte 0x83; .byte 0x3d; .long _D_00151c70; .byte 0x00
+    .byte 0x83; .byte 0x3d; .long .Ldata+0x70; .byte 0x00
     .byte 0x0f; .byte 0x84; .long .L0010e5f1-.-4
     .byte 0x58
     .byte 0xe9; .long .L0010e5be-.-4
@@ -4833,27 +4833,27 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010e690:
-    .byte 0x01; .byte 0x15; .long _D_00151df4
-    .byte 0x8b; .byte 0x0d; .long _D_00151df4
-    .byte 0x39; .byte 0x0d; .long _D_00151df0
+    .byte 0x01; .byte 0x15; .long .Ldata+0x1f4
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x1f4
+    .byte 0x39; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x77; .byte .L0010e6e0-.-1
-    .byte 0x8b; .byte 0x1d; .long _D_00151df0
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x1f0
     .byte 0x83; .byte 0xc1; .byte 0x0f
     .byte 0xc1; .byte 0xe9; .byte 0x04
     .byte 0xc1; .byte 0xeb; .byte 0x04
     .byte 0x3b; .byte 0xd9
     .byte 0x74; .byte .L0010e6d1-.-1
-    .byte 0x03; .byte 0x1d; .long _D_00151df8
-    .byte 0x03; .byte 0x0d; .long _D_00151df8
+    .byte 0x03; .byte 0x1d; .long .Ldata+0x1f8
+    .byte 0x03; .byte 0x0d; .long .Ldata+0x1f8
 .L0010e6c3:
     .byte 0xc6; .byte 0x03; .byte 0x01
     .byte 0x43
     .byte 0x3b; .byte 0xd9
     .byte 0x75; .byte .L0010e6c3-.-1
-    .byte 0x2b; .byte 0x0d; .long _D_00151df8
+    .byte 0x2b; .byte 0x0d; .long .Ldata+0x1f8
 .L0010e6d1:
     .byte 0xc1; .byte 0xe1; .byte 0x04
-    .byte 0x89; .byte 0x0d; .long _D_00151df0
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x1f0
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
@@ -4863,12 +4863,12 @@
     .byte 0xc1; .byte 0xe0; .byte 0x10
     .byte 0x66; .byte 0x8b; .byte 0xc1
 .L0010e6ea:
-    .byte 0x8b; .byte 0x0d; .long _D_00151c68
-    .byte 0x39; .byte 0x0d; .long _D_00151c64
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x68
+    .byte 0x39; .byte 0x0d; .long .Ldata+0x64
     .byte 0x73; .byte .L0010e6fe-.-1
-    .byte 0x8b; .byte 0x0d; .long _D_00151c64
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x64
 .L0010e6fe:
-    .byte 0x8b; .byte 0x1d; .long _D_00151c60
+    .byte 0x8b; .byte 0x1d; .long .Ldata+0x60
     .byte 0x8d; .byte 0x14; .byte 0x8d; .byte 0x00; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x2b; .byte 0xda
     .byte 0x8b; .byte 0xd1
@@ -4882,21 +4882,21 @@
     .byte 0x03; .byte 0xfb
     .byte 0x8b; .byte 0xca
     .byte 0xf3; .byte 0xab
-    .byte 0x2b; .byte 0x3d; .long _D_00151c84
-    .byte 0x29; .byte 0x15; .long _D_00151c68
+    .byte 0x2b; .byte 0x3d; .long .Ldata+0x84
+    .byte 0x29; .byte 0x15; .long .Ldata+0x68
     .byte 0x74; .byte .L0010e740-.-1
-    .byte 0x29; .byte 0x15; .long _D_00151c64
+    .byte 0x29; .byte 0x15; .long .Ldata+0x64
     .byte 0x75; .byte .L0010e6ea-.-1
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0x87; .byte 0xdb
 .L0010e740:
-    .byte 0xff; .byte 0x0d; .long _D_00151c70
+    .byte 0xff; .byte 0x0d; .long .Ldata+0x70
     .byte 0x74; .byte .L0010e770-.-1
-    .byte 0x03; .byte 0x3d; .long _D_00151c88
+    .byte 0x03; .byte 0x3d; .long .Ldata+0x88
 .L0010e74e:
-    .byte 0x29; .byte 0x15; .long _D_00151c64
-    .byte 0x8b; .byte 0x0d; .long _D_00151c74
-    .byte 0x89; .byte 0x0d; .long _D_00151c68
+    .byte 0x29; .byte 0x15; .long .Ldata+0x64
+    .byte 0x8b; .byte 0x0d; .long .Ldata+0x74
+    .byte 0x89; .byte 0x0d; .long .Ldata+0x68
     .byte 0x75; .byte .L0010e6ea-.-1
     .byte 0xe9; .long "_Unsmack"+0x2a0-.-4
     .byte 0xeb; .byte .L0010e770-.-1
@@ -4905,11 +4905,11 @@
     .byte 0x87; .byte 0xdb
     .byte 0x90
 .L0010e770:
-    .byte 0xf7; .byte 0x05; .long _D_00151cac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
+    .byte 0xf7; .byte 0x05; .long .Ldata+0xac; .byte 0x01; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x0f; .byte 0x84; .long "_Unsmack"+0x3a0-.-4
     .byte 0x50
 .L0010e781:
-    .byte 0x8b; .byte 0x3d; .long _D_00151ca0
+    .byte 0x8b; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x66; .byte 0x8b; .byte 0x07
     .byte 0x66; .byte 0x3d; .byte 0xfd; .byte 0xff
     .byte 0x72; .byte .L0010e7b0-.-1
@@ -4924,29 +4924,29 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010e7b0:
-    .byte 0xff; .byte 0x15; .long _D_00151c9c
+    .byte 0xff; .byte 0x15; .long .Ldata+0x9c
 .L0010e7b6:
     .byte 0x83; .byte 0xc7; .byte 0x02
     .byte 0x0f; .byte 0xb7; .byte 0x07
-    .byte 0xa3; .long _D_00151c60
+    .byte 0xa3; .long .Ldata+0x60
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x02
-    .byte 0xa3; .long _D_00151c74
-    .byte 0xa3; .long _D_00151c68
+    .byte 0xa3; .long .Ldata+0x74
+    .byte 0xa3; .long .Ldata+0x68
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c6c
+    .byte 0xa3; .long .Ldata+0x6c
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x06
-    .byte 0xa3; .long _D_00151c84
+    .byte 0xa3; .long .Ldata+0x84
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x08
-    .byte 0xa3; .long _D_00151c88
+    .byte 0xa3; .long .Ldata+0x88
     .byte 0x83; .byte 0xc7; .byte 0x0a
     .byte 0x0f; .byte 0xb7; .byte 0x47; .byte 0x04
-    .byte 0xa3; .long _D_00151c70
+    .byte 0xa3; .long .Ldata+0x70
     .byte 0x8b; .byte 0x07
     .byte 0x83; .byte 0xc7; .byte 0x06
-    .byte 0x89; .byte 0x3d; .long _D_00151ca0
+    .byte 0x89; .byte 0x3d; .long .Ldata+0xa0
     .byte 0x8b; .byte 0xf8
 .L0010e803:
-    .byte 0x83; .byte 0x3d; .long _D_00151c70; .byte 0x00
+    .byte 0x83; .byte 0x3d; .long .Ldata+0x70; .byte 0x00
     .byte 0x0f; .byte 0x84; .long .L0010e781-.-4
     .byte 0x58
     .byte 0xe9; .long .L0010e74e-.-4
@@ -4974,12 +4974,12 @@
     mov es, eax
     cld
     mov esi, dword ptr [ebp + 0xc]
-    mov dword ptr [_D_00151ca4], esi
+    mov dword ptr [.Ldata+0xa4], esi
     add esi, 0x7410
     mov eax, dword ptr [esi]
     add esi, 4
-    mov word ptr [_D_00151cd0], ax
-    .byte 0xbf; .long _D_00151c10  # mov edi, 0x31c10
+    mov word ptr [.Ldata+0xd0], ax
+    .byte 0xbf; .long .Ldata+0x10  # mov edi, 0x31c10
     mov ecx, 4
 .L0010e852:
     lodsd eax, dword ptr [esi]
@@ -4998,69 +4998,69 @@
     jne .L0010e852
     mov eax, dword ptr [ebp + 0xc]
     add eax, 0x10
-    mov dword ptr [_D_00151c00], eax
+    mov dword ptr [.Ldata+0x0], eax
     add eax, 0x2000
-    mov dword ptr [_D_00151c04], eax
+    mov dword ptr [.Ldata+0x4], eax
     add eax, 0x1000
-    mov dword ptr [_D_00151c08], eax
+    mov dword ptr [.Ldata+0x8], eax
     add eax, 0x4000
-    mov dword ptr [_D_00151c0c], eax
+    mov dword ptr [.Ldata+0xc], eax
     mov edi, dword ptr [ebp + 0x10]
     mov esi, dword ptr [ebp + 8]
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x21
+    mov byte ptr [.Ldata+0xc0], 0x21
     mov al, byte ptr [edi]
     and eax, 1
     xor eax, 1
-    mov dword ptr [_D_00151cac], eax
+    mov dword ptr [.Ldata+0xac], eax
     test byte ptr [edi + 1], 1
     jne .L0010e91d
-    test dword ptr [_D_00151cac], 1
+    test dword ptr [.Ldata+0xac], 1
     je .L0010e8e9
-    .byte 0xc7; .byte 0x05; .long _D_00151c50; .long "fn_0010bf10_"+0x1b30  # mov dword ptr [0x31c50], 0xfda40
-    .byte 0xc7; .byte 0x05; .long _D_00151c54; .long "fn_0010bf10_"+0x1e70  # mov dword ptr [0x31c54], 0xfdd80
-    .byte 0xc7; .byte 0x05; .long _D_00151c58; .long "fn_0010bf10_"+0x2674  # mov dword ptr [0x31c58], 0xfe584
-    .byte 0xc7; .byte 0x05; .long _D_00151c5c; .long "fn_0010bf10_"+0x27d0  # mov dword ptr [0x31c5c], 0xfe6e0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "fn_0010bf10_"+0x1b30  # mov dword ptr [0x31c50], 0xfda40
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "fn_0010bf10_"+0x1e70  # mov dword ptr [0x31c54], 0xfdd80
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "fn_0010bf10_"+0x2674  # mov dword ptr [0x31c58], 0xfe584
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "fn_0010bf10_"+0x27d0  # mov dword ptr [0x31c5c], 0xfe6e0
     jmp .L0010e911
 .L0010e8e9:
-    .byte 0xc7; .byte 0x05; .long _D_00151c50; .long "fn_0010bf10_"+0x1ae0  # mov dword ptr [0x31c50], 0xfd9f0
-    .byte 0xc7; .byte 0x05; .long _D_00151c54; .long "fn_0010bf10_"+0x1e20  # mov dword ptr [0x31c54], 0xfdd30
-    .byte 0xc7; .byte 0x05; .long _D_00151c58; .long "fn_0010bf10_"+0x2630  # mov dword ptr [0x31c58], 0xfe540
-    .byte 0xc7; .byte 0x05; .long _D_00151c5c; .long "fn_0010bf10_"+0x2780  # mov dword ptr [0x31c5c], 0xfe690
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "fn_0010bf10_"+0x1ae0  # mov dword ptr [0x31c50], 0xfd9f0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "fn_0010bf10_"+0x1e20  # mov dword ptr [0x31c54], 0xfdd30
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "fn_0010bf10_"+0x2630  # mov dword ptr [0x31c58], 0xfe540
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "fn_0010bf10_"+0x2780  # mov dword ptr [0x31c5c], 0xfe690
 .L0010e911:
-    mov dword ptr [_D_00151ca8], 0
+    mov dword ptr [.Ldata+0xa8], 0
     jmp .L0010e985
 .L0010e91d:
-    test dword ptr [_D_00151cac], 1
+    test dword ptr [.Ldata+0xac], 1
     je .L0010e953
-    .byte 0xc7; .byte 0x05; .long _D_00151c50; .long "fn_0010bf10_"+0x80  # mov dword ptr [0x31c50], 0xfbf90
-    .byte 0xc7; .byte 0x05; .long _D_00151c54; .long "fn_0010bf10_"+0x3e0  # mov dword ptr [0x31c54], 0xfc2f0
-    .byte 0xc7; .byte 0x05; .long _D_00151c58; .long "fn_0010bf10_"+0x2674  # mov dword ptr [0x31c58], 0xfe584
-    .byte 0xc7; .byte 0x05; .long _D_00151c5c; .long "fn_0010bf10_"+0xbf0  # mov dword ptr [0x31c5c], 0xfcb00
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "fn_0010bf10_"+0x80  # mov dword ptr [0x31c50], 0xfbf90
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "fn_0010bf10_"+0x3e0  # mov dword ptr [0x31c54], 0xfc2f0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "fn_0010bf10_"+0x2674  # mov dword ptr [0x31c58], 0xfe584
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "fn_0010bf10_"+0xbf0  # mov dword ptr [0x31c5c], 0xfcb00
     jmp .L0010e97b
 .L0010e953:
-    .byte 0xc7; .byte 0x05; .long _D_00151c50; .long "fn_0010bf10_"+0x30  # mov dword ptr [0x31c50], 0xfbf40
-    .byte 0xc7; .byte 0x05; .long _D_00151c54; .long "fn_0010bf10_"+0x390  # mov dword ptr [0x31c54], 0xfc2a0
-    .byte 0xc7; .byte 0x05; .long _D_00151c58; .long "fn_0010bf10_"+0x2630  # mov dword ptr [0x31c58], 0xfe540
-    .byte 0xc7; .byte 0x05; .long _D_00151c5c; .long "fn_0010bf10_"+0xba0  # mov dword ptr [0x31c5c], 0xfcab0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x50; .long "fn_0010bf10_"+0x30  # mov dword ptr [0x31c50], 0xfbf40
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x54; .long "fn_0010bf10_"+0x390  # mov dword ptr [0x31c54], 0xfc2a0
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x58; .long "fn_0010bf10_"+0x2630  # mov dword ptr [0x31c58], 0xfe540
+    .byte 0xc7; .byte 0x05; .long .Ldata+0x5c; .long "fn_0010bf10_"+0xba0  # mov dword ptr [0x31c5c], 0xfcab0
 .L0010e97b:
-    mov dword ptr [_D_00151ca8], 1
+    mov dword ptr [.Ldata+0xa8], 1
 .L0010e985:
-    test dword ptr [_D_00151cac], 1
+    test dword ptr [.Ldata+0xac], 1
     je .L0010ea53
     mov eax, dword ptr [edi + 4]
-    mov dword ptr [_D_00151c9c], eax
+    mov dword ptr [.Ldata+0x9c], eax
     movzx eax, word ptr [edi + 8]
-    mov dword ptr [_D_00151c80], eax
+    mov dword ptr [.Ldata+0x80], eax
     add edi, 0xa
-    mov dword ptr [_D_00151ca0], edi
+    mov dword ptr [.Ldata+0xa0], edi
     nop
-    test dword ptr [_D_00151cac], 1
+    test dword ptr [.Ldata+0xac], 1
     je .L0010ebc0
     push eax
 .L0010e9c1:
-    mov edi, dword ptr [_D_00151ca0]
+    mov edi, dword ptr [.Ldata+0xa0]
     mov ax, word ptr [edi]
     .byte 0x66; .byte 0x3d; .byte 0xfd; .byte 0xff  # cmp ax, 0xfffd
     jb .L0010e9f0
@@ -5075,55 +5075,55 @@
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
 .L0010e9f0:
-    call dword ptr [_D_00151c9c]
+    call dword ptr [.Ldata+0x9c]
 .L0010e9f6:
     add edi, 2
     movzx eax, word ptr [edi]
-    mov dword ptr [_D_00151c60], eax
+    mov dword ptr [.Ldata+0x60], eax
     movzx eax, word ptr [edi + 2]
-    mov dword ptr [_D_00151c74], eax
-    mov dword ptr [_D_00151c68], eax
+    mov dword ptr [.Ldata+0x74], eax
+    mov dword ptr [.Ldata+0x68], eax
     movzx eax, word ptr [edi + 4]
-    mov dword ptr [_D_00151c6c], eax
+    mov dword ptr [.Ldata+0x6c], eax
     movzx eax, word ptr [edi + 6]
-    mov dword ptr [_D_00151c84], eax
+    mov dword ptr [.Ldata+0x84], eax
     movzx eax, word ptr [edi + 8]
-    mov dword ptr [_D_00151c88], eax
+    mov dword ptr [.Ldata+0x88], eax
     add edi, 0xa
     movzx eax, word ptr [edi + 4]
-    mov dword ptr [_D_00151c70], eax
+    mov dword ptr [.Ldata+0x70], eax
     mov eax, dword ptr [edi]
     add edi, 6
-    mov dword ptr [_D_00151ca0], edi
+    mov dword ptr [.Ldata+0xa0], edi
     {load} mov edi, eax
 .L0010ea43:
-    cmp dword ptr [_D_00151c70], 0
+    cmp dword ptr [.Ldata+0x70], 0
     je .L0010e9c1
     pop eax
     jmp .L0010eab9
 .L0010ea53:
     mov eax, dword ptr [edi + 8]
-    mov dword ptr [_D_00151c74], eax
-    mov dword ptr [_D_00151c68], eax
+    mov dword ptr [.Ldata+0x74], eax
+    mov dword ptr [.Ldata+0x68], eax
     mov eax, dword ptr [edi + 0xc]
-    mov dword ptr [_D_00151c70], eax
+    mov dword ptr [.Ldata+0x70], eax
     mov eax, dword ptr [edi + 0x10]
-    mov dword ptr [_D_00151c6c], eax
+    mov dword ptr [.Ldata+0x6c], eax
     mov eax, dword ptr [edi + 0x14]
-    mov dword ptr [_D_00151c84], eax
+    mov dword ptr [.Ldata+0x84], eax
     mov eax, dword ptr [edi + 0x18]
-    mov dword ptr [_D_00151c60], eax
+    mov dword ptr [.Ldata+0x60], eax
     mov eax, dword ptr [edi + 0x1c]
-    mov dword ptr [_D_00151c88], eax
+    mov dword ptr [.Ldata+0x88], eax
     mov eax, dword ptr [edi + 4]
     mov dword ptr [edi + 0x20], 0
     mov dword ptr [edi + 0x2c], 0
     mov dword ptr [edi + 0x30], 0
     add edi, 0x38
-    mov dword ptr [_D_00151df8], edi
+    mov dword ptr [.Ldata+0x1f8], edi
     {load} xor edi, edi
-    mov dword ptr [_D_00151df4], edi
-    mov dword ptr [_D_00151df0], edi
+    mov dword ptr [.Ldata+0x1f4], edi
+    mov dword ptr [.Ldata+0x1f0], edi
     {load} mov edi, eax
 .L0010eab9:
     jmp .L0010eac0
@@ -5131,8 +5131,8 @@
     .byte 0x87; .byte 0xc9
     .byte 0x90
 .L0010eac0:
-    mov al, byte ptr [_D_00151cc0]
-    mov ebx, dword ptr [_D_00151cd0]
+    mov al, byte ptr [.Ldata+0xc0]
+    mov ebx, dword ptr [.Ldata+0xd0]
     cmp al, 8
     ja .L0010eb10
     {load} mov cl, al
@@ -5140,7 +5140,7 @@
     dec cl
     add esi, 2
     shl edx, cl
-    mov ecx, dword ptr [_D_00151c0c]
+    mov ecx, dword ptr [.Ldata+0xc]
     {load} or edx, ebp
     {load} mov ebp, edx
     and edx, 0xff
@@ -5149,7 +5149,7 @@
     shr ebp, cl
     {load} sub al, cl
     shr ecx, 8
-    add ecx, dword ptr [_D_00151ca4]
+    add ecx, dword ptr [.Ldata+0xa4]
     mov edx, dword ptr [ecx]
     {load} cmp bx, dx
     jne .L0010eb5c
@@ -5162,13 +5162,13 @@
     .byte 0x90
 .L0010eb10:
     {load} mov edx, ebp
-    mov ecx, dword ptr [_D_00151c0c]
+    mov ecx, dword ptr [.Ldata+0xc]
     and edx, 0xff
     mov ecx, dword ptr [ecx + edx*4]
     shr ebp, cl
     {load} sub al, cl
     shr ecx, 8
-    add ecx, dword ptr [_D_00151ca4]
+    add ecx, dword ptr [.Ldata+0xa4]
     mov edx, dword ptr [ecx]
     {load} cmp bx, dx
     jne .L0010eb5c
@@ -5190,30 +5190,30 @@
     {load} cmp bx, dx
     je .L0010eb35
 .L0010eb5c:
-    mov ecx, dword ptr [_D_00151c44]
+    mov ecx, dword ptr [.Ldata+0x44]
     ror edx, 0x10
-    mov byte ptr [_D_00151cc0], al
+    mov byte ptr [.Ldata+0xc0], al
     {load} mov ax, dx
     ror edx, 0x10
     cmp dword ptr [ecx], edx
     je .L0010eb94
-    mov dword ptr [_D_00151c78], eax
+    mov dword ptr [.Ldata+0x78], eax
     mov eax, dword ptr [ecx]
-    mov ebx, dword ptr [_D_00151c48]
+    mov ebx, dword ptr [.Ldata+0x48]
     mov dword ptr [ecx], edx
-    mov ecx, dword ptr [_D_00151c4c]
+    mov ecx, dword ptr [.Ldata+0x4c]
     mov edx, dword ptr [ebx]
     mov dword ptr [ebx], eax
-    mov eax, dword ptr [_D_00151c78]
+    mov eax, dword ptr [.Ldata+0x78]
     mov dword ptr [ecx], edx
 .L0010eb94:
     {load} mov edx, eax
     {load} mov ecx, eax
     and edx, 0xfc
     and ecx, 3
-    mov edx, dword ptr [edx + _D_00151ce0]
-    mov dword ptr [_D_00151c64], edx
-    jmp dword ptr [ecx*4 + _D_00151c50]
+    mov edx, dword ptr [edx + .Ldata+0xe0]
+    mov dword ptr [.Ldata+0x64], edx
+    jmp dword ptr [ecx*4 + .Ldata+0x50]
     .byte 0xeb; .byte .L0010ebc0-.-1
     .byte 0x87; .byte 0xdb
     .byte 0x87; .byte 0xc9
@@ -5221,14 +5221,14 @@
     .byte 0x87; .byte 0xc9
     .byte 0x87; .byte 0xdb
 .L0010ebc0:
-    test dword ptr [_D_00151cac], 1
+    test dword ptr [.Ldata+0xac], 1
     je .L0010ebcf
     pop eax
     jmp .L0010ebe0
 .L0010ebcf:
-    mov eax, dword ptr [_D_00151df0]
+    mov eax, dword ptr [.Ldata+0x1f0]
     shr eax, 4
-    add eax, dword ptr [_D_00151df8]
+    add eax, dword ptr [.Ldata+0x1f8]
     mov byte ptr [eax], 0
 .L0010ebe0:
     pop edx
@@ -5261,74 +5261,74 @@
     mov ax, ds
     mov es, eax
     mov eax, dword ptr [ebp + 0xc]
-    mov dword ptr [_D_00152220], eax
+    mov dword ptr [.Ldata+0x620], eax
     mov eax, dword ptr [ebp + 0x10]
-    mov dword ptr [_D_00152224], eax
+    mov dword ptr [.Ldata+0x624], eax
     mov eax, dword ptr [ebp + 0x14]
-    mov dword ptr [_D_00152228], eax
+    mov dword ptr [.Ldata+0x628], eax
     mov eax, dword ptr [ebp + 0x18]
-    mov dword ptr [_D_0015222c], eax
+    mov dword ptr [.Ldata+0x62c], eax
     mov eax, dword ptr [ebp + 0x1c]
-    mov dword ptr [_D_00152230], eax
-    mov byte ptr [_D_00151cc0], 1
+    mov dword ptr [.Ldata+0x630], eax
+    mov byte ptr [.Ldata+0xc0], 1
     mov esi, dword ptr [ebp + 8]
     {load} xor ebp, ebp
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ec45
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ec45:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jae .L0010f412
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ec62
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ec62:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010ef35
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ec7f
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ec7f:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010ed80
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ec9c
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ec9c:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
-    mov dword ptr [_D_00151c8c], edi
+    mov edi, dword ptr [.Ldata+0x624]
+    mov dword ptr [.Ldata+0x8c], edi
     call "fn_0010b700_"
-    mov edx, dword ptr [_D_00152220]
+    mov edx, dword ptr [.Ldata+0x620]
     cmp edx, 0
     je .L0010f412
-    mov edi, dword ptr [_D_00152230]
+    mov edi, dword ptr [.Ldata+0x630]
     {load} add edx, edi
-    cmp dword ptr [_D_0015222c], edx
+    cmp dword ptr [.Ldata+0x62c], edx
     jae .L0010ecdb
-    sub edx, dword ptr [_D_0015222c]
-    add edx, dword ptr [_D_00152228]
+    sub edx, dword ptr [.Ldata+0x62c]
+    add edx, dword ptr [.Ldata+0x628]
 .L0010ecdb:
-    mov dword ptr [_D_00151dfc], edx
-    cmp byte ptr [_D_00151cc0], 9
+    mov dword ptr [.Ldata+0x1fc], edx
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010ecfa
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010ed20
 .L0010ecfa:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5343,16 +5343,16 @@
     {load} mov cl, al
     jmp .L0010ed61
 .L0010ed24:
-    mov edx, dword ptr [_D_00151c8c]
+    mov edx, dword ptr [.Ldata+0x8c]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010ed5c
 .L0010ed33:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ed47
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ed47:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010ed51
@@ -5368,56 +5368,56 @@
 .L0010ed61:
     mov byte ptr [edi], cl
     inc edi
-    cmp dword ptr [_D_00151dfc], edi
+    cmp dword ptr [.Ldata+0x1fc], edi
     je .L0010f412
-    cmp dword ptr [_D_0015222c], edi
+    cmp dword ptr [.Ldata+0x62c], edi
     jne .L0010ed24
-    mov edi, dword ptr [_D_00152228]
+    mov edi, dword ptr [.Ldata+0x628]
     jmp .L0010ed24
 .L0010ed80:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ed94
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ed94:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
-    mov dword ptr [_D_00151c8c], edi
+    mov edi, dword ptr [.Ldata+0x624]
+    mov dword ptr [.Ldata+0x8c], edi
     call "fn_0010b700_"
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010edbc
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010edbc:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
+    mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x800
-    mov dword ptr [_D_00151c90], edi
+    mov dword ptr [.Ldata+0x90], edi
     call "fn_0010b700_"
-    mov edx, dword ptr [_D_00152220]
+    mov edx, dword ptr [.Ldata+0x620]
     cmp edx, 0
     je .L0010f412
-    mov edi, dword ptr [_D_00152230]
+    mov edi, dword ptr [.Ldata+0x630]
     {load} add edx, edi
-    cmp dword ptr [_D_0015222c], edx
+    cmp dword ptr [.Ldata+0x62c], edx
     jae .L0010ee01
-    sub edx, dword ptr [_D_0015222c]
-    add edx, dword ptr [_D_00152228]
+    sub edx, dword ptr [.Ldata+0x62c]
+    add edx, dword ptr [.Ldata+0x628]
 .L0010ee01:
-    mov dword ptr [_D_00151dfc], edx
-    cmp byte ptr [_D_00151cc0], 9
+    mov dword ptr [.Ldata+0x1fc], edx
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010ee20
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010ee46
 .L0010ee20:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5430,17 +5430,17 @@
     shr ebp, cl
 .L0010ee46:
     {load} mov ah, al
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010ee61
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010ee87
 .L0010ee61:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5455,16 +5455,16 @@
     {load} mov cx, ax
     .byte 0xe9; .long .L0010ef0c-.-4  # jmp 0x10ef0c
 .L0010ee8f:
-    mov edx, dword ptr [_D_00151c8c]
+    mov edx, dword ptr [.Ldata+0x8c]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010eec7
 .L0010ee9e:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010eeb2
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010eeb2:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010eebc
@@ -5478,16 +5478,16 @@
     {load} mov ax, ax
     {load} add cl, al
     adc ch, 0
-    mov edx, dword ptr [_D_00151c90]
+    mov edx, dword ptr [.Ldata+0x90]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010ef07
 .L0010eede:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010eef2
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010eef2:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010eefc
@@ -5503,64 +5503,64 @@
 .L0010ef0c:
     mov word ptr [edi], cx
     add edi, 2
-    cmp dword ptr [_D_00151dfc], edi
+    cmp dword ptr [.Ldata+0x1fc], edi
     je .L0010f412
-    cmp dword ptr [_D_0015222c], edi
+    cmp dword ptr [.Ldata+0x62c], edi
     jne .L0010ee8f
-    mov edi, dword ptr [_D_00152228]
+    mov edi, dword ptr [.Ldata+0x628]
     jmp .L0010ee8f
 .L0010ef35:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ef49
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ef49:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010f101
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ef66
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ef66:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
-    mov dword ptr [_D_00151c8c], edi
+    mov edi, dword ptr [.Ldata+0x624]
+    mov dword ptr [.Ldata+0x8c], edi
     call "fn_0010b700_"
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010ef8e
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010ef8e:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
+    mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x800
-    mov dword ptr [_D_00151c90], edi
+    mov dword ptr [.Ldata+0x90], edi
     call "fn_0010b700_"
-    mov edx, dword ptr [_D_00152220]
+    mov edx, dword ptr [.Ldata+0x620]
     cmp edx, 0
     je .L0010f412
-    mov edi, dword ptr [_D_00152230]
+    mov edi, dword ptr [.Ldata+0x630]
     {load} add edx, edi
-    cmp dword ptr [_D_0015222c], edx
+    cmp dword ptr [.Ldata+0x62c], edx
     jae .L0010efd3
-    sub edx, dword ptr [_D_0015222c]
-    add edx, dword ptr [_D_00152228]
+    sub edx, dword ptr [.Ldata+0x62c]
+    add edx, dword ptr [.Ldata+0x628]
 .L0010efd3:
-    mov dword ptr [_D_00151dfc], edx
-    cmp byte ptr [_D_00151cc0], 9
+    mov dword ptr [.Ldata+0x1fc], edx
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010eff2
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010f018
 .L0010eff2:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5573,17 +5573,17 @@
     shr ebp, cl
 .L0010f018:
     {load} mov ah, al
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010f033
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010f059
 .L0010f033:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5598,16 +5598,16 @@
     {load} mov cx, ax
     jmp .L0010f0d8
 .L0010f05e:
-    mov edx, dword ptr [_D_00151c8c]
+    mov edx, dword ptr [.Ldata+0x8c]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010f096
 .L0010f06d:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f081
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f081:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010f08b
@@ -5620,16 +5620,16 @@
 .L0010f096:
     {load} mov ax, ax
     {load} add cl, al
-    mov edx, dword ptr [_D_00151c90]
+    mov edx, dword ptr [.Ldata+0x90]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010f0d3
 .L0010f0aa:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f0be
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f0be:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010f0c8
@@ -5645,78 +5645,78 @@
 .L0010f0d8:
     mov word ptr [edi], cx
     add edi, 2
-    cmp dword ptr [_D_00151dfc], edi
+    cmp dword ptr [.Ldata+0x1fc], edi
     je .L0010f412
-    cmp dword ptr [_D_0015222c], edi
+    cmp dword ptr [.Ldata+0x62c], edi
     jne .L0010f05e
-    mov edi, dword ptr [_D_00152228]
+    mov edi, dword ptr [.Ldata+0x628]
     jmp .L0010f05e
 .L0010f101:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f115
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f115:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
-    mov dword ptr [_D_00151c8c], edi
+    mov edi, dword ptr [.Ldata+0x624]
+    mov dword ptr [.Ldata+0x8c], edi
     call "fn_0010b700_"
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f13d
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f13d:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
+    mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x800
-    mov dword ptr [_D_00151c90], edi
+    mov dword ptr [.Ldata+0x90], edi
     call "fn_0010b700_"
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f16b
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f16b:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
+    mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x1000
-    mov dword ptr [_D_00151c94], edi
+    mov dword ptr [.Ldata+0x94], edi
     call "fn_0010b700_"
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f199
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f199:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
-    mov edi, dword ptr [_D_00152224]
+    mov edi, dword ptr [.Ldata+0x624]
     add edi, 0x1800
-    mov dword ptr [_D_00151c98], edi
+    mov dword ptr [.Ldata+0x98], edi
     call "fn_0010b700_"
-    mov edx, dword ptr [_D_00152220]
+    mov edx, dword ptr [.Ldata+0x620]
     cmp edx, 0
     je .L0010f412
-    mov edi, dword ptr [_D_00152230]
+    mov edi, dword ptr [.Ldata+0x630]
     {load} add edx, edi
-    cmp dword ptr [_D_0015222c], edx
+    cmp dword ptr [.Ldata+0x62c], edx
     jae .L0010f1de
-    sub edx, dword ptr [_D_0015222c]
-    add edx, dword ptr [_D_00152228]
+    sub edx, dword ptr [.Ldata+0x62c]
+    add edx, dword ptr [.Ldata+0x628]
 .L0010f1de:
-    mov dword ptr [_D_00151dfc], edx
-    cmp byte ptr [_D_00151cc0], 9
+    mov dword ptr [.Ldata+0x1fc], edx
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010f1fd
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010f223
 .L0010f1fd:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5729,17 +5729,17 @@
     shr ebp, cl
 .L0010f223:
     {load} mov ah, al
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010f23e
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010f264
 .L0010f23e:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5752,17 +5752,17 @@
     shr ebp, cl
 .L0010f264:
     shl eax, 0x10
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010f280
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010f2a6
 .L0010f280:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5775,17 +5775,17 @@
     shr ebp, cl
 .L0010f2a6:
     {load} mov ah, al
-    cmp byte ptr [_D_00151cc0], 9
+    cmp byte ptr [.Ldata+0xc0], 9
     jb .L0010f2c1
     {load} mov ebx, ebp
-    sub byte ptr [_D_00151cc0], 8
+    sub byte ptr [.Ldata+0xc0], 8
     shr ebp, 8
     {load} mov al, bl
     jmp .L0010f2e7
 .L0010f2c1:
-    mov cl, byte ptr [_D_00151cc0]
+    mov cl, byte ptr [.Ldata+0xc0]
     {load} mov ebx, ebp
-    add byte ptr [_D_00151cc0], 0x18
+    add byte ptr [.Ldata+0xc0], 0x18
     {load} mov al, bl
     mov ebx, dword ptr [esi]
     dec cl
@@ -5800,16 +5800,16 @@
     {load} mov ecx, eax
     jmp .L0010f3ee
 .L0010f2ee:
-    mov edx, dword ptr [_D_00151c8c]
+    mov edx, dword ptr [.Ldata+0x8c]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010f326
 .L0010f2fd:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f311
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f311:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010f31b
@@ -5823,16 +5823,16 @@
     {load} mov ax, ax
     {load} add cl, al
     adc ch, 0
-    mov edx, dword ptr [_D_00151c90]
+    mov edx, dword ptr [.Ldata+0x90]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010f366
 .L0010f33d:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f351
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f351:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010f35b
@@ -5846,16 +5846,16 @@
     {load} mov ax, ax
     {load} add ch, al
     ror ecx, 0x10
-    mov edx, dword ptr [_D_00151c94]
+    mov edx, dword ptr [.Ldata+0x94]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010f3a6
 .L0010f37d:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f391
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f391:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010f39b
@@ -5869,16 +5869,16 @@
     {load} mov ax, ax
     {load} add cl, al
     adc ch, 0
-    mov edx, dword ptr [_D_00151c98]
+    mov edx, dword ptr [.Ldata+0x98]
     mov eax, dword ptr [edx]
     test eax, 0x80000000
     jne .L0010f3e6
 .L0010f3bd:
-    dec byte ptr [_D_00151cc0]
+    dec byte ptr [.Ldata+0xc0]
     jne .L0010f3d1
     mov ebp, dword ptr [esi]
     add esi, 4
-    mov byte ptr [_D_00151cc0], 0x20
+    mov byte ptr [.Ldata+0xc0], 0x20
 .L0010f3d1:
     .byte 0xc1; .byte 0xed; .byte 0x01  # shr ebp, 1
     jb .L0010f3db
@@ -5895,11 +5895,11 @@
 .L0010f3ee:
     mov dword ptr [edi], ecx
     add edi, 4
-    cmp dword ptr [_D_00151dfc], edi
+    cmp dword ptr [.Ldata+0x1fc], edi
     je .L0010f412
-    cmp dword ptr [_D_0015222c], edi
+    cmp dword ptr [.Ldata+0x62c], edi
     jne .L0010f2ee
-    mov edi, dword ptr [_D_00152228]
+    mov edi, dword ptr [.Ldata+0x628]
     jmp .L0010f2ee
 .L0010f412:
     pop es
@@ -6086,7 +6086,7 @@
     lea eax, [esi + 0x7410]
     mov cx, word ptr [eax]
     add eax, 4
-    mov word ptr [_D_00151cd0], cx
+    mov word ptr [.Ldata+0xd0], cx
     mov cl, byte ptr [edi]
     {load} mov ch, cl
     mov word ptr [eax + 0x12], cx
@@ -6098,7 +6098,7 @@
     jecxz .L0010f5bb
 .L0010f5a0:
     lodsd eax, dword ptr [esi]
-    cmp word ptr [_D_00151cd0], ax
+    cmp word ptr [.Ldata+0xd0], ax
     je .L0010f5b8
     {load} mov bl, al
     mov al, byte ptr [edi + ebx]
@@ -6119,7 +6119,7 @@
     jecxz .L0010f5ee
 .L0010f5d3:
     lodsd eax, dword ptr [esi]
-    cmp word ptr [_D_00151cd0], ax
+    cmp word ptr [.Ldata+0xd0], ax
     je .L0010f5eb
     {load} mov bl, al
     mov al, byte ptr [edi + ebx]
@@ -6142,7 +6142,7 @@
 .L0010f609:
     lodsd eax, dword ptr [esi]
     {load} mov edx, eax
-    cmp word ptr [_D_00151cd0], ax
+    cmp word ptr [.Ldata+0xd0], ax
     je .L0010f625
     and edx, 3
     cmp edx, 3
@@ -6198,3 +6198,330 @@
     .byte 0xdb
     .byte 0x87; .byte 0xc9
 .size "_SmackRemapTables",.-"_SmackRemapTables"
+
+
+.section _DATA,"aw",@progbits
+.Ldata:
+    .fill 56, 4, 0
+    .long 0x1
+    .long 0x2
+    .long 0x3
+    .long 0x4
+    .long 0x5
+    .long 0x6
+    .long 0x7
+    .long 0x8
+    .long 0x9
+    .long 0xa
+    .long 0xb
+    .long 0xc
+    .long 0xd
+    .long 0xe
+    .long 0xf
+    .long 0x10
+    .long 0x11
+    .long 0x12
+    .long 0x13
+    .long 0x14
+    .long 0x15
+    .long 0x16
+    .long 0x17
+    .long 0x18
+    .long 0x19
+    .long 0x1a
+    .long 0x1b
+    .long 0x1c
+    .long 0x1d
+    .long 0x1e
+    .long 0x1f
+    .long 0x20
+    .long 0x21
+    .long 0x22
+    .long 0x23
+    .long 0x24
+    .long 0x25
+    .long 0x26
+    .long 0x27
+    .long 0x28
+    .long 0x29
+    .long 0x2a
+    .long 0x2b
+    .long 0x2c
+    .long 0x2d
+    .long 0x2e
+    .long 0x2f
+    .long 0x30
+    .long 0x31
+    .long 0x32
+    .long 0x33
+    .long 0x34
+    .long 0x35
+    .long 0x36
+    .long 0x37
+    .long 0x38
+    .long 0x39
+    .long 0x3a
+    .long 0x3b
+    .long 0x80
+    .long 0x100
+    .long 0x200
+    .long 0x400
+    .long 0x800
+    .fill 8, 4, 0
+    .long .L0010cc60
+    .long .L0010cc60+0xc
+    .long .L0010cc60+0x18
+    .long .L0010cc60+0x24
+    .long .L0010cc60+0x30
+    .long .L0010cc60+0x40
+    .long .L0010cc60+0x50
+    .long .L0010cc60+0x60
+    .long .L0010cc60+0x70
+    .long .L0010cc60+0x7c
+    .long .L0010cc60+0x88
+    .long .L0010cc60+0x94
+    .long .L0010cc60+0xa0
+    .long .L0010cc60+0xb0
+    .long .L0010cc60+0xc0
+    .long .L0010cc60+0xd0
+    .long .L0010cc60+0xe0
+    .long .L0010cc60+0xec
+    .long .L0010cc60+0xf8
+    .long .L0010cc60+0x108
+    .long .L0010cc60+0x114
+    .long .L0010cc60+0x124
+    .long .L0010cc60+0x134
+    .long .L0010cc60+0x144
+    .long .L0010cc60+0x154
+    .long .L0010cc60+0x160
+    .long .L0010cc60+0x16c
+    .long .L0010cc60+0x178
+    .long .L0010cc60+0x184
+    .long .L0010cc60+0x194
+    .long .L0010cc60+0x1a4
+    .long .L0010cc60+0x1b4
+    .long .L0010cc60+0x1c4
+    .long .L0010cc60+0x1d0
+    .long .L0010cc60+0x1e0
+    .long .L0010cc60+0x1ec
+    .long .L0010cc60+0x1f8
+    .long .L0010cc60+0x208
+    .long .L0010cc60+0x218
+    .long .L0010cc60+0x228
+    .long .L0010cc60+0x238
+    .long .L0010cc60+0x244
+    .long .L0010cc60+0x250
+    .long .L0010cc60+0x25c
+    .long .L0010cc60+0x268
+    .long .L0010cc60+0x278
+    .long .L0010cc60+0x288
+    .long .L0010cc60+0x298
+    .long .L0010cc60+0x2a8
+    .long .L0010cc60+0x2b4
+    .long .L0010cc60+0x2c0
+    .long .L0010cc60+0x2cc
+    .long .L0010cc60+0x2d8
+    .long .L0010cc60+0x2e8
+    .long .L0010cc60+0x2f8
+    .long .L0010cc60+0x308
+    .long .L0010cc60+0x318
+    .long .L0010cc60+0x324
+    .long .L0010cc60+0x330
+    .long .L0010cc60+0x33c
+    .long .L0010cc60+0x348
+    .long .L0010cc60+0x358
+    .long .L0010cc60+0x368
+    .long .L0010cc60+0x378
+    .long .L0010cc60+0x388
+    .long .L0010cc60+0x398
+    .long .L0010cc60+0x3a8
+    .long .L0010cc60+0x3b8
+    .long .L0010cc60+0x3c8
+    .long .L0010cc60+0x3d4
+    .long .L0010cc60+0x3e0
+    .long .L0010cc60+0x3f0
+    .long .L0010cc60+0x3fc
+    .long .L0010cc60+0x408
+    .long .L0010cc60+0x414
+    .long .L0010cc60+0x420
+    .long .L0010cc60+0x42c
+    .long .L0010cc60+0x43c
+    .long .L0010cc60+0x44c
+    .long .L0010cc60+0x45c
+    .long .L0010cc60+0x46c
+    .long .L0010cc60+0x47c
+    .long .L0010cc60+0x48c
+    .long .L0010cc60+0x49c
+    .long .L0010cc60+0x4ac
+    .long .L0010cc60+0x4b8
+    .long .L0010cc60+0x4c0
+    .long .L0010cc60+0x4cc
+    .long .L0010cc60+0x4d8
+    .long .L0010cc60+0x4e4
+    .long .L0010cc60+0x4f0
+    .long .L0010cc60+0x4f8
+    .long .L0010cc60+0x504
+    .long .L0010cc60+0x514
+    .long .L0010cc60+0x524
+    .long .L0010cc60+0x534
+    .long .L0010cc60+0x544
+    .long .L0010cc60+0x554
+    .long .L0010cc60+0x564
+    .long .L0010cc60+0x574
+    .long .L0010cc60+0x584
+    .long .L0010cc60+0x594
+    .long .L0010cc60+0x5a0
+    .long .L0010cc60+0x5ac
+    .long .L0010cc60+0x5bc
+    .long .L0010cc60+0x5cc
+    .long .L0010cc60+0x5d8
+    .long .L0010cc60+0x5e4
+    .long .L0010cc60+0x5f4
+    .long .L0010cc60+0x604
+    .long .L0010cc60+0x614
+    .long .L0010cc60+0x624
+    .long .L0010cc60+0x634
+    .long .L0010cc60+0x644
+    .long .L0010cc60+0x654
+    .long .L0010cc60+0x664
+    .long .L0010cc60+0x674
+    .long .L0010cc60+0x680
+    .long .L0010cc60+0x68c
+    .long .L0010cc60+0x69c
+    .long .L0010cc60+0x6a8
+    .long .L0010cc60+0x6b4
+    .long .L0010cc60+0x6c0
+    .long .L0010cc60+0x6cc
+    .long .L0010cc60+0x6d8
+    .long .L0010cc60+0x6e8
+    .long .L0010cc60+0x6f8
+    .long .L0010cc60+0x708
+    .long .L0010cc60+0x718
+    .long .L0010cc60+0x724
+    .long .L0010cc60+0x730
+    .long .L0010cc60+0x73c
+    .long .L0010cc60+0x748
+    .long .L0010cc60+0x754
+    .long .L0010cc60+0x760
+    .long .L0010cc60+0x770
+    .long .L0010cc60+0x77c
+    .long .L0010cc60+0x784
+    .long .L0010cc60+0x790
+    .long .L0010cc60+0x798
+    .long .L0010cc60+0x7a0
+    .long .L0010cc60+0x7ac
+    .long .L0010cc60+0x7b8
+    .long .L0010cc60+0x7c4
+    .long .L0010cc60+0x7d0
+    .long .L0010cc60+0x7dc
+    .long .L0010cc60+0x7ec
+    .long .L0010cc60+0x7f8
+    .long .L0010cc60+0x804
+    .long .L0010cc60+0x814
+    .long .L0010cc60+0x820
+    .long .L0010cc60+0x82c
+    .long .L0010cc60+0x83c
+    .long .L0010cc60+0x848
+    .long .L0010cc60+0x854
+    .long .L0010cc60+0x860
+    .long .L0010cc60+0x86c
+    .long .L0010cc60+0x878
+    .long .L0010cc60+0x888
+    .long .L0010cc60+0x894
+    .long .L0010cc60+0x8a0
+    .long .L0010cc60+0x8ac
+    .long .L0010cc60+0x8b8
+    .long .L0010cc60+0x8c4
+    .long .L0010cc60+0x8d0
+    .long .L0010cc60+0x8dc
+    .long .L0010cc60+0x8e4
+    .long .L0010cc60+0x8f0
+    .long .L0010cc60+0x8fc
+    .long .L0010cc60+0x904
+    .long .L0010cc60+0x910
+    .long .L0010cc60+0x918
+    .long .L0010cc60+0x920
+    .long .L0010cc60+0x92c
+    .long .L0010cc60+0x938
+    .long .L0010cc60+0x944
+    .long .L0010cc60+0x950
+    .long .L0010cc60+0x95c
+    .long .L0010cc60+0x968
+    .long .L0010cc60+0x974
+    .long .L0010cc60+0x980
+    .long .L0010cc60+0x98c
+    .long .L0010cc60+0x998
+    .long .L0010cc60+0x9a8
+    .long .L0010cc60+0x9b4
+    .long .L0010cc60+0x9bc
+    .long .L0010cc60+0x9c8
+    .long .L0010cc60+0x9d0
+    .long .L0010cc60+0x9d8
+    .long .L0010cc60+0x9e4
+    .long .L0010cc60+0x9f0
+    .long .L0010cc60+0x9fc
+    .long .L0010cc60+0xa08
+    .long .L0010cc60+0xa18
+    .long .L0010cc60+0xa28
+    .long .L0010cc60+0xa38
+    .long .L0010cc60+0xa48
+    .long .L0010cc60+0xa58
+    .long .L0010cc60+0xa68
+    .long .L0010cc60+0xa78
+    .long .L0010cc60+0xa88
+    .long .L0010cc60+0xa94
+    .long .L0010cc60+0xaa0
+    .long .L0010cc60+0xaac
+    .long .L0010cc60+0xab8
+    .long .L0010cc60+0xac4
+    .long .L0010cc60+0xad0
+    .long .L0010cc60+0xadc
+    .long .L0010cc60+0xae8
+    .long .L0010cc60+0xaf8
+    .long .L0010cc60+0xb08
+    .long .L0010cc60+0xb18
+    .long .L0010cc60+0xb28
+    .long .L0010cc60+0xb38
+    .long .L0010cc60+0xb48
+    .long .L0010cc60+0xb58
+    .long .L0010cc60+0xb68
+    .long .L0010cc60+0xb74
+    .long .L0010cc60+0xb80
+    .long .L0010cc60+0xb8c
+    .long .L0010cc60+0xb98
+    .long .L0010cc60+0xba4
+    .long .L0010cc60+0xbb0
+    .long .L0010cc60+0xbc0
+    .long .L0010cc60+0xbcc
+    .long .L0010cc60+0xbdc
+    .long .L0010cc60+0xbec
+    .long .L0010cc60+0xbfc
+    .long .L0010cc60+0xc0c
+    .long .L0010cc60+0xc1c
+    .long .L0010cc60+0xc2c
+    .long .L0010cc60+0xc3c
+    .long .L0010cc60+0xc4c
+    .long .L0010cc60+0xc58
+    .long .L0010cc60+0xc64
+    .long .L0010cc60+0xc70
+    .long .L0010cc60+0xc7c
+    .long .L0010cc60+0xc88
+    .long .L0010cc60+0xc98
+    .long .L0010cc60+0xca4
+    .long .L0010cc60+0xcb0
+    .long .L0010cc60+0xcc0
+    .long .L0010cc60+0xcd0
+    .long .L0010cc60+0xce0
+    .long .L0010cc60+0xcf0
+    .long .L0010cc60+0xd00
+    .long .L0010cc60+0xd10
+    .long .L0010cc60+0xd20
+    .long .L0010cc60+0xd30
+    .long .L0010cc60+0xd3c
+    .long .L0010cc60+0xd48
+    .long .L0010cc60+0xd54
+    .long .L0010cc60+0xd60
+    .long .L0010cc60+0xd6c
+    .long .L0010cc60+0xd78
+    .long .L0010cc60+0xd84
+    .fill 13, 4, 0

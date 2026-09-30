@@ -72,13 +72,16 @@ CODE_BASE = 0x10000
 # BSS) and the fourth object, which no unit places anything in.
 DATA_VSIZE = 0x79F30
 OBJECT4_VSIZE = 0x1004
-# Data-only units with no init table entry, and the unit each was linked
-# right after. moddtorr's only data is a fini table (YI) entry; the YI
-# entries' order (moddtorr, stinit, 386inite) does not fix its place among
-# the XI objects. The routine its entry calls, __wcpp_2_module_dtor__, is
-# stabmod's first function, and the original processed moddtorr's fixup
-# right after stabmod's.
-LINKED_AFTER = {"lib/clib/moddtorr": "lib/clib/stabmod"}
+# Units whose place in link order neither their code address nor an init
+# table entry shows, and the unit each was linked right after.
+# - moddtorr's only data is a fini table (YI) entry; the YI entries' order
+#   (moddtorr, stinit, 386inite) does not fix its place among the XI
+#   objects. The routine its entry calls, __wcpp_2_module_dtor__, is
+#   stabmod's first function, and the original processed moddtorr's fixup
+#   right after stabmod's.
+# - unsmack's code lies after every other object's, but the original
+#   processed its data's fixups right after radtimer's.
+LINKED_AFTER = {"lib/clib/moddtorr": "lib/clib/stabmod", "lib/smk/unsmack": "lib/smk/radtimer"}
 
 
 def fixup_record(page_offset, target_obj, target_off, kind=SRC_OFFSET32):
@@ -163,8 +166,8 @@ def link_order(placed):
     after delay386's; ini87386's after stk386's). Those units take the code
     order places they hold between them in the order of their XI entries; a
     data-only unit with one follows the unit whose entry precedes its own.
-    Other data-only units follow the unit LINKED_AFTER names, or are not
-    ranked (see main)."""
+    A unit LINKED_AFTER names follows the unit it gives; other data-only
+    units are not ranked (see main)."""
     units = {p[0].name: p[0] for p in placed}
     order = sorted((u for u in units.values() if u.functions), key=lambda u: u.functions[0].addr)
     xi = sorted((addr, u.name) for u, sec, addr, *_ in placed if sec.name == "XI")
@@ -178,7 +181,9 @@ def link_order(placed):
         if name not in names:
             names.insert(names.index(prev) + 1, name)
     for name, after in LINKED_AFTER.items():
-        if name in units and name not in names:
+        if name in units and after in names:
+            if name in names:
+                names.remove(name)
             names.insert(names.index(after) + 1, name)
     return {n: i for i, n in enumerate(names)}
 
