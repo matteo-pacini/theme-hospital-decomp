@@ -76,8 +76,12 @@ class Section:
         self.data = bytearray()
         self.length = 0
         self.relocs = []  # (offset, type, target), target = ("sec", Section) | ("sym", name)
-        # The FIXUPP record each relocation came from (convert only): the
-        # linker orders an EXE page's fixups by record.
+        # The object's data records (LEDATA, LIDATA, COMDAT) holding this
+        # section's data, as (offset, record number) in offset order, and
+        # {relocation offset: its data record's number} (convert only): the
+        # linker processes an object's fixups in record order, and write_omf
+        # keeps that order.
+        self.records = []
         self.reloc_records = {}
         self.nobits = cls in ("BSS", "STACK")
         self.code = cls.endswith("CODE")
@@ -118,7 +122,7 @@ def convert(obj):
     last = None  # (Section, offset) of the last LEDATA/COMDAT, for FIXUPP
     backpatches = []
     easy_omf = False  # Phar Lap Easy OMF-386: every record has 32-bit fields
-    fixupp_records = 0
+    data_records = 0
 
     p = 0
     while p < len(obj):
@@ -174,8 +178,10 @@ def convert(obj):
         elif kind in (0xA0, 0xA2):  # LEDATA, LIDATA
             sec, off = segments[r.index()], r.off()
             data = r.rest() if kind == 0xA0 else b"".join(lidata(r) for _ in iter(r.more, False))
+            data_records += 1
             if sec is not None:
                 sec.write(off, data)
+                sec.records.append((off, data_records))
             last = (sec, off, kind)
         elif kind == 0xC2:  # COMDAT
             flags, attrs, align = r.u8(), r.u8(), r.u8()
@@ -206,9 +212,10 @@ def convert(obj):
                 if attrs & 0xF0:
                     weak[name] = None
             sec.write(off, r.rest())
+            data_records += 1
+            sec.records.append((off, data_records))
             last = (sec, off, kind)
         elif kind == 0x9C:  # FIXUPP
-            fixupp_records += 1
             while r.more():
                 b = r.u8()
                 if not b & 0x80:  # THREAD
@@ -254,7 +261,7 @@ def convert(obj):
                 addend = struct.unpack_from("<i", sec.data, at)[0] + disp - (4 if relative else 0)
                 struct.pack_into("<i", sec.data, at, addend)
                 sec.relocs.append((at, R_386_PC32 if relative else R_386_32, target))
-                sec.reloc_records[at] = fixupp_records
+                sec.reloc_records[at] = data_records
         elif kind == 0xB2:  # BAKPAT
             sec, loc = segments[r.index()], r.u8()
             while r.more():
@@ -471,7 +478,7 @@ def write_omf(sections, symbols, externs, weak, path):
 
     def fixups(sec, lo, hi):
         body = bytearray()
-        for at, rtype, target in sec.relocs:
+        for at, rtype, target in sorted(sec.relocs, key=lambda r: r[0]):
             if not lo <= at < hi:
                 continue
             addend = struct.unpack_from("<i", sec.data, at)[0] + (4 if rtype == R_386_PC32 else 0)
@@ -490,17 +497,27 @@ def write_omf(sections, symbols, externs, weak, path):
             patched[at] = addend
         return body
 
-    for sec in sections:
-        patched = {}
-        data = bytearray(sec.data)
-        lo = 0
-        while lo < len(data) and not sec.nobits:
-            hi = min(lo + 1024, len(data))
+    # Each of convert's data records becomes one or more records here, in
+    # the original's record order, so the linker processes the fixups in the
+    # same order; sections without records follow in section order.
+    spans = []
+    for i, sec in enumerate(sections):
+        if sec.nobits:
+            continue
+        starts = sec.records or [(0, None)]
+        for k, (lo, n) in enumerate(starts):
+            hi = starts[k + 1][0] if k + 1 < len(starts) else len(sec.data)
+            spans.append((n is None, n or 0, i, 0 if k == 0 else lo, hi))
+    for _, _, i, lo, end in sorted(spans):
+        sec = sections[i]
+        while lo < end:
+            patched = {}
+            hi = min(lo + 1024, end)
             # Never split a relocated field across two records.
             while any(lo < at < hi < at + 4 for at, _, _ in sec.relocs):
                 hi -= 1
             fx = fixups(sec, lo, hi)
-            chunk = bytearray(data[lo:hi])
+            chunk = bytearray(sec.data[lo:hi])
             for at, value in patched.items():
                 if lo <= at < hi:
                     struct.pack_into("<i", chunk, at - lo, value)

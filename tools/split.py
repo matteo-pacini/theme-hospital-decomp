@@ -31,15 +31,16 @@ def q(sym):
     return f'"{sym}"'
 
 
-def code_ref(proj, starts, section_label, section, addr):
+def code_ref(proj, starts, anchor, section, addr):
     """Expression for a code address, as referenced from inside a section
     spanning `section` = (start, end) whose functions start at `starts`
-    ({address: function})."""
+    ({address: function}); addresses inside it are relative to `anchor` =
+    (symbol, its address)."""
     if addr in starts:
         # Taking a function's address names its symbol.
         return q(starts[addr].name)
     if section[0] <= addr < section[1]:
-        return f"{section_label}+{addr - section[0]:#x}"
+        return f"{anchor[0]}{addr - anchor[1]:+#x}"
     target = proj.function_at(addr)
     if target is None:
         return f"_C_{addr:08x}"
@@ -152,12 +153,15 @@ def emit_data(le, proj, data_secs, segments, out):
             a += 1
 
 
-def emit_section(le, proj, fns, n, out, shared, data_secs=()):
-    """One _TEXT section holding `fns`: a single function (-zm), or every
-    function of a module compiled into one segment (`shared`), laid out as
-    in the executable."""
+def emit_section(le, proj, fns, n, out, shared, data_secs=(), comdat=False):
+    """One _TEXT section holding `fns`: a single function (-zm, or a
+    `comdat`), or every function of a module compiled into one segment
+    (`shared`), laid out as in the executable."""
     label = f".Lsec{n}"
     start = leading_table(le, fns[0].addr, fns[0].end) or fns[0].addr
+    # The compiler refers into a COMDAT through its symbol, and into a
+    # segment through the segment.
+    anchor = (q(fns[0].name), fns[0].addr) if comdat else (label, start)
     end = fns[-1].end
     starts = {f.addr: f for f in fns}
     # Each function's bytes run to the next one's start in a shared segment:
@@ -177,7 +181,7 @@ def emit_section(le, proj, fns, n, out, shared, data_secs=()):
         if t is None:
             continue
         if not start <= t < end:
-            fields[it.branch_field] = (4, f"{code_ref(proj, starts, label, (start, end), t)}-.-4")
+            fields[it.branch_field] = (4, f"{code_ref(proj, starts, anchor, (start, end), t)}-.-4")
         elif t in starts and (it.mnemonic == "call" or t != fn.addr):
             # Calls, and jumps to another function's entry, are relocated
             # against the target's symbol even within one segment; as would
@@ -193,7 +197,7 @@ def emit_section(le, proj, fns, n, out, shared, data_secs=()):
             name, off = proj.reloc_overrides[site]
             expr = f"{q(name)}{off:+#x}" if off else q(name)
         elif le.code.contains(fx.target):
-            expr = code_ref(proj, starts, label, (start, end), fx.target)
+            expr = code_ref(proj, starts, anchor, (start, end), fx.target)
         elif in_data_segment(proj, data_secs, fx.target) is not None:
             expr = data_expr(proj, data_secs, fx.target)
         elif site in sign_reads:
@@ -261,7 +265,7 @@ def write_unit(le, proj, unit, path):
     else:
         separate = unit.functions
     for n, fn in enumerate(separate, 1 if separate is not unit.functions else 0):
-        emit_section(le, proj, [fn], n, out, shared=False, data_secs=data_secs)
+        emit_section(le, proj, [fn], n, out, shared=False, data_secs=data_secs, comdat=fn.addr in unit.comdats)
     emit_data(le, proj, data_secs, segments, out)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     text = "\n".join(out) + "\n"

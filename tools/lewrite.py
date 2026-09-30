@@ -6,9 +6,10 @@ The code object comes from tools/relink.py's placement of every unit at its
 original address. Gaps between functions are filled as the original linker
 filled them: with the no-op filler sequence for the gap's length between two
 segments of one object, with zeros between objects (and throughout the
-objects that were zero-padded). The data object comes from the units' data
-sections where relink.py places them. A relocated field holds the target's
-offset within its object, as LE pages do. Each page's fixup records are
+objects that were zero-padded, and around COMDATs, placed like objects).
+The data object comes from the units' data sections where relink.py places
+them. A relocated field holds the target's offset within its object, as LE
+pages do. Each page's fixup records are
 generated in the order the original linker processed them (objects in link
 order, each object's fixups in FIXUPP record order), packed into 512-byte
 blocks written newest first. The LE header, object table, page map, name
@@ -32,11 +33,9 @@ import struct
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
-import omf2elf  # noqa: E402
 import relink  # noqa: E402
 from lefile import SRC_OFFSET32, LEFile  # noqa: E402
 from project import EXE, ROOT, Project  # noqa: E402
-from standin import companion  # noqa: E402
 
 # The no-op sequences the original linker filled a gap of each length with.
 FILLER = {n: bytes.fromhex(h) for n, h in {
@@ -121,9 +120,13 @@ def relink_all():
     return result
 
 
-def code_image(result, vsize):
-    """The code object's bytes and the gaps (address offset, size) left unfilled."""
+def code_image(result, vsize, base, proj):
+    """The code object's bytes and the gaps (address offset, size) left
+    unfilled. `base` is the object's address; `proj` gives the functions and
+    which of them are COMDATs."""
     image, owner = bytearray(result["image"][:vsize]), result["owner"]
+    starts = sorted(f.addr for f in proj.functions)
+    comdats = {a for u in proj.units for a in u.comdats}
     i, unfilled = 0, []
     while i < vsize:
         if owner[i] is not None:
@@ -134,32 +137,14 @@ def code_image(result, vsize):
             j += 1
         before, after = owner[i - 1] if i else None, owner[j] if j < vsize else None
         n = j - i
-        if before is not None and before == after and before not in result["zero_padded"] and n in FILLER:
+        # The linker placed a COMDAT like a separate object.
+        comdat = base + j in comdats or starts[bisect.bisect(starts, base + i - 1) - 1] in comdats
+        if before is not None and before == after and before not in result["zero_padded"] and not comdat and n in FILLER:
             image[i:j] = FILLER[n]
         elif n >= 16:
             unfilled.append((i, n))
         i = j
     return image, unfilled
-
-
-def section_keys(symbols):
-    """A name for each section of a unit's model: a COMDAT's symbol, else its segment's."""
-    keys = {}
-    for name, (sec, off, _) in symbols.items():
-        if sec.comdat and off == 0:
-            keys.setdefault(id(sec), name)
-    return keys
-
-
-def compiler_records(u):
-    """{(section name, offset): FIXUPP record} of a unit with stand-ins,
-    from the compiler's own object: the one with the stand-ins added orders
-    its records differently, and the linker processed the compiler's order."""
-    if u.auto or not os.path.exists(os.path.join(ROOT, companion(u.source))):
-        return None
-    sections, symbols, _, _ = omf2elf.convert(open(os.path.join(ROOT, "build", "base", u.name + ".obj"), "rb").read())
-    keys = section_keys(symbols)
-    return {(keys.get(id(sec), sec.name), at): rec for sec in sections for at, rec in sec.reloc_records.items()}
 
 
 def data_image(result, data, vsize):
@@ -180,11 +165,7 @@ def data_image(result, data, vsize):
                 seen.add(id(s))
                 placed.append((u, s, base[id(s)], syms, base, weak))
     rank = {u.name: i for i, u in enumerate(sorted({p[0].name: p[0] for p in placed}.values(), key=lambda u: u.functions[0].addr))}
-    records = {}
     for u, sec, addr, syms, base, weak in placed:
-        if u.name not in records:
-            records[u.name] = (compiler_records(u), section_keys(syms))
-        compiled, keys = records[u.name]
         size = max(len(sec.data), sec.length)
         at0 = addr - data.base
         image[at0 : at0 + len(sec.data)] = sec.data
@@ -205,8 +186,7 @@ def data_image(result, data, vsize):
             value = (t + addend) & 0xFFFFFFFF
             tobj = next(o for o in result["objects"] if o.base <= value <= o.base + o.vsize)
             struct.pack_into("<I", image, at0 + at, value - tobj.base)
-            rec = compiled.get((keys.get(id(sec), sec.name), at)) if compiled else None
-            order = (rank[u.name], rec or sec.reloc_records.get(at, 1 << 30), n)
+            order = (rank[u.name], sec.reloc_records.get(at, 1 << 30), n)
             if at0 + at not in fixups or order < fixups[at0 + at][0]:
                 fixups[at0 + at] = (order, tobj.index, value - tobj.base)
     return image, owner, fixups, unknown
@@ -246,7 +226,7 @@ def main(output=os.path.join(ROOT, "build", "hospital.exe")):
     result["objects"] = objects
 
     # Code object and its fixups.
-    image, unfilled = code_image(result, code.vsize)
+    image, unfilled = code_image(result, code.vsize, code.base, proj)
     code_pages = collections.defaultdict(list)
     for site, target in result["code_fixups"]:
         # An object's end (an end-of-segment label) belongs to it too.

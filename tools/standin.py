@@ -124,6 +124,10 @@ def apply(source, model, Section):
         else:
             symbols[name + ".c"] = (sec, off, True)
             del symbols[name]
+            # The stand-in's records take the compiled function's place in
+            # the object's record order.
+            new_sec.records = sec.records[:1]
+            new_sec.reloc_records = {at: sec.records[0][1] for at, _, _ in new_sec.relocs}
             sections.append(new_sec)
             symbols[name] = (new_sec, new_off, False)
     known = {n for n, _ in externs[1:]}
@@ -189,6 +193,9 @@ def resize(sec, off, size, new_size, symbols, name):
             sys.exit(f"{name}: a short branch at {field:#x} no longer reaches")
         struct.pack_into("<b" if width == 1 else "<i", sec.data, moved(field), disp)
 
+    # A data record that started inside the range starts at its new end.
+    sec.records = sorted((moved(o) if o >= end else min(o, off + new_size), n) for o, n in sec.records)
+    sec.reloc_records = {moved(at): n for at, n in sec.reloc_records.items() if not off <= at < end}
     relocs = []
     for at, rtype, target in sec.relocs:
         if off <= at < end:
@@ -209,6 +216,14 @@ def substitute(sec, off, size, new_sec, symbols):
     """Put new_sec's code over sec[off:off + size] with its relocations."""
     sec.data[off : off + size] = new_sec.data
     sec.relocs = [r for r in sec.relocs if not off <= r[0] < off + size]
+    # The stand-in stays in the data record it starts in, so that no record
+    # boundary of the compiled code splits one of its relocated fields; the
+    # last record that started inside it starts after it.
+    inside = [n for o, n in sec.records if off < o <= off + size]
+    sec.records = [r for r in sec.records if not off < r[0] <= off + size] + [(off + size, n) for n in inside[-1:]]
+    sec.records.sort()
+    record = [n for o, n in sec.records if o <= off][-1]
+    sec.reloc_records = {at: n for at, n in sec.reloc_records.items() if not off <= at < off + size}
     for at, rtype, target in new_sec.relocs:
         site = off + at
         addend = struct.unpack_from("<i", sec.data, site)[0]
@@ -223,6 +238,7 @@ def substitute(sec, off, size, new_sec, symbols):
             struct.pack_into("<i", sec.data, site, symbols[target[1]][1] + addend - site)
         else:
             sec.relocs.append((site, rtype, target))
+    sec.reloc_records.update((at, record) for at, _, _ in sec.relocs if off <= at < off + size)
 
 
 def nonmatching_note(text, marker):

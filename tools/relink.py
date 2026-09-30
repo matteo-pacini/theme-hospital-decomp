@@ -107,8 +107,9 @@ def module_boundaries(proj, le):
     """Gaps between functions that contradict the units: the original linker
     filled alignment gaps between one object's segments with no-op filler,
     and gaps between objects with zeros (after filler up to a dword, when
-    the object ends unaligned). Returns (contradictions, zero-padded units):
-    contradictions are [(kind, gap address, gap size, function before, its
+    the object ends unaligned; only that filler before a dword-aligned
+    object, the C runtime's or an assembly module's). Returns
+    (contradictions, zero-padded units): contradictions are [(kind, gap address, gap size, function before, its
     unit, function after, its unit)] for filler between two units, zeros
     inside one, and a compiled game or library object (not the dword-aligned
     C runtime) that starts off a 16-byte boundary. Zero-padded units are
@@ -118,13 +119,16 @@ def module_boundaries(proj, le):
     16-byte boundary between units is not reported: it can be an assembly
     `align` or the end of the object before."""
     unit_of = {f.addr: u for u in proj.units for f in u.functions}
+    dword_aligned = lambda u: u.source.endswith(".s") or u.source.startswith("src/lib/clib/")
     fs = sorted(proj.functions, key=lambda f: f.addr)
     gaps = []
     for a, b in zip(fs, fs[1:]):
         n = b.addr - a.end
         if 0 < n < 16:
             gap, k = le.read(a.end, n), -a.end % 4
-            gaps.append((a, b, n, not any(gap) or k < n and gap[:k] == DWORD_FILLER.get(k, b"") and not any(gap[k:])))
+            ua, ub = unit_of[a.addr], unit_of[b.addr]
+            dword_end = k < n or k == n and ua is not ub and dword_aligned(ub)
+            gaps.append((a, b, n, not any(gap) or dword_end and gap[:k] == DWORD_FILLER.get(k, b"") and not any(gap[k:])))
     inside = collections.defaultdict(list)
     for a, b, n, zero in gaps:
         if unit_of[a.addr] is unit_of[b.addr]:
@@ -140,7 +144,7 @@ def module_boundaries(proj, le):
             out.append(("filler between units", a.end, n, a.name, ua.name, b.name, ub.name))
     for u in proj.units:
         f = u.functions[0]
-        if f.addr % 16 and not u.source.endswith(".s") and not u.source.startswith("src/lib/clib/"):
+        if f.addr % 16 and not dword_aligned(u):
             out.append(("object start not 16-aligned", f.addr, 0, "", "", f.name, u.name))
     return sorted(out, key=lambda c: c[1]), zero_padded
 
