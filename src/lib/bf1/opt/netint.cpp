@@ -883,11 +883,9 @@ static TbError HostDataBroadcast(void)
 }
 
 // FUNCTION: 0x000c1518
-// NONMATCHING: register choice in the inlined IdToIndex loops
 static void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
 {
     void *ret = 0;
-    u32 ok;
 
     if (localPlayerId == hostId) {
         if (size == exchangeSize) {
@@ -909,7 +907,7 @@ static void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data
     } else if (size == exchangeSize * maximumPlayers) {
         if (id == hostId) {
             if (IdToIndex(id)) {
-                ok = 1;
+                u32 ok = 1;
                 if (sequenceNumber == 15)
                     sequenceNumber = seq;
                 else if (sequenceNumber != seq)
@@ -1167,11 +1165,9 @@ static TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 
 static void PlayerMapMsgHandler(u32 id, void *buf, u32 size);
 
 // FUNCTION: 0x000c1de8
-// NONMATCHING: block layout: the target tests the message type inline and its early return
-// jumps into MultiPlayerCallback's epilogue (the module was built without -zm)
 void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
 {
-    if (!msg || !size)
+    if (msg == 0 || size == 0)
         return;
     switch (*(TbMessageType *)msg) {
     case MSG_TYPE_0:

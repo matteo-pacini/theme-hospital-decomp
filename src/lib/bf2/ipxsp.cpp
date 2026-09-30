@@ -828,13 +828,11 @@ void IPXServiceProvider::ConvertStringToGuid(char *str, __tibcaGUID *guid)
 }
 
 // FUNCTION: 0xd82f4
-// NONMATCHING: the stack slots of to and end are swapped
 TbError IPXServiceProvider::SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3ljac5NETSOCKET *to)
 {
     u8 buf[0x1a0];
     IPXPlayerEntry *p;
     IPXPlayerEntry *dst;
-    IPXPlayerEntry *end;
     u32 skip;
     u32 i;
     TbError ret = Lb_FAIL;
@@ -854,6 +852,7 @@ TbError IPXServiceProvider::SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3lj
                         i++;
                 }
             }
+            IPXPlayerEntry *end;
             dst = (IPXPlayerEntry *)(buf + 0x50);
             end = dst + 6;
             do {
@@ -1473,12 +1472,10 @@ void IPXServiceProvider::ClearSpStuff(void)
 }
 
 // FUNCTION: 0xdb6d4
-// NONMATCHING: frame layout and register allocation differ
 TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
 {
     u32 now;
     u32 size;
-    u32 last;
     u32 max;
     u32 start;
     u32 me;
@@ -1509,6 +1506,7 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
                     ipx.Send(&socket, addr, (u8 *)&out, sizeof(out));
                     BatchProcess(0);
                     if (magic == MSG_BUDG) {
+                        u32 last;
                         start = last = clock();
                         while (ret == Lb_FAIL) {
                             now = clock();

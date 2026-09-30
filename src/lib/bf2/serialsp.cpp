@@ -598,7 +598,6 @@ u8 Parser::GetSequenceNumber(void)
 }
 
 // FUNCTION: 0xee380
-// NONMATCHING: the inner switch's inline copy of the failure tail loads ret before clearing active
 TbError Parser::InputByte(u8 c)
 {
     TbError ret = Lb_OK;
@@ -654,7 +653,7 @@ TbError Parser::InputByte(u8 c)
             if (size > 0x401) {
             fail:
                 active = 0;
-                return ret;
+                break;
             }
             state = PS_DATA;
             count = 0;
@@ -672,8 +671,8 @@ TbError Parser::InputByte(u8 c)
         msg[4 + size + count] = c;
         count++;
         if (count >= 2) {
-            memcpy(&checksum, &msg[size + 4], 2);
             sum = 0;
+            memcpy(&checksum, &msg[size + 4], 2);
             for (i = 0; i < 4; i++)
                 sum += header[i];
             if (header[0] == 0x1e || header[0] == 4)
