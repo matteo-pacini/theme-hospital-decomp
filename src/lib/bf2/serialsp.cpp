@@ -1,5 +1,9 @@
 #include "net.h"
 
+static u8 messageHeader[] = { 0x1b, 0x9c, 0x52, 0x8f };
+static u8 deliveryHeader[] = { 0x1e, 0xca, 0x67, 0x72 };
+static u8 acknowledgementHeader[] = { 0x04, 0x3e, 0xbe, 0x38 };
+
 extern "C" {
 extern u8 D_0018d01c[];
 extern TbNetworkPlayerEntry D_0018cfc4;
@@ -198,11 +202,11 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
             fn_000c20c0("  WARNING network: SerialSP::SendMessage() deliveryBuffer is too small\n");
             return ret;
         }
-        memcpy(D_0018d01c, D_00151a78, 4);
+        memcpy(D_0018d01c, deliveryHeader, 4);
         memcpy(D_0018d01c + 4, &send_seq, 1);
         memcpy(D_0018d01c + 5, buf, size + 4);
         for (i = 0; i < 4; i++)
-            sum += D_00151a78[i];
+            sum += deliveryHeader[i];
         sum += send_seq;
         for (i = 0; i < size + 4; i++)
             sum += data[i];
@@ -232,10 +236,10 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
             fn_000c20c0("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
         }
     } else {
-        if (comm->WriteBytes(D_00151a74, 4) == 4) {
+        if (comm->WriteBytes(messageHeader, 4) == 4) {
             if (comm->WriteBytes((u8 *)buf, size + 4) == size + 4) {
                 for (i = 0; i < 4; i++)
-                    sum += D_00151a74[i];
+                    sum += messageHeader[i];
                 for (i = 0; i < size + 4; i++)
                     sum += data[i];
                 if (comm->WriteBytes((u8 *)&sum, 2) == 2)
@@ -608,10 +612,10 @@ TbError Parser::InputByte(u8 c)
             count++;
             switch (c) {
             case 0x1b:
-                memcpy(header, D_00151a74, 4);
+                memcpy(header, messageHeader, 4);
                 break;
             case 0x1e:
-                memcpy(header, D_00151a78, 4);
+                memcpy(header, deliveryHeader, 4);
                 break;
             case 4:
                 memcpy(header, acknowledgementHeader, 4);

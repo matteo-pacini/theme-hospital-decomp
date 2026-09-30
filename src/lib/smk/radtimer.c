@@ -21,10 +21,7 @@ void setpit(unsigned short divisor);
     parm [bx] \
     modify exact [eax];
 
-extern u32 (__pascal *SmackTimerReadAddr)(void);
 extern void (__pascal *SmackTimerDoneAddr)(void);
-extern u32 D_00151b90;
-extern u32 D_00151b94;
 extern u32 (__far *D_0018d666)(void);
 
 void vtdentry(void);
@@ -56,16 +53,21 @@ u32 __pascal BIOSSmackTimerRead(void);
 void __pascal DOSSmackTimerSetup(void);
 #pragma aux (__pascal) DOSSmackTimerSetup "fn_000f2ec0_";
 
+u32 (__pascal *SmackTimerReadAddr)(void) = 0;
+static u32 timeradjust = 0;
+static u32 lasttimerread = 0;
+void (__pascal *SmackTimerSetupAddr)(void) = DOSSmackTimerSetup;
+
 // FUNCTION: 0xf2fa0
 u32 __pascal BIOSSmackTimerRead(void)
 {
     u32 t;
 
     t = *(u32 *)0x46c;
-    if (t < D_00151b94)
-        D_00151b90 += D_00151b94 - t;
-    D_00151b94 = t;
-    return mult64anddiv(t + D_00151b90, 2746, 50);
+    if (t < lasttimerread)
+        timeradjust += lasttimerread - t;
+    lasttimerread = t;
+    return mult64anddiv(t + timeradjust, 2746, 50);
 }
 
 // FUNCTION: 0xf2f80
@@ -74,9 +76,9 @@ u32 __pascal VTDSmackTimerRead(void)
     u32 t;
 
     t = vtdread();
-    if (t < D_00151b94)
-        return D_00151b94;
-    D_00151b94 = t;
+    if (t < lasttimerread)
+        return lasttimerread;
+    lasttimerread = t;
     return t;
 }
 
@@ -88,17 +90,17 @@ void __pascal DOSSmackTimerDone(void)
 // FUNCTION: 0xf2ec0
 void __pascal DOSSmackTimerSetup(void)
 {
-    if (D_00151b90 == 0) {
+    if (timeradjust == 0) {
         SmackTimerDoneAddr = DOSSmackTimerDone;
         vtdentry();
         if (D_0018d666 != 0) {
             SmackTimerReadAddr = VTDSmackTimerRead;
-            D_00151b90 = 1;
+            timeradjust = 1;
             return;
         }
-        D_00151b90 = *(u32 *)0x46c;
+        timeradjust = *(u32 *)0x46c;
         SmackTimerReadAddr = BIOSSmackTimerRead;
-        D_00151b90 = -D_00151b90;
+        timeradjust = -timeradjust;
         setpit(0);
     }
 }

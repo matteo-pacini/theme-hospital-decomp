@@ -397,7 +397,7 @@
     and ebx, 0x38
     {load} or bl, al
     call "__GETDS"
-    lea ebp, ["W?modem_response$n[]$ModemResponse$$"+0x6e0]
+    lea ebp, [_D_001529fc]
     mov edi, dword ptr ds:[ebp + 4]
     and edi, 0x3800
     shr edi, 0xb
@@ -462,7 +462,7 @@
 .L000f7a91:
     mov dword ptr [ebp + 0x38], esi
     call "__GETDS"
-    lea ebp, ["W?modem_response$n[]$ModemResponse$$"+0x6e0]
+    lea ebp, [_D_001529fc]
     {load} mov dl, ah
     and edx, 0x38
     {load} or dl, al
@@ -564,7 +564,7 @@
     cld
     rep movsd dword ptr es:[edi], dword ptr [esi]
     movzx eax, ah
-    call dword ptr [_D_001507c9]
+    call dword ptr ["__FPE_handler"]
     mov cx, ds
     .byte 0x66; .byte 0x8e; .byte 0xc1  # mov es, cx
     mov cx, ss

@@ -13,9 +13,9 @@ void SetMusicMasterVolume(s32 volume)
 // FUNCTION: 0xeff20
 void SetSoundMasterVolume(s32 volume)
 {
-    if (SoundAble && SoundInstalled && volume != D_00150824 && volume <= 127 && volume >= 0
+    if (SoundAble && SoundInstalled && volume != CurrentSoundMasterVolume && volume <= 127 && volume >= 0
         && !SoundMasterVolumeOverride) {
         AIL_set_digital_master_volume(SoundDriver, volume);
-        D_00150824 = volume;
+        CurrentSoundMasterVolume = volume;
     }
 }

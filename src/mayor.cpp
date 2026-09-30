@@ -6,8 +6,6 @@ extern u8 D_00158192;
 void fn_000c93bf(char *dst, char *src);
 }
 
-extern char D_00145330[];
-#pragma aux D_00145330 "W?$Wsi0dnew_line$n[]a$:.0$:?report_mayor_result$n(ucpnpna)vnx[]a"
 
 u16 create_mayor(u8 owner);
 u8 mayor_judges_hospital(u8 owner);
@@ -320,9 +318,8 @@ void report_mayor_result(u8 owner, char **strs)
     u16 a;
     u16 b;
     int v;
-    u16 sep;
+    char new_line[] = "\n";
 
-    sep = *(u16 *)D_00145330;
     v = lbFontPtr ? lbFontPtr[34].height : 0;
     text[0] = 0;
     a = 0;
@@ -330,27 +327,27 @@ void report_mayor_result(u8 owner, char **strs)
     sprintf(buf, strs[0], allhosps[othervar.ff].unknown0);
     fn_000c93bf(text, buf);
     sprintf(buf, strs[1], mayor_names[allhosps[owner].f1f9]);
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
     sprintf(buf, "%s", strs[allhosps[owner].f1fb + 5]);
-    fn_000c93bf(text, (char *)&sep);
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
+    fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
     value = mayor_result[allhosps[owner].f1fb].f4;
     if (value != 0) {
         sprintf(buf, strs[2], value);
-        fn_000c93bf(text, (char *)&sep);
+        fn_000c93bf(text, new_line);
         fn_000c93bf(text, buf);
     }
     value = mayor_result[allhosps[owner].f1fb].f2;
     if (value == 0x10) {
         sprintf(buf, strs[3], value);
-        fn_000c93bf(text, (char *)&sep);
+        fn_000c93bf(text, new_line);
         fn_000c93bf(text, buf);
     } else if (value == 0x12) {
         sprintf(buf, strs[4], value);
-        fn_000c93bf(text, (char *)&sep);
+        fn_000c93bf(text, new_line);
         fn_000c93bf(text, buf);
     }
     LbTextDraw(a, b, text);

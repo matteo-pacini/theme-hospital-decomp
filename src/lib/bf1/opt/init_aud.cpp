@@ -1,7 +1,7 @@
 #include "snd.h"
 
-extern u32 build_number;
-extern u32 build_date;
+u32 build_number = 8;
+u32 build_date = 50297;
 extern long ForceSoundPlaybackOverride;
 extern long ForceMidiPlaybackOverride;
 

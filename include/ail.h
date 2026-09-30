@@ -349,7 +349,6 @@ extern S32 AIL_debug;
 extern S32 AIL_sys_debug;
 extern S32 AIL_starttime;
 extern S32 AIL_debugfile;
-extern char AIL_indent_str[];
 extern void (__pascal *AIL_sprintf)(char *dest, char const *fmt, S32 nargs,
                                     S32 *args);
 

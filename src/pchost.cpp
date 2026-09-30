@@ -1,9 +1,5 @@
 #include "hosp.h"
 
-struct Message {
-    char text[200];
-};
-
 extern "C" {
 
 extern u8 D_0015f982;
@@ -25,7 +21,6 @@ extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef;
 extern s32 D_001581e8;
 extern s32 D_001290cc;
 extern char *D_001289a0;
-extern Message D_00129004;
 extern void *D_00158334;
 
 void LbDataLoadAll(TbLoadFiles *files);
@@ -141,7 +136,7 @@ u8 setup_host(void)
 // FUNCTION: 0x00010b20
 void reset_host(void)
 {
-    Message msg = D_00129004;
+    char error_string[200] = "";
 
     if (lbDisplay.unknown4) {
         LbScreenUnlock();
@@ -152,22 +147,22 @@ void reset_host(void)
     LbScreenReset();
     switch (D_0015f982) {
     case 1:
-        fn_000bbff0(msg.text, "Language Setup Failed.\n");
+        fn_000bbff0(error_string, "Language Setup Failed.\n");
         break;
     case 2:
-        fn_000bbff0(msg.text, "No Mouse Detected.\n");
+        fn_000bbff0(error_string, "No Mouse Detected.\n");
         break;
     case 3:
-        fn_000bbff0(msg.text, "Failed to initialise MCGA screen\n");
+        fn_000bbff0(error_string, "Failed to initialise MCGA screen\n");
         break;
     case 4:
-        fn_000bbff0(msg.text, "Failed to initialise VRES256 screen\n");
+        fn_000bbff0(error_string, "Failed to initialise VRES256 screen\n");
         break;
     case 5:
-        fn_000bbff0(msg.text, "Memory allocation failure\n");
+        fn_000bbff0(error_string, "Memory allocation failure\n");
         break;
     case 6:
-        fn_000bbff0(msg.text, "Heap allocation failure\n");
+        fn_000bbff0(error_string, "Heap allocation failure\n");
         break;
     case 8:
         hosp_dos_printf("Speech Setup Failed. Sample too Large\n");
@@ -180,10 +175,10 @@ void reset_host(void)
         break;
     }
     if (sub_error_number) {
-        sprintf(msg.text, "%s(Reason code: %d)\n", msg.text, sub_error_number);
+        sprintf(error_string, "%s(Reason code: %d)\n", error_string, sub_error_number);
     }
-    if (msg.text[0]) {
-        hosp_dos_printf(msg.text);
+    if (error_string[0]) {
+        hosp_dos_printf(error_string);
     }
     switch (resvars.f0) {
     case SCREEN_MODE_1:

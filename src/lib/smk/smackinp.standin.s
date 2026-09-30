@@ -220,12 +220,12 @@
     mov edx, dword ptr [eax + 0x414]
     test edx, edx
     je .L000e9bb1
-    mov ebx, dword ptr [_D_0015168c]
+    mov ebx, dword ptr ["_LowSoundOnAddr"]
     mov esi, edx
     test ebx, ebx
     je .L000e9a97
     push edx
-    call dword ptr [_D_0015168c]
+    call dword ptr ["_LowSoundOnAddr"]
     test al, al
     jne .L000e9a97
     xor eax, eax
@@ -369,10 +369,10 @@
     mov eax, dword ptr [edi + 0x414]
     test eax, eax
     je .L000e9c2b
-    cmp dword ptr [_D_00151688], 0
+    cmp dword ptr ["_LowSoundOffAddr"], 0
     je .L000e9c0b
     push eax
-    call dword ptr [_D_00151688]
+    call dword ptr ["_LowSoundOffAddr"]
 .L000e9c0b:
     mov esi, dword ptr [edi + 0x414]
     mov eax, dword ptr [esi]
@@ -2107,7 +2107,7 @@
     xor eax, eax
     jmp .L000ea4db
 .L000e9c9d:
-    call dword ptr [_D_00151b98]
+    call dword ptr ["_SmackTimerSetupAddr"]
     call dword ptr ["_SmackTimerReadAddr"]
     mov dword ptr [esp + 8], eax
     test byte ptr [esp + 0x35], 0x10

@@ -34,7 +34,7 @@ struct __ic76sReceiveCallbacks {
     void (__stdcall *addMsg)(u32 id, char *name, void *data);
     void (__stdcall *deleteMsg)(u32 id, void *data);
     void (__stdcall *hostMsg)(u32 id, void *data);
-    void (__stdcall *unknownc)(void);
+    void (__stdcall *unknownc)(void *data);
     void *(__stdcall *multiPlayer)(u32 id, u32 size, u32 seq, void *data);
     void (__stdcall *mpReqExDataMsg)(u32 id, u32 seq, void *data);
     void (__stdcall *mpReqCompsExDataMsg)(u32 id, u32 seq, void *data);
@@ -273,12 +273,9 @@ extern u8 deletePlayerBuffer[];
 extern u8 requestExchangeDataBuffer[];
 extern u8 addPlayerBuffer[];
 extern u8 ackBuffer[8];
-extern u8 acknowledgementHeader[];
 extern "C" {
 extern u32 D_0018ba9c;
 extern u8 D_0018d428[];
-extern u8 D_00151a74[];
-extern u8 D_00151a78[];
 }
 
 /* __stdcall (arguments on the stack, callee pops) under their address names. */
@@ -372,8 +369,6 @@ extern u8 D_00110068[];
 }
 
 extern char IPXDEBUGSTRING[];
-extern char ipxsendesr[];
-extern char ipxrecvesr[];
 
 struct IPXHandler;
 extern "C" u8 *fn_000d4150(IPXHandler *self, u32 size, u16 *sel);

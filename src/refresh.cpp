@@ -2,7 +2,6 @@
 
 extern "C" {
 extern u8 D_001567c0[][16];
-extern s8 D_00149618[];
 void LbVesaSetPage(s16 page);
 }
 
@@ -22,6 +21,7 @@ void special_refresh(void)
 // FUNCTION: 0x000ab144
 void refresh_to_VRAM(void)
 {
+    static s8 vesaPageNum[] = { 0, 0, 0, -1, 1, 1, -2, 2, 2, -3, 3, 3, -4, 4, 4, 0 };
     s8 page;
     u32 dst;
     s32 col;
@@ -49,9 +49,9 @@ void refresh_to_VRAM(void)
                 dst = (offset & 0xffff) + 0xa0000;
                 dst_next = dst + 0x280;
                 src_next = src + 0x280;
-                if (D_00149618[row] > -1) {
-                    if (D_00149618[row] != page) {
-                        page = D_00149618[row];
+                if (vesaPageNum[row] > -1) {
+                    if (vesaPageNum[row] != page) {
+                        page = vesaPageNum[row];
                         LbVesaSetPage(page);
                     }
                     for (line = 0; line < 32; line++, src = src_next, dst = dst_next, src_next += 0x280, dst_next += 0x280)

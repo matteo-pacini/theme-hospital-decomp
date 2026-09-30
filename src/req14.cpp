@@ -2,7 +2,7 @@
 
 extern "C" {
 extern Event D_001549d0[];
-extern s32 D_00145328;
+s32 D_00145328 = -1;
 extern char **D_0016029c;
 extern char **D_001602a0;
 extern char **D_001602cc;

@@ -22,8 +22,6 @@ struct STAB_TRAVERSE {
 };
 
 extern DTREG_VFPTRS *__wcpp_2_data_dtreg_vfptrs_[];
-extern DTREG_VFPTRS fun_vftable;
-#pragma aux fun_vftable "W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"
 
 void *__wcpp_2_base_register_(RW_DTREG *rw, void *ro, unsigned state_var);
 
@@ -55,6 +53,15 @@ void fun_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw)
 {
     ctl->obj_type = 0;
 }
+
+struct DTREG_VFPTRS {
+    RO_STATE *(*state_table)(RO_DTREG *ro);
+    void *(*point_object)(RW_DTREG *rw, unsigned index);
+    void (*init_traverse)(STAB_TRAVERSE *ctl, RW_DTREG *rw);
+};
+
+static DTREG_VFPTRS fun_vftable = { fun_state_table, fun_point_object, fun_init_traverse };
+#pragma aux fun_vftable "W?fun_vftable$n$__6rq0qbDTREG_VFTBL$$"
 
 void init(void);
 #pragma aux init "W?init$n()v"

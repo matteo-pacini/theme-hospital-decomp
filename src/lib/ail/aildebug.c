@@ -1,6 +1,9 @@
 #include "ail.h"
 
+S32 AIL_started = 0;
 static S32 locked = 0;
+static char AIL_indent_str[] = "               "
+    "\372\372\372\372\372\372\372\372\372\372\372\372\372";
 
 #define START                                                            \
     AIL_indent++;                                                        \

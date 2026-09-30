@@ -39,6 +39,7 @@ struct __ic76sReceiveCallbacks {
     void (__stdcall *mpReqCompsExDataMsg)(u32 id, u32 seq, void *data);
     void *(__stdcall *unidirectionalMsg)(u32 id, u32 size, void *data);
     void (__stdcall *systemUserMsg)(u32 id, void *msg, u32 size, void *data);
+    void (__stdcall *unknown24)(u32 id, void *msg);
 };
 
 extern u32 exchangeTimeout;
@@ -90,7 +91,6 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
 
 extern "C" {
 extern u32 D_00188cb8;
-extern u32 D_0014da60;
 
 }
 
@@ -105,6 +105,22 @@ static TbError GetPlayerInfo(void);
 static TbError HostDataBroadcast(void);
 static TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size);
 static u32 IdToIndex(u32 &id);
+void __stdcall HostMsgCallback(u32 id, void *data);
+void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data);
+
+u32 basicTimeout = 250;
+__ic76sReceiveCallbacks receiveCallbacks = {
+    AddMsgCallback,
+    DeleteMsgCallback,
+    HostMsgCallback,
+    0,
+    MultiPlayerCallback,
+    MultiPlayerReqExDataMsgCallback,
+    RequestCompositeExchangeDataMsgCallback,
+    UnidirectionalMsgCallback,
+    SystemUserMsgCallback,
+    0,
+};
 
 extern "C" {
 
@@ -376,7 +392,7 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     exchangeBuffer = (u8 *)exchange_buf;
     localPlayerInfoPtr = info;
     receiveCallbacks.multiPlayer = MultiPlayerCallback;
-    D_0014da60 = 0;
+    receiveCallbacks.unknown24 = 0;
     receiveCallbacks.mpReqExDataMsg = MultiPlayerReqExDataMsgCallback;
     if (exchange_size > 0) {
         D_00188cb8 = max_players * exchange_size;

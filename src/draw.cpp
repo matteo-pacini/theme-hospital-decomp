@@ -31,7 +31,6 @@ extern "C" {
 extern FrameBox D_001567b0;
 extern s32 D_00156911;
 extern TbSprite *D_00153f5c;
-extern u8 D_00130280[];
 
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour);
 void LbSpriteDrawScaled(s32 x, s32 y, TbSprite *spr, s32 w, s32 h);
@@ -41,6 +40,8 @@ u32 ror13(u32 x);
 #pragma aux ror13 = "ror eax,13" parm [eax] value [eax];
 
 }
+
+static u8 glow_path[] = { 0x4d, 0x4e, 0x4f, 0x50, 0x50, 0x4f, 0x4e, 0x4d };
 
 // FUNCTION: 0x0002d910
 void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, const u8 flip)
@@ -460,7 +461,7 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
     ElementBits *bits;
 
     f = &frame[w->sprite];
-    glow = D_00130280[((actual_game_turn + w->unknown29 + w->unknown30[0]) >> 1) & 7];
+    glow = glow_path[((actual_game_turn + w->unknown29 + w->unknown30[0]) >> 1) & 7];
     D_001567b0.x = D_001567b0.y = 999;
     for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
         elem = &element[*el];

@@ -41,7 +41,7 @@ extern __38rogeSF_DATA __far *data;
 extern "C" {
 extern u8 UseCurrentAwe32Soundfont;
 extern u8 Awe32SoundfontLoaded;
-extern char CurrentAwe32SoundfontPrefix[];
+char CurrentAwe32SoundfontPrefix[] = "Bullfrog";
 extern char D_0018c8b4[];
 
 int stricmp(const char *a, const char *b);

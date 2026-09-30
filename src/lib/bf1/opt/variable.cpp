@@ -3,7 +3,7 @@
 extern "C" {
 extern u32 SoundDriver;
 extern u16 NumberOfSongs;
-extern s32 D_00150824;
+extern s32 CurrentSoundMasterVolume;
 extern s32 CurrentMusicMasterVolume;
 extern u32 MusicDriver;
 
@@ -64,7 +64,7 @@ u16 GetNumberOfSongs(void)
 // FUNCTION: 0x000c2450
 s32 GetCurrentSoundMasterVolume(void)
 {
-    return D_00150824;
+    return CurrentSoundMasterVolume;
 }
 
 // FUNCTION: 0x000c2460

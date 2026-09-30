@@ -318,3 +318,14 @@
     add byte ptr [eax], al
     .byte 0x00
 .size "___GETDSEnd_",.-"___GETDSEnd_"
+
+.section _DATA,"aw",@progbits
+.globl "__GDAptr"
+"__GDAptr":
+    .long 0
+.globl "__D16Infoseg"
+"__D16Infoseg":
+    .word 0x20
+.globl "__x386_zero_base_selector"
+"__x386_zero_base_selector":
+    .word 0

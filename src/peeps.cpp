@@ -15,11 +15,6 @@ extern u8 D_00158192;
 extern char **D_00160370;
 extern char **D_00160318;
 extern char **D_001602a4;
-extern char D_0012d8e8[];
-
-// Initialiser data the compiler emits for a local char array in announce_new_illness_fax.
-extern char D_0012d8ea[];
-#pragma aux D_0012d8ea "W?$Wsi0dnew_line$n[]a$:.0$:?announce_new_illness_fax$n(xucpnpna)usnx[]a"
 
 void fn_000444e0(Thing *w);
 void fn_000b05f0(Thing *w);
@@ -1166,13 +1161,12 @@ u16 call_no_treatment(Thing *e, char **strs)
     s16 pct;
     u16 v14;
     u16 a;
-    u16 sep;
 
     room = 0;
     staff = 0;
     unused30 = 0;
     unused1c = 0;
-    sep = *(u16 *)D_0012d8e8;
+    char new_line[] = "\n";
     if (e <= thing) {
         return 0;
     }
@@ -1212,11 +1206,11 @@ u16 call_no_treatment(Thing *e, char **strs)
     } else {
         sprintf(buf2, strs[4], D_001602a4[e->style]);
     }
-    fn_000c93bf(buf2, (char *)&sep);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
+    fn_000c93bf(buf2, new_line);
     fn_000c93bf(buf2, buf1);
     sprintf(buf3, strs[5]);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     fn_000c93bf(buf2, buf3);
     LbTextDraw(a, b, buf2);
     return 0;
@@ -1279,7 +1273,6 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     int i;
     Expertise *info;
     u16 v28;
-    u16 sep;
     int unused18;
     int unused14;
     int staff;
@@ -1291,7 +1284,7 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     staff = 0;
     unused14 = 0;
     unused18 = 0;
-    sep = *(u16 *)D_0012d8ea;
+    char new_line[] = "\n";
     if (kind <= 1) {
         return 0;
     }
@@ -1322,15 +1315,15 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     b = 0;
     sprintf(buf3, strs[4], D_001602a4[kind]);
     fn_000c93bf(buf2, buf3);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     sprintf(buf3, strs[kind * 3 - 1]);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     fn_000c93bf(buf2, buf3);
     sprintf(buf3, strs[kind * 3 - 1 + 1]);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     fn_000c93bf(buf2, buf3);
     sprintf(buf3, strs[kind * 3 + 1]);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     fn_000c93bf(buf2, buf3);
     LbTextDraw(a, b, buf2);
     return 0;

@@ -493,7 +493,7 @@
     mov eax, edi
     jmp .L000dd01f
 .L000dd01a:
-    mov eax, dword ptr [_D_00150824]
+    mov eax, dword ptr [_CurrentSoundMasterVolume]
 .L000dd01f:
     call "SetSoundMasterVolume_"
 .L000dd024:

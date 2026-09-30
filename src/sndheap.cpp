@@ -41,7 +41,7 @@ struct SoundBankSample {
 
 extern u8 *memstart;
 extern u32 memsize;
-extern s32 sound_file;
+s32 sound_file = -1;
 extern s32 samples_in_bank;
 extern SampleTable *sample_table;
 

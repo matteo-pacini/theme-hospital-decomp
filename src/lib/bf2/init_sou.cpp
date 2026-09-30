@@ -1,5 +1,19 @@
 #include "snd.h"
 
+extern "C" {
+u32 MaxNumberOfSamples = 10;
+u8 SoundAble = 1;
+}
+u8 SixteenBit = 1;
+extern "C" {
+u8 SoundActive = 1;
+u8 AutoScanForSoundHardware = 1;
+u8 StereoSound = 1;
+volatile s8 CurrentSoundBank = -1;
+s32 CurrentSoundMasterVolume = 127;
+s32 SystemPlaybackRate = 22050;
+}
+
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
 
@@ -181,7 +195,7 @@ void InitSound(void)
         SoundInstalled = 1;
         sprintf(SoundProgressMessage, "BF24 - Init sound completed\n");
         SoundProgressLog(SoundProgressMessage);
-        SetSoundMasterVolume(SoundMasterVolumeOverride ? SoundMasterVolumeOverride : D_00150824);
+        SetSoundMasterVolume(SoundMasterVolumeOverride ? SoundMasterVolumeOverride : CurrentSoundMasterVolume);
     }
 }
 

@@ -206,7 +206,7 @@
     cmp byte ptr ["_SoundAble"], 0
     je .L000f01be
     xor eax, eax
-    movsx edx, byte ptr [_D_00150821]
+    movsx edx, byte ptr [_CurrentSoundBank]
     mov ax, di
     cmp edx, eax
     je .L000f01be
@@ -329,7 +329,7 @@
     .byte 0xe9; .long .L000f01f3-.-4  # jmp 0xf01f3
 .L000f0180:
     mov al, byte ptr [esp + 0x1c]
-    mov byte ptr [_D_00150821], al
+    mov byte ptr [_CurrentSoundBank], al
     mov eax, esi
     call "LbFileClose_"
     .byte 0x68; .long _D_001281bc  # push 0x81bc

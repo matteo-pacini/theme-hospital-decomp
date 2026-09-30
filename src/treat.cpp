@@ -6,7 +6,6 @@ extern s16 diag_register[][8];
 
 extern "C" {
 
-extern char D_001303c8[];
 extern char **D_001602a4;
 
 void fn_000c93bf(char *dst, char *src);
@@ -705,9 +704,8 @@ u16 call_no_diagnosis(Thing *w, char **strs)
     u16 b;
     s16 pct;
     u16 height;
-    u16 sep;
+    char new_line[] = "\n";
 
-    sep = *(u16 *)D_001303c8;
     if (w <= thing) {
         return 0;
     }
@@ -725,9 +723,9 @@ u16 call_no_diagnosis(Thing *w, char **strs)
     a = 0;
     b = 0;
     sprintf(buf2, strs[0]);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     fn_000c93bf(buf2, strs[1]);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     if (allhosps[w->owner].rooms[w->style].unknown1C == 1 && allhosps[w->owner].rooms[w->style].unknown1D == 1) {
         fn_000c93bf(buf2, buf1);
     }

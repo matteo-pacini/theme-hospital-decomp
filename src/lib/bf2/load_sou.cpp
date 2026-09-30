@@ -7,7 +7,7 @@ u8 load_sound_bank(long file, u8 bank);
 
 extern "C" {
 
-extern volatile s8 D_00150821;
+extern volatile s8 CurrentSoundBank;
 
 // NONMATCHING: bank-offset multiply uses eax instead of ecx; volatile load order
 // FUNCTION: 0xeff70
@@ -22,7 +22,7 @@ u32 LoadSounds(u8 bank)
     number = bank;
     sprintf(SoundProgressMessage, "BF42 - load sound bank %d\n", bank);
     SoundProgressLog(SoundProgressMessage);
-    if (SoundInstalled && SoundAble && D_00150821 != number && !DisableLoadSounds) {
+    if (SoundInstalled && SoundAble && CurrentSoundBank != number && !DisableLoadSounds) {
         StopAllSamples();
         file = LbFileOpen(D_0018d4c4, 2);
         if (file != -1) {
@@ -74,7 +74,7 @@ u32 LoadSounds(u8 bank)
                 SoundProgressLog(SoundProgressMessage);
                 return 1;
             }
-            D_00150821 = bank;
+            CurrentSoundBank = bank;
             LbFileClose(file);
             sprintf(SoundProgressMessage, "BF45 - load sound bank - passed\n");
             SoundProgressLog(SoundProgressMessage);

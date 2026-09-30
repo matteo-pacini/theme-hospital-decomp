@@ -21,7 +21,7 @@ void put_down_sprites(char *sbegin, char *send, long x, long y, long space_len);
 extern "C" {
 extern TbTextWindow lbTextJustifyWindow;
 extern TbTextWindow lbTextClipWindow;
-extern u8 lbSpacesPerTab;
+u8 lbSpacesPerTab = 4;
 
 int fn_000d0848(char *expr, char *file, int line);
 void int3(void);

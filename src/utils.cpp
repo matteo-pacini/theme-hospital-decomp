@@ -42,6 +42,8 @@ void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 
 }
 
+char fingchk2[20] = { 0xd6, 0xd4, 0xee, 0xe4, 0xc8, 0xd6, 0xd4, 0xcc };
+
 // FUNCTION: 0x000196c0
 u8 pick_random_player(void)
 {

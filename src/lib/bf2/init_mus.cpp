@@ -1,5 +1,13 @@
 #include "snd.h"
 
+extern "C" {
+s32 CurrentMusicMasterVolume = 127;
+u8 MusicAble = 1;
+u8 MusicActive = 1;
+s8 CurrentDangerMusicFadeDirection = 1;
+u8 DangerMusicVolumeChange = 255;
+}
+
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
 

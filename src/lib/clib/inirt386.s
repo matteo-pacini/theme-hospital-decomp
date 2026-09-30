@@ -103,6 +103,8 @@
     pop edi
     pop esi
     ret
+.globl "__null_FPE_rtn"
+"__null_FPE_rtn":
     .byte 0xc3
 .L000d064b:
     .byte 0x53

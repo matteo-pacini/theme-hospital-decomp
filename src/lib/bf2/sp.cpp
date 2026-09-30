@@ -1,8 +1,27 @@
 #include "net.h"
 
-extern "C" {
-extern __ic76sReceiveCallbacks *D_001507dc;
-}
+void __stdcall NilAddMsgCallback(u32 id, char *name, void *data);
+void __stdcall NilDeleteMsgCallback(u32 id, void *data);
+void __stdcall NilHostMsgCallback(u32 id, void *data);
+void __stdcall NilUserSysMsgCallback(void *data);
+void *__stdcall NilUserDataMsgCallback(u32 id, u32 size, u32 seq, void *data);
+void __stdcall NilRequestExchangeDataMsgCallback(u32 id, u32 seq, void *data);
+void __stdcall NilRequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data);
+void *__stdcall NilUnidirectionalMsgCallback(u32 id, u32 size, void *data);
+void __stdcall NilSystemUserMsgCallback(u32 id, void *msg, u32 size, void *data);
+
+static __ic76sReceiveCallbacks nilReceiveAspect = {
+    NilAddMsgCallback,
+    NilDeleteMsgCallback,
+    NilHostMsgCallback,
+    NilUserSysMsgCallback,
+    NilUserDataMsgCallback,
+    NilRequestExchangeDataMsgCallback,
+    NilRequestCompositeExchangeDataMsgCallback,
+    NilUnidirectionalMsgCallback,
+    NilSystemUserMsgCallback,
+    0,
+};
 
 /* Copies at most size - 1 characters and always terminates. */
 inline void NameCopy(char *dst, char *src, u32 size)
@@ -32,7 +51,7 @@ ServiceProvider::ServiceProvider()
     strcpy(name, "");
     started = 0;
     callback_data = 0;
-    callbacks = (__ic76sReceiveCallbacks *)&D_001507dc;
+    callbacks = &nilReceiveAspect;
 }
 
 // FUNCTION: 0x000d13bc

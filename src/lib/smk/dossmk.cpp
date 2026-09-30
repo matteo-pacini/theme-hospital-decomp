@@ -25,8 +25,8 @@ void __pascal SmackNextFrame(Smack *smk);
 u32 __pascal SmackWait(Smack *smk);
 void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 destheight, const void *buf, u32 flags);
 
-extern void *(*smack_malloc)(u32 bytes);
-extern void (*smack_free)(void *ptr);
+void *(*smack_malloc)(u32 bytes) = LbMemoryAlloc;
+void (*smack_free)(void *ptr) = (void (*)(void *))LbMemoryFree;
 extern void *smack_draw_callback;
 
 u32 GetSoundDriver(void);

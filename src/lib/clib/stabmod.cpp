@@ -24,7 +24,6 @@ struct THREAD_CTL {
 extern THREAD_CTL _wint_thread_data;
 extern RW_DTREG *D_00151700;
 extern DTREG_VFPTRS *__wcpp_2_data_dtreg_vfptrs_[];
-extern DTREG_VFPTRS D_001505d4;
 
 void __wcpp_2_destruct_all_(void);
 #pragma aux __wcpp_2_destruct_all_ "__wcpp_2_destruct_all__"
@@ -91,13 +90,22 @@ void fs_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw)
     ctl->obj_type = 0;
 }
 
+struct DTREG_VFPTRS {
+    RO_STATE *(*state_table)(RO_DTREG *ro);
+    void *(*point_object)(RW_DTREG *rw, unsigned index);
+    void (*init_traverse)(STAB_TRAVERSE *ctl, RW_DTREG *rw);
+};
+
+static DTREG_VFPTRS fs_vftable = { fs_state_table, fs_point_object, fs_init_traverse };
+#pragma aux fs_vftable "W?fs_vftable$n$__6rq0qbDTREG_VFTBL$$"
+
 void fs_init(void);
 #pragma aux fs_init "fn_000cf244_"
 
 // FUNCTION: 0xcf244
 void fs_init(void)
 {
-    __wcpp_2_data_dtreg_vfptrs_[3] = &D_001505d4;
+    __wcpp_2_data_dtreg_vfptrs_[3] = &fs_vftable;
 }
 
 AXI(fs_init, 10)

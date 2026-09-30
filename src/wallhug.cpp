@@ -7,7 +7,7 @@ u32 line_of_sight(wallhug_waypoint from, wallhug_waypoint to);
 u32 wallhug_cleanup(wallhug_path *path, u32 result);
 u32 huggers_met_again(wallhug_info *info);
 
-extern wallhug_waypoint wallhug_dirn_steps[];
+wallhug_waypoint wallhug_dirn_steps[] = { { 0, 0xff }, { 1, 0 }, { 0, 1 }, { 0xff, 0 } };
 extern s32 dx;
 extern s32 dy;
 extern s32 bresval;

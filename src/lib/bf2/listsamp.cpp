@@ -1,5 +1,7 @@
 #include "snd.h"
 
+u8 sample_queue_handle_stopped = 1;
+
 extern "C" {
 
 extern volatile u32 D_0018cd80;

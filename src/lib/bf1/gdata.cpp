@@ -1,7 +1,10 @@
 #include "bflib.h"
 
+static char *_defaultModifyDataLoadFilename(TbLoadFiles *files);
+
+static char *(*modify_data_load_filename_function)(TbLoadFiles *files) = _defaultModifyDataLoadFilename;
+
 extern "C" {
-extern char *(*D_0014d5e4)(TbLoadFiles *files);
 
 void *LbMemoryAllocLow(u32 size);
 void fn_000cd2cc(char *s, ...);
@@ -13,15 +16,13 @@ void int3(void);
 // FUNCTION: 0xbccf0
 void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *files))
 {
-    D_0014d5e4 = fn;
+    modify_data_load_filename_function = fn;
 }
 
 }
 
 // FUNCTION: 0xbcd08
-// Not static, as the original is: only D_0014d5e4's initialiser refers to it, and
-// that data is not part of this unit, so a static copy would not be emitted.
-char *_defaultModifyDataLoadFilename(TbLoadFiles *files)
+static char *_defaultModifyDataLoadFilename(TbLoadFiles *files)
 {
     return files->FName;
 }
@@ -40,7 +41,7 @@ int LbDataLoad(TbLoadFiles *files)
     else
         alloc = LbMemoryAlloc;
     LbDataFree(files);
-    fname = D_0014d5e4(files);
+    fname = modify_data_load_filename_function(files);
     if (*fname == '*') {
         *files->Start = (u8 *)alloc(files->SLength);
         if (*files->Start == 0)

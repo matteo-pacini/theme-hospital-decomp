@@ -2,13 +2,6 @@
 
 u8 treatment_machine_used(const u16 illness, const u16 tile);
 
-struct ComplexChoice {
-    u32 v[3];
-};
-
-extern ComplexChoice D_00136404;
-#pragma aux D_00136404 "W?$Wsi0fcomplexes$n[]ul$:.15$:?doctor_carries_out_examination$n(pn$Thing$$)vnx[]ul"
-
 extern "C" {
 extern s16 D_001567b0[8];
 }
@@ -185,11 +178,11 @@ void doctor_carries_out_examination(Thing *w)
         break;
     case 110:
         {
-            ComplexChoice complexes = D_00136404;
+            u32 complexes[] = { 0x456, 0x460, 0x46a };
 
             w->unknown103 = 111;
             w->state_b = 0x1c;
-            set_complex(w, complexes.v[old_newrand() % 3], 0);
+            set_complex(w, complexes[old_newrand() % 3], 0);
             fn_0003e724(w);
         }
         break;

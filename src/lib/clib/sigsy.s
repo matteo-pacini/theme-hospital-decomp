@@ -23,7 +23,7 @@
     mov dx, bx
     mov eax, ecx
     mov esi, dword ptr ["__STACKLOW"]
-    mov edi, dword ptr [_D_001507b8]
+    mov edi, dword ptr ["__child"]
     mov ecx, edx
     .byte 0xba; .long _D_0018d6a0  # mov edx, 0x6d6a0
     mov ebx, eax
@@ -85,7 +85,7 @@
     mov dx, bx
     mov eax, ecx
     mov esi, dword ptr ["__STACKLOW"]
-    mov edi, dword ptr [_D_001507b8]
+    mov edi, dword ptr ["__child"]
     mov ecx, edx
     .byte 0xba; .long _D_0018d6a0  # mov edx, 0x6d6a0
     mov ebx, eax

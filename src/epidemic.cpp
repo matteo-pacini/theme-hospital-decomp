@@ -2,14 +2,11 @@
 
 extern "C" {
 extern char **D_001602a4;
-extern char D_0014532c[];
 extern u16 D_00158190;
 extern u8 D_00158192;
 void fn_000c93bf(char *dst, char *src);
 }
 
-extern char D_0014532e[];
-#pragma aux D_0014532e "W?$Wsi0dnew_line$n[]a$:.0$:?epidemic_over$n(xucpnpna)vnx[]a"
 
 // FUNCTION: 0x000a0040
 void spread_epidemic(Thing *w, u16 n)
@@ -61,22 +58,21 @@ void declare_epidemic(char **strs)
     int a;
     int b;
     char buf1[200];
-    u16 sep;
+    char new_line[] = "\n";
 
-    sep = *(u16 *)D_0014532c;
     v = lbFontPtr ? lbFontPtr[34].height : 0;
     buf2[0] = 0;
     a = 0;
     b = 0;
     sprintf(buf1, strs[0], D_001602a4[myhosp->f20b]);
     fn_000c93bf(buf2, buf1);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     sprintf(buf1, strs[1], myhosp->f203);
     fn_000c93bf(buf2, buf1);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     sprintf(buf1, strs[2]);
     fn_000c93bf(buf2, buf1);
-    fn_000c93bf(buf2, (char *)&sep);
+    fn_000c93bf(buf2, new_line);
     sprintf(buf1, strs[3]);
     fn_000c93bf(buf2, buf1);
     LbTextDraw(a, b, buf2);
@@ -188,7 +184,7 @@ void epidemic_over(const u8 owner, char **strs)
     int kind;
     AllHosps *h;
     int v;
-    u16 sep;
+    char new_line[] = "\n";
     char buf1[200];
     char buf2[200];
     char buf3[200];
@@ -196,7 +192,6 @@ void epidemic_over(const u8 owner, char **strs)
     u16 a;
     u16 b;
 
-    sep = *(u16 *)D_0014532e;
     v = lbFontPtr ? lbFontPtr[34].height : 0;
     h = &allhosps[owner];
     kind = choice_spare_data;
@@ -226,9 +221,9 @@ void epidemic_over(const u8 owner, char **strs)
     a = 0;
     b = 0;
     fn_000c93bf(text, buf1);
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf2);
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf3);
     LbTextDraw(a, b, text);
 }

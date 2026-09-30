@@ -90,7 +90,49 @@ struct SerialHandler {
 // FUNCTION: 0xf51f0
 SerialHandler SerialCommHandler;
 extern ComHandlerInfo com_dev[];
-extern ModemResponse modem_response[];
+/* Modem result strings, verbose and numeric, and what GetModemResponse returns for each. */
+ModemResponse modem_response[] = {
+    { "OK", 1 },
+    { "CONNECT 300", 2 },
+    { "CONNECT 600", 2 },
+    { "CONNECT 0600", 2 },
+    { "CONNECT 2400", 2 },
+    { "CONNECT 4800", 2 },
+    { "CONNECT 7200", 2 },
+    { "CONNECT 9600", 2 },
+    { "CONNECT 12000", 2 },
+    { "CONNECT 14400", 2 },
+    { "CONNECT 16800", 2 },
+    { "CONNECT 19200", 2 },
+    { "CONNECT 21600", 2 },
+    { "CONNECT 24000", 2 },
+    { "CONNECT 26400", 2 },
+    { "CONNECT 28800", 2 },
+    { "CONNECT 38400", 2 },
+    { "CONNECT 57600", 2 },
+    { "CONNECT 115200", 2 },
+    { "CONNECT 75TX/1200RX", 2 },
+    { "CONNECT 1200TX/75RX", 2 },
+    { "CONNECT", 2 },
+    { "RING", 3 },
+    { "BUSY", 4 },
+    { "ERROR", 5 },
+    { "NO CARRIER", 6 },
+    { "NO DIALTONE", 7 },
+    { "NO DIAL TONE", 7 },
+    { "0", 1 },
+    { "1", 2 },
+    { "2", 3 },
+    { "3", 6 },
+    { "4", 5 },
+    { "5", 2 },
+    { "6", 7 },
+    { "7", 4 },
+    { "10", 2 },
+    { "11", 2 },
+    { "12", 2 },
+    { "", 0 },
+};
 
 void handle_com(TbSerialDev *dev);
 

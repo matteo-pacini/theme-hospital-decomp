@@ -1,6 +1,8 @@
-extern void (*__atexit)(void);
-extern void (*__int23_exit)(void);
-extern void (*__FPE_handler_exit)(void);
+void __null_int23_exit(void);
+
+void (*__atexit)(void) = __null_int23_exit;
+void (*__int23_exit)(void) = __null_int23_exit;
+void (*__FPE_handler_exit)(void) = __null_int23_exit;
 
 void __exit(int status);
 #pragma aux __exit aborts;

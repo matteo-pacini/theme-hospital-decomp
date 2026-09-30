@@ -3,7 +3,11 @@
 u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
 
 extern "C" {
-extern s8 D_00145338[16][2];
+// demo: earthquake_table
+s8 D_00145338[16][2] = {
+    { 4, 4 }, { 1, 2 }, { 3, 1 }, { 2, 1 }, { 0, -2 }, { -1, -2 }, { 4, -4 }, { 1, -2 },
+    { -4, 4 }, { -3, -1 }, { -2, 0 }, { 0, 2 }, { -2, -1 }, { -4, -4 }, { 2, 0 }, { -1, 2 },
+};
 void ReleaseLoopedSample(u32 source, s16 sample);
 void fn_000a30f0(s8 dx, s8 dy);
 }

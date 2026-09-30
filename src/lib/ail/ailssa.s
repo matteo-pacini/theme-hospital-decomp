@@ -1977,7 +1977,7 @@
 .globl "_M_0"
 .type "_M_0",@function
 "_M_0":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1e06
     mov ah, byte ptr [esi]
     xor eax, 0x8000
@@ -1985,7 +1985,7 @@
     movsx ebp, ax
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xe0  # jb 0xf1de6
 .L000f1e06:
     ret
@@ -1997,7 +1997,7 @@
 .globl "_M_1"
 .type "_M_1",@function
 "_M_1":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1e2a
     mov ah, byte ptr [esi]
     xor eax, 0x8000
@@ -2006,7 +2006,7 @@
     add dword ptr [edi], ebp
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xdd  # jb 0xf1e07
 .L000f1e2a:
     ret
@@ -2018,7 +2018,7 @@
 .globl "_M_3"
 .type "_M_3",@function
 "_M_3":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1e5c
     mov ah, byte ptr [esi]
     mov bh, byte ptr [esi + 1]
@@ -2030,7 +2030,7 @@
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcf  # jb 0xf1e2b
 .L000f1e5c:
     ret
@@ -2042,7 +2042,7 @@
 .globl "_M_7"
 .type "_M_7",@function
 "_M_7":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1e8e
     mov bh, byte ptr [esi]
     mov ah, byte ptr [esi + 1]
@@ -2054,7 +2054,7 @@
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcf  # jb 0xf1e5d
 .L000f1e8e:
     ret
@@ -2066,7 +2066,7 @@
 .globl "_M_8"
 .type "_M_8",@function
 "_M_8":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1eb2
     mov ax, word ptr [esi]
     xor eax, 0x8000
@@ -2074,7 +2074,7 @@
     movsx ebp, ax
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xdd  # jb 0xf1e8f
 .L000f1eb2:
     ret
@@ -2086,7 +2086,7 @@
 .globl "_M_9"
 .type "_M_9",@function
 "_M_9":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1ed9
     mov ax, word ptr [esi]
     xor eax, 0x8000
@@ -2095,7 +2095,7 @@
     add dword ptr [edi], ebp
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xda  # jb 0xf1eb3
 .L000f1ed9:
     ret
@@ -2107,7 +2107,7 @@
 .globl "_M_11"
 .type "_M_11",@function
 "_M_11":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1f0d
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
@@ -2119,7 +2119,7 @@
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcd  # jb 0xf1eda
 .L000f1f0d:
     ret
@@ -2131,7 +2131,7 @@
 .globl "_M_15"
 .type "_M_15",@function
 "_M_15":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1f41
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
@@ -2143,7 +2143,7 @@
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcd  # jb 0xf1f0e
 .L000f1f41:
     ret
@@ -2155,14 +2155,14 @@
 .globl "_M_16"
 .type "_M_16",@function
 "_M_16":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1f5d
     mov ah, byte ptr [esi]
     inc esi
     movsx ebp, ax
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xe5  # jb 0xf1f42
 .L000f1f5d:
     ret
@@ -2174,7 +2174,7 @@
 .globl "_M_17"
 .type "_M_17",@function
 "_M_17":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1f7c
     mov ah, byte ptr [esi]
     inc esi
@@ -2182,7 +2182,7 @@
     add dword ptr [edi], ebp
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xe2  # jb 0xf1f5e
 .L000f1f7c:
     ret
@@ -2194,7 +2194,7 @@
 .globl "_M_19"
 .type "_M_19",@function
 "_M_19":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1fa3
     mov ah, byte ptr [esi]
     mov bh, byte ptr [esi + 1]
@@ -2204,7 +2204,7 @@
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xda  # jb 0xf1f7d
 .L000f1fa3:
     ret
@@ -2216,7 +2216,7 @@
 .globl "_M_23"
 .type "_M_23",@function
 "_M_23":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1fca
     mov bh, byte ptr [esi]
     mov ah, byte ptr [esi + 1]
@@ -2226,7 +2226,7 @@
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xda  # jb 0xf1fa4
 .L000f1fca:
     ret
@@ -2238,14 +2238,14 @@
 .globl "_M_24"
 .type "_M_24",@function
 "_M_24":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f1fe9
     mov ax, word ptr [esi]
     add esi, 2
     movsx ebp, ax
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xe2  # jb 0xf1fcb
 .L000f1fe9:
     ret
@@ -2257,7 +2257,7 @@
 .globl "_M_25"
 .type "_M_25",@function
 "_M_25":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f200b
     mov ax, word ptr [esi]
     add esi, 2
@@ -2265,7 +2265,7 @@
     add dword ptr [edi], ebp
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xdf  # jb 0xf1fea
 .L000f200b:
     ret
@@ -2277,7 +2277,7 @@
 .globl "_M_27"
 .type "_M_27",@function
 "_M_27":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2034
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
@@ -2287,7 +2287,7 @@
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd8  # jb 0xf200c
 .L000f2034:
     ret
@@ -2299,7 +2299,7 @@
 .globl "_M_31"
 .type "_M_31",@function
 "_M_31":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f205d
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
@@ -2309,7 +2309,7 @@
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd8  # jb 0xf2035
 .L000f205d:
     ret
@@ -2321,16 +2321,16 @@
 .globl "_M_32"
 .type "_M_32",@function
 "_M_32":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2089
     mov ah, byte ptr [esi]
     xor eax, 0x8000
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
-    adc esi, dword ptr ["_SmackTimerSetupAddr"+0x14]
+    add ecx, dword ptr [.Ldata+0x14]
+    adc esi, dword ptr [.Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd5  # jb 0xf205e
 .L000f2089:
     ret
@@ -2342,17 +2342,17 @@
 .globl "_M_33"
 .type "_M_33",@function
 "_M_33":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f20b8
     mov ah, byte ptr [esi]
     xor eax, 0x8000
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
-    adc esi, dword ptr ["_SmackTimerSetupAddr"+0x14]
+    add ecx, dword ptr [.Ldata+0x14]
+    adc esi, dword ptr [.Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd2  # jb 0xf208a
 .L000f20b8:
     ret
@@ -2364,22 +2364,22 @@
 .globl "_M_35"
 .type "_M_35",@function
 "_M_35":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f20f8
     mov ah, byte ptr [esi]
     mov bh, byte ptr [esi + 1]
     xor eax, 0x8000
     xor ebx, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc1  # jb 0xf20b9
 .L000f20f8:
     ret
@@ -2391,22 +2391,22 @@
 .globl "_M_39"
 .type "_M_39",@function
 "_M_39":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2138
     mov bh, byte ptr [esi]
     mov ah, byte ptr [esi + 1]
     xor eax, 0x8000
     xor ebx, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc1  # jb 0xf20f9
 .L000f2138:
     ret
@@ -2418,18 +2418,18 @@
 .globl "_M_40"
 .type "_M_40",@function
 "_M_40":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f216a
     mov ax, word ptr [esi]
     xor eax, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcf  # jb 0xf2139
 .L000f216a:
     ret
@@ -2441,19 +2441,19 @@
 .globl "_M_41"
 .type "_M_41",@function
 "_M_41":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f219f
     mov ax, word ptr [esi]
     xor eax, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcc  # jb 0xf216b
 .L000f219f:
     ret
@@ -2465,22 +2465,22 @@
 .globl "_M_43"
 .type "_M_43",@function
 "_M_43":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f21e1
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
     xor eax, 0x8000
     xor ebx, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbf  # jb 0xf21a0
 .L000f21e1:
     ret
@@ -2492,22 +2492,22 @@
 .globl "_M_47"
 .type "_M_47",@function
 "_M_47":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2223
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
     xor eax, 0x8000
     xor ebx, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbf  # jb 0xf21e2
 .L000f2223:
     ret
@@ -2519,15 +2519,15 @@
 .globl "_M_48"
 .type "_M_48",@function
 "_M_48":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f224a
     mov ah, byte ptr [esi]
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
-    adc esi, dword ptr ["_SmackTimerSetupAddr"+0x14]
+    add ecx, dword ptr [.Ldata+0x14]
+    adc esi, dword ptr [.Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xda  # jb 0xf2224
 .L000f224a:
     ret
@@ -2539,16 +2539,16 @@
 .globl "_M_49"
 .type "_M_49",@function
 "_M_49":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2274
     mov ah, byte ptr [esi]
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
-    adc esi, dword ptr ["_SmackTimerSetupAddr"+0x14]
+    add ecx, dword ptr [.Ldata+0x14]
+    adc esi, dword ptr [.Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd7  # jb 0xf224b
 .L000f2274:
     ret
@@ -2560,20 +2560,20 @@
 .globl "_M_51"
 .type "_M_51",@function
 "_M_51":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f22a9
     mov ah, byte ptr [esi]
     mov bh, byte ptr [esi + 1]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcc  # jb 0xf2275
 .L000f22a9:
     ret
@@ -2585,20 +2585,20 @@
 .globl "_M_55"
 .type "_M_55",@function
 "_M_55":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f22de
     mov bh, byte ptr [esi]
     mov ah, byte ptr [esi + 1]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcc  # jb 0xf22aa
 .L000f22de:
     ret
@@ -2610,17 +2610,17 @@
 .globl "_M_56"
 .type "_M_56",@function
 "_M_56":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f230b
     mov ax, word ptr [esi]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd4  # jb 0xf22df
 .L000f230b:
     ret
@@ -2632,18 +2632,18 @@
 .globl "_M_57"
 .type "_M_57",@function
 "_M_57":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f233b
     mov ax, word ptr [esi]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd1  # jb 0xf230c
 .L000f233b:
     ret
@@ -2655,20 +2655,20 @@
 .globl "_M_59"
 .type "_M_59",@function
 "_M_59":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2372
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xca  # jb 0xf233c
 .L000f2372:
     ret
@@ -2680,20 +2680,20 @@
 .globl "_M_63"
 .type "_M_63",@function
 "_M_63":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f23a9
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     add dword ptr [edi], ebp
     movsx ebp, bx
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xca  # jb 0xf2373
 .L000f23a9:
     ret
@@ -2705,14 +2705,14 @@
 .globl "_M_64"
 .type "_M_64",@function
 "_M_64":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f23c5
     mov al, byte ptr [esi]
     inc esi
     mov ebp, dword ptr [edx + eax*4]
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xe5  # jb 0xf23aa
 .L000f23c5:
     ret
@@ -2724,7 +2724,7 @@
 .globl "_M_65"
 .type "_M_65",@function
 "_M_65":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f23eb
     mov al, byte ptr [esi]
     inc esi
@@ -2733,7 +2733,7 @@
     mov ebp, dword ptr [edx + eax*4 + 0x400]
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xdb  # jb 0xf23c6
 .L000f23eb:
     ret
@@ -2745,7 +2745,7 @@
 .globl "_M_66"
 .type "_M_66",@function
 "_M_66":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2415
     mov al, byte ptr [esi]
     mov bl, byte ptr [esi + 1]
@@ -2755,7 +2755,7 @@
     mov ebp, dword ptr [edx + ebx*4 + 0x400]
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd7  # jb 0xf23ec
 .L000f2415:
     ret
@@ -2767,7 +2767,7 @@
 .globl "_M_67"
 .type "_M_67",@function
 "_M_67":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2440
     mov al, byte ptr [esi]
     mov bl, byte ptr [esi + 1]
@@ -2777,7 +2777,7 @@
     mov ebp, dword ptr [edx + ebx*4 + 0x400]
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd6  # jb 0xf2416
 .L000f2440:
     ret
@@ -2789,7 +2789,7 @@
 .globl "_M_70"
 .type "_M_70",@function
 "_M_70":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f246a
     mov bl, byte ptr [esi]
     mov al, byte ptr [esi + 1]
@@ -2799,7 +2799,7 @@
     mov ebp, dword ptr [edx + ebx*4 + 0x400]
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd7  # jb 0xf2441
 .L000f246a:
     ret
@@ -2811,7 +2811,7 @@
 .globl "_M_71"
 .type "_M_71",@function
 "_M_71":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2495
     mov bl, byte ptr [esi]
     mov al, byte ptr [esi + 1]
@@ -2821,7 +2821,7 @@
     mov ebp, dword ptr [edx + ebx*4 + 0x400]
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd6  # jb 0xf246b
 .L000f2495:
     ret
@@ -2833,7 +2833,7 @@
 .globl "_M_72"
 .type "_M_72",@function
 "_M_72":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f24bf
     mov ax, word ptr [esi]
     xor eax, 0x8000
@@ -2843,7 +2843,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd7  # jb 0xf2496
 .L000f24bf:
     ret
@@ -2855,7 +2855,7 @@
 .globl "_M_73"
 .type "_M_73",@function
 "_M_73":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f24f9
     mov ax, word ptr [esi]
     xor eax, 0x8000
@@ -2869,7 +2869,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc7  # jb 0xf24c0
 .L000f24f9:
     ret
@@ -2881,7 +2881,7 @@
 .globl "_M_74"
 .type "_M_74",@function
 "_M_74":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f253c
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
@@ -2897,7 +2897,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbe  # jb 0xf24fa
 .L000f253c:
     ret
@@ -2909,7 +2909,7 @@
 .globl "_M_75"
 .type "_M_75",@function
 "_M_75":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2580
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
@@ -2925,7 +2925,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbd  # jb 0xf253d
 .L000f2580:
     ret
@@ -2937,7 +2937,7 @@
 .globl "_M_78"
 .type "_M_78",@function
 "_M_78":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f25c3
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
@@ -2953,7 +2953,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbe  # jb 0xf2581
 .L000f25c3:
     ret
@@ -2965,7 +2965,7 @@
 .globl "_M_79"
 .type "_M_79",@function
 "_M_79":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2607
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
@@ -2981,7 +2981,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbd  # jb 0xf25c4
 .L000f2607:
     ret
@@ -2993,7 +2993,7 @@
 .globl "_M_88"
 .type "_M_88",@function
 "_M_88":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f262c
     mov ax, word ptr [esi]
     add esi, 2
@@ -3002,7 +3002,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xdc  # jb 0xf2608
 .L000f262c:
     ret
@@ -3014,7 +3014,7 @@
 .globl "_M_89"
 .type "_M_89",@function
 "_M_89":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2661
     mov ax, word ptr [esi]
     add esi, 2
@@ -3027,7 +3027,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xcc  # jb 0xf262d
 .L000f2661:
     ret
@@ -3039,7 +3039,7 @@
 .globl "_M_90"
 .type "_M_90",@function
 "_M_90":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2699
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
@@ -3053,7 +3053,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc9  # jb 0xf2662
 .L000f2699:
     ret
@@ -3065,7 +3065,7 @@
 .globl "_M_91"
 .type "_M_91",@function
 "_M_91":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f26d2
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
@@ -3079,7 +3079,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc8  # jb 0xf269a
 .L000f26d2:
     ret
@@ -3091,7 +3091,7 @@
 .globl "_M_94"
 .type "_M_94",@function
 "_M_94":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f270a
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
@@ -3105,7 +3105,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc9  # jb 0xf26d3
 .L000f270a:
     ret
@@ -3117,7 +3117,7 @@
 .globl "_M_95"
 .type "_M_95",@function
 "_M_95":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2743
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
@@ -3131,7 +3131,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc8  # jb 0xf270b
 .L000f2743:
     ret
@@ -3143,15 +3143,15 @@
 .globl "_M_96"
 .type "_M_96",@function
 "_M_96":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f276a
     mov al, byte ptr [esi]
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
-    adc esi, dword ptr ["_SmackTimerSetupAddr"+0x14]
+    add ecx, dword ptr [.Ldata+0x14]
+    adc esi, dword ptr [.Ldata+0x18]
     mov ebp, dword ptr [edx + eax*4]
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xda  # jb 0xf2744
 .L000f276a:
     ret
@@ -3163,17 +3163,17 @@
 .globl "_M_97"
 .type "_M_97",@function
 "_M_97":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f279b
     mov al, byte ptr [esi]
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
-    adc esi, dword ptr ["_SmackTimerSetupAddr"+0x14]
+    add ecx, dword ptr [.Ldata+0x14]
+    adc esi, dword ptr [.Ldata+0x18]
     mov ebp, dword ptr [edx + eax*4]
     add dword ptr [edi], ebp
     mov ebp, dword ptr [edx + eax*4 + 0x400]
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xd0  # jb 0xf276b
 .L000f279b:
     ret
@@ -3185,20 +3185,20 @@
 .globl "_M_98"
 .type "_M_98",@function
 "_M_98":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f27d3
     mov al, byte ptr [esi]
     mov bl, byte ptr [esi + 1]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     mov ebp, dword ptr [edx + eax*4]
     add dword ptr [edi], ebp
     mov ebp, dword ptr [edx + ebx*4 + 0x400]
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc9  # jb 0xf279c
 .L000f27d3:
     ret
@@ -3210,20 +3210,20 @@
 .globl "_M_99"
 .type "_M_99",@function
 "_M_99":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f280c
     mov al, byte ptr [esi]
     mov bl, byte ptr [esi + 1]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     mov ebp, dword ptr [edx + eax*4]
     add dword ptr [edi], ebp
     mov ebp, dword ptr [edx + ebx*4 + 0x400]
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc8  # jb 0xf27d4
 .L000f280c:
     ret
@@ -3235,20 +3235,20 @@
 .globl "_M_102"
 .type "_M_102",@function
 "_M_102":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2844
     mov bl, byte ptr [esi]
     mov al, byte ptr [esi + 1]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     mov ebp, dword ptr [edx + eax*4]
     add dword ptr [edi], ebp
     mov ebp, dword ptr [edx + ebx*4 + 0x400]
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc9  # jb 0xf280d
 .L000f2844:
     ret
@@ -3260,20 +3260,20 @@
 .globl "_M_103"
 .type "_M_103",@function
 "_M_103":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f287d
     mov bl, byte ptr [esi]
     mov al, byte ptr [esi + 1]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     mov ebp, dword ptr [edx + eax*4]
     add dword ptr [edi], ebp
     mov ebp, dword ptr [edx + ebx*4 + 0x400]
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc8  # jb 0xf2845
 .L000f287d:
     ret
@@ -3285,20 +3285,20 @@
 .globl "_M_104"
 .type "_M_104",@function
 "_M_104":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f28b5
     mov ax, word ptr [esi]
     xor eax, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xc9  # jb 0xf287e
 .L000f28b5:
     ret
@@ -3310,14 +3310,14 @@
 .globl "_M_105"
 .type "_M_105",@function
 "_M_105":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f28fd
     mov ax, word ptr [esi]
     xor eax, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3327,7 +3327,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xb9  # jb 0xf28b6
 .L000f28fd:
     ret
@@ -3339,16 +3339,16 @@
 .globl "_M_106"
 .type "_M_106",@function
 "_M_106":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f294e
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
     xor eax, 0x8000
     xor ebx, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3358,7 +3358,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xb0  # jb 0xf28fe
 .L000f294e:
     ret
@@ -3370,16 +3370,16 @@
 .globl "_M_107"
 .type "_M_107",@function
 "_M_107":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f29a0
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
     xor eax, 0x8000
     xor ebx, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3389,7 +3389,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xaf  # jb 0xf294f
 .L000f29a0:
     ret
@@ -3401,16 +3401,16 @@
 .globl "_M_110"
 .type "_M_110",@function
 "_M_110":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f29f1
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
     xor eax, 0x8000
     xor ebx, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3420,7 +3420,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xb0  # jb 0xf29a1
 .L000f29f1:
     ret
@@ -3432,16 +3432,16 @@
 .globl "_M_111"
 .type "_M_111",@function
 "_M_111":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2a43
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
     xor eax, 0x8000
     xor ebx, 0x8000
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3451,7 +3451,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xaf  # jb 0xf29f2
 .L000f2a43:
     ret
@@ -3463,19 +3463,19 @@
 .globl "_M_120"
 .type "_M_120",@function
 "_M_120":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2a76
     mov ax, word ptr [esi]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xce  # jb 0xf2a44
 .L000f2a76:
     ret
@@ -3487,13 +3487,13 @@
 .globl "_M_121"
 .type "_M_121",@function
 "_M_121":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2ab9
     mov ax, word ptr [esi]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3503,7 +3503,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbe  # jb 0xf2a77
 .L000f2ab9:
     ret
@@ -3515,14 +3515,14 @@
 .globl "_M_122"
 .type "_M_122",@function
 "_M_122":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2aff
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3532,7 +3532,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbb  # jb 0xf2aba
 .L000f2aff:
     ret
@@ -3544,14 +3544,14 @@
 .globl "_M_123"
 .type "_M_123",@function
 "_M_123":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2b46
     mov ax, word ptr [esi]
     mov bx, word ptr [esi + 2]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3561,7 +3561,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xba  # jb 0xf2b00
 .L000f2b46:
     ret
@@ -3573,14 +3573,14 @@
 .globl "_M_126"
 .type "_M_126",@function
 "_M_126":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2b8c
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3590,7 +3590,7 @@
     sar ebp, 7
     add dword ptr [edi], ebp
     add edi, 4
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xbb  # jb 0xf2b47
 .L000f2b8c:
     ret
@@ -3602,14 +3602,14 @@
 .globl "_M_127"
 .type "_M_127",@function
 "_M_127":
-    cmp esi, dword ptr ["_SmackTimerSetupAddr"+0x4]
+    cmp esi, dword ptr [.Ldata+0x8]
     jae .L000f2bd3
     mov bx, word ptr [esi]
     mov ax, word ptr [esi + 2]
     {load} xor ebp, ebp
-    add ecx, dword ptr ["_SmackTimerSetupAddr"+0x10]
+    add ecx, dword ptr [.Ldata+0x14]
     {load} adc ebp, ebp
-    add esi, dword ptr [ebp*4 + "_SmackTimerSetupAddr"+0x14]
+    add esi, dword ptr [ebp*4 + .Ldata+0x18]
     movsx ebp, ax
     imul ebp, dword ptr [edx]
     sar ebp, 7
@@ -3619,7 +3619,7 @@
     sar ebp, 7
     add dword ptr [edi + 4], ebp
     add edi, 8
-    cmp edi, dword ptr ["_SmackTimerSetupAddr"+0xc]
+    cmp edi, dword ptr [.Ldata+0x10]
     .byte 0x72; .byte 0xba  # jb 0xf2b8d
 .L000f2bd3:
     ret
@@ -3685,7 +3685,7 @@
     je .L000f2c56
     or eax, 0x10
 .L000f2c56:
-    mov dword ptr ["_locked"+0x4], eax
+    mov dword ptr [.Ldata], eax
     mov eax, 0
     mov edx, dword ptr [ecx + 0x4c]
     cmp edx, 0
@@ -3705,28 +3705,28 @@
     {load} mov ebx, eax
     shr ebx, 0x10
     shl eax, 0x10
-    mov dword ptr ["_SmackTimerSetupAddr"+0x10], eax
+    mov dword ptr [.Ldata+0x14], eax
     {load} mov eax, ebx
     inc ebx
-    test dword ptr ["_locked"+0x4], 2
+    test dword ptr [.Ldata], 2
     je .L000f2ca9
     shl eax, 1
     shl ebx, 1
 .L000f2ca9:
-    test dword ptr ["_locked"+0x4], 8
+    test dword ptr [.Ldata], 8
     je .L000f2cb9
     shl eax, 1
     shl ebx, 1
 .L000f2cb9:
-    mov dword ptr ["_SmackTimerSetupAddr"+0x14], eax
-    mov dword ptr ["_SmackTimerSetupAddr"+0x18], ebx
-    or dword ptr ["_locked"+0x4], 0x20
+    mov dword ptr [.Ldata+0x18], eax
+    mov dword ptr [.Ldata+0x1c], ebx
+    or dword ptr [.Ldata], 0x20
 .L000f2ccb:
     mov ebx, dword ptr [edi + 0x50]
     mov eax, dword ptr [edi + 0x54]
-    mov dword ptr ["_SmackTimerSetupAddr"+0x8], eax
+    mov dword ptr [.Ldata+0xc], eax
     {load} add ebx, eax
-    mov dword ptr ["_SmackTimerSetupAddr"+0xc], ebx
+    mov dword ptr [.Ldata+0x10], ebx
     {load} mov edi, eax
     add edi, dword ptr [ebp + 0x10]
     mov ebx, dword ptr [ecx + 0x2c]
@@ -3734,13 +3734,13 @@
     add esi, dword ptr [ecx + ebx*4 + 0x1c]
     {load} mov eax, esi
     add eax, dword ptr [ebp + 0xc]
-    mov dword ptr ["_SmackTimerSetupAddr"+0x4], eax
+    mov dword ptr [.Ldata+0x8], eax
     lea edx, [ecx + 0x58]
     mov eax, 0
     mov ebx, 0
     mov ecx, 0x80000000
     push ebp
-    mov ebp, dword ptr ["_locked"+0x4]
+    mov ebp, dword ptr [.Ldata]
     call dword ptr cs:[ebp*4 + "fn_000f0da8_"+0x200]
     pop ebp
     mov ecx, dword ptr [ebp + 8]
@@ -3748,7 +3748,7 @@
     sub esi, dword ptr [ecx + ebx*4 + 0xc]
     mov dword ptr [ecx + ebx*4 + 0x1c], esi
     {load} mov eax, edi
-    sub eax, dword ptr ["_SmackTimerSetupAddr"+0x8]
+    sub eax, dword ptr [.Ldata+0xc]
     pop es
     pop ds
     pop edi
@@ -3792,7 +3792,7 @@
     jbe .L000f2d6f
     or eax, 0x40
 .L000f2d6f:
-    mov dword ptr ["_locked"+0x4], eax
+    mov dword ptr [.Ldata], eax
     mov esi, dword ptr [ebx + 0x54]
     mov ecx, dword ptr [ebx + 0x4c]
     test dword ptr [ebx + 0x20], 0x20
@@ -3806,7 +3806,7 @@
     lea ebx, [eax + edi]
     jmp .L000f2db6
 .L000f2d9d:
-    or dword ptr ["_locked"+0x4], 8
+    or dword ptr [.Ldata], 8
     mov eax, dword ptr [ebx + 0x14]
     mov edi, dword ptr [ebx + 0x30]
     lea ebx, [eax + edi]
@@ -3815,7 +3815,7 @@
     {load} add edi, eax
     {load} add ebx, eax
 .L000f2db6:
-    mov eax, dword ptr ["_locked"+0x4]
+    mov eax, dword ptr [.Ldata]
     call dword ptr cs:[eax*4 + "fn_000f0da8_"]
     pop es
     pop ds
@@ -3896,7 +3896,7 @@
     push ds
     push es
     .byte 0x68; .long "___WD_Present"  # push 0x31b88
-    .byte 0x68; .long "_locked"+0x4  # push 0x31b68
+    .byte 0x68; .long .Ldata  # push 0x31b68
     call "_AIL_vmm_lock_range"
     add esp, 8
     .byte 0x68; .long "_AILSSA_VMM_lock"  # push 0xe2e3c
@@ -3910,3 +3910,7 @@
     pop ebx
     ret
 .size "_AILSSA_VMM_lock",.-"_AILSSA_VMM_lock"
+
+.section _DATA,"aw",@progbits
+.Ldata:
+    .fill 8, 4, 0

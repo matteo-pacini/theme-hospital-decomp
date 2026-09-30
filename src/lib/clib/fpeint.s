@@ -196,7 +196,7 @@
     .byte 0x8d; .byte 0x05; .long _D_00153ae0+0x16
     .byte 0xa3; .long "__STACKLOW"
     .byte 0x0f; .byte 0xb6; .byte 0xc1
-    .byte 0xff; .byte 0x15; .long _D_001507c9
+    .byte 0xff; .byte 0x15; .long "__FPE_handler"
     .byte 0x66; .byte 0x8e; .byte 0x15; .long _D_00153ae0+0x216
     .byte 0x8b; .byte 0x25; .long _D_00153ae0+0x218
     .byte 0x8f; .byte 0x05; .long "__STACKLOW"

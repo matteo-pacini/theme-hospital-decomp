@@ -45,7 +45,20 @@ struct StatItem {
 
 extern "C" {
 extern Event D_001549d0[];
-extern StatItem D_00136388[];
+// demo: banktext
+StatItem D_00136388[] = {
+    { 1, 32, 8 },
+    { 2, 8, 24 },
+    { 3, 2, 40 },
+    { 4, 11, 40 },
+    { 5, 40, 40 },
+    { 6, 50, 40 },
+    { 7, 62, 40 },
+    { 8, 84, 405 },
+    { 2, 25, 405 },
+    { 9, 568, 405, { 0x30, 0, 0x1e } },
+    { 0, 0, 0 },
+};
 extern char **D_0016032c;
 extern char **D_001602b4;
 extern char **D_001602a4;

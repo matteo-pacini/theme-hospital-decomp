@@ -134,7 +134,7 @@
     mov eax, dword ptr [ebp - 0xc]
     call "LbDataFree_"
     mov eax, dword ptr [ebp - 0xc]
-    call dword ptr [_D_0014d5e4]
+    call dword ptr ["W?modify_data_load_filename_function$npn(pn$TbLoadFiles$$)pna"]
     mov dword ptr [ebp - 4], eax
     mov eax, dword ptr [ebp - 4]
     cmp byte ptr [eax], 0x2a

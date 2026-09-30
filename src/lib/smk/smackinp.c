@@ -193,22 +193,28 @@ typedef struct SmackSum {
     u32 HighestExtraUsed;
 } SmackSum;
 
-extern u32 sounds;
-extern u8 *trackbuf;
-extern s32 forcerate;
-extern u32 simspeed;
-extern u8 pallookup[];
+u32 sounds = 0;
+u8 *trackbuf = NULL;
+u32 simspeed = 0;
+s32 forcerate = 0;
 extern u32 (__pascal *SmackTimerReadAddr)(void);
 extern void (__pascal *SmackTimerDoneAddr)(void);
-extern void (__pascal *D_00151b98)(void);
+extern void (__pascal *SmackTimerSetupAddr)(void);
 extern void (__pascal *LowSoundCheckAddr)(void);
-extern u8 (__pascal *LowSoundOpenAddr)(SmackSnd *snd, u32 flags);
+u8 (__pascal *LowSoundOpenAddr)(SmackSnd *snd, u32 flags) = NULL;
 extern void (__pascal *D_0018cdbc)(SmackSnd *snd);
 extern u32 (__pascal *LowSoundPlayedAddr)(SmackSnd *snd);
 extern void (__pascal *LowSoundPurgeAddr)(SmackSnd *snd);
-extern void (__pascal *D_00151688)(SmackSnd *snd);
-extern u8 (__pascal *D_0015168c)(SmackSnd *snd);
-extern void (__pascal *D_00151690)(SmackSnd *snd, u32 volume, u32 pan);
+void (__pascal *LowSoundOffAddr)(SmackSnd *snd) = NULL;
+u8 (__pascal *LowSoundOnAddr)(SmackSnd *snd) = NULL;
+void (__pascal *LowSoundVolPanAddr)(SmackSnd *snd, u32 volume, u32 pan) = NULL;
+char SmackerVersionString[] = "*** Smacker Version: 2.2k***";
+u8 pallookup[64] = {
+    0x00, 0x04, 0x08, 0x0c, 0x10, 0x14, 0x18, 0x1c, 0x20, 0x24, 0x28, 0x2c, 0x30, 0x34, 0x38, 0x3c,
+    0x41, 0x45, 0x49, 0x4d, 0x51, 0x55, 0x59, 0x5d, 0x61, 0x65, 0x69, 0x6d, 0x71, 0x75, 0x79, 0x7d,
+    0x82, 0x86, 0x8a, 0x8e, 0x92, 0x96, 0x9a, 0x9e, 0xa2, 0xa6, 0xaa, 0xae, 0xb2, 0xb6, 0xba, 0xbe,
+    0xc3, 0xc7, 0xcb, 0xcf, 0xd3, 0xd7, 0xdb, 0xdf, 0xe3, 0xe7, 0xeb, 0xef, 0xf3, 0xf7, 0xfb, 0xff,
+};
 
 void *__pascal RADMALLOC(u32 bytes);
 void __pascal RADFREE(void *ptr);
@@ -687,7 +693,7 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     total = 0;
     if (name == NULL)
         return NULL;
-    D_00151b98();
+    SmackTimerSetupAddr();
     start = SmackTimerReadAddr();
     if (flags & 0x1000) {
         handle = (flags & 0x2000000) ? *(u32 *)name : (u32)name;
@@ -926,7 +932,7 @@ void __pascal SmackFrameRate(s32 rate)
 
 // FUNCTION: 0xe9a20
 // NONMATCHING: register allocation; the target keeps behind in ebp and
-// spills the sounds[] cursor (one more dword of frame), loads D_0015168c into
+// spills the sounds[] cursor (one more dword of frame), loads LowSoundOnAddr into
 // a register before testing it, and does not keep 0 in a register in the
 // second loop
 u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
@@ -945,7 +951,7 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
                 snd = smk->sounds[i];
                 if (snd == NULL)
                     continue;
-                if (D_0015168c != NULL && !D_0015168c(snd))
+                if (LowSoundOnAddr != NULL && !LowSoundOnAddr(snd))
                     return 0;
                 snd->f24 = LowSoundPlayedAddr(snd);
                 behind = snd->f2c - snd->f24;
@@ -979,8 +985,8 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
         smk->f438 = 1;
         for (i = 0; i < 7; i++) {
             if (smk->sounds[i] != NULL) {
-                if (D_00151688 != NULL)
-                    D_00151688(smk->sounds[i]);
+                if (LowSoundOffAddr != NULL)
+                    LowSoundOffAddr(smk->sounds[i]);
                 snd = smk->sounds[i];
                 snd->readpos = snd->writepos = snd->buf;
                 snd->f2c -= snd->f10;
@@ -1795,8 +1801,8 @@ void __pascal SmackVolumePan(Smack *smk, u32 trackflag, u32 volume, u32 pan)
     while (trackflag & SMACKTRACKS) {
         trk = nexttrack(&trackflag);
         if (trk < 7) {
-            if (smk->sounds[trk] != NULL && D_00151690 != NULL)
-                D_00151690(smk->sounds[trk], volume, pan);
+            if (smk->sounds[trk] != NULL && LowSoundVolPanAddr != NULL)
+                LowSoundVolPanAddr(smk->sounds[trk], volume, pan);
         }
     }
 }

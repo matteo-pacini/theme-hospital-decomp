@@ -1,5 +1,10 @@
 #include "net.h"
 
+/* Real-mode event service routines, copied into the DOS buffer at 0x78 and
+   0x80. */
+static char ipxsendesr[] = { 0x2e, 0x80, 0x06, 0x88, 0x00, 0x01, 0xcb, 0x00 }; /* add byte ptr cs:[0x88], 1; retf */
+static char ipxrecvesr[] = { 0x2e, 0x80, 0x06, 0x89, 0x00, 0x01, 0xcb, 0x00 }; /* add byte ptr cs:[0x89], 1; retf */
+
 u16 Swap16(u16 v)
 {
     u16 r = v >> 8;

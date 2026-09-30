@@ -16,7 +16,6 @@ struct PlayerPopup {
 };
 
 extern "C" {
-extern char D_00149628[];
 extern PlayerPopup D_0015f5c2[];
 extern char **D_001602a4;
 extern char **D_001602cc;
@@ -34,8 +33,6 @@ void setup_emergency_stats(u16 call, u8 owner);
 u16 summon_vehicle(u16 owner, u8 a, u16 b, u16 c, u16 d);
 u32 old_newrand(void);
 
-extern char D_0014962a[];
-#pragma aux D_0014962a "W?$Wsi0dnew_line$n[]a$:.0$:?emergency_over$n(ucpnpna)vnx[]a"
 
 u16 saferand(void);
 u16 count_emergency_staff(u8 owner);
@@ -199,7 +196,6 @@ u32 announce_emergency(u8 owner, char **strs)
     s32 staff;
     s32 cured;
     s32 count;
-    u16 sep;
     s32 v;
     AllHosps *h;
     u16 call;
@@ -220,7 +216,7 @@ u32 announce_emergency(u8 owner, char **strs)
     staff = 0;
     cured = 0;
     count = 0;
-    sep = *(u16 *)D_00149628;
+    char new_line[] = "\n";
     v = lbFontPtr ? lbFontPtr[34].height : 0;
     h = &allhosps[owner];
     if (h->f1e2s != 0)
@@ -256,7 +252,7 @@ u32 announce_emergency(u8 owner, char **strs)
     sprintf(buf, strs[0], name);
     fn_000c93bf(text, buf);
     sprintf(buf, strs[1], patients, D_001602a4[illness]);
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
     if (cured) {
         if (count)
@@ -272,10 +268,10 @@ u32 announce_emergency(u8 owner, char **strs)
     } else {
         sprintf(buf, strs[7]);
     }
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
     sprintf(buf, strs[8], bonus);
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
     LbTextDraw(a, b, text);
     return 0;
@@ -299,7 +295,7 @@ void process_emergency_start_buttons(u8 button)
 // FUNCTION: 0x000afb34
 void emergency_over(u8 owner, char **strs)
 {
-    u16 sep;
+    char new_line[] = "\n";
     s32 v;
     AllHosps *h;
     s32 bonus;
@@ -309,7 +305,6 @@ void emergency_over(u8 owner, char **strs)
     u16 b;
     char buf[200];
 
-    sep = *(u16 *)D_0014962a;
     v = lbFontPtr ? lbFontPtr[34].height : 0;
     h = &allhosps[owner];
     if (h->f1e5 * 100 / h->f1e6 >= h->f1e8)
@@ -323,7 +318,7 @@ void emergency_over(u8 owner, char **strs)
     sprintf(buf, strs[0], total, bonus);
     fn_000c93bf(text, buf);
     sprintf(buf, strs[1], h->f1e5, h->f1e6);
-    fn_000c93bf(text, (char *)&sep);
+    fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
     LbTextDraw(a, b, text);
 }

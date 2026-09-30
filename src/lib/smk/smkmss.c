@@ -92,15 +92,15 @@ extern U32 D_0018cda0;
 
 extern U32 (__pascal *SmackTimerReadAddr)(void);
 extern void (__pascal *SmackTimerDoneAddr)(void);
-extern void (__pascal *D_00151b98)(void);
+extern void (__pascal *SmackTimerSetupAddr)(void);
 extern void (__pascal *LowSoundCheckAddr)(void);
 extern U8 (__pascal *LowSoundOpenAddr)(SmackSnd *snd, U32 flags);
 extern void (__pascal *D_0018cdbc)(SmackSnd *snd);
 extern U32 (__pascal *LowSoundPlayedAddr)(SmackSnd *snd);
 extern void (__pascal *LowSoundPurgeAddr)(SmackSnd *snd);
-extern void (__pascal *D_00151688)(SmackSnd *snd);
-extern U8 (__pascal *D_0015168c)(SmackSnd *snd);
-extern void (__pascal *D_00151690)(SmackSnd *snd, U32 volume, U32 pan);
+extern void (__pascal *LowSoundOffAddr)(SmackSnd *snd);
+extern U8 (__pascal *LowSoundOnAddr)(SmackSnd *snd);
+extern void (__pascal *LowSoundVolPanAddr)(SmackSnd *snd, U32 volume, U32 pan);
 
 void *__pascal RADMALLOC(U32 bytes);
 void __pascal RADFREE(void *ptr);
@@ -322,10 +322,10 @@ U8 __pascal SmackSoundUseMSS(void *digdriver)
         D_0018cdbc = MSSLowSoundClose;
         LowSoundPlayedAddr = MSSLowSoundPlayed;
         LowSoundPurgeAddr = MSSLowSoundPurge;
-        D_00151688 = MSSLowSoundPurge;
-        D_0015168c = NULL;
-        D_00151690 = MSSLowSoundVolPan;
-        D_00151b98 = MSSSmackTimerSetup;
+        LowSoundOffAddr = MSSLowSoundPurge;
+        LowSoundOnAddr = NULL;
+        LowSoundVolPanAddr = MSSLowSoundVolPan;
+        SmackTimerSetupAddr = MSSSmackTimerSetup;
         SmackTimerReadAddr = MSSSmackTimerRead;
         SmackTimerDoneAddr = MSSSmackTimerSetup;
     }

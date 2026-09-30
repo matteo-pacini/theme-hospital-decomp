@@ -461,7 +461,7 @@
     .byte 0xe9; .long .L000ee447-.-4
 .L000ee3b4:
     .byte 0xb9; .byte 0x04; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xbe; .long _D_00151a74
+    .byte 0xbe; .long "W?messageHeader$n[]uc"
     .byte 0x57
     .byte 0x89; .byte 0xc8
     .byte 0xc1; .byte 0xe9; .byte 0x02
@@ -473,7 +473,7 @@
     .byte 0xe9; .long .L000ee61a-.-4
 .L000ee3d3:
     .byte 0xb9; .byte 0x04; .byte 0x00; .byte 0x00; .byte 0x00
-    .byte 0xbe; .long _D_00151a78
+    .byte 0xbe; .long "W?deliveryHeader$n[]uc"
     .byte 0x57
     .byte 0x89; .byte 0xc8
     .byte 0xc1; .byte 0xe9; .byte 0x02

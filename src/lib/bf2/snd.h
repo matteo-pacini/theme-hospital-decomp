@@ -84,7 +84,7 @@ extern SoundBankEntry *EndMusic;
 extern u8 *MusicData;
 extern u32 SoundDriver;
 extern s32 SoundMasterVolumeOverride;
-extern s32 D_00150824;
+extern s32 CurrentSoundMasterVolume;
 extern char SoundDataPath[];
 extern char MusicDataPath[];
 extern char MusicType[];
