@@ -27,7 +27,11 @@ src/lib/bf2/dosser.cpp  wpp386  -s -oneatx -xs -zm-
 # init_sou: built for the 486 like the other sound modules (lea for the scaled index).
 src/lib/bf2/init_sou.cpp  wpp386  -s -oneatx -4 -xs
 # serialsp: inlines the small Parser accessors into ProcessAvailableMsg but not SendAck.
-src/lib/bf2/serialsp.cpp  wpp386  -s -oneatx -xs -oe=40
+# One segment: its code ends with the no-op filler that aligns the inline
+# SerialSP destructor (a COMDAT) after it.
+src/lib/bf2/serialsp.cpp  wpp386  -s -oneatx -xs -oe=40 -zm-
+# modemsp: one segment, like serialsp (filler before the inline ModemSP destructor).
+src/lib/bf2/modemsp.cpp  wpp386  -s -oneatx -xs -zm-
 # dosipx: RecPkt stays out of line in UpdateServer only below -oe=90 (the
 # network modules otherwise agree on plain -oe); ours is likely a few nodes smaller.
 src/lib/bf2/dosipx.cpp  wpp386  -s -oneatx -xs -oe=80

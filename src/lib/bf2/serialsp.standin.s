@@ -74,6 +74,7 @@
     pop edi
     pop esi
     ret 4
+    .byte 0x8d, 0x40, 0x00
 .size "W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$",.-"W?Start$:SerialSP$n(pnapnaulpnv)$TbError$$"
 
 // STANDIN: 0x000edf24
@@ -190,6 +191,7 @@
     pop edi
     pop esi
     ret
+    .byte 0x8b, 0xc0
 .size "W?PrivateReceive$:SerialSP$n(pnvpnul$$TE$$)ul",.-"W?PrivateReceive$:SerialSP$n(pnvpnul$$TE$$)ul"
 
 // STANDIN: 0x000ee050
@@ -426,21 +428,19 @@
     pop edi
     pop esi
     ret
+    .byte 0x8b, 0xc0
 .size "W?ProcessAvailableMsg$:SerialSP$n(pnvpnulul)ul",.-"W?ProcessAvailableMsg$:SerialSP$n(pnvpnulul)ul"
 
 // STANDIN: 0x000ee380
 
 .section _TEXT,"ax",@progbits,unique,975744
 .globl "W?InputByte$:Parser$n(uc)$TbError$$"
-.L000ee368:
-    .long "W?InputByte$:Parser$n(uc)$TbError$$"+0x28
-    .long "W?InputByte$:Parser$n(uc)$TbError$$"+0x115
-    .long "W?InputByte$:Parser$n(uc)$TbError$$"+0x155
-    .long "W?InputByte$:Parser$n(uc)$TbError$$"+0x1b6
-    .long "W?InputByte$:Parser$n(uc)$TbError$$"+0x1ea
-    .long "W?InputByte$:Parser$n(uc)$TbError$$"+0x29a
+// The jump table ahead of the entry is the compiled one, which the module
+// (one segment) keeps in the preceding function's place.
+.set .L000ee368, .L000ee380-0x18
 .type "W?InputByte$:Parser$n(uc)$TbError$$",@function
 "W?InputByte$:Parser$n(uc)$TbError$$":
+.L000ee380:
     push ebx
     push ecx
     push esi
@@ -454,7 +454,7 @@
     cmp al, 5
     ja .L000ee61a
     and eax, 0xff
-    jmp dword ptr cs:[eax*4 + .L000ee368+0x0]
+    jmp dword ptr cs:[eax*4 + .L000ee368]
     .byte 0x8b; .byte 0x7d; .byte 0x05
     .byte 0x85; .byte 0xff
     .byte 0x74; .byte .L000ee411-.-1
@@ -699,4 +699,5 @@
     pop ecx
     pop ebx
     ret
+    .byte 0x90
 .size "W?InputByte$:Parser$n(uc)$TbError$$",.-"W?InputByte$:Parser$n(uc)$TbError$$"

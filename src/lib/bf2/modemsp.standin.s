@@ -255,6 +255,7 @@
     pop edi
     pop esi
     ret 4
+    .byte 0x8b, 0xc0
 .size "W?Start$:ModemSP$n(pnapnaulpnv)$TbError$$",.-"W?Start$:ModemSP$n(pnapnaulpnv)$TbError$$"
 
 // STANDIN: 0x000eea58
@@ -564,4 +565,5 @@
     pop edi
     pop esi
     ret
+    .byte 0x90
 .size "W?Start$:ModemSP$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$",.-"W?Start$:ModemSP$n(pn$TbNetworkSessionNameEntry$$pnapnv)$TbError$$"

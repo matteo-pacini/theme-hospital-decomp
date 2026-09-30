@@ -426,6 +426,9 @@
     pop ecx
     pop ebx
     ret
+    // Alignment filler: the compiler pads an out-of-line inline function in
+    // its own segment when another one (GetNextEmptyReceiveBuffer) follows it.
+    .byte 0x90
 .size "W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v",.-"W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v"
 
 // STANDIN: 0x000db6d4
