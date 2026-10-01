@@ -224,7 +224,7 @@ u32 get_frame_for_placing_bomb(void)
         obj = &thing[bs->objects[i]];
         if (obj > thing) {
             if (obj->subtype == 0x11 && obj->owner == player)
-                return start[obj->f64 + 0x9bf].frame;
+                return start[obj->fuse + 0x9bf].frame;
         }
     }
     return start[0x9bf].frame;

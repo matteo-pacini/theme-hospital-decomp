@@ -68,12 +68,12 @@ void req5_overdraw(Window *win)
     count = 0;
     compute_help_text(0, 0, 0xb);
     machine = &thing[D_001581b2[3].value];
-    if (machine->renderer == 6) {
+    if (machine->type == 6) {
         LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                                   window.unknown2cf - window.unknown2c7);
         x = win->x - lbDisplay.graphics_window_x;
         y = win->y - lbDisplay.graphics_window_y;
-        age = machine->mode;
+        age = machine->times_used;
         max = allhosps[machine->owner].object_stats[machine->subtype].unknown8;
         set_font_from_cache(1);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -88,7 +88,7 @@ void req5_overdraw(Window *win)
             RoomInfo *room;
             s32 pct;
 
-            room = &room_info[machine->unknown89];
+            room = &room_info[machine->room_id];
             if (room > room_info) {
                 count = room->count;
                 sprintf(buf, "%d", count);

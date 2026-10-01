@@ -340,7 +340,7 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
 
     vehicle = allocate_thing(0x19);
     if (vehicle) {
-        vehicle->renderer = 0x10;
+        vehicle->type = 0x10;
         vehicle->subtype = kind;
         vehicle->owner = owner;
         vehicle->x.tile = cell % 128;
@@ -348,14 +348,14 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
         vehicle->x.frac = 0x80;
         vehicle->y.frac = 0x80;
         vehicle->anim_speed = 2;
-        vehicle->unknown17 = 1;
+        vehicle->facing = 1;
         insert_node(vehicle, vehicle->x, vehicle->y);
-        vehicle->unknown18 = 8;
-        vehicle->f37 = 0x190;
+        vehicle->speed = 8;
+        vehicle->altitude = 0x190;
         vehicle->sprite = start[anim].frame;
-        vehicle->palette = start[anim].flags;
-        vehicle->kind = 2;
-        vehicle->f39 = create_shadow(cell, vehicle - thing, owner, shadow_anim);
+        vehicle->flip = start[anim].flags;
+        vehicle->state = 2;
+        vehicle->shadow = create_shadow(cell, vehicle - thing, owner, shadow_anim);
         if (owner == player) {
             if (anim == 0x792)
                 play_ambient(saferand() % 5 + 0xc7);
@@ -371,22 +371,22 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
 void helicopter_lands(Thing *heli)
 {
     heli->sprite = frame[heli->sprite].next;
-    if (heli->f37 > 0) {
-        heli->f37 -= heli->unknown18;
+    if (heli->altitude > 0) {
+        heli->altitude -= heli->speed;
     } else {
         switch (heli->subtype) {
         case 0:
-            heli->f37 = 0;
-            heli->kind = 4;
+            heli->altitude = 0;
+            heli->state = 4;
             allhosps[heli->owner].f1e1 = 1;
             if (heli->owner == player)
                 advisor.f127 = 1;
             break;
         case 1:
             heli->sprite = start[0x7a8].frame;
-            heli->palette = start[0x7a8].flags;
-            heli->f37 = 0;
-            heli->kind = 8;
+            heli->flip = start[0x7a8].flags;
+            heli->altitude = 0;
+            heli->state = 8;
             break;
         }
     }
@@ -399,8 +399,8 @@ void helicopter_leaves(Thing *heli)
 
     hosp = &allhosps[heli->owner];
     heli->sprite = frame[heli->sprite].next;
-    if (heli->f37 < 0x190) {
-        heli->f37 += heli->unknown18;
+    if (heli->altitude < 0x190) {
+        heli->altitude += heli->speed;
     } else {
         switch (heli->subtype) {
         case 0:
@@ -412,8 +412,8 @@ void helicopter_leaves(Thing *heli)
             gamevar.ff7 = 0;
             break;
         }
-        if (heli->f39)
-            remove_thing(&thing[(u16)heli->f39]);
+        if (heli->shadow)
+            remove_thing(&thing[(u16)heli->shadow]);
         remove_thing(heli);
     }
 }

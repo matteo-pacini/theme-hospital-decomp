@@ -218,10 +218,10 @@ void req7_overdraw(Window *win)
                     if (dest == 0) {
                         selected = &thing[othervar.f43];
                         if (selected > thing) {
-                            if (selected->renderer == 4 && selected->subtype == 3)
+                            if (selected->type == 4 && selected->subtype == 3)
                                 dest = selected->room;
-                            else if (selected->renderer == 6 && selected->subtype == 0xb && selected->unknown91)
-                                dest = thing[selected->unknown91].room;
+                            else if (selected->type == 6 && selected->subtype == 0xb && selected->user)
+                                dest = thing[selected->user].room;
                         }
                     }
                     if (dest) {
@@ -391,18 +391,18 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                 u16 y0;
                 u16 y1;
 
-                old_17 = person->unknown17;
+                old_17 = person->facing;
                 old_sprite = person->sprite;
-                old_palette = person->palette;
-                person->unknown17 = 2;
-                anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->unknown17;
+                old_palette = person->flip;
+                person->facing = 2;
+                anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->facing;
                 person->sprite = start[anim].frame;
-                person->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                 if (position == sel)
                     px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
-                if (person->style == 6)
+                if (person->illness == 6)
                     fn_0002f47c(person, px, py);
-                else if (person->style == 12 && othervar.f1c == 0)
+                else if (person->illness == 12 && othervar.f1c == 0)
                     fn_0002e804(person, px, py);
                 else if ((u16)(person - thing) == othervar.f43)
                     draw_hilight_frame(person, px, py);
@@ -410,9 +410,9 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                     draw_special_id_frame(person, px, py);
                 if (position == sel)
                     px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
-                person->unknown17 = old_17;
+                person->facing = old_17;
                 person->sprite = old_sprite;
-                person->palette = old_palette;
+                person->flip = old_palette;
                 {
                     CompFrame *fr;
                     u16 x0;
@@ -458,16 +458,16 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
             person = &thing[id];
             for (;;) {
                 if (position == sel) {
-                    old_17 = person->unknown17;
+                    old_17 = person->facing;
                     old_sprite = person->sprite;
-                    old_palette = person->palette;
-                    person->unknown17 = 2;
-                    anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->unknown17;
+                    old_palette = person->flip;
+                    person->facing = 2;
+                    anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->facing;
                     person->sprite = start[anim].frame;
-                    person->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                    person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                     InitPixBuffer(0, 0, 0x40, 0x40, 0, 0);
                     DrawIntoPixBuffer();
-                    full_draw_frame(person, person->sprite, 0x20, 0x3a, 0, 0, person->palette);
+                    full_draw_frame(person, person->sprite, 0x20, 0x3a, 0, 0, person->flip);
                     RestoreFromPixBuffer();
                     pixBuf.x = x - 0x20;
                     pixBuf.y = y - 0x3a;
@@ -477,9 +477,9 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                     lbDisplay.draw_flags = 0;
                     fr = &frame[person->sprite];
                     set_all_refresh_zones_in_window(x + D_001567b0[4], y + D_001567b0[5], x + D_001567b0[4] + fr->width, y + D_001567b0[5] + fr->length, 3);
-                    person->unknown17 = old_17;
+                    person->facing = old_17;
                     person->sprite = old_sprite;
-                    person->palette = old_palette;
+                    person->flip = old_palette;
                     break;
                 }
                 if (person->queue_next == 0)
@@ -577,16 +577,16 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
                 u8 old_palette;
                 u16 anim;
 
-                old_17 = person->unknown17;
+                old_17 = person->facing;
                 old_sprite = person->sprite;
-                old_palette = person->palette;
-                person->unknown17 = 2;
-                anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->unknown17;
+                old_palette = person->flip;
+                person->facing = 2;
+                anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->facing;
                 person->sprite = start[anim].frame;
-                person->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
-                person->unknown17 = old_17;
+                person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                person->facing = old_17;
                 person->sprite = old_sprite;
-                person->palette = old_palette;
+                person->flip = old_palette;
                 if (position == sel)
                     return px;
                 fr = &frame[person->sprite];

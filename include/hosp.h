@@ -73,292 +73,518 @@ struct RoomInfo {
     u8 f22;
 };
 
+/*
+ * One entry of thing[] (things.cpp): the record shared by everything that
+ * lives on the map. `type` says what the thing is and process_things runs
+ * the state machine for that type on `state`.
+ *
+ * The layout is packed (175 bytes) and fixed by the original code. Many bytes
+ * mean different things for different types, so they appear as unions with
+ * one member per meaning. The comments name the types that use each member.
+ * "People" means patients and staff, plus the mayor and inspector where they
+ * share the walking code. Offsets are given in hex.
+ */
 struct Thing {
-    s16 prev;
-    s16 next;
+    // 0x00: links in the list of things on one map cell (Map.first).
+    s16 cell_prev;
+    s16 cell_next;
     MapPos x;
     MapPos y;
+    // Current animation frame (frame[] index).
     u16 sprite;
-    s16 height;
-    u8 renderer;
-    u8 kind;
+    union {
+        // Turns until the next step to a new tile; the open time of sliding
+        // doors; a staff member's pause while wandering.
+        s16 countdown;
+        // Height above the floor while a patient floats away (person_flys).
+        s16 fly_height;
+    };
+    // 0x0c: 0 = free entry, 2 patient, 4 staff, 6 object, 8 door, 0xa grim
+    // reaper, 0xc rat, 0xe explosion debris, 0x10 helicopter, 0x12 floating
+    // number, 0x14 mayor, 0x16 inspector, 0x18 shadow.
+    u8 type;
+    // Even state number. Each type has its own state machine (process_things).
+    u8 state;
+    // Patient, staff, or object kind (anim_starts, staff, or objects index).
+    // For floating numbers, the text colour.
     u8 subtype;
+    // The animation advances every anim_speed turns. Floating numbers use it
+    // as their start height.
     u8 anim_speed;
-    u8 palette;
-    u8 unknown17;
-    u8 unknown18;
-    u8 unknown19;
-    u8 unknown20;
+    // Nonzero: the sprite is drawn mirrored (the frame's flags).
+    u8 flip;
+    // Direction the thing faces, 0-3 (around_xy, opposite_angle). 4 is used
+    // while a person is stuck.
+    u8 facing;
+    // Distance moved per turn, in 1/256 tile. Floating numbers count it down
+    // as their lifetime and rise with it.
+    u8 speed;
+    // Tile the thing is walking to.
+    u8 dest_x;
+    u8 dest_y;
+    // Added to the draw-order bucket in do_mapwho.
     s8 depth;
+    // Player index.
     u8 owner;
-    u8 unknown23;
-    s8 unknown24;
+    // Sound of the last frame drawn, so that a looping frame plays it once.
+    u8 last_sound;
+    // 0x18: status icon over a person's head or a broken machine
+    // (icon_table index). Negative until peep_icon announces it.
+    s8 icon_id;
+    // Turns left to show the icon. 0xffff keeps it.
+    u16 icon_timer;
+    u16 icon_frame;
+    // 0x1d: the element id drawn for each of the 13 animation layers (head,
+    // colours, ...). Objects set 10-12.
+    u8 layers[13];
     union {
-        u8 unknown25[2];
-        u16 unknown25w;
-    };
-    u16 unknown27;
-    union {
-        u8 unknown29;
-        u8 layers[1];
-    };
-    union {
-        u8 unknown30[25];
+        // 0x2a: the first 13 bytes of the thing's orthonav_path (see
+        // THING_PATH in nav.cpp). The struct's last 3 bytes lie over the
+        // next field.
+        u8 path[13];
+        // The same path as rats read it: the next two waypoints and the
+        // number of waypoints.
         struct {
-            u8 unknown30_[9];
-            u8 unknown39;
-            u8 unknown40;
-            u8 unknown41;
-        };
-        struct {
-            u8 unknown30__[16];
+            u8 pad2a_[4];
             union {
-                u16 f2e_raw;
+                u16 path_step0;
                 struct {
-                    u8 f2e;
-                    u8 f2f;
+                    u8 path_step0_x;
+                    u8 path_step0_y;
                 };
             };
             union {
-                u16 f30_raw;
+                u16 path_step1;
                 struct {
-                    u8 f30;
-                    u8 f31;
+                    u8 path_step1_x;
+                    u8 path_step1_y;
                 };
             };
-            u8 unknown32_[4];
-            u8 f36;
+            u8 pad32_[4];
+            u8 path_step_count;
         };
     };
     union {
-        s32 mode;
-        s16 offset;
-        u16 link;
+        // 0x37, people: the room they are in.
         RoomInfo *room;
+        // People in a save file: room as an index into room_info.
+        s32 room_index;
+        // Machines: uses since the last repair (compared with strength).
+        s32 times_used;
+        // Floating numbers: 0 number, 1 text, 2 formatted number, 3 money.
+        s32 numfx_type;
+        // Rats: turns left before the next waypoint.
+        s32 rat_ticks;
+        // Shadows: the thing that casts the shadow.
+        u16 caster;
         struct {
-            s16 f37;
-            s16 f39;
+            // Explosion debris and helicopters: height above the floor.
+            s16 altitude;
+            union {
+                // Debris: x velocity.
+                s16 vel_x;
+                // Helicopters: their shadow thing.
+                s16 shadow;
+            };
         };
     };
     union {
-        s32 value;
+        // 0x3b, machines: uses before a breakdown. A repair lowers it.
+        s32 strength;
+        // Floating numbers: the value shown.
+        s32 numfx_amount;
+        // Rats: x step per turn in 1/65536 tile.
+        s32 rat_dx;
         struct {
+            // People: turns to wait in the current state.
             s16 timer;
-            u16 unknown61;
+            // People: position in the current complex's action list.
+            u16 complex_pc;
         };
         struct {
-            s16 f3b;
-            s16 f3d;
+            // Debris: y and height velocities.
+            s16 vel_y;
+            s16 vel_z;
         };
     };
     union {
-        char text[4];
-        u16 unknown63;
-        s32 f3f;
+        // 0x3f, floating numbers: the text (never set; see mapwho_numfx).
+        char numfx_text[4];
+        // Rats: y step per turn in 1/65536 tile.
+        s32 rat_dy;
+        // Debris: the room of the explosion (room_info index).
+        u16 bang_room;
         struct {
-            u16 unknown63_;
-            u16 unknown65;
+            // People: the complex queued behind the current one (set_complex).
+            u16 complex_queued;
+            // People: complex_pc to resume at (set_complex).
+            u16 complex_resume;
+        };
+        struct {
+            // Objects: where a person stands while using the object.
+            MapPos use_x;
+            MapPos use_y;
         };
     };
-    u16 icon;
-    u16 unknown69;
-    u16 unknown71;
-    u16 unknown73;
     union {
-        u8 unknown75[2];
-        u16 unknown75w;
+        // 0x43, people: the complex action in progress (set_complex).
+        u16 complex_action;
+        // Objects: frame of an animation drawn on top (machine smoke).
+        u16 overlay_frame;
     };
     union {
+        // 0x45, people: the object (or bed, desk, gate) they use or go to.
+        u16 object;
+        // Objects: the previous object in the room's list (first_object).
+        u16 room_obj_prev;
+    };
+    union {
+        // 0x47, people: the tile to step to after using an object or door.
+        u16 exit_tile;
+        // Objects: the next object in the room's list.
+        u16 room_obj_next;
+    };
+    union {
+        // 0x49, staff: the person they deal with (a patient, an interaction
+        // partner). The grim reaper: its victim. Patients: the reaper coming
+        // for them.
+        u16 slave;
+        // Objects: the previous object of the same kind in
+        // listhead[owner].objects.
+        u16 type_obj_prev;
+    };
+    union {
+        // 0x4b, people: the second queued complex.
+        u16 complex_queued2;
+        // Objects: the next object of the same kind.
+        u16 type_obj_next;
+    };
+    union {
+        // 0x4d, objects: tiles a person uses the object from (0-2), and
+        // the tiles they leave to afterwards (3-5).
         u16 use_pos[6];
         struct {
-            u8 unknown77_[6];
-            u16 unknown83w;
-        };
-        struct {
-            u8 unknown77s_[4];
-            s16 unknown81s;
-        };
-        struct {
+            // People: links in the room's list of people (RoomInfo.first).
             u16 room_prev;
             u16 room_next;
-            u16 unknown81;
-            u8 unknown83[2];
-            u16 unknown85;
-            u8 unknown87[2];
-        };
-        struct {
-            u8 unknown77t_[10];
-            u16 unknown87w;
-        };
-    };
-    u16 unknown89;
-    u16 unknown91;
-    u8 unknown93;
-    union {
-        u8 state_a;
-        struct {
-            u8 unknown94;
-            u16 group;
-        };
-        struct {
-            u8 unknown94_;
-            u8 unknown95;
-            u8 unknown96;
-        };
-    };
-    u8 unknown97;
-    u8 unknown98;
-    u8 unknown99;
-    union {
-        char label[0x44];
-        struct {
-            u8 f64;
-            s8 f65;
-        };
-        struct {
-            u8 unknown100t_[0xc];
-            s32 f70;
-        };
-        struct {
-            u8 unknown100h_[0x34];
-            u16 f98;
-            u16 f9a;
-            u16 f9c;
-        };
-        struct {
-            u8 unknown100s_[0x20];
-            u8 f84;
-            u8 f85;
-            u8 f86;
-            u8 f87;
-            u8 f88;
-            u8 f89;
-            u8 f8a;
-            u8 f8b;
-            u8 f8c;
-            u8 f8d;
-            u8 unknown142s_[2];
-            u8 f90;
-            u8 unknown145s_[0xd];
-            u8 f9e;
-            u8 f9f;
-            u8 fa0;
-        };
-        struct {
+            // People: 0-100.
             union {
-                struct {
-                    u8 fuse;
-                    u8 fuse_tick;
-                };
-                s16 unknown100s;
+                u16 happiness;
+                s16 happiness_s;
             };
-            u8 unknown102_[8];
-            u8 smoke[3];
+            // People: how warm they feel, 0-100.
+            u16 warmth;
+            // People: sprite to restore after a reaction animation.
+            u16 saved_sprite;
+            // People: game time (othervar.f82) of the next modify_person or
+            // modify_staff.
+            u16 modify_time;
+        };
+    };
+    union {
+        // 0x59, people: the room (room_info index) they are heading for.
+        u16 dest_room;
+        // Objects and doors: the room they belong to.
+        u16 room_id;
+    };
+    union {
+        // 0x5b, people: their pending player call (make_a_playercall).
+        u16 playercall;
+        // Objects: the person using it.
+        u16 user;
+    };
+    // People: repeats left of the current complex action.
+    u8 complex_repeat;
+    union {
+        // 0x5e, people: state to go back to when a complex fails or is
+        // interrupted.
+        u8 resume_state;
+        struct {
+            u8 pad5e_a_;
+            // Objects: the other half of a two-part object.
+            u16 pair;
         };
         struct {
-            u16 unknown100__;
-            u16 unknown102;
-            u16 unknown104w;
+            u8 pad5e_b_;
+            // People: argument tile of complex_queued.
+            u8 queued_arg_x;
+            u8 queued_arg_y;
         };
+    };
+    union {
+        // 0x61, people: argument tile of complex_queued2.
+        u8 queued2_arg_x;
+        // Objects: how people use it (objects[].unknown15[0]).
+        u8 use_style;
+    };
+    union {
+        u8 queued2_arg_y;
+        // Objects: 1 while someone uses or has claimed it.
+        u8 in_use;
+    };
+    // Step in an animation sequence (aniseq) or interaction.
+    u8 seq_index;
+    union {
+        // 0x64: 68 bytes whose meaning depends on the type.
+        char data[0x44];
+        // People and staff.
         struct {
-            u8 unknown100y_[8];
-            u16 f6c;
-            u8 f6e;
-        };
-        struct {
-            u8 unknown100r_[8];
-            u16 next_sprite;
-            u16 gate;
-            u8 next_palette;
-            u8 next_kind;
-        };
-        struct {
-            u16 unknown100;
-            u8 state_b;
-            u8 unknown103;
-            u8 unknown104;
-            u8 unknown105;
-            u8 unknown106;
-            u8 unknown107;
-            s32 unknown108;
-            u8 unknown112[4];
+            // 0 none, 1 playing, 2 finished (interact.cpp).
+            u8 interact_anim;
+            // Repeats left of the interaction's current frame.
+            s8 interact_repeat;
+            // State to enter on arriving or after the current action.
+            u8 next_state;
+            // Step within the current state.
+            u8 substate;
+            // While stuck or reacting: what to restore afterwards.
+            u8 saved_flip;
+            u8 saved_state;
+            u8 saved_dest_x;
+            u8 saved_dest_y;
             union {
+                // 0x6c, staff: wage (month_end).
+                s32 salary;
+                // Patients: the price of the treatment they are paying for.
+                s32 fee;
+            };
+            union {
+                // 0x70, patients: money they can spend.
+                s32 cash;
+                // Staff: the wage they ask for (appraise_staff).
+                s32 wage_demand;
+            };
+            union {
+                // 0x74, patients: status bits (contagious, vaccinated,
+                // diagnosed, going home, ...).
                 u32 flags32;
+                // Staff: game turn of the next resignation check.
+                u32 resign_time;
                 struct {
                     union {
                         u16 flags;
                         struct {
-                            u8 f74;
-                            u8 f75;
+                            u8 flags0;
+                            u8 flags1;
                         };
                     };
-                    u8 unknown118;
-                    u8 unknown119;
+                    u8 flags2;
+                    u8 flags3;
                 };
             };
             union {
-                u8 unknown120[2];
+                // 0x78, patients: links in a room's queue.
                 u16 queue_prev;
-                s16 f78;
+                // Staff: 0-1000.
+                s16 tiredness;
             };
             union {
-                s16 unknown122;
                 u16 queue_next;
-            };
-            u16 unknown124;
-            u16 unknown126;
-            union {
-                u16 unknown128;
-                s16 unknown128s;
-            };
-            s16 unknown130;
-            s16 unknown132;
-            s16 unknown134;
-            s16 unknown136;
-            union {
-                u8 unknown138[2];
-                u16 unknown138w;
+                // Staff: calls left before giving up on a patient
+                // (call_person_again).
+                s16 call_retries;
             };
             union {
-                u16 unknown140;
+                // 0x7c, staff: skill bits (0x10 doctor, 0x20 surgeon,
+                // 0x40 psychiatrist, 0x80 consultant, 0x100 researcher, ...).
+                u16 skills;
+                // Patients: grows while they wait or are unhappy; past
+                // gbv.f108 they go home.
+                u16 impatience;
+            };
+            union {
+                // 0x7e, staff: 30-1000.
+                u16 ability;
+                // Patients: turns waited since admission or treatment.
+                u16 waiting_time;
+            };
+            union {
+                // 0x80, staff: grows while unhappy; past gbv.f10a they want
+                // to resign.
+                u16 discontent;
+                s16 discontent_s;
+                // Patients: grows near litter and after drinking; they then
+                // drop litter.
+                u16 litter_urge;
+            };
+            union {
+                // 0x82, patients: 0-1000, dead at 0.
+                s16 health;
+                // Staff: game turn they were hired.
+                s16 hire_time;
+            };
+            // 0x84, patients: health change not yet applied (change_health).
+            s16 health_delta;
+            // Patients: falls over time; below 30 they are thirsty.
+            s16 refreshment;
+            // Patients: rises over time; they need the toilet past gbv.f116.
+            s16 bladder;
+            // Patients: rises near litter or dead plants and when too hot;
+            // past gbv.f11a they may vomit.
+            u16 nausea;
+            // 0x8c, patients: the room whose queue they are in.
+            u16 queue_room;
+            union {
                 struct {
-                    u8 unknown140_lo;
-                    u8 unknown141;
+                    // 0x8e, staff: requests to act on (1 rest, 4 training,
+                    // 0x10 research, 0x20 resignation pending, ...).
+                    u8 orders;
+                    // Staff: times they have asked to resign.
+                    u8 resign_count;
                 };
-            };
-            union {
-                struct {
-                    u8 f8e;
-                    u8 f8f;
-                };
+                // Patients: next in the hospital's vaccination queue.
                 u16 vaccine_next;
             };
-            u16 unknown144;
+            // 0x90, patients: subtracted from diagnosis progress.
+            u16 diagnosis_handicap;
             union {
-                s16 unknown146;
+                // 0x92, patients: diagnosis progress (done at gbv.ffc).
+                s16 diagnosis;
                 struct {
-                    u8 unknown146_lo;
-                    u8 f93;
+                    u8 pad92_;
+                    // Staff: a bit per player who has offered them a job.
+                    u8 poach_offers;
                 };
             };
             union {
-                u8 unknown148[10];
-                u16 unknown148w;
-                u32 unknown148d;
+                // 0x94, patients: treatments received, oldest first.
+                u8 treatments[10];
+                // Doctors: their assistant. Nurses: their bed or patient.
+                // Handymen: the litter tile they head for.
+                u16 work_target;
+                // Job applicants: game turn they leave the list.
+                u32 hire_expiry;
                 struct {
-                    u16 unknown148w_;
-                    u16 unknown150;
+                    u16 pad94_;
+                    // Handymen: the next litter tile.
+                    u16 work_target2;
+                };
+                struct {
+                    u8 pad94b_[2];
+                    // Doctors: they have cracked up.
+                    u8 crazy;
+                    // Doctors: training points towards each skill.
+                    u8 surgeon_training;
+                    u8 psych_training;
+                    u8 research_training;
                 };
             };
-            s8 unknown158[10];
+            // 0x9e, patients: health over time, in tenths.
+            s8 health_history[10];
+        };
+        // Staff: identity shown in the staff windows.
+        struct {
+            u8 pad64a_[0x20];
+            // 0x84: first initial, as a letter.
+            u8 initial;
+            // staff_names_1 and staff_names_2 indexes.
+            u8 surname_a;
+            u8 surname_b;
+            // A Picture for draw_face.
+            u8 face_head;
+            u8 face_body;
+            u8 face_legs;
+            // ref_general_text, ref_good_text and ref_bad_text indexes.
+            u8 ref_general;
+            u8 ref_good;
+            u8 ref_bad;
+            // 0x8d: they work only on turns divisible by work_delay + 1.
+            u8 work_delay;
+            u8 pad8e_[2];
+            // 0x90: 1 for nurses and receptionists, 0 for handymen, random
+            // for doctors; presumably the gender. Only written.
+            u8 female;
+            u8 pad91_[0xd];
+            // 0x9e, handymen: priorities for cleaning, watering, repairs.
+            u8 prio_litter;
+            u8 prio_plants;
+            u8 prio_repair;
+        };
+        // Handymen: jobs done, set against the priorities.
+        struct {
+            u8 pad64b_[0x34];
+            u16 litter_count;
+            u16 plant_count;
+            u16 repair_count;
+        };
+        // Mayor and inspector.
+        struct {
+            u8 pad64c_[8];
+            // 0x6c: the room being inspected.
+            u16 inspect_room;
+            // State to enter on arrival.
+            u8 goto_state;
+        };
+        // Grim reaper.
+        struct {
+            u8 pad64d_[8];
+            // 0x6c: animation and state to switch to when the current
+            // animation ends (reaper_play_anim).
+            u16 next_sprite;
+            u16 gate;
+            u8 next_flip;
+            u8 reaper_next_state;
+        };
+        // Objects.
+        struct {
+            union {
+                // 0x64, machines: a second frame drawn with the user (see
+                // draw_split_frame). Gates: frame to switch to when the
+                // animation ends (object_hell).
+                u16 aux_sprite;
+                // The first half of a double door: the second half.
+                u16 door_partner;
+                // Plants: 400 when watered; dying below 0.
+                s16 plant_health;
+                // Bombs.
+                struct {
+                    u8 fuse;
+                    u8 fuse_tick;
+                };
+            };
+            union {
+                struct {
+                    // 0x66: flip flag for aux_sprite.
+                    u8 aux_flip;
+                    // Machines: height at which draw_split_frame splits the
+                    // user's sprite.
+                    u8 split_height;
+                    // Machines: parameter of their drawing effect. Doors:
+                    // whether the cell had flag 0x10 before it was cleared.
+                    u8 aux_param;
+                    // Machines: draw flags for the user (0xff: not drawn).
+                    u8 aux_draw_flags;
+                };
+                struct {
+                    // Gates: aux_flip as a word.
+                    u16 aux_flip_w;
+                    // Gates: removed once the animation ends.
+                    u16 remove_after_anim;
+                };
+                // The second half of a double door: the first half.
+                u16 door_main;
+            };
+            u8 pad6a_[4];
+            // 0x6e, machines: smoke puffs shown as they wear out.
+            u8 smoke[3];
+            // depth while a person uses the object.
+            u8 saved_depth;
         };
     };
-    u8 style;
-    u8 unknown169;
-    u8 unknown170;
-    u8 unknown171;
-    u8 unknown172[2];
-    u8 unknown174;
+    // 0xa8, patients: their illness (expertise index).
+    u8 illness;
+    // The illness they have been diagnosed with (1 while unknown).
+    u8 known_illness;
+    // subtype before an illness or effect changed their appearance.
+    u8 orig_subtype;
+    // Expertise index of the room they are sent to next.
+    u8 treatment;
+    // Treatment that becomes `treatment` next (setup_next_treatment).
+    u8 next_treatment;
+    // Bit of their insurance company (allhosps.f216), or 0.
+    u8 insurance;
+    // Contagiousness: above 0 contagious, 0xff vaccinated.
+    u8 contagion;
 };
 
 struct HospitalDrug {

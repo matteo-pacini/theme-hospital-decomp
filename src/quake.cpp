@@ -96,21 +96,21 @@ void do_earthquake(void)
     Thing *obj;
 
     for (obj = thing + 1; obj < end_things; obj++) {
-        if (obj->renderer == 6) {
+        if (obj->type == 6) {
             if (objects[obj->subtype].unknown1e) {
             if (statvar.unknownfd > 1) {
-                room = &room_info[obj->unknown89];
+                room = &room_info[obj->room_id];
                 if (room > room_info && (room->f3 == 4 || room->f22)) {
                     continue;
                 }
             } else {
-                if (obj->unknown89 && obj->unknown89 == allhosps[obj->owner].unknown11b7) {
+                if (obj->room_id && obj->room_id == allhosps[obj->owner].unknown11b7) {
                     continue;
                 }
             }
-            if (obj->kind != 0x12) {
-                obj->mode += gamevar.f12b;
-                if (obj->value * 75 / 100 <= obj->mode) {
+            if (obj->state != 0x12) {
+                obj->times_used += gamevar.f12b;
+                if (obj->strength * 75 / 100 <= obj->times_used) {
                     modify_machine(obj);
                 }
             }

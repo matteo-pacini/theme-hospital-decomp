@@ -853,7 +853,7 @@ void draw_things_on_map(void)
         for (y = 0; y < 128; y++) {
             if (map[(s16)x + ((s16)y << 7)].first > 0) {
                 occupant = &thing[map[(s16)x + ((s16)y << 7)].first];
-                switch (occupant->renderer) {
+                switch (occupant->type) {
                 case 6:
                     switch (occupant->subtype) {
                     case 0x2d:
@@ -884,7 +884,7 @@ void draw_things_on_map(void)
                         break;
                     case 0x3a:
                     case 0x3b:
-                        if (occupant->unknown17 == 0 || occupant->unknown17 == 2)
+                        if (occupant->facing == 0 || occupant->facing == 2)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 7, 3, color.unknown11);
                         else

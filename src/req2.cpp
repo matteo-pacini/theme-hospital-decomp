@@ -101,7 +101,7 @@ void req2(Window *win)
             } else if (i == resvars.fe[8]) {
                 if (crequester.unknown6) {
                     if (crequester.unknown0 == 2) {
-                        if (allhosps[player].f35 >= thing[crequester.unknown6].unknown108 && allhosps[player].f35 > 0) {
+                        if (allhosps[player].f35 >= thing[crequester.unknown6].salary && allhosps[player].f35 > 0) {
                             D_001549d0[player].type = 0x30;
                             D_001549d0[player].value = crequester.unknown4;
                             D_001549d0[player].arg = crequester.unknown6;
@@ -181,7 +181,7 @@ void req2_overdraw(Window *win)
         crequester.unknown6 = 0;
     if (crequester.unknown6) {
         candidate = &thing[crequester.unknown6];
-        if (candidate->kind != 0x2e)
+        if (candidate->state != 0x2e)
             crequester.unknown6 = req2_alter_staff(1, 0, crequester.unknown4);
     }
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
@@ -216,8 +216,8 @@ void req2_overdraw(Window *win)
     for (i = 0; i < 4; i++)
         counts[i] = 0;
     for (candidate = &thing[1]; candidate < end_things; candidate++) {
-        if (candidate->renderer == 4) {
-            if (candidate->kind == 0x2e) {
+        if (candidate->type == 4) {
+            if (candidate->state == 0x2e) {
                 if (candidate->subtype == 1)
                     counts[0]++;
                 else if (candidate->subtype == 0)
@@ -291,45 +291,45 @@ void req2_overdraw(Window *win)
     case 2:
         if (crequester.unknown6) {
             candidate = &thing[crequester.unknown6];
-            sprintf(buf, "%c. %s%s", candidate->f84, staff_names_1[candidate->f85], staff_names_2[candidate->f86]);
+            sprintf(buf, "%c. %s%s", candidate->initial, staff_names_1[candidate->surname_a], staff_names_2[candidate->surname_b]);
             LbTextDraw(x0 + resvars.f1c[82].x, y0 + resvars.f1c[82].y, buf);
-            sprintf(buf, "$%d", candidate->unknown108);
+            sprintf(buf, "$%d", candidate->salary);
             LbTextDraw(x0 + resvars.f1c[84].x, y0 + resvars.f1c[84].y, buf);
-            draw_face((Picture *)&candidate->f87, x0 + resvars.f1c[83].x, y0 + resvars.f1c[83].y);
+            draw_face((Picture *)&candidate->face_head, x0 + resvars.f1c[83].x, y0 + resvars.f1c[83].y);
             i = 0;
-            if ((candidate->unknown124 & 8) && !(candidate->unknown124 & 0x80))
+            if ((candidate->skills & 8) && !(candidate->skills & 0x80))
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
-            if ((candidate->unknown124 & 0x10) && !(candidate->unknown124 & 0x80) && !(candidate->unknown124 & 8))
+            if ((candidate->skills & 0x10) && !(candidate->skills & 0x80) && !(candidate->skills & 8))
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
-            if (candidate->unknown124 & 0x80)
+            if (candidate->skills & 0x80)
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
-            if (candidate->unknown124 & 0x20)
+            if (candidate->skills & 0x20)
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[7]]);
             i++;
-            if (candidate->unknown124 & 0x40)
+            if (candidate->skills & 0x40)
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[8]]);
             i++;
-            if (candidate->unknown124 & 0x100)
+            if (candidate->skills & 0x100)
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[9]]);
             if (candidate->subtype != 1)
                 draw_req2_coverup(x0, y0);
-            draw_gauge(candidate->unknown126, x0 + resvars.f18_Req2Layoutp->gauge_x + i, y0 + resvars.f18_Req2Layoutp->gauge_y, resvars.f18_Req2Layoutp->gauge_w,
+            draw_gauge(candidate->ability, x0 + resvars.f18_Req2Layoutp->gauge_x + i, y0 + resvars.f18_Req2Layoutp->gauge_y, resvars.f18_Req2Layoutp->gauge_w,
                        &button_sprite[resvars.f12[2]], 1000, 30, 970, 1);
             lbDisplay.draw_flags = 0x20;
             LbTextSetWindow(x0 + resvars.f18_Req2Layoutp->text_x, y0 + resvars.f18_Req2Layoutp->text_y, resvars.f18_Req2Layoutp->text_w, resvars.f18_Req2Layoutp->text_h);
             if (resvars.f1 == SCREEN_MODE_13) {
-                if (candidate->unknown126 > 500)
-                    sprintf(buf, "%s%s", ref_general_text[candidate->f8a], ref_good_text[candidate->f8b]);
+                if (candidate->ability > 500)
+                    sprintf(buf, "%s%s", ref_general_text[candidate->ref_general], ref_good_text[candidate->ref_good]);
                 else
-                    sprintf(buf, "%s%s", ref_general_text[candidate->f8a], ref_bad_text[candidate->f8c]);
+                    sprintf(buf, "%s%s", ref_general_text[candidate->ref_general], ref_bad_text[candidate->ref_bad]);
             } else if (resvars.f1 == SCREEN_MODE_1) {
-                if (candidate->unknown126 > 500)
-                    sprintf(buf, "%s", ref_good_text[candidate->f8b]);
+                if (candidate->ability > 500)
+                    sprintf(buf, "%s", ref_good_text[candidate->ref_good]);
                 else
-                    sprintf(buf, "%s", ref_bad_text[candidate->f8c]);
+                    sprintf(buf, "%s", ref_bad_text[candidate->ref_bad]);
             }
             LbTextDraw(0, 0, buf);
             lbDisplay.draw_flags = 0;
@@ -365,9 +365,9 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
     case 1:
         if (cur == 0) {
             for (candidate = &thing[1]; candidate < end_things; candidate++) {
-                if (candidate->renderer == 4) {
+                if (candidate->type == 4) {
                     if (candidate->subtype == kind) {
-                        if (candidate->kind == 0x2e)
+                        if (candidate->state == 0x2e)
                             return candidate - thing;
                     }
                 }
@@ -383,9 +383,9 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
             if (found == 1) {
                 found = 0;
                 for (candidate++; candidate < end_things; candidate++) {
-                    if (candidate->renderer == 4) {
+                    if (candidate->type == 4) {
                         if (candidate->subtype == kind) {
-                            if (candidate->kind == 0x2e)
+                            if (candidate->state == 0x2e)
                                 return candidate - thing;
                         }
                     }
@@ -397,9 +397,9 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
     case 0:
         if (cur == 0) {
             for (candidate = &thing[1]; candidate < end_things; candidate++) {
-                if (candidate->renderer == 4) {
+                if (candidate->type == 4) {
                     if (candidate->subtype == kind) {
-                        if (candidate->kind == 0x2e)
+                        if (candidate->state == 0x2e)
                             return candidate - thing;
                     }
                 }
@@ -415,9 +415,9 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
             if (found == 1) {
                 found = 0;
                 for (candidate--; &thing[1] <= candidate; candidate--) {
-                    if (candidate->renderer == 4) {
+                    if (candidate->type == 4) {
                         if (candidate->subtype == kind) {
-                            if (candidate->kind == 0x2e)
+                            if (candidate->state == 0x2e)
                                 return candidate - thing;
                         }
                     }
@@ -476,8 +476,8 @@ void req2_mark_employing(const u16 id)
     Thing *candidate;
 
     candidate = &thing[id];
-    candidate->kind = 0x44;
-    adcounts.f4 += candidate->unknown81;
+    candidate->state = 0x44;
+    adcounts.f4 += candidate->happiness;
 }
 
 // FUNCTION: 0x0006b1bc
@@ -486,7 +486,7 @@ void req2_exit_employing(const u16 id)
     Thing *candidate;
 
     candidate = &thing[id];
-    candidate->kind = 0x2e;
+    candidate->state = 0x2e;
 }
 
 // FUNCTION: 0x0006b1f4
@@ -530,7 +530,7 @@ void req12(Window *win)
                 case 9:
                     D_001549d0[player].type = 0x6c;
                     D_001549d0[player].value = crequester.unknown4;
-                    D_001549d0[player].arg = thing[crequester.unknown4].unknown108 * 2;
+                    D_001549d0[player].arg = thing[crequester.unknown4].salary * 2;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
                     break;
                 }
@@ -585,30 +585,30 @@ void req12_overdraw(Window *win)
     }
     if (crequester.unknown4) {
         staff = &thing[crequester.unknown4];
-        sprintf(buf, "%c. %s%s", staff->f84, staff_names_1[staff->f85], staff_names_2[staff->f86]);
+        sprintf(buf, "%c. %s%s", staff->initial, staff_names_1[staff->surname_a], staff_names_2[staff->surname_b]);
         LbTextDraw(x0 + resvars.f1c[2].x, y0 + resvars.f1c[2].y, buf);
-        sprintf(buf, "$%d", staff->unknown108);
+        sprintf(buf, "$%d", staff->salary);
         LbTextDraw(x0 + resvars.f1c[4].x, y0 + resvars.f1c[4].y, buf);
-        draw_face((Picture *)&staff->f87, x0 + resvars.f1c[3].x, y0 + resvars.f1c[3].y);
+        draw_face((Picture *)&staff->face_head, x0 + resvars.f1c[3].x, y0 + resvars.f1c[3].y);
         i = 0;
-        if (staff->unknown124 & 8)
+        if (staff->skills & 8)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
-        if ((staff->unknown124 & 0x10) && !(staff->unknown124 & 0x80) && !(staff->unknown124 & 8))
+        if ((staff->skills & 0x10) && !(staff->skills & 0x80) && !(staff->skills & 8))
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
-        if (staff->unknown124 & 0x80)
+        if (staff->skills & 0x80)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
-        if (staff->unknown124 & 0x20)
+        if (staff->skills & 0x20)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[7]]);
         i++;
-        if (staff->unknown124 & 0x40)
+        if (staff->skills & 0x40)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[8]]);
         i++;
-        if (staff->unknown124 & 0x100)
+        if (staff->skills & 0x100)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[9]]);
-        draw_gauge(staff->unknown126, x0 + resvars.f1c[0].x, y0 + resvars.f1c[0].y, resvars.f18_Req2Layoutp->gauge_w,
+        draw_gauge(staff->ability, x0 + resvars.f1c[0].x, y0 + resvars.f1c[0].y, resvars.f18_Req2Layoutp->gauge_w,
                    &button_sprite[resvars.f12[3]], 1000, 30, 970, 1);
         if (staff->subtype != 1 && staff->subtype != 4) {
             LbDrawBox(x0 + resvars.f18_Req2Layoutp->cover2_x, y0 + resvars.f18_Req2Layoutp->cover2_y, resvars.f18_Req2Layoutp->cover2_w,
@@ -629,10 +629,10 @@ void req12_overdraw(Window *win)
         case 4:
         case 6:
             sprintf(buf, D_001602a0[crequester.unknown8], crequester.unknown6,
-                    crequester.unknown6 + staff->unknown108);
+                    crequester.unknown6 + staff->salary);
             break;
         case 9:
-            sprintf(buf, D_001602a0[crequester.unknown8], staff->unknown108 * 2, &allhosps[crequester.unknown6]);
+            sprintf(buf, D_001602a0[crequester.unknown8], staff->salary * 2, &allhosps[crequester.unknown6]);
             break;
         }
         lbDisplay.draw_flags = 0x20;
@@ -682,42 +682,42 @@ void open_staff_resign_requester(Thing *staff)
     fn_0001bc94(crequester.unknown2, 1);
     crequester.unknown4 = staff - thing;
     crequester.unknown9 = 0;
-    if (staff->f93) {
+    if (staff->poach_offers) {
         crequester.unknown6 = 0;
         for (i = 0; i < nplayers; i++) {
             if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                 continue;
-            if (staff->f93 == 1 << i) {
+            if (staff->poach_offers == 1 << i) {
                 crequester.unknown6 = i;
                 break;
             }
         }
         crequester.unknown8 = 9;
-    } else if (staff->f8f > 5) {
+    } else if (staff->resign_count > 5) {
         crequester.unknown6 = 0;
         crequester.unknown8 = 2;
-    } else if (staff->f70 > staff->unknown108) {
-        pay_gap = staff->f70 - staff->unknown108;
-        crequester.unknown6 = staff->f70 * 10 / 100 + pay_gap;
+    } else if (staff->wage_demand > staff->salary) {
+        pay_gap = staff->wage_demand - staff->salary;
+        crequester.unknown6 = staff->wage_demand * 10 / 100 + pay_gap;
         crequester.unknown8 = 7;
-    } else if (staff->f78 > gbv.fea && saferand() % 2) {
+    } else if (staff->tiredness > gbv.fea && saferand() % 2) {
         i = safe_normal_rand(10, 30);
         if (saferand() % 2 == 0)
             crequester.unknown8 = 3;
         else
             crequester.unknown8 = 4;
-        crequester.unknown6 = staff->unknown108 * i / 100;
-    } else if (staff->unknown81s > gbv.fea) {
+        crequester.unknown6 = staff->salary * i / 100;
+    } else if (staff->happiness_s > gbv.fea) {
         i = safe_normal_rand(10, 30);
         if (saferand() % 2 == 0)
             crequester.unknown8 = 5;
         else
             crequester.unknown8 = 6;
-        crequester.unknown6 = staff->unknown108 * i / 100;
+        crequester.unknown6 = staff->salary * i / 100;
     } else {
         i = safe_normal_rand(10, 30);
         crequester.unknown8 = 8;
-        crequester.unknown6 = staff->unknown108 * i / 100;
+        crequester.unknown6 = staff->salary * i / 100;
     }
     crequester.unknown0 = 0;
 }
@@ -735,7 +735,7 @@ void req2_help_if_doctor(void)
     Thing *candidate;
 
     candidate = &thing[crequester.unknown6];
-    if (candidate > thing && (candidate->unknown124 & 0x10))
+    if (candidate > thing && (candidate->skills & 0x10))
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -747,7 +747,7 @@ void req2_help_if_surgeon(void)
 
     candidate = &thing[crequester.unknown6];
     mask = 0x30;
-    if (candidate > thing && (candidate->unknown124 & mask) == mask)
+    if (candidate > thing && (candidate->skills & mask) == mask)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -759,7 +759,7 @@ void req2_help_if_psycho(void)
 
     candidate = &thing[crequester.unknown6];
     mask = 0x50;
-    if (candidate > thing && (candidate->unknown124 & mask) == mask)
+    if (candidate > thing && (candidate->skills & mask) == mask)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -771,7 +771,7 @@ void req2_help_if_researcher(void)
 
     candidate = &thing[crequester.unknown6];
     mask = 0x110;
-    if (candidate > thing && (candidate->unknown124 & mask) == mask)
+    if (candidate > thing && (candidate->skills & mask) == mask)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -788,7 +788,7 @@ void req12_help_if_doctor(void)
     Thing *staff;
 
     staff = &thing[crequester.unknown4];
-    if (staff > thing && (staff->unknown124 & 0x10))
+    if (staff > thing && (staff->skills & 0x10))
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -800,7 +800,7 @@ void req12_help_if_surgeon(void)
 
     staff = &thing[crequester.unknown4];
     mask = 0x30;
-    if (staff > thing && (staff->unknown124 & mask) == mask)
+    if (staff > thing && (staff->skills & mask) == mask)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -812,7 +812,7 @@ void req12_help_if_shrink(void)
 
     staff = &thing[crequester.unknown4];
     mask = 0x50;
-    if (staff > thing && (staff->unknown124 & mask) == mask)
+    if (staff > thing && (staff->skills & mask) == mask)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -824,7 +824,7 @@ void req12_help_if_research(void)
 
     staff = &thing[crequester.unknown4];
     mask = 0x110;
-    if (staff > thing && (staff->unknown124 & mask) == mask)
+    if (staff > thing && (staff->skills & mask) == mask)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 

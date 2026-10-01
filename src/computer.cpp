@@ -335,7 +335,7 @@ void process_computer_peep(Thing *patient, u8 player)
     month = mycontrol->unknown650;
     hours = mycontrol->unknown64f;
     bucket = &comp_buckets[player][month];
-    kind = patient->style;
+    kind = patient->illness;
     hosp->f123c++;
     if (listhead[player].objects[7] * 10 > hosp->f123c) {
         busy = 1;
@@ -351,7 +351,7 @@ void process_computer_peep(Thing *patient, u8 player)
     } else {
         chance = 20;
     }
-    patience = patient->unknown130;
+    patience = patient->health;
     result = 0;
     step = 5;
     for (;;) {
@@ -359,11 +359,11 @@ void process_computer_peep(Thing *patient, u8 player)
         if (allhosps[player].rooms[1].unknown1C == 1) {
             update_single_cure_cost(1, player);
             bucket->f0 += hosp->rooms[1].unknownC;
-            patient->unknown171 = 1;
+            patient->treatment = 1;
             computer_diag_progress(patient, player);
             reputation_affected(1, 10, month % 12, patient->owner, 0);
-            if (patient->unknown146 > gbv.ffc) {
-                patient->unknown171 = patient->style;
+            if (patient->diagnosis > gbv.ffc) {
+                patient->treatment = patient->illness;
                 reputation_affected(kind, 6, month % 12, patient->owner, 0);
                 hosp->f1ef++;
                 result = 1;
@@ -396,9 +396,9 @@ void process_computer_peep(Thing *patient, u8 player)
             patience = 5;
         }
         find_possible_diagnosis(patient);
-        if (patient->unknown171 == 0) {
+        if (patient->treatment == 0) {
             reputation_affected(kind, 7, month % 12, player, 0);
-            pct = patient->unknown146 * 100 / gbv.ffc;
+            pct = patient->diagnosis * 100 / gbv.ffc;
             if (pct < 0) {
                 pct = 0;
             } else if (pct > 99) {
@@ -416,11 +416,11 @@ void process_computer_peep(Thing *patient, u8 player)
             break;
         }
         ADVANCE_TIME();
-        update_single_cure_cost(patient->unknown171, player);
-        bucket->f0 += hosp->rooms[patient->unknown171].unknownC;
+        update_single_cure_cost(patient->treatment, player);
+        bucket->f0 += hosp->rooms[patient->treatment].unknownC;
         add_treatment_to_history(patient);
         computer_diag_progress(patient, player);
-        reputation_affected(patient->unknown171, 10, month % 12, patient->owner, 0);
+        reputation_affected(patient->treatment, 10, month % 12, patient->owner, 0);
         if (old_newrand() % chance == 0) {
             result = 3;
             break;
@@ -492,14 +492,14 @@ u8 computer_employ(u8 type, u16 skills, u8 player)
     AllHosps *hosp;
 
     for (candidate = thing + 1; candidate < end_things; candidate++) {
-        if (candidate->renderer == 4 && candidate->kind == 0x2e) {
+        if (candidate->type == 4 && candidate->state == 0x2e) {
             if ((u16)(candidate - thing) != gamevar.unknown75) {
                 if (type == candidate->subtype) {
             ok = 1;
             if (skills) {
                 for (i = 0; i < 9; i++) {
                     if (skills & (1 << i)) {
-                        if ((candidate->unknown124 & (1 << i)) == 0) {
+                        if ((candidate->skills & (1 << i)) == 0) {
                             ok = 0;
                             break;
                         }
@@ -507,15 +507,15 @@ u8 computer_employ(u8 type, u16 skills, u8 player)
                 }
             }
             if (ok) {
-                if (allhosps[player].f35 >= candidate->unknown108 * 12 / 10 && allhosps[player].f35 > 0) {
+                if (allhosps[player].f35 >= candidate->salary * 12 / 10 && allhosps[player].f35 > 0) {
                     hosp = &allhosps[player];
                     inc_staff_stats(candidate, player);
-                    hosp->f35 -= candidate->unknown108 * 12 / 10;
-                    hosp->f1234 += candidate->unknown108;
-                    hosp->f1246[candidate->subtype] += candidate->unknown126;
+                    hosp->f35 -= candidate->salary * 12 / 10;
+                    hosp->f1234 += candidate->salary;
+                    hosp->f1246[candidate->subtype] += candidate->ability;
                     candidate->owner = player;
                     set_expertise_staff(candidate);
-                    insert_skill(candidate->unknown124, player);
+                    insert_skill(candidate->skills, player);
                     remove_staff_in_struct(candidate);
                     return 1;
                 }
@@ -807,21 +807,21 @@ void computer_diag_progress(Thing *patient, u8 player)
     int val;
 
     hosp = &allhosps[player];
-    skill = expertise[patient->unknown171].unknown0;
+    skill = expertise[patient->treatment].unknown0;
     for (i = 0; i < 9; i++) {
         if (skill & (1 << i)) {
             break;
         }
     }
     who = skillnb_to_who[i];
-    val = patient->unknown146 - patient->unknown144;
+    val = patient->diagnosis - patient->diagnosis_handicap;
     val += hosp->f1246[who] / hosp->fc9e[who];
     val += 250 - old_normal_rand(0, 500);
-    if (patient->unknown171 >= 0x24) {
-        val += diag_register[patient->style][patient->unknown171 - 0x24];
+    if (patient->treatment >= 0x24) {
+        val += diag_register[patient->illness][patient->treatment - 0x24];
     }
-    if (patient->unknown146 < val) {
-        patient->unknown146 = val;
+    if (patient->diagnosis < val) {
+        patient->diagnosis = val;
     }
 }
 

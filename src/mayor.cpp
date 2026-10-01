@@ -114,30 +114,30 @@ u16 create_mayor(u8 owner)
     mayor = allocate_thing(0x19);
     if (mayor != 0) {
     Thing *reception_desk;
-    mayor->renderer = 0x14;
+    mayor->type = 0x14;
     mayor->owner = owner;
     pos = room_info[allhosps[owner].unknown1cf[old_newrand() & 3]].unknown4;
     mayor->x.tile = pos % 128;
     mayor->y.tile = pos / 128;
     mayor->x.frac = 0x80;
     mayor->y.frac = 0x80;
-    mayor->unknown18 = 0x10;
+    mayor->speed = 0x10;
     mayor->anim_speed = 2;
-    mayor->unknown17 = 1;
+    mayor->facing = 1;
     insert_node(mayor, mayor->x, mayor->y);
-    anim = check_frame(0x89, mayor) + mayor->unknown17;
+    anim = check_frame(0x89, mayor) + mayor->facing;
     mayor->sprite = start[anim].frame;
-    mayor->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+    mayor->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     reception_desk = &thing[listhead[owner].objects[11]];
     if (reception_desk > thing) {
         fn_0004195c(mayor, reception_desk->use_pos[1]);
-        mayor->kind = 2;
-        mayor->f6e = 4;
-        mayor->f6c = 0;
+        mayor->state = 2;
+        mayor->goto_state = 4;
+        mayor->inspect_room = 0;
     } else {
         fn_0004195c(mayor, room_info[allhosps[mayor->owner].unknown1cf[old_newrand() & 3]].unknown4);
-        mayor->kind = 2;
-        mayor->f6e = 6;
+        mayor->state = 2;
+        mayor->goto_state = 6;
         allhosps[mayor->owner].f1fb = 0xe;
     }
     return mayor - thing;
@@ -155,23 +155,23 @@ void mayor_pauses(Thing *mayor)
     if (--mayor->timer != 0)
         return;
     for (;;) {
-        mayor->f6c++;
-        room = &room_info[mayor->f6c];
+        mayor->inspect_room++;
+        room = &room_info[mayor->inspect_room];
         if (room >= end_room_info)
             break;
         if (room->owner == mayor->owner && rooms[room->type].fa) {
             if (rooms[room->type].unknown36 == 0 || !(old_newrand() & 1)) {
                 fn_0004195c(mayor, room->unknown4);
-                mayor->kind = 2;
-                mayor->f6e = 4;
+                mayor->state = 2;
+                mayor->goto_state = 4;
                 return;
             }
         }
     }
     hosp = &allhosps[mayor->owner];
     fn_0004195c(mayor, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
-    mayor->kind = 2;
-    mayor->f6e = 6;
+    mayor->state = 2;
+    mayor->goto_state = 6;
     hosp->f1fb = mayor_judges_hospital(mayor->owner);
     value = mayor_result[hosp->f1fb].f4;
     if (value != 0)
@@ -215,14 +215,14 @@ u8 mayor_judges_hospital(u8 owner)
         for (person = thing + 1; person < end_things; person++) {
             if (person->owner != owner)
                 continue;
-            switch (person->renderer) {
+            switch (person->type) {
             case 4:
-                fatigue_sum += person->f78;
-                person->f78 > max_fatigue ? max_fatigue = person->f78 : 0;
+                fatigue_sum += person->tiredness;
+                person->tiredness > max_fatigue ? max_fatigue = person->tiredness : 0;
                 nstaff++;
                 break;
             case 2:
-                sum2 += (s16)person->unknown83w;
+                sum2 += (s16)person->warmth;
                 npatients++;
                 break;
             }
@@ -259,11 +259,11 @@ u8 mayor_judges_hospital(u8 owner)
             --score;
     }
     for (person = thing + 1; person < end_things; person++) {
-        if ((person->renderer == 4 && person->subtype == 1) && person->owner == owner) {
+        if ((person->type == 4 && person->subtype == 1) && person->owner == owner) {
             doctors++;
-            if (person->unknown124 & 8)
+            if (person->skills & 8)
                 juniors++;
-            else if (person->unknown124 & 0x80)
+            else if (person->skills & 0x80)
                 consultants++;
         }
     }
@@ -300,7 +300,7 @@ u8 mayor_judges_hospital(u8 owner)
 // FUNCTION: 0x000a1754
 void mayor_gone(Thing *mayor)
 {
-    if (mayor->renderer == 0x14) {
+    if (mayor->type == 0x14) {
         allhosps[mayor->owner].f1fa = 4;
         make_a_playercall(5, 2, 0, mayor->owner);
     } else {
@@ -370,19 +370,19 @@ void mayor_inspects(Thing *mayor)
     Thing *door;
     Thing *reception_desk;
 
-    if (mayor->f6c == 0) {
+    if (mayor->inspect_room == 0) {
         reception_desk = &thing[listhead[mayor->owner].objects[11]];
         if (reception_desk > thing)
-            mayor->unknown17 = opposite_angle[reception_desk->unknown17];
+            mayor->facing = opposite_angle[reception_desk->facing];
     } else {
         door = find_door(mayor);
         if (door > thing)
-            mayor->unknown17 = opposite_angle[door->unknown17];
+            mayor->facing = opposite_angle[door->facing];
     }
     {
-        u16 anim = check_frame(0x89, mayor) + mayor->unknown17;
+        u16 anim = check_frame(0x89, mayor) + mayor->facing;
         mayor->sprite = start[anim].frame;
-        mayor->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+        mayor->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     }
     mayor->timer = 0x32;
 }

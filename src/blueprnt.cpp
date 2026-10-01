@@ -467,8 +467,8 @@ u8 is_tile_valid(u16 tile, u8 owner)
 {
     Thing *occupant;
 
-    for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->next]) {
-        if (occupant->renderer != 2 && occupant->renderer != 4) {
+    for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
+        if (occupant->type != 2 && occupant->type != 4) {
             advisor.f11f |= 2;
             return 0;
         }
@@ -545,7 +545,7 @@ void edit_blueprint(u8 owner)
     room = &room_info[allhosps[owner].build.room];
     i = 0;
     while ((obj = &thing[room->first_object]) > thing) {
-        if (othervar.ff == player && (!obj->group || objects[thing[obj->group].subtype].unknown17 == -1))
+        if (othervar.ff == player && (!obj->pair || objects[thing[obj->pair].subtype].unknown17 == -1))
             gamevar.unknown33.unknown0[obj->subtype]++;
         remove_object_from_map(obj);
         for (; i < 20; i++) {
@@ -594,15 +594,15 @@ void compute_room_pointed(u16 tile)
         build->unknownE_ = 0;
         pointed = &thing[othervar.f41];
         if (pointed > thing) {
-            switch (pointed->renderer) {
+            switch (pointed->type) {
             case 6:
-                if (pointed->unknown89 == 0 && !(objects[pointed->subtype].unknown20[2] & 1) && pointed->owner == player)
+                if (pointed->room_id == 0 && !(objects[pointed->subtype].unknown20[2] & 1) && pointed->owner == player)
                     othervar.f43 = othervar.f41;
                 break;
             case 2:
             case 4:
-                if (pointed->unknown69 && (u16)(pointed - thing) == thing[pointed->unknown69].unknown91
-                    && thing[pointed->unknown69].unknown89 == 0 && pointed->owner == player)
+                if (pointed->object && (u16)(pointed - thing) == thing[pointed->object].user
+                    && thing[pointed->object].room_id == 0 && pointed->owner == player)
                     othervar.f43 = othervar.f41;
                 break;
             }
@@ -626,7 +626,7 @@ u8 check_room_access(u8 owner)
         }
     }
     for (obj = thing + 1; obj < end_things; obj++) {
-        if ((obj->renderer == 6 && obj->subtype == 0xb) && obj->owner == owner) {
+        if ((obj->type == 6 && obj->subtype == 0xb) && obj->owner == owner) {
             if (!check_points_connected(pos, obj->use_pos[0]))
                 return 0;
             if (!check_points_connected(pos, obj->use_pos[1]))
@@ -841,14 +841,14 @@ u8 try_move_peep_cell(Thing *peep, u8 x, u8 y)
     pos = room_info[allhosps[peep->owner].unknown1cf[0]].unknown4;
     tile = (s16)(x + (y << 7));
     if ((!(map[tile].unknown7 & 0x10) && !which_room(tile)) && check_points_connected(tile, pos)) {
-        peep->unknown105 = peep->kind;
-        peep->unknown106 = x;
-        peep->unknown107 = y;
-        if (peep->renderer == 2)
-            peep->kind = 0x40;
+        peep->saved_state = peep->state;
+        peep->saved_dest_x = x;
+        peep->saved_dest_y = y;
+        if (peep->type == 2)
+            peep->state = 0x40;
         else
-            peep->kind = 0x4c;
-        peep->height = 0;
+            peep->state = 0x4c;
+        peep->countdown = 0;
         return 1;
     }
     return 0;

@@ -16,30 +16,30 @@ u16 create_inspector(u8 owner)
     inspector = allocate_thing(0x19);
     if (inspector != 0) {
     Thing *obj;
-    inspector->renderer = 0x16;
+    inspector->type = 0x16;
     inspector->owner = owner;
     pos = room_info[allhosps[owner].unknown1cf[old_newrand() & 3]].unknown4;
     inspector->x.tile = pos % 128;
     inspector->y.tile = pos / 128;
     inspector->x.frac = 0x80;
     inspector->y.frac = 0x80;
-    inspector->unknown18 = 0x20;
+    inspector->speed = 0x20;
     inspector->anim_speed = 1;
-    inspector->unknown17 = 1;
+    inspector->facing = 1;
     insert_node(inspector, inspector->x, inspector->y);
-    entry = check_frame(0x89, inspector) + inspector->unknown17;
+    entry = check_frame(0x89, inspector) + inspector->facing;
     inspector->sprite = start[entry].frame;
-    inspector->palette = start[entry].flags > 0 ? (u8)1 : (u8)0;
+    inspector->flip = start[entry].flags > 0 ? (u8)1 : (u8)0;
     obj = &thing[listhead[owner].objects[11]];
     if (obj > thing) {
         fn_0004195c(inspector, obj->use_pos[1]);
-        inspector->kind = 2;
-        inspector->f6e = 8;
-        inspector->f6c = 0;
+        inspector->state = 2;
+        inspector->goto_state = 8;
+        inspector->inspect_room = 0;
     } else {
         fn_0004195c(inspector, room_info[allhosps[inspector->owner].unknown1cf[old_newrand() & 3]].unknown4);
-        inspector->kind = 2;
-        inspector->f6e = 6;
+        inspector->state = 2;
+        inspector->goto_state = 6;
     }
     return inspector - thing;
     }
@@ -67,8 +67,8 @@ void inspector_pauses(Thing *inspector)
         return;
     hosp = &allhosps[inspector->owner];
     fn_0004195c(inspector, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
-    inspector->kind = 2;
-    inspector->f6e = 6;
+    inspector->state = 2;
+    inspector->goto_state = 6;
     contagious = count_and_flag_contagious_peeps(hosp->f20b, 2, inspector->owner);
     if (contagious == 0) {
         hosp->unknown209[0] = 0;

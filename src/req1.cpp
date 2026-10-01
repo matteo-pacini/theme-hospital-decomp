@@ -14,7 +14,7 @@ void adjust_build_palette_for_shop(RoomInfo *room)
     s32 obj_type;
 
     memset(counts, 0, 0x3f);
-    for (room_obj = &thing[room->first_object]; room_obj > thing; room_obj = &thing[room_obj->unknown71])
+    for (room_obj = &thing[room->first_object]; room_obj > thing; room_obj = &thing[room_obj->room_obj_next])
         counts[room_obj->subtype]++;
     memset(othervar.f8f6, 0, 0x3f);
     for (i = rooms[room->type].fc - 1; i >= 0; i--) {

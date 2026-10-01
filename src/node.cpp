@@ -18,10 +18,10 @@ void insert_node(Thing *node, MapPos x, MapPos y)
     id = node - thing;
     first = cell->first;
     if (first) {
-        node->next = first;
-        if (node->next > 0) {
+        node->cell_next = first;
+        if (node->cell_next > 0) {
             other = &thing[first];
-            other->prev = id;
+            other->cell_prev = id;
         }
     }
     cell->first = id;
@@ -51,18 +51,18 @@ void fn_00015b68(Thing *node)
     Map *cell;
     Thing *other;
 
-    if (node->prev == 0) {
+    if (node->cell_prev == 0) {
         cell = &map[((s16)node->y.tile << 7) + (s16)node->x.tile];
-        cell->first = node->next;
+        cell->first = node->cell_next;
         if (cell->first > 0) {
-            other = &thing[node->next];
-            other->prev = 0;
+            other = &thing[node->cell_next];
+            other->cell_prev = 0;
         }
     } else {
-        if ((thing[node->prev].next = node->next) > 0) {
-            thing[node->next].prev = node->prev;
+        if ((thing[node->cell_prev].cell_next = node->cell_next) > 0) {
+            thing[node->cell_next].cell_prev = node->cell_prev;
         }
     }
-    node->next = 0;
-    node->prev = 0;
+    node->cell_next = 0;
+    node->cell_prev = 0;
 }

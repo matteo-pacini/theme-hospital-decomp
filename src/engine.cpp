@@ -840,18 +840,18 @@ void adjust_big_cell_flag(const u16 cell)
     Thing *o;
     u16 shape;
 
-    for (t = &thing[map[cell].first]; t > thing; t = &thing[t->next]) {
-        switch (t->renderer) {
+    for (t = &thing[map[cell].first]; t > thing; t = &thing[t->cell_next]) {
+        switch (t->type) {
         case 2:
         case 4:
-            o = &thing[t->unknown69];
-            if (o > thing && (u16)(t - thing) == o->unknown91) {
+            o = &thing[t->object];
+            if (o > thing && (u16)(t - thing) == o->user) {
                 map[cell].flags |= 0x20;
                 return;
             }
             break;
         case 6:
-            shape = objects[t->subtype].shapes[t->unknown17];
+            shape = objects[t->subtype].shapes[t->facing];
             if (shapes[shape].count > 1) {
                 map[cell].flags |= 0x20;
                 return;
@@ -918,19 +918,19 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
     Thing *o;
     s8 v;
 
-    for (; t > thing; t = &thing[t->next]) {
-        switch (t->renderer) {
+    for (; t > thing; t = &thing[t->cell_next]) {
+        switch (t->type) {
         case 4:
-            if (t->kind == 0x2a || t->kind == 0x2e)
+            if (t->state == 0x2a || t->state == 0x2e)
                 break;
-            o = &thing[t->unknown69];
-            if (o > thing && (u16)(t - thing) == o->unknown91) {
+            o = &thing[t->object];
+            if (o > thing && (u16)(t - thing) == o->user) {
                 u16 shape;
                 s16 off;
                 u8 k;
                 s16 pos;
 
-                shape = objects[o->subtype].shapes[o->unknown17];
+                shape = objects[o->subtype].shapes[o->facing];
                 record_covering_cell(row, 0);
                 off = (s16)-(s8)shapes[shape].unknown1f[0] + -(s8)shapes[shape].unknown1f[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
@@ -946,16 +946,16 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
                 return v;
             break;
         case 2:
-            if (t->kind == 0x28)
+            if (t->state == 0x28)
                 break;
-            o = &thing[t->unknown69];
-            if (o > thing && (u16)(t - thing) == o->unknown91) {
+            o = &thing[t->object];
+            if (o > thing && (u16)(t - thing) == o->user) {
                 u16 shape;
                 s16 off;
                 u8 k;
                 s16 pos;
 
-                shape = objects[o->subtype].shapes[o->unknown17];
+                shape = objects[o->subtype].shapes[o->facing];
                 record_covering_cell(row, 0);
                 off = (s16)-(s8)shapes[shape].unknown1f[0] + -(s8)shapes[shape].unknown1f[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
@@ -975,8 +975,8 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
             u8 k;
             s16 pos;
 
-            shape = objects[t->subtype].shapes[t->unknown17];
-            if (t->kind == 4)
+            shape = objects[t->subtype].shapes[t->facing];
+            if (t->state == 4)
                 break;
             for (k = 0; k < shapes[shape].count; k++) {
                 pos = shapes[shape].points[k];

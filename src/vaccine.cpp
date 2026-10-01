@@ -15,8 +15,8 @@ u8 is_person_highlighted_for_vaccination(u8 flag)
 
     person = &thing[othervar.f41];
     flag = 0;
-    if (person > thing && person->renderer == 2 && person->owner == player && (s8)person->unknown174 > 0
-        && myhosp->f20b == person->style) {
+    if (person > thing && person->type == 2 && person->owner == player && (s8)person->contagion > 0
+        && myhosp->f20b == person->illness) {
         if (flag || is_person_in_vaccine_queue(person) == 0) {
             othervar.f7a = othervar.f41;
             return 1;
@@ -108,10 +108,10 @@ u8 should_nurse_vaccinate(Thing *nurse)
                 if (nurse->room)
                     set_complex(nurse, 0x136, nurse->room->unknown6);
                 set_complex(nurse, 0xbe, pos);
-                nurse->state_b = 0x40;
-                nurse->state_a = 0x40;
+                nurse->next_state = 0x40;
+                nurse->resume_state = 0x40;
                 fn_0003e724(nurse);
-                nurse->unknown73 = patient - thing;
+                nurse->slave = patient - thing;
                 patient->flags |= 2;
                 reset_icon_value(patient, 0xe);
                 set_icon_value(patient, 0xf);
@@ -128,28 +128,28 @@ void nurse_vaccinates(Thing *nurse)
 {
     Thing *patient;
 
-    patient = &thing[nurse->unknown73];
-    nurse->unknown73 = 0;
+    patient = &thing[nurse->slave];
+    nurse->slave = 0;
     if (!is_person_in_vaccine_queue(patient)) {
-        nurse->kind = 0x28;
+        nurse->state = 0x28;
     } else if (am_i_near_point(nurse, patient->x.tile + (patient->y.tile << 7))) {
         cancel_vaccination_request(patient);
-        nurse->kind = 0x28;
+        nurse->state = 0x28;
         reset_icon_value(patient, 0xf);
         set_icon_value(patient, 0x10);
-        if ((s8)patient->unknown174 > 0)
-            patient->unknown174 = 0xff;
+        if ((s8)patient->contagion > 0)
+            patient->contagion = 0xff;
         change_balance(0x1d, -gbv.f126, 0, patient->owner);
     } else {
         u16 pos = can_i_go_near_point(nurse, patient->x.tile + (patient->y.tile << 7));
         if (pos && !(map[pos].unknown7 & 0x10)) {
             set_complex(nurse, 0xbe, pos);
-            nurse->state_b = 0x40;
-            nurse->state_a = 0x40;
+            nurse->next_state = 0x40;
+            nurse->resume_state = 0x40;
             fn_0003e724(nurse);
-            nurse->unknown73 = patient - thing;
+            nurse->slave = patient - thing;
         } else {
-            nurse->kind = 0x28;
+            nurse->state = 0x28;
             patient->flags &= ~2;
             allhosps[patient->owner].vaccine_requests++;
         }

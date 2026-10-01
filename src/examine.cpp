@@ -12,43 +12,43 @@ void doctor_carries_out_examination(Thing *doctor)
     Thing *patient;
     Thing *t;
 
-    patient = &thing[doctor->unknown73];
+    patient = &thing[doctor->slave];
     if (patient <= thing)
         return;
-    switch (doctor->unknown103) {
+    switch (doctor->substate) {
     case 1:
-        doctor->kind = 8;
-        doctor->unknown73 = 0;
+        doctor->state = 8;
+        doctor->slave = 0;
         done_treatment(doctor, patient);
         doctor->room->unknown29 = 1;
         break;
     case 30:
-        if (patient->kind != 0x20) {
+        if (patient->state != 0x20) {
             othervar.f0 = old_newrand() % 100;
             if (othervar.f0 >= 30 && othervar.f0 < 32) {
-                doctor->state_b = 0x1c;
+                doctor->next_state = 0x1c;
                 set_complex(doctor, 0x10e, 0);
                 fn_0003e724(doctor);
             }
             break;
         }
-        doctor->unknown103++;
-        patient->state_b = 0x20;
+        doctor->substate++;
+        patient->next_state = 0x20;
         set_complex(patient, 0x78, 0);
         process_person_complex(patient);
         break;
     case 31:
-        if (patient->kind != 0x20) {
+        if (patient->state != 0x20) {
             othervar.f0 = old_newrand() % 100;
             if (othervar.f0 >= 33 && othervar.f0 < 35) {
-                doctor->state_b = 0x1c;
+                doctor->next_state = 0x1c;
                 set_complex(doctor, 0x10e, 0);
                 fn_0003e724(doctor);
             }
             break;
         }
-        doctor->unknown103++;
-        doctor->state_b = 0x1c;
+        doctor->substate++;
+        doctor->next_state = 0x1c;
         set_complex(doctor, 0x118, 0);
         fn_0003e724(doctor);
         break;
@@ -68,16 +68,16 @@ void doctor_carries_out_examination(Thing *doctor)
                     othervar.f0 = old_newrand() % 100;
                     if (othervar.f0 >= 35 && othervar.f0 < 50) {
                         patient->anim_speed = gbv.f14e;
-                        doctor->unknown103 = 33;
-                        patient->state_b = 0x20;
+                        doctor->substate = 33;
+                        patient->next_state = 0x20;
                         set_complex(patient, 0xbe, 0);
                         process_person_complex(patient);
-                        doctor->state_b = 0x1c;
+                        doctor->next_state = 0x1c;
                         set_complex(doctor, 0x10e, 0);
                         fn_0003e724(doctor);
                         break;
                     } else {
-                        doctor->state_b = 0x1c;
+                        doctor->next_state = 0x1c;
                         set_complex(doctor, 0x122, 0);
                         fn_0003e724(doctor);
                         break;
@@ -85,24 +85,24 @@ void doctor_carries_out_examination(Thing *doctor)
                 }
             }
         }
-        doctor->state_b = 0x1c;
+        doctor->next_state = 0x1c;
         set_complex(doctor, 0x118, 0);
         fn_0003e724(doctor);
         break;
     case 33:
-        if (patient->kind != 0x20)
+        if (patient->state != 0x20)
             break;
-        doctor->unknown103 = 40;
-        patient->state_b = 0x20;
+        doctor->substate = 40;
+        patient->next_state = 0x20;
         set_complex(patient, 0xb4, 0);
         process_person_complex(patient);
         break;
     case 40:
-        if (patient->kind != 0x20)
+        if (patient->state != 0x20)
             break;
-        doctor->kind = 0x24;
-        doctor->unknown73 = 0;
-        if (treatment_machine_used((u16)patient->unknown171, patient->x.tile + (patient->y.tile << 7)))
+        doctor->state = 0x24;
+        doctor->slave = 0;
+        if (treatment_machine_used((u16)patient->treatment, patient->x.tile + (patient->y.tile << 7)))
             break;
         done_treatment(doctor, patient);
         doctor->room->unknown29 = 1;
@@ -111,16 +111,16 @@ void doctor_carries_out_examination(Thing *doctor)
         if (patient->subtype == 3) {
             if (set_complex(patient, 500, 0))
                 process_person_complex(patient);
-            patient->state_b = 0x20;
+            patient->next_state = 0x20;
             if (find_object(doctor->x.tile + (doctor->y.tile << 7), 0x38, 1, 0x96, doctor->owner)) {
                 if (set_complex(doctor, 0x370, 0))
                     fn_0003e724(doctor);
             }
             if (set_complex(doctor, 0x2b2, 0))
                 fn_0003e724(doctor);
-            doctor->state_b = 0x1c;
+            doctor->next_state = 0x1c;
         }
-        doctor->unknown103 = 230;
+        doctor->substate = 230;
         break;
     case 10:
     case 50:
@@ -134,136 +134,136 @@ void doctor_carries_out_examination(Thing *doctor)
     case 170:
     case 210:
     case 230:
-        if (treatment_machine_used((u16)patient->unknown171, patient->x.tile + (patient->y.tile << 7)))
+        if (treatment_machine_used((u16)patient->treatment, patient->x.tile + (patient->y.tile << 7)))
             break;
         done_treatment(doctor, patient);
-        doctor->state_b = 0x24;
+        doctor->next_state = 0x24;
         set_complex(doctor, 0x154, 0);
         fn_0003e724(doctor);
-        doctor->unknown73 = 0;
+        doctor->slave = 0;
         doctor->room->unknown29 = 1;
         break;
     case 240:
-        doctor->unknown103++;
-        patient->kind = 0x2e;
-        t = &thing[patient->unknown69];
+        doctor->substate++;
+        patient->state = 0x2e;
+        t = &thing[patient->object];
         {
             u16 f;
 
-            f = check_frame(anim_starts[patient->subtype].anims[0x79], patient) + patient->unknown17;
+            f = check_frame(anim_starts[patient->subtype].anims[0x79], patient) + patient->facing;
             patient->sprite = start[f].frame;
-            patient->palette = start[f].flags > 0;
+            patient->flip = start[f].flags > 0;
         }
         {
             u16 f;
 
-            f = check_frame(anim_starts[patient->unknown170].anims[0x79], patient) + patient->unknown17;
-            t->unknown100 = start[f].frame;
-            t->state_b = start[f].flags > 0;
+            f = check_frame(anim_starts[patient->orig_subtype].anims[0x79], patient) + patient->facing;
+            t->aux_sprite = start[f].frame;
+            t->aux_flip = start[f].flags > 0;
         }
         D_001567b0[4] = D_001567b0[5] = 999;
-        full_draw_frame(patient, patient->sprite, 0, 0, 0, 1, patient->palette);
-        t->unknown103 = -((TbSprite *)(element[elelist[frame[patient->sprite].list]].sprite + (u32)sprite))->height
+        full_draw_frame(patient, patient->sprite, 0, 0, 0, 1, patient->flip);
+        t->split_height = -((TbSprite *)(element[elelist[frame[patient->sprite].list]].sprite + (u32)sprite))->height
                       - D_001567b0[5];
         break;
     case 241:
-        if (patient->kind != 0x20)
+        if (patient->state != 0x20)
             break;
-        patient->kind = 0x28;
+        patient->state = 0x28;
         effect_illness(patient, 8, 1);
         set_complex(doctor, 0x488, 0);
-        doctor->state_b = 0x1c;
+        doctor->next_state = 0x1c;
         fn_0003e724(doctor);
-        doctor->unknown103 = 230;
+        doctor->substate = 230;
         break;
     case 110:
         {
             u32 complexes[] = { 0x456, 0x460, 0x46a };
 
-            doctor->unknown103 = 111;
-            doctor->state_b = 0x1c;
+            doctor->substate = 111;
+            doctor->next_state = 0x1c;
             set_complex(doctor, complexes[old_newrand() % 3], 0);
             fn_0003e724(doctor);
         }
         break;
     case 111:
-        doctor->unknown103 = 230;
-        doctor->state_b = 0x1c;
+        doctor->substate = 230;
+        doctor->next_state = 0x1c;
         set_complex(doctor, 0x474, 0);
         fn_0003e724(doctor);
         break;
     case 70:
-        doctor->state_b = 0x1c;
+        doctor->next_state = 0x1c;
         set_complex(doctor, 0x334, 0);
         fn_0003e724(doctor);
-        doctor->unknown103 = 71;
+        doctor->substate = 71;
         break;
     case 71:
         {
             Thing *h;
 
-            h = &thing[doctor->unknown148w];
-            if (h->kind != 0x18)
+            h = &thing[doctor->work_target];
+            if (h->state != 0x18)
                 break;
-            h->state_b = 0x18;
+            h->next_state = 0x18;
             set_complex(h, 0x33e, 0);
             fn_0003e724(h);
-            doctor->unknown103 = 72;
+            doctor->substate = 72;
         }
         break;
     case 72:
         {
             Thing *h;
 
-            h = &thing[doctor->unknown148w];
-            if (h->kind != 0x18)
+            h = &thing[doctor->work_target];
+            if (h->state != 0x18)
                 break;
-            h->state_b = 0x24;
+            h->next_state = 0x24;
             set_complex(h, 0x352, 0);
             fn_0003e724(h);
-            doctor->state_b = 0x1c;
+            doctor->next_state = 0x1c;
             set_complex(doctor, 0x348, 0);
             fn_0003e724(doctor);
-            doctor->unknown103 = 73;
-            doctor->unknown148w = 0;
+            doctor->substate = 73;
+            doctor->work_target = 0;
         }
         break;
     case 73:
-        if (treatment_machine_used((u16)patient->unknown171, patient->x.tile + (patient->y.tile << 7)))
+        if (treatment_machine_used((u16)patient->treatment, patient->x.tile + (patient->y.tile << 7)))
             break;
         set_complex(patient, 0x276, 0);
         process_person_complex(patient);
         done_treatment(doctor, patient);
-        doctor->unknown73 = 0;
-        doctor->kind = 0x24;
+        doctor->slave = 0;
+        doctor->state = 0x24;
         doctor->room->unknown29 = 1;
         break;
     case 180:
         if (!pre_administer_drugs(patient)) {
             person_go_home(patient);
-            doctor->unknown73 = 0;
-            doctor->kind = 0x24;
+            doctor->slave = 0;
+            doctor->state = 0x24;
             doctor->room->unknown29 = 1;
-        } else if (patient->style == 15) {
-            doctor->state_b = 0x1c;
-            doctor->unknown103 = 190;
+        } else if (patient->illness == 15) {
+            doctor->next_state = 0x1c;
+            doctor->substate = 190;
             set_complex(doctor, 0x21c, 0);
             fn_0003e724(doctor);
-        } else if (patient->style == 5) {
-            doctor->state_b = 0x1c;
-            doctor->unknown103 = 200;
+        } else if (patient->illness == 5) {
+            doctor->next_state = 0x1c;
+            doctor->substate = 200;
             set_complex(doctor, 0x21c, 0);
             fn_0003e724(doctor);
         } else {
-            doctor->state_b = 0x1c;
-            doctor->unknown103 = 181;
+            doctor->next_state = 0x1c;
+            doctor->substate = 181;
             set_complex(doctor, 500, 0);
             fn_0003e724(doctor);
         }
         break;
     case 181:
-        doctor->state_b = 0x24;
-        doctor->unknown73 = 0;
+        doctor->next_state = 0x24;
+        doctor->slave = 0;
         set_complex(doctor, 0x154, 0);
         fn_0003e724(doctor);
         administer_drugs(doctor, patient);
@@ -273,158 +273,158 @@ void doctor_carries_out_examination(Thing *doctor)
         {
             u16 f;
 
-            doctor->unknown103++;
-            f = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->unknown17;
+            doctor->substate++;
+            f = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
             doctor->sprite = start[f].frame;
-            doctor->palette = start[f].flags > 0;
+            doctor->flip = start[f].flags > 0;
         }
-        patient->kind = 0x2e;
-        patient->unknown69 = doctor->unknown69;
-        t = &thing[patient->unknown69];
+        patient->state = 0x2e;
+        patient->object = doctor->object;
+        t = &thing[patient->object];
         {
             u16 f;
 
-            f = check_frame(anim_starts[patient->subtype].anims[43], patient) + patient->unknown17;
+            f = check_frame(anim_starts[patient->subtype].anims[43], patient) + patient->facing;
             patient->sprite = start[f].frame;
-            patient->palette = start[f].flags > 0;
+            patient->flip = start[f].flags > 0;
         }
         if (patient->subtype == 6) {
             u16 f;
 
-            f = check_frame(anim_starts[0].anims[43], patient) + patient->unknown17;
-            t->unknown100 = start[f].frame;
-            t->state_b = start[f].flags > 0;
+            f = check_frame(anim_starts[0].anims[43], patient) + patient->facing;
+            t->aux_sprite = start[f].frame;
+            t->aux_flip = start[f].flags > 0;
         } else {
             u16 f;
 
-            f = check_frame(anim_starts[1].anims[43], patient) + patient->unknown17;
-            t->unknown100 = start[f].frame;
-            t->state_b = start[f].flags > 0;
+            f = check_frame(anim_starts[1].anims[43], patient) + patient->facing;
+            t->aux_sprite = start[f].frame;
+            t->aux_flip = start[f].flags > 0;
         }
-        t->unknown103 = 0;
+        t->split_height = 0;
         break;
     case 191:
-        if (patient->kind != 0x20)
+        if (patient->state != 0x20)
             break;
         transform_peep_who(patient, 4);
-        doctor->state_b = 0x1c;
+        doctor->next_state = 0x1c;
         set_complex(doctor, 0x230, 0);
         fn_0003e724(doctor);
-        doctor->unknown103 = 181;
-        patient->kind = 0x28;
+        doctor->substate = 181;
+        patient->state = 0x28;
         break;
     case 200:
         {
             u16 f;
 
-            doctor->unknown103++;
-            f = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->unknown17;
+            doctor->substate++;
+            f = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
             doctor->sprite = start[f].frame;
-            doctor->palette = start[f].flags > 0;
+            doctor->flip = start[f].flags > 0;
         }
-        patient->kind = 0x30;
-        patient->unknown69 = doctor->unknown69;
-        t = &thing[patient->unknown69];
+        patient->state = 0x30;
+        patient->object = doctor->object;
+        t = &thing[patient->object];
         {
             u16 f;
 
-            f = check_frame(anim_starts[patient->subtype].anims[43], patient) + patient->unknown17;
+            f = check_frame(anim_starts[patient->subtype].anims[43], patient) + patient->facing;
             patient->sprite = start[f].frame;
-            patient->palette = start[f].flags > 0;
+            patient->flip = start[f].flags > 0;
         }
-        t->unknown105 = 4;
+        t->aux_draw_flags = 4;
         {
             u16 f;
 
-            f = check_frame(anim_starts[0].anims[43], patient) + patient->unknown17;
-            t->unknown100 = start[f].frame;
-            t->state_b = start[f].flags > 0;
+            f = check_frame(anim_starts[0].anims[43], patient) + patient->facing;
+            t->aux_sprite = start[f].frame;
+            t->aux_flip = start[f].flags > 0;
         }
-        t->unknown104 = 0;
-        t->unknown103 = 0;
+        t->aux_param = 0;
+        t->split_height = 0;
         break;
     case 201:
-        t = &thing[patient->unknown69];
-        if (t->unknown103 == 200) {
-            doctor->unknown103++;
-            t->unknown105 = 8;
-            t->unknown104 = 1;
-            t->unknown103 = 0;
+        t = &thing[patient->object];
+        if (t->split_height == 200) {
+            doctor->substate++;
+            t->aux_draw_flags = 8;
+            t->aux_param = 1;
+            t->split_height = 0;
         } else {
-            t->unknown103 += 10;
+            t->split_height += 10;
         }
         break;
     case 202:
-        t = &thing[patient->unknown69];
-        if (t->unknown103 == 200) {
-            doctor->unknown103++;
-            t->unknown105 = 0xff;
-            t->unknown104 = 1;
-            t->unknown103 = 0;
+        t = &thing[patient->object];
+        if (t->split_height == 200) {
+            doctor->substate++;
+            t->aux_draw_flags = 0xff;
+            t->aux_param = 1;
+            t->split_height = 0;
         } else {
-            t->unknown103 += 10;
+            t->split_height += 10;
         }
         break;
     case 203:
-        t = &thing[patient->unknown69];
-        if (t->unknown103 == 200) {
-            doctor->unknown103++;
-            patient->sprite = t->unknown100;
-            patient->palette = t->state_b;
-            t->unknown105 = 0xff;
-            t->unknown104 = 1;
-            t->unknown103 = 200;
+        t = &thing[patient->object];
+        if (t->split_height == 200) {
+            doctor->substate++;
+            patient->sprite = t->aux_sprite;
+            patient->flip = t->aux_flip;
+            t->aux_draw_flags = 0xff;
+            t->aux_param = 1;
+            t->split_height = 200;
         } else {
-            t->unknown103 += 10;
+            t->split_height += 10;
         }
         break;
     case 204:
-        t = &thing[patient->unknown69];
-        if (t->unknown103 == 0) {
-            doctor->unknown103++;
-            t->unknown105 = 8;
-            t->unknown104 = 5;
-            t->unknown103 = 200;
+        t = &thing[patient->object];
+        if (t->split_height == 0) {
+            doctor->substate++;
+            t->aux_draw_flags = 8;
+            t->aux_param = 5;
+            t->split_height = 200;
         } else {
-            t->unknown103 -= 10;
+            t->split_height -= 10;
         }
         break;
     case 205:
-        t = &thing[patient->unknown69];
-        if (t->unknown103 == 0) {
-            doctor->unknown103++;
-            t->unknown105 = 4;
-            t->unknown104 = 0;
-            t->unknown103 = 200;
+        t = &thing[patient->object];
+        if (t->split_height == 0) {
+            doctor->substate++;
+            t->aux_draw_flags = 4;
+            t->aux_param = 0;
+            t->split_height = 200;
         } else {
-            t->unknown103 -= 10;
+            t->split_height -= 10;
         }
         break;
     case 206:
-        t = &thing[patient->unknown69];
-        if (t->unknown103 == 0) {
+        t = &thing[patient->object];
+        if (t->split_height == 0) {
             transform_peep_who(patient, 0xa);
-            doctor->state_b = 0x1c;
+            doctor->next_state = 0x1c;
             set_complex(doctor, 0x230, 0);
             fn_0003e724(doctor);
-            doctor->unknown103 = 181;
-            patient->kind = 0x28;
+            doctor->substate = 181;
+            patient->state = 0x28;
         } else {
-            t->unknown103 -= 10;
+            t->split_height -= 10;
         }
         break;
     case 220:
         if (treatment_machine_used(0x2c, patient->x.tile + (patient->y.tile << 7)))
             break;
-        doctor->state_b = 0x3e;
+        doctor->next_state = 0x3e;
         set_complex(doctor, 0x154, 0);
         fn_0003e724(doctor);
-        doctor->unknown73 = 0;
+        doctor->slave = 0;
         doctor->room->unknown29 = 1;
         remove_person(patient);
         break;
     default:
-        doctor->unknown103 = 1;
+        doctor->substate = 1;
         set_complex(doctor, 0xfa, 0);
         fn_0003e724(doctor);
         done_treatment(doctor, patient);
@@ -520,10 +520,10 @@ void effect_illness(Thing *patient, u8 illness, u8 cured)
         break;
     case 8:
         if (cured == 1) {
-            patient->subtype = patient->unknown170;
+            patient->subtype = patient->orig_subtype;
         } else {
             patient->layers[0] = 1;
-            patient->unknown170 = patient->subtype;
+            patient->orig_subtype = patient->subtype;
             patient->subtype = 0xe;
         }
         break;
@@ -536,15 +536,15 @@ void effect_illness(Thing *patient, u8 illness, u8 cured)
         break;
     }
     if (cured == 0) {
-        patient->style = illness;
+        patient->illness = illness;
     } else {
         allhosps[patient->owner].f1e9++;
         if (patient->owner == player)
             advisor.f128 |= 0x40;
-        allhosps[patient->owner].rooms[patient->style].unknown1E++;
-        reputation_affected(patient->style, 0, 0, patient->owner, 0);
-        patient->unknown169 = patient->style = 0;
-        if (patient->unknown174)
+        allhosps[patient->owner].rooms[patient->illness].unknown1E++;
+        reputation_affected(patient->illness, 0, 0, patient->owner, 0);
+        patient->known_illness = patient->illness = 0;
+        if (patient->contagion)
             clean_contagious_peep(patient);
         if (patient->owner == player)
             mycontrol->fc++;

@@ -648,13 +648,13 @@ void display_panel_person_info(void)
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
     text = 0;
-    if (person->unknown118 & 4)
+    if (person->flags2 & 4)
         text = info_bar_text[4];
-    else if (person->unknown118 & 8)
+    else if (person->flags2 & 8)
         text = info_bar_text[15];
-    else if (person->unknown118 & 0x10)
+    else if (person->flags2 & 0x10)
         text = info_bar_text[16];
-    else if (person->unknown118 & 0x80)
+    else if (person->flags2 & 0x80)
         text = info_bar_text[19];
     if (text) {
         line = 1;
@@ -665,54 +665,54 @@ void display_panel_person_info(void)
         lines = 2;
     else
         lines = 1;
-    if (person->f74 & 0x10) {
+    if (person->flags0 & 0x10) {
         fn_00036730(info_bar_text[5], &line, lines);
-    } else if (person->f74 & 0x80) {
-        if (person->f75 & 4)
+    } else if (person->flags0 & 0x80) {
+        if (person->flags1 & 4)
             fn_00036730(info_bar_text[17], &line, lines);
         else
             fn_00036730(info_bar_text[18], &line, lines);
     } else {
-        room = &room_info[person->unknown140];
+        room = &room_info[person->queue_room];
         if (room > room_info && room < end_room_info) {
             sprintf(buf, info_bar_text[6], D_001602cc[rooms[room->type].id]);
             fn_00036730(buf, &line, lines);
         }
-        room = &room_info[person->unknown89];
-        if (room > room_info && room < end_room_info && person->unknown89 != person->unknown140) {
+        room = &room_info[person->dest_room];
+        if (room > room_info && room < end_room_info && person->dest_room != person->queue_room) {
             sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
             fn_00036730(buf, &line, lines);
         }
     }
-    if (person->f75 & 0x20)
+    if (person->flags1 & 0x20)
         fn_00036730(info_bar_text[8], &line, lines);
-    else if (person->f75 & 1)
+    else if (person->flags1 & 1)
         fn_00036730(info_bar_text[24], &line, lines);
-    else if (person->f75 & 0x40)
+    else if (person->flags1 & 0x40)
         fn_00036730(info_bar_text[9], &line, lines);
-    else if (person->f75 & 0x80)
+    else if (person->flags1 & 0x80)
         fn_00036730(info_bar_text[10], &line, lines);
-    else if (person->unknown118 & 1)
+    else if (person->flags2 & 1)
         fn_00036730(info_bar_text[11], &line, lines);
-    else if (person->f74 & 0x20)
+    else if (person->flags0 & 0x20)
         fn_00036730(info_bar_text[25], &line, lines);
-    if (line < 3 && person->style != 0) {
-        if (person->f74 & 0x40) {
+    if (line < 3 && person->illness != 0) {
+        if (person->flags0 & 0x40) {
             line = 2;
-            sprintf(buf, info_bar_text[22], D_001602a4[person->style]);
+            sprintf(buf, info_bar_text[22], D_001602a4[person->illness]);
             fn_00036730(buf, &line, 3);
         } else if (person->flags32 & 0x21000) {
             u8 k;
 
-            k = person->unknown169;
+            k = person->known_illness;
             line = 2;
-            if (person->unknown118 & 2)
+            if (person->flags2 & 2)
                 sprintf(buf, info_bar_text[12], D_001602a4[k]);
             else
                 sprintf(buf, info_bar_text[13], D_001602a4[k]);
             fn_00036730(buf, &line, 3);
         } else {
-            fn_00036594(person->unknown146 * 100 / gbv.ffc, info_bar_text[14]);
+            fn_00036594(person->diagnosis * 100 / gbv.ffc, info_bar_text[14]);
         }
     }
 }
@@ -739,16 +739,16 @@ void display_panel_staff_info(void)
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
         fn_000bbff0(buf, D_00160298[staff->subtype]);
-        if ((staff->subtype == 1 || staff->subtype == 4) && (staff->unknown124 & 0x1e0)) {
+        if ((staff->subtype == 1 || staff->subtype == 4) && (staff->skills & 0x1e0)) {
             fn_000bbff0(buf, "");
             n = 0;
-            if (staff->unknown124 & 0x80)
+            if (staff->skills & 0x80)
                 fn_000bbff0(names[n++], D_00160318[7]);
-            if (staff->unknown124 & 0x100)
+            if (staff->skills & 0x100)
                 fn_000bbff0(names[n++], D_00160318[8]);
-            if (staff->unknown124 & 0x20)
+            if (staff->skills & 0x20)
                 fn_000bbff0(names[n++], D_00160318[5]);
-            if (staff->unknown124 & 0x40) {
+            if (staff->skills & 0x40) {
                 if (n == 3)
                     fn_000bbff0(names[n++], info_bar_text[26]);
                 else
@@ -760,19 +760,19 @@ void display_panel_staff_info(void)
         }
         fn_00036730(buf, &line, 2);
         if (resvars.f1 == SCREEN_MODE_13) {
-            room = &room_info[staff->unknown89];
+            room = &room_info[staff->dest_room];
             if (room > room_info) {
                 sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
                 fn_00036730(buf, &line, 2);
-            } else if ((staff->subtype == 1 && staff->kind == 0x14) || staff->state_b == 0x20) {
+            } else if ((staff->subtype == 1 && staff->state == 0x14) || staff->next_state == 0x20) {
                 fn_00036730(info_bar_text[23], &line, 2);
-            } else if (staff->kind == 0x34) {
+            } else if (staff->state == 0x34) {
                 fn_00036730(info_bar_text[27], &line, 2);
             }
         }
         pct = allhosps[staff->owner].f21d * 100 / 1000;
         pct > 100 ? pct = 100 : 0;
-        fn_00036594(staff->f78 * 100 / 1000, info_bar_text[28]);
+        fn_00036594(staff->tiredness * 100 / 1000, info_bar_text[28]);
         fn_000ccac4(pct * (resvars.f18_PanelLayoutp->unknown5e8 - 2) / 100 + (resvars.f18_PanelLayoutp->unknown5e0 + panel->x + 1),
                     resvars.f18_PanelLayoutp->unknown5e4 + (panel->y + resvars.f1c_PanelLayoutp->unknown584 + resvars.f1c_PanelLayoutp->unknown57c * 2 + 1),
                     panel->x + resvars.f18_PanelLayoutp->unknown5e0 + 1 + pct * (resvars.f18_PanelLayoutp->unknown5e8 - 2) / 100,
@@ -792,18 +792,18 @@ void display_panel_object_info(void)
     obj = &thing[othervar.f7e];
     line = 0;
     clear_panel_info_bar();
-    if (obj->renderer == 6) {
+    if (obj->type == 6) {
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
         fn_00036730(D_0016029c[obj->subtype], &line, 3);
         if (resvars.f1 == SCREEN_MODE_13) {
-            sprintf(buf, info_bar_text[30], obj->value);
+            sprintf(buf, info_bar_text[30], obj->strength);
             fn_00036730(buf, &line, 3);
-            sprintf(buf, info_bar_text[31], obj->mode);
+            sprintf(buf, info_bar_text[31], obj->times_used);
             fn_00036730(buf, &line, 3);
         } else {
-            sprintf(buf, info_bar_text[31], obj->mode);
-            sprintf(buf, "%s/%d", buf, obj->value);
+            sprintf(buf, info_bar_text[31], obj->times_used);
+            sprintf(buf, "%s/%d", buf, obj->strength);
             line = 2;
             fn_00036730(buf, &line, 3);
         }
@@ -822,10 +822,10 @@ void display_panel_queue_info(void)
     selected = &thing[othervar.f7e];
     line = 0;
     height = resvars.f1c_PanelLayoutp->unknown57c;
-    if (selected->renderer == 4)
+    if (selected->type == 4)
         room = selected->room;
     else
-        room = &room_info[selected->unknown89];
+        room = &room_info[selected->room_id];
     if (room > room_info) {
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
@@ -853,10 +853,10 @@ void display_panel_mayor_info(void)
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
-    if (mayor->renderer == 0x14) {
+    if (mayor->type == 0x14) {
         fn_00036730(info_bar_text[20], &line, 3);
         fn_00036730(mayor_names[allhosps[mayor->owner].f1f9], &line, 3);
-    } else if (mayor->renderer == 0x16) {
+    } else if (mayor->type == 0x16) {
         fn_00036730(info_bar_text[21], &line, 3);
     }
 }
@@ -876,7 +876,7 @@ void display_panel_usage_info(void)
     fn_00036730(D_0016029c[machine->subtype], &line, 3);
     if (resvars.f1 != SCREEN_MODE_13)
         line = 2;
-    sprintf(buf, info_bar_text[31], machine->mode);
+    sprintf(buf, info_bar_text[31], machine->times_used);
     fn_00036730(buf, &line, 3);
 }
 

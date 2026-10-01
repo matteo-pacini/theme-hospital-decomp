@@ -91,18 +91,18 @@ void process_things(Thing *first, Thing *last)
     reset_all_count();
     check_win_status();
     for (cur = first; cur < last; cur++) {
-        switch (cur->renderer) {
+        switch (cur->type) {
         case 0:
             break;
         case 2:
             debug.thing_count++;
             person_count(cur);
             if (cur->owner == player) {
-                happiness_sum += cur->unknown81s;
+                happiness_sum += cur->happiness_s;
                 happiness_count++;
             }
             update_icon_counter(cur);
-            switch (cur->kind) {
+            switch (cur->state) {
             case 4:
                 person_waits_for_busy(cur);
                 break;
@@ -206,7 +206,7 @@ void process_things(Thing *first, Thing *last)
             staff_count(cur);
             update_icon_counter(cur);
             modify_staff(cur);
-            switch (cur->kind) {
+            switch (cur->state) {
             case 2:
             case 4:
                 staff_waits(cur);
@@ -271,7 +271,7 @@ void process_things(Thing *first, Thing *last)
                 staff_complex_retry(cur);
                 break;
             case 0x2e:
-                if (actual_game_turn > cur->unknown148d) {
+                if (actual_game_turn > cur->hire_expiry) {
                     if (statvar.unknownfd <= 1) {
                         if ((u16)(cur - thing) != gamevar.unknown75)
                             remove_staff_in_struct(cur);
@@ -302,8 +302,8 @@ void process_things(Thing *first, Thing *last)
                 break;
             case 0x38:
                 fn_00015b68(cur);
-                cur->kind = 0x2e;
-                cur->unknown130 = actual_game_turn;
+                cur->state = 0x2e;
+                cur->hire_time = actual_game_turn;
                 gamevar.f6[cur->subtype]++;
                 gamevar.f4++;
                 break;
@@ -344,13 +344,13 @@ void process_things(Thing *first, Thing *last)
             debug.thing_count++;
             object_count(cur);
             update_icon_counter(cur);
-            switch (cur->kind) {
+            switch (cur->state) {
             case 2:
                 object_static(cur);
                 break;
             case 4:
-                if (cur->icon)
-                    cur->icon = frame[cur->icon].next;
+                if (cur->overlay_frame)
+                    cur->overlay_frame = frame[cur->overlay_frame].next;
             case 0xe:
             case 0x12:
                 break;
@@ -384,7 +384,7 @@ void process_things(Thing *first, Thing *last)
             break;
         case 8:
             debug.thing_count++;
-            switch (cur->kind) {
+            switch (cur->state) {
             case 0x10:
                 double_door_swings(cur);
                 break;
@@ -396,7 +396,7 @@ void process_things(Thing *first, Thing *last)
             break;
         case 0xa:
             debug.thing_count++;
-            switch (cur->kind) {
+            switch (cur->state) {
             case 2:
                 reaper_play_anim(cur);
                 break;
@@ -417,7 +417,7 @@ void process_things(Thing *first, Thing *last)
             break;
         case 0xc:
             debug.thing_count++;
-            switch (cur->kind) {
+            switch (cur->state) {
             case 2:
                 rat_scurries(cur);
                 break;
@@ -439,7 +439,7 @@ void process_things(Thing *first, Thing *last)
             break;
         case 0x10:
             debug.thing_count++;
-            switch (cur->kind) {
+            switch (cur->state) {
             case 2:
                 helicopter_lands(cur);
                 break;
@@ -462,7 +462,7 @@ void process_things(Thing *first, Thing *last)
             break;
         case 0x14:
             debug.thing_count++;
-            switch (cur->kind) {
+            switch (cur->state) {
             case 2:
                 mayor_goto(cur);
                 break;
@@ -478,7 +478,7 @@ void process_things(Thing *first, Thing *last)
             break;
         case 0x16:
             debug.thing_count++;
-            switch (cur->kind) {
+            switch (cur->state) {
             case 2:
                 mayor_goto(cur);
                 break;

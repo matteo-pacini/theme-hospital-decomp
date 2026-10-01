@@ -32,7 +32,7 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     memset(D_00153fa4, 0, sizeof(D_00153fa4));
     D_001567b0[0] = D_001567b0[1] = 999;
     D_001567b0[2] = D_001567b0[3] = 0;
-    for (id = cell->first; id > 0; id = occupant->next) {
+    for (id = cell->first; id > 0; id = occupant->cell_next) {
         occupant = &thing[id];
         screen_x = resvars.f0 == SCREEN_MODE_13 ? ((occupant->x.frac - occupant->y.frac) >> 3) + 0x20 : ((occupant->x.frac - occupant->y.frac) >> 4) + 0x10;
         screen_y = resvars.f0 == SCREEN_MODE_13 ? (occupant->y.frac + occupant->x.frac) >> 4 : (occupant->y.frac + occupant->x.frac) >> 5;
@@ -82,7 +82,7 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 
             draw_x = node->x + x;
             draw_y = node->y + y;
-            switch (node->widget->renderer) {
+            switch (node->widget->type) {
             case 2:
                 mapwho_person(node->widget, draw_x, draw_y, left, top);
                 break;
@@ -123,7 +123,7 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
 {
     othervar.fa72++;
-    switch (person->kind) {
+    switch (person->state) {
     case 4:
     case 6:
     case 8:
@@ -150,9 +150,9 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
     case 68:
     case 70:
     case 240:
-        if (person->style == 6) {
+        if (person->illness == 6) {
             fn_0002f47c(person, x, y);
-        } else if (person->style == 12 && othervar.f1c == 0 && person->unknown69 == 0) {
+        } else if (person->illness == 12 && othervar.f1c == 0 && person->object == 0) {
             fn_0002e804(person, x, y);
         } else if ((u16)(person - thing) == othervar.f43) {
             draw_hilight_frame(person, x, y);
@@ -176,7 +176,7 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
         break;
     case 52:
     case 72:
-        draw_special_id_frame(person, x, y - person->height);
+        draw_special_id_frame(person, x, y - person->fly_height);
         break;
     case 14:
     case 40:
@@ -195,7 +195,7 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
 void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
 {
     othervar.fa72++;
-    switch (staff->kind) {
+    switch (staff->state) {
     case 2:
     case 4:
     case 6:
@@ -253,7 +253,7 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
 // FUNCTION: 0x00015334
 void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s32 top)
 {
-    switch (obj->kind) {
+    switch (obj->state) {
     case 2:
     case 6:
     case 10:
@@ -264,7 +264,7 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
     case 24:
     case 26:
     case 28:
-        if ((u16)(obj - thing) == othervar.f43 || (obj->group && obj->group == othervar.f43)) {
+        if ((u16)(obj - thing) == othervar.f43 || (obj->pair && obj->pair == othervar.f43)) {
             draw_hilight_frame(obj, x, y);
         } else {
             draw_special_id_frame(obj, x, y);
@@ -273,13 +273,13 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
             && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
             othervar.f41_s16 = obj - thing;
         }
-        if (obj->icon) {
-            draw_from_special_id_frame(obj->icon, x, y, 0, (u8 *)obj->label, obj->palette);
+        if (obj->overlay_frame) {
+            draw_from_special_id_frame(obj->overlay_frame, x, y, 0, (u8 *)obj->data, obj->flip);
         }
         break;
     case 4:
-        if (obj->icon) {
-            draw_from_special_id_frame(obj->icon, x, y, 0, (u8 *)obj->label, obj->palette);
+        if (obj->overlay_frame) {
+            draw_from_special_id_frame(obj->overlay_frame, x, y, 0, (u8 *)obj->data, obj->flip);
         }
         break;
     }
@@ -288,8 +288,8 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
 // FUNCTION: 0x0001557c
 void mapwho_reaper(Thing *reaper, s32 x, s32 y)
 {
-    if (reaper->kind != 0xf2 || !(game_turn & 1)) {
-        if (reaper->kind == 6) {
+    if (reaper->state != 0xf2 || !(game_turn & 1)) {
+        if (reaper->state == 6) {
             return;
         }
         draw_special_id_frame(reaper, x, y);
@@ -327,13 +327,13 @@ void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32
 // FUNCTION: 0x00015760
 void mapwho_bang(Thing *bang, s32 x, s32 y)
 {
-    draw_a_frame(bang->sprite, x, y - (bang->offset >> 8), 0, bang->palette);
+    draw_a_frame(bang->sprite, x, y - (bang->altitude >> 8), 0, bang->flip);
 }
 
 // FUNCTION: 0x000157b8
 void mapwho_helicopter(Thing *helicopter, s32 x, s32 y)
 {
-    draw_special_id_frame(helicopter, x, y - helicopter->offset);
+    draw_special_id_frame(helicopter, x, y - helicopter->altitude);
 }
 
 // FUNCTION: 0x000157f0
@@ -341,19 +341,19 @@ void mapwho_numfx(Thing *fx, s32 x, s32 y)
 {
     char buf[100];
 
-    switch (fx->mode) {
+    switch (fx->numfx_type) {
     case 3:
-        draw_money(x, fx->unknown18 + y - fx->anim_speed, fx->value);
+        draw_money(x, fx->speed + y - fx->anim_speed, fx->numfx_amount);
         break;
     default:
-        if (fx->mode == 0) {
-            sprintf(buf, "%d", fx->value);
-        } else if (fx->mode == 1) {
-            fn_000bbff0(buf, fx->text);
-        } else if (fx->mode == 2) {
-            sprintf(buf, fx->text, fx->value);
+        if (fx->numfx_type == 0) {
+            sprintf(buf, "%d", fx->numfx_amount);
+        } else if (fx->numfx_type == 1) {
+            fn_000bbff0(buf, fx->numfx_text);
+        } else if (fx->numfx_type == 2) {
+            sprintf(buf, fx->numfx_text, fx->numfx_amount);
         }
-        draw_text_on_map(buf, fx->subtype, x, y + fx->unknown18 - fx->anim_speed);
+        draw_text_on_map(buf, fx->subtype, x, y + fx->speed - fx->anim_speed);
         break;
     }
 }
@@ -373,6 +373,6 @@ void mapwho_shadow(Thing *shadow, s32 x, s32 y)
 {
     Thing *caster;
 
-    caster = &thing[shadow->link];
-    draw_a_frame_scaled(shadow->sprite, x, y, 0, shadow->palette, 0x640000 / (caster->offset + 100));
+    caster = &thing[shadow->caster];
+    draw_a_frame_scaled(shadow->sprite, x, y, 0, shadow->flip, 0x640000 / (caster->altitude + 100));
 }

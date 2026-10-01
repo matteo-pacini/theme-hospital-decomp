@@ -229,13 +229,13 @@ void auto_available(void)
 // FUNCTION: 0x0006da40
 void research_contribution(Thing *researcher, s16 amount)
 {
-    if (researcher->f78 > gbv.fea)
-        amount += researcher->unknown126 / 4;
-    else if (researcher->f78 > gbv.fe8)
-        amount += researcher->unknown126 / 2;
+    if (researcher->tiredness > gbv.fea)
+        amount += researcher->ability / 4;
+    else if (researcher->tiredness > gbv.fe8)
+        amount += researcher->ability / 2;
     else
-        amount += researcher->unknown126;
-    if (researcher->subtype == 1 && researcher->unknown148[2])
+        amount += researcher->ability;
+    if (researcher->subtype == 1 && researcher->crazy)
         amount = -amount / 2;
     allhosps[researcher->owner].research_points += amount;
     award_counts.f145 += amount;
@@ -252,11 +252,11 @@ void send_person_for_research(Thing *patient)
     room = get_expertise_dest(0x2c, patient);
     room->unknown32++;
     page_staff_i_need(patient, room);
-    patient->unknown89 = room - room_info;
-    idx = check_frame(anim_starts[patient->subtype].idle, patient) + patient->unknown17;
+    patient->dest_room = room - room_info;
+    idx = check_frame(anim_starts[patient->subtype].idle, patient) + patient->facing;
     patient->sprite = start[idx].frame;
-    patient->palette = start[idx].flags > 0 ? (u8)1 : (u8)0;
-    patient->kind = 0x24;
+    patient->flip = start[idx].flags > 0 ? (u8)1 : (u8)0;
+    patient->state = 0x24;
     fn_0004195c(patient, room->unknown4);
 }
 
@@ -275,14 +275,14 @@ u16 emptiest_research_room(u8 owner)
     for (room = room_info + 1; room < end_room_info; room++) {
         if (room->type == 0x1c && room->owner == owner) {
             count = 0;
-            for (t = &thing[room->first_object]; t > thing; t = &thing[t->unknown71]) {
+            for (t = &thing[room->first_object]; t > thing; t = &thing[t->room_obj_next]) {
                 for (k = 0; k < research_workstations.count; k++) {
                     if (t->subtype == research_workstations.kinds[k])
                         count++;
                 }
             }
             for (t = &thing[room->first]; t > thing; t = &thing[t->room_next]) {
-                if (t->renderer == 4)
+                if (t->type == 4)
                     count--;
             }
             if (count > best) {
@@ -329,9 +329,9 @@ u8 send_doctor_to_research(Thing *doctor)
     if (doctor->room)
         set_complex(doctor, 0x136, doctor->room->unknown6);
     set_complex(doctor, 0x96, room_info[id].unknown4);
-    doctor->state_b = 0x3e;
-    doctor->state_a = 0x36;
-    doctor->unknown89 = id;
+    doctor->next_state = 0x3e;
+    doctor->resume_state = 0x36;
+    doctor->dest_room = id;
     fn_0003e724(doctor);
     return 1;
 }
@@ -347,10 +347,10 @@ void person_autopsied(Thing *patient)
     hosp = &allhosps[patient->owner];
     staff_happiness = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if ((staff->renderer == 4 && staff->kind != 0x2e) && staff->owner == patient->owner)
-            staff_happiness += staff->unknown81s;
+        if ((staff->type == 4 && staff->state != 0x2e) && staff->owner == patient->owner)
+            staff_happiness += staff->happiness_s;
     }
-    do_illness_research(patient->owner, patient->style, gbv.f138 * expertise[patient->style].cost / 100, 4);
+    do_illness_research(patient->owner, patient->illness, gbv.f138 * expertise[patient->illness].cost / 100, 4);
     if ((staff_happiness << 8) / hosp->fc9c < 0x1900)
         bad = old_newrand() % 3 != 0;
     else

@@ -460,7 +460,7 @@ void process_turn(void)
 
             if (fn_00029c4c(D_001549d0[i].value, D_001549d0[i].arg, 0, i)) {
                 if (empty) {
-                    change_balance(2, -(thing[D_001549d0[i].arg].unknown108 * 12) / 10, 0, othervar.ff);
+                    change_balance(2, -(thing[D_001549d0[i].arg].salary * 12) / 10, 0, othervar.ff);
                 }
                 if (i == player) {
                     play_sound(10, 7, -1, -1);
@@ -755,7 +755,7 @@ void process_turn(void)
             break;
         case 0x30:
             if (i == player) {
-                if (thing[D_001549d0[i].arg].kind != 0x44) {
+                if (thing[D_001549d0[i].arg].state != 0x44) {
                     close_crequester(crequester.unknown2);
                     gamevar.unknown77 = D_001549d0[i].value;
                     gamevar.unknown75 = D_001549d0[i].arg;
@@ -922,7 +922,7 @@ void process_turn(void)
 
                 obj = &thing[D_001549d0[i].value];
                 if (obj->owner == player) {
-                    switch (obj->renderer) {
+                    switch (obj->type) {
                     case 2:
                         slot = 1;
                         D_001581b2[slot].kind = 2;
@@ -1127,23 +1127,23 @@ void process_turn(void)
             break;
         case 0x5e:
             obj2 = &thing[D_001549d0[i].value];
-            obj2->f8e &= 0xf0;
-            obj2->f8e |= 1;
+            obj2->orders &= 0xf0;
+            obj2->orders |= 1;
             break;
         case 0x5f:
             obj2 = &thing[D_001549d0[i].value];
-            obj2->f8e &= 0xf0;
-            obj2->f8e |= 4;
+            obj2->orders &= 0xf0;
+            obj2->orders |= 4;
             break;
         case 0x60:
             obj2 = &thing[D_001549d0[i].value];
-            obj2->f8e &= 0xf0;
-            obj2->f8e |= 2;
+            obj2->orders &= 0xf0;
+            obj2->orders |= 2;
             break;
         case 0x61:
             obj2 = &thing[D_001549d0[i].value];
-            obj2->f8e &= 0xf0;
-            obj2->f8e |= 8;
+            obj2->orders &= 0xf0;
+            obj2->orders |= 8;
             break;
         case 0x62:
             if (i == player) {
@@ -1191,8 +1191,8 @@ void process_turn(void)
             break;
         case 0x57:
             obj1 = &thing[D_001549d0[i].value];
-            allhosps[obj1->owner].rooms[obj1->style].unknown24++;
-            if (obj1->f74 & 0x20) {
+            allhosps[obj1->owner].rooms[obj1->illness].unknown24++;
+            if (obj1->flags0 & 0x20) {
                 allhosps[obj1->owner].f207 = 0;
             }
             refer_patient(obj1, D_001549d0[i].arg);
@@ -1204,7 +1204,7 @@ void process_turn(void)
         case 0x68:
             obj2 = &thing[D_001549d0[i].value];
             allhosps[i].f11f4 = D_001549d0[i].value;
-            if (!(obj2->f8e & 0x20)) {
+            if (!(obj2->orders & 0x20)) {
                 if (fn_0002d11c(obj2)) {
                     interrupt_staff(obj2);
                     staff_picked_up(&thing[D_001549d0[i].value]);
@@ -1256,12 +1256,12 @@ void process_turn(void)
         case 0x6b:
             obj2 = &thing[D_001549d0[i].value];
             if (obj2 > thing) {
-                if (old_newrand() % (obj2->f8f + 1)) {
+                if (old_newrand() % (obj2->resign_count + 1)) {
                     sack_staff(&thing[D_001549d0[i].value], 1);
                 } else {
-                    obj2->f8e &= 0xdf;
+                    obj2->orders &= 0xdf;
                     advisor.f128 &= 0xfe;
-                    obj2->unknown128 = 0;
+                    obj2->discontent = 0;
                     reset_icon_value(&thing[D_001549d0[i].value], 9);
                 }
                 if (i == player) {
@@ -1276,11 +1276,11 @@ void process_turn(void)
         case 0x6c:
             obj2 = &thing[D_001549d0[i].value];
             if (obj2 > thing) {
-                obj2->f8e &= 0xdf;
+                obj2->orders &= 0xdf;
                 advisor.f128 &= 0xfe;
-                obj2->unknown108 += D_001549d0[i].arg;
-                obj2->unknown81 = 100;
-                obj2->unknown128 = 0;
+                obj2->salary += D_001549d0[i].arg;
+                obj2->happiness = 100;
+                obj2->discontent = 0;
                 reset_icon_value(&thing[D_001549d0[i].value], 9);
             }
             if (i == player) {
@@ -1294,11 +1294,11 @@ void process_turn(void)
         case 0x6d:
             obj2 = &thing[D_001549d0[i].value];
             if (obj2 > thing) {
-                obj2->f8e &= 0xdf;
+                obj2->orders &= 0xdf;
                 advisor.f128 &= 0xfe;
                 pay_staff_bonus(obj2, D_001549d0[i].arg, 0, 1, i);
-                obj2->unknown81 = 100;
-                obj2->unknown128 = 0;
+                obj2->happiness = 100;
+                obj2->discontent = 0;
                 reset_icon_value(&thing[D_001549d0[i].value], 9);
             }
             if (i == player) {
@@ -1392,11 +1392,11 @@ void process_turn(void)
             break;
         case 0x74:
             obj1 = &thing[D_001549d0[i].value];
-            obj1->unknown171 = 0;
-            allhosps[obj1->owner].rooms[obj1->style].unknown24++;
+            obj1->treatment = 0;
+            allhosps[obj1->owner].rooms[obj1->illness].unknown24++;
             person_go_home(obj1);
-            obj1->f75 |= 0x80;
-            if (obj1->f74 & 0x20) {
+            obj1->flags1 |= 0x80;
+            if (obj1->flags0 & 0x20) {
                 allhosps[obj1->owner].f207 = 0;
             }
             break;
@@ -1451,38 +1451,38 @@ void process_turn(void)
             switch (D_001549d0[i].value) {
             case 0:
                 obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->renderer == 2 && (obj1->f74 & 0x10)) {
-                    obj1->unknown171 = 0;
-                    allhosps[obj1->owner].rooms[obj1->style].unknown24++;
+                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
+                    obj1->treatment = 0;
+                    allhosps[obj1->owner].rooms[obj1->illness].unknown24++;
                     person_go_home(obj1);
-                    obj1->unknown118 |= 0x10;
+                    obj1->flags2 |= 0x10;
                 }
-                if (obj1->renderer == 2) {
-                    obj1->unknown91 = 0;
+                if (obj1->type == 2) {
+                    obj1->playercall = 0;
                 }
                 break;
             case 1:
                 obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->renderer == 2 && (obj1->f74 & 0x10)) {
-                    obj1->f74 &= 0xef;
+                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
+                    obj1->flags0 &= 0xef;
                     reset_icon_value(obj1, 0x1b);
-                    obj1->f74 |= 0x80;
+                    obj1->flags0 |= 0x80;
                     obj1->timer = othervar.f82;
                 }
-                if (obj1->renderer == 2) {
-                    obj1->unknown91 = 0;
+                if (obj1->type == 2) {
+                    obj1->playercall = 0;
                 }
                 break;
             case 2:
                 obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->renderer == 2 && (obj1->f74 & 0x10)) {
-                    obj1->unknown171 = 0x2c;
-                    obj1->f74 &= 0xef;
+                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
+                    obj1->treatment = 0x2c;
+                    obj1->flags0 &= 0xef;
                     reset_icon_value(obj1, 0x1b);
-                    obj1->kind = 0x26;
+                    obj1->state = 0x26;
                 }
-                if (obj1->renderer == 2) {
-                    obj1->unknown91 = 0;
+                if (obj1->type == 2) {
+                    obj1->playercall = 0;
                 }
                 break;
             case 0xa:
@@ -1522,39 +1522,39 @@ void process_turn(void)
                 goto dispatch;
             case 0x28:
                 obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->renderer == 2 && (obj1->f74 & 0x10)) {
-                    obj1->unknown171 = 0;
-                    allhosps[obj1->owner].rooms[obj1->style].unknown24++;
+                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
+                    obj1->treatment = 0;
+                    allhosps[obj1->owner].rooms[obj1->illness].unknown24++;
                     person_go_home(obj1);
-                    obj1->unknown118 |= 8;
+                    obj1->flags2 |= 8;
                 }
-                if (obj1->renderer == 2) {
-                    obj1->unknown91 = 0;
+                if (obj1->type == 2) {
+                    obj1->playercall = 0;
                 }
                 break;
             case 0x29:
                 obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->renderer == 2 && (obj1->f74 & 0x10)) {
-                    obj1->f74 &= 0xef;
+                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
+                    obj1->flags0 &= 0xef;
                     reset_icon_value(obj1, 0x1b);
                     interrupt_complex(obj1);
                     best_guess_treatment(obj1);
                     next_treatment_now_setup(obj1, 0);
                 }
-                if (obj1->renderer == 2) {
-                    obj1->unknown91 = 0;
+                if (obj1->type == 2) {
+                    obj1->playercall = 0;
                 }
                 break;
             case 0x2a:
                 obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->renderer == 2 && (obj1->f74 & 0x10)) {
-                    obj1->f74 &= 0xef;
+                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
+                    obj1->flags0 &= 0xef;
                     reset_icon_value(obj1, 0x1b);
-                    obj1->f74 |= 0x80;
+                    obj1->flags0 |= 0x80;
                     obj1->timer = othervar.f82;
                 }
-                if (obj1->renderer == 2) {
-                    obj1->unknown91 = 0;
+                if (obj1->type == 2) {
+                    obj1->playercall = 0;
                 }
                 break;
             }
@@ -1577,10 +1577,10 @@ void process_turn(void)
 
                     for (o = thing + 1; o < end_things; o++) {
                         if (o->owner == i) {
-                            switch (o->renderer) {
+                            switch (o->type) {
                             case 6:
                                 if (objects[o->subtype].unknown1e) {
-                                    o->mode = o->value * 2;
+                                    o->times_used = o->strength * 2;
                                     machine_disaster(o);
                                 }
                                 break;
@@ -1589,9 +1589,9 @@ void process_turn(void)
                                 break;
                             case 2:
                                 if (!(map[(s16)o->x.tile + ((s16)o->y.tile << 7)].unknown7 & 0x10)) {
-                                    o->f74 &= 0xdf;
-                                    o->unknown174 = 0;
-                                    o->f75 |= 1;
+                                    o->flags0 &= 0xdf;
+                                    o->contagion = 0;
+                                    o->flags1 |= 1;
                                 }
                                 break;
                             }
@@ -1628,32 +1628,32 @@ void process_turn(void)
             break;
         case 0x7f:
             obj1 = &thing[D_001549d0[i].value];
-            obj1->f74 &= 0xef;
+            obj1->flags0 &= 0xef;
             reset_icon_value(obj1, 0x1b);
-            obj1->f74 |= 0x80;
+            obj1->flags0 |= 0x80;
             obj1->timer = othervar.f82;
             break;
         case 0x80:
             obj1 = &thing[D_001549d0[i].value];
-            obj1->unknown171 = 0x2c;
-            obj1->f74 &= 0xef;
+            obj1->treatment = 0x2c;
+            obj1->flags0 &= 0xef;
             reset_icon_value(obj1, 0x1b);
-            obj1->kind = 0x26;
+            obj1->state = 0x26;
             break;
         case 0x81:
             obj2 = &thing[D_001549d0[i].value];
             if (obj2 > thing) {
-                obj2->f93 = 1 << (u8)i;
+                obj2->poach_offers = 1 << (u8)i;
             }
             break;
         case 0x82:
             obj1 = &thing[D_001549d0[i].value];
-            if (obj1->f74 & 1) {
+            if (obj1->flags0 & 1) {
                 if (i == player) {
                     play_sound(10, 0xdf, -1, -1);
                 }
                 cancel_vaccination_request(obj1);
-                if (obj1->f74 & 0x20) {
+                if (obj1->flags0 & 0x20) {
                     set_icon_value(obj1, 0xd);
                 }
             } else {
@@ -1699,7 +1699,7 @@ void process_turn(void)
 
                     obj = &thing[D_001549d0[i].arg];
                     if (obj->owner == player) {
-                        switch (obj->renderer) {
+                        switch (obj->type) {
                         case 2:
                             slot = 1;
                             D_001581b2[slot].kind = 2;
@@ -1920,8 +1920,8 @@ u16 fn_00021818(s8 slot, s8 port)
     }
     setup_addresses();
     for (w = thing + 1; w < end_things; w++) {
-        if ((w->renderer == 4 || w->renderer == 2) && w->room > 0) {
-            w->mode = w->room - room_info;
+        if ((w->type == 4 || w->type == 2) && w->room > 0) {
+            w->room_index = w->room - room_info;
         }
     }
     if (port == -1) {
@@ -1959,8 +1959,8 @@ u16 fn_00021818(s8 slot, s8 port)
         }
     }
     for (w = thing + 1; w < end_things; w++) {
-        if ((w->renderer == 4 || w->renderer == 2) && w->room > 0) {
-            w->room = &room_info[w->mode];
+        if ((w->type == 4 || w->type == 2) && w->room > 0) {
+            w->room = &room_info[w->room_index];
         }
     }
     if (resvars.f1 == SCREEN_MODE_1) {
@@ -2039,8 +2039,8 @@ s16 fn_00021c38(s8 slot, s8 port)
                 goto_cell_in_window(window.unknown2eb, cell);
             }
             for (w = thing + 1; w < end_things; w++) {
-                if ((w->renderer == 2 || w->renderer == 4) && w->room > 0) {
-                    w->room = &room_info[w->mode];
+                if ((w->type == 2 || w->type == 4) && w->room > 0) {
+                    w->room = &room_info[w->room_index];
                 }
             }
             recreate_map(1);
@@ -2078,8 +2078,8 @@ s16 fn_00021c38(s8 slot, s8 port)
             }
             if (found) {
                 for (w = thing + 1; w < end_things; w++) {
-                    if ((w->renderer == 2 || w->renderer == 4) && w->room > 0) {
-                        w->room = &room_info[w->mode];
+                    if ((w->type == 2 || w->type == 4) && w->room > 0) {
+                        w->room = &room_info[w->room_index];
                     }
                 }
             }

@@ -256,28 +256,28 @@ u16 shall_peep_pay(Thing *patient)
     u16 price;
     s32 max;
 
-    room = patient->unknown171;
-    advisor.fc_u16 = patient->unknown171;
+    room = patient->treatment;
+    advisor.fc_u16 = patient->treatment;
     for (attempt = 0; attempt < 2; attempt++) {
         pays = 0;
         update_single_cure_cost(room, patient->owner);
         price = allhosps[patient->owner].rooms[room].unknownC;
         max = max_price_for_treatment(room, patient->owner);
-        ins = patient->unknown172[1] & allhosps[patient->owner].f216;
+        ins = patient->insurance & allhosps[patient->owner].f216;
         if (ins)
             max += insurance_co[ins_control[ins]].f3 * max / 100;
-        else if (price > patient->f70)
+        else if (price > patient->cash)
             max = 0;
         max += old_newrand() % (price / 2 + 1);
         if (price <= max)
             pays = 1;
-        room = patient->unknown172[0];
+        room = patient->next_treatment;
         if (room == 0 || pays == 0)
             break;
     }
     if (!pays) {
         set_icon_value(patient, 0x13);
-        patient->unknown118 |= 0x80;
+        patient->flags2 |= 0x80;
         record_person_as_patient(patient);
         if (patient->owner == player)
             advisor.f128 |= 2;

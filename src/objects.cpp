@@ -114,10 +114,10 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
     cell = &map[tile];
     control = &objects[obj->subtype];
     shape = &shapes[control->shapes[dir]];
-    obj->kind = control->unknown23;
-    obj->unknown17 = dir;
-    obj->sprite = start[control->unknownE + obj->unknown17].frame;
-    obj->palette = start[control->unknownE + obj->unknown17].flags;
+    obj->state = control->unknown23;
+    obj->facing = dir;
+    obj->sprite = start[control->unknownE + obj->facing].frame;
+    obj->flip = start[control->unknownE + obj->facing].flags;
     mark_object_shape(cell, shape, dir, control, 1);
     obj->use_pos[0] = tile + shape->unknown13[0];
     obj->use_pos[1] = tile + shape->unknown13[1];
@@ -128,10 +128,10 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
     obj->depth = shape->unknown1f[2];
     obj->x.tile = tile % 128;
     obj->y.tile = tile / 128;
-    obj->text[1] = obj->x.tile + shape->unknown1f[0];
-    obj->text[3] = obj->y.tile + shape->unknown1f[1];
-    obj->x.frac = obj->text[0] = 0x80;
-    obj->y.frac = obj->text[2] = 0x80;
+    obj->use_x.tile = obj->x.tile + shape->unknown1f[0];
+    obj->use_y.tile = obj->y.tile + shape->unknown1f[1];
+    obj->x.frac = obj->use_x.frac = 0x80;
+    obj->y.frac = obj->use_y.frac = 0x80;
     insert_node(obj, obj->x, obj->y);
     insert_object(tile, obj, obj->subtype);
     inc_hardware_stats(obj->subtype, obj->owner);
@@ -145,12 +145,12 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
         part = &next_part[control->unknown17];
         other = &thing[fn_00037098((u16)(tile + part->dirs[dir].offset), part->kind, part->dirs[dir].dir, obj->owner)];
         if (other > thing) {
-            other->group = obj - thing;
-            obj->group = other - thing;
+            other->pair = obj - thing;
+            obj->pair = other - thing;
         }
     }
     if (obj->subtype == 0x3a || obj->subtype == 0x3b) {
-        if (obj->unknown17 == 1) {
+        if (obj->facing == 1) {
             map[(s16)obj->x.tile + ((s16)obj->y.tile << 7) + 0x7f].flags |= 0x20;
         }
     } else {
@@ -169,9 +169,9 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
         }
         break;
     case 0x11:
-        frame = check_frame(obj->label[0] + 0x9bf, obj) + obj->unknown17;
+        frame = check_frame(obj->fuse + 0x9bf, obj) + obj->facing;
         obj->sprite = start[frame].frame;
-        obj->palette = start[frame].flags > 0;
+        obj->flip = start[frame].flags > 0;
         obj->owner = (map[tile].unknown7 & 2) ? 1 : (map[tile].unknown7 & 4) ? 2 : (map[tile].unknown7 & 8) ? 3 : 0;
         break;
     }
@@ -227,18 +227,18 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
         if (cost) {
             change_balance(3, -cost, 0, owner);
         }
-        obj->renderer = 6;
+        obj->type = 6;
         obj->subtype = kind;
         obj->anim_speed = 2;
-        obj->unknown97 = control->unknown15[0];
+        obj->use_style = control->unknown15[0];
         obj->owner = owner;
-        obj->value = allhosps[othervar.ff].object_stats[kind].unknown8;
-        obj->mode = 0;
-        obj->unknown39 = 0;
-        obj->unknown40 = old_newrand() & 3;
-        obj->unknown41 = old_newrand() & 3;
+        obj->strength = allhosps[othervar.ff].object_stats[kind].unknown8;
+        obj->times_used = 0;
+        obj->layers[10] = 0;
+        obj->layers[11] = old_newrand() & 3;
+        obj->layers[12] = old_newrand() & 3;
         if (kind == 0x2d) {
-            obj->unknown100 = 400;
+            obj->plant_health = 400;
             if (obj->owner == player) {
                 NRAdcounts.unknownb += 0x37;
                 if (NRAdcounts.unknownb < 0) {
@@ -259,8 +259,8 @@ void object_static(Thing *obj)
 {
     if (actual_game_turn % obj->anim_speed == 0) {
         obj->sprite = frame[obj->sprite].next;
-        if (obj->icon) {
-            obj->icon = frame[obj->icon].next;
+        if (obj->overlay_frame) {
+            obj->overlay_frame = frame[obj->overlay_frame].next;
         }
     }
 }
@@ -274,12 +274,12 @@ void fn_0003751c(Thing *obj)
         obj->sprite = frame[obj->sprite].next;
         cur_frame = &frame[obj->sprite];
         if (cur_frame->flags & 1) {
-            if (obj->unknown100) {
-                obj->sprite = obj->unknown100;
-                obj->palette = obj->unknown102;
-                obj->unknown100 = 0;
-                obj->unknown102 = 0;
-            } else if (obj->unknown104w) {
+            if (obj->aux_sprite) {
+                obj->sprite = obj->aux_sprite;
+                obj->flip = obj->aux_flip_w;
+                obj->aux_sprite = 0;
+                obj->aux_flip_w = 0;
+            } else if (obj->remove_after_anim) {
                 fn_00038d04(obj, obj->owner);
             }
         }
@@ -298,18 +298,18 @@ void insert_object(u16 tile, Thing *obj, u16 kind)
     if (room) {
         first = room->first_object;
         if (first) {
-            obj->unknown71 = first;
-            thing[first].unknown69 = id;
+            obj->room_obj_next = first;
+            thing[first].room_obj_prev = id;
         }
         room->first_object = id;
-        obj->unknown89 = room - room_info;
+        obj->room_id = room - room_info;
     } else {
-        obj->unknown89 = 0;
+        obj->room_id = 0;
     }
     first = listhead[obj->owner].objects[kind];
     if (first) {
-        obj->unknown75w = first;
-        thing[first].unknown73 = id;
+        obj->type_obj_next = first;
+        thing[first].type_obj_prev = id;
     }
     listhead[obj->owner].objects[kind] = id;
 }
@@ -324,31 +324,31 @@ void delete_object(u16 tile, Thing *obj)
     room = which_room(tile);
     if (room) {
         if (room->first_object) {
-            prev = &thing[obj->unknown69];
+            prev = &thing[obj->room_obj_prev];
             if (prev > thing) {
-                prev->unknown71 = obj->unknown71;
+                prev->room_obj_next = obj->room_obj_next;
             } else {
-                room->first_object = obj->unknown71;
+                room->first_object = obj->room_obj_next;
             }
-            next = &thing[obj->unknown71];
+            next = &thing[obj->room_obj_next];
             if (next > thing) {
-                next->unknown69 = obj->unknown69;
+                next->room_obj_prev = obj->room_obj_prev;
             }
         }
-        obj->unknown69 = obj->unknown71 = 0;
+        obj->room_obj_prev = obj->room_obj_next = 0;
     }
     if (listhead[obj->owner].objects[obj->subtype]) {
-        prev = &thing[obj->unknown73];
+        prev = &thing[obj->type_obj_prev];
         if (prev > thing) {
-            prev->unknown75w = obj->unknown75w;
+            prev->type_obj_next = obj->type_obj_next;
         } else {
-            listhead[obj->owner].objects[obj->subtype] = obj->unknown75w;
+            listhead[obj->owner].objects[obj->subtype] = obj->type_obj_next;
         }
-        next = &thing[obj->unknown75w];
+        next = &thing[obj->type_obj_next];
         if (next > thing) {
-            next->unknown73 = obj->unknown73;
+            next->type_obj_prev = obj->type_obj_prev;
         }
-        obj->unknown73 = obj->unknown75w = 0;
+        obj->type_obj_prev = obj->type_obj_next = 0;
     }
     if (listhead[obj->owner].objects[0x37] == 0) {
         allhosps[obj->owner].rooms[0x2c].unknown1C = 0;
@@ -372,7 +372,7 @@ u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
         if (obj > thing) {
             do {
                 if (obj->subtype == kind) {
-                    if (flag != 0x96 || obj->unknown98 == 0) {
+                    if (flag != 0x96 || obj->in_use == 0) {
                         if (random && count < 30) {
                             found[count++] = obj - thing;
                         } else {
@@ -380,7 +380,7 @@ u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
                         }
                     }
                 }
-            } while ((obj = &thing[obj->unknown71]) > thing);
+            } while ((obj = &thing[obj->room_obj_next]) > thing);
         }
     } else {
         obj = &thing[listhead[owner].objects[kind]];
@@ -388,13 +388,13 @@ u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
             x = tile % 128;
             y = tile / 128;
             do {
-                if (flag == 0x96 && obj->unknown98 != 0) {
+                if (flag == 0x96 && obj->in_use != 0) {
                     continue;
                 }
                 if (fn_000cb2db(x - obj->x.tile) <= 7) {
                     if (fn_000cb2db(y - obj->y.tile) <= 7) {
                         if (can_i_get_to(obj, tile) != 0) {
-                            if (!obj->unknown89) {
+                            if (!obj->room_id) {
                                 if (random && count < 30) {
                                     found[count++] = obj - thing;
                                 } else {
@@ -404,7 +404,7 @@ u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
                         }
                     }
                 }
-            } while ((obj = &thing[obj->unknown75w]) > thing);
+            } while ((obj = &thing[obj->type_obj_next]) > thing);
         }
     }
     if (count) {
@@ -439,7 +439,7 @@ u16 find_object_anywhere(u16 kind, u8 random, u16 after, u8 owner)
             } else {
                 return id;
             }
-        } while ((obj = &thing[obj->unknown75w]) > thing);
+        } while ((obj = &thing[obj->type_obj_next]) > thing);
     }
     if (count) {
         return found[old_newrand() % count];
@@ -469,8 +469,8 @@ u16 find_nearest_free_object(u16 id, u8 kind)
     pos = (u16)seeker->x.tile + ((u16)seeker->y.tile << 7);
     room = which_room(pos);
     if (room) {
-        for (obj = &thing[room->first_object]; obj > thing; obj = &thing[obj->unknown71]) {
-            if (obj->subtype == kind && obj->unknown98 == 0) {
+        for (obj = &thing[room->first_object]; obj > thing; obj = &thing[obj->room_obj_next]) {
+            if (obj->subtype == kind && obj->in_use == 0) {
                 if (count < 30) {
                     found[count++] = obj - thing;
                 } else {
@@ -483,18 +483,18 @@ u16 find_nearest_free_object(u16 id, u8 kind)
         }
         return 0;
     }
-    if (seeker->renderer == 4) {
+    if (seeker->type == 4) {
         side = seeker->subtype == 2 ? 2 : 0;
     } else {
         side = 1;
     }
-    for (obj = &thing[listhead[seeker->owner].objects[kind]]; obj > thing; obj = &thing[obj->unknown75w]) {
-        if (obj->unknown98 == 0) {
+    for (obj = &thing[listhead[seeker->owner].objects[kind]]; obj > thing; obj = &thing[obj->type_obj_next]) {
+        if (obj->in_use == 0) {
             if ((dx = fn_000cb2db(seeker->x.tile - obj->x.tile)) <= 7) {
                 if ((dy = fn_000cb2db(seeker->y.tile - obj->y.tile)) <= 7) {
                     pos = obj->use_pos[side];
                     if (can_i_get_to(obj, pos) != 0) {
-                        if (!obj->unknown89) {
+                        if (!obj->room_id) {
                             if (dx + dy < best_dist) {
                                 best_dist = dx + dy;
                                 best = obj;
@@ -532,7 +532,7 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
         if (obj > thing) {
             for (;;) {
                 if (obj->subtype == kind) {
-                    if (obj->unknown98 != 0) {
+                    if (obj->in_use != 0) {
                         continue;
                     }
                     if (count < 30) {
@@ -541,7 +541,7 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
                         return obj - thing;
                     }
                 }
-                obj = &thing[obj->unknown71];
+                obj = &thing[obj->room_obj_next];
                 if (obj <= thing) {
                     break;
                 }
@@ -552,16 +552,16 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
         }
         return 0;
     }
-    if (seeker->renderer == 4) {
+    if (seeker->type == 4) {
         side = seeker->subtype == 2 ? 2 : 0;
     } else {
         side = 1;
     }
-    for (obj = &thing[listhead[seeker->owner].objects[kind]]; obj > thing; obj = &thing[obj->unknown75w]) {
-        if (obj->unknown98 == 0) {
+    for (obj = &thing[listhead[seeker->owner].objects[kind]]; obj > thing; obj = &thing[obj->type_obj_next]) {
+        if (obj->in_use == 0) {
             pos = obj->use_pos[side];
             if (can_i_get_to(seeker, pos) != 0) {
-                if (!obj->unknown89) {
+                if (!obj->room_id) {
                     dist = fn_000cb2db(seeker->x.tile - obj->x.tile) + fn_000cb2db(seeker->y.tile - obj->y.tile);
                     if (dist < best_dist) {
                         best_dist = dist;
@@ -586,8 +586,8 @@ u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 flag)
 
     best = thing;
     best_score = 9999;
-    for (desk = &thing[listhead[person->owner].objects[11]]; desk > thing; desk = &thing[desk->unknown75w]) {
-        staff = &thing[desk->unknown91];
+    for (desk = &thing[listhead[person->owner].objects[11]]; desk > thing; desk = &thing[desk->type_obj_next]) {
+        staff = &thing[desk->user];
         if (staff > thing) {
             if (!staff->room || !(room == 0 || (u16)(staff->room - room_info) == room)) {
                 continue;
@@ -648,11 +648,11 @@ s16 place_door(u16 tile, u16 kind)
         for (i = 0; i < shape->count; i++) {
             cell[(s16)shape->points[i]].flags |= 2;
         }
-        door->renderer = 8;
-        door->unknown17 = gamevar.f28;
+        door->type = 8;
+        door->facing = gamevar.f28;
         door->subtype = kind;
-        door->sprite = start[control->unknownE + door->unknown17].frame;
-        door->palette = start[control->unknownE + door->unknown17].flags;
+        door->sprite = start[control->unknownE + door->facing].frame;
+        door->flip = start[control->unknownE + door->facing].flags;
         door->anim_speed = 2;
         door->use_pos[0] = tile + shape->unknown13[0];
         door->use_pos[3] = tile + shape->unknown19[0];
@@ -660,11 +660,11 @@ s16 place_door(u16 tile, u16 kind)
         door->y.tile = tile / 128;
         door->x.frac = door->y.frac = 0x80;
         door->depth = shape->unknown1f[2];
-        door->kind = 2;
+        door->state = 2;
         insert_node(door, door->x, door->y);
-        room = which_room(tile + door_to_room[door->unknown17]);
+        room = which_room(tile + door_to_room[door->facing]);
         if (room) {
-            door->unknown89 = room - room_info;
+            door->room_id = room - room_info;
             door->owner = room->owner;
         }
         return 1;
@@ -683,7 +683,7 @@ Thing *find_door(Thing *person)
     for (i = 0; i < 5; i++) {
         door = fn_00019aac(&cell[special_around[i]], 8);
         if (door > thing) {
-            if (person->room || (s16)person->x.tile + ((s16)person->y.tile << 7) == room_info[door->unknown89].unknown4) {
+            if (person->room || (s16)person->x.tile + ((s16)person->y.tile << 7) == room_info[door->room_id].unknown4) {
                 return door;
             }
         }
@@ -702,9 +702,9 @@ s16 place_small_thing(u16 tile, u16 id, u8 flag)
     if (cell->first > 0) {
         last = &thing[cell->first];
         if (last > thing) {
-            for (; last->next > 0; last = &thing[last->next]) {
+            for (; last->cell_next > 0; last = &thing[last->cell_next]) {
             }
-            link = &last->next;
+            link = &last->cell_next;
         }
     } else {
         link = &cell->first;
@@ -726,7 +726,7 @@ s16 find_small_thing(u16 tile)
     s16 id;
 
     cell = &map[tile];
-    for (id = cell->first; id > 0; id = thing[id].next) {
+    for (id = cell->first; id > 0; id = thing[id].cell_next) {
     }
     return -id;
 }
@@ -748,10 +748,10 @@ void remove_object_from_map(Thing *obj)
     switch (obj->subtype) {
     case 0x2d:
         thingpage_cancel(&allhosps[obj->owner].fd2b, obj - thing);
-        NRAdcounts.unknownb -= (obj->unknown100s * 2 + 0x50) / 16;
+        NRAdcounts.unknownb -= (obj->plant_health * 2 + 0x50) / 16;
         if (obj->owner == player) {
             NRAdcounts.unknown0--;
-            if (obj->unknown100s < 0) {
+            if (obj->plant_health < 0) {
                 NRAdcounts.unknown2--;
             }
         }
@@ -766,8 +766,8 @@ void remove_object_from_map(Thing *obj)
     }
     thingpage_cancel(&allhosps[obj->owner].ff6d, obj - thing);
     control = &objects[obj->subtype];
-    shape = &shapes[control->shapes[obj->unknown17]];
-    remove_object_shape(cell, shape, obj->unknown17, control);
+    shape = &shapes[control->shapes[obj->facing]];
+    remove_object_shape(cell, shape, obj->facing, control);
     switch (control->unknown14) {
     case 1:
     case 2:
@@ -796,13 +796,13 @@ void remove_object_from_map(Thing *obj)
     }
     hosp->fc96--;
     hosp->object_stats[obj->subtype].fA++;
-    if (obj->kind == 4) {
-        user = &thing[obj->unknown91];
+    if (obj->state == 4) {
+        user = &thing[obj->user];
         if (user > thing) {
             interrupt_peep(user);
         }
     }
-    obj->kind = 0x12;
+    obj->state = 0x12;
     delete_object(tile, obj);
     adjust_big_cell_flag(tile);
     fn_00015b68(obj);
@@ -837,14 +837,14 @@ u8 treatment_machine_used(const u16 illness, const u16 tile)
         id = find_object(tile, kind, 0, 0x97, 0);
         machine = &thing[id];
         if (machine > thing) {
-            if (machine->value * 2 > machine->mode) {
-                machine->mode++;
+            if (machine->strength * 2 > machine->times_used) {
+                machine->times_used++;
             }
-            if (machine->mode > machine->value / 3) {
-                percent = machine->mode * 100 / (machine->value + 1);
+            if (machine->times_used > machine->strength / 3) {
+                percent = machine->times_used * 100 / (machine->strength + 1);
                 thingpage_request(&allhosps[machine->owner].ff6d, (u16)(machine - thing), percent < 100 ? percent : 100);
             }
-            if (machine->value * 75 / 100 <= machine->mode) {
+            if (machine->strength * 75 / 100 <= machine->times_used) {
                 return modify_machine(machine);
             }
         }
@@ -862,7 +862,7 @@ u8 modify_machine(Thing *machine)
 
     count = 0;
     obj = &objects[machine->subtype];
-    if (machine->value * 75 / 100 <= machine->mode) {
+    if (machine->strength * 75 / 100 <= machine->times_used) {
         if (machine->owner == player) {
             if (machine->subtype >= 0 && machine->subtype < 0x3e) {
                 play_ambient(machine->subtype + 0x4c);
@@ -873,13 +873,13 @@ u8 modify_machine(Thing *machine)
                 count++;
             }
         }
-        if (machine->value * 85 / 100 <= machine->mode && count != 0) {
+        if (machine->strength * 85 / 100 <= machine->times_used && count != 0) {
             play_sound(10, 0xd0, -1, -1);
-            if (machine->value * 95 / 100 <= machine->mode) {
+            if (machine->strength * 95 / 100 <= machine->times_used) {
                 machine->smoke[0] = 1;
                 machine->smoke[1] = 1;
                 machine->smoke[2] = 1;
-                machine->icon = start[obj->unknown1e].frame;
+                machine->overlay_frame = start[obj->unknown1e].frame;
             } else if (count == 1) {
                 for (j = 0; j < 3; j++) {
                     if (machine->smoke[j] == 1) {
@@ -888,16 +888,16 @@ u8 modify_machine(Thing *machine)
                 }
                 j = (j + 1 + (old_newrand() & 1)) % 3;
                 machine->smoke[j] = 1;
-                machine->icon = start[obj->unknown1e].frame;
+                machine->overlay_frame = start[obj->unknown1e].frame;
             }
         } else {
             j = old_newrand() % 3;
             machine->smoke[j] = 1;
-            machine->icon = start[obj->unknown1e].frame;
+            machine->overlay_frame = start[obj->unknown1e].frame;
         }
     }
-    if (machine->mode >= machine->value) {
-        i = machine->value * 3 / 2 - machine->mode + 1;
+    if (machine->times_used >= machine->strength) {
+        i = machine->strength * 3 / 2 - machine->times_used + 1;
         if (i <= 1 || old_newrand() % i == 0) {
             machine_disaster(machine);
             return 1;
@@ -970,16 +970,16 @@ void double_door_swings(Thing *door)
     if (actual_game_turn % door->anim_speed == 0) {
         door->sprite = frame[door->sprite].next;
         if (frame[door->sprite].flags & 1) {
-            door->unknown98 = 0;
-            door->kind = 2;
+            door->in_use = 0;
+            door->state = 2;
             if (door->subtype == 0x35) {
-                u16 anim = check_frame(0x3eb, door) + door->unknown17;
+                u16 anim = check_frame(0x3eb, door) + door->facing;
                 door->sprite = start[anim].frame;
-                door->palette = start[anim].flags > 0;
+                door->flip = start[anim].flags > 0;
             } else {
-                u16 anim2 = check_frame(0x3e6, door) + door->unknown17;
+                u16 anim2 = check_frame(0x3e6, door) + door->facing;
                 door->sprite = start[anim2].frame;
-                door->palette = start[anim2].flags > 0;
+                door->flip = start[anim2].flags > 0;
             }
         }
     }
@@ -989,7 +989,7 @@ void double_door_swings(Thing *door)
 void sliding_door_closed(Thing *door)
 {
     if (should_sliding_door_open(door)) {
-        door->kind = 0x16;
+        door->state = 0x16;
     }
 }
 
@@ -1001,8 +1001,8 @@ void sliding_door_opens(Thing *door)
     if (actual_game_turn % door->anim_speed == 0) {
         next = frame[door->sprite].next;
         if (frame[next].flags & 1) {
-            door->height = 0x32;
-            door->kind = 0x18;
+            door->countdown = 0x32;
+            door->state = 0x18;
         } else {
             door->sprite = next;
         }
@@ -1013,14 +1013,14 @@ void sliding_door_opens(Thing *door)
 void sliding_door_open(Thing *door)
 {
     if (should_sliding_door_open(door)) {
-        door->height = 0x32;
+        door->countdown = 0x32;
     } else {
-        door->height--;
-        if (door->height == 0) {
-            u16 anim = check_frame(sliding_doors[door->subtype - 0x3a].close_anim, door) + door->unknown17;
+        door->countdown--;
+        if (door->countdown == 0) {
+            u16 anim = check_frame(sliding_doors[door->subtype - 0x3a].close_anim, door) + door->facing;
             door->sprite = start[anim].frame;
-            door->palette = start[anim].flags > 0;
-            door->kind = 0x1a;
+            door->flip = start[anim].flags > 0;
+            door->state = 0x1a;
         }
     }
 }
@@ -1036,20 +1036,20 @@ void sliding_door_closes(Thing *door)
             door->sprite = frame[door->sprite].next;
             steps++;
         }
-        u16 anim = check_frame(sliding_doors[door->subtype - 0x3a].open_anim, door) + door->unknown17;
+        u16 anim = check_frame(sliding_doors[door->subtype - 0x3a].open_anim, door) + door->facing;
         door->sprite = start[anim].frame;
-        door->palette = start[anim].flags > 0;
+        door->flip = start[anim].flags > 0;
         for (steps--; steps != 0; steps--) {
             door->sprite = frame[door->sprite].next;
         }
-        door->kind = 0x16;
+        door->state = 0x16;
     } else if (actual_game_turn % door->anim_speed == 0) {
         u16 next = frame[door->sprite].next;
         if (frame[next].flags & 1) {
-            u16 anim2 = check_frame(sliding_doors[door->subtype - 0x3a].open_anim, door) + door->unknown17;
+            u16 anim2 = check_frame(sliding_doors[door->subtype - 0x3a].open_anim, door) + door->facing;
             door->sprite = start[anim2].frame;
-            door->palette = start[anim2].flags > 0;
-            door->kind = 0x14;
+            door->flip = start[anim2].flags > 0;
+            door->state = 0x14;
         } else {
             door->sprite = next;
         }
@@ -1063,16 +1063,16 @@ u8 should_sliding_door_open(Thing *door)
     Thing *occupant;
     Map *cell;
 
-    offset = sliding_doors[door->subtype - 0x3a].offset[door->unknown17];
-    cell = &map[((s16)door->y.tile << 7) + (s16)door->x.tile + shapes[objects[door->subtype].shapes[door->unknown17]].unknown13[1] + offset];
-    for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->next]) {
-        if (occupant->renderer == 2 || occupant->renderer == 4 || occupant->renderer == 0x14 || occupant->renderer == 0x16) {
+    offset = sliding_doors[door->subtype - 0x3a].offset[door->facing];
+    cell = &map[((s16)door->y.tile << 7) + (s16)door->x.tile + shapes[objects[door->subtype].shapes[door->facing]].unknown13[1] + offset];
+    for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
+        if (occupant->type == 2 || occupant->type == 4 || occupant->type == 0x14 || occupant->type == 0x16) {
             return 1;
         }
     }
-    cell = &map[shapes[objects[door->subtype].shapes[door->unknown17]].unknown19[1] + (((s16)door->y.tile << 7) + (s16)door->x.tile) + offset];
-    for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->next]) {
-        if (occupant->renderer == 2 || occupant->renderer == 4 || occupant->renderer == 0x14 || occupant->renderer == 0x16) {
+    cell = &map[shapes[objects[door->subtype].shapes[door->facing]].unknown19[1] + (((s16)door->y.tile << 7) + (s16)door->x.tile) + offset];
+    for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
+        if (occupant->type == 2 || occupant->type == 4 || occupant->type == 0x14 || occupant->type == 0x16) {
             return 1;
         }
     }
@@ -1107,17 +1107,17 @@ u8 check_no_peeps_on_cell(RoomInfo *room, u16 tile, s8 side)
     if (which_room(tile) != room) {
         return 1;
     }
-    for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->next]) {
-        if (occupant->renderer == 2 || occupant->renderer == 4 || occupant->renderer == 0x14 || occupant->renderer == 0x16
-            || occupant->renderer == 0xa) {
+    for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
+        if (occupant->type == 2 || occupant->type == 4 || occupant->type == 0x14 || occupant->type == 0x16
+            || occupant->type == 0xa) {
             if (side == -1) {
                 return 0;
             }
-            if (occupant->unknown17 == side) {
-                if (occupant->renderer == 2 && occupant->kind == 0x18 && occupant->icon != 0x46) {
+            if (occupant->facing == side) {
+                if (occupant->type == 2 && occupant->state == 0x18 && occupant->complex_action != 0x46) {
                     return 1;
                 }
-                if (occupant->renderer == 2 && occupant->kind == 0x44) {
+                if (occupant->type == 2 && occupant->state == 0x44) {
                     return 1;
                 }
                 return 0;
@@ -1173,9 +1173,9 @@ void bomb_ticks(Thing *bomb)
                 fn_00038d04(bomb, bomb->owner);
                 return;
             }
-            u16 anim = check_frame(bomb->fuse + 0x9bf, bomb) + bomb->unknown17;
+            u16 anim = check_frame(bomb->fuse + 0x9bf, bomb) + bomb->facing;
             bomb->sprite = start[anim].frame;
-            bomb->palette = start[anim].flags > 0;
+            bomb->flip = start[anim].flags > 0;
         }
     }
     if (actual_game_turn % bomb->anim_speed == 0) {
@@ -1249,9 +1249,9 @@ void replace_machine(Thing *machine)
     cost = allhosps[othervar.ff].object_stats[machine->subtype].cost;
     if (allhosps[player].f35 >= cost && allhosps[player].f35 > 0) {
         change_balance(0x24, -cost, 0, machine->owner);
-        machine->value = allhosps[othervar.ff].object_stats[machine->subtype].unknown8;
-        machine->mode = 0;
-        machine->icon = 0;
+        machine->strength = allhosps[othervar.ff].object_stats[machine->subtype].unknown8;
+        machine->times_used = 0;
+        machine->overlay_frame = 0;
         machine->smoke[0] = 0;
         machine->smoke[1] = 0;
         machine->smoke[2] = 0;
@@ -1281,7 +1281,7 @@ void check_invis_walls_around_object(Thing *obj)
 
     control = &objects[obj->subtype];
     if (control->walls != -1) {
-        walls = &object_walls[control->walls * 4 + obj->unknown17];
+        walls = &object_walls[control->walls * 4 + obj->facing];
         for (i = 0; i < walls->count; i++) {
             cell = &map[((s16)obj->y.tile << 7) + (s16)obj->x.tile + walls->pos[i]];
             side = walls->side[i];

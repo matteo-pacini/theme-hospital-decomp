@@ -170,10 +170,10 @@ void make_a_rat(u8 owner)
     if (rat == 0) {
         return;
     }
-    rat->renderer = 0xc;
+    rat->type = 0xc;
     rat->owner = owner;
     if (othervar.f9e9) {
-        rat->unknown29 = othervar.f9e9;
+        rat->layers[0] = othervar.f9e9;
         othervar.f9e9 = 0;
     }
     from = old_newrand() % count;
@@ -181,29 +181,29 @@ void make_a_rat(u8 owner)
     rat->y.tile = allhosps[owner].fcaf[from].tile / 128;
     rat->x.frac = 0x80;
     rat->y.frac = 0x80;
-    rat->unknown18 = 0x40;
+    rat->speed = 0x40;
     to = old_newrand() % count;
     if (to == from) {
         to = (to + 1) % count;
     }
-    rat->unknown19 = allhosps[owner].fcaf[to].tile % 128;
-    rat->unknown20 = allhosps[owner].fcaf[to].tile / 128;
+    rat->dest_x = allhosps[owner].fcaf[to].tile % 128;
+    rat->dest_y = allhosps[owner].fcaf[to].tile / 128;
     insert_node(rat, rat->x, rat->y);
     switch (allhosps[owner].fcaf[from].side) {
     case 0:
-        rat->kind = 4;
+        rat->state = 4;
         rat->sprite = start[0x3c4].frame;
-        rat->palette = start[0x3c4].flags;
+        rat->flip = start[0x3c4].flags;
         rat->depth = -9;
         break;
     case 3:
-        rat->kind = 4;
+        rat->state = 4;
         rat->sprite = start[0x3c5].frame;
-        rat->palette = start[0x3c5].flags;
+        rat->flip = start[0x3c5].flags;
         rat->depth = -9;
         break;
     default:
-        rat->kind = 2;
+        rat->state = 2;
         ratnav_init(rat);
         break;
     }
@@ -215,10 +215,10 @@ void rat_scurries(Thing *rat)
     MapPos x;
     MapPos y;
 
-    x.raw = (rat->value >> 8) + (s16)rat->x.raw;
-    y.raw = (rat->f3f >> 8) + (s16)rat->y.raw;
+    x.raw = (rat->rat_dx >> 8) + (s16)rat->x.raw;
+    y.raw = (rat->rat_dy >> 8) + (s16)rat->y.raw;
     move_node(rat, x, y);
-    if (--rat->mode == 0) {
+    if (--rat->rat_ticks == 0) {
         ratnav_init(rat);
     } else {
         rat->sprite = frame[rat->sprite].next;
@@ -233,23 +233,23 @@ void ratnav_init(Thing *rat)
     int i;
 
     fn_000444e0(rat);
-    if ((rat->x.tile == rat->unknown19 && rat->y.tile == rat->unknown20) || rat->f36 == 0) {
+    if ((rat->x.tile == rat->dest_x && rat->y.tile == rat->dest_y) || rat->path_step_count == 0) {
         for (i = allhosps[rat->owner].fcae - 1; i >= 0; i--) {
             if (allhosps[rat->owner].fcaf[i].tile == ((s16)rat->y.tile << 7) + (s16)rat->x.tile) {
                 switch (allhosps[rat->owner].fcaf[i].side) {
                 case 0:
                     rat->sprite = start[0x3c2].frame;
-                    rat->palette = start[0x3c2].flags;
+                    rat->flip = start[0x3c2].flags;
                     break;
                 case 3:
                     rat->sprite = start[0x3c3].frame;
-                    rat->palette = start[0x3c3].flags;
+                    rat->flip = start[0x3c3].flags;
                     break;
                 default:
                     remove_thing(rat);
                     return;
                 }
-                rat->kind = 6;
+                rat->state = 6;
                 rat->y.frac = 0x80;
                 rat->x.frac = rat->y.frac;
                 rat->depth = -9;
@@ -259,22 +259,22 @@ void ratnav_init(Thing *rat)
         remove_thing(rat);
         return;
     }
-    if (rat->x.tile == rat->f2e && rat->y.tile == rat->f2f) {
-        if (rat->f36 > 1 && (rat->x.tile != rat->f30 || rat->y.tile != rat->f31)) {
-            rat->f2e_raw = rat->f30_raw;
-            rat->f36 = 1;
+    if (rat->x.tile == rat->path_step0_x && rat->y.tile == rat->path_step0_y) {
+        if (rat->path_step_count > 1 && (rat->x.tile != rat->path_step1_x || rat->y.tile != rat->path_step1_y)) {
+            rat->path_step0 = rat->path_step1;
+            rat->path_step_count = 1;
         } else {
             remove_thing(rat);
             return;
         }
     }
-    dx = rat->f2e - rat->x.tile;
-    dy = rat->f2f - rat->y.tile;
-    rat->mode = LbSqrL((dx << 8) * (dx << 8) + (dy << 8) * (dy << 8)) / rat->unknown18;
-    rat->value = (dx << 16) / rat->mode;
-    rat->f3f = (dy << 16) / rat->mode;
+    dx = rat->path_step0_x - rat->x.tile;
+    dy = rat->path_step0_y - rat->y.tile;
+    rat->rat_ticks = LbSqrL((dx << 8) * (dx << 8) + (dy << 8) * (dy << 8)) / rat->speed;
+    rat->rat_dx = (dx << 16) / rat->rat_ticks;
+    rat->rat_dy = (dy << 16) / rat->rat_ticks;
     rat->sprite = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].frame;
-    rat->palette = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].flags;
+    rat->flip = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].flags;
 }
 
 // FUNCTION: 0x0007dab4
@@ -306,7 +306,7 @@ void rat_arrives(Thing *rat)
     rat->sprite = frame[rat->sprite].next;
     if (frame[rat->sprite].flags & 1) {
         rat->depth = 0;
-        rat->kind = 2;
+        rat->state = 2;
         ratnav_init(rat);
     }
 }

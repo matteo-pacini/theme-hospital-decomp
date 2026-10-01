@@ -76,14 +76,14 @@ void create_a_peep(void)
         if (hosp->f1e3 > 0 && hosp->f1e1 == 1) {
             patient = make_a_peep(hosp->f1d7, hosp->f1e4, i);
             if (patient) {
-                patient->unknown169 = patient->style;
-                patient->unknown171 = patient->unknown169;
+                patient->known_illness = patient->illness;
+                patient->treatment = patient->known_illness;
                 if (shall_peep_pay(patient))
                     pay_for_treatment(patient, 3);
                 else
-                    patient->unknown171 = 0;
-                patient->kind = 0x26;
-                patient->unknown18 = 0x20;
+                    patient->treatment = 0;
+                patient->state = 0x26;
+                patient->speed = 0x20;
                 patient->anim_speed = 1;
                 patient->flags |= 0x40;
                 hosp->f1ed++;
@@ -94,7 +94,7 @@ void create_a_peep(void)
             if (hosp->f1e3 == 0) {
                 t = &thing[hosp->f1df];
                 if (t > thing)
-                    t->kind = 6;
+                    t->state = 6;
                 hosp->f1e1 = 0;
             }
         }
@@ -245,8 +245,8 @@ void add_contagiousness(Thing *patient)
     u8 chance;
     u8 boost;
 
-    if (!expertise[patient->style].unknown10[1]) {
-        chance = expertise[patient->style].unknown10[0];
+    if (!expertise[patient->illness].unknown10[1]) {
+        chance = expertise[patient->illness].unknown10[0];
         if (chance) {
             boost = 0;
             if (gbv.fd0 && othervar.f9d1 < gbv.fd0)
@@ -258,7 +258,7 @@ void add_contagiousness(Thing *patient)
             if (allhosps[patient->owner].f20d)
                 chance = 0;
             if (chance && old_newrand() % chance == 0)
-                patient->unknown174 = old_newrand() % gbv.fce + 1;
+                patient->contagion = old_newrand() % gbv.fce + 1;
         }
     }
 }
@@ -280,14 +280,14 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
     peep = allocate_thing(0x32);
     if (peep) {
         peep->owner = owner;
-        peep->renderer = 2;
+        peep->type = 2;
         peep->x.tile = pos % 128;
         peep->y.tile = pos / 128;
         peep->x.frac = 0x80;
         peep->y.frac = 0x80;
-        peep->unknown19 = peep->x.tile;
-        peep->unknown20 = peep->y.tile;
-        peep->unknown18 = gbv.f14c;
+        peep->dest_x = peep->x.tile;
+        peep->dest_y = peep->y.tile;
+        peep->speed = gbv.f14c;
         peep->anim_speed = gbv.f14e;
         if (illness >= 16) {
             total = 0;
@@ -321,40 +321,40 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
             pal = &D_0012b818[choices[pick].palette];
         }
         if (statvar.unknownfd > 1 && pal->count1 == 4)
-            peep->unknown30[0] = pal->layer1[owner];
+            peep->layers[1] = pal->layer1[owner];
         else
-            peep->unknown30[0] = pal->layer1[old_newrand() % pal->count1];
-        peep->unknown30[1] = pal->layer2[old_newrand() % pal->count2];
-        peep->unknown30[2] = pal->layer3[old_newrand() % pal->count3];
-        peep->unknown30[3] = 0;
+            peep->layers[1] = pal->layer1[old_newrand() % pal->count1];
+        peep->layers[2] = pal->layer2[old_newrand() % pal->count2];
+        peep->layers[3] = pal->layer3[old_newrand() % pal->count3];
+        peep->layers[4] = 0;
         effect_illness(peep, illness, 0);
         add_contagiousness(peep);
-        peep->unknown24 = 0;
+        peep->icon_id = 0;
         {
             u16 idx;
 
-            idx = check_frame(anim_starts[peep->subtype].idle, peep) + peep->unknown17;
+            idx = check_frame(anim_starts[peep->subtype].idle, peep) + peep->facing;
             peep->sprite = start[idx].frame;
-            peep->palette = start[idx].flags > 0 ? (u8)1 : (u8)0;
+            peep->flip = start[idx].flags > 0 ? (u8)1 : (u8)0;
         }
-        peep->unknown81 = 100;
-        peep->unknown83w = 50;
-        peep->unknown134 = 100;
+        peep->happiness = 100;
+        peep->warmth = 50;
+        peep->refreshment = 100;
         if (illness == 0x1d)
-            peep->unknown136 = gbv.f116 / 2;
+            peep->bladder = gbv.f116 / 2;
         else
-            peep->unknown136 = 0;
-        peep->unknown130 = old_normal_rand(200, 1000);
+            peep->bladder = 0;
+        peep->health = old_normal_rand(200, 1000);
         for (j = 0; j < 10; j++)
-            peep->unknown158[j] = peep->unknown130;
-        peep->unknown171 = 1;
-        peep->unknown169 = 1;
-        peep->unknown144 = old_normal_rand(1, *(u16 *)&expertise[illness].unknown10[6]);
+            peep->health_history[j] = peep->health;
+        peep->treatment = 1;
+        peep->known_illness = 1;
+        peep->diagnosis_handicap = old_normal_rand(1, *(u16 *)&expertise[illness].unknown10[6]);
         if (old_newrand() % *(u16 *)&towns[myhosp->f29].unknown4[0xe] == 0)
-            peep->unknown172[1] = 1 << old_newrand() % 3;
+            peep->insurance = 1 << old_newrand() % 3;
         else
-            peep->unknown172[1] = 0;
-        peep->f70 = old_newrand() % 95000 + 5000;
+            peep->insurance = 0;
+        peep->cash = old_newrand() % 95000 + 5000;
         if (allhosps[owner].f2a == 1) {
             fn_000444e0(peep);
             insert_node(peep, peep->x, peep->y);

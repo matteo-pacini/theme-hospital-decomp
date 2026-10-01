@@ -22,27 +22,27 @@ void spread_epidemic(Thing *carrier, u16 n)
     othervar.f0 = old_newrand() % 100;
     if (othervar.f0 < 0 || othervar.f0 >= gbv.f145 + n / 2)
         return;
-    illness = carrier->style;
+    illness = carrier->illness;
     cell = &map[(s16)carrier->x.tile + ((s16)carrier->y.tile << 7)];
     for (i = 0; i < 5; i++) {
         adj = &cell[around[i]];
-        for (id = adj->first; id > 0; id = victim->next) {
+        for (id = adj->first; id > 0; id = victim->cell_next) {
             victim = &thing[id];
-            if (victim->renderer != 2 || victim == carrier)
+            if (victim->type != 2 || victim == carrier)
                 continue;
-            if (victim->style == victim->unknown169)
+            if (victim->illness == victim->known_illness)
                 continue;
-            other = victim->style;
-            if (expertise[other].unknown10[1] != 0 || (s8)victim->unknown174 != 0 || old_newrand() & 1)
+            other = victim->illness;
+            if (expertise[other].unknown10[1] != 0 || (s8)victim->contagion != 0 || old_newrand() & 1)
                 continue;
             othervar.f87++;
             if (other != illness) {
-                victim->style = illness;
+                victim->illness = illness;
                 effect_illness(carrier, illness, 0);
             }
             othervar.f39 = illness;
-            victim->unknown174 = (s8)carrier->unknown174 / 2;
-            carrier->unknown174 -= victim->unknown174;
+            victim->contagion = (s8)carrier->contagion / 2;
+            carrier->contagion -= victim->contagion;
             if (carrier->flags & 0x20)
                 victim->flags |= 0x20;
             return;
@@ -120,17 +120,17 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
     count = 0;
     max = 0;
     for (peep = thing + 1; peep < end_things; peep++) {
-        if (peep->renderer != 2 || peep->owner != owner)
+        if (peep->type != 2 || peep->owner != owner)
             continue;
-        if (!peep->unknown174 || peep->style != illness)
+        if (!peep->contagion || peep->illness != illness)
             continue;
         if (!(map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].unknown7 & 0x10)) {
-            if ((s8)peep->unknown174 > max)
-                max = (s8)peep->unknown174;
+            if ((s8)peep->contagion > max)
+                max = (s8)peep->contagion;
             if (mode == 1) {
                 if (peep->flags & 0x4000) {
                     peep->flags &= ~0x20;
-                    peep->unknown174 = 0;
+                    peep->contagion = 0;
                     continue;
                 }
                 count++;
@@ -143,7 +143,7 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
             }
         } else {
             peep->flags &= ~0x20;
-            peep->unknown174 = 0;
+            peep->contagion = 0;
         }
     }
     return count;
@@ -244,13 +244,13 @@ void send_peeps_home(u8 all, u8 owner)
     Thing *peep;
 
     for (peep = thing + 1; peep < end_things; peep++) {
-        if (peep->renderer != 2 || peep->owner != owner)
+        if (peep->type != 2 || peep->owner != owner)
             continue;
         if (map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].unknown7 & 0x10)
             continue;
         if (all || (peep->flags & 0x20)) {
             peep->flags &= ~0x20;
-            peep->unknown174 = 0;
+            peep->contagion = 0;
             peep->flags |= 0x100;
         }
     }
@@ -260,7 +260,7 @@ void send_peeps_home(u8 all, u8 owner)
 void clean_contagious_peep(Thing *peep)
 {
     peep->flags &= ~0x20;
-    peep->unknown174 = 0;
+    peep->contagion = 0;
     reset_icon_value(peep, 0xe);
     reset_icon_value(peep, 0xf);
     reset_icon_value(peep, 0x10);

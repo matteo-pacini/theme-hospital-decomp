@@ -13,28 +13,28 @@ extern "C" void fn_00054870(Thing *w)
     CompFrame *fr;
     u16 next_frame;
 
-    if (w->f64 != 0) {
+    if (w->interact_anim != 0) {
         if (actual_game_turn % w->anim_speed == 0) {
             next_frame = frame[w->sprite].next;
             w->sprite = next_frame;
             fr = &frame[next_frame];
             if (fr->flags & 1)
-                w->f64 = 2;
+                w->interact_anim = 2;
         }
     }
-    partner = &thing[w->unknown73];
+    partner = &thing[w->slave];
     if (partner > thing) {
-        if (partner->f64 != 0) {
+        if (partner->interact_anim != 0) {
             if (actual_game_turn % partner->anim_speed == 0) {
                 next_frame = frame[partner->sprite].next;
                 partner->sprite = next_frame;
                 fr = &frame[next_frame];
                 if (fr->flags & 1)
-                    partner->f64 = 2;
+                    partner->interact_anim = 2;
             }
         }
     }
-    if (w->f64 != 1 && partner->f64 != 1)
+    if (w->interact_anim != 1 && partner->interact_anim != 1)
         fn_000549bc(w);
 }
 
@@ -45,25 +45,25 @@ extern "C" void fn_000549bc(Thing *w)
     s16 anim;
     Thing *partner;
 
-    if (w->f65 > 0) {
-        idx = w->unknown99;
-        w->f65--;
+    if (w->interact_repeat > 0) {
+        idx = w->seq_index;
+        w->interact_repeat--;
     } else {
-        w->unknown99++;
-        idx = w->unknown99;
-        w->f65 = D_0012b598[idx].count - 1;
+        w->seq_index++;
+        idx = w->seq_index;
+        w->interact_repeat = D_0012b598[idx].count - 1;
     }
     anim = D_0012b598[idx].v;
     if (anim) {
         if (anim == -1) {
-            w->unknown99 = 0;
-            w->f64 = 0;
-            partner = &thing[w->unknown73];
+            w->seq_index = 0;
+            w->interact_anim = 0;
+            partner = &thing[w->slave];
             if (partner > thing) {
-                partner->unknown99 = 0;
-                partner->f64 = 0;
+                partner->seq_index = 0;
+                partner->interact_anim = 0;
             }
-            switch (w->renderer) {
+            switch (w->type) {
             case 2:
                 process_person_complex(w);
                 break;
@@ -73,43 +73,43 @@ extern "C" void fn_000549bc(Thing *w)
             }
             return;
         }
-        w->f64 = 1;
-        if (w->renderer == 4) {
+        w->interact_anim = 1;
+        if (w->type == 4) {
             u16 f;
 
-            f = check_frame(staff_anim_starts[w->subtype].anims[anim], w) + w->unknown17;
+            f = check_frame(staff_anim_starts[w->subtype].anims[anim], w) + w->facing;
             w->sprite = start[f].frame;
-            w->palette = start[f].flags > 0;
+            w->flip = start[f].flags > 0;
         } else {
             u16 f;
 
-            f = check_frame(anim_starts[w->subtype].anims[anim], w) + w->unknown17;
+            f = check_frame(anim_starts[w->subtype].anims[anim], w) + w->facing;
             w->sprite = start[f].frame;
-            w->palette = start[f].flags > 0;
+            w->flip = start[f].flags > 0;
         }
     } else {
-        w->f64 = 0;
+        w->interact_anim = 0;
     }
-    partner = &thing[w->unknown73];
+    partner = &thing[w->slave];
     if (partner > thing) {
         anim = D_0012b598[idx].other;
         if (anim) {
-            partner->f64 = 1;
-            if (partner->renderer == 2) {
+            partner->interact_anim = 1;
+            if (partner->type == 2) {
                 u16 f;
 
-                f = check_frame(anim_starts[partner->subtype].anims[anim], partner) + partner->unknown17;
+                f = check_frame(anim_starts[partner->subtype].anims[anim], partner) + partner->facing;
                 partner->sprite = start[f].frame;
-                partner->palette = start[f].flags > 0;
+                partner->flip = start[f].flags > 0;
             } else {
                 u16 f;
 
-                f = check_frame(staff_anim_starts[partner->subtype].anims[anim], partner) + partner->unknown17;
+                f = check_frame(staff_anim_starts[partner->subtype].anims[anim], partner) + partner->facing;
                 partner->sprite = start[f].frame;
-                partner->palette = start[f].flags > 0;
+                partner->flip = start[f].flags > 0;
             }
         } else {
-            partner->f64 = 0;
+            partner->interact_anim = 0;
         }
     }
 }
@@ -136,17 +136,17 @@ extern "C" void fn_00054d60(void)
 // FUNCTION: 0x00054dd4
 void start_new_interaction(Thing *w, u8 interaction)
 {
-    switch (w->renderer) {
+    switch (w->type) {
     case 2:
-        w->kind = 0x22;
+        w->state = 0x22;
         break;
     case 4:
-        w->kind = 0x1a;
+        w->state = 0x1a;
         break;
     default:
         return;
     }
-    w->unknown99 = statvar.unknowne8[interaction] - 1;
-    w->label[1] = 0;
+    w->seq_index = statvar.unknowne8[interaction] - 1;
+    w->interact_repeat = 0;
     fn_000549bc(w);
 }

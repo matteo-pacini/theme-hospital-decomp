@@ -1,6 +1,6 @@
 #include "hosp.h"
 
-#define THING_PATH(w) ((orthonav_path *)&(w)->unknown30[0xc])
+#define THING_PATH(w) ((orthonav_path *)&(w)->path[0])
 
 extern Thing *nav_person;
 extern s16 opposite_angle[];
@@ -86,10 +86,10 @@ s16 person_head_for(Thing *person, u8 a)
         fn_000444e0(person);
     }
     nav_person = person;
-    if (person->unknown19 != THING_PATH(person)->x1 || person->unknown20 != THING_PATH(person)->y1) {
+    if (person->dest_x != THING_PATH(person)->x1 || person->dest_y != THING_PATH(person)->y1) {
         fn_000444e0(person);
     }
-    return orthonav_whatnext(THING_PATH(person), person->x.tile, person->y.tile, person->unknown17);
+    return orthonav_whatnext(THING_PATH(person), person->x.tile, person->y.tile, person->facing);
 }
 
 // FUNCTION: 0x000442a0
@@ -119,16 +119,16 @@ s32 person_in_way(u32 x, u32 y, u32 dir)
     for (i = 0; i < 4; i++) {
         if (id > 0) {
         other = &thing[id];
-        switch (other->renderer) {
+        switch (other->type) {
         case 2:
         case 4:
             if (other != nav_person) {
-                if (other->unknown17 == opposite_angle[nav_person->unknown17])
+                if (other->facing == opposite_angle[nav_person->facing])
                     return 0x8000;
             }
             break;
         }
-        id = other->next;
+        id = other->cell_next;
         } else {
             break;
         }
@@ -149,17 +149,17 @@ s32 person_overlap(void)
     for (i = 0; i < 4; i++) {
         if (id > 0) {
         other = &thing[id];
-        switch (other->renderer) {
+        switch (other->type) {
         case 2:
         case 4:
             if (other > nav_person) {
-                if (other->unknown17 == nav_person->unknown17) {
+                if (other->facing == nav_person->facing) {
                     return 0x8000;
                 }
             }
             break;
         }
-        id = other->next;
+        id = other->cell_next;
         } else {
             break;
         }
@@ -172,7 +172,7 @@ extern "C" {
 // FUNCTION: 0x000444e0
 void fn_000444e0(Thing *person)
 {
-    orthonav_init(THING_PATH(person), person->x.tile, person->y.tile, person->unknown19, person->unknown20);
+    orthonav_init(THING_PATH(person), person->x.tile, person->y.tile, person->dest_x, person->dest_y);
 }
 
 }

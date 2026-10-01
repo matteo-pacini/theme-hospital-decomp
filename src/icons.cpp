@@ -49,18 +49,18 @@ IconTableData icon_table_data[] = {
 // FUNCTION: 0x000b0300
 void set_icon_value(Thing *const peep, const s8 icon)
 {
-    if (peep->renderer != 2 || peep->unknown130 > 0) {
-        if (icon_table[icon].unknown0 <= icon_table[fn_000cb2db(peep->unknown24)].unknown0) {
-            peep->unknown27 = start[icon_table[icon].unknown1].frame;
+    if (peep->type != 2 || peep->health > 0) {
+        if (icon_table[icon].unknown0 <= icon_table[fn_000cb2db(peep->icon_id)].unknown0) {
+            peep->icon_frame = start[icon_table[icon].unknown1].frame;
             if (icon_table[icon].f5 < 0) {
-                peep->unknown24 = -icon;
-                peep->unknown25w = icon_table[icon].f3;
+                peep->icon_id = -icon;
+                peep->icon_timer = icon_table[icon].f3;
             } else if (icon_table[icon].f5 == 0) {
-                peep->unknown24 = icon;
-                peep->unknown25w = icon_table[icon].f3;
+                peep->icon_id = icon;
+                peep->icon_timer = icon_table[icon].f3;
             } else if (icon_table[icon].f5 > 0) {
-                peep->unknown24 = icon;
-                peep->unknown25w = 0xffff;
+                peep->icon_id = icon;
+                peep->icon_timer = 0xffff;
             }
         }
     }
@@ -69,37 +69,37 @@ void set_icon_value(Thing *const peep, const s8 icon)
 // FUNCTION: 0x000b0428
 void reset_icon_value(Thing *const peep, const s8 icon)
 {
-    if (peep->unknown24 == fn_000cb2db(icon)) {
-        peep->unknown24 = 0;
-        peep->unknown25w = 0;
-        peep->unknown27 = 0;
+    if (peep->icon_id == fn_000cb2db(icon)) {
+        peep->icon_id = 0;
+        peep->icon_timer = 0;
+        peep->icon_frame = 0;
     }
 }
 
 // FUNCTION: 0x000b0474
 void peep_icon(Thing *const peep)
 {
-    if (peep->renderer != 2 || peep->unknown130 > 0) {
-        if (peep->unknown24 < 0)
+    if (peep->type != 2 || peep->health > 0) {
+        if (peep->icon_id < 0)
             play_sound(10, 1, -1, -1);
-        peep->unknown24 = fn_000cb2db(peep->unknown24);
-        if (icon_table[peep->unknown24].unknown1 > 0 && icon_table[peep->unknown24].f5 == -1)
-            peep->unknown25w = icon_table[peep->unknown24].f3;
+        peep->icon_id = fn_000cb2db(peep->icon_id);
+        if (icon_table[peep->icon_id].unknown1 > 0 && icon_table[peep->icon_id].f5 == -1)
+            peep->icon_timer = icon_table[peep->icon_id].f3;
     }
 }
 
 // FUNCTION: 0x000b0540
 void update_icon_counter(Thing *const peep)
 {
-    if (peep->unknown24 > 0) {
-        if ((s16)peep->unknown25w > 0) {
-            peep->unknown25w--;
-            peep->unknown27 = frame[peep->unknown27].next;
+    if (peep->icon_id > 0) {
+        if ((s16)peep->icon_timer > 0) {
+            peep->icon_timer--;
+            peep->icon_frame = frame[peep->icon_frame].next;
         }
-        if ((s16)peep->unknown25w == 0)
-            reset_icon_value(peep, peep->unknown24);
-        else if ((s16)peep->unknown25w < 0)
-            peep->unknown27 = frame[peep->unknown27].next;
+        if ((s16)peep->icon_timer == 0)
+            reset_icon_value(peep, peep->icon_id);
+        else if ((s16)peep->icon_timer < 0)
+            peep->icon_frame = frame[peep->icon_frame].next;
     }
 }
 
@@ -108,9 +108,9 @@ extern "C" {
 // FUNCTION: 0x000b05f0
 void fn_000b05f0(Thing *peep)
 {
-    peep->unknown24 = 0;
-    peep->unknown25w = 0;
-    peep->unknown27 = 0;
+    peep->icon_id = 0;
+    peep->icon_timer = 0;
+    peep->icon_frame = 0;
 }
 
 }

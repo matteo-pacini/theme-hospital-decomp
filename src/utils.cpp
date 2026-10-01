@@ -96,8 +96,8 @@ u16 can_i_get_to(Thing *mover, u16 pos)
     u16 x = pos % 128;
     u16 y = pos / 128;
 
-    if (mover->renderer == 6) {
-        orthonav_init(&path, mover->room_next % 128, mover->room_next / 128, x, y);
+    if (mover->type == 6) {
+        orthonav_init(&path, mover->use_pos[1] % 128, mover->use_pos[1] / 128, x, y);
     } else {
         orthonav_init(&path, mover->x.tile, mover->y.tile, x, y);
     }
@@ -133,8 +133,8 @@ Thing *fn_00019aac(Map *cell, u16 kind)
     Thing *occupant;
 
     if (!(cell < map || cell >= end_map)) {
-        for (occupant = thing + cell->first; occupant > thing; occupant = thing + occupant->next) {
-            if (occupant->renderer == kind) {
+        for (occupant = thing + cell->first; occupant > thing; occupant = thing + occupant->cell_next) {
+            if (occupant->type == kind) {
                 return occupant;
             }
         }
@@ -148,8 +148,8 @@ Thing *search_mapwho_for_room_door(Map *cell, u16 id)
     Thing *occupant;
 
     if (!(cell < map || cell >= end_map)) {
-        for (occupant = thing + cell->first; occupant > thing; occupant = thing + occupant->next) {
-            if (occupant->renderer == 8 && occupant->unknown89 == id) {
+        for (occupant = thing + cell->first; occupant > thing; occupant = thing + occupant->cell_next) {
+            if (occupant->type == 8 && occupant->room_id == id) {
                 return occupant;
             }
         }
@@ -486,7 +486,7 @@ u8 direction_to_face(Thing *self, Thing *target)
     if (target->x.tile > self->x.tile) {
         return 3;
     }
-    return self->unknown17;
+    return self->facing;
 }
 
 // FUNCTION: 0x0001a7dc
@@ -706,7 +706,7 @@ u32 calc_room_value(RoomInfo *room)
         return 0;
     }
     base = (room->f1 + room->f2) * 5;
-    for (obj = thing + room->first_object; obj > thing; obj = thing + obj->unknown71) {
+    for (obj = thing + room->first_object; obj > thing; obj = thing + obj->room_obj_next) {
         count++;
     }
     count -= rooms[room->type].fc;
@@ -725,7 +725,7 @@ Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
 
     if (room) {
         for (person = thing + room->first; person > thing; person = thing + person->room_next) {
-            if (person->renderer == kind) {
+            if (person->type == kind) {
                 if (person->subtype == sub) {
                     return person;
                 }
@@ -816,7 +816,7 @@ Thing *allocate_thing(u32 reserve)
     Thing *slot;
 
     for (slot = thing + 1; slot < end_things - reserve; slot++) {
-        if (slot->renderer == 0) {
+        if (slot->type == 0) {
             return slot;
         }
     }

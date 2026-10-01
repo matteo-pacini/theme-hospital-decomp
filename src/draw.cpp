@@ -175,17 +175,17 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
     f = &frame[w->sprite];
     icon = 0;
     D_001567b0.x = D_001567b0.y = 999;
-    if (w->palette) {
+    if (w->flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
             if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
-                if (w->unknown24 > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
+                if (w->icon_id > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
-                            icon_draw_from_special_id_frame(w->unknown27, x, y, (s16)-((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
-                    } else if (w->renderer == 6) {
+                            icon_draw_from_special_id_frame(w->icon_frame, x, y, (s16)-((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
+                    } else if (w->type == 6) {
                         icon = 1;
                         othervar.fa52 = 1;
                     }
@@ -214,12 +214,12 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             elem = &element[*el];
             if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
-                if (w->unknown24 > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
+                if (w->icon_id > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
-                            icon_draw_from_special_id_frame(w->unknown27, x, y, (s16)((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
-                    } else if (w->renderer == 6) {
+                            icon_draw_from_special_id_frame(w->icon_frame, x, y, (s16)((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
+                    } else if (w->type == 6) {
                         icon = 1;
                         othervar.fa52 = 1;
                     }
@@ -243,12 +243,12 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             }
         }
     }
-    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
+    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.f12d == 0)
-        w->unknown23 = f->sound;
+        w->last_sound = f->sound;
     if (icon)
-        icon_draw_from_special_id_frame(w->unknown27, x, y, f->width / 2 + D_001567b0.x, D_001567b0.y);
+        icon_draw_from_special_id_frame(w->icon_frame, x, y, f->width / 2 + D_001567b0.x, D_001567b0.y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
@@ -293,13 +293,13 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
     drawn = 0;
     icon = 0;
     D_001567b0.x = D_001567b0.y = 999;
-    if (w->palette) {
+    if (w->flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
             if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
-                if (w->unknown24 > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
+                if (w->icon_id > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
                             icon = 1;
@@ -357,8 +357,8 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
             elem = &element[*el];
             if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
-                if (w->unknown24 > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
+                if (w->icon_id > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
                             icon = 1;
@@ -418,10 +418,10 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
                     phase);
     }
     FillBoxInPixBuffer(0xfe, D_001567b0.x + 0x3a, D_001567b0.y + 0x74, f->width, f->length);
-    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
+    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.f12d == 0)
-        w->unknown23 = f->sound;
+        w->last_sound = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
@@ -461,21 +461,21 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
     ElementBits *bits;
 
     f = &frame[w->sprite];
-    glow = glow_path[((actual_game_turn + w->unknown29 + w->unknown30[0]) >> 1) & 7];
+    glow = glow_path[((actual_game_turn + w->layers[0] + w->layers[1]) >> 1) & 7];
     D_001567b0.x = D_001567b0.y = 999;
     for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
         elem = &element[*el];
         if (elem->flags & 0xfff0) {
             if (!othervar.fa52) {
                 kind = elem->flags & 0xfff0;
-                if (w->unknown24 > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->unknown24].unknown1 > 0) {
+                if (w->icon_id > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
-                            if (w->palette)
-                                icon_draw_from_special_id_frame(w->unknown27, x, y, -((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
+                            if (w->flip)
+                                icon_draw_from_special_id_frame(w->icon_frame, x, y, -((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                             else
-                                icon_draw_from_special_id_frame(w->unknown27, x, y, (elem->x - 0x8d) + spr->width / 2, (s16)(elem->y - 0xca));
+                                icon_draw_from_special_id_frame(w->icon_frame, x, y, (elem->x - 0x8d) + spr->width / 2, (s16)(elem->y - 0xca));
                         }
                     }
                 } else {
@@ -496,7 +496,7 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
             lbDisplay.draw_flags = elem->flags & 0xf;
             if (g)
                 lbDisplay.draw_flags |= 4;
-            if (w->palette) {
+            if (w->flip) {
                 lbDisplay.draw_flags ^= 1;
                 sprite_draw_glow(x - (elem->x - 0x8d) - spr->width, y + (elem->y - 0xca), spr, g);
                 if (D_001567b0.x > -(spr->width + (elem->x - 0x8d)))
@@ -512,10 +512,10 @@ void fn_0002f47c(Thing *w, s16 x, s16 y)
             }
         }
     }
-    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
+    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.f12d == 0)
-        w->unknown23 = f->sound;
+        w->last_sound = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
@@ -552,12 +552,12 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
 
     old_top = lbDisplay.graphics_window_y;
     old_height = lbDisplay.graphics_window_height;
-    o = &thing[w->unknown69];
+    o = &thing[w->object];
     if (o > thing) {
         if (w->subtype == 0xe)
             draw_special_id_frame(o, x, y);
         f = &frame[w->sprite];
-        split_height = o->unknown103;
+        split_height = o->split_height;
         rest = f->length - split_height;
         D_001567b0.x = D_001567b0.y = 999;
         {
@@ -565,21 +565,21 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
 
             lbDisplay.graphics_window_height = top - lbDisplay.graphics_window_y > lbDisplay.graphics_window_height ? lbDisplay.graphics_window_height : top - lbDisplay.graphics_window_y;
         }
-        full_draw_frame(w, w->sprite, x, y, 0, 0, w->palette);
+        full_draw_frame(w, w->sprite, x, y, 0, 0, w->flip);
         {
             s32 top = y - split_height;
 
             lbDisplay.graphics_window_y = top > old_top ? top : old_top;
         }
         lbDisplay.graphics_window_height = old_height + old_top - lbDisplay.graphics_window_y;
-        full_draw_frame(w, o->unknown100, x, y - lbDisplay.graphics_window_y, 0, 0, o->state_b);
+        full_draw_frame(w, o->aux_sprite, x, y - lbDisplay.graphics_window_y, 0, 0, o->aux_flip);
         lbDisplay.graphics_window_y = old_top;
         lbDisplay.graphics_window_height = old_height;
         lbDisplay.draw_flags = 0;
-        if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->unknown23 != f->sound))
+        if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->last_sound != f->sound))
             play_sound((u32)w, f->sound, x, y);
         if (gamevar.f12d == 0)
-            w->unknown23 = f->sound;
+            w->last_sound = f->sound;
         D_001567b0.x += x;
         D_001567b0.y += y;
         D_001567b0.w = f->width;
@@ -600,7 +600,7 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         if (w->subtype == 0xe) {
             s32 anim;
 
-            if (w->unknown17 == 0)
+            if (w->facing == 0)
                 anim = 0x787;
             else
                 anim = 0x784;
@@ -619,18 +619,18 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
     Thing *o;
     u16 i;
 
-    o = &thing[w->unknown69];
+    o = &thing[w->object];
     rng = 0x546b1;
     if (o > thing) {
         f = &frame[w->sprite];
         D_001567b0.x = D_001567b0.y = 999;
-        if (o->unknown105 != 0xff)
-            full_draw_frame(w, w->sprite, x, y, o->unknown105, 0, w->palette);
+        if (o->aux_draw_flags != 0xff)
+            full_draw_frame(w, w->sprite, x, y, o->aux_draw_flags, 0, w->flip);
         InitPixBuffer(0, 0, 0x40, 0x40, 0, 0);
         DrawIntoPixBuffer();
-        full_draw_frame(w, w->sprite, 0x20, 0x3a, 0, 0, w->palette);
+        full_draw_frame(w, w->sprite, 0x20, 0x3a, 0, 0, w->flip);
         RestoreFromPixBuffer();
-        for (i = o->unknown103 * 10; i > 0; i--) {
+        for (i = o->split_height * 10; i > 0; i--) {
             pixBuf.data[rng & 0xfff] = 0xfe;
             pixBuf.data[(rng >> 10) & 0xfff] = 0xfe;
             pixBuf.data[(rng >> 20) & 0xfff] = 0xfe;
@@ -639,13 +639,13 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
         }
         pixBuf.x = x - 0x20;
         pixBuf.y = y - 0x3a;
-        DrawPixBuffer(o->unknown104, 0, 0, 0x40, 0x40);
+        DrawPixBuffer(o->aux_param, 0, 0, 0x40, 0x40);
         FillPixBuffer(0xfe);
         InitPixBuffer(0, 0, 0xb4, 0xb4, 0, 0);
-        if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->unknown23 != f->sound))
+        if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->last_sound != f->sound))
             play_sound((u32)w, f->sound, x, y);
         if (gamevar.f12d == 0)
-            w->unknown23 = f->sound;
+            w->last_sound = f->sound;
         D_001567b0.x += x;
         D_001567b0.y += y;
         D_001567b0.w = f->width;
@@ -759,11 +759,11 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
         hidden = 1;
         break;
     }
-    full_draw_frame(w, w->sprite, x, y, colour, hidden, w->palette);
-    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->unknown23 != (int)f->sound))
+    full_draw_frame(w, w->sprite, x, y, colour, hidden, w->flip);
+    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.f12d == 0)
-        w->unknown23 = f->sound;
+        w->last_sound = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;

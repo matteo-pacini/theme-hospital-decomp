@@ -33,7 +33,7 @@ u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wante
     }
     if (count_present) {
         for (staff = &thing[room->first]; staff > thing; staff = &thing[staff->room_next]) {
-            if (staff->renderer == 4 && (staff->unknown124 & skill_mask)) {
+            if (staff->type == 4 && (staff->skills & skill_mask)) {
                 if (--wanted <= 0)
                     return 1;
             }
@@ -76,7 +76,7 @@ u16 check_pager(Thing *staff)
     found = 0;
     best = 999;
     for (pager = pagers; pager < end_pagers; pager++) {
-        if ((pager->owner == staff->owner && (pager->mask & staff->unknown124) && pager->unknown4 < actual_game_turn)
+        if ((pager->owner == staff->owner && (pager->mask & staff->skills) && pager->unknown4 < actual_game_turn)
             || (u16)(staff - thing) == pager->unknown8) {
             room = &room_info[pager->room];
             if (!(room->f3 == 1 || room->f3 == 0))
@@ -121,7 +121,7 @@ void pager_arrival(Thing *staff)
     other = 0;
     blank = 0;
     for (pager = pagers; pager < end_pagers; pager++) {
-        if ((pager->mask & staff->unknown124) && (u16)(staff->room - room_info) == pager->room && pager->owner == staff->owner) {
+        if ((pager->mask & staff->skills) && (u16)(staff->room - room_info) == pager->room && pager->owner == staff->owner) {
             if ((u16)(staff - thing) == pager->unknown8)
                 goto found;
             if (pager->unknown8)
@@ -181,7 +181,7 @@ RoomInfo *get_expertise_dest(u16 type, Thing *patient)
                             + fn_000cb2db(patient->y.tile - room->unknown4 / 128)) * gbv.f102;
                     score += gbv.f104;
                     for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
-                        if (occupant->renderer == 4) {
+                        if (occupant->type == 4) {
                             score -= gbv.f104;
                             break;
                         }
@@ -270,7 +270,7 @@ void set_expertise_staff(Thing *staff)
             if (listhead[staff->owner].rooms[exp->category] != 0) {
                 if ((exp->unknown0 & 0x20) && allhosps[staff->owner].fca6 < 2)
                     continue;
-                if (staff->unknown124 & exp->unknown0) {
+                if (staff->skills & exp->unknown0) {
                     if (exp->unknown7 && !ward)
                         continue;
                     kind = exp->kind;
@@ -332,8 +332,8 @@ void remove_expertise_staff(Thing *staff)
     s32 ward;
 
     ward = allhosps[staff->owner].rooms[42].unknown1C == 1;
-    remove_skill(staff->unknown124, staff->owner);
-    mask = staff->unknown124;
+    remove_skill(staff->skills, staff->owner);
+    mask = staff->skills;
     for (i = 0; i < 9; i++) {
         if (mask & (1 << i)) {
             if (listhead[staff->owner].staff[i] == 0 || (i == 5 && allhosps[staff->owner].fca6 < 3)) {

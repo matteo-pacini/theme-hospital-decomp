@@ -22,13 +22,13 @@ void reinit_nurse(Thing *nurse)
     if (room > 0) {
         if (room->type != 1)
             insert_person_in_room_list(room, nurse);
-        nurse->kind = get_state((u16)room->type, nurse);
+        nurse->state = get_state((u16)room->type, nurse);
         if (room->type == 9)
-            nurse->unknown103 = 0;
+            nurse->substate = 0;
     } else {
-        nurse->kind = get_state(0, nurse);
+        nurse->state = get_state(0, nurse);
     }
-    nurse->unknown103 = 0;
+    nurse->substate = 0;
 }
 
 // FUNCTION: 0x0006c6f4
@@ -40,11 +40,11 @@ u8 nurse_check_for_work(Thing *nurse)
     if (room == 0)
         return 0;
     set_complex(nurse, 0x14a, room->unknown4);
-    nurse->state_a = 0x36;
-    nurse->unknown103 = 0;
-    nurse->state_b = 0x32;
-    nurse->state_a = 0x28;
-    nurse->unknown89 = room - room_info;
+    nurse->resume_state = 0x36;
+    nurse->substate = 0;
+    nurse->next_state = 0x32;
+    nurse->resume_state = 0x28;
+    nurse->dest_room = room - room_info;
     fn_0003e724(nurse);
     return 1;
 }
@@ -55,10 +55,10 @@ u16 find_unallocated_bed(RoomInfo *room)
     Thing *bed;
     Thing *occupant;
 
-    for (bed = &thing[room->first_object]; bed > thing; bed = &thing[bed->unknown71]) {
-        if (bed->subtype == 8 && bed->unknown91 == 0) {
+    for (bed = &thing[room->first_object]; bed > thing; bed = &thing[bed->room_obj_next]) {
+        if (bed->subtype == 8 && bed->user == 0) {
             for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
-                if (occupant->renderer == 2 && &thing[occupant->unknown69] == bed)
+                if (occupant->type == 2 && &thing[occupant->object] == bed)
                     break;
             }
             if (occupant <= thing)
@@ -81,20 +81,20 @@ void nurse_in_ward(Thing *nurse)
     u32 obj;
 
     obj = find_object(nurse->x.tile + (nurse->y.tile << 7), 1, 0, 0x97, nurse->owner);
-    switch (nurse->unknown103) {
+    switch (nurse->substate) {
     case 0:
         nurse->room->f3 == 4 ? 0 : (nurse->room->f3 = 1);
         if (!(fn_0002b400(nurse) ? 1 : (process_staff_complex(nurse), 0)))
             return;
         if (shall_i_resign(nurse))
             return;
-        if ((nurse->f8e & 1) && take_a_break(nurse))
+        if ((nurse->orders & 1) && take_a_break(nurse))
             return;
         if (allhosps[nurse->owner].f21f
-            && actual_game_turn % (nurse->f78 > allhosps[nurse->owner].f21d ? nurse->unknown141 * 2 + 1 : nurse->unknown141 + 1) == 0
+            && actual_game_turn % (nurse->tiredness > allhosps[nurse->owner].f21d ? nurse->work_delay * 2 + 1 : nurse->work_delay + 1) == 0
             && obey_pager(nurse))
             return;
-        if (nurse->f78 > allhosps[nurse->owner].f21d && take_a_break(nurse))
+        if (nurse->tiredness > allhosps[nurse->owner].f21d && take_a_break(nurse))
             return;
         if (nurse->room->f22 || nurse->room->f3 == 4) {
             process_staff_complex(nurse);
@@ -109,28 +109,28 @@ void nurse_in_ward(Thing *nurse)
             bed = find_unallocated_bed(nurse->room);
             if (bed) {
                 if (call_person_to_room(nurse, queue, 0x28, nurse->room->unknown4, 0)) {
-                    nurse->unknown69 = bed;
-                    nurse->state_b = 0x32;
-                    nurse->unknown103 = 1;
+                    nurse->object = bed;
+                    nurse->next_state = 0x32;
+                    nurse->substate = 1;
                     set_complex(nurse, 0x15e, 0);
                     fn_0003e724(nurse);
                     return;
                 }
             }
         }
-        if (obj > 0 && nurse->unknown148w != obj && old_newrand() % 100 < 10) {
-            nurse->unknown148w = obj;
+        if (obj > 0 && nurse->work_target != obj && old_newrand() % 100 < 10) {
+            nurse->work_target = obj;
             set_complex(nurse, 0x168, 0);
-            nurse->state_b = 0x32;
+            nurse->next_state = 0x32;
             fn_0003e724(nurse);
             return;
         }
         patient = &thing[find_peep(nurse->room - room_info, 1, 2, 0x2c, nurse->owner)];
         if (patient > thing) {
-            if ((u16)(patient - thing) != nurse->unknown148w) {
-                nurse->unknown148w = patient - thing;
-                nurse->unknown69 = patient->unknown69;
-                nurse->state_b = 0x32;
+            if ((u16)(patient - thing) != nurse->work_target) {
+                nurse->work_target = patient - thing;
+                nurse->object = patient->object;
+                nurse->next_state = 0x32;
                 set_complex(nurse, 0x17c, 0);
                 fn_0003e724(nurse);
                 return;
@@ -144,40 +144,40 @@ void nurse_in_ward(Thing *nurse)
         else
             target = room->pos + (((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1));
         if (cur != target && can_i_get_to(nurse, target)) {
-            nurse->state_b = nurse->state_a = 0x32;
+            nurse->next_state = nurse->resume_state = 0x32;
             set_complex(nurse, 0xbe, target);
             fn_0003e724(nurse);
             return;
         }
         othervar.f0 = old_newrand() % 100;
         if (othervar.f0 >= 0x46 && othervar.f0 < 0x50)
-            nurse->unknown148w = 0;
+            nurse->work_target = 0;
         break;
     case 1:
-        patient = &thing[nurse->unknown73];
-        if (patient->kind == 0x46) {
+        patient = &thing[nurse->slave];
+        if (patient->state == 0x46) {
             affect_diagnosis(nurse, patient);
-            nurse->unknown103 = 0;
-            nurse->unknown73 = 0;
-            patient->unknown69 = nurse->unknown69;
-            nurse->unknown69 = 0;
+            nurse->substate = 0;
+            nurse->slave = 0;
+            patient->object = nurse->object;
+            nurse->object = 0;
             set_complex(patient, 200, 0);
-            patient->state_b = 0x2c;
+            patient->next_state = 0x2c;
             process_person_complex(patient);
         } else if (--nurse->timer <= 0) {
             result = call_person_again(nurse, 0x28, nurse->room->unknown4);
             if (result == 0) {
-                nurse->unknown103 = 0;
-                nurse->unknown73 = 0;
+                nurse->substate = 0;
+                nurse->slave = 0;
             } else if (result == 1) {
-                nurse->unknown103 = 0;
-                nurse->unknown73 = 0;
+                nurse->substate = 0;
+                nurse->slave = 0;
                 interrupt_person(patient);
                 start_person_going(patient);
             }
         } else if (fn_0003c1e8(nurse, 0x28)) {
-            nurse->unknown103 = 0;
-            nurse->unknown73 = 0;
+            nurse->substate = 0;
+            nurse->slave = 0;
         }
         break;
     }

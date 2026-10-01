@@ -24,25 +24,25 @@ void setup_aniseq_indices(void)
 // FUNCTION: 0x0009b380
 void setup_aniseq(Thing *w, u8 seq, u8 mode)
 {
-    if (w->renderer == 4)
-        w->kind = 0x50;
-    w->state_b = mode;
-    w->unknown99 = statvar.aniseq_start[seq];
+    if (w->type == 4)
+        w->state = 0x50;
+    w->next_state = mode;
+    w->seq_index = statvar.aniseq_start[seq];
     setup_next_aniseq(w);
 }
 
 // FUNCTION: 0x0009b3d8
 void setup_next_aniseq(Thing *w)
 {
-    if (ani_seq[w->unknown99] == -1) {
-        w->kind = w->state_b;
+    if (ani_seq[w->seq_index] == -1) {
+        w->state = w->next_state;
     } else {
         u16 entry;
 
-        entry = check_frame(ani_seq[w->unknown99], w) + w->unknown17;
+        entry = check_frame(ani_seq[w->seq_index], w) + w->facing;
         w->sprite = start[entry].frame;
-        w->palette = start[entry].flags > 0 ? (u8)1 : (u8)0;
-        w->unknown99++;
+        w->flip = start[entry].flags > 0 ? (u8)1 : (u8)0;
+        w->seq_index++;
     }
 }
 

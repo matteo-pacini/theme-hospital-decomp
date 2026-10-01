@@ -75,34 +75,34 @@ void req3(Window *win)
                 D_001549d0[player].value = 1;
                 play_sound(10, 0x42, -1, -1);
             } else if (i == resvars.fe[0xe]) {
-                if (patient->unknown146 >= gbv.ffc) {
+                if (patient->diagnosis >= gbv.ffc) {
                     display_mode = 1;
                     chart_type = 1;
                     drugs.unknown2 = 0;
                     set_mouse_mode(9);
-                    othervar.f8c = patient->style;
+                    othervar.f8c = patient->illness;
                     play_sound(10, 0x43, -1, -1);
                 }
             } else if (i == resvars.fe[0xf]) {
                 if (!(patient->flags & 0x2000 || patient->flags & 0x8000)) {
-                    if (patient->unknown130 > 0) {
+                    if (patient->health > 0) {
                         D_001549d0[player].type = 0x74;
                         D_001549d0[player].value = D_001581b2[1].value;
                         play_sound(10, 0xaa, -1, -1);
                     }
                 }
             } else if (i == resvars.fe[0x10]) {
-                if (patient->unknown140) {
+                if (patient->queue_room) {
                     D_001549d0[player].type = 0x3b;
-                    D_001549d0[player].value = patient->unknown140;
+                    D_001549d0[player].value = patient->queue_room;
                     D_001549d0[player].arg = 0;
                     play_sound(10, 0x43, -1, -1);
                 }
             } else if (i == resvars.fe[0x11]) {
-                if (!(patient->unknown171 == 0 || patient->flags & 0x1000 || patient->flags & 0x4000 || patient->style == patient->unknown169)
-                    && patient->unknown146 >= gbv.ffc) {
-                    if (!(patient->unknown171 == 0 || patient->flags & 0x1000)) {
-                        if (patient->unknown130 > 0) {
+                if (!(patient->treatment == 0 || patient->flags & 0x1000 || patient->flags & 0x4000 || patient->illness == patient->known_illness)
+                    && patient->diagnosis >= gbv.ffc) {
+                    if (!(patient->treatment == 0 || patient->flags & 0x1000)) {
+                        if (patient->health > 0) {
                             D_001549d0[player].type = 0x86;
                             D_001549d0[player].value = D_001581b2[1].value;
                             play_sound(10, 0x43, -1, -1);
@@ -135,23 +135,23 @@ void req3_overdraw(Window *win)
     othervar.f35 = window.unknown2ec - 1;
     if (D_001581b2[1].f6)
         D_001581b2[1].f6--;
-    if (patient->unknown146 < gbv.ffc) {
+    if (patient->diagnosis < gbv.ffc) {
         LbDrawBox(x + resvars.f18_ReqLayoutp->box_a.x, y + resvars.f18_ReqLayoutp->box_a.y, resvars.f18_ReqLayoutp->box_a.w, resvars.f18_ReqLayoutp->box_a.h, 0x46);
         LbDrawBox(x + resvars.f18_ReqLayoutp->box_c.x, y + resvars.f18_ReqLayoutp->box_c.y, resvars.f18_ReqLayoutp->box_c.w, resvars.f18_ReqLayoutp->box_c.h, 0x46);
     }
-    if (!patient->unknown140)
+    if (!patient->queue_room)
         LbDrawBox(x + resvars.f18_ReqLayoutp->box_b.x, y + resvars.f18_ReqLayoutp->box_b.y, resvars.f18_ReqLayoutp->box_b.w, resvars.f18_ReqLayoutp->box_b.h, 0x46);
-    if (patient->unknown171 == 0 || patient->flags & 0x1000 || patient->flags & 0x4000 || patient->style == patient->unknown169
-        || patient->unknown146 < gbv.ffc) {
+    if (patient->treatment == 0 || patient->flags & 0x1000 || patient->flags & 0x4000 || patient->illness == patient->known_illness
+        || patient->diagnosis < gbv.ffc) {
         LbDrawBox(x + resvars.f18_ReqLayoutp->box_c.x, y + resvars.f18_ReqLayoutp->box_c.y, resvars.f18_ReqLayoutp->box_c.w, resvars.f18_ReqLayoutp->box_c.h, 0x46);
         if (patient->flags & 0x2000 || patient->flags & 0x8000)
             LbDrawBox(x + resvars.f18_ReqLayoutp->box_d.x, y + resvars.f18_ReqLayoutp->box_d.y, resvars.f18_ReqLayoutp->box_d.w, resvars.f18_ReqLayoutp->box_d.h, 0x46);
     }
-    draw_gauge(patient->unknown81s, x + resvars.f18_ReqLayoutp->gauge_x, y + resvars.f18_ReqLayoutp->gauge_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
+    draw_gauge(patient->happiness_s, x + resvars.f18_ReqLayoutp->gauge_x, y + resvars.f18_ReqLayoutp->gauge_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
                &button_sprite[resvars.f12[0]], 100, 0, 100, 1);
-    draw_gauge(patient->unknown134, x + resvars.f1c_ReqLayoutp->gauge2_x, y + resvars.f1c_ReqLayoutp->gauge2_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
+    draw_gauge(patient->refreshment, x + resvars.f1c_ReqLayoutp->gauge2_x, y + resvars.f1c_ReqLayoutp->gauge2_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
                &button_sprite[resvars.f12[0x10]], 100, 0, 100, 1);
-    draw_gauge((s16)patient->unknown83w, x + resvars.f1c_ReqLayoutp->gauge3_x, y + resvars.f1c_ReqLayoutp->gauge3_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
+    draw_gauge((s16)patient->warmth, x + resvars.f1c_ReqLayoutp->gauge3_x, y + resvars.f1c_ReqLayoutp->gauge3_y, (u16)resvars.f18_ReqLayoutp->gauge_len,
                &button_sprite[resvars.f12[0x11]], 100, 0, 100, 1);
     if (D_001581b2[1].f4)
         draw_health_graph(patient, x, y, color.unknownD);
@@ -215,8 +215,8 @@ void draw_health_graph(Thing *patient, u16 x, u16 y, u16 colour)
     point = 0;
     step = resvars.f18_ReqLayoutp->graph_width / 10;
     for (i = 1; i < 9; i++) {
-        h1 = patient->unknown158[i] * 10;
-        h2 = patient->unknown158[i + 1] * 10;
+        h1 = patient->health_history[i] * 10;
+        h2 = patient->health_history[i + 1] * 10;
         h1 = resvars.f18_ReqLayoutp->graph_height * h1 / 1000;
         h2 = h2 * resvars.f18_ReqLayoutp->graph_height / 1000;
         if (h1 < 1)
@@ -247,13 +247,13 @@ void draw_diagnosis(Thing *patient, u16 x, u16 y)
     set_font_from_cache(3);
     dy = 0;
     for (i = 0; i < 10; i++) {
-        if (!patient->unknown148[i])
+        if (!patient->treatments[i])
             break;
         if (resvars.f1 == SCREEN_MODE_13) {
-            sprintf(buf, " %s", D_001602a4[patient->unknown148[i]]);
+            sprintf(buf, " %s", D_001602a4[patient->treatments[i]]);
             fn_0001b7e0(buf, buf, 0);
         } else {
-            sprintf(buf, "%s", D_001602a4[patient->unknown148[i]]);
+            sprintf(buf, "%s", D_001602a4[patient->treatments[i]]);
         }
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
         LbTextDraw(x + resvars.f18_ReqLayoutp->diag.x, dy + y + resvars.f18_ReqLayoutp->diag.y, buf);
@@ -284,7 +284,7 @@ u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
         cand = thing;
     if (sub1 >= 0) {
         for (; cand < end_things; cand++) {
-            if (cand->renderer == kind) {
+            if (cand->type == kind) {
                 if (cand->subtype == sub1 || cand->subtype == sub2) {
                     if (cand->owner == player) {
                         if (check_if_point_beyond_scroll_limit((u8)cand->x.tile, cand->y.tile, 0)) {
@@ -297,7 +297,7 @@ u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
         }
         if (!found) {
             for (cand = thing; cand < end_things; cand++) {
-                if (cand->renderer == kind) {
+                if (cand->type == kind) {
                     if (cand->subtype == sub1 || cand->subtype == sub2) {
                         if (cand->owner == player) {
                             if (check_if_point_beyond_scroll_limit((u8)cand->x.tile, cand->y.tile, 0))
@@ -309,10 +309,10 @@ u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
         }
     } else {
         for (; cand < end_things; cand++) {
-            if (cand->renderer == kind) {
+            if (cand->type == kind) {
                 if (cand->owner == player) {
                     if (check_if_point_beyond_scroll_limit((u8)cand->x.tile, cand->y.tile, 0)) {
-                        if (cand->renderer == 6) {
+                        if (cand->type == 6) {
                             if (objects[cand->subtype].f20) {
                                 found = 1;
                                 break;
@@ -327,10 +327,10 @@ u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
         }
         if (!found) {
             for (cand = thing; cand < end_things; cand++) {
-                if (cand->renderer == kind) {
+                if (cand->type == kind) {
                     if (cand->owner == player) {
                         if (check_if_point_beyond_scroll_limit((u8)cand->x.tile, cand->y.tile, 0)) {
-                            if (cand->renderer == 6) {
+                            if (cand->type == 6) {
                                 if (objects[cand->subtype].f20)
                                     break;
                             } else {
@@ -370,7 +370,7 @@ extern "C" void fn_00074064(void)
     Thing *patient;
 
     patient = &thing[D_001581b2[1].value];
-    if (patient->unknown146 >= gbv.ffc)
+    if (patient->diagnosis >= gbv.ffc)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -380,8 +380,8 @@ extern "C" void fn_000740e4(void)
     Thing *patient;
 
     patient = &thing[D_001581b2[1].value];
-    if (patient->unknown171 != 0 && !(patient->flags & 0x1000) && !(patient->flags & 0x4000) && patient->style != patient->unknown169
-        && patient->unknown146 >= gbv.ffc)
+    if (patient->treatment != 0 && !(patient->flags & 0x1000) && !(patient->flags & 0x4000) && patient->illness != patient->known_illness
+        && patient->diagnosis >= gbv.ffc)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -391,7 +391,7 @@ extern "C" void fn_000741a4(void)
     Thing *patient;
 
     patient = &thing[D_001581b2[1].value];
-    if (patient->unknown140)
+    if (patient->queue_room)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -407,7 +407,7 @@ u16 fn_00073e64(u16 id, u32 flags)
     if (person >= end_things)
         person = thing;
     for (; person < end_things; person++) {
-        if (person->renderer == 2) {
+        if (person->type == 2) {
             if (person->owner == player) {
                 if (check_if_point_beyond_scroll_limit((u8)person->x.tile, person->y.tile, 0)) {
                     if (person->flags32 & flags) {
@@ -420,7 +420,7 @@ u16 fn_00073e64(u16 id, u32 flags)
     }
     if (!found) {
         for (person = thing; person < end_things; person++) {
-            if (person->renderer == 2) {
+            if (person->type == 2) {
                 if (person->owner == player) {
                     if (check_if_point_beyond_scroll_limit((u8)person->x.tile, person->y.tile, 0)) {
                         if (person->flags32 & flags)

@@ -29,9 +29,9 @@ void panel_l_button(const u16 icon);
 void clicked_for_edit(void);
 
 #define PARTNER(t)                                                                                         \
-    ((t)->unknown69 && (thing[(t)->unknown69].renderer == 6 || thing[(t)->unknown69].renderer == 8)       \
-             && (u16)((t) - thing) == thing[(t)->unknown69].unknown91                                      \
-         ? (t)->unknown69                                                                                  \
+    ((t)->object && (thing[(t)->object].type == 6 || thing[(t)->object].type == 8)       \
+             && (u16)((t) - thing) == thing[(t)->object].user                                      \
+         ? (t)->object                                                                                  \
          : 0)
 void panel_ml_button(const u16 icon);
 void panel_r_button(const u16 icon);
@@ -150,11 +150,11 @@ void process_mouse(void)
             } else if (crequester.unknown2 == 0x63 && (hovered = &thing[othervar.f41]) > thing) {
                 if (gamevar.f174)
                     return;
-                if ((hovered->renderer == 2 || hovered->renderer == 4)
-                    && (used_object = &thing[hovered->unknown69
-                                               && (thing[hovered->unknown69].renderer == 6 || thing[hovered->unknown69].renderer == 8)
-                                               && (u16)(hovered - thing) == thing[hovered->unknown69].unknown91
-                                           ? hovered->unknown69
+                if ((hovered->type == 2 || hovered->type == 4)
+                    && (used_object = &thing[hovered->object
+                                               && (thing[hovered->object].type == 6 || thing[hovered->object].type == 8)
+                                               && (u16)(hovered - thing) == thing[hovered->object].user
+                                           ? hovered->object
                                            : 0])
                            > thing) {
                     if (used_object->subtype == 0xb) {
@@ -170,9 +170,9 @@ void process_mouse(void)
                     if (objects[used_object->subtype].f20)
                         hovered = used_object;
                 }
-                if (hovered->renderer == 6) {
-                    if (hovered->group && objects[thing[hovered->group].subtype].unknown17 != -1)
-                        hovered = &thing[hovered->group];
+                if (hovered->type == 6) {
+                    if (hovered->pair && objects[thing[hovered->pair].subtype].unknown17 != -1)
+                        hovered = &thing[hovered->pair];
                     if (objects[hovered->subtype].f20) {
                         othervar.f7d = othervar.f7c;
                         othervar.f7c = 3;
@@ -191,9 +191,9 @@ void process_mouse(void)
                     }
                 }
                 hovered = &thing[othervar.f41];
-                if (hovered->renderer == 6 && (hovered->subtype == 0x34 || hovered->subtype == 0x35) && hovered->unknown102)
-                    hovered = &thing[hovered->unknown102];
-                if (hovered->renderer == 2) {
+                if (hovered->type == 6 && (hovered->subtype == 0x34 || hovered->subtype == 0x35) && hovered->door_main)
+                    hovered = &thing[hovered->door_main];
+                if (hovered->type == 2) {
                     othervar.f7d = othervar.f7c;
                     othervar.f7c = 2;
                     gamevar.f130 = 3;
@@ -205,7 +205,7 @@ void process_mouse(void)
                         gamevar.f130 = 1;
                         set_mouse_sprite(0xd);
                     }
-                } else if (hovered->renderer == 4) {
+                } else if (hovered->type == 4) {
                     othervar.f7d = othervar.f7c;
                     othervar.f7c = 1;
                     gamevar.f130 = 3;
@@ -213,10 +213,10 @@ void process_mouse(void)
                     hit = 1;
                     if (othervar.f30 != 0x10)
                         set_mouse_sprite(0x10);
-                } else if (hovered->renderer == 8) {
+                } else if (hovered->type == 8) {
                     RoomInfo *room;
 
-                    room = &room_info[hovered->unknown89];
+                    room = &room_info[hovered->room_id];
                     if (rooms[room->type].unknown27[2]) {
                         othervar.f7d = othervar.f7c;
                         othervar.f7c = 4;
@@ -225,7 +225,7 @@ void process_mouse(void)
                         if (othervar.f30 != 0x13)
                             set_mouse_sprite(0x13);
                     }
-                } else if (hovered->renderer == 0x14 || hovered->renderer == 0x16) {
+                } else if (hovered->type == 0x14 || hovered->type == 0x16) {
                     othervar.f7d = othervar.f7c;
                     othervar.f7c = 5;
                     gamevar.f130 = 3;
@@ -335,13 +335,13 @@ void process_left_button(u16 icon)
                 case 3:
                     clicked = &thing[othervar.f7e];
                     if (clicked->owner == player) {
-                        switch (clicked->renderer) {
+                        switch (clicked->type) {
                         case 6:
                             switch (clicked->subtype) {
                             case 0xb: {
                                 Thing *receptionist;
 
-                                receptionist = &thing[clicked->unknown91];
+                                receptionist = &thing[clicked->user];
                                 if (receptionist > thing) {
                                     if (receptionist->room) {
                                         D_001549d0[player].type = 0x3b;
@@ -371,10 +371,10 @@ void process_left_button(u16 icon)
                             default:
                                 if (crequester.unknown2 == 0x63) {
                                     close_irequesters();
-                                    if ((clicked->f8e & 0x20) && clicked->unknown91) {
+                                    if ((clicked->orders & 0x20) && clicked->playercall) {
                                         D_001549d0[player].type = 0xa;
                                         D_001549d0[player].value = 1;
-                                        D_001549d0[player].arg = clicked->unknown91;
+                                        D_001549d0[player].arg = clicked->playercall;
                                     } else {
                                         D_001549d0[player].type = 0x42;
                                         D_001549d0[player].value = othervar.f7e;
@@ -386,14 +386,14 @@ void process_left_button(u16 icon)
                         case 2:
                             if (crequester.unknown2 == 0x63) {
                                 close_irequesters();
-                                if ((clicked->f75 & 4) && clicked->unknown91) {
+                                if ((clicked->flags1 & 4) && clicked->playercall) {
                                     D_001549d0[player].type = 0xa;
                                     D_001549d0[player].value = 8;
-                                    D_001549d0[player].arg = clicked->unknown91;
-                                } else if ((clicked->f74 & 0x10) && clicked->unknown91) {
+                                    D_001549d0[player].arg = clicked->playercall;
+                                } else if ((clicked->flags0 & 0x10) && clicked->playercall) {
                                     D_001549d0[player].type = 0xa;
                                     D_001549d0[player].value = 4;
-                                    D_001549d0[player].arg = clicked->unknown91;
+                                    D_001549d0[player].arg = clicked->playercall;
                                 } else {
                                     D_001549d0[player].type = 0x42;
                                     D_001549d0[player].value = othervar.f7e;
@@ -405,11 +405,11 @@ void process_left_button(u16 icon)
                             D_001549d0[player].value = othervar.f7e;
                             break;
                         }
-                    } else if (statvar.unknownfd > 1 && clicked->renderer == 4 && clicked->owner != 0x63) {
-                        if (clicked->f93) {
-                            if (clicked->f93 != 1 << player)
+                    } else if (statvar.unknownfd > 1 && clicked->type == 4 && clicked->owner != 0x63) {
+                        if (clicked->poach_offers) {
+                            if (clicked->poach_offers != 1 << player)
                                 advisor.f2 = 0xf;
-                        } else if (clicked->unknown128s < gbv.f10a / 4) {
+                        } else if (clicked->discontent_s < gbv.f10a / 4) {
                             advisor.f2 = 0x10;
                         } else {
                             D_001549d0[player].type = 0x81;
@@ -421,7 +421,7 @@ void process_left_button(u16 icon)
                 case 4:
                     if (thing[othervar.f7e].owner == player) {
                         D_001549d0[player].type = 0x3b;
-                        D_001549d0[player].value = thing[othervar.f7e].unknown89;
+                        D_001549d0[player].value = thing[othervar.f7e].room_id;
                         D_001549d0[player].arg = (thing[othervar.f7e].y.tile << 7) + thing[othervar.f7e].x.tile;
                         compute_room_pointed(othervar.f28);
                     }
@@ -499,7 +499,7 @@ void process_left_button(u16 icon)
             case 0xb:
                 othervar.f43 = compute_object_pointed(&room_info[allhosps[player].unknown11b7]);
                 if (othervar.f43) {
-                    if (thing[othervar.f43].unknown89 == allhosps[player].unknown11b7) {
+                    if (thing[othervar.f43].room_id == allhosps[player].unknown11b7) {
                         D_001549d0[player].type = 0x44;
                         D_001549d0[player].value = othervar.f43;
                         D_001549d0[player].arg = 1;
@@ -534,10 +534,10 @@ void process_left_button(u16 icon)
 
                     selected = &thing[othervar.f43];
                     if (selected > thing) {
-                        if (selected->renderer == 4 && selected->subtype == 3)
+                        if (selected->type == 4 && selected->subtype == 3)
                             room = selected->room;
-                        else if (selected->renderer == 6 && selected->subtype == 0xb && selected->unknown91)
-                            room = thing[selected->unknown91].room;
+                        else if (selected->type == 6 && selected->subtype == 0xb && selected->user)
+                            room = thing[selected->user].room;
                     }
                 }
                 if (room) {
@@ -682,7 +682,7 @@ void process_right_button(u16 icon)
                                 if (hovered->owner == player) {
                                     if (allhosps[player].unknown11b7) {
                                         check_object_right_click_in_room_edit();
-                                    } else if (gamevar.f130 == 3 && hovered > thing && hovered->renderer == 4) {
+                                    } else if (gamevar.f130 == 3 && hovered > thing && hovered->type == 4) {
                                         D_001549d0[player].type = 0x68;
                                         D_001549d0[player].value = othervar.f41;
                                         play_sound(10, 0x99, -1, -1);
@@ -759,7 +759,7 @@ void process_no_button(u16 icon)
                 } else {
                     hovered = &thing[othervar.f41];
                     if (hovered > thing && hovered->owner == player) {
-                        if ((hovered->renderer == 6 && hovered->subtype == 0xb) || (hovered->renderer == 4 && hovered->subtype == 3))
+                        if ((hovered->type == 6 && hovered->subtype == 0xb) || (hovered->type == 4 && hovered->subtype == 3))
                             flag_all_queue_members(thing[othervar.f7e].room);
                     }
                 }

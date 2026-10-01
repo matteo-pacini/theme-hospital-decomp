@@ -145,20 +145,20 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
     u16 month;
 
     fee = 0;
-    price = allhosps[patient->owner].rooms[patient->unknown171].unknownC;
-    room = &allhosps[patient->owner].rooms[patient->unknown171];
+    price = allhosps[patient->owner].rooms[patient->treatment].unknownC;
+    room = &allhosps[patient->owner].rooms[patient->treatment];
     if (kind == 2) {
-        if (patient->unknown108 == 0)
-            patient->unknown108 = price;
-        room->unknown14 += patient->unknown108;
-        fee = patient->unknown108;
+        if (patient->fee == 0)
+            patient->fee = price;
+        room->unknown14 += patient->fee;
+        fee = patient->fee;
         type = 7;
-        patient->unknown108 = 0;
+        patient->fee = 0;
     } else {
-        patient->unknown108 = price;
+        patient->fee = price;
     }
     if (fee > 0) {
-        ins = (u16)patient->unknown172[1];
+        ins = (u16)patient->insurance;
         if (ins & allhosps[patient->owner].f216) {
             for (i = 0; i < 3; i++) {
                 if (ins & (1 << i)) {
@@ -173,9 +173,9 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
                 }
             }
         } else {
-            if (fee <= patient->f70) {
-                patient->f70 -= fee;
-                change_balance(type, fee, (u16)patient->unknown171, (u16)patient->owner);
+            if (fee <= patient->cash) {
+                patient->cash -= fee;
+                change_balance(type, fee, (u16)patient->treatment, (u16)patient->owner);
                 create_numfx(3, fee, patient->x.tile + (patient->y.tile << 7), color.unknown8, 0x40);
             } else {
                 return 0;
@@ -201,8 +201,8 @@ void month_end(void)
     for (i = 0; i < 4; i++)
         wages[i] = 0;
     for (employee = thing + 1; employee < end_things; employee++) {
-        if (employee->renderer == 4 && employee->kind != 0x2e) {
-            wages[employee->owner] += employee->unknown108;
+        if (employee->type == 4 && employee->state != 0x2e) {
+            wages[employee->owner] += employee->salary;
             appraise_staff(employee);
         }
     }

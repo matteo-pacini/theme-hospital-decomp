@@ -34,7 +34,7 @@ void front_queue(const u16 room_id, const u16 pos)
                             head = &thing[id];
                             room->queue_head = person - thing;
                             room->unknown31++;
-                            person->unknown140 = room - room_info;
+                            person->queue_room = room - room_info;
                             person->queue_prev = 0;
                             person->queue_next = id;
                             head->queue_prev = person - thing;
@@ -108,7 +108,7 @@ void join_queue(Thing *person, RoomInfo *room)
         person->queue_prev = 0;
     }
     person->queue_next = 0;
-    person->unknown140 = room - room_info;
+    person->queue_room = room - room_info;
     room->unknown31++;
     if (room->unknown32) {
         room->unknown32--;
@@ -122,7 +122,7 @@ void leave_queue(Thing *person)
     Thing *next;
     RoomInfo *room;
 
-    room = &room_info[person->unknown140];
+    room = &room_info[person->queue_room];
     if (room > room_info && room < end_room_info) {
         if (person->queue_prev == 0) {
             if ((u16)(person - thing) == room->queue_head) {
@@ -139,17 +139,17 @@ void leave_queue(Thing *person)
         if (room->unknown31 > 0) {
             room->unknown31--;
         }
-    } else if (person->unknown89) {
-        if (room_info[person->unknown89].type != 4) {
-            if (room_info[person->unknown89].unknown32 != 0) {
-                room_info[person->unknown89].unknown32--;
+    } else if (person->dest_room) {
+        if (room_info[person->dest_room].type != 4) {
+            if (room_info[person->dest_room].unknown32 != 0) {
+                room_info[person->dest_room].unknown32--;
             }
         }
-        person->unknown89 = 0;
+        person->dest_room = 0;
     }
     person->queue_next = 0;
     person->queue_prev = 0;
-    person->unknown140 = 0;
+    person->queue_room = 0;
 }
 
 // FUNCTION: 0x0004b21c
@@ -329,22 +329,22 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                 if (room->type == 4) {
                     reception = find_nearest_manned_reception(person, room - room_info, 0);
                     if (reception) {
-                        fn_0004195c(person, thing[reception].room_next);
+                        fn_0004195c(person, thing[reception].use_pos[1]);
                     }
                 } else {
                     room->unknown32++;
                     page_staff_i_need(person, room);
                     fn_0004195c(person, room->unknown4);
                 }
-                person->unknown89 = room - room_info;
+                person->dest_room = room - room_info;
                 {
                     u16 frame;
 
-                    frame = check_frame(anim_starts[person->subtype].idle, person) + (u16)person->unknown17;
+                    frame = check_frame(anim_starts[person->subtype].idle, person) + (u16)person->facing;
                     person->sprite = start[frame].frame;
-                    person->palette = start[frame].flags > 0 ? (u8)1 : (u8)0;
+                    person->flip = start[frame].flags > 0 ? (u8)1 : (u8)0;
                 }
-                person->kind = 0x24;
+                person->state = 0x24;
             }
         }
     }

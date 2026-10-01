@@ -233,8 +233,8 @@ u16 get_slist_staff(const u8 dir)
     staff = &thing[slist.unknown0];
     if (dir == 0) {
         while (++staff < end_things) {
-            if (staff->renderer == 4 && staff->owner == player) {
-                if (staff->kind != 0x2e) {
+            if (staff->type == 4 && staff->owner == player) {
+                if (staff->state != 0x2e) {
                     if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
                         || (staff->subtype == 0 && (othervar.f49 & 2))
                         || (staff->subtype == 3 && (othervar.f49 & 8))
@@ -247,8 +247,8 @@ u16 get_slist_staff(const u8 dir)
         }
     } else {
         while (thing + 1 <= --staff) {
-            if (staff->renderer == 4 && staff->owner == player) {
-                if (staff->kind != 0x2e) {
+            if (staff->type == 4 && staff->owner == player) {
+                if (staff->state != 0x2e) {
                     if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
                         || (staff->subtype == 0 && (othervar.f49 & 2))
                         || (staff->subtype == 3 && (othervar.f49 & 8))
@@ -286,8 +286,8 @@ void draw_slist_staff(const u16 selected)
     }
     row = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if (staff->renderer == 4 && staff->owner == player) {
-            if (staff->kind == 0x2e)
+        if (staff->type == 4 && staff->owner == player) {
+            if (staff->state == 0x2e)
                 continue;
             if (row >= 10)
                 break;
@@ -310,15 +310,15 @@ void draw_slist_staff(const u16 selected)
                     }
                     sprintf(buf, "%d", listed + 1);
                     LbTextDraw(resvars.f40[row + 114].x, resvars.f40[row + 114].y, buf);
-                    sprintf(buf, "%c. %s%s", staff->f84, staff_names_1[staff->f85], staff_names_2[staff->f86]);
+                    sprintf(buf, "%c. %s%s", staff->initial, staff_names_1[staff->surname_a], staff_names_2[staff->surname_b]);
                     LbTextDraw(resvars.f40[row + 124].x, resvars.f40[row + 124].y, buf);
-                    sprintf(buf, "$%d", staff->unknown108);
+                    sprintf(buf, "$%d", staff->salary);
                     LbTextDraw(resvars.f40[row + 134].x, resvars.f40[row + 134].y, buf);
-                    draw_gauge(staff->unknown81s, resvars.f3c_Boxp[row + 71].x, resvars.f3c_Boxp[row + 71].y, resvars.f3c_Boxp[row + 71].w,
+                    draw_gauge(staff->happiness_s, resvars.f3c_Boxp[row + 71].x, resvars.f3c_Boxp[row + 71].y, resvars.f3c_Boxp[row + 71].w,
                                &screen_sprites_tab_start[resvars.f3c_Boxp[row + 71].h], 100, 0, 100, 1);
-                    draw_gauge(staff->f78, resvars.f3c_Boxp[row + 81].x, resvars.f3c_Boxp[row + 81].y, resvars.f3c_Boxp[row + 81].w,
+                    draw_gauge(staff->tiredness, resvars.f3c_Boxp[row + 81].x, resvars.f3c_Boxp[row + 81].y, resvars.f3c_Boxp[row + 81].w,
                                &screen_sprites_tab_start[resvars.f3c_Boxp[row + 81].h], 1000, 0, 1000, 0);
-                    draw_gauge(staff->unknown126, resvars.f3c_Boxp[row + 91].x, resvars.f3c_Boxp[row + 91].y, resvars.f3c_Boxp[row + 91].w,
+                    draw_gauge(staff->ability, resvars.f3c_Boxp[row + 91].x, resvars.f3c_Boxp[row + 91].y, resvars.f3c_Boxp[row + 91].w,
                                &screen_sprites_tab_start[resvars.f3c_Boxp[row + 91].h], 1000, 30, 970, 1);
                     if (lbDisplay.mleft_button) {
                         if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
@@ -393,40 +393,40 @@ void draw_slist_window(const u16 id)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
-    draw_face((Picture *)&thing[id].f87, resvars.f44_SlistAreap->face_x, resvars.f44_SlistAreap->face_y);
+    draw_face((Picture *)&thing[id].face_head, resvars.f44_SlistAreap->face_x, resvars.f44_SlistAreap->face_y);
     if (staff->subtype == 1 || staff->subtype == 4) {
         i = 0;
-        if ((staff->unknown124 & 8) && !(staff->unknown124 & 0x80))
+        if ((staff->skills & 8) && !(staff->skills & 0x80))
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
-        if ((staff->unknown124 & 0x10) && !(staff->unknown124 & 0x80) && !(staff->unknown124 & 8))
+        if ((staff->skills & 0x10) && !(staff->skills & 0x80) && !(staff->skills & 8))
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
-        if (staff->unknown124 & 0x80)
+        if (staff->skills & 0x80)
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
-        if (staff->unknown124 & 0x20) {
+        if (staff->skills & 0x20) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
-        } else if (staff->unknown148[3]) {
+        } else if (staff->surgeon_training) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
-            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->unknown148[3], gbv.f146);
+            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->surgeon_training, gbv.f146);
         }
         i++;
-        if (staff->unknown124 & 0x40) {
+        if (staff->skills & 0x40) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
-        } else if (staff->unknown148[4]) {
+        } else if (staff->psych_training) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
-            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->unknown148[4], gbv.f148);
+            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->psych_training, gbv.f148);
         }
         i++;
-        if (staff->unknown124 & 0x100) {
+        if (staff->skills & 0x100) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
-        } else if (staff->unknown148[5]) {
+        } else if (staff->research_training) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
-            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->unknown148[5], gbv.f14a);
+            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->research_training, gbv.f14a);
         }
     }
-    ability = staff->f8d;
+    ability = staff->work_delay;
     if (ability > 10)
         ability = 10;
     if (ability < 0)
@@ -453,15 +453,15 @@ void draw_slist_overall(void)
     happiness = tiredness = ability = 0;
     count = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if (staff->renderer == 4 && staff->owner == player) {
-            if (staff->kind != 0x2e) {
+        if (staff->type == 4 && staff->owner == player) {
+            if (staff->state != 0x2e) {
                 if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
                     || (staff->subtype == 0 && (othervar.f49 & 2))
                     || (staff->subtype == 3 && (othervar.f49 & 8))
                     || (staff->subtype == 2 && (othervar.f49 & 4))) {
-                    happiness += staff->unknown81s;
-                    tiredness += staff->f78;
-                    ability += staff->unknown126;
+                    happiness += staff->happiness_s;
+                    tiredness += staff->tiredness;
+                    ability += staff->ability;
                     count++;
                 }
             }
@@ -572,7 +572,7 @@ void process_slist_button(u8 button)
     case 5:
         if (slist.unknown0) {
             D_001549d0[player].type = 0x5a;
-            D_001549d0[player].value = thing[slist.unknown0].unknown108 / 10;
+            D_001549d0[player].value = thing[slist.unknown0].salary / 10;
             D_001549d0[player].arg = slist.unknown0;
             play_sound(10, 0xb4, -1, -1);
         }
@@ -580,7 +580,7 @@ void process_slist_button(u8 button)
     case 6:
         if (slist.unknown0) {
             D_001549d0[player].type = 0x48;
-            D_001549d0[player].value = thing[slist.unknown0].unknown108 / 10;
+            D_001549d0[player].value = thing[slist.unknown0].salary / 10;
             D_001549d0[player].arg = slist.unknown0;
             play_sound(10, 0xb8, -1, -1);
         }
@@ -642,8 +642,8 @@ u8 staff_on_page(const u8 page)
 
     listed = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if (staff->renderer == 4) {
-            if (staff->kind != 0x2e && staff->owner == player) {
+        if (staff->type == 4) {
+            if (staff->state != 0x2e && staff->owner == player) {
                 if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
                     || (staff->subtype == 0 && (othervar.f49 & 2))
                     || (staff->subtype == 3 && (othervar.f49 & 8))
@@ -677,8 +677,8 @@ void draw_slist_nums(void)
     for (i = 0; i < 4; i++)
         counts[i] = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if (staff->renderer == 4 && staff->owner == player) {
-            if (staff->kind == 0x2e)
+        if (staff->type == 4 && staff->owner == player) {
+            if (staff->state == 0x2e)
                 continue;
             if (staff->subtype == 1 || staff->subtype == 4)
                 counts[0]++;
@@ -748,10 +748,10 @@ void slist_help_if_surgeon(void)
     s32 pct;
 
     staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->unknown124 & 0x20)) {
+    if ((othervar.f49 & 1) && staff > thing && (staff->skills & 0x20)) {
         fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
-        pct = staff->unknown148[3];
+        pct = staff->surgeon_training;
         if (pct != 0) {
             pct = pct * 100 / gbv.f146;
             pct > 100 ? pct = 100 : 0;
@@ -767,10 +767,10 @@ void slist_help_if_shrink(void)
     s32 pct;
 
     staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->unknown124 & 0x40)) {
+    if ((othervar.f49 & 1) && staff > thing && (staff->skills & 0x40)) {
         fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
-        pct = staff->unknown148[4];
+        pct = staff->psych_training;
         if (pct != 0) {
             pct = pct * 100 / gbv.f148;
             pct > 100 ? pct = 100 : 0;
@@ -786,10 +786,10 @@ void slist_help_if_researcher(void)
     s32 pct;
 
     staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->unknown124 & 0x100)) {
+    if ((othervar.f49 & 1) && staff > thing && (staff->skills & 0x100)) {
         fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
-        pct = staff->unknown148[5];
+        pct = staff->research_training;
         if (pct != 0) {
             pct = pct * 100 / gbv.f14a;
             pct > 100 ? pct = 100 : 0;
@@ -804,9 +804,9 @@ void draw_slist_button_overlays(Thing *staff)
     char buf[100];
 
     set_font_from_cache(1);
-    sprintf(buf, "$%d", staff->unknown108 / 10 + staff->unknown108);
+    sprintf(buf, "$%d", staff->salary / 10 + staff->salary);
     LbTextDraw(resvars.f40[149].x, resvars.f40[149].y, buf);
-    sprintf(buf, "$%d", staff->unknown108 / 10);
+    sprintf(buf, "$%d", staff->salary / 10);
     LbTextDraw(resvars.f40[150].x, resvars.f40[150].y, buf);
 }
 

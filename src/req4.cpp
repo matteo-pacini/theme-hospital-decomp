@@ -126,7 +126,7 @@ void req4_overdraw(Window *win)
         compute_help_text(0, 0, 0xc);
         set_font_from_cache(1);
         othervar.f36 = window.unknown2ec - 1;
-        sprintf(buf, "%d", staff->unknown108);
+        sprintf(buf, "%d", staff->salary);
         LbTextDraw(x + resvars.f1c[0x6b].x, y + resvars.f1c[0x6b].y, buf);
         draw_staff_handyman_bars(staff, x, y, &button_sprite[resvars.f12[3]]);
         if (lbDisplay.mleft_button) {
@@ -159,26 +159,26 @@ void req4_overdraw(Window *win)
         compute_help_text(0, 0, 10);
         set_font_from_cache(1);
         othervar.f36 = window.unknown2ec - 1;
-        sprintf(buf, "%d", staff->unknown108);
+        sprintf(buf, "%d", staff->salary);
         LbTextDraw(x + resvars.f1c[0x66].x, y + resvars.f1c[0x66].y, buf);
         slot = 0;
         slot++;
-        if (staff->unknown124 & 8)
+        if (staff->skills & 8)
             reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[10]]);
         slot++;
-        if (staff->unknown124 & 0x10 && !(staff->unknown124 & 0x80) && !(staff->unknown124 & 8))
+        if (staff->skills & 0x10 && !(staff->skills & 0x80) && !(staff->skills & 8))
             reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[10]]);
         slot++;
-        if (staff->unknown124 & 0x80)
+        if (staff->skills & 0x80)
             reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[10]]);
         slot++;
-        if (staff->unknown124 & 0x20)
+        if (staff->skills & 0x20)
             reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[11]]);
         slot++;
-        if (staff->unknown124 & 0x40)
+        if (staff->skills & 0x40)
             reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[12]]);
         slot++;
-        if (staff->unknown124 & 0x100)
+        if (staff->skills & 0x100)
             reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[13]]);
         if (!(staff->subtype == 1 || staff->subtype == 4))
             LbDrawBox(x + resvars.f18[0x40].x, y + resvars.f18[0x40].y, resvars.f18[0x40].w, resvars.f18[0x40].h, 0x7a);
@@ -212,14 +212,14 @@ void req4_overdraw(Window *win)
             othervar.fa61 = 0;
         break;
     }
-    draw_face((Picture *)&staff->f87, x + resvars.f1c[0x65].x, y + resvars.f1c[0x65].y);
-    draw_gauge(staff->unknown81s, x + resvars.f1c[0x67].x, y + resvars.f1c[0x67].y, resvars.f1c[0x69].x,
+    draw_face((Picture *)&staff->face_head, x + resvars.f1c[0x65].x, y + resvars.f1c[0x65].y);
+    draw_gauge(staff->happiness_s, x + resvars.f1c[0x67].x, y + resvars.f1c[0x67].y, resvars.f1c[0x69].x,
                &button_sprite[resvars.f12[0]], 100, 0, 100, 1);
-    draw_gauge(staff->f78, x + resvars.f1c[0x68].x, y + resvars.f1c[0x68].y, resvars.f1c[0x69].x,
+    draw_gauge(staff->tiredness, x + resvars.f1c[0x68].x, y + resvars.f1c[0x68].y, resvars.f1c[0x69].x,
                &button_sprite[resvars.f12[1]], 1000, 0, 1000, 0);
-    draw_gauge(staff->unknown126, x + resvars.f1c[0x6a].x, y + resvars.f1c[0x6a].y, resvars.f1c[0x76].x,
+    draw_gauge(staff->ability, x + resvars.f1c[0x6a].x, y + resvars.f1c[0x6a].y, resvars.f1c[0x76].x,
                &button_sprite[resvars.f12[2]], 1000, 30, 970, 1);
-    sprintf(buf, "%c. %s%s", staff->f84, staff_names_1[staff->f85], staff_names_2[staff->f86]);
+    sprintf(buf, "%c. %s%s", staff->initial, staff_names_1[staff->surname_a], staff_names_2[staff->surname_b]);
     LbTextDraw(x + resvars.f1c[0x64].x, y + resvars.f1c[0x64].y, buf);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -261,17 +261,17 @@ void adjust_handyman_values(const u16 id, const u8 button)
 
     handyman = &thing[id];
     if (button == resvars.fe[0x27]) {
-        raised = handyman->f9e;
-        other1 = handyman->f9f;
-        other2 = handyman->fa0;
+        raised = handyman->prio_litter;
+        other1 = handyman->prio_plants;
+        other2 = handyman->prio_repair;
     } else if (button == resvars.fe[0x28]) {
-        raised = handyman->f9f;
-        other1 = handyman->f9e;
-        other2 = handyman->fa0;
+        raised = handyman->prio_plants;
+        other1 = handyman->prio_litter;
+        other2 = handyman->prio_repair;
     } else if (button == resvars.fe[0x29]) {
-        raised = handyman->fa0;
-        other1 = handyman->f9f;
-        other2 = handyman->f9e;
+        raised = handyman->prio_repair;
+        other1 = handyman->prio_plants;
+        other2 = handyman->prio_litter;
     }
     if (raised < 0x5e) {
         raised += 6;
@@ -289,29 +289,29 @@ void adjust_handyman_values(const u16 id, const u8 button)
         other2 = 0;
     }
     if (button == resvars.fe[0x27]) {
-        handyman->f9e = raised;
-        handyman->f9f = other1;
-        handyman->fa0 = other2;
+        handyman->prio_litter = raised;
+        handyman->prio_plants = other1;
+        handyman->prio_repair = other2;
     } else if (button == resvars.fe[0x28]) {
-        handyman->f9f = raised;
-        handyman->f9e = other1;
-        handyman->fa0 = other2;
+        handyman->prio_plants = raised;
+        handyman->prio_litter = other1;
+        handyman->prio_repair = other2;
     } else if (button == resvars.fe[0x29]) {
-        handyman->fa0 = raised;
-        handyman->f9f = other1;
-        handyman->f9e = other2;
+        handyman->prio_repair = raised;
+        handyman->prio_plants = other1;
+        handyman->prio_litter = other2;
     }
-    handyman->f98 = 0;
-    handyman->f9a = 0;
-    handyman->f9c = 0;
+    handyman->litter_count = 0;
+    handyman->plant_count = 0;
+    handyman->repair_count = 0;
 }
 
 // FUNCTION: 0x00087e7c
 void draw_staff_handyman_bars(const Thing *const handyman, const u16 x, const u16 y, TbSprite *spr)
 {
-    draw_gauge(handyman->f9e, x + resvars.f1c[0x72].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
-    draw_gauge(handyman->f9f, x + resvars.f1c[0x73].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
-    draw_gauge(handyman->fa0, x + resvars.f1c[0x74].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_litter, x + resvars.f1c[0x72].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_plants, x + resvars.f1c[0x73].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_repair, x + resvars.f1c[0x74].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
 }
 
 // FUNCTION: 0x00087fb8
@@ -335,7 +335,7 @@ void req4_help_if_doctor(void)
     Thing *staff;
 
     staff = &thing[D_001581b2[2].value];
-    if (staff > thing && staff->unknown124 & 0x10)
+    if (staff > thing && staff->skills & 0x10)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -345,7 +345,7 @@ void req4_help_if_surgeon(void)
     Thing *staff;
 
     staff = &thing[D_001581b2[2].value];
-    if (staff > thing && staff->unknown124 & 0x20)
+    if (staff > thing && staff->skills & 0x20)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -355,7 +355,7 @@ void req4_help_if_shrink(void)
     Thing *staff;
 
     staff = &thing[D_001581b2[2].value];
-    if (staff > thing && staff->unknown124 & 0x40)
+    if (staff > thing && staff->skills & 0x40)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -365,6 +365,6 @@ void req4_help_if_research(void)
     Thing *staff;
 
     staff = &thing[D_001581b2[2].value];
-    if (staff > thing && staff->unknown124 & 0x100)
+    if (staff > thing && staff->skills & 0x100)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
