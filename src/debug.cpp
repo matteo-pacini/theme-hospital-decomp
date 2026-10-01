@@ -38,7 +38,7 @@ u16 check_frame(u16 anim, Thing *peep)
 // FUNCTION: 0x0008dd40
 void nav_debug_mode(void)
 {
-    set_mouse_mode(0xd);
+    set_mouse_mode(MM_NAV_DEBUG);
     debug.nav_debug = 1;
 }
 

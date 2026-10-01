@@ -366,8 +366,8 @@ void process_turn(void)
             for (j = 0; j < 4; j++) {
                 if (D_001609c4[j].active && D_001549d0[j].checksum) {
                     if (D_001549d0[D_00160508].checksum != D_001549d0[j].checksum) {
-                        if (D_001549d0[j].type != 0x8e && D_001549d0[j].type != 0x8d) {
-                            D_001549d0[j].type = 0;
+                        if (D_001549d0[j].type != EV_NETWORK_GAINED_FOCUS && D_001549d0[j].type != EV_NETWORK_LOST_FOCUS) {
+                            D_001549d0[j].type = EV_NONE;
                             D_001549d0[j].value = 0;
                             D_001549d0[j].arg = 0;
                         }
@@ -386,17 +386,17 @@ void process_turn(void)
             u8 handled = 0;
 
             switch (D_001549d0[i].type) {
-            case 0x8d:
+            case EV_NETWORK_LOST_FOCUS:
                 network_lost_focus(i);
                 handled = 1;
                 break;
-            case 0x8e:
+            case EV_NETWORK_GAINED_FOCUS:
                 network_gained_focus(i);
                 handled = 1;
                 break;
             }
             if (handled) {
-                D_001549d0[i].type = 0;
+                D_001549d0[i].type = EV_NONE;
                 D_001549d0[i].value = 0;
                 D_001549d0[i].arg = 0;
                 return;
@@ -415,29 +415,29 @@ void process_turn(void)
         }
     dispatch:
         switch (D_001549d0[i].type) {
-        case 0:
+        case EV_NONE:
             break;
-        case 1:
+        case EV_OPEN_ROOM:
             open_room(i);
             break;
-        case 2:
+        case EV_MODIFY_BLUEPRINT:
             modify_blueprint(i, 1, D_001549d0[i].value);
             break;
-        case 0x12:
+        case EV_COMMIT_BLUEPRINT:
             if (commit_blueprint(i)) {
                 if (i == player) {
-                    play_sound(10, 0x41, -1, -1);
+                    play_sound(10, SFX_YESX, -1, -1);
                 }
             } else {
                 if (i == player) {
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 }
             }
             break;
-        case 0x13:
+        case EV_UNCOMMIT_BLUEPRINT:
             uncommit_blueprint(i);
             if (i == player) {
-                set_mouse_mode(1);
+                set_mouse_mode(MM_BLUEPRINT);
             }
             break;
         case 0x14:
@@ -446,10 +446,10 @@ void process_turn(void)
                 set_buyable_items(3);
             }
             break;
-        case 3:
+        case EV_PLACE_BP_DOOR:
             place_bp_door(i, (u8)D_001549d0[i].value);
             break;
-        case 4:
+        case EV_COMMIT_DOORS:
             if (i == player) {
                 set_mouse_mode(0x10);
             }
@@ -460,19 +460,19 @@ void process_turn(void)
 
             if (fn_00029c4c(D_001549d0[i].value, D_001549d0[i].arg, 0, i)) {
                 if (empty) {
-                    change_balance(2, -(thing[D_001549d0[i].arg].salary * 12) / 10, 0, othervar.ff);
+                    change_balance(TX_HIRE_STAFF, -(thing[D_001549d0[i].arg].salary * 12) / 10, 0, othervar.ff);
                 }
                 if (i == player) {
-                    play_sound(10, 7, -1, -1);
-                    set_mouse_mode(0);
+                    play_sound(10, SFX_PLAC_ST2, -1, -1);
+                    set_mouse_mode(MM_NORMAL);
                 }
             }
             break;
         }
-        case 7:
+        case EV_PLACE_OBJECT:
             if (fn_00037098(D_001549d0[i].value, D_001549d0[i].argb[0], D_001549d0[i].argb[1], i) != 0) {
                 if (i == player) {
-                    play_sound(10, 0x46, -1, -1);
+                    play_sound(10, SFX_PLACE_R, -1, -1);
                     object_placed();
                 }
             }
@@ -480,7 +480,7 @@ void process_turn(void)
         case 8:
             modify_blueprint(i, 0, D_001549d0[i].value);
             break;
-        case 9:
+        case EV_QUEUE_PERSON_TO_NEW_QUEUE:
             queue_person_to_new_queue(D_001549d0[i].value, D_001549d0[i].arg);
             break;
         case 0xa:
@@ -554,10 +554,10 @@ void process_turn(void)
                 break;
             }
             break;
-        case 0xb:
+        case EV_PLACE_SMALL_THING:
             place_small_thing(D_001549d0[i].value, D_001549d0[i].arg, 0);
             if (i == player) {
-                play_sound(10, 0x46, -1, -1);
+                play_sound(10, SFX_PLACE_R, -1, -1);
             }
             break;
         case 0xc:
@@ -569,7 +569,7 @@ void process_turn(void)
                         req2_exit_employing(gamevar.unknown75);
                     }
                     close_yes_no_requester(0x63);
-                    set_mouse_mode(0);
+                    set_mouse_mode(MM_NORMAL);
                     lbDisplay.left_button = 0;
                 }
                 fn_00021818((s8)D_001549d0[i].value, -1);
@@ -581,17 +581,17 @@ void process_turn(void)
                 fn_00021c38((s8)D_001549d0[i].value, -1);
             }
             break;
-        case 0xe:
+        case EV_VARY_SPEED:
             vary_speed((s16)D_001549d0[i].value);
             break;
         case 0x17:
             break;
         case 0x18:
             break;
-        case 0x1a:
+        case EV_TEMP_PLACE_DOOR:
             temp_place_door(D_001549d0[i].value, i);
             break;
-        case 0x20:
+        case EV_REQ1_RESET_ROOMS:
             if (i == player) {
                 crequester.unknown4 = D_001549d0[i].value;
                 crequester.unknown0 = 4;
@@ -605,7 +605,7 @@ void process_turn(void)
                 set_buyable_items(crequester.unknown8);
                 buy_compulsory_items(crequester.unknown8);
                 close_crequester(crequester.unknown2);
-                set_mouse_mode(1);
+                set_mouse_mode(MM_BLUEPRINT);
                 open_edit_room_requester();
                 set_edit_room_requester_mode(0);
                 pmenu.unknown7 = 0;
@@ -661,14 +661,14 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x1d:
+        case EV_GOTO_COLUMN_ROW:
             goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
             othervar.fa5c = 1;
             othervar.f10 = 1;
             break;
         case 0x21:
             break;
-        case 0x22:
+        case EV_PAUSE:
             yearend.unknown0--;
             if (display_mode != 8 || yearend.unknown0 == 0) {
                 gamevar.unknown21 = !gamevar.unknown21;
@@ -709,7 +709,7 @@ void process_turn(void)
                 pmenu.unknown7 = 0;
             }
             break;
-        case 0x25:
+        case EV_BUY_OBJECT:
             if (i == player) {
                 req1_buy_object(D_001549d0[i].value, D_001549d0[i].arg);
             }
@@ -753,14 +753,14 @@ void process_turn(void)
                 crequester.unknown6 = req2_alter_staff(1, 0, crequester.unknown4);
             }
             break;
-        case 0x30:
+        case EV_MARK_EMPLOYING:
             if (i == player) {
-                if (thing[D_001549d0[i].arg].state != 0x44) {
+                if (thing[D_001549d0[i].arg].state != PS_WAITS_FOR_DECISION) {
                     close_crequester(crequester.unknown2);
                     gamevar.unknown77 = D_001549d0[i].value;
                     gamevar.unknown75 = D_001549d0[i].arg;
                     gamevar.unknown79 = 0xffff;
-                    set_mouse_mode(3);
+                    set_mouse_mode(MM_PLACE_STAFF);
                     pmenu.unknown7 = 0;
                 }
             }
@@ -771,7 +771,7 @@ void process_turn(void)
                 crequester.unknown6 = req2_alter_staff((u8)D_001549d0[i].value, crequester.unknown6, crequester.unknown4);
             }
             break;
-        case 0x34:
+        case EV_CLOSE_SCREEN:
             if (display_mode != 0) {
                 display_mode = 0;
                 othervar.f10 = 1;
@@ -779,9 +779,9 @@ void process_turn(void)
                 othervar.f1f = D_00153f34;
             }
             break;
-        case 0x33:
+        case EV_OPEN_SCREEN:
             if (i == player && gamevar.f12e == 0xe) {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
                 break;
             }
             if (allhosps[i].f11f4) {
@@ -835,7 +835,7 @@ void process_turn(void)
                 D_00156910 = 1;
             }
             break;
-        case 0x36:
+        case EV_BUY_LAND:
             if (statvar.unknownfd > 1) {
                 town.unknown2 = 1;
             }
@@ -879,10 +879,10 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x3c:
+        case EV_FRONT_QUEUE:
             front_queue(D_001549d0[i].value, D_001549d0[i].arg);
             break;
-        case 0x3d:
+        case EV_BACK_QUEUE:
             back_queue(D_001549d0[i].value, D_001549d0[i].arg);
             break;
         case 0x38:
@@ -907,7 +907,7 @@ void process_turn(void)
                     gamevar.unknown77 = 0;
                     gamevar.unknown25 = 0;
                     gamevar.unknown1e = 0;
-                    set_mouse_mode(0);
+                    set_mouse_mode(MM_NORMAL);
                     pmenu.unknown7 = 0;
                 } else {
                     init_place_object(0x11, gamevar.unknown26, gamevar.unknown2f, 0);
@@ -923,16 +923,16 @@ void process_turn(void)
                 obj = &thing[D_001549d0[i].value];
                 if (obj->owner == player) {
                     switch (obj->type) {
-                    case 2:
+                    case THING_PATIENT:
                         slot = 1;
                         D_001581b2[slot].kind = 2;
                         D_001581b2[slot].f4 = 1;
                         D_001581b2[slot].f6 = 0;
                         kind = 0x22;
                         break;
-                    case 4:
+                    case THING_STAFF:
                         switch (obj->subtype) {
-                        case 2:
+                        case STAFF_HANDYMAN:
                             slot = 2;
                             D_001581b2[slot].kind = 1;
                             kind = 0x21;
@@ -944,7 +944,7 @@ void process_turn(void)
                             break;
                         }
                         break;
-                    case 6:
+                    case THING_OBJECT:
                         slot = 3;
                         D_001581b2[slot].kind = 3;
                         break;
@@ -967,31 +967,31 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x43:
+        case EV_CLOSE_QUERY:
             if (i == player) {
                 close_query((u8)D_001549d0[i].value);
             }
             break;
-        case 0x44:
+        case EV_PICK_UP_OBJECT:
             pick_up_object(D_001549d0[i].value, D_001549d0[i].arg);
             if (i == player) {
-                play_sound(10, 0xba, -1, -1);
+                play_sound(10, SFX_PICKUPSM, -1, -1);
             }
             break;
-        case 0x47:
+        case EV_SACK_STAFF:
             sack_staff(&thing[D_001549d0[i].value], D_001549d0[i].arg);
             if (i == player) {
                 close_yes_no_requester(1);
                 close_irequesters();
-                set_mouse_mode(0);
+                set_mouse_mode(MM_NORMAL);
                 lbDisplay.left_button = 0;
-                play_sound(10, 0xaa, -1, -1);
+                play_sound(10, SFX_SACK, -1, -1);
             }
             break;
-        case 0x45:
+        case EV_EDIT_BLUEPRINT:
             edit_blueprint(i);
             break;
-        case 0x48:
+        case EV_PAY_STAFF_BONUS:
             if (D_001549d0[i].arg) {
                 if (allhosps[i].f35 >= D_001549d0[i].value && allhosps[i].f35 > 0) {
                     pay_staff_bonus(&thing[D_001549d0[i].arg], D_001549d0[i].value, 0, 1, i);
@@ -1002,7 +1002,7 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x46:
+        case EV_INIT_EDIT_ROOM:
             othervar.f9c5 = 1;
             init_edit_room(&room_info[D_001549d0[i].value]);
             break;
@@ -1032,16 +1032,16 @@ void process_turn(void)
                 return_from_screen(0, 1, 1);
             }
             break;
-        case 0x4b:
+        case EV_NET_TEXT_DISPLAY:
             if (D_001549d0[i].value & (1 << player)) {
                 net_text_display(i);
             }
             net_text[i].unknown0 = 0;
             break;
-        case 0x4c:
+        case EV_NET_TEXT_DELETE:
             net_text_delete(i);
             break;
-        case 0x4d:
+        case EV_NET_TEXT_KEYPRESS:
             net_text_keypress(D_001549d0[i].value, i);
             break;
         case 0x4e:
@@ -1055,13 +1055,13 @@ void process_turn(void)
                 allhosps[i].fc94 = D_001549d0[i].value;
             }
             break;
-        case 0x50:
+        case EV_ALTER_RESEARCH:
             alter_research(D_001549d0[i].value, D_001549d0[i].arg, i);
             break;
-        case 0x51:
+        case EV_QUEUE_PERSON_GO_HOME:
             queue_person_go_home(D_001549d0[i].value, D_001549d0[i].arg);
             if (i == player) {
-                play_sound(10, 0xaa, -1, -1);
+                play_sound(10, SFX_SACK, -1, -1);
             }
             break;
         case 0x53:
@@ -1074,10 +1074,10 @@ void process_turn(void)
                 room_info[D_001549d0[i].value].f1e--;
             }
             break;
-        case 0x55:
+        case EV_QUEUE_PERSON_GO_RECEPTION:
             queue_person_go_reception(D_001549d0[i].value, D_001549d0[i].arg);
             break;
-        case 0x56:
+        case EV_STAFF_JOIN_NEW_EMPLOYER:
             staff_join_new_employer(D_001549d0[i].value, D_001549d0[i].arg);
             if (i == player) {
                 display_mode = 0;
@@ -1087,17 +1087,17 @@ void process_turn(void)
                 pmenu.unknown7 = 0;
             }
             break;
-        case 0x58:
+        case EV_SETUP_TOWN_BID:
             finish_composite_help();
             setup_town_bid();
             display_mode = 0xe;
             town.unknown2 = 0xb;
             othervar.f78 = D_001549d0[i].value;
             break;
-        case 0x59:
+        case EV_PLOT_BID_MONEY:
             plot_bid_money(i);
             break;
-        case 0x5a:
+        case EV_INCREASE_STAFF_SALARIES:
             if (D_001549d0[i].arg) {
                 increase_staff_salaries(&thing[D_001549d0[i].arg], D_001549d0[i].value, 0, i);
             } else {
@@ -1120,20 +1120,20 @@ void process_turn(void)
                 pmenu.unknown7 = 0;
             }
             break;
-        case 0x5c:
+        case EV_BACK_TO_PLACE_OBJECT:
             if (i == player) {
                 go_back_to_place_object_requester(D_001549d0[i].value);
             }
             break;
-        case 0x5e:
+        case EV_ORDER_REST:
             employee = &thing[D_001549d0[i].value];
             employee->orders &= 0xf0;
-            employee->orders |= 1;
+            employee->orders |= ORD_REST;
             break;
-        case 0x5f:
+        case EV_ORDER_TRAIN:
             employee = &thing[D_001549d0[i].value];
             employee->orders &= 0xf0;
-            employee->orders |= 4;
+            employee->orders |= ORD_TRAIN;
             break;
         case 0x60:
             employee = &thing[D_001549d0[i].value];
@@ -1163,7 +1163,7 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x63:
+        case EV_SELL_OBJECT:
             if (i == player) {
                 req11_sell_object(D_001549d0[i].value, D_001549d0[i].arg);
             }
@@ -1180,31 +1180,31 @@ void process_turn(void)
             mycontrol->unknown64f = calendar[mycontrol->unknown650] - 1;
             break;
         case 0x66:
-            change_balance(0x12, 5000, 0, i);
+            change_balance(TX_BANK_LOAN, 5000, 0, i);
             allhosps[i].f3d += 5000;
             break;
         case 0x67:
             if (allhosps[i].f35 >= 5000 && allhosps[i].f35 > 0) {
-                change_balance(0x13, -5000, 0, i);
+                change_balance(TX_LOAN_REPAYMENT, -5000, 0, i);
                 allhosps[i].f3d -= 5000;
             }
             break;
         case 0x57:
             patient = &thing[D_001549d0[i].value];
             allhosps[patient->owner].rooms[patient->illness].unknown24++;
-            if (patient->flags0 & 0x20) {
+            if (patient->flags0 & PF_CONTAGIOUS) {
                 allhosps[patient->owner].f207 = 0;
             }
             refer_patient(patient, D_001549d0[i].arg);
             if (i == player) {
                 close_query(1);
-                play_sound(10, 0xaa, -1, -1);
+                play_sound(10, SFX_SACK, -1, -1);
             }
             break;
         case 0x68:
             employee = &thing[D_001549d0[i].value];
             allhosps[i].f11f4 = D_001549d0[i].value;
-            if (!(employee->orders & 0x20)) {
+            if (!(employee->orders & ORD_RESIGN)) {
                 if (fn_0002d11c(employee)) {
                     interrupt_staff(employee);
                     staff_picked_up(&thing[D_001549d0[i].value]);
@@ -1214,7 +1214,7 @@ void process_turn(void)
                 close_query(2);
             }
             break;
-        case 0x69:
+        case EV_STAFF_PICKED_UP:
             staff_picked_up(&thing[D_001549d0[i].value]);
             break;
         case 0x6a: {
@@ -1223,12 +1223,12 @@ void process_turn(void)
             switch (D_001549d0[i].argb[0]) {
             case 1:
                 if (i == player) {
-                    play_sound(10, 0xd3, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
+                    play_sound(10, SFX_UZIBRST, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
                 break;
             case 2:
                 if (i == player) {
-                    play_sound(10, 0xd4, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
+                    play_sound(10, SFX_ROCKET, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
                 break;
             case 3:
@@ -1236,7 +1236,7 @@ void process_turn(void)
                 break;
             default:
                 if (i == player) {
-                    play_sound(10, 0x3f, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
+                    play_sound(10, SFX_SHOTGUN, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
                 break;
             }
@@ -1245,9 +1245,9 @@ void process_turn(void)
             if (D_001549d0[i].argb[1]) {
                 award_counts.f14d++;
                 if (i == player) {
-                    play_sound(10, 0x40, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
+                    play_sound(10, SFX_DEADRAT2, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
-                create_numfx(0, ++allhosps[i].fd27, rat->x.tile + (rat->y.tile << 7), color.unknown9, 0x20);
+                create_numfx(NUMFX_NUMBER, ++allhosps[i].fd27, rat->x.tile + (rat->y.tile << 7), color.unknown9, 0x20);
                 place_litter(rat->x.tile + (rat->y.tile << 7), (s8)rat->owner, 4);
                 remove_thing(rat);
             }
@@ -1262,7 +1262,7 @@ void process_turn(void)
                     employee->orders &= 0xdf;
                     advisor.f128 &= 0xfe;
                     employee->discontent = 0;
-                    reset_icon_value(&thing[D_001549d0[i].value], 9);
+                    reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
                 }
                 if (i == player) {
                     display_mode = 0;
@@ -1281,7 +1281,7 @@ void process_turn(void)
                 employee->salary += D_001549d0[i].arg;
                 employee->happiness = 100;
                 employee->discontent = 0;
-                reset_icon_value(&thing[D_001549d0[i].value], 9);
+                reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
             }
             if (i == player) {
                 display_mode = 0;
@@ -1299,7 +1299,7 @@ void process_turn(void)
                 pay_staff_bonus(employee, D_001549d0[i].arg, 0, 1, i);
                 employee->happiness = 100;
                 employee->discontent = 0;
-                reset_icon_value(&thing[D_001549d0[i].value], 9);
+                reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
             }
             if (i == player) {
                 display_mode = 0;
@@ -1339,7 +1339,7 @@ void process_turn(void)
             }
             break;
         }
-        case 0x70:
+        case EV_RETURN_FROM_SCREEN:
             if (othervar.ff == player) {
                 lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
                 return_from_screen(D_001549d0[i].value, 1, 1);
@@ -1387,22 +1387,22 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x73:
+        case EV_ADJUST_HANDYMAN_VALUES:
             adjust_handyman_values(D_001549d0[i].value, D_001549d0[i].argb[0]);
             break;
-        case 0x74:
+        case EV_PERSON_GO_HOME:
             patient = &thing[D_001549d0[i].value];
             patient->treatment = 0;
             allhosps[patient->owner].rooms[patient->illness].unknown24++;
             person_go_home(patient);
-            patient->flags1 |= 0x80;
-            if (patient->flags0 & 0x20) {
+            patient->flags1 |= (PF_SENT_HOME >> 8);
+            if (patient->flags0 & PF_CONTAGIOUS) {
                 allhosps[patient->owner].f207 = 0;
             }
             break;
-        case 0x76:
+        case EV_THINGPAGE_REQUEST:
             thingpage_request(&allhosps[i].ff6d, D_001549d0[i].value, 0xff);
-            set_icon_value(&thing[D_001549d0[i].value], 0x1c);
+            set_icon_value(&thing[D_001549d0[i].value], ICON_NEEDS_REPAIR);
             break;
         case 0x77:
             if (i == player) {
@@ -1430,7 +1430,7 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x79:
+        case EV_DELETE_ROOM:
             close_yes_no_requester(0);
             clear_build_objects(i);
             delete_blueprint_room(i);
@@ -1442,7 +1442,7 @@ void process_turn(void)
             D_001549d0[i].type = 0x38;
             D_001549d0[i].value = 0;
             goto dispatch;
-        case 0x7c:
+        case EV_REFER_PATIENT:
             refer_patient(&thing[D_001549d0[i].value], D_001549d0[i].arg);
             break;
         case 0x7d: {
@@ -1451,37 +1451,37 @@ void process_turn(void)
             switch (D_001549d0[i].value) {
             case 0:
                 patient = &thing[D_001549d0[i].arg];
-                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = 0;
                     allhosps[patient->owner].rooms[patient->illness].unknown24++;
                     person_go_home(patient);
-                    patient->flags2 |= 0x10;
+                    patient->flags2 |= (PF_NO_TREATMENT >> 16);
                 }
-                if (patient->type == 2) {
+                if (patient->type == THING_PATIENT) {
                     patient->playercall = 0;
                 }
                 break;
             case 1:
                 patient = &thing[D_001549d0[i].arg];
-                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->flags0 &= 0xef;
-                    reset_icon_value(patient, 0x1b);
-                    patient->flags0 |= 0x80;
+                    reset_icon_value(patient, ICON_AWAITING_DECISION);
+                    patient->flags0 |= PF_WAITING_FOR_ROOM;
                     patient->timer = othervar.f82;
                 }
-                if (patient->type == 2) {
+                if (patient->type == THING_PATIENT) {
                     patient->playercall = 0;
                 }
                 break;
             case 2:
                 patient = &thing[D_001549d0[i].arg];
-                if (patient->type == 2 && (patient->flags0 & 0x10)) {
-                    patient->treatment = 0x2c;
+                if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
+                    patient->treatment = ILL_AUTOPSY;
                     patient->flags0 &= 0xef;
-                    reset_icon_value(patient, 0x1b);
-                    patient->state = 0x26;
+                    reset_icon_value(patient, ICON_AWAITING_DECISION);
+                    patient->state = PS_GO_FOR_TREATMENT;
                 }
-                if (patient->type == 2) {
+                if (patient->type == THING_PATIENT) {
                     patient->playercall = 0;
                 }
                 break;
@@ -1489,7 +1489,7 @@ void process_turn(void)
                 count_and_flag_contagious_peeps(allhosps[i].f20b, 2, i);
                 allhosps[i].f20b = 0;
                 allhosps[i].f20d = 0;
-                change_balance(0x21, -allhosps[i].f203, 0, i);
+                change_balance(TX_EPIDEMIC_FINE, -allhosps[i].f203, 0, i);
                 reputation_affected(0, 0xe, 0, i, 0);
                 if (i == player) {
                     play_sound(10, 0xce, -1, -1);
@@ -1522,38 +1522,38 @@ void process_turn(void)
                 goto dispatch;
             case 0x28:
                 patient = &thing[D_001549d0[i].arg];
-                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = 0;
                     allhosps[patient->owner].rooms[patient->illness].unknown24++;
                     person_go_home(patient);
-                    patient->flags2 |= 8;
+                    patient->flags2 |= (PF_NO_DIAGNOSIS >> 16);
                 }
-                if (patient->type == 2) {
+                if (patient->type == THING_PATIENT) {
                     patient->playercall = 0;
                 }
                 break;
             case 0x29:
                 patient = &thing[D_001549d0[i].arg];
-                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->flags0 &= 0xef;
-                    reset_icon_value(patient, 0x1b);
+                    reset_icon_value(patient, ICON_AWAITING_DECISION);
                     interrupt_complex(patient);
                     best_guess_treatment(patient);
                     next_treatment_now_setup(patient, 0);
                 }
-                if (patient->type == 2) {
+                if (patient->type == THING_PATIENT) {
                     patient->playercall = 0;
                 }
                 break;
             case 0x2a:
                 patient = &thing[D_001549d0[i].arg];
-                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->flags0 &= 0xef;
-                    reset_icon_value(patient, 0x1b);
-                    patient->flags0 |= 0x80;
+                    reset_icon_value(patient, ICON_AWAITING_DECISION);
+                    patient->flags0 |= PF_WAITING_FOR_ROOM;
                     patient->timer = othervar.f82;
                 }
-                if (patient->type == 2) {
+                if (patient->type == THING_PATIENT) {
                     patient->playercall = 0;
                 }
                 break;
@@ -1578,20 +1578,20 @@ void process_turn(void)
                     for (o = thing + 1; o < end_things; o++) {
                         if (o->owner == i) {
                             switch (o->type) {
-                            case 6:
+                            case THING_OBJECT:
                                 if (objects[o->subtype].unknown1e) {
                                     o->times_used = o->strength * 2;
                                     machine_disaster(o);
                                 }
                                 break;
-                            case 4:
+                            case THING_STAFF:
                                 sack_staff(o, 0);
                                 break;
-                            case 2:
+                            case THING_PATIENT:
                                 if (!(map[(s16)o->x.tile + ((s16)o->y.tile << 7)].unknown7 & 0x10)) {
                                     o->flags0 &= 0xdf;
                                     o->contagion = 0;
-                                    o->flags1 |= 1;
+                                    o->flags1 |= (PF_SENT_HOME_BY_INSPECTOR >> 8);
                                 }
                                 break;
                             }
@@ -1629,16 +1629,16 @@ void process_turn(void)
         case 0x7f:
             patient = &thing[D_001549d0[i].value];
             patient->flags0 &= 0xef;
-            reset_icon_value(patient, 0x1b);
-            patient->flags0 |= 0x80;
+            reset_icon_value(patient, ICON_AWAITING_DECISION);
+            patient->flags0 |= PF_WAITING_FOR_ROOM;
             patient->timer = othervar.f82;
             break;
         case 0x80:
             patient = &thing[D_001549d0[i].value];
-            patient->treatment = 0x2c;
+            patient->treatment = ILL_AUTOPSY;
             patient->flags0 &= 0xef;
-            reset_icon_value(patient, 0x1b);
-            patient->state = 0x26;
+            reset_icon_value(patient, ICON_AWAITING_DECISION);
+            patient->state = PS_GO_FOR_TREATMENT;
             break;
         case 0x81:
             employee = &thing[D_001549d0[i].value];
@@ -1646,19 +1646,19 @@ void process_turn(void)
                 employee->poach_offers = 1 << (u8)i;
             }
             break;
-        case 0x82:
+        case EV_TOGGLE_VACCINATION:
             patient = &thing[D_001549d0[i].value];
-            if (patient->flags0 & 1) {
+            if (patient->flags0 & PF_VACCINE_REQUESTED) {
                 if (i == player) {
-                    play_sound(10, 0xdf, -1, -1);
+                    play_sound(10, SFX_DEVACCIN, -1, -1);
                 }
                 cancel_vaccination_request(patient);
-                if (patient->flags0 & 0x20) {
-                    set_icon_value(patient, 0xd);
+                if (patient->flags0 & PF_CONTAGIOUS) {
+                    set_icon_value(patient, ICON_CONTAGIOUS);
                 }
             } else {
                 if (i == player) {
-                    play_sound(10, 0xde, -1, -1);
+                    play_sound(10, SFX_VACCIN, -1, -1);
                 }
                 request_vaccination(patient);
             }
@@ -1668,7 +1668,7 @@ void process_turn(void)
             room_info[allhosps[i].unknown11b7].f22 = 0;
             if (i == player) {
                 setup_place_object_requester();
-                set_mouse_mode(0);
+                set_mouse_mode(MM_NORMAL);
             }
             break;
         case 0x84:
@@ -1679,13 +1679,13 @@ void process_turn(void)
                 close_irequesters();
                 close_crequester(6);
                 window.unknown2eb = 0;
-                set_mouse_mode(0);
+                set_mouse_mode(MM_NORMAL);
                 pmenu.unknown7 = 0;
             }
             break;
         case 0x85:
             break;
-        case 0x86:
+        case EV_FORCE_CURE:
             force_peep_to_be_cured(&thing[D_001549d0[i].value]);
             break;
         case 0x87:
@@ -1700,16 +1700,16 @@ void process_turn(void)
                     obj = &thing[D_001549d0[i].arg];
                     if (obj->owner == player) {
                         switch (obj->type) {
-                        case 2:
+                        case THING_PATIENT:
                             slot = 1;
                             D_001581b2[slot].kind = 2;
                             D_001581b2[slot].f4 = 1;
                             D_001581b2[slot].f6 = 0;
                             kind = 0x22;
                             break;
-                        case 4:
+                        case THING_STAFF:
                             switch (obj->subtype) {
-                            case 2:
+                            case STAFF_HANDYMAN:
                                 slot = 2;
                                 D_001581b2[slot].kind = 1;
                                 kind = 0x21;
@@ -1721,7 +1721,7 @@ void process_turn(void)
                                 break;
                             }
                             break;
-                        case 6:
+                        case THING_OBJECT:
                             slot = 3;
                             D_001581b2[slot].kind = 3;
                             break;
@@ -1764,7 +1764,7 @@ void process_turn(void)
                 obj = &thing[D_001549d0[i].value];
                 if (obj->owner == player) {
                     switch (obj->subtype) {
-                    case 2:
+                    case STAFF_HANDYMAN:
                         slot = 2;
                         D_001581b2[slot].kind = 1;
                         kind = 0x21;
@@ -1791,20 +1791,20 @@ void process_turn(void)
                     othervar.f34[slot] = window.unknown2ec - 1;
                     window.unknown2eb = 0;
                 }
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
             }
             break;
         case 0x89:
             mycontrol->unknown650 = 0xb;
             mycontrol->unknown64f = calendar[mycontrol->unknown650] - 2;
             break;
-        case 0x8a:
+        case EV_REPLACE_MACHINE:
             if (i == player) {
                 close_yes_no_requester(0);
             }
             replace_machine(&thing[D_001549d0[i].value]);
             break;
-        case 0x8b:
+        case EV_ANNOUNCE:
             allhosps[i].unknown1257 = 0;
             if (statvar.unknownfd <= 1) {
                 allhosps[i].unknown1256 = 1;
@@ -1845,7 +1845,7 @@ void process_turn(void)
         D_00154a0c[i].value = D_001549d0[i].value;
         D_00154a0c[i].arg = D_001549d0[i].arg;
         D_00154a0c[i].checksum = D_001549d0[i].checksum;
-        D_001549d0[i].type = 0;
+        D_001549d0[i].type = EV_NONE;
         D_001549d0[i].value = 0;
         D_001549d0[i].arg = 0;
     }
@@ -1920,7 +1920,7 @@ u16 fn_00021818(s8 slot, s8 port)
     }
     setup_addresses();
     for (w = thing + 1; w < end_things; w++) {
-        if ((w->type == 4 || w->type == 2) && w->room > 0) {
+        if ((w->type == THING_STAFF || w->type == THING_PATIENT) && w->room > 0) {
             w->room_index = w->room - room_info;
         }
     }
@@ -1959,7 +1959,7 @@ u16 fn_00021818(s8 slot, s8 port)
         }
     }
     for (w = thing + 1; w < end_things; w++) {
-        if ((w->type == 4 || w->type == 2) && w->room > 0) {
+        if ((w->type == THING_STAFF || w->type == THING_PATIENT) && w->room > 0) {
             w->room = &room_info[w->room_index];
         }
     }
@@ -2039,7 +2039,7 @@ s16 fn_00021c38(s8 slot, s8 port)
                 goto_cell_in_window(window.unknown2eb, cell);
             }
             for (w = thing + 1; w < end_things; w++) {
-                if ((w->type == 2 || w->type == 4) && w->room > 0) {
+                if ((w->type == THING_PATIENT || w->type == THING_STAFF) && w->room > 0) {
                     w->room = &room_info[w->room_index];
                 }
             }
@@ -2078,7 +2078,7 @@ s16 fn_00021c38(s8 slot, s8 port)
             }
             if (found) {
                 for (w = thing + 1; w < end_things; w++) {
-                    if ((w->type == 2 || w->type == 4) && w->room > 0) {
+                    if ((w->type == THING_PATIENT || w->type == THING_STAFF) && w->room > 0) {
                         w->room = &room_info[w->room_index];
                     }
                 }
@@ -2165,7 +2165,7 @@ s8 load_level(const u8 lvl, const u8 full)
             if (D_001609c4[i].active || (statvar.unknownfd <= 1 && i == player)) {
                 for (j = 0; j < 4; j++) {
                     for (; room < end_room_info; room++) {
-                        if (room->type == 0) {
+                        if (room->type == ROOM_FREE) {
                             room->type = 1;
                             switch (j) {
                             case 0:
@@ -2243,7 +2243,7 @@ void check_autosave(void)
 // FUNCTION: 0x00022854
 u8 fn_00022854(u8 warn)
 {
-    if (gamevar.f12e != 0) {
+    if (gamevar.f12e != MM_NORMAL) {
         if (warn) {
             othervar.fa66 = 0x19;
             othervar.fa67 = 0x14;

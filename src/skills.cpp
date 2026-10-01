@@ -17,9 +17,9 @@ u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wante
     room = &room_info[room_id];
     free_pager = 0;
     count = 0;
-    if (room->type != 0) {}
+    if (room->type != ROOM_FREE) {}
     room = &room_info[room_id];
-    if (room->type == 4)
+    if (room->type == ROOM_RECEPTION)
         return 0;
     for (i = 0; i < 9; i++) {
         if (skill_mask & (1 << i)) {
@@ -33,7 +33,7 @@ u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wante
     }
     if (count_present) {
         for (staff = &thing[room->first]; staff > thing; staff = &thing[staff->room_next]) {
-            if (staff->type == 4 && (staff->skills & skill_mask)) {
+            if (staff->type == THING_STAFF && (staff->skills & skill_mask)) {
                 if (--wanted <= 0)
                     return 1;
             }
@@ -99,7 +99,7 @@ u16 check_pager(Thing *staff)
         room_id = 0;
     }
     room = &room_info[room_id];
-    if (room > room_info && room->type == 0) {
+    if (room > room_info && room->type == ROOM_FREE) {
         for (pager = pagers; pager < end_pagers; pager++) {
             if (pager->room == room_id)
                 memset(pager, 0, sizeof(SkillPager));
@@ -181,7 +181,7 @@ RoomInfo *get_expertise_dest(u16 type, Thing *patient)
                             + fn_000cb2db(patient->y.tile - room->unknown4 / 128)) * gbv.f102;
                     score += gbv.f104;
                     for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
-                        if (occupant->type == 4) {
+                        if (occupant->type == THING_STAFF) {
                             score -= gbv.f104;
                             break;
                         }
@@ -263,7 +263,7 @@ void set_expertise_staff(Thing *staff)
     u32 kind;
     s32 ward;
 
-    ward = allhosps[staff->owner].rooms[42].unknown1C == 1;
+    ward = allhosps[staff->owner].rooms[ILL_DIAG_WARD].unknown1C == 1;
     for (i = 1; i < 0x2f; i++) {
         if (allhosps[staff->owner].rooms[i].unknown1C == 0) {
             exp = &expertise[i];
@@ -282,7 +282,7 @@ void set_expertise_staff(Thing *staff)
             }
         }
     }
-    if (!ward && allhosps[staff->owner].rooms[42].unknown1C == 1)
+    if (!ward && allhosps[staff->owner].rooms[ILL_DIAG_WARD].unknown1C == 1)
         set_expertise_ward(staff->owner);
 }
 
@@ -295,7 +295,7 @@ void set_expertise_room(RoomInfo *room)
     u32 j;
     s32 ward;
 
-    ward = allhosps[room->owner].rooms[42].unknown1C == 1;
+    ward = allhosps[room->owner].rooms[ILL_DIAG_WARD].unknown1C == 1;
     for (i = 1; i < 0x2f; i++) {
         if (allhosps[room->owner].rooms[i].unknown1C == 0) {
             exp = &expertise[i];
@@ -304,7 +304,7 @@ void set_expertise_room(RoomInfo *room)
             if (exp->category == room->type) {
                 mask = exp->unknown0;
                 if (mask == 0) {
-                    if (room->type != 0x1c)
+                    if (room->type != ROOM_RESEARCH)
                         allhosps[room->owner].rooms[i].unknown1C = 1;
                 } else {
                     for (j = 0; j < 9; j++) {
@@ -319,7 +319,7 @@ void set_expertise_room(RoomInfo *room)
             }
         }
     }
-    if (!ward && allhosps[room->owner].rooms[42].unknown1C == 1)
+    if (!ward && allhosps[room->owner].rooms[ILL_DIAG_WARD].unknown1C == 1)
         set_expertise_ward(room->owner);
 }
 
@@ -331,7 +331,7 @@ void remove_expertise_staff(Thing *staff)
     u16 mask;
     s32 ward;
 
-    ward = allhosps[staff->owner].rooms[42].unknown1C == 1;
+    ward = allhosps[staff->owner].rooms[ILL_DIAG_WARD].unknown1C == 1;
     remove_skill(staff->skills, staff->owner);
     mask = staff->skills;
     for (i = 0; i < 9; i++) {
@@ -346,7 +346,7 @@ void remove_expertise_staff(Thing *staff)
             }
         }
     }
-    if (ward && allhosps[staff->owner].rooms[42].unknown1C != 1)
+    if (ward && allhosps[staff->owner].rooms[ILL_DIAG_WARD].unknown1C != 1)
         remove_expertise_ward(staff->owner);
 }
 
@@ -357,7 +357,7 @@ void remove_expertise_room(RoomInfo *room)
     RoomInfo *other;
     s32 ward;
 
-    ward = allhosps[room->owner].rooms[42].unknown1C == 1;
+    ward = allhosps[room->owner].rooms[ILL_DIAG_WARD].unknown1C == 1;
     for (other = room_info + 1; other < end_room_info; other++) {
         if (other->owner == room->owner && room->type == other->type && other != room)
             return;
@@ -368,7 +368,7 @@ void remove_expertise_room(RoomInfo *room)
                 allhosps[room->owner].rooms[i].unknown1C = 0;
         }
     }
-    if (ward && allhosps[room->owner].rooms[42].unknown1C != 1)
+    if (ward && allhosps[room->owner].rooms[ILL_DIAG_WARD].unknown1C != 1)
         remove_expertise_ward(room->owner);
 }
 

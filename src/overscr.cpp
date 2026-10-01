@@ -90,7 +90,7 @@ void display_peep_overview(void)
                 if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f3c_ScreenBoxp[0x37 + slot].x, resvars.f3c_ScreenBoxp[0x37 + slot].y,
                                  resvars.f3c_ScreenBoxp[0x37 + slot].w, resvars.f3c_ScreenBoxp[0x37 + slot].h)) {
                     D_00158164 = i;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                     reqspr_draw(resvars.f3c_ScreenBoxp[0x37 + slot].x + 0x13, resvars.f3c_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
                 }
                 slot++;
@@ -98,7 +98,7 @@ void display_peep_overview(void)
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, resvars.f3c_ScreenBoxp[0x3c].w,
                              resvars.f3c_ScreenBoxp[0x3c].h)) {
                 D_00158166 = 2;
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
                 reqspr_draw(resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, &screen_sprites_tab_start[8]);
             }
             lbDisplay.rleft_button = 0;
@@ -111,7 +111,7 @@ void display_peep_overview(void)
         draw_piechart();
         break;
     case 2:
-        D_001549d0[player].type = 0x70;
+        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
         D_001549d0[player].value = 0;
         cancel_helpmsg();
         break;

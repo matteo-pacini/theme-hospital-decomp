@@ -52,7 +52,7 @@ void display_manager(void)
         process_bank_panel();
         break;
     case 2:
-        D_001549d0[player].type = 0x70;
+        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
         D_001549d0[player].value = 0;
         break;
     }
@@ -240,29 +240,29 @@ void process_bank_button(u8 button)
     case 0:
         if (myhosp->f35 >= 5000 && myhosp->f3d > 0) {
             D_001549d0[player].type = 0x67;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 1:
         if (myhosp->f3d <= myhosp->f41 - 5000) {
             D_001549d0[player].type = 0x66;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 2:
         if (!manager.unknown0) {
             manager.unknown0 = 1;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         }
         break;
     case 3:
         if (!manager.unknown0) {
             manager.unknown0 = 2;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         }
         break;
     case 4:
@@ -270,11 +270,11 @@ void process_bank_button(u8 button)
             manager.unknown0 = 0;
         else
             manager.unknown0 = 3;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 5:
         manager.unknown2 = 2;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     }
 }

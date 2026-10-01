@@ -92,9 +92,9 @@ void process_things(Thing *first, Thing *last)
     check_win_status();
     for (cur = first; cur < last; cur++) {
         switch (cur->type) {
-        case 0:
+        case THING_FREE:
             break;
-        case 2:
+        case THING_PATIENT:
             debug.thing_count++;
             person_count(cur);
             if (cur->owner == player) {
@@ -103,34 +103,34 @@ void process_things(Thing *first, Thing *last)
             }
             update_icon_counter(cur);
             switch (cur->state) {
-            case 4:
+            case PS_WAITS_FOR_BUSY:
                 person_waits_for_busy(cur);
                 break;
-            case 6:
+            case PS_GOTO_DESTINATION:
                 person_goto_destination(cur);
                 break;
-            case 8:
+            case PS_RETURN_TO_QUEUE_AREA:
                 return_to_queue_area(cur);
                 break;
-            case 0xc:
+            case PS_GO_HOME:
                 person_go_home(cur);
                 break;
             case 0xe:
                 fn_0001673c(cur);
                 break;
-            case 0x10:
+            case PS_COMPLEX_RETRY:
                 person_complex_retry(cur);
                 break;
-            case 0x12:
+            case PS_ARRIVES_AT_DOOR:
                 person_arrives_at_door(cur);
                 break;
-            case 0x14:
+            case PS_IN_QUEUE:
                 person_in_queue(cur);
                 break;
-            case 0x16:
+            case PS_GOTO_OBJECT:
                 person_goto_object(cur);
                 break;
-            case 0x18:
+            case PS_ENTERTAINS_THEMSELF:
                 person_entertains_themself(cur);
                 break;
             case 0x1a:
@@ -144,55 +144,55 @@ void process_things(Thing *first, Thing *last)
             case 0x22:
                 fn_00054870(cur);
                 break;
-            case 0x24:
+            case PS_GOTO_QUEUE:
                 person_goto_queue(cur);
                 break;
-            case 0x26:
+            case PS_GO_FOR_TREATMENT:
                 person_go_for_treatment(cur);
                 break;
             case 0x28:
             case 0xf2:
                 break;
-            case 0xf0:
+            case PS_NAV_DEBUG:
                 nav_debug_state(cur);
                 break;
             case 0x2a:
                 fn_00041a54(cur);
                 break;
-            case 0x2c:
+            case PS_IN_BED:
                 person_in_bed(cur);
                 break;
-            case 0x2e:
+            case PS_FILLS:
                 person_fills(cur);
                 break;
-            case 0x30:
+            case PS_ENERGISES:
                 person_energises(cur);
                 break;
-            case 0x32:
+            case PS_DEAD:
                 person_dead(cur);
                 break;
             case 0x34:
                 fn_00017cb0(cur);
                 break;
-            case 0x36:
+            case PS_IN_BOGS:
                 person_in_bogs(cur);
                 break;
-            case 0x38:
+            case PS_LEAVE_TOILETS:
                 leave_toilets(cur);
                 break;
-            case 0x3a:
+            case PS_SHOWANIM:
                 play_person_showanim(cur);
                 break;
-            case 0x3c:
+            case PS_STUCK:
                 peep_stuck(cur);
                 break;
-            case 0x40:
+            case PS_BP_GOTO:
                 peep_bp_goto(cur);
                 break;
-            case 0x44:
+            case PS_WAITS_FOR_DECISION:
                 person_waits_for_decision(cur);
                 break;
-            case 0x46:
+            case PS_ARRIVED_FROM_CALL:
                 person_arrived_from_call(cur);
                 break;
             case 0x48:
@@ -201,7 +201,7 @@ void process_things(Thing *first, Thing *last)
                 break;
             }
             break;
-        case 4:
+        case THING_STAFF:
             debug.thing_count++;
             staff_count(cur);
             update_icon_counter(cur);
@@ -211,30 +211,30 @@ void process_things(Thing *first, Thing *last)
             case 4:
                 staff_waits(cur);
                 break;
-            case 6:
+            case SS_DOCTOR_IN_OFFICE:
                 doctor_in_office(cur);
                 break;
-            case 8:
+            case SS_DOCTOR_WORKS_AT_DESK:
                 doctor_works_at_desk(cur);
                 break;
-            case 0xa:
+            case SS_RECEPTIONIST_WORKS:
                 receptionist_works(cur);
                 break;
-            case 0xc:
+            case SS_RECEPTIONIST_FINDS_RECEPTION:
                 receptionist_finds_reception(cur);
                 break;
-            case 0xe:
+            case SS_PLAY_COMPLEX_ANIM:
                 play_complex_staff_anim(cur);
                 break;
-            case 0x10:
+            case SS_SURGEON_WAITS:
                 surgeon_waits(cur);
                 break;
-            case 0x12:
+            case SS_GOTO_OBJECT:
                 staff_goto_object(cur);
                 break;
             case 0x1e:
                 break;
-            case 0x14:
+            case SS_DOCTOR_WAITS_FOR_PATIENT:
                 doctor_waits_for_patient_to_arrive(cur);
                 break;
             case 0x18:
@@ -242,35 +242,35 @@ void process_things(Thing *first, Thing *last)
             case 0x1a:
                 fn_00054870(cur);
                 break;
-            case 0x1c:
+            case SS_DOCTOR_EXAMINES:
                 doctor_carries_out_examination(cur);
                 break;
-            case 0x3c:
+            case SS_HANDYMAN_WORKS:
                 handyman_works(cur);
                 break;
-            case 0x20:
+            case SS_RECEPT_WAITS_FOR_PATIENT:
                 recept_waits_for_patient(cur);
                 break;
-            case 0x22:
+            case SS_RECEPT_ADMITS_PATIENT:
                 recept_admits_patient(cur);
                 break;
-            case 0x24:
+            case SS_DOCTOR_IN_MACHINE_ROOM:
                 doctor_in_machine_room(cur);
                 break;
-            case 0x26:
+            case SS_WAIT_FOR_COMPLEX_SLAVE:
                 staff_wait_for_complex_slave(cur);
                 break;
-            case 0x28:
+            case SS_IN_CORRIDOR:
                 staff_in_corridor(cur);
                 break;
             case 0x2a:
             case 0x3a:
             case 0xf2:
                 break;
-            case 0x2c:
+            case SS_COMPLEX_RETRY:
                 staff_complex_retry(cur);
                 break;
-            case 0x2e:
+            case SS_APPLICANT:
                 if (actual_game_turn > cur->hire_expiry) {
                     if (statvar.unknownfd <= 1) {
                         if ((u16)(cur - thing) != gamevar.unknown75)
@@ -279,73 +279,73 @@ void process_things(Thing *first, Thing *last)
                         if ((u16)(cur - thing) == gamevar.unknown75) {
                             gamevar.unknown75 = 0;
                             gamevar.unknown77 = 0;
-                            set_mouse_mode(0);
+                            set_mouse_mode(MM_NORMAL);
                         }
                         remove_staff_in_struct(cur);
                     }
                 }
                 break;
-            case 0xf0:
+            case SS_NAV_DEBUG:
                 nav_debug_state(cur);
                 break;
-            case 0x30:
+            case SS_IN_STAFF_ROOM:
                 staff_in_staff_room(cur);
                 break;
-            case 0x32:
+            case SS_NURSE_IN_WARD:
                 nurse_in_ward(cur);
                 break;
-            case 0x34:
+            case SS_WANDERS:
                 staff_wanders(cur);
                 break;
-            case 0x36:
+            case SS_PROCESS_COMPLEX:
                 process_staff_complex(cur);
                 break;
             case 0x38:
                 fn_00015b68(cur);
-                cur->state = 0x2e;
+                cur->state = SS_APPLICANT;
                 cur->hire_time = actual_game_turn;
                 gamevar.f6[cur->subtype]++;
                 gamevar.f4++;
                 break;
-            case 0x3e:
+            case SS_DOCTOR_RESEARCHES:
                 doctor_researches(cur);
                 break;
-            case 0x40:
+            case SS_NURSE_VACCINATES:
                 nurse_vaccinates(cur);
                 break;
-            case 0x42:
+            case SS_DOCTOR_IN_THEATRE:
                 doctor_in_theatre(cur);
                 break;
-            case 0x46:
+            case SS_DOCTOR_IS_TRAINED:
                 doctor_is_trained(cur);
                 break;
-            case 0x48:
+            case SS_CONSULTANT_TRAINS:
                 consultant_trains(cur);
                 break;
-            case 0x4a:
+            case SS_RECEPTIONIST_SETUP:
                 receptionist_setup(cur);
                 break;
             case 0x44:
                 break;
-            case 0x4c:
+            case SS_BP_GOTO:
                 peep_bp_goto(cur);
                 break;
-            case 0x4e:
+            case SS_STUCK:
                 peep_stuck(cur);
                 break;
-            case 0x50:
+            case SS_PLAY_ANISEQ:
                 play_aniseq(cur);
                 break;
             default:
                 break;
             }
             break;
-        case 6:
+        case THING_OBJECT:
             debug.thing_count++;
             object_count(cur);
             update_icon_counter(cur);
             switch (cur->state) {
-            case 2:
+            case OS_STATIC:
                 object_static(cur);
                 break;
             case 4:
@@ -357,35 +357,35 @@ void process_things(Thing *first, Thing *last)
             case 6:
                 fn_0003751c(cur);
                 break;
-            case 0xa:
+            case OS_PLANT_AGES:
                 plant_ages(cur);
                 break;
-            case 0x10:
+            case OS_DOUBLE_DOOR_SWINGS:
                 double_door_swings(cur);
                 break;
-            case 0x14:
+            case OS_SLIDING_DOOR_CLOSED:
                 sliding_door_closed(cur);
                 break;
-            case 0x16:
+            case OS_SLIDING_DOOR_OPENS:
                 sliding_door_opens(cur);
                 break;
-            case 0x18:
+            case OS_SLIDING_DOOR_OPEN:
                 sliding_door_open(cur);
                 break;
-            case 0x1a:
+            case OS_SLIDING_DOOR_CLOSES:
                 sliding_door_closes(cur);
                 break;
-            case 0x1c:
+            case OS_BOMB_TICKS:
                 bomb_ticks(cur);
                 break;
             default:
                 break;
             }
             break;
-        case 8:
+        case THING_DOOR:
             debug.thing_count++;
             switch (cur->state) {
-            case 0x10:
+            case OS_DOUBLE_DOOR_SWINGS:
                 double_door_swings(cur);
                 break;
             default:
@@ -394,19 +394,19 @@ void process_things(Thing *first, Thing *last)
                 break;
             }
             break;
-        case 0xa:
+        case THING_REAPER:
             debug.thing_count++;
             switch (cur->state) {
-            case 2:
+            case REAPER_PLAY_ANIM:
                 reaper_play_anim(cur);
                 break;
-            case 4:
+            case REAPER_WAITS:
                 reaper_waits(cur);
                 break;
-            case 6:
+            case REAPER_REMOVE:
                 remove_reaper(cur);
                 break;
-            case 8:
+            case REAPER_GOTO_HELL:
                 reaper_goto_hell(cur);
                 break;
             case 0xf2:
@@ -415,77 +415,77 @@ void process_things(Thing *first, Thing *last)
                 break;
             }
             break;
-        case 0xc:
+        case THING_RAT:
             debug.thing_count++;
             switch (cur->state) {
-            case 2:
+            case RAT_SCURRIES:
                 rat_scurries(cur);
                 break;
-            case 4:
+            case RAT_ARRIVES:
                 rat_arrives(cur);
                 break;
-            case 6:
+            case RAT_LEAVES:
                 rat_leaves(cur);
                 break;
             default:
                 break;
             }
             break;
-        case 0xe:
+        case THING_DEBRIS:
             debug.thing_count++;
             debug.bang_count++;
             debug.bang_max < debug.bang_count ? (debug.bang_max = debug.bang_count) : 0;
             process_bang(cur);
             break;
-        case 0x10:
+        case THING_HELICOPTER:
             debug.thing_count++;
             switch (cur->state) {
-            case 2:
+            case HELI_LANDS:
                 helicopter_lands(cur);
                 break;
             case 4:
                 cur->sprite = frame[cur->sprite].next;
                 break;
-            case 6:
+            case HELI_LEAVES:
                 helicopter_leaves(cur);
                 break;
-            case 8:
+            case HELI_ABDUCTS:
                 saucer_abducts(cur);
                 break;
             default:
                 break;
             }
             break;
-        case 0x12:
+        case THING_NUMFX:
             debug.thing_count++;
             numfx_ages(cur);
             break;
-        case 0x14:
+        case THING_MAYOR:
             debug.thing_count++;
             switch (cur->state) {
-            case 2:
+            case MAYOR_GOTO:
                 mayor_goto(cur);
                 break;
-            case 4:
+            case MAYOR_PAUSES:
                 mayor_pauses(cur);
                 break;
-            case 6:
+            case MAYOR_GONE:
                 mayor_gone(cur);
                 break;
             default:
                 break;
             }
             break;
-        case 0x16:
+        case THING_INSPECTOR:
             debug.thing_count++;
             switch (cur->state) {
-            case 2:
+            case MAYOR_GOTO:
                 mayor_goto(cur);
                 break;
-            case 4:
+            case MAYOR_PAUSES:
                 inspector_pauses(cur);
                 break;
-            case 6:
+            case MAYOR_GONE:
                 mayor_gone(cur);
                 break;
             case 8:
@@ -495,7 +495,7 @@ void process_things(Thing *first, Thing *last)
                 break;
             }
             break;
-        case 0x18:
+        case THING_SHADOW:
             break;
         default:
             break;

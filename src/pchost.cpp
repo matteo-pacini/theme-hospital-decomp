@@ -208,14 +208,14 @@ void reset_host(void)
 void get_input(void)
 {
     HospShift = 0;
-    if (lbKeyOn[0x2a] || lbKeyOn[0x36]) {
-        HospShift |= 1;
+    if (lbKeyOn[KC_LSHIFT] || lbKeyOn[KC_RSHIFT]) {
+        HospShift |= MOD_SHIFT;
     }
-    if (lbKeyOn[0x38] || lbKeyOn[0xb8]) {
-        HospShift |= 4;
+    if (lbKeyOn[KC_LALT] || lbKeyOn[KC_RALT]) {
+        HospShift |= MOD_ALT;
     }
-    if (lbKeyOn[0x1d] || lbKeyOn[0x9d]) {
-        HospShift |= 2;
+    if (lbKeyOn[KC_LCONTROL] || lbKeyOn[KC_RCONTROL]) {
+        HospShift |= MOD_CTRL;
     }
 }
 

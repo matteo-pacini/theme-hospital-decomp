@@ -85,10 +85,10 @@ extern "C" void fn_00090610(void)
             D_001549d0[player].type = 0x1e;
             D_001549d0[player].value = debug.unknown10a;
         } else {
-            D_001549d0[player].type = 0x1d;
+            D_001549d0[player].type = EV_GOTO_COLUMN_ROW;
         }
     } else {
-        D_001549d0[player].type = 0x1d;
+        D_001549d0[player].type = EV_GOTO_COLUMN_ROW;
     }
 }
 
@@ -250,7 +250,7 @@ void balance_control(void)
         statvar.fa += non_visuals[i];
         non_visuals[i] = statvar.fa;
     }
-    expertise[1].unknown10[8] = 1;
+    expertise[ILL_GENERAL_PRACTICE].unknown10[8] = 1;
     statvar.f6a = count;
 }
 

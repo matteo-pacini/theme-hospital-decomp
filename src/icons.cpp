@@ -49,7 +49,7 @@ IconTableData icon_table_data[] = {
 // FUNCTION: 0x000b0300
 void set_icon_value(Thing *const peep, const s8 icon)
 {
-    if (peep->type != 2 || peep->health > 0) {
+    if (peep->type != THING_PATIENT || peep->health > 0) {
         if (icon_table[icon].unknown0 <= icon_table[fn_000cb2db(peep->icon_id)].unknown0) {
             peep->icon_frame = start[icon_table[icon].unknown1].frame;
             if (icon_table[icon].f5 < 0) {
@@ -79,9 +79,9 @@ void reset_icon_value(Thing *const peep, const s8 icon)
 // FUNCTION: 0x000b0474
 void peep_icon(Thing *const peep)
 {
-    if (peep->type != 2 || peep->health > 0) {
+    if (peep->type != THING_PATIENT || peep->health > 0) {
         if (peep->icon_id < 0)
-            play_sound(10, 1, -1, -1);
+            play_sound(10, SFX_HLIGHTP2, -1, -1);
         peep->icon_id = fn_000cb2db(peep->icon_id);
         if (icon_table[peep->icon_id].unknown1 > 0 && icon_table[peep->icon_id].f5 == -1)
             peep->icon_timer = icon_table[peep->icon_id].f3;

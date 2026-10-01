@@ -90,7 +90,7 @@ void draw_it(void)
     draw_emergency();
     if (!debug.unknownd7)
         compute_help_text(0, 0, 3);
-    if (gamevar.f12e == 1)
+    if (gamevar.f12e == MM_BLUEPRINT)
         draw_cell_no(othervar.f28, color.unknownD);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_map_cur_and_mcur_x_and_y();
@@ -842,15 +842,15 @@ void adjust_big_cell_flag(const u16 cell)
 
     for (t = &thing[map[cell].first]; t > thing; t = &thing[t->cell_next]) {
         switch (t->type) {
-        case 2:
-        case 4:
+        case THING_PATIENT:
+        case THING_STAFF:
             obj = &thing[t->object];
             if (obj > thing && (u16)(t - thing) == obj->user) {
                 map[cell].flags |= 0x20;
                 return;
             }
             break;
-        case 6:
+        case THING_OBJECT:
             shape = objects[t->subtype].shapes[t->facing];
             if (shapes[shape].count > 1) {
                 map[cell].flags |= 0x20;
@@ -920,7 +920,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 
     for (; t > thing; t = &thing[t->cell_next]) {
         switch (t->type) {
-        case 4:
+        case THING_STAFF:
             if (t->state == 0x2a || t->state == 0x2e)
                 break;
             obj = &thing[t->object];
@@ -945,7 +945,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
             if (v >= 0)
                 return v;
             break;
-        case 2:
+        case THING_PATIENT:
             if (t->state == 0x28)
                 break;
             obj = &thing[t->object];
@@ -970,7 +970,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
             if (v >= 0)
                 return v;
             break;
-        case 6: {
+        case THING_OBJECT: {
             u16 shape;
             u8 k;
             s16 pos;

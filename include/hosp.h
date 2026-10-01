@@ -2,6 +2,7 @@
 #define HOSP_H
 
 #include "bflib.h"
+#include "enums.h"
 
 /*
  * Game types, globals and functions whose real names are known from the 1997

@@ -174,7 +174,7 @@ void play_winlose(void)
             clear_loading_screen(0);
             fn_0001102c();
             D_001549d0[player].value = 0;
-            set_mouse_mode(0);
+            set_mouse_mode(MM_NORMAL);
         }
         break;
     case 1:

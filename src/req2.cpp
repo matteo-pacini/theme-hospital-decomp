@@ -82,38 +82,38 @@ void req2(Window *win)
                 D_001549d0[player].type = 0x2f;
                 D_001549d0[player].value = 1;
                 if (crequester.unknown4 != 1 || crequester.unknown0 != 2)
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
             } else if (i == resvars.fe[3]) {
                 D_001549d0[player].type = 0x2f;
                 D_001549d0[player].value = 0;
                 if (crequester.unknown4 != 0 || crequester.unknown0 != 2)
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
             } else if (i == resvars.fe[5]) {
                 D_001549d0[player].type = 0x2f;
                 D_001549d0[player].value = 3;
                 if (crequester.unknown4 != 3 || crequester.unknown0 != 2)
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
             } else if (i == resvars.fe[4]) {
                 D_001549d0[player].type = 0x2f;
                 D_001549d0[player].value = 2;
                 if (crequester.unknown4 != 2 || crequester.unknown0 != 2)
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
             } else if (i == resvars.fe[8]) {
                 if (crequester.unknown6) {
                     if (crequester.unknown0 == 2) {
                         if (allhosps[player].f35 >= thing[crequester.unknown6].salary && allhosps[player].f35 > 0) {
-                            D_001549d0[player].type = 0x30;
+                            D_001549d0[player].type = EV_MARK_EMPLOYING;
                             D_001549d0[player].value = crequester.unknown4;
                             D_001549d0[player].arg = crequester.unknown6;
-                            play_sound(10, 0x41, -1, -1);
+                            play_sound(10, SFX_YESX, -1, -1);
                         } else {
-                            play_sound(10, 8, -1, -1);
+                            play_sound(10, SFX_WRONG2, -1, -1);
                         }
                     } else {
-                        play_sound(10, 8, -1, -1);
+                        play_sound(10, SFX_WRONG2, -1, -1);
                     }
                 } else {
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 }
             } else if (i == resvars.fe[6]) {
                 if (crequester.unknown6) {
@@ -121,17 +121,17 @@ void req2(Window *win)
                     id = req2_alter_staff(0, crequester.unknown6, crequester.unknown4);
                     if (id) {
                         if (id == old) {
-                            play_sound(10, 8, -1, -1);
+                            play_sound(10, SFX_WRONG2, -1, -1);
                         } else {
                             D_001549d0[player].type = 0x32;
                             D_001549d0[player].value = 0;
-                            play_sound(10, 0xa8, -1, -1);
+                            play_sound(10, SFX_PAGETUR2, -1, -1);
                         }
                     } else {
-                        play_sound(10, 8, -1, -1);
+                        play_sound(10, SFX_WRONG2, -1, -1);
                     }
                 } else {
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 }
             } else if (i == resvars.fe[7]) {
                 if (crequester.unknown6) {
@@ -139,22 +139,22 @@ void req2(Window *win)
                     id = req2_alter_staff(1, crequester.unknown6, crequester.unknown4);
                     if (id) {
                         if (id == old) {
-                            play_sound(10, 8, -1, -1);
+                            play_sound(10, SFX_WRONG2, -1, -1);
                         } else {
                             D_001549d0[player].type = 0x32;
                             D_001549d0[player].value = 1;
-                            play_sound(10, 0xa8, -1, -1);
+                            play_sound(10, SFX_PAGETUR2, -1, -1);
                         }
                     } else {
-                        play_sound(10, 8, -1, -1);
+                        play_sound(10, SFX_WRONG2, -1, -1);
                     }
                 } else {
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 }
             } else if (i == resvars.fe[9]) {
                 window.unknown2eb = 0;
                 setup_abort_all_requesters();
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
             }
         }
         i++;
@@ -181,7 +181,7 @@ void req2_overdraw(Window *win)
         crequester.unknown6 = 0;
     if (crequester.unknown6) {
         candidate = &thing[crequester.unknown6];
-        if (candidate->state != 0x2e)
+        if (candidate->state != SS_APPLICANT)
             crequester.unknown6 = req2_alter_staff(1, 0, crequester.unknown4);
     }
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
@@ -216,15 +216,15 @@ void req2_overdraw(Window *win)
     for (i = 0; i < 4; i++)
         counts[i] = 0;
     for (candidate = &thing[1]; candidate < end_things; candidate++) {
-        if (candidate->type == 4) {
-            if (candidate->state == 0x2e) {
-                if (candidate->subtype == 1)
+        if (candidate->type == THING_STAFF) {
+            if (candidate->state == SS_APPLICANT) {
+                if (candidate->subtype == STAFF_DOCTOR)
                     counts[0]++;
-                else if (candidate->subtype == 0)
+                else if (candidate->subtype == STAFF_NURSE)
                     counts[1]++;
-                else if (candidate->subtype == 2)
+                else if (candidate->subtype == STAFF_HANDYMAN)
                     counts[2]++;
-                else if (candidate->subtype == 3)
+                else if (candidate->subtype == STAFF_RECEPTIONIST)
                     counts[3]++;
             }
         }
@@ -297,24 +297,24 @@ void req2_overdraw(Window *win)
             LbTextDraw(x0 + resvars.f1c[84].x, y0 + resvars.f1c[84].y, buf);
             draw_face((Picture *)&candidate->face_head, x0 + resvars.f1c[83].x, y0 + resvars.f1c[83].y);
             i = 0;
-            if ((candidate->skills & 8) && !(candidate->skills & 0x80))
+            if ((candidate->skills & SKILL_JUNIOR) && !(candidate->skills & SKILL_CONSULTANT))
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
-            if ((candidate->skills & 0x10) && !(candidate->skills & 0x80) && !(candidate->skills & 8))
+            if ((candidate->skills & SKILL_DOCTOR) && !(candidate->skills & SKILL_CONSULTANT) && !(candidate->skills & SKILL_JUNIOR))
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
-            if (candidate->skills & 0x80)
+            if (candidate->skills & SKILL_CONSULTANT)
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[6]]);
             i++;
-            if (candidate->skills & 0x20)
+            if (candidate->skills & SKILL_SURGEON)
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[7]]);
             i++;
-            if (candidate->skills & 0x40)
+            if (candidate->skills & SKILL_PSYCHIATRIST)
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[8]]);
             i++;
-            if (candidate->skills & 0x100)
+            if (candidate->skills & SKILL_RESEARCHER)
                 reqspr_draw(x0 + resvars.f1c[i + 85].x, y0 + resvars.f1c[i + 85].y, &button_sprite[resvars.f12[9]]);
-            if (candidate->subtype != 1)
+            if (candidate->subtype != STAFF_DOCTOR)
                 draw_req2_coverup(x0, y0);
             draw_gauge(candidate->ability, x0 + resvars.f18_Req2Layoutp->gauge_x + i, y0 + resvars.f18_Req2Layoutp->gauge_y, resvars.f18_Req2Layoutp->gauge_w,
                        &button_sprite[resvars.f12[2]], 1000, 30, 970, 1);
@@ -365,9 +365,9 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
     case 1:
         if (cur == 0) {
             for (candidate = &thing[1]; candidate < end_things; candidate++) {
-                if (candidate->type == 4) {
+                if (candidate->type == THING_STAFF) {
                     if (candidate->subtype == kind) {
-                        if (candidate->state == 0x2e)
+                        if (candidate->state == SS_APPLICANT)
                             return candidate - thing;
                     }
                 }
@@ -383,9 +383,9 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
             if (found == 1) {
                 found = 0;
                 for (candidate++; candidate < end_things; candidate++) {
-                    if (candidate->type == 4) {
+                    if (candidate->type == THING_STAFF) {
                         if (candidate->subtype == kind) {
-                            if (candidate->state == 0x2e)
+                            if (candidate->state == SS_APPLICANT)
                                 return candidate - thing;
                         }
                     }
@@ -397,9 +397,9 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
     case 0:
         if (cur == 0) {
             for (candidate = &thing[1]; candidate < end_things; candidate++) {
-                if (candidate->type == 4) {
+                if (candidate->type == THING_STAFF) {
                     if (candidate->subtype == kind) {
-                        if (candidate->state == 0x2e)
+                        if (candidate->state == SS_APPLICANT)
                             return candidate - thing;
                     }
                 }
@@ -415,9 +415,9 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
             if (found == 1) {
                 found = 0;
                 for (candidate--; &thing[1] <= candidate; candidate--) {
-                    if (candidate->type == 4) {
+                    if (candidate->type == THING_STAFF) {
                         if (candidate->subtype == kind) {
-                            if (candidate->state == 0x2e)
+                            if (candidate->state == SS_APPLICANT)
                                 return candidate - thing;
                         }
                     }
@@ -486,7 +486,7 @@ void req2_exit_employing(const u16 id)
     Thing *candidate;
 
     candidate = &thing[id];
-    candidate->state = 0x2e;
+    candidate->state = SS_APPLICANT;
 }
 
 // FUNCTION: 0x0006b1f4
@@ -504,7 +504,7 @@ void req12(Window *win)
         if (button->flags & 6) {
             debug.unknown4 = i;
             if (i == resvars.fe[0x15]) {
-                play_sound(10, 0xb8, -1, -1);
+                play_sound(10, SFX_BONUS2, -1, -1);
                 switch (crequester.unknown8) {
                 case 2:
                     D_001549d0[player].type = 0x6b;
@@ -535,7 +535,7 @@ void req12(Window *win)
                     break;
                 }
             } else if (i == resvars.fe[0x16]) {
-                play_sound(10, 0xaa, -1, -1);
+                play_sound(10, SFX_SACK, -1, -1);
                 req12_clicked_sack();
                 lbDisplay.left_button = lbDisplay.rleft_button = 0;
             }
@@ -591,26 +591,26 @@ void req12_overdraw(Window *win)
         LbTextDraw(x0 + resvars.f1c[4].x, y0 + resvars.f1c[4].y, buf);
         draw_face((Picture *)&staff->face_head, x0 + resvars.f1c[3].x, y0 + resvars.f1c[3].y);
         i = 0;
-        if (staff->skills & 8)
+        if (staff->skills & SKILL_JUNIOR)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
-        if ((staff->skills & 0x10) && !(staff->skills & 0x80) && !(staff->skills & 8))
+        if ((staff->skills & SKILL_DOCTOR) && !(staff->skills & SKILL_CONSULTANT) && !(staff->skills & SKILL_JUNIOR))
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
-        if (staff->skills & 0x80)
+        if (staff->skills & SKILL_CONSULTANT)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[6]]);
         i++;
-        if (staff->skills & 0x20)
+        if (staff->skills & SKILL_SURGEON)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[7]]);
         i++;
-        if (staff->skills & 0x40)
+        if (staff->skills & SKILL_PSYCHIATRIST)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[8]]);
         i++;
-        if (staff->skills & 0x100)
+        if (staff->skills & SKILL_RESEARCHER)
             reqspr_draw(x0 + resvars.f1c[i + 91].x, y0 + resvars.f1c[i + 91].y, &button_sprite[resvars.f12[9]]);
         draw_gauge(staff->ability, x0 + resvars.f1c[0].x, y0 + resvars.f1c[0].y, resvars.f18_Req2Layoutp->gauge_w,
                    &button_sprite[resvars.f12[3]], 1000, 30, 970, 1);
-        if (staff->subtype != 1 && staff->subtype != 4) {
+        if (staff->subtype != STAFF_DOCTOR && staff->subtype != STAFF_SURGEON) {
             LbDrawBox(x0 + resvars.f18_Req2Layoutp->cover2_x, y0 + resvars.f18_Req2Layoutp->cover2_y, resvars.f18_Req2Layoutp->cover2_w,
                       resvars.f18_Req2Layoutp->cover2_h, 0x77);
             LbDrawBox(x0 + resvars.f18_Req2Layoutp->cover3_x, y0 + resvars.f18_Req2Layoutp->cover3_y, resvars.f18_Req2Layoutp->cover3_w,
@@ -735,7 +735,7 @@ void req2_help_if_doctor(void)
     Thing *candidate;
 
     candidate = &thing[crequester.unknown6];
-    if (candidate > thing && (candidate->skills & 0x10))
+    if (candidate > thing && (candidate->skills & SKILL_DOCTOR))
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -788,7 +788,7 @@ void req12_help_if_doctor(void)
     Thing *staff;
 
     staff = &thing[crequester.unknown4];
-    if (staff > thing && (staff->skills & 0x10))
+    if (staff > thing && (staff->skills & SKILL_DOCTOR))
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
@@ -832,7 +832,7 @@ void req12_help_if_research(void)
 void req12_clicked_sack(void)
 {
     if (crequester.unknown8 == 9) {
-        D_001549d0[player].type = 0x56;
+        D_001549d0[player].type = EV_STAFF_JOIN_NEW_EMPLOYER;
         D_001549d0[player].value = crequester.unknown4;
         D_001549d0[player].arg = crequester.unknown6;
     } else {

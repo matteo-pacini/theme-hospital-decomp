@@ -86,7 +86,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
         if (crequester.unknown2 == 5) {
             switch (crequester.unknown0) {
             case 0:
-                set_mouse_mode(1);
+                set_mouse_mode(MM_BLUEPRINT);
                 break;
             case 2:
             case 4:

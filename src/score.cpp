@@ -374,16 +374,16 @@ void process_hall_buttons(u8 button)
     case 0:
     case 1:
         if (othervar.f9e4) {
-            play_sound(10, 0x47, -1, -1);
+            play_sound(10, SFX_UPDOWN, -1, -1);
             set_shame_pos(DesiredTextPos, DesiredTitlePos);
         } else {
-            play_sound(10, 0x47, -1, -1);
+            play_sound(10, SFX_UPDOWN, -1, -1);
             set_fame_pos(DesiredTextPos, DesiredTitlePos);
         }
         break;
     case 2:
         hall.unknown2 = 2;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     default:
         break;

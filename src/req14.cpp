@@ -26,30 +26,30 @@ void req14(Window *win)
             continue;
         if (resvars.fe[0x4f] == i) {
             setup_abort_all_requesters();
-            play_sound(10, 0x42, -1, -1);
+            play_sound(10, SFX_NO4, -1, -1);
         } else if (resvars.fe[0x50] == i) {
             D_001549d0[player].type = 0x5b;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         } else if (resvars.fe[0x51] == i) {
             set_mouse_mode(0xb);
             set_edit_room_requester_mode(8);
             crequester.unknown9 = 0;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         } else if (resvars.fe[0x52] == i) {
             switch (crequester.unknown0) {
             case 0:
-                D_001549d0[player].type = 0x12;
-                set_mouse_mode(0);
+                D_001549d0[player].type = EV_COMMIT_BLUEPRINT;
+                set_mouse_mode(MM_NORMAL);
                 break;
             case 4:
-                D_001549d0[player].type = 4;
+                D_001549d0[player].type = EV_COMMIT_DOORS;
                 D_001549d0[player].value = crequester.unknown8;
-                play_sound(10, 0x41, -1, -1);
+                play_sound(10, SFX_YESX, -1, -1);
                 break;
             case 6:
             case 8:
-                D_001549d0[player].type = 1;
-                play_sound(10, 0x41, -1, -1);
+                D_001549d0[player].type = EV_OPEN_ROOM;
+                play_sound(10, SFX_YESX, -1, -1);
                 break;
             case 1:
             case 2:
@@ -172,12 +172,12 @@ void req14_overdraw(Window *win)
                     && by + resvars.f18[0x29].y <= lbDisplay.mmouse_y
                     && by + resvars.f18[0x27].y + resvars.f18[0x27].h > lbDisplay.mmouse_y) {
                     if (D_00145328 != obj)
-                        play_sound(10, 0x44, -1, -1);
+                        play_sound(10, SFX_HLIGHT5, -1, -1);
                     D_00145328 = obj;
                     hover = 1;
                     if (lbDisplay.mleft_button) {
                         if (crequester.unknown9 != obj)
-                            play_sound(10, 0x43, -1, -1);
+                            play_sound(10, SFX_SELECTX, -1, -1);
                         crequester.unknown9 = obj;
                         init_place_object(obj, gamevar.unknown26, gamevar.unknown2f, 0);
                         set_edit_room_requester_mode(6);
@@ -307,7 +307,7 @@ void go_back_to_place_object_requester(u8 restore_purchases)
     if (obj) {
         init_place_object(obj, 0, allhosps[othervar.ff].unknown11b7, 0);
     } else {
-        set_mouse_mode(0);
+        set_mouse_mode(MM_NORMAL);
         setup_place_object_requester();
     }
 }

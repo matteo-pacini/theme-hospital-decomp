@@ -47,7 +47,7 @@ void person_arrives_at_door(Thing *person)
         set_complex(person, 0x32, 0);
         process_person_complex(person);
     } else {
-        person->state = 0x14;
+        person->state = PS_IN_QUEUE;
     }
 }
 
@@ -74,9 +74,9 @@ void person_in_queue(Thing *person)
                         page_staff_i_need(person, room);
                     }
                     if (abilities[person->subtype][0] && person->refreshment < 30 && person->complex_action != 60) {
-                        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, 7, 1, 150, person->owner)) {
-                            person->resume_state = 0x18;
-                            person->next_state = 0x18;
+                        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_DRINKS_MACHINE, 1, 150, person->owner)) {
+                            person->resume_state = PS_ENTERTAINS_THEMSELF;
+                            person->next_state = PS_ENTERTAINS_THEMSELF;
                             set_complex(person, 60, 0);
                             process_person_complex(person);
                             return;
@@ -84,12 +84,12 @@ void person_in_queue(Thing *person)
                     }
                     if (person->complex_action != 70) {
                         if (abilities[person->subtype][1]) {
-                            if (find_nearest_free_object(person - thing, 4)) {
+                            if (find_nearest_free_object(person - thing, OBJ_BENCH)) {
                                 if (person->owner == player) {
                                     NRAdcounts.unknown6 -= 5;
                                 }
-                                person->resume_state = 0x18;
-                                person->next_state = 0x18;
+                                person->resume_state = PS_ENTERTAINS_THEMSELF;
+                                person->next_state = PS_ENTERTAINS_THEMSELF;
                                 set_complex(person, 70, 0);
                                 process_person_complex(person);
                                 return;
@@ -110,7 +110,7 @@ void person_in_queue(Thing *person)
                         }
                     }
                     person->countdown = person->speed == 0 ? div_err() : 0x100 / person->speed;
-                    person->state = 0x18;
+                    person->state = PS_ENTERTAINS_THEMSELF;
                 }
             }
         }
@@ -139,30 +139,30 @@ void person_entertains_themself(Thing *person)
                     if (room > room_info) {
                         page_staff_i_need(person, room);
                     }
-                    if (person->impatience > gbv.f108 || (person->flags & 0x100)) {
+                    if (person->impatience > gbv.f108 || (person->flags & PF_SENT_HOME_BY_INSPECTOR)) {
                         if (person->owner == player) {
                             othervar.f89++;
                         }
-                        set_icon_value(person, 7);
+                        set_icon_value(person, ICON_FED_UP);
                         person_go_home(person);
-                        person->flags |= 0x4000;
+                        person->flags |= PF_FED_UP;
                         return;
                     }
                     if (abilities[person->subtype][0] && person->refreshment < 30 && person->complex_action != 60) {
-                        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, 7, 1, 150, person->owner)) {
-                            person->resume_state = 0x18;
-                            person->next_state = 0x18;
+                        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_DRINKS_MACHINE, 1, 150, person->owner)) {
+                            person->resume_state = PS_ENTERTAINS_THEMSELF;
+                            person->next_state = PS_ENTERTAINS_THEMSELF;
                             set_complex(person, 60, 0);
                             process_person_complex(person);
                             return;
                         }
                     }
                     if (abilities[person->subtype][2] && person->bladder > gbv.f116 && person->complex_action != 90) {
-                        room = get_nearest_room_info(person, 0x1d);
+                        room = get_nearest_room_info(person, ROOM_TOILETS);
                         if (room != 0) {
                             leave_queue(person);
-                            person->resume_state = 0x18;
-                            person->next_state = 0x36;
+                            person->resume_state = PS_ENTERTAINS_THEMSELF;
+                            person->next_state = PS_IN_BOGS;
                             person->substate = 0;
                             set_complex(person, 360, room->unknown4);
                             process_person_complex(person);
@@ -171,12 +171,12 @@ void person_entertains_themself(Thing *person)
                     }
                     if (person->complex_action != 70) {
                         if (abilities[person->subtype][1]) {
-                            if (find_nearest_free_object(person - thing, 4)) {
+                            if (find_nearest_free_object(person - thing, OBJ_BENCH)) {
                                 if (person->owner == player) {
                                     NRAdcounts.unknown6 -= 5;
                                 }
-                                person->resume_state = 0x18;
-                                person->next_state = 0x18;
+                                person->resume_state = PS_ENTERTAINS_THEMSELF;
+                                person->next_state = PS_ENTERTAINS_THEMSELF;
                                 set_complex(person, 70, 0);
                                 process_person_complex(person);
                                 return;
@@ -239,7 +239,7 @@ void person_go_home(Thing *person)
     if (person->playercall) {
         get_playercall(8, person->playercall, person->owner);
         get_playercall(4, person->playercall, person->owner);
-        person->flags &= ~0x10;
+        person->flags &= ~PF_AWAITING_DECISION;
         person->playercall = 0;
     }
     person->next_state = 0;
@@ -249,7 +249,7 @@ void person_go_home(Thing *person)
     if (set_complex(person, 20, get_room_info(1, 0x65, person->owner)->unknown4)) {
         process_person_complex(person);
     }
-    set_icon_value(person, 7);
+    set_icon_value(person, ICON_FED_UP);
 }
 
 // FUNCTION: 0x0001673c
@@ -300,7 +300,7 @@ void insert_person_in_room_list(RoomInfo *room, Thing *person)
         room->first = id;
     }
     person->room = room;
-    if (person->type == 2) {
+    if (person->type == THING_PATIENT) {
         room->count++;
     }
 }
@@ -335,7 +335,7 @@ void fn_000168a0(Thing *person)
 // FUNCTION: 0x00016974
 void nav_debug_state(Thing *person)
 {
-    if (person->type == 2) {
+    if (person->type == THING_PATIENT) {
         if (actual_game_turn % 6 == 0) {
             u16 anim;
 
@@ -370,7 +370,7 @@ u8 transform_peep_who(Thing *person, u8 level)
     s8 subtype;
 
     subtype = change_person_who[level][person->subtype];
-    if (person->type == 2) {
+    if (person->type == THING_PATIENT) {
         person->orig_subtype = person->subtype;
     }
     if (subtype != -1) {
@@ -403,7 +403,7 @@ u16 call_person_to_room(Thing *caller, u16 id, u16 action, u16 arg, u8 follow)
                 if (set_complex(callee, action, arg)) {
                     process_person_complex(callee);
                 }
-                callee->next_state = 0x46;
+                callee->next_state = PS_ARRIVED_FROM_CALL;
                 return id;
             }
             if (follow == 0) {
@@ -430,7 +430,7 @@ u8 call_person_again(Thing *caller, u16 action, u16 arg)
         if (callee->health <= 0) {
             return 0;
         }
-        if (callee->type != 2) {
+        if (callee->type != THING_PATIENT) {
             return 0;
         }
         if (callee->queue_room) {
@@ -445,13 +445,13 @@ u8 call_person_again(Thing *caller, u16 action, u16 arg)
                 if (set_complex(callee, action, arg)) {
                     process_person_complex(callee);
                 }
-                callee->next_state = 0x46;
+                callee->next_state = PS_ARRIVED_FROM_CALL;
             } else if (callee->complex_queued != action) {
                 if (callee->complex_queued == 0) {
                     if (set_complex(callee, action, arg)) {
                         process_person_complex(callee);
                     }
-                    callee->next_state = 0x46;
+                    callee->next_state = PS_ARRIVED_FROM_CALL;
                 } else {
                     return 0;
                 }
@@ -462,8 +462,8 @@ u8 call_person_again(Thing *caller, u16 action, u16 arg)
                 return 0;
             }
         }
-        if (callee->next_state != 0x46) {
-            callee->next_state = 0x46;
+        if (callee->next_state != PS_ARRIVED_FROM_CALL) {
+            callee->next_state = PS_ARRIVED_FROM_CALL;
         }
         caller->timer = 200;
         caller->call_retries--;
@@ -484,11 +484,11 @@ void send_person_to_bed(Thing *person)
 
     person->timer = old_newrand() % 300 + 300;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->owner != person->owner || room->type != 9) {
+        if (room->owner != person->owner || room->type != ROOM_WARD) {
             continue;
         }
         for (bed = &thing[room->first_object]; bed > thing; bed = &thing[bed->room_obj_next]) {
-            if (bed->subtype != 8 || bed->user != 0) {
+            if (bed->subtype != OBJ_BED || bed->user != 0) {
                 continue;
             }
             page_member_of_staff(4, room - room_info, 1, 1, person->owner);
@@ -501,7 +501,7 @@ void send_person_to_bed(Thing *person)
                 person->sprite = start[anim].frame;
                 person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
             }
-            person->state = 0x24;
+            person->state = PS_GOTO_QUEUE;
             room->unknown32++;
             return;
         }
@@ -517,7 +517,7 @@ void send_person_to_bed(Thing *person)
         person->sprite = start[anim].frame;
         person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     }
-    person->state = 0x24;
+    person->state = PS_GOTO_QUEUE;
     fn_0004195c(person, room->unknown4);
 }
 
@@ -635,14 +635,14 @@ void person_nav_failure(Thing *person)
             return;
         }
     }
-    if (person->next_state == 0x14 || person->next_state == 0x18) {
+    if (person->next_state == PS_IN_QUEUE || person->next_state == PS_ENTERTAINS_THEMSELF) {
         person->state = person->next_state;
         return;
     }
     person->saved_state = person->state;
     person->saved_dest_x = person->dest_x;
     person->saved_dest_y = person->dest_y;
-    person->state = 0x3c;
+    person->state = PS_STUCK;
     person->countdown = 0;
     if (person->owner == player) {
         announce_this(1, 1);
@@ -674,7 +674,7 @@ void person_fills(Thing *person)
             person->sprite = machine->aux_sprite;
             person->flip = machine->aux_flip;
             if (person->subtype == 14) {
-                found = find_person_in_room(person->room, 4, 1);
+                found = find_person_in_room(person->room, THING_STAFF, STAFF_DOCTOR);
                 if (found != 0) {
                     process_things(found, found + 1);
                 }
@@ -705,35 +705,35 @@ void person_energises(Thing *person)
 void person_in_bogs(Thing *person)
 {
     if (person->substate == 0) {
-        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, 0x33, 1, 150, person->owner)) {
-            person->next_state = 0x36;
-            person->resume_state = 0x38;
+        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_TOILET, 1, 150, person->owner)) {
+            person->next_state = PS_IN_BOGS;
+            person->resume_state = PS_LEAVE_TOILETS;
             person->substate = 1;
             set_complex(person, 330, 0);
             process_person_complex(person);
         } else {
-            person->state = 0x38;
+            person->state = PS_LEAVE_TOILETS;
         }
     } else if (person->substate == 1) {
         person->impatience = 0;
-        if (person->illness >= 0x10 && find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, 0x20, 1, 150, person->owner)) {
-            person->next_state = 0x38;
-            person->resume_state = 0x38;
+        if (person->illness >= 0x10 && find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_SINK, 1, 150, person->owner)) {
+            person->next_state = PS_LEAVE_TOILETS;
+            person->resume_state = PS_LEAVE_TOILETS;
             set_complex(person, 350, 0);
             process_person_complex(person);
         } else {
-            person->state = 0x38;
+            person->state = PS_LEAVE_TOILETS;
         }
     } else {
-        person->state = 0x38;
+        person->state = PS_LEAVE_TOILETS;
     }
 }
 
 // FUNCTION: 0x000179a8
 void leave_toilets(Thing *person)
 {
-    person->next_state = 0x26;
-    person->resume_state = 0x38;
+    person->next_state = PS_GO_FOR_TREATMENT;
+    person->resume_state = PS_LEAVE_TOILETS;
     set_complex(person, 90, person->room->unknown6);
     process_person_complex(person);
 }
@@ -749,10 +749,10 @@ void return_to_queue_area(Thing *person)
     arg = 0;
     if (person->queue_room) {
         room = &room_info[person->queue_room];
-        person->resume_state = 0x18;
-        person->next_state = 0x18;
-        if (room->type == 4) {
-            id = find_object_anywhere(11, 0, 0, person->owner);
+        person->resume_state = PS_ENTERTAINS_THEMSELF;
+        person->next_state = PS_ENTERTAINS_THEMSELF;
+        if (room->type == ROOM_RECEPTION) {
+            id = find_object_anywhere(OBJ_RECEPTION_DESK, 0, 0, person->owner);
             if (id) {
                 desk = &thing[id];
                 arg = desk->use_pos[1];
@@ -766,7 +766,7 @@ void return_to_queue_area(Thing *person)
             return;
         }
     }
-    person->state = 0x18;
+    person->state = PS_ENTERTAINS_THEMSELF;
 }
 
 // FUNCTION: 0x00017ae0
@@ -783,12 +783,12 @@ void play_person_showanim(Thing *person)
             person->sprite = person->saved_sprite;
             person->flip = person->saved_flip;
             person->saved_sprite = person->saved_flip = person->substate = 0;
-            if (person->flags & 0x4) {
+            if (person->flags & PF_VOMITS) {
                 place_litter(person->x.tile + (person->y.tile << 7), (s8)person->owner, 5);
-                person->flags &= ~0x4;
-            } else if (person->flags & 0x8) {
+                person->flags &= ~PF_VOMITS;
+            } else if (person->flags & PF_WETS) {
                 place_litter(person->x.tile + (person->y.tile << 7), (s8)person->owner, 6);
-                person->flags &= ~0x8;
+                person->flags &= ~PF_WETS;
             }
         } else {
             person->sprite = next;
@@ -801,7 +801,7 @@ void page_staff_i_need(Thing *person, RoomInfo *room)
 {
     s8 count;
 
-    if (room->type == 10) {
+    if (room->type == ROOM_THEATRE) {
         count = 2;
     } else {
         count = 1;
@@ -825,7 +825,7 @@ void fn_00017cb0(Thing *person)
 // FUNCTION: 0x00017d2c
 void send_person_somewhere_else(Thing *person)
 {
-    person->next_state = 0x26;
+    person->next_state = PS_GO_FOR_TREATMENT;
     if (set_complex(person, 90, person->room->unknown6)) {
         process_person_complex(person);
     }
@@ -836,19 +836,19 @@ void refer_patient(Thing *person, u8 owner)
 {
     u8 i;
 
-    if (!(person->flags & 0x40)) {
+    if (!(person->flags & PF_EMERGENCY)) {
         interrupt_person(person);
         leave_queue(person);
         person->owner = owner;
-        person->flags2 |= 1;
-        if (person->flags & 0x20) {
+        person->flags2 |= (PF_REFERRED >> 16);
+        if (person->flags & PF_CONTAGIOUS) {
             fn_000b05f0(person);
             person->contagion = 100;
-            person->flags &= ~0x20;
+            person->flags &= ~PF_CONTAGIOUS;
             remove_person_from_vaccination_queue(person);
         }
         person->known_illness = 1;
-        person->treatment = 1;
+        person->treatment = ILL_GENERAL_PRACTICE;
         for (i = 0; i < 10; i++) {
             person->treatments[i] = 0;
         }
@@ -873,18 +873,18 @@ void person_waits_for_decision(Thing *person)
                 if (person->flags & 0x400) {
                     done = find_possible_diagnosis(person);
                     if (done || (u16)(othervar.f82 - person->timer) >= 1500) {
-                        person->flags &= ~0x10;
-                        reset_icon_value(person, 0x1b);
-                        if (!(person->flags & 0x80)) {
+                        person->flags &= ~PF_AWAITING_DECISION;
+                        reset_icon_value(person, ICON_AWAITING_DECISION);
+                        if (!(person->flags & PF_WAITING_FOR_ROOM)) {
                             get_playercall(8, person->playercall, person->owner);
                             person->playercall = 0;
                         }
                         if (done) {
-                            person->state = 0x26;
+                            person->state = PS_GO_FOR_TREATMENT;
                         } else {
                             person_go_home(person);
                             allhosps[person->owner].rooms[person->illness].unknown24++;
-                            person->flags2 |= 8;
+                            person->flags2 |= (PF_NO_DIAGNOSIS >> 16);
                         }
                         person->flags &= 0xfb7f;
                         return;
@@ -899,22 +899,22 @@ void person_waits_for_decision(Thing *person)
                     done = allhosps[person->owner].rooms[treatment].unknown1C == 1 && listhead[person->owner].rooms[category]
                         ? (u8)1 : (u8)0;
                     if (done || (u16)(othervar.f82 - person->timer) >= 1500) {
-                        person->flags &= ~0x10;
-                        reset_icon_value(person, 0x1b);
-                        if (person->flags & 0x80) {
-                            person->flags &= ~0x80;
+                        person->flags &= ~PF_AWAITING_DECISION;
+                        reset_icon_value(person, ICON_AWAITING_DECISION);
+                        if (person->flags & PF_WAITING_FOR_ROOM) {
+                            person->flags &= ~PF_WAITING_FOR_ROOM;
                             if (!done) {
                                 person_go_home(person);
                                 allhosps[person->owner].rooms[person->illness].unknown24++;
-                                person->flags2 |= 0x10;
+                                person->flags2 |= (PF_NO_TREATMENT >> 16);
                             } else {
                                 get_playercall(4, person->playercall, person->owner);
-                                person->state = 0x26;
+                                person->state = PS_GO_FOR_TREATMENT;
                                 person->playercall = 0;
                             }
                         } else {
                             person_go_home(person);
-                            person->flags2 |= 0x10;
+                            person->flags2 |= (PF_NO_TREATMENT >> 16);
                         }
                         return;
                     }
@@ -1189,12 +1189,12 @@ u16 call_no_treatment(Thing *person, char **strs)
     } else {
         sprintf(buf1, strs[3]);
     }
-    if (allhosps[person->owner].rooms[0x2c].unknown1C != 1) {
+    if (allhosps[person->owner].rooms[ILL_AUTOPSY].unknown1C != 1) {
         available_buttons &= ~4;
     }
     text_x = 0;
     text_y = 0;
-    if (person->flags32 & 0x1000) {
+    if (person->flags32 & PF_GUESSED) {
         pct = person->diagnosis * 100 / gbv.ffc;
         if (pct < 0) {
             pct = 0;
@@ -1238,12 +1238,12 @@ void person_arrived_from_call(Thing *person)
 
     if (person->room != 0) {
         for (staff = thing + person->room->first; staff > thing; staff = thing + staff->room_next) {
-            if (staff->type == 4 && (u16)(person - thing) == staff->slave) {
+            if (staff->type == THING_STAFF && (u16)(person - thing) == staff->slave) {
                 return;
             }
         }
         set_complex(person, 0x5a, person->room->unknown6);
-        person->next_state = 0x26;
+        person->next_state = PS_GO_FOR_TREATMENT;
         process_person_complex(person);
     }
 }
@@ -1254,10 +1254,10 @@ u32 person_ok_to_call(Thing *person)
     RoomInfo *room = person->room;
 
     if (room != 0) {
-        if (room->type == 0x1d) {
+        if (room->type == ROOM_TOILETS) {
             return 0;
         }
-    } else if (person->next_state == 0x36) {
+    } else if (person->next_state == PS_IN_BOGS) {
         return 0;
     }
     return 1;
@@ -1352,7 +1352,7 @@ void force_peep_to_be_cured(Thing *person)
 // FUNCTION: 0x000194f0
 void interrupt_person(Thing *person)
 {
-    u8 was_deciding = person->state == 0x44 || person->next_state == 0x44;
+    u8 was_deciding = person->state == PS_WAITS_FOR_DECISION || person->next_state == PS_WAITS_FOR_DECISION;
     u8 state;
     Thing *staff;
 
@@ -1367,7 +1367,7 @@ void interrupt_person(Thing *person)
     interrupt_complex(person);
     if (person->room) {
         for (staff = thing + person->room->first; staff > thing; staff = thing + staff->room_next) {
-            if (staff->type == 4 && (u16)(person - thing) == staff->slave) {
+            if (staff->type == THING_STAFF && (u16)(person - thing) == staff->slave) {
                 staff->slave = 0;
                 interrupt_staff(staff);
                 break;
@@ -1388,7 +1388,7 @@ void interrupt_person(Thing *person)
         process_person_complex(person);
         person->next_state = state;
     } else if (was_deciding) {
-        person->state = 0x44;
+        person->state = PS_WAITS_FOR_DECISION;
     } else {
         person->state = state;
     }

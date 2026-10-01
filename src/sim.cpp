@@ -276,8 +276,8 @@ u16 shall_peep_pay(Thing *patient)
             break;
     }
     if (!pays) {
-        set_icon_value(patient, 0x13);
-        patient->flags2 |= 0x80;
+        set_icon_value(patient, ICON_TOO_EXPENSIVE);
+        patient->flags2 |= (PF_TOO_EXPENSIVE >> 16);
         record_person_as_patient(patient);
         if (patient->owner == player)
             advisor.f128 |= 2;

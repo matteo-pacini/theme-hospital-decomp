@@ -67,7 +67,7 @@ void generate_mayors(void)
         for (i = 0; i < count; i++) {
             if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                 continue;
-            if (&thing[listhead[i].objects[11]] > thing) {
+            if (&thing[listhead[i].objects[OBJ_RECEPTION_DESK]] > thing) {
                 hosp = &allhosps[i];
                 hosp->f1ff++;
                 if ((s16)hosp->f1ff >= gbv.f128) {
@@ -114,7 +114,7 @@ u16 create_mayor(u8 owner)
     mayor = allocate_thing(0x19);
     if (mayor != 0) {
     Thing *reception_desk;
-    mayor->type = 0x14;
+    mayor->type = THING_MAYOR;
     mayor->owner = owner;
     pos = room_info[allhosps[owner].unknown1cf[old_newrand() & 3]].unknown4;
     mayor->x.tile = pos % 128;
@@ -128,16 +128,16 @@ u16 create_mayor(u8 owner)
     anim = check_frame(0x89, mayor) + mayor->facing;
     mayor->sprite = start[anim].frame;
     mayor->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
-    reception_desk = &thing[listhead[owner].objects[11]];
+    reception_desk = &thing[listhead[owner].objects[OBJ_RECEPTION_DESK]];
     if (reception_desk > thing) {
         fn_0004195c(mayor, reception_desk->use_pos[1]);
-        mayor->state = 2;
-        mayor->goto_state = 4;
+        mayor->state = MAYOR_GOTO;
+        mayor->goto_state = MAYOR_PAUSES;
         mayor->inspect_room = 0;
     } else {
         fn_0004195c(mayor, room_info[allhosps[mayor->owner].unknown1cf[old_newrand() & 3]].unknown4);
-        mayor->state = 2;
-        mayor->goto_state = 6;
+        mayor->state = MAYOR_GOTO;
+        mayor->goto_state = MAYOR_GONE;
         allhosps[mayor->owner].f1fb = 0xe;
     }
     return mayor - thing;
@@ -162,20 +162,20 @@ void mayor_pauses(Thing *mayor)
         if (room->owner == mayor->owner && rooms[room->type].fa) {
             if (rooms[room->type].unknown36 == 0 || !(old_newrand() & 1)) {
                 fn_0004195c(mayor, room->unknown4);
-                mayor->state = 2;
-                mayor->goto_state = 4;
+                mayor->state = MAYOR_GOTO;
+                mayor->goto_state = MAYOR_PAUSES;
                 return;
             }
         }
     }
     hosp = &allhosps[mayor->owner];
     fn_0004195c(mayor, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
-    mayor->state = 2;
-    mayor->goto_state = 6;
+    mayor->state = MAYOR_GOTO;
+    mayor->goto_state = MAYOR_GONE;
     hosp->f1fb = mayor_judges_hospital(mayor->owner);
     value = mayor_result[hosp->f1fb].f4;
     if (value != 0)
-        change_balance(0x20, value, 0, (u16)mayor->owner);
+        change_balance(TX_VIP_AWARD, value, 0, (u16)mayor->owner);
     value = mayor_result[hosp->f1fb].f2;
     if (value != 0)
         reputation_affected(0, value, 0, mayor->owner, 0);
@@ -216,12 +216,12 @@ u8 mayor_judges_hospital(u8 owner)
             if (person->owner != owner)
                 continue;
             switch (person->type) {
-            case 4:
+            case THING_STAFF:
                 fatigue_sum += person->tiredness;
                 person->tiredness > max_fatigue ? max_fatigue = person->tiredness : 0;
                 nstaff++;
                 break;
-            case 2:
+            case THING_PATIENT:
                 warmth_sum += (s16)person->warmth;
                 npatients++;
                 break;
@@ -259,11 +259,11 @@ u8 mayor_judges_hospital(u8 owner)
             --score;
     }
     for (person = thing + 1; person < end_things; person++) {
-        if ((person->type == 4 && person->subtype == 1) && person->owner == owner) {
+        if ((person->type == THING_STAFF && person->subtype == STAFF_DOCTOR) && person->owner == owner) {
             doctors++;
-            if (person->skills & 8)
+            if (person->skills & SKILL_JUNIOR)
                 juniors++;
-            else if (person->skills & 0x80)
+            else if (person->skills & SKILL_CONSULTANT)
                 consultants++;
         }
     }
@@ -274,7 +274,7 @@ u8 mayor_judges_hospital(u8 owner)
     if (doctors == 0)
         score += 4;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if ((room->type != 0 && room->owner == owner) && room->type != 1)
+        if ((room->type != ROOM_FREE && room->owner == owner) && room->type != 1)
             nrooms++;
     }
     if (nrooms == 0)
@@ -300,7 +300,7 @@ u8 mayor_judges_hospital(u8 owner)
 // FUNCTION: 0x000a1754
 void mayor_gone(Thing *mayor)
 {
-    if (mayor->type == 0x14) {
+    if (mayor->type == THING_MAYOR) {
         allhosps[mayor->owner].f1fa = 4;
         make_a_playercall(5, 2, 0, mayor->owner);
     } else {
@@ -371,7 +371,7 @@ void mayor_inspects(Thing *mayor)
     Thing *reception_desk;
 
     if (mayor->inspect_room == 0) {
-        reception_desk = &thing[listhead[mayor->owner].objects[11]];
+        reception_desk = &thing[listhead[mayor->owner].objects[OBJ_RECEPTION_DESK]];
         if (reception_desk > thing)
             mayor->facing = opposite_angle[reception_desk->facing];
     } else {

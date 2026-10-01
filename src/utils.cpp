@@ -96,7 +96,7 @@ u16 can_i_get_to(Thing *mover, u16 pos)
     u16 x = pos % 128;
     u16 y = pos / 128;
 
-    if (mover->type == 6) {
+    if (mover->type == THING_OBJECT) {
         orthonav_init(&path, mover->use_pos[1] % 128, mover->use_pos[1] / 128, x, y);
     } else {
         orthonav_init(&path, mover->x.tile, mover->y.tile, x, y);
@@ -149,7 +149,7 @@ Thing *search_mapwho_for_room_door(Map *cell, u16 id)
 
     if (!(cell < map || cell >= end_map)) {
         for (occupant = thing + cell->first; occupant > thing; occupant = thing + occupant->cell_next) {
-            if (occupant->type == 8 && occupant->room_id == id) {
+            if (occupant->type == THING_DOOR && occupant->room_id == id) {
                 return occupant;
             }
         }
@@ -331,10 +331,10 @@ void cheat(u32 flags)
                 }
             }
             if (flags & 8) {
-                change_balance(0xf, 1000, 0, player);
+                change_balance(TX_CHEAT_MONEY, 1000, 0, player);
             }
             if (flags & 0x10) {
-                change_balance(0xf, -1000, 0, player);
+                change_balance(TX_CHEAT_MONEY, -1000, 0, player);
             }
         }
     }
@@ -344,10 +344,10 @@ void cheat(u32 flags)
 void set_mouse_mode(const u8 mode)
 {
     switch (mode) {
-    case 0:
+    case MM_NORMAL:
         othervar.f30 = 1;
         break;
-    case 1:
+    case MM_BLUEPRINT:
     case 2:
     case 7:
         othervar.f30 = 3;
@@ -361,13 +361,13 @@ void set_mouse_mode(const u8 mode)
     case 11:
         othervar.f30 = 0xe;
         break;
-    case 12:
+    case MM_EDIT_ROOM:
         othervar.f30 = 4;
         break;
     case 14:
         othervar.f30 = 9;
         break;
-    case 15:
+    case MM_VACCINATE:
         othervar.f30 = 0xc;
         break;
     case 16:
@@ -745,7 +745,7 @@ void setup_abort_all_requesters(void)
     switch (crequester.unknown2) {
     case 10:
         if (crequester.unknown9) {
-            D_001549d0[player].type = 0x5c;
+            D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
             D_001549d0[player].value = 1;
             othervar.f9c5 = 1;
             return;
@@ -758,11 +758,11 @@ void setup_abort_all_requesters(void)
                 open_yes_no_requester(0x79, 0, 0, 0x78, 1, 1);
                 return;
             }
-            D_001549d0[player].type = 0x79;
+            D_001549d0[player].type = EV_DELETE_ROOM;
             return;
         }
         if (crequester.unknown8 != 3) {
-            D_001549d0[player].type = 0x45;
+            D_001549d0[player].type = EV_EDIT_BLUEPRINT;
             return;
         }
         break;
@@ -816,7 +816,7 @@ Thing *allocate_thing(u32 reserve)
     Thing *slot;
 
     for (slot = thing + 1; slot < end_things - reserve; slot++) {
-        if (slot->type == 0) {
+        if (slot->type == THING_FREE) {
             return slot;
         }
     }

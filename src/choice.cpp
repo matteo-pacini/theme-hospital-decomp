@@ -116,7 +116,7 @@ void display_choice(void)
         D_001611f0 = actual_game_turn;
         NumPressed = 0;
         copy_screen_to_wscreen(bscreen);
-        play_sound(10, 0xab, -1, -1);
+        play_sound(10, SFX_FAX_IN, -1, -1);
         break;
     case 0x5b:
         copy_screen_to_wscreen(bscreen);
@@ -124,9 +124,9 @@ void display_choice(void)
         check_fax_buttons();
         fn_000a3140();
         if (choice_time_out) {
-            if (lbInkey == 1 || lbInkey == 0x39) {
+            if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
                 lbInkey = 0;
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
                 D_00158192 = 0x5c;
             }
             if (D_0015f760 != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
@@ -164,7 +164,7 @@ void check_choice_buttons(void)
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
                              (s16)resvars.f48[i + 0xae].width, (s16)resvars.f48[i + 0xae].height)) {
                 if (available_buttons & (1 << i)) {
-                    play_sound(10, 0x41, -1, -1);
+                    play_sound(10, SFX_YESX, -1, -1);
                     if (resvars.f48[i + 0xae].callback)
                         resvars.f48[i + 0xae].callback(i);
                     reqspr_draw(resvars.f48[i + 0xae].unknownC, resvars.f48[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
@@ -426,56 +426,56 @@ void process_fax_buttons(u8 button)
     case 0xb9:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xbe, -1, -1);
+        play_sound(10, SFX_FAX_0, -1, -1);
         break;
     case 0xba:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xbf, -1, -1);
+        play_sound(10, SFX_FAX_1, -1, -1);
         break;
     case 0xbb:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xc0, -1, -1);
+        play_sound(10, SFX_FAX_2, -1, -1);
         break;
     case 0xbc:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xc1, -1, -1);
+        play_sound(10, SFX_FAX_3, -1, -1);
         break;
     case 0xbd:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xc2, -1, -1);
+        play_sound(10, SFX_FAX_4, -1, -1);
         break;
     case 0xbe:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xc3, -1, -1);
+        play_sound(10, SFX_FAX_5, -1, -1);
         break;
     case 0xbf:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xc4, -1, -1);
+        play_sound(10, SFX_FAX_6, -1, -1);
         break;
     case 0xc0:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xc5, -1, -1);
+        play_sound(10, SFX_FAX_7, -1, -1);
         break;
     case 0xc1:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xc6, -1, -1);
+        play_sound(10, SFX_FAX_8, -1, -1);
         break;
     case 0xc2:
         if (NumPressed < 6)
             D_001611f8[NumPressed++] = button;
-        play_sound(10, 0xc7, -1, -1);
+        play_sound(10, SFX_FAX_9, -1, -1);
         break;
     case 0xc3:
     case 0xc4:
-        play_sound(10, 0xbe, -1, -1);
+        play_sound(10, SFX_FAX_0, -1, -1);
         break;
     case 0xb8:
     case 0xc5:
@@ -486,15 +486,15 @@ void process_fax_buttons(u8 button)
                 found = 1;
                 switch (cheat_numbers[i].action) {
                 case 1:
-                    play_sound(10, 0xac, -1, -1);
+                    play_sound(10, SFX_FAX_YES, -1, -1);
                     break;
                 case 0:
                     othervar.fa8e = !othervar.fa8e ? (u8)1 : (u8)0;
-                    play_sound(10, 0xac, -1, -1);
+                    play_sound(10, SFX_FAX_YES, -1, -1);
                     break;
                 case 2:
                     debug.f219 = 1;
-                    play_sound(10, 0xac, -1, -1);
+                    play_sound(10, SFX_FAX_YES, -1, -1);
                     break;
                 default:
                     found = 0;
@@ -504,13 +504,13 @@ void process_fax_buttons(u8 button)
             i++;
         }
         if (!found)
-            play_sound(10, 0xad, -1, -1);
+            play_sound(10, SFX_FAX_NO, -1, -1);
         NumPressed = 0;
         break;
     case 0xc7:
         if (choice_time_out) {
             D_00158192 = 0x5c;
-            play_sound(10, 0x42, -1, -1);
+            play_sound(10, SFX_NO4, -1, -1);
         }
         break;
     }

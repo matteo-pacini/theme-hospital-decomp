@@ -149,7 +149,7 @@ u8 process_buttons_normal_state(Window **windows, Window *win, u16 *pos)
                         || (pressed = (button->flags & 0x200) && (OldLeftButton && !lbDisplay.mleft_button))
                         || ((button->flags & 0x100) && lbDisplay.mright_button) || ((button->flags & 0x10000000) && lbDisplay.right_button)
                         || ((button->flags & 0x400) && (OldRightButton && !lbDisplay.mright_button)))
-                || lbKeyOn[0x20]) {
+                || lbKeyOn[KC_D]) {
                 tool_tip_count = 0;
                 if (button->flags & 0x4000000)
                     button->flags ^= 4;
@@ -578,7 +578,7 @@ extern "C" void fn_0004e47c(Window **windows)
     if (MouseOnWindow(win)) {
         if (!mouse_was_on_window) {
             othervar.f68 = gamevar.f12e;
-            set_mouse_mode(0);
+            set_mouse_mode(MM_NORMAL);
             mouse_was_on_window = 1;
         }
     } else if (mouse_was_on_window) {

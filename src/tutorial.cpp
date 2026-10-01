@@ -76,7 +76,7 @@ s8 tutorial(void)
                 advisor.f131 = 0x1d;
                 clear_force_help();
                 advisor.f120 = 0;
-            } else if (D_00154a0c[player].type != 0x25 || D_00154a0c[player].value != 0xb) {
+            } else if (D_00154a0c[player].type != EV_BUY_OBJECT || D_00154a0c[player].value != 0xb) {
                 if (D_0016120b == 0) {
                     if (resvars.f1 == SCREEN_MODE_13) {
                         sprintf(advisor.f10, advisor_text[40]);
@@ -109,7 +109,7 @@ s8 tutorial(void)
                 advisor.f131 = 0x1d;
                 clear_force_help();
                 advisor.f120 = 0;
-            } else if ((D_00154a0c[player].type == 0x63 && D_00154a0c[player].value == 0xb) && gamevar.unknown33.unknown0[0xb] == 0) {
+            } else if ((D_00154a0c[player].type == EV_SELL_OBJECT && D_00154a0c[player].value == 0xb) && gamevar.unknown33.unknown0[0xb] == 0) {
                 D_0016120d = 0;
                 D_0016120b = 0;
                 advisor.f131 = 0x28;
@@ -156,7 +156,7 @@ s8 tutorial(void)
                 advisor.f123 = 0;
                 D_0016120c = 0;
                 return 1;
-            } else if (!listhead[player].rooms[4]) {
+            } else if (!listhead[player].rooms[ROOM_RECEPTION]) {
                 if (D_0016120c == 0) {
                     sprintf(advisor.f10, advisor_text[41]);
                     advisor.f124 = 1;
@@ -199,7 +199,7 @@ s8 tutorial(void)
         break;
     case 0x21:
         if (D_00161204 != 2) {
-            if (D_00154a0c[player].type == 0x38 || (D_00154a0c[player].type == 0x30 && D_00154a0c[player].value != 3)) {
+            if (D_00154a0c[player].type == 0x38 || (D_00154a0c[player].type == EV_MARK_EMPLOYING && D_00154a0c[player].value != 3)) {
                 D_00161201 = 0;
                 D_00161204 = 0;
                 advisor.f131 = 0x1e;
@@ -245,7 +245,7 @@ s8 tutorial(void)
         break;
     case 0x25:
         if (D_00161208 != 2) {
-            if (D_00154a0c[player].type == 0x38 || (D_00154a0c[player].type == 0x30 && D_00154a0c[player].value != 3)) {
+            if (D_00154a0c[player].type == 0x38 || (D_00154a0c[player].type == EV_MARK_EMPLOYING && D_00154a0c[player].value != 3)) {
                 D_00161208 = 2;
                 D_00161209 = 2;
                 D_00161201 = 0;
@@ -253,7 +253,7 @@ s8 tutorial(void)
                 advisor.f131 = 0x1e;
                 clear_force_help();
                 advisor.f120 = 0;
-            } else if (D_00154a0c[player].type == 0x30 && D_00154a0c[player].value == 3) {
+            } else if (D_00154a0c[player].type == EV_MARK_EMPLOYING && D_00154a0c[player].value == 3) {
                 D_00161208 = 2;
                 D_00161209 = 2;
                 advisor.f131 = 0x24;
@@ -296,14 +296,14 @@ s8 tutorial(void)
         break;
     case 0x26:
         if (D_00161209 != 2) {
-            if (D_00154a0c[player].type == 0x38 || (D_00154a0c[player].type == 0x30 && D_00154a0c[player].value != 3)) {
+            if (D_00154a0c[player].type == 0x38 || (D_00154a0c[player].type == EV_MARK_EMPLOYING && D_00154a0c[player].value != 3)) {
                 D_00161209 = 2;
                 D_00161201 = 0;
                 D_00161204 = 0;
                 advisor.f131 = 0x1e;
                 clear_force_help();
                 advisor.f120 = 0;
-            } else if (D_00154a0c[player].type == 0x30 && D_00154a0c[player].value == 3) {
+            } else if (D_00154a0c[player].type == EV_MARK_EMPLOYING && D_00154a0c[player].value == 3) {
                 D_00161209 = 2;
                 advisor.f131 = 0x24;
                 clear_force_help();
@@ -356,7 +356,7 @@ s8 tutorial(void)
                 advisor.f131 = 0x21;
                 clear_force_help();
                 advisor.f120 = 0;
-            } else if (D_00154a0c[player].type != 0x30) {
+            } else if (D_00154a0c[player].type != EV_MARK_EMPLOYING) {
                 if (D_00161205 == 0) {
                     if (resvars.f1 == SCREEN_MODE_13) {
                         sprintf(advisor.f10, advisor_text[34]);
@@ -423,7 +423,7 @@ s8 tutorial(void)
         }
         break;
     case 0x20:
-        if (D_00161203 != 2 && !listhead[player].rooms[7]) {
+        if (D_00161203 != 2 && !listhead[player].rooms[ROOM_GP]) {
             if (D_00154a0c[player].type != 0x37) {
                 if (D_00161203 == 0) {
                     sprintf(advisor.f10, advisor_text[32]);
@@ -456,7 +456,7 @@ s8 tutorial(void)
             clear_force_help();
             advisor.f120 = 0;
         } else if (D_0016120e != 2) {
-            if (D_00154a0c[player].type != 0x20 || D_00154a0c[player].value != 3) {
+            if (D_00154a0c[player].type != EV_REQ1_RESET_ROOMS || D_00154a0c[player].value != 3) {
                 if (D_0016120e == 0) {
                     if (resvars.f1 == SCREEN_MODE_13) {
                         sprintf(advisor.f10, advisor_text[43]);
@@ -530,7 +530,7 @@ s8 tutorial(void)
             advisor.f131 = 0x20;
             clear_force_help();
             advisor.f120 = 0;
-        } else if (D_00154a0c[player].type != 2) {
+        } else if (D_00154a0c[player].type != EV_MODIFY_BLUEPRINT) {
             sprintf(advisor.f10, advisor_text[47]);
             advisor.f124 = 1;
             advisor.f122 = 0;
@@ -641,7 +641,7 @@ s8 tutorial(void)
             advisor.f120 = 0;
             clear_force_help();
             return 1;
-        } else if (D_00154a0c[player].type != 0x12) {
+        } else if (D_00154a0c[player].type != EV_COMMIT_BLUEPRINT) {
             if (D_0016121b == 0) {
                 sprintf(advisor.f10, advisor_text[56]);
                 advisor.f124 = 1;
@@ -661,7 +661,7 @@ s8 tutorial(void)
         }
         break;
     case 0x30:
-        if (D_00154a0c[player].type == 0x45) {
+        if (D_00154a0c[player].type == EV_EDIT_BLUEPRINT) {
             D_00161203 = 0;
             D_0016120e = 0;
             D_0016120f = 0;
@@ -672,14 +672,14 @@ s8 tutorial(void)
             advisor.f131 = 0x38;
             clear_force_help();
             advisor.f120 = 0;
-        } else if (D_00154a0c[player].type == 3 && othervar.f18[player] == 1) {
+        } else if (D_00154a0c[player].type == EV_PLACE_BP_DOOR && othervar.f18[player] == 1) {
             sprintf(advisor.f10, advisor_text[53]);
             advisor.f124 = 1;
             advisor.f122 = 0;
             advisor.f123 = 0;
             D_00161218 = 1;
             return 1;
-        } else if (D_00154a0c[player].type != 3) {
+        } else if (D_00154a0c[player].type != EV_PLACE_BP_DOOR) {
             if (D_00161213 == 0) {
                 sprintf(advisor.f10, advisor_text[48]);
                 advisor.f124 = 1;
@@ -696,7 +696,7 @@ s8 tutorial(void)
         }
         break;
     case 0x31:
-        if (D_00154a0c[player].type == 0x45) {
+        if (D_00154a0c[player].type == EV_EDIT_BLUEPRINT) {
             D_00161203 = 0;
             D_0016120e = 0;
             D_0016120f = 0;
@@ -708,21 +708,21 @@ s8 tutorial(void)
             advisor.f131 = 0x38;
             clear_force_help();
             advisor.f120 = 0;
-        } else if (D_00154a0c[player].type == 3 && othervar.f18[player] == 1) {
+        } else if (D_00154a0c[player].type == EV_PLACE_BP_DOOR && othervar.f18[player] == 1) {
             sprintf(advisor.f10, advisor_text[54]);
             advisor.f124 = 1;
             advisor.f122 = 0;
             advisor.f123 = 0;
             D_00161219 = 1;
             return 1;
-        } else if (D_00154a0c[player].type == 3 && othervar.f18[player] == 0) {
+        } else if (D_00154a0c[player].type == EV_PLACE_BP_DOOR && othervar.f18[player] == 0) {
             sprintf(advisor.f10, advisor_text[49]);
             advisor.f124 = 1;
             advisor.f122 = 0;
             advisor.f123 = 0;
             D_00161214 = 1;
             return 1;
-        } else if (D_00154a0c[player].type != 4) {
+        } else if (D_00154a0c[player].type != EV_COMMIT_DOORS) {
             if (D_00161214 == 0) {
                 sprintf(advisor.f10, advisor_text[49]);
                 advisor.f124 = 1;
@@ -742,7 +742,7 @@ s8 tutorial(void)
         }
         break;
     case 0x32:
-        if (D_00154a0c[player].type == 0x45) {
+        if (D_00154a0c[player].type == EV_EDIT_BLUEPRINT) {
             D_00161203 = 0;
             D_0016120e = 0;
             D_0016120f = 0;
@@ -780,7 +780,7 @@ s8 tutorial(void)
         }
         break;
     case 0x3a:
-        if (D_00154a0c[player].type == 0x45) {
+        if (D_00154a0c[player].type == EV_EDIT_BLUEPRINT) {
             D_00161203 = 0;
             D_0016120e = 0;
             D_0016120f = 0;
@@ -794,7 +794,7 @@ s8 tutorial(void)
             advisor.f131 = 0x38;
             clear_force_help();
             advisor.f120 = 0;
-        } else if (D_00154a0c[player].type != 1) {
+        } else if (D_00154a0c[player].type != EV_OPEN_ROOM) {
             if (D_0016121d == 0) {
                 sprintf(advisor.f10, advisor_text[58]);
                 advisor.f124 = 1;
@@ -839,7 +839,7 @@ s8 tutorial(void)
         break;
     case 0x23:
         if (D_00161206 != 2) {
-            if (D_00154a0c[player].type == 0x38 || (D_00154a0c[player].type == 0x30 && D_00154a0c[player].value != 1)) {
+            if (D_00154a0c[player].type == 0x38 || (D_00154a0c[player].type == EV_MARK_EMPLOYING && D_00154a0c[player].value != 1)) {
                 D_00161202 = 0;
                 D_00161206 = 0;
                 advisor.f131 = 0x1f;
@@ -887,7 +887,7 @@ s8 tutorial(void)
                 advisor.f131 = 0x23;
                 clear_force_help();
                 advisor.f120 = 0;
-            } else if (D_00154a0c[player].type != 0x30) {
+            } else if (D_00154a0c[player].type != EV_MARK_EMPLOYING) {
                 if (D_00161210 == 0) {
                     if (resvars.f1 == SCREEN_MODE_13) {
                         sprintf(advisor.f10, advisor_text[45]);

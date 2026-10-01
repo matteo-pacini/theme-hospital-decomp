@@ -120,8 +120,8 @@ s32 person_in_way(u32 x, u32 y, u32 dir)
         if (id > 0) {
         other = &thing[id];
         switch (other->type) {
-        case 2:
-        case 4:
+        case THING_PATIENT:
+        case THING_STAFF:
             if (other != nav_person) {
                 if (other->facing == opposite_angle[nav_person->facing])
                     return 0x8000;
@@ -150,8 +150,8 @@ s32 person_overlap(void)
         if (id > 0) {
         other = &thing[id];
         switch (other->type) {
-        case 2:
-        case 4:
+        case THING_PATIENT:
+        case THING_STAFF:
             if (other > nav_person) {
                 if (other->facing == nav_person->facing) {
                     return 0x8000;

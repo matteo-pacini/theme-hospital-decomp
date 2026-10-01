@@ -10,7 +10,7 @@ void set_expertise_staff(Thing *w);
 void insert_skill(u16 skill, u8 owner);
 
 #define TRAINING_OBJECT(t) \
-    ((t)->object && (thing[(t)->object].type == 6 || thing[(t)->object].type == 8) \
+    ((t)->object && (thing[(t)->object].type == THING_OBJECT || thing[(t)->object].type == THING_DOOR) \
         && (u16)((t) - thing) == thing[(t)->object].user ? (u32)(t)->object : 0)
 
 extern "C" {
@@ -27,15 +27,15 @@ void doctor_is_trained(Thing *doctor)
     u8 x;
     u8 y;
 
-    doctor->orders &= ~4;
-    if (doctor->skills & 0x80) {
-        doctor->state = 0x48;
+    doctor->orders &= ~ORD_TRAIN;
+    if (doctor->skills & SKILL_CONSULTANT) {
+        doctor->state = SS_CONSULTANT_TRAINS;
         return;
     }
     if (shall_i_resign(doctor)) {
         return;
     }
-    doctor->orders |= 0x40;
+    doctor->orders |= ORD_RETURN_TO_TRAINING;
     if (doctor->room->f22 || doctor->room->f3 == 4) {
         process_staff_complex(doctor);
         return;
@@ -48,12 +48,12 @@ void doctor_is_trained(Thing *doctor)
         process_staff_complex(doctor);
         return;
     }
-    if (((doctor->orders & 1) || doctor->tiredness > allhosps[doctor->owner].f21d) && take_a_break(doctor)) {
+    if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].f21d) && take_a_break(doctor)) {
         return;
     }
-    if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, 0x24, 1, 0x96, doctor->owner) && doctor->complex_action != 0x41a) {
-        doctor->next_state = 0x46;
-        doctor->resume_state = 0x46;
+    if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_LECTURE_CHAIR, 1, 0x96, doctor->owner) && doctor->complex_action != 0x41a) {
+        doctor->next_state = SS_DOCTOR_IS_TRAINED;
+        doctor->resume_state = SS_DOCTOR_IS_TRAINED;
         set_complex(doctor, 0x41a, 0);
         fn_0003e724(doctor);
         return;
@@ -65,8 +65,8 @@ void doctor_is_trained(Thing *doctor)
     x = old_newrand() % room->f1 + room->pos % 128;
     y = old_newrand() % room->f2 + room->pos / 128;
     if (map[((s16)y << 7) + (s16)x].first == 0 && can_i_get_to(doctor, (s16)(x + (y << 7)))) {
-        doctor->next_state = 0x46;
-        doctor->resume_state = 0x46;
+        doctor->next_state = SS_DOCTOR_IS_TRAINED;
+        doctor->resume_state = SS_DOCTOR_IS_TRAINED;
         set_complex(doctor, 0xbe, (s16)(x + (y << 7)));
         fn_0003e724(doctor);
     }
@@ -77,7 +77,7 @@ void consultant_trains(Thing *consultant)
 {
     Thing *projector;
 
-    consultant->orders &= ~4;
+    consultant->orders &= ~ORD_TRAIN;
     if (shall_i_resign(consultant)) {
         return;
     }
@@ -96,40 +96,40 @@ void consultant_trains(Thing *consultant)
     if (!(fn_0002b400(consultant) ? 1 : (process_staff_complex(consultant), 0))) {
         return;
     }
-    consultant->orders |= 0x40;
-    if (((consultant->orders & 1) || consultant->tiredness > allhosps[consultant->owner].f21d) && take_a_break(consultant)) {
+    consultant->orders |= ORD_RETURN_TO_TRAINING;
+    if (((consultant->orders & ORD_REST) || consultant->tiredness > allhosps[consultant->owner].f21d) && take_a_break(consultant)) {
         return;
     }
-    projector = &thing[find_object(consultant->x.tile + ((u16)consultant->y.tile << 7), 0x25, 0, 0x97, consultant->owner)];
+    projector = &thing[find_object(consultant->x.tile + ((u16)consultant->y.tile << 7), OBJ_PROJECTOR, 0, 0x97, consultant->owner)];
     if (projector <= thing) {
         return;
     }
     if (!projector->data[0]) {
         projector->data[0] = 1;
         set_complex(consultant, 0x3fc, 0);
-        consultant->next_state = 0x48;
+        consultant->next_state = SS_CONSULTANT_TRAINS;
         fn_0003e724(consultant);
         return;
     }
-    if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile, 0x38, 1, 0x96, consultant->owner)) {
+    if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile, OBJ_BOOKCASE, 1, 0x96, consultant->owner)) {
         training_done(consultant, 2);
-        consultant->next_state = 0x48;
-        consultant->resume_state = 0x48;
+        consultant->next_state = SS_CONSULTANT_TRAINS;
+        consultant->resume_state = SS_CONSULTANT_TRAINS;
         set_complex(consultant, 0x370, 0);
         fn_0003e724(consultant);
         return;
     }
-    if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile, 0x3c, 1, 0x96, consultant->owner)) {
+    if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile, OBJ_SKELETON, 1, 0x96, consultant->owner)) {
         training_done(consultant, 1);
-        consultant->next_state = 0x48;
-        consultant->resume_state = 0x48;
+        consultant->next_state = SS_CONSULTANT_TRAINS;
+        consultant->resume_state = SS_CONSULTANT_TRAINS;
         set_complex(consultant, 0x410, 0);
         fn_0003e724(consultant);
         return;
     }
     if (consultant->complex_action != 0x3de && consultant->complex_action != 0x3e8) {
-        consultant->next_state = 0x48;
-        consultant->resume_state = 0x36;
+        consultant->next_state = SS_CONSULTANT_TRAINS;
+        consultant->resume_state = SS_PROCESS_COMPLEX;
         set_complex(consultant, 0x3de, 0);
         fn_0003e724(consultant);
         return;
@@ -139,7 +139,7 @@ void consultant_trains(Thing *consultant)
     consultant->complex_queued = 0;
     consultant->complex_queued2 = 0;
     consultant->complex_resume = 0;
-    consultant->next_state = 0x48;
+    consultant->next_state = SS_CONSULTANT_TRAINS;
     set_complex(consultant, 0x3e8, 0);
     fn_0003e724(consultant);
 }
@@ -147,7 +147,7 @@ void consultant_trains(Thing *consultant)
 // FUNCTION: 0x00042ff0
 u8 check_training_command(Thing *doctor)
 {
-    if ((doctor->orders & 4) && send_doctor_to_training(doctor)) {
+    if ((doctor->orders & ORD_TRAIN) && send_doctor_to_training(doctor)) {
         doctor->orders &= 0xf0;
         return 1;
     }
@@ -167,7 +167,7 @@ u8 send_doctor_to_training(Thing *doctor)
     if (doctor->room) {
         current_room = doctor->room - room_info;
     }
-    if (doctor->skills & 0x80) {
+    if (doctor->skills & SKILL_CONSULTANT) {
         room = find_training_room_no_consultant(doctor->owner, current_room);
         state = 0x48;
     } else {
@@ -180,7 +180,7 @@ u8 send_doctor_to_training(Thing *doctor)
         set_complex(doctor, 0x136, doctor->room->unknown6);
     }
     doctor->next_state = state;
-    doctor->resume_state = 0x36;
+    doctor->resume_state = SS_PROCESS_COMPLEX;
     set_complex(doctor, 0x96, room_info[room].unknown4);
     doctor->dest_room = room;
     fn_0003e724(doctor);
@@ -195,13 +195,13 @@ u16 find_training_room_no_consultant(u8 owner, u16 exclude)
     RoomInfo *room;
 
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->type == 0x16 && room->owner == owner && (u16)(room - room_info) != exclude) {
+        if (room->type == ROOM_TRAINING && room->owner == owner && (u16)(room - room_info) != exclude) {
             u8 free;
             Thing *occupant;
 
             free = 1;
             for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
-                if (occupant->type == 4 && occupant->subtype == 1 && (occupant->skills & 0x80)) {
+                if (occupant->type == THING_STAFF && occupant->subtype == STAFF_DOCTOR && (occupant->skills & SKILL_CONSULTANT)) {
                     free = 0;
                     break;
                 }
@@ -226,15 +226,15 @@ u16 find_emptiest_training_room(u8 owner, u16 exclude)
     best = -10000;
     found = 0;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->type == 0x16 && room->owner == owner && (u16)(room - room_info) != exclude) {
+        if (room->type == ROOM_TRAINING && room->owner == owner && (u16)(room - room_info) != exclude) {
             space = 0;
             for (t = &thing[room->first_object]; t > thing; t = &thing[t->room_obj_next]) {
-                if (t->subtype == 0x24) {
+                if (t->subtype == OBJ_LECTURE_CHAIR) {
                     space++;
                 }
             }
             for (t = &thing[room->first]; t > thing; t = &thing[t->room_next]) {
-                if (t->type == 4 && t->subtype == 1 && !(t->skills & 0x80)) {
+                if (t->type == THING_STAFF && t->subtype == STAFF_DOCTOR && !(t->skills & SKILL_CONSULTANT)) {
                     space--;
                 }
             }
@@ -266,15 +266,15 @@ void training_done(const Thing *consultant, const u8 kind)
     limit = old_newrand() % consultant->ability;
     skills = (u16)(consultant->skills & 0x160);
     for (student = &thing[consultant->room->first]; student > thing; student = &thing[student->room_next]) {
-        if (student->type == 4 && student->subtype == 1 && !(student->skills & 0x80)
-            && (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == 0x24)) {
+        if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT)
+            && (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
             students++;
         }
     }
     students = (students >> 2) + 1;
     for (student = &thing[consultant->room->first]; student > thing; student = &thing[student->room_next]) {
-        if (student->type == 4 && student->subtype == 1 && !(student->skills & 0x80)
-            && (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == 0x24)) {
+        if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT)
+            && (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
             learn = skills & ~(u16)(student->skills & 0x160);
             if (learn & 0x160) {
                 if (learn & 0x20) {
@@ -309,7 +309,7 @@ void training_done(const Thing *consultant, const u8 kind)
                 if (learn & 0x20) {
                     student->surgeon_training += points;
                     if (student->surgeon_training > gbv.f146) {
-                        student->skills |= 0x20;
+                        student->skills |= SKILL_SURGEON;
                         allhosps[student->owner].fca6++;
                         if (student->owner == player) {
                             announce_this(4, 5);
@@ -321,7 +321,7 @@ void training_done(const Thing *consultant, const u8 kind)
                 if (learn & 0x40) {
                     student->psych_training += points;
                     if (student->psych_training > gbv.f148) {
-                        student->skills |= 0x40;
+                        student->skills |= SKILL_PSYCHIATRIST;
                         if (student->owner == player) {
                             announce_this(4, 6);
                         }
@@ -332,7 +332,7 @@ void training_done(const Thing *consultant, const u8 kind)
                 if (learn & 0x100) {
                     student->research_training += points;
                     if (student->research_training > gbv.f14a) {
-                        student->skills |= 0x100;
+                        student->skills |= SKILL_RESEARCHER;
                         if (student->owner == player) {
                             announce_this(4, 8);
                         }

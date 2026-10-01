@@ -28,23 +28,23 @@ s32 losing(void);
 // FUNCTION: 0x00070f80
 void modify_person(Thing *person)
 {
-    if (person->flags & 0x40) {
+    if (person->flags & PF_EMERGENCY) {
         if (allhosps[person->owner].f1e2s == 2) {
             change_health(person, -1000);
-            person->flags &= ~0x40;
-            reset_icon_value(person, 6);
+            person->flags &= ~PF_EMERGENCY;
+            reset_icon_value(person, ICON_EMERGENCY);
             return;
         }
-        set_icon_value(person, 6);
+        set_icon_value(person, ICON_EMERGENCY);
         if (person->health_delta)
             change_health(person, 0);
         return;
     }
-    if (person->flags & 0x20) {
+    if (person->flags & PF_CONTAGIOUS) {
         if ((s8)person->contagion > 0)
-            set_icon_value(person, 0xd);
+            set_icon_value(person, ICON_CONTAGIOUS);
         else if ((s8)person->contagion < 0)
-            set_icon_value(person, 0x10);
+            set_icon_value(person, ICON_VACCINATED);
     }
     if (!(othervar.f82 > person->modify_time || person->modify_time - othervar.f82 > 0x7fff))
         return;
@@ -65,28 +65,28 @@ void modify_person(Thing *person)
         person->nausea++;
         if ((s16)person->nausea < 0)
             person->nausea = 0;
-        set_icon_value(person, 0x11);
+        set_icon_value(person, ICON_TOO_HOT);
         person->happiness--;
     } else if ((s16)person->warmth < 20) {
-        set_icon_value(person, 0x12);
+        set_icon_value(person, ICON_TOO_COLD);
         person->happiness--;
     } else {
-        reset_icon_value(person, 0x11);
-        reset_icon_value(person, 0x12);
+        reset_icon_value(person, ICON_TOO_HOT);
+        reset_icon_value(person, ICON_TOO_COLD);
         person->happiness++;
     }
     if (person->happiness_s < gbv.f10e) {
-        set_icon_value(person, 8);
+        set_icon_value(person, ICON_UNHAPPY);
         person->impatience++;
     } else {
-        reset_icon_value(person, 8);
+        reset_icon_value(person, ICON_UNHAPPY);
     }
     if (person->bladder > gbv.f116) {
-        set_icon_value(person, 0xb);
+        set_icon_value(person, ICON_TOILET);
         person->impatience++;
     }
     if (person->refreshment < 30) {
-        set_icon_value(person, 0xc);
+        set_icon_value(person, ICON_THIRSTY);
         person->impatience++;
     }
     if (person->happiness_s < 0)
@@ -116,7 +116,7 @@ u16 check_warmth(Thing *person)
         if (room) {
             warmth = room->unknown26 * 1250 / (room->f1 * room->f2);
         } else {
-            radiator = &thing[listhead[person->owner].objects[0x2c]];
+            radiator = &thing[listhead[person->owner].objects[OBJ_RADIATOR]];
             if (radiator > thing) {
                 do {
                     if (!radiator->room_id) {
@@ -139,7 +139,7 @@ u16 check_warmth(Thing *person)
         person->warmth++;
     else if (warmth < (s16)person->warmth)
         person->warmth--;
-    if (person->type == 2 && (s16)person->warmth > 60)
+    if (person->type == THING_PATIENT && (s16)person->warmth > 60)
         person->refreshment -= 2;
     if ((s16)person->warmth < 0)
         person->warmth = 0;
@@ -163,7 +163,7 @@ s16 check_feelgood(Thing *person)
                 if (!obj->room_id) {
                     if (ABS(person->x.tile - obj->x.tile) <= feely[i].range) {
                         if (ABS(person->y.tile - obj->y.tile) <= feely[i].range) {
-                            if (obj->subtype == 0x2d) {
+                            if (obj->subtype == OBJ_PLANT) {
                                 if ((s16)obj->plant_health < 0)
                                     mood--;
                                 else
@@ -187,7 +187,7 @@ s16 check_feelgood(Thing *person)
             person->nausea = 0;
         person->happiness++;
     }
-    if ((person->state == 0x18 && abilities[person->subtype][1]) && person->complex_action != 0x46)
+    if ((person->state == PS_ENTERTAINS_THEMSELF && abilities[person->subtype][1]) && person->complex_action != 0x46)
         person->happiness--;
     return 0;
 }
@@ -249,18 +249,18 @@ u8 do_reaction(Thing *peep)
         if ((s16)peep->nausea >= gbv.f11a && old_newrand() % 5 == 0) {
             setup_showanim(peep, 0x4b);
             peep->nausea = 5;
-            peep->flags |= 4;
+            peep->flags |= PF_VOMITS;
             change_health(peep, -10);
             return 1;
         }
         if (peep->bladder >= gbv.f118 && old_newrand() % 5 == 0) {
-            reset_icon_value(peep, 0xb);
+            reset_icon_value(peep, ICON_TOILET);
             setup_showanim(peep, 0x66);
-            if (peep->illness == 0x1d)
+            if (peep->illness == ILL_THE_SQUITS)
                 peep->bladder = gbv.f116 / 2;
             else
                 peep->bladder = 0;
-            peep->flags |= 8;
+            peep->flags |= PF_WETS;
             change_health(peep, -10);
             return 1;
         }
@@ -322,7 +322,7 @@ void setup_showanim(Thing *peep, u16 anim)
     peep->substate = peep->state;
     peep->saved_sprite = peep->sprite;
     peep->saved_flip = peep->flip;
-    peep->state = 0x3a;
+    peep->state = PS_SHOWANIM;
     peep->sprite = start[anim_starts[peep->subtype].anims[anim]].frame;
     peep->flip = start[anim_starts[peep->subtype].anims[anim]].flags;
 }
@@ -335,13 +335,13 @@ void modify_staff(Thing *employee)
     employee->modify_time = othervar.f84;
     if (employee->owner >= 4 || gamevar.f174)
         return;
-    if (employee->subtype == 3)
+    if (employee->subtype == STAFF_RECEPTIONIST)
         return;
     calculate_speed(employee);
     check_warmth(employee);
     staff_check_around(employee);
-    if (employee->state != 0x34) {
-        if (employee->room == 0 || employee->room->type != 0x19)
+    if (employee->state != SS_WANDERS) {
+        if (employee->room == 0 || employee->room->type != ROOM_STAFF_ROOM)
             employee->tiredness += gbv.fe2;
     }
     if (employee->tiredness > gbv.fec) {
@@ -349,18 +349,18 @@ void modify_staff(Thing *employee)
             doctor_cracks_up(employee);
     }
     if (employee->tiredness > gbv.fec) {
-        set_icon_value(employee, 10);
+        set_icon_value(employee, ICON_TIRED);
         employee->happiness--;
     } else if (employee->tiredness < gbv.fe6) {
-        reset_icon_value(employee, 10);
+        reset_icon_value(employee, ICON_TIRED);
         employee->happiness++;
     }
     if ((s16)employee->warmth > 80) {
         employee->happiness--;
-        set_icon_value(employee, 0x11);
+        set_icon_value(employee, ICON_TOO_HOT);
     } else if ((s16)employee->warmth < 20) {
         employee->happiness--;
-        set_icon_value(employee, 0x12);
+        set_icon_value(employee, ICON_TOO_COLD);
     }
     if (employee->happiness_s < gbv.f10e)
         employee->discontent++;
@@ -425,33 +425,33 @@ void appraise_staff(Thing *employee)
     s32 value;
 
     value = employee->ability / gbv.fc4 + *(u16 *)&staff[employee->subtype].unknown0[2];
-    if (employee->skills & 8)
+    if (employee->skills & SKILL_JUNIOR)
         value += gbv.fb8[0];
-    if (employee->skills & 0x10)
+    if (employee->skills & SKILL_DOCTOR)
         value += gbv.fb8[1];
-    if (employee->skills & 0x20)
+    if (employee->skills & SKILL_SURGEON)
         value += gbv.fb8[2];
-    if (employee->skills & 0x40)
+    if (employee->skills & SKILL_PSYCHIATRIST)
         value += gbv.fb8[3];
-    if (employee->skills & 0x80)
+    if (employee->skills & SKILL_CONSULTANT)
         value += gbv.fb8[4];
-    if (employee->skills & 0x100)
+    if (employee->skills & SKILL_RESEARCHER)
         value += gbv.fb8[5];
     employee->wage_demand = value;
-    if (employee->skills & 0x10) {
-        if ((employee->skills & 8) && employee->ability > gbv.f156) {
+    if (employee->skills & SKILL_DOCTOR) {
+        if ((employee->skills & SKILL_JUNIOR) && employee->ability > gbv.f156) {
             if (actual_game_turn - (u16)employee->hire_time >= gbv.f143 * 1500) {
                 employee->skills &= ~8;
                 if (employee->owner == player)
                     announce_this(10, 1);
             }
-        } else if (!(employee->skills & 0x80) && employee->ability > gbv.f158) {
+        } else if (!(employee->skills & SKILL_CONSULTANT) && employee->ability > gbv.f158) {
             if (actual_game_turn - (u16)employee->hire_time >= gbv.f144 * 1500) {
-                employee->skills |= 0x80;
+                employee->skills |= SKILL_CONSULTANT;
                 if (employee->owner == player)
                     announce_this(0xd, 1);
-                if (employee->room != 0 && employee->room->type == 0x16) {
-                    employee->next_state = 0x28;
+                if (employee->room != 0 && employee->room->type == ROOM_TRAINING) {
+                    employee->next_state = SS_IN_CORRIDOR;
                     set_complex(employee, 0x136, employee->room->unknown6);
                     fn_0003e724(employee);
                 }
@@ -490,31 +490,31 @@ void reset_all_count(void)
 void staff_count(Thing *employee)
 {
     if (othervar.f86) {
-        if (employee->state != 0x2e && employee->owner == player) {
+        if (employee->state != SS_APPLICANT && employee->owner == player) {
             switch (employee->subtype) {
-            case 4:
+            case STAFF_SURGEON:
                 adcounts.f23++;
-            case 1:
+            case STAFF_DOCTOR:
                 adcounts.f6++;
                 adcounts.f7a[1] += employee->tiredness;
                 adcounts.f84[1] += employee->happiness;
-                if (employee->skills & 0x80)
+                if (employee->skills & SKILL_CONSULTANT)
                     adcounts.f20++;
-                if (employee->skills & 0x100)
+                if (employee->skills & SKILL_RESEARCHER)
                     adcounts.f21++;
-                if (employee->skills & 0x40)
+                if (employee->skills & SKILL_PSYCHIATRIST)
                     adcounts.f22++;
                 break;
-            case 0:
+            case STAFF_NURSE:
                 adcounts.f6++;
                 adcounts.f7a[0] += employee->tiredness;
                 adcounts.f84[0] += employee->happiness;
                 break;
-            case 2:
+            case STAFF_HANDYMAN:
                 adcounts.f7a[2] += employee->tiredness;
                 adcounts.f84[2] += employee->happiness;
                 break;
-            case 3:
+            case STAFF_RECEPTIONIST:
                 adcounts.f7a[3] += employee->tiredness;
                 adcounts.f84[3] += employee->happiness;
                 break;
@@ -523,8 +523,8 @@ void staff_count(Thing *employee)
             adcounts.f2 += employee->tiredness;
             if (employee->tiredness > adcounts.f8)
                 adcounts.f8 = employee->tiredness;
-            if (employee->state == 0x34
-                || (((employee->room != 0 && employee->room->type != 0x16) && employee->room->unknown31 == 0) && employee->room->unknown32 == 0))
+            if (employee->state == SS_WANDERS
+                || (((employee->room != 0 && employee->room->type != ROOM_TRAINING) && employee->room->unknown31 == 0) && employee->room->unknown32 == 0))
                 adcounts.f99_arr[employee->subtype]++;
             adcounts.f16 += employee->warmth;
         }
@@ -565,7 +565,7 @@ void person_count(Thing *person)
                     adcounts.f1e = person->bladder;
                 adcounts.f24[person->illness]++;
             }
-            if (person->flags & 0x40)
+            if (person->flags & PF_EMERGENCY)
                 allhosps[person->owner].f1e7++;
             if ((s8)person->contagion != 0)
                 allhosps[person->owner].f205++;
@@ -575,7 +575,7 @@ void person_count(Thing *person)
                     person->flags32 |= 0x200000;
                 }
             }
-        } else if (person->flags & 0x20) {
+        } else if (person->flags & PF_CONTAGIOUS) {
             allhosps[person->owner].f207 = 0;
         }
     }

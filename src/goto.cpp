@@ -47,7 +47,7 @@ s16 person_goto_destination(Thing *person)
         switch (dir) {
         case 4:
             if (process_person_complex(person) == 2) {
-                person->state = 4;
+                person->state = PS_WAITS_FOR_BUSY;
                 person->timer = 200;
             }
             person->countdown = 0;
@@ -99,7 +99,7 @@ s16 person_goto_object(Thing *person)
         if (dir >= 0 && dir <= 3) {
             if (fn_000cb2db(person->x.tile - person->dest_x) < othervar.f2f && fn_000cb2db(person->y.tile - person->dest_y) < othervar.f2f) {
                 obj = &thing[person->object];
-                if (obj->in_use == 1 || obj->state == 0x12 || (obj->type != 8 && obj->type != 6))
+                if (obj->in_use == 1 || obj->state == 0x12 || (obj->type != THING_DOOR && obj->type != THING_OBJECT))
                     dir = 4;
             }
         }
@@ -170,13 +170,13 @@ void person_goto_queue(Thing *person)
         dir = person_head_for(person, 3);
         if (dir >= 0 && dir <= 3) {
             if (fn_000cb2db(person->x.tile - person->dest_x) <= othervar.fe && fn_000cb2db(person->y.tile - person->dest_y) <= othervar.fe) {
-                if (room->type == 4 || queue_size(room) > 0)
+                if (room->type == ROOM_RECEPTION || queue_size(room) > 0)
                     dir = 4;
             }
         }
         switch (dir) {
         case 4:
-            if (room->type != 4) {
+            if (room->type != ROOM_RECEPTION) {
                 if (room->type != expertise[person->treatment].category || room->unknown4 == 0) {
                     if (person->dest_room && room->unknown4 != 0)
                         room->unknown32--;
@@ -199,11 +199,11 @@ void person_goto_queue(Thing *person)
             person->complex_queued = 0;
             person->complex_queued2 = 0;
             join_queue(person, room);
-            if (room->type != 4) {
+            if (room->type != ROOM_RECEPTION) {
                 page_staff_i_need(person, room);
-                person->state = 0x12;
+                person->state = PS_ARRIVES_AT_DOOR;
             } else {
-                person->state = 0x14;
+                person->state = PS_IN_QUEUE;
                 PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
             }
             person->countdown = 0;
@@ -277,7 +277,7 @@ s16 staff_goto_object(Thing *employee)
     MapPos y;
     s16 dir;
 
-    if (employee->subtype == 2)
+    if (employee->subtype == STAFF_HANDYMAN)
         handyman_check_for_litter(employee);
     if (actual_game_turn % employee->anim_speed == 0)
         employee->sprite = frame[employee->sprite].next;
@@ -361,12 +361,12 @@ void staff_wanders(Thing *employee)
     s16 dir;
     MapPos x;
 
-    if (employee->subtype == 2) {
-        employee->state = 0x3c;
+    if (employee->subtype == STAFF_HANDYMAN) {
+        employee->state = SS_HANDYMAN_WORKS;
         employee->substate = 0;
         return;
     }
-    if (employee->subtype == 0)
+    if (employee->subtype == STAFF_NURSE)
         allhosps[employee->owner].unknown11f0++;
     if (shall_i_resign(employee))
         return;
@@ -383,9 +383,9 @@ void staff_wanders(Thing *employee)
             employee->sprite = frame[employee->sprite].next;
         employee->countdown--;
         if (employee->countdown <= 0) {
-            if (employee->subtype == 3 && listhead[employee->owner].rooms[4]) {
-                if (find_free_object_anywhere(employee - thing, 0xb)) {
-                    employee->state = 0xc;
+            if (employee->subtype == STAFF_RECEPTIONIST && listhead[employee->owner].rooms[ROOM_RECEPTION]) {
+                if (find_free_object_anywhere(employee - thing, OBJ_RECEPTION_DESK)) {
+                    employee->state = SS_RECEPTIONIST_FINDS_RECEPTION;
                     return;
                 }
             }
@@ -426,9 +426,9 @@ void staff_wanders(Thing *employee)
     return;
 decide:
     employee->orders &= 0xaf;
-    if (employee->subtype == 0 && should_nurse_vaccinate(employee))
+    if (employee->subtype == STAFF_NURSE && should_nurse_vaccinate(employee))
         return;
-    if ((employee->orders & 1) && take_a_break(employee))
+    if ((employee->orders & ORD_REST) && take_a_break(employee))
         return;
     if (obey_pager(employee))
         return;
@@ -522,7 +522,7 @@ void peep_bp_goto(Thing *peep)
             retry = 0;
         }
         peep->countdown = peep->speed == 0 ? div_err() : 0x100 / peep->speed;
-        if (peep->type == 4) {
+        if (peep->type == THING_STAFF) {
             if (peep->facing != dir || start[staff_anim_starts[peep->subtype].unknownA + peep->facing].frame == peep->sprite) {
                 peep->facing = dir;
                 PLAY_FRAME(peep, staff_anim_starts[peep->subtype].idle);
@@ -565,7 +565,7 @@ s16 mayor_goto(Thing *mayor)
             return 0;
         case -2:
         case -3:
-            mayor->state = 6;
+            mayor->state = MAYOR_GONE;
             return 0;
         default:
             if (mayor->facing != dir) {
@@ -600,7 +600,7 @@ void peep_stuck(Thing *peep)
     if (peep->countdown <= 0) {
         if (peep->facing != 4) {
             peep->countdown = 100;
-            if (peep->type == 2)
+            if (peep->type == THING_PATIENT)
                 PLAY_FRAME(peep, anim_starts[peep->subtype].unknown12)
             else
                 PLAY_FRAME(peep, staff_anim_starts[peep->subtype].unknownA)
@@ -608,24 +608,24 @@ void peep_stuck(Thing *peep)
             return;
         }
         dest = (s16)peep->saved_dest_x + ((s16)peep->saved_dest_y << 7);
-        if ((peep->type != 2 || !(peep->flags & 0x4000))
+        if ((peep->type != THING_PATIENT || !(peep->flags & PF_FED_UP))
             && check_points_connected((u16)peep->x.tile + ((u16)peep->y.tile << 7), dest)) {
             peep->state = peep->saved_state;
             peep->dest_x = peep->saved_dest_x;
             peep->dest_y = peep->saved_dest_y;
             return;
         }
-        if (peep->type == 2) {
+        if (peep->type == THING_PATIENT) {
             peep->impatience += 0xf;
             if (peep->impatience > gbv.f108) {
                 peep->impatience = 0;
-                if (!(peep->flags & 0x4000)) {
+                if (!(peep->flags & PF_FED_UP)) {
                     if (peep->owner == player)
                         othervar.f89++;
                 }
-                set_icon_value(peep, 7);
+                set_icon_value(peep, ICON_FED_UP);
                 person_go_home(peep);
-                peep->flags |= 0x4000;
+                peep->flags |= PF_FED_UP;
                 return;
             }
         }
@@ -633,7 +633,7 @@ void peep_stuck(Thing *peep)
         if (!wall_in_way(peep->x.tile, peep->y.tile, dir)) {
             peep->facing = dir;
             peep->countdown = peep->speed == 0 ? div_err() : 0x100 / peep->speed;
-            if (peep->type == 2)
+            if (peep->type == THING_PATIENT)
                 PLAY_FRAME(peep, anim_starts[peep->subtype].idle)
             else
                 PLAY_FRAME(peep, staff_anim_starts[peep->subtype].idle)

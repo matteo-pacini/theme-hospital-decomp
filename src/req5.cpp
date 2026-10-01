@@ -30,13 +30,13 @@ void req5(Window *win)
         if (button->flags & 6) {
             debug.unknown4 = i;
             if (i == resvars.fe[0x12]) {
-                D_001549d0[player].type = 0x43;
+                D_001549d0[player].type = EV_CLOSE_QUERY;
                 D_001549d0[player].value = 3;
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
             } else if (i == resvars.fe[0x13]) {
-                D_001549d0[player].type = 0x76;
+                D_001549d0[player].type = EV_THINGPAGE_REQUEST;
                 D_001549d0[player].value = D_001581b2[3].value;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
             } else if (i == resvars.fe[0x14]) {
                 u8 kind;
 
@@ -46,7 +46,7 @@ void req5(Window *win)
                     sprintf(othervar.f935, yesno_text[2], D_0016029c[objects[kind].name],
                             allhosps[othervar.ff].object_stats[kind].cost);
                     open_yes_no_requester(0x8a, D_001581b2[3].value, 0, 0x78, 0, 0);
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 }
             }
         }
@@ -68,7 +68,7 @@ void req5_overdraw(Window *win)
     count = 0;
     compute_help_text(0, 0, 0xb);
     machine = &thing[D_001581b2[3].value];
-    if (machine->type == 6) {
+    if (machine->type == THING_OBJECT) {
         LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                                   window.unknown2cf - window.unknown2c7);
         x = win->x - lbDisplay.graphics_window_x;
@@ -109,13 +109,13 @@ void req5_overdraw(Window *win)
         if (lbDisplay.mright_button && !othervar.fa61) {
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x54].x, y + resvars.f18[0x54].y, resvars.f18[0x54].w,
                              resvars.f18[0x54].h)) {
-                D_001581b2[3].value = find_next_thing(machine, 6, -1, -1);
+                D_001581b2[3].value = find_next_thing(machine, THING_OBJECT, -1, -1);
                 othervar.f38 = 3;
                 othervar.f10 = 1;
                 othervar.f7d = othervar.f7c;
                 othervar.f7c = 3;
                 othervar.f7e = D_001581b2[3].value;
-                play_sound(10, 0xbb, -1, -1);
+                play_sound(10, SFX_CAMCLICK, -1, -1);
             }
         }
         if (lbDisplay.mright_button)

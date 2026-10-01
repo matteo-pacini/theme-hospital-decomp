@@ -33,7 +33,7 @@ void display_research(void)
         load_ingame_pic(6, 1, 0x1e, 0, SCREEN_MODE_13);
         research.unknown2 = 1;
         research.unknown0 = 0;
-        play_sound(0xc, 0x75, -1, -1);
+        play_sound(0xc, SFX_RESEARCH, -1, -1);
         othervar.fa84 = 0;
         panel = panel_icons_over;
         ((PanelIcon *)panel)[9].sprite = 0x15;
@@ -42,7 +42,7 @@ void display_research(void)
         copy_screen_to_wscreen(bscreen);
         break;
     case 2:
-        D_001549d0[player].type = 0x70;
+        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
         D_001549d0[player].value = 0;
         StopSample(0xc, 0x75);
         break;
@@ -180,7 +180,7 @@ void process_res_button(u8 button)
     switch (button) {
     case 0:
         research.unknown2 = 2;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     case 1:
     case 2:
@@ -191,7 +191,7 @@ void process_res_button(u8 button)
             i = myhosp->research_alloc[button - 1];
             if (i > 0) {
                 if (othervar.f8a2 - othervar.f9f3 > 0xfa || othervar.f9f1 == 0x100) {
-                    D_001549d0[player].type = 0x50;
+                    D_001549d0[player].type = EV_ALTER_RESEARCH;
                     D_001549d0[player].value = button - 1;
                     D_001549d0[player].arg = myhosp->research_alloc[button - 1];
                     if (othervar.f9f1 < 0xa00)
@@ -201,10 +201,10 @@ void process_res_button(u8 button)
                     D_001549d0[player].arg -= othervar.f9f1 >> 8;
                     if ((s16)D_001549d0[player].arg < 0)
                         D_001549d0[player].arg = 0;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 }
             } else if (!research.unknown0) {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
                 research.unknown0 = 1;
             }
         }
@@ -225,7 +225,7 @@ void process_res_button(u8 button)
             i = myhosp->research_alloc[button - 6];
             if (i + total < 100) {
                 if (othervar.f8a2 - othervar.f9f3 > 0xfa || othervar.f9f1 == 0x100) {
-                    D_001549d0[player].type = 0x50;
+                    D_001549d0[player].type = EV_ALTER_RESEARCH;
                     D_001549d0[player].value = button - 6;
                     D_001549d0[player].arg = myhosp->research_alloc[button - 6];
                     if (othervar.f9f1 < 0xa00)
@@ -235,10 +235,10 @@ void process_res_button(u8 button)
                     D_001549d0[player].arg += othervar.f9f1 >> 8;
                     if (D_001549d0[player].arg + total > 100)
                         D_001549d0[player].arg = 100 - total;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 }
             } else if (!research.unknown0) {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
                 research.unknown0 = 1;
             }
         }

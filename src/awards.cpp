@@ -138,11 +138,11 @@ void check_trophies_won(void)
                 if (myhosp->f1ed > myhosp->f1c7) {
                     if ((myhosp->f1e9 - mycontrol->f4a4 << 8) / (myhosp->f1ed - myhosp->f1c7) > 0xf3) {
                         set_trophy_value(i, awards_trophies.f11, 2);
-                        change_balance(0x23, (u16)awards_trophies.f11, 0, player);
+                        change_balance(TX_TROPHY_BONUS, (u16)awards_trophies.f11, 0, player);
                     }
                 } else if (myhosp->f1ed == myhosp->f1e9) {
                     set_trophy_value(i, awards_trophies.f11, 2);
-                    change_balance(0x23, (u16)awards_trophies.f11 * 2, 0, player);
+                    change_balance(TX_TROPHY_BONUS, (u16)awards_trophies.f11 * 2, 0, player);
                 }
                 break;
             case 1:
@@ -262,12 +262,12 @@ void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
         if (myhosp->unknownc7e != rep) {
             trophy[trophy_no].value = myhosp->unknownc7e - rep;
         } else {
-            change_balance(0x23, 5000, 0, player);
+            change_balance(TX_TROPHY_BONUS, 5000, 0, player);
             trophy[trophy_no].value = 5000;
             trophy[trophy_no].unknown0 = 2;
         }
     } else if (type == 2) {
-        change_balance(0x23, value, 0, player);
+        change_balance(TX_TROPHY_BONUS, value, 0, player);
         trophy[trophy_no].value = value;
     }
     trophy[trophy_no].f4 = saferand() % 1 + type - 1;
@@ -280,7 +280,7 @@ void fn_000b4510(const u8 award, const s8 dir, const u8 tier, const s16 value, u
     all_awards[award].f1 = award;
     all_awards[award].f2 = tier + award * 3 + saferand() % 1 + 1;
     if (type == 2) {
-        change_balance(0x22, value, 0, player);
+        change_balance(TX_YEAR_END_BONUS, value, 0, player);
         all_awards[award].value = value;
     } else if (type == 1) {
         s32 rep;
@@ -291,10 +291,10 @@ void fn_000b4510(const u8 award, const s8 dir, const u8 tier, const s16 value, u
             all_awards[award].value = myhosp->unknownc7e - rep;
         } else {
             if (dir > 0) {
-                change_balance(0x22, 2500, 0, player);
+                change_balance(TX_YEAR_END_BONUS, 2500, 0, player);
                 all_awards[award].value = 2500;
             } else if (dir < 0) {
-                change_balance(0x22, -2500, 0, player);
+                change_balance(TX_YEAR_END_BONUS, -2500, 0, player);
                 all_awards[award].value = -2500;
             }
             type = 2;

@@ -170,7 +170,7 @@ void make_a_rat(u8 owner)
     if (rat == 0) {
         return;
     }
-    rat->type = 0xc;
+    rat->type = THING_RAT;
     rat->owner = owner;
     if (othervar.f9e9) {
         rat->layers[0] = othervar.f9e9;
@@ -191,19 +191,19 @@ void make_a_rat(u8 owner)
     insert_node(rat, rat->x, rat->y);
     switch (allhosps[owner].fcaf[from].side) {
     case 0:
-        rat->state = 4;
+        rat->state = RAT_ARRIVES;
         rat->sprite = start[0x3c4].frame;
         rat->flip = start[0x3c4].flags;
         rat->depth = -9;
         break;
     case 3:
-        rat->state = 4;
+        rat->state = RAT_ARRIVES;
         rat->sprite = start[0x3c5].frame;
         rat->flip = start[0x3c5].flags;
         rat->depth = -9;
         break;
     default:
-        rat->state = 2;
+        rat->state = RAT_SCURRIES;
         ratnav_init(rat);
         break;
     }
@@ -249,7 +249,7 @@ void ratnav_init(Thing *rat)
                     remove_thing(rat);
                     return;
                 }
-                rat->state = 6;
+                rat->state = RAT_LEAVES;
                 rat->y.frac = 0x80;
                 rat->x.frac = rat->y.frac;
                 rat->depth = -9;
@@ -306,7 +306,7 @@ void rat_arrives(Thing *rat)
     rat->sprite = frame[rat->sprite].next;
     if (frame[rat->sprite].flags & 1) {
         rat->depth = 0;
-        rat->state = 2;
+        rat->state = RAT_SCURRIES;
         ratnav_init(rat);
     }
 }

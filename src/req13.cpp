@@ -27,12 +27,12 @@ void req13(Window *win)
             debug.unknown4 = i;
             if (i == resvars.fe[1]) {
                 req13_no_pressed();
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
             } else if (i == resvars.fe[0]) {
                 D_001549d0[player].type = othervar.f99e;
                 D_001549d0[player].value = othervar.f99f;
                 D_001549d0[player].arg = othervar.f9a2;
-                play_sound(10, 0x41, -1, -1);
+                play_sound(10, SFX_YESX, -1, -1);
             }
         }
         i++;
@@ -98,7 +98,7 @@ void req13_no_pressed(void)
 void req13_cancel_check(void)
 {
     if (crequester.unknown2 == 4) {
-        if (lbInkey == 1 || (lbDisplay.right_button && !mouse_was_on_window)) {
+        if (lbInkey == KC_ESCAPE || (lbDisplay.right_button && !mouse_was_on_window)) {
             req13_no_pressed();
             lbDisplay.right_button = 0;
         }

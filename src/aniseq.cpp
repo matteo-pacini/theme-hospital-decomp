@@ -24,8 +24,8 @@ void setup_aniseq_indices(void)
 // FUNCTION: 0x0009b380
 void setup_aniseq(Thing *w, u8 seq, u8 next_state)
 {
-    if (w->type == 4)
-        w->state = 0x50;
+    if (w->type == THING_STAFF)
+        w->state = SS_PLAY_ANISEQ;
     w->next_state = next_state;
     w->seq_index = statvar.aniseq_start[seq];
     setup_next_aniseq(w);

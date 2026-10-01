@@ -112,7 +112,7 @@ void item_researched(u16 item, u16 illness, u8 owner)
             }
         }
         if (pay) {
-            change_balance(0x15, 500, 0, (u16)owner);
+            change_balance(TX_RESEARCH_BONUS, 500, 0, (u16)owner);
             if (illness < 0x2c)
                 reputation_affected(illness, 9, 0, owner, 0);
         }
@@ -235,7 +235,7 @@ void research_contribution(Thing *researcher, s16 amount)
         amount += researcher->ability / 2;
     else
         amount += researcher->ability;
-    if (researcher->subtype == 1 && researcher->crazy)
+    if (researcher->subtype == STAFF_DOCTOR && researcher->crazy)
         amount = -amount / 2;
     allhosps[researcher->owner].research_points += amount;
     award_counts.f145 += amount;
@@ -256,7 +256,7 @@ void send_person_for_research(Thing *patient)
     idx = check_frame(anim_starts[patient->subtype].idle, patient) + patient->facing;
     patient->sprite = start[idx].frame;
     patient->flip = start[idx].flags > 0 ? (u8)1 : (u8)0;
-    patient->state = 0x24;
+    patient->state = PS_GOTO_QUEUE;
     fn_0004195c(patient, room->unknown4);
 }
 
@@ -273,7 +273,7 @@ u16 emptiest_research_room(u8 owner)
     best = -10000;
     found = 0;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->type == 0x1c && room->owner == owner) {
+        if (room->type == ROOM_RESEARCH && room->owner == owner) {
             count = 0;
             for (t = &thing[room->first_object]; t > thing; t = &thing[t->room_obj_next]) {
                 for (k = 0; k < research_workstations.count; k++) {
@@ -282,7 +282,7 @@ u16 emptiest_research_room(u8 owner)
                 }
             }
             for (t = &thing[room->first]; t > thing; t = &thing[t->room_next]) {
-                if (t->type == 4)
+                if (t->type == THING_STAFF)
                     count--;
             }
             if (count > best) {
@@ -303,7 +303,7 @@ u16 find_rand_research_room(u8 owner, u16 exclude)
 
     count = 0;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if ((room->type == 0x1c && room->owner == owner) && room - room_info != exclude) {
+        if ((room->type == ROOM_RESEARCH && room->owner == owner) && room - room_info != exclude) {
             list[count++] = room - room_info;
             if (count == 30)
                 break;
@@ -319,7 +319,7 @@ u8 send_doctor_to_research(Thing *doctor)
 {
     u16 id;
 
-    if (doctor->room != 0 && doctor->room->type == 0x1c)
+    if (doctor->room != 0 && doctor->room->type == ROOM_RESEARCH)
         id = find_rand_research_room(doctor->owner, doctor->room - room_info);
     else
         id = emptiest_research_room(doctor->owner);
@@ -329,8 +329,8 @@ u8 send_doctor_to_research(Thing *doctor)
     if (doctor->room)
         set_complex(doctor, 0x136, doctor->room->unknown6);
     set_complex(doctor, 0x96, room_info[id].unknown4);
-    doctor->next_state = 0x3e;
-    doctor->resume_state = 0x36;
+    doctor->next_state = SS_DOCTOR_RESEARCHES;
+    doctor->resume_state = SS_PROCESS_COMPLEX;
     doctor->dest_room = id;
     fn_0003e724(doctor);
     return 1;
@@ -347,7 +347,7 @@ void person_autopsied(Thing *patient)
     hosp = &allhosps[patient->owner];
     staff_happiness = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if ((staff->type == 4 && staff->state != 0x2e) && staff->owner == patient->owner)
+        if ((staff->type == THING_STAFF && staff->state != SS_APPLICANT) && staff->owner == patient->owner)
             staff_happiness += staff->happiness_s;
     }
     do_illness_research(patient->owner, patient->illness, gbv.f138 * expertise[patient->illness].cost / 100, 4);

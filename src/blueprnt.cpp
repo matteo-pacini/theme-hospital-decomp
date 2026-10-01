@@ -401,14 +401,14 @@ u8 commit_blueprint(u8 owner)
     if (!is_valid_room(build->x0, build->y0, build->x1, build->y1, owner)) {
         if (othervar.ff == player) {
             advisor.f2 = 4;
-            set_mouse_mode(1);
+            set_mouse_mode(MM_BLUEPRINT);
         }
         return 0;
     }
     if (!check_room_access_with_blueprint(owner)) {
         if (othervar.ff == player) {
             advisor.f2 = 5;
-            set_mouse_mode(1);
+            set_mouse_mode(MM_BLUEPRINT);
         }
         return 0;
     }
@@ -468,7 +468,7 @@ u8 is_tile_valid(u16 tile, u8 owner)
     Thing *occupant;
 
     for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
-        if (occupant->type != 2 && occupant->type != 4) {
+        if (occupant->type != THING_PATIENT && occupant->type != THING_STAFF) {
             advisor.f11f |= 2;
             return 0;
         }
@@ -569,7 +569,7 @@ void edit_blueprint(u8 owner)
     room->f3 = 3;
     if (othervar.ff == player) {
         set_edit_room_requester_mode(0);
-        set_mouse_mode(1);
+        set_mouse_mode(MM_BLUEPRINT);
     }
 }
 
@@ -582,7 +582,7 @@ void compute_room_pointed(u16 tile)
 
     room = which_room(tile);
     build = &allhosps[player].build;
-    if (room && room->type != 6) {
+    if (room && room->type != ROOM_DESTROYED) {
         build->edit_room = room - room_info;
         build->unknownE_ = 2;
         build->x0 = room->pos % 128;
@@ -595,12 +595,12 @@ void compute_room_pointed(u16 tile)
         pointed = &thing[othervar.f41];
         if (pointed > thing) {
             switch (pointed->type) {
-            case 6:
+            case THING_OBJECT:
                 if (pointed->room_id == 0 && !(objects[pointed->subtype].unknown20[2] & 1) && pointed->owner == player)
                     othervar.f43 = othervar.f41;
                 break;
-            case 2:
-            case 4:
+            case THING_PATIENT:
+            case THING_STAFF:
                 if (pointed->object && (u16)(pointed - thing) == thing[pointed->object].user
                     && thing[pointed->object].room_id == 0 && pointed->owner == player)
                     othervar.f43 = othervar.f41;
@@ -619,14 +619,14 @@ u8 check_room_access(u8 owner)
 
     pos = room_info[allhosps[owner].unknown1cf[0]].unknown4;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (((!(room->type == 0 || room->f3 == 3) && room->owner == owner) && room->type != 1) && room->type != 4) {
+        if (((!(room->type == ROOM_FREE || room->f3 == 3) && room->owner == owner) && room->type != 1) && room->type != ROOM_RECEPTION) {
             if (!check_points_connected(pos, room->unknown4))
                 return 0;
             pos = room->unknown4;
         }
     }
     for (obj = thing + 1; obj < end_things; obj++) {
-        if ((obj->type == 6 && obj->subtype == 0xb) && obj->owner == owner) {
+        if ((obj->type == THING_OBJECT && obj->subtype == OBJ_RECEPTION_DESK) && obj->owner == owner) {
             if (!check_points_connected(pos, obj->use_pos[0]))
                 return 0;
             if (!check_points_connected(pos, obj->use_pos[1]))
@@ -844,10 +844,10 @@ u8 try_move_peep_cell(Thing *peep, u8 x, u8 y)
         peep->saved_state = peep->state;
         peep->saved_dest_x = x;
         peep->saved_dest_y = y;
-        if (peep->type == 2)
-            peep->state = 0x40;
+        if (peep->type == THING_PATIENT)
+            peep->state = PS_BP_GOTO;
         else
-            peep->state = 0x4c;
+            peep->state = SS_BP_GOTO;
         peep->countdown = 0;
         return 1;
     }
@@ -881,7 +881,7 @@ void delete_blueprint_room(u8 owner)
     build = &allhosps[owner].build;
     room = &room_info[allhosps[owner].build.room];
     if (room->unknown33) {
-        change_balance(4, rooms[room->type].cost * room_depreciation() / 100, 0, (u16)room->owner);
+        change_balance(TX_BUILD_ROOM, rooms[room->type].cost * room_depreciation() / 100, 0, (u16)room->owner);
         room->unknown33 = 0;
     }
     if (allhosps[owner].build.unknownE_ == 0)
@@ -923,7 +923,7 @@ void allocate_roominfo(const u8 owner, const u8 type)
 
     build = &allhosps[owner].build;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->type == 0) {
+        if (room->type == ROOM_FREE) {
             build->room = room - room_info;
             memset(room, 0, sizeof(RoomInfo));
             room->owner = owner;
@@ -943,8 +943,8 @@ RoomInfo *allocate_reception_roominfo(u8 owner)
     RoomInfo *room;
 
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->type == 0) {
-            room->type = 4;
+        if (room->type == ROOM_FREE) {
+            room->type = ROOM_RECEPTION;
             room->pos = 0x3fff;
             room->f1 = room->f2 = 1;
             room->f3 = 0;

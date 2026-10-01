@@ -28,7 +28,7 @@ void machine_disaster(Thing *machine)
     explosion_kills_dudes_in_room(room);
     remove_expertise_room(room);
     room_deleted_update_listhead(room);
-    room->type = 6;
+    room->type = ROOM_DESTROYED;
     room->f3 = 6;
     allhosps[machine->owner].fc98++;
     reputation_affected(0, 0xb, 0, machine->owner, 0);
@@ -89,8 +89,8 @@ u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim)
     x = tile % 128;
     y = tile / 128;
     for (bang = &thing[id]; bang < end_things - 50; bang++) {
-        if (bang->type == 0) {
-            bang->type = 0xe;
+        if (bang->type == THING_FREE) {
+            bang->type = THING_DEBRIS;
             bang->sprite = start[anim].frame;
             bang->flip = start[anim].flags;
             bang->anim_speed = (old_newrand() & 1) + 1;
@@ -134,7 +134,7 @@ void create_explosion(u16 tile, u16 anim)
             id = create_bang(id, tile, dx, dy, dz, anim);
         }
     }
-    play_sound(10, 0xd5, -1, -1);
+    play_sound(10, SFX_BOMB, -1, -1);
 }
 
 // FUNCTION: 0x000755c8
@@ -215,7 +215,7 @@ void blast_things(Map *m)
 
 restart:
     for (obj = &thing[m->first]; obj > thing; obj = &thing[obj->cell_next]) {
-        if (obj->type == 6) {
+        if (obj->type == THING_OBJECT) {
             debris = objects[obj->subtype].unknown20[0];
             facing = obj->facing;
             fn_00038d04(obj, obj->owner);
@@ -238,7 +238,7 @@ void explosion_kills_dudes_in_room(RoomInfo *room)
     while (again && --tries >= 0) {
         again = 0;
         for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
-            if (person->type == 4) {
+            if (person->type == THING_STAFF) {
                 sack_staff(person, 2);
                 again = 1;
                 break;
@@ -246,7 +246,7 @@ void explosion_kills_dudes_in_room(RoomInfo *room)
         }
     }
     for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
-        if (person->type == 2)
+        if (person->type == THING_PATIENT)
             person_dies(person);
     }
 }
@@ -258,7 +258,7 @@ void restart_entire_queue(RoomInfo *room)
 
     while ((patient = &thing[room->queue_head]) > thing) {
         if (allhosps[patient->owner].rooms[patient->treatment].unknown1C != 1)
-            patient->treatment = 1;
+            patient->treatment = ILL_GENERAL_PRACTICE;
         leave_queue(patient);
         interrupt_person(patient);
         start_person_going(patient);
@@ -281,7 +281,7 @@ void generate_disaster(u8 owner)
             case 0:
                 break;
             case 1:
-                if (listhead[owner].objects[0x2c] && hosp->fc9e[2] * 8 < hosp->fc92) {
+                if (listhead[owner].objects[OBJ_RADIATOR] && hosp->fc9e[2] * 8 < hosp->fc92) {
                     hosp->f211 = hosp->fc94;
                     hosp->fc94 = 0;
                     hosp->fc95 = 1;
@@ -292,7 +292,7 @@ void generate_disaster(u8 owner)
                 }
                 break;
             case 2:
-                if (listhead[owner].objects[0x2c] && hosp->fc9e[2] * 8 < hosp->fc92) {
+                if (listhead[owner].objects[OBJ_RADIATOR] && hosp->fc9e[2] * 8 < hosp->fc92) {
                     hosp->f211 = hosp->fc94;
                     hosp->fc94 = 0xa;
                     hosp->fc95 = 1;
@@ -348,7 +348,7 @@ void disaster_peeps(u8 mode, s8 owner)
     Thing *peep;
 
     for (peep = thing + 1; peep < end_things; peep++) {
-        if (peep->type == 2 && (peep->owner == owner || owner == -1)) {
+        if (peep->type == THING_PATIENT && (peep->owner == owner || owner == -1)) {
             if (mode == 0)
                 peep->nausea = (u16)gbv.f11a + 10;
             else if (mode == 1 && abilities[peep->subtype][5])
@@ -402,8 +402,8 @@ void what_is_required(u8 illness, u8 owner)
         }
     }
     if (exp->unknown7) {
-        if (allhosps[owner].rooms[0x2a].unknown1C == 0) {
-            if (listhead[owner].rooms[9] == 0)
+        if (allhosps[owner].rooms[ILL_DIAG_WARD].unknown1C == 0) {
+            if (listhead[owner].rooms[ROOM_WARD] == 0)
                 required.unknown8 = 1;
             if (listhead[owner].staff[2] == 0)
                 required.unknown9 = 1;
@@ -429,7 +429,7 @@ u16 create_shadow(u16 tile, u16 caster, u8 owner, u16 anim)
 
     shadow = allocate_thing(0x32);
     if (shadow) {
-        shadow->type = 0x18;
+        shadow->type = THING_SHADOW;
         shadow->owner = owner;
         shadow->x.tile = tile % 128;
         shadow->y.tile = tile / 128;

@@ -180,12 +180,12 @@ extern "C" void fn_000b4e88(void)
         check_stats_buttons();
         if (lbInkey >= 0x80)
             lbInkey = 0;
-        if (lbInkey == 1 || lbInkey == 0x39) {
+        if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
             lbInkey = 0;
             if (!exit_the_yearend_screen) {
-                D_001549d0[player].type = 0x22;
+                D_001549d0[player].type = EV_PAUSE;
                 exit_the_yearend_screen = 1;
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
             }
         }
         break;
@@ -194,12 +194,12 @@ extern "C" void fn_000b4e88(void)
         display_awards();
         check_awards_buttons();
         display_plaque();
-        if (lbInkey == 1 || lbInkey == 0x39) {
+        if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
             lbInkey = 0;
             if (!exit_the_yearend_screen) {
-                D_001549d0[player].type = 0x22;
+                D_001549d0[player].type = EV_PAUSE;
                 exit_the_yearend_screen = 1;
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
             }
         }
         break;
@@ -294,14 +294,14 @@ void process_yearend_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         if (!exit_the_yearend_screen) {
-            D_001549d0[player].type = 0x22;
+            D_001549d0[player].type = EV_PAUSE;
             exit_the_yearend_screen = 1;
         }
         break;
     case 1:
-        play_sound(10, 0x41, -1, -1);
+        play_sound(10, SFX_YESX, -1, -1);
         switch (yearend.unknown2) {
         case 3:
             yearend.unknown2 = 0;
@@ -315,7 +315,7 @@ void process_yearend_buttons(u8 button)
         break;
     case 3:
     case 2:
-        play_sound(10, 0x41, -1, -1);
+        play_sound(10, SFX_YESX, -1, -1);
         current_display = 0;
         break;
     case 4:
@@ -324,7 +324,7 @@ void process_yearend_buttons(u8 button)
     case 5:
     case 7:
     case 9:
-        play_sound(10, 0x41, -1, -1);
+        play_sound(10, SFX_YESX, -1, -1);
         switch (awards_won[button - 4].unknown0) {
         case 0:
             current_display = 0;
@@ -343,7 +343,7 @@ void process_yearend_buttons(u8 button)
     case 12:
     case 11:
     case 10:
-        play_sound(10, 0x41, -1, -1);
+        play_sound(10, SFX_YESX, -1, -1);
         current_display = 3;
         current_award = button - 10;
         break;

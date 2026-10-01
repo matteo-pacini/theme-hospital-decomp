@@ -26,7 +26,7 @@ extern "C" Thing *fn_00019aac(Map *t, u16 kind);
 u8 fn_000b0630(u16 tile, u8 parity)
 {
     Map *cell = &map[(u16)tile];
-    Thing *door = fn_00019aac(cell, 8);
+    Thing *door = fn_00019aac(cell, THING_DOOR);
 
     if (door == 0) {
         return 0;

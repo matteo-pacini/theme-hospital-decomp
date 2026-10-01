@@ -64,17 +64,17 @@ extern "C" void fn_000549bc(Thing *w)
                 partner->interact_anim = 0;
             }
             switch (w->type) {
-            case 2:
+            case THING_PATIENT:
                 process_person_complex(w);
                 break;
-            case 4:
+            case THING_STAFF:
                 fn_0003e724(w);
                 break;
             }
             return;
         }
         w->interact_anim = 1;
-        if (w->type == 4) {
+        if (w->type == THING_STAFF) {
             u16 entry;
 
             entry = check_frame(staff_anim_starts[w->subtype].anims[anim], w) + w->facing;
@@ -95,7 +95,7 @@ extern "C" void fn_000549bc(Thing *w)
         anim = D_0012b598[step].other;
         if (anim) {
             partner->interact_anim = 1;
-            if (partner->type == 2) {
+            if (partner->type == THING_PATIENT) {
                 u16 entry;
 
                 entry = check_frame(anim_starts[partner->subtype].anims[anim], partner) + partner->facing;
@@ -137,10 +137,10 @@ extern "C" void fn_00054d60(void)
 void start_new_interaction(Thing *w, u8 interaction)
 {
     switch (w->type) {
-    case 2:
+    case THING_PATIENT:
         w->state = 0x22;
         break;
-    case 4:
+    case THING_STAFF:
         w->state = 0x1a;
         break;
     default:

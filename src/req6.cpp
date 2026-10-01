@@ -55,13 +55,13 @@ extern "C" void fn_0008dee0(Requester *req)
                                 play_last_midi();
                             }
                         }
-                        play_sound(10, 0x43, -1, -1);
+                        play_sound(10, SFX_SELECTX, -1, -1);
                     } else if (idx == resvars.fe[0x57]) {
                         if (othervar.fa4f) {
                             stop_midi();
                             othervar.fa4f = 0;
                         }
-                        play_sound(10, 0x43, -1, -1);
+                        play_sound(10, SFX_SELECTX, -1, -1);
                     } else if (idx == resvars.fe[0x54]) {
                         if (othervar.fa4f) {
                             AIL_stop_sequence(song);
@@ -72,19 +72,19 @@ extern "C" void fn_0008dee0(Requester *req)
                             if (!is_midi_playing())
                                 play_midi(othervar.f9ba);
                         }
-                        play_sound(10, 0x43, -1, -1);
+                        play_sound(10, SFX_SELECTX, -1, -1);
                     } else if (idx == resvars.fe[0x56]) {
                         if (!othervar.fa50) {
                             if (othervar.fa4f)
                                 AIL_end_sequence(song);
                         }
-                        play_sound(10, 0x43, -1, -1);
+                        play_sound(10, SFX_SELECTX, -1, -1);
                     } else if (idx == resvars.fe[0x53]) {
                         setup_abort_all_requesters();
-                        play_sound(10, 0x42, -1, -1);
+                        play_sound(10, SFX_NO4, -1, -1);
                     } else if (idx == resvars.fe[0x58]) {
                         othervar.fa50 = !othervar.fa50 ? (u8)1 : (u8)0;
-                        play_sound(10, 0x43, -1, -1);
+                        play_sound(10, SFX_SELECTX, -1, -1);
                     }
                 }
                 idx++;
@@ -158,7 +158,7 @@ extern "C" void fn_0008e184(Requester *req)
             if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, ox + x + BSPR(0x20)->width, oy + y, BSPR(0x22)->width, BSPR(0x22)->height)) {
                 song = GetSongHandle();
                 myplayer.unknown12[i] = !myplayer.unknown12[i] ? (u8)1 : (u8)0;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 if (i == othervar.f9ba) {
                     AIL_end_sequence(song);
                     play_next_midi();

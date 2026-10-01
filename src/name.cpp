@@ -188,24 +188,24 @@ void process_keys_nickname(void)
     case 2:
         if (BufferedInkey) {
             switch (BufferedInkey) {
-            case 1:
+            case KC_ESCAPE:
                 fade_out_menu();
                 quit_game = 3;
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
                 break;
-            case 0x1c:
-            case 0x9c:
+            case KC_RETURN:
+            case KC_NUMPADENTER:
                 nickname.unknown2 = 1;
-                play_sound(10, 0x41, -1, -1);
+                play_sound(10, SFX_YESX, -1, -1);
                 if (myplayer.name[0] == 0)
                     fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
                 break;
-            case 0xe:
-            case 0x53:
+            case KC_BACKSPACE:
+            case KC_DECIMAL:
                 for (i = 1; i < 9; i++) {
                     if (myplayer.name[i] == 0) {
                         if (myplayer.name[0] != 0)
-                            play_sound(10, 0x10, -1, -1);
+                            play_sound(10, SFX_DELANAME, -1, -1);
                         myplayer.name[i - 1] = 0;
                         break;
                     }
@@ -218,7 +218,7 @@ void process_keys_nickname(void)
                             if (__IsTable[(u8)(lbInkeyToAsciiShift[BufferedInkey] + 1)] & 0xc0) {
                                 myplayer.name[i] = toupper((u8)lbInkeyToAsciiShift[BufferedInkey]);
                                 myplayer.name[i + 1] = 0;
-                                play_sound(10, 0xc, -1, -1);
+                                play_sound(10, SFX_ENTANAME, -1, -1);
                             }
                             break;
                         }
@@ -231,15 +231,15 @@ void process_keys_nickname(void)
     case 5:
         if (BufferedInkey) {
             switch (BufferedInkey) {
-            case 1:
+            case KC_ESCAPE:
                 nickname.unknown2 = 8;
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
                 break;
-            case 0x1f:
+            case KC_S:
                 break;
-            case 0x23:
+            case KC_H:
                 break;
-            case 0x1c:
+            case KC_RETURN:
                 break;
             default:
                 break;
@@ -354,37 +354,37 @@ extern "C" void fn_0008fa90(u8 index)
     switch (index) {
     case 4:
         if (current_balance_file != current_balance_file->prev)
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         prev_balance_file();
         break;
     case 5:
         if (current_balance_file != current_balance_file->next)
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         next_balance_file();
         break;
     case 0:
         advisor.f11f |= 1;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 1:
         advisor.f11f &= ~1;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 2:
         nickname.unknown2 = 4;
-        play_sound(10, 0x41, -1, -1);
+        play_sound(10, SFX_YESX, -1, -1);
         break;
     case 3:
         nickname.unknown2 = 8;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     case 6:
         resvars.f1 = SCREEN_MODE_1;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 7:
         resvars.f1 = SCREEN_MODE_13;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     }
 }

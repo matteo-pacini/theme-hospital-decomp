@@ -23,7 +23,7 @@ void reinit_nurse(Thing *nurse)
         if (room->type != 1)
             insert_person_in_room_list(room, nurse);
         nurse->state = get_state((u16)room->type, nurse);
-        if (room->type == 9)
+        if (room->type == ROOM_WARD)
             nurse->substate = 0;
     } else {
         nurse->state = get_state(0, nurse);
@@ -36,14 +36,14 @@ u8 nurse_check_for_work(Thing *nurse)
 {
     RoomInfo *room;
 
-    room = get_room_info_rand(9, 100, nurse->owner);
+    room = get_room_info_rand(ROOM_WARD, 100, nurse->owner);
     if (room == 0)
         return 0;
     set_complex(nurse, 0x14a, room->unknown4);
-    nurse->resume_state = 0x36;
+    nurse->resume_state = SS_PROCESS_COMPLEX;
     nurse->substate = 0;
-    nurse->next_state = 0x32;
-    nurse->resume_state = 0x28;
+    nurse->next_state = SS_NURSE_IN_WARD;
+    nurse->resume_state = SS_IN_CORRIDOR;
     nurse->dest_room = room - room_info;
     fn_0003e724(nurse);
     return 1;
@@ -56,9 +56,9 @@ u16 find_unallocated_bed(RoomInfo *room)
     Thing *occupant;
 
     for (bed = &thing[room->first_object]; bed > thing; bed = &thing[bed->room_obj_next]) {
-        if (bed->subtype == 8 && bed->user == 0) {
+        if (bed->subtype == OBJ_BED && bed->user == 0) {
             for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
-                if (occupant->type == 2 && &thing[occupant->object] == bed)
+                if (occupant->type == THING_PATIENT && &thing[occupant->object] == bed)
                     break;
             }
             if (occupant <= thing)
@@ -80,7 +80,7 @@ void nurse_in_ward(Thing *nurse)
     int bed;
     u32 obj;
 
-    obj = find_object(nurse->x.tile + (nurse->y.tile << 7), 1, 0, 0x97, nurse->owner);
+    obj = find_object(nurse->x.tile + (nurse->y.tile << 7), OBJ_DESK, 0, 0x97, nurse->owner);
     switch (nurse->substate) {
     case 0:
         nurse->room->f3 == 4 ? 0 : (nurse->room->f3 = 1);
@@ -88,7 +88,7 @@ void nurse_in_ward(Thing *nurse)
             return;
         if (shall_i_resign(nurse))
             return;
-        if ((nurse->orders & 1) && take_a_break(nurse))
+        if ((nurse->orders & ORD_REST) && take_a_break(nurse))
             return;
         if (allhosps[nurse->owner].f21f
             && actual_game_turn % (nurse->tiredness > allhosps[nurse->owner].f21d ? nurse->work_delay * 2 + 1 : nurse->work_delay + 1) == 0
@@ -110,7 +110,7 @@ void nurse_in_ward(Thing *nurse)
             if (bed) {
                 if (call_person_to_room(nurse, queue, 0x28, nurse->room->unknown4, 0)) {
                     nurse->object = bed;
-                    nurse->next_state = 0x32;
+                    nurse->next_state = SS_NURSE_IN_WARD;
                     nurse->substate = 1;
                     set_complex(nurse, 0x15e, 0);
                     fn_0003e724(nurse);
@@ -121,16 +121,16 @@ void nurse_in_ward(Thing *nurse)
         if (obj > 0 && nurse->work_target != obj && old_newrand() % 100 < 10) {
             nurse->work_target = obj;
             set_complex(nurse, 0x168, 0);
-            nurse->next_state = 0x32;
+            nurse->next_state = SS_NURSE_IN_WARD;
             fn_0003e724(nurse);
             return;
         }
-        patient = &thing[find_peep(nurse->room - room_info, 1, 2, 0x2c, nurse->owner)];
+        patient = &thing[find_peep(nurse->room - room_info, 1, THING_PATIENT, PS_IN_BED, nurse->owner)];
         if (patient > thing) {
             if ((u16)(patient - thing) != nurse->work_target) {
                 nurse->work_target = patient - thing;
                 nurse->object = patient->object;
-                nurse->next_state = 0x32;
+                nurse->next_state = SS_NURSE_IN_WARD;
                 set_complex(nurse, 0x17c, 0);
                 fn_0003e724(nurse);
                 return;
@@ -144,7 +144,7 @@ void nurse_in_ward(Thing *nurse)
         else
             target = room->pos + (((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1));
         if (cur != target && can_i_get_to(nurse, target)) {
-            nurse->next_state = nurse->resume_state = 0x32;
+            nurse->next_state = nurse->resume_state = SS_NURSE_IN_WARD;
             set_complex(nurse, 0xbe, target);
             fn_0003e724(nurse);
             return;
@@ -155,14 +155,14 @@ void nurse_in_ward(Thing *nurse)
         break;
     case 1:
         patient = &thing[nurse->slave];
-        if (patient->state == 0x46) {
+        if (patient->state == PS_ARRIVED_FROM_CALL) {
             affect_diagnosis(nurse, patient);
             nurse->substate = 0;
             nurse->slave = 0;
             patient->object = nurse->object;
             nurse->object = 0;
             set_complex(patient, 200, 0);
-            patient->next_state = 0x2c;
+            patient->next_state = PS_IN_BED;
             process_person_complex(patient);
         } else if (--nurse->timer <= 0) {
             result = call_person_again(nurse, 0x28, nurse->room->unknown4);

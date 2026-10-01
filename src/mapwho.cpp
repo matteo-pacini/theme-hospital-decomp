@@ -83,36 +83,36 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
             draw_x = node->x + x;
             draw_y = node->y + y;
             switch (node->widget->type) {
-            case 2:
+            case THING_PATIENT:
                 mapwho_person(node->widget, draw_x, draw_y, left, top);
                 break;
-            case 4:
+            case THING_STAFF:
                 mapwho_staff(node->widget, draw_x, draw_y, left, top);
                 break;
-            case 6:
-            case 8:
+            case THING_OBJECT:
+            case THING_DOOR:
                 mapwho_object(node->widget, draw_x, draw_y, left, top);
                 break;
-            case 10:
+            case THING_REAPER:
                 mapwho_reaper(node->widget, draw_x, draw_y);
                 break;
-            case 12:
+            case THING_RAT:
                 mapwho_rat(node->widget, draw_x, draw_y, left, top);
                 break;
-            case 14:
+            case THING_DEBRIS:
                 mapwho_bang(node->widget, draw_x, draw_y);
                 break;
-            case 16:
+            case THING_HELICOPTER:
                 mapwho_helicopter(node->widget, draw_x, draw_y);
                 break;
-            case 18:
+            case THING_NUMFX:
                 mapwho_numfx(node->widget, draw_x, draw_y);
                 break;
-            case 20:
-            case 22:
+            case THING_MAYOR:
+            case THING_INSPECTOR:
                 mapwho_mayor(node->widget, draw_x, draw_y, left, top);
                 break;
-            case 24:
+            case THING_SHADOW:
                 mapwho_shadow(node->widget, draw_x, draw_y);
             }
         }
@@ -124,35 +124,35 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
 {
     othervar.fa72++;
     switch (person->state) {
-    case 4:
-    case 6:
-    case 8:
-    case 12:
-    case 16:
-    case 18:
-    case 20:
-    case 22:
-    case 24:
+    case PS_WAITS_FOR_BUSY:
+    case PS_GOTO_DESTINATION:
+    case PS_RETURN_TO_QUEUE_AREA:
+    case PS_GO_HOME:
+    case PS_COMPLEX_RETRY:
+    case PS_ARRIVES_AT_DOOR:
+    case PS_IN_QUEUE:
+    case PS_GOTO_OBJECT:
+    case PS_ENTERTAINS_THEMSELF:
     case 26:
     case 28:
     case 32:
     case 34:
-    case 36:
-    case 38:
+    case PS_GOTO_QUEUE:
+    case PS_GO_FOR_TREATMENT:
     case 42:
-    case 44:
-    case 50:
-    case 54:
-    case 56:
-    case 58:
-    case 60:
-    case 64:
-    case 68:
-    case 70:
-    case 240:
-        if (person->illness == 6) {
+    case PS_IN_BED:
+    case PS_DEAD:
+    case PS_IN_BOGS:
+    case PS_LEAVE_TOILETS:
+    case PS_SHOWANIM:
+    case PS_STUCK:
+    case PS_BP_GOTO:
+    case PS_WAITS_FOR_DECISION:
+    case PS_ARRIVED_FROM_CALL:
+    case PS_NAV_DEBUG:
+        if (person->illness == ILL_SERIOUS_RADIATION) {
             fn_0002f47c(person, x, y);
-        } else if (person->illness == 12 && othervar.f1c == 0 && person->object == 0) {
+        } else if (person->illness == ILL_JELLYITIS && othervar.f1c == 0 && person->object == 0) {
             fn_0002e804(person, x, y);
         } else if ((u16)(person - thing) == othervar.f43) {
             draw_hilight_frame(person, x, y);
@@ -162,10 +162,10 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
             draw_special_id_frame(person, x, y);
         }
         break;
-    case 46:
+    case PS_FILLS:
         draw_split_frame(person, x, y);
         break;
-    case 48:
+    case PS_ENERGISES:
         if (othervar.f1c == 0) {
             draw_energise_frame(person, x, y);
         } else {
@@ -198,39 +198,39 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
     switch (staff->state) {
     case 2:
     case 4:
-    case 6:
-    case 8:
-    case 10:
-    case 12:
-    case 14:
-    case 16:
-    case 18:
-    case 20:
+    case SS_DOCTOR_IN_OFFICE:
+    case SS_DOCTOR_WORKS_AT_DESK:
+    case SS_RECEPTIONIST_WORKS:
+    case SS_RECEPTIONIST_FINDS_RECEPTION:
+    case SS_PLAY_COMPLEX_ANIM:
+    case SS_SURGEON_WAITS:
+    case SS_GOTO_OBJECT:
+    case SS_DOCTOR_WAITS_FOR_PATIENT:
     case 24:
     case 26:
-    case 28:
-    case 32:
-    case 34:
-    case 36:
-    case 38:
-    case 40:
-    case 44:
-    case 48:
-    case 50:
-    case 52:
-    case 54:
+    case SS_DOCTOR_EXAMINES:
+    case SS_RECEPT_WAITS_FOR_PATIENT:
+    case SS_RECEPT_ADMITS_PATIENT:
+    case SS_DOCTOR_IN_MACHINE_ROOM:
+    case SS_WAIT_FOR_COMPLEX_SLAVE:
+    case SS_IN_CORRIDOR:
+    case SS_COMPLEX_RETRY:
+    case SS_IN_STAFF_ROOM:
+    case SS_NURSE_IN_WARD:
+    case SS_WANDERS:
+    case SS_PROCESS_COMPLEX:
     case 58:
-    case 60:
-    case 62:
-    case 64:
-    case 66:
-    case 70:
-    case 72:
-    case 74:
-    case 76:
-    case 78:
-    case 80:
-    case 240:
+    case SS_HANDYMAN_WORKS:
+    case SS_DOCTOR_RESEARCHES:
+    case SS_NURSE_VACCINATES:
+    case SS_DOCTOR_IN_THEATRE:
+    case SS_DOCTOR_IS_TRAINED:
+    case SS_CONSULTANT_TRAINS:
+    case SS_RECEPTIONIST_SETUP:
+    case SS_BP_GOTO:
+    case SS_STUCK:
+    case SS_PLAY_ANISEQ:
+    case SS_NAV_DEBUG:
         if ((u16)(staff - thing) == othervar.f43) {
             draw_hilight_frame(staff, x, y);
         } else {
@@ -238,7 +238,7 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
         }
         break;
     case 42:
-    case 46:
+    case SS_APPLICANT:
     case 56:
         return;
     default:
@@ -254,16 +254,16 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
 void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s32 top)
 {
     switch (obj->state) {
-    case 2:
+    case OS_STATIC:
     case 6:
-    case 10:
+    case OS_PLANT_AGES:
     case 14:
-    case 16:
-    case 20:
-    case 22:
-    case 24:
-    case 26:
-    case 28:
+    case OS_DOUBLE_DOOR_SWINGS:
+    case OS_SLIDING_DOOR_CLOSED:
+    case OS_SLIDING_DOOR_OPENS:
+    case OS_SLIDING_DOOR_OPEN:
+    case OS_SLIDING_DOOR_CLOSES:
+    case OS_BOMB_TICKS:
         if ((u16)(obj - thing) == othervar.f43 || (obj->pair && obj->pair == othervar.f43)) {
             draw_hilight_frame(obj, x, y);
         } else {
@@ -289,7 +289,7 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
 void mapwho_reaper(Thing *reaper, s32 x, s32 y)
 {
     if (reaper->state != 0xf2 || !(game_turn & 1)) {
-        if (reaper->state == 6) {
+        if (reaper->state == REAPER_REMOVE) {
             return;
         }
         draw_special_id_frame(reaper, x, y);
@@ -342,15 +342,15 @@ void mapwho_numfx(Thing *fx, s32 x, s32 y)
     char buf[100];
 
     switch (fx->numfx_type) {
-    case 3:
+    case NUMFX_MONEY:
         draw_money(x, fx->speed + y - fx->anim_speed, fx->numfx_amount);
         break;
     default:
-        if (fx->numfx_type == 0) {
+        if (fx->numfx_type == NUMFX_NUMBER) {
             sprintf(buf, "%d", fx->numfx_amount);
-        } else if (fx->numfx_type == 1) {
+        } else if (fx->numfx_type == NUMFX_TEXT) {
             fn_000bbff0(buf, fx->numfx_text);
-        } else if (fx->numfx_type == 2) {
+        } else if (fx->numfx_type == NUMFX_FORMATTED) {
             sprintf(buf, fx->numfx_text, fx->numfx_amount);
         }
         draw_text_on_map(buf, fx->subtype, x, y + fx->speed - fx->anim_speed);

@@ -7,7 +7,7 @@ void create_numfx(u8 type, s16 value, u16 pos, u8 colour, u8 life)
 
     fx = allocate_thing(0x32);
     if (fx) {
-        fx->type = 0x12;
+        fx->type = THING_NUMFX;
         fx->numfx_type = type;
         fx->x.tile = pos % 128;
         fx->y.tile = pos / 128;
@@ -25,7 +25,7 @@ void create_numfx(u8 type, s16 value, u16 pos, u8 colour, u8 life)
 // FUNCTION: 0x0009d560
 void numfx_ages(Thing *fx)
 {
-    if (fx->numfx_type == 3)
+    if (fx->numfx_type == NUMFX_MONEY)
         fx->speed--;
     fx->speed--;
     if ((s8)fx->speed <= 0)

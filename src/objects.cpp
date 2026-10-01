@@ -138,8 +138,8 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
     if (control->unknown14 == 6 && (room = which_room(tile)) != 0) {
         room->unknown26++;
     }
-    if (control->unknown14 == 7 && listhead[obj->owner].rooms[4] == 0) {
-        listhead[obj->owner].rooms[4] = room - room_info;
+    if (control->unknown14 == 7 && listhead[obj->owner].rooms[ROOM_RECEPTION] == 0) {
+        listhead[obj->owner].rooms[ROOM_RECEPTION] = room - room_info;
     }
     if (control->unknown17 != -1) {
         part = &next_part[control->unknown17];
@@ -149,7 +149,7 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
             obj->pair = other - thing;
         }
     }
-    if (obj->subtype == 0x3a || obj->subtype == 0x3b) {
+    if (obj->subtype == OBJ_ENTRANCE_LEFT_DOOR || obj->subtype == OBJ_ENTRANCE_RIGHT_DOOR) {
         if (obj->facing == 1) {
             map[(s16)obj->x.tile + ((s16)obj->y.tile << 7) + 0x7f].flags |= 0x20;
         }
@@ -157,18 +157,18 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
         adjust_big_cell_flag(tile);
     }
     switch (obj->subtype) {
-    case 0x2d:
+    case OBJ_PLANT:
         obj->sprite = compute_plant_frame(obj);
         if (obj->owner == player) {
             NRAdcounts.unknown0++;
         }
         break;
-    case 4:
+    case OBJ_BENCH:
         if (obj->owner == player) {
             NRAdcounts.unknown4++;
         }
         break;
-    case 0x11:
+    case OBJ_LITTER_BOMB:
         anim = check_frame(obj->fuse + 0x9bf, obj) + obj->facing;
         obj->sprite = start[anim].frame;
         obj->flip = start[anim].flags > 0;
@@ -208,7 +208,7 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
         return 0;
     }
     if (kind == 0x37) {
-        allhosps[owner].rooms[0x2c].unknown1C = 1;
+        allhosps[owner].rooms[ILL_AUTOPSY].unknown1C = 1;
     }
     for (i = 0; i < 20; i++) {
         obj = &thing[build->objects[i]];
@@ -225,9 +225,9 @@ u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
     if (obj) {
         cost = allhosps[owner].object_stats[kind].cost;
         if (cost) {
-            change_balance(3, -cost, 0, owner);
+            change_balance(TX_BUY_OBJECT, -cost, 0, owner);
         }
-        obj->type = 6;
+        obj->type = THING_OBJECT;
         obj->subtype = kind;
         obj->anim_speed = 2;
         obj->use_style = control->unknown15[0];
@@ -350,8 +350,8 @@ void delete_object(u16 tile, Thing *obj)
         }
         obj->type_obj_prev = obj->type_obj_next = 0;
     }
-    if (listhead[obj->owner].objects[0x37] == 0) {
-        allhosps[obj->owner].rooms[0x2c].unknown1C = 0;
+    if (listhead[obj->owner].objects[OBJ_AUTO_AUTOPSY] == 0) {
+        allhosps[obj->owner].rooms[ILL_AUTOPSY].unknown1C = 0;
     }
 }
 
@@ -483,8 +483,8 @@ u16 find_nearest_free_object(u16 id, u8 kind)
         }
         return 0;
     }
-    if (seeker->type == 4) {
-        side = seeker->subtype == 2 ? 2 : 0;
+    if (seeker->type == THING_STAFF) {
+        side = seeker->subtype == STAFF_HANDYMAN ? 2 : 0;
     } else {
         side = 1;
     }
@@ -552,8 +552,8 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
         }
         return 0;
     }
-    if (seeker->type == 4) {
-        side = seeker->subtype == 2 ? 2 : 0;
+    if (seeker->type == THING_STAFF) {
+        side = seeker->subtype == STAFF_HANDYMAN ? 2 : 0;
     } else {
         side = 1;
     }
@@ -586,7 +586,7 @@ u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_sp
 
     best = thing;
     best_score = 9999;
-    for (desk = &thing[listhead[person->owner].objects[11]]; desk > thing; desk = &thing[desk->type_obj_next]) {
+    for (desk = &thing[listhead[person->owner].objects[OBJ_RECEPTION_DESK]]; desk > thing; desk = &thing[desk->type_obj_next]) {
         staff = &thing[desk->user];
         if (staff > thing) {
             if (!staff->room || !(room == 0 || (u16)(staff->room - room_info) == room)) {
@@ -648,7 +648,7 @@ s16 place_door(u16 tile, u16 kind)
         for (i = 0; i < shape->count; i++) {
             cell[(s16)shape->points[i]].flags |= 2;
         }
-        door->type = 8;
+        door->type = THING_DOOR;
         door->facing = gamevar.f28;
         door->subtype = kind;
         door->sprite = start[control->unknownE + door->facing].frame;
@@ -660,7 +660,7 @@ s16 place_door(u16 tile, u16 kind)
         door->y.tile = tile / 128;
         door->x.frac = door->y.frac = 0x80;
         door->depth = shape->unknown1f[2];
-        door->state = 2;
+        door->state = OS_STATIC;
         insert_node(door, door->x, door->y);
         room = which_room(tile + door_to_room[door->facing]);
         if (room) {
@@ -681,7 +681,7 @@ Thing *find_door(Thing *person)
 
     cell = &map[((s16)person->y.tile << 7) + (s16)person->x.tile];
     for (i = 0; i < 5; i++) {
-        door = fn_00019aac(&cell[special_around[i]], 8);
+        door = fn_00019aac(&cell[special_around[i]], THING_DOOR);
         if (door > thing) {
             if (person->room || (s16)person->x.tile + ((s16)person->y.tile << 7) == room_info[door->room_id].unknown4) {
                 return door;
@@ -746,7 +746,7 @@ void remove_object_from_map(Thing *obj)
     hosp = &allhosps[obj->owner];
     tile = (u16)obj->x.tile + ((u16)obj->y.tile << 7);
     switch (obj->subtype) {
-    case 0x2d:
+    case OBJ_PLANT:
         thingpage_cancel(&allhosps[obj->owner].fd2b, obj - thing);
         NRAdcounts.unknownb -= (obj->plant_health * 2 + 0x50) / 16;
         if (obj->owner == player) {
@@ -756,7 +756,7 @@ void remove_object_from_map(Thing *obj)
             }
         }
         break;
-    case 4:
+    case OBJ_BENCH:
         if (obj->owner == player) {
             NRAdcounts.unknown4--;
         }
@@ -814,7 +814,7 @@ s32 fn_00038d04(Thing *obj, u8 owner)
     Map *cell;
 
     cell = &map[(s16)obj->x.tile + ((s16)obj->y.tile << 7)];
-    if (!(obj->subtype == 0x30 || obj->subtype == 0x11 || cell->unknown7 == 1 << owner)) {
+    if (!(obj->subtype == OBJ_GATES_OF_HELL || obj->subtype == OBJ_LITTER_BOMB || cell->unknown7 == 1 << owner)) {
         return 0;
     }
     remove_object_from_map(obj);
@@ -874,7 +874,7 @@ u8 modify_machine(Thing *machine)
             }
         }
         if (machine->strength * 85 / 100 <= machine->times_used && count != 0) {
-            play_sound(10, 0xd0, -1, -1);
+            play_sound(10, SFX_MACHWARN, -1, -1);
             if (machine->strength * 95 / 100 <= machine->times_used) {
                 machine->smoke[0] = 1;
                 machine->smoke[1] = 1;
@@ -971,8 +971,8 @@ void double_door_swings(Thing *door)
         door->sprite = frame[door->sprite].next;
         if (frame[door->sprite].flags & 1) {
             door->in_use = 0;
-            door->state = 2;
-            if (door->subtype == 0x35) {
+            door->state = OS_STATIC;
+            if (door->subtype == OBJ_SWING_DOOR2) {
                 u16 anim = check_frame(0x3eb, door) + door->facing;
                 door->sprite = start[anim].frame;
                 door->flip = start[anim].flags > 0;
@@ -989,7 +989,7 @@ void double_door_swings(Thing *door)
 void sliding_door_closed(Thing *door)
 {
     if (should_sliding_door_open(door)) {
-        door->state = 0x16;
+        door->state = OS_SLIDING_DOOR_OPENS;
     }
 }
 
@@ -1002,7 +1002,7 @@ void sliding_door_opens(Thing *door)
         next = frame[door->sprite].next;
         if (frame[next].flags & 1) {
             door->countdown = 0x32;
-            door->state = 0x18;
+            door->state = OS_SLIDING_DOOR_OPEN;
         } else {
             door->sprite = next;
         }
@@ -1020,7 +1020,7 @@ void sliding_door_open(Thing *door)
             u16 anim = check_frame(sliding_doors[door->subtype - 0x3a].close_anim, door) + door->facing;
             door->sprite = start[anim].frame;
             door->flip = start[anim].flags > 0;
-            door->state = 0x1a;
+            door->state = OS_SLIDING_DOOR_CLOSES;
         }
     }
 }
@@ -1042,14 +1042,14 @@ void sliding_door_closes(Thing *door)
         for (steps--; steps != 0; steps--) {
             door->sprite = frame[door->sprite].next;
         }
-        door->state = 0x16;
+        door->state = OS_SLIDING_DOOR_OPENS;
     } else if (actual_game_turn % door->anim_speed == 0) {
         u16 next = frame[door->sprite].next;
         if (frame[next].flags & 1) {
             u16 anim2 = check_frame(sliding_doors[door->subtype - 0x3a].open_anim, door) + door->facing;
             door->sprite = start[anim2].frame;
             door->flip = start[anim2].flags > 0;
-            door->state = 0x14;
+            door->state = OS_SLIDING_DOOR_CLOSED;
         } else {
             door->sprite = next;
         }
@@ -1066,13 +1066,13 @@ u8 should_sliding_door_open(Thing *door)
     offset = sliding_doors[door->subtype - 0x3a].offset[door->facing];
     cell = &map[((s16)door->y.tile << 7) + (s16)door->x.tile + shapes[objects[door->subtype].shapes[door->facing]].unknown13[1] + offset];
     for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
-        if (occupant->type == 2 || occupant->type == 4 || occupant->type == 0x14 || occupant->type == 0x16) {
+        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR || occupant->type == THING_INSPECTOR) {
             return 1;
         }
     }
     cell = &map[shapes[objects[door->subtype].shapes[door->facing]].unknown19[1] + (((s16)door->y.tile << 7) + (s16)door->x.tile) + offset];
     for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
-        if (occupant->type == 2 || occupant->type == 4 || occupant->type == 0x14 || occupant->type == 0x16) {
+        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR || occupant->type == THING_INSPECTOR) {
             return 1;
         }
     }
@@ -1108,16 +1108,16 @@ u8 check_no_peeps_on_cell(RoomInfo *room, u16 tile, s8 side)
         return 1;
     }
     for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
-        if (occupant->type == 2 || occupant->type == 4 || occupant->type == 0x14 || occupant->type == 0x16
-            || occupant->type == 0xa) {
+        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR || occupant->type == THING_INSPECTOR
+            || occupant->type == THING_REAPER) {
             if (side == -1) {
                 return 0;
             }
             if (occupant->facing == side) {
-                if (occupant->type == 2 && occupant->state == 0x18 && occupant->complex_action != 0x46) {
+                if (occupant->type == THING_PATIENT && occupant->state == PS_ENTERTAINS_THEMSELF && occupant->complex_action != 0x46) {
                     return 1;
                 }
-                if (occupant->type == 2 && occupant->state == 0x44) {
+                if (occupant->type == THING_PATIENT && occupant->state == PS_WAITS_FOR_DECISION) {
                     return 1;
                 }
                 return 0;
@@ -1248,7 +1248,7 @@ void replace_machine(Thing *machine)
 
     cost = allhosps[othervar.ff].object_stats[machine->subtype].cost;
     if (allhosps[player].f35 >= cost && allhosps[player].f35 > 0) {
-        change_balance(0x24, -cost, 0, machine->owner);
+        change_balance(TX_REPLACEMENT_MACHINE, -cost, 0, machine->owner);
         machine->strength = allhosps[othervar.ff].object_stats[machine->subtype].unknown8;
         machine->times_used = 0;
         machine->overlay_frame = 0;
@@ -1263,10 +1263,10 @@ void replace_machine(Thing *machine)
             }
         }
         thingpage_cancel(pager, machine - thing);
-        reset_icon_value(machine, 0x1c);
-        play_sound(10, 0x43, -1, -1);
+        reset_icon_value(machine, ICON_NEEDS_REPAIR);
+        play_sound(10, SFX_SELECTX, -1, -1);
     } else {
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
     }
 }
 

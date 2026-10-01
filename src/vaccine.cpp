@@ -15,7 +15,7 @@ u8 is_person_highlighted_for_vaccination(u8 flag)
 
     person = &thing[othervar.f41];
     flag = 0;
-    if (person > thing && person->type == 2 && person->owner == player && (s8)person->contagion > 0
+    if (person > thing && person->type == THING_PATIENT && person->owner == player && (s8)person->contagion > 0
         && myhosp->f20b == person->illness) {
         if (flag || is_person_in_vaccine_queue(person) == 0) {
             othervar.f7a = othervar.f41;
@@ -30,20 +30,20 @@ u8 is_person_highlighted_for_vaccination(u8 flag)
 void request_vaccination(Thing *person)
 {
     insert_person_in_vaccination_queue(person);
-    person->flags |= 1;
-    set_icon_value(person, 0xe);
+    person->flags |= PF_VACCINE_REQUESTED;
+    set_icon_value(person, ICON_VACCINE_REQUESTED);
     allhosps[person->owner].vaccine_requests++;
 }
 
 // FUNCTION: 0x000987c8
 void cancel_vaccination_request(Thing *person)
 {
-    if (is_person_in_vaccine_queue(person) && !(person->flags & 2))
+    if (is_person_in_vaccine_queue(person) && !(person->flags & PF_VACCINE_NURSE_SENT))
         allhosps[person->owner].vaccine_requests--;
     remove_person_from_vaccination_queue(person);
-    person->flags &= ~3;
-    reset_icon_value(person, 0xe);
-    reset_icon_value(person, 0xf);
+    person->flags &= ~(PF_VACCINE_REQUESTED | PF_VACCINE_NURSE_SENT);
+    reset_icon_value(person, ICON_VACCINE_REQUESTED);
+    reset_icon_value(person, ICON_VACCINE_NURSE_SENT);
 }
 
 // FUNCTION: 0x00098844
@@ -102,19 +102,19 @@ u8 should_nurse_vaccinate(Thing *nurse)
     if (allhosps[nurse->owner].vaccine_requests == 0)
         return 0;
     for (patient = &thing[allhosps[nurse->owner].vaccine_queue]; patient > thing; patient = &thing[patient->vaccine_next]) {
-        if ((patient->flags & 1) && !(patient->flags & 2) && !patient->room) {
+        if ((patient->flags & PF_VACCINE_REQUESTED) && !(patient->flags & PF_VACCINE_NURSE_SENT) && !patient->room) {
             u16 pos = can_i_go_near_point(nurse, patient->x.tile + (patient->y.tile << 7));
             if (pos && !(map[pos].unknown7 & 0x10)) {
                 if (nurse->room)
                     set_complex(nurse, 0x136, nurse->room->unknown6);
                 set_complex(nurse, 0xbe, pos);
-                nurse->next_state = 0x40;
-                nurse->resume_state = 0x40;
+                nurse->next_state = SS_NURSE_VACCINATES;
+                nurse->resume_state = SS_NURSE_VACCINATES;
                 fn_0003e724(nurse);
                 nurse->slave = patient - thing;
-                patient->flags |= 2;
-                reset_icon_value(patient, 0xe);
-                set_icon_value(patient, 0xf);
+                patient->flags |= PF_VACCINE_NURSE_SENT;
+                reset_icon_value(patient, ICON_VACCINE_REQUESTED);
+                set_icon_value(patient, ICON_VACCINE_NURSE_SENT);
                 allhosps[patient->owner].vaccine_requests--;
                 return 1;
             }
@@ -131,26 +131,26 @@ void nurse_vaccinates(Thing *nurse)
     patient = &thing[nurse->slave];
     nurse->slave = 0;
     if (!is_person_in_vaccine_queue(patient)) {
-        nurse->state = 0x28;
+        nurse->state = SS_IN_CORRIDOR;
     } else if (am_i_near_point(nurse, patient->x.tile + (patient->y.tile << 7))) {
         cancel_vaccination_request(patient);
-        nurse->state = 0x28;
-        reset_icon_value(patient, 0xf);
-        set_icon_value(patient, 0x10);
+        nurse->state = SS_IN_CORRIDOR;
+        reset_icon_value(patient, ICON_VACCINE_NURSE_SENT);
+        set_icon_value(patient, ICON_VACCINATED);
         if ((s8)patient->contagion > 0)
             patient->contagion = 0xff;
-        change_balance(0x1d, -gbv.f126, 0, patient->owner);
+        change_balance(TX_VACCINATION, -gbv.f126, 0, patient->owner);
     } else {
         u16 pos = can_i_go_near_point(nurse, patient->x.tile + (patient->y.tile << 7));
         if (pos && !(map[pos].unknown7 & 0x10)) {
             set_complex(nurse, 0xbe, pos);
-            nurse->next_state = 0x40;
-            nurse->resume_state = 0x40;
+            nurse->next_state = SS_NURSE_VACCINATES;
+            nurse->resume_state = SS_NURSE_VACCINATES;
             fn_0003e724(nurse);
             nurse->slave = patient - thing;
         } else {
-            nurse->state = 0x28;
-            patient->flags &= ~2;
+            nurse->state = SS_IN_CORRIDOR;
+            patient->flags &= ~PF_VACCINE_NURSE_SENT;
             allhosps[patient->owner].vaccine_requests++;
         }
     }
@@ -169,7 +169,7 @@ u8 could_nurse_vaccinate(Thing *nurse)
     else
         from = nurse->x.tile + (nurse->y.tile << 7);
     for (patient = &thing[allhosps[nurse->owner].vaccine_queue]; patient > thing; patient = &thing[patient->vaccine_next]) {
-        if (!(patient->flags & 1) || (patient->flags & 2) || patient->room)
+        if (!(patient->flags & PF_VACCINE_REQUESTED) || (patient->flags & PF_VACCINE_NURSE_SENT) || patient->room)
             continue;
         u16 pos = patient->x.tile + (patient->y.tile << 7);
         if (!(map[pos].unknown7 & 0x10) && check_points_connected(pos, from))

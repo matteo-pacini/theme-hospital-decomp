@@ -140,7 +140,7 @@ void leave_queue(Thing *person)
             room->unknown31--;
         }
     } else if (person->dest_room) {
-        if (room_info[person->dest_room].type != 4) {
+        if (room_info[person->dest_room].type != ROOM_RECEPTION) {
             if (room_info[person->dest_room].unknown32 != 0) {
                 room_info[person->dest_room].unknown32--;
             }
@@ -183,14 +183,14 @@ void process_queue_button(u8 button)
     switch (button) {
     case 0:
         if (othervar.f63) {
-            D_001549d0[player].type = 0x3c;
+            D_001549d0[player].type = EV_FRONT_QUEUE;
             D_001549d0[player].value = othervar.f61;
             D_001549d0[player].arg = othervar.f63;
         }
         break;
     case 1:
         if (othervar.f63) {
-            D_001549d0[player].type = 0x3d;
+            D_001549d0[player].type = EV_BACK_QUEUE;
             D_001549d0[player].value = othervar.f61;
             D_001549d0[player].arg = othervar.f63;
         }
@@ -205,14 +205,14 @@ void process_queue_button(u8 button)
         break;
     case 4:
         if (othervar.f63) {
-            D_001549d0[player].type = 0x51;
+            D_001549d0[player].type = EV_QUEUE_PERSON_GO_HOME;
             D_001549d0[player].value = othervar.f61;
             D_001549d0[player].arg = othervar.f63;
         }
         break;
     case 5:
         if (othervar.f63) {
-            D_001549d0[player].type = 0x55;
+            D_001549d0[player].type = EV_QUEUE_PERSON_GO_RECEPTION;
             D_001549d0[player].value = othervar.f61;
             D_001549d0[player].arg = othervar.f63;
         }
@@ -229,7 +229,7 @@ void process_queue_button(u8 button)
     case 8:
         if (statvar.unknownfd > 1) {
             if (othervar.f63) {
-                D_001549d0[player].type = 0x7c;
+                D_001549d0[player].type = EV_REFER_PATIENT;
                 D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
                 D_001549d0[player].arg = fn_00085660(1);
                 othervar.f63 = 0;
@@ -239,7 +239,7 @@ void process_queue_button(u8 button)
     case 9:
         if (statvar.unknownfd > 2) {
             if (othervar.f63) {
-                D_001549d0[player].type = 0x7c;
+                D_001549d0[player].type = EV_REFER_PATIENT;
                 D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
                 D_001549d0[player].arg = fn_00085660(2);
                 othervar.f63 = 0;
@@ -249,7 +249,7 @@ void process_queue_button(u8 button)
     case 10:
         if (statvar.unknownfd > 3) {
             if (othervar.f63) {
-                D_001549d0[player].type = 0x7c;
+                D_001549d0[player].type = EV_REFER_PATIENT;
                 D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
                 D_001549d0[player].arg = fn_00085660(3);
                 othervar.f63 = 0;
@@ -326,7 +326,7 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
             if (person_ok_to_call(person)) {
                 leave_queue(person);
                 interrupt_person(person);
-                if (room->type == 4) {
+                if (room->type == ROOM_RECEPTION) {
                     reception = find_nearest_manned_reception(person, room - room_info, 0);
                     if (reception) {
                         fn_0004195c(person, thing[reception].use_pos[1]);
@@ -344,7 +344,7 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                     person->sprite = start[anim].frame;
                     person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                 }
-                person->state = 0x24;
+                person->state = PS_GOTO_QUEUE;
             }
         }
     }
@@ -434,14 +434,14 @@ void flag_all_queue_members(RoomInfo *room)
         person = &thing[room->queue_head];
         if (person > thing) {
             while (1) {
-                set_icon_value(person, 0x1a);
+                set_icon_value(person, ICON_QUEUE);
                 if (person->queue_next == 0) {
                     break;
                 }
                 person = &thing[person->queue_next];
             }
             if (game_turn - 1 != D_001603d0 || D_001603d4 != room)
-                play_sound(10, 1, -1, -1);
+                play_sound(10, SFX_HLIGHTP2, -1, -1);
         }
     }
     D_001603d4 = room;

@@ -16,7 +16,7 @@ u16 create_inspector(u8 owner)
     inspector = allocate_thing(0x19);
     if (inspector != 0) {
     Thing *obj;
-    inspector->type = 0x16;
+    inspector->type = THING_INSPECTOR;
     inspector->owner = owner;
     pos = room_info[allhosps[owner].unknown1cf[old_newrand() & 3]].unknown4;
     inspector->x.tile = pos % 128;
@@ -30,16 +30,16 @@ u16 create_inspector(u8 owner)
     entry = check_frame(0x89, inspector) + inspector->facing;
     inspector->sprite = start[entry].frame;
     inspector->flip = start[entry].flags > 0 ? (u8)1 : (u8)0;
-    obj = &thing[listhead[owner].objects[11]];
+    obj = &thing[listhead[owner].objects[OBJ_RECEPTION_DESK]];
     if (obj > thing) {
         fn_0004195c(inspector, obj->use_pos[1]);
-        inspector->state = 2;
+        inspector->state = MAYOR_GOTO;
         inspector->goto_state = 8;
         inspector->inspect_room = 0;
     } else {
         fn_0004195c(inspector, room_info[allhosps[inspector->owner].unknown1cf[old_newrand() & 3]].unknown4);
-        inspector->state = 2;
-        inspector->goto_state = 6;
+        inspector->state = MAYOR_GOTO;
+        inspector->goto_state = MAYOR_GONE;
     }
     return inspector - thing;
     }
@@ -67,8 +67,8 @@ void inspector_pauses(Thing *inspector)
         return;
     hosp = &allhosps[inspector->owner];
     fn_0004195c(inspector, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
-    inspector->state = 2;
-    inspector->goto_state = 6;
+    inspector->state = MAYOR_GOTO;
+    inspector->goto_state = MAYOR_GONE;
     contagious = count_and_flag_contagious_peeps(hosp->f20b, 2, inspector->owner);
     if (contagious == 0) {
         hosp->unknown209[0] = 0;
@@ -106,15 +106,15 @@ void inspector_pauses(Thing *inspector)
     switch (hosp->unknown209[0]) {
     case 0:
         hosp->f203 = old_normal_rand(gbv.f130, gbv.f132);
-        change_balance(0x1f, hosp->f203, 0, (u16)inspector->owner);
+        change_balance(TX_GOVERNMENT_COMPENSATION, hosp->f203, 0, (u16)inspector->owner);
         break;
     case 1:
-        change_balance(0x1e, -hosp->f203, 0, (u16)inspector->owner);
+        change_balance(TX_EPIDEMIC_COVERUP_FINE, -hosp->f203, 0, (u16)inspector->owner);
         send_peeps_home(0, inspector->owner);
         break;
     case 2:
         reputation_affected(0, 0xf, 0, inspector->owner, 0);
-        change_balance(0x1e, -hosp->f203, 0, (u16)inspector->owner);
+        change_balance(TX_EPIDEMIC_COVERUP_FINE, -hosp->f203, 0, (u16)inspector->owner);
         send_peeps_home(0, inspector->owner);
         break;
     case 3:

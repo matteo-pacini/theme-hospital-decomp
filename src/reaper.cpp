@@ -30,19 +30,19 @@ u8 summon_the_reaper(Thing *victim)
     found = 0;
     reaper = &thing[victim->slave];
     if (reaper > thing) {
-        if (reaper->type == 10)
+        if (reaper->type == THING_REAPER)
             return 0;
     }
     reaper = allocate_thing(0x32);
     if (reaper) {
-        reaper->type = 10;
+        reaper->type = THING_REAPER;
         victim_pos = (u16)victim->x.tile + ((u16)victim->y.tile << 7);
         for (i = 1; i <= gate_arrive[0]; i++) {
             gate_pos = victim_pos + gate_arrive[i];
             if (can_i_get_to(victim, gate_pos) > 0) {
-                if (can_place_object(gate_pos, 0x30, 0, victim->owner)) {
+                if (can_place_object(gate_pos, OBJ_GATES_OF_HELL, 0, victim->owner)) {
                     if (corridor_object_nav_check(gate_pos, 0x30, 0)) {
-                        gate_id = fn_00037098(gate_pos, 0x30, 0, victim->owner);
+                        gate_id = fn_00037098(gate_pos, OBJ_GATES_OF_HELL, 0, victim->owner);
                         if (gate_id) {
                             gate = &thing[gate_id];
                             gate->aux_sprite = start[0x4fa].frame;
@@ -82,7 +82,7 @@ u8 summon_the_reaper(Thing *victim)
                 victim->slave = reaper - thing;
                 reaper->sprite = start[check_frame(0x33d, reaper) + reaper->facing].frame;
                 reaper->flip = start[check_frame(0x33d, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
-                reaper->state = 2;
+                reaper->state = REAPER_PLAY_ANIM;
                 reaper->timer = 0x5dc;
                 reaper->dest_x = gate->use_pos[0] % 128;
                 reaper->dest_y = gate->use_pos[0] / 128;
@@ -93,11 +93,11 @@ u8 summon_the_reaper(Thing *victim)
                 fn_000444e0(reaper);
             } else {
                 fn_00038d04(gate, gate->owner);
-                reaper->type = 0;
+                reaper->type = THING_FREE;
                 return 0;
             }
         } else {
-            reaper->type = 0;
+            reaper->type = THING_FREE;
             return 0;
         }
     }
@@ -135,7 +135,7 @@ void reaper_calls_victim(Thing *reaper)
     reaper->facing = 0;
     reaper->sprite = start[check_frame(0x1f5, reaper) + reaper->facing].frame;
     reaper->flip = start[check_frame(0x1f5, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
-    reaper->state = 4;
+    reaper->state = REAPER_WAITS;
     victim = &thing[reaper->slave];
     if (victim > thing) {
         gate = &thing[reaper->gate];
@@ -172,7 +172,7 @@ void reaper_waits(Thing *reaper)
                         if (((s16)victim->y.tile << 7) + (s16)victim->x.tile == gate->use_pos[1]) {
                             reaper->sprite = start[check_frame(0x343, reaper) + reaper->facing].frame;
                             reaper->flip = start[check_frame(0x343, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
-                            reaper->state = 2;
+                            reaper->state = REAPER_PLAY_ANIM;
                             reaper->reaper_next_state = 4;
                             reaper->next_sprite = start[check_frame(0x1f5, reaper) + reaper->facing].frame;
                             reaper->next_flip = start[check_frame(0x1f5, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
@@ -194,7 +194,7 @@ void reaper_leaves_normally(Thing *reaper)
     reaper->facing = 0;
     reaper->sprite = start[check_frame(0x347, reaper) + reaper->facing].frame;
     reaper->flip = start[check_frame(0x347, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
-    reaper->state = 2;
+    reaper->state = REAPER_PLAY_ANIM;
     reaper->reaper_next_state = 6;
     reaper->next_sprite = 0;
     reaper->next_flip = 0;

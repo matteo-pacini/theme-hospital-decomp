@@ -112,7 +112,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             graphs.unknown2 = 2;
         break;
     case 2:
-        D_001549d0[player].type = 0x70;
+        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
         D_001549d0[player].value = 0;
         break;
     }
@@ -330,7 +330,7 @@ void process_graph_button(u8 button)
         } else {
             graph[button].visible = 1;
         }
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 8:
         switch (othervar.f2d) {
@@ -344,11 +344,11 @@ void process_graph_button(u8 button)
             othervar.f2d = 0;
             break;
         }
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 9:
         graphs.unknown2 = 2;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     }
 }

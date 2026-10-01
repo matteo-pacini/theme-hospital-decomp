@@ -77,19 +77,19 @@ void display_slist(void)
         othervar.f91 = 0;
         if (othervar.fa82) {
             switch ((thing + othervar.fa82)->subtype) {
-            case 0:
+            case STAFF_NURSE:
                 othervar.f49 = 2;
                 break;
-            case 1:
+            case STAFF_DOCTOR:
                 othervar.f49 = 1;
                 break;
-            case 2:
+            case STAFF_HANDYMAN:
                 othervar.f49 = 4;
                 break;
-            case 3:
+            case STAFF_RECEPTIONIST:
                 othervar.f49 = 8;
                 break;
-            case 4:
+            case STAFF_SURGEON:
                 othervar.f49 = 1;
                 break;
             default:
@@ -135,7 +135,7 @@ void display_slist(void)
         cancel_helpmsg();
         break;
     case 3:
-        D_001549d0[player].type = 0x70;
+        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
         D_001549d0[player].value = 0;
         cancel_helpmsg();
         break;
@@ -161,32 +161,32 @@ void slist_keys(void)
     int i;
 
     prev = 0;
-    if (lbInkey == 0x4d || lbKeyOn[0xcd]) {
+    if (lbInkey == KC_NUMPAD6 || lbKeyOn[KC_RIGHT]) {
         if (othervar.f49 != 8) {
             othervar.f49 <<= 1;
             slist.unknown0 = 0;
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
             othervar.fa60 = 0;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         }
         lbInkey = 0;
-    } else if (lbInkey == 0x4b || lbKeyOn[0xcb]) {
+    } else if (lbInkey == KC_NUMPAD4 || lbKeyOn[KC_LEFT]) {
         if (othervar.f49 != 1) {
             othervar.f49 >>= 1;
             slist.unknown0 = 0;
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
             othervar.fa60 = 0;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         }
         lbInkey = 0;
     }
-    if (lbInkey == 0x50 || lbKeyOn[0xd0]) {
+    if (lbInkey == KC_NUMPAD2 || lbKeyOn[KC_DOWN]) {
         prev = slist.unknown0;
         slist.unknown0 = get_slist_staff(0);
         if (prev != slist.unknown0) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
             lbInkey = 0;
@@ -194,28 +194,28 @@ void slist_keys(void)
                 if (othervar.f91 < 150) {
                     if (staff_on_page(othervar.f91 + 1)) {
                         othervar.f91++;
-                        play_sound(10, 0x43, -1, -1);
+                        play_sound(10, SFX_SELECTX, -1, -1);
                     } else {
-                        play_sound(10, 0x43, -1, -1);
+                        play_sound(10, SFX_SELECTX, -1, -1);
                     }
                 } else {
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 }
             }
         }
-    } else if (lbInkey == 0x48 || lbKeyOn[0xc8]) {
+    } else if (lbInkey == KC_NUMPAD8 || lbKeyOn[KC_UP]) {
         prev = slist.unknown0;
         slist.unknown0 = get_slist_staff(1);
         if (prev != slist.unknown0) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             if (othervar.fa60 / 10 > 0 && othervar.fa60 % 10 == 0) {
                 if (othervar.f91 > 0) {
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                     othervar.f91--;
                     for (i = 0; i < 10; i++)
                         slist.unknown0 = get_slist_staff(1);
                 } else {
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 }
             }
             lbDisplay.mouse_x = 0;
@@ -233,12 +233,12 @@ u16 get_slist_staff(const u8 dir)
     staff = &thing[slist.unknown0];
     if (dir == 0) {
         while (++staff < end_things) {
-            if (staff->type == 4 && staff->owner == player) {
-                if (staff->state != 0x2e) {
-                    if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
-                        || (staff->subtype == 0 && (othervar.f49 & 2))
-                        || (staff->subtype == 3 && (othervar.f49 & 8))
-                        || (staff->subtype == 2 && (othervar.f49 & 4))) {
+            if (staff->type == THING_STAFF && staff->owner == player) {
+                if (staff->state != SS_APPLICANT) {
+                    if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
+                        || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
+                        || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
+                        || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
                         othervar.fa60++;
                         return staff - thing;
                     }
@@ -247,12 +247,12 @@ u16 get_slist_staff(const u8 dir)
         }
     } else {
         while (thing + 1 <= --staff) {
-            if (staff->type == 4 && staff->owner == player) {
-                if (staff->state != 0x2e) {
-                    if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
-                        || (staff->subtype == 0 && (othervar.f49 & 2))
-                        || (staff->subtype == 3 && (othervar.f49 & 8))
-                        || (staff->subtype == 2 && (othervar.f49 & 4))) {
+            if (staff->type == THING_STAFF && staff->owner == player) {
+                if (staff->state != SS_APPLICANT) {
+                    if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
+                        || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
+                        || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
+                        || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
                         othervar.fa60--;
                         return staff - thing;
                     }
@@ -286,20 +286,20 @@ void draw_slist_staff(const u16 selected)
     }
     row = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if (staff->type == 4 && staff->owner == player) {
-            if (staff->state == 0x2e)
+        if (staff->type == THING_STAFF && staff->owner == player) {
+            if (staff->state == SS_APPLICANT)
                 continue;
             if (row >= 10)
                 break;
-            if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
-                || (staff->subtype == 0 && (othervar.f49 & 2))
-                || (staff->subtype == 3 && (othervar.f49 & 8))
-                || (staff->subtype == 2 && (othervar.f49 & 4))) {
+            if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
+                || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
+                || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
+                || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
                 if (listed >= othervar.f91 * 10 && listed < (othervar.f91 + 1) * 10) {
                     set_font_from_cache(1);
                     if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
                         if (othervar.fa60 != row + othervar.f91 * 10 + 1)
-                            play_sound(10, 0x44, -1, -1);
+                            play_sound(10, SFX_HLIGHT5, -1, -1);
                         set_font_from_cache(2);
                         othervar.fa60 = othervar.f91 * 10 + row + 1;
                     }
@@ -323,7 +323,7 @@ void draw_slist_staff(const u16 selected)
                     if (lbDisplay.mleft_button) {
                         if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
                             if ((u16)(staff - thing) != slist.unknown0)
-                                play_sound(10, 0x43, -1, -1);
+                                play_sound(10, SFX_SELECTX, -1, -1);
                             slist.unknown0 = staff - thing;
                         }
                     }
@@ -394,32 +394,32 @@ void draw_slist_window(const u16 id)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     draw_face((Picture *)&thing[id].face_head, resvars.f44_SlistAreap->face_x, resvars.f44_SlistAreap->face_y);
-    if (staff->subtype == 1 || staff->subtype == 4) {
+    if (staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) {
         i = 0;
-        if ((staff->skills & 8) && !(staff->skills & 0x80))
+        if ((staff->skills & SKILL_JUNIOR) && !(staff->skills & SKILL_CONSULTANT))
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
-        if ((staff->skills & 0x10) && !(staff->skills & 0x80) && !(staff->skills & 8))
+        if ((staff->skills & SKILL_DOCTOR) && !(staff->skills & SKILL_CONSULTANT) && !(staff->skills & SKILL_JUNIOR))
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
-        if (staff->skills & 0x80)
+        if (staff->skills & SKILL_CONSULTANT)
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         i++;
-        if (staff->skills & 0x20) {
+        if (staff->skills & SKILL_SURGEON) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         } else if (staff->surgeon_training) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
             draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->surgeon_training, gbv.f146);
         }
         i++;
-        if (staff->skills & 0x40) {
+        if (staff->skills & SKILL_PSYCHIATRIST) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         } else if (staff->psych_training) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
             draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->psych_training, gbv.f148);
         }
         i++;
-        if (staff->skills & 0x100) {
+        if (staff->skills & SKILL_RESEARCHER) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
         } else if (staff->research_training) {
             reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
@@ -453,12 +453,12 @@ void draw_slist_overall(void)
     happiness = tiredness = ability = 0;
     count = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if (staff->type == 4 && staff->owner == player) {
-            if (staff->state != 0x2e) {
-                if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
-                    || (staff->subtype == 0 && (othervar.f49 & 2))
-                    || (staff->subtype == 3 && (othervar.f49 & 8))
-                    || (staff->subtype == 2 && (othervar.f49 & 4))) {
+        if (staff->type == THING_STAFF && staff->owner == player) {
+            if (staff->state != SS_APPLICANT) {
+                if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
+                    || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
+                    || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
+                    || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
                     happiness += staff->happiness_s;
                     tiredness += staff->tiredness;
                     ability += staff->ability;
@@ -505,7 +505,7 @@ void process_slist_panel(void)
                 slist.unknown2 = 2;
                 close_irequesters();
                 window.unknown2eb = 0;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
             }
         }
         if (slist.unknown0)
@@ -532,35 +532,35 @@ void process_slist_button(u8 button)
     switch (button) {
     case 0:
         if (othervar.f49 != 1)
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         othervar.f49 = 1;
         slist.unknown0 = 0;
         othervar.fa60 = 0;
         break;
     case 1:
         if (othervar.f49 != 2)
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         othervar.f49 = 2;
         slist.unknown0 = 0;
         othervar.fa60 = 0;
         break;
     case 2:
         if (othervar.f49 != 8)
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         othervar.f49 = 8;
         slist.unknown0 = 0;
         othervar.fa60 = 0;
         break;
     case 3:
         if (othervar.f49 != 4)
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         othervar.f49 = 4;
         slist.unknown0 = 0;
         othervar.fa60 = 0;
         break;
     case 4:
         if (slist.unknown0) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             close_irequesters();
             lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
             set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
@@ -571,25 +571,25 @@ void process_slist_button(u8 button)
         break;
     case 5:
         if (slist.unknown0) {
-            D_001549d0[player].type = 0x5a;
+            D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
             D_001549d0[player].value = thing[slist.unknown0].salary / 10;
             D_001549d0[player].arg = slist.unknown0;
-            play_sound(10, 0xb4, -1, -1);
+            play_sound(10, SFX_BONUSAL2, -1, -1);
         }
         break;
     case 6:
         if (slist.unknown0) {
-            D_001549d0[player].type = 0x48;
+            D_001549d0[player].type = EV_PAY_STAFF_BONUS;
             D_001549d0[player].value = thing[slist.unknown0].salary / 10;
             D_001549d0[player].arg = slist.unknown0;
-            play_sound(10, 0xb8, -1, -1);
+            play_sound(10, SFX_BONUS2, -1, -1);
         }
         break;
     case 7:
         slist.unknown2 = 3;
         close_irequesters();
         window.unknown2eb = 0;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     case 8:
         sound = 8;
@@ -616,18 +616,18 @@ void process_slist_button(u8 button)
         play_sound(10, sound, -1, -1);
         break;
     case 10:
-        D_001549d0[player].type = 0x5a;
+        D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
         D_001549d0[player].value = 500;
         D_001549d0[player].arg = 0;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 11:
         if (slist.unknown0) {
-            D_001549d0[player].type = 0x5a;
+            D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
             D_001549d0[player].value = 500;
             D_001549d0[player].arg = slist.unknown0;
         }
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     default:
         break;
@@ -642,12 +642,12 @@ u8 staff_on_page(const u8 page)
 
     listed = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if (staff->type == 4) {
-            if (staff->state != 0x2e && staff->owner == player) {
-                if (((staff->subtype == 1 || staff->subtype == 4) && (othervar.f49 & 1))
-                    || (staff->subtype == 0 && (othervar.f49 & 2))
-                    || (staff->subtype == 3 && (othervar.f49 & 8))
-                    || (staff->subtype == 2 && (othervar.f49 & 4))) {
+        if (staff->type == THING_STAFF) {
+            if (staff->state != SS_APPLICANT && staff->owner == player) {
+                if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
+                    || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
+                    || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
+                    || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
                     if (listed >= page * 10 && listed < (page + 1) * 10)
                         return 1;
                     listed++;
@@ -677,16 +677,16 @@ void draw_slist_nums(void)
     for (i = 0; i < 4; i++)
         counts[i] = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
-        if (staff->type == 4 && staff->owner == player) {
-            if (staff->state == 0x2e)
+        if (staff->type == THING_STAFF && staff->owner == player) {
+            if (staff->state == SS_APPLICANT)
                 continue;
-            if (staff->subtype == 1 || staff->subtype == 4)
+            if (staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON)
                 counts[0]++;
-            else if (staff->subtype == 0)
+            else if (staff->subtype == STAFF_NURSE)
                 counts[1]++;
-            else if (staff->subtype == 2)
+            else if (staff->subtype == STAFF_HANDYMAN)
                 counts[2]++;
-            else if (staff->subtype == 3)
+            else if (staff->subtype == STAFF_RECEPTIONIST)
                 counts[3]++;
         }
     }
@@ -748,7 +748,7 @@ void slist_help_if_surgeon(void)
     s32 pct;
 
     staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->skills & 0x20)) {
+    if ((othervar.f49 & 1) && staff > thing && (staff->skills & SKILL_SURGEON)) {
         fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
         pct = staff->surgeon_training;
@@ -767,7 +767,7 @@ void slist_help_if_shrink(void)
     s32 pct;
 
     staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->skills & 0x40)) {
+    if ((othervar.f49 & 1) && staff > thing && (staff->skills & SKILL_PSYCHIATRIST)) {
         fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
         pct = staff->psych_training;
@@ -786,7 +786,7 @@ void slist_help_if_researcher(void)
     s32 pct;
 
     staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->skills & 0x100)) {
+    if ((othervar.f49 & 1) && staff > thing && (staff->skills & SKILL_RESEARCHER)) {
         fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
     } else {
         pct = staff->research_training;

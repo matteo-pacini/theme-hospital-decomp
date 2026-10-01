@@ -260,8 +260,8 @@ void game(void)
             setup_colors();
         }
         if (othervar.fa5c || othervar.fa5d || othervar.fa5e) {
-            if (display_mode == 0 && crequester.unknown2 == 0x63 && othervar.f9b8 == 0 && gamevar.f12e != 0x25 && !othervar.fa94
-                && gamevar.f12e != 3) {
+            if (display_mode == 0 && crequester.unknown2 == 0x63 && othervar.f9b8 == 0 && gamevar.f12e != MM_HELP && !othervar.fa94
+                && gamevar.f12e != MM_PLACE_STAFF) {
                 display_mission();
             }
         }
@@ -376,7 +376,7 @@ void start_turn(void)
             if (i != player) {
                 announce_this(0xc, i);
             } else {
-                play_sound(10, 0xd9, -1, -1);
+                play_sound(10, SFX_FANFARE, -1, -1);
             }
             if (statvar.unknownfd <= 1) {
                 allhosps[i].unknown1256 = 1;
@@ -481,7 +481,7 @@ void do_charts(void)
     case 11:
     case 12:
     default:
-        D_001549d0[player].type = 0x34;
+        D_001549d0[player].type = EV_CLOSE_SCREEN;
         break;
     }
 }
@@ -547,12 +547,12 @@ void check_if_active(void)
     if (statvar.unknownfd > 1) {
         if (LbIsActive() && othervar.fa7b[player] != 0) {
             othervar.fa81 = 0xf;
-            D_001549d0[player].type = 0x8e;
+            D_001549d0[player].type = EV_NETWORK_GAINED_FOCUS;
             if (othervar.fa4f) {
                 AIL_resume_sequence(GetSongHandle());
             }
         } else if (!LbIsActive() && othervar.fa7b[player] == 0) {
-            D_001549d0[player].type = 0x8d;
+            D_001549d0[player].type = EV_NETWORK_LOST_FOCUS;
             if (has_any_player_lost_focus()) {
                 othervar.fa7b[player] = 2;
             } else {
@@ -610,7 +610,7 @@ void display_mission(void)
         othervar.fa5c = 0;
     } else if (othervar.fa5e) {
         if (othervar.fa5e == 3) {
-            play_sound(10, 0xaf, -1, -1);
+            play_sound(10, SFX_CHEER, -1, -1);
         }
         show_help_page(3, othervar.fa5e);
         othervar.fa5e = 0;

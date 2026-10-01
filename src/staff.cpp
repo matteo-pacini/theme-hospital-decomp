@@ -108,11 +108,11 @@ u16 fn_00029c4c(u16 tile, u16 id, u8 force, u8 owner)
             if (room > 0) {
                 insert_person_in_room_list(room, new_staff);
                 new_staff->state = get_state((u16)room->type, new_staff);
-                if (new_staff->state != 0x36) {
-                    if (new_staff->subtype != 2 && (room->type != 0x16 || new_staff->subtype != 1 || (new_staff->skills & 0x80)) && room->type != 0x1c) {
+                if (new_staff->state != SS_PROCESS_COMPLEX) {
+                    if (new_staff->subtype != STAFF_HANDYMAN && (room->type != ROOM_TRAINING || new_staff->subtype != STAFF_DOCTOR || (new_staff->skills & SKILL_CONSULTANT)) && room->type != ROOM_RESEARCH) {
                         change_lockholder(new_staff, room);
                     }
-                } else if (new_staff->subtype != 2) {
+                } else if (new_staff->subtype != STAFF_HANDYMAN) {
                     if (new_staff->owner == player) {
                         advisor.f12d = 1;
                         advisor.f12e = new_staff->subtype;
@@ -140,9 +140,9 @@ u16 fn_00029c4c(u16 tile, u16 id, u8 force, u8 owner)
                 gamevar.f4--;
                 gamevar.f6[new_staff->subtype]--;
             }
-            if (new_staff->subtype == 0) {
+            if (new_staff->subtype == STAFF_NURSE) {
                 reinit_nurse(new_staff);
-            } else if (new_staff->subtype == 2) {
+            } else if (new_staff->subtype == STAFF_HANDYMAN) {
                 new_staff->work_target2 = 0;
                 new_staff->work_target = new_staff->work_target2;
             }
@@ -164,8 +164,8 @@ u16 fn_00029c4c(u16 tile, u16 id, u8 force, u8 owner)
 // FUNCTION: 0x0002a094
 void inc_staff_stats(Thing *staff, u8 owner)
 {
-    allhosps[owner].fc9e[staff->subtype == 4 ? 1 : staff->subtype]++;
-    if (staff->skills & 0x20) {
+    allhosps[owner].fc9e[staff->subtype == STAFF_SURGEON ? 1 : staff->subtype]++;
+    if (staff->skills & SKILL_SURGEON) {
         allhosps[owner].fca6++;
     }
     allhosps[owner].fc9c++;
@@ -189,7 +189,7 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
     new_staff = allocate_thing(0x19);
     if (new_staff != 0) {
         new_staff->subtype = kind;
-        new_staff->type = 4;
+        new_staff->type = THING_STAFF;
         new_staff->facing = 0;
         new_staff->owner = 0x63;
         if (staff[kind].unknown6[5]) {
@@ -208,38 +208,38 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
         new_staff->work_delay = normal_staffrand(1, 10);
         new_staff->happiness = 100;
         new_staff->warmth = 50;
-        new_staff->state = 0x2e;
+        new_staff->state = SS_APPLICANT;
         gamevar.f4++;
         gamevar.f6[new_staff->subtype]++;
         switch (new_staff->subtype) {
-        case 0:
+        case STAFF_NURSE:
             mean = 30;
             spread = 1000;
-            new_staff->skills = 4;
+            new_staff->skills = SKILL_NURSE;
             new_staff->female = 1;
             new_staff->face_head = 12;
             new_staff->face_body = staffrand() % 5 + 10;
             new_staff->face_legs = staffrand() % 5 + 10;
             break;
-        case 1:
+        case STAFF_DOCTOR:
             mean = gbv.f156;
             spread = gbv.f158;
-            new_staff->skills |= 0x10;
+            new_staff->skills |= SKILL_DOCTOR;
             if (gamevar.f16f > 0 && staffrand() % gamevar.f16f == 0) {
-                new_staff->skills |= 0x40;
+                new_staff->skills |= SKILL_PSYCHIATRIST;
             }
             if (gamevar.f170 > 0 && staffrand() % gamevar.f170 == 0) {
-                new_staff->skills |= 0x20;
+                new_staff->skills |= SKILL_SURGEON;
             }
             if (gamevar.f171 > 0 && staffrand() % gamevar.f171 == 0) {
-                new_staff->skills |= 0x100;
+                new_staff->skills |= SKILL_RESEARCHER;
             }
             if (gamevar.f172 > 0 && staffrand() % gamevar.f172 == 0) {
-                new_staff->skills |= 0x80;
+                new_staff->skills |= SKILL_CONSULTANT;
                 mean = gbv.f158;
                 spread = 1000;
             } else if (gamevar.f173 > 0 && staffrand() % gamevar.f173 == 0) {
-                new_staff->skills |= 8;
+                new_staff->skills |= SKILL_JUNIOR;
                 mean = 30;
                 spread = gbv.f156;
             }
@@ -261,10 +261,10 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
                 break;
             }
             break;
-        case 2:
+        case STAFF_HANDYMAN:
             mean = 30;
             spread = 1000;
-            new_staff->skills = 2;
+            new_staff->skills = SKILL_HANDYMAN;
             new_staff->female = 0;
             new_staff->prio_litter = 0x21;
             new_staff->prio_plants = 0x21;
@@ -273,10 +273,10 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
             new_staff->face_body = staffrand() % 3 + 15;
             new_staff->face_legs = staffrand() % 3 + 15;
             break;
-        case 3:
+        case STAFF_RECEPTIONIST:
             mean = 30;
             spread = 1000;
-            new_staff->skills = 1;
+            new_staff->skills = SKILL_RECEPTIONIST;
             new_staff->female = 1;
             new_staff->face_head = staffrand() % 4 + 10;
             new_staff->face_body = staffrand() % 5 + 10;
@@ -305,14 +305,14 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
 void sack_staff(Thing *staff, u16 mode)
 {
     remove_person_from_room_list(staff);
-    set_icon_value(staff, 9);
+    set_icon_value(staff, ICON_LEAVING);
     if (staff->owner == 0x63) {
         return;
     }
     interrupt_staff(staff);
     switch (mode) {
     case 0:
-        change_balance(0x18, -staff->salary, 0, staff->owner);
+        change_balance(TX_SEVERANCE_PAY, -staff->salary, 0, staff->owner);
         break;
     case 1:
         staff->orders &= 0xdf;
@@ -337,8 +337,8 @@ void sack_staff(Thing *staff, u16 mode)
     staff->discontent = 0;
     fn_000b05f0(staff);
     allhosps[staff->owner].fc9c--;
-    allhosps[staff->owner].fc9e[staff->subtype == 4 ? 1 : staff->subtype]--;
-    if (staff->skills & 0x20) {
+    allhosps[staff->owner].fc9e[staff->subtype == STAFF_SURGEON ? 1 : staff->subtype]--;
+    if (staff->skills & SKILL_SURGEON) {
         allhosps[staff->owner].fca6--;
     }
     staff->owner = 0x63;
@@ -377,7 +377,7 @@ void staff_in_corridor(Thing *staff)
 
     staff->dest_x = staff->x.tile;
     staff->dest_y = staff->y.tile;
-    staff->state = 0x34;
+    staff->state = SS_WANDERS;
     staff->substate = 6;
     staff->countdown = 1;
     anim = check_frame(staff_anim_starts[staff->subtype].unknownA, staff) + (u16)staff->facing;
@@ -400,10 +400,10 @@ u8 obey_pager(Thing *staff)
     if (staff->room) {
         set_complex(staff, 0x136, staff->room->unknown6);
         fn_0003e724(staff);
-        staff->resume_state = 0x36;
+        staff->resume_state = SS_PROCESS_COMPLEX;
         set_complex(staff, 0x14a, room->unknown4);
     } else {
-        staff->resume_state = 0x36;
+        staff->resume_state = SS_PROCESS_COMPLEX;
         set_complex(staff, 0x14a, room->unknown4);
         fn_0003e724(staff);
     }
@@ -420,10 +420,10 @@ u8 process_staff_complex(Thing *staff)
     if (room > room_info) {
         staff_exit_room_check(staff);
         set_complex(staff, 0x136, room->unknown6);
-        staff->next_state = 0x28;
+        staff->next_state = SS_IN_CORRIDOR;
         fn_0003e724(staff);
     } else {
-        staff->state = 0x28;
+        staff->state = SS_IN_CORRIDOR;
     }
     return 1;
 }
@@ -433,23 +433,23 @@ u8 take_a_break(Thing *staff)
 {
     RoomInfo *room;
 
-    room = get_nearest_room_info(staff, 0x19);
+    room = get_nearest_room_info(staff, ROOM_STAFF_ROOM);
     if (room <= room_info) {
         return 0;
     }
-    if (staff->subtype == 3) {
+    if (staff->subtype == STAFF_RECEPTIONIST) {
         interrupt_staff(staff);
     }
     staff_exit_room_check(staff);
-    staff->next_state = 0x30;
+    staff->next_state = SS_IN_STAFF_ROOM;
     if (staff->room > room_info) {
         set_complex(staff, 0x136, staff->room->unknown6);
         fn_0003e724(staff);
-        staff->resume_state = 0x36;
+        staff->resume_state = SS_PROCESS_COMPLEX;
         set_complex(staff, 0x96, room->unknown4);
     } else {
         set_complex(staff, 0x96, room->unknown4);
-        staff->resume_state = 0x36;
+        staff->resume_state = SS_PROCESS_COMPLEX;
         fn_0003e724(staff);
     }
     staff->dest_room = room - room_info;
@@ -472,7 +472,7 @@ void staff_in_staff_room(Thing *staff)
                 } else {
                     rest_staff(staff, gbv.fda);
                 }
-                staff->orders &= ~1;
+                staff->orders &= ~ORD_REST;
                 if (staff->orders & 8) {
                     staff->orders &= 0xf0;
                     process_staff_complex(staff);
@@ -483,28 +483,28 @@ void staff_in_staff_room(Thing *staff)
                     return;
                 }
                 roll = old_newrand() % 10;
-                if ((find_object(staff->x.tile + (staff->y.tile << 7), 10, 1, 0x96, staff->owner) && staff->complex_action != 0x2ee) && roll == 1) {
+                if ((find_object(staff->x.tile + (staff->y.tile << 7), OBJ_POOL_TABLE, 1, 0x96, staff->owner) && staff->complex_action != 0x2ee) && roll == 1) {
                     if (staff_abilities[staff->subtype][1]) {
-                        staff->resume_state = 0x30;
-                        staff->next_state = 0x30;
+                        staff->resume_state = SS_IN_STAFF_ROOM;
+                        staff->next_state = SS_IN_STAFF_ROOM;
                         set_complex(staff, 0x2ee, 0);
                         fn_0003e724(staff);
                         return;
                     }
                 }
-                if ((find_object((u16)staff->x.tile + ((u16)staff->y.tile << 7), 0x39, 1, 0x96, staff->owner) && staff->complex_action != 0x2f8) && roll == 2) {
+                if ((find_object((u16)staff->x.tile + ((u16)staff->y.tile << 7), OBJ_VIDEO_GAME, 1, 0x96, staff->owner) && staff->complex_action != 0x2f8) && roll == 2) {
                     if (staff_abilities[staff->subtype][0]) {
-                        staff->resume_state = 0x30;
-                        staff->next_state = 0x30;
+                        staff->resume_state = SS_IN_STAFF_ROOM;
+                        staff->next_state = SS_IN_STAFF_ROOM;
                         set_complex(staff, 0x2f8, 0);
                         fn_0003e724(staff);
                     }
                     return;
                 }
                 if (staff->complex_action != 0x2da) {
-                    if (find_object((u16)staff->x.tile + ((u16)staff->y.tile << 7), 0x13, 1, 0x96, staff->owner)) {
-                    staff->resume_state = 0x30;
-                    staff->next_state = 0x30;
+                    if (find_object((u16)staff->x.tile + ((u16)staff->y.tile << 7), OBJ_SOFA, 1, 0x96, staff->owner)) {
+                    staff->resume_state = SS_IN_STAFF_ROOM;
+                    staff->next_state = SS_IN_STAFF_ROOM;
                     set_complex(staff, 0x2da, 0);
                     fn_0003e724(staff);
                     return;
@@ -516,7 +516,7 @@ void staff_in_staff_room(Thing *staff)
                 staff->speed = 0x20;
                 if (staff->tiredness <= 0) {
                     staff->discontent = (s16)staff->discontent / 2;
-                    if (staff->subtype == 1 && staff->crazy) {
+                    if (staff->subtype == STAFF_DOCTOR && staff->crazy) {
                         if (staff->tiredness <= 0) {
                             if (staff->layers[5] == 3) {
                                 staff->layers[5] = 1;
@@ -525,29 +525,29 @@ void staff_in_staff_room(Thing *staff)
                             }
                             staff->crazy = 0;
                         }
-                    } else if (staff->subtype == 1) {
-                        if ((staff->orders & 0x10) && send_doctor_to_research(staff)) {
+                    } else if (staff->subtype == STAFF_DOCTOR) {
+                        if ((staff->orders & ORD_RETURN_TO_RESEARCH) && send_doctor_to_research(staff)) {
                             return;
                         }
-                        if ((staff->orders & 0x40) && send_doctor_to_training(staff)) {
+                        if ((staff->orders & ORD_RETURN_TO_TRAINING) && send_doctor_to_training(staff)) {
                             return;
                         }
                         if (!obey_pager(staff)) {
                             set_complex(staff, 0x136, staff->room->unknown6);
-                            staff->next_state = 0x28;
+                            staff->next_state = SS_IN_CORRIDOR;
                             fn_0003e724(staff);
                         }
-                    } else if (staff->subtype == 0) {
+                    } else if (staff->subtype == STAFF_NURSE) {
                         set_complex(staff, 0x136, staff->room->unknown6);
                         if (!nurse_check_for_work(staff)) {
-                            staff->next_state = 0x28;
+                            staff->next_state = SS_IN_CORRIDOR;
                             fn_0003e724(staff);
                         }
-                    } else if (staff->subtype == 2) {
-                        staff->state = 0x36;
+                    } else if (staff->subtype == STAFF_HANDYMAN) {
+                        staff->state = SS_PROCESS_COMPLEX;
                         return;
-                    } else if (staff->subtype == 3) {
-                        staff->state = 0x36;
+                    } else if (staff->subtype == STAFF_RECEPTIONIST) {
+                        staff->state = SS_PROCESS_COMPLEX;
                         return;
                     }
                     calculate_speed(staff);
@@ -572,7 +572,7 @@ u8 fn_0002b400(Thing *staff)
     if ((u16)(staff - thing) == holders[0] || (u16)(staff - thing) == holders[1]) {
         return 1;
     }
-    if (staff->room->type == 10) {
+    if (staff->room->type == ROOM_THEATRE) {
         if (!holders[0]) {
             holders[0] = staff - thing;
             return 1;
@@ -597,7 +597,7 @@ u8 am_i_lead_staff(Thing *staff)
 
     if (staff->room) {
         holders = staff->room->staff;
-        if (staff->room->type == 10) {
+        if (staff->room->type == ROOM_THEATRE) {
             if (holders[0] == 0 || holders[1] == 0) {
                 return 0;
             }
@@ -622,7 +622,7 @@ void staff_nav_failure(Thing *staff)
     staff->saved_state = staff->state;
     staff->saved_dest_x = staff->dest_x;
     staff->saved_dest_y = staff->dest_y;
-    staff->state = 0x4e;
+    staff->state = SS_STUCK;
     staff->countdown = 0;
     if (staff->owner == player) {
         announce_this(1, 1);
@@ -699,11 +699,11 @@ s32 pay_staff_bonus(Thing *staff, u16 amount, u16 percent, u16 morale, u8 owner)
             } else if ((s16)staff->happiness > 100) {
                 staff->happiness = 100;
             }
-            change_balance(0x1b, -amount, staff - thing, owner);
+            change_balance(TX_PERSONAL_BONUS, -amount, staff - thing, owner);
         }
     } else {
         for (member = thing + 1; member < end_things; member++) {
-            if (member->type == 4 && member->owner == owner) {
+            if (member->type == THING_STAFF && member->owner == owner) {
                 if (percent) {
                     total += percent * member->salary / 100;
                 } else {
@@ -720,7 +720,7 @@ s32 pay_staff_bonus(Thing *staff, u16 amount, u16 percent, u16 morale, u8 owner)
             }
         }
         if (morale) {
-            change_balance(0x19, -total, 0, owner);
+            change_balance(TX_GENERAL_BONUS, -total, 0, owner);
         }
     }
     return total;
@@ -747,17 +747,17 @@ void staff_exit_room_check(Thing *staff)
     Thing *projector;
 
     if (staff->room) {
-        if (staff->subtype == 4) {
+        if (staff->subtype == STAFF_SURGEON) {
             change_surgeon_to_doc(staff);
         }
-        if (staff->room->type == 0x16 && &thing[staff->room->staff[0]] == staff) {
-            projector = &thing[find_object((u16)staff->x.tile + ((u16)staff->y.tile << 7), 0x25, 0, 0x97, staff->owner)];
+        if (staff->room->type == ROOM_TRAINING && &thing[staff->room->staff[0]] == staff) {
+            projector = &thing[find_object((u16)staff->x.tile + ((u16)staff->y.tile << 7), OBJ_PROJECTOR, 0, 0x97, staff->owner)];
             if (projector > thing && projector->fuse) {
                 staff->complex_pc = 0;
                 staff->complex_queued = 0;
                 staff->complex_queued2 = 0;
                 staff->complex_resume = 0;
-                if (&thing[staff->object && (thing[staff->object].type == 6 || thing[staff->object].type == 8)
+                if (&thing[staff->object && (thing[staff->object].type == THING_OBJECT || thing[staff->object].type == THING_DOOR)
                            && (u16)(staff - thing) == thing[staff->object].user ? staff->object : 0] == projector) {
                     set_complex(staff, 0x3b6, 0);
                 } else {
@@ -766,7 +766,7 @@ void staff_exit_room_check(Thing *staff)
                 projector->fuse = 0;
             }
         }
-        if (staff->subtype == 0 && staff->room->type == 9) {
+        if (staff->subtype == STAFF_NURSE && staff->room->type == ROOM_WARD) {
             staff->room->f3 == 4 ? 0 : (staff->room->f3 = 0);
         }
     }
@@ -799,7 +799,7 @@ void staff_picked_up(Thing *staff)
         gamevar.unknown77 = staff->subtype;
         gamevar.unknown75 = staff - thing;
         gamevar.unknown79 = 0xffff;
-        set_mouse_mode(3);
+        set_mouse_mode(MM_PLACE_STAFF);
     }
     remove_person_from_room_list(staff);
     remove_node(staff);
@@ -820,8 +820,8 @@ u32 shall_i_resign(Thing *staff)
 {
     u32 limit;
 
-    if (staff->orders & 0x20) {
-        set_icon_value(staff, 9);
+    if (staff->orders & ORD_RESIGN) {
+        set_icon_value(staff, ICON_LEAVING);
         if (staff->owner == player) {
             advisor.f128 |= 1;
         }
@@ -835,7 +835,7 @@ u32 shall_i_resign(Thing *staff)
         limit = ((old_newrand() & 3) + 6) * 1500;
         if (actual_game_turn - (u16)staff->hire_time > limit) {
             if ((s16)staff->discontent > gbv.f10a) {
-        staff->orders |= 0x20;
+        staff->orders |= ORD_RESIGN;
         staff->resign_count++;
         staff->resign_time = actual_game_turn + 1500;
         staff->playercall = make_a_playercall(1, staff - thing, 0, staff->owner);
@@ -844,7 +844,7 @@ u32 shall_i_resign(Thing *staff)
         }
         if (staff->poach_offers) {
             if (staff->discontent_s > gbv.f10a / 4) {
-            staff->orders |= 0x20;
+            staff->orders |= ORD_RESIGN;
             staff->resign_time = actual_game_turn + 1500;
             staff->playercall = make_a_playercall(1, staff - thing, 0, staff->owner);
                 return 1;
@@ -863,7 +863,7 @@ u16 count_emergency_staff(u8 owner)
 
     count = 0;
     for (doctor = thing + 1; doctor < end_things; doctor++) {
-        if ((doctor->type == 4 && doctor->subtype == 1) && doctor->owner == owner) {
+        if ((doctor->type == THING_STAFF && doctor->subtype == STAFF_DOCTOR) && doctor->owner == owner) {
             if (doctor->tiredness < gbv.fe8) {
                 count++;
             }
@@ -892,7 +892,7 @@ void calculate_speed(Thing *staff)
             speed += 10;
         }
         if (staff->room) {
-            if (staff->room->type == 0x16) {
+            if (staff->room->type == ROOM_TRAINING) {
                 speed = 31;
             }
         }
@@ -926,7 +926,7 @@ void interrupt_staff(Thing *staff)
     u16 *slots;
 
     private_interrupt_staff(staff);
-    if (staff->subtype == 4) {
+    if (staff->subtype == STAFF_SURGEON) {
         if (staff->room) {
             slots = staff->room->staff;
             partner = &thing[slots[0]];
@@ -951,7 +951,7 @@ void private_interrupt_staff(Thing *staff)
     RoomInfo *room;
 
     patient = &thing[staff->slave];
-    if (staff->subtype == 2) {
+    if (staff->subtype == STAFF_HANDYMAN) {
         target_obj = &thing[thingpage_remind_me(&allhosps[staff->owner].ff6d, staff)];
         if (target_obj > thing) {
             room = &room_info[target_obj->room_id];
@@ -971,10 +971,10 @@ void private_interrupt_staff(Thing *staff)
         thingpage_cancel_my_response(&allhosps[staff->owner].fd2b, staff);
     }
     interrupt_complex(staff);
-    if ((staff->subtype == 0 && patient > thing) && staff->room == 0) {
-        patient->flags &= ~2;
+    if ((staff->subtype == STAFF_NURSE && patient > thing) && staff->room == 0) {
+        patient->flags &= ~PF_VACCINE_NURSE_SENT;
         staff->slave = 0;
-    } else if ((patient > thing && patient->type == 2) && (staff->room != 0 || staff->subtype == 3)) {
+    } else if ((patient > thing && patient->type == THING_PATIENT) && (staff->room != 0 || staff->subtype == STAFF_RECEPTIONIST)) {
         staff->slave = 0;
         interrupt_person(patient);
     }
@@ -985,7 +985,7 @@ void private_interrupt_staff(Thing *staff)
     }
     staff->substate = 0;
     staff_abandon_pager_response(staff);
-    if (staff->subtype == 3) {
+    if (staff->subtype == STAFF_RECEPTIONIST) {
         receptionist_reset(staff);
     }
 }
@@ -1005,8 +1005,8 @@ void staff_join_new_employer(u16 id, u16 owner)
         if (staff->room) {
             set_complex(staff, 0x136, staff->room->unknown6);
         }
-        set_complex(staff, 0xbe, get_room_info(4, 0x65, owner)->unknown4);
-        staff->next_state = 0x28;
+        set_complex(staff, 0xbe, get_room_info(ROOM_RECEPTION, 0x65, owner)->unknown4);
+        staff->next_state = SS_IN_CORRIDOR;
         fn_0003e724(staff);
         remove_expertise_staff(staff);
         staff->work_delay += staff->work_delay / 4;
@@ -1019,9 +1019,9 @@ void staff_join_new_employer(u16 id, u16 owner)
         fn_000b05f0(staff);
         allhosps[staff->owner].fc9c--;
         allhosps[owner].fc9c++;
-        allhosps[staff->owner].fc9e[staff->subtype == 4 ? 1 : staff->subtype]--;
-        allhosps[owner].fc9e[staff->subtype == 4 ? 1 : staff->subtype]++;
-        if (staff->skills & 0x20) {
+        allhosps[staff->owner].fc9e[staff->subtype == STAFF_SURGEON ? 1 : staff->subtype]--;
+        allhosps[owner].fc9e[staff->subtype == STAFF_SURGEON ? 1 : staff->subtype]++;
+        if (staff->skills & SKILL_SURGEON) {
             allhosps[staff->owner].fca6--;
             allhosps[owner].fca6++;
         }
@@ -1030,7 +1030,7 @@ void staff_join_new_employer(u16 id, u16 owner)
         insert_skill(staff->skills, staff->owner);
         staff->discontent = 0;
         staff->salary *= 2;
-        if (!listhead[owner].rooms[4]) {
+        if (!listhead[owner].rooms[ROOM_RECEPTION]) {
             sack_staff(staff, 0);
         }
     }
@@ -1049,7 +1049,7 @@ void change_lockholder(Thing *staff, RoomInfo *room)
         slot = &room->staff[1];
     }
     if (slot) {
-        if (room->type != 10 || room->staff[0] && room->staff[1]) {
+        if (room->type != ROOM_THEATRE || room->staff[0] && room->staff[1]) {
             old_holder = &thing[*slot];
             interrupt_staff(old_holder);
             process_staff_complex(old_holder);
@@ -1064,7 +1064,7 @@ s16 get_state(const u16 type, const Thing *staff)
     s16 state;
 
     state = staff_states[rooms[type].unknown2[1]][staff->subtype];
-    if (staff->subtype == 1 && rooms[type].unknown8) {
+    if (staff->subtype == STAFF_DOCTOR && rooms[type].unknown8) {
         if ((staff->skills & rooms[type].unknown8) == 0) {
             state = 0x36;
         }
@@ -1097,7 +1097,7 @@ void increase_staff_salaries(Thing *staff, u16 amount, u16 percent, u8 owner)
         }
     } else {
         for (member = thing + 1; member < end_things; member++) {
-            if (member->type == 4 && member->owner == owner) {
+            if (member->type == THING_STAFF && member->owner == owner) {
                 if (percent) {
                     member->salary += percent * member->salary / 100;
                 } else {
@@ -1164,7 +1164,7 @@ u8 is_staff_stepping_on_toes(Thing *staff)
     Thing *other;
 
     for (other = &thing[staff->cell_next]; other > thing; other = &thing[other->cell_next]) {
-        if (other->type == 4) {
+        if (other->type == THING_STAFF) {
             return 1;
         }
     }
@@ -1176,7 +1176,7 @@ u8 overlapping_staff_check(Thing *staff, s32 state)
 {
     if (actual_game_turn % 47 == 0 || ((s16)staff->y.tile << 7) + (s16)staff->x.tile == staff->room->unknown6
         || is_staff_stepping_on_toes(staff)
-        || (staff->object && (thing[staff->object].type == 6 || thing[staff->object].type == 8)
+        || (staff->object && (thing[staff->object].type == THING_OBJECT || thing[staff->object].type == THING_DOOR)
                    && (u16)(staff - thing) == thing[staff->object].user ? staff->object : 0) == 0
             && (map[(s16)staff->x.tile + ((s16)staff->y.tile << 7)].flags & 7)) {
         RoomInfo *room;
@@ -1202,8 +1202,8 @@ u8 fn_0002d11c(Thing *staff)
 {
     Thing *obj;
 
-    if (staff->subtype == 4) {
-        obj = &thing[find_object(staff->x.tile + (staff->y.tile << 7), 0x23, 0, 0x97, staff->owner)];
+    if (staff->subtype == STAFF_SURGEON) {
+        obj = &thing[find_object(staff->x.tile + (staff->y.tile << 7), OBJ_SURGEON_SCREEN, 0, 0x97, staff->owner)];
         if (obj > thing) {
             if (obj->in_use != 0) {
                 return 0;

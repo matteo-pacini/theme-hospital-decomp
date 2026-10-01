@@ -340,7 +340,7 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
 
     vehicle = allocate_thing(0x19);
     if (vehicle) {
-        vehicle->type = 0x10;
+        vehicle->type = THING_HELICOPTER;
         vehicle->subtype = kind;
         vehicle->owner = owner;
         vehicle->x.tile = cell % 128;
@@ -354,7 +354,7 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
         vehicle->altitude = 0x190;
         vehicle->sprite = start[anim].frame;
         vehicle->flip = start[anim].flags;
-        vehicle->state = 2;
+        vehicle->state = HELI_LANDS;
         vehicle->shadow = create_shadow(cell, vehicle - thing, owner, shadow_anim);
         if (owner == player) {
             if (anim == 0x792)
@@ -386,7 +386,7 @@ void helicopter_lands(Thing *heli)
             heli->sprite = start[0x7a8].frame;
             heli->flip = start[0x7a8].flags;
             heli->altitude = 0;
-            heli->state = 8;
+            heli->state = HELI_ABDUCTS;
             break;
         }
     }

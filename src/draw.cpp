@@ -185,7 +185,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
                             icon_draw_from_special_id_frame(w->icon_frame, x, y, (s16)-((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
-                    } else if (w->type == 6) {
+                    } else if (w->type == THING_OBJECT) {
                         icon = 1;
                         othervar.fa52 = 1;
                     }
@@ -219,7 +219,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
                             icon_draw_from_special_id_frame(w->icon_frame, x, y, (s16)((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
-                    } else if (w->type == 6) {
+                    } else if (w->type == THING_OBJECT) {
                         icon = 1;
                         othervar.fa52 = 1;
                     }

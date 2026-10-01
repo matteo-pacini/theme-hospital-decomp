@@ -63,9 +63,9 @@ u8 draw_area_select(void)
             check_cd_available(buf);
         }
         if (level_number >= 12)
-            play_sound(10, 0xdc, -1, -1);
+            play_sound(10, SFX_DICE122M, -1, -1);
         else
-            play_sound(10, 0xd2, -1, -1);
+            play_sound(10, SFX_DICEYFIN, -1, -1);
         play_area_smk(level_number);
         lbDisplay.left_button = 0;
         LbPaletteGet(ppalette.data);
@@ -138,9 +138,9 @@ u8 draw_area_select(void)
             check_cd_available(buf);
         }
         if (level_number >= 12)
-            play_sound(10, 0xdc, -1, -1);
+            play_sound(10, SFX_DICE122M, -1, -1);
         else
-            play_sound(10, 0xd2, -1, -1);
+            play_sound(10, SFX_DICEYFIN, -1, -1);
         play_area_smk(level_number);
         lbDisplay.left_button = 0;
         LbPaletteGet(ppalette.data);
@@ -165,14 +165,14 @@ u8 draw_area_select(void)
 void process_keys_area_select(void)
 {
     switch (BufferedInkey) {
-    case 1:
+    case KC_ESCAPE:
         area.unknown2 = 0;
         display_mode = 2;
         mainmenu.unknown2 = 0x1f;
         D_001549d0[player].value = 0;
-        set_mouse_mode(0);
+        set_mouse_mode(MM_NORMAL);
         break;
-    case 0x2e:
+    case KC_C:
         area.unknown2 = 5;
         break;
     }

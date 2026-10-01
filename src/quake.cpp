@@ -96,7 +96,7 @@ void do_earthquake(void)
     Thing *obj;
 
     for (obj = thing + 1; obj < end_things; obj++) {
-        if (obj->type == 6) {
+        if (obj->type == THING_OBJECT) {
             if (objects[obj->subtype].unknown1e) {
             if (statvar.unknownfd > 1) {
                 room = &room_info[obj->room_id];

@@ -87,13 +87,13 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
             mycontrol->entries[count].type = type;
             mycontrol->entries[count].amount = amount;
             switch (type) {
-            case 17:
+            case TX_INSURANCE:
                 mycontrol->entries[count].extra = ins_control[arg];
                 break;
-            case 7:
-            case 8:
-            case 9:
-            case 11:
+            case TX_TREAT:
+            case TX_FINAL_TREAT:
+            case TX_CURE_TREATMENT:
+            case TX_ADVANCE:
                 mycontrol->entries[count].extra = arg;
                 break;
             }
@@ -109,8 +109,8 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
             }
         }
         switch (type) {
-        case 1:
-        case 2:
+        case TX_WAGES:
+        case TX_HIRE_STAFF:
             mycontrol->f0 -= amount;
             myhosp->f35 += amount;
             break;
@@ -118,7 +118,7 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
             myhosp->f35 += amount;
             break;
         }
-        if (type != 15) {
+        if (type != TX_CHEAT_MONEY) {
             if (amount > 0)
                 mycontrol->f4 += amount;
             else if (amount < 0)
@@ -152,7 +152,7 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
             patient->fee = price;
         room->unknown14 += patient->fee;
         fee = patient->fee;
-        type = 7;
+        type = TX_TREAT;
         patient->fee = 0;
     } else {
         patient->fee = price;
@@ -168,7 +168,7 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
                     if (month >= 12)
                         month = 0;
                     allhosps[patient->owner].f45[i][month] += fee;
-                    create_numfx(3, fee, patient->x.tile + (patient->y.tile << 7), color.unknownD, 0x40);
+                    create_numfx(NUMFX_MONEY, fee, patient->x.tile + (patient->y.tile << 7), color.unknownD, 0x40);
                     break;
                 }
             }
@@ -176,7 +176,7 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
             if (fee <= patient->cash) {
                 patient->cash -= fee;
                 change_balance(type, fee, (u16)patient->treatment, (u16)patient->owner);
-                create_numfx(3, fee, patient->x.tile + (patient->y.tile << 7), color.unknown8, 0x40);
+                create_numfx(NUMFX_MONEY, fee, patient->x.tile + (patient->y.tile << 7), color.unknown8, 0x40);
             } else {
                 return 0;
             }
@@ -201,7 +201,7 @@ void month_end(void)
     for (i = 0; i < 4; i++)
         wages[i] = 0;
     for (employee = thing + 1; employee < end_things; employee++) {
-        if (employee->type == 4 && employee->state != 0x2e) {
+        if (employee->type == THING_STAFF && employee->state != SS_APPLICANT) {
             wages[employee->owner] += employee->salary;
             appraise_staff(employee);
         }
@@ -209,10 +209,10 @@ void month_end(void)
     for (i = 0; i < 4; i++) {
         count_hospital_area(i);
         if (wages[i] != 0)
-            change_balance(1, -wages[i], 0, i);
+            change_balance(TX_WAGES, -wages[i], 0, i);
         for (j = 0; j < 2; j++) {
             if (allhosps[i].fd5s[j] != 0) {
-                change_balance(j + 13, allhosps[i].fd5s[j], 0, i);
+                change_balance(j + TX_INCOME_DRINKS, allhosps[i].fd5s[j], 0, i);
                 allhosps[i].fd5s[j] = 0;
             }
         }
@@ -220,16 +220,16 @@ void month_end(void)
             amount = allhosps[i].f45[j][mycontrol->unknown650];
             if (amount != 0) {
                 allhosps[i].f45[j][mycontrol->unknown650] = 0;
-                change_balance(17, amount, j, i);
+                change_balance(TX_INSURANCE, amount, j, i);
             }
         }
         amount = allhosps[i].fc92 * allhosps[i].fc94 * mycontrol->f64c / 100;
         if (amount != 0)
-            change_balance(16, -amount, 0, i);
+            change_balance(TX_HEATING, -amount, 0, i);
         if (allhosps[i].f3d != 0)
-            change_balance(20, -(towns[allhosps[i].f29].f10 * allhosps[i].f3d / 10000 / 12), 0, i);
+            change_balance(TX_LOAN_INTEREST, -(towns[allhosps[i].f29].f10 * allhosps[i].f3d / 10000 / 12), 0, i);
         if (allhosps[i].f35 < 0)
-            change_balance(23, towns[allhosps[i].f29].f10 * allhosps[i].f35 * 2 / 10000 / 12, 0, i);
+            change_balance(TX_OVERDRAFT_INTEREST, towns[allhosps[i].f29].f10 * allhosps[i].f35 * 2 / 10000 / 12, 0, i);
         calc_pricing_factor(i);
         total += allhosps[i].f1cd;
     }
@@ -344,7 +344,7 @@ void bank_statement(void)
         process_stat_panel();
         break;
     case 2:
-        D_001549d0[player].type = 0x70;
+        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
         D_001549d0[player].value = 0;
         break;
     }
@@ -383,14 +383,14 @@ void bank_statement(void)
                 sprintf(buf, "%d %s", mycontrol->entries[first].day, month_text[mycontrol->entries[first].month]);
                 LbTextDraw(resvars.f40[72].x, row + resvars.f40[72].y, buf);
                 switch (mycontrol->entries[first].type) {
-                case 17:
+                case TX_INSURANCE:
                     sprintf(buf, "%s %s", D_001602b4[mycontrol->entries[first].type],
                             insurance_names[mycontrol->entries[first].extra]);
                     break;
-                case 7:
-                case 8:
-                case 9:
-                case 11:
+                case TX_TREAT:
+                case TX_FINAL_TREAT:
+                case TX_CURE_TREATMENT:
+                case TX_ADVANCE:
                     sprintf(buf, "%s %s", D_001602b4[mycontrol->entries[first].type],
                             D_001602a4[mycontrol->entries[first].extra]);
                     break;
@@ -469,10 +469,10 @@ void process_stat_button(u8 button)
     switch (button) {
     case 0:
         bank.unknown2 = 2;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     case 1:
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         fn_00074220(0, 0x41);
         break;
     }
@@ -483,9 +483,9 @@ u16 exit_quick_requester(void)
 {
     if (lbInkey >= 0x80)
         lbInkey = 0;
-    if (lbInkey == 1 || lbInkey == 0x39) {
+    if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
         lbInkey = 0;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         return 1;
     }
     return 0;
@@ -511,7 +511,7 @@ void daily_admin(void)
             if (allhosps[i].f1e7 == 0) {
                 allhosps[i].f1e2 = 1;
                 if (allhosps[i].f1e5 * 100 / allhosps[i].f1e6 >= allhosps[i].f1e8) {
-                    change_balance(0x1c, allhosps[i].f1dd * allhosps[i].f1e5, 0, i);
+                    change_balance(TX_EMERGENCY_BONUS, allhosps[i].f1dd * allhosps[i].f1e5, 0, i);
                     reputation_affected(0, 0xc, 0, i, 0);
                     satisfied_net_criteria(1, i);
                 } else {

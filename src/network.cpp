@@ -400,7 +400,7 @@ void draw_network_select(void)
         clear_loading_screen(0);
         othervar.f24 = D_00153f34;
         current_palette = D_00153f34;
-        set_mouse_mode(0);
+        set_mouse_mode(MM_NORMAL);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
         break;
     case 2:
@@ -882,7 +882,7 @@ void add_number(char c)
     len = fn_000cd716(PhoneNumber);
     if (len < 12) {
         if (BufferedInkey)
-            play_sound(10, 0xc, -1, -1);
+            play_sound(10, SFX_ENTANAME, -1, -1);
         PhoneNumber[len++] = c;
         PhoneNumber[len] = 0;
     }
@@ -943,73 +943,73 @@ void process_keys_network_select(void)
     if (network.unknown2 == 2) {
         if (CurrentDisplay & 0x400) {
             switch (BufferedInkey) {
-            case 2:
+            case KC_1:
                 add_number('1');
                 BufferedInkey = 0;
                 break;
-            case 3:
+            case KC_2:
                 add_number('2');
                 BufferedInkey = 0;
                 break;
-            case 4:
+            case KC_3:
                 add_number('3');
                 BufferedInkey = 0;
                 break;
-            case 5:
+            case KC_4:
                 add_number('4');
                 BufferedInkey = 0;
                 break;
-            case 6:
+            case KC_5:
                 add_number('5');
                 BufferedInkey = 0;
                 break;
-            case 7:
+            case KC_6:
                 add_number('6');
                 BufferedInkey = 0;
                 break;
-            case 8:
+            case KC_7:
                 add_number('7');
                 BufferedInkey = 0;
                 break;
-            case 9:
+            case KC_8:
                 add_number('8');
                 BufferedInkey = 0;
                 break;
-            case 0xa:
+            case KC_9:
                 add_number('9');
                 BufferedInkey = 0;
                 break;
-            case 0xb:
+            case KC_0:
                 add_number('0');
                 BufferedInkey = 0;
                 break;
-            case 0x1c:
-            case 0x9c:
+            case KC_RETURN:
+            case KC_NUMPADENTER:
                 BufferedInkey = 0;
-                play_sound(10, 0x41, -1, -1);
+                play_sound(10, SFX_YESX, -1, -1);
                 reset_glass_map(0x400);
                 add_phone_number(PhoneNumber);
                 break;
-            case 1:
+            case KC_ESCAPE:
                 BufferedInkey = 0;
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
                 reset_glass_map(0x400);
                 break;
-            case 0xe:
-            case 0x53:
+            case KC_BACKSPACE:
+            case KC_DECIMAL:
                 BufferedInkey = 0;
                 if (PhoneNumber[0]) {
-                    play_sound(10, 0x10, -1, -1);
+                    play_sound(10, SFX_DELANAME, -1, -1);
                     PhoneNumber[fn_000cd716(PhoneNumber) - 1] = 0;
                 }
                 break;
             }
         }
         switch (BufferedInkey) {
-        case 0xe:
-        case 0x53:
+        case KC_BACKSPACE:
+        case KC_DECIMAL:
             if (BookHilight != -1) {
-                play_sound(10, 0x10, -1, -1);
+                play_sound(10, SFX_DELANAME, -1, -1);
                 for (i = BookHilight; BookCount - 1 > i; i++)
                     fn_000c21e6(PhoneBook[i], PhoneBook[i + 1], 12);
                 memset(PhoneBook[i], 0, 12);
@@ -1019,9 +1019,9 @@ void process_keys_network_select(void)
                 BookHilight = -1;
             }
             break;
-        case 1:
+        case KC_ESCAPE:
             if (!(CurrentDisplay & 0x200) || !login_control.players[player].len) {
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
                 network_button_quit();
                 BufferedInkey = 0;
             }
@@ -1133,7 +1133,7 @@ void process_network_buttons(u8 button)
 
     switch (button) {
     case 0:
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         if (CurrentDisplay & 0x40) {
             reset_glass_map(0x40);
         } else {
@@ -1147,7 +1147,7 @@ void process_network_buttons(u8 button)
         }
         break;
     case 1:
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         toggle_glass_map(0x20);
         if (DesiredDisplay & 0x20)
             set_glass_map(0x8000);
@@ -1155,7 +1155,7 @@ void process_network_buttons(u8 button)
             reset_glass_map(0x8000);
         break;
     case 2:
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         toggle_glass_map(0x10);
         if (DesiredDisplay & 0x10)
             set_glass_map(0x10000);
@@ -1163,7 +1163,7 @@ void process_network_buttons(u8 button)
             reset_glass_map(0x10000);
         break;
     case 3:
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         network_button_quit();
         break;
     }
@@ -1172,7 +1172,7 @@ void process_network_buttons(u8 button)
 // FUNCTION: 0x0008242c
 void process_level_buttons(u8 button)
 {
-    play_sound(10, 0x43, -1, -1);
+    play_sound(10, SFX_SELECTX, -1, -1);
     level_number = net_control.players[button].level;
     screen_packet[player].f5 = 2;
 }
@@ -1183,28 +1183,28 @@ void process_ipx_buttons(u8 button)
     switch (button) {
     case 2:
         if (D_001606cc) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             D_001606cc--;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 3:
         if (D_001606cc < D_0015f1aa - 3) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             D_001606cc++;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 0:
         switch (login_control.f17) {
         case 5:
-            play_sound(10, 0x42, -1, -1);
+            play_sound(10, SFX_NO4, -1, -1);
             network_button_quit();
             break;
         case 6:
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             if (network_button_create() == -1)
                 report_message(D_00160308[27]);
             break;
@@ -1212,29 +1212,29 @@ void process_ipx_buttons(u8 button)
         break;
     case 4:
         if (login_control.f1f) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             login_control.f1f--;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 5:
         if (login_control.f1f < player_count - 3) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             login_control.f1f++;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 1:
         switch (login_control.f17) {
         case 5:
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             if (D_00160508 == player && player_count > 1)
                 screen_packet[player].f5 = 9;
             break;
         case 6:
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             if (hilighted_session != -1) {
                 if (network_button_join() == -1)
                     report_message(D_00160308[28]);
@@ -1254,18 +1254,18 @@ void process_message_buttons(u8 button)
         break;
     case 1:
         if (TopMessage) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             TopMessage--;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 2:
         if (TopMessage < NumMessages - 3) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             TopMessage++;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     }
@@ -1277,12 +1277,12 @@ void process_balance_buttons(u8 button)
     switch (button) {
     case 0:
         if (current_balance_file != current_balance_file->next)
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         prev_balance_file();
         break;
     case 1:
         if (current_balance_file != current_balance_file->prev)
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         next_balance_file();
         break;
     }
@@ -1294,18 +1294,18 @@ void process_irq_buttons(u8 button)
     switch (button) {
     case 0:
         if (TopIRQ) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             TopIRQ--;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 1:
         if (TopIRQ < 4) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             TopIRQ++;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     }
@@ -1321,57 +1321,57 @@ void process_serial_buttons(u8 button)
     case 0:
         if (login_control.f17 != 5) {
             if (D_001606c8) {
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 D_001606c8--;
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
         } else {
             if (login_control.f1f) {
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 login_control.f1f--;
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
         }
         break;
     case 1:
         if (login_control.f17 != 5) {
             if (D_001606c8 < 5) {
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 D_001606c8++;
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
         } else {
             if (login_control.f1f < player_count - 3) {
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 login_control.f1f++;
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
         }
         break;
     case 4:
         if (D_001606c9) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             D_001606c9 = 0;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 5:
         if (!D_001606c9) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             D_001606c9 = 1;
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         break;
     case 2:
     case 3:
         if (login_control.f17 != 5) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             if (myplayer.f56[4] && (int)myplayer.f56[5] >= 0) {
                 service = NS_SERIAL;
                 bits = (s8)myplayer.f56[4] >> 1;
@@ -1409,10 +1409,10 @@ void process_serial_buttons(u8 button)
             }
         } else {
             if (button == 3) {
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
                 network_button_quit();
             } else {
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 if (D_00160508 == player && player_count > 1)
                     screen_packet[player].f5 = 9;
             }
@@ -1433,59 +1433,59 @@ void process_modem_buttons(u8 button)
         case 0:
             if (login_control.f17 != 5) {
                 if (D_001605f1) {
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                     D_001605f1--;
                 } else {
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 }
             } else {
                 if (login_control.f1f) {
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                     login_control.f1f--;
                 } else {
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 }
             }
             break;
         case 1:
             if (login_control.f17 != 5) {
                 if (D_001605f1 < BookCount - 3) {
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                     D_001605f1++;
                 } else {
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 }
             } else {
                 if (login_control.f1f < player_count - 3) {
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                     login_control.f1f++;
                 } else {
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 }
             }
             break;
         case 5:
             if (D_001606c8) {
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 D_001606c8--;
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             if (D_001606c9)
                 D_001606c9 = 0;
             break;
         case 6:
             if (D_001606c8 < 5) {
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 D_001606c8++;
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             if (!D_001606c9)
                 D_001606c9 = 1;
             break;
         case 2:
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             if (login_control.f17 != 5) {
                 if (!(CurrentDisplay & 0x400)) {
                     set_glass_map(0x400);
@@ -1496,7 +1496,7 @@ void process_modem_buttons(u8 button)
         case 3:
         case 4:
             if (login_control.f17 != 5) {
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
                 if (button == 3 && BookHilight == -1)
                     break;
                 reset_glass_map(0x400);
@@ -1635,10 +1635,10 @@ void process_modem_buttons(u8 button)
                 }
             } else {
                 if (button == 3) {
-                    play_sound(10, 0x42, -1, -1);
+                    play_sound(10, SFX_NO4, -1, -1);
                     network_button_quit();
                 } else {
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                     if (D_00160508 == player && player_count > 1)
                         screen_packet[player].f5 = 9;
                 }
@@ -1651,7 +1651,7 @@ void process_modem_buttons(u8 button)
 // FUNCTION: 0x00083554
 void process_number_buttons(u8 button)
 {
-    play_sound(10, 0x43, -1, -1);
+    play_sound(10, SFX_SELECTX, -1, -1);
     switch (button) {
     case 0:
         add_number('1');
@@ -1899,13 +1899,13 @@ void update_message_box(u8 key, u8 shift, u8 from)
     char buf[64];
 
     switch (key) {
-    case 1:
+    case KC_ESCAPE:
         login_control.players[from].len = 0;
         login_control.players[from].text[0] = 0;
         if (from == player)
-            play_sound(10, 0x42, -1, -1);
+            play_sound(10, SFX_NO4, -1, -1);
         break;
-    case 0x1c:
+    case KC_RETURN:
         if (login_control.players[from].len) {
             for (i = 0; i < 9; i++) {
                 if (!NetMessageText[i][0])
@@ -1920,21 +1920,21 @@ void update_message_box(u8 key, u8 shift, u8 from)
             login_control.players[from].len = 0;
             login_control.players[from].text[0] = 0;
             if (from == player)
-                play_sound(10, 0x41, -1, -1);
+                play_sound(10, SFX_YESX, -1, -1);
             if (NumMessages < 9)
                 NumMessages++;
             if (NumMessages > TopMessage + 3)
                 TopMessage = NumMessages - 3;
         } else {
             if (from == player)
-                play_sound(10, 0x41, -1, -1);
+                play_sound(10, SFX_YESX, -1, -1);
         }
         break;
-    case 0xe:
-    case 0x53:
+    case KC_BACKSPACE:
+    case KC_DECIMAL:
         if (login_control.players[from].len > 0) {
             if (from == player)
-                play_sound(10, 0x10, -1, -1);
+                play_sound(10, SFX_DELANAME, -1, -1);
             login_control.players[from].text[--login_control.players[from].len] = 0;
         }
         break;
@@ -1948,7 +1948,7 @@ void update_message_box(u8 key, u8 shift, u8 from)
         if (c < 0x7f && c > 0x1f) {
             set_font_from_cache(0x21);
             if (from == player)
-                play_sound(10, 0xc, -1, -1);
+                play_sound(10, SFX_ENTANAME, -1, -1);
             if (login_control.players[from].len < 0x1e &&
                 LbTextStringWidth(login_control.players[from].text) < resvars.f3c_NetBoxp[120].w - 0x28) {
                 sprintf(buf, "%s:%s", &player_info[from], login_control.players[from].text);
@@ -2411,13 +2411,13 @@ u8 send_message(void)
         BufferedInkey -= 0x46;
     else if (BufferedInkey >= 0x47 && BufferedInkey <= 0x49)
         BufferedInkey -= 0x3f;
-    else if (BufferedInkey == 0x52)
+    else if (BufferedInkey == KC_NUMPAD0)
         BufferedInkey = 0xb;
-    else if (BufferedInkey == 0xb5)
+    else if (BufferedInkey == KC_DIVIDE)
         BufferedInkey = 0x35;
-    else if (BufferedInkey == 0x9c)
+    else if (BufferedInkey == KC_NUMPADENTER)
         BufferedInkey = 0x1c;
-    else if (HospShift & 1)
+    else if (HospShift & MOD_SHIFT)
         BufferedInkey |= 0x80;
     screen_packet[player].f7 = BufferedInkey;
     BufferedInkey = 0;
@@ -2505,22 +2505,22 @@ u8 cheat_mode(char *text);
 void process_nettext_keys(u8 shift, u8 key)
 {
     switch (key) {
-    case 1:
+    case KC_ESCAPE:
         othervar.f4a = 0;
         break;
-    case 0x3b:
+    case KC_F1:
         if (statvar.unknownfd >= 2)
             othervar.f4c = 1 << fn_00085660(1);
         break;
-    case 0x3c:
+    case KC_F2:
         if (statvar.unknownfd >= 3)
             othervar.f4c = 1 << fn_00085660(2);
         break;
-    case 0x3d:
+    case KC_F3:
         if (statvar.unknownfd >= 4)
             othervar.f4c = 1 << fn_00085660(3);
         break;
-    case 0x3e:
+    case KC_F4:
         if (statvar.unknownfd == 1) {
             othervar.f4c = 0xff;
         } else {
@@ -2528,35 +2528,35 @@ void process_nettext_keys(u8 shift, u8 key)
             othervar.f4c = ~othervar.f4c;
         }
         break;
-    case 0x1c:
-    case 0x9c:
+    case KC_RETURN:
+    case KC_NUMPADENTER:
         if (statvar.unknownfd <= 1) {
             if (!cheat_mode(NET_TEXT(othervar.ff))) {
                 othervar.f4a = 0;
-                D_001549d0[player].type = 0x4b;
+                D_001549d0[player].type = EV_NET_TEXT_DISPLAY;
                 D_001549d0[player].value = (u16)othervar.f4c;
             } else {
                 othervar.f4a = 0;
             }
         } else {
             othervar.f4a = 0;
-            D_001549d0[player].type = 0x4b;
+            D_001549d0[player].type = EV_NET_TEXT_DISPLAY;
             D_001549d0[player].value = (u16)othervar.f4c;
         }
         break;
-    case 0x0e:
-    case 0x53:
-        D_001549d0[player].type = 0x4c;
+    case KC_BACKSPACE:
+    case KC_DECIMAL:
+        D_001549d0[player].type = EV_NET_TEXT_DELETE;
         break;
-    case 0x4b:
-    case 0x4d:
+    case KC_NUMPAD4:
+    case KC_NUMPAD6:
         break;
     default:
         if (fn_000cd716(NET_TEXT(player)) < 0x32) {
             if (key < 0x7f) {
-                D_001549d0[player].type = 0x4d;
+                D_001549d0[player].type = EV_NET_TEXT_KEYPRESS;
                 D_001549d0[player].value = (u16)(key & 0x7f);
-                if (shift & 1)
+                if (shift & MOD_SHIFT)
                     D_001549d0[player].value |= 0x80;
             }
         }
@@ -2948,9 +2948,9 @@ s32 network_service_function(void)
             ;
         get_input();
         draw_network_select();
-        if (BufferedInkey == 1) {
+        if (BufferedInkey == KC_ESCAPE) {
             BufferedInkey = 0;
-            play_sound(10, 0x42, -1, -1);
+            play_sound(10, SFX_NO4, -1, -1);
             return -7;
         }
         process_mouse_network_select();

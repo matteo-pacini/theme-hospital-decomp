@@ -664,20 +664,20 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x49:
-        if (myhosp->fc9c > myhosp->f29 + 5 && !listhead[player].rooms[0x19]) {
+        if (myhosp->fc9c > myhosp->f29 + 5 && !listhead[player].rooms[ROOM_STAFF_ROOM]) {
             sprintf(advisor.f10, advisor_text[0x49]);
             found = 1;
         }
         break;
     case 0x50:
-        if (listhead[player].rooms[0x16] != 0 && adcounts.f20 == 0 && othervar.fa4b_s8 == 0x16 && advisor.f130) {
+        if (listhead[player].rooms[ROOM_TRAINING] != 0 && adcounts.f20 == 0 && othervar.fa4b_s8 == 0x16 && advisor.f130) {
             sprintf(advisor.f10, advisor_text[0x50]);
             found = 1;
             othervar.fa4b_s8 = 0;
         }
         break;
     case 0x53:
-        if (listhead[player].rooms[0x1c] != 0 && adcounts.f21 == 0 && othervar.fa4b_s8 == 0x1c && advisor.f130) {
+        if (listhead[player].rooms[ROOM_RESEARCH] != 0 && adcounts.f21 == 0 && othervar.fa4b_s8 == 0x1c && advisor.f130) {
             if (!myplayer.f41[1]) {
                 sprintf(advisor.f10, advisor_situations[2]);
                 myplayer.f41[1] = 1;
@@ -795,14 +795,14 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x68:
-        if (listhead[player].rooms[7] != 0 && myhosp->fc9e[1] == 0 && othervar.fa4b_s8 == 7 && myhosp->f29 == 1) {
+        if (listhead[player].rooms[ROOM_GP] != 0 && myhosp->fc9e[1] == 0 && othervar.fa4b_s8 == 7 && myhosp->f29 == 1) {
             sprintf(advisor.f10, advisor_text[0x68]);
             found = 1;
             othervar.fa4b_s8 = 0;
         }
         break;
     case 0x69:
-        if (listhead[player].rooms[4] != 0 && myhosp->fc9e[3] == 0 && myhosp->f29 == 1) {
+        if (listhead[player].rooms[ROOM_RECEPTION] != 0 && myhosp->fc9e[3] == 0 && myhosp->f29 == 1) {
             sprintf(advisor.f10, advisor_text[0x69]);
             found = 1;
             othervar.fa4b_s8 = 0;
@@ -1063,19 +1063,19 @@ u8 advisor_toilets(void)
     s32 ratio;
 
     ratio = adcounts.f1c / adcounts.f0;
-    if (ratio * 4 > gbv.f116 * 3 && listhead[player].objects[0x33] == 0) {
+    if (ratio * 4 > gbv.f116 * 3 && listhead[player].objects[OBJ_TOILET] == 0) {
         sprintf(advisor.f10, advisor_text[0x13]);
         return 1;
     }
-    if (gbv.f116 < ratio && listhead[player].objects[0x33] == 0) {
+    if (gbv.f116 < ratio && listhead[player].objects[OBJ_TOILET] == 0) {
         sprintf(advisor.f10, extra_advice[10]);
         return 1;
     }
-    if (gbv.f116 < ratio && listhead[player].objects[0x33] != 0) {
+    if (gbv.f116 < ratio && listhead[player].objects[OBJ_TOILET] != 0) {
         sprintf(advisor.f10, extra_advice[11]);
         return 1;
     }
-    if (gbv.f118 < ratio && listhead[player].objects[0x33] == 0) {
+    if (gbv.f118 < ratio && listhead[player].objects[OBJ_TOILET] == 0) {
         sprintf(advisor.f10, extra_advice[0x26]);
         return 1;
     }
@@ -1165,7 +1165,7 @@ u8 advisor_thirsty_peeps(void)
             sprintf(advisor.f10, advisor_situations[15]);
             myplayer.f41[18] = 1;
             return 1;
-        } else if (listhead[player].objects[7] == 0) {
+        } else if (listhead[player].objects[OBJ_DRINKS_MACHINE] == 0) {
             sprintf(advisor.f10, advisor_text[15]);
             return 1;
         } else {
@@ -1173,7 +1173,7 @@ u8 advisor_thirsty_peeps(void)
             return 1;
         }
     } else if (thirst < 10) {
-        if (listhead[player].objects[7] == 0) {
+        if (listhead[player].objects[OBJ_DRINKS_MACHINE] == 0) {
             sprintf(advisor.f10, advisor_text[5]);
             return 1;
         } else {

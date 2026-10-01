@@ -39,7 +39,7 @@ void display_policy(void)
         pol.unknown2 = 3;
         break;
     case 3:
-        D_001549d0[player].type = 0x70;
+        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
         D_001549d0[player].value = 0;
         break;
     }
@@ -78,17 +78,17 @@ void fn_0004477c(u8 action)
         D_001549d0[player].type = 0x71;
         D_001549d0[player].value = 5;
         D_001549d0[player].arg = 1;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 1:
         D_001549d0[player].type = 0x71;
         D_001549d0[player].value = 5;
         D_001549d0[player].arg = 0;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 2:
         pol.unknown2 = 2;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     }
 }

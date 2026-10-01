@@ -84,12 +84,12 @@ void handyman_works(Thing *handyman)
     case 0:
         if (shall_i_resign(handyman))
             break;
-        if (((handyman->orders & 1) || handyman->tiredness > allhosps[handyman->owner].f21d) && take_a_break(handyman))
+        if (((handyman->orders & ORD_REST) || handyman->tiredness > allhosps[handyman->owner].f21d) && take_a_break(handyman))
             break;
         room = handyman->room;
         if (room) {
             for (machine = &thing[handyman->room->first_object]; machine > thing; machine = &thing[machine->room_obj_next]) {
-                if (machine->type == 6 && objects[machine->subtype].unknown24) {
+                if (machine->type == THING_OBJECT && objects[machine->subtype].unknown24) {
                     if (machine->times_used > 0) {
                         thingpage_request(&allhosps[machine->owner].ff6d, machine - thing, 100);
                         break;
@@ -102,7 +102,7 @@ void handyman_works(Thing *handyman)
                     room->f3 = 5;
                 break;
             }
-            handyman->state = 0x36;
+            handyman->state = SS_PROCESS_COMPLEX;
             break;
         }
         if (thingpage_find_highest_priority(&allhosps[handyman->owner].ff6d) && handyman_try_fix(handyman))
@@ -135,7 +135,7 @@ void handyman_works(Thing *handyman)
         dy = old_newrand() % 15 - 7;
         pos = (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx);
         if (map[pos].unknown7 == 1 << handyman->owner && can_i_get_to(handyman, pos) && !(map[pos].unknown7 & 0x10)) {
-            handyman->next_state = handyman->resume_state = 0x3c;
+            handyman->next_state = handyman->resume_state = SS_HANDYMAN_WORKS;
             set_complex(handyman, 0xbe, (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx));
             fn_0003e724(handyman);
         }
@@ -150,7 +150,7 @@ void handyman_works(Thing *handyman)
         if (handyman->work_target == TILE_POS(handyman))
             handyman->work_target = 0;
         handyman->facing = showanim_angle[handyman->facing];
-        handyman->next_state = 0x3c;
+        handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->substate = 3;
         set_complex(handyman, 0x46, 0);
         fn_0003e724(handyman);
@@ -158,7 +158,7 @@ void handyman_works(Thing *handyman)
     case 3:
         remove_litter((u16)handyman->x.tile + ((u16)handyman->y.tile << 7), handyman->owner);
         set_complex(handyman, 0x30c, 0);
-        handyman->next_state = 0x3c;
+        handyman->next_state = SS_HANDYMAN_WORKS;
         fn_0003e724(handyman);
         handyman->substate = 0;
         handyman->litter_count++;
@@ -167,23 +167,23 @@ void handyman_works(Thing *handyman)
         handyman->object = thingpage_remind_me(&allhosps[handyman->owner].fd2b, handyman);
         set_complex(handyman, 0x26c, 0);
         handyman->substate = 5;
-        handyman->next_state = 0x3c;
-        handyman->resume_state = 0x36;
+        handyman->next_state = SS_HANDYMAN_WORKS;
+        handyman->resume_state = SS_PROCESS_COMPLEX;
         fn_0003e724(handyman);
         break;
     case 5:
         id = handyman->object;
         plant = &thing[id];
         thingpage_cancel(&allhosps[plant->owner].fd2b, id);
-        if (plant->in_use == 1 || plant->type != 6 || plant->subtype != 0x2d || plant->state != 10
+        if (plant->in_use == 1 || plant->type != THING_OBJECT || plant->subtype != OBJ_PLANT || plant->state != OS_PLANT_AGES
             || !is_next_to_plant(handyman, plant)) {
-            handyman->state = 0x36;
+            handyman->state = SS_PROCESS_COMPLEX;
             break;
         }
         plant->in_use = 1;
         handyman->facing = direction_to_face(plant, handyman);
-        handyman->next_state = 0x3c;
-        handyman->resume_state = 0x36;
+        handyman->next_state = SS_HANDYMAN_WORKS;
+        handyman->resume_state = SS_PROCESS_COMPLEX;
         handyman->substate = 6;
         set_complex(handyman, 0x258, 0);
         fn_0003e724(handyman);
@@ -214,7 +214,7 @@ void handyman_works(Thing *handyman)
                     plant->sprite = start[anim2].frame;
                     plant->flip = start[anim2].flags > 0 ? (u8)1 : (u8)0;
                 }
-                plant->state = 10;
+                plant->state = OS_PLANT_AGES;
                 if (plant->owner == player) {
                     NRAdcounts.unknownb += 0x37 - (plant->plant_health * 2 + 0x50) / 16;
                     if (NRAdcounts.unknownb < 0)
@@ -228,7 +228,7 @@ void handyman_works(Thing *handyman)
                 set_complex(handyman, 0x262, 0);
                 if (handyman->room)
                     set_complex(handyman, 0x136, handyman->room->unknown6);
-                handyman->next_state = 0x3c;
+                handyman->next_state = SS_HANDYMAN_WORKS;
                 fn_0003e724(handyman);
                 NRAdcounts.unknown2--;
             }
@@ -237,23 +237,23 @@ void handyman_works(Thing *handyman)
     case 8:
         room = handyman->room;
         if (room->f3 != 6) {
-            if (!(find_person_in_room(room, 4, 1) || find_person_in_room(room, 4, 0)
-                  || find_person_in_room(room, 4, 4))) {
+            if (!(find_person_in_room(room, THING_STAFF, STAFF_DOCTOR) || find_person_in_room(room, THING_STAFF, STAFF_NURSE)
+                  || find_person_in_room(room, THING_STAFF, STAFF_SURGEON))) {
                 room->f3 = 6;
             } else {
                 u16 pos2;
 
                 pos2 = room->pos + (((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1));
                 if (pos2 != TILE_POS(handyman) && can_i_get_to(handyman, pos2)) {
-                    handyman->next_state = handyman->resume_state = 0x3c;
+                    handyman->next_state = handyman->resume_state = SS_HANDYMAN_WORKS;
                     set_complex(handyman, 0xbe, pos2);
                     fn_0003e724(handyman);
                 }
             }
         } else {
-            handyman->next_state = 0x3c;
+            handyman->next_state = SS_HANDYMAN_WORKS;
             handyman->substate = 9;
-            handyman->resume_state = 0x36;
+            handyman->resume_state = SS_PROCESS_COMPLEX;
             handyman->object = thingpage_remind_me(&allhosps[handyman->owner].ff6d, handyman);
             set_complex(handyman, 0x2d0, 0);
             fn_0003e724(handyman);
@@ -263,7 +263,7 @@ void handyman_works(Thing *handyman)
         u16 seq;
 
         seq = objects[thing[handyman->object].subtype].f12;
-        reset_icon_value(&thing[handyman->object], 0x1c);
+        reset_icon_value(&thing[handyman->object], ICON_NEEDS_REPAIR);
         if (seq)
             choose_aniseq(handyman, seq, 0x3c);
         machine = &thing[handyman->object];
@@ -288,8 +288,8 @@ void handyman_works(Thing *handyman)
         }
         handyman->room->f3 = 0;
         set_complex(handyman, 0x136, handyman->room->unknown6);
-        handyman->resume_state = 0x36;
-        handyman->next_state = 0x3c;
+        handyman->resume_state = SS_PROCESS_COMPLEX;
+        handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->substate = 0;
         handyman->repair_count++;
         fn_0003e724(handyman);
@@ -517,9 +517,9 @@ u8 handyman_try_fix(Thing *handyman)
         room = &room_info[thing[id].room_id];
         if (room > room_info) {
             set_complex(handyman, 0x96, room->unknown4);
-            handyman->next_state = 0x3c;
+            handyman->next_state = SS_HANDYMAN_WORKS;
             handyman->substate = 8;
-            handyman->resume_state = 0x36;
+            handyman->resume_state = SS_PROCESS_COMPLEX;
             handyman->dest_room = room - room_info;
             fn_0003e724(handyman);
             if (room->f3 != 6)
@@ -548,8 +548,8 @@ u8 handyman_try_plant(Thing *handyman)
             handyman->object = id;
             handyman->substate = 5;
         }
-        handyman->next_state = 0x3c;
-        handyman->resume_state = 0x36;
+        handyman->next_state = SS_HANDYMAN_WORKS;
+        handyman->resume_state = SS_PROCESS_COMPLEX;
         fn_0003e724(handyman);
         return 1;
     }
@@ -580,8 +580,8 @@ u8 handyman_try_litter(Thing *handyman)
         handyman->work_target2 = 0;
     }
     if (target) {
-        handyman->next_state = 0x3c;
-        handyman->resume_state = 0x3c;
+        handyman->next_state = SS_HANDYMAN_WORKS;
+        handyman->resume_state = SS_HANDYMAN_WORKS;
         set_complex(handyman, 0xbe, target);
         fn_0003e724(handyman);
         handyman->substate = 2;

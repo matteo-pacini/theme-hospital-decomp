@@ -185,7 +185,7 @@ void fn_00063a64(void)
         break;
     }
     switch (lbInkey) {
-    case 1:
+    case KC_ESCAPE:
         town.unknown2 = 1;
         break;
     default:
@@ -222,13 +222,13 @@ void process_mouse_town_select(void)
         plot = check_for_sale();
         if (plot) {
             if (myhosp->f35 > land_amount[plot] * gbv.f7c) {
-                play_sound(10, 0x45, -1, -1);
+                play_sound(10, SFX_CASHREG, -1, -1);
                 if (statvar.unknownfd > 1) {
-                    D_001549d0[player].type = 0x58;
+                    D_001549d0[player].type = EV_SETUP_TOWN_BID;
                     D_001549d0[player].value = plot;
                     othervar.f69 = 1;
                 } else {
-                    D_001549d0[player].type = 0x36;
+                    D_001549d0[player].type = EV_BUY_LAND;
                     D_001549d0[player].value = plot;
                     othervar.f69 = 1;
                 }
@@ -243,7 +243,7 @@ void process_mouse_town_select(void)
         goto_column_row_in_window(window.unknown2eb, (u16)x, (u16)y);
         if (!check_if_point_beyond_scroll_limit(window.f0[window.unknown2eb], window.fc[window.unknown2eb], 0)) {
             town.unknown2 = 1;
-            play_sound(10, 0x41, -1, -1);
+            play_sound(10, SFX_YESX, -1, -1);
         } else {
             window.f0[window.unknown2eb] = old_x;
             window.fc[window.unknown2eb] = old_y;
@@ -434,9 +434,9 @@ void buy_land(u16 plot)
     place_partition_walls();
     mow_grass();
     if (statvar.unknownfd > 1)
-        change_balance(6, -plotbid.bids[othervar.ff], 0, (u16)othervar.ff);
+        change_balance(TX_BUY_LAND, -plotbid.bids[othervar.ff], 0, (u16)othervar.ff);
     else if (total > 0)
-        change_balance(6, -total, 0, (u16)othervar.ff);
+        change_balance(TX_BUY_LAND, -total, 0, (u16)othervar.ff);
     othervar.f10 = 1;
     add_static_shadows();
 }
@@ -854,19 +854,19 @@ void draw_things_on_map(void)
             if (map[(s16)x + ((s16)y << 7)].first > 0) {
                 occupant = &thing[map[(s16)x + ((s16)y << 7)].first];
                 switch (occupant->type) {
-                case 6:
+                case THING_OBJECT:
                     switch (occupant->subtype) {
-                    case 0x2d:
+                    case OBJ_PLANT:
                         if (town.unknown0 & 2)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknown13);
                         break;
-                    case 0x2b:
+                    case OBJ_FIRE_EXTINGUISHER:
                         if (town.unknown0 & 4)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknownD);
                         break;
-                    case 0x2c:
+                    case OBJ_RADIATOR:
                         if (town.unknown0 & 0x10) {
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 1, 1, color.unknownC);
@@ -882,8 +882,8 @@ void draw_things_on_map(void)
                             lbDisplay.draw_flags = 0;
                         }
                         break;
-                    case 0x3a:
-                    case 0x3b:
+                    case OBJ_ENTRANCE_LEFT_DOOR:
+                    case OBJ_ENTRANCE_RIGHT_DOOR:
                         if (occupant->facing == 0 || occupant->facing == 2)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 7, 3, color.unknown11);
@@ -891,9 +891,9 @@ void draw_things_on_map(void)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 7, color.unknown11);
                         break;
-                    case 3:
-                    case 0x34:
-                    case 0x35:
+                    case OBJ_DOOR:
+                    case OBJ_SWING_DOOR:
+                    case OBJ_SWING_DOOR2:
                         LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                   area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknown11);
                         break;
@@ -906,14 +906,14 @@ void draw_things_on_map(void)
                         break;
                     }
                     break;
-                case 4:
-                case 0x14:
-                case 0x16:
+                case THING_STAFF:
+                case THING_MAYOR:
+                case THING_INSPECTOR:
                     if (town.unknown0 & 1)
                         LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                   area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 2, 2, color.unknown12);
                     break;
-                case 2:
+                case THING_PATIENT:
                     if ((town.unknown0 & 1) && !(map[((s16)(u16)occupant->y.tile << 7) + (s16)(u16)occupant->x.tile].unknown7 & 0x10))
                         LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                   area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 2, 2, color.unknown7);
@@ -986,25 +986,25 @@ void process_town_button(u8 button)
         if (lbDisplay.rright_button)
             town.unknown0 = 0;
         town.unknown0 ^= 1;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 1:
         if (lbDisplay.rright_button)
             town.unknown0 = 0;
         town.unknown0 ^= 2;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 2:
         if (lbDisplay.rright_button)
             town.unknown0 = 0;
         town.unknown0 ^= 4;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 3:
         if (lbDisplay.rright_button)
             town.unknown0 = 0;
         town.unknown0 ^= 8;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 4:
         if (lbDisplay.rright_button)
@@ -1012,7 +1012,7 @@ void process_town_button(u8 button)
         town.unknown0 ^= 0x10;
         if (town.unknown0 & 0x10)
             othervar.fa8a = 0x1e;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 6:
         if (myhosp->fc94 < 10) {
@@ -1020,7 +1020,7 @@ void process_town_button(u8 button)
             D_001549d0[player].value = (u16)myhosp->fc94 + 1;
             othervar.f6a = myhosp->fc94 + 1;
             othervar.f6b = 0x32;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         }
         othervar.fa8a = 0x1e;
         break;
@@ -1030,13 +1030,13 @@ void process_town_button(u8 button)
             D_001549d0[player].value = (u16)myhosp->fc94 - 1;
             othervar.f6a = myhosp->fc94 - 1;
             othervar.f6b = 0x32;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         }
         othervar.fa8a = 0x1e;
         break;
     case 7:
         town.unknown2 = 1;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     }
 }
@@ -1074,10 +1074,10 @@ void process_bid_button(u8 button)
     case 0:
     case 1:
         if (myhosp->f35 >= plotbid.price) {
-            D_001549d0[player].type = 0x59;
-            play_sound(10, 0x41, -1, -1);
+            D_001549d0[player].type = EV_PLOT_BID_MONEY;
+            play_sound(10, SFX_YESX, -1, -1);
         } else {
-            play_sound(10, 0x42, -1, -1);
+            play_sound(10, SFX_NO4, -1, -1);
         }
         break;
     case 2:
@@ -1193,7 +1193,7 @@ void process_bid_time(void)
         if (plotbid.bidder != 0x63) {
             LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
             if (plotbid.bidder == player) {
-                D_001549d0[player].type = 0x36;
+                D_001549d0[player].type = EV_BUY_LAND;
                 D_001549d0[player].value = (u16)othervar.f78;
             } else {
                 town.unknown2 = 1;
@@ -1203,7 +1203,7 @@ void process_bid_time(void)
         }
     }
     if (bid_hammer[plotbid.timer] == 3)
-        play_sound(10, 0xa5, -1, -1);
+        play_sound(10, SFX_AUCTION, -1, -1);
     reqspr_draw(resvars.f40[70].x, resvars.f40[70].y, &screen_sprites_tab_start[bid_hammer[plotbid.timer]]);
 }
 

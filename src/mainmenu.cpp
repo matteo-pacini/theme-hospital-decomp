@@ -96,7 +96,7 @@ void draw_main_menu(void)
     case 9:
         if (save_game_valid(0x63) == 0) {
             mainmenu.unknown2 = 3;
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
             break;
         }
         fn_0006310c();
@@ -116,7 +116,7 @@ void draw_main_menu(void)
             fn_00090804((u16)level_number, 1);
             if (fn_00021c38(0x63, -1)) {
                 othervar.fa65 = 0;
-                set_mouse_mode(0);
+                set_mouse_mode(MM_NORMAL);
                 LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
                 display_mode = 0;
                 mainmenu.unknown2 = 0;
@@ -178,32 +178,32 @@ void draw_main_menu(void)
     case 0x11:
         display_main_menu();
         reqspr_draw(resvars.f40[0xb8].x, resvars.f40[0xb8].y, &screen_sprites_tab_start[6]);
-        play_sound(10, 0x44, -1, -1);
+        play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x12:
         display_main_menu();
         reqspr_draw(resvars.f40[0xb9].x, resvars.f40[0xb9].y, &screen_sprites_tab_start[7]);
-        play_sound(10, 0x44, -1, -1);
+        play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x13:
         display_main_menu();
         reqspr_draw(resvars.f40[0xba].x, resvars.f40[0xba].y, &screen_sprites_tab_start[8]);
-        play_sound(10, 0x44, -1, -1);
+        play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x14:
         display_main_menu();
         reqspr_draw(resvars.f40[0xbb].x, resvars.f40[0xbb].y, &screen_sprites_tab_start[9]);
-        play_sound(10, 0x44, -1, -1);
+        play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x15:
         display_main_menu();
         reqspr_draw(resvars.f40[0xbc].x, resvars.f40[0xbc].y, &screen_sprites_tab_start[10]);
-        play_sound(10, 0x44, -1, -1);
+        play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x16:
         display_main_menu();
         reqspr_draw(resvars.f40[0xbd].x, resvars.f40[0xbd].y, &screen_sprites_tab_start[11]);
-        play_sound(10, 0x44, -1, -1);
+        play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x17:
         lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
@@ -344,8 +344,8 @@ void process_keys_main_menu(void)
         break;
     }
     switch (lbInkey) {
-    case 1:
-    case 0x10:
+    case KC_ESCAPE:
+    case KC_Q:
         fade_out_menu();
         quit_game = 3;
         lbInkey = 0;

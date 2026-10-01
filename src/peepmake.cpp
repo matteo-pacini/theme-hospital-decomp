@@ -82,19 +82,19 @@ void create_a_peep(void)
                     pay_for_treatment(patient, 3);
                 else
                     patient->treatment = 0;
-                patient->state = 0x26;
+                patient->state = PS_GO_FOR_TREATMENT;
                 patient->speed = 0x20;
                 patient->anim_speed = 1;
-                patient->flags |= 0x40;
+                patient->flags |= PF_EMERGENCY;
                 hosp->f1ed++;
                 hosp->f1cd++;
-                set_icon_value(patient, 6);
+                set_icon_value(patient, ICON_EMERGENCY);
             }
             hosp->f1e3--;
             if (hosp->f1e3 == 0) {
                 vehicle = &thing[hosp->f1df];
                 if (vehicle > thing)
-                    vehicle->state = 6;
+                    vehicle->state = HELI_LEAVES;
                 hosp->f1e1 = 0;
             }
         }
@@ -280,7 +280,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
     peep = allocate_thing(0x32);
     if (peep) {
         peep->owner = owner;
-        peep->type = 2;
+        peep->type = THING_PATIENT;
         peep->x.tile = pos % 128;
         peep->y.tile = pos / 128;
         peep->x.frac = 0x80;
@@ -340,14 +340,14 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         peep->happiness = 100;
         peep->warmth = 50;
         peep->refreshment = 100;
-        if (illness == 0x1d)
+        if (illness == ILL_THE_SQUITS)
             peep->bladder = gbv.f116 / 2;
         else
             peep->bladder = 0;
         peep->health = old_normal_rand(200, 1000);
         for (j = 0; j < 10; j++)
             peep->health_history[j] = peep->health;
-        peep->treatment = 1;
+        peep->treatment = ILL_GENERAL_PRACTICE;
         peep->known_illness = 1;
         peep->diagnosis_handicap = old_normal_rand(1, *(u16 *)&expertise[illness].unknown10[6]);
         if (old_newrand() % *(u16 *)&towns[myhosp->f29].unknown4[0xe] == 0)

@@ -219,7 +219,7 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
             set_font_from_cache(pmenu.font_hi);
             if (D_00160f1a != i + 1 || D_00160f18 != idx) {
                 D_00160f18 = idx;
-                play_sound(10, 0x44, -1, -1);
+                play_sound(10, SFX_HLIGHT5, -1, -1);
             }
             D_00160f1a = i + 1;
             if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.unknownfd > 1) {
@@ -315,7 +315,7 @@ extern "C" void fn_0008add8(void)
                             othervar.f40 = item_no;
                             if (!(((pmenu.pulldowns[i].items[j].flags & 1) && statvar.unknownfd > 1) || (!pmenu.pulldowns[i].items[j].f0 && gamevar.unknown21))) {
                                 if (gamevar.f174 && !pmenu.pulldowns[i].items[j].f1) {
-                                    play_sound(10, 8, -1, -1);
+                                    play_sound(10, SFX_WRONG2, -1, -1);
                                 } else {
                                     if (pmenu.pulldowns[i].items[j].check) {
                                         if (*pmenu.pulldowns[i].items[j].check)
@@ -330,10 +330,10 @@ extern "C" void fn_0008add8(void)
                                         othervar.f90 = j;
                                         pmenu.pulldowns[i].items[j].callback();
                                     }
-                                    play_sound(10, 0x43, -1, -1);
+                                    play_sound(10, SFX_SELECTX, -1, -1);
                                 }
                             } else {
-                                play_sound(10, 8, -1, -1);
+                                play_sound(10, SFX_WRONG2, -1, -1);
                             }
                             break;
                         }
@@ -362,7 +362,7 @@ extern "C" void fn_0008add8(void)
                 if (pmenu.pulldowns[i].active) {
                     if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x2, 0, x, pmenu.line_height)) {
                         if (pmenu.unknown0 != i)
-                            play_sound(10, 0x44, -1, -1);
+                            play_sound(10, SFX_HLIGHT5, -1, -1);
                         pmenu.unknown0 = i;
                         break;
                     }
@@ -444,7 +444,7 @@ extern "C" void fn_0008b6f8(void)
 void pulldown_briefing(void)
 {
     if (gamevar.f12e == 0xe)
-        play_sound(10, 8, -1, -1);
+        play_sound(10, SFX_WRONG2, -1, -1);
     else if (statvar.unknownfd <= 1)
         show_help_page(1, level_number);
     else
@@ -558,7 +558,7 @@ extern "C" void fn_0008bb10(void)
             othervar.fa3a[i] = 0;
         othervar.fa3a[sel] = 1;
         myplayer.f20 = sel;
-        D_001549d0[player].type = 0xe;
+        D_001549d0[player].type = EV_VARY_SPEED;
         D_001549d0[player].value = othervar.f8f;
     }
 }

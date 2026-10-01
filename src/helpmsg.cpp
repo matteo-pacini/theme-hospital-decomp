@@ -52,7 +52,7 @@ void compute_help_text(s16 x, s16 y, u8 help_group)
 
     dx = lbDisplay.mmouse_x - x;
     dy = lbDisplay.mmouse_y - y;
-    if (gamevar.f12e == 0x25)
+    if (gamevar.f12e == MM_HELP)
         return;
     if (othervar.f9bd) {
         if (help_group == othervar.f9bf)
@@ -180,7 +180,7 @@ void draw_help_text(void)
             && othervar.f8aa <= lbDisplay.mmouse_y && othervar.f8aa + pulldv[19].height > lbDisplay.mmouse_y) {
             reqspr_draw(othervar.f8a8, othervar.f8aa, &pulldv[20]);
             if (!D_00161134)
-                play_sound(10, 0x44, -1, -1);
+                play_sound(10, SFX_HLIGHT5, -1, -1);
             D_00161134 = 1;
         } else {
             reqspr_draw(othervar.f8a8, othervar.f8aa, &pulldv[19]);
@@ -197,7 +197,7 @@ void draw_help_text(void)
     lbDisplay.draw_colour = color.unknown8;
     LbTextDraw(othervar.f896 + border, othervar.f898 + border, othervar.f96);
     lbDisplay.draw_flags = 0;
-    if (gamevar.f12e != 0x25)
+    if (gamevar.f12e != MM_HELP)
         othervar.f96[0] = 0;
 }
 
@@ -379,7 +379,7 @@ void show_help_page(u32 page, u32 sub)
 {
     char *saved;
 
-    set_mouse_mode(0x25);
+    set_mouse_mode(MM_HELP);
     switch (page) {
     case 0:
         set_help_text(2, -1, -1, &D_0016037c[statvar.f4df[sub]]);
@@ -392,7 +392,7 @@ void show_help_page(u32 page, u32 sub)
 
         switch (current_net_criteria.unknown0) {
         case 0:
-            set_mouse_mode(0);
+            set_mouse_mode(MM_NORMAL);
             return;
         case 1:
         case 9:
@@ -455,9 +455,9 @@ void finish_composite_help(void)
     D_00161134 = 0;
     D_00156910 = 1;
     othervar.f96[0] = 0;
-    if (gamevar.f12e == 0x25) {
-        set_mouse_mode(0);
-        play_sound(10, 0x41, -1, -1);
+    if (gamevar.f12e == MM_HELP) {
+        set_mouse_mode(MM_NORMAL);
+        play_sound(10, SFX_YESX, -1, -1);
         switch (othervar.fa92) {
         case 1:
             switch (othervar.fa93) {

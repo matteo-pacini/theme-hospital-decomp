@@ -337,12 +337,12 @@ void process_computer_peep(Thing *patient, u8 owner)
     bucket = &comp_buckets[owner][month];
     illness = patient->illness;
     hosp->f123c++;
-    if (listhead[owner].objects[7] * 10 > hosp->f123c) {
+    if (listhead[owner].objects[OBJ_DRINKS_MACHINE] * 10 > hosp->f123c) {
         busy = 1;
     }
     if (hosp->f123c > 5) {
         chance = 100 - hosp->f123c / ((hosp->f1238 + 1) * 10) - hosp->f123c / ((hosp->fc9c + 1) * 10)
-            - hosp->f123c / ((listhead[owner].objects[4] + 1) * 10);
+            - hosp->f123c / ((listhead[owner].objects[OBJ_BENCH] + 1) * 10);
         if (chance < 0) {
             chance = 0;
         } else if (chance > 100) {
@@ -356,10 +356,10 @@ void process_computer_peep(Thing *patient, u8 owner)
     step = 5;
     for (;;) {
         ADVANCE_TIME();
-        if (allhosps[owner].rooms[1].unknown1C == 1) {
+        if (allhosps[owner].rooms[ILL_GENERAL_PRACTICE].unknown1C == 1) {
             update_single_cure_cost(1, owner);
-            bucket->f0 += hosp->rooms[1].unknownC;
-            patient->treatment = 1;
+            bucket->f0 += hosp->rooms[ILL_GENERAL_PRACTICE].unknownC;
+            patient->treatment = ILL_GENERAL_PRACTICE;
             computer_diag_progress(patient, owner);
             reputation_affected(1, 10, month % 12, patient->owner, 0);
             if (patient->diagnosis > gbv.ffc) {
@@ -492,7 +492,7 @@ u8 computer_employ(u8 type, u16 skills, u8 owner)
     AllHosps *hosp;
 
     for (candidate = thing + 1; candidate < end_things; candidate++) {
-        if (candidate->type == 4 && candidate->state == 0x2e) {
+        if (candidate->type == THING_STAFF && candidate->state == SS_APPLICANT) {
             if ((u16)(candidate - thing) != gamevar.unknown75) {
                 if (type == candidate->subtype) {
             ok = 1;
@@ -563,7 +563,7 @@ u8 computer_place_object(u8 obj, u8 free, u8 owner)
         }
         inc_hardware_stats(obj, owner);
         if (objects[obj].unknown14 == 7) {
-            listhead[owner].rooms[4]++;
+            listhead[owner].rooms[ROOM_RECEPTION]++;
         }
         listhead[owner].objects[obj]++;
         return 1;

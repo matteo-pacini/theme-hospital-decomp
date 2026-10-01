@@ -63,7 +63,7 @@ void display_drugs(void)
         othervar.fa78 = 0;
         break;
     case 1:
-        D_001549d0[player].type = 0x70;
+        D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
         D_001549d0[player].value = 0;
         break;
     case 2:
@@ -127,8 +127,8 @@ void display_drugs(void)
         for (i = othervar.f8c + 1; i < 0x2e; i++) {
             if ((i < 0x24 && myhosp->rooms[i].unknown1D)
                 || (i >= 0x24 && allhosps[player].rooms[i].unknown1C == 1)
-                || (i == 0x2c && (allhosps[player].equipment[55].unknown0 != 0 && objects[55].unknown1c != 0)
-                    && listhead[player].rooms[0x1c])) {
+                || (i == 0x2c && (allhosps[player].equipment[55].unknown0 != 0 && objects[OBJ_AUTO_AUTOPSY].unknown1c != 0)
+                    && listhead[player].rooms[ROOM_RESEARCH])) {
                 if (count >= 7) {
                     break;
                 }
@@ -168,7 +168,7 @@ void display_drugs(void)
                     if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f40[i].x, resvars.f40[i].y,
                                     lbDisplay.graphics_screen_width - resvars.f40[i].y, line_height)) {
                         othervar.f8c = list[i];
-                        play_sound(10, 0xa8, -1, -1);
+                        play_sound(10, SFX_PAGETUR2, -1, -1);
                         lbDisplay.left_button = 0;
                     }
                 }
@@ -314,9 +314,9 @@ void price_up(void)
             othervar.f9f1 = 0xa00;
         }
         if (myhosp->rooms[othervar.f8c].unknown10 < 20000) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         } else if (!drugs.unknown0) {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
             drugs.unknown0 = 1;
         }
     }
@@ -335,9 +335,9 @@ void price_down(void)
             othervar.f9f1 = 0xa00;
         }
         if (myhosp->rooms[othervar.f8c].unknown10 > 5000) {
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
         } else if (!drugs.unknown0) {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
             drugs.unknown0 = 1;
         }
     }
@@ -348,27 +348,27 @@ void process_drug_keys(void)
 {
     u8 illness;
 
-    if (lbKeyOn[0x48] || lbKeyOn[0xc8]) {
+    if (lbKeyOn[KC_NUMPAD8] || lbKeyOn[KC_UP]) {
         illness = get_next_illness(0, othervar.f8c);
         if (illness != 0xfa) {
             othervar.f8c = illness;
-            play_sound(10, 0xa8, -1, -1);
+            play_sound(10, SFX_PAGETUR2, -1, -1);
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
     }
-    if (lbKeyOn[0x50] || lbKeyOn[0xd0]) {
+    if (lbKeyOn[KC_NUMPAD2] || lbKeyOn[KC_DOWN]) {
         illness = get_next_illness(1, othervar.f8c);
         if (illness != 0xfa) {
             othervar.f8c = illness;
-            play_sound(10, 0xa8, -1, -1);
+            play_sound(10, SFX_PAGETUR2, -1, -1);
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
     }
-    if (lbKeyOn[0x4d] || lbKeyOn[0xcd]) {
+    if (lbKeyOn[KC_NUMPAD6] || lbKeyOn[KC_RIGHT]) {
         price_up();
-    } else if (lbKeyOn[0x4b] || lbKeyOn[0xcb]) {
+    } else if (lbKeyOn[KC_NUMPAD4] || lbKeyOn[KC_LEFT]) {
         price_down();
     } else if (!lbDisplay.mleft_button) {
         othervar.f9f1 = 0x100;
@@ -395,9 +395,9 @@ void process_drug_button(u8 action)
         illness = get_next_illness(0, othervar.f8c);
         if (illness != 0xfa) {
             othervar.f8c = illness;
-            play_sound(10, 0xa8, -1, -1);
+            play_sound(10, SFX_PAGETUR2, -1, -1);
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         othervar.fa78 = 0x32;
         break;
@@ -405,20 +405,20 @@ void process_drug_button(u8 action)
         illness = get_next_illness(1, othervar.f8c);
         if (illness != 0xfa) {
             othervar.f8c = illness;
-            play_sound(10, 0xa8, -1, -1);
+            play_sound(10, SFX_PAGETUR2, -1, -1);
         } else {
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
         }
         othervar.fa78 = 0x32;
         break;
     case 4:
         drugs.unknown2 = 1;
-        play_sound(10, 0x42, -1, -1);
+        play_sound(10, SFX_NO4, -1, -1);
         break;
     case 5:
         D_001549d0[player].type = 0x72;
         D_001549d0[player].value = othervar.f8c;
-        play_sound(10, 0x43, -1, -1);
+        play_sound(10, SFX_SELECTX, -1, -1);
         break;
     }
 }
@@ -434,8 +434,8 @@ u8 get_next_illness(const u8 forward, const u8 from)
             for (i = from - 1; i > 0; i--) {
                 if ((i < 0x24 && myhosp->rooms[i].unknown1D)
                     || (i >= 0x24 && allhosps[player].rooms[i].unknown1C == 1)
-                    || (i == 0x2c && (allhosps[player].equipment[55].unknown0 != 0 && objects[55].unknown1c != 0)
-                        && listhead[player].rooms[0x1c])) {
+                    || (i == 0x2c && (allhosps[player].equipment[55].unknown0 != 0 && objects[OBJ_AUTO_AUTOPSY].unknown1c != 0)
+                        && listhead[player].rooms[ROOM_RESEARCH])) {
                     return i;
                 }
             }
@@ -446,8 +446,8 @@ u8 get_next_illness(const u8 forward, const u8 from)
             for (i = from + 1; i < 0x2e; i++) {
                 if ((i < 0x24 && myhosp->rooms[i].unknown1D)
                     || (i >= 0x24 && allhosps[player].rooms[i].unknown1C == 1)
-                    || (i == 0x2c && (allhosps[player].equipment[55].unknown0 != 0 && objects[55].unknown1c != 0)
-                        && listhead[player].rooms[0x1c])) {
+                    || (i == 0x2c && (allhosps[player].equipment[55].unknown0 != 0 && objects[OBJ_AUTO_AUTOPSY].unknown1c != 0)
+                        && listhead[player].rooms[ROOM_RESEARCH])) {
                     return i;
                 }
             }

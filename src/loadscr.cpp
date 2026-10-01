@@ -113,7 +113,7 @@ void draw_load_game(void)
                     othervar.fa65 = 0;
                     fn_000110b0();
                     load_game_files();
-                    set_mouse_mode(0);
+                    set_mouse_mode(MM_NORMAL);
                     LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
                     display_mode = 0;
                     D_00156910 = 1;
@@ -134,7 +134,7 @@ void draw_load_game(void)
         LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
         display_mode = 2;
         mainmenu.unknown2 = 0;
-        set_mouse_mode(0);
+        set_mouse_mode(MM_NORMAL);
         loadgame.unknown2 = 0;
         break;
     default:
@@ -158,8 +158,8 @@ void process_loadgame_buttons(u8 slot)
 void process_keys_load_game(void)
 {
     switch (BufferedInkey) {
-    case 1:
-        play_sound(10, 0x42, -1, -1);
+    case KC_ESCAPE:
+        play_sound(10, SFX_NO4, -1, -1);
         loadgame.unknown2 = 2;
         BufferedInkey = 0;
         break;
@@ -193,7 +193,7 @@ void process_mouse_load_game(void)
                 if (lbDisplay.rleft_button) {
                     if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.f48[base + i].width - x + 1,
                             resvars.f48[base + i].height - y + 1)) {
-                        play_sound(10, 0x41, -1, -1);
+                        play_sound(10, SFX_YESX, -1, -1);
                         lbDisplay.rleft_button = 0;
                         if (resvars.f48[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
@@ -211,7 +211,7 @@ void process_mouse_load_game(void)
                     else
                         draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
                     if (i != loadgame.unknown0) {
-                        play_sound(10, 0x44, -1, -1);
+                        play_sound(10, SFX_HLIGHT5, -1, -1);
                         loadgame.unknown0 = i;
                     }
                 }

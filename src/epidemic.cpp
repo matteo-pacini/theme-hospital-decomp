@@ -28,7 +28,7 @@ void spread_epidemic(Thing *carrier, u16 warmth)
         adj = &cell[around[i]];
         for (id = adj->first; id > 0; id = victim->cell_next) {
             victim = &thing[id];
-            if (victim->type != 2 || victim == carrier)
+            if (victim->type != THING_PATIENT || victim == carrier)
                 continue;
             if (victim->illness == victim->known_illness)
                 continue;
@@ -43,8 +43,8 @@ void spread_epidemic(Thing *carrier, u16 warmth)
             othervar.f39 = illness;
             victim->contagion = (s8)carrier->contagion / 2;
             carrier->contagion -= victim->contagion;
-            if (carrier->flags & 0x20)
-                victim->flags |= 0x20;
+            if (carrier->flags & PF_CONTAGIOUS)
+                victim->flags |= PF_CONTAGIOUS;
             return;
         }
     }
@@ -120,7 +120,7 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
     count = 0;
     max = 0;
     for (peep = thing + 1; peep < end_things; peep++) {
-        if (peep->type != 2 || peep->owner != owner)
+        if (peep->type != THING_PATIENT || peep->owner != owner)
             continue;
         if (!peep->contagion || peep->illness != illness)
             continue;
@@ -128,21 +128,21 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
             if ((s8)peep->contagion > max)
                 max = (s8)peep->contagion;
             if (mode == 1) {
-                if (peep->flags & 0x4000) {
-                    peep->flags &= ~0x20;
+                if (peep->flags & PF_FED_UP) {
+                    peep->flags &= ~PF_CONTAGIOUS;
                     peep->contagion = 0;
                     continue;
                 }
                 count++;
-                set_icon_value(peep, 0xd);
-                peep->flags |= 0x20;
+                set_icon_value(peep, ICON_CONTAGIOUS);
+                peep->flags |= PF_CONTAGIOUS;
             } else if (mode == 2) {
-                if (peep->flags & 0x20)
+                if (peep->flags & PF_CONTAGIOUS)
                     count++;
                 clean_contagious_peep(peep);
             }
         } else {
-            peep->flags &= ~0x20;
+            peep->flags &= ~PF_CONTAGIOUS;
             peep->contagion = 0;
         }
     }
@@ -244,14 +244,14 @@ void send_peeps_home(u8 all, u8 owner)
     Thing *peep;
 
     for (peep = thing + 1; peep < end_things; peep++) {
-        if (peep->type != 2 || peep->owner != owner)
+        if (peep->type != THING_PATIENT || peep->owner != owner)
             continue;
         if (map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].unknown7 & 0x10)
             continue;
-        if (all || (peep->flags & 0x20)) {
-            peep->flags &= ~0x20;
+        if (all || (peep->flags & PF_CONTAGIOUS)) {
+            peep->flags &= ~PF_CONTAGIOUS;
             peep->contagion = 0;
-            peep->flags |= 0x100;
+            peep->flags |= PF_SENT_HOME_BY_INSPECTOR;
         }
     }
 }
@@ -259,12 +259,12 @@ void send_peeps_home(u8 all, u8 owner)
 // FUNCTION: 0x000a0ae8
 void clean_contagious_peep(Thing *peep)
 {
-    peep->flags &= ~0x20;
+    peep->flags &= ~PF_CONTAGIOUS;
     peep->contagion = 0;
-    reset_icon_value(peep, 0xe);
-    reset_icon_value(peep, 0xf);
-    reset_icon_value(peep, 0x10);
-    reset_icon_value(peep, 0xd);
+    reset_icon_value(peep, ICON_VACCINE_REQUESTED);
+    reset_icon_value(peep, ICON_VACCINE_NURSE_SENT);
+    reset_icon_value(peep, ICON_VACCINATED);
+    reset_icon_value(peep, ICON_CONTAGIOUS);
     remove_person_from_vaccination_queue(peep);
     if (othervar.f87 >= 1)
         othervar.f87--;

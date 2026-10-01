@@ -36,20 +36,20 @@ void req11(Window *win)
                 if (crequester.unknown4 == 1) {
                     D_001549d0[player].type = 0x2b;
                 } else if (crequester.unknown9) {
-                    D_001549d0[player].type = 0x5c;
+                    D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
                     D_001549d0[player].value = 0;
                 }
-                play_sound(10, 0x41, -1, -1);
+                play_sound(10, SFX_YESX, -1, -1);
             } else if (i == resvars.fe[0x3a]) {
                 if (crequester.unknown9) {
-                    D_001549d0[player].type = 0x5c;
+                    D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
                     D_001549d0[player].value = 1;
                 } else {
                     while (--k >= 0)
                         gamevar.buy_count[k] = 0;
                     D_001549d0[player].type = 0x64;
                 }
-                play_sound(10, 0x42, -1, -1);
+                play_sound(10, SFX_NO4, -1, -1);
             }
         }
         i++;
@@ -121,7 +121,7 @@ void req11_overdraw(Window *win)
                 resvars.f18[i + 0xb].w, resvars.f18[i + 0xb].h)) {
             set_font_from_cache(2);
             if (crequester.unknown3 != item)
-                play_sound(10, 0x44, -1, -1);
+                play_sound(10, SFX_HLIGHT5, -1, -1);
             crequester.unknown3 = item;
         }
         LbTextDraw(ox + resvars.f1c[i + 0x34].x, oy + resvars.f1c[i + 0x34].y, D_0016029c[objects[item].name]);
@@ -172,37 +172,37 @@ void clicked_buy_objects(const s32 idx, const u8 button)
     s32 obj;
     s32 amount;
 
-    amount = (HospShift & 2) ? 10 : ((HospShift & 1) ? 5 : 1);
+    amount = (HospShift & MOD_CTRL) ? 10 : ((HospShift & MOD_SHIFT) ? 5 : 1);
     obj = crequester.unknown3;
     if (req_indices[idx]) {
         if (button == 1) {
             if (cost_of_all_selected_objects() + allhosps[player].object_stats[obj].cost * amount
                     <= (u32)allhosps[player].f35
                 && allhosps[player].f35 > 0) {
-                D_001549d0[player].type = 0x25;
+                D_001549d0[player].type = EV_BUY_OBJECT;
                 D_001549d0[player].value = obj;
                 D_001549d0[player].arg = amount;
                 if (gamevar.buy_count[obj] + amount < 0x63)
-                    play_sound(10, 0x5b, -1, -1);
+                    play_sound(10, SFX_ADDITEMJ, -1, -1);
                 else
-                    play_sound(10, 8, -1, -1);
+                    play_sound(10, SFX_WRONG2, -1, -1);
                 return;
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
         } else {
             if (gamevar.buy_count[obj] >= amount) {
-                D_001549d0[player].type = 0x63;
+                D_001549d0[player].type = EV_SELL_OBJECT;
                 D_001549d0[player].value = obj;
                 D_001549d0[player].arg = amount;
-                play_sound(10, 0x5c, -1, -1);
+                play_sound(10, SFX_DELITEMJ, -1, -1);
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             return;
         }
     }
-    play_sound(10, 8, -1, -1);
+    play_sound(10, SFX_WRONG2, -1, -1);
 }
 
 // FUNCTION: 0x0009d36c

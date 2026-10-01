@@ -512,14 +512,14 @@ void check_cd_available(char *path)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     LbTextDraw((lbDisplay.unknown18 - LbTextStringWidth(text)) / 2, 0x1a4, text);
-    if (lbKeyOn[0x21] && lbKeyOn[0x38])
+    if (lbKeyOn[KC_F] && lbKeyOn[KC_LALT])
         LbTextDraw(0, 0x1c2, path);
     LbScreenUnlock();
     LbMouseChangeSprite(0);
     LbScreenSwap();
     LbPaletteSet(D_00153f34);
     while (!LbFileExists(path)) {
-        if (lbKeyOn[1]) {
+        if (lbKeyOn[KC_ESCAPE]) {
             reset_host();
             exit(1);
         }

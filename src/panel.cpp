@@ -315,100 +315,100 @@ void panel_ml_button(const u16 icon)
 void panel_l_button(const u16 icon)
 {
     if (gamevar.f12e == 0xe) {
-        play_sound(10, 8, -1, -1);
+        play_sound(10, SFX_WRONG2, -1, -1);
     } else if (icon != 0x63) {
         switch (icon) {
         case 0:
-            D_001549d0[player].type = 0x33;
+            D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 6;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             break;
         case 2:
-            if (!(gamevar.f12e == 1 || gamevar.f12e == 2 || gamevar.f12e == 3 || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
-                set_mouse_mode(0);
+            if (!(gamevar.f12e == MM_BLUEPRINT || gamevar.f12e == 2 || gamevar.f12e == MM_PLACE_STAFF || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
+                set_mouse_mode(MM_NORMAL);
                 D_001549d0[player].type = 0x37;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             break;
         case 5:
-            if (!(gamevar.f12e == 1 || gamevar.f12e == 2 || gamevar.f12e == 3 || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
-                set_mouse_mode(0);
+            if (!(gamevar.f12e == MM_BLUEPRINT || gamevar.f12e == 2 || gamevar.f12e == MM_PLACE_STAFF || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
+                set_mouse_mode(MM_NORMAL);
                 D_001549d0[player].type = 0x2e;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             break;
         case 4:
-            if (gamevar.f12e == 0 && crequester.unknown2 == 0x63) {
-                set_mouse_mode(0xc);
+            if (gamevar.f12e == MM_NORMAL && crequester.unknown2 == 0x63) {
+                set_mouse_mode(MM_EDIT_ROOM);
                 allhosps[player].unknown11b7 = 0;
-                play_sound(10, 0x43, -1, -1);
-            } else if (gamevar.f12e == 0xc && crequester.unknown2 == 0x63) {
-                set_mouse_mode(0);
+                play_sound(10, SFX_SELECTX, -1, -1);
+            } else if (gamevar.f12e == MM_EDIT_ROOM && crequester.unknown2 == 0x63) {
+                set_mouse_mode(MM_NORMAL);
                 allhosps[player].unknown11b7 = 0;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             break;
         case 3:
-            if (!(gamevar.f12e == 1 || gamevar.f12e == 2 || gamevar.f12e == 3 || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
-                set_mouse_mode(0);
+            if (!(gamevar.f12e == MM_BLUEPRINT || gamevar.f12e == 2 || gamevar.f12e == MM_PLACE_STAFF || gamevar.f12e == 0xe || gamevar.f12e == 0x10)) {
+                set_mouse_mode(MM_NORMAL);
                 D_001549d0[player].type = 0x62;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             break;
         case 6:
-            D_001549d0[player].type = 0x33;
+            D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 5;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             break;
         case 7:
             if (crequester.unknown2 != 5 && (crequester.unknown2 != 10 || crequester.unknown4 == 1)) {
                 display_mode = 4;
                 town.unknown2 = 0;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             break;
         case 8:
-            D_001549d0[player].type = 0x33;
+            D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 1;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             break;
         case 9:
-            if (listhead[player].rooms[0x1c]) {
-                D_001549d0[player].type = 0x33;
+            if (listhead[player].rooms[ROOM_RESEARCH]) {
+                D_001549d0[player].type = EV_OPEN_SCREEN;
                 D_001549d0[player].value = 3;
-                play_sound(10, 0x43, -1, -1);
+                play_sound(10, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, 8, -1, -1);
+                play_sound(10, SFX_WRONG2, -1, -1);
             }
             break;
         case 10:
-            D_001549d0[player].type = 0x33;
+            D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 7;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             break;
         case 11:
-            D_001549d0[player].type = 0x33;
+            D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 4;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             break;
         case 12:
-            D_001549d0[player].type = 0x33;
+            D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 2;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             break;
         case 1:
         default:
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
             break;
         }
         D_00156910 = 1;
@@ -420,21 +420,21 @@ void panel_l_button(const u16 icon)
 void panel_r_button(const u16 icon)
 {
     if (gamevar.f12e == 0xe) {
-        play_sound(10, 8, -1, -1);
+        play_sound(10, SFX_WRONG2, -1, -1);
     } else if (icon != 0x63) {
         switch (icon) {
         case 0:
-            D_001549d0[player].type = 0x33;
+            D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 0;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             break;
         case 5:
-            D_001549d0[player].type = 0x33;
+            D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 5;
-            play_sound(10, 0x43, -1, -1);
+            play_sound(10, SFX_SELECTX, -1, -1);
             break;
         default:
-            play_sound(10, 8, -1, -1);
+            play_sound(10, SFX_WRONG2, -1, -1);
             break;
         }
         D_00156910 = 1;
@@ -557,7 +557,7 @@ void draw_emergency(void)
                     set_all_refresh_zones_in_window(off + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
                                                     watch[15].width + (off + resvars.f1c_PanelLayoutp->unknown430), watch[15].height + resvars.f1c_PanelLayoutp->unknown434, 3);
                     if (!othervar.fa6b)
-                        play_sound(10, 0x44, -1, -1);
+                        play_sound(10, SFX_HLIGHT5, -1, -1);
                     othervar.fa6b = 1;
                 } else {
                     othervar.fa6b = 0;
@@ -585,7 +585,7 @@ void draw_emergency(void)
                     set_all_refresh_zones_in_window(resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434,
                                                     watch[17].width + resvars.f1c_PanelLayoutp->unknown430, resvars.f1c_PanelLayoutp->unknown434 + watch[17].height, 3);
                     if (!othervar.fa6b)
-                        play_sound(10, 0x44, -1, -1);
+                        play_sound(10, SFX_HLIGHT5, -1, -1);
                     othervar.fa6b = 1;
                 } else {
                     othervar.fa6b = 0;
@@ -648,13 +648,13 @@ void display_panel_person_info(void)
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
     text = 0;
-    if (person->flags2 & 4)
+    if (person->flags2 & (PF_DYING >> 16))
         text = info_bar_text[4];
-    else if (person->flags2 & 8)
+    else if (person->flags2 & (PF_NO_DIAGNOSIS >> 16))
         text = info_bar_text[15];
-    else if (person->flags2 & 0x10)
+    else if (person->flags2 & (PF_NO_TREATMENT >> 16))
         text = info_bar_text[16];
-    else if (person->flags2 & 0x80)
+    else if (person->flags2 & (PF_TOO_EXPENSIVE >> 16))
         text = info_bar_text[19];
     if (text) {
         line = 1;
@@ -665,9 +665,9 @@ void display_panel_person_info(void)
         lines = 2;
     else
         lines = 1;
-    if (person->flags0 & 0x10) {
+    if (person->flags0 & PF_AWAITING_DECISION) {
         fn_00036730(info_bar_text[5], &line, lines);
-    } else if (person->flags0 & 0x80) {
+    } else if (person->flags0 & PF_WAITING_FOR_ROOM) {
         if (person->flags1 & 4)
             fn_00036730(info_bar_text[17], &line, lines);
         else
@@ -684,29 +684,29 @@ void display_panel_person_info(void)
             fn_00036730(buf, &line, lines);
         }
     }
-    if (person->flags1 & 0x20)
+    if (person->flags1 & (PF_CURED >> 8))
         fn_00036730(info_bar_text[8], &line, lines);
-    else if (person->flags1 & 1)
+    else if (person->flags1 & (PF_SENT_HOME_BY_INSPECTOR >> 8))
         fn_00036730(info_bar_text[24], &line, lines);
-    else if (person->flags1 & 0x40)
+    else if (person->flags1 & (PF_FED_UP >> 8))
         fn_00036730(info_bar_text[9], &line, lines);
-    else if (person->flags1 & 0x80)
+    else if (person->flags1 & (PF_SENT_HOME >> 8))
         fn_00036730(info_bar_text[10], &line, lines);
-    else if (person->flags2 & 1)
+    else if (person->flags2 & (PF_REFERRED >> 16))
         fn_00036730(info_bar_text[11], &line, lines);
-    else if (person->flags0 & 0x20)
+    else if (person->flags0 & PF_CONTAGIOUS)
         fn_00036730(info_bar_text[25], &line, lines);
     if (line < 3 && person->illness != 0) {
-        if (person->flags0 & 0x40) {
+        if (person->flags0 & PF_EMERGENCY) {
             line = 2;
             sprintf(buf, info_bar_text[22], D_001602a4[person->illness]);
             fn_00036730(buf, &line, 3);
-        } else if (person->flags32 & 0x21000) {
+        } else if (person->flags32 & (PF_GUESSED | PF_DIAGNOSED)) {
             u8 k;
 
             k = person->known_illness;
             line = 2;
-            if (person->flags2 & 2)
+            if (person->flags2 & (PF_DIAGNOSED >> 16))
                 sprintf(buf, info_bar_text[12], D_001602a4[k]);
             else
                 sprintf(buf, info_bar_text[13], D_001602a4[k]);
@@ -739,16 +739,16 @@ void display_panel_staff_info(void)
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
         fn_000bbff0(buf, D_00160298[staff->subtype]);
-        if ((staff->subtype == 1 || staff->subtype == 4) && (staff->skills & 0x1e0)) {
+        if ((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (staff->skills & 0x1e0)) {
             fn_000bbff0(buf, "");
             n = 0;
-            if (staff->skills & 0x80)
+            if (staff->skills & SKILL_CONSULTANT)
                 fn_000bbff0(names[n++], D_00160318[7]);
-            if (staff->skills & 0x100)
+            if (staff->skills & SKILL_RESEARCHER)
                 fn_000bbff0(names[n++], D_00160318[8]);
-            if (staff->skills & 0x20)
+            if (staff->skills & SKILL_SURGEON)
                 fn_000bbff0(names[n++], D_00160318[5]);
-            if (staff->skills & 0x40) {
+            if (staff->skills & SKILL_PSYCHIATRIST) {
                 if (n == 3)
                     fn_000bbff0(names[n++], info_bar_text[26]);
                 else
@@ -764,9 +764,9 @@ void display_panel_staff_info(void)
             if (room > room_info) {
                 sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
                 fn_00036730(buf, &line, 2);
-            } else if ((staff->subtype == 1 && staff->state == 0x14) || staff->next_state == 0x20) {
+            } else if ((staff->subtype == STAFF_DOCTOR && staff->state == SS_DOCTOR_WAITS_FOR_PATIENT) || staff->next_state == SS_RECEPT_WAITS_FOR_PATIENT) {
                 fn_00036730(info_bar_text[23], &line, 2);
-            } else if (staff->state == 0x34) {
+            } else if (staff->state == SS_WANDERS) {
                 fn_00036730(info_bar_text[27], &line, 2);
             }
         }
@@ -792,7 +792,7 @@ void display_panel_object_info(void)
     obj = &thing[othervar.f7e];
     line = 0;
     clear_panel_info_bar();
-    if (obj->type == 6) {
+    if (obj->type == THING_OBJECT) {
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
         fn_00036730(D_0016029c[obj->subtype], &line, 3);
@@ -822,7 +822,7 @@ void display_panel_queue_info(void)
     selected = &thing[othervar.f7e];
     line = 0;
     height = resvars.f1c_PanelLayoutp->unknown57c;
-    if (selected->type == 4)
+    if (selected->type == THING_STAFF)
         room = selected->room;
     else
         room = &room_info[selected->room_id];
@@ -853,10 +853,10 @@ void display_panel_mayor_info(void)
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
-    if (mayor->type == 0x14) {
+    if (mayor->type == THING_MAYOR) {
         fn_00036730(info_bar_text[20], &line, 3);
         fn_00036730(mayor_names[allhosps[mayor->owner].f1f9], &line, 3);
-    } else if (mayor->type == 0x16) {
+    } else if (mayor->type == THING_INSPECTOR) {
         fn_00036730(info_bar_text[21], &line, 3);
     }
 }
@@ -1147,7 +1147,7 @@ void add_panel_popup(PlayerCall *call)
         } else {
             call->slot = 9;
         }
-        play_sound(10, 0xdd, -1, -1);
+        play_sound(10, SFX_NEWFAX, -1, -1);
     }
 }
 

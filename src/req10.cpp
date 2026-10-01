@@ -23,24 +23,24 @@ void req10(Window *win)
             if (button->flags & 6) {
                 debug.unknown8 = i;
                 if (i == resvars.fe[0x17]) {
-                    D_001549d0[player].type = 0x20;
+                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 3;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.fe[0x18]) {
-                    D_001549d0[player].type = 0x20;
+                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 4;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.fe[0x19]) {
-                    D_001549d0[player].type = 0x20;
+                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 5;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.fe[0x1a]) {
-                    D_001549d0[player].type = 0x20;
+                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 6;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.fe[0x25]) {
                     D_001549d0[player].type = 0x26;
-                    play_sound(10, 0x42, -1, -1);
+                    play_sound(10, SFX_NO4, -1, -1);
                 }
             }
             i++;
@@ -51,21 +51,21 @@ void req10(Window *win)
             if (button->flags & 6) {
                 debug.unknown8 = i;
                 if (i == resvars.fe[0x17]) {
-                    D_001549d0[player].type = 0x20;
+                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 3;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.fe[0x18]) {
-                    D_001549d0[player].type = 0x20;
+                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 4;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.fe[0x19]) {
-                    D_001549d0[player].type = 0x20;
+                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 5;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.fe[0x1a]) {
-                    D_001549d0[player].type = 0x20;
+                    D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 6;
-                    play_sound(10, 0x43, -1, -1);
+                    play_sound(10, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.fe[0x1b] || i == resvars.fe[0x1c] || i == resvars.fe[0x1d]
                     || i == resvars.fe[0x1e] || i == resvars.fe[0x1f] || i == resvars.fe[0x20]
                     || i == resvars.fe[0x21] || i == resvars.fe[0x22] || i == resvars.fe[0x23]
@@ -83,15 +83,15 @@ void req10(Window *win)
                             D_001549d0[player].type = 0x35;
                             D_001549d0[player].value = crequester.unknown8;
                             D_001549d0[player].arg = crequester.unknown8;
-                            play_sound(10, 0x41, -1, -1);
+                            play_sound(10, SFX_YESX, -1, -1);
                         } else {
-                            play_sound(10, 8, -1, -1);
+                            play_sound(10, SFX_WRONG2, -1, -1);
                         }
                     }
-                    play_sound(10, 0x41, -1, -1);
+                    play_sound(10, SFX_YESX, -1, -1);
                 } else if (i == resvars.fe[0x25]) {
                     D_001549d0[player].type = 0x26;
-                    play_sound(10, 0x42, -1, -1);
+                    play_sound(10, SFX_NO4, -1, -1);
                 }
             }
             i++;
@@ -186,7 +186,7 @@ void req10_overdraw(Window *win)
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18[i + 1].x, oy + resvars.f18[i + 1].y,
                     resvars.f18[i + 1].w, resvars.f18[i + 1].h)) {
                 if (crequester.unknown8 != room)
-                    play_sound(10, 0x44, -1, -1);
+                    play_sound(10, SFX_HLIGHT5, -1, -1);
                 crequester.unknown8 = room;
                 set_font_from_cache(2);
             }

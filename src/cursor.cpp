@@ -143,7 +143,7 @@ void draw_object_cursor(void)
     if (gamevar.unknown26 == 2) {
         room = which_room(tile);
         if (room) {
-            if ((objects[kind].unknown20[2] & 8) && room->type != 6) {
+            if ((objects[kind].unknown20[2] & 8) && room->type != ROOM_DESTROYED) {
                 gamevar.unknown2a = corridor_object_room_nav_check(tile, kind, dir, room);
             } else {
                 gamevar.f23 = tile;
@@ -223,7 +223,7 @@ u32 get_frame_for_placing_bomb(void)
     for (i = 0; i < 20; i++) {
         obj = &thing[bs->objects[i]];
         if (obj > thing) {
-            if (obj->subtype == 0x11 && obj->owner == player)
+            if (obj->subtype == OBJ_LITTER_BOMB && obj->owner == player)
                 return start[obj->fuse + 0x9bf].frame;
         }
     }
@@ -241,7 +241,7 @@ u32 get_frame_for_placing_plant(void)
     for (i = 0; i < 20; i++) {
         obj = &thing[bs->objects[i]];
         if (obj > thing) {
-            if (obj->subtype == 0x2d && obj->owner == player)
+            if (obj->subtype == OBJ_PLANT && obj->owner == player)
                 return compute_plant_frame(obj);
         }
     }
