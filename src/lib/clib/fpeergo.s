@@ -16,10 +16,10 @@
     mov al, byte ptr ["___IRQ_int"]
     cmp byte ptr ["___MST_pic"], 0x20
     jne .L000fde91
-    lea edx, ["fn_000fd992_"+0x15]
+    lea edx, ["__Enable_FPE_"+0x15]
     jmp .L000fde97
 .L000fde91:
-    lea edx, ["fn_000fd992_"+0x22]
+    lea edx, ["__Enable_FPE_"+0x22]
 .L000fde97:
     mov bx, cs
     mov ds, ebx

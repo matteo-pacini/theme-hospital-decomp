@@ -18,7 +18,7 @@ extern "C" {
 extern s8 free_head;
 extern u8 font_buffer[];
 extern u8 call_level;
-extern u8 D_0016126d;
+extern u8 res;
 }
 
 s8 get_fontmem(void);
@@ -309,9 +309,9 @@ void set_font_from_cache(const s32 font)
     char **names;
     s8 block;
 
-    if (resvars.screen_mode != D_0016126d)
+    if (resvars.screen_mode != res)
         init_font_cache();
-    D_0016126d = resvars.screen_mode;
+    res = resvars.screen_mode;
     if (cfonts[font]) {
         lbFontPtr = (TbSprite *)&font_buffer[font_memory[cfonts[font] - 1].offset];
         font_memory[font].used = othervar.clock_ms;

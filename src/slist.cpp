@@ -28,7 +28,7 @@ struct Slot {
 };
 
 extern "C" {
-extern u8 D_001290d0, D_001290d1, D_001290d2;
+extern Picture loaded_face;
 extern Event D_001549d0[];
 extern char **slist_text;
 extern Slot D_001581b2[];
@@ -68,9 +68,9 @@ void display_slist(void)
     switch (slist.state) {
     case 0:
         load_ingame_pic(SCR_STAFF_LIST, 1, 0x21, 0, SCREEN_MODE_13);
-        D_001290d0 = 0xff;
-        D_001290d1 = 0xff;
-        D_001290d2 = 0xff;
+        loaded_face.head = 0xff;
+        loaded_face.body = 0xff;
+        loaded_face.legs = 0xff;
         set_mouse_mode(MM_STAFF_LIST);
         slist.state = 1;
         slist.value = 0;
@@ -744,7 +744,7 @@ void draw_slist_coverup(void)
 void slist_salary_help_if_present(void)
 {
     if (resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].row < othervar.slist_rows)
-        fn_000bbff0(othervar.help_msg, help_text[50]);
+        lib_strcpy(othervar.help_msg, help_text[50]);
 }
 
 // Help text for a staff row's happiness, into othervar.help_msg, if the row is
@@ -753,7 +753,7 @@ void slist_salary_help_if_present(void)
 void slist_happiness_help_if_present(void)
 {
     if (resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].row < othervar.slist_rows)
-        fn_000bbff0(othervar.help_msg, help_text[51]);
+        lib_strcpy(othervar.help_msg, help_text[51]);
 }
 
 // Help text for a staff row's tiredness, into othervar.help_msg, if the row is
@@ -762,7 +762,7 @@ void slist_happiness_help_if_present(void)
 void slist_tiredness_help_if_present(void)
 {
     if (resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].row < othervar.slist_rows)
-        fn_000bbff0(othervar.help_msg, help_text[52]);
+        lib_strcpy(othervar.help_msg, help_text[52]);
 }
 
 // Help text for a staff row's ability, into othervar.help_msg, if the row is
@@ -771,7 +771,7 @@ void slist_tiredness_help_if_present(void)
 void slist_ability_help_if_present(void)
 {
     if (resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].row < othervar.slist_rows)
-        fn_000bbff0(othervar.help_msg, help_text[53]);
+        lib_strcpy(othervar.help_msg, help_text[53]);
 }
 
 // Help text for a doctor-only part, into othervar.help_msg, if doctors are
@@ -780,7 +780,7 @@ void slist_ability_help_if_present(void)
 void slist_help_if_doctor(void)
 {
     if (othervar.slist_filter & 1)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
 }
 
 // Help text for the surgeon qualification of the selected doctor, or their
@@ -793,7 +793,7 @@ void slist_help_if_surgeon(void)
 
     staff = &thing[slist.value];
     if ((othervar.slist_filter & 1) && staff > thing && (staff->skills & SKILL_SURGEON)) {
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
     } else {
         pct = staff->surgeon_training;
         if (pct != 0) {
@@ -814,7 +814,7 @@ void slist_help_if_shrink(void)
 
     staff = &thing[slist.value];
     if ((othervar.slist_filter & 1) && staff > thing && (staff->skills & SKILL_PSYCHIATRIST)) {
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
     } else {
         pct = staff->psych_training;
         if (pct != 0) {
@@ -835,7 +835,7 @@ void slist_help_if_researcher(void)
 
     staff = &thing[slist.value];
     if ((othervar.slist_filter & 1) && staff > thing && (staff->skills & SKILL_RESEARCHER)) {
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
     } else {
         pct = staff->research_training;
         if (pct != 0) {

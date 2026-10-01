@@ -10,7 +10,7 @@ extern u8 done[];
 extern "C" {
 
 void LbDrawTriangleFilled(s32 x1, s32 y1, s32 x2, s32 y2, s32 x3, s32 y3, u8 colour);
-void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 }
 
 /* 16.16 fixed-point product: (a * b) >> 16 over the full 64-bit result. */
@@ -131,26 +131,26 @@ void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i
         LbDrawTriangleFilled(x1, y1 + h, x1, y1, x2, y2, sec->rim_colour);
         LbDrawTriangleFilled(x1, y1 + h, x2, y2, x2, y2 + h, sec->rim_colour);
         LbDrawTriangleFilled(ox, oy, x2, y2, x1, y1, sec->top_colour);
-        fn_000c9be0(x1 - 1, y1, x2 - 1, y2, sec->edge_colour);
+        LbDrawLine(x1 - 1, y1, x2 - 1, y2, sec->edge_colour);
         if (!(lbSinTable[ang & 0x7ff] > 0 || lbSinTable[(ang - step) & 0x7ff] > 0))
-            fn_000c9be0(x1 - 1, y1 + h, x2 - 1, y2 + h, sec->edge_colour);
+            LbDrawLine(x1 - 1, y1 + h, x2 - 1, y2 + h, sec->edge_colour);
         if (mouse_in_slice(ox, oy, x1, y1, x2, y2, h))
             pie_sector_return = i;
     }
     if (side_off != 1) {
-        fn_000c9be0(ox - 1, oy, sx - 1, sy, sec->edge_colour);
+        LbDrawLine(ox - 1, oy, sx - 1, sy, sec->edge_colour);
         if (lbSinTable[(start & 0x7ff) + 0x200] >= 0) {
-            fn_000c9be0(ox - 1, oy + h, sx - 1, sy + h, sec->edge_colour);
-            fn_000c9be0(ox - 1, oy, ox - 1, oy + h, sec->edge_colour);
-            fn_000c9be0(sx - 1, sy, sx - 1, sy + h, sec->edge_colour);
+            LbDrawLine(ox - 1, oy + h, sx - 1, sy + h, sec->edge_colour);
+            LbDrawLine(ox - 1, oy, ox - 1, oy + h, sec->edge_colour);
+            LbDrawLine(sx - 1, sy, sx - 1, sy + h, sec->edge_colour);
         }
     }
     if (side_off != 2) {
-        fn_000c9be0(ox - 1, oy, ex - 1, ey, sec->edge_colour);
+        LbDrawLine(ox - 1, oy, ex - 1, ey, sec->edge_colour);
         if (lbSinTable[(end & 0x7ff) + 0x200] <= 0) {
-            fn_000c9be0(ox - 1, oy + h, ex - 1, ey + h, sec->edge_colour);
-            fn_000c9be0(ox - 1, oy, ox - 1, oy + h, sec->edge_colour);
-            fn_000c9be0(ex - 1, ey, ex - 1, ey + h, sec->edge_colour);
+            LbDrawLine(ox - 1, oy + h, ex - 1, ey + h, sec->edge_colour);
+            LbDrawLine(ox - 1, oy, ox - 1, oy + h, sec->edge_colour);
+            LbDrawLine(ex - 1, ey, ex - 1, ey + h, sec->edge_colour);
         }
     }
 }
@@ -227,7 +227,7 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sector
                 sec->text_y = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * text_radius) >> 8);
                 sec->text_right = lbSinTable[(mid & 0x7ff) + 0x200] >= 0 ? 1 : 0;
                 split = i;
-                fn_000c21e6(&copy, &sectors[split], 0x21);
+                lib_memcpy(&copy, &sectors[split], 0x21);
                 sectors[split].radius = 0;
                 start_half_first = lbSinTable[(sectors[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
                 if (start_half_first) {
@@ -270,5 +270,5 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sector
         }
     }
     if (split != -1)
-        fn_000c21e6(&sectors[split], &copy, 0x21);
+        lib_memcpy(&sectors[split], &copy, 0x21);
 }

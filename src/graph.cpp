@@ -27,7 +27,7 @@ extern Event D_001549d0[];
 extern char **report_text;
 void insert_graph_label(s16 kind, s16 value, s32 data);
 void spread_graph_labels(u16 gap);
-void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 s32 LbTextWordWidth(char *text);
 }
 
@@ -230,8 +230,8 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
                     ny = y - h;
                 else if (ny > y)
                     ny = y;
-                fn_000c9be0(px, py, nx, ny, colour[graph[i].colour]);
-                fn_000c9be0(px - 1, py, nx - 1, ny, colour[graph[i].colour]);
+                LbDrawLine(px, py, nx, ny, colour[graph[i].colour]);
+                LbDrawLine(px - 1, py, nx - 1, ny, colour[graph[i].colour]);
                 px = nx;
                 py = ny;
             }
@@ -262,7 +262,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             month--;
             if (month < 0)
                 month = 0xb;
-            fn_000c9be0(px, y + 2, px, y + 6, color.black);
+            LbDrawLine(px, y + 2, px, y + 6, color.black);
             break;
         case 1:
             sprintf(buf, "%d", year);
@@ -270,7 +270,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
             year--;
-            fn_000c9be0(px, y + 2, px, y + 6, color.black);
+            LbDrawLine(px, y + 2, px, y + 6, color.black);
             break;
         case 2:
             sprintf(buf, "%d", quarter);
@@ -278,7 +278,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
             quarter += -4;
-            fn_000c9be0(px, y + 2, px, y + 6, color.black);
+            LbDrawLine(px, y + 2, px, y + 6, color.black);
             break;
         }
     }

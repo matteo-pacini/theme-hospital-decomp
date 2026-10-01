@@ -529,7 +529,7 @@ WindowButtonData mcgabutton_list[486] = {
 };
 
 // demo: mcgawindow_list
-Window D_00145108[16] = {
+Window mcgawindow_list[16] = {
     {
         170, 0, 0, 0, 123, 157, 50, 50, 320, 240, 21, 0, 0, 0, 0, (WindowButton *)&mcgabutton_list[258],
         req4_overdraw,

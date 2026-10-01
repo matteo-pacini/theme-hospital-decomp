@@ -20,10 +20,10 @@
     mov cx, cs
     cmp byte ptr ["___MST_pic"], 0x20
     jne .L000fdeff
-    lea edx, ["fn_000fd992_"+0x15]
+    lea edx, ["__Enable_FPE_"+0x15]
     jmp .L000fdf05
 .L000fdeff:
-    lea edx, ["fn_000fd992_"+0x22]
+    lea edx, ["__Enable_FPE_"+0x22]
 .L000fdf05:
     mov ax, 0x205
     mov bl, byte ptr ["___FPE_int"]

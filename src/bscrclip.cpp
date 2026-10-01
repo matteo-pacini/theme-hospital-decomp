@@ -78,7 +78,7 @@ void copy_region(const s16 src_x, const s16 src_y, const s16 dst_x, const s16 ds
     src = bscreen + src_y * lbDisplay.physical_screen_width + src_x;
     dst = lbDisplay.wscreen + dst_y * lbDisplay.graphics_screen_width + dst_x;
     for (; i < h; i++, src += lbDisplay.physical_screen_width, dst += lbDisplay.graphics_screen_width)
-        fn_000c21e6(dst, src, w);
+        lib_memcpy(dst, src, w);
 }
 
 // Copies to the work screen each 32x32 cell of the current view zone whose

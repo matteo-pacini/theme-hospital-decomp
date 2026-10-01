@@ -1620,6 +1620,7 @@
 000c99d8 000aa1ec manual  confirmed  bflib   gpalette.cpp   LbPaletteDraw_
 000c9abc 000aa2e4 bytes   consistent runtime sqroot.asm     LbSqrL_
 000c9b40 000aa39f align   consistent runtime scr_copy.asm   LbScreenCopyBox_
+000c9be0 000aa400 manual  confirmed  bflib   gline.cpp      LbDrawLine_
 000ca028 000aa62c manual  confirmed  bflib   gline.cpp      W?draw_b_line$n(lllluc)v
 000ca350 000aa910 bytes   consistent runtime dossmk         set_smack_malloc_
 000ca358 000aa918 bytes   consistent runtime dossmk         set_smack_free_
@@ -1637,7 +1638,7 @@
 000cade4 000cd1a4 strings confirmed  bflib   netint3.cpp    W?LbNetwork_Receive$n(ulpnvul)ul
 000cb2f0 000ad770 manual  confirmed  bflib   gspr_col.cpp   LbSpriteDrawOneColour_
 000cbe20 000adfc0 manual  confirmed  bflib   gspr_rmp.cpp   LbSpriteDrawRemap_
-000ccac4 000aa400 manual  confirmed  bflib   gline.cpp      LbDrawLine_
+000ccac4 000aea00 manual  confirmed  runtime hvline.asm     LbDrawHVLine_
 000ccca8 000b0fb0 manual  confirmed  runtime undefed        __wcpp_2_undefed_cdtor__
 000cccc0 000aebf0 calls   confirmed  bflib   stop_sam.cpp   StopSample_
 000ccd30 000aec60 order   confirmed  bflib   fade_sam.cpp   W?cbfadesample$n(ul)v

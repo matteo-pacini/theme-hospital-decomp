@@ -363,8 +363,8 @@ void process_buttons(Window **windows, Window *win)
                 ox = mdx;
                 if (ox < -(win->x + buttonstore->x + buttonstore->width - 3))
                     ox = -(win->x + buttonstore->x + buttonstore->width - 3);
-                else if (ox > lbDisplay.graphics_screen_width - 3 - fn_000cb2db(win->x + buttonstore->x))
-                    ox = lbDisplay.graphics_screen_width - 3 - fn_000cb2db(win->x + buttonstore->x);
+                else if (ox > lbDisplay.graphics_screen_width - 3 - abs(win->x + buttonstore->x))
+                    ox = lbDisplay.graphics_screen_width - 3 - abs(win->x + buttonstore->x);
             }
             if ((mdy > 0 && lbDisplay.mmouse_y - lbDisplay.graphics_window_y <= win->y + buttonstore->y)
                 || (mdy < 0 && lbDisplay.mmouse_y - lbDisplay.graphics_window_y >= win->y + buttonstore->y + buttonstore->height)) {
@@ -375,8 +375,8 @@ void process_buttons(Window **windows, Window *win)
                 oy = mdy;
                 if (oy < -(win->y + buttonstore->y + buttonstore->height - 3))
                     oy = -(win->y + buttonstore->y + buttonstore->height - 3);
-                else if (oy > lbDisplay.graphics_screen_height - 3 - fn_000cb2db(win->y + buttonstore->y))
-                    oy = lbDisplay.graphics_screen_height - 3 - fn_000cb2db(win->y + buttonstore->y);
+                else if (oy > lbDisplay.graphics_screen_height - 3 - abs(win->y + buttonstore->y))
+                    oy = lbDisplay.graphics_screen_height - 3 - abs(win->y + buttonstore->y);
             }
             if (ox < -(win->width - win->min_width))
                 ox = -(win->width - win->min_width);

@@ -41,7 +41,7 @@ void bresenham_start(wallhug_waypoint from, wallhug_waypoint to)
     ddx -= from.x;
     ddy = to.y;
     ddy -= from.y;
-    if (fn_000cb2db(ddx) > fn_000cb2db(ddy))
+    if (abs(ddx) > abs(ddy))
         x_longer = 1;
     else
         x_longer = 0;
@@ -57,8 +57,8 @@ void bresenham_start(wallhug_waypoint from, wallhug_waypoint to)
         x_dirn = y_dirn;
     if (from.y == to.y)
         y_dirn = x_dirn;
-    dx = fn_000cb2db(ddx);
-    dy = fn_000cb2db(ddy);
+    dx = abs(ddx);
+    dy = abs(ddy);
     bresval = dx / 2 + dy / 2;
 }
 
@@ -175,7 +175,7 @@ restart:
             if (sub.count + path->count - 2 > 0xfc)
                 continue;
             memmove(path->route + i + sub.count, path->route + i + 2, (path->count - i) * 2 - 4);
-            fn_000c21e6(path->route + i, sub.route, sub.count * 2);
+            lib_memcpy(path->route + i, sub.route, sub.count * 2);
             path->count = sub.count + path->count - 2;
             if (i < 4)
                 from = 0;

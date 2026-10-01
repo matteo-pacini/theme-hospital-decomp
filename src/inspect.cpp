@@ -57,7 +57,7 @@ void generate_inspector(u8 owner)
     if (allhosps[owner].inspection[1] != 0)
         return;
     if (allhosps[owner].inspector = create_inspector(owner)) {}
-    fn_000bbff0(debug.msg_text, "Inspector Generated");
+    lib_strcpy(debug.msg_text, "Inspector Generated");
     debug.msg_timer = 0xc8;
     allhosps[owner].inspection[1] = 3;
 }

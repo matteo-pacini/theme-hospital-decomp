@@ -3,9 +3,9 @@
 // FUNCTION: 0x000fd8d8
 
 .section _TEXT,"ax",@progbits,unique,1038552
-.globl "fn_000fd8d8_"
-.type "fn_000fd8d8_",@function
-"fn_000fd8d8_":
+.globl "__Init_FPE_handler_"
+.type "__Init_FPE_handler_",@function
+"__Init_FPE_handler_":
     cmp word ptr ["___PMSeg"], 0
     jne .L000fd8ed
     cmp byte ptr [_D_00150814], 0
@@ -38,7 +38,7 @@
     call "__Phar_hook_init_"
 .L000fd929:
     pop ds
-    call "fn_000fd992_"
+    call "__Enable_FPE_"
     pop es
     pop edx
     pop ecx
@@ -83,14 +83,14 @@
     .byte 0x5b
     .byte 0x58
     .byte 0xc3
-.size "fn_000fd8d8_",.-"fn_000fd8d8_"
+.size "__Init_FPE_handler_",.-"__Init_FPE_handler_"
 
 // FUNCTION: 0x000fd992
 
 .section _TEXT,"ax",@progbits,unique,1038738
-.globl "fn_000fd992_"
-.type "fn_000fd992_",@function
-"fn_000fd992_":
+.globl "__Enable_FPE_"
+.type "__Enable_FPE_",@function
+"__Enable_FPE_":
     sub esp, 4
     wait
     fnstcw word ptr [esp]
@@ -218,7 +218,7 @@
     .byte 0x5b
     .byte 0x58
     .byte 0xcf
-.size "fn_000fd992_",.-"fn_000fd992_"
+.size "__Enable_FPE_",.-"__Enable_FPE_"
 
 // FUNCTION: 0x000fdaba
 

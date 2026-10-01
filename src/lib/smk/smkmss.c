@@ -80,22 +80,22 @@ typedef struct SmackSnd {
     U32 f80;
 } SmackSnd;
 
-extern SmackSnd *D_00151664;
-extern HDIGDRIVER D_00151668;
-extern U32 D_0015166c;
-extern void *D_00151670;
-extern void *D_0018cd90;
-extern void *D_0018cd94;
-extern U32 D_0018cd98;
-extern U32 D_0018cd9c;
-extern U32 D_0018cda0;
+extern SmackSnd *fss;
+extern HDIGDRIVER SmackMSSDigDriver;
+extern U32 MSSLiteInit;
+extern void *MSSLiteAddr1;
+extern void *MSSLiteAddr3;
+extern void *MSSLiteAddr2;
+extern U32 MSSLiteSize1;
+extern U32 MSSLiteSize2;
+extern U32 MSSLiteSize3;
 
 extern U32 (__pascal *SmackTimerReadAddr)(void);
 extern void (__pascal *SmackTimerDoneAddr)(void);
 extern void (__pascal *SmackTimerSetupAddr)(void);
 extern void (__pascal *LowSoundCheckAddr)(void);
 extern U8 (__pascal *LowSoundOpenAddr)(SmackSnd *snd, U32 flags);
-extern void (__pascal *D_0018cdbc)(SmackSnd *snd);
+extern void (__pascal *LowSoundCloseAddr)(SmackSnd *snd);
 extern U32 (__pascal *LowSoundPlayedAddr)(SmackSnd *snd);
 extern void (__pascal *LowSoundPurgeAddr)(SmackSnd *snd);
 extern void (__pascal *LowSoundOffAddr)(SmackSnd *snd);
@@ -166,7 +166,7 @@ void __pascal MSSLowSoundCheck(void)
     U32 n;
     U32 now;
 
-    for (snd = D_00151664; snd != NULL; snd = snd->next) {
+    for (snd = fss; snd != NULL; snd = snd->next) {
         if (AIL_sample_buffer_info(snd->sample, NULL, NULL, NULL, NULL))
             snd->starved = 1;
         if (snd->pending > snd->minbuf || (snd->flush && snd->pending > 3)) {
@@ -220,26 +220,26 @@ void MSSInitSample(SmackSnd *snd)
 // FUNCTION: 0xe7af0
 U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
 {
-    if (D_00151668 == NULL) {
-        if (D_0015166c && D_00151670 != NULL) {
+    if (SmackMSSDigDriver == NULL) {
+        if (MSSLiteInit && MSSLiteAddr1 != NULL) {
             AIL_set_preference(6, 0);
             AIL_set_preference(7, (flags & 0x20) || snd->stereo ? 1 : 0);
             AIL_set_preference(8, snd->bits16 != 0);
-            D_00151668 = AIL_install_DIG_driver_image(D_00151670, D_0018cd98, NULL);
-            if (D_00151668 == NULL) {
-                D_00151668 = AIL_install_DIG_driver_image(D_0018cd94, D_0018cd9c, NULL);
-                if (D_00151668 == NULL)
-                    D_00151668 = AIL_install_DIG_driver_image(D_0018cd90, D_0018cda0, NULL);
+            SmackMSSDigDriver = AIL_install_DIG_driver_image(MSSLiteAddr1, MSSLiteSize1, NULL);
+            if (SmackMSSDigDriver == NULL) {
+                SmackMSSDigDriver = AIL_install_DIG_driver_image(MSSLiteAddr2, MSSLiteSize2, NULL);
+                if (SmackMSSDigDriver == NULL)
+                    SmackMSSDigDriver = AIL_install_DIG_driver_image(MSSLiteAddr3, MSSLiteSize3, NULL);
             }
         }
-        if (D_00151668 == NULL) {
-            D_00151668 = (HDIGDRIVER)-1;
+        if (SmackMSSDigDriver == NULL) {
+            SmackMSSDigDriver = (HDIGDRIVER)-1;
             return 0;
         }
     }
-    if (D_00151668 == (HDIGDRIVER)-1)
+    if (SmackMSSDigDriver == (HDIGDRIVER)-1)
         return 0;
-    snd->minbuf = (AIL_minimum_sample_buffer_size(D_00151668, snd->rate,
+    snd->minbuf = (AIL_minimum_sample_buffer_size(SmackMSSDigDriver, snd->rate,
         snd->bits16 ? (snd->stereo ? 3 : 1) : (snd->stereo ? 2 : 0)) + 3) & ~3;
     snd->halfsize = ((snd->bytespersec >> 2) + 0xfff) & ~0xfff;
     if (snd->minbuf > snd->halfsize)
@@ -248,15 +248,15 @@ U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
     if (snd->halves[0] == NULL)
         return 0;
     AIL_vmm_lock(snd->halves[0], snd->halfsize * 2);
-    snd->sample = AIL_allocate_sample_handle(D_00151668);
+    snd->sample = AIL_allocate_sample_handle(SmackMSSDigDriver);
     if (snd->sample == NULL) {
         RADFREE(snd->halves[0]);
         return 0;
     }
     snd->halves[1] = (U8 *)((U32)snd->halves[0] + snd->halfsize);
     MSSInitSample(snd);
-    snd->next = D_00151664;
-    D_00151664 = snd;
+    snd->next = fss;
+    fss = snd;
     return 1;
 }
 
@@ -273,16 +273,16 @@ void __pascal MSSLowSoundPurge(SmackSnd *snd)
 // FUNCTION: 0xe7a40
 void __pascal MSSLowSoundClose(SmackSnd *snd)
 {
-    if (D_00151664 == NULL)
+    if (fss == NULL)
         return;
     AIL_end_sample(snd->sample);
     AIL_release_sample_handle(snd->sample);
     AIL_vmm_unlock(snd->halves[0], snd->halfsize * 2);
     RADFREE(snd->halves[0]);
-    if (snd == D_00151664) {
-        D_00151664 = snd->next;
+    if (snd == fss) {
+        fss = snd->next;
     } else {
-        volatile SmackSnd *p = D_00151664;
+        volatile SmackSnd *p = fss;
         while (p->next != NULL) {
             if (snd == p->next) {
                 p->next = snd->next;
@@ -319,7 +319,7 @@ U8 __pascal SmackSoundUseMSS(void *digdriver)
     if (SmackTimerReadAddr == NULL) {
         LowSoundCheckAddr = MSSLowSoundCheck;
         LowSoundOpenAddr = MSSLowSoundOpen;
-        D_0018cdbc = MSSLowSoundClose;
+        LowSoundCloseAddr = MSSLowSoundClose;
         LowSoundPlayedAddr = MSSLowSoundPlayed;
         LowSoundPurgeAddr = MSSLowSoundPurge;
         LowSoundOffAddr = MSSLowSoundPurge;
@@ -329,8 +329,8 @@ U8 __pascal SmackSoundUseMSS(void *digdriver)
         SmackTimerReadAddr = MSSSmackTimerRead;
         SmackTimerDoneAddr = MSSSmackTimerSetup;
     }
-    if (D_00151664 == NULL) {
-        D_00151668 = digdriver;
+    if (fss == NULL) {
+        SmackMSSDigDriver = digdriver;
         return 1;
     }
     return 0;

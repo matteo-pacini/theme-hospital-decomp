@@ -694,7 +694,7 @@ const u8 calendar[12] = {
 
 extern "C" {
 // demo: generate_person, of type PersonGen
-PeepType D_0012b7d4[5] = {
+PeepType generate_person[5] = {
     { 0, 3, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 33 },
     { 0, 1, 4, 0, 0, 0, 0, 2, 0, 0, 0, 0, 33 },
     { 0, 1, 5, 0, 0, 0, 0, 3, 0, 0, 0, 0, 33 },
@@ -703,7 +703,7 @@ PeepType D_0012b7d4[5] = {
 };
 
 // demo: variations, of type GenVariations
-PeepPalette D_0012b818[4] = {
+PeepPalette variations[4] = {
     { 4, 0, 1, 2, 3, 0, 4, 0, 1, 2, 0, 0, 4, 0, 1, 2, 3, 0, 4, 0, 1, 2, 3 },
     { 4, 0, 1, 2, 3, 0, 4, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 4, 0, 1, 2, 3 },
     { 4, 0, 1, 2, 3, 0, 4, 0, 1, 0, 0, 0, 4, 0, 1, 2, 3, 0, 4, 0, 1, 2, 3 },
@@ -1155,12 +1155,12 @@ u8 hilight_plot[0x1c] = {
 
 extern "C" {
 // demo: litter_pos
-Coord D_0012cc3c[8] = {
+Coord litter_pos[8] = {
     { 0 }, { 10, 4 }, { -21, -2 }, { 9, -8 }, { -10, 5 }, { -16, -3 }, { 0, 9 }, { 16, 3 },
 };
 
-// not in the demo; the code selects it like D_0012cc3c, through resvars.litter_pos
-Coord D_0012cc7c[8] = {
+// not in the demo; the code selects it like litter_pos, through resvars.litter_pos
+Coord lores_litter_pos[8] = {
     { 0 }, { 5, 2 }, { -10, -1 }, { 4, -4 }, { -5, 2 }, { -8, -1 }, { 0, 4 }, { 8, 1 },
 };
 }

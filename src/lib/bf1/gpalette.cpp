@@ -3,8 +3,8 @@
 extern u8 fade_started;
 
 extern "C" {
-extern u8 D_00189ad4[];
-extern u8 D_001897d4[];
+extern u8 from[];
+extern u8 to_pal[];
 extern s32 fade_count;
 
 int LbScreenWaitVbi(void);
@@ -16,27 +16,27 @@ u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b);
 
 extern "C" {
 
-// Fades the palette towards to_pal (0: black) over fade_steps steps, waiting
+// Fades the palette towards fade_to (0: black) over fade_steps steps, waiting
 // for the vertical blank before each. With Lb_PALETTE_FADE_CLOSED it runs
 // the whole fade; otherwise it takes one step per call, starting a new fade
 // when none is under way. Returns the current step.
 // FUNCTION: 0x000c9400
-s32 LbPaletteFade(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
+s32 LbPaletteFade(u8 *fade_to, u8 fade_steps, TbPaletteFadeFlag flag)
 {
     s16 i;
     s16 diff;
     u8 palette[768];
 
     if (flag == Lb_PALETTE_FADE_CLOSED) {
-        LbPaletteGet(D_00189ad4);
-        if (!to_pal) {
-            to_pal = D_001897d4;
-            memset(to_pal, 0, 768);
+        LbPaletteGet(from);
+        if (!fade_to) {
+            fade_to = to_pal;
+            memset(fade_to, 0, 768);
         }
         for (fade_count = 0; fade_count <= fade_steps; fade_count++) {
             for (i = 0; i < 768; i++) {
-                diff = to_pal[i] - D_00189ad4[i];
-                palette[i] = diff * fade_count / (s16)fade_steps + D_00189ad4[i];
+                diff = fade_to[i] - from[i];
+                palette[i] = diff * fade_count / (s16)fade_steps + from[i];
             }
             LbScreenWaitVbi();
             LbPaletteSet(palette);
@@ -46,19 +46,19 @@ s32 LbPaletteFade(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
         if (!fade_started) {
             fade_count = 0;
             fade_started = 1;
-            LbPaletteGet(D_00189ad4);
-            if (!to_pal)
-                memset(D_001897d4, 0, 768);
+            LbPaletteGet(from);
+            if (!fade_to)
+                memset(to_pal, 0, 768);
         } else {
             fade_count++;
             if (fade_steps == fade_count)
                 fade_started = 0;
         }
-        if (!to_pal)
-            to_pal = D_001897d4;
+        if (!fade_to)
+            fade_to = to_pal;
         for (i = 0; i < 768; i++) {
-            diff = to_pal[i] - D_00189ad4[i];
-            palette[i] = diff * fade_count / fade_steps + D_00189ad4[i];
+            diff = fade_to[i] - from[i];
+            palette[i] = diff * fade_count / fade_steps + from[i];
         }
         LbScreenWaitVbi();
         LbPaletteSet(palette);

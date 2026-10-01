@@ -268,7 +268,7 @@ u8 find_advice(const u16 id)
                 u8 i;
 
                 for (i = 0; i < 4; i++) {
-                    if (myhosp->balance < lose_criteria[crit].value + (i + 1) * fn_000cb2db(lose_criteria[crit].value) / 10
+                    if (myhosp->balance < lose_criteria[crit].value + (i + 1) * abs(lose_criteria[crit].value) / 10
                         && myhosp->balance > lose_criteria[crit].value) {
                         sprintf(advisor.text, extra_advice[0x1c + i], myhosp->balance - lose_criteria[crit].value);
                         found = 1;
@@ -335,7 +335,7 @@ u8 find_advice(const u16 id)
                 if (myhosp->balance - myhosp->loan > win_criteria[crit].value && (advisor.event_flags_u32 & 0x20)) {
                     sprintf(advisor.text, extra_advice[0x37], win_criteria[crit].value);
                     found = 1;
-                } else if (myhosp->balance - myhosp->loan > win_criteria[crit].value - fn_000cb2db(win_criteria[crit].value) / 10
+                } else if (myhosp->balance - myhosp->loan > win_criteria[crit].value - abs(win_criteria[crit].value) / 10
                            && myhosp->balance - myhosp->loan < win_criteria[crit].value && (advisor.event_flags_u32 & 0x20)) {
                     sprintf(advisor.text, advisor_text[0x14], win_criteria[crit].value - (myhosp->balance - myhosp->loan));
                     found = 1;
@@ -983,7 +983,7 @@ void mouse_advice(void)
 
     switch (advisor.mouse_advice_id) {
     default:
-        fn_000bbff0(advisor.text, mouse_advice_text[advisor.mouse_advice_id]);
+        lib_strcpy(advisor.text, mouse_advice_text[advisor.mouse_advice_id]);
         break;
     }
 }
@@ -997,7 +997,7 @@ void forced_advice(void)
 
     switch (advisor.forced_advice_id_s) {
     case 2:
-        fn_000bbff0(advisor.text, forced_advice_text[advisor.forced_advice_id_s]);
+        lib_strcpy(advisor.text, forced_advice_text[advisor.forced_advice_id_s]);
         for (i = 0; i < 4; i++) {
             if (othervar.net_winners[i]) {
                 sprintf(advisor.text, "%s %s", advisor.text, allhosps[i].name);
@@ -1014,7 +1014,7 @@ void forced_advice(void)
         }
         break;
     default:
-        fn_000bbff0(advisor.text, forced_advice_text[advisor.forced_advice_id_s]);
+        lib_strcpy(advisor.text, forced_advice_text[advisor.forced_advice_id_s]);
         break;
     }
     advisor.advice_id = 0;

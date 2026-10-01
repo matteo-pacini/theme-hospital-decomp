@@ -2,9 +2,8 @@
 
 extern "C" {
 extern char **illness_text;
-extern u16 choice;
-extern u8 D_00158192;
-void fn_000c93bf(char *dst, char *src);
+extern Menu choice;
+void strcat(char *dst, char *src);
 }
 
 
@@ -72,16 +71,16 @@ void declare_epidemic(char **strs)
     x = 0;
     y = 0;
     sprintf(line, strs[0], illness_text[myhosp->epidemic_illness]);
-    fn_000c93bf(text, line);
-    fn_000c93bf(text, new_line);
+    strcat(text, line);
+    strcat(text, new_line);
     sprintf(line, strs[1], myhosp->epidemic_fine);
-    fn_000c93bf(text, line);
-    fn_000c93bf(text, new_line);
+    strcat(text, line);
+    strcat(text, new_line);
     sprintf(line, strs[2]);
-    fn_000c93bf(text, line);
-    fn_000c93bf(text, new_line);
+    strcat(text, line);
+    strcat(text, new_line);
     sprintf(line, strs[3]);
-    fn_000c93bf(text, line);
+    strcat(text, line);
     LbTextDraw(x, y, text);
 }
 
@@ -110,7 +109,7 @@ void alert_epidemic(u8 illness, u8 owner)
 {
     AllHosps *hosp;
 
-    if ((statvar.num_players <= 1 && display_mode == DM_CHOICE) && choice == 2)
+    if ((statvar.num_players <= 1 && display_mode == DM_CHOICE) && choice.value == 2)
         return;
     hosp = &allhosps[owner];
     if (hosp->epidemic_illness != 0 || hosp->emergency_state_s != 0)
@@ -241,11 +240,11 @@ void epidemic_over(const u8 owner, char **strs)
     text[0] = 0;
     x = 0;
     y = 0;
-    fn_000c93bf(text, buf1);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf2);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf3);
+    strcat(text, buf1);
+    strcat(text, new_line);
+    strcat(text, buf2);
+    strcat(text, new_line);
+    strcat(text, buf3);
     LbTextDraw(x, y, text);
 }
 
@@ -255,7 +254,7 @@ void process_epidemic_end_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        D_00158192 = 0x5c;
+        choice.state = 0x5c;
         break;
     }
 }

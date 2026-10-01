@@ -122,7 +122,7 @@
     jne .L000d427d
     push ecx
     .byte 0x68; .long _D_00126012  # push 0x6012
-    call "fn_000d5340_"
+    call "IPXDebug_"
     add esp, 8
     mov word ptr [esi + 0x3e], cx
     mov eax, dword ptr [esp + 8]
@@ -403,9 +403,9 @@
     shl edx, 4
     sub eax, edx
     mov word ptr [ebp + 0x3c], ax
-    .byte 0xb8; .long _D_00110068  # mov eax, 0x68
-    .byte 0xbe; .long _D_00110000  # mov esi, 0
-    .byte 0x2d; .long _D_00110000  # sub eax, 0
+    .byte 0xb8; .long _serial_handler_code  # mov eax, 0x68
+    .byte 0xbe; .long _ipx_esr_code  # mov esi, 0
+    .byte 0x2d; .long _ipx_esr_code  # sub eax, 0
     mov edi, dword ptr [ebp + 0x1e]
     mov ecx, eax
     mov dword ptr [ebp + 0x26], eax
@@ -446,7 +446,7 @@
     .byte 0x68; .long _D_00125e70  # push 0x5e70
     mov ebx, 0x4d4
     xor edx, edx
-    call "fn_000d5340_"
+    call "IPXDebug_"
     add esp, 8
     mov eax, 0x31
     mov dword ptr [esp + 0x264], edx
@@ -493,7 +493,7 @@
     push eax
     .byte 0x68; .long _D_00125e92  # push 0x5e92
     mov dword ptr [ebp + 0x16], edi
-    call "fn_000d5340_"
+    call "IPXDebug_"
     mov eax, dword ptr [ebp + 0x16]
     add esp, 0xc
     test eax, eax
@@ -516,7 +516,7 @@
     pop edi
     push edi
     mov esi, 0x101
-    call "fn_000d5340_"
+    call "IPXDebug_"
     mov dword ptr [ebp + 0x1e], 0
     add esp, 4
     mov ax, word ptr [ebp + 0x2a]
@@ -576,7 +576,7 @@
     pop edi
     push edi
     mov ebx, 0x101
-    call "fn_000d5340_"
+    call "IPXDebug_"
     mov dword ptr [ebp + 0x1e], 0
     add esp, 4
     mov ax, word ptr [ebp + 0x2a]
@@ -667,7 +667,7 @@
     pop edi
     push edi
     mov esi, 0x101
-    call "fn_000d5340_"
+    call "IPXDebug_"
     mov dword ptr [ebp + 0x1e], 0
     add esp, 4
     mov ax, word ptr [ebp + 0x2a]
@@ -761,7 +761,7 @@
 .L000d3ba6:
     pop edi
     push edi
-    call "fn_000d5340_"
+    call "IPXDebug_"
     mov edi, 0x101
     mov dword ptr [ebp + 0x1e], 0
     add esp, 4
@@ -834,7 +834,7 @@
     mov al, byte ptr [edx]
     push eax
     .byte 0x68; .long _D_00125f2c  # push 0x5f2c
-    call "fn_000d5340_"
+    call "IPXDebug_"
     add esp, 8
     mov eax, ebp
     call "W?SetupVector$:IPXHandler$n()l"
@@ -858,7 +858,7 @@
     pop edi
     push edi
     mov edx, 0x101
-    call "fn_000d5340_"
+    call "IPXDebug_"
     mov dword ptr [ebp + 0x1e], 0
     add esp, 4
     mov ax, word ptr [ebp + 0x2a]
@@ -900,7 +900,7 @@
     call "int386_"
     .byte 0x68; .long _D_00125f6a  # push 0x5f6a
     mov dword ptr [ebp + 0x30], 0
-    call "fn_000d5340_"
+    call "IPXDebug_"
     mov eax, 1
     add esp, 4
     add esp, 0x26c
@@ -925,7 +925,7 @@
     add esp, 0x10
     .byte 0x68; .long "W?IPXDEBUGSTRING$n[]a"  # push 0x6c2bc
     .byte 0x68; .long _D_00125f9f  # push 0x5f9f
-    call "fn_000d5340_"
+    call "IPXDebug_"
     add esp, 8
     lea edx, [esp + 0x254]
     mov eax, ebp

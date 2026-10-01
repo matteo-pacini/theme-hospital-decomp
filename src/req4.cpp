@@ -355,7 +355,7 @@ void req4_help_if_doctor(void)
 
     staff = &thing[D_001581b2[2].value];
     if (staff > thing && staff->skills & SKILL_DOCTOR)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req4_help_if_doctor, if they are a surgeon.
@@ -366,7 +366,7 @@ void req4_help_if_surgeon(void)
 
     staff = &thing[D_001581b2[2].value];
     if (staff > thing && staff->skills & SKILL_SURGEON)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req4_help_if_doctor, if they are a psychiatrist.
@@ -377,7 +377,7 @@ void req4_help_if_shrink(void)
 
     staff = &thing[D_001581b2[2].value];
     if (staff > thing && staff->skills & SKILL_PSYCHIATRIST)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req4_help_if_doctor, if they are a researcher.
@@ -388,5 +388,5 @@ void req4_help_if_research(void)
 
     staff = &thing[D_001581b2[2].value];
     if (staff > thing && staff->skills & SKILL_RESEARCHER)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }

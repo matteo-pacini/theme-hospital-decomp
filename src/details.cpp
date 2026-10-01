@@ -2,7 +2,7 @@
 
 extern "C" {
 
-void fn_000baad0(void);
+void apply_player_details(void);
 void setup_pulldown_menu_options(void);
 void FadeMusic(u32 rate, u8 volume);
 }
@@ -47,7 +47,7 @@ u8 load_player_details(void)
     sprintf(name, "%s%sdt", statvar.save_root, statvar.save_prefix);
     if (!LbFileExists(name)) {
         set_default_player_details();
-        fn_000baad0();
+        apply_player_details();
         return 0;
     }
     handle = LbFileOpen(name, 2);
@@ -60,7 +60,7 @@ u8 load_player_details(void)
         debug_msg("Error closing file after reading from it\n", name);
         return 0;
     }
-    fn_000baad0();
+    apply_player_details();
     return 1;
 }
 
@@ -90,7 +90,7 @@ void set_default_player_details(void)
 // Applies the player's settings: music volume (myplayer.music_volume), pulldown menu
 // ticks, and the game speed from myplayer.game_speed.
 // FUNCTION: 0x000baad0
-void fn_000baad0(void)
+void apply_player_details(void)
 {
     FadeMusic(1000, myplayer.music_volume);
     setup_pulldown_menu_options();

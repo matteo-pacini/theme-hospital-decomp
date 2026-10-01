@@ -3,11 +3,11 @@
 extern "C" {
 
 extern u8 lbShift;
-extern u8 D_00189688;
+extern u8 lbExtendedKeyPress;
 extern volatile u8 lbInkeyFlags;
 extern u8 lbIInkey;
 extern u8 lbIInkeyFlags;
-extern u8 D_0018cfb8;
+extern u8 KInt_oinkey;
 
 s16 in_port(u32 port);
 #pragma aux in_port = \
@@ -141,8 +141,8 @@ void __interrupt __far KInt(void)
     s32 old;
 
     INKEY = in_port(0x60);
-    if (D_0018cfb8 == 0xe0) {
-        D_00189688 = 1;
+    if (KInt_oinkey == 0xe0) {
+        lbExtendedKeyPress = 1;
         if (INKEY == 0x2a || INKEY == 0xaa) {
             INKEY = 0x80;
             key = 0x80;
@@ -151,11 +151,11 @@ void __interrupt __far KInt(void)
             KEYON[key] = INKEY <= 0x7f;
         }
     } else {
-        D_00189688 = 0;
+        lbExtendedKeyPress = 0;
         key = (u8)(INKEY & 0x7f);
         KEYON[key] = INKEY <= 0x7f;
     }
-    D_0018cfb8 = INKEY;
+    KInt_oinkey = INKEY;
     lbInkeyFlags = 0;
     if (KEYON[0x2a] || KEYON[0x36])
         lbInkeyFlags |= 0x10;

@@ -105,7 +105,7 @@ s16 person_goto_object(Thing *person)
         person->countdown = person->speed == 0 ? div_err() : 0x100 / person->speed;
         dir = person_head_for(person, 1);
         if (dir >= 0 && dir <= 3) {
-            if (fn_000cb2db(person->x.tile - person->dest_x) < othervar.object_near_dist && fn_000cb2db(person->y.tile - person->dest_y) < othervar.object_near_dist) {
+            if (abs(person->x.tile - person->dest_x) < othervar.object_near_dist && abs(person->y.tile - person->dest_y) < othervar.object_near_dist) {
                 obj = &thing[person->object];
                 if (obj->in_use == 1 || obj->state == OS_REMOVED || (obj->type != THING_DOOR && obj->type != THING_OBJECT))
                     dir = 4;
@@ -181,7 +181,7 @@ void person_goto_queue(Thing *person)
         room = &room_info[person->dest_room];
         dir = person_head_for(person, 3);
         if (dir >= 0 && dir <= 3) {
-            if (fn_000cb2db(person->x.tile - person->dest_x) <= othervar.queue_near_dist && fn_000cb2db(person->y.tile - person->dest_y) <= othervar.queue_near_dist) {
+            if (abs(person->x.tile - person->dest_x) <= othervar.queue_near_dist && abs(person->y.tile - person->dest_y) <= othervar.queue_near_dist) {
                 if (room->type == ROOM_RECEPTION || queue_size(room) > 0)
                     dir = 4;
             }
@@ -199,8 +199,8 @@ void person_goto_queue(Thing *person)
                     start_person_going(person);
                     return;
                 }
-                if (fn_000cb2db(person->x.tile - room->door_tile % 128) > othervar.queue_near_dist
-                    || fn_000cb2db(person->y.tile - room->door_tile / 128) > othervar.queue_near_dist) {
+                if (abs(person->x.tile - room->door_tile % 128) > othervar.queue_near_dist
+                    || abs(person->y.tile - room->door_tile / 128) > othervar.queue_near_dist) {
                     set_destination_coords(person, room->door_tile);
                     person->countdown = 0;
                     return;

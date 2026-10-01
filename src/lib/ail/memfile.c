@@ -9,7 +9,7 @@
 
 #define FILE_READ_WITH_SIZE ((void *)-1)
 
-extern S32 D_00150834;
+extern S32 disk_err;
 
 // FUNCTION: 0x000dda40
 void *__cdecl AIL_mem_use_malloc(void *(__pascal *fn)(U32 size))
@@ -153,7 +153,7 @@ S32 __cdecl AIL_vmm_unlock(void *start, U32 size)
 // FUNCTION: 0xddd10
 S32 __cdecl AIL_file_error(void)
 {
-    return D_00150834;
+    return disk_err;
 }
 
 // FUNCTION: 0x000ddd20
@@ -162,15 +162,15 @@ S32 __cdecl AIL_file_size(char *filename)
     S32 handle;
     S32 len;
 
-    D_00150834 = AIL_NO_ERROR;
+    disk_err = AIL_NO_ERROR;
     handle = AIL_fopen(filename, 0);
     if (handle == 0 || handle == -1) {
-        D_00150834 = AIL_FILE_NOT_FOUND;
+        disk_err = AIL_FILE_NOT_FOUND;
         return -1;
     }
     len = AIL_fseekend(handle, 0);
     if (len == -1) {
-        D_00150834 = AIL_CANT_READ_FILE;
+        disk_err = AIL_CANT_READ_FILE;
     }
     AIL_fclose(handle);
     return len;
@@ -184,10 +184,10 @@ void *__cdecl AIL_file_read(char *filename, void *dest)
     U8 *buf;
     U8 *read_ptr;
 
-    D_00150834 = AIL_NO_ERROR;
+    disk_err = AIL_NO_ERROR;
     handle = AIL_fopen(filename, 0);
     if (handle == 0 || handle == -1) {
-        D_00150834 = AIL_FILE_NOT_FOUND;
+        disk_err = AIL_FILE_NOT_FOUND;
         return NULL;
     }
     len = AIL_fseekend(handle, 0);
@@ -197,7 +197,7 @@ void *__cdecl AIL_file_read(char *filename, void *dest)
               : dest;
     read_ptr = buf;
     if (buf == NULL) {
-        D_00150834 = AIL_OUT_OF_MEMORY;
+        disk_err = AIL_OUT_OF_MEMORY;
         AIL_fclose(handle);
         return NULL;
     }
@@ -209,7 +209,7 @@ void *__cdecl AIL_file_read(char *filename, void *dest)
         if (dest != buf) {
             AIL_mem_free_lock(buf);
         }
-        D_00150834 = AIL_CANT_READ_FILE;
+        disk_err = AIL_CANT_READ_FILE;
         AIL_fclose(handle);
         return NULL;
     }
@@ -223,19 +223,19 @@ S32 __cdecl AIL_file_write(char *filename, void *buf, U32 len)
     S32 handle;
     U32 written;
 
-    D_00150834 = AIL_NO_ERROR;
+    disk_err = AIL_NO_ERROR;
     handle = AIL_fcreate(filename);
     if (handle == 0 || handle == -1) {
-        D_00150834 = AIL_CANT_WRITE_FILE;
+        disk_err = AIL_CANT_WRITE_FILE;
         return 0;
     }
     written = AIL_fwrite(handle, buf, len);
     if (written != len) {
-        D_00150834 = AIL_CANT_WRITE_FILE;
+        disk_err = AIL_CANT_WRITE_FILE;
         return 0;
     }
     if (written != len) {
-        D_00150834 = AIL_DISK_FULL;
+        disk_err = AIL_DISK_FULL;
         return 0;
     }
     AIL_fclose(handle);
@@ -248,19 +248,19 @@ S32 __cdecl AIL_file_append(char *filename, void *buf, U32 len)
     S32 handle;
     U32 written;
 
-    D_00150834 = AIL_NO_ERROR;
+    disk_err = AIL_NO_ERROR;
     handle = AIL_fappend(filename);
     if (handle == 0 || handle == -1) {
-        D_00150834 = AIL_CANT_WRITE_FILE;
+        disk_err = AIL_CANT_WRITE_FILE;
         return 0;
     }
     written = AIL_fwrite(handle, buf, len);
     if (written != len) {
-        D_00150834 = AIL_CANT_WRITE_FILE;
+        disk_err = AIL_CANT_WRITE_FILE;
         return 0;
     }
     if (written != len) {
-        D_00150834 = AIL_DISK_FULL;
+        disk_err = AIL_DISK_FULL;
         return 0;
     }
     AIL_fclose(handle);

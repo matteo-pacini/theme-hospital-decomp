@@ -26,7 +26,7 @@ u8 send_doctor_to_training(Thing *doctor);
 u8 nurse_check_for_work(Thing *nurse);
 u16 check_pager(Thing *staff);
 extern "C" u8 check_room_mutex(Thing *w);
-extern "C" u8 fn_0002d11c(Thing *o);
+extern "C" u8 surgeon_screen_free(Thing *o);
 void private_interrupt_staff(Thing *staff);
 u16 thingpage_remind_me(ThingPager *p, Thing *handyman);
 void thingpage_cancel_my_response(ThingPager *p, Thing *handyman);
@@ -1283,7 +1283,7 @@ u8 overlapping_staff_check(Thing *staff, s32 state)
 // Returns 0 if staff is a surgeon whose room's surgeon screen is in use,
 // else 1.
 // FUNCTION: 0x0002d11c
-u8 fn_0002d11c(Thing *staff)
+u8 surgeon_screen_free(Thing *staff)
 {
     Thing *obj;
 

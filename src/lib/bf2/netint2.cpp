@@ -26,7 +26,7 @@ TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: GenericSerialInit() failure on ServiceProvider::Init()\n");
+            NetworkDebugPrintf("  WARNING network: GenericSerialInit() failure on ServiceProvider::Init()\n");
     }
     return ret;
 }
@@ -59,7 +59,7 @@ TbError StartTwoPlayerExchange(void *buf)
             memcpy(lastButOneMessage, lastMessage, exchangeSize);
             memcpy(lastMessage, buf, exchangeSize);
         } else {
-            fn_000c20c0("  WARNING network: StartTwoPlayerExchange() failure on SP::Send()\n");
+            NetworkDebugPrintf("  WARNING network: StartTwoPlayerExchange() failure on SP::Send()\n");
         }
     } else {
         ret = Lb_OK;
@@ -89,12 +89,12 @@ TbError CompleteTwoPlayerExchange(void *buf)
                 elapsed = LbTimerClock() - startTime;
                 if (elapsed < 0)
                     elapsed = -elapsed;
-                if (timeCount == 0 || elapsed > D_0018ba9c)
-                    D_0018ba9c = elapsed;
+                if (timeCount == 0 || elapsed > maxTime)
+                    maxTime = elapsed;
                 timeCount++;
                 if (timeCount >= 50) {
                     timeCount = 0;
-                    basicTimeout = D_0018ba9c * 3;
+                    basicTimeout = maxTime * 3;
                     if (basicTimeout < 250)
                         basicTimeout = 250;
                 }
@@ -105,27 +105,27 @@ TbError CompleteTwoPlayerExchange(void *buf)
             if (elapsed < 0)
                 elapsed = -elapsed;
             if (elapsed > actualTimeout) {
-                fn_000c20c0("Timed out (%d) waiting for seq %d - %d ms\n", retries, sequenceNumber, actualTimeout);
+                NetworkDebugPrintf("Timed out (%d) waiting for seq %d - %d ms\n", retries, sequenceNumber, actualTimeout);
                 retries++;
-                fn_000c20c0("Retries = %d\n", retries);
+                NetworkDebugPrintf("Retries = %d\n", retries);
                 if (retries > 10) {
                     if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                        fn_000c20c0("  WARNING network: CompleteTwoPlayerExchange() deletePlayerBuffer is too small\n");
+                        NetworkDebugPrintf("  WARNING network: CompleteTwoPlayerExchange() deletePlayerBuffer is too small\n");
                     } else {
                         EncodeDeletePlayerMsg(deletePlayerBuffer, remotePlayerId);
                         if (spPtr->Send(localPlayerId, deletePlayerBuffer) == Lb_OK)
-                            fn_000c20c0("Sent delete player message\n");
+                            NetworkDebugPrintf("Sent delete player message\n");
                         else
-                            fn_000c20c0("  WARNING network: CompleteTwoPlayerExchange() failure on SP::Send()\n");
+                            NetworkDebugPrintf("  WARNING network: CompleteTwoPlayerExchange() failure on SP::Send()\n");
                         return ret;
                     }
                 } else if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                    fn_000c20c0("  WARNING network: CompleteTwoPlayerExchange() requestExchangeDataBuffer is too small\n");
+                    NetworkDebugPrintf("  WARNING network: CompleteTwoPlayerExchange() requestExchangeDataBuffer is too small\n");
                 } else {
                     EncodeRequestExchangeDataMsg(requestExchangeDataBuffer, localPlayerId, sequenceNumber);
-                    fn_000c20c0("Requesting resend of packet (%d)\n", sequenceNumber);
+                    NetworkDebugPrintf("Requesting resend of packet (%d)\n", sequenceNumber);
                     if (spPtr->Send(remotePlayerId, requestExchangeDataBuffer) != Lb_OK)
-                        fn_000c20c0("  WARNING network: CompleteTwoPlayerExchange() failure on SP::Send()\n");
+                        NetworkDebugPrintf("  WARNING network: CompleteTwoPlayerExchange() failure on SP::Send()\n");
                 }
                 startTime = LbTimerClock();
                 if (exchangeTimeout == 0) {
@@ -177,24 +177,24 @@ void *TwoPlayerCallback(u32 id, u32 size, u32 seq, void *data)
                 gotCompositeData = 1;
                 ret = exchangeBuffer + exchangeSize;
             } else {
-                fn_000c20c0("  WARNING network: TwoPlayerCallback() Unexpected sequence number: Got %d, expected %d\n", seq, sequenceNumber);
+                NetworkDebugPrintf("  WARNING network: TwoPlayerCallback() Unexpected sequence number: Got %d, expected %d\n", seq, sequenceNumber);
                 if (seq > 0)
                     seq--;
                 else
                     seq = 14;
                 if (seq == sequenceNumber) {
                     if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                        fn_000c20c0("  WARNING network: CompleteTwoPlayerExchange() requestExchangeDataBuffer is too small\n");
+                        NetworkDebugPrintf("  WARNING network: CompleteTwoPlayerExchange() requestExchangeDataBuffer is too small\n");
                     } else {
                         EncodeRequestExchangeDataMsg(requestExchangeDataBuffer, localPlayerId, sequenceNumber);
-                        fn_000c20c0("Requesting resend of seq %d because we received the next one\n", sequenceNumber);
+                        NetworkDebugPrintf("Requesting resend of seq %d because we received the next one\n", sequenceNumber);
                         if (spPtr->Send(remotePlayerId, requestExchangeDataBuffer) != Lb_OK)
-                            fn_000c20c0("  WARNING network: CompleteTwoPlayerExchange() failure on SP::Send()\n");
+                            NetworkDebugPrintf("  WARNING network: CompleteTwoPlayerExchange() failure on SP::Send()\n");
                     }
                 }
             }
         } else {
-            fn_000c20c0("  WARNING network: TwoPlayerCallback() invalid length: %d\n", size);
+            NetworkDebugPrintf("  WARNING network: TwoPlayerCallback() invalid length: %d\n", size);
         }
     } else {
         if (size == exchangeSize) {
@@ -210,24 +210,24 @@ void *TwoPlayerCallback(u32 id, u32 size, u32 seq, void *data)
                 gotCompositeData = ok;
                 ret = exchangeBuffer;
             } else {
-                fn_000c20c0("  WARNING network: TwoPlayerCallback() Unexpected sequence number: Got %d, expected %d\n", seq, sequenceNumber);
+                NetworkDebugPrintf("  WARNING network: TwoPlayerCallback() Unexpected sequence number: Got %d, expected %d\n", seq, sequenceNumber);
                 if (seq > 0)
                     seq--;
                 else
                     seq = 14;
                 if (seq == sequenceNumber) {
                     if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                        fn_000c20c0("  WARNING network: CompleteTwoPlayerExchange() requestExchangeDataBuffer is too small\n");
+                        NetworkDebugPrintf("  WARNING network: CompleteTwoPlayerExchange() requestExchangeDataBuffer is too small\n");
                     } else {
                         EncodeRequestExchangeDataMsg(requestExchangeDataBuffer, localPlayerId, sequenceNumber);
-                        fn_000c20c0("Requesting resend of seq %d because we received the next one\n", sequenceNumber);
+                        NetworkDebugPrintf("Requesting resend of seq %d because we received the next one\n", sequenceNumber);
                         if (spPtr->Send(remotePlayerId, requestExchangeDataBuffer) != Lb_OK)
-                            fn_000c20c0("  WARNING network: CompleteTwoPlayerExchange() failure on SP::Send()\n");
+                            NetworkDebugPrintf("  WARNING network: CompleteTwoPlayerExchange() failure on SP::Send()\n");
                     }
                 }
             }
         } else {
-            fn_000c20c0("  WARNING network: TwoPlayerCallback() invalid length: %d\n", size);
+            NetworkDebugPrintf("  WARNING network: TwoPlayerCallback() invalid length: %d\n", size);
         }
     }
     return ret;
@@ -241,7 +241,7 @@ void TwoPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
     u8 *msg = 0;
     u32 msg_seq;
 
-    fn_000c20c0("Received Resend Request for seq no %d\n", seq);
+    NetworkDebugPrintf("Received Resend Request for seq no %d\n", seq);
     if (sequenceNumber == 15) {
         msg = lastMessage;
     } else {
@@ -253,17 +253,17 @@ void TwoPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
             msg = lastButOneMessage;
     }
     if (msg == 0) {
-        fn_000c20c0("  WARNING network: TwoPlayerReqExDataMsgCallback() could not find requested message()\n");
+        NetworkDebugPrintf("  WARNING network: TwoPlayerReqExDataMsgCallback() could not find requested message()\n");
     } else if (spPtr->Send(id, msg) == Lb_OK) {
         if (msg == lastButOneMessage) {
             spPtr->Send(id, lastMessage);
             if (seq == 14)
-                fn_000c20c0("Resending lastMessage for seq no %d as well\n", 0);
+                NetworkDebugPrintf("Resending lastMessage for seq no %d as well\n", 0);
             else
-                fn_000c20c0("Resending lastMessage for seq no %d as well\n", seq + 1);
+                NetworkDebugPrintf("Resending lastMessage for seq no %d as well\n", seq + 1);
         }
     } else {
-        fn_000c20c0("  WARNING network: TwoPlayerReqExDataMsgCallback() failure on SP::Send()\n");
+        NetworkDebugPrintf("  WARNING network: TwoPlayerReqExDataMsgCallback() failure on SP::Send()\n");
     }
     startTime = LbTimerClock();
 }
@@ -292,7 +292,7 @@ TbError GenericModemInit(__tibcaGUID guid, void *init_data)
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: GenericModemInit() failure on ServiceProvider::Init()\n");
+            NetworkDebugPrintf("  WARNING network: GenericModemInit() failure on ServiceProvider::Init()\n");
     }
     return ret;
 }

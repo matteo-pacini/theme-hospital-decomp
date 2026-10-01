@@ -52,7 +52,7 @@
 .L000d2b5f:
     .byte 0x68; .long _D_0012574e  # push 0x574e
 .L000d2b64:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000d2b6c:
     mov al, byte ptr [esp + 8]
@@ -213,7 +213,7 @@
     test ebx, ebx
     jne .L000d1e6b
     .byte 0x68; .long _D_00125189  # push 0x5189
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     jmp .L000d257c
@@ -244,7 +244,7 @@
     test edx, edx
     jne .L000d1ee5
     .byte 0x68; .long _D_00124f4b  # push 0x4f4b
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     jmp .L000d1f1f
 .L000d1ee5:
@@ -286,7 +286,7 @@
     .byte 0x0f; .byte 0x84; .long .L000d1e83-.-4
     .byte 0x8b; .byte 0x84; .byte 0x24; .byte 0x4c; .byte 0x04; .byte 0x00; .byte 0x00
     .byte 0x83; .byte 0xc0; .byte 0x04
-    .byte 0xe8; .long "fn_000ed344_"-.-4
+    .byte 0xe8; .long "W?$nan(ui)pnv"-.-4
     .byte 0x89; .byte 0xc6
     .byte 0x8b; .byte 0x84; .byte 0x24; .byte 0x4c; .byte 0x04; .byte 0x00; .byte 0x00
     .byte 0x83; .byte 0xc0; .byte 0x04
@@ -324,7 +324,7 @@
 .L000d200b:
     .byte 0xb8; .long _D_001251c8
     .byte 0x50
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
 .L000d2019:
     .byte 0x85; .byte 0xdb
@@ -342,7 +342,7 @@
     .byte 0x75; .byte .L000d205e-.-1
     .byte 0x68; .long _D_0012521e
     .byte 0xb5; .byte 0xff
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0x88; .byte 0xac; .byte 0x24; .byte 0x84; .byte 0x04; .byte 0x00; .byte 0x00
 .L000d205e:
@@ -446,7 +446,7 @@
 .L000d219a:
     .byte 0xb8; .long _D_0012526d
     .byte 0x50
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
     .byte 0xf6; .byte 0x84; .byte 0x24; .byte 0x70; .byte 0x04; .byte 0x00; .byte 0x00; .byte 0x04
@@ -503,7 +503,7 @@
 .L000d226d:
     .byte 0xb8; .long _D_001252bf
     .byte 0x50
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d2280:
@@ -528,7 +528,7 @@
     .byte 0x85; .byte 0xd2
     .byte 0x75; .byte .L000d22e4-.-1
     .byte 0x68; .long _D_00124f4b
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xeb; .byte .L000d231e-.-1
 .L000d22e4:
@@ -569,7 +569,7 @@
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d2354:
     .byte 0x68; .long _D_00125304
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
     .byte 0xf6; .byte 0x84; .byte 0x24; .byte 0x70; .byte 0x04; .byte 0x00; .byte 0x00; .byte 0x10
@@ -608,7 +608,7 @@
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d23f1:
     .byte 0x68; .long _D_00125349
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d2403:
@@ -651,7 +651,7 @@
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d249c:
     .byte 0x68; .long _D_0012538e
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d24ae:
@@ -675,7 +675,7 @@
     .byte 0xeb; .byte .L000d2504-.-1
 .L000d24f7:
     .byte 0x68; .long _D_001253d3
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
 .L000d2504:
     .byte 0x85; .byte 0xdb
@@ -693,7 +693,7 @@
     .byte 0x75; .byte .L000d2549-.-1
     .byte 0x68; .long _D_0012542f
     .byte 0xb5; .byte 0xff
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0x88; .byte 0xac; .byte 0x24; .byte 0x84; .byte 0x04; .byte 0x00; .byte 0x00
 .L000d2549:
@@ -702,7 +702,7 @@
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d2557:
     .byte 0x68; .long _D_0012547e  # push 0x547e
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     jmp .L000d1e83
 .L000d2569:

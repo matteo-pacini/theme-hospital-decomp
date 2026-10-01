@@ -1,7 +1,7 @@
 #include "clib.h"
 
 extern char **environ;
-extern char *D_001516f8;
+extern char *__env_mask;
 extern char *_Envptr;
 extern unsigned short _Envseg;
 
@@ -54,8 +54,8 @@ void __setenvp(void)
             ++count;
         }
         environ[count] = NULL;
-        D_001516f8 = (char *)&environ[count + 1];
-        memset(D_001516f8, 0, count);
+        __env_mask = (char *)&environ[count + 1];
+        memset(__env_mask, 0, count);
     } else {
         _nfree(ep);
     }

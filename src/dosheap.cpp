@@ -7,7 +7,7 @@ typedef char *va_list[1];
 extern "C" {
 
 int vsprintf(char *dest, char *format, va_list arg);
-void fn_000bb5cc(CDosHeapStats *stats);
+void CDosHeapStats_Init(CDosHeapStats *stats);
 u32 GetFreeFragCount(CDosHeap *heap);
 }
 
@@ -22,7 +22,7 @@ CDosHeap::CDosHeap()
         ((CDosHeapStats *)&items[i])->Init();
     free_list = 0;
     used_list = 0;
-    fn_000bb5cc(&stats);
+    CDosHeapStats_Init(&stats);
     errors = 0;
     reporting = 0;
 }
@@ -113,7 +113,7 @@ extern "C" {
 
 // Zeroes stats (as CDosHeapStats::Init).
 // FUNCTION: 0x000bb5cc
-void fn_000bb5cc(CDosHeapStats *stats)
+void CDosHeapStats_Init(CDosHeapStats *stats)
 {
     stats->total = 0;
     stats->count = 0;

@@ -2,8 +2,8 @@
 
 extern "C" {
 extern u8 D_00156910;
-extern u8 D_00158192;
-void fn_000c93bf(char *dst, char *src);
+extern Menu choice;
+void strcat(char *dst, char *src);
 }
 
 
@@ -347,42 +347,42 @@ void report_mayor_result(u8 owner, char **strs)
     text_x = 0;
     text_y = 0;
     sprintf(buf, strs[0], allhosps[othervar.cur_player].name);
-    fn_000c93bf(text, buf);
+    strcat(text, buf);
     sprintf(buf, strs[1], mayor_names[allhosps[owner].mayor_name]);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf);
+    strcat(text, new_line);
+    strcat(text, buf);
     sprintf(buf, "%s", strs[allhosps[owner].mayor_verdict + 5]);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf);
-    fn_000c93bf(text, new_line);
+    strcat(text, new_line);
+    strcat(text, new_line);
+    strcat(text, buf);
+    strcat(text, new_line);
     value = mayor_result[allhosps[owner].mayor_verdict].cash_bonus;
     if (value != 0) {
         sprintf(buf, strs[2], value);
-        fn_000c93bf(text, new_line);
-        fn_000c93bf(text, buf);
+        strcat(text, new_line);
+        strcat(text, buf);
     }
     value = mayor_result[allhosps[owner].mayor_verdict].reputation_event;
     if (value == 0x10) {
         sprintf(buf, strs[3], value);
-        fn_000c93bf(text, new_line);
-        fn_000c93bf(text, buf);
+        strcat(text, new_line);
+        strcat(text, buf);
     } else if (value == 0x12) {
         sprintf(buf, strs[4], value);
-        fn_000c93bf(text, new_line);
-        fn_000c93bf(text, buf);
+        strcat(text, new_line);
+        strcat(text, buf);
     }
     LbTextDraw(text_x, text_y, text);
     D_00156910 = 1;
 }
 
-// VIP report button 0 closes the report (D_00158192 = 0x5c).
+// VIP report button 0 closes the report (choice.state = 0x5c).
 // FUNCTION: 0x000a1ab4
 void process_mayor_end_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        D_00158192 = 0x5c;
+        choice.state = 0x5c;
         break;
     }
 }

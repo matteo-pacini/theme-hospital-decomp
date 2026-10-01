@@ -18,7 +18,7 @@ struct ComputerBucket {
 };
 
 extern "C" {
-extern u16 choice[];
+extern Menu choice;
 extern Event D_001549d0[];
 }
 
@@ -255,12 +255,12 @@ void check_quarterly_game_over(void)
             if (othervar.next_level_offer > 200000000)
                 othervar.next_level_offer = 200000000;
             if (display_mode == DM_CHOICE) {
-                fn_000c21e6(&year_end_backup.choice_state, choice, 10);
+                lib_memcpy(&year_end_backup.choice_state, &choice, 10);
                 year_end_backup.mode = display_mode;
                 year_end_backup.spare_data = choice_spare_data;
                 year_end_backup.time_out = choice_time_out;
             } else {
-                fn_000c21e6(&year_end_backup, &choice_backup, 10);
+                lib_memcpy(&year_end_backup, &choice_backup, 10);
             }
             year_end_type = 5;
             display_mode = DM_YEAR_END_WINLOSE;

@@ -6,9 +6,9 @@
 // are the demo's names for them.
 
 extern "C" {
-void fn_00074064(void);
-void fn_000740e4(void);
-void fn_000741a4(void);
+void req3_help_if_diagnosed(void);
+void req3_help_if_curable(void);
+void req3_help_if_queueing(void);
 }
 
 void manager_help_displayed_ins();
@@ -45,7 +45,7 @@ void slist_tiredness_help_if_present();
 
 extern "C" {
 // demo: HiresBoxes
-BoxCoord D_0013bb0c[95] = {
+BoxCoord HiresBoxes[95] = {
     { 126, 60, 110, 86 },
     { 160, 36, 125, 18 },
     { 160, 55, 125, 18 },
@@ -144,7 +144,7 @@ BoxCoord D_0013bb0c[95] = {
 };
 
 // demo: HiresCoords
-Coord D_0013c0fc[181] = {
+Coord HiresCoords[181] = {
     { 44, 232 }, { 208, 26 }, { 23, 24 }, { 98, 127 }, { 60, 181 }, { 53, 55 }, { 206, 55 },
     { 354, 55 }, { 138, 364 }, { 240, 100 }, { 266 }, { 382, 270 }, { 185, 270 }, { 286, 359 },
     { 286, 386 }, { 286, 414 }, { 414, 416 }, { 175, 70 }, { 210, 70 }, { 435, 70 }, { 20, 60 },
@@ -362,11 +362,11 @@ HelpControl hireshelp[350] = {
     { 467, 142, 554, 159, 89 },
     { 468, 170, 554, 187, 90 },
     { 466, 192, 556, 222, 91 },
-    { 565, 187, 603, 229, 92, fn_00074064 },
+    { 565, 187, 603, 229, 92, req3_help_if_diagnosed },
     { 543, 241, 604, 301, 93 },
     { 459, 243, 520, 302, 94 },
-    { 565, 142, 604, 182, 95, fn_000740e4 },
-    { 580, 103, 603, 132, 96, fn_000741a4 },
+    { 565, 142, 604, 182, 95, req3_help_if_curable },
+    { 580, 103, 603, 132, 96, req3_help_if_queueing },
     { -1 },
     { 439, 43, 573, 62, 97 },
     { 583, 41, 606, 64, 98 },

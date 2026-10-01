@@ -139,15 +139,15 @@ extern char **staff_names;
 extern char **skill_names;
 extern char **illness_text;
 
-void fn_000c93bf(char *dst, char *src);
+void strcat(char *dst, char *src);
 void LbDataLoadAll(TbLoadFiles *files);
 void rebuild_panel_popup_pos(void);
 void draw_panel_percent_bar(s32 value, char *text);
 void draw_panel_info_line(char *text, u8 *line, u8 lines);
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
 void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
-void fn_000ccac4(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
-#pragma aux fn_000ccac4 "LbDrawLine_";
+void LbDrawHVLine(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
+#pragma aux LbDrawHVLine "LbDrawHVLine_";
 
 }
 
@@ -526,7 +526,7 @@ void draw_money_on_panel(void)
     set_font_from_cache(5);
     height = lbFontPtr ? lbFontPtr[18].height : 0;
     if (othervar.shown_balance != myhosp->balance) {
-        diff = fn_000cb2db(othervar.shown_balance - myhosp->balance);
+        diff = abs(othervar.shown_balance - myhosp->balance);
         for (div = 1000000; div >= 0; div /= 10) {
             if (diff >= div) {
                 digits++;
@@ -817,23 +817,23 @@ void display_panel_staff_info(void)
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(1);
-        fn_000bbff0(buf, staff_names[staff->subtype]);
+        lib_strcpy(buf, staff_names[staff->subtype]);
         if ((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (staff->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_CONSULTANT | SKILL_RESEARCHER))) {
-            fn_000bbff0(buf, "");
+            lib_strcpy(buf, "");
             n = 0;
             if (staff->skills & SKILL_CONSULTANT)
-                fn_000bbff0(names[n++], skill_names[7]);
+                lib_strcpy(names[n++], skill_names[7]);
             if (staff->skills & SKILL_RESEARCHER)
-                fn_000bbff0(names[n++], skill_names[8]);
+                lib_strcpy(names[n++], skill_names[8]);
             if (staff->skills & SKILL_SURGEON)
-                fn_000bbff0(names[n++], skill_names[5]);
+                lib_strcpy(names[n++], skill_names[5]);
             if (staff->skills & SKILL_PSYCHIATRIST) {
                 if (n == 3)
-                    fn_000bbff0(names[n++], info_bar_text[26]);
+                    lib_strcpy(names[n++], info_bar_text[26]);
                 else
-                    fn_000bbff0(names[n++], skill_names[6]);
+                    lib_strcpy(names[n++], skill_names[6]);
             }
-            fn_000bbff0(buf, names[0]);
+            lib_strcpy(buf, names[0]);
             for (i = 1; i < n; i++)
                 sprintf(buf, "%s %s", buf, names[i]);
         }
@@ -852,7 +852,7 @@ void display_panel_staff_info(void)
         pct = allhosps[staff->owner].rest_threshold * 100 / 1000;
         pct > 100 ? pct = 100 : 0;
         draw_panel_percent_bar(staff->tiredness * 100 / 1000, info_bar_text[28]);
-        fn_000ccac4(pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100 + (resvars.boxes_PanelLayoutp->info_bar_x + panel->x + 1),
+        LbDrawHVLine(pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100 + (resvars.boxes_PanelLayoutp->info_bar_x + panel->x + 1),
                     resvars.boxes_PanelLayoutp->info_bar_y + (panel->y + resvars.coords_PanelLayoutp->info_text_y + resvars.coords_PanelLayoutp->info_line_height * 2 + 1),
                     panel->x + resvars.boxes_PanelLayoutp->info_bar_x + 1 + pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100,
                     panel->y + resvars.coords_PanelLayoutp->info_text_y + resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.boxes_PanelLayoutp->info_bar_h - 1 + resvars.boxes_PanelLayoutp->info_bar_y,
@@ -1522,7 +1522,7 @@ void panel_watch_help(void)
         text = 0xed;
     else
         return;
-    fn_000bbff0(othervar.help_msg, help_text[text]);
+    lib_strcpy(othervar.help_msg, help_text[text]);
 }
 
 // Help text for the reputation scale, with the reputation value, into
@@ -1532,9 +1532,9 @@ void panel_rep_help(void)
 {
     char buf[12];
 
-    fn_000bbff0(othervar.help_msg, help_text[9]);
+    lib_strcpy(othervar.help_msg, help_text[9]);
     sprintf(buf, " (%d)", myhosp->reputation);
-    fn_000c93bf(othervar.help_msg, buf);
+    strcat(othervar.help_msg, buf);
 }
 
 // Loads the rat game's panel sprites (not in 320x200) and lays them out.

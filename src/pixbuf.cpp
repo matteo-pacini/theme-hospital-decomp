@@ -185,7 +185,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
         } else {
             if (flags & 2) {
                 for (; rows > 0; rows--) {
-                    fn_000c21e6(dst, src, cols);
+                    lib_memcpy(dst, src, cols);
                     dst = next_dst;
                     next_dst += lbDisplay.graphics_screen_width;
                     src = next_src;

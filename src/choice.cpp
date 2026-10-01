@@ -45,8 +45,7 @@ void process_mayor_start_buttons(u8 button);
 void process_mayor_end_buttons(u8 button);
 
 extern "C" {
-extern u8 D_00158192;
-extern u16 choice;
+extern Menu choice;
 extern s16 choice_mouse_position;
 extern u32 choice_actual_game_turn;
 extern u8 fax_no[];
@@ -84,7 +83,7 @@ void display_cheat_mode(void)
 {
 }
 
-// Runs one frame of the fax (choice) screen, by its state D_00158192: 0x5a
+// Runs one frame of the fax (choice) screen, by its state choice.state: 0x5a
 // draws the message for choice with its buttons and moves to 0x5b, which
 // handles the buttons and keypad and, if the fax can time out, closes it
 // (0x5c) on Escape, Space, or choice_time_out turns without mouse movement.
@@ -96,7 +95,7 @@ void display_choice(void)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x1e);
     lbDisplay.draw_flags = 0;
-    switch (D_00158192) {
+    switch (choice.state) {
     case 0x5a:
         available_buttons = 0xffff;
         load_ingame_pic(SCR_FAX, 1, 0x24, 0, (TbScreenMode)0xd);
@@ -108,9 +107,9 @@ void display_choice(void)
         lbDisplay.graphics_screen_height = lbDisplay.physical_screen_height;
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        calculate_buttons(choice);
+        calculate_buttons(choice.value);
         LbTextSetWindow(resvars.screen_boxes_ChoiceBoxp[173].x, resvars.screen_boxes_ChoiceBoxp[173].y, resvars.screen_boxes_ChoiceBoxp[173].w, resvars.screen_boxes_ChoiceBoxp[173].h);
-        display_choice_text(choice);
+        display_choice_text(choice.value);
         display_buttons();
         if (!choice_time_out)
             reqspr_draw(resvars.screen_coords[0xbe].x, resvars.screen_coords[0xbe].y, &screen_sprites_tab_start[20]);
@@ -118,7 +117,7 @@ void display_choice(void)
         lbDisplay.graphics_screen_width = othervar.saved_screen_width;
         lbDisplay.graphics_screen_height = othervar.saved_screen_height;
         LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
-        D_00158192 = 0x5b;
+        choice.state = 0x5b;
         choice_actual_game_turn = actual_game_turn;
         NumPressed = 0;
         copy_screen_to_wscreen(bscreen);
@@ -133,14 +132,14 @@ void display_choice(void)
             if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
                 lbInkey = 0;
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
-                D_00158192 = 0x5c;
+                choice.state = 0x5c;
             }
             if (choice_mouse_position != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
                 choice_actual_game_turn = actual_game_turn;
                 choice_mouse_position = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
             }
             if (actual_game_turn - choice_actual_game_turn > choice_time_out || exit_quick_requester())
-                D_00158192 = 0x5c;
+                choice.state = 0x5c;
         }
         break;
     case 0x5c:
@@ -370,8 +369,8 @@ void display_choice_screen(const u8 owner, const u8 type, const s16 data, const 
     if (owner == player) {
         save_display_screen();
         display_mode = DM_CHOICE;
-        D_00158192 = 0x5a;
-        choice = type;
+        choice.state = 0x5a;
+        choice.value = type;
         choice_spare_data = data;
         choice_time_out = timeout;
     }
@@ -407,7 +406,7 @@ void restore_display_screen(void)
     choice_spare_data = choice_backup.spare_data;
     choice_time_out = choice_backup.time_out;
     if (display_mode == DM_CHOICE)
-        D_00158192 = 0x5a;
+        choice.state = 0x5a;
     choice_backup.mode = DM_GAME;
     switch (display_mode) {
     case DM_GAME:
@@ -543,7 +542,7 @@ void process_fax_buttons(u8 button)
         break;
     case 0xc7:
         if (choice_time_out) {
-            D_00158192 = 0x5c;
+            choice.state = 0x5c;
             play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         }
         break;

@@ -24,7 +24,7 @@ extern char MusicType[];
 extern u8 DisableLoadMusic;
 extern u8 DisableDangerMusic;
 extern char SoundInstallChoice[];
-extern char D_0018c8b4[];
+extern char MusicDriverName[];
 
 char *getenv(const char *name);
 char *strcpy(char *dst, const char *src);
@@ -183,7 +183,7 @@ void InitAudio(AudioInitOptions *ao)
     SoundProgressLog(SoundProgressMessage);
     sprintf(SoundProgressMessage, "BF55 - SA   %d\n", SoundAble);
     SoundProgressLog(SoundProgressMessage);
-    sprintf(SoundProgressMessage, "BF56 - music driver = %s\n", D_0018c8b4);
+    sprintf(SoundProgressMessage, "BF56 - music driver = %s\n", MusicDriverName);
     SoundProgressLog(SoundProgressMessage);
     sprintf(SoundProgressMessage, "BF57 - sound driver = %s\n", &SoundInstallChoice[0x80]);
     SoundProgressLog(SoundProgressMessage);

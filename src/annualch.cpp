@@ -12,7 +12,7 @@ extern u8 current_display;
 extern u8 current_award;
 
 extern "C" {
-extern u16 choice;
+extern Menu choice;
 extern char **chart_types;
 extern char **trophy_text;
 extern char **bad_awards_text;
@@ -43,13 +43,13 @@ void start_year_end(void)
 
     finish_composite_help();
     if (display_mode == DM_CHOICE) {
-        fn_000c21e6(year_end_backup.choice_state, &choice, 10);
+        lib_memcpy(year_end_backup.choice_state, &choice, 10);
         year_end_backup.mode = display_mode;
         year_end_backup.spare_data = choice_spare_data;
         year_end_backup.time_out = choice_time_out;
         choice_backup.mode = DM_YEAR_END;
     } else {
-        fn_000c21e6(&year_end_backup, &choice_backup, 10);
+        lib_memcpy(&year_end_backup, &choice_backup, 10);
     }
     display_mode = DM_YEAR_END;
     year_end_type = 0;

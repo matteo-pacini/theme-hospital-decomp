@@ -60,49 +60,49 @@ struct Stride6c {
 };
 
 extern "C" {
-extern u8 D_00160508;
+extern u8 host_player;
 
 extern Event D_001549d0[];
-extern Event D_00154a0c[];
-extern MemRegion D_001290d4[];
-extern u32 D_00160288;
-extern u16 D_0015fe86[];
-extern u32 D_0015fe78, D_0015fe7c, D_0015fe80;
-extern u32 D_0016028c, D_00160290;
-extern u8 D_00160294;
+extern Event old_packet[];
+extern MemRegion save[];
+extern u32 block_checksums_size;
+extern u16 block_checksums[];
+extern u32 sync_block, sync_progress_count, synced_regions;
+extern u32 sync_total_bytes, sync_done_bytes;
+extern u8 resyncing;
 extern Struct_001602a0 *misc_text;
-extern u8 D_001581ee;
-extern s32 D_001581e8;
-extern u8 D_001581ef, D_001581f0;
+extern u8 replay_mode;
+extern s32 replay_file;
+extern u8 replay_number, replay_loop;
 extern u8 *palette;
 extern u8 D_00156910;
 extern u8 last_saved;
 extern u8 need_a_save;
-extern u8 D_00158166;
+extern Menu overview;
 extern Slot D_001581b2[];
 extern Stride6c D_0015f5c2[];
 
 int LbScreenLock(void);
 u32 check_sum(void);
-u8 fn_00086b60(void);
-void fn_0008debc(char *s);
+u8 end_game_if_alone(void);
+void net_debug_msg(char *s);
 u8 is_player_building(void);
 void check_autosave(void);
 void restart_level(void);
 void find_other_player(int me);
-void fn_0002994c(u8 a);
-u8 fn_0002d11c(Thing *staff);
+void cancel_room_edit(u8 a);
+u8 surgeon_screen_free(Thing *staff);
 int is_checksummed_region(int region);
 void draw_sync_progress(int percent);
 u16 checksum16(u16 *p, int len);
 void checksum_memory_regions(void);
 int sync_memory_region(s8 port, u32 base, int len);
 void resync_network_game(void);
-void *fn_00022b60(TbCacheUsedBlock *block);
+void *cache_block_data(TbCacheUsedBlock *block);
 
 }
 
-// Returns 1 if save region region (D_001290d4 index) is checksummed and
+// Returns 1 if save region region (save index) is checksummed and
 // synchronised in network games, else 0.
 // FUNCTION: 0x0001c030
 int is_checksummed_region(int region)
@@ -162,7 +162,7 @@ u16 checksum16(u16 *p, int len)
 }
 
 // Records the checksum of each 1 KB block of the checksummed save regions in
-// D_0015fe86 (at most 512), for resynchronising network games.
+// block_checksums (at most 512), for resynchronising network games.
 // FUNCTION: 0x0001c234
 void checksum_memory_regions(void)
 {
@@ -172,28 +172,28 @@ void checksum_memory_regions(void)
     u32 chunk;
     u32 size;
 
-    D_00160288 = 0;
-    for (i = 0; D_001290d4[i].addr != 0; i++) {
+    block_checksums_size = 0;
+    for (i = 0; save[i].addr != 0; i++) {
         if (is_checksummed_region(i)) {
-            p = base = D_001290d4[i].addr;
-            size = D_001290d4[i].size;
+            p = base = save[i].addr;
+            size = save[i].size;
             while (base + size > p) {
                 chunk = 0x400;
                 if (p + chunk > base + size) {
                     chunk = base + size - p;
                 }
-                if (D_00160288 < 0x200) {
-                    D_0015fe86[D_00160288++] = checksum16((u16 *)p, chunk);
+                if (block_checksums_size < 0x200) {
+                    block_checksums[block_checksums_size++] = checksum16((u16 *)p, chunk);
                 }
                 p += chunk;
             }
         }
     }
-    D_00160288 <<= 1;
+    block_checksums_size <<= 1;
 }
 
 // Resynchronises save region base (len bytes) with a network player. With
-// port negative, this machine receives: it asks the host (D_00160508) for
+// port negative, this machine receives: it asks the host (host_player) for
 // each 1 KB block whose checksum differs from the host's and reads it in.
 // Otherwise it sends the blocks port asks for. Shows progress. Returns 1, or
 // 0 if the network failed.
@@ -204,8 +204,8 @@ int sync_memory_region(s8 port, u32 base, int len)
     int chunk;
     int off;
 
-    if (base == D_001290d4[0].addr) {
-        D_0015fe78 = D_0015fe80 = 0;
+    if (base == save[0].addr) {
+        sync_block = synced_regions = 0;
     }
     if (port < 0) {
         off = 0;
@@ -214,30 +214,30 @@ int sync_memory_region(s8 port, u32 base, int len)
             if (off + chunk > len) {
                 chunk = len - off;
             }
-            if (D_0015fe86[D_0015fe78++] != checksum16((u16 *)(base + off), chunk)) {
+            if (block_checksums[sync_block++] != checksum16((u16 *)(base + off), chunk)) {
                 tries = 0;
                 do {
-                } while (LbNetwork_Send(D_00160508, &off, 4) == -1 && tries++ < 8);
+                } while (LbNetwork_Send(host_player, &off, 4) == -1 && tries++ < 8);
                 if (tries >= 8) {
                     return 0;
                 }
                 tries = 0;
                 do {
-                } while (LbNetwork_Receive(D_00160508, (void *)(base + off), chunk) != chunk && tries++ < 8);
+                } while (LbNetwork_Receive(host_player, (void *)(base + off), chunk) != chunk && tries++ < 8);
                 if (tries >= 8) {
                     return 0;
                 }
-                if ((D_0015fe7c++ & 0xf) == 0) {
-                    draw_sync_progress((D_00160290 + chunk) * 100 / D_0016028c);
+                if ((sync_progress_count++ & 0xf) == 0) {
+                    draw_sync_progress((sync_done_bytes + chunk) * 100 / sync_total_bytes);
                 }
             }
             off += chunk;
-            D_00160290 += chunk;
+            sync_done_bytes += chunk;
         }
         tries = 0;
         off = -1;
         do {
-        } while (LbNetwork_Send(D_00160508, &off, 4) == -1 && tries++ < 8);
+        } while (LbNetwork_Send(host_player, &off, 4) == -1 && tries++ < 8);
         if (tries >= 8) {
             return 0;
         }
@@ -265,14 +265,14 @@ int sync_memory_region(s8 port, u32 base, int len)
                 }
                 end = off + chunk;
             }
-            if ((D_0015fe7c++ & 0xf) == 0) {
-                draw_sync_progress((D_00160290 + end) * 100 / D_0016028c);
+            if ((sync_progress_count++ & 0xf) == 0) {
+                draw_sync_progress((sync_done_bytes + end) * 100 / sync_total_bytes);
             }
         }
-        D_00160290 += len;
-        draw_sync_progress(D_00160290 * 100 / D_0016028c);
+        sync_done_bytes += len;
+        draw_sync_progress(sync_done_bytes * 100 / sync_total_bytes);
     }
-    D_0015fe80++;
+    synced_regions++;
     return 1;
 }
 
@@ -286,13 +286,13 @@ void resync_network_game(void)
     int i;
     int tries;
 
-    if (D_00160508 == player) {
+    if (host_player == player) {
         value = 1;
         for (i = 0; i < 4; i++) {
             if (D_001549d0[i].checksum != 0) {
                 if (D_001549d0[player].checksum != D_001549d0[i].checksum) {
                     draw_sync_progress(0);
-                    D_00160290 = 0;
+                    sync_done_bytes = 0;
                     tries = 0;
                     do {
                     } while (LbNetwork_Send(i, &value, 4) == -1 && tries++ < 8);
@@ -318,19 +318,19 @@ void resync_network_game(void)
             }
         }
     } else {
-        if (D_001549d0[player].checksum != D_001549d0[D_00160508].checksum) {
+        if (D_001549d0[player].checksum != D_001549d0[host_player].checksum) {
             draw_sync_progress(0);
-            D_00160290 = 0;
+            sync_done_bytes = 0;
             value = 0;
             while (value == 0) {
-                LbNetwork_Receive(D_00160508, &value, 4);
+                LbNetwork_Receive(host_player, &value, 4);
             }
             load_game(0, 1);
             draw_sync_progress(100);
         }
         value = 0;
         while (value == 0) {
-            LbNetwork_Receive(D_00160508, &value, 4);
+            LbNetwork_Receive(host_player, &value, 4);
         }
     }
 }
@@ -352,29 +352,29 @@ void process_turn(void)
     u16 i;
     u8 changed;
 
-    if (D_001581ee & 2) {
+    if (replay_mode & 2) {
         u32 recorded_seed;
 
-        LbFileRead(D_001581e8, packet, 0xf);
-        LbFileRead(D_001581e8, &mouse_x, 4);
-        LbFileRead(D_001581e8, &mouse_y, 4);
-        LbFileRead(D_001581e8, &gamevar.mouse_mode, 2);
-        LbFileRead(D_001581e8, &gamevar, 0x178);
-        LbFileRead(D_001581e8, &recorded_seed, 4);
+        LbFileRead(replay_file, packet, 0xf);
+        LbFileRead(replay_file, &mouse_x, 4);
+        LbFileRead(replay_file, &mouse_y, 4);
+        LbFileRead(replay_file, &gamevar.mouse_mode, 2);
+        LbFileRead(replay_file, &gamevar, 0x178);
+        LbFileRead(replay_file, &recorded_seed, 4);
         if (seed != recorded_seed) {
-            fn_000bbff0(debug.msg_text, "PLAYBACK OUT OF SYNC");
+            lib_strcpy(debug.msg_text, "PLAYBACK OUT OF SYNC");
             debug.msg_timer = 200;
         }
         LbMouseSetPosition(mouse_x, mouse_y);
-    } else if (D_001581ee & 1) {
+    } else if (replay_mode & 1) {
         mouse_x = lbDisplay.mmouse_x;
         mouse_y = lbDisplay.mmouse_y;
-        LbFileWrite(D_001581e8, packet, 0xf);
-        LbFileWrite(D_001581e8, &mouse_x, 4);
-        LbFileWrite(D_001581e8, &mouse_y, 4);
-        LbFileWrite(D_001581e8, &gamevar.mouse_mode, 2);
-        LbFileWrite(D_001581e8, &gamevar, 0x178);
-        LbFileWrite(D_001581e8, &seed, 4);
+        LbFileWrite(replay_file, packet, 0xf);
+        LbFileWrite(replay_file, &mouse_x, 4);
+        LbFileWrite(replay_file, &mouse_y, 4);
+        LbFileWrite(replay_file, &gamevar.mouse_mode, 2);
+        LbFileWrite(replay_file, &gamevar, 0x178);
+        LbFileWrite(replay_file, &seed, 4);
     }
     if (D_001549d0[player].flags && !pmenu.open_pulldown) {
         if (D_001549d0[player].flags & 1) {
@@ -391,25 +391,25 @@ void process_turn(void)
             goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
             othervar.full_redraw = 1;
         }
-        D_00154a0c[player].flags = D_001549d0[player].flags;
+        old_packet[player].flags = D_001549d0[player].flags;
         D_001549d0[player].flags = 0;
     }
     if (statvar.num_players > 1) {
         D_001549d0[player].checksum = check_sum();
         sprintf(buf, "size of pac %ld", 0xf);
-        if (!fn_00086b60()) {
+        if (!end_game_if_alone()) {
             LbNetwork_ChangeExchangeBuffer(packet, 0xf);
-            fn_0008debc("Entering net xchg...");
+            net_debug_msg("Entering net xchg...");
             if (LbNetwork_Exchange((u8 *)packet + player * 0xf) == -1) {
             }
-            fn_0008debc("done\n");
+            net_debug_msg("done\n");
             if (game_turn == 4) {
                 LbNetwork_ChangeExchangeTimeout(0);
             }
             changed = 0;
             for (j = 0; j < 4; j++) {
                 if (D_001609c4[j].active && D_001549d0[j].checksum) {
-                    if (D_001549d0[D_00160508].checksum != D_001549d0[j].checksum) {
+                    if (D_001549d0[host_player].checksum != D_001549d0[j].checksum) {
                         if (D_001549d0[j].type != EV_NETWORK_GAINED_FOCUS && D_001549d0[j].type != EV_NETWORK_LOST_FOCUS) {
                             D_001549d0[j].type = EV_NONE;
                             D_001549d0[j].value = 0;
@@ -421,9 +421,9 @@ void process_turn(void)
             }
             if (changed) {
                 finish_composite_help();
-                D_00160294 = 1;
+                resyncing = 1;
                 resync_network_game();
-                D_00160294 = 0;
+                resyncing = 0;
             }
         }
         for (i = 0; i < 4; i++) {
@@ -675,22 +675,22 @@ void process_turn(void)
             quit_game = 1;
             if (debug.unknowne2 == 1) {
             }
-            if (D_001581ee & 2) {
-                if (D_001581f0) {
+            if (replay_mode & 2) {
+                if (replay_loop) {
                     quit_game = 2;
                     for (;;) {
                         char name[50];
 
-                        if (D_001581ef < 10) {
-                            D_001581ef++;
+                        if (replay_number < 10) {
+                            replay_number++;
                         } else {
-                            D_001581ef = 1;
+                            replay_number = 1;
                         }
-                        LbFileClose(D_001581e8);
-                        sprintf(name, "%ssave/hosp.r%d", statvar.save_root, D_001581ef);
-                        D_001581e8 = LbFileOpen(name, 2);
-                        if (D_001581e8 > 0) {
-                            D_001581ee |= 2;
+                        LbFileClose(replay_file);
+                        sprintf(name, "%ssave/hosp.r%d", statvar.save_root, replay_number);
+                        replay_file = LbFileOpen(name, 2);
+                        if (replay_file > 0) {
+                            replay_mode |= 2;
                             break;
                         }
                     }
@@ -859,7 +859,7 @@ void process_turn(void)
                     manager.state = 0;
                     break;
                 case 7:
-                    D_00158166 = 0;
+                    overview.state = 0;
                     calculate_value(player);
                     break;
                 case 8:
@@ -1249,7 +1249,7 @@ void process_turn(void)
             employee = &thing[D_001549d0[i].value];
             allhosps[i].held_staff = D_001549d0[i].value;
             if (!(employee->orders & ORD_RESIGN)) {
-                if (fn_0002d11c(employee)) {
+                if (surgeon_screen_free(employee)) {
                     interrupt_staff(employee);
                     staff_picked_up(&thing[D_001549d0[i].value]);
                 }
@@ -1482,7 +1482,7 @@ void process_turn(void)
             D_001549d0[i].arg = gamevar.mouse_mode;
             goto dispatch;
         case EV_CANCEL_EDIT_ROOM:
-            fn_0002994c(i);
+            cancel_room_edit(i);
             D_001549d0[i].type = EV_CANCEL_BUILD;
             D_001549d0[i].value = 0;
             goto dispatch;
@@ -1885,10 +1885,10 @@ void process_turn(void)
             break;
         }
     copy:
-        D_00154a0c[i].type = D_001549d0[i].type;
-        D_00154a0c[i].value = D_001549d0[i].value;
-        D_00154a0c[i].arg = D_001549d0[i].arg;
-        D_00154a0c[i].checksum = D_001549d0[i].checksum;
+        old_packet[i].type = D_001549d0[i].type;
+        old_packet[i].value = D_001549d0[i].value;
+        old_packet[i].arg = D_001549d0[i].arg;
+        old_packet[i].checksum = D_001549d0[i].checksum;
         D_001549d0[i].type = EV_NONE;
         D_001549d0[i].value = 0;
         D_001549d0[i].arg = 0;
@@ -1979,8 +1979,8 @@ u16 save_game(s8 slot, s8 port)
         sprintf(buf, "%s%s%d", statvar.save_root, statvar.save_prefix, slot);
         handle = LbFileOpen(buf, 0);
         if (handle != -1) {
-            for (i = 0; D_001290d4[i].addr; i++) {
-                LbFileWrite(handle, (void *)D_001290d4[i].addr, D_001290d4[i].size);
+            for (i = 0; save[i].addr; i++) {
+                LbFileWrite(handle, (void *)save[i].addr, save[i].size);
             }
             LbFileClose(handle);
             othervar.panel_message = 0x18;
@@ -1996,12 +1996,12 @@ u16 save_game(s8 slot, s8 port)
         ok = 0;
         tries = 0;
         do {
-        } while (LbNetwork_Send(port, D_0015fe86, 0x400) == -1 && tries++ < 8);
+        } while (LbNetwork_Send(port, block_checksums, 0x400) == -1 && tries++ < 8);
         if (tries < 8) {
             ok = 1;
-            for (i = 0; D_001290d4[i].addr; i++) {
+            for (i = 0; save[i].addr; i++) {
                 if (is_checksummed_region(i)) {
-                    if (!sync_memory_region(port, D_001290d4[i].addr, D_001290d4[i].size)) {
+                    if (!sync_memory_region(port, save[i].addr, save[i].size)) {
                         ok = 0;
                         break;
                     }
@@ -2066,8 +2066,8 @@ s16 load_game(s8 slot, s8 port)
             sprintf(buf, "%s%s%d", statvar.save_root, statvar.save_prefix, slot);
             handle = LbFileOpen(buf, 2);
             if (handle != -1) {
-                for (i = 0; D_001290d4[i].addr; i++) {
-                    LbFileRead(handle, (void *)D_001290d4[i].addr, D_001290d4[i].size);
+                for (i = 0; save[i].addr; i++) {
+                    LbFileRead(handle, (void *)save[i].addr, save[i].size);
                 }
                 LbFileClose(handle);
             }
@@ -2112,20 +2112,20 @@ s16 load_game(s8 slot, s8 port)
         ok = 0;
         tries = 0;
         do {
-        } while (LbNetwork_Receive(D_00160508, D_0015fe86, 0x400) != 0x400 && tries++ < 8);
+        } while (LbNetwork_Receive(host_player, block_checksums, 0x400) != 0x400 && tries++ < 8);
         if (tries < 8) {
             u8 found;
 
             found = 0;
             ok = 1;
             setup_addresses();
-            for (i = 0; D_001290d4[i].addr; i++) {
+            for (i = 0; save[i].addr; i++) {
                 if (is_checksummed_region(i)) {
-                    if (!sync_memory_region(-1, D_001290d4[i].addr, D_001290d4[i].size)) {
+                    if (!sync_memory_region(-1, save[i].addr, save[i].size)) {
                         ok = 0;
                         break;
                     }
-                    if (D_001290d4[i].addr == (u32)thing) {
+                    if (save[i].addr == (u32)thing) {
                         found = 1;
                     }
                 }
@@ -2149,7 +2149,7 @@ s16 load_game(s8 slot, s8 port)
     return 0;
 }
 
-// Points the save regions (D_001290d4) at the current map, things, rooms and
+// Points the save regions (save) at the current map, things, rooms and
 // other dynamic tables; in network games also totals their size and, on the
 // host, checksums them.
 // FUNCTION: 0x00022120
@@ -2157,23 +2157,23 @@ void setup_addresses(void)
 {
     int i;
 
-    D_001290d4[3].addr = (u32)map;
-    D_001290d4[4].addr = (u32)thing;
-    D_001290d4[5].addr = (u32)room_info;
-    D_001290d4[6].addr = (u32)pagers;
-    D_001290d4[7].addr = (u32)mycontrol;
-    D_001290d4[8].addr = (u32)listhead;
-    D_001290d4[9].addr = (u32)allhosps;
-    D_001290d4[10].addr = (u32)playercall;
-    D_001290d4[11].addr = (u32)for_sale;
+    save[3].addr = (u32)map;
+    save[4].addr = (u32)thing;
+    save[5].addr = (u32)room_info;
+    save[6].addr = (u32)pagers;
+    save[7].addr = (u32)mycontrol;
+    save[8].addr = (u32)listhead;
+    save[9].addr = (u32)allhosps;
+    save[10].addr = (u32)playercall;
+    save[11].addr = (u32)for_sale;
     if (statvar.num_players > 1) {
-        D_0016028c = 0;
-        for (i = 0; D_001290d4[i].addr; i++) {
+        sync_total_bytes = 0;
+        for (i = 0; save[i].addr; i++) {
             if (is_checksummed_region(i)) {
-                D_0016028c += D_001290d4[i].size;
+                sync_total_bytes += save[i].size;
             }
         }
-        if (D_00160508 == player) {
+        if (host_player == player) {
             checksum_memory_regions();
         }
     }
@@ -2202,7 +2202,7 @@ s8 load_level(const u8 lvl, const u8 full)
     clear_sound_heap();
     othervar.level_block = cache.Allocate(0x2806c, 0x63);
     if (othervar.level_block) {
-        level = (Level *)fn_00022b60(othervar.level_block);
+        level = (Level *)cache_block_data(othervar.level_block);
     } else {
         return 0;
     }
@@ -2255,7 +2255,7 @@ s8 load_level(const u8 lvl, const u8 full)
             gamevar.scroll_max_tile = level->scroll_max;
         }
         for (i = 0; i < 4; i++) {
-            fn_000c21e6(&allhosps[i].entrances, &allhosps[D_00160508].entrances, 8);
+            lib_memcpy(&allhosps[i].entrances, &allhosps[host_player].entrances, 8);
         }
         recreate_map(0);
         add_static_shadows();
@@ -2398,7 +2398,7 @@ void restart_level(void)
 
 // Returns the data of cache block block (just past its 0x14-byte header).
 // FUNCTION: 0x00022b60 COMDAT
-inline void *fn_00022b60(TbCacheUsedBlock *block)
+inline void *cache_block_data(TbCacheUsedBlock *block)
 {
     return (u8 *)block + 0x14;
 }

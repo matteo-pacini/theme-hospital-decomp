@@ -17,7 +17,7 @@ struct ManagerHelp {
 extern "C" {
 extern Event D_001549d0[];
 
-void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 }
 
 extern u16 ins_control[];
@@ -178,8 +178,8 @@ void display_manager_text(void)
                 py = y;
                 x += resvars.screen_boxes_ManagerBoxp[30].w / 12;
                 y = resvars.screen_boxes_ManagerBoxp[30].y - myhosp->insurance_claims[manager.value - 1][i] * resvars.screen_boxes_ManagerBoxp[30].h / max;
-                fn_000c9be0(px + 1, py + 1, x + 1, y + 1, othervar.manager_line_shadow_colour);
-                fn_000c9be0(px, py, x, y, othervar.manager_line_colour);
+                LbDrawLine(px + 1, py + 1, x + 1, y + 1, othervar.manager_line_shadow_colour);
+                LbDrawLine(px, py, x, y, othervar.manager_line_colour);
                 i++;
             }
             end = mycontrol->month;

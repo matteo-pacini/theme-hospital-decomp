@@ -14,9 +14,9 @@ extern "C" {
 extern void *smack_draw_callback;
 
 int LbScreenLock(void);
-void fn_0001102c(void);
+void setup_lores_screen(void);
 void use_hires_help_and_fonts(void);
-void fn_000110b0(void);
+void use_hires_layout(void);
 void fn_000905f4(void);
 void play_main_menu_outro(void);
 u8 play_intro(void);
@@ -64,7 +64,7 @@ void draw_main_menu(void)
         clear_loading_screen(0);
         LbMouseReset();
         LbMouseChangeSprite(0);
-        fn_0001102c();
+        setup_lores_screen();
         use_hires_help_and_fonts();
         lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         load_ingame_pic(SCR_MAIN_MENU, 1, 0x14, 0, SCREEN_MODE_1);
@@ -116,7 +116,7 @@ void draw_main_menu(void)
             break;
         level_number = read_level_number(0x63);
         if (level_number != -1) {
-            fn_000110b0();
+            use_hires_layout();
             load_game_files();
             setup_new_level((u16)level_number, 1);
             if (load_game(0x63, -1)) {
@@ -137,7 +137,7 @@ void draw_main_menu(void)
         mainmenu.state = MMS_CONTINUE_FAILED;
         break;
     case MMS_CONTINUE_FAILED:
-        fn_0001102c();
+        setup_lores_screen();
         mainmenu.state = MMS_ENTER;
         break;
     case MMS_NETWORK:
@@ -327,7 +327,7 @@ void draw_main_menu(void)
     case MMS_CREDITS_DONE:
         mainmenu.state = MMS_UNLOAD_GAME;
         fade_out_menu();
-        fn_0001102c();
+        setup_lores_screen();
         break;
     default:
         mainmenu.state = MMS_ENTER;
@@ -622,7 +622,7 @@ u8 play_intro(void)
     if (was_locked)
         LbScreenUnlock();
     LbScreenClear(0);
-    fn_0001102c();
+    setup_lores_screen();
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;

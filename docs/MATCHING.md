@@ -515,7 +515,7 @@ predates the tool and uses a separate file instead.
 - `W?SetupVector$:IPXHandler$n()l` (0xd422c), `src/lib/bf2/dosipx.standin.s`
 - `W?Send$:IPXHandler$n(pn$__3ljac5NETSOCKET$$pn$2$pnucl)v` (0xd4634), `src/lib/bf2/dosipx.standin.s`
 - `W?Init$:IPXHandler$n()l` (0xd35a0), `src/lib/bf2/dosipx.standin.s`
-- `W?$dt:SerialHandler$n()_` (0xf534c), `src/lib/bf2/dosser.standin.s`: the entry also covers SerialHandler::Init's body, where the size _D_001100fe - _D_00110068 is computed in other registers
+- `W?$dt:SerialHandler$n()_` (0xf534c), `src/lib/bf2/dosser.standin.s`: the entry also covers SerialHandler::Init's body, where the size _serial_handler_code_end - _serial_handler_code is computed in other registers
 - `W?ReadByte$:SerialHandler$n(l)l` (0xf5714), `src/lib/bf2/dosser.standin.s`
 - `W?ReadBytes$:CommHandler$n(pnvul)ul` (0xf63f4), `src/lib/bf2/dosser.standin.s`
 - `W?AddToReceiveBuffer$:IPXServiceProvider$n(pn$__6eas9nIPXDATAMESSAGE$$)v` (0xdc440), `src/lib/bf2/ipxsp.standin.s`
@@ -750,7 +750,7 @@ in `_DATA` come from a string initialiser (`char buf[0xdc] = "";`, as in
 `main.cpp`). Dead code (`if (0) {...}`) still emits its string literals to
 `CONST`, in evaluation order (a call's arguments right to left), and no
 code; its locals still take frame space and its statics `_BSS`, while
-`extern` declarations cost nothing (`debug.cpp`'s `fn_0008dea0`). The rest
+`extern` declarations cost nothing (`debug.cpp`'s `write_network_log`). The rest
 of this section is about C.
 
 Watcom C (`wcc386` 10.6, the file-scope pass of `FreeSym`/`GetSymList` in

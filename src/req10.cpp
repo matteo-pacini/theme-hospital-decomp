@@ -240,5 +240,5 @@ void req10_help_room(void)
 
     idx = req_indices[resvars.help_hotspots_HelpHotspotp[othervar.help_hotspot].req_slot];
     if (idx)
-        fn_000bbff0(othervar.help_msg, room_help[idx]);
+        lib_strcpy(othervar.help_msg, room_help[idx]);
 }

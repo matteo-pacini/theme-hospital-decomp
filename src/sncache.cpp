@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-void fn_000a2770(TbCacheUsedBlock *block);
+void unlock_cache_block(TbCacheUsedBlock *block);
 }
 
 // Counts the cache's used blocks into used and the locked ones into locked.
@@ -43,7 +43,7 @@ void TbCache::UnlockAll(void)
     TbCacheUsedBlock *block;
 
     for (block = oldest; block != 0; block = block->next)
-        fn_000a2770(block);
+        unlock_cache_block(block);
 }
 
 // Allocates a block of size bytes (plus a 0x14-byte header) tagged tag from
@@ -182,7 +182,7 @@ u32 TbCache::ThrowOutOldest(void)
 
 // Unlocks block.
 // FUNCTION: 0x000a2770 COMDAT
-inline void fn_000a2770(TbCacheUsedBlock *block)
+inline void unlock_cache_block(TbCacheUsedBlock *block)
 {
     block->locked = 0;
 }

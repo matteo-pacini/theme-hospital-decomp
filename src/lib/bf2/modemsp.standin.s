@@ -76,7 +76,7 @@
     cmp ecx, -7
     jne .L000ee871
     .byte 0x68; .long _D_00127c29  # push 0x7c29
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     mov dword ptr [ebx + 0xa8], ecx
@@ -89,7 +89,7 @@
     cmp ecx, -1
     jne .L000ee894
     .byte 0x68; .long _D_00127c50  # push 0x7c50
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     mov dword ptr [ebx + 0xa8], ecx
@@ -104,7 +104,7 @@
     cmp edi, 1
     je .L000ee8f8
     .byte 0x68; .long _D_00127c82  # push 0x7c82
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov edi, ecx
     mov esi, dword ptr [ebp + 0xb14]
@@ -127,7 +127,7 @@
     mov edx, dword ptr [ebp + 0xb14]
     push edx
     .byte 0x68; .long _D_00127cb0  # push 0x7cb0
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 8
     add esp, 0x10
@@ -157,7 +157,7 @@
     mov eax, dword ptr [ebp + 0xb14]
     push eax
     .byte 0x68; .long _D_00127cca  # push 0x7cca
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov eax, dword ptr [ebp + 0xb14]
     add esp, 8
     lea edx, [eax + 0x148]
@@ -170,7 +170,7 @@
     .byte 0x68; .long _D_00127ce4  # push 0x7ce4
     mov edx, eax
     mov esi, eax
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     cmp edx, 1
     je .L000ee97e
@@ -191,13 +191,13 @@
     cmp esi, 1
     je .L000ee9ba
     .byte 0x68; .long _D_00127d05  # push 0x7d05
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [ebp + 0xb14]
     call "W?HangUpModem$:CommHandler$n()l"
 .L000ee9ba:
     .byte 0x68; .long _D_00127d3e  # push 0x7d3e
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [ebp + 0xb14]
     call "W?InitModem$:CommHandler$n()l"
@@ -206,7 +206,7 @@
     cmp edx, -1
     jne .L000ee9f7
     .byte 0x68; .long _D_00127d71  # push 0x7d71
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     mov dword ptr [ebx + 0xa8], edx
@@ -217,7 +217,7 @@
     ret 4
 .L000ee9f7:
     .byte 0x68; .long _D_00127da2  # push 0x7da2
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov edi, ecx
     mov esi, dword ptr [ebp + 0xb14]
@@ -239,7 +239,7 @@
     mov eax, dword ptr [ebp + 0xb14]
     push eax
     .byte 0x68; .long _D_00127dd3  # push 0x7dd3
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 8
     add esp, 0x10
@@ -335,7 +335,7 @@
     cmp ebx, -7
     jne .L000eeb63
     .byte 0x68; .long _D_00127ded  # push 0x7ded
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
     mov dword ptr [eax + 0xa8], ebx
@@ -345,7 +345,7 @@
     cmp ebx, -1
     jne .L000eeb88
     .byte 0x68; .long _D_00127e0e  # push 0x7e0e
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
     mov dword ptr [eax + 0xa8], ebx
@@ -381,7 +381,7 @@
     mov edi, dword ptr [ebp + 0xb14]
     push edi
     .byte 0x68; .long _D_00127e3c  # push 0x7e3c
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 8
     add esp, 0xc
@@ -411,7 +411,7 @@
     mov ecx, dword ptr [ebp + 0xb14]
     push ecx
     .byte 0x68; .long _D_00127e6c  # push 0x7e6c
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     mov edx, dword ptr [esp + 4]
     mov eax, dword ptr [ebp + 0xb14]
@@ -424,12 +424,12 @@
     cmp ebx, -7
     jne .L000eec7b
     .byte 0x68; .long _D_00127e86  # push 0x7e86
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
     .byte 0x68; .long _D_00127eaa  # push 0x7eaa
     mov dword ptr [eax + 0xa8], ebx
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [ebp + 0xb14]
     call "W?HangUpModem$:CommHandler$n()l"
@@ -443,12 +443,12 @@
     cmp ebx, -1
     jne .L000eecb8
     .byte 0x68; .long _D_00127ed7  # push 0x7ed7
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
     .byte 0x68; .long _D_00127ef7  # push 0x7ef7
     mov dword ptr [eax + 0xa8], ebx
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [ebp + 0xb14]
     call "W?HangUpModem$:CommHandler$n()l"
@@ -479,7 +479,7 @@
     mov esi, dword ptr [ebp + 0xb14]
     push esi
     .byte 0x68; .long _D_00127f24  # push 0x7f24
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     cmp ebx, 2
     jne .L000eed54
@@ -499,7 +499,7 @@
     mov eax, dword ptr [esp + 4]
     .byte 0x68; .long _D_00127f3e  # push 0x7f3e
     mov dword ptr [eax + 0xa8], 0xfffffffe
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [ebp + 0xb14]
     call "W?HangUpModem$:CommHandler$n()l"
@@ -513,7 +513,7 @@
     cmp ebx, 4
     jne .L000eed6f
     .byte 0x68; .long _D_00127f5f  # push 0x7f5f
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     add esp, 0xc
@@ -525,7 +525,7 @@
     cmp ebx, 7
     jne .L000eed8a
     .byte 0x68; .long _D_00127f7a  # push 0x7f7a
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     add esp, 0xc
@@ -537,7 +537,7 @@
     cmp ebx, 5
     jne .L000eeda5
     .byte 0x68; .long _D_00127f97  # push 0x7f97
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     add esp, 0xc
@@ -549,7 +549,7 @@
     cmp ebx, 6
     jne .L000eedc0
     .byte 0x68; .long _D_00127fbd  # push 0x7fbd
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     add esp, 0xc

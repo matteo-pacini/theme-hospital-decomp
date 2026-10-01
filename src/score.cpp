@@ -12,8 +12,8 @@ struct HospScores {
 
 extern "C" {
 
-u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "fn_000cd716_"
+u32 lib_strlen(char *s);
+#pragma aux lib_strlen "strlen_"
 int strcmp(const char *a, const char *b);
 void modify_background(void);
 void display_hall(void);
@@ -90,10 +90,10 @@ void move_text(void)
     if (othervar.showing_fame != old) {
         if (othervar.showing_fame) {
             TitleText = hall_text[4];
-            TitleLen = fn_000cd716(TitleText);
+            TitleLen = lib_strlen(TitleText);
         } else {
             TitleText = hall_text[5];
-            TitleLen = fn_000cd716(TitleText);
+            TitleLen = lib_strlen(TitleText);
         }
     }
     for (i = 0; i < 20; i++) {
@@ -147,7 +147,7 @@ void set_shame_pos(s32 *text, s32 *title)
     TitleText = hall_text[5];
     for (i = 0; i < 20; i++) {
         title[i] = (lbDisplay.graphics_screen_width + LbTextStringWidth(TitleText)) / 2;
-        title[i] -= LbTextStringWidth(&TitleText[fn_000cd716(TitleText) - 1 - i]);
+        title[i] -= LbTextStringWidth(&TitleText[lib_strlen(TitleText) - 1 - i]);
         title[i] = title[i] << 16;
     }
     TitleText = saved;
@@ -205,7 +205,7 @@ void display_hall(void)
             set_shame_pos(TextPos, TitlePos);
             TitleText = hall_text[5];
         }
-        TitleLen = fn_000cd716(TitleText);
+        TitleLen = lib_strlen(TitleText);
         move_text();
         draw_fame_text();
         break;

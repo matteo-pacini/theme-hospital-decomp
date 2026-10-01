@@ -2,7 +2,7 @@
 
 extern "C" {
 
-void fn_000c93bf(char *dst, char *src);
+void strcat(char *dst, char *src);
 void LbErrorLog(char *fmt, ...);
 int strcmp(const char *a, const char *b);
 void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *));
@@ -66,10 +66,10 @@ char *read_line_from_buf(char *line, s32 max, char *src)
 char *modify_data_load_filename(TbLoadFiles *file)
 {
     if (file->install_level > install_type) {
-        fn_000bbff0(filename, cd_install_path);
-        fn_000c93bf(filename, (char *)file);
+        lib_strcpy(filename, cd_install_path);
+        strcat(filename, (char *)file);
     } else {
-        fn_000bbff0(filename, (char *)file);
+        lib_strcpy(filename, (char *)file);
     }
     check_cd_available(filename);
     LbErrorLog(filename);
@@ -117,7 +117,7 @@ s32 read_config_file(void)
             return -1;
         data[value++] = 0;
         if (!strcmp(data + key, "INSTALL_PATH")) {
-            fn_000bbff0(cd_install_path, data + value);
+            lib_strcpy(cd_install_path, data + value);
             LbDataLoadSetModifyFilenameFunction(modify_data_load_filename);
         } else if (!strcmp(data + key, "INSTALL_TYPE")) {
             switch (tolower((s8)data[value + 1])) {
@@ -155,7 +155,7 @@ s32 read_config_file(void)
             }
             myplayer.language = install_language;
         } else if (!strcmp(data + key, "SAVE_OVERRIDE")) {
-            fn_000bbff0(statvar.save_root, data + value);
+            lib_strcpy(statvar.save_root, data + value);
         } else {
             LbMemoryFree(data);
             return -1;

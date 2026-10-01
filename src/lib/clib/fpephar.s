@@ -9,10 +9,10 @@
     push ds
     cmp byte ptr ["___MST_pic"], 0x20
     jne .L000fdd3e
-    lea edx, ["fn_000fd992_"+0x15]
+    lea edx, ["__Enable_FPE_"+0x15]
     jmp .L000fdd44
 .L000fdd3e:
-    lea edx, ["fn_000fd992_"+0x22]
+    lea edx, ["__Enable_FPE_"+0x22]
 .L000fdd44:
     cmp byte ptr ["__Extender"], 3
     jae .L000fdd6b

@@ -4,28 +4,28 @@ extern "C" {
 
 extern u8 error_number;
 extern View ScreenBoxes;
-extern Point D_00146c8c[];
+extern Point ScreenCoords[];
 extern Button screenbuttons[];
-extern u8 D_0013bb0c[], D_0013c0fc[], window_list[], button_list[], screenlistpos[];
-extern u8 hiresbuttons[], panel_popup_coord[], D_0012cc3c[];
-extern u8 D_00147314[];
-extern int hireshelp[], D_0014be34[];
+extern u8 HiresBoxes[], HiresCoords[], window_list[], button_list[], screenlistpos[];
+extern u8 hiresbuttons[], panel_popup_coord[], litter_pos[];
+extern u8 hiresglass[];
+extern int hireshelp[], loreshelp[];
 extern u8 *palette;
 extern TbSprite *end_pointers;
 extern u8 *pointer_data;
-extern char *D_0013e80c;
-extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef;
-extern s32 D_001581e8;
+extern char *palette_filename;
+extern u8 record_replay, play_replay, replay_mode, replay_number;
+extern s32 replay_file;
 extern void *heapptr;
 
 void LbDataLoadAll(TbLoadFiles *files);
 void setup_mcga_elements(void);
 void FreeAudio(void);
 int LbScreenSetupAnyMode(int mode, ...);
-void fn_0001102c(void);
+void setup_lores_screen(void);
 void use_hires_help_and_fonts(void);
 void use_lores_help_and_fonts(void);
-void fn_000110b0(void);
+void use_hires_layout(void);
 
 }
 
@@ -52,11 +52,11 @@ u8 setup_host(void)
         return 1;
     }
     if (install_type < 2) {
-        sprintf(path, "%s%s", cd_install_path, D_0013e80c);
+        sprintf(path, "%s%s", cd_install_path, palette_filename);
         check_cd_available(path);
         LbFileLoadAt(path, palette);
     } else {
-        LbFileLoadAt(D_0013e80c, palette);
+        LbFileLoadAt(palette_filename, palette);
     }
     if (debug.direct_start) {
         load_game_files();
@@ -69,10 +69,10 @@ u8 setup_host(void)
     resvars.tile_width = 0x40;
     resvars.tile_width = 0x40;
     resvars.tile_height = 0x20;
-    resvars.boxes_u8p = D_0013bb0c;
+    resvars.boxes_u8p = HiresBoxes;
     resvars.screen_boxes = &ScreenBoxes;
-    resvars.coords_u8p = D_0013c0fc;
-    resvars.screen_coords = D_00146c8c;
+    resvars.coords_u8p = HiresCoords;
+    resvars.screen_coords = ScreenCoords;
     resvars.window_list_u8p = window_list;
     resvars.button_list = button_list;
     resvars.screen_list_pos = screenlistpos;
@@ -80,12 +80,12 @@ u8 setup_host(void)
     resvars.help_hotspots_intp = hireshelp;
     resvars.panel_popup_coords = panel_popup_coord;
     resvars.game_mode = SCREEN_MODE_13;
-    resvars.litter_pos = D_0012cc3c;
+    resvars.litter_pos = litter_pos;
     resvars.advisor_min_segments = 3;
     resvars.advisor_max_segments = 0x20;
     resvars.screen_mode = SCREEN_MODE_13;
     resvars.font_filenames_charpp = hires_font_filenames;
-    resvars.glass_frames = D_00147314;
+    resvars.glass_frames = hiresglass;
     resvars.screen_buttons = screenbuttons;
     resvars.game_files_state = 0;
     if (!display_loading_screen()) {
@@ -105,18 +105,18 @@ u8 setup_host(void)
     LbMouseChangeSprite(0);
     LbDataLoad(thingfiles);
     othervar.fade_palette = 0;
-    D_001581ee = 0;
-    if (D_001581ec) {
-        sprintf(name, "SAVE/PLAY.R%d", D_001581ef);
-        D_001581e8 = LbFileOpen(name, 0);
-        if (D_001581e8) {
-            D_001581ee |= 1;
+    replay_mode = 0;
+    if (record_replay) {
+        sprintf(name, "SAVE/PLAY.R%d", replay_number);
+        replay_file = LbFileOpen(name, 0);
+        if (replay_file) {
+            replay_mode |= 1;
         }
-    } else if (D_001581ed) {
-        sprintf(name, "SAVE/PLAY.R%d", D_001581ef);
-        D_001581e8 = LbFileOpen(name, 2);
-        if (D_001581e8) {
-            D_001581ee |= 2;
+    } else if (play_replay) {
+        sprintf(name, "SAVE/PLAY.R%d", replay_number);
+        replay_file = LbFileOpen(name, 2);
+        if (replay_file) {
+            replay_mode |= 2;
         }
     }
     debug.screenshot_number = -1;
@@ -149,22 +149,22 @@ void reset_host(void)
     LbScreenReset();
     switch (error_number) {
     case 1:
-        fn_000bbff0(error_string, "Language Setup Failed.\n");
+        lib_strcpy(error_string, "Language Setup Failed.\n");
         break;
     case 2:
-        fn_000bbff0(error_string, "No Mouse Detected.\n");
+        lib_strcpy(error_string, "No Mouse Detected.\n");
         break;
     case 3:
-        fn_000bbff0(error_string, "Failed to initialise MCGA screen\n");
+        lib_strcpy(error_string, "Failed to initialise MCGA screen\n");
         break;
     case 4:
-        fn_000bbff0(error_string, "Failed to initialise VRES256 screen\n");
+        lib_strcpy(error_string, "Failed to initialise VRES256 screen\n");
         break;
     case 5:
-        fn_000bbff0(error_string, "Memory allocation failure\n");
+        lib_strcpy(error_string, "Memory allocation failure\n");
         break;
     case 6:
-        fn_000bbff0(error_string, "Heap allocation failure\n");
+        lib_strcpy(error_string, "Heap allocation failure\n");
         break;
     case 8:
         hosp_dos_printf("Speech Setup Failed. Sample too Large\n");
@@ -191,8 +191,8 @@ void reset_host(void)
         break;
     }
     unload_game_files();
-    if (D_001581ee & 3) {
-        LbFileClose(D_001581e8);
+    if (replay_mode & 3) {
+        LbFileClose(replay_file);
     }
     close_sound_heap();
     FreeAudio();
@@ -310,7 +310,7 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
 
 // Switches to 320x200 with the low-resolution help layout and fonts.
 // FUNCTION: 0x0001102c
-void fn_0001102c(void)
+void setup_lores_screen(void)
 {
     use_lores_help_and_fonts();
     setup_any_screen(palette, SCREEN_MODE_1);
@@ -328,7 +328,7 @@ void use_hires_help_and_fonts(void)
 // FUNCTION: 0x00011084
 void use_lores_help_and_fonts(void)
 {
-    resvars.help_hotspots_intp = D_0014be34;
+    resvars.help_hotspots_intp = loreshelp;
     resvars.font_filenames_charpp = lores_font_filenames;
 }
 
@@ -336,17 +336,17 @@ void use_lores_help_and_fonts(void)
 // (exiting the program if it cannot), resets the view window and rebuilds
 // the menus and pointer sprites. The screen mode itself is not changed.
 // FUNCTION: 0x000110b0
-void fn_000110b0(void)
+void use_hires_layout(void)
 {
     statvar.view_height = lbScreenModeInfo[SCREEN_MODE_13].height - 0x30;
     statvar.unknowne6 = 0x1c;
     statvar.unknowne7 = 0x1f;
     resvars.game_mode = SCREEN_MODE_13;
     resvars.screen_mode = SCREEN_MODE_13;
-    resvars.boxes_u8p = D_0013bb0c;
+    resvars.boxes_u8p = HiresBoxes;
     resvars.screen_boxes = &ScreenBoxes;
-    resvars.coords_u8p = D_0013c0fc;
-    resvars.screen_coords = D_00146c8c;
+    resvars.coords_u8p = HiresCoords;
+    resvars.screen_coords = ScreenCoords;
     resvars.tile_height = 0x20;
     resvars.tile_width = 0x40;
     resvars.window_list_u8p = window_list;
@@ -361,7 +361,7 @@ void fn_000110b0(void)
     resvars.font_filenames_charpp = hires_font_filenames;
     resvars.advisor_min_segments = 3;
     resvars.advisor_max_segments = 0x20;
-    resvars.litter_pos = D_0012cc3c;
+    resvars.litter_pos = litter_pos;
     if (face_file != -1) {
         LbFileClose(face_file);
         face_file = -1;

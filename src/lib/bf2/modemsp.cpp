@@ -24,7 +24,7 @@ ModemSP::ModemSP(__4dn7ojSerialInitData *init_data) : SerialSP(init_data)
 // FUNCTION: 0xee718
 TbError ModemSP::Release(void)
 {
-    fn_000c20c0("  LbNETWORK : Releasing ModemSP\n");
+    NetworkDebugPrintf("  LbNETWORK : Releasing ModemSP\n");
     if (in_session)
         Stop();
     return SerialSP::Release();
@@ -71,47 +71,47 @@ TbError ModemSP::Start(char *session, char *name, u32 max_players, void *data)
         result = comm->InitModem();
         comm->SetInitModemFunc(0);
         if (result == -7) {
-            fn_000c20c0("MODEM: USER ABORTS MODEM INIT FUNCTION");
+            NetworkDebugPrintf("MODEM: USER ABORTS MODEM INIT FUNCTION");
             init->result = result;
             return Lb_FAIL;
         }
         if (result == -1) {
-            fn_000c20c0("MODEM: Didin't get modem Response from InitModem\n");
+            NetworkDebugPrintf("MODEM: Didin't get modem Response from InitModem\n");
             init->result = result;
             return Lb_FAIL;
         }
         if (result != 1) {
-            fn_000c20c0("MODEM: Modem Response wasn't OK on InitModem\n");
+            NetworkDebugPrintf("MODEM: Modem Response wasn't OK on InitModem\n");
             strcpy(init->response, CH(comm)->response);
             init->result = result;
-            fn_000c20c0("MODEM RESPONSE CODE = %s\n", comm);
+            NetworkDebugPrintf("MODEM RESPONSE CODE = %s\n", comm);
             return Lb_FAIL;
         }
         strcpy(init->response, CH(comm)->response);
         init->result = result;
-        fn_000c20c0("MODEM RESPONSE CODE = %s\n", comm);
+        NetworkDebugPrintf("MODEM RESPONSE CODE = %s\n", comm);
         comm->SendModemString(CH(comm)->reset_str);
         response = comm->GetModemResponse(CH(comm)->timeout);
-        fn_000c20c0("ANSWER MODEM RESPONSE CODE = %s\n", comm);
+        NetworkDebugPrintf("ANSWER MODEM RESPONSE CODE = %s\n", comm);
         if (response == 1 || response == 3 || response == 2) {
             ret = SerialSP::Start(session, name, max_players, 0);
             if (ret != Lb_OK) {
                 if (response != 1) {
-                    fn_000c20c0("MODEM: I COULDNT JOIN SERVER SO I MUST HANGUP THE MODEM\n");
+                    NetworkDebugPrintf("MODEM: I COULDNT JOIN SERVER SO I MUST HANGUP THE MODEM\n");
                     comm->HangUpModem();
                 }
-                fn_000c20c0("MODEM: TURN OFF AUTO ANSWER BY CALLING INITIALISE\n");
+                NetworkDebugPrintf("MODEM: TURN OFF AUTO ANSWER BY CALLING INITIALISE\n");
                 comm->InitModem();
             }
         } else if (response == -1) {
-            fn_000c20c0("MODEM: Didn't responsded to Auto Answer Command\n");
+            NetworkDebugPrintf("MODEM: Didn't responsded to Auto Answer Command\n");
             init->result = response;
             return Lb_FAIL;
         } else {
-            fn_000c20c0("MODEM: Responded with the following return Code\n");
+            NetworkDebugPrintf("MODEM: Responded with the following return Code\n");
             strcpy(init->response, CH(comm)->response);
             init->result = response;
-            fn_000c20c0("MODEM RESPONSE CODE = %s\n", comm);
+            NetworkDebugPrintf("MODEM RESPONSE CODE = %s\n", comm);
             return Lb_FAIL;
         }
     }
@@ -149,63 +149,63 @@ TbError ModemSP::Start(TbNetworkSessionNameEntry *session, char *name, void *dat
             result = comm->InitModem();
             comm->SetInitModemFunc(0);
             if (result == -7) {
-                fn_000c20c0("USER ABORTS MODEM INIT FUNCTION\n");
+                NetworkDebugPrintf("USER ABORTS MODEM INIT FUNCTION\n");
                 init->result = result;
                 return Lb_FAIL;
             }
             if (result == -1) {
-                fn_000c20c0("DIDN'T GET MODEM RESPONSE FROM INIT FUNCTION\n");
+                NetworkDebugPrintf("DIDN'T GET MODEM RESPONSE FROM INIT FUNCTION\n");
                 init->result = result;
                 return Lb_FAIL;
             }
             if (result != 1) {
                 strcpy(init->response, CH(comm)->response);
                 init->result = result;
-                fn_000c20c0("DIDN'T GET OK MODEM RESPONSE CODE FOR INIT= %s\n", comm);
+                NetworkDebugPrintf("DIDN'T GET OK MODEM RESPONSE CODE FOR INIT= %s\n", comm);
                 return Lb_FAIL;
             }
             strcpy(init->response, CH(comm)->response);
             init->result = result;
-            fn_000c20c0("MODEM RESPONSE CODE = %s\n", comm);
+            NetworkDebugPrintf("MODEM RESPONSE CODE = %s\n", comm);
             result = comm->DialModem(init->number);
             comm->SetDialModemFunc(0);
             if (result == -7) {
-                fn_000c20c0("USER ABORTS MODEM DIALING FUNCTION\n");
+                NetworkDebugPrintf("USER ABORTS MODEM DIALING FUNCTION\n");
                 init->result = result;
-                fn_000c20c0("OK ILL BETTER HANGUP THE MODEM JUST IN-CASE\n");
+                NetworkDebugPrintf("OK ILL BETTER HANGUP THE MODEM JUST IN-CASE\n");
                 comm->HangUpModem();
                 return Lb_FAIL;
             }
             if (result == -1) {
-                fn_000c20c0("NO MODEM RESPONSE FROM DIALING\n");
+                NetworkDebugPrintf("NO MODEM RESPONSE FROM DIALING\n");
                 init->result = result;
-                fn_000c20c0("OK ILL BETTER HANGUP THE MODEM JUST IN-CASE\n");
+                NetworkDebugPrintf("OK ILL BETTER HANGUP THE MODEM JUST IN-CASE\n");
                 comm->HangUpModem();
                 return Lb_FAIL;
             }
             strcpy(init->response, CH(comm)->response);
             init->result = result;
-            fn_000c20c0("MODEM RESPONSE CODE = %s\n", comm);
+            NetworkDebugPrintf("MODEM RESPONSE CODE = %s\n", comm);
             if (result == 2) {
                 ret = SerialSP::Start((TbNetworkSessionNameEntry *)0, name, 0);
                 if (ret == Lb_FAIL) {
                     memset(init->response, 0, sizeof(init->response));
                     init->result = -2;
-                    fn_000c20c0("NO SERVER FOUND HANGINGUP MODEM\n");
+                    NetworkDebugPrintf("NO SERVER FOUND HANGINGUP MODEM\n");
                     comm->HangUpModem();
                     return ret;
                 }
             } else if (result == 4) {
-                fn_000c20c0("MODEM: IS BUSY OR ENGAGED\n");
+                NetworkDebugPrintf("MODEM: IS BUSY OR ENGAGED\n");
                 return Lb_FAIL;
             } else if (result == 7) {
-                fn_000c20c0("MODEM: THERE IS NO DIALTONE\n");
+                NetworkDebugPrintf("MODEM: THERE IS NO DIALTONE\n");
                 return Lb_FAIL;
             } else if (result == 5) {
-                fn_000c20c0("MODEM DIDN'T UNDERSTAND MODEM STRING\n");
+                NetworkDebugPrintf("MODEM DIDN'T UNDERSTAND MODEM STRING\n");
                 return Lb_FAIL;
             } else if (result == 6) {
-                fn_000c20c0("MODEM: THERE IS NOCARRIER\n");
+                NetworkDebugPrintf("MODEM: THERE IS NOCARRIER\n");
                 return Lb_FAIL;
             }
         }
@@ -229,7 +229,7 @@ TbError ModemSP::Stop(void)
 
     if (in_session) {
         ret = SerialSP::Stop();
-        fn_000c20c0("CALLING HANGUPMODEM\n");
+        NetworkDebugPrintf("CALLING HANGUPMODEM\n");
         comm->HangUpModem();
     }
     return ret;

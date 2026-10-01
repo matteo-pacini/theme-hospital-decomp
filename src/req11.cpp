@@ -227,7 +227,7 @@ void req11_help_object(void)
 
     idx = req_indices[resvars.help_hotspots_HelpHotspotp[othervar.help_hotspot].req_slot];
     if (idx)
-        fn_000bbff0(othervar.help_msg, object_help[idx]);
+        lib_strcpy(othervar.help_msg, object_help[idx]);
 }
 
 // Help text for the plus button of a buy objects entry, into othervar.help_msg.
@@ -238,7 +238,7 @@ void req11_help_plus(void)
 
     idx = req_indices[resvars.help_hotspots_HelpHotspotp[othervar.help_hotspot].req_slot];
     if (idx)
-        fn_000bbff0(othervar.help_msg, help_text[0x29]);
+        lib_strcpy(othervar.help_msg, help_text[0x29]);
 }
 
 // Help text for the minus button of a buy objects entry, into othervar.help_msg.
@@ -249,5 +249,5 @@ void req11_help_minus(void)
 
     idx = req_indices[resvars.help_hotspots_HelpHotspotp[othervar.help_hotspot].req_slot];
     if (idx)
-        fn_000bbff0(othervar.help_msg, help_text[0x2a]);
+        lib_strcpy(othervar.help_msg, help_text[0x2a]);
 }

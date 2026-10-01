@@ -5,7 +5,7 @@ extern "C" {
 
 u8 check_room_mutex(Thing *staff);
 Thing *search_mapwho(Map *cell, u16 kind);
-void fn_0003b234(Thing *w);
+void stop_waiting_for_patient(Thing *w);
 
 }
 
@@ -276,14 +276,14 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
             if (doctor->timer <= 0) {
                 result = call_person_again(doctor, 0x28, doctor->room->door_tile);
                 if (result == 0) {
-                    fn_0003b234(doctor);
+                    stop_waiting_for_patient(doctor);
                 } else if (result == 1) {
-                    fn_0003b234(doctor);
+                    stop_waiting_for_patient(doctor);
                     interrupt_person(patient);
                     start_person_going(patient);
                 }
             } else if (forget_about_my_slave(doctor, 0x28)) {
-                fn_0003b234(doctor);
+                stop_waiting_for_patient(doctor);
             }
         }
     } else {
@@ -295,7 +295,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
 // for a surgeon, also releases the other surgeon waiting with them (state
 // 0x18).
 // FUNCTION: 0x0003b234
-void fn_0003b234(Thing *w)
+void stop_waiting_for_patient(Thing *w)
 {
     w->state = get_state(w->room->type, w);
     w->slave = 0;

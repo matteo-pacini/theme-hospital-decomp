@@ -31,8 +31,8 @@ extern Event D_001549d0[];
 extern char **town_names;
 extern char **town_details;
 extern u8 D_00156910;
-extern u8 D_00158166;
-extern u8 D_00158192;
+extern Menu overview;
+extern Menu choice;
 void LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height);
 void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 void conv_string(char *dst, s8 *src, u8 mode);
@@ -43,7 +43,7 @@ void display_overhead_map(void);
 void draw_town_select(void);
 void process_keys_town_select(void);
 void remove_town_bid(void);
-void fn_00068a14(void);
+void reset_screen_states(void);
 void display_bid_map(void);
 extern u8 *palette;
 }
@@ -119,7 +119,7 @@ void draw_town_select(void)
         remove_town_bid();
         town.state = 0;
         LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
-        fn_00068a14();
+        reset_screen_states();
         break;
     case 7:
         compute_help_text(0, 0, 0x13);
@@ -1297,7 +1297,7 @@ void draw_money_on_town(void)
     set_font_from_cache(0x1a);
     h = lbFontPtr ? lbFontPtr[18].height : 0;
     if (othervar.shown_balance != myhosp->balance) {
-        diff = fn_000cb2db(othervar.shown_balance - myhosp->balance);
+        diff = abs(othervar.shown_balance - myhosp->balance);
         if (diff >= 1000000)
             digits = 0;
         else if (diff >= 100000)
@@ -1352,7 +1352,7 @@ extern "C" void remove_town_bid(void)
         display_mode = othervar.town_bid_return_mode;
         switch (display_mode) {
         case 9:
-            D_00158192 = 0x5a;
+            choice.state = 0x5a;
             break;
         case 0:
         case 11:
@@ -1393,7 +1393,7 @@ extern "C" void remove_town_bid(void)
 
 // Resets the full-screen windows' states so they reopen from scratch.
 // FUNCTION: 0x00068a14
-extern "C" void fn_00068a14(void)
+extern "C" void reset_screen_states(void)
 {
     bank.state = 0;
     drugs.state = 0;
@@ -1402,7 +1402,7 @@ extern "C" void fn_00068a14(void)
     graphs.state = 0;
     slist.state = 0;
     manager.state = 0;
-    D_00158166 = 0;
+    overview.state = 0;
     reputation.state = 0;
     variables.state = 0;
     yearend.state = 0;

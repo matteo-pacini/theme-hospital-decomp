@@ -22,7 +22,7 @@ void setpit(unsigned short divisor);
     modify exact [eax];
 
 extern void (__pascal *SmackTimerDoneAddr)(void);
-extern u32 (__far *D_0018d666)(void);
+extern u32 (__far *snaddr)(void);
 
 void vtdentry(void);
 #pragma aux vtdentry = \
@@ -32,26 +32,26 @@ void vtdentry(void);
     "xor di,di" \
     "mov es,di" \
     "int 2fh" \
-    "mov word ptr D_0018d666,di" \
-    "mov word ptr D_0018d666+2,0" \
-    "mov word ptr D_0018d666+4,es" \
+    "mov word ptr snaddr,di" \
+    "mov word ptr snaddr+2,0" \
+    "mov word ptr snaddr+4,es" \
     "pop es" \
     modify [eax ebx edi];
 
 u32 vtdread(void);
 #pragma aux vtdread = \
     "mov eax,101h" \
-    "call fword ptr D_0018d666" \
+    "call fword ptr snaddr" \
     value [eax];
 
 void __pascal DOSSmackTimerDone(void);
-#pragma aux (__pascal) DOSSmackTimerDone "fn_000f2f70_";
+#pragma aux (__pascal) DOSSmackTimerDone "DOSSMACKTIMERDONE";
 u32 __pascal VTDSmackTimerRead(void);
-#pragma aux (__pascal) VTDSmackTimerRead "fn_000f2f80_";
+#pragma aux (__pascal) VTDSmackTimerRead "VTDSMACKTIMERREAD";
 u32 __pascal BIOSSmackTimerRead(void);
-#pragma aux (__pascal) BIOSSmackTimerRead "fn_000f2fa0_";
+#pragma aux (__pascal) BIOSSmackTimerRead "BIOSSMACKTIMERREAD";
 void __pascal DOSSmackTimerSetup(void);
-#pragma aux (__pascal) DOSSmackTimerSetup "fn_000f2ec0_";
+#pragma aux (__pascal) DOSSmackTimerSetup "DOSSMACKTIMERSETUP";
 
 u32 (__pascal *SmackTimerReadAddr)(void) = 0;
 static u32 timeradjust = 0;
@@ -93,7 +93,7 @@ void __pascal DOSSmackTimerSetup(void)
     if (timeradjust == 0) {
         SmackTimerDoneAddr = DOSSmackTimerDone;
         vtdentry();
-        if (D_0018d666 != 0) {
+        if (snaddr != 0) {
             SmackTimerReadAddr = VTDSmackTimerRead;
             timeradjust = 1;
             return;

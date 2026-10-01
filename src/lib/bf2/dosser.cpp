@@ -15,8 +15,8 @@ void delay(unsigned ms);
 unsigned short FP_SEG(const volatile void __far *p);
 #pragma aux FP_SEG = parm caller [eax dx] value [dx];
 #define FP_OFF(p) ((unsigned)(p))
-extern u8 D_00110068[];
-extern u8 D_001100fe[];
+extern u8 serial_handler_code[];
+extern u8 serial_handler_code_end[];
 typedef struct __iobuf FILE;
 FILE *fopen(const char *name, const char *access_mode);
 int fgetc(FILE *fp);
@@ -189,7 +189,7 @@ SerialHandler::SerialHandler()
 
 // Destroys the serial handler (nothing to do).
 // NONMATCHING: the entry also covers SerialHandler::Init's body, where the size
-// _D_001100fe - _D_00110068 is computed in other registers
+// _serial_handler_code_end - _serial_handler_code is computed in other registers
 // FUNCTION: 0xf534c
 SerialHandler::~SerialHandler()
 {
@@ -212,10 +212,10 @@ long SerialHandler::Init(long port)
         dev = (TbSerialDev *)AllocDosMem(0x10c9, &dos_sel[port]);
     if (!dev)
         return 0;
-    size = D_001100fe - D_00110068;
-    memcpy(dev, D_00110068, size);
+    size = serial_handler_code_end - serial_handler_code;
+    memcpy(dev, serial_handler_code, size);
     *(u16 *)&dev->isr_code[2] = com_dev[port].base;
-    fn_000c20c0("SERIALHANDLER size %d Port %x IRQ %x INT VECT %x\n", size, *(u16 *)&dev->isr_code[2], com_dev[port].irq, com_dev[port].vector);
+    NetworkDebugPrintf("SERIALHANDLER size %d Port %x IRQ %x INT VECT %x\n", size, *(u16 *)&dev->isr_code[2], com_dev[port].irq, com_dev[port].vector);
     dev->port = port;
     dev->base = com_dev[dev->port].base;
     dev->vector = com_dev[dev->port].vector;
@@ -591,10 +591,10 @@ void SerialHandler::init_com_port(TbSerialDev *dev)
     outp(dev->base + 2, 0);
     outp(dev->base + 2, 0xc1);
     if ((inp(dev->base + 2) & 0xf8) == 0xc0) {
-        fn_000c20c0("COM PORT HAS 16550 FIFO\n");
+        NetworkDebugPrintf("COM PORT HAS 16550 FIFO\n");
         outp(dev->base + 2, 0x41);
     } else {
-        fn_000c20c0("COM PORT HAS A 8250 PORT\n");
+        NetworkDebugPrintf("COM PORT HAS A 8250 PORT\n");
         outp(dev->base + 2, 0);
     }
     outp(dev->base + 1, 1);
@@ -892,13 +892,13 @@ long CommHandler::HangUpModem(void)
         ;
     strcpy(CH(this)->response, "OK");
     GetModemResponse(CH(this)->timeout);
-    fn_000c20c0("+++ RESPONSE CODE = %s\n", CH(this)->response);
+    NetworkDebugPrintf("+++ RESPONSE CODE = %s\n", CH(this)->response);
     SendModemString(CH(this)->hangup_str);
     GetModemResponse(CH(this)->timeout);
-    fn_000c20c0("HangUP RESPONSE CODE = %s\n", CH(this)->response);
+    NetworkDebugPrintf("HangUP RESPONSE CODE = %s\n", CH(this)->response);
     SendModemString("ATS0=0");
     GetModemResponse(CH(this)->timeout);
-    fn_000c20c0("ATS0=0 RESPONSE CODE = %s\n", CH(this)->response);
+    NetworkDebugPrintf("ATS0=0 RESPONSE CODE = %s\n", CH(this)->response);
     CH(this)->online = 0;
     ClearDtr();
     ClearRts();
@@ -934,11 +934,11 @@ long CommHandler::ReadConfigFile(char *filename)
     FILE *f;
     s16 i;
 
-    fn_000c20c0("ATTEMPTING TO OPEN FILE %s\n", filename);
+    NetworkDebugPrintf("ATTEMPTING TO OPEN FILE %s\n", filename);
     if (filename) {
         f = fopen(filename, "rt");
         if (f) {
-            fn_000c20c0("CommHandler::ReadConfigFile with file %s\n", filename);
+            NetworkDebugPrintf("CommHandler::ReadConfigFile with file %s\n", filename);
             for (i = 0; i < 4; i++) {
                 read_a_line(f, buf);
                 read_a_line(f, buf);
@@ -985,7 +985,7 @@ void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
                 data->reset_str = CH(this)->reset_str;
         }
     } else {
-        fn_000c20c0("CommHandler::ReadSerialDev NULL parameter passed\n");
+        NetworkDebugPrintf("CommHandler::ReadSerialDev NULL parameter passed\n");
     }
 }
 

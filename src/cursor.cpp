@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-void fn_000c9be0(int x1, int y1, int x2, int y2, u8 colour);
+void LbDrawLine(int x1, int y1, int x2, int y2, u8 colour);
 }
 
 void draw_cell_no_editor(s32 x, s32 y, u8 colour);
@@ -73,10 +73,10 @@ void draw_cell_no(s32 cell, u8 colour)
 void draw_cell_no_editor(s32 x, s32 y, u8 colour)
 {
     if (-(resvars.tile_width / 2) <= x && resvars.tile_width / 2 + lbDisplay.graphics_screen_width > x && -resvars.tile_height <= y && lbDisplay.physical_screen_height - 0x5c > y) {
-        fn_000c9be0(x, y, (resvars.tile_width - 1) / 2 + x - 1, y + (resvars.tile_height - 1) / 2, colour);
-        fn_000c9be0((resvars.tile_width - 1) / 2 + x, y + (resvars.tile_height - 1) / 2, x, y + (resvars.tile_height - 1), colour);
-        fn_000c9be0(x, resvars.tile_height - 1 + y, x - (resvars.tile_width - 1) / 2, y + (resvars.tile_height - 1) / 2, colour);
-        fn_000c9be0(x - (resvars.tile_width - 1) / 2, y + (resvars.tile_height - 1) / 2, x, y, colour);
+        LbDrawLine(x, y, (resvars.tile_width - 1) / 2 + x - 1, y + (resvars.tile_height - 1) / 2, colour);
+        LbDrawLine((resvars.tile_width - 1) / 2 + x, y + (resvars.tile_height - 1) / 2, x, y + (resvars.tile_height - 1), colour);
+        LbDrawLine(x, resvars.tile_height - 1 + y, x - (resvars.tile_width - 1) / 2, y + (resvars.tile_height - 1) / 2, colour);
+        LbDrawLine(x - (resvars.tile_width - 1) / 2, y + (resvars.tile_height - 1) / 2, x, y, colour);
         set_all_refresh_zones_in_window(x - (resvars.tile_width - 1) / 2, y, (resvars.tile_width - 1) / 2 + x - 1, resvars.tile_height - 1 + y, 3);
     }
 }

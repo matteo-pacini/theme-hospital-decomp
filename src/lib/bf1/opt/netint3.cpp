@@ -64,7 +64,7 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
     ret = Lb_FAIL;
     spPtr->Receive(RECV_ADD_PLAYER | RECV_DELETE_PLAYER);
     if (player >= maximumPlayers) {
-        fn_000c20c0("  Warning: LbNetwork_Send() player index %d is out of range (max = %d)\n", player, maximumPlayers - 1);
+        NetworkDebugPrintf("  Warning: LbNetwork_Send() player index %d is out of range (max = %d)\n", player, maximumPlayers - 1);
         return Lb_FAIL;
     }
     if (!clientDataTable[player].active)
@@ -87,7 +87,7 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
                 case 1:
                     msg = &incomingUnidirectionalMessage;
                     if (msg->block > last_block || msg->last > last_block) {
-                        fn_000c20c0("  Warning : LbNetwork_Send() requested page numbers %d to %d are out of range\n", msg->block, msg->last);
+                        NetworkDebugPrintf("  Warning : LbNetwork_Send() requested page numbers %d to %d are out of range\n", msg->block, msg->last);
                         running = 0;
                         break;
                     }
@@ -100,7 +100,7 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
                         if (spPtr->Send(id, &dataMessage) == Lb_OK) {
                             start = LbTimerClock();
                         } else {
-                            fn_000c20c0("  Warning: LbNetwork_Send() failure on SP::Send() for DATA Page  # %d\n", block);
+                            NetworkDebugPrintf("  Warning: LbNetwork_Send() failure on SP::Send() for DATA Page  # %d\n", block);
                             running = 0;
                         }
                     }
@@ -117,13 +117,13 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
             } else {
                 elapsed = LbTimerClock() - start;
                 if ((elapsed < 0 ? -elapsed : elapsed) > 30000) {
-                    fn_000c20c0("  Warning : LbNetwork_Send() timeout on CTS or END\n");
+                    NetworkDebugPrintf("  Warning : LbNetwork_Send() timeout on CTS or END\n");
                     running = 0;
                 }
             }
         } while (running);
     } else {
-        fn_000c20c0("  Warning : LbNetwork_Send() failure on SP::Send() for RTS\n");
+        NetworkDebugPrintf("  Warning : LbNetwork_Send() failure on SP::Send() for RTS\n");
     }
     return ret;
 }
@@ -176,9 +176,9 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
                 block_size = incomingUnidirectionalMessage.last;
                 window = incomingUnidirectionalMessage.window;
                 if (block_size > 0x200)
-                    fn_000c20c0("  Warning : LbNetwork_Receive() page size %d is out of range\n", block_size);
+                    NetworkDebugPrintf("  Warning : LbNetwork_Receive() page size %d is out of range\n", block_size);
                 else if (total > len)
-                    fn_000c20c0("  Warning : LbNetwork_Receive() total size %d is out of range\n", total);
+                    NetworkDebugPrintf("  Warning : LbNetwork_Receive() total size %d is out of range\n", total);
                 else
                     got_rts = 1;
                 waiting = 0;
@@ -186,7 +186,7 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
                     abortMessage.type = 4;
                     EncodeMessageStub(&abortMessage, 4, MSG_TYPE_UNIDIRECTIONAL, 0);
                     if (spPtr->Send(id, &abortMessage) != Lb_OK) {
-                        fn_000c20c0("  Warning : LbNetwork_Receive() failure on SP::Send() for ABORT\n");
+                        NetworkDebugPrintf("  Warning : LbNetwork_Receive() failure on SP::Send() for ABORT\n");
                         waiting = 0;
                     }
                 }
@@ -194,7 +194,7 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
         } else {
             elapsed = LbTimerClock() - start;
             if ((elapsed < 0 ? -elapsed : elapsed) > 30000) {
-                fn_000c20c0("  Warning : LbNetwork_Receive() timeout on RTS\n");
+                NetworkDebugPrintf("  Warning : LbNetwork_Receive() timeout on RTS\n");
                 waiting = 0;
             }
         }
@@ -242,16 +242,16 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
                                     else
                                         first = last + 1;
                                 } else {
-                                    fn_000c20c0("  Warning : LbNetwork_Receive() unexpected page %d instead of %d to %d received\n", block, first, last);
+                                    NetworkDebugPrintf("  Warning : LbNetwork_Receive() unexpected page %d instead of %d to %d received\n", block, first, last);
                                     abortMessage.type = 4;
                                     waiting = 0;
                                     EncodeMessageStub(&abortMessage, 4, MSG_TYPE_UNIDIRECTIONAL, 0);
                                     running = 0;
                                     if (spPtr->Send(id, &abortMessage) != Lb_OK)
-                                        fn_000c20c0("  Warning : LbNetwork_Receive() failure on SP::Send() for ABORT\n");
+                                        NetworkDebugPrintf("  Warning : LbNetwork_Receive() failure on SP::Send() for ABORT\n");
                                 }
                             } else {
-                                fn_000c20c0("  Warning : LbNetwork_Receive() unexpected command %d received\n", incomingUnidirectionalMessage.type);
+                                NetworkDebugPrintf("  Warning : LbNetwork_Receive() unexpected command %d received\n", incomingUnidirectionalMessage.type);
                             }
                         } else {
                             elapsed = LbTimerClock() - block_time;
@@ -261,17 +261,17 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
                                 EncodeMessageStub(&abortMessage, 4, MSG_TYPE_UNIDIRECTIONAL, 0);
                                 running = 0;
                                 if (spPtr->Send(id, &abortMessage) != Lb_OK)
-                                    fn_000c20c0("  Warning : LbNetwork_Receive() failure on SP::Send() for ABORT\n");
+                                    NetworkDebugPrintf("  Warning : LbNetwork_Receive() failure on SP::Send() for ABORT\n");
                             }
                         }
                     }
                 } else {
-                    fn_000c20c0("  Warning : LbNetwork_Receive() failure on SP::Send() for CTS Pages %d to %d\n", first, last);
+                    NetworkDebugPrintf("  Warning : LbNetwork_Receive() failure on SP::Send() for CTS Pages %d to %d\n", first, last);
                     running = 0;
                     abortMessage.type = 4;
                     EncodeMessageStub(&abortMessage, 4, MSG_TYPE_UNIDIRECTIONAL, 0);
                     if (spPtr->Send(id, &abortMessage) != Lb_OK)
-                        fn_000c20c0("  Warning : LbNetwork_Receive() failure on SP::Send() for ABORT\n");
+                        NetworkDebugPrintf("  Warning : LbNetwork_Receive() failure on SP::Send() for ABORT\n");
                 }
             }
         } while (running);
@@ -279,7 +279,7 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
             endMessage.type = 3;
             EncodeMessageStub(&endMessage, 4, MSG_TYPE_UNIDIRECTIONAL, 0);
             if (spPtr->Send(id, &endMessage) != Lb_OK)
-                fn_000c20c0("  Warning : LbNetwork_Receive() failure on SP::Send() for END\n");
+                NetworkDebugPrintf("  Warning : LbNetwork_Receive() failure on SP::Send() for END\n");
         }
     }
     return result;

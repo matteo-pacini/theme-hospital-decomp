@@ -413,8 +413,8 @@ u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
                 if (flag == 0x96 && obj->in_use != 0) {
                     continue;
                 }
-                if (fn_000cb2db(x - obj->x.tile) <= 7) {
-                    if (fn_000cb2db(y - obj->y.tile) <= 7) {
+                if (abs(x - obj->x.tile) <= 7) {
+                    if (abs(y - obj->y.tile) <= 7) {
                         if (can_i_get_to(obj, tile) != 0) {
                             if (!obj->room_id) {
                                 if (random && count < 30) {
@@ -518,8 +518,8 @@ u16 find_nearest_free_object(u16 id, u8 kind)
     }
     for (obj = &thing[listhead[seeker->owner].objects[kind]]; obj > thing; obj = &thing[obj->type_obj_next]) {
         if (obj->in_use == 0) {
-            if ((dx = fn_000cb2db(seeker->x.tile - obj->x.tile)) <= 7) {
-                if ((dy = fn_000cb2db(seeker->y.tile - obj->y.tile)) <= 7) {
+            if ((dx = abs(seeker->x.tile - obj->x.tile)) <= 7) {
+                if ((dy = abs(seeker->y.tile - obj->y.tile)) <= 7) {
                     pos = obj->use_pos[side];
                     if (can_i_get_to(obj, pos) != 0) {
                         if (!obj->room_id) {
@@ -593,7 +593,7 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
             pos = obj->use_pos[side];
             if (can_i_get_to(seeker, pos) != 0) {
                 if (!obj->room_id) {
-                    dist = fn_000cb2db(seeker->x.tile - obj->x.tile) + fn_000cb2db(seeker->y.tile - obj->y.tile);
+                    dist = abs(seeker->x.tile - obj->x.tile) + abs(seeker->y.tile - obj->y.tile);
                     if (dist < best_dist) {
                         best_dist = dist;
                         best = obj;
@@ -631,7 +631,7 @@ u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_sp
                 continue;
             }
             score = staff->room->queue_length * gbv.q_points;
-            score += (fn_000cb2db(desk->x.tile - person->x.tile) + fn_000cb2db(desk->y.tile - person->y.tile)) * gbv.dist_points;
+            score += (abs(desk->x.tile - person->x.tile) + abs(desk->y.tile - person->y.tile)) * gbv.dist_points;
             score -= free;
             if (score < best_score) {
                 best_score = score;

@@ -2,13 +2,13 @@
 
 extern "C" {
 extern u8 oinkey;
-extern u8 D_00189688;
+extern u8 lbExtendedKeyPress;
 extern u8 lbInkeyFlags;
 extern u8 lbIInkey;
 extern u8 lbIInkeyFlags;
 void process_game_keys(u8 modifiers, u8 key);
-unsigned fn_000cd1bf(unsigned port);
-unsigned fn_000cd1c7(unsigned port, unsigned value);
+unsigned inp(unsigned port);
+unsigned outp(unsigned port, unsigned value);
 void (__interrupt __far *_dos_getvect(unsigned num))();
 void _dos_setvect(unsigned num, void (__interrupt __far *handler)());
 }
@@ -360,9 +360,9 @@ void __interrupt __far myKInt(void)
     u32 key;
     s32 port61;
 
-    lbInkey = fn_000cd1bf(0x60);
+    lbInkey = inp(0x60);
     if (oinkey == 0xe0) {
-        D_00189688 = 1;
+        lbExtendedKeyPress = 1;
         if (lbInkey == KC_LSHIFT || lbInkey == 0xaa) {
             lbInkey = 0x80;
             key = 0x80;
@@ -371,7 +371,7 @@ void __interrupt __far myKInt(void)
             lbKeyOn[key] = lbInkey <= 0x7f ? (u8)1 : (u8)0;
         }
     } else {
-        D_00189688 = 0;
+        lbExtendedKeyPress = 0;
         key = (u16)(lbInkey & 0x7f);
         lbKeyOn[key] = lbInkey <= 0x7f ? (u8)1 : (u8)0;
         if (lbKeyOn[key]) {
@@ -393,14 +393,14 @@ void __interrupt __far myKInt(void)
         lbInkeyFlags |= 0x40;
     if (lbKeyOn[key])
         lbKeyOn[key] |= lbInkeyFlags;
-    key = (s16)fn_000cd1bf(0x61);
+    key = (s16)inp(0x61);
     port61 = key;
     key |= 0x80;
-    fn_000cd1c7(0x61, key);
-    fn_000cd1c7(0x61, port61);
+    outp(0x61, key);
+    outp(0x61, port61);
     if (!(lbInkey >= 0x80 || lbIInkey)) {
         lbIInkey = lbInkey;
         lbIInkeyFlags = lbInkeyFlags;
     }
-    fn_000cd1c7(0x20, 0x20);
+    outp(0x20, 0x20);
 }

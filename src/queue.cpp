@@ -3,8 +3,8 @@
 extern "C" {
 
 extern Event D_001549d0[];
-extern u32 D_001603d0;
-extern RoomInfo *D_001603d4;
+extern u32 last_flag_turn;
+extern RoomInfo *last_flag_room;
 
 u16 nth_other_active_player(int nth);
 
@@ -472,10 +472,10 @@ void flag_all_queue_members(RoomInfo *room)
                 }
                 person = &thing[person->queue_next];
             }
-            if (game_turn - 1 != D_001603d0 || D_001603d4 != room)
+            if (game_turn - 1 != last_flag_turn || last_flag_room != room)
                 play_sound(SNDSRC_GENERAL, SFX_HLIGHTP2, -1, -1);
         }
     }
-    D_001603d4 = room;
-    D_001603d0 = game_turn;
+    last_flag_room = room;
+    last_flag_turn = game_turn;
 }

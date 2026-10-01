@@ -202,7 +202,7 @@ extern void (__pascal *SmackTimerDoneAddr)(void);
 extern void (__pascal *SmackTimerSetupAddr)(void);
 extern void (__pascal *LowSoundCheckAddr)(void);
 u8 (__pascal *LowSoundOpenAddr)(SmackSnd *snd, u32 flags) = NULL;
-extern void (__pascal *D_0018cdbc)(SmackSnd *snd);
+extern void (__pascal *LowSoundCloseAddr)(SmackSnd *snd);
 extern u32 (__pascal *LowSoundPlayedAddr)(SmackSnd *snd);
 extern void (__pascal *LowSoundPurgeAddr)(SmackSnd *snd);
 void (__pascal *LowSoundOffAddr)(SmackSnd *snd) = NULL;
@@ -1009,7 +1009,7 @@ void __pascal SmackClose(Smack *smk)
     if (smk->f430 != -1) {
         for (i = 0; i < 7; i++) {
             if (smk->sounds[i] != NULL) {
-                D_0018cdbc(smk->sounds[i]);
+                LowSoundCloseAddr(smk->sounds[i]);
                 RADFREE(smk->sounds[i]->buf);
                 RADFREE(smk->sounds[i]);
                 smk->sounds[i] = NULL;

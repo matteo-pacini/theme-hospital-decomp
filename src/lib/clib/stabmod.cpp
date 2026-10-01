@@ -22,7 +22,7 @@ struct THREAD_CTL {
 };
 
 extern THREAD_CTL _wint_thread_data;
-extern RW_DTREG *D_00151700;
+extern RW_DTREG *_wint_module_init;
 extern DTREG_VFPTRS *__wcpp_2_data_dtreg_vfptrs_[];
 
 void __wcpp_2_destruct_all_(void);
@@ -40,9 +40,9 @@ void __wcpp_2_module_dtor__(void)
 
     thr = &_wint_thread_data;
     for (;;) {
-        rw = D_00151700;
+        rw = _wint_module_init;
         if (rw != 0)
-            D_00151700 = rw->prev;
+            _wint_module_init = rw->prev;
         if (rw == 0)
             break;
         local.prev = thr->registered;
@@ -116,8 +116,8 @@ void __wcpp_2_mod_register__(RW_DTREG *rw);
 // FUNCTION: 0xcf24f
 void __wcpp_2_mod_register__(RW_DTREG *rw)
 {
-    rw->prev = D_00151700;
-    D_00151700 = rw;
+    rw->prev = _wint_module_init;
+    _wint_module_init = rw;
 }
 
 }

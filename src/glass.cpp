@@ -82,7 +82,7 @@ extern "C" {
 
 void StopSample(u32 source_id, u32 number);
 void LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
-void fn_000c9be0(int x1, int y1, int x2, int y2, u8 colour);
+void LbDrawLine(int x1, int y1, int x2, int y2, u8 colour);
 }
 
 s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay);
@@ -602,31 +602,31 @@ void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style)
 {
     lbDisplay.draw_flags = 0;
     if (!style) {
-        fn_000c9be0(x + 1, y + 1, x + w - 1, y + 1, Gray[2]);
-        fn_000c9be0(x + 2, y + 2, x + w - 2, y + 2, Gray[3]);
-        fn_000c9be0(x + 3, y + 3, x + w - 3, y + 3, Gray[4]);
-        fn_000c9be0(x + 1, y + 2, x + 1, y + h - 1, Gray[2]);
-        fn_000c9be0(x + 2, y + 3, x + 2, y + h - 2, Gray[3]);
-        fn_000c9be0(x + 3, y + 4, x + 3, y + h - 3, Gray[4]);
-        fn_000c9be0(x + 2, y + h - 1, x + w - 1, y + h - 1, Gray[5]);
-        fn_000c9be0(x + 3, y + h - 2, x + w - 2, y + h - 2, Gray[6]);
-        fn_000c9be0(x + 4, y + h - 3, x + w - 3, y + h - 3, Gray[7]);
-        fn_000c9be0(x + w - 1, y + 2, x + w - 1, y + h - 2, Gray[5]);
-        fn_000c9be0(x + w - 2, y + 3, x + w - 2, y + h - 3, Gray[6]);
-        fn_000c9be0(x + w - 3, y + 4, x + w - 3, y + h - 4, Gray[7]);
+        LbDrawLine(x + 1, y + 1, x + w - 1, y + 1, Gray[2]);
+        LbDrawLine(x + 2, y + 2, x + w - 2, y + 2, Gray[3]);
+        LbDrawLine(x + 3, y + 3, x + w - 3, y + 3, Gray[4]);
+        LbDrawLine(x + 1, y + 2, x + 1, y + h - 1, Gray[2]);
+        LbDrawLine(x + 2, y + 3, x + 2, y + h - 2, Gray[3]);
+        LbDrawLine(x + 3, y + 4, x + 3, y + h - 3, Gray[4]);
+        LbDrawLine(x + 2, y + h - 1, x + w - 1, y + h - 1, Gray[5]);
+        LbDrawLine(x + 3, y + h - 2, x + w - 2, y + h - 2, Gray[6]);
+        LbDrawLine(x + 4, y + h - 3, x + w - 3, y + h - 3, Gray[7]);
+        LbDrawLine(x + w - 1, y + 2, x + w - 1, y + h - 2, Gray[5]);
+        LbDrawLine(x + w - 2, y + 3, x + w - 2, y + h - 3, Gray[6]);
+        LbDrawLine(x + w - 3, y + 4, x + w - 3, y + h - 4, Gray[7]);
     } else {
-        fn_000c9be0(x + 1, y + 1, x + w - 1, y + 1, Gray[5]);
-        fn_000c9be0(x + 2, y + 2, x + w - 2, y + 2, Gray[6]);
-        fn_000c9be0(x + 3, y + 3, x + w - 3, y + 3, Gray[7]);
-        fn_000c9be0(x + 1, y + 2, x + 1, y + h - 1, Gray[5]);
-        fn_000c9be0(x + 2, y + 3, x + 2, y + h - 2, Gray[6]);
-        fn_000c9be0(x + 3, y + 4, x + 3, y + h - 3, Gray[7]);
-        fn_000c9be0(x + 2, y + h - 1, x + w - 1, y + h - 1, Gray[2]);
-        fn_000c9be0(x + 3, y + h - 2, x + w - 2, y + h - 2, Gray[3]);
-        fn_000c9be0(x + 4, y + h - 3, x + w - 3, y + h - 3, Gray[4]);
-        fn_000c9be0(x + w - 1, y + 2, x + w - 1, y + h - 2, Gray[2]);
-        fn_000c9be0(x + w - 2, y + 3, x + w - 2, y + h - 3, Gray[3]);
-        fn_000c9be0(x + w - 3, y + 4, x + w - 3, y + h - 4, Gray[4]);
+        LbDrawLine(x + 1, y + 1, x + w - 1, y + 1, Gray[5]);
+        LbDrawLine(x + 2, y + 2, x + w - 2, y + 2, Gray[6]);
+        LbDrawLine(x + 3, y + 3, x + w - 3, y + 3, Gray[7]);
+        LbDrawLine(x + 1, y + 2, x + 1, y + h - 1, Gray[5]);
+        LbDrawLine(x + 2, y + 3, x + 2, y + h - 2, Gray[6]);
+        LbDrawLine(x + 3, y + 4, x + 3, y + h - 3, Gray[7]);
+        LbDrawLine(x + 2, y + h - 1, x + w - 1, y + h - 1, Gray[2]);
+        LbDrawLine(x + 3, y + h - 2, x + w - 2, y + h - 2, Gray[3]);
+        LbDrawLine(x + 4, y + h - 3, x + w - 3, y + h - 3, Gray[4]);
+        LbDrawLine(x + w - 1, y + 2, x + w - 1, y + h - 2, Gray[2]);
+        LbDrawLine(x + w - 2, y + 3, x + w - 2, y + h - 3, Gray[3]);
+        LbDrawLine(x + w - 3, y + 4, x + w - 3, y + h - 4, Gray[4]);
     }
 }
 

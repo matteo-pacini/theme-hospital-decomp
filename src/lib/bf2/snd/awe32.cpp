@@ -47,7 +47,7 @@ extern "C" {
 extern u8 UseCurrentAwe32Soundfont;
 extern u8 Awe32SoundfontLoaded;
 char CurrentAwe32SoundfontPrefix[] = "Bullfrog";
-extern char D_0018c8b4[];
+extern char MusicDriverName[];
 
 int stricmp(const char *s, const char *t);
 char *strcpy(char *dst, const char *src);
@@ -258,7 +258,7 @@ void LoadAwe32Soundfont(char *prefix)
         Awe32SoundfontLoaded = 1;
         return;
     }
-    if (!MusicInstalled || !MusicAble || stricmp(D_0018c8b4, "SBAWE32.MDI") || stricmp(MusicType, "w"))
+    if (!MusicInstalled || !MusicAble || stricmp(MusicDriverName, "SBAWE32.MDI") || stricmp(MusicType, "w"))
         return;
     if (Awe32SoundfontLoaded == 1) {
         FreeAwe32Soundfont();
@@ -308,7 +308,7 @@ void LoadAwe32Soundfont(char *prefix)
 // FUNCTION: 0xefad0
 void FreeAwe32Soundfont(void)
 {
-    if (!UseCurrentAwe32Soundfont && MusicInstalled && MusicAble && !stricmp(D_0018c8b4, "SBAWE32.MDI")
+    if (!UseCurrentAwe32Soundfont && MusicInstalled && MusicAble && !stricmp(MusicDriverName, "SBAWE32.MDI")
         && !stricmp(MusicType, "w")) {
         AWEFreeMem((AWEDriver *)MusicDriver, 1);
         FreeDOSmem(buffer);

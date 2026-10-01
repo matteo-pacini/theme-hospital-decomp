@@ -24,8 +24,8 @@ void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h);
 void swap_game_sprites(TbScreenMode mode);
 void precalculate_shadow_blocks(void);
 
-u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "fn_000cd716_"
+u32 lib_strlen(char *s);
+#pragma aux lib_strlen "strlen_"
 
 extern "C" {
 
@@ -34,20 +34,20 @@ extern u16 last_p, selected_option;
 extern Event D_001549d0[];
 void FadeMusic(u32 rate, u8 volume);
 extern CompElement *end_elements;
-extern u8 D_001290d0, D_001290d1, D_001290d2;
+extern Picture loaded_face;
 extern u8 error_number;
 extern TbSprite *end_pointers;
 extern u8 *pointer_data;
 extern u8 D_00156910;
-void fn_000c93bf(char *dst, char *src);
+void strcat(char *dst, char *src);
 int LbScreenLock(void);
 void change_screen_mode(TbScreenMode mode);
-extern s32 D_0014b1c4[], D_0013bb0c[], D_00146c8c[];
-extern IconScreen D_0014b7b4, D_0013c0fc;
-extern u8 ScreenBoxes[], D_00145108[], mcgabutton_list[], screenlistpos[], D_0014bd5c[], mcgapanel_popup_coord[];
-extern u8 D_0012cc7c[];
-extern u8 window_list[], button_list[], hiresbuttons[], panel_popup_coord[], D_0012cc3c[];
-extern int D_0014be34[], hireshelp[];
+extern s32 LoresBoxes[], HiresBoxes[], ScreenCoords[];
+extern IconScreen LoresCoords, HiresCoords;
+extern u8 ScreenBoxes[], mcgawindow_list[], mcgabutton_list[], screenlistpos[], loresbuttons[], mcgapanel_popup_coord[];
+extern u8 lores_litter_pos[];
+extern u8 window_list[], button_list[], hiresbuttons[], panel_popup_coord[], litter_pos[];
+extern int loreshelp[], hireshelp[];
 extern TbSprite *tile, *end_tiles, *end_sprites, *end_game_panel, *end_pulldv;
 extern u8 *tile_data, *sprite_data, *game_panel_data, *pulldv_data;
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
@@ -82,7 +82,7 @@ void setup_menus(void)
     set_font_from_cache(0);
     sprintf(sep, ".");
     sprintf(end, "..");
-    for (i = 1; (pmenu.pulldowns[i].length = fn_000cd716(pulldown_text[i])), strcmp(sep, pulldown_text[i]); i++)
+    for (i = 1; (pmenu.pulldowns[i].length = lib_strlen(pulldown_text[i])), strcmp(sep, pulldown_text[i]); i++)
         ;
     pmenu.count = i;
     i++;
@@ -94,8 +94,8 @@ void setup_menus(void)
                 i++;
                 break;
             }
-            if (fn_000cd716(pulldown_text[i]) > pmenu.pulldowns[j].width)
-                pmenu.pulldowns[j].width = fn_000cd716(pulldown_text[i]);
+            if (lib_strlen(pulldown_text[i]) > pmenu.pulldowns[j].width)
+                pmenu.pulldowns[j].width = lib_strlen(pulldown_text[i]);
             i++;
         }
     }
@@ -113,8 +113,8 @@ void setup_menus(void)
                 i++;
                 break;
             }
-            if (fn_000cd716(pulldown_text[i]) > pmenu.pulldowns[j].width)
-                pmenu.pulldowns[j].width = fn_000cd716(pulldown_text[i]);
+            if (lib_strlen(pulldown_text[i]) > pmenu.pulldowns[j].width)
+                pmenu.pulldowns[j].width = lib_strlen(pulldown_text[i]);
             i++;
         }
     }
@@ -657,7 +657,7 @@ void check_save_games(void)
     for (i = 0; i < 10; i++) {
         othervar.save_slot_used[i] = 0;
         sprintf(buf, "%ssave\\", statvar.save_root);
-        fn_000c93bf(buf, myplayer.name_chars);
+        strcat(buf, myplayer.name_chars);
         sprintf(buf, "%s.h%d", buf, i);
         handle = LbFileOpen(buf, 2);
         if (handle != -1) {
@@ -1158,24 +1158,24 @@ void swap_game_sprites(TbScreenMode mode)
         LbPackHeap();
         resvars.game_mode = SCREEN_MODE_1;
         load_game_files();
-        resvars.boxes_s32p = D_0014b1c4;
+        resvars.boxes_s32p = LoresBoxes;
         resvars.screen_boxes_u8p = ScreenBoxes;
-        resvars.coords_IconScreenp = &D_0014b7b4;
-        resvars.screen_coords_s32p = D_00146c8c;
+        resvars.coords_IconScreenp = &LoresCoords;
+        resvars.screen_coords_s32p = ScreenCoords;
         resvars.tile_height = 0x10;
         resvars.tile_width = 0x20;
-        resvars.window_list_u8p = D_00145108;
+        resvars.window_list_u8p = mcgawindow_list;
         resvars.button_list = mcgabutton_list;
         resvars.screen_list_pos = screenlistpos;
-        resvars.buttons = D_0014bd5c;
-        resvars.help_hotspots_intp = D_0014be34;
+        resvars.buttons = loresbuttons;
+        resvars.help_hotspots_intp = loreshelp;
         resvars.panel_popup_coords = mcgapanel_popup_coord;
         resvars.requester_buttons = lores_requester_buttons;
         resvars.requester_sprites = lores_requester_sprites;
         resvars.font_filenames_charpp = lores_font_filenames;
         resvars.advisor_min_segments = 4;
         resvars.advisor_max_segments = 0x21;
-        resvars.litter_pos = D_0012cc7c;
+        resvars.litter_pos = lores_litter_pos;
         mcga_coords();
         othervar.lores_checked = 1;
         othervar.hires_checked = 0;
@@ -1190,10 +1190,10 @@ void swap_game_sprites(TbScreenMode mode)
         LbPackHeap();
         resvars.game_mode = SCREEN_MODE_13;
         load_game_files();
-        resvars.boxes_s32p = D_0013bb0c;
+        resvars.boxes_s32p = HiresBoxes;
         resvars.screen_boxes_u8p = ScreenBoxes;
-        resvars.coords_IconScreenp = &D_0013c0fc;
-        resvars.screen_coords_s32p = D_00146c8c;
+        resvars.coords_IconScreenp = &HiresCoords;
+        resvars.screen_coords_s32p = ScreenCoords;
         resvars.tile_height = 0x20;
         resvars.tile_width = 0x40;
         resvars.window_list_u8p = window_list;
@@ -1208,7 +1208,7 @@ void swap_game_sprites(TbScreenMode mode)
         resvars.font_filenames_charpp = hires_font_filenames;
         resvars.advisor_min_segments = 3;
         resvars.advisor_max_segments = 0x20;
-        resvars.litter_pos = D_0012cc3c;
+        resvars.litter_pos = litter_pos;
         othervar.hires_checked = 1;
         othervar.lores_checked = 0;
         break;
@@ -1239,9 +1239,9 @@ extern "C" void change_screen_mode(TbScreenMode mode)
     active = lbDisplay.wscreen ? (u8)1 : (u8)0;
     find_cell_at_point(window.current_window, window.center_x[window.current_window], window.center_y[window.current_window]);
     cell = info.cell;
-    D_001290d0 = 0xff;
-    D_001290d1 = 0xff;
-    D_001290d2 = 0xff;
+    loaded_face.head = 0xff;
+    loaded_face.body = 0xff;
+    loaded_face.legs = 0xff;
     if (active)
         LbScreenUnlock();
     if (!change_res(mode)) {
@@ -1270,7 +1270,7 @@ extern "C" void change_screen_mode(TbScreenMode mode)
 extern "C" void ask_restart_level(void)
 {
     if (statvar.num_players <= 1) {
-        fn_000bbff0(othervar.yesno_msg, yesno_text[6]);
+        lib_strcpy(othervar.yesno_msg, yesno_text[6]);
         open_yes_no_requester(EV_RESTART_LEVEL, 0, 0, EV_CLOSE_YES_NO, 1, 0);
     }
 }

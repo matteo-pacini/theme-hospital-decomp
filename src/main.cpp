@@ -3,15 +3,15 @@
 extern "C" {
 
 extern u8 new_game;
-extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef, D_001581f0;
+extern u8 record_replay, play_replay, replay_mode, replay_number, replay_loop;
 extern View ScreenBoxes;
-extern Point D_00146c8c[];
+extern Point ScreenCoords[];
 extern Button screenbuttons[];
-extern u8 D_0013bb0c[], D_0013c0fc[], window_list[], button_list[], screenlistpos[];
-extern u8 hiresbuttons[], panel_popup_coord[], D_0012cc3c[];
-extern u8 D_00147314[];
+extern u8 HiresBoxes[], HiresCoords[], window_list[], button_list[], screenlistpos[];
+extern u8 hiresbuttons[], panel_popup_coord[], litter_pos[];
+extern u8 hiresglass[];
 extern int hireshelp[];
-extern MemRegion D_001290d4[];
+extern MemRegion save[];
 extern TbSprite *tile, *end_tiles;
 extern u8 *tile_data;
 extern TbSprite *end_game_panel, *end_pulldv, *end_sprites, *end_watch;
@@ -56,7 +56,7 @@ int main(u16 argc, char **argv)
                 switch (c) {
                 case 'B':
                 case 'b':
-                    fn_000bbff0(balance_id, arg);
+                    lib_strcpy(balance_id, arg);
                     goto next_arg;
                 case 'C':
                 case 'c':
@@ -87,8 +87,8 @@ int main(u16 argc, char **argv)
                     goto next_arg;
                 case 'P':
                 case 'p':
-                    D_001581ed = 1;
-                    D_001581ef = atoi(arg);
+                    play_replay = 1;
+                    replay_number = atoi(arg);
                     goto next_arg;
                 case 'Q':
                 case 'q':
@@ -96,8 +96,8 @@ int main(u16 argc, char **argv)
                     goto next_arg;
                 case 'R':
                 case 'r':
-                    D_001581ec = 1;
-                    D_001581ef = atoi(arg);
+                    record_replay = 1;
+                    replay_number = atoi(arg);
                     goto next_arg;
                 default:
                     break;
@@ -138,17 +138,17 @@ void init_game_vars(void)
     resvars.loaded_mode = SCREEN_MODE_13;
     resvars.tile_height = 0x20;
     resvars.tile_width = 0x40;
-    resvars.boxes_u8p = D_0013bb0c;
+    resvars.boxes_u8p = HiresBoxes;
     resvars.screen_boxes = &ScreenBoxes;
-    resvars.coords_u8p = D_0013c0fc;
-    resvars.screen_coords = D_00146c8c;
+    resvars.coords_u8p = HiresCoords;
+    resvars.screen_coords = ScreenCoords;
     resvars.window_list_u8p = window_list;
     resvars.button_list = button_list;
     resvars.screen_list_pos = screenlistpos;
     resvars.buttons = hiresbuttons;
     resvars.screen_buttons = screenbuttons;
     resvars.help_hotspots_intp = hireshelp;
-    resvars.glass_frames = D_00147314;
+    resvars.glass_frames = hiresglass;
     resvars.req_filenames_names = hires_req_filenames;
     resvars.requester_buttons = hires_requester_buttons;
     resvars.requester_sprites = hires_requester_sprites;
@@ -156,7 +156,7 @@ void init_game_vars(void)
     resvars.panel_popup_coords = panel_popup_coord;
     resvars.advisor_min_segments = 3;
     resvars.advisor_max_segments = 0x20;
-    resvars.litter_pos = D_0012cc3c;
+    resvars.litter_pos = litter_pos;
     resvars.game_files_state = 0;
     advisor.flags &= 0xfe;
     NRAdcounts.thirsty_plants = 0;
@@ -164,13 +164,13 @@ void init_game_vars(void)
     NRAdcounts.bench_shortage = 0;
     othervar.last_built_room = 0;
     othervar.editing_room = 0;
-    D_001581ed = D_001581ec = D_001581ee = D_001581ef = 0;
-    D_001581f0 = 0;
+    play_replay = record_replay = replay_mode = replay_number = 0;
+    replay_loop = 0;
     statvar.num_players = 1;
     player = 0;
     statvar.quiet = 0;
-    for (i = 0; D_001290d4[i].size != 0; i++) {
-        statvar.save_game_size += D_001290d4[i].size;
+    for (i = 0; save[i].size != 0; i++) {
+        statvar.save_game_size += save[i].size;
     }
     othervar.f16 = 1;
     statvar.f5dc = 0x40;

@@ -59,11 +59,11 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
 extern "C" {
 extern s16 D_001567b0[8];
 extern CellLink draw_precedence[];
-void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, s32 colour);
 void draw_all_windows(void);
-void fn_000a6c7c(void);
-void fn_000a6ca4(void);
+void draw_main_window(void);
+void draw_other_windows(void);
 void draw_window_using_bscreen(u8 win);
 void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win);
 }
@@ -85,7 +85,7 @@ void draw_it(void)
     if (window.window_count > 0) {
         animate_windows();
         move_windows();
-        fn_000a6c7c();
+        draw_main_window();
     }
     draw_overdrawn_blueprints();
     update_panel();
@@ -120,7 +120,7 @@ void draw_all_windows(void)
 
 // Draws the main view window through the background buffer.
 // FUNCTION: 0x000a6c7c
-void fn_000a6c7c(void)
+void draw_main_window(void)
 {
     u8 i = 0;
 
@@ -129,7 +129,7 @@ void fn_000a6c7c(void)
 
 // Draws every view window except the main one, directly.
 // FUNCTION: 0x000a6ca4
-void fn_000a6ca4(void)
+void draw_other_windows(void)
 {
     u8 i = 0;
 
@@ -874,10 +874,10 @@ void draw_boundry(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
         top = window.zone_y[win] - info.clip_y0;
         bottom += top;
     }
-    fn_000c9be0(left, top, right, top, 3);
-    fn_000c9be0(right, top, right, bottom, 3);
-    fn_000c9be0(right, bottom, left, bottom, 3);
-    fn_000c9be0(left, bottom, left, top, 3);
+    LbDrawLine(left, top, right, top, 3);
+    LbDrawLine(right, top, right, bottom, 3);
+    LbDrawLine(right, bottom, left, bottom, 3);
+    LbDrawLine(left, bottom, left, top, 3);
 }
 
 // Sets map flag 0x20 on cell if anything on it covers more than one cell (an

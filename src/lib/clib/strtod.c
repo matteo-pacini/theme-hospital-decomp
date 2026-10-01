@@ -7,7 +7,7 @@
 
 #define MAX_SIG_DIGITS 17
 
-extern const double D_00128eb0;
+extern const double _HugeValue;
 
 void __ZBuf2F(char *buf, double *value);
 #pragma aux __ZBuf2F "*" parm [eax] [edx];
@@ -115,9 +115,9 @@ double strtod(const char *s, char **endptr)
         if (exp + ndigits - 1 > 308) {
             __set_ERANGE();
             if ((int)(unsigned char)(flags & SIGN) != 0) {
-                value = -D_00128eb0;
+                value = -_HugeValue;
             } else {
-                value = D_00128eb0;
+                value = _HugeValue;
             }
         } else if (exp + ndigits - 1 < -308) {
             __set_ERANGE();

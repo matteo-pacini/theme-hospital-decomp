@@ -2087,7 +2087,7 @@ struct Statics {
     // 0x56d: net_result_start indexed from 1: [n] is net_result_start[n - 1].
     u16 net_result_base[1];
     // 0x56f: Start of each network game result text in language group 0x43
-    // (D_0016039c).
+    // (beta_demo_text_short).
     u16 net_result_start[3];
     char save_root[100];
     u8 ref_general_count;
@@ -2690,7 +2690,7 @@ struct ScreenInfo {
         struct {
             // 0x0: Saved display_mode.
             u16 mode;
-            // 0x2: Saved bytes of the current choice box (D_00158190).
+            // 0x2: Saved bytes of the current choice box (choice).
             u8 choice_state[4];
             // 0x6: Saved choice_spare_data.
             s16 spare_data;
@@ -2738,13 +2738,13 @@ struct Advisor {
         u8 advice_id_bytes[2];
     };
     union {
-        // 0x2: Event message to show next (D_001602e8 text), set by game
+        // 0x2: Event message to show next (forced_advice_text text), set by game
         // events; 0 for none.
         u16 forced_advice_id;
         // 0x2: Signed view of forced_advice_id.
         s16 forced_advice_id_s;
     };
-    // 0x4: Mouse-help message to show (D_001602ec text); 0 for none.
+    // 0x4: Mouse-help message to show (mouse_advice_text text); 0 for none.
     s16 mouse_advice_id;
     // 0x6: Current animation frame of the advisor.
     u16 anim_frame;
@@ -3083,7 +3083,7 @@ struct General {
     u16 forced_help_hotspot;
     // 0x9bf: Help group in which forced_help_hotspot applies.
     u8 forced_help_group;
-    // 0x9c0: Text index (D_001602a0) of the hint in the low-resolution
+    // 0x9c0: Text index (misc_text) of the hint in the low-resolution
     // edit-room requester.
     u16 edit_room_hint;
     // 0x9c2: Panel popup icon under the mouse; 0 = none.
@@ -3256,7 +3256,7 @@ struct General {
     // 0xa65: A full-screen picture with its own pointers is loaded
     // (load_ingame_pic).
     u8 screen_pic_loaded;
-    // 0xa66: Text index (D_001602a0) shown in the panel info bar, e.g. save or
+    // 0xa66: Text index (misc_text) shown in the panel info bar, e.g. save or
     // load result; 0 = none.
     u8 panel_message;
     // 0xa67: Draws left before panel_message is cleared.
@@ -4312,9 +4312,9 @@ struct Graphs {
     u8 inverted;
     // 0x1: The line is drawn.
     u8 visible;
-    // 0x2: Line colour (D_0015eb94 index).
+    // 0x2: Line colour (colour index).
     u8 colour;
-    // 0x3: Legend text index (D_001602b0).
+    // 0x3: Legend text index (report_text).
     u8 label;
 };
 
@@ -4611,6 +4611,7 @@ extern Menu yearend;
 extern Menu winlose;
 extern Menu que;
 extern Req crequester;
+extern Req prequester;
 extern Level *level;
 extern void *midi_buffer;
 extern u16 popup_id[];

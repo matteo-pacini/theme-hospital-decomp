@@ -52,7 +52,7 @@ extern Slot D_001581b2[];
 extern Event D_001549d0[];
 extern char **illness_text;
 void conv_string(char *dst, char *src, u8 mode);
-void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 }
 
@@ -248,7 +248,7 @@ void draw_health_graph(Thing *patient, u16 x, u16 y, u16 colour)
         y2 = resvars.boxes_ReqLayoutp->graph_bottom - h2;
         x1 = resvars.boxes_ReqLayoutp->graph_x + point++ * step;
         x2 = resvars.boxes_ReqLayoutp->graph_x + point * step;
-        fn_000c9be0(x + x1, y + y1, x + x2, y + y2, colour);
+        LbDrawLine(x + x1, y + y1, x + x2, y + y2, colour);
     }
 }
 
@@ -393,38 +393,38 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
 // Help text for a patient window button that needs a diagnosis, into
 // othervar.help_msg.
 // FUNCTION: 0x00074064
-extern "C" void fn_00074064(void)
+extern "C" void req3_help_if_diagnosed(void)
 {
     Thing *patient;
 
     patient = &thing[D_001581b2[1].value];
     if (patient->diagnosis >= gbv.diagnosis_complete)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // Help text for the patient window's cure button, into othervar.help_msg, when
 // it is available.
 // FUNCTION: 0x000740e4
-extern "C" void fn_000740e4(void)
+extern "C" void req3_help_if_curable(void)
 {
     Thing *patient;
 
     patient = &thing[D_001581b2[1].value];
     if (patient->treatment != 0 && !(patient->flags & PF_GUESSED) && !(patient->flags & PF_FED_UP) && patient->illness != patient->known_illness
         && patient->diagnosis >= gbv.diagnosis_complete)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // Help text for the patient window's queue button, into othervar.help_msg, when
 // the patient is queueing.
 // FUNCTION: 0x000741a4
-extern "C" void fn_000741a4(void)
+extern "C" void req3_help_if_queueing(void)
 {
     Thing *patient;
 
     patient = &thing[D_001581b2[1].value];
     if (patient->queue_room)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // Returns the next patient after thing id with any of flags in flags32

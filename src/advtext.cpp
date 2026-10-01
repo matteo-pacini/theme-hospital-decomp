@@ -145,7 +145,7 @@ void format_advisor_text(u8 segments)
     out = wrapped;
     LbMemorySet(text, 0, 0x118);
     LbMemorySet(wrapped, 0, 0x10e);
-    fn_000bbff0(text, advisor.text);
+    lib_strcpy(text, advisor.text);
     p = text;
     brk = text;
     line_start = text;
@@ -175,7 +175,7 @@ void format_advisor_text(u8 segments)
         }
     } while (lines < 3 && *p != '\0');
     if (!*p) {
-        fn_000bbff0(advisor.text, wrapped);
+        lib_strcpy(advisor.text, wrapped);
         if (lines < 3)
             advisor.line_count = lines;
         else

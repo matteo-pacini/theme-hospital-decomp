@@ -10,7 +10,7 @@ extern "C" {
 
 extern SelectionState D_001581b2;
 extern PlayerCall popup_store[][9];
-extern u8 D_00158192;
+extern Menu choice;
 extern char **real_room_names;
 extern char **skill_names;
 extern char **illness_text;
@@ -20,7 +20,7 @@ void clear_peep_icon(Thing *peep);
 void person_gone(Thing *person);
 void remove_person_from_room_list(Thing *person);
 void person_flys(Thing *person);
-void fn_000c93bf(char *dst, char *src);
+void strcat(char *dst, char *src);
 
 }
 
@@ -1290,12 +1290,12 @@ u16 call_no_treatment(Thing *person, char **strs)
     } else {
         sprintf(buf2, strs[4], illness_text[person->illness]);
     }
-    fn_000c93bf(buf2, new_line);
-    fn_000c93bf(buf2, new_line);
-    fn_000c93bf(buf2, buf1);
+    strcat(buf2, new_line);
+    strcat(buf2, new_line);
+    strcat(buf2, buf1);
     sprintf(buf3, strs[5]);
-    fn_000c93bf(buf2, new_line);
-    fn_000c93bf(buf2, buf3);
+    strcat(buf2, new_line);
+    strcat(buf2, buf3);
     LbTextDraw(text_x, text_y, buf2);
     return 0;
 }
@@ -1404,28 +1404,28 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     text_x = 0;
     text_y = 0;
     sprintf(buf3, strs[4], illness_text[kind]);
-    fn_000c93bf(buf2, buf3);
-    fn_000c93bf(buf2, new_line);
+    strcat(buf2, buf3);
+    strcat(buf2, new_line);
     sprintf(buf3, strs[kind * 3 - 1]);
-    fn_000c93bf(buf2, new_line);
-    fn_000c93bf(buf2, buf3);
+    strcat(buf2, new_line);
+    strcat(buf2, buf3);
     sprintf(buf3, strs[kind * 3 - 1 + 1]);
-    fn_000c93bf(buf2, new_line);
-    fn_000c93bf(buf2, buf3);
+    strcat(buf2, new_line);
+    strcat(buf2, buf3);
     sprintf(buf3, strs[kind * 3 + 1]);
-    fn_000c93bf(buf2, new_line);
-    fn_000c93bf(buf2, buf3);
+    strcat(buf2, new_line);
+    strcat(buf2, buf3);
     LbTextDraw(text_x, text_y, buf2);
     return 0;
 }
 
-// New illness fax button 0 closes it (D_00158192 = 0x5c).
+// New illness fax button 0 closes it (choice.state = 0x5c).
 // FUNCTION: 0x00019464
 void process_announce_new_illness_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        D_00158192 = 0x5c;
+        choice.state = 0x5c;
         break;
     }
 }

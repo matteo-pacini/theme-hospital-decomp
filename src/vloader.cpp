@@ -246,9 +246,9 @@ char *strchr(const char *s, int c);
 char *strrchr(const char *s, int c);
 char *strtok(char *str, const char *charset);
 s32 atol(const char *p);
-void fn_000c93bf(char *dst, char *src);
-u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "fn_000cd716_"
+void strcat(char *dst, char *src);
+u32 lib_strlen(char *s);
+#pragma aux lib_strlen "strlen_"
 }
 
 s32 variable_address(char *name);
@@ -414,7 +414,7 @@ void read_variable_file(char *name)
             value_ptr = cursor;
             while (isspace(*value_ptr))
                 value_ptr++;
-            strncpy(var_front, var, fn_000cd716(var) + 1);
+            strncpy(var_front, var, lib_strlen(var) + 1);
             if (strchr(var, '.')) {
                 LbMemorySet(full, 0, 0x80);
                 LbMemorySet(var_back, 0, 0x80);
@@ -429,8 +429,8 @@ void read_variable_file(char *name)
                         cursor++;
                     }
                     strncpy(var_back, start, len);
-                    strncpy(full, var_front, fn_000cd716(var_front) + 1);
-                    fn_000c93bf(full, var_back);
+                    strncpy(full, var_front, lib_strlen(var_front) + 1);
+                    strcat(full, var_back);
                     start = value_ptr;
                     len = 0;
                     while (!isspace(*value_ptr) && *value_ptr) {
@@ -494,11 +494,11 @@ u16 array_index(char *name)
     LbMemorySet(buf2, 0, 0x80);
     LbMemorySet(buf3, 0, 0x80);
     LbMemorySet(num, 0, 8);
-    strncpy(buf, name, fn_000cd716(name) + 1);
+    strncpy(buf, name, lib_strlen(name) + 1);
     cursor = strstr(name, "[");
     if (cursor) {
         strtok(buf, "[");
-        strncpy(buf2, name, fn_000cd716(name) + 1);
+        strncpy(buf2, name, lib_strlen(name) + 1);
         cursor = strstr(buf2, "[");
         ++cursor;
         start = cursor;
@@ -516,8 +516,8 @@ u16 array_index(char *name)
             cursor++;
         }
         strncpy(buf3, start, len);
-        strncat(buf, buf3, fn_000cd716(buf3) + 1);
-        fn_000bbff0(name, buf);
+        strncat(buf, buf3, lib_strlen(buf3) + 1);
+        lib_strcpy(name, buf);
         return idx;
     }
     return 0;

@@ -91,8 +91,8 @@ u16 check_pager(Thing *staff)
             if (!(room->state == 1 || room->state == 0))
                 continue;
             {
-                dist = fn_000cb2db(staff->x.tile - room->door_tile % 128)
-                     + fn_000cb2db(staff->y.tile - room->door_tile / 128);
+                dist = abs(staff->x.tile - room->door_tile % 128)
+                     + abs(staff->y.tile - room->door_tile / 128);
                 if (best > dist) {
                     best = dist;
                     found = pager;
@@ -193,8 +193,8 @@ RoomInfo *get_expertise_dest(u16 type, Thing *patient)
                 fallback = room;
                 if (spare_queue_capacity(0, 1, room, owner)) {
                     score = room->queue_length * gbv.q_points;
-                    score += (fn_000cb2db(patient->x.tile - room->door_tile % 128)
-                            + fn_000cb2db(patient->y.tile - room->door_tile / 128)) * gbv.dist_points;
+                    score += (abs(patient->x.tile - room->door_tile % 128)
+                            + abs(patient->y.tile - room->door_tile / 128)) * gbv.dist_points;
                     score += gbv.no_staff_points;
                     for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
                         if (occupant->type == THING_STAFF) {

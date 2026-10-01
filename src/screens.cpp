@@ -22,13 +22,13 @@ extern TbSprite *screen_sprites_tab_end;
 extern u8 *screen_sprites_data;
 extern u8 *screen_pointers_data;
 extern TbSprite *screen_pointers_tab_end;
-extern u8 D_001290d0, D_001290d1, D_001290d2;
+extern Picture loaded_face;
 extern u8 *palette;
 extern u8 D_00156910;
 extern PicLengths D_0017526c;
 
 int LbScreenLock(void);
-u8 *fn_00022b60(TbCacheUsedBlock *block);
+u8 *cache_block_data(TbCacheUsedBlock *block);
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
 int strcmp(const char *a, const char *b);
 }
@@ -78,9 +78,9 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
     if (in_game) {
         if (resvars.game_mode == SCREEN_MODE_1)
             setup_menus();
-        D_001290d0 = 0xff;
-        D_001290d1 = 0xff;
-        D_001290d2 = 0xff;
+        loaded_face.head = 0xff;
+        loaded_face.body = 0xff;
+        loaded_face.legs = 0xff;
         othervar.fade_palette = palette;
         display_mode = DM_GAME;
         othervar.full_redraw = 1;
@@ -168,7 +168,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     clear_sound_heap();
     othervar.level_block = cache.Allocate(len.palette + len.pointers + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
     if (othervar.level_block)
-        dest = fn_00022b60(othervar.level_block);
+        dest = cache_block_data(othervar.level_block);
     else
         return;
     if (fade)

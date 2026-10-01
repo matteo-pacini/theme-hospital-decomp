@@ -19,10 +19,10 @@ typedef struct heapblkp {
 } heapblkp, *mheapptr;
 
 extern mheapptr __nheapbeg;
-extern mheapptr D_001505e4;
-extern unsigned D_001505e8;
-extern mheapptr D_0018ba94;
-extern unsigned char D_0018cfa8;
+extern mheapptr __MiniHeapRover;
+extern unsigned __LargestSizeB4MiniHeapRover;
+extern mheapptr __MiniHeapFreeRover;
+extern unsigned char __nheap_clean;
 
 void __MemFree(unsigned ptr, unsigned seg, unsigned heap);
 #pragma aux __MemFree "__MemFree" parm [eax] [edx] [ebx];
@@ -40,7 +40,7 @@ void _nfree(void *stg)
 
     if (stg == NULL)
         return;
-    p1 = D_0018ba94;
+    p1 = __MiniHeapFreeRover;
     if (p1 == NULL || (unsigned)p1 > (unsigned)stg || (unsigned)stg >= (unsigned)p1->next) {
         for (p1 = __nheapbeg; p1->next != NULL; p1 = p1->next) {
             if ((unsigned)p1 <= (unsigned)stg && (unsigned)stg < (unsigned)p1->next)
@@ -48,10 +48,10 @@ void _nfree(void *stg)
         }
     }
     __MemFree((unsigned)stg, _DGroup(), (unsigned)p1);
-    D_0018ba94 = p1;
-    if (p1 < D_001505e4) {
-        if (p1->largest_blk > D_001505e8)
-            D_001505e8 = p1->largest_blk;
+    __MiniHeapFreeRover = p1;
+    if (p1 < __MiniHeapRover) {
+        if (p1->largest_blk > __LargestSizeB4MiniHeapRover)
+            __LargestSizeB4MiniHeapRover = p1->largest_blk;
     }
-    D_0018cfa8 = 0;
+    __nheap_clean = 0;
 }

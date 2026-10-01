@@ -63,8 +63,8 @@ long IPXHandler::Init(void)
         rm_sp = (u16)(u32)dosbuf + 0x950 - (rm_ss << 4);
         send_esr = (u32)dosbuf + 0x78 - ((((u32)dosbuf >> 4) & 0xffff) << 4);
         recv_esr = (u32)dosbuf + 0x80 - ((((u32)dosbuf >> 4) & 0xffff) << 4);
-        esr_size = D_00110068 - D_00110000;
-        memcpy(dosbuf, D_00110000, esr_size);
+        esr_size = serial_handler_code - ipx_esr_code;
+        memcpy(dosbuf, ipx_esr_code, esr_size);
         memcpy(dosbuf + 0x78, ipxsendesr, 8);
         memcpy(dosbuf + 0x80, ipxrecvesr, 8);
         IPXDebug("ALLOCATED FINE HANDLER SIZE = %d\n", esr_size);

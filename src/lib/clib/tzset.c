@@ -20,7 +20,7 @@ void *memcpy(void *dst, const void *src, size_t n);
 char *getenv(const char *name);
 
 extern const char D_00128484[];
-extern char D_00152294[];
+extern char stzone[];
 extern char dtzone[];
 extern long timezone;
 extern int daylight;
@@ -32,7 +32,7 @@ struct tzflags {
     unsigned cache_OS_TZ : 1;
     unsigned have_OS_TZ : 1;
 };
-extern struct tzflags D_001522da;
+extern struct tzflags tzFlag;
 
 void tryOSTimeZone(void);
 char *parse_time(char *tz, int *val);
@@ -45,17 +45,17 @@ int __CacheOSTZ(int flag)
 {
     int old;
 
-    old = D_001522da.cache_OS_TZ;
-    D_001522da.cache_OS_TZ = ~old;
-    D_001522da.have_OS_TZ = flag != 0;
+    old = tzFlag.cache_OS_TZ;
+    tzFlag.cache_OS_TZ = ~old;
+    tzFlag.have_OS_TZ = flag != 0;
     return old;
 }
 
 // FUNCTION: 0xf3934
 void tryOSTimeZone(void)
 {
-    if (!D_001522da.cache_OS_TZ || !D_001522da.have_OS_TZ)
-        D_001522da.have_OS_TZ = 1;
+    if (!tzFlag.cache_OS_TZ || !tzFlag.have_OS_TZ)
+        tzFlag.have_OS_TZ = 1;
 }
 
 // FUNCTION: 0xf394c
@@ -186,7 +186,7 @@ void __parse_tz(char *tz)
     long dayzone;
 
     daylight = 0;
-    tz = parse_offset(tz, D_00152294, &timezone);
+    tz = parse_offset(tz, stzone, &timezone);
     if (*tz == '\0') {
         dtzone[0] = '\0';
         return;

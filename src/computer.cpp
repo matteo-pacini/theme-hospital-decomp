@@ -87,7 +87,7 @@ void setup_computer_players(void)
             for (k = 0; k < 4; k++) {
                 hosp = &allhosps[k];
                 if (hosp->player_type == 0) {
-                    fn_000bbff0((char *)hosp, computer_names[j]);
+                    lib_strcpy((char *)hosp, computer_names[j]);
                     hosp->player_type = 2;
                     hosp->ai_index = j;
                     hosp->strategy = computer[j].strategy;
@@ -107,12 +107,12 @@ void setup_computer_players(void)
             hosp = &allhosps[k];
             if (hosp->player_type == 0) {
                 hosp->player_type = 2;
-                fn_000bbff0((char *)hosp, "DEF 64");
+                lib_strcpy((char *)hosp, "DEF 64");
                 for (i = 0; i < 1000; i++) {
                     j = (lbDisplay.mmouse_x + lbDisplay.mmouse_y + old_newrand()) % 20;
                     hosp->ai_index = j;
                     if (used[j] == 0) {
-                        fn_000bbff0((char *)hosp, computer_names[j]);
+                        lib_strcpy((char *)hosp, computer_names[j]);
                         used[j] = 1;
                         break;
                     }

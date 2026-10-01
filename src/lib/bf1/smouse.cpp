@@ -1,7 +1,7 @@
 #include "bflib.h"
 
 extern "C" {
-extern s32 D_00176bc0;
+extern s32 lbMouseInstalled;
 extern s32 D_00176bc4;
 extern s32 D_00176bc8;
 extern s32 D_00176bcc;
@@ -16,17 +16,17 @@ extern s32 D_00177be8;
 extern s32 D_00177bec;
 extern s32 D_00177bf0;
 extern u8 D_00177bf4[];
-extern s32 D_00178bf4;
-extern s32 D_00178bf8;
-extern volatile s32 D_00178c00;
-extern volatile s32 D_00178c04;
+extern s32 redraw_active;
+extern s32 mouse_initialised;
+extern volatile s32 mouse_dx;
+extern volatile s32 mouse_dy;
 extern s32 D_00178c08;
-extern s16 D_00176bb4;
-extern s16 D_00176bb6;
-extern s32 D_00176bb8;
-extern s32 D_00176bbc;
-extern volatile s16 D_00178bfc;
-extern volatile s16 D_00178bfe;
+extern s16 old_mx;
+extern s16 old_my;
+extern s32 old_rx;
+extern s32 old_ry;
+extern volatile s16 mouse_mickey_x;
+extern volatile s16 mouse_mickey_y;
 extern s16 lbVesaPage;
 
 int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height);
@@ -63,7 +63,7 @@ int LbMousePlace(void)
     u8 *sprite;
     u8 *screen;
 
-    D_00178bf4 = 1;
+    redraw_active = 1;
     if (lbDisplay.mouse_sprite) {
         D_00177bd4 = lbDisplay.mmouse_x + D_00177bec;
         D_00177bd8 = lbDisplay.mmouse_y + D_00177bf0;
@@ -111,8 +111,8 @@ int LbMouseRemove(void)
         }
     }
     if (D_00178c08) {
-        lbDisplay.mmouse_x += D_00178c00;
-        lbDisplay.mmouse_y += D_00178c04;
+        lbDisplay.mmouse_x += mouse_dx;
+        lbDisplay.mmouse_y += mouse_dy;
         adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
         if (!mouse_pos_change_saved) {
             screen_remove(0);
@@ -120,7 +120,7 @@ int LbMouseRemove(void)
         }
         D_00178c08 = 0;
     }
-    D_00178bf4 = 0;
+    redraw_active = 0;
     return 1;
 }
 
@@ -129,9 +129,9 @@ int LbMouseRemove(void)
 // FUNCTION: 0x000bd1f4
 int LbMouseSetPointerHotspot(s32 x, s32 y)
 {
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
-    D_00178bf4 = 1;
+    redraw_active = 1;
     if (!mouse_pos_change_saved)
         screen_remove(1);
     D_00177bec = x;
@@ -140,7 +140,7 @@ int LbMouseSetPointerHotspot(s32 x, s32 y)
     D_00177bf0 = -D_00177bf0;
     if (!mouse_pos_change_saved)
         screen_place();
-    D_00178bf4 = 0;
+    redraw_active = 0;
     return 1;
 }
 
@@ -157,13 +157,13 @@ int LbMouseChangeSprite(TbSprite *sprite)
     u8 *screen;
     u16 flags;
 
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
     if (lbDisplay.mouse_sprite == sprite)
         return 1;
     if (sprite && (sprite->width > 64 || sprite->height > 64))
         return -1;
-    D_00178bf4 = 1;
+    redraw_active = 1;
     if (!mouse_pos_change_saved)
         screen_remove(1);
     lbDisplay.mouse_sprite = sprite;
@@ -188,7 +188,7 @@ int LbMouseChangeSprite(TbSprite *sprite)
     }
     if (!mouse_pos_change_saved)
         screen_place();
-    D_00178bf4 = 0;
+    redraw_active = 0;
     return 1;
 }
 
@@ -211,7 +211,7 @@ int LbMouseChangeSpriteAndHotspot(TbSprite *sprite, s32 x, s32 y)
 // FUNCTION: 0x000bd43c
 long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y)
 {
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
     if (ratio_x < 1 || ratio_x > 63)
         return -1;
@@ -228,7 +228,7 @@ extern "C" {
 // FUNCTION: 0x000bd4b4
 int LbMouseIsInstalled(void)
 {
-    if (D_00176bc0)
+    if (lbMouseInstalled)
         return 1;
     return -1;
 }
@@ -247,47 +247,47 @@ int LbMouseSetup(TbSprite *sprite)
 
     ratio_x = 1;
     ratio_y = 1;
-    if (D_00176bc0)
+    if (lbMouseInstalled)
         return -1;
-    if (!D_00178bf8) {
+    if (!mouse_initialised) {
         segread(&sregs);
         in.w.ax = 0;
         int386(0x33, &in, &out);
         if (out.w.ax != 0xffff)
             return -1;
     }
-    D_00176bc0 = 1;
+    lbMouseInstalled = 1;
     D_00177be4 = 1;
     D_00177be8 = 1;
     D_00177bec = 0;
     D_00177bf0 = 0;
     memset(D_00177bf4, 0xfe, 0x1000);
     lbDisplay.mouse_sprite = 0;
-    D_00178bf4 = 0;
+    redraw_active = 0;
     memset(&D_00176bc4, 0, 0x1020);
     if (LbMouseSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height) != 1) {
-        D_00176bc0 = 0;
+        lbMouseInstalled = 0;
         return -1;
     }
     if (LbMouseChangeMoveRatio(ratio_x, ratio_y) != 1) {
-        D_00176bc0 = 0;
+        lbMouseInstalled = 0;
         return -1;
     }
     if (LbMouseSetPosition(lbDisplay.graphics_screen_width >> 1, lbDisplay.graphics_screen_height >> 1) != 1) {
-        D_00176bc0 = 0;
+        lbMouseInstalled = 0;
         return -1;
     }
     if (LbMouseChangeSprite(sprite) != 1) {
-        D_00176bc0 = 0;
+        lbMouseInstalled = 0;
         return -1;
     }
-    if (!D_00178bf8) {
+    if (!mouse_initialised) {
         in.w.ax = 0xc;
         in.w.cx = 0x7f;
         in.x.edx = (u32)MouseHandler256;
         sregs.es = FP_SEG(MouseHandler256);
         int386x(0x33, &in, &out, &sregs);
-        D_00178bf8 = 1;
+        mouse_initialised = 1;
     }
     return 1;
 }
@@ -300,18 +300,18 @@ int LbMouseReset(void)
     REGS in;
     REGS out;
 
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
-    D_00178bf4 = 1;
+    redraw_active = 1;
     if (!mouse_pos_change_saved)
         screen_remove(1);
     memset(&D_00176bc4, 0, 0x1020);
     in.w.ax = 0;
     int386(0x33, &in, &out);
-    D_00178bf8 = 0;
+    mouse_initialised = 0;
     lbDisplay.mouse_sprite = 0;
-    D_00176bc0 = 0;
-    D_00178bf4 = 0;
+    lbMouseInstalled = 0;
+    redraw_active = 0;
     return 1;
 }
 
@@ -320,15 +320,15 @@ int LbMouseReset(void)
 // FUNCTION: 0x000bd70c
 int LbMouseSuspend(void)
 {
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
-    D_00178bf4 = 1;
+    redraw_active = 1;
     if (!mouse_pos_change_saved)
         screen_remove(1);
     memset(&D_00176bc4, 0, 0x1020);
     lbDisplay.mouse_sprite = 0;
-    D_00176bc0 = 0;
-    D_00178bf4 = 0;
+    lbMouseInstalled = 0;
+    redraw_active = 0;
     return 1;
 }
 
@@ -337,7 +337,7 @@ int LbMouseSuspend(void)
 // FUNCTION: 0x000bd770
 int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height)
 {
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
     lbDisplay.mouse_window_x = x;
     lbDisplay.mouse_window_y = y;
@@ -353,9 +353,9 @@ int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height)
 // FUNCTION: 0x000bd7dc
 int LbMouseSetPosition(s32 x, s32 y)
 {
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
-    D_00178bf4 = 1;
+    redraw_active = 1;
     if (!mouse_pos_change_saved)
         screen_remove(1);
     adjust_point(&x, &y);
@@ -363,7 +363,7 @@ int LbMouseSetPosition(s32 x, s32 y)
     lbDisplay.mouse_y = lbDisplay.mmouse_y = y;
     if (!mouse_pos_change_saved)
         screen_place();
-    D_00178bf4 = 0;
+    redraw_active = 0;
     return 1;
 }
 
@@ -375,8 +375,8 @@ int LbMouseSetPosition(s32 x, s32 y)
 long LbMouseUpdatePosition(void)
 {
     if (D_00178c08) {
-        lbDisplay.mmouse_x += D_00178c00;
-        lbDisplay.mmouse_y += D_00178c04;
+        lbDisplay.mmouse_x += mouse_dx;
+        lbDisplay.mmouse_y += mouse_dy;
         adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
         D_00178c08 = 0;
     }
@@ -396,7 +396,7 @@ void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y)
     s16 page;
     s16 y;
 
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return;
     if (events != 1) {
         if (events & 2) {
@@ -455,46 +455,46 @@ void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y)
         return;
     x = raw_x;
     y = raw_y;
-    D_00176bb4 = D_00178bfc;
-    D_00176bb6 = D_00178bfe;
-    D_00178bfc = x;
-    D_00178bfe = y;
-    D_00178c00 = D_00178c04 = 0;
-    dx = D_00178bfc - D_00176bb4;
+    old_mx = mouse_mickey_x;
+    old_my = mouse_mickey_y;
+    mouse_mickey_x = x;
+    mouse_mickey_y = y;
+    mouse_dx = mouse_dy = 0;
+    dx = mouse_mickey_x - old_mx;
     if (dx != 0) {
         if (dx > 0) {
-            dx += D_00176bb8;
-            D_00176bb8 = dx % D_00177be4;
-            D_00178c00 = dx / D_00177be4;
+            dx += old_rx;
+            old_rx = dx % D_00177be4;
+            mouse_dx = dx / D_00177be4;
         } else {
-            D_00178c00 = dx / D_00177be4;
-            D_00176bb8 += dx % D_00177be4;
-            if (D_00176bb8 < 0) {
-                D_00178c00--;
-                D_00176bb8 = D_00177be4 + D_00176bb8 % D_00177be4;
+            mouse_dx = dx / D_00177be4;
+            old_rx += dx % D_00177be4;
+            if (old_rx < 0) {
+                mouse_dx--;
+                old_rx = D_00177be4 + old_rx % D_00177be4;
             }
         }
         D_00178c08 = 1;
     }
-    dy = D_00178bfe - D_00176bb6;
+    dy = mouse_mickey_y - old_my;
     if (dy != 0) {
         if (dy > 0) {
-            dy += D_00176bbc;
-            D_00176bbc = dy % D_00177be8;
-            D_00178c04 = dy / D_00177be8;
+            dy += old_ry;
+            old_ry = dy % D_00177be8;
+            mouse_dy = dy / D_00177be8;
         } else {
-            D_00178c04 = dy / D_00177be8;
-            D_00176bbc += dy % D_00177be8;
-            if (D_00176bbc < 0) {
-                D_00178c04--;
-                D_00176bbc = D_00177be8 + D_00176bbc % D_00177be8;
+            mouse_dy = dy / D_00177be8;
+            old_ry += dy % D_00177be8;
+            if (old_ry < 0) {
+                mouse_dy--;
+                old_ry = D_00177be8 + old_ry % D_00177be8;
             }
         }
         D_00178c08 = 1;
     }
-    if (!D_00178bf4 && !mouse_pos_change_saved) {
-        lbDisplay.mmouse_x += D_00178c00;
-        lbDisplay.mmouse_y += D_00178c04;
+    if (!redraw_active && !mouse_pos_change_saved) {
+        lbDisplay.mmouse_x += mouse_dx;
+        lbDisplay.mmouse_y += mouse_dy;
         force = adjust_point((long *)&lbDisplay.mmouse_x, (long *)&lbDisplay.mmouse_y);
         page = lbVesaPage;
         screen_remove(force);
@@ -581,7 +581,7 @@ long screen_place(void)
     s32 j;
     s16 page;
 
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
     if (lbDisplay.mouse_sprite) {
         D_00177bd4 = lbDisplay.mmouse_x + D_00177bec;
@@ -653,7 +653,7 @@ long screen_remove(u32 force)
     s32 j;
     s16 page;
 
-    if (!D_00176bc0)
+    if (!lbMouseInstalled)
         return -1;
     if ((lbDisplay.mmouse_x != D_00177bd4 || lbDisplay.mmouse_y != D_00177bd8 || force) && D_00176bc4) {
         save = D_00176bd4;

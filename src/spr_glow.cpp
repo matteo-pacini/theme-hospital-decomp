@@ -329,7 +329,7 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
             for (;;) {
                 if (remaining > 0) {
                     if (*src > 0) {
-                        fn_000c21e6(dst, src + 1, *src < remaining ? *src : remaining);
+                        lib_memcpy(dst, src + 1, *src < remaining ? *src : remaining);
                         remaining -= *src;
                         dst += *src;
                         src += *src + 1;
@@ -371,7 +371,7 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                                     len = *src - skip;
                                     if (len > w)
                                         len = w;
-                                    fn_000c21e6(dst, src + 1 + skip, len);
+                                    lib_memcpy(dst, src + 1 + skip, len);
                                     dst += len;
                                     src += *src + 1;
                                     remaining -= len;

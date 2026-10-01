@@ -7,8 +7,8 @@ typedef char *va_list[1];
 void note_in_error_log(char *text);
 void write_to_player_log(char *text);
 
-u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "fn_000cd716_"
+u32 lib_strlen(char *s);
+#pragma aux lib_strlen "strlen_"
 
 extern "C" {
 
@@ -57,7 +57,7 @@ void write_to_player_log(char *text)
     handle = LbFileOpen(path, 1);
     if (handle != -1) {
         LbFileSeek(handle, 0, 2);
-        LbFileWrite(handle, text, fn_000cd716(text));
+        LbFileWrite(handle, text, lib_strlen(text));
         LbFileClose(handle);
     }
 }
@@ -76,7 +76,7 @@ void note_in_error_log(char *text)
 // resvars.screen_mode to SCREEN_MODE_1 if it was SCREEN_MODE_13. Exits if the mode
 // cannot be set.
 // FUNCTION: 0x0008de24
-extern "C" void fn_0008de24(void)
+extern "C" void switch_to_hires(void)
 {
     if (resvars.screen_mode == SCREEN_MODE_13)
         resvars.screen_mode = SCREEN_MODE_1;
@@ -99,7 +99,7 @@ void debug_msg(char *fmt, ...)
 
 // Does nothing (a disabled log writer).
 // FUNCTION: 0x0008dea0
-extern "C" void fn_0008dea0(char *text)
+extern "C" void write_network_log(char *text)
 {
     // Dead code: the compiler still emits its string literals, in this
     // order, and nothing else. The statements are reconstructed from those
@@ -118,7 +118,7 @@ extern "C" void fn_0008dea0(char *text)
 
 // Does nothing (a disabled message formatter).
 // FUNCTION: 0x0008debc
-extern "C" void fn_0008debc(char *text)
+extern "C" void net_debug_msg(char *text)
 {
     char buf[132];
 

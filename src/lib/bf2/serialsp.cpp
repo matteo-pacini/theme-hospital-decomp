@@ -6,7 +6,7 @@ static u8 acknowledgementHeader[] = { 0x04, 0x3e, 0xbe, 0x38 };
 
 extern "C" {
 extern u8 deliveryBuffer[];
-extern TbNetworkPlayerEntry D_0018cfc4;
+extern TbNetworkPlayerEntry playerData;
 }
 
 // Constructs an unconfigured serial provider.
@@ -43,13 +43,13 @@ TbError SerialSP::Release(void)
 {
     u32 start;
 
-    fn_000c20c0("  LbNETWORK : Releasing SerialSP\n");
+    NetworkDebugPrintf("  LbNETWORK : Releasing SerialSP\n");
     if (!started) {
-        fn_000c20c0("  WARNING network: SerialSP::Release() not initialised\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::Release() not initialised\n");
         return Lb_FAIL;
     }
     if (!comm) {
-        fn_000c20c0("  WARNING network: SerialSP::Release() NULL m_commHandlerPtr\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::Release() NULL m_commHandlerPtr\n");
     } else {
         if (in_session)
             Stop();
@@ -72,7 +72,7 @@ TbError SerialSP::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallb
 {
     TbError ret = Lb_FAIL;
 
-    fn_000c20c0("  LbNETWORK : Initialising SerialSP\n");
+    NetworkDebugPrintf("  LbNETWORK : Initialising SerialSP\n");
     send_seq = 0;
     recv_seq = 0;
     started = 0;
@@ -81,23 +81,23 @@ TbError SerialSP::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallb
         this->guid = guid;
         comm = new CommHandler;
         if (comm) {
-            fn_000c20c0("CALLING SERIALSP INIT \n");
-            fn_000c20c0("\t COM PORT %d\n", serial_data.port);
+            NetworkDebugPrintf("CALLING SERIALSP INIT \n");
+            NetworkDebugPrintf("\t COM PORT %d\n", serial_data.port);
             comm->ReadSerialDev(&serial_data);
             if (comm->Init(port)) {
-                fn_000c20c0("SERIAL SP INIT SUCCESS\n");
+                NetworkDebugPrintf("SERIAL SP INIT SUCCESS\n");
                 if (comm->SetBaud(baud) == 0)
                     ret = Lb_OK;
                 else
-                    fn_000c20c0("  WARNING network: SerialSP::SerialSP() failure on CommHandler::SetBaud\n");
+                    NetworkDebugPrintf("  WARNING network: SerialSP::SerialSP() failure on CommHandler::SetBaud\n");
             } else {
-                fn_000c20c0("  WARNING network: SerialSP::SerialSP() failure on CommHandler::Init\n");
+                NetworkDebugPrintf("  WARNING network: SerialSP::SerialSP() failure on CommHandler::Init\n");
             }
         }
         if (ret == Lb_OK)
             started = 1;
     } else {
-        fn_000c20c0("  WARNING network: SerialSP::SerialSP() failure on parent initialisation\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::SerialSP() failure on parent initialisation\n");
     }
     return ret;
 }
@@ -111,15 +111,15 @@ TbError SerialSP::Start(char *session, char *name, u32 max_players, void *data)
     TbError ret = Lb_FAIL;
 
     if (!started) {
-        fn_000c20c0("  WARNING network: SerialSP::Start() not initialised\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::Start() not initialised\n");
     } else {
         if (max_players != 2) {
-            fn_000c20c0("  WARNING network: SerialSP::Start() maxPlayers != 2\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::Start() maxPlayers != 2\n");
             return ret;
         }
         StrCpyTrunc(this->name, session, 0x20);
         if (!comm) {
-            fn_000c20c0("  WARNING network: SerialSP::Start() NULL m_commHandlerPtr\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::Start() NULL m_commHandlerPtr\n");
             return ret;
         }
         if (in_session)
@@ -128,7 +128,7 @@ TbError SerialSP::Start(char *session, char *name, u32 max_players, void *data)
         is_host = 1;
         ClearPlayers();
         if (AddPlayer(local_id, name, 1, 1) != Lb_OK)
-            fn_000c20c0("  WARNING network: Win95SerialSP::Start() failure on AddPlayer()\n");
+            NetworkDebugPrintf("  WARNING network: Win95SerialSP::Start() failure on AddPlayer()\n");
         in_session = 1;
         ret = Lb_OK;
     }
@@ -146,19 +146,19 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
     u32 waiting;
 
     if (!started) {
-        fn_000c20c0("  WARNING network: SerialSP::Start() not initialised\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::Start() not initialised\n");
         return Lb_FAIL;
     }
     ClearPlayers();
     if (!comm) {
-        fn_000c20c0("  WARNING network: SerialSP::Start() NULL m_commHandlerPtr\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::Start() NULL m_commHandlerPtr\n");
     } else {
         if (in_session)
             Stop();
         local_id = 1;
         is_host = 0;
         if (GetAddPlayerMsgSize(name) > 0x28) {
-            fn_000c20c0("  WARNING network: SerialSP::Start() addPlayerBuffer is too small\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::Start() addPlayerBuffer is too small\n");
             return ret;
         }
         EncodeAddPlayerMsg(addPlayerBuffer, local_id, name);
@@ -170,7 +170,7 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
                 if (player_count > 0) {
                     waiting = 0;
                     if (AddPlayer(local_id, name, 1, 0) != Lb_OK)
-                        fn_000c20c0("  WARNING network: SerialSP::Start() failure on AddPlayer()\n");
+                        NetworkDebugPrintf("  WARNING network: SerialSP::Start() failure on AddPlayer()\n");
                     in_session = 1;
                     ret = Lb_OK;
                 } else if (LbTimerClock() - start > 10000) {
@@ -178,7 +178,7 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
                 }
             } while (waiting);
         } else {
-            fn_000c20c0("  WARNING network: SerialSP::Start() failure on Broadcast()\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::Start() failure on Broadcast()\n");
         }
     }
     return ret;
@@ -209,7 +209,7 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
         guaranteed = 0;
         break;
     default:
-        fn_000c20c0("  WARNING network: SerialSP::SendMessage() invalid sendMode()\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::SendMessage() invalid sendMode()\n");
         return ret;
     }
     DecodeMessageStub(buf, &size, 0, 0);
@@ -217,7 +217,7 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
         total = size + 0xb;
         retries = 0;
         if (total > 0x40b) {
-            fn_000c20c0("  WARNING network: SerialSP::SendMessage() deliveryBuffer is too small\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::SendMessage() deliveryBuffer is too small\n");
             return ret;
         }
         memcpy(deliveryBuffer, deliveryHeader, 4);
@@ -237,12 +237,12 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
                 if (awaiting_ack) {
                     if (LbTimerClock() - start > 2500) {
                         if (++retries > 8) {
-                            fn_000c20c0("  WARNING network: SerialSP::SendMessage() delivery failure\n");
+                            NetworkDebugPrintf("  WARNING network: SerialSP::SendMessage() delivery failure\n");
                             awaiting_ack = 0;
                         } else if (comm->WriteBytes(deliveryBuffer, total) == total) {
                             start = LbTimerClock();
                         } else {
-                            fn_000c20c0("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
+                            NetworkDebugPrintf("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
                             awaiting_ack = 0;
                         }
                     }
@@ -251,7 +251,7 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
                 }
             }
         } else {
-            fn_000c20c0("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
         }
     } else {
         if (comm->WriteBytes(messageHeader, 4) == 4) {
@@ -263,12 +263,12 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
                 if (comm->WriteBytes((u8 *)&sum, 2) == 2)
                     ret = Lb_OK;
                 else
-                    fn_000c20c0("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
+                    NetworkDebugPrintf("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
             } else {
-                fn_000c20c0("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
+                NetworkDebugPrintf("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
             }
         } else {
-            fn_000c20c0("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");
         }
     }
     return ret;
@@ -282,7 +282,7 @@ TbError SerialSP::Enumerate(void (__stdcall *callback)(TbNetworkCallbackData *, 
     TbNetworkSessionNameEntry *session;
 
     if (!started) {
-        fn_000c20c0("  WARNING network: SerialSP::Enumerate() not initialised\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::Enumerate() not initialised\n");
         return Lb_FAIL;
     }
     ClearSessions();
@@ -301,7 +301,7 @@ TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall 
     TbError ret;
 
     if (!started) {
-        fn_000c20c0("  WARNING network: SerialSP::Enumerate() not initialised\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::Enumerate() not initialised\n");
         return Lb_FAIL;
     }
     ret = Lb_OK;
@@ -309,17 +309,17 @@ TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall 
         if (LookForSystemMessages() == Lb_OK) {
             if (EnumeratePlayers(callback, data) != Lb_OK) {
                 ret = Lb_FAIL;
-                fn_000c20c0("  WARNING network: SerialSP::Enumerate() failure on EnumeratePlayers()\n");
+                NetworkDebugPrintf("  WARNING network: SerialSP::Enumerate() failure on EnumeratePlayers()\n");
             }
         } else {
-            fn_000c20c0("  WARNING network: SerialSP::Enumerate() failure on LookForSystemMessages()\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::Enumerate() failure on LookForSystemMessages()\n");
         }
     } else {
-        D_0018cfc4.local = 0;
-        D_0018cfc4.host = 0;
-        D_0018cfc4.id = 0;
-        strcpy(D_0018cfc4.name, "REMOTE_PLAYER");
-        callback((TbNetworkCallbackData *)&D_0018cfc4, data);
+        playerData.local = 0;
+        playerData.host = 0;
+        playerData.id = 0;
+        strcpy(playerData.name, "REMOTE_PLAYER");
+        callback((TbNetworkCallbackData *)&playerData, data);
     }
     return ret;
 }
@@ -334,18 +334,18 @@ TbError SerialSP::Stop(void)
 
     size = GetRequestCompositeExchangeDataMsgSize();
     if (!started) {
-        fn_000c20c0("  WARNING network: SerialSP::Stop() not initialised\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::Stop() not initialised\n");
     } else {
         if (!in_session) {
-            fn_000c20c0("  WARNING network: SerialSP::Stop() not connected to a session\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::Stop() not connected to a session\n");
             return ret;
         }
         if (size > 8) {
-            fn_000c20c0("  WARNING network: SerialSP::Stop() deletePlayerBuffer is too small\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::Stop() deletePlayerBuffer is too small\n");
             return ret;
         }
-        EncodeDeletePlayerMsg(D_0018d428, local_id);
-        BroadcastSystemMessage(D_0018d428);
+        EncodeDeletePlayerMsg(serialDeletePlayerBuffer, local_id);
+        BroadcastSystemMessage(serialDeletePlayerBuffer);
         in_session = 0;
         ClearPlayers();
         ret = Lb_OK;
@@ -369,7 +369,7 @@ u32 SerialSP::ReadMessage(u32 *from, void *buf, u32 *size)
             *from = 0;
             break;
         default:
-            fn_000c20c0("  WARNING network: SerialSP::ReadMessage() invalid m_localPlayerId\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::ReadMessage() invalid m_localPlayerId\n");
             break;
         }
         ret = 1;
@@ -392,7 +392,7 @@ u32 SerialSP::PeekMessage(u32 *from, void *buf, u32 *size)
             *from = 0;
             break;
         default:
-            fn_000c20c0("  WARNING network: SerialSP::PeekMessage() invalid m_localPlayerId\n");
+            NetworkDebugPrintf("  WARNING network: SerialSP::PeekMessage() invalid m_localPlayerId\n");
             break;
         }
         ret = 1;
@@ -409,7 +409,7 @@ void SerialSP::SendAck(u8 seq)
     u32 i;
 
     if (len > sizeof(ackBuffer)) {
-        fn_000c20c0("  WARNING network: SerialSP::SendAck() ackBuffer is too small\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::SendAck() ackBuffer is too small\n");
         return;
     }
     memcpy(ackBuffer, acknowledgementHeader, 4);
@@ -419,7 +419,7 @@ void SerialSP::SendAck(u8 seq)
     sum += seq;
     memcpy(ackBuffer + 5, &sum, 2);
     if (comm->WriteBytes(ackBuffer, len) != len)
-        fn_000c20c0("  WARNING network: SerialSP::SendAck() failure on CommHandler::WriteBytes\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::SendAck() failure on CommHandler::WriteBytes\n");
 }
 
 // Feeds the received bytes to the packet parsers (up to ten partial
@@ -446,7 +446,7 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
         remove = 0;
         break;
     default:
-        fn_000c20c0("  WARNING network: SerialSP::PrivateReceive() invalid mode value\n");
+        NetworkDebugPrintf("  WARNING network: SerialSP::PrivateReceive() invalid mode value\n");
         return 0;
     }
     got = ProcessAvailableMsg(buf, size, remove);
@@ -560,7 +560,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
                         }
                         if (name) {
                             if (GetAddPlayerMsgSize(name) > 0x28) {
-                                fn_000c20c0("  WARNING network: SerialSP::PrivateReceive addPlayerBuffer too small\n");
+                                NetworkDebugPrintf("  WARNING network: SerialSP::PrivateReceive addPlayerBuffer too small\n");
                             } else {
                                 EncodeAddPlayerMsg(addPlayerBuffer, 0, name);
                                 Send(1, addPlayerBuffer);

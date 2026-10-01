@@ -9,14 +9,14 @@ extern u8 *palette;
 extern u8 D_00156910;
 
 void start_game(void);
-void fn_000110b0(void);
+void use_hires_layout(void);
 int LbScreenLock(void);
 void process_menus(void);
 void ProcessWindows(Window **windows);
-void fn_000a6ca4(void);
+void draw_other_windows(void);
 void draw_town_select(void);
 void process_keys_town_select(void);
-u8 fn_00029a54(RoomInfo *room);
+u8 is_room_empty(RoomInfo *room);
 void display_year_charts(void);
 void insert_hall_details(void);
 void display_hall(void);
@@ -46,7 +46,7 @@ void game(void)
     if (debug.direct_start) {
         display_mode = DM_GAME;
         gamevar.paused = 0;
-        fn_000110b0();
+        use_hires_layout();
     } else {
         display_mode = DM_MAIN_MENU;
         mainmenu.state = MMS_INTRO;
@@ -90,7 +90,7 @@ void game(void)
                 process_sound_heap();
                 manage_background_sounds();
                 do_ambients();
-                fn_000a6ca4();
+                draw_other_windows();
                 DrawWindows(open_windows);
                 process_turn();
                 draw_pause_mode();
@@ -185,13 +185,13 @@ void game(void)
                 process_sound_heap();
                 do_ambients();
                 manage_sound();
-                fn_000a6ca4();
+                draw_other_windows();
                 DrawWindows(open_windows);
                 process_turn();
                 draw_help_text();
                 break;
             case DM_YEAR_END_WINLOSE:
-                fn_000c21e6(&choice_backup, &year_end_backup, 10);
+                lib_memcpy(&choice_backup, &year_end_backup, 10);
                 play_winlose();
                 process_turn();
                 break;
@@ -405,7 +405,7 @@ void start_turn(void)
     }
     room = &room_info[allhosps[player].edited_room];
     if (room > room_info) {
-        if (room->being_edited && fn_00029a54(&room_info[allhosps[player].edited_room])) {
+        if (room->being_edited && is_room_empty(&room_info[allhosps[player].edited_room])) {
             if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
                 if (room_info[allhosps[player].edited_room].first == 0) {
                     D_001549d0[player].type = EV_SETUP_PLACE_OBJECT_REQUESTER;
@@ -539,7 +539,7 @@ void do_year_end(void)
         year_end_type = 4;
         break;
     case 4:
-        fn_000c21e6(&choice_backup, &year_end_backup, 10);
+        lib_memcpy(&choice_backup, &year_end_backup, 10);
         check_game_over();
         if (year_end_type == 4) {
             restore_display_screen();

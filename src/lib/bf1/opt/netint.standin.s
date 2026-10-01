@@ -98,7 +98,7 @@
 .L000c0762:
     .byte 0x68; .long _D_0012247f  # push 0x247f
 .L000c0767:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c076f:
     xor edi, edi
@@ -120,7 +120,7 @@
     jmp .L000c07b3
 .L000c07a6:
     .byte 0x68; .long _D_001224d0  # push 0x24d0
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c07b3:
     xor ecx, ecx
@@ -134,7 +134,7 @@
     cmp eax, ebx
     jbe .L000c08a7
     .byte 0x68; .long _D_00122517  # push 0x2517
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     inc esi
     add esp, 4
     cmp esi, 0xa
@@ -156,7 +156,7 @@
     je .L000c0832
     .byte 0x68; .long _D_00122583  # push 0x2583
 .L000c082a:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0832:
     mov ecx, 1
@@ -180,7 +180,7 @@
     je .L000c0886
     .byte 0x68; .long _D_00122623  # push 0x2623
 .L000c087e:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0886:
     call "LbTimerClock_"
@@ -309,7 +309,7 @@
 .L000c09f2:
     .byte 0x68; .long _D_0012247f  # push 0x247f
 .L000c09f7:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c09ff:
     xor ebp, ebp
@@ -331,7 +331,7 @@
     jmp .L000c0a43
 .L000c0a36:
     .byte 0x68; .long _D_001224d0  # push 0x24d0
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0a43:
     xor ecx, ecx
@@ -345,7 +345,7 @@
     cmp eax, ebx
     jbe .L000c0b37
     .byte 0x68; .long _D_00122517  # push 0x2517
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     inc esi
     add esp, 4
     cmp esi, 0xa
@@ -367,7 +367,7 @@
     je .L000c0ac2
     .byte 0x68; .long _D_00122583  # push 0x2583
 .L000c0aba:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0ac2:
     mov ecx, 1
@@ -391,7 +391,7 @@
     je .L000c0b16
     .byte 0x68; .long _D_00122623  # push 0x2623
 .L000c0b0e:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0b16:
     call "LbTimerClock_"
@@ -521,7 +521,7 @@
     jmp .L000c0c98
 .L000c0c8b:
     .byte 0x68; .long _D_001223eb  # push 0x23eb
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0c98:
     mov al, byte ptr [esp + 8]
@@ -612,7 +612,7 @@
 .L000c0dc1:
     .byte 0x68; .long _D_0012247f  # push 0x247f
 .L000c0dc6:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0dce:
     xor ebp, ebp
@@ -634,7 +634,7 @@
     jmp .L000c0e13
 .L000c0e06:
     .byte 0x68; .long _D_001224d0  # push 0x24d0
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0e13:
     xor ecx, ecx
@@ -648,7 +648,7 @@
     cmp eax, edx
     jbe .L000c0f07
     .byte 0x68; .long _D_00122517  # push 0x2517
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     inc esi
     add esp, 4
     cmp esi, 0xa
@@ -670,7 +670,7 @@
     je .L000c0e92
     .byte 0x68; .long _D_00122583  # push 0x2583
 .L000c0e8a:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0e92:
     mov ecx, 1
@@ -694,7 +694,7 @@
     je .L000c0ee6
     .byte 0x68; .long _D_00122623  # push 0x2623
 .L000c0ede:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0ee6:
     call "LbTimerClock_"
@@ -731,7 +731,7 @@
 .L000c0f4b:
     .byte 0x68; .long _D_001226bb  # push 0x26bb
 .L000c0f50:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0f58:
     mov al, byte ptr [esp + 4]
@@ -830,7 +830,7 @@
     cmp eax, ebp
     jbe .L000c1431
     .byte 0x68; .long _D_00122843  # push 0x2843
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
     inc eax
@@ -841,7 +841,7 @@
     cmp eax, 8
     jbe .L000c12de
     .byte 0x68; .long _D_00122860  # push 0x2860
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     jmp .L000c140e
 .L000c12de:
@@ -887,7 +887,7 @@
     test al, al
     je .L000c1379
     .byte 0x68; .long _D_001228a9  # push 0x28a9
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c1379:
     mov ebx, dword ptr ["W?maximumPlayers$nul"]
@@ -901,7 +901,7 @@
     cmp eax, 8
     jbe .L000c13a5
     .byte 0x68; .long _D_001228e8  # push 0x28e8
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     .byte 0xe9; .long .L000c140e-.-4  # jmp 0xc140e
 .L000c13a5:
@@ -926,7 +926,7 @@
     test al, al
     je .L000c1401
     .byte 0x68; .long _D_00122938  # push 0x2938
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000c1401:
     mov eax, dword ptr ["W?maximumPlayers$nul"]

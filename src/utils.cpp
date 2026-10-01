@@ -16,13 +16,12 @@ struct SortEntry {
 
 extern "C" {
 
-extern char D_0015fde4[];
+extern char filename[];
 extern Event D_001549d0[];
 extern u8 error_number;
-extern u32 D_0014bcc4, D_0014bcd0, D_0014bcd8, D_0014bce0, D_0014bce4, D_0014bce8;
-extern u32 D_0013c60c, D_0013c618, D_0013c620, D_0013c628, D_0013c62c, D_0013c630;
-extern u8 D_001581ec, D_001581ed, D_001581ef;
-extern u8 D_0015fe74;
+extern Coord LoresCoords[], HiresCoords[];
+extern u8 record_replay, play_replay, replay_number;
+extern u8 debug_mouse_pointer;
 
 void remove_node(Thing *node);
 Thing *search_mapwho(Map *cell, u16 kind);
@@ -30,13 +29,13 @@ void conv_string(char *dst, s8 *src, u8 mode);
 int to_upper_char(u8 ch);
 void record_mappos(u8 key);
 void display_copyright(void);
-void fn_0001be78(u8 dir);
+void cycle_mouse_pointer(u8 dir);
 void open_face_file(void);
 u8 nth_active_player(int nth);
 int LbScreenLock(void);
-void fn_000c93bf(char *dst, char *src);
+void strcat(char *dst, char *src);
 void LbPaletteFade(u8 *to_pal, int fade_steps, int flag);
-void fn_000c9be0(int x1, int y1, int x2, int y2, u8 colour);
+void LbDrawLine(int x1, int y1, int x2, int y2, u8 colour);
 
 }
 
@@ -895,10 +894,10 @@ s32 over_hotspot(s16 x, s16 y, s16 rx, s16 ry, s16 w, s16 h)
 // FUNCTION: 0x0001b554
 void draw_frame(const s16 x, const s16 y, const s16 w, const s16 h, const u16 color)
 {
-    fn_000c9be0(x, y, x + w, y, color);
-    fn_000c9be0(x, y, x, y + h, color);
-    fn_000c9be0(x + w, y, x + w, y + h, color);
-    fn_000c9be0(x, y + h, x + w, y + h, color);
+    LbDrawLine(x, y, x + w, y, color);
+    LbDrawLine(x, y, x, y + h, color);
+    LbDrawLine(x + w, y, x + w, y + h, color);
+    LbDrawLine(x, y + h, x + w, y + h, color);
 }
 
 // Plays animation idx of animation_table (from the CD when needed),
@@ -923,13 +922,13 @@ u8 hosp_play_smk(const u8 idx)
         LbScreenSwap();
     }
     if (animation_table[idx].cd_install_level > install_type) {
-        sprintf(D_0015fde4, "%s%s", cd_install_path, animation_table[idx].name);
-        check_cd_available(D_0015fde4);
+        sprintf(filename, "%s%s", cd_install_path, animation_table[idx].name);
+        check_cd_available(filename);
     } else {
-        fn_000bbff0(D_0015fde4, animation_table[idx].name);
+        lib_strcpy(filename, animation_table[idx].name);
     }
-    if (LbFileExists(D_0015fde4)) {
-        ok = play_smk(D_0015fde4, animation_table[idx].smk_flags, animation_table[idx].play_flags);
+    if (LbFileExists(filename)) {
+        ok = play_smk(filename, animation_table[idx].smk_flags, animation_table[idx].play_flags);
     } else {
         ok = 0;
     }
@@ -1113,8 +1112,8 @@ void open_requester(u8 idx, u8 flag)
 
     if (resvars.screen_mode == SCREEN_MODE_13) {
         if (idx != loaded_requester) {
-            fn_000bbff0(path, name);
-            fn_000c93bf(path, ".tab");
+            lib_strcpy(path, name);
+            strcat(path, ".tab");
             size = LbFileLengthRnc(path);
             if ((s32)end_button_sprites - (s32)button_sprite < size) {
                 return;
@@ -1122,8 +1121,8 @@ void open_requester(u8 idx, u8 flag)
             if (LbFileLoadAt(path, button_sprite) != size) {
                 return;
             }
-            fn_000bbff0(path, name);
-            fn_000c93bf(path, ".dat");
+            lib_strcpy(path, name);
+            strcat(path, ".dat");
             size = LbFileLengthRnc(path);
             if ((s32)end_button_sprite_data - (s32)button_sprite_data < size) {
                 return;
@@ -1157,31 +1156,31 @@ void display_copyright(void)
     hosp_dos_printf("Copyright (c) 1997 Bullfrog Productions Ltd.\n");
     hosp_dos_printf("All rights reserved.\n");
     hosp_dos_printf("Theme Hospital v%d \n", 3);
-    if (D_001581ec) {
-        hosp_dos_printf("Recording..%d..\n", D_001581ef);
+    if (record_replay) {
+        hosp_dos_printf("Recording..%d..\n", replay_number);
     }
-    if (D_001581ed) {
-        hosp_dos_printf("PlayBack..%d..\n", D_001581ef);
+    if (play_replay) {
+        hosp_dos_printf("PlayBack..%d..\n", replay_number);
     }
 }
 
 // Debug: steps the mouse pointer sprite up (dir 0) or down (1) and prints
 // its number.
 // FUNCTION: 0x0001be78
-void fn_0001be78(u8 dir)
+void cycle_mouse_pointer(u8 dir)
 {
     switch (dir) {
     case 0:
-        D_0015fe74++;
+        debug_mouse_pointer++;
         break;
     case 1:
-        D_0015fe74--;
+        debug_mouse_pointer--;
         break;
     default:
         break;
     }
-    hosp_dos_printf("MOUSE_POINTER %d\n", D_0015fe74);
-    set_mouse_sprite(D_0015fe74);
+    hosp_dos_printf("MOUSE_POINTER %d\n", debug_mouse_pointer);
+    set_mouse_sprite(debug_mouse_pointer);
 }
 
 // Reopens the faces file for the current resolution (low-res faces when
@@ -1202,12 +1201,12 @@ void open_face_file(void)
             reset_host();
             exit(1);
         }
-        resvars.face_w_u32 = D_0014bcc4;
-        resvars.face_head_h_u32 = D_0014bcd0;
-        resvars.face_body_h_u32 = D_0014bcd8;
-        resvars.face_legs_h_u32 = D_0014bce0;
-        resvars.face_border_w_u32 = D_0014bce4;
-        resvars.face_border_h_u32 = D_0014bce8;
+        resvars.face_w_u32 = LoresCoords[162].x;
+        resvars.face_head_h_u32 = LoresCoords[163].y;
+        resvars.face_body_h_u32 = LoresCoords[164].y;
+        resvars.face_legs_h_u32 = LoresCoords[165].y;
+        resvars.face_border_w_u32 = LoresCoords[166].x;
+        resvars.face_border_h_u32 = LoresCoords[166].y;
     } else if (resvars.screen_mode == SCREEN_MODE_13) {
         face_file = LbFileOpen((char *)hires_faces, 2);
         if (face_file == -1) {
@@ -1216,11 +1215,11 @@ void open_face_file(void)
             reset_host();
             exit(1);
         }
-        resvars.face_w_u32 = D_0013c60c;
-        resvars.face_head_h_u32 = D_0013c618;
-        resvars.face_body_h_u32 = D_0013c620;
-        resvars.face_legs_h_u32 = D_0013c628;
-        resvars.face_border_w_u32 = D_0013c62c;
-        resvars.face_border_h_u32 = D_0013c630;
+        resvars.face_w_u32 = HiresCoords[162].x;
+        resvars.face_head_h_u32 = HiresCoords[163].y;
+        resvars.face_body_h_u32 = HiresCoords[164].y;
+        resvars.face_legs_h_u32 = HiresCoords[165].y;
+        resvars.face_border_w_u32 = HiresCoords[166].x;
+        resvars.face_border_h_u32 = HiresCoords[166].y;
     }
 }

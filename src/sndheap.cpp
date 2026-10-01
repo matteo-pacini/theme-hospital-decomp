@@ -66,8 +66,8 @@ char IsSamplePlaying(s32 source_id, s32 number, void *handle);
 SampleInfo *GetFirstSampleInfoStructure(void);
 SampleInfo *GetLastSampleInfoStructure(void);
 SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, u32 volume, u32 pan, u16 pitch, s8 loop, u8 type, void *address, u32 extra);
-void *fn_00022b60(TbCacheUsedBlock *block);
-void fn_000a2ed0(TbCacheUsedBlock *block);
+void *cache_block_data(TbCacheUsedBlock *block);
+void lock_cache_block(TbCacheUsedBlock *block);
 }
 
 // Opens sound bank file path, reads the sample directory for sample rate
@@ -151,9 +151,9 @@ void process_sound_heap(void)
         return;
     cache.UnlockAll();
     if (othervar.loaded_level)
-        fn_000a2ed0(othervar.level_block);
+        lock_cache_block(othervar.level_block);
     if (othervar.screen_pic_loaded)
-        fn_000a2ed0(othervar.level_block);
+        lock_cache_block(othervar.level_block);
     end = GetLastSampleInfoStructure();
     for (info = GetFirstSampleInfoStructure(); info <= end; info++) {
         if (info->SampleHandle == 0 || !(info->flags & 1))
@@ -161,7 +161,7 @@ void process_sound_heap(void)
         if (IsSamplePlaying(0, 0, info->SampleHandle)) {
             st = &sample_table[info->SampleNumber];
             if (st->block)
-                fn_000a2ed0(st->block);
+                lock_cache_block(st->block);
         } else {
             info->flags &= ~1;
         }
@@ -197,15 +197,15 @@ SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, 
             sample_table[tag - 1].block = 0;
         }
         LbFileSeek(sound_file, st->offset, 0);
-        LbFileRead(sound_file, fn_00022b60(st->block), st->length);
+        LbFileRead(sound_file, cache_block_data(st->block), st->length);
         cache.MakeNewest(st->block);
     }
-    data = fn_00022b60(st->block);
-    info = PlaySampleFromAddress(source, sample, volume, pan, pitch, loop, type, fn_00022b60(st->block), st->priority);
+    data = cache_block_data(st->block);
+    info = PlaySampleFromAddress(source, sample, volume, pan, pitch, loop, type, cache_block_data(st->block), st->priority);
     if (info == 0)
         return 0;
     info->flags |= 1;
-    fn_000a2ed0(st->block);
+    lock_cache_block(st->block);
     return info;
 }
 
@@ -299,7 +299,7 @@ void clear_sound_heap(void)
 
 // Locks block.
 // FUNCTION: 0x000a2ed0 COMDAT
-inline void fn_000a2ed0(TbCacheUsedBlock *block)
+inline void lock_cache_block(TbCacheUsedBlock *block)
 {
     block->locked = 1;
 }

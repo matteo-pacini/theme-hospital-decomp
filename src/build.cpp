@@ -30,7 +30,7 @@ void delete_wall(u16 tile, u16 room, u8 side);
 #pragma aux delete_wall "W?delete_wall$n(ususuc)v"
 void clear_cell_of_ratholes(u8 owner, u16 tile);
 #pragma aux clear_cell_of_ratholes "W?clear_cell_of_ratholes$n(ucus)v"
-u8 fn_00029a54(RoomInfo *room);
+u8 is_room_empty(RoomInfo *room);
 Thing *search_mapwho(Map *cell, u16 kind);
 
 }
@@ -142,7 +142,7 @@ void temp_place_door(u16 pos, u8 owner)
             for (j = 0; j <= room->width; j += room->width) {
                 tile = &cell0[j + (i << 7)] - map;
                 if (build->door_state || (-map[tile + 128].first & 3) == 2) {
-                    d = fn_000cb2db((s16)pos % 128 - tile % 128) + fn_000cb2db((s16)pos / 128 - tile / 128);
+                    d = abs((s16)pos % 128 - tile % 128) + abs((s16)pos / 128 - tile / 128);
                     if (d < best) {
                         best = d;
                         best_tile = tile;
@@ -161,7 +161,7 @@ void temp_place_door(u16 pos, u8 owner)
             for (j = 0; j <= room->height; j += room->height) {
                 tile = &cell0[i + (j << 7)] - map;
                 if (build->door_state || (-map[tile - 1].first & 3) == 1) {
-                    d = fn_000cb2db((s16)pos % 128 - tile % 128) + fn_000cb2db((s16)pos / 128 - tile / 128);
+                    d = abs((s16)pos % 128 - tile % 128) + abs((s16)pos / 128 - tile / 128);
                     if (d < best) {
                         best = d;
                         best_tile = tile;
@@ -1652,7 +1652,7 @@ void init_edit_room(RoomInfo *room)
         crequester.kind = room->type;
         gamevar.place_mode = 0;
     }
-    if (fn_00029a54(room)) {
+    if (is_room_empty(room)) {
         room->state = RS_EDITED;
         if (othervar.cur_player == player) {
             setup_place_object_requester();
@@ -2334,7 +2334,7 @@ void repair_invis_walls_around_room(RoomInfo *room)
 // Cancels editing owner's room (allhosps.edited_room): clears its waiting flag
 // and takes its outline off the map.
 // FUNCTION: 0x0002994c
-extern "C" void fn_0002994c(u8 owner)
+extern "C" void cancel_room_edit(u8 owner)
 {
     RoomInfo *room;
     BuildState *build;
@@ -2357,7 +2357,7 @@ extern "C" void fn_0002994c(u8 owner)
 
 // Returns 1 if nobody is in room and its door is not in use, else 0.
 // FUNCTION: 0x00029a54
-extern "C" u8 fn_00029a54(RoomInfo *room)
+extern "C" u8 is_room_empty(RoomInfo *room)
 {
     Thing *door;
 

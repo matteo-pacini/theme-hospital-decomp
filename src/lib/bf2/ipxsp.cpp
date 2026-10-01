@@ -19,8 +19,8 @@ extern "C" {
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 unsigned long strtoul(const char *nptr, char **endptr, int base);
-void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address);
-#pragma aux fn_000db4c8 "W?AddIPXSession$:IPXServiceProvider$n(pn$__1snc1aHOSTINFOPACKET$$pn$__3ljac5NETSOCKET$$)v"
+void IPXServiceProvider_AddIPXSession(IPXServiceProvider *sp, u8 *info, u8 *address);
+#pragma aux IPXServiceProvider_AddIPXSession "W?AddIPXSession$:IPXServiceProvider$n(pn$__1snc1aHOSTINFOPACKET$$pn$__3ljac5NETSOCKET$$)v"
 }
 
 // No settings to change over IPX. Returns Lb_OK.
@@ -69,10 +69,10 @@ TbError IPXServiceProvider::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sRe
         ok = 1;
         ret = Lb_OK;
     } else {
-        fn_000c20c0("  WARNING network: IPXServiceProvider::Init() failure on Initialise()\n");
+        NetworkDebugPrintf("  WARNING network: IPXServiceProvider::Init() failure on Initialise()\n");
     }
     if (ok) {
-        fn_000c20c0("MAX PACKET SIZE = %d\n", 0x212);
+        NetworkDebugPrintf("MAX PACKET SIZE = %d\n", 0x212);
         started = 1;
         this->guid = guid;
         session_count = 0;
@@ -119,7 +119,7 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
     IPXPacket *p;
     TbError ret = Lb_FAIL;
 
-    fn_000c20c0("  LbNETWORK : Initialising IPXServiceProvider\n");
+    NetworkDebugPrintf("  LbNETWORK : Initialising IPXServiceProvider\n");
     if (ServiceProvider::Initialise(cb, data) == Lb_OK) {
         if (ipx.Init() == 0) {
             socket.socket = 0;
@@ -141,7 +141,7 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
             ServiceProvider::Release();
         }
     } else {
-        fn_000c20c0("  WARNING network: SERVICE PROVIDER FAILURE\n");
+        NetworkDebugPrintf("  WARNING network: SERVICE PROVIDER FAILURE\n");
     }
     return ret;
 }
@@ -152,9 +152,9 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
 // FUNCTION: 0xd569c
 TbError IPXServiceProvider::Release(void)
 {
-    fn_000c20c0("  LbNETWORK : Releasing IPXServiceProvider\n");
+    NetworkDebugPrintf("  LbNETWORK : Releasing IPXServiceProvider\n");
     if (!started) {
-        fn_000c20c0("  WARNING network: IPXServiceProvider::Release() not initialised\n");
+        NetworkDebugPrintf("  WARNING network: IPXServiceProvider::Release() not initialised\n");
         return Lb_FAIL;
     }
     if (in_session)
@@ -172,12 +172,12 @@ TbError IPXServiceProvider::Release(void)
 
 extern "C" {
 
-TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed);
-#pragma aux fn_000d6550 "W?SendMessage$:IPXServiceProvider$n(ulpnv$$TE$$)$TbError$$"
-u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
-#pragma aux fn_000d6588 "W?ReadMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
-u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
-#pragma aux fn_000d6590 "W?PeekMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
+TbError IPXServiceProvider_SendMessage(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed);
+#pragma aux IPXServiceProvider_SendMessage "W?SendMessage$:IPXServiceProvider$n(ulpnv$$TE$$)$TbError$$"
+u32 IPXServiceProvider_ReadMessage(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
+#pragma aux IPXServiceProvider_ReadMessage "W?ReadMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
+u32 IPXServiceProvider_PeekMessage(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
+#pragma aux IPXServiceProvider_PeekMessage "W?PeekMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
 
 // Hosts session session_name (up to max_players, at most 32) as player
 // player_name: advertises it over SAP as "BU.GI.<guid>" and makes this
@@ -190,7 +190,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
     u32 i;
 
     if (!started) {
-        fn_000c20c0("  WARNING network: IPXServiceProvider::Start() not initialised\n");
+        NetworkDebugPrintf("  WARNING network: IPXServiceProvider::Start() not initialised\n");
         return Lb_FAIL;
     }
     if (in_session)
@@ -207,7 +207,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
     memset(players, 0, size);
     strcpy(server_name, "BU.GI.");
     ConvertGuidToString(&guid, server_name + 6);
-    fn_000c20c0("%s\n", server_name);
+    NetworkDebugPrintf("%s\n", server_name);
     if (ipx.AdvertiseServer(0xbe08, server_name, &socket) == 0) {
         session.local_id = 0;
         session.host_id = 0;
@@ -228,7 +228,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
         ret = Lb_OK;
         ClearPlayers();
         if (AddPlayer(local_id, player_name, 1, 1) != Lb_OK) {
-            fn_000c20c0("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
+            NetworkDebugPrintf("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
         } else {
             in_session = 1;
             accepting = 1;
@@ -236,7 +236,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
     } else {
         LbMemoryFree(players);
         players = 0;
-        fn_000c20c0(" COULD NOT ADVERTISE SERVICE\n");
+        NetworkDebugPrintf(" COULD NOT ADVERTISE SERVICE\n");
     }
     return ret;
 }
@@ -421,7 +421,7 @@ TbError IPXServiceProvider::Stop(void)
 // Sends message buf to player to, guaranteed (BUDG) or not (BUDN).
 // Returns SendMessageToPlayerId's result.
 // FUNCTION: 0x000d6550
-TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
+TbError IPXServiceProvider_SendMessage(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
 {
     u32 magic;
     TbError ret;
@@ -436,23 +436,23 @@ TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
     }
     ret = sp->SendMessageToPlayerId(to, buf, magic);
     if (ret == Lb_FAIL)
-        fn_000c20c0("ERROR SendMessageToPlayer\n");
+        NetworkDebugPrintf("ERROR SendMessageToPlayer\n");
     return ret;
 }
 
-// Takes the next received message (see fn_000d6598).
+// Takes the next received message (see IPXServiceProvider_PrivateReceive).
 // FUNCTION: 0xd6588
-u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
+u32 IPXServiceProvider_ReadMessage(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
 {
-    return fn_000d6598(sp, from, buf, size, 0);
+    return IPXServiceProvider_PrivateReceive(sp, from, buf, size, 0);
 }
 
 // Looks at the next received message without taking it (see
-// fn_000d6598).
+// IPXServiceProvider_PrivateReceive).
 // FUNCTION: 0xd6590
-u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
+u32 IPXServiceProvider_PeekMessage(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
 {
-    return fn_000d6598(sp, from, buf, size, 1);
+    return IPXServiceProvider_PrivateReceive(sp, from, buf, size, 1);
 }
 
 }
@@ -478,7 +478,7 @@ static inline IPXQueueEntry *GetNextFullReceiveBuffer(IPXServiceProvider *self)
 // from the queue. With nothing queued, sets *size to 0 and polls the
 // network. Returns 1 if a message was copied, else 0.
 // FUNCTION: 0xd6598
-u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
+u32 IPXServiceProvider_PrivateReceive(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
 {
     IPXQueueEntry *entry;
     u32 msg_size;
@@ -666,7 +666,7 @@ TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetw
                         if (BullfrogIPXMessage((__407tigIPXMESSAGEBLOCK *)info, (__tibcaGUID *)(info + 0xc)) == Lb_OK) {
                             switch (*(u32 *)info) {
                             case MSG_BUHI:
-                                fn_000db4c8(this, info, (u8 *)&from);
+                                IPXServiceProvider_AddIPXSession(this, info, (u8 *)&from);
                                 break;
                             case MSG_BUHP:
                                 if (memcmp(from.node, &session_list[session->id].address[10], 6))
@@ -944,7 +944,7 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
                         strcpy(p->name, join->name);
                         p->id = i;
                         if (AddPlayer(i, p->name, 0, 0) != Lb_OK) {
-                            fn_000c20c0("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
+                            NetworkDebugPrintf("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
                             return Lb_FAIL;
                         }
                         session.num_players++;
@@ -1057,7 +1057,7 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
                                     if (entry->id == msg->host_id)
                                         is_host = 1;
                                     if (AddPlayer(entry->id, entry->name, is_local, is_host) != Lb_OK)
-                                        fn_000c20c0("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
+                                        NetworkDebugPrintf("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
                                     memcpy(&players[entry->id], entry, sizeof(IPXPlayerEntry));
                                 }
                             }
@@ -1596,24 +1596,24 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
                             CheckForSystemMessages();
                         }
                         if (ret == Lb_FAIL)
-                            fn_000c20c0("DIDN'T GET AN ACK\n");
+                            NetworkDebugPrintf("DIDN'T GET AN ACK\n");
                     } else {
                         ret = Lb_OK;
                     }
                 } else {
-                    fn_000c20c0("Invalid length: %d vs %d\n", size, 0x212);
+                    NetworkDebugPrintf("Invalid length: %d vs %d\n", size, 0x212);
                 }
             } else {
-                fn_000c20c0("sender->SocketNumber = FALSE\n");
+                NetworkDebugPrintf("sender->SocketNumber = FALSE\n");
             }
         } else {
-            fn_000c20c0("Invalid player id %d\n", id);
+            NetworkDebugPrintf("Invalid player id %d\n", id);
         }
     } else {
-        fn_000c20c0("m_connectToSession = FALSE\n");
+        NetworkDebugPrintf("m_connectToSession = FALSE\n");
     }
     if (ret == Lb_FAIL)
-        fn_000c20c0("Ended up with ret == LB_ERROR\n");
+        NetworkDebugPrintf("Ended up with ret == LB_ERROR\n");
     return ret;
 }
 
@@ -1821,7 +1821,7 @@ extern "C" {
 // (updating or adding its entry) and rebuilds the provider's session
 // table.
 // FUNCTION: 0xdb4c8
-void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address)
+void IPXServiceProvider_AddIPXSession(IPXServiceProvider *sp, u8 *info, u8 *address)
 {
     s32 now;
     s32 i;

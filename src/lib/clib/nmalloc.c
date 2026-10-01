@@ -23,9 +23,9 @@ typedef struct heapblkp {
 #define FRL_SIZE     12
 
 extern mheapptr __nheapbeg;
-extern mheapptr D_001505e4;
-extern unsigned D_001505e8;
-extern unsigned char D_0018cfa8;
+extern mheapptr __MiniHeapRover;
+extern unsigned __LargestSizeB4MiniHeapRover;
+extern unsigned char __nheap_clean;
 
 unsigned __MemAllocator(unsigned size, unsigned seg, unsigned heap);
 #pragma aux __MemAllocator "__MemAllocator" parm [eax] [edx] [ebx] value [eax] modify [es fs gs];
@@ -56,24 +56,24 @@ void *_nmalloc(size_t amt)
         largest = size;
         if (largest < FRL_SIZE)
             largest = FRL_SIZE;
-        if (largest > D_001505e8) {
-            miniheap_ptr = D_001505e4;
+        if (largest > __LargestSizeB4MiniHeapRover) {
+            miniheap_ptr = __MiniHeapRover;
             if (miniheap_ptr == NULL) {
-                D_001505e8 = 0;
+                __LargestSizeB4MiniHeapRover = 0;
                 miniheap_ptr = __nheapbeg;
             }
         } else {
-            D_001505e8 = 0;
+            __LargestSizeB4MiniHeapRover = 0;
             miniheap_ptr = __nheapbeg;
         }
         for (; miniheap_ptr != NULL; miniheap_ptr = miniheap_ptr->next) {
-            D_001505e4 = miniheap_ptr;
+            __MiniHeapRover = miniheap_ptr;
             ptr = __MemAllocator(amt, _DGroup(), (unsigned)miniheap_ptr);
             if (ptr != 0)
                 goto release;
             largest = miniheap_ptr->largest_blk;
-            if (largest > D_001505e8)
-                D_001505e8 = largest;
+            if (largest > __LargestSizeB4MiniHeapRover)
+                __LargestSizeB4MiniHeapRover = largest;
         }
         if (expanded || !__ExpandDGROUP(amt)) {
             if (!__nmemneed(amt))
@@ -84,6 +84,6 @@ void *_nmalloc(size_t amt)
         }
     }
 release:
-    D_0018cfa8 = 0;
+    __nheap_clean = 0;
     return (void *)ptr;
 }

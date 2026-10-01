@@ -158,11 +158,6 @@ struct __iobuf {
     u8 unknown[0x1a];
 };
 
-struct __1rdtuTbModemDev {
-    u8 unknown0[0x1c];
-    u8 unknown1c;
-};
-
 struct __ctcl4TbNetworkVersion {
     char text[0x50];
     float version;
@@ -187,8 +182,8 @@ int LbMemoryFree(void *p);
 void LbMemoryCopy(void *dst, void *src, u32 size);
 void LbMemorySet(void *dst, u8 value, u32 size);
 /* The C library's strcpy. */
-void fn_000bbff0(char *dst, char *src);
-#pragma aux fn_000bbff0 "strcpy_"
+void lib_strcpy(char *dst, char *src);
+#pragma aux lib_strcpy "strcpy_"
 int LbDataLoad(TbLoadFiles *files);
 int LbDataFree(TbLoadFiles *files);
 int LbDataFreeAll(TbLoadFiles *files);
@@ -219,8 +214,8 @@ int LbScreenSwap(void);
 int LbIsActive(void);
 s32 LbTimerClock(void);
 /* The C library's memcpy. */
-void fn_000c21e6(void *a, void *b, int c);
-#pragma aux fn_000c21e6 "memcpy_"
+void lib_memcpy(void *a, void *b, int c);
+#pragma aux lib_memcpy "memcpy_"
 int LbPaletteGet(u8 *palette, ...);
 int LbPaletteSet(u8 *palette, ...);
 u32 GetSongHandle(void);
@@ -232,7 +227,7 @@ u32 LbSqrL(u32 n);
 s32 LbTextStringWidth(char *text);
 s32 LbTextStringHeight(char *text);
 u16 LbArcTan(s32 x, s32 y);
-int fn_000cb2db(int i);
+int abs(int i);
 void LbScreenCopyBox(const u8 *src, u8 *dst, s32 height);
 u8 play_smk(char *name, u32 smk_flags, u32 flags);
 
@@ -326,8 +321,6 @@ void AIL_end_sequence(u32 handle, ...);
 #pragma aux AIL_end_sequence "_*"
 
 }
-
-extern __1rdtuTbModemDev modem_dev;
 
 /* A cache block's header; the block's data follows it. */
 struct TbCacheUsedBlock {

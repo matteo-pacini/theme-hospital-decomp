@@ -1,7 +1,7 @@
 #include "clib.h"
 
 extern unsigned char _osmajor;
-extern const signed char D_001519f0[20];
+extern const signed char xlat[20];
 
 void __set_doserrno(int err);
 
@@ -45,7 +45,7 @@ int __set_errno_dos(unsigned err)
         }
         if ((int)code > 0x13)
             code = 0x13;
-        errnum = D_001519f0[code];
+        errnum = xlat[code];
     } else {
         errnum = (err >> 8) & 0xff;
     }

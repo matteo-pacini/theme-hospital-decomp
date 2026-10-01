@@ -46,7 +46,7 @@ struct HelpControl {
 };
 
 /*
- * Element of the zoom-box frame tables (D_00147314, the demo's hiresglass);
+ * Element of the zoom-box frame tables (hiresglass, the demo's hiresglass);
  * add_glass_frame reads a list, ended by x1 0, as GlassBox.
  */
 struct GlassFrame {

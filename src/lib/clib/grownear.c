@@ -32,8 +32,8 @@ typedef int tiny_ret_t;
 #define TINY_ERROR(rc) ((rc) < 0)
 
 extern mheapptr __nheapbeg;
-extern mheapptr D_001505e4;
-extern mheapptr D_0018ba94;
+extern mheapptr __MiniHeapRover;
+extern mheapptr __MiniHeapFreeRover;
 extern unsigned _curbrk;
 extern int __heap_enabled;
 extern unsigned long __minreal;
@@ -147,10 +147,10 @@ void __unlink(mheapptr heap)
     mheapptr prev_heap;
     mheapptr next_heap;
 
-    if (heap == D_001505e4)
-        D_001505e4 = heap->next;
-    if (heap == D_0018ba94)
-        D_0018ba94 = NULL;
+    if (heap == __MiniHeapRover)
+        __MiniHeapRover = heap->next;
+    if (heap == __MiniHeapFreeRover)
+        __MiniHeapFreeRover = NULL;
     if (heap == __nheapbeg)
         __nheapbeg = heap->next;
     prev_heap = heap->prev;

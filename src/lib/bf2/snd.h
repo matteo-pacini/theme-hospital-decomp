@@ -119,7 +119,7 @@ extern AILIni SoundInstallChoice;
 extern AILIni MusicInstallChoice;
 extern SampleInfo sample_id[];
 extern SampleInfo *end_sample_id;
-extern char D_0018c8b4[];
+extern char MusicDriverName[];
 
 s32 LbFilePosition(s32 handle);
 char *getenv(const char *name);

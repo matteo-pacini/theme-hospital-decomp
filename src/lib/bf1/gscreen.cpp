@@ -4,7 +4,7 @@ extern u32 _lbScreenInitialised;
 extern u32 screen_initialised;
 
 extern "C" {
-extern s32 D_00188c0c;
+extern s32 setup;
 
 TbScreenModeInfo lbScreenModeInfo[] = {
     { 0, 0, 0, 0, 0x0, "MODE_INVALID     " },
@@ -45,10 +45,10 @@ int LbScreenFindVideoModes(void);
 // FUNCTION: 0x000be900
 s32 LbScreenIsModeAvailable(TbScreenMode mode)
 {
-    if (!D_00188c0c) {
+    if (!setup) {
         if (LbScreenFindVideoModes() != 1)
             return 0;
-        D_00188c0c = 1;
+        setup = 1;
     }
     return lbScreenModeInfo[mode].Available;
 }

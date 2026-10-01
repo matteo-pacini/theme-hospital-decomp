@@ -962,7 +962,7 @@
     test al, al
     je .L000d9182
     .byte 0x68; .long _D_001262d0  # push 0x62d0
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000d9182:
     imul edi, dword ptr [ebp], 0x38
@@ -1295,7 +1295,7 @@
     test al, al
     je .L000d86cb
     .byte 0x68; .long _D_00126289  # push 0x6289
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
     add esp, 0x11c

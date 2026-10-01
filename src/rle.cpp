@@ -79,7 +79,7 @@ s32 rle_compress(s8 *data, s32 len)
     }
     size = out - buf;
     if (size < len)
-        fn_000c21e6(data, buf, size);
+        lib_memcpy(data, buf, size);
     else
         size = len;
     LbMemoryFree(buf);
@@ -139,7 +139,7 @@ s32 rle_decompress(s8 *data, s32 len)
             src += 2;
         }
     }
-    fn_000c21e6(data, buf, size);
+    lib_memcpy(data, buf, size);
     LbMemoryFree(buf);
     return size;
 }

@@ -3,9 +3,9 @@
 // FUNCTION: 0x000c93bf
 
 .section _TEXT,"ax",@progbits,unique,824255
-.globl "fn_000c93bf_"
-.type "fn_000c93bf_",@function
-"fn_000c93bf_":
+.globl "strcat_"
+.type "strcat_",@function
+"strcat_":
     push ecx
     push esi
     push edi
@@ -39,4 +39,4 @@
     pop esi
     pop ecx
     ret
-.size "fn_000c93bf_",.-"fn_000c93bf_"
+.size "strcat_",.-"strcat_"

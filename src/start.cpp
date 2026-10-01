@@ -5,12 +5,11 @@ extern char **misc_text;
 extern u8 tutorial_display_flags[];
 extern u16 all_illnesses[];
 
-u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "fn_000cd716_"
+u32 lib_strlen(char *s);
+#pragma aux lib_strlen "strlen_"
 void setup_pulldown_menu_options(void);
 extern u8 *palette;
-extern u8 D_001581a6;
-extern char **show_help_text_0, **level_text, **win_text, **D_00160398, **D_0016039c;
+extern char **show_help_text_0, **level_text, **win_text, **net_mission_text, **beta_demo_text_short;
 extern u8 xs[], ys[];
 extern u8 new_game;
 extern Event D_001549d0[];
@@ -59,7 +58,7 @@ extern "C" void start_game(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     init_andys_variables();
     setup_req4_references();
-    crequester.id = D_001581a6 = REQ_NONE;
+    crequester.id = prequester.id = REQ_NONE;
     myplayer.shadows_on = 1;
     setup_menus();
     setup_interactions();
@@ -68,8 +67,8 @@ extern "C" void start_game(void)
     setup_indices_for_composite_help(show_help_text_0, statvar.help_page0_start, 0x1f);
     setup_indices_for_composite_help(level_text, statvar.help_page1_start, 0x13);
     setup_indices_for_composite_help(win_text, statvar.winlose_text_start, 0xd);
-    setup_indices_for_composite_help(D_00160398, statvar.net_help_start, 0xb);
-    setup_indices_for_composite_help(D_0016039c, statvar.net_result_start, 4);
+    setup_indices_for_composite_help(net_mission_text, statvar.net_help_start, 0xb);
+    setup_indices_for_composite_help(beta_demo_text_short, statvar.net_result_start, 4);
     InitPixBuffer(0, 0, 0xb4, 0xb4, 0xfe, 1);
     init_midi();
     init_ambients();
@@ -80,8 +79,8 @@ extern "C" void start_game(void)
     choice_backup.mode = DM_GAME;
     current_text.text[0] = 0;
     if (debug.direct_start) {
-        if (fn_000cd716(myplayer.name_chars) == 0)
-            fn_000bbff0(myplayer.name_chars, misc_text[1]);
+        if (lib_strlen(myplayer.name_chars) == 0)
+            lib_strcpy(myplayer.name_chars, misc_text[1]);
         setup_new_level((u16)level_number, 1);
         load_player_details();
         othervar.pending_palette = palette;
@@ -109,9 +108,9 @@ void setup_new_level(int level, u8 reload_balance)
     AllHosps backup;
 
     myhosp = &allhosps[player];
-    if (fn_000cd716(myplayer.name_chars) == 0)
-        fn_000bbff0(myplayer.name_chars, misc_text[1]);
-    fn_000bbff0((char *)myhosp->name, myplayer.name_chars);
+    if (lib_strlen(myplayer.name_chars) == 0)
+        lib_strcpy(myplayer.name_chars, misc_text[1]);
+    lib_strcpy((char *)myhosp->name, myplayer.name_chars);
     myhosp->player_type = 1;
     if ((u16)level > 14)
         myhosp->level = 1;
@@ -199,7 +198,7 @@ void setup_new_level(int level, u8 reload_balance)
 // FUNCTION: 0x00090c8c
 void copy_my_hosp(AllHosps *dst, AllHosps *src)
 {
-    fn_000bbff0((char *)dst->name, (char *)src->name);
+    lib_strcpy((char *)dst->name, (char *)src->name);
     dst->level = src->level;
     dst->player_type = src->player_type;
     dst->score = src->score;
@@ -214,8 +213,8 @@ void load_balance(const u16 level)
     char path[0x90];
     char level_path[0x90];
 
-    if (fn_000cd716(balance_id) == 0)
-        fn_000bbff0(balance_id, "FULL");
+    if (lib_strlen(balance_id) == 0)
+        lib_strcpy(balance_id, "FULL");
     if (install_type < 3) {
         sprintf(path, "%slevels/%s00.sam", cd_install_path, balance_id);
         check_cd_available(path);

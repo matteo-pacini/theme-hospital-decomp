@@ -15,11 +15,11 @@ extern u8 *end_game_panel, *pulldv_data, *end_pulldv, *staff_complex_group, *fac
 extern u8 *end_allhosps, *end_comp_buckets, *end_text_buffer, *heapptr;
 
 int __far harderr_handler(unsigned deverr, unsigned errcode, unsigned __far *devhdr);
-void fn_000ce546(int (__far *handler)(unsigned, unsigned, unsigned __far *));
+void _harderr(int (__far *handler)(unsigned, unsigned, unsigned __far *));
 char *strchr(const char *s, int c);
 int LbFileFindFirst(char *path, void *ff, u32 attr);
 int LbScreenLock(void);
-void fn_0001102c(void);
+void setup_lores_screen(void);
 }
 
 TbLoadFiles mcgaspritefiles[] = {
@@ -233,7 +233,7 @@ TbLoadFiles palettefile[] = {
 };
 
 extern "C" {
-char *D_0013e80c = "data/mpalette.dat";
+char *palette_filename = "data/mpalette.dat";
 }
 
 TbLoadFiles langfile[] = {
@@ -451,7 +451,7 @@ TbLoadFiles hiresratfestpanelfiles[] = {
 };
 
 extern "C" {
-char *D_0013f704[] = {
+char *cd_required_text[] = {
     "Theme Hospital requires the CDROM to play!",
     "Un CD-ROM requis pour jouer \205 Theme Hospital",
     "Sie ben\232tigen die CD-ROM, um Theme Hospital zu spielen!",
@@ -492,7 +492,7 @@ void check_cd_available(char *path)
     unused = 0;
     if (*path == '*')
         return;
-    fn_000ce546(harderr_handler);
+    _harderr(harderr_handler);
     handle = LbFileOpen(path, 2);
     if (handle != -1) {
         if (LbFileRead(handle, &probe, 4) != -1) {
@@ -514,7 +514,7 @@ void check_cd_available(char *path)
     LbFileLoadAt((char *)hiresscreens[SCR_LOADING], lbDisplay.wscreen);
     lbDisplay.draw_flags = 0;
     set_font_from_cache(0x2f);
-    text = D_0013f704[myplayer.language];
+    text = cd_required_text[myplayer.language];
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     LbTextDraw((lbDisplay.physical_screen_width - LbTextStringWidth(text)) / 2, 0x1a4, text);
@@ -533,7 +533,7 @@ void check_cd_available(char *path)
     if (resvars.screen_mode != mode)
         setup_any_screen(palette, mode);
     if (flag)
-        fn_0001102c();
+        setup_lores_screen();
     if (had_screen) {
         while (LbScreenLock() != 1)
             ;
@@ -541,10 +541,10 @@ void check_cd_available(char *path)
     set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
     othervar.full_redraw = 1;
     if (install_type < 2) {
-        sprintf(fname, "%s%s", cd_install_path, D_0013e80c);
+        sprintf(fname, "%s%s", cd_install_path, palette_filename);
         check_cd_available(fname);
         LbFileLoadAt(fname, palette);
     } else {
-        LbFileLoadAt(D_0013e80c, palette);
+        LbFileLoadAt(palette_filename, palette);
     }
 }

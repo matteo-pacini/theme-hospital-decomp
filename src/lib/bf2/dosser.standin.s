@@ -54,8 +54,8 @@
     .byte 0x31; .byte 0xc0
     .byte 0xe9; .long .L000f5538-.-4
 .L000f53d0:
-    .byte 0xb8; .long _D_00110068
-    .byte 0xba; .long _D_001100fe
+    .byte 0xb8; .long _serial_handler_code
+    .byte 0xba; .long _serial_handler_code_end
     .byte 0x89; .byte 0xdf
     .byte 0x29; .byte 0xc2
     .byte 0x89; .byte 0xc6
@@ -90,7 +90,7 @@
     .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x28
     .byte 0x50
     .byte 0x68; .long _D_00128690
-    .byte 0xe8; .long "fn_000c20c0_"-.-4
+    .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x14
     .byte 0x31; .byte 0xd2
     .byte 0x8a; .byte 0x44; .byte 0x24; .byte 0x20

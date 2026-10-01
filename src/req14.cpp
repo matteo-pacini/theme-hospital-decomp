@@ -2,7 +2,7 @@
 
 extern "C" {
 extern Event D_001549d0[];
-s32 D_00145328 = -1;
+s32 hilighted_object = -1;
 extern char **object_names;
 extern char **misc_text;
 extern char **room_names;
@@ -179,9 +179,9 @@ void req14_overdraw(Window *win)
                 if ((ox + resvars.boxes[0x27].x <= lbDisplay.mmouse_x && ox + resvars.boxes[0x27].x + resvars.boxes[0x27].w > lbDisplay.mmouse_x)
                     && by + resvars.boxes[0x29].y <= lbDisplay.mmouse_y
                     && by + resvars.boxes[0x27].y + resvars.boxes[0x27].h > lbDisplay.mmouse_y) {
-                    if (D_00145328 != obj)
+                    if (hilighted_object != obj)
                         play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
-                    D_00145328 = obj;
+                    hilighted_object = obj;
                     hover = 1;
                     if (lbDisplay.mleft_button) {
                         if (crequester.arg3 != obj)
@@ -196,7 +196,7 @@ void req14_overdraw(Window *win)
             }
         }
         if (!hover)
-            D_00145328 = -1;
+            hilighted_object = -1;
         if (rows) {
             reqspr_draw(bx, by + resvars.coords[0x71].y, &button_sprite[resvars.requester_sprites[0x1e]]);
             reqspr_draw(bx, oy + resvars.coords[0x70].y, &button_sprite[resvars.requester_sprites[0x1c]]);
@@ -214,7 +214,7 @@ void req14_overdraw(Window *win)
                         color.red);
                     lbDisplay.draw_flags ^= 0x10;
                 }
-                if (obj == D_00145328)
+                if (obj == hilighted_object)
                     set_font_from_cache(2);
                 else
                     set_font_from_cache(1);

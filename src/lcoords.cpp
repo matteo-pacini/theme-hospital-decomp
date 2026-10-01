@@ -6,9 +6,9 @@
 // element types; these are the demo's names for them.
 
 extern "C" {
-void fn_00074064(void);
-void fn_000740e4(void);
-void fn_000741a4(void);
+void req3_help_if_diagnosed(void);
+void req3_help_if_curable(void);
+void req3_help_if_queueing(void);
 }
 
 void manager_help_displayed_ins();
@@ -45,7 +45,7 @@ void slist_tiredness_help_if_present();
 
 extern "C" {
 // demo: LoresBoxes
-BoxCoord D_0014b1c4[95] = {
+BoxCoord LoresBoxes[95] = {
     { 63, 25, 110, 86 },
     { 80, 15, 125, 18 },
     { 80, 23, 125, 18 },
@@ -144,7 +144,7 @@ BoxCoord D_0014b1c4[95] = {
 };
 
 // demo: LoresCoords
-Coord D_0014b7b4[181] = {
+Coord LoresCoords[181] = {
     { 22, 97 }, { 104, 11 }, { 12, 10 }, { 49, 53 }, { 30, 75 }, { 27, 23 }, { 103, 23 },
     { 177, 23 }, { 69, 152 }, { 120, 42 }, { 133 }, { 191, 113 }, { 93, 113 }, { 143, 150 },
     { 143, 161 }, { 143, 173 }, { 207, 173 }, { 88, 29 }, { 105, 29 }, { 218, 29 }, { 10, 25 },
@@ -171,7 +171,7 @@ Coord D_0014b7b4[181] = {
 };
 
 // demo: loresbuttons
-SlistButton D_0014bd5c[12] = {
+SlistButton loresbuttons[12] = {
     { 21, 108, 52, 13, process_queue_button },
     { 223, 108, 52, 13, process_queue_button },
     { 178, 110, 8, 7, process_queue_button },
@@ -186,7 +186,7 @@ SlistButton D_0014bd5c[12] = {
 };
 
 // demo: loreshelp
-HelpControl D_0014be34[350] = {
+HelpControl loreshelp[350] = {
     { -1 },
     { 72, 32, 95, 49, 80 },
     { 99, 53, 116, 72, 81 },
@@ -360,11 +360,11 @@ HelpControl D_0014be34[350] = {
     { 189, 76, 239, 87, 89 },
     { 190, 89, 238, 100, 90 },
     { 188, 101, 239, 117, 91 },
-    { 244, 101, 270, 119, 92, fn_00074064 },
+    { 244, 101, 270, 119, 92, req3_help_if_diagnosed },
     { 244, 125, 270, 152, 93 },
     { 180, 123, 217, 159, 94 },
-    { 243, 76, 271, 96, 95, fn_000740e4 },
-    { 260, 56, 271, 69, 96, fn_000741a4 },
+    { 243, 76, 271, 96, 95, req3_help_if_curable },
+    { 260, 56, 271, 69, 96, req3_help_if_queueing },
     { -1 },
     { 188, 11, 266, 20, 97 },
     { 271, 10, 282, 21, 98 },

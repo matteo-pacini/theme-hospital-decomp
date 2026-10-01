@@ -53,7 +53,7 @@ struct Req2Layout {
 
 extern "C" {
 extern Event D_001549d0[];
-extern u8 D_001290d0, D_001290d1, D_001290d2;
+extern Picture loaded_face;
 extern u8 *face_buffer;
 void open_face_file(void);
 }
@@ -454,27 +454,27 @@ void draw_face(Picture *face, const u16 x, const u16 y)
     s32 rows;
 
     open_face_file();
-    if (face->head != D_001290d0) {
+    if (face->head != loaded_face.head) {
         LbFileSeek(face_file, face->head * (resvars.face_w * resvars.face_head_h), 0);
         LbFileRead(face_file, face_buffer, resvars.face_w * resvars.face_head_h);
-        D_001290d0 = face->head;
+        loaded_face.head = face->head;
     }
-    if (face->body != D_001290d1) {
+    if (face->body != loaded_face.body) {
         LbFileSeek(face_file, resvars.face_w * resvars.face_head_h * 18 + face->body * (resvars.face_w * resvars.face_body_h), 0);
         LbFileRead(face_file, face_buffer + resvars.face_w * resvars.face_head_h, resvars.face_w * resvars.face_body_h);
-        D_001290d1 = face->body;
+        loaded_face.body = face->body;
     }
-    if (face->legs != D_001290d2) {
+    if (face->legs != loaded_face.legs) {
         LbFileSeek(face_file, resvars.face_w * resvars.face_head_h * 18 + resvars.face_w * resvars.face_body_h * 18 + (u8)face->legs * (resvars.face_w * resvars.face_legs_h), 0);
         LbFileRead(face_file, resvars.face_w * resvars.face_head_h + resvars.face_w * resvars.face_body_h + face_buffer, resvars.face_w * resvars.face_legs_h);
-        D_001290d2 = face->legs;
+        loaded_face.legs = face->legs;
     }
     src = face_buffer;
     dst = x + resvars.face_border_w + lbDisplay.wscreen + lbDisplay.graphics_screen_width * (y - (resvars.face_head_h + resvars.face_body_h + resvars.face_legs_h) - resvars.face_border_h);
     width = resvars.face_w;
     rows = resvars.face_head_h + resvars.face_body_h + resvars.face_legs_h;
     while (--rows >= 0) {
-        fn_000c21e6(dst, src, width);
+        lib_memcpy(dst, src, width);
         src += width;
         dst += lbDisplay.graphics_screen_width;
     }
@@ -768,7 +768,7 @@ void req2_help_if_doctor(void)
 
     candidate = &thing[crequester.arg2];
     if (candidate > thing && (candidate->skills & SKILL_DOCTOR))
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req2_help_if_doctor, if they are a surgeon.
@@ -781,7 +781,7 @@ void req2_help_if_surgeon(void)
     candidate = &thing[crequester.arg2];
     mask = 0x30;
     if (candidate > thing && (candidate->skills & mask) == mask)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req2_help_if_doctor, if they are a psychiatrist.
@@ -794,7 +794,7 @@ void req2_help_if_psycho(void)
     candidate = &thing[crequester.arg2];
     mask = 0x50;
     if (candidate > thing && (candidate->skills & mask) == mask)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req2_help_if_doctor, if they are a researcher.
@@ -807,7 +807,7 @@ void req2_help_if_researcher(void)
     candidate = &thing[crequester.arg2];
     mask = 0x110;
     if (candidate > thing && (candidate->skills & mask) == mask)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // Help text for the hovered entry, into othervar.help_msg, if an applicant is
@@ -816,7 +816,7 @@ void req2_help_if_researcher(void)
 void req2_help_if_selected(void)
 {
     if (crequester.arg2)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req2_help_if_doctor for the staff member of the demand requester.
@@ -827,7 +827,7 @@ void req12_help_if_doctor(void)
 
     staff = &thing[crequester.arg];
     if (staff > thing && (staff->skills & SKILL_DOCTOR))
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req2_help_if_surgeon for the staff member of the demand requester.
@@ -840,7 +840,7 @@ void req12_help_if_surgeon(void)
     staff = &thing[crequester.arg];
     mask = 0x30;
     if (staff > thing && (staff->skills & mask) == mask)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req2_help_if_psycho for the staff member of the demand requester.
@@ -853,7 +853,7 @@ void req12_help_if_shrink(void)
     staff = &thing[crequester.arg];
     mask = 0x50;
     if (staff > thing && (staff->skills & mask) == mask)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req2_help_if_researcher for the staff member of the demand requester.
@@ -866,7 +866,7 @@ void req12_help_if_research(void)
     staff = &thing[crequester.arg];
     mask = 0x110;
     if (staff > thing && (staff->skills & mask) == mask)
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // Refuses the staff member's demand: they join the rival who made the offer

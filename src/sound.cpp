@@ -114,7 +114,7 @@ u8 setup_sound(void)
     myplayer.ambients_on = 0;
     myplayer.sfx_on = 0;
     myplayer.music_on = 0;
-    fn_000bbff0(statvar.sound_path, options.SoundDataPath);
+    lib_strcpy(statvar.sound_path, options.SoundDataPath);
     InitAudio(&options);
     if (GetSoundInstalled() && GetSoundAble()) {
         LbDataLoad(&soundfiles[D_00156433]);

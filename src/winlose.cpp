@@ -26,15 +26,15 @@ extern char **win_text;
 extern char **town_names;
 
 u32 time(u32 *timer);
-void fn_0001102c(void);
+void setup_lores_screen(void);
 void insert_hall_details(void);
 int LbScreenLock(void);
 void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 void LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
 
 int strcmp(const char *a, const char *b);
-void fn_000c93bf(char *dst, char *src);
-void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void strcat(char *dst, char *src);
+void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 }
 
 // Smacker frame callback for the losing animation: once its text frame is
@@ -68,7 +68,7 @@ void __stdcall lose_call(void *buf, u32 a, u32 b)
             x = (lbDisplay.graphics_screen_width - width) / 2;
             LbTextDraw(x, y + 0x83, text1);
             for (y = 1; y < lbDisplay.graphics_screen_height / 2; y += 2)
-                fn_000c9be0(0, y, lbDisplay.graphics_screen_width, y, color.black);
+                LbDrawLine(0, y, lbDisplay.graphics_screen_width, y, color.black);
         }
     }
 }
@@ -167,7 +167,7 @@ void play_winlose(void)
         if (statvar.num_players > 1) {
             mainmenu.state = MMS_UNLOAD_GAME;
             display_mode = DM_MAIN_MENU;
-            fn_0001102c();
+            setup_lores_screen();
             quit_game = 0;
         } else {
             winlose.state = 4;
@@ -184,7 +184,7 @@ void play_winlose(void)
             mainmenu.state = MMS_UNLOAD_GAME;
             display_mode = DM_MAIN_MENU;
             clear_loading_screen(0);
-            fn_0001102c();
+            setup_lores_screen();
             D_001549d0[player].value = 0;
             set_mouse_mode(MM_NORMAL);
         }
@@ -440,5 +440,5 @@ void letter_format_text(char *dst, char *src, s16 width)
 void concat_composite(char *dst, char **strs)
 {
     for (; strcmp(*strs, ".") != 0; strs++)
-        fn_000c93bf(dst, *strs);
+        strcat(dst, *strs);
 }

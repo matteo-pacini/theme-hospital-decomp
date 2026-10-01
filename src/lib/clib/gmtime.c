@@ -18,7 +18,7 @@ typedef long time_t;
 
 extern short const __diyr[];
 extern short const __dilyr[];
-extern struct tm D_0018d670;
+extern struct tm The_time;
 
 int __leapyear(unsigned year);
 
@@ -78,5 +78,5 @@ struct tm *_gmtime(const time_t *timer, struct tm *tm)
 // FUNCTION: 0x000f38d3
 struct tm *gmtime(const time_t *timer)
 {
-    return _gmtime(timer, &D_0018d670);
+    return _gmtime(timer, &The_time);
 }

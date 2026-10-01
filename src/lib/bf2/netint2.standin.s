@@ -38,7 +38,7 @@
     push ebx
     push esi
     .byte 0x68; .long _D_00125a28  # push 0x5a28
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 0xc
     test esi, esi
     jbe .L000d3110
@@ -53,7 +53,7 @@
     cmp eax, 8
     jbe .L000d3144
     .byte 0x68; .long _D_00125a80  # push 0x5a80
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edi
     add esp, 8
@@ -71,7 +71,7 @@
     push eax
     .byte 0x68; .long _D_00125ad7  # push 0x5ad7
     .byte 0xbb; .long "W?requestExchangeDataBuffer$n[]uc"  # mov ebx, 0x69274
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     mov edx, dword ptr ["W?remotePlayerId$nul"]
     mov eax, dword ptr ["W?spPtr$npn$ServiceProvider$$"]
@@ -79,7 +79,7 @@
     test al, al
     je .L000d32ed
     .byte 0x68; .long _D_00125b15  # push 0x5b15
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edi
     add esp, 8
@@ -91,7 +91,7 @@
 .L000d31a3:
     push eax
     .byte 0x68; .long _D_00125b5b  # push 0x5b5b
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     mov eax, edi
     add esp, 8
@@ -142,7 +142,7 @@
     push ebx
     push esi
     .byte 0x68; .long _D_00125b96  # push 0x5b96
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 0xc
     test esi, esi
     jbe .L000d324f
@@ -157,7 +157,7 @@
     cmp eax, 8
     jbe .L000d3283
     .byte 0x68; .long _D_00125bee  # push 0x5bee
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edi
     add esp, 8
@@ -175,7 +175,7 @@
     push esi
     .byte 0x68; .long _D_00125c45  # push 0x5c45
     .byte 0xbb; .long "W?requestExchangeDataBuffer$n[]uc"  # mov ebx, 0x69274
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     mov edx, dword ptr ["W?remotePlayerId$nul"]
     mov eax, dword ptr ["W?spPtr$npn$ServiceProvider$$"]
@@ -183,7 +183,7 @@
     test al, al
     je .L000d32ed
     .byte 0x68; .long _D_00125c83  # push 0x5c83
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edi
     add esp, 8
@@ -195,7 +195,7 @@
 .L000d32df:
     push eax
     .byte 0x68; .long _D_00125cc9  # push 0x5cc9
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
 .L000d32ed:
     mov eax, edi

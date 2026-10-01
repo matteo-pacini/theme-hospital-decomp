@@ -44,8 +44,8 @@ extern char **overview_text;
 extern char **staff_unhappy_text;
 extern char **trophy_bonus_messages;
 extern char **win_criteria_help;
-extern char **D_00160398;
-extern char **D_0016039c;
+extern char **net_mission_text;
+extern char **beta_demo_text_short;
 
 }
 
@@ -312,11 +312,11 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x42) {
-        D_00160398 = address;
+        net_mission_text = address;
         return 1;
     }
     if (group == 0x43) {
-        D_0016039c = address;
+        beta_demo_text_short = address;
         return 1;
     }
     return 1;

@@ -65,12 +65,12 @@ void InitMusic(void)
         }
         sprintf(SoundProgressMessage, "BF31 - MDMUSIC environment driver installation - passed\n");
         SoundProgressLog(SoundProgressMessage);
-        sprintf(D_0018c8b4, "%s", name);
+        sprintf(MusicDriverName, "%s", name);
     } else {
         if (AIL_read_INI(&MusicInstallChoice, "MDI.INI")) {
             sprintf(SoundProgressMessage, "BF32 - Search for MDI.INI - passed\n");
             SoundProgressLog(SoundProgressMessage);
-            if (stricmp(D_0018c8b4, "None") == 0) {
+            if (stricmp(MusicDriverName, "None") == 0) {
                 sprintf(SoundProgressMessage, "BF33 - user requests no music in SETSOUND\n");
                 SoundProgressLog(SoundProgressMessage);
                 if (!SoundAble)
@@ -103,25 +103,25 @@ void InitMusic(void)
     }
     SongHandle = AIL_allocate_sequence_handle(MusicDriver);
     if (MidiTypeOverride == 0) {
-        if (stricmp(D_0018c8b4, "ADLIB.MDI") == 0) {
+        if (stricmp(MusicDriverName, "ADLIB.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "ADLIBG.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "ADLIBG.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "OPL3.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "OPL3.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "PAS.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "PAS.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "PASPLUS.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "PASPLUS.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "SBLASTER.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "SBLASTER.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "SBPRO1.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "SBPRO1.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "SBPRO2.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "SBPRO2.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "ESFM.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "ESFM.MDI") == 0) {
             sprintf(MusicType, "f");
-        } else if (stricmp(D_0018c8b4, "SBAWE32.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "SBAWE32.MDI") == 0) {
             sprintf(MusicType, "w");
             MusicInstalled = 1;
             LoadAwe32Soundfont(CurrentAwe32SoundfontPrefix);
@@ -134,13 +134,13 @@ void InitMusic(void)
                 sprintf(SoundProgressMessage, "BF38 - awe32 soundfont loaded\n");
                 SoundProgressLog(SoundProgressMessage);
             }
-        } else if (stricmp(D_0018c8b4, "MPU401.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "MPU401.MDI") == 0) {
             sprintf(MusicType, "g");
-        } else if (stricmp(D_0018c8b4, "SNDSCAPE.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "SNDSCAPE.MDI") == 0) {
             sprintf(MusicType, "g");
-        } else if (stricmp(D_0018c8b4, "ULTRA.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "ULTRA.MDI") == 0) {
             sprintf(MusicType, "g");
-        } else if (stricmp(D_0018c8b4, "MT32MPU.MDI") == 0) {
+        } else if (stricmp(MusicDriverName, "MT32MPU.MDI") == 0) {
             sprintf(MusicType, "r");
         } else if (AIL_MDI_driver_type(MusicDriver) == 0) {
             sprintf(MusicType, "g");

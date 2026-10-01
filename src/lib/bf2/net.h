@@ -9,8 +9,9 @@ unsigned strlen(const char *s);
 char *strcpy(char *dst, const char *src);
 int memcmp(const void *a, const void *b, unsigned size);
 #pragma intrinsic(memcpy, strlen, strcpy, memcmp)
-void fn_000c20c0(char *fmt, ...);
-void *fn_000ed344(u32 size);
+void NetworkDebugPrintf(char *fmt, ...);
+void *__op_new_array(u32 size);
+#pragma aux __op_new_array "W?$nan(ui)pnv"
 }
 
 struct TbNetworkCallbackData;
@@ -294,8 +295,8 @@ extern u8 requestExchangeDataBuffer[];
 extern u8 addPlayerBuffer[];
 extern u8 ackBuffer[8];
 extern "C" {
-extern u32 D_0018ba9c;
-extern u8 D_0018d428[];
+extern u32 maxTime;
+extern u8 serialDeletePlayerBuffer[];
 }
 
 /* __stdcall (arguments on the stack, callee pops). */
@@ -384,9 +385,9 @@ typedef REGS DPMIREGS;
 
 extern "C" {
 void IPXDebug(char *fmt, ...);
-#pragma aux IPXDebug "fn_000d5340_"
-extern u8 D_00110000[];
-extern u8 D_00110068[];
+#pragma aux IPXDebug "IPXDebug_"
+extern u8 ipx_esr_code[];
+extern u8 serial_handler_code[];
 }
 
 extern char IPXDEBUGSTRING[];
@@ -596,8 +597,8 @@ struct IPXServiceProvider : ServiceProvider {
 };
 
 extern "C" {
-u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek);
-#pragma aux fn_000d6598 "W?PrivateReceive$:IPXServiceProvider$n(pnulpnvpnul$$TE$$)ul"
+u32 IPXServiceProvider_PrivateReceive(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek);
+#pragma aux IPXServiceProvider_PrivateReceive "W?PrivateReceive$:IPXServiceProvider$n(pnulpnvpnul$$TE$$)ul"
 }
 
 #endif

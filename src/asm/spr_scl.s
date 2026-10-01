@@ -497,7 +497,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -509,7 +509,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -521,7 +521,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -533,7 +533,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -545,7 +545,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -557,7 +557,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -569,7 +569,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -581,7 +581,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -694,7 +694,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -706,7 +706,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -718,7 +718,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -730,7 +730,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -742,7 +742,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -754,7 +754,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -766,7 +766,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -778,7 +778,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     add ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     inc esi
@@ -887,7 +887,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -899,7 +899,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -911,7 +911,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -923,7 +923,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -935,7 +935,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -947,7 +947,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -959,7 +959,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -971,7 +971,7 @@
     mov al, byte ptr [esi]
     mov ah, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -1081,7 +1081,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -1093,7 +1093,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -1105,7 +1105,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -1117,7 +1117,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -1129,7 +1129,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -1141,7 +1141,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -1153,7 +1153,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -1165,7 +1165,7 @@
     mov ah, byte ptr [esi]
     mov al, byte ptr [edx]
     sub ebp, 8
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     inc edx
     mov byte ptr [esi], al
     dec esi
@@ -2211,49 +2211,49 @@
     mov ah, byte ptr [edx]
 .L0010a8f0:
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     inc esi
     dec ebx
     je .L0010a8e0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     inc esi
     dec ebx
     je .L0010a8e0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     inc esi
     dec ebx
     je .L0010a8e0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     inc esi
     dec ebx
     je .L0010a8e0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     inc esi
     dec ebx
     je .L0010a8e0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     inc esi
     dec ebx
     je .L0010a8e0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     inc esi
     dec ebx
     je .L0010a8e0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     inc esi
     dec ebx
@@ -2372,49 +2372,49 @@
     mov al, byte ptr [edx]
 .L0010aa70:
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     inc esi
     dec ebx
     je .L0010aa60
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     inc esi
     dec ebx
     je .L0010aa60
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     inc esi
     dec ebx
     je .L0010aa60
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     inc esi
     dec ebx
     je .L0010aa60
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     inc esi
     dec ebx
     je .L0010aa60
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     inc esi
     dec ebx
     je .L0010aa60
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     inc esi
     dec ebx
     je .L0010aa60
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     inc esi
     dec ebx
@@ -2529,49 +2529,49 @@
     mov ah, byte ptr [edx]
 .L0010abe0:
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     dec esi
     dec ebx
     je .L0010abd0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     dec esi
     dec ebx
     je .L0010abd0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     dec esi
     dec ebx
     je .L0010abd0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     dec esi
     dec ebx
     je .L0010abd0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     dec esi
     dec ebx
     je .L0010abd0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     dec esi
     dec ebx
     je .L0010abd0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     dec esi
     dec ebx
     je .L0010abd0
     mov al, byte ptr [esi]
-    mov al, byte ptr [eax + _D_00178c0c]
+    mov al, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], al
     dec esi
     dec ebx
@@ -2687,49 +2687,49 @@
     mov al, byte ptr [edx]
 .L0010ad50:
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     dec esi
     dec ebx
     je .L0010ad40
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     dec esi
     dec ebx
     je .L0010ad40
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     dec esi
     dec ebx
     je .L0010ad40
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     dec esi
     dec ebx
     je .L0010ad40
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     dec esi
     dec ebx
     je .L0010ad40
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     dec esi
     dec ebx
     je .L0010ad40
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     dec esi
     dec ebx
     je .L0010ad40
     mov ah, byte ptr [esi]
-    mov ah, byte ptr [eax + _D_00178c0c]
+    mov ah, byte ptr [eax + _ghost_table]
     mov byte ptr [esi], ah
     dec esi
     dec ebx

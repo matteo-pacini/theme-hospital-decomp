@@ -124,12 +124,10 @@ __ic76sReceiveCallbacks receiveCallbacks = {
 
 extern "C" {
 
-void fn_000bf7a0(u32 timeout);
-#pragma aux fn_000bf7a0 "W?LbNetwork_ChangeExchangeTimeout$n(ul)v"
 TbError AddAPlayer(TbNetworkPlayerEntry *player);
 #pragma aux AddAPlayer "W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$"
-u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "fn_000cd716_"
+u32 lib_strlen(char *s);
+#pragma aux lib_strlen "strlen_"
 
 }
 
@@ -147,16 +145,11 @@ void operator delete(void *p)
     LbMemoryFree(p);
 }
 
-extern "C" {
-
-// Sets the exchange timeout to timeout seconds
-// (LbNetwork_ChangeExchangeTimeout).
+// Sets the exchange timeout to timeout seconds.
 // FUNCTION: 0x000bf7a0
-void fn_000bf7a0(u32 timeout)
+void LbNetwork_ChangeExchangeTimeout(u32 timeout)
 {
     exchangeTimeout = timeout * 1000;
-}
-
 }
 
 // Fills version with the network library's version text and number (1.1).
@@ -198,9 +191,9 @@ TbError LbNetwork_EnableNewPlayers(u32 allow)
     ret = Lb_FAIL;
     if (spPtr) {
         if (allow)
-            fn_000c20c0("NEW PLAYERS ARE ALLOWED TO JOIN\n");
+            NetworkDebugPrintf("NEW PLAYERS ARE ALLOWED TO JOIN\n");
         else
-            fn_000c20c0("NEW PLAYERS ARE NOT ALLOWED TO JOIN\n");
+            NetworkDebugPrintf("NEW PLAYERS ARE NOT ALLOWED TO JOIN\n");
         ret = spPtr->EnableNewPlayers(allow);
     }
     return ret;
@@ -266,7 +259,7 @@ extern "C" {
 // LbNetwork_Init for service `service` taking the serial or modem settings
 // as TbNetworkInitParams (0 for none), converted to the provider's form.
 // FUNCTION: 0x000bf91c
-TbError fn_000bf91c(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
+TbError LbNetwork_InitWithParams(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                     u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, TbNetworkInitParams *params)
 {
     __4dn7ojSerialInitData data;
@@ -338,7 +331,7 @@ TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_playe
         index = 2;
         break;
     default:
-        fn_000c20c0("The requested serviceType %d is out of range\n", (s32)service);
+        NetworkDebugPrintf("The requested serviceType %d is out of range\n", (s32)service);
         ret = Lb_FAIL;
         break;
     }
@@ -349,9 +342,9 @@ TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_playe
 
 extern "C" {
 
-// As fn_000bf91c, by provider index (0 serial, 1 modem, 2 IPX).
+// As LbNetwork_InitWithParams, by provider index (0 serial, 1 modem, 2 IPX).
 // FUNCTION: 0x000bfb78
-TbError fn_000bfb78(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
+TbError LbNetwork_InitIndexWithParams(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                     u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, TbNetworkInitParams *params)
 {
     __4dn7ojSerialInitData data;
@@ -418,7 +411,7 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
         compositeBufferSize = max_players * exchange_size;
         compositeBuffer = LbMemoryAlloc(compositeBufferSize);
         if (!compositeBuffer) {
-            fn_000c20c0("  WARNING network: LbNetwork_Init() failure on compositeBuffer allocation\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_Init() failure on compositeBuffer allocation\n");
             return ret;
         }
     }
@@ -430,28 +423,28 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     }
     switch (index) {
     case 0:
-        fn_000c20c0("Selecting DOS Serial SP\n");
+        NetworkDebugPrintf("Selecting DOS Serial SP\n");
         if (GenericSerialInit(guid, init_data) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: LbNetwork_Init() failure on GenericSerialInit()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_Init() failure on GenericSerialInit()\n");
         break;
     case 1:
-        fn_000c20c0("Selecting DOS Modem SP\n");
+        NetworkDebugPrintf("Selecting DOS Modem SP\n");
         if (GenericModemInit(guid, init_data) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: LbNetwork_Init() failure on GenericModemInit()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_Init() failure on GenericModemInit()\n");
         break;
     case 2:
-        fn_000c20c0("Selecting DOS IPX SP\n");
+        NetworkDebugPrintf("Selecting DOS IPX SP\n");
         if (GenericIPXInit(guid) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: LbNetwork_Init() failure on GenericIPXInit()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_Init() failure on GenericIPXInit()\n");
         break;
     default:
-        fn_000c20c0("The serviceIndex value of %d is out of range\n", index);
+        NetworkDebugPrintf("The serviceIndex value of %d is out of range\n", index);
         break;
     }
     return ret;
@@ -478,10 +471,10 @@ TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
             GetPlayerInfo();
             LbNetwork_EnableNewPlayers(1);
         } else {
-            fn_000c20c0("  WARNING network: LbNetwork_Create() failure on GetCurrentPlayers()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_Create() failure on GetCurrentPlayers()\n");
         }
     } else {
-        fn_000c20c0("  WARNING network: LbNetwork_Create() failure on SP::Start()\n");
+        NetworkDebugPrintf("  WARNING network: LbNetwork_Create() failure on SP::Start()\n");
     }
     return ret;
 }
@@ -523,10 +516,10 @@ TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *play
             ret = Lb_OK;
             GetPlayerInfo();
         } else {
-            fn_000c20c0("  WARNING network: LbNetwork_Join() failure on GetCurrentPlayers()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_Join() failure on GetCurrentPlayers()\n");
         }
     } else {
-        fn_000c20c0("  WARNING network: LbNetwork_Join() failure on Join\n");
+        NetworkDebugPrintf("  WARNING network: LbNetwork_Join() failure on Join\n");
     }
     return ret;
 }
@@ -543,7 +536,7 @@ TbError LbNetwork_Stop(void)
         if (spPtr->Release() == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: LbNetwork_Stop() failure on Release\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_Stop() failure on Release\n");
         delete spPtr;
         spPtr = 0;
     }
@@ -567,7 +560,7 @@ TbError LbNetwork_EnumerateSessions(TbNetworkCallbackFunc callback, void *data)
     if (spPtr->Enumerate(callback, data) == Lb_OK)
         ret = Lb_OK;
     else
-        fn_000c20c0("  WARNING network: LbNetwork_EnumerateSessions() failure on Enumerate\n");
+        NetworkDebugPrintf("  WARNING network: LbNetwork_EnumerateSessions() failure on Enumerate\n");
     return ret;
 }
 
@@ -581,7 +574,7 @@ TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetwork
     if (spPtr->Enumerate(session, callback, data) == Lb_OK)
         ret = Lb_OK;
     else
-        fn_000c20c0("  WARNING network: LbNetwork_EnumeratePlayers() failure on Enumerate\n");
+        NetworkDebugPrintf("  WARNING network: LbNetwork_EnumeratePlayers() failure on Enumerate\n");
     return ret;
 }
 
@@ -623,7 +616,7 @@ static TbError StartMultiPlayerExchange(void *buf)
         if (spPtr->Send(hostId, buf) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: LbNetwork_StartExchange() failure on SP::Send()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_StartExchange() failure on SP::Send()\n");
     }
     return ret;
 }
@@ -693,9 +686,9 @@ static TbError CompleteMultiPlayerExchange(void *buf)
                         if (HostDataBroadcast() == Lb_OK)
                             ret = Lb_OK;
                         else
-                            fn_000c20c0("  WARNING network: LbNetwork_CompleteExchange() failure on HostDataBroadcast()\n");
+                            NetworkDebugPrintf("  WARNING network: LbNetwork_CompleteExchange() failure on HostDataBroadcast()\n");
                     } else {
-                        fn_000c20c0("  WARNING network: LbNetwork_CompleteExchange() failure on HostDataCollection()\n");
+                        NetworkDebugPrintf("  WARNING network: LbNetwork_CompleteExchange() failure on HostDataCollection()\n");
                     }
                     keep_going = 0;
                 } else {
@@ -703,28 +696,28 @@ static TbError CompleteMultiPlayerExchange(void *buf)
                     if (spPtr->Send(hostId, buf) == Lb_OK)
                         ret = Lb_OK;
                     else
-                        fn_000c20c0("  WARNING network: LbNetwork_CompleteExchange() failure on SP::Send()\n");
+                        NetworkDebugPrintf("  WARNING network: LbNetwork_CompleteExchange() failure on SP::Send()\n");
                 }
                 host_changed = 0;
             }
             if (keep_going && LbTimerClock() - startTime > actualTimeout) {
-                fn_000c20c0("Timed out waiting for host");
+                NetworkDebugPrintf("Timed out waiting for host");
                 retries++;
                 if (retries > 10) {
                     if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                        fn_000c20c0("  WARNING network: LbNetwork_CompleteExchange() deletePlayerBuffer is too small\n");
+                        NetworkDebugPrintf("  WARNING network: LbNetwork_CompleteExchange() deletePlayerBuffer is too small\n");
                     } else {
                         EncodeDeletePlayerMsg(deletePlayerBuffer, hostId);
                         if (spPtr->Send(localPlayerId, deletePlayerBuffer) != Lb_OK)
-                            fn_000c20c0("  WARNING network: HostDataCollection() failure on SP::Send()\n");
+                            NetworkDebugPrintf("  WARNING network: HostDataCollection() failure on SP::Send()\n");
                     }
                     host_changed = 1;
                 } else if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                    fn_000c20c0("  WARNING network: LbNetwork_CompleteExchange() requestCompositeExchangeDataBuffer is too small\n");
+                    NetworkDebugPrintf("  WARNING network: LbNetwork_CompleteExchange() requestCompositeExchangeDataBuffer is too small\n");
                 } else {
                     EncodeRequestCompositeExchangeDataMsg(requestCompositeExchangeDataBuffer, localPlayerId, sequenceNumber);
                     if (spPtr->Send(hostId, requestCompositeExchangeDataBuffer) != Lb_OK)
-                        fn_000c20c0("  WARNING network: LbNetwork_CompleteExchange() failure on SP::Send()\n");
+                        NetworkDebugPrintf("  WARNING network: LbNetwork_CompleteExchange() failure on SP::Send()\n");
                 }
                 startTime = LbTimerClock();
                 actualTimeout = basicTimeout * (retries + 1);
@@ -754,9 +747,9 @@ TbError LbNetwork_Exchange(void *buf)
         if (LbNetwork_CompleteExchange(buf) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: LbNetwork_Exchange() failure on LbNetwork_CompleteExchange()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_Exchange() failure on LbNetwork_CompleteExchange()\n");
     } else {
-        fn_000c20c0("  WARNING network: LbNetwork_Exchange() failure on LbNetwork_StartExchange()\n");
+        NetworkDebugPrintf("  WARNING network: LbNetwork_Exchange() failure on LbNetwork_StartExchange()\n");
     }
     return ret;
 }
@@ -778,7 +771,7 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
     if (compositeBuffer == 0) {
         compositeBuffer = LbMemoryAlloc(total);
         if (!compositeBuffer) {
-            fn_000c20c0("  WARNING network: LbNetwork_ChangeExchangeBuffer() failure on buffer allocation\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_ChangeExchangeBuffer() failure on buffer allocation\n");
         } else {
             compositeBufferSize = total;
             ret = Lb_OK;
@@ -786,7 +779,7 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
     } else if (total > compositeBufferSize) {
         new_buf = LbMemoryAlloc(total);
         if (!new_buf) {
-            fn_000c20c0("  WARNING network: LbNetwork_ChangeExchangeBuffer() failure on buffer allocation\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_ChangeExchangeBuffer() failure on buffer allocation\n");
         } else {
             memcpy(new_buf, compositeBuffer, compositeBufferSize);
             ret = Lb_OK;
@@ -812,9 +805,9 @@ TbError LbNetwork_GetPlayerInfo(void)
         if (GetPlayerInfo() == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: LbNetwork_GetPlayerInfo() failure on GetPlayerInfo()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_GetPlayerInfo() failure on GetPlayerInfo()\n");
     } else {
-        fn_000c20c0("  WARNING network: LbNetwork_GetPlayerInfo() failure on GetCurrentPlayers()\n");
+        NetworkDebugPrintf("  WARNING network: LbNetwork_GetPlayerInfo() failure on GetCurrentPlayers()\n");
     }
     return ret;
 }
@@ -878,11 +871,11 @@ static TbError HostDataCollection(void)
             ret = Lb_OK;
         } else {
             if (LbTimerClock() - startTime > actualTimeout) {
-                fn_000c20c0("Timed out waiting for client");
+                NetworkDebugPrintf("Timed out waiting for client");
                 retries++;
                 if (retries > 10) {
                     if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                        fn_000c20c0("  WARNING network: HostDataCollection() deletePlayerBuffer is too small\n");
+                        NetworkDebugPrintf("  WARNING network: HostDataCollection() deletePlayerBuffer is too small\n");
                     } else {
                         for (i = 0; i < maximumPlayers; i++) {
                             if (clientDataTable[i].active && !clientDataTable[i].got_data) {
@@ -890,19 +883,19 @@ static TbError HostDataCollection(void)
                                 for (j = 0; j < maximumPlayers; j++) {
                                     if (clientDataTable[j].active && clientDataTable[j].id != clientDataTable[i].id
                                         && spPtr->Send(clientDataTable[j].id, deletePlayerBuffer) != Lb_OK)
-                                        fn_000c20c0("  WARNING network: HostDataCollection() failure on SP::Send()\n");
+                                        NetworkDebugPrintf("  WARNING network: HostDataCollection() failure on SP::Send()\n");
                                 }
                             }
                         }
                     }
                 } else if (GetRequestCompositeExchangeDataMsgSize() > 8) {
-                    fn_000c20c0("  WARNING network: HostDataCollection() requestExchangeDataBuffer is too small\n");
+                    NetworkDebugPrintf("  WARNING network: HostDataCollection() requestExchangeDataBuffer is too small\n");
                 } else {
                     EncodeRequestExchangeDataMsg(requestExchangeDataBuffer, hostId, sequenceNumber);
                     for (i = 0; i < maximumPlayers; i++) {
                         if (clientDataTable[i].active && !clientDataTable[i].got_data
                             && spPtr->Send(clientDataTable[i].id, requestExchangeDataBuffer) != Lb_OK)
-                            fn_000c20c0("  WARNING network: HostDataCollection() failure on SP::Send()\n");
+                            NetworkDebugPrintf("  WARNING network: HostDataCollection() failure on SP::Send()\n");
                     }
                 }
                 startTime = LbTimerClock();
@@ -930,7 +923,7 @@ static TbError HostDataBroadcast(void)
     for (i = 0; i < maximumPlayers; i++) {
         if (clientDataTable[i].active && clientDataTable[i].id != hostId
             && spPtr->Send(clientDataTable[i].id, exchangeBuffer) != Lb_OK) {
-            fn_000c20c0("  WARNING network: LbNetwork_CompleteExchange() failure on SP::Send()\n");
+            NetworkDebugPrintf("  WARNING network: LbNetwork_CompleteExchange() failure on SP::Send()\n");
             ret = Lb_FAIL;
         }
     }
@@ -949,19 +942,19 @@ static void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data
     if (localPlayerId == hostId) {
         if (size == exchangeSize) {
             if (id == localPlayerId) {
-                fn_000c20c0("  WARNING network: UserDataMsgCallback() host got data from itself\n");
+                NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() host got data from itself\n");
             } else if (IdToIndex(id)) {
                 if (seq == sequenceNumber || seq == 15) {
                     ret = exchangeBuffer + exchangeSize * id;
                     clientDataTable[id].got_data = 1;
                 } else {
-                    fn_000c20c0("  WARNING network: UserDataMsgCallback() Unexpected sequence number: Got %d, expected %d\n", seq, sequenceNumber);
+                    NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() Unexpected sequence number: Got %d, expected %d\n", seq, sequenceNumber);
                 }
             } else {
-                fn_000c20c0("  WARNING network: UserDataMsgCallback() invalid id: %d\n", id);
+                NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() invalid id: %d\n", id);
             }
         } else {
-            fn_000c20c0("  WARNING network: UserDataMsgCallback() invalid length: %d\n", size);
+            NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() invalid length: %d\n", size);
         }
     } else if (size == exchangeSize * maximumPlayers) {
         if (id == hostId) {
@@ -975,25 +968,25 @@ static void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data
                     gotCompositeData = 1;
                     ret = exchangeBuffer;
                 } else {
-                    fn_000c20c0("  WARNING network: UserDataMsgCallback() Unexpected sequence number: Got %d, expected %d\n", seq, sequenceNumber);
+                    NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() Unexpected sequence number: Got %d, expected %d\n", seq, sequenceNumber);
                 }
             } else {
-                fn_000c20c0("  WARNING network: UserDataMsgCallback() invalid id: %d\n", id);
+                NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() invalid id: %d\n", id);
             }
         } else {
-            fn_000c20c0("  WARNING network: UserDataMsgCallback() data is not from host\n");
+            NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() data is not from host\n");
         }
     } else if (size == exchangeSize) {
         if (id == localPlayerId) {
-            fn_000c20c0("  WARNING network: UserDataMsgCallback() client acting as host got data from itself\n");
+            NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() client acting as host got data from itself\n");
         } else if (IdToIndex(id)) {
             ret = exchangeBuffer + exchangeSize * id;
             clientDataTable[id].got_data = 1;
         } else {
-            fn_000c20c0("  WARNING network: UserDataMsgCallback() invalid id: %d\n", id);
+            NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() invalid id: %d\n", id);
         }
     } else {
-        fn_000c20c0("  WARNING network: UserDataMsgCallback() invalid length: %d\n", size);
+        NetworkDebugPrintf("  WARNING network: UserDataMsgCallback() invalid length: %d\n", size);
     }
     return ret;
 }
@@ -1021,7 +1014,7 @@ void __stdcall DeleteMsgCallback(u32 id, void *data)
         if (clientDataTable[i].active && clientDataTable[i].id == id) {
             clientDataTable[i].active = 0;
             if (!localPlayerInfoPtr)
-                fn_000c20c0("  WARNING network: DeleteMsgCallback() NULL localPlayerInfoPtr\n");
+                NetworkDebugPrintf("  WARNING network: DeleteMsgCallback() NULL localPlayerInfoPtr\n");
             else
                 localPlayerInfoPtr[i].active = 0;
         }
@@ -1048,9 +1041,9 @@ static TbError GetCurrentPlayers(void)
         if (localPlayerIndex < maximumPlayers)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: GetCurrentPlayers() localPlayerIndex not updated\n");
+            NetworkDebugPrintf("  WARNING network: GetCurrentPlayers() localPlayerIndex not updated\n");
     } else {
-        fn_000c20c0("  WARNING network: GetCurrentPlayers() failure on ServiceProvider::Enumerate()\n");
+        NetworkDebugPrintf("  WARNING network: GetCurrentPlayers() failure on ServiceProvider::Enumerate()\n");
     }
     return ret;
 }
@@ -1070,7 +1063,7 @@ void *__stdcall UnidirectionalMsgCallback(u32 id, u32 size, void *data)
     void *ret = 0;
 
     if (size > 0x20c) {
-        fn_000c20c0("  Warning: UnidirectionalMsgCallback invalid length %d vs %d", size, 0x20c);
+        NetworkDebugPrintf("  Warning: UnidirectionalMsgCallback invalid length %d vs %d", size, 0x20c);
     } else {
         ret = &incomingUnidirectionalMessage;
         unidirectionalMsgReceived = 1;
@@ -1171,7 +1164,7 @@ void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
     u32 ok;
 
     if (!localDataPtr) {
-        fn_000c20c0("  WARNING network: RequestExchangeDataMsgCallback() NULL data pointer\n");
+        NetworkDebugPrintf("  WARNING network: RequestExchangeDataMsgCallback() NULL data pointer\n");
         return;
     }
     ok = 1;
@@ -1182,9 +1175,9 @@ void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
     if (ok) {
         EncodeMessageStub(localDataPtr, exchangeSize - 4, MSG_TYPE_MULTIPLAYER, sequenceNumber);
         if (spPtr->Send(id, localDataPtr) != Lb_OK)
-            fn_000c20c0("  WARNING network: RequestExchangeDataMsgCallback() failure on SP::Send()\n");
+            NetworkDebugPrintf("  WARNING network: RequestExchangeDataMsgCallback() failure on SP::Send()\n");
     } else {
-        fn_000c20c0("  WARNING network: RequestExchangeDataMsgCallback() unexpected sequence number, got %d, expected %d\n", seq, sequenceNumber);
+        NetworkDebugPrintf("  WARNING network: RequestExchangeDataMsgCallback() unexpected sequence number, got %d, expected %d\n", seq, sequenceNumber);
     }
 }
 
@@ -1195,9 +1188,9 @@ void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *da
 {
     if (seq == sequenceNumber || seq == ((sequenceNumber - 1) & 0xf)) {
         if (spPtr->Send(id, compositeBuffer) != Lb_OK)
-            fn_000c20c0("  WARNING network: RequestCompositeExchangeDataMsgCallback() failure on SP::Send()\n");
+            NetworkDebugPrintf("  WARNING network: RequestCompositeExchangeDataMsgCallback() failure on SP::Send()\n");
     } else {
-        fn_000c20c0("  WARNING network: RequestCompositeExchangeDataMsgCallback() unexpected sequence number, got %d, expected %d\n", seq, sequenceNumber);
+        NetworkDebugPrintf("  WARNING network: RequestCompositeExchangeDataMsgCallback() unexpected sequence number, got %d, expected %d\n", seq, sequenceNumber);
     }
 }
 
@@ -1218,7 +1211,7 @@ static TbError GenericIPXInit(__tibcaGUID guid)
         if (spPtr->Init(guid, 0, &receiveCallbacks, 0) == Lb_OK)
             ret = Lb_OK;
         else
-            fn_000c20c0("  WARNING network: GenericIPXInit() failure on ServiceProvider::Init()\n");
+            NetworkDebugPrintf("  WARNING network: GenericIPXInit() failure on ServiceProvider::Init()\n");
     }
     return ret;
 }
@@ -1231,7 +1224,7 @@ static TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 
     TbError ret = Lb_FAIL;
 
     if (size + 5 > 0x404) {
-        fn_000c20c0("  WARNING network: SendSystemUserMessage() systemUserBuffer is too small\n", type);
+        NetworkDebugPrintf("  WARNING network: SendSystemUserMessage() systemUserBuffer is too small\n", type);
     } else {
         EncodeMessageStub(systemUserBuffer, size + 1, (TbMessageType)4, 0);
         systemUserBuffer[4] = type;
@@ -1256,7 +1249,7 @@ void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
         PlayerMapMsgHandler(id, (u8 *)msg + 1, size - 1);
         break;
     default:
-        fn_000c20c0("  WARNING network: SystemUserMsgCallback() illegal sysMsgType %d\n", *(TbMessageType *)msg);
+        NetworkDebugPrintf("  WARNING network: SystemUserMsgCallback() illegal sysMsgType %d\n", *(TbMessageType *)msg);
         break;
     }
 }
@@ -1267,7 +1260,7 @@ void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
 // function is inline too, so the original's padding (the session entry's constructor alone
 // padded) needs the generation order below: these two before PlayerMapMsgHandler, the
 // IPXServiceProvider constructor last. In the module's segment (built without -zm), the empty
-// fn_000c20c0 would let the optimiser drop every call to it.
+// NetworkDebugPrintf would let the optimiser drop every call to it.
 
 // Constructs an empty session entry.
 // FUNCTION: 0x000c20d0 COMDAT
@@ -1282,7 +1275,7 @@ extern "C" {
 
 // Debug printf; does nothing in this build.
 // FUNCTION: 0x000c20c0 COMDAT
-inline void fn_000c20c0(char *fmt, ...)
+inline void NetworkDebugPrintf(char *fmt, ...)
 {
 }
 
@@ -1302,10 +1295,10 @@ static void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
             memcpy(clientDataTable, buf, size);
             waitingForPlayerMapResponse = 0;
         } else {
-            fn_000c20c0("  WARNING network: PlayerMapMsgHandler() invalid length %d\n", size);
+            NetworkDebugPrintf("  WARNING network: PlayerMapMsgHandler() invalid length %d\n", size);
         }
     } else {
-        fn_000c20c0("  WARNING network: PlayerMapMsgHandler() received unexpected SU_PLAYER_MAP_MSG\n");
+        NetworkDebugPrintf("  WARNING network: PlayerMapMsgHandler() received unexpected SU_PLAYER_MAP_MSG\n");
     }
 }
 

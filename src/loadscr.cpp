@@ -35,12 +35,12 @@ void draw_glass_text(SlistButton *button, char *text);
 
 extern "C" {
 extern u8 *palette;
-extern u16 D_00161138;
+extern u16 col;
 extern u8 D_00156910;
 
-void fn_000c93bf(char *dst, char *src);
+void strcat(char *dst, char *src);
 void keybuffer_clear(void);
-void fn_000110b0(void);
+void use_hires_layout(void);
 void delay(u32 ms);
 }
 
@@ -68,15 +68,15 @@ void draw_load_game(void)
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         calculate_grey(ppalette.data);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        for (D_00161138 = 0; D_00161138 < 0x1e; D_00161138++) {
-            loadable[D_00161138] = 0;
+        for (col = 0; col < 0x1e; col++) {
+            loadable[col] = 0;
             sprintf(tmp, "%ssave\\", statvar.save_root);
-            fn_000c93bf(tmp, myplayer.name_chars);
-            sprintf(tmp, "%s.h%d", tmp, D_00161138);
+            strcat(tmp, myplayer.name_chars);
+            sprintf(tmp, "%s.h%d", tmp, col);
             handle = LbFileOpen(tmp, 2);
             if (handle != -1) {
                 if (LbFileLengthRnc(tmp) == statvar.save_game_size)
-                    loadable[D_00161138] = 1;
+                    loadable[col] = 1;
                 LbFileClose(handle);
             }
         }
@@ -115,7 +115,7 @@ void draw_load_game(void)
                 if (load_game((s8)load_game_number, -1)) {
                     clear_loading_screen(palette);
                     othervar.screen_pic_loaded = 0;
-                    fn_000110b0();
+                    use_hires_layout();
                     load_game_files();
                     set_mouse_mode(MM_NORMAL);
                     LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");

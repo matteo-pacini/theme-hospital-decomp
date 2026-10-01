@@ -54,7 +54,7 @@ IconTableData icon_table_data[] = {
 void set_icon_value(Thing *const peep, const s8 icon)
 {
     if (peep->type != THING_PATIENT || peep->health > 0) {
-        if (icon_table[icon].priority <= icon_table[fn_000cb2db(peep->icon_id)].priority) {
+        if (icon_table[icon].priority <= icon_table[abs(peep->icon_id)].priority) {
             peep->icon_frame = start[icon_table[icon].anim].frame;
             if (icon_table[icon].mode < 0) {
                 peep->icon_id = -icon;
@@ -74,7 +74,7 @@ void set_icon_value(Thing *const peep, const s8 icon)
 // FUNCTION: 0x000b0428
 void reset_icon_value(Thing *const peep, const s8 icon)
 {
-    if (peep->icon_id == fn_000cb2db(icon)) {
+    if (peep->icon_id == abs(icon)) {
         peep->icon_id = 0;
         peep->icon_timer = 0;
         peep->icon_frame = 0;
@@ -89,7 +89,7 @@ void peep_icon(Thing *const peep)
     if (peep->type != THING_PATIENT || peep->health > 0) {
         if (peep->icon_id < 0)
             play_sound(SNDSRC_GENERAL, SFX_HLIGHTP2, -1, -1);
-        peep->icon_id = fn_000cb2db(peep->icon_id);
+        peep->icon_id = abs(peep->icon_id);
         if (icon_table[peep->icon_id].anim > 0 && icon_table[peep->icon_id].mode == -1)
             peep->icon_timer = icon_table[peep->icon_id].duration;
     }

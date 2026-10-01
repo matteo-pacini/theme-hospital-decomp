@@ -2,16 +2,16 @@
 
 extern "C" {
 extern u8 D_00156910;
-extern u8 D_00161134;
+extern u8 help_close_hover;
 extern char **show_help_text_0;
 extern char **level_text;
-extern char **D_00160398;
-extern char **D_0016039c;
+extern char **net_mission_text;
+extern char **beta_demo_text_short;
 extern Event D_001549d0[];
 
 int strcmp(const char *a, const char *b);
-u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "fn_000cd716_"
+u32 lib_strlen(char *s);
+#pragma aux lib_strlen "strlen_"
 void LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height);
 }
 
@@ -192,12 +192,12 @@ void draw_help_text(void)
         if ((othervar.help_close_x <= lbDisplay.mmouse_x && othervar.help_close_x + pulldv[19].width > lbDisplay.mmouse_x)
             && othervar.help_close_y <= lbDisplay.mmouse_y && othervar.help_close_y + pulldv[19].height > lbDisplay.mmouse_y) {
             reqspr_draw(othervar.help_close_x, othervar.help_close_y, &pulldv[20]);
-            if (!D_00161134)
+            if (!help_close_hover)
                 play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
-            D_00161134 = 1;
+            help_close_hover = 1;
         } else {
             reqspr_draw(othervar.help_close_x, othervar.help_close_y, &pulldv[19]);
-            D_00161134 = 0;
+            help_close_hover = 0;
         }
         lbDisplay.draw_flags = 4;
         LbDrawBox(othervar.help_x + othervar.help_w, othervar.help_y + 0xc, 0xc, othervar.help_h, color.black);
@@ -224,7 +224,7 @@ void copy_and_format(char *dst, char *src)
     s32 width;
     s32 col;
 
-    len = fn_000cd716(src);
+    len = lib_strlen(src);
     col = 0;
     width = 0xc;
     for (k = 1; width * k < len; width += 4, k++)
@@ -430,30 +430,30 @@ void show_help_page(u32 page, u32 sub)
         case 2:
         case 8:
         case 3:
-            sprintf(buf, D_00160398[statvar.net_help_start[sub]], current_net_criteria.start - othervar.game_month);
-            saved = D_00160398[statvar.net_help_start[sub]];
-            D_00160398[statvar.net_help_start[sub]] = buf;
+            sprintf(buf, net_mission_text[statvar.net_help_start[sub]], current_net_criteria.start - othervar.game_month);
+            saved = net_mission_text[statvar.net_help_start[sub]];
+            net_mission_text[statvar.net_help_start[sub]] = buf;
             break;
         case 4:
         case 6:
         case 5:
         case 7:
             if (current_net_criteria.criterion == 7 && myplayer.language == 2)
-                sprintf(buf, D_00160398[statvar.net_help_start[sub]], current_net_criteria.start - othervar.game_month,
+                sprintf(buf, net_mission_text[statvar.net_help_start[sub]], current_net_criteria.start - othervar.game_month,
                     current_net_criteria.value);
             else
-                sprintf(buf, D_00160398[statvar.net_help_start[sub]], current_net_criteria.value,
+                sprintf(buf, net_mission_text[statvar.net_help_start[sub]], current_net_criteria.value,
                     current_net_criteria.start - othervar.game_month);
-            saved = D_00160398[statvar.net_help_start[sub]];
-            D_00160398[statvar.net_help_start[sub]] = buf;
+            saved = net_mission_text[statvar.net_help_start[sub]];
+            net_mission_text[statvar.net_help_start[sub]] = buf;
             break;
         }
-        set_help_text(2, -1, -1, &D_00160398[statvar.net_help_start[sub]]);
-        D_00160398[statvar.net_help_start[sub]] = saved;
+        set_help_text(2, -1, -1, &net_mission_text[statvar.net_help_start[sub]]);
+        net_mission_text[statvar.net_help_start[sub]] = saved;
         break;
     }
     case 3:
-        set_help_text(2, -1, -1, &D_0016039c[statvar.net_result_base[sub]]);
+        set_help_text(2, -1, -1, &beta_demo_text_short[statvar.net_result_base[sub]]);
         break;
     }
     othervar.help_page = page;
@@ -487,7 +487,7 @@ void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n)
 void finish_composite_help(void)
 {
     LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
-    D_00161134 = 0;
+    help_close_hover = 0;
     D_00156910 = 1;
     othervar.help_msg[0] = 0;
     if (gamevar.mouse_mode == MM_HELP) {

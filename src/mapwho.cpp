@@ -368,7 +368,7 @@ void mapwho_numfx(Thing *fx, s32 x, s32 y)
         if (fx->numfx_type == NUMFX_NUMBER) {
             sprintf(buf, "%d", fx->numfx_amount);
         } else if (fx->numfx_type == NUMFX_TEXT) {
-            fn_000bbff0(buf, fx->numfx_text);
+            lib_strcpy(buf, fx->numfx_text);
         } else if (fx->numfx_type == NUMFX_FORMATTED) {
             sprintf(buf, fx->numfx_text, fx->numfx_amount);
         }

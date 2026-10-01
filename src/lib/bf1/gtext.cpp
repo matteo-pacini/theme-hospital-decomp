@@ -29,7 +29,7 @@ void int3(void);
 #pragma aux int3 = 0xcc;
 
 
-void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void LbDrawHVLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour);
 
 int LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
@@ -368,17 +368,17 @@ void put_down_sprites(char *sbegin, char *send, long x, long y, long space_len)
             else
                 LbSpriteDraw(x, y, spr);
             if (lbDisplay.draw_flags & 0x400)
-                LbDrawLine(x, y + (lbFontPtr ? lbFontPtr[1].height : 0), spr->width + x,
+                LbDrawHVLine(x, y + (lbFontPtr ? lbFontPtr[1].height : 0), spr->width + x,
                            y + (lbFontPtr ? lbFontPtr[1].height : 0), lbDisplay.draw_colour);
             x += spr->width;
         } else if ((s8)*sbegin == ' ') {
             if (lbDisplay.draw_flags & 0x400)
-                LbDrawLine(x, (lbFontPtr ? lbFontPtr[1].height : 0) + y, x + space_len,
+                LbDrawHVLine(x, (lbFontPtr ? lbFontPtr[1].height : 0) + y, x + space_len,
                            (lbFontPtr ? lbFontPtr[1].height : 0) + y, lbDisplay.draw_colour);
             x += space_len;
         } else if ((s8)*sbegin == '\t') {
             if (lbDisplay.draw_flags & 0x400)
-                LbDrawLine(x, (lbFontPtr ? lbFontPtr[1].height : 0) + y, x + lbSpacesPerTab * space_len,
+                LbDrawHVLine(x, (lbFontPtr ? lbFontPtr[1].height : 0) + y, x + lbSpacesPerTab * space_len,
                            (lbFontPtr ? lbFontPtr[1].height : 0) + y, lbDisplay.draw_colour);
             x += lbSpacesPerTab * space_len;
         } else {

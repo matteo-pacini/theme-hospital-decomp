@@ -8,7 +8,7 @@ void *memcpy(void *dst, const void *src, unsigned size);
 unsigned strlen(const char *s);
 char *strcpy(char *dst, const char *src);
 #pragma intrinsic(memcpy, strlen, strcpy)
-void fn_000c20c0(char *fmt, ...);
+void NetworkDebugPrintf(char *fmt, ...);
 }
 
 struct TbNetworkCallbackData;

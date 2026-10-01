@@ -3,9 +3,9 @@
 // FUNCTION: 0x000ce546
 
 .section _TEXT,"ax",@progbits,unique,845126
-.globl "fn_000ce546_"
-.type "fn_000ce546_",@function
-"fn_000ce546_":
+.globl "_harderr_"
+.type "_harderr_",@function
+"_harderr_":
     push edx
     mov dword ptr [_D_001505ca], eax
     mov word ptr [_D_001505ce], dx
@@ -98,4 +98,4 @@
     .byte 0x1f
     .byte 0x07
     .byte 0xcf
-.size "fn_000ce546_",.-"fn_000ce546_"
+.size "_harderr_",.-"_harderr_"

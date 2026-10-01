@@ -62,8 +62,8 @@ extern TbFileFind balance_file;
 extern char balance_file_name[];
 extern char *upstr, *downstr;
 
-u32 fn_000cd716(char *s);
-#pragma aux fn_000cd716 "fn_000cd716_"
+u32 lib_strlen(char *s);
+#pragma aux lib_strlen "strlen_"
 
 extern "C" {
 
@@ -120,8 +120,8 @@ void draw_nickname(void)
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         mainmenu.state = MMS_ENTER;
         display_mode = DM_MAIN_MENU;
-        if (fn_000cd716(myplayer.name_chars) == 0)
-            fn_000bbff0(myplayer.name_chars, misc_text[1]);
+        if (lib_strlen(myplayer.name_chars) == 0)
+            lib_strcpy(myplayer.name_chars, misc_text[1]);
         sprintf(statvar.save_prefix, "save/%s.h", myplayer.name_chars);
         load_player_details();
         break;
@@ -206,7 +206,7 @@ void process_keys_nickname(void)
                 nickname.state = 1;
                 play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 if (myplayer.name[0] == 0)
-                    fn_000bbff0(myplayer.name_chars, misc_text[1]);
+                    lib_strcpy(myplayer.name_chars, misc_text[1]);
                 break;
             case KC_BACKSPACE:
             case KC_DECIMAL:
@@ -362,7 +362,7 @@ void display_nick_name_screen(void)
 // Preferences screen button `index`: 0/1 advisor on/off (advisor.flags bit 0),
 // 2 accept, 3 cancel, 4/5 previous/next balance file, 6/7 320x200 or 640x480.
 // FUNCTION: 0x0008fa90
-extern "C" void fn_0008fa90(u8 index)
+extern "C" void process_nickname_button(u8 index)
 {
     switch (index) {
     case 4:
@@ -494,9 +494,9 @@ u8 setup_balance_files(u8 net_game)
     if (handle == -1)
         done = 1;
     while (!done) {
-        fn_000bbff0(fname, balance_file.Filename);
+        lib_strcpy(fname, balance_file.Filename);
         strtok(fname, ".");
-        len = fn_000cd716(fname);
+        len = lib_strlen(fname);
         strncpy(num, &fname[len] - 2, 2);
         num[2] = 0;
         level = atoi(num);
@@ -536,10 +536,10 @@ u8 setup_balance_files(u8 net_game)
             }
         }
         balance_filename(current_balance_file->name);
-        fn_000bbff0(balance_id, current_balance_file->name);
+        lib_strcpy(balance_id, current_balance_file->name);
         return 1;
     } else {
-        fn_000bbff0(balance_file_name, nickname_text[0x15]);
+        lib_strcpy(balance_file_name, nickname_text[0x15]);
         return 0;
     }
 }
@@ -571,7 +571,7 @@ void next_balance_file(void)
 {
     if (current_balance_file) {
         current_balance_file = current_balance_file->next;
-        fn_000bbff0(balance_id, current_balance_file->name);
+        lib_strcpy(balance_id, current_balance_file->name);
         balance_filename(balance_id);
     }
 }
@@ -582,7 +582,7 @@ void prev_balance_file(void)
 {
     if (current_balance_file) {
         current_balance_file = current_balance_file->prev;
-        fn_000bbff0(balance_id, current_balance_file->name);
+        lib_strcpy(balance_id, current_balance_file->name);
         balance_filename(balance_id);
     }
 }
@@ -610,16 +610,16 @@ void balance_filename(char *name)
     }
     len = LbFileLengthRnc(path);
     if (len == -1) {
-        fn_000bbff0(balance_file_name, nickname_text[0x15]);
+        lib_strcpy(balance_file_name, nickname_text[0x15]);
         return;
     }
     buf = (char *)LbMemoryAlloc(len + 1);
     if (buf == 0) {
-        fn_000bbff0(balance_file_name, nickname_text[0x15]);
+        lib_strcpy(balance_file_name, nickname_text[0x15]);
         return;
     }
     if (LbFileLoadAt(path, buf) == -1) {
-        fn_000bbff0(balance_file_name, nickname_text[0x15]);
+        lib_strcpy(balance_file_name, nickname_text[0x15]);
         LbMemoryFree(buf);
         return;
     }

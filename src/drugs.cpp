@@ -495,7 +495,7 @@ void setup_drug(u16 hospital, u16 illness)
 void drugs_help_concentrate(void)
 {
     if (othervar.f8b6) {
-        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
+        lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
     }
 }
 
@@ -511,14 +511,14 @@ void drugs_help_cure_type(void)
         if (allhosps[player].rooms[othervar.selected_illness].cure_available == 1) {
             sprintf(othervar.help_msg, help_text[148], allhosps[player].rooms[othervar.selected_illness].drug_effectiveness);
         } else {
-            fn_000bbff0(othervar.help_msg, help_text[147]);
+            lib_strcpy(othervar.help_msg, help_text[147]);
         }
     } else if (expertise[othervar.selected_illness].staff_mask == 0x40) {
-        fn_000bbff0(othervar.help_msg, help_text[149]);
+        lib_strcpy(othervar.help_msg, help_text[149]);
     } else if (expertise[othervar.selected_illness].category == 10) {
-        fn_000bbff0(othervar.help_msg, help_text[150]);
+        lib_strcpy(othervar.help_msg, help_text[150]);
     } else {
-        fn_000bbff0(othervar.help_msg, help_text[151]);
+        lib_strcpy(othervar.help_msg, help_text[151]);
     }
 }
 
@@ -528,26 +528,26 @@ void drugs_help_cure_type(void)
 void drugs_help_handled(void)
 {
     if (allhosps[player].rooms[othervar.selected_illness].cure_available == 1) {
-        fn_000bbff0(othervar.help_msg, help_text[152]);
+        lib_strcpy(othervar.help_msg, help_text[152]);
         return;
     }
     what_is_required(othervar.selected_illness, player);
     if (required.room_unavailable) {
-        fn_000bbff0(othervar.help_msg, help_text[153]);
+        lib_strcpy(othervar.help_msg, help_text[153]);
     } else if (required.missing_room) {
-        fn_000bbff0(othervar.help_msg, help_text[154]);
+        lib_strcpy(othervar.help_msg, help_text[154]);
     } else if (required.surgeons_needed == 2) {
-        fn_000bbff0(othervar.help_msg, help_text[155]);
+        lib_strcpy(othervar.help_msg, help_text[155]);
     } else if (required.surgeons_needed == 1) {
-        fn_000bbff0(othervar.help_msg, help_text[156]);
+        lib_strcpy(othervar.help_msg, help_text[156]);
     } else if (required.missing_skill) {
         sprintf(othervar.help_msg, help_text[157], skill_names[required.missing_skill]);
     } else if (required.needs_ward) {
-        fn_000bbff0(othervar.help_msg, help_text[158]);
+        lib_strcpy(othervar.help_msg, help_text[158]);
     } else if (required.needs_nurse) {
-        fn_000bbff0(othervar.help_msg, help_text[159]);
+        lib_strcpy(othervar.help_msg, help_text[159]);
     } else {
-        fn_000bbff0(othervar.help_msg, help_text[160]);
+        lib_strcpy(othervar.help_msg, help_text[160]);
     }
 }
 

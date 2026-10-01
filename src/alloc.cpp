@@ -5,11 +5,11 @@ extern u32 lbMemoryAvailable[5];
 extern u32 D_0015642f;
 extern u32 D_00156433;
 
-void fn_000bb0d0(_CMemory *mem);
-#pragma aux fn_000bb0d0 "W?ReleaseAll$:_CMemory$n()v"
-u32 fn_000bb10c(_CMemory *mem, void *p);
-#pragma aux fn_000bb10c "W?Free$:_CMemory$n(pnv)ul"
-u32 fn_000bb2b0(void);
+void _CMemory_ReleaseAll(_CMemory *mem);
+#pragma aux _CMemory_ReleaseAll "W?ReleaseAll$:_CMemory$n()v"
+u32 _CMemory_Free(_CMemory *mem, void *p);
+#pragma aux _CMemory_Free "W?Free$:_CMemory$n(pnv)ul"
+u32 get_low_memory_flag(void);
 }
 
 /* The static initialiser for these objects (.fn_init) constructs both. */
@@ -64,21 +64,21 @@ int LbMemorySetup(void)
     u32 size;
     u32 try_size;
 
-    mem = _lbMemory.Alloc(0x565720, fn_000bb2b0());
+    mem = _lbMemory.Alloc(0x565720, get_low_memory_flag());
     size = 0x565720;
     if (mem == 0) {
         try_size = 0x4ac4a0;
         size = try_size;
         while (try_size < 0x565720) {
-            mem = _lbMemory.Alloc(try_size, fn_000bb2b0());
+            mem = _lbMemory.Alloc(try_size, get_low_memory_flag());
             if (mem) {
-                fn_000bb10c(&_lbMemory, mem);
+                _CMemory_Free(&_lbMemory, mem);
                 size = try_size;
             } else
                 break;
             try_size += 0x25800;
         }
-        mem = _lbMemory.Alloc(size, fn_000bb2b0());
+        mem = _lbMemory.Alloc(size, get_low_memory_flag());
     }
     if (mem == 0)
         return -1;
@@ -100,7 +100,7 @@ int LbMemorySetup(void)
 // FUNCTION: 0x000badfc
 int LbMemoryReset(void)
 {
-    fn_000bb0d0(&_lbMemory);
+    _CMemory_ReleaseAll(&_lbMemory);
     return 1;
 }
 
@@ -132,7 +132,7 @@ int LbMemoryCheck(void)
 
 // Not supported: always returns -1.
 // FUNCTION: 0x000baec0
-int fn_000baec0(void *p, u32 size)
+int LbMemoryGrow(void *p, u32 size)
 {
     return -1;
 }
@@ -202,16 +202,16 @@ extern "C" {
 
 // _CMemory::ReleaseAll: frees every block mem has allocated.
 // FUNCTION: 0x000bb0d0
-void fn_000bb0d0(_CMemory *mem)
+void _CMemory_ReleaseAll(_CMemory *mem)
 {
     while (mem->used_list)
-        fn_000bb10c(mem, mem->used_list->ptr);
+        _CMemory_Free(mem, mem->used_list->ptr);
 }
 
 // _CMemory::Free: frees the block of mem whose address is p. Returns 1 when
 // freed or p is 0, 0 if p is not one of mem's blocks.
 // FUNCTION: 0x000bb10c
-u32 fn_000bb10c(_CMemory *mem, void *p)
+u32 _CMemory_Free(_CMemory *mem, void *p)
 {
     _CMemoryBlock *block;
     _CMemoryBlock *prev;
@@ -281,7 +281,7 @@ void dos_free(u16 seg)
 // The low-memory flag LbMemorySetup passes to _CMemory::Alloc: always 0, so
 // the game heap comes from the C heap.
 // FUNCTION: 0x000bb2b0 COMDAT
-extern "C" inline u32 fn_000bb2b0(void)
+extern "C" inline u32 get_low_memory_flag(void)
 {
     return 0;
 }

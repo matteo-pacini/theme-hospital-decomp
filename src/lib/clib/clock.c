@@ -24,7 +24,7 @@ union REGS {
 
 int intdos(union REGS *in_regs, union REGS *out_regs);
 
-extern clock_t D_0018cfac;
+extern clock_t clock_start;
 
 // FUNCTION: 0xec34a
 clock_t clock_value(void)
@@ -39,7 +39,7 @@ clock_t clock_value(void)
 // FUNCTION: 0x000ec3a5
 void __clock_init(void)
 {
-    D_0018cfac = clock_value();
+    clock_start = clock_value();
 }
 
 // FUNCTION: 0x000ec3b0
@@ -48,7 +48,7 @@ clock_t __clock(void)
     clock_t ticks;
 
     ticks = clock_value();
-    if (ticks < D_0018cfac)
+    if (ticks < clock_start)
         ticks += 24UL * 60 * 60 * 100;
-    return ticks - D_0018cfac;
+    return ticks - clock_start;
 }

@@ -8,7 +8,7 @@ extern "C" {
 
 extern char **illness_text;
 
-void fn_000c93bf(char *dst, char *src);
+void strcat(char *dst, char *src);
 
 }
 
@@ -774,11 +774,11 @@ u16 call_no_diagnosis(Thing *patient, char **strs)
     text_x = 0;
     text_y = 0;
     sprintf(buf2, strs[0]);
-    fn_000c93bf(buf2, new_line);
-    fn_000c93bf(buf2, strs[1]);
-    fn_000c93bf(buf2, new_line);
+    strcat(buf2, new_line);
+    strcat(buf2, strs[1]);
+    strcat(buf2, new_line);
     if (allhosps[patient->owner].rooms[patient->illness].cure_available == 1 && allhosps[patient->owner].rooms[patient->illness].discovered == 1) {
-        fn_000c93bf(buf2, buf1);
+        strcat(buf2, buf1);
     }
     LbTextDraw(text_x, text_y, buf2);
     return 0;

@@ -15,13 +15,12 @@ struct ScreenBox {
 };
 
 extern "C" {
-extern u16 overview;
-extern u8 D_00158166;
+extern Menu overview;
 extern Event D_001549d0[];
 extern char **overview_text;
 extern char **win_criteria_help;
 
-void fn_000c93bf(char *dst, char *src);
+void strcat(char *dst, char *src);
 void conv_string(char *dst, s8 *src, u8 mode);
 s32 nth_active_player(int nth);
 }
@@ -45,7 +44,7 @@ s32 evaluate_criteria(const u8 owner);
 u32 check_criteria_values(const u32 mode, const u8 owner);
 void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sectors);
 
-// Runs one frame of the status (overview) screen (state D_00158166: 0
+// Runs one frame of the status (overview) screen (state overview.state: 0
 // opening, 1 shown, 2 closing): clicking a hospital's name shows its
 // figures, the close button queues EV_RETURN_FROM_SCREEN.
 // FUNCTION: 0x00056d50
@@ -56,11 +55,11 @@ void display_peep_overview(void)
     s32 i;
 
     nplayers = 4;
-    switch (D_00158166) {
+    switch (overview.state) {
     case 0:
         load_ingame_pic(SCR_OVERVIEW, 1, 0x26, 0, SCREEN_MODE_13);
-        D_00158166 = 1;
-        overview = player;
+        overview.state = 1;
+        overview.value = player;
         close_irequesters();
         copy_screen_to_wscreen(bscreen);
         draw_overview_screen();
@@ -68,8 +67,8 @@ void display_peep_overview(void)
         draw_piechart();
         break;
     case 1:
-        if (statvar.num_players > 1 && D_001609c4[overview].active == 0)
-            overview = player;
+        if (statvar.num_players > 1 && D_001609c4[overview.value].active == 0)
+            overview.value = player;
         copy_screen_to_wscreen(bscreen);
         if (lbDisplay.mleft_button) {
             slot = 0;
@@ -92,7 +91,7 @@ void display_peep_overview(void)
                     continue;
                 if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x37 + slot].x, resvars.screen_boxes_ScreenBoxp[0x37 + slot].y,
                                  resvars.screen_boxes_ScreenBoxp[0x37 + slot].w, resvars.screen_boxes_ScreenBoxp[0x37 + slot].h)) {
-                    overview = i;
+                    overview.value = i;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x37 + slot].x + 0x13, resvars.screen_boxes_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
                 }
@@ -100,15 +99,15 @@ void display_peep_overview(void)
             }
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y, resvars.screen_boxes_ScreenBoxp[0x3c].w,
                              resvars.screen_boxes_ScreenBoxp[0x3c].h)) {
-                D_00158166 = 2;
+                overview.state = 2;
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y, &screen_sprites_tab_start[8]);
             }
             lbDisplay.rleft_button = 0;
         }
-        calculate_value(overview);
-        evaluate_criteria(overview);
-        check_criteria_values(1, overview);
+        calculate_value(overview.value);
+        evaluate_criteria(overview.value);
+        check_criteria_values(1, overview.value);
         draw_overview_screen();
         calculate_piechart();
         draw_piechart();
@@ -121,7 +120,7 @@ void display_peep_overview(void)
     }
     lbDisplay.draw_flags = 0;
     if (exit_quick_requester())
-        D_00158166 = 2;
+        overview.state = 2;
 }
 
 // Draws the status screen for hospital `overview`: the year, the players'
@@ -151,7 +150,7 @@ void draw_overview_screen(void)
         for (i = 0; i < nplayers; i++) {
             if (statvar.num_players > 1 && D_001609c4[i].active == 0)
                 continue;
-            if (overview == i)
+            if (overview.value == i)
                 set_font_from_cache(0x25);
             else
                 set_font_from_cache(0x24);
@@ -165,23 +164,23 @@ void draw_overview_screen(void)
             if (pct > 100)
                 pct = 100;
             if (gbv.very_unhappy > pct)
-                fn_000c93bf(buf, overview_text[1]);
+                strcat(buf, overview_text[1]);
             else if (gbv.unhappy > pct)
-                fn_000c93bf(buf, overview_text[2]);
+                strcat(buf, overview_text[2]);
             reqspr_draw(resvars.screen_coords[0x6c].x + pct, resvars.screen_coords[0x6c].y, &screen_sprites_tab_start[5]);
             pct = adcounts.refreshment_sum / adcounts.patients;
             if (pct > 100)
                 pct = 100;
             if (pct < 30)
-                fn_000c93bf(buf, overview_text[3]);
+                strcat(buf, overview_text[3]);
             reqspr_draw(resvars.screen_coords[0x6d].x + pct, resvars.screen_coords[0x6d].y, &screen_sprites_tab_start[5]);
             pct = adcounts.warmth_sum / adcounts.patients;
             if (pct > 100)
                 pct = 100;
             if (pct > 80)
-                fn_000c93bf(buf, overview_text[4]);
+                strcat(buf, overview_text[4]);
             else if (pct < 20)
-                fn_000c93bf(buf, overview_text[5]);
+                strcat(buf, overview_text[5]);
             reqspr_draw(resvars.screen_coords[0x6e].x + pct, resvars.screen_coords[0x6e].y, &screen_sprites_tab_start[5]);
             reqspr_draw(0xf5, 0x12c, &screen_sprites_tab_start[7]);
             set_font_from_cache(0x24);
@@ -192,13 +191,13 @@ void draw_overview_screen(void)
         set_font_from_cache(0x26);
         lbDisplay.draw_flags = 0;
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        sprintf(buf, "%s (%d%%)", overview_text[6], allhosps[overview].market_share);
+        sprintf(buf, "%s (%d%%)", overview_text[6], allhosps[overview.value].market_share);
         conv_string(buf, (s8 *)buf, 0);
         LbTextDraw(resvars.screen_coords[0x70].x, resvars.screen_coords[0x70].y, buf);
         sprintf(buf, "%s", overview_text[7]);
         LbTextDraw(resvars.screen_coords[0x71].x, resvars.screen_coords[0x71].y, buf);
         set_font_from_cache(0x24);
-        display_overview_bars(overview);
+        display_overview_bars(overview.value);
         compute_help_text(0, 0, 0x18);
     }
 }
@@ -274,11 +273,11 @@ void calculate_piechart(void)
     for (i = 0; i < 4u; i++) {
         slices[i].start += 4;
         slices[i].end += 4;
-        if (slices[i].radius != 0 && i != overview)
+        if (slices[i].radius != 0 && i != overview.value)
             slices[i].radius -= 2;
     }
-    if (slices[overview].radius < 0x50)
-        slices[overview].radius += 2;
+    if (slices[overview.value].radius < 0x50)
+        slices[overview.value].radius += 2;
 }
 
 // Draws the pie chart and each slice's hospital name.
@@ -407,7 +406,7 @@ void overscr_help_win_criteria(void)
     count = 0;
     found = 0;
     hit = 0;
-    owner = overview;
+    owner = overview.value;
     for (crit = 0; crit <= 6; crit++) {
         found = 0;
         for (i = 0; i < 10; i++) {

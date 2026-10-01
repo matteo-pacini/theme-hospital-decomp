@@ -141,7 +141,7 @@ extern const char D_001285ec[];
 extern const char D_00128616[];
 extern const char D_00128641[];
 extern const char D_0012866b[];
-extern void (*D_00152a90)(rw_dtreg *rw);
+extern void (*__longjmp_handler)(rw_dtreg *rw);
 
 void __wcpp_2_call_terminate_(void);
 void __wcpp_2_fatal_runtime_error_(const char *msg, unsigned code);
@@ -793,7 +793,7 @@ void __wcpp_2_lj_handler_(rw_dtreg *bound)
 // FUNCTION: 0xf46a5
 void __wcpp_2_lj_init_(void)
 {
-    D_00152a90 = (void (*)(rw_dtreg *))__wcpp_2_lj_handler_;
+    __longjmp_handler = (void (*)(rw_dtreg *))__wcpp_2_lj_handler_;
 }
 
 }

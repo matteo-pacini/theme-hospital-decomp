@@ -16,7 +16,7 @@
     mov al, byte ptr ["___FPE_int"]
     mov dx, cs
     mov ds, edx
-    lea edx, ["fn_000fd992_"+0x22]
+    lea edx, ["__Enable_FPE_"+0x22]
     int 0x21
     pop ds
     ret

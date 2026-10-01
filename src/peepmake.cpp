@@ -16,8 +16,8 @@ struct PeepChoice {
 extern "C" {
 
 extern u16 visuals_available[];
-extern PeepType D_0012b7d4[];
-extern PeepPalette D_0012b818[];
+extern PeepType generate_person[];
+extern PeepPalette variations[];
 
 s8 nth_active_player(int nth);
 void sort_peep_bids(PeepBid *bids);
@@ -314,25 +314,25 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         if (illness >= 16) {
             total = 0;
             for (i = 4; i >= 0; i--)
-                total += D_0012b7d4[i].weight;
+                total += generate_person[i].weight;
             r = old_newrand() % total;
             for (i = 4; i >= 0; i--) {
-                total -= D_0012b7d4[i].weight;
+                total -= generate_person[i].weight;
                 if (r >= total)
                     break;
             }
-            peep->subtype = D_0012b7d4[i].kind;
-            k = old_newrand() % D_0012b7d4[i].count;
-            peep->layers[0] = D_0012b7d4[i].head[k];
-            pal = &D_0012b818[D_0012b7d4[i].palette[k]];
+            peep->subtype = generate_person[i].kind;
+            k = old_newrand() % generate_person[i].count;
+            peep->layers[0] = generate_person[i].head[k];
+            pal = &variations[generate_person[i].palette[k]];
         } else {
             nchoices = 0;
             for (i = 4; i >= 0; i--) {
                 if (illness >= 16 || suitable_illness[illness][i]) {
-                    for (k = D_0012b7d4[i].count - 1; k >= 0; k--) {
-                        choices[nchoices].kind = D_0012b7d4[i].kind;
-                        choices[nchoices].head = D_0012b7d4[i].head[k];
-                        choices[nchoices].palette = D_0012b7d4[i].palette[k];
+                    for (k = generate_person[i].count - 1; k >= 0; k--) {
+                        choices[nchoices].kind = generate_person[i].kind;
+                        choices[nchoices].head = generate_person[i].head[k];
+                        choices[nchoices].palette = generate_person[i].palette[k];
                         nchoices++;
                     }
                 }
@@ -340,7 +340,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
             pick = old_newrand() % nchoices;
             peep->subtype = choices[pick].kind;
             peep->layers[0] = choices[pick].head;
-            pal = &D_0012b818[choices[pick].palette];
+            pal = &variations[choices[pick].palette];
         }
         if (statvar.num_players > 1 && pal->count1 == 4)
             peep->layers[1] = pal->layer1[owner];

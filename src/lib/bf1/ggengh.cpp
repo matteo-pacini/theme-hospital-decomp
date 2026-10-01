@@ -1,7 +1,7 @@
 #include "bflib.h"
 
 extern "C" {
-extern u8 D_00178c0c[];
+extern u8 ghost_table[];
 
 u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b);
 
@@ -24,8 +24,8 @@ int LbGhostTableGenerate(u8 *palette, u8 intensity, char *name)
     s32 g;
     s32 b;
 
-    if (LbFileLoadAt(name, D_00178c0c) == -1) {
-        out = D_00178c0c;
+    if (LbFileLoadAt(name, ghost_table) == -1) {
+        out = ghost_table;
         base_rgb = palette;
         for (i = 0; i < 256; i++) {
             base_r = *base_rgb++;
@@ -39,10 +39,10 @@ int LbGhostTableGenerate(u8 *palette, u8 intensity, char *name)
                 *out++ = LbPaletteFindColour(palette, r, g, b);
             }
         }
-        if (LbFileSaveAt(name, D_00178c0c, 0x10000) == -1)
+        if (LbFileSaveAt(name, ghost_table, 0x10000) == -1)
             return -1;
     }
-    lbDisplay.ghost = D_00178c0c;
+    lbDisplay.ghost = ghost_table;
     return 1;
 }
 

@@ -7,7 +7,7 @@
 
 extern "C" {
 void process_policy_button(u8 action);
-void fn_0008fa90(u8 button);
+void process_nickname_button(u8 button);
 }
 
 void process_balance_buttons(u8 button);
@@ -201,14 +201,14 @@ SlistButton screenbuttons[201] = {
     { 226, 357, 413, 390, process_loadgame_buttons },
     { 414, 413, 439, 438, process_loadgame_buttons, 158, 1, 157, 1, 8 },
     { 0 },
-    { 339, 303, 406, 336, fn_0008fa90 },
-    { 411, 303, 478, 336, fn_0008fa90 },
-    { 339, 379, 406, 412, fn_0008fa90 },
-    { 449, 383, 474, 408, fn_0008fa90, 193, 1, 127, 1, 8 },
-    { 441, 72, 474, 105, fn_0008fa90 },
-    { 441, 138, 474, 171, fn_0008fa90 },
-    { 339, 341, 406, 374, fn_0008fa90 },
-    { 411, 341, 478, 374, fn_0008fa90 },
+    { 339, 303, 406, 336, process_nickname_button },
+    { 411, 303, 478, 336, process_nickname_button },
+    { 339, 379, 406, 412, process_nickname_button },
+    { 449, 383, 474, 408, process_nickname_button, 193, 1, 127, 1, 8 },
+    { 441, 72, 474, 105, process_nickname_button },
+    { 441, 138, 474, 171, process_nickname_button },
+    { 339, 341, 406, 374, process_nickname_button },
+    { 411, 341, 478, 374, process_nickname_button },
     { 0 },
     { 137, 217, 40, 40, process_hall_buttons, 137, 0, 217, 0, 2 },
     { 456, 217, 40, 40, process_hall_buttons, 200, 1, 217, 0, 2 },
@@ -423,7 +423,7 @@ BoxCoord ScreenBoxes[175] = {
 };
 
 // demo: ScreenCoords
-Coord D_00146c8c[209] = {
+Coord ScreenCoords[209] = {
     { 407, 71 }, { 407, 88 }, { 407, 105 }, { 407, 122 }, { 407, 139 }, { 407, 156 }, { 407, 173 },
     { 407, 190 }, { 407, 230 }, { 407, 268 }, { 407, 285 }, { 407, 302 }, { 407, 319 },
     { 407, 336 }, { 407, 353 }, { 407, 370 }, { 407, 387 }, { 0, -1 }, { 0, 44 }, { 0, 88 },
@@ -458,7 +458,7 @@ Coord D_00146c8c[209] = {
 };
 
 // demo: hiresglass
-GlassFrame D_00147314[465] = {
+GlassFrame hiresglass[465] = {
     { 0 },
     { 0 },
     { 0 },

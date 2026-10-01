@@ -12,7 +12,7 @@ int abs(int n);
 // clipped or not drawn; when no clipping is needed the return value is
 // undefined (clipped is never set).
 // FUNCTION: 0x000c9be0
-u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
+u8 LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
 {
     u8 clipped;
 

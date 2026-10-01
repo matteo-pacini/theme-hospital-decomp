@@ -31,9 +31,8 @@ extern PlayerPopup D_0015f5c2[];
 extern char **illness_text;
 extern char **room_names;
 extern char **skill_names;
-void fn_000c93bf(char *dst, char *src);
-extern u16 choice;
-extern u8 D_00158192;
+void strcat(char *dst, char *src);
+extern Menu choice;
 extern Event D_001549d0[];
 extern EmergencyDef emergency_control[];
 }
@@ -120,7 +119,7 @@ u32 check_emergency_criteria(void)
     hosp_count = 1;
     if (statvar.num_players > 1)
         hosp_count = 4;
-    if (statvar.num_players <= 1 && display_mode == DM_CHOICE && choice == 5)
+    if (statvar.num_players <= 1 && display_mode == DM_CHOICE && choice.value == 5)
         return 0;
     if (actual_game_turn >= gamevar.next_emergency_turn && gamevar.emergency_pending) {
         for (i = 0; i < hosp_count; i++) {
@@ -277,15 +276,15 @@ u32 announce_emergency(u8 owner, char **strs)
             }
         }
     }
-    fn_000bbff0(name, strs[saferand() % 4 + 9]);
+    lib_strcpy(name, strs[saferand() % 4 + 9]);
     text[0] = 0;
     x = 0;
     y = 0;
     sprintf(buf, strs[0], name);
-    fn_000c93bf(text, buf);
+    strcat(text, buf);
     sprintf(buf, strs[1], patients, illness_text[illness]);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf);
+    strcat(text, new_line);
+    strcat(text, buf);
     if (cured) {
         if (count)
             sprintf(buf, strs[2], illness_text[illness], count);
@@ -300,11 +299,11 @@ u32 announce_emergency(u8 owner, char **strs)
     } else {
         sprintf(buf, strs[7]);
     }
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf);
+    strcat(text, new_line);
+    strcat(text, buf);
     sprintf(buf, strs[8], bonus);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf);
+    strcat(text, new_line);
+    strcat(text, buf);
     LbTextDraw(x, y, text);
     return 0;
 }
@@ -351,10 +350,10 @@ void emergency_over(u8 owner, char **strs)
     x = 0;
     y = 0;
     sprintf(buf, strs[0], total, bonus);
-    fn_000c93bf(text, buf);
+    strcat(text, buf);
     sprintf(buf, strs[1], hosp->emergency_cured, hosp->emergency_patients);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf);
+    strcat(text, new_line);
+    strcat(text, buf);
     LbTextDraw(x, y, text);
 }
 
@@ -364,7 +363,7 @@ void process_emergency_end_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        D_00158192 = 0x5c;
+        choice.state = 0x5c;
         break;
     }
 }

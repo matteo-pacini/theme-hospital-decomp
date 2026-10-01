@@ -5,10 +5,9 @@
 long face_file = -1;
 
 extern "C" {
-// demo: loaded_face (a Picture)
-u8 D_001290d0 = 0xff, D_001290d1 = 0xff, D_001290d2 = 0xff;
+Picture loaded_face = {0xff, 0xff, 0xff};
 // demo: save. The entries with no address are filled in by setup_addresses.
-MemRegion D_001290d4[] = {
+MemRegion save[] = {
     { (u32)&version, 2 },
     { (u32)&level_number, 1 },
     { (u32)balance_id, 10 },

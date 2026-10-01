@@ -156,9 +156,9 @@
 // FUNCTION: 0x000fa8f0
 
 .section _TEXT,"ax",@progbits,unique,1026288
-.globl "fn_000fa8f0_"
-.type "fn_000fa8f0_",@function
-"fn_000fa8f0_":
+.globl "__init_80x87"
+.type "__init_80x87",@function
+"__init_80x87":
     push ax
     wait
     fninit
@@ -180,14 +180,14 @@
     xchg word ptr [esp], ax
     pop ax
     ret
-.size "fn_000fa8f0_",.-"fn_000fa8f0_"
+.size "__init_80x87",.-"__init_80x87"
 
 .section CONST,"aw",@progbits
 .Lconst:
     .asciz "RATIONAL DOS/4G"
 
 // save8087's hooks for saving and restoring the 80x87 state: its
-// do-nothing routine (0xfa8ef) until fn_000ef30c installs the real ones
+// do-nothing routine (0xfa8ef) until __init_8087_ installs the real ones
 // when a coprocessor is present.
 .section _DATA,"aw",@progbits
 .globl "___Save8087"

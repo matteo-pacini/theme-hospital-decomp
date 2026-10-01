@@ -21,7 +21,7 @@ static char AIL_indent_str[] = "               "
 
 void __pascal AILDEBUG_START(void);
 void __pascal AILDEBUG_END(void);
-#pragma aux (__pascal) AILDEBUG_END "fn_000c82f0_"
+#pragma aux (__pascal) AILDEBUG_END "AILDEBUG_END"
 
 // FUNCTION: 0x000c24c0
 void __pascal AILDEBUG_START(void)

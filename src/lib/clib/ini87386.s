@@ -280,12 +280,12 @@
 // FUNCTION: 0x000ef30c
 
 .section _TEXT,"ax",@progbits,unique,979724
-.globl "fn_000ef30c_"
-.type "fn_000ef30c_",@function
-"fn_000ef30c_":
+.globl "__init_8087_"
+.type "__init_8087_",@function
+"__init_8087_":
     push ebx
     push edx
-    cmp byte ptr [_D_00150815], 0
+    cmp byte ptr [__real87], 0
     je .L000ef32d
     .byte 0xba; .long "fn_000ef2e2_"+0x21  # mov edx, 0xdf303
     .byte 0xbb; .long "fn_000ef2e2_"+0x26  # mov ebx, 0xdf308
@@ -294,11 +294,11 @@
 .L000ef32d:
     xor eax, eax
     mov ax, word ptr ["__8087cw"]
-    call "fn_000fa8f0_"
+    call "__init_80x87"
     pop edx
     pop ebx
     ret
-    .byte 0x80; .byte 0x3d; .long _D_00150815; .byte 0x00
+    .byte 0x80; .byte 0x3d; .long __real87; .byte 0x00
     .byte 0x75; .byte 0xc6
     .byte 0xc3
 .L000ef347:
@@ -306,7 +306,7 @@
     .byte 0x8a; .byte 0x25; .long _D_00150814
     .byte 0x84; .byte 0xe4
     .byte 0x75; .byte .L000ef38b-.-1
-    .byte 0x88; .byte 0x25; .long _D_00150815
+    .byte 0x88; .byte 0x25; .long __real87
     .byte 0x2b; .byte 0xc0
     .byte 0x50
     .byte 0xdb; .byte 0xe3
@@ -317,17 +317,17 @@
     .byte 0x25; .byte 0xff; .byte 0x00; .byte 0x00; .byte 0x00
     .byte 0x83; .byte 0xf8; .byte 0x03
     .byte 0x75; .byte .L000ef376-.-1
-    .byte 0xe8; .long -4; .reloc .-4, R_386_PC32, "fn_000ef30c_"
+    .byte 0xe8; .long -4; .reloc .-4, R_386_PC32, "__init_8087_"
     .byte 0x88; .byte 0xc2
 .L000ef376:
     .byte 0x80; .byte 0x3d; .long "__no87"; .byte 0x00
     .byte 0x75; .byte .L000ef38b-.-1
     .byte 0x88; .byte 0x15; .long _D_00150814
-    .byte 0x88; .byte 0x15; .long _D_00150815
+    .byte 0x88; .byte 0x15; .long __real87
 .L000ef38b:
     .byte 0x5a
     .byte 0xc3
-.size "fn_000ef30c_",.-"fn_000ef30c_"
+.size "__init_8087_",.-"__init_8087_"
 
 // _8087386's XI entry: __chk8087 (0xef347) at priority 2.
 .section XI,"aw",@progbits

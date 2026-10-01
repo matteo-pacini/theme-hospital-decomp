@@ -3,9 +3,9 @@
 // FUNCTION: 0x000ccac4
 
 .section _TEXT,"ax",@progbits,unique,838340
-.globl "LbDrawLine_"
-.type "LbDrawLine_",@function
-"LbDrawLine_":
+.globl "LbDrawHVLine_"
+.type "LbDrawHVLine_",@function
+"LbDrawHVLine_":
     push ebp
     {load} mov ebp, esp
     add esp, -0x10
@@ -233,4 +233,4 @@
     pop eax
     leave
     ret 4
-.size "LbDrawLine_",.-"LbDrawLine_"
+.size "LbDrawHVLine_",.-"LbDrawHVLine_"

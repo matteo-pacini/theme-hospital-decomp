@@ -28,7 +28,7 @@
     push eax
     push ebp
     .byte 0x68; .long _D_001242c8  # push 0x42c8
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 0xc
     jmp .L000caddc
@@ -93,7 +93,7 @@
     cmp eax, 0x7530
     jle .L000cabf1
     .byte 0x68; .long _D_001243a6  # push 0x43a6
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     xor ebx, ebx
     add esp, 4
     mov dword ptr [esp + 0x18], ebx
@@ -125,7 +125,7 @@
     push edi
     .byte 0x68; .long _D_00124310  # push 0x4310
     xor ebp, ebp
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 0xc
     mov dword ptr [esp + 0x18], ebp
     cmp dword ptr [esp + 0x18], 0
@@ -191,7 +191,7 @@
 .L000cacf5:
     push ebp
     .byte 0x68; .long _D_0012435f  # push 0x435f
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     xor eax, eax
     mov dword ptr [esp + 0x18], eax
@@ -266,7 +266,7 @@
     ret
 .L000cadcb:
     .byte 0x68; .long _D_001243da  # push 0x43da
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
     mov al, byte ptr [esp + 0x24]
 .L000caddc:
@@ -341,7 +341,7 @@
     cmp eax, 0x7530
     jle .L000caea1
     .byte 0x68; .long _D_001244d4  # push 0x44d4
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     xor esi, esi
 .L000cae9e:
     add esp, 4
@@ -381,7 +381,7 @@
     jbe .L000caf2c
     push edx
     .byte 0x68; .long _D_00124416  # push 0x4416
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     jmp .L000caf49
 .L000caf2c:
@@ -390,7 +390,7 @@
     jae .L000caf44
     push ebx
     .byte 0x68; .long _D_00124454  # push 0x4454
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     jmp .L000caf49
 .L000caf44:
@@ -413,7 +413,7 @@
     test al, al
     je .L000caea1
     .byte 0x68; .long _D_00124493  # push 0x4493
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     jmp .L000cae9e
 .L000caf9a:
     xor eax, eax
@@ -544,7 +544,7 @@
     .byte 0x68; .long _D_00124504  # push 0x4504
     mov ebx, 7
     xor ecx, ecx
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     mov eax, 4
     add esp, 0x10
     mov dword ptr ["W?abortMessage$n$__4p8ei9UnidirectionalHeader$$"+0x4], eax
@@ -564,7 +564,7 @@
 .L000cb18a:
     push eax
     .byte 0x68; .long _D_00124596  # push 0x4596
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 8
     test esi, esi
     jne .L000cb03e
@@ -596,7 +596,7 @@
     je .L000cb208
     .byte 0x68; .long _D_001245d6  # push 0x45d6
 .L000cb200:
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000cb208:
     test esi, esi
@@ -612,7 +612,7 @@
     .byte 0x68; .long _D_00124617  # push 0x4617
     mov edx, esi
     mov ebx, 7
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     xor ecx, ecx
     add esp, 0xc
     .byte 0xb8; .long "W?abortMessage$n$__4p8ei9UnidirectionalHeader$$"  # mov eax, 0x6a360
@@ -625,7 +625,7 @@
     test al, al
     je .L000cb273
     .byte 0x68; .long _D_00124665  # push 0x4665
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000cb273:
     mov ecx, dword ptr [esp + 0x7c]
@@ -647,7 +647,7 @@
     test al, al
     je .L000cb2cc
     .byte 0x68; .long _D_001246a6  # push 0x46a6
-    call "fn_000c20c0_"
+    call "NetworkDebugPrintf_"
     add esp, 4
 .L000cb2cc:
     mov eax, dword ptr [esp + 0x54]
