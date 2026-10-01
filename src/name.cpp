@@ -43,19 +43,19 @@ s8 draw_zoom_boxes(void);
 long keybuffer_get(void);
 u8 what_key_is_it_really(u8 key);
 u8 load_player_details(void);
-u8 setup_balance_files(u8 a);
+u8 setup_balance_files(u8 net_game);
 void free_balance_files(void);
 void next_balance_file(void);
 void prev_balance_file(void);
 void display_nick_name_screen(void);
 void draw_new_prefs_screen(void);
 s16 character_height(void);
-s16 button_index(s32 id);
+s16 button_index(s32 mask);
 void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style);
 void draw_balance_file_explanation(void);
 void balance_filename(char *name);
-void draw_glass_text(SlistButton *b, char *text);
-void draw_glass_text_hilight(SlistButton *b, char *text);
+void draw_glass_text(SlistButton *button, char *text);
+void draw_glass_text_hilight(SlistButton *button, char *text);
 char *read_line_from_buf(char *line, s32 max, char *src);
 
 extern TbFileFind balance_file;
@@ -74,16 +74,16 @@ extern s8 __IsTable[];
 
 void keybuffer_clear(void);
 void delay(int ms);
-int LbFileFindFirst(char *spec, void *find, u32 attributes);
-int LbFileFindNext(void *find);
-char *strtok(char *s, char *delim);
-char *strncpy(char *dst, char *src, u32 n);
-int stricmp(char *a, char *b);
+int LbFileFindFirst(char *path, void *ff, u32 attr);
+int LbFileFindNext(void *ff);
+char *strtok(char *str, char *charset);
+char *strncpy(char *dst, char *src, u32 len);
+int stricmp(char *s, char *t);
 
 }
 
 // Runs one frame of the name-entry and preferences screens' state machine
-// (nickname.unknown2): zooms the boxes in, takes key presses, and on leaving
+// (nickname.state): zooms the boxes in, takes key presses, and on leaving
 // loads the player's details (name screen) or goes on to the level map or
 // back to the main menu (preferences, display_mode 3 or 2).
 // FUNCTION: 0x0008ee50
@@ -118,8 +118,8 @@ void draw_nickname(void)
         fade_out_menu();
         nickname.state = 0;
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
-        mainmenu.state = 0;
-        display_mode = 2;
+        mainmenu.state = MMS_ENTER;
+        display_mode = DM_MAIN_MENU;
         if (fn_000cd716(myplayer.name_chars) == 0)
             fn_000bbff0(myplayer.name_chars, misc_text[1]);
         sprintf(statvar.save_prefix, "save/%s.h", myplayer.name_chars);
@@ -135,7 +135,7 @@ void draw_nickname(void)
     case 3:
         return_from_screen(9, 0, 1);
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        load_ingame_pic(0xc, 1, 0x19, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_NETWORK_PREFS, 1, 0x19, 0, SCREEN_MODE_13);
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         calculate_grey(ppalette.data);
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
@@ -161,10 +161,10 @@ void draw_nickname(void)
         fade_out_menu();
         if (nickname.state == 4) {
             area.state = 0;
-            display_mode = 3;
+            display_mode = DM_AREA_SELECT;
         } else {
-            mainmenu.state = 0;
-            display_mode = 2;
+            mainmenu.state = MMS_ENTER;
+            display_mode = DM_MAIN_MENU;
         }
         nickname.state = 0;
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
@@ -199,12 +199,12 @@ void process_keys_nickname(void)
             case KC_ESCAPE:
                 fade_out_menu();
                 quit_game = 3;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 break;
             case KC_RETURN:
             case KC_NUMPADENTER:
                 nickname.state = 1;
-                play_sound(10, SFX_YESX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 if (myplayer.name[0] == 0)
                     fn_000bbff0(myplayer.name_chars, misc_text[1]);
                 break;
@@ -213,7 +213,7 @@ void process_keys_nickname(void)
                 for (i = 1; i < 9; i++) {
                     if (myplayer.name[i] == 0) {
                         if (myplayer.name[0] != 0)
-                            play_sound(10, SFX_DELANAME, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_DELANAME, -1, -1);
                         myplayer.name[i - 1] = 0;
                         break;
                     }
@@ -226,7 +226,7 @@ void process_keys_nickname(void)
                             if (__IsTable[(u8)(lbInkeyToAsciiShift[BufferedInkey] + 1)] & 0xc0) {
                                 myplayer.name[i] = toupper((u8)lbInkeyToAsciiShift[BufferedInkey]);
                                 myplayer.name[i + 1] = 0;
-                                play_sound(10, SFX_ENTANAME, -1, -1);
+                                play_sound(SNDSRC_GENERAL, SFX_ENTANAME, -1, -1);
                             }
                             break;
                         }
@@ -241,7 +241,7 @@ void process_keys_nickname(void)
             switch (BufferedInkey) {
             case KC_ESCAPE:
                 nickname.state = 8;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 break;
             case KC_S:
                 break;
@@ -367,37 +367,37 @@ extern "C" void fn_0008fa90(u8 index)
     switch (index) {
     case 4:
         if (current_balance_file != current_balance_file->prev)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         prev_balance_file();
         break;
     case 5:
         if (current_balance_file != current_balance_file->next)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         next_balance_file();
         break;
     case 0:
         advisor.flags |= 1;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 1:
         advisor.flags &= ~1;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 2:
         nickname.state = 4;
-        play_sound(10, SFX_YESX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         break;
     case 3:
         nickname.state = 8;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     case 6:
         resvars.game_mode = SCREEN_MODE_1;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 7:
         resvars.game_mode = SCREEN_MODE_13;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     }
 }

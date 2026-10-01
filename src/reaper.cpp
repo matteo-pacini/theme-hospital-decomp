@@ -6,12 +6,12 @@ extern s16 gate_arrive[];
 
 u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner);
 u8 corridor_object_nav_check(u16 pos, u8 kind, u8 dir);
-void reaper_leaves_normally(Thing *w);
+void reaper_leaves_normally(Thing *reaper);
 
 extern "C" {
-s32 remove_object(Thing *w, u8 owner);
+s32 remove_object(Thing *obj, u8 owner);
 #pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
-void nav_init(Thing *w);
+void nav_init(Thing *person);
 }
 
 // Summons the grim reaper for a dead patient: raises the gates of hell on a
@@ -91,7 +91,7 @@ u8 summon_the_reaper(Thing *victim)
                 reaper->dest_x = gate->use_pos[0] % 128;
                 reaper->dest_y = gate->use_pos[0] / 128;
                 reaper->countdown = 0;
-                reaper->reaper_next_state = 8;
+                reaper->reaper_next_state = REAPER_GOTO_HELL;
                 reaper->next_sprite = start[check_frame(0x1f1, reaper) + reaper->facing].frame;
                 reaper->next_flip = start[check_frame(0x1f1, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
                 nav_init(reaper);
@@ -133,7 +133,7 @@ void reaper_play_anim(Thing *reaper)
 }
 
 // The reaper has reached the gates (from REAPER_GOTO_HELL): turns to call the
-// victim, who walks to the gates (victim state 0x42 on arrival), and waits
+// victim, who walks to the gates (PS_AT_HELL_GATE on arrival), and waits
 // (REAPER_WAITS).
 // FUNCTION: 0x0005c7b4
 void reaper_calls_victim(Thing *reaper)
@@ -152,7 +152,7 @@ void reaper_calls_victim(Thing *reaper)
             if (set_complex(victim, 0x136, gate->use_pos[1])) {
                 victim->depth = 0;
                 victim->object = reaper->gate;
-                victim->next_state = 0x42;
+                victim->next_state = PS_AT_HELL_GATE;
                 process_person_complex(victim);
             }
         }
@@ -160,7 +160,7 @@ void reaper_calls_victim(Thing *reaper)
 }
 
 // Reaper state REAPER_WAITS: swings at the victim when they reach the gates,
-// removes them once they have gone in (state 0x42), and leaves if they do
+// removes them once they have gone in (PS_AT_HELL_GATE), and leaves if they do
 // not come before the timer runs out.
 // FUNCTION: 0x0005c8e0
 void reaper_waits(Thing *reaper)
@@ -175,7 +175,7 @@ void reaper_waits(Thing *reaper)
         if (cur_frame->flags & 1) {
             victim = &thing[reaper->slave];
             if (victim > thing) {
-                if (victim->state == 0x42) {
+                if (victim->state == PS_AT_HELL_GATE) {
                     reaper_leaves_normally(reaper);
                     remove_person(victim);
                 } else {
@@ -185,10 +185,10 @@ void reaper_waits(Thing *reaper)
                             reaper->sprite = start[check_frame(0x343, reaper) + reaper->facing].frame;
                             reaper->flip = start[check_frame(0x343, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
                             reaper->state = REAPER_PLAY_ANIM;
-                            reaper->reaper_next_state = 4;
+                            reaper->reaper_next_state = REAPER_WAITS;
                             reaper->next_sprite = start[check_frame(0x1f5, reaper) + reaper->facing].frame;
                             reaper->next_flip = start[check_frame(0x1f5, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
-                        } else if (--reaper->timer <= 0 || victim->next_state != 0x42) {
+                        } else if (--reaper->timer <= 0 || victim->next_state != PS_AT_HELL_GATE) {
                             reaper_leaves_normally(reaper);
                         }
                     }
@@ -209,12 +209,12 @@ void reaper_leaves_normally(Thing *reaper)
     reaper->sprite = start[check_frame(0x347, reaper) + reaper->facing].frame;
     reaper->flip = start[check_frame(0x347, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
     reaper->state = REAPER_PLAY_ANIM;
-    reaper->reaper_next_state = 6;
+    reaper->reaper_next_state = REAPER_REMOVE;
     reaper->next_sprite = 0;
     reaper->next_flip = 0;
 }
 
-// Removes the reaper and makes its gates of hell sink away (state 6, then
+// Removes the reaper and makes its gates of hell sink away (OS_HELL, then
 // removed when the animation ends).
 // FUNCTION: 0x0005cbe4
 void remove_reaper(Thing *reaper)
@@ -223,7 +223,7 @@ void remove_reaper(Thing *reaper)
 
     gate = &thing[reaper->gate];
     if (gate > thing) {
-        gate->state = 6;
+        gate->state = OS_HELL;
         gate->aux_sprite = start[0x4fc].frame;
         gate->aux_flip_w = start[0x4fc].flags;
         gate->remove_after_anim = 1;

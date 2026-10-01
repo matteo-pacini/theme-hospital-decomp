@@ -18,7 +18,7 @@ extern TbSprite *end_game_panel, *end_pulldv, *end_sprites, *end_watch;
 extern TbSprite *money, *end_money;
 extern u8 *game_panel_data, *pulldv_data, *sprite_data, *watch_data, *money_data;
 
-void conv_string(void *dst, char *text, int flags);
+void conv_string(void *dst, char *src, int mode);
 void display_copyright(void);
 
 // No code refers to it, and its type is unknown: its zeros are in _DATA,
@@ -68,7 +68,7 @@ int main(u16 argc, char **argv)
                     break;
                 case 'G':
                 case 'g':
-                    debug.unknown10a = atoi(arg);
+                    debug.save_slot = atoi(arg);
                     goto next_arg;
                 case 'S':
                 case 's':
@@ -182,7 +182,7 @@ void init_game_vars(void)
     set_default_player_details();
 }
 
-// Measures the CD's read speed by reading animation_table[25]'s file from
+// Measures the CD's read speed by reading animation_table[ANIM_INTRO_SM2]'s file from
 // cd_install_path, storing the result in othervar.cd_speed (2 if no buffer could
 // be allocated).
 // FUNCTION: 0x00010584
@@ -194,7 +194,7 @@ void get_cd_speed(void)
 
     buf = LbMemoryAlloc(0x10000);
     if (buf != 0) {
-        sprintf(path, "%s%s", cd_install_path, animation_table[25].name);
+        sprintf(path, "%s%s", cd_install_path, animation_table[ANIM_INTRO_SM2].name);
         count = LbFileLengthRnc(path) / 12;
         othervar.cd_speed = GetCDSpeed(path, buf, 0x10000, count);
         LbMemoryFree(buf);

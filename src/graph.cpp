@@ -27,7 +27,7 @@ extern Event D_001549d0[];
 extern char **report_text;
 void insert_graph_label(s16 kind, s16 value, s32 data);
 void spread_graph_labels(u16 gap);
-void fn_000c9be0(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
+void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 s32 LbTextWordWidth(char *text);
 }
 
@@ -111,7 +111,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     switch (graphs.state) {
     case 0:
-        load_ingame_pic(4, 1, 0x1f, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_GRAPHS, 1, 0x1f, 0, SCREEN_MODE_13);
         graphs.state = 1;
         lbDisplay.draw_flags = 0;
         break;
@@ -344,7 +344,7 @@ void process_graph_button(u8 button)
         } else {
             graph[button].visible = 1;
         }
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 8:
         switch (othervar.graph_period) {
@@ -358,11 +358,11 @@ void process_graph_button(u8 button)
             othervar.graph_period = 0;
             break;
         }
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 9:
         graphs.state = 2;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     }
 }

@@ -30,7 +30,7 @@ void int3(void);
 
 
 void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
-void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *sprite, u8 colour);
+void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour);
 
 int LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
 int LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);

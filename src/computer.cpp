@@ -1,30 +1,43 @@
 #include "hosp.h"
 
+/*
+ * One month of a computer player's simulated results
+ * (comp_buckets[player][month]), added to its hospital by get_computer_bucket.
+ */
 struct ComputerBucket {
-    s32 f0;
-    s32 f4;
-    s32 f8;
-    s32 fc;
-    s32 f10;
-    s32 f14;
-    s32 f18[47];
-    s32 fd4[47];
+    // 0x0: Money taken.
+    s32 income;
+    // 0x4: Reputation points from reputation_affected.
+    s32 rep_points;
+    // 0x8: Number of reputation events.
+    s32 rep_events;
+    // 0xc: Patients cured.
+    s32 cures;
+    // 0x10: Patients who died.
+    s32 deaths;
+    // 0x14: Patients whose visit was simulated; taken off the hospital's
+    // patient load.
+    s32 patients_done;
+    // 0x18: rep_points per treatment.
+    s32 room_rep_points[47];
+    // 0xd4: rep_events per treatment.
+    s32 room_rep_events[47];
 };
 
 extern ComputerBucket (*comp_buckets)[12];
 extern u8 skillnb_to_who[];
 extern s16 diag_register[][8];
-u32 old_normal_rand(u32 a, u32 b);
-void add_treatment_to_history(Thing *w);
+u32 old_normal_rand(u32 low, u32 high);
+void add_treatment_to_history(Thing *patient);
 
-void calculate_score(u8 player);
-void evaluate_reputation(const u8 room, const u8 player);
-void inc_staff_stats(Thing *w, u8 player);
-void remove_staff_in_struct(Thing *w);
-void insert_skill(u16 skills, u8 player);
-void set_expertise_staff(Thing *w);
+void calculate_score(u8 owner);
+void evaluate_reputation(const u8 treatment, const u8 owner);
+void inc_staff_stats(Thing *staff, u8 owner);
+void remove_staff_in_struct(Thing *staff);
+void insert_skill(u16 mask, u8 owner);
+void set_expertise_staff(Thing *staff);
 void set_expertise_room(RoomInfo *room);
-void inc_hardware_stats(u8 obj, u8 player);
+void inc_hardware_stats(u8 kind, u8 owner);
 u32 find_strategy_start(u8 type);
 void computer_decision(u8 owner);
 void get_computer_bucket(u8 owner);
@@ -39,7 +52,7 @@ u8 make_a_note(u16 type, s16 arg, s16 count, u8 owner);
 u8 find_a_note(u16 type, u8 owner);
 void remove_a_note(u16 type, u8 owner);
 void declass_a_note(u16 type, u8 owner);
-void computer_diag_progress(Thing *w, u8 owner);
+void computer_diag_progress(Thing *patient, u8 owner);
 u8 computer_free_build(u8 owner);
 u8 computer_maintain_loan(u8 owner);
 u8 computer_object_levels(u8 owner);
@@ -292,7 +305,7 @@ void computer_decision(u8 owner)
         if (statvar.num_players <= 1) {
             hosp->hospital_open = 1;
         }
-        announce_this(0xc, owner);
+        announce_this(ANN_RIVAL_OPENED, owner);
         break;
     case 11:
         computer_staff_levels(owner);
@@ -382,26 +395,26 @@ void process_computer_peep(Thing *patient, u8 owner)
         ADVANCE_TIME();
         if (allhosps[owner].rooms[ILL_GENERAL_PRACTICE].cure_available == 1) {
             update_single_cure_cost(1, owner);
-            bucket->f0 += hosp->rooms[ILL_GENERAL_PRACTICE].price;
+            bucket->income += hosp->rooms[ILL_GENERAL_PRACTICE].price;
             patient->treatment = ILL_GENERAL_PRACTICE;
             computer_diag_progress(patient, owner);
-            reputation_affected(1, 10, month % 12, patient->owner, 0);
+            reputation_affected(1, REP_NEXT_TREATMENT, month % 12, patient->owner, 0);
             if (patient->diagnosis > gbv.diagnosis_complete) {
                 patient->treatment = patient->illness;
-                reputation_affected(illness, 6, month % 12, patient->owner, 0);
+                reputation_affected(illness, REP_COMPUTER_DIAGNOSED, month % 12, patient->owner, 0);
                 hosp->diagnosed++;
                 result = 1;
                 break;
             }
         } else {
-            reputation_affected(illness, 7, month % 12, owner, 0);
+            reputation_affected(illness, REP_NO_TREATMENT_FOUND, month % 12, owner, 0);
             result = 3;
             break;
         }
         ADVANCE_TIME();
         if (busy && old_newrand() % 5 == 0) {
             ADVANCE_TIME();
-            bucket->f0 += 20;
+            bucket->income += 20;
         }
         if (old_newrand() % chance == 0) {
             result = 3;
@@ -421,7 +434,7 @@ void process_computer_peep(Thing *patient, u8 owner)
         }
         find_possible_diagnosis(patient);
         if (patient->treatment == 0) {
-            reputation_affected(illness, 7, month % 12, owner, 0);
+            reputation_affected(illness, REP_NO_TREATMENT_FOUND, month % 12, owner, 0);
             pct = patient->diagnosis * 100 / gbv.diagnosis_complete;
             if (pct < 0) {
                 pct = 0;
@@ -441,41 +454,41 @@ void process_computer_peep(Thing *patient, u8 owner)
         }
         ADVANCE_TIME();
         update_single_cure_cost(patient->treatment, owner);
-        bucket->f0 += hosp->rooms[patient->treatment].price;
+        bucket->income += hosp->rooms[patient->treatment].price;
         add_treatment_to_history(patient);
         computer_diag_progress(patient, owner);
-        reputation_affected(patient->treatment, 10, month % 12, patient->owner, 0);
+        reputation_affected(patient->treatment, REP_NEXT_TREATMENT, month % 12, patient->owner, 0);
         if (old_newrand() % chance == 0) {
             result = 3;
             break;
         }
     }
-    reputation_affected(illness, 10, month % 12, patient->owner, 0);
+    reputation_affected(illness, REP_NEXT_TREATMENT, month % 12, patient->owner, 0);
     switch (result) {
     case 1:
         if (allhosps[owner].rooms[illness].cure_available == 1) {
-            if (expertise[illness].unknown5[0] == 1 && old_normal_rand(0, 99) >= hosp->rooms[illness].drug_effectiveness) {
-                bucket->f10++;
-                reputation_affected(illness, 3, month % 12, owner, 0);
+            if (expertise[illness].research_type == 1 && old_normal_rand(0, 99) >= hosp->rooms[illness].drug_effectiveness) {
+                bucket->deaths++;
+                reputation_affected(illness, REP_DIED, month % 12, owner, 0);
             } else {
-                bucket->fc++;
-                reputation_affected(illness, 0, month % 12, owner, 0);
+                bucket->cures++;
+                reputation_affected(illness, REP_CURED, month % 12, owner, 0);
             }
         } else {
-            reputation_affected(illness, 2, month % 12, owner, 0);
+            reputation_affected(illness, REP_GO_FOR_TREATMENT, month % 12, owner, 0);
             result = 3;
         }
         break;
     case 2:
-        bucket->f10++;
-        reputation_affected(illness, 3, month % 12, owner, 0);
+        bucket->deaths++;
+        reputation_affected(illness, REP_DIED, month % 12, owner, 0);
         break;
     case 3:
-        reputation_affected(illness, 2, month % 12, owner, 0);
+        reputation_affected(illness, REP_GO_FOR_TREATMENT, month % 12, owner, 0);
         break;
     }
-    reputation_affected(illness, 0x16, month % 12, owner, 0);
-    bucket->f14++;
+    reputation_affected(illness, REP_CASE, month % 12, owner, 0);
+    bucket->patients_done++;
 }
 
 // Moves the results in owner's bucket for the current month (othervar.game_month)
@@ -492,19 +505,19 @@ void get_computer_bucket(u8 owner)
     month = othervar.game_month % 12;
     bucket = &comp_buckets[owner][month];
     hosp = &allhosps[owner];
-    hosp->balance += bucket->f0;
-    hosp->cures += bucket->fc;
-    hosp->deaths += bucket->f10;
-    hosp->rep_points += bucket->f4;
-    hosp->rep_events += bucket->f8;
+    hosp->balance += bucket->income;
+    hosp->cures += bucket->cures;
+    hosp->deaths += bucket->deaths;
+    hosp->rep_points += bucket->rep_points;
+    hosp->rep_events += bucket->rep_events;
     evaluate_reputation(0, owner);
-    hosp->patient_load -= bucket->f14;
+    hosp->patient_load -= bucket->patients_done;
     if (hosp->patient_load < 0) {
         hosp->patient_load = 0;
     }
     for (i = 0; i < 47; i++) {
-        hosp->rooms[i].rep_points += bucket->f18[i];
-        hosp->rooms[i].rep_events += bucket->fd4[i];
+        hosp->rooms[i].rep_points += bucket->room_rep_points[i];
+        hosp->rooms[i].rep_events += bucket->room_rep_events[i];
         evaluate_reputation(i, owner);
     }
     memset(bucket, 0, 400);
@@ -913,7 +926,7 @@ u8 computer_free_build(u8 owner)
     }
     room = computer_choose_room(0, owner);
     if (room != 0) {
-        arg = rooms[room].f26;
+        arg = rooms[room].staff_kind;
         if (arg >= 0) {
             count = rooms[room].doctor_skills;
             make_a_note(1, arg, count, owner);
@@ -922,7 +935,7 @@ u8 computer_free_build(u8 owner)
     }
     room = computer_choose_room(1, owner);
     if (room != 0) {
-        arg = rooms[room].f26;
+        arg = rooms[room].staff_kind;
         if (arg >= 0) {
             count = rooms[room].doctor_skills;
             make_a_note(1, arg, count, owner);
@@ -990,7 +1003,7 @@ u8 computer_object_levels(u8 owner)
     for (i = 0; i < 4; i++) {
         obj = object_nbs[i][0];
         max = hosp->patient_load / object_nbs[i][ai->comfort + 1];
-        if (hosp->object_stats[obj].fA < max) {
+        if (hosp->object_stats[obj].count < max) {
             pace = ai->speed - old_newrand() % ai->skill;
             if (pace < 1) {
                 pace = 1;
@@ -999,7 +1012,7 @@ u8 computer_object_levels(u8 owner)
             }
             hosp->action.type = 3;
             hosp->action.arg = obj;
-            n = max - hosp->object_stats[obj].fA;
+            n = max - hosp->object_stats[obj].count;
             if (n < 1) {
                 n = 1;
             } else if (n > 4) {

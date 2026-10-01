@@ -175,72 +175,72 @@ u8 process_buttons_normal_state(Window **windows, Window *win, u16 *pos)
                     if (pressed) {
                         if (win->flags & 0x80) {
                             win->flags &= ~0x180;
-                            win->x = win->x4;
-                            win->y = win->y6;
-                            ox = win->width - win->widthC;
-                            oy = win->height - win->heightE;
+                            win->x = win->restore_x;
+                            win->y = win->restore_y;
+                            ox = win->width - win->min_width;
+                            oy = win->height - win->min_height;
                         } else if (win->flags & 0x100) {
                             win->flags = win->flags & ~0x100 | 0x80;
-                            win->x = win->x4;
-                            win->y = win->y6;
+                            win->x = win->restore_x;
+                            win->y = win->restore_y;
                             if (win->x < 0)
                                 win->x = 0;
-                            else if (win->x > lbDisplay.graphics_screen_width - win->widthC)
-                                win->x = lbDisplay.graphics_screen_width - win->widthC;
+                            else if (win->x > lbDisplay.graphics_screen_width - win->min_width)
+                                win->x = lbDisplay.graphics_screen_width - win->min_width;
                             if (win->y < 0)
                                 win->y = 0;
-                            else if (win->y > lbDisplay.graphics_screen_height - win->heightE)
-                                win->y = lbDisplay.graphics_screen_height - win->heightE;
-                            ox = -(win->width10 - win->widthC);
-                            oy = -(win->height12 - win->heightE);
+                            else if (win->y > lbDisplay.graphics_screen_height - win->min_height)
+                                win->y = lbDisplay.graphics_screen_height - win->min_height;
+                            ox = -(win->max_width - win->min_width);
+                            oy = -(win->max_height - win->min_height);
                         } else {
                             win->flags = win->flags & ~0x80 | 0x100;
-                            win->x4 = win->x;
-                            win->y6 = win->y;
+                            win->restore_x = win->x;
+                            win->restore_y = win->y;
                             if (win->x < 0)
                                 win->x = 0;
-                            else if (win->x > lbDisplay.graphics_screen_width - win->width10)
-                                win->x = lbDisplay.graphics_screen_width - win->width10;
+                            else if (win->x > lbDisplay.graphics_screen_width - win->max_width)
+                                win->x = lbDisplay.graphics_screen_width - win->max_width;
                             if (win->y < 0)
                                 win->y = 0;
-                            else if (win->y > lbDisplay.graphics_screen_height - win->height12)
-                                win->y = lbDisplay.graphics_screen_height - win->height12;
-                            ox = win->width10 - win->width;
-                            oy = win->height12 - win->height;
+                            else if (win->y > lbDisplay.graphics_screen_height - win->max_height)
+                                win->y = lbDisplay.graphics_screen_height - win->max_height;
+                            ox = win->max_width - win->width;
+                            oy = win->max_height - win->height;
                         }
                     } else {
                         if (win->flags & 0x80) {
                             win->flags = win->flags & ~0x80 | 0x100;
                             if (win->x < 0)
                                 win->x = 0;
-                            else if (win->x > lbDisplay.graphics_screen_width - win->width10)
-                                win->x = lbDisplay.graphics_screen_width - win->width10;
+                            else if (win->x > lbDisplay.graphics_screen_width - win->max_width)
+                                win->x = lbDisplay.graphics_screen_width - win->max_width;
                             if (win->y < 0)
                                 win->y = 0;
-                            else if (win->y > lbDisplay.graphics_screen_height - win->height12)
-                                win->y = lbDisplay.graphics_screen_height - win->height12;
-                            ox = win->width10 - win->widthC;
-                            oy = win->height12 - win->heightE;
+                            else if (win->y > lbDisplay.graphics_screen_height - win->max_height)
+                                win->y = lbDisplay.graphics_screen_height - win->max_height;
+                            ox = win->max_width - win->min_width;
+                            oy = win->max_height - win->min_height;
                         } else if (win->flags & 0x100) {
                             win->flags &= ~0x180;
-                            win->x = win->x4;
-                            win->y = win->y6;
-                            ox = -(win->width10 - win->width);
-                            oy = -(win->height12 - win->height);
+                            win->x = win->restore_x;
+                            win->y = win->restore_y;
+                            ox = -(win->max_width - win->width);
+                            oy = -(win->max_height - win->height);
                         } else {
                             win->flags = win->flags & ~0x100 | 0x80;
-                            win->x4 = win->x;
-                            win->y6 = win->y;
-                            ox = -(win->width - win->widthC);
-                            oy = -(win->height - win->heightE);
+                            win->restore_x = win->x;
+                            win->restore_y = win->y;
+                            ox = -(win->width - win->min_width);
+                            oy = -(win->height - win->min_height);
                             if (win->x < 0)
                                 win->x = 0;
-                            else if (win->x > lbDisplay.graphics_screen_width - win->widthC)
-                                win->x = lbDisplay.graphics_screen_width - win->widthC;
+                            else if (win->x > lbDisplay.graphics_screen_width - win->min_width)
+                                win->x = lbDisplay.graphics_screen_width - win->min_width;
                             if (win->y < 0)
                                 win->y = 0;
-                            else if (win->y > lbDisplay.graphics_screen_height - win->heightE)
-                                win->y = lbDisplay.graphics_screen_height - win->heightE;
+                            else if (win->y > lbDisplay.graphics_screen_height - win->min_height)
+                                win->y = lbDisplay.graphics_screen_height - win->min_height;
                         }
                     }
                     reposition_buttons(win, ox, oy);
@@ -248,12 +248,12 @@ u8 process_buttons_normal_state(Window **windows, Window *win, u16 *pos)
                     update_state = 1;
                     if (win->flags & 0x80) {
                         win->flags &= ~0x180;
-                        win->width = win->widthC;
-                        win->height = win->heightE;
+                        win->width = win->min_width;
+                        win->height = win->min_height;
                     } else if (win->flags & 0x100) {
                         win->flags &= ~0x180;
-                        win->width = win->width10;
-                        win->height = win->height12;
+                        win->width = win->max_width;
+                        win->height = win->max_height;
                     }
                     buttonstore = button;
                 } else if (button->flags & 0x100000) {
@@ -263,23 +263,23 @@ u8 process_buttons_normal_state(Window **windows, Window *win, u16 *pos)
                     remove_window(windows, win);
                 }
                 if (button->max > button->min) {
-                    if (button->width > button_sprite[button->sprite18].width) {
+                    if (button->width > button_sprite[button->pressed_sprite].width) {
                         ox = button->x + win->x
-                            + (button->width - button_sprite[button->sprite18].width) * (*button->value - button->min) / (button->max - button->min)
-                            + button_sprite[button->sprite18].width / 2;
+                            + (button->width - button_sprite[button->pressed_sprite].width) * (*button->value - button->min) / (button->max - button->min)
+                            + button_sprite[button->pressed_sprite].width / 2;
                         ox = lbDisplay.mmouse_x - lbDisplay.graphics_window_x - ox;
-                        slider_delta = ox * (button->max - button->min) / (button->width - button_sprite[button->sprite18].width);
+                        slider_delta = ox * (button->max - button->min) / (button->width - button_sprite[button->pressed_sprite].width);
                     }
-                    if (button->height > button_sprite[button->sprite18].height) {
-                        oy = button->y + win->y + button_sprite[button->sprite18].height / 2
-                            + (button->height - button_sprite[button->sprite18].height) * (button->max - *button->value)
+                    if (button->height > button_sprite[button->pressed_sprite].height) {
+                        oy = button->y + win->y + button_sprite[button->pressed_sprite].height / 2
+                            + (button->height - button_sprite[button->pressed_sprite].height) * (button->max - *button->value)
                                 / (button->max - button->min);
                         oy = -(lbDisplay.mmouse_y - lbDisplay.graphics_window_y - oy);
                         if (slider_delta) {
-                            slider_delta += oy * (button->max - button->min) / (button->height - button_sprite[button->sprite18].height);
+                            slider_delta += oy * (button->max - button->min) / (button->height - button_sprite[button->pressed_sprite].height);
                             slider_delta /= 2;
                         } else {
-                            slider_delta += oy * (button->max - button->min) / (button->height - button_sprite[button->sprite18].height);
+                            slider_delta += oy * (button->max - button->min) / (button->height - button_sprite[button->pressed_sprite].height);
                         }
                     }
                     if (button->max > button->min) {
@@ -378,14 +378,14 @@ void process_buttons(Window **windows, Window *win)
                 else if (oy > lbDisplay.graphics_screen_height - 3 - fn_000cb2db(win->y + buttonstore->y))
                     oy = lbDisplay.graphics_screen_height - 3 - fn_000cb2db(win->y + buttonstore->y);
             }
-            if (ox < -(win->width - win->widthC))
-                ox = -(win->width - win->widthC);
-            else if (ox > win->width10 - win->width)
-                ox = win->width10 - win->width;
-            if (oy < -(win->height - win->heightE))
-                oy = -(win->height - win->heightE);
-            else if (oy > win->height12 - win->height)
-                oy = win->height12 - win->height;
+            if (ox < -(win->width - win->min_width))
+                ox = -(win->width - win->min_width);
+            else if (ox > win->max_width - win->width)
+                ox = win->max_width - win->width;
+            if (oy < -(win->height - win->min_height))
+                oy = -(win->height - win->min_height);
+            else if (oy > win->max_height - win->height)
+                oy = win->max_height - win->height;
             if (ox || oy) {
                 win->width += ox;
                 win->height += oy;
@@ -402,28 +402,28 @@ void process_buttons(Window **windows, Window *win)
     case 3:
         if (lbDisplay.mleft_button) {
             if (mdx || mdy) {
-                if (buttonstore->width > button_sprite[buttonstore->sprite18].width) {
+                if (buttonstore->width > button_sprite[buttonstore->pressed_sprite].width) {
                     ox = buttonstore->x + win->x
-                        + (buttonstore->width - button_sprite[buttonstore->sprite18].width)
+                        + (buttonstore->width - button_sprite[buttonstore->pressed_sprite].width)
                             * (*buttonstore->value - buttonstore->min) / (buttonstore->max - buttonstore->min)
-                        + button_sprite[buttonstore->sprite18].width / 2;
+                        + button_sprite[buttonstore->pressed_sprite].width / 2;
                     ox = lbDisplay.mmouse_x - lbDisplay.graphics_window_x - ox;
                     slider_delta = ox * (buttonstore->max - buttonstore->min)
-                        / (buttonstore->width - button_sprite[buttonstore->sprite18].width);
+                        / (buttonstore->width - button_sprite[buttonstore->pressed_sprite].width);
                 }
-                if (buttonstore->height > button_sprite[buttonstore->sprite18].height) {
-                    oy = buttonstore->y + win->y + button_sprite[buttonstore->sprite18].height / 2
+                if (buttonstore->height > button_sprite[buttonstore->pressed_sprite].height) {
+                    oy = buttonstore->y + win->y + button_sprite[buttonstore->pressed_sprite].height / 2
                         + (buttonstore->max - *buttonstore->value)
-                            * (buttonstore->height - button_sprite[buttonstore->sprite18].height)
+                            * (buttonstore->height - button_sprite[buttonstore->pressed_sprite].height)
                             / (buttonstore->max - buttonstore->min);
                     oy = -(lbDisplay.mmouse_y - lbDisplay.graphics_window_y - oy);
                     if (slider_delta) {
                         slider_delta += oy * (buttonstore->max - buttonstore->min)
-                            / (buttonstore->height - button_sprite[buttonstore->sprite18].height);
+                            / (buttonstore->height - button_sprite[buttonstore->pressed_sprite].height);
                         slider_delta /= 2;
                     } else {
                         slider_delta += oy * (buttonstore->max - buttonstore->min)
-                            / (buttonstore->height - button_sprite[buttonstore->sprite18].height);
+                            / (buttonstore->height - button_sprite[buttonstore->pressed_sprite].height);
                     }
                 }
                 if (buttonstore->max > buttonstore->min) {
@@ -523,11 +523,11 @@ void GetWindowDimensions(Window *win, u16 *width, u16 *height)
 {
     if (win) {
         if (win->flags & 0x100) {
-            *width = win->width10;
-            *height = win->height12;
+            *width = win->max_width;
+            *height = win->max_height;
         } else if (win->flags & 0x80) {
-            *width = win->widthC;
-            *height = win->heightE;
+            *width = win->min_width;
+            *height = win->min_height;
         } else {
             *width = win->width;
             *height = win->height;
@@ -576,14 +576,14 @@ void process_window(Window **windows, Window *win)
     OldRightButton = lbDisplay.mright_button;
     if (win->flags & 0x100) {
         if (win->flags & 0x20)
-            win->x = (lbDisplay.graphics_screen_width - win->width10) / 2;
+            win->x = (lbDisplay.graphics_screen_width - win->max_width) / 2;
         if (win->flags & 0x40)
-            win->y = (lbDisplay.graphics_screen_height - win->height12) / 2;
+            win->y = (lbDisplay.graphics_screen_height - win->max_height) / 2;
     } else if (win->flags & 0x80) {
         if (win->flags & 0x20)
-            win->x = (lbDisplay.graphics_screen_width - win->widthC) / 2;
+            win->x = (lbDisplay.graphics_screen_width - win->min_width) / 2;
         if (win->flags & 0x40)
-            win->y = (lbDisplay.graphics_screen_height - win->heightE) / 2;
+            win->y = (lbDisplay.graphics_screen_height - win->min_height) / 2;
     } else {
         if (win->flags & 0x20)
             win->x = (lbDisplay.graphics_screen_width - win->width) / 2;

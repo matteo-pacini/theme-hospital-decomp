@@ -24,7 +24,7 @@ void display_policy(void)
 {
     switch (pol.state) {
     case 0:
-        load_ingame_pic(5, 1, 0x1c, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_POLICY, 1, 0x1c, 0, SCREEN_MODE_13);
         pol.state = 1;
         pol.value = 0;
         lbDisplay.draw_flags = 0;
@@ -74,34 +74,34 @@ void process_policy_panel(void)
 }
 
 // Policy screen button `action`: 0 and 1 set the staff pager option
-// (allhosps.staff_leave_rooms) on and off through event 0x71, 2 closes the screen.
+// (allhosps.staff_leave_rooms) on and off through event EV_SET_POLICY, 2 closes the screen.
 // FUNCTION: 0x0004477c
 void process_policy_button(u8 action)
 {
     debug.last_action = action;
     switch (action) {
     case 0:
-        D_001549d0[player].type = 0x71;
+        D_001549d0[player].type = EV_SET_POLICY;
         D_001549d0[player].value = 5;
         D_001549d0[player].arg = 1;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 1:
-        D_001549d0[player].type = 0x71;
+        D_001549d0[player].type = EV_SET_POLICY;
         D_001549d0[player].value = 5;
         D_001549d0[player].arg = 0;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 2:
         pol.state = 2;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     }
 }
 
 // Draws the policy sliders at this player's settings (allhosps.guess_cure_threshold and
 // f21b 0-100, f217 1000-2000, f21d 0-1000 rest threshold) and the pager
-// option; dragging a slider sends its new value as event 0x71 (value =
+// option; dragging a slider sends its new value as event EV_SET_POLICY (value =
 // slider 1-4).
 // FUNCTION: 0x0004488c
 void process_policy_sliders(void)
@@ -186,20 +186,20 @@ void process_policy_sliders(void)
                     x = 0;
                 else if (x > 100)
                     x = 100;
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 2;
                 D_001549d0[player].arg = x;
                 pol.value = 2;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.screen_boxes_PolicyRectp[0x25].x, lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 2;
                 D_001549d0[player].arg = 0;
                 pol.value = 2;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_PolicyRectp[0x25].x + resvars.screen_boxes_PolicyRectp[0x25].w + screen_sprites_tab_start[2].width / 2, 0,
                              lbDisplay.graphics_screen_width - (screen_sprites_tab_start[2].width / 2 + resvars.screen_boxes_PolicyRectp[0x25].w), lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 2;
                 D_001549d0[player].arg = 100;
                 pol.value = 2;
@@ -213,20 +213,20 @@ void process_policy_sliders(void)
                     x = 0;
                 else if (x > 100)
                     x = 100;
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 1;
                 D_001549d0[player].arg = x;
                 pol.value = 1;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.screen_boxes_PolicyRectp[0x26].x, lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 1;
                 D_001549d0[player].arg = 0;
                 pol.value = 1;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_PolicyRectp[0x26].x + resvars.screen_boxes_PolicyRectp[0x26].w + screen_sprites_tab_start[1].width / 2, 0,
                              lbDisplay.graphics_screen_width - (screen_sprites_tab_start[1].width / 2 + resvars.screen_boxes_PolicyRectp[0x26].w), lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 1;
                 D_001549d0[player].arg = 100;
                 pol.value = 1;
@@ -240,20 +240,20 @@ void process_policy_sliders(void)
                     x = 0;
                 else if (x > 1000)
                     x = 1000;
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 3;
                 D_001549d0[player].arg = x + 1000;
                 pol.value = 3;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.screen_boxes_PolicyRectp[0x27].x, lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 3;
                 D_001549d0[player].arg = 1000;
                 pol.value = 3;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_PolicyRectp[0x27].x + resvars.screen_boxes_PolicyRectp[0x27].w + screen_sprites_tab_start[3].width / 2, 0,
                              lbDisplay.graphics_screen_width - (screen_sprites_tab_start[3].width / 2 + resvars.screen_boxes_PolicyRectp[0x27].w), lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 3;
                 D_001549d0[player].arg = 2000;
                 pol.value = 3;
@@ -267,20 +267,20 @@ void process_policy_sliders(void)
                     x = 0;
                 else if (x > 1000)
                     x = 1000;
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 4;
                 D_001549d0[player].arg = x;
                 pol.value = 4;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, 0, 0, resvars.screen_boxes_PolicyRectp[0x28].x, lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 4;
                 D_001549d0[player].arg = 0;
                 pol.value = 4;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_PolicyRectp[0x28].x + resvars.screen_boxes_PolicyRectp[0x28].w + screen_sprites_tab_start[3].width / 2, 0,
                              lbDisplay.graphics_screen_width - (screen_sprites_tab_start[3].width / 2 + resvars.screen_boxes_PolicyRectp[0x28].w), lbDisplay.graphics_screen_height)) {
-                D_001549d0[player].type = 0x71;
+                D_001549d0[player].type = EV_SET_POLICY;
                 D_001549d0[player].value = 4;
                 D_001549d0[player].arg = 1000;
                 pol.value = 4;

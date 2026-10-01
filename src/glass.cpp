@@ -7,11 +7,19 @@ struct GlassBox {
     s16 y1;
     u8 f8;
     u8 unknown9[5];
-    u8 fe;
-    u8 ff;
-    u8 f10;
-    u8 f11;
-    u8 f12;
+    // 0xe: Box style for draw_a_box: -1 or 0 background (0 translucent), 1 or 2
+    // foreground.
+    u8 type;
+    // 0xf: Nonzero: drawn as a button.
+    u8 button;
+    // 0x10: Length of the zoom animation in frames.
+    u8 steps;
+    // 0x11: Frames before opening and closing, unless add_glass_box is given
+    // its own.
+    u8 delay;
+    // 0x12: Where the zoom grows from: 0 the box's centre, 1 its top centre, 2
+    // the screen centre.
+    u8 origin;
 };
 
 struct SlistButton {
@@ -35,14 +43,19 @@ struct GlassScreen {
 
 struct ZoomBox {
     u8 active;
-    s8 f1;
-    s8 f2;
-    u8 f3;
-    u8 f4;
+    // 0x1: Animation step: 0 closed, steps - 1 fully open.
+    s8 step;
+    // 0x2: Animation length.
+    s8 steps;
+    // 0x3: Frames left before opening starts.
+    u8 open_delay;
+    // 0x4: Frames left before closing starts.
+    u8 close_delay;
     s32 id;
     s8 type;
     u8 fa;
-    u8 fb;
+    // 0xb: Nonzero: drawn as a button.
+    u8 button;
     s32 from[4];
     s32 to[4];
 };
@@ -67,9 +80,9 @@ extern u8 Gray[];
 
 extern "C" {
 
-void StopSample(u32 a, u32 b);
-void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
-void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
+void StopSample(u32 source_id, u32 number);
+void LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
+void fn_000c9be0(int x1, int y1, int x2, int y2, u8 colour);
 }
 
 s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay);
@@ -119,7 +132,7 @@ extern "C" s32 glass_box_matches_zoom(GlassBox *box, ZoomBox *zoom)
 }
 
 // Sets up the first free zoom box to grow into box's rectangle for display bit
-// id, from its centre, its top centre or the screen centre (box->f12), with
+// id, from its centre, its top centre or the screen centre (box->origin), with
 // open_delay and close_delay frames of delay (-1: the box's own). An unused
 // slot that already ends there is reused unchanged. Returns the slot index
 // (0x2e if none was free).
@@ -136,21 +149,21 @@ s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay)
         ZoomBoxes[i].active = 1;
         if (glass_box_matches_zoom(box, &ZoomBoxes[i]))
             return i;
-        ZoomBoxes[i].f1 = 0;
-        ZoomBoxes[i].f2 = box->f10;
+        ZoomBoxes[i].step = 0;
+        ZoomBoxes[i].steps = box->steps;
         ZoomBoxes[i].id = id;
-        ZoomBoxes[i].type = box->fe;
+        ZoomBoxes[i].type = box->type;
         ZoomBoxes[i].fa = box->f8;
-        ZoomBoxes[i].fb = box->ff;
+        ZoomBoxes[i].button = box->button;
         if (open_delay == -1)
-            ZoomBoxes[i].f3 = box->f11;
+            ZoomBoxes[i].open_delay = box->delay;
         else
-            ZoomBoxes[i].f3 = open_delay;
+            ZoomBoxes[i].open_delay = open_delay;
         if (close_delay == -1)
-            ZoomBoxes[i].f4 = box->f11;
+            ZoomBoxes[i].close_delay = box->delay;
         else
-            ZoomBoxes[i].f4 = close_delay;
-        switch (box->f12) {
+            ZoomBoxes[i].close_delay = close_delay;
+        switch (box->origin) {
         case 1:
             ZoomBoxes[i].from[0] = box->x + (box->x1 - box->x) / 2;
             ZoomBoxes[i].from[1] = box->y;
@@ -216,16 +229,16 @@ void draw_a_box(u8 zoom)
     lbDisplay.draw_flags = 4;
     from = ZoomBoxes[zoom].from;
     to = ZoomBoxes[zoom].to;
-    step = ZoomBoxes[zoom].f1;
-    total = ZoomBoxes[zoom].f2 - 1;
+    step = ZoomBoxes[zoom].step;
+    total = ZoomBoxes[zoom].steps - 1;
     x = (to[0] * step + (total - step) * from[0]) / total;
     y = ((total - step) * from[1] + to[1] * step) / total;
     w = ((total - step) * from[2] + to[2] * step) / total;
     h = ((total - step) * from[3] + to[3] * step) / total;
     if (step != 0) {
         lbDisplay.draw_flags = 0;
-        if (ZoomBoxes[zoom].fb) {
-            if (!((((s8)ZoomBoxes[zoom].type != 2 && display_mode == 10) || (to[0] == 0x213 && display_mode == 5))
+        if (ZoomBoxes[zoom].button) {
+            if (!((((s8)ZoomBoxes[zoom].type != 2 && display_mode == DM_NICKNAME) || (to[0] == 0x213 && display_mode == DM_NETWORK_SELECT))
                   && current_balance_file && current_balance_file == current_balance_file->next)) {
                 draw_button_box(x, y, w, h);
                 draw_button_edges(x, y, w - 1, h - 1, 0);
@@ -279,19 +292,19 @@ s8 draw_zoom_boxes(void)
     found = 0;
     for (i = 0; i < 0x2e; i++) {
         if (ZoomBoxes[i].active) {
-            if ((ZoomBoxes[i].f1 > 0 && ZoomBoxes[i].f1 < ZoomBoxes[i].f2 - 1)
-                || (ZoomBoxes[i].f1 && !(DesiredDisplay & ZoomBoxes[i].id))) {
+            if ((ZoomBoxes[i].step > 0 && ZoomBoxes[i].step < ZoomBoxes[i].steps - 1)
+                || (ZoomBoxes[i].step && !(DesiredDisplay & ZoomBoxes[i].id))) {
                 found = 1;
                 if (ZoomBoxes[i].type > hi)
                     hi = ZoomBoxes[i].type;
             }
-            if (ZoomBoxes[i].f1 == 0) {
+            if (ZoomBoxes[i].step == 0) {
                 if (!found) {
                     hi = ZoomBoxes[i].type;
                     found = 1;
                 }
             }
-            if (ZoomBoxes[i].f1 > 0 && ZoomBoxes[i].f1 <= ZoomBoxes[i].f2 - 1) {
+            if (ZoomBoxes[i].step > 0 && ZoomBoxes[i].step <= ZoomBoxes[i].steps - 1) {
                 if (ZoomBoxes[i].type > lo)
                     lo = ZoomBoxes[i].type;
             }
@@ -310,36 +323,36 @@ s8 draw_zoom_boxes(void)
                     draw_a_box(i);
                 } else if (!incomplete && ZoomBoxes[i].type <= hi) {
                     if (ZoomBoxes[i].type == hi) {
-                        if (!ZoomBoxes[i].f3) {
-                            if (++ZoomBoxes[i].f1 >= ZoomBoxes[i].f2 - 1) {
+                        if (!ZoomBoxes[i].open_delay) {
+                            if (++ZoomBoxes[i].step >= ZoomBoxes[i].steps - 1) {
                                 for (j = 0; j < 0x2e; j++) {
                                     if (((ZoomBoxes[j].active && i != j) && ZoomBoxes[j].id == ZoomBoxes[i].id)
-                                        && ZoomBoxes[j].f1 != ZoomBoxes[j].f2 - 1)
+                                        && ZoomBoxes[j].step != ZoomBoxes[j].steps - 1)
                                         break;
                                 }
                                 if (j == 0x2e)
                                     CurrentDisplay |= ZoomBoxes[i].id;
-                                if (ZoomBoxes[i].f1 > ZoomBoxes[i].f2 - 1)
-                                    ZoomBoxes[i].f1--;
+                                if (ZoomBoxes[i].step > ZoomBoxes[i].steps - 1)
+                                    ZoomBoxes[i].step--;
                             } else {
                                 opening = 1;
                                 result = 1;
                             }
                         } else {
-                            ZoomBoxes[i].f3--;
+                            ZoomBoxes[i].open_delay--;
                         }
                     }
                     draw_a_box(i);
                 }
             } else if (ZoomBoxes[i].type == hi) {
-                if (!ZoomBoxes[i].f4) {
+                if (!ZoomBoxes[i].close_delay) {
                     CurrentDisplay &= ~ZoomBoxes[i].id;
                     result = 1;
                     closing = 1;
-                    if (--ZoomBoxes[i].f1 <= 0)
+                    if (--ZoomBoxes[i].step <= 0)
                         ZoomBoxes[i].active = 0;
                 } else {
-                    ZoomBoxes[i].f4--;
+                    ZoomBoxes[i].close_delay--;
                 }
                 draw_a_box(i);
             } else {
@@ -349,17 +362,17 @@ s8 draw_zoom_boxes(void)
     }
     if (opening && !playing_open_sound) {
         playing_open_sound = 1;
-        play_sound(10, 0x9c, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_ZOOM_OPEN, -1, -1);
     } else if (!opening) {
         playing_open_sound = 0;
-        StopSample(10, 0x9c);
+        StopSample(SNDSRC_GENERAL, 0x9c);
     }
     if (closing && !playing_close_sound) {
         playing_close_sound = 1;
-        play_sound(10, 0x9e, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_ZOOM_CLOSE, -1, -1);
     } else if (!closing) {
         playing_close_sound = 0;
-        StopSample(10, 0x9e);
+        StopSample(SNDSRC_GENERAL, 0x9e);
     }
     return result;
 }

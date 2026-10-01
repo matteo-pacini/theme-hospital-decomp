@@ -29,9 +29,9 @@ long keybuffer_get(void);
 u8 what_key_is_it_really(u8 key);
 s8 draw_zoom_boxes(void);
 void display_loadgame_screen(void);
-s16 button_index(s32 id);
+s16 button_index(s32 mask);
 void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style);
-void draw_glass_text(SlistButton *b, char *text);
+void draw_glass_text(SlistButton *button, char *text);
 
 extern "C" {
 extern u8 *palette;
@@ -44,7 +44,7 @@ void fn_000110b0(void);
 void delay(u32 ms);
 }
 
-// Runs one frame of the load game screen, by loadgame.unknown2: 0 sets it up
+// Runs one frame of the load game screen, by loadgame.state: 0 sets it up
 // (finding which of the player's save files are valid), 3 opens its panels, 4
 // shows it, 1 loads the chosen save and starts the game (back to 4 if that
 // fails), 2 returns to the main menu.
@@ -64,7 +64,7 @@ void draw_load_game(void)
     case 0:
         return_from_screen(9, 0, 1);
         lbDisplay.left_button = 0;
-        load_ingame_pic(0x11, 1, 0x19, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_LOAD_GAME, 1, 0x19, 0, SCREEN_MODE_13);
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         calculate_grey(ppalette.data);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -119,7 +119,7 @@ void draw_load_game(void)
                     load_game_files();
                     set_mouse_mode(MM_NORMAL);
                     LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
-                    display_mode = 0;
+                    display_mode = DM_GAME;
                     D_00156910 = 1;
                     set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
                     draw_it();
@@ -136,8 +136,8 @@ void draw_load_game(void)
         loadgame.value = 0;
         fade_out_menu();
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
-        display_mode = 2;
-        mainmenu.state = 0;
+        display_mode = DM_MAIN_MENU;
+        mainmenu.state = MMS_ENTER;
         set_mouse_mode(MM_NORMAL);
         loadgame.state = 0;
         break;
@@ -165,7 +165,7 @@ void process_keys_load_game(void)
 {
     switch (BufferedInkey) {
     case KC_ESCAPE:
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         loadgame.state = 2;
         BufferedInkey = 0;
         break;
@@ -201,7 +201,7 @@ void process_mouse_load_game(void)
                 if (lbDisplay.rleft_button) {
                     if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
                             resvars.screen_buttons[base + i].height - y + 1)) {
-                        play_sound(10, SFX_YESX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                         lbDisplay.rleft_button = 0;
                         if (resvars.screen_buttons[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
@@ -219,7 +219,7 @@ void process_mouse_load_game(void)
                     else
                         draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
                     if (i != loadgame.value) {
-                        play_sound(10, SFX_HLIGHT5, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                         loadgame.value = i;
                     }
                 }

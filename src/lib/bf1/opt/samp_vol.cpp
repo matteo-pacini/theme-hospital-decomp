@@ -12,7 +12,7 @@ void SetSampleVolume(u32 source_id, s16 number, s16 volume, u32 handle)
     if (SoundInstalled && SoundAble && SoundActive) {
         if (number == 0 && source_id == 0) {
             for (smp = sample_id; smp <= end_sample_id; smp++) {
-                if (smp->SampleHandle == handle && AIL_sample_status(smp->SampleHandle) == 4
+                if (smp->SampleHandle == handle && AIL_sample_status(smp->SampleHandle) == SMP_PLAYING
                     && volume >= 0 && volume <= 127 && volume != smp->SampleVolume) {
                     AIL_set_sample_volume(smp->SampleHandle, volume);
                     smp->SampleVolume = volume;
@@ -22,7 +22,7 @@ void SetSampleVolume(u32 source_id, s16 number, s16 volume, u32 handle)
         } else {
             for (smp = sample_id; smp <= end_sample_id; smp++) {
                 if (smp->SourceID == source_id && smp->SampleNumber == number
-                    && AIL_sample_status(smp->SampleHandle) == 4
+                    && AIL_sample_status(smp->SampleHandle) == SMP_PLAYING
                     && volume >= 0 && volume <= 127 && volume != smp->SampleVolume) {
                     AIL_set_sample_volume(smp->SampleHandle, volume);
                     smp->SampleVolume = volume;

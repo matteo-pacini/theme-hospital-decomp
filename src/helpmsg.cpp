@@ -12,7 +12,7 @@ extern Event D_001549d0[];
 int strcmp(const char *a, const char *b);
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
-void LbMouseSetWindow(s32 x, s32 y, s32 w, s32 h);
+void LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height);
 }
 
 void set_help_text(u8 mode, s16 x, s16 y, char **strs);
@@ -92,7 +92,7 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
     s32 my;
 
     othervar.help_style = mode;
-    set_font_from_cache(display_mode == 2 ? 0x2d : 0);
+    set_font_from_cache(display_mode == DM_MAIN_MENU ? 0x2d : 0);
     lbDisplay.draw_flags = 0;
     switch (mode) {
     case 1:
@@ -193,7 +193,7 @@ void draw_help_text(void)
             && othervar.help_close_y <= lbDisplay.mmouse_y && othervar.help_close_y + pulldv[19].height > lbDisplay.mmouse_y) {
             reqspr_draw(othervar.help_close_x, othervar.help_close_y, &pulldv[20]);
             if (!D_00161134)
-                play_sound(10, SFX_HLIGHT5, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
             D_00161134 = 1;
         } else {
             reqspr_draw(othervar.help_close_x, othervar.help_close_y, &pulldv[19]);
@@ -206,7 +206,7 @@ void draw_help_text(void)
         break;
     }
     lbDisplay.draw_flags = 0x40;
-    set_font_from_cache(display_mode == 2 ? 0x2d : 0);
+    set_font_from_cache(display_mode == DM_MAIN_MENU ? 0x2d : 0);
     lbDisplay.draw_colour = color.black;
     LbTextDraw(othervar.help_x + border, othervar.help_y + border, othervar.help_msg);
     lbDisplay.draw_flags = 0;
@@ -276,7 +276,7 @@ void copy_and_format_composite(char *dst, char **strs)
     limit = 0xc;
     for (k = 1; limit * k < most; limit += 4, k++)
         ;
-    set_font_from_cache(display_mode == 2 ? 0x2d : 0);
+    set_font_from_cache(display_mode == DM_MAIN_MENU ? 0x2d : 0);
     limit = limit * (lbFontPtr ? lbFontPtr[46].width : 0);
     limit > lbDisplay.physical_screen_width * 3 / 4 ? limit = lbDisplay.physical_screen_width * 3 / 4 : 0;
     dst_start = dst;
@@ -453,7 +453,7 @@ void show_help_page(u32 page, u32 sub)
         break;
     }
     case 3:
-        set_help_text(2, -1, -1, &D_0016039c[statvar.f56d[sub]]);
+        set_help_text(2, -1, -1, &D_0016039c[statvar.net_result_base[sub]]);
         break;
     }
     othervar.help_page = page;
@@ -482,7 +482,7 @@ void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n)
 }
 
 // Closes a help page and leaves help mode; after some briefing pages opens
-// the next, and after network result page 2 queues event 0x7e.
+// the next, and after network result page 2 queues event EV_LEAVE_NET_GAME.
 // FUNCTION: 0x0009b1f0
 void finish_composite_help(void)
 {
@@ -492,7 +492,7 @@ void finish_composite_help(void)
     othervar.help_msg[0] = 0;
     if (gamevar.mouse_mode == MM_HELP) {
         set_mouse_mode(MM_NORMAL);
-        play_sound(10, SFX_YESX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         switch (othervar.help_page) {
         case 1:
             switch (othervar.help_sub) {
@@ -504,7 +504,7 @@ void finish_composite_help(void)
             break;
         case 3:
             if (othervar.help_sub == 2) {
-                D_001549d0[player].type = 0x7e;
+                D_001549d0[player].type = EV_LEAVE_NET_GAME;
                 D_001549d0[player].value = 1;
             }
             break;

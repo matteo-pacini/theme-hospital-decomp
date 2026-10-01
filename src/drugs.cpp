@@ -12,7 +12,7 @@ extern Event D_001549d0[];
 extern char **cabinet_text, **illness_text;
 extern char **skill_names;
 
-void conv_string(void *dst, char *text, int flags);
+void conv_string(void *dst, char *src, int mode);
 
 }
 
@@ -61,7 +61,7 @@ void display_drugs(void)
     switch (drugs.state) {
     case 0:
         fade_out_menu();
-        load_ingame_pic(2, 1, 0x1b, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_DRUGS, 1, 0x1b, 0, SCREEN_MODE_13);
         drugs.state = 2;
         drugs.value = 0;
         othervar.repeat_step = 0x100;
@@ -173,7 +173,7 @@ void display_drugs(void)
                     if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.screen_coords[i].x, resvars.screen_coords[i].y,
                                     lbDisplay.graphics_screen_width - resvars.screen_coords[i].y, line_height)) {
                         othervar.selected_illness = list[i];
-                        play_sound(10, SFX_PAGETUR2, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
                         lbDisplay.left_button = 0;
                     }
                 }
@@ -207,13 +207,13 @@ void display_drugs(void)
                 lbDisplay.draw_flags = 0;
             } else if (def->category == 10) {
                 reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 8);
-            } else if (def->unknown8 != 1 && def->unknown8 != 5 && def->unknown8 != 4) {
+            } else if (def->outcome != 1 && def->outcome != 5 && def->outcome != 4) {
                 reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 6);
             }
             reqspr_draw(resvars.screen_coords[0x20].x, resvars.screen_coords[0x20].y, screen_sprites_tab_start + 11);
         } else {
             reqspr_draw(resvars.screen_coords[0x20].x, resvars.screen_coords[0x20].y, screen_sprites_tab_start + 12);
-            if (def->unknown8 != 1 && def->unknown8 != 5 && def->unknown8 != 4) {
+            if (def->outcome != 1 && def->outcome != 5 && def->outcome != 4) {
                 if (def->kind == 0x27) {
                     reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 7);
                     set_font_from_cache(0x2e);
@@ -249,7 +249,7 @@ void display_drugs(void)
             reqspr_draw(resvars.screen_coords[0x20].x, resvars.screen_coords[0x20].y, screen_sprites_tab_start + 12);
         }
     }
-    if (expertise[illness].unknown5[0] != 0) {
+    if (expertise[illness].research_type != 0) {
         if (illness == (statvar.num_players > 1 ? allhosps[player].hospital_open : gamevar.research_illness)) {
             set_font_from_cache(0xf);
         } else {
@@ -309,14 +309,14 @@ void process_drug_panel(void)
     lbDisplay.left_button = 0;
 }
 
-// Queues raising the selected illness's price (event 0x6e), with a step that
+// Queues raising the selected illness's price (event EV_PRICE_UP), with a step that
 // grows while the button is held (othervar.repeat_step, 8.8 fixed point, up to 10),
 // and plays the refusal sound once at the 200% limit.
 // FUNCTION: 0x0001387c
 void price_up(void)
 {
     if (othervar.clock_ms - othervar.repeat_time > 0xfa || othervar.repeat_step == 0x100) {
-        D_001549d0[player].type = 0x6e;
+        D_001549d0[player].type = EV_PRICE_UP;
         D_001549d0[player].value = othervar.repeat_step >> 8;
         D_001549d0[player].arg = othervar.selected_illness;
         if (othervar.repeat_step < 0xa00) {
@@ -325,21 +325,21 @@ void price_up(void)
             othervar.repeat_step = 0xa00;
         }
         if (myhosp->rooms[othervar.selected_illness].price_scale < 20000) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else if (!drugs.value) {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             drugs.value = 1;
         }
     }
 }
 
-// Queues lowering the selected illness's price (event 0x6f), as price_up; the
+// Queues lowering the selected illness's price (event EV_PRICE_DOWN), as price_up; the
 // limit is 50%.
 // FUNCTION: 0x0001397c
 void price_down(void)
 {
     if (othervar.clock_ms - othervar.repeat_time > 0xfa || othervar.repeat_step == 0x100) {
-        D_001549d0[player].type = 0x6f;
+        D_001549d0[player].type = EV_PRICE_DOWN;
         D_001549d0[player].value = othervar.repeat_step >> 8;
         D_001549d0[player].arg = othervar.selected_illness;
         if (othervar.repeat_step < 0xa00) {
@@ -348,9 +348,9 @@ void price_down(void)
             othervar.repeat_step = 0xa00;
         }
         if (myhosp->rooms[othervar.selected_illness].price_scale > 5000) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else if (!drugs.value) {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             drugs.value = 1;
         }
     }
@@ -367,18 +367,18 @@ void process_drug_keys(void)
         illness = get_next_illness(0, othervar.selected_illness);
         if (illness != 0xfa) {
             othervar.selected_illness = illness;
-            play_sound(10, SFX_PAGETUR2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
     }
     if (lbKeyOn[KC_NUMPAD2] || lbKeyOn[KC_DOWN]) {
         illness = get_next_illness(1, othervar.selected_illness);
         if (illness != 0xfa) {
             othervar.selected_illness = illness;
-            play_sound(10, SFX_PAGETUR2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
     }
     if (lbKeyOn[KC_NUMPAD6] || lbKeyOn[KC_RIGHT]) {
@@ -413,9 +413,9 @@ void process_drug_button(u8 action)
         illness = get_next_illness(0, othervar.selected_illness);
         if (illness != 0xfa) {
             othervar.selected_illness = illness;
-            play_sound(10, SFX_PAGETUR2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         othervar.drug_pct_display_time = 0x32;
         break;
@@ -423,20 +423,20 @@ void process_drug_button(u8 action)
         illness = get_next_illness(1, othervar.selected_illness);
         if (illness != 0xfa) {
             othervar.selected_illness = illness;
-            play_sound(10, SFX_PAGETUR2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         othervar.drug_pct_display_time = 0x32;
         break;
     case 4:
         drugs.state = 1;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     case 5:
-        D_001549d0[player].type = 0x72;
+        D_001549d0[player].type = EV_CONCENTRATE_RESEARCH;
         D_001549d0[player].value = othervar.selected_illness;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     }
 }
@@ -489,8 +489,8 @@ void setup_drug(u16 hospital, u16 illness)
     }
 }
 
-// Help text callback: the hovered casebook item's help, while the screen is
-// open (othervar.f8b6).
+// Help text callback: the hovered casebook item's help, but only while
+// othervar.f8b6 is set, which nothing does (the casebook clears it each frame).
 // FUNCTION: 0x0001403c
 void drugs_help_concentrate(void)
 {

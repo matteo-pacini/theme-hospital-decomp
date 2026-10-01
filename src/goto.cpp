@@ -5,16 +5,16 @@ extern s8 around_xy[][2];
 #pragma aux around_xy "W?around_vxy$n[]$VXY$$"
 }
 
-u8 do_reaction(Thing *w);
-s16 person_head_for(Thing *w, u8 a);
-void join_queue(Thing *w, RoomInfo *room);
-void reaper_calls_victim(Thing *w);
-void handyman_check_for_litter(Thing *w);
-void staff_nav_failure(Thing *w);
+u8 do_reaction(Thing *peep);
+s16 person_head_for(Thing *person, u8 a);
+void join_queue(Thing *person, RoomInfo *room);
+void reaper_calls_victim(Thing *reaper);
+void handyman_check_for_litter(Thing *handyman);
+void staff_nav_failure(Thing *staff);
 extern "C" void fail_staff_complex(Thing *w);
 extern "C" void nav_init(Thing *w);
 u16 find_free_object_anywhere(u16 id, u8 kind);
-u8 should_nurse_vaccinate(Thing *w);
+u8 should_nurse_vaccinate(Thing *nurse);
 u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate);
 
 #define PLAY_FRAME(t, a) \
@@ -67,7 +67,7 @@ s16 person_goto_destination(Thing *person)
         default:
             if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
-                PLAY_FRAME(person, anim_starts[person->subtype].idle);
+                PLAY_FRAME(person, anim_starts[person->subtype].walk);
             }
             break;
         }
@@ -107,7 +107,7 @@ s16 person_goto_object(Thing *person)
         if (dir >= 0 && dir <= 3) {
             if (fn_000cb2db(person->x.tile - person->dest_x) < othervar.object_near_dist && fn_000cb2db(person->y.tile - person->dest_y) < othervar.object_near_dist) {
                 obj = &thing[person->object];
-                if (obj->in_use == 1 || obj->state == 0x12 || (obj->type != THING_DOOR && obj->type != THING_OBJECT))
+                if (obj->in_use == 1 || obj->state == OS_REMOVED || (obj->type != THING_DOOR && obj->type != THING_OBJECT))
                     dir = 4;
             }
         }
@@ -141,7 +141,7 @@ s16 person_goto_object(Thing *person)
         default:
             if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
-                PLAY_FRAME(person, anim_starts[person->subtype].idle);
+                PLAY_FRAME(person, anim_starts[person->subtype].walk);
             }
             break;
         }
@@ -231,7 +231,7 @@ void person_goto_queue(Thing *person)
         default:
             if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
-                PLAY_FRAME(person, anim_starts[person->subtype].idle);
+                PLAY_FRAME(person, anim_starts[person->subtype].walk);
             }
             break;
         }
@@ -329,7 +329,7 @@ s16 staff_goto_object(Thing *employee)
         default:
             if (employee->facing != dir || start[staff_anim_starts[employee->subtype].staff_stand + employee->facing].frame == employee->sprite) {
                 employee->facing = dir;
-                PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
+                PLAY_FRAME(employee, staff_anim_starts[employee->subtype].walk);
             }
             break;
         }
@@ -366,7 +366,7 @@ u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate)
     }
     employee->dest_x += dx;
     employee->dest_y += dy;
-    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
+    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].walk);
     nav_init(employee);
     employee->countdown = 1;
     employee->substate = substate;
@@ -438,7 +438,7 @@ void staff_wanders(Thing *employee)
             default:
                 if (employee->facing != dir) {
                     employee->facing = dir;
-                    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
+                    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].walk);
                 }
                 break;
             }
@@ -449,7 +449,7 @@ void staff_wanders(Thing *employee)
     }
     return;
 decide:
-    employee->orders &= 0xaf;
+    employee->orders &= ~(ORD_RETURN_TO_RESEARCH | ORD_RETURN_TO_TRAINING);
     if (employee->subtype == STAFF_NURSE && should_nurse_vaccinate(employee))
         return;
     if ((employee->orders & ORD_REST) && take_a_break(employee))
@@ -551,12 +551,12 @@ void peep_bp_goto(Thing *peep)
         if (peep->type == THING_STAFF) {
             if (peep->facing != dir || start[staff_anim_starts[peep->subtype].staff_stand + peep->facing].frame == peep->sprite) {
                 peep->facing = dir;
-                PLAY_FRAME(peep, staff_anim_starts[peep->subtype].idle);
+                PLAY_FRAME(peep, staff_anim_starts[peep->subtype].walk);
             }
         } else {
             if (peep->facing != dir || start[anim_starts[peep->subtype].patient_stand + peep->facing].frame == peep->sprite) {
                 peep->facing = dir;
-                PLAY_FRAME(peep, anim_starts[peep->subtype].idle);
+                PLAY_FRAME(peep, anim_starts[peep->subtype].walk);
             }
         }
     }
@@ -565,7 +565,7 @@ void peep_bp_goto(Thing *peep)
     move_node(peep, x, y);
 }
 
-void mayor_inspects(Thing *w);
+void mayor_inspects(Thing *mayor);
 
 // MAYOR_GOTO: walks the mayor or inspector towards their destination; on
 // arrival they inspect and enter goto_state; a navigation failure makes them
@@ -666,9 +666,9 @@ void peep_stuck(Thing *peep)
             peep->facing = dir;
             peep->countdown = peep->speed == 0 ? div_err() : 0x100 / peep->speed;
             if (peep->type == THING_PATIENT)
-                PLAY_FRAME(peep, anim_starts[peep->subtype].idle)
+                PLAY_FRAME(peep, anim_starts[peep->subtype].walk)
             else
-                PLAY_FRAME(peep, staff_anim_starts[peep->subtype].idle)
+                PLAY_FRAME(peep, staff_anim_starts[peep->subtype].walk)
         }
     }
     if (peep->facing != 4) {

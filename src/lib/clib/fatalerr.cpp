@@ -1,7 +1,7 @@
 extern "C" {
 
 int __EnterWVIDEO(char __far *msg);
-void __exit_with_msg(char *msg, unsigned code);
+void __exit_with_msg(char *msg, unsigned retcode);
 
 // FUNCTION: 0xe78f0
 void __wcpp_2_fatal_runtime_error_(char *msg, int code)

@@ -15,8 +15,8 @@ extern Event D_001549d0[];
 extern char **object_names;
 }
 
-u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
-void req5_draw_machine_usage_bar(long x, long y, long used, long total);
+u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2);
+void req5_draw_machine_usage_bar(long x, long y, long filled, long total);
 u8 is_thing_paged(ThingPager *pager, u16 id);
 
 // Machine window clicks (machine D_001581b2[3].value): close, call a
@@ -35,11 +35,11 @@ void req5(Window *win)
             if (i == resvars.requester_buttons[0x12]) {
                 D_001549d0[player].type = EV_CLOSE_QUERY;
                 D_001549d0[player].value = 3;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             } else if (i == resvars.requester_buttons[0x13]) {
                 D_001549d0[player].type = EV_THINGPAGE_REQUEST;
                 D_001549d0[player].value = D_001581b2[3].value;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[0x14]) {
                 u8 kind;
 
@@ -48,8 +48,8 @@ void req5(Window *win)
                     && allhosps[player].balance > 0) {
                     sprintf(othervar.yesno_msg, yesno_text[2], object_names[objects[kind].name],
                             allhosps[othervar.cur_player].object_stats[kind].cost);
-                    open_yes_no_requester(0x8a, D_001581b2[3].value, 0, 0x78, 0, 0);
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    open_yes_no_requester(EV_REPLACE_MACHINE, D_001581b2[3].value, 0, EV_CLOSE_YES_NO, 0, 0);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             }
         }
@@ -122,7 +122,7 @@ void req5_overdraw(Window *win)
                 othervar.prev_panel_info = othervar.panel_info;
                 othervar.panel_info = 3;
                 othervar.panel_thing = D_001581b2[3].value;
-                play_sound(10, SFX_CAMCLICK, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
             }
         }
         if (lbDisplay.mright_button)

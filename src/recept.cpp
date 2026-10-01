@@ -3,7 +3,7 @@
 extern s16 opposite_angle[];
 
 u16 find_free_object_anywhere(u16 id, u8 kind);
-void staff_in_corridor(Thing *w);
+void staff_in_corridor(Thing *staff);
 RoomInfo *allocate_reception_roominfo(u8 owner);
 
 // Staff state SS_RECEPTIONIST_FINDS_RECEPTION: sends the receptionist to a
@@ -155,7 +155,7 @@ void recept_waits_for_patient(Thing *receptionist)
             patient->facing = opposite_angle[receptionist->facing];
             receptionist->next_state = SS_RECEPT_ADMITS_PATIENT;
             process_staff_complex(receptionist);
-            othervar.f8ac_u16a[1] = 0;
+            othervar.recept_call_timer = 0;
         } else {
             receptionist->timer--;
             if (receptionist->timer <= 0) {
@@ -172,7 +172,7 @@ void recept_waits_for_patient(Thing *receptionist)
                         interrupt_person(patient);
                         start_person_going(patient);
                         receptionist->slave = 0;
-                        othervar.f8ac_u16a[1] = 0;
+                        othervar.recept_call_timer = 0;
                     }
                 }
             } else if (forget_about_my_slave(receptionist, 0x6e)) {
@@ -184,7 +184,7 @@ void recept_waits_for_patient(Thing *receptionist)
         reset_icon_value(receptionist, ICON_CALLING);
         receptionist->slave = 0;
         receptionist->state = SS_RECEPTIONIST_WORKS;
-        othervar.f8ac_u16a[1] = 0;
+        othervar.recept_call_timer = 0;
     }
 }
 

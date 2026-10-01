@@ -11,7 +11,7 @@ void fn_000c93bf(char *dst, char *src);
 // With a chance that grows with warmth (gbv.contagious_spread_factor + warmth / 2 percent), passes
 // carrier's contagious illness to one undiagnosed, uncontagious patient on or
 // next to carrier's tile (half the time each; not to those whose illness has
-// expertise unknown10[1] set), splitting carrier's contagion with them. Note
+// expertise not_contagious set), splitting carrier's contagion with them. Note
 // that effect_illness is applied to carrier, not the new victim.
 // FUNCTION: 0x000a0040
 void spread_epidemic(Thing *carrier, u16 warmth)
@@ -38,14 +38,14 @@ void spread_epidemic(Thing *carrier, u16 warmth)
             if (victim->illness == victim->known_illness)
                 continue;
             other = victim->illness;
-            if (expertise[other].unknown10[1] != 0 || (s8)victim->contagion != 0 || old_newrand() & 1)
+            if (expertise[other].not_contagious != 0 || (s8)victim->contagion != 0 || old_newrand() & 1)
                 continue;
             othervar.contagious_count++;
             if (other != illness) {
                 victim->illness = illness;
                 effect_illness(carrier, illness, 0);
             }
-            othervar.f39 = illness;
+            othervar.last_spread_illness = illness;
             victim->contagion = (s8)carrier->contagion / 2;
             carrier->contagion -= victim->contagion;
             if (carrier->flags & PF_CONTAGIOUS)
@@ -93,10 +93,10 @@ void process_epidemic_start_buttons(u8 button)
     choice_spare_data = 0;
     switch (button) {
     case 0:
-        packet_choice_result(10);
+        packet_choice_result(CH_EPIDEMIC_DECLARE);
         break;
     case 1:
-        packet_choice_result(11);
+        packet_choice_result(CH_EPIDEMIC_COVER_UP);
         advisor.event_flag_bytes[1] |= 1;
         break;
     }
@@ -110,7 +110,7 @@ void alert_epidemic(u8 illness, u8 owner)
 {
     AllHosps *hosp;
 
-    if ((statvar.num_players <= 1 && display_mode == 9) && choice == 2)
+    if ((statvar.num_players <= 1 && display_mode == DM_CHOICE) && choice == 2)
         return;
     hosp = &allhosps[owner];
     if (hosp->epidemic_illness != 0 || hosp->emergency_state_s != 0)
@@ -140,7 +140,7 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
             continue;
         if (!peep->contagion || peep->illness != illness)
             continue;
-        if (!(map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].owner_flags & 0x10)) {
+        if (!(map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].owner_flags & MAP_OUTDOOR)) {
             if ((s8)peep->contagion > max)
                 max = (s8)peep->contagion;
             if (mode == 1) {
@@ -183,7 +183,7 @@ u32 epidemic_status(u8 owner)
                 over = 1;
         } else {
             if (owner == player)
-                play_sound(10, 0xce, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_EPIDEMIC_END, -1, -1);
             over = 1;
         }
     }
@@ -271,7 +271,7 @@ void send_peeps_home(u8 all, u8 owner)
     for (peep = thing + 1; peep < end_things; peep++) {
         if (peep->type != THING_PATIENT || peep->owner != owner)
             continue;
-        if (map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].owner_flags & 0x10)
+        if (map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].owner_flags & MAP_OUTDOOR)
             continue;
         if (all || (peep->flags & PF_CONTAGIOUS)) {
             peep->flags &= ~PF_CONTAGIOUS;

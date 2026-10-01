@@ -28,7 +28,7 @@ extern u8 *lbVesaData;
 extern s16 lbVesaPage;
 extern s16 lbVesaGran;
 
-int strncmp(const char *a, const char *b, u32 n);
+int strncmp(const char *s, const char *t, u32 n);
 
 void vesa_set_window(u32 window, u32 position, u32 zero);
 #pragma aux vesa_set_window = 0xb8 0x05 0x4f 0x00 0x00 0x66 0x55 0xcd 0x10 0x66 0x5d \

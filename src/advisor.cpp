@@ -2,9 +2,9 @@
 
 struct Advice {
     u16 id;
-    u16 f2;
-    u16 f4;
-    u8 f6;
+    u16 duration;
+    u16 repeat_weight;
+    u8 times_given;
     u8 f7;
     u32 time;
     u32 fc;
@@ -136,7 +136,7 @@ extern char **mouse_advice_text;
 
 // Runs the advisor for a frame, if enabled (myplayer.advisor_flags[20]) and not
 // suppressed: in the tutorial shows the tutorial text; otherwise lets the
-// current advice expire after its time (advice[].f2), then picks the first
+// current advice expire after its time (advice[].duration), then picks the first
 // advice entry not given too often or too recently whose condition holds
 // (find_advice), animates the advisor and draws the speech bubble, and sends
 // the advisor away once the advice is done.
@@ -148,8 +148,8 @@ void display_advisor(void)
     u16 elapsed;
 
     if (!gamevar.rat_fest_level) {
-    if (!debug.unknownd7) {
-    if (!debug.unknownd8[0]) {
+    if (!debug.suppress_help) {
+    if (!debug.advisor_off) {
     if (myplayer.advisor_flags[20]) {
         if (advisor.flags & 1) {
             if (tutorial() && advisor.text[0]) {
@@ -165,20 +165,20 @@ void display_advisor(void)
         } else {
             stale = 0;
             if (advisor.advice_id) {
-                if (resvars.game_mode != SCREEN_MODE_1 || (crequester.id == 0x63 || crequester.id == 5)) {
+                if (resvars.game_mode != SCREEN_MODE_1 || (crequester.id == REQ_NONE || crequester.id == REQ_EDIT_ROOM)) {
                     elapsed = actual_game_turn - advice[advisor.advice_id].time;
                     if (elapsed > 0x64 || othervar.dismiss_advisor == 1)
                         stale = 1;
-                    if (elapsed >= advice[advisor.advice_id].f2 || othervar.dismiss_advisor == 1)
+                    if (elapsed >= advice[advisor.advice_id].duration || othervar.dismiss_advisor == 1)
                         advisor.advice_id = 0;
                 } else {
-                    advice[advisor.advice_id].time = actual_game_turn - advice[advisor.advice_id].f2 / 4;
+                    advice[advisor.advice_id].time = actual_game_turn - advice[advisor.advice_id].duration / 4;
                 }
             }
             if (advisor.advice_id == 0 || stale == 1) {
                 for (i = 1; advice[i].id; i++) {
                     if (actual_game_turn > advice[i].time) {
-                        if ((advice[i].f6 * advice[i].f4 << 10) / (actual_game_turn - advice[i].time) < 10) {
+                        if ((advice[i].times_given * advice[i].repeat_weight << 10) / (actual_game_turn - advice[i].time) < 10) {
                             if (find_advice(i) == 1) {
                                 advisor.rewrap = 1;
                                 break;
@@ -238,16 +238,16 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x4d:
-        if (NRAdcounts.unknowna[0] >= 8) {
-            sprintf(advisor.text, advisor_text[0x4d], NRAdcounts.unknowna[0] / 2);
-            NRAdcounts.unknowna[0] = 0;
+        if (NRAdcounts.last_quake_size >= 8) {
+            sprintf(advisor.text, advisor_text[0x4d], NRAdcounts.last_quake_size / 2);
+            NRAdcounts.last_quake_size = 0;
             found = 1;
         }
         break;
     case 0x63:
-        if (NRAdcounts.unknowna[5]) {
-            sprintf(advisor.text, advisor_text[0x63], NRAdcounts.unknowna[0] / 2, NRAdcounts.unknowna[0] / 2);
-            NRAdcounts.unknowna[5] = 0;
+        if (NRAdcounts.quake_damage_report) {
+            sprintf(advisor.text, advisor_text[0x63], NRAdcounts.last_quake_size / 2, NRAdcounts.last_quake_size / 2);
+            NRAdcounts.quake_damage_report = 0;
             found = 1;
         }
         break;
@@ -417,13 +417,13 @@ u8 find_advice(const u16 id)
         break;
     case 9:
         if (mycontrol->month > 4 && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && mycontrol->history_visitors_now == 0
-            && advice[id].f6 < 1) {
+            && advice[id].times_given < 1) {
             sprintf(advisor.text, advisor_text[9]);
             found = 1;
         }
         break;
     case 0xa:
-        if (mycontrol->month > 4 && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && advice[id].f6 < 1
+        if (mycontrol->month > 4 && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && advice[id].times_given < 1
             && mycontrol->history_cures_now == 0 && mycontrol->history_visitors_now > 0 && myhosp->visitors > othervar.patients_left_count) {
             sprintf(advisor.text, advisor_text[10]);
             found = 1;
@@ -499,15 +499,15 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0xc:
-        value = gamevar.announce[1][0];
+        value = gamevar.announce[ANN_STUCK][0];
         if (value) {
             sprintf(advisor.text, advisor_text[12]);
-            done_announcement(1);
+            done_announcement(ANN_STUCK);
             found = 1;
         }
         break;
     case 0x59:
-        value = gamevar.announce[11][0];
+        value = gamevar.announce[ANN_STAFF_POACHED][0];
         if (value) {
             if (!myplayer.advisor_flags[9]) {
                 sprintf(advisor.text, advisor_situations[9]);
@@ -515,7 +515,7 @@ u8 find_advice(const u16 id)
             } else {
                 sprintf(advisor.text, advisor_text[0x59]);
             }
-            done_announcement(0xb);
+            done_announcement(ANN_STAFF_POACHED);
             found = 1;
         }
         break;
@@ -532,15 +532,15 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x7a:
-        value = gamevar.announce[2][0];
+        value = gamevar.announce[ANN_AUTOPSY_DISCOVERED][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x7a]);
-            done_announcement(2);
+            done_announcement(ANN_AUTOPSY_DISCOVERED);
             found = 1;
         }
         break;
     case 0x44:
-        value = gamevar.announce[4][0];
+        value = gamevar.announce[ANN_PROMOTED][0];
         if (value) {
             if (value == 5)
                 sprintf(advisor.text, advisor_text[0x44], help_text[0x3f]);
@@ -548,76 +548,76 @@ u8 find_advice(const u16 id)
                 sprintf(advisor.text, advisor_text[0x44], help_text[0x40]);
             else if (value == 8)
                 sprintf(advisor.text, advisor_text[0x44], help_text[0x41]);
-            done_announcement(4);
+            done_announcement(ANN_PROMOTED);
             found = 1;
         }
         break;
     case 0x89:
-        value = gamevar.announce[13][0];
+        value = gamevar.announce[ANN_DOCTOR_TO_CONSULTANT][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x89]);
-            done_announcement(0xd);
+            done_announcement(ANN_DOCTOR_TO_CONSULTANT);
             found = 1;
         }
         break;
     case 0x16:
-        value = gamevar.announce[10][0];
+        value = gamevar.announce[ANN_JUNIOR_TO_DOCTOR][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x16]);
-            done_announcement(0xa);
+            done_announcement(ANN_JUNIOR_TO_DOCTOR);
             found = 1;
         }
         break;
     case 0x17:
-        value = gamevar.announce[5][0];
+        value = gamevar.announce[ANN_OBJECT_RESEARCHED][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x17], object_names[value]);
-            done_announcement(5);
+            done_announcement(ANN_OBJECT_RESEARCHED);
             found = 1;
         }
         break;
     case 0x18:
-        value = gamevar.announce[6][0];
+        value = gamevar.announce[ANN_NEW_DRUG][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x18], illness_text[value]);
-            done_announcement(6);
+            done_announcement(ANN_NEW_DRUG);
             found = 1;
         }
         break;
     case 0x19:
-        value = gamevar.announce[7][0];
+        value = gamevar.announce[ANN_DRUG_IMPROVED][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x19], illness_text[value]);
-            done_announcement(7);
+            done_announcement(ANN_DRUG_IMPROVED);
             found = 1;
         }
         break;
     case 0x1a:
-        value = gamevar.announce[8][0];
+        value = gamevar.announce[ANN_OBJECT_IMPROVED][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x1a], object_names[value]);
-            done_announcement(8);
+            done_announcement(ANN_OBJECT_IMPROVED);
             found = 1;
         }
         break;
     case 0x1b:
-        value = gamevar.announce[9][0];
+        value = gamevar.announce[ANN_OBJECT_AVAILABLE][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x1b], object_names[value]);
-            done_announcement(9);
+            done_announcement(ANN_OBJECT_AVAILABLE);
             found = 1;
         }
         break;
     case 0x79:
-        value = gamevar.announce[3][0];
+        value = gamevar.announce[ANN_CATEGORY_DONE][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x79], research_names[value]);
-            done_announcement(3);
+            done_announcement(ANN_CATEGORY_DONE);
             found = 1;
         }
         break;
     case 0x45:
-        if (advice[id].f6 < 1 && myhosp->litter_count > 0 && myhosp->staff_by_kind[2] == 0) {
+        if (advice[id].times_given < 1 && myhosp->litter_count > 0 && myhosp->staff_by_kind[2] == 0) {
             sprintf(advisor.text, advisor_text[0x45]);
             found = 1;
         }
@@ -629,13 +629,13 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x47:
-        if (advice[id].f6 < 1 && myhosp->deaths == 1) {
+        if (advice[id].times_given < 1 && myhosp->deaths == 1) {
             sprintf(advisor.text, advisor_text[0x47]);
             found = 1;
         }
         break;
     case 0x52:
-        if (advice[id].f6 < 1 && myhosp->cures == 1) {
+        if (advice[id].times_given < 1 && myhosp->cures == 1) {
             sprintf(advisor.text, advisor_text[0x52]);
             found = 1;
         }
@@ -825,7 +825,7 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x6e:
-        if (!myplayer.advisor_flags[11] && gamevar.ff5) {
+        if (!myplayer.advisor_flags[11] && gamevar.abductee) {
             sprintf(advisor.text, advisor_text[0x6e]);
             myplayer.advisor_flags[11] = 1;
             found = 1;
@@ -919,10 +919,10 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x86:
-        value = gamevar.announce[12][0];
+        value = gamevar.announce[ANN_RIVAL_OPENED][0];
         if (value) {
             sprintf(advisor.text, advisor_text[0x86], allhosps[value].name);
-            done_announcement(0xc);
+            done_announcement(ANN_RIVAL_OPENED);
             found = 1;
         }
         break;
@@ -965,12 +965,12 @@ u8 find_advice(const u16 id)
         advisor.mouse_advice_id = 0;
         advisor.line_count = 0;
         advisor.extra_segments = 0;
-        advice[id].f6++;
+        advice[id].times_given++;
         advice[id].time = actual_game_turn;
         advice[id].f7 = f7;
         advice[id].fc = extra;
         advisor.advice_id = id;
-        advisor.time_left = advice[id].f2 / 2;
+        advisor.time_left = advice[id].duration / 2;
     }
     return found;
 }
@@ -1029,7 +1029,7 @@ void reset_advisor(void)
     u16 i;
 
     for (i = 1; advice[i].id; i++) {
-        advice[i].f6 = 0;
+        advice[i].times_given = 0;
         advice[i].f7 = 0;
         advice[i].time = 0;
         advice[i].fc = 0;
@@ -1370,8 +1370,8 @@ u8 advisor_dead_plants(void)
 // FUNCTION: 0x00061998
 void monthly_update_of_adivsor_counts(void)
 {
-    advice[14].f6 = 0;
-    advice[15].f6 = 0;
+    advice[14].times_given = 0;
+    advice[15].times_given = 0;
 }
 
 // Returns a staff_unhappy entry for the first kind of staff more tired than

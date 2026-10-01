@@ -11,7 +11,7 @@ void StopSample(u32 source_id, s16 number)
     if (SoundInstalled && SoundAble && SoundActive) {
         for (smp = sample_id; smp <= end_sample_id; smp++) {
             if (smp->SourceID == source_id && smp->SampleNumber == number
-                && AIL_sample_status(smp->SampleHandle) != 2) {
+                && AIL_sample_status(smp->SampleHandle) != SMP_DONE) {
                 AIL_end_sample(smp->SampleHandle);
                 return;
             }

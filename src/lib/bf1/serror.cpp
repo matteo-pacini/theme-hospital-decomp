@@ -6,7 +6,7 @@ typedef char *va_list[1];
 
 extern "C" {
 
-int vsprintf(char *buf, char *fmt, va_list args);
+int vsprintf(char *dest, char *format, va_list arg);
 u32 LbScreenIsInitialised(void);
 int LbIsIKeyboardInstalled(void);
 void LbKeyboardClose(void);

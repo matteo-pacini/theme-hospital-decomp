@@ -24,19 +24,19 @@ extern u32 D_0013c60c, D_0013c618, D_0013c620, D_0013c628, D_0013c62c, D_0013c63
 extern u8 D_001581ec, D_001581ed, D_001581ef;
 extern u8 D_0015fe74;
 
-void remove_node(Thing *w);
-Thing *search_mapwho(Map *t, u16 kind);
+void remove_node(Thing *node);
+Thing *search_mapwho(Map *cell, u16 kind);
 void conv_string(char *dst, s8 *src, u8 mode);
-int to_upper_char(u8 c);
-void record_mappos(u8 i);
+int to_upper_char(u8 ch);
+void record_mappos(u8 key);
 void display_copyright(void);
 void fn_0001be78(u8 dir);
 void open_face_file(void);
-u8 nth_active_player(int player);
+u8 nth_active_player(int nth);
 int LbScreenLock(void);
 void fn_000c93bf(char *dst, char *src);
-void LbPaletteFade(u8 *palette, int steps, int flag);
-void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
+void LbPaletteFade(u8 *to_pal, int fade_steps, int flag);
+void fn_000c9be0(int x1, int y1, int x2, int y2, u8 colour);
 
 }
 
@@ -107,7 +107,7 @@ u16 can_i_get_to(Thing *mover, u16 pos)
     } else {
         orthonav_init(&path, mover->x.tile, mover->y.tile, x, y);
     }
-    return path.result;
+    return path.count;
 }
 
 // Unlinks target from the map and frees its thing.
@@ -370,41 +370,41 @@ void set_mouse_mode(const u8 mode)
 {
     switch (mode) {
     case MM_NORMAL:
-        othervar.pointer_sprite = 1;
+        othervar.pointer_sprite = PTR_DEFAULT;
         break;
     case MM_BLUEPRINT:
-    case 2:
+    case MM_PLACE_DOOR:
     case 7:
-        othervar.pointer_sprite = 3;
+        othervar.pointer_sprite = PTR_RESIZE_ROOM;
         break;
-    case 10:
+    case MM_TOWN_MAP:
         othervar.pointer_sprite = 0xd;
         break;
-    case 9:
+    case MM_SCREEN:
         othervar.pointer_sprite = 0;
         break;
-    case 11:
+    case MM_PICK_UP_OBJECT:
         othervar.pointer_sprite = 0xe;
         break;
     case MM_EDIT_ROOM:
-        othervar.pointer_sprite = 4;
+        othervar.pointer_sprite = PTR_EDIT_ROOM;
         break;
-    case 14:
+    case MM_EDIT_ROOM_WAIT:
         othervar.pointer_sprite = 9;
         break;
     case MM_VACCINATE:
-        othervar.pointer_sprite = 0xc;
+        othervar.pointer_sprite = PTR_VACCINATE;
         break;
     case 16:
         othervar.pointer_sprite = 9;
         break;
-    case 18:
+    case MM_MOVE_QUEUE_PERSON:
         othervar.pointer_sprite = 0xf;
         break;
-    case 20:
+    case MM_MAIN_MENU:
         othervar.pointer_sprite = 0xf;
         break;
-    case 21:
+    case MM_AREA_SMK:
         othervar.pointer_sprite = 1;
         break;
     case 22:
@@ -440,7 +440,7 @@ void set_mouse_mode(const u8 mode)
     case 32:
         othervar.pointer_sprite = 9;
         break;
-    case 33:
+    case MM_STAFF_LIST:
         othervar.pointer_sprite = 0x20;
         break;
     case 34:
@@ -459,7 +459,7 @@ void set_mouse_mode(const u8 mode)
         othervar.pointer_sprite = 0x1e;
         break;
     default:
-        othervar.pointer_sprite = 1;
+        othervar.pointer_sprite = PTR_DEFAULT;
         break;
     }
     gamevar.mouse_mode = mode;
@@ -496,7 +496,7 @@ u8 check_points_connected(u16 from, u16 to)
     orthonav_path path;
 
     orthonav_init(&path, from % 128, from / 128, to % 128, to / 128);
-    return path.result != 0;
+    return path.count != 0;
 }
 
 // Returns the facing for self to look towards target: 0 if target has a
@@ -734,7 +734,7 @@ void vary_speed(s16 speed)
 // FUNCTION: 0x0001afd8
 void compute_whether_user_not_busy(void)
 {
-    u8 idle = CountWindows(open_windows) == 0 && display_mode == 0 && !debug.unknownd7;
+    u8 idle = CountWindows(open_windows) == 0 && display_mode == DM_GAME && !debug.suppress_help;
 
     if (idle && !othervar.user_idle) {
         othervar.idle_since = othervar.clock_ms;
@@ -789,17 +789,17 @@ Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
 
 // Cancels what the player is building or placing, by the open requester:
 // back to placing, a confirm to delete a new room, editing the blueprint,
-// refusing a staff demand, or dropping what is held (event 0x38).
+// refusing a staff demand, or dropping what is held (event EV_CANCEL_BUILD).
 // FUNCTION: 0x0001b1f8
 void setup_abort_all_requesters(void)
 {
-    if (gamevar.mouse_mode == 0xe) {
-        D_001549d0[player].type = 0x7b;
+    if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
+        D_001549d0[player].type = EV_CANCEL_EDIT_ROOM;
         return;
     }
     switch (crequester.id) {
     case 10:
-        if (crequester.unknown9) {
+        if (crequester.arg3) {
             D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
             D_001549d0[player].value = 1;
             othervar.editing_room = 1;
@@ -810,7 +810,7 @@ void setup_abort_all_requesters(void)
         if (crequester.mode == 0) {
             if (othervar.editing_room == 1) {
                 sprintf(othervar.yesno_msg, "%s", yesno_text[4]);
-                open_yes_no_requester(0x79, 0, 0, 0x78, 1, 1);
+                open_yes_no_requester(EV_DELETE_ROOM, 0, 0, EV_CLOSE_YES_NO, 1, MM_BLUEPRINT);
                 return;
             }
             D_001549d0[player].type = EV_DELETE_ROOM;
@@ -825,7 +825,7 @@ void setup_abort_all_requesters(void)
         req12_clicked_sack();
         return;
     }
-    D_001549d0[player].type = 0x38;
+    D_001549d0[player].type = EV_CANCEL_BUILD;
     if (gamevar.held_staff) {
         D_001549d0[player].value = gamevar.held_staff;
     } else {
@@ -860,7 +860,7 @@ void cancel_top_level_requesters(s32 keep)
             close_crequester(crequester.id);
             break;
         case 10:
-            if (!crequester.unknown9) {
+            if (!crequester.arg3) {
                 clear_build_objects(othervar.cur_player);
                 close_crequester(crequester.id);
             }
@@ -1145,7 +1145,7 @@ void open_requester(u8 idx, u8 flag)
 void close_crequester(u8 i)
 {
     remove_window(open_windows, resvars.window_list + i);
-    crequester.id = 0x63;
+    crequester.id = REQ_NONE;
     cancel_helpmsg();
 }
 

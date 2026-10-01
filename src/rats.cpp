@@ -6,14 +6,14 @@ void remove_rathole(u8 owner, u8 idx);
 void try_create_rathole(u8 owner);
 void remove_rand_rathole(u8 owner);
 void make_a_rat(u8 owner);
-void ratnav_init(Thing *w);
-s16 place_staff_in_struct(u16 a, u16 b);
+void ratnav_init(Thing *rat);
+s16 place_staff_in_struct(u16 kind, u16 extra_skills);
 
 extern Menu area;
 
 extern "C" {
 extern Event D_001549d0[];
-void nav_init(Thing *w);
+void nav_init(Thing *person);
 }
 
 // Tries to make a rat hole for player `owner`: walks from tile allhosps.last_litter_tile in
@@ -387,11 +387,11 @@ void rat_fest_control(void)
             gamevar.rat_fest_rats += count;
         }
         if (myhosp->litter_count <= 4 || actual_game_turn >= 9000) {
-            D_001549d0[player].type = 0x38;
+            D_001549d0[player].type = EV_CANCEL_BUILD;
             level_number = othervar.level_after_bonus;
             myhosp->level = level_number;
             area.state = 6;
-            display_mode = 3;
+            display_mode = DM_AREA_SELECT;
             if (othervar.music_playing) {
                 stop_midi();
             }

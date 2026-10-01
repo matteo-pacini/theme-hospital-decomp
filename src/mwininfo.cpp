@@ -10,26 +10,26 @@ void req6(Window *w);
 void req6_overdraw(Window *w);
 }
 
-void req2(Window *w);
-void req2_overdraw(Window *w);
-void req3(Window *w);
-void req3_overdraw(Window *w);
-void req4(Window *w);
-void req4_overdraw(Window *w);
-void req5(Window *w);
-void req5_overdraw(Window *w);
-void req7(Window *w);
-void req7_overdraw(Window *w);
-void req10(Window *w);
-void req10_overdraw(Window *w);
-void req11(Window *w);
-void req11_overdraw(Window *w);
-void req12(Window *w);
-void req12_overdraw(Window *w);
-void req13(Window *w);
-void req13_overdraw(Window *w);
-void req14(Window *w);
-void req14_overdraw(Window *w);
+void req2(Window *win);
+void req2_overdraw(Window *win);
+void req3(Window *win);
+void req3_overdraw(Window *win);
+void req4(Window *win);
+void req4_overdraw(Window *win);
+void req5(Window *win);
+void req5_overdraw(Window *win);
+void req7(Window *win);
+void req7_overdraw(Window *win);
+void req10(Window *win);
+void req10_overdraw(Window *win);
+void req11(Window *win);
+void req11_overdraw(Window *win);
+void req12(Window *win);
+void req12_overdraw(Window *win);
+void req13(Window *win);
+void req13_overdraw(Window *win);
+void req14(Window *win);
+void req14_overdraw(Window *win);
 
 extern "C" {
 // demo: mcgabutton_list

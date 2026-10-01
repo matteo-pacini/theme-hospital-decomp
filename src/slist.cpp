@@ -44,16 +44,16 @@ u8 staff_on_page(const u8 page);
 void draw_slist_nums(void);
 void draw_slist_coverup(void);
 void slist_keys(void);
-void draw_slist_button_overlays(Thing *w);
+void draw_slist_button_overlays(Thing *staff);
 void draw_slist_training_bar(u16 x, u16 y, u16 value, u16 max);
 void cancel_helpmsg(void);
-void draw_gauge(s32 value, const u16 x, const u16 y, const u16 w, TbSprite *spr, const s32 max, const s32 lo, const s32 hi, const u8 flag);
+void draw_gauge(s32 value, const u16 x, const u16 y, const u16 len, TbSprite *spr, const s32 max, const s32 min, const s32 range, const u8 up);
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
-void draw_window_not_using_bscreen(const u8 n);
-void draw_face(Picture *pic, const u16 x, const u16 y);
+void draw_window_not_using_bscreen(const u8 win);
+void draw_face(Picture *face, const u16 x, const u16 y);
 
 // Runs one frame of the staff management screen (slist.state: 0 opening,
-// 1 shown, 2 leaving to the selected staff member's window (event 0x87), 3
+// 1 shown, 2 leaving to the selected staff member's window (event EV_RETURN_TO_THING_WINDOW), 3
 // closing). Opened from a staff window (othervar.slist_staff), it starts on that
 // staff member's kind and page.
 // FUNCTION: 0x000914e0
@@ -67,11 +67,11 @@ void display_slist(void)
     lbDisplay.draw_flags = 0;
     switch (slist.state) {
     case 0:
-        load_ingame_pic(8, 1, 0x21, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_STAFF_LIST, 1, 0x21, 0, SCREEN_MODE_13);
         D_001290d0 = 0xff;
         D_001290d1 = 0xff;
         D_001290d2 = 0xff;
-        set_mouse_mode(0x21);
+        set_mouse_mode(MM_STAFF_LIST);
         slist.state = 1;
         slist.value = 0;
         othervar.slist_filter = 1;
@@ -133,7 +133,7 @@ void display_slist(void)
         process_slist_panel();
         break;
     case 2:
-        D_001549d0[player].type = 0x87;
+        D_001549d0[player].type = EV_RETURN_TO_THING_WINDOW;
         D_001549d0[player].value = 0;
         D_001549d0[player].arg = slist.value;
         cancel_helpmsg();
@@ -175,7 +175,7 @@ void slist_keys(void)
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
             othervar.slist_cursor = 0;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         }
         lbInkey = 0;
     } else if (lbInkey == KC_NUMPAD4 || lbKeyOn[KC_LEFT]) {
@@ -185,7 +185,7 @@ void slist_keys(void)
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
             othervar.slist_cursor = 0;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         }
         lbInkey = 0;
     }
@@ -193,7 +193,7 @@ void slist_keys(void)
         prev = slist.value;
         slist.value = get_slist_staff(0);
         if (prev != slist.value) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
             lbInkey = 0;
@@ -201,12 +201,12 @@ void slist_keys(void)
                 if (othervar.slist_page < 150) {
                     if (staff_on_page(othervar.slist_page + 1)) {
                         othervar.slist_page++;
-                        play_sound(10, SFX_SELECTX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     } else {
-                        play_sound(10, SFX_SELECTX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     }
                 } else {
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             }
         }
@@ -214,15 +214,15 @@ void slist_keys(void)
         prev = slist.value;
         slist.value = get_slist_staff(1);
         if (prev != slist.value) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             if (othervar.slist_cursor / 10 > 0 && othervar.slist_cursor % 10 == 0) {
                 if (othervar.slist_page > 0) {
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     othervar.slist_page--;
                     for (i = 0; i < 10; i++)
                         slist.value = get_slist_staff(1);
                 } else {
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             }
             lbDisplay.mouse_x = 0;
@@ -312,7 +312,7 @@ void draw_slist_staff(const u16 selected)
                     set_font_from_cache(1);
                     if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_Boxp[row + 104].x, resvars.screen_boxes_Boxp[row + 104].y, resvars.screen_boxes_Boxp[row + 104].w, resvars.screen_boxes_Boxp[row + 104].h)) {
                         if (othervar.slist_cursor != row + othervar.slist_page * 10 + 1)
-                            play_sound(10, SFX_HLIGHT5, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                         set_font_from_cache(2);
                         othervar.slist_cursor = othervar.slist_page * 10 + row + 1;
                     }
@@ -336,7 +336,7 @@ void draw_slist_staff(const u16 selected)
                     if (lbDisplay.mleft_button) {
                         if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_Boxp[row + 104].x, resvars.screen_boxes_Boxp[row + 104].y, resvars.screen_boxes_Boxp[row + 104].w, resvars.screen_boxes_Boxp[row + 104].h)) {
                             if ((u16)(staff - thing) != slist.value)
-                                play_sound(10, SFX_SELECTX, -1, -1);
+                                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                             slist.value = staff - thing;
                         }
                     }
@@ -527,7 +527,7 @@ void process_slist_panel(void)
                 slist.state = 2;
                 close_irequesters();
                 window.current_window = 0;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             }
         }
         if (slist.value)
@@ -559,40 +559,40 @@ void process_slist_button(u8 button)
     switch (button) {
     case 0:
         if (othervar.slist_filter != 1)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         othervar.slist_filter = 1;
         slist.value = 0;
         othervar.slist_cursor = 0;
         break;
     case 1:
         if (othervar.slist_filter != 2)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         othervar.slist_filter = 2;
         slist.value = 0;
         othervar.slist_cursor = 0;
         break;
     case 2:
         if (othervar.slist_filter != 8)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         othervar.slist_filter = 8;
         slist.value = 0;
         othervar.slist_cursor = 0;
         break;
     case 3:
         if (othervar.slist_filter != 4)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         othervar.slist_filter = 4;
         slist.value = 0;
         othervar.slist_cursor = 0;
         break;
     case 4:
         if (slist.value) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             close_irequesters();
             lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
             set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
             sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
-            open_yes_no_requester(0x47, slist.value, 0, 0x88, slist.value, 0);
+            open_yes_no_requester(EV_SACK_STAFF, slist.value, 0, EV_CANCEL_SACK, slist.value, 0);
             slist.value = 0;
         }
         break;
@@ -601,7 +601,7 @@ void process_slist_button(u8 button)
             D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
             D_001549d0[player].value = thing[slist.value].salary / 10;
             D_001549d0[player].arg = slist.value;
-            play_sound(10, SFX_BONUSAL2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_BONUSAL2, -1, -1);
         }
         break;
     case 6:
@@ -609,14 +609,14 @@ void process_slist_button(u8 button)
             D_001549d0[player].type = EV_PAY_STAFF_BONUS;
             D_001549d0[player].value = thing[slist.value].salary / 10;
             D_001549d0[player].arg = slist.value;
-            play_sound(10, SFX_BONUS2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_BONUS2, -1, -1);
         }
         break;
     case 7:
         slist.state = 3;
         close_irequesters();
         window.current_window = 0;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     case 8:
         sound = 8;
@@ -628,7 +628,7 @@ void process_slist_button(u8 button)
                 sound = 0x43;
             }
         }
-        play_sound(10, sound, -1, -1);
+        play_sound(SNDSRC_GENERAL, sound, -1, -1);
         break;
     case 9:
         sound = 8;
@@ -640,13 +640,13 @@ void process_slist_button(u8 button)
                 sound = 0x43;
             }
         }
-        play_sound(10, sound, -1, -1);
+        play_sound(SNDSRC_GENERAL, sound, -1, -1);
         break;
     case 10:
         D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
         D_001549d0[player].value = 500;
         D_001549d0[player].arg = 0;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 11:
         if (slist.value) {
@@ -654,7 +654,7 @@ void process_slist_button(u8 button)
             D_001549d0[player].value = 500;
             D_001549d0[player].arg = slist.value;
         }
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     default:
         break;

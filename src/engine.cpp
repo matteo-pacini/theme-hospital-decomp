@@ -22,14 +22,14 @@ extern PrecalcShadows RoomTileFull[];
 extern PrecalcShadows RoomTileHalf[];
 extern s8 ShadowBuffer[][85];
 
-void draw_a_clipped_four_zone_floor_tile(s32 x, s32 y, const TbSprite *const sprite, s32 x0, s32 y0, s32 x1, s32 y1);
-void draw_a_clipped_four_zone_wall_0(s32 x, s32 y, const TbSprite *const sprite, s32 x0, s32 y0, s32 x1, s32 y1);
+void draw_a_clipped_four_zone_floor_tile(s32 x, s32 y, const TbSprite *const spr, s32 x0, s32 y0, s32 x1, s32 y1);
+void draw_a_clipped_four_zone_wall_0(s32 x, s32 y, const TbSprite *const spr, s32 x0, s32 y0, s32 x1, s32 y1);
 void draw_a_clipped_four_zone_wall_1(s32 x, s32 y, const s32 cell, s32 x0, s32 y0, s32 x1, s32 y1);
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
-void create_overlay_sprite(const TbSprite *sprite, const TbSprite *shadow, const TbSprite *out);
+void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSprite *dst);
 
 void process_tracking_windows(void);
-s8 compute_cell_precedence(const s8 i, Thing *w);
+s8 compute_cell_precedence(const s8 row, Thing *t);
 s8 check_obscuring_column(const s8 row, s8 x, s8 y);
 s8 record_covering_cell(const s8 row, const s16 pos);
 void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const s32 h);
@@ -45,22 +45,22 @@ void draw_emergency(void);
 void draw_cell_no(s32 cell, u8 colour);
 void set_map_cur_and_mcur_x_and_y(void);
 void refresh_wscreen(void);
-void copy_bscreen_window_to_wscreen_mk1(const s32 x, const s32 y, const s32 w, const s32 h, const s16 a, const s16 b);
+void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1, const s32 y1, const s16 dx, const s16 dy);
 void draw_window_not_using_bscreen(const u8 win);
-void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 w0, s32 h0, s32 x1, s32 y1, s32 w1, s32 h1);
-void remove_old_window_image_from_wscreen(s32 x0, s32 y0, s32 w0, s32 h0, s32 x1, s32 y1, s32 w1, s32 h1);
-void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 x, s32 y, s32 w, s32 h);
-void draw_boundry(const u8 win, s32 x, s32 y, s32 w, s32 h);
-void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x, s32 y, s32 w, s32 h);
-void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x, s32 y, s32 w, s32 h);
-void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, const s32 a, const s32 b);
+void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1, s32 ny1);
+void remove_old_window_image_from_wscreen(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1, s32 ny1);
+void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1);
+void draw_boundry(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1);
+void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1);
+void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1);
+void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, const s32 lx, const s32 ly);
 void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, const s32 cell);
 
 extern "C" {
 extern s16 D_001567b0[8];
 extern CellLink draw_precedence[];
-void fn_000c9be0(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
-void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *sprite, s32 colour);
+void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, s32 colour);
 void draw_all_windows(void);
 void fn_000a6c7c(void);
 void fn_000a6ca4(void);
@@ -92,7 +92,7 @@ void draw_it(void)
     draw_menus();
     draw_popup_icons();
     draw_emergency();
-    if (!debug.unknownd7)
+    if (!debug.suppress_help)
         compute_help_text(0, 0, 3);
     if (gamevar.mouse_mode == MM_BLUEPRINT)
         draw_cell_no(othervar.mouse_cell, color.red);
@@ -140,14 +140,14 @@ void fn_000a6ca4(void)
 }
 
 // Draws view window win through the background buffer: if nothing changed (not
-// moved or resized, window.fde 0 and unchanged, othervar.full_redraw clear) only the
+// moved or resized, window.blank 0 and unchanged, othervar.full_redraw clear) only the
 // dirty cells are copied; otherwise the floor and walls are redrawn into
 // bscreen and copied whole. Then draws the things on top and records the
 // window's position and zone as drawn.
 // FUNCTION: 0x000a6cf0
 void draw_window_using_bscreen(u8 win)
 {
-    if ((((window.scrolled[win] == 0 && window.zone_changed[win] == 0) && window.fe1[win] == window.fde[win]) && window.fde[win] == 0) && !othervar.full_redraw) {
+    if ((((window.scrolled[win] == 0 && window.zone_changed[win] == 0) && window.prev_blank[win] == window.blank[win]) && window.blank[win] == 0) && !othervar.full_redraw) {
         refresh_wscreen();
     } else {
         s32 x;
@@ -187,7 +187,7 @@ void draw_window_using_bscreen(u8 win)
     window.prev_zone_y[win] = window.zone_y[win];
     window.prev_zone_x1[win] = window.zone_x1[win];
     window.prev_zone_y1[win] = window.zone_y1[win];
-    window.fe1[win] = window.fde[win];
+    window.prev_blank[win] = window.blank[win];
     window.zone_changed[win] = 0;
     window.scrolled[win] = 0;
 }
@@ -205,7 +205,7 @@ void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win)
 }
 
 // Draws secondary view window win straight onto the work screen (floor, walls
-// and things, unless window.fde is set), with its border, and records its
+// and things, unless window.blank is set), with its border, and records its
 // position and zone as drawn.
 // FUNCTION: 0x000a71bc
 void draw_window_not_using_bscreen(const u8 win)
@@ -213,7 +213,7 @@ void draw_window_not_using_bscreen(const u8 win)
     set_all_refresh_zones_in_window(window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win], 2);
     if (window.zone_changed[win] == 1)
         set_all_refresh_zones_in_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win], 3);
-    if (window.fde[win] == 0)
+    if (window.blank[win] == 0)
         draw_all_mk7_selective_sprites_wscreen(win, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
     draw_boundry(win, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
     window.prev_scroll_x[win] = window.scroll_x[win];
@@ -249,7 +249,7 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
     if (y1 > y0) {
         if (x0 < nx0) {
             LbDrawBox(x0, y0, nx0 - x0, y1 - y0, colour);
-            if (window.fde[window.bscreen_window] == 0) {
+            if (window.blank[window.bscreen_window] == 0) {
                 find_common_window(x0, y0, nx0, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
                                    window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
                 if (info.clip_empty == 0)
@@ -258,7 +258,7 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
         }
         if (x1 > nx1) {
             LbDrawBox(nx1, y0, x1 - nx1, y1 - y0, colour);
-            if (window.fde[window.bscreen_window] == 0) {
+            if (window.blank[window.bscreen_window] == 0) {
                 find_common_window(nx1, y0, x1, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
                                    window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
                 if (info.clip_empty == 0)
@@ -269,7 +269,7 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
     if (x1 > x0) {
         if (y0 < ny0) {
             LbDrawBox(x0, y0, x1 - x0, ny0 - y0, colour);
-            if (window.fde[window.bscreen_window] == 0) {
+            if (window.blank[window.bscreen_window] == 0) {
                 find_common_window(x0, y0, x1, ny0, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
                                    window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
                 if (info.clip_empty == 0)
@@ -278,7 +278,7 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
         }
         if (y1 > ny1) {
             LbDrawBox(x0, ny1, x1 - x0, y1 - ny1, colour);
-            if (window.fde[window.bscreen_window] == 0) {
+            if (window.blank[window.bscreen_window] == 0) {
                 find_common_window(x0, ny1, x1, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
                                    window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
                 if (info.clip_empty == 0)
@@ -584,7 +584,7 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
             for (i = 0; i < line_len; i++) {
                 m = &map[c];
                 if ((((x >= 0 && x < 0x80) && y >= 0) && y < 0x80) && ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0))) {
-                    if (m->flags & 0x20) {
+                    if (m->flags & MAP_BIG_CELL) {
                         s8 prec;
 
                         prec = compute_cell_precedence(i, &thing[m->first]);
@@ -895,20 +895,20 @@ void adjust_big_cell_flag(const u16 cell)
         case THING_STAFF:
             obj = &thing[t->object];
             if (obj > thing && (u16)(t - thing) == obj->user) {
-                map[cell].flags |= 0x20;
+                map[cell].flags |= MAP_BIG_CELL;
                 return;
             }
             break;
         case THING_OBJECT:
             shape = objects[t->subtype].shapes[t->facing];
             if (shapes[shape].count > 1) {
-                map[cell].flags |= 0x20;
+                map[cell].flags |= MAP_BIG_CELL;
                 return;
             }
             break;
         }
     }
-    map[cell].flags &= ~0x20;
+    map[cell].flags &= ~MAP_BIG_CELL;
 }
 
 // Returns the scan cell that already covers the position x,y relative to
@@ -978,7 +978,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
     for (; t > thing; t = &thing[t->cell_next]) {
         switch (t->type) {
         case THING_STAFF:
-            if (t->state == 0x2a || t->state == 0x2e)
+            if (t->state == 0x2a || t->state == SS_APPLICANT)
                 break;
             obj = &thing[t->object];
             if (obj > thing && (u16)(t - thing) == obj->user) {
@@ -1003,7 +1003,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
                 return v;
             break;
         case THING_PATIENT:
-            if (t->state == 0x28)
+            if (t->state == PS_MERGED)
                 break;
             obj = &thing[t->object];
             if (obj > thing && (u16)(t - thing) == obj->user) {
@@ -1033,7 +1033,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
             s16 pos;
 
             shape = objects[t->subtype].shapes[t->facing];
-            if (t->state == 4)
+            if (t->state == OS_IN_USE)
                 break;
             for (k = 0; k < shapes[shape].count; k++) {
                 pos = shapes[shape].points[k];

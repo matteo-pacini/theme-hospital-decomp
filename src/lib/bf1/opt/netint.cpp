@@ -506,10 +506,10 @@ TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *play
     sequenceNumber = 15;
     if (spPtr->Start(session, name, data) == Lb_OK) {
         if (!runningTwoPlayerModel) {
-            SendSystemUserMessage(0, MSG_TYPE_0, 0, 0);
+            SendSystemUserMessage(0, MSG_TYPE_PLAYER_MAP, 0, 0);
             waitingForPlayerMapResponse = 1;
             while (waitingForPlayerMapResponse) {
-                spPtr->Receive(8);
+                spPtr->Receive(RECV_ALL);
                 if (waitingForPlayerMapResponse) {
                     if (LbTimerClock() - start > 10000) {
                         waitingForPlayerMapResponse = 0;
@@ -607,7 +607,7 @@ static TbError StartMultiPlayerExchange(void *buf)
 
     ret = Lb_FAIL;
     localDataPtr = buf;
-    spPtr->Receive(6);
+    spPtr->Receive(RECV_ADD_PLAYER | RECV_DELETE_PLAYER);
     for (i = 0; i < maximumPlayers; i++) {
         if (clientDataTable[i].active)
             clientDataTable[i].got_data = 0;
@@ -619,7 +619,7 @@ static TbError StartMultiPlayerExchange(void *buf)
     if (localPlayerId == hostId) {
         ret = Lb_OK;
     } else {
-        EncodeMessageStub(buf, exchangeSize - 4, MSG_TYPE_0, sequenceNumber);
+        EncodeMessageStub(buf, exchangeSize - 4, MSG_TYPE_MULTIPLAYER, sequenceNumber);
         if (spPtr->Send(hostId, buf) == Lb_OK)
             ret = Lb_OK;
         else
@@ -667,7 +667,7 @@ static TbError CompleteMultiPlayerExchange(void *buf)
         gotCompositeData = 0;
         do {
             old_host = hostId;
-            spPtr->Receive(8);
+            spPtr->Receive(RECV_ALL);
             if (old_host != hostId)
                 host_changed = 1;
             if (!host_changed) {
@@ -699,7 +699,7 @@ static TbError CompleteMultiPlayerExchange(void *buf)
                     }
                     keep_going = 0;
                 } else {
-                    EncodeMessageStub(buf, exchangeSize - 4, MSG_TYPE_0, sequenceNumber);
+                    EncodeMessageStub(buf, exchangeSize - 4, MSG_TYPE_MULTIPLAYER, sequenceNumber);
                     if (spPtr->Send(hostId, buf) == Lb_OK)
                         ret = Lb_OK;
                     else
@@ -909,7 +909,7 @@ static TbError HostDataCollection(void)
                 actualTimeout = basicTimeout * (retries + 1);
                 basicTimeout += 100;
             }
-            spPtr->Receive(8);
+            spPtr->Receive(RECV_ALL);
         }
     } while (keep_going);
     return ret;
@@ -925,7 +925,7 @@ static TbError HostDataBroadcast(void)
     u32 i;
 
     ret = Lb_OK;
-    EncodeMessageStub(exchangeBuffer, exchangeSize * maximumPlayers - 4, MSG_TYPE_0, sequenceNumber);
+    EncodeMessageStub(exchangeBuffer, exchangeSize * maximumPlayers - 4, MSG_TYPE_MULTIPLAYER, sequenceNumber);
     memcpy(compositeBuffer, exchangeBuffer, exchangeSize * maximumPlayers);
     for (i = 0; i < maximumPlayers; i++) {
         if (clientDataTable[i].active && clientDataTable[i].id != hostId
@@ -1180,7 +1180,7 @@ void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
     else if (seq != sequenceNumber)
         ok = 0;
     if (ok) {
-        EncodeMessageStub(localDataPtr, exchangeSize - 4, MSG_TYPE_0, sequenceNumber);
+        EncodeMessageStub(localDataPtr, exchangeSize - 4, MSG_TYPE_MULTIPLAYER, sequenceNumber);
         if (spPtr->Send(id, localDataPtr) != Lb_OK)
             fn_000c20c0("  WARNING network: RequestExchangeDataMsgCallback() failure on SP::Send()\n");
     } else {
@@ -1252,7 +1252,7 @@ void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
     if (msg == 0 || size == 0)
         return;
     switch (*(TbMessageType *)msg) {
-    case MSG_TYPE_0:
+    case MSG_TYPE_PLAYER_MAP:
         PlayerMapMsgHandler(id, (u8 *)msg + 1, size - 1);
         break;
     default:
@@ -1296,7 +1296,7 @@ static void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
     u32 table_size = maximumPlayers * sizeof(__4kqpm7ClientDataEntry);
 
     if (size == 0) {
-        SendSystemUserMessage(id, MSG_TYPE_0, clientDataTable, table_size);
+        SendSystemUserMessage(id, MSG_TYPE_PLAYER_MAP, clientDataTable, table_size);
     } else if (waitingForPlayerMapResponse) {
         if (size == table_size) {
             memcpy(clientDataTable, buf, size);

@@ -29,7 +29,7 @@ void doctor_carries_out_examination(Thing *doctor)
         doctor->room->staff_free = 1;
         break;
     case 30:
-        if (patient->state != 0x20) {
+        if (patient->state != PS_SLAVE_READY) {
             othervar.rand_pct = old_newrand() % 100;
             if (othervar.rand_pct >= 30 && othervar.rand_pct < 32) {
                 doctor->next_state = SS_DOCTOR_EXAMINES;
@@ -39,12 +39,12 @@ void doctor_carries_out_examination(Thing *doctor)
             break;
         }
         doctor->substate++;
-        patient->next_state = 0x20;
+        patient->next_state = PS_SLAVE_READY;
         set_complex(patient, 0x78, 0);
         process_person_complex(patient);
         break;
     case 31:
-        if (patient->state != 0x20) {
+        if (patient->state != PS_SLAVE_READY) {
             othervar.rand_pct = old_newrand() % 100;
             if (othervar.rand_pct >= 33 && othervar.rand_pct < 35) {
                 doctor->next_state = SS_DOCTOR_EXAMINES;
@@ -75,7 +75,7 @@ void doctor_carries_out_examination(Thing *doctor)
                     if (othervar.rand_pct >= 35 && othervar.rand_pct < 50) {
                         patient->anim_speed = gbv.peep_anim_speed;
                         doctor->substate = 33;
-                        patient->next_state = 0x20;
+                        patient->next_state = PS_SLAVE_READY;
                         set_complex(patient, 0xbe, 0);
                         process_person_complex(patient);
                         doctor->next_state = SS_DOCTOR_EXAMINES;
@@ -96,15 +96,15 @@ void doctor_carries_out_examination(Thing *doctor)
         process_staff_complex(doctor);
         break;
     case 33:
-        if (patient->state != 0x20)
+        if (patient->state != PS_SLAVE_READY)
             break;
         doctor->substate = 40;
-        patient->next_state = 0x20;
+        patient->next_state = PS_SLAVE_READY;
         set_complex(patient, 0xb4, 0);
         process_person_complex(patient);
         break;
     case 40:
-        if (patient->state != 0x20)
+        if (patient->state != PS_SLAVE_READY)
             break;
         doctor->state = SS_DOCTOR_IN_MACHINE_ROOM;
         doctor->slave = 0;
@@ -117,7 +117,7 @@ void doctor_carries_out_examination(Thing *doctor)
         if (patient->subtype == 3) {
             if (set_complex(patient, 500, 0))
                 process_person_complex(patient);
-            patient->next_state = 0x20;
+            patient->next_state = PS_SLAVE_READY;
             if (find_object(doctor->x.tile + (doctor->y.tile << 7), OBJ_BOOKCASE, 1, 0x96, doctor->owner)) {
                 if (set_complex(doctor, 0x370, 0))
                     process_staff_complex(doctor);
@@ -173,9 +173,9 @@ void doctor_carries_out_examination(Thing *doctor)
                       - D_001567b0[5];
         break;
     case 241:
-        if (patient->state != 0x20)
+        if (patient->state != PS_SLAVE_READY)
             break;
-        patient->state = 0x28;
+        patient->state = PS_MERGED;
         effect_illness(patient, ILL_ALIEN_DNA, 1);
         set_complex(doctor, 0x488, 0);
         doctor->next_state = SS_DOCTOR_EXAMINES;
@@ -209,9 +209,9 @@ void doctor_carries_out_examination(Thing *doctor)
             Thing *assistant;
 
             assistant = &thing[doctor->work_target];
-            if (assistant->state != 0x18)
+            if (assistant->state != SS_ASSISTANT_READY)
                 break;
-            assistant->next_state = 0x18;
+            assistant->next_state = SS_ASSISTANT_READY;
             set_complex(assistant, 0x33e, 0);
             process_staff_complex(assistant);
             doctor->substate = 72;
@@ -222,7 +222,7 @@ void doctor_carries_out_examination(Thing *doctor)
             Thing *assistant;
 
             assistant = &thing[doctor->work_target];
-            if (assistant->state != 0x18)
+            if (assistant->state != SS_ASSISTANT_READY)
                 break;
             assistant->next_state = SS_DOCTOR_IN_MACHINE_ROOM;
             set_complex(assistant, 0x352, 0);
@@ -310,14 +310,14 @@ void doctor_carries_out_examination(Thing *doctor)
         obj->split_height = 0;
         break;
     case 191:
-        if (patient->state != 0x20)
+        if (patient->state != PS_SLAVE_READY)
             break;
         transform_peep_who(patient, 4);
         doctor->next_state = SS_DOCTOR_EXAMINES;
         set_complex(doctor, 0x230, 0);
         process_staff_complex(doctor);
         doctor->substate = 181;
-        patient->state = 0x28;
+        patient->state = PS_MERGED;
         break;
     case 200:
         {
@@ -414,7 +414,7 @@ void doctor_carries_out_examination(Thing *doctor)
             set_complex(doctor, 0x230, 0);
             process_staff_complex(doctor);
             doctor->substate = 181;
-            patient->state = 0x28;
+            patient->state = PS_MERGED;
         } else {
             obj->split_height -= 10;
         }
@@ -534,7 +534,7 @@ void effect_illness(Thing *patient, u8 illness, u8 cured)
         } else {
             patient->layers[0] = 1;
             patient->orig_subtype = patient->subtype;
-            patient->subtype = 0xe;
+            patient->subtype = PK_ALIEN;
         }
         break;
     case ILL_SERIOUS_RADIATION:
@@ -552,7 +552,7 @@ void effect_illness(Thing *patient, u8 illness, u8 cured)
         if (patient->owner == player)
             advisor.event_flags |= 0x40;
         allhosps[patient->owner].rooms[patient->illness].cured++;
-        reputation_affected(patient->illness, 0, 0, patient->owner, 0);
+        reputation_affected(patient->illness, REP_CURED, 0, patient->owner, 0);
         patient->known_illness = patient->illness = 0;
         if (patient->contagion)
             clean_contagious_peep(patient);

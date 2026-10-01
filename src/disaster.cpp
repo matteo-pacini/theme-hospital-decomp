@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 extern "C" {
-s32 remove_object(Thing *w, u8 owner);
+s32 remove_object(Thing *obj, u8 owner);
 #pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
 }
 
@@ -32,9 +32,9 @@ void machine_disaster(Thing *machine)
     remove_expertise_room(room);
     room_deleted_update_listhead(room);
     room->type = ROOM_DESTROYED;
-    room->state = 6;
-    allhosps[machine->owner].fc98++;
-    reputation_affected(0, 0xb, 0, machine->owner, 0);
+    room->state = RS_CLOSED;
+    allhosps[machine->owner].mishaps++;
+    reputation_affected(0, REP_MACHINE_EXPLODED, 0, machine->owner, 0);
     if (machine->owner == player)
         award_counts.machine_exploded = 1;
     restart_entire_queue(room);
@@ -145,7 +145,7 @@ void create_explosion(u16 tile, u16 anim)
             id = create_bang(id, tile, dx, dy, dz, anim);
         }
     }
-    play_sound(10, SFX_BOMB, -1, -1);
+    play_sound(SNDSRC_GENERAL, SFX_BOMB, -1, -1);
 }
 
 // Wrecks room around tile within a random radius of 4-7 tiles: removes the
@@ -234,7 +234,7 @@ void blast_things(Map *m)
 restart:
     for (obj = &thing[m->first]; obj > thing; obj = &thing[obj->cell_next]) {
         if (obj->type == THING_OBJECT) {
-            debris = objects[obj->subtype].unknown20[0];
+            debris = objects[obj->subtype].debris_lo;
             facing = obj->facing;
             remove_object(obj, obj->owner);
             if (debris)
@@ -370,7 +370,7 @@ void generate_disaster(u8 owner)
 }
 
 // Applies mode to every patient of owner (-1 for all): 0 makes them about to
-// vomit, 1 and 2 set and clear flags bit 0x200 for those whose kind allows it,
+// vomit, 1 and 2 set and clear PF_QUAKE_SHAKEN for those whose kind allows it,
 // 3 kills them.
 // FUNCTION: 0x00075ed0
 void disaster_peeps(u8 mode, s8 owner)
@@ -382,9 +382,9 @@ void disaster_peeps(u8 mode, s8 owner)
             if (mode == 0)
                 peep->nausea = (u16)gbv.vomit_limit + 10;
             else if (mode == 1 && abilities[peep->subtype][5])
-                peep->flags |= 0x200;
+                peep->flags |= PF_QUAKE_SHAKEN;
             else if (mode == 2 && abilities[peep->subtype][5])
-                peep->flags &= ~0x200;
+                peep->flags &= ~PF_QUAKE_SHAKEN;
             else if (mode == 3)
                 change_health(peep, -peep->health);
         }

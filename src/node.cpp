@@ -2,7 +2,7 @@
 
 extern "C" {
 
-void remove_node(Thing *w);
+void remove_node(Thing *node);
 
 }
 

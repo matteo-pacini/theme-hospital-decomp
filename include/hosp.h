@@ -61,7 +61,7 @@ struct RoomInfo {
     union {
         u16 pos;
         struct {
-            u8 f8;
+            u8 pos_lo;
             union {
                 u8 unknown9[3];
                 struct {
@@ -690,15 +690,24 @@ struct Equipment {
     u8 upgrade_level[13];
 };
 
+/*
+ * A hospital's state for one object kind (allhosps[].object_stats).
+ */
 struct ObjectStats {
+    // 0x0: Purchase price.
     s32 cost;
-    union {
-        u8 unknown4[4];
-        u32 available;
-    };
+    // 0x4: Month the object becomes available (from objects[].when_avail or
+    // research), 0 for none pending.
+    u32 available;
+    // 0x8: Strength given to new objects of this kind.
     u16 strength;
-    u16 fA;
-    u8 unknownC[2];
+    // 0xa: Incremented for each one placed (inc_hardware_stats), and also in
+    // remove_object_from_map.
+    u16 count;
+    // 0xc: Same byte as equipment[].available: 1 once buyable.
+    u8 equip_available;
+    // 0xd: Same byte as equipment[].upgrade_level[0].
+    u8 upgrade_level;
 };
 
 struct ThingPage {
@@ -729,7 +738,7 @@ struct ComputerPlayer {
     u8 skill;
     // 0x1: StaffLevels key; column of staff_max_nbs used for staff numbers.
     u8 staff_levels;
-    u8 unknown2;
+    u8 luck;
     // 0x3: Speed key; base pace of actions (higher waits longer).
     u8 speed;
     // 0x4: Comfort key; column of object_nbs used for comfort objects.
@@ -765,43 +774,57 @@ struct BuildPoint {
     u8 y;
 };
 
+/*
+ * A hospital's room-building state (allhosps[].build): the blueprint being
+ * dragged, the room being edited and its objects.
+ */
 struct BuildState {
     union {
-        u8 unknown0[8];
         struct {
+            // 0x0: Blueprint's top-left tile x.
             u8 x0;
+            // 0x1: Blueprint's top-left tile y.
             u8 y0;
+            // 0x2: Blueprint's bottom-right tile x (inclusive).
             u8 x1;
+            // 0x3: Blueprint's bottom-right tile y (inclusive).
             u8 y1;
         };
         struct {
+            // 0x0: Same bytes as x0, y0.
             BuildPoint start;
+            // 0x2: Same bytes as x1, y1.
             BuildPoint end;
+            // 0x4: Corner of the blueprint held fixed while the player drags
+            // it.
             BuildPoint anchor;
+            // 0x6: Set to the bottom-right corner when an edge drag (drag 2)
+            // starts.
             BuildPoint pivot;
         };
     };
+    // 0x8: room_info index of the room being built or edited.
     u16 room;
-    union {
-        u8 unknownA[3];
-        u16 edit_room;
-        struct {
-            u8 unknownA_[2];
-            u8 drag;
-        };
-    };
+    // 0xa: room_info index of the room under the pointer while editing, or 0.
+    u16 edit_room;
+    // 0xc: 0 until a blueprint drag starts, then the drag mode (1 or 2).
+    u8 drag;
+    // 0xd: Room type (ROOM_*) being built.
     u8 room_type;
-    union {
-        u8 unknownE[5];
-        struct {
-            u8 draw_mode;
-            u16 door_tile;
-            u8 door_type;
-            u8 door_state;
-        };
-    };
+    // 0xe: Set to 1 when a blueprint drag starts.
+    u8 draw_mode;
+    // 0xf: Tile where the door is being placed.
+    u16 door_tile;
+    // 0x11: doortype[] index of the door being placed.
+    u8 door_type;
+    // 0x12: Kind of door being placed (from rooms[].door_kind); 2 is a window.
+    u8 door_state;
+    // 0x13: Object ids the player picked up and may place again.
     u16 objects[20];
+    // 0x3b: Building step (2 while waiting for the room to clear).
     u8 state;
+    // 0x3c: Map overlay of the blueprint top-left tile before the blueprint was
+    // marked.
     u8 saved_overlay;
 };
 
@@ -835,7 +858,7 @@ struct AllHosps {
         struct {
             u8 unknown45_[0x90];
             s32 drinks_income;
-            s32 fd9;
+            s32 jukebox_income;
         };
         struct {
             u8 unknown45a_[0x90];
@@ -991,7 +1014,7 @@ struct AllHosps {
     u8 heating_broken;
     u8 object_count;
     u8 machine_count;
-    u16 fc98;
+    u16 mishaps;
     u16 amenity_count;
     u16 staff_count;
     // 0xc9e: Staff counts: [0] nurses, [1] doctors (surgeons included), [2]
@@ -1017,14 +1040,6 @@ struct AllHosps {
         struct {
             u8 unknownf6e[8];
             u16 edited_room;
-            union {
-                u8 unknown11b9[3];
-                u16 f11b9;
-            };
-            u8 f11bc;
-            u8 unknown11bd[5];
-            u16 f11c2[0x14];
-            u8 unknown11ea[4];
         };
         BuildState build;
         struct {
@@ -1170,31 +1185,53 @@ struct PlayerCall {
 
 struct Window;
 
+/*
+ * A button or slider of a Window, in its linked list.
+ */
 struct WindowButton {
+    // 0x0: x relative to the window.
     s16 x;
+    // 0x2: y relative to the window.
     s16 y;
+    // 0x4: Width.
     u16 width;
+    // 0x6: Height.
     u16 height;
+    // 0x8: Bits: 1 disabled (drawn with disabled_sprite and not processed), 2
+    // held, 4 pressed (toggled when 0x4000000 is set), 0x200000 cycles the
+    // window's size; the others choose which mouse events press it.
     u32 flags;
+    // 0xc: Next button of the window, or null.
     WindowButton *next;
+    // 0x10: Called with the window when the button is pressed.
     void (*callback)(Window *w);
+    // 0x14: Normal sprite (button_sprite index), drawn at x, y.
     s32 sprite;
-    s32 sprite18;
-    s32 sprite1c;
+    // 0x18: Sprite drawn while held or pressed; a slider's knob.
+    s32 pressed_sprite;
+    // 0x1c: Sprite drawn while disabled.
+    s32 disabled_sprite;
     union {
         struct {
-            s16 x20;
-            s16 y22;
+            // 0x20: x of disabled_sprite relative to the window.
+            s16 disabled_x;
+            // 0x22: y of disabled_sprite.
+            s16 disabled_y;
         };
+        // 0x20: A slider's value.
         s32 *value;
     };
     union {
         struct {
-            s16 x24;
-            s16 y26;
+            // 0x24: x of pressed_sprite relative to the window.
+            s16 pressed_x;
+            // 0x26: y of pressed_sprite.
+            s16 pressed_y;
         };
+        // 0x24: A slider's minimum value.
         s32 min;
     };
+    // 0x28: A slider's maximum value.
     s32 max;
 };
 
@@ -1210,124 +1247,188 @@ struct WindowButtonData {
     WindowButton *next;
     void (*callback)(Window *w);
     s32 sprite;
-    s32 sprite18;
-    s32 sprite1c;
-    s16 x20;
-    s16 y22;
-    s16 x24;
-    s16 y26;
+    s32 pressed_sprite;
+    s32 disabled_sprite;
+    s16 disabled_x;
+    s16 disabled_y;
+    s16 pressed_x;
+    s16 pressed_y;
     s32 max;
 };
 
+/*
+ * A window of the in-game window system (winproc.cpp, windraw.cpp);
+ * open_windows[] holds up to two, front first. It has a normal, a minimised
+ * and a maximised size.
+ */
 struct Window {
+    // 0x0: Screen x of the top-left corner.
     s16 x;
+    // 0x2: Screen y of the top-left corner.
     s16 y;
-    s16 x4;
-    s16 y6;
+    // 0x4: x saved on leaving the normal size, restored on returning to it.
+    s16 restore_x;
+    // 0x6: y saved with restore_x.
+    s16 restore_y;
+    // 0x8: Width at the normal size.
     u16 width;
+    // 0xa: Height at the normal size.
     u16 height;
-    u16 widthC;
-    u16 heightE;
-    u16 width10;
-    u16 height12;
+    // 0xc: Width while minimised (flags 0x80).
+    u16 min_width;
+    // 0xe: Height while minimised.
+    u16 min_height;
+    // 0x10: Width while maximised (flags 0x100).
+    u16 max_width;
+    // 0x12: Height while maximised.
+    u16 max_height;
+    // 0x14: Bits: 1 no frame (only marks its area for redraw), 2 and 4 frame
+    // style 0 and 1 (draw_a_window); 0x20 and 0x40 centre horizontally and
+    // vertically; 0x80 minimised; 0x100 maximised; 0x600 on the front window
+    // stops OpenWindow.
     u16 flags;
     u8 unknown16[4];
+    // 0x1a: First of the window's buttons (linked through WindowButton.next).
     WindowButton *buttons;
+    // 0x1e: Draws the window's contents after its frame and buttons; may be
+    // null.
     void (*draw)(Window *w);
 };
 
+/*
+ * One entry of expertise[], indexed by illness (ILL_*): how the illness or
+ * diagnosis is treated and researched. Level-file keys expertise.* set some
+ * fields (vloader.cpp).
+ */
 struct Expertise {
+    // 0x0: Skill bits (SKILL_*) of the staff needed to treat it.
     u16 staff_mask;
-    union {
-        u8 unknown2[2];
-        u16 start_price;
-    };
+    // 0x2: StartPrice key: the treatment's starting price.
+    u16 start_price;
+    // 0x4: Object kind (OBJ_*) the treatment uses; OBJ_PHARMACY_CABINET for
+    // drug cures.
     u8 kind;
-    union {
-        u8 unknown5[3];
-        struct {
-            u8 unknown5_[2];
-            u8 needs_ward;
-        };
-    };
-    u8 unknown8;
+    // 0x5: What research can buy for it: 1 a drug, 2 a treatment machine, 3 a
+    // diagnosis machine, 0 nothing.
+    u8 research_type;
+    // 0x6: possible_diagnoses index listing the treatments a doctor may guess
+    // for it.
+    u8 diag_set;
+    // 0x7: Bit 0 set: patients go to the ward (ILL_DIAG_WARD) before this
+    // treatment.
+    u8 needs_ward;
+    // 0x8: What setup_next_treatment does after it: 0 clears the treatment, 1
+    // sends the patient back to the GP, 2 cures (or kills) them, 4 diagnoses
+    // them, 5 moves on to next_treatment (else the GP); 3 nothing.
+    u8 outcome;
+    // 0x9: Room type (ROOM_*) where it is treated.
     u8 category;
-    union {
-        u8 unknown10[9];
-        struct {
-            u8 unknown10_[2];
-            u32 cost;
-        };
-    };
+    // 0xa: ContRate key: chance a new patient with it is contagious
+    // (add_contagiousness).
+    u8 cont_rate;
+    // 0xb: Nonzero: never made contagious or spread by an epidemic, and a
+    // failed drug treatment kills the patient (administer_drugs).
+    u8 not_contagious;
+    // 0xc: RschReqd key: research points needed for its drug or machine, and
+    // the base of the improvement costs.
+    u32 cost;
+    // 0x10: MaxDiagDiff key: upper bound of a new patient's random
+    // diagnosis_handicap.
+    u16 max_diag_diff;
+    // 0x12: Known key: 1 if the hospital knows it from the start (copied to
+    // rooms[].discovered).
+    u8 known;
 };
 
+/*
+ * One entry of objects[], indexed by object kind (OBJ_*): an object's fixed
+ * properties. Level-file keys objects.* set some fields (vloader.cpp).
+ */
 struct ObjectControl {
-    union {
-        u8 unknown0[2];
-        u16 name;
-    };
+    // 0x0: Index into object_names.
+    u16 name;
+    // 0x2: shapes[] index of the object's footprint for each facing; 0 when it
+    // cannot face that way.
     u8 shapes[4];
-    union {
-        u8 unknown6[8];
-        struct {
-            u8 unknown6_[2];
-            s32 cost;
-        };
-        struct {
-            u8 unknown6c_[6];
-            u16 when_avail;
-        };
-    };
+    // 0x6: face_dirns index giving the direction a user faces for each object
+    // facing, or -1.
+    u8 face_dirn;
+    // 0x7: StartAvail key: 1 if buyable from the start (copied to
+    // object_stats[].equip_available).
+    u8 start_avail;
+    // 0x8: StartCost key: purchase price.
+    s32 cost;
+    // 0xc: WhenAvail key: month it becomes available (copied to
+    // object_stats[].available).
+    u16 when_avail;
+    // 0xe: start[] index of the object's frames, plus the facing.
     u16 anim_start;
-    union {
-        u8 unknown10[4];
-        struct {
-            u8 unknown10_[2];
-            u16 repair_aniseq;
-        };
-        u16 preview_anim;
-    };
+    // 0x10: Not read by the game code.
+    u16 preview_anim;
+    // 0x12: Not read by the game code.
+    u16 repair_aniseq;
+    // 0x14: Object category; placing one of category 7 counts as a reception
+    // desk for the AI (computer_place_object).
     u8 category;
+    // 0x15: Copied to Thing.use_style when the object is created.
     u8 use_style[1];
+    // 0x16: Not read by the game code.
     s8 walls;
+    // 0x17: next_part[] index of the second part of a two-part object, or -1.
     s8 next_part_index;
-    union {
-        u8 unknown18[4];
-        struct {
-            u16 unknown18w;
-            u16 explosion_offset;
-        };
-    };
+    // 0x18: wall_hug[] index used to place it against a wall, or -1
+    // (gamevar.place_wall_hug).
+    u8 wall_hug;
+    u8 unknown19;
+    // 0x1a: Tile offset from the machine to where its explosion starts.
+    u16 explosion_offset;
+    // 0x1c: AvailableForLevel key: 1 if the object exists in this level.
     u8 available_for_level;
+    // 0x1d: StartStrength key: a new machine's strength.
     u8 start_strength;
+    // 0x1e: start[] index of a machine's overlay frame, or 0.
     u16 overlay_anim;
     union {
-        u8 unknown20[3];
-        u16 f20;
+        // 0x20: Blueprint id (plus the facing) of the wreck an exploded machine
+        // leaves; nonzero only for machines, which the mouse and the
+        // find-machine button test it for.
+        u16 debris;
+        u8 debris_lo;
     };
+    // 0x22: Bit 0: cannot be picked up; bit 1: hovering shows panel info 6; bit
+    // 2: clicking sends no query event (0x42); bit 3: can be picked up from
+    // inside a room (radiators, extinguishers, plants).
+    u8 flags;
+    // 0x23: Thing.state a new object starts in.
     u8 initial_state;
+    // 0x24: Nonzero for machines.
     u8 is_machine;
 };
 
+/*
+ * One entry of rooms[], indexed by room type (ROOM_*): a room's fixed
+ * properties. The level-file key rooms.Cost sets cost (vloader.cpp).
+ */
 struct RoomControl {
+    // 0x0: Name index in language section 52.
     u16 id;
-    union {
-        u8 unknown2[0xa];
-        struct {
-            u8 unknown2_[6];
-            u16 doctor_skills;
-        };
-        struct {
-            u8 unknown2__[2];
-            s32 cost;
-        };
-        struct {
-            u8 unknown2a_[8];
-            u16 main_object;
-        };
-    };
+    // 0x2: Wall colour style recolour_all_rooms paints the room in (3-6; 1 and
+    // 2 none).
+    u8 wall_style;
+    // 0x3: staff_states row giving the state of a staff member placed in the
+    // room, by staff kind.
+    u8 staff_state_row;
+    // 0x4: Cost key: price of building the room.
+    s32 cost;
+    // 0x8: Skill bits of the doctor the room pages for.
+    u16 doctor_skills;
+    // 0xa: Object kind the room is built around, or 0.
+    u16 main_object;
+    // 0xc: Number of leading objects entries that must be placed.
     u8 compulsory_count;
     union {
+        // 0xd: Object kinds placed in the room; the first compulsory_count are
+        // compulsory.
         u8 objects[0x15];
         struct {
             u8 objects_[0xa];
@@ -1335,12 +1436,22 @@ struct RoomControl {
             u8 buyable[0xa];
         };
     };
+    // 0x22: Map overlay set on the floor tiles of the room while it is a
+    // blueprint.
     u8 overlay;
     u8 unknown23;
-    u8 unknown36;
+    // 0x24: 0 for double doors (init_double_doors), else a single door that
+    // patients enter straight through; copied to build.door_state.
+    u8 door_kind;
     u8 unknown25;
-    s8 f26;
-    u8 unknown27[3];
+    // 0x26: Staff kind (STAFF_*) the AI hires for the room, or -1.
+    s8 staff_kind;
+    // 0x27: Smallest blueprint width allowed.
+    u8 min_width;
+    // 0x28: Smallest blueprint height allowed.
+    u8 min_height;
+    // 0x29: Nonzero: hovering over the room's door shows its queue info.
+    u8 has_queue;
 };
 
 /*
@@ -1389,27 +1500,47 @@ struct Shapes {
     u8 use_wall_flags;
 };
 
+/*
+ * One entry of blueprint[], indexed by small-thing id: a wall, door or window
+ * piece drawn on the map.
+ */
 struct Blueprint {
+    // 0x0: start[] index of the piece's frame.
     u16 anim;
-    union {
-        u8 unknown2[6];
-        struct {
-            u16 kind;
-            u8 build_type;
-            u8 flags;
-            u8 wall_layer;
-            u8 unknown7;
-        };
-    };
+    // 0x2: Wall block (or door kind) the piece builds.
+    u16 kind;
+    // 0x4: How the piece is built (the switch in build_all_rooms); for doors,
+    // the placing direction plus 1.
+    u8 build_type;
+    // 0x5: Map cell flags set on the cell the piece stands on; build_all_rooms
+    // also tests bits 0 and 1.
+    u8 flags;
+    // 0x6: Index, from wall_n, of the cell wall byte that kind is written to.
+    u8 wall_layer;
+    // 0x7: Object kind of the door the piece shows (OBJ_DOOR,
+    // OBJ_SWING_DOOR...).
+    u8 object_kind;
 };
 
+/*
+ * One entry of doortype[]: the pieces of a door or window kind and facing.
+ */
 struct DoorInfo {
+    // 0x0: Number of tiles (and pieces) the door covers.
     u8 count;
-    u16 tiles[4];
+    // 0x1: Tile offsets of its pieces from the door tile.
+    u16 tiles[3];
+    // 0x7: start[] index of the frame drawn under the pointer while placing it.
+    u16 cursor_anim;
+    // 0x9: Blueprint ids of its pieces.
     u16 sprites[3];
+    // 0xf: Tile offset of the room's door_tile.
     u16 door1;
+    // 0x11: Tile offset of the room's door_inside_tile.
     u16 door2;
+    // 0x13: Map overlays set on its tiles.
     u16 overlays[3];
+    // 0x19: Tile offset subtracted for the overlay and preview tiles.
     u16 offset;
     // 0x1b: Nonzero for doors: placing one sets the room's two door-side tiles
     // from door1 and door2; zero for the window entries.
@@ -1425,7 +1556,7 @@ struct AnimStart {
     union {
         u16 anims[0x8c];
         struct {
-            u16 idle;
+            u16 walk;
             u8 unknown2[8];
             u16 staff_stand;
             u8 unknownC[6];
@@ -1437,10 +1568,22 @@ struct AnimStart {
     };
 };
 
+/*
+ * One entry of staff[], indexed by staff kind (STAFF_*).
+ */
 struct StaffControl {
-    u8 unknown0[4];
+    u8 unknown0[2];
+    // 0x2: MinSalary key: salary before the ability and skill additions
+    // (appraise_staff).
+    u16 min_salary;
+    // 0x4: anims[] index in staff_anim_starts of the frames shown for a new or
+    // held staff member.
     u16 anim;
-    u8 unknown6[7];
+    u8 unknown6[5];
+    // 0xb: Number of layer-5 graphic variants a new applicant picks from; 0 for
+    // none.
+    u8 layer5_count;
+    u8 unknownc;
 };
 
 struct AnimTable {
@@ -1553,6 +1696,7 @@ struct Refresh {
             s16 scroll_y;
         };
     };
+    // 0x4: The first word of the refresh box D_001567b0 declared after refresh.
     s16 x0;
 };
 
@@ -1714,11 +1858,21 @@ struct Colors {
     u8 salmon;
 };
 
+/*
+ * Received network messages shown scrolling over the view (current_text).
+ */
 struct CurrentText {
+    // 0x0: The messages, each appended as "name:text".
     char text[0x5e6];
     u8 unknown5e6[2];
 };
 
+/*
+ * The four bytes before D_001549d0 (the players' Events). packet is the base
+ * of the per-player 0xf-byte block exchanged over the network and recorded or
+ * played back each turn, so player p's block starts 4 bytes before
+ * D_001549d0[p].
+ */
 struct Packet {
     u8 unknown0[4];
 };
@@ -1776,7 +1930,9 @@ struct Game {
     };
     u8 place_blueprint;
     u8 unknown1f;
-    u8 unknown20;
+    // 0x20: room_info index of the room whose objects the local player was last
+    // sent to place.
+    u8 new_room_index;
     u8 paused;
     union {
         u8 unknown22[3];
@@ -1806,26 +1962,20 @@ struct Game {
         Blob63 buy_list;
         struct {
             u8 unknown33_[0x11];
-            u8 unknown44;
+            // 0x44: buy_list entry for OBJ_LITTER_BOMB: bombs bought and not
+            // yet placed.
+            u8 litter_bombs_to_place;
             u8 unknown45[0x2c];
             u8 buy_kind_count;
         };
         u8 buy_count[0x3f];
     };
-    union {
-        u8 unknown72[3];
-        struct {
-            u8 staff_place_ok;
-            u16 staff_cursor_anim;
-        };
-    };
+    u8 staff_place_ok;
+    u16 staff_cursor_anim;
     u16 held_staff;
     u16 held_staff_kind;
     u16 drawn_staff_kind;
-    union {
-        u8 unknown7b[0x70];
-        u16 announce[14][4];
-    };
+    u16 announce[14][4];
     u32 quake_timer;
     u8 quake_phase;
     union {
@@ -1839,7 +1989,9 @@ struct Game {
         s8 quake_ramp;
         u8 quake_ramp_u;
     };
-    u16 ff5;
+    // 0xf5: Nonzero while aliens are abducting a patient; cleared when the
+    // saucer leaves.
+    u16 abductee;
     u16 ff7;
     u8 unknownf9[4];
     EmergencyCall emergency_calls[4];
@@ -1877,7 +2029,8 @@ struct Game {
     u8 junior_rate;
     u8 rat_fest_level;
     u8 rat_fest_powerup;
-    u8 f176;
+    // 0x176: Times the player declined the next level after a win.
+    u8 win_declined_count;
     u8 prev_year_deaths;
 };
 
@@ -1931,8 +2084,11 @@ struct Statics {
     u16 help_page1_start[19];
     u16 winlose_text_start[12];
     u16 net_help_start[9];
-    u16 f56d[1];
-    u16 f56f[3];
+    // 0x56d: net_result_start indexed from 1: [n] is net_result_start[n - 1].
+    u16 net_result_base[1];
+    // 0x56f: Start of each network game result text in language group 0x43
+    // (D_0016039c).
+    u16 net_result_start[3];
     char save_root[100];
     u8 ref_general_count;
     u8 ref_good_count;
@@ -2093,8 +2249,11 @@ struct HospWindow {
             u8 scrolled[3];
             // 0xdb: Set when the zone changed since the last draw.
             u8 zone_changed[3];
-            u8 fde[3];
-            u8 fe1[3];
+            // 0xde: Set for a window that shows none of the map
+            // (open_new_window's first argument).
+            u8 blank[3];
+            // 0xe1: blank when the window was last drawn.
+            u8 prev_blank[3];
         };
         struct {
             // 0xa8: Scroll velocity, 16.16 fixed point; decays by 0xcd/0x100
@@ -2206,17 +2365,17 @@ struct Debug {
         u16 f0;
     };
     u32 last_action;
-    u8 unknownc[0xc8];
+    // 0xc: Text buffer; complex retries print a message into its second half.
+    u8 scratch_text[0xc8];
     u8 screenshot_request;
     u8 unknownd5[2];
-    u8 unknownd7;
-    union {
-        u8 unknownd8[0xa];
-        struct {
-            u8 unknownd8_[2];
-            u32 thing_count;
-        };
-    };
+    // 0xd7: Suppresses help text and the advisor and keeps the user counted as
+    // busy.
+    u8 suppress_help;
+    u8 advisor_off;
+    u8 unknownd9;
+    u32 thing_count;
+    u8 unknownde[4];
     u8 unknowne2;
     union {
         u8 unknowne3[0x25];
@@ -2236,7 +2395,9 @@ struct Debug {
         };
     };
     u16 unknown108;
-    u8 unknown10a;
+    // 0x10a: Save slot from the -G option, used by the Alt+S/Alt+L keys and
+    // loaded at start.
+    u8 save_slot;
     u8 unknown10b[0xb];
     char msg_text[0xc8];
     u8 msg_timer;
@@ -2469,7 +2630,10 @@ struct Req {
     u16 arg;
     u16 arg2;
     u8 kind;
-    u8 unknown9;
+    // 0x9: Byte argument whose use depends on the requester: the object kind
+    // being placed for requester 10, set once the staff view window is open for
+    // requester 0xc.
+    u8 arg3;
     u8 unknownA;
     u8 unknownB;
 };
@@ -2503,9 +2667,16 @@ struct Level {
     u16 scroll_max;
 };
 
+/*
+ * The current panel icon table (panel: panel_icons_normal, _over or _ratfest),
+ * an array of PanelIcon; this type is used only for the x and y of the entry
+ * at 0x62 (icon 7).
+ */
 struct Icons {
     u8 unknown0[0x62];
+    // 0x62: x of panel icon 7; origin of a text window over the panel.
     s16 x;
+    // 0x64: y of panel icon 7.
     s16 y;
 };
 
@@ -2534,17 +2705,23 @@ struct ScreenInfo {
  * (NRAdcounts), kept up to date as objects are placed and removed.
  */
 struct NonResettingAdvisorCounts {
+    // 0x0: Plants placed.
     u16 plants;
+    // 0x2: Plants needing water (handyman.cpp).
     u16 thirsty_plants;
+    // 0x4: Benches placed.
     u16 benches;
+    // 0x6: Up by 1 when a patient who wants to sit finds no free bench, down by
+    // 5 when one does.
     s32 bench_shortage;
-    union {
-        u8 unknowna[6];
-        struct {
-            u8 last_quake_size;
-            s32 plant_health_sum;
-        };
-    };
+    // 0xa: Strength of the last earthquake; the advisor quotes half of it on
+    // the Richter scale.
+    u8 last_quake_size;
+    // 0xb: Sum of the plants' health, at most 0x37 per plant; divided by plants
+    // for the averages.
+    s32 plant_health_sum;
+    u8 quake_damage_report;
+    // 0x10: Rooms opened and not since deleted.
     u8 open_rooms;
 };
 
@@ -2666,7 +2843,8 @@ struct General {
     u8 full_redraw;
     u8 unknown11[0x5];
     u8 f16;
-    u8 f17;
+    // 0x17: Set when the blueprint drawing marked a tile invalid.
+    u8 blueprint_has_invalid;
     // 0x18: Per player: the door position being placed for the blueprint is
     // invalid.
     u8 door_invalid[4];
@@ -2708,12 +2886,14 @@ struct General {
     // 0x38: Info-requester slot whose thing the main view should centre on, or
     // 0.
     u8 center_on_slot;
-    u16 f39;
+    // 0x39: Illness most recently passed on by contagion.
+    u16 last_spread_illness;
     // 0x3b: Bank balance as currently shown; rolls toward the real balance.
     s32 shown_balance;
     // 0x3f: Step (0..3) of the balance roll animation.
     u8 balance_roll_step;
-    u8 f40;
+    // 0x40: Index (across all pulldowns) of the pulldown item last clicked.
+    u8 clicked_pulldown_item;
     union {
         // 0x41: Thing under the mouse, found while drawing.
         u16 pointed_thing;
@@ -2747,7 +2927,8 @@ struct General {
     u16 queue_win_room;
     // 0x63: Selected position in that room's queue, or 0.
     u16 queue_pos;
-    u16 f65;
+    // 0x65: Map cell of the thing clicked to open the queue window, or 0.
+    u16 queue_win_cell;
     // 0x67: Queue window drag: 0 none, 1 dragging a person, 2 dragging the
     // queue bar.
     u8 queue_drag;
@@ -2755,7 +2936,8 @@ struct General {
     u8 saved_mouse_mode;
     // 0x69: Set when the town overhead map must be redrawn.
     u8 town_map_dirty;
-    u8 f6a;
+    // 0x6a: Heating level last requested on the town screen.
+    u8 pending_heating_level;
     union {
         s32 f6b;
         u32 f6b_u32;
@@ -2846,12 +3028,11 @@ struct General {
     s16 help_close_x;
     // 0x8aa: y of the close icon of the composite help box.
     s16 help_close_y;
-    union {
-        // 0x8ac: Current help hotspot (resvars.help_hotspots index), 0 none.
-        u16 help_hotspot;
-        s16 f8ac_s16a[2];
-        u16 f8ac_u16a[2];
-    };
+    // 0x8ac: Current help hotspot (resvars.help_hotspots index), 0 none.
+    u16 help_hotspot;
+    // 0x8ae: Countdown decremented each turn while positive; cleared when a
+    // receptionist finishes or abandons calling a patient.
+    s16 recept_call_timer;
     // 0x8b0: Set while the fast-forward key is held; turns run without the
     // speed delay.
     u8 turbo_key;
@@ -3183,7 +3364,7 @@ struct Balance {
     // 0xfc: Diagnosis progress at which a patient counts as diagnosed;
     // percentages of diagnosis are taken against it.
     u16 diagnosis_complete;
-    s16 ffe;
+    s16 diagnosis_hopeless;
     u16 q_points;
     u16 dist_points;
     u16 no_staff_points;
@@ -3214,7 +3395,7 @@ struct Balance {
     u16 autopsy_rsch_percent;
     u8 unknown13a[2];
     u8 alloc_rand;
-    u8 unknown13d;
+    u8 alloc_total_rep;
     u8 alloc_ind_rep;
     u8 alloc_delay;
     u8 drug_improve_rate;
@@ -3254,7 +3435,7 @@ struct Balance {
     u8 rsch_improve_cost_percent;
     u8 rsch_improve_inc_percent;
     u8 unknown15c[2];
-    u16 f15e[1];
+    u16 ins_control_base[1];
 };
 
 /*
@@ -3533,14 +3714,18 @@ struct ScoreRatings {
     u16 capped_growth;
 };
 
+/*
+ * An insurance company (insurance_co[], indexed through ins_control) that pays
+ * for its patients' treatment.
+ */
 struct InsuranceCo {
-    union {
-        u8 unknown0[3];
-        struct {
-            u8 unknown0_;
-            u8 payment_delay;
-        };
-    };
+    // 0x0: Index into insurance_names.
+    u8 name;
+    // 0x1: Months after the treatment before the claim is paid (finance.cpp).
+    u8 payment_delay;
+    u8 unknown2;
+    // 0x3: Percent its patients will pay above the normal maximum price
+    // (sim.cpp).
     u8 extra_pay_pct;
 };
 
@@ -3559,18 +3744,24 @@ struct Sector {
     s32 text_right;
 };
 
+/*
+ * A short planned path (at most four waypoints) kept in Thing.path, built by
+ * orthonav_init.
+ */
 struct orthonav_path {
-
-
+    // 0x0: Current start tile x.
     u8 x0;
+    // 0x1: Current start tile y.
     u8 y0;
+    // 0x2: Destination tile x.
     u8 x1;
+    // 0x3: Destination tile y.
     u8 y1;
-    union {
-        u8 unknown4[8];
-        PathStep steps[4];
-    };
-    u8 result;
+    // 0x4: Waypoints; when one is reached it becomes the start
+    // (delete_first_path_entry).
+    PathStep steps[4];
+    // 0xc: Number of waypoints in steps, 0 if no route was found.
+    u8 count;
     u8 unknownd[3];
 };
 
@@ -3579,20 +3770,34 @@ struct wallhug_waypoint {
     u8 y;
 };
 
+/*
+ * A route for the wall-hugging path finder (wallhug.cpp): from start to end
+ * through up to 0xfd waypoints. orthonav fills one through the x0..y1 and
+ * points view.
+ */
 struct wallhug_path {
+    // 0x0: Waypoints in route.
     u8 count;
     u8 unknown1;
     union {
         struct {
+            // 0x2: Signed view of start.x.
             s8 x0;
+            // 0x3: Signed view of start.y.
             s8 y0;
+            // 0x4: Signed view of end.x.
             s8 x1;
+            // 0x5: Signed view of end.y.
             s8 y1;
+            // 0x6: PathStep view of route.
             PathStep points[0xfd];
         };
         struct {
+            // 0x2: Start tile.
             wallhug_waypoint start;
+            // 0x4: Destination tile.
             wallhug_waypoint end;
+            // 0x6: Waypoints in order; on success the last is end.
             wallhug_waypoint route[0xfd];
         };
     };
@@ -3600,14 +3805,23 @@ struct wallhug_path {
 
 /* One of the two wall followers of wallhug_info; its route has room for 0xfc steps. */
 struct wallhug_hugger {
+    // 0x0: Corners recorded in route.
     u8 count;
     u8 unknown1;
+    // 0x2: Tile the straight line was walked from before the wall was hit.
     wallhug_waypoint start;
+    // 0x4: The path's destination.
     wallhug_waypoint end;
+    // 0x6: Corner tiles passed while following the wall.
     wallhug_waypoint route[0xfc];
+    // 0x1fe: Heading 0-3 (see wall_in_way); 0x32 once back on the line to end,
+    // 0x33 when route is full.
     u32 dir;
+    // 0x202: Side the wall is kept on: -1 or 1, added to dir to turn.
     s32 turn;
+    // 0x206: Current tile.
     wallhug_waypoint pos;
+    // 0x208: Tile where the wall was hit.
     wallhug_waypoint hit;
 };
 
@@ -3627,15 +3841,27 @@ struct MemRegion {
     s32 size;
 };
 
+/*
+ * A player's command for the turn (D_001549d0[player]), carried out by
+ * process_turn.
+ */
 struct Event {
     u8 unknown0;
+    // 0x1: Command (EV_ enumerators).
     u8 type;
+    // 0x2: Main argument.
     u16 value;
+    // 0x4: View scroll requests: 1 up, 2 down, 4 left, 8 right; 0x10 recentres
+    // on the level's camera start.
     u8 flags;
     union {
+        // 0x5: Second argument.
         u16 arg;
+        // 0x5: Byte view of arg.
         u8 argb[2];
     };
+    // 0x7: check_sum() of the sender's game in network games; a mismatch
+    // cancels the command and resyncs.
     u32 checksum;
     u8 unknownB[4];
 };
@@ -3907,14 +4133,26 @@ struct ResolutionInfo {
 
 extern ResolutionInfo resvars;
 
+/*
+ * Per hospital level (area_towns[], indexed by level): where the town map sits
+ * on the town screen and its scale. The list ends at an entry whose w or h is
+ * 0.
+ */
 struct ClickArea {
     u8 unknown0[4];
+    // 0x4: Width; 0 ends the list.
     u16 w;
+    // 0x6: Height; 0 ends the list.
     u16 h;
+    // 0x8: Read by draw_area_select, which does not use it.
     u8 kind;
+    // 0x9: Screen x of the town map's map cell 0.
     u16 x;
+    // 0xb: Screen y of the town map's map cell 0.
     u16 y;
+    // 0xd: Screen pixels per map cell across.
     u8 width;
+    // 0xe: Screen pixels per map cell down.
     u8 height;
     u8 unknownf;
 };
@@ -3930,11 +4168,20 @@ struct Background {
     u8 map_defaults[2];
 };
 
+/*
+ * The land auction on the town screen (plotbid).
+ */
 struct PlotBid {
+    // 0x0: Frames left on the auction clock; each bid resets it to 100. When it
+    // runs out the plot goes to bidder.
     u32 timer;
+    // 0x4: Next bid: the starting price, raised by step after each bid.
     s32 price;
+    // 0x8: Bid increment: a tenth of the starting price, at least 10.
     s32 step;
+    // 0xc: Per player: their last bid.
     s32 bids[4];
+    // 0x1c: Player with the highest bid, 0x63 for none.
     u8 bidder;
     u8 unknown1d[3];
 };
@@ -3980,19 +4227,29 @@ struct MayorPoints {
     s16 cash_bonus;
 };
 
+/*
+ * One entry of towns[], indexed by level: the level's town settings.
+ * Level-file keys towns.* set some fields (vloader.cpp).
+ */
 struct Town {
+    // 0x0: StartCash key: opening bank balance.
     u32 start_cash;
-    union {
-        u8 unknown4[0x19];
-        struct {
-            u8 unknown4_[0xc];
-            u16 interest_rate;
-        };
-        struct {
-            u8 unknown4e_[0xa];
-            u16 inflation_rate;
-        };
-    };
+    u8 unknown4;
+    // 0x5: Argument passed to rat_fest_builder or training_builder.
+    u8 special_arg;
+    // 0x6: 1 for the rat fest level, 2 for the training level, 0 otherwise.
+    u8 special_kind;
+    // 0x7: IllRate key: a new patient has a 1 in ill_rate chance of a visual
+    // illness; 0 never.
+    u8 ill_rate;
+    u8 unknown8[6];
+    // 0xe: InflationRate key.
+    u16 inflation_rate;
+    // 0x10: InterestRate key.
+    u16 interest_rate;
+    // 0x12: A new patient is insured with a 1 in insurance_odds chance.
+    u16 insurance_odds;
+    u8 unknown14[9];
 };
 
 struct FaceDirns {
@@ -4022,9 +4279,16 @@ struct RoomNavControl {
     u8 objects[10];
 };
 
+/*
+ * An object kind that changes the mood of people near it (feely[], read by
+ * check_feelgood); only plants have an effect.
+ */
 struct FeelGoodies {
+    // 0x0: Object kind (OBJ_).
     u16 kind;
+    // 0x2: Distance in tiles, on each axis, within which it counts.
     u8 range;
+    // 0x3: Nonzero for a live entry; the list ends at the first 0.
     u8 valid;
     u16 unknown4;
 };
@@ -4072,9 +4336,18 @@ struct PopupIconControl {
     u32 sprite;
 };
 
+/*
+ * A step of a two-person interaction sequence (interaction[];
+ * statvar.interaction_start holds where each sequence starts), played by
+ * setup_next_interaction.
+ */
 struct DoorAnim {
-    s16 v;
-    s16 other;
+    // 0x0: Animation (anim_starts anims[] index) the thing plays, 0 none; -1
+    // ends a sequence, -99 the table.
+    s16 anim;
+    // 0x2: Animation its partner (slave) plays, 0 none.
+    s16 partner_anim;
+    // 0x4: Times the step plays.
     u8 count;
     u8 unknown5;
 };
@@ -4106,13 +4379,28 @@ struct FloorDef {
     u16 animated;
 };
 
+/*
+ * A step of a staff or patient action sequence (staff_complex[],
+ * person_complex[]), reached through staff_complex_group /
+ * person_complex_group at Thing.complex_pc and run by process_staff_complex /
+ * process_person_complex.
+ */
 struct Complex {
+    // 0x0: Object kind (OBJ_) the step needs; the nearest free one is found,
+    // and the complex fails without one. 0 for none.
     u8 object;
+    // 0x1: What the step does (the switch in process_staff_complex and
+    // process_person_complex).
     u8 action;
+    // 0x2: The action's argument: usually an anim_starts anims[] index.
     u16 anim;
-    u8 kind;
+    // 0x4: If nonzero, the Thing.state set before the action.
+    u8 state;
     u8 unknown5;
+    // 0x6: Extra times the step runs (0 runs it once); negative for a random 1
+    // to -repeat extra runs.
     s8 repeat;
+    // 0x7: Run the next step at once rather than on a later turn.
     u8 chain;
 };
 
@@ -4125,9 +4413,13 @@ struct ComplexAnims {
  * A bottom-panel icon.
  */
 struct PanelIcon {
+    // 0x0: Screen left, laid out by setup_panel_icons.
     s16 x;
+    // 0x2: Screen top.
     s16 y;
+    // 0x4: Screen right.
     s16 x2;
+    // 0x6: Screen bottom.
     s16 y2;
     // 0x8: Normal sprite.
     u8 sprite;
@@ -4399,7 +4691,7 @@ void do_charts(void);
 void do_year_end(void);
 void draw_pause_mode(void);
 void check_if_active(void);
-u8 process_lost_focus_display(u8 flag);
+u8 process_lost_focus_display(u8 draw);
 void display_mission(void);
 void display_drugs(void);
 void process_drug_panel(void);
@@ -4407,100 +4699,100 @@ void price_up(void);
 void price_down(void);
 void process_drug_keys(void);
 void process_drug_button(u8 action);
-u8 get_next_illness(const u8 forward, const u8 start);
-void setup_drug(u16 a, u16 b);
+u8 get_next_illness(const u8 forward, const u8 from);
+void setup_drug(u16 hospital, u16 illness);
 void drugs_help_concentrate(void);
 void drugs_help_cure_type(void);
 void drugs_help_handled(void);
 void update_cure_costs(void);
-void update_single_cure_cost(u8 room, u8 hospital);
+void update_single_cure_cost(u8 illness, u8 hospital);
 void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, const s32 top);
-void mapwho_person(Thing *w, s32 x, s32 y, s32 left, s32 top);
-void mapwho_staff(Thing *w, s32 x, s32 y, s32 left, s32 top);
-void mapwho_object(Thing *w, const s32 x, const s32 y, const s32 left, const s32 top);
-void mapwho_reaper(Thing *w, s32 x, s32 y);
-void mapwho_rat(Thing *w, const s32 x, const s32 y, const s32 left, const s32 top);
-void mapwho_bang(Thing *w, s32 x, s32 y);
-void mapwho_helicopter(Thing *w, s32 x, s32 y);
-void mapwho_numfx(Thing *w, s32 x, s32 y);
-void mapwho_mayor(Thing *w, s32 x, s32 y, s32 left, s32 top);
-void mapwho_shadow(Thing *w, s32 x, s32 y);
-void insert_node(Thing *w, MapPos x, MapPos y);
-u16 move_node(Thing *w, MapPos x, MapPos y);
-void person_waits_for_busy(Thing *w);
-void person_arrives_at_door(Thing *w);
-void person_in_queue(Thing *w);
-void person_entertains_themself(Thing *w);
-u16 find_standing_place(Thing *w);
-void person_go_home(Thing *w);
-void remove_person(Thing *w);
-void move_person_in_room_list(Thing *w, u16 id);
-void insert_person_in_room_list(RoomInfo *room, Thing *w);
-void nav_debug_state(Thing *w);
-u8 transform_peep_who(Thing *w, u8 level);
-u16 call_person_to_room(Thing *w, u16 id, u16 action, u16 arg, u8 follow);
-u8 call_person_again(Thing *w, u16 action, u16 arg);
-void send_person_to_bed(Thing *w);
-void person_in_bed(Thing *w);
-u16 find_peep(u16 room_id, u8 random, u8 renderer, u8 kind, u8 owner);
-void start_person_going(Thing *w);
-void person_nav_failure(Thing *w);
-void person_fills(Thing *w);
-void person_energises(Thing *w);
-void person_in_bogs(Thing *w);
-void leave_toilets(Thing *w);
-void return_to_queue_area(Thing *w);
-void play_person_showanim(Thing *w);
-void page_staff_i_need(Thing *w, RoomInfo *room);
-void send_person_somewhere_else(Thing *w);
-void refer_patient(Thing *w, u8 owner);
-void person_waits_for_decision(Thing *w);
-u16 make_a_playercall(const u16 type, const u16 x, const s16 y, u8 owner);
+void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top);
+void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top);
+void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s32 top);
+void mapwho_reaper(Thing *reaper, s32 x, s32 y);
+void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32 top0);
+void mapwho_bang(Thing *bang, s32 x, s32 y);
+void mapwho_helicopter(Thing *helicopter, s32 x, s32 y);
+void mapwho_numfx(Thing *fx, s32 x, s32 y);
+void mapwho_mayor(Thing *mayor, s32 x, s32 y, s32 left, s32 top);
+void mapwho_shadow(Thing *shadow, s32 x, s32 y);
+void insert_node(Thing *node, MapPos x, MapPos y);
+u16 move_node(Thing *node, MapPos x, MapPos y);
+void person_waits_for_busy(Thing *person);
+void person_arrives_at_door(Thing *person);
+void person_in_queue(Thing *person);
+void person_entertains_themself(Thing *person);
+u16 find_standing_place(Thing *person);
+void person_go_home(Thing *person);
+void remove_person(Thing *person);
+void move_person_in_room_list(Thing *person, u16 tile);
+void insert_person_in_room_list(RoomInfo *room, Thing *person);
+void nav_debug_state(Thing *person);
+u8 transform_peep_who(Thing *person, u8 level);
+u16 call_person_to_room(Thing *caller, u16 id, u16 action, u16 arg, u8 follow);
+u8 call_person_again(Thing *caller, u16 action, u16 arg);
+void send_person_to_bed(Thing *person);
+void person_in_bed(Thing *person);
+u16 find_peep(u16 room_id, u8 random, u8 type, u8 state, u8 owner);
+void start_person_going(Thing *person);
+void person_nav_failure(Thing *person);
+void person_fills(Thing *person);
+void person_energises(Thing *person);
+void person_in_bogs(Thing *person);
+void leave_toilets(Thing *person);
+void return_to_queue_area(Thing *person);
+void play_person_showanim(Thing *person);
+void page_staff_i_need(Thing *person, RoomInfo *room);
+void send_person_somewhere_else(Thing *person);
+void refer_patient(Thing *person, u8 owner);
+void person_waits_for_decision(Thing *person);
+u16 make_a_playercall(const u16 type, const u16 subject, const s16 timeout, u8 owner);
 void get_new_popup_head(u16 type, u8 owner);
 void save_popup(u16 type);
 void restore_popup(u16 type);
 u16 get_playercall(const u16 type, u16 id, u8 owner);
-u16 check_playercall(u16 type, u16 x, u8 owner);
+u16 check_playercall(u16 type, u16 subject, u8 owner);
 void expire_playercalls(void);
-u16 call_no_treatment(Thing *e, char **strs);
-void process_no_treatment_buttons(u8 n);
-void person_arrived_from_call(Thing *e);
-u32 person_ok_to_call(Thing *e);
+u16 call_no_treatment(Thing *person, char **strs);
+void process_no_treatment_buttons(u8 button);
+void person_arrived_from_call(Thing *person);
+u32 person_ok_to_call(Thing *person);
 u16 announce_new_illness_fax(const u8 kind, char **strs);
-void process_announce_new_illness_buttons(u8 n);
-void force_peep_to_be_cured(Thing *e);
-void interrupt_person(Thing *e);
+void process_announce_new_illness_buttons(u8 button);
+void force_peep_to_be_cured(Thing *person);
+void interrupt_person(Thing *person);
 u16 div_err(void);
 void setup_colors(void);
-u16 can_i_get_to(Thing *e, u16 pos);
-void remove_thing(Thing *e);
-void count_hospital_area(u16 player);
-Thing *search_mapwho_for_room_door(Map *t, u16 id);
+u16 can_i_get_to(Thing *mover, u16 pos);
+void remove_thing(Thing *target);
+void count_hospital_area(u16 owner);
+Thing *search_mapwho_for_room_door(Map *cell, u16 id);
 void screen_shot(void);
 RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner);
 RoomInfo *get_room_info(u8 kind, u8 mode, u8 owner);
-RoomInfo *get_nearest_room_info(Thing *e, u8 kind);
+RoomInfo *get_nearest_room_info(Thing *person, u8 kind);
 void cheat(u32 flags);
 void set_mouse_mode(const u8 mode);
 void generate_bw_remap(u8 *palette, u8 *out);
 u8 check_points_connected(u16 from, u16 to);
-u8 direction_to_face(Thing *a, Thing *b);
+u8 direction_to_face(Thing *self, Thing *target);
 void convert_MW_to_xy(u16 pos, s8 *x, s8 *y);
 void measure_objects(void);
 int descend(const void *a, const void *b);
 int ascend(const void *a, const void *b);
 void set_mouse_sprite(const u8 idx);
-u16 can_i_go_near_point(Thing *e, u16 target);
-u8 am_i_near_point(Thing *e, u16 pos);
+u16 can_i_go_near_point(Thing *person, u16 target);
+u8 am_i_near_point(Thing *person, u16 pos);
 void vary_speed(s16 speed);
 void compute_whether_user_not_busy(void);
-u32 calc_room_value(RoomInfo *r);
+u32 calc_room_value(RoomInfo *room);
 Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub);
 void setup_abort_all_requesters(void);
 void copy_screen_to_wscreen(const u8 *src);
 void copy_screen_from_wscreen(u8 *dst);
-void cancel_top_level_requesters(s32 n);
-Thing *allocate_thing(u32 n);
+void cancel_top_level_requesters(s32 keep);
+Thing *allocate_thing(u32 reserve);
 s32 over_hotspot(s16 x, s16 y, s16 rx, s16 ry, s16 w, s16 h);
 void draw_frame(const s16 x, const s16 y, const s16 w, const s16 h, const u16 color);
 u8 hosp_play_smk(const u8 idx);
@@ -4510,287 +4802,287 @@ void setup_key_mappos(void);
 void hosp_fade_palette(u8 *palette, u8 steps, TbPaletteFadeFlag flag);
 void close_crequester(u8 i);
 void process_turn(void);
-void temp_place_door(u16 a, u8 b);
-void place_bp_door(u8 a, u8 b);
+void temp_place_door(u16 pos, u8 owner);
+void place_bp_door(u8 owner, u8 swap);
 RoomInfo *which_room(u16 tile);
 RoomInfo *is_this_a_door(u16 tile);
 void object_placed(void);
-void init_place_object(u8 a, u8 b, u16 c, s16 d);
+void init_place_object(u8 kind, u8 mode, u16 room, s16 offset);
 void init_edit_room(RoomInfo *room);
 void setup_place_object_requester(void);
 u8 next_object_to_build(void);
-void open_room(u8 a);
-void pick_up_object(u16 a, u8 b);
-void clear_build_objects(u8 a);
+void open_room(u8 owner);
+void pick_up_object(u16 id, u8 both);
+void clear_build_objects(u8 owner);
 void clear_object_drag_shape(void);
-void sack_staff(Thing *e, u16 a);
-s32 pay_staff_bonus(Thing *e, u16 a, u16 b, u16 c, u8 d);
-void staff_picked_up(Thing *e);
-void interrupt_staff(Thing *e);
-void staff_join_new_employer(u16 a, u16 b);
-void increase_staff_salaries(Thing *e, u16 a, u16 b, u8 c);
+void sack_staff(Thing *staff, u16 mode);
+s32 pay_staff_bonus(Thing *staff, u16 amount, u16 percent, u16 morale, u8 owner);
+void staff_picked_up(Thing *staff);
+void interrupt_staff(Thing *staff);
+void staff_join_new_employer(u16 id, u16 owner);
+void increase_staff_salaries(Thing *staff, u16 amount, u16 percent, u8 owner);
 u8 set_group_address(s32 group, char **address);
 s16 setup_lang(void);
-void draw_a_frame(const u16 sprite, const s16 x, const s16 y, const u8 flags, const u8 palette);
-void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16 colour, const u8 flip);
+void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 flip);
+void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const u16 colour, const u8 flip);
 void draw_special_id_frame(Thing *w, const s16 x, const s16 y);
 void draw_split_frame(Thing *w, const s16 x, const s16 y);
 void draw_energise_frame(Thing *w, const s16 x, const s16 y);
-void draw_a_frame_scaled(const u16 sprite, const s16 x, const s16 y, u8 flags, const u8 palette, s32 scale);
+void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags, const u8 flip, s32 scale);
 void draw_hilight_frame(Thing *w, const s16 x, const s16 y);
-void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip);
-void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const u8 flip);
-void InitPixBuffer(s16 x, s16 y, s16 w, s16 h, u8 a, u8 b);
+void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip);
+void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, const u8 flip);
+void InitPixBuffer(s16 x, s16 y, s16 w, s16 h, u8 colour, u8 clear);
 void FillPixBuffer(u8 colour);
 void DrawIntoPixBuffer(void);
 void RestoreFromPixBuffer(void);
-void DrawPixBuffer(u8 colour, s32 a, s32 b, s32 c, s32 d);
+void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h);
 void FillBoxInPixBuffer(u8 colour, s32 x, s32 y, s32 w, s32 h);
 void draw_wibble(s32 x, s32 y, u8 *buf, s32 w, s32 h, s32 phase);
 s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow);
-void draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, u8 *a, u8 *label, const u8 palette);
+void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, u8 *layers, const u8 flip);
 void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, const s16 dx, const s16 dy);
-void draw_text_on_map(char *text, const u8 font, const s32 x, const s32 y);
+void draw_text_on_map(char *text, const u8 colour, const s32 x, const s32 y);
 void draw_money(s32 x, s32 y, s32 value);
 void setup_panel_icons(const u8 mode);
 void clear_panel_info_bar(void);
-void delete_panel_popup(PlayerCall *p);
-void add_panel_popup(PlayerCall *p);
+void delete_panel_popup(PlayerCall *call);
+void add_panel_popup(PlayerCall *call);
 void remove_panel_popup(const u8 slot);
 u8 which_icon_is_mouse_over(void);
-u16 find_object(u16 tile, u16 a, u8 b, u8 c, u8 owner);
-u16 find_object_anywhere(u16 a, u8 b, u16 c, u8 owner);
-u16 find_nearest_free_object(u16 id, u8 a);
-u16 find_nearest_manned_reception(Thing *w, const u8 a, const u8 b);
-s16 place_small_thing(u16 a, u16 b, u8 c);
+u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner);
+u16 find_object_anywhere(u16 kind, u8 random, u16 after, u8 owner);
+u16 find_nearest_free_object(u16 id, u8 kind);
+u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_space);
+s16 place_small_thing(u16 tile, u16 id, u8 keep_existing);
 s16 find_small_thing(u16 tile);
 u8 check_room_access_with_blueprint(u8 owner);
-void replace_machine(Thing *e);
-void setup_next_treatment(Thing *a, Thing *w);
-void next_treatment_now_setup(Thing *e, u8 a);
-void best_guess_treatment(Thing *e);
-u16 find_possible_diagnosis(Thing *w);
-void record_person_as_patient(Thing *w);
-void done_treatment(Thing *e, Thing *w);
-void affect_diagnosis(Thing *e, Thing *w);
-void change_health(Thing *w, s16 amount);
-void person_dies(Thing *w);
-void person_dead(Thing *w);
-void add_health_to_history(Thing *w);
-void diagnose_patient(Thing *e, Thing *w);
-s32 calc_ability(Thing *e);
-void add_treatment_to_history(Thing *w);
-u8 treatment_already_done(Thing *w, u16 treatment);
-void person_go_for_treatment(Thing *w);
-s16 pre_administer_drugs(Thing *w);
-void administer_drugs(Thing *e, Thing *w);
+void replace_machine(Thing *machine);
+void setup_next_treatment(Thing *staff, Thing *patient);
+void next_treatment_now_setup(Thing *patient, u8 in_room);
+void best_guess_treatment(Thing *patient);
+u16 find_possible_diagnosis(Thing *patient);
+void record_person_as_patient(Thing *patient);
+void done_treatment(Thing *staff, Thing *patient);
+void affect_diagnosis(Thing *staff, Thing *patient);
+void change_health(Thing *patient, s16 amount);
+void person_dies(Thing *patient);
+void person_dead(Thing *patient);
+void add_health_to_history(Thing *patient);
+void diagnose_patient(Thing *staff, Thing *patient);
+s32 calc_ability(Thing *staff);
+void add_treatment_to_history(Thing *patient);
+u8 treatment_already_done(Thing *patient, u16 treatment);
+void person_go_for_treatment(Thing *patient);
+s16 pre_administer_drugs(Thing *patient);
+void administer_drugs(Thing *staff, Thing *patient);
 void announce_new_illness(const u16 illness, const u16 owner);
-u16 call_no_diagnosis(Thing *w, char **strs);
-void process_no_diagnosis_buttons(u8 n);
-u16 pay_for_treatment(Thing *w, u16 kind);
-u16 shall_peep_pay(Thing *w);
-void effect_illness(Thing *w, u8 illness, u8 a);
-void clean_contagious_peep(Thing *w);
-Thing *find_door(Thing *w);
-u32 old_normal_rand(u32 a, u32 b);
-s16 get_state(const u16 room, const Thing *w);
-u8 evacuate_staff(Thing *w);
-u8 take_a_break(Thing *w);
-u32 shall_i_resign(Thing *w);
-u8 obey_pager(Thing *w);
-u8 could_nurse_vaccinate(Thing *w);
-u8 am_i_lead_staff(Thing *w);
-u8 overlapping_staff_check(Thing *w, s32 state);
+u16 call_no_diagnosis(Thing *patient, char **strs);
+void process_no_diagnosis_buttons(u8 button);
+u16 pay_for_treatment(Thing *patient, u16 kind);
+u16 shall_peep_pay(Thing *patient);
+void effect_illness(Thing *patient, u8 illness, u8 cured);
+void clean_contagious_peep(Thing *peep);
+Thing *find_door(Thing *person);
+u32 old_normal_rand(u32 low, u32 high);
+s16 get_state(const u16 type, const Thing *staff);
+u8 evacuate_staff(Thing *staff);
+u8 take_a_break(Thing *staff);
+u32 shall_i_resign(Thing *staff);
+u8 obey_pager(Thing *staff);
+u8 could_nurse_vaccinate(Thing *nurse);
+u8 am_i_lead_staff(Thing *staff);
+u8 overlapping_staff_check(Thing *staff, s32 state);
 void alert_epidemic(u8 illness, u8 owner);
-u8 summon_the_reaper(Thing *w);
-void send_person_for_research(Thing *w);
-u8 process_person_complex(Thing *w);
+u8 summon_the_reaper(Thing *victim);
+void send_person_for_research(Thing *patient);
+u8 process_person_complex(Thing *person);
 u8 set_complex(Thing *w, u16 action, u16 arg);
 void abandon_complex(Thing *w);
-void interrupt_complex(Thing *e);
+void interrupt_complex(Thing *w);
 void display_policy(void);
-void init_blueprint(u8 a, u8 b);
-void modify_blueprint(u8 a, u8 b, u16 c);
-u8 commit_blueprint(u8 a);
-void uncommit_blueprint(u8 a);
-void edit_blueprint(u8 a);
+void init_blueprint(u8 owner, u8 type);
+void modify_blueprint(u8 owner, u8 dragging, u16 tile);
+u8 commit_blueprint(u8 owner);
+void uncommit_blueprint(u8 owner);
+void edit_blueprint(u8 owner);
 void process_blueprint_zones(void);
-void commit_doors(u8 a);
-u8 move_peep_from_blueprint(Thing *w);
-void delete_blueprint_room(u8 a);
-void allocate_roominfo(const u8 a, const u8 b);
-u16 page_member_of_staff(u16 a, u16 room, u8 b, s8 c, u8 owner);
-RoomInfo *get_expertise_dest(u16 type, Thing *w);
+void commit_doors(u8 owner);
+u8 move_peep_from_blueprint(Thing *peep);
+void delete_blueprint_room(u8 owner);
+void allocate_roominfo(const u8 owner, const u8 type);
+u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wanted, u8 owner);
+RoomInfo *get_expertise_dest(u16 type, Thing *patient);
 void set_expertise_ward(u8 owner);
 void remove_expertise_ward(u8 owner);
-void front_queue(const u16 a, const u16 b);
-void back_queue(const u16 a, const u16 b);
-void leave_queue(Thing *w);
-u16 which_queue(Thing *w);
-void queue_person_go_home(const u16 a, const u16 b);
-void queue_person_go_reception(const u16 a, const u16 b);
-void queue_person_to_new_queue(const u16 a, const u16 b);
-void join_queue(Thing *w, RoomInfo *room);
+void front_queue(const u16 room_id, const u16 pos);
+void back_queue(const u16 room_id, const u16 pos);
+void leave_queue(Thing *person);
+u16 which_queue(Thing *person);
+void queue_person_go_home(const u16 room_id, const u16 pos);
+void queue_person_go_reception(const u16 room_id, const u16 pos);
+void queue_person_to_new_queue(const u16 room_id, const u16 id);
+void join_queue(Thing *person, RoomInfo *room);
 u16 queue_size(RoomInfo *room);
-void process_queue_button(u8 n);
-u16 get_real_person_from_room(const u16 room, const u16 pos);
-s16 spare_queue_capacity(const u16 type, const u8 a, RoomInfo *room, const u8 owner);
-s16 all_queue_capacity(const u16 type, const u8 a, const u8 owner);
+void process_queue_button(u8 button);
+u16 get_real_person_from_room(const u16 room_id, const u16 pos);
+s16 spare_queue_capacity(const u16 type, const u8 waiting, RoomInfo *room, const u8 owner);
+s16 all_queue_capacity(const u16 type, const u8 waiting, const u8 owner);
 void restart_all_queue_peeps(RoomInfo *room);
 void flag_all_queue_members(RoomInfo *room);
-void draw_buttons(Window *w);
+void draw_buttons(Window *win);
 void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style);
-void draw_window(Window *w);
+void draw_window(Window *win);
 void DrawWindows(Window **windows);
-void reposition_buttons(Window *w, s32 dx, s32 dy);
-void clear_buttons(Window *w);
+void reposition_buttons(Window *win, s32 dx, s32 dy);
+void clear_buttons(Window *win);
 u8 mouse_over(s32 x1, s32 y1, s32 x2, s32 y2);
 u8 mouse_pressed_over(s32 x1, s32 y1, s32 x2, s32 y2);
-void calculate_currentbuttonstore(Window *w);
-u8 process_buttons_normal_state(Window **windows, Window *w, u16 *pos);
-void process_buttons(Window **windows, Window *w);
-u8 insert_window(Window **windows, Window *w);
-u8 make_front_window(Window **windows, Window *w);
-u8 remove_window(Window **windows, Window *w);
-u8 OpenWindow(Window **windows, Window *w, u16 a);
+void calculate_currentbuttonstore(Window *win);
+u8 process_buttons_normal_state(Window **windows, Window *win, u16 *pos);
+void process_buttons(Window **windows, Window *win);
+u8 insert_window(Window **windows, Window *win);
+u8 make_front_window(Window **windows, Window *win);
+u8 remove_window(Window **windows, Window *win);
+u8 OpenWindow(Window **windows, Window *list, u16 idx);
 u16 CountWindows(Window **windows);
-void GetWindowDimensions(Window *w, u16 *width, u16 *height);
-u8 MouseOnWindow(Window *w);
-u8 MousePressedOnWindow(Window *w);
-void process_window(Window **windows, Window *w);
-void change_balance(const u8 a, const s32 b, const u16 c, const u16 d);
+void GetWindowDimensions(Window *win, u16 *width, u16 *height);
+u8 MouseOnWindow(Window *win);
+u8 MousePressedOnWindow(Window *win);
+void process_window(Window **windows, Window *win);
+void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 owner);
 void month_end(void);
 void year_end(void);
 void bank_statement(void);
 u16 exit_quick_requester(void);
 void daily_admin(void);
 void twice_daily_admin(void);
-void calculate_value(const u8 a);
+void calculate_value(const u8 owner);
 void adjust_build_palette_for_shop(RoomInfo *room);
 void clear_req_indices(void);
-void set_buyable_items(u16 a);
-void buy_compulsory_items(const u16 a);
-void req1_reset_rooms(u16 a);
+void set_buyable_items(u16 room);
+void buy_compulsory_items(const u16 room);
+void req1_reset_rooms(u16 dept);
 u16 room_available(u16 room);
-void req1_buy_object(const u16 a, const s32 b);
-void orthonav_init(orthonav_path *path, s8 a, s8 b, s8 c, s8 d);
+void req1_buy_object(const u16 obj, const s32 amount);
+void orthonav_init(orthonav_path *path, s8 x0, s8 y0, s8 x1, s8 y1);
 void display_peep_overview(void);
-void reputation_affected(const u8 a, const u16 b, const u16 c, const u8 d, const s32 e);
+void reputation_affected(const u8 treatment, const u16 event, const u16 month, const u8 owner, const s32 amount);
 void check_game_over(void);
 void check_quarterly_game_over(void);
-s32 max_price_for_treatment(const u16 room, const u8 hospital);
-void satisfied_net_criteria(const u8 a, const u8 b);
+s32 max_price_for_treatment(const u16 treatment, const u8 owner);
+void satisfied_net_criteria(const u8 criterion, const u8 owner);
 void process_mouse(void);
-void process_things(Thing *a, Thing *b);
+void process_things(Thing *first, Thing *last);
 void display_advisor(void);
-void announce_this(const u8 a, const u32 b);
+void announce_this(const u8 type, const u32 value);
 void draw_main_menu(void);
 void process_keys_main_menu(void);
 void process_mouse_main_menu(void);
 void process_mouse_town_select(void);
-void buy_land(u16 a);
-void plot_bid_money(u8 a);
+void buy_land(u16 plot);
+void plot_bid_money(u8 who);
 void setup_town_bid(void);
 u8 draw_area_select(void);
 void process_keys_area_select(void);
 void process_mouse_area_select(void);
 void req2_reset(void);
-u16 req2_alter_staff(u8 a, u16 b, u16 c);
-void req2_mark_employing(const u16 a);
-void req2_exit_employing(const u16 a);
-void open_staff_resign_requester(Thing *e);
+u16 req2_alter_staff(u8 dir, u16 cur, u16 kind);
+void req2_mark_employing(const u16 id);
+void req2_exit_employing(const u16 id);
+void open_staff_resign_requester(Thing *staff);
 void req12_clicked_sack(void);
-void open_yes_no_requester(u8 a, u16 b, u16 c, u8 d, u16 e, u16 f);
-void close_yes_no_requester(u8 a);
+void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, u16 no_value, u16 no_arg);
+void close_yes_no_requester(u8 reopen);
 void req13_cancel_check(void);
-void modify_person(Thing *w);
-void close_query(u8 a);
+void modify_person(Thing *person);
+void close_query(u8 i);
 s32 SWIKeyboardOpen(void);
 s32 SWIKeyboardClose(void);
-void machine_disaster(Thing *e);
-void create_explosion(u16 a, u16 b);
-void what_is_required(u8 room, u8 hospital);
-void draw_graphs(u16 a, u16 b, u16 c, u16 d);
+void machine_disaster(Thing *machine);
+void create_explosion(u16 tile, u16 anim);
+void what_is_required(u8 illness, u8 owner);
+void draw_graphs(u16 x, u16 y, u16 h, u16 step);
 s32 read_config_file(void);
-void place_litter(u16 tile, s8 owner, u8 a);
-u8 thingpage_request(ThingPager *p, u16 a, u8 b);
+void place_litter(u16 tile, s8 owner, u8 type);
+u8 thingpage_request(ThingPager *p, u16 id, u8 priority);
 void display_manager(void);
 void draw_network_select(void);
 void process_keys_network_select(void);
 void process_mouse_network_select(void);
 void do_net_text(void);
-void net_text_display(u8 a);
-void net_text_keypress(u8 a, u8 b);
-void net_text_delete(u8 a);
+void net_text_display(u8 from);
+void net_text_keypress(u8 key, u8 who);
+void net_text_delete(u8 who);
 u8 network_num_players(void);
-void network_lost_focus(s32 a);
-void network_gained_focus(s32 a);
+void network_lost_focus(s32 who);
+void network_gained_focus(s32 who);
 void draw_lost_focus_screen(void);
 u8 has_any_player_lost_focus(void);
 void close_irequesters(void);
-void adjust_handyman_values(const u16 a, const u8 b);
+void adjust_handyman_values(const u16 id, const u8 button);
 u8 setup_sound(void);
 void do_ambients(void);
 void play_ambient(u8 sound);
-void play_sound(u32 a, u16 b, s32 c, s32 d);
+void play_sound(u32 source, u16 sfx, s32 x, s32 y);
 void manage_sound(void);
 void manage_background_sounds(void);
 void play_next_midi(void);
 void setup_menus(void);
 void check_save_games(void);
-u16 check_frame(u16 anim, Thing *w);
+u16 check_frame(u16 anim, Thing *peep);
 void stop_midi(void);
 void play_midi(u8 track);
 void draw_nickname(void);
 void process_keys_nickname(void);
 void process_mouse_nickname(void);
 void display_slist(void);
-void request_vaccination(Thing *e);
-void cancel_vaccination_request(Thing *e);
-u8 remove_person_from_vaccination_queue(Thing *e);
-void compute_help_text(s16 a, s16 b, u8 c);
+void request_vaccination(Thing *person);
+void cancel_vaccination_request(Thing *person);
+u8 remove_person_from_vaccination_queue(Thing *person);
+void compute_help_text(s16 x, s16 y, u8 help_group);
 void draw_help_text(void);
 void cancel_helpmsg(void);
-void show_help_page(u32 a, u32 b);
+void show_help_page(u32 page, u32 sub);
 void finish_composite_help(void);
 void check_cd_available(char *path);
-void req11_sell_object(const u16 a, const s32 b);
-void create_numfx(u8 a, s16 b, u16 c, u8 d, u8 e);
+void req11_sell_object(const u16 idx, const s32 amount);
+void create_numfx(u8 type, s16 value, u16 pos, u8 colour, u8 height);
 void draw_load_game(void);
 void process_keys_load_game(void);
 void process_mouse_load_game(void);
 void play_winlose(void);
-void set_edit_room_requester_mode(const u8 a);
+void set_edit_room_requester_mode(const u8 mode);
 void open_edit_room_requester(void);
-void go_back_to_place_object_requester(u8 a);
-u32 count_and_flag_contagious_peeps(const u8 a, const u8 b, const u8 c);
+void go_back_to_place_object_requester(u8 restore_purchases);
+u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 owner);
 void close_sound_heap(void);
 void process_sound_heap(void);
-u8 earthquake(const s8 a, const u8 b);
+u8 earthquake(const s8 magnitude, const u8 chance);
 void display_choice(void);
-void display_choice_screen(const u8 a, const u8 b, const s16 c, const s16 d);
-void packet_choice_result(u8 n);
+void display_choice_screen(const u8 owner, const u8 type, const s16 data, const s16 timeout);
+void packet_choice_result(u8 button);
 void restore_display_screen(void);
 void draw_it(void);
 void special_refresh(void);
-void set_all_refresh_zones_in_window(const s32 x, const s32 y, const s32 w, const s32 h, const u8 a);
+void set_all_refresh_zones_in_window(const s32 x1, const s32 y1, const s32 x2, const s32 y2, const u8 refresh_count);
 void find_common_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1);
-void goto_cell_in_window(const u8 a, const s32 b);
-void goto_column_row_in_window(const u8 a, const s32 x, const s32 y);
-void find_cell_at_point(const u8 a, const s32 x, const s32 y);
-void open_new_window(const u8 a, const u8 b, const u8 c, const s32 x0, const s32 y0, const s32 x1, const s32 y1);
-void give_emergency_stats(u16 a, u8 b);
-void give_screen_xy_of_cell_at_column_row(const u8 a, const s32 x, const s32 y);
+void goto_cell_in_window(const u8 win, const s32 cell);
+void goto_column_row_in_window(const u8 win, const s32 x, const s32 y);
+void find_cell_at_point(const u8 win, const s32 x, const s32 y);
+void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1, const s32 y1);
+void give_emergency_stats(u16 call, u8 owner);
+void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y);
 u32 old_newrand(void);
 u16 saferand(void);
-void set_icon_value(Thing *const w, const s8 a);
-void reset_icon_value(Thing *const w, const s8 a);
+void set_icon_value(Thing *const peep, const s8 icon);
+void reset_icon_value(Thing *const peep, const s8 icon);
 void initialise_shadows(void);
 void display_research(void);
-void alter_research(u8 a, u8 b, u8 c);
+void alter_research(u8 cat, u8 value, u8 owner);
 void set_font_from_cache(const s32 font);
-void return_from_screen(const u8 a, const u8 b, const u8 c);
-void load_ingame_pic(const u8 a, const u8 b, const u8 c, const u8 d, TbScreenMode mode);
+void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites);
+void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 map, TbScreenMode mode);
 void fade_out_menu(void);
 u8 display_loading_screen(void);
 void clear_loading_screen(u8 *palette);
@@ -4798,12 +5090,12 @@ void set_default_player_details(void);
 void recreate_map(const u8 flag);
 void add_static_shadows(void);
 void clear_sound_heap(void);
-s8 load_level(const u8 level, const u8 full);
+s8 load_level(const u8 lvl, const u8 full);
 s16 save_game_valid(const s8 slot);
 void setup_addresses(void);
 void free_level(void);
 void reset_earthquake_variables(void);
-s32 read_level_number(s32 n);
+s32 read_level_number(s32 slot);
 void load_balance(const u16 level);
 void reset_advisor(void);
 void init_ambients(void);
@@ -4816,21 +5108,21 @@ extern u8 for_sale[];
  * keep their address names and are bound to that symbol explicitly.
  */
 extern "C" {
-u16 save_game(s8 slot, s8 player);
+u16 save_game(s8 slot, s8 port);
 #pragma aux save_game "W?save_game$n(xc)s"
-s16 load_game(s8 slot, s8 player);
+s16 load_game(s8 slot, s8 port);
 #pragma aux load_game "W?load_game$n(xc)s"
-u16 place_staff_on_map(u16 tile, u16 id, u8 flag, u8 owner);
+u16 place_staff_on_map(u16 tile, u16 id, u8 force, u8 owner);
 #pragma aux place_staff_on_map "W?place_staff_on_map$n(xusxusuc)s"
 u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner);
 #pragma aux place_object "W?place_object$n(ususuc)us"
-void set_destination_coords(Thing *w, u16 a);
+void set_destination_coords(Thing *w, u16 pos);
 #pragma aux set_destination_coords "W?set_destination_coords$n(pn$Thing$$us)v"
-void process_keys(u8 a, u8 b);
+void process_keys(u8 modifiers, u8 key);
 #pragma aux process_keys "W?process_keys$n(ucuc)v"
 u8 LbPaletteFindColour(u8 *palette, int r, int g, int b);
 void open_requester(u8 idx, u8 flag);
-u8 process_staff_complex(Thing *w);
+u8 process_staff_complex(Thing *employee);
 #pragma aux process_staff_complex "W?process_staff_complex$n(pn$Thing$$)uc"
 #pragma aux open_requester "W?open_requester$n(uc)v"
 void clear_cell_of_ratholes(u8 owner, u16 tile);
@@ -4839,9 +5131,9 @@ u8 door(u16 tile, u8 parity);
 #pragma aux door "W?door$n(xusxuc)uc"
 u8 check_okay_to_save(u8 warn);
 #pragma aux check_okay_to_save "W?check_okay_to_save$n(uc)uc"
-void setup_new_level(int level, u8 flag);
+void setup_new_level(int level, u8 reload_balance);
 #pragma aux setup_new_level "W?setup_new_level$n(xus)v"
-Thing *find_waiting_surgeon(RoomInfo *room, u8 kind);
+Thing *find_waiting_surgeon(RoomInfo *room, u8 state);
 #pragma aux find_waiting_surgeon "W?find_waiting_surgeon$n(pn$RoomInfo$$)pn$Thing$$"
 u8 forget_about_my_slave(Thing *w, u16 action);
 #pragma aux forget_about_my_slave "W?forget_about_my_slave$n(us)uc"
@@ -4849,7 +5141,7 @@ void swap_criteria_packets(u8 fail, u8 active);
 #pragma aux swap_criteria_packets "W?swap_criteria_packets$n(uc)v"
 u16 find_next_emergency_person(u16 id, u32 flags);
 #pragma aux find_next_emergency_person "W?find_next_emergency_person$n(us)us"
-void set_award_value(const u8 a, const s8 dir, const u8 level, const s16 value, u8 type);
+void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 value, u8 type);
 #pragma aux set_award_value "W?set_award_value$n(xucxucxucxsuc)v"
 
 

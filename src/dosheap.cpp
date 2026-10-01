@@ -6,7 +6,7 @@ typedef char *va_list[1];
 
 extern "C" {
 
-int vsprintf(char *buf, char *fmt, va_list args);
+int vsprintf(char *dest, char *format, va_list arg);
 void fn_000bb5cc(CDosHeapStats *stats);
 u32 GetFreeFragCount(CDosHeap *heap);
 }

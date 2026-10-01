@@ -10,7 +10,7 @@ int LbAssertMessage(const char *expr, const char *file, unsigned long line);
 extern "C" {
 
 void *LbMemoryAllocLow(u32 size);
-void LbErrorLog(char *s, ...);
+void LbErrorLog(char *fmt, ...);
 void int3(void);
 #pragma aux int3 = 0xcc;
 

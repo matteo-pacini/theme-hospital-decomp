@@ -12,7 +12,7 @@ void StopMusic(void)
         CurrentDangerMusicFadeDirection = 1;
         DangerMusicVolume = 0;
         DangerMusicVolumeChange = 0xff;
-        if (AIL_sequence_status(SongHandle) != 2) {
+        if (AIL_sequence_status(SongHandle) != SEQ_DONE) {
             AIL_stop_sequence(SongHandle);
             AIL_end_sequence(SongHandle);
         }

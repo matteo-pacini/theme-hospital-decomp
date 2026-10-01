@@ -18,7 +18,7 @@
 extern "C" {
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
-unsigned long strtoul(const char *s, char **end, int base);
+unsigned long strtoul(const char *nptr, char **endptr, int base);
 void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address);
 #pragma aux fn_000db4c8 "W?AddIPXSession$:IPXServiceProvider$n(pn$__1snc1aHOSTINFOPACKET$$pn$__3ljac5NETSOCKET$$)v"
 }

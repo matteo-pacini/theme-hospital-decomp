@@ -238,7 +238,7 @@ u32 ServiceProvider::GetAddPlayerMsgSize(char *name)
 // FUNCTION: 0xd1820
 void ServiceProvider::EncodeAddPlayerMsg(u8 *buf, u32 id, char *name)
 {
-    EncodeMessageStub(buf, strlen(name) + 5, (TbMessageType)1, 0);
+    EncodeMessageStub(buf, strlen(name) + 5, MSG_TYPE_ADD_PLAYER, 0);
     memcpy(buf + 4, &id, 4);
     strcpy((char *)buf + 8, name);
 }
@@ -267,7 +267,7 @@ u32 GetRequestCompositeExchangeDataMsgSize(void)
 // FUNCTION: 0xd1900
 void EncodeDeletePlayerMsg(u8 *buf, u32 id)
 {
-    EncodeMessageStub(buf, 4, (TbMessageType)2, 0);
+    EncodeMessageStub(buf, 4, MSG_TYPE_DELETE_PLAYER, 0);
     memcpy(buf + 4, &id, 4);
 }
 
@@ -284,7 +284,7 @@ u32 DecodeRequestExchangeDataMsg(u8 *buf, u32 &id)
 // FUNCTION: 0xd1970
 void EncodeRequestExchangeDataMsg(u8 *buf, u32 id, u32 seq)
 {
-    EncodeMessageStub(buf, 4, (TbMessageType)5, seq);
+    EncodeMessageStub(buf, 4, MSG_TYPE_REQ_EXCHANGE_DATA, seq);
     memcpy(buf + 4, &id, 4);
 }
 
@@ -293,7 +293,7 @@ void EncodeRequestExchangeDataMsg(u8 *buf, u32 id, u32 seq)
 // FUNCTION: 0xd19c0
 void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq)
 {
-    EncodeMessageStub(buf, 4, (TbMessageType)6, seq);
+    EncodeMessageStub(buf, 4, MSG_TYPE_REQ_COMPOSITE_EXCHANGE_DATA, seq);
     memcpy(buf + 4, &id, 4);
 }
 
@@ -530,11 +530,11 @@ TbError ServiceProvider::Receive(u32 flags)
         if (PeekMessage(&from, buf, &size)) {
             dst = 0;
             DecodeMessageStub(buf, &msg_size, (TbMessageType *)&type, &seq);
-            if (flags & 8)
+            if (flags & RECV_ALL)
                 flags = 0xffffffff;
             switch (type) {
-            case 8:
-                if (flags & 0x100) {
+            case MSG_TYPE_8:
+                if (flags & RECV_MSG_TYPE_8) {
                     if (callbacks->unknown24) {
                         dst = fn_000ed344(msg_size + 4);
                         size = msg_size + 4;
@@ -543,8 +543,8 @@ TbError ServiceProvider::Receive(u32 flags)
                     }
                 }
                 break;
-            case 0:
-                if (flags & 1) {
+            case MSG_TYPE_MULTIPLAYER:
+                if (flags & RECV_MULTIPLAYER) {
                     if (callbacks->multiPlayer)
                         dst = callbacks->multiPlayer(from, msg_size + 4, seq, callback_data);
                     else
@@ -560,8 +560,8 @@ TbError ServiceProvider::Receive(u32 flags)
                 }
                 keep_going = 0;
                 break;
-            case 1:
-                if (flags & 2) {
+            case MSG_TYPE_ADD_PLAYER:
+                if (flags & RECV_ADD_PLAYER) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
                         SystemAddPlayerHandler((u8 *)buf);
@@ -575,8 +575,8 @@ TbError ServiceProvider::Receive(u32 flags)
                     keep_going = 0;
                 }
                 break;
-            case 2:
-                if (flags & 4) {
+            case MSG_TYPE_DELETE_PLAYER:
+                if (flags & RECV_DELETE_PLAYER) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
                         SystemDeletePlayerHandler((u8 *)buf);
@@ -592,8 +592,8 @@ TbError ServiceProvider::Receive(u32 flags)
                 break;
             case 3:
                 break;
-            case 4:
-                if (flags & 0x80) {
+            case MSG_TYPE_SYSTEM_USER:
+                if (flags & RECV_SYSTEM_USER) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
                         DecodeMessageStub(buf, &sys_msg_size, 0, 0);
@@ -606,8 +606,8 @@ TbError ServiceProvider::Receive(u32 flags)
                     keep_going = 0;
                 }
                 break;
-            case 5:
-                if (flags & 0x10) {
+            case MSG_TYPE_REQ_EXCHANGE_DATA:
+                if (flags & RECV_REQ_EXCHANGE_DATA) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
                         DecodeRequestExchangeDataMsg((u8 *)buf, req_id);
@@ -620,8 +620,8 @@ TbError ServiceProvider::Receive(u32 flags)
                     keep_going = 0;
                 }
                 break;
-            case 6:
-                if (flags & 0x20) {
+            case MSG_TYPE_REQ_COMPOSITE_EXCHANGE_DATA:
+                if (flags & RECV_REQ_COMPOSITE_EXCHANGE_DATA) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
                         DecodeRequestCompositeExchangeDataMsg((u8 *)buf, comp_req_id);
@@ -634,8 +634,8 @@ TbError ServiceProvider::Receive(u32 flags)
                     keep_going = 0;
                 }
                 break;
-            case 7:
-                if (flags & 0x40) {
+            case MSG_TYPE_UNIDIRECTIONAL:
+                if (flags & RECV_UNIDIRECTIONAL) {
                     if (callbacks->unidirectionalMsg)
                         dst = callbacks->unidirectionalMsg(from, msg_size + 4, callback_data);
                     else
@@ -686,11 +686,11 @@ TbError ServiceProvider::Send(u32 to, void *buf)
     if (to == local_id) {
         dst = 0;
         switch (type) {
-        case 8:
+        case MSG_TYPE_8:
             if (callbacks->unknown24)
                 callbacks->unknown24(player_id, buf);
             break;
-        case 0:
+        case MSG_TYPE_MULTIPLAYER:
             if (callbacks->multiPlayer)
                 dst = callbacks->multiPlayer(local_id, msg_size + 4, seq, callback_data);
             else
@@ -698,13 +698,13 @@ TbError ServiceProvider::Send(u32 to, void *buf)
             if (dst)
                 memcpy(dst, buf, msg_size + 4);
             break;
-        case 1:
+        case MSG_TYPE_ADD_PLAYER:
             SystemAddPlayerHandler((u8 *)buf);
             DecodeAddPlayerMsg((u8 *)buf, player_id, added_name);
             if (callbacks->addMsg)
                 callbacks->addMsg(player_id, added_name, callback_data);
             break;
-        case 2:
+        case MSG_TYPE_DELETE_PLAYER:
             SystemDeletePlayerHandler((u8 *)buf);
             DecodeRequestCompositeExchangeDataMsg((u8 *)buf, player_id);
             if (callbacks->deleteMsg)
@@ -712,18 +712,18 @@ TbError ServiceProvider::Send(u32 to, void *buf)
             break;
         case 3:
             break;
-        case 4:
+        case MSG_TYPE_SYSTEM_USER:
             if (callbacks->systemUserMsg)
                 callbacks->systemUserMsg(local_id, (u8 *)buf + 4, msg_size, callback_data);
             else
                 fn_000c20c0("  WARNING network: ServiceProvider::Send() NIL target for systemUserMsgCallbackProc\n");
             break;
-        case 5:
+        case MSG_TYPE_REQ_EXCHANGE_DATA:
             DecodeRequestExchangeDataMsg((u8 *)buf, player_id);
             if (callbacks->mpReqExDataMsg)
                 callbacks->mpReqExDataMsg(player_id, seq, callback_data);
             break;
-        case 6:
+        case MSG_TYPE_REQ_COMPOSITE_EXCHANGE_DATA:
             DecodeRequestCompositeExchangeDataMsg((u8 *)buf, player_id);
             if (callbacks->mpReqCompsExDataMsg)
                 callbacks->mpReqCompsExDataMsg(player_id, seq, callback_data);
@@ -734,7 +734,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
         }
         ret = Lb_OK;
     } else {
-        guaranteed = (type == MSG_TYPE_0 || type == MSG_TYPE_5 || type == MSG_TYPE_6 || type == MSG_TYPE_8) ? (s8)0 : (s8)1;
+        guaranteed = (type == MSG_TYPE_MULTIPLAYER || type == MSG_TYPE_REQ_EXCHANGE_DATA || type == MSG_TYPE_REQ_COMPOSITE_EXCHANGE_DATA || type == MSG_TYPE_8) ? (s8)0 : (s8)1;
         if (SendMessage(to, buf, (TbMessageType)guaranteed) == Lb_OK)
             ret = Lb_OK;
         else
@@ -748,7 +748,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
 // FUNCTION: 0xd29d8
 TbError ServiceProvider::LookForSystemMessages(void)
 {
-    return Receive(0xb6);
+    return Receive(RECV_ADD_PLAYER | RECV_DELETE_PLAYER | RECV_REQ_EXCHANGE_DATA | RECV_REQ_COMPOSITE_EXCHANGE_DATA | RECV_SYSTEM_USER);
 }
 
 // Sends an add- or delete-player message to every other player but the one
@@ -766,10 +766,10 @@ TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
     invalid = 0;
     DecodeMessageStub(msg, 0, (TbMessageType *)&type, 0);
     switch (type) {
-    case 1:
+    case MSG_TYPE_ADD_PLAYER:
         DecodeAddPlayerMsg(msg, id, 0);
         break;
-    case 2:
+    case MSG_TYPE_DELETE_PLAYER:
         DecodeRequestCompositeExchangeDataMsg(msg, id);
         break;
     default:

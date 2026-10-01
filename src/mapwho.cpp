@@ -135,18 +135,18 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
     case PS_GOTO_DESTINATION:
     case PS_RETURN_TO_QUEUE_AREA:
     case PS_GO_HOME:
-    case PS_COMPLEX_RETRY:
+    case PS_PLAY_COMPLEX_ANIM:
     case PS_ARRIVES_AT_DOOR:
     case PS_IN_QUEUE:
     case PS_GOTO_OBJECT:
     case PS_ENTERTAINS_THEMSELF:
-    case 26:
+    case PS_WAIT_FOR_COMPLEX_SLAVE:
     case 28:
-    case 32:
-    case 34:
+    case PS_SLAVE_READY:
+    case PS_TWO_PEEPS_INTERACT:
     case PS_GOTO_QUEUE:
     case PS_GO_FOR_TREATMENT:
-    case 42:
+    case PS_COMPLEX_RETRY:
     case PS_IN_BED:
     case PS_DEAD:
     case PS_IN_BOGS:
@@ -181,13 +181,13 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
         break;
     case 0xf2:
         break;
-    case 52:
+    case PS_FLYS:
     case 72:
         draw_special_id_frame(person, x, y - person->fly_height);
         break;
-    case 14:
-    case 40:
-    case 66:
+    case PS_GONE:
+    case PS_MERGED:
+    case PS_AT_HELL_GATE:
         return;
     default:
         break;
@@ -216,8 +216,8 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
     case SS_SURGEON_WAITS:
     case SS_GOTO_OBJECT:
     case SS_DOCTOR_WAITS_FOR_PATIENT:
-    case 24:
-    case 26:
+    case SS_ASSISTANT_READY:
+    case SS_TWO_PEEPS_INTERACT:
     case SS_DOCTOR_EXAMINES:
     case SS_RECEPT_WAITS_FOR_PATIENT:
     case SS_RECEPT_ADMITS_PATIENT:
@@ -228,7 +228,7 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
     case SS_IN_STAFF_ROOM:
     case SS_NURSE_IN_WARD:
     case SS_WANDERS:
-    case SS_PROCESS_COMPLEX:
+    case SS_EVACUATE:
     case 58:
     case SS_HANDYMAN_WORKS:
     case SS_DOCTOR_RESEARCHES:
@@ -249,7 +249,7 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
         break;
     case 42:
     case SS_APPLICANT:
-    case 56:
+    case SS_BACK_TO_APPLICANTS:
         return;
     default:
         break;
@@ -267,9 +267,9 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
 {
     switch (obj->state) {
     case OS_STATIC:
-    case 6:
+    case OS_HELL:
     case OS_PLANT_AGES:
-    case 14:
+    case OS_BEING_WATERED:
     case OS_DOUBLE_DOOR_SWINGS:
     case OS_SLIDING_DOOR_CLOSED:
     case OS_SLIDING_DOOR_OPENS:
@@ -289,7 +289,7 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
             draw_from_special_id_frame(obj->overlay_frame, x, y, 0, (u8 *)obj->data, obj->flip);
         }
         break;
-    case 4:
+    case OS_IN_USE:
         if (obj->overlay_frame) {
             draw_from_special_id_frame(obj->overlay_frame, x, y, 0, (u8 *)obj->data, obj->flip);
         }

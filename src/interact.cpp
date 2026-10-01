@@ -60,7 +60,7 @@ extern "C" void setup_next_interaction(Thing *w)
         step = w->seq_index;
         w->interact_repeat = interaction[step].count - 1;
     }
-    anim = interaction[step].v;
+    anim = interaction[step].anim;
     if (anim) {
         if (anim == -1) {
             w->seq_index = 0;
@@ -99,7 +99,7 @@ extern "C" void setup_next_interaction(Thing *w)
     }
     partner = &thing[w->slave];
     if (partner > thing) {
-        anim = interaction[step].other;
+        anim = interaction[step].partner_anim;
         if (anim) {
             partner->interact_anim = 1;
             if (partner->type == THING_PATIENT) {
@@ -133,26 +133,26 @@ extern "C" void setup_interactions(void)
     i = 0;
     statvar.interaction_start[0] = 0;
     for (;;) {
-        if (interaction[i].v == -1) {
+        if (interaction[i].anim == -1) {
             statvar.interaction_start[++seq] = i + 1;
-        } else if (interaction[i].v == -99) {
+        } else if (interaction[i].anim == -99) {
             break;
         }
         i++;
     }
 }
 
-// Starts interaction sequence seq (statvar.interaction_start index) for w (state 0x22
-// for a patient, 0x1a for staff) with its partner w->slave.
+// Starts interaction sequence seq (statvar.interaction_start index) for w (state
+// PS_TWO_PEEPS_INTERACT or SS_TWO_PEEPS_INTERACT) with its partner w->slave.
 // FUNCTION: 0x00054dd4
 void start_new_interaction(Thing *w, u8 seq)
 {
     switch (w->type) {
     case THING_PATIENT:
-        w->state = 0x22;
+        w->state = PS_TWO_PEEPS_INTERACT;
         break;
     case THING_STAFF:
-        w->state = 0x1a;
+        w->state = SS_TWO_PEEPS_INTERACT;
         break;
     default:
         return;

@@ -6,7 +6,7 @@
 // demo's names for them.
 
 extern "C" {
-void process_policy_button(u8 button);
+void process_policy_button(u8 action);
 void fn_0008fa90(u8 button);
 }
 
@@ -20,7 +20,7 @@ void process_hall_buttons(u8 button);
 void process_ipx_buttons(u8 button);
 void process_irq_buttons(u8 button);
 void process_level_buttons(u8 button);
-void process_loadgame_buttons(u8 button);
+void process_loadgame_buttons(u8 slot);
 void process_message_buttons(u8 button);
 void process_modem_buttons(u8 button);
 void process_network_buttons(u8 button);

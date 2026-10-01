@@ -41,55 +41,91 @@ struct TbScreenModeInfo {
     char Desc[24];
 };
 
+/*
+ * The library's display and mouse state (lbDisplay).
+ */
 struct TbDisplayStruct {
-    union {
-        u32 unknown0;
-        u8 *physical_screen;
-    };
+    // 0x0: Video memory the screen is shown from.
+    u8 *physical_screen;
+    // 0x4: Buffer the drawing routines write to.
     u8 *wscreen;
-    union {
-        u8 unknown8[0x10];
-        u8 *ghost;
-        struct {
-            u8 *ghost_;
-            u8 *fade_table;
-            u8 *graphics_window;
-            TbSprite *mouse_sprite;
-        };
-    };
-
+    // 0x8: 256x256 colour-blend table (ghost[a << 8 | b]) for translucent
+    // drawing.
+    u8 *ghost;
+    // 0xc: Table of 64 colour remaps, one per fade_step, used for sprites drawn
+    // with draw_flags 0x800.
+    u8 *fade_table;
+    // 0x10: Address in wscreen of the graphics window's top-left pixel.
+    u8 *graphics_window;
+    // 0x14: Pointer sprite, or 0.
+    TbSprite *mouse_sprite;
+    // 0x18: Width of the physical screen in pixels.
     s32 physical_screen_width;
+    // 0x1c: Height of the physical screen in pixels.
     s32 physical_screen_height;
+    // 0x20: Width (line pitch) of wscreen.
     s32 graphics_screen_width;
+    // 0x24: Height of wscreen.
     s32 graphics_screen_height;
+    // 0x28: Graphics window left edge.
     s32 graphics_window_x;
+    // 0x2c: Graphics window top edge.
     s32 graphics_window_y;
+    // 0x30: Graphics window width.
     s32 graphics_window_width;
+    // 0x34: Graphics window height.
     s32 graphics_window_height;
+    // 0x38: Left edge of the area the pointer is kept in.
     s32 mouse_window_x;
+    // 0x3c: Top edge of the pointer area.
     s32 mouse_window_y;
+    // 0x40: Width of the pointer area.
     s32 mouse_window_width;
+    // 0x44: Height of the pointer area.
     s32 mouse_window_height;
+    // 0x48: Pointer x when a button was last pressed.
     volatile s32 mouse_x;
+    // 0x4c: Pointer y when a button was last pressed.
     volatile s32 mouse_y;
+    // 0x50: Current pointer x, updated by the mouse handler.
     volatile s32 mmouse_x;
+    // 0x54: Current pointer y.
     volatile s32 mmouse_y;
+    // 0x58: Pointer x when a button was last released.
     volatile s32 rmouse_x;
+    // 0x5c: Pointer y when a button was last released.
     volatile s32 rmouse_y;
+    // 0x60: Drawing mode bits for the sprite, text and line routines.
     u16 draw_flags;
+    // 0x62: BIOS video mode saved before the first mode change.
     u16 old_video_mode;
+    // 0x64: Current screen mode.
     u16 screen_mode;
+    // 0x66: Nonzero while a VESA mode is set.
     u8 vesa_is_set_up;
+    // 0x67: Set by the mouse handler on a left press; cleared by the game when
+    // handled.
     volatile u8 left_button;
+    // 0x68: Set on a right press.
     volatile u8 right_button;
+    // 0x69: Set on a middle press.
     volatile u8 middle_button;
+    // 0x6a: 1 while the left button is held.
     volatile u8 mleft_button;
+    // 0x6b: 1 while the right button is held.
     volatile u8 mright_button;
+    // 0x6c: 1 while the middle button is held.
     volatile u8 mmiddle_button;
+    // 0x6d: Set on a left release.
     volatile u8 rleft_button;
+    // 0x6e: Set on a middle release.
     volatile u8 rmiddle_button;
+    // 0x6f: Set on a right release.
     volatile u8 rright_button;
+    // 0x70: Index of the fade_table remap in use (low 6 bits).
     u8 fade_step;
+    // 0x71: Colour for one-colour drawing, such as text drawn with draw_flags
+    // 0x40.
     u8 draw_colour;
     u8 unknown72[6];
 };
@@ -109,7 +145,12 @@ struct TbLoadFiles {
             u8 Spare;
             u8 Spare_hi;
         };
-        u8 unknown[0x2c];
+        // Spare read as a whole: the lowest install_type that has the file on
+        // the hard disk; above it modify_data_load_filename loads it from the CD.
+        struct {
+            u8 unknown_[0x2a];
+            u16 install_level;
+        };
     };
 };
 
@@ -185,29 +226,46 @@ int LbPaletteSet(u8 *palette, ...);
 u32 GetSongHandle(void);
 void StopAllSamples(void);
 int LbDrawBox(s32 x, s32 y, s32 w, s32 h, u8 colour);
-int LbTextSetWindow(s32 x, s32 y, s32 w, s32 h);
+int LbTextSetWindow(s32 x, s32 y, s32 width, s32 height);
 int LbTextDraw(s32 x, s32 y, char *text);
 u32 LbSqrL(u32 n);
 s32 LbTextStringWidth(char *text);
 s32 LbTextStringHeight(char *text);
 u16 LbArcTan(s32 x, s32 y);
-int fn_000cb2db(int n);
+int fn_000cb2db(int i);
 void LbScreenCopyBox(const u8 *src, u8 *dst, s32 height);
-u8 play_smk(char *path, u32 a, u32 b);
+u8 play_smk(char *name, u32 smk_flags, u32 flags);
+
+// play_smk's flags (AnimTable.play_flags).
+#define SMK_NO_SOUND 0x1
+// Esc, Enter, Space and the left button do not stop the video.
+#define SMK_NO_SKIP 0x2
+#define SMK_DOUBLE_HEIGHT 0x4
+// Double height with every other row left blank.
+#define SMK_INTERLACE 0x8
+#define SMK_DOUBLE_WIDTH 0x80
+// Decode straight into VGA memory (320x200 mode only).
+#define SMK_DIRECT_VGA 0x100
+#define SMK_LOOP 0x400
+
+// play_smk's result when the file opened: played to the end, or skipped.
+#define SMK_PLAYED 1
+#define SMK_SKIPPED 2
+
 void reqspr_draw(int x, int y, TbSprite *sprite);
 
-int atoi(char *text);
+int atoi(char *p);
 void flushall(void);
 void memset(void *dst, int value, u32 size);
 void memmove(void *dst, void *src, u32 size);
-int sprintf(char *buf, char *fmt, ...);
-void exit(int code);
-void vprintf(char *fmt, char **args);
+int sprintf(char *dest, char *format, ...);
+void exit(int status);
+void vprintf(char *format, char **arg);
 void fflush(__iobuf *fp);
 int tolower(int c);
 int toupper(int c);
 
-int printf(char *fmt, ...);
+int printf(char *format, ...);
 u32 clock(void);
 void *malloc(u32 size);
 #pragma aux malloc "_nmalloc_"
@@ -255,10 +313,10 @@ struct SREGS {
     u16 es, cs, ss, ds, fs, gs;
 };
 
-int int386x(int intno, REGS *in, REGS *out, SREGS *seg);
+int int386x(int intno, REGS *in_regs, REGS *out_regs, SREGS *segregs);
 void segread(SREGS *seg);
 
-int int386(int intno, REGS *in, REGS *out);
+int int386(int intno, REGS *in_regs, REGS *out_regs);
 
 void AIL_stop_sequence(u32 handle, ...);
 #pragma aux AIL_stop_sequence "_*"
@@ -376,8 +434,8 @@ void LbNetwork_ChangeExchangeTimeout(u32 timeout);
 TbError LbNetwork_Stop(void);
 TbError LbNetwork_Exchange(void *buf);
 TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size);
-TbError LbNetwork_Send(u32 port, void *buf, u32 len);
-u32 LbNetwork_Receive(u32 port, void *buf, u32 len);
+TbError LbNetwork_Send(u32 player, void *buf, u32 len);
+u32 LbNetwork_Receive(u32 player, void *buf, u32 len);
 
 /* The library's service enum has no tag: any typedef name mangles as $$TE$$. */
 typedef enum {
@@ -419,11 +477,11 @@ struct TbNetworkPlayerNameEntry {
 
 typedef void (__stdcall *TbNetworkCallbackFunc)(TbNetworkCallbackData *, void *);
 
-TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *a, u32 b,
+TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf, u32 exchange_size,
                        __7308jnTbNetworkPlayerInfo *info, void *init_data);
 TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data);
 TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *player, void *data);
-TbError LbNetwork_EnableNewPlayers(u32 enable);
+TbError LbNetwork_EnableNewPlayers(u32 allow);
 TbError LbNetwork_EnumerateSessions(TbNetworkCallbackFunc callback, void *data);
 TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetworkCallbackFunc callback, void *data);
 

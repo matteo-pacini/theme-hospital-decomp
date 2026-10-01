@@ -20,9 +20,9 @@ extern char **good_awards_text;
 extern char **trophy_bonus_messages;
 extern Event D_001549d0[];
 
-void conv_string(void *dst, char *text, int flags);
+void conv_string(void *dst, char *src, int mode);
 
-void qsort(void *base, u32 n, u32 size, int (*cmp)(const void *, const void *));
+void qsort(void *base, u32 n, u32 size, int (comparp)(const void *, const void *));
 }
 
 void display_plaque(void);
@@ -42,16 +42,16 @@ void start_year_end(void)
     s32 i;
 
     finish_composite_help();
-    if (display_mode == 9) {
+    if (display_mode == DM_CHOICE) {
         fn_000c21e6(year_end_backup.choice_state, &choice, 10);
         year_end_backup.mode = display_mode;
         year_end_backup.spare_data = choice_spare_data;
         year_end_backup.time_out = choice_time_out;
-        choice_backup.mode = 8;
+        choice_backup.mode = DM_YEAR_END;
     } else {
         fn_000c21e6(&year_end_backup, &choice_backup, 10);
     }
-    display_mode = 8;
+    display_mode = DM_YEAR_END;
     year_end_type = 0;
     for (i = 0; i < 4; i++) {
         if (allhosps[i].held_staff)
@@ -135,16 +135,16 @@ extern "C" void display_year_charts(void)
     count = 4;
     switch (yearend.state) {
     case 1:
-        crequester.unknown9 = 0;
+        crequester.arg3 = 0;
         current_display = 0;
-        load_ingame_pic(15, 1, 0x16, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_AWARDS1, 1, 0x16, 0, SCREEN_MODE_13);
         current_award = 0;
         othervar.idle_countdown = 0x4b0;
         yearend.state = 3;
         break;
     case 0:
-        crequester.unknown9 = 0;
-        load_ingame_pic(16, 1, 0x16, 0, SCREEN_MODE_13);
+        crequester.arg3 = 0;
+        load_ingame_pic(SCR_AWARDS2, 1, 0x16, 0, SCREEN_MODE_13);
         copy_screen_to_wscreen(bscreen);
         yearend.state = 2;
         othervar.idle_countdown = 0x4b0;
@@ -196,7 +196,7 @@ extern "C" void display_year_charts(void)
             if (!exit_the_yearend_screen) {
                 D_001549d0[player].type = EV_PAUSE;
                 exit_the_yearend_screen = 1;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
         }
         break;
@@ -210,7 +210,7 @@ extern "C" void display_year_charts(void)
             if (!exit_the_yearend_screen) {
                 D_001549d0[player].type = EV_PAUSE;
                 exit_the_yearend_screen = 1;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
         }
         break;
@@ -311,14 +311,14 @@ void process_yearend_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         if (!exit_the_yearend_screen) {
             D_001549d0[player].type = EV_PAUSE;
             exit_the_yearend_screen = 1;
         }
         break;
     case 1:
-        play_sound(10, SFX_YESX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         switch (yearend.state) {
         case 3:
             yearend.state = 0;
@@ -332,7 +332,7 @@ void process_yearend_buttons(u8 button)
         break;
     case 3:
     case 2:
-        play_sound(10, SFX_YESX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         current_display = 0;
         break;
     case 4:
@@ -341,7 +341,7 @@ void process_yearend_buttons(u8 button)
     case 5:
     case 7:
     case 9:
-        play_sound(10, SFX_YESX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         switch (awards_won[button - 4].direction) {
         case 0:
             current_display = 0;
@@ -360,7 +360,7 @@ void process_yearend_buttons(u8 button)
     case 12:
     case 11:
     case 10:
-        play_sound(10, SFX_YESX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         current_display = 3;
         current_award = button - 10;
         break;

@@ -15,12 +15,32 @@ void *fn_000ed344(u32 size);
 
 struct TbNetworkCallbackData;
 
+// A provider message's type (its stub header, EncodeMessageStub), named
+// after the ServiceProvider::Receive callback it goes to. Also passed to
+// SendMessage as the delivery mode (0 not guaranteed, 1 guaranteed).
 typedef enum {
-    MSG_TYPE_0,
-    MSG_TYPE_5 = 5,
-    MSG_TYPE_6,
-    MSG_TYPE_8 = 8
+    // Exchange data for the multiPlayer callback.
+    MSG_TYPE_MULTIPLAYER,
+    MSG_TYPE_ADD_PLAYER,
+    MSG_TYPE_DELETE_PLAYER,
+    MSG_TYPE_SYSTEM_USER = 4,
+    MSG_TYPE_REQ_EXCHANGE_DATA,
+    MSG_TYPE_REQ_COMPOSITE_EXCHANGE_DATA,
+    MSG_TYPE_UNIDIRECTIONAL,
+    MSG_TYPE_8
 } TbMessageType;
+
+// ServiceProvider::Receive flags: which message types to take from the
+// queue (RECV_ALL: every type).
+#define RECV_MULTIPLAYER 0x1
+#define RECV_ADD_PLAYER 0x2
+#define RECV_DELETE_PLAYER 0x4
+#define RECV_ALL 0x8
+#define RECV_REQ_EXCHANGE_DATA 0x10
+#define RECV_REQ_COMPOSITE_EXCHANGE_DATA 0x20
+#define RECV_UNIDIRECTIONAL 0x40
+#define RECV_SYSTEM_USER 0x80
+#define RECV_MSG_TYPE_8 0x100
 
 struct TbNetworkPlayerEntry {
     u8 unknown0;

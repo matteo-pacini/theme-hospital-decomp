@@ -13,24 +13,24 @@ u8 shall_i_be_abducted(Thing *w);
 
 }
 
-u16 check_warmth(Thing *w);
-s16 check_feelgood(Thing *w);
-void check_around(Thing *w);
-void setup_showanim(Thing *w, u16 anim);
-s16 staff_check_around(Thing *w);
+u16 check_warmth(Thing *person);
+s16 check_feelgood(Thing *person);
+void check_around(Thing *person);
+void setup_showanim(Thing *peep, u16 anim);
+s16 staff_check_around(Thing *employee);
 void spread_epidemic(Thing *carrier, u16 warmth);
-void calculate_speed(Thing *w);
-void doctor_cracks_up(Thing *w);
-s32 evaluate_criteria(const u8 player);
-u32 check_criteria_values(const u32 a, const u8 player);
+void calculate_speed(Thing *staff);
+void doctor_cracks_up(Thing *doctor);
+s32 evaluate_criteria(const u8 owner);
+u32 check_criteria_values(const u32 mode, const u8 owner);
 s32 losing(void);
 
 // Periodic update of patient person: an emergency patient dies when the
 // emergency ends and otherwise only shows the emergency icon; a contagious one
 // shows contagious or vaccinated. When due (Thing.modify_time) and inside the
-// building (map unknown7 flag 0x10 clear), applies warmth, plants, mess and
-// contagion, makes them more impatient, thirsty and in need of the toilet,
-// adjusts happiness and status icons, and costs 1 health.
+// building (MAP_OUTDOOR clear in Map.owner_flags), applies warmth, plants,
+// mess and contagion, makes them more impatient, thirsty and in need of the
+// toilet, adjusts happiness and status icons, and costs 1 health.
 // FUNCTION: 0x00070f80
 void modify_person(Thing *person)
 {
@@ -55,7 +55,7 @@ void modify_person(Thing *person)
     if (!(othervar.cur_turn > person->modify_time || person->modify_time - othervar.cur_turn > 0x7fff))
         return;
     person->modify_time = othervar.next_modify_turn;
-    if (map[((s16)person->y.tile << 7) + (s16)person->x.tile].owner_flags & 0x10)
+    if (map[((s16)person->y.tile << 7) + (s16)person->x.tile].owner_flags & MAP_OUTDOOR)
         return;
     check_warmth(person);
     check_feelgood(person);
@@ -259,12 +259,12 @@ u8 do_reaction(Thing *peep)
     u16 list[5];
 
     count = 0;
-    if (map[((s16)peep->y.tile << 7) + (s16)peep->x.tile].owner_flags & 0x10)
+    if (map[((s16)peep->y.tile << 7) + (s16)peep->x.tile].owner_flags & MAP_OUTDOOR)
         return 0;
     pos = (u16)peep->x.tile + ((u16)peep->y.tile << 7);
     if (which_room(pos) == 0) {
-        if (peep->flags & 0x200) {
-            peep->flags &= ~0x200;
+        if (peep->flags & PF_QUAKE_SHAKEN) {
+            peep->flags &= ~PF_QUAKE_SHAKEN;
             setup_showanim(peep, 0x2d);
             return 1;
         }
@@ -458,7 +458,7 @@ void appraise_staff(Thing *employee)
 {
     s32 value;
 
-    value = employee->ability / gbv.salary_ability_divisor + *(u16 *)&staff[employee->subtype].unknown0[2];
+    value = employee->ability / gbv.salary_ability_divisor + staff[employee->subtype].min_salary;
     if (employee->skills & SKILL_JUNIOR)
         value += gbv.salary_add[0];
     if (employee->skills & SKILL_DOCTOR)
@@ -477,13 +477,13 @@ void appraise_staff(Thing *employee)
             if (actual_game_turn - (u16)employee->hire_time >= gbv.promo_doc * 1500) {
                 employee->skills &= ~8;
                 if (employee->owner == player)
-                    announce_this(10, 1);
+                    announce_this(ANN_JUNIOR_TO_DOCTOR, 1);
             }
         } else if (!(employee->skills & SKILL_CONSULTANT) && employee->ability > gbv.consultant_threshold) {
             if (actual_game_turn - (u16)employee->hire_time >= gbv.promo_con * 1500) {
                 employee->skills |= SKILL_CONSULTANT;
                 if (employee->owner == player)
-                    announce_this(0xd, 1);
+                    announce_this(ANN_DOCTOR_TO_CONSULTANT, 1);
                 if (employee->room != 0 && employee->room->type == ROOM_TRAINING) {
                     employee->next_state = SS_IN_CORRIDOR;
                     set_complex(employee, 0x136, employee->room->door_inside_tile);
@@ -580,7 +580,7 @@ void person_count(Thing *person)
 
     if (othervar.every_32_turns) {
         advisor.has_patients = 1;
-        if (!(map[((s16)person->y.tile << 7) + (s16)person->x.tile].owner_flags & 0x10)) {
+        if (!(map[((s16)person->y.tile << 7) + (s16)person->x.tile].owner_flags & MAP_OUTDOOR)) {
             if (person->owner == player) {
                 adcounts.patients++;
                 adcounts.impatience_sum += person->impatience;
@@ -611,10 +611,10 @@ void person_count(Thing *person)
                 allhosps[person->owner].emergency_present++;
             if ((s8)person->contagion != 0)
                 allhosps[person->owner].contagious_count++;
-            if (~person->flags32 & 0x200000) {
+            if (~person->flags32 & PF_COUNTED_VISITOR) {
                 for (k = 3; --k >= 0;) {
                     mycontrol->history[4][k][11]++;
-                    person->flags32 |= 0x200000;
+                    person->flags32 |= PF_COUNTED_VISITOR;
                 }
             }
         } else if (person->flags & PF_CONTAGIOUS) {
@@ -672,7 +672,7 @@ void check_win_status(void)
 }
 
 // Returns how close the local player is to losing: the average progress
-// (lose_criteria[].f14) of the lose criteria in use, times 256.
+// (lose_criteria[].progress) of the lose criteria in use, times 256.
 // FUNCTION: 0x00072cc0
 s32 losing(void)
 {

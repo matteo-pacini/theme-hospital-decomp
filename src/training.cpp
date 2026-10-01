@@ -1,13 +1,13 @@
 #include "hosp.h"
 
-u8 check_training_command(Thing *w);
-u8 send_doctor_to_training(Thing *w);
+u8 check_training_command(Thing *doctor);
+u8 send_doctor_to_training(Thing *doctor);
 u16 find_training_room_no_consultant(u8 owner, u16 exclude);
 u16 find_emptiest_training_room(u8 owner, u16 exclude);
-void training_done(const Thing *w, const u8 kind);
-void staff_exit_room_check(Thing *w);
-void set_expertise_staff(Thing *w);
-void insert_skill(u16 skill, u8 owner);
+void training_done(const Thing *consultant, const u8 kind);
+void staff_exit_room_check(Thing *staff);
+void set_expertise_staff(Thing *staff);
+void insert_skill(u16 mask, u8 owner);
 
 #define TRAINING_OBJECT(t) \
     ((t)->object && (thing[(t)->object].type == THING_OBJECT || thing[(t)->object].type == THING_DOOR) \
@@ -16,7 +16,7 @@ void insert_skill(u16 skill, u8 owner);
 extern "C" {
 
 
-u8 check_room_mutex(Thing *w);
+u8 check_room_mutex(Thing *staff);
 
 }
 
@@ -40,14 +40,14 @@ void doctor_is_trained(Thing *doctor)
         return;
     }
     doctor->orders |= ORD_RETURN_TO_TRAINING;
-    if (doctor->room->being_edited || doctor->room->state == 4) {
+    if (doctor->room->being_edited || doctor->room->state == RS_EDITED) {
         evacuate_staff(doctor);
         return;
     }
     if (check_training_command(doctor)) {
         return;
     }
-    if (doctor->orders & 8) {
+    if (doctor->orders & ORD_LEAVE_ROOM) {
         doctor->orders &= 0xf0;
         evacuate_staff(doctor);
         return;
@@ -89,14 +89,14 @@ void consultant_trains(Thing *consultant)
     if (shall_i_resign(consultant)) {
         return;
     }
-    if (consultant->room->being_edited || consultant->room->state == 4) {
+    if (consultant->room->being_edited || consultant->room->state == RS_EDITED) {
         evacuate_staff(consultant);
         return;
     }
     if (check_training_command(consultant)) {
         return;
     }
-    if (consultant->orders & 8) {
+    if (consultant->orders & ORD_LEAVE_ROOM) {
         consultant->orders &= 0xf0;
         evacuate_staff(consultant);
         return;
@@ -137,7 +137,7 @@ void consultant_trains(Thing *consultant)
     }
     if (consultant->complex_action != 0x3de && consultant->complex_action != 0x3e8) {
         consultant->next_state = SS_CONSULTANT_TRAINS;
-        consultant->resume_state = SS_PROCESS_COMPLEX;
+        consultant->resume_state = SS_EVACUATE;
         set_complex(consultant, 0x3de, 0);
         process_staff_complex(consultant);
         return;
@@ -182,10 +182,10 @@ u8 send_doctor_to_training(Thing *doctor)
     }
     if (doctor->skills & SKILL_CONSULTANT) {
         room = find_training_room_no_consultant(doctor->owner, current_room);
-        state = 0x48;
+        state = SS_CONSULTANT_TRAINS;
     } else {
         room = find_emptiest_training_room(doctor->owner, current_room);
-        state = 0x46;
+        state = SS_DOCTOR_IS_TRAINED;
     }
     if (state && room) {
     staff_exit_room_check(doctor);
@@ -193,7 +193,7 @@ u8 send_doctor_to_training(Thing *doctor)
         set_complex(doctor, 0x136, doctor->room->door_inside_tile);
     }
     doctor->next_state = state;
-    doctor->resume_state = SS_PROCESS_COMPLEX;
+    doctor->resume_state = SS_EVACUATE;
     set_complex(doctor, 0x96, room_info[room].door_tile);
     doctor->dest_room = room;
     process_staff_complex(doctor);
@@ -287,7 +287,7 @@ void training_done(const Thing *consultant, const u8 kind)
     students = 0;
     points = 0;
     limit = old_newrand() % consultant->ability;
-    skills = (u16)(consultant->skills & 0x160);
+    skills = (u16)(consultant->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_RESEARCHER));
     for (student = &thing[consultant->room->first]; student > thing; student = &thing[student->room_next]) {
         if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT)
             && (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
@@ -298,8 +298,8 @@ void training_done(const Thing *consultant, const u8 kind)
     for (student = &thing[consultant->room->first]; student > thing; student = &thing[student->room_next]) {
         if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT)
             && (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
-            learn = skills & ~(u16)(student->skills & 0x160);
-            if (learn & 0x160) {
+            learn = skills & ~(u16)(student->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_RESEARCHER));
+            if (learn & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_RESEARCHER)) {
                 if (learn & 0x20) {
                     count++;
                 } else if (learn & 0x40) {
@@ -335,7 +335,7 @@ void training_done(const Thing *consultant, const u8 kind)
                         student->skills |= SKILL_SURGEON;
                         allhosps[student->owner].surgeon_count++;
                         if (student->owner == player) {
-                            announce_this(4, 5);
+                            announce_this(ANN_PROMOTED, 5);
                         }
                         set_expertise_staff(student);
                         insert_skill(0x20, student->owner);
@@ -346,7 +346,7 @@ void training_done(const Thing *consultant, const u8 kind)
                     if (student->psych_training > gbv.ability_threshold_psych) {
                         student->skills |= SKILL_PSYCHIATRIST;
                         if (student->owner == player) {
-                            announce_this(4, 6);
+                            announce_this(ANN_PROMOTED, 6);
                         }
                         set_expertise_staff(student);
                         insert_skill(0x40, student->owner);
@@ -357,7 +357,7 @@ void training_done(const Thing *consultant, const u8 kind)
                     if (student->research_training > gbv.ability_threshold_research) {
                         student->skills |= SKILL_RESEARCHER;
                         if (student->owner == player) {
-                            announce_this(4, 8);
+                            announce_this(ANN_PROMOTED, 8);
                         }
                         set_expertise_staff(student);
                         insert_skill(0x100, student->owner);

@@ -23,10 +23,10 @@ extern u16 ins_control[];
 void copy_my_hosp(AllHosps *dst, AllHosps *src);
 void balance_control(void);
 void setup_insurances(void);
-void init_player(u8 p);
+void init_player(u8 owner);
 void setup_rat_fest_panel(void);
-void rat_fest_builder(u8 kind);
-void training_builder(u8 kind);
+void rat_fest_builder(u8 level);
+void training_builder(u8 level);
 void create_job_market(void);
 void calc_visitors_this_month(void);
 void setup_computer_players(void);
@@ -34,8 +34,8 @@ void setup_next_emergency(void);
 void setup_next_quake(void);
 void setup_next_net_criteria(const u8 owner);
 void play_midi(u8 track);
-void read_variable_file(char *path);
-void evaluate_reputation(const u8 a, const u8 owner);
+void read_variable_file(char *name);
+void evaluate_reputation(const u8 treatment, const u8 owner);
 void calc_pricing_factor(const u8 owner);
 u8 load_player_details(void);
 void init_mcga_coords(void);
@@ -49,7 +49,7 @@ void init_wibble(void *xoff, void *yoff, s32 w, s32 h, s32 width, s32 freq, s32 
 
 // One-time game setup after startup: menus, interaction and help tables,
 // the pixel buffer, music and announcements. With -L or -S it starts the
-// level at once (with -S, also sending event 0x1e with the -G value);
+// level at once (with -S, also sending event EV_LOAD_GAME_AT_START with the -G value);
 // otherwise it only queues EV_GOTO_COLUMN_ROW.
 // FUNCTION: 0x00090610
 extern "C" void start_game(void)
@@ -59,7 +59,7 @@ extern "C" void start_game(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     init_andys_variables();
     setup_req4_references();
-    crequester.id = D_001581a6 = 0x63;
+    crequester.id = D_001581a6 = REQ_NONE;
     myplayer.shadows_on = 1;
     setup_menus();
     setup_interactions();
@@ -69,7 +69,7 @@ extern "C" void start_game(void)
     setup_indices_for_composite_help(level_text, statvar.help_page1_start, 0x13);
     setup_indices_for_composite_help(win_text, statvar.winlose_text_start, 0xd);
     setup_indices_for_composite_help(D_00160398, statvar.net_help_start, 0xb);
-    setup_indices_for_composite_help(D_0016039c, statvar.f56f, 4);
+    setup_indices_for_composite_help(D_0016039c, statvar.net_result_start, 4);
     InitPixBuffer(0, 0, 0xb4, 0xb4, 0xfe, 1);
     init_midi();
     init_ambients();
@@ -77,7 +77,7 @@ extern "C" void start_game(void)
     myplayer.game_speed = 0x19;
     init_wibble(xs, ys, pixBuf.width + 0x20, pixBuf.width + 0x20, pixBuf.width, 0x11, 2);
     measure_objects();
-    choice_backup.mode = 0;
+    choice_backup.mode = DM_GAME;
     current_text.text[0] = 0;
     if (debug.direct_start) {
         if (fn_000cd716(myplayer.name_chars) == 0)
@@ -86,8 +86,8 @@ extern "C" void start_game(void)
         load_player_details();
         othervar.pending_palette = palette;
         if (!new_game) {
-            D_001549d0[player].type = 0x1e;
-            D_001549d0[player].value = debug.unknown10a;
+            D_001549d0[player].type = EV_LOAD_GAME_AT_START;
+            D_001549d0[player].value = debug.save_slot;
         } else {
             D_001549d0[player].type = EV_GOTO_COLUMN_ROW;
         }
@@ -151,12 +151,12 @@ void setup_new_level(int level, u8 reload_balance)
     load_level(level, 1);
     free_level();
     clear_sound_heap();
-    if (towns[myhosp->level].unknown4[2] == 1) {
+    if (towns[myhosp->level].special_kind == 1) {
         gamevar.rat_fest_level = 1;
         setup_rat_fest_panel();
-        rat_fest_builder(towns[myhosp->level].unknown4[1]);
-    } else if (towns[myhosp->level].unknown4[2] == 2) {
-        training_builder(towns[myhosp->level].unknown4[1]);
+        rat_fest_builder(towns[myhosp->level].special_arg);
+    } else if (towns[myhosp->level].special_kind == 2) {
+        training_builder(towns[myhosp->level].special_arg);
     }
     create_job_market();
     for (i = 0; i < 4; i++)
@@ -268,7 +268,7 @@ void balance_control(void)
         statvar.non_visuals_total += non_visuals[i];
         non_visuals[i] = statvar.non_visuals_total;
     }
-    expertise[ILL_GENERAL_PRACTICE].unknown10[8] = 1;
+    expertise[ILL_GENERAL_PRACTICE].known = 1;
     statvar.illness_kind_count = count;
 }
 
@@ -316,7 +316,7 @@ void init_player(u8 owner)
     allhosps[owner].rooms[0].cure_available = 1;
     for (i = 0; i < 0x3e; i++) {
         if (objects[i].available_for_level) {
-            hosp->object_stats[i].unknownC[0] = objects[i].unknown6[1];
+            hosp->object_stats[i].equip_available = objects[i].start_avail;
             hosp->object_stats[i].available = objects[i].when_avail;
         }
         hosp->object_stats[i].cost = objects[i].cost;
@@ -326,7 +326,7 @@ void init_player(u8 owner)
     for (i = 0; i < 0x2f; i++) {
         hosp->rooms[i].price = expertise[i].start_price;
         hosp->rooms[i].price_scale = 10000;
-        hosp->rooms[i].discovered = expertise[i].unknown10[8];
+        hosp->rooms[i].discovered = expertise[i].known;
         setup_drug((u16)owner, i);
         hosp->rooms[i].rep_points = 20;
         hosp->rooms[i].rep_events = 20;

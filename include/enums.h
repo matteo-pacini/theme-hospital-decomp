@@ -52,6 +52,9 @@ enum {
 // name in language section 52 (13 for the build menu).
 enum {
     ROOM_FREE = 0,
+    // One per entrance of each hospital, made at level load from
+    // level->entrances: where people come in and leave.
+    ROOM_ENTRANCE = 1,
     ROOM_CORRIDOR = 3,
     ROOM_RECEPTION = 4,
     ROOM_DESTROYED = 6,
@@ -153,22 +156,35 @@ enum {
     PS_GOTO_DESTINATION = 6,
     PS_RETURN_TO_QUEUE_AREA = 8,
     PS_GO_HOME = 0xc,
-    PS_COMPLEX_RETRY = 0x10,
+    PS_GONE = 0xe,
+    PS_PLAY_COMPLEX_ANIM = 0x10,
     PS_ARRIVES_AT_DOOR = 0x12,
     PS_IN_QUEUE = 0x14,
     PS_GOTO_OBJECT = 0x16,
     PS_ENTERTAINS_THEMSELF = 0x18,
+    PS_WAIT_FOR_COMPLEX_SLAVE = 0x1a,
+    // No routine: ready as the slave of a staff member's complex (examined,
+    // treated), which staff_wait_for_complex_slave and merge_slave wait for.
+    PS_SLAVE_READY = 0x20,
+    PS_TWO_PEEPS_INTERACT = 0x22,
     PS_GOTO_QUEUE = 0x24,
     PS_GO_FOR_TREATMENT = 0x26,
+    // No routine: drawn as part of the staff member whose animation it joined
+    // (merge_slave).
+    PS_MERGED = 0x28,
+    PS_COMPLEX_RETRY = 0x2a,
     PS_IN_BED = 0x2c,
     PS_FILLS = 0x2e,
     PS_ENERGISES = 0x30,
     PS_DEAD = 0x32,
+    PS_FLYS = 0x34,
     PS_IN_BOGS = 0x36,
     PS_LEAVE_TOILETS = 0x38,
     PS_SHOWANIM = 0x3a,
     PS_STUCK = 0x3c,
     PS_BP_GOTO = 0x40,
+    // No routine: the grim reaper's victim, arrived at the gates of hell.
+    PS_AT_HELL_GATE = 0x42,
     PS_WAITS_FOR_DECISION = 0x44,
     PS_ARRIVED_FROM_CALL = 0x46,
     PS_NAV_DEBUG = 0xf0
@@ -185,6 +201,9 @@ enum {
     SS_SURGEON_WAITS = 0x10,
     SS_GOTO_OBJECT = 0x12,
     SS_DOCTOR_WAITS_FOR_PATIENT = 0x14,
+    // No routine: a theatre assistant ready for the lead surgeon's complex.
+    SS_ASSISTANT_READY = 0x18,
+    SS_TWO_PEEPS_INTERACT = 0x1a,
     SS_DOCTOR_EXAMINES = 0x1c,
     SS_RECEPT_WAITS_FOR_PATIENT = 0x20,
     SS_RECEPT_ADMITS_PATIENT = 0x22,
@@ -197,11 +216,16 @@ enum {
     SS_IN_STAFF_ROOM = 0x30,
     SS_NURSE_IN_WARD = 0x32,
     SS_WANDERS = 0x34,
-    SS_PROCESS_COMPLEX = 0x36,
+    SS_EVACUATE = 0x36,
+    // Back on the list of job applicants after walking off the map (sacked or
+    // resigned).
+    SS_BACK_TO_APPLICANTS = 0x38,
     SS_HANDYMAN_WORKS = 0x3c,
     SS_DOCTOR_RESEARCHES = 0x3e,
     SS_NURSE_VACCINATES = 0x40,
     SS_DOCTOR_IN_THEATRE = 0x42,
+    // No routine: off the map, picked up or being hired by the player.
+    SS_HELD = 0x44,
     SS_DOCTOR_IS_TRAINED = 0x46,
     SS_CONSULTANT_TRAINS = 0x48,
     SS_RECEPTIONIST_SETUP = 0x4a,
@@ -215,8 +239,16 @@ enum {
 // runs for it.
 enum {
     OS_STATIC = 2,
+    // In use by the person in its use position, whose animation plays the
+    // object's overlay.
+    OS_IN_USE = 4,
+    OS_HELL = 6,
     OS_PLANT_AGES = 0xa,
+    // No routine: a plant while a handyman waters it.
+    OS_BEING_WATERED = 0xe,
     OS_DOUBLE_DOOR_SWINGS = 0x10,
+    // No routine: taken off the map (remove_object_from_map).
+    OS_REMOVED = 0x12,
     OS_SLIDING_DOOR_CLOSED = 0x14,
     OS_SLIDING_DOOR_OPENS = 0x16,
     OS_SLIDING_DOOR_OPEN = 0x18,
@@ -224,7 +256,7 @@ enum {
     OS_BOMB_TICKS = 0x1c
 };
 
-// Thing.state of the grim reaper.
+// Thing.state (and reaper_next_state) of the grim reaper.
 enum {
     REAPER_PLAY_ANIM = 2,
     REAPER_WAITS = 4,
@@ -242,6 +274,8 @@ enum {
 // Thing.state of a helicopter (or saucer).
 enum {
     HELI_LANDS = 2,
+    // No routine but the animation: landed, waiting for the emergency.
+    HELI_WAITS = 4,
     HELI_LEAVES = 6,
     HELI_ABDUCTS = 8
 };
@@ -250,7 +284,9 @@ enum {
 enum {
     MAYOR_GOTO = 2,
     MAYOR_PAUSES = 4,
-    MAYOR_GONE = 6
+    MAYOR_GONE = 6,
+    // The inspector at the reception desk (inspector_pauses).
+    MAYOR_INSPECTS = 8
 };
 
 // Thing.illness and other illness (expertise) indexes: an illness, or a
@@ -320,6 +356,15 @@ enum {
 // Waiting for the player to build a diagnosis or treatment room.
 #define PF_WAITING_FOR_ROOM 0x80
 #define PF_SENT_HOME_BY_INSPECTOR 0x100
+// Set by an earthquake (disaster_peeps) for kinds that react; the next time
+// they are outdoors they play the reaction animation and it clears.
+#define PF_QUAKE_SHAKEN 0x200
+// Diagnosed as far as the hospital can, but no illness found: waiting for
+// more diagnosis rooms (info bar text 17 rather than 18).
+#define PF_NEEDS_DIAGNOSIS_ROOM 0x400
+// The guessed diagnosis is wrong (best_guess_treatment): the treatment does
+// nothing, or kills.
+#define PF_WRONG_GUESS 0x800
 #define PF_GUESSED 0x1000
 #define PF_CURED 0x2000
 #define PF_FED_UP 0x4000
@@ -329,6 +374,8 @@ enum {
 #define PF_DYING 0x40000
 #define PF_NO_DIAGNOSIS 0x80000
 #define PF_NO_TREATMENT 0x100000
+// Counted once in this month's visitor history (history_visitors_now).
+#define PF_COUNTED_VISITOR 0x200000
 // Counted once in the hospital's patient statistics.
 #define PF_RECORDED 0x400000
 #define PF_TOO_EXPENSIVE 0x800000
@@ -337,6 +384,8 @@ enum {
 // order from the staff window. Defines, as for the skills.
 #define ORD_REST 0x1
 #define ORD_TRAIN 0x4
+// Leave the current room (evacuate_staff), then clear the order.
+#define ORD_LEAVE_ROOM 0x8
 // Set while researching or being trained, so that they go back after a rest.
 #define ORD_RETURN_TO_RESEARCH 0x10
 #define ORD_RESIGN 0x20
@@ -674,58 +723,131 @@ enum {
     EV_MODIFY_BLUEPRINT = 2,
     EV_PLACE_BP_DOOR = 3,
     EV_COMMIT_DOORS = 4,
+    EV_PLACE_STAFF = 5,
     EV_PLACE_OBJECT = 7,
+    // Updates the blueprint under the mouse (modify_blueprint, not dragging).
+    EV_HOVER_BLUEPRINT = 8,
     EV_QUEUE_PERSON_TO_NEW_QUEUE = 9,
+    // Answers a pending call to the player (value: the call's kind).
+    EV_ANSWER_PLAYERCALL = 0xa,
     EV_PLACE_SMALL_THING = 0xb,
+    EV_SAVE_GAME = 0xc,
+    EV_LOAD_GAME = 0xd,
     EV_VARY_SPEED = 0xe,
     EV_COMMIT_BLUEPRINT = 0x12,
     EV_UNCOMMIT_BLUEPRINT = 0x13,
     EV_TEMP_PLACE_DOOR = 0x1a,
+    EV_QUIT_GAME = 0x1c,
+    EV_GOTO_COLUMN_ROW = 0x1d,
+    // Loads save value when a level starts from a saved game, then centres on an entrance.
+    EV_LOAD_GAME_AT_START = 0x1e,
+    EV_REQ1_RESET_ROOMS = 0x20,
     // Pauses or unpauses the game.
     EV_PAUSE = 0x22,
-    EV_GOTO_COLUMN_ROW = 0x1d,
-    EV_REQ1_RESET_ROOMS = 0x20,
     EV_BUY_OBJECT = 0x25,
+    EV_CLOSE_REQUESTERS = 0x26,
+    EV_FADE_TO_BLACK = 0x29,
+    EV_FADE_IN = 0x2a,
+    EV_PLACE_NEXT_OBJECT = 0x2b,
+    EV_OPEN_HIRE_STAFF = 0x2e,
+    // Hire staff window: shows applicants of staff kind value.
+    EV_HIRE_SELECT_KIND = 0x2f,
     EV_MARK_EMPLOYING = 0x30,
+    // Hire staff window: next (value 1) or previous applicant.
+    EV_HIRE_NEXT_APPLICANT = 0x32,
     // Opens a full-screen window (value: chart_type).
     EV_OPEN_SCREEN = 0x33,
     EV_CLOSE_SCREEN = 0x34,
+    EV_INIT_BLUEPRINT = 0x35,
     EV_BUY_LAND = 0x36,
+    EV_OPEN_BUILD_ROOM = 0x37,
+    // Drops what is held and closes the build and placing requesters.
+    EV_CANCEL_BUILD = 0x38,
+    EV_OPEN_QUEUE_WINDOW = 0x3b,
     EV_FRONT_QUEUE = 0x3c,
     EV_BACK_QUEUE = 0x3d,
+    // Opens the patient, staff or object window for thing value.
+    EV_OPEN_THING_WINDOW = 0x42,
     EV_CLOSE_QUERY = 0x43,
     EV_PICK_UP_OBJECT = 0x44,
     EV_EDIT_BLUEPRINT = 0x45,
     EV_INIT_EDIT_ROOM = 0x46,
     EV_SACK_STAFF = 0x47,
     EV_PAY_STAFF_BONUS = 0x48,
+    EV_OPEN_JUKEBOX = 0x49,
+    // Starts the countdown of an accepted emergency.
+    EV_START_EMERGENCY = 0x4a,
     EV_NET_TEXT_DISPLAY = 0x4b,
     EV_NET_TEXT_DELETE = 0x4c,
     EV_NET_TEXT_KEYPRESS = 0x4d,
+    EV_NET_TEXT_START = 0x4e,
+    EV_SET_HEATING = 0x4f,
     EV_ALTER_RESEARCH = 0x50,
     EV_QUEUE_PERSON_GO_HOME = 0x51,
+    EV_QUEUE_CAPACITY_UP = 0x53,
+    EV_QUEUE_CAPACITY_DOWN = 0x54,
     EV_QUEUE_PERSON_GO_RECEPTION = 0x55,
     EV_STAFF_JOIN_NEW_EMPLOYER = 0x56,
+    // Multiplayer: refers a queued patient to another player's hospital.
+    EV_REFER_TO_PLAYER = 0x57,
     EV_SETUP_TOWN_BID = 0x58,
     EV_PLOT_BID_MONEY = 0x59,
     EV_INCREASE_STAFF_SALARIES = 0x5a,
+    EV_FURNISH_EDITED_ROOM = 0x5b,
     EV_BACK_TO_PLACE_OBJECT = 0x5c,
     EV_ORDER_REST = 0x5e,
     EV_ORDER_TRAIN = 0x5f,
+    EV_ORDER_LEAVE_ROOM = 0x61,
+    EV_OPEN_FURNISH_CORRIDOR = 0x62,
     EV_SELL_OBJECT = 0x63,
+    EV_CANCEL_BUY_OBJECTS = 0x64,
+    EV_CHEAT_END_MONTH = 0x65,
+    EV_TAKE_LOAN = 0x66,
+    EV_REPAY_LOAN = 0x67,
+    EV_PICK_UP_STAFF = 0x68,
     EV_STAFF_PICKED_UP = 0x69,
+    EV_SHOOT_RAT = 0x6a,
+    // A resigning staff member's demand refused: they may still leave.
+    EV_REFUSE_STAFF_DEMAND = 0x6b,
+    EV_RAISE_STAFF_SALARY = 0x6c,
+    EV_GIVE_STAFF_BONUS = 0x6d,
+    EV_PRICE_UP = 0x6e,
+    EV_PRICE_DOWN = 0x6f,
     EV_RETURN_FROM_SCREEN = 0x70,
+    // Sets a policy slider (value: which, arg: setting).
+    EV_SET_POLICY = 0x71,
+    EV_CONCENTRATE_RESEARCH = 0x72,
     EV_ADJUST_HANDYMAN_VALUES = 0x73,
     EV_PERSON_GO_HOME = 0x74,
     EV_THINGPAGE_REQUEST = 0x76,
+    EV_OPEN_YES_NO = 0x77,
+    EV_CLOSE_YES_NO = 0x78,
     EV_DELETE_ROOM = 0x79,
+    EV_CANCEL_EDIT_ROOM = 0x7b,
     EV_REFER_PATIENT = 0x7c,
+    // A fax answer (value: CH_*, arg: choice_spare_data).
+    EV_CHOICE_RESULT = 0x7d,
+    // Value 1: the player leaves a network game, losing.
+    EV_LEAVE_NET_GAME = 0x7e,
+    EV_PATIENT_WAITS_FOR_ROOM = 0x7f,
+    // Sends the patient to research (treatment ILL_AUTOPSY).
+    EV_PATIENT_TO_RESEARCH = 0x80,
+    EV_POACH_STAFF = 0x81,
     EV_TOGGLE_VACCINATION = 0x82,
+    EV_SETUP_PLACE_OBJECT_REQUESTER = 0x83,
+    EV_CLOSE_QUEUE_WINDOW = 0x84,
     EV_FORCE_CURE = 0x86,
+    // Leaves a full-screen window and opens the window for thing arg.
+    EV_RETURN_TO_THING_WINDOW = 0x87,
+    EV_CANCEL_SACK = 0x88,
+    EV_CHEAT_END_YEAR = 0x89,
     EV_REPLACE_MACHINE = 0x8a,
     EV_ANNOUNCE = 0x8b,
+    EV_CLOSE_SAVE_YES_NO = 0x8c,
     EV_NETWORK_LOST_FOCUS = 0x8d,
-    EV_NETWORK_GAINED_FOCUS = 0x8e
+    EV_NETWORK_GAINED_FOCUS = 0x8e,
+    EV_NET_WIN = 0x90,
+    EV_RESTART_LEVEL = 0x91
 };
 
 // set_icon_value and reset_icon_value: the status icon shown over a person
@@ -764,18 +886,188 @@ enum {
     ICON_NEEDS_REPAIR = 0x1c
 };
 
+// EV_CHOICE_RESULT's value: the fax button the player answered with, from
+// the fax's button handler (process_*_buttons).
+enum {
+    // No treatment available: send home, wait, or send to research.
+    CH_TREAT_SEND_HOME = 0,
+    CH_TREAT_WAIT = 1,
+    CH_TREAT_RESEARCH = 2,
+    // Epidemic: declare it (pay the fine) or try to cover it up.
+    CH_EPIDEMIC_DECLARE = 0xa,
+    CH_EPIDEMIC_COVER_UP = 0xb,
+    CH_VIP_ACCEPT = 0x14,
+    CH_VIP_REFUSE = 0x15,
+    CH_EMERGENCY_REFUSE = 0x1e,
+    CH_EMERGENCY_ACCEPT = 0x1f,
+    // No diagnosis: send home, treat the best guess, or wait.
+    CH_DIAG_SEND_HOME = 0x28,
+    CH_DIAG_GUESS = 0x29,
+    CH_DIAG_WAIT = 0x2a
+};
+
+// reputation_affected's event (and MayorPoints.reputation_event), named
+// after its caller. The comment gives what it adds to the reputation totals;
+// % is of allhosps.rep_events.
+enum {
+    // +1 (effect_illness).
+    REP_CURED = 0,
+    REP_GO_FOR_TREATMENT = 2,
+    // -1 (person_dies).
+    REP_DIED = 3,
+    REP_DIAGNOSED = 4,
+    // -5%: diagnosis given up, the patient killed or sent for autopsy.
+    REP_DIAGNOSIS_FAILED = 5,
+    // +1: a computer hospital's patient diagnosed.
+    REP_COMPUTER_DIAGNOSED = 6,
+    REP_NO_TREATMENT_FOUND = 7,
+    // +5% (item_researched).
+    REP_RESEARCHED = 9,
+    REP_NEXT_TREATMENT = 10,
+    // -10% (machine_disaster).
+    REP_MACHINE_EXPLODED = 11,
+    // +2%.
+    REP_EMERGENCY_SUCCESS = 12,
+    // -(4 * amount)%, amount being the patients not cured.
+    REP_EMERGENCY_FAILED = 13,
+    // -2%: an epidemic declared and its fine paid.
+    REP_EPIDEMIC_DECLARED = 14,
+    // -10%: the inspector found a covered-up epidemic.
+    REP_EPIDEMIC_COVER_UP_FOUND = 15,
+    // VIP verdicts (mayor_result): +4%, +2%, -4%.
+    REP_VIP_GOOD = 16,
+    REP_VIP_FAIR = 17,
+    REP_VIP_BAD = 18,
+    // -20% (person_autopsied).
+    REP_AUTOPSY = 19,
+    // +1: a patient's real illness diagnosed (diagnose_patient).
+    REP_ILLNESS_FOUND = 21,
+    // Counts one case in rep_events (record_person_as_patient).
+    REP_CASE = 22,
+    // +amount% (set_trophy_value, set_award_value).
+    REP_TROPHY = 23,
+    REP_AWARD = 24
+};
+
+// Thing.subtype of a patient (anim_starts index) while infected with alien
+// DNA; Thing.orig_subtype keeps the kind to restore.
+enum {
+    PK_ALIEN = 0xe
+};
+
+// mainmenu.state (draw_main_menu). 0x11-0x16 animate the highlight moving
+// between two entries.
+enum {
+    MMS_ENTER = 0,
+    // Highlighting an entry (tri_test).
+    MMS_HOVER_CONTINUE = 3,
+    MMS_HOVER_LOAD = 4,
+    MMS_HOVER_NEW_GAME = 5,
+    MMS_HOVER_NETWORK = 6,
+    MMS_HOVER_QUIT = 7,
+    // An entry chosen (process_mouse_main_menu).
+    MMS_NEW_GAME = 8,
+    // Continues from the autosave (slot 0x63).
+    MMS_CONTINUE = 9,
+    MMS_NETWORK = 0xa,
+    MMS_QUIT = 0xc,
+    MMS_LOAD_CONTINUE = 0xd,
+    // Loads the menu screen and plays its intro.
+    MMS_SHOW_MENU = 0xe,
+    MMS_LOAD_GAME = 0xf,
+    MMS_INTRO = 0x17,
+    MMS_TITLE = 0x18,
+    MMS_ATTRACT = 0x19,
+    MMS_TO_NICKNAME = 0x1a,
+    MMS_CONTINUE_FAILED = 0x1b,
+    MMS_CREDITS = 0x1c,
+    MMS_CREDITS_SCROLL = 0x1d,
+    MMS_CREDITS_DONE = 0x1e,
+    MMS_UNLOAD_GAME = 0x1f
+};
+
+// Map.flags: set by adjust_big_cell_flag while the tile holds a multi-tile
+// object or a person using an object, so drawing works out what covers what.
+#define MAP_BIG_CELL 0x20
+// Map.owner_flags: an outdoor tile (the low bits are 1 << owner).
+#define MAP_OUTDOOR 0x10
+
+// RoomInfo.state values past 0 (in use) and 1; negative is a free slot.
+enum {
+    // Still a blueprint being placed.
+    RS_BLUEPRINT = 3,
+    // Being edited by the player (init_edit_room); staff leave it.
+    RS_EDITED = 4,
+    // A handyman answered the room's repair page.
+    RS_REPAIR_DUE = 5,
+    // Closed to patients: under repair with no doctor inside, or destroyed
+    // (machine_disaster).
+    RS_CLOSED = 6
+};
+
+// announce_this's type (gamevar.announce index): an announcement the advisor
+// makes once (advisor_text, with the value as its argument where it has one).
+enum {
+    // Someone has got stuck.
+    ANN_STUCK = 1,
+    ANN_AUTOPSY_DISCOVERED = 2,
+    // A research category (value) is complete.
+    ANN_CATEGORY_DONE = 3,
+    // A doctor gained the qualification whose skill bit index is value.
+    ANN_PROMOTED = 4,
+    // Object value has been researched.
+    ANN_OBJECT_RESEARCHED = 5,
+    // A drug for illness value has been researched.
+    ANN_NEW_DRUG = 6,
+    ANN_DRUG_IMPROVED = 7,
+    ANN_OBJECT_IMPROVED = 8,
+    ANN_OBJECT_AVAILABLE = 9,
+    ANN_JUNIOR_TO_DOCTOR = 0xa,
+    ANN_STAFF_POACHED = 0xb,
+    // Hospital value opened in the area.
+    ANN_RIVAL_OPENED = 0xc,
+    ANN_DOCTOR_TO_CONSULTANT = 0xd
+};
+
+// Research categories: AllHosps.research_alloc index and do_research's
+// category (names: language section 16, same index).
+enum {
+    RC_CURE = 0,
+    RC_DIAGNOSIS = 1,
+    RC_DRUGS = 2,
+    RC_IMPROVEMENTS = 3,
+    RC_SPECIALISATION = 4
+};
+
 // set_mouse_mode's mode (kept in gamevar.mouse_mode): what a click on the map does.
 enum {
     MM_NORMAL = 0,
     // Dragging out a room's blueprint.
     MM_BLUEPRINT = 1,
+    // Placing a blueprint's doors (place_bp_door, temp_place_door).
+    MM_PLACE_DOOR = 2,
     MM_PLACE_STAFF = 3,
     MM_PLACE_OBJECT = 5,
+    MM_PLACE_SMALL_THING = 6,
+    // Full-screen menus and screens (pointer sprite 0).
+    MM_SCREEN = 9,
+    MM_TOWN_MAP = 0xa,
+    // Picking up an object of the room being edited.
+    MM_PICK_UP_OBJECT = 0xb,
     MM_EDIT_ROOM = 0xc,
     MM_NAV_DEBUG = 0xd,
+    // Waiting for the room being edited to empty (right click cancels).
+    MM_EDIT_ROOM_WAIT = 0xe,
     // Choosing patients to vaccinate.
     MM_VACCINATE = 0xf,
-    MM_HELP = 0x25
+    // Moving a patient from the queue window to another room's queue.
+    MM_MOVE_QUEUE_PERSON = 0x12,
+    MM_MAIN_MENU = 0x14,
+    // Playing a level's briefing video from the area map.
+    MM_AREA_SMK = 0x15,
+    MM_STAFF_LIST = 0x21,
+    MM_HELP = 0x25,
+    MM_WINLOSE = 0x2a
 };
 
 // Thing.numfx_type and create_numfx's type: how a floating number is drawn
@@ -785,6 +1077,203 @@ enum {
     NUMFX_TEXT = 1,
     NUMFX_FORMATTED = 2,
     NUMFX_MONEY = 3
+};
+
+// hosp_play_smk's idx: animation_table index, named after the video file.
+// Entries 7 to 0x15 are the level briefings (area01v.smk...), played as
+// level + 7.
+enum {
+    ANIM_LOSE1 = 0,
+    ANIM_LOSE2 = 1,
+    ANIM_LOSE3 = 2,
+    ANIM_LOSE4 = 3,
+    ANIM_LOSE5 = 4,
+    ANIM_LOSE6 = 5,
+    ANIM_WIN_LEVEL = 6,
+    ANIM_MAIN_MENU1 = 0x16,
+    ANIM_MAIN_MENU2 = 0x17,
+    ANIM_WIN_GAME = 0x18,
+    // The intro for slower CD drives (intro.sm2) and for faster ones (intro.sm4).
+    ANIM_INTRO_SM2 = 0x19,
+    ANIM_INTRO_SM4 = 0x1a,
+    ANIM_ATTRACT = 0x1b
+};
+
+// set_mouse_sprite's idx and othervar.pointer_sprite: a sprite of the
+// in-game pointer set (pointer[]).
+enum {
+    PTR_DEFAULT = 1,
+    // Dragging out a blueprint, outside the current one.
+    PTR_RESIZE_ROOM = 3,
+    PTR_EDIT_ROOM = 4,
+    // Over a blueprint's y0 or y1 edge, its x0 or x1 edge, or a corner;
+    // inside it.
+    PTR_RESIZE_Y_EDGE = 5,
+    PTR_RESIZE_X_EDGE = 6,
+    PTR_RESIZE_CORNER = 7,
+    PTR_MOVE_ROOM = 8,
+    // Shown while a network player has lost focus.
+    PTR_SLEEP = 9,
+    // Near a rat, and on one.
+    PTR_RAT_NEAR = 0xa,
+    PTR_RAT_AIM = 0xb,
+    // Vaccinating: no patient to vaccinate under the pointer, and one.
+    PTR_VACCINATE = 0xc,
+    PTR_VACCINATE_TARGET = 0xd,
+    PTR_STAFF = 0x10,
+    // Over an object that has its own window (a machine).
+    PTR_MACHINE = 0x11,
+    PTR_PATIENT = 0x12,
+    // Over a reception desk in use or a room's door: opens the queue.
+    PTR_QUEUE = 0x13
+};
+
+// play_sound's sfx parameter, for sound effects whose sample is NULL.WAV
+// (silent); named after where the game plays them.
+enum {
+    // Opening a staff member's demand requester.
+    SFX_STAFF_DEMAND = 0x9a,
+    // A zoom box opening or closing.
+    SFX_ZOOM_OPEN = 0x9c,
+    SFX_ZOOM_CLOSE = 0x9e,
+    SFX_EPIDEMIC_START = 0xcd,
+    SFX_EPIDEMIC_END = 0xce,
+    // A research category has nothing left to research.
+    SFX_RESEARCH_EXHAUSTED = 0xdb,
+    // Each character of the win or lose text as it is typed out.
+    SFX_WINLOSE_TYPE = 0xee
+};
+
+// crequester.id, D_001581b2[].kind and open_requester's idx: a requester
+// window, its window_list index (its button sprites are hires_req_filenames,
+// same index). Named after the routine that handles its clicks.
+enum {
+    // req4: a doctor's, nurse's or receptionist's window.
+    REQ_STAFF = 0,
+    // req4 with the handyman's priority buttons.
+    REQ_HANDYMAN = 1,
+    // req3.
+    REQ_PATIENT = 2,
+    // req5.
+    REQ_MACHINE = 3,
+    // req13.
+    REQ_YES_NO = 4,
+    // req14.
+    REQ_EDIT_ROOM = 5,
+    // req7.
+    REQ_QUEUE = 6,
+    // req10.
+    REQ_BUILD_ROOM = 9,
+    // req11.
+    REQ_BUY_OBJECTS = 0xa,
+    // req2.
+    REQ_HIRE_STAFF = 0xb,
+    // req12: a staff member's demand (open_staff_resign_requester).
+    REQ_STAFF_DEMAND = 0xc,
+    // req6.
+    REQ_JUKEBOX = 0xd,
+    // No requester open.
+    REQ_NONE = 0x63
+};
+
+// display_mode: what the main loop (game()) runs each frame.
+enum {
+    // The hospital view.
+    DM_GAME = 0,
+    // A full-screen window (do_charts).
+    DM_CHARTS = 1,
+    DM_MAIN_MENU = 2,
+    DM_AREA_SELECT = 3,
+    // The town map (draw_town_select).
+    DM_TOWN_MAP = 4,
+    DM_NETWORK_SELECT = 5,
+    DM_LOAD_GAME = 6,
+    DM_WINLOSE = 7,
+    DM_YEAR_END = 8,
+    // A fax (display_choice).
+    DM_CHOICE = 9,
+    DM_NICKNAME = 10,
+    // The hospital view, stopped under a requester that must be answered
+    // (yes/no, a staff member's demand).
+    DM_MODAL = 11,
+    // The win or lose screen after the year end.
+    DM_YEAR_END_WINLOSE = 12,
+    // A network player has lost focus (process_lost_focus_display).
+    DM_LOST_FOCUS = 13,
+    // Bidding for a plot in the town map.
+    DM_TOWN_BID = 14
+};
+
+// load_ingame_pic's idx: a full-screen picture, its hiresscreens and
+// screenpalettes index (the comment gives its file in qdata).
+enum {
+    // town01v.
+    SCR_TOWN = 1,
+    // drugn01v.
+    SCR_DRUGS = 2,
+    // stat01v: the bank statement.
+    SCR_STATEMENT = 3,
+    // graph01v.
+    SCR_GRAPHS = 4,
+    // pol01v.
+    SCR_POLICY = 5,
+    // res01v.
+    SCR_RESEARCH = 6,
+    // bank01v: the bank manager.
+    SCR_BANK_MANAGER = 7,
+    // staff01v: the staff list.
+    SCR_STAFF_LIST = 8,
+    // bid01v: the town map while bidding for a plot.
+    SCR_TOWN_BID = 10,
+    // pref01v, for the nickname and network screens.
+    SCR_NETWORK_PREFS = 0xc,
+    // main01m.
+    SCR_MAIN_MENU = 0xd,
+    // fame01v: the hall of fame.
+    SCR_HALL_OF_FAME = 0xe,
+    // award01v and award02v: the year-end awards.
+    SCR_AWARDS1 = 0xf,
+    SCR_AWARDS2 = 0x10,
+    // pref01v, for the load game screen.
+    SCR_LOAD_GAME = 0x11,
+    // title01v.
+    SCR_TITLE = 0x12,
+    // fax01v.
+    SCR_FAX = 0x13,
+    // rep01v: the patient overview (display_peep_overview).
+    SCR_OVERVIEW = 0x14,
+    // load01v: the loading screen.
+    SCR_LOADING = 0x15,
+    // cred01v.
+    SCR_CREDITS = 0x17,
+    // No picture (empty file name): only the screen pointers load.
+    SCR_NONE = 0x18
+};
+
+// play_sound and play_sample_using_heap source: a fixed sample source for
+// sounds that do not come from a thing (manage_sound keeps only sources
+// above 0xe, the things, positioned on screen).
+enum {
+    // Sound effects at full volume in the centre.
+    SNDSRC_GENERAL = 0xa,
+    // The ambient sample queue (do_ambients).
+    SNDSRC_AMBIENT = 0xb,
+    // The ticking clock: the emergency countdown, and the bank statement.
+    SNDSRC_CLOCK = 0xd
+};
+
+// SfxDetail.type: how play_sound picks the sample of a sound effect.
+enum {
+    SFXT_NONE = 0,
+    SFXT_SAMPLE = 1,
+    // Stops the sample instead.
+    SFXT_STOP = 2,
+    // The sample at a random pitch of pitch_group[group].
+    SFXT_RANDOM_PITCH = 3,
+    // A random sample of sample_group[group].
+    SFXT_RANDOM_SAMPLE = 4,
+    // The sample at a random pitch in the range of pitch_group[group].
+    SFXT_PITCH_RANGE = 5
 };
 
 #endif

@@ -3,6 +3,13 @@
 
 #include "bflib.h"
 
+// AIL_sample_status and AIL_sequence_status results (Miles, as in ail.h).
+#ifndef SMP_DONE
+#define SMP_DONE 0x0002
+#define SMP_PLAYING 0x0004
+#define SEQ_DONE 0x0002
+#endif
+
 struct _SAMPLE;
 
 struct SoundBankEntry {
@@ -116,8 +123,8 @@ extern char D_0018c8b4[];
 
 s32 LbFilePosition(s32 handle);
 char *getenv(const char *name);
-int sscanf(const char *s, const char *fmt, ...);
-int stricmp(const char *a, const char *b);
+int sscanf(const char *s, const char *format, ...);
+int stricmp(const char *s, const char *t);
 void InitSound(void);
 void InitMusic(void);
 void DetermineSoundType(void);
@@ -133,31 +140,31 @@ void SetSoundMasterVolume(s32 volume);
 s32 AllocateSoundBankMemory(u16 type);
 s32 AllocateMusicBankMemory(void);
 
-void __cdecl AIL_set_XMIDI_master_volume(u32 driver, s32 volume);
+void __cdecl AIL_set_XMIDI_master_volume(u32 mdi, s32 master_volume);
 void __cdecl AIL_release_timer_handle(s32 timer);
-u32 __cdecl AIL_sequence_status(u32 sequence);
-void __cdecl AIL_end_sample(_SAMPLE *sample);
-void __cdecl AIL_register_EOS_callback(_SAMPLE *sample, void *callback);
-void __cdecl AIL_set_sample_user_data(_SAMPLE *sample, u32 index, s32 value);
-void __cdecl AIL_set_digital_master_volume(u32 driver, s32 volume);
-u32 __cdecl AIL_init_sequence(u32 sequence, u32 start, s32 track);
+u32 __cdecl AIL_sequence_status(u32 S);
+void __cdecl AIL_end_sample(_SAMPLE *S);
+void __cdecl AIL_register_EOS_callback(_SAMPLE *S, void *EOS);
+void __cdecl AIL_set_sample_user_data(_SAMPLE *S, u32 index, s32 value);
+void __cdecl AIL_set_digital_master_volume(u32 dig, s32 master_volume);
+u32 __cdecl AIL_init_sequence(u32 S, u32 start, s32 sequence_num);
 void __cdecl AIL_shutdown(void);
 void __cdecl AIL_mem_use_malloc(void *(*fn)(u32));
 void __cdecl AIL_mem_use_free(int (*fn)(void *));
 void __cdecl AIL_startup_reg(void);
 #define AIL_startup AIL_startup_reg
 s32 __cdecl AIL_set_preference(u32 number, s32 value);
-u32 __cdecl AIL_install_DIG_driver_file(char *filename, AILIOParms *io);
-s32 __cdecl AIL_read_INI(AILIni *ini, char *filename);
-s32 __cdecl AIL_install_DIG_INI(u32 *driver);
-void __cdecl AIL_uninstall_DIG_driver(u32 driver);
-u32 __cdecl AIL_allocate_sample_handle(u32 driver);
+u32 __cdecl AIL_install_DIG_driver_file(char *filename, AILIOParms *IO);
+s32 __cdecl AIL_read_INI(AILIni *INI, char *filename);
+s32 __cdecl AIL_install_DIG_INI(u32 *dig);
+void __cdecl AIL_uninstall_DIG_driver(u32 dig);
+u32 __cdecl AIL_allocate_sample_handle(u32 dig);
 void __cdecl AIL_set_GTL_filename_prefix(char *prefix);
-u32 __cdecl AIL_install_MDI_driver_file(char *filename, AILIOParms *io);
-s32 __cdecl AIL_install_MDI_INI(u32 *driver);
-void __cdecl AIL_uninstall_MDI_driver(u32 driver);
-u32 __cdecl AIL_allocate_sequence_handle(u32 driver);
-s32 __cdecl AIL_MDI_driver_type(u32 driver);
+u32 __cdecl AIL_install_MDI_driver_file(char *filename, AILIOParms *IO);
+s32 __cdecl AIL_install_MDI_INI(u32 *mdi);
+void __cdecl AIL_uninstall_MDI_driver(u32 mdi);
+u32 __cdecl AIL_allocate_sequence_handle(u32 mdi);
+s32 __cdecl AIL_MDI_driver_type(u32 mdi);
 }
 
 extern u8 sample_queue_handle_initiated;

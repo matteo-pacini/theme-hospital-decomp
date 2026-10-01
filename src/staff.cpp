@@ -1,43 +1,43 @@
 #include "hosp.h"
 
 extern "C" {
-void clear_peep_icon(Thing *w);
-void remove_person_from_room_list(Thing *w);
+void clear_peep_icon(Thing *peep);
+void remove_person_from_room_list(Thing *person);
 }
 
-s16 place_staff_in_struct(u16 a, u16 b);
-s16 get_state(const u16 type, const Thing *w);
-void change_lockholder(Thing *w, RoomInfo *room);
-void calculate_speed(Thing *w);
-void inc_staff_stats(Thing *w, u8 owner);
-void set_expertise_staff(Thing *w);
-void insert_skill(u16 skill, u8 owner);
-void reinit_nurse(Thing *w);
-void pager_arrival(Thing *w);
+s16 place_staff_in_struct(u16 kind, u16 extra_skills);
+s16 get_state(const u16 type, const Thing *staff);
+void change_lockholder(Thing *staff, RoomInfo *room);
+void calculate_speed(Thing *staff);
+void inc_staff_stats(Thing *staff, u8 owner);
+void set_expertise_staff(Thing *staff);
+void insert_skill(u16 mask, u8 owner);
+void reinit_nurse(Thing *nurse);
+void pager_arrival(Thing *staff);
 u16 staffrand(void);
-u32 normal_staffrand(u32 mean, u32 spread);
-void appraise_staff(Thing *w);
-void clear_my_mutex(Thing *w);
-void staff_exit_room_check(Thing *w);
-void remove_expertise_staff(Thing *w);
-void rest_staff(Thing *w, s16 amount);
-u8 send_doctor_to_research(Thing *w);
-u8 send_doctor_to_training(Thing *w);
-u8 nurse_check_for_work(Thing *w);
-u16 check_pager(Thing *w);
+u32 normal_staffrand(u32 low, u32 high);
+void appraise_staff(Thing *employee);
+void clear_my_mutex(Thing *staff);
+void staff_exit_room_check(Thing *staff);
+void remove_expertise_staff(Thing *staff);
+void rest_staff(Thing *staff, s16 amount);
+u8 send_doctor_to_research(Thing *doctor);
+u8 send_doctor_to_training(Thing *doctor);
+u8 nurse_check_for_work(Thing *nurse);
+u16 check_pager(Thing *staff);
 extern "C" u8 check_room_mutex(Thing *w);
 extern "C" u8 fn_0002d11c(Thing *o);
-void private_interrupt_staff(Thing *w);
-u16 thingpage_remind_me(ThingPager *p, Thing *w);
-void thingpage_cancel_my_response(ThingPager *p, Thing *w);
-void staff_abandon_pager_response(Thing *w);
-void receptionist_reset(Thing *w);
-void remove_staff_from_map(Thing *w);
+void private_interrupt_staff(Thing *staff);
+u16 thingpage_remind_me(ThingPager *p, Thing *handyman);
+void thingpage_cancel_my_response(ThingPager *p, Thing *handyman);
+void staff_abandon_pager_response(Thing *staff);
+void receptionist_reset(Thing *receptionist);
+void remove_staff_from_map(Thing *staff);
 extern "C" {
-void remove_node(Thing *w);
-void remove_person_from_room_list(Thing *w);
+void remove_node(Thing *node);
+void remove_person_from_room_list(Thing *person);
 }
-void change_surgeon_to_doc(Thing *w);
+void change_surgeon_to_doc(Thing *surgeon);
 extern s16 staff_states[][5];
 extern s16 mcurx;
 extern s16 mcury;
@@ -115,7 +115,7 @@ u16 place_staff_on_map(u16 tile, u16 id, u8 force, u8 owner)
             if (room > 0) {
                 insert_person_in_room_list(room, new_staff);
                 new_staff->state = get_state((u16)room->type, new_staff);
-                if (new_staff->state != SS_PROCESS_COMPLEX) {
+                if (new_staff->state != SS_EVACUATE) {
                     if (new_staff->subtype != STAFF_HANDYMAN && (room->type != ROOM_TRAINING || new_staff->subtype != STAFF_DOCTOR || (new_staff->skills & SKILL_CONSULTANT)) && room->type != ROOM_RESEARCH) {
                         change_lockholder(new_staff, room);
                     }
@@ -206,8 +206,8 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
         new_staff->type = THING_STAFF;
         new_staff->facing = 0;
         new_staff->owner = 0x63;
-        if (staff[kind].unknown6[5]) {
-            new_staff->layers[5] = staffrand() % staff[kind].unknown6[5] + 1;
+        if (staff[kind].layer5_count) {
+            new_staff->layers[5] = staffrand() % staff[kind].layer5_count + 1;
         } else {
             new_staff->layers[5] = 0;
         }
@@ -332,7 +332,7 @@ void sack_staff(Thing *staff, u16 mode)
         change_balance(TX_SEVERANCE_PAY, -staff->salary, 0, staff->owner);
         break;
     case 1:
-        staff->orders &= 0xdf;
+        staff->orders &= ~ORD_RESIGN;
         break;
     }
     if (mode != 2) {
@@ -340,8 +340,8 @@ void sack_staff(Thing *staff, u16 mode)
         if (staff->room) {
             set_complex(staff, 0x136, staff->room->door_inside_tile);
         }
-        set_complex(staff, 0xbe, get_room_info(1, 0x65, staff->owner)->door_tile);
-        staff->next_state = 0x38;
+        set_complex(staff, 0xbe, get_room_info(ROOM_ENTRANCE, 0x65, staff->owner)->door_tile);
+        staff->next_state = SS_BACK_TO_APPLICANTS;
         staff->resume_state = 0;
         process_staff_complex(staff);
     }
@@ -421,10 +421,10 @@ u8 obey_pager(Thing *staff)
     if (staff->room) {
         set_complex(staff, 0x136, staff->room->door_inside_tile);
         process_staff_complex(staff);
-        staff->resume_state = SS_PROCESS_COMPLEX;
+        staff->resume_state = SS_EVACUATE;
         set_complex(staff, 0x14a, room->door_tile);
     } else {
-        staff->resume_state = SS_PROCESS_COMPLEX;
+        staff->resume_state = SS_EVACUATE;
         set_complex(staff, 0x14a, room->door_tile);
         process_staff_complex(staff);
     }
@@ -470,11 +470,11 @@ u8 take_a_break(Thing *staff)
     if (staff->room > room_info) {
         set_complex(staff, 0x136, staff->room->door_inside_tile);
         process_staff_complex(staff);
-        staff->resume_state = SS_PROCESS_COMPLEX;
+        staff->resume_state = SS_EVACUATE;
         set_complex(staff, 0x96, room->door_tile);
     } else {
         set_complex(staff, 0x96, room->door_tile);
-        staff->resume_state = SS_PROCESS_COMPLEX;
+        staff->resume_state = SS_EVACUATE;
         process_staff_complex(staff);
     }
     staff->dest_room = room - room_info;
@@ -501,12 +501,12 @@ void staff_in_staff_room(Thing *staff)
                     rest_staff(staff, gbv.rest_standing);
                 }
                 staff->orders &= ~ORD_REST;
-                if (staff->orders & 8) {
+                if (staff->orders & ORD_LEAVE_ROOM) {
                     staff->orders &= 0xf0;
                     evacuate_staff(staff);
                     return;
                 }
-                if (staff->room->being_edited || staff->room->state == 4) {
+                if (staff->room->being_edited || staff->room->state == RS_EDITED) {
                     evacuate_staff(staff);
                     return;
                 }
@@ -572,10 +572,10 @@ void staff_in_staff_room(Thing *staff)
                             process_staff_complex(staff);
                         }
                     } else if (staff->subtype == STAFF_HANDYMAN) {
-                        staff->state = SS_PROCESS_COMPLEX;
+                        staff->state = SS_EVACUATE;
                         return;
                     } else if (staff->subtype == STAFF_RECEPTIONIST) {
-                        staff->state = SS_PROCESS_COMPLEX;
+                        staff->state = SS_EVACUATE;
                         return;
                     }
                     calculate_speed(staff);
@@ -660,7 +660,7 @@ void staff_nav_failure(Thing *staff)
     staff->state = SS_STUCK;
     staff->countdown = 0;
     if (staff->owner == player) {
-        announce_this(1, 1);
+        announce_this(ANN_STUCK, 1);
     }
 }
 
@@ -678,7 +678,7 @@ void draw_staff_cursor(void)
     if (othervar.mouse_cell != othervar.prev_mouse_cell || gamevar.held_staff_kind != gamevar.drawn_staff_kind) {
         room = which_room(othervar.mouse_cell);
         if (room > 0) {
-            state = staff_states[rooms[room->type].unknown2[1]][gamevar.held_staff_kind];
+            state = staff_states[rooms[room->type].staff_state_row][gamevar.held_staff_kind];
             bad = 0;
             if (check_points_connected(othervar.mouse_cell, room->door_inside_tile) == 0) {
                 bad = 1;
@@ -687,7 +687,7 @@ void draw_staff_cursor(void)
                 bad = 1;
             }
         } else {
-            state = staff_states[rooms[0].unknown2[1]][gamevar.held_staff_kind];
+            state = staff_states[rooms[0].staff_state_row][gamevar.held_staff_kind];
             bad = !check_points_connected(othervar.mouse_cell, room_info[allhosps[player].entrances[0]].door_tile) ? (u8)1 : (u8)0;
         }
         if (state == -1 || bad == 1) {
@@ -813,7 +813,7 @@ void staff_exit_room_check(Thing *staff)
             }
         }
         if (staff->subtype == STAFF_NURSE && staff->room->type == ROOM_WARD) {
-            staff->room->state == 4 ? 0 : (staff->room->state = 0);
+            staff->room->state == RS_EDITED ? 0 : (staff->room->state = 0);
         }
     }
 }
@@ -853,7 +853,7 @@ void staff_picked_up(Thing *staff)
     }
     clear_my_mutex(staff);
     remove_staff_from_map(staff);
-    staff->state = 0x44;
+    staff->state = SS_HELD;
 }
 
 // Takes staff off the map and out of their room's list.
@@ -1020,14 +1020,14 @@ void private_interrupt_staff(Thing *staff)
         if (target_obj > thing) {
             room = &room_info[target_obj->room_id];
             if (room > room_info) {
-                if (room->state == 5 || room->state == 6) {
+                if (room->state == RS_REPAIR_DUE || room->state == RS_CLOSED) {
                     room->state = 0;
                 }
             }
         }
         room = staff->room;
         if ((room && (target_obj = &thing[staff->object]) > thing) && objects[target_obj->subtype].is_machine) {
-            if (room->state == 5 || room->state == 6) {
+            if (room->state == RS_REPAIR_DUE || room->state == RS_CLOSED) {
                 room->state = 0;
             }
         }
@@ -1065,7 +1065,7 @@ void staff_join_new_employer(u16 id, u16 owner)
     if (staff > thing) {
         interrupt_staff(staff);
         if (staff->owner == player) {
-            announce_this(0xb, 1);
+            announce_this(ANN_STAFF_POACHED, 1);
         }
         staff_exit_room_check(staff);
         if (staff->room) {
@@ -1128,13 +1128,13 @@ void change_lockholder(Thing *staff, RoomInfo *room)
 }
 
 // Returns the state for staff entering a room of type `type` (0 for the
-// corridor), or SS_PROCESS_COMPLEX for a doctor lacking the room's skill.
+// corridor), or SS_EVACUATE for a doctor lacking the room's skill.
 // FUNCTION: 0x0002ca88
 s16 get_state(const u16 type, const Thing *staff)
 {
     s16 state;
 
-    state = staff_states[rooms[type].unknown2[1]][staff->subtype];
+    state = staff_states[rooms[type].staff_state_row][staff->subtype];
     if (staff->subtype == STAFF_DOCTOR && rooms[type].doctor_skills) {
         if ((staff->skills & rooms[type].doctor_skills) == 0) {
             state = 0x36;

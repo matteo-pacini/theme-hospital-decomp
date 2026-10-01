@@ -57,13 +57,13 @@ extern "C" void req6(Requester *req)
                                 play_last_midi();
                             }
                         }
-                        play_sound(10, SFX_SELECTX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     } else if (idx == resvars.requester_buttons[0x57]) {
                         if (othervar.music_playing) {
                             stop_midi();
                             othervar.music_playing = 0;
                         }
-                        play_sound(10, SFX_SELECTX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     } else if (idx == resvars.requester_buttons[0x54]) {
                         if (othervar.music_playing) {
                             AIL_stop_sequence(song);
@@ -74,19 +74,19 @@ extern "C" void req6(Requester *req)
                             if (!is_midi_playing())
                                 play_midi(othervar.midi_track);
                         }
-                        play_sound(10, SFX_SELECTX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     } else if (idx == resvars.requester_buttons[0x56]) {
                         if (!othervar.loop_track) {
                             if (othervar.music_playing)
                                 AIL_end_sequence(song);
                         }
-                        play_sound(10, SFX_SELECTX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     } else if (idx == resvars.requester_buttons[0x53]) {
                         setup_abort_all_requesters();
-                        play_sound(10, SFX_NO4, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                     } else if (idx == resvars.requester_buttons[0x58]) {
                         othervar.loop_track = !othervar.loop_track ? (u8)1 : (u8)0;
-                        play_sound(10, SFX_SELECTX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     }
                 }
                 idx++;
@@ -164,7 +164,7 @@ extern "C" void req6_overdraw(Requester *req)
             if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, ox + x + BSPR(0x20)->width, oy + y, BSPR(0x22)->width, BSPR(0x22)->height)) {
                 song = GetSongHandle();
                 myplayer.track_enabled[i] = !myplayer.track_enabled[i] ? (u8)1 : (u8)0;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 if (i == othervar.midi_track) {
                     AIL_end_sequence(song);
                     play_next_midi();

@@ -25,12 +25,12 @@ extern char **win_lose;
 extern char **win_text;
 extern char **town_names;
 
-u32 time(u32 *t);
+u32 time(u32 *timer);
 void fn_0001102c(void);
 void insert_hall_details(void);
 int LbScreenLock(void);
-void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
-void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
+void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
+void LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
 
 int strcmp(const char *a, const char *b);
 void fn_000c93bf(char *dst, char *src);
@@ -52,13 +52,13 @@ void __stdcall lose_call(void *buf, u32 a, u32 b)
         current_frame++;
         if (current_frame >= animation_table[anim_choice].text_frame) {
             y = 0;
-            if (anim_choice != 2)
+            if (anim_choice != ANIM_LOSE3)
                 set_font_from_cache(0x13);
             else
                 set_font_from_cache(0x15);
             width = LbTextStringWidth(text1);
             if (width > lbDisplay.physical_screen_width) {
-                if (anim_choice != 2)
+                if (anim_choice != ANIM_LOSE3)
                     set_font_from_cache(0x14);
                 else
                     set_font_from_cache(0x16);
@@ -142,8 +142,8 @@ void play_winlose(void)
         safeseed = time(0);
         anim_choice = saferand() % 6;
         n = anim_choice;
-        if (anim_choice == 2) {
-            anim_choice = 1;
+        if (anim_choice == ANIM_LOSE3) {
+            anim_choice = ANIM_LOSE2;
             n = anim_choice;
         }
         if (othervar.music_playing)
@@ -161,12 +161,12 @@ void play_winlose(void)
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         lbDisplay.draw_flags = 0;
         current_frame = 0;
-        set_mouse_mode(9);
+        set_mouse_mode(MM_SCREEN);
         smack_draw_callback = (void *)lose_call;
         hosp_play_smk(anim_choice);
         if (statvar.num_players > 1) {
-            mainmenu.state = 0x1f;
-            display_mode = 2;
+            mainmenu.state = MMS_UNLOAD_GAME;
+            display_mode = DM_MAIN_MENU;
             fn_0001102c();
             quit_game = 0;
         } else {
@@ -181,8 +181,8 @@ void play_winlose(void)
         if (lbDisplay.rleft_button || lbInkey) {
             lbDisplay.left_button = 0;
             lbInkey = 0;
-            mainmenu.state = 0x1f;
-            display_mode = 2;
+            mainmenu.state = MMS_UNLOAD_GAME;
+            display_mode = DM_MAIN_MENU;
             clear_loading_screen(0);
             fn_0001102c();
             D_001549d0[player].value = 0;
@@ -192,14 +192,14 @@ void play_winlose(void)
     case 1:
         finish_composite_help();
         clear_loading_screen(0);
-        set_mouse_mode(0x2a);
+        set_mouse_mode(MM_WINLOSE);
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         lbDisplay.draw_flags = 0;
         current_frame = 0;
         smack_draw_callback = 0;
-        hosp_play_smk(6);
-        load_ingame_pic(0x18, 0, 0x29, 0, SCREEN_MODE_13);
+        hosp_play_smk(ANIM_WIN_LEVEL);
+        load_ingame_pic(SCR_NONE, 0, 0x29, 0, SCREEN_MODE_13);
         winlose.state = 5;
         lbDisplay.left_button = 0;
         insert_hall_details();
@@ -209,7 +209,7 @@ void play_winlose(void)
         if (level_number != 0xc) {
             safeseed = time(0);
             pick = saferand() % 4;
-            if (gamevar.f176 % 2 == 1)
+            if (gamevar.win_declined_count % 2 == 1)
                 pick += 4;
             concat_composite(othervar.help_msg, &win_text[statvar.winlose_text_start[pick]]);
             sprintf(buf, othervar.help_msg, myhosp, othervar.next_level_offer_s, town_names[level_number + 1]);
@@ -230,9 +230,9 @@ void play_winlose(void)
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         lbDisplay.draw_flags = 0;
         current_frame = 0;
-        set_mouse_mode(9);
+        set_mouse_mode(MM_SCREEN);
         smack_draw_callback = 0;
-        hosp_play_smk(0x18);
+        hosp_play_smk(ANIM_WIN_GAME);
         quit_game = 1;
         break;
     case 5:
@@ -260,7 +260,7 @@ void play_winlose(void)
                     display_text[text_ofs] = text_buf;
                     text_ofs++;
                     text_delay = 1;
-                    play_sound(10, 0xee, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WINLOSE_TYPE, -1, -1);
                 }
             }
         }
@@ -268,7 +268,7 @@ void play_winlose(void)
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y,
                     screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
                 if (level_number != 0xc) {
-                    D_001549d0[player].type = 0x38;
+                    D_001549d0[player].type = EV_CANCEL_BUILD;
                     area.state = 0;
                     level_number++;
                     if (othervar.bonus_level && resvars.game_mode == SCREEN_MODE_13) {
@@ -278,24 +278,24 @@ void play_winlose(void)
                     }
                     myhosp->level = level_number;
                     myhosp->score = othervar.next_level_offer_s;
-                    display_mode = 3;
+                    display_mode = DM_AREA_SELECT;
                 } else {
-                    D_001549d0[player].type = 0x38;
+                    D_001549d0[player].type = EV_CANCEL_BUILD;
                     level_number = myhosp->level = 0;
                     myhosp->score = othervar.next_level_offer_s;
-                    display_mode = 3;
-                    set_mouse_mode(9);
+                    display_mode = DM_AREA_SELECT;
+                    set_mouse_mode(MM_SCREEN);
                     fade_out_menu();
                     clear_loading_screen(0);
                     smack_draw_callback = 0;
-                    hosp_play_smk(0x18);
-                    mainmenu.state = 0x1c;
-                    display_mode = 2;
+                    hosp_play_smk(ANIM_WIN_GAME);
+                    mainmenu.state = MMS_CREDITS;
+                    display_mode = DM_MAIN_MENU;
                     quit_game = 0;
                 }
             } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xd0].x, resvars.screen_coords[0xd0].y,
                            screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
-                gamevar.f176++;
+                gamevar.win_declined_count++;
                 othervar.win_declined = 1;
                 othervar.bonus_level = 0;
                 pick = display_loading_screen();
@@ -316,14 +316,14 @@ void play_winlose(void)
         break;
     case 6:
         finish_composite_help();
-        set_mouse_mode(0x2a);
+        set_mouse_mode(MM_WINLOSE);
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         lbDisplay.draw_flags = 0;
         current_frame = 0;
         smack_draw_callback = 0;
-        hosp_play_smk(6);
-        load_ingame_pic(0x18, 0, 0x29, 0, SCREEN_MODE_13);
+        hosp_play_smk(ANIM_WIN_LEVEL);
+        load_ingame_pic(SCR_NONE, 0, 0x29, 0, SCREEN_MODE_13);
         winlose.state = 5;
         set_font_from_cache(0x17);
         lbDisplay.draw_flags = text_ofs = text_paragraph = 0;
@@ -359,19 +359,19 @@ void play_winlose(void)
                         display_text[text_ofs] = text_buf;
                         text_ofs++;
                         text_delay = 1;
-                        play_sound(10, 0xee, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_WINLOSE_TYPE, -1, -1);
                     }
                 }
             }
             if (lbDisplay.left_button) {
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y,
                         screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
-                    set_mouse_mode(9);
+                    set_mouse_mode(MM_SCREEN);
                     clear_loading_screen(0);
                     smack_draw_callback = 0;
-                    hosp_play_smk(0x18);
-                    mainmenu.state = 0x1f;
-                    display_mode = 2;
+                    hosp_play_smk(ANIM_WIN_GAME);
+                    mainmenu.state = MMS_UNLOAD_GAME;
+                    display_mode = DM_MAIN_MENU;
                     quit_game = 0;
                     done = 1;
                 } else {

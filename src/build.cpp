@@ -24,19 +24,19 @@ extern "C" {
 
 extern Event D_001549d0[];
 
-s32 remove_object(Thing *w, u8 owner);
+s32 remove_object(Thing *obj, u8 owner);
 #pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
 void delete_wall(u16 tile, u16 room, u8 side);
 #pragma aux delete_wall "W?delete_wall$n(ususuc)v"
 void clear_cell_of_ratholes(u8 owner, u16 tile);
 #pragma aux clear_cell_of_ratholes "W?clear_cell_of_ratholes$n(ucus)v"
 u8 fn_00029a54(RoomInfo *room);
-Thing *search_mapwho(Map *t, u16 kind);
+Thing *search_mapwho(Map *cell, u16 kind);
 
 }
 
-void give_screen_xy_of_cell_at_column_row(const u8 view, const s32 column, const s32 row);
-u8 can_place_door(u16 tile, u16 a, u8 b);
+void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y);
+u8 can_place_door(u16 tile, u16 kind, u8 dir);
 u8 is_valid_door(u16 tile, u8 owner, u8 type);
 s16 place_door(u16 tile, u16 kind);
 s8 search_for_outer_color(Map *cell);
@@ -50,20 +50,20 @@ void recolour_inside_room(RoomInfo *room, u16 wall_base, u16 b);
 void recolour_outside_room(RoomInfo *room, u16 wall_base, u16 b);
 void fill_in_window(u16 x, u16 y, u8 side);
 void pixel_buffer_map(void);
-void mark_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *obj, u8 mark);
-void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *obj);
-void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 mode);
-void clear_pager_responses(u16 room);
+void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *control, u8 cleanse);
+void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *control);
+void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay);
+void clear_pager_responses(u16 room_id);
 u8 search_fill_in_window(u8 wall);
 void check_inside_w_wall(u16 x, u16 y);
 void check_inside_n_wall(u16 x, u16 y);
 void check_outside_s_wall(u16 x, u16 y);
 void check_outside_e_wall(u16 x, u16 y);
-void remove_object_from_map(Thing *w);
+void remove_object_from_map(Thing *obj);
 s32 depreciation(void);
-s16 get_state(const u16 a, const Thing *w);
-u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 a, u8 b, u8 c);
-void check_invis_walls_around_object(Thing *w);
+s16 get_state(const u16 type, const Thing *staff);
+u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 pos2, u8 kind2, u8 dir2);
+void check_invis_walls_around_object(Thing *obj);
 
 // Door placing stage: finds the wall tile of owner's blueprint room nearest
 // tile pos where the current door kind (build.door_state; 2 is a window) can
@@ -202,7 +202,7 @@ void temp_place_door(u16 pos, u8 owner)
         } else {
             int kind;
 
-            kind = blueprint[find_small_thing((cy << 7) + cx)].unknown7;
+            kind = blueprint[find_small_thing((cy << 7) + cx)].object_kind;
             blocked = kind == 3 || kind == 0x34 || kind == 0x35 ? (u8)1 : (u8)0;
         }
         give_screen_xy_of_cell_at_column_row(window.current_window, cx, cy - 1);
@@ -211,14 +211,14 @@ void temp_place_door(u16 pos, u8 owner)
         if (check_valid || blocked) {
             if (blocked || !is_valid_door((cy << 7) + cx, owner, type)) {
                 if (owner == player) {
-                    draw_a_one_colour_frame(start[doortype[type].tiles[3]].frame, d, i, (u16)color.red, start[doortype[type].tiles[3]].flags);
+                    draw_a_one_colour_frame(start[doortype[type].cursor_anim].frame, d, i, (u16)color.red, start[doortype[type].cursor_anim].flags);
                 }
                 othervar.door_invalid[owner] = 1;
             } else if (owner == player) {
-                draw_a_frame(start[doortype[type].tiles[3]].frame, d, i, 0, start[doortype[type].tiles[3]].flags);
+                draw_a_frame(start[doortype[type].cursor_anim].frame, d, i, 0, start[doortype[type].cursor_anim].flags);
             }
         } else if (owner == player) {
-            draw_a_frame(start[doortype[type].tiles[3]].frame, d, i, 0, start[doortype[type].tiles[3]].flags);
+            draw_a_frame(start[doortype[type].cursor_anim].frame, d, i, 0, start[doortype[type].cursor_anim].flags);
         }
     }
     build->door_tile = best_tile;
@@ -247,7 +247,7 @@ void place_bp_door(u8 owner, u8 swap)
     delta = 1;
     if (othervar.door_invalid[owner]) {
         if (othervar.cur_player == player) {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         return;
     }
@@ -258,7 +258,7 @@ void place_bp_door(u8 owner, u8 swap)
     if (!check_room_access_with_blueprint(owner)) {
         if (owner == player) {
             advisor.forced_advice_id = 6;
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         return;
     }
@@ -268,15 +268,15 @@ void place_bp_door(u8 owner, u8 swap)
             type %= 4;
             type += 0x14;
             delta = -1;
-            play_sound(10, SFX_DE_BUILD, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_DE_BUILD, -1, -1);
         } else {
             return;
         }
     } else if (owner == player) {
         if (bs->door_state == 2 && blueprint[find_small_thing(bs->door_tile + doortype[type].tiles[0])].kind == 0x7e) {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         } else {
-            play_sound(10, SFX_BUILDCLK, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_BUILDCLK, -1, -1);
         }
     }
     for (i = 0; i < doortype[type].count; i++) {
@@ -660,7 +660,7 @@ void build_all_rooms(void)
                     break;
                 }
             }
-        } else if (cell->owner_flags & (u8)(mask | 0x10)) {
+        } else if (cell->owner_flags & (u8)(mask | MAP_OUTDOOR)) {
             bp = -id;
             place_small_thing(cell - map, 0, 0);
         }
@@ -744,7 +744,7 @@ void object_placed(void)
         if (gamevar.buy_kind_count == 0) {
             set_mouse_mode(MM_NORMAL);
             if (gamevar.place_mode == 2) {
-                close_crequester(5);
+                close_crequester(REQ_EDIT_ROOM);
             }
             return;
         } else {
@@ -757,7 +757,7 @@ void object_placed(void)
 
 // Gives owner's room under construction the floor of room type type and its
 // wall colours; for the local player starts placing its objects and sets
-// gamevar.unknown20 to the room's index.
+// gamevar.new_room_index to the room's index.
 // FUNCTION: 0x00024874
 void price_all_rooms(u16 type, u8 owner)
 {
@@ -767,7 +767,7 @@ void price_all_rooms(u16 type, u8 owner)
     RoomInfo *r;
 
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->state != 3 || room->owner != owner) {
+        if (room->state != RS_BLUEPRINT || room->owner != owner) {
             continue;
         }
         for (y = room->pos / 128; y < room->pos / 128 + room->height; y++) {
@@ -780,8 +780,8 @@ void price_all_rooms(u16 type, u8 owner)
             if (othervar.cur_player == player) {
                 init_place_object(next_object_to_build(), 0, room - room_info, 0);
             }
-            gamevar.unknown20 = 1;
-            for (r = room_info + 1; r != room; r++, gamevar.unknown20++) {
+            gamevar.new_room_index = 1;
+            for (r = room_info + 1; r != room; r++, gamevar.new_room_index++) {
             }
         }
         break;
@@ -1138,7 +1138,7 @@ void recolour_outside_room(RoomInfo *room, u16 wall_base, u16 b)
     }
 }
 
-// Repaints every room's walls in the style of its type (rooms[].unknown2[0])
+// Repaints every room's walls in the style of its type (rooms[].wall_style)
 // and fills in the window corners, then refreshes the wall flags.
 // FUNCTION: 0x000260ec
 void recolour_all_rooms(void)
@@ -1152,7 +1152,7 @@ void recolour_all_rooms(void)
         if (room->type != ROOM_FREE) {
             outer = 0;
             b = 0;
-            switch (rooms[room->type].unknown2[0]) {
+            switch (rooms[room->type].wall_style) {
             case 1:
             case 2:
                 outer = 0;
@@ -1185,7 +1185,7 @@ void recolour_all_rooms(void)
             if (room->type != ROOM_FREE) {
                 inner = 0;
                 b = 0;
-                switch (rooms[room->type].unknown2[0]) {
+                switch (rooms[room->type].wall_style) {
                 case 1:
                 case 2:
                     inner = 0;
@@ -1456,7 +1456,7 @@ u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 pos2, u8
         goto fail;
     }
     for (obj = &thing[room->first_object]; obj > thing; obj = &thing[obj->room_obj_next]) {
-        if (obj->state != 0x12 && !check_object_nav((u16)obj->subtype, &shapes[objects[obj->subtype].shapes[obj->facing]], room, ((u16)obj->y.tile << 7) + (u16)obj->x.tile, (u16)room->type)) {
+        if (obj->state != OS_REMOVED && !check_object_nav((u16)obj->subtype, &shapes[objects[obj->subtype].shapes[obj->facing]], room, ((u16)obj->y.tile << 7) + (u16)obj->x.tile, (u16)room->type)) {
             goto fail;
         }
     }
@@ -1566,7 +1566,7 @@ void init_place_object(u8 kind, u8 mode, u16 room, s16 offset)
     if (mode == 1) {
         mode = 0;
     }
-    gamevar.place_wall_hug = objects[kind].unknown18[0];
+    gamevar.place_wall_hug = objects[kind].wall_hug;
     if (mode == 0 && gamevar.place_wall_hug != -1) {
         mode = 1;
     }
@@ -1580,7 +1580,7 @@ void init_place_object(u8 kind, u8 mode, u16 room, s16 offset)
         crequester.kind = 3;
     }
     setup_place_object_requester();
-    crequester.unknown9 = kind;
+    crequester.arg3 = kind;
     if (mode == 2) {
         crequester.kind = 3;
         set_edit_room_requester_mode(10);
@@ -1653,14 +1653,14 @@ void init_edit_room(RoomInfo *room)
         gamevar.place_mode = 0;
     }
     if (fn_00029a54(room)) {
-        room->state = 4;
+        room->state = RS_EDITED;
         if (othervar.cur_player == player) {
             setup_place_object_requester();
         }
     } else {
         room->being_edited = 1;
         if (othervar.cur_player == player) {
-            set_mouse_mode(14);
+            set_mouse_mode(MM_EDIT_ROOM_WAIT);
         }
     }
 }
@@ -1732,7 +1732,7 @@ void open_room(u8 owner)
         othervar.editing_room = 0;
         if (othervar.cur_player == player) {
             set_mouse_mode(MM_NORMAL);
-            close_crequester(5);
+            close_crequester(REQ_EDIT_ROOM);
             if (myplayer.room_help_seen[room->type] == 0) {
                 show_help_page(0, room->type);
                 myplayer.room_help_seen[room->type] = 1;
@@ -1813,7 +1813,7 @@ void pick_up_object(u16 id, u8 both)
                 set_complex(user, 0x1b8, 0);
                 user->next_state = get_state(0, user);
                 abandon_complex(user);
-                anim = check_frame(staff_anim_starts[user->subtype].idle, user) + (u16)user->facing;
+                anim = check_frame(staff_anim_starts[user->subtype].walk, user) + (u16)user->facing;
                 user->sprite = start[anim].frame;
                 user->flip = start[anim].flags > 0;
             } else {
@@ -1924,7 +1924,7 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
     }
     angle = wall_hug[gamevar.place_wall_hug].angle[side];
     if (angle != gamevar.place_dir)
-        play_sound(10, SFX_SWOOSH, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SWOOSH, -1, -1);
     gamevar.place_dir = angle;
     b = &statvar.object_bounds[kind][angle];
     if (sx + b->minX < rx) {
@@ -1992,7 +1992,7 @@ void clicked_for_edit(void)
 
     room = allhosps[player].build.edit_room;
     if (othervar.pickup_thing) {
-        edit = crequester.id == 5 || (crequester.id == 10 && crequester.arg != 1);
+        edit = crequester.id == REQ_EDIT_ROOM || (crequester.id == REQ_BUY_OBJECTS && crequester.arg != 1);
         if (edit) {
             if (thing[othervar.pickup_thing].room_id != room)
                 return;
@@ -2272,7 +2272,7 @@ void pick_up_object_right_click(void)
     if (clicked->type == THING_PATIENT && LINKED_OBJECT(clicked)) {
         clicked = &thing[LINKED_OBJECT(clicked)];
     }
-    if (clicked->type == THING_OBJECT && clicked->owner == player && (!clicked->room_id || (objects[clicked->subtype].unknown20[2] & 8)) && !(objects[clicked->subtype].unknown20[2] & 1)) {
+    if (clicked->type == THING_OBJECT && clicked->owner == player && (!clicked->room_id || (objects[clicked->subtype].flags & 8)) && !(objects[clicked->subtype].flags & 1)) {
         othervar.pickup_thing = othervar.pointed_thing;
         clicked_for_edit();
     }
@@ -2287,7 +2287,7 @@ extern "C" u8 is_player_building(void)
     int i;
     int small;
 
-    if (allhosps[player].build.unknownE[0] == 1) {
+    if (allhosps[player].build.draw_mode == 1) {
         return 1;
     }
     for (m = map, i = 0; m < end_map; m++, i++) {
@@ -2345,8 +2345,8 @@ extern "C" void fn_0002994c(u8 owner)
     build = &allhosps[owner].build;
     if (room > room_info) {
         room->being_edited = 0;
-        for (x = build->unknown0[0]; x <= build->unknown0[2] + 1; x++) {
-            for (y = build->unknown0[1]; y <= build->unknown0[3] + 1; y++) {
+        for (x = build->x0; x <= build->x1 + 1; x++) {
+            for (y = build->y0; y <= build->y1 + 1; y++) {
                 place_small_thing((s16)(x + (y << 7)), 0, 0);
             }
         }

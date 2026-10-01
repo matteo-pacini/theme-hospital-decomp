@@ -1,11 +1,18 @@
 #include "hosp.h"
 
+/*
+ * A tracked-window slot (D_001581b2[]); see io.cpp.
+ */
 struct Slot {
+    // 0x0: Requester shown (REQ_).
     u8 kind;
     u8 unknown1[0x1];
+    // 0x2: Thing shown.
     u16 value;
-    s16 f4;
-    u8 f6;
+    // 0x4: Nonzero shows the health graph, 0 the diagnosis.
+    s16 show_graph;
+    // 0x6: Frames before the graph/diagnosis toggle works again.
+    u8 toggle_delay;
     u8 unknown7[0x4];
 };
 
@@ -46,13 +53,13 @@ extern Event D_001549d0[];
 extern char **illness_text;
 void conv_string(char *dst, char *src, u8 mode);
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
-void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
+void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 }
 
-u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
-void draw_health_graph(Thing *w, u16 x, u16 y, u16 colour);
-void draw_diagnosis(Thing *w, u16 x, u16 y);
-u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
+u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_margin);
+void draw_health_graph(Thing *patient, u16 x, u16 y, u16 colour);
+void draw_diagnosis(Thing *patient, u16 x, u16 y);
+u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2);
 void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *spr, const long max, const long min,
                 const long range, const u8 up);
 
@@ -76,30 +83,30 @@ void req3(Window *win)
             if (i == resvars.requester_buttons[0xd]) {
                 D_001549d0[player].type = EV_CLOSE_QUERY;
                 D_001549d0[player].value = 1;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             } else if (i == resvars.requester_buttons[0xe]) {
                 if (patient->diagnosis >= gbv.diagnosis_complete) {
-                    display_mode = 1;
+                    display_mode = DM_CHARTS;
                     chart_type = 1;
                     drugs.state = 0;
-                    set_mouse_mode(9);
+                    set_mouse_mode(MM_SCREEN);
                     othervar.selected_illness = patient->illness;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             } else if (i == resvars.requester_buttons[0xf]) {
                 if (!(patient->flags & PF_CURED || patient->flags & PF_SENT_HOME)) {
                     if (patient->health > 0) {
                         D_001549d0[player].type = EV_PERSON_GO_HOME;
                         D_001549d0[player].value = D_001581b2[1].value;
-                        play_sound(10, SFX_SACK, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
                     }
                 }
             } else if (i == resvars.requester_buttons[0x10]) {
                 if (patient->queue_room) {
-                    D_001549d0[player].type = 0x3b;
+                    D_001549d0[player].type = EV_OPEN_QUEUE_WINDOW;
                     D_001549d0[player].value = patient->queue_room;
                     D_001549d0[player].arg = 0;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             } else if (i == resvars.requester_buttons[0x11]) {
                 if (!(patient->treatment == 0 || patient->flags & PF_GUESSED || patient->flags & PF_FED_UP || patient->illness == patient->known_illness)
@@ -108,7 +115,7 @@ void req3(Window *win)
                         if (patient->health > 0) {
                             D_001549d0[player].type = EV_FORCE_CURE;
                             D_001549d0[player].value = D_001581b2[1].value;
-                            play_sound(10, SFX_SELECTX, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                         }
                     }
                 }
@@ -140,8 +147,8 @@ void req3_overdraw(Window *win)
     set_font_from_cache(1);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     othervar.track_window_1 = window.window_count - 1;
-    if (D_001581b2[1].f6)
-        D_001581b2[1].f6--;
+    if (D_001581b2[1].toggle_delay)
+        D_001581b2[1].toggle_delay--;
     if (patient->diagnosis < gbv.diagnosis_complete) {
         LbDrawBox(x + resvars.boxes_ReqLayoutp->box_a.x, y + resvars.boxes_ReqLayoutp->box_a.y, resvars.boxes_ReqLayoutp->box_a.w, resvars.boxes_ReqLayoutp->box_a.h, 0x46);
         LbDrawBox(x + resvars.boxes_ReqLayoutp->box_c.x, y + resvars.boxes_ReqLayoutp->box_c.y, resvars.boxes_ReqLayoutp->box_c.w, resvars.boxes_ReqLayoutp->box_c.h, 0x46);
@@ -160,7 +167,7 @@ void req3_overdraw(Window *win)
                &button_sprite[resvars.requester_sprites[0x10]], 100, 0, 100, 1);
     draw_gauge((s16)patient->warmth, x + resvars.coords_ReqLayoutp->gauge3_x, y + resvars.coords_ReqLayoutp->gauge3_y, (u16)resvars.boxes_ReqLayoutp->gauge_len,
                &button_sprite[resvars.requester_sprites[0x11]], 100, 0, 100, 1);
-    if (D_001581b2[1].f4)
+    if (D_001581b2[1].show_graph)
         draw_health_graph(patient, x, y, color.red);
     else
         draw_diagnosis(patient, x, y);
@@ -171,9 +178,9 @@ void req3_overdraw(Window *win)
             othervar.full_redraw = 1;
         } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->diag.x, y + resvars.boxes_ReqLayoutp->diag.y,
                                 resvars.boxes_ReqLayoutp->diag.w, resvars.boxes_ReqLayoutp->diag.h)) {
-            if (!D_001581b2[1].f6) {
-                D_001581b2[1].f4 = !D_001581b2[1].f4 ? 1 : 0;
-                D_001581b2[1].f6 = 5;
+            if (!D_001581b2[1].toggle_delay) {
+                D_001581b2[1].show_graph = !D_001581b2[1].show_graph ? 1 : 0;
+                D_001581b2[1].toggle_delay = 5;
             }
         }
     }
@@ -185,7 +192,7 @@ void req3_overdraw(Window *win)
             old = D_001581b2[1].value;
             D_001581b2[1].value = find_next_thing(patient, THING_PATIENT, -1, -1);
             if (old != D_001581b2[1].value)
-                play_sound(10, SFX_CAMCLICK, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
         }
     }
     if (lbDisplay.mright_button)
@@ -202,7 +209,7 @@ void req3_overdraw(Window *win)
 void close_query(u8 i)
 {
     close_irequesters();
-    D_001581b2[i].kind = 0x63;
+    D_001581b2[i].kind = REQ_NONE;
 }
 
 // Draws patient's recorded health (health_history[1-9]) as a line graph at
@@ -287,7 +294,7 @@ void draw_diagnosis(Thing *patient, u16 x, u16 y)
 // Returns the next thing after cand of type kind belonging to this player for
 // which check_if_point_beyond_scroll_limit(tile x, tile y, 0) is nonzero,
 // wrapping round: with sub1 >= 0 only subtypes sub1 or sub2, otherwise objects
-// only if they have a window (objects[].f20). If none matches it returns the
+// only machines (nonzero objects[].debris). If none matches it returns the
 // thing count (an index past the last).
 // FUNCTION: 0x00073bb0
 u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
@@ -329,7 +336,7 @@ u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
                 if (cand->owner == player) {
                     if (check_if_point_beyond_scroll_limit((u8)cand->x.tile, cand->y.tile, 0)) {
                         if (cand->type == THING_OBJECT) {
-                            if (objects[cand->subtype].f20) {
+                            if (objects[cand->subtype].debris) {
                                 found = 1;
                                 break;
                             }
@@ -347,7 +354,7 @@ u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
                     if (cand->owner == player) {
                         if (check_if_point_beyond_scroll_limit((u8)cand->x.tile, cand->y.tile, 0)) {
                             if (cand->type == THING_OBJECT) {
-                                if (objects[cand->subtype].f20)
+                                if (objects[cand->subtype].debris)
                                     break;
                             } else {
                                 break;

@@ -3,8 +3,8 @@
 extern "C" {
 
 
-void remove_person_from_room_list(Thing *w);
-u8 check_room_mutex(Thing *w);
+void remove_person_from_room_list(Thing *person);
+u8 check_room_mutex(Thing *staff);
 
 }
 
@@ -22,7 +22,7 @@ void reinit_nurse(Thing *nurse)
     pos = nurse->x.tile + (nurse->y.tile << 7);
     room = which_room(pos);
     if (room > 0) {
-        if (room->type != 1)
+        if (room->type != ROOM_ENTRANCE)
             insert_person_in_room_list(room, nurse);
         nurse->state = get_state((u16)room->type, nurse);
         if (room->type == ROOM_WARD)
@@ -44,7 +44,7 @@ u8 nurse_check_for_work(Thing *nurse)
     if (room == 0)
         return 0;
     set_complex(nurse, 0x14a, room->door_tile);
-    nurse->resume_state = SS_PROCESS_COMPLEX;
+    nurse->resume_state = SS_EVACUATE;
     nurse->substate = 0;
     nurse->next_state = SS_NURSE_IN_WARD;
     nurse->resume_state = SS_IN_CORRIDOR;
@@ -92,7 +92,7 @@ void nurse_in_ward(Thing *nurse)
     obj = find_object(nurse->x.tile + (nurse->y.tile << 7), OBJ_DESK, 0, 0x97, nurse->owner);
     switch (nurse->substate) {
     case 0:
-        nurse->room->state == 4 ? 0 : (nurse->room->state = 1);
+        nurse->room->state == RS_EDITED ? 0 : (nurse->room->state = 1);
         if (!(check_room_mutex(nurse) ? 1 : (evacuate_staff(nurse), 0)))
             return;
         if (shall_i_resign(nurse))
@@ -105,7 +105,7 @@ void nurse_in_ward(Thing *nurse)
             return;
         if (nurse->tiredness > allhosps[nurse->owner].rest_threshold && take_a_break(nurse))
             return;
-        if (nurse->room->being_edited || nurse->room->state == 4) {
+        if (nurse->room->being_edited || nurse->room->state == RS_EDITED) {
             evacuate_staff(nurse);
             return;
         }

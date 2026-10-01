@@ -3,20 +3,20 @@
 extern "C" {
 u8 trapped_plant_check(RoomInfo *room, s32 pos, u8 owner);
 #pragma aux trapped_plant_check "W?trapped_plant_check$n(pn$RoomInfo$$l)uc"
-u8 is_plant_trapped(Thing *w);
+u8 is_plant_trapped(Thing *plant);
 }
 
 extern s16 special_around[];
 extern Map *map;
 
 u8 thingpage_cancel(ThingPager *p, u16 id);
-u16 thingpage_respond(ThingPager *p, Thing *w, u16 room, u8 min);
+u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min);
 u8 thingpage_find_highest_priority(ThingPager *p);
-u16 thingpage_remind_me(ThingPager *p, Thing *w);
-u8 handyman_try_fix(Thing *w);
-u8 handyman_try_plant(Thing *w);
-u8 handyman_try_litter(Thing *w);
-u8 is_next_to_plant(Thing *w, Thing *plant);
+u16 thingpage_remind_me(ThingPager *p, Thing *handyman);
+u8 handyman_try_fix(Thing *handyman);
+u8 handyman_try_plant(Thing *handyman);
+u8 handyman_try_litter(Thing *handyman);
+u8 is_next_to_plant(Thing *handyman, Thing *plant);
 
 void choose_aniseq(Thing *w, u8 group, u8 next_state);
 void remove_litter(u16 tile, u8 owner);
@@ -108,11 +108,11 @@ void handyman_works(Thing *handyman)
             }
             if (thingpage_respond(&allhosps[handyman->owner].repair_pager, handyman, handyman->room - room_info, 0)) {
                 handyman->substate = 8;
-                if (room->state != 6)
-                    room->state = 5;
+                if (room->state != RS_CLOSED)
+                    room->state = RS_REPAIR_DUE;
                 break;
             }
-            handyman->state = SS_PROCESS_COMPLEX;
+            handyman->state = SS_EVACUATE;
             break;
         }
         if (thingpage_find_highest_priority(&allhosps[handyman->owner].repair_pager) && handyman_try_fix(handyman))
@@ -144,7 +144,7 @@ void handyman_works(Thing *handyman)
         dx = old_newrand() % 15 - 7;
         dy = old_newrand() % 15 - 7;
         pos = (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx);
-        if (map[pos].owner_flags == 1 << handyman->owner && can_i_get_to(handyman, pos) && !(map[pos].owner_flags & 0x10)) {
+        if (map[pos].owner_flags == 1 << handyman->owner && can_i_get_to(handyman, pos) && !(map[pos].owner_flags & MAP_OUTDOOR)) {
             handyman->next_state = handyman->resume_state = SS_HANDYMAN_WORKS;
             set_complex(handyman, 0xbe, (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx));
             process_staff_complex(handyman);
@@ -178,7 +178,7 @@ void handyman_works(Thing *handyman)
         set_complex(handyman, 0x26c, 0);
         handyman->substate = 5;
         handyman->next_state = SS_HANDYMAN_WORKS;
-        handyman->resume_state = SS_PROCESS_COMPLEX;
+        handyman->resume_state = SS_EVACUATE;
         process_staff_complex(handyman);
         break;
     case 5:
@@ -187,13 +187,13 @@ void handyman_works(Thing *handyman)
         thingpage_cancel(&allhosps[plant->owner].plant_pager, id);
         if (plant->in_use == 1 || plant->type != THING_OBJECT || plant->subtype != OBJ_PLANT || plant->state != OS_PLANT_AGES
             || !is_next_to_plant(handyman, plant)) {
-            handyman->state = SS_PROCESS_COMPLEX;
+            handyman->state = SS_EVACUATE;
             break;
         }
         plant->in_use = 1;
         handyman->facing = direction_to_face(plant, handyman);
         handyman->next_state = SS_HANDYMAN_WORKS;
-        handyman->resume_state = SS_PROCESS_COMPLEX;
+        handyman->resume_state = SS_EVACUATE;
         handyman->substate = 6;
         set_complex(handyman, 0x258, 0);
         process_staff_complex(handyman);
@@ -208,7 +208,7 @@ void handyman_works(Thing *handyman)
         }
         for (i = 0; i < 5 - stage - 1; i++)
             plant->sprite = frame[plant->sprite].next;
-        plant->state = 0xe;
+        plant->state = OS_BEING_WATERED;
         break;
     case 6:
         id = handyman->object;
@@ -246,10 +246,10 @@ void handyman_works(Thing *handyman)
         break;
     case 8:
         room = handyman->room;
-        if (room->state != 6) {
+        if (room->state != RS_CLOSED) {
             if (!(find_person_in_room(room, THING_STAFF, STAFF_DOCTOR) || find_person_in_room(room, THING_STAFF, STAFF_NURSE)
                   || find_person_in_room(room, THING_STAFF, STAFF_SURGEON))) {
-                room->state = 6;
+                room->state = RS_CLOSED;
             } else {
                 u16 pos2;
 
@@ -263,7 +263,7 @@ void handyman_works(Thing *handyman)
         } else {
             handyman->next_state = SS_HANDYMAN_WORKS;
             handyman->substate = 9;
-            handyman->resume_state = SS_PROCESS_COMPLEX;
+            handyman->resume_state = SS_EVACUATE;
             handyman->object = thingpage_remind_me(&allhosps[handyman->owner].repair_pager, handyman);
             set_complex(handyman, 0x2d0, 0);
             process_staff_complex(handyman);
@@ -298,7 +298,7 @@ void handyman_works(Thing *handyman)
         }
         handyman->room->state = 0;
         set_complex(handyman, 0x136, handyman->room->door_inside_tile);
-        handyman->resume_state = SS_PROCESS_COMPLEX;
+        handyman->resume_state = SS_EVACUATE;
         handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->substate = 0;
         handyman->repair_count++;
@@ -464,7 +464,7 @@ u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min)
             continue;
         room_id = thing[p->pages[i].id].room_id;
         if (room_id != 0
-            && (room_info[room_id].being_edited || room_info[room_id].state == 4
+            && (room_info[room_id].being_edited || room_info[room_id].state == RS_EDITED
                 || allhosps[handyman->owner].edited_room == room_id))
             continue;
         if (p->pages[i].priority == best_priority) {
@@ -549,11 +549,11 @@ u8 handyman_try_fix(Thing *handyman)
             set_complex(handyman, 0x96, room->door_tile);
             handyman->next_state = SS_HANDYMAN_WORKS;
             handyman->substate = 8;
-            handyman->resume_state = SS_PROCESS_COMPLEX;
+            handyman->resume_state = SS_EVACUATE;
             handyman->dest_room = room - room_info;
             process_staff_complex(handyman);
-            if (room->state != 6)
-                room->state = 5;
+            if (room->state != RS_CLOSED)
+                room->state = RS_REPAIR_DUE;
             return 1;
         }
     }
@@ -581,7 +581,7 @@ u8 handyman_try_plant(Thing *handyman)
             handyman->substate = 5;
         }
         handyman->next_state = SS_HANDYMAN_WORKS;
-        handyman->resume_state = SS_PROCESS_COMPLEX;
+        handyman->resume_state = SS_EVACUATE;
         process_staff_complex(handyman);
         return 1;
     }

@@ -1,60 +1,107 @@
 #include "hosp.h"
 
+/*
+ * The panel's entries of the in-game box table (resvars.boxes) and position
+ * table (resvars.coords), both read through this struct.
+ */
 struct PanelLayout {
     u8 unknown0[0x150];
-    s32 unknown150;
-    s32 unknown154;
-    s32 unknown158;
+    // 0x150: Box: clip window of the balance's rolling digits.
+    s32 balance_clip_x;
+    // 0x154: Its y.
+    s32 balance_clip_y;
+    // 0x158: Its width.
+    s32 balance_clip_w;
     u8 unknown15c[4];
-    s32 unknown160;
-    s32 unknown164;
-    s32 unknown168;
+    // 0x160: Box: clip window of the balance digits that stay still while the
+    // others roll.
+    s32 balance_fixed_clip_x;
+    // 0x164: Its y.
+    s32 balance_fixed_clip_y;
+    // 0x168: Its width before the extra digits.
+    s32 balance_fixed_clip_w;
     u8 unknown16c[0xd4];
-    s32 unknown240;
+    // 0x240: Position: the advisor's x.
+    s32 advisor_x;
     u8 unknown244[4];
-    s32 unknown248;
+    // 0x248: Position: width of a balance digit.
+    s32 balance_digit_width;
     u8 unknown24c[4];
-    s32 unknown250;
-    s32 unknown254;
-    s32 unknown258;
-    s32 unknown25c;
-    s32 unknown260;
+    // 0x250: Position: balance text x.
+    s32 balance_x;
+    // 0x254: Balance text y.
+    s32 balance_y;
+    // 0x258: Position: reputation scale x at 0.
+    s32 rep_scale_x0;
+    // 0x25c: Reputation marker y.
+    s32 rep_marker_y;
+    // 0x260: Reputation scale x at 1000.
+    s32 rep_scale_x1;
     u8 unknown264[0x1bc];
-    s32 unknown420;
-    s32 unknown424;
+    // 0x420: Position: the panel watch.
+    s32 watch_x;
+    // 0x424: Watch y.
+    s32 watch_y;
     u8 unknown428[8];
-    s32 unknown430;
-    s32 unknown434;
-    s32 unknown438;
-    s32 unknown43c;
-    s32 unknown440;
-    s32 unknown444;
+    // 0x430: Position: the vaccinate or announce button by the watch.
+    s32 watch_button_x;
+    // 0x434: Its y.
+    s32 watch_button_y;
+    // 0x438: Offset of the watch face from the watch.
+    s32 watch_face_dx;
+    // 0x43c: Its y offset.
+    s32 watch_face_dy;
+    // 0x440: Position: the date text.
+    s32 date_x;
+    // 0x444: Its y.
+    s32 date_y;
+    // 0x448: Positions: fax icon slots.
     Point slots[9];
     u8 unknown490[0x10];
-    s32 unknown4a0;
-    s32 unknown4a4;
-    s32 unknown4a8;
-    s32 unknown4ac;
+    // 0x4a0: Position: start of the message bar shutter.
+    s32 shutter_x;
+    // 0x4a4: Its y.
+    s32 shutter_y;
+    // 0x4a8: Added to a slot's x for its fax icon.
+    s32 popup_icon_dx;
+    // 0x4ac: Added to the top of the fax icons' clip window.
+    s32 popup_window_dy;
     u8 unknown4b0[0x10];
-    s32 unknown4c0;
-    s32 unknown4c4;
-    s32 unknown4c8;
-    s32 unknown4cc;
+    // 0x4c0: Box: text window of the date.
+    s32 date_box_x;
+    // 0x4c4: Its y.
+    s32 date_box_y;
+    // 0x4c8: Its width.
+    s32 date_box_w;
+    // 0x4cc: Its height.
+    s32 date_box_h;
     u8 unknown4d0[0xa0];
-    s32 unknown570;
+    // 0x570: Position: info bar text x, also the margin on each side when
+    // wrapping.
+    s32 info_text_x;
     u8 unknown574[8];
-    s32 unknown57c;
+    // 0x57c: Info bar line height.
+    s32 info_line_height;
     u8 unknown580[4];
-    s32 unknown584;
+    // 0x584: Info bar first line y.
+    s32 info_text_y;
     u8 unknown588[0xc];
-    s32 unknown594;
-    s32 unknown598;
-    s32 unknown59c;
+    // 0x594: Extra y of the paused or panel message line.
+    s32 info_message_dy;
+    // 0x598: Offset of the emergency animation on its fax icon.
+    s32 emergency_anim_dx;
+    // 0x59c: Its y offset.
+    s32 emergency_anim_dy;
     u8 unknown5a0[0x40];
-    s32 unknown5e0;
-    s32 unknown5e4;
-    s32 unknown5e8;
-    s32 unknown5ec;
+    // 0x5e0: Box: percentage bar on the info bar's third line (x relative to
+    // the panel).
+    s32 info_bar_x;
+    // 0x5e4: Its y below the third line.
+    s32 info_bar_y;
+    // 0x5e8: Its width.
+    s32 info_bar_w;
+    // 0x5ec: Its height.
+    s32 info_bar_h;
 };
 
 void draw_panel(u8 all);
@@ -98,7 +145,7 @@ void rebuild_panel_popup_pos(void);
 void draw_panel_percent_bar(s32 value, char *text);
 void draw_panel_info_line(char *text, u8 *line, u8 lines);
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
-void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
+void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 void fn_000ccac4(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
 #pragma aux fn_000ccac4 "LbDrawLine_";
 
@@ -223,7 +270,7 @@ void draw_panel(u8 all)
         for (i = 0; ((PanelIcon *)panel)[i].sprite > 0; i++)
             reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y, &game_panel[((PanelIcon *)panel)[i].sprite]);
         draw_ratfest_on_panel();
-    } else if (all == 1 || display_mode != 0) {
+    } else if (all == 1 || display_mode != DM_GAME) {
         for (i = 0; ((PanelIcon *)panel)[i].sprite > 0; i++)
             reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y, &game_panel[((PanelIcon *)panel)[i].sprite]);
         draw_money_on_panel();
@@ -248,7 +295,7 @@ void choose_panel_icons(void)
     if (gamevar.rat_fest_level)
         panel = panel_icons_ratfest;
     statvar.panel_top = ((PanelIcon *)panel)[1].y;
-    advisor.x_u = resvars.coords_PanelLayoutp->unknown240;
+    advisor.x_u = resvars.coords_PanelLayoutp->advisor_x;
     advisor.y_u = statvar.panel_top;
 }
 
@@ -331,101 +378,101 @@ void panel_ml_button(const u16 icon)
 // FUNCTION: 0x00032308
 void panel_l_button(const u16 icon)
 {
-    if (gamevar.mouse_mode == 0xe) {
-        play_sound(10, SFX_WRONG2, -1, -1);
+    if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
+        play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
     } else if (icon != 0x63) {
         switch (icon) {
         case 0:
             D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 6;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 2:
-            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == 2 || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == 0xe || gamevar.mouse_mode == 0x10)) {
+            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT || gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
-                D_001549d0[player].type = 0x37;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                D_001549d0[player].type = EV_OPEN_BUILD_ROOM;
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             break;
         case 5:
-            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == 2 || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == 0xe || gamevar.mouse_mode == 0x10)) {
+            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT || gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
-                D_001549d0[player].type = 0x2e;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                D_001549d0[player].type = EV_OPEN_HIRE_STAFF;
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             break;
         case 4:
-            if (gamevar.mouse_mode == MM_NORMAL && crequester.id == 0x63) {
+            if (gamevar.mouse_mode == MM_NORMAL && crequester.id == REQ_NONE) {
                 set_mouse_mode(MM_EDIT_ROOM);
                 allhosps[player].edited_room = 0;
-                play_sound(10, SFX_SELECTX, -1, -1);
-            } else if (gamevar.mouse_mode == MM_EDIT_ROOM && crequester.id == 0x63) {
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+            } else if (gamevar.mouse_mode == MM_EDIT_ROOM && crequester.id == REQ_NONE) {
                 set_mouse_mode(MM_NORMAL);
                 allhosps[player].edited_room = 0;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             break;
         case 3:
-            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == 2 || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == 0xe || gamevar.mouse_mode == 0x10)) {
+            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT || gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
-                D_001549d0[player].type = 0x62;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                D_001549d0[player].type = EV_OPEN_FURNISH_CORRIDOR;
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             break;
         case 6:
             D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 5;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 7:
-            if (crequester.id != 5 && (crequester.id != 10 || crequester.arg == 1)) {
-                display_mode = 4;
+            if (crequester.id != REQ_EDIT_ROOM && (crequester.id != REQ_BUY_OBJECTS || crequester.arg == 1)) {
+                display_mode = DM_TOWN_MAP;
                 town.state = 0;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             break;
         case 8:
             D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 1;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 9:
             if (listhead[player].rooms[ROOM_RESEARCH]) {
                 D_001549d0[player].type = EV_OPEN_SCREEN;
                 D_001549d0[player].value = 3;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             break;
         case 10:
             D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 7;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 11:
             D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 4;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 12:
             D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 2;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 1:
         default:
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             break;
         }
         D_00156910 = 1;
@@ -438,22 +485,22 @@ void panel_l_button(const u16 icon)
 // FUNCTION: 0x000328c0
 void panel_r_button(const u16 icon)
 {
-    if (gamevar.mouse_mode == 0xe) {
-        play_sound(10, SFX_WRONG2, -1, -1);
+    if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
+        play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
     } else if (icon != 0x63) {
         switch (icon) {
         case 0:
             D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 0;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 5:
             D_001549d0[player].type = EV_OPEN_SCREEN;
             D_001549d0[player].value = 5;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         default:
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             break;
         }
         D_00156910 = 1;
@@ -486,17 +533,17 @@ void draw_money_on_panel(void)
                 break;
             }
         }
-        LbTextSetClipWindow(resvars.boxes_PanelLayoutp->unknown150 + resvars.coords_PanelLayoutp->unknown248 * digits, resvars.boxes_PanelLayoutp->unknown154,
-                            resvars.boxes_PanelLayoutp->unknown158 - resvars.coords_PanelLayoutp->unknown248 * digits, height);
+        LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_clip_x + resvars.coords_PanelLayoutp->balance_digit_width * digits, resvars.boxes_PanelLayoutp->balance_clip_y,
+                            resvars.boxes_PanelLayoutp->balance_clip_w - resvars.coords_PanelLayoutp->balance_digit_width * digits, height);
         sprintf(buf, "%7d", myhosp->balance);
-        LbTextDraw(resvars.coords_PanelLayoutp->unknown250, resvars.coords_PanelLayoutp->unknown254 - (height - othervar.balance_roll_step * 6), buf);
+        LbTextDraw(resvars.coords_PanelLayoutp->balance_x, resvars.coords_PanelLayoutp->balance_y - (height - othervar.balance_roll_step * 6), buf);
         sprintf(buf, "%7d", othervar.shown_balance);
-        LbTextDraw(resvars.coords_PanelLayoutp->unknown250, resvars.coords_PanelLayoutp->unknown254 + othervar.balance_roll_step * 6, buf);
+        LbTextDraw(resvars.coords_PanelLayoutp->balance_x, resvars.coords_PanelLayoutp->balance_y + othervar.balance_roll_step * 6, buf);
         if (digits) {
-            LbTextSetClipWindow(resvars.boxes_PanelLayoutp->unknown160, resvars.boxes_PanelLayoutp->unknown164,
-                                resvars.coords_PanelLayoutp->unknown248 * (digits - 3) + resvars.boxes_PanelLayoutp->unknown168, height);
+            LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_fixed_clip_x, resvars.boxes_PanelLayoutp->balance_fixed_clip_y,
+                                resvars.coords_PanelLayoutp->balance_digit_width * (digits - 3) + resvars.boxes_PanelLayoutp->balance_fixed_clip_w, height);
             sprintf(buf, "%7d", myhosp->balance);
-            LbTextDraw(resvars.coords_PanelLayoutp->unknown250, resvars.coords_PanelLayoutp->unknown254, buf);
+            LbTextDraw(resvars.coords_PanelLayoutp->balance_x, resvars.coords_PanelLayoutp->balance_y, buf);
         }
         othervar.balance_roll_step++;
         if (othervar.balance_roll_step == 4) {
@@ -505,9 +552,9 @@ void draw_money_on_panel(void)
             D_00156910 = 1;
         }
     } else {
-        LbTextSetClipWindow(resvars.boxes_PanelLayoutp->unknown150, resvars.boxes_PanelLayoutp->unknown154, resvars.boxes_PanelLayoutp->unknown158, height);
+        LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_clip_x, resvars.boxes_PanelLayoutp->balance_clip_y, resvars.boxes_PanelLayoutp->balance_clip_w, height);
         sprintf(buf, "%7d", myhosp->balance);
-        LbTextDraw(resvars.coords_PanelLayoutp->unknown250, resvars.coords_PanelLayoutp->unknown254, buf);
+        LbTextDraw(resvars.coords_PanelLayoutp->balance_x, resvars.coords_PanelLayoutp->balance_y, buf);
     }
 }
 
@@ -520,9 +567,9 @@ void draw_date_on_panel(void)
 
     set_font_from_cache(6);
     lbDisplay.draw_flags = 0x100;
-    LbTextSetWindow(resvars.boxes_PanelLayoutp->unknown4c0, resvars.boxes_PanelLayoutp->unknown4c4, resvars.boxes_PanelLayoutp->unknown4c8, resvars.boxes_PanelLayoutp->unknown4cc);
+    LbTextSetWindow(resvars.boxes_PanelLayoutp->date_box_x, resvars.boxes_PanelLayoutp->date_box_y, resvars.boxes_PanelLayoutp->date_box_w, resvars.boxes_PanelLayoutp->date_box_h);
     sprintf(buf, "%d %s", mycontrol->day, month_text[mycontrol->month]);
-    LbTextDraw(resvars.coords_PanelLayoutp->unknown440, resvars.coords_PanelLayoutp->unknown444, buf);
+    LbTextDraw(resvars.coords_PanelLayoutp->date_x, resvars.coords_PanelLayoutp->date_y, buf);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
 }
@@ -533,9 +580,9 @@ void draw_rep_on_panel(void)
 {
     s32 offset;
 
-    offset = (resvars.coords_PanelLayoutp->unknown260 - resvars.coords_PanelLayoutp->unknown258) * myhosp->reputation / 1000;
+    offset = (resvars.coords_PanelLayoutp->rep_scale_x1 - resvars.coords_PanelLayoutp->rep_scale_x0) * myhosp->reputation / 1000;
     lbDisplay.draw_flags = 0;
-    reqspr_draw(resvars.coords_PanelLayoutp->unknown258 + offset, resvars.coords_PanelLayoutp->unknown25c, &game_panel[36]);
+    reqspr_draw(resvars.coords_PanelLayoutp->rep_scale_x0 + offset, resvars.coords_PanelLayoutp->rep_marker_y, &game_panel[36]);
 }
 
 // Draws the panel's watch for an emergency, an epidemic (myhosp->epidemic_timer) or
@@ -554,36 +601,36 @@ void draw_emergency(void)
         set_font_from_cache(6);
         height = lbFontPtr ? lbFontPtr[25].height : 0;
         if (myhosp->emergency_timer || (myhosp->opening_countdown && !(advisor.flags & 1)) || myhosp->epidemic_timer || myhosp->epidemic_over || (s8)myhosp->emergency_state > 1) {
-            reqspr_draw(resvars.coords_PanelLayoutp->unknown420, resvars.coords_PanelLayoutp->unknown424, &watch[13]);
-            set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->unknown420, resvars.coords_PanelLayoutp->unknown424,
-                                            watch[13].width + resvars.coords_PanelLayoutp->unknown420, resvars.coords_PanelLayoutp->unknown424 + watch[13].height, 3);
+            reqspr_draw(resvars.coords_PanelLayoutp->watch_x, resvars.coords_PanelLayoutp->watch_y, &watch[13]);
+            set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x, resvars.coords_PanelLayoutp->watch_y,
+                                            watch[13].width + resvars.coords_PanelLayoutp->watch_x, resvars.coords_PanelLayoutp->watch_y + watch[13].height, 3);
             if (myhosp->emergency_timer) {
                 if ((s16)myhosp->emergency_timer / 8 >= 6) {
-                    reqspr_draw(resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c, &watch[1]);
-                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
-                                                    resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438 + watch[1].width,
-                                                    resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c + watch[1].height, 3);
+                    reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy, &watch[1]);
+                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                                    resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx + watch[1].width,
+                                                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy + watch[1].height, 3);
                 }
-                reqspr_draw(resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
+                reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
                             &watch[watch_face[(s16)myhosp->emergency_timer / 8]]);
-                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
-                                                (resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438) + watch[watch_face[(s16)myhosp->emergency_timer / 8]].width,
-                                                (resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c) + watch[watch_face[(s16)myhosp->emergency_timer / 8]].height, 3);
+                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                                (resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx) + watch[watch_face[(s16)myhosp->emergency_timer / 8]].width,
+                                                (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) + watch[watch_face[(s16)myhosp->emergency_timer / 8]].height, 3);
             } else if (myhosp->epidemic_timer) {
                 if (myhosp->emergency_timer)
                     off = watch[15].width / 4 + watch[15].width;
                 if (myhosp->epidemic_illness && !myhosp->epidemic_timer)
                     lbDisplay.draw_flags = 4;
-                reqspr_draw(off + resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434, &watch[14]);
-                set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434,
-                                                off + resvars.coords_PanelLayoutp->unknown430 + watch[14].width, watch[14].height + resvars.coords_PanelLayoutp->unknown434, 3);
+                reqspr_draw(off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, &watch[14]);
+                set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
+                                                off + resvars.coords_PanelLayoutp->watch_button_x + watch[14].width, watch[14].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
                 lbDisplay.draw_flags = 0;
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, off + resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
-                    reqspr_draw(off + resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434, &watch[15]);
-                    set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434,
-                                                    watch[15].width + (off + resvars.coords_PanelLayoutp->unknown430), watch[15].height + resvars.coords_PanelLayoutp->unknown434, 3);
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, watch[14].width, watch[14].height)) {
+                    reqspr_draw(off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, &watch[15]);
+                    set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
+                                                    watch[15].width + (off + resvars.coords_PanelLayoutp->watch_button_x), watch[15].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
                     if (!othervar.watch_hovered)
-                        play_sound(10, SFX_HLIGHT5, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                     othervar.watch_hovered = 1;
                 } else {
                     othervar.watch_hovered = 0;
@@ -591,42 +638,42 @@ void draw_emergency(void)
                 if (myhosp->epidemic_illness && !myhosp->epidemic_timer)
                     lbDisplay.draw_flags = 4;
                 if ((s16)myhosp->epidemic_timer / 8 >= 6) {
-                    reqspr_draw(off + resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c, &watch[1]);
-                    set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
-                                                    watch[1].width + (off + resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438),
-                                                    resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c + watch[1].height, 3);
+                    reqspr_draw(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy, &watch[1]);
+                    set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                                    watch[1].width + (off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx),
+                                                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy + watch[1].height, 3);
                 }
-                reqspr_draw(off + resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
+                reqspr_draw(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
                             &watch[watch_face[(s16)myhosp->epidemic_timer / 8]]);
-                set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
-                                                watch[watch_face[(s16)myhosp->epidemic_timer / 8]].width + (off + resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438),
-                                                (resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c) + watch[watch_face[(s16)myhosp->epidemic_timer / 8]].height, 3);
+                set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                                watch[watch_face[(s16)myhosp->epidemic_timer / 8]].width + (off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx),
+                                                (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) + watch[watch_face[(s16)myhosp->epidemic_timer / 8]].height, 3);
                 lbDisplay.draw_flags = 0;
             } else if (myhosp->opening_countdown) {
-                reqspr_draw(resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434, &watch[16]);
-                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434,
-                                                watch[16].width + resvars.coords_PanelLayoutp->unknown430, watch[16].height + resvars.coords_PanelLayoutp->unknown434, 3);
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434, watch[14].width, watch[14].height)) {
-                    reqspr_draw(resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434, &watch[17]);
-                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434,
-                                                    watch[17].width + resvars.coords_PanelLayoutp->unknown430, resvars.coords_PanelLayoutp->unknown434 + watch[17].height, 3);
+                reqspr_draw(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, &watch[16]);
+                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
+                                                watch[16].width + resvars.coords_PanelLayoutp->watch_button_x, watch[16].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, watch[14].width, watch[14].height)) {
+                    reqspr_draw(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, &watch[17]);
+                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
+                                                    watch[17].width + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y + watch[17].height, 3);
                     if (!othervar.watch_hovered)
-                        play_sound(10, SFX_HLIGHT5, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                     othervar.watch_hovered = 1;
                 } else {
                     othervar.watch_hovered = 0;
                 }
                 if (myhosp->opening_countdown / (gbv.open_countdown / 13) >= 6) {
-                    reqspr_draw(resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c, &watch[1]);
-                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
-                                                    resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438 + watch[1].width,
-                                                    resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c + watch[1].height, 3);
+                    reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy, &watch[1]);
+                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                                    resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx + watch[1].width,
+                                                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy + watch[1].height, 3);
                 }
-                reqspr_draw(resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
+                reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
                             &watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]]);
-                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438, resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c,
-                                                (resvars.coords_PanelLayoutp->unknown420 + resvars.coords_PanelLayoutp->unknown438) + watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]].width,
-                                                (resvars.coords_PanelLayoutp->unknown424 + resvars.coords_PanelLayoutp->unknown43c) + watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]].height, 3);
+                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                                (resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx) + watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]].width,
+                                                (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) + watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]].height, 3);
             }
         }
     }
@@ -672,7 +719,7 @@ void display_panel_person_info(void)
 
     person = &thing[othervar.panel_thing];
     line = 0;
-    height = resvars.coords_PanelLayoutp->unknown57c;
+    height = resvars.coords_PanelLayoutp->info_line_height;
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
     set_font_from_cache(1);
@@ -697,7 +744,7 @@ void display_panel_person_info(void)
     if (person->flags0 & PF_AWAITING_DECISION) {
         draw_panel_info_line(info_bar_text[5], &line, lines);
     } else if (person->flags0 & PF_WAITING_FOR_ROOM) {
-        if (person->flags1 & 4)
+        if (person->flags1 & (PF_NEEDS_DIAGNOSIS_ROOM >> 8))
             draw_panel_info_line(info_bar_text[17], &line, lines);
         else
             draw_panel_info_line(info_bar_text[18], &line, lines);
@@ -765,13 +812,13 @@ void display_panel_staff_info(void)
 
     staff = &thing[othervar.panel_thing];
     line = 0;
-    height = resvars.coords_PanelLayoutp->unknown57c;
+    height = resvars.coords_PanelLayoutp->info_line_height;
     if (staff->owner != 0x63) {
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(1);
         fn_000bbff0(buf, staff_names[staff->subtype]);
-        if ((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (staff->skills & 0x1e0)) {
+        if ((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (staff->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_CONSULTANT | SKILL_RESEARCHER))) {
             fn_000bbff0(buf, "");
             n = 0;
             if (staff->skills & SKILL_CONSULTANT)
@@ -805,10 +852,10 @@ void display_panel_staff_info(void)
         pct = allhosps[staff->owner].rest_threshold * 100 / 1000;
         pct > 100 ? pct = 100 : 0;
         draw_panel_percent_bar(staff->tiredness * 100 / 1000, info_bar_text[28]);
-        fn_000ccac4(pct * (resvars.boxes_PanelLayoutp->unknown5e8 - 2) / 100 + (resvars.boxes_PanelLayoutp->unknown5e0 + panel->x + 1),
-                    resvars.boxes_PanelLayoutp->unknown5e4 + (panel->y + resvars.coords_PanelLayoutp->unknown584 + resvars.coords_PanelLayoutp->unknown57c * 2 + 1),
-                    panel->x + resvars.boxes_PanelLayoutp->unknown5e0 + 1 + pct * (resvars.boxes_PanelLayoutp->unknown5e8 - 2) / 100,
-                    panel->y + resvars.coords_PanelLayoutp->unknown584 + resvars.coords_PanelLayoutp->unknown57c * 2 + resvars.boxes_PanelLayoutp->unknown5ec - 1 + resvars.boxes_PanelLayoutp->unknown5e4,
+        fn_000ccac4(pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100 + (resvars.boxes_PanelLayoutp->info_bar_x + panel->x + 1),
+                    resvars.boxes_PanelLayoutp->info_bar_y + (panel->y + resvars.coords_PanelLayoutp->info_text_y + resvars.coords_PanelLayoutp->info_line_height * 2 + 1),
+                    panel->x + resvars.boxes_PanelLayoutp->info_bar_x + 1 + pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100,
+                    panel->y + resvars.coords_PanelLayoutp->info_text_y + resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.boxes_PanelLayoutp->info_bar_h - 1 + resvars.boxes_PanelLayoutp->info_bar_y,
                     color.white);
     }
 }
@@ -857,7 +904,7 @@ void display_panel_queue_info(void)
 
     selected = &thing[othervar.panel_thing];
     line = 0;
-    height = resvars.coords_PanelLayoutp->unknown57c;
+    height = resvars.coords_PanelLayoutp->info_line_height;
     if (selected->type == THING_STAFF)
         room = selected->room;
     else
@@ -955,7 +1002,7 @@ void draw_popup_icons(void)
             redraw = 1;
             break;
         }
-        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height + resvars.coords_PanelLayoutp->unknown4ac,
+        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height + resvars.coords_PanelLayoutp->popup_window_dy,
                                   lbDisplay.graphics_screen_width, game_panel[popup_icons[1].sprite].height);
         for (i = 1; popup_icons[i].sprite != 0; i++) {
             if (listhead[player].first[i]) {
@@ -964,11 +1011,11 @@ void draw_popup_icons(void)
                 if (call->slot < 9) {
                     if (call->flash) {
                         if (call->flash > 0x22)
-                            x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->unknown4a8;
+                            x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->popup_icon_dx;
                         else
-                            x = resvars.coords_PanelLayoutp->slots[0].x + resvars.coords_PanelLayoutp->unknown4a8;
+                            x = resvars.coords_PanelLayoutp->slots[0].x + resvars.coords_PanelLayoutp->popup_icon_dx;
                     } else {
-                        x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->unknown4a8;
+                        x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->popup_icon_dx;
                     }
                     y = 0;
                     if (call->flash) {
@@ -1013,7 +1060,7 @@ void draw_popup_icons(void)
                     if (y) {
                         reqspr_draw(x, y, spr);
                         if (popup_icons[i].sprite == 0x2b)
-                            reqspr_draw(x + resvars.coords_PanelLayoutp->unknown598, y + resvars.coords_PanelLayoutp->unknown59c, &game_panel[panel_emergency_spr[othervar.emergency_anim_frame]]);
+                            reqspr_draw(x + resvars.coords_PanelLayoutp->emergency_anim_dx, y + resvars.coords_PanelLayoutp->emergency_anim_dy, &game_panel[panel_emergency_spr[othervar.emergency_anim_frame]]);
                         othervar.popup_shutter_state = 2;
                         no_flash = 0;
                     }
@@ -1038,7 +1085,7 @@ void draw_popup_icons(void)
             set_all_refresh_zones_in_window(((PanelIcon *)panel)[0].x, ((PanelIcon *)panel)[0].y,
                                             ((PanelIcon *)panel)[0].x2, ((PanelIcon *)panel)[0].y2, 3);
         }
-        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height + resvars.coords_PanelLayoutp->unknown4ac,
+        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height + resvars.coords_PanelLayoutp->popup_window_dy,
                                   lbDisplay.graphics_screen_width, game_panel[popup_icons[1].sprite].height);
         for (i = 1; popup_icons[i].sprite != 0; i++) {
             if (listhead[player].first[i]) {
@@ -1047,11 +1094,11 @@ void draw_popup_icons(void)
                 if (call->slot < 9) {
                     if (call->flash) {
                         if (call->flash > 0x22)
-                            x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->unknown4a8;
+                            x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->popup_icon_dx;
                         else
-                            x = resvars.coords_PanelLayoutp->slots[0].x + resvars.coords_PanelLayoutp->unknown4a8;
+                            x = resvars.coords_PanelLayoutp->slots[0].x + resvars.coords_PanelLayoutp->popup_icon_dx;
                     } else {
-                        x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->unknown4a8;
+                        x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->popup_icon_dx;
                     }
                     y = 0;
                     if (call->flash) {
@@ -1063,7 +1110,7 @@ void draw_popup_icons(void)
                         y1 = y + spr->height;
                         reqspr_draw(x, y, spr);
                         if (popup_icons[i].sprite == 0x2b)
-                            reqspr_draw(x + resvars.coords_PanelLayoutp->unknown598, y + resvars.coords_PanelLayoutp->unknown59c, &game_panel[panel_emergency_spr[othervar.emergency_anim_frame]]);
+                            reqspr_draw(x + resvars.coords_PanelLayoutp->emergency_anim_dx, y + resvars.coords_PanelLayoutp->emergency_anim_dy, &game_panel[panel_emergency_spr[othervar.emergency_anim_frame]]);
                         y += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height;
                         y1 += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height;
                         set_all_refresh_zones_in_window(x, y, x1, y1, 3);
@@ -1073,8 +1120,8 @@ void draw_popup_icons(void)
         }
         if (resvars.game_mode == SCREEN_MODE_13)
             LbScreenSetGraphicsWindow(0xb1, ((PanelIcon *)panel)[0].y, 100, 100);
-        x = resvars.coords_PanelLayoutp->unknown4a0;
-        y = resvars.coords_PanelLayoutp->unknown4a4;
+        x = resvars.coords_PanelLayoutp->shutter_x;
+        y = resvars.coords_PanelLayoutp->shutter_y;
         switch (othervar.popup_shutter_state) {
         case 2:
             if (othervar.popup_shutter_width - 2 >= 0)
@@ -1193,7 +1240,7 @@ void add_panel_popup(PlayerCall *call)
         } else {
             call->slot = 9;
         }
-        play_sound(10, SFX_NEWFAX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NEWFAX, -1, -1);
     }
 }
 
@@ -1420,7 +1467,7 @@ u8 display_panel_special_info(void)
 
     selected = &thing[othervar.panel_thing];
     line = 0;
-    y = resvars.coords_PanelLayoutp->unknown594;
+    y = resvars.coords_PanelLayoutp->info_message_dy;
     i = 0;
     x = 0;
     lbDisplay.draw_flags = 0;
@@ -1447,9 +1494,9 @@ u8 display_panel_special_info(void)
         LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(0x2c);
         if (gamevar.paused) {
-            LbTextDraw(resvars.coords_PanelLayoutp->unknown570, y + resvars.coords_PanelLayoutp->unknown584, misc_text[21]);
+            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, y + resvars.coords_PanelLayoutp->info_text_y, misc_text[21]);
         } else if (othervar.panel_message) {
-            LbTextDraw(resvars.coords_PanelLayoutp->unknown570, y + resvars.coords_PanelLayoutp->unknown584, misc_text[othervar.panel_message]);
+            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, y + resvars.coords_PanelLayoutp->info_text_y, misc_text[othervar.panel_message]);
             othervar.panel_message_time--;
             if (othervar.panel_message_time == 0)
                 othervar.panel_message = 0;
@@ -1510,13 +1557,13 @@ void draw_panel_percent_bar(s32 value, char *text)
     s32 x;
     s32 y;
 
-    x = resvars.boxes_PanelLayoutp->unknown5e0 + panel->x;
-    y = resvars.coords_PanelLayoutp->unknown584 + panel->y + resvars.coords_PanelLayoutp->unknown57c * 2 + resvars.boxes_PanelLayoutp->unknown5e4;
+    x = resvars.boxes_PanelLayoutp->info_bar_x + panel->x;
+    y = resvars.coords_PanelLayoutp->info_text_y + panel->y + resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.boxes_PanelLayoutp->info_bar_y;
     value > 100 ? (value = 100) : 0;
-    LbTextDraw(resvars.coords_PanelLayoutp->unknown570, resvars.coords_PanelLayoutp->unknown57c * 2 + resvars.coords_PanelLayoutp->unknown584, text);
-    LbDrawBox(x, y, resvars.boxes_PanelLayoutp->unknown5e8, resvars.boxes_PanelLayoutp->unknown5ec, color.white);
-    LbDrawBox(x + 1, y + 1, (resvars.boxes_PanelLayoutp->unknown5e8 - 2) * value / 100, resvars.boxes_PanelLayoutp->unknown5ec - 2, color.red);
-    LbDrawBox(x + 1 + (resvars.boxes_PanelLayoutp->unknown5e8 - 2) * value / 100, y + 1, resvars.boxes_PanelLayoutp->unknown5e8 - 2 - (resvars.boxes_PanelLayoutp->unknown5e8 - 2) * value / 100, resvars.boxes_PanelLayoutp->unknown5ec - 2, color.black);
+    LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.coords_PanelLayoutp->info_text_y, text);
+    LbDrawBox(x, y, resvars.boxes_PanelLayoutp->info_bar_w, resvars.boxes_PanelLayoutp->info_bar_h, color.white);
+    LbDrawBox(x + 1, y + 1, (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100, resvars.boxes_PanelLayoutp->info_bar_h - 2, color.red);
+    LbDrawBox(x + 1 + (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100, y + 1, resvars.boxes_PanelLayoutp->info_bar_w - 2 - (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100, resvars.boxes_PanelLayoutp->info_bar_h - 2, color.black);
 }
 
 // Draws text on info bar line *line, wrapping it onto a second line if too
@@ -1530,11 +1577,11 @@ void draw_panel_info_line(char *text, u8 *line, u8 lines)
     char *cursor;
     char *last;
 
-    height = resvars.coords_PanelLayoutp->unknown57c;
-    width = lbDisplay.physical_screen_width - panel->x - resvars.coords_PanelLayoutp->unknown570 * 2;
+    height = resvars.coords_PanelLayoutp->info_line_height;
+    width = lbDisplay.physical_screen_width - panel->x - resvars.coords_PanelLayoutp->info_text_x * 2;
     if (LbTextStringWidth(text) < width) {
         if (*line + 1 <= lines) {
-            LbTextDraw(resvars.coords_PanelLayoutp->unknown570, resvars.coords_PanelLayoutp->unknown584 + *line * height, text);
+            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_text_y + *line * height, text);
             (*line)++;
         }
     } else if (*line + 2 <= lines) {
@@ -1552,10 +1599,10 @@ void draw_panel_info_line(char *text, u8 *line, u8 lines)
             }
         }
         last[-1] = 0;
-        LbTextDraw(resvars.coords_PanelLayoutp->unknown570, resvars.coords_PanelLayoutp->unknown584 + *line * height, text);
+        LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_text_y + *line * height, text);
         last[-1] = ' ';
         (*line)++;
-        LbTextDraw(resvars.coords_PanelLayoutp->unknown570, resvars.coords_PanelLayoutp->unknown584 + *line * height, last);
+        LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_text_y + *line * height, last);
         (*line)++;
     }
 }

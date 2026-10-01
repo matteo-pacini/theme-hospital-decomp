@@ -19,17 +19,17 @@ extern u16 visuals_available[];
 extern PeepType D_0012b7d4[];
 extern PeepPalette D_0012b818[];
 
-s8 nth_active_player(int player);
+s8 nth_active_player(int nth);
 void sort_peep_bids(PeepBid *bids);
-void nav_init(Thing *w);
+void nav_init(Thing *person);
 
 }
 
 u8 create_an_illness(void);
 s8 who_owns_peep(u8 illness);
-void add_contagiousness(Thing *w);
+void add_contagiousness(Thing *patient);
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner);
-void process_computer_peep(Thing *w, u8 player);
+void process_computer_peep(Thing *patient, u8 owner);
 
 // Starts a month's arrivals: adds the popn[] count for month othervar.game_month
 // to the visitor total (gamevar.visitors_per_month) and sets the spawn interval
@@ -146,7 +146,7 @@ u8 create_an_illness(void)
 
     illness = 0;
     ok = 0;
-    if (towns[myhosp->level].unknown4[3] && old_newrand() % towns[myhosp->level].unknown4[3] == 0) {
+    if (towns[myhosp->level].ill_rate && old_newrand() % towns[myhosp->level].ill_rate == 0) {
         ok = 1;
         if (gbv.hold_visual_months && othervar.game_month < gbv.hold_visual_months)
             ok = 0;
@@ -263,8 +263,8 @@ void add_contagiousness(Thing *patient)
     u8 chance;
     u8 boost;
 
-    if (!expertise[patient->illness].unknown10[1]) {
-        chance = expertise[patient->illness].unknown10[0];
+    if (!expertise[patient->illness].not_contagious) {
+        chance = expertise[patient->illness].cont_rate;
         if (chance) {
             boost = 0;
             if (gbv.reduce_cont_months && othervar.game_month < gbv.reduce_cont_months)
@@ -355,7 +355,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         {
             u16 idx;
 
-            idx = check_frame(anim_starts[peep->subtype].idle, peep) + peep->facing;
+            idx = check_frame(anim_starts[peep->subtype].walk, peep) + peep->facing;
             peep->sprite = start[idx].frame;
             peep->flip = start[idx].flags > 0 ? (u8)1 : (u8)0;
         }
@@ -371,8 +371,8 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
             peep->health_history[j] = peep->health;
         peep->treatment = ILL_GENERAL_PRACTICE;
         peep->known_illness = 1;
-        peep->diagnosis_handicap = old_normal_rand(1, *(u16 *)&expertise[illness].unknown10[6]);
-        if (old_newrand() % *(u16 *)&towns[myhosp->level].unknown4[0xe] == 0)
+        peep->diagnosis_handicap = old_normal_rand(1, expertise[illness].max_diag_diff);
+        if (old_newrand() % towns[myhosp->level].insurance_odds == 0)
             peep->insurance = 1 << old_newrand() % 3;
         else
             peep->insurance = 0;

@@ -39,17 +39,17 @@ void game(void)
     char path[128];
 
     unused = 0;
-    sprintf(path, "%s%s", cd_install_path, animation_table[25].name);
+    sprintf(path, "%s%s", cd_install_path, animation_table[ANIM_INTRO_SM2].name);
     check_cd_available(path);
     get_cd_speed();
     start_game();
     if (debug.direct_start) {
-        display_mode = 0;
+        display_mode = DM_GAME;
         gamevar.paused = 0;
         fn_000110b0();
     } else {
-        display_mode = 2;
-        mainmenu.state = 0x17;
+        display_mode = DM_MAIN_MENU;
+        mainmenu.state = MMS_INTRO;
     }
     process_turn();
     while (quit_game == 0) {
@@ -64,7 +64,7 @@ void game(void)
         check_if_active();
         if (LbScreenLock() != 1) {
             run_things = display_mode_control[display_mode];
-            if (display_mode == 13) {
+            if (display_mode == DM_LOST_FOCUS) {
                 run_things = process_lost_focus_display(0);
             } else {
                 set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
@@ -76,7 +76,7 @@ void game(void)
             run_things = display_mode_control[display_mode];
             menu_turn++;
             switch (display_mode) {
-            case 0:
+            case DM_GAME:
                 draw_it();
                 do_net_text();
                 process_menus();
@@ -96,21 +96,21 @@ void game(void)
                 draw_pause_mode();
                 draw_help_text();
                 break;
-            case 1:
+            case DM_CHARTS:
                 do_charts();
                 process_keys(HospShift, lbInkey);
                 process_sound_heap();
                 draw_help_text();
                 process_turn();
                 break;
-            case 2:
+            case DM_MAIN_MENU:
                 draw_main_menu();
                 process_keys_main_menu();
                 process_mouse_main_menu();
                 process_sound_heap();
                 process_turn();
                 break;
-            case 3:
+            case DM_AREA_SELECT:
                 if (!draw_area_select()) {
                     goto done;
                 }
@@ -119,7 +119,7 @@ void game(void)
                 process_sound_heap();
                 process_turn();
                 break;
-            case 4:
+            case DM_TOWN_MAP:
                 draw_town_select();
                 ProcessWindows(open_windows);
                 process_keys_town_select();
@@ -127,20 +127,20 @@ void game(void)
                 process_sound_heap();
                 process_turn();
                 break;
-            case 5:
+            case DM_NETWORK_SELECT:
                 draw_network_select();
                 process_keys_network_select();
                 process_mouse_network_select();
                 process_sound_heap();
                 break;
-            case 6:
+            case DM_LOAD_GAME:
                 draw_load_game();
                 process_keys_load_game();
                 process_mouse_load_game();
                 process_sound_heap();
                 manage_sound();
                 break;
-            case 7:
+            case DM_WINLOSE:
                 if (othervar.winlose_result != 0) {
                     switch (othervar.winlose_result) {
                     case 1:
@@ -154,21 +154,21 @@ void game(void)
                 }
                 process_turn();
                 break;
-            case 8:
+            case DM_YEAR_END:
                 do_year_end();
                 manage_sound();
                 process_sound_heap();
                 draw_help_text();
                 process_turn();
                 break;
-            case 9:
+            case DM_CHOICE:
                 display_choice();
                 process_sound_heap();
                 manage_sound();
                 draw_help_text();
                 process_turn();
                 break;
-            case 10:
+            case DM_NICKNAME:
                 draw_nickname();
                 process_keys_nickname();
                 process_mouse_nickname();
@@ -176,7 +176,7 @@ void game(void)
                 manage_sound();
                 process_turn();
                 break;
-            case 11:
+            case DM_MODAL:
                 draw_it();
                 do_net_text();
                 ProcessWindows(open_windows);
@@ -190,18 +190,18 @@ void game(void)
                 process_turn();
                 draw_help_text();
                 break;
-            case 12:
+            case DM_YEAR_END_WINLOSE:
                 fn_000c21e6(&choice_backup, &year_end_backup, 10);
                 play_winlose();
                 process_turn();
                 break;
-            case 13:
+            case DM_LOST_FOCUS:
                 run_things = process_lost_focus_display(1);
                 break;
             case 99:
                 process_turn();
                 break;
-            case 14:
+            case DM_TOWN_BID:
                 draw_town_select();
                 ProcessWindows(open_windows);
                 process_keys_town_select();
@@ -229,7 +229,7 @@ void game(void)
             LbMouseRemove();
         }
         limit_framerate();
-        if ((display_mode == 0 || display_mode == 11) && resvars.screen_mode == SCREEN_MODE_13 && othervar.full_swap_frames == 0) {
+        if ((display_mode == DM_GAME || display_mode == DM_MODAL) && resvars.screen_mode == SCREEN_MODE_13 && othervar.full_swap_frames == 0) {
             special_refresh();
         } else {
             if (othervar.full_swap_frames) {
@@ -267,7 +267,7 @@ void game(void)
             setup_colors();
         }
         if (othervar.show_level_brief || othervar.show_net_criteria || othervar.net_result_page) {
-            if (display_mode == 0 && crequester.id == 0x63 && othervar.irequester_slot == 0 && gamevar.mouse_mode != MM_HELP && !othervar.net_result
+            if (display_mode == DM_GAME && crequester.id == REQ_NONE && othervar.irequester_slot == 0 && gamevar.mouse_mode != MM_HELP && !othervar.net_result
                 && gamevar.mouse_mode != MM_PLACE_STAFF) {
                 display_mission();
             }
@@ -275,11 +275,11 @@ void game(void)
         switch (quit_game) {
         case 1:
             close_irequesters();
-            if (crequester.id != 0x63) {
+            if (crequester.id != REQ_NONE) {
                 close_crequester(crequester.id);
             }
-            mainmenu.state = 0x1f;
-            display_mode = 2;
+            mainmenu.state = MMS_UNLOAD_GAME;
+            display_mode = DM_MAIN_MENU;
             fade_out_menu();
             LbScreenClear(0);
             LbScreenSwap();
@@ -357,8 +357,8 @@ void start_turn(void)
     othervar.cur_turn = actual_game_turn;
     othervar.next_modify_turn = actual_game_turn + gbv.modify_freq;
     othervar.every_32_turns = (actual_game_turn & 0x1f) == 0;
-    if (othervar.f8ac_s16a[1] > 0) {
-        othervar.f8ac_s16a[1]--;
+    if (othervar.recept_call_timer > 0) {
+        othervar.recept_call_timer--;
     }
     if (actual_game_turn % 25 == 0) {
         twice_daily_admin();
@@ -390,9 +390,9 @@ void start_turn(void)
         allhosps[i].opening_countdown--;
         if (!allhosps[i].opening_countdown) {
             if (i != player) {
-                announce_this(0xc, i);
+                announce_this(ANN_RIVAL_OPENED, i);
             } else {
-                play_sound(10, SFX_FANFARE, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_FANFARE, -1, -1);
             }
             if (statvar.num_players <= 1) {
                 allhosps[i].hospital_open = 1;
@@ -406,23 +406,23 @@ void start_turn(void)
     room = &room_info[allhosps[player].edited_room];
     if (room > room_info) {
         if (room->being_edited && fn_00029a54(&room_info[allhosps[player].edited_room])) {
-            if (gamevar.mouse_mode == 0xe) {
+            if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
                 if (room_info[allhosps[player].edited_room].first == 0) {
-                    D_001549d0[player].type = 0x83;
+                    D_001549d0[player].type = EV_SETUP_PLACE_OBJECT_REQUESTER;
                 }
             } else {
-                D_001549d0[player].type = 0x7b;
+                D_001549d0[player].type = EV_CANCEL_EDIT_ROOM;
             }
         }
     }
     if (statvar.num_players > 1) {
         switch (othervar.net_result) {
         case 1:
-            D_001549d0[player].type = 0x7e;
+            D_001549d0[player].type = EV_LEAVE_NET_GAME;
             D_001549d0[player].value = 1;
             break;
         case 2:
-            D_001549d0[player].type = 0x90;
+            D_001549d0[player].type = EV_NET_WIN;
             break;
         default:
             break;
@@ -586,9 +586,9 @@ void check_if_active(void)
             } else {
                 othervar.lost_focus[player] = 1;
             }
-            if (display_mode != 0xd) {
+            if (display_mode != DM_LOST_FOCUS) {
                 othervar.lost_focus_display_mode = display_mode;
-                display_mode = 0xd;
+                display_mode = DM_LOST_FOCUS;
             }
             if (othervar.music_playing) {
                 AIL_end_sequence(GetSongHandle());
@@ -613,8 +613,8 @@ u8 process_lost_focus_display(u8 draw)
     }
     if (draw) {
         switch (othervar.lost_focus_display_mode) {
-        case 0:
-        case 11:
+        case DM_GAME:
+        case DM_MODAL:
             draw_it();
             break;
         default:
@@ -643,7 +643,7 @@ void display_mission(void)
         othervar.show_level_brief = 0;
     } else if (othervar.net_result_page) {
         if (othervar.net_result_page == 3) {
-            play_sound(10, SFX_CHEER, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_CHEER, -1, -1);
         }
         show_help_page(3, othervar.net_result_page);
         othervar.net_result_page = 0;

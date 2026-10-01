@@ -11,35 +11,52 @@ struct FrameBox {
     s16 h;
 };
 
+/*
+ * The advisor speech bubble's entries (0x93 to 0x9e) of the in-game position
+ * table, read through resvars.coords.
+ */
 struct AdvisorLayout {
     u8 unknown0[0x49c];
-    s32 f49c;
+    // 0x49c: Y of the bubble's left end and middle pieces.
+    s32 bubble_y;
     u8 unknown4a0[0x14];
-    s32 f4b4;
+    // 0x4b4: Text y when the advice wraps to three lines.
+    s32 text_y_3_lines;
     u8 unknown4b8[4];
-    s32 f4bc;
+    // 0x4bc: Text y for two lines.
+    s32 text_y_2_lines;
     u8 unknown4c0[4];
-    s32 f4c4;
-    s32 f4c8;
+    // 0x4c4: Text y for one line.
+    s32 text_y_1_line;
+    // 0x4c8: Text x offset from the left end piece; also taken off the wrap
+    // width.
+    s32 text_left_margin;
     u8 unknown4cc[4];
-    s32 f4d0;
+    // 0x4d0: Taken off the wrap width.
+    s32 text_right_margin;
     u8 unknown4d4[4];
-    s32 f4d8;
+    // 0x4d8: Wrap width added per middle piece.
+    s32 middle_text_width;
     u8 unknown4dc[4];
-    s32 f4e0;
+    // 0x4e0: Wrap width added for one end piece.
+    s32 left_text_width;
     u8 unknown4e4[4];
-    s32 f4e8;
+    // 0x4e8: Wrap width added for the other end piece.
+    s32 right_text_width;
     u8 unknown4ec[4];
-    s32 f4f0;
-    s32 f4f4;
+    // 0x4f0: X of the bubble's right end (game_panel[39]); the other pieces
+    // extend left from it.
+    s32 right_piece_x;
+    // 0x4f4: Y of the bubble's right end.
+    s32 right_piece_y;
 };
 
 extern "C" {
 extern u8 no_pieces;
 extern u8 D_00156910;
 extern FrameBox D_001567b0;
-char *strncpy(char *dst, const char *src, u32 n);
-char *strncat(char *dst, const char *src, u32 n);
+char *strncpy(char *dst, const char *src, u32 len);
+char *strncat(char *dst, const char *t, u32 n);
 void process_advisor_text(void);
 void format_advisor_text(u8 segments);
 }
@@ -64,26 +81,26 @@ void advisor_text_box(void)
         if (advisor.rewrap)
             process_advisor_text();
         if (advisor.line_count == 3)
-            y = resvars.coords_AdvisorLayoutp->f4b4;
+            y = resvars.coords_AdvisorLayoutp->text_y_3_lines;
         else if (advisor.line_count == 2)
-            y = resvars.coords_AdvisorLayoutp->f4bc;
+            y = resvars.coords_AdvisorLayoutp->text_y_2_lines;
         else if (advisor.line_count == 1)
-            y = resvars.coords_AdvisorLayoutp->f4c4;
+            y = resvars.coords_AdvisorLayoutp->text_y_1_line;
         if (no_pieces <= resvars.advisor_max_segments) {
-            reqspr_draw(resvars.coords_AdvisorLayoutp->f4f0, resvars.coords_AdvisorLayoutp->f4f4, &game_panel[39]);
-            reqspr_draw(resvars.coords_AdvisorLayoutp->f4f0 - game_panel[37].width - (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width,
-                        resvars.coords_AdvisorLayoutp->f49c, &game_panel[37]);
+            reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x, resvars.coords_AdvisorLayoutp->right_piece_y, &game_panel[39]);
+            reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x - game_panel[37].width - (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width,
+                        resvars.coords_AdvisorLayoutp->bubble_y, &game_panel[37]);
             for (i = 0; i < resvars.advisor_min_segments + advisor.extra_segments; i++)
-                reqspr_draw(resvars.coords_AdvisorLayoutp->f4f0 - (advisor.extra_segments + resvars.advisor_min_segments - i) * game_panel[38].width, resvars.coords_AdvisorLayoutp->f49c,
+                reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x - (advisor.extra_segments + resvars.advisor_min_segments - i) * game_panel[38].width, resvars.coords_AdvisorLayoutp->bubble_y,
                             &game_panel[38]);
             set_all_refresh_zones_in_window(
-                resvars.coords_AdvisorLayoutp->f4f0 - (advisor.extra_segments + resvars.advisor_min_segments + 1) * game_panel[38].width - game_panel[39].width,
-                resvars.coords_AdvisorLayoutp->f4f4, resvars.coords_AdvisorLayoutp->f4f0 + game_panel[39].width, resvars.coords_AdvisorLayoutp->f4f4 + game_panel[39].height, 3);
-            advisor.box_left = resvars.coords_AdvisorLayoutp->f4f0 - game_panel[38].width * (u16)(advisor.extra_segments + resvars.advisor_min_segments + 1) - game_panel[39].width;
+                resvars.coords_AdvisorLayoutp->right_piece_x - (advisor.extra_segments + resvars.advisor_min_segments + 1) * game_panel[38].width - game_panel[39].width,
+                resvars.coords_AdvisorLayoutp->right_piece_y, resvars.coords_AdvisorLayoutp->right_piece_x + game_panel[39].width, resvars.coords_AdvisorLayoutp->right_piece_y + game_panel[39].height, 3);
+            advisor.box_left = resvars.coords_AdvisorLayoutp->right_piece_x - game_panel[38].width * (u16)(advisor.extra_segments + resvars.advisor_min_segments + 1) - game_panel[39].width;
             LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
             LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
             lbDisplay.draw_flags = 0;
-            LbTextDraw(resvars.coords_AdvisorLayoutp->f4f0 - (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width + resvars.coords_AdvisorLayoutp->f4c8
+            LbTextDraw(resvars.coords_AdvisorLayoutp->right_piece_x - (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width + resvars.coords_AdvisorLayoutp->text_left_margin
                            - game_panel[37].width,
                        y, advisor.text);
         }
@@ -122,7 +139,7 @@ void format_advisor_text(u8 segments)
     char *brk;
     char *line_start;
 
-    max_width = segments * resvars.coords_AdvisorLayoutp->f4d8 + resvars.coords_AdvisorLayoutp->f4e8 + resvars.coords_AdvisorLayoutp->f4e0 - resvars.coords_AdvisorLayoutp->f4c8 - resvars.coords_AdvisorLayoutp->f4d0;
+    max_width = segments * resvars.coords_AdvisorLayoutp->middle_text_width + resvars.coords_AdvisorLayoutp->right_text_width + resvars.coords_AdvisorLayoutp->left_text_width - resvars.coords_AdvisorLayoutp->text_left_margin - resvars.coords_AdvisorLayoutp->text_right_margin;
     width = 0;
     lines = 0;
     out = wrapped;

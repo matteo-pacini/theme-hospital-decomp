@@ -3,7 +3,7 @@
 extern "C" {
 
 void fn_000c93bf(char *dst, char *src);
-void LbErrorLog(char *s, ...);
+void LbErrorLog(char *fmt, ...);
 int strcmp(const char *a, const char *b);
 void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *));
 }
@@ -65,7 +65,7 @@ char *read_line_from_buf(char *line, s32 max, char *src)
 // FUNCTION: 0x0007a29c
 char *modify_data_load_filename(TbLoadFiles *file)
 {
-    if (*(u16 *)&file->unknown[0x2a] > install_type) {
+    if (file->install_level > install_type) {
         fn_000bbff0(filename, cd_install_path);
         fn_000c93bf(filename, (char *)file);
     } else {

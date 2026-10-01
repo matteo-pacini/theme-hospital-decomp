@@ -44,17 +44,17 @@ struct TbFileFind {
 extern "C" {
 int access(char *path, int mode);
 int tell(int handle);
-int creat(char *path, int mode);
+int creat(char *name, int pmode);
 int setmode(int handle, int mode);
 int close(int handle);
-int sopen(char *path, int access, int share, ...);
+int sopen(char *name, int mode, int shflag, ...);
 int lseek(int handle, int offset, int origin);
 int read(int handle, void *buf, u32 len);
-int write(int handle, void *buf, u32 len);
+int write(int handle, void *buffer, u32 len);
 int filelength(int handle);
 u32 _dos_findfirst(char *path, u32 attr, find_t *buf);
 u32 _dos_findnext(find_t *buf);
-int remove(const char *path);
+int remove(const char *filename);
 int rename(char *from, char *to);
 char *strcpy(char *dst, const char *src);
 #pragma intrinsic(strcpy)

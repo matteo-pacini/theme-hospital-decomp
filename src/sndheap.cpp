@@ -13,10 +13,19 @@ struct SampleInfo {
     u8 unknown18[5];
 };
 
+/*
+ * One sample of the loaded sound bank: where it is in the file and its cache
+ * block.
+ */
 struct SampleTable {
+    // 0x0: File offset of the sample data.
     u32 offset;
+    // 0x4: Size of the sample data.
     s32 length;
-    u32 unknown8;
+    // 0x8: Passed to PlaySampleFromAddress as its extra value (logged as the
+    // priority).
+    u32 priority;
+    // 0xc: Cache block holding the sample, or 0 if not loaded.
     TbCacheUsedBlock *block;
     u32 unknown10;
 };
@@ -31,11 +40,15 @@ struct SoundBankEntry {
 
 /* One sample's header in the sound bank. */
 struct SoundBankSample {
+    // 0x0: Sample file name.
     char name[0x12];
+    // 0x12: Offset of the data from the bank's base.
     u32 offset;
     u8 unknown16[4];
+    // 0x1a: Size of the data.
     u32 length;
-    u8 unknown1e;
+    // 0x1e: Copied to SampleTable.priority.
+    u8 priority;
     u8 unknown1f;
 };
 
@@ -49,10 +62,10 @@ s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate);
 
 extern "C" {
 int LbFilePosition(int handle);
-char IsSamplePlaying(s32 a, s32 b, void *handle);
+char IsSamplePlaying(s32 source_id, s32 number, void *handle);
 SampleInfo *GetFirstSampleInfoStructure(void);
 SampleInfo *GetLastSampleInfoStructure(void);
-SampleInfo *PlaySampleFromAddress(u32 source, s16 sample, u32 volume, u32 pan, u16 pitch, s8 loop, u8 type, void *data, u32 length);
+SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, u32 volume, u32 pan, u16 pitch, s8 loop, u8 type, void *address, u32 extra);
 void *fn_00022b60(TbCacheUsedBlock *block);
 void fn_000a2ed0(TbCacheUsedBlock *block);
 }
@@ -188,7 +201,7 @@ SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, 
         cache.MakeNewest(st->block);
     }
     data = fn_00022b60(st->block);
-    info = PlaySampleFromAddress(source, sample, volume, pan, pitch, loop, type, fn_00022b60(st->block), st->unknown8);
+    info = PlaySampleFromAddress(source, sample, volume, pan, pitch, loop, type, fn_00022b60(st->block), st->priority);
     if (info == 0)
         return 0;
     info->flags |= 1;
@@ -267,7 +280,7 @@ s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate)
         st->offset = rec.offset + base;
         st->length = rec.length;
         st->block = 0;
-        st->unknown8 = rec.unknown1e;
+        st->priority = rec.priority;
     }
     return *count * sizeof(SampleTable);
 }

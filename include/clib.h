@@ -73,7 +73,7 @@ int __qwrite(int handle, const void *buffer, unsigned len);
 void __set_errno(int err);
 long lseek(int handle, long offset, int origin);
 int __fprtf(FILE *fp, const char *format, va_list arg);
-int __prtf(void *dest, const char *format, va_list arg, void (*out_putc)());
+int __prtf(void *dest, const char *format, va_list args, void (*out_putc)());
 
 #define O_RDONLY 0x0000
 #define O_WRONLY 0x0001

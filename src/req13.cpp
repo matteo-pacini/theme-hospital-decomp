@@ -29,12 +29,12 @@ void req13(Window *win)
             debug.last_button = i;
             if (i == resvars.requester_buttons[1]) {
                 req13_no_pressed();
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             } else if (i == resvars.requester_buttons[0]) {
                 D_001549d0[player].type = othervar.yes_type;
                 D_001549d0[player].value = othervar.yes_value;
                 D_001549d0[player].arg = othervar.yes_arg;
-                play_sound(10, SFX_YESX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
             }
         }
         i++;
@@ -60,7 +60,7 @@ void req13_overdraw(Window *win)
     lbDisplay.draw_flags = 0;
 }
 
-// Opens the yes/no requester (event 0x77) for the question in othervar.yesno_msg,
+// Opens the yes/no requester (event EV_OPEN_YES_NO) for the question in othervar.yesno_msg,
 // which sends event yes_type (with yes_value, yes_arg) on yes and no_type
 // (no_value, no_arg) on no.
 // FUNCTION: 0x0006fd98
@@ -72,7 +72,7 @@ void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, 
     othervar.no_type = no_type;
     othervar.no_value = no_value;
     othervar.no_arg = no_arg;
-    D_001549d0[player].type = 0x77;
+    D_001549d0[player].type = EV_OPEN_YES_NO;
 }
 
 // Closes the yes/no requester if it is open, and with reopen set reopens the
@@ -80,13 +80,13 @@ void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, 
 // FUNCTION: 0x0006fdfc
 void close_yes_no_requester(u8 reopen)
 {
-    if (crequester.id == 4) {
+    if (crequester.id == REQ_YES_NO) {
         pmenu.disabled = 0;
-        display_mode = 0;
+        display_mode = DM_GAME;
         close_crequester(crequester.id);
         close_irequesters();
         window.current_window = 0;
-        if (reopen && othervar.yesno_saved_requester != 0x63) {
+        if (reopen && othervar.yesno_saved_requester != REQ_NONE) {
             crequester.id = othervar.yesno_saved_requester;
             open_requester(crequester.id, 1);
             set_mouse_mode(othervar.yesno_saved_mouse_mode);
@@ -108,7 +108,7 @@ void req13_no_pressed(void)
 // FUNCTION: 0x0006fed8
 void req13_cancel_check(void)
 {
-    if (crequester.id == 4) {
+    if (crequester.id == REQ_YES_NO) {
         if (lbInkey == KC_ESCAPE || (lbDisplay.right_button && !mouse_was_on_window)) {
             req13_no_pressed();
             lbDisplay.right_button = 0;

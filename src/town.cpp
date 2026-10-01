@@ -1,17 +1,29 @@
 #include "hosp.h"
 
+/*
+ * The town map's entries of the screen box table (resvars.screen_boxes).
+ */
 struct TownView {
     u8 unknown0[0x10];
+    // 0x10: X of the town map.
     s32 x;
+    // 0x14: Y of the town map.
     s32 y;
     u8 unknown18[8];
-    s32 f20;
-    s32 f24;
-    s32 f28;
+    // 0x20: Clip window of the balance's rolling digits.
+    s32 balance_clip_x;
+    // 0x24: Its y.
+    s32 balance_clip_y;
+    // 0x28: Its width.
+    s32 balance_clip_w;
     s32 f2c;
-    s32 f30;
-    s32 f34;
-    s32 f38;
+    // 0x30: Clip window of the balance digits that stay still while the others
+    // roll.
+    s32 balance_fixed_clip_x;
+    // 0x34: Its y.
+    s32 balance_fixed_clip_y;
+    // 0x38: Its width before the extra digits.
+    s32 balance_fixed_clip_w;
 };
 
 extern "C" {
@@ -21,8 +33,8 @@ extern char **town_details;
 extern u8 D_00156910;
 extern u8 D_00158166;
 extern u8 D_00158192;
-void LbMouseSetWindow(s32 x, s32 y, s32 w, s32 h);
-void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
+void LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height);
+void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 void conv_string(char *dst, s8 *src, u8 mode);
 void setup_bid_map(void);
 void draw_hilight_plot(void);
@@ -64,7 +76,7 @@ void draw_things_on_map(void);
 void display_plot_under_mouse(void);
 void setup_overhead_map(void);
 void display_hospital_map_overhead(void);
-u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
+u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_margin);
 
 u8 testcol = 0x94;
 
@@ -81,15 +93,15 @@ void draw_town_select(void)
     case 0:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         setup_abort_all_requesters();
-        othervar.f6a = myhosp->heating_level;
+        othervar.pending_heating_level = myhosp->heating_level;
         othervar.f6b_u32 = 0x32;
-        load_ingame_pic(1, 1, 0xa, level_number, SCREEN_MODE_13);
+        load_ingame_pic(SCR_TOWN, 1, 0xa, level_number, SCREEN_MODE_13);
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         if (!town.value)
             town.value = 0x1f;
         calculate_land_amount();
-        set_mouse_mode(0xa);
+        set_mouse_mode(MM_TOWN_MAP);
         set_font_from_cache(0);
         setup_overhead_map();
         town.state = 7;
@@ -103,7 +115,7 @@ void draw_town_select(void)
     case 1:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
-        display_mode = 0;
+        display_mode = DM_GAME;
         remove_town_bid();
         town.state = 0;
         LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
@@ -115,7 +127,7 @@ void draw_town_select(void)
         draw_money_on_town();
         set_font_from_cache(0);
         draw_help_text();
-        set_mouse_mode(0xa);
+        set_mouse_mode(MM_TOWN_MAP);
         if (lbDisplay.rleft_button) {
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0xd, 0x1a6, 0xc0, 0x2e)) {
                 process_keys(0, 0x41);
@@ -126,9 +138,9 @@ void draw_town_select(void)
         break;
     case 0xb:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        othervar.f6a = 1;
+        othervar.pending_heating_level = 1;
         othervar.f6b_u32 = 0;
-        othervar.f6a = myhosp->heating_level;
+        othervar.pending_heating_level = myhosp->heating_level;
         othervar.f6b_u32 = 0x32;
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -229,7 +241,7 @@ void process_mouse_town_select(void)
         plot = check_for_sale();
         if (plot) {
             if (myhosp->balance > land_amount[plot] * gbv.land_cost_per_tile) {
-                play_sound(10, SFX_CASHREG, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_CASHREG, -1, -1);
                 if (statvar.num_players > 1) {
                     D_001549d0[player].type = EV_SETUP_TOWN_BID;
                     D_001549d0[player].value = plot;
@@ -250,7 +262,7 @@ void process_mouse_town_select(void)
         goto_column_row_in_window(window.current_window, (u16)x, (u16)y);
         if (!check_if_point_beyond_scroll_limit(window.scroll_x[window.current_window], window.scroll_y[window.current_window], 0)) {
             town.state = 1;
-            play_sound(10, SFX_YESX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         } else {
             window.scroll_x[window.current_window] = old_x;
             window.scroll_y[window.current_window] = old_y;
@@ -492,12 +504,12 @@ void place_partition_walls(void)
 
     for (x = 0; x < 128; x++) {
         for (y = 0; y < 128; y++) {
-            if (!(map[(s16)x + ((s16)y << 7)].owner_flags & 0x10)) {
-                if (map[(s16)(x + 1) + ((s16)y << 7)].owner_flags & 0x10) {
+            if (!(map[(s16)x + ((s16)y << 7)].owner_flags & MAP_OUTDOOR)) {
+                if (map[(s16)(x + 1) + ((s16)y << 7)].owner_flags & MAP_OUTDOOR) {
                     if (level->tiles[(s16)(x + 1) + ((s16)y << 7)].wall_w == 0x8d)
                         map[(s16)(x + 1) + ((s16)y << 7)].wall_w = 0x8d;
                 }
-                if (map[(s16)x + ((s16)(y + 1) << 7)].owner_flags & 0x10) {
+                if (map[(s16)x + ((s16)(y + 1) << 7)].owner_flags & MAP_OUTDOOR) {
                     if (level->tiles[(s16)x + ((s16)(y + 1) << 7)].wall_n == 0x8c)
                         map[(s16)x + ((s16)(y + 1) << 7)].wall_n = 0x8c;
                 }
@@ -518,9 +530,9 @@ void remove_partition_walls(void)
     for (i = 0; i < 0x4000; i++) {
         if (map[i].wall_n == 0x8c) {
             next_open = prev_open = 0;
-            if (!(map[i + 128].owner_flags & 0x10))
+            if (!(map[i + 128].owner_flags & MAP_OUTDOOR))
                 next_open = 1;
-            if (!(map[i - 128].owner_flags & 0x10))
+            if (!(map[i - 128].owner_flags & MAP_OUTDOOR))
                 prev_open = 1;
             if (next_open && prev_open) {
                 if (which_room(i + 128) || which_room(i - 128))
@@ -531,9 +543,9 @@ void remove_partition_walls(void)
         }
         if (map[i].wall_w == 0x8d) {
             next_open = prev_open = 0;
-            if (!(map[i + 1].owner_flags & 0x10))
+            if (!(map[i + 1].owner_flags & MAP_OUTDOOR))
                 next_open = 1;
-            if (!(map[i - 1].owner_flags & 0x10))
+            if (!(map[i - 1].owner_flags & MAP_OUTDOOR))
                 prev_open = 1;
             if (next_open && prev_open) {
                 if (which_room(i + 1) || which_room(i - 1))
@@ -829,7 +841,7 @@ extern "C" void setup_bid_map(void)
 {
     s32 unused;
 
-    load_ingame_pic(10, 1, 10, level_number, SCREEN_MODE_13);
+    load_ingame_pic(SCR_TOWN_BID, 1, 10, level_number, SCREEN_MODE_13);
     othervar.saved_screen_ptr = lbDisplay.wscreen;
     othervar.saved_screen_width = lbDisplay.graphics_screen_width;
     othervar.saved_screen_height = lbDisplay.graphics_screen_height;
@@ -957,7 +969,7 @@ void draw_things_on_map(void)
                                   area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 2, 2, color.blue);
                     break;
                 case THING_PATIENT:
-                    if ((town.value & 1) && !(map[((s16)(u16)occupant->y.tile << 7) + (s16)(u16)occupant->x.tile].owner_flags & 0x10))
+                    if ((town.value & 1) && !(map[((s16)(u16)occupant->y.tile << 7) + (s16)(u16)occupant->x.tile].owner_flags & MAP_OUTDOOR))
                         LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
                                   area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 2, 2, color.white);
                     break;
@@ -968,9 +980,9 @@ void draw_things_on_map(void)
     set_font_from_cache(0x19);
     sprintf(buf, "%d", adcounts.patients);
     LbTextDraw(resvars.screen_coords[39].x, resvars.screen_coords[39].y, buf);
-    sprintf(buf, "%d", myhosp->object_stats[45].fA);
+    sprintf(buf, "%d", myhosp->object_stats[45].count);
     LbTextDraw(resvars.screen_coords[40].x, resvars.screen_coords[40].y, buf);
-    sprintf(buf, "%d", myhosp->object_stats[43].fA);
+    sprintf(buf, "%d", myhosp->object_stats[43].count);
     LbTextDraw(resvars.screen_coords[41].x, resvars.screen_coords[41].y, buf);
     sprintf(buf, "%d", myhosp->machine_count);
     LbTextDraw(resvars.screen_coords[42].x, resvars.screen_coords[42].y, buf);
@@ -1025,7 +1037,7 @@ u8 process_town_panel(void)
 
 // Town map buttons: 0-4 toggle the people, plant, fire extinguisher,
 // machine and radiator overlays (a right click shows only that one), 5/6
-// lower or raise the heating (event 0x4f, 1-10), 7 closes the map.
+// lower or raise the heating (event EV_SET_HEATING, 1-10), 7 closes the map.
 // FUNCTION: 0x000678dc
 void process_town_button(u8 button)
 {
@@ -1034,25 +1046,25 @@ void process_town_button(u8 button)
         if (lbDisplay.rright_button)
             town.value = 0;
         town.value ^= 1;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 1:
         if (lbDisplay.rright_button)
             town.value = 0;
         town.value ^= 2;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 2:
         if (lbDisplay.rright_button)
             town.value = 0;
         town.value ^= 4;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 3:
         if (lbDisplay.rright_button)
             town.value = 0;
         town.value ^= 8;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 4:
         if (lbDisplay.rright_button)
@@ -1060,31 +1072,31 @@ void process_town_button(u8 button)
         town.value ^= 0x10;
         if (town.value & 0x10)
             othervar.heat_icon_time = 0x1e;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 6:
         if (myhosp->heating_level < 10) {
-            D_001549d0[player].type = 0x4f;
+            D_001549d0[player].type = EV_SET_HEATING;
             D_001549d0[player].value = (u16)myhosp->heating_level + 1;
-            othervar.f6a = myhosp->heating_level + 1;
+            othervar.pending_heating_level = myhosp->heating_level + 1;
             othervar.f6b = 0x32;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         }
         othervar.heat_icon_time = 0x1e;
         break;
     case 5:
         if (myhosp->heating_level > 1) {
-            D_001549d0[player].type = 0x4f;
+            D_001549d0[player].type = EV_SET_HEATING;
             D_001549d0[player].value = (u16)myhosp->heating_level - 1;
-            othervar.f6a = myhosp->heating_level - 1;
+            othervar.pending_heating_level = myhosp->heating_level - 1;
             othervar.f6b = 0x32;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         }
         othervar.heat_icon_time = 0x1e;
         break;
     case 7:
         town.state = 1;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     }
 }
@@ -1127,9 +1139,9 @@ void process_bid_button(u8 button)
     case 1:
         if (myhosp->balance >= plotbid.price) {
             D_001549d0[player].type = EV_PLOT_BID_MONEY;
-            play_sound(10, SFX_YESX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         } else {
-            play_sound(10, SFX_NO4, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         }
         break;
     case 2:
@@ -1264,7 +1276,7 @@ void process_bid_time(void)
         }
     }
     if (bid_hammer[plotbid.timer] == 3)
-        play_sound(10, SFX_AUCTION, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_AUCTION, -1, -1);
     reqspr_draw(resvars.screen_coords[70].x, resvars.screen_coords[70].y, &screen_sprites_tab_start[bid_hammer[plotbid.timer]]);
 }
 
@@ -1300,14 +1312,14 @@ void draw_money_on_town(void)
             digits = 5;
         else
             digits = 6;
-        LbTextSetClipWindow(resvars.screen_boxes_TownViewp->f20 + resvars.screen_coords[54].x * digits, resvars.screen_boxes_TownViewp->f24,
-                            resvars.screen_boxes_TownViewp->f28 - resvars.screen_coords[54].x * digits, h);
+        LbTextSetClipWindow(resvars.screen_boxes_TownViewp->balance_clip_x + resvars.screen_coords[54].x * digits, resvars.screen_boxes_TownViewp->balance_clip_y,
+                            resvars.screen_boxes_TownViewp->balance_clip_w - resvars.screen_coords[54].x * digits, h);
         sprintf(buf, "%7d", myhosp->balance);
         LbTextDraw(resvars.screen_coords[55].x, resvars.screen_coords[55].y - (h - othervar.balance_roll_step * 6), buf);
         sprintf(buf, "%7d", othervar.shown_balance);
         LbTextDraw(resvars.screen_coords[55].x, resvars.screen_coords[55].y + othervar.balance_roll_step * 6, buf);
         if (digits) {
-            LbTextSetClipWindow(resvars.screen_boxes_TownViewp->f30, resvars.screen_boxes_TownViewp->f34, resvars.screen_coords[54].x * (digits - 3) + resvars.screen_boxes_TownViewp->f38, h);
+            LbTextSetClipWindow(resvars.screen_boxes_TownViewp->balance_fixed_clip_x, resvars.screen_boxes_TownViewp->balance_fixed_clip_y, resvars.screen_coords[54].x * (digits - 3) + resvars.screen_boxes_TownViewp->balance_fixed_clip_w, h);
             sprintf(buf, "%7d", myhosp->balance);
             LbTextDraw(resvars.screen_coords[55].x, resvars.screen_coords[55].y, buf);
         }
@@ -1318,7 +1330,7 @@ void draw_money_on_town(void)
             D_00156910 = 1;
         }
     } else {
-        LbTextSetClipWindow(resvars.screen_boxes_TownViewp->f20, resvars.screen_boxes_TownViewp->f24, resvars.screen_boxes_TownViewp->f28, h);
+        LbTextSetClipWindow(resvars.screen_boxes_TownViewp->balance_clip_x, resvars.screen_boxes_TownViewp->balance_clip_y, resvars.screen_boxes_TownViewp->balance_clip_w, h);
         sprintf(buf, "%7d", myhosp->balance);
         LbTextDraw(resvars.screen_coords[55].x, resvars.screen_coords[55].y, buf);
     }

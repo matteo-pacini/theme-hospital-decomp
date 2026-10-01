@@ -40,11 +40,11 @@ TbError StartTwoPlayerExchange(void *buf)
     TbError ret = Lb_FAIL;
 
     if (!clientDataTable[remotePlayerIndex].active)
-        spPtr->Receive(2);
+        spPtr->Receive(RECV_ADD_PLAYER);
     gotCompositeData = 0;
     if (clientDataTable[remotePlayerIndex].active) {
-        spPtr->Receive(8);
-        spPtr->Receive(0x10);
+        spPtr->Receive(RECV_ALL);
+        spPtr->Receive(RECV_REQ_EXCHANGE_DATA);
     }
     memcpy(&exchangeBuffer[localPlayerIndex * exchangeSize], buf, exchangeSize);
     if (clientDataTable[remotePlayerIndex].active) {
@@ -82,7 +82,7 @@ TbError CompleteTwoPlayerExchange(void *buf)
     if (!clientDataTable[remotePlayerIndex].active)
         return Lb_OK;
     while (keep_going) {
-        spPtr->Receive(8);
+        spPtr->Receive(RECV_ALL);
         if (gotCompositeData) {
             keep_going = 0;
             if (retries == 0) {

@@ -26,9 +26,9 @@ void draw_buttons(Window *win)
         x = win->x - lbDisplay.graphics_window_x;
         y = win->y - lbDisplay.graphics_window_y;
         if (button->flags & 1)
-            reqspr_draw((s16)x + button->x20, (s16)y + button->y22, &button_sprite[button->sprite1c]);
+            reqspr_draw((s16)x + button->disabled_x, (s16)y + button->disabled_y, &button_sprite[button->disabled_sprite]);
         else if ((button->flags & 6) && (!(button->flags & 2) || !(button->flags & 4)))
-            reqspr_draw((s16)x + button->x24, (s16)y + button->y26, &button_sprite[button->sprite18]);
+            reqspr_draw((s16)x + button->pressed_x, (s16)y + button->pressed_y, &button_sprite[button->pressed_sprite]);
         else
             reqspr_draw((s16)x + button->x, (s16)y + button->y, &button_sprite[button->sprite]);
     }

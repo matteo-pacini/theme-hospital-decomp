@@ -35,7 +35,7 @@ extern u8 D_0016121c;
 extern u8 D_0016121d;
 }
 
-void set_force_help(u8 kind, u16 text);
+void set_force_help(u8 help_group, u16 id);
 void clear_force_help(void);
 
 // Runs the tutorial's current step (advisor.tutorial_step): shows that step's advisor
@@ -69,7 +69,7 @@ s8 tutorial(void)
         break;
     case 0x28:
         if (D_0016120b != 2) {
-            if (D_001549d0[player].type == 0x64) {
+            if (D_001549d0[player].type == EV_CANCEL_BUY_OBJECTS) {
                 tutorial_display_flags = 0;
                 D_0016120b = 0;
                 advisor.tutorial_step = 0x1d;
@@ -107,7 +107,7 @@ s8 tutorial(void)
         break;
     case 0x2a:
         if (D_0016120d != 2) {
-            if (D_001549d0[player].type == 0x64) {
+            if (D_001549d0[player].type == EV_CANCEL_BUY_OBJECTS) {
                 tutorial_display_flags = 0;
                 D_0016120b = 0;
                 D_0016120d = 0;
@@ -146,7 +146,7 @@ s8 tutorial(void)
         break;
     case 0x29:
         if (D_0016120c != 2) {
-            if (D_001549d0[player].type == 0x38) {
+            if (D_001549d0[player].type == EV_CANCEL_BUILD) {
                 D_0016120c = 0;
                 D_0016120d = 0;
                 D_0016120b = 0;

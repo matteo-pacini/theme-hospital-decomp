@@ -30,7 +30,7 @@ void cbfadesample(u32 user)
             switch (smp->FadeState) {
             case 1:
                 a_sample_is_fading = 1;
-                if (AIL_sample_status(smp->SampleHandle) == 4) {
+                if (AIL_sample_status(smp->SampleHandle) == SMP_PLAYING) {
                     if ((u16)smp->FadeToVolume > 127)
                         smp->FadeToVolume = 127;
                     if ((u16)smp->FadeToVolume <= smp->SampleVolume) {
@@ -61,7 +61,7 @@ void cbfadesample(u32 user)
                 break;
             case 2:
                 a_sample_is_fading = 1;
-                if (AIL_sample_status(smp->SampleHandle) == 4) {
+                if (AIL_sample_status(smp->SampleHandle) == SMP_PLAYING) {
                     if ((u16)smp->FadeToVolume >= smp->SampleVolume) {
                         smp->FadeState = 0;
                         if (smp->FadeStep) {
@@ -115,7 +115,7 @@ void FadeSample(u32 source_id, s16 number, s16 volume, u8 rate, u8 stop_when_don
     if (SoundInstalled && SoundAble && SoundActive && number <= NumberOfSamples) {
         for (smp = sample_id; smp <= end_sample_id; smp++) {
             if (smp->SourceID == source_id && smp->SampleNumber == number
-                && AIL_sample_status(smp->SampleHandle) != 2) {
+                && AIL_sample_status(smp->SampleHandle) != SMP_DONE) {
                 if (volume > 127)
                     volume = 127;
                 if (volume == smp->SampleVolume)

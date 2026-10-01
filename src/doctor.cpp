@@ -3,8 +3,8 @@
 extern "C" {
 
 
-u8 check_room_mutex(Thing *w);
-Thing *search_mapwho(Map *t, u16 kind);
+u8 check_room_mutex(Thing *staff);
+Thing *search_mapwho(Map *cell, u16 kind);
 void fn_0003b234(Thing *w);
 
 }
@@ -42,10 +42,10 @@ void doctor_works_at_desk(Thing *doctor)
         doctor->sprite = frame[doctor->sprite].next;
         f = &frame[doctor->sprite];
         if (f->flags & 1) {
-            doctor->orders &= 0xaf;
+            doctor->orders &= ~(ORD_RETURN_TO_RESEARCH | ORD_RETURN_TO_TRAINING);
             if (check_room_mutex(doctor) ? 1 : (evacuate_staff(doctor), 0)) {
                 if (!shall_i_resign(doctor)) {
-                    if (doctor->room->being_edited || doctor->room->state == 4) {
+                    if (doctor->room->being_edited || doctor->room->state == RS_EDITED) {
                         evacuate_staff(doctor);
                     } else if ((doctor->orders & ORD_REST) && take_a_break(doctor)) {
                     } else {
@@ -112,7 +112,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
     patient = &thing[doctor->slave];
     if (patient > thing) {
         if (patient->state == PS_ARRIVED_FROM_CALL) {
-            patient->state = 0x20;
+            patient->state = PS_SLAVE_READY;
             if ((doctor->subtype == STAFF_DOCTOR && doctor->crazy) && (old_newrand() & 3) == 0) {
                 send_person_somewhere_else(patient);
                 doctor->state = get_state(doctor->room->type, doctor);
@@ -123,7 +123,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
             switch (doctor->room->type) {
             case ROOM_GP:
                 if (find_object(((u16)patient->y.tile << 7) + (u16)patient->x.tile, OBJ_CHAIR, 1, 0x96, patient->owner)) {
-                    patient->next_state = 0x20;
+                    patient->next_state = PS_SLAVE_READY;
                     if (set_complex(patient, 0x82, 0)) {
                         process_person_complex(patient);
                     }
@@ -141,7 +141,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 process_staff_complex(doctor);
                 break;
             case ROOM_CARDIO:
-                patient->next_state = 0x20;
+                patient->next_state = PS_SLAVE_READY;
                 set_complex(patient, 0xaa, 0);
                 process_person_complex(patient);
                 doctor->next_state = SS_DOCTOR_EXAMINES;
@@ -167,7 +167,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 doctor->substate = 0x3c;
                 set_complex(doctor, 0x37a, 0);
                 process_staff_complex(doctor);
-                patient->next_state = 0x20;
+                patient->next_state = PS_SLAVE_READY;
                 set_complex(patient, 0x1e0, 0);
                 process_person_complex(patient);
                 break;
@@ -180,7 +180,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 set_complex(doctor, 0x316, 0);
                 process_staff_complex(doctor);
                 assistant = &thing[doctor->work_target];
-                assistant->next_state = 0x18;
+                assistant->next_state = SS_ASSISTANT_READY;
                 set_complex(assistant, 0x32a, 0);
                 process_staff_complex(assistant);
                 break;
@@ -327,21 +327,21 @@ void doctor_in_machine_room(Thing *doctor)
             if (doctor->room->type == ROOM_THEATRE && doctor->subtype == STAFF_DOCTOR) {
                 doctor->state = SS_DOCTOR_IN_THEATRE;
             } else {
-                doctor->orders &= 0xaf;
+                doctor->orders &= ~(ORD_RETURN_TO_RESEARCH | ORD_RETURN_TO_TRAINING);
                 if (check_room_mutex(doctor) ? 1 : (evacuate_staff(doctor), 0)) {
                     if (!shall_i_resign(doctor)) {
-                        if (doctor->room->being_edited || doctor->room->state == 4) {
+                        if (doctor->room->being_edited || doctor->room->state == RS_EDITED) {
                             evacuate_staff(doctor);
                         } else if ((doctor->orders & ORD_REST) && take_a_break(doctor)) {
                         } else if ((doctor->subtype == STAFF_NURSE && allhosps[doctor->owner].idle_nurses == 0) && could_nurse_vaccinate(doctor)) {
                             evacuate_staff(doctor);
                         } else {
-                            if (doctor->room->state == 5) {
-                                doctor->room->state = 6;
+                            if (doctor->room->state == RS_REPAIR_DUE) {
+                                doctor->room->state = RS_CLOSED;
                             }
                             othervar.rand_pct = old_newrand() % 100;
                             if (othervar.rand_pct >= 0 && othervar.rand_pct < 25) {
-                                if (doctor->room->state != 6 && (queue = doctor->room->queue_head)) {
+                                if (doctor->room->state != RS_CLOSED && (queue = doctor->room->queue_head)) {
                                     if (doctor->room->type == ROOM_THEATRE) {
                                         if (am_i_lead_staff(doctor)) {
                                             doctor->timer = 200;
@@ -351,7 +351,7 @@ void doctor_in_machine_room(Thing *doctor)
                                             if (lead > thing && call_person_to_room(lead, queue, 0x28, doctor->room->door_tile, 1)) {
                                                 u16 anim;
 
-                                                doctor->state = 0x18;
+                                                doctor->state = SS_ASSISTANT_READY;
                                                 set_icon_value(lead, ICON_CALLING);
                                                 anim = check_frame(staff_anim_starts[lead->subtype].staff_stand, lead) + (u16)lead->facing;
                                                 lead->sprite = start[anim].frame;
@@ -418,7 +418,7 @@ void doctor_in_machine_room(Thing *doctor)
 
 // SS_DOCTOR_RESEARCHES: each time the animation loops, keeps doctor working in
 // the research room: leaves if not a researcher, if the room is being edited,
-// or on orders bit 8 (clearing the low orders); takes breaks when tired; calls
+// or on ORD_LEAVE_ROOM (clearing the low orders); takes breaks when tired; calls
 // an autopsy patient when the room is free; otherwise sometimes uses a free
 // research machine (research_tasks).
 // FUNCTION: 0x0003b9a0
@@ -440,9 +440,9 @@ void doctor_researches(Thing *doctor)
                 evacuate_staff(doctor);
             } else if (!shall_i_resign(doctor)) {
                 doctor->orders |= ORD_RETURN_TO_RESEARCH;
-                if (doctor->room->being_edited || doctor->room->state == 4) {
+                if (doctor->room->being_edited || doctor->room->state == RS_EDITED) {
                     evacuate_staff(doctor);
-                } else if (doctor->orders & 8) {
+                } else if (doctor->orders & ORD_LEAVE_ROOM) {
                     doctor->orders &= 0xf0;
                     evacuate_staff(doctor);
                 } else if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].rest_threshold) && take_a_break(doctor)) {
@@ -604,10 +604,10 @@ void change_surgeon_to_doc(Thing *surgeon)
 
     count = count_surgeons(surgeon->room);
     if (count == 1) {
-        surgeon->resume_state = SS_PROCESS_COMPLEX;
+        surgeon->resume_state = SS_EVACUATE;
         set_complex(surgeon, 0x3ca, 0);
     } else if (count == 2) {
-        surgeon->resume_state = SS_PROCESS_COMPLEX;
+        surgeon->resume_state = SS_EVACUATE;
         set_complex(surgeon, 0x3d4, 0);
     } else {
         surgeon->subtype = STAFF_DOCTOR;

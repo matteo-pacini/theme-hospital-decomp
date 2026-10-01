@@ -36,11 +36,11 @@ void process_mayor_start_buttons(u8 button)
 {
     switch (button) {
     case 1:
-        packet_choice_result(0x15);
+        packet_choice_result(CH_VIP_REFUSE);
         if (++allhosps[player].mayor_postponed <= 5 || othervar.rand_pct >= 10)
             break;
     case 0:
-        packet_choice_result(0x14);
+        packet_choice_result(CH_VIP_ACCEPT);
         allhosps[player].mayor_postponed = 0;
         break;
     }
@@ -175,7 +175,7 @@ void mayor_pauses(Thing *mayor)
         if (room >= end_room_info)
             break;
         if (room->owner == mayor->owner && rooms[room->type].main_object) {
-            if (rooms[room->type].unknown36 == 0 || !(old_newrand() & 1)) {
+            if (rooms[room->type].door_kind == 0 || !(old_newrand() & 1)) {
                 set_destination_coords(mayor, room->door_tile);
                 mayor->state = MAYOR_GOTO;
                 mayor->goto_state = MAYOR_PAUSES;
@@ -194,7 +194,7 @@ void mayor_pauses(Thing *mayor)
     value = mayor_result[hosp->mayor_verdict].reputation_event;
     if (value != 0)
         reputation_affected(0, value, 0, mayor->owner, 0);
-    if (value != 0x12)
+    if (value != REP_VIP_BAD)
         satisfied_net_criteria(2, mayor->owner);
 }
 
@@ -292,7 +292,7 @@ u8 mayor_judges_hospital(u8 owner)
     if (doctors == 0)
         score += 4;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if ((room->type != ROOM_FREE && room->owner == owner) && room->type != 1)
+        if ((room->type != ROOM_FREE && room->owner == owner) && room->type != ROOM_ENTRANCE)
             nrooms++;
     }
     if (nrooms == 0)

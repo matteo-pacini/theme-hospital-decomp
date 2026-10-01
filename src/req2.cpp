@@ -58,18 +58,18 @@ extern u8 *face_buffer;
 void open_face_file(void);
 }
 
-u32 safe_normal_rand(u32 a, u32 b);
-void draw_face(Picture *p, const u16 x, const u16 y);
+u32 safe_normal_rand(u32 low, u32 high);
+void draw_face(Picture *face, const u16 x, const u16 y);
 void draw_req2_coverup(const u16 x, const u16 y);
 void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *spr, const long max, const long min,
-                const long mid, const u8 flag);
+                const long range, const u8 up);
 
 extern "C" {
 }
 
 // Hire staff requester clicks: the four kind buttons choose doctors, nurses,
-// handymen or receptionists (event 0x2f), the arrows page through that
-// kind's applicants (event 0x32), hire takes on the shown applicant if
+// handymen or receptionists (event EV_HIRE_SELECT_KIND), the arrows page through that
+// kind's applicants (event EV_HIRE_NEXT_APPLICANT), hire takes on the shown applicant if
 // affordable (EV_MARK_EMPLOYING), and close aborts.
 // FUNCTION: 0x000697e0
 void req2(Window *win)
@@ -83,25 +83,25 @@ void req2(Window *win)
         if (button->flags & 6) {
             debug.last_button = i;
             if (i == resvars.requester_buttons[2]) {
-                D_001549d0[player].type = 0x2f;
+                D_001549d0[player].type = EV_HIRE_SELECT_KIND;
                 D_001549d0[player].value = 1;
                 if (crequester.arg != 1 || crequester.mode != 2)
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[3]) {
-                D_001549d0[player].type = 0x2f;
+                D_001549d0[player].type = EV_HIRE_SELECT_KIND;
                 D_001549d0[player].value = 0;
                 if (crequester.arg != 0 || crequester.mode != 2)
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[5]) {
-                D_001549d0[player].type = 0x2f;
+                D_001549d0[player].type = EV_HIRE_SELECT_KIND;
                 D_001549d0[player].value = 3;
                 if (crequester.arg != 3 || crequester.mode != 2)
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[4]) {
-                D_001549d0[player].type = 0x2f;
+                D_001549d0[player].type = EV_HIRE_SELECT_KIND;
                 D_001549d0[player].value = 2;
                 if (crequester.arg != 2 || crequester.mode != 2)
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[8]) {
                 if (crequester.arg2) {
                     if (crequester.mode == 2) {
@@ -109,15 +109,15 @@ void req2(Window *win)
                             D_001549d0[player].type = EV_MARK_EMPLOYING;
                             D_001549d0[player].value = crequester.arg;
                             D_001549d0[player].arg = crequester.arg2;
-                            play_sound(10, SFX_YESX, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                         } else {
-                            play_sound(10, SFX_WRONG2, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                         }
                     } else {
-                        play_sound(10, SFX_WRONG2, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                     }
                 } else {
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 }
             } else if (i == resvars.requester_buttons[6]) {
                 if (crequester.arg2) {
@@ -125,17 +125,17 @@ void req2(Window *win)
                     id = req2_alter_staff(0, crequester.arg2, crequester.arg);
                     if (id) {
                         if (id == old) {
-                            play_sound(10, SFX_WRONG2, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                         } else {
-                            D_001549d0[player].type = 0x32;
+                            D_001549d0[player].type = EV_HIRE_NEXT_APPLICANT;
                             D_001549d0[player].value = 0;
-                            play_sound(10, SFX_PAGETUR2, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
                         }
                     } else {
-                        play_sound(10, SFX_WRONG2, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                     }
                 } else {
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 }
             } else if (i == resvars.requester_buttons[7]) {
                 if (crequester.arg2) {
@@ -143,22 +143,22 @@ void req2(Window *win)
                     id = req2_alter_staff(1, crequester.arg2, crequester.arg);
                     if (id) {
                         if (id == old) {
-                            play_sound(10, SFX_WRONG2, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                         } else {
-                            D_001549d0[player].type = 0x32;
+                            D_001549d0[player].type = EV_HIRE_NEXT_APPLICANT;
                             D_001549d0[player].value = 1;
-                            play_sound(10, SFX_PAGETUR2, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
                         }
                     } else {
-                        play_sound(10, SFX_WRONG2, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                     }
                 } else {
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 }
             } else if (i == resvars.requester_buttons[9]) {
                 window.current_window = 0;
                 setup_abort_all_requesters();
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
         }
         i++;
@@ -354,12 +354,12 @@ void req2_overdraw(Window *win)
     }
 }
 
-// Resets the hire staff requester (crequester.id 0xb) to no kind
+// Resets the hire staff requester (REQ_HIRE_STAFF) to no kind
 // chosen.
 // FUNCTION: 0x0006aab0
 void req2_reset(void)
 {
-    crequester.id = 0xb;
+    crequester.id = REQ_HIRE_STAFF;
     crequester.mode = 1;
     crequester.arg = 0;
 }
@@ -485,14 +485,14 @@ void draw_face(Picture *face, const u16 x, const u16 y)
     LbDrawBox(x + resvars.face_w + resvars.face_border_w, y - (resvars.face_head_h + resvars.face_body_h + resvars.face_legs_h) - resvars.face_border_h * 2, resvars.face_border_w, resvars.face_head_h + resvars.face_body_h + resvars.face_legs_h + resvars.face_border_h * 2, 0x9c);
 }
 
-// Marks applicant id as being hired (state 0x44).
+// Marks applicant id as being hired (SS_HELD).
 // FUNCTION: 0x0006b174
 void req2_mark_employing(const u16 id)
 {
     Thing *candidate;
 
     candidate = &thing[id];
-    candidate->state = 0x44;
+    candidate->state = SS_HELD;
     adcounts.staff_happiness_sum += candidate->happiness;
 }
 
@@ -525,17 +525,17 @@ void req12(Window *win)
         if (button->flags & 6) {
             debug.last_button = i;
             if (i == resvars.requester_buttons[0x15]) {
-                play_sound(10, SFX_BONUS2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_BONUS2, -1, -1);
                 switch (crequester.kind) {
                 case 2:
-                    D_001549d0[player].type = 0x6b;
+                    D_001549d0[player].type = EV_REFUSE_STAFF_DEMAND;
                     D_001549d0[player].value = crequester.arg;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
                     break;
                 case 3:
                 case 5:
                 case 8:
-                    D_001549d0[player].type = 0x6d;
+                    D_001549d0[player].type = EV_GIVE_STAFF_BONUS;
                     D_001549d0[player].value = crequester.arg;
                     D_001549d0[player].arg = crequester.arg2;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
@@ -543,20 +543,20 @@ void req12(Window *win)
                 case 4:
                 case 6:
                 case 7:
-                    D_001549d0[player].type = 0x6c;
+                    D_001549d0[player].type = EV_RAISE_STAFF_SALARY;
                     D_001549d0[player].value = crequester.arg;
                     D_001549d0[player].arg = crequester.arg2;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
                     break;
                 case 9:
-                    D_001549d0[player].type = 0x6c;
+                    D_001549d0[player].type = EV_RAISE_STAFF_SALARY;
                     D_001549d0[player].value = crequester.arg;
                     D_001549d0[player].arg = thing[crequester.arg].salary * 2;
                     lbDisplay.left_button = lbDisplay.rleft_button = 0;
                     break;
                 }
             } else if (i == resvars.requester_buttons[0x16]) {
-                play_sound(10, SFX_SACK, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
                 req12_clicked_sack();
                 lbDisplay.left_button = lbDisplay.rleft_button = 0;
             }
@@ -570,7 +570,7 @@ extern "C" {
 extern char **misc_text;
 }
 
-void draw_window_not_using_bscreen(const u8 idx);
+void draw_window_not_using_bscreen(const u8 win);
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
 
 // Draws the staff demand requester: the staff member's details, the request
@@ -600,12 +600,12 @@ void req12_overdraw(Window *win)
     lbDisplay.draw_flags = 0;
     set_font_from_cache(1);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    if (!crequester.unknown9) {
+    if (!crequester.arg3) {
         close_irequesters();
         open_new_window(0, 0, 0, x0 + resvars.boxes_Req2Layoutp->win_x, y0 + resvars.boxes_Req2Layoutp->win_y,
                         x0 + resvars.boxes_Req2Layoutp->win_x + resvars.boxes_Req2Layoutp->win_w, y0 + resvars.boxes_Req2Layoutp->win_y + resvars.boxes_Req2Layoutp->win_h);
         window.current_window = 0;
-        crequester.unknown9 = 1;
+        crequester.arg3 = 1;
     }
     if (crequester.arg) {
         staff = &thing[crequester.arg];
@@ -703,13 +703,13 @@ void open_staff_resign_requester(Thing *staff)
     nplayers = 1;
     if (statvar.num_players > 1)
         nplayers = 4;
-    play_sound(10, 0x9a, -1, -1);
-    display_mode = 0xb;
+    play_sound(SNDSRC_GENERAL, SFX_STAFF_DEMAND, -1, -1);
+    display_mode = DM_MODAL;
     close_irequesters();
-    crequester.id = 0xc;
+    crequester.id = REQ_STAFF_DEMAND;
     open_requester(crequester.id, 1);
     crequester.arg = staff - thing;
-    crequester.unknown9 = 0;
+    crequester.arg3 = 0;
     if (staff->poach_offers) {
         crequester.arg2 = 0;
         for (i = 0; i < nplayers; i++) {
@@ -870,7 +870,7 @@ void req12_help_if_research(void)
 }
 
 // Refuses the staff member's demand: they join the rival who made the offer
-// (EV_STAFF_JOIN_NEW_EMPLOYER) or leave (event 0x6b).
+// (EV_STAFF_JOIN_NEW_EMPLOYER) or leave (event EV_REFUSE_STAFF_DEMAND).
 // FUNCTION: 0x0006c5b8
 void req12_clicked_sack(void)
 {
@@ -879,7 +879,7 @@ void req12_clicked_sack(void)
         D_001549d0[player].value = crequester.arg;
         D_001549d0[player].arg = crequester.arg2;
     } else {
-        D_001549d0[player].type = 0x6b;
+        D_001549d0[player].type = EV_REFUSE_STAFF_DEMAND;
         D_001549d0[player].value = crequester.arg;
     }
 }

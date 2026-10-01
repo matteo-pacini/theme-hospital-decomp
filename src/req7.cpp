@@ -12,22 +12,39 @@ struct QueueLayout {
     QueueRect r[27];
 };
 
+/*
+ * The queue window's entries of the in-game position table, read through
+ * resvars.coords.
+ */
 struct QueuePanel {
     u8 unknown0[0x48];
+    // 0x48: X of the queue's patients, relative to the window.
     s32 queue_x;
+    // 0x4c: Their y.
     s32 queue_y;
+    // 0x50: Width the patients are spread over.
     s32 queue_w;
     u8 unknown54[0x364];
+    // 0x3b8: Positions of the window's labels.
     Point labels[8];
     u8 unknown3f8[0x1a8];
-    s32 f5a0;
+    // 0x5a0: Patients after the drop position shift right by the screen width
+    // over this.
+    s32 drop_gap_divisor;
 };
 
+/*
+ * The queue window's button numbers in the requester button table
+ * (resvars.requester_buttons).
+ */
 struct QueueButtons {
     u8 unknown0[0xa];
-    u8 fa;
-    u8 fb;
-    u8 fc;
+    // 0xa: Raises the queue limit.
+    u8 capacity_up_button;
+    // 0xb: Lowers the queue limit.
+    u8 capacity_down_button;
+    // 0xc: Closes the window.
+    u8 close_button;
 };
 
 extern "C" {
@@ -35,10 +52,10 @@ extern char **queue_text;
 extern Event D_001549d0[];
 extern s16 D_001567b0[8];
 
-void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
+void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 void draw_glow_frame(Thing *w, s16 x, s16 y);
 void draw_wibble_frame(Thing *w, s16 x, s16 y);
-u32 nth_active_player(u32 n);
+u32 nth_active_player(u32 nth);
 }
 
 u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel);
@@ -51,8 +68,8 @@ u16 get_queue_person(u16 room_id, u8 sel);
 void display_panel_person_info(void);
 void compute_room_pointed(u16 tile);
 
-// Queue window clicks (room othervar.queue_win_room): raise (event 0x53, up to 30) or
-// lower (0x54) the queue's limit (f1e), and close (event 0x84).
+// Queue window clicks (room othervar.queue_win_room): raise (event EV_QUEUE_CAPACITY_UP, up to 30) or
+// lower (0x54) the queue's limit (f1e), and close (event EV_CLOSE_QUEUE_WINDOW).
 // FUNCTION: 0x000957f0
 void req7(Window *win)
 {
@@ -62,23 +79,23 @@ void req7(Window *win)
     for (button = win->buttons, button_no = 1; button != 0; button = button->next) {
         if (button->flags & 6) {
             debug.last_button = button_no;
-            if (button_no == resvars.requester_buttons_QueueButtonsp->fb) {
-                D_001549d0[player].type = 0x54;
+            if (button_no == resvars.requester_buttons_QueueButtonsp->capacity_down_button) {
+                D_001549d0[player].type = EV_QUEUE_CAPACITY_DOWN;
                 D_001549d0[player].value = othervar.queue_win_room;
                 if (room_info[D_001549d0[player].value].queue_capacity)
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 else
-                    play_sound(10, SFX_WRONG2, -1, -1);
-            } else if (button_no == resvars.requester_buttons_QueueButtonsp->fa) {
-                D_001549d0[player].type = 0x53;
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
+            } else if (button_no == resvars.requester_buttons_QueueButtonsp->capacity_up_button) {
+                D_001549d0[player].type = EV_QUEUE_CAPACITY_UP;
                 D_001549d0[player].value = othervar.queue_win_room;
                 if (room_info[D_001549d0[player].value].queue_capacity < 30)
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 else
-                    play_sound(10, SFX_WRONG2, -1, -1);
-            } else if (button_no == resvars.requester_buttons_QueueButtonsp->fc) {
-                D_001549d0[player].type = 0x84;
-                play_sound(10, SFX_NO4, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
+            } else if (button_no == resvars.requester_buttons_QueueButtonsp->close_button) {
+                D_001549d0[player].type = EV_CLOSE_QUEUE_WINDOW;
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
         }
         button_no++;
@@ -162,7 +179,7 @@ void req7_overdraw(Window *win)
                 RoomInfo *room_under_mouse;
 
                 room_under_mouse = which_room(othervar.mouse_cell);
-                set_mouse_mode(0x12);
+                set_mouse_mode(MM_MOVE_QUEUE_PERSON);
                 gamevar.queue_selected_person = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
                 if (room_under_mouse && room_under_mouse->type == room_info[othervar.queue_win_room].type)
                     compute_room_pointed(othervar.mouse_cell);
@@ -192,8 +209,8 @@ void req7_overdraw(Window *win)
             break;
         case 1:
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes_QueueLayoutp->r[3].x, oy + resvars.boxes_QueueLayoutp->r[3].y, resvars.boxes_QueueLayoutp->r[3].w, resvars.boxes_QueueLayoutp->r[3].h)) {
-                D_001549d0[player].type = 0x84;
-                play_sound(10, SFX_NO4, -1, -1);
+                D_001549d0[player].type = EV_CLOSE_QUEUE_WINDOW;
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 break;
             }
             if (othervar.queue_pos) {
@@ -202,7 +219,7 @@ void req7_overdraw(Window *win)
                     D_001549d0[player].value = othervar.queue_win_room;
                     D_001549d0[player].arg = othervar.queue_pos;
                     display_queue_people(ox, oy, othervar.queue_win_room, othervar.queue_pos);
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     break;
                 }
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes_QueueLayoutp->r[2].x, oy + resvars.boxes_QueueLayoutp->r[2].y, resvars.boxes_QueueLayoutp->r[2].w, resvars.boxes_QueueLayoutp->r[2].h)) {
@@ -210,7 +227,7 @@ void req7_overdraw(Window *win)
                     D_001549d0[player].value = othervar.queue_win_room;
                     D_001549d0[player].arg = othervar.queue_pos;
                     display_queue_people(ox, oy, othervar.queue_win_room, othervar.queue_pos);
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     break;
                 }
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes_QueueLayoutp->r[1].x, oy + resvars.boxes_QueueLayoutp->r[1].y, resvars.boxes_QueueLayoutp->r[1].w, resvars.boxes_QueueLayoutp->r[1].h)) {
@@ -221,7 +238,7 @@ void req7_overdraw(Window *win)
                     RoomInfo *dest;
                     Thing *selected;
 
-                    dest = &room_info[allhosps[player].f11b9];
+                    dest = &room_info[allhosps[player].build.edit_room];
                     if (dest == 0) {
                         selected = &thing[othervar.pickup_thing];
                         if (selected > thing) {
@@ -236,7 +253,7 @@ void req7_overdraw(Window *win)
                         D_001549d0[player].value = dest - room_info;
                         D_001549d0[player].arg = gamevar.queue_selected_person;
                         set_mouse_mode(MM_NORMAL);
-                        play_sound(10, SFX_SELECTX, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     }
                 }
             } else {
@@ -252,14 +269,14 @@ void req7_overdraw(Window *win)
                     D_001549d0[player].type = EV_QUEUE_PERSON_GO_RECEPTION;
                     D_001549d0[player].value = othervar.queue_win_room;
                     D_001549d0[player].arg = othervar.queue_pos;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     break;
                 }
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, qx - resvars.boxes_QueueLayoutp->r[4].x + resvars.boxes_QueueLayoutp->r[8].x, qy + resvars.boxes_QueueLayoutp->r[4].y + resvars.boxes_QueueLayoutp->r[8].y, resvars.boxes_QueueLayoutp->r[8].w, resvars.boxes_QueueLayoutp->r[8].h)) {
                     D_001549d0[player].type = EV_QUEUE_PERSON_GO_HOME;
                     D_001549d0[player].value = othervar.queue_win_room;
                     D_001549d0[player].arg = othervar.queue_pos;
-                    play_sound(10, SFX_SACK, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
                     break;
                 }
                 {
@@ -273,9 +290,9 @@ void req7_overdraw(Window *win)
                                 break;
                             }
                             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, qx - resvars.boxes_QueueLayoutp->r[4].x + resvars.boxes_QueueLayoutp->r[24].x, qy + off + resvars.boxes_QueueLayoutp->r[4].y + resvars.boxes_QueueLayoutp->r[5].y, resvars.boxes_QueueLayoutp->r[24].w, resvars.boxes_QueueLayoutp->r[24].h)) {
-                                play_sound(10, SFX_SACK, -1, -1);
+                                play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
                                 if (statvar.num_players > 1) {
-                                    D_001549d0[player].type = 0x57;
+                                    D_001549d0[player].type = EV_REFER_TO_PLAYER;
                                     D_001549d0[player].value = get_queue_person(othervar.queue_win_room, othervar.queue_pos);
                                     D_001549d0[player].arg = nth_active_player(i + 1);
                                 } else {
@@ -344,7 +361,7 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
             person = &thing[id];
             for (;;) {
                 if (position == sel)
-                    px += lbDisplay.graphics_screen_width / resvars.coords_QueuePanelp->f5a0;
+                    px += lbDisplay.graphics_screen_width / resvars.coords_QueuePanelp->drop_gap_divisor;
                 fr = &frame[person->sprite];
                 x0 = px - fr->width / 2;
                 x1 = x0 + fr->width;
@@ -359,7 +376,7 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                 }
                 px += step;
                 if (position == sel)
-                    px += lbDisplay.graphics_screen_width / resvars.coords_QueuePanelp->f5a0;
+                    px += lbDisplay.graphics_screen_width / resvars.coords_QueuePanelp->drop_gap_divisor;
                 if (person->queue_next == 0)
                     break;
                 id = person->queue_next;
@@ -411,7 +428,7 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                 person->sprite = start[anim].frame;
                 person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                 if (position == sel)
-                    px += lbDisplay.graphics_screen_width / resvars.coords_QueuePanelp->f5a0;
+                    px += lbDisplay.graphics_screen_width / resvars.coords_QueuePanelp->drop_gap_divisor;
                 if (person->illness == ILL_SERIOUS_RADIATION)
                     draw_glow_frame(person, px, py);
                 else if (person->illness == ILL_JELLYITIS && othervar.drawing_pixbuf == 0)
@@ -421,7 +438,7 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                 else
                     draw_special_id_frame(person, px, py);
                 if (position == sel)
-                    px += lbDisplay.graphics_screen_width / resvars.coords_QueuePanelp->f5a0;
+                    px += lbDisplay.graphics_screen_width / resvars.coords_QueuePanelp->drop_gap_divisor;
                 person->facing = old_facing;
                 person->sprite = old_sprite;
                 person->flip = old_flip;

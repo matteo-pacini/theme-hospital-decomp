@@ -9,7 +9,7 @@ extern "C" {
 
 extern SndTimer sound_timer[5];
 
-s32 __cdecl AIL_register_timer(void *callback);
+s32 __cdecl AIL_register_timer(void *callback_fn);
 void __cdecl AIL_set_timer_frequency(s32 timer, u32 hertz);
 void __cdecl AIL_start_timer(s32 timer);
 

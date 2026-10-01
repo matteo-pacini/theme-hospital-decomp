@@ -26,7 +26,7 @@ void put_fontmem(s8 block);
 void init_font_cache(void);
 void insert_block_into_free_list(s8 block);
 void insert_block_into_used_list(s8 block);
-void realign_sprites(TbSprite *start, TbSprite *end, s32 delta);
+void realign_sprites(TbSprite *first, TbSprite *last, s32 delta);
 void defrag_cache(void);
 void throw_out(s32 size);
 s8 get_block_from_free_list(s32 size);

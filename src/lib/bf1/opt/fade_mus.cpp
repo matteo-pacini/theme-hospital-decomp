@@ -7,7 +7,7 @@ extern "C" {
 void FadeMusic(u16 rate, u8 volume)
 {
     if (MusicInstalled && MusicAble && MusicActive && SongCurrentlyPlaying && volume <= 127) {
-        if (AIL_sequence_status(SongHandle) != 2)
+        if (AIL_sequence_status(SongHandle) != SEQ_DONE)
             AIL_set_sequence_volume(SongHandle, volume, rate);
     }
 }

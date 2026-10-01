@@ -9,8 +9,8 @@ void _enable(void);
 #pragma intrinsic(_disable, _enable)
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
-int stricmp(const char *a, const char *b);
-int strnicmp(const char *a, const char *b, unsigned n);
+int stricmp(const char *s, const char *t);
+int strnicmp(const char *s, const char *t, unsigned n);
 void delay(unsigned ms);
 unsigned short FP_SEG(const volatile void __far *p);
 #pragma aux FP_SEG = parm caller [eax dx] value [dx];
@@ -18,13 +18,14 @@ unsigned short FP_SEG(const volatile void __far *p);
 extern u8 D_00110068[];
 extern u8 D_001100fe[];
 typedef struct __iobuf FILE;
-FILE *fopen(const char *name, const char *mode);
-int fgetc(FILE *f);
-int fclose(FILE *f);
+FILE *fopen(const char *name, const char *access_mode);
+int fgetc(FILE *fp);
+int fclose(FILE *fp);
 }
 
 struct TbSerialDev {
-    u8 unknown0[0x896];
+    u8 isr_code[0x96];
+    u8 tx_buf[0x800];
     u8 rx_buf[0x800];
     u16 base;
     u16 vector;
@@ -33,7 +34,7 @@ struct TbSerialDev {
     u16 rx_tail;
     u16 head;
     u16 tail;
-    u8 unknown10a4[4];
+    u8 baud[4];
     u8 port;
 };
 
@@ -213,8 +214,8 @@ long SerialHandler::Init(long port)
         return 0;
     size = D_001100fe - D_00110068;
     memcpy(dev, D_00110068, size);
-    *(u16 *)&dev->unknown0[2] = com_dev[port].base;
-    fn_000c20c0("SERIALHANDLER size %d Port %x IRQ %x INT VECT %x\n", size, *(u16 *)&dev->unknown0[2], com_dev[port].irq, com_dev[port].vector);
+    *(u16 *)&dev->isr_code[2] = com_dev[port].base;
+    fn_000c20c0("SERIALHANDLER size %d Port %x IRQ %x INT VECT %x\n", size, *(u16 *)&dev->isr_code[2], com_dev[port].irq, com_dev[port].vector);
     dev->port = port;
     dev->base = com_dev[dev->port].base;
     dev->vector = com_dev[dev->port].vector;
@@ -228,7 +229,7 @@ long SerialHandler::Init(long port)
     backup_serial_int_vectors(dev);
     setup_serial_int_vectors(dev);
     init_com_port(dev);
-    *(u32 *)dev->unknown10a4 = 9600;
+    *(u32 *)dev->baud = 9600;
     return (long)dev;
 }
 

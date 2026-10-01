@@ -11,7 +11,7 @@ extern "C" {
 extern Event D_001549d0[];
 extern char **research_names;
 extern char **misc_text;
-void StopSample(u32 a, u32 b);
+void StopSample(u32 source_id, u32 number);
 }
 
 extern Icons panel_icons_over[];
@@ -33,7 +33,7 @@ void display_research(void)
     compute_help_text(0, 0, 0x10);
     switch (research.state) {
     case 0:
-        load_ingame_pic(6, 1, 0x1e, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_RESEARCH, 1, 0x1e, 0, SCREEN_MODE_13);
         research.state = 1;
         research.value = 0;
         play_sound(0xc, SFX_RESEARCH, -1, -1);
@@ -193,7 +193,7 @@ void process_res_button(u8 button)
     switch (button) {
     case 0:
         research.state = 2;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     case 1:
     case 2:
@@ -214,10 +214,10 @@ void process_res_button(u8 button)
                     D_001549d0[player].arg -= othervar.repeat_step >> 8;
                     if ((s16)D_001549d0[player].arg < 0)
                         D_001549d0[player].arg = 0;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             } else if (!research.value) {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 research.value = 1;
             }
         }
@@ -248,10 +248,10 @@ void process_res_button(u8 button)
                     D_001549d0[player].arg += othervar.repeat_step >> 8;
                     if (D_001549d0[player].arg + total > 100)
                         D_001549d0[player].arg = 100 - total;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             } else if (!research.value) {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 research.value = 1;
             }
         }

@@ -12,17 +12,17 @@ u8 IsSamplePlaying(u32 source_id, s16 number, u32 handle)
 
     if (SoundInstalled && SoundAble && SoundActive) {
         if (number == 0 && source_id == 0) {
-            if (AIL_sample_status(handle) == 4)
+            if (AIL_sample_status(handle) == SMP_PLAYING)
                 return 1;
         } else if (number == 0) {
             for (smp = sample_id; smp <= end_sample_id; smp++) {
-                if (smp->SourceID == source_id && AIL_sample_status(smp->SampleHandle) == 4)
+                if (smp->SourceID == source_id && AIL_sample_status(smp->SampleHandle) == SMP_PLAYING)
                     return 1;
             }
         } else {
             for (smp = sample_id; smp <= end_sample_id; smp++) {
                 if (smp->SourceID == source_id && smp->SampleNumber == number
-                    && AIL_sample_status(smp->SampleHandle) == 4)
+                    && AIL_sample_status(smp->SampleHandle) == SMP_PLAYING)
                     return 1;
             }
         }

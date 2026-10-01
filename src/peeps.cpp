@@ -15,11 +15,11 @@ extern char **real_room_names;
 extern char **skill_names;
 extern char **illness_text;
 
-void nav_init(Thing *w);
-void clear_peep_icon(Thing *w);
-void person_gone(Thing *w);
-void remove_person_from_room_list(Thing *w);
-void person_flys(Thing *w);
+void nav_init(Thing *person);
+void clear_peep_icon(Thing *peep);
+void person_gone(Thing *person);
+void remove_person_from_room_list(Thing *person);
+void person_flys(Thing *person);
 void fn_000c93bf(char *dst, char *src);
 
 }
@@ -47,7 +47,7 @@ void person_arrives_at_door(Thing *person)
 
     tile = person->x.tile + (person->y.tile << 7);
     room = is_this_a_door(tile);
-    if (room != 0 && rooms[room->type].unknown36 != 0) {
+    if (room != 0 && rooms[room->type].door_kind != 0) {
         set_complex(person, 0x32, 0);
         process_person_complex(person);
     } else {
@@ -230,7 +230,7 @@ u16 find_standing_place(Thing *person)
         for (i = old_newrand() % 12 + 1; i <= standing_place[0]; i++) {
             tile = base + standing_place[i];
             target = &map[tile];
-            if (target->first == 0 && !(target->flags & 7) && can_i_get_to(person, tile) > 0 && !(target->owner_flags & 0x10)) {
+            if (target->first == 0 && !(target->flags & 7) && can_i_get_to(person, tile) > 0 && !(target->owner_flags & MAP_OUTDOOR)) {
                 break;
             }
         }
@@ -260,7 +260,7 @@ void person_go_home(Thing *person)
     record_person_as_patient(person);
     interrupt_person(person);
     leave_queue(person);
-    if (set_complex(person, 20, get_room_info(1, 0x65, person->owner)->door_tile)) {
+    if (set_complex(person, 20, get_room_info(ROOM_ENTRANCE, 0x65, person->owner)->door_tile)) {
         process_person_complex(person);
     }
     set_icon_value(person, ICON_FED_UP);
@@ -532,7 +532,7 @@ void send_person_to_bed(Thing *person)
             {
                 u16 anim;
 
-                anim = check_frame(anim_starts[person->subtype].idle, person) + (u16)person->facing;
+                anim = check_frame(anim_starts[person->subtype].walk, person) + (u16)person->facing;
                 person->sprite = start[anim].frame;
                 person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
             }
@@ -548,7 +548,7 @@ void send_person_to_bed(Thing *person)
     {
         u16 anim;
 
-        anim = check_frame(anim_starts[person->subtype].idle, person) + (u16)person->facing;
+        anim = check_frame(anim_starts[person->subtype].walk, person) + (u16)person->facing;
         person->sprite = start[anim].frame;
         person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     }
@@ -689,13 +689,13 @@ void person_nav_failure(Thing *person)
     person->state = PS_STUCK;
     person->countdown = 0;
     if (person->owner == player) {
-        announce_this(1, 1);
+        announce_this(ANN_STUCK, 1);
     }
 }
 
 // Patient state PS_FILLS: fills the machine's split animation (twice as fast
-// for subtype 14) until complete, then waits (state 0x20) and wakes the
-// doctor for subtype 14.
+// for PK_ALIEN) until complete, then waits (PS_SLAVE_READY) and wakes the
+// doctor for PK_ALIEN.
 // FUNCTION: 0x00017620
 void person_fills(Thing *person)
 {
@@ -709,7 +709,7 @@ void person_fills(Thing *person)
             person->sprite = frame[person->sprite].next;
             machine->aux_sprite = frame[machine->aux_sprite].next;
         }
-        if (person->subtype == 14) {
+        if (person->subtype == PK_ALIEN) {
             machine->split_height += 2;
             cur = &frame[machine->aux_sprite];
         } else {
@@ -717,10 +717,10 @@ void person_fills(Thing *person)
             cur = &frame[person->sprite];
         }
         if (machine->split_height > cur->length) {
-            person->state = 0x20;
+            person->state = PS_SLAVE_READY;
             person->sprite = machine->aux_sprite;
             person->flip = machine->aux_flip;
-            if (person->subtype == 14) {
+            if (person->subtype == PK_ALIEN) {
                 found = find_person_in_room(person->room, THING_STAFF, STAFF_DOCTOR);
                 if (found != 0) {
                     process_things(found, found + 1);
@@ -938,7 +938,7 @@ void person_waits_for_decision(Thing *person)
         if (cur->flags & 1) {
             person->countdown--;
             if (person->countdown <= 0) {
-                if (person->flags & 0x400) {
+                if (person->flags & PF_NEEDS_DIAGNOSIS_ROOM) {
                     done = find_possible_diagnosis(person);
                     if (done || (u16)(othervar.cur_turn - person->timer) >= 1500) {
                         person->flags &= ~PF_AWAITING_DECISION;
@@ -954,7 +954,7 @@ void person_waits_for_decision(Thing *person)
                             allhosps[person->owner].rooms[person->illness].turned_away++;
                             person->flags2 |= (PF_NO_DIAGNOSIS >> 16);
                         }
-                        person->flags &= 0xfb7f;
+                        person->flags &= ~(PF_NEEDS_DIAGNOSIS_ROOM | PF_WAITING_FOR_ROOM);
                         return;
                     }
                 } else {
@@ -1202,7 +1202,7 @@ void expire_playercalls(void)
                 allhosps[owner1].mayor_state = 2;
             } else if (call->type == 3) {
                 choice_spare_data = 0x63;
-                packet_choice_result(0xb);
+                packet_choice_result(CH_EPIDEMIC_COVER_UP);
             } else if (call->type == 5) {
                 if (call->x == 1) {
                     allhosps[call->owner].emergency_state = 0;
@@ -1306,13 +1306,13 @@ void process_no_treatment_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        packet_choice_result(0);
+        packet_choice_result(CH_TREAT_SEND_HOME);
         break;
     case 1:
-        packet_choice_result(1);
+        packet_choice_result(CH_TREAT_WAIT);
         break;
     case 2:
-        packet_choice_result(2);
+        packet_choice_result(CH_TREAT_RESEARCH);
         break;
     }
 }

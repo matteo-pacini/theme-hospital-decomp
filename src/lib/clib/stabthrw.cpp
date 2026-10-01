@@ -144,7 +144,7 @@ extern const char D_0012866b[];
 extern void (*D_00152a90)(rw_dtreg *rw);
 
 void __wcpp_2_call_terminate_(void);
-void __wcpp_2_fatal_runtime_error_(const char *msg, unsigned retcode);
+void __wcpp_2_fatal_runtime_error_(const char *msg, unsigned code);
 void __wcpp_2_destruct_internal_(unsigned bound, rw_dtreg *rw);
 RO_STATE *__wcpp_2_stab_entry_(RO_DTREG *ro, unsigned state_var);
 void __wcpp_2_stab_trav_init_(STAB_TRAVERSE *ctl, rw_dtreg *rw);

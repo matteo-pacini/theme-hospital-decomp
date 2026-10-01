@@ -1,18 +1,18 @@
 #include "hosp.h"
 
 extern "C" {
-void set_next_destination_coords(Thing *w, u16 arg);
-void set_next2_destination_coords(Thing *w, u16 arg);
+void set_next_destination_coords(Thing *w, u16 pos);
+void set_next2_destination_coords(Thing *w, u16 pos);
 u8 process_complex_either(Thing *w);
-void person_complex_retry(Thing *w);
-void person_wait_for_complex_slave(Thing *w);
-void nav_init(Thing *w);
+void person_complex_retry(Thing *person);
+void person_wait_for_complex_slave(Thing *person);
+void nav_init(Thing *person);
 }
 
 extern "C" {
 extern u8 *staff_complex_group;
 extern ComplexAnims group_anim[];
-void fail_staff_complex(Thing *w);
+void fail_staff_complex(Thing *employee);
 }
 
 extern Complex person_complex[];
@@ -20,20 +20,20 @@ extern u8 *person_complex_group;
 extern FaceDirns face_dirns[];
 extern s16 opposite_angle[];
 
-void staff_exit_room_check(Thing *w);
-s16 person_head_for(Thing *w, u8 a);
-Thing *find_door(Thing *w);
-void adjust_big_cell_flag(const u16 tile);
+void staff_exit_room_check(Thing *staff);
+s16 person_head_for(Thing *person, u8 a);
+Thing *find_door(Thing *person);
+void adjust_big_cell_flag(const u16 cell);
 void start_new_interaction(Thing *w, u8 seq);
-void pager_arrival(Thing *w);
-void clear_my_mutex(Thing *w);
+void pager_arrival(Thing *staff);
+void clear_my_mutex(Thing *staff);
 u8 count_surgeons(RoomInfo *room);
 u8 check_room_mutex_on_entry(Thing *w);
-void merge_slave(Thing *w);
+void merge_slave(Thing *employee);
 void complex_success(Thing *w, u8 kind);
 u8 staff_go_near_object(Thing *w);
-void fail_person_complex(Thing *w);
-void thingpage_cancel_my_response(ThingPager *p, Thing *w);
+void fail_person_complex(Thing *person);
+void thingpage_cancel_my_response(ThingPager *p, Thing *handyman);
 
 #define PLAY_FRAME(t, a) \
     { \
@@ -43,9 +43,9 @@ void thingpage_cancel_my_response(ThingPager *p, Thing *w);
         (t)->sprite = start[anim].frame; \
         (t)->flip = start[anim].flags > 0 ? (u8)1 : (u8)0; \
     }
-void rest_staff(Thing *w, s16 amount);
-void research_contribution(Thing *w, s16 amount);
-void person_autopsied(Thing *w);
+void rest_staff(Thing *staff, s16 amount);
+void research_contribution(Thing *researcher, s16 amount);
+void person_autopsied(Thing *patient);
 
 // Runs the next step of w's complex (process_staff_complex or
 // process_person_complex by type). Returns its result, or 0 for other types.
@@ -111,8 +111,8 @@ u8 process_staff_complex(Thing *employee)
     } else {
         obj = 0;
     }
-    if (entry->kind) {
-        employee->state = entry->kind;
+    if (entry->state) {
+        employee->state = entry->state;
     }
     switch (entry->action) {
     case 0:
@@ -123,7 +123,7 @@ u8 process_staff_complex(Thing *employee)
             if (dir >= 0 && dir < 4) {
                 employee->facing = dir;
             }
-            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
+            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].walk);
             employee->countdown = 0;
         } else {
             fail_staff_complex(employee);
@@ -139,7 +139,7 @@ u8 process_staff_complex(Thing *employee)
         if (dir >= 0 && dir < 4) {
             employee->facing = dir;
         }
-        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].walk);
         employee->countdown = 0;
         break;
     case 4:
@@ -157,7 +157,7 @@ u8 process_staff_complex(Thing *employee)
         break;
     case 6:
         obj = &thing[employee->object];
-        if ((obj->in_use == 1 || obj->state == 0x12) || obj->type != THING_OBJECT
+        if ((obj->in_use == 1 || obj->state == OS_REMOVED) || obj->type != THING_OBJECT
             || obj->use_pos[employee->subtype == STAFF_HANDYMAN ? 2 : 0] != ((s16)employee->y.tile << 7) + (s16)employee->x.tile) {
             fail_staff_complex(employee);
             return 3;
@@ -168,13 +168,13 @@ u8 process_staff_complex(Thing *employee)
         if (obj->use_style == 1 || obj->use_style == 2) {
             employee->exit_tile = obj->use_pos[(employee->subtype == STAFF_HANDYMAN ? 2 : 0) + 3];
             move_node(employee, *(MapPos *)&obj->use_x, *(MapPos *)&obj->use_y);
-            obj->state = 4;
+            obj->state = OS_IN_USE;
             employee->depth = obj->depth;
             if (objects[obj->subtype].overlay_anim) {
                 obj->saved_depth = obj->depth;
                 obj->depth = 8;
             }
-            map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].flags |= 0x20;
+            map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].flags |= MAP_BIG_CELL;
         }
         employee->layers[10] = obj->layers[10];
         employee->layers[11] = obj->layers[11];
@@ -251,7 +251,7 @@ u8 process_staff_complex(Thing *employee)
                 return 4;
             }
             if (employee->room == 0
-                && ((room_info[door->room_id].being_edited || room_info[door->room_id].state == 4)
+                && ((room_info[door->room_id].being_edited || room_info[door->room_id].state == RS_EDITED)
                     || door->room_id == allhosps[door->owner].edited_room)) {
                 fail_staff_complex(employee);
                 return 4;
@@ -265,7 +265,7 @@ u8 process_staff_complex(Thing *employee)
             employee->object = door - thing;
             door->user = employee - thing;
             move_node(employee, door->x, door->y);
-            door->state = 4;
+            door->state = OS_IN_USE;
             cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
             door->aux_param = cell->flags & 0x10 ? (u8)1 : (u8)0;
             cell->flags |= 0x10;
@@ -341,7 +341,7 @@ u8 process_staff_complex(Thing *employee)
         patient = &thing[employee->slave];
         if (patient > thing) {
             employee->complex_pc++;
-            patient->next_state = 0x20;
+            patient->next_state = PS_SLAVE_READY;
             set_complex(patient, (u16)staff_complex_group[employee->complex_pc] * 10, 0);
             process_complex_either(patient);
         } else {
@@ -353,7 +353,7 @@ u8 process_staff_complex(Thing *employee)
         patient = &thing[employee->slave];
         if (patient > thing) {
             employee->complex_pc++;
-            patient->next_state = 0x20;
+            patient->next_state = PS_SLAVE_READY;
             set_complex(patient, (u16)staff_complex_group[employee->complex_pc] * 10, 0);
         } else {
             fail_staff_complex(employee);
@@ -365,7 +365,7 @@ u8 process_staff_complex(Thing *employee)
         if (dir >= 0 && dir < 4) {
             employee->facing = dir;
         }
-        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].walk);
         break;
     case 48:
         patient = &thing[employee->slave];
@@ -385,7 +385,7 @@ u8 process_staff_complex(Thing *employee)
             s8 d;
 
             kind = thing[obj_id].subtype;
-            face = objects[kind].unknown6[0];
+            face = objects[kind].face_dirn;
             if (face != -1) {
                 d = face_dirns[face].dirs[thing[obj_id].facing];
                 if (d != -1) {
@@ -500,13 +500,13 @@ void staff_complex_retry(Thing *employee)
         f = &frame[employee->sprite];
         if (f->flags & 1) {
             process_staff_complex(employee);
-            sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(employee - thing), 0);
+            sprintf((char *)&debug.scratch_text[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(employee - thing), 0);
         }
     }
 }
 
 // SS_WAIT_FOR_COMPLEX_SLAVE: continues employee's complex once its slave is
-// ready (state 0x20).
+// ready (PS_SLAVE_READY).
 // FUNCTION: 0x000403d0
 void staff_wait_for_complex_slave(Thing *employee)
 {
@@ -514,13 +514,13 @@ void staff_wait_for_complex_slave(Thing *employee)
 
     slave = &thing[employee->slave];
     if (slave > thing) {
-        if (slave->state == 0x20) {
+        if (slave->state == PS_SLAVE_READY) {
             process_staff_complex(employee);
         }
     }
 }
 
-// Joins employee's ready slave (state 0x20, then set to 0x28) into
+// Joins employee's ready slave (PS_SLAVE_READY, then set to PS_MERGED) into
 // employee's animation: copies the slave's layers 0-4 (and the object's
 // layers 10-12) to employee and gives the slave employee's object.
 // FUNCTION: 0x0004042c
@@ -531,8 +531,8 @@ void merge_slave(Thing *employee)
 
     slave = &thing[employee->slave];
     if (slave > thing) {
-        if (slave->state == 0x20) {
-            slave->state = 0x28;
+        if (slave->state == PS_SLAVE_READY) {
+            slave->state = PS_MERGED;
             obj = &thing[employee->object];
             if (obj > thing) {
                 employee->layers[10] = obj->layers[10];
@@ -552,7 +552,7 @@ void merge_slave(Thing *employee)
 
 // As process_staff_complex, for a patient's complex (person_complex_group).
 // Returns 1 after a step, 2 if no complex is running, 0 or 3 if the step
-// failed (fail_person_complex, or state 0x2a for a busy door).
+// failed (fail_person_complex, or PS_COMPLEX_RETRY for a busy door).
 // FUNCTION: 0x00040524
 u8 process_person_complex(Thing *person)
 {
@@ -595,8 +595,8 @@ u8 process_person_complex(Thing *person)
     } else {
         obj = 0;
     }
-    if (entry->kind) {
-        person->state = entry->kind;
+    if (entry->state) {
+        person->state = entry->state;
     }
     switch (entry->action) {
     case 0:
@@ -610,7 +610,7 @@ u8 process_person_complex(Thing *person)
         if (dir >= 0 && dir < 4) {
             person->facing = dir;
         }
-        PLAY_FRAME(person, anim_starts[person->subtype].idle);
+        PLAY_FRAME(person, anim_starts[person->subtype].walk);
         person->countdown = 0;
         break;
     case 4:
@@ -618,7 +618,7 @@ u8 process_person_complex(Thing *person)
         break;
     case 6:
         obj = &thing[person->object];
-        if ((obj->in_use == 1 || obj->state == 0x12) || obj->type != THING_OBJECT
+        if ((obj->in_use == 1 || obj->state == OS_REMOVED) || obj->type != THING_OBJECT
             || obj->use_pos[1] != ((s16)person->y.tile << 7) + (s16)person->x.tile) {
             fail_person_complex(person);
             return 3;
@@ -629,13 +629,13 @@ u8 process_person_complex(Thing *person)
         if ((obj->use_style == 1 || obj->use_style == 2) || obj->use_style == 3) {
             person->exit_tile = obj->use_pos[4];
             move_node(person, *(MapPos *)&obj->use_x, *(MapPos *)&obj->use_y);
-            obj->state = 4;
+            obj->state = OS_IN_USE;
             person->depth = obj->depth;
             if (objects[obj->subtype].overlay_anim) {
                 obj->saved_depth = obj->depth;
                 obj->depth = 8;
             }
-            map[(s16)person->x.tile + ((s16)person->y.tile << 7)].flags |= 0x20;
+            map[(s16)person->x.tile + ((s16)person->y.tile << 7)].flags |= MAP_BIG_CELL;
         }
         person->layers[10] = obj->layers[10];
         person->layers[11] = obj->layers[11];
@@ -692,10 +692,10 @@ u8 process_person_complex(Thing *person)
 
             double_door = door->subtype != OBJ_DOOR ? (u8)1 : (u8)0;
             if (door->in_use == 1) {
-                person->state = 0x2a;
+                person->state = PS_COMPLEX_RETRY;
                 return 3;
             }
-            if (person->room == 0 && (room_info[door->room_id].being_edited || room_info[door->room_id].state == 4)) {
+            if (person->room == 0 && (room_info[door->room_id].being_edited || room_info[door->room_id].state == RS_EDITED)) {
                 fail_person_complex(person);
                 return 3;
             }
@@ -718,7 +718,7 @@ u8 process_person_complex(Thing *person)
             person->object = door - thing;
             door->user = person - thing;
             move_node(person, door->x, door->y);
-            door->state = 4;
+            door->state = OS_IN_USE;
             cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
             door->aux_param = cell->flags & 0x10 ? (u8)1 : (u8)0;
             cell->flags |= 0x10;
@@ -766,7 +766,7 @@ u8 process_person_complex(Thing *person)
         break;
     case 32:
         if (transform_peep_who(person, entry->anim)) {
-            PLAY_FRAME(person, anim_starts[person->subtype].idle);
+            PLAY_FRAME(person, anim_starts[person->subtype].walk);
         }
         break;
     case 34:
@@ -777,7 +777,7 @@ u8 process_person_complex(Thing *person)
         if (dir >= 0 && dir < 4) {
             person->facing = dir;
         }
-        PLAY_FRAME(person, anim_starts[person->subtype].idle);
+        PLAY_FRAME(person, anim_starts[person->subtype].walk);
         break;
     case 18:
         obj_id = person->object;
@@ -787,7 +787,7 @@ u8 process_person_complex(Thing *person)
             s8 d;
 
             kind = thing[obj_id].subtype;
-            face = objects[kind].unknown6[0];
+            face = objects[kind].face_dirn;
             if (face != -1) {
                 d = face_dirns[face].dirs[thing[obj_id].facing + 4];
                 if (d != -1) {
@@ -935,7 +935,7 @@ void set_next2_destination_coords(Thing *w, u16 pos)
     w->queued2_arg_y = pos / 128;
 }
 
-// As staff_complex_retry, for a patient (state 0x2a).
+// As staff_complex_retry, for a patient (PS_COMPLEX_RETRY).
 // FUNCTION: 0x00041a54
 void person_complex_retry(Thing *person)
 {
@@ -946,13 +946,13 @@ void person_complex_retry(Thing *person)
         f = &frame[person->sprite];
         if (f->flags & 1) {
             process_person_complex(person);
-            sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(person - thing), 0);
+            sprintf((char *)&debug.scratch_text[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(person - thing), 0);
         }
     }
 }
 
 // Continues person's complex once its slave is in PS_ENTERTAINS_THEMSELF
-// (setting the slave to state 0x2a), taking over the slave's layers 5-9 and
+// (setting the slave to PS_COMPLEX_RETRY), taking over the slave's layers 5-9 and
 // its object's layers 10-12.
 // FUNCTION: 0x00041b08
 void person_wait_for_complex_slave(Thing *person)
@@ -966,7 +966,7 @@ void person_wait_for_complex_slave(Thing *person)
         person->state = person->next_state;
         person->next_state = 0;
         process_person_complex(person);
-        slave->state = 0x2a;
+        slave->state = PS_COMPLEX_RETRY;
         obj = &thing[person->object];
         if (obj > thing) {
             person->layers[5] = slave->layers[5];
@@ -1006,7 +1006,7 @@ void fail_staff_complex(Thing *employee)
     }
 }
 
-// As fail_staff_complex, for a patient (retry state 0x2a).
+// As fail_staff_complex, for a patient (PS_COMPLEX_RETRY).
 // FUNCTION: 0x00041d54
 void fail_person_complex(Thing *person)
 {
@@ -1020,7 +1020,7 @@ void fail_person_complex(Thing *person)
         person->sprite = start[anim].frame;
         person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     } else {
-        person->state = 0x2a;
+        person->state = PS_COMPLEX_RETRY;
     }
 }
 
@@ -1192,7 +1192,7 @@ void complex_success(Thing *w, u8 kind)
         w->happiness++;
         w->cash -= 10;
         create_numfx(NUMFX_MONEY, 10, (u16)w->x.tile + ((u16)w->y.tile << 7), color.red, 0x40);
-        allhosps[w->owner].fd9 += 10;
+        allhosps[w->owner].jukebox_income += 10;
         break;
     case 6:
         reset_icon_value(w, ICON_TOILET);

@@ -6,7 +6,7 @@ extern Event D_001549d0[];
 extern u32 D_001603d0;
 extern RoomInfo *D_001603d4;
 
-u16 nth_other_active_player(int n);
+u16 nth_other_active_player(int nth);
 
 }
 
@@ -212,11 +212,11 @@ void process_queue_button(u8 button)
         }
         break;
     case 2:
-        D_001549d0[player].type = 0x53;
+        D_001549d0[player].type = EV_QUEUE_CAPACITY_UP;
         D_001549d0[player].value = othervar.queue_win_room;
         break;
     case 3:
-        D_001549d0[player].type = 0x54;
+        D_001549d0[player].type = EV_QUEUE_CAPACITY_DOWN;
         D_001549d0[player].value = othervar.queue_win_room;
         break;
     case 4:
@@ -364,7 +364,7 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                 {
                     u16 anim;
 
-                    anim = check_frame(anim_starts[person->subtype].idle, person) + (u16)person->facing;
+                    anim = check_frame(anim_starts[person->subtype].walk, person) + (u16)person->facing;
                     person->sprite = start[anim].frame;
                     person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                 }
@@ -473,7 +473,7 @@ void flag_all_queue_members(RoomInfo *room)
                 person = &thing[person->queue_next];
             }
             if (game_turn - 1 != D_001603d0 || D_001603d4 != room)
-                play_sound(10, SFX_HLIGHTP2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_HLIGHTP2, -1, -1);
         }
     }
     D_001603d4 = room;

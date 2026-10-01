@@ -1,11 +1,11 @@
 #include "hosp.h"
 
 extern "C" {
-void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
+void fn_000c9be0(int x1, int y1, int x2, int y2, u8 colour);
 }
 
 void draw_cell_no_editor(s32 x, s32 y, u8 colour);
-u32 compute_plant_frame(Thing *w);
+u32 compute_plant_frame(Thing *plant);
 u32 get_frame_for_placing_bomb(void);
 u32 get_frame_for_placing_plant(void);
 u16 place_object_wall_hug(u16 pos, u8 kind);
@@ -20,7 +20,9 @@ void compute_object_drag_shape(u16 pos, u8 kind, u8 angle);
 struct NextPartDir {
     u8 dir;
     u16 offset;
-    u8 unknown3[3];
+    u8 unknown3[2];
+    // 0x5: Nonzero to draw the second part before the first.
+    u8 draw_part_first;
 };
 
 struct NextPart {
@@ -153,7 +155,7 @@ void draw_object_cursor(void)
     if (gamevar.place_mode == 2) {
         room = which_room(tile);
         if (room) {
-            if ((objects[kind].unknown20[2] & 8) && room->type != ROOM_DESTROYED) {
+            if ((objects[kind].flags & 8) && room->type != ROOM_DESTROYED) {
                 gamevar.place_ok = corridor_object_room_nav_check(tile, kind, dir, room);
             } else {
                 gamevar.place_tile = tile;
@@ -210,7 +212,7 @@ draw:
             + resvars.tile_height / 2;
         part_frame = start[objects[kind].anim_start + dir2].frame;
         flip2 = start[objects[kind].anim_start + dir2].flags;
-        if (next_part[part].dirs[dir].unknown3[2]) {
+        if (next_part[part].dirs[dir].draw_part_first) {
             draw_from_frame(part_frame, x2, y2, remap, flip2);
             draw_from_frame(obj_frame, x, y, remap, flip);
         } else {

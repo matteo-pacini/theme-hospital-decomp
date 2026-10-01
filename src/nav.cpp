@@ -5,11 +5,11 @@
 extern Thing *nav_person;
 extern s16 opposite_angle[];
 
-s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 a);
+s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir);
 
 extern "C" {
 
-void nav_init(Thing *w);
+void nav_init(Thing *person);
 
 }
 
@@ -88,7 +88,7 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
 // FUNCTION: 0x00044210
 s16 person_head_for(Thing *person, u8 a)
 {
-    if (THING_PATH(person)->result == 0) {
+    if (THING_PATH(person)->count == 0) {
         nav_init(person);
     }
     nav_person = person;

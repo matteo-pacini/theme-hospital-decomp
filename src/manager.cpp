@@ -39,7 +39,7 @@ void display_manager(void)
     set_font_from_cache(0x1b);
     switch (manager.state) {
     case 0:
-        load_ingame_pic(7, 1, 0x17, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_BANK_MANAGER, 1, 0x17, 0, SCREEN_MODE_13);
         othervar.manager_line_colour = LbPaletteFindColour(current_palette, 0x15, 0x15, 0x18);
         othervar.manager_line_shadow_colour = LbPaletteFindColour(current_palette, 0x2c, 0x2c, 0x2c);
         manager.state = 1;
@@ -153,7 +153,7 @@ void display_manager_text(void)
         resvars.screen_buttons[6].sprite = 0;
         resvars.screen_buttons[7].sprite = 2;
         LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[16].x, resvars.screen_boxes_ManagerBoxp[16].y, resvars.screen_boxes_ManagerBoxp[16].w, resvars.screen_boxes_ManagerBoxp[16].h);
-        sprintf(buf, "%s", insurance_names[insurance_co[gbv.f15e[manager.value]].unknown0[0]]);
+        sprintf(buf, "%s", insurance_names[insurance_co[gbv.ins_control_base[manager.value]].name]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
         for (i = 0; i < 12; i++) {
             if (max < myhosp->insurance_claims[manager.value - 1][i])
@@ -195,13 +195,13 @@ void display_manager_text(void)
         resvars.screen_buttons[6].sprite = 3;
         resvars.screen_buttons[7].sprite = 3;
         LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[16].x, resvars.screen_boxes_ManagerBoxp[16].y, resvars.screen_boxes_ManagerBoxp[16].w, resvars.screen_boxes_ManagerBoxp[16].h);
-        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[0]].unknown0[0]]);
+        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[0]].name]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
         LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[17].x, resvars.screen_boxes_ManagerBoxp[17].y, resvars.screen_boxes_ManagerBoxp[17].w, resvars.screen_boxes_ManagerBoxp[17].h);
-        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[1]].unknown0[0]]);
+        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[1]].name]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
         LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[18].x, resvars.screen_boxes_ManagerBoxp[18].y, resvars.screen_boxes_ManagerBoxp[18].w, resvars.screen_boxes_ManagerBoxp[18].h);
-        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[2]].unknown0[0]]);
+        sprintf(buf, "%s", insurance_names[insurance_co[ins_control[2]].name]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
         compute_help_text(0, 0, 0x16);
     }
@@ -241,7 +241,7 @@ void process_bank_panel(void)
 }
 
 // Carries out bank screen button `button`: 0 repays and 1 borrows 5000 (as
-// event 0x67 / 0x66, if the balance or the loan limit allows), 2-4 show an
+// event EV_REPAY_LOAN / EV_TAKE_LOAN, if the balance or the loan limit allows), 2-4 show an
 // insurance company's graph (4 again goes back), 5 closes the screen.
 // FUNCTION: 0x0007f50c
 void process_bank_button(u8 button)
@@ -249,30 +249,30 @@ void process_bank_button(u8 button)
     switch (button) {
     case 0:
         if (myhosp->balance >= 5000 && myhosp->loan > 0) {
-            D_001549d0[player].type = 0x67;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            D_001549d0[player].type = EV_REPAY_LOAN;
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 1:
         if (myhosp->loan <= myhosp->max_loan - 5000) {
-            D_001549d0[player].type = 0x66;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            D_001549d0[player].type = EV_TAKE_LOAN;
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 2:
         if (!manager.value) {
             manager.value = 1;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         }
         break;
     case 3:
         if (!manager.value) {
             manager.value = 2;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         }
         break;
     case 4:
@@ -280,11 +280,11 @@ void process_bank_button(u8 button)
             manager.value = 0;
         else
             manager.value = 3;
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         break;
     case 5:
         manager.state = 2;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     }
 }
@@ -339,7 +339,7 @@ void manager_help_pointed_ins(void)
 
     text = resvars.help_hotspots_ManagerHelpp[othervar.help_hotspot].text;
     idx = resvars.help_hotspots_ManagerHelpp[othervar.help_hotspot].arg;
-    sprintf(othervar.help_msg, help_text[text], insurance_names[insurance_co[ins_control[idx]].unknown0[0]]);
+    sprintf(othervar.help_msg, help_text[text], insurance_names[insurance_co[ins_control[idx]].name]);
 }
 
 // Help text for the insurance graph: formats the hovered help entry with the
@@ -350,5 +350,5 @@ void manager_help_displayed_ins(void)
     u32 text;
 
     text = resvars.help_hotspots_ManagerHelpp[othervar.help_hotspot].text;
-    sprintf(othervar.help_msg, help_text[text], insurance_names[insurance_co[gbv.f15e[manager.value]].unknown0[0]]);
+    sprintf(othervar.help_msg, help_text[text], insurance_names[insurance_co[gbv.ins_control_base[manager.value]].name]);
 }

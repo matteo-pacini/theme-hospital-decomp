@@ -17,7 +17,7 @@ extern u8 *end_allhosps, *end_comp_buckets, *end_text_buffer, *heapptr;
 int __far harderr_handler(unsigned deverr, unsigned errcode, unsigned __far *devhdr);
 void fn_000ce546(int (__far *handler)(unsigned, unsigned, unsigned __far *));
 char *strchr(const char *s, int c);
-int LbFileFindFirst(char *spec, void *find, u32 attributes);
+int LbFileFindFirst(char *path, void *ff, u32 attr);
 int LbScreenLock(void);
 void fn_0001102c(void);
 }
@@ -352,31 +352,31 @@ const char *screenpalettes[] = {
 };
 
 AnimTable animation_table[] = {
-    { "anims/lose1.smk", 3, 0x140, 0xf0, 0x34, 0xc, 0x8a },
-    { "anims/lose2.smk", 3, 0x140, 0xf0, 0x3b, 0xc, 0x8a },
-    { "anims/lose3.smk", 3, 0x140, 0xf0, 0x5a, 0xc, 0x8a },
-    { "anims/lose4.smk", 3, 0x140, 0xf0, 0x4f, 0xc, 0x8a },
-    { "anims/lose5.smk", 3, 0x140, 0xf0, 0x89, 0xc, 0x8a },
-    { "anims/lose6.smk", 3, 0x140, 0xf0, 0x94, 0xc, 0x8a },
-    { "anims/winlevel.smk", 3, 0x140, 0xf0, 0x1e, 0xe, 0x86 },
-    { "anims/area01v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area02v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area02v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area03v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area04v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area05v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area06v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area07v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area08v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area09v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area10v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area11v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area12v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area13v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
-    { "anims/area14v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, 0x1 },
+    { "anims/lose1.smk", 3, 0x140, 0xf0, 0x34, 0xc, SMK_NO_SKIP | SMK_INTERLACE | SMK_DOUBLE_WIDTH },
+    { "anims/lose2.smk", 3, 0x140, 0xf0, 0x3b, 0xc, SMK_NO_SKIP | SMK_INTERLACE | SMK_DOUBLE_WIDTH },
+    { "anims/lose3.smk", 3, 0x140, 0xf0, 0x5a, 0xc, SMK_NO_SKIP | SMK_INTERLACE | SMK_DOUBLE_WIDTH },
+    { "anims/lose4.smk", 3, 0x140, 0xf0, 0x4f, 0xc, SMK_NO_SKIP | SMK_INTERLACE | SMK_DOUBLE_WIDTH },
+    { "anims/lose5.smk", 3, 0x140, 0xf0, 0x89, 0xc, SMK_NO_SKIP | SMK_INTERLACE | SMK_DOUBLE_WIDTH },
+    { "anims/lose6.smk", 3, 0x140, 0xf0, 0x94, 0xc, SMK_NO_SKIP | SMK_INTERLACE | SMK_DOUBLE_WIDTH },
+    { "anims/winlevel.smk", 3, 0x140, 0xf0, 0x1e, 0xe, SMK_NO_SKIP | SMK_DOUBLE_HEIGHT | SMK_DOUBLE_WIDTH },
+    { "anims/area01v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area02v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area02v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area03v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area04v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area05v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area06v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area07v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area08v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area09v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area10v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area11v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area12v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area13v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
+    { "anims/area14v.smk", 3, 0x280, 0x1e0, 0x0, 0xe, SMK_NO_SOUND },
     { "anims/mmenu1-0.smk", 3, 0x140, 0xc8, 0x0, 0xe, 0x0 },
     { "anims/mmenu2-0.smk", 3, 0x140, 0xc8, 0x0, 0xe, 0x0 },
-    { "anims/wingame.smk", 3, 0x140, 0xf0, 0x0, 0xe, 0x86 },
+    { "anims/wingame.smk", 3, 0x140, 0xf0, 0x0, 0xe, SMK_NO_SKIP | SMK_DOUBLE_HEIGHT | SMK_DOUBLE_WIDTH },
     { "intro/intro.sm2", 4, 0x140, 0xc8, 0x0, 0xe, 0x0 },
     { "intro/intro.sm4", 4, 0x140, 0xc8, 0x0, 0xe, 0x0 },
     { "intro/attract.smk", 4, 0x280, 0x12c, 0x0, 0xe, 0x0 },
@@ -508,10 +508,10 @@ void check_cd_available(char *path)
         LbScreenUnlock();
     if (resvars.screen_mode != SCREEN_MODE_13 || othervar.use_lores_assets)
         setup_any_screen(palette, SCREEN_MODE_13);
-    LbFileLoadAt((char *)screenpalettes[21], palette);
+    LbFileLoadAt((char *)screenpalettes[SCR_LOADING], palette);
     while (LbScreenLock() != 1)
         ;
-    LbFileLoadAt((char *)hiresscreens[21], lbDisplay.wscreen);
+    LbFileLoadAt((char *)hiresscreens[SCR_LOADING], lbDisplay.wscreen);
     lbDisplay.draw_flags = 0;
     set_font_from_cache(0x2f);
     text = D_0013f704[myplayer.language];

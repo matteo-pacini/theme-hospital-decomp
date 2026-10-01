@@ -22,16 +22,16 @@ extern Slot D_001581b2[];
 extern Event D_001549d0[];
 }
 
-void remove_window_from_list(const u8 n);
+void remove_window_from_list(const u8 win);
 
-u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
+u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2);
 void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *spr, const long max, const long min,
                 const long range, const u8 up);
-void draw_face(Picture *p, const u16 x, const u16 y);
-void draw_staff_handyman_bars(const Thing *const w, const u16 x, const u16 y, TbSprite *spr);
+void draw_face(Picture *face, const u16 x, const u16 y);
+void draw_staff_handyman_bars(const Thing *const handyman, const u16 x, const u16 y, TbSprite *spr);
 
 // Staff window clicks (staff D_001581b2[2].value): close, sack (asks to
-// confirm), pick up (event 0x68), and for a handyman the three priority
+// confirm), pick up (event EV_PICK_UP_STAFF), and for a handyman the three priority
 // buttons (EV_ADJUST_HANDYMAN_VALUES).
 // FUNCTION: 0x00086c10
 void req4(Window *win)
@@ -51,7 +51,7 @@ void req4(Window *win)
                 if (i == resvars.requester_buttons[0x26]) {
                     D_001549d0[player].type = EV_CLOSE_QUERY;
                     D_001549d0[player].value = 2;
-                    play_sound(10, SFX_NO4, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 } else if (i == resvars.requester_buttons[0x27]) {
                     D_001549d0[player].type = EV_ADJUST_HANDYMAN_VALUES;
                     D_001549d0[player].value = D_001581b2[2].value;
@@ -66,13 +66,13 @@ void req4(Window *win)
                     D_001549d0[player].arg = resvars.requester_buttons[0x29];
                 } else if (i == resvars.requester_buttons[0x2a]) {
                     close_query(2);
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
-                    open_yes_no_requester(0x47, D_001581b2[2].value, 0, 0x88, D_001581b2[2].value, 0);
+                    open_yes_no_requester(EV_SACK_STAFF, D_001581b2[2].value, 0, EV_CANCEL_SACK, D_001581b2[2].value, 0);
                 } else if (i == resvars.requester_buttons[0x2b]) {
-                    D_001549d0[player].type = 0x68;
+                    D_001549d0[player].type = EV_PICK_UP_STAFF;
                     D_001549d0[player].value = D_001581b2[2].value;
-                    play_sound(10, SFX_PICKUP, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_PICKUP, -1, -1);
                 }
             }
             i++;
@@ -85,16 +85,16 @@ void req4(Window *win)
                 if (i == resvars.requester_buttons[0x2c]) {
                     D_001549d0[player].type = EV_CLOSE_QUERY;
                     D_001549d0[player].value = 2;
-                    play_sound(10, SFX_NO4, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 } else if (i == resvars.requester_buttons[0x2d]) {
                     close_query(2);
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
-                    open_yes_no_requester(0x47, D_001581b2[2].value, 0, 0x88, D_001581b2[2].value, 0);
+                    open_yes_no_requester(EV_SACK_STAFF, D_001581b2[2].value, 0, EV_CANCEL_SACK, D_001581b2[2].value, 0);
                 } else if (i == resvars.requester_buttons[0x2e]) {
-                    D_001549d0[player].type = 0x68;
+                    D_001549d0[player].type = EV_PICK_UP_STAFF;
                     D_001549d0[player].value = D_001581b2[2].value;
-                    play_sound(10, SFX_PICKUP, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_PICKUP, -1, -1);
                 }
             }
             i++;
@@ -147,14 +147,14 @@ void req4_overdraw(Window *win)
                 othervar.slist_staff = staff - thing;
                 D_001549d0[player].type = EV_OPEN_SCREEN;
                 D_001549d0[player].value = 5;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             }
         }
         if (lbDisplay.mright_button && !othervar.right_button_was_down) {
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4e].x, y + resvars.boxes[0x4e].y, resvars.boxes[0x4e].w,
                              resvars.boxes[0x4e].h)) {
                 D_001581b2[2].value = find_next_thing(staff, THING_STAFF, staff->subtype, -1);
-                play_sound(10, SFX_CAMCLICK, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
             }
         }
         if (lbDisplay.mright_button)
@@ -200,7 +200,7 @@ void req4_overdraw(Window *win)
                 othervar.slist_staff = staff - thing;
                 D_001549d0[player].type = EV_OPEN_SCREEN;
                 D_001549d0[player].value = 5;
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             }
         }
         if (lbDisplay.mright_button && !othervar.right_button_was_down) {
@@ -210,7 +210,7 @@ void req4_overdraw(Window *win)
                     D_001581b2[2].value = find_next_thing(staff, THING_STAFF, STAFF_DOCTOR, STAFF_SURGEON);
                 else
                     D_001581b2[2].value = find_next_thing(staff, THING_STAFF, staff->subtype, -1);
-                play_sound(10, SFX_CAMCLICK, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
             }
         }
         if (lbDisplay.mright_button)
@@ -295,7 +295,7 @@ void adjust_handyman_values(const u16 id, const u8 button)
                 other2--;
         }
         if (handyman->owner == player)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
     } else {
         raised = 100;
         other1 = 0;

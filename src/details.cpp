@@ -4,7 +4,7 @@ extern "C" {
 
 void fn_000baad0(void);
 void setup_pulldown_menu_options(void);
-void FadeMusic(u32 time, u8 volume);
+void FadeMusic(u32 rate, u8 volume);
 }
 
 void debug_msg(char *fmt, ...);

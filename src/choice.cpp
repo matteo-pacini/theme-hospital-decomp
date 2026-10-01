@@ -41,8 +41,8 @@ void process_emergency_start_buttons(u8 button);
 void process_emergency_end_buttons(u8 button);
 void process_epidemic_start_buttons(u8 button);
 void process_epidemic_end_buttons(u8 button);
-void process_mayor_start_buttons(u8 n);
-void process_mayor_end_buttons(u8 n);
+void process_mayor_start_buttons(u8 button);
+void process_mayor_end_buttons(u8 button);
 
 extern "C" {
 extern u8 D_00158192;
@@ -99,7 +99,7 @@ void display_choice(void)
     switch (D_00158192) {
     case 0x5a:
         available_buttons = 0xffff;
-        load_ingame_pic(0x13, 1, 0x24, 0, (TbScreenMode)0xd);
+        load_ingame_pic(SCR_FAX, 1, 0x24, 0, (TbScreenMode)0xd);
         othervar.saved_screen_ptr = lbDisplay.wscreen;
         othervar.saved_screen_width = lbDisplay.graphics_screen_width;
         othervar.saved_screen_height = lbDisplay.graphics_screen_height;
@@ -122,7 +122,7 @@ void display_choice(void)
         choice_actual_game_turn = actual_game_turn;
         NumPressed = 0;
         copy_screen_to_wscreen(bscreen);
-        play_sound(10, SFX_FAX_IN, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_IN, -1, -1);
         break;
     case 0x5b:
         copy_screen_to_wscreen(bscreen);
@@ -132,7 +132,7 @@ void display_choice(void)
         if (choice_time_out) {
             if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
                 lbInkey = 0;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 D_00158192 = 0x5c;
             }
             if (choice_mouse_position != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
@@ -172,7 +172,7 @@ void check_choice_buttons(void)
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0xae].x, resvars.screen_buttons[i + 0xae].y,
                              (s16)resvars.screen_buttons[i + 0xae].width, (s16)resvars.screen_buttons[i + 0xae].height)) {
                 if (available_buttons & (1 << i)) {
-                    play_sound(10, SFX_YESX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                     if (resvars.screen_buttons[i + 0xae].callback)
                         resvars.screen_buttons[i + 0xae].callback(i);
                     reqspr_draw(resvars.screen_buttons[i + 0xae].sprite_x, resvars.screen_buttons[i + 0xae].sprite_y, &screen_sprites_tab_start[18]);
@@ -369,7 +369,7 @@ void display_choice_screen(const u8 owner, const u8 type, const s16 data, const 
 {
     if (owner == player) {
         save_display_screen();
-        display_mode = 9;
+        display_mode = DM_CHOICE;
         D_00158192 = 0x5a;
         choice = type;
         choice_spare_data = data;
@@ -377,12 +377,12 @@ void display_choice_screen(const u8 owner, const u8 type, const s16 data, const 
     }
 }
 
-// Queues the local player's answer button to the fax as a turn event (type
-// 0x7d) with choice_spare_data.
+// Queues the local player's answer button to the fax as a turn event
+// (EV_CHOICE_RESULT) with choice_spare_data.
 // FUNCTION: 0x000a4168
 void packet_choice_result(u8 button)
 {
-    D_001549d0[player].type = 0x7d;
+    D_001549d0[player].type = EV_CHOICE_RESULT;
     D_001549d0[player].value = button;
     D_001549d0[player].arg = choice_spare_data;
 }
@@ -406,15 +406,15 @@ void restore_display_screen(void)
     display_mode = choice_backup.mode;
     choice_spare_data = choice_backup.spare_data;
     choice_time_out = choice_backup.time_out;
-    if (display_mode == 9)
+    if (display_mode == DM_CHOICE)
         D_00158192 = 0x5a;
-    choice_backup.mode = 0;
+    choice_backup.mode = DM_GAME;
     switch (display_mode) {
-    case 0:
-    case 0xb:
+    case DM_GAME:
+    case DM_MODAL:
         return_from_screen(0, 1, 1);
         break;
-    case 1:
+    case DM_CHARTS:
         bank.state = 0;
         drugs.state = 0;
         pol.state = 0;
@@ -460,56 +460,56 @@ void process_fax_buttons(u8 button)
     case 0xb9:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_0, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_0, -1, -1);
         break;
     case 0xba:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_1, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_1, -1, -1);
         break;
     case 0xbb:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_2, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_2, -1, -1);
         break;
     case 0xbc:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_3, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_3, -1, -1);
         break;
     case 0xbd:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_4, -1, -1);
         break;
     case 0xbe:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_5, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_5, -1, -1);
         break;
     case 0xbf:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_6, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_6, -1, -1);
         break;
     case 0xc0:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_7, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_7, -1, -1);
         break;
     case 0xc1:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_8, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_8, -1, -1);
         break;
     case 0xc2:
         if (NumPressed < 6)
             fax_no[NumPressed++] = button;
-        play_sound(10, SFX_FAX_9, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_9, -1, -1);
         break;
     case 0xc3:
     case 0xc4:
-        play_sound(10, SFX_FAX_0, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_FAX_0, -1, -1);
         break;
     case 0xb8:
     case 0xc5:
@@ -520,15 +520,15 @@ void process_fax_buttons(u8 button)
                 found = 1;
                 switch (cheat_numbers[i].action) {
                 case 1:
-                    play_sound(10, SFX_FAX_YES, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_FAX_YES, -1, -1);
                     break;
                 case 0:
                     othervar.cheats_enabled = !othervar.cheats_enabled ? (u8)1 : (u8)0;
-                    play_sound(10, SFX_FAX_YES, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_FAX_YES, -1, -1);
                     break;
                 case 2:
                     debug.force_bonus_level = 1;
-                    play_sound(10, SFX_FAX_YES, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_FAX_YES, -1, -1);
                     break;
                 default:
                     found = 0;
@@ -538,13 +538,13 @@ void process_fax_buttons(u8 button)
             i++;
         }
         if (!found)
-            play_sound(10, SFX_FAX_NO, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_FAX_NO, -1, -1);
         NumPressed = 0;
         break;
     case 0xc7:
         if (choice_time_out) {
             D_00158192 = 0x5c;
-            play_sound(10, SFX_NO4, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         }
         break;
     }

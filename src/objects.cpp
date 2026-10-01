@@ -34,32 +34,32 @@ extern "C" {
 
 }
 
-void mark_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *obj, u8 mark);
-void insert_object(u16 tile, Thing *w, u16 kind);
-void delete_object(u16 tile, Thing *w);
+void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *control, u8 cleanse);
+void insert_object(u16 tile, Thing *obj, u16 kind);
+void delete_object(u16 tile, Thing *obj);
 void inc_hardware_stats(u8 kind, u8 owner);
-u32 compute_plant_frame(Thing *w);
-void adjust_big_cell_flag(const u16 tile);
-void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *obj);
+u32 compute_plant_frame(Thing *plant);
+void adjust_big_cell_flag(const u16 cell);
+void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *control);
 u8 check_room_access(u8 owner);
 u8 check_no_peeps_in_way(u16 tile, u8 kind, u8 dir);
-void remove_object_from_map(Thing *w);
-u8 modify_machine(Thing *w);
-u8 should_sliding_door_open(Thing *w);
+void remove_object_from_map(Thing *obj);
+u8 modify_machine(Thing *machine);
+u8 should_sliding_door_open(Thing *door);
 u8 check_no_peeps_on_cell(RoomInfo *room, u16 tile, s8 side);
 void insert_blank_wall(Map *cell, u8 side);
 void remove_blank_wall(Map *cell, u8 side);
-void cleanse_area(u8 type, u8 x, u8 y, u8 w, u8 h);
+void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h);
 void litter_explosion(u32 pos, u8 owner);
 u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner);
 u8 thingpage_cancel(ThingPager *p, u16 id);
 void interrupt_peep(Thing *w);
 
 extern "C" {
-void object_hell(Thing *w);
-void remove_node(Thing *w);
-Thing *search_mapwho(Map *t, u16 kind);
-s32 remove_object(Thing *w, u8 owner);
+void object_hell(Thing *obj);
+void remove_node(Thing *node);
+Thing *search_mapwho(Map *cell, u16 kind);
+s32 remove_object(Thing *obj, u8 owner);
 #pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
 }
 
@@ -90,7 +90,7 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
         if (cell[(s16)shape->points[i]].owner_flags != 1 << owner && kind != 0x11) {
             return 0;
         }
-        if (cell->owner_flags & 0x10) {
+        if (cell->owner_flags & MAP_OUTDOOR) {
             return 0;
         }
     }
@@ -757,7 +757,7 @@ s16 place_small_thing(u16 tile, u16 id, u8 keep_existing)
         *link = id;
         *link = -*link;
         if (id >= 0x4b) {
-            cell->flags |= blueprint[id].unknown2[3];
+            cell->flags |= blueprint[id].flags;
         }
     }
     return 0;
@@ -843,14 +843,14 @@ void remove_object_from_map(Thing *obj)
         break;
     }
     hosp->object_count--;
-    hosp->object_stats[obj->subtype].fA++;
-    if (obj->state == 4) {
+    hosp->object_stats[obj->subtype].count++;
+    if (obj->state == OS_IN_USE) {
         user = &thing[obj->user];
         if (user > thing) {
             interrupt_peep(user);
         }
     }
-    obj->state = 0x12;
+    obj->state = OS_REMOVED;
     delete_object(tile, obj);
     adjust_big_cell_flag(tile);
     remove_node(obj);
@@ -930,7 +930,7 @@ u8 modify_machine(Thing *machine)
             }
         }
         if (machine->strength * 85 / 100 <= machine->times_used && count != 0) {
-            play_sound(10, SFX_MACHWARN, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_MACHWARN, -1, -1);
             if (machine->strength * 95 / 100 <= machine->times_used) {
                 machine->smoke[0] = 1;
                 machine->smoke[1] = 1;
@@ -1236,7 +1236,7 @@ void inc_hardware_stats(u8 kind, u8 owner)
         break;
     }
     hosp->object_count++;
-    hosp->object_stats[kind].fA++;
+    hosp->object_stats[kind].count++;
 }
 
 // Object state OS_BOMB_TICKS (litter bomb): burns the fuse one step every
@@ -1355,9 +1355,9 @@ void replace_machine(Thing *machine)
         }
         thingpage_cancel(pager, machine - thing);
         reset_icon_value(machine, ICON_NEEDS_REPAIR);
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
     } else {
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
     }
 }
 

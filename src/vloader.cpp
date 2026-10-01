@@ -239,13 +239,13 @@ extern u8 __IsTable[];
 #pragma aux __IsTable "*"
 
 int strcmp(const char *a, const char *b);
-char *strncpy(char *dst, const char *src, u32 n);
-char *strncat(char *dst, const char *src, u32 n);
-char *strstr(const char *s, const char *sub);
+char *strncpy(char *dst, const char *src, u32 len);
+char *strncat(char *dst, const char *t, u32 n);
+char *strstr(const char *s1, const char *s2);
 char *strchr(const char *s, int c);
 char *strrchr(const char *s, int c);
-char *strtok(char *s, const char *delim);
-s32 atol(const char *s);
+char *strtok(char *str, const char *charset);
+s32 atol(const char *p);
 void fn_000c93bf(char *dst, char *src);
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
@@ -254,7 +254,7 @@ u32 fn_000cd716(char *s);
 s32 variable_address(char *name);
 u16 array_index(char *name);
 u8 number_of_members(char *name);
-void strip_formatting(char *s);
+void strip_formatting(char *name);
 char *read_line_from_buf(char *line, s32 max, char *src);
 
 #define isspace(c) (__IsTable[(u8)((c) + 1)] & 2)

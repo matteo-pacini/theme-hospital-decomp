@@ -10,7 +10,7 @@ extern char **department_names;
 // Build room requester clicks (crequester.mode 1 departments, 4 rooms):
 // the department buttons list that department's rooms (EV_REQ1_RESET_ROOMS
 // 3-6), a room button starts building the hovered room type if affordable
-// (event 0x35), and the close button sends event 0x26.
+// (event EV_INIT_BLUEPRINT), and the close button sends event EV_CLOSE_REQUESTERS.
 // FUNCTION: 0x0009b870
 void req10(Window *win)
 {
@@ -29,22 +29,22 @@ void req10(Window *win)
                 if (i == resvars.requester_buttons[0x17]) {
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 3;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x18]) {
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 4;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x19]) {
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 5;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x1a]) {
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 6;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x25]) {
-                    D_001549d0[player].type = 0x26;
-                    play_sound(10, SFX_NO4, -1, -1);
+                    D_001549d0[player].type = EV_CLOSE_REQUESTERS;
+                    play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 }
             }
             i++;
@@ -57,19 +57,19 @@ void req10(Window *win)
                 if (i == resvars.requester_buttons[0x17]) {
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 3;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x18]) {
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 4;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x19]) {
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 5;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x1a]) {
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 6;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x1b] || i == resvars.requester_buttons[0x1c] || i == resvars.requester_buttons[0x1d]
                     || i == resvars.requester_buttons[0x1e] || i == resvars.requester_buttons[0x1f] || i == resvars.requester_buttons[0x20]
                     || i == resvars.requester_buttons[0x21] || i == resvars.requester_buttons[0x22] || i == resvars.requester_buttons[0x23]
@@ -84,18 +84,18 @@ void req10(Window *win)
                             total += allhosps[player].object_stats[obj].cost;
                         }
                         if (rooms[room].cost + total < allhosps[player].balance) {
-                            D_001549d0[player].type = 0x35;
+                            D_001549d0[player].type = EV_INIT_BLUEPRINT;
                             D_001549d0[player].value = crequester.kind;
                             D_001549d0[player].arg = crequester.kind;
-                            play_sound(10, SFX_YESX, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                         } else {
-                            play_sound(10, SFX_WRONG2, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                         }
                     }
-                    play_sound(10, SFX_YESX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 } else if (i == resvars.requester_buttons[0x25]) {
-                    D_001549d0[player].type = 0x26;
-                    play_sound(10, SFX_NO4, -1, -1);
+                    D_001549d0[player].type = EV_CLOSE_REQUESTERS;
+                    play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 }
             }
             i++;
@@ -193,7 +193,7 @@ void req10_overdraw(Window *win)
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes[i + 1].x, oy + resvars.boxes[i + 1].y,
                     resvars.boxes[i + 1].w, resvars.boxes[i + 1].h)) {
                 if (crequester.kind != room)
-                    play_sound(10, SFX_HLIGHT5, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                 crequester.kind = room;
                 set_font_from_cache(2);
             }

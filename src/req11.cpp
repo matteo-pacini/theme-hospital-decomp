@@ -12,8 +12,8 @@ void clicked_buy_objects(const s32 idx, const u8 button);
 
 // Buy objects requester clicks: the item, plus and minus buttons buy or sell
 // one (5 with Shift, 10 with Ctrl) of the selected object, the accept button
-// places them (event 0x2b, or back to placing), and the cancel button
-// empties the list (event 0x64) or returns to placing.
+// places them (event EV_PLACE_NEXT_OBJECT, or back to placing), and the cancel button
+// empties the list (event EV_CANCEL_BUY_OBJECTS) or returns to placing.
 // FUNCTION: 0x0009c6f0
 void req11(Window *win)
 {
@@ -38,22 +38,22 @@ void req11(Window *win)
                 clicked_buy_objects(i - resvars.requester_buttons[0x3b], 2);
             } else if (i == resvars.requester_buttons[0x2f]) {
                 if (crequester.arg == 1) {
-                    D_001549d0[player].type = 0x2b;
-                } else if (crequester.unknown9) {
+                    D_001549d0[player].type = EV_PLACE_NEXT_OBJECT;
+                } else if (crequester.arg3) {
                     D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
                     D_001549d0[player].value = 0;
                 }
-                play_sound(10, SFX_YESX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
             } else if (i == resvars.requester_buttons[0x3a]) {
-                if (crequester.unknown9) {
+                if (crequester.arg3) {
                     D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
                     D_001549d0[player].value = 1;
                 } else {
                     while (--k >= 0)
                         gamevar.buy_count[k] = 0;
-                    D_001549d0[player].type = 0x64;
+                    D_001549d0[player].type = EV_CANCEL_BUY_OBJECTS;
                 }
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
         }
         i++;
@@ -128,7 +128,7 @@ void req11_overdraw(Window *win)
                 resvars.boxes[i + 0xb].w, resvars.boxes[i + 0xb].h)) {
             set_font_from_cache(2);
             if (crequester.item != item)
-                play_sound(10, SFX_HLIGHT5, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
             crequester.item = item;
         }
         LbTextDraw(ox + resvars.coords[i + 0x34].x, oy + resvars.coords[i + 0x34].y, object_names[objects[item].name]);
@@ -196,26 +196,26 @@ void clicked_buy_objects(const s32 idx, const u8 button)
                 D_001549d0[player].value = obj;
                 D_001549d0[player].arg = amount;
                 if (gamevar.buy_count[obj] + amount < 0x63)
-                    play_sound(10, SFX_ADDITEMJ, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_ADDITEMJ, -1, -1);
                 else
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 return;
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
         } else {
             if (gamevar.buy_count[obj] >= amount) {
                 D_001549d0[player].type = EV_SELL_OBJECT;
                 D_001549d0[player].value = obj;
                 D_001549d0[player].arg = amount;
-                play_sound(10, SFX_DELITEMJ, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_DELITEMJ, -1, -1);
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             return;
         }
     }
-    play_sound(10, SFX_WRONG2, -1, -1);
+    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
 }
 
 // Help text for an object entry of the buy objects requester, into

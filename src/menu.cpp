@@ -1,11 +1,17 @@
 #include "hosp.h"
 
+/*
+ * The in-game position table read through resvars.coords, as words (v) or at
+ * the pulldown menu's entry.
+ */
 struct IconScreen {
     union {
         s32 v[0x156];
         struct {
             u8 unknown0[0x54c];
-            s32 unknown54c;
+            // 0x54c: Added to the pulldown line height and to each pulldown
+            // text's y.
+            s32 pulldown_text_dy;
         };
     };
 };
@@ -26,7 +32,7 @@ extern "C" {
 extern char **pulldown_text;
 extern u16 last_p, selected_option;
 extern Event D_001549d0[];
-void FadeMusic(u32 time, u8 volume);
+void FadeMusic(u32 rate, u8 volume);
 extern CompElement *end_elements;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern u8 error_number;
@@ -48,7 +54,7 @@ void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
 int LbDataLoadAll(TbLoadFiles *files);
 
 int strcmp(const char *a, const char *b);
-void LbTextSetClipWindow(u32 x, u32 y, u32 w, u32 h);
+void LbTextSetClipWindow(u32 x, u32 y, u32 width, u32 height);
 
 }
 
@@ -71,7 +77,7 @@ void setup_menus(void)
     pmenu.font_hi = 2;
     pmenu.disabled = 0;
     set_font_from_cache(pmenu.font);
-    pmenu.line_height = LbTextCharHeight('A') + resvars.coords_IconScreenp->unknown54c;
+    pmenu.line_height = LbTextCharHeight('A') + resvars.coords_IconScreenp->pulldown_text_dy;
     pmenu.char_width = LbTextCharWidth('A');
     set_font_from_cache(0);
     sprintf(sep, ".");
@@ -170,7 +176,7 @@ void draw_menus(void)
         for (i = 1; i < pmenu.count; i++) {
             lbDisplay.draw_flags = 0;
             if (pmenu.pulldowns[i].active) {
-                LbTextDraw(x, resvars.coords_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[i].text]);
+                LbTextDraw(x, resvars.coords_IconScreenp->pulldown_text_dy, pulldown_text[pmenu.pulldowns[i].text]);
                 if (lbDisplay.mleft_button) {
                     if (pmenu.open_pulldown == i)
                         draw_pulldown(x, (u16)pmenu.line_height, i);
@@ -210,35 +216,35 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
         if (!(pmenu.pulldowns[idx].items[i].flags & 1) || statvar.num_players <= 1) {
             if (pmenu.pulldowns[idx].items[i].check) {
                 if (*pmenu.pulldowns[idx].items[i].check)
-                    reqspr_draw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->unknown54c, &pulldv[10]);
+                    reqspr_draw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->pulldown_text_dy, &pulldv[10]);
             }
             if (pmenu.pulldowns[idx].items[i].check2) {
                 if (*pmenu.pulldowns[idx].items[i].check2)
-                    reqspr_draw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->unknown54c, &pulldv[10]);
+                    reqspr_draw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->pulldown_text_dy, &pulldv[10]);
             }
         }
         if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.num_players > 1) {
             saved = lbDisplay.draw_flags;
             lbDisplay.draw_flags = 4;
-            LbTextDraw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
+            LbTextDraw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->pulldown_text_dy, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
             lbDisplay.draw_flags = saved;
         } else {
-            LbTextDraw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
+            LbTextDraw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->pulldown_text_dy, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
         }
         if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, i * pmenu.line_height + y, pmenu.pulldowns[idx].width * pmenu.char_width, pmenu.line_height)) {
             set_font_from_cache(pmenu.font_hi);
             if (selected_option != i + 1 || last_p != idx) {
                 last_p = idx;
-                play_sound(10, SFX_HLIGHT5, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
             }
             selected_option = i + 1;
             if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.num_players > 1) {
                 saved2 = lbDisplay.draw_flags;
                 lbDisplay.draw_flags = 4;
-                LbTextDraw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
+                LbTextDraw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->pulldown_text_dy, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
                 lbDisplay.draw_flags = saved2;
             } else {
-                LbTextDraw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
+                LbTextDraw(x, y + i * pmenu.line_height + resvars.coords_IconScreenp->pulldown_text_dy, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
             }
             set_font_from_cache(pmenu.font);
         }
@@ -328,10 +334,10 @@ extern "C" void process_menus(void)
                     for (j = 0; j < pmenu.pulldowns[i].count; j++) {
                         if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, pmenu.line_height * j + y, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.line_height)) {
                             debug.last_action = item_no;
-                            othervar.f40 = item_no;
+                            othervar.clicked_pulldown_item = item_no;
                             if (!(((pmenu.pulldowns[i].items[j].flags & 1) && statvar.num_players > 1) || (!pmenu.pulldowns[i].items[j].usable_paused && gamevar.paused))) {
                                 if (gamevar.rat_fest_level && !pmenu.pulldowns[i].items[j].usable_rat_level) {
-                                    play_sound(10, SFX_WRONG2, -1, -1);
+                                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                                 } else {
                                     if (pmenu.pulldowns[i].items[j].check) {
                                         if (*pmenu.pulldowns[i].items[j].check)
@@ -346,10 +352,10 @@ extern "C" void process_menus(void)
                                         othervar.pulldown_item = j;
                                         pmenu.pulldowns[i].items[j].callback();
                                     }
-                                    play_sound(10, SFX_SELECTX, -1, -1);
+                                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                                 }
                             } else {
-                                play_sound(10, SFX_WRONG2, -1, -1);
+                                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                             }
                             break;
                         }
@@ -378,7 +384,7 @@ extern "C" void process_menus(void)
                 if (pmenu.pulldowns[i].active) {
                     if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x2, 0, x, pmenu.line_height)) {
                         if (pmenu.open_pulldown != i)
-                            play_sound(10, SFX_HLIGHT5, -1, -1);
+                            play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                         pmenu.open_pulldown = i;
                         break;
                     }
@@ -425,7 +431,7 @@ extern "C" void process_menus(void)
     }
 }
 
-// Load menu item: queues event 0xd to load save slot othervar.pulldown_item + 1 (1-9).
+// Load menu item: queues event EV_LOAD_GAME to load save slot othervar.pulldown_item + 1 (1-9).
 // FUNCTION: 0x0008b6a0
 extern "C" void pulldown_load(void)
 {
@@ -434,12 +440,12 @@ extern "C" void pulldown_load(void)
     slot = othervar.pulldown_item + 1;
     if (slot < 10) {
         debug.last_action = slot;
-        D_001549d0[player].type = 0xd;
+        D_001549d0[player].type = EV_LOAD_GAME;
         D_001549d0[player].value = slot;
     }
 }
 
-// Save menu item: queues event 0xc to save to slot othervar.pulldown_item + 1, asking
+// Save menu item: queues event EV_SAVE_GAME to save to slot othervar.pulldown_item + 1, asking
 // first if the slot is already used.
 // FUNCTION: 0x0008b6f8
 extern "C" void pulldown_save(void)
@@ -450,9 +456,9 @@ extern "C" void pulldown_save(void)
     debug.last_action = slot;
     if (othervar.save_slot_used[slot] == 1) {
         sprintf(othervar.yesno_msg, "%s", yesno_text[3]);
-        open_yes_no_requester(0xc, (u16)slot, 0, 0x8c, 0x63, 0);
+        open_yes_no_requester(EV_SAVE_GAME, (u16)slot, 0, EV_CLOSE_SAVE_YES_NO, 0x63, 0);
     } else {
-        D_001549d0[player].type = 0xc;
+        D_001549d0[player].type = EV_SAVE_GAME;
         D_001549d0[player].value = slot;
         if (slot < 10)
             othervar.save_slot_used[slot] = 1;
@@ -464,8 +470,8 @@ extern "C" void pulldown_save(void)
 // FUNCTION: 0x0008b7b4
 void pulldown_briefing(void)
 {
-    if (gamevar.mouse_mode == 0xe)
-        play_sound(10, SFX_WRONG2, -1, -1);
+    if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT)
+        play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
     else if (statvar.num_players <= 1)
         show_help_page(1, level_number);
     else
@@ -604,8 +610,8 @@ extern "C" void pulldown_vary_speed(void)
 extern "C" void pulldown_toggle_screen_mode(void)
 {
     if (!((resvars.screen_mode == SCREEN_MODE_1 && othervar.pulldown_item == 1) || (resvars.screen_mode == SCREEN_MODE_13 && othervar.pulldown_item == 0))) {
-        if (!(crequester.id == 5 || (crequester.id == 10 && crequester.arg != 1))) {
-            if (crequester.id != 0x63)
+        if (!(crequester.id == REQ_EDIT_ROOM || (crequester.id == REQ_BUY_OBJECTS && crequester.arg != 1))) {
+            if (crequester.id != REQ_NONE)
                 close_crequester(crequester.id);
             close_irequesters();
             advisor.advice_id = 0;
@@ -1265,6 +1271,6 @@ extern "C" void ask_restart_level(void)
 {
     if (statvar.num_players <= 1) {
         fn_000bbff0(othervar.yesno_msg, yesno_text[6]);
-        open_yes_no_requester(0x91, 0, 0, 0x78, 1, 0);
+        open_yes_no_requester(EV_RESTART_LEVEL, 0, 0, EV_CLOSE_YES_NO, 1, 0);
     }
 }

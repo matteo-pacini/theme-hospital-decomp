@@ -1,12 +1,20 @@
 #include "hosp.h"
 
+/*
+ * One month of a computer player's simulated results
+ * (comp_buckets[player][month]); see computer.cpp.
+ */
 struct ComputerBucket {
     u8 unknown0[4];
-    s32 f4;
-    s32 f8;
+    // 0x4: Reputation points from reputation_affected.
+    s32 rep_points;
+    // 0x8: Number of reputation events.
+    s32 rep_events;
     u8 unknownc[0xc];
-    s32 f18[0x2f];
-    s32 fd4[0x2f];
+    // 0x18: rep_points per treatment.
+    s32 room_rep_points[0x2f];
+    // 0xd4: rep_events per treatment.
+    s32 room_rep_events[0x2f];
 };
 
 extern "C" {
@@ -23,7 +31,7 @@ extern InsuranceCo insurance_co[];
 extern u16 ins_control[];
 extern s16 choice_time_out;
 
-void evaluate_reputation(const u8 room, const u8 owner);
+void evaluate_reputation(const u8 treatment, const u8 owner);
 s32 evaluate_criteria(const u8 owner);
 u32 check_criteria_values(const u32 mode, const u8 owner);
 s32 check_criteria(u16 mode, u8 owner);
@@ -127,11 +135,11 @@ void reputation_affected(const u8 treatment, const u16 event, const u16 month, c
 
         bucket = &comp_buckets[owner][month];
         if (treatment) {
-            bucket->f18[treatment] += delta;
-            bucket->fd4[treatment] += count;
+            bucket->room_rep_points[treatment] += delta;
+            bucket->room_rep_events[treatment] += count;
         }
-        bucket->f4 += delta;
-        bucket->f8 += count;
+        bucket->rep_points += delta;
+        bucket->rep_events += count;
     }
     if (treatment)
         update_single_cure_cost(treatment, owner);
@@ -246,7 +254,7 @@ void check_quarterly_game_over(void)
             othervar.next_level_offer = myhosp->score * pct / 100;
             if (othervar.next_level_offer > 200000000)
                 othervar.next_level_offer = 200000000;
-            if (display_mode == 9) {
+            if (display_mode == DM_CHOICE) {
                 fn_000c21e6(&year_end_backup.choice_state, choice, 10);
                 year_end_backup.mode = display_mode;
                 year_end_backup.spare_data = choice_spare_data;
@@ -255,7 +263,7 @@ void check_quarterly_game_over(void)
                 fn_000c21e6(&year_end_backup, &choice_backup, 10);
             }
             year_end_type = 5;
-            display_mode = 0xc;
+            display_mode = DM_YEAR_END_WINLOSE;
             winlose.state = 1;
             try_bonus_level();
         }
@@ -658,13 +666,13 @@ u8 check_net_criteria(const u8 owner)
     swap_criteria_packets(fail, active);
     if (owner == player) {
         if (evaluate_criteria(owner) >= 100) {
-            D_001549d0[player].type = 0x90;
+            D_001549d0[player].type = EV_NET_WIN;
             othervar.net_result = 2;
             othervar.net_won = 1;
             return 0;
         }
         if (check_criteria(1, owner)) {
-            D_001549d0[player].type = 0x7e;
+            D_001549d0[player].type = EV_LEAVE_NET_GAME;
             D_001549d0[player].value = 1;
             othervar.net_result = 1;
             return 0;

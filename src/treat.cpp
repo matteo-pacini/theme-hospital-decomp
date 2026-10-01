@@ -74,8 +74,8 @@ void setup_next_treatment(Thing *staff, Thing *patient)
     pay = 1;
     patient->impatience = 0;
     patient->waiting_time = 0;
-    reputation_affected(patient->treatment, 10, 0, patient->owner, 0);
-    switch (expertise[patient->treatment].unknown8) {
+    reputation_affected(patient->treatment, REP_NEXT_TREATMENT, 0, patient->owner, 0);
+    switch (expertise[patient->treatment].outcome) {
     case 0:
         pay_for_treatment(patient, 2);
         patient->treatment = 0;
@@ -100,15 +100,15 @@ void setup_next_treatment(Thing *staff, Thing *patient)
         }
         patient->flags &= ~PF_AWAITING_DECISION;
         reset_icon_value(patient, ICON_AWAITING_DECISION);
-        if (patient->flags & 0x800) {
+        if (patient->flags & PF_WRONG_GUESS) {
             set_icon_value(patient, ICON_KILLED);
             change_health(patient, -1000);
-            play_sound(10, SFX_BOO, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_BOO, -1, -1);
         } else {
             set_icon_value(patient, ICON_CURED);
             change_health(patient, 1000);
             patient->flags |= PF_CURED;
-            play_sound(10, SFX_CHEER, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_CHEER, -1, -1);
         }
         break;
     case 4:
@@ -140,7 +140,7 @@ void setup_next_treatment(Thing *staff, Thing *patient)
         patient->treatment = 0;
         pay_for_treatment(patient, 2);
     }
-    if (patient->flags & 0x400) {
+    if (patient->flags & PF_NEEDS_DIAGNOSIS_ROOM) {
         pct = patient->diagnosis * 100 / gbv.diagnosis_complete;
         if (allhosps[patient->owner].guess_cure_threshold <= pct && allhosps[patient->owner].rooms[patient->illness].discovered == 1 && pct > 0) {
             best_guess_treatment(patient);
@@ -155,14 +155,14 @@ void setup_next_treatment(Thing *staff, Thing *patient)
 }
 
 // Chooses patient's next state: while the diagnosis awaits a decision
-// (flags 0x400) or the treatment's room is missing (PF_AWAITING_DECISION),
+// (PF_NEEDS_DIAGNOSIS_ROOM) or the treatment's room is missing (PF_AWAITING_DECISION),
 // calls the player (at most a few such calls at a time, else gives up);
 // otherwise goes for treatment. Walks them out of the room first if in_room
 // is set.
 // FUNCTION: 0x0003c8d8
 void next_treatment_now_setup(Thing *patient, u8 in_room)
 {
-    if (patient->flags & 0x400) {
+    if (patient->flags & PF_NEEDS_DIAGNOSIS_ROOM) {
         if (check_playercall(8, 0, patient->owner) <= 5) {
             patient->flags |= PF_AWAITING_DECISION;
             set_icon_value(patient, ICON_AWAITING_DECISION);
@@ -296,7 +296,7 @@ void person_dies(Thing *patient)
     if (patient->owner == player) {
         advisor.event_flags |= 0x80;
     }
-    reputation_affected(patient->illness, 3, 0, patient->owner, 0);
+    reputation_affected(patient->illness, REP_DIED, 0, patient->owner, 0);
     record_person_as_patient(patient);
     if (patient->owner == player) {
         mycontrol->deaths_this_month++;
@@ -343,7 +343,7 @@ void person_dead(Thing *patient)
         } else {
             patient->substate = 0x2f;
         }
-        if (patient->subtype == 0xe) {
+        if (patient->subtype == PK_ALIEN) {
             patient->subtype = patient->orig_subtype;
             if (set_complex(patient, 0x280, 0)) {
                 process_person_complex(patient);
@@ -357,7 +357,7 @@ void person_dead(Thing *patient)
         if (patient->layers[0] > 5) {
             patient->layers[0] = 1;
         }
-        patient->next_state = 0x34;
+        patient->next_state = PS_FLYS;
         patient->countdown = 0;
         patient->speed = 8;
         if (set_complex(patient, 0x1cc, 0)) {
@@ -427,7 +427,7 @@ void diagnose_patient(Thing *staff, Thing *patient)
         if (patient->known_illness != illness) {
             staff->happiness += 5;
             announce_new_illness(illness, (u16)patient->owner);
-            reputation_affected(illness, 0x15, 0, patient->owner, 0);
+            reputation_affected(illness, REP_ILLNESS_FOUND, 0, patient->owner, 0);
             record_person_as_patient(patient);
             patient->known_illness = illness;
             allhosps[patient->owner].diagnosed++;
@@ -440,8 +440,8 @@ void diagnose_patient(Thing *staff, Thing *patient)
         if (diag < allhosps[patient->owner].diag_threshold) {
             find_possible_diagnosis(patient);
             if (patient->treatment == 0) {
-                patient->flags |= 0x400;
-                reputation_affected(patient->illness, 7, 0, patient->owner, 0);
+                patient->flags |= PF_NEEDS_DIAGNOSIS_ROOM;
+                reputation_affected(patient->illness, REP_NO_TREATMENT_FOUND, 0, patient->owner, 0);
             } else {
                 ok = 0;
             }
@@ -453,11 +453,11 @@ void diagnose_patient(Thing *staff, Thing *patient)
                 patient->treatment = patient->illness;
                 set_icon_value(patient, ICON_AWAITING_DECISION);
             } else {
-                reputation_affected(patient->illness, 4, 0, patient->owner, 0);
+                reputation_affected(patient->illness, REP_DIAGNOSED, 0, patient->owner, 0);
                 patient->treatment = patient->illness;
             }
         }
-    } else if (diag <= gbv.ffe) {
+    } else if (diag <= gbv.diagnosis_hopeless) {
         coin = old_newrand() & 1;
         if (coin == 0) {
             if (allhosps[patient->owner].rooms[ILL_AUTOPSY].cure_available == 1) {
@@ -469,22 +469,22 @@ void diagnose_patient(Thing *staff, Thing *patient)
         if (coin == 1) {
             change_health(patient, -(patient->health - 3));
         }
-        reputation_affected(patient->illness, 5, 0, patient->owner, 0);
-        allhosps[patient->owner].fc98++;
+        reputation_affected(patient->illness, REP_DIAGNOSIS_FAILED, 0, patient->owner, 0);
+        allhosps[patient->owner].mishaps++;
         guess = 0;
     }
     if (guess) {
         find_possible_diagnosis(patient);
         if (patient->treatment == 0) {
             set_icon_value(staff, ICON_NO_DIAGNOSIS);
-            patient->flags |= 0x400;
-            reputation_affected(patient->illness, 7, 0, patient->owner, 0);
+            patient->flags |= PF_NEEDS_DIAGNOSIS_ROOM;
+            reputation_affected(patient->illness, REP_NO_TREATMENT_FOUND, 0, patient->owner, 0);
         } else {
             set_icon_value(staff, ICON_GUESSED);
         }
     }
     patient->next_treatment = 0;
-    if (expertise[patient->treatment].unknown5[2] & 1) {
+    if (expertise[patient->treatment].needs_ward & 1) {
         patient->next_treatment = patient->treatment;
         patient->treatment = ILL_DIAG_WARD;
     }
@@ -602,7 +602,7 @@ void person_go_for_treatment(Thing *patient)
             treatment = 0;
         }
     } else if (allhosps[patient->owner].rooms[treatment].cure_available == 0) {
-        reputation_affected(treatment, 2, 0, patient->owner, 0);
+        reputation_affected(treatment, REP_GO_FOR_TREATMENT, 0, patient->owner, 0);
         treatment = 0;
     }
     if (treatment != 0 && listhead[patient->owner].rooms[exp->category] == 0) {
@@ -618,8 +618,8 @@ void person_go_for_treatment(Thing *patient)
         u16 anim;
 
         action = 20;
-        pos = get_room_info(1, 0x65, patient->owner)->door_tile;
-        anim = check_frame(anim_starts[patient->subtype].idle, patient) + (u16)patient->facing;
+        pos = get_room_info(ROOM_ENTRANCE, 0x65, patient->owner)->door_tile;
+        anim = check_frame(anim_starts[patient->subtype].walk, patient) + (u16)patient->facing;
         patient->sprite = start[anim].frame;
         patient->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         set_complex(patient, action, pos);
@@ -645,7 +645,7 @@ void person_go_for_treatment(Thing *patient)
         {
             u16 anim;
 
-            anim = check_frame(anim_starts[patient->subtype].idle, patient) + (u16)patient->facing;
+            anim = check_frame(anim_starts[patient->subtype].walk, patient) + (u16)patient->facing;
             patient->sprite = start[anim].frame;
             patient->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
@@ -692,7 +692,7 @@ void administer_drugs(Thing *staff, Thing *patient)
     illness = patient->illness;
     drug = &hosp->rooms[illness].drug;
     effect = drug->effectiveness;
-    if (patient->flags & 0x800) {
+    if (patient->flags & PF_WRONG_GUESS) {
         effect = 0;
     }
     if (old_normal_rand(0, 99) < effect) {
@@ -704,18 +704,18 @@ void administer_drugs(Thing *staff, Thing *patient)
         reset_icon_value(patient, ICON_AWAITING_DECISION);
         patient->flags |= PF_CURED;
         change_health(patient, 1000);
-        play_sound(10, SFX_CHEER, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_CHEER, -1, -1);
         if (patient->contagion) {
             clean_contagious_peep(patient);
         }
     } else {
         pay_for_treatment(patient, 2);
-        if ((patient->flags & PF_EMERGENCY) || expertise[patient->illness].unknown10[1]) {
+        if ((patient->flags & PF_EMERGENCY) || expertise[patient->illness].not_contagious) {
             change_health(patient, -1000);
-            play_sound(10, SFX_BOO, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_BOO, -1, -1);
         } else {
             if (patient->health <= 1000 - effect * 10) {
-                play_sound(10, SFX_BOO, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_BOO, -1, -1);
             }
             change_health(patient, -(1000 - effect * 10));
         }
@@ -785,36 +785,36 @@ u16 call_no_diagnosis(Thing *patient, char **strs)
 }
 
 // "No diagnosis" call buttons 0-2: sends that choice (packet_choice_result
-// 0x28-0x2a).
+// CH_DIAG_*).
 // FUNCTION: 0x0003e2c4
 void process_no_diagnosis_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        packet_choice_result(0x28);
+        packet_choice_result(CH_DIAG_SEND_HOME);
         break;
     case 1:
-        packet_choice_result(0x29);
+        packet_choice_result(CH_DIAG_GUESS);
         break;
     case 2:
-        packet_choice_result(0x2a);
+        packet_choice_result(CH_DIAG_WAIT);
         break;
     }
 }
 
 // Treats patient's real illness as the diagnosis (PF_GUESSED): the guess is
-// wrong (flags 0x800, fatal when treated) with a chance falling as the
+// wrong (PF_WRONG_GUESS, fatal when treated) with a chance falling as the
 // diagnosis progresses.
 // FUNCTION: 0x0003e330
 void best_guess_treatment(Thing *patient)
 {
     u8 pct;
 
-    patient->flags &= ~0x400;
+    patient->flags &= ~PF_NEEDS_DIAGNOSIS_ROOM;
     patient->flags |= PF_GUESSED;
     patient->known_illness = patient->treatment = patient->illness;
     patient->next_treatment = 0;
-    if (expertise[patient->treatment].unknown5[2] & 1) {
+    if (expertise[patient->treatment].needs_ward & 1) {
         patient->next_treatment = patient->treatment;
         patient->treatment = ILL_DIAG_WARD;
     }
@@ -829,7 +829,7 @@ void best_guess_treatment(Thing *patient)
         pct = 99;
     }
     if (pct < old_newrand() % 100) {
-        patient->flags |= 0x800;
+        patient->flags |= PF_WRONG_GUESS;
     }
 }
 
@@ -849,7 +849,7 @@ u16 find_possible_diagnosis(Thing *patient)
     u16 result;
 
     result = 0;
-    diag = &possible_diagnoses[expertise[patient->illness].unknown5[1]];
+    diag = &possible_diagnoses[expertise[patient->illness].diag_set];
     patient->treatment = 0;
     if (diag->count) {
         for (i = 0, count = 0; i < diag->count; i++) {
@@ -887,7 +887,7 @@ u16 find_possible_diagnosis(Thing *patient)
 void record_person_as_patient(Thing *patient)
 {
     if (!(patient->flags2 & (PF_RECORDED >> 16))) {
-        reputation_affected(patient->illness, 0x16, 0, patient->owner, 0);
+        reputation_affected(patient->illness, REP_CASE, 0, patient->owner, 0);
         patient->flags2 |= (PF_RECORDED >> 16);
     }
 }

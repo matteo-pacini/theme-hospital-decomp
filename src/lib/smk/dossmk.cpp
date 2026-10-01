@@ -66,12 +66,12 @@ void set_smack_free(void (*fn)(void *ptr))
 u8 play_smk(char *name, u32 smk_flags, u32 flags)
 {
     lbDisplay.left_button = 0;
-    if (smack_draw_callback != 0 || (flags & 0x8c)) {
-        flags &= ~0x100;
+    if (smack_draw_callback != 0 || (flags & (SMK_DOUBLE_HEIGHT | SMK_INTERLACE | SMK_DOUBLE_WIDTH))) {
+        flags &= ~SMK_DIRECT_VGA;
         return play_smk_via_buffer(name, smk_flags, flags);
     }
     if (lbDisplay.screen_mode != 1)
-        flags &= ~0x100;
+        flags &= ~SMK_DIRECT_VGA;
     return play_smk_direct(name, smk_flags, flags);
 }
 
@@ -97,16 +97,16 @@ long play_smk_direct(char *name, long smk_flags, long flags)
     // Both settings are the same value; the original still tests the flag.
     if (flags & 0x200)
         extra = SMACKAUTOEXTRA;
-    if (!(flags & 1) && GetSoundDriver()) {
+    if (!(flags & SMK_NO_SOUND) && GetSoundDriver()) {
         SmackSoundUseMSS(GetSoundDriver());
     } else {
-        flags |= 1;
+        flags |= SMK_NO_SOUND;
     }
-    tracks = (flags & 1) == 0 ? SMACKTRACKS : 0;
+    tracks = (flags & SMK_NO_SOUND) == 0 ? SMACKTRACKS : 0;
     smk = SmackOpen(name, tracks, extra);
     if (smk == 0)
         return 0;
-    if (flags & 0x100) {
+    if (flags & SMK_DIRECT_VGA) {
         x = (320 - smk->Width) >> 1;
         y = (200 - smk->Height) >> 1;
         SmackToBuffer(smk, x, y, 320, 200, (void *)0xa0000, 0);
@@ -115,8 +115,8 @@ long play_smk_direct(char *name, long smk_flags, long flags)
         y = (lbDisplay.graphics_screen_height - smk->Height) >> 1;
         SmackToBuffer(smk, x, y, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, lbDisplay.wscreen, 0);
     }
-    for (frame = 0; (flags & 0x400) || frame < smk->Frames; frame++) {
-        if (flags & 0x100) {
+    for (frame = 0; (flags & SMK_LOOP) || frame < smk->Frames; frame++) {
+        if (flags & SMK_DIRECT_VGA) {
             if (smk->NewPalette) {
                 for (i = 0; i < 0x300; i++)
                     palette[i] = smk->Palette[i] >> 2;
@@ -139,7 +139,7 @@ long play_smk_direct(char *name, long smk_flags, long flags)
         }
         SmackNextFrame(smk);
         do {
-            if (!(flags & 2)) {
+            if (!(flags & SMK_NO_SKIP)) {
                 if (lbKeyOn[1] || lbKeyOn[0x1c] || lbKeyOn[0x39] || lbDisplay.left_button) {
                     SmackClose(smk);
                     return 2;
@@ -168,12 +168,12 @@ long play_smk_via_buffer(char *name, long smk_flags, long flags)
     // Both settings are the same value; the original still tests the flag.
     if (flags & 0x200)
         extra = SMACKAUTOEXTRA;
-    if (!(flags & 1) && GetSoundDriver()) {
+    if (!(flags & SMK_NO_SOUND) && GetSoundDriver()) {
         SmackSoundUseMSS(GetSoundDriver());
     } else {
-        flags |= 1;
+        flags |= SMK_NO_SOUND;
     }
-    tracks = (flags & 1) == 0 ? SMACKTRACKS : 0;
+    tracks = (flags & SMK_NO_SOUND) == 0 ? SMACKTRACKS : 0;
     smk = SmackOpen(name, tracks, extra);
     if (smk == 0)
         return 0;
@@ -183,7 +183,7 @@ long play_smk_via_buffer(char *name, long smk_flags, long flags)
         return 0;
     }
     SmackToBuffer(smk, 0, 0, smk->Width, smk->Height, buf, 0);
-    for (frame = 0; (flags & 0x400) || frame < smk->Frames; frame++) {
+    for (frame = 0; (flags & SMK_LOOP) || frame < smk->Frames; frame++) {
         if (smk->NewPalette) {
             for (i = 0; i < 0x300; i++)
                 palette[i] = smk->Palette[i] >> 2;
@@ -195,7 +195,7 @@ long play_smk_via_buffer(char *name, long smk_flags, long flags)
         copy_to_screen(buf, smk->Width, smk->Height, flags);
         SmackNextFrame(smk);
         while (SmackWait(smk)) {
-            if (!(flags & 2)) {
+            if (!(flags & SMK_NO_SKIP)) {
                 if (lbKeyOn[1] || lbKeyOn[0x1c] || lbKeyOn[0x39] || lbDisplay.left_button) {
                     SmackClose(smk);
                     LbMemoryFree(buf);
@@ -286,16 +286,16 @@ void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
         dst = lbDisplay.wscreen;
         screen_height = lbDisplay.graphics_screen_height;
     }
-    if ((flags & 4) || (flags & 8))
+    if ((flags & SMK_DOUBLE_HEIGHT) || (flags & SMK_INTERLACE))
         dst += ((screen_height - height * 2) >> 1) * pitch;
     else
         dst += ((screen_height - height) >> 1) * pitch;
-    if (flags & 0x80)
+    if (flags & SMK_DOUBLE_WIDTH)
         dst += (pitch - width * 2) >> 1;
     else
         dst += (pitch - width) >> 1;
-    if (flags & 4) {
-        if (flags & 0x80) {
+    if (flags & SMK_DOUBLE_HEIGHT) {
+        if (flags & SMK_DOUBLE_WIDTH) {
             for (i = 0; i < height; i++) {
                 copy_line_double_both(dst, buf, width, pitch);
                 dst += pitch * 2;
@@ -308,8 +308,8 @@ void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
                 buf += width;
             }
         }
-    } else if (flags & 0x80) {
-        if (flags & 8) {
+    } else if (flags & SMK_DOUBLE_WIDTH) {
+        if (flags & SMK_INTERLACE) {
             for (i = 0; i < height; i++) {
                 copy_line_double_width(dst, buf, width);
                 dst += pitch * 2;
@@ -322,7 +322,7 @@ void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
                 buf += width;
             }
         }
-    } else if (flags & 8) {
+    } else if (flags & SMK_INTERLACE) {
         for (i = 0; i < height; i++) {
             memcpy(dst, buf, width);
             dst += pitch * 2;

@@ -7,7 +7,7 @@ u16 create_inspector(u8 owner);
 void send_peeps_home(u8 all, u8 owner);
 
 // Creates the health inspector for owner at one of the hospital's entrances,
-// walking to the reception desk to inspect (goto_state 8), or straight back
+// walking to the reception desk to inspect (goto_state MAYOR_INSPECTS), or straight back
 // out if there is none. Returns its thing index, or 0 if no thing is free.
 // FUNCTION: 0x000a1c10
 u16 create_inspector(u8 owner)
@@ -37,7 +37,7 @@ u16 create_inspector(u8 owner)
     if (obj > thing) {
         set_destination_coords(inspector, obj->use_pos[1]);
         inspector->state = MAYOR_GOTO;
-        inspector->goto_state = 8;
+        inspector->goto_state = MAYOR_INSPECTS;
         inspector->inspect_room = 0;
     } else {
         set_destination_coords(inspector, room_info[allhosps[inspector->owner].entrances[old_newrand() & 3]].door_tile);
@@ -124,12 +124,12 @@ void inspector_pauses(Thing *inspector)
         send_peeps_home(0, inspector->owner);
         break;
     case 2:
-        reputation_affected(0, 0xf, 0, inspector->owner, 0);
+        reputation_affected(0, REP_EPIDEMIC_COVER_UP_FOUND, 0, inspector->owner, 0);
         change_balance(TX_EPIDEMIC_COVERUP_FINE, -hosp->epidemic_fine, 0, (u16)inspector->owner);
         send_peeps_home(0, inspector->owner);
         break;
     case 3:
-        reputation_affected(0, 0xf, 0, inspector->owner, 0);
+        reputation_affected(0, REP_EPIDEMIC_COVER_UP_FOUND, 0, inspector->owner, 0);
         send_peeps_home(1, inspector->owner);
         break;
     }

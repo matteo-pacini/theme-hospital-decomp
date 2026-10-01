@@ -6,10 +6,10 @@ extern "C" {
 
 extern volatile u32 current_sample_queue_count;
 
-void __cdecl AIL_init_sample(_SAMPLE *sample);
-s32 __cdecl AIL_sample_user_data(_SAMPLE *sample, u32 index);
-u32 __cdecl AIL_set_sample_file(_SAMPLE *sample, void *file, s32 block);
-void __cdecl AIL_start_sample(_SAMPLE *sample);
+void __cdecl AIL_init_sample(_SAMPLE *S);
+s32 __cdecl AIL_sample_user_data(_SAMPLE *S, u32 index);
+u32 __cdecl AIL_set_sample_file(_SAMPLE *S, void *file_image, s32 block);
+void __cdecl AIL_start_sample(_SAMPLE *S);
 
 /* End-of-sample callback: __pascal (callee pops), address-named. */
 void cb_sample_queue_callback(_SAMPLE *sample);

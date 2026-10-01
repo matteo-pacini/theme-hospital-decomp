@@ -7,10 +7,15 @@ struct TrackSlot {
     u8 unknown4[0x7];
 };
 
+/*
+ * Entry 0xab of the in-game position table, read through resvars.coords.
+ */
 struct ScrollLayout {
     u8 unknown0[0x558];
-    s32 unknown558;
-    s32 unknown55c;
+    // 0x558: Taken off a tracked thing's cell x when centring a view on it.
+    s32 track_offset_x;
+    // 0x55c: Taken off its cell y (except for the main view's limit test).
+    s32 track_offset_y;
 };
 
 extern "C" {
@@ -27,7 +32,7 @@ extern s16 mcury;
 
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
 u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_margin);
-void set_window_animating(const u8 win, const u8 a, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1);
+void set_window_animating(const u8 win, const u8 mode, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1);
 void animate_single_window(const u8 win);
 void remove_window_from_list(const u8 win);
 void copy_window_from_a_to_b(const u8 from, const u8 to);
@@ -38,7 +43,7 @@ void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s3
 // D_001581b2[i].value) and the main view (othervar.center_on_slot) to centre on that
 // thing, once each; if the thing is beyond the scroll limit the requesters are
 // closed instead. The main view's limit test uses the layout's x offset
-// (unknown558) for y too.
+// (track_offset_x) for y too.
 // FUNCTION: 0x000ab610
 void process_tracking_windows(void)
 {
@@ -50,15 +55,15 @@ void process_tracking_windows(void)
             tracked = &thing[D_001581b2[i].value];
             give_absolute_xy_of_cell_at_column_row(tracked->x.tile, tracked->y.tile);
             if (!check_if_point_beyond_scroll_limit(
-                    info.cell_x - resvars.coords_ScrollLayoutp->unknown558
+                    info.cell_x - resvars.coords_ScrollLayoutp->track_offset_x
                         + (resvars.screen_mode == SCREEN_MODE_13 ? ((tracked->x.frac - tracked->y.frac) >> 3) + 32 : ((tracked->x.frac - tracked->y.frac) >> 4) + 16),
                     (resvars.screen_mode == SCREEN_MODE_13 ? (tracked->y.frac + tracked->x.frac) >> 4 : (tracked->y.frac + tracked->x.frac) >> 5)
-                        + (info.cell_y - resvars.coords_ScrollLayoutp->unknown55c),
+                        + (info.cell_y - resvars.coords_ScrollLayoutp->track_offset_y),
                     1)) {
                 window.scroll_x[othervar.track_window[i]] = (resvars.screen_mode == SCREEN_MODE_13 ? ((tracked->x.frac - tracked->y.frac) >> 3) + 32 : ((tracked->x.frac - tracked->y.frac) >> 4) + 16)
-                    + (info.cell_x - resvars.coords_ScrollLayoutp->unknown558);
+                    + (info.cell_x - resvars.coords_ScrollLayoutp->track_offset_x);
                 window.scroll_y[othervar.track_window[i]] = (resvars.screen_mode == SCREEN_MODE_13 ? (tracked->y.frac + tracked->x.frac) >> 4 : (tracked->y.frac + tracked->x.frac) >> 5)
-                    + (info.cell_y - resvars.coords_ScrollLayoutp->unknown55c);
+                    + (info.cell_y - resvars.coords_ScrollLayoutp->track_offset_y);
             } else {
                 close_irequesters();
             }
@@ -69,15 +74,15 @@ void process_tracking_windows(void)
         tracked = &thing[D_001581b2[othervar.center_on_slot].value];
         give_absolute_xy_of_cell_at_column_row(tracked->x.tile, tracked->y.tile);
         if (!check_if_point_beyond_scroll_limit(
-                info.cell_x - resvars.coords_ScrollLayoutp->unknown558
+                info.cell_x - resvars.coords_ScrollLayoutp->track_offset_x
                     + (resvars.screen_mode == SCREEN_MODE_13 ? ((tracked->x.frac - tracked->y.frac) >> 3) + 32 : ((tracked->x.frac - tracked->y.frac) >> 4) + 16),
                 (resvars.screen_mode == SCREEN_MODE_13 ? (tracked->y.frac + tracked->x.frac) >> 4 : (tracked->y.frac + tracked->x.frac) >> 5)
-                    + (info.cell_y - resvars.coords_ScrollLayoutp->unknown558),
+                    + (info.cell_y - resvars.coords_ScrollLayoutp->track_offset_x),
                 0)) {
             window.scroll_x[0] = (resvars.screen_mode == SCREEN_MODE_13 ? ((tracked->x.frac - tracked->y.frac) >> 3) + 32 : ((tracked->x.frac - tracked->y.frac) >> 4) + 16)
-                + (info.cell_x - resvars.coords_ScrollLayoutp->unknown558);
+                + (info.cell_x - resvars.coords_ScrollLayoutp->track_offset_x);
             window.scroll_y[0] = (resvars.screen_mode == SCREEN_MODE_13 ? (tracked->y.frac + tracked->x.frac) >> 4 : (tracked->y.frac + tracked->x.frac) >> 5)
-                + (info.cell_y - resvars.coords_ScrollLayoutp->unknown55c);
+                + (info.cell_y - resvars.coords_ScrollLayoutp->track_offset_y);
         } else {
             close_irequesters();
         }
@@ -362,7 +367,7 @@ void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s3
 
 // Opens a second view window (at most two exist) at the mouse with the current
 // view's scroll position, growing it to x0,y0 to x1,y1 (source 0) or to preset
-// rectangle preset (source 1); a is kept in window.fde. With window.instant_open
+// rectangle preset (source 1); a is kept in window.blank. With window.instant_open
 // 1 the growth completes at once. Makes the new window current.
 // FUNCTION: 0x000ac78c
 void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
@@ -388,7 +393,7 @@ void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0,
         window.center_y[window.window_count - 1] = (window.zone_y[window.window_count - 1] + window.zone_y1[window.window_count - 1]) / 2;
         window.scroll_x[window.window_count - 1] = window.scroll_x[window.current_window];
         window.scroll_y[window.window_count - 1] = window.scroll_y[window.current_window];
-        window.fde[window.window_count - 1] = a;
+        window.blank[window.window_count - 1] = a;
         window.anim_mode[window.window_count - 1] = 1;
         if (window.instant_open == 0)
             window.anim_steps[window.window_count - 1] = 12;
@@ -539,7 +544,7 @@ void copy_window_from_a_to_b(const u8 from, const u8 to)
     window.scroll_y[to] = window.scroll_y[from];
     window.prev_scroll_x[to] = window.prev_scroll_x[from];
     window.prev_scroll_y[to] = window.prev_scroll_y[from];
-    window.fde[to] = window.fde[from];
+    window.blank[to] = window.blank[from];
     window.open_x0[to] = window.open_x0[from];
     window.open_y0[to] = window.open_y0[from];
     window.open_x1[to] = window.open_x1[from];
@@ -598,7 +603,7 @@ void init_andys_variables(void)
     window.scroll_vel_y[1] = 0;
     window.scroll_frac_x[0] = 0;
     window.scroll_frac_y[0] = 0;
-    window.fde[0] = 0;
+    window.blank[0] = 0;
     window.open_x0[0] = 0x13b;
     window.open_y0[0] = 0xeb;
     window.open_x1[0] = 0x145;

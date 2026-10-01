@@ -9,7 +9,7 @@ void PlayMidiFromAddress(u8 volume, void *address)
 {
     if (MusicInstalled && MusicAble && MusicActive) {
         if (SongCurrentlyPlaying) {
-            if (AIL_sequence_status(SongHandle) != 2) {
+            if (AIL_sequence_status(SongHandle) != SEQ_DONE) {
                 AIL_stop_sequence(SongHandle);
                 AIL_end_sequence(SongHandle);
             }

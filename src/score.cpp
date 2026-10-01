@@ -189,7 +189,7 @@ void display_hall(void)
     lbDisplay.draw_flags = 0;
     switch (hall.state) {
     case 0:
-        load_ingame_pic(0xe, 1, 0x16, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_HALL_OF_FAME, 1, 0x16, 0, SCREEN_MODE_13);
         load_highscores();
         modify_background();
         hall.state = 1;
@@ -397,16 +397,16 @@ void process_hall_buttons(u8 button)
     case 0:
     case 1:
         if (othervar.showing_fame) {
-            play_sound(10, SFX_UPDOWN, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_UPDOWN, -1, -1);
             set_shame_pos(DesiredTextPos, DesiredTitlePos);
         } else {
-            play_sound(10, SFX_UPDOWN, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_UPDOWN, -1, -1);
             set_fame_pos(DesiredTextPos, DesiredTitlePos);
         }
         break;
     case 2:
         hall.state = 2;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     default:
         break;

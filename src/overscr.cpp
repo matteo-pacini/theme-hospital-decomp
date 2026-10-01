@@ -23,7 +23,7 @@ extern char **win_criteria_help;
 
 void fn_000c93bf(char *dst, char *src);
 void conv_string(char *dst, s8 *src, u8 mode);
-s32 nth_active_player(int player);
+s32 nth_active_player(int nth);
 }
 
 
@@ -43,7 +43,7 @@ void draw_piechart(void);
 void display_overview_bars(u8 who);
 s32 evaluate_criteria(const u8 owner);
 u32 check_criteria_values(const u32 mode, const u8 owner);
-void pie_render(s32 x, s32 y, s32 r, s32 h, s32 d, s32 n, Sector *s);
+void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sectors);
 
 // Runs one frame of the status (overview) screen (state D_00158166: 0
 // opening, 1 shown, 2 closing): clicking a hospital's name shows its
@@ -58,7 +58,7 @@ void display_peep_overview(void)
     nplayers = 4;
     switch (D_00158166) {
     case 0:
-        load_ingame_pic(0x14, 1, 0x26, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_OVERVIEW, 1, 0x26, 0, SCREEN_MODE_13);
         D_00158166 = 1;
         overview = player;
         close_irequesters();
@@ -93,7 +93,7 @@ void display_peep_overview(void)
                 if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x37 + slot].x, resvars.screen_boxes_ScreenBoxp[0x37 + slot].y,
                                  resvars.screen_boxes_ScreenBoxp[0x37 + slot].w, resvars.screen_boxes_ScreenBoxp[0x37 + slot].h)) {
                     overview = i;
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x37 + slot].x + 0x13, resvars.screen_boxes_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
                 }
                 slot++;
@@ -101,7 +101,7 @@ void display_peep_overview(void)
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y, resvars.screen_boxes_ScreenBoxp[0x3c].w,
                              resvars.screen_boxes_ScreenBoxp[0x3c].h)) {
                 D_00158166 = 2;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y, &screen_sprites_tab_start[8]);
             }
             lbDisplay.rleft_button = 0;

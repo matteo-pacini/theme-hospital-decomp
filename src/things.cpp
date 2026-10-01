@@ -3,77 +3,77 @@
 void reset_all_count(void);
 void check_win_status(void);
 void final_count(void);
-void person_count(Thing *w);
-void staff_count(Thing *w);
-void object_count(const Thing *w);
-void update_icon_counter(Thing *const w);
-s16 person_goto_destination(Thing *w);
-void play_complex_person_anim(Thing *w);
-s16 person_goto_object(Thing *w);
-void person_goto_queue(Thing *w);
-void peep_stuck(Thing *w);
-void peep_bp_goto(Thing *w);
-void modify_staff(Thing *w);
-s16 staff_waits(Thing *w);
-void doctor_in_office(Thing *w);
-void doctor_works_at_desk(Thing *w);
-void receptionist_works(Thing *w);
-void receptionist_finds_reception(Thing *w);
-void play_complex_staff_anim(Thing *w);
-void surgeon_waits(Thing *w);
-s16 staff_goto_object(Thing *w);
-void doctor_waits_for_patient_to_arrive(Thing *w);
-void doctor_carries_out_examination(Thing *w);
-void handyman_works(Thing *w);
-void recept_waits_for_patient(Thing *w);
-void recept_admits_patient(Thing *w);
-void doctor_in_machine_room(Thing *w);
-void staff_wait_for_complex_slave(Thing *w);
-void staff_in_corridor(Thing *w);
-void staff_complex_retry(Thing *w);
-void remove_staff_in_struct(Thing *w);
-void staff_in_staff_room(Thing *w);
-void nurse_in_ward(Thing *w);
-void staff_wanders(Thing *w);
-void doctor_researches(Thing *w);
-void nurse_vaccinates(Thing *w);
-void doctor_in_theatre(Thing *w);
-void doctor_is_trained(Thing *w);
-void consultant_trains(Thing *w);
-void receptionist_setup(Thing *w);
+void person_count(Thing *person);
+void staff_count(Thing *employee);
+void object_count(const Thing *obj);
+void update_icon_counter(Thing *const peep);
+s16 person_goto_destination(Thing *person);
+void play_complex_person_anim(Thing *person);
+s16 person_goto_object(Thing *person);
+void person_goto_queue(Thing *person);
+void peep_stuck(Thing *peep);
+void peep_bp_goto(Thing *peep);
+void modify_staff(Thing *employee);
+s16 staff_waits(Thing *worker);
+void doctor_in_office(Thing *doctor);
+void doctor_works_at_desk(Thing *doctor);
+void receptionist_works(Thing *receptionist);
+void receptionist_finds_reception(Thing *receptionist);
+void play_complex_staff_anim(Thing *employee);
+void surgeon_waits(Thing *surgeon);
+s16 staff_goto_object(Thing *employee);
+void doctor_waits_for_patient_to_arrive(Thing *doctor);
+void doctor_carries_out_examination(Thing *doctor);
+void handyman_works(Thing *handyman);
+void recept_waits_for_patient(Thing *receptionist);
+void recept_admits_patient(Thing *receptionist);
+void doctor_in_machine_room(Thing *doctor);
+void staff_wait_for_complex_slave(Thing *employee);
+void staff_in_corridor(Thing *staff);
+void staff_complex_retry(Thing *employee);
+void remove_staff_in_struct(Thing *staff);
+void staff_in_staff_room(Thing *staff);
+void nurse_in_ward(Thing *nurse);
+void staff_wanders(Thing *employee);
+void doctor_researches(Thing *doctor);
+void nurse_vaccinates(Thing *nurse);
+void doctor_in_theatre(Thing *doctor);
+void doctor_is_trained(Thing *doctor);
+void consultant_trains(Thing *consultant);
+void receptionist_setup(Thing *receptionist);
 void play_aniseq(Thing *w);
-void object_static(Thing *w);
-void plant_ages(Thing *w);
-void double_door_swings(Thing *w);
-void sliding_door_closed(Thing *w);
-void sliding_door_opens(Thing *w);
-void sliding_door_open(Thing *w);
-void sliding_door_closes(Thing *w);
-void bomb_ticks(Thing *w);
-void reaper_play_anim(Thing *w);
-void reaper_waits(Thing *w);
-void remove_reaper(Thing *w);
-s16 reaper_goto_hell(Thing *w);
-void rat_scurries(Thing *w);
-void rat_arrives(Thing *w);
-void rat_leaves(Thing *w);
-void process_bang(Thing *w);
-void helicopter_lands(Thing *w);
-void helicopter_leaves(Thing *w);
+void object_static(Thing *obj);
+void plant_ages(Thing *plant);
+void double_door_swings(Thing *door);
+void sliding_door_closed(Thing *door);
+void sliding_door_opens(Thing *door);
+void sliding_door_open(Thing *door);
+void sliding_door_closes(Thing *door);
+void bomb_ticks(Thing *bomb);
+void reaper_play_anim(Thing *reaper);
+void reaper_waits(Thing *reaper);
+void remove_reaper(Thing *reaper);
+s16 reaper_goto_hell(Thing *reaper);
+void rat_scurries(Thing *rat);
+void rat_arrives(Thing *rat);
+void rat_leaves(Thing *rat);
+void process_bang(Thing *bang);
+void helicopter_lands(Thing *heli);
+void helicopter_leaves(Thing *heli);
 void saucer_abducts(Thing *w);
-void numfx_ages(Thing *w);
-s16 mayor_goto(Thing *w);
-void mayor_pauses(Thing *w);
-void mayor_gone(Thing *w);
-void inspector_pauses(Thing *w);
+void numfx_ages(Thing *fx);
+s16 mayor_goto(Thing *mayor);
+void mayor_pauses(Thing *mayor);
+void mayor_gone(Thing *mayor);
+void inspector_pauses(Thing *inspector);
 
 extern "C" {
-void remove_node(Thing *w);
-void person_gone(Thing *w);
-void person_flys(Thing *w);
-void object_hell(Thing *w);
-void person_complex_retry(Thing *w);
-void person_wait_for_complex_slave(Thing *w);
+void remove_node(Thing *node);
+void person_gone(Thing *person);
+void person_flys(Thing *person);
+void object_hell(Thing *obj);
+void person_complex_retry(Thing *person);
+void person_wait_for_complex_slave(Thing *person);
 void two_peeps_interact(Thing *w);
 }
 
@@ -118,10 +118,10 @@ void process_things(Thing *first, Thing *last)
             case PS_GO_HOME:
                 person_go_home(cur);
                 break;
-            case 0xe:
+            case PS_GONE:
                 person_gone(cur);
                 break;
-            case PS_COMPLEX_RETRY:
+            case PS_PLAY_COMPLEX_ANIM:
                 play_complex_person_anim(cur);
                 break;
             case PS_ARRIVES_AT_DOOR:
@@ -136,15 +136,15 @@ void process_things(Thing *first, Thing *last)
             case PS_ENTERTAINS_THEMSELF:
                 person_entertains_themself(cur);
                 break;
-            case 0x1a:
+            case PS_WAIT_FOR_COMPLEX_SLAVE:
                 person_wait_for_complex_slave(cur);
                 break;
             case 0x1c:
                 break;
-            case 0x20:
-            case 0x42:
+            case PS_SLAVE_READY:
+            case PS_AT_HELL_GATE:
                 break;
-            case 0x22:
+            case PS_TWO_PEEPS_INTERACT:
                 two_peeps_interact(cur);
                 break;
             case PS_GOTO_QUEUE:
@@ -153,13 +153,13 @@ void process_things(Thing *first, Thing *last)
             case PS_GO_FOR_TREATMENT:
                 person_go_for_treatment(cur);
                 break;
-            case 0x28:
+            case PS_MERGED:
             case 0xf2:
                 break;
             case PS_NAV_DEBUG:
                 nav_debug_state(cur);
                 break;
-            case 0x2a:
+            case PS_COMPLEX_RETRY:
                 person_complex_retry(cur);
                 break;
             case PS_IN_BED:
@@ -174,7 +174,7 @@ void process_things(Thing *first, Thing *last)
             case PS_DEAD:
                 person_dead(cur);
                 break;
-            case 0x34:
+            case PS_FLYS:
                 person_flys(cur);
                 break;
             case PS_IN_BOGS:
@@ -240,9 +240,9 @@ void process_things(Thing *first, Thing *last)
             case SS_DOCTOR_WAITS_FOR_PATIENT:
                 doctor_waits_for_patient_to_arrive(cur);
                 break;
-            case 0x18:
+            case SS_ASSISTANT_READY:
                 break;
-            case 0x1a:
+            case SS_TWO_PEEPS_INTERACT:
                 two_peeps_interact(cur);
                 break;
             case SS_DOCTOR_EXAMINES:
@@ -300,10 +300,10 @@ void process_things(Thing *first, Thing *last)
             case SS_WANDERS:
                 staff_wanders(cur);
                 break;
-            case SS_PROCESS_COMPLEX:
+            case SS_EVACUATE:
                 evacuate_staff(cur);
                 break;
-            case 0x38:
+            case SS_BACK_TO_APPLICANTS:
                 remove_node(cur);
                 cur->state = SS_APPLICANT;
                 cur->hire_time = actual_game_turn;
@@ -328,7 +328,7 @@ void process_things(Thing *first, Thing *last)
             case SS_RECEPTIONIST_SETUP:
                 receptionist_setup(cur);
                 break;
-            case 0x44:
+            case SS_HELD:
                 break;
             case SS_BP_GOTO:
                 peep_bp_goto(cur);
@@ -351,13 +351,13 @@ void process_things(Thing *first, Thing *last)
             case OS_STATIC:
                 object_static(cur);
                 break;
-            case 4:
+            case OS_IN_USE:
                 if (cur->overlay_frame)
                     cur->overlay_frame = frame[cur->overlay_frame].next;
-            case 0xe:
-            case 0x12:
+            case OS_BEING_WATERED:
+            case OS_REMOVED:
                 break;
-            case 6:
+            case OS_HELL:
                 object_hell(cur);
                 break;
             case OS_PLANT_AGES:
@@ -446,7 +446,7 @@ void process_things(Thing *first, Thing *last)
             case HELI_LANDS:
                 helicopter_lands(cur);
                 break;
-            case 4:
+            case HELI_WAITS:
                 cur->sprite = frame[cur->sprite].next;
                 break;
             case HELI_LEAVES:
@@ -491,7 +491,7 @@ void process_things(Thing *first, Thing *last)
             case MAYOR_GONE:
                 mayor_gone(cur);
                 break;
-            case 8:
+            case MAYOR_INSPECTS:
                 inspector_pauses(cur);
                 break;
             default:

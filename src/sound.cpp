@@ -26,19 +26,19 @@ struct HospMusic {
 #define isprint(c) (__IsTable[(u8)((c) + 1)] & 8)
 
 struct AudioInitOptions {
-    char *unknown0;
-    u32 unknown4;
-    char *unknown8;
-    u16 unknownc;
-    u16 unknowne;
-    u8 unknown10;
-    u8 unknown11;
-    u8 unknown12;
-    u8 unknown13;
-    u8 unknown14;
-    u8 unknown15;
-    u8 unknown16;
-    u8 unknown17;
+    char *SoundDataPath;
+    u32 MusicDataPath;
+    char *SoundDriverPath;
+    u16 SoundType;
+    u16 AbleFlags;
+    u8 MaxSamples;
+    u8 StereoCheck;
+    u8 AutoScan;
+    u8 DisableDangerMusic;
+    u8 DisableLoadSounds;
+    u8 DisableLoadMusic;
+    u8 UseCurrentAwe32Soundfont;
+    u8 UseMultiMediaExtensions;
     u32 unknown18;
 };
 
@@ -53,7 +53,7 @@ void play_last_midi(void);
 char *read_line_from_buf(char *line, s32 max, char *src);
 extern SampleGroup sample_group[];
 
-s32 init_sound_heap(u8 *heap, s32 size, char *path, s32 rate);
+s32 init_sound_heap(u8 *mem, s32 size, char *path, s32 rate);
 SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, u32 pitch, s8 loop, u8 type);
 
 extern "C" {
@@ -63,21 +63,21 @@ extern s32 D_0015642f;
 extern u8 *heapptr;
 extern u8 __IsTable[];
 #pragma aux __IsTable "*"
-void PlayMidiFromAddress(u8 volume, void *data);
+void PlayMidiFromAddress(u8 volume, void *address);
 int AIL_sequence_status(u32 handle, ...);
 #pragma aux AIL_sequence_status "_*"
 
-void SetupAudioOptionDefaults(AudioInitOptions *options);
-void InitAudio(AudioInitOptions *options);
+void SetupAudioOptionDefaults(AudioInitOptions *ao);
+void InitAudio(AudioInitOptions *ao);
 char GetSoundInstalled(void);
 char GetSoundAble(void);
 u8 GetMusicInstalled(void);
 u8 GetMusicAble(void);
-char IsSamplePlaying(s32 a, s32 b, void *handle);
+char IsSamplePlaying(s32 source_id, s32 number, void *handle);
 int LbDataLoadAll(TbLoadFiles *files);
-void StopSample(u32 source, s16 sample);
-void SetSamplePan(u32 source, s16 sample, u16 pan, void *handle);
-void SetSampleVolume(u32 source, s16 sample, s16 volume, void *handle);
+void StopSample(u32 source_id, s16 number);
+void SetSamplePan(u32 source_id, s16 number, u16 pan, void *handle);
+void SetSampleVolume(u32 source_id, s16 number, s16 volume, void *handle);
 SampleInfo *GetFirstSampleInfoStructure(void);
 SampleInfo *GetLastSampleInfoStructure(void);
 
@@ -98,30 +98,30 @@ u8 setup_sound(void)
 
     loaded = 0;
     SetupAudioOptionDefaults(&options);
-    options.unknown0 = "Sound";
-    options.unknown8 = "Sound";
-    options.unknowne = 3;
-    options.unknown12 = 1;
-    options.unknown11 = 1;
-    options.unknownc = 0x656;
-    options.unknown10 = 0xa;
-    options.unknown15 = 1;
-    options.unknown14 = 1;
-    options.unknown16 = 1;
-    options.unknown17 = 1;
+    options.SoundDataPath = "Sound";
+    options.SoundDriverPath = "Sound";
+    options.AbleFlags = 3;
+    options.AutoScan = 1;
+    options.StereoCheck = 1;
+    options.SoundType = 0x656;
+    options.MaxSamples = 0xa;
+    options.DisableLoadMusic = 1;
+    options.DisableLoadSounds = 1;
+    options.UseCurrentAwe32Soundfont = 1;
+    options.UseMultiMediaExtensions = 1;
     statvar.sound_ok = 0;
     statvar.music_ok = 0;
     myplayer.ambients_on = 0;
     myplayer.sfx_on = 0;
     myplayer.music_on = 0;
-    fn_000bbff0(statvar.sound_path, options.unknown0);
+    fn_000bbff0(statvar.sound_path, options.SoundDataPath);
     InitAudio(&options);
     if (GetSoundInstalled() && GetSoundAble()) {
         LbDataLoad(&soundfiles[D_00156433]);
         if (heapptr) {
             loaded = 1;
-            sprintf(buf, "%s\\data\\sound-%1d.dat", options.unknown0, myplayer.language);
-            if (init_sound_heap(heapptr, D_0015642f, buf, options.unknownc)) {
+            sprintf(buf, "%s\\data\\sound-%1d.dat", options.SoundDataPath, myplayer.language);
+            if (init_sound_heap(heapptr, D_0015642f, buf, options.SoundType)) {
                 window.zone0_x = 0;
                 window.zone0_x1 = lbDisplay.physical_screen_width;
                 window.zone0_y = 0;
@@ -146,8 +146,8 @@ u8 setup_sound(void)
     if (!loaded) {
         LbDataLoadAll(nosoundfiles);
         if (heapptr) {
-            sprintf(buf, "%s\\data\\minheap.dat", options.unknown0);
-            if (!init_sound_heap(heapptr, 0x32000, buf, options.unknownc))
+            sprintf(buf, "%s\\data\\minheap.dat", options.SoundDataPath);
+            if (!init_sound_heap(heapptr, 0x32000, buf, options.SoundType))
                 return 7;
         } else {
             sub_error_number = 1;
@@ -170,7 +170,7 @@ void do_ambients(void)
             if (!IsSamplePlaying(0, 0, othervar.ambient_sample->SampleHandle))
                 othervar.ambient_playing = 0;
         } else if (AmbientQueue[0].sound) {
-            othervar.ambient_sample = play_sample_using_heap(0xb, AmbientQueue[0].sound + 500, myplayer.ambient_volume, 0x40, 0x64, 0, 2);
+            othervar.ambient_sample = play_sample_using_heap(SNDSRC_AMBIENT, AmbientQueue[0].sound + 500, myplayer.ambient_volume, 0x40, 0x64, 0, 2);
             if (othervar.ambient_sample)
                 othervar.ambient_playing = AmbientQueue[0].sound;
             for (i = 0; i < 3; i++)
@@ -243,24 +243,24 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
     if (myplayer.sfx_on && statvar.sound_ok) {
         if (sfx < 0xf2) {
             switch (sfx_details[sfx].type) {
-            case 0:
+            case SFXT_NONE:
                 break;
-            case 1:
+            case SFXT_SAMPLE:
                 pitch = 100;
                 sample = sfx_details[sfx].sample;
                 break;
-            case 2:
+            case SFXT_STOP:
                 StopSample(source, sfx_details[sfx].sample);
                 return;
-            case 3:
+            case SFXT_RANDOM_PITCH:
                 pitch = pitch_group[sfx_details[sfx].group].values[saferand() % pitch_group[sfx_details[sfx].group].count];
                 sample = sfx_details[sfx].sample;
                 break;
-            case 4:
+            case SFXT_RANDOM_SAMPLE:
                 pitch = 100;
                 sample = sample_group[sfx_details[sfx].group].samples[saferand() % sample_group[sfx_details[sfx].group].count];
                 break;
-            case 5:
+            case SFXT_PITCH_RANGE:
                 pitch = pitch_group[sfx_details[sfx].group].values[0] + saferand() % (pitch_group[sfx_details[sfx].group].values[1] - pitch_group[sfx_details[sfx].group].values[0]);
                 sample = sfx_details[sfx].sample;
                 break;
@@ -306,7 +306,7 @@ void manage_sound(void)
                 give_screen_xy_of_cell_at_column_row(window.current_window, source->x.tile, source->y.tile);
                 info.cell_x += resvars.tile_width / 2;
                 info.cell_y += resvars.tile_height / 2;
-                if (sample->SourceID == 0xd) {
+                if (sample->SourceID == SNDSRC_CLOCK) {
                     if (myhosp->emergency_timer_s == 0)
                         StopSample(sample->SourceID, sample->SampleNumber);
                 } else if (info.cell_x > 0 && info.cell_x < lbDisplay.physical_screen_width && info.cell_y > 0 && info.cell_y < lbDisplay.physical_screen_height) {
@@ -359,7 +359,7 @@ void manage_background_sounds(void)
         othervar.ambient_noise_timer++;
         if (othervar.ambient_noise_timer > 400) {
             sample = saferand() % 30 + 0x10e;
-            play_sample_using_heap(0xa, sample, volume, 0x40, 100, 0, 2);
+            play_sample_using_heap(SNDSRC_GENERAL, sample, volume, 0x40, 100, 0, 2);
             othervar.ambient_noise_timer = 0;
         }
         if (myhosp->emergency_timer) {
@@ -370,9 +370,9 @@ void manage_background_sounds(void)
                 volume = 0;
             else if (volume > myplayer.sfx_volume)
                 volume = myplayer.sfx_volume;
-            play_sample_using_heap(0xd, 0xa9, volume, 0x40, 100, -1, 2);
+            play_sample_using_heap(SNDSRC_CLOCK, 0xa9, volume, 0x40, 100, -1, 2);
             if (othervar.emergency_clock_volume != volume) {
-                SetSampleVolume(0xd, 0xa9, volume, 0);
+                SetSampleVolume(SNDSRC_CLOCK, 0xa9, volume, 0);
                 othervar.emergency_clock_volume = volume;
             }
         }

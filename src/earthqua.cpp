@@ -8,7 +8,7 @@ s8 earthquake_table[16][2] = {
     { 4, 4 }, { 1, 2 }, { 3, 1 }, { 2, 1 }, { 0, -2 }, { -1, -2 }, { 4, -4 }, { 1, -2 },
     { -4, 4 }, { -3, -1 }, { -2, 0 }, { 0, 2 }, { -2, -1 }, { -4, -4 }, { 2, 0 }, { -1, 2 },
 };
-void ReleaseLoopedSample(u32 source, s16 sample);
+void ReleaseLoopedSample(u32 source_id, s16 number);
 void shake_screen(s8 dx, s8 dy);
 }
 

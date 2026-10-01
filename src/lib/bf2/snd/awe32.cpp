@@ -49,7 +49,7 @@ extern u8 Awe32SoundfontLoaded;
 char CurrentAwe32SoundfontPrefix[] = "Bullfrog";
 extern char D_0018c8b4[];
 
-int stricmp(const char *a, const char *b);
+int stricmp(const char *s, const char *t);
 char *strcpy(char *dst, const char *src);
 #pragma intrinsic(strcpy)
 long filelength(int handle);

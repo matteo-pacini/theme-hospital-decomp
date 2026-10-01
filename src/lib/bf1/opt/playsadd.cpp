@@ -24,7 +24,7 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
         case 1:
             smp = 0;
             for (cand = sample_id; cand <= end_sample_id; cand++) {
-                if (AIL_sample_status(cand->SampleHandle) == 2) {
+                if (AIL_sample_status(cand->SampleHandle) == SMP_DONE) {
                     smp = cand;
                     busy = 0;
                     break;
@@ -35,7 +35,7 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
             busy = 0;
             for (cand = sample_id; cand <= end_sample_id; cand++) {
                 if (cand->SourceID == source_id && cand->SampleNumber == number
-                    && AIL_sample_status(cand->SampleHandle) != 2) {
+                    && AIL_sample_status(cand->SampleHandle) != SMP_DONE) {
                     busy = cand;
                     break;
                 }
@@ -44,7 +44,7 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
                 break;
             smp = 0;
             for (cand = sample_id; cand <= end_sample_id; cand++) {
-                if (AIL_sample_status(cand->SampleHandle) == 2) {
+                if (AIL_sample_status(cand->SampleHandle) == SMP_DONE) {
                     smp = cand;
                     break;
                 }
@@ -74,7 +74,7 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
             if (!found) {
                 smp = 0;
                 for (cand = sample_id; cand <= end_sample_id; cand++) {
-                    if (AIL_sample_status(cand->SampleHandle) == 2) {
+                    if (AIL_sample_status(cand->SampleHandle) == SMP_DONE) {
                         smp = cand;
                         busy = 0;
                         break;

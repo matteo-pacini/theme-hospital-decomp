@@ -6,13 +6,21 @@ struct ElementBits {
     u32 id : 7;
 };
 
+/*
+ * Status icon and money bag entries of the in-game position table, read
+ * through resvars.coords.
+ */
 struct IconScreen {
     u8 unknown0[0x4fc];
-    s32 unknown4fc;
+    // 0x4fc: Extra lift of a status icon above the thing's frame.
+    s32 icon_gap;
     u8 unknown500[0x60];
-    s32 unknown560;
-    s32 unknown564;
-    s32 unknown568;
+    // 0x560: Width the value's digits are centred in on a money bag.
+    s32 money_text_width;
+    // 0x564: Y offset of the digits on the bag.
+    s32 money_text_y;
+    // 0x568: X offset of the centring area on the bag.
+    s32 money_text_x;
 };
 
 struct FrameBox {
@@ -33,7 +41,7 @@ extern s32 D_00156911;
 extern TbSprite *money;
 
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour);
-void LbSpriteDrawScaled(s32 x, s32 y, TbSprite *spr, s32 w, s32 h);
+void LbSpriteDrawScaled(s32 x, s32 y, TbSprite *sprite, s32 dest_width, s32 dest_height);
 void LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap);
 
 u32 ror13(u32 x);
@@ -86,7 +94,7 @@ void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, 
         }
     }
     if (f->sound && gamevar.turn_skipped == 0)
-        play_sound(10, f->sound, x, y);
+        play_sound(SNDSRC_GENERAL, f->sound, x, y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
@@ -731,7 +739,7 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
         }
     }
     if (f->sound && gamevar.turn_skipped == 0)
-        play_sound(10, f->sound, x, y);
+        play_sound(SNDSRC_GENERAL, f->sound, x, y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
@@ -1083,12 +1091,12 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
         if (spr > sprite) {
             lbDisplay.draw_flags = elem->flags & 0xf;
-            LbSpriteDraw(x + dx - spr->width / 2, (y + dy) + (elem->y - 0xca) - f->length - resvars.coords_IconScreenp->unknown4fc, spr);
+            LbSpriteDraw(x + dx - spr->width / 2, (y + dy) + (elem->y - 0xca) - f->length - resvars.coords_IconScreenp->icon_gap, spr);
             if (D_001567b0.x > dx - spr->width / 2)
                 D_001567b0.x = dx - spr->width / 2;
-            if (D_001567b0.y > dy - f->length - resvars.coords_IconScreenp->unknown4fc) {
-                D_001567b0.y = dy - f->length - resvars.coords_IconScreenp->unknown4fc;
-                D_00156911 = resvars.coords_IconScreenp->unknown4fc + f->length;
+            if (D_001567b0.y > dy - f->length - resvars.coords_IconScreenp->icon_gap) {
+                D_001567b0.y = dy - f->length - resvars.coords_IconScreenp->icon_gap;
+                D_00156911 = resvars.coords_IconScreenp->icon_gap + f->length;
             }
         }
     }
@@ -1122,8 +1130,8 @@ void draw_money(s32 x, s32 y, s32 value)
             digit = *p - '0';
             width += money[digit + 2].width + 1;
         }
-        px = x + resvars.coords_IconScreenp->unknown568 + (resvars.coords_IconScreenp->unknown560 - width) / 2;
-        py = y + resvars.coords_IconScreenp->unknown564;
+        px = x + resvars.coords_IconScreenp->money_text_x + (resvars.coords_IconScreenp->money_text_width - width) / 2;
+        py = y + resvars.coords_IconScreenp->money_text_y;
         for (p = buf; *p; p++) {
             digit = *p - '0';
             LbSpriteDraw(px, py, &money[digit + 2]);

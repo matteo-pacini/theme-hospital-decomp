@@ -62,7 +62,7 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
     TbError ret;
 
     ret = Lb_FAIL;
-    spPtr->Receive(6);
+    spPtr->Receive(RECV_ADD_PLAYER | RECV_DELETE_PLAYER);
     if (player >= maximumPlayers) {
         fn_000c20c0("  Warning: LbNetwork_Send() player index %d is out of range (max = %d)\n", player, maximumPlayers - 1);
         return Lb_FAIL;
@@ -80,7 +80,7 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
         running = 1;
         last_block = (len - 1) >> 9;
         do {
-            spPtr->Receive(8);
+            spPtr->Receive(RECV_ALL);
             if (unidirectionalMsgReceived) {
                 unidirectionalMsgReceived = 0;
                 switch (incomingUnidirectionalMessage.type) {
@@ -160,7 +160,7 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
     start = LbTimerClock();
     waiting = 1;
     got_rts = 0;
-    spPtr->Receive(6);
+    spPtr->Receive(RECV_ADD_PLAYER | RECV_DELETE_PLAYER);
     result = 0;
     if (player >= maximumPlayers)
         return 0;
@@ -168,7 +168,7 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
         return 0;
     id = clientDataTable[player].id;
     do {
-        spPtr->Receive(8);
+        spPtr->Receive(RECV_ALL);
         if (unidirectionalMsgReceived) {
             unidirectionalMsgReceived = 0;
             if (incomingUnidirectionalMessage.type == 0) {
@@ -221,7 +221,7 @@ u32 LbNetwork_Receive(u32 player, void *buf, u32 len)
                         pending[i] = 1;
                     block_time = LbTimerClock();
                     while (waiting) {
-                        spPtr->Receive(8);
+                        spPtr->Receive(RECV_ALL);
                         if (unidirectionalMsgReceived) {
                             unidirectionalMsgReceived = 0;
                             if (incomingUnidirectionalMessage.type == 2) {

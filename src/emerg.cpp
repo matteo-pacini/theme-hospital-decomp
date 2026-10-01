@@ -1,13 +1,24 @@
 #include "hosp.h"
 
+/*
+ * A scheduled emergency of the level (emergency_control[], the level file's
+ * emergency_control keys).
+ */
 struct EmergencyDef {
+    // 0x0: First month it may happen (StartMonth).
     u16 start;
+    // 0x2: Last month (EndMonth).
     u16 end;
+    // 0x4: Fewest patients (Min).
     u8 min;
+    // 0x5: Most patients (Max).
     u8 max;
+    // 0x6: Their illness (Illness).
     u8 illness;
-    u8 f7;
-    u16 f8;
+    // 0x7: Percentage to cure for the bonus (PercWin).
+    u8 perc_win;
+    // 0x8: Bonus per patient cured (Bonus).
+    u16 bonus;
 };
 
 struct PlayerPopup {
@@ -109,7 +120,7 @@ u32 check_emergency_criteria(void)
     hosp_count = 1;
     if (statvar.num_players > 1)
         hosp_count = 4;
-    if (statvar.num_players <= 1 && display_mode == 9 && choice == 5)
+    if (statvar.num_players <= 1 && display_mode == DM_CHOICE && choice == 5)
         return 0;
     if (actual_game_turn >= gamevar.next_emergency_turn && gamevar.emergency_pending) {
         for (i = 0; i < hosp_count; i++) {
@@ -151,8 +162,8 @@ void setup_next_emergency(void)
                 gamevar.emergency_illness = emergency_control[i].illness;
                 r = old_newrand() % (emergency_control[i].max + 1 - emergency_control[i].min);
                 gamevar.emergency_patients = r + emergency_control[i].min;
-                gamevar.emergency_win_percent = emergency_control[i].f7;
-                gamevar.emergency_bonus = emergency_control[i].f8;
+                gamevar.emergency_win_percent = emergency_control[i].perc_win;
+                gamevar.emergency_bonus = emergency_control[i].bonus;
                 gamevar.emergency_pending = 1;
                 break;
             }
@@ -304,12 +315,12 @@ void process_emergency_start_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        D_001549d0[player].type = 0x7d;
-        D_001549d0[player].value = 0x1f;
+        D_001549d0[player].type = EV_CHOICE_RESULT;
+        D_001549d0[player].value = CH_EMERGENCY_ACCEPT;
         break;
     case 1:
-        D_001549d0[player].type = 0x7d;
-        D_001549d0[player].value = 0x1e;
+        D_001549d0[player].type = EV_CHOICE_RESULT;
+        D_001549d0[player].value = CH_EMERGENCY_REFUSE;
         break;
     }
 }
@@ -396,7 +407,7 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
 }
 
 // HELI_LANDS: animates heli and lowers it; on landing a helicopter waits
-// (state 4) and marks the hospital's emergency as landed, a saucer starts
+// (HELI_WAITS) and marks the hospital's emergency as landed, a saucer starts
 // abducting (HELI_ABDUCTS).
 // FUNCTION: 0x000afef4
 void helicopter_lands(Thing *heli)
@@ -408,7 +419,7 @@ void helicopter_lands(Thing *heli)
         switch (heli->subtype) {
         case 0:
             heli->altitude = 0;
-            heli->state = 4;
+            heli->state = HELI_WAITS;
             allhosps[heli->owner].heli_landed = 1;
             if (heli->owner == player)
                 advisor.heli_landed = 1;
@@ -441,7 +452,7 @@ void helicopter_leaves(Thing *heli)
             hosp->emergency_heli = 0;
             break;
         case 1:
-            gamevar.ff5 = 0;
+            gamevar.abductee = 0;
             gamevar.ff7 = 0;
             break;
         }

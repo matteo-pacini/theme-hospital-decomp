@@ -7,8 +7,8 @@ extern char **object_names;
 extern char **misc_text;
 extern char **room_names;
 
-void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
-void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
+void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
+void LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
 }
 
 void post_shop_readjust_build_palette(void);
@@ -30,15 +30,15 @@ void req14(Window *win)
             continue;
         if (resvars.requester_buttons[0x4f] == i) {
             setup_abort_all_requesters();
-            play_sound(10, SFX_NO4, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         } else if (resvars.requester_buttons[0x50] == i) {
-            D_001549d0[player].type = 0x5b;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            D_001549d0[player].type = EV_FURNISH_EDITED_ROOM;
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else if (resvars.requester_buttons[0x51] == i) {
-            set_mouse_mode(0xb);
+            set_mouse_mode(MM_PICK_UP_OBJECT);
             set_edit_room_requester_mode(8);
-            crequester.unknown9 = 0;
-            play_sound(10, SFX_SELECTX, -1, -1);
+            crequester.arg3 = 0;
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         } else if (resvars.requester_buttons[0x52] == i) {
             switch (crequester.mode) {
             case 0:
@@ -48,12 +48,12 @@ void req14(Window *win)
             case 4:
                 D_001549d0[player].type = EV_COMMIT_DOORS;
                 D_001549d0[player].value = crequester.kind;
-                play_sound(10, SFX_YESX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 break;
             case 6:
             case 8:
                 D_001549d0[player].type = EV_OPEN_ROOM;
-                play_sound(10, SFX_YESX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 break;
             case 1:
             case 2:
@@ -70,7 +70,7 @@ void req14(Window *win)
 // Draws the edit room requester: its buttons (lit or greyed), the room
 // name, the step's instructions (misc_text[othervar.edit_room_hint]) and, while
 // placing objects, the list of objects still to place; clicking one selects
-// it for placing (crequester.unknown9). Sets the window's height to fit.
+// it for placing (crequester.arg3). Sets the window's height to fit.
 // FUNCTION: 0x0009f2e0
 void req14_overdraw(Window *win)
 {
@@ -180,13 +180,13 @@ void req14_overdraw(Window *win)
                     && by + resvars.boxes[0x29].y <= lbDisplay.mmouse_y
                     && by + resvars.boxes[0x27].y + resvars.boxes[0x27].h > lbDisplay.mmouse_y) {
                     if (D_00145328 != obj)
-                        play_sound(10, SFX_HLIGHT5, -1, -1);
+                        play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                     D_00145328 = obj;
                     hover = 1;
                     if (lbDisplay.mleft_button) {
-                        if (crequester.unknown9 != obj)
-                            play_sound(10, SFX_SELECTX, -1, -1);
-                        crequester.unknown9 = obj;
+                        if (crequester.arg3 != obj)
+                            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+                        crequester.arg3 = obj;
                         init_place_object(obj, gamevar.place_mode, gamevar.place_room, 0);
                         set_edit_room_requester_mode(6);
                     }
@@ -208,7 +208,7 @@ void req14_overdraw(Window *win)
         for (obj = 0; obj < 0x3e && rows < (resvars.game_mode == SCREEN_MODE_13 ? 8 : 6); obj++) {
             count = gamevar.buy_count[obj];
             if (count) {
-                if (crequester.unknown9 == obj) {
+                if (crequester.arg3 == obj) {
                     lbDisplay.draw_flags |= 0x10;
                     LbDrawBox(ox + resvars.boxes[0x27].x, by + resvars.boxes[0x27].y, resvars.boxes[0x27].w, resvars.boxes[0x27].h,
                         color.red);
@@ -290,18 +290,18 @@ void set_edit_room_requester_mode(const u8 mode)
     }
     if (mode == 8)
         othervar.edit_room_hint = 0xf;
-    if (crequester.id != 5)
+    if (crequester.id != REQ_EDIT_ROOM)
         open_edit_room_requester();
 }
 
-// Opens the edit room requester (crequester.id 5) if no requester is
+// Opens the edit room requester (REQ_EDIT_ROOM) if no requester is
 // open.
 // FUNCTION: 0x0009ff68
 void open_edit_room_requester(void)
 {
-    if (crequester.id == 0x63) {
+    if (crequester.id == REQ_NONE) {
         close_irequesters();
-        crequester.id = 5;
+        crequester.id = REQ_EDIT_ROOM;
         open_requester(crequester.id, 1);
     }
 }
@@ -316,7 +316,7 @@ void go_back_to_place_object_requester(u8 restore_purchases)
     u8 obj;
 
     close_irequesters();
-    close_crequester(10);
+    close_crequester(REQ_BUY_OBJECTS);
     open_edit_room_requester();
     if (restore_purchases)
         gamevar.buy_list = othervar.saved_build_palette;

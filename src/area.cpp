@@ -20,9 +20,9 @@ extern u8 D_00156910;
 extern void *smack_draw_callback;
 void keybuffer_clear(void);
 int LbScreenLock(void);
-void FadeSample(int a, int b, int c, int d, u8 e);
-void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
-void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
+void FadeSample(int source_id, int number, int volume, int rate, u8 stop_when_done);
+void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
+void LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
 }
 
 extern Menu area;
@@ -47,7 +47,7 @@ long keybuffer_get(void);
 u8 what_key_is_it_really(u8 key);
 void swap_game_sprites(TbScreenMode mode);
 
-// Runs one frame of the level briefing screen, by its state (area.unknown2): 0
+// Runs one frame of the level briefing screen, by its state (area.state): 0
 // and 6 unload the game and play the level's intro video, 1 shows the
 // briefing's map screens (next_map) until they are done, 3 types out the
 // briefing text, 4 shows the debug level list, 5 the text while any level can
@@ -70,9 +70,9 @@ u8 draw_area_select(void)
             check_cd_available(buf);
         }
         if (level_number >= 12)
-            play_sound(10, SFX_DICE122M, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_DICE122M, -1, -1);
         else
-            play_sound(10, SFX_DICEYFIN, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_DICEYFIN, -1, -1);
         play_area_smk(level_number);
         lbDisplay.left_button = 0;
         LbPaletteGet(ppalette.data);
@@ -84,7 +84,7 @@ u8 draw_area_select(void)
         area.state = 1;
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         othervar.screen_pic_loaded = 0;
-        set_mouse_mode(9);
+        set_mouse_mode(MM_SCREEN);
         break;
     case 1:
         next = next_map();
@@ -94,7 +94,7 @@ u8 draw_area_select(void)
         copy_screen_to_wscreen(bscreen);
         break;
     case 2:
-        set_mouse_mode(9);
+        set_mouse_mode(MM_SCREEN);
         FadeSample(10, 0xd2, 0, 1, 1);
         LbScreenClear(0);
         if (!display_loading_screen())
@@ -102,7 +102,7 @@ u8 draw_area_select(void)
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         area.state = 0;
         advisor.tutorial_step = 0x1d;
-        display_mode = 0;
+        display_mode = DM_GAME;
         othervar.f33 = 0;
         LbScreenClear(0);
         swap_game_sprites(resvars.game_mode);
@@ -145,9 +145,9 @@ u8 draw_area_select(void)
             check_cd_available(buf);
         }
         if (level_number >= 12)
-            play_sound(10, SFX_DICE122M, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_DICE122M, -1, -1);
         else
-            play_sound(10, SFX_DICEYFIN, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_DICEYFIN, -1, -1);
         play_area_smk(level_number);
         lbDisplay.left_button = 0;
         LbPaletteGet(ppalette.data);
@@ -159,7 +159,7 @@ u8 draw_area_select(void)
         area.state = 1;
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         othervar.screen_pic_loaded = 0;
-        set_mouse_mode(9);
+        set_mouse_mode(MM_SCREEN);
         break;
     default:
         area.state = 0;
@@ -176,8 +176,8 @@ void process_keys_area_select(void)
     switch (BufferedInkey) {
     case KC_ESCAPE:
         area.state = 0;
-        display_mode = 2;
-        mainmenu.state = 0x1f;
+        display_mode = DM_MAIN_MENU;
+        mainmenu.state = MMS_UNLOAD_GAME;
         D_001549d0[player].value = 0;
         set_mouse_mode(MM_NORMAL);
         break;
@@ -205,7 +205,7 @@ void process_mouse_area_select(void)
         if (lbDisplay.left_button) {
             for (i = 0; i < 0x15; i++) {
                 if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.boxes[i + 45].x, resvars.boxes[i + 45].y, resvars.boxes[i + 45].w, resvars.boxes[i + 45].h)) {
-                    set_mouse_mode(0x15);
+                    set_mouse_mode(MM_AREA_SMK);
                     play_area_smk(i + 1);
                     area.state = 2;
                     level_number = i + 1;

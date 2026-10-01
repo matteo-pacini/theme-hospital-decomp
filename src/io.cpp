@@ -1,25 +1,44 @@
 #include "hosp.h"
 
+/*
+ * Info bar entries of the in-game position table, read through resvars.coords.
+ */
 struct Struct_0015f410 {
     u8 unknown0[0x570];
-    int f570;
+    // 0x570: Info bar text x.
+    int info_text_x;
     u8 unknown574[0x10];
-    int f584;
+    // 0x584: Info bar first line y.
+    int info_text_y;
     u8 unknown588[0xc];
-    int f594;
+    // 0x594: Extra y of a one-line message.
+    int info_message_dy;
 };
 
+/*
+ * The misc_text string table (language section 2) read as a struct.
+ */
 struct Struct_001602a0 {
     u8 unknown0[0x6c];
-    int f6c;
+    // 0x6c: String 27, "Game Out Of Sync".
+    int out_of_sync;
 };
 
+/*
+ * A tracked-window slot (D_001581b2[]): which requester and thing it shows,
+ * and the patient window's view state.
+ */
 struct Slot {
+    // 0x0: Requester shown (REQ_).
     u8 kind;
     u8 unknown1[0x1];
+    // 0x2: Thing shown.
     u16 value;
-    u16 f4;
-    u8 f6;
+    // 0x4: Patient window: nonzero shows the health graph, 0 the diagnosis.
+    u16 show_graph;
+    // 0x6: Patient window: frames before the graph/diagnosis toggle works
+    // again.
+    u8 toggle_delay;
     u8 unknown7[0x4];
 };
 
@@ -30,8 +49,13 @@ struct Rect {
     int y1;
 };
 
+/*
+ * A player's popup state (D_0015f5c2[player]), as emerg.cpp's PlayerPopup.
+ */
 struct Stride6c {
-    u16 f0;
+    // 0x0: The emergency call the player's popup is about (matched against
+    // gamevar.emergency_calls[].call).
+    u16 call;
     u8 unknown2[0x6a];
 };
 
@@ -65,9 +89,9 @@ void fn_0008debc(char *s);
 u8 is_player_building(void);
 void check_autosave(void);
 void restart_level(void);
-void find_other_player(int a);
+void find_other_player(int me);
 void fn_0002994c(u8 a);
-u8 fn_0002d11c(Thing *o);
+u8 fn_0002d11c(Thing *staff);
 int is_checksummed_region(int region);
 void draw_sync_progress(int percent);
 u16 checksum16(u16 *p, int len);
@@ -96,18 +120,18 @@ void draw_sync_progress(int percent)
 {
     u8 was_locked = lbDisplay.wscreen != 0;
 
-    if (display_mode == 0) {
+    if (display_mode == DM_GAME) {
         char buf[32];
 
         if (!was_locked) {
             while (LbScreenLock() != 1) {
             }
         }
-        sprintf(buf, "%s (%d%%)", misc_text->f6c, percent);
+        sprintf(buf, "%s (%d%%)", misc_text->out_of_sync, percent);
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(0x2c);
-        LbTextDraw(resvars.coords_Struct_0015f410p->f570, resvars.coords_Struct_0015f410p->f584 + resvars.coords_Struct_0015f410p->f594, buf);
+        LbTextDraw(resvars.coords_Struct_0015f410p->info_text_x, resvars.coords_Struct_0015f410p->info_text_y + resvars.coords_Struct_0015f410p->info_message_dy, buf);
         set_all_refresh_zones_in_window(0, lbDisplay.physical_screen_height - 0x5c, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
         LbScreenUnlock();
         special_refresh();
@@ -427,8 +451,8 @@ void process_turn(void)
         othervar.cur_player = i;
         if (allhosps[i].playing != 2) {
             switch (D_001549d0[i].type) {
-            case 0x1c:
-            case 0x7e:
+            case EV_QUIT_GAME:
+            case EV_LEAVE_NET_GAME:
                 goto dispatch;
             }
             goto copy;
@@ -446,11 +470,11 @@ void process_turn(void)
         case EV_COMMIT_BLUEPRINT:
             if (commit_blueprint(i)) {
                 if (i == player) {
-                    play_sound(10, SFX_YESX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 }
             } else {
                 if (i == player) {
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 }
             }
             break;
@@ -475,7 +499,7 @@ void process_turn(void)
             }
             commit_doors(i);
             break;
-        case 5: {
+        case EV_PLACE_STAFF: {
             u8 empty = !allhosps[i].held_staff;
 
             if (place_staff_on_map(D_001549d0[i].value, D_001549d0[i].arg, 0, i)) {
@@ -483,7 +507,7 @@ void process_turn(void)
                     change_balance(TX_HIRE_STAFF, -(thing[D_001549d0[i].arg].salary * 12) / 10, 0, othervar.cur_player);
                 }
                 if (i == player) {
-                    play_sound(10, SFX_PLAC_ST2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_PLAC_ST2, -1, -1);
                     set_mouse_mode(MM_NORMAL);
                 }
             }
@@ -492,18 +516,18 @@ void process_turn(void)
         case EV_PLACE_OBJECT:
             if (place_object(D_001549d0[i].value, D_001549d0[i].argb[0], D_001549d0[i].argb[1], i) != 0) {
                 if (i == player) {
-                    play_sound(10, SFX_PLACE_R, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_PLACE_R, -1, -1);
                     object_placed();
                 }
             }
             break;
-        case 8:
+        case EV_HOVER_BLUEPRINT:
             modify_blueprint(i, 0, D_001549d0[i].value);
             break;
         case EV_QUEUE_PERSON_TO_NEW_QUEUE:
             queue_person_to_new_queue(D_001549d0[i].value, D_001549d0[i].arg);
             break;
-        case 0xa:
+        case EV_ANSWER_PLAYERCALL:
             if (i == player) {
                 compute_whether_user_not_busy();
             }
@@ -577,10 +601,10 @@ void process_turn(void)
         case EV_PLACE_SMALL_THING:
             place_small_thing(D_001549d0[i].value, D_001549d0[i].arg, 0);
             if (i == player) {
-                play_sound(10, SFX_PLACE_R, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_PLACE_R, -1, -1);
             }
             break;
-        case 0xc:
+        case EV_SAVE_GAME:
             if (i == player) {
                 if (othervar.save_slot_used[D_001549d0[i].value] == 1) {
                     if (allhosps[i].held_staff) {
@@ -596,7 +620,7 @@ void process_turn(void)
                 check_save_games();
             }
             break;
-        case 0xd:
+        case EV_LOAD_GAME:
             if (i == player) {
                 load_game((s8)D_001549d0[i].value, -1);
             }
@@ -618,7 +642,7 @@ void process_turn(void)
                 req1_reset_rooms(crequester.arg);
             }
             break;
-        case 0x35:
+        case EV_INIT_BLUEPRINT:
             init_blueprint(i, D_001549d0[i].value);
             if (i == player) {
                 crequester.kind = D_001549d0[i].value;
@@ -632,10 +656,10 @@ void process_turn(void)
             }
             allocate_roominfo(i, D_001549d0[i].value);
             break;
-        case 0x1c:
+        case EV_QUIT_GAME:
             if (i == player) {
-                if (crequester.id == 4) {
-                    close_crequester(4);
+                if (crequester.id == REQ_YES_NO) {
+                    close_crequester(REQ_YES_NO);
                     pmenu.disabled = 0;
                 }
             }
@@ -673,10 +697,10 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x1e:
+        case EV_LOAD_GAME_AT_START:
             if (i == player) {
                 if (load_game((s8)D_001549d0[i].value, -1) == 0) {
-                    goto_cell_in_window(0, get_room_info(1, 0x65, othervar.cur_player)->door_tile);
+                    goto_cell_in_window(0, get_room_info(ROOM_ENTRANCE, 0x65, othervar.cur_player)->door_tile);
                     othervar.full_redraw = 1;
                 }
             }
@@ -690,7 +714,7 @@ void process_turn(void)
             break;
         case EV_PAUSE:
             yearend.value--;
-            if (display_mode != 8 || yearend.value == 0) {
+            if (display_mode != DM_YEAR_END || yearend.value == 0) {
                 gamevar.paused = !gamevar.paused;
                 if (i == player) {
                     int handle;
@@ -714,7 +738,7 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x26:
+        case EV_CLOSE_REQUESTERS:
             if (i == player) {
                 close_crequester(crequester.id);
                 close_irequesters();
@@ -734,7 +758,7 @@ void process_turn(void)
                 req1_buy_object(D_001549d0[i].value, D_001549d0[i].arg);
             }
             break;
-        case 0x2b:
+        case EV_PLACE_NEXT_OBJECT:
             if (i == player) {
                 u16 k;
 
@@ -746,27 +770,27 @@ void process_turn(void)
                 pmenu.disabled = 0;
             }
             break;
-        case 0x29:
+        case EV_FADE_TO_BLACK:
             hosp_fade_palette(0, 0x32, Lb_PALETTE_FADE_CLOSED);
             break;
-        case 0x2a:
+        case EV_FADE_IN:
             if (i == player) {
                 hosp_fade_palette(palette, 0x32, Lb_PALETTE_FADE_CLOSED);
             }
             break;
-        case 0x2e:
+        case EV_OPEN_HIRE_STAFF:
             if (i == player) {
-                cancel_top_level_requesters(0xb);
-                if (crequester.id == 0x63) {
+                cancel_top_level_requesters(REQ_HIRE_STAFF);
+                if (crequester.id == REQ_NONE) {
                     req2_reset();
                     close_irequesters();
                     open_requester(crequester.id, 1);
-                    set_mouse_sprite(1);
+                    set_mouse_sprite(PTR_DEFAULT);
                     pmenu.disabled = 1;
                 }
             }
             break;
-        case 0x2f:
+        case EV_HIRE_SELECT_KIND:
             if (i == player) {
                 crequester.mode = 2;
                 crequester.arg = D_001549d0[i].value;
@@ -786,22 +810,22 @@ void process_turn(void)
             }
             req2_mark_employing(D_001549d0[i].arg);
             break;
-        case 0x32:
+        case EV_HIRE_NEXT_APPLICANT:
             if (i == player) {
                 crequester.arg2 = req2_alter_staff((u8)D_001549d0[i].value, crequester.arg2, crequester.arg);
             }
             break;
         case EV_CLOSE_SCREEN:
-            if (display_mode != 0) {
-                display_mode = 0;
+            if (display_mode != DM_GAME) {
+                display_mode = DM_GAME;
                 othervar.full_redraw = 1;
                 D_00156910 = 1;
                 othervar.fade_palette = palette;
             }
             break;
         case EV_OPEN_SCREEN:
-            if (i == player && gamevar.mouse_mode == 0xe) {
-                play_sound(10, SFX_WRONG2, -1, -1);
+            if (i == player && gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 break;
             }
             if (allhosps[i].held_staff) {
@@ -809,7 +833,7 @@ void process_turn(void)
             }
             update_cure_costs();
             if (i == player) {
-                display_mode = 1;
+                display_mode = DM_CHARTS;
                 chart_type = D_001549d0[i].value;
                 switch (chart_type) {
                 case 0:
@@ -862,39 +886,39 @@ void process_turn(void)
             buy_land(D_001549d0[i].value);
             satisfied_net_criteria(3, i);
             break;
-        case 0x37:
+        case EV_OPEN_BUILD_ROOM:
             if (i == player) {
-                cancel_top_level_requesters(9);
-                if (crequester.id == 0x63) {
-                    crequester.id = 9;
+                cancel_top_level_requesters(REQ_BUILD_ROOM);
+                if (crequester.id == REQ_NONE) {
+                    crequester.id = REQ_BUILD_ROOM;
                     crequester.mode = 1;
                     close_irequesters();
                     open_requester(crequester.id, 1);
                     crequester.arg2 = 0;
-                    set_mouse_sprite(1);
+                    set_mouse_sprite(PTR_DEFAULT);
                     crequester.kind = 0;
-                    crequester.unknown9 = 0;
+                    crequester.arg3 = 0;
                     clear_req_indices();
                     pmenu.disabled = 1;
                 }
             }
             break;
-        case 0x3b:
+        case EV_OPEN_QUEUE_WINDOW:
             if (i == player) {
-                if (crequester.id == 0x63 && &room_info[D_001549d0[i].value] > room_info) {
-                    crequester.id = 6;
+                if (crequester.id == REQ_NONE && &room_info[D_001549d0[i].value] > room_info) {
+                    crequester.id = REQ_QUEUE;
                     crequester.mode = 0;
                     crequester.arg = 0;
                     crequester.arg2 = 0;
                     crequester.kind = 0;
-                    crequester.unknown9 = 0;
+                    crequester.arg3 = 0;
                     crequester.unknownA = 0;
                     close_irequesters();
                     open_requester(crequester.id, 1);
-                    set_mouse_sprite(1);
+                    set_mouse_sprite(PTR_DEFAULT);
                     othervar.queue_pos = 0;
                     othervar.queue_win_room = D_001549d0[i].value;
-                    othervar.f65 = D_001549d0[i].arg;
+                    othervar.queue_win_cell = D_001549d0[i].arg;
                     pmenu.disabled = 1;
                 }
             }
@@ -905,7 +929,7 @@ void process_turn(void)
         case EV_BACK_QUEUE:
             back_queue(D_001549d0[i].value, D_001549d0[i].arg);
             break;
-        case 0x38:
+        case EV_CANCEL_BUILD:
             if (allhosps[i].held_staff) {
                 place_staff_on_map(allhosps[i].held_staff_tile, allhosps[i].held_staff, 1, i);
             } else if (D_001549d0[i].value) {
@@ -913,15 +937,15 @@ void process_turn(void)
             }
             clear_build_objects(i);
             if (i == player) {
-                if (!gamevar.unknown44) {
-                    close_crequester(0);
-                    close_crequester(0xb);
-                    close_crequester(0xd);
-                    close_crequester(6);
-                    close_crequester(9);
-                    close_crequester(0xa);
-                    close_crequester(0xc);
-                    close_crequester(5);
+                if (!gamevar.litter_bombs_to_place) {
+                    close_crequester(REQ_STAFF);
+                    close_crequester(REQ_HIRE_STAFF);
+                    close_crequester(REQ_JUKEBOX);
+                    close_crequester(REQ_QUEUE);
+                    close_crequester(REQ_BUILD_ROOM);
+                    close_crequester(REQ_BUY_OBJECTS);
+                    close_crequester(REQ_STAFF_DEMAND);
+                    close_crequester(REQ_EDIT_ROOM);
                     close_irequesters();
                     gamevar.held_staff = 0;
                     gamevar.held_staff_kind = 0;
@@ -934,7 +958,7 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x42:
+        case EV_OPEN_THING_WINDOW:
             if (i == player) {
                 Thing *obj;
                 int kind = 0;
@@ -945,28 +969,28 @@ void process_turn(void)
                     switch (obj->type) {
                     case THING_PATIENT:
                         slot = 1;
-                        D_001581b2[slot].kind = 2;
-                        D_001581b2[slot].f4 = 1;
-                        D_001581b2[slot].f6 = 0;
+                        D_001581b2[slot].kind = REQ_PATIENT;
+                        D_001581b2[slot].show_graph = 1;
+                        D_001581b2[slot].toggle_delay = 0;
                         kind = 0x22;
                         break;
                     case THING_STAFF:
                         switch (obj->subtype) {
                         case STAFF_HANDYMAN:
                             slot = 2;
-                            D_001581b2[slot].kind = 1;
+                            D_001581b2[slot].kind = REQ_HANDYMAN;
                             kind = 0x21;
                             break;
                         default:
                             slot = 2;
-                            D_001581b2[slot].kind = 0;
+                            D_001581b2[slot].kind = REQ_STAFF;
                             kind = 0x20;
                             break;
                         }
                         break;
                     case THING_OBJECT:
                         slot = 3;
-                        D_001581b2[slot].kind = 3;
+                        D_001581b2[slot].kind = REQ_MACHINE;
                         break;
                     }
                 }
@@ -975,7 +999,7 @@ void process_turn(void)
                     othervar.irequester_slot = slot;
                     open_requester(D_001581b2[slot].kind, 1);
                     D_001581b2[slot].value = D_001549d0[i].value;
-                    set_mouse_sprite(1);
+                    set_mouse_sprite(PTR_DEFAULT);
                 }
                 if (kind) {
                     int x = resvars.window_list[slot].x;
@@ -995,7 +1019,7 @@ void process_turn(void)
         case EV_PICK_UP_OBJECT:
             pick_up_object(D_001549d0[i].value, D_001549d0[i].arg);
             if (i == player) {
-                play_sound(10, SFX_PICKUPSM, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_PICKUPSM, -1, -1);
             }
             break;
         case EV_SACK_STAFF:
@@ -1005,7 +1029,7 @@ void process_turn(void)
                 close_irequesters();
                 set_mouse_mode(MM_NORMAL);
                 lbDisplay.left_button = 0;
-                play_sound(10, SFX_SACK, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
             }
             break;
         case EV_EDIT_BLUEPRINT:
@@ -1026,24 +1050,24 @@ void process_turn(void)
             othervar.editing_room = 1;
             init_edit_room(&room_info[D_001549d0[i].value]);
             break;
-        case 0x49:
+        case EV_OPEN_JUKEBOX:
             if (i == player) {
-                if (crequester.id == 0x63) {
-                    crequester.id = 0xd;
+                if (crequester.id == REQ_NONE) {
+                    crequester.id = REQ_JUKEBOX;
                     crequester.mode = 1;
                     crequester.arg = 0;
                     crequester.arg2 = 0;
                     crequester.kind = 0;
-                    crequester.unknown9 = 0;
+                    crequester.arg3 = 0;
                     crequester.unknownA = 0;
                     close_irequesters();
                     open_requester(crequester.id, 1);
-                    set_mouse_sprite(1);
+                    set_mouse_sprite(PTR_DEFAULT);
                     pmenu.disabled = 1;
                 }
             }
             break;
-        case 0x4a:
+        case EV_START_EMERGENCY:
             allhosps[i].emergency_state = 10;
             allhosps[i].emergency_timer = 100;
             allhosps[i].emergency_cured = 0;
@@ -1064,13 +1088,13 @@ void process_turn(void)
         case EV_NET_TEXT_KEYPRESS:
             net_text_keypress(D_001549d0[i].value, i);
             break;
-        case 0x4e:
+        case EV_NET_TEXT_START:
             net_text[i].text = 0;
             if (i == player) {
                 othervar.net_text_entering = 1;
             }
             break;
-        case 0x4f:
+        case EV_SET_HEATING:
             if (allhosps[i].heating_broken == 0) {
                 allhosps[i].heating_level = D_001549d0[i].value;
             }
@@ -1081,15 +1105,15 @@ void process_turn(void)
         case EV_QUEUE_PERSON_GO_HOME:
             queue_person_go_home(D_001549d0[i].value, D_001549d0[i].arg);
             if (i == player) {
-                play_sound(10, SFX_SACK, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
             }
             break;
-        case 0x53:
+        case EV_QUEUE_CAPACITY_UP:
             if (room_info[D_001549d0[i].value].queue_capacity < 0x1e) {
                 room_info[D_001549d0[i].value].queue_capacity++;
             }
             break;
-        case 0x54:
+        case EV_QUEUE_CAPACITY_DOWN:
             if (room_info[D_001549d0[i].value].queue_capacity) {
                 room_info[D_001549d0[i].value].queue_capacity--;
             }
@@ -1100,8 +1124,8 @@ void process_turn(void)
         case EV_STAFF_JOIN_NEW_EMPLOYER:
             staff_join_new_employer(D_001549d0[i].value, D_001549d0[i].arg);
             if (i == player) {
-                display_mode = 0;
-                close_crequester(0xc);
+                display_mode = DM_GAME;
+                close_crequester(REQ_STAFF_DEMAND);
                 close_irequesters();
                 window.current_window = 0;
                 pmenu.disabled = 0;
@@ -1110,7 +1134,7 @@ void process_turn(void)
         case EV_SETUP_TOWN_BID:
             finish_composite_help();
             setup_town_bid();
-            display_mode = 0xe;
+            display_mode = DM_TOWN_BID;
             town.state = 0xb;
             othervar.bid_plot = D_001549d0[i].value;
             break;
@@ -1124,17 +1148,17 @@ void process_turn(void)
                 increase_staff_salaries(0, D_001549d0[i].value, 0, i);
             }
             break;
-        case 0x5b:
+        case EV_FURNISH_EDITED_ROOM:
             if (i == player) {
                 close_irequesters();
-                close_crequester(5);
+                close_crequester(REQ_EDIT_ROOM);
                 othervar.saved_build_palette = gamevar.buy_list;
                 adjust_build_palette_for_shop(&room_info[allhosps[i].edited_room]);
                 set_buyable_items(room_info[allhosps[i].edited_room].type);
-                crequester.id = 10;
+                crequester.id = REQ_BUY_OBJECTS;
                 open_requester(crequester.id, 1);
-                crequester.kind = allhosps[i].f11bc;
-                crequester.unknown9 = room_info[allhosps[i].edited_room].f8;
+                crequester.kind = allhosps[i].build.room_type;
+                crequester.arg3 = room_info[allhosps[i].edited_room].pos_lo;
                 crequester.mode = 3;
                 crequester.item = req_indices[0];
                 pmenu.disabled = 0;
@@ -1160,23 +1184,23 @@ void process_turn(void)
             employee->orders &= 0xf0;
             employee->orders |= 2;
             break;
-        case 0x61:
+        case EV_ORDER_LEAVE_ROOM:
             employee = &thing[D_001549d0[i].value];
             employee->orders &= 0xf0;
-            employee->orders |= 8;
+            employee->orders |= ORD_LEAVE_ROOM;
             break;
-        case 0x62:
+        case EV_OPEN_FURNISH_CORRIDOR:
             if (i == player) {
-                cancel_top_level_requesters(10);
-                if (crequester.id == 0x63) {
+                cancel_top_level_requesters(REQ_BUY_OBJECTS);
+                if (crequester.id == REQ_NONE) {
                     crequester.arg = 1;
                     set_buyable_items(3);
                     close_irequesters();
-                    crequester.id = 10;
+                    crequester.id = REQ_BUY_OBJECTS;
                     open_requester(crequester.id, 1);
                     allhosps[i].edited_room = 0;
                     crequester.kind = 3;
-                    crequester.unknown9 = 0;
+                    crequester.arg3 = 0;
                     crequester.mode = 3;
                     crequester.item = req_indices[0];
                     pmenu.disabled = 1;
@@ -1188,28 +1212,28 @@ void process_turn(void)
                 req11_sell_object(D_001549d0[i].value, D_001549d0[i].arg);
             }
             break;
-        case 0x64:
+        case EV_CANCEL_BUY_OBJECTS:
             if (i == player) {
-                close_crequester(10);
+                close_crequester(REQ_BUY_OBJECTS);
                 close_irequesters();
                 set_mouse_sprite(othervar.prev_pointer_sprite);
                 pmenu.disabled = 0;
             }
             break;
-        case 0x65:
+        case EV_CHEAT_END_MONTH:
             mycontrol->day = calendar[mycontrol->month] - 1;
             break;
-        case 0x66:
+        case EV_TAKE_LOAN:
             change_balance(TX_BANK_LOAN, 5000, 0, i);
             allhosps[i].loan += 5000;
             break;
-        case 0x67:
+        case EV_REPAY_LOAN:
             if (allhosps[i].balance >= 5000 && allhosps[i].balance > 0) {
                 change_balance(TX_LOAN_REPAYMENT, -5000, 0, i);
                 allhosps[i].loan -= 5000;
             }
             break;
-        case 0x57:
+        case EV_REFER_TO_PLAYER:
             patient = &thing[D_001549d0[i].value];
             allhosps[patient->owner].rooms[patient->illness].turned_away++;
             if (patient->flags0 & PF_CONTAGIOUS) {
@@ -1218,10 +1242,10 @@ void process_turn(void)
             refer_patient(patient, D_001549d0[i].arg);
             if (i == player) {
                 close_query(1);
-                play_sound(10, SFX_SACK, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SACK, -1, -1);
             }
             break;
-        case 0x68:
+        case EV_PICK_UP_STAFF:
             employee = &thing[D_001549d0[i].value];
             allhosps[i].held_staff = D_001549d0[i].value;
             if (!(employee->orders & ORD_RESIGN)) {
@@ -1237,18 +1261,18 @@ void process_turn(void)
         case EV_STAFF_PICKED_UP:
             staff_picked_up(&thing[D_001549d0[i].value]);
             break;
-        case 0x6a: {
+        case EV_SHOOT_RAT: {
             Thing *rat = &thing[D_001549d0[i].value];
 
             switch (D_001549d0[i].argb[0]) {
             case 1:
                 if (i == player) {
-                    play_sound(10, SFX_UZIBRST, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
+                    play_sound(SNDSRC_GENERAL, SFX_UZIBRST, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
                 break;
             case 2:
                 if (i == player) {
-                    play_sound(10, SFX_ROCKET, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
+                    play_sound(SNDSRC_GENERAL, SFX_ROCKET, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
                 break;
             case 3:
@@ -1256,7 +1280,7 @@ void process_turn(void)
                 break;
             default:
                 if (i == player) {
-                    play_sound(10, SFX_SHOTGUN, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
+                    play_sound(SNDSRC_GENERAL, SFX_SHOTGUN, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
                 break;
             }
@@ -1265,7 +1289,7 @@ void process_turn(void)
             if (D_001549d0[i].argb[1]) {
                 award_counts.rats_killed++;
                 if (i == player) {
-                    play_sound(10, SFX_DEADRAT2, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
+                    play_sound(SNDSRC_GENERAL, SFX_DEADRAT2, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
                 create_numfx(NUMFX_NUMBER, ++allhosps[i].rats_killed, rat->x.tile + (rat->y.tile << 7), color.dark_blue, 0x20);
                 place_litter(rat->x.tile + (rat->y.tile << 7), (s8)rat->owner, 4);
@@ -1273,30 +1297,30 @@ void process_turn(void)
             }
             break;
         }
-        case 0x6b:
+        case EV_REFUSE_STAFF_DEMAND:
             employee = &thing[D_001549d0[i].value];
             if (employee > thing) {
                 if (old_newrand() % (employee->resign_count + 1)) {
                     sack_staff(&thing[D_001549d0[i].value], 1);
                 } else {
-                    employee->orders &= 0xdf;
+                    employee->orders &= ~ORD_RESIGN;
                     advisor.event_flags &= 0xfe;
                     employee->discontent = 0;
                     reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
                 }
                 if (i == player) {
-                    display_mode = 0;
-                    close_crequester(0xc);
+                    display_mode = DM_GAME;
+                    close_crequester(REQ_STAFF_DEMAND);
                     close_irequesters();
                     window.current_window = 0;
                 }
                 pmenu.disabled = 0;
             }
             break;
-        case 0x6c:
+        case EV_RAISE_STAFF_SALARY:
             employee = &thing[D_001549d0[i].value];
             if (employee > thing) {
-                employee->orders &= 0xdf;
+                employee->orders &= ~ORD_RESIGN;
                 advisor.event_flags &= 0xfe;
                 employee->salary += D_001549d0[i].arg;
                 employee->happiness = 100;
@@ -1304,17 +1328,17 @@ void process_turn(void)
                 reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
             }
             if (i == player) {
-                display_mode = 0;
-                close_crequester(0xc);
+                display_mode = DM_GAME;
+                close_crequester(REQ_STAFF_DEMAND);
                 close_irequesters();
                 window.current_window = 0;
                 pmenu.disabled = 0;
             }
             break;
-        case 0x6d:
+        case EV_GIVE_STAFF_BONUS:
             employee = &thing[D_001549d0[i].value];
             if (employee > thing) {
-                employee->orders &= 0xdf;
+                employee->orders &= ~ORD_RESIGN;
                 advisor.event_flags &= 0xfe;
                 pay_staff_bonus(employee, D_001549d0[i].arg, 0, 1, i);
                 employee->happiness = 100;
@@ -1322,14 +1346,14 @@ void process_turn(void)
                 reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
             }
             if (i == player) {
-                display_mode = 0;
-                close_crequester(0xc);
+                display_mode = DM_GAME;
+                close_crequester(REQ_STAFF_DEMAND);
                 close_irequesters();
                 window.current_window = 0;
                 pmenu.disabled = 0;
             }
             break;
-        case 0x6e: {
+        case EV_PRICE_UP: {
             int illness = D_001549d0[i].arg;
             int max_price = max_price_for_treatment(illness, i);
 
@@ -1344,7 +1368,7 @@ void process_turn(void)
             }
             break;
         }
-        case 0x6f: {
+        case EV_PRICE_DOWN: {
             int illness = D_001549d0[i].arg;
             int max_price = max_price_for_treatment(illness, i);
 
@@ -1365,7 +1389,7 @@ void process_turn(void)
                 return_from_screen(D_001549d0[i].value, 1, 1);
             }
             break;
-        case 0x71:
+        case EV_SET_POLICY:
             switch (D_001549d0[i].value) {
             case 1:
                 if (D_001549d0[i].arg <= allhosps[i].guess_cure_threshold) {
@@ -1392,7 +1416,7 @@ void process_turn(void)
                 break;
             }
             break;
-        case 0x72:
+        case EV_CONCENTRATE_RESEARCH:
             if (D_001549d0[i].value == (statvar.num_players > 1 ? allhosps[i].hospital_open : gamevar.research_illness)) {
                 if (statvar.num_players > 1) {
                     allhosps[i].hospital_open = 0;
@@ -1424,24 +1448,24 @@ void process_turn(void)
             thingpage_request(&allhosps[i].repair_pager, D_001549d0[i].value, 0xff);
             set_icon_value(&thing[D_001549d0[i].value], ICON_NEEDS_REPAIR);
             break;
-        case 0x77:
+        case EV_OPEN_YES_NO:
             if (i == player) {
                 if (othervar.screen_pic_loaded) {
                     return_from_screen(0, 1, 1);
                 }
                 othervar.yesno_saved_mouse_mode = gamevar.mouse_mode;
-                display_mode = 0xb;
+                display_mode = DM_MODAL;
                 close_irequesters();
                 othervar.yesno_saved_requester = crequester.id;
-                if (crequester.id != 0x63) {
+                if (crequester.id != REQ_NONE) {
                     close_crequester(crequester.id);
                 }
-                crequester.id = 4;
+                crequester.id = REQ_YES_NO;
                 open_requester(crequester.id, 1);
                 pmenu.disabled = 1;
             }
             break;
-        case 0x78:
+        case EV_CLOSE_YES_NO:
             if (i == player) {
                 close_yes_no_requester((u8)D_001549d0[i].value);
                 if (othervar.no_arg) {
@@ -1454,22 +1478,22 @@ void process_turn(void)
             close_yes_no_requester(0);
             clear_build_objects(i);
             delete_blueprint_room(i);
-            D_001549d0[i].type = 0x38;
+            D_001549d0[i].type = EV_CANCEL_BUILD;
             D_001549d0[i].arg = gamevar.mouse_mode;
             goto dispatch;
-        case 0x7b:
+        case EV_CANCEL_EDIT_ROOM:
             fn_0002994c(i);
-            D_001549d0[i].type = 0x38;
+            D_001549d0[i].type = EV_CANCEL_BUILD;
             D_001549d0[i].value = 0;
             goto dispatch;
         case EV_REFER_PATIENT:
             refer_patient(&thing[D_001549d0[i].value], D_001549d0[i].arg);
             break;
-        case 0x7d: {
+        case EV_CHOICE_RESULT: {
             u8 quiet = 0;
 
             switch (D_001549d0[i].value) {
-            case 0:
+            case CH_TREAT_SEND_HOME:
                 patient = &thing[D_001549d0[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = 0;
@@ -1481,10 +1505,10 @@ void process_turn(void)
                     patient->playercall = 0;
                 }
                 break;
-            case 1:
+            case CH_TREAT_WAIT:
                 patient = &thing[D_001549d0[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
-                    patient->flags0 &= 0xef;
+                    patient->flags0 &= ~PF_AWAITING_DECISION;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
                     patient->flags0 |= PF_WAITING_FOR_ROOM;
                     patient->timer = othervar.cur_turn;
@@ -1493,11 +1517,11 @@ void process_turn(void)
                     patient->playercall = 0;
                 }
                 break;
-            case 2:
+            case CH_TREAT_RESEARCH:
                 patient = &thing[D_001549d0[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = ILL_AUTOPSY;
-                    patient->flags0 &= 0xef;
+                    patient->flags0 &= ~PF_AWAITING_DECISION;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
                     patient->state = PS_GO_FOR_TREATMENT;
                 }
@@ -1505,42 +1529,42 @@ void process_turn(void)
                     patient->playercall = 0;
                 }
                 break;
-            case 0xa:
+            case CH_EPIDEMIC_DECLARE:
                 count_and_flag_contagious_peeps(allhosps[i].epidemic_illness, 2, i);
                 allhosps[i].epidemic_illness = 0;
                 allhosps[i].epidemic_active = 0;
                 change_balance(TX_EPIDEMIC_FINE, -allhosps[i].epidemic_fine, 0, i);
-                reputation_affected(0, 0xe, 0, i, 0);
+                reputation_affected(0, REP_EPIDEMIC_DECLARED, 0, i, 0);
                 if (i == player) {
-                    play_sound(10, 0xce, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_EPIDEMIC_END, -1, -1);
                 }
                 break;
-            case 0xb:
+            case CH_EPIDEMIC_COVER_UP:
                 count_and_flag_contagious_peeps(allhosps[i].epidemic_illness, 1, i);
                 allhosps[i].epidemic_active = 1;
                 allhosps[i].epidemic_timer = 100;
                 if (i == player) {
-                    play_sound(10, 0xcd, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_EPIDEMIC_START, -1, -1);
                 }
                 quiet = D_001549d0[i].arg;
                 break;
-            case 0x15:
+            case CH_VIP_REFUSE:
                 allhosps[i].mayor_state = 0;
                 break;
-            case 0x14:
+            case CH_VIP_ACCEPT:
                 allhosps[i].mayor_arrival_turn = actual_game_turn + 1500;
                 allhosps[i].mayor_state = 2;
                 break;
-            case 0x1e:
+            case CH_EMERGENCY_REFUSE:
                 if (statvar.num_players > 1) {
                     restore_popup(2);
                 }
                 break;
-            case 0x1f:
-                give_emergency_stats(D_0015f5c2[player].f0, i);
-                D_001549d0[i].type = 0x4a;
+            case CH_EMERGENCY_ACCEPT:
+                give_emergency_stats(D_0015f5c2[player].call, i);
+                D_001549d0[i].type = EV_START_EMERGENCY;
                 goto dispatch;
-            case 0x28:
+            case CH_DIAG_SEND_HOME:
                 patient = &thing[D_001549d0[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = 0;
@@ -1552,10 +1576,10 @@ void process_turn(void)
                     patient->playercall = 0;
                 }
                 break;
-            case 0x29:
+            case CH_DIAG_GUESS:
                 patient = &thing[D_001549d0[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
-                    patient->flags0 &= 0xef;
+                    patient->flags0 &= ~PF_AWAITING_DECISION;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
                     interrupt_complex(patient);
                     best_guess_treatment(patient);
@@ -1565,10 +1589,10 @@ void process_turn(void)
                     patient->playercall = 0;
                 }
                 break;
-            case 0x2a:
+            case CH_DIAG_WAIT:
                 patient = &thing[D_001549d0[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
-                    patient->flags0 &= 0xef;
+                    patient->flags0 &= ~PF_AWAITING_DECISION;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
                     patient->flags0 |= PF_WAITING_FOR_ROOM;
                     patient->timer = othervar.cur_turn;
@@ -1586,7 +1610,7 @@ void process_turn(void)
             }
             break;
         }
-        case 0x7e:
+        case EV_LEAVE_NET_GAME:
             finish_composite_help();
             switch (D_001549d0[i].value) {
             case 0:
@@ -1608,8 +1632,8 @@ void process_turn(void)
                                 sack_staff(o, 0);
                                 break;
                             case THING_PATIENT:
-                                if (!(map[(s16)o->x.tile + ((s16)o->y.tile << 7)].owner_flags & 0x10)) {
-                                    o->flags0 &= 0xdf;
+                                if (!(map[(s16)o->x.tile + ((s16)o->y.tile << 7)].owner_flags & MAP_OUTDOOR)) {
+                                    o->flags0 &= ~PF_CONTAGIOUS;
                                     o->contagion = 0;
                                     o->flags1 |= (PF_SENT_HOME_BY_INSPECTOR >> 8);
                                 }
@@ -1646,21 +1670,21 @@ void process_turn(void)
                 break;
             }
             break;
-        case 0x7f:
+        case EV_PATIENT_WAITS_FOR_ROOM:
             patient = &thing[D_001549d0[i].value];
-            patient->flags0 &= 0xef;
+            patient->flags0 &= ~PF_AWAITING_DECISION;
             reset_icon_value(patient, ICON_AWAITING_DECISION);
             patient->flags0 |= PF_WAITING_FOR_ROOM;
             patient->timer = othervar.cur_turn;
             break;
-        case 0x80:
+        case EV_PATIENT_TO_RESEARCH:
             patient = &thing[D_001549d0[i].value];
             patient->treatment = ILL_AUTOPSY;
-            patient->flags0 &= 0xef;
+            patient->flags0 &= ~PF_AWAITING_DECISION;
             reset_icon_value(patient, ICON_AWAITING_DECISION);
             patient->state = PS_GO_FOR_TREATMENT;
             break;
-        case 0x81:
+        case EV_POACH_STAFF:
             employee = &thing[D_001549d0[i].value];
             if (employee > thing) {
                 employee->poach_offers = 1 << (u8)i;
@@ -1670,7 +1694,7 @@ void process_turn(void)
             patient = &thing[D_001549d0[i].value];
             if (patient->flags0 & PF_VACCINE_REQUESTED) {
                 if (i == player) {
-                    play_sound(10, SFX_DEVACCIN, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_DEVACCIN, -1, -1);
                 }
                 cancel_vaccination_request(patient);
                 if (patient->flags0 & PF_CONTAGIOUS) {
@@ -1678,26 +1702,26 @@ void process_turn(void)
                 }
             } else {
                 if (i == player) {
-                    play_sound(10, SFX_VACCIN, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_VACCIN, -1, -1);
                 }
                 request_vaccination(patient);
             }
             break;
-        case 0x83:
-            room_info[allhosps[i].edited_room].state = 4;
+        case EV_SETUP_PLACE_OBJECT_REQUESTER:
+            room_info[allhosps[i].edited_room].state = RS_EDITED;
             room_info[allhosps[i].edited_room].being_edited = 0;
             if (i == player) {
                 setup_place_object_requester();
                 set_mouse_mode(MM_NORMAL);
             }
             break;
-        case 0x84:
+        case EV_CLOSE_QUEUE_WINDOW:
             if (i == player) {
                 othervar.queue_pos = 0;
                 othervar.queue_hilight_thing = 0;
-                display_mode = 0;
+                display_mode = DM_GAME;
                 close_irequesters();
-                close_crequester(6);
+                close_crequester(REQ_QUEUE);
                 window.current_window = 0;
                 set_mouse_mode(MM_NORMAL);
                 pmenu.disabled = 0;
@@ -1708,7 +1732,7 @@ void process_turn(void)
         case EV_FORCE_CURE:
             force_peep_to_be_cured(&thing[D_001549d0[i].value]);
             break;
-        case 0x87:
+        case EV_RETURN_TO_THING_WINDOW:
             if (othervar.cur_player == player) {
                 lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
                 return_from_screen(D_001549d0[i].value, 1, 1);
@@ -1722,41 +1746,41 @@ void process_turn(void)
                         switch (obj->type) {
                         case THING_PATIENT:
                             slot = 1;
-                            D_001581b2[slot].kind = 2;
-                            D_001581b2[slot].f4 = 1;
-                            D_001581b2[slot].f6 = 0;
+                            D_001581b2[slot].kind = REQ_PATIENT;
+                            D_001581b2[slot].show_graph = 1;
+                            D_001581b2[slot].toggle_delay = 0;
                             kind = 0x22;
                             break;
                         case THING_STAFF:
                             switch (obj->subtype) {
                             case STAFF_HANDYMAN:
                                 slot = 2;
-                                D_001581b2[slot].kind = 1;
+                                D_001581b2[slot].kind = REQ_HANDYMAN;
                                 kind = 0x21;
                                 break;
                             default:
                                 slot = 2;
-                                D_001581b2[slot].kind = 0;
+                                D_001581b2[slot].kind = REQ_STAFF;
                                 kind = 0x20;
                                 break;
                             }
                             break;
                         case THING_OBJECT:
                             slot = 3;
-                            D_001581b2[slot].kind = 3;
+                            D_001581b2[slot].kind = REQ_MACHINE;
                             break;
                         }
                     }
                     if (slot) {
                         close_irequesters();
-                        cancel_top_level_requesters(0x63);
-                        if (crequester.id != 0x63) {
+                        cancel_top_level_requesters(REQ_NONE);
+                        if (crequester.id != REQ_NONE) {
                             break;
                         }
                         othervar.irequester_slot = slot;
                         open_requester(D_001581b2[slot].kind, 1);
                         D_001581b2[slot].value = D_001549d0[i].arg;
-                        set_mouse_sprite(1);
+                        set_mouse_sprite(PTR_DEFAULT);
                     }
                     if (kind) {
                         int x = resvars.window_list[slot].x;
@@ -1769,7 +1793,7 @@ void process_turn(void)
                 }
             }
             break;
-        case 0x88:
+        case EV_CANCEL_SACK:
             if (i == player) {
                 Thing *obj;
                 int kind = 0;
@@ -1786,12 +1810,12 @@ void process_turn(void)
                     switch (obj->subtype) {
                     case STAFF_HANDYMAN:
                         slot = 2;
-                        D_001581b2[slot].kind = 1;
+                        D_001581b2[slot].kind = REQ_HANDYMAN;
                         kind = 0x21;
                         break;
                     default:
                         slot = 2;
-                        D_001581b2[slot].kind = 0;
+                        D_001581b2[slot].kind = REQ_STAFF;
                         kind = 0x20;
                         break;
                     }
@@ -1801,7 +1825,7 @@ void process_turn(void)
                     othervar.irequester_slot = slot;
                     open_requester(D_001581b2[slot].kind, 1);
                     D_001581b2[slot].value = D_001549d0[i].value;
-                    set_mouse_sprite(1);
+                    set_mouse_sprite(PTR_DEFAULT);
                 }
                 if (kind) {
                     int x = resvars.window_list[slot].x;
@@ -1811,10 +1835,10 @@ void process_turn(void)
                     othervar.track_window[slot] = window.window_count - 1;
                     window.current_window = 0;
                 }
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             }
             break;
-        case 0x89:
+        case EV_CHEAT_END_YEAR:
             mycontrol->month = 0xb;
             mycontrol->day = calendar[mycontrol->month] - 2;
             break;
@@ -1830,10 +1854,10 @@ void process_turn(void)
                 allhosps[i].hospital_open = 1;
             }
             if (i != player) {
-                announce_this(0xc, i);
+                announce_this(ANN_RIVAL_OPENED, i);
             }
             break;
-        case 0x8c:
+        case EV_CLOSE_SAVE_YES_NO:
             if (i == player) {
                 close_yes_no_requester((u8)D_001549d0[i].value);
                 if (othervar.no_arg) {
@@ -1846,14 +1870,14 @@ void process_turn(void)
                 check_save_games();
             }
             break;
-        case 0x90:
+        case EV_NET_WIN:
             if (i == player) {
                 othervar.net_result = 0;
             } else {
                 othervar.net_result = 1;
             }
             break;
-        case 0x91:
+        case EV_RESTART_LEVEL:
             close_yes_no_requester(0);
             restart_level();
             break;
@@ -2033,7 +2057,7 @@ s16 load_game(s8 slot, s8 port)
     if (port == -1) {
         reset_earthquake_variables();
         close_irequesters();
-        if (crequester.id != 0x63) {
+        if (crequester.id != REQ_NONE) {
             close_crequester(crequester.id);
         }
         if (load_level(level_number, 1)) {
@@ -2203,7 +2227,7 @@ s8 load_level(const u8 lvl, const u8 full)
                 for (j = 0; j < 4; j++) {
                     for (; room < end_room_info; room++) {
                         if (room->type == ROOM_FREE) {
-                            room->type = 1;
+                            room->type = ROOM_ENTRANCE;
                             switch (j) {
                             case 0:
                                 room->pos = room->door_tile = room->door_inside_tile = level->entrances[i][0];
@@ -2251,7 +2275,7 @@ void free_level(void)
 }
 
 // Returns the game state checksum compared between network players: the
-// random seed plus each active hospital's allhosps.f11c2 entries.
+// random seed plus each active hospital's allhosps.build.objects entries.
 // FUNCTION: 0x00022790
 u32 check_sum(void)
 {
@@ -2264,7 +2288,7 @@ u32 check_sum(void)
     for (i = 0; i < 4; i++) {
         if (D_001609c4[i].active) {
             for (j = 0; j < 20; j++) {
-                sum += allhosps[i].f11c2[j];
+                sum += allhosps[i].build.objects[j];
             }
         }
     }
@@ -2358,7 +2382,7 @@ void restart_level(void)
         reset_earthquake_variables();
         reset_advisor();
         close_irequesters();
-        if (crequester.id != 0x63) {
+        if (crequester.id != REQ_NONE) {
             close_crequester(crequester.id);
         }
         D_00156910 = 1;

@@ -70,7 +70,7 @@ void InitAudio(AudioInitOptions *ao)
         SoundProgressLog(SoundProgressMessage);
     }
     if (getenv("BF_FORCE_REDBOOK_DISABLE")) {
-        ao->unknown19 = 0;
+        ao->InitRedbookAudio = 0;
         sprintf(SoundProgressMessage, "System override - ForceRedbookDisable \n");
         SoundProgressLog(SoundProgressMessage);
     }
@@ -168,16 +168,16 @@ void InitAudio(AudioInitOptions *ao)
     SoundProgressLog(SoundProgressMessage);
     sprintf(SoundProgressMessage, "BF2  - SA   %d\n", SoundAble);
     SoundProgressLog(SoundProgressMessage);
-    if (!(ao->InitRedbookAudio & 1) && !ForceMidiPlaybackOverride)
+    if (!(ao->AbleFlags & 1) && !ForceMidiPlaybackOverride)
         MusicAble = 0;
-    if (!(ao->InitRedbookAudio & 2) && !ForceSoundPlaybackOverride)
+    if (!(ao->AbleFlags & 2) && !ForceSoundPlaybackOverride)
         SoundAble = 0;
     InitSound();
     InitMusic();
     InitAllBullfrogSoundTimers();
-    if (ao->unknown18 == 1)
+    if (ao->InitStreamedSound == 1)
         InitStreamedSound();
-    if (ao->unknown19 == 1)
+    if (ao->InitRedbookAudio == 1)
         InitRedbook();
     sprintf(SoundProgressMessage, "BF54 - MA   %d\n", MusicAble);
     SoundProgressLog(SoundProgressMessage);

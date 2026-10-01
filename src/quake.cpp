@@ -11,8 +11,8 @@ extern QuakeControl quake_control[];
 
 void setup_next_quake(void);
 void do_earthquake(void);
-void disaster_peeps(u8 kind, s8 owner);
-u8 modify_machine(Thing *w);
+void disaster_peeps(u8 mode, s8 owner);
+u8 modify_machine(Thing *machine);
 
 extern "C" {
 
@@ -110,7 +110,7 @@ void do_earthquake(void)
             if (objects[obj->subtype].overlay_anim) {
             if (statvar.num_players > 1) {
                 room = &room_info[obj->room_id];
-                if (room > room_info && (room->state == 4 || room->being_edited)) {
+                if (room > room_info && (room->state == RS_EDITED || room->being_edited)) {
                     continue;
                 }
             } else {

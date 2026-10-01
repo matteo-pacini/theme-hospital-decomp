@@ -15,15 +15,15 @@ struct NetBox {
 struct GlassBox {
     s16 x;
     s16 y;
-    s16 w;
-    s16 h;
+    s16 x1;
+    s16 y1;
     u16 f8;
     u8 unknownA[4];
-    u8 fe;
-    u8 ff;
-    u8 f10;
+    u8 type;
+    u8 button;
+    u8 steps;
     u8 unknown11;
-    u8 f12;
+    u8 origin;
     u8 unknown13;
 };
 
@@ -37,10 +37,15 @@ struct NetPlayer {
     char name[0x14];
 };
 
+/*
+ * The levels of a network game read from levels/net<n>.dat (net_control).
+ */
 struct NetControl {
     u8 unknown0;
     u8 unknown1[3];
-    s8 f4;
+    // 0x4: Number of levels read, -1 if none.
+    s8 level_count;
+    // 0x5: The levels: number, title and name.
     NetPlayer players[6];
 };
 
@@ -51,9 +56,9 @@ struct LoginPlayer {
 
 struct LoginControl {
     u8 unknown0[0x17];
-    u8 f17;
+    u8 state;
     u8 unknown18[7];
-    u8 f1f;
+    u8 player_scroll;
     u16 f20;
     LoginPlayer players[4];
 };
@@ -74,9 +79,9 @@ struct BalanceFileInfo {
 struct ScreenPacket {
     u8 unknown0[4];
     u8 f4;
-    u8 f5;
+    u8 command;
     u8 f6;
-    u8 f7;
+    u8 key;
     u16 f8;
     u16 fa;
     u16 fc;
@@ -98,9 +103,9 @@ extern s8 BookIndex;
 extern char ConnectMessage[];
 void draw_modem_selection_screen(void);
 void draw_serial_selection_screen(void);
-void draw_available_ports(u8 flag);
-void draw_available_bauds(u8 flag);
-void draw_active_session(u8 a);
+void draw_available_ports(u8 modem);
+void draw_available_bauds(u8 modem);
+void draw_active_session(u8 com_panel);
 void draw_available_irqs(void);
 #pragma aux draw_available_irqs "W?draw_available_irqs$n()v"
 
@@ -147,16 +152,16 @@ extern char PhoneNumber[];
 extern s32 RestoreDisplay;
 
 char *read_line_from_buf(char *line, s32 max, char *src);
-s8 add_glass_box(GlassBox *box, s32 id, s8 a, s8 b);
-void add_glass_frame(GlassFrame *frame, s32 id);
-s16 glass_index(s32 id);
+s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay);
+void add_glass_frame(GlassFrame *frames, s32 mask);
+s16 glass_index(s32 mask);
 void network_read_control(u8 n);
 void set_glass_map(s32 mask);
 void reset_glass_map(s32 mask);
 void display_button_text(s32 mask);
 void calculate_grey(u8 *palette);
 void init_zoom_boxes(s32 mask);
-u8 setup_balance_files(u8 a);
+u8 setup_balance_files(u8 net_game);
 s32 next_map(void);
 s8 draw_zoom_boxes(void);
 void free_balance_files(void);
@@ -166,9 +171,9 @@ void init_network_players(void);
 long keybuffer_get(void);
 u8 what_key_is_it_really(u8 key);
 void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style);
-void draw_glass_text(SlistButton *b, char *text);
-void draw_glass_text_hilight(SlistButton *b, char *text);
-void draw_glass_text_hilight_no_jump(SlistButton *b, char *text);
+void draw_glass_text(SlistButton *button, char *text);
+void draw_glass_text_hilight(SlistButton *button, char *text);
+void draw_glass_text_hilight_no_jump(SlistButton *button, char *text);
 void draw_network_game_selection_screen(void);
 void draw_current_message(char *text);
 void draw_message_box(void);
@@ -181,7 +186,7 @@ void process_login_exchange(void);
 void draw_phone_numbers(void);
 void network_button_quit(void);
 u8 send_message(void);
-s16 button_index(s32 id);
+s16 button_index(s32 mask);
 void add_number(char c);
 void add_phone_number(char *number);
 
@@ -275,31 +280,31 @@ void set_glass_map(s32 mask)
             network_read_control(network_num_players());
             set_font_from_cache(0x22);
             box.x = resvars.screen_boxes_NetBoxp[126].x;
-            box.h = (s16)resvars.screen_boxes_NetBoxp[126].h * net_control.f4 + 0x17;
-            box.y = (lbDisplay.graphics_screen_height - box.h) / 2;
-            box.h += box.y;
-            box.w = box.x + resvars.screen_boxes_NetBoxp[126].w;
+            box.y1 = (s16)resvars.screen_boxes_NetBoxp[126].h * net_control.level_count + 0x17;
+            box.y = (lbDisplay.graphics_screen_height - box.y1) / 2;
+            box.y1 += box.y;
+            box.x1 = box.x + resvars.screen_boxes_NetBoxp[126].w;
             box.f8 = 0x27;
-            box.fe = 0;
-            box.ff = 0;
-            box.f10 = 7;
-            box.f12 = 1;
+            box.type = 0;
+            box.button = 0;
+            box.steps = 7;
+            box.origin = 1;
             add_glass_box(&box, 0x1000, 0, 0);
             box.x += resvars.screen_boxes_NetBoxp[126].y;
             box.y += 0xd;
-            box.h = box.y + resvars.screen_boxes_NetBoxp[126].h - 3;
-            box.w = box.x + resvars.screen_boxes_NetBoxp[126].w - resvars.screen_boxes_NetBoxp[126].y * 2;
-            box.fe = 1;
-            box.ff = 1;
-            box.f12 = 0;
-            for (i = 0; i < net_control.f4; i++) {
+            box.y1 = box.y + resvars.screen_boxes_NetBoxp[126].h - 3;
+            box.x1 = box.x + resvars.screen_boxes_NetBoxp[126].w - resvars.screen_boxes_NetBoxp[126].y * 2;
+            box.type = 1;
+            box.button = 1;
+            box.origin = 0;
+            for (i = 0; i < net_control.level_count; i++) {
                 resvars.screen_buttons[i + 0x8c].x = box.x;
                 resvars.screen_buttons[i + 0x8c].y = box.y;
-                resvars.screen_buttons[i + 0x8c].width = box.w;
-                resvars.screen_buttons[i + 0x8c].height = box.h;
+                resvars.screen_buttons[i + 0x8c].width = box.x1;
+                resvars.screen_buttons[i + 0x8c].height = box.y1;
                 add_glass_box(&box, 0x1000, i * 3, i * 3);
                 box.y += resvars.screen_boxes_NetBoxp[126].h;
-                box.h += resvars.screen_boxes_NetBoxp[126].h;
+                box.y1 += resvars.screen_boxes_NetBoxp[126].h;
             }
             resvars.screen_buttons[i + 0x8c].x = 0;
             resvars.screen_buttons[i + 0x8c].y = 0;
@@ -336,7 +341,7 @@ void toggle_glass_map(s32 mask)
 }
 
 // Runs one frame of the network game screen's state machine
-// (network.unknown2): sets up the screen, zooms panels in and out, draws them,
+// (network.state): sets up the screen, zooms panels in and out, draws them,
 // and once a session starts (state 1) loads the level and enters the game.
 // FUNCTION: 0x0007ff88
 void draw_network_select(void)
@@ -349,12 +354,12 @@ void draw_network_select(void)
         statvar.num_players = 1;
         player = 0;
         return_from_screen(9, 0, 1);
-        load_ingame_pic(0xc, 1, 0x19, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_NETWORK_PREFS, 1, 0x19, 0, SCREEN_MODE_13);
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         calculate_grey(ppalette.data);
         keybuffer_clear();
         BufferedInkey = 0;
-        login_control.f17 = 6;
+        login_control.state = 6;
         lbDisplay.draw_colour = color.green;
         session_index = 0;
         init_zoom_boxes(0x84);
@@ -377,8 +382,8 @@ void draw_network_select(void)
                 statvar.num_players = 1;
                 player = 0;
                 network.state = 0;
-                display_mode = 2;
-                mainmenu.state = 0;
+                display_mode = DM_MAIN_MENU;
+                mainmenu.state = MMS_ENTER;
             }
             break;
         }
@@ -406,11 +411,11 @@ void draw_network_select(void)
         memset(packet, 0, 0x3c);
         memset(screen_packet, 0, 0x38);
         quit_game = 2;
-        display_mode = 0;
+        display_mode = DM_GAME;
         debug.f0 = 0;
         set_font_from_cache(0);
         lbDisplay.rleft_button = lbDisplay.left_button = 0;
-        login_control.f17 = 6;
+        login_control.state = 6;
         first_login_exchange = 0;
         clear_loading_screen(0);
         othervar.pending_palette = palette;
@@ -424,7 +429,7 @@ void draw_network_select(void)
         copy_screen_to_wscreen(bscreen);
         draw_zoom_boxes();
         display_button_text(CurrentDisplay);
-        if (login_control.f17 == 5) {
+        if (login_control.state == 5) {
             if (D_00160508 == player && !(CurrentDisplay & 0x100))
                 set_glass_map(0x100);
         }
@@ -481,7 +486,7 @@ void display_button_text(s32 mask)
             if (TopBaud >= 5)
                 lbDisplay.draw_flags |= 4;
             draw_glass_text(SLIST(107), downstr);
-            if (login_control.f17 == 5) {
+            if (login_control.state == 5) {
                 lbDisplay.draw_flags = 0;
                 draw_glass_text(SLIST(104), network_text[11]);
                 if (D_00160508 != player) {
@@ -517,20 +522,20 @@ void display_button_text(s32 mask)
                 }
             }
             lbDisplay.draw_flags = 0;
-            if (login_control.f17 != 5) {
+            if (login_control.state != 5) {
                 if (!BookIndex)
                     lbDisplay.draw_flags |= 4;
             } else {
-                if (login_control.f1f == 0)
+                if (login_control.player_scroll == 0)
                     lbDisplay.draw_flags |= 4;
             }
             draw_glass_text(SLIST(101), upstr);
             lbDisplay.draw_flags = 0;
-            if (login_control.f17 != 5) {
+            if (login_control.state != 5) {
                 if (BookIndex >= BookCount - 3)
                     lbDisplay.draw_flags |= 4;
             } else {
-                if (login_control.f1f >= player_count - 3)
+                if (login_control.player_scroll >= player_count - 3)
                     lbDisplay.draw_flags |= 4;
             }
             draw_glass_text(SLIST(102), downstr);
@@ -539,20 +544,20 @@ void display_button_text(s32 mask)
             break;
         case 0x20:
             lbDisplay.draw_flags = 0;
-            if (login_control.f17 != 5) {
+            if (login_control.state != 5) {
                 if (TopBaud == 0)
                     lbDisplay.draw_flags |= 4;
             } else {
-                if (login_control.f1f == 0)
+                if (login_control.player_scroll == 0)
                     lbDisplay.draw_flags |= 4;
             }
             draw_glass_text(SLIST(109), upstr);
             lbDisplay.draw_flags = 0;
-            if (login_control.f17 != 5) {
+            if (login_control.state != 5) {
                 if (TopBaud >= 5)
                     lbDisplay.draw_flags |= 4;
             } else {
-                if (login_control.f1f >= player_count - 3)
+                if (login_control.player_scroll >= player_count - 3)
                     lbDisplay.draw_flags |= 4;
             }
             draw_glass_text(SLIST(110), downstr);
@@ -565,7 +570,7 @@ void display_button_text(s32 mask)
                 lbDisplay.draw_flags |= 4;
             draw_glass_text(SLIST(114), downstr);
             lbDisplay.draw_flags = 0;
-            switch (login_control.f17) {
+            switch (login_control.state) {
             case 5:
                 draw_glass_text(SLIST(112), network_text[4]);
                 if (D_00160508 != player) {
@@ -598,23 +603,23 @@ void display_button_text(s32 mask)
             break;
         case 0x40:
             lbDisplay.draw_flags = 0;
-            if (login_control.f1f == 0)
+            if (login_control.player_scroll == 0)
                 lbDisplay.draw_flags |= 4;
             draw_glass_text(SLIST(120), upstr);
             lbDisplay.draw_flags = 0;
-            if (login_control.f1f >= player_count - 3)
+            if (login_control.player_scroll >= player_count - 3)
                 lbDisplay.draw_flags |= 4;
             draw_glass_text(SLIST(121), downstr);
             lbDisplay.draw_flags = 0;
-            if (TopSession == 0 || login_control.f17 == 5)
+            if (TopSession == 0 || login_control.state == 5)
                 lbDisplay.draw_flags |= 4;
             draw_glass_text(SLIST(118), upstr);
             lbDisplay.draw_flags = 0;
-            if (TopSession >= session_index - 3 || login_control.f17 == 5)
+            if (TopSession >= session_index - 3 || login_control.state == 5)
                 lbDisplay.draw_flags |= 4;
             draw_glass_text(SLIST(119), downstr);
             lbDisplay.draw_flags = 0;
-            switch (login_control.f17) {
+            switch (login_control.state) {
             case 5:
                 draw_glass_text(SLIST(116), network_text[4]);
                 break;
@@ -625,7 +630,7 @@ void display_button_text(s32 mask)
                     draw_glass_text(SLIST(116), network_text[1]);
                 break;
             }
-            switch (login_control.f17) {
+            switch (login_control.state) {
             case 5:
                 if (D_00160508 != player) {
                     lbDisplay.draw_flags |= 4;
@@ -700,7 +705,7 @@ void display_button_text(s32 mask)
             LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             break;
         case 0x1000:
-            for (i = 0; i < net_control.f4; i++)
+            for (i = 0; i < net_control.level_count; i++)
                 draw_glass_text(SLIST(i + 0x8c), net_control.players[i].name);
             draw_level_selection_screen();
             break;
@@ -833,7 +838,7 @@ void draw_available_irqs(void)
 // FUNCTION: 0x0008172c
 void draw_serial_selection_screen(void)
 {
-    switch (login_control.f17) {
+    switch (login_control.state) {
     case 5:
         draw_active_session(1);
         process_login_exchange();
@@ -861,7 +866,7 @@ void draw_serial_selection_screen(void)
 // FUNCTION: 0x000817c4
 void draw_modem_selection_screen(void)
 {
-    switch (login_control.f17) {
+    switch (login_control.state) {
     case 5:
         draw_active_session(1);
         process_login_exchange();
@@ -911,7 +916,7 @@ void add_number(char c)
     len = fn_000cd716(PhoneNumber);
     if (len < 12) {
         if (BufferedInkey)
-            play_sound(10, SFX_ENTANAME, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_ENTANAME, -1, -1);
         PhoneNumber[len++] = c;
         PhoneNumber[len] = 0;
     }
@@ -922,7 +927,7 @@ void add_number(char c)
 // FUNCTION: 0x00081958
 void process_report_buttons(u8 button)
 {
-    if (!(login_control.f17 == 9 || login_control.f17 == 8)) {
+    if (!(login_control.state == 9 || login_control.state == 8)) {
         set_glass_map(RestoreDisplay);
         reset_glass_map(8);
         network.state = 3;
@@ -938,30 +943,30 @@ void report_message(char *message)
 
     MessageText = message;
     set_font_from_cache(0x22);
-    box.w = LbTextStringWidth(message) + resvars.screen_boxes_NetBoxp[126].y * 4;
-    box.x = (lbDisplay.graphics_screen_width - box.w) / 2;
-    box.h = resvars.screen_boxes_NetBoxp[126].h + resvars.screen_boxes_NetBoxp[126].y * 2;
-    box.y = (lbDisplay.graphics_screen_height - box.h) / 2;
-    box.h += box.y;
-    box.w += box.x;
+    box.x1 = LbTextStringWidth(message) + resvars.screen_boxes_NetBoxp[126].y * 4;
+    box.x = (lbDisplay.graphics_screen_width - box.x1) / 2;
+    box.y1 = resvars.screen_boxes_NetBoxp[126].h + resvars.screen_boxes_NetBoxp[126].y * 2;
+    box.y = (lbDisplay.graphics_screen_height - box.y1) / 2;
+    box.y1 += box.y;
+    box.x1 += box.x;
     box.f8 = 0x27;
-    box.fe = 0;
-    box.ff = 0;
-    box.f10 = 10;
-    box.f12 = 1;
+    box.type = 0;
+    box.button = 0;
+    box.steps = 10;
+    box.origin = 1;
     add_glass_box(&box, 8, 0, 0);
     box.x += resvars.screen_boxes_NetBoxp[126].y;
     box.y += resvars.screen_boxes_NetBoxp[126].y;
-    box.w -= resvars.screen_boxes_NetBoxp[126].y;
-    box.h -= resvars.screen_boxes_NetBoxp[126].y;
+    box.x1 -= resvars.screen_boxes_NetBoxp[126].y;
+    box.y1 -= resvars.screen_boxes_NetBoxp[126].y;
     SLIST(147)->x = box.x;
     SLIST(147)->y = box.y;
-    SLIST(147)->x1 = box.w;
-    SLIST(147)->y1 = box.h;
-    box.fe = 1;
-    box.ff = 1;
-    box.f10 = 10;
-    box.f12 = 0;
+    SLIST(147)->x1 = box.x1;
+    SLIST(147)->y1 = box.y1;
+    box.type = 1;
+    box.button = 1;
+    box.steps = 10;
+    box.origin = 0;
     add_glass_box(&box, 8, 0, 0);
     RestoreDisplay = DesiredDisplay;
     DesiredDisplay = 8;
@@ -1022,20 +1027,20 @@ void process_keys_network_select(void)
             case KC_RETURN:
             case KC_NUMPADENTER:
                 BufferedInkey = 0;
-                play_sound(10, SFX_YESX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                 reset_glass_map(0x400);
                 add_phone_number(PhoneNumber);
                 break;
             case KC_ESCAPE:
                 BufferedInkey = 0;
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 reset_glass_map(0x400);
                 break;
             case KC_BACKSPACE:
             case KC_DECIMAL:
                 BufferedInkey = 0;
                 if (PhoneNumber[0]) {
-                    play_sound(10, SFX_DELANAME, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_DELANAME, -1, -1);
                     PhoneNumber[fn_000cd716(PhoneNumber) - 1] = 0;
                 }
                 break;
@@ -1045,7 +1050,7 @@ void process_keys_network_select(void)
         case KC_BACKSPACE:
         case KC_DECIMAL:
             if (BookHilight != -1) {
-                play_sound(10, SFX_DELANAME, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_DELANAME, -1, -1);
                 for (i = BookHilight; BookCount - 1 > i; i++)
                     fn_000c21e6(PhoneBook[i], PhoneBook[i + 1], 12);
                 memset(PhoneBook[i], 0, 12);
@@ -1057,7 +1062,7 @@ void process_keys_network_select(void)
             break;
         case KC_ESCAPE:
             if (!(CurrentDisplay & 0x200) || !login_control.players[player].len) {
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 network_button_quit();
                 BufferedInkey = 0;
             }
@@ -1173,7 +1178,7 @@ void process_network_buttons(u8 button)
 
     switch (button) {
     case 0:
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         if (CurrentDisplay & 0x40) {
             reset_glass_map(0x40);
         } else {
@@ -1187,7 +1192,7 @@ void process_network_buttons(u8 button)
         }
         break;
     case 1:
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         toggle_glass_map(0x20);
         if (DesiredDisplay & 0x20)
             set_glass_map(0x8000);
@@ -1195,7 +1200,7 @@ void process_network_buttons(u8 button)
             reset_glass_map(0x8000);
         break;
     case 2:
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         toggle_glass_map(0x10);
         if (DesiredDisplay & 0x10)
             set_glass_map(0x10000);
@@ -1203,7 +1208,7 @@ void process_network_buttons(u8 button)
             reset_glass_map(0x10000);
         break;
     case 3:
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         network_button_quit();
         break;
     }
@@ -1214,9 +1219,9 @@ void process_network_buttons(u8 button)
 // FUNCTION: 0x0008242c
 void process_level_buttons(u8 button)
 {
-    play_sound(10, SFX_SELECTX, -1, -1);
+    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
     level_number = net_control.players[button].level;
-    screen_packet[player].f5 = 2;
+    screen_packet[player].command = 2;
 }
 
 // IPX session panel buttons: 0 create a session (or leave one), 1 join the
@@ -1228,58 +1233,58 @@ void process_ipx_buttons(u8 button)
     switch (button) {
     case 2:
         if (TopSession) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             TopSession--;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 3:
         if (TopSession < session_index - 3) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             TopSession++;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 0:
-        switch (login_control.f17) {
+        switch (login_control.state) {
         case 5:
-            play_sound(10, SFX_NO4, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             network_button_quit();
             break;
         case 6:
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             if (network_button_create() == -1)
                 report_message(network_text[27]);
             break;
         }
         break;
     case 4:
-        if (login_control.f1f) {
-            play_sound(10, SFX_SELECTX, -1, -1);
-            login_control.f1f--;
+        if (login_control.player_scroll) {
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+            login_control.player_scroll--;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 5:
-        if (login_control.f1f < player_count - 3) {
-            play_sound(10, SFX_SELECTX, -1, -1);
-            login_control.f1f++;
+        if (login_control.player_scroll < player_count - 3) {
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+            login_control.player_scroll++;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 1:
-        switch (login_control.f17) {
+        switch (login_control.state) {
         case 5:
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             if (D_00160508 == player && player_count > 1)
-                screen_packet[player].f5 = 9;
+                screen_packet[player].command = 9;
             break;
         case 6:
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             if (hilighted_session != -1) {
                 if (network_button_join() == -1)
                     report_message(network_text[28]);
@@ -1300,18 +1305,18 @@ void process_message_buttons(u8 button)
         break;
     case 1:
         if (TopMessage) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             TopMessage--;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 2:
         if (TopMessage < NumMessages - 3) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             TopMessage++;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     }
@@ -1324,12 +1329,12 @@ void process_balance_buttons(u8 button)
     switch (button) {
     case 0:
         if (current_balance_file != current_balance_file->next)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         prev_balance_file();
         break;
     case 1:
         if (current_balance_file != current_balance_file->prev)
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         next_balance_file();
         break;
     }
@@ -1342,18 +1347,18 @@ void process_irq_buttons(u8 button)
     switch (button) {
     case 0:
         if (TopIRQ) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             TopIRQ--;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 1:
         if (TopIRQ < 4) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             TopIRQ++;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     }
@@ -1371,59 +1376,59 @@ void process_serial_buttons(u8 button)
 
     switch (button) {
     case 0:
-        if (login_control.f17 != 5) {
+        if (login_control.state != 5) {
             if (TopBaud) {
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 TopBaud--;
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
         } else {
-            if (login_control.f1f) {
-                play_sound(10, SFX_SELECTX, -1, -1);
-                login_control.f1f--;
+            if (login_control.player_scroll) {
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+                login_control.player_scroll--;
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
         }
         break;
     case 1:
-        if (login_control.f17 != 5) {
+        if (login_control.state != 5) {
             if (TopBaud < 5) {
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 TopBaud++;
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
         } else {
-            if (login_control.f1f < player_count - 3) {
-                play_sound(10, SFX_SELECTX, -1, -1);
-                login_control.f1f++;
+            if (login_control.player_scroll < player_count - 3) {
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+                login_control.player_scroll++;
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
         }
         break;
     case 4:
         if (TopPort) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             TopPort = 0;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 5:
         if (!TopPort) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             TopPort = 1;
         } else {
-            play_sound(10, SFX_WRONG2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         }
         break;
     case 2:
     case 3:
-        if (login_control.f17 != 5) {
-            play_sound(10, SFX_SELECTX, -1, -1);
+        if (login_control.state != 5) {
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             if (myplayer.serial_config[4] && (int)myplayer.serial_config[5] >= 0) {
                 service = NS_SERIAL;
                 bits = (s8)myplayer.serial_config[4] >> 1;
@@ -1461,12 +1466,12 @@ void process_serial_buttons(u8 button)
             }
         } else {
             if (button == 3) {
-                play_sound(10, SFX_NO4, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                 network_button_quit();
             } else {
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 if (D_00160508 == player && player_count > 1)
-                    screen_packet[player].f5 = 9;
+                    screen_packet[player].command = 9;
             }
         }
         break;
@@ -1487,62 +1492,62 @@ void process_modem_buttons(u8 button)
 
         switch (button) {
         case 0:
-            if (login_control.f17 != 5) {
+            if (login_control.state != 5) {
                 if (BookIndex) {
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     BookIndex--;
                 } else {
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 }
             } else {
-                if (login_control.f1f) {
-                    play_sound(10, SFX_SELECTX, -1, -1);
-                    login_control.f1f--;
+                if (login_control.player_scroll) {
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+                    login_control.player_scroll--;
                 } else {
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 }
             }
             break;
         case 1:
-            if (login_control.f17 != 5) {
+            if (login_control.state != 5) {
                 if (BookIndex < BookCount - 3) {
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     BookIndex++;
                 } else {
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 }
             } else {
-                if (login_control.f1f < player_count - 3) {
-                    play_sound(10, SFX_SELECTX, -1, -1);
-                    login_control.f1f++;
+                if (login_control.player_scroll < player_count - 3) {
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+                    login_control.player_scroll++;
                 } else {
-                    play_sound(10, SFX_WRONG2, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
                 }
             }
             break;
         case 5:
             if (TopBaud) {
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 TopBaud--;
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             if (TopPort)
                 TopPort = 0;
             break;
         case 6:
             if (TopBaud < 5) {
-                play_sound(10, SFX_SELECTX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 TopBaud++;
             } else {
-                play_sound(10, SFX_WRONG2, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
             }
             if (!TopPort)
                 TopPort = 1;
             break;
         case 2:
-            play_sound(10, SFX_SELECTX, -1, -1);
-            if (login_control.f17 != 5) {
+            play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
+            if (login_control.state != 5) {
                 if (!(CurrentDisplay & 0x400)) {
                     set_glass_map(0x400);
                     PhoneNumber[0] = 0;
@@ -1551,8 +1556,8 @@ void process_modem_buttons(u8 button)
             break;
         case 3:
         case 4:
-            if (login_control.f17 != 5) {
-                play_sound(10, SFX_SELECTX, -1, -1);
+            if (login_control.state != 5) {
+                play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 if (button == 3 && BookHilight == -1)
                     break;
                 reset_glass_map(0x400);
@@ -1691,12 +1696,12 @@ void process_modem_buttons(u8 button)
                 }
             } else {
                 if (button == 3) {
-                    play_sound(10, SFX_NO4, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
                     network_button_quit();
                 } else {
-                    play_sound(10, SFX_SELECTX, -1, -1);
+                    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     if (D_00160508 == player && player_count > 1)
-                        screen_packet[player].f5 = 9;
+                        screen_packet[player].command = 9;
                 }
             }
             break;
@@ -1709,7 +1714,7 @@ void process_modem_buttons(u8 button)
 // FUNCTION: 0x00083554
 void process_number_buttons(u8 button)
 {
-    play_sound(10, SFX_SELECTX, -1, -1);
+    play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
     switch (button) {
     case 0:
         add_number('1');
@@ -1799,7 +1804,7 @@ void draw_available_sessions(SessionInfo *sessions);
 // FUNCTION: 0x0008385c
 void draw_network_game_selection_screen(void)
 {
-    switch (login_control.f17) {
+    switch (login_control.state) {
     case 5:
         draw_active_session(0);
         process_login_exchange();
@@ -1826,7 +1831,7 @@ void draw_network_game_selection_screen(void)
 // FUNCTION: 0x000838e8
 void draw_report_selection_screen(void)
 {
-    switch (login_control.f17) {
+    switch (login_control.state) {
     case 9:
         process_login_exchange();
         break;
@@ -1843,7 +1848,7 @@ void draw_report_selection_screen(void)
 // FUNCTION: 0x00083944
 void draw_level_selection_screen(void)
 {
-    switch (login_control.f17) {
+    switch (login_control.state) {
     case 9:
         process_login_exchange();
         break;
@@ -1871,7 +1876,7 @@ void draw_message_box(void)
         draw_small_centre_text(resvars.screen_boxes_NetBoxp[121].x, resvars.screen_boxes_NetBoxp[121].w, y, NetMessageText[i]);
 }
 
-void update_message_box(u8 c, u8 flag, u8 from);
+void update_message_box(u8 key, u8 shift, u8 from);
 
 // Exchanges each player's screen_packet and acts on their requests: chat
 // keys, starting the game (all players), leaving the session, and opening the
@@ -1896,7 +1901,7 @@ void process_login_exchange(void)
         first_login_exchange = 1;
     }
     for (i = 0; i < 4; i++) {
-        switch (screen_packet[i].f5) {
+        switch (screen_packet[i].command) {
         case 1:
             break;
         case 5:
@@ -1907,21 +1912,21 @@ void process_login_exchange(void)
         case 6:
             break;
         case 7:
-            update_message_box(screen_packet[i].f7 & 0x7f, screen_packet[i].f7 & 0x80, i);
+            update_message_box(screen_packet[i].key & 0x7f, screen_packet[i].key & 0x80, i);
             break;
         case 2:
-            login_control.f17 = 8;
+            login_control.state = 8;
             statvar.num_players = network_num_players();
             LbNetwork_ChangeExchangeTimeout(0x1e);
             break;
         case 8:
             if (i == player || (!(DesiredDisplay & 0x40) && i == D_00160508)) {
                 LbNetwork_Stop();
-                login_control.f17 = 6;
+                login_control.state = 6;
                 set_glass_map(0x80);
                 reset_glass_map(0x300);
                 for (j = 0; j < 4; j++)
-                    screen_packet[j].f5 = 0;
+                    screen_packet[j].command = 0;
                 if (DesiredDisplay & 0x40) {
                     service = NS_IPX;
                     if (!setup_network(service, 0, 4)) {
@@ -1937,7 +1942,7 @@ void process_login_exchange(void)
             find_other_player(i);
             break;
         case 9:
-            login_control.f17 = 9;
+            login_control.state = 9;
             if (D_00160508 == player) {
                 LbNetwork_EnableNewPlayers(0);
                 set_glass_map(0x1000);
@@ -1946,7 +1951,7 @@ void process_login_exchange(void)
             }
             break;
         }
-        screen_packet[i].f5 = 0;
+        screen_packet[i].command = 0;
     }
 }
 
@@ -1954,7 +1959,7 @@ void process_login_exchange(void)
 // FUNCTION: 0x00083d98
 u8 start_session(void)
 {
-    screen_packet[player].f5 = 2;
+    screen_packet[player].command = 2;
     return 0;
 }
 
@@ -1977,7 +1982,7 @@ void update_message_box(u8 key, u8 shift, u8 from)
         login_control.players[from].len = 0;
         login_control.players[from].text[0] = 0;
         if (from == player)
-            play_sound(10, SFX_NO4, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     case KC_RETURN:
         if (login_control.players[from].len) {
@@ -1994,21 +1999,21 @@ void update_message_box(u8 key, u8 shift, u8 from)
             login_control.players[from].len = 0;
             login_control.players[from].text[0] = 0;
             if (from == player)
-                play_sound(10, SFX_YESX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
             if (NumMessages < 9)
                 NumMessages++;
             if (NumMessages > TopMessage + 3)
                 TopMessage = NumMessages - 3;
         } else {
             if (from == player)
-                play_sound(10, SFX_YESX, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
         }
         break;
     case KC_BACKSPACE:
     case KC_DECIMAL:
         if (login_control.players[from].len > 0) {
             if (from == player)
-                play_sound(10, SFX_DELANAME, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_DELANAME, -1, -1);
             login_control.players[from].text[--login_control.players[from].len] = 0;
         }
         break;
@@ -2022,7 +2027,7 @@ void update_message_box(u8 key, u8 shift, u8 from)
         if (c < 0x7f && c > 0x1f) {
             set_font_from_cache(0x21);
             if (from == player)
-                play_sound(10, SFX_ENTANAME, -1, -1);
+                play_sound(SNDSRC_GENERAL, SFX_ENTANAME, -1, -1);
             if (login_control.players[from].len < 0x1e &&
                 LbTextStringWidth(login_control.players[from].text) < resvars.screen_boxes_NetBoxp[120].w - 0x28) {
                 sprintf(buf, "%s:%s", &player_info[from], login_control.players[from].text);
@@ -2060,7 +2065,7 @@ extern LevelPacket swap_level_packet[];
 void draw_players_on_session(u32 session);
 void balance_filename(char *name);
 
-// Draws the names of the session's players from login_control.f1f in the
+// Draws the names of the session's players from login_control.player_scroll in the
 // modem/serial panel (com_panel set) or the IPX panel, and counts them in
 // player_count.
 // FUNCTION: 0x000841b8
@@ -2082,8 +2087,8 @@ void draw_active_session(u8 com_panel)
             player_count++;
     }
     if (player_count <= 3)
-        login_control.f1f = 0;
-    for (i = 0, j = login_control.f1f; i < 3 && j < 4; j++) {
+        login_control.player_scroll = 0;
+    for (i = 0, j = login_control.player_scroll; i < 3 && j < 4; j++) {
         if (D_001609c4[j].active) {
             draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, player_info[j].name);
             y += character_height();
@@ -2211,7 +2216,7 @@ void __stdcall players_callback(TbNetworkCallbackData *data, void *arg)
 }
 
 // Draws the names of the players in session `session` (a session_pointers
-// index), from login_control.f1f.
+// index), from login_control.player_scroll.
 // FUNCTION: 0x00084784
 void draw_players_on_session(u32 session)
 {
@@ -2223,9 +2228,9 @@ void draw_players_on_session(u32 session)
     if (LbNetwork_EnumeratePlayers(session_pointers[session], players_callback, 0) != Lb_OK)
         return;
     if (player_count <= 3)
-        login_control.f1f = 0;
+        login_control.player_scroll = 0;
     y = resvars.screen_boxes_NetBoxp[123].y + 4;
-    for (count = 0, i = login_control.f1f; count < 3 && i < 4; i++) {
+    for (count = 0, i = login_control.player_scroll; count < 3 && i < 4; i++) {
         if (player_names[i][0]) {
             draw_small_centre_text(resvars.screen_boxes_NetBoxp[123].x, resvars.screen_boxes_NetBoxp[123].w, y, player_names[i]);
             y += character_height();
@@ -2300,31 +2305,59 @@ void swap_criteria_packets(u8 fail, u8 active)
     }
 }
 
+/*
+ * A player's year-end figures exchanged in a network game
+ * (D_00154a48[player]); swap_year_end_packets copies each field from and to
+ * the same allhosps field.
+ */
 struct YearEndPacket {
-    s32 f0;
-    s32 f4;
-    s32 f8;
-    u16 fc;
-    u16 fe;
-    u16 f10;
-    u16 f12;
-    s32 f14;
-    s16 f18;
-    u16 f1a;
-    u16 f1c;
-    u8 f1e;
-    u8 f1f;
-    u16 f20;
-    u16 f22;
-    u16 f24;
-    s16 f26[2];
+    // 0x0: allhosps.score.
+    s32 score;
+    // 0x4: allhosps.balance.
+    s32 balance;
+    // 0x8: allhosps.loan.
+    s32 loan;
+    // 0xc: allhosps.cures.
+    u16 cures;
+    // 0xe: allhosps.deaths.
+    u16 deaths;
+    // 0x10: allhosps.visitors.
+    u16 visitors;
+    // 0x12: allhosps.area.
+    u16 area;
+    // 0x14: allhosps.reputation.
+    s32 reputation;
+    // 0x18: allhosps.avg_patient_happiness.
+    s16 avg_patient_happiness;
+    // 0x1a: allhosps.extinguisher_count.
+    u16 extinguisher_count;
+    // 0x1c: allhosps.radiator_count.
+    u16 radiator_count;
+    // 0x1e: allhosps.object_count.
+    u8 object_count;
+    // 0x1f: allhosps.machine_count.
+    u8 machine_count;
+    // 0x20: allhosps.mishaps.
+    u16 mishaps;
+    // 0x22: allhosps.amenity_count.
+    u16 amenity_count;
+    // 0x24: allhosps.staff_count.
+    u16 staff_count;
+    // 0x26: allhosps.staff_by_kind[0] and [1] (nurses, doctors).
+    s16 staff_by_kind[2];
     u8 unknown2a[6];
-    u16 f30;
-    u16 f32;
-    u8 f34;
-    s32 f35;
-    s32 f39;
-    s32 f3d;
+    // 0x30: allhosps.leisure_count.
+    u16 leisure_count;
+    // 0x32: allhosps.litter_count.
+    u16 litter_count;
+    // 0x34: allhosps.rathole_count.
+    u8 rathole_count;
+    // 0x35: allhosps.hospital_value.
+    s32 hospital_value;
+    // 0x39: allhosps.rep_points.
+    s32 rep_points;
+    // 0x3d: allhosps.rep_events.
+    s32 rep_events;
     u8 unknown41[4];
 };
 
@@ -2345,58 +2378,58 @@ void swap_year_end_packets(void)
 
     if (statvar.num_players <= 1)
         return;
-    D_00154a48[player].f0 = myhosp->score;
-    D_00154a48[player].f4 = myhosp->balance;
-    D_00154a48[player].f8 = myhosp->loan;
-    D_00154a48[player].fc = myhosp->cures;
-    D_00154a48[player].fe = myhosp->deaths;
-    D_00154a48[player].f10 = myhosp->visitors;
-    D_00154a48[player].f12 = myhosp->area;
-    D_00154a48[player].f14 = myhosp->reputation;
-    D_00154a48[player].f18 = myhosp->avg_patient_happiness;
-    D_00154a48[player].f1a = myhosp->extinguisher_count;
-    D_00154a48[player].f1c = myhosp->radiator_count;
-    D_00154a48[player].f1e = myhosp->object_count;
-    D_00154a48[player].f1f = myhosp->machine_count;
-    D_00154a48[player].f20 = myhosp->fc98;
-    D_00154a48[player].f22 = myhosp->amenity_count;
-    D_00154a48[player].f24 = myhosp->staff_count;
-    D_00154a48[player].f26[1] = myhosp->staff_by_kind[1];
-    D_00154a48[player].f26[0] = myhosp->staff_by_kind[0];
-    D_00154a48[player].f30 = myhosp->leisure_count;
-    D_00154a48[player].f32 = myhosp->litter_count;
-    D_00154a48[player].f34 = myhosp->rathole_count;
-    D_00154a48[player].f35 = myhosp->hospital_value;
-    D_00154a48[player].f39 = myhosp->rep_points;
-    D_00154a48[player].f3d = myhosp->rep_events;
+    D_00154a48[player].score = myhosp->score;
+    D_00154a48[player].balance = myhosp->balance;
+    D_00154a48[player].loan = myhosp->loan;
+    D_00154a48[player].cures = myhosp->cures;
+    D_00154a48[player].deaths = myhosp->deaths;
+    D_00154a48[player].visitors = myhosp->visitors;
+    D_00154a48[player].area = myhosp->area;
+    D_00154a48[player].reputation = myhosp->reputation;
+    D_00154a48[player].avg_patient_happiness = myhosp->avg_patient_happiness;
+    D_00154a48[player].extinguisher_count = myhosp->extinguisher_count;
+    D_00154a48[player].radiator_count = myhosp->radiator_count;
+    D_00154a48[player].object_count = myhosp->object_count;
+    D_00154a48[player].machine_count = myhosp->machine_count;
+    D_00154a48[player].mishaps = myhosp->mishaps;
+    D_00154a48[player].amenity_count = myhosp->amenity_count;
+    D_00154a48[player].staff_count = myhosp->staff_count;
+    D_00154a48[player].staff_by_kind[1] = myhosp->staff_by_kind[1];
+    D_00154a48[player].staff_by_kind[0] = myhosp->staff_by_kind[0];
+    D_00154a48[player].leisure_count = myhosp->leisure_count;
+    D_00154a48[player].litter_count = myhosp->litter_count;
+    D_00154a48[player].rathole_count = myhosp->rathole_count;
+    D_00154a48[player].hospital_value = myhosp->hospital_value;
+    D_00154a48[player].rep_points = myhosp->rep_points;
+    D_00154a48[player].rep_events = myhosp->rep_events;
     LbNetwork_ChangeExchangeBuffer(YEAR_END_PACKETS, 0x45);
     LbNetwork_Exchange(YEAR_END_PACKETS + player * 0x45);
     for (i = 0; i < 4; i++) {
         if (D_001609c4[i].active) {
-            allhosps[i].score = D_00154a48[i].f0;
-            allhosps[i].avg_patient_happiness = D_00154a48[i].f18;
-            allhosps[i].loan = D_00154a48[i].f8;
-            allhosps[i].balance = D_00154a48[i].f4;
-            allhosps[i].cures = D_00154a48[i].fc;
-            allhosps[i].deaths = D_00154a48[i].fe;
-            allhosps[i].visitors = D_00154a48[i].f10;
-            allhosps[i].area = D_00154a48[i].f12;
-            allhosps[i].reputation = D_00154a48[i].f14;
-            allhosps[i].extinguisher_count = D_00154a48[i].f1a;
-            allhosps[i].radiator_count = D_00154a48[i].f1c;
-            allhosps[i].object_count = D_00154a48[i].f1e;
-            allhosps[i].machine_count = D_00154a48[i].f1f;
-            allhosps[i].fc98 = D_00154a48[i].f20;
-            allhosps[i].amenity_count = D_00154a48[i].f22;
-            allhosps[i].staff_count = D_00154a48[i].f24;
-            allhosps[i].staff_by_kind[1] = D_00154a48[i].f26[1];
-            allhosps[i].staff_by_kind[0] = D_00154a48[i].f26[0];
-            allhosps[i].leisure_count = D_00154a48[i].f30;
-            allhosps[i].litter_count = D_00154a48[i].f32;
-            allhosps[i].rathole_count = D_00154a48[i].f34;
-            allhosps[i].hospital_value = D_00154a48[i].f35;
-            allhosps[i].rep_points = D_00154a48[i].f39;
-            allhosps[i].rep_events = D_00154a48[i].f3d;
+            allhosps[i].score = D_00154a48[i].score;
+            allhosps[i].avg_patient_happiness = D_00154a48[i].avg_patient_happiness;
+            allhosps[i].loan = D_00154a48[i].loan;
+            allhosps[i].balance = D_00154a48[i].balance;
+            allhosps[i].cures = D_00154a48[i].cures;
+            allhosps[i].deaths = D_00154a48[i].deaths;
+            allhosps[i].visitors = D_00154a48[i].visitors;
+            allhosps[i].area = D_00154a48[i].area;
+            allhosps[i].reputation = D_00154a48[i].reputation;
+            allhosps[i].extinguisher_count = D_00154a48[i].extinguisher_count;
+            allhosps[i].radiator_count = D_00154a48[i].radiator_count;
+            allhosps[i].object_count = D_00154a48[i].object_count;
+            allhosps[i].machine_count = D_00154a48[i].machine_count;
+            allhosps[i].mishaps = D_00154a48[i].mishaps;
+            allhosps[i].amenity_count = D_00154a48[i].amenity_count;
+            allhosps[i].staff_count = D_00154a48[i].staff_count;
+            allhosps[i].staff_by_kind[1] = D_00154a48[i].staff_by_kind[1];
+            allhosps[i].staff_by_kind[0] = D_00154a48[i].staff_by_kind[0];
+            allhosps[i].leisure_count = D_00154a48[i].leisure_count;
+            allhosps[i].litter_count = D_00154a48[i].litter_count;
+            allhosps[i].rathole_count = D_00154a48[i].rathole_count;
+            allhosps[i].hospital_value = D_00154a48[i].hospital_value;
+            allhosps[i].rep_points = D_00154a48[i].rep_points;
+            allhosps[i].rep_events = D_00154a48[i].rep_events;
         }
     }
 }
@@ -2412,7 +2445,7 @@ u8 setup_network(TbNetworkService service, void *data, u8 max_players)
 {
     s32 res;
 
-    login_control.f17 = 6;
+    login_control.state = 6;
     memset(D_0016053c, 0, 0xb4);
     memset(player_info, 0, 0x90);
     res = LbNetwork_Init(service, theme_hospital_guid, max_players, 0, 0, player_info, data);
@@ -2443,7 +2476,7 @@ s32 create_session(void)
     sprintf(name, "%s", myplayer.name_chars);
     res = LbNetwork_Create(name, myplayer.name_chars, &player, D_0016053c);
     if (res == Lb_OK) {
-        login_control.f17 = 5;
+        login_control.state = 5;
         memset(login_control.players, 0, 0x540);
     }
     return res;
@@ -2470,7 +2503,7 @@ s32 join_session(void)
         }
         res = LbNetwork_Join(session_pointers[hilighted_session], myplayer.name_chars, &player, D_0016053c);
         if (res == Lb_OK) {
-            login_control.f17 = 5;
+            login_control.state = 5;
             reset_glass_map(0x80);
             reset_glass_map(0x8000);
             reset_glass_map(0x10000);
@@ -2527,10 +2560,10 @@ u8 send_message(void)
         BufferedInkey = 0x1c;
     else if (HospShift & MOD_SHIFT)
         BufferedInkey |= 0x80;
-    screen_packet[player].f7 = BufferedInkey;
+    screen_packet[player].key = BufferedInkey;
     BufferedInkey = 0;
-    if (screen_packet[player].f7)
-        screen_packet[player].f5 = 7;
+    if (screen_packet[player].key)
+        screen_packet[player].command = 7;
     return 0;
 }
 
@@ -2566,8 +2599,8 @@ void draw_current_message(char *text)
 }
 
 extern "C" {
-s32 nth_other_active_player(s32 n);
-s32 nth_active_player(s32 n);
+s32 nth_other_active_player(s32 nth);
+s32 nth_active_player(s32 nth);
 }
 
 // Returns the nth (1-based) active player other than this one, or -1.
@@ -2819,16 +2852,16 @@ void net_text_delete(u8 who)
 // FUNCTION: 0x00085fc4
 void network_button_quit(void)
 {
-    switch (login_control.f17) {
+    switch (login_control.state) {
     case 5:
-        screen_packet[player].f5 = 8;
+        screen_packet[player].command = 8;
         break;
     case 6:
         statvar.num_players = 1;
         player = 0;
         network.state = 0;
-        display_mode = 2;
-        mainmenu.state = 0;
+        display_mode = DM_MAIN_MENU;
+        mainmenu.state = MMS_ENTER;
         break;
     }
 }
@@ -2857,7 +2890,7 @@ s32 network_button_create(void)
     s32 res;
 
     res = 0;
-    switch (login_control.f17) {
+    switch (login_control.state) {
     case 5:
         break;
     case 6:
@@ -2877,8 +2910,8 @@ s32 network_button_create(void)
 // FUNCTION: 0x00086130
 void network_button_message(void)
 {
-    screen_packet[player].f7 = 0x1c;
-    screen_packet[player].f5 = 7;
+    screen_packet[player].key = 0x1c;
+    screen_packet[player].command = 7;
 }
 
 // Joins the highlighted session if not in one. Returns join_session's result
@@ -2889,7 +2922,7 @@ s32 network_button_join(void)
     s32 res;
 
     res = 0;
-    switch (login_control.f17) {
+    switch (login_control.state) {
     case 5:
         break;
     case 6:
@@ -2916,12 +2949,12 @@ void init_network_players(void)
 extern char current_line[];
 
 extern "C" {
-char *strstr(char *s, char *sub);
+char *strstr(char *s1, char *s2);
 }
 
 // Reads levels/net<n>.dat, the levels for an n-player game, into net_control
 // (up to six: level number, title and the name for language myplayer.language);
-// net_control.f4 is their count, -1 if none.
+// net_control.level_count is their count, -1 if none.
 // FUNCTION: 0x00086240
 void network_read_control(u8 n)
 {
@@ -2984,9 +3017,9 @@ void network_read_control(u8 n)
         }
     }
     if (count == 0)
-        net_control.f4 = -1;
+        net_control.level_count = -1;
     else
-        net_control.f4 = count;
+        net_control.level_count = count;
     read_line_from_buf(0, 1, 0);
     LbMemoryFree(buf);
 }
@@ -3088,7 +3121,7 @@ s32 network_service_function(void)
         draw_network_select();
         if (BufferedInkey == KC_ESCAPE) {
             BufferedInkey = 0;
-            play_sound(10, SFX_NO4, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
             return -7;
         }
         process_mouse_network_select();
@@ -3137,11 +3170,11 @@ extern "C" {
 void network_lost_focus(s32 who)
 {
     othervar.lost_focus[who] = 2;
-    if (display_mode != 0xd) {
-        if (display_mode == 0)
-            set_mouse_sprite(9);
+    if (display_mode != DM_LOST_FOCUS) {
+        if (display_mode == DM_GAME)
+            set_mouse_sprite(PTR_SLEEP);
         othervar.lost_focus_display_mode = display_mode;
-        display_mode = 0xd;
+        display_mode = DM_LOST_FOCUS;
     }
 }
 
@@ -3228,7 +3261,7 @@ u8 fn_00086b60(void)
 {
     if (network_num_players() == 1) {
         close_irequesters();
-        if (crequester.id != 0x63)
+        if (crequester.id != REQ_NONE)
             close_crequester(crequester.id);
         allhosps[player].playing = 0;
         LbNetwork_Stop();

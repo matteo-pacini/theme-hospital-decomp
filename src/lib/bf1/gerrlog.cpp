@@ -10,10 +10,10 @@ extern u8 error_log[];
 
 int LbFileMakeFullPath(int current_dir, char *directory, char *filename, char *buf, u32 buflen);
 int LbLogSetup(void *log, char *filename, u32 flags);
-int LbLogSetPrefix(void *log, char *title);
+int LbLogSetPrefix(void *log, char *prefix);
 int LbLog(void *log, char *fmt, ...);
 int LbLogClose(void *log);
-int vsprintf(char *buf, char *fmt, va_list args);
+int vsprintf(char *dest, char *format, va_list arg);
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 

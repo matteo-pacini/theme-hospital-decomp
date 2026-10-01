@@ -22,10 +22,27 @@ struct TbNetworkPlayerEntry {
     char name[0x20];
 };
 
+// A provider message's type (its stub header, EncodeMessageStub).
 typedef enum {
-    MSG_TYPE_0,
+    // Exchange data for the multiPlayer callback.
+    MSG_TYPE_MULTIPLAYER,
+    // Also the first byte of a system user message: the player map
+    // (SystemUserMsgCallback).
+    MSG_TYPE_PLAYER_MAP = 0,
     MSG_TYPE_UNIDIRECTIONAL = 7
 } TbMessageType;
+
+// ServiceProvider::Receive flags: which message types to take from the
+// queue (RECV_ALL: every type).
+#define RECV_MULTIPLAYER 0x1
+#define RECV_ADD_PLAYER 0x2
+#define RECV_DELETE_PLAYER 0x4
+#define RECV_ALL 0x8
+#define RECV_REQ_EXCHANGE_DATA 0x10
+#define RECV_REQ_COMPOSITE_EXCHANGE_DATA 0x20
+#define RECV_UNIDIRECTIONAL 0x40
+#define RECV_SYSTEM_USER 0x80
+#define RECV_MSG_TYPE_8 0x100
 
 struct ServiceProvider {
     u32 local_id;

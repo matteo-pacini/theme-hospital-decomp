@@ -2,18 +2,18 @@
 
 extern "C" {
 
-int strncmp(const char *a, const char *b, u32 n);
+int strncmp(const char *s, const char *t, u32 n);
 int UnpackM1(void *src, void *dst);
 int LbFileLength(char *path);
 int LbFilePosition(int handle);
-void LbErrorLog(char *s, ...);
+void LbErrorLog(char *fmt, ...);
 int LbDirectoryCurrent(char *buf, u32 size);
 unsigned strlen(const char *s);
 char *strcpy(char *dst, const char *src);
 char *strcat(char *dst, const char *src);
 void *memcpy(void *dst, const void *src, u32 n);
 #pragma intrinsic(strlen, strcpy, strcat, memcpy)
-int compare(s8 *a, s8 *b, u32 len, int ignore_case);
+int compare(s8 *s1, s8 *s2, u32 len, int ignore_case);
 
 // Returns the unpacked length of file path: from its header if it is
 // RNC-packed, else its size. -1 if it cannot be read.

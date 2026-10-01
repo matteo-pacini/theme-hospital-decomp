@@ -82,21 +82,21 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
         D_001290d1 = 0xff;
         D_001290d2 = 0xff;
         othervar.fade_palette = palette;
-        display_mode = 0;
+        display_mode = DM_GAME;
         othervar.full_redraw = 1;
         D_00156910 = 1;
         set_font_from_cache(1);
         close_irequesters();
         window.current_window = 0;
         draw_it();
-        if (crequester.id == 5) {
+        if (crequester.id == REQ_EDIT_ROOM) {
             switch (crequester.mode) {
             case 0:
                 set_mouse_mode(MM_BLUEPRINT);
                 break;
             case 2:
             case 4:
-                set_mouse_mode(2);
+                set_mouse_mode(MM_PLACE_DOOR);
                 break;
             case 6:
             case 10: {
@@ -108,7 +108,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
                 break;
             }
             case 8:
-                set_mouse_mode(0xb);
+                set_mouse_mode(MM_PICK_UP_OBJECT);
                 break;
             case 1:
             case 3:
@@ -119,7 +119,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
                 break;
             }
         }
-        if (crequester.id != 0x63)
+        if (crequester.id != REQ_NONE)
             open_requester(crequester.id, 0);
     }
 }

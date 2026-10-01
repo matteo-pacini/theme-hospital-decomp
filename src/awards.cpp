@@ -273,7 +273,7 @@ void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
         s32 rep;
 
         rep = myhosp->reputation;
-        reputation_affected(0, 0x17, 0, player, value);
+        reputation_affected(0, REP_TROPHY, 0, player, value);
         if (myhosp->reputation != rep) {
             trophy[trophy_no].value = myhosp->reputation - rep;
         } else {
@@ -305,7 +305,7 @@ void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 valu
         s32 rep;
 
         rep = myhosp->reputation;
-        reputation_affected(0, 0x18, 0, player, value);
+        reputation_affected(0, REP_AWARD, 0, player, value);
         if (myhosp->reputation != rep) {
             all_awards[award].value = myhosp->reputation - rep;
         } else {

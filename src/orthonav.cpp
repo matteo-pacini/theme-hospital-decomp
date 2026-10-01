@@ -10,10 +10,10 @@ void delete_first_path_entry(orthonav_path *path)
 {
     s32 i;
 
-    path->x0 = path->unknown4[0];
-    path->y0 = path->unknown4[1];
-    path->result--;
-    for (i = 0; i < path->result; i++)
+    path->x0 = path->steps[0].x;
+    path->y0 = path->steps[0].y;
+    path->count--;
+    for (i = 0; i < path->count; i++)
         path->steps[i] = path->steps[i + 1];
 }
 
@@ -31,18 +31,18 @@ void orthonav_init(orthonav_path *path, s8 x0, s8 y0, s8 x1, s8 y1)
     hug.x1 = x1;
     hug.y1 = y1;
     if (wallhug_tricky(&hug) == 0x70000000) {
-        path->result = 0;
+        path->count = 0;
         return;
     }
     if (hug.count > 4)
-        path->result = 4;
+        path->count = 4;
     else
-        path->result = hug.count;
+        path->count = hug.count;
     path->x0 = x0;
     path->y0 = y0;
     path->x1 = x1;
     path->y1 = y1;
-    for (i = 0; i < path->result; i++) {
+    for (i = 0; i < path->count; i++) {
         path->steps[i].x = hug.points[i].x;
         path->steps[i].y = hug.points[i].y;
     }
@@ -101,7 +101,7 @@ s32 orthonav_wn(orthonav_path *path, s32 x, s32 y, s32 dir)
     deleted = 0;
 again:
     if (path->steps[0].x == x && path->steps[0].y == y) {
-        if (path->result == 1)
+        if (path->count == 1)
             return 4;
         delete_first_path_entry(path);
         deleted = 1;
@@ -143,7 +143,7 @@ again:
     } else {
         other_wherefacing = xdir;
     }
-    if (path->result > 1) {
+    if (path->count > 1) {
         if (!deleted && !wall_in_way(x, y, dir)
             && ((path->steps[0].x == x && dir == xdir) || (path->steps[0].y == y && dir == ydir))) {
             s32 ex;
@@ -362,7 +362,7 @@ s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
     s32 blocked;
     s32 alt_dir;
 
-    if (path->result == 0) {
+    if (path->count == 0) {
         if (wall_in_way(x, y, 0) && wall_in_way(x, y, 2) && wall_in_way(x, y, 3) && wall_in_way(x, y, 1))
             return -2;
         return -3;

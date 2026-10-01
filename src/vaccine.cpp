@@ -3,8 +3,8 @@
 extern "C" {
 }
 
-u8 is_person_in_vaccine_queue(Thing *w);
-void insert_person_in_vaccination_queue(Thing *w);
+u8 is_person_in_vaccine_queue(Thing *person);
+void insert_person_in_vaccination_queue(Thing *person);
 
 char fingchk3[20] = { 0xad, 0xa9, 0xdd, 0xc9, 0x91, 0xad, 0xa9, 0x99 };
 
@@ -118,7 +118,7 @@ u8 should_nurse_vaccinate(Thing *nurse)
     for (patient = &thing[allhosps[nurse->owner].vaccine_queue]; patient > thing; patient = &thing[patient->vaccine_next]) {
         if ((patient->flags & PF_VACCINE_REQUESTED) && !(patient->flags & PF_VACCINE_NURSE_SENT) && !patient->room) {
             u16 pos = can_i_go_near_point(nurse, patient->x.tile + (patient->y.tile << 7));
-            if (pos && !(map[pos].owner_flags & 0x10)) {
+            if (pos && !(map[pos].owner_flags & MAP_OUTDOOR)) {
                 if (nurse->room)
                     set_complex(nurse, 0x136, nurse->room->door_inside_tile);
                 set_complex(nurse, 0xbe, pos);
@@ -159,7 +159,7 @@ void nurse_vaccinates(Thing *nurse)
         change_balance(TX_VACCINATION, -gbv.vac_cost, 0, patient->owner);
     } else {
         u16 pos = can_i_go_near_point(nurse, patient->x.tile + (patient->y.tile << 7));
-        if (pos && !(map[pos].owner_flags & 0x10)) {
+        if (pos && !(map[pos].owner_flags & MAP_OUTDOOR)) {
             set_complex(nurse, 0xbe, pos);
             nurse->next_state = SS_NURSE_VACCINATES;
             nurse->resume_state = SS_NURSE_VACCINATES;
@@ -191,7 +191,7 @@ u8 could_nurse_vaccinate(Thing *nurse)
         if (!(patient->flags & PF_VACCINE_REQUESTED) || (patient->flags & PF_VACCINE_NURSE_SENT) || patient->room)
             continue;
         u16 pos = patient->x.tile + (patient->y.tile << 7);
-        if (!(map[pos].owner_flags & 0x10) && check_points_connected(pos, from))
+        if (!(map[pos].owner_flags & MAP_OUTDOOR) && check_points_connected(pos, from))
             return 1;
     }
     return 0;

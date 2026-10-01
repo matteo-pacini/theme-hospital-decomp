@@ -88,7 +88,7 @@ void peep_icon(Thing *const peep)
 {
     if (peep->type != THING_PATIENT || peep->health > 0) {
         if (peep->icon_id < 0)
-            play_sound(10, SFX_HLIGHTP2, -1, -1);
+            play_sound(SNDSRC_GENERAL, SFX_HLIGHTP2, -1, -1);
         peep->icon_id = fn_000cb2db(peep->icon_id);
         if (icon_table[peep->icon_id].anim > 0 && icon_table[peep->icon_id].mode == -1)
             peep->icon_timer = icon_table[peep->icon_id].duration;

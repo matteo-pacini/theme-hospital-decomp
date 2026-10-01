@@ -4,7 +4,7 @@ extern u16 ins_control[];
 extern InsuranceCo insurance_co[];
 
 void auto_available(void);
-void appraise_staff(Thing *w);
+void appraise_staff(Thing *employee);
 void computer_month(void);
 void adjust_monthly_figures(void);
 void calc_visitors_this_month(void);
@@ -63,7 +63,7 @@ extern char **stat_text;
 extern char **finance_text;
 extern char **illness_text;
 extern u8 D_00156910;
-void StopSample(u32 a, u32 b);
+void StopSample(u32 source_id, u32 number);
 }
 
 // Adds amount (negative to spend) to owner's bank balance as a transaction of
@@ -362,7 +362,7 @@ void bank_statement(void)
     compute_help_text(0, 0, 0xf);
     switch (bank.state) {
     case 0:
-        load_ingame_pic(3, 1, 0x1a, 0, (TbScreenMode)0xd);
+        load_ingame_pic(SCR_STATEMENT, 1, 0x1a, 0, (TbScreenMode)0xd);
         bank.state = 1;
         break;
     case 1:
@@ -498,10 +498,10 @@ void process_stat_button(u8 button)
     switch (button) {
     case 0:
         bank.state = 2;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     case 1:
-        play_sound(10, SFX_SELECTX, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         process_keys(0, 0x41);
         break;
     }
@@ -516,7 +516,7 @@ u16 exit_quick_requester(void)
         lbInkey = 0;
     if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
         lbInkey = 0;
-        play_sound(10, SFX_NO4, -1, -1);
+        play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         return 1;
     }
     return 0;
@@ -546,10 +546,10 @@ void daily_admin(void)
                 allhosps[i].emergency_state = 1;
                 if (allhosps[i].emergency_cured * 100 / allhosps[i].emergency_patients >= allhosps[i].emergency_win_pct) {
                     change_balance(TX_EMERGENCY_BONUS, allhosps[i].emergency_bonus * allhosps[i].emergency_cured, 0, i);
-                    reputation_affected(0, 0xc, 0, i, 0);
+                    reputation_affected(0, REP_EMERGENCY_SUCCESS, 0, i, 0);
                     satisfied_net_criteria(1, i);
                 } else {
-                    reputation_affected(0, 0xd, 0, i, allhosps[i].emergency_patients - allhosps[i].emergency_cured);
+                    reputation_affected(0, REP_EMERGENCY_FAILED, 0, i, allhosps[i].emergency_patients - allhosps[i].emergency_cured);
                 }
                 make_a_playercall(5, 1, 0x14, i);
             }
@@ -585,7 +585,7 @@ void twice_daily_admin(void)
             if (hosp->emergency_timer_s == 0 && hosp->emergency_state_s > 0)
                 hosp->emergency_state--;
             if (myhosp->emergency_timer_s == 0)
-                StopSample(0xd, 0xa9);
+                StopSample(SNDSRC_CLOCK, 0xa9);
         }
         if (epidemic_status(i))
             generate_inspector(i);
