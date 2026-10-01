@@ -7,9 +7,9 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
 {
     u8 *dst;
     u8 *next;
-    u8 t;
+    u8 old_bottom;
     u8 xflip;
-    s8 *sp;
+    s8 *rle;
     u8 right;
     u8 top;
     u8 h;
@@ -18,8 +18,8 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
     u8 run;
     u8 left;
     s32 rows;
-    s32 tmp;
-    s32 cnt;
+    s32 clip;
+    s32 remain;
     s32 pitch;
 
     if (!spr->width || !spr->height)
@@ -29,90 +29,90 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
     x += lbDisplay.graphics_window_x;
     y += lbDisplay.graphics_window_y;
     w = spr->width;
-    tmp = lbDisplay.graphics_window_x - x;
-    if (tmp > 0) {
-        if (w <= tmp)
+    clip = lbDisplay.graphics_window_x - x;
+    if (clip > 0) {
+        if (w <= clip)
             return 1;
-        left = tmp;
+        left = clip;
     } else {
         left = 0;
     }
-    tmp = w + x - (lbDisplay.graphics_window_x + lbDisplay.graphics_window_width);
-    if (tmp > 0) {
-        if (w <= tmp)
+    clip = w + x - (lbDisplay.graphics_window_x + lbDisplay.graphics_window_width);
+    if (clip > 0) {
+        if (w <= clip)
             return 1;
-        right = w - tmp;
+        right = w - clip;
     } else {
         right = w;
     }
     h = spr->height;
-    tmp = lbDisplay.graphics_window_y - y;
-    if (tmp > 0) {
-        if (h <= tmp)
+    clip = lbDisplay.graphics_window_y - y;
+    if (clip > 0) {
+        if (h <= clip)
             return 1;
-        top = tmp;
+        top = clip;
     } else {
         top = 0;
     }
-    tmp = h + y - (lbDisplay.graphics_window_y + lbDisplay.graphics_window_height);
-    if (tmp > 0) {
-        if (h <= tmp)
+    clip = h + y - (lbDisplay.graphics_window_y + lbDisplay.graphics_window_height);
+    if (clip > 0) {
+        if (h <= clip)
             return 1;
-        bottom = h - tmp;
+        bottom = h - clip;
     } else {
         bottom = h;
     }
     if (lbDisplay.draw_flags & 2) {
         dst = x + (lbDisplay.unknown4 + (bottom + y - 1) * lbDisplay.graphics_screen_width) + left;
         pitch = -lbDisplay.graphics_screen_width;
-        t = bottom;
+        old_bottom = bottom;
         bottom = h - top;
-        top = h - t;
+        top = h - old_bottom;
     } else {
         dst = lbDisplay.unknown4 + lbDisplay.graphics_screen_width * (top + y) + x + left;
         pitch = lbDisplay.graphics_screen_width;
     }
     h = bottom - top;
     w = right - left;
-    sp = (s8 *)spr->data;
+    rle = (s8 *)spr->data;
     if (top) {
         rows = top;
         do {
             do {
-                while (*sp > 0)
-                    sp += *sp + 1;
-            } while (*sp++ != 0);
+                while (*rle > 0)
+                    rle += *rle + 1;
+            } while (*rle++ != 0);
         } while (--rows);
     }
     if (lbDisplay.draw_flags & 0xd) {
         if (lbDisplay.draw_flags & 1) {
-            u8 t2;
-            u8 t1;
+            u8 old_right;
+            u8 full_width;
 
             dst += w - 1;
             xflip = 1;
-            t1 = spr->width;
-            t2 = right;
-            right = t1 - left;
-            left = t1 - t2;
+            full_width = spr->width;
+            old_right = right;
+            right = full_width - left;
+            left = full_width - old_right;
         } else {
             xflip = 0;
         }
         next = dst + pitch;
-        cnt = w;
+        remain = w;
         rows = h;
         if (lbDisplay.draw_flags & 0xc) {
             if (left)
                 goto t_left;
             for (;;) {
-                if (cnt > 0) {
-                    if (*sp > 0) {
+                if (remain > 0) {
+                    if (*rle > 0) {
                         u8 *s;
                         u8 i;
                         u8 n;
 
-                        n = *sp < cnt ? *sp : cnt;
-                        s = (u8 *)sp + 1;
+                        n = *rle < remain ? *rle : remain;
+                        s = (u8 *)rle + 1;
                         if (xflip) {
                             if (lbDisplay.draw_flags & 4) {
                                 for (i = 0; i < n; i++, s++, dst--)
@@ -130,21 +130,21 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
                                     *dst = *(lbDisplay.ghost + (*dst << 8) + colour);
                             }
                         }
-                        cnt -= *sp;
-                        sp += *sp + 1;
-                    } else if (*sp < 0) {
-                        cnt += *sp;
+                        remain -= *rle;
+                        rle += *rle + 1;
+                    } else if (*rle < 0) {
+                        remain += *rle;
                         if (xflip)
-                            dst += *sp;
+                            dst += *rle;
                         else
-                            dst -= *sp;
-                        sp++;
+                            dst -= *rle;
+                        rle++;
                     } else {
                         if (--rows) {
                             dst = next;
                             next += pitch;
-                            cnt = w;
-                            sp++;
+                            remain = w;
+                            rle++;
                             goto t_left;
                         }
                         return 1;
@@ -153,25 +153,25 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
                     if (!--rows)
                         return 1;
                     do {
-                        while (*sp > 0)
-                            sp += *sp + 1;
-                    } while (*sp++ != 0);
+                        while (*rle > 0)
+                            rle += *rle + 1;
+                    } while (*rle++ != 0);
                     dst = next;
                     next += pitch;
-                    cnt = w;
+                    remain = w;
                 t_left:
                     if (left) {
-                        u8 l;
+                        u8 skip;
 
-                        l = left;
+                        skip = left;
                         do {
-                            if (*sp > 0) {
-                                if (*sp > l) {
+                            if (*rle > 0) {
+                                if (*rle > skip) {
                                     u8 i;
                                     u8 *s;
 
-                                    s = (u8 *)sp + 1 + l;
-                                    run = *sp - l;
+                                    s = (u8 *)rle + 1 + skip;
+                                    run = *rle - skip;
                                     if (run > w)
                                         run = w;
                                     if (xflip) {
@@ -191,32 +191,32 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
                                                 *dst = *(lbDisplay.ghost + (*dst << 8) + colour);
                                         }
                                     }
-                                    sp += *sp + 1;
-                                    cnt -= run;
+                                    rle += *rle + 1;
+                                    remain -= run;
                                     break;
                                 }
-                                l -= *sp;
-                                sp += *sp + 1;
-                            } else if (*sp == 0) {
-                                cnt = 0;
+                                skip -= *rle;
+                                rle += *rle + 1;
+                            } else if (*rle == 0) {
+                                remain = 0;
                                 break;
                             } else {
-                                if (*sp < -l) {
-                                    run = -*sp - l;
+                                if (*rle < -skip) {
+                                    run = -*rle - skip;
                                     if (run > w)
                                         run = w;
-                                    sp++;
+                                    rle++;
                                     if (xflip)
                                         dst -= run;
                                     else
                                         dst += run;
-                                    cnt -= run;
+                                    remain -= run;
                                     break;
                                 }
-                                l += *sp;
-                                sp++;
+                                skip += *rle;
+                                rle++;
                             }
-                        } while (l);
+                        } while (skip);
                     }
                 }
             }
@@ -224,25 +224,25 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
             if (left)
                 goto f_left;
             for (;;) {
-                if (cnt > 0) {
-                    if (*sp > 0) {
+                if (remain > 0) {
+                    if (*rle > 0) {
                         u8 n;
 
-                        n = *sp < cnt ? *sp : cnt;
+                        n = *rle < remain ? *rle : remain;
                         memset(dst - n + 1, colour, n);
                         dst -= n;
-                        cnt -= *sp;
-                        sp += *sp + 1;
-                    } else if (*sp < 0) {
-                        cnt += *sp;
-                        dst += *sp;
-                        sp++;
+                        remain -= *rle;
+                        rle += *rle + 1;
+                    } else if (*rle < 0) {
+                        remain += *rle;
+                        dst += *rle;
+                        rle++;
                     } else {
                         if (--rows) {
                             dst = next;
                             next += pitch;
-                            cnt = w;
-                            sp++;
+                            remain = w;
+                            rle++;
                             goto f_left;
                         }
                         return 1;
@@ -251,77 +251,77 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
                     if (!--rows)
                         return 1;
                     do {
-                        while (*sp > 0)
-                            sp += *sp + 1;
-                    } while (*sp++ != 0);
+                        while (*rle > 0)
+                            rle += *rle + 1;
+                    } while (*rle++ != 0);
                     dst = next;
                     next += pitch;
-                    cnt = w;
+                    remain = w;
                 f_left:
                     if (left) {
-                        u8 l;
+                        u8 skip;
 
-                        l = left;
+                        skip = left;
                         do {
-                            if (*sp > 0) {
-                                if (*sp > l) {
-                                    run = *sp - l;
+                            if (*rle > 0) {
+                                if (*rle > skip) {
+                                    run = *rle - skip;
                                     if (run > w)
                                         run = w;
                                     memset(dst - run + 1, colour, run);
                                     dst -= run;
-                                    sp += *sp + 1;
-                                    cnt -= run;
+                                    rle += *rle + 1;
+                                    remain -= run;
                                     break;
                                 }
-                                l -= *sp;
-                                sp += *sp + 1;
-                            } else if (*sp == 0) {
-                                cnt = 0;
+                                skip -= *rle;
+                                rle += *rle + 1;
+                            } else if (*rle == 0) {
+                                remain = 0;
                                 break;
                             } else {
-                                if (*sp < -l) {
-                                    run = -*sp - l;
+                                if (*rle < -skip) {
+                                    run = -*rle - skip;
                                     if (run > w)
                                         run = w;
-                                    sp++;
+                                    rle++;
                                     dst -= run;
-                                    cnt -= run;
+                                    remain -= run;
                                     break;
                                 }
-                                l += *sp;
-                                sp++;
+                                skip += *rle;
+                                rle++;
                             }
-                        } while (l);
+                        } while (skip);
                     }
                 }
             }
         }
     } else {
         next = dst + pitch;
-        cnt = w;
+        remain = w;
         rows = h;
         if (left)
             goto n_left;
         for (;;) {
-            u8 l;
+            u8 skip;
 
-            if (cnt > 0) {
-                if (*sp > 0) {
-                    memset(dst, colour, *sp < cnt ? *sp : cnt);
-                    cnt -= *sp;
-                    dst += *sp;
-                    sp += *sp + 1;
-                } else if (*sp < 0) {
-                    cnt += *sp;
-                    dst -= *sp;
-                    sp++;
+            if (remain > 0) {
+                if (*rle > 0) {
+                    memset(dst, colour, *rle < remain ? *rle : remain);
+                    remain -= *rle;
+                    dst += *rle;
+                    rle += *rle + 1;
+                } else if (*rle < 0) {
+                    remain += *rle;
+                    dst -= *rle;
+                    rle++;
                 } else {
                     if (--rows) {
                         dst = next;
                         next += pitch;
-                        cnt = w;
-                        sp++;
+                        remain = w;
+                        rle++;
                         goto n_left;
                     }
                     return 1;
@@ -330,46 +330,46 @@ int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
                 if (!--rows)
                     return 1;
                 do {
-                    while (*sp > 0)
-                        sp += *sp + 1;
-                } while (*sp++ != 0);
+                    while (*rle > 0)
+                        rle += *rle + 1;
+                } while (*rle++ != 0);
                 dst = next;
                 next += pitch;
-                cnt = w;
+                remain = w;
             n_left:
                 if (left) {
-                    l = left;
+                    skip = left;
                     do {
-                        if (*sp > 0) {
-                            if (*sp > l) {
-                                run = *sp - l;
+                        if (*rle > 0) {
+                            if (*rle > skip) {
+                                run = *rle - skip;
                                 if (run > w)
                                     run = w;
                                 memset(dst, colour, run);
                                 dst += run;
-                                sp += *sp + 1;
-                                cnt -= run;
+                                rle += *rle + 1;
+                                remain -= run;
                                 break;
                             }
-                            l -= *sp;
-                            sp += *sp + 1;
-                        } else if (*sp == 0) {
-                            cnt = 0;
+                            skip -= *rle;
+                            rle += *rle + 1;
+                        } else if (*rle == 0) {
+                            remain = 0;
                             break;
                         } else {
-                            if (*sp < -l) {
-                                run = -*sp - l;
+                            if (*rle < -skip) {
+                                run = -*rle - skip;
                                 if (run > w)
                                     run = w;
-                                sp++;
+                                rle++;
                                 dst += run;
-                                cnt -= run;
+                                remain -= run;
                                 break;
                             }
-                            l += *sp;
-                            sp++;
+                            skip += *rle;
+                            rle++;
                         }
-                    } while (l);
+                    } while (skip);
                 }
             }
         }

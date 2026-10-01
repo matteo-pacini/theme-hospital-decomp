@@ -122,19 +122,19 @@ s32 GetDOSseg(u32 selector)
 // FUNCTION: 0xef4a0
 s32 AWEGetTotalRAM(AWEDriver *mdi)
 {
-    AWECall v;
+    AWECall regs;
 
-    v.CX = 0x10;
-    AIL_call_driver(mdi->drvr, 0x506, &v, &v);
-    if (v.AX == 0)
-        return v.DX << (v.SI + 16);
+    regs.CX = 0x10;
+    AIL_call_driver(mdi->drvr, 0x506, &regs, &regs);
+    if (regs.AX == 0)
+        return regs.DX << (regs.SI + 16);
     return -1;
 }
 
 // FUNCTION: 0xef4f0
 s32 AWEDefMemMap(AWEDriver *mdi, u16 count, void __far *map)
 {
-    AWECall v;
+    AWECall regs;
 
     if (!data) {
         data = (__38rogeSF_DATA __far *)AllocDOSmem(4);
@@ -143,17 +143,17 @@ s32 AWEDefMemMap(AWEDriver *mdi, u16 count, void __far *map)
     }
     data->count = count;
     data->segment = GetDOSseg(FP_SEG(map));
-    v.CX = 0x11;
-    v.DX = GetDOSseg(FP_SEG(data));
-    v.SI = 0;
-    AIL_call_driver(mdi->drvr, 0x506, &v, &v);
-    return v.AX;
+    regs.CX = 0x11;
+    regs.DX = GetDOSseg(FP_SEG(data));
+    regs.SI = 0;
+    AIL_call_driver(mdi->drvr, 0x506, &regs, &regs);
+    return regs.AX;
 }
 
 // FUNCTION: 0xef5a0
 void __far *AWEGetSFInfo(AWEDriver *mdi, u16 bank, void __far *buf)
 {
-    AWECall v;
+    AWECall regs;
 
     if (!data) {
         data = (__38rogeSF_DATA __far *)AllocDOSmem(4);
@@ -162,19 +162,19 @@ void __far *AWEGetSFInfo(AWEDriver *mdi, u16 bank, void __far *buf)
     }
     data->count = bank;
     data->segment = GetDOSseg(FP_SEG(buf));
-    v.CX = 0x17;
-    v.DX = GetDOSseg(FP_SEG(data));
-    v.SI = 0;
-    AIL_call_driver(mdi->drvr, 0x506, &v, &v);
-    if (v.AX == 0)
-        return MK_FP(CreateSelector(v.DX), v.SI);
+    regs.CX = 0x17;
+    regs.DX = GetDOSseg(FP_SEG(data));
+    regs.SI = 0;
+    AIL_call_driver(mdi->drvr, 0x506, &regs, &regs);
+    if (regs.AX == 0)
+        return MK_FP(CreateSelector(regs.DX), regs.SI);
     return 0;
 }
 
 // FUNCTION: 0xef670
 s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
 {
-    AWECall v;
+    AWECall regs;
 
     if (!data) {
         data = (__38rogeSF_DATA __far *)AllocDOSmem(4);
@@ -183,17 +183,17 @@ s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
     }
     data->count = bank;
     data->segment = GetDOSseg(FP_SEG(buf));
-    v.CX = 0x18;
-    v.DX = GetDOSseg(FP_SEG(data));
-    v.SI = 0;
-    AIL_call_driver(mdi->drvr, 0x506, &v, &v);
-    return v.AX;
+    regs.CX = 0x18;
+    regs.DX = GetDOSseg(FP_SEG(data));
+    regs.SI = 0;
+    AIL_call_driver(mdi->drvr, 0x506, &regs, &regs);
+    return regs.AX;
 }
 
 // FUNCTION: 0xef720
 s32 AWELoadPreset(AWEDriver *mdi, u16 bank, void __far *buf)
 {
-    AWECall v;
+    AWECall regs;
 
     if (!data) {
         data = (__38rogeSF_DATA __far *)AllocDOSmem(4);
@@ -202,24 +202,24 @@ s32 AWELoadPreset(AWEDriver *mdi, u16 bank, void __far *buf)
     }
     data->count = bank;
     data->segment = GetDOSseg(FP_SEG(buf));
-    v.CX = 0x19;
-    v.DX = GetDOSseg(FP_SEG(data));
-    v.SI = 0;
-    AIL_call_driver(mdi->drvr, 0x506, &v, &v);
-    return v.AX;
+    regs.CX = 0x19;
+    regs.DX = GetDOSseg(FP_SEG(data));
+    regs.SI = 0;
+    AIL_call_driver(mdi->drvr, 0x506, &regs, &regs);
+    return regs.AX;
 }
 
 // FUNCTION: 0xef7d0
 s32 AWEFreeMem(AWEDriver *mdi, u16 bank)
 {
-    AWECall v;
+    AWECall regs;
 
     FreeDOSmem(data);
     data = 0;
-    v.CX = 0x12;
-    v.DX = bank;
-    AIL_call_driver(mdi->drvr, 0x506, &v, &v);
-    return v.AX;
+    regs.CX = 0x12;
+    regs.DX = bank;
+    AIL_call_driver(mdi->drvr, 0x506, &regs, &regs);
+    return regs.AX;
 }
 
 // FUNCTION: 0xef830

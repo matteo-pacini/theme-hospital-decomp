@@ -61,25 +61,25 @@ void (__pascal *SmackTimerSetupAddr)(void) = DOSSmackTimerSetup;
 // FUNCTION: 0xf2fa0
 u32 __pascal BIOSSmackTimerRead(void)
 {
-    u32 t;
+    u32 ticks;
 
-    t = *(u32 *)0x46c;
-    if (t < lasttimerread)
-        timeradjust += lasttimerread - t;
-    lasttimerread = t;
-    return mult64anddiv(t + timeradjust, 2746, 50);
+    ticks = *(u32 *)0x46c;
+    if (ticks < lasttimerread)
+        timeradjust += lasttimerread - ticks;
+    lasttimerread = ticks;
+    return mult64anddiv(ticks + timeradjust, 2746, 50);
 }
 
 // FUNCTION: 0xf2f80
 u32 __pascal VTDSmackTimerRead(void)
 {
-    u32 t;
+    u32 ticks;
 
-    t = vtdread();
-    if (t < lasttimerread)
+    ticks = vtdread();
+    if (ticks < lasttimerread)
         return lasttimerread;
-    lasttimerread = t;
-    return t;
+    lasttimerread = ticks;
+    return ticks;
 }
 
 // FUNCTION: 0xf2f70

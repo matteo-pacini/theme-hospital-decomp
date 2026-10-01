@@ -99,12 +99,12 @@ u32 LoadSounds(u8 bank)
 // FUNCTION: 0xf0220
 void format_sounds(void)
 {
-    SoundBankEntry *p;
+    SoundBankEntry *entry;
 
     if (Sfx && SfxData) {
         NumberOfSamples = 0;
-        for (p = Sfx + 1; p < EndSfxs; p++) {
-            p->data += (u32)SfxData;
+        for (entry = Sfx + 1; entry < EndSfxs; entry++) {
+            entry->data += (u32)SfxData;
             NumberOfSamples++;
         }
     }
@@ -118,7 +118,7 @@ u8 load_sound_bank(long file, u8 bank)
     BankHead head[9];
     u8 *data;
     u8 *tab;
-    u32 n;
+    u32 packed_size;
 
     LbFilePosition(file);
     LbFileRead(file, head, sizeof(head));
@@ -133,11 +133,11 @@ u8 load_sound_bank(long file, u8 bank)
             LbFileSeek(file, head[bank].data_offset, 0);
             LbFileRead(file, SfxData, 8);
             if (data[0] == 'R' && data[1] == 'N' && data[2] == 'C') {
-                n = data[4];
-                n = (n << 8) + data[5];
-                n = (n << 8) + data[6];
-                n = (n << 8) + data[7];
-                LbFileRead(file, SfxData + 8, n - 8);
+                packed_size = data[4];
+                packed_size = (packed_size << 8) + data[5];
+                packed_size = (packed_size << 8) + data[6];
+                packed_size = (packed_size << 8) + data[7];
+                LbFileRead(file, SfxData + 8, packed_size - 8);
                 UnpackM1(data, data);
             } else {
                 LbFileRead(file, SfxData + 8, head[bank].data_size - 8);
@@ -145,11 +145,11 @@ u8 load_sound_bank(long file, u8 bank)
             LbFileSeek(file, head[bank].tab_offset, 0);
             LbFileRead(file, Sfx, 8);
             if (tab[0] == 'R' && tab[1] == 'N' && tab[2] == 'C') {
-                n = tab[4];
-                n = (n << 8) + tab[5];
-                n = (n << 8) + tab[6];
-                n = (n << 8) + tab[7];
-                LbFileRead(file, (u8 *)Sfx + 8, n - 8);
+                packed_size = tab[4];
+                packed_size = (packed_size << 8) + tab[5];
+                packed_size = (packed_size << 8) + tab[6];
+                packed_size = (packed_size << 8) + tab[7];
+                LbFileRead(file, (u8 *)Sfx + 8, packed_size - 8);
                 UnpackM1(tab, tab);
             } else {
                 LbFileRead(file, (u8 *)Sfx + 8, head[bank].tab_size - 8);

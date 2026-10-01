@@ -506,20 +506,20 @@ void setuptheframe(Smack *smk)
     u32 n;
     u8 *prev;
     u16 i;
-    u8 cnt2;
-    u8 cnt;
-    s32 d;
-    u8 *p;
+    u8 copy_count;
+    u8 keep_count;
+    s32 past_end;
+    u8 *chunk;
     u8 *src;
     u8 *dst;
     u8 flags;
     u8 c;
 
     smk->f408 = 0;
-    d = smk->FrameNum - smk->Frames;
-    if (d >= 0) {
+    past_end = smk->FrameNum - smk->Frames;
+    if (past_end >= 0) {
         if (smk->SmackerType & 1) {
-            if (d == 0) {
+            if (past_end == 0) {
                 readframe(smk);
                 goto frame;
             }
@@ -530,34 +530,34 @@ void setuptheframe(Smack *smk)
         gotoframe(smk);
     }
 frame:
-    p = smk->f3c0;
-    smk->f3d0 = p;
+    chunk = smk->f3c0;
+    smk->f3d0 = chunk;
     flags = smk->f3cc[smk->FrameNum];
     if (flags & 1)
-        p += *p * 4;
-    smk->trackbufs[0] = (flags & 0x02) ? (u32 *)p : NULL;
+        chunk += *chunk * 4;
+    smk->trackbufs[0] = (flags & 0x02) ? (u32 *)chunk : NULL;
     if (smk->trackbufs[0] != NULL)
-        p += *(u32 *)p;
-    smk->trackbufs[1] = (flags & 0x04) ? (u32 *)p : NULL;
+        chunk += *(u32 *)chunk;
+    smk->trackbufs[1] = (flags & 0x04) ? (u32 *)chunk : NULL;
     if (smk->trackbufs[1] != NULL)
-        p += *(u32 *)p;
-    smk->trackbufs[2] = (flags & 0x08) ? (u32 *)p : NULL;
+        chunk += *(u32 *)chunk;
+    smk->trackbufs[2] = (flags & 0x08) ? (u32 *)chunk : NULL;
     if (smk->trackbufs[2] != NULL)
-        p += *(u32 *)p;
-    smk->trackbufs[3] = (flags & 0x10) ? (u32 *)p : NULL;
+        chunk += *(u32 *)chunk;
+    smk->trackbufs[3] = (flags & 0x10) ? (u32 *)chunk : NULL;
     if (smk->trackbufs[3] != NULL)
-        p += *(u32 *)p;
-    smk->trackbufs[4] = (flags & 0x20) ? (u32 *)p : NULL;
+        chunk += *(u32 *)chunk;
+    smk->trackbufs[4] = (flags & 0x20) ? (u32 *)chunk : NULL;
     if (smk->trackbufs[4] != NULL)
-        p += *(u32 *)p;
-    smk->trackbufs[5] = (flags & 0x40) ? (u32 *)p : NULL;
+        chunk += *(u32 *)chunk;
+    smk->trackbufs[5] = (flags & 0x40) ? (u32 *)chunk : NULL;
     if (smk->trackbufs[5] != NULL)
-        p += *(u32 *)p;
-    smk->trackbufs[6] = (flags & 0x80) ? (u32 *)p : NULL;
+        chunk += *(u32 *)chunk;
+    smk->trackbufs[6] = (flags & 0x80) ? (u32 *)chunk : NULL;
     if (smk->trackbufs[6] != NULL)
-        p += *(u32 *)p;
-    smk->f3f0 = p;
-    smk->SndSize = p - smk->f3d0;
+        chunk += *(u32 *)chunk;
+    smk->f3f0 = chunk;
+    smk->SndSize = chunk - smk->f3d0;
     if (flags & 1) {
         dst = smk->Palette;
         i = 0;
@@ -568,18 +568,18 @@ frame:
         while (i < 0x100) {
             c = *src;
             if (c & 0x80) {
-                cnt = (c & 0x7f) + 1;
-                n = cnt * 3;
+                keep_count = (c & 0x7f) + 1;
+                n = keep_count * 3;
                 radmemcpy(dst, prev + i * 3, n);
                 dst += n;
-                i += cnt;
+                i += keep_count;
                 src++;
             } else if (c & 0x40) {
-                cnt2 = (c & 0x3f) + 1;
-                n = cnt2 * 3;
+                copy_count = (c & 0x3f) + 1;
+                n = copy_count * 3;
                 radmemcpy(dst, prev + src[1] * 3, n);
                 src += 2;
-                i += cnt2;
+                i += copy_count;
                 dst += n;
             } else {
                 *dst++ = pallookup[c];
@@ -686,7 +686,7 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     u32 i;
     u32 window;
     u32 highest;
-    u32 *sz;
+    u32 *frame_size;
     u8 trk;
 
     largest = 0;
@@ -770,47 +770,47 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     smk->f3b8 += (u32)((u8 *)&smk->extra - (u8 *)smk) + 4 + smk->tablesize;
     tmp = smk->Frames - 1 + (smk->SmackerType & 1);
     highest = 0;
-    sz = smk->f3c8;
+    frame_size = smk->f3c8;
     if (tmp < fps) {
         highframe = 0;
         i = 0;
         for (;;) {
-            highest += *sz;
-            if (*sz > largest)
-                largest = *sz;
-            total += *sz;
-            sz++;
+            highest += *frame_size;
+            if (*frame_size > largest)
+                largest = *frame_size;
+            total += *frame_size;
+            frame_size++;
             if (++i > tmp)
                 break;
         }
     } else {
         window = 0;
         for (i = 0; i < fps; i++)
-            window += *sz++;
-        sz = smk->f3c8;
+            window += *frame_size++;
+        frame_size = smk->f3c8;
         left = tmp - fps;
         i = 0;
-        nextsize = sz + fps;
+        nextsize = frame_size + fps;
         for (;;) {
             if (window > highest && i != 0) {
                 highest = window;
                 highframe = i;
             }
-            window -= *sz;
+            window -= *frame_size;
             window += *nextsize;
-            if (*sz > largest)
-                largest = *sz;
-            total += *sz;
-            sz++;
+            if (*frame_size > largest)
+                largest = *frame_size;
+            total += *frame_size;
+            frame_size++;
             nextsize++;
             if (++i > left)
                 break;
         }
         for (; i <= tmp; i++) {
-            if (*sz > largest)
-                largest = *sz;
-            total += *sz;
-            sz++;
+            if (*frame_size > largest)
+                largest = *frame_size;
+            total += *frame_size;
+            frame_size++;
         }
     }
     smk->f4b8 = highframe;
@@ -1168,7 +1168,7 @@ u8 doskip(Smack *smk)
 // FUNCTION: 0xe9350
 u32 __pascal SmackDoFrame(Smack *smk)
 {
-    u32 t;
+    u32 now;
     u8 skip;
     u8 nodraw;
 
@@ -1176,11 +1176,11 @@ u32 __pascal SmackDoFrame(Smack *smk)
         return 0;
     if (smk->unknown39c)
         return 0;
-    t = SmackTimerReadAddr();
-    smk->f474 = t;
-    smk->f470 = t;
+    now = SmackTimerReadAddr();
+    smk->f474 = now;
+    smk->f470 = now;
     if (smk->f47c == 0)
-        smk->f47c = t;
+        smk->f47c = now;
     if (smk->NewPalette)
         smk->f3c4 = smk->FrameNum;
     smk->f488++;
@@ -1210,36 +1210,36 @@ u32 __pascal SmackDoFrame(Smack *smk)
 // FUNCTION: 0xe9230
 void timeframe(Smack *smk)
 {
-    u32 t;
-    u32 d;
+    u32 now;
+    u32 elapsed;
 
-    t = (u32)-1;
+    now = (u32)-1;
     if (smk->f470) {
-        t = SmackTimerReadAddr();
-        d = t - smk->f470;
+        now = SmackTimerReadAddr();
+        elapsed = now - smk->f470;
         smk->f470 = 0;
-        if (d > smk->f498) {
+        if (elapsed > smk->f498) {
             if (smk->f4a0 != smk->FrameNum) {
                 smk->f49c = smk->f498;
                 smk->f4a4 = smk->f4a0;
                 smk->f4a0 = smk->FrameNum;
             }
-            smk->f498 = d;
-        } else if (d > smk->f49c && smk->f4a0 != smk->FrameNum) {
-            smk->f49c = d;
+            smk->f498 = elapsed;
+        } else if (elapsed > smk->f49c && smk->f4a0 != smk->FrameNum) {
+            smk->f49c = elapsed;
             smk->f4a4 = smk->FrameNum;
         }
     }
     if (smk->f478) {
-        if (t == -1)
-            t = SmackTimerReadAddr();
-        smk->f490 += t - smk->f478;
+        if (now == -1)
+            now = SmackTimerReadAddr();
+        smk->f490 += now - smk->f478;
         smk->f478 = 0;
     }
     if (smk->f474) {
-        if (t == -1)
-            t = SmackTimerReadAddr();
-        smk->f494 += t - smk->f474;
+        if (now == -1)
+            now = SmackTimerReadAddr();
+        smk->f494 += now - smk->f474;
         smk->f474 = 0;
     }
 }
@@ -1326,13 +1326,13 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
     u32 bpl;
     u32 rows;
     u32 lines;
-    u8 *tmp;
+    u8 *split_buf;
     u32 stride;
     u32 height;
     u32 w;
     u32 i;
     u16 n;
-    u8 *t;
+    u8 *old_table;
     u16 *p;
 
     prevbuf = NULL;
@@ -1342,11 +1342,11 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
         banked = 0;
         wintbl = (const u16 *)0xa0000;
     }
-    t = smk->f3b0;
-    if (t != NULL) {
-        if (*t == 1) {
-            prevstep = *(u32 *)(t + 0x18);
-            prevbuf = *(u8 **)(t + 4);
+    old_table = smk->f3b0;
+    if (old_table != NULL) {
+        if (*old_table == 1) {
+            prevstep = *(u32 *)(old_table + 0x18);
+            prevbuf = *(u8 **)(old_table + 4);
         }
         RADFREE(smk->f3b0);
         smk->f46c -= smk->f3b4;
@@ -1376,7 +1376,7 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
     left &= ~3;
     smk->TopOfs = top;
     smk->LeftOfs = left;
-    tmp = smk->f3b0 + 0x400;
+    split_buf = smk->f3b0 + 0x400;
     p = (u16 *)smk->f3b0;
     *(u8 *)p = 0;
     ((u8 *)p)[1] = (smk->OpenFlags & 0x200000) != 0;
@@ -1416,19 +1416,19 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
                 *p = 0xfffe;
                 rows = 0;
                 p = PutWidths(p + 1, smk->Width, smk->Width, mult, lines);
-                *(u8 **)p = tmp;
+                *(u8 **)p = split_buf;
                 p += 2;
                 *p++ = 1;
                 *p++ = 0xfffd;
-                *(u8 **)p = tmp;
+                *(u8 **)p = split_buf;
                 if (prevbuf != NULL) {
                     for (i = 0; i < lines; i++) {
-                        radmemcpy(tmp, prevbuf, smk->Width);
-                        tmp += smk->Width;
+                        radmemcpy(split_buf, prevbuf, smk->Width);
+                        split_buf += smk->Width;
                         prevbuf += prevstep;
                     }
                 } else {
-                    tmp += smk->Width * lines;
+                    split_buf += smk->Width * lines;
                 }
                 p += 2;
                 *(*(u32 **)&p)++ = offset + 0xa0000;
@@ -1477,7 +1477,7 @@ void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 desthe
     u32 mult;
     u32 step;
     u32 row;
-    u8 *t;
+    u8 *table;
     u32 *p;
     u32 size;
 
@@ -1501,11 +1501,11 @@ void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 desthe
         height >>= 1;
         mult = 7;
     }
-    t = smk->f3b0;
-    if (t != NULL) {
-        if (*t == 1)
+    table = smk->f3b0;
+    if (table != NULL) {
+        if (*table == 1)
             goto have;
-        RADFREE(t);
+        RADFREE(table);
         smk->f46c -= smk->f3b4;
     }
     size = SmackGetSizeDeltas(smk->Width, height) + 0x20;
@@ -1517,10 +1517,10 @@ void __pascal SmackToBuffer(Smack *smk, u32 left, u32 top, u32 pitch, u32 desthe
 have:
     smk->TopOfs = top;
     smk->LeftOfs = left;
-    t = smk->f3b0;
-    t[0] = 1;
-    t[1] = (smk->OpenFlags & 0x200000) ? 1 : 0;
-    p = (u32 *)(t + 4);
+    table = smk->f3b0;
+    table[0] = 1;
+    table[1] = (smk->OpenFlags & 0x200000) ? 1 : 0;
+    p = (u32 *)(table + 4);
     row = flags ? destheight - top - 1 : top;
     *p++ = (u32)buf + (left + pitch * row);
     step = mult * bpl;
@@ -1818,7 +1818,7 @@ void __pascal SmackSoundCheck(void)
 u32 __pascal SmackWait(Smack *smk)
 {
     u32 played;
-    u32 t;
+    u32 now;
     SmackSnd *snd;
 
     if (smk == NULL)
@@ -1839,13 +1839,13 @@ u32 __pascal SmackWait(Smack *smk)
     } else {
         if (smk->f408)
             return 0;
-        t = SmackTimerReadAddr() * 100;
+        now = SmackTimerReadAddr() * 100;
         if (smk->f40c == -1) {
-            smk->f40c = t + smk->f410;
-        } else if (t >= smk->f40c) {
+            smk->f40c = now + smk->f410;
+        } else if (now >= smk->f40c) {
             smk->f40c = smk->f410 + smk->f40c;
-            if (t - smk->f40c > smk->f410)
-                smk->f40c = t + smk->f410;
+            if (now - smk->f40c > smk->f410)
+                smk->f40c = now + smk->f410;
             if (smk->f410)
                 smk->f408 = 1;
             return 0;

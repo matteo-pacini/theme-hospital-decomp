@@ -16,162 +16,162 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
         if (x2 < 0)
             return 1;
         {
-            s32 d1;
-            s32 d2;
-            s32 d3;
+            s32 span;
+            s32 overshoot;
+            s32 shift;
 
-            d1 = x1 - x2;
-            d2 = x1;
-            d3 = y1 - y2;
-            d3 = d3 * d2 / d1;
+            span = x1 - x2;
+            overshoot = x1;
+            shift = y1 - y2;
+            shift = shift * overshoot / span;
             x1 = 0;
-            y1 -= d3;
+            y1 -= shift;
             clipped = 1;
         }
         if (x2 >= lbDisplay.graphics_window_width) {
-            s32 d1;
-            s32 d2;
-            s32 d3;
+            s32 span;
+            s32 overshoot;
+            s32 shift;
 
-            d1 = x2 - x1;
-            d2 = x2 - (lbDisplay.graphics_window_width - 1);
-            d3 = y2 - y1;
-            d3 = d3 * d2 / d1;
+            span = x2 - x1;
+            overshoot = x2 - (lbDisplay.graphics_window_width - 1);
+            shift = y2 - y1;
+            shift = shift * overshoot / span;
             x2 = lbDisplay.graphics_window_width - 1;
-            y2 -= d3;
+            y2 -= shift;
         }
     } else if (x1 >= lbDisplay.graphics_window_width) {
         if (x2 >= lbDisplay.graphics_window_width)
             return 1;
         {
-            s32 d1;
-            s32 d2;
-            s32 d3;
+            s32 span;
+            s32 overshoot;
+            s32 shift;
 
-            d1 = x1 - x2;
-            d2 = x1 - (lbDisplay.graphics_window_width - 1);
-            d3 = y1 - y2;
-            d3 = d3 * d2 / d1;
+            span = x1 - x2;
+            overshoot = x1 - (lbDisplay.graphics_window_width - 1);
+            shift = y1 - y2;
+            shift = shift * overshoot / span;
             x1 = lbDisplay.graphics_window_width - 1;
-            y1 -= d3;
+            y1 -= shift;
             clipped = 1;
         }
         if (x2 < 0) {
-            s32 d1;
-            s32 d2;
-            s32 d3;
+            s32 span;
+            s32 overshoot;
+            s32 shift;
 
-            d1 = x2 - x1;
-            d2 = x2;
-            d3 = y2 - y1;
-            d3 = d3 * d2 / d1;
+            span = x2 - x1;
+            overshoot = x2;
+            shift = y2 - y1;
+            shift = shift * overshoot / span;
             x2 = 0;
-            y2 -= d3;
+            y2 -= shift;
         }
     } else if (x2 < 0) {
-        s32 d1;
-        s32 d2;
-        s32 d3;
+        s32 span;
+        s32 overshoot;
+        s32 shift;
 
-        d1 = x2 - x1;
-        d2 = x2;
-        d3 = y2 - y1;
-        d3 = d3 * d2 / d1;
+        span = x2 - x1;
+        overshoot = x2;
+        shift = y2 - y1;
+        shift = shift * overshoot / span;
         x2 = 0;
-        y2 -= d3;
+        y2 -= shift;
         clipped = 1;
     } else if (x2 >= lbDisplay.graphics_window_width) {
-        s32 d1;
-        s32 d2;
-        s32 d3;
+        s32 span;
+        s32 overshoot;
+        s32 shift;
 
-        d1 = x2 - x1;
-        d2 = x2 - (lbDisplay.graphics_window_width - 1);
-        d3 = y2 - y1;
-        d3 = d3 * d2 / d1;
+        span = x2 - x1;
+        overshoot = x2 - (lbDisplay.graphics_window_width - 1);
+        shift = y2 - y1;
+        shift = shift * overshoot / span;
         x2 = lbDisplay.graphics_window_width - 1;
-        y2 -= d3;
+        y2 -= shift;
         clipped = 1;
     }
     if (y1 < 0) {
         if (y2 < 0)
             return 1;
         {
-            s32 d1;
-            s32 d2;
-            s32 d3;
+            s32 span;
+            s32 overshoot;
+            s32 shift;
 
-            d1 = y1 - y2;
-            d2 = y1;
-            d3 = x1 - x2;
-            d3 = d3 * d2 / d1;
+            span = y1 - y2;
+            overshoot = y1;
+            shift = x1 - x2;
+            shift = shift * overshoot / span;
             y1 = 0;
-            x1 -= d3;
+            x1 -= shift;
             clipped = 1;
         }
         if (y2 >= lbDisplay.graphics_window_height) {
-            s32 d1;
-            s32 d2;
-            s32 d3;
+            s32 span;
+            s32 overshoot;
+            s32 shift;
 
-            d1 = y2 - y1;
-            d2 = y2 - (lbDisplay.graphics_window_height - 1);
-            d3 = x2 - x1;
-            d3 = d3 * d2 / d1;
+            span = y2 - y1;
+            overshoot = y2 - (lbDisplay.graphics_window_height - 1);
+            shift = x2 - x1;
+            shift = shift * overshoot / span;
             y2 = lbDisplay.graphics_window_height - 1;
-            x2 -= d3;
+            x2 -= shift;
         }
     } else if (y1 >= lbDisplay.graphics_window_height) {
         if (y2 >= lbDisplay.graphics_window_height)
             return 1;
         {
-            s32 d1;
-            s32 d2;
-            s32 d3;
+            s32 span;
+            s32 overshoot;
+            s32 shift;
 
-            d1 = y1 - y2;
-            d2 = y1 - (lbDisplay.graphics_window_height - 1);
-            d3 = x1 - x2;
-            d3 = d3 * d2 / d1;
+            span = y1 - y2;
+            overshoot = y1 - (lbDisplay.graphics_window_height - 1);
+            shift = x1 - x2;
+            shift = shift * overshoot / span;
             y1 = lbDisplay.graphics_window_height - 1;
-            x1 -= d3;
+            x1 -= shift;
             clipped = 1;
         }
         if (y2 < 0) {
-            s32 d1;
-            s32 d2;
-            s32 d3;
+            s32 span;
+            s32 overshoot;
+            s32 shift;
 
-            d1 = y2 - y1;
-            d2 = y2;
-            d3 = x2 - x1;
-            d3 = d3 * d2 / d1;
+            span = y2 - y1;
+            overshoot = y2;
+            shift = x2 - x1;
+            shift = shift * overshoot / span;
             y2 = 0;
-            x2 -= d3;
+            x2 -= shift;
         }
     } else if (y2 < 0) {
-        s32 d1;
-        s32 d2;
-        s32 d3;
+        s32 span;
+        s32 overshoot;
+        s32 shift;
 
-        d1 = y2 - y1;
-        d2 = y2;
-        d3 = x2 - x1;
-        d3 = d3 * d2 / d1;
+        span = y2 - y1;
+        overshoot = y2;
+        shift = x2 - x1;
+        shift = shift * overshoot / span;
         y2 = 0;
-        x2 -= d3;
+        x2 -= shift;
         clipped = 1;
     } else if (y2 >= lbDisplay.graphics_window_height) {
-        s32 d1;
-        s32 d2;
-        s32 d3;
+        s32 span;
+        s32 overshoot;
+        s32 shift;
 
-        d1 = y2 - y1;
-        d2 = y2 - (lbDisplay.graphics_window_height - 1);
-        d3 = x2 - x1;
-        d3 = d3 * d2 / d1;
+        span = y2 - y1;
+        overshoot = y2 - (lbDisplay.graphics_window_height - 1);
+        shift = x2 - x1;
+        shift = shift * overshoot / span;
         y2 = lbDisplay.graphics_window_height - 1;
-        x2 -= d3;
+        x2 -= shift;
         clipped = 1;
     }
     fn_000ca028(x1, y1, x2, y2, colour);

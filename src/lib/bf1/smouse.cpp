@@ -44,7 +44,7 @@ long screen_place(void);
 long screen_remove(u32 force);
 long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y);
 long LbMouseUpdatePosition(void);
-void __interrupt __far MouseHandler256(int max, int mcx, int mdx);
+void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y);
 #pragma aux MouseHandler256 parm [eax] [esi] [edi]
 
 extern "C" {
@@ -357,7 +357,7 @@ long LbMouseUpdatePosition(void)
 }
 
 // FUNCTION: 0x000bd8ac
-void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
+void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y)
 {
     s32 dx;
     s32 dy;
@@ -368,8 +368,8 @@ void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
 
     if (!D_00176bc0)
         return;
-    if (max != 1) {
-        if (max & 2) {
+    if (events != 1) {
+        if (events & 2) {
             lbDisplay.mleft_button = 1;
             if (!lbDisplay.left_button) {
                 lbDisplay.left_button = 1;
@@ -378,7 +378,7 @@ void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
                 lbDisplay.rleft_button = 0;
             }
         }
-        if (max & 4) {
+        if (events & 4) {
             lbDisplay.mleft_button = 0;
             if (!lbDisplay.rleft_button) {
                 lbDisplay.rleft_button = 1;
@@ -386,7 +386,7 @@ void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
                 lbDisplay.rmouse_y = lbDisplay.mmouse_y;
             }
         }
-        if (max & 8) {
+        if (events & 8) {
             lbDisplay.mright_button = 1;
             if (!lbDisplay.right_button) {
                 lbDisplay.right_button = 1;
@@ -395,7 +395,7 @@ void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
                 lbDisplay.rright_button = 0;
             }
         }
-        if (max & 0x10) {
+        if (events & 0x10) {
             lbDisplay.mright_button = 0;
             if (!lbDisplay.rright_button) {
                 lbDisplay.rright_button = 1;
@@ -403,7 +403,7 @@ void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
                 lbDisplay.rmouse_y = lbDisplay.mmouse_y;
             }
         }
-        if (max & 0x20) {
+        if (events & 0x20) {
             lbDisplay.mmiddle_button = 1;
             if (!lbDisplay.middle_button) {
                 lbDisplay.middle_button = 1;
@@ -412,7 +412,7 @@ void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
                 lbDisplay.rmiddle_button = 0;
             }
         }
-        if (max & 0x40) {
+        if (events & 0x40) {
             lbDisplay.mmiddle_button = 0;
             if (!lbDisplay.rmiddle_button) {
                 lbDisplay.rmiddle_button = 1;
@@ -421,10 +421,10 @@ void __interrupt __far MouseHandler256(int max, int mcx, int mdx)
             }
         }
     }
-    if (!(max & 1))
+    if (!(events & 1))
         return;
-    x = mcx;
-    y = mdx;
+    x = raw_x;
+    y = raw_y;
     D_00176bb4 = D_00178bfc;
     D_00176bb6 = D_00178bfe;
     D_00178bfc = x;
@@ -533,9 +533,9 @@ u32 mouse_setup_range(void)
 // FUNCTION: 0x000bde14
 long screen_place(void)
 {
-    s32 h;
-    s32 n;
-    s32 k;
+    s32 rows_left;
+    s32 after_bank;
+    s32 before_bank;
     u8 *mask;
     u8 *scr;
     u8 *save;
@@ -558,7 +558,7 @@ long screen_place(void)
             D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * lbDisplay.unknown18;
             if (!lbDisplay.vesa_is_set_up) {
                 screen = lbDisplay.physical_screen + D_00176bd0;
-                for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18, sprite += lbDisplay.mouse_sprite->width) {
+                for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.unknown18, sprite += lbDisplay.mouse_sprite->width) {
                     scr = screen;
                     mask = sprite;
                     for (x = 0; x < D_00176bc8; x++, scr++, mask++) {
@@ -571,26 +571,26 @@ long screen_place(void)
                 page = D_00176bd0 >> 16;
                 LbVesaSetPage(page);
                 screen = lbDisplay.physical_screen + (D_00176bd0 & 0xffff);
-                for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18, sprite += lbDisplay.mouse_sprite->width) {
+                for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.unknown18, sprite += lbDisplay.mouse_sprite->width) {
                     scr = screen;
                     mask = sprite;
-                    n = D_00176bc8;
+                    after_bank = D_00176bc8;
                     if ((u32)(scr + D_00176bc8) >= 0xb0000) {
-                        k = 0xb0000 - (u32)scr;
-                        if (k > 0) {
-                            for (i = 0; i < k; i++, scr++, mask++) {
+                        before_bank = 0xb0000 - (u32)scr;
+                        if (before_bank > 0) {
+                            for (i = 0; i < before_bank; i++, scr++, mask++) {
                                 *save++ = *scr;
                                 if (*mask != 0xfe)
                                     *scr = *mask;
                             }
-                            n -= k;
+                            after_bank -= before_bank;
                         }
                         ++page;
                         LbVesaSetPage(page);
                         scr -= 0x10000;
                         screen -= 0x10000;
                     }
-                    for (j = 0; j < n; j++, scr++, mask++) {
+                    for (j = 0; j < after_bank; j++, scr++, mask++) {
                         *save++ = *scr;
                         if (*mask != 0xfe)
                             *scr = *mask;
@@ -605,9 +605,9 @@ long screen_place(void)
 // FUNCTION: 0x000be0cc
 long screen_remove(u32 force)
 {
-    s32 h;
-    s32 n;
-    s32 k;
+    s32 rows_left;
+    s32 after_bank;
+    s32 before_bank;
     u8 *save;
     u8 *scr;
     u8 *screen;
@@ -622,7 +622,7 @@ long screen_remove(u32 force)
         save = D_00176bd4;
         if (!lbDisplay.vesa_is_set_up) {
             screen = lbDisplay.physical_screen + D_00176bd0;
-            for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18) {
+            for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.unknown18) {
                 scr = screen;
                 for (x = 0; x < D_00176bc8; x++)
                     *scr++ = *save++;
@@ -631,22 +631,22 @@ long screen_remove(u32 force)
             page = D_00176bd0 >> 16;
             LbVesaSetPage(page);
             screen = lbDisplay.physical_screen + (D_00176bd0 & 0xffff);
-            for (h = D_00176bcc; --h != -1; screen += lbDisplay.unknown18) {
+            for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.unknown18) {
                 scr = screen;
-                n = D_00176bc8;
+                after_bank = D_00176bc8;
                 if ((u32)(scr + D_00176bc8) >= 0xb0000) {
-                    k = 0xb0000 - (u32)scr;
-                    if (k > 0) {
-                        for (i = 0; i < k; i++)
+                    before_bank = 0xb0000 - (u32)scr;
+                    if (before_bank > 0) {
+                        for (i = 0; i < before_bank; i++)
                             *scr++ = *save++;
-                        n -= k;
+                        after_bank -= before_bank;
                     }
                     ++page;
                     LbVesaSetPage(page);
                     scr -= 0x10000;
                     screen -= 0x10000;
                 }
-                for (j = 0; j < n; j++)
+                for (j = 0; j < after_bank; j++)
                     *scr++ = *save++;
             }
         }

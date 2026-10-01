@@ -71,28 +71,28 @@ int LbDataLoadAll(TbLoadFiles *files)
 {
     u16 count;
     int ret;
-    TbLoadFiles *t;
+    TbLoadFiles *file;
 
     count = 0;
     fn_000cd2cc("LbDataLoadAll");
-    for (t = files; t->Start; t++)
-        LbDataFree(t);
-    for (t = files; t->Start; t++) {
-        ret = LbDataLoad(t);
+    for (file = files; file->Start; file++)
+        LbDataFree(file);
+    for (file = files; file->Start; file++) {
+        ret = LbDataLoad(file);
         if (ret == -100) {
-            LbDebugString("ERROR: Allocation %s.\n", t);
+            LbDebugString("ERROR: Allocation %s.\n", file);
             {
                 char msg[150];
-                sprintf(msg, "LbDataLoadAll() : Memory alloaction error before loading file: %s", t);
+                sprintf(msg, "LbDataLoadAll() : Memory alloaction error before loading file: %s", file);
                 if (LbAssertMessage(msg, "gdata.cpp", 102))
                     int3();
             }
             count++;
         } else if (ret == -101) {
-            LbDebugString("ERROR: File %s.\n", t);
+            LbDebugString("ERROR: File %s.\n", file);
             {
                 char msg[150];
-                sprintf(msg, "LbDataLoadAll() : Error loading file: %s", t);
+                sprintf(msg, "LbDataLoadAll() : Error loading file: %s", file);
                 if (LbAssertMessage(msg, "gdata.cpp", 110))
                     int3();
             }

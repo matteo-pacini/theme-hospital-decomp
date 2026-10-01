@@ -434,37 +434,37 @@ u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
 
 static inline IPXQueueEntry *GetNextFullReceiveBuffer(IPXServiceProvider *self)
 {
-    IPXQueueEntry *e;
+    IPXQueueEntry *entry;
     u32 found = 0;
 
-    for (e = self->queue; e < self->queue + 32; e++) {
-        if (e->used) {
+    for (entry = self->queue; entry < self->queue + 32; entry++) {
+        if (entry->used) {
             found = 1;
             break;
         }
     }
     if (found == 1)
-        return e;
+        return entry;
     return 0;
 }
 
 // FUNCTION: 0xd6598
 u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
 {
-    IPXQueueEntry *e;
+    IPXQueueEntry *entry;
     u32 msg_size;
     u32 ret = 0;
 
-    e = GetNextFullReceiveBuffer(self);
-    if (e) {
-        *from = e->from;
-        DecodeMessageStub(e, &msg_size, 0, 0);
+    entry = GetNextFullReceiveBuffer(self);
+    if (entry) {
+        *from = entry->from;
+        DecodeMessageStub(entry, &msg_size, 0, 0);
         if (msg_size + 4 <= *size) {
             ret = 1;
-            memcpy(buf, e, msg_size + 4);
+            memcpy(buf, entry, msg_size + 4);
             *size = msg_size + 4;
             if (!peek)
-                e->used = 0;
+                entry->used = 0;
         }
     } else {
         *size = 0;
@@ -486,7 +486,7 @@ TbError IPXServiceProvider::Enumerate(TbNetworkCallbackFunc callback, void *data
     s32 i;
     __3ljac5NETSOCKET from;
     u8 *sap;
-    TbNetworkSessionNameEntry *ne;
+    TbNetworkSessionNameEntry *session_entry;
 
     if (started) {
         if (unknown528) {
@@ -555,8 +555,8 @@ TbError IPXServiceProvider::Enumerate(TbNetworkCallbackFunc callback, void *data
             }
             for (i = 0; i <= session_count; i++) {
                 if (session_list[i].time) {
-                    ne = AddSession(i, session_list[i].name);
-                    callback((TbNetworkCallbackData *)ne, data);
+                    session_entry = AddSession(i, session_list[i].name);
+                    callback((TbNetworkCallbackData *)session_entry, data);
                     ret = Lb_OK;
                 }
             }
@@ -585,7 +585,7 @@ TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetw
     u32 now;
     u8 *info;
     __3ljac5NETSOCKET *server;
-    IPXPlayerEntry *e;
+    IPXPlayerEntry *entry;
     u32 start;
     u32 last;
     __5303ctCLIENTINFOPACKET query;
@@ -640,12 +640,12 @@ TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetw
                                         start = time;
                                         last = now;
                                         player.id = 0;
-                                        for (i = 0, e = (IPXPlayerEntry *)(info + 0x50); i < 6; i++, e++) {
-                                            if (e->addr.socket) {
+                                        for (i = 0, entry = (IPXPlayerEntry *)(info + 0x50); i < 6; i++, entry++) {
+                                            if (entry->addr.socket) {
                                                 count++;
-                                                player.host = e->id == ((IPXSessionInfo *)info)->host_id;
-                                                strcpy(player.name, e->name);
-                                                player.id = e->id;
+                                                player.host = entry->id == ((IPXSessionInfo *)info)->host_id;
+                                                strcpy(player.name, entry->name);
+                                                player.id = entry->id;
                                                 callback((TbNetworkCallbackData *)&player, data);
                                             }
                                         }
@@ -793,12 +793,12 @@ TbError IPXServiceProvider::BullfrogIPXServer(char *name)
 void IPXServiceProvider::ConvertGuidToString(__tibcaGUID *guid, char *str)
 {
     char buf[0xc];
-    u32 *d = guid->data;
+    u32 *word = guid->data;
     u32 i;
 
     str[0] = 0;
-    for (i = 0; i < 16; i += 4, d++) {
-        sprintf(buf, "%x.", *d);
+    for (i = 0; i < 16; i += 4, word++) {
+        sprintf(buf, "%x.", *word);
         strcat(str, buf);
     }
 }
@@ -807,7 +807,7 @@ void IPXServiceProvider::ConvertGuidToString(__tibcaGUID *guid, char *str)
 void IPXServiceProvider::ConvertStringToGuid(char *str, __tibcaGUID *guid)
 {
     char buf[0x14];
-    u32 *d = guid->data;
+    u32 *word = guid->data;
     char *p = str;
     u32 j;
     u8 i;
@@ -822,7 +822,7 @@ void IPXServiceProvider::ConvertStringToGuid(char *str, __tibcaGUID *guid)
             }
             buf[j] = *p++;
         }
-        *d++ = strtoul(buf, 0, 16);
+        *word++ = strtoul(buf, 0, 16);
         i++;
     }
 }
@@ -954,7 +954,7 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
     u32 total = 32;
     IPXSessionInfo *msg;
     u32 max = 32;
-    IPXPlayerEntry *e;
+    IPXPlayerEntry *entry;
     u32 last_send;
     u32 start;
     u32 now;
@@ -992,18 +992,18 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
                         if (msg->page == remote.page) {
                             last_send = now;
                             start = now;
-                            for (i = 0, e = (IPXPlayerEntry *)(msg + 1); i < 6; i++, e++) {
-                                if (e->addr.socket) {
+                            for (i = 0, entry = (IPXPlayerEntry *)(msg + 1); i < 6; i++, entry++) {
+                                if (entry->addr.socket) {
                                     added++;
                                     is_local = 0;
                                     is_host = 0;
-                                    if (e->id == remote.host_id)
+                                    if (entry->id == remote.host_id)
                                         is_local = 1;
-                                    if (e->id == msg->host_id)
+                                    if (entry->id == msg->host_id)
                                         is_host = 1;
-                                    if (AddPlayer(e->id, e->name, is_local, is_host) != Lb_OK)
+                                    if (AddPlayer(entry->id, entry->name, is_local, is_host) != Lb_OK)
                                         fn_000c20c0("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
-                                    memcpy(&players[e->id], e, sizeof(IPXPlayerEntry));
+                                    memcpy(&players[entry->id], entry, sizeof(IPXPlayerEntry));
                                 }
                             }
                             if (added >= total) {
@@ -1151,7 +1151,7 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
 // call ahead of the loop body, ours after it
 TbError IPXServiceProvider::RemoveAbortedPlayer(void)
 {
-    IPXPlayerEntry *ap;
+    IPXPlayerEntry *aborted;
     u32 count;
     IPXPlayerEntry *p;
     __3ljac5NETSOCKET from;
@@ -1176,17 +1176,17 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
             max = remote.max_players;
         }
         ret = Lb_OK;
-        for (ap = players; ap < players + max; ap++) {
-            if (!ap->addr.socket || ap->id == me || ap->ack)
+        for (aborted = players; aborted < players + max; aborted++) {
+            if (!aborted->addr.socket || aborted->id == me || aborted->ack)
                 continue;
             memset(&msg, 0, sizeof(msg));
             msg.magic = MSG_BUSD;
             msg.seq = sys_seq++;
             msg.guid = guid;
             msg.host = me;
-            memcpy(&msg.player, ap, sizeof(IPXPlayerEntry));
-            acked_a[ap->id] = 0;
-            acked_b[ap->id] = 0;
+            memcpy(&msg.player, aborted, sizeof(IPXPlayerEntry));
+            acked_a[aborted->id] = 0;
+            acked_b[aborted->id] = 0;
             num = 1;
             for (p = players; p < players + max; p++) {
                 if (p->addr.socket && p->id != me) {
@@ -1270,11 +1270,11 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
                     ipx.Listen(pk, &socket);
                 }
             } while (!done);
-            memset(ap, 0, sizeof(IPXPlayerEntry));
+            memset(aborted, 0, sizeof(IPXPlayerEntry));
             if (!done) {
                 for (p = players; p < players + max; p++)
                     p->ack = p->unknown36;
-                ap = players;
+                aborted = players;
             }
             continue;
         none:
@@ -1687,17 +1687,17 @@ void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
 // FUNCTION: 0x000dc400 COMDAT
 inline IPXQueueEntry *IPXServiceProvider::GetNextEmptyReceiveBuffer(void)
 {
-    IPXQueueEntry *e;
+    IPXQueueEntry *entry;
     u32 found = 0;
 
-    for (e = queue; e < queue + 32; e++) {
-        if (!e->used) {
+    for (entry = queue; entry < queue + 32; entry++) {
+        if (!entry->used) {
             found = 1;
             break;
         }
     }
     if (found == 1)
-        return e;
+        return entry;
     return 0;
 }
 

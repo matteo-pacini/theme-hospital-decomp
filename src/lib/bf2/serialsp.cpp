@@ -402,7 +402,7 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
     u32 remove;
     u32 got;
     u32 found;
-    long c;
+    long byte;
     Parser *p;
 
     max_size = *size;
@@ -421,21 +421,21 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
     if (got || *size)
         return got;
     while (keep_going) {
-        c = comm->ReadByte();
-        if (c == -1) {
+        byte = comm->ReadByte();
+        if (byte == -1) {
             keep_going = 0;
             continue;
         }
         found = 0;
         for (p = parsers; p != parsers + 10; p++) {
             if (p->active) {
-                p->InputByte(c);
+                p->InputByte(byte);
             } else if (!found) {
                 found = 1;
                 p->state = PS_HEADER;
                 p->count = 0;
                 p->active = 1;
-                p->InputByte(c);
+                p->InputByte(byte);
             }
         }
         *size = max_size;
@@ -452,7 +452,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
 {
     u32 j;
     TbMessageType type;
-    Parser *q;
+    Parser *other;
     u32 msg_size;
     u32 got = 0;
     u32 deliver;
@@ -468,9 +468,9 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
         if (!p->InUse() || !p->GotCompleteMessage())
             continue;
         deliver = 0;
-        for (j = 0, q = parsers; j < 10; j++, q++) {
-            if (q->InUse() && j != i)
-                q->TakeDown();
+        for (j = 0, other = parsers; j < 10; j++, other++) {
+            if (other->InUse() && j != i)
+                other->TakeDown();
         }
         switch (p->GetFirstHeaderByte()) {
         case 0x1b:
@@ -598,7 +598,7 @@ u8 Parser::GetSequenceNumber(void)
 }
 
 // FUNCTION: 0xee380
-TbError Parser::InputByte(u8 c)
+TbError Parser::InputByte(u8 byte)
 {
     TbError ret = Lb_OK;
     u16 checksum;
@@ -609,7 +609,7 @@ TbError Parser::InputByte(u8 c)
     case PS_HEADER:
         if (count == 0) {
             count++;
-            switch (c) {
+            switch (byte) {
             case 0x1b:
                 memcpy(header, messageHeader, 4);
                 break;
@@ -623,7 +623,7 @@ TbError Parser::InputByte(u8 c)
                 goto fail;
             }
         } else {
-            if (c != header[count])
+            if (byte != header[count])
                 goto fail;
             count++;
             if (count >= 4) {
@@ -636,7 +636,7 @@ TbError Parser::InputByte(u8 c)
         }
         break;
     case PS_SEQUENCE:
-        seq = c;
+        seq = byte;
         if (header[0] == 0x1b || header[0] == 0x1e) {
             state = PS_SIZE;
         } else {
@@ -646,7 +646,7 @@ TbError Parser::InputByte(u8 c)
         count = 0;
         break;
     case PS_SIZE:
-        msg[count] = c;
+        msg[count] = byte;
         count++;
         if (count >= 4) {
             DecodeMessageStub(msg, &size, 0, 0);
@@ -660,7 +660,7 @@ TbError Parser::InputByte(u8 c)
         }
         break;
     case PS_DATA:
-        msg[4 + count] = c;
+        msg[4 + count] = byte;
         count++;
         if (count >= size) {
             state = PS_CHECKSUM;
@@ -668,7 +668,7 @@ TbError Parser::InputByte(u8 c)
         }
         break;
     case PS_CHECKSUM:
-        msg[4 + size + count] = c;
+        msg[4 + size + count] = byte;
         count++;
         if (count >= 2) {
             sum = 0;

@@ -8,7 +8,7 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
 {
     SampleInfo *smp;
     SampleInfo *busy;
-    SampleInfo *s;
+    SampleInfo *cand;
     u8 found;
 
     if (SoundInstalled && SoundAble && SoundActive) {
@@ -17,9 +17,9 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
         switch (type) {
         case 1:
             smp = 0;
-            for (s = sample_id; s <= end_sample_id; s++) {
-                if (AIL_sample_status(s->SampleHandle) == 2) {
-                    smp = s;
+            for (cand = sample_id; cand <= end_sample_id; cand++) {
+                if (AIL_sample_status(cand->SampleHandle) == 2) {
+                    smp = cand;
                     busy = 0;
                     break;
                 }
@@ -27,28 +27,28 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
             break;
         case 2:
             busy = 0;
-            for (s = sample_id; s <= end_sample_id; s++) {
-                if (s->SourceID == source_id && s->SampleNumber == number
-                    && AIL_sample_status(s->SampleHandle) != 2) {
-                    busy = s;
+            for (cand = sample_id; cand <= end_sample_id; cand++) {
+                if (cand->SourceID == source_id && cand->SampleNumber == number
+                    && AIL_sample_status(cand->SampleHandle) != 2) {
+                    busy = cand;
                     break;
                 }
             }
             if (busy)
                 break;
             smp = 0;
-            for (s = sample_id; s <= end_sample_id; s++) {
-                if (AIL_sample_status(s->SampleHandle) == 2) {
-                    smp = s;
+            for (cand = sample_id; cand <= end_sample_id; cand++) {
+                if (AIL_sample_status(cand->SampleHandle) == 2) {
+                    smp = cand;
                     break;
                 }
             }
             break;
         case 3:
             found = 0;
-            for (s = sample_id; s <= end_sample_id; s++) {
-                if (s->SourceID == source_id && s->SampleNumber == number) {
-                    smp = s;
+            for (cand = sample_id; cand <= end_sample_id; cand++) {
+                if (cand->SourceID == source_id && cand->SampleNumber == number) {
+                    smp = cand;
                     busy = 0;
                     found = 1;
                     break;
@@ -56,9 +56,9 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
             }
             if (!found && extra) {
                 smp = 0;
-                for (s = sample_id; s <= end_sample_id; s++) {
-                    if (s->SourceID == source_id && s->ExtraData == extra) {
-                        smp = s;
+                for (cand = sample_id; cand <= end_sample_id; cand++) {
+                    if (cand->SourceID == source_id && cand->ExtraData == extra) {
+                        smp = cand;
                         busy = 0;
                         found = 1;
                         break;
@@ -67,9 +67,9 @@ SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan
             }
             if (!found) {
                 smp = 0;
-                for (s = sample_id; s <= end_sample_id; s++) {
-                    if (AIL_sample_status(s->SampleHandle) == 2) {
-                        smp = s;
+                for (cand = sample_id; cand <= end_sample_id; cand++) {
+                    if (AIL_sample_status(cand->SampleHandle) == 2) {
+                        smp = cand;
                         busy = 0;
                         break;
                     }

@@ -26,7 +26,7 @@ void InitSound(void)
     u8 ok = 0;
     u8 extra = 5;
     char *env;
-    SampleInfo *p;
+    SampleInfo *smp;
 
     if (!SoundAble)
         return;
@@ -187,10 +187,10 @@ void InitSound(void)
     }
     if (SoundAble) {
         end_sample_id = &sample_id[MaxNumberOfSamples - 1];
-        for (p = sample_id; p <= end_sample_id; p++) {
-            p->SampleHandle = AIL_allocate_sample_handle(SoundDriver);
-            p->FadeState = 0;
-            p->unknown17 = 0;
+        for (smp = sample_id; smp <= end_sample_id; smp++) {
+            smp->SampleHandle = AIL_allocate_sample_handle(SoundDriver);
+            smp->FadeState = 0;
+            smp->unknown17 = 0;
         }
         SoundInstalled = 1;
         sprintf(SoundProgressMessage, "BF24 - Init sound completed\n");

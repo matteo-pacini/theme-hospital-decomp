@@ -33,7 +33,7 @@ void fn_000e7460(_SAMPLE *sample)
 }
 
 // FUNCTION: 0xe7520
-void fn_000e7520(s32 s0, s32 s1, s32 s2, s32 s3, s32 s4, s32 s5, s32 s6, s32 s7)
+void fn_000e7520(s32 sfx0, s32 sfx1, s32 sfx2, s32 sfx3, s32 sfx4, s32 sfx5, s32 sfx6, s32 sfx7)
 {
     if (SoundInstalled && SoundAble && SoundActive) {
         if (!sample_queue_handle_initiated) {
@@ -42,14 +42,14 @@ void fn_000e7520(s32 s0, s32 s1, s32 s2, s32 s3, s32 s4, s32 s5, s32 s6, s32 s7)
         }
         sample_queue_handle_stopped = 1;
         AIL_end_sample(sample_queue_handle);
-        AIL_set_sample_user_data(sample_queue_handle, 0, s0);
-        AIL_set_sample_user_data(sample_queue_handle, 1, s1);
-        AIL_set_sample_user_data(sample_queue_handle, 2, s2);
-        AIL_set_sample_user_data(sample_queue_handle, 3, s3);
-        AIL_set_sample_user_data(sample_queue_handle, 4, s4);
-        AIL_set_sample_user_data(sample_queue_handle, 5, s5);
-        AIL_set_sample_user_data(sample_queue_handle, 6, s6);
-        AIL_set_sample_user_data(sample_queue_handle, 7, s7);
+        AIL_set_sample_user_data(sample_queue_handle, 0, sfx0);
+        AIL_set_sample_user_data(sample_queue_handle, 1, sfx1);
+        AIL_set_sample_user_data(sample_queue_handle, 2, sfx2);
+        AIL_set_sample_user_data(sample_queue_handle, 3, sfx3);
+        AIL_set_sample_user_data(sample_queue_handle, 4, sfx4);
+        AIL_set_sample_user_data(sample_queue_handle, 5, sfx5);
+        AIL_set_sample_user_data(sample_queue_handle, 6, sfx6);
+        AIL_set_sample_user_data(sample_queue_handle, 7, sfx7);
         D_0018cd80 = 0;
         sample_queue_handle_stopped = 0;
         fn_000e7460(0);

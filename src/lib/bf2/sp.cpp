@@ -92,7 +92,7 @@ TbError ServiceProvider::Release(void)
 }
 
 // FUNCTION: 0x000d14a4
-TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 a, u32 b)
+TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 is_local, u32 is_host)
 {
     u32 i;
     u32 found;
@@ -115,8 +115,8 @@ TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 a, u32 b)
         dst = players[i].name;
         if (dst && name)
             NameCopy(dst, name, 32);
-        players[i].unknown5 = a;
-        players[i].host = b;
+        players[i].unknown5 = is_local;
+        players[i].host = is_host;
         ret = Lb_OK;
         player_count++;
     }
@@ -447,20 +447,20 @@ TbError ServiceProvider::CheckForDeletedHost(u8 *msg)
 // NONMATCHING: the inlined DecodeMessageStub swaps ecx/edx (buffer and sequence pointer); its jump table sits in the preceding range
 TbError ServiceProvider::Receive(u32 flags)
 {
-    char name2[0x20];
+    char added_name[0x20];
     u32 keep_going;
     u32 from;
     u32 size;
     u32 msg_size;
     u32 seq;
-    u32 id;
-    u32 id5;
-    u32 id3;
+    u32 added_id;
+    u32 comp_req_id;
+    u32 deleted_id;
     u8 type;
-    u32 id4;
+    u32 req_id;
     char buf[0x404];
     TbError ret;
-    u32 msg_size2;
+    u32 sys_msg_size;
     void *dst;
 
     keep_going = 1;
@@ -509,9 +509,9 @@ TbError ServiceProvider::Receive(u32 flags)
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
                         SystemAddPlayerHandler((u8 *)buf);
-                        DecodeAddPlayerMsg((u8 *)buf, id, name2);
+                        DecodeAddPlayerMsg((u8 *)buf, added_id, added_name);
                         if (callbacks->addMsg)
-                            callbacks->addMsg(id, name2, callback_data);
+                            callbacks->addMsg(added_id, added_name, callback_data);
                     } else {
                         fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error on Receive()\n");
                     }
@@ -524,9 +524,9 @@ TbError ServiceProvider::Receive(u32 flags)
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
                         SystemDeletePlayerHandler((u8 *)buf);
-                        DecodeRequestCompositeExchangeDataMsg((u8 *)buf, id3);
+                        DecodeRequestCompositeExchangeDataMsg((u8 *)buf, deleted_id);
                         if (callbacks->deleteMsg)
-                            callbacks->deleteMsg(id3, callback_data);
+                            callbacks->deleteMsg(deleted_id, callback_data);
                     } else {
                         fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error\n");
                     }
@@ -540,9 +540,9 @@ TbError ServiceProvider::Receive(u32 flags)
                 if (flags & 0x80) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
-                        DecodeMessageStub(buf, &msg_size2, 0, 0);
+                        DecodeMessageStub(buf, &sys_msg_size, 0, 0);
                         if (callbacks->systemUserMsg)
-                            callbacks->systemUserMsg(from, buf + 4, msg_size2, callback_data);
+                            callbacks->systemUserMsg(from, buf + 4, sys_msg_size, callback_data);
                     } else {
                         fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error\n");
                     }
@@ -554,9 +554,9 @@ TbError ServiceProvider::Receive(u32 flags)
                 if (flags & 0x10) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
-                        DecodeRequestExchangeDataMsg((u8 *)buf, id4);
+                        DecodeRequestExchangeDataMsg((u8 *)buf, req_id);
                         if (callbacks->mpReqExDataMsg)
-                            callbacks->mpReqExDataMsg(id4, seq, callback_data);
+                            callbacks->mpReqExDataMsg(req_id, seq, callback_data);
                     } else {
                         fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error\n");
                     }
@@ -568,9 +568,9 @@ TbError ServiceProvider::Receive(u32 flags)
                 if (flags & 0x20) {
                     size = 0x404;
                     if (ReadMessage(&from, buf, &size)) {
-                        DecodeRequestCompositeExchangeDataMsg((u8 *)buf, id5);
+                        DecodeRequestCompositeExchangeDataMsg((u8 *)buf, comp_req_id);
                         if (callbacks->mpReqCompsExDataMsg)
-                            callbacks->mpReqCompsExDataMsg(id5, seq, callback_data);
+                            callbacks->mpReqCompsExDataMsg(comp_req_id, seq, callback_data);
                     } else {
                         fn_000c20c0("  WARNING network: ServiceProvider::ReadMessage() consistency error\n");
                     }
@@ -612,9 +612,9 @@ TbError ServiceProvider::Send(u32 to, void *buf)
     TbError ret;
     u32 msg_size;
     TbMessageType type;
-    u32 id2;
+    u32 player_id;
     u32 seq;
-    char name2[0x20];
+    char added_name[0x20];
     void *dst;
     s8 guaranteed;
 
@@ -629,7 +629,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
         switch (type) {
         case 8:
             if (callbacks->unknown24)
-                callbacks->unknown24(id2, buf);
+                callbacks->unknown24(player_id, buf);
             break;
         case 0:
             if (callbacks->multiPlayer)
@@ -641,15 +641,15 @@ TbError ServiceProvider::Send(u32 to, void *buf)
             break;
         case 1:
             SystemAddPlayerHandler((u8 *)buf);
-            DecodeAddPlayerMsg((u8 *)buf, id2, name2);
+            DecodeAddPlayerMsg((u8 *)buf, player_id, added_name);
             if (callbacks->addMsg)
-                callbacks->addMsg(id2, name2, callback_data);
+                callbacks->addMsg(player_id, added_name, callback_data);
             break;
         case 2:
             SystemDeletePlayerHandler((u8 *)buf);
-            DecodeRequestCompositeExchangeDataMsg((u8 *)buf, id2);
+            DecodeRequestCompositeExchangeDataMsg((u8 *)buf, player_id);
             if (callbacks->deleteMsg)
-                callbacks->deleteMsg(id2, callback_data);
+                callbacks->deleteMsg(player_id, callback_data);
             break;
         case 3:
             break;
@@ -660,14 +660,14 @@ TbError ServiceProvider::Send(u32 to, void *buf)
                 fn_000c20c0("  WARNING network: ServiceProvider::Send() NIL target for systemUserMsgCallbackProc\n");
             break;
         case 5:
-            DecodeRequestExchangeDataMsg((u8 *)buf, id2);
+            DecodeRequestExchangeDataMsg((u8 *)buf, player_id);
             if (callbacks->mpReqExDataMsg)
-                callbacks->mpReqExDataMsg(id2, seq, callback_data);
+                callbacks->mpReqExDataMsg(player_id, seq, callback_data);
             break;
         case 6:
-            DecodeRequestCompositeExchangeDataMsg((u8 *)buf, id2);
+            DecodeRequestCompositeExchangeDataMsg((u8 *)buf, player_id);
             if (callbacks->mpReqCompsExDataMsg)
-                callbacks->mpReqCompsExDataMsg(id2, seq, callback_data);
+                callbacks->mpReqCompsExDataMsg(player_id, seq, callback_data);
             break;
         default:
             fn_000c20c0("  WARNING network: ServiceProvider::Send() messageType is out of range\n");
@@ -735,12 +735,12 @@ TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
 TbError ServiceProvider::EnumeratePlayersForSessionRunning(void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data)
 {
     TbError ret = Lb_FAIL;
-    TbError r;
+    TbError result;
 
     if (Receive(0xb6) == Lb_OK) {
-        r = EnumeratePlayers(callback, data);
-        if (r == Lb_OK)
-            ret = r;
+        result = EnumeratePlayers(callback, data);
+        if (result == Lb_OK)
+            ret = result;
         else
             fn_000c20c0("  WARNING network: ServiceProvider::EnumeratePlayersForSessionRunning() failure on EnumeratePlayers()\n");
     } else {

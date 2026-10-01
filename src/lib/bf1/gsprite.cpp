@@ -23,10 +23,10 @@ struct TbSetupSprite {
 };
 
 // FUNCTION: 0x000bc824
-int LbSpriteResetAll(TbSetupSprite *t)
+int LbSpriteResetAll(TbSetupSprite *setup)
 {
-    for (; t->Start; t++)
-        LbSpriteReset(*t->Start, *t->End, *t->Data);
+    for (; setup->Start; setup++)
+        LbSpriteReset(*setup->Start, *setup->End, *setup->Data);
     return 1;
 }
 
@@ -41,10 +41,10 @@ int LbSpriteSetup(TbSprite *start, TbSprite *end, void *data)
 }
 
 // FUNCTION: 0x000bc8b0
-int LbSpriteSetupAll(TbSetupSprite *t)
+int LbSpriteSetupAll(TbSetupSprite *setup)
 {
-    for (; t->Start; t++)
-        LbSpriteSetup(*t->Start, *t->End, *t->Data);
+    for (; setup->Start; setup++)
+        LbSpriteSetup(*setup->Start, *setup->End, *setup->Data);
     return 1;
 }
 

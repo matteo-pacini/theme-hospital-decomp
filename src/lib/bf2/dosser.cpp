@@ -264,16 +264,16 @@ long SerialHandler::DeInit(long port)
 long SerialHandler::ReadByte(long port)
 {
     TbSerialDev *dev;
-    long c;
+    long byte;
 
     if (port < 4) {
         dev = com_dev[port].dev;
         if (dev->rx_head != dev->rx_tail) {
-            c = dev->rx_buf[dev->rx_head];
+            byte = dev->rx_buf[dev->rx_head];
             dev->rx_head++;
             if (dev->rx_head > 0x7ff)
                 dev->rx_head = 0;
-            return c;
+            return byte;
         }
     }
     return -1;
@@ -549,7 +549,7 @@ void SerialHandler::setup_serial_int_vectors(TbSerialDev *dev)
 // FUNCTION: 0xf5e74
 void SerialHandler::init_com_port(TbSerialDev *dev)
 {
-    TbSerialDev *d;
+    TbSerialDev *port_dev;
 
     outp(0x21, inp(0x21) | (1 << dev->irq));
     outp(dev->base + 4, 0);
@@ -572,12 +572,12 @@ void SerialHandler::init_com_port(TbSerialDev *dev)
     inp(dev->base + 6);
     _enable();
     if (dev->port < 4) {
-        d = com_dev[dev->port].dev;
-        outp(d->base + 4, inp(d->base + 4) | 2);
+        port_dev = com_dev[dev->port].dev;
+        outp(port_dev->base + 4, inp(port_dev->base + 4) | 2);
     }
     if (dev->port < 4) {
-        d = com_dev[dev->port].dev;
-        outp(d->base + 4, inp(d->base + 4) | 1);
+        port_dev = com_dev[dev->port].dev;
+        outp(port_dev->base + 4, inp(port_dev->base + 4) | 1);
     }
     SetBaud(dev->port, 9600);
 }
@@ -625,8 +625,8 @@ void handle_com(TbSerialDev *dev)
         if (iir & 4) {
             u32 lsr = inp(dev->base + 5);
             while (lsr & 1) {
-                u32 c = inp(dev->base);
-                dev->rx_buf[dev->rx_tail] = c;
+                u32 byte = inp(dev->base);
+                dev->rx_buf[dev->rx_tail] = byte;
                 dev->rx_tail++;
                 if (dev->rx_tail > 0x7ff)
                     dev->rx_tail = 0;
@@ -726,17 +726,17 @@ u32 CommHandler::ReadBytes(void *buf, u32 len)
     u32 n = 0;
     u32 more = 1;
     u8 *p = (u8 *)buf;
-    long c;
+    long byte;
 
     do {
         if (n >= len) {
             more = 0;
         } else {
-            c = ReadByte();
-            if (c == -1) {
+            byte = ReadByte();
+            if (byte == -1) {
                 more = 0;
             } else {
-                *p++ = c;
+                *p++ = byte;
                 n++;
             }
         }
@@ -811,19 +811,19 @@ long CommHandler::DialModem(char *number)
 // FUNCTION: 0xf6940
 long CommHandler::HangUpModem(void)
 {
-    u32 t;
+    u32 start;
     long ret = -1;
 
     CH(this)->cur_func = CH(this)->hangup_func;
-    t = clock();
-    while (clock() - t < 100)
+    start = clock();
+    while (clock() - start < 100)
         ;
     SerialCommHandler.ClearDtr(CH(this)->port);
     delay(50);
     SerialCommHandler.SetDtr(CH(this)->port);
     SerialCommHandler.WriteBytes(CH(this)->port, (u8 *)"+++", 3);
-    t = clock();
-    while (clock() - t < 100)
+    start = clock();
+    while (clock() - start < 100)
         ;
     strcpy(CH(this)->response, "OK");
     GetModemResponse(CH(this)->timeout);
@@ -930,13 +930,13 @@ void CommHandler::read_a_line(FILE *f, char *p)
 // FUNCTION: 0xf70f8
 long CommHandler::GetModemResponse(long timeout)
 {
-    long c;
+    long byte;
     u8 done = 0;
     u32 start;
     long ret = -1;
     u16 len = 0;
     char buf[0xa0];
-    ModemResponse *m;
+    ModemResponse *resp;
 
     memset(buf, 0, sizeof(buf));
     start = clock();
@@ -945,16 +945,16 @@ long CommHandler::GetModemResponse(long timeout)
             return -7;
         if (clock() - start > timeout)
             break;
-        c = ReadByte();
-        if (c == -1)
+        byte = ReadByte();
+        if (byte == -1)
             continue;
-        if (c == '\r' || len == 0x50) {
-            for (m = modem_response;; m++) {
-                if (m->code == 0)
+        if (byte == '\r' || len == 0x50) {
+            for (resp = modem_response;; resp++) {
+                if (resp->code == 0)
                     break;
-                if (!stricmp(buf, m->text)) {
+                if (!stricmp(buf, resp->text)) {
                     done = 1;
-                    ret = m->code;
+                    ret = resp->code;
                     strcpy(CH(this)->response, buf);
                     break;
                 }
@@ -966,8 +966,8 @@ long CommHandler::GetModemResponse(long timeout)
             }
             memset(buf, 0, sizeof(buf));
             len = 0;
-        } else if (c != '\n') {
-            buf[len++] = c;
+        } else if (byte != '\n') {
+            buf[len++] = byte;
         }
     } while (!done);
     return ret;

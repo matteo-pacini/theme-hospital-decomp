@@ -71,7 +71,7 @@ struct ServiceProvider {
     virtual TbError SendMessage(u32 to, void *buf, TbMessageType type) = 0;
 
     TbError Initialise(__ic76sReceiveCallbacks *callbacks, void *data);
-    TbError AddPlayer(u32 id, char *name, u32 a, u32 b);
+    TbError AddPlayer(u32 id, char *name, u32 is_local, u32 is_host);
     void ClearPlayers(void);
     TbError DeletePlayer(u32 id);
     void ClearSessions(void);
@@ -202,7 +202,7 @@ struct Parser {
     u32 GotCompleteMessage(void);
     u8 GetFirstHeaderByte(void);
     u8 GetSequenceNumber(void);
-    TbError InputByte(u8 c);
+    TbError InputByte(u8 byte);
 };
 
 struct SerialSP : ServiceProvider {

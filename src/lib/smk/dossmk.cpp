@@ -37,8 +37,8 @@ void SmackSoundUseMSS(u32 digdriver);
 }
 
 void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags);
-long play_smk_direct(char *name, long a2, long flags);
-long play_smk_via_buffer(char *name, long a2, long flags);
+long play_smk_direct(char *name, long smk_flags, long flags);
+long play_smk_via_buffer(char *name, long smk_flags, long flags);
 
 extern "C" {
 
@@ -55,22 +55,22 @@ void set_smack_free(void (*fn)(void *ptr))
 }
 
 // FUNCTION: 0xca360
-u8 play_smk(char *name, u32 a2, u32 flags)
+u8 play_smk(char *name, u32 smk_flags, u32 flags)
 {
     lbDisplay.left_button = 0;
     if (smack_draw_callback != 0 || (flags & 0x8c)) {
         flags &= ~0x100;
-        return play_smk_via_buffer(name, a2, flags);
+        return play_smk_via_buffer(name, smk_flags, flags);
     }
     if (lbDisplay.screen_mode != 1)
         flags &= ~0x100;
-    return play_smk_direct(name, a2, flags);
+    return play_smk_direct(name, smk_flags, flags);
 }
 
 }
 
 // FUNCTION: 0xca398
-long play_smk_direct(char *name, long a2, long flags)
+long play_smk_direct(char *name, long smk_flags, long flags)
 {
     Smack *smk;
     u32 frame;
@@ -140,7 +140,7 @@ long play_smk_direct(char *name, long a2, long flags)
 }
 
 // FUNCTION: 0xca568
-long play_smk_via_buffer(char *name, long a2, long flags)
+long play_smk_via_buffer(char *name, long smk_flags, long flags)
 {
     Smack *smk;
     u8 *buf;

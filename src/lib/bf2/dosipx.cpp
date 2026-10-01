@@ -151,10 +151,10 @@ void IPXHandler::DeInit(void)
 
     if (dosbuf) {
         if (socket_open) {
-            __3ljac5NETSOCKET s;
+            __3ljac5NETSOCKET listen_sock;
 
-            s.socket = socket;
-            CloseSocket(&s);
+            listen_sock.socket = socket;
+            CloseSocket(&listen_sock);
             socket_open = 0;
         }
         if (vector) {
@@ -341,7 +341,7 @@ void IPXHandler::Send(__3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *dest, u8 *data
 // FUNCTION: 0xd4800
 void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
 {
-    __2aq9p8IPXPARAMS c;
+    __2aq9p8IPXPARAMS entry;
 
     memset(p, 0, sizeof(IPXPacket));
     p->link = 0;
@@ -355,10 +355,10 @@ void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
     p->frag_off = (u16)(u32)&p->hdr & 0xf;
     p->hdr.length = 0x1e00;
     p->frag_seg = ((u32)&p->hdr >> 4) & 0xffff;
-    c.cmd = 4;
-    c.seg = ((u32)p >> 4) & 0xffff;
-    c.off = (u16)(u32)p & 0xf;
-    AddBatch(&c);
+    entry.cmd = 4;
+    entry.seg = ((u32)p >> 4) & 0xffff;
+    entry.off = (u16)(u32)p & 0xf;
+    AddBatch(&entry);
 }
 
 // FUNCTION: 0xd48f0
@@ -395,19 +395,19 @@ IPXPacket *IPXHandler::GetNextSendPkt(void)
 // FUNCTION: 0xd4998
 void IPXHandler::SendEcb(ECB *ecb)
 {
-    __2aq9p8IPXPARAMS c;
+    __2aq9p8IPXPARAMS entry;
 
-    c.cmd = 3;
-    c.seg = ((u32)ecb >> 4) & 0xffff;
-    c.off = (u16)(u32)ecb & 0xf;
-    AddBatch(&c);
+    entry.cmd = 3;
+    entry.seg = ((u32)ecb >> 4) & 0xffff;
+    entry.off = (u16)(u32)ecb & 0xf;
+    AddBatch(&entry);
 }
 
 // FUNCTION: 0xd4a1c
-void IPXHandler::AddBatch(__2aq9p8IPXPARAMS *c)
+void IPXHandler::AddBatch(__2aq9p8IPXPARAMS *entry)
 {
     if (++batch_count < 30) {
-        memcpy(dosbuf + 0x90 + (batch_count - 1) * 6, c, 6);
+        memcpy(dosbuf + 0x90 + (batch_count - 1) * 6, entry, 6);
     } else {
         batch_count = 31;
         BatchProcess();
@@ -418,14 +418,14 @@ void IPXHandler::AddBatch(__2aq9p8IPXPARAMS *c)
 void IPXHandler::BatchProcess(void)
 {
     RMREGS rm;
-    __2aq9p8IPXPARAMS c;
+    __2aq9p8IPXPARAMS entry;
 
     if (batch_count) {
         if (++batch_count <= 31) {
-            c.cmd = 0xa;
-            c.off = 0;
-            c.seg = 0;
-            memcpy(dosbuf + 0x90 + (batch_count - 1) * 6, &c, 6);
+            entry.cmd = 0xa;
+            entry.off = 0;
+            entry.seg = 0;
+            memcpy(dosbuf + 0x90 + (batch_count - 1) * 6, &entry, 6);
         }
         memset(&rm, 0, sizeof(rm));
         rm.ebx = 0xffff;
@@ -438,16 +438,16 @@ void IPXHandler::BatchProcess(void)
 // FUNCTION: 0xd4b7c
 IPXPacket *IPXHandler::AllocIPXPackets(long count, u32 *sel)
 {
-    u16 s;
+    u16 dos_sel;
     u32 size;
     IPXPacket *p;
 
     size = count * sizeof(IPXPacket);
-    s = 0;
-    p = (IPXPacket *)AllocDosMem(size, &s);
+    dos_sel = 0;
+    p = (IPXPacket *)AllocDosMem(size, &dos_sel);
     if (p) {
         memset(p, 0, size);
-        *sel = s;
+        *sel = dos_sel;
     }
     return p;
 }
@@ -466,27 +466,27 @@ void IPXHandler::FreeIPXPackets(u32 sel)
 long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
 {
     u16 i;
-    __3ljac5NETSOCKET s;
+    __3ljac5NETSOCKET listen_sock;
     IPXPacket *pk;
     __3ljac5NETSOCKET dest;
     SAPPacket pkt;
 
     if (!socket_open) {
         socket = 0x452;
-        s.socket = 0x452;
-        if (OpenSocket(&s, 0) == 0) {
+        listen_sock.socket = 0x452;
+        if (OpenSocket(&listen_sock, 0) == 0) {
             socket_open = 1;
-            socket = s.socket;
+            socket = listen_sock.socket;
             for (i = 0, pk = recv_packets; i < 32; i++, pk++)
-                Listen(pk, &s);
+                Listen(pk, &listen_sock);
             BatchProcess();
         } else {
             socket = 0x4141;
-            s.socket = 0x4141;
-            if (OpenSocket(&s, 0) == 0) {
+            listen_sock.socket = 0x4141;
+            if (OpenSocket(&listen_sock, 0) == 0) {
                 socket_open = 1;
                 for (i = 0, pk = recv_packets; i < 32; i++, pk++)
-                    Listen(pk, &s);
+                    Listen(pk, &listen_sock);
                 BatchProcess();
             }
         }
@@ -529,9 +529,9 @@ void IPXHandler::QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock)
 void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
 {
     __3ljac5NETSOCKET from;
-    u16 *d;
+    u16 *query;
     SAPPacket pkt;
-    __3ljac5NETSOCKET s;
+    __3ljac5NETSOCKET listen_sock;
     IPXPacket *p;
     u16 count;
     __3ljac5NETSOCKET dest;
@@ -548,17 +548,17 @@ void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
         strcpy(pkt.name, name);
         for (p = recv_packets; p < recv_packets + 32; p++) {
             if (RecPkt(p, sock, &from)) {
-                d = (u16 *)p->data;
+                query = (u16 *)p->data;
                 if (memcmp(p->hdr.src_node, node, 6) != 0
-                    && d[0] == 0x100 && d[1] == type) {
+                    && query[0] == 0x100 && query[1] == type) {
                     dest.socket = p->hdr.src_socket;
                     memcpy(dest.net, p->hdr.src_net, 4);
                     memcpy(dest.node, p->hdr.src_node, 6);
                     Send(sock, &dest, (u8 *)&pkt, sizeof(pkt));
                 }
-                s.socket = socket;
+                listen_sock.socket = socket;
                 count++;
-                Listen(p, &s);
+                Listen(p, &listen_sock);
             }
         }
         unknown4 = clock();

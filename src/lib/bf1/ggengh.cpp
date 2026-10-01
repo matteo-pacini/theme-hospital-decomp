@@ -11,27 +11,27 @@ int LbGhostTableGenerate(u8 *palette, u8 intensity, char *name)
     s32 i;
     s32 n;
     u8 *out;
-    u8 *p2;
-    u8 *p1;
-    s32 r1;
-    s32 g1;
-    s32 b1;
+    u8 *blend_rgb;
+    u8 *base_rgb;
+    s32 base_r;
+    s32 base_g;
+    s32 base_b;
     s32 r;
     s32 g;
     s32 b;
 
     if (LbFileLoadAt(name, D_00178c0c) == -1) {
         out = D_00178c0c;
-        p1 = palette;
+        base_rgb = palette;
         for (i = 0; i < 256; i++) {
-            r1 = *p1++;
-            g1 = *p1++;
-            b1 = *p1++;
-            p2 = palette;
+            base_r = *base_rgb++;
+            base_g = *base_rgb++;
+            base_b = *base_rgb++;
+            blend_rgb = palette;
             for (n = 256; n != 0; n--) {
-                r = r1 + (*p2++ - r1) * intensity / 100;
-                g = g1 + (*p2++ - g1) * intensity / 100;
-                b = b1 + (*p2++ - b1) * intensity / 100;
+                r = base_r + (*blend_rgb++ - base_r) * intensity / 100;
+                g = base_g + (*blend_rgb++ - base_g) * intensity / 100;
+                b = base_b + (*blend_rgb++ - base_b) * intensity / 100;
                 *out++ = LbPaletteFindColour(palette, r, g, b);
             }
         }
