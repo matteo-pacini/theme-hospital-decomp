@@ -101,6 +101,14 @@ ninja link               # trial link with wlink; unresolved symbols in build/li
 
 `objdiff` (GUI) can open the project root directly; it reads `objdiff.json`.
 
+Editors: `configure.py` also writes `compile_commands.json`, which lets
+clangd and clang-tidy parse the sources (clang flags approximating Watcom's
+dialect, with `tools/clangd/compat.h` pre-included). A few Watcom-only
+constructs still show as errors (ordered comparisons of a pointer with 0,
+one callback type). For Neovim, `.nvim.lua` (read with `exrc` on) turns
+format-on-save off here, since plain clang-format rewrites Watcom pragmas;
+use `tools/format.py` instead.
+
 Before committing, check that everything still matches:
 
 ```sh

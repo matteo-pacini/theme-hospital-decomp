@@ -121,6 +121,41 @@ def main():
         json.dump(objdiff, f, indent=2)
         f.write("\n")
 
+    with open(os.path.join(ROOT, "compile_commands.json"), "w") as f:
+        json.dump(compile_commands(proj), f, indent=2)
+        f.write("\n")
+
+
+# Clang flags approximating Watcom's dialect, for editors (clangd, clang-tidy).
+CLANG_FLAGS = [
+    "--target=i386-unknown-none",
+    "-ffreestanding",
+    "-funsigned-char",
+    "-fshort-enums",
+    "-fms-extensions",
+    "-Wno-unknown-pragmas",
+    "-Wno-pragma-pack",
+    "-Wno-incompatible-function-pointer-types",
+]
+
+
+def compile_commands(proj):
+    """compile_commands.json for editors: each C/C++ source compiled by clang
+    with the Watcom dialect shimmed (tools/clangd/compat.h). The build itself
+    uses Watcom (tools/cc.py)."""
+    compat = os.path.join(ROOT, "tools", "clangd", "compat.h")
+    include = os.path.join(ROOT, "include")
+    seen, entries = set(), []
+    for u in proj.units:
+        if u.auto or u.source in seen or not u.source.endswith((".c", ".cpp")):
+            continue
+        seen.add(u.source)
+        cxx = u.source.endswith(".cpp")
+        args = ["clang++" if cxx else "clang", "-std=gnu++98" if cxx else "-std=gnu89", *CLANG_FLAGS]
+        args += ["-include", compat, "-I", include, "-c", u.source]
+        entries.append({"directory": ROOT, "file": os.path.join(ROOT, u.source), "arguments": args})
+    return entries
+
 
 if __name__ == "__main__":
     main()

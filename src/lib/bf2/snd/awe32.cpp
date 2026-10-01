@@ -3,7 +3,12 @@
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
 
+#ifdef __WATCOMC__
 #define MK_FP(s, o) (((unsigned short)(s)):>((void __near *)(o)))
+#else
+/* For editors (clangd), which don't know Watcom's :> base operator. */
+#define MK_FP(s, o) ((void *)(o))
+#endif
 unsigned short FP_SEG(const volatile void __far *p);
 #pragma aux FP_SEG = parm caller [eax dx] value [dx];
 

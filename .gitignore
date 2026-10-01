@@ -8,3 +8,5 @@ __pycache__/
 /build.ninja
 /objdiff.json
 *.err
+/compile_commands.json
+/.cache/
