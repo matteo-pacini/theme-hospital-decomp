@@ -128,6 +128,7 @@ and comparing against the original.
 | --- | --- |
 | `xor eax,eax; mov al,[g]; cmp eax,2` | `u8`/`char` variable compared with a constant |
 | `cmp byte ptr [g],2` | enum-typed variable compared with an enumerator |
+| `test byte ptr [x+N],8` | `u8` field `& 8` with a literal or `#define`; an anonymous-enum enumerator there loads the whole field and masks it, so bit masks in include/enums.h are `#define`s |
 | `cmp byte ptr [g],0; jne` | truth test of a `u8` (`if (g)`) |
 | `mov eax,[x+2]; sar eax,0x18; test eax,eax; jl` | `s8` field at `x+5` tested `>= 0` |
 | `mov ax,[..]; and eax,0xffff` | `u16` field promoted to `int` (e.g. varargs argument) |
