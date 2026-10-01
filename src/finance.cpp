@@ -66,6 +66,12 @@ extern u8 D_00156910;
 void StopSample(u32 a, u32 b);
 }
 
+// Adds amount (negative to spend) to owner's bank balance as a transaction of
+// type (TX_*), capped at 9999999. For the local player also records it in the
+// bank statement (merged with an identical type on the same day; arg is the
+// illness, or insurance company index, shown with some types) and in the
+// month's income, expenditure and wage totals, and warns the advisor when
+// money runs low.
 // FUNCTION: 0x00050ef0
 void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 owner)
 {
@@ -133,6 +139,10 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
         allhosps[owner].f35 = 9999999;
 }
 
+// With kind 2, charges patient for their current treatment: the fee quoted
+// earlier (or the current price), paid by their insurance company (credited
+// later) or from their cash. Otherwise just quotes the current price as their
+// fee. Returns 0 if they cannot afford it, else 1.
 // FUNCTION: 0x00051280
 u16 pay_for_treatment(Thing *patient, u16 kind)
 {
@@ -185,6 +195,12 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
     return 1;
 }
 
+// Month end for every hospital: pays wages (appraising each employee), banks
+// drinks and amusement income and the insurance payments due this month,
+// charges heating, loan and overdraft interest, updates prices and each
+// hospital's share of the f1cd totals (f1cb), the computer players, the monthly
+// history and statistics, then moves to the next month and refreshes the job
+// market.
 // FUNCTION: 0x00051534
 void month_end(void)
 {
@@ -253,6 +269,9 @@ void month_end(void)
     update_cure_costs();
 }
 
+// Shifts the local player's 12-month history one month and stores this
+// month's figures (balance, income, expenditure, wages, deaths, cures,
+// reputation), then clears the month's totals.
 // FUNCTION: 0x00051a84
 void adjust_monthly_figures(void)
 {
@@ -282,6 +301,10 @@ void adjust_monthly_figures(void)
     mycontrol->fc = 0;
 }
 
+// Year end: values and scores the hospitals, totals the year's income and
+// expenditure, moves to the next year, records the year's starting figures,
+// then works out the league tables, trophies and awards and opens the
+// year-end screens.
 // FUNCTION: 0x00051d98
 void year_end(void)
 {
@@ -321,6 +344,9 @@ void year_end(void)
     mycontrol->f4a0 = myhosp->unknownc7e;
 }
 
+// Runs one frame of the bank statement screen (bank.unknown2: 0 loads it, 1
+// shows it, 2 asks to return to the game): the latest entries that fit, with
+// the running balance.
 // FUNCTION: 0x00052038
 void bank_statement(void)
 {
@@ -435,6 +461,8 @@ void bank_statement(void)
         bank.unknown2 = 2;
 }
 
+// Draws pressed and runs the callbacks of the bank statement's buttons under
+// the mouse.
 // FUNCTION: 0x000528cc
 void process_stat_panel(void)
 {
@@ -463,6 +491,7 @@ void process_stat_panel(void)
     lbDisplay.rleft_button = 0;
 }
 
+// Bank statement button: 0 closes it, 1 acts as key F7 (process_keys).
 // FUNCTION: 0x00052b48
 void process_stat_button(u8 button)
 {
@@ -478,6 +507,8 @@ void process_stat_button(u8 button)
     }
 }
 
+// Returns 1 (consuming the key, with a sound) if Escape or Space was pressed
+// to leave a screen, else 0.
 // FUNCTION: 0x00052bcc
 u16 exit_quick_requester(void)
 {
@@ -491,6 +522,9 @@ u16 exit_quick_requester(void)
     return 0;
 }
 
+// Daily: advances the day, then runs the emergencies (ending finished ones
+// with their bonus or penalty), the mayor's visits, disasters, earthquakes,
+// expired calls, rats, the computer players' day and research.
 // FUNCTION: 0x00052c44
 void daily_admin(void)
 {
@@ -529,6 +563,9 @@ void daily_admin(void)
     do_research();
 }
 
+// Twice a day: counts down each hospital's emergency clock (allhosps.f1d9),
+// ends cover-ups and sends the inspector, then admits new patients, runs the
+// rat level and the computer players' actions.
 // FUNCTION: 0x00052e70
 void twice_daily_admin(void)
 {
@@ -558,6 +595,9 @@ void twice_daily_admin(void)
     computer_action();
 }
 
+// Recalculates owner's hospital value (allhosps.f1bb: rooms, land,
+// reputation, f1bf and a base 10000) and from it the loan limit (f41, a third
+// of it plus 10000, at most 100000).
 // FUNCTION: 0x00052f7c
 void calculate_value(const u8 owner)
 {

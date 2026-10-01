@@ -30,6 +30,8 @@ struct NextPart {
 
 extern NextPart next_part[];
 
+// Outlines map tile cell (y * 128 + x) in colour colour on the current view,
+// clipped to the view.
 // FUNCTION: 0x000b10b0
 void draw_cell_no(s32 cell, u8 colour)
 {
@@ -63,6 +65,8 @@ void draw_cell_no(s32 cell, u8 colour)
     }
 }
 
+// Draws a tile-sized diamond outline in colour colour with its top corner at
+// screen x,y, if on screen, and flags the area for redraw.
 // FUNCTION: 0x000b1318
 void draw_cell_no_editor(s32 x, s32 y, u8 colour)
 {
@@ -75,6 +79,12 @@ void draw_cell_no_editor(s32 x, s32 y, u8 colour)
     }
 }
 
+// Draws the object being placed (gamevar.unknown25, and its second part) at the
+// mouse tile, greyed where it cannot go. When the mouse tile or angle changed,
+// first recomputes its tile (gamevar.f23) for the placing mode
+// (gamevar.unknown26 0 free in the room, 1 against a wall, 2 moving) and
+// whether it may be placed there (gamevar.unknown2a), and marks the tiles it
+// covers.
 // FUNCTION: 0x000b14f0
 void draw_object_cursor(void)
 {
@@ -212,6 +222,8 @@ draw:
     }
 }
 
+// Returns the frame to draw for a litter bomb being placed: that of the local
+// player's bomb in the build list (by its fuse), else the first.
 // FUNCTION: 0x000b1c68
 u32 get_frame_for_placing_bomb(void)
 {
@@ -230,6 +242,8 @@ u32 get_frame_for_placing_bomb(void)
     return start[0x9bf].frame;
 }
 
+// Returns the frame to draw for a plant being placed: that of the local
+// player's plant in the build list (by its health), else a healthy plant.
 // FUNCTION: 0x000b1d44
 u32 get_frame_for_placing_plant(void)
 {

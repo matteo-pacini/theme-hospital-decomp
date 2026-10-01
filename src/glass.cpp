@@ -82,6 +82,8 @@ void draw_foreground_box2(s16 x, s16 y, s16 w, s16 h);
 void draw_button_box(s16 x, s16 y, s16 w, s16 h);
 void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style);
 
+// Resets the menu screen panels (zoom boxes) and opens those of each display
+// bit in mask (screen layout sets by glass_index).
 // FUNCTION: 0x000b8ab0
 void init_zoom_boxes(s32 mask)
 {
@@ -101,6 +103,7 @@ void init_zoom_boxes(s32 mask)
     }
 }
 
+// Returns 1 if zoom box zoom already ends at box's rectangle, else 0.
 // FUNCTION: 0x000b8b50
 extern "C" s32 glass_box_matches_zoom(GlassBox *box, ZoomBox *zoom)
 {
@@ -115,6 +118,11 @@ extern "C" s32 glass_box_matches_zoom(GlassBox *box, ZoomBox *zoom)
     return 1;
 }
 
+// Sets up the first free zoom box to grow into box's rectangle for display bit
+// id, from its centre, its top centre or the screen centre (box->f12), with
+// open_delay and close_delay frames of delay (-1: the box's own). An unused
+// slot that already ends there is reused unchanged. Returns the slot index
+// (0x2e if none was free).
 // FUNCTION: 0x000b8bf0
 s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay)
 {
@@ -174,6 +182,8 @@ s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay)
     return i;
 }
 
+// Adds a zoom box for each rectangle in frames (ended by x1 0) under the
+// lowest display bit of mask, and asks for that display to open.
 // FUNCTION: 0x000b8f64
 void add_glass_frame(GlassFrame *frames, s32 mask)
 {
@@ -186,6 +196,9 @@ void add_glass_frame(GlassFrame *frames, s32 mask)
     DesiredDisplay |= mask;
 }
 
+// Draws zoom box zoom at its current animation step, as a panel or a
+// button by its type (type 0 panels translucent, draw flag 4); nothing at
+// step 0.
 // FUNCTION: 0x000b8fcc
 void draw_a_box(u8 zoom)
 {
@@ -240,6 +253,10 @@ void draw_a_box(u8 zoom)
     }
 }
 
+// Steps the zoom box animations one frame and draws them: boxes of displays
+// no longer wanted close, then those wanted open, the highest layer first; a
+// display joins CurrentDisplay once all its boxes are open. Plays the opening
+// and closing sounds while they run. Returns 1 while any box is moving.
 // FUNCTION: 0x000b9284
 s8 draw_zoom_boxes(void)
 {
@@ -347,6 +364,9 @@ s8 draw_zoom_boxes(void)
     return result;
 }
 
+// Returns the display bits to change next: those to close first, then (all at
+// once if bit 8 is involved) the lowest one to open; 0 when CurrentDisplay
+// matches DesiredDisplay.
 // FUNCTION: 0x000b96cc
 s32 next_map(void)
 {
@@ -362,6 +382,8 @@ s32 next_map(void)
     return diff & -diff;
 }
 
+// Returns the resvars.f50 screen layout index of the panels for the lowest
+// display bit in mask, or 0 if it has none.
 // FUNCTION: 0x000b973c
 s16 glass_index(s32 mask)
 {
@@ -400,6 +422,8 @@ s16 glass_index(s32 mask)
     }
 }
 
+// Returns the resvars.f48 index of the first button for the lowest display bit
+// in mask, or 0 if it has none.
 // FUNCTION: 0x000b991c
 s16 button_index(s32 mask)
 {
@@ -438,6 +462,8 @@ s16 button_index(s32 mask)
     }
 }
 
+// Draws text centred on button, in the pressed font and shifted by a pixel
+// while the mouse holds it down.
 // FUNCTION: 0x000b9b04
 void draw_glass_text(SlistButton *button, char *text)
 {
@@ -460,6 +486,7 @@ void draw_glass_text(SlistButton *button, char *text)
     }
 }
 
+// Draws text centred on button in the highlighted font, shifted as if pressed.
 // FUNCTION: 0x000b9d20
 void draw_glass_text_hilight(SlistButton *button, char *text)
 {
@@ -473,6 +500,8 @@ void draw_glass_text_hilight(SlistButton *button, char *text)
     LbTextDraw(x + 1, ((button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
 }
 
+// Draws text centred on button in the highlighted font, shifted only while
+// the mouse holds it down.
 // FUNCTION: 0x000b9e14
 void draw_glass_text_hilight_no_jump(SlistButton *button, char *text)
 {
@@ -492,6 +521,9 @@ void draw_glass_text_hilight_no_jump(SlistButton *button, char *text)
         LbTextDraw(x, (button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);
 }
 
+// Draws a panel at x,y of size w,h: a white fill (with the draw flags in
+// effect), a black outline (draw flag 0x10) and a 3-pixel border in the
+// blue-grey (style 0) or colour 0xca.
 // FUNCTION: 0x000b9ffc
 void draw_background_box(s16 x, s16 y, s16 w, s16 h, u8 style)
 {
@@ -510,6 +542,8 @@ void draw_background_box(s16 x, s16 y, s16 w, s16 h, u8 style)
     lbDisplay.draw_flags = 0;
 }
 
+// Draws a panel at x,y of size w,h: a white fill, an outline in colour 0xf8
+// and a 3-pixel blue-grey border.
 // FUNCTION: 0x000ba0ec
 void draw_foreground_box(s16 x, s16 y, s16 w, s16 h)
 {
@@ -523,6 +557,8 @@ void draw_foreground_box(s16 x, s16 y, s16 w, s16 h)
     lbDisplay.draw_flags = 0;
 }
 
+// Draws a panel at x,y of size w,h: a white fill and a 2-pixel blue-grey
+// border.
 // FUNCTION: 0x000ba1d4
 void draw_foreground_box2(s16 x, s16 y, s16 w, s16 h)
 {
@@ -534,6 +570,8 @@ void draw_foreground_box2(s16 x, s16 y, s16 w, s16 h)
     lbDisplay.draw_flags = 0;
 }
 
+// Draws a button face at x,y of size w,h: a white fill and an outline in
+// colour 0xf8.
 // FUNCTION: 0x000ba270
 void draw_button_box(s16 x, s16 y, s16 w, s16 h)
 {
@@ -544,6 +582,8 @@ void draw_button_box(s16 x, s16 y, s16 w, s16 h)
     lbDisplay.draw_flags = 0;
 }
 
+// Draws the bevelled edges of a button at x,y (inner size w,h): raised with
+// style 0, sunken otherwise.
 // FUNCTION: 0x000ba2e0
 void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style)
 {
@@ -577,6 +617,8 @@ void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style)
     }
 }
 
+// Finds the menu panel colours (blue-grey, white, black) in palette and sets
+// the button bevel greys.
 // FUNCTION: 0x000ba800
 void calculate_grey(u8 *palette)
 {

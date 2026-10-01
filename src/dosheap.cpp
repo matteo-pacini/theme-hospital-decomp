@@ -11,6 +11,8 @@ void fn_000bb5cc(CDosHeapStats *stats);
 u32 GetFreeFragCount(CDosHeap *heap);
 }
 
+// Builds an empty heap: all 200 block records unused, no free or used blocks,
+// statistics zeroed, reporting and error messages off.
 // FUNCTION: 0x000bb2e0
 CDosHeap::CDosHeap()
 {
@@ -25,6 +27,7 @@ CDosHeap::CDosHeap()
     reporting = 0;
 }
 
+// Zeroes the statistics.
 // FUNCTION: 0x000bb36c
 void CDosHeapStats::Init(void)
 {
@@ -32,6 +35,9 @@ void CDosHeapStats::Init(void)
     count = 0;
 }
 
+// Allocates size bytes from the start of the first free block big enough
+// (first fit; no alignment). Returns 0, with an error message if enabled, when
+// no block or record is free.
 // FUNCTION: 0x000bb39c
 void *CDosHeap::Alloc(u32 size)
 {
@@ -60,6 +66,8 @@ void *CDosHeap::Alloc(u32 size)
     return 0;
 }
 
+// Returns an unused block record (ptr 0), or 0 with an error message if all
+// 200 are in use.
 // FUNCTION: 0x000bb4b8
 CDosHeapItem *CDosHeap::GetNextRecord(void)
 {
@@ -73,6 +81,7 @@ CDosHeapItem *CDosHeap::GetNextRecord(void)
     return 0;
 }
 
+// Prints a printf-style error message, if errors are enabled.
 // FUNCTION: 0x000bb524
 void CDosHeap::Error(char *fmt, ...)
 {
@@ -87,6 +96,7 @@ void CDosHeap::Error(char *fmt, ...)
     }
 }
 
+// Makes the size bytes at mem the heap's single free block.
 // FUNCTION: 0x000bb57c
 void CDosHeap::Init(void *mem, u32 size)
 {
@@ -101,6 +111,7 @@ void CDosHeap::Init(void *mem, u32 size)
 
 extern "C" {
 
+// Zeroes stats (as CDosHeapStats::Init).
 // FUNCTION: 0x000bb5cc
 void fn_000bb5cc(CDosHeapStats *stats)
 {
@@ -110,6 +121,9 @@ void fn_000bb5cc(CDosHeapStats *stats)
 
 }
 
+// Frees the block allocated at p, merging it into an adjacent free block where
+// possible. On an unknown p it reads through a null record to report the
+// error.
 // FUNCTION: 0x000bb5fc
 void CDosHeap::Free(void *p)
 {
@@ -130,6 +144,8 @@ void CDosHeap::Free(void *p)
         Error("Free failed to free block at address %d", rec->ptr);
 }
 
+// Unlinks and returns the used block record at address p, or 0 if there is
+// none.
 // FUNCTION: 0x000bb708
 CDosHeapItem *CDosHeap::RemoveAllocMatch(void *p)
 {
@@ -151,6 +167,8 @@ CDosHeapItem *CDosHeap::RemoveAllocMatch(void *p)
     return cur;
 }
 
+// Unlinks free block item from the free list and releases its record. Returns
+// 1 if it was on the list, else 0.
 // FUNCTION: 0x000bb78c
 u32 CDosHeap::ReleaseFreeBlock(CDosHeapItem *item)
 {
@@ -173,6 +191,8 @@ u32 CDosHeap::ReleaseFreeBlock(CDosHeapItem *item)
     return cur ? 1 : 0;
 }
 
+// Grows a free block that directly precedes or follows item to cover item too.
+// Returns 1 if one was found, else 0 (item is unchanged either way).
 // FUNCTION: 0x000bb830
 u32 CDosHeap::MergeRecord(CDosHeapItem *item)
 {
@@ -194,6 +214,8 @@ u32 CDosHeap::MergeRecord(CDosHeapItem *item)
     return 0;
 }
 
+// Merges free blocks that are next to each other, releasing the records of
+// those merged into others.
 // FUNCTION: 0x000bb8dc
 void CDosHeap::Repack(void)
 {
@@ -216,6 +238,7 @@ void CDosHeap::Repack(void)
     Report("Repacking the heap, %d to %d", before, GetFreeFragCount(this));
 }
 
+// Prints a printf-style trace message, if reporting is enabled.
 // FUNCTION: 0x000bb97c
 void CDosHeap::Report(char *fmt, ...)
 {
@@ -230,24 +253,28 @@ void CDosHeap::Report(char *fmt, ...)
     }
 }
 
+// Turns trace messages on (nonzero) or off.
 // FUNCTION: 0x000bb9d4
 void CDosHeap::SetReporting(u32 on)
 {
     reporting = on;
 }
 
+// Turns error messages on (nonzero) or off.
 // FUNCTION: 0x000bb9fc
 void CDosHeap::SetErrors(u32 on)
 {
     errors = on;
 }
 
+// Marks block record item unused.
 // FUNCTION: 0x000bba24
 void CDosHeap::ReleaseRecord(CDosHeapItem *item)
 {
     item->ptr = 0;
 }
 
+// Counts item as allocated in the statistics.
 // FUNCTION: 0x000bba4c
 void CDosHeapStats::RecordAlloc(CDosHeapItem *item)
 {
@@ -255,6 +282,7 @@ void CDosHeapStats::RecordAlloc(CDosHeapItem *item)
     count++;
 }
 
+// Removes item from the statistics.
 // FUNCTION: 0x000bba78
 void CDosHeapStats::RecordFree(CDosHeapItem *item)
 {
@@ -262,12 +290,14 @@ void CDosHeapStats::RecordFree(CDosHeapItem *item)
     count--;
 }
 
+// Returns the bytes currently allocated.
 // FUNCTION: 0x000bbaa4
 u32 CDosHeapStats::GetTotalAllocation(void)
 {
     return total;
 }
 
+// Returns the number of blocks currently allocated.
 // FUNCTION: 0x000bbacc
 u32 CDosHeapStats::GetAllocCount(void)
 {
@@ -276,6 +306,7 @@ u32 CDosHeapStats::GetAllocCount(void)
 
 extern "C" {
 
+// Returns the number of blocks on heap's free list.
 // FUNCTION: 0x000bbaf4
 u32 GetFreeFragCount(CDosHeap *heap)
 {

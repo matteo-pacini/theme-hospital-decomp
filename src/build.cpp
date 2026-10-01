@@ -65,6 +65,11 @@ s16 get_state(const u16 a, const Thing *w);
 u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 a, u8 b, u8 c);
 void check_invis_walls_around_object(Thing *w);
 
+// Door placing stage: finds the wall tile of owner's blueprint room nearest
+// tile pos where the current door kind (build.door_state; 2 is a window) can
+// go, draws the preview there for the local player, and records it in
+// build.door_tile and build.door_type. Sets othervar.f18[owner] if the door
+// cannot be placed there.
 // FUNCTION: 0x00022b90
 void temp_place_door(u16 pos, u8 owner)
 {
@@ -220,6 +225,10 @@ void temp_place_door(u16 pos, u8 owner)
     build->door_type = type;
 }
 
+// Places the door or window previewed by temp_place_door for owner. With swap
+// nonzero, removes the window there instead. Fails (with a sound for the local
+// player) if the preview was invalid or the door would cut rooms off from the
+// entrance. After the door, moves the build on to placing windows.
 // FUNCTION: 0x0002341c
 void place_bp_door(u8 owner, u8 swap)
 {
@@ -301,6 +310,7 @@ void place_bp_door(u8 owner, u8 swap)
     }
 }
 
+// Returns the room whose floor contains tile, or 0 for a corridor tile.
 // FUNCTION: 0x0002384c
 RoomInfo *which_room(u16 tile)
 {
@@ -330,6 +340,7 @@ RoomInfo *which_room(u16 tile)
     return 0;
 }
 
+// As which_room, but returns the room's room_info index (0 if none).
 // FUNCTION: 0x00023950
 u16 which_room_number(u16 tile)
 {
@@ -363,6 +374,7 @@ u16 which_room_number(u16 tile)
     return 0;
 }
 
+// Returns the room with a door tile (unknown4 or unknown6) at tile, or 0.
 // FUNCTION: 0x00023a64
 RoomInfo *is_this_a_door(u16 tile)
 {
@@ -379,6 +391,8 @@ RoomInfo *is_this_a_door(u16 tile)
     return 0;
 }
 
+// Returns the blueprint small thing on cell (a negative id), or 0 if there is
+// none.
 // FUNCTION: 0x00023ad4
 s16 find_bluep_who(Map *cell)
 {
@@ -397,6 +411,9 @@ s16 find_bluep_who(Map *cell)
     return id;
 }
 
+// Turns the blueprint pieces on the current player's land (othervar.ff) into
+// real walls, doors, windows and objects, in a wall colour matched to the
+// surroundings, then resets any negative room f3 to 0.
 // FUNCTION: 0x00023b64
 void build_all_rooms(void)
 {
@@ -663,6 +680,8 @@ void build_all_rooms(void)
     othervar.f10 = 1;
 }
 
+// Looks for the wall colour next to blueprint cell cell, storing it in
+// color.unknown6 (or color.unknown5 for a corridor wall). Always returns 1.
 // FUNCTION: 0x000245fc
 s8 search_for_outer_color(Map *cell)
 {
@@ -699,6 +718,8 @@ s8 search_for_outer_color(Map *cell)
     return 1;
 }
 
+// Returns the colour index of cell's north or west wall block, or -1 if it has
+// none (or only plain pieces 0x70-0x7c).
 // FUNCTION: 0x00024718
 s8 get_wall_color(Map *cell)
 {
@@ -711,6 +732,9 @@ s8 get_wall_color(Map *cell)
     return -1;
 }
 
+// Called after an object of kind gamevar.unknown25 is placed: uses one up from
+// stock and starts placing the next one, or ends object placing (closing the
+// requester when moving objects) when none are left.
 // FUNCTION: 0x000247c8
 void object_placed(void)
 {
@@ -731,6 +755,9 @@ void object_placed(void)
     }
 }
 
+// Gives owner's room under construction the floor of room type type and its
+// wall colours; for the local player starts placing its objects and sets
+// gamevar.unknown20 to the room's index.
 // FUNCTION: 0x00024874
 void price_all_rooms(u16 type, u8 owner)
 {
@@ -762,6 +789,9 @@ void price_all_rooms(u16 type, u8 owner)
     othervar.f10 = 1;
 }
 
+// Removes the north (side 0) or west (side 1) wall of tile, unless it also
+// bounds another room than room (a room_info index) or its block has flag
+// 0x10.
 // FUNCTION: 0x00024a34
 void delete_wall(u16 tile, u16 room, u8 side)
 {
@@ -815,6 +845,8 @@ void delete_wall(u16 tile, u16 room, u8 side)
     }
 }
 
+// Removes room from the map: its objects, the walls it does not share, its
+// doors and the rat holes around it. The room_info entry itself is left.
 // FUNCTION: 0x00024c58
 void delete_room(RoomInfo *room)
 {
@@ -871,6 +903,8 @@ void delete_room(RoomInfo *room)
     NRAdcounts.unknown10--;
 }
 
+// Recolours room's north and west walls (seen from inside) to wall colour
+// wall_base, using b for the 0x7e-0x8b pieces.
 // FUNCTION: 0x000250f8
 void recolour_inside_room(RoomInfo *room, u16 wall_base, u16 b)
 {
@@ -988,6 +1022,9 @@ void recolour_inside_room(RoomInfo *room, u16 wall_base, u16 b)
     }
 }
 
+// Recolours room's south and east walls (seen from outside) to wall colour
+// wall_base, using b for the 0x7e-0x8b pieces. Its skip test (a type 3 thing on
+// the tile) reads the room's top row, and a stale x for the east wall.
 // FUNCTION: 0x0002583c
 void recolour_outside_room(RoomInfo *room, u16 wall_base, u16 b)
 {
@@ -1101,6 +1138,8 @@ void recolour_outside_room(RoomInfo *room, u16 wall_base, u16 b)
     }
 }
 
+// Repaints every room's walls in the style of its type (rooms[].unknown2[0])
+// and fills in the window corners, then refreshes the wall flags.
 // FUNCTION: 0x000260ec
 void recolour_all_rooms(void)
 {
@@ -1183,6 +1222,8 @@ void recolour_all_rooms(void)
     othervar.f10 = 1;
 }
 
+// Returns the filled-in window block for wall block wall (fill_in_windows), or
+// 0 if it has none.
 // FUNCTION: 0x00026488
 u8 search_fill_in_window(u8 wall)
 {
@@ -1201,6 +1242,8 @@ u8 search_fill_in_window(u8 wall)
     return fill_block;
 }
 
+// Replaces the window pieces meeting at room corner x,y with their filled-in
+// blocks: side 1 top right, 2 bottom left, 3 bottom right, 4 top left.
 // FUNCTION: 0x000264f8
 void fill_in_window(u16 x, u16 y, u8 side)
 {
@@ -1224,6 +1267,7 @@ void fill_in_window(u16 x, u16 y, u8 side)
     }
 }
 
+// Fills in a window piece on the west wall at x,y (and the one above it).
 // FUNCTION: 0x000265e4
 void check_inside_w_wall(u16 x, u16 y)
 {
@@ -1240,6 +1284,7 @@ void check_inside_w_wall(u16 x, u16 y)
     }
 }
 
+// Fills in a window piece on the north wall at x,y (and the one left of it).
 // FUNCTION: 0x000266bc
 void check_inside_n_wall(u16 x, u16 y)
 {
@@ -1256,6 +1301,7 @@ void check_inside_n_wall(u16 x, u16 y)
     }
 }
 
+// Fills in the window pieces along the wall left of corner x,y.
 // FUNCTION: 0x00026798
 void check_outside_s_wall(u16 x, u16 y)
 {
@@ -1285,6 +1331,7 @@ void check_outside_s_wall(u16 x, u16 y)
     }
 }
 
+// Fills in the window pieces along the wall above corner x,y.
 // FUNCTION: 0x000269e8
 void check_outside_e_wall(u16 x, u16 y)
 {
@@ -1314,6 +1361,8 @@ void check_outside_e_wall(u16 x, u16 y)
     }
 }
 
+// Adds an invisible wall on cell's north (side 0) or west (side 1) edge, if it
+// has no wall there; nests twice.
 // FUNCTION: 0x00026c28
 void insert_blank_wall(Map *cell, u8 side)
 {
@@ -1324,6 +1373,7 @@ void insert_blank_wall(Map *cell, u8 side)
     }
 }
 
+// Removes one level of insert_blank_wall's invisible wall from cell's side.
 // FUNCTION: 0x00026c98
 void remove_blank_wall(Map *cell, u8 side)
 {
@@ -1334,6 +1384,8 @@ void remove_blank_wall(Map *cell, u8 side)
     }
 }
 
+// Returns nonzero if tile pos, and tile other unless the same, can reach
+// target.
 // FUNCTION: 0x00026d08
 u8 check_object_accessible(u16 pos, u16 other, u16 target)
 {
@@ -1343,6 +1395,9 @@ u8 check_object_accessible(u16 pos, u16 other, u16 target)
     return check_points_connected(pos, target) && check_points_connected(other, target);
 }
 
+// For an object of kind object that room type type needs to stay usable
+// (room_nav), returns 0 if its use tiles, for shape at pos, cannot reach the
+// room's door (room->unknown6); else 1.
 // FUNCTION: 0x00026d84
 u8 check_object_nav(u16 object, Shapes *shape, RoomInfo *room, u16 pos, u16 type)
 {
@@ -1372,6 +1427,9 @@ u8 check_object_nav(u16 object, Shapes *shape, RoomInfo *room, u16 pos, u16 type
     return 1;
 }
 
+// Returns 1 if placing an object of kind at pos facing dir (and its second
+// part kind2 at pos2, dir2, unless pos2 is 0) in room leaves every object in
+// the room usable; else 0. The map is left unchanged.
 // FUNCTION: 0x00026ef0
 u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 pos2, u8 kind2, u8 dir2)
 {
@@ -1415,6 +1473,8 @@ fail:
     return 0;
 }
 
+// Returns tile pos moved so that an object of kind facing dir, tested at
+// pos + offset, lies inside the room being furnished (gamevar.unknown2f).
 // FUNCTION: 0x000271fc
 u16 place_object_restrict_to_room(u16 pos, u16 offset, u8 kind, u8 dir)
 {
@@ -1450,6 +1510,10 @@ u16 place_object_restrict_to_room(u16 pos, u16 offset, u8 kind, u8 dir)
     return new_x + (new_y << 7);
 }
 
+// Sets the placing angle (gamevar.f28) to angle, or to the next angle the
+// object has a shape for if angle is -1 (0 if it has none for angle), and
+// recomputes its tile extent (gamevar.f2b to f2e). Returns 1 if the angle
+// changed.
 // FUNCTION: 0x000273bc
 u8 place_object_change_angle(s8 angle)
 {
@@ -1493,6 +1557,9 @@ u8 place_object_change_angle(s8 angle)
     return changed;
 }
 
+// Starts placing an object of kind: in room (room_info index, 0 for the
+// corridor), freely (mode 0), against a wall (when the object hugs walls), or
+// moving one already placed (mode 2). offset is kept in gamevar.f31.
 // FUNCTION: 0x000275c8
 void init_place_object(u8 kind, u8 mode, u16 room, s16 offset)
 {
@@ -1520,6 +1587,8 @@ void init_place_object(u8 kind, u8 mode, u16 room, s16 offset)
     }
 }
 
+// Links the two halves of room's double door (door_partner, door_main),
+// turning the second half into an object.
 // FUNCTION: 0x00027694
 void init_double_doors(RoomInfo *room)
 {
@@ -1554,6 +1623,10 @@ void init_double_doors(RoomInfo *room)
     }
 }
 
+// Makes room the build state's room for editing and puts its outline up. If
+// nobody is inside and its door is free, its f3 is set to 4 (editing);
+// otherwise it is flagged to wait (f22) and the local player's mouse mode set
+// to 14.
 // FUNCTION: 0x00027920
 void init_edit_room(RoomInfo *room)
 {
@@ -1592,6 +1665,8 @@ void init_edit_room(RoomInfo *room)
     }
 }
 
+// Counts the object kinds still to place (gamevar.unknown71) and shows the
+// object placing requester.
 // FUNCTION: 0x00027a90
 void setup_place_object_requester(void)
 {
@@ -1608,6 +1683,7 @@ void setup_place_object_requester(void)
     set_edit_room_requester_mode(6);
 }
 
+// Returns the first object kind with any left to place, or 0.
 // FUNCTION: 0x00027af0
 u8 next_object_to_build(void)
 {
@@ -1621,6 +1697,10 @@ u8 next_object_to_build(void)
     return 0;
 }
 
+// Opens owner's room being edited (allhosps.unknown11b7) for use: takes down
+// its outline, refunds objects lifted but not put back, charges for the room
+// if not yet paid, and for the local player shows the room's help page the
+// first time.
 // FUNCTION: 0x00027b44
 void open_room(u8 owner)
 {
@@ -1663,6 +1743,8 @@ void open_room(u8 owner)
     }
 }
 
+// Returns the pointed thing (othervar.f41) if it is the local player's and,
+// when room is given, an object of that room other than a swing door; else 0.
 // FUNCTION: 0x00027d48
 u16 compute_object_pointed(RoomInfo *room)
 {
@@ -1684,6 +1766,10 @@ u16 compute_object_pointed(RoomInfo *room)
     }
 }
 
+// Lifts object id off the map into its owner's build list to be placed again.
+// With both, also lifts its other half (editing a room). Otherwise stops
+// anyone using it, as for moving a corridor object. For the local player,
+// starts placing it again from where it was.
 // FUNCTION: 0x00027e1c
 void pick_up_object(u16 id, u8 both)
 {
@@ -1749,6 +1835,9 @@ void pick_up_object(u16 id, u8 both)
     }
 }
 
+// Refunds owner's lifted objects (at depreciation() percent) and deletes
+// them; for the local player also clears the stock left to place. Litter bombs
+// are kept in multiplayer games.
 // FUNCTION: 0x0002812c
 void clear_build_objects(u8 owner)
 {
@@ -1780,6 +1869,9 @@ void clear_build_objects(u8 owner)
     }
 }
 
+// Returns the tile to place a wall-hugging object of kind at for mouse tile
+// pos: against the room wall nearest pos, turned to face away from it, and
+// kept inside the room with its second part.
 // FUNCTION: 0x00028288
 u16 place_object_wall_hug(u16 pos, u8 kind)
 {
@@ -1875,18 +1967,23 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
     return (s16)(sx + (sy << 7));
 }
 
+// Percentage of an object's price refunded when it is sold back.
 // FUNCTION: 0x00028710
 s32 depreciation(void)
 {
     return 100;
 }
 
+// Percentage of a room's price refunded when it is abandoned.
 // FUNCTION: 0x00028734
 s32 room_depreciation(void)
 {
     return 50;
 }
 
+// Queues the local player's click in edit mode: picks up the object chosen
+// (othervar.f43, or the object its user uses) or starts editing the room
+// highlighted (build.edit_room).
 // FUNCTION: 0x00028758
 void clicked_for_edit(void)
 {
@@ -1914,6 +2011,8 @@ void clicked_for_edit(void)
     }
 }
 
+// Right click while editing a room: queues picking up the pointed object if it
+// is in the room being edited.
 // FUNCTION: 0x000288ac
 void check_object_right_click_in_room_edit(void)
 {
@@ -1927,6 +2026,7 @@ void check_object_right_click_in_room_edit(void)
     }
 }
 
+// Resets the extent of the object drag marks to empty.
 // FUNCTION: 0x00028950
 void init_object_drag_shape(void)
 {
@@ -1941,6 +2041,9 @@ void init_object_drag_shape(void)
 #define DRAG_MIN(a, b) ((a) > (b) ? ((a) = (b)) : 0)
 #define DRAG_MAX(a, b) ((a) < (b) ? ((a) = (b)) : 0)
 
+// Marks the tiles an object of kind at pos facing angle would cover, and its
+// use tiles: map flag 0x80 where blocked, else 0x40. Grows the extent that
+// clear_object_drag_shape clears.
 // FUNCTION: 0x00028984
 void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
 {
@@ -1991,6 +2094,7 @@ void compute_object_drag_shape(u16 pos, u8 kind, u8 angle)
     }
 }
 
+// Clears the drag marks within the recorded extent and resets it.
 // FUNCTION: 0x00028e08
 void clear_object_drag_shape(void)
 {
@@ -2005,6 +2109,7 @@ void clear_object_drag_shape(void)
     init_object_drag_shape();
 }
 
+// Recomputes map flag 0x10 on the cells next to visible walls.
 // FUNCTION: 0x00028e80
 void pixel_buffer_map(void)
 {
@@ -2031,6 +2136,9 @@ void pixel_buffer_map(void)
     }
 }
 
+// Returns 1 if a corridor object of kind at pos facing dir would leave its own
+// use tile (except plants and litter bombs) and those of nearby corridor
+// objects reachable from the entrance, else 0.
 // FUNCTION: 0x00028f88
 u8 corridor_object_nav_check(u16 pos, u8 kind, u8 dir)
 {
@@ -2089,6 +2197,7 @@ u8 corridor_object_nav_check(u16 pos, u8 kind, u8 dir)
     return ok;
 }
 
+// Returns 1 if room has every object its type requires, else 0.
 // FUNCTION: 0x000291e8
 u8 does_room_contain_compulsory_objects(RoomInfo *room)
 {
@@ -2113,6 +2222,8 @@ u8 does_room_contain_compulsory_objects(RoomInfo *room)
     return 1;
 }
 
+// Returns 1 if placing an object of kind at pos facing dir in room keeps the
+// room's objects usable and everyone inside able to reach its door, else 0.
 // FUNCTION: 0x000292d0
 u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
 {
@@ -2150,6 +2261,8 @@ u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
     return ok;
 }
 
+// Right click: picks up the pointed object (or the object a patient is using)
+// if it belongs to the local player and may be moved from where it is.
 // FUNCTION: 0x00029520
 void pick_up_object_right_click(void)
 {
@@ -2165,6 +2278,8 @@ void pick_up_object_right_click(void)
     }
 }
 
+// Returns 1 if the local player is dragging a blueprint or any blueprint
+// outline is on the map, else 0.
 // FUNCTION: 0x00029748
 extern "C" u8 is_player_building(void)
 {
@@ -2186,6 +2301,8 @@ extern "C" u8 is_player_building(void)
     return 0;
 }
 
+// Rechecks the invisible walls of the objects on the ring of tiles around
+// room.
 // FUNCTION: 0x000297e4
 void repair_invis_walls_around_room(RoomInfo *room)
 {
@@ -2214,6 +2331,8 @@ void repair_invis_walls_around_room(RoomInfo *room)
     }
 }
 
+// Cancels editing owner's room (allhosps.unknown11b7): clears its waiting flag
+// and takes its outline off the map.
 // FUNCTION: 0x0002994c
 extern "C" void fn_0002994c(u8 owner)
 {
@@ -2236,6 +2355,7 @@ extern "C" void fn_0002994c(u8 owner)
     }
 }
 
+// Returns 1 if nobody is in room and its door is not in use, else 0.
 // FUNCTION: 0x00029a54
 extern "C" u8 fn_00029a54(RoomInfo *room)
 {

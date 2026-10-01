@@ -6,6 +6,9 @@ extern "C" {
 u16 create_inspector(u8 owner);
 void send_peeps_home(u8 all, u8 owner);
 
+// Creates the health inspector for owner at one of the hospital's entrances,
+// walking to the reception desk to inspect (goto_state 8), or straight back
+// out if there is none. Returns its thing index, or 0 if no thing is free.
 // FUNCTION: 0x000a1c10
 u16 create_inspector(u8 owner)
 {
@@ -46,6 +49,8 @@ u16 create_inspector(u8 owner)
     return 0;
 }
 
+// Sends the health inspector to owner after an epidemic cover-up, unless
+// one is already on the way.
 // FUNCTION: 0x000a1e3c
 void generate_inspector(u8 owner)
 {
@@ -57,6 +62,12 @@ void generate_inspector(u8 owner)
     allhosps[owner].unknown209[1] = 3;
 }
 
+// The inspector's visit: after the pause, leaves and judges the epidemic by
+// the contagious patients still inside (allhosps.unknown209[0], harsher the
+// more there are): 0 (always when none, rarely otherwise) pays compensation;
+// 1 fines gbv.f12e * 2 per contagious patient and sends them home; 2 also
+// costs reputation; 3 costs reputation and sends every patient home. Ends the
+// epidemic and raises the result fax.
 // FUNCTION: 0x000a1ed4
 void inspector_pauses(Thing *inspector)
 {

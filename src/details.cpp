@@ -10,6 +10,9 @@ void FadeMusic(u32 time, u8 volume);
 void debug_msg(char *fmt, ...);
 void set_default_player_details(void);
 
+// Writes the player's settings (myplayer) to the player details file
+// (statvar.f575 + statvar.f6c + "dt"). Returns 1, 0 if the write was short, or
+// 0xff (-1) if the file cannot be opened.
 // FUNCTION: 0x000ba8b0
 u8 save_player_details(void)
 {
@@ -32,6 +35,9 @@ u8 save_player_details(void)
     return 1;
 }
 
+// Reads the player's settings (myplayer) from the player details file and
+// applies them; without a file, applies the defaults. Returns 1 if read, else
+// 0.
 // FUNCTION: 0x000ba954
 u8 load_player_details(void)
 {
@@ -58,6 +64,8 @@ u8 load_player_details(void)
     return 1;
 }
 
+// Sets myplayer to the default settings. The three LbMemorySet calls pass
+// their size and value swapped, so they clear nothing.
 // FUNCTION: 0x000baa28
 void set_default_player_details(void)
 {
@@ -79,6 +87,8 @@ void set_default_player_details(void)
     myplayer.fe = 0x7f;
 }
 
+// Applies the player's settings: music volume (myplayer.fc), pulldown menu
+// ticks, and the game speed from myplayer.f1e.
 // FUNCTION: 0x000baad0
 void fn_000baad0(void)
 {

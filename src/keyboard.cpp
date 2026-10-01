@@ -18,6 +18,8 @@ extern volatile long keybufferin;
 extern volatile long keybufferout;
 extern void (__interrupt __far *myOldInt)();
 
+// Handles key key with modifiers (MOD_* bits) in the game view; see
+// process_game_keys.
 // FUNCTION: 0x00074220
 void process_keys(u8 modifiers, u8 key)
 {
@@ -34,6 +36,14 @@ void record_mappos(u8 slot);
 void process_nettext_keys(u8 shift, u8 key);
 void make_a_rat(u8 owner);
 
+// Handles key key with modifiers (MOD_* bits) in the game view, mostly by
+// queueing turn events: the arrow keys scroll, 1-5 set the game speed (Alt+1-4
+// start a network chat message), P pauses, F1-F8 open the full-screen windows
+// (Alt and Ctrl store and recall map positions), Escape closes requesters,
+// Shift+Escape or a modifier with Q or X asks to quit (Shift+Ctrl+Escape quits
+// at once), Shift+A toggles the advisor, plus debug and cheat keys. In help
+// mode Space or Escape close the help page; while chatting, keys go to the
+// message.
 // FUNCTION: 0x0007424c
 void process_game_keys(u8 modifiers, u8 key)
 {
@@ -297,12 +307,14 @@ void process_game_keys(u8 modifiers, u8 key)
         break;
     }
 }
+// Empties the keyboard buffer.
 // FUNCTION: 0x00074cd8
 extern "C" void keybuffer_clear(void)
 {
     keybufferin = keybufferout = 0;
 }
 
+// Returns the next scan code from the keyboard buffer, or 0 if it is empty.
 // FUNCTION: 0x00074d04
 long keybuffer_get(void)
 {
@@ -318,6 +330,8 @@ long keybuffer_get(void)
 
 void __interrupt __far myKInt(void);
 
+// Installs the game's keyboard interrupt handler (myKInt), clearing the key
+// states. Returns 1.
 // FUNCTION: 0x00074d60
 s32 SWIKeyboardOpen(void)
 {
@@ -327,6 +341,8 @@ s32 SWIKeyboardOpen(void)
     return 1;
 }
 
+// Restores the keyboard interrupt handler replaced by SWIKeyboardOpen.
+// Returns 1.
 // FUNCTION: 0x00074dc8
 s32 SWIKeyboardClose(void)
 {
@@ -334,6 +350,10 @@ s32 SWIKeyboardClose(void)
     return 1;
 }
 
+// Keyboard interrupt handler: reads the scan code, updates lbKeyOn (0xe0
+// prefixed keys at code + 0x80, with the modifier flags), queues ordinary key
+// presses in the 16-entry key buffer, records the key in lbInkey and lbIInkey,
+// and acknowledges the keyboard and interrupt controller.
 // FUNCTION: 0x00074e08
 void __interrupt __far myKInt(void)
 {

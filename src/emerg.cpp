@@ -38,6 +38,11 @@ u16 saferand(void);
 u16 count_emergency_staff(u8 owner);
 u16 create_shadow(u16 tile, u16 caster, u8 owner, u16 anim);
 
+// Daily emergency handling: sends a helicopter to each hospital that has just
+// accepted an emergency (allhosps.f1e2 5, then 3 once summoned, or 0 if no
+// thing was free); when the next scheduled emergency is due (and some hospital
+// has seen its illness) offers it to every active hospital by fax, then
+// schedules the following one; counts down the waits (f1e2 above 5).
 // FUNCTION: 0x000aeec0
 void try_to_generate_emergency(void)
 {
@@ -90,6 +95,11 @@ void try_to_generate_emergency(void)
     }
 }
 
+// Returns 1 if the scheduled emergency (gamevar.f11d) is due, statvar.f6a is
+// set, fewer than 4 offers are outstanding, and no active hospital has an
+// emergency call (type 3) pending, allhosps.f20d set, an emergency running
+// (f1e2), or, in single player, unknown1256 clear; else 0. Never while a single
+// player is viewing an epidemic fax.
 // FUNCTION: 0x000af118
 u32 check_emergency_criteria(void)
 {
@@ -120,6 +130,9 @@ u32 check_emergency_criteria(void)
     return 0;
 }
 
+// Schedules the next emergency from emergency_control: the first unused entry
+// still ahead picks the turn (gamevar.f11d, within its months), illness,
+// patient count and terms. Clears gamevar.f123 if none is left.
 // FUNCTION: 0x000af2c0
 void setup_next_emergency(void)
 {
@@ -147,6 +160,8 @@ void setup_next_emergency(void)
     }
 }
 
+// Stores the scheduled emergency's details for the local player's offer fax
+// (call is its player call), in a free gamevar.ffd slot.
 // FUNCTION: 0x000af448
 void setup_emergency_stats(u16 call, u8 owner)
 {
@@ -168,6 +183,8 @@ void setup_emergency_stats(u16 call, u8 owner)
     }
 }
 
+// Gives owner the emergency stored for player call call (illness, patient
+// count, bonus per patient, cure percentage required) and frees its slot.
 // FUNCTION: 0x000af510
 void give_emergency_stats(u16 call, u8 owner)
 {
@@ -188,6 +205,10 @@ void give_emergency_stats(u16 call, u8 owner)
     gamevar.f13e--;
 }
 
+// Composes the emergency fax for owner from strs: who is calling, the patient
+// count and illness, whether the hospital can treat it (or the room and staff
+// it lacks), and the bonus. The accept button is disabled while an emergency
+// is running. Always returns 0.
 // FUNCTION: 0x000af600
 u32 announce_emergency(u8 owner, char **strs)
 {
@@ -277,6 +298,7 @@ u32 announce_emergency(u8 owner, char **strs)
     return 0;
 }
 
+// Emergency offer fax button: queues the accept (0) or refuse (1) answer.
 // FUNCTION: 0x000afab8
 void process_emergency_start_buttons(u8 button)
 {
@@ -292,6 +314,8 @@ void process_emergency_start_buttons(u8 button)
     }
 }
 
+// Composes the emergency result fax for owner from strs: the bonus earned
+// (if enough were cured) and how many of the patients were saved.
 // FUNCTION: 0x000afb34
 void emergency_over(u8 owner, char **strs)
 {
@@ -323,6 +347,7 @@ void emergency_over(u8 owner, char **strs)
     LbTextDraw(x, y, text);
 }
 
+// Emergency result fax button 0 closes the fax.
 // FUNCTION: 0x000afcd0
 void process_emergency_end_buttons(u8 button)
 {
@@ -333,6 +358,9 @@ void process_emergency_end_buttons(u8 button)
     }
 }
 
+// Creates a vehicle (helicopter, kind 0; saucer, kind 1) for owner at cell,
+// descending to land (HELI_LANDS), with its shadow. For the local player
+// plays an arrival sound. Returns its thing index, or 0 if none is free.
 // FUNCTION: 0x000afd0c
 u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
 {
@@ -367,6 +395,9 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
     return 0;
 }
 
+// HELI_LANDS: animates heli and lowers it; on landing a helicopter waits
+// (state 4) and marks the hospital's emergency as landed, a saucer starts
+// abducting (HELI_ABDUCTS).
 // FUNCTION: 0x000afef4
 void helicopter_lands(Thing *heli)
 {
@@ -392,6 +423,8 @@ void helicopter_lands(Thing *heli)
     }
 }
 
+// HELI_LEAVES: animates heli and raises it; at the top removes it and its
+// shadow and clears the emergency's (or the saucer's) records.
 // FUNCTION: 0x000b0000
 void helicopter_leaves(Thing *heli)
 {

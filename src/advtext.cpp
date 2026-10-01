@@ -48,6 +48,11 @@ extern const u16 advisor_anims[];
 
 void get_advisor(void);
 
+// Draws the advisor's speech bubble with the current advice (advisor.f10),
+// re-wrapping the text first when advisor.f124 is set. The bubble grows to the
+// left by as many middle pieces as the text needs (advisor.f123), and its left
+// edge is kept in advisor.f125. Draws nothing if wrapping left no_pieces past
+// resvars.f17 (the text did not fit).
 // FUNCTION: 0x000b1e10
 void advisor_text_box(void)
 {
@@ -85,6 +90,9 @@ void advisor_text_box(void)
     }
 }
 
+// Wraps the advice text into the narrowest bubble that holds it, trying widths
+// from resvars.f16 middle pieces up to resvars.f17, until advisor.f122 is set.
+// Leaves no_pieces one past the width tried last and clears advisor.f124.
 // FUNCTION: 0x000b2124
 void process_advisor_text(void)
 {
@@ -96,6 +104,11 @@ void process_advisor_text(void)
     advisor.f124 = 0;
 }
 
+// Tries to wrap advisor.f10 into at most three lines for a bubble segments
+// middle pieces wide, breaking after spaces and punctuation. If the whole text
+// fits, it replaces advisor.f10 with the wrapped text, sets advisor.f122 to the
+// line count and advisor.f123 to the extra pieces used; otherwise it leaves
+// everything unchanged.
 // FUNCTION: 0x000b2178
 void format_advisor_text(u8 segments)
 {
@@ -154,6 +167,10 @@ void format_advisor_text(u8 segments)
     }
 }
 
+// Draws and animates the advisor character for advisor.f11e (its animation
+// state), first bringing it on screen if advice is pending (advisor.f0). Idle
+// states occasionally switch to a special animation; looping states move to
+// next_advisor_state when their animation ends.
 // FUNCTION: 0x000b242c
 void advisor_character(void)
 {
@@ -208,6 +225,7 @@ void advisor_character(void)
     }
 }
 
+// Starts the advisor's entry animation if the advisor is not on screen.
 // FUNCTION: 0x000b2678
 void get_advisor(void)
 {

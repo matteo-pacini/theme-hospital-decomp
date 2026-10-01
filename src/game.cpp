@@ -23,6 +23,13 @@ void display_hall(void);
 
 }
 
+// The game's main loop, until quit_game asks to leave or a mode change or the
+// briefing fails: reads input, then runs the screen for display_mode (game
+// view, full-screen charts, menus, briefing, town select, network, load, year
+// end, fax, ...) and the turn's events, limits the frame rate, swaps the
+// screen, runs the things for the turn (several times when fast forwarding),
+// applies pending palette changes, shows the mission text when due, and
+// handles quitting to the main menu or a new game.
 // FUNCTION: 0x000112b0
 void game(void)
 {
@@ -296,6 +303,8 @@ done:
     AIL_end_sequence(GetSongHandle());
 }
 
+// Waits until at least 40 timer ticks (LbTimerClock) have passed since the
+// previous frame.
 // FUNCTION: 0x00011b24
 void limit_framerate(void)
 {
@@ -310,6 +319,13 @@ void limit_framerate(void)
     gamecounts.unknown18 = now;
 }
 
+// Starts a game turn if the game speed (myplayer.f1e, turns per second)
+// allows one now; otherwise sets gamevar.f12d (frame without a turn) and
+// returns. Unless paused, advances actual_game_turn and the per-turn random
+// values, runs the twice-daily, daily, month-end, quarterly and year-end
+// administration as they fall due, counts down each hospital's start delay
+// (unknown1257), runs earthquakes, and queues closing a room being edited once
+// it is empty.
 // FUNCTION: 0x00011b90
 void start_turn(void)
 {
@@ -414,6 +430,8 @@ void start_turn(void)
     }
 }
 
+// Switches to screen mode mode, keeping the mouse at the same place on the
+// screen and the cursor sprite. Returns 1, or 0 if the mode could not be set.
 // FUNCTION: 0x00012068
 u8 change_res(TbScreenMode mode)
 {
@@ -443,6 +461,9 @@ u8 change_res(TbScreenMode mode)
     }
 }
 
+// Runs one frame of the full-screen window chart_type (bank statement,
+// casebook, policy, research, graphs, staff list, manager, patient
+// overview, year charts); others ask to close the screen.
 // FUNCTION: 0x00012148
 void do_charts(void)
 {
@@ -486,6 +507,9 @@ void do_charts(void)
     }
 }
 
+// Runs one frame of the year end, by year_end_type: 0 sets it up and pauses
+// the game, 1 the hall of fame, 2 the year charts, 4 checks for winning or
+// losing and returns to the game, 5-7 the win or lose sequence.
 // FUNCTION: 0x00012274
 void do_year_end(void)
 {
@@ -529,6 +553,7 @@ void do_year_end(void)
     }
 }
 
+// While the game is paused, shades the whole screen.
 // FUNCTION: 0x00012390
 void draw_pause_mode(void)
 {
@@ -541,6 +566,9 @@ void draw_pause_mode(void)
     }
 }
 
+// Network game: tells the others when this player's game window gains or
+// loses focus, switching to the lost focus display (display_mode 13) and
+// pausing or resuming the music.
 // FUNCTION: 0x00012400
 void check_if_active(void)
 {
@@ -569,6 +597,9 @@ void check_if_active(void)
     }
 }
 
+// Lost focus display: keeps turns running if only this player lost focus,
+// and with draw set draws the game view (or a blank screen) and the lost
+// focus message. Returns 1 if the turn's things should run.
 // FUNCTION: 0x00012500
 u8 process_lost_focus_display(u8 draw)
 {
@@ -597,6 +628,8 @@ u8 process_lost_focus_display(u8 draw)
     return result;
 }
 
+// Shows the mission briefing help page (single player) or the network
+// criteria or result page, clearing the request; not in the tutorial.
 // FUNCTION: 0x000125b8
 void display_mission(void)
 {

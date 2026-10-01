@@ -9,6 +9,9 @@ void fn_0003b234(Thing *w);
 
 }
 
+// SS_DOCTOR_IN_OFFICE: sends doctor to sit at the room's desk (then
+// SS_DOCTOR_WORKS_AT_DESK), or out of the room if it is not theirs to hold or
+// has no desk.
 // FUNCTION: 0x0003a6e0
 void doctor_in_office(Thing *doctor)
 {
@@ -25,6 +28,10 @@ void doctor_in_office(Thing *doctor)
     }
 }
 
+// SS_DOCTOR_WORKS_AT_DESK: each time the desk animation loops, decides what
+// doctor does next: leaves if the room is being edited or they resign, takes a
+// requested break, calls the next patient in the queue (a quarter of the time),
+// fetches from the filing cabinet, or answers a staff page when idle.
 // FUNCTION: 0x0003a7a8
 void doctor_works_at_desk(Thing *doctor)
 {
@@ -91,6 +98,11 @@ void doctor_works_at_desk(Thing *doctor)
     }
 }
 
+// SS_DOCTOR_WAITS_FOR_PATIENT: once the called patient has arrived, starts the
+// room's examination or treatment complexes for both (SS_DOCTOR_EXAMINES, with
+// the substate for the room type); a doctor who has cracked up sends one in
+// four elsewhere. Until then counts down and calls again, giving up on a
+// patient who no longer comes.
 // FUNCTION: 0x0003aba4
 void doctor_waits_for_patient_to_arrive(Thing *doctor)
 {
@@ -279,6 +291,9 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
     }
 }
 
+// Drops w's call for a patient and puts w back in its room's working state;
+// for a surgeon, also releases the other surgeon waiting with them (state
+// 0x18).
 // FUNCTION: 0x0003b234
 void fn_0003b234(Thing *w)
 {
@@ -293,6 +308,11 @@ void fn_0003b234(Thing *w)
     }
 }
 
+// SS_DOCTOR_IN_MACHINE_ROOM: each time the animation loops, decides what the
+// member of staff in a diagnosis or treatment room does next: leaves if needed,
+// takes a break, calls the next patient (in the theatre via the lead surgeon),
+// wanders within the room, or answers a page when idle. A doctor in the
+// theatre goes to SS_DOCTOR_IN_THEATRE instead.
 // FUNCTION: 0x0003b2c4
 void doctor_in_machine_room(Thing *doctor)
 {
@@ -396,6 +416,11 @@ void doctor_in_machine_room(Thing *doctor)
     }
 }
 
+// SS_DOCTOR_RESEARCHES: each time the animation loops, keeps doctor working in
+// the research room: leaves if not a researcher, if the room is being edited,
+// or on orders bit 8 (clearing the low orders); takes breaks when tired; calls
+// an autopsy patient when the room is free; otherwise sometimes uses a free
+// research machine (research_tasks).
 // FUNCTION: 0x0003b9a0
 void doctor_researches(Thing *doctor)
 {
@@ -467,6 +492,9 @@ void doctor_researches(Thing *doctor)
     }
 }
 
+// Makes doctor (STAFF_DOCTOR only) crack up, once: changes their look, rerolls
+// their ability around a mean set by their seniority, and counts it for the
+// advisor if they are the local player's.
 // FUNCTION: 0x0003bd34
 void doctor_cracks_up(Thing *doctor)
 {
@@ -499,6 +527,7 @@ void doctor_cracks_up(Thing *doctor)
     }
 }
 
+// Returns the number of staff in room dressed as surgeons (STAFF_SURGEON).
 // FUNCTION: 0x0003be38
 u8 count_surgeons(RoomInfo *room)
 {
@@ -514,6 +543,9 @@ u8 count_surgeons(RoomInfo *room)
     return count;
 }
 
+// SS_DOCTOR_IN_THEATRE: sends a qualified surgeon to change at the surgeon
+// screen (as the first or second surgeon), or to wander if there is no screen;
+// others, or a third surgeon, leave.
 // FUNCTION: 0x0003bed0
 void doctor_in_theatre(Thing *doctor)
 {
@@ -562,6 +594,9 @@ void doctor_in_theatre(Thing *doctor)
     }
 }
 
+// Starts surgeon changing back from surgical dress (the complex for the first
+// or second surgeon), or turns them back into STAFF_DOCTOR at once if no
+// surgeon is counted in the room.
 // FUNCTION: 0x0003c0a8
 void change_surgeon_to_doc(Thing *surgeon)
 {
@@ -579,6 +614,7 @@ void change_surgeon_to_doc(Thing *surgeon)
     }
 }
 
+// SS_SURGEON_WAITS: counts down, then returns to SS_DOCTOR_IN_MACHINE_ROOM.
 // FUNCTION: 0x0003c11c
 void surgeon_waits(Thing *surgeon)
 {
@@ -588,6 +624,7 @@ void surgeon_waits(Thing *surgeon)
     }
 }
 
+// Returns the first staff member in room whose state is state, or 0.
 // FUNCTION: 0x0003c154
 Thing *find_waiting_surgeon(RoomInfo *room, u8 state)
 {
@@ -601,6 +638,10 @@ Thing *find_waiting_surgeon(RoomInfo *room, u8 state)
     return 0;
 }
 
+// Checks w's called patient (slave): returns 1 if w should forget them (dead,
+// not a patient, in a queue, or doing something other than answering the
+// call); if they are idle instead, calls them again (action at the room's door,
+// or at the desk for a receptionist) and returns 0.
 // FUNCTION: 0x0003c1e8
 u8 forget_about_my_slave(Thing *w, u16 action)
 {

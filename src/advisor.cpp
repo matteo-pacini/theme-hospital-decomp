@@ -134,6 +134,12 @@ extern char **forced_advice_text;
 extern char **mouse_advice_text;
 }
 
+// Runs the advisor for a frame, if enabled (myplayer.f41[20]) and not
+// suppressed: in the tutorial shows the tutorial text; otherwise lets the
+// current advice expire after its time (advice[].f2), then picks the first
+// advice entry not given too often or too recently whose condition holds
+// (find_advice), animates the advisor and draws the speech bubble, and sends
+// the advisor away once the advice is done.
 // FUNCTION: 0x0005dbb0
 void display_advisor(void)
 {
@@ -206,6 +212,10 @@ void display_advisor(void)
     }
 }
 
+// Checks advice entry id (advice[] index): if its situation applies (from the
+// statistics pass, announcements and the level's criteria), writes the advice
+// text into advisor.f10, makes it the current advice (advisor.f0) and records
+// when it was given. Returns 1 if advice was written, else 0.
 // FUNCTION: 0x0005defc
 u8 find_advice(const u16 id)
 {
@@ -965,6 +975,7 @@ u8 find_advice(const u16 id)
     return found;
 }
 
+// Writes the text for the mouse advice advisor.f4 into advisor.f10.
 // FUNCTION: 0x000608bc
 void mouse_advice(void)
 {
@@ -977,6 +988,8 @@ void mouse_advice(void)
     }
 }
 
+// Writes the text for the forced advice advisor.f2 (some with names filled in)
+// into advisor.f10, and clears the request.
 // FUNCTION: 0x00060904
 void forced_advice(void)
 {
@@ -1008,6 +1021,8 @@ void forced_advice(void)
     advisor.f2_s16 = 0;
 }
 
+// Clears all advice history and the current advice, and starts a new
+// statistics pass.
 // FUNCTION: 0x00060a80
 void reset_advisor(void)
 {
@@ -1031,6 +1046,8 @@ void reset_advisor(void)
     reset_all_count();
 }
 
+// Queues announcement value of type type for the advisor (up to 4 per type,
+// duplicates ignored).
 // FUNCTION: 0x00060b54
 void announce_this(const u8 type, const u32 value)
 {
@@ -1046,6 +1063,8 @@ void announce_this(const u8 type, const u32 value)
     }
 }
 
+// Removes the oldest announcement of type type and asks for the bubble to be
+// re-wrapped.
 // FUNCTION: 0x00060bf4
 void done_announcement(const u16 type)
 {
@@ -1057,6 +1076,8 @@ void done_announcement(const u16 type)
     advisor.f124 = 1;
 }
 
+// Toilet advice from the patients' average bladder (advisor counts). Returns
+// 1 if advice was written.
 // FUNCTION: 0x00060c78
 u8 advisor_toilets(void)
 {
@@ -1086,6 +1107,8 @@ u8 advisor_toilets(void)
     return 0;
 }
 
+// Plant advice from the plants per land area and the patients' impatience and
+// happiness. Returns 1 if advice was written.
 // FUNCTION: 0x00060e18
 u8 advisor_plants(void)
 {
@@ -1119,6 +1142,8 @@ u8 advisor_plants(void)
     return 0;
 }
 
+// Machine advice from their average wear and whether there are handymen.
+// Returns 1 if advice was written.
 // FUNCTION: 0x00060f90
 u8 advisor_old_hardware(void)
 {
@@ -1154,6 +1179,8 @@ u8 advisor_old_hardware(void)
     return 0;
 }
 
+// Drinks advice from the patients' average refreshment. Returns 1 if advice
+// was written. The "very thirsty" branch (below 10) is never reached.
 // FUNCTION: 0x00061188
 u8 advisor_thirsty_peeps(void)
 {
@@ -1184,6 +1211,8 @@ u8 advisor_thirsty_peeps(void)
     return 0;
 }
 
+// Advice about unhappy patients: those who left fed up (othervar.f89, then
+// cleared) or a low average happiness. Returns 1 if advice was written.
 // FUNCTION: 0x000612b8
 u8 advisor_peeps_unhappy(void)
 {
@@ -1207,6 +1236,8 @@ u8 advisor_peeps_unhappy(void)
     return 0;
 }
 
+// Heating advice from the patients' average warmth, with a too hot or too
+// cold sound. Returns 1 if advice was written.
 // FUNCTION: 0x000613a0
 u8 advisor_peeps_warmth(void)
 {
@@ -1246,6 +1277,8 @@ u8 advisor_peeps_warmth(void)
     return 0;
 }
 
+// Litter advice from the litter per land area and the number of handymen.
+// Returns 1 if advice was written.
 // FUNCTION: 0x00061558
 u8 advisor_litter_problem(void)
 {
@@ -1276,6 +1309,9 @@ u8 advisor_litter_problem(void)
     return 0;
 }
 
+// Bench advice from the bench shortage score per patient (NRAdcounts.unknown6:
+// up when a patient finds no free bench, down when one does) and the number of
+// benches (unknown4). Returns 1 if advice was written.
 // FUNCTION: 0x000616b4
 u8 advisor_benches(void)
 {
@@ -1301,6 +1337,7 @@ u8 advisor_benches(void)
     return 0;
 }
 
+// Advice from the plants' average health. Returns 1 if advice was written.
 // FUNCTION: 0x000617e4
 u8 advisor_dead_plants(void)
 {
@@ -1328,6 +1365,8 @@ u8 advisor_dead_plants(void)
     return 0;
 }
 
+// Lets the unhappy patients and thirst advice (entries 14 and 15) be given
+// again this month.
 // FUNCTION: 0x00061998
 void monthly_update_of_adivsor_counts(void)
 {
@@ -1335,6 +1374,9 @@ void monthly_update_of_adivsor_counts(void)
     advice[15].f6 = 0;
 }
 
+// Returns a staff_unhappy entry for the first kind of staff more tired than
+// gbv.fea on average (graded by the overall tiredness), or 0. Writes no text;
+// find_advice ignores the result.
 // FUNCTION: 0x000619bc
 u8 advisor_staff_tired(void)
 {
@@ -1369,6 +1411,8 @@ u8 advisor_staff_tired(void)
     return 0;
 }
 
+// Heating advice from the staff's average warmth, with a sound. Returns 1 if
+// advice was written.
 // FUNCTION: 0x00061b34
 u8 advisor_staff_warmth(void)
 {

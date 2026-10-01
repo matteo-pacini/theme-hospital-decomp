@@ -34,6 +34,11 @@ void copy_window_from_a_to_b(const u8 from, const u8 to);
 void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h);
 void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1);
 
+// Scrolls each view window that follows a thing (othervar.f34[i], thing
+// D_001581b2[i].value) and the main view (othervar.f38) to centre on that
+// thing, once each; if the thing is beyond the scroll limit the requesters are
+// closed instead. The main view's limit test uses the layout's x offset
+// (unknown558) for y too.
 // FUNCTION: 0x000ab610
 void process_tracking_windows(void)
 {
@@ -80,6 +85,10 @@ void process_tracking_windows(void)
     }
 }
 
+// Updates the map cursor from the mouse in the current view: mapx,mapy (the
+// cell at the view's top left), curx,cury (the mouse cell relative to it),
+// mcurx,mcury (that cell's screen position), and othervar.f28 (the mouse
+// tile, clamped to the map; the previous one goes to othervar.f2a).
 // FUNCTION: 0x000aba50
 void set_map_cur_and_mcur_x_and_y(void)
 {
@@ -110,12 +119,14 @@ void set_map_cur_and_mcur_x_and_y(void)
     othervar.f28 = x + (y << 7);
 }
 
+// Scrolls view window win to map tile cell (y * 128 + x).
 // FUNCTION: 0x000abb80
 void goto_cell_in_window(const u8 win, const s32 cell)
 {
     goto_column_row_in_window(win, cell % 128, cell / 128);
 }
 
+// Scrolls view window win to map tile x,y; ignored if off the map.
 // FUNCTION: 0x000abbc8
 void goto_column_row_in_window(const u8 win, const s32 x, const s32 y)
 {
@@ -126,6 +137,11 @@ void goto_column_row_in_window(const u8 win, const s32 x, const s32 y)
     }
 }
 
+// Applies a frame of scrolling: the scroll keys accelerate the current view,
+// every view moves by its velocity (in 1/65536 pixel, at most one tile a
+// frame, stopped at the scroll limit) which then decays, the background
+// buffer's wrap offset follows the drawn view, and moved or resized views are
+// flagged for redrawing (window.fd8, fdb). Clears the scroll keys.
 // FUNCTION: 0x000abc44
 void move_windows(void)
 {
@@ -212,6 +228,9 @@ void move_windows(void)
     }
 }
 
+// Finds the map cell under screen point x,y of view window win. Sets
+// info.unknown5c,unknown60 to its column and row (unclamped), unknown64 to
+// row * 128 + column, and unknown54,unknown58 to its screen position.
 // FUNCTION: 0x000ac264
 void find_cell_at_point(const u8 win, const s32 x, const s32 y)
 {
@@ -233,6 +252,8 @@ void find_cell_at_point(const u8 win, const s32 x, const s32 y)
     info.unknown58 = resvars.f3 * (col + row + 2) / 2 - window.fc[win] + window.f9c[win];
 }
 
+// Sets info.unknown54,unknown58 to the screen position in view window win of
+// map cell column x, row y.
 // FUNCTION: 0x000ac3c4
 void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y)
 {
@@ -240,6 +261,8 @@ void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y
     info.unknown58 = (x + y + 2) * resvars.f3 / 2 - window.fc[win] + window.f9c[win];
 }
 
+// Sets info.unknown54,unknown58 to the map pixel position of cell column x,
+// row y, before any scrolling.
 // FUNCTION: 0x000ac464
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y)
 {
@@ -247,6 +270,8 @@ void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y)
     info.unknown58 = (x + y) * resvars.f3 / 2;
 }
 
+// Returns 1 if map pixel position x,y falls outside the scroll limits
+// (gamevar.f132 to f134), widened by 10 tiles with with_margin; else 0.
 // FUNCTION: 0x000ac4bc
 u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_margin)
 {
@@ -272,6 +297,9 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_ma
     return 0;
 }
 
+// Clamps the rectangle x0,y0 to x1,y1 to the window wx0,wy0 to wx1,wy1 and
+// stores it in info.unknown68 to unknown74; info.unknown78 is set if the
+// result is empty.
 // FUNCTION: 0x000ac5e4
 void find_common_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1)
 {
@@ -301,6 +329,8 @@ void find_common_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32
         info.unknown78 = 0;
 }
 
+// Stores in info.unknown68 to unknown74 the rectangle covering both x0,y0 to
+// x1,y1 and wx0,wy0 to wx1,wy1; info.unknown78 is set if it is empty.
 // FUNCTION: 0x000ac6bc
 void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1)
 {
@@ -330,6 +360,10 @@ void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s3
         info.unknown78 = 0;
 }
 
+// Opens a second view window (at most two exist) at the mouse with the current
+// view's scroll position, growing it to x0,y0 to x1,y1 (source 0) or to preset
+// rectangle preset (source 1); a is kept in window.fde. With window.unknown2ed
+// 1 the growth completes at once. Makes the new window current.
 // FUNCTION: 0x000ac78c
 void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
 {
@@ -391,6 +425,9 @@ void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0,
     }
 }
 
+// Starts view window win moving from its zone to x0,y0 to x1,y1 over steps
+// frames (0 counts as 1), with mode kept in window.f2c0 (2 closes it at the
+// end). Ignored for an empty target.
 // FUNCTION: 0x000acc4c
 void set_window_animating(const u8 win, const u8 mode, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
 {
@@ -410,6 +447,8 @@ void set_window_animating(const u8 win, const u8 mode, s32 steps, const s32 x0, 
     }
 }
 
+// Advances every view window's zone animation by a frame, closing those that
+// finished closing.
 // FUNCTION: 0x000acdb0
 void animate_windows(void)
 {
@@ -446,6 +485,8 @@ void animate_windows(void)
     }
 }
 
+// Advances view window win's zone animation by a frame, removing it from the
+// list if it finished closing.
 // FUNCTION: 0x000ad034
 void animate_single_window(const u8 win)
 {
@@ -476,6 +517,7 @@ void animate_single_window(const u8 win)
     }
 }
 
+// Copies view window from's state to slot to.
 // FUNCTION: 0x000ad284
 void copy_window_from_a_to_b(const u8 from, const u8 to)
 {
@@ -514,6 +556,7 @@ void copy_window_from_a_to_b(const u8 from, const u8 to)
     window.f224[to] = window.f224[from];
 }
 
+// Removes view window win from the list, moving later ones down.
 // FUNCTION: 0x000ad6cc
 void remove_window_from_list(const u8 win)
 {
@@ -526,6 +569,8 @@ void remove_window_from_list(const u8 win)
     }
 }
 
+// Resets the view windows to a single full-screen view, the background wrap
+// offset to 0, and the preset rectangles; flags the whole screen for redraw.
 // FUNCTION: 0x000ad72c
 void init_andys_variables(void)
 {

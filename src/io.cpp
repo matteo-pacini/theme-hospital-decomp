@@ -78,6 +78,8 @@ void *fn_00022b60(TbCacheUsedBlock *block);
 
 }
 
+// Returns 1 if save region region (D_001290d4 index) is checksummed and
+// synchronised in network games, else 0.
 // FUNCTION: 0x0001c030
 int is_checksummed_region(int region)
 {
@@ -87,6 +89,8 @@ int is_checksummed_region(int region)
     return 0;
 }
 
+// Shows the network resynchronisation message with percent done in the
+// panel's info bar (game view only).
 // FUNCTION: 0x0001c084
 void draw_sync_progress(int percent)
 {
@@ -114,6 +118,7 @@ void draw_sync_progress(int percent)
     }
 }
 
+// Returns the ones' complement 16-bit checksum of the len bytes at p.
 // FUNCTION: 0x0001c1b4
 u16 checksum16(u16 *p, int len)
 {
@@ -132,6 +137,8 @@ u16 checksum16(u16 *p, int len)
     return ~sum;
 }
 
+// Records the checksum of each 1 KB block of the checksummed save regions in
+// D_0015fe86 (at most 512), for resynchronising network games.
 // FUNCTION: 0x0001c234
 void checksum_memory_regions(void)
 {
@@ -161,6 +168,11 @@ void checksum_memory_regions(void)
     D_00160288 <<= 1;
 }
 
+// Resynchronises save region base (len bytes) with a network player. With
+// port negative, this machine receives: it asks the host (D_00160508) for
+// each 1 KB block whose checksum differs from the host's and reads it in.
+// Otherwise it sends the blocks port asks for. Shows progress. Returns 1, or
+// 0 if the network failed.
 // FUNCTION: 0x0001c318
 int sync_memory_region(s8 port, u32 base, int len)
 {
@@ -240,6 +252,9 @@ int sync_memory_region(s8 port, u32 base, int len)
     return 1;
 }
 
+// After the players' checksums disagree: the host sends its game state to
+// each player whose checksum differs and then releases everyone; the others
+// receive it if theirs differs and wait for the host.
 // FUNCTION: 0x0001c5e4
 void resync_network_game(void)
 {
@@ -296,6 +311,11 @@ void resync_network_game(void)
     }
 }
 
+// Carries out a turn's player commands: records or plays back the input,
+// applies the local player's scroll requests, exchanges the turn's packets in
+// network games (resynchronising if the checksums disagree), then runs each
+// player's command (Event.type, EV_*) and moves it to the previous turn's
+// copy. Also checks for an autosave.
 // FUNCTION: 0x0001c7c0
 void process_turn(void)
 {
@@ -1853,6 +1873,9 @@ void process_turn(void)
     check_autosave();
 }
 
+// Returns 1 if save slot slot holds a valid save (the right length and
+// version 3), loading its level number and balance settings; else sets the
+// error message to show and returns 0.
 // FUNCTION: 0x00021700
 s16 save_game_valid(const s8 slot)
 {
@@ -1886,6 +1909,10 @@ s16 save_game_valid(const s8 slot)
     return 0;
 }
 
+// Saves the game regions to save slot slot (port -1), or sends them to network
+// player port for resynchronisation; in low resolution the view is saved as
+// if in high resolution. Returns 1 on success, else 0 (with a message for a
+// local save). Not while building or editing in single player.
 // FUNCTION: 0x00021818
 u16 save_game(s8 slot, s8 port)
 {
@@ -1979,6 +2006,9 @@ u16 save_game(s8 slot, s8 port)
     return ok;
 }
 
+// Loads save slot slot (port -1) over a freshly loaded level and rebuilds the
+// map, or receives the game regions from the network host. Returns 1 on
+// success, else 0.
 // FUNCTION: 0x00021c38
 s16 load_game(s8 slot, s8 port)
 {
@@ -2095,6 +2125,9 @@ s16 load_game(s8 slot, s8 port)
     return 0;
 }
 
+// Points the save regions (D_001290d4) at the current map, things, rooms and
+// other dynamic tables; in network games also totals their size and, on the
+// host, checksums them.
 // FUNCTION: 0x00022120
 void setup_addresses(void)
 {
@@ -2122,6 +2155,10 @@ void setup_addresses(void)
     }
 }
 
+// Loads level file lvl (level.l<lvl>) into the cache. With full set, also
+// creates each player's entrance rooms and sets the start view, helipad and
+// scroll limits from it and rebuilds the map. A level already loaded is kept.
+// Returns 1, or 0 on failure.
 // FUNCTION: 0x000221fc
 s8 load_level(const u8 lvl, const u8 full)
 {
@@ -2205,6 +2242,7 @@ s8 load_level(const u8 lvl, const u8 full)
     return 0;
 }
 
+// Frees the loaded level file.
 // FUNCTION: 0x00022764
 void free_level(void)
 {
@@ -2212,6 +2250,8 @@ void free_level(void)
     cache.Free(othervar.fa06);
 }
 
+// Returns the game state checksum compared between network players: the
+// random seed plus each active hospital's allhosps.f11c2 entries.
 // FUNCTION: 0x00022790
 u32 check_sum(void)
 {
@@ -2231,6 +2271,7 @@ u32 check_sum(void)
     return sum;
 }
 
+// Clears the earthquake state.
 // FUNCTION: 0x00022820
 void reset_earthquake_variables(void)
 {
@@ -2240,6 +2281,8 @@ void reset_earthquake_variables(void)
     gamevar.fef = 0;
 }
 
+// Returns 1 if the game can be saved now (normal mouse mode, no building or
+// room editing in progress); else 0, setting the error message if warn.
 // FUNCTION: 0x00022854
 u8 check_okay_to_save(u8 warn)
 {
@@ -2260,6 +2303,9 @@ u8 check_okay_to_save(u8 warn)
     return 1;
 }
 
+// Autosaves to slot 8 on day 28 of each month (or as soon as possible after,
+// if saving was not possible then), when autosave is on (myplayer.f22).
+// Single player only.
 // FUNCTION: 0x000228e0
 void check_autosave(void)
 {
@@ -2280,6 +2326,8 @@ void check_autosave(void)
     }
 }
 
+// Returns the level number stored in save slot slot, or -1 if it cannot be
+// read. Reads two bytes into a one-byte local.
 // FUNCTION: 0x000229b0
 s32 read_level_number(s32 slot)
 {
@@ -2302,6 +2350,7 @@ s32 read_level_number(s32 slot)
     return -1;
 }
 
+// Restarts the current level from the beginning (single player only).
 // FUNCTION: 0x00022a58
 void restart_level(void)
 {
@@ -2323,6 +2372,7 @@ void restart_level(void)
     }
 }
 
+// Returns the data of cache block block (just past its 0x14-byte header).
 // FUNCTION: 0x00022b60 COMDAT
 inline void *fn_00022b60(TbCacheUsedBlock *block)
 {

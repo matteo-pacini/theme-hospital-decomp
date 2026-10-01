@@ -6,6 +6,12 @@ extern "C" {
 extern s16 D_001567b0[8];
 }
 
+// SS_DOCTOR_EXAMINES: steps the examination or treatment of doctor's patient
+// (slave) through the room-specific sequence chosen by doctor->substate (set
+// by doctor_waits_for_patient_to_arrive), starting each stage's complexes for
+// doctor, patient and any assistant; at the end applies the result
+// (done_treatment, unless the treatment machine is still in use) and returns
+// doctor to the room's working state.
 // FUNCTION: 0x000530e0
 void doctor_carries_out_examination(Thing *doctor)
 {
@@ -432,6 +438,10 @@ void doctor_carries_out_examination(Thing *doctor)
     }
 }
 
+// With cured 0, gives patient illness and changes their appearance to show it.
+// With cured 1, restores their appearance and records the cure of their
+// current illness: cure counts, reputation, contagion cleared, emergency
+// progress, and the patient record. illness picks the appearance change.
 // FUNCTION: 0x00054444
 void effect_illness(Thing *patient, u8 illness, u8 cured)
 {

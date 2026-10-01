@@ -24,7 +24,7 @@ void staff_exit_room_check(Thing *w);
 s16 person_head_for(Thing *w, u8 a);
 Thing *find_door(Thing *w);
 void adjust_big_cell_flag(const u16 tile);
-void start_new_interaction(Thing *w, u8 who);
+void start_new_interaction(Thing *w, u8 seq);
 void pager_arrival(Thing *w);
 void clear_my_mutex(Thing *w);
 u8 count_surgeons(RoomInfo *room);
@@ -47,6 +47,8 @@ void rest_staff(Thing *w, s16 amount);
 void research_contribution(Thing *w, s16 amount);
 void person_autopsied(Thing *w);
 
+// Runs the next step of w's complex (process_staff_complex or
+// process_person_complex by type). Returns its result, or 0 for other types.
 // FUNCTION: 0x0003e6c0
 extern "C" u8 process_complex_either(Thing *w)
 {
@@ -59,6 +61,13 @@ extern "C" u8 process_complex_either(Thing *w)
     return 0;
 }
 
+// Runs the step of employee's complex at complex_pc (staff_complex_group):
+// claims and walks to objects, uses doors, plays animations, starts
+// interactions with or drives its slave, and so on. Then advances complex_pc,
+// honouring the step's repeat count; at the end it starts the queued complex,
+// if any, or enters next_state. Returns 1 after a step, 2 if no complex is
+// running, 0, 3 or 4 if the step failed (fail_staff_complex, or the state was
+// set to SS_COMPLEX_RETRY for a busy door).
 // FUNCTION: 0x0003e724
 u8 process_staff_complex(Thing *employee)
 {
@@ -460,6 +469,8 @@ u8 process_staff_complex(Thing *employee)
     return 1;
 }
 
+// Advances employee's complex animation every anim_speed turns, running the
+// next complex step when the animation would wrap.
 // FUNCTION: 0x0004029c
 void play_complex_staff_anim(Thing *employee)
 {
@@ -477,6 +488,8 @@ void play_complex_staff_anim(Thing *employee)
     }
 }
 
+// SS_COMPLEX_RETRY: plays employee's animation and retries the complex step
+// each time it wraps.
 // FUNCTION: 0x0004031c
 void staff_complex_retry(Thing *employee)
 {
@@ -492,6 +505,8 @@ void staff_complex_retry(Thing *employee)
     }
 }
 
+// SS_WAIT_FOR_COMPLEX_SLAVE: continues employee's complex once its slave is
+// ready (state 0x20).
 // FUNCTION: 0x000403d0
 void staff_wait_for_complex_slave(Thing *employee)
 {
@@ -505,6 +520,9 @@ void staff_wait_for_complex_slave(Thing *employee)
     }
 }
 
+// Joins employee's ready slave (state 0x20, then set to 0x28) into
+// employee's animation: copies the slave's layers 0-4 (and the object's
+// layers 10-12) to employee and gives the slave employee's object.
 // FUNCTION: 0x0004042c
 void merge_slave(Thing *employee)
 {
@@ -532,7 +550,9 @@ void merge_slave(Thing *employee)
 }
 
 
-// NONMATCHING: register choice
+// As process_staff_complex, for a patient's complex (person_complex_group).
+// Returns 1 after a step, 2 if no complex is running, 0 or 3 if the step
+// failed (fail_person_complex, or state 0x2a for a busy door).
 // FUNCTION: 0x00040524
 u8 process_person_complex(Thing *person)
 {
@@ -828,6 +848,11 @@ u8 process_person_complex(Thing *person)
     return 1;
 }
 
+// Gives w complex action (a complex_group index) with argument tile arg (0
+// for none). If w has no complex running it starts at once (or resumes a
+// complex suspended with complex_resume, queueing action behind it) and
+// returns 1. Otherwise action is queued (second slot if the first is taken,
+// replacing it) and 0 is returned.
 // FUNCTION: 0x000417ac
 u8 set_complex(Thing *w, u16 action, u16 arg)
 {
@@ -865,6 +890,7 @@ u8 set_complex(Thing *w, u16 action, u16 arg)
     return 0;
 }
 
+// As play_complex_staff_anim, for a patient.
 // FUNCTION: 0x000418dc
 void play_complex_person_anim(Thing *person)
 {
@@ -882,6 +908,8 @@ void play_complex_person_anim(Thing *person)
     }
 }
 
+// Sends w to tile pos (y * 128 + x): sets its destination and starts its
+// navigation.
 // FUNCTION: 0x0004195c
 void set_destination_coords(Thing *w, u16 pos)
 {
@@ -891,6 +919,7 @@ void set_destination_coords(Thing *w, u16 pos)
     nav_init(w);
 }
 
+// Sets the destination tile pos of w's first queued complex.
 // FUNCTION: 0x000419bc
 void set_next_destination_coords(Thing *w, u16 pos)
 {
@@ -898,6 +927,7 @@ void set_next_destination_coords(Thing *w, u16 pos)
     w->queued_arg_y = pos / 128;
 }
 
+// Sets the destination tile pos of w's second queued complex.
 // FUNCTION: 0x00041a08
 void set_next2_destination_coords(Thing *w, u16 pos)
 {
@@ -905,6 +935,7 @@ void set_next2_destination_coords(Thing *w, u16 pos)
     w->queued2_arg_y = pos / 128;
 }
 
+// As staff_complex_retry, for a patient (state 0x2a).
 // FUNCTION: 0x00041a54
 void person_complex_retry(Thing *person)
 {
@@ -920,6 +951,9 @@ void person_complex_retry(Thing *person)
     }
 }
 
+// Continues person's complex once its slave is in PS_ENTERTAINS_THEMSELF
+// (setting the slave to state 0x2a), taking over the slave's layers 5-9 and
+// its object's layers 10-12.
 // FUNCTION: 0x00041b08
 void person_wait_for_complex_slave(Thing *person)
 {
@@ -948,6 +982,9 @@ void person_wait_for_complex_slave(Thing *person)
     }
 }
 
+// Ends employee's failed complex: back to resume_state with the complex and
+// its queue cleared (cancelling a handyman's page responses), or, with no
+// resume_state, into SS_COMPLEX_RETRY to try the step again.
 // FUNCTION: 0x00041c0c
 void fail_staff_complex(Thing *employee)
 {
@@ -969,6 +1006,7 @@ void fail_staff_complex(Thing *employee)
     }
 }
 
+// As fail_staff_complex, for a patient (retry state 0x2a).
 // FUNCTION: 0x00041d54
 void fail_person_complex(Thing *person)
 {
@@ -986,6 +1024,9 @@ void fail_person_complex(Thing *person)
     }
 }
 
+// Claims the room that w is entering by its door (at exit_tile) for w:
+// returns 1 if w already holds it or takes a free place (two in an operating
+// theatre, one elsewhere), 0 if it is taken. Corridors always return 1.
 // FUNCTION: 0x00041e44
 u8 check_room_mutex_on_entry(Thing *w)
 {
@@ -1017,6 +1058,10 @@ u8 check_room_mutex_on_entry(Thing *w)
     return 0;
 }
 
+// Makes w give up its complex: runs complex 0xf0 (0x4ba for a receptionist
+// at an object) up to 12 steps at once, keeps w where it was if it did not
+// change room, frees a staff member's slave, and returns w to resume_state
+// standing.
 // FUNCTION: 0x00041f84
 void abandon_complex(Thing *w)
 {
@@ -1122,6 +1167,9 @@ void abandon_complex(Thing *w)
     }
 }
 
+// Applies the effect of a completed complex step of kind kind to w: 2 a drink,
+// 4 a paid amusement, 6 the toilet, 8/10/14/16 research, 12 an autopsy of the
+// slave, 18/20/22 rest, 24 a machine use. Keeps happiness within 0-100.
 // FUNCTION: 0x000423c8
 void complex_success(Thing *w, u8 kind)
 {
@@ -1194,6 +1242,8 @@ void complex_success(Thing *w, u8 kind)
     }
 }
 
+// Sends w to a reachable tile near its object. Returns 1, or 0 if there is
+// none.
 // FUNCTION: 0x00042748
 u8 staff_go_near_object(Thing *w)
 {
@@ -1207,6 +1257,9 @@ u8 staff_go_near_object(Thing *w)
     return 0;
 }
 
+// Clears w's complex, queue and pending states, and if w is using an object or
+// door, runs the complex step that gets it off (resetting a patient's walking
+// speed).
 // FUNCTION: 0x000427d8
 void interrupt_complex(Thing *w)
 {
@@ -1243,6 +1296,7 @@ void interrupt_complex(Thing *w)
     }
 }
 
+// interrupt_staff or interrupt_person, by w's type.
 // FUNCTION: 0x000429b4
 void interrupt_peep(Thing *w)
 {

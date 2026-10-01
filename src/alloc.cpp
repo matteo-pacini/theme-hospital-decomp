@@ -20,6 +20,7 @@ CDosHeap _lbHeap;
 u32 dos_alloc(u32 size);
 void dos_free(u16 seg);
 
+// Compacts the game heap (_lbHeap), merging adjacent free blocks.
 // FUNCTION: 0x000bac20
 void LbPackHeap(void)
 {
@@ -28,18 +29,23 @@ void LbPackHeap(void)
 
 extern "C" {
 
+// Allocates size bytes from the game heap (_lbHeap) that LbMemorySetup set up.
+// Returns 0 on failure.
 // FUNCTION: 0x000bac40
 void *LbMemoryAlloc(u32 size)
 {
     return _lbHeap.Alloc(size);
 }
 
+// Allocates size bytes of zeroed DOS conventional memory (below 1 MB) through
+// DPMI. Returns its linear address, or 0 on failure.
 // FUNCTION: 0x000bac70
 void *LbMemoryAllocLow(u32 size)
 {
     return _lbMemory.Alloc(size, 1);
 }
 
+// Frees a block from LbMemoryAlloc. Always returns 1.
 // FUNCTION: 0x000baca4
 int LbMemoryFree(void *p)
 {
@@ -47,6 +53,10 @@ int LbMemoryFree(void *p)
     return 1;
 }
 
+// Reserves the game heap: about 5.4 MB if available, else the largest size from
+// 4.7 MB upwards in 150 KB steps that can be allocated. Picks the sound heap
+// size (D_0015642f) and sound file set (D_00156433) to match the memory
+// obtained. Returns 1, or -1 if no heap could be allocated.
 // FUNCTION: 0x000bacd8
 int LbMemorySetup(void)
 {
@@ -86,6 +96,7 @@ int LbMemorySetup(void)
     return 1;
 }
 
+// Releases every block _lbMemory allocated, including the game heap. Returns 1.
 // FUNCTION: 0x000badfc
 int LbMemoryReset(void)
 {
@@ -93,17 +104,21 @@ int LbMemoryReset(void)
     return 1;
 }
 
+// Does nothing in this build.
 // FUNCTION: 0x000bae28
 void LbMemorySetupMaxSize(u32 size)
 {
 }
 
+// Not supported: always returns -1.
 // FUNCTION: 0x000bae44
 int LbMemoryShrink(void *p, u32 size)
 {
     return -1;
 }
 
+// Clears lbMemoryAvailable (its last entry to -1) and returns -1: the free
+// memory is not measured in this build.
 // FUNCTION: 0x000bae6c
 int LbMemoryCheck(void)
 {
@@ -115,6 +130,7 @@ int LbMemoryCheck(void)
     return -1;
 }
 
+// Not supported: always returns -1.
 // FUNCTION: 0x000baec0
 int fn_000baec0(void *p, u32 size)
 {
@@ -123,6 +139,7 @@ int fn_000baec0(void *p, u32 size)
 
 }
 
+// Puts all 100 block records on the free list, with nothing allocated.
 // FUNCTION: 0x000baee8
 _CMemory::_CMemory()
 {
@@ -141,6 +158,9 @@ _CMemory::~_CMemory()
     if (used_list) {}
 }
 
+// Allocates size bytes, zeroed: from DOS conventional memory if low is nonzero,
+// else from the C heap (rounded up to 32 bytes). Returns 0 if size is 0, the
+// 100 block records are used up, or the allocation fails.
 // FUNCTION: 0x000baf94
 void *_CMemory::Alloc(u32 size, u32 low)
 {
@@ -180,6 +200,7 @@ void *_CMemory::Alloc(u32 size, u32 low)
 
 extern "C" {
 
+// _CMemory::ReleaseAll: frees every block mem has allocated.
 // FUNCTION: 0x000bb0d0
 void fn_000bb0d0(_CMemory *mem)
 {
@@ -187,6 +208,8 @@ void fn_000bb0d0(_CMemory *mem)
         fn_000bb10c(mem, mem->used_list->ptr);
 }
 
+// _CMemory::Free: frees the block of mem whose address is p. Returns 1 when
+// freed or p is 0, 0 if p is not one of mem's blocks.
 // FUNCTION: 0x000bb10c
 u32 fn_000bb10c(_CMemory *mem, void *p)
 {
@@ -220,6 +243,9 @@ u32 fn_000bb10c(_CMemory *mem, void *p)
 
 }
 
+// Allocates size bytes (under 640 KB) of DOS memory with DPMI function 0x100.
+// Returns the selector in the high word and the real-mode segment in the low
+// word, or 0 on failure.
 // FUNCTION: 0x000bb1f8
 u32 dos_alloc(u32 size)
 {
@@ -238,6 +264,7 @@ u32 dos_alloc(u32 size)
     return result;
 }
 
+// Frees DOS memory by its selector (DPMI function 0x101); 0 is ignored.
 // FUNCTION: 0x000bb268
 void dos_free(u16 seg)
 {
@@ -251,6 +278,8 @@ void dos_free(u16 seg)
     }
 }
 
+// The low-memory flag LbMemorySetup passes to _CMemory::Alloc: always 0, so
+// the game heap comes from the C heap.
 // FUNCTION: 0x000bb2b0 COMDAT
 extern "C" inline u32 fn_000bb2b0(void)
 {

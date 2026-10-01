@@ -8,6 +8,11 @@ void fn_000c93bf(char *dst, char *src);
 }
 
 
+// With a chance that grows with warmth (gbv.f145 + warmth / 2 percent), passes
+// carrier's contagious illness to one undiagnosed, uncontagious patient on or
+// next to carrier's tile (half the time each; not to those whose illness has
+// expertise unknown10[1] set), splitting carrier's contagion with them. Note
+// that effect_illness is applied to carrier, not the new victim.
 // FUNCTION: 0x000a0040
 void spread_epidemic(Thing *carrier, u16 warmth)
 {
@@ -50,6 +55,8 @@ void spread_epidemic(Thing *carrier, u16 warmth)
     }
 }
 
+// Composes the epidemic fax for the local player from strs: the illness
+// (myhosp->f20b), the number of contagious patients (f203), and the choices.
 // FUNCTION: 0x000a0240
 void declare_epidemic(char **strs)
 {
@@ -78,6 +85,8 @@ void declare_epidemic(char **strs)
     LbTextDraw(x, y, text);
 }
 
+// Epidemic fax button: queues the answer, 0 to declare it and pay the fine
+// (10) or 1 to try to cover it up (11, noted for the advisor).
 // FUNCTION: 0x000a03b0
 void process_epidemic_start_buttons(u8 button)
 {
@@ -93,6 +102,9 @@ void process_epidemic_start_buttons(u8 button)
     }
 }
 
+// Starts an epidemic of illness in owner's hospital, unless one or an
+// emergency is already running (or a single player is viewing an emergency
+// fax): withdraws any emergency call and raises the epidemic call.
 // FUNCTION: 0x000a0414
 void alert_epidemic(u8 illness, u8 owner)
 {
@@ -110,6 +122,10 @@ void alert_epidemic(u8 illness, u8 owner)
     make_a_playercall(3, 1, 0x14, owner);
 }
 
+// Goes over owner's patients inside the building who carry illness: mode 1
+// flags them contagious (curing fed-up ones of it instead) and counts them,
+// mode 2 cleans them all and counts those that were flagged. Patients outside
+// lose their contagion. Returns the count (0 for other modes).
 // FUNCTION: 0x000a04e4
 u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 owner)
 {
@@ -149,6 +165,9 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
     return count;
 }
 
+// Counts down owner's epidemic cover-up (allhosps.f20d): it ends when no
+// contagious patient is left or time (f207) runs out. On ending, clears the
+// cover-up and sets f20e. Returns 1 if it ended this call.
 // FUNCTION: 0x000a0654
 u32 epidemic_status(u8 owner)
 {
@@ -178,6 +197,8 @@ u32 epidemic_status(u8 owner)
     return over;
 }
 
+// Composes the epidemic result fax for owner from strs, by its outcome
+// (allhosps.unknown209[0]: 0 to 3) and the illness in choice_spare_data.
 // FUNCTION: 0x000a073c
 void epidemic_over(const u8 owner, char **strs)
 {
@@ -228,6 +249,7 @@ void epidemic_over(const u8 owner, char **strs)
     LbTextDraw(x, y, text);
 }
 
+// Epidemic result fax button 0 closes the fax.
 // FUNCTION: 0x000a09f4
 void process_epidemic_end_buttons(u8 button)
 {
@@ -238,6 +260,9 @@ void process_epidemic_end_buttons(u8 button)
     }
 }
 
+// Sends owner's patients inside the building home (PF_SENT_HOME_BY_INSPECTOR),
+// all of them or (all zero) only the contagious ones, clearing their
+// contagion.
 // FUNCTION: 0x000a0a30
 void send_peeps_home(u8 all, u8 owner)
 {
@@ -256,6 +281,8 @@ void send_peeps_home(u8 all, u8 owner)
     }
 }
 
+// Cures peep of contagion: clears the flag, vaccination icons and queue place,
+// and the count of spread infections.
 // FUNCTION: 0x000a0ae8
 void clean_contagious_peep(Thing *peep)
 {

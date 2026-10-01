@@ -12,6 +12,11 @@ void ReleaseLoopedSample(u32 source, s16 sample);
 void shake_screen(s8 dx, s8 dy);
 }
 
+// Runs one turn of the current earthquake: its strength (gamevar.ff2) builds
+// up to magnitude, then dies down, each step taken with a 1 in chance per
+// call; otherwise the main view is shaken by the strength. When it has died
+// out it stops the quake sound, records gamevar.ff0 in NRAdcounts and resets
+// for the next quake. Always returns 1.
 // FUNCTION: 0x000a2f00
 u8 earthquake(const s8 magnitude, const u8 chance)
 {
@@ -48,6 +53,7 @@ u8 earthquake(const s8 magnitude, const u8 chance)
     return 1;
 }
 
+// Moves the main view by dx,dy unless that would pass the scroll limit.
 // FUNCTION: 0x000a30f0
 void shake_screen(s8 dx, s8 dy)
 {

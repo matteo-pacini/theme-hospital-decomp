@@ -21,6 +21,8 @@ void copy_and_format_composite(char *dst, char **strs);
 void help_hotspot_detected(u16 hotspot, u8 help_group, s16 x, s16 y);
 void set_help_from_index(u16 hotspot, s16 x, s16 y);
 
+// Records in statvar.help_start where each help group's hotspots begin in the
+// layout's help hotspot list (groups end with x0 -1, the list with -2).
 // FUNCTION: 0x00099c70
 void setup_help_indices(void)
 {
@@ -43,6 +45,9 @@ void setup_help_indices(void)
     }
 }
 
+// Shows the tooltip of help group help_group's hotspot under the mouse, the
+// group's hotspots being relative to x,y; or the forced help hotspot if one is
+// set for this group. Not in help mode.
 // FUNCTION: 0x00099d00
 void compute_help_text(s16 x, s16 y, u8 help_group)
 {
@@ -70,6 +75,11 @@ void compute_help_text(s16 x, s16 y, u8 help_group)
         othervar.f8ac = 0;
 }
 
+// Prepares a help box with text strs: mode 1 a tooltip (strs[0] wrapped) above
+// x,y, mode 2 a framed help page (the "."-ended list of strs) centred on screen
+// when x,y is -1,-1, with the mouse kept inside it. Stores the text, size and
+// position in othervar (f96, f89a, f89c, f896, f898), kept on screen (the
+// bottom limit uses the screen width).
 // FUNCTION: 0x00099e4c
 void set_help_text(u8 mode, s16 x, s16 y, char **strs)
 {
@@ -127,6 +137,9 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
     othervar.f898 > lbDisplay.unknown18 - othervar.f89c ? othervar.f898 = lbDisplay.unknown18 - othervar.f89c : 0;
 }
 
+// Draws the prepared help box and its text, with a close button for help
+// pages; the text is cleared afterwards unless in help mode. Only when the
+// mouse mode allows help or in the tutorial.
 // FUNCTION: 0x0009a1f8
 void draw_help_text(void)
 {
@@ -201,6 +214,8 @@ void draw_help_text(void)
         othervar.f96[0] = 0;
 }
 
+// Copies src to dst, breaking lines at spaces once a line reaches a width
+// (in characters) that grows with the text's length.
 // FUNCTION: 0x0009a7c8
 void copy_and_format(char *dst, char *src)
 {
@@ -227,6 +242,9 @@ void copy_and_format(char *dst, char *src)
     *dst = 0;
 }
 
+// Joins the "."-ended list of strings strs into dst as one text, "//" giving
+// a paragraph break, wrapping lines to a width that grows with the longest
+// paragraph (at most three quarters of the screen).
 // FUNCTION: 0x0009a86c
 void copy_and_format_composite(char *dst, char **strs)
 {
@@ -298,6 +316,7 @@ void copy_and_format_composite(char *dst, char **strs)
     *dst = 0;
 }
 
+// Clears the tooltip and its hover state.
 // FUNCTION: 0x0009ab54
 void cancel_helpmsg(void)
 {
@@ -306,6 +325,10 @@ void cancel_helpmsg(void)
     othervar.f96[0] = 0;
 }
 
+// Handles the mouse resting on help hotspot hotspot of group help_group: its
+// tooltip appears after 750 timer ticks, or at once within 500 ticks of the
+// previous tooltip. In network games the player slots of group 0x18 beyond
+// the players present are ignored.
 // FUNCTION: 0x0009ab84
 void help_hotspot_detected(u16 hotspot, u8 help_group, s16 x, s16 y)
 {
@@ -333,6 +356,8 @@ void help_hotspot_detected(u16 hotspot, u8 help_group, s16 x, s16 y)
     }
 }
 
+// Shows the tooltip of help hotspot hotspot above its top centre (offset by
+// x,y): its help_text entry, or the text its callback writes.
 // FUNCTION: 0x0009ac70
 void set_help_from_index(u16 hotspot, s16 x, s16 y)
 {
@@ -351,6 +376,8 @@ void set_help_from_index(u16 hotspot, s16 x, s16 y)
     }
 }
 
+// Forces the tooltip of the help hotspot with text id id to show while help
+// group help_group is displayed.
 // FUNCTION: 0x0009ad68
 void set_force_help(u8 help_group, u16 id)
 {
@@ -368,12 +395,16 @@ void set_force_help(u8 help_group, u16 id)
     }
 }
 
+// Stops forcing a tooltip.
 // FUNCTION: 0x0009ade8
 void clear_force_help(void)
 {
     othervar.f9bd = 0;
 }
 
+// Opens help page sub of kind page in help mode: 0 a room's help, 1 a level's
+// briefing, 2 the network game's criterion (filled with its target and time
+// left), 3 a network result page.
 // FUNCTION: 0x0009ae08
 void show_help_page(u32 page, u32 sub)
 {
@@ -429,6 +460,8 @@ void show_help_page(u32 page, u32 sub)
     othervar.fa93 = sub;
 }
 
+// Fills idx with the index in strs of the start of each "."-ended section, up
+// to n sections or the ".." that ends the list.
 // FUNCTION: 0x0009b144
 void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n)
 {
@@ -448,6 +481,8 @@ void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n)
     if (count == n && strcmp(*strs, "..") != 0) {}
 }
 
+// Closes a help page and leaves help mode; after some briefing pages opens
+// the next, and after network result page 2 queues event 0x7e.
 // FUNCTION: 0x0009b1f0
 void finish_composite_help(void)
 {

@@ -25,6 +25,12 @@ s32 evaluate_criteria(const u8 player);
 u32 check_criteria_values(const u32 a, const u8 player);
 s32 losing(void);
 
+// Periodic update of patient person: an emergency patient dies when the
+// emergency ends and otherwise only shows the emergency icon; a contagious one
+// shows contagious or vaccinated. When due (Thing.modify_time) and inside the
+// building (map unknown7 flag 0x10 clear), applies warmth, plants, mess and
+// contagion, makes them more impatient, thirsty and in need of the toilet,
+// adjusts happiness and status icons, and costs 1 health.
 // FUNCTION: 0x00070f80
 void modify_person(Thing *person)
 {
@@ -98,6 +104,11 @@ void modify_person(Thing *person)
     change_health(person, -1);
 }
 
+// Moves person's warmth one step towards the warmth where they stand: a room's
+// unknown26 * 1250 spread over its area, or in the corridor the nearby corridor
+// radiators by distance and the heating setting (allhosps.fc94); 0 with the
+// heating off. Hot patients get thirsty faster. Returns the warmth at that
+// spot.
 // FUNCTION: 0x000712a8
 u16 check_warmth(Thing *person)
 {
@@ -148,6 +159,9 @@ u16 check_warmth(Thing *person)
     return warmth;
 }
 
+// Changes person's nausea and happiness by the healthy and dead plants near
+// them (feely), and makes a patient in PS_ENTERTAINS_THEMSELF whose kind has
+// abilities[][1] (unless in complex 0x46) a little unhappier. Always returns 0.
 // FUNCTION: 0x00071558
 s16 check_feelgood(Thing *person)
 {
@@ -192,6 +206,9 @@ s16 check_feelgood(Thing *person)
     return 0;
 }
 
+// In the corridor, makes person sicker, unhappier and more likely to drop
+// litter for each tile of mess (floor kinds other than 7 and 8) on and around
+// their tile.
 // FUNCTION: 0x000717f0
 void check_around(Thing *person)
 {
@@ -224,6 +241,11 @@ void check_around(Thing *person)
     }
 }
 
+// Gives a patient in the corridor (inside the building) a chance to react:
+// plays a pending animation (flags bit 0x200), vomits when nauseous or wets
+// when desperate (each costing health), or rarely plays a fitting idle
+// animation from show_anims; may also drop litter. Returns 1 if an animation
+// started, else 0.
 // FUNCTION: 0x00071960
 u8 do_reaction(Thing *peep)
 {
@@ -316,6 +338,8 @@ u8 do_reaction(Thing *peep)
     return 0;
 }
 
+// Plays reaction animation anim (anim_starts index) on peep in PS_SHOWANIM,
+// saving its state, sprite and flip to restore afterwards.
 // FUNCTION: 0x00071dfc
 void setup_showanim(Thing *peep, u16 anim)
 {
@@ -327,6 +351,10 @@ void setup_showanim(Thing *peep, u16 anim)
     peep->flip = start[anim_starts[peep->subtype].anims[anim]].flags;
 }
 
+// Periodic update of a staff member (not receptionists): when due, applies
+// speed, warmth and surroundings, adds tiredness (except while wandering or in
+// the staff room), may make an exhausted doctor crack up, adjusts happiness,
+// status icons and discontent.
 // FUNCTION: 0x00071eb8
 void modify_staff(Thing *employee)
 {
@@ -378,6 +406,8 @@ void modify_staff(Thing *employee)
         employee->discontent = 0;
 }
 
+// Changes employee's happiness by the healthy and dead plants near them and,
+// in the corridor, the mess around them. Always returns 0.
 // FUNCTION: 0x00072110
 s16 staff_check_around(Thing *employee)
 {
@@ -419,6 +449,10 @@ s16 staff_check_around(Thing *employee)
     return 0;
 }
 
+// Sets employee's wage demand from their ability and skills, promotes a
+// junior or doctor (to doctor or consultant) whose ability and time served
+// allow it, and makes them happier or less happy by whether their salary
+// meets the demand.
 // FUNCTION: 0x00072374
 void appraise_staff(Thing *employee)
 {
@@ -468,6 +502,8 @@ void appraise_staff(Thing *employee)
         employee->happiness = 100;
 }
 
+// Starts a statistics pass (when othervar.f86 is set): clears the advisor
+// counts and each hospital's emergency and contagion counts.
 // FUNCTION: 0x000725dc
 void reset_all_count(void)
 {
@@ -486,6 +522,8 @@ void reset_all_count(void)
     }
 }
 
+// Adds employee (the local player's, not applicants) to the statistics pass:
+// staff counts, tiredness, happiness and warmth totals, and idle staff.
 // FUNCTION: 0x00072684
 void staff_count(Thing *employee)
 {
@@ -531,6 +569,10 @@ void staff_count(Thing *employee)
     }
 }
 
+// Adds patient person to the statistics pass: the local player's waiting,
+// happiness, thirst, warmth and toilet figures and illness counts, each
+// hospital's emergency and contagious patients, and counts them once as a
+// visitor this month. Patients outside the building are not counted.
 // FUNCTION: 0x00072880
 void person_count(Thing *person)
 {
@@ -581,6 +623,8 @@ void person_count(Thing *person)
     }
 }
 
+// Ends a statistics pass: stores the local player's average patient and staff
+// happiness.
 // FUNCTION: 0x00072b20
 void final_count(void)
 {
@@ -593,6 +637,8 @@ void final_count(void)
     }
 }
 
+// Adds machine obj to the statistics pass: the local player's machine count
+// and wear, and the most worn machine past its strength.
 // FUNCTION: 0x00072ba4
 void object_count(const Thing *obj)
 {
@@ -614,6 +660,8 @@ void object_count(const Thing *obj)
     }
 }
 
+// During a statistics pass, re-evaluates the local player's win criteria and
+// how close they are to losing.
 // FUNCTION: 0x00072c8c
 void check_win_status(void)
 {
@@ -623,6 +671,8 @@ void check_win_status(void)
     }
 }
 
+// Returns how close the local player is to losing: the average progress
+// (lose_criteria[].f14) of the lose criteria in use, times 256.
 // FUNCTION: 0x00072cc0
 s32 losing(void)
 {

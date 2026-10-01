@@ -31,6 +31,8 @@ void defrag_cache(void);
 void throw_out(s32 size);
 s8 get_block_from_free_list(s32 size);
 
+// Takes an unused font cache block record. Returns its index, or -1 (with a
+// message) if all are in use.
 // FUNCTION: 0x000b6800
 s8 get_fontmem(void)
 {
@@ -47,6 +49,7 @@ s8 get_fontmem(void)
     return block;
 }
 
+// Returns font cache block record block to the unused records.
 // FUNCTION: 0x000b6870
 void put_fontmem(s8 block)
 {
@@ -56,6 +59,8 @@ void put_fontmem(s8 block)
     fontmem_head = block;
 }
 
+// Empties the font cache: every font unloaded, one free block covering the
+// whole 81000-byte font buffer.
 // FUNCTION: 0x000b68c8
 void init_font_cache(void)
 {
@@ -77,6 +82,7 @@ void init_font_cache(void)
     }
 }
 
+// Adds block to the free list, merging it into a free block it adjoins.
 // FUNCTION: 0x000b6988
 void insert_block_into_free_list(s8 block)
 {
@@ -106,6 +112,8 @@ void insert_block_into_free_list(s8 block)
     free_head = block;
 }
 
+// Adds block to the used list, kept in buffer order, stamping it as just used
+// (othervar.f8a2).
 // FUNCTION: 0x000b6ac8
 void insert_block_into_used_list(s8 block)
 {
@@ -135,6 +143,7 @@ void insert_block_into_used_list(s8 block)
     font_memory[block].next = -1;
 }
 
+// Adds delta to the data pointer of each sprite from first up to last.
 // FUNCTION: 0x000b6bf4
 void realign_sprites(TbSprite *first, TbSprite *last, s32 delta)
 {
@@ -144,6 +153,8 @@ void realign_sprites(TbSprite *first, TbSprite *last, s32 delta)
         s->data += delta;
 }
 
+// Moves the loaded fonts to the start of the font buffer, fixing their sprite
+// pointers, and makes the rest one free block.
 // FUNCTION: 0x000b6c34
 void defrag_cache(void)
 {
@@ -175,6 +186,8 @@ void defrag_cache(void)
     }
 }
 
+// Unloads least recently used fonts until at least size bytes have been
+// freed.
 // FUNCTION: 0x000b6da0
 void throw_out(s32 size)
 {
@@ -215,6 +228,9 @@ void throw_out(s32 size)
     }
 }
 
+// Takes a block of size bytes from the font buffer (first fit, splitting off
+// the rest). If none is big enough, unloads old fonts and defragments, then
+// tries once more. Returns the block, or -1.
 // FUNCTION: 0x000b6eec
 s8 get_block_from_free_list(s32 size)
 {
@@ -277,6 +293,11 @@ s8 get_block_from_free_list(s32 size)
     return -1;
 }
 
+// Makes font (resvars.fa_charpp index) the current font (lbFontPtr), loading
+// its .tab and .dat into the font cache if needed; the cache is emptied when
+// the screen mode changes. Leaves lbFontPtr unchanged if it cannot be loaded.
+// For an already cached font, the use stamp goes to record font instead of the
+// font's block.
 // FUNCTION: 0x000b714c
 void set_font_from_cache(const s32 font)
 {

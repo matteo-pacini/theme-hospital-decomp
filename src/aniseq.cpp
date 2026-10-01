@@ -4,6 +4,9 @@ extern s16 ani_seq[];
 
 void setup_next_aniseq(Thing *w);
 
+// Fills statvar.aniseq_start with the ani_seq index of each sequence's first
+// entry. ani_seq holds sequences of start[] indexes, each ended by -1; -2 ends
+// the table. Sequence numbers start at 1.
 // FUNCTION: 0x0009b300
 void setup_aniseq_indices(void)
 {
@@ -21,6 +24,9 @@ void setup_aniseq_indices(void)
     }
 }
 
+// Starts animation sequence seq (statvar.aniseq_start index) on w, showing its
+// first frame. A staff member is put into SS_PLAY_ANISEQ; w enters next_state
+// once the sequence ends (play_aniseq).
 // FUNCTION: 0x0009b380
 void setup_aniseq(Thing *w, u8 seq, u8 next_state)
 {
@@ -31,6 +37,8 @@ void setup_aniseq(Thing *w, u8 seq, u8 next_state)
     setup_next_aniseq(w);
 }
 
+// Shows the next animation of w's sequence, offset by its facing, and advances
+// seq_index; at the sequence's end (-1) w enters next_state instead.
 // FUNCTION: 0x0009b3d8
 void setup_next_aniseq(Thing *w)
 {
@@ -46,6 +54,9 @@ void setup_next_aniseq(Thing *w)
     }
 }
 
+// Advances w's sequence by one frame every anim_speed turns, moving on to the
+// sequence's next animation when the current one would wrap back to its
+// first frame (frame flag 1).
 // FUNCTION: 0x0009b498
 void play_aniseq(Thing *w)
 {
@@ -60,6 +71,8 @@ void play_aniseq(Thing *w)
     }
 }
 
+// Starts a random sequence from ani_seq_choice[group] (a zero-ended list of
+// sequence numbers) on w, as setup_aniseq does.
 // FUNCTION: 0x0009b510
 void choose_aniseq(Thing *w, u8 group, u8 next_state)
 {

@@ -16,6 +16,11 @@ CDSpeedTable cd_speed_table[] = {
     { 99, 0 },
 };
 
+// Measures the CD drive's speed by reading up to count bytes of the file at
+// path in size-byte blocks into buf. Returns the fastest speed factor (1x to
+// 12x) in cd_speed_table the measured rate reaches, 0 if below 1x, or -1 if
+// the file cannot be opened or no time elapsed. Under a second of reading
+// counts as the fastest speed.
 // FUNCTION: 0x000bbbb0
 s32 GetCDSpeed(char *path, void *buf, s32 size, u32 count)
 {

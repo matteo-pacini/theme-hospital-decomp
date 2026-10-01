@@ -36,6 +36,8 @@ void process_graph_panel(void);
 extern "C" {
 }
 
+// Adds a label for graph kind at screen y value (data is the number shown) to
+// the graph labels, kept sorted by y.
 // FUNCTION: 0x00078d70
 void insert_graph_label(s16 kind, s16 value, s32 data)
 {
@@ -51,6 +53,8 @@ void insert_graph_label(s16 kind, s16 value, s32 data)
     NumText++;
 }
 
+// Nudges the graph labels apart, a pixel at a time, until neighbours are at
+// least gap pixels apart, keeping them within the graph area.
 // FUNCTION: 0x00078e38
 void spread_graph_labels(u16 gap)
 {
@@ -79,6 +83,12 @@ void spread_graph_labels(u16 gap)
     }
 }
 
+// Runs one frame of the graphs screen (graphs.unknown2: 0 loads it, 1 shows
+// it, 2 asks to return to the game): draws each visible statistic's last 12
+// points from the local player's history at the chosen time scale
+// (othervar.f2d: months, years or 4-year spans) as a line, from right edge x
+// and baseline y, h pixels tall and step pixels between points, with its
+// latest value labelled, and the time axis.
 // FUNCTION: 0x00078fc4
 void draw_graphs(u16 x, u16 y, u16 h, u16 step)
 {
@@ -274,6 +284,8 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     }
     lbDisplay.draw_flags = 0;
 }
+// Handles clicks on the graphs screen's buttons, drawing the one under the
+// mouse pressed.
 // FUNCTION: 0x00079d30
 void process_graph_panel(void)
 {
@@ -303,6 +315,8 @@ void process_graph_panel(void)
     }
 }
 
+// Graphs screen button: 0-7 show or hide a statistic (right click shows only
+// that one), 8 cycles the time scale, 9 closes the screen.
 // FUNCTION: 0x0007a008
 void process_graph_button(u8 button)
 {

@@ -7,6 +7,10 @@ extern u8 D_001567c0[][16];
 void copy_region(const s16 src_x, const s16 src_y, const s16 dst_x, const s16 dst_y, const s16 w, const s16 h);
 void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1, const s32 y1, const s16 dx, const s16 dy);
 
+// Copies the screen rectangle x0,y0 to x1,y1 (exclusive) from the background
+// buffer (bscreen), which is scrolled by dx,dy and wraps at its width and
+// height (lbDisplay.unknown18, unknown1c), to the work screen; a rectangle
+// crossing the wrap is copied in up to four parts.
 // FUNCTION: 0x000adad0
 void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1, const s32 y1, const s16 dx, const s16 dy)
 {
@@ -61,6 +65,8 @@ void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1
     }
 }
 
+// Copies a w x h block from bscreen at src_x,src_y to the work screen at
+// dst_x,dst_y, with no clipping or wrapping.
 // FUNCTION: 0x000adcc8
 void copy_region(const s16 src_x, const s16 src_y, const s16 dst_x, const s16 dst_y, const s16 w, const s16 h)
 {
@@ -75,6 +81,8 @@ void copy_region(const s16 src_x, const s16 src_y, const s16 dst_x, const s16 ds
         fn_000c21e6(dst, src, w);
 }
 
+// Copies to the work screen each 32x32 cell of the current view zone whose
+// dirty count (D_001567c0) is positive, decrementing the count.
 // FUNCTION: 0x000add58
 void refresh_wscreen(void)
 {
@@ -110,6 +118,9 @@ void refresh_wscreen(void)
     }
 }
 
+// Draws the wall block of map cell cell (map unknown4) at view position x,y
+// into the wrapping background buffer, clipped to x0,y0 to x1,y1 and the
+// current view zone, drawing up to four copies where it crosses the wrap.
 // FUNCTION: 0x000adf8c
 void draw_a_clipped_four_zone_wall_1(s32 x, s32 y, const s32 cell, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -215,6 +226,7 @@ void draw_a_clipped_four_zone_wall_1(s32 x, s32 y, const s32 cell, s32 x0, s32 y
     }
 }
 
+// As draw_a_clipped_four_zone_wall_1, for the sprite spr.
 // FUNCTION: 0x000ae518
 void draw_a_clipped_four_zone_wall_0(s32 x, s32 y, const TbSprite *const spr, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -318,6 +330,8 @@ void draw_a_clipped_four_zone_wall_0(s32 x, s32 y, const TbSprite *const spr, s3
     }
 }
 
+// As draw_a_clipped_four_zone_wall_0, for a floor tile sprite spr (its
+// vertical reach taken as resvars.f3).
 // FUNCTION: 0x000ae9ec
 void draw_a_clipped_four_zone_floor_tile(s32 x, s32 y, const TbSprite *const spr, s32 x0, s32 y0, s32 x1, s32 y1)
 {

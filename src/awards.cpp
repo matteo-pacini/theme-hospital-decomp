@@ -5,6 +5,10 @@ void set_trophy_value(const u8 trophy_no, const s16 value, u8 type);
 void general_award(s32 *field, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
                    const u8 type, const s16 good, const s16 bad);
 
+// Year end: decides the player's 13 awards (all_awards, cleared first) from
+// this year's figures, the monthly award_counts and the level's thresholds
+// (awards_trophies), paying their money or reputation. Gives none unless the
+// year's history[4] total exceeds three times myhosp->f29.
 // FUNCTION: 0x000b3430
 void check_awards_won(void)
 {
@@ -120,6 +124,9 @@ void check_awards_won(void)
     }
 }
 
+// Year end: decides the player's 9 trophies (trophy, cleared first) from this
+// year's figures and the level's thresholds (awards_trophies), paying their
+// bonuses. Gives none unless the year's history[4] total exceeds 5.
 // FUNCTION: 0x000b3ce4
 void check_trophies_won(void)
 {
@@ -193,6 +200,8 @@ void check_trophies_won(void)
     }
 }
 
+// Returns 1 if all 12 monthly values are at least limit (above nonzero) or at
+// most limit (above zero), else 0.
 // FUNCTION: 0x000b40ec
 u8 year_check(s32 *values, const s32 limit, const u8 above)
 {
@@ -213,6 +222,8 @@ u8 year_check(s32 *values, const s32 limit, const u8 above)
     return 1;
 }
 
+// Month end: stores this month's ratios (from adcounts and NRAdcounts) in the
+// award_counts arrays at index mycontrol->unknown650, for year_check.
 // FUNCTION: 0x000b4170
 void monthly_update_of_award_counts(void)
 {
@@ -235,6 +246,7 @@ void monthly_update_of_award_counts(void)
     award_counts.f104[mycontrol->unknown650] = adcounts.f8f;
 }
 
+// Clears the award_counts totals kept over a year (not the monthly arrays).
 // FUNCTION: 0x000b4358
 void annual_update_of_award_counts(void)
 {
@@ -249,6 +261,9 @@ void annual_update_of_award_counts(void)
     award_counts.f151 = 0;
 }
 
+// Awards trophy trophy_no: picks one of its three texts at random and pays
+// value as reputation (type 1) or money (type 2, TX_TROPHY_BONUS). If the
+// reputation cannot change, pays 5000 instead.
 // FUNCTION: 0x000b43c0
 void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
 {
@@ -273,6 +288,10 @@ void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
     trophy[trophy_no].f4 = saferand() % 1 + type - 1;
 }
 
+// Records award award as won (dir 1) or lost (dir -1), with text variant tier
+// (0-2), and applies value as reputation (type 1) or money (type 2,
+// TX_YEAR_END_BONUS). If the reputation cannot change, 2500 is paid or taken
+// instead.
 // FUNCTION: 0x000b4510
 void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 value, u8 type)
 {
@@ -303,6 +322,11 @@ void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 valu
     all_awards[award].f5 = saferand() % 1 + type - 1;
 }
 
+// Gives award award from a statistic compared with the other active hospitals:
+// field points at the player's AllHosps field (size bytes, signed if
+// is_signed) and value is its value. Above high: good, doubled if no other
+// hospital beats it, tripled if it also beats their total. Below low: bad,
+// doubled if every other hospital is above it. type as for set_award_value.
 // FUNCTION: 0x000b4698
 void general_award(s32 *field, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
                    const u8 type, const s16 good, const s16 bad)

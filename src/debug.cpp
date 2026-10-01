@@ -22,6 +22,8 @@ int fclose(FILE *fp);
 
 }
 
+// Returns anim unchanged, unless it is 9999 (no animation for peep): then logs
+// it and returns 0.
 // FUNCTION: 0x0008dcd0
 u16 check_frame(u16 anim, Thing *peep)
 {
@@ -35,6 +37,7 @@ u16 check_frame(u16 anim, Thing *peep)
     return anim;
 }
 
+// Enters navigation debug mode (MM_NAV_DEBUG).
 // FUNCTION: 0x0008dd40
 void nav_debug_mode(void)
 {
@@ -42,6 +45,8 @@ void nav_debug_mode(void)
     debug.nav_debug = 1;
 }
 
+// Appends text to the developer's log file (N:\hosp\log\<USERID>.txt), if it
+// can be opened.
 // FUNCTION: 0x0008dd68
 void write_to_player_log(char *text)
 {
@@ -57,6 +62,7 @@ void write_to_player_log(char *text)
     }
 }
 
+// Appends "NOTE: text" as a line to the developer's log.
 // FUNCTION: 0x0008dde4
 void note_in_error_log(char *text)
 {
@@ -66,6 +72,9 @@ void note_in_error_log(char *text)
     write_to_player_log(buf);
 }
 
+// Switches to screen mode SCREEN_MODE_13 (high resolution), first setting
+// resvars.f0 to SCREEN_MODE_1 if it was SCREEN_MODE_13. Exits if the mode
+// cannot be set.
 // FUNCTION: 0x0008de24
 extern "C" void fn_0008de24(void)
 {
@@ -75,6 +84,8 @@ extern "C" void fn_0008de24(void)
         exit(1);
 }
 
+// Formats a debug message into debug.unknown116 and shows it for 200 frames
+// (debug.unknown1de).
 // FUNCTION: 0x0008de64
 void debug_msg(char *fmt, ...)
 {
@@ -86,6 +97,7 @@ void debug_msg(char *fmt, ...)
     debug.unknown1de = 200;
 }
 
+// Does nothing (a disabled log writer).
 // FUNCTION: 0x0008dea0
 extern "C" void fn_0008dea0(char *text)
 {
@@ -104,6 +116,7 @@ extern "C" void fn_0008dea0(char *text)
     }
 }
 
+// Does nothing (a disabled message formatter).
 // FUNCTION: 0x0008debc
 extern "C" void fn_0008debc(char *text)
 {

@@ -44,6 +44,10 @@ void fn_000110b0(void);
 void delay(u32 ms);
 }
 
+// Runs one frame of the load game screen, by loadgame.unknown2: 0 sets it up
+// (finding which of the player's save files are valid), 3 opens its panels, 4
+// shows it, 1 loads the chosen save and starts the game (back to 4 if that
+// fails), 2 returns to the main menu.
 // FUNCTION: 0x0009d5b0
 void draw_load_game(void)
 {
@@ -143,6 +147,7 @@ void draw_load_game(void)
     }
 }
 
+// Load game button slot: 9 goes back, others load that save if it is valid.
 // FUNCTION: 0x0009d988
 void process_loadgame_buttons(u8 slot)
 {
@@ -154,6 +159,7 @@ void process_loadgame_buttons(u8 slot)
     }
 }
 
+// Load game screen keys: Escape goes back to the main menu.
 // FUNCTION: 0x0009d9d4
 void process_keys_load_game(void)
 {
@@ -166,6 +172,8 @@ void process_keys_load_game(void)
     }
 }
 
+// Highlights the load game screen's buttons under the mouse and runs the one
+// clicked.
 // FUNCTION: 0x0009da30
 void process_mouse_load_game(void)
 {
@@ -221,6 +229,8 @@ void process_mouse_load_game(void)
     lbDisplay.rleft_button = 0;
 }
 
+// Writes each save slot's label on its button: its number if it holds a valid
+// save, else the empty text.
 // FUNCTION: 0x0009dddc
 void display_loadgame_screen(void)
 {

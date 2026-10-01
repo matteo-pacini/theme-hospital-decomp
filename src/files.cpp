@@ -461,12 +461,18 @@ char *D_0013f704[] = {
 };
 }
 
+// DOS critical error handler: always answers 3 (fail the call), so a missing
+// CD reports an error instead of prompting.
 // FUNCTION: 0x0009b590
 extern "C" int __far harderr_handler(unsigned deverr, unsigned errcode, unsigned __far *devhdr)
 {
     return 3;
 }
 
+// Checks that file path (or, with wildcards, a match for it) can be read; if
+// not, shows the "insert the CD" screen in the language set and waits until it
+// appears (Escape quits the game), then restores the screen mode and palette.
+// Paths starting with '*' are not checked.
 // FUNCTION: 0x0009b5b8
 void check_cd_available(char *path)
 {

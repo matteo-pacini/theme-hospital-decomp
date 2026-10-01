@@ -68,6 +68,10 @@ void draw_window_using_bscreen(u8 win);
 void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win);
 }
 
+// Draws one game frame: follows tracked things, animates and scrolls the view
+// windows and draws the main one, then the blueprints, panel, menus, popup
+// icons and emergency display, updates the help text and blueprint cursor,
+// and reads the map cursor from the mouse.
 // FUNCTION: 0x000a6b20
 void draw_it(void)
 {
@@ -96,6 +100,9 @@ void draw_it(void)
     set_map_cur_and_mcur_x_and_y();
 }
 
+// Redraws every view window: clears the old images of moved secondary views,
+// then draws the main one through the background buffer and the others
+// directly.
 // FUNCTION: 0x000a6c08
 void draw_all_windows(void)
 {
@@ -111,6 +118,7 @@ void draw_all_windows(void)
     }
 }
 
+// Draws the main view window through the background buffer.
 // FUNCTION: 0x000a6c7c
 void fn_000a6c7c(void)
 {
@@ -119,6 +127,7 @@ void fn_000a6c7c(void)
     draw_window_using_bscreen(window.f2ea);
 }
 
+// Draws every view window except the main one, directly.
 // FUNCTION: 0x000a6ca4
 void fn_000a6ca4(void)
 {
@@ -130,6 +139,11 @@ void fn_000a6ca4(void)
     }
 }
 
+// Draws view window win through the background buffer: if nothing changed (not
+// moved or resized, window.fde 0 and unchanged, othervar.f10 clear) only the
+// dirty cells are copied; otherwise the floor and walls are redrawn into
+// bscreen and copied whole. Then draws the things on top and records the
+// window's position and zone as drawn.
 // FUNCTION: 0x000a6cf0
 void draw_window_using_bscreen(u8 win)
 {
@@ -178,6 +192,8 @@ void draw_window_using_bscreen(u8 win)
     window.fd8[win] = 0;
 }
 
+// If view window win was resized, clears what its old zone left uncovered and
+// flags it for redraw.
 // FUNCTION: 0x000a70d0
 void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win)
 {
@@ -188,6 +204,9 @@ void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win)
     }
 }
 
+// Draws secondary view window win straight onto the work screen (floor, walls
+// and things, unless window.fde is set), with its border, and records its
+// position and zone as drawn.
 // FUNCTION: 0x000a71bc
 void draw_window_not_using_bscreen(const u8 win)
 {
@@ -207,6 +226,9 @@ void draw_window_not_using_bscreen(const u8 win)
     window.fd8[win] = 0;
 }
 
+// Fills with the background colour the parts of the old zone x0,y0 to x1,y1
+// that the new zone nx0,ny0 to nx1,ny1 does not cover, then copies back the
+// main view under them.
 // FUNCTION: 0x000a73c0
 void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1, s32 ny1)
 {
@@ -266,6 +288,9 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
     }
 }
 
+// Fills with the background colour the parts of the old zone x0,y0 to x1,y1
+// above and below the new zone nx0,ny0 to nx1,ny1. The left and right parts
+// are never filled: their test compares y1 with itself.
 // FUNCTION: 0x000a77dc
 void remove_old_window_image_from_wscreen(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1, s32 ny1)
 {
@@ -297,6 +322,8 @@ void remove_old_window_image_from_wscreen(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx
     }
 }
 
+// Fills the screen rectangle x,y to w,h (right and bottom edges) with the
+// background colour and flags it for redraw.
 // FUNCTION: 0x000a7950
 void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h)
 {
@@ -308,6 +335,11 @@ void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h)
     }
 }
 
+// Prepares the scan of the map cells covering screen rectangle x,y to w,h
+// (right and bottom edges) in view window win, row by row from the top: sets
+// info.f0 to f24 to the first cell, its screen position, the row length, the
+// row counts for floors and for walls and things (taller), and how rows
+// alternate.
 // FUNCTION: 0x000a7a0c
 void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const s32 h)
 {
@@ -418,6 +450,11 @@ void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const 
         info.f24++;
 }
 
+// Draws the things on map cell cell at screen x,y (z,w are the cell's column
+// and row) clipped to cx0,cy0 to cx1,cy1, then redraws the walls in front of
+// them; for cells near walls (map flag 0x10) through the pixel buffer, so that
+// only the visible parts show. wx,wy offset the redraw area. Flags the area
+// for redraw.
 // FUNCTION: 0x000a7df0
 void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, const s32 cell, const s32 wx, const s32 wy,
              const s32 cx0, const s32 cy0, const s32 cx1, const s32 cy1)
@@ -476,6 +513,9 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
     }
 }
 
+// Draws all things in screen rectangle x0,y0 to x1,y1 of view window win onto
+// the work screen, row by row; cells holding things that span several cells
+// (map flag 0x20) are ordered so that the ones in front draw last.
 // FUNCTION: 0x000a8198
 void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -606,6 +646,9 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
     }
 }
 
+// Redraws the walls of view window win within x0,y0 to x1,y1 from the row
+// after the one containing map cell cell, so that they cover things drawn
+// behind them.
 // FUNCTION: 0x000a8688
 void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, const s32 cell)
 {
@@ -717,6 +760,8 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
     }
 }
 
+// Masks out in the pixel buffer (colour 0xfe) the walls within x0,y0 to x1,y1
+// that lie in front of map cell lx,ly, for drawing a thing behind them.
 // FUNCTION: 0x000a8a8c
 void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, const s32 lx, const s32 ly)
 {
@@ -803,6 +848,8 @@ void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, c
     }
 }
 
+// Draws a border (colour 3) around view window win's zone, clipped to x0,y0
+// to x1,y1.
 // FUNCTION: 0x000a8d98
 void draw_boundry(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -833,6 +880,8 @@ void draw_boundry(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
     fn_000c9be0(left, bottom, left, top, 3);
 }
 
+// Sets map flag 0x20 on cell if anything on it covers more than one cell (an
+// object larger than a tile, or a person using an object); else clears it.
 // FUNCTION: 0x000a8f78
 void adjust_big_cell_flag(const u16 cell)
 {
@@ -862,6 +911,8 @@ void adjust_big_cell_flag(const u16 cell)
     map[cell].flags &= ~0x20;
 }
 
+// Returns the scan cell that already covers the position x,y relative to
+// row's cell (covers table), or -1 if none other than row does.
 // FUNCTION: 0x000a9100
 s8 check_obscuring_column(const s8 row, s8 x, s8 y)
 {
@@ -885,6 +936,9 @@ s8 check_obscuring_column(const s8 row, s8 x, s8 y)
     return -1;
 }
 
+// Records scan cell row as covering the position pos relative to it (y * 128
+// + x), unless another cell already covers it or a neighbour: then returns
+// that cell, else -1.
 // FUNCTION: 0x000a91f0
 s8 record_covering_cell(const s8 row, const s16 pos)
 {
@@ -912,6 +966,9 @@ s8 record_covering_cell(const s8 row, const s16 pos)
     return -1;
 }
 
+// Records the cells covered by the things in a cell's list starting at t, for
+// scan cell row. Returns a scan cell that must be drawn before row (one whose
+// things overlap), or -1.
 // FUNCTION: 0x000a9358
 s8 compute_cell_precedence(const s8 row, Thing *t)
 {
@@ -991,6 +1048,9 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
     return -1;
 }
 
+// Draws view window win within x0,y0 to x1,y1 straight onto the work screen:
+// floor (with shadows if enabled, myplayer.f1d), then walls and things row by
+// row.
 // FUNCTION: 0x000a9744
 void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
 {
@@ -1272,6 +1332,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
     }
 }
 
+// Draws the floor and walls of view window win within x0,y0 to x1,y1 into the
+// background buffer (bscreen), wrapping at its edges, with shadows if enabled.
 // FUNCTION: 0x000aa67c
 void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
 {

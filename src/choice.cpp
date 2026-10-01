@@ -78,11 +78,17 @@ int strcmp(const char *a, const char *b);
 void display_cheat_mode(void);
 }
 
+// Does nothing in this build.
 // FUNCTION: 0x000a3140
 void display_cheat_mode(void)
 {
 }
 
+// Runs one frame of the fax (choice) screen, by its state D_00158192: 0x5a
+// draws the message for choice with its buttons and moves to 0x5b, which
+// handles the buttons and keypad and, if the fax can time out, closes it
+// (0x5c) on Escape, Space, or choice_time_out turns without mouse movement.
+// 0x5c restores the screen it replaced.
 // FUNCTION: 0x000a3158
 void display_choice(void)
 {
@@ -143,6 +149,8 @@ void display_choice(void)
     }
 }
 
+// Draws pressed and runs the callbacks of the fax's available answer buttons
+// (available_buttons bits) under the mouse.
 // FUNCTION: 0x000a3430
 void check_choice_buttons(void)
 {
@@ -176,6 +184,9 @@ void check_choice_buttons(void)
     }
 }
 
+// Draws pressed and runs the callbacks (with the button's index) of the fax's
+// keypad buttons under the mouse; the close button only works if the fax can
+// time out.
 // FUNCTION: 0x000a374c
 void check_fax_buttons(void)
 {
@@ -210,6 +221,9 @@ void check_fax_buttons(void)
     }
 }
 
+// Finds the answer buttons and message text for choice type type in
+// choice_text (sections ended by ".", buttons ended by "!"), sets c_buttons,
+// numbuttons, c_text and numtext, and lays the buttons out with type's handler.
 // FUNCTION: 0x000a3a90
 void calculate_buttons(const u8 type)
 {
@@ -278,6 +292,9 @@ void calculate_buttons(const u8 type)
     resvars.f48[numbuttons + 0xae].y = 0;
 }
 
+// Draws the fax's answer buttons with their text, greyed if not in
+// available_buttons. The text is centred using the button's width as its
+// height.
 // FUNCTION: 0x000a3db4
 void display_buttons(void)
 {
@@ -304,6 +321,8 @@ void display_buttons(void)
     }
 }
 
+// Draws the fax message of choice type type, for the local player, by calling
+// the routine that composes it from c_text.
 // FUNCTION: 0x000a3fb0
 void display_choice_text(const u8 type)
 {
@@ -340,6 +359,11 @@ void display_choice_text(const u8 type)
     }
 }
 
+// Opens the fax screen for type type (2 emergency, 3 emergency over, 4 new
+// illness, 5 epidemic, 6 epidemic over, 7 no treatment, 8 mayor, 9 mayor's
+// result, 10 no diagnosis) if owner is the local player. data is the type's
+// argument (a thing or illness); timeout, in turns without mouse movement,
+// lets the fax close itself (0: it must be answered).
 // FUNCTION: 0x000a410c
 void display_choice_screen(const u8 owner, const u8 type, const s16 data, const s16 timeout)
 {
@@ -353,14 +377,17 @@ void display_choice_screen(const u8 owner, const u8 type, const s16 data, const 
     }
 }
 
+// Queues the local player's answer button to the fax as a turn event (type
+// 0x7d) with choice_spare_data.
 // FUNCTION: 0x000a4168
-void packet_choice_result(u8 choice)
+void packet_choice_result(u8 button)
 {
     D_001549d0[player].type = 0x7d;
-    D_001549d0[player].value = choice;
+    D_001549d0[player].value = button;
     D_001549d0[player].arg = choice_spare_data;
 }
 
+// Saves the display mode and fax state for restore_display_screen.
 // FUNCTION: 0x000a41b8
 void save_display_screen(void)
 {
@@ -370,6 +397,8 @@ void save_display_screen(void)
     choice_backup.f8 = choice_time_out;
 }
 
+// Restores the display mode and fax state saved by save_display_screen,
+// reopening a saved fax and resetting the menus of the screen returned to.
 // FUNCTION: 0x000a4208
 void restore_display_screen(void)
 {
@@ -402,6 +431,7 @@ void restore_display_screen(void)
     }
 }
 
+// Returns 1 if the NumPressed digits in pressed match fax number fax.
 // FUNCTION: 0x000a431c
 u8 fax_no_equal(FaxNo fax, u8 *pressed)
 {
@@ -416,6 +446,10 @@ u8 fax_no_equal(FaxNo fax, u8 *pressed)
     return 1;
 }
 
+// Handles fax keypad button button (0xb9-0xc2 dial 0-9, 0xb8/0xc5/0xc6 send
+// the number, 0xc7 closes a fax that can time out). A number in cheat_numbers
+// plays the success sound (action 0 toggles othervar.fa8e, 2 sets
+// debug.f219); others play the fail sound.
 // FUNCTION: 0x000a4384
 void process_fax_buttons(u8 button)
 {

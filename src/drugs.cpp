@@ -16,6 +16,11 @@ void conv_string(void *dst, char *text, int flags);
 
 }
 
+// Runs one frame of the casebook screen (drugs.unknown2: 0 loads it, 2 shows
+// it, 1 asks to return to the game): the selected illness's figures (price or
+// price percentage, earnings, reputation, ...), the illnesses listed around it
+// (clicking one selects it), and what is needed to treat it. Then handles the
+// buttons and keys.
 // FUNCTION: 0x00012690
 void display_drugs(void)
 {
@@ -262,6 +267,9 @@ void display_drugs(void)
     set_font_from_cache(0);
 }
 
+// Handles clicks on the casebook's buttons (resvars.f48 from 0x12); holding
+// the button repeats the price buttons. A click restarts the price change
+// acceleration.
 // FUNCTION: 0x00013540
 void process_drug_panel(void)
 {
@@ -301,6 +309,9 @@ void process_drug_panel(void)
     lbDisplay.left_button = 0;
 }
 
+// Queues raising the selected illness's price (event 0x6e), with a step that
+// grows while the button is held (othervar.f9f1, 8.8 fixed point, up to 10),
+// and plays the refusal sound once at the 200% limit.
 // FUNCTION: 0x0001387c
 void price_up(void)
 {
@@ -322,6 +333,8 @@ void price_up(void)
     }
 }
 
+// Queues lowering the selected illness's price (event 0x6f), as price_up; the
+// limit is 50%.
 // FUNCTION: 0x0001397c
 void price_down(void)
 {
@@ -343,6 +356,8 @@ void price_down(void)
     }
 }
 
+// Casebook keys: up and down select the previous or next listed illness, left
+// and right lower or raise its price.
 // FUNCTION: 0x00013a7c
 void process_drug_keys(void)
 {
@@ -376,6 +391,9 @@ void process_drug_keys(void)
     }
 }
 
+// Casebook button action: 0 price up, 1 price down, 2 previous illness, 3
+// next illness, 4 close, 5 make the illness a research concentration (event
+// 0x72).
 // FUNCTION: 0x00013bc4
 void process_drug_button(u8 action)
 {
@@ -423,6 +441,9 @@ void process_drug_button(u8 action)
     }
 }
 
+// Returns the illness before (forward 0) or after from in the casebook: one
+// the hospital has seen, a diagnosis it can do, or autopsy once available.
+// Returns 0xfa if there is none.
 // FUNCTION: 0x00013d8c
 u8 get_next_illness(const u8 forward, const u8 from)
 {
@@ -457,6 +478,8 @@ u8 get_next_illness(const u8 forward, const u8 from)
     return 0xfa;
 }
 
+// Gives hospital's drug for illness (if illness is cured by drugs) the level's
+// starting effectiveness and cost.
 // FUNCTION: 0x00013fb0
 void setup_drug(u16 hospital, u16 illness)
 {
@@ -466,6 +489,8 @@ void setup_drug(u16 hospital, u16 illness)
     }
 }
 
+// Help text callback: the hovered casebook item's help, while the screen is
+// open (othervar.f8b6).
 // FUNCTION: 0x0001403c
 void drugs_help_concentrate(void)
 {
@@ -474,6 +499,8 @@ void drugs_help_concentrate(void)
     }
 }
 
+// Help text callback: how the selected illness is cured (drug and its
+// effectiveness, psychiatry, surgery, or a machine).
 // FUNCTION: 0x00014090
 void drugs_help_cure_type(void)
 {
@@ -495,6 +522,8 @@ void drugs_help_cure_type(void)
     }
 }
 
+// Help text callback: whether the hospital can treat the selected illness, or
+// the first thing it lacks (see what_is_required).
 // FUNCTION: 0x000141f0
 void drugs_help_handled(void)
 {
@@ -522,6 +551,7 @@ void drugs_help_handled(void)
     }
 }
 
+// Updates every hospital's price for every illness (update_single_cure_cost).
 // FUNCTION: 0x0001438c
 void update_cure_costs(void)
 {
@@ -535,6 +565,8 @@ void update_cure_costs(void)
     }
 }
 
+// Sets hospital's price for illness to its percentage (rooms[].unknown10, in
+// hundredths of a percent) of the maximum price, if it moved by at least 1%.
 // FUNCTION: 0x000143e0
 void update_single_cure_cost(u8 illness, u8 hospital)
 {

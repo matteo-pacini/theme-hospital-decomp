@@ -16,6 +16,11 @@ extern char filename[];
 #pragma aux filename "W?filename$:.0$:?modify_data_load_filename$n(pn$TbLoadFiles$$)pnan[]a"
 extern u8 install_language;
 
+// Reads text a line at a time from a buffer ended by 0xff. With line 0, starts
+// reading src (max 0) or makes the next call return 0 (max nonzero).
+// Otherwise copies up to max characters of the next line into line, dropping
+// its last character (the '\r' of a CRLF line), and returns the position after
+// it, or 0 at the end of the buffer.
 // FUNCTION: 0x0007a190
 char *read_line_from_buf(char *line, s32 max, char *src)
 {
@@ -53,6 +58,10 @@ char *read_line_from_buf(char *line, s32 max, char *src)
     return 0;
 }
 
+// LbDataLoad's filename hook: returns the path to load file from, prefixed
+// with cd_install_path when the file is not installed on the hard disk (its
+// install level is above install_type), after checking the CD is present.
+// The path is in a static buffer.
 // FUNCTION: 0x0007a29c
 char *modify_data_load_filename(TbLoadFiles *file)
 {
@@ -67,6 +76,12 @@ char *modify_data_load_filename(TbLoadFiles *file)
     return filename;
 }
 
+// Reads up to four KEY=value lines from hospital.cfg: INSTALL_PATH (also hooks
+// modify_data_load_filename into LbDataLoad), INSTALL_TYPE (install_type 1-3),
+// LANGUAGE (install_language and myplayer.f21: 0 English, 1 French, 2 German,
+// 3 Italian, 4 Spanish, 5 another S... language) and SAVE_OVERRIDE
+// (statvar.f575). Returns 1, or -1 if the file is missing or a line is not
+// understood.
 // FUNCTION: 0x0007a318
 s32 read_config_file(void)
 {
@@ -150,6 +165,8 @@ s32 read_config_file(void)
     return 1;
 }
 
+// Maps a scan code to the key at that position on a German (QWERTZ) or French
+// (AZERTY) keyboard, as set by install_language; other languages unchanged.
 // FUNCTION: 0x0007a5e8
 u8 what_key_is_it_really(u8 key)
 {

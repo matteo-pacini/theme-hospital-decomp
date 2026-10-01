@@ -43,6 +43,10 @@ u32 ror13(u32 x);
 
 static u8 glow_path[] = { 0x4d, 0x4e, 0x4f, 0x50, 0x50, 0x4f, 0x4e, 0x4d };
 
+// Draws composite frame frame_id with its origin at screen x,y, mirrored if
+// flip, with flags ORed into each element's draw flags; plays the frame's
+// sound. Records the frame's box in D_001567b0 (x, y, w, h) and grows its
+// dirty rectangle (x0, y0, x1, y1) to cover it.
 // FUNCTION: 0x0002d910
 void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 flip)
 {
@@ -103,6 +107,8 @@ void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, 
     lbDisplay.draw_flags = 0;
 }
 
+// As draw_a_frame, drawing every element in the single colour colour and
+// without the sound.
 // FUNCTION: 0x0002dd1c
 void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const u16 colour, const u8 flip)
 {
@@ -161,6 +167,10 @@ void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const
     lbDisplay.draw_flags = 0;
 }
 
+// Draws w's current frame at x,y, showing only the layered elements that match
+// w's layers (head, colours, ...) and drawing w's status icon over its head
+// element. Plays the frame's sound once (or every time for looping sounds) and
+// records the box as draw_a_frame does.
 // FUNCTION: 0x0002e0ec
 void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -273,6 +283,8 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
 
 extern "C" {
 
+// As draw_special_id_frame, but draws the layered elements through the pixel
+// buffer with a wobble (draw_wibble) that changes each turn.
 // FUNCTION: 0x0002e804
 void draw_wibble_frame(Thing *w, s16 x, s16 y)
 {
@@ -448,6 +460,8 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
     othervar.fa52 = 0;
 }
 
+// As draw_special_id_frame, but draws the layered elements glowing in a colour
+// that cycles over time (glow_path).
 // FUNCTION: 0x0002f47c
 void draw_glow_frame(Thing *w, s16 x, s16 y)
 {
@@ -540,6 +554,9 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
 
 }
 
+// Draws w using a machine (its object): w's own frame above the machine's
+// split line (split_height), and the machine's aux_sprite frame below it, so
+// that w appears inside the machine. Does nothing if w has no object.
 // FUNCTION: 0x0002fa3c
 void draw_split_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -611,6 +628,10 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
 }
 
 
+// Draws w using an energising machine: w normally (with the machine's
+// aux_draw_flags, unless 0xff), then a speckled copy in colour aux_param whose
+// density grows with the machine's split_height. Does nothing if w has no
+// object.
 // FUNCTION: 0x0002fe18
 void draw_energise_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -667,6 +688,8 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
     }
 }
 
+// As draw_a_frame, scaled by scale (16.16 fixed point). The recorded box is
+// unscaled.
 // FUNCTION: 0x00030198
 void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags, const u8 flip, s32 scale)
 {
@@ -730,6 +753,8 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
 }
 
 
+// Draws w's frame flashing (cycling the draw flags every turn, hidden one turn
+// in six), as for a highlighted thing.
 // FUNCTION: 0x000305fc
 void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
 {
@@ -785,6 +810,9 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
 }
 
 
+// Draws composite frame frame_id at x,y, through the colour table remap if not
+// 0, mirrored if flip. Resets the dirty rectangle to this frame's box and flags
+// it for redraw.
 // FUNCTION: 0x000308a0
 void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, const u8 flip)
 {
@@ -878,6 +906,8 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
 }
 
 
+// As draw_from_frame, showing only the layered elements that match layers.
+// Grows rather than resets the dirty rectangle.
 // FUNCTION: 0x00030f34
 void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, u8 *layers, const u8 flip)
 {
@@ -955,6 +985,10 @@ void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8
 }
 
 
+// Draws frame frame_id at x,y for w (only the layered elements matching w's
+// layers), with flags ORed into the draw flags and mirrored if flip; with
+// hidden set nothing is drawn. Only grows D_001567b0's x,y to the frame's top
+// left (relative to x,y), for the caller to finish.
 // FUNCTION: 0x00031434
 void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip)
 {
@@ -1009,6 +1043,8 @@ void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, con
     }
 }
 
+// Draws text at x,y in colour colour with font 0, and records its box in
+// D_001567b0.
 // FUNCTION: 0x00031760
 void draw_text_on_map(char *text, const u8 colour, const s32 x, const s32 y)
 {
@@ -1031,6 +1067,8 @@ void draw_text_on_map(char *text, const u8 colour, const s32 x, const s32 y)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
 }
 
+// Draws icon frame icon centred at x + dx, above y + dy by the frame's height
+// and the layout's icon gap, and notes the extra height in D_00156911.
 // FUNCTION: 0x00031874
 void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, const s16 dx, const s16 dy)
 {
@@ -1058,6 +1096,8 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
     othervar.fa52 = 1;
 }
 
+// Draws a money bag at x,y, with value written on it in high resolution
+// (unless othervar.fa8d), and records its box in D_001567b0.
 // FUNCTION: 0x00031a44
 void draw_money(s32 x, s32 y, s32 value)
 {

@@ -18,11 +18,14 @@ u8 handyman_try_plant(Thing *w);
 u8 handyman_try_litter(Thing *w);
 u8 is_next_to_plant(Thing *w, Thing *plant);
 
-void choose_aniseq(Thing *w, u8 anim, u8 speed);
+void choose_aniseq(Thing *w, u8 group, u8 next_state);
 void remove_litter(u16 tile, u8 owner);
 
 #define TILE_POS(t) ((s16)(t)->x.tile + ((s16)(t)->y.tile << 7))
 
+// Drops litter of kind type (floor kind 1-15) at tile if it is owner's land:
+// on a clean tile, counting it (allhosps.fcaa); kinds 4 and 5 also replace
+// existing mess. Records the tile in allhosps.fcac.
 // FUNCTION: 0x0007a710
 void place_litter(u16 tile, s8 owner, u8 type)
 {
@@ -45,6 +48,7 @@ void place_litter(u16 tile, s8 owner, u8 type)
     }
 }
 
+// Cleans the mess off tile (on owner's land), uncounting it.
 // FUNCTION: 0x0007a814
 void remove_litter(u16 tile, u8 owner)
 {
@@ -59,6 +63,12 @@ void remove_litter(u16 tile, u8 owner)
     }
 }
 
+// SS_HANDYMAN_WORKS: runs handyman by substate. 0 decides what to do next:
+// resign or rest if due; in a room, page and repair its machines; otherwise
+// repair urgent machines, then the job (sweeping, watering, repairing) whose
+// done count is lowest for its priority, else stroll nearby. Later substates
+// sweep litter (2-3), water a plant (4-6) and repair a machine once its room
+// is clear of staff (8-10).
 // FUNCTION: 0x0007a8a8
 void handyman_works(Thing *handyman)
 {
@@ -300,6 +310,9 @@ void handyman_works(Thing *handyman)
     }
 }
 
+// Picks a random tile near handyman (closer the more able they are) and, if it
+// has litter on their land, keeps it as their nearest or second nearest litter
+// target (work_target, work_target2).
 // FUNCTION: 0x0007b554
 void handyman_check_for_litter(Thing *handyman)
 {
@@ -339,6 +352,10 @@ void handyman_check_for_litter(Thing *handyman)
     }
 }
 
+// OS_PLANT_AGES: every 16 turns, half the time, plant loses health; every 80
+// points it wilts a stage and pages a handyman (unless it cannot be reached),
+// and once dead it pages urgently every 40 points more. Updates the advisor's
+// plant counts.
 // FUNCTION: 0x0007b88c
 void plant_ages(Thing *plant)
 {
@@ -367,6 +384,7 @@ void plant_ages(Thing *plant)
     }
 }
 
+// Returns the frame showing plant at its wilting stage.
 // FUNCTION: 0x0007ba18
 u32 compute_plant_frame(Thing *plant)
 {
@@ -381,6 +399,8 @@ u32 compute_plant_frame(Thing *plant)
     return f;
 }
 
+// Pages for thing id at priority on pager p, raising the priority of an
+// existing page. Returns 0 if the pager is full (64 pages), else 1.
 // FUNCTION: 0x0007baac
 u8 thingpage_request(ThingPager *p, u16 id, u8 priority)
 {
@@ -402,6 +422,7 @@ u8 thingpage_request(ThingPager *p, u16 id, u8 priority)
     return 1;
 }
 
+// Removes the page for thing id from p. Returns 1 if there was one.
 // FUNCTION: 0x0007bbbc
 u8 thingpage_cancel(ThingPager *p, u16 id)
 {
@@ -417,6 +438,10 @@ u8 thingpage_cancel(ThingPager *p, u16 id)
     return 0;
 }
 
+// Picks for handyman the page on p (for things in room, if not 0) of the
+// highest priority (at least min), nearest first, that nobody else has taken
+// in the last 3000 turns and is not in a room being edited; takes it for
+// 3000 turns. Returns its thing, or 0.
 // FUNCTION: 0x0007bc4c
 u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min)
 {
@@ -467,6 +492,7 @@ u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min)
     return p->pages[best].id;
 }
 
+// Returns the highest priority among p's pages (0xff if there are none).
 // FUNCTION: 0x0007c2f8
 u8 thingpage_find_highest_priority(ThingPager *p)
 {
@@ -479,6 +505,7 @@ u8 thingpage_find_highest_priority(ThingPager *p)
     return best;
 }
 
+// Returns the thing of a page on p that handyman has taken, or 0.
 // FUNCTION: 0x0007c37c
 u16 thingpage_remind_me(ThingPager *p, Thing *handyman)
 {
@@ -491,6 +518,7 @@ u16 thingpage_remind_me(ThingPager *p, Thing *handyman)
     return 0;
 }
 
+// Releases every page on p that handyman had taken.
 // FUNCTION: 0x0007c3f8
 void thingpage_cancel_my_response(ThingPager *p, Thing *handyman)
 {
@@ -506,6 +534,8 @@ void thingpage_cancel_my_response(ThingPager *p, Thing *handyman)
     }
 }
 
+// Sends handyman to repair the most urgent machine paged (by their repair
+// priority), into its room (substate 8). Returns 1 if one was taken.
 // FUNCTION: 0x0007c488
 u8 handyman_try_fix(Thing *handyman)
 {
@@ -530,6 +560,8 @@ u8 handyman_try_fix(Thing *handyman)
     return 0;
 }
 
+// Sends handyman to water the most urgent plant paged, through its room's
+// door if it is in a room. Returns 1 if one was taken.
 // FUNCTION: 0x0007c5ac
 u8 handyman_try_plant(Thing *handyman)
 {
@@ -556,6 +588,9 @@ u8 handyman_try_plant(Thing *handyman)
     return 0;
 }
 
+// Sends handyman to sweep litter on or next to them, or else their nearest
+// remembered litter target (moving on to the next). Returns 1 if they set
+// off.
 // FUNCTION: 0x0007c6a0
 u8 handyman_try_litter(Thing *handyman)
 {
@@ -590,6 +625,8 @@ u8 handyman_try_litter(Thing *handyman)
     return 0;
 }
 
+// Returns 1 if handyman stands on a tile beside plant (not diagonally) with an
+// invisible wall (blocks 0x8e-0x91) on the edge between them, else 0.
 // FUNCTION: 0x0007c884
 u8 is_next_to_plant(Thing *handyman, Thing *plant)
 {
@@ -613,6 +650,8 @@ u8 is_next_to_plant(Thing *handyman, Thing *plant)
     return 0;
 }
 
+// Returns 1 if tile pos can be reached: from room's door when room is a room
+// (and pos is in it), else from owner's entrance. Otherwise 0.
 // FUNCTION: 0x0007cbdc
 u8 trapped_plant_check(RoomInfo *room, s32 pos, u8 owner)
 {
@@ -631,6 +670,8 @@ u8 trapped_plant_check(RoomInfo *room, s32 pos, u8 owner)
     return 0;
 }
 
+// Returns 1 if none of the four tiles beside plant can be reached (see
+// trapped_plant_check), else 0.
 // FUNCTION: 0x0007cc88
 u8 is_plant_trapped(Thing *plant)
 {

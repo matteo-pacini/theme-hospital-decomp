@@ -32,6 +32,10 @@ u8 button_available(const u8 button);
 void check_awards_buttons(void);
 void display_awards(void);
 
+// Switches the display to the year-end screens (display_mode 8), saving the
+// current screen state to restore afterwards (from the choice screen's backup
+// if one is showing). Places on the map each hospital's staff member held in
+// allhosps.f11f4 (at tile f11f6) and clears the awards and trophies to show.
 // FUNCTION: 0x000b4980
 void start_year_end(void)
 {
@@ -57,6 +61,9 @@ void start_year_end(void)
     LbMemorySet(trophies_won, 0, 0xf);
 }
 
+// Fills the year-end league tables (chart) with each of the four hospitals'
+// figures and sorts each table best first (table 4 ascending). The first
+// table's running total is not reset between hospitals.
 // FUNCTION: 0x000b4aac
 void create_chart_data(void)
 {
@@ -103,6 +110,10 @@ void create_chart_data(void)
     qsort(chart[10], hosp_count, 5, descend);
 }
 
+// Runs one frame of the year-end screens, by yearend.unknown2: 0 draws the
+// league tables, 2 shows them, 1 loads the awards screen, 3 shows awards and
+// trophies, 4 moves year_end_type on. Escape, Space, or 0x4b0 frames without
+// mouse movement ask to leave (an EV_PAUSE event). Clears the mouse buttons.
 // FUNCTION: 0x000b4e88
 extern "C" void display_year_charts(void)
 {
@@ -218,6 +229,9 @@ extern "C" void display_year_charts(void)
     lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = lbDisplay.rright_button = 0;
 }
 
+// Draws the plaque for the award or trophy selected (current_display 1 good
+// award, 2 bad award, 3 trophy; current_award picks it), with its text and
+// bonus.
 // FUNCTION: 0x000b5460
 void display_plaque(void)
 {
@@ -289,6 +303,9 @@ void display_plaque(void)
         reqspr_draw(resvars.f48[0x56].unknownC, resvars.f48[0x56].unknownE, &screen_sprites_tab_start[13]);
 }
 
+// Handles year-end screen button button: 0 leaves the screen, 1 switches
+// between the tables and awards pages, 2-3 close the plaque, 4-9 show
+// awards_won[button - 4], 10-12 show trophies_won[button - 10].
 // FUNCTION: 0x000b5b38
 void process_yearend_buttons(u8 button)
 {
@@ -352,6 +369,8 @@ void process_yearend_buttons(u8 button)
     }
 }
 
+// Draws pressed and runs the callbacks of the league table page's buttons
+// (resvars.f48 from index 0x48) under the mouse.
 // FUNCTION: 0x000b5d10
 void check_stats_buttons(void)
 {
@@ -384,6 +403,9 @@ void check_stats_buttons(void)
     }
 }
 
+// Returns nonzero if awards page button button (see process_yearend_buttons)
+// applies: the plaque buttons while a plaque is shown, the award and trophy
+// buttons when there is one in that slot.
 // FUNCTION: 0x000b601c
 u8 button_available(const u8 button)
 {
@@ -411,6 +433,8 @@ u8 button_available(const u8 button)
     }
 }
 
+// Draws pressed and runs the callbacks of the awards page's available buttons
+// (resvars.f48 from index 0x4b) under the mouse.
 // FUNCTION: 0x000b614c
 void check_awards_buttons(void)
 {
@@ -447,6 +471,8 @@ void check_awards_buttons(void)
     }
 }
 
+// Draws the trophies (up to 3) and awards (up to 6) won this year and copies
+// them into trophies_won and awards_won, which the plaques and buttons use.
 // FUNCTION: 0x000b647c
 void display_awards(void)
 {

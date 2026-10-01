@@ -46,6 +46,10 @@ IconTableData icon_table_data[] = {
 };
 #pragma aux icon_table_data "W?icon_table$n[]x$IconTable$$"
 
+// Shows status icon icon (ICON_*) over peep, unless a dead patient or a more
+// important icon (lower icon_table priority) is showing. The icon stays until
+// reset (kind f5 > 0) or for its time; kind f5 < 0 waits, stored negative, for
+// peep_icon to announce it.
 // FUNCTION: 0x000b0300
 void set_icon_value(Thing *const peep, const s8 icon)
 {
@@ -66,6 +70,7 @@ void set_icon_value(Thing *const peep, const s8 icon)
     }
 }
 
+// Removes peep's status icon if it is icon (either sign).
 // FUNCTION: 0x000b0428
 void reset_icon_value(Thing *const peep, const s8 icon)
 {
@@ -76,6 +81,8 @@ void reset_icon_value(Thing *const peep, const s8 icon)
     }
 }
 
+// Announces peep's pending icon (stored negative) with a sound, making it
+// showing and starting its timer for announced kinds. Not for dead patients.
 // FUNCTION: 0x000b0474
 void peep_icon(Thing *const peep)
 {
@@ -88,6 +95,8 @@ void peep_icon(Thing *const peep)
     }
 }
 
+// Animates peep's status icon and counts down its time, removing it when the
+// time runs out; permanent icons (0xffff) just animate.
 // FUNCTION: 0x000b0540
 void update_icon_counter(Thing *const peep)
 {
@@ -105,6 +114,7 @@ void update_icon_counter(Thing *const peep)
 
 extern "C" {
 
+// Removes peep's status icon.
 // FUNCTION: 0x000b05f0
 void clear_peep_icon(Thing *peep)
 {

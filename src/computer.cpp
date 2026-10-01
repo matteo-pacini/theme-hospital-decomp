@@ -51,6 +51,9 @@ extern char **computer_names;
 
 }
 
+// Single player: fills the free hospital slots (allhosps.f2a 0) with computer
+// players (f2a 2), first those computer[] marks (f8), then random unused ones,
+// giving each its name, personality (f1245) and strategy (f1244, f1240).
 // FUNCTION: 0x0004e760
 void setup_computer_players(void)
 {
@@ -108,6 +111,8 @@ void setup_computer_players(void)
     }
 }
 
+// Year end for computer players: recalculates each one's value and score.
+// Single player only.
 // FUNCTION: 0x0004e9d8
 void computer_year(void)
 {
@@ -125,6 +130,9 @@ void computer_year(void)
     }
 }
 
+// Daily for computer players: every fifth day (mycontrol->unknown64f), adds
+// each one's simulated results so far to its hospital (get_computer_bucket).
+// Single player only.
 // FUNCTION: 0x0004ea50
 void computer_day(void)
 {
@@ -143,6 +151,8 @@ void computer_day(void)
     }
 }
 
+// Month end for computer players: adds the simulated results to each one's
+// hospital and pays its wages (f1234). Single player only.
 // FUNCTION: 0x0004eae0
 void computer_month(void)
 {
@@ -160,6 +170,11 @@ void computer_month(void)
     }
 }
 
+// Runs each computer player whose next action time (f11f8) has come: carries
+// out its pending action (employ, build, buy objects, loan) or, with none,
+// takes its next strategy step (computer_decision), then sets the time of the
+// next one from its personality's pace. Single player only, and not during the
+// tutorial.
 // FUNCTION: 0x0004eb5c
 void computer_action(void)
 {
@@ -228,6 +243,10 @@ void computer_action(void)
     }
 }
 
+// Takes owner's next step in its com_strategy script: either sets it as the
+// pending action (types 0-4) or carries it out at once (choose a room, recheck
+// staff, staff and object levels, buy land, repay the loan, build freely,
+// switch strategy, or announce).
 // FUNCTION: 0x0004eebc
 void computer_decision(u8 owner)
 {
@@ -314,6 +333,11 @@ void computer_decision(u8 owner)
         bucket = &comp_buckets[owner][month];                  \
     }
 
+// Simulates patient's whole visit to computer player owner's hospital at once:
+// GP and diagnosis visits until diagnosed, sent home or fed up, then treatment
+// or not by the hospital's personality; adds the income, cures, deaths and
+// reputation changes to this month's bucket (comp_buckets), advancing the
+// simulated date as it goes.
 // FUNCTION: 0x0004f15c
 void process_computer_peep(Thing *patient, u8 owner)
 {
@@ -454,6 +478,9 @@ void process_computer_peep(Thing *patient, u8 owner)
     bucket->f14++;
 }
 
+// Moves the results in owner's bucket for the current month (othervar.f9d1)
+// into its hospital (money, cures, deaths, room statistics), updates its
+// reputations and empties the bucket.
 // FUNCTION: 0x0004f900
 void get_computer_bucket(u8 owner)
 {
@@ -483,6 +510,9 @@ void get_computer_bucket(u8 owner)
     memset(bucket, 0, 400);
 }
 
+// Hires for owner the first job applicant of staff kind type with all the
+// skill bits in skills (0 for any), paying 1.2 times their salary. Returns 1
+// if hired, 0 if there is no such applicant or not enough money.
 // FUNCTION: 0x0004fa50
 u8 computer_employ(u8 type, u16 skills, u8 owner)
 {
@@ -528,6 +558,9 @@ u8 computer_employ(u8 type, u16 skills, u8 owner)
     return 0;
 }
 
+// Builds a room of type type for owner (in the abstract: counts and
+// statistics), with its required objects for free. Returns 1, or 0 if owner
+// cannot afford it.
 // FUNCTION: 0x0004fc48
 u8 computer_build(u8 type, u8 owner)
 {
@@ -551,6 +584,8 @@ u8 computer_build(u8 type, u8 owner)
     return 0;
 }
 
+// Buys object obj for owner (in the abstract), free of charge if free is set.
+// Returns 1, or 0 if owner cannot afford it.
 // FUNCTION: 0x0004fd6c
 u8 computer_place_object(u8 obj, u8 free, u8 owner)
 {
@@ -571,6 +606,10 @@ u8 computer_place_object(u8 obj, u8 free, u8 owner)
     return 0;
 }
 
+// Changes owner's loan by 5000: amount negative adds 5000 to the balance and to
+// f3d if the balance is at least 5000 and f3d is positive; amount positive
+// takes 5000 from both if f3d stays at least 5000 below the limit f41. Returns
+// 1 if done.
 // FUNCTION: 0x0004fe78
 u8 computer_loan(s8 amount, u8 owner)
 {
@@ -590,6 +629,10 @@ u8 computer_loan(s8 amount, u8 owner)
     return 0;
 }
 
+// Looks back over owner's strategy for the first staff hire step whose kind
+// owner now has fewer of than the strategy has hired, and makes it the pending
+// action. a 1 repeats this step next time; otherwise the position reached is
+// kept (f1242) to resume from. Always returns 0.
 // FUNCTION: 0x0004ff24
 u8 computer_recheck_actions(u8 a, u8 owner)
 {
@@ -633,6 +676,9 @@ u8 computer_recheck_actions(u8 a, u8 owner)
     return 0;
 }
 
+// Makes hiring staff owner's pending action: a noted hire if there is one,
+// else the first kind (nurse, doctor, handyman, receptionist) below the level
+// its patient load calls for. Returns 1 if an action was set.
 // FUNCTION: 0x0005010c
 u8 computer_staff_levels(u8 owner)
 {
@@ -672,6 +718,8 @@ u8 computer_staff_levels(u8 owner)
     return 0;
 }
 
+// Returns the com_strategy index just after the start marker of strategy type,
+// or 0 if there is none.
 // FUNCTION: 0x000502e0
 u32 find_strategy_start(u8 type)
 {
@@ -688,6 +736,10 @@ u32 find_strategy_start(u8 type)
     return 0;
 }
 
+// Makes building the first room in com_room_orders[order] that owner lacks,
+// may build and can afford its pending action, and returns that room type. If
+// only unaffordable rooms remain, adds note 4. Returns 0 if none was
+// chosen.
 // FUNCTION: 0x00050360
 u8 computer_choose_room(u8 order, u8 owner)
 {
@@ -726,6 +778,8 @@ u8 computer_choose_room(u8 order, u8 owner)
     return 0;
 }
 
+// Stores a note (a postponed action type, arg, count) in a free slot of
+// owner's notes. Returns 1, or 0 if all 8 are used.
 // FUNCTION: 0x00050528
 u8 make_a_note(u16 type, s16 arg, s16 count, u8 owner)
 {
@@ -744,6 +798,8 @@ u8 make_a_note(u16 type, s16 arg, s16 count, u8 owner)
     return 0;
 }
 
+// If owner has a note of type, makes it the pending action (flagging it as
+// from a note, f1202) and returns 1; else 0.
 // FUNCTION: 0x000505d0
 u8 find_a_note(u16 type, u8 owner)
 {
@@ -763,6 +819,7 @@ u8 find_a_note(u16 type, u8 owner)
     return 0;
 }
 
+// Removes owner's first note of type.
 // FUNCTION: 0x00050684
 void remove_a_note(u16 type, u8 owner)
 {
@@ -778,6 +835,7 @@ void remove_a_note(u16 type, u8 owner)
     }
 }
 
+// Moves owner's note of type to the last free slot, behind the others.
 // FUNCTION: 0x000506f4
 void declass_a_note(u16 type, u8 owner)
 {
@@ -797,6 +855,9 @@ void declass_a_note(u16 type, u8 owner)
     }
 }
 
+// Raises patient's diagnosis progress by a simulated visit to their current
+// treatment room in owner's hospital: by the average ability of the staff kind
+// it needs, a random spread, and the room's diagnosis bonus.
 // FUNCTION: 0x000507c4
 void computer_diag_progress(Thing *patient, u8 owner)
 {
@@ -825,6 +886,9 @@ void computer_diag_progress(Thing *patient, u8 owner)
     }
 }
 
+// Makes building owner's pending action: a noted build if any, else the next
+// room from room orders 0 then 1, noting a hire for its staff. Returns 1 if an
+// action was set.
 // FUNCTION: 0x0005090c
 u8 computer_free_build(u8 owner)
 {
@@ -868,6 +932,9 @@ u8 computer_free_build(u8 owner)
     return 0;
 }
 
+// Makes a loan change (action 4, arg -1) owner's pending action if it has a
+// loan (f3d) and more than 6000; a pending note 4 is taken (with its arg 0)
+// and removed instead. Returns 1 if an action was set.
 // FUNCTION: 0x00050aa8
 u8 computer_maintain_loan(u8 owner)
 {
@@ -904,6 +971,9 @@ u8 computer_maintain_loan(u8 owner)
     return 0;
 }
 
+// Makes buying objects owner's pending action for the first of four object
+// kinds (object_nbs) owner has fewer of than its patient load calls for (1 to
+// 4 of them). Returns 1 if an action was set.
 // FUNCTION: 0x00050c44
 u8 computer_object_levels(u8 owner)
 {
@@ -943,6 +1013,8 @@ u8 computer_object_levels(u8 owner)
     return 0;
 }
 
+// Buys owner as many plots as the local player has more of, if it can afford
+// them (else adds note 4). Returns 1 if bought.
 // FUNCTION: 0x00050de4
 u8 computer_buy_land(u8 owner)
 {

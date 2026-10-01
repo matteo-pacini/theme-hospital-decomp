@@ -47,6 +47,13 @@ long keybuffer_get(void);
 u8 what_key_is_it_really(u8 key);
 void swap_game_sprites(TbScreenMode mode);
 
+// Runs one frame of the level briefing screen, by its state (area.unknown2): 0
+// and 6 unload the game and play the level's intro video, 1 shows the
+// briefing's map screens (next_map) until they are done, 3 types out the
+// briefing text, 4 shows the debug level list, 5 the text while any level can
+// be picked (process_mouse_area_select), and 2 loads level_number and starts
+// the game (display_mode 0). Returns 0 if the loading screen could not be
+// shown, else 1.
 // FUNCTION: 0x00068a80
 u8 draw_area_select(void)
 {
@@ -161,6 +168,8 @@ u8 draw_area_select(void)
     return 1;
 }
 
+// Handles a key on the briefing screen: Escape returns to the main menu, C
+// switches the briefing to state 5 (pick any level). Consumes the key.
 // FUNCTION: 0x00068f60
 void process_keys_area_select(void)
 {
@@ -179,6 +188,10 @@ void process_keys_area_select(void)
     BufferedInkey = lbInkey = 0;
 }
 
+// Handles the mouse on the briefing screen: in state 5 a click on one of the
+// 21 level areas plays that level's video and starts it. Otherwise a click, or
+// 600 frames without mouse movement, starts the selected level (level 1 if none
+// is set).
 // FUNCTION: 0x00068fec
 void process_mouse_area_select(void)
 {
@@ -238,6 +251,9 @@ void process_mouse_area_select(void)
     }
 }
 
+// Draws the briefing text: the paragraphs already shown, then the current one
+// (text_paragraph) revealed one more character per call, moving on to the
+// next paragraph with a pause (text_delay) once it is complete.
 // FUNCTION: 0x00069268
 void display_area_select(void)
 {
@@ -278,6 +294,9 @@ void display_area_select(void)
     lbDisplay.draw_flags = 0;
 }
 
+// Debug level list: draws level.l0 to level.l119 in six columns, greyed when
+// the file is missing, and starts the level clicked (state 2). Levels above 14
+// use town 1.
 // FUNCTION: 0x000694e8
 void display_select_level(void)
 {
@@ -334,6 +353,8 @@ void display_select_level(void)
     }
 }
 
+// Plays level level_no's briefing video (animation_table index level_no + 7)
+// full screen, then restores the saved screen.
 // FUNCTION: 0x00069770
 void play_area_smk(const u8 level_no)
 {

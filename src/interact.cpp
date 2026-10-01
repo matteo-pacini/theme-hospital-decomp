@@ -6,6 +6,9 @@ extern DoorAnim interaction[];
 void setup_next_interaction(Thing *w);
 }
 
+// Plays one turn of w's interaction with its partner (slave): advances both
+// animations, and once neither is still playing (interact_anim 1) moves on to
+// the next step.
 // FUNCTION: 0x00054870
 extern "C" void two_peeps_interact(Thing *w)
 {
@@ -38,6 +41,10 @@ extern "C" void two_peeps_interact(Thing *w)
         setup_next_interaction(w);
 }
 
+// Starts the next step of w's interaction sequence (repeating the current step
+// interact_repeat more times first): plays the step's animations on w and its
+// partner (0 for none). At the sequence's end (-1) clears both and continues
+// w's complex.
 // FUNCTION: 0x000549bc
 extern "C" void setup_next_interaction(Thing *w)
 {
@@ -114,6 +121,8 @@ extern "C" void setup_next_interaction(Thing *w)
     }
 }
 
+// Records in statvar.unknowne8 where each interaction sequence starts in
+// interaction[] (sequences end with -1, the table with -99).
 // FUNCTION: 0x00054d60
 extern "C" void setup_interactions(void)
 {
@@ -133,8 +142,10 @@ extern "C" void setup_interactions(void)
     }
 }
 
+// Starts interaction sequence seq (statvar.unknowne8 index) for w (state 0x22
+// for a patient, 0x1a for staff) with its partner w->slave.
 // FUNCTION: 0x00054dd4
-void start_new_interaction(Thing *w, u8 interaction)
+void start_new_interaction(Thing *w, u8 seq)
 {
     switch (w->type) {
     case THING_PATIENT:
@@ -146,7 +157,7 @@ void start_new_interaction(Thing *w, u8 interaction)
     default:
         return;
     }
-    w->seq_index = statvar.unknowne8[interaction] - 1;
+    w->seq_index = statvar.unknowne8[seq] - 1;
     w->interact_repeat = 0;
     setup_next_interaction(w);
 }

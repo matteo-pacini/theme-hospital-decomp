@@ -26,6 +26,10 @@ u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate);
         (t)->flip = start[anim].flags > 0 ? (u8)1 : (u8)0; \
     }
 
+// PS_GOTO_DESTINATION: walks person a step towards dest_x,dest_y, animating
+// them; at each new tile also leaves a blueprint, updates their needs and lets
+// them react. On arrival runs their complex (or waits in PS_WAITS_FOR_BUSY if
+// none); a navigation failure goes to person_nav_failure. Always returns 0.
 // FUNCTION: 0x000763d0
 s16 person_goto_destination(Thing *person)
 {
@@ -74,6 +78,10 @@ s16 person_goto_destination(Thing *person)
     return 0;
 }
 
+// PS_GOTO_OBJECT: walks person towards their object as person_goto_destination
+// does; close to it, or on arrival, runs the complex to use it, waiting if it
+// is busy. If the object's tile cannot be reached the complex still runs, with
+// the object treated as busy. Always returns 0.
 // FUNCTION: 0x00076768
 s16 person_goto_object(Thing *person)
 {
@@ -144,6 +152,10 @@ s16 person_goto_object(Thing *person)
     return 0;
 }
 
+// PS_GOTO_QUEUE: walks person towards the room they are heading for
+// (dest_room); near its door joins its queue (paging the staff it needs,
+// PS_ARRIVES_AT_DOOR) or the reception queue (PS_IN_QUEUE). If the room has
+// changed kind or lost its door, starts them going again.
 // FUNCTION: 0x00076c44
 void person_goto_queue(Thing *person)
 {
@@ -229,6 +241,8 @@ void person_goto_queue(Thing *person)
     move_node(person, x, y);
 }
 
+// REAPER_GOTO_HELL: walks the grim reaper towards its destination; on arrival
+// it calls its victim. Always returns 0.
 // FUNCTION: 0x0007724c
 s16 reaper_goto_hell(Thing *reaper)
 {
@@ -270,6 +284,9 @@ s16 reaper_goto_hell(Thing *reaper)
     return 0;
 }
 
+// SS_GOTO_OBJECT: walks employee towards their destination (a handyman also
+// looks for litter on the way); on arrival runs their complex; a navigation
+// failure ends the complex or goes to staff_nav_failure. Always returns 0.
 // FUNCTION: 0x00077508
 s16 staff_goto_object(Thing *employee)
 {
@@ -323,6 +340,9 @@ s16 staff_goto_object(Thing *employee)
     return 0;
 }
 
+// Sends wandering employee dx,dy tiles on from their destination and sets
+// substate (the direction wandered) if the tile is free corridor on their own
+// land; otherwise sets substate 6 (decide again). Returns 1 if they set off.
 // FUNCTION: 0x000778b4
 u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate)
 {
@@ -353,6 +373,10 @@ u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate)
     return 1;
 }
 
+// SS_WANDERS: an idle member of staff strolls the corridors, usually pacing 3
+// tiles back and forth, sometimes pausing or picking a new direction; between
+// strolls they check whether to vaccinate, rest, answer a page or take a break,
+// and a receptionist goes to a free desk. Handymen go straight to work.
 // FUNCTION: 0x00077ab8
 void staff_wanders(Thing *employee)
 {
@@ -476,6 +500,8 @@ decide:
     }
 }
 
+// PS_BP_GOTO / SS_BP_GOTO: walks peep off a blueprint towards saved_dest_x,y
+// along the grid, and returns them to saved_state once off it or there.
 // FUNCTION: 0x000781f8
 void peep_bp_goto(Thing *peep)
 {
@@ -541,6 +567,9 @@ void peep_bp_goto(Thing *peep)
 
 void mayor_inspects(Thing *w);
 
+// MAYOR_GOTO: walks the mayor or inspector towards their destination; on
+// arrival they inspect and enter goto_state; a navigation failure makes them
+// leave (MAYOR_GONE). Always returns 0.
 // FUNCTION: 0x00078640
 s16 mayor_goto(Thing *mayor)
 {
@@ -586,6 +615,9 @@ s32 wall_in_way(u32 x, u32 y, u32 dir);
 extern "C" {
 }
 
+// PS_STUCK / SS_STUCK: peep stands still, then tries random directions until
+// a path to their saved destination opens, then resumes saved_state. A
+// patient grows impatient meanwhile and eventually goes home fed up.
 // FUNCTION: 0x000788d8
 void peep_stuck(Thing *peep)
 {

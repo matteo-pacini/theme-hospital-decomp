@@ -15,6 +15,9 @@ void restart_entire_queue(RoomInfo *room);
 u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim);
 void disaster_peeps(u8 mode, s8 owner);
 
+// Blows up machine: explosion, damage and debris around it, kills everyone in
+// its room and destroys the room (ROOM_DESTROYED), costing reputation and
+// counting the disaster. Its queue is sent elsewhere.
 // FUNCTION: 0x00075010
 void machine_disaster(Thing *machine)
 {
@@ -37,6 +40,9 @@ void machine_disaster(Thing *machine)
     restart_entire_queue(room);
 }
 
+// THING_DEBRIS: moves the piece by its velocity under gravity and drag and
+// animates it; removes it when it lands, reaches the edge of its room, or its
+// animation ends.
 // FUNCTION: 0x00075110
 void process_bang(Thing *bang)
 {
@@ -77,6 +83,9 @@ die:
     remove_thing(bang);
 }
 
+// Creates a piece of debris with animation anim at tile, moving at dx,dy,dz,
+// in the first free thing from id on (the last 50 are left free). Returns its
+// thing index, or 0 if none is free.
 // FUNCTION: 0x000752e8
 u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim)
 {
@@ -111,6 +120,8 @@ u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim)
     return 0;
 }
 
+// Throws a burst of debris (animation anim) out from tile in all directions
+// and plays the bomb sound.
 // FUNCTION: 0x00075484
 void create_explosion(u16 tile, u16 anim)
 {
@@ -137,6 +148,9 @@ void create_explosion(u16 tile, u16 anim)
     play_sound(10, SFX_BOMB, -1, -1);
 }
 
+// Wrecks room around tile within a random radius of 4-7 tiles: removes the
+// objects there, and the nearer a tile the likelier its walls and floor are
+// damaged.
 // FUNCTION: 0x000755c8
 void blast_effect(u16 tile, RoomInfo *room)
 {
@@ -173,6 +187,8 @@ void blast_effect(u16 tile, RoomInfo *room)
     othervar.f10 = 1;
 }
 
+// Damages tile's north and west walls, each with a 70% chance, by placing
+// damage markers (small things).
 // FUNCTION: 0x000757a0
 void blast_walls_and_floor(u16 tile)
 {
@@ -206,6 +222,8 @@ void blast_walls_and_floor(u16 tile)
     }
 }
 
+// Removes every object on map cell m, leaving its debris piece where it has
+// one.
 // FUNCTION: 0x000758b8
 void blast_things(Map *m)
 {
@@ -226,6 +244,7 @@ restart:
     }
 }
 
+// Fires (sack_staff mode 2) all staff in room and kills all patients in it.
 // FUNCTION: 0x0007599c
 void explosion_kills_dudes_in_room(RoomInfo *room)
 {
@@ -251,6 +270,8 @@ void explosion_kills_dudes_in_room(RoomInfo *room)
     }
 }
 
+// Takes every patient out of room's queue and sends them on again, to the GP
+// if the hospital cannot treat their treatment.
 // FUNCTION: 0x00075aac
 void restart_entire_queue(RoomInfo *room)
 {
@@ -265,6 +286,12 @@ void restart_entire_queue(RoomInfo *room)
     }
 }
 
+// Daily: runs owner's random disaster (allhosps.f213). Every gbv.f12c days a
+// new one may start: 1 or 2 the heating fails cold or hot (when there are
+// radiators and fewer than one handyman per 8 of allhosps.fc92), 3 everyone
+// feels sick (while there are over 10 pieces of litter, allhosps.fcaa). A
+// running one counts down (faster for the heating with more handymen) and then
+// ends, with advisor messages at start and end.
 // FUNCTION: 0x00075b54
 void generate_disaster(u8 owner)
 {
@@ -342,6 +369,9 @@ void generate_disaster(u8 owner)
     }
 }
 
+// Applies mode to every patient of owner (-1 for all): 0 makes them about to
+// vomit, 1 and 2 set and clear flags bit 0x200 for those whose kind allows it,
+// 3 kills them.
 // FUNCTION: 0x00075ed0
 void disaster_peeps(u8 mode, s8 owner)
 {
@@ -361,6 +391,10 @@ void disaster_peeps(u8 mode, s8 owner)
     }
 }
 
+// Fills required with what owner lacks to handle illness (an expertise index):
+// the room, whether it is available, staff with the needed skill (two
+// surgeons for surgery), a ward and nurse, or that nothing is lacking
+// (required.unknown5).
 // FUNCTION: 0x00075fe4
 void what_is_required(u8 illness, u8 owner)
 {
@@ -411,17 +445,21 @@ void what_is_required(u8 illness, u8 owner)
     }
 }
 
+// Abductions are disabled: always returns 0.
 // FUNCTION: 0x0007628c
 extern "C" u8 shall_i_be_abducted(Thing *w)
 {
     return 0;
 }
 
+// Does nothing in this build.
 // FUNCTION: 0x000762b0
 void saucer_abducts(Thing *w)
 {
 }
 
+// Creates a shadow thing at tile for thing caster, drawn with animation anim
+// below other things. Returns its index, or 0 if no thing is free.
 // FUNCTION: 0x000762cc
 u16 create_shadow(u16 tile, u16 caster, u8 owner, u16 anim)
 {

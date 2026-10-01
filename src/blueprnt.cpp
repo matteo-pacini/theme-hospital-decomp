@@ -31,6 +31,11 @@ extern s16 D_001567b0[8];
 
 }
 
+// Draws the blueprint x0,y0 to x1,y1 (inclusive tiles) on the local player's
+// view: floor tiles, marked invalid where the room cannot go (also setting
+// othervar.f17), and the outline, in one colour at invalid tiles. mode 2
+// flashes the outline alone, as for an existing room picked for editing. Does
+// nothing for other owners.
 // FUNCTION: 0x00045890
 void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1, const u8 owner, const u8 mode)
 {
@@ -174,6 +179,9 @@ outline:
     lbDisplay.draw_flags = saved;
 }
 
+// Puts the blueprint outline x0,y0 to x1,y1 (inclusive tiles) on the map as
+// small things, and with set_overlay nonzero marks its floor with the
+// blueprint overlay (with a centre marker for even sizes).
 // FUNCTION: 0x00046174
 void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay)
 {
@@ -239,6 +247,7 @@ void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay)
     }
 }
 
+// Clears owner's build state to start a blueprint for a room of type type.
 // FUNCTION: 0x000464bc
 void init_blueprint(u8 owner, u8 type)
 {
@@ -250,6 +259,11 @@ void init_blueprint(u8 owner, u8 type)
     build->unknownD = type;
 }
 
+// Applies the mouse at tile to owner's blueprint. While dragging, the first
+// call picks what the drag does by where it starts (outside: a new rectangle;
+// corner or edge: resize; inside: move) and later calls apply it. Otherwise it
+// ends any drag and, for the local player, sets the cursor for what a drag
+// from tile would do.
 // FUNCTION: 0x00046514
 void modify_blueprint(u8 owner, u8 dragging, u16 tile)
 {
@@ -387,6 +401,10 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
     }
 }
 
+// Places owner's blueprint as the room's floor plan, removes rat holes in
+// the area, and moves to the door placing stage. Returns 0 (with an advisor
+// message for the local player) if the room is invalid there or would cut off
+// other rooms from the entrance, else 1.
 // FUNCTION: 0x00046b54
 u8 commit_blueprint(u8 owner)
 {
@@ -438,6 +456,8 @@ u8 commit_blueprint(u8 owner)
     return 1;
 }
 
+// Takes owner's blueprint off the map (outline and overlay) and back to the
+// dragging stage.
 // FUNCTION: 0x00046e50
 void uncommit_blueprint(u8 owner)
 {
@@ -462,6 +482,9 @@ void uncommit_blueprint(u8 owner)
     othervar.f10 = 1;
 }
 
+// Returns 1 if owner may build on tile: only people stand on it, its map
+// flags & 7 are clear, and it is owner's land not marked 0x10 (map unknown7).
+// Otherwise returns 0 (setting advisor.f11f flag 2 unless the flags failed).
 // FUNCTION: 0x00046f88
 u8 is_tile_valid(u16 tile, u8 owner)
 {
@@ -483,6 +506,9 @@ u8 is_tile_valid(u16 tile, u8 owner)
     return 0;
 }
 
+// Returns 1 if the blueprint x0,y0 to x1,y1 (inclusive) is a valid room for
+// owner: at least the room type's minimum size, overlapping no room, on
+// buildable tiles, and away from half-height walls.
 // FUNCTION: 0x00047098
 u8 is_valid_room(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
 {
@@ -514,6 +540,8 @@ u8 is_valid_room(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
     return 1;
 }
 
+// Returns nonzero if a door of door type type at tile would open onto a tile
+// outside any room that is not marked 0x10 (map unknown7).
 // FUNCTION: 0x00047248
 u8 is_valid_door(u16 tile, u8 owner, u8 type)
 {
@@ -523,6 +551,8 @@ u8 is_valid_door(u16 tile, u8 owner, u8 type)
     return !(map[pos].unknown7 & 0x10) && which_room(pos) == 0;
 }
 
+// Returns 1 if tile is not in a room; otherwise returns 0 and sets
+// advisor.f11f flag 2.
 // FUNCTION: 0x000472c8
 u8 is_valid_no_room(u16 tile)
 {
@@ -533,6 +563,10 @@ u8 is_valid_no_room(u16 tile)
     return 0;
 }
 
+// Turns owner's room being edited (build.room) back into a blueprint: lifts
+// its objects into the build list (counting them back into the local player's
+// stock), deletes the room from the map and puts its outline back up for
+// dragging.
 // FUNCTION: 0x00047308
 void edit_blueprint(u8 owner)
 {
@@ -573,6 +607,10 @@ void edit_blueprint(u8 owner)
     }
 }
 
+// Hover in edit-room mode: records the local player's room at tile for
+// highlighting (build.edit_room), or, outside rooms, records the pointed thing
+// (othervar.f41) in othervar.f43 if it is a movable object of the player's in
+// the corridor, or a person using one.
 // FUNCTION: 0x0004750c
 void compute_room_pointed(u16 tile)
 {
@@ -610,6 +648,8 @@ void compute_room_pointed(u16 tile)
     }
 }
 
+// Returns 1 if every finished room of owner's (except receptions) and both
+// sides of each reception desk can be reached from the entrance, else 0.
 // FUNCTION: 0x00047778
 u8 check_room_access(u8 owner)
 {
@@ -636,6 +676,7 @@ u8 check_room_access(u8 owner)
     return 1;
 }
 
+// check_room_access with owner's blueprint walled off.
 // FUNCTION: 0x0004790c
 u8 check_room_access_with_blueprint(u8 owner)
 {
@@ -649,6 +690,8 @@ u8 check_room_access_with_blueprint(u8 owner)
     return result;
 }
 
+// Adds (blank nonzero) or removes invisible walls around owner's blueprint,
+// for path checks.
 // FUNCTION: 0x00047974
 void blank_wall_around_blueprint(u8 owner, u8 blank)
 {
@@ -683,6 +726,7 @@ void blank_wall_around_blueprint(u8 owner, u8 blank)
     }
 }
 
+// Returns 1 once no things are on the room's floor tiles, else 0.
 // FUNCTION: 0x00047b88
 u8 is_room_clear_yet(RoomInfo *room)
 {
@@ -707,6 +751,8 @@ u8 is_room_clear_yet(RoomInfo *room)
     return 1;
 }
 
+// For each active player whose room is waiting to be cleared (build state 2),
+// retries commit_doors.
 // FUNCTION: 0x00047c58
 void process_blueprint_zones(void)
 {
@@ -728,6 +774,10 @@ void process_blueprint_zones(void)
     }
 }
 
+// Finishes owner's new room once no things are left on its floor: builds it,
+// prices it and makes it the player's room of its kind, then for the local
+// player opens the object placing stage. Until then leaves the build waiting
+// (state 2).
 // FUNCTION: 0x00047cf8
 void commit_doors(u8 owner)
 {
@@ -745,6 +795,10 @@ void commit_doors(u8 owner)
     }
 }
 
+// Sends peep standing inside its owner's blueprint to a reachable tile just
+// outside it, trying the nearest sides first. Returns 1 if a tile was found
+// (peep is then in PS_BP_GOTO or SS_BP_GOTO), 0 if peep is not inside or none
+// was found.
 // FUNCTION: 0x00047ed0
 u8 move_peep_from_blueprint(Thing *peep)
 {
@@ -782,6 +836,9 @@ u8 move_peep_from_blueprint(Thing *peep)
     return 0;
 }
 
+// Tries tiles along side side (0 top, 1 right, 2 bottom, 3 left) outside the
+// blueprint, starting level with peep, then at random, sending peep to the
+// first one that works. Returns 1 on success.
 // FUNCTION: 0x00047ffc
 u8 try_move_peep_to_wall(Thing *peep, u8 side)
 {
@@ -832,6 +889,8 @@ u8 try_move_peep_to_wall(Thing *peep, u8 side)
     return 0;
 }
 
+// If tile x,y is outside any room and reachable from the entrance, sends peep
+// there (PS_BP_GOTO or SS_BP_GOTO, saving its state) and returns 1; else 0.
 // FUNCTION: 0x00048224
 u8 try_move_peep_cell(Thing *peep, u8 x, u8 y)
 {
@@ -854,6 +913,8 @@ u8 try_move_peep_cell(Thing *peep, u8 x, u8 y)
     return 0;
 }
 
+// Returns 1 if a blueprint x0,y0 to x1,y1 (inclusive) meets the minimum size
+// of owner's room type, else 0; tracks the result in advisor.f11f flag 4.
 // FUNCTION: 0x0004831c
 u8 is_room_size_valid(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
 {
@@ -872,6 +933,9 @@ u8 is_room_size_valid(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
     return 1;
 }
 
+// Abandons owner's room under construction: refunds its depreciated cost if
+// it was paid for, takes down the blueprint, restarts its queue and frees
+// the room_info entry and build state.
 // FUNCTION: 0x000483c4
 void delete_blueprint_room(u8 owner)
 {
@@ -894,6 +958,8 @@ void delete_blueprint_room(u8 owner)
     memset(build, 0, sizeof(BuildState));
 }
 
+// Draws each player's blueprint (build mode 1), or flashes the room picked for
+// editing (mode 2, for one frame).
 // FUNCTION: 0x00048504
 void draw_overdrawn_blueprints(void)
 {
@@ -915,6 +981,8 @@ void draw_overdrawn_blueprints(void)
     }
 }
 
+// Takes a free room_info entry for a new room of type type for owner and makes
+// it the build state's room (build.room). Does nothing if there is none.
 // FUNCTION: 0x000485e0
 void allocate_roominfo(const u8 owner, const u8 type)
 {
@@ -937,6 +1005,8 @@ void allocate_roominfo(const u8 owner, const u8 type)
     }
 }
 
+// Takes a free room_info entry as a reception (a 1x1 room at tile 0x3fff) for
+// owner. Returns it, or 0 if room_info is full.
 // FUNCTION: 0x000486a8
 RoomInfo *allocate_reception_roominfo(u8 owner)
 {
@@ -956,6 +1026,8 @@ RoomInfo *allocate_reception_roominfo(u8 owner)
     return 0;
 }
 
+// Returns 1 if tile x,y has a half-height wall on the sides inside the
+// rectangle whose far corner is x1,y1 (x0 and y0 unused).
 // FUNCTION: 0x0004873c
 u8 check_near_half_wall(u8 x, u8 y, u8 x0, u8 y0, u8 x1, u8 y1)
 {
@@ -966,6 +1038,8 @@ u8 check_near_half_wall(u8 x, u8 y, u8 x0, u8 y0, u8 x1, u8 y1)
     return 0;
 }
 
+// Returns 1 if tile x,y of the blueprint x0,y0 to x1,y1, or its neighbour
+// across the blueprint's far edges, has a half-height wall.
 // FUNCTION: 0x000487f4
 u8 is_tile_near_half_wall(u8 x, u8 y, u8 x0, u8 y0, u8 x1, u8 y1)
 {
