@@ -237,7 +237,7 @@ field (or the reverse), or the grouping is wrong:
   had shrunk; `memset` sizes in initialisation code give the real sizes.
   Decide field versus plain global from the evaluation order.
 - Layout-pointer tables are indexed as arrays of elements
-  (`resvars.f40[i + K].x`), not through invented structs; give per-file
+  (`resvars.screen_coords[i + K].x`), not through invented structs; give per-file
   pointer types through a union of pointer members, since casts add nodes.
 - The map index is `x + (y << 7)` (tile expressions too); `y` is evaluated
   first.

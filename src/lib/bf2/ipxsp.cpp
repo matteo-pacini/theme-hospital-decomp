@@ -37,7 +37,7 @@ TbError IPXServiceProvider::EnableNewPlayers(u32 allow)
 {
     TbError ret = Lb_FAIL;
 
-    if (unknown528) {
+    if (in_session) {
         ret = Lb_OK;
         accepting = allow;
     }
@@ -157,7 +157,7 @@ TbError IPXServiceProvider::Release(void)
         fn_000c20c0("  WARNING network: IPXServiceProvider::Release() not initialised\n");
         return Lb_FAIL;
     }
-    if (unknown528)
+    if (in_session)
         Stop();
     memset(session_list, 0, sizeof(session_list));
     host_state = 0;
@@ -193,7 +193,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
         fn_000c20c0("  WARNING network: IPXServiceProvider::Start() not initialised\n");
         return Lb_FAIL;
     }
-    if (unknown528)
+    if (in_session)
         Stop();
     if (max_players > 32)
         return Lb_FAIL;
@@ -230,7 +230,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
         if (AddPlayer(local_id, player_name, 1, 1) != Lb_OK) {
             fn_000c20c0("  WARNING network: IPXServiceProvider::Start() failure on AddPlayer()\n");
         } else {
-            unknown528 = 1;
+            in_session = 1;
             accepting = 1;
         }
     } else {
@@ -268,7 +268,7 @@ TbError IPXServiceProvider::Start(TbNetworkSessionNameEntry *entry, char *player
     __5303ctCLIENTINFOPACKET query;
     u32 begin;
 
-    if (started && !unknown528) {
+    if (started && !in_session) {
         ret = Lb_OK;
         if (entry->id < 32 && *(u16 *)session_list[entry->id].address) {
             memcpy(&server, session_list[entry->id].address, sizeof(server));
@@ -349,7 +349,7 @@ TbError IPXServiceProvider::Start(TbNetworkSessionNameEntry *entry, char *player
                     if (EnumerateAndAddPlayers(&from) == Lb_OK) {
                         host_state = 2;
                         sys_seq = 0;
-                        unknown528 = 1;
+                        in_session = 1;
                         for (i = 0; i < 32; i++) {
                             acked_a[i] = 0;
                             acked_b[i] = 0;
@@ -379,7 +379,7 @@ TbError IPXServiceProvider::Stop(void)
     u32 num;
     u32 i;
 
-    if (started && unknown528) {
+    if (started && in_session) {
         start = LbTimerClock();
         while (LbTimerClock() - start < 700)
             ;
@@ -412,7 +412,7 @@ TbError IPXServiceProvider::Stop(void)
                 }
             }
         }
-        unknown528 = 0;
+        in_session = 0;
         ClearSpStuff();
     }
     return Lb_FAIL;
@@ -522,7 +522,7 @@ TbError IPXServiceProvider::Enumerate(TbNetworkCallbackFunc callback, void *data
     TbNetworkSessionNameEntry *session_entry;
 
     if (started) {
-        if (unknown528) {
+        if (in_session) {
             if (host_state == 1) {
                 strcpy(entry.name, session.name);
                 entry.id = session.local_id;
@@ -633,7 +633,7 @@ TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetw
     u32 i;
 
     if (started) {
-        if (unknown528) {
+        if (in_session) {
             ret = EnumeratePlayersForSessionRunning(callback, data);
         } else if (session->id < 32) {
             if (session_list[session->id].time) {
@@ -738,7 +738,7 @@ TbError IPXServiceProvider::Update(void)
     u8 join[0x8c];
     TbError ret = Lb_FAIL;
 
-    if (unknown528) {
+    if (in_session) {
     if (host_state == 1) {
         for (p = packets; p < packets + 32; p++) {
             if (ipx.RecPkt(p, &socket, &from)) {
@@ -884,7 +884,7 @@ TbError IPXServiceProvider::SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3lj
     u32 i;
     TbError ret = Lb_FAIL;
 
-    if (started && unknown528 && host_state == 1) {
+    if (started && in_session && host_state == 1) {
         memset(buf, 0, sizeof(buf));
         memcpy(buf, &session, sizeof(IPXSessionInfo));
         ((IPXSessionInfo *)buf)->page = info->page;
@@ -932,7 +932,7 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
     u8 buf[0x88];
     TbError ret = Lb_FAIL;
 
-    if (started && unknown528 && host_state == 1) {
+    if (started && in_session && host_state == 1) {
         ret = Lb_OK;
         if (session.num_players < session.max_players) {
             if (CheckIfPlayerWantingToJoinIsInSession(join, from) == 1)
@@ -1120,7 +1120,7 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
     u32 done = 0;
     u32 max;
 
-    if (started && unknown528 && (host_state == 1 || host_state == 2)) {
+    if (started && in_session && (host_state == 1 || host_state == 2)) {
         if (host_state == 1) {
             max = session.max_players;
             me = session.host_id;
@@ -1228,7 +1228,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
     u32 done;
     TbError ret = Lb_FAIL;
 
-    if (started && unknown528 && (host_state == 1 || host_state == 2)) {
+    if (started && in_session && (host_state == 1 || host_state == 2)) {
         if (host_state == 1) {
             me = session.host_id;
             max = session.max_players;
@@ -1255,7 +1255,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
                         ipx.Send(&socket, &p->addr, (u8 *)&msg, sizeof(msg));
                         num++;
                     }
-                    p->unknown36 = 0;
+                    p->abort_acked = 0;
                 }
             }
             BatchProcess(0);
@@ -1272,7 +1272,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
                 if (now - last > 100) {
                     last = now;
                     for (p = players; p < players + max; p++) {
-                        if (p->addr.socket && p->id != me && p->ack && !p->unknown36)
+                        if (p->addr.socket && p->id != me && p->ack && !p->abort_acked)
                             ipx.Send(&socket, &p->addr, (u8 *)&msg, sizeof(msg));
                     }
                     BatchProcess(0);
@@ -1287,9 +1287,9 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
                             count = 1;
                             p = &players[data->player.id];
                             if (p->ack) {
-                                p->unknown36 = 1;
+                                p->abort_acked = 1;
                                 for (p = players; p < players + max; p++) {
-                                    if (p->unknown36)
+                                    if (p->abort_acked)
                                         count++;
                                 }
                                 if (count >= num)
@@ -1334,7 +1334,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
             memset(aborted, 0, sizeof(IPXPlayerEntry));
             if (!done) {
                 for (p = players; p < players + max; p++)
-                    p->ack = p->unknown36;
+                    p->ack = p->abort_acked;
                 aborted = players;
             }
             continue;
@@ -1359,7 +1359,7 @@ TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *m
     __1p5pi1IPXSYSTEMMESSAGE ack;
     u32 me;
 
-    if (started && unknown528) {
+    if (started && in_session) {
         if (host_state == 1)
             me = session.host_id;
         else
@@ -1395,7 +1395,7 @@ u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
     IPXPacket *p;
     u32 got = 0;
 
-    if (started && unknown528) {
+    if (started && in_session) {
         for (p = packets; p < packets + 32; p++) {
             if (ipx.RecPkt(p, &socket, &from)) {
                 data = p->data;
@@ -1433,7 +1433,7 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
     __3ljac5NETSOCKET from;
     u32 got = 0;
 
-    if (!started || !unknown528)
+    if (!started || !in_session)
         return got;
     if (host_state == 1) {
         for (p = packets; p < packets + 32; p++) {
@@ -1482,7 +1482,7 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
                 break;
             }
         }
-    } else if (host_state == 2 && unknown528) {
+    } else if (host_state == 2 && in_session) {
         for (p = packets; p < packets + 32; p++) {
             if (!ipx.RecPkt(p, &socket, &from))
                 continue;
@@ -1556,7 +1556,7 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
     __3ljac5NETSOCKET *addr;
     TbError ret = Lb_FAIL;
 
-    if (unknown528) {
+    if (in_session) {
         if (host_state == 1) {
             me = session.host_id;
             max = session.max_players;

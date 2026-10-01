@@ -22,14 +22,14 @@ MemRegion D_001290d4[] = {
     { 0, 0x258 },
     { 0, 0xc8 },
     { (u32)&window, 4 },
-    { (u32)&window.fc, 4 },
+    { (u32)&window.scroll_y, 4 },
     { (u32)&game_turn, 4 },
     { (u32)&actual_game_turn, 4 },
     { (u32)&seed, 4 },
     { (u32)&gamevar, 0x178 },
     { (u32)&award_counts, 0x155 },
     { (u32)&NRAdcounts, 0x11 },
-    { (u32)&advisor.f128_u32, 4 },
+    { (u32)&advisor.event_flags_u32, 4 },
     { 0, 0 },
 };
 }

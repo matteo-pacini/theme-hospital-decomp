@@ -18,8 +18,8 @@ void draw_buttons(Window *win)
     s32 y;
 
     button = win->buttons;
-    LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
-                              window.unknown2cf - window.unknown2c7);
+    LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
+                              window.clip_y1 - window.clip_y0);
     for (; button; button = button->next) {
         if (button->flags & 0x20001000)
             continue;
@@ -69,12 +69,12 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     y0 = y + bord[style + 1].height;
     x1 = x0 + len;
     y1 = y0 + len2;
-    find_common_window(x0, y0, x1, y1, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    if (info.unknown78 == 0) {
-        LbScreenSetGraphicsWindow(info.unknown68, info.unknown6c, info.unknown70 - info.unknown68,
-                                  info.unknown74 - info.unknown6c);
-        dx += x0 - info.unknown68;
-        dy += y0 - info.unknown6c;
+    find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    if (info.clip_empty == 0) {
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
+                                  info.clip_y1 - info.clip_y0);
+        dx += x0 - info.clip_x0;
+        dy += y0 - info.clip_y0;
         len = dx;
         saved = lbDisplay.draw_flags;
         lbDisplay.draw_flags = 8;
@@ -99,12 +99,12 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     y0 = y;
     x1 = x0 + len;
     y1 = y0 + h;
-    find_common_window(x0, y0, x1, y1, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    if (info.unknown78 == 0) {
-        LbScreenSetGraphicsWindow(info.unknown68, info.unknown6c, info.unknown70 - info.unknown68,
-                                  info.unknown74 - info.unknown6c);
-        dx += x0 - info.unknown68;
-        dy += y0 - info.unknown6c;
+    find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    if (info.clip_empty == 0) {
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
+                                  info.clip_y1 - info.clip_y0);
+        dx += x0 - info.clip_x0;
+        dy += y0 - info.clip_y0;
         for (j = 0; j < nx; j++) {
             LbSpriteDraw(dx, dy, &bord[style + 2]);
             LbSpriteDraw(dx, h + dy - bord[style + 6].height, &bord[style + 7]);
@@ -122,12 +122,12 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     y0 = y + bord[style + 1].height;
     x1 = x0 + w;
     y1 = y0 + len;
-    find_common_window(x0, y0, x1, y1, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    if (info.unknown78 == 0) {
-        LbScreenSetGraphicsWindow(info.unknown68, info.unknown6c, info.unknown70 - info.unknown68,
-                                  info.unknown74 - info.unknown6c);
-        dx += x0 - info.unknown68;
-        dy += y0 - info.unknown6c;
+    find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    if (info.clip_empty == 0) {
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
+                                  info.clip_y1 - info.clip_y0);
+        dx += x0 - info.clip_x0;
+        dy += y0 - info.clip_y0;
         for (j = 0; j < ny; j++) {
             LbSpriteDraw(dx, dy, &bord[style + 4]);
             LbSpriteDraw(w + dx - bord[style + 5].width, dy, &bord[style + 5]);
@@ -142,12 +142,12 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     y0 = y;
     x1 = x0 + w;
     y1 = y0 + h;
-    find_common_window(x0, y0, x1, y1, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    if (info.unknown78 == 0) {
-        LbScreenSetGraphicsWindow(info.unknown68, info.unknown6c, info.unknown70 - info.unknown68,
-                                  info.unknown74 - info.unknown6c);
-        dx += x0 - info.unknown68;
-        dy += y0 - info.unknown6c;
+    find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    if (info.clip_empty == 0) {
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
+                                  info.clip_y1 - info.clip_y0);
+        dx += x0 - info.clip_x0;
+        dy += y0 - info.clip_y0;
         LbSpriteDraw(dx, dy, &bord[style + 1]);
         LbSpriteDraw(w + dx - bord[style + 3].width, dy, &bord[style + 3]);
         LbSpriteDraw(dx, h + dy - bord[style + 6].height, &bord[style + 6]);

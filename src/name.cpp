@@ -25,7 +25,7 @@ struct NetBox {
 };
 
 #define LbTextCharHeight(c) (lbFontPtr ? lbFontPtr[(c) - 31].height : 0)
-#define SLIST(n) ((SlistButton *)&resvars.f48[n])
+#define SLIST(n) ((SlistButton *)&resvars.screen_buttons[n])
 
 extern Menu nickname;
 extern Menu area;
@@ -91,38 +91,38 @@ void draw_nickname(void)
 {
     s32 next;
 
-    switch (nickname.unknown2) {
+    switch (nickname.state) {
     case 0:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         lbInkey = 0;
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost2.dat");
         calculate_grey(ppalette.data);
-        nickname.unknown0 = 0;
+        nickname.value = 0;
         BufferedInkey = 0;
         keybuffer_clear();
-        nickname.unknown2 = 7;
+        nickname.state = 7;
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        myplayer.unknown0[0] = 0;
+        myplayer.name_chars[0] = 0;
         delay(800);
         init_zoom_boxes(2);
         break;
     case 7:
         next = next_map();
         if (next == 0)
-            nickname.unknown2 = 2;
+            nickname.state = 2;
         PendingDisplay = next;
         copy_screen_to_wscreen(bscreen);
         draw_zoom_boxes();
         break;
     case 1:
         fade_out_menu();
-        nickname.unknown2 = 0;
+        nickname.state = 0;
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
-        mainmenu.unknown2 = 0;
+        mainmenu.state = 0;
         display_mode = 2;
-        if (fn_000cd716(myplayer.unknown0) == 0)
-            fn_000bbff0(myplayer.unknown0, misc_text[1]);
-        sprintf(statvar.f6c, "save/%s.h", myplayer.unknown0);
+        if (fn_000cd716(myplayer.name_chars) == 0)
+            fn_000bbff0(myplayer.name_chars, misc_text[1]);
+        sprintf(statvar.save_prefix, "save/%s.h", myplayer.name_chars);
         load_player_details();
         break;
     case 2:
@@ -140,8 +140,8 @@ void draw_nickname(void)
         calculate_grey(ppalette.data);
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         setup_balance_files(0);
-        nickname.unknown2 = 6;
-        nickname.unknown0 = 0;
+        nickname.state = 6;
+        nickname.value = 0;
         BufferedInkey = 0;
         keybuffer_clear();
         delay(800);
@@ -150,23 +150,23 @@ void draw_nickname(void)
     case 6:
         next = next_map();
         if (next == 0)
-            nickname.unknown2 = 5;
+            nickname.state = 5;
         PendingDisplay = next;
         copy_screen_to_wscreen(bscreen);
         draw_zoom_boxes();
         break;
     case 4:
     case 8:
-        nickname.unknown0 = 0;
+        nickname.value = 0;
         fade_out_menu();
-        if (nickname.unknown2 == 4) {
-            area.unknown2 = 0;
+        if (nickname.state == 4) {
+            area.state = 0;
             display_mode = 3;
         } else {
-            mainmenu.unknown2 = 0;
+            mainmenu.state = 0;
             display_mode = 2;
         }
-        nickname.unknown2 = 0;
+        nickname.state = 0;
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         free_balance_files();
         break;
@@ -178,7 +178,7 @@ void draw_nickname(void)
         draw_new_prefs_screen();
         break;
     default:
-        nickname.unknown2 = 0;
+        nickname.state = 0;
         break;
     }
 }
@@ -192,7 +192,7 @@ void process_keys_nickname(void)
 {
     u8 i;
 
-    switch (nickname.unknown2) {
+    switch (nickname.state) {
     case 2:
         if (BufferedInkey) {
             switch (BufferedInkey) {
@@ -203,10 +203,10 @@ void process_keys_nickname(void)
                 break;
             case KC_RETURN:
             case KC_NUMPADENTER:
-                nickname.unknown2 = 1;
+                nickname.state = 1;
                 play_sound(10, SFX_YESX, -1, -1);
                 if (myplayer.name[0] == 0)
-                    fn_000bbff0(myplayer.unknown0, misc_text[1]);
+                    fn_000bbff0(myplayer.name_chars, misc_text[1]);
                 break;
             case KC_BACKSPACE:
             case KC_DECIMAL:
@@ -240,7 +240,7 @@ void process_keys_nickname(void)
         if (BufferedInkey) {
             switch (BufferedInkey) {
             case KC_ESCAPE:
-                nickname.unknown2 = 8;
+                nickname.state = 8;
                 play_sound(10, SFX_NO4, -1, -1);
                 break;
             case KC_S:
@@ -271,8 +271,8 @@ void process_mouse_nickname(void)
     s32 bit;
 
     if ((CurrentDisplay & DesiredDisplay) & 1)
-        reqspr_draw((u16)resvars.f48[163].x, (u16)resvars.f48[163].y, &screen_sprites_tab_start[2]);
-    if (nickname.unknown2 == 5) {
+        reqspr_draw((u16)resvars.screen_buttons[163].x, (u16)resvars.screen_buttons[163].y, &screen_sprites_tab_start[2]);
+    if (nickname.state == 5) {
         mask = CurrentDisplay;
         while (mask) {
             bit = mask & -mask;
@@ -285,47 +285,47 @@ void process_mouse_nickname(void)
                     if (first_button + i == 0xa4 || first_button + i == 0xa5)
                         continue;
                 }
-                if (resvars.f48[first_button + i].width == 0 || resvars.f48[first_button + i].height == 0)
+                if (resvars.screen_buttons[first_button + i].width == 0 || resvars.screen_buttons[first_button + i].height == 0)
                     break;
-                x = resvars.f48[first_button + i].x;
-                y = resvars.f48[first_button + i].y;
+                x = resvars.screen_buttons[first_button + i].x;
+                y = resvars.screen_buttons[first_button + i].y;
                 if (lbDisplay.rleft_button) {
-                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.f48[first_button + i].width - x + 1,
-                                     resvars.f48[first_button + i].height - y + 1)) {
+                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.screen_buttons[first_button + i].width - x + 1,
+                                     resvars.screen_buttons[first_button + i].height - y + 1)) {
                         lbDisplay.rleft_button = 0;
-                        if (resvars.f48[first_button + i].sprite)
+                        if (resvars.screen_buttons[first_button + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
-                        if (resvars.f48[first_button + i].callback)
-                            resvars.f48[first_button + i].callback(i);
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
+                        if (resvars.screen_buttons[first_button + i].callback)
+                            resvars.screen_buttons[first_button + i].callback(i);
                         continue;
                     }
                 }
-                if (lbDisplay.mleft_button && over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.f48[first_button + i].width - x + 1,
-                                               resvars.f48[first_button + i].height - y + 1)) {
-                    if (resvars.f48[first_button + i].sprite)
+                if (lbDisplay.mleft_button && over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.screen_buttons[first_button + i].width - x + 1,
+                                               resvars.screen_buttons[first_button + i].height - y + 1)) {
+                    if (resvars.screen_buttons[first_button + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
+                        draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
                 }
                 if (first_button == 0xa0) {
                     switch (i) {
                     case 0:
-                        if (advisor.f11f & 1)
-                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
+                        if (advisor.flags & 1)
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
                         break;
                     case 1:
-                        if (!(advisor.f11f & 1))
-                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
+                        if (!(advisor.flags & 1))
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
                         break;
                     case 6:
-                        if (resvars.f1 == SCREEN_MODE_1)
-                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
+                        if (resvars.game_mode == SCREEN_MODE_1)
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
                         break;
                     case 7:
-                        if (resvars.f1 == SCREEN_MODE_13)
-                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
+                        if (resvars.game_mode == SCREEN_MODE_13)
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
                         break;
                     case 2:
                     case 3:
@@ -353,13 +353,13 @@ void display_nick_name_screen(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     set_font_from_cache(0x23);
-    sprintf(buf, "%s : %s*", nickname_text[0], myplayer.unknown0);
+    sprintf(buf, "%s : %s*", nickname_text[0], myplayer.name_chars);
     y = ((0x2c - character_height()) >> 1) + 0x1a6;
     x = ((0x1cb - LbTextStringWidth(nickname_text[0]) - 0x70) >> 1) + 0x5a;
     LbTextDraw(x, y, buf);
 }
 
-// Preferences screen button `index`: 0/1 advisor on/off (advisor.f11f bit 0),
+// Preferences screen button `index`: 0/1 advisor on/off (advisor.flags bit 0),
 // 2 accept, 3 cancel, 4/5 previous/next balance file, 6/7 320x200 or 640x480.
 // FUNCTION: 0x0008fa90
 extern "C" void fn_0008fa90(u8 index)
@@ -376,27 +376,27 @@ extern "C" void fn_0008fa90(u8 index)
         next_balance_file();
         break;
     case 0:
-        advisor.f11f |= 1;
+        advisor.flags |= 1;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 1:
-        advisor.f11f &= ~1;
+        advisor.flags &= ~1;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 2:
-        nickname.unknown2 = 4;
+        nickname.state = 4;
         play_sound(10, SFX_YESX, -1, -1);
         break;
     case 3:
-        nickname.unknown2 = 8;
+        nickname.state = 8;
         play_sound(10, SFX_NO4, -1, -1);
         break;
     case 6:
-        resvars.f1 = SCREEN_MODE_1;
+        resvars.game_mode = SCREEN_MODE_1;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 7:
-        resvars.f1 = SCREEN_MODE_13;
+        resvars.game_mode = SCREEN_MODE_13;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     }
@@ -425,14 +425,14 @@ void draw_new_prefs_screen(void)
     }
     lbDisplay.draw_flags = 0;
     draw_glass_text(SLIST(162), nickname_text[0x12]);
-    if (advisor.f11f & 1) {
+    if (advisor.flags & 1) {
         draw_glass_text_hilight(SLIST(160), nickname_text[0x10]);
         draw_glass_text(SLIST(161), nickname_text[0x11]);
     } else {
         draw_glass_text(SLIST(160), nickname_text[0x10]);
         draw_glass_text_hilight(SLIST(161), nickname_text[0x11]);
     }
-    if (resvars.f1 == SCREEN_MODE_1) {
+    if (resvars.game_mode == SCREEN_MODE_1) {
         draw_glass_text_hilight(SLIST(166), nickname_text[0x10]);
         draw_glass_text(SLIST(167), nickname_text[0x11]);
     } else {
@@ -448,10 +448,10 @@ void draw_new_prefs_screen(void)
     y = 0x155;
     y += (0x176 - y - character_height()) >> 1;
     LbTextDraw(x, y, misc_text[0x1d]);
-    LbTextDraw(resvars.f3c_NetBoxp[122].x + (resvars.f3c_NetBoxp[122].w - LbTextStringWidth(misc_text[0x1e])) / 2,
-               resvars.f3c_NetBoxp[122].y + (resvars.f3c_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2, misc_text[0x1e]);
-    LbTextDraw(resvars.f3c_NetBoxp[122].x + (resvars.f3c_NetBoxp[122].w - LbTextStringWidth(balance_file_name)) / 2,
-               resvars.f3c_NetBoxp[122].y + (resvars.f3c_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2 + LbTextCharHeight('B'),
+    LbTextDraw(resvars.screen_boxes_NetBoxp[122].x + (resvars.screen_boxes_NetBoxp[122].w - LbTextStringWidth(misc_text[0x1e])) / 2,
+               resvars.screen_boxes_NetBoxp[122].y + (resvars.screen_boxes_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2, misc_text[0x1e]);
+    LbTextDraw(resvars.screen_boxes_NetBoxp[122].x + (resvars.screen_boxes_NetBoxp[122].w - LbTextStringWidth(balance_file_name)) / 2,
+               resvars.screen_boxes_NetBoxp[122].y + (resvars.screen_boxes_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2 + LbTextCharHeight('B'),
                balance_file_name);
     draw_balance_file_explanation();
 }
@@ -518,14 +518,14 @@ u8 setup_balance_files(u8 net_game)
             current_balance_file->prev = entry;
             strncpy(entry->name, fname, len - 2);
             entry->name[len - 2] = 0;
-            othervar.f8e++;
+            othervar.balance_file_count++;
             last = entry;
         }
         handle = LbFileFindNext(&balance_file);
         if (handle == -1)
             done = 1;
     }
-    if (othervar.f8e != 0) {
+    if (othervar.balance_file_count != 0) {
         if (stricmp(current_balance_file->name, "full") != 0) {
             entry = current_balance_file;
             current_balance_file = entry->next;
@@ -562,7 +562,7 @@ void free_balance_files(void)
         LbMemoryFree(current_balance_file);
         current_balance_file = next;
     }
-    othervar.f8e = 0;
+    othervar.balance_file_count = 0;
 }
 
 // Selects the next balance file in the ring and loads its description.
@@ -588,7 +588,7 @@ void prev_balance_file(void)
 }
 
 // Loads the description of balance file `name` (levels/<name>00.sam) into
-// balance_file_name: the "&<n>" line for language myplayer.f21, else the
+// balance_file_name: the "&<n>" line for language myplayer.language, else the
 // first line, or the "not found" text.
 // FUNCTION: 0x000903f0
 void balance_filename(char *name)
@@ -627,14 +627,14 @@ void balance_filename(char *name)
     read_line_from_buf(0, 0, buf);
     i = found = 0;
     read_line_from_buf(line, 0x20, buf);
-    if (line[0] == '&' && (s8)line[1] - '0' == myplayer.f21)
+    if (line[0] == '&' && (s8)line[1] - '0' == myplayer.language)
         found = 1;
     else
         sprintf(balance_file_name, "%s", line);
     while (!found && i < 5) {
         read_line_from_buf(line, 0x20, buf);
         if (line[0] == '&') {
-            if ((s8)line[1] - '0' == myplayer.f21)
+            if ((s8)line[1] - '0' == myplayer.language)
                 found = 1;
         }
         i++;

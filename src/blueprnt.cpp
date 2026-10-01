@@ -59,8 +59,8 @@ void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1,
     if (owner != player)
         return;
     lbDisplay.draw_flags = 4;
-    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-    LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
+    LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
     block = 0x17;
     base = 0;
     width = x1 - x0 + 1;
@@ -84,10 +84,10 @@ void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1,
     }
     for (y = y0; y <= y1; y++) {
         for (x = x0; x <= x1; x++) {
-            give_screen_xy_of_cell_at_column_row(window.unknown2eb, x, y);
-            sx = info.unknown54;
-            sy = info.unknown58;
-            set_all_refresh_zones_in_window(sx, sy - resvars.f3, sx + resvars.f4, sy, 3);
+            give_screen_xy_of_cell_at_column_row(window.current_window, x, y);
+            sx = info.cell_x;
+            sy = info.cell_y;
+            set_all_refresh_zones_in_window(sx, sy - resvars.tile_height, sx + resvars.tile_width, sy, 3);
             if (!(is_room_size_valid(x0, y0, x1, y1, owner) && is_valid_no_room((y << 7) + x)
                   && is_tile_valid((y << 7) + x, owner))
                 || is_tile_near_half_wall(x, y, x0, y0, x1, y1)) {
@@ -131,15 +131,15 @@ outline:
             }
             cell = &map[x + (y << 7)];
             if (piece) {
-                give_screen_xy_of_cell_at_column_row(window.unknown2eb, x, y - 1);
-                sx = info.unknown54;
-                sy = info.unknown58;
+                give_screen_xy_of_cell_at_column_row(window.current_window, x, y - 1);
+                sx = info.cell_x;
+                sy = info.cell_y;
                 D_001567b0[0] = D_001567b0[1] = 999;
                 D_001567b0[2] = D_001567b0[3] = 0;
                 tx = x;
                 ty = y;
                 if (mode != 2) {
-                    if (!((blocks[cell->unknown3].width & 0x10) || (blocks[cell->unknown4].width & 0x10))) {
+                    if (!((blocks[cell->wall_n].width & 0x10) || (blocks[cell->wall_w].width & 0x10))) {
                         if (y == y1 + 1 || x == x1 + 1) {
                             if (x == x1 + 1 && y != y1 + 1) {
                                 tx--;
@@ -165,13 +165,13 @@ outline:
                     && (!(is_valid_no_room((ty << 7) + tx) && is_tile_valid((ty << 7) + tx, owner)
                           && is_room_size_valid(x0, y0, x1, y1, owner))
                         || is_tile_near_half_wall(x, y, x0, y0, x1, y1)))
-                    draw_a_one_colour_frame(start[blueprint[piece + base].anim].frame, sx, sy, color.unknownD,
+                    draw_a_one_colour_frame(start[blueprint[piece + base].anim].frame, sx, sy, color.red,
                                             start[blueprint[piece + base].anim].flags);
                 else
                     draw_a_frame(start[blueprint[piece + base].anim].frame, sx, sy, palette,
                                  start[blueprint[piece + base].anim].flags);
-                LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-                LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
+                LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
+                LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
                 set_all_refresh_zones_in_window(D_001567b0[0], D_001567b0[1], D_001567b0[2], D_001567b0[3], 3);
             }
         }
@@ -194,7 +194,7 @@ void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay)
     u8 piece;
     Map *cell;
 
-    othervar.f10 = 1;
+    othervar.full_redraw = 1;
     block = 0x17;
     base = 0;
     width = x1 - x0 + 1;
@@ -236,7 +236,7 @@ void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay)
                 }
             }
             if (piece) {
-                if (!((blocks[cell->unknown3].width & 0x10) || (blocks[cell->unknown4].width & 0x10))) {
+                if (!((blocks[cell->wall_n].width & 0x10) || (blocks[cell->wall_w].width & 0x10))) {
                     place_small_thing((s16)((y << 7) + x), 0, 0);
                     place_small_thing((y << 7) + x, (u16)piece + base, 0);
                 } else {
@@ -256,7 +256,7 @@ void init_blueprint(u8 owner, u8 type)
     build = &allhosps[owner].build;
     memset(build, 0, 0x3d);
     build->unknownA[2] = 0;
-    build->unknownD = type;
+    build->room_type = type;
 }
 
 // Applies the mouse at tile to owner's blueprint. While dragging, the first
@@ -285,7 +285,7 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
     if (dragging) {
         switch (build->drag) {
         case 0:
-            build->unknownE_ = 1;
+            build->draw_mode = 1;
             if (!(x >= build->x0 && x <= build->x1 && y >= build->y0 && y <= build->y1)) {
                 build->anchor.x = x;
                 build->anchor.y = y;
@@ -376,18 +376,18 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
     } else {
         switch (allhosps[owner].build.drag) {
         case 0:
-            if (othervar.ff == player) {
+            if (othervar.cur_player == player) {
                 if (!(x >= build->x0 && x <= build->x1 && y >= build->y0 && y <= build->y1))
-                    othervar.f30 = 3;
+                    othervar.pointer_sprite = 3;
                 else if ((((on_x0 && on_y0) || (on_x0 && on_y1)) || (on_x1 && on_y0)) || (on_x1 && on_y1))
-                    othervar.f30 = 7;
+                    othervar.pointer_sprite = 7;
                 else if (on_x0 || on_x1)
-                    othervar.f30 = 6;
+                    othervar.pointer_sprite = 6;
                 else if (on_y0 || on_y1)
-                    othervar.f30 = 5;
+                    othervar.pointer_sprite = 5;
                 else
-                    othervar.f30 = 8;
-                set_mouse_sprite(othervar.f30);
+                    othervar.pointer_sprite = 8;
+                set_mouse_sprite(othervar.pointer_sprite);
             }
             break;
         case 1:
@@ -417,32 +417,32 @@ u8 commit_blueprint(u8 owner)
 
     build = &allhosps[owner].build;
     if (!is_valid_room(build->x0, build->y0, build->x1, build->y1, owner)) {
-        if (othervar.ff == player) {
-            advisor.f2 = 4;
+        if (othervar.cur_player == player) {
+            advisor.forced_advice_id = 4;
             set_mouse_mode(MM_BLUEPRINT);
         }
         return 0;
     }
     if (!check_room_access_with_blueprint(owner)) {
-        if (othervar.ff == player) {
-            advisor.f2 = 5;
+        if (othervar.cur_player == player) {
+            advisor.forced_advice_id = 5;
             set_mouse_mode(MM_BLUEPRINT);
         }
         return 0;
     }
     room = &room_info[build->room];
-    build->door_state = rooms[build->unknownD].unknown36;
-    allhosps[owner].build.unknownE_ = 0;
-    build->unknown3c = map[(s16)build->x0 + ((s16)build->y0 << 7)].overlay;
+    build->door_state = rooms[build->room_type].unknown36;
+    allhosps[owner].build.draw_mode = 0;
+    build->saved_overlay = map[(s16)build->x0 + ((s16)build->y0 << 7)].overlay;
     mark_blueprint_on_map(build->x0, build->y0, build->x1, build->y1, 1);
-    room->unknown22 = actual_game_turn;
+    room->created_turn = actual_game_turn;
     room->pos = (s16)(build->x0 + (build->y0 << 7));
-    room->f1 = build->x1 - build->x0 + 1;
-    room->f2 = build->y1 - build->y0 + 1;
-    cleanse_area(room->owner, room->pos % 128, room->pos / 128, room->f1, room->f2);
+    room->width = build->x1 - build->x0 + 1;
+    room->height = build->y1 - build->y0 + 1;
+    cleanse_area(room->owner, room->pos % 128, room->pos / 128, room->width, room->height);
     blank_wall_around_blueprint(owner, 1);
     build->state = 1;
-    if (othervar.ff == player) {
+    if (othervar.cur_player == player) {
         set_edit_room_requester_mode(2);
         set_mouse_mode(2);
     }
@@ -474,17 +474,17 @@ void uncommit_blueprint(u8 owner)
     }
     for (x = build->x0; x <= build->x1; x++) {
         for (y = build->y0; y <= build->y1; y++) {
-            map[(s16)x + ((s16)y << 7)].overlay = build->unknown3c;
+            map[(s16)x + ((s16)y << 7)].overlay = build->saved_overlay;
         }
     }
-    build->unknownE_ = 1;
+    build->draw_mode = 1;
     allhosps[owner].build.state = 0;
-    othervar.f10 = 1;
+    othervar.full_redraw = 1;
 }
 
 // Returns 1 if owner may build on tile: only people stand on it, its map
 // flags & 7 are clear, and it is owner's land not marked 0x10 (map unknown7).
-// Otherwise returns 0 (setting advisor.f11f flag 2 unless the flags failed).
+// Otherwise returns 0 (setting advisor.flags flag 2 unless the flags failed).
 // FUNCTION: 0x00046f88
 u8 is_tile_valid(u16 tile, u8 owner)
 {
@@ -492,17 +492,17 @@ u8 is_tile_valid(u16 tile, u8 owner)
 
     for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
         if (occupant->type != THING_PATIENT && occupant->type != THING_STAFF) {
-            advisor.f11f |= 2;
+            advisor.flags |= 2;
             return 0;
         }
     }
     if (map[tile].flags & 7) {
         return 0;
     }
-    if (!(map[tile].unknown7 & 0x10) && (map[tile].unknown7 & (1 << owner))) {
+    if (!(map[tile].owner_flags & 0x10) && (map[tile].owner_flags & (1 << owner))) {
         return 1;
     }
-    advisor.f11f |= 2;
+    advisor.flags |= 2;
     return 0;
 }
 
@@ -548,18 +548,18 @@ u8 is_valid_door(u16 tile, u8 owner, u8 type)
     s32 pos;
 
     pos = tile + (s16)doortype[type % 4 + 4].door1;
-    return !(map[pos].unknown7 & 0x10) && which_room(pos) == 0;
+    return !(map[pos].owner_flags & 0x10) && which_room(pos) == 0;
 }
 
 // Returns 1 if tile is not in a room; otherwise returns 0 and sets
-// advisor.f11f flag 2.
+// advisor.flags flag 2.
 // FUNCTION: 0x000472c8
 u8 is_valid_no_room(u16 tile)
 {
     if (which_room(tile) == 0) {
         return 1;
     }
-    advisor.f11f |= 2;
+    advisor.flags |= 2;
     return 0;
 }
 
@@ -579,8 +579,8 @@ void edit_blueprint(u8 owner)
     room = &room_info[allhosps[owner].build.room];
     i = 0;
     while ((obj = &thing[room->first_object]) > thing) {
-        if (othervar.ff == player && (!obj->pair || objects[thing[obj->pair].subtype].unknown17 == -1))
-            gamevar.unknown33.unknown0[obj->subtype]++;
+        if (othervar.cur_player == player && (!obj->pair || objects[thing[obj->pair].subtype].next_part_index == -1))
+            gamevar.buy_list.to_place[obj->subtype]++;
         remove_object_from_map(obj);
         for (; i < 20; i++) {
             if (build->objects[i] == 0) {
@@ -589,19 +589,19 @@ void edit_blueprint(u8 owner)
             }
         }
     }
-    if (room->unknown4 && room->unknown4 < 0x4000)
-        build->unknown3c = map[room->unknown4].overlay;
+    if (room->door_tile && room->door_tile < 0x4000)
+        build->saved_overlay = map[room->door_tile].overlay;
     room_deleted_update_listhead(room);
     delete_room(room);
     uncommit_blueprint(owner);
     repair_invis_walls_around_room(room);
     room->pos = 0;
-    room->unknown4 = 0;
-    room->unknown6 = 0;
-    room->f1 = 0;
-    room->f2 = 0;
-    room->f3 = 3;
-    if (othervar.ff == player) {
+    room->door_tile = 0;
+    room->door_inside_tile = 0;
+    room->width = 0;
+    room->height = 0;
+    room->state = 3;
+    if (othervar.cur_player == player) {
         set_edit_room_requester_mode(0);
         set_mouse_mode(MM_BLUEPRINT);
     }
@@ -609,7 +609,7 @@ void edit_blueprint(u8 owner)
 
 // Hover in edit-room mode: records the local player's room at tile for
 // highlighting (build.edit_room), or, outside rooms, records the pointed thing
-// (othervar.f41) in othervar.f43 if it is a movable object of the player's in
+// (othervar.pointed_thing) in othervar.pickup_thing if it is a movable object of the player's in
 // the corridor, or a person using one.
 // FUNCTION: 0x0004750c
 void compute_room_pointed(u16 tile)
@@ -622,26 +622,26 @@ void compute_room_pointed(u16 tile)
     build = &allhosps[player].build;
     if (room && room->type != ROOM_DESTROYED) {
         build->edit_room = room - room_info;
-        build->unknownE_ = 2;
+        build->draw_mode = 2;
         build->x0 = room->pos % 128;
         build->y0 = room->pos / 128;
-        build->x1 = room->pos % 128 + room->f1 - 1;
-        build->y1 = room->pos / 128 + room->f2 - 1;
+        build->x1 = room->pos % 128 + room->width - 1;
+        build->y1 = room->pos / 128 + room->height - 1;
     } else {
         build->edit_room = 0;
-        build->unknownE_ = 0;
-        pointed = &thing[othervar.f41];
+        build->draw_mode = 0;
+        pointed = &thing[othervar.pointed_thing];
         if (pointed > thing) {
             switch (pointed->type) {
             case THING_OBJECT:
                 if (pointed->room_id == 0 && !(objects[pointed->subtype].unknown20[2] & 1) && pointed->owner == player)
-                    othervar.f43 = othervar.f41;
+                    othervar.pickup_thing = othervar.pointed_thing;
                 break;
             case THING_PATIENT:
             case THING_STAFF:
                 if (pointed->object && (u16)(pointed - thing) == thing[pointed->object].user
                     && thing[pointed->object].room_id == 0 && pointed->owner == player)
-                    othervar.f43 = othervar.f41;
+                    othervar.pickup_thing = othervar.pointed_thing;
                 break;
             }
         }
@@ -657,12 +657,12 @@ u8 check_room_access(u8 owner)
     RoomInfo *room;
     Thing *obj;
 
-    pos = room_info[allhosps[owner].unknown1cf[0]].unknown4;
+    pos = room_info[allhosps[owner].entrances[0]].door_tile;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (((!(room->type == ROOM_FREE || room->f3 == 3) && room->owner == owner) && room->type != 1) && room->type != ROOM_RECEPTION) {
-            if (!check_points_connected(pos, room->unknown4))
+        if (((!(room->type == ROOM_FREE || room->state == 3) && room->owner == owner) && room->type != 1) && room->type != ROOM_RECEPTION) {
+            if (!check_points_connected(pos, room->door_tile))
                 return 0;
-            pos = room->unknown4;
+            pos = room->door_tile;
         }
     }
     for (obj = thing + 1; obj < end_things; obj++) {
@@ -739,8 +739,8 @@ u8 is_room_clear_yet(RoomInfo *room)
 
     x0 = room->pos % 128;
     y0 = room->pos / 128;
-    x1 = x0 + room->f1;
-    y1 = y0 + room->f2;
+    x1 = x0 + room->width;
+    y1 = y0 + room->height;
     for (x = x0; x < x1; x++) {
         for (y = y0; y < y1; y++) {
             if (map[((s16)y << 7) + (s16)x].first > 0) {
@@ -760,14 +760,14 @@ void process_blueprint_zones(void)
     s8 i;
 
     count = 1;
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         count = 4;
     }
     for (i = count - 1; i >= 0; i--) {
-        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0) {
+        if (statvar.num_players > 1 && D_001609c4[i].active == 0) {
             continue;
         }
-        othervar.ff = i;
+        othervar.cur_player = i;
         if (allhosps[i].build.state == 2) {
             commit_doors(i);
         }
@@ -785,11 +785,11 @@ void commit_doors(u8 owner)
     if (is_room_clear_yet(&room_info[allhosps[owner].build.room])) {
         allhosps[owner].build.state = 0;
         build_all_rooms();
-        price_all_rooms((u16)allhosps[owner].build.unknownD, owner);
-        if (rooms[allhosps[owner].build.unknownD].unknown36 == 0)
+        price_all_rooms((u16)allhosps[owner].build.room_type, owner);
+        if (rooms[allhosps[owner].build.room_type].unknown36 == 0)
             init_double_doors(&room_info[allhosps[owner].build.room]);
         init_edit_room(&room_info[allhosps[owner].build.room]);
-        listhead[owner].rooms[allhosps[owner].build.unknownD] = allhosps[owner].build.room;
+        listhead[owner].rooms[allhosps[owner].build.room_type] = allhosps[owner].build.room;
         if (owner == player)
             init_place_object(next_object_to_build(), 0, allhosps[owner].build.room, 0);
     }
@@ -897,9 +897,9 @@ u8 try_move_peep_cell(Thing *peep, u8 x, u8 y)
     u16 pos;
     u16 tile;
 
-    pos = room_info[allhosps[peep->owner].unknown1cf[0]].unknown4;
+    pos = room_info[allhosps[peep->owner].entrances[0]].door_tile;
     tile = (s16)(x + (y << 7));
-    if ((!(map[tile].unknown7 & 0x10) && !which_room(tile)) && check_points_connected(tile, pos)) {
+    if ((!(map[tile].owner_flags & 0x10) && !which_room(tile)) && check_points_connected(tile, pos)) {
         peep->saved_state = peep->state;
         peep->saved_dest_x = x;
         peep->saved_dest_y = y;
@@ -914,7 +914,7 @@ u8 try_move_peep_cell(Thing *peep, u8 x, u8 y)
 }
 
 // Returns 1 if a blueprint x0,y0 to x1,y1 (inclusive) meets the minimum size
-// of owner's room type, else 0; tracks the result in advisor.f11f flag 4.
+// of owner's room type, else 0; tracks the result in advisor.flags flag 4.
 // FUNCTION: 0x0004831c
 u8 is_room_size_valid(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
 {
@@ -924,12 +924,12 @@ u8 is_room_size_valid(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner)
 
     width = x1 - x0 + 1;
     height = y1 - y0 + 1;
-    type = allhosps[owner].build.unknownD;
+    type = allhosps[owner].build.room_type;
     if (width < rooms[type].unknown27[0] || height < rooms[type].unknown27[1]) {
-        advisor.f11f |= 4;
+        advisor.flags |= 4;
         return 0;
     }
-    advisor.f11f &= ~4;
+    advisor.flags &= ~4;
     return 1;
 }
 
@@ -944,13 +944,13 @@ void delete_blueprint_room(u8 owner)
 
     build = &allhosps[owner].build;
     room = &room_info[allhosps[owner].build.room];
-    if (room->unknown33) {
+    if (room->paid_for) {
         change_balance(TX_BUILD_ROOM, rooms[room->type].cost * room_depreciation() / 100, 0, (u16)room->owner);
-        room->unknown33 = 0;
+        room->paid_for = 0;
     }
-    if (allhosps[owner].build.unknownE_ == 0)
+    if (allhosps[owner].build.draw_mode == 0)
         uncommit_blueprint(owner);
-    allhosps[owner].build.unknownE_ = 0;
+    allhosps[owner].build.draw_mode = 0;
     allhosps[owner].build.state = 0;
     restart_all_queue_peeps(room);
     remove_expertise_room(room);
@@ -970,10 +970,10 @@ void draw_overdrawn_blueprints(void)
         u8 mode;
 
         build = &allhosps[i].build;
-        mode = allhosps[i].build.unknownE_;
+        mode = allhosps[i].build.draw_mode;
         switch (mode) {
         case 2:
-            allhosps[i].build.unknownE_ = 0;
+            allhosps[i].build.draw_mode = 0;
         case 1:
             draw_blueprint_area(build->x0, build->y0, build->x1, build->y1, i, mode);
             break;
@@ -996,9 +996,9 @@ void allocate_roominfo(const u8 owner, const u8 type)
             memset(room, 0, sizeof(RoomInfo));
             room->owner = owner;
             room->type = type;
-            room->f3 = 3;
-            room->unknown22 = actual_game_turn;
-            room->f1e = 6;
+            room->state = 3;
+            room->created_turn = actual_game_turn;
+            room->queue_capacity = 6;
             set_expertise_room(room);
             break;
         }
@@ -1016,10 +1016,10 @@ RoomInfo *allocate_reception_roominfo(u8 owner)
         if (room->type == ROOM_FREE) {
             room->type = ROOM_RECEPTION;
             room->pos = 0x3fff;
-            room->f1 = room->f2 = 1;
-            room->f3 = 0;
+            room->width = room->height = 1;
+            room->state = 0;
             room->owner = owner;
-            room->f1e = 0x14;
+            room->queue_capacity = 0x14;
             return room;
         }
     }
@@ -1031,9 +1031,9 @@ RoomInfo *allocate_reception_roominfo(u8 owner)
 // FUNCTION: 0x0004873c
 u8 check_near_half_wall(u8 x, u8 y, u8 x0, u8 y0, u8 x1, u8 y1)
 {
-    if (y != y1 + 1 && (blocks[map[(s16)x + ((s16)y << 7)].unknown4].width & 4))
+    if (y != y1 + 1 && (blocks[map[(s16)x + ((s16)y << 7)].wall_w].width & 4))
         return 1;
-    if (x != x1 + 1 && (blocks[map[(s16)x + ((s16)y << 7)].unknown3].width & 4))
+    if (x != x1 + 1 && (blocks[map[(s16)x + ((s16)y << 7)].wall_n].width & 4))
         return 1;
     return 0;
 }

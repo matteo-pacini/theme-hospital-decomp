@@ -100,24 +100,24 @@ void display_choice(void)
     case 0x5a:
         available_buttons = 0xffff;
         load_ingame_pic(0x13, 1, 0x24, 0, (TbScreenMode)0xd);
-        othervar.f9d7 = lbDisplay.unknown4;
-        othervar.f9db = lbDisplay.graphics_screen_width;
-        othervar.f9df = lbDisplay.graphics_screen_height;
-        lbDisplay.unknown4 = bscreen;
-        lbDisplay.graphics_screen_width = lbDisplay.unknown18;
-        lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
-        LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+        othervar.saved_screen_ptr = lbDisplay.wscreen;
+        othervar.saved_screen_width = lbDisplay.graphics_screen_width;
+        othervar.saved_screen_height = lbDisplay.graphics_screen_height;
+        lbDisplay.wscreen = bscreen;
+        lbDisplay.graphics_screen_width = lbDisplay.physical_screen_width;
+        lbDisplay.graphics_screen_height = lbDisplay.physical_screen_height;
+        LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         calculate_buttons(choice);
-        LbTextSetWindow(resvars.f3c_ChoiceBoxp[173].x, resvars.f3c_ChoiceBoxp[173].y, resvars.f3c_ChoiceBoxp[173].w, resvars.f3c_ChoiceBoxp[173].h);
+        LbTextSetWindow(resvars.screen_boxes_ChoiceBoxp[173].x, resvars.screen_boxes_ChoiceBoxp[173].y, resvars.screen_boxes_ChoiceBoxp[173].w, resvars.screen_boxes_ChoiceBoxp[173].h);
         display_choice_text(choice);
         display_buttons();
         if (!choice_time_out)
-            reqspr_draw(resvars.f40[0xbe].x, resvars.f40[0xbe].y, &screen_sprites_tab_start[20]);
-        lbDisplay.unknown4 = othervar.f9d7;
-        lbDisplay.graphics_screen_width = othervar.f9db;
-        lbDisplay.graphics_screen_height = othervar.f9df;
-        LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
+            reqspr_draw(resvars.screen_coords[0xbe].x, resvars.screen_coords[0xbe].y, &screen_sprites_tab_start[20]);
+        lbDisplay.wscreen = othervar.saved_screen_ptr;
+        lbDisplay.graphics_screen_width = othervar.saved_screen_width;
+        lbDisplay.graphics_screen_height = othervar.saved_screen_height;
+        LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
         D_00158192 = 0x5b;
         choice_actual_game_turn = actual_game_turn;
         NumPressed = 0;
@@ -157,25 +157,25 @@ void check_choice_buttons(void)
     u8 i;
 
     if (lbDisplay.mleft_button) {
-        for (i = 0; (u16)resvars.f48[i + 0xae].x != 0 && (u16)resvars.f48[i + 0xae].y != 0; i++) {
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
-                             (s16)resvars.f48[i + 0xae].width, (s16)resvars.f48[i + 0xae].height)) {
+        for (i = 0; (u16)resvars.screen_buttons[i + 0xae].x != 0 && (u16)resvars.screen_buttons[i + 0xae].y != 0; i++) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0xae].x, resvars.screen_buttons[i + 0xae].y,
+                             (s16)resvars.screen_buttons[i + 0xae].width, (s16)resvars.screen_buttons[i + 0xae].height)) {
                 if (available_buttons & (1 << i)) {
-                    reqspr_draw(resvars.f48[i + 0xae].unknownC, resvars.f48[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
+                    reqspr_draw(resvars.screen_buttons[i + 0xae].sprite_x, resvars.screen_buttons[i + 0xae].sprite_y, &screen_sprites_tab_start[18]);
                     break;
                 }
             }
         }
     }
     if (lbDisplay.rleft_button) {
-        for (i = 0; (u16)resvars.f48[i + 0xae].x != 0 && (u16)resvars.f48[i + 0xae].y != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0xae].x, resvars.f48[i + 0xae].y,
-                             (s16)resvars.f48[i + 0xae].width, (s16)resvars.f48[i + 0xae].height)) {
+        for (i = 0; (u16)resvars.screen_buttons[i + 0xae].x != 0 && (u16)resvars.screen_buttons[i + 0xae].y != 0; i++) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0xae].x, resvars.screen_buttons[i + 0xae].y,
+                             (s16)resvars.screen_buttons[i + 0xae].width, (s16)resvars.screen_buttons[i + 0xae].height)) {
                 if (available_buttons & (1 << i)) {
                     play_sound(10, SFX_YESX, -1, -1);
-                    if (resvars.f48[i + 0xae].callback)
-                        resvars.f48[i + 0xae].callback(i);
-                    reqspr_draw(resvars.f48[i + 0xae].unknownC, resvars.f48[i + 0xae].unknownE, &screen_sprites_tab_start[18]);
+                    if (resvars.screen_buttons[i + 0xae].callback)
+                        resvars.screen_buttons[i + 0xae].callback(i);
+                    reqspr_draw(resvars.screen_buttons[i + 0xae].sprite_x, resvars.screen_buttons[i + 0xae].sprite_y, &screen_sprites_tab_start[18]);
                     lbDisplay.rleft_button = lbDisplay.left_button = 0;
                     break;
                 }
@@ -193,27 +193,27 @@ void check_fax_buttons(void)
     u8 i;
 
     if (lbDisplay.mleft_button) {
-        for (i = 0; resvars.f48[i + 0xb8].width != 0 && resvars.f48[i + 0xb8].height != 0; i++) {
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 0xb8].x, resvars.f48[i + 0xb8].y,
-                             (s16)resvars.f48[i + 0xb8].width, (s16)resvars.f48[i + 0xb8].height)) {
+        for (i = 0; resvars.screen_buttons[i + 0xb8].width != 0 && resvars.screen_buttons[i + 0xb8].height != 0; i++) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0xb8].x, resvars.screen_buttons[i + 0xb8].y,
+                             (s16)resvars.screen_buttons[i + 0xb8].width, (s16)resvars.screen_buttons[i + 0xb8].height)) {
                 if (i + 0xb8 == 0xc7 && !choice_time_out)
                     break;
-                reqspr_draw(resvars.f48[i + 0xb8].unknownC, resvars.f48[i + 0xb8].unknownE,
-                            (TbSprite *)((u32)screen_sprites_tab_start + resvars.f48[i + 0xb8].sprite * 6));
+                reqspr_draw(resvars.screen_buttons[i + 0xb8].sprite_x, resvars.screen_buttons[i + 0xb8].sprite_y,
+                            (TbSprite *)((u32)screen_sprites_tab_start + resvars.screen_buttons[i + 0xb8].sprite * 6));
                 break;
             }
         }
     }
     if (lbDisplay.rleft_button) {
-        for (i = 0; resvars.f48[i + 0xb8].width != 0 && resvars.f48[i + 0xb8].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0xb8].x, resvars.f48[i + 0xb8].y,
-                             (s16)resvars.f48[i + 0xb8].width, (s16)resvars.f48[i + 0xb8].height)) {
+        for (i = 0; resvars.screen_buttons[i + 0xb8].width != 0 && resvars.screen_buttons[i + 0xb8].height != 0; i++) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0xb8].x, resvars.screen_buttons[i + 0xb8].y,
+                             (s16)resvars.screen_buttons[i + 0xb8].width, (s16)resvars.screen_buttons[i + 0xb8].height)) {
                 if (i + 0xb8 == 0xc7 && !choice_time_out)
                     break;
-                if (resvars.f48[i + 0xb8].callback)
-                    resvars.f48[i + 0xb8].callback((u8)(i + 0xb8));
-                reqspr_draw(resvars.f48[i + 0xb8].unknownC, resvars.f48[i + 0xb8].unknownE,
-                            (TbSprite *)((u32)screen_sprites_tab_start + resvars.f48[i + 0xb8].sprite * 6));
+                if (resvars.screen_buttons[i + 0xb8].callback)
+                    resvars.screen_buttons[i + 0xb8].callback((u8)(i + 0xb8));
+                reqspr_draw(resvars.screen_buttons[i + 0xb8].sprite_x, resvars.screen_buttons[i + 0xb8].sprite_y,
+                            (TbSprite *)((u32)screen_sprites_tab_start + resvars.screen_buttons[i + 0xb8].sprite * 6));
                 break;
             }
         }
@@ -282,14 +282,14 @@ void calculate_buttons(const u8 type)
     for (numtext = 0; strcmp(c_text[numtext], ".") != 0; numtext++)
         ;
     for (i = 0; i < numbuttons; i++) {
-        resvars.f48[i + 0xae].x = resvars.f3c_ChoiceBoxp[173].x + resvars.f3c_ChoiceBoxp[173].w - resvars.f48[0xae].width;
-        resvars.f48[i + 0xae].unknownC = resvars.f48[i + 0xae].x;
-        resvars.f48[i + 0xae].y = resvars.f3c_ChoiceBoxp[173].y + resvars.f3c_ChoiceBoxp[173].h - (u16)(numbuttons - i) * (u16)(resvars.f48[0xae].height + 5);
-        resvars.f48[i + 0xae].unknownE = resvars.f48[i + 0xae].y;
-        resvars.f48[i + 0xae].callback = handler;
+        resvars.screen_buttons[i + 0xae].x = resvars.screen_boxes_ChoiceBoxp[173].x + resvars.screen_boxes_ChoiceBoxp[173].w - resvars.screen_buttons[0xae].width;
+        resvars.screen_buttons[i + 0xae].sprite_x = resvars.screen_buttons[i + 0xae].x;
+        resvars.screen_buttons[i + 0xae].y = resvars.screen_boxes_ChoiceBoxp[173].y + resvars.screen_boxes_ChoiceBoxp[173].h - (u16)(numbuttons - i) * (u16)(resvars.screen_buttons[0xae].height + 5);
+        resvars.screen_buttons[i + 0xae].sprite_y = resvars.screen_buttons[i + 0xae].y;
+        resvars.screen_buttons[i + 0xae].callback = handler;
     }
-    resvars.f48[numbuttons + 0xae].x = 0;
-    resvars.f48[numbuttons + 0xae].y = 0;
+    resvars.screen_buttons[numbuttons + 0xae].x = 0;
+    resvars.screen_buttons[numbuttons + 0xae].y = 0;
 }
 
 // Draws the fax's answer buttons with their text, greyed if not in
@@ -303,19 +303,19 @@ void display_buttons(void)
     s16 y;
     s16 width;
 
-    width = resvars.f3c_ChoiceBoxp[173].w - resvars.f48[0xae].width;
+    width = resvars.screen_boxes_ChoiceBoxp[173].w - resvars.screen_buttons[0xae].width;
     unused8 = 0;
-    LbTextSetWindow(resvars.f3c_ChoiceBoxp[173].x, 0, width, lbDisplay.graphics_screen_height);
+    LbTextSetWindow(resvars.screen_boxes_ChoiceBoxp[173].x, 0, width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x1e);
     lbDisplay.draw_flags = 0x20;
-    for (i = 0; (u16)resvars.f48[i + 0xae].x != 0; i++) {
+    for (i = 0; (u16)resvars.screen_buttons[i + 0xae].x != 0; i++) {
         if (available_buttons & (1 << i))
-            reqspr_draw((u16)resvars.f48[i + 0xae].x, (u16)resvars.f48[i + 0xae].y, &screen_sprites_tab_start[17]);
+            reqspr_draw((u16)resvars.screen_buttons[i + 0xae].x, (u16)resvars.screen_buttons[i + 0xae].y, &screen_sprites_tab_start[17]);
         else
-            reqspr_draw((u16)resvars.f48[i + 0xae].x, (u16)resvars.f48[i + 0xae].y, &screen_sprites_tab_start[19]);
+            reqspr_draw((u16)resvars.screen_buttons[i + 0xae].x, (u16)resvars.screen_buttons[i + 0xae].y, &screen_sprites_tab_start[19]);
         format_text(c_buttons[i], width);
-        y = resvars.f48[i + 0xae].y;
-        y += (resvars.f48[i + 0xae].width - LbTextStringHeight(c_buttons[i])) / 2;
+        y = resvars.screen_buttons[i + 0xae].y;
+        y += (resvars.screen_buttons[i + 0xae].width - LbTextStringHeight(c_buttons[i])) / 2;
         LbTextDraw(0, y, c_buttons[i]);
         remove_newlines(c_buttons[i]);
     }
@@ -391,10 +391,10 @@ void packet_choice_result(u8 button)
 // FUNCTION: 0x000a41b8
 void save_display_screen(void)
 {
-    memmove(choice_backup.unknown2, &choice, 3);
+    memmove(choice_backup.choice_state, &choice, 3);
     choice_backup.mode = display_mode;
-    choice_backup.f6 = choice_spare_data;
-    choice_backup.f8 = choice_time_out;
+    choice_backup.spare_data = choice_spare_data;
+    choice_backup.time_out = choice_time_out;
 }
 
 // Restores the display mode and fax state saved by save_display_screen,
@@ -402,10 +402,10 @@ void save_display_screen(void)
 // FUNCTION: 0x000a4208
 void restore_display_screen(void)
 {
-    memmove(&choice, choice_backup.unknown2, 3);
+    memmove(&choice, choice_backup.choice_state, 3);
     display_mode = choice_backup.mode;
-    choice_spare_data = choice_backup.f6;
-    choice_time_out = choice_backup.f8;
+    choice_spare_data = choice_backup.spare_data;
+    choice_time_out = choice_backup.time_out;
     if (display_mode == 9)
         D_00158192 = 0x5a;
     choice_backup.mode = 0;
@@ -415,18 +415,18 @@ void restore_display_screen(void)
         return_from_screen(0, 1, 1);
         break;
     case 1:
-        bank.unknown2 = 0;
-        drugs.unknown2 = 0;
-        pol.unknown2 = 0;
-        research.unknown2 = 0;
-        graphs.unknown2 = 0;
-        slist.unknown2 = 0;
-        manager.unknown2 = 0;
-        reputation.unknown2 = 0;
-        variables.unknown2 = 0;
-        objs.unknown2 = 1;
-        options.unknown2 = 1;
-        que.unknown2 = 0;
+        bank.state = 0;
+        drugs.state = 0;
+        pol.state = 0;
+        research.state = 0;
+        graphs.state = 0;
+        slist.state = 0;
+        manager.state = 0;
+        reputation.state = 0;
+        variables.state = 0;
+        objs.state = 1;
+        options.state = 1;
+        que.state = 0;
         break;
     }
 }
@@ -448,8 +448,8 @@ u8 fax_no_equal(FaxNo fax, u8 *pressed)
 
 // Handles fax keypad button button (0xb9-0xc2 dial 0-9, 0xb8/0xc5/0xc6 send
 // the number, 0xc7 closes a fax that can time out). A number in cheat_numbers
-// plays the success sound (action 0 toggles othervar.fa8e, 2 sets
-// debug.f219); others play the fail sound.
+// plays the success sound (action 0 toggles othervar.cheats_enabled, 2 sets
+// debug.force_bonus_level); others play the fail sound.
 // FUNCTION: 0x000a4384
 void process_fax_buttons(u8 button)
 {
@@ -523,11 +523,11 @@ void process_fax_buttons(u8 button)
                     play_sound(10, SFX_FAX_YES, -1, -1);
                     break;
                 case 0:
-                    othervar.fa8e = !othervar.fa8e ? (u8)1 : (u8)0;
+                    othervar.cheats_enabled = !othervar.cheats_enabled ? (u8)1 : (u8)0;
                     play_sound(10, SFX_FAX_YES, -1, -1);
                     break;
                 case 2:
-                    debug.f219 = 1;
+                    debug.force_bonus_level = 1;
                     play_sound(10, SFX_FAX_YES, -1, -1);
                     break;
                 default:

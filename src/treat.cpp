@@ -141,13 +141,13 @@ void setup_next_treatment(Thing *staff, Thing *patient)
         pay_for_treatment(patient, 2);
     }
     if (patient->flags & 0x400) {
-        pct = patient->diagnosis * 100 / gbv.ffc;
-        if (allhosps[patient->owner].f219 <= pct && allhosps[patient->owner].rooms[patient->illness].unknown1D == 1 && pct > 0) {
+        pct = patient->diagnosis * 100 / gbv.diagnosis_complete;
+        if (allhosps[patient->owner].guess_cure_threshold <= pct && allhosps[patient->owner].rooms[patient->illness].discovered == 1 && pct > 0) {
             best_guess_treatment(patient);
-        } else if (allhosps[patient->owner].f21b >= pct) {
+        } else if (allhosps[patient->owner].send_home_threshold >= pct) {
             patient->flags32 = 0;
             patient->treatment = 0;
-            allhosps[patient->owner].rooms[patient->illness].unknown24++;
+            allhosps[patient->owner].rooms[patient->illness].turned_away++;
             patient->flags2 |= (PF_NO_DIAGNOSIS >> 16);
         }
     }
@@ -167,29 +167,29 @@ void next_treatment_now_setup(Thing *patient, u8 in_room)
             patient->flags |= PF_AWAITING_DECISION;
             set_icon_value(patient, ICON_AWAITING_DECISION);
             patient->next_state = PS_WAITS_FOR_DECISION;
-            patient->timer = othervar.f82;
+            patient->timer = othervar.cur_turn;
             patient->playercall = make_a_playercall(8, patient - thing, 0, patient->owner);
             if (patient->owner == player) {
-                advisor.f128 |= 4;
+                advisor.event_flags |= 4;
             }
         } else {
             patient->treatment = 0;
             patient->next_state = PS_GO_FOR_TREATMENT;
-            allhosps[patient->owner].rooms[patient->illness].unknown24++;
+            allhosps[patient->owner].rooms[patient->illness].turned_away++;
             patient->flags2 |= (PF_NO_DIAGNOSIS >> 16);
         }
     } else if (patient->flags & PF_AWAITING_DECISION) {
         if (check_playercall(4, (u16)patient->illness, patient->owner) <= 5) {
             patient->next_state = PS_WAITS_FOR_DECISION;
-            patient->timer = othervar.f82;
+            patient->timer = othervar.cur_turn;
             patient->playercall = make_a_playercall(4, patient - thing, 0, patient->owner);
             if (patient->owner == player) {
-                advisor.f128 |= 4;
+                advisor.event_flags |= 4;
             }
         } else {
             patient->treatment = 0;
             patient->next_state = PS_GO_FOR_TREATMENT;
-            allhosps[patient->owner].rooms[patient->illness].unknown24++;
+            allhosps[patient->owner].rooms[patient->illness].turned_away++;
             patient->flags2 |= (PF_NO_TREATMENT >> 16);
         }
     } else {
@@ -197,7 +197,7 @@ void next_treatment_now_setup(Thing *patient, u8 in_room)
     }
     if (patient->room != 0) {
         if (in_room) {
-            if (set_complex(patient, 0x5a, patient->room->unknown6)) {
+            if (set_complex(patient, 0x5a, patient->room->door_inside_tile)) {
                 process_person_complex(patient);
             }
         } else {
@@ -272,11 +272,11 @@ void person_dies(Thing *patient)
         pos = tile + dying_place[i];
         if (map[pos].first == 0 && can_i_get_to(patient, pos) > 0) {
             cell = &map[pos + 1];
-            if (cell->first == 0 && cell->unknown4 == 0) {
+            if (cell->first == 0 && cell->wall_w == 0) {
                 break;
             }
             cell = &map[pos + 0x80];
-            if (cell->first == 0 && cell->unknown3 == 0) {
+            if (cell->first == 0 && cell->wall_n == 0) {
                 break;
             }
         }
@@ -291,15 +291,15 @@ void person_dies(Thing *patient)
     } else {
         patient->state = PS_DEAD;
     }
-    allhosps[patient->owner].rooms[patient->illness].unknown20++;
-    allhosps[patient->owner].f1eb++;
+    allhosps[patient->owner].rooms[patient->illness].deaths++;
+    allhosps[patient->owner].deaths++;
     if (patient->owner == player) {
-        advisor.f128 |= 0x80;
+        advisor.event_flags |= 0x80;
     }
     reputation_affected(patient->illness, 3, 0, patient->owner, 0);
     record_person_as_patient(patient);
     if (patient->owner == player) {
-        mycontrol->unknown10++;
+        mycontrol->deaths_this_month++;
     }
     patient->flags2 |= (PF_DYING >> 16);
     if (patient->playercall) {
@@ -324,13 +324,13 @@ void person_dead(Thing *patient)
         right = &map[tile + 1];
         down = &map[tile + 0x80];
         if ((old_newrand() & 1) == 0) {
-            if (right->first == 0 && right->unknown4 == 0) {
+            if (right->first == 0 && right->wall_w == 0) {
                 patient->facing = 0;
             } else {
                 patient->facing = 1;
             }
         } else {
-            if (down->first == 0 && down->unknown3 == 0) {
+            if (down->first == 0 && down->wall_n == 0) {
                 patient->facing = 1;
             } else {
                 patient->facing = 0;
@@ -421,7 +421,7 @@ void diagnose_patient(Thing *staff, Thing *patient)
 
     guess = 1;
     diag = patient->diagnosis;
-    if (diag >= gbv.ffc) {
+    if (diag >= gbv.diagnosis_complete) {
         guess = 0;
         illness = (u16)patient->illness;
         if (patient->known_illness != illness) {
@@ -430,14 +430,14 @@ void diagnose_patient(Thing *staff, Thing *patient)
             reputation_affected(illness, 0x15, 0, patient->owner, 0);
             record_person_as_patient(patient);
             patient->known_illness = illness;
-            allhosps[patient->owner].f1ef++;
+            allhosps[patient->owner].diagnosed++;
         }
         if (patient->contagion) {
             alert_epidemic(patient->illness, patient->owner);
         }
         patient->flags2 |= (PF_DIAGNOSED >> 16);
         ok = 1;
-        if (diag < allhosps[patient->owner].f217) {
+        if (diag < allhosps[patient->owner].diag_threshold) {
             find_possible_diagnosis(patient);
             if (patient->treatment == 0) {
                 patient->flags |= 0x400;
@@ -448,7 +448,7 @@ void diagnose_patient(Thing *staff, Thing *patient)
         }
         if (ok) {
             set_icon_value(staff, ICON_DIAGNOSED);
-            if (allhosps[patient->owner].rooms[illness].unknown1C == 0) {
+            if (allhosps[patient->owner].rooms[illness].cure_available == 0) {
                 patient->flags |= (PF_AWAITING_DECISION | PF_WAITING_FOR_ROOM);
                 patient->treatment = patient->illness;
                 set_icon_value(patient, ICON_AWAITING_DECISION);
@@ -460,7 +460,7 @@ void diagnose_patient(Thing *staff, Thing *patient)
     } else if (diag <= gbv.ffe) {
         coin = old_newrand() & 1;
         if (coin == 0) {
-            if (allhosps[patient->owner].rooms[ILL_AUTOPSY].unknown1C == 1) {
+            if (allhosps[patient->owner].rooms[ILL_AUTOPSY].cure_available == 1) {
                 patient->treatment = ILL_AUTOPSY;
             } else {
                 coin = 1;
@@ -512,11 +512,11 @@ s32 calc_ability(Thing *staff)
     } else if (staff->skills & SKILL_JUNIOR) {
         skill_adj = -100;
     }
-    if (staff->tiredness < gbv.fe6) {
+    if (staff->tiredness < gbv.not_tired) {
         tired_adj = 100;
-    } else if (staff->tiredness >= gbv.fe8) {
+    } else if (staff->tiredness >= gbv.tired) {
         tired_adj = -100;
-    } else if (staff->tiredness >= gbv.fea) {
+    } else if (staff->tiredness >= gbv.very_tired) {
         tired_adj = -200;
     }
     if (staff->subtype == STAFF_DOCTOR && staff->crazy) {
@@ -601,13 +601,13 @@ void person_go_for_treatment(Thing *patient)
         if (listhead[patient->owner].rooms[exp->category] == 0) {
             treatment = 0;
         }
-    } else if (allhosps[patient->owner].rooms[treatment].unknown1C == 0) {
+    } else if (allhosps[patient->owner].rooms[treatment].cure_available == 0) {
         reputation_affected(treatment, 2, 0, patient->owner, 0);
         treatment = 0;
     }
     if (treatment != 0 && listhead[patient->owner].rooms[exp->category] == 0) {
         patient->flags |= PF_WAITING_FOR_ROOM;
-        patient->timer = othervar.f82;
+        patient->timer = othervar.cur_turn;
         set_complex(patient, 0xf0, 0);
         patient->next_state = PS_WAITS_FOR_DECISION;
         process_person_complex(patient);
@@ -618,7 +618,7 @@ void person_go_for_treatment(Thing *patient)
         u16 anim;
 
         action = 20;
-        pos = get_room_info(1, 0x65, patient->owner)->unknown4;
+        pos = get_room_info(1, 0x65, patient->owner)->door_tile;
         anim = check_frame(anim_starts[patient->subtype].idle, patient) + (u16)patient->facing;
         patient->sprite = start[anim].frame;
         patient->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
@@ -633,13 +633,13 @@ void person_go_for_treatment(Thing *patient)
         send_person_for_research(patient);
         break;
     default: {
-        if (allhosps[patient->owner].rooms[treatment].unknown1C == 1) {
+        if (allhosps[patient->owner].rooms[treatment].cure_available == 1) {
             room = get_expertise_dest(treatment, patient);
         } else {
             room = &room_info[listhead[patient->owner].rooms[exp->category]];
         }
-        room->unknown32++;
-        pos = room->unknown4;
+        room->queue_incoming++;
+        pos = room->door_tile;
         page_staff_i_need(patient, room);
         patient->dest_room = room - room_info;
         {
@@ -723,24 +723,24 @@ void administer_drugs(Thing *staff, Thing *patient)
         pay_for_treatment(patient, 3);
     }
     patient->next_state = PS_GO_FOR_TREATMENT;
-    if (set_complex(patient, 0x5a, staff->room->unknown6)) {
+    if (set_complex(patient, 0x5a, staff->room->door_inside_tile)) {
         process_person_complex(patient);
     }
     change_balance(TX_DRUG_COST, -drug->cost, 0, (u16)staff->owner);
 }
 
-// Marks illness as discovered for player `owner` (rooms[].unknown1D),
+// Marks illness as discovered for player `owner` (rooms[].discovered),
 // sending the new illness fax the first time.
 // FUNCTION: 0x0003dfcc
 void announce_new_illness(const u16 illness, const u16 owner)
 {
-    if (allhosps[owner].rooms[illness].unknown1D == 0) {
+    if (allhosps[owner].rooms[illness].discovered == 0) {
         if (owner == player) {
-            advisor.f128 |= 4;
+            advisor.event_flags |= 4;
         }
         make_a_playercall(7, illness, 0xf, owner);
     }
-    allhosps[owner].rooms[illness].unknown1D = 1;
+    allhosps[owner].rooms[illness].discovered = 1;
 }
 
 // Draws the "no diagnosis" call for patient: the diagnosis so far and,
@@ -761,14 +761,14 @@ u16 call_no_diagnosis(Thing *patient, char **strs)
         return 0;
     }
     height = lbFontPtr ? lbFontPtr[34].height : 0;
-    pct = patient->diagnosis * 100 / gbv.ffc;
+    pct = patient->diagnosis * 100 / gbv.diagnosis_complete;
     if (pct < 0) {
         pct = 0;
     } else if (pct > 99) {
         pct = 99;
     }
     sprintf(buf1, strs[2], pct, illness_text[patient->illness]);
-    if (allhosps[patient->owner].rooms[patient->illness].unknown1C != 1 || allhosps[patient->owner].rooms[patient->illness].unknown1D == 0) {
+    if (allhosps[patient->owner].rooms[patient->illness].cure_available != 1 || allhosps[patient->owner].rooms[patient->illness].discovered == 0) {
         available_buttons &= ~2;
     }
     text_x = 0;
@@ -777,7 +777,7 @@ u16 call_no_diagnosis(Thing *patient, char **strs)
     fn_000c93bf(buf2, new_line);
     fn_000c93bf(buf2, strs[1]);
     fn_000c93bf(buf2, new_line);
-    if (allhosps[patient->owner].rooms[patient->illness].unknown1C == 1 && allhosps[patient->owner].rooms[patient->illness].unknown1D == 1) {
+    if (allhosps[patient->owner].rooms[patient->illness].cure_available == 1 && allhosps[patient->owner].rooms[patient->illness].discovered == 1) {
         fn_000c93bf(buf2, buf1);
     }
     LbTextDraw(text_x, text_y, buf2);
@@ -818,11 +818,11 @@ void best_guess_treatment(Thing *patient)
         patient->next_treatment = patient->treatment;
         patient->treatment = ILL_DIAG_WARD;
     }
-    if (allhosps[patient->owner].rooms[patient->illness].unknown1C == 0) {
+    if (allhosps[patient->owner].rooms[patient->illness].cure_available == 0) {
         patient->flags |= PF_AWAITING_DECISION;
         set_icon_value(patient, ICON_AWAITING_DECISION);
     }
-    pct = patient->diagnosis * 100 / gbv.ffc;
+    pct = patient->diagnosis * 100 / gbv.diagnosis_complete;
     if (pct < 0) {
         pct = 0;
     } else if (pct > 99) {
@@ -854,7 +854,7 @@ u16 find_possible_diagnosis(Thing *patient)
     if (diag->count) {
         for (i = 0, count = 0; i < diag->count; i++) {
             treatment = (u16)diag->ids[i];
-            if (allhosps[patient->owner].rooms[treatment].unknown1C == 1) {
+            if (allhosps[patient->owner].rooms[treatment].cure_available == 1) {
                 list[count++] = treatment;
             }
         }
@@ -862,7 +862,7 @@ u16 find_possible_diagnosis(Thing *patient)
             for (i = 0; i < 9; i++) {
                 pick = old_newrand() % count;
                 treatment = list[pick];
-                if (allhosps[patient->owner].rooms[treatment].unknown1C != 0) {
+                if (allhosps[patient->owner].rooms[treatment].cure_available != 0) {
                     if (treatment_already_done(patient, treatment) == 0) {
                         result = treatment;
                         break;

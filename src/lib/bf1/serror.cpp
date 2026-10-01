@@ -68,7 +68,7 @@ int LbAssertMessage(const char *expr, const char *file, unsigned long line)
         restore = 1;
         x = 0;
         y = 0;
-        LbDrawBox(0, 0, lbDisplay.unknown18, 72, 0);
+        LbDrawBox(0, 0, lbDisplay.physical_screen_width, 72, 0);
         y += 12;
         LbDrawCheapText(x, y, "Warning a library assertion occured:", 1);
         sprintf(text, "%s", expr);

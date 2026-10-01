@@ -67,7 +67,7 @@ void load_highscores(void);
 
 // Moves the hall of fame's rows and title letters an eighth of the way to
 // their targets (16.16 fixed point), and switches the title between fame
-// and shame (othervar.f9e4) when the rows cross over.
+// and shame (othervar.showing_fame) when the rows cross over.
 // FUNCTION: 0x00094500
 void move_text(void)
 {
@@ -85,10 +85,10 @@ void move_text(void)
                 TextPos[i] = DesiredTextPos[i];
         }
     }
-    old = othervar.f9e4;
-    othervar.f9e4 = TextPos[0] < TextPos[5] ? (u8)1 : (u8)0;
-    if (othervar.f9e4 != old) {
-        if (othervar.f9e4) {
+    old = othervar.showing_fame;
+    othervar.showing_fame = TextPos[0] < TextPos[5] ? (u8)1 : (u8)0;
+    if (othervar.showing_fame != old) {
+        if (othervar.showing_fame) {
             TitleText = hall_text[4];
             TitleLen = fn_000cd716(TitleText);
         } else {
@@ -119,7 +119,7 @@ void set_fame_pos(s32 *text, s32 *title)
     u8 c;
 
     for (i = 0; i < 10; i++)
-        text[i] = resvars.f40[i + 191].y << 16;
+        text[i] = resvars.screen_coords[i + 191].y << 16;
     saved = TitleText;
     TitleText = hall_text[4];
     for (i = 0; i < 20; i++) {
@@ -142,7 +142,7 @@ void set_shame_pos(s32 *text, s32 *title)
     s16 i;
 
     for (i = 0; i < 10; i++)
-        text[i] = resvars.f40[200 - i].y << 16;
+        text[i] = resvars.screen_coords[200 - i].y << 16;
     saved = TitleText;
     TitleText = hall_text[5];
     for (i = 0; i < 20; i++) {
@@ -160,22 +160,22 @@ void modify_background(void)
     s16 i;
 
     set_font_from_cache(0x10);
-    othervar.f9d7 = lbDisplay.unknown4;
-    othervar.f9db = lbDisplay.graphics_screen_width;
-    othervar.f9df_u32 = lbDisplay.graphics_screen_height;
-    lbDisplay.unknown4 = bscreen;
-    lbDisplay.graphics_screen_width = lbDisplay.unknown18;
-    lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
-    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-    for (i = 1; resvars.f40[i + 200].y != 0; i++)
-        LbTextDraw(resvars.f40[i + 200].x, resvars.f40[i + 200].y, hall_text[i]);
-    lbDisplay.unknown4 = othervar.f9d7;
-    lbDisplay.graphics_screen_width = othervar.f9db;
-    lbDisplay.graphics_screen_height = othervar.f9df_u32;
-    LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df_u32);
+    othervar.saved_screen_ptr = lbDisplay.wscreen;
+    othervar.saved_screen_width = lbDisplay.graphics_screen_width;
+    othervar.saved_screen_height_u = lbDisplay.graphics_screen_height;
+    lbDisplay.wscreen = bscreen;
+    lbDisplay.graphics_screen_width = lbDisplay.physical_screen_width;
+    lbDisplay.graphics_screen_height = lbDisplay.physical_screen_height;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
+    for (i = 1; resvars.screen_coords[i + 200].y != 0; i++)
+        LbTextDraw(resvars.screen_coords[i + 200].x, resvars.screen_coords[i + 200].y, hall_text[i]);
+    lbDisplay.wscreen = othervar.saved_screen_ptr;
+    lbDisplay.graphics_screen_width = othervar.saved_screen_width;
+    lbDisplay.graphics_screen_height = othervar.saved_screen_height_u;
+    LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height_u);
 }
 
-// Runs one frame of the hall of fame screen (hall.unknown2: 0 opening, 1
+// Runs one frame of the hall of fame screen (hall.state: 0 opening, 1
 // shown, 2 done, which moves on to the next year-end screen); closes by
 // itself after 1200 frames without mouse movement.
 // FUNCTION: 0x00094b28
@@ -187,16 +187,16 @@ void display_hall(void)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x10);
     lbDisplay.draw_flags = 0;
-    switch (hall.unknown2) {
+    switch (hall.state) {
     case 0:
         load_ingame_pic(0xe, 1, 0x16, 0, SCREEN_MODE_13);
         load_highscores();
         modify_background();
-        hall.unknown2 = 1;
-        othervar.f9ed = 1200;
+        hall.state = 1;
+        othervar.idle_countdown = 1200;
         for (i = 0; i < 20; i++)
             TitlePos[i] = DesiredTitlePos[i] = lbDisplay.graphics_screen_width / 2;
-        if (othervar.f9e4) {
+        if (othervar.showing_fame) {
             set_fame_pos(DesiredTextPos, DesiredTitlePos);
             set_fame_pos(TextPos, TitlePos);
             TitleText = hall_text[4];
@@ -216,19 +216,19 @@ void display_hall(void)
         break;
     case 2:
         set_font_from_cache(1);
-        othervar.f10 = 1;
+        othervar.full_redraw = 1;
         year_end_type++;
         break;
     default:
         break;
     }
     check_hall_buttons();
-    if (othervar.f9eb != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
-        othervar.f9ed = 1200;
-        othervar.f9eb = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
+    if (othervar.last_mouse_sum != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
+        othervar.idle_countdown = 1200;
+        othervar.last_mouse_sum = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
     }
-    if (!othervar.f9ed--)
-        hall.unknown2 = 2;
+    if (!othervar.idle_countdown--)
+        hall.state = 2;
 }
 
 // Draws the sliding title and the ten rows of the hall of fame or shame.
@@ -244,7 +244,7 @@ void draw_fame_text(void)
 
     set_font_from_cache(0x10);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
-    if (othervar.f9e4)
+    if (othervar.showing_fame)
         letter = TitleText;
     else
         letter = &TitleText[TitleLen - 1];
@@ -252,10 +252,10 @@ void draw_fame_text(void)
         x = (TitlePos[i] + 0x8000) >> 16;
         c = letter[1];
         letter[1] = 0;
-        LbTextDraw(x, resvars.f40[205].y, letter);
+        LbTextDraw(x, resvars.screen_coords[205].y, letter);
         x += LbTextStringWidth(letter);
         letter[1] = c;
-        if (othervar.f9e4)
+        if (othervar.showing_fame)
             letter++;
         else
             letter--;
@@ -263,26 +263,26 @@ void draw_fame_text(void)
     for (i = 0; i < 10; i++) {
         x = (TextPos[i] + 0x8000) >> 16;
         sprintf(buf, "%2d", i + 1);
-        LbTextDraw(resvars.f40[201].x, x, buf);
-        if (othervar.f9e4) {
-            LbTextDraw(resvars.f40[202].x, x, hosp_scores.fame[i].name);
+        LbTextDraw(resvars.screen_coords[201].x, x, buf);
+        if (othervar.showing_fame) {
+            LbTextDraw(resvars.screen_coords[202].x, x, hosp_scores.fame[i].name);
             sprintf(buf, "%6d", hosp_scores.fame[i].score);
-            LbTextDraw(resvars.f40[203].x, x, buf);
+            LbTextDraw(resvars.screen_coords[203].x, x, buf);
         } else {
-            LbTextDraw(resvars.f40[202].x, x, hosp_scores.shame[9 - i].name);
+            LbTextDraw(resvars.screen_coords[202].x, x, hosp_scores.shame[9 - i].name);
             sprintf(buf, "%6d", hosp_scores.shame[9 - i].score);
-            LbTextDraw(resvars.f40[203].x, x, buf);
+            LbTextDraw(resvars.screen_coords[203].x, x, buf);
         }
     }
 }
 
-// Writes this player's hospital name and score (allhosps.f2d) into hall of
+// Writes this player's hospital name and score (allhosps.score) into hall of
 // fame slot `slot`.
 // FUNCTION: 0x00094f5c
 void add_highscore_fame(s8 slot)
 {
     sprintf(hosp_scores.fame[slot].name, "%s", &allhosps[player]);
-    hosp_scores.fame[slot].score = allhosps[player].f2d;
+    hosp_scores.fame[slot].score = allhosps[player].score;
 }
 
 // Sorts the hall of fame by descending score.
@@ -315,7 +315,7 @@ void bubble_sort_fame(void)
 void add_highscore_shame(s8 slot)
 {
     sprintf(hosp_scores.shame[slot].name, "%s", &allhosps[player]);
-    hosp_scores.shame[slot].score = allhosps[player].f2d;
+    hosp_scores.shame[slot].score = allhosps[player].score;
 }
 
 // Sorts the hall of shame by ascending score.
@@ -345,16 +345,16 @@ void bubble_sort_shame(void)
 // Enters this player's score in the hall of fame if it beats the lowest
 // entry, else in the hall of shame if it beats its lowest, replacing their
 // own entry if they have one with a lower score, and saves the table. Sets
-// which hall is shown (othervar.f9e4).
+// which hall is shown (othervar.showing_fame).
 // FUNCTION: 0x000951c8
 void insert_hall_details(void)
 {
     s8 i;
 
     load_highscores();
-    if (allhosps[player].f2d > hosp_scores.fame[9].score) {
+    if (allhosps[player].score > hosp_scores.fame[9].score) {
         for (i = 0; i < 10; i++) {
-            if (strcmp((char *)allhosps[player].unknown0, hosp_scores.fame[i].name) == 0)
+            if (strcmp((char *)allhosps[player].name, hosp_scores.fame[i].name) == 0)
                 break;
         }
         if (i == 10) {
@@ -362,16 +362,16 @@ void insert_hall_details(void)
             add_highscore_fame(i);
             bubble_sort_fame();
             save_highscores();
-        } else if (allhosps[player].f2d > hosp_scores.fame[i].score) {
+        } else if (allhosps[player].score > hosp_scores.fame[i].score) {
             add_highscore_fame(i);
             bubble_sort_fame();
             save_highscores();
         }
-        othervar.f9e4 = 1;
+        othervar.showing_fame = 1;
     } else {
-        if (allhosps[player].f2d > hosp_scores.shame[0].score) {
+        if (allhosps[player].score > hosp_scores.shame[0].score) {
             for (i = 0; i < 10; i++) {
-                if (strcmp((char *)allhosps[player].unknown0, hosp_scores.shame[i].name) == 0)
+                if (strcmp((char *)allhosps[player].name, hosp_scores.shame[i].name) == 0)
                     break;
             }
             if (i == 10) {
@@ -379,13 +379,13 @@ void insert_hall_details(void)
                 add_highscore_shame(i);
                 bubble_sort_shame();
                 save_highscores();
-            } else if (allhosps[player].f2d > hosp_scores.shame[i].score) {
+            } else if (allhosps[player].score > hosp_scores.shame[i].score) {
                 add_highscore_shame(i);
                 bubble_sort_shame();
                 save_highscores();
             }
         }
-        othervar.f9e4 = 0;
+        othervar.showing_fame = 0;
     }
 }
 
@@ -396,7 +396,7 @@ void process_hall_buttons(u8 button)
     switch (button) {
     case 0:
     case 1:
-        if (othervar.f9e4) {
+        if (othervar.showing_fame) {
             play_sound(10, SFX_UPDOWN, -1, -1);
             set_shame_pos(DesiredTextPos, DesiredTitlePos);
         } else {
@@ -405,7 +405,7 @@ void process_hall_buttons(u8 button)
         }
         break;
     case 2:
-        hall.unknown2 = 2;
+        hall.state = 2;
         play_sound(10, SFX_NO4, -1, -1);
         break;
     default:
@@ -421,18 +421,18 @@ void check_hall_buttons(void)
     u8 i;
 
     if (lbDisplay.mleft_button) {
-        for (i = 0; resvars.f48[i + 0xa9].width != 0 && resvars.f48[i + 0xa9].height != 0; i++) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f48[i + 0xa9].x, resvars.f48[i + 0xa9].y, resvars.f48[i + 0xa9].width, resvars.f48[i + 0xa9].height)) {
-                reqspr_draw(resvars.f48[i + 0xa9].unknownC, resvars.f48[i + 0xa9].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0xa9].sprite]);
+        for (i = 0; resvars.screen_buttons[i + 0xa9].width != 0 && resvars.screen_buttons[i + 0xa9].height != 0; i++) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i + 0xa9].x, resvars.screen_buttons[i + 0xa9].y, resvars.screen_buttons[i + 0xa9].width, resvars.screen_buttons[i + 0xa9].height)) {
+                reqspr_draw(resvars.screen_buttons[i + 0xa9].sprite_x, resvars.screen_buttons[i + 0xa9].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[i + 0xa9].sprite]);
                 break;
             }
         }
     }
     if (lbDisplay.rleft_button) {
-        for (i = 0; resvars.f48[i + 0xa9].width != 0 && resvars.f48[i + 0xa9].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0xa9].x, resvars.f48[i + 0xa9].y, resvars.f48[i + 0xa9].width, resvars.f48[i + 0xa9].height)) {
-                resvars.f48[i + 0xa9].callback(i);
-                reqspr_draw(resvars.f48[i + 0xa9].unknownC, resvars.f48[i + 0xa9].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0xa9].sprite]);
+        for (i = 0; resvars.screen_buttons[i + 0xa9].width != 0 && resvars.screen_buttons[i + 0xa9].height != 0; i++) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0xa9].x, resvars.screen_buttons[i + 0xa9].y, resvars.screen_buttons[i + 0xa9].width, resvars.screen_buttons[i + 0xa9].height)) {
+                resvars.screen_buttons[i + 0xa9].callback(i);
+                reqspr_draw(resvars.screen_buttons[i + 0xa9].sprite_x, resvars.screen_buttons[i + 0xa9].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[i + 0xa9].sprite]);
                 break;
             }
         }
@@ -448,8 +448,8 @@ void save_highscores(void)
     int fh;
     char path[100];
 
-    if (statvar.unknownfd <= 1 || (statvar.unknownfd > 1 && player == 0)) {
-        sprintf(path, "%ssave/hiscore.dat", statvar.f575);
+    if (statvar.num_players <= 1 || (statvar.num_players > 1 && player == 0)) {
+        sprintf(path, "%ssave/hiscore.dat", statvar.save_root);
         fh = LbFileOpen(path, 0);
         if (fh != -1) {
             LbFileWrite(fh, &hosp_scores, 0x2d0);
@@ -465,7 +465,7 @@ void load_highscores(void)
     int fh;
     char path[100];
 
-    sprintf(path, "%ssave/hiscore.dat", statvar.f575);
+    sprintf(path, "%ssave/hiscore.dat", statvar.save_root);
     fh = LbFileOpen(path, 2);
     if (fh != -1) {
         LbFileRead(fh, &hosp_scores, 0x2d0);

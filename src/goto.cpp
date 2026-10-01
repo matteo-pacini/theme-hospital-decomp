@@ -57,7 +57,7 @@ s16 person_goto_destination(Thing *person)
             person->countdown = 0;
             return 0;
         case -1:
-            PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
+            PLAY_FRAME(person, anim_starts[person->subtype].patient_stand);
             person->countdown = 0;
             return 0;
         case -2:
@@ -65,7 +65,7 @@ s16 person_goto_destination(Thing *person)
             person_nav_failure(person);
             return 0;
         default:
-            if (person->facing != dir || start[anim_starts[person->subtype].unknown12 + person->facing].frame == person->sprite) {
+            if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
                 PLAY_FRAME(person, anim_starts[person->subtype].idle);
             }
@@ -105,7 +105,7 @@ s16 person_goto_object(Thing *person)
         person->countdown = person->speed == 0 ? div_err() : 0x100 / person->speed;
         dir = person_head_for(person, 1);
         if (dir >= 0 && dir <= 3) {
-            if (fn_000cb2db(person->x.tile - person->dest_x) < othervar.f2f && fn_000cb2db(person->y.tile - person->dest_y) < othervar.f2f) {
+            if (fn_000cb2db(person->x.tile - person->dest_x) < othervar.object_near_dist && fn_000cb2db(person->y.tile - person->dest_y) < othervar.object_near_dist) {
                 obj = &thing[person->object];
                 if (obj->in_use == 1 || obj->state == 0x12 || (obj->type != THING_DOOR && obj->type != THING_OBJECT))
                     dir = 4;
@@ -117,7 +117,7 @@ s16 person_goto_object(Thing *person)
             person->countdown = 0;
             return 0;
         case -1:
-            PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
+            PLAY_FRAME(person, anim_starts[person->subtype].patient_stand);
             person->countdown = 0;
             return 0;
         case -2:
@@ -139,7 +139,7 @@ s16 person_goto_object(Thing *person)
         case 2:
         case 3:
         default:
-            if (person->facing != dir || start[anim_starts[person->subtype].unknown12 + person->facing].frame == person->sprite) {
+            if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
                 PLAY_FRAME(person, anim_starts[person->subtype].idle);
             }
@@ -181,7 +181,7 @@ void person_goto_queue(Thing *person)
         room = &room_info[person->dest_room];
         dir = person_head_for(person, 3);
         if (dir >= 0 && dir <= 3) {
-            if (fn_000cb2db(person->x.tile - person->dest_x) <= othervar.fe && fn_000cb2db(person->y.tile - person->dest_y) <= othervar.fe) {
+            if (fn_000cb2db(person->x.tile - person->dest_x) <= othervar.queue_near_dist && fn_000cb2db(person->y.tile - person->dest_y) <= othervar.queue_near_dist) {
                 if (room->type == ROOM_RECEPTION || queue_size(room) > 0)
                     dir = 4;
             }
@@ -189,9 +189,9 @@ void person_goto_queue(Thing *person)
         switch (dir) {
         case 4:
             if (room->type != ROOM_RECEPTION) {
-                if (room->type != expertise[person->treatment].category || room->unknown4 == 0) {
-                    if (person->dest_room && room->unknown4 != 0)
-                        room->unknown32--;
+                if (room->type != expertise[person->treatment].category || room->door_tile == 0) {
+                    if (person->dest_room && room->door_tile != 0)
+                        room->queue_incoming--;
                     person->dest_room = 0;
                     person->complex_pc = 0;
                     person->complex_queued = 0;
@@ -199,9 +199,9 @@ void person_goto_queue(Thing *person)
                     start_person_going(person);
                     return;
                 }
-                if (fn_000cb2db(person->x.tile - room->unknown4 % 128) > othervar.fe
-                    || fn_000cb2db(person->y.tile - room->unknown4 / 128) > othervar.fe) {
-                    set_destination_coords(person, room->unknown4);
+                if (fn_000cb2db(person->x.tile - room->door_tile % 128) > othervar.queue_near_dist
+                    || fn_000cb2db(person->y.tile - room->door_tile / 128) > othervar.queue_near_dist) {
+                    set_destination_coords(person, room->door_tile);
                     person->countdown = 0;
                     return;
                 }
@@ -216,12 +216,12 @@ void person_goto_queue(Thing *person)
                 person->state = PS_ARRIVES_AT_DOOR;
             } else {
                 person->state = PS_IN_QUEUE;
-                PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
+                PLAY_FRAME(person, anim_starts[person->subtype].patient_stand);
             }
             person->countdown = 0;
             return;
         case -1:
-            PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
+            PLAY_FRAME(person, anim_starts[person->subtype].patient_stand);
             person->countdown = 0;
             return;
         case -2:
@@ -229,7 +229,7 @@ void person_goto_queue(Thing *person)
             person_nav_failure(person);
             return;
         default:
-            if (person->facing != dir || start[anim_starts[person->subtype].unknown12 + person->facing].frame == person->sprite) {
+            if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
                 PLAY_FRAME(person, anim_starts[person->subtype].idle);
             }
@@ -310,7 +310,7 @@ s16 staff_goto_object(Thing *employee)
             process_staff_complex(employee);
             return 0;
         case -1:
-            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].unknownA);
+            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].staff_stand);
             employee->countdown = 0;
             return 0;
         case -2:
@@ -327,7 +327,7 @@ s16 staff_goto_object(Thing *employee)
         case 2:
         case 3:
         default:
-            if (employee->facing != dir || start[staff_anim_starts[employee->subtype].unknownA + employee->facing].frame == employee->sprite) {
+            if (employee->facing != dir || start[staff_anim_starts[employee->subtype].staff_stand + employee->facing].frame == employee->sprite) {
                 employee->facing = dir;
                 PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
             }
@@ -356,7 +356,7 @@ u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate)
     tile = x + (y << 7);
     m = &map[tile];
     if (!(m >= map && m < end_map && !(m->flags & 3) && (x >= 0 && x < 0x80 && y >= 0 && y < 0x80))
-        || m->unknown7 != 1 << employee->owner || which_room(tile)) {
+        || m->owner_flags != 1 << employee->owner || which_room(tile)) {
         employee->substate = 6;
         return 0;
     }
@@ -391,7 +391,7 @@ void staff_wanders(Thing *employee)
         return;
     }
     if (employee->subtype == STAFF_NURSE)
-        allhosps[employee->owner].unknown11f0++;
+        allhosps[employee->owner].idle_nurses++;
     if (shall_i_resign(employee))
         return;
     if (employee->substate == 0) {
@@ -425,7 +425,7 @@ void staff_wanders(Thing *employee)
                 employee->countdown = 1;
                 goto decide;
             case -1:
-                PLAY_FRAME(employee, staff_anim_starts[employee->subtype].unknownA);
+                PLAY_FRAME(employee, staff_anim_starts[employee->subtype].staff_stand);
                 employee->countdown = 0;
                 return;
             case -2:
@@ -456,7 +456,7 @@ decide:
         return;
     if (obey_pager(employee))
         return;
-    if (employee->tiredness > allhosps[employee->owner].f21d) {
+    if (employee->tiredness > allhosps[employee->owner].rest_threshold) {
         if (take_a_break(employee))
             return;
     }
@@ -477,7 +477,7 @@ decide:
         }
     }
     employee->substate = 6;
-    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].unknownA);
+    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].staff_stand);
     roll = old_newrand() % 100;
     if (roll < 0xf) {
         employee->substate = 0;
@@ -549,12 +549,12 @@ void peep_bp_goto(Thing *peep)
         }
         peep->countdown = peep->speed == 0 ? div_err() : 0x100 / peep->speed;
         if (peep->type == THING_STAFF) {
-            if (peep->facing != dir || start[staff_anim_starts[peep->subtype].unknownA + peep->facing].frame == peep->sprite) {
+            if (peep->facing != dir || start[staff_anim_starts[peep->subtype].staff_stand + peep->facing].frame == peep->sprite) {
                 peep->facing = dir;
                 PLAY_FRAME(peep, staff_anim_starts[peep->subtype].idle);
             }
         } else {
-            if (peep->facing != dir || start[anim_starts[peep->subtype].unknown12 + peep->facing].frame == peep->sprite) {
+            if (peep->facing != dir || start[anim_starts[peep->subtype].patient_stand + peep->facing].frame == peep->sprite) {
                 peep->facing = dir;
                 PLAY_FRAME(peep, anim_starts[peep->subtype].idle);
             }
@@ -633,9 +633,9 @@ void peep_stuck(Thing *peep)
         if (peep->facing != 4) {
             peep->countdown = 100;
             if (peep->type == THING_PATIENT)
-                PLAY_FRAME(peep, anim_starts[peep->subtype].unknown12)
+                PLAY_FRAME(peep, anim_starts[peep->subtype].patient_stand)
             else
-                PLAY_FRAME(peep, staff_anim_starts[peep->subtype].unknownA)
+                PLAY_FRAME(peep, staff_anim_starts[peep->subtype].staff_stand)
             peep->facing = 4;
             return;
         }
@@ -649,11 +649,11 @@ void peep_stuck(Thing *peep)
         }
         if (peep->type == THING_PATIENT) {
             peep->impatience += 0xf;
-            if (peep->impatience > gbv.f108) {
+            if (peep->impatience > gbv.leave_max) {
                 peep->impatience = 0;
                 if (!(peep->flags & PF_FED_UP)) {
                     if (peep->owner == player)
-                        othervar.f89++;
+                        othervar.patients_left_count++;
                 }
                 set_icon_value(peep, ICON_FED_UP);
                 person_go_home(peep);

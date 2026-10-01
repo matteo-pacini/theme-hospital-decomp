@@ -29,7 +29,7 @@ void mayor_requester(u8 idx, char **strs)
 }
 
 // VIP request buttons: 0 accepts the visit (choice 0x14), 1 refuses it
-// (0x15). After more than five refusals in a row, while othervar.f0 < 10, a
+// (0x15). After more than five refusals in a row, while othervar.rand_pct < 10, a
 // refusal is followed by an acceptance.
 // FUNCTION: 0x000a0c08
 void process_mayor_start_buttons(u8 button)
@@ -37,17 +37,17 @@ void process_mayor_start_buttons(u8 button)
     switch (button) {
     case 1:
         packet_choice_result(0x15);
-        if (++allhosps[player].f1fd <= 5 || othervar.f0 >= 10)
+        if (++allhosps[player].mayor_postponed <= 5 || othervar.rand_pct >= 10)
             break;
     case 0:
         packet_choice_result(0x14);
-        allhosps[player].f1fd = 0;
+        allhosps[player].mayor_postponed = 0;
         break;
     }
 }
 
-// Daily VIP check: once a hospital with a reception desk has waited gbv.f128
-// days, asks it to accept a random VIP (allhosps.f1fa = 1). An accepted
+// Daily VIP check: once a hospital with a reception desk has waited gbv.mayor_launch
+// days, asks it to accept a random VIP (allhosps.mayor_state = 1). An accepted
 // visit (f1fa 2) starts at its time with create_mayor (f1fa 3).
 // FUNCTION: 0x000a0cac
 void generate_mayors(void)
@@ -61,29 +61,29 @@ void generate_mayors(void)
     found = 0;
     made = 0;
     count = 1;
-    if (statvar.unknownfd > 1)
+    if (statvar.num_players > 1)
         count = 4;
     for (i = 0; i < count; i++) {
-        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+        if (statvar.num_players > 1 && D_001609c4[i].active == 0)
             continue;
-        if (allhosps[i].f1fa != 0) {
+        if (allhosps[i].mayor_state != 0) {
             found = 1;
             break;
         }
     }
     if (!found) {
         for (i = 0; i < count; i++) {
-            if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+            if (statvar.num_players > 1 && D_001609c4[i].active == 0)
                 continue;
             if (&thing[listhead[i].objects[OBJ_RECEPTION_DESK]] > thing) {
                 hosp = &allhosps[i];
-                hosp->f1ff++;
-                if ((s16)hosp->f1ff >= gbv.f128) {
+                hosp->mayor_launch_count++;
+                if ((s16)hosp->mayor_launch_count >= gbv.mayor_launch) {
                     u8 mayor_idx;
                     mayor_idx = old_newrand() % 11;
-                    hosp->f1f9 = mayor_idx;
-                    hosp->f1fa = 1;
-                    hosp->f1ff = 0;
+                    hosp->mayor_name = mayor_idx;
+                    hosp->mayor_state = 1;
+                    hosp->mayor_launch_count = 0;
                     made = 1;
                     make_a_playercall(6, (u16)mayor_idx, 0x14, (u8)i);
                 }
@@ -91,19 +91,19 @@ void generate_mayors(void)
         }
     } else {
         for (i = 0; i < count; i++) {
-            if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+            if (statvar.num_players > 1 && D_001609c4[i].active == 0)
                 continue;
             hosp = &allhosps[i];
-            switch (hosp->f1fa) {
+            switch (hosp->mayor_state) {
             case 2:
-                if (actual_game_turn > hosp->f1f3) {
-                    hosp->f1f7 = create_mayor((u8)i);
-                    if (hosp->f1f7) {}
-                    hosp->f1fa = 3;
+                if (actual_game_turn > hosp->mayor_arrival_turn) {
+                    hosp->mayor = create_mayor((u8)i);
+                    if (hosp->mayor) {}
+                    hosp->mayor_state = 3;
                     if (i == player) {
-                        advisor.f2 = 8;
-                        if (hosp->f1f9 >= 0 && hosp->f1f9 < 6)
-                            play_ambient(hosp->f1f9 + 0xb7);
+                        advisor.forced_advice_id = 8;
+                        if (hosp->mayor_name >= 0 && hosp->mayor_name < 6)
+                            play_ambient(hosp->mayor_name + 0xb7);
                     }
                 }
                 break;
@@ -128,7 +128,7 @@ u16 create_mayor(u8 owner)
     Thing *reception_desk;
     mayor->type = THING_MAYOR;
     mayor->owner = owner;
-    pos = room_info[allhosps[owner].unknown1cf[old_newrand() & 3]].unknown4;
+    pos = room_info[allhosps[owner].entrances[old_newrand() & 3]].door_tile;
     mayor->x.tile = pos % 128;
     mayor->y.tile = pos / 128;
     mayor->x.frac = 0x80;
@@ -147,10 +147,10 @@ u16 create_mayor(u8 owner)
         mayor->goto_state = MAYOR_PAUSES;
         mayor->inspect_room = 0;
     } else {
-        set_destination_coords(mayor, room_info[allhosps[mayor->owner].unknown1cf[old_newrand() & 3]].unknown4);
+        set_destination_coords(mayor, room_info[allhosps[mayor->owner].entrances[old_newrand() & 3]].door_tile);
         mayor->state = MAYOR_GOTO;
         mayor->goto_state = MAYOR_GONE;
-        allhosps[mayor->owner].f1fb = 0xe;
+        allhosps[mayor->owner].mayor_verdict = 0xe;
     }
     return mayor - thing;
     }
@@ -174,9 +174,9 @@ void mayor_pauses(Thing *mayor)
         room = &room_info[mayor->inspect_room];
         if (room >= end_room_info)
             break;
-        if (room->owner == mayor->owner && rooms[room->type].fa) {
+        if (room->owner == mayor->owner && rooms[room->type].main_object) {
             if (rooms[room->type].unknown36 == 0 || !(old_newrand() & 1)) {
-                set_destination_coords(mayor, room->unknown4);
+                set_destination_coords(mayor, room->door_tile);
                 mayor->state = MAYOR_GOTO;
                 mayor->goto_state = MAYOR_PAUSES;
                 return;
@@ -184,14 +184,14 @@ void mayor_pauses(Thing *mayor)
         }
     }
     hosp = &allhosps[mayor->owner];
-    set_destination_coords(mayor, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
+    set_destination_coords(mayor, room_info[hosp->entrances[old_newrand() & 3]].door_tile);
     mayor->state = MAYOR_GOTO;
     mayor->goto_state = MAYOR_GONE;
-    hosp->f1fb = mayor_judges_hospital(mayor->owner);
-    value = mayor_result[hosp->f1fb].f4;
+    hosp->mayor_verdict = mayor_judges_hospital(mayor->owner);
+    value = mayor_result[hosp->mayor_verdict].cash_bonus;
     if (value != 0)
         change_balance(TX_VIP_AWARD, value, 0, (u16)mayor->owner);
-    value = mayor_result[hosp->f1fb].f2;
+    value = mayor_result[hosp->mayor_verdict].reputation_event;
     if (value != 0)
         reputation_affected(0, value, 0, mayor->owner, 0);
     if (value != 0x12)
@@ -224,7 +224,7 @@ u8 mayor_judges_hospital(u8 owner)
     juniors = 0;
     consultants = 0;
     nrooms = 0;
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         nstaff = 0;
         fatigue_sum = 0;
         max_fatigue = 0;
@@ -246,23 +246,23 @@ u8 mayor_judges_hospital(u8 owner)
             }
         }
     } else {
-        fatigue_sum = adcounts.f2;
-        max_fatigue = adcounts.f8;
-        npatients = adcounts.f0;
-        warmth_sum = adcounts.f14;
+        fatigue_sum = adcounts.staff_tiredness_sum;
+        max_fatigue = adcounts.max_staff_tiredness;
+        npatients = adcounts.patients;
+        warmth_sum = adcounts.warmth_sum;
     }
     hosp = &allhosps[owner];
-    if (hosp->fcaa > 10)
+    if (hosp->litter_count > 10)
         ++score;
-    else if (hosp->fcaa > 20)
+    else if (hosp->litter_count > 20)
         score += 2;
     else
         --score;
-    if (hosp->fc9c > 2) {
-        avg = fatigue_sum / hosp->fc9c;
-        if (gbv.fea < max_fatigue)
+    if (hosp->staff_count > 2) {
+        avg = fatigue_sum / hosp->staff_count;
+        if (gbv.very_tired < max_fatigue)
             score += 2;
-        else if (gbv.fe8 < avg)
+        else if (gbv.tired < avg)
             ++score;
         else
             --score;
@@ -301,14 +301,14 @@ u8 mayor_judges_hospital(u8 owner)
         ++score;
     score += 2 - old_normal_rand(0, 5);
     if (owner == player) {
-        award_counts.f13a += score;
-        award_counts.f13e++;
+        award_counts.mayor_score_total += score;
+        award_counts.mayor_visits++;
     }
     {
         int i;
 
         for (i = 0; i < 15; i++) {
-            if (mayor_result[i].f0 >= score)
+            if (mayor_result[i].max_score >= score)
                 return i;
         }
     }
@@ -321,10 +321,10 @@ u8 mayor_judges_hospital(u8 owner)
 void mayor_gone(Thing *mayor)
 {
     if (mayor->type == THING_MAYOR) {
-        allhosps[mayor->owner].f1fa = 4;
+        allhosps[mayor->owner].mayor_state = 4;
         make_a_playercall(5, 2, 0, mayor->owner);
     } else {
-        allhosps[mayor->owner].unknown209[1] = 0;
+        allhosps[mayor->owner].inspection[1] = 0;
     }
     remove_thing(mayor);
 }
@@ -346,23 +346,23 @@ void report_mayor_result(u8 owner, char **strs)
     text[0] = 0;
     text_x = 0;
     text_y = 0;
-    sprintf(buf, strs[0], allhosps[othervar.ff].unknown0);
+    sprintf(buf, strs[0], allhosps[othervar.cur_player].name);
     fn_000c93bf(text, buf);
-    sprintf(buf, strs[1], mayor_names[allhosps[owner].f1f9]);
-    fn_000c93bf(text, new_line);
-    fn_000c93bf(text, buf);
-    sprintf(buf, "%s", strs[allhosps[owner].f1fb + 5]);
-    fn_000c93bf(text, new_line);
+    sprintf(buf, strs[1], mayor_names[allhosps[owner].mayor_name]);
     fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
+    sprintf(buf, "%s", strs[allhosps[owner].mayor_verdict + 5]);
     fn_000c93bf(text, new_line);
-    value = mayor_result[allhosps[owner].f1fb].f4;
+    fn_000c93bf(text, new_line);
+    fn_000c93bf(text, buf);
+    fn_000c93bf(text, new_line);
+    value = mayor_result[allhosps[owner].mayor_verdict].cash_bonus;
     if (value != 0) {
         sprintf(buf, strs[2], value);
         fn_000c93bf(text, new_line);
         fn_000c93bf(text, buf);
     }
-    value = mayor_result[allhosps[owner].f1fb].f2;
+    value = mayor_result[allhosps[owner].mayor_verdict].reputation_event;
     if (value == 0x10) {
         sprintf(buf, strs[3], value);
         fn_000c93bf(text, new_line);

@@ -31,9 +31,9 @@ void add_contagiousness(Thing *w);
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner);
 void process_computer_peep(Thing *w, u8 player);
 
-// Starts a month's arrivals: adds the popn[] count for month othervar.f9d1
-// to the visitor total (gamevar.f147) and sets the spawn interval
-// gamevar.f1c to 1500 / that total (0 if none).
+// Starts a month's arrivals: adds the popn[] count for month othervar.game_month
+// to the visitor total (gamevar.visitors_per_month) and sets the spawn interval
+// gamevar.peep_interval to 1500 / that total (0 if none).
 // FUNCTION: 0x0006ff30
 void calc_visitors_this_month(void)
 {
@@ -42,25 +42,25 @@ void calc_visitors_this_month(void)
 
     unused = 0;
     for (i = 0; i < 30; i++) {
-        if (popn[i].month == othervar.f9d1) {
-            gamevar.f145 = popn[i].count;
+        if (popn[i].month == othervar.game_month) {
+            gamevar.visitor_change = popn[i].count;
             break;
         }
-        if (popn[i].month > othervar.f9d1)
+        if (popn[i].month > othervar.game_month)
             break;
     }
-    gamevar.f147 += gamevar.f145;
-    if (gamevar.f147)
-        gamevar.f1c = 1500 / gamevar.f147;
+    gamevar.visitors_per_month += gamevar.visitor_change;
+    if (gamevar.visitors_per_month)
+        gamevar.peep_interval = 1500 / gamevar.visitors_per_month;
     else
-        gamevar.f1c = 0;
+        gamevar.peep_interval = 0;
 }
 
 // Creates this turn's patients: one emergency patient per hospital whose
 // emergency helicopter has landed (sending it off after the last), and, in
-// the first 25 turns of each gamevar.f1c-turn period, a visitor with a random
+// the first 25 turns of each gamevar.peep_interval-turn period, a visitor with a random
 // illness for the hospital that wins them (who_owns_peep). A hospital not on
-// the map (allhosps.f2a != 1) treats theirs at once (process_computer_peep).
+// the map (allhosps.player_type != 1) treats theirs at once (process_computer_peep).
 // FUNCTION: 0x0006ffec
 void create_a_peep(void)
 {
@@ -73,16 +73,16 @@ void create_a_peep(void)
     s32 nplayers;
 
     nplayers = 1;
-    if (statvar.unknownfd > 1)
+    if (statvar.num_players > 1)
         nplayers = 4;
-    if (gamevar.f174)
+    if (gamevar.rat_fest_level)
         return;
     for (i = 0; i < nplayers; i++) {
-        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+        if (statvar.num_players > 1 && D_001609c4[i].active == 0)
             continue;
         hosp = &allhosps[i];
-        if (hosp->f1e3 > 0 && hosp->f1e1 == 1) {
-            patient = make_a_peep(hosp->f1d7, hosp->f1e4, i);
+        if (hosp->emergency_to_spawn > 0 && hosp->heli_landed == 1) {
+            patient = make_a_peep(hosp->heli_pad_tile, hosp->emergency_illness, i);
             if (patient) {
                 patient->known_illness = patient->illness;
                 patient->treatment = patient->known_illness;
@@ -94,29 +94,29 @@ void create_a_peep(void)
                 patient->speed = 0x20;
                 patient->anim_speed = 1;
                 patient->flags |= PF_EMERGENCY;
-                hosp->f1ed++;
-                hosp->f1cd++;
+                hosp->visitors++;
+                hosp->month_visitors++;
                 set_icon_value(patient, ICON_EMERGENCY);
             }
-            hosp->f1e3--;
-            if (hosp->f1e3 == 0) {
-                vehicle = &thing[hosp->f1df];
+            hosp->emergency_to_spawn--;
+            if (hosp->emergency_to_spawn == 0) {
+                vehicle = &thing[hosp->emergency_heli];
                 if (vehicle > thing)
                     vehicle->state = HELI_LEAVES;
-                hosp->f1e1 = 0;
+                hosp->heli_landed = 0;
             }
         }
     }
-    if (gamevar.f1c) {
-        if (actual_game_turn % gamevar.f1c >= 25)
+    if (gamevar.peep_interval) {
+        if (actual_game_turn % gamevar.peep_interval >= 25)
             return;
         illness = create_an_illness();
         i = who_owns_peep(illness);
         if (i >= 0) {
             hosp = &allhosps[i];
-            if (hosp->f2a == 1) {
-                room = &room_info[hosp->unknown1cf[old_newrand() & 3]];
-                patient = make_a_peep(room->unknown4, illness, i);
+            if (hosp->player_type == 1) {
+                room = &room_info[hosp->entrances[old_newrand() & 3]];
+                patient = make_a_peep(room->door_tile, illness, i);
                 if (patient)
                     start_person_going(patient);
             } else {
@@ -126,9 +126,9 @@ void create_a_peep(void)
                     remove_thing(patient);
                 }
             }
-            gamevar.f1a++;
-            hosp->f1ed++;
-            hosp->f1cd++;
+            gamevar.peeps_arrived++;
+            hosp->visitors++;
+            hosp->month_visitors++;
         }
     }
 }
@@ -146,18 +146,18 @@ u8 create_an_illness(void)
 
     illness = 0;
     ok = 0;
-    if (towns[myhosp->f29].unknown4[3] && old_newrand() % towns[myhosp->f29].unknown4[3] == 0) {
+    if (towns[myhosp->level].unknown4[3] && old_newrand() % towns[myhosp->level].unknown4[3] == 0) {
         ok = 1;
-        if (gbv.fd6 && othervar.f9d1 < gbv.fd6)
+        if (gbv.hold_visual_months && othervar.game_month < gbv.hold_visual_months)
             ok = 0;
-        else if (gbv.fd8 && gamevar.f1a < gbv.fd8)
+        else if (gbv.hold_visual_peep_count && gamevar.peeps_arrived < gbv.hold_visual_peep_count)
             ok = 0;
     }
-    if (ok && statvar.f8) {
-        r = old_newrand() % statvar.f8;
+    if (ok && statvar.visuals_total) {
+        r = old_newrand() % statvar.visuals_total;
         for (i = 0; i < 14; i++) {
             if (r < visuals[i]) {
-                if (othervar.f9d1 < visuals_available[i])
+                if (othervar.game_month < visuals_available[i])
                     ok = 0;
                 else
                     illness = i + 2;
@@ -166,7 +166,7 @@ u8 create_an_illness(void)
         }
     }
     if (ok == 0) {
-        r = old_newrand() % statvar.fa;
+        r = old_newrand() % statvar.non_visuals_total;
         for (i = 0; i < 20; i++) {
             if (r < non_visuals[i]) {
                 illness = i + 0x10;
@@ -179,8 +179,8 @@ u8 create_an_illness(void)
 
 // Picks the hospital a new patient with illness goes to: round robin early in
 // the level, sometimes at random, otherwise weighted by each hospital's
-// rooms[illness].unknown0 and price. Returns the player, or -1 if a
-// single-player hospital does not take patients (allhosps.unknown1256 0).
+// rooms[illness].reputation and price. Returns the player, or -1 if a
+// single-player hospital does not take patients (allhosps.hospital_open 0).
 // FUNCTION: 0x00070458
 s8 who_owns_peep(u8 illness)
 {
@@ -197,31 +197,31 @@ s8 who_owns_peep(u8 illness)
 
     best = -9999;
     owner = -1;
-    if (statvar.unknownfd > 1)
+    if (statvar.num_players > 1)
         players = network_num_players();
     else
         players = 4;
-    if (gbv.f13f && othervar.f9d1 < gbv.f13f) {
-        owner = gamevar.f149 % players;
-        gamevar.f149++;
-        if (statvar.unknownfd > 1)
+    if (gbv.alloc_delay && othervar.game_month < gbv.alloc_delay) {
+        owner = gamevar.peep_owner_counter % players;
+        gamevar.peep_owner_counter++;
+        if (statvar.num_players > 1)
             owner = nth_active_player(owner + 1);
-    } else if (old_newrand() % gbv.f13c == 0) {
+    } else if (old_newrand() % gbv.alloc_rand == 0) {
         owner = old_newrand() % players;
-        if (statvar.unknownfd > 1)
+        if (statvar.num_players > 1)
             owner = nth_active_player(owner + 1);
     } else {
         for (i = 0; i < 4; i++) {
             bids[i].player = i;
             bids[i].score = 0;
-            if (statvar.unknownfd > 1) {
+            if (statvar.num_players > 1) {
                 if (D_001609c4[i].active == 0)
                     continue;
             }
-            bids[i].score += allhosps[i].rooms[illness].unknown0 * gbv.f13e;
+            bids[i].score += allhosps[i].rooms[illness].reputation * gbv.alloc_ind_rep;
             update_single_cure_cost(illness, i);
             price[i] = max_price_for_treatment(illness, i);
-            pct[i] = price[i] * 100 / allhosps[i].rooms[illness].unknownC;
+            pct[i] = price[i] * 100 / allhosps[i].rooms[illness].price;
             if (pct[i] < 50)
                 pct[i] = 50;
             else if (pct[i] > 150)
@@ -245,18 +245,18 @@ s8 who_owns_peep(u8 illness)
         }
         if (owner < 0) {
             owner = old_newrand() % players;
-            if (statvar.unknownfd > 1)
+            if (statvar.num_players > 1)
                 owner = nth_active_player(owner + 1);
         }
     }
-    if (statvar.unknownfd > 1 ? 1 : allhosps[owner].unknown1256)
+    if (statvar.num_players > 1 ? 1 : allhosps[owner].hospital_open)
         return owner;
     return -1;
 }
 
 // Randomly makes a new patient contagious, as their illness allows
-// (Thing.contagion = 1 to gbv.fce); more likely early in the level, never while
-// the hospital's allhosps.f20d is set.
+// (Thing.contagion = 1 to gbv.how_contagious); more likely early in the level, never while
+// the hospital's allhosps.epidemic_active is set.
 // FUNCTION: 0x000707f4
 void add_contagiousness(Thing *patient)
 {
@@ -267,23 +267,23 @@ void add_contagiousness(Thing *patient)
         chance = expertise[patient->illness].unknown10[0];
         if (chance) {
             boost = 0;
-            if (gbv.fd0 && othervar.f9d1 < gbv.fd0)
+            if (gbv.reduce_cont_months && othervar.game_month < gbv.reduce_cont_months)
                 boost = 1;
-            else if (gbv.fd2 && gamevar.f1a < gbv.fd2)
+            else if (gbv.reduce_cont_peep_count && gamevar.peeps_arrived < gbv.reduce_cont_peep_count)
                 boost = 1;
             if (boost)
-                chance = chance * gbv.fd4 / 100;
-            if (allhosps[patient->owner].f20d)
+                chance = chance * gbv.reduce_cont_rate / 100;
+            if (allhosps[patient->owner].epidemic_active)
                 chance = 0;
             if (chance && old_newrand() % chance == 0)
-                patient->contagion = old_newrand() % gbv.fce + 1;
+                patient->contagion = old_newrand() % gbv.how_contagious + 1;
         }
     }
 }
 
 // Creates a patient for player `owner` with illness on tile pos (y * 128 +
 // x): appearance to suit the illness, needs, health, insurance and cash.
-// Puts them on the map if the hospital is on it (allhosps.f2a 1). Returns
+// Puts them on the map if the hospital is on it (allhosps.player_type 1). Returns
 // the patient, or 0 if no thing was free.
 // FUNCTION: 0x00070918
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
@@ -309,8 +309,8 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         peep->y.frac = 0x80;
         peep->dest_x = peep->x.tile;
         peep->dest_y = peep->y.tile;
-        peep->speed = gbv.f14c;
-        peep->anim_speed = gbv.f14e;
+        peep->speed = gbv.peep_speed;
+        peep->anim_speed = gbv.peep_anim_speed;
         if (illness >= 16) {
             total = 0;
             for (i = 4; i >= 0; i--)
@@ -342,7 +342,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
             peep->layers[0] = choices[pick].head;
             pal = &D_0012b818[choices[pick].palette];
         }
-        if (statvar.unknownfd > 1 && pal->count1 == 4)
+        if (statvar.num_players > 1 && pal->count1 == 4)
             peep->layers[1] = pal->layer1[owner];
         else
             peep->layers[1] = pal->layer1[old_newrand() % pal->count1];
@@ -363,7 +363,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         peep->warmth = 50;
         peep->refreshment = 100;
         if (illness == ILL_THE_SQUITS)
-            peep->bladder = gbv.f116 / 2;
+            peep->bladder = gbv.bowel_full / 2;
         else
             peep->bladder = 0;
         peep->health = old_normal_rand(200, 1000);
@@ -372,12 +372,12 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         peep->treatment = ILL_GENERAL_PRACTICE;
         peep->known_illness = 1;
         peep->diagnosis_handicap = old_normal_rand(1, *(u16 *)&expertise[illness].unknown10[6]);
-        if (old_newrand() % *(u16 *)&towns[myhosp->f29].unknown4[0xe] == 0)
+        if (old_newrand() % *(u16 *)&towns[myhosp->level].unknown4[0xe] == 0)
             peep->insurance = 1 << old_newrand() % 3;
         else
             peep->insurance = 0;
         peep->cash = old_newrand() % 95000 + 5000;
-        if (allhosps[owner].f2a == 1) {
+        if (allhosps[owner].player_type == 1) {
             nav_init(peep);
             insert_node(peep, peep->x, peep->y);
         }

@@ -26,12 +26,12 @@ void doctor_carries_out_examination(Thing *doctor)
         doctor->state = SS_DOCTOR_WORKS_AT_DESK;
         doctor->slave = 0;
         done_treatment(doctor, patient);
-        doctor->room->unknown29 = 1;
+        doctor->room->staff_free = 1;
         break;
     case 30:
         if (patient->state != 0x20) {
-            othervar.f0 = old_newrand() % 100;
-            if (othervar.f0 >= 30 && othervar.f0 < 32) {
+            othervar.rand_pct = old_newrand() % 100;
+            if (othervar.rand_pct >= 30 && othervar.rand_pct < 32) {
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 set_complex(doctor, 0x10e, 0);
                 process_staff_complex(doctor);
@@ -45,8 +45,8 @@ void doctor_carries_out_examination(Thing *doctor)
         break;
     case 31:
         if (patient->state != 0x20) {
-            othervar.f0 = old_newrand() % 100;
-            if (othervar.f0 >= 33 && othervar.f0 < 35) {
+            othervar.rand_pct = old_newrand() % 100;
+            if (othervar.rand_pct >= 33 && othervar.rand_pct < 35) {
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 set_complex(doctor, 0x10e, 0);
                 process_staff_complex(doctor);
@@ -59,21 +59,21 @@ void doctor_carries_out_examination(Thing *doctor)
         process_staff_complex(doctor);
         break;
     case 32:
-        othervar.f0 = old_newrand() % 100;
-        if (othervar.f0 >= 0 && othervar.f0 < 5) {
+        othervar.rand_pct = old_newrand() % 100;
+        if (othervar.rand_pct >= 0 && othervar.rand_pct < 5) {
             patient->anim_speed = 2;
         } else {
-            othervar.f0 = old_newrand() % 100;
-            if (othervar.f0 >= 5 && othervar.f0 < 30) {
+            othervar.rand_pct = old_newrand() % 100;
+            if (othervar.rand_pct >= 5 && othervar.rand_pct < 30) {
                 patient->anim_speed = 1;
             } else {
-                othervar.f0 = old_newrand() % 100;
-                if (othervar.f0 >= 30 && othervar.f0 < 35) {
+                othervar.rand_pct = old_newrand() % 100;
+                if (othervar.rand_pct >= 30 && othervar.rand_pct < 35) {
                     patient->anim_speed = 4;
                 } else {
-                    othervar.f0 = old_newrand() % 100;
-                    if (othervar.f0 >= 35 && othervar.f0 < 50) {
-                        patient->anim_speed = gbv.f14e;
+                    othervar.rand_pct = old_newrand() % 100;
+                    if (othervar.rand_pct >= 35 && othervar.rand_pct < 50) {
+                        patient->anim_speed = gbv.peep_anim_speed;
                         doctor->substate = 33;
                         patient->next_state = 0x20;
                         set_complex(patient, 0xbe, 0);
@@ -111,7 +111,7 @@ void doctor_carries_out_examination(Thing *doctor)
         if (treatment_machine_used((u16)patient->treatment, patient->x.tile + (patient->y.tile << 7)))
             break;
         done_treatment(doctor, patient);
-        doctor->room->unknown29 = 1;
+        doctor->room->staff_free = 1;
         break;
     case 60:
         if (patient->subtype == 3) {
@@ -147,7 +147,7 @@ void doctor_carries_out_examination(Thing *doctor)
         set_complex(doctor, 0x154, 0);
         process_staff_complex(doctor);
         doctor->slave = 0;
-        doctor->room->unknown29 = 1;
+        doctor->room->staff_free = 1;
         break;
     case 240:
         doctor->substate++;
@@ -242,14 +242,14 @@ void doctor_carries_out_examination(Thing *doctor)
         done_treatment(doctor, patient);
         doctor->slave = 0;
         doctor->state = SS_DOCTOR_IN_MACHINE_ROOM;
-        doctor->room->unknown29 = 1;
+        doctor->room->staff_free = 1;
         break;
     case 180:
         if (!pre_administer_drugs(patient)) {
             person_go_home(patient);
             doctor->slave = 0;
             doctor->state = SS_DOCTOR_IN_MACHINE_ROOM;
-            doctor->room->unknown29 = 1;
+            doctor->room->staff_free = 1;
         } else if (patient->illness == ILL_TRANSPARENCY) {
             doctor->next_state = SS_DOCTOR_EXAMINES;
             doctor->substate = 190;
@@ -273,7 +273,7 @@ void doctor_carries_out_examination(Thing *doctor)
         set_complex(doctor, 0x154, 0);
         process_staff_complex(doctor);
         administer_drugs(doctor, patient);
-        doctor->room->unknown29 = 1;
+        doctor->room->staff_free = 1;
         break;
     case 190:
         {
@@ -426,7 +426,7 @@ void doctor_carries_out_examination(Thing *doctor)
         set_complex(doctor, 0x154, 0);
         process_staff_complex(doctor);
         doctor->slave = 0;
-        doctor->room->unknown29 = 1;
+        doctor->room->staff_free = 1;
         remove_person(patient);
         break;
     default:
@@ -548,18 +548,18 @@ void effect_illness(Thing *patient, u8 illness, u8 cured)
     if (cured == 0) {
         patient->illness = illness;
     } else {
-        allhosps[patient->owner].f1e9++;
+        allhosps[patient->owner].cures++;
         if (patient->owner == player)
-            advisor.f128 |= 0x40;
-        allhosps[patient->owner].rooms[patient->illness].unknown1E++;
+            advisor.event_flags |= 0x40;
+        allhosps[patient->owner].rooms[patient->illness].cured++;
         reputation_affected(patient->illness, 0, 0, patient->owner, 0);
         patient->known_illness = patient->illness = 0;
         if (patient->contagion)
             clean_contagious_peep(patient);
         if (patient->owner == player)
-            mycontrol->fc++;
+            mycontrol->cures_this_month++;
         if (patient->flags & PF_EMERGENCY) {
-            allhosps[patient->owner].f1e5++;
+            allhosps[patient->owner].emergency_cured++;
             patient->flags &= ~PF_EMERGENCY;
             reset_icon_value(patient, ICON_EMERGENCY);
         }

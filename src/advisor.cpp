@@ -134,7 +134,7 @@ extern char **forced_advice_text;
 extern char **mouse_advice_text;
 }
 
-// Runs the advisor for a frame, if enabled (myplayer.f41[20]) and not
+// Runs the advisor for a frame, if enabled (myplayer.advisor_flags[20]) and not
 // suppressed: in the tutorial shows the tutorial text; otherwise lets the
 // current advice expire after its time (advice[].f2), then picks the first
 // advice entry not given too often or too recently whose condition holds
@@ -147,15 +147,15 @@ void display_advisor(void)
     u16 i;
     u16 elapsed;
 
-    if (!gamevar.f174) {
+    if (!gamevar.rat_fest_level) {
     if (!debug.unknownd7) {
     if (!debug.unknownd8[0]) {
-    if (myplayer.f41[20]) {
-        if (advisor.f11f & 1) {
-            if (tutorial() && advisor.f10[0]) {
-                advisor.f0 = 1;
+    if (myplayer.advisor_flags[20]) {
+        if (advisor.flags & 1) {
+            if (tutorial() && advisor.text[0]) {
+                advisor.advice_id = 1;
                 advisor_character();
-                if (advisor_up_states[advisor.f11e]) {
+                if (advisor_up_states[advisor.anim_state]) {
                     advisor_text_box();
                     D_00156910 = 1;
                 }
@@ -164,23 +164,23 @@ void display_advisor(void)
             }
         } else {
             stale = 0;
-            if (advisor.f0) {
-                if (resvars.f1 != SCREEN_MODE_1 || (crequester.unknown2 == 0x63 || crequester.unknown2 == 5)) {
-                    elapsed = actual_game_turn - advice[advisor.f0].time;
-                    if (elapsed > 0x64 || othervar.fa54 == 1)
+            if (advisor.advice_id) {
+                if (resvars.game_mode != SCREEN_MODE_1 || (crequester.id == 0x63 || crequester.id == 5)) {
+                    elapsed = actual_game_turn - advice[advisor.advice_id].time;
+                    if (elapsed > 0x64 || othervar.dismiss_advisor == 1)
                         stale = 1;
-                    if (elapsed >= advice[advisor.f0].f2 || othervar.fa54 == 1)
-                        advisor.f0 = 0;
+                    if (elapsed >= advice[advisor.advice_id].f2 || othervar.dismiss_advisor == 1)
+                        advisor.advice_id = 0;
                 } else {
-                    advice[advisor.f0].time = actual_game_turn - advice[advisor.f0].f2 / 4;
+                    advice[advisor.advice_id].time = actual_game_turn - advice[advisor.advice_id].f2 / 4;
                 }
             }
-            if (advisor.f0 == 0 || stale == 1) {
+            if (advisor.advice_id == 0 || stale == 1) {
                 for (i = 1; advice[i].id; i++) {
                     if (actual_game_turn > advice[i].time) {
                         if ((advice[i].f6 * advice[i].f4 << 10) / (actual_game_turn - advice[i].time) < 10) {
                             if (find_advice(i) == 1) {
-                                advisor.f124 = 1;
+                                advisor.rewrap = 1;
                                 break;
                             }
                         }
@@ -188,21 +188,21 @@ void display_advisor(void)
                 }
             }
             advisor_character();
-            if (advisor_up_states[advisor.f11e]) {
-                if (advisor.f0 && !othervar.fa54) {
+            if (advisor_up_states[advisor.anim_state]) {
+                if (advisor.advice_id && !othervar.dismiss_advisor) {
                     advisor_text_box();
                     D_00156910 = 1;
-                } else if (--advisor.fe <= 0 || othervar.fa54) {
-                    othervar.fa54 = 0;
-                    advisor.fe = -1;
-                    advisor.f11e = next_advisor_state[advisor.f11e];
-                    advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
-                    advisor.f12c = 0;
-                } else if (!advisor.f12c) {
-                    advisor.f11e = next_advisor_state[advisor.f11e];
-                    advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
-                    advisor.f12c = 1;
-                    othervar.fa54 = 0;
+                } else if (--advisor.time_left <= 0 || othervar.dismiss_advisor) {
+                    othervar.dismiss_advisor = 0;
+                    advisor.time_left = -1;
+                    advisor.anim_state = next_advisor_state[advisor.anim_state];
+                    advisor.anim_frame = start[advisor_anims[advisor.anim_state]].frame;
+                    advisor.state_advanced = 0;
+                } else if (!advisor.state_advanced) {
+                    advisor.anim_state = next_advisor_state[advisor.anim_state];
+                    advisor.anim_frame = start[advisor_anims[advisor.anim_state]].frame;
+                    advisor.state_advanced = 1;
+                    othervar.dismiss_advisor = 0;
                 }
             }
         }
@@ -214,7 +214,7 @@ void display_advisor(void)
 
 // Checks advice entry id (advice[] index): if its situation applies (from the
 // statistics pass, announcements and the level's criteria), writes the advice
-// text into advisor.f10, makes it the current advice (advisor.f0) and records
+// text into advisor.text, makes it the current advice (advisor.advice_id) and records
 // when it was given. Returns 1 if advice was written, else 0.
 // FUNCTION: 0x0005defc
 u8 find_advice(const u16 id)
@@ -231,113 +231,113 @@ u8 find_advice(const u16 id)
     f7 = 0;
     switch (advice[id].id) {
     case 0x6a:
-        if (gamevar.fef == 2 && !myplayer.f41[13]) {
-            sprintf(advisor.f10, advisor_text[0x6a]);
-            myplayer.f41[13] = 1;
+        if (gamevar.quake_phase == 2 && !myplayer.advisor_flags[13]) {
+            sprintf(advisor.text, advisor_text[0x6a]);
+            myplayer.advisor_flags[13] = 1;
             found = 1;
         }
         break;
     case 0x4d:
         if (NRAdcounts.unknowna[0] >= 8) {
-            sprintf(advisor.f10, advisor_text[0x4d], NRAdcounts.unknowna[0] / 2);
+            sprintf(advisor.text, advisor_text[0x4d], NRAdcounts.unknowna[0] / 2);
             NRAdcounts.unknowna[0] = 0;
             found = 1;
         }
         break;
     case 0x63:
         if (NRAdcounts.unknowna[5]) {
-            sprintf(advisor.f10, advisor_text[0x63], NRAdcounts.unknowna[0] / 2, NRAdcounts.unknowna[0] / 2);
+            sprintf(advisor.text, advisor_text[0x63], NRAdcounts.unknowna[0] / 2, NRAdcounts.unknowna[0] / 2);
             NRAdcounts.unknowna[5] = 0;
             found = 1;
         }
         break;
     case 0x5e:
-        if (adcounts.unknown8e && advisor.f130) {
-            if (adcounts.unknown8e == 1) {
-                sprintf(advisor.f10, advisor_text[0x5e]);
-                adcounts.unknown8e = 0;
+        if (adcounts.crackups && advisor.has_patients) {
+            if (adcounts.crackups == 1) {
+                sprintf(advisor.text, advisor_text[0x5e]);
+                adcounts.crackups = 0;
                 found = 1;
             }
         }
         break;
     case 0x48:
         crit = is_relevant_criterion(2, lose_criteria);
-        if (crit && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256)) {
+        if (crit && (statvar.num_players > 1 ? 1 : myhosp->hospital_open)) {
             win_crit = is_relevant_criterion(2, win_criteria);
-            if (win_crit && myhosp->f35 - myhosp->f3d < win_criteria[win_crit].value) {
+            if (win_crit && myhosp->balance - myhosp->loan < win_criteria[win_crit].value) {
                 u8 i;
 
                 for (i = 0; i < 4; i++) {
-                    if (myhosp->f35 < lose_criteria[crit].value + (i + 1) * fn_000cb2db(lose_criteria[crit].value) / 10
-                        && myhosp->f35 > lose_criteria[crit].value) {
-                        sprintf(advisor.f10, extra_advice[0x1c + i], myhosp->f35 - lose_criteria[crit].value);
+                    if (myhosp->balance < lose_criteria[crit].value + (i + 1) * fn_000cb2db(lose_criteria[crit].value) / 10
+                        && myhosp->balance > lose_criteria[crit].value) {
+                        sprintf(advisor.text, extra_advice[0x1c + i], myhosp->balance - lose_criteria[crit].value);
                         found = 1;
                         break;
                     }
                 }
             }
-        } else if (towns[myhosp->f29].f0 / 10 >= myhosp->f35 && myhosp->f3d == 0) {
-            sprintf(advisor.f10, advisor_text[0x48]);
+        } else if (towns[myhosp->level].start_cash / 10 >= myhosp->balance && myhosp->loan == 0) {
+            sprintf(advisor.text, advisor_text[0x48]);
             found = 1;
-        } else if (towns[myhosp->f29].f0 / 10 >= myhosp->f35 && myhosp->f3d != 0 && myhosp->f3d < myhosp->f41) {
-            sprintf(advisor.f10, extra_advice[0xf]);
+        } else if (towns[myhosp->level].start_cash / 10 >= myhosp->balance && myhosp->loan != 0 && myhosp->loan < myhosp->max_loan) {
+            sprintf(advisor.text, extra_advice[0xf]);
             found = 1;
         }
         break;
     case 0x41:
         crit = is_relevant_criterion(5, lose_criteria);
-        if (crit && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256) && myhosp->f1ed && (advisor.f128_u32 & 0x80)) {
-            if (lose_criteria[crit].value - myhosp->f1eb * 100 / myhosp->f1ed < 10) {
-                sprintf(advisor.f10, extra_advice[0x3a]);
+        if (crit && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && myhosp->visitors && (advisor.event_flags_u32 & 0x80)) {
+            if (lose_criteria[crit].value - myhosp->deaths * 100 / myhosp->visitors < 10) {
+                sprintf(advisor.text, extra_advice[0x3a]);
                 found = 1;
-            } else if (lose_criteria[crit].value - myhosp->f1eb * 100 / myhosp->f1ed < 0x19) {
-                sprintf(advisor.f10, advisor_text[0x41], myhosp->f1ed * lose_criteria[crit].value / 100 - myhosp->f1eb);
+            } else if (lose_criteria[crit].value - myhosp->deaths * 100 / myhosp->visitors < 0x19) {
+                sprintf(advisor.text, advisor_text[0x41], myhosp->visitors * lose_criteria[crit].value / 100 - myhosp->deaths);
                 found = 1;
             }
-            advisor.f128_u32 &= ~0x80;
+            advisor.event_flags_u32 &= ~0x80;
         }
         break;
     case 0x42:
         crit = is_relevant_criterion(1, win_criteria);
-        if (crit && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256) && mycontrol->unknown650 > 5) {
-            if (myhosp->unknownc7e > win_criteria[crit].value) {
-                sprintf(advisor.f10, extra_advice[0x3b], win_criteria[crit].value);
-            } else if ((win_criteria[crit].value - myhosp->unknownc7e) * 100 / win_criteria[crit].value < 10) {
-                sprintf(advisor.f10, extra_advice[0x3c], win_criteria[crit].value);
+        if (crit && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && mycontrol->month > 5) {
+            if (myhosp->reputation > win_criteria[crit].value) {
+                sprintf(advisor.text, extra_advice[0x3b], win_criteria[crit].value);
+            } else if ((win_criteria[crit].value - myhosp->reputation) * 100 / win_criteria[crit].value < 10) {
+                sprintf(advisor.text, extra_advice[0x3c], win_criteria[crit].value);
             } else {
-                sprintf(advisor.f10, advisor_text[0x42], myhosp->unknownc7e - win_criteria[crit].value);
+                sprintf(advisor.text, advisor_text[0x42], myhosp->reputation - win_criteria[crit].value);
             }
             found = 1;
         }
         break;
     case 0x43:
         crit = is_relevant_criterion(6, win_criteria);
-        if (crit && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256) && mycontrol->unknown650 > 6) {
-            if (myhosp->f1bb > win_criteria[crit].value) {
-                sprintf(advisor.f10, extra_advice[0x3d], win_criteria[crit].value);
+        if (crit && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && mycontrol->month > 6) {
+            if (myhosp->hospital_value > win_criteria[crit].value) {
+                sprintf(advisor.text, extra_advice[0x3d], win_criteria[crit].value);
                 found = 1;
-            } else if ((win_criteria[crit].value - myhosp->f1bb) * 100 / win_criteria[crit].value < 10) {
-                sprintf(advisor.f10, extra_advice[0x3e], win_criteria[crit].value - myhosp->f1bb);
+            } else if ((win_criteria[crit].value - myhosp->hospital_value) * 100 / win_criteria[crit].value < 10) {
+                sprintf(advisor.text, extra_advice[0x3e], win_criteria[crit].value - myhosp->hospital_value);
                 found = 1;
-            } else if (myhosp->f1bb < win_criteria[crit].value) {
-                sprintf(advisor.f10, advisor_text[0x43], win_criteria[crit].value);
+            } else if (myhosp->hospital_value < win_criteria[crit].value) {
+                sprintf(advisor.text, advisor_text[0x43], win_criteria[crit].value);
                 found = 1;
             }
         }
         break;
     case 0x14:
-        if (myhosp->f3d && myhosp->f35 > myhosp->f3d * 3) {
-            sprintf(advisor.f10, extra_advice[0x38]);
+        if (myhosp->loan && myhosp->balance > myhosp->loan * 3) {
+            sprintf(advisor.text, extra_advice[0x38]);
             found = 1;
         } else {
             crit = is_relevant_criterion(2, win_criteria);
-            if (crit && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256)) {
-                if (myhosp->f35 - myhosp->f3d > win_criteria[crit].value && (advisor.f128_u32 & 0x20)) {
-                    sprintf(advisor.f10, extra_advice[0x37], win_criteria[crit].value);
+            if (crit && (statvar.num_players > 1 ? 1 : myhosp->hospital_open)) {
+                if (myhosp->balance - myhosp->loan > win_criteria[crit].value && (advisor.event_flags_u32 & 0x20)) {
+                    sprintf(advisor.text, extra_advice[0x37], win_criteria[crit].value);
                     found = 1;
-                } else if (myhosp->f35 - myhosp->f3d > win_criteria[crit].value - fn_000cb2db(win_criteria[crit].value) / 10
-                           && myhosp->f35 - myhosp->f3d < win_criteria[crit].value && (advisor.f128_u32 & 0x20)) {
-                    sprintf(advisor.f10, advisor_text[0x14], win_criteria[crit].value - (myhosp->f35 - myhosp->f3d));
+                } else if (myhosp->balance - myhosp->loan > win_criteria[crit].value - fn_000cb2db(win_criteria[crit].value) / 10
+                           && myhosp->balance - myhosp->loan < win_criteria[crit].value && (advisor.event_flags_u32 & 0x20)) {
+                    sprintf(advisor.text, advisor_text[0x14], win_criteria[crit].value - (myhosp->balance - myhosp->loan));
                     found = 1;
                 }
             }
@@ -345,38 +345,38 @@ u8 find_advice(const u16 id)
         break;
     case 0x88:
         crit = is_relevant_criterion(4, win_criteria);
-        if (crit && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256) && (advisor.f128_u32 & 0x40)
-            && myhosp->f1e9 > myhosp->f29 * 3) {
-            if (myhosp->f1e9 > win_criteria[crit].value && adcounts.fa2 > 0x19 && advisor.f130) {
-                sprintf(advisor.f10, extra_advice[0x39], win_criteria[crit].value);
+        if (crit && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && (advisor.event_flags_u32 & 0x40)
+            && myhosp->cures > myhosp->level * 3) {
+            if (myhosp->cures > win_criteria[crit].value && adcounts.lose_progress > 0x19 && advisor.has_patients) {
+                sprintf(advisor.text, extra_advice[0x39], win_criteria[crit].value);
                 found = 1;
-            } else if (myhosp->f1e9 < win_criteria[crit].value) {
-                sprintf(advisor.f10, advisor_text[0x88], win_criteria[crit].value - myhosp->f1e9);
+            } else if (myhosp->cures < win_criteria[crit].value) {
+                sprintf(advisor.text, advisor_text[0x88], win_criteria[crit].value - myhosp->cures);
                 found = 1;
             }
-            advisor.f128_u32 &= ~0x40;
+            advisor.event_flags_u32 &= ~0x40;
         }
         break;
     case 0x78:
-        if (adcounts.f98 && advisor.f130) {
-            sprintf(advisor.f10, advisor_text[0x78], object_names[adcounts.f98]);
+        if (adcounts.worst_machine && advisor.has_patients) {
+            sprintf(advisor.text, advisor_text[0x78], object_names[adcounts.worst_machine]);
             found = 1;
         }
         break;
     case 3:
-        if (adcounts.f8f > 0 && advisor.f130) {
+        if (adcounts.machines > 0 && advisor.has_patients) {
             if (advisor_old_hardware())
                 found = 1;
         }
         break;
     case 4:
-        if (advisor.f2_s16) {
+        if (advisor.forced_advice_id_s) {
             forced_advice();
             found = 1;
         }
         break;
     case 5:
-        if (advisor.f4) {
+        if (advisor.mouse_advice_id) {
             mouse_advice();
             found = 1;
         }
@@ -384,90 +384,90 @@ u8 find_advice(const u16 id)
     case 6:
         break;
     case 7:
-        if (adcounts.f0 > 3 && advisor.f130) {
-            if (adcounts.f66 > 0 && adcounts.f9a == 0) {
-                if ((adcounts.f52 << 8) / adcounts.f66 > (gbv.f108 << 8) / 2) {
-                    sprintf(advisor.f10, advisor_text[7]);
+        if (adcounts.patients > 3 && advisor.has_patients) {
+            if (adcounts.doctor_wait_count > 0 && adcounts.idle_doctors == 0) {
+                if ((adcounts.doctor_wait_sum << 8) / adcounts.doctor_wait_count > (gbv.leave_max << 8) / 2) {
+                    sprintf(advisor.text, advisor_text[7]);
                     found = 1;
                 }
             }
         }
         break;
     case 8:
-        if (myhosp->fc9e[1] >= 6 && adcounts.f9a > myhosp->fc9e[1] / 3 && advisor.f130) {
-            sprintf(advisor.f10, advisor_text[8]);
+        if (myhosp->staff_by_kind[1] >= 6 && adcounts.idle_doctors > myhosp->staff_by_kind[1] / 3 && advisor.has_patients) {
+            sprintf(advisor.text, advisor_text[8]);
             found = 1;
         }
         break;
     case 0x64:
-        if (adcounts.f0 > 3 && advisor.f130) {
-            if (adcounts.f62 > 0 && adcounts.f99 == 0) {
-                if ((adcounts.f4e << 8) / adcounts.f62 > (gbv.f108 << 8) / 2) {
-                    sprintf(advisor.f10, advisor_text[0x64]);
+        if (adcounts.patients > 3 && advisor.has_patients) {
+            if (adcounts.nurse_wait_count > 0 && adcounts.idle_nurses == 0) {
+                if ((adcounts.nurse_wait_sum << 8) / adcounts.nurse_wait_count > (gbv.leave_max << 8) / 2) {
+                    sprintf(advisor.text, advisor_text[0x64]);
                     found = 1;
                 }
             }
         }
         break;
     case 0x65:
-        if (myhosp->fc9e[0] >= 4 && adcounts.f99 > myhosp->fc9e[0] / 4 && advisor.f130) {
-            sprintf(advisor.f10, advisor_text[0x65]);
+        if (myhosp->staff_by_kind[0] >= 4 && adcounts.idle_nurses > myhosp->staff_by_kind[0] / 4 && advisor.has_patients) {
+            sprintf(advisor.text, advisor_text[0x65]);
             found = 1;
         }
         break;
     case 9:
-        if (mycontrol->unknown650 > 4 && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256) && mycontrol->f28c == 0
+        if (mycontrol->month > 4 && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && mycontrol->history_visitors_now == 0
             && advice[id].f6 < 1) {
-            sprintf(advisor.f10, advisor_text[9]);
+            sprintf(advisor.text, advisor_text[9]);
             found = 1;
         }
         break;
     case 0xa:
-        if (mycontrol->unknown650 > 4 && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256) && advice[id].f6 < 1
-            && mycontrol->f3ac == 0 && mycontrol->f28c > 0 && myhosp->f1ed > othervar.f89) {
-            sprintf(advisor.f10, advisor_text[10]);
+        if (mycontrol->month > 4 && (statvar.num_players > 1 ? 1 : myhosp->hospital_open) && advice[id].f6 < 1
+            && mycontrol->history_cures_now == 0 && mycontrol->history_visitors_now > 0 && myhosp->visitors > othervar.patients_left_count) {
+            sprintf(advisor.text, advisor_text[10]);
             found = 1;
         }
         break;
     case 0xb:
-        if (adcounts.f0 > 5 && advisor.f130) {
-            if ((adcounts.f4a << 8) / adcounts.f0 > (gbv.f108 << 9) / 4) {
-                value = ((adcounts.f48 - adcounts.f4a) << 8) / gbv.f108;
+        if (adcounts.patients > 5 && advisor.has_patients) {
+            if ((adcounts.waiting_sum << 8) / adcounts.patients > (gbv.leave_max << 9) / 4) {
+                value = ((adcounts.impatience_sum - adcounts.waiting_sum) << 8) / gbv.leave_max;
                 if (value * 10 < 0x100)
-                    sprintf(advisor.f10, advisor_text[11]);
+                    sprintf(advisor.text, advisor_text[11]);
                 else
-                    sprintf(advisor.f10, extra_advice[0x32]);
+                    sprintf(advisor.text, extra_advice[0x32]);
                 found = 1;
             }
         }
         break;
     case 0x8d:
-        if (!myplayer.f41[14] && (advisor.f128_u32 & 8)) {
-            sprintf(advisor.f10, advisor_situations[11]);
-            myplayer.f41[14] = 1;
-            advisor.f128_u32 &= ~8;
+        if (!myplayer.advisor_flags[14] && (advisor.event_flags_u32 & 8)) {
+            sprintf(advisor.text, advisor_situations[11]);
+            myplayer.advisor_flags[14] = 1;
+            advisor.event_flags_u32 &= ~8;
             found = 1;
         }
         break;
     case 0xd:
-        if (advisor.f128_u32 & 8) {
-            if (othervar.f87 >= 4) {
-                sprintf(advisor.f10, extra_advice[1]);
+        if (advisor.event_flags_u32 & 8) {
+            if (othervar.contagious_count >= 4) {
+                sprintf(advisor.text, extra_advice[1]);
                 found = 1;
-            } else if (othervar.f87 >= 8) {
-                sprintf(advisor.f10, extra_advice[2]);
+            } else if (othervar.contagious_count >= 8) {
+                sprintf(advisor.text, extra_advice[2]);
                 found = 1;
             }
         }
         break;
     case 0xe:
-        if (adcounts.f0 > 5 && advisor.f130) {
+        if (adcounts.patients > 5 && advisor.has_patients) {
             if (advisor_peeps_unhappy())
                 found = 1;
         }
         break;
     case 0xf:
-        if (adcounts.f0 > 5 && advisor.f130) {
+        if (adcounts.patients > 5 && advisor.has_patients) {
             if (advisor_thirsty_peeps())
                 found = 1;
         }
@@ -475,25 +475,25 @@ u8 find_advice(const u16 id)
     case 0x58:
         break;
     case 0x10:
-        if (myhosp->fc9c > 3 && advisor.f130) {
+        if (myhosp->staff_count > 3 && advisor.has_patients) {
             if (advisor_staff_tired()) {
             }
         }
         break;
     case 0x11:
-        if (adcounts.f0 > 10 && advisor.f130) {
+        if (adcounts.patients > 10 && advisor.has_patients) {
             if (advisor_peeps_warmth())
                 found = 1;
         }
         break;
     case 0x12:
-        if (myhosp->fc9c > 10 && advisor.f130) {
+        if (myhosp->staff_count > 10 && advisor.has_patients) {
             if (advisor_staff_warmth())
                 found = 1;
         }
         break;
     case 0x13:
-        if (adcounts.f0 > 10 && advisor.f130) {
+        if (adcounts.patients > 10 && advisor.has_patients) {
             if (advisor_toilets())
                 found = 1;
         }
@@ -501,7 +501,7 @@ u8 find_advice(const u16 id)
     case 0xc:
         value = gamevar.announce[1][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[12]);
+            sprintf(advisor.text, advisor_text[12]);
             done_announcement(1);
             found = 1;
         }
@@ -509,32 +509,32 @@ u8 find_advice(const u16 id)
     case 0x59:
         value = gamevar.announce[11][0];
         if (value) {
-            if (!myplayer.f41[9]) {
-                sprintf(advisor.f10, advisor_situations[9]);
-                myplayer.f41[9] = 1;
+            if (!myplayer.advisor_flags[9]) {
+                sprintf(advisor.text, advisor_situations[9]);
+                myplayer.advisor_flags[9] = 1;
             } else {
-                sprintf(advisor.f10, advisor_text[0x59]);
+                sprintf(advisor.text, advisor_text[0x59]);
             }
             done_announcement(0xb);
             found = 1;
         }
         break;
     case 0x15:
-        if (advisor.f127) {
-            if (!myplayer.f41[19]) {
-                sprintf(advisor.f10, advisor_situations[16]);
-                myplayer.f41[19] = 1;
+        if (advisor.heli_landed) {
+            if (!myplayer.advisor_flags[19]) {
+                sprintf(advisor.text, advisor_situations[16]);
+                myplayer.advisor_flags[19] = 1;
             } else {
-                sprintf(advisor.f10, advisor_text[0x15]);
+                sprintf(advisor.text, advisor_text[0x15]);
             }
-            advisor.f127 = 0;
+            advisor.heli_landed = 0;
             found = 1;
         }
         break;
     case 0x7a:
         value = gamevar.announce[2][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x7a]);
+            sprintf(advisor.text, advisor_text[0x7a]);
             done_announcement(2);
             found = 1;
         }
@@ -543,11 +543,11 @@ u8 find_advice(const u16 id)
         value = gamevar.announce[4][0];
         if (value) {
             if (value == 5)
-                sprintf(advisor.f10, advisor_text[0x44], help_text[0x3f]);
+                sprintf(advisor.text, advisor_text[0x44], help_text[0x3f]);
             else if (value == 6)
-                sprintf(advisor.f10, advisor_text[0x44], help_text[0x40]);
+                sprintf(advisor.text, advisor_text[0x44], help_text[0x40]);
             else if (value == 8)
-                sprintf(advisor.f10, advisor_text[0x44], help_text[0x41]);
+                sprintf(advisor.text, advisor_text[0x44], help_text[0x41]);
             done_announcement(4);
             found = 1;
         }
@@ -555,7 +555,7 @@ u8 find_advice(const u16 id)
     case 0x89:
         value = gamevar.announce[13][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x89]);
+            sprintf(advisor.text, advisor_text[0x89]);
             done_announcement(0xd);
             found = 1;
         }
@@ -563,7 +563,7 @@ u8 find_advice(const u16 id)
     case 0x16:
         value = gamevar.announce[10][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x16]);
+            sprintf(advisor.text, advisor_text[0x16]);
             done_announcement(0xa);
             found = 1;
         }
@@ -571,7 +571,7 @@ u8 find_advice(const u16 id)
     case 0x17:
         value = gamevar.announce[5][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x17], object_names[value]);
+            sprintf(advisor.text, advisor_text[0x17], object_names[value]);
             done_announcement(5);
             found = 1;
         }
@@ -579,7 +579,7 @@ u8 find_advice(const u16 id)
     case 0x18:
         value = gamevar.announce[6][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x18], illness_text[value]);
+            sprintf(advisor.text, advisor_text[0x18], illness_text[value]);
             done_announcement(6);
             found = 1;
         }
@@ -587,7 +587,7 @@ u8 find_advice(const u16 id)
     case 0x19:
         value = gamevar.announce[7][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x19], illness_text[value]);
+            sprintf(advisor.text, advisor_text[0x19], illness_text[value]);
             done_announcement(7);
             found = 1;
         }
@@ -595,7 +595,7 @@ u8 find_advice(const u16 id)
     case 0x1a:
         value = gamevar.announce[8][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x1a], object_names[value]);
+            sprintf(advisor.text, advisor_text[0x1a], object_names[value]);
             done_announcement(8);
             found = 1;
         }
@@ -603,7 +603,7 @@ u8 find_advice(const u16 id)
     case 0x1b:
         value = gamevar.announce[9][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x1b], object_names[value]);
+            sprintf(advisor.text, advisor_text[0x1b], object_names[value]);
             done_announcement(9);
             found = 1;
         }
@@ -611,414 +611,414 @@ u8 find_advice(const u16 id)
     case 0x79:
         value = gamevar.announce[3][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x79], research_names[value]);
+            sprintf(advisor.text, advisor_text[0x79], research_names[value]);
             done_announcement(3);
             found = 1;
         }
         break;
     case 0x45:
-        if (advice[id].f6 < 1 && myhosp->fcaa > 0 && myhosp->fc9e[2] == 0) {
-            sprintf(advisor.f10, advisor_text[0x45]);
+        if (advice[id].f6 < 1 && myhosp->litter_count > 0 && myhosp->staff_by_kind[2] == 0) {
+            sprintf(advisor.text, advisor_text[0x45]);
             found = 1;
         }
         break;
     case 0x46:
-        if (myhosp->f1f1 > 0 && advisor.f130) {
+        if (myhosp->area > 0 && advisor.has_patients) {
             if (advisor_litter_problem())
                 found = 1;
         }
         break;
     case 0x47:
-        if (advice[id].f6 < 1 && myhosp->f1eb == 1) {
-            sprintf(advisor.f10, advisor_text[0x47]);
+        if (advice[id].f6 < 1 && myhosp->deaths == 1) {
+            sprintf(advisor.text, advisor_text[0x47]);
             found = 1;
         }
         break;
     case 0x52:
-        if (advice[id].f6 < 1 && myhosp->f1e9 == 1) {
-            sprintf(advisor.f10, advisor_text[0x52]);
+        if (advice[id].f6 < 1 && myhosp->cures == 1) {
+            sprintf(advisor.text, advisor_text[0x52]);
             found = 1;
         }
         break;
     case 0x5c:
-        if (NRAdcounts.unknown0 > 0 && myhosp->fc9e[2] == 0) {
-            sprintf(advisor.f10, advisor_text[0x5c]);
+        if (NRAdcounts.plants > 0 && myhosp->staff_by_kind[2] == 0) {
+            sprintf(advisor.text, advisor_text[0x5c]);
             found = 1;
         }
         break;
     case 0x5a:
-        if (NRAdcounts.unknown0 > 2 && advisor.f130) {
+        if (NRAdcounts.plants > 2 && advisor.has_patients) {
             if (advisor_dead_plants())
                 found = 1;
         }
         break;
     case 0x5b:
-        if (myhosp->f1f1 && advisor.f130) {
-            value = (NRAdcounts.unknown0 << 14) / myhosp->f1f1;
+        if (myhosp->area && advisor.has_patients) {
+            value = (NRAdcounts.plants << 14) / myhosp->area;
             if (value > 0x800) {
-                sprintf(advisor.f10, advisor_text[0x5b]);
+                sprintf(advisor.text, advisor_text[0x5b]);
                 found = 1;
             }
         }
         break;
     case 0x4a:
-        if (adcounts.f0 > 8 && myhosp->f1f1 > 0 && advisor.f130) {
+        if (adcounts.patients > 8 && myhosp->area > 0 && advisor.has_patients) {
             if (advisor_plants())
                 found = 1;
         }
         break;
     case 0x4b:
-        if (adcounts.f0 > 5 && advisor.f130) {
+        if (adcounts.patients > 5 && advisor.has_patients) {
             if (advisor_benches())
                 found = 1;
         }
         break;
     case 0x49:
-        if (myhosp->fc9c > myhosp->f29 + 5 && !listhead[player].rooms[ROOM_STAFF_ROOM]) {
-            sprintf(advisor.f10, advisor_text[0x49]);
+        if (myhosp->staff_count > myhosp->level + 5 && !listhead[player].rooms[ROOM_STAFF_ROOM]) {
+            sprintf(advisor.text, advisor_text[0x49]);
             found = 1;
         }
         break;
     case 0x50:
-        if (listhead[player].rooms[ROOM_TRAINING] != 0 && adcounts.f20 == 0 && othervar.fa4b_s8 == 0x16 && advisor.f130) {
-            sprintf(advisor.f10, advisor_text[0x50]);
+        if (listhead[player].rooms[ROOM_TRAINING] != 0 && adcounts.consultants == 0 && othervar.last_built_room_s == 0x16 && advisor.has_patients) {
+            sprintf(advisor.text, advisor_text[0x50]);
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x53:
-        if (listhead[player].rooms[ROOM_RESEARCH] != 0 && adcounts.f21 == 0 && othervar.fa4b_s8 == 0x1c && advisor.f130) {
-            if (!myplayer.f41[1]) {
-                sprintf(advisor.f10, advisor_situations[2]);
-                myplayer.f41[1] = 1;
+        if (listhead[player].rooms[ROOM_RESEARCH] != 0 && adcounts.researchers == 0 && othervar.last_built_room_s == 0x1c && advisor.has_patients) {
+            if (!myplayer.advisor_flags[1]) {
+                sprintf(advisor.text, advisor_situations[2]);
+                myplayer.advisor_flags[1] = 1;
             } else {
-                sprintf(advisor.f10, advisor_text[0x53]);
+                sprintf(advisor.text, advisor_text[0x53]);
             }
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x66:
         what_is_required(0x13, player);
-        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 2 && othervar.fa4b_s8 == 10
-            && required.unknown8) {
-            if (!myplayer.f41[2]) {
-                sprintf(advisor.f10, advisor_situations[3]);
-                myplayer.f41[2] = 1;
+        if ((required.raw[0] & 0x20) && required.missing_room != 10 && required.surgeons_needed == 2 && othervar.last_built_room_s == 10
+            && required.needs_ward) {
+            if (!myplayer.advisor_flags[2]) {
+                sprintf(advisor.text, advisor_situations[3]);
+                myplayer.advisor_flags[2] = 1;
             } else {
-                sprintf(advisor.f10, advisor_text[0x66]);
+                sprintf(advisor.text, advisor_text[0x66]);
             }
             found = 1;
-            othervar.fa4b_s8 = 1;
+            othervar.last_built_room_s = 1;
         }
         break;
     case 0x54:
         what_is_required(0x13, player);
-        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 2 && othervar.fa4b_s8 == 10) {
-            if (!myplayer.f41[2]) {
-                sprintf(advisor.f10, advisor_situations[3]);
-                myplayer.f41[2] = 1;
+        if ((required.raw[0] & 0x20) && required.missing_room != 10 && required.surgeons_needed == 2 && othervar.last_built_room_s == 10) {
+            if (!myplayer.advisor_flags[2]) {
+                sprintf(advisor.text, advisor_situations[3]);
+                myplayer.advisor_flags[2] = 1;
             } else {
-                sprintf(advisor.f10, advisor_text[0x54]);
+                sprintf(advisor.text, advisor_text[0x54]);
             }
             found = 1;
-            othervar.fa4b_s8 = 1;
+            othervar.last_built_room_s = 1;
         }
         break;
     case 0x67:
         what_is_required(0x13, player);
-        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 1 && othervar.fa4b_s8 == 10
-            && required.unknown8) {
-            sprintf(advisor.f10, advisor_text[0x67]);
+        if ((required.raw[0] & 0x20) && required.missing_room != 10 && required.surgeons_needed == 1 && othervar.last_built_room_s == 10
+            && required.needs_ward) {
+            sprintf(advisor.text, advisor_text[0x67]);
             found = 1;
         }
         break;
     case 0x55:
         what_is_required(0x13, player);
-        if ((required.unknown0[0] & 0x20) && required.unknown6 != 10 && required.unknown4 == 1 && othervar.fa4b_s8 == 10) {
-            sprintf(advisor.f10, advisor_text[0x55]);
+        if ((required.raw[0] & 0x20) && required.missing_room != 10 && required.surgeons_needed == 1 && othervar.last_built_room_s == 10) {
+            sprintf(advisor.text, advisor_text[0x55]);
             found = 1;
         }
         break;
     case 0x56:
         what_is_required(0x13, player);
-        if (!required.flags && required.unknown6 != 10 && required.unknown8 && othervar.fa4b_s8 == 10) {
-            sprintf(advisor.f10, advisor_text[0x56]);
+        if (!required.flags && required.missing_room != 10 && required.needs_ward && othervar.last_built_room_s == 10) {
+            sprintf(advisor.text, advisor_text[0x56]);
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x57:
         what_is_required(0x13, player);
-        if (!required.unknown8 && required.unknown9 && othervar.fa4b_s8 == 9) {
-            sprintf(advisor.f10, advisor_text[0x57]);
+        if (!required.needs_ward && required.needs_nurse && othervar.last_built_room_s == 9) {
+            sprintf(advisor.text, advisor_text[0x57]);
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x4f:
         what_is_required(5, player);
-        if ((required.unknown0[0] & 4) && required.unknown6 != 0xb && othervar.fa4b_s8 == 0xb) {
-            sprintf(advisor.f10, advisor_text[0x4f]);
+        if ((required.raw[0] & 4) && required.missing_room != 0xb && othervar.last_built_room_s == 0xb) {
+            sprintf(advisor.text, advisor_text[0x4f]);
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x4e:
         what_is_required(4, player);
-        if ((required.unknown0[0] & 0x40) && required.unknown6 != 8 && othervar.fa4b_s8 == 8) {
-            if (!myplayer.f41[3]) {
-                sprintf(advisor.f10, advisor_situations[4]);
-                myplayer.f41[3] = 1;
+        if ((required.raw[0] & 0x40) && required.missing_room != 8 && othervar.last_built_room_s == 8) {
+            if (!myplayer.advisor_flags[3]) {
+                sprintf(advisor.text, advisor_situations[4]);
+                myplayer.advisor_flags[3] = 1;
             } else {
-                sprintf(advisor.f10, advisor_text[0x4e]);
+                sprintf(advisor.text, advisor_text[0x4e]);
             }
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x5d:
-        if (adcounts.f8f > 0 && myhosp->fc9e[2] == 0 && othervar.fa4b_s8 > 0 && advisor.f130) {
-            sprintf(advisor.f10, advisor_text[0x5d]);
+        if (adcounts.machines > 0 && myhosp->staff_by_kind[2] == 0 && othervar.last_built_room_s > 0 && advisor.has_patients) {
+            sprintf(advisor.text, advisor_text[0x5d]);
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x4c:
-        if (myhosp->f1eb > 4 && (advisor.f128_u32 & 0x80) && saferand() % 4 == 0) {
+        if (myhosp->deaths > 4 && (advisor.event_flags_u32 & 0x80) && saferand() % 4 == 0) {
             if (saferand() % 2 == 0)
-                sprintf(advisor.f10, advisor_text[0x4c], myhosp->f1eb);
+                sprintf(advisor.text, advisor_text[0x4c], myhosp->deaths);
             else
-                sprintf(advisor.f10, extra_advice[0x25], myhosp->f1eb);
-            advisor.f128_u32 &= ~0x80;
+                sprintf(advisor.text, extra_advice[0x25], myhosp->deaths);
+            advisor.event_flags_u32 &= ~0x80;
             found = 1;
         }
         break;
     case 0x51:
-        if (myhosp->f1e9 > 4 && (advisor.f128_u32 & 0x40) && saferand() % 4 == 0) {
+        if (myhosp->cures > 4 && (advisor.event_flags_u32 & 0x40) && saferand() % 4 == 0) {
             if (saferand() % 2 == 0)
-                sprintf(advisor.f10, advisor_text[0x51], myhosp->f1e9);
+                sprintf(advisor.text, advisor_text[0x51], myhosp->cures);
             else
-                sprintf(advisor.f10, extra_advice[0x24], myhosp->f1e9);
+                sprintf(advisor.text, extra_advice[0x24], myhosp->cures);
             found = 1;
-            advisor.f128_u32 &= ~0x40;
+            advisor.event_flags_u32 &= ~0x40;
         }
         break;
     case 0x68:
-        if (listhead[player].rooms[ROOM_GP] != 0 && myhosp->fc9e[1] == 0 && othervar.fa4b_s8 == 7 && myhosp->f29 == 1) {
-            sprintf(advisor.f10, advisor_text[0x68]);
+        if (listhead[player].rooms[ROOM_GP] != 0 && myhosp->staff_by_kind[1] == 0 && othervar.last_built_room_s == 7 && myhosp->level == 1) {
+            sprintf(advisor.text, advisor_text[0x68]);
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x69:
-        if (listhead[player].rooms[ROOM_RECEPTION] != 0 && myhosp->fc9e[3] == 0 && myhosp->f29 == 1) {
-            sprintf(advisor.f10, advisor_text[0x69]);
+        if (listhead[player].rooms[ROOM_RECEPTION] != 0 && myhosp->staff_by_kind[3] == 0 && myhosp->level == 1) {
+            sprintf(advisor.text, advisor_text[0x69]);
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     case 0x6b:
-        if ((myhosp->f29 >= 2 || myhosp->f29 <= 5) && NRAdcounts.unknown10 > 2 && NRAdcounts.unknown10 < 7) {
-            sprintf(advisor.f10, advisor_text[0x6b + saferand() % 3]);
+        if ((myhosp->level >= 2 || myhosp->level <= 5) && NRAdcounts.open_rooms > 2 && NRAdcounts.open_rooms < 7) {
+            sprintf(advisor.text, advisor_text[0x6b + saferand() % 3]);
             found = 1;
         }
         break;
     case 0x6e:
-        if (!myplayer.f41[11] && gamevar.ff5) {
-            sprintf(advisor.f10, advisor_text[0x6e]);
-            myplayer.f41[11] = 1;
+        if (!myplayer.advisor_flags[11] && gamevar.ff5) {
+            sprintf(advisor.text, advisor_text[0x6e]);
+            myplayer.advisor_flags[11] = 1;
             found = 1;
         }
         break;
     case 0x1c:
-        if (!myplayer.f41[10] && (advisor.f128_u32 & 1)) {
-            sprintf(advisor.f10, advisor_text[0x1c]);
-            myplayer.f41[10] = 1;
-            advisor.f128_u32 &= ~1;
+        if (!myplayer.advisor_flags[10] && (advisor.event_flags_u32 & 1)) {
+            sprintf(advisor.text, advisor_text[0x1c]);
+            myplayer.advisor_flags[10] = 1;
+            advisor.event_flags_u32 &= ~1;
             found = 1;
         }
         break;
     case 0x72:
-        if (myhosp->f29 > 1 && mycontrol->unknown650 > 6 && advisor.f130) {
-            win_crit = 100 - adcounts.fa2;
+        if (myhosp->level > 1 && mycontrol->month > 6 && advisor.has_patients) {
+            win_crit = 100 - adcounts.lose_progress;
             if (win_crit < 0x32 && win_crit > 0x19) {
-                sprintf(advisor.f10, advisor_text[0x74]);
+                sprintf(advisor.text, advisor_text[0x74]);
                 found = 1;
             } else if (win_crit < 0x19 && win_crit > 5) {
-                sprintf(advisor.f10, advisor_text[0x73]);
+                sprintf(advisor.text, advisor_text[0x73]);
                 found = 1;
             } else if (win_crit < 5 && win_crit > 0) {
-                sprintf(advisor.f10, advisor_text[0x72]);
+                sprintf(advisor.text, advisor_text[0x72]);
                 found = 1;
             }
         }
         break;
     case 0x6f:
-        if (myhosp->f29 > 1 && mycontrol->unknown650 > myhosp->f29 + 3 && advisor.f130) {
-            win_crit = 100 - adcounts.f9e;
+        if (myhosp->level > 1 && mycontrol->month > myhosp->level + 3 && advisor.has_patients) {
+            win_crit = 100 - adcounts.win_progress;
             if (win_crit < 0x32 && win_crit > 0x19) {
-                sprintf(advisor.f10, advisor_text[0x71]);
+                sprintf(advisor.text, advisor_text[0x71]);
                 found = 1;
             } else if (win_crit < 0x19 && win_crit > 5) {
-                sprintf(advisor.f10, advisor_text[0x70]);
+                sprintf(advisor.text, advisor_text[0x70]);
                 found = 1;
             } else if (win_crit < 5 && win_crit > 0) {
-                sprintf(advisor.f10, advisor_text[0x6f]);
+                sprintf(advisor.text, advisor_text[0x6f]);
                 found = 1;
             }
         }
         break;
     case 0x75:
-        if ((advisor.f128_u32 & 2) && advisor.fc != 0) {
-            sprintf(advisor.f10, advisor_text[0x75], illness_text[advisor.fc]);
+        if ((advisor.event_flags_u32 & 2) && advisor.unpaid_treatment != 0) {
+            sprintf(advisor.text, advisor_text[0x75], illness_text[advisor.unpaid_treatment]);
             found = 1;
-            advisor.f128_u32 &= ~2;
+            advisor.event_flags_u32 &= ~2;
         }
         break;
     case 0x76:
-        if (myhosp->fc8e > 0x96) {
-            sprintf(advisor.f10, advisor_text[0x76]);
+        if (myhosp->price_level > 0x96) {
+            sprintf(advisor.text, advisor_text[0x76]);
             found = 1;
         }
         break;
     case 0x77:
-        if (myhosp->fc8e && myhosp->fc8e < 0x3c) {
-            sprintf(advisor.f10, advisor_text[0x77]);
+        if (myhosp->price_level && myhosp->price_level < 0x3c) {
+            sprintf(advisor.text, advisor_text[0x77]);
             found = 1;
         }
         break;
     case 0x7b:
-        if (advisor.f12d) {
-            if (advisor.f12e == 1) {
-                if (advisor.f12f == 8) {
-                    sprintf(advisor.f10, advisor_text[0x7d]);
+        if (advisor.new_staff_pending) {
+            if (advisor.new_staff_kind == 1) {
+                if (advisor.new_staff_room == 8) {
+                    sprintf(advisor.text, advisor_text[0x7d]);
                     found = 1;
-                } else if (advisor.f12f == 0x1c) {
-                    sprintf(advisor.f10, advisor_text[0x7b]);
+                } else if (advisor.new_staff_room == 0x1c) {
+                    sprintf(advisor.text, advisor_text[0x7b]);
                     found = 1;
-                } else if (advisor.f12f == 10) {
-                    sprintf(advisor.f10, advisor_text[0x7c]);
+                } else if (advisor.new_staff_room == 10) {
+                    sprintf(advisor.text, advisor_text[0x7c]);
                     found = 1;
-                } else if (advisor.f12f != 0x1d) {
-                    sprintf(advisor.f10, advisor_text[0x7e + saferand() % 2], real_room_names[rooms[advisor.f12f].id]);
-                    found = 1;
-                }
-            } else if (advisor.f12e == 0) {
-                if (advisor.f12f != 0x1d) {
-                    sprintf(advisor.f10, advisor_text[0x80 + saferand() % 2], real_room_names[rooms[advisor.f12f].id]);
+                } else if (advisor.new_staff_room != 0x1d) {
+                    sprintf(advisor.text, advisor_text[0x7e + saferand() % 2], real_room_names[rooms[advisor.new_staff_room].id]);
                     found = 1;
                 }
-            } else if (advisor.f12e == 3) {
-                sprintf(advisor.f10, advisor_text[0x82]);
+            } else if (advisor.new_staff_kind == 0) {
+                if (advisor.new_staff_room != 0x1d) {
+                    sprintf(advisor.text, advisor_text[0x80 + saferand() % 2], real_room_names[rooms[advisor.new_staff_room].id]);
+                    found = 1;
+                }
+            } else if (advisor.new_staff_kind == 3) {
+                sprintf(advisor.text, advisor_text[0x82]);
                 found = 1;
             }
-            advisor.f12d = 0;
-            advisor.f12e = 0;
-            advisor.f12f = 0;
+            advisor.new_staff_pending = 0;
+            advisor.new_staff_kind = 0;
+            advisor.new_staff_room = 0;
         }
         break;
     case 0x86:
         value = gamevar.announce[12][0];
         if (value) {
-            sprintf(advisor.f10, advisor_text[0x86], allhosps[value].unknown0);
+            sprintf(advisor.text, advisor_text[0x86], allhosps[value].name);
             done_announcement(0xc);
             found = 1;
         }
         break;
     case 0x87:
-        if (!myplayer.f41[8] && (advisor.f128_u32 & 4)) {
-            sprintf(advisor.f10, advisor_text[0x87]);
-            myplayer.f41[8] = 1;
-            advisor.f128_u32 &= ~4;
+        if (!myplayer.advisor_flags[8] && (advisor.event_flags_u32 & 4)) {
+            sprintf(advisor.text, advisor_text[0x87]);
+            myplayer.advisor_flags[8] = 1;
+            advisor.event_flags_u32 &= ~4;
             found = 1;
         }
-        crit = myplayer.f41[8];
+        crit = myplayer.advisor_flags[8];
         win_crit = 8;
         break;
     case 0x8a:
-        if (!myplayer.f41[6] && (advisor.f128_u32 & 0x100)) {
-            sprintf(advisor.f10, advisor_situations[7]);
-            myplayer.f41[6] = 1;
-            advisor.f128_u32 &= ~0x100;
+        if (!myplayer.advisor_flags[6] && (advisor.event_flags_u32 & 0x100)) {
+            sprintf(advisor.text, advisor_situations[7]);
+            myplayer.advisor_flags[6] = 1;
+            advisor.event_flags_u32 &= ~0x100;
             found = 1;
         }
     case 0x8b:
-        if (!myplayer.f41[4] && myhosp->fcae > 0) {
-            sprintf(advisor.f10, advisor_situations[5]);
-            myplayer.f41[4] = 1;
+        if (!myplayer.advisor_flags[4] && myhosp->rathole_count > 0) {
+            sprintf(advisor.text, advisor_situations[5]);
+            myplayer.advisor_flags[4] = 1;
             found = 1;
         }
         break;
     case 0x8c:
-        if (!myplayer.f41[0] && othervar.fa4b_s8 == 0x1c) {
-            sprintf(advisor.f10, advisor_situations[1]);
-            myplayer.f41[0] = 1;
+        if (!myplayer.advisor_flags[0] && othervar.last_built_room_s == 0x1c) {
+            sprintf(advisor.text, advisor_situations[1]);
+            myplayer.advisor_flags[0] = 1;
             found = 1;
-            othervar.fa4b_s8 = 0;
+            othervar.last_built_room_s = 0;
         }
         break;
     default:
         break;
     }
-    if (found == 1 && advice[id].id && (s8)advisor.f10[0] != 0) {
-        advisor.f4 = 0;
-        advisor.f122 = 0;
-        advisor.f123 = 0;
+    if (found == 1 && advice[id].id && (s8)advisor.text[0] != 0) {
+        advisor.mouse_advice_id = 0;
+        advisor.line_count = 0;
+        advisor.extra_segments = 0;
         advice[id].f6++;
         advice[id].time = actual_game_turn;
         advice[id].f7 = f7;
         advice[id].fc = extra;
-        advisor.f0 = id;
-        advisor.fe = advice[id].f2 / 2;
+        advisor.advice_id = id;
+        advisor.time_left = advice[id].f2 / 2;
     }
     return found;
 }
 
-// Writes the text for the mouse advice advisor.f4 into advisor.f10.
+// Writes the text for the mouse advice advisor.mouse_advice_id into advisor.text.
 // FUNCTION: 0x000608bc
 void mouse_advice(void)
 {
     s32 unused;
 
-    switch (advisor.f4) {
+    switch (advisor.mouse_advice_id) {
     default:
-        fn_000bbff0(advisor.f10, mouse_advice_text[advisor.f4]);
+        fn_000bbff0(advisor.text, mouse_advice_text[advisor.mouse_advice_id]);
         break;
     }
 }
 
-// Writes the text for the forced advice advisor.f2 (some with names filled in)
-// into advisor.f10, and clears the request.
+// Writes the text for the forced advice advisor.forced_advice_id (some with names filled in)
+// into advisor.text, and clears the request.
 // FUNCTION: 0x00060904
 void forced_advice(void)
 {
     u8 i;
 
-    switch (advisor.f2_s16) {
+    switch (advisor.forced_advice_id_s) {
     case 2:
-        fn_000bbff0(advisor.f10, forced_advice_text[advisor.f2_s16]);
+        fn_000bbff0(advisor.text, forced_advice_text[advisor.forced_advice_id_s]);
         for (i = 0; i < 4; i++) {
-            if (othervar.fa6c[i]) {
-                sprintf(advisor.f10, "%s %s", advisor.f10, allhosps[i].unknown0);
-                othervar.fa6c[i] = 0;
+            if (othervar.net_winners[i]) {
+                sprintf(advisor.text, "%s %s", advisor.text, allhosps[i].name);
+                othervar.net_winners[i] = 0;
             }
         }
         break;
     case 8:
-        if (myplayer.f41[7] == 0) {
-            sprintf(advisor.f10, advisor_situations[8]);
-            myplayer.f41[7] = 1;
+        if (myplayer.advisor_flags[7] == 0) {
+            sprintf(advisor.text, advisor_situations[8]);
+            myplayer.advisor_flags[7] = 1;
         } else {
-            sprintf(advisor.f10, forced_advice_text[advisor.f2_s16], mayor_names[allhosps[player].f1f9]);
+            sprintf(advisor.text, forced_advice_text[advisor.forced_advice_id_s], mayor_names[allhosps[player].mayor_name]);
         }
         break;
     default:
-        fn_000bbff0(advisor.f10, forced_advice_text[advisor.f2_s16]);
+        fn_000bbff0(advisor.text, forced_advice_text[advisor.forced_advice_id_s]);
         break;
     }
-    advisor.f0 = 0;
-    advisor.f2_s16 = 0;
+    advisor.advice_id = 0;
+    advisor.forced_advice_id_s = 0;
 }
 
 // Clears all advice history and the current advice, and starts a new
@@ -1034,15 +1034,15 @@ void reset_advisor(void)
         advice[i].time = 0;
         advice[i].fc = 0;
     }
-    advisor.f0 = 0;
-    advisor.fe = 0;
-    advisor.fc = 0;
-    advisor.f2_s16 = 0;
-    advisor.f4 = 0;
-    advisor.f10[0] = 0;
-    othervar.f86 = 1;
-    advisor.f130 = 0;
-    advisor.f128_u32 ^= advisor.f128_u32;
+    advisor.advice_id = 0;
+    advisor.time_left = 0;
+    advisor.unpaid_treatment = 0;
+    advisor.forced_advice_id_s = 0;
+    advisor.mouse_advice_id = 0;
+    advisor.text[0] = 0;
+    othervar.every_32_turns = 1;
+    advisor.has_patients = 0;
+    advisor.event_flags_u32 ^= advisor.event_flags_u32;
     reset_all_count();
 }
 
@@ -1073,7 +1073,7 @@ void done_announcement(const u16 type)
     for (i = 0; i < 3; i++)
         gamevar.announce[type][i] = gamevar.announce[type][i + 1];
     gamevar.announce[type][3] = 0;
-    advisor.f124 = 1;
+    advisor.rewrap = 1;
 }
 
 // Toilet advice from the patients' average bladder (advisor counts). Returns
@@ -1083,25 +1083,25 @@ u8 advisor_toilets(void)
 {
     s32 ratio;
 
-    ratio = adcounts.f1c / adcounts.f0;
-    if (ratio * 4 > gbv.f116 * 3 && listhead[player].objects[OBJ_TOILET] == 0) {
-        sprintf(advisor.f10, advisor_text[0x13]);
+    ratio = adcounts.bladder_sum / adcounts.patients;
+    if (ratio * 4 > gbv.bowel_full * 3 && listhead[player].objects[OBJ_TOILET] == 0) {
+        sprintf(advisor.text, advisor_text[0x13]);
         return 1;
     }
-    if (gbv.f116 < ratio && listhead[player].objects[OBJ_TOILET] == 0) {
-        sprintf(advisor.f10, extra_advice[10]);
+    if (gbv.bowel_full < ratio && listhead[player].objects[OBJ_TOILET] == 0) {
+        sprintf(advisor.text, extra_advice[10]);
         return 1;
     }
-    if (gbv.f116 < ratio && listhead[player].objects[OBJ_TOILET] != 0) {
-        sprintf(advisor.f10, extra_advice[11]);
+    if (gbv.bowel_full < ratio && listhead[player].objects[OBJ_TOILET] != 0) {
+        sprintf(advisor.text, extra_advice[11]);
         return 1;
     }
-    if (gbv.f118 < ratio && listhead[player].objects[OBJ_TOILET] == 0) {
-        sprintf(advisor.f10, extra_advice[0x26]);
+    if (gbv.bowel_overflows < ratio && listhead[player].objects[OBJ_TOILET] == 0) {
+        sprintf(advisor.text, extra_advice[0x26]);
         return 1;
     }
-    if (gbv.f118 < ratio) {
-        sprintf(advisor.f10, extra_advice[12]);
+    if (gbv.bowel_overflows < ratio) {
+        sprintf(advisor.text, extra_advice[12]);
         return 1;
     }
     return 0;
@@ -1116,27 +1116,27 @@ u8 advisor_plants(void)
     s32 impatience;
     s32 happiness;
 
-    per_area = (NRAdcounts.unknown0 << 14) / myhosp->f1f1;
-    impatience = (adcounts.f48 << 6) / (adcounts.f0 * gbv.f108);
-    happiness = (adcounts.fa << 10) / adcounts.f0;
+    per_area = (NRAdcounts.plants << 14) / myhosp->area;
+    impatience = (adcounts.impatience_sum << 6) / (adcounts.patients * gbv.leave_max);
+    happiness = (adcounts.happiness_sum << 10) / adcounts.patients;
     if (impatience > 0x30) {
         if (per_area < 0x100) {
-            sprintf(advisor.f10, extra_advice[0x14]);
+            sprintf(advisor.text, extra_advice[0x14]);
             return 1;
         } else if (per_area < 0x200) {
-            sprintf(advisor.f10, extra_advice[0x15]);
+            sprintf(advisor.text, extra_advice[0x15]);
             return 1;
         }
-    } else if ((gbv.f110 << 10) > happiness) {
+    } else if ((gbv.very_unhappy << 10) > happiness) {
         if (per_area < 0x100) {
-            sprintf(advisor.f10, extra_advice[0x16]);
+            sprintf(advisor.text, extra_advice[0x16]);
             return 1;
         } else if (per_area < 0x200) {
-            sprintf(advisor.f10, extra_advice[0x17]);
+            sprintf(advisor.text, extra_advice[0x17]);
             return 1;
         }
     } else if (per_area >= 0x400 && per_area <= 0x800) {
-        sprintf(advisor.f10, advisor_text[0x4a]);
+        sprintf(advisor.text, advisor_text[0x4a]);
         return 1;
     }
     return 0;
@@ -1147,32 +1147,32 @@ u8 advisor_plants(void)
 // FUNCTION: 0x00060f90
 u8 advisor_old_hardware(void)
 {
-    if (adcounts.f90 * 20 * adcounts.f8f > adcounts.f8f * 0x1300) {
-        if (myhosp->fc9e[2] > 0) {
-            sprintf(advisor.f10, advisor_text[3]);
+    if (adcounts.machine_wear_sum * 20 * adcounts.machines > adcounts.machines * 0x1300) {
+        if (myhosp->staff_by_kind[2] > 0) {
+            sprintf(advisor.text, advisor_text[3]);
             return 1;
-        } else if (myhosp->fc9e[2] == 0) {
-            sprintf(advisor.f10, extra_advice[0x21]);
+        } else if (myhosp->staff_by_kind[2] == 0) {
+            sprintf(advisor.text, extra_advice[0x21]);
             return 1;
         }
-    } else if (adcounts.f90 * 5 * adcounts.f8f > adcounts.f8f * 0x400) {
-        sprintf(advisor.f10, extra_advice[0x1f]);
+    } else if (adcounts.machine_wear_sum * 5 * adcounts.machines > adcounts.machines * 0x400) {
+        sprintf(advisor.text, extra_advice[0x1f]);
         return 1;
-    } else if (adcounts.f90 * 5 * adcounts.f8f > adcounts.f8f * 0x300) {
-        if (myhosp->fc9e[2] > 0) {
-            sprintf(advisor.f10, extra_advice[0x20]);
+    } else if (adcounts.machine_wear_sum * 5 * adcounts.machines > adcounts.machines * 0x300) {
+        if (myhosp->staff_by_kind[2] > 0) {
+            sprintf(advisor.text, extra_advice[0x20]);
             return 1;
-        } else if (myhosp->fc9e[2] == 0) {
-            sprintf(advisor.f10, extra_advice[0x22]);
+        } else if (myhosp->staff_by_kind[2] == 0) {
+            sprintf(advisor.text, extra_advice[0x22]);
             return 1;
         }
-    } else if (adcounts.f90 * 2 * adcounts.f8f > adcounts.f8f * 0x100) {
-        if (!myplayer.f41[12]) {
-            sprintf(advisor.f10, advisor_situations[10]);
-            myplayer.f41[12] = 1;
+    } else if (adcounts.machine_wear_sum * 2 * adcounts.machines > adcounts.machines * 0x100) {
+        if (!myplayer.advisor_flags[12]) {
+            sprintf(advisor.text, advisor_situations[10]);
+            myplayer.advisor_flags[12] = 1;
             return 1;
-        } else if (myhosp->fc9e[2] > 0) {
-            sprintf(advisor.f10, extra_advice[0x23]);
+        } else if (myhosp->staff_by_kind[2] > 0) {
+            sprintf(advisor.text, extra_advice[0x23]);
             return 1;
         }
     }
@@ -1186,51 +1186,51 @@ u8 advisor_thirsty_peeps(void)
 {
     s32 thirst;
 
-    thirst = adcounts.f10 / adcounts.f0;
+    thirst = adcounts.refreshment_sum / adcounts.patients;
     if (thirst < 0x1e) {
-        if (!myplayer.f41[18]) {
-            sprintf(advisor.f10, advisor_situations[15]);
-            myplayer.f41[18] = 1;
+        if (!myplayer.advisor_flags[18]) {
+            sprintf(advisor.text, advisor_situations[15]);
+            myplayer.advisor_flags[18] = 1;
             return 1;
         } else if (listhead[player].objects[OBJ_DRINKS_MACHINE] == 0) {
-            sprintf(advisor.f10, advisor_text[15]);
+            sprintf(advisor.text, advisor_text[15]);
             return 1;
         } else {
-            sprintf(advisor.f10, extra_advice[4]);
+            sprintf(advisor.text, extra_advice[4]);
             return 1;
         }
     } else if (thirst < 10) {
         if (listhead[player].objects[OBJ_DRINKS_MACHINE] == 0) {
-            sprintf(advisor.f10, advisor_text[5]);
+            sprintf(advisor.text, advisor_text[5]);
             return 1;
         } else {
-            sprintf(advisor.f10, extra_advice[0x33]);
+            sprintf(advisor.text, extra_advice[0x33]);
             return 1;
         }
     }
     return 0;
 }
 
-// Advice about unhappy patients: those who left fed up (othervar.f89, then
+// Advice about unhappy patients: those who left fed up (othervar.patients_left_count, then
 // cleared) or a low average happiness. Returns 1 if advice was written.
 // FUNCTION: 0x000612b8
 u8 advisor_peeps_unhappy(void)
 {
     s32 happiness;
 
-    happiness = (adcounts.fa << 10) / adcounts.f0;
-    if (othervar.f89) {
-        if (othervar.f89 > 1)
-            sprintf(advisor.f10, extra_advice[7]);
+    happiness = (adcounts.happiness_sum << 10) / adcounts.patients;
+    if (othervar.patients_left_count) {
+        if (othervar.patients_left_count > 1)
+            sprintf(advisor.text, extra_advice[7]);
         else
-            sprintf(advisor.f10, extra_advice[0x31]);
-        othervar.f89 = 0;
+            sprintf(advisor.text, extra_advice[0x31]);
+        othervar.patients_left_count = 0;
         return 1;
-    } else if ((gbv.f110 << 10) > happiness) {
-        sprintf(advisor.f10, extra_advice[6]);
+    } else if ((gbv.very_unhappy << 10) > happiness) {
+        sprintf(advisor.text, extra_advice[6]);
         return 1;
-    } else if ((gbv.f10e << 10) > happiness) {
-        sprintf(advisor.f10, advisor_text[14]);
+    } else if ((gbv.unhappy << 10) > happiness) {
+        sprintf(advisor.text, advisor_text[14]);
         return 1;
     }
     return 0;
@@ -1243,33 +1243,33 @@ u8 advisor_peeps_warmth(void)
 {
     s32 warmth;
 
-    warmth = adcounts.f14 / adcounts.f0;
+    warmth = adcounts.warmth_sum / adcounts.patients;
     if (warmth * 2 > 0xf0) {
-        sprintf(advisor.f10, extra_advice[0x34]);
+        sprintf(advisor.text, extra_advice[0x34]);
         play_ambient(0xd9);
         return 1;
     } else if (warmth > 0x50) {
-        if (!myplayer.f41[17]) {
-            sprintf(advisor.f10, advisor_situations[14]);
-            myplayer.f41[17] = 1;
+        if (!myplayer.advisor_flags[17]) {
+            sprintf(advisor.text, advisor_situations[14]);
+            myplayer.advisor_flags[17] = 1;
         } else {
-            sprintf(advisor.f10, advisor_text[0x11]);
+            sprintf(advisor.text, advisor_text[0x11]);
         }
         play_ambient(0xd9);
         return 1;
     } else if (warmth < 10) {
-        sprintf(advisor.f10, extra_advice[0x35]);
+        sprintf(advisor.text, extra_advice[0x35]);
         play_ambient(0xd8);
         return 1;
     } else if (warmth < 0x14) {
-        if (!myplayer.f41[15] && myhosp->fc92 == 0) {
-            sprintf(advisor.f10, advisor_situations[12]);
-            myplayer.f41[15] = 1;
-        } else if (myplayer.f41[15] && !myplayer.f41[16] && myhosp->fc92 == 0) {
-            sprintf(advisor.f10, advisor_situations[13]);
-            myplayer.f41[16] = 1;
+        if (!myplayer.advisor_flags[15] && myhosp->radiator_count == 0) {
+            sprintf(advisor.text, advisor_situations[12]);
+            myplayer.advisor_flags[15] = 1;
+        } else if (myplayer.advisor_flags[15] && !myplayer.advisor_flags[16] && myhosp->radiator_count == 0) {
+            sprintf(advisor.text, advisor_situations[13]);
+            myplayer.advisor_flags[16] = 1;
         } else {
-            sprintf(advisor.f10, extra_advice[13]);
+            sprintf(advisor.text, extra_advice[13]);
         }
         play_ambient(0xd8);
         return 1;
@@ -1284,32 +1284,32 @@ u8 advisor_litter_problem(void)
 {
     s32 litter;
 
-    litter = (myhosp->fcaa << 14) / myhosp->f1f1;
+    litter = (myhosp->litter_count << 14) / myhosp->area;
     if (litter > 0x600) {
         play_ambient(0xd7);
-        if (myhosp->fc9e[2] > 0) {
-            sprintf(advisor.f10, extra_advice[0x12]);
+        if (myhosp->staff_by_kind[2] > 0) {
+            sprintf(advisor.text, extra_advice[0x12]);
             return 1;
-        } else if (myhosp->fc9e[2] == 0) {
-            sprintf(advisor.f10, extra_advice[0x11]);
+        } else if (myhosp->staff_by_kind[2] == 0) {
+            sprintf(advisor.text, extra_advice[0x11]);
             return 1;
         }
     } else if (litter > 0x300) {
-        sprintf(advisor.f10, extra_advice[0x10]);
+        sprintf(advisor.text, extra_advice[0x10]);
         return 1;
     } else if (litter > 0x100) {
-        if (myhosp->fc9e[2] > 1) {
-            sprintf(advisor.f10, advisor_text[0x46]);
+        if (myhosp->staff_by_kind[2] > 1) {
+            sprintf(advisor.text, advisor_text[0x46]);
             return 1;
-        } else if (myhosp->fc9e[2] == 0) {
-            sprintf(advisor.f10, extra_advice[0x13]);
+        } else if (myhosp->staff_by_kind[2] == 0) {
+            sprintf(advisor.text, extra_advice[0x13]);
             return 1;
         }
     }
     return 0;
 }
 
-// Bench advice from the bench shortage score per patient (NRAdcounts.unknown6:
+// Bench advice from the bench shortage score per patient (NRAdcounts.bench_shortage:
 // up when a patient finds no free bench, down when one does) and the number of
 // benches (unknown4). Returns 1 if advice was written.
 // FUNCTION: 0x000616b4
@@ -1317,21 +1317,21 @@ u8 advisor_benches(void)
 {
     s32 standing;
 
-    standing = (NRAdcounts.unknown6 << 10) / adcounts.f0;
+    standing = (NRAdcounts.bench_shortage << 10) / adcounts.patients;
     if (standing > 0x1000) {
-        sprintf(advisor.f10, extra_advice[0x1b]);
+        sprintf(advisor.text, extra_advice[0x1b]);
         return 1;
     } else if (standing > 0x400) {
-        sprintf(advisor.f10, extra_advice[0x18]);
+        sprintf(advisor.text, extra_advice[0x18]);
         return 1;
-    } else if (NRAdcounts.unknown4 > myhosp->f29 + 8 && standing < -0x1400) {
-        sprintf(advisor.f10, extra_advice[0x1a]);
+    } else if (NRAdcounts.benches > myhosp->level + 8 && standing < -0x1400) {
+        sprintf(advisor.text, extra_advice[0x1a]);
         return 1;
-    } else if (NRAdcounts.unknown4 > 8 && standing < -0x400) {
-        sprintf(advisor.f10, extra_advice[0x19]);
+    } else if (NRAdcounts.benches > 8 && standing < -0x400) {
+        sprintf(advisor.text, extra_advice[0x19]);
         return 1;
-    } else if (NRAdcounts.unknown4 > 4) {
-        sprintf(advisor.f10, advisor_text[0x4b]);
+    } else if (NRAdcounts.benches > 4) {
+        sprintf(advisor.text, advisor_text[0x4b]);
         return 1;
     }
     return 0;
@@ -1341,25 +1341,25 @@ u8 advisor_benches(void)
 // FUNCTION: 0x000617e4
 u8 advisor_dead_plants(void)
 {
-    if (NRAdcounts.unknownb * 0x190000 / NRAdcounts.unknown0 < 0xce4000) {
-        if (myhosp->fc9e[2] == 0) {
-            sprintf(advisor.f10, extra_advice[0x27]);
+    if (NRAdcounts.plant_health_sum * 0x190000 / NRAdcounts.plants < 0xce4000) {
+        if (myhosp->staff_by_kind[2] == 0) {
+            sprintf(advisor.text, extra_advice[0x27]);
             return 1;
-        } else if (myhosp->fc9e[2] > 1) {
-            sprintf(advisor.f10, extra_advice[0x28]);
+        } else if (myhosp->staff_by_kind[2] > 1) {
+            sprintf(advisor.text, extra_advice[0x28]);
             return 1;
         }
-    } else if (NRAdcounts.unknownb * 0x190000 / NRAdcounts.unknown0 < 0x2260000) {
-        sprintf(advisor.f10, extra_advice[0x29]);
+    } else if (NRAdcounts.plant_health_sum * 0x190000 / NRAdcounts.plants < 0x2260000) {
+        sprintf(advisor.text, extra_advice[0x29]);
         return 1;
-    } else if (NRAdcounts.unknownb * 0x190000 / NRAdcounts.unknown0 < 0x3c28000) {
-        sprintf(advisor.f10, advisor_text[0x5a]);
+    } else if (NRAdcounts.plant_health_sum * 0x190000 / NRAdcounts.plants < 0x3c28000) {
+        sprintf(advisor.text, advisor_text[0x5a]);
         return 1;
-    } else if (NRAdcounts.unknownb * 0x190000 / NRAdcounts.unknown0 > 0x51a4000) {
-        sprintf(advisor.f10, extra_advice[0x2b]);
+    } else if (NRAdcounts.plant_health_sum * 0x190000 / NRAdcounts.plants > 0x51a4000) {
+        sprintf(advisor.text, extra_advice[0x2b]);
         return 1;
-    } else if ((NRAdcounts.unknownb << 14) / NRAdcounts.unknown0 > 0x490c000) {
-        sprintf(advisor.f10, extra_advice[0x2a]);
+    } else if ((NRAdcounts.plant_health_sum << 14) / NRAdcounts.plants > 0x490c000) {
+        sprintf(advisor.text, extra_advice[0x2a]);
         return 1;
     }
     return 0;
@@ -1375,7 +1375,7 @@ void monthly_update_of_adivsor_counts(void)
 }
 
 // Returns a staff_unhappy entry for the first kind of staff more tired than
-// gbv.fea on average (graded by the overall tiredness), or 0. Writes no text;
+// gbv.very_tired on average (graded by the overall tiredness), or 0. Writes no text;
 // find_advice ignores the result.
 // FUNCTION: 0x000619bc
 u8 advisor_staff_tired(void)
@@ -1385,23 +1385,23 @@ u8 advisor_staff_tired(void)
     u8 i;
     u8 severity;
 
-    average = (adcounts.f2 << 8) / myhosp->fc9c;
+    average = (adcounts.staff_tiredness_sum << 8) / myhosp->staff_count;
     i = 0;
     severity = 0;
-    if ((gbv.fea << 8) < average)
+    if ((gbv.very_tired << 8) < average)
         severity = 0;
-    else if ((gbv.fe8 << 8) < average)
+    else if ((gbv.tired << 8) < average)
         severity = 0x10;
-    else if ((gbv.fe6 << 8) > average)
+    else if ((gbv.not_tired << 8) > average)
         severity = 0x20;
     else
         severity = 0x30;
     for (; i < 4; i++) {
-        if (myhosp->fc9e[i]) {
-            tired = (adcounts.f7a[i] << 8) / myhosp->fc9e[i];
-            if ((gbv.fea << 8) < tired) {
-                if (((average - tired) << 8) / (myhosp->fc9c - myhosp->fc9e[i])
-                    < (gbv.fea << 8))
+        if (myhosp->staff_by_kind[i]) {
+            tired = (adcounts.staff_tiredness_by_kind[i] << 8) / myhosp->staff_by_kind[i];
+            if ((gbv.very_tired << 8) < tired) {
+                if (((average - tired) << 8) / (myhosp->staff_count - myhosp->staff_by_kind[i])
+                    < (gbv.very_tired << 8))
                     ++severity;
                 if (staff_unhappy[severity])
                     return staff_unhappy[severity];
@@ -1418,13 +1418,13 @@ u8 advisor_staff_warmth(void)
 {
     s32 warmth;
 
-    warmth = adcounts.f16 / myhosp->fc9c;
+    warmth = adcounts.staff_warmth_sum / myhosp->staff_count;
     if (warmth > 0x50) {
-        sprintf(advisor.f10, advisor_text[0x12]);
+        sprintf(advisor.text, advisor_text[0x12]);
         play_ambient(0xd9);
         return 1;
     } else if (warmth < 0x14) {
-        sprintf(advisor.f10, extra_advice[0x36]);
+        sprintf(advisor.text, extra_advice[0x36]);
         play_ambient(0xd8);
         return 1;
     }

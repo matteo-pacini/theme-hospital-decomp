@@ -600,10 +600,10 @@ void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
                 Listen(p, &listen_sock);
             }
         }
-        unknown4 = clock();
-        if (unknown4 - stamp > 4000) {
+        last_update = clock();
+        if (last_update - stamp > 4000) {
             AdvertiseServer(type, name, sock);
-            stamp = unknown4;
+            stamp = last_update;
         } else if (count) {
             BatchProcess();
         }

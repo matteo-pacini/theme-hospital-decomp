@@ -48,66 +48,66 @@ extern const u16 advisor_anims[];
 
 void get_advisor(void);
 
-// Draws the advisor's speech bubble with the current advice (advisor.f10),
-// re-wrapping the text first when advisor.f124 is set. The bubble grows to the
-// left by as many middle pieces as the text needs (advisor.f123), and its left
-// edge is kept in advisor.f125. Draws nothing if wrapping left no_pieces past
-// resvars.f17 (the text did not fit).
+// Draws the advisor's speech bubble with the current advice (advisor.text),
+// re-wrapping the text first when advisor.rewrap is set. The bubble grows to the
+// left by as many middle pieces as the text needs (advisor.extra_segments), and its left
+// edge is kept in advisor.box_left. Draws nothing if wrapping left no_pieces past
+// resvars.advisor_max_segments (the text did not fit).
 // FUNCTION: 0x000b1e10
 void advisor_text_box(void)
 {
     u32 i;
     s32 y;
 
-    if (advisor.f10[0]) {
+    if (advisor.text[0]) {
         set_font_from_cache(0x1d);
-        if (advisor.f124)
+        if (advisor.rewrap)
             process_advisor_text();
-        if (advisor.f122 == 3)
-            y = resvars.f1c_AdvisorLayoutp->f4b4;
-        else if (advisor.f122 == 2)
-            y = resvars.f1c_AdvisorLayoutp->f4bc;
-        else if (advisor.f122 == 1)
-            y = resvars.f1c_AdvisorLayoutp->f4c4;
-        if (no_pieces <= resvars.f17) {
-            reqspr_draw(resvars.f1c_AdvisorLayoutp->f4f0, resvars.f1c_AdvisorLayoutp->f4f4, &game_panel[39]);
-            reqspr_draw(resvars.f1c_AdvisorLayoutp->f4f0 - game_panel[37].width - (advisor.f123 + resvars.f16) * game_panel[38].width,
-                        resvars.f1c_AdvisorLayoutp->f49c, &game_panel[37]);
-            for (i = 0; i < resvars.f16 + advisor.f123; i++)
-                reqspr_draw(resvars.f1c_AdvisorLayoutp->f4f0 - (advisor.f123 + resvars.f16 - i) * game_panel[38].width, resvars.f1c_AdvisorLayoutp->f49c,
+        if (advisor.line_count == 3)
+            y = resvars.coords_AdvisorLayoutp->f4b4;
+        else if (advisor.line_count == 2)
+            y = resvars.coords_AdvisorLayoutp->f4bc;
+        else if (advisor.line_count == 1)
+            y = resvars.coords_AdvisorLayoutp->f4c4;
+        if (no_pieces <= resvars.advisor_max_segments) {
+            reqspr_draw(resvars.coords_AdvisorLayoutp->f4f0, resvars.coords_AdvisorLayoutp->f4f4, &game_panel[39]);
+            reqspr_draw(resvars.coords_AdvisorLayoutp->f4f0 - game_panel[37].width - (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width,
+                        resvars.coords_AdvisorLayoutp->f49c, &game_panel[37]);
+            for (i = 0; i < resvars.advisor_min_segments + advisor.extra_segments; i++)
+                reqspr_draw(resvars.coords_AdvisorLayoutp->f4f0 - (advisor.extra_segments + resvars.advisor_min_segments - i) * game_panel[38].width, resvars.coords_AdvisorLayoutp->f49c,
                             &game_panel[38]);
             set_all_refresh_zones_in_window(
-                resvars.f1c_AdvisorLayoutp->f4f0 - (advisor.f123 + resvars.f16 + 1) * game_panel[38].width - game_panel[39].width,
-                resvars.f1c_AdvisorLayoutp->f4f4, resvars.f1c_AdvisorLayoutp->f4f0 + game_panel[39].width, resvars.f1c_AdvisorLayoutp->f4f4 + game_panel[39].height, 3);
-            advisor.f125 = resvars.f1c_AdvisorLayoutp->f4f0 - game_panel[38].width * (u16)(advisor.f123 + resvars.f16 + 1) - game_panel[39].width;
-            LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-            LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
+                resvars.coords_AdvisorLayoutp->f4f0 - (advisor.extra_segments + resvars.advisor_min_segments + 1) * game_panel[38].width - game_panel[39].width,
+                resvars.coords_AdvisorLayoutp->f4f4, resvars.coords_AdvisorLayoutp->f4f0 + game_panel[39].width, resvars.coords_AdvisorLayoutp->f4f4 + game_panel[39].height, 3);
+            advisor.box_left = resvars.coords_AdvisorLayoutp->f4f0 - game_panel[38].width * (u16)(advisor.extra_segments + resvars.advisor_min_segments + 1) - game_panel[39].width;
+            LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
+            LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
             lbDisplay.draw_flags = 0;
-            LbTextDraw(resvars.f1c_AdvisorLayoutp->f4f0 - (advisor.f123 + resvars.f16) * game_panel[38].width + resvars.f1c_AdvisorLayoutp->f4c8
+            LbTextDraw(resvars.coords_AdvisorLayoutp->f4f0 - (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width + resvars.coords_AdvisorLayoutp->f4c8
                            - game_panel[37].width,
-                       y, advisor.f10);
+                       y, advisor.text);
         }
     }
 }
 
 // Wraps the advice text into the narrowest bubble that holds it, trying widths
-// from resvars.f16 middle pieces up to resvars.f17, until advisor.f122 is set.
-// Leaves no_pieces one past the width tried last and clears advisor.f124.
+// from resvars.advisor_min_segments middle pieces up to resvars.advisor_max_segments, until advisor.line_count is set.
+// Leaves no_pieces one past the width tried last and clears advisor.rewrap.
 // FUNCTION: 0x000b2124
 void process_advisor_text(void)
 {
-    no_pieces = resvars.f16;
+    no_pieces = resvars.advisor_min_segments;
     do {
         format_advisor_text(no_pieces);
         no_pieces++;
-    } while (no_pieces <= resvars.f17 && !advisor.f122);
-    advisor.f124 = 0;
+    } while (no_pieces <= resvars.advisor_max_segments && !advisor.line_count);
+    advisor.rewrap = 0;
 }
 
-// Tries to wrap advisor.f10 into at most three lines for a bubble segments
+// Tries to wrap advisor.text into at most three lines for a bubble segments
 // middle pieces wide, breaking after spaces and punctuation. If the whole text
-// fits, it replaces advisor.f10 with the wrapped text, sets advisor.f122 to the
-// line count and advisor.f123 to the extra pieces used; otherwise it leaves
+// fits, it replaces advisor.text with the wrapped text, sets advisor.line_count to the
+// line count and advisor.extra_segments to the extra pieces used; otherwise it leaves
 // everything unchanged.
 // FUNCTION: 0x000b2178
 void format_advisor_text(u8 segments)
@@ -122,13 +122,13 @@ void format_advisor_text(u8 segments)
     char *brk;
     char *line_start;
 
-    max_width = segments * resvars.f1c_AdvisorLayoutp->f4d8 + resvars.f1c_AdvisorLayoutp->f4e8 + resvars.f1c_AdvisorLayoutp->f4e0 - resvars.f1c_AdvisorLayoutp->f4c8 - resvars.f1c_AdvisorLayoutp->f4d0;
+    max_width = segments * resvars.coords_AdvisorLayoutp->f4d8 + resvars.coords_AdvisorLayoutp->f4e8 + resvars.coords_AdvisorLayoutp->f4e0 - resvars.coords_AdvisorLayoutp->f4c8 - resvars.coords_AdvisorLayoutp->f4d0;
     width = 0;
     lines = 0;
     out = wrapped;
     LbMemorySet(text, 0, 0x118);
     LbMemorySet(wrapped, 0, 0x10e);
-    fn_000bbff0(text, advisor.f10);
+    fn_000bbff0(text, advisor.text);
     p = text;
     brk = text;
     line_start = text;
@@ -158,17 +158,17 @@ void format_advisor_text(u8 segments)
         }
     } while (lines < 3 && *p != '\0');
     if (!*p) {
-        fn_000bbff0(advisor.f10, wrapped);
+        fn_000bbff0(advisor.text, wrapped);
         if (lines < 3)
-            advisor.f122 = lines;
+            advisor.line_count = lines;
         else
-            advisor.f122 = lines;
-        advisor.f123 = segments - resvars.f16;
+            advisor.line_count = lines;
+        advisor.extra_segments = segments - resvars.advisor_min_segments;
     }
 }
 
-// Draws and animates the advisor character for advisor.f11e (its animation
-// state), first bringing it on screen if advice is pending (advisor.f0). Idle
+// Draws and animates the advisor character for advisor.anim_state (its animation
+// state), first bringing it on screen if advice is pending (advisor.advice_id). Idle
 // states occasionally switch to a special animation; looping states move to
 // next_advisor_state when their animation ends.
 // FUNCTION: 0x000b242c
@@ -179,9 +179,9 @@ void advisor_character(void)
     u32 speed;
 
     speed = 0;
-    if (advisor.f0_u16)
+    if (advisor.advice_id_u)
         get_advisor();
-    switch (advisor.f11e) {
+    switch (advisor.anim_state) {
     case 0:
         break;
     case 1:
@@ -192,7 +192,7 @@ void advisor_character(void)
         D_00156910 = 1;
         speed = 1;
         loop = 1;
-        advisor.f12c = 0;
+        advisor.state_advanced = 0;
         break;
     case 9:
     case 10:
@@ -200,11 +200,11 @@ void advisor_character(void)
         loop = 1;
         break;
     case 2:
-        advisor.f12c = 0;
+        advisor.state_advanced = 0;
     case 3:
         if (saferand() % 50 == 0) {
-            advisor.f11e = advisor_specials[saferand() % 2];
-            advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
+            advisor.anim_state = advisor_specials[saferand() % 2];
+            advisor.anim_frame = start[advisor_anims[advisor.anim_state]].frame;
         }
     case 7:
         speed = 2;
@@ -212,14 +212,14 @@ void advisor_character(void)
         break;
     }
     if (speed) {
-        draw_a_frame(advisor.f6, advisor.f8, advisor.fa, 0, 0);
+        draw_a_frame(advisor.anim_frame, advisor.x, advisor.y, 0, 0);
         set_all_refresh_zones_in_window(D_001567b0.x, D_001567b0.y, D_001567b0.x + D_001567b0.w, D_001567b0.y + D_001567b0.h, 3);
-        if (actual_game_turn % speed == 0 && !gamevar.unknown21) {
-            advisor.f6 = frame[advisor.f6].next;
-            f = &frame[advisor.f6];
+        if (actual_game_turn % speed == 0 && !gamevar.paused) {
+            advisor.anim_frame = frame[advisor.anim_frame].next;
+            f = &frame[advisor.anim_frame];
             if (loop && (f->flags & 1)) {
-                advisor.f11e = next_advisor_state[advisor.f11e];
-                advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
+                advisor.anim_state = next_advisor_state[advisor.anim_state];
+                advisor.anim_frame = start[advisor_anims[advisor.anim_state]].frame;
             }
         }
     }
@@ -229,8 +229,8 @@ void advisor_character(void)
 // FUNCTION: 0x000b2678
 void get_advisor(void)
 {
-    if (advisor.f11e == 0) {
-        advisor.f11e = 1;
-        advisor.f6 = start[advisor_anims[advisor.f11e]].frame;
+    if (advisor.anim_state == 0) {
+        advisor.anim_state = 1;
+        advisor.anim_frame = start[advisor_anims[advisor.anim_state]].frame;
     }
 }

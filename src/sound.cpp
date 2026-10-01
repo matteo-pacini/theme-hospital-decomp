@@ -85,7 +85,7 @@ SampleInfo *GetLastSampleInfoStructure(void);
 
 // Starts the sound and music drivers and loads the sound bank for the
 // language (or the minimal bank without sound), setting which of sound
-// effects (statvar.fe4) and music (statvar.unknowne5) are available and
+// effects (statvar.sound_ok) and music (statvar.music_ok) are available and
 // turning them on. Returns 0, or an error number for error_number.
 // FUNCTION: 0x00088980
 u8 setup_sound(void)
@@ -109,40 +109,40 @@ u8 setup_sound(void)
     options.unknown14 = 1;
     options.unknown16 = 1;
     options.unknown17 = 1;
-    statvar.fe4 = 0;
-    statvar.unknowne5 = 0;
-    myplayer.f10 = 0;
-    myplayer.ff = 0;
-    myplayer.unknown11 = 0;
-    fn_000bbff0(statvar.fd0, options.unknown0);
+    statvar.sound_ok = 0;
+    statvar.music_ok = 0;
+    myplayer.ambients_on = 0;
+    myplayer.sfx_on = 0;
+    myplayer.music_on = 0;
+    fn_000bbff0(statvar.sound_path, options.unknown0);
     InitAudio(&options);
     if (GetSoundInstalled() && GetSoundAble()) {
         LbDataLoad(&soundfiles[D_00156433]);
         if (heapptr) {
             loaded = 1;
-            sprintf(buf, "%s\\data\\sound-%1d.dat", options.unknown0, myplayer.f21);
+            sprintf(buf, "%s\\data\\sound-%1d.dat", options.unknown0, myplayer.language);
             if (init_sound_heap(heapptr, D_0015642f, buf, options.unknownc)) {
-                window.unknown30 = 0;
-                window.unknown48 = lbDisplay.unknown18;
-                window.unknown3c = 0;
-                window.unknown54 = statvar.unknown4;
-                window.unknown90 = (window.unknown30 + window.unknown48) / 2;
-                window.unknown9c = (window.unknown3c + window.unknown54) / 2;
-                window.unknown2eb = 0;
-                statvar.fe4 = 1;
+                window.zone0_x = 0;
+                window.zone0_x1 = lbDisplay.physical_screen_width;
+                window.zone0_y = 0;
+                window.zone0_y1 = statvar.view_height;
+                window.center0_x = (window.zone0_x + window.zone0_x1) / 2;
+                window.center0_y = (window.zone0_y + window.zone0_y1) / 2;
+                window.current_window = 0;
+                statvar.sound_ok = 1;
             } else {
                 return 6;
             }
         }
     }
     if ((installed = GetMusicInstalled()) != 0 && (able = GetMusicAble()) != 0)
-        statvar.unknowne5 = 1;
-    if (statvar.fe4) {
-        myplayer.ff = 1;
-        myplayer.f10 = 1;
+        statvar.music_ok = 1;
+    if (statvar.sound_ok) {
+        myplayer.sfx_on = 1;
+        myplayer.ambients_on = 1;
     }
-    if (statvar.unknowne5 && LbDataLoadAll(midifiles) == 0)
-        myplayer.unknown11 = 1;
+    if (statvar.music_ok && LbDataLoadAll(midifiles) == 0)
+        myplayer.music_on = 1;
     if (!loaded) {
         LbDataLoadAll(nosoundfiles);
         if (heapptr) {
@@ -165,23 +165,23 @@ void do_ambients(void)
 {
     u8 i;
 
-    if (myplayer.f10 != 0 && !gamevar.f174 && !gamevar.unknown21) {
-        if (othervar.fa42) {
-            if (!IsSamplePlaying(0, 0, othervar.fa45->SampleHandle))
-                othervar.fa42 = 0;
+    if (myplayer.ambients_on != 0 && !gamevar.rat_fest_level && !gamevar.paused) {
+        if (othervar.ambient_playing) {
+            if (!IsSamplePlaying(0, 0, othervar.ambient_sample->SampleHandle))
+                othervar.ambient_playing = 0;
         } else if (AmbientQueue[0].sound) {
-            othervar.fa45 = play_sample_using_heap(0xb, AmbientQueue[0].sound + 500, myplayer.fe, 0x40, 0x64, 0, 2);
-            if (othervar.fa45)
-                othervar.fa42 = AmbientQueue[0].sound;
+            othervar.ambient_sample = play_sample_using_heap(0xb, AmbientQueue[0].sound + 500, myplayer.ambient_volume, 0x40, 0x64, 0, 2);
+            if (othervar.ambient_sample)
+                othervar.ambient_playing = AmbientQueue[0].sound;
             for (i = 0; i < 3; i++)
                 AmbientQueue[i] = AmbientQueue[i + 1];
             AmbientQueue[i].sound = AmbientQueue[i].priority = 0;
-            othervar.fa43 = 0;
+            othervar.ambient_timer = 0;
         }
-        othervar.fa43++;
-        if (othervar.fa43 > 2000) {
+        othervar.ambient_timer++;
+        if (othervar.ambient_timer > 2000) {
             play_ambient(saferand() % 34 + 0x89);
-            othervar.fa43 = 0;
+            othervar.ambient_timer = 0;
         }
     }
 }
@@ -208,7 +208,7 @@ void play_ambient(u8 sound)
     u8 i;
     u8 slot;
 
-    if (myplayer.f10 != 0 && Ambients[sound].sound && myhosp->fc9e[3] != 0 && !gamevar.unknown21) {
+    if (myplayer.ambients_on != 0 && Ambients[sound].sound && myhosp->staff_by_kind[3] != 0 && !gamevar.paused) {
         for (i = 0; i < 4; i++) {
             if (!AmbientQueue[i].sound) {
                 AmbientQueue[i] = Ambients[sound];
@@ -240,7 +240,7 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
     s32 volume;
     s32 half;
 
-    if (myplayer.ff && statvar.fe4) {
+    if (myplayer.sfx_on && statvar.sound_ok) {
         if (sfx < 0xf2) {
             switch (sfx_details[sfx].type) {
             case 0:
@@ -267,21 +267,21 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
             }
             if (x == -1 || y == -1) {
                 pan = 0x40;
-                volume = myplayer.fd;
+                volume = myplayer.sfx_volume;
             } else {
-                half = lbDisplay.unknown18 / 2;
-                volume = (half - ABS(x - half)) * myplayer.fd / half;
-                pan = x * 0x7f / lbDisplay.unknown18;
+                half = lbDisplay.physical_screen_width / 2;
+                volume = (half - ABS(x - half)) * myplayer.sfx_volume / half;
+                pan = x * 0x7f / lbDisplay.physical_screen_width;
                 if (volume < 0)
                     volume = 0;
-                else if (volume > myplayer.fd)
-                    volume = myplayer.fd;
+                else if (volume > myplayer.sfx_volume)
+                    volume = myplayer.sfx_volume;
                 if (pan < 0)
                     pan = 0;
                 else if (pan > 0x7f)
                     pan = 0x7f;
             }
-            play_sample_using_heap(source, sample, volume, pan, pitch, sfx_details[sfx].f4, sfx_details[sfx].fb);
+            play_sample_using_heap(source, sample, volume, pan, pitch, sfx_details[sfx].loop, sfx_details[sfx].play_type);
         }
     }
 }
@@ -303,20 +303,20 @@ void manage_sound(void)
             if (sample->SourceID > 0xe) {
             if ((Thing *)sample->SourceID > thing && (Thing *)sample->SourceID < end_things) {
                 source = (Thing *)sample->SourceID;
-                give_screen_xy_of_cell_at_column_row(window.unknown2eb, source->x.tile, source->y.tile);
-                info.unknown54 += resvars.f4 / 2;
-                info.unknown58 += resvars.f3 / 2;
+                give_screen_xy_of_cell_at_column_row(window.current_window, source->x.tile, source->y.tile);
+                info.cell_x += resvars.tile_width / 2;
+                info.cell_y += resvars.tile_height / 2;
                 if (sample->SourceID == 0xd) {
-                    if (myhosp->f1d9s == 0)
+                    if (myhosp->emergency_timer_s == 0)
                         StopSample(sample->SourceID, sample->SampleNumber);
-                } else if (info.unknown54 > 0 && info.unknown54 < lbDisplay.unknown18 && info.unknown58 > 0 && info.unknown58 < lbDisplay.unknown1c) {
-                    half = lbDisplay.unknown18 / 2;
-                    volume = (half - ABS(info.unknown54 - half)) * myplayer.fd / half;
-                    pan = info.unknown54 * 0x7f / lbDisplay.unknown18;
+                } else if (info.cell_x > 0 && info.cell_x < lbDisplay.physical_screen_width && info.cell_y > 0 && info.cell_y < lbDisplay.physical_screen_height) {
+                    half = lbDisplay.physical_screen_width / 2;
+                    volume = (half - ABS(info.cell_x - half)) * myplayer.sfx_volume / half;
+                    pan = info.cell_x * 0x7f / lbDisplay.physical_screen_width;
                     if (volume < 0)
                         volume = 0;
-                    else if (volume > myplayer.fd)
-                        volume = myplayer.fd;
+                    else if (volume > myplayer.sfx_volume)
+                        volume = myplayer.sfx_volume;
                     if (pan < 0)
                         pan = 0;
                     else if (pan > 0x7f)
@@ -337,7 +337,7 @@ void manage_sound(void)
 }
 
 // Per turn: keeps the crowd sound looping at a volume set by the people on
-// screen (othervar.fa72), plays random background samples, the emergency
+// screen (othervar.visible_people), plays random background samples, the emergency
 // clock (louder as time runs out) and the earthquake rumble.
 // FUNCTION: 0x00089468
 void manage_background_sounds(void)
@@ -345,39 +345,39 @@ void manage_background_sounds(void)
     s32 sample;
     s32 volume;
 
-    if (myplayer.ff && statvar.fe4 && !gamevar.unknown21) {
-        volume = othervar.fa72 * myplayer.fd / 20;
+    if (myplayer.sfx_on && statvar.sound_ok && !gamevar.paused) {
+        volume = othervar.visible_people * myplayer.sfx_volume / 20;
         if (volume < 0)
             volume = 0;
-        else if (volume > myplayer.fd)
-            volume = myplayer.fd;
+        else if (volume > myplayer.sfx_volume)
+            volume = myplayer.sfx_volume;
         play_sample_using_heap(0xc, 200, volume, 0x40, 100, -1, 2);
-        if (othervar.fa74 != volume) {
+        if (othervar.crowd_volume != volume) {
             SetSampleVolume(0xc, 200, volume, 0);
-            othervar.fa74 = volume;
+            othervar.crowd_volume = volume;
         }
-        othervar.fa8b++;
-        if (othervar.fa8b > 400) {
+        othervar.ambient_noise_timer++;
+        if (othervar.ambient_noise_timer > 400) {
             sample = saferand() % 30 + 0x10e;
             play_sample_using_heap(0xa, sample, volume, 0x40, 100, 0, 2);
-            othervar.fa8b = 0;
+            othervar.ambient_noise_timer = 0;
         }
-        if (myhosp->f1d9) {
-            volume = myplayer.fd / 2;
-            if (myhosp->f1d9s < 0x21)
-                volume += (0x21 - myhosp->f1d9s) * myplayer.fd / 0x42;
+        if (myhosp->emergency_timer) {
+            volume = myplayer.sfx_volume / 2;
+            if (myhosp->emergency_timer_s < 0x21)
+                volume += (0x21 - myhosp->emergency_timer_s) * myplayer.sfx_volume / 0x42;
             if (volume < 0)
                 volume = 0;
-            else if (volume > myplayer.fd)
-                volume = myplayer.fd;
+            else if (volume > myplayer.sfx_volume)
+                volume = myplayer.sfx_volume;
             play_sample_using_heap(0xd, 0xa9, volume, 0x40, 100, -1, 2);
-            if (othervar.fa7a != volume) {
+            if (othervar.emergency_clock_volume != volume) {
                 SetSampleVolume(0xd, 0xa9, volume, 0);
-                othervar.fa7a = volume;
+                othervar.emergency_clock_volume = volume;
             }
         }
-        if (gamevar.ff0)
-            play_sample_using_heap(0xc, 0x48, myplayer.fd, 0x40, 100, -1, 2);
+        if (gamevar.quake_strength)
+            play_sample_using_heap(0xc, 0x48, myplayer.sfx_volume, 0x40, 100, -1, 2);
     }
 }
 
@@ -389,50 +389,50 @@ void init_midi(void)
     u8 i;
 
     music.unknown0 = 1;
-    music.volume = myplayer.fc;
+    music.volume = myplayer.music_volume;
     for (i = 0; i < 10; i++)
-        myplayer.unknown12[i] = 1;
-    othervar.f9b9 = 1;
-    othervar.f9ba = 8;
+        myplayer.track_enabled[i] = 1;
+    othervar.midi_playing = 1;
+    othervar.midi_track = 8;
     load_midi();
 }
 
 // If no track is playing, plays the next enabled track (or repeats the
-// current one when looping), clearing othervar.f9b9 if none can be loaded.
+// current one when looping), clearing othervar.midi_playing if none can be loaded.
 // FUNCTION: 0x00089718
 void play_next_midi(void)
 {
     char buf[100];
     u8 i;
 
-    othervar.f9b9 = 1;
+    othervar.midi_playing = 1;
     if (!is_midi_playing()) {
-        if (othervar.fa50) {
-            if (myplayer.unknown12[othervar.f9ba]) {
-                sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[othervar.f9ba].name);
+        if (othervar.loop_track) {
+            if (myplayer.track_enabled[othervar.midi_track]) {
+                sprintf(buf, "%s\\midi/%s", statvar.sound_path, midi_files[othervar.midi_track].name);
                 if (LbFileLoadAt(buf, midi_buffer) != -1) {
-                    PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                    othervar.fa4f = 1;
+                    PlayMidiFromAddress(myplayer.music_volume, midi_buffer);
+                    othervar.music_playing = 1;
                 } else {
-                    othervar.f9b9 = 0;
+                    othervar.midi_playing = 0;
                 }
             }
         } else {
-            for (i = 0; i < statvar.f5dd; i++) {
-                othervar.f9ba++;
-                if (othervar.f9ba > statvar.f5dd)
-                    othervar.f9ba = 0;
-                if (myplayer.unknown12[othervar.f9ba]) {
-                    sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[othervar.f9ba].name);
+            for (i = 0; i < statvar.midi_count; i++) {
+                othervar.midi_track++;
+                if (othervar.midi_track > statvar.midi_count)
+                    othervar.midi_track = 0;
+                if (myplayer.track_enabled[othervar.midi_track]) {
+                    sprintf(buf, "%s\\midi/%s", statvar.sound_path, midi_files[othervar.midi_track].name);
                     if (LbFileLoadAt(buf, midi_buffer) != -1) {
-                        PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                        othervar.fa4f = 1;
+                        PlayMidiFromAddress(myplayer.music_volume, midi_buffer);
+                        othervar.music_playing = 1;
                         break;
                     }
                 }
             }
-            if (i == statvar.f5dd)
-                othervar.f9b9 = 0;
+            if (i == statvar.midi_count)
+                othervar.midi_playing = 0;
         }
     }
 }
@@ -445,13 +445,13 @@ void play_midi(u8 track)
     char buf[100];
 
     AIL_end_sequence(GetSongHandle());
-    if (myplayer.unknown11 && statvar.unknowne5 && othervar.f9b9) {
-        if (myplayer.unknown12[track]) {
-            sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[track].name);
+    if (myplayer.music_on && statvar.music_ok && othervar.midi_playing) {
+        if (myplayer.track_enabled[track]) {
+            sprintf(buf, "%s\\midi/%s", statvar.sound_path, midi_files[track].name);
             if (LbFileLoadAt(buf, midi_buffer) != -1) {
-                PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                othervar.f9ba = track;
-                othervar.fa4f = 1;
+                PlayMidiFromAddress(myplayer.music_volume, midi_buffer);
+                othervar.midi_track = track;
+                othervar.music_playing = 1;
             } else {
                 play_next_midi();
             }
@@ -462,42 +462,42 @@ void play_midi(u8 track)
 }
 
 // If no track is playing, plays the previous enabled track (or repeats the
-// current one when looping), clearing othervar.f9b9 if none can be loaded.
+// current one when looping), clearing othervar.midi_playing if none can be loaded.
 // FUNCTION: 0x00089940
 void play_last_midi(void)
 {
     char buf[100];
     u8 i;
 
-    othervar.f9b9 = 1;
+    othervar.midi_playing = 1;
     if (!is_midi_playing()) {
-        if (othervar.fa50) {
-            if (myplayer.unknown12[othervar.f9ba]) {
-                sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[othervar.f9ba].name);
+        if (othervar.loop_track) {
+            if (myplayer.track_enabled[othervar.midi_track]) {
+                sprintf(buf, "%s\\midi/%s", statvar.sound_path, midi_files[othervar.midi_track].name);
                 if (LbFileLoadAt(buf, midi_buffer) != -1) {
-                    PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                    othervar.fa4f = 1;
+                    PlayMidiFromAddress(myplayer.music_volume, midi_buffer);
+                    othervar.music_playing = 1;
                 } else {
-                    othervar.f9b9 = 0;
+                    othervar.midi_playing = 0;
                 }
             }
         } else {
-            for (i = 0; i < statvar.f5dd; i++) {
-                if (othervar.f9ba == 0)
-                    othervar.f9ba = statvar.f5dd;
+            for (i = 0; i < statvar.midi_count; i++) {
+                if (othervar.midi_track == 0)
+                    othervar.midi_track = statvar.midi_count;
                 else
-                    othervar.f9ba--;
-                if (myplayer.unknown12[othervar.f9ba]) {
-                    sprintf(buf, "%s\\midi/%s", statvar.fd0, midi_files[othervar.f9ba].name);
+                    othervar.midi_track--;
+                if (myplayer.track_enabled[othervar.midi_track]) {
+                    sprintf(buf, "%s\\midi/%s", statvar.sound_path, midi_files[othervar.midi_track].name);
                     if (LbFileLoadAt(buf, midi_buffer) != -1) {
-                        PlayMidiFromAddress(myplayer.fc, midi_buffer);
-                        othervar.fa4f = 1;
+                        PlayMidiFromAddress(myplayer.music_volume, midi_buffer);
+                        othervar.music_playing = 1;
                         break;
                     }
                 }
             }
-            if (i == statvar.f5dd)
-                othervar.f9b9 = 0;
+            if (i == statvar.midi_count)
+                othervar.midi_playing = 0;
         }
     }
 }
@@ -507,11 +507,11 @@ void play_last_midi(void)
 // FUNCTION: 0x00089aa8
 u8 is_midi_playing(void)
 {
-    if (gamevar.unknown21)
+    if (gamevar.paused)
         return 1;
-    if (myplayer.unknown11 && statvar.unknowne5) {
-        if (othervar.f9b9) {
-            if (othervar.fa4f) {
+    if (myplayer.music_on && statvar.music_ok) {
+        if (othervar.midi_playing) {
+            if (othervar.music_playing) {
                 if (AIL_sequence_status(GetSongHandle()) != 4)
                     return 0;
             }
@@ -521,9 +521,9 @@ u8 is_midi_playing(void)
 }
 
 // Reads the jukebox's track list (file name and title pairs) from
-// midi/midi.txt, keeping up to ten tracks whose files exist; statvar.f5dd
+// midi/midi.txt, keeping up to ten tracks whose files exist; statvar.midi_count
 // is their count. On failure, or with no tracks, it turns off the sound
-// effects flags (statvar.fe4, myplayer.ff), not the music ones.
+// effects flags (statvar.sound_ok, myplayer.sfx_on), not the music ones.
 // FUNCTION: 0x00089b14
 void load_midi(void)
 {
@@ -538,25 +538,25 @@ void load_midi(void)
 
     len = 0;
     buf = 0;
-    sprintf(name, "%s\\midi/midi.txt", statvar.fd0);
+    sprintf(name, "%s\\midi/midi.txt", statvar.sound_path);
     len = LbFileLengthRnc(name);
     if (len == -1) {
-        othervar.f9b9 = 0;
-        statvar.fe4 = 0;
-        myplayer.ff = 0;
+        othervar.midi_playing = 0;
+        statvar.sound_ok = 0;
+        myplayer.sfx_on = 0;
         return;
     }
     buf = (char *)LbMemoryAlloc(len + 1);
     if (buf == 0) {
-        othervar.f9b9 = 0;
-        statvar.fe4 = 0;
-        myplayer.ff = 0;
+        othervar.midi_playing = 0;
+        statvar.sound_ok = 0;
+        myplayer.sfx_on = 0;
         return;
     }
     if (LbFileLoadAt(name, buf) == -1) {
-        othervar.f9b9 = 0;
-        statvar.fe4 = 0;
-        myplayer.ff = 0;
+        othervar.midi_playing = 0;
+        statvar.sound_ok = 0;
+        myplayer.sfx_on = 0;
         LbMemoryFree(buf);
         return;
     }
@@ -576,7 +576,7 @@ void load_midi(void)
             }
         }
         line[0x1d] = 0;
-        sprintf(path, "%s\\midi/%s", statvar.fd0, line);
+        sprintf(path, "%s\\midi/%s", statvar.sound_path, line);
         handle = LbFileOpen(path, 2);
         if (handle != -1) {
             LbFileClose(handle);
@@ -596,10 +596,10 @@ void load_midi(void)
                 break;
         }
     }
-    statvar.f5dd = i;
-    if (statvar.f5dd == 0) {
-        statvar.fe4 = 0;
-        myplayer.ff = 0;
+    statvar.midi_count = i;
+    if (statvar.midi_count == 0) {
+        statvar.sound_ok = 0;
+        myplayer.sfx_on = 0;
     }
     read_line_from_buf(0, 1, 0);
     LbMemoryFree(buf);

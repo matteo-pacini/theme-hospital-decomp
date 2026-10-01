@@ -47,17 +47,17 @@ void make_a_rat(u8 owner);
 // FUNCTION: 0x0007424c
 void process_game_keys(u8 modifiers, u8 key)
 {
-    if (gamevar.f12e == MM_HELP) {
+    if (gamevar.mouse_mode == MM_HELP) {
         if (key == KC_SPACE || key == KC_ESCAPE)
             finish_composite_help();
         lbInkey = 0;
         return;
     }
-    if (statvar.unknownfd <= 1) {
+    if (statvar.num_players <= 1) {
         if ((lbKeyOn[KC_W] || lbKeyOn[0x91]) && !(modifiers & MOD_CTRL))
-            othervar.f8b0 = 1;
+            othervar.turbo_key = 1;
     }
-    if (othervar.f4a) {
+    if (othervar.net_text_entering) {
         process_nettext_keys(modifiers, key);
         lbInkey = 0;
         return;
@@ -76,51 +76,51 @@ void process_game_keys(u8 modifiers, u8 key)
         D_001549d0[player].flags &= ~0xc;
     switch (key) {
     case KC_1:
-        if (statvar.unknownfd > 1 && (modifiers & MOD_ALT)) {
+        if (statvar.num_players > 1 && (modifiers & MOD_ALT)) {
             if (display_mode == 0) {
-                if (statvar.unknownfd >= 2) {
-                    othervar.f4c = 1 << nth_other_active_player(1);
-                    othervar.f4a = 1;
-                    net_text[player].unknown0 = 0;
+                if (statvar.num_players >= 2) {
+                    othervar.net_text_to = 1 << nth_other_active_player(1);
+                    othervar.net_text_entering = 1;
+                    net_text[player].text = 0;
                     D_001549d0[player].type = 0x4e;
                 }
             }
-        } else if (!(modifiers & MOD_SHIFT) && gamevar.f174 == 0) {
+        } else if (!(modifiers & MOD_SHIFT) && gamevar.rat_fest_level == 0) {
             D_001549d0[player].type = EV_VARY_SPEED;
             D_001549d0[player].value = 10;
             lbInkey = 0;
         } else if (modifiers & MOD_SHIFT) {
-            if (othervar.fa8e) {
+            if (othervar.cheats_enabled) {
                 D_001549d0[player].type = 0x17;
-                D_001549d0[player].value = othervar.f28;
-                D_001549d0[player].arg = (u16)othervar.ff;
+                D_001549d0[player].value = othervar.mouse_cell;
+                D_001549d0[player].arg = (u16)othervar.cur_player;
                 lbInkey = 0;
             }
         }
         break;
     case KC_2:
-        if (statvar.unknownfd > 1 && (modifiers & MOD_ALT)) {
+        if (statvar.num_players > 1 && (modifiers & MOD_ALT)) {
             if (display_mode == 0) {
-                if (statvar.unknownfd >= 3) {
-                    othervar.f4c = 1 << nth_other_active_player(2);
-                    othervar.f4a = 1;
-                    net_text[player].unknown0 = 0;
+                if (statvar.num_players >= 3) {
+                    othervar.net_text_to = 1 << nth_other_active_player(2);
+                    othervar.net_text_entering = 1;
+                    net_text[player].text = 0;
                     D_001549d0[player].type = 0x4e;
                 }
             }
-        } else if (gamevar.f174 == 0) {
+        } else if (gamevar.rat_fest_level == 0) {
             D_001549d0[player].type = EV_VARY_SPEED;
             D_001549d0[player].value = 0x14;
         }
         lbInkey = 0;
         break;
     case KC_3:
-        if (statvar.unknownfd > 1 && (modifiers & MOD_ALT)) {
+        if (statvar.num_players > 1 && (modifiers & MOD_ALT)) {
             if (display_mode == 0) {
-                if (statvar.unknownfd >= 4) {
-                    othervar.f4c = 1 << nth_other_active_player(3);
-                    othervar.f4a = 1;
-                    net_text[player].unknown0 = 0;
+                if (statvar.num_players >= 4) {
+                    othervar.net_text_to = 1 << nth_other_active_player(3);
+                    othervar.net_text_entering = 1;
+                    net_text[player].text = 0;
                     D_001549d0[player].type = 0x4e;
                 }
             }
@@ -131,16 +131,16 @@ void process_game_keys(u8 modifiers, u8 key)
         lbInkey = 0;
         break;
     case KC_4:
-        if (statvar.unknownfd > 1 && (modifiers & MOD_ALT)) {
+        if (statvar.num_players > 1 && (modifiers & MOD_ALT)) {
             if (display_mode == 0) {
-                if (statvar.unknownfd <= 1) {
-                    othervar.f4c = 0xff;
+                if (statvar.num_players <= 1) {
+                    othervar.net_text_to = 0xff;
                 } else {
-                    othervar.f4c = 1 << player;
-                    othervar.f4c = ~othervar.f4c;
+                    othervar.net_text_to = 1 << player;
+                    othervar.net_text_to = ~othervar.net_text_to;
                 }
-                othervar.f4a = 1;
-                net_text[player].unknown0 = 0;
+                othervar.net_text_entering = 1;
+                net_text[player].text = 0;
                 D_001549d0[player].type = 0x4e;
             }
             break;
@@ -158,8 +158,8 @@ void process_game_keys(u8 modifiers, u8 key)
     case KC_Q:
     case KC_X:
         if (((modifiers & MOD_SHIFT) || (modifiers & MOD_ALT)) || (modifiers & MOD_CTRL)) {
-            sprintf(othervar.f935, "%s", yesno_text[0]);
-            if (statvar.unknownfd > 1)
+            sprintf(othervar.yesno_msg, "%s", yesno_text[0]);
+            if (statvar.num_players > 1)
                 open_yes_no_requester(0x7e, 1, 0, 0x78, 1, 0);
             else
                 open_yes_no_requester(0x1c, 0, 0, 0x78, 1, 0);
@@ -168,15 +168,15 @@ void process_game_keys(u8 modifiers, u8 key)
         break;
     case KC_ESCAPE:
         if ((modifiers & MOD_SHIFT) && ((modifiers & MOD_CTRL) || lbKeyOn[KC_TAB])) {
-            if (statvar.unknownfd > 1)
+            if (statvar.num_players > 1)
                 D_001549d0[player].type = 0x7e;
             else
                 D_001549d0[player].type = 0x1c;
             D_001549d0[player].value = 0;
             D_001549d0[player].arg = 0;
         } else if (modifiers & MOD_SHIFT) {
-            sprintf(othervar.f935, "%s", yesno_text[0]);
-            if (statvar.unknownfd > 1)
+            sprintf(othervar.yesno_msg, "%s", yesno_text[0]);
+            if (statvar.num_players > 1)
                 open_yes_no_requester(0x7e, 1, 0, 0x78, 1, 0);
             else
                 open_yes_no_requester(0x1c, 0, 0, 0x78, 1, 0);
@@ -191,19 +191,19 @@ void process_game_keys(u8 modifiers, u8 key)
         break;
     case KC_T:
         display_mode = 4;
-        town.unknown2 = 0;
+        town.state = 0;
         break;
     case KC_J:
-        if (!gamevar.unknown21) {
+        if (!gamevar.paused) {
             if (!(modifiers & MOD_SHIFT)) {
-                if (resvars.f1 == SCREEN_MODE_13)
+                if (resvars.game_mode == SCREEN_MODE_13)
                     D_001549d0[player].type = 0x49;
                 lbInkey = 0;
             }
         }
         break;
     case KC_F4:
-        if (!gamevar.unknown21) {
+        if (!gamevar.paused) {
             if (modifiers & MOD_ALT) {
                 play_sound(10, SFX_SNAPSHOT, -1, -1);
                 record_mappos(key - KC_F1);
@@ -225,7 +225,7 @@ void process_game_keys(u8 modifiers, u8 key)
     case KC_F6:
     case KC_F7:
     case KC_F8:
-        if (!gamevar.unknown21 && gamevar.f174 == 0) {
+        if (!gamevar.paused && gamevar.rat_fest_level == 0) {
             if (modifiers & MOD_ALT) {
                 play_sound(10, SFX_SNAPSHOT, -1, -1);
                 record_mappos(key - KC_F1);
@@ -240,14 +240,14 @@ void process_game_keys(u8 modifiers, u8 key)
         break;
     case KC_A:
         if (modifiers & MOD_SHIFT) {
-            myplayer.f41[20] = myplayer.f41[20] == 1 ? 0 : 1;
+            myplayer.advisor_flags[20] = myplayer.advisor_flags[20] == 1 ? 0 : 1;
             LbMemorySet(gamevar.unknown7b, 0, 0x70);
             lbInkey = 0;
         }
         break;
     case KC_C:
         if (modifiers & MOD_ALT) {
-            debug.unknownd4 = 1;
+            debug.screenshot_request = 1;
             lbInkey = 0;
         } else if (modifiers & MOD_CTRL) {
             if (modifiers & MOD_SHIFT)
@@ -274,16 +274,16 @@ void process_game_keys(u8 modifiers, u8 key)
         break;
     case KC_D:
         if ((modifiers & MOD_ALT) && (modifiers & MOD_CTRL)) {
-            if (othervar.fa8e) {
-                gamevar.f132 = 0;
-                gamevar.f134 = 0x3fff;
+            if (othervar.cheats_enabled) {
+                gamevar.scroll_min_tile = 0;
+                gamevar.scroll_max_tile = 0x3fff;
                 lbInkey = 0;
             }
         }
         break;
     case KC_R:
         if (modifiers & MOD_SHIFT) {
-            if (othervar.fa8e) {
+            if (othervar.cheats_enabled) {
                 make_a_rat(player);
                 lbInkey = 0;
             }
@@ -291,7 +291,7 @@ void process_game_keys(u8 modifiers, u8 key)
         break;
     case KC_Y:
         if (modifiers & MOD_CTRL) {
-            if (othervar.fa8e) {
+            if (othervar.cheats_enabled) {
                 D_001549d0[player].type = 0x89;
                 lbInkey = 0;
             }
@@ -299,7 +299,7 @@ void process_game_keys(u8 modifiers, u8 key)
         break;
     case KC_M:
         if (modifiers & MOD_CTRL) {
-            if (othervar.fa8e) {
+            if (othervar.cheats_enabled) {
                 D_001549d0[player].type = 0x65;
                 lbInkey = 0;
             }

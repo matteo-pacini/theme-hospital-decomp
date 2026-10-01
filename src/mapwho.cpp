@@ -38,8 +38,8 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     D_001567b0[2] = D_001567b0[3] = 0;
     for (id = cell->first; id > 0; id = occupant->cell_next) {
         occupant = &thing[id];
-        screen_x = resvars.f0 == SCREEN_MODE_13 ? ((occupant->x.frac - occupant->y.frac) >> 3) + 0x20 : ((occupant->x.frac - occupant->y.frac) >> 4) + 0x10;
-        screen_y = resvars.f0 == SCREEN_MODE_13 ? (occupant->y.frac + occupant->x.frac) >> 4 : (occupant->y.frac + occupant->x.frac) >> 5;
+        screen_x = resvars.screen_mode == SCREEN_MODE_13 ? ((occupant->x.frac - occupant->y.frac) >> 3) + 0x20 : ((occupant->x.frac - occupant->y.frac) >> 4) + 0x10;
+        screen_y = resvars.screen_mode == SCREEN_MODE_13 ? (occupant->y.frac + occupant->x.frac) >> 4 : (occupant->y.frac + occupant->x.frac) >> 5;
         bucket = ((occupant->y.frac + occupant->x.frac) >> 4) + occupant->depth;
         if (node < (ToDraw *)&pixBuf) {
             node->next = buckets[bucket];
@@ -55,12 +55,12 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 
         sprite = start[((cell->flags & 0xc0) >> 6) + 625].frame;
         if (cell->flags & 0x10) {
-            LbSpriteDraw(x, resvars.f3 + y - blocks[cell->overlay].info->height, blocks[cell->overlay].info);
+            LbSpriteDraw(x, resvars.tile_height + y - blocks[cell->overlay].info->height, blocks[cell->overlay].info);
         }
-        draw_a_frame(sprite, resvars.f4 / 2 + x, resvars.f3 / 2 + y, 0, 0);
+        draw_a_frame(sprite, resvars.tile_width / 2 + x, resvars.tile_height / 2 + y, 0, 0);
     }
     if (id < 0) {
-        draw_a_frame(start[blueprint[-id].anim].frame, (resvars.f4 >> 1) + x, (resvars.f3 >> 1) + y, 0,
+        draw_a_frame(start[blueprint[-id].anim].frame, (resvars.tile_width >> 1) + x, (resvars.tile_height >> 1) + y, 0,
             start[blueprint[-id].anim].flags);
     }
     floor = cell->floor & 0xf;
@@ -71,12 +71,12 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
         frame = start[litter_starts[floor].anim].frame;
         flip = start[litter_starts[floor].anim].flags;
         if (litter_starts[floor].animated) {
-            draw_a_frame(frame, x + (resvars.f0 == SCREEN_MODE_13 ? 32 : 16), y + (resvars.f0 == SCREEN_MODE_13 ? 16 : 8), 0, flip);
+            draw_a_frame(frame, x + (resvars.screen_mode == SCREEN_MODE_13 ? 32 : 16), y + (resvars.screen_mode == SCREEN_MODE_13 ? 16 : 8), 0, flip);
         } else {
             Offset *offset;
 
-            offset = &resvars.f38_Offsetp[((u16)(cell - map) * 0x2e4a4321 >> 16) & 7];
-            draw_a_frame(frame, x + resvars.f4 / 2 + offset->x, y + resvars.f3 / 2 + offset->y, 0, flip);
+            offset = &resvars.litter_pos_Offsetp[((u16)(cell - map) * 0x2e4a4321 >> 16) & 7];
+            draw_a_frame(frame, x + resvars.tile_width / 2 + offset->x, y + resvars.tile_height / 2 + offset->y, 0, flip);
         }
     }
     for (i = 0; i < 32; i++) {
@@ -125,11 +125,11 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 
 // Draws a patient (glowing, wobbling, split or highlighted as its illness and
 // state require) and, if the mouse is over the frame drawn, records it in
-// othervar.f41_s16 as the thing under the mouse.
+// othervar.pointed_thing_s as the thing under the mouse.
 // FUNCTION: 0x00014b88
 void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
 {
-    othervar.fa72++;
+    othervar.visible_people++;
     switch (person->state) {
     case PS_WAITS_FOR_BUSY:
     case PS_GOTO_DESTINATION:
@@ -159,11 +159,11 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
     case PS_NAV_DEBUG:
         if (person->illness == ILL_SERIOUS_RADIATION) {
             draw_glow_frame(person, x, y);
-        } else if (person->illness == ILL_JELLYITIS && othervar.f1c == 0 && person->object == 0) {
+        } else if (person->illness == ILL_JELLYITIS && othervar.drawing_pixbuf == 0 && person->object == 0) {
             draw_wibble_frame(person, x, y);
-        } else if ((u16)(person - thing) == othervar.f43) {
+        } else if ((u16)(person - thing) == othervar.pickup_thing) {
             draw_hilight_frame(person, x, y);
-        } else if ((u16)(person - thing) == othervar.f45) {
+        } else if ((u16)(person - thing) == othervar.queue_hilight_thing) {
             draw_hilight_frame(person, x, y);
         } else {
             draw_special_id_frame(person, x, y);
@@ -173,7 +173,7 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
         draw_split_frame(person, x, y);
         break;
     case PS_ENERGISES:
-        if (othervar.f1c == 0) {
+        if (othervar.drawing_pixbuf == 0) {
             draw_energise_frame(person, x, y);
         } else {
             draw_special_id_frame(person, x, y);
@@ -194,17 +194,17 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
     }
     if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
         && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
-        othervar.f41_s16 = person - thing;
+        othervar.pointed_thing_s = person - thing;
     }
 }
 
-// Draws a staff member (highlighted if othervar.f43) and records it in
-// othervar.f41_s16 if under the mouse. Applicants and some hidden states are
+// Draws a staff member (highlighted if othervar.pickup_thing) and records it in
+// othervar.pointed_thing_s if under the mouse. Applicants and some hidden states are
 // not drawn.
 // FUNCTION: 0x00014fbc
 void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
 {
-    othervar.fa72++;
+    othervar.visible_people++;
     switch (staff->state) {
     case 2:
     case 4:
@@ -241,7 +241,7 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
     case SS_STUCK:
     case SS_PLAY_ANISEQ:
     case SS_NAV_DEBUG:
-        if ((u16)(staff - thing) == othervar.f43) {
+        if ((u16)(staff - thing) == othervar.pickup_thing) {
             draw_hilight_frame(staff, x, y);
         } else {
             draw_special_id_frame(staff, x, y);
@@ -256,12 +256,12 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
     }
     if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
         && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
-        othervar.f41_s16 = staff - thing;
+        othervar.pointed_thing_s = staff - thing;
     }
 }
 
 // Draws an object or door with its overlay animation (highlighted if it or its
-// pair is othervar.f43) and records it in othervar.f41_s16 if under the mouse.
+// pair is othervar.pickup_thing) and records it in othervar.pointed_thing_s if under the mouse.
 // FUNCTION: 0x00015334
 void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s32 top)
 {
@@ -276,14 +276,14 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
     case OS_SLIDING_DOOR_OPEN:
     case OS_SLIDING_DOOR_CLOSES:
     case OS_BOMB_TICKS:
-        if ((u16)(obj - thing) == othervar.f43 || (obj->pair && obj->pair == othervar.f43)) {
+        if ((u16)(obj - thing) == othervar.pickup_thing || (obj->pair && obj->pair == othervar.pickup_thing)) {
             draw_hilight_frame(obj, x, y);
         } else {
             draw_special_id_frame(obj, x, y);
         }
         if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
             && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
-            othervar.f41_s16 = obj - thing;
+            othervar.pointed_thing_s = obj - thing;
         }
         if (obj->overlay_frame) {
             draw_from_special_id_frame(obj->overlay_frame, x, y, 0, (u8 *)obj->data, obj->flip);
@@ -309,9 +309,9 @@ void mapwho_reaper(Thing *reaper, s32 x, s32 y)
     }
 }
 
-// Draws a rat. A mouse over the rat's frame (within othervar.f9e7 of it)
-// records it in othervar.f41_s16 and f6f_s16; a near miss (within
-// othervar.f9e5) sets othervar.f71.
+// Draws a rat. A mouse over the rat's frame (within othervar.rat_hit_margin of it)
+// records it in othervar.pointed_thing_s and f6f_s16; a near miss (within
+// othervar.rat_near_margin) sets othervar.near_rat.
 // FUNCTION: 0x000155d4
 void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32 top0)
 {
@@ -325,17 +325,17 @@ void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32
     mouse_x = lbDisplay.mmouse_x;
     mouse_y = lbDisplay.mmouse_y;
     draw_special_id_frame(rat, x, y);
-    left = left0 + D_001567b0[4] - othervar.f9e5;
-    right = left + D_001567b0[6] + othervar.f9e5 * 2;
-    top = top0 + D_001567b0[5] - othervar.f9e5;
-    bottom = top + D_001567b0[7] + othervar.f9e5 * 2;
+    left = left0 + D_001567b0[4] - othervar.rat_near_margin;
+    right = left + D_001567b0[6] + othervar.rat_near_margin * 2;
+    top = top0 + D_001567b0[5] - othervar.rat_near_margin;
+    bottom = top + D_001567b0[7] + othervar.rat_near_margin * 2;
     if (mouse_x > left && mouse_x < right && mouse_y > top && mouse_y < bottom) {
-        if (left + othervar.f9e5 - othervar.f9e7 < mouse_x && right - othervar.f9e5 + othervar.f9e7 > mouse_x
-            && top + othervar.f9e5 - othervar.f9e7 < mouse_y && bottom - othervar.f9e5 + othervar.f9e7 > mouse_y) {
-            othervar.f41_s16 = rat - thing;
-            othervar.f6f_s16 = rat - thing;
+        if (left + othervar.rat_near_margin - othervar.rat_hit_margin < mouse_x && right - othervar.rat_near_margin + othervar.rat_hit_margin > mouse_x
+            && top + othervar.rat_near_margin - othervar.rat_hit_margin < mouse_y && bottom - othervar.rat_near_margin + othervar.rat_hit_margin > mouse_y) {
+            othervar.pointed_thing_s = rat - thing;
+            othervar.pointed_rat_s = rat - thing;
         } else {
-            othervar.f71 = 1;
+            othervar.near_rat = 1;
         }
     }
 }
@@ -377,7 +377,7 @@ void mapwho_numfx(Thing *fx, s32 x, s32 y)
     }
 }
 
-// Draws the mayor or inspector and records them in othervar.f41_s16 if under
+// Draws the mayor or inspector and records them in othervar.pointed_thing_s if under
 // the mouse.
 // FUNCTION: 0x000158e8
 void mapwho_mayor(Thing *mayor, s32 x, s32 y, s32 left, s32 top)
@@ -385,7 +385,7 @@ void mapwho_mayor(Thing *mayor, s32 x, s32 y, s32 left, s32 top)
     draw_special_id_frame(mayor, x, y);
     if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
         && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
-        othervar.f41_s16 = mayor - thing;
+        othervar.pointed_thing_s = mayor - thing;
     }
 }
 

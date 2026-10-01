@@ -43,7 +43,7 @@ u8 nurse_check_for_work(Thing *nurse)
     room = get_room_info_rand(ROOM_WARD, 100, nurse->owner);
     if (room == 0)
         return 0;
-    set_complex(nurse, 0x14a, room->unknown4);
+    set_complex(nurse, 0x14a, room->door_tile);
     nurse->resume_state = SS_PROCESS_COMPLEX;
     nurse->substate = 0;
     nurse->next_state = SS_NURSE_IN_WARD;
@@ -92,24 +92,24 @@ void nurse_in_ward(Thing *nurse)
     obj = find_object(nurse->x.tile + (nurse->y.tile << 7), OBJ_DESK, 0, 0x97, nurse->owner);
     switch (nurse->substate) {
     case 0:
-        nurse->room->f3 == 4 ? 0 : (nurse->room->f3 = 1);
+        nurse->room->state == 4 ? 0 : (nurse->room->state = 1);
         if (!(check_room_mutex(nurse) ? 1 : (evacuate_staff(nurse), 0)))
             return;
         if (shall_i_resign(nurse))
             return;
         if ((nurse->orders & ORD_REST) && take_a_break(nurse))
             return;
-        if (allhosps[nurse->owner].f21f
-            && actual_game_turn % (nurse->tiredness > allhosps[nurse->owner].f21d ? nurse->work_delay * 2 + 1 : nurse->work_delay + 1) == 0
+        if (allhosps[nurse->owner].staff_leave_rooms
+            && actual_game_turn % (nurse->tiredness > allhosps[nurse->owner].rest_threshold ? nurse->work_delay * 2 + 1 : nurse->work_delay + 1) == 0
             && obey_pager(nurse))
             return;
-        if (nurse->tiredness > allhosps[nurse->owner].f21d && take_a_break(nurse))
+        if (nurse->tiredness > allhosps[nurse->owner].rest_threshold && take_a_break(nurse))
             return;
-        if (nurse->room->f22 || nurse->room->f3 == 4) {
+        if (nurse->room->being_edited || nurse->room->state == 4) {
             evacuate_staff(nurse);
             return;
         }
-        if (allhosps[nurse->owner].unknown11f0 == 0 && could_nurse_vaccinate(nurse)) {
+        if (allhosps[nurse->owner].idle_nurses == 0 && could_nurse_vaccinate(nurse)) {
             evacuate_staff(nurse);
             return;
         }
@@ -117,7 +117,7 @@ void nurse_in_ward(Thing *nurse)
         if (queue) {
             bed = find_unallocated_bed(nurse->room);
             if (bed) {
-                if (call_person_to_room(nurse, queue, 0x28, nurse->room->unknown4, 0)) {
+                if (call_person_to_room(nurse, queue, 0x28, nurse->room->door_tile, 0)) {
                     nurse->object = bed;
                     nurse->next_state = SS_NURSE_IN_WARD;
                     nurse->substate = 1;
@@ -147,19 +147,19 @@ void nurse_in_ward(Thing *nurse)
         }
         cur = (s16)nurse->x.tile + ((s16)nurse->y.tile << 7);
         room = which_room(cur);
-        othervar.f0 = old_newrand() % 100;
-        if (othervar.f0 >= 15 && othervar.f0 < 20)
-            target = room->pos + (((s16)(room->f2 / 2) << 7) + (s16)(room->f1 / 2));
+        othervar.rand_pct = old_newrand() % 100;
+        if (othervar.rand_pct >= 15 && othervar.rand_pct < 20)
+            target = room->pos + (((s16)(room->height / 2) << 7) + (s16)(room->width / 2));
         else
-            target = room->pos + (((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1));
+            target = room->pos + (((s16)(old_newrand() % room->height) << 7) + (s16)(old_newrand() % room->width));
         if (cur != target && can_i_get_to(nurse, target)) {
             nurse->next_state = nurse->resume_state = SS_NURSE_IN_WARD;
             set_complex(nurse, 0xbe, target);
             process_staff_complex(nurse);
             return;
         }
-        othervar.f0 = old_newrand() % 100;
-        if (othervar.f0 >= 0x46 && othervar.f0 < 0x50)
+        othervar.rand_pct = old_newrand() % 100;
+        if (othervar.rand_pct >= 0x46 && othervar.rand_pct < 0x50)
             nurse->work_target = 0;
         break;
     case 1:
@@ -174,7 +174,7 @@ void nurse_in_ward(Thing *nurse)
             patient->next_state = PS_IN_BED;
             process_person_complex(patient);
         } else if (--nurse->timer <= 0) {
-            result = call_person_again(nurse, 0x28, nurse->room->unknown4);
+            result = call_person_again(nurse, 0x28, nurse->room->door_tile);
             if (result == 0) {
                 nurse->substate = 0;
                 nurse->slave = 0;

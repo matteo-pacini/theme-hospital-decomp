@@ -85,12 +85,12 @@ void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, 
             }
         }
     }
-    if (f->sound && gamevar.f12d == 0)
+    if (f->sound && gamevar.turn_skipped == 0)
         play_sound(10, f->sound, x, y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -150,7 +150,7 @@ void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -188,19 +188,19 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
     if (w->flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
-            if (!othervar.fa52) {
+            if (!othervar.frame_icon_drawn) {
                 kind = elem->flags & 0xfff0;
                 if (w->icon_id > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].anim > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
                             icon_draw_from_special_id_frame(w->icon_frame, x, y, (s16)-((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                     } else if (w->type == THING_OBJECT) {
                         icon = 1;
-                        othervar.fa52 = 1;
+                        othervar.frame_icon_drawn = 1;
                     }
                 } else {
-                    othervar.fa52 = 1;
+                    othervar.frame_icon_drawn = 1;
                 }
             }
             if (elem->flags & 0xffb0) {
@@ -222,19 +222,19 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
     } else {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
-            if (!othervar.fa52) {
+            if (!othervar.frame_icon_drawn) {
                 kind = elem->flags & 0xfff0;
                 if (w->icon_id > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].anim > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
                             icon_draw_from_special_id_frame(w->icon_frame, x, y, (s16)((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                     } else if (w->type == THING_OBJECT) {
                         icon = 1;
-                        othervar.fa52 = 1;
+                        othervar.frame_icon_drawn = 1;
                     }
                 } else {
-                    othervar.fa52 = 1;
+                    othervar.frame_icon_drawn = 1;
                 }
             }
             if (elem->flags & 0xffb0) {
@@ -253,16 +253,16 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             }
         }
     }
-    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->last_sound != (int)f->sound))
+    if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
-    if (gamevar.f12d == 0)
+    if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
     if (icon)
         icon_draw_from_special_id_frame(w->icon_frame, x, y, f->width / 2 + D_001567b0.x, D_001567b0.y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -278,7 +278,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
     lbDisplay.draw_flags = 0;
-    othervar.fa52 = 0;
+    othervar.frame_icon_drawn = 0;
 }
 
 extern "C" {
@@ -308,10 +308,10 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
     if (w->flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
-            if (!othervar.fa52) {
+            if (!othervar.frame_icon_drawn) {
                 kind = elem->flags & 0xfff0;
                 if (w->icon_id > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].anim > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
                             icon = 1;
@@ -320,7 +320,7 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
                         }
                     }
                 } else {
-                    othervar.fa52 = 1;
+                    othervar.frame_icon_drawn = 1;
                 }
             }
             if (elem->flags & 0xfff0) {
@@ -367,10 +367,10 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
     } else {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];
-            if (!othervar.fa52) {
+            if (!othervar.frame_icon_drawn) {
                 kind = elem->flags & 0xfff0;
                 if (w->icon_id > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].anim > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
                             icon = 1;
@@ -379,7 +379,7 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
                         }
                     }
                 } else {
-                    othervar.fa52 = 1;
+                    othervar.frame_icon_drawn = 1;
                 }
             }
             if (elem->flags & 0xfff0) {
@@ -430,14 +430,14 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
                     phase);
     }
     FillBoxInPixBuffer(0xfe, D_001567b0.x + 0x3a, D_001567b0.y + 0x74, f->width, f->length);
-    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->last_sound != (int)f->sound))
+    if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
-    if (gamevar.f12d == 0)
+    if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -457,7 +457,7 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
     lbDisplay.draw_flags = 0;
-    othervar.fa52 = 0;
+    othervar.frame_icon_drawn = 0;
 }
 
 // As draw_special_id_frame, but draws the layered elements glowing in a colour
@@ -480,10 +480,10 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
     for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
         elem = &element[*el];
         if (elem->flags & 0xfff0) {
-            if (!othervar.fa52) {
+            if (!othervar.frame_icon_drawn) {
                 kind = elem->flags & 0xfff0;
                 if (w->icon_id > 0) {
-                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].unknown1 > 0) {
+                    if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].anim > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
                             if (w->flip)
@@ -493,7 +493,7 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
                         }
                     }
                 } else {
-                    othervar.fa52 = 1;
+                    othervar.frame_icon_drawn = 1;
                 }
             }
             if (elem->flags & 0xffb0) {
@@ -526,14 +526,14 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
             }
         }
     }
-    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->last_sound != (int)f->sound))
+    if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
-    if (gamevar.f12d == 0)
+    if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -549,7 +549,7 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
     if (D_001567b0.y1 < D_001567b0.y + D_001567b0.h)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
     lbDisplay.draw_flags = 0;
-    othervar.fa52 = 0;
+    othervar.frame_icon_drawn = 0;
 }
 
 }
@@ -593,14 +593,14 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         lbDisplay.graphics_window_y = old_top;
         lbDisplay.graphics_window_height = old_height;
         lbDisplay.draw_flags = 0;
-        if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->last_sound != f->sound))
+        if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || w->last_sound != f->sound))
             play_sound((u32)w, f->sound, x, y);
-        if (gamevar.f12d == 0)
+        if (gamevar.turn_skipped == 0)
             w->last_sound = f->sound;
         D_001567b0.x += x;
         D_001567b0.y += y;
         D_001567b0.w = f->width;
-        if (resvars.f0 == SCREEN_MODE_13) {
+        if (resvars.screen_mode == SCREEN_MODE_13) {
             D_001567b0.h = f->length + D_00156911;
         } else {
             D_001567b0.w /= 2;
@@ -663,14 +663,14 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
         DrawPixBuffer(obj->aux_param, 0, 0, 0x40, 0x40);
         FillPixBuffer(0xfe);
         InitPixBuffer(0, 0, 0xb4, 0xb4, 0, 0);
-        if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->last_sound != f->sound))
+        if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || w->last_sound != f->sound))
             play_sound((u32)w, f->sound, x, y);
-        if (gamevar.f12d == 0)
+        if (gamevar.turn_skipped == 0)
             w->last_sound = f->sound;
         D_001567b0.x += x;
         D_001567b0.y += y;
         D_001567b0.w = f->width;
-        if (resvars.f0 == SCREEN_MODE_13) {
+        if (resvars.screen_mode == SCREEN_MODE_13) {
             D_001567b0.h = f->length + D_00156911;
         } else {
             D_001567b0.w /= 2;
@@ -730,12 +730,12 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
             }
         }
     }
-    if (f->sound && gamevar.f12d == 0)
+    if (f->sound && gamevar.turn_skipped == 0)
         play_sound(10, f->sound, x, y);
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -785,14 +785,14 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
         break;
     }
     full_draw_frame(w, w->sprite, x, y, colour, hidden, w->flip);
-    if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || (int)w->last_sound != (int)f->sound))
+    if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
-    if (gamevar.f12d == 0)
+    if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -887,7 +887,7 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -966,7 +966,7 @@ void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8
     D_001567b0.x += x;
     D_001567b0.y += y;
     D_001567b0.w = f->width;
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         D_001567b0.h = f->length + D_00156911;
     } else {
         D_001567b0.w /= 2;
@@ -1083,21 +1083,21 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
         if (spr > sprite) {
             lbDisplay.draw_flags = elem->flags & 0xf;
-            LbSpriteDraw(x + dx - spr->width / 2, (y + dy) + (elem->y - 0xca) - f->length - resvars.f1c_IconScreenp->unknown4fc, spr);
+            LbSpriteDraw(x + dx - spr->width / 2, (y + dy) + (elem->y - 0xca) - f->length - resvars.coords_IconScreenp->unknown4fc, spr);
             if (D_001567b0.x > dx - spr->width / 2)
                 D_001567b0.x = dx - spr->width / 2;
-            if (D_001567b0.y > dy - f->length - resvars.f1c_IconScreenp->unknown4fc) {
-                D_001567b0.y = dy - f->length - resvars.f1c_IconScreenp->unknown4fc;
-                D_00156911 = resvars.f1c_IconScreenp->unknown4fc + f->length;
+            if (D_001567b0.y > dy - f->length - resvars.coords_IconScreenp->unknown4fc) {
+                D_001567b0.y = dy - f->length - resvars.coords_IconScreenp->unknown4fc;
+                D_00156911 = resvars.coords_IconScreenp->unknown4fc + f->length;
             }
         }
     }
     lbDisplay.draw_flags = 0;
-    othervar.fa52 = 1;
+    othervar.frame_icon_drawn = 1;
 }
 
 // Draws a money bag at x,y, with value written on it in high resolution
-// (unless othervar.fa8d), and records its box in D_001567b0.
+// (unless othervar.use_lores_assets), and records its box in D_001567b0.
 // FUNCTION: 0x00031a44
 void draw_money(s32 x, s32 y, s32 value)
 {
@@ -1115,15 +1115,15 @@ void draw_money(s32 x, s32 y, s32 value)
     D_001567b0.y = y;
     D_001567b0.w = money[1].width;
     D_001567b0.h = money[1].height;
-    if (resvars.f1 == SCREEN_MODE_13 && !othervar.fa8d) {
+    if (resvars.game_mode == SCREEN_MODE_13 && !othervar.use_lores_assets) {
         sprintf(buf, "%d", value);
         width = -1;
         for (p = buf; *p; p++) {
             digit = *p - '0';
             width += money[digit + 2].width + 1;
         }
-        px = x + resvars.f1c_IconScreenp->unknown568 + (resvars.f1c_IconScreenp->unknown560 - width) / 2;
-        py = y + resvars.f1c_IconScreenp->unknown564;
+        px = x + resvars.coords_IconScreenp->unknown568 + (resvars.coords_IconScreenp->unknown560 - width) / 2;
+        py = y + resvars.coords_IconScreenp->unknown564;
         for (p = buf; *p; p++) {
             digit = *p - '0';
             LbSpriteDraw(px, py, &money[digit + 2]);

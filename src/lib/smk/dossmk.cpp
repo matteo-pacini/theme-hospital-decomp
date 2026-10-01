@@ -113,7 +113,7 @@ long play_smk_direct(char *name, long smk_flags, long flags)
     } else {
         x = (lbDisplay.graphics_screen_width - smk->Width) >> 1;
         y = (lbDisplay.graphics_screen_height - smk->Height) >> 1;
-        SmackToBuffer(smk, x, y, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, lbDisplay.unknown4, 0);
+        SmackToBuffer(smk, x, y, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, lbDisplay.wscreen, 0);
     }
     for (frame = 0; (flags & 0x400) || frame < smk->Frames; frame++) {
         if (flags & 0x100) {
@@ -283,7 +283,7 @@ void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
         screen_height = 200;
     } else {
         pitch = lbDisplay.graphics_screen_width;
-        dst = lbDisplay.unknown4;
+        dst = lbDisplay.wscreen;
         screen_height = lbDisplay.graphics_screen_height;
     }
     if ((flags & 4) || (flags & 8))
@@ -337,7 +337,7 @@ void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
     }
     if (lbDisplay.screen_mode != 1 || smack_draw_callback) {
         if (smack_draw_callback)
-            ((SmackDrawCallback)smack_draw_callback)(lbDisplay.unknown4, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
+            ((SmackDrawCallback)smack_draw_callback)(lbDisplay.wscreen, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbScreenSwap();
     } else {
         if (smack_draw_callback)

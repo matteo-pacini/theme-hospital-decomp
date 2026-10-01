@@ -24,8 +24,8 @@ void remove_litter(u16 tile, u8 owner);
 #define TILE_POS(t) ((s16)(t)->x.tile + ((s16)(t)->y.tile << 7))
 
 // Drops litter of kind type (floor kind 1-15) at tile if it is owner's land:
-// on a clean tile, counting it (allhosps.fcaa); kinds 4 and 5 also replace
-// existing mess. Records the tile in allhosps.fcac.
+// on a clean tile, counting it (allhosps.litter_count); kinds 4 and 5 also replace
+// existing mess. Records the tile in allhosps.last_litter_tile.
 // FUNCTION: 0x0007a710
 void place_litter(u16 tile, s8 owner, u8 type)
 {
@@ -33,17 +33,17 @@ void place_litter(u16 tile, s8 owner, u8 type)
     u8 cur;
 
     m = &map[tile];
-    if (m->unknown7 == 1 << owner) {
+    if (m->owner_flags == 1 << owner) {
         cur = m->floor & 0xf;
         if (cur == 0) {
             m->floor &= 0xf0;
             m->floor |= type;
-            allhosps[owner].fcaa++;
-            allhosps[owner].fcac = tile;
+            allhosps[owner].litter_count++;
+            allhosps[owner].last_litter_tile = tile;
         } else if ((type == 5 || type == 4) && !(cur == 0 || cur == 7 || cur == 8)) {
             m->floor &= 0xf0;
             m->floor |= type;
-            allhosps[owner].fcac = tile;
+            allhosps[owner].last_litter_tile = tile;
         }
     }
 }
@@ -57,9 +57,9 @@ void remove_litter(u16 tile, u8 owner)
 
     m = &map[tile];
     cur = m->floor & 0xf;
-    if (m->unknown7 == 1 << owner && !(cur == 0 || cur == 7 || cur == 8)) {
+    if (m->owner_flags == 1 << owner && !(cur == 0 || cur == 7 || cur == 8)) {
         m->floor &= 0xf0;
-        allhosps[owner].fcaa--;
+        allhosps[owner].litter_count--;
     }
 }
 
@@ -94,28 +94,28 @@ void handyman_works(Thing *handyman)
     case 0:
         if (shall_i_resign(handyman))
             break;
-        if (((handyman->orders & ORD_REST) || handyman->tiredness > allhosps[handyman->owner].f21d) && take_a_break(handyman))
+        if (((handyman->orders & ORD_REST) || handyman->tiredness > allhosps[handyman->owner].rest_threshold) && take_a_break(handyman))
             break;
         room = handyman->room;
         if (room) {
             for (machine = &thing[handyman->room->first_object]; machine > thing; machine = &thing[machine->room_obj_next]) {
-                if (machine->type == THING_OBJECT && objects[machine->subtype].unknown24) {
+                if (machine->type == THING_OBJECT && objects[machine->subtype].is_machine) {
                     if (machine->times_used > 0) {
-                        thingpage_request(&allhosps[machine->owner].ff6d, machine - thing, 100);
+                        thingpage_request(&allhosps[machine->owner].repair_pager, machine - thing, 100);
                         break;
                     }
                 }
             }
-            if (thingpage_respond(&allhosps[handyman->owner].ff6d, handyman, handyman->room - room_info, 0)) {
+            if (thingpage_respond(&allhosps[handyman->owner].repair_pager, handyman, handyman->room - room_info, 0)) {
                 handyman->substate = 8;
-                if (room->f3 != 6)
-                    room->f3 = 5;
+                if (room->state != 6)
+                    room->state = 5;
                 break;
             }
             handyman->state = SS_PROCESS_COMPLEX;
             break;
         }
-        if (thingpage_find_highest_priority(&allhosps[handyman->owner].ff6d) && handyman_try_fix(handyman))
+        if (thingpage_find_highest_priority(&allhosps[handyman->owner].repair_pager) && handyman_try_fix(handyman))
             break;
         litter_score = handyman->litter_count * 100 / (handyman->prio_litter + 1);
         plant_score = handyman->plant_count * 1000 / (handyman->prio_plants + 1);
@@ -144,7 +144,7 @@ void handyman_works(Thing *handyman)
         dx = old_newrand() % 15 - 7;
         dy = old_newrand() % 15 - 7;
         pos = (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx);
-        if (map[pos].unknown7 == 1 << handyman->owner && can_i_get_to(handyman, pos) && !(map[pos].unknown7 & 0x10)) {
+        if (map[pos].owner_flags == 1 << handyman->owner && can_i_get_to(handyman, pos) && !(map[pos].owner_flags & 0x10)) {
             handyman->next_state = handyman->resume_state = SS_HANDYMAN_WORKS;
             set_complex(handyman, 0xbe, (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx));
             process_staff_complex(handyman);
@@ -174,7 +174,7 @@ void handyman_works(Thing *handyman)
         handyman->litter_count++;
         break;
     case 4:
-        handyman->object = thingpage_remind_me(&allhosps[handyman->owner].fd2b, handyman);
+        handyman->object = thingpage_remind_me(&allhosps[handyman->owner].plant_pager, handyman);
         set_complex(handyman, 0x26c, 0);
         handyman->substate = 5;
         handyman->next_state = SS_HANDYMAN_WORKS;
@@ -184,7 +184,7 @@ void handyman_works(Thing *handyman)
     case 5:
         id = handyman->object;
         plant = &thing[id];
-        thingpage_cancel(&allhosps[plant->owner].fd2b, id);
+        thingpage_cancel(&allhosps[plant->owner].plant_pager, id);
         if (plant->in_use == 1 || plant->type != THING_OBJECT || plant->subtype != OBJ_PLANT || plant->state != OS_PLANT_AGES
             || !is_next_to_plant(handyman, plant)) {
             handyman->state = SS_PROCESS_COMPLEX;
@@ -226,34 +226,34 @@ void handyman_works(Thing *handyman)
                 }
                 plant->state = OS_PLANT_AGES;
                 if (plant->owner == player) {
-                    NRAdcounts.unknownb += 0x37 - (plant->plant_health * 2 + 0x50) / 16;
-                    if (NRAdcounts.unknownb < 0)
-                        NRAdcounts.unknownb = 0;
-                    else if (NRAdcounts.unknown0 * 0x37 < NRAdcounts.unknownb)
-                        NRAdcounts.unknownb = NRAdcounts.unknown0 * 0x37;
+                    NRAdcounts.plant_health_sum += 0x37 - (plant->plant_health * 2 + 0x50) / 16;
+                    if (NRAdcounts.plant_health_sum < 0)
+                        NRAdcounts.plant_health_sum = 0;
+                    else if (NRAdcounts.plants * 0x37 < NRAdcounts.plant_health_sum)
+                        NRAdcounts.plant_health_sum = NRAdcounts.plants * 0x37;
                 }
                 plant->plant_health = 400;
                 handyman->substate = 0;
                 handyman->plant_count++;
                 set_complex(handyman, 0x262, 0);
                 if (handyman->room)
-                    set_complex(handyman, 0x136, handyman->room->unknown6);
+                    set_complex(handyman, 0x136, handyman->room->door_inside_tile);
                 handyman->next_state = SS_HANDYMAN_WORKS;
                 process_staff_complex(handyman);
-                NRAdcounts.unknown2--;
+                NRAdcounts.thirsty_plants--;
             }
         }
         break;
     case 8:
         room = handyman->room;
-        if (room->f3 != 6) {
+        if (room->state != 6) {
             if (!(find_person_in_room(room, THING_STAFF, STAFF_DOCTOR) || find_person_in_room(room, THING_STAFF, STAFF_NURSE)
                   || find_person_in_room(room, THING_STAFF, STAFF_SURGEON))) {
-                room->f3 = 6;
+                room->state = 6;
             } else {
                 u16 pos2;
 
-                pos2 = room->pos + (((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1));
+                pos2 = room->pos + (((s16)(old_newrand() % room->height) << 7) + (s16)(old_newrand() % room->width));
                 if (pos2 != TILE_POS(handyman) && can_i_get_to(handyman, pos2)) {
                     handyman->next_state = handyman->resume_state = SS_HANDYMAN_WORKS;
                     set_complex(handyman, 0xbe, pos2);
@@ -264,7 +264,7 @@ void handyman_works(Thing *handyman)
             handyman->next_state = SS_HANDYMAN_WORKS;
             handyman->substate = 9;
             handyman->resume_state = SS_PROCESS_COMPLEX;
-            handyman->object = thingpage_remind_me(&allhosps[handyman->owner].ff6d, handyman);
+            handyman->object = thingpage_remind_me(&allhosps[handyman->owner].repair_pager, handyman);
             set_complex(handyman, 0x2d0, 0);
             process_staff_complex(handyman);
         }
@@ -272,7 +272,7 @@ void handyman_works(Thing *handyman)
     case 9: {
         u16 seq;
 
-        seq = objects[thing[handyman->object].subtype].f12;
+        seq = objects[thing[handyman->object].subtype].repair_aniseq;
         reset_icon_value(&thing[handyman->object], ICON_NEEDS_REPAIR);
         if (seq)
             choose_aniseq(handyman, seq, 0x3c);
@@ -285,7 +285,7 @@ void handyman_works(Thing *handyman)
     case 10:
         machine = &thing[handyman->object];
         if (machine > thing) {
-            thingpage_cancel(&allhosps[handyman->owner].ff6d, handyman->object);
+            thingpage_cancel(&allhosps[handyman->owner].repair_pager, handyman->object);
             if (machine->strength > 2) {
                 if (old_newrand() % machine->strength < machine->times_used)
                     machine->strength--;
@@ -296,8 +296,8 @@ void handyman_works(Thing *handyman)
             machine->smoke[1] = 0;
             machine->smoke[2] = 0;
         }
-        handyman->room->f3 = 0;
-        set_complex(handyman, 0x136, handyman->room->unknown6);
+        handyman->room->state = 0;
+        set_complex(handyman, 0x136, handyman->room->door_inside_tile);
         handyman->resume_state = SS_PROCESS_COMPLEX;
         handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->substate = 0;
@@ -327,7 +327,7 @@ void handyman_check_for_litter(Thing *handyman)
     dy = old_newrand() % (range * 2) - range;
     pos = ((u16)handyman->y.tile << 7) + (u16)handyman->x.tile + ((dy << 7) + dx);
     m = &map[pos];
-    if (!(m->floor & 0xf) || (m->floor & 0xf) == 7 || (m->floor & 0xf) == 8 || m->unknown7 != (1 << handyman->owner))
+    if (!(m->floor & 0xf) || (m->floor & 0xf) == 7 || (m->floor & 0xf) == 8 || m->owner_flags != (1 << handyman->owner))
         return;
     {
         u16 nearest;
@@ -362,7 +362,7 @@ void plant_ages(Thing *plant)
     u8 stage;
     u32 next;
 
-    if (!othervar.f32 || (old_newrand() & 1))
+    if (!othervar.every_16_turns || (old_newrand() & 1))
         return;
     plant->plant_health--;
     if (plant->plant_health > 0) {
@@ -372,15 +372,15 @@ void plant_ages(Thing *plant)
             if (!(frame[next].flags & 1))
                 plant->sprite = next;
             if (!is_plant_trapped(plant))
-                thingpage_request(&allhosps[plant->owner].fd2b, plant - thing, stage);
-            NRAdcounts.unknown2++;
-            NRAdcounts.unknownb -= 11;
+                thingpage_request(&allhosps[plant->owner].plant_pager, plant - thing, stage);
+            NRAdcounts.thirsty_plants++;
+            NRAdcounts.plant_health_sum -= 11;
         }
     } else if (plant->plant_health == -40) {
         if (!is_plant_trapped(plant))
-            thingpage_request(&allhosps[plant->owner].fd2b, plant - thing, 10);
+            thingpage_request(&allhosps[plant->owner].plant_pager, plant - thing, 10);
         plant->plant_health = 0;
-        NRAdcounts.unknown2 += 2;
+        NRAdcounts.thirsty_plants += 2;
     }
 }
 
@@ -464,8 +464,8 @@ u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min)
             continue;
         room_id = thing[p->pages[i].id].room_id;
         if (room_id != 0
-            && (room_info[room_id].f22 || room_info[room_id].f3 == 4
-                || allhosps[handyman->owner].unknown11b7 == room_id))
+            && (room_info[room_id].being_edited || room_info[room_id].state == 4
+                || allhosps[handyman->owner].edited_room == room_id))
             continue;
         if (p->pages[i].priority == best_priority) {
             dist = (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
@@ -542,18 +542,18 @@ u8 handyman_try_fix(Thing *handyman)
     u16 id;
     RoomInfo *room;
 
-    id = thingpage_respond(&allhosps[handyman->owner].ff6d, handyman, 0, (100 - handyman->prio_repair) * 3 / 4);
+    id = thingpage_respond(&allhosps[handyman->owner].repair_pager, handyman, 0, (100 - handyman->prio_repair) * 3 / 4);
     if (id) {
         room = &room_info[thing[id].room_id];
         if (room > room_info) {
-            set_complex(handyman, 0x96, room->unknown4);
+            set_complex(handyman, 0x96, room->door_tile);
             handyman->next_state = SS_HANDYMAN_WORKS;
             handyman->substate = 8;
             handyman->resume_state = SS_PROCESS_COMPLEX;
             handyman->dest_room = room - room_info;
             process_staff_complex(handyman);
-            if (room->f3 != 6)
-                room->f3 = 5;
+            if (room->state != 6)
+                room->state = 5;
             return 1;
         }
     }
@@ -568,12 +568,12 @@ u8 handyman_try_plant(Thing *handyman)
     u16 id;
     u16 room_id;
 
-    id = thingpage_respond(&allhosps[handyman->owner].fd2b, handyman, 0, 0);
+    id = thingpage_respond(&allhosps[handyman->owner].plant_pager, handyman, 0, 0);
     if (id) {
         room_id = thing[id].room_id;
         if (room_id) {
             handyman->dest_room = room_id;
-            set_complex(handyman, 0x96, room_info[room_id].unknown4);
+            set_complex(handyman, 0x96, room_info[room_id].door_tile);
             handyman->substate = 4;
         } else {
             set_complex(handyman, 0x26c, 0);
@@ -640,13 +640,13 @@ u8 is_next_to_plant(Thing *handyman, Thing *plant)
         > 1)
         return 0;
     if (handyman->y.tile == plant->y.tile + 1)
-        return map[here].unknown3 >= 0x8e && map[here].unknown3 <= 0x91 ? (u8)1 : (u8)0;
+        return map[here].wall_n >= 0x8e && map[here].wall_n <= 0x91 ? (u8)1 : (u8)0;
     if (handyman->x.tile == plant->x.tile + 1)
-        return map[here].unknown4 >= 0x8e && map[here].unknown4 <= 0x91 ? (u8)1 : (u8)0;
+        return map[here].wall_w >= 0x8e && map[here].wall_w <= 0x91 ? (u8)1 : (u8)0;
     if (handyman->y.tile == plant->y.tile - 1)
-        return map[there].unknown3 >= 0x8e && map[there].unknown3 <= 0x91 ? (u8)1 : (u8)0;
+        return map[there].wall_n >= 0x8e && map[there].wall_n <= 0x91 ? (u8)1 : (u8)0;
     if (handyman->x.tile == plant->x.tile - 1)
-        return map[there].unknown4 >= 0x8e && map[there].unknown4 <= 0x91 ? (u8)1 : (u8)0;
+        return map[there].wall_w >= 0x8e && map[there].wall_w <= 0x91 ? (u8)1 : (u8)0;
     return 0;
 }
 
@@ -657,13 +657,13 @@ u8 trapped_plant_check(RoomInfo *room, s32 pos, u8 owner)
 {
     if (room > room_info) {
         if (which_room(pos) == room) {
-            if (check_points_connected(room->unknown6, pos))
+            if (check_points_connected(room->door_inside_tile, pos))
                 return 1;
         }
     } else {
         s32 door;
 
-        door = room_info[allhosps[owner].unknown1cf[0]].unknown4;
+        door = room_info[allhosps[owner].entrances[0]].door_tile;
         if (check_points_connected(door, pos))
             return 1;
     }

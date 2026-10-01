@@ -68,7 +68,7 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
 
 u8 testcol = 0x94;
 
-// Runs one frame of the town map (town.unknown2: 0 opening, 7 shown, 1
+// Runs one frame of the town map (town.state: 0 opening, 7 shown, 1
 // closing back to the game) and of the network land auction (0xb, 0xc
 // setting it up, 0x45 running).
 // FUNCTION: 0x00063680
@@ -77,36 +77,36 @@ void draw_town_select(void)
     u32 i;
     u32 total;
 
-    switch (town.unknown2) {
+    switch (town.state) {
     case 0:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         setup_abort_all_requesters();
-        othervar.f6a = myhosp->fc94;
+        othervar.f6a = myhosp->heating_level;
         othervar.f6b_u32 = 0x32;
         load_ingame_pic(1, 1, 0xa, level_number, SCREEN_MODE_13);
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        if (!town.unknown0)
-            town.unknown0 = 0x1f;
+        if (!town.value)
+            town.value = 0x1f;
         calculate_land_amount();
         set_mouse_mode(0xa);
         set_font_from_cache(0);
         setup_overhead_map();
-        town.unknown2 = 7;
-        othervar.f69 = 1;
+        town.state = 7;
+        othervar.town_map_dirty = 1;
         display_overhead_map();
         draw_money_on_town();
         set_font_from_cache(0);
-        othervar.fa8a = 0x1e;
-        LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+        othervar.heat_icon_time = 0x1e;
+        LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
         break;
     case 1:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         display_mode = 0;
         remove_town_bid();
-        town.unknown2 = 0;
-        LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+        town.state = 0;
+        LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
         fn_00068a14();
         break;
     case 7:
@@ -120,7 +120,7 @@ void draw_town_select(void)
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0xd, 0x1a6, 0xc0, 0x2e)) {
                 process_keys(0, 0x41);
                 LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
-                town.unknown2 = 0;
+                town.state = 0;
             }
         }
         break;
@@ -128,15 +128,15 @@ void draw_town_select(void)
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         othervar.f6a = 1;
         othervar.f6b_u32 = 0;
-        othervar.f6a = myhosp->fc94;
+        othervar.f6a = myhosp->heating_level;
         othervar.f6b_u32 = 0x32;
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        town.unknown0 = 3;
-        town.unknown2 = 0xc;
+        town.value = 3;
+        town.state = 0xc;
         calculate_land_amount();
         set_font_from_cache(0xc);
-        LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+        LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
         break;
     case 0x45:
         display_bid_map();
@@ -144,13 +144,13 @@ void draw_town_select(void)
         process_bid_time();
         break;
     case 0xc:
-        othervar.f69 = 1;
+        othervar.town_map_dirty = 1;
         setup_bid_map();
-        town.unknown2 = 0x45;
+        town.state = 0x45;
         total = 0;
         for (i = 0; i < 0x4000; i++) {
-            if (level->plots[i] == othervar.f78)
-                total += gbv.f7c;
+            if (level->plots[i] == othervar.bid_plot)
+                total += gbv.land_cost_per_tile;
         }
         plotbid.price = total;
         if (total > 0) {
@@ -164,18 +164,18 @@ void draw_town_select(void)
         plotbid.timer = 0x64;
         break;
     default:
-        town.unknown2 = 0;
+        town.state = 0;
         break;
     }
-    if (othervar.fa8a)
-        othervar.fa8a--;
+    if (othervar.heat_icon_time)
+        othervar.heat_icon_time--;
 }
 
 // Town map keys: Escape closes it.
 // FUNCTION: 0x00063a64
 void process_keys_town_select(void)
 {
-    switch (town.unknown2) {
+    switch (town.state) {
     case 0:
     case 1:
     case 4:
@@ -190,7 +190,7 @@ void process_keys_town_select(void)
     }
     switch (lbInkey) {
     case KC_ESCAPE:
-        town.unknown2 = 1;
+        town.state = 1;
         break;
     default:
         break;
@@ -210,9 +210,9 @@ void process_mouse_town_select(void)
     s32 y;
     u16 plot;
 
-    old_x = window.f0[window.unknown2eb];
-    old_y = window.fc[window.unknown2eb];
-    switch (town.unknown2) {
+    old_x = window.scroll_x[window.current_window];
+    old_y = window.scroll_y[window.current_window];
+    switch (town.state) {
     case 0:
     case 1:
     case 4:
@@ -228,32 +228,32 @@ void process_mouse_town_select(void)
     if (lbDisplay.left_button) {
         plot = check_for_sale();
         if (plot) {
-            if (myhosp->f35 > land_amount[plot] * gbv.f7c) {
+            if (myhosp->balance > land_amount[plot] * gbv.land_cost_per_tile) {
                 play_sound(10, SFX_CASHREG, -1, -1);
-                if (statvar.unknownfd > 1) {
+                if (statvar.num_players > 1) {
                     D_001549d0[player].type = EV_SETUP_TOWN_BID;
                     D_001549d0[player].value = plot;
-                    othervar.f69 = 1;
+                    othervar.town_map_dirty = 1;
                 } else {
                     D_001549d0[player].type = EV_BUY_LAND;
                     D_001549d0[player].value = plot;
-                    othervar.f69 = 1;
+                    othervar.town_map_dirty = 1;
                 }
             }
-            othervar.f69 = 1;
+            othervar.town_map_dirty = 1;
         }
         lbDisplay.left_button = 0;
     }
     if (lbDisplay.right_button) {
-        x = (lbDisplay.mmouse_x - area_towns[myhosp->f29].x) / area_towns[myhosp->f29].width;
-        y = (lbDisplay.mmouse_y - area_towns[myhosp->f29].y) / area_towns[myhosp->f29].height;
-        goto_column_row_in_window(window.unknown2eb, (u16)x, (u16)y);
-        if (!check_if_point_beyond_scroll_limit(window.f0[window.unknown2eb], window.fc[window.unknown2eb], 0)) {
-            town.unknown2 = 1;
+        x = (lbDisplay.mmouse_x - area_towns[myhosp->level].x) / area_towns[myhosp->level].width;
+        y = (lbDisplay.mmouse_y - area_towns[myhosp->level].y) / area_towns[myhosp->level].height;
+        goto_column_row_in_window(window.current_window, (u16)x, (u16)y);
+        if (!check_if_point_beyond_scroll_limit(window.scroll_x[window.current_window], window.scroll_y[window.current_window], 0)) {
+            town.state = 1;
             play_sound(10, SFX_YESX, -1, -1);
         } else {
-            window.f0[window.unknown2eb] = old_x;
-            window.fc[window.unknown2eb] = old_y;
+            window.scroll_x[window.current_window] = old_x;
+            window.scroll_y[window.current_window] = old_y;
         }
         lbDisplay.right_button = 0;
     }
@@ -294,10 +294,10 @@ u16 check_for_sale(void)
     s16 x;
     s16 y;
 
-    if (area_towns[myhosp->f29].x <= lbDisplay.mouse_x && (area_towns[myhosp->f29].width << 7) + area_towns[myhosp->f29].x > lbDisplay.mouse_x) {
-        if (area_towns[myhosp->f29].y <= lbDisplay.mouse_y && (area_towns[myhosp->f29].height << 7) + area_towns[myhosp->f29].y > lbDisplay.mouse_y) {
-            x = (lbDisplay.mouse_x - area_towns[myhosp->f29].x) / area_towns[myhosp->f29].width;
-            y = (lbDisplay.mouse_y - area_towns[myhosp->f29].y) / area_towns[myhosp->f29].height;
+    if (area_towns[myhosp->level].x <= lbDisplay.mouse_x && (area_towns[myhosp->level].width << 7) + area_towns[myhosp->level].x > lbDisplay.mouse_x) {
+        if (area_towns[myhosp->level].y <= lbDisplay.mouse_y && (area_towns[myhosp->level].height << 7) + area_towns[myhosp->level].y > lbDisplay.mouse_y) {
+            x = (lbDisplay.mouse_x - area_towns[myhosp->level].x) / area_towns[myhosp->level].width;
+            y = (lbDisplay.mouse_y - area_towns[myhosp->level].y) / area_towns[myhosp->level].height;
             if (level->plots[x + y * 128])
                 return can_buy_plot(level->plots[x + y * 128]);
         }
@@ -315,34 +315,34 @@ void display_hospital_map_overhead(void)
 
     for (x = 0; x < 128; x++) {
         for (y = 0; y < 128; y++) {
-            if (map[(s16)x + ((s16)y << 7)].unknown3) {
-            if (map[(s16)x + ((s16)y << 7)].unknown3 < 0x95) {
-                switch (map[(s16)x + ((s16)y << 7)].unknown3) {
+            if (map[(s16)x + ((s16)y << 7)].wall_n) {
+            if (map[(s16)x + ((s16)y << 7)].wall_n < 0x95) {
+                switch (map[(s16)x + ((s16)y << 7)].wall_n) {
                 case 0x8e:
                 case 0x8f:
                 case 0x90:
                 case 0x91:
                     break;
                 default:
-                    LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                              area_towns[myhosp->f29].y + area_towns[myhosp->f29].height * y,
-                              area_towns[myhosp->f29].width, area_towns[myhosp->f29].height / 2, color.unknown7);
+                    LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                              area_towns[myhosp->level].y + area_towns[myhosp->level].height * y,
+                              area_towns[myhosp->level].width, area_towns[myhosp->level].height / 2, color.white);
                     break;
                 }
             }
             }
-            if (map[(s16)x + ((s16)y << 7)].unknown4) {
-            if (map[(s16)x + ((s16)y << 7)].unknown4 < 0x95) {
-                switch (map[(s16)x + ((s16)y << 7)].unknown4) {
+            if (map[(s16)x + ((s16)y << 7)].wall_w) {
+            if (map[(s16)x + ((s16)y << 7)].wall_w < 0x95) {
+                switch (map[(s16)x + ((s16)y << 7)].wall_w) {
                 case 0x8e:
                 case 0x8f:
                 case 0x90:
                 case 0x91:
                     break;
                 default:
-                    LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                              area_towns[myhosp->f29].y + area_towns[myhosp->f29].height * y,
-                              area_towns[myhosp->f29].width / 2, area_towns[myhosp->f29].height, color.unknown7);
+                    LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                              area_towns[myhosp->level].y + area_towns[myhosp->level].height * y,
+                              area_towns[myhosp->level].width / 2, area_towns[myhosp->level].height, color.white);
                     break;
                 }
             }
@@ -362,39 +362,39 @@ void display_hospital_map_sale(void)
 
     for (x = 1; x < 128; x++) {
         for (y = 1; y < 128; y++) {
-            colour = color.unknown9;
-            if (map[(s16)x + ((s16)y << 7)].unknown7 & 2)
-                colour = color.unknownF;
-            if (map[(s16)x + ((s16)y << 7)].unknown7 & 4)
-                colour = color.unknownB;
-            if (map[(s16)x + ((s16)y << 7)].unknown7 & 8)
-                colour = color.unknownA;
-            if (background[map[(s16)x + ((s16)y << 7)].overlay].unknown0)
-                LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                          area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
-                          area_towns[myhosp->f29].width, area_towns[myhosp->f29].height, colour);
+            colour = color.dark_blue;
+            if (map[(s16)x + ((s16)y << 7)].owner_flags & 2)
+                colour = color.purple;
+            if (map[(s16)x + ((s16)y << 7)].owner_flags & 4)
+                colour = color.orange;
+            if (map[(s16)x + ((s16)y << 7)].owner_flags & 8)
+                colour = color.green;
+            if (background[map[(s16)x + ((s16)y << 7)].overlay].show_on_map)
+                LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                          area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
+                          area_towns[myhosp->level].width, area_towns[myhosp->level].height, colour);
             if (level->plots[(s16)x + ((s16)y << 7)] && can_buy_plot(level->plots[(s16)x + ((s16)y << 7)]))
-                LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                          area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
-                          area_towns[myhosp->f29].width, area_towns[myhosp->f29].height, color.unknownD);
+                LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                          area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
+                          area_towns[myhosp->level].width, area_towns[myhosp->level].height, color.red);
             draw_sale_area_outlines(x, y);
-            if (map[(s16)x + ((s16)y << 7)].unknown3) {
-                if ((blocks[map[(s16)x + ((s16)y << 7)].unknown3].width & 1) && !(blocks[map[(s16)x + ((s16)y << 7)].unknown3].width & 0x40))
-                    LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                              area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
-                              area_towns[myhosp->f29].width, area_towns[myhosp->f29].height / 2, color.unknown7);
+            if (map[(s16)x + ((s16)y << 7)].wall_n) {
+                if ((blocks[map[(s16)x + ((s16)y << 7)].wall_n].width & 1) && !(blocks[map[(s16)x + ((s16)y << 7)].wall_n].width & 0x40))
+                    LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                              area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
+                              area_towns[myhosp->level].width, area_towns[myhosp->level].height / 2, color.white);
             }
-            if (map[(s16)x + ((s16)y << 7)].unknown4) {
-                if ((blocks[map[(s16)x + ((s16)y << 7)].unknown4].width & 1) && !(blocks[map[(s16)x + ((s16)y << 7)].unknown4].width & 0x40))
-                    LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                              area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
-                              area_towns[myhosp->f29].width / 2, area_towns[myhosp->f29].height, color.unknown7);
+            if (map[(s16)x + ((s16)y << 7)].wall_w) {
+                if ((blocks[map[(s16)x + ((s16)y << 7)].wall_w].width & 1) && !(blocks[map[(s16)x + ((s16)y << 7)].wall_w].width & 0x40))
+                    LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                              area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
+                              area_towns[myhosp->level].width / 2, area_towns[myhosp->level].height, color.white);
             }
-            if (map[(s16)(x - 1) + ((s16)y << 7)].unknown3 && map[(s16)x + ((s16)(y - 1) << 7)].unknown4) {
-                if ((blocks[map[(s16)(x - 1) + ((s16)y << 7)].unknown3].width & 1) && !(blocks[map[(s16)(x - 1) + ((s16)y << 7)].unknown3].width & 0x40)) {
-                    if ((blocks[map[(s16)x + ((s16)(y - 1) << 7)].unknown4].width & 1) && !(blocks[map[(s16)x + ((s16)(y - 1) << 7)].unknown4].width & 0x40))
-                        LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                  area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 1, 1, color.unknown7);
+            if (map[(s16)(x - 1) + ((s16)y << 7)].wall_n && map[(s16)x + ((s16)(y - 1) << 7)].wall_w) {
+                if ((blocks[map[(s16)(x - 1) + ((s16)y << 7)].wall_n].width & 1) && !(blocks[map[(s16)(x - 1) + ((s16)y << 7)].wall_n].width & 0x40)) {
+                    if ((blocks[map[(s16)x + ((s16)(y - 1) << 7)].wall_w].width & 1) && !(blocks[map[(s16)x + ((s16)(y - 1) << 7)].wall_w].width & 0x40))
+                        LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                  area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 1, 1, color.white);
                 }
             }
         }
@@ -408,24 +408,24 @@ void draw_sale_area_outlines(u16 x, u16 y)
 {
     if (x) {
         if (level->plots[(s16)x + ((s16)y << 7)] != level->plots[(s16)(x - 1) + ((s16)y << 7)])
-            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
-                      area_towns[myhosp->f29].width / 2, area_towns[myhosp->f29].height, color.unknown7);
+            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
+                      area_towns[myhosp->level].width / 2, area_towns[myhosp->level].height, color.white);
     }
     if (y) {
         if (level->plots[(s16)x + ((s16)y << 7)] != level->plots[(s16)x + ((s16)(y - 1) << 7)])
-            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height,
-                      area_towns[myhosp->f29].width, area_towns[myhosp->f29].height / 2, color.unknown7);
+            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
+                      area_towns[myhosp->level].width, area_towns[myhosp->level].height / 2, color.white);
     }
     if (x > 1 && y > 1) {
         if (level->plots[(s16)x + ((s16)y << 7)] != level->plots[((s16)(y - 1) << 7) + (s16)(x - 1)])
-            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 1, 1, color.unknown7);
+            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 1, 1, color.white);
     }
 }
 
-// Gives plot `plot` to player othervar.ff: copies its tiles from the level
+// Gives plot `plot` to player othervar.cur_player: copies its tiles from the level
 // (placing its objects), marks it as theirs, rebuilds the partition walls
 // and grass, and charges the price (the winning bid in a network game).
 // FUNCTION: 0x00064db0
@@ -434,31 +434,31 @@ void buy_land(u16 plot)
     s32 total;
     u16 i;
 
-    for_sale[plot] = 1 << othervar.ff;
+    for_sale[plot] = 1 << othervar.cur_player;
     total = 0;
     for (i = 0; i < 0x4000; i++) {
         if (level->plots[i] == plot) {
-            map[i].unknown3 = level->tiles[i].unknown3;
-            map[i].unknown4 = level->tiles[i].unknown4;
+            map[i].wall_n = level->tiles[i].wall_n;
+            map[i].wall_w = level->tiles[i].wall_w;
             map[i].first = level->tiles[i].first;
             adjust_mapwho(i);
             map[i].overlay = level->tiles[i].overlay;
             map[i].flags = level->tiles[i].flags & 0x3f;
             map[i].floor = level->tiles[i].floor & 0xf0;
-            map[i].unknown7 = level->tiles[i].unknown7;
-            map[i].unknown7 |= 1 << othervar.ff;
+            map[i].owner_flags = level->tiles[i].owner_flags;
+            map[i].owner_flags |= 1 << othervar.cur_player;
             level->plots[i] = 0;
-            total += gbv.f7c;
+            total += gbv.land_cost_per_tile;
         }
     }
     remove_partition_walls();
     place_partition_walls();
     mow_grass();
-    if (statvar.unknownfd > 1)
-        change_balance(TX_BUY_LAND, -plotbid.bids[othervar.ff], 0, (u16)othervar.ff);
+    if (statvar.num_players > 1)
+        change_balance(TX_BUY_LAND, -plotbid.bids[othervar.cur_player], 0, (u16)othervar.cur_player);
     else if (total > 0)
-        change_balance(TX_BUY_LAND, -total, 0, (u16)othervar.ff);
-    othervar.f10 = 1;
+        change_balance(TX_BUY_LAND, -total, 0, (u16)othervar.cur_player);
+    othervar.full_redraw = 1;
     add_static_shadows();
 }
 
@@ -492,14 +492,14 @@ void place_partition_walls(void)
 
     for (x = 0; x < 128; x++) {
         for (y = 0; y < 128; y++) {
-            if (!(map[(s16)x + ((s16)y << 7)].unknown7 & 0x10)) {
-                if (map[(s16)(x + 1) + ((s16)y << 7)].unknown7 & 0x10) {
-                    if (level->tiles[(s16)(x + 1) + ((s16)y << 7)].unknown4 == 0x8d)
-                        map[(s16)(x + 1) + ((s16)y << 7)].unknown4 = 0x8d;
+            if (!(map[(s16)x + ((s16)y << 7)].owner_flags & 0x10)) {
+                if (map[(s16)(x + 1) + ((s16)y << 7)].owner_flags & 0x10) {
+                    if (level->tiles[(s16)(x + 1) + ((s16)y << 7)].wall_w == 0x8d)
+                        map[(s16)(x + 1) + ((s16)y << 7)].wall_w = 0x8d;
                 }
-                if (map[(s16)x + ((s16)(y + 1) << 7)].unknown7 & 0x10) {
-                    if (level->tiles[(s16)x + ((s16)(y + 1) << 7)].unknown3 == 0x8c)
-                        map[(s16)x + ((s16)(y + 1) << 7)].unknown3 = 0x8c;
+                if (map[(s16)x + ((s16)(y + 1) << 7)].owner_flags & 0x10) {
+                    if (level->tiles[(s16)x + ((s16)(y + 1) << 7)].wall_n == 0x8c)
+                        map[(s16)x + ((s16)(y + 1) << 7)].wall_n = 0x8c;
                 }
             }
         }
@@ -516,30 +516,30 @@ void remove_partition_walls(void)
     u8 prev_open;
 
     for (i = 0; i < 0x4000; i++) {
-        if (map[i].unknown3 == 0x8c) {
+        if (map[i].wall_n == 0x8c) {
             next_open = prev_open = 0;
-            if (!(map[i + 128].unknown7 & 0x10))
+            if (!(map[i + 128].owner_flags & 0x10))
                 next_open = 1;
-            if (!(map[i - 128].unknown7 & 0x10))
+            if (!(map[i - 128].owner_flags & 0x10))
                 prev_open = 1;
             if (next_open && prev_open) {
                 if (which_room(i + 128) || which_room(i - 128))
-                    map[i].unknown3 = 0x52;
+                    map[i].wall_n = 0x52;
                 else
-                    map[i].unknown3 = 0;
+                    map[i].wall_n = 0;
             }
         }
-        if (map[i].unknown4 == 0x8d) {
+        if (map[i].wall_w == 0x8d) {
             next_open = prev_open = 0;
-            if (!(map[i + 1].unknown7 & 0x10))
+            if (!(map[i + 1].owner_flags & 0x10))
                 next_open = 1;
-            if (!(map[i - 1].unknown7 & 0x10))
+            if (!(map[i - 1].owner_flags & 0x10))
                 prev_open = 1;
             if (next_open && prev_open) {
                 if (which_room(i + 1) || which_room(i - 1))
-                    map[i].unknown4 = 0x53;
+                    map[i].wall_w = 0x53;
                 else
-                    map[i].unknown4 = 0;
+                    map[i].wall_w = 0;
             }
         }
     }
@@ -575,33 +575,33 @@ void recreate_map(const u8 flag)
             switch (level->plots[i]) {
             case 0:
                 found = 1;
-                map[i].unknown3 = level->tiles[i].unknown3;
-                map[i].unknown4 = level->tiles[i].unknown4;
+                map[i].wall_n = level->tiles[i].wall_n;
+                map[i].wall_w = level->tiles[i].wall_w;
                 map[i].first = level->tiles[i].first;
                 map[i].overlay = level->tiles[i].overlay;
                 map[i].flags = level->tiles[i].flags & 0x3f;
                 map[i].floor = level->tiles[i].floor & 0xf0;
-                map[i].unknown7 = level->tiles[i].unknown7;
-                map[i].unknown7 &= ~1;
-                map[i].unknown7 &= ~2;
-                map[i].unknown7 &= ~4;
-                map[i].unknown7 &= ~8;
+                map[i].owner_flags = level->tiles[i].owner_flags;
+                map[i].owner_flags &= ~1;
+                map[i].owner_flags &= ~2;
+                map[i].owner_flags &= ~4;
+                map[i].owner_flags &= ~8;
                 level->plots[i] = 0;
                 map[i].first = level->tiles[i].first;
                 adjust_mapwho(i);
                 for_sale[0] = 0x10;
                 break;
             case 1:
-                if (level->f0 >= 1) {
+                if (level->player_count >= 1) {
                     found = 1;
-                    map[i].unknown3 = level->tiles[i].unknown3;
-                    map[i].unknown4 = level->tiles[i].unknown4;
+                    map[i].wall_n = level->tiles[i].wall_n;
+                    map[i].wall_w = level->tiles[i].wall_w;
                     map[i].first = level->tiles[i].first;
                     map[i].overlay = level->tiles[i].overlay;
                     map[i].flags = level->tiles[i].flags & 0x3f;
                     map[i].floor = level->tiles[i].floor & 0xf0;
-                    map[i].unknown7 = level->tiles[i].unknown7;
-                    map[i].unknown7 |= 1;
+                    map[i].owner_flags = level->tiles[i].owner_flags;
+                    map[i].owner_flags |= 1;
                     level->plots[i] = 0;
                     map[i].first = level->tiles[i].first;
                     adjust_mapwho(i);
@@ -609,16 +609,16 @@ void recreate_map(const u8 flag)
                 }
                 break;
             case 2:
-                if (level->f0 >= 2) {
+                if (level->player_count >= 2) {
                     found = 1;
-                    map[i].unknown3 = level->tiles[i].unknown3;
-                    map[i].unknown4 = level->tiles[i].unknown4;
+                    map[i].wall_n = level->tiles[i].wall_n;
+                    map[i].wall_w = level->tiles[i].wall_w;
                     map[i].first = level->tiles[i].first;
                     map[i].overlay = level->tiles[i].overlay;
                     map[i].flags = level->tiles[i].flags & 0x3f;
                     map[i].floor = level->tiles[i].floor & 0xf0;
-                    map[i].unknown7 = level->tiles[i].unknown7;
-                    map[i].unknown7 |= 2;
+                    map[i].owner_flags = level->tiles[i].owner_flags;
+                    map[i].owner_flags |= 2;
                     level->plots[i] = 0;
                     map[i].first = level->tiles[i].first;
                     adjust_mapwho(i);
@@ -626,16 +626,16 @@ void recreate_map(const u8 flag)
                 }
                 break;
             case 3:
-                if (level->f0 >= 3) {
+                if (level->player_count >= 3) {
                     found = 1;
-                    map[i].unknown3 = level->tiles[i].unknown3;
-                    map[i].unknown4 = level->tiles[i].unknown4;
+                    map[i].wall_n = level->tiles[i].wall_n;
+                    map[i].wall_w = level->tiles[i].wall_w;
                     map[i].first = level->tiles[i].first;
                     map[i].overlay = level->tiles[i].overlay;
                     map[i].flags = level->tiles[i].flags & 0x3f;
                     map[i].floor = level->tiles[i].floor & 0xf0;
-                    map[i].unknown7 = level->tiles[i].unknown7;
-                    map[i].unknown7 |= 4;
+                    map[i].owner_flags = level->tiles[i].owner_flags;
+                    map[i].owner_flags |= 4;
                     level->plots[i] = 0;
                     map[i].first = level->tiles[i].first;
                     adjust_mapwho(i);
@@ -643,16 +643,16 @@ void recreate_map(const u8 flag)
                 }
                 break;
             case 4:
-                if (level->f0 >= 4) {
+                if (level->player_count >= 4) {
                     found = 1;
-                    map[i].unknown3 = level->tiles[i].unknown3;
-                    map[i].unknown4 = level->tiles[i].unknown4;
+                    map[i].wall_n = level->tiles[i].wall_n;
+                    map[i].wall_w = level->tiles[i].wall_w;
                     map[i].first = level->tiles[i].first;
                     map[i].overlay = level->tiles[i].overlay;
                     map[i].flags = level->tiles[i].flags & 0x3f;
                     map[i].floor = level->tiles[i].floor & 0xf0;
-                    map[i].unknown7 = level->tiles[i].unknown7;
-                    map[i].unknown7 |= 8;
+                    map[i].owner_flags = level->tiles[i].owner_flags;
+                    map[i].owner_flags |= 8;
                     level->plots[i] = 0;
                     map[i].first = level->tiles[i].first;
                     adjust_mapwho(i);
@@ -663,10 +663,10 @@ void recreate_map(const u8 flag)
             if (!found) {
                 map[i].first = 0;
                 map[i].overlay = 0;
-                map[i].unknown3 = 0;
-                map[i].unknown4 = 0;
-                map[i].flags = background[map[i].overlay].unknown1[1] & 0x3f;
-                map[i].unknown7 = background[map[i].overlay].unknown1[0];
+                map[i].wall_n = 0;
+                map[i].wall_w = 0;
+                map[i].flags = background[map[i].overlay].map_defaults[1] & 0x3f;
+                map[i].owner_flags = background[map[i].overlay].map_defaults[0];
             }
         }
         mow_grass();
@@ -676,7 +676,7 @@ void recreate_map(const u8 flag)
             if (level->plots[i]) {
                 if (map[i].overlay == 0) {
                     if (((rnd >> 8) & 0x7fff) % 50 == 0)
-                        map[i].unknown3 = ((rnd >> 8) & 0x7fff & 7) + 0xb6;
+                        map[i].wall_n = ((rnd >> 8) & 0x7fff & 7) + 0xb6;
                 }
             }
         }
@@ -700,13 +700,13 @@ void adjust_mapwho(u16 tile)
         kind = map[tile].first >> 8;
         dir = map[tile].first;
         map[tile].first = 0;
-        othervar.f9bb = 1;
-        id = place_object(tile, (u16)kind, dir, othervar.ff);
+        othervar.force_place_objects = 1;
+        id = place_object(tile, (u16)kind, dir, othervar.cur_player);
         if (id) {
             obj = &thing[id];
             obj->owner = 0;
         }
-        othervar.f9bb = 0;
+        othervar.force_place_objects = 0;
     }
 }
 
@@ -729,59 +729,59 @@ void display_plot_under_mouse(void)
     line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     LbTextSetWindow(0xe6, 0x30 - line_height / 2, 0x180, 0x18);
     lbDisplay.draw_flags = 0x100;
-    sprintf(buf, "%s", town_names[myhosp->f29]);
+    sprintf(buf, "%s", town_names[myhosp->level]);
     conv_string(buf, (s8 *)buf, 0);
     LbTextDraw(0, 0, buf);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     sprintf(buf, "%s", town_details[4]);
-    LbTextDraw(resvars.f40[46].x, resvars.f40[46].y, buf);
+    LbTextDraw(resvars.screen_coords[46].x, resvars.screen_coords[46].y, buf);
     sprintf(buf, "%s", town_details[5]);
-    LbTextDraw(resvars.f40[47].x, resvars.f40[47].y, buf);
+    LbTextDraw(resvars.screen_coords[47].x, resvars.screen_coords[47].y, buf);
     sprintf(buf, "%s", town_details[6]);
-    LbTextDraw(resvars.f40[48].x, resvars.f40[48].y, buf);
+    LbTextDraw(resvars.screen_coords[48].x, resvars.screen_coords[48].y, buf);
     sprintf(buf, "%s", town_details[7]);
-    LbTextDraw(resvars.f40[49].x, resvars.f40[49].y, buf);
-    x = (lbDisplay.mmouse_x - area_towns[myhosp->f29].x) / area_towns[myhosp->f29].width;
-    y = (lbDisplay.mmouse_y - area_towns[myhosp->f29].y) / area_towns[myhosp->f29].height;
+    LbTextDraw(resvars.screen_coords[49].x, resvars.screen_coords[49].y, buf);
+    x = (lbDisplay.mmouse_x - area_towns[myhosp->level].x) / area_towns[myhosp->level].width;
+    y = (lbDisplay.mmouse_y - area_towns[myhosp->level].y) / area_towns[myhosp->level].height;
     if ((x >= 0 && y >= 0) && (x < 128 && y < 128)) {
         plot = level->plots[x + (y << 7)];
         if (plot) {
-            price = land_amount[plot] * gbv.f7c;
+            price = land_amount[plot] * gbv.land_cost_per_tile;
             sprintf(buf, ": %d", plot);
-            LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
+            LbTextDraw(resvars.screen_coords[50].x, resvars.screen_coords[50].y, buf);
             sprintf(buf, ": %s", town_details[2]);
-            LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
+            LbTextDraw(resvars.screen_coords[51].x, resvars.screen_coords[51].y, buf);
             sprintf(buf, ": %d", land_amount[plot]);
-            LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
+            LbTextDraw(resvars.screen_coords[52].x, resvars.screen_coords[52].y, buf);
             sprintf(buf, ": $%d", price);
-            LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
+            LbTextDraw(resvars.screen_coords[53].x, resvars.screen_coords[53].y, buf);
         } else {
             cell = &map[x + (y << 7)];
             sprintf(buf, ": -");
-            LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
+            LbTextDraw(resvars.screen_coords[50].x, resvars.screen_coords[50].y, buf);
             sprintf(buf, ": %s", town_details[3]);
             for (i = 0; i < 4; i++) {
-                if (cell->unknown7 & (1 << i)) {
-                    sprintf(buf, ": %s", allhosps[i].unknown0);
+                if (cell->owner_flags & (1 << i)) {
+                    sprintf(buf, ": %s", allhosps[i].name);
                     break;
                 }
             }
-            LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
+            LbTextDraw(resvars.screen_coords[51].x, resvars.screen_coords[51].y, buf);
             sprintf(buf, ": -");
-            LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
+            LbTextDraw(resvars.screen_coords[52].x, resvars.screen_coords[52].y, buf);
             sprintf(buf, ": -");
-            LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
+            LbTextDraw(resvars.screen_coords[53].x, resvars.screen_coords[53].y, buf);
         }
     } else {
         sprintf(buf, ": -");
-        LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
+        LbTextDraw(resvars.screen_coords[50].x, resvars.screen_coords[50].y, buf);
         sprintf(buf, ": -");
-        LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
+        LbTextDraw(resvars.screen_coords[51].x, resvars.screen_coords[51].y, buf);
         sprintf(buf, ": -");
-        LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
+        LbTextDraw(resvars.screen_coords[52].x, resvars.screen_coords[52].y, buf);
         sprintf(buf, ": -");
-        LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
+        LbTextDraw(resvars.screen_coords[53].x, resvars.screen_coords[53].y, buf);
     }
 }
 
@@ -807,19 +807,19 @@ void setup_overhead_map(void)
 {
     s32 unused;
 
-    othervar.f9d7 = lbDisplay.unknown4;
-    othervar.f9db = lbDisplay.graphics_screen_width;
-    othervar.f9df = lbDisplay.graphics_screen_height;
-    lbDisplay.unknown4 = bscreen;
-    lbDisplay.graphics_screen_width = lbDisplay.unknown18;
-    lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
-    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+    othervar.saved_screen_ptr = lbDisplay.wscreen;
+    othervar.saved_screen_width = lbDisplay.graphics_screen_width;
+    othervar.saved_screen_height = lbDisplay.graphics_screen_height;
+    lbDisplay.wscreen = bscreen;
+    lbDisplay.graphics_screen_width = lbDisplay.physical_screen_width;
+    lbDisplay.graphics_screen_height = lbDisplay.physical_screen_height;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     display_hospital_map_overhead();
-    lbDisplay.unknown4 = othervar.f9d7;
-    lbDisplay.graphics_screen_width = othervar.f9db;
-    lbDisplay.graphics_screen_height = othervar.f9df;
-    LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
-    othervar.f69 = 0;
+    lbDisplay.wscreen = othervar.saved_screen_ptr;
+    lbDisplay.graphics_screen_width = othervar.saved_screen_width;
+    lbDisplay.graphics_screen_height = othervar.saved_screen_height;
+    LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
+    othervar.town_map_dirty = 0;
 }
 
 // Loads the auction screen and draws the map with the plot for sale into
@@ -830,31 +830,31 @@ extern "C" void setup_bid_map(void)
     s32 unused;
 
     load_ingame_pic(10, 1, 10, level_number, SCREEN_MODE_13);
-    othervar.f9d7 = lbDisplay.unknown4;
-    othervar.f9db = lbDisplay.graphics_screen_width;
-    othervar.f9df = lbDisplay.graphics_screen_height;
-    lbDisplay.unknown4 = bscreen;
-    lbDisplay.graphics_screen_width = lbDisplay.unknown18;
-    lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
-    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+    othervar.saved_screen_ptr = lbDisplay.wscreen;
+    othervar.saved_screen_width = lbDisplay.graphics_screen_width;
+    othervar.saved_screen_height = lbDisplay.graphics_screen_height;
+    lbDisplay.wscreen = bscreen;
+    lbDisplay.graphics_screen_width = lbDisplay.physical_screen_width;
+    lbDisplay.graphics_screen_height = lbDisplay.physical_screen_height;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     LbDrawBox(0x14c, 0x49, 0x103, 0x107, 0x6c);
     draw_frame(0x14b, 0x48, 0x104, 0x108, 0x68);
     draw_hilight_plot();
-    lbDisplay.unknown4 = othervar.f9d7;
-    lbDisplay.graphics_screen_width = othervar.f9db;
-    lbDisplay.graphics_screen_height = othervar.f9df;
-    LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
-    othervar.f69 = 0;
+    lbDisplay.wscreen = othervar.saved_screen_ptr;
+    lbDisplay.graphics_screen_width = othervar.saved_screen_width;
+    lbDisplay.graphics_screen_height = othervar.saved_screen_height;
+    LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
+    othervar.town_map_dirty = 0;
 }
 
-// Draws the town map with the shown overlays (town.unknown0 bits) and the
+// Draws the town map with the shown overlays (town.value bits) and the
 // details under the mouse.
 // FUNCTION: 0x00066914
 extern "C" void display_overhead_map(void)
 {
     u8 i;
 
-    if (othervar.f69)
+    if (othervar.town_map_dirty)
         setup_overhead_map();
     copy_screen_to_wscreen(bscreen);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -863,8 +863,8 @@ extern "C" void display_overhead_map(void)
     display_hospital_map_sale();
     draw_things_on_map();
     for (i = 0; i < 5; i++) {
-        if (!(town.unknown0 & (1 << i)))
-            reqspr_draw(resvars.f40[34 + i].x, resvars.f40[34 + i].y, &screen_sprites_tab_start[i + 1]);
+        if (!(town.value & (1 << i)))
+            reqspr_draw(resvars.screen_coords[34 + i].x, resvars.screen_coords[34 + i].y, &screen_sprites_tab_start[i + 1]);
     }
     display_plot_under_mouse();
 }
@@ -873,7 +873,7 @@ extern "C" void display_overhead_map(void)
 // FUNCTION: 0x000669fc
 extern "C" void display_bid_map(void)
 {
-    if (othervar.f69)
+    if (othervar.town_map_dirty)
         setup_bid_map();
     copy_screen_to_wscreen(bscreen);
     draw_hilight_plot();
@@ -881,7 +881,7 @@ extern "C" void display_bid_map(void)
 }
 
 // Draws the overlay markers on the town map (people, plants, fire
-// extinguishers, machines, radiators by town.unknown0 bits; doors always)
+// extinguishers, machines, radiators by town.value bits; doors always)
 // and the hospital's counts and heating level.
 // FUNCTION: 0x00066a34
 void draw_things_on_map(void)
@@ -900,26 +900,26 @@ void draw_things_on_map(void)
                 case THING_OBJECT:
                     switch (occupant->subtype) {
                     case OBJ_PLANT:
-                        if (town.unknown0 & 2)
-                            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknown13);
+                        if (town.value & 2)
+                            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 3, 3, color.pale_green);
                         break;
                     case OBJ_FIRE_EXTINGUISHER:
-                        if (town.unknown0 & 4)
-                            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknownD);
+                        if (town.value & 4)
+                            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 3, 3, color.red);
                         break;
                     case OBJ_RADIATOR:
-                        if (town.unknown0 & 0x10) {
-                            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 1, 1, color.unknownC);
+                        if (town.value & 0x10) {
+                            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 1, 1, color.light_red);
                             lbDisplay.draw_flags = 4;
                             if (occupant->owner == player) {
-                                if (othervar.fa8a) {
-                                    if (myhosp->fc94)
-                                        reqspr_draw(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width - screen_sprites_tab_start[myhosp->fc94 + 9].width / 2,
-                                            area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height - screen_sprites_tab_start[myhosp->fc94 + 9].height / 2,
-                                            &screen_sprites_tab_start[myhosp->fc94 + 9]);
+                                if (othervar.heat_icon_time) {
+                                    if (myhosp->heating_level)
+                                        reqspr_draw(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width - screen_sprites_tab_start[myhosp->heating_level + 9].width / 2,
+                                            area_towns[myhosp->level].y + y * area_towns[myhosp->level].height - screen_sprites_tab_start[myhosp->heating_level + 9].height / 2,
+                                            &screen_sprites_tab_start[myhosp->heating_level + 9]);
                                 }
                             }
                             lbDisplay.draw_flags = 0;
@@ -928,23 +928,23 @@ void draw_things_on_map(void)
                     case OBJ_ENTRANCE_LEFT_DOOR:
                     case OBJ_ENTRANCE_RIGHT_DOOR:
                         if (occupant->facing == 0 || occupant->facing == 2)
-                            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 7, 3, color.unknown11);
+                            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 7, 3, color.grey);
                         else
-                            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 7, color.unknown11);
+                            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 3, 7, color.grey);
                         break;
                     case OBJ_DOOR:
                     case OBJ_SWING_DOOR:
                     case OBJ_SWING_DOOR2:
-                        LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                  area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknown11);
+                        LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                  area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 3, 3, color.grey);
                         break;
                     default:
-                        if (objects[occupant->subtype].unknown14 == 1 || objects[occupant->subtype].unknown14 == 2) {
-                            if (town.unknown0 & 8)
-                            LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                      area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknownE);
+                        if (objects[occupant->subtype].category == 1 || objects[occupant->subtype].category == 2) {
+                            if (town.value & 8)
+                            LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                      area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 3, 3, color.cyan);
                         }
                         break;
                     }
@@ -952,35 +952,35 @@ void draw_things_on_map(void)
                 case THING_STAFF:
                 case THING_MAYOR:
                 case THING_INSPECTOR:
-                    if (town.unknown0 & 1)
-                        LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                  area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 2, 2, color.unknown12);
+                    if (town.value & 1)
+                        LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                  area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 2, 2, color.blue);
                     break;
                 case THING_PATIENT:
-                    if ((town.unknown0 & 1) && !(map[((s16)(u16)occupant->y.tile << 7) + (s16)(u16)occupant->x.tile].unknown7 & 0x10))
-                        LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
-                                  area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 2, 2, color.unknown7);
+                    if ((town.value & 1) && !(map[((s16)(u16)occupant->y.tile << 7) + (s16)(u16)occupant->x.tile].owner_flags & 0x10))
+                        LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
+                                  area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 2, 2, color.white);
                     break;
                 }
             }
         }
     }
     set_font_from_cache(0x19);
-    sprintf(buf, "%d", adcounts.f0);
-    LbTextDraw(resvars.f40[39].x, resvars.f40[39].y, buf);
+    sprintf(buf, "%d", adcounts.patients);
+    LbTextDraw(resvars.screen_coords[39].x, resvars.screen_coords[39].y, buf);
     sprintf(buf, "%d", myhosp->object_stats[45].fA);
-    LbTextDraw(resvars.f40[40].x, resvars.f40[40].y, buf);
+    LbTextDraw(resvars.screen_coords[40].x, resvars.screen_coords[40].y, buf);
     sprintf(buf, "%d", myhosp->object_stats[43].fA);
-    LbTextDraw(resvars.f40[41].x, resvars.f40[41].y, buf);
-    sprintf(buf, "%d", myhosp->fc97);
-    LbTextDraw(resvars.f40[42].x, resvars.f40[42].y, buf);
-    sprintf(buf, "%d", myhosp->fc92);
-    LbTextDraw(resvars.f40[43].x, resvars.f40[43].y, buf);
-    sprintf(buf, "%d", myhosp->fc92 * myhosp->fc94 * mycontrol->f64c / 100);
-    LbTextDraw(resvars.f40[44].x, resvars.f40[44].y, buf);
-    if (myhosp->fc94) {
-        for (i = 0; i < myhosp->fc94 * 6; i++)
-            reqspr_draw(resvars.f40[45].x + i, resvars.f40[45].y, &screen_sprites_tab_start[9]);
+    LbTextDraw(resvars.screen_coords[41].x, resvars.screen_coords[41].y, buf);
+    sprintf(buf, "%d", myhosp->machine_count);
+    LbTextDraw(resvars.screen_coords[42].x, resvars.screen_coords[42].y, buf);
+    sprintf(buf, "%d", myhosp->radiator_count);
+    LbTextDraw(resvars.screen_coords[43].x, resvars.screen_coords[43].y, buf);
+    sprintf(buf, "%d", myhosp->radiator_count * myhosp->heating_level * mycontrol->heating_price / 100);
+    LbTextDraw(resvars.screen_coords[44].x, resvars.screen_coords[44].y, buf);
+    if (myhosp->heating_level) {
+        for (i = 0; i < myhosp->heating_level * 6; i++)
+            reqspr_draw(resvars.screen_coords[45].x + i, resvars.screen_coords[45].y, &screen_sprites_tab_start[9]);
     }
 }
 
@@ -994,27 +994,27 @@ u8 process_town_panel(void)
 
     hit = 0;
     if (lbDisplay.rleft_button || lbDisplay.rright_button) {
-        for (i = 0; resvars.f48[i + 0x3b].width != 0 && resvars.f48[i + 0x3b].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0x3b].x, resvars.f48[i + 0x3b].y,
-                             (s16)resvars.f48[i + 0x3b].width, (s16)resvars.f48[i + 0x3b].height)) {
+        for (i = 0; resvars.screen_buttons[i + 0x3b].width != 0 && resvars.screen_buttons[i + 0x3b].height != 0; i++) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x3b].x, resvars.screen_buttons[i + 0x3b].y,
+                             (s16)resvars.screen_buttons[i + 0x3b].width, (s16)resvars.screen_buttons[i + 0x3b].height)) {
                 hit = 1;
-                resvars.f48[i + 0x3b].callback(i);
-                if (resvars.f48[i + 0x3b].sprite)
-                    reqspr_draw(resvars.f48[i + 0x3b].unknownC, resvars.f48[i + 0x3b].unknownE,
-                                &screen_sprites_tab_start[resvars.f48[i + 0x3b].sprite]);
+                resvars.screen_buttons[i + 0x3b].callback(i);
+                if (resvars.screen_buttons[i + 0x3b].sprite)
+                    reqspr_draw(resvars.screen_buttons[i + 0x3b].sprite_x, resvars.screen_buttons[i + 0x3b].sprite_y,
+                                &screen_sprites_tab_start[resvars.screen_buttons[i + 0x3b].sprite]);
                 break;
             }
         }
         lbDisplay.rleft_button = lbDisplay.rright_button = 0;
     }
     if (lbDisplay.mleft_button || lbDisplay.mright_button) {
-        for (i = 0; resvars.f48[i + 0x3b].width != 0 && resvars.f48[i + 0x3b].height != 0; i++) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f48[i + 0x3b].x, resvars.f48[i + 0x3b].y,
-                             (s16)resvars.f48[i + 0x3b].width, (s16)resvars.f48[i + 0x3b].height)) {
+        for (i = 0; resvars.screen_buttons[i + 0x3b].width != 0 && resvars.screen_buttons[i + 0x3b].height != 0; i++) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x3b].x, resvars.screen_buttons[i + 0x3b].y,
+                             (s16)resvars.screen_buttons[i + 0x3b].width, (s16)resvars.screen_buttons[i + 0x3b].height)) {
                 hit = 1;
-                if (resvars.f48[i + 0x3b].sprite)
-                    reqspr_draw(resvars.f48[i + 0x3b].unknownC, resvars.f48[i + 0x3b].unknownE,
-                                &screen_sprites_tab_start[resvars.f48[i + 0x3b].sprite]);
+                if (resvars.screen_buttons[i + 0x3b].sprite)
+                    reqspr_draw(resvars.screen_buttons[i + 0x3b].sprite_x, resvars.screen_buttons[i + 0x3b].sprite_y,
+                                &screen_sprites_tab_start[resvars.screen_buttons[i + 0x3b].sprite]);
                 lbDisplay.left_button = lbDisplay.right_button = 0;
                 break;
             }
@@ -1032,58 +1032,58 @@ void process_town_button(u8 button)
     switch (button) {
     case 0:
         if (lbDisplay.rright_button)
-            town.unknown0 = 0;
-        town.unknown0 ^= 1;
+            town.value = 0;
+        town.value ^= 1;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 1:
         if (lbDisplay.rright_button)
-            town.unknown0 = 0;
-        town.unknown0 ^= 2;
+            town.value = 0;
+        town.value ^= 2;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 2:
         if (lbDisplay.rright_button)
-            town.unknown0 = 0;
-        town.unknown0 ^= 4;
+            town.value = 0;
+        town.value ^= 4;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 3:
         if (lbDisplay.rright_button)
-            town.unknown0 = 0;
-        town.unknown0 ^= 8;
+            town.value = 0;
+        town.value ^= 8;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 4:
         if (lbDisplay.rright_button)
-            town.unknown0 = 0;
-        town.unknown0 ^= 0x10;
-        if (town.unknown0 & 0x10)
-            othervar.fa8a = 0x1e;
+            town.value = 0;
+        town.value ^= 0x10;
+        if (town.value & 0x10)
+            othervar.heat_icon_time = 0x1e;
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 6:
-        if (myhosp->fc94 < 10) {
+        if (myhosp->heating_level < 10) {
             D_001549d0[player].type = 0x4f;
-            D_001549d0[player].value = (u16)myhosp->fc94 + 1;
-            othervar.f6a = myhosp->fc94 + 1;
+            D_001549d0[player].value = (u16)myhosp->heating_level + 1;
+            othervar.f6a = myhosp->heating_level + 1;
             othervar.f6b = 0x32;
             play_sound(10, SFX_SELECTX, -1, -1);
         }
-        othervar.fa8a = 0x1e;
+        othervar.heat_icon_time = 0x1e;
         break;
     case 5:
-        if (myhosp->fc94 > 1) {
+        if (myhosp->heating_level > 1) {
             D_001549d0[player].type = 0x4f;
-            D_001549d0[player].value = (u16)myhosp->fc94 - 1;
-            othervar.f6a = myhosp->fc94 - 1;
+            D_001549d0[player].value = (u16)myhosp->heating_level - 1;
+            othervar.f6a = myhosp->heating_level - 1;
             othervar.f6b = 0x32;
             play_sound(10, SFX_SELECTX, -1, -1);
         }
-        othervar.fa8a = 0x1e;
+        othervar.heat_icon_time = 0x1e;
         break;
     case 7:
-        town.unknown2 = 1;
+        town.state = 1;
         play_sound(10, SFX_NO4, -1, -1);
         break;
     }
@@ -1097,22 +1097,22 @@ void process_bid_panel(void)
     u8 i;
 
     if (lbDisplay.rleft_button) {
-        for (i = 0; resvars.f48[i + 0x44].width != 0 && resvars.f48[i + 0x44].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0x44].x, resvars.f48[i + 0x44].y,
-                             (s16)resvars.f48[i + 0x44].width, (s16)resvars.f48[i + 0x44].height)) {
-                resvars.f48[i + 0x44].callback(i);
-                reqspr_draw(resvars.f48[i + 0x44].unknownC, resvars.f48[i + 0x44].unknownE,
-                            &screen_sprites_tab_start[resvars.f48[i + 0x44].sprite]);
+        for (i = 0; resvars.screen_buttons[i + 0x44].width != 0 && resvars.screen_buttons[i + 0x44].height != 0; i++) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x44].x, resvars.screen_buttons[i + 0x44].y,
+                             (s16)resvars.screen_buttons[i + 0x44].width, (s16)resvars.screen_buttons[i + 0x44].height)) {
+                resvars.screen_buttons[i + 0x44].callback(i);
+                reqspr_draw(resvars.screen_buttons[i + 0x44].sprite_x, resvars.screen_buttons[i + 0x44].sprite_y,
+                            &screen_sprites_tab_start[resvars.screen_buttons[i + 0x44].sprite]);
             }
         }
         lbDisplay.rleft_button = lbDisplay.left_button = 0;
     }
     if (lbDisplay.mleft_button) {
-        for (i = 0; resvars.f48[i + 0x44].width != 0 && resvars.f48[i + 0x44].height != 0; i++) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f48[i + 0x44].x, resvars.f48[i + 0x44].y,
-                             (s16)resvars.f48[i + 0x44].width, (s16)resvars.f48[i + 0x44].height))
-                reqspr_draw(resvars.f48[i + 0x44].unknownC, resvars.f48[i + 0x44].unknownE,
-                            &screen_sprites_tab_start[resvars.f48[i + 0x44].sprite]);
+        for (i = 0; resvars.screen_buttons[i + 0x44].width != 0 && resvars.screen_buttons[i + 0x44].height != 0; i++) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x44].x, resvars.screen_buttons[i + 0x44].y,
+                             (s16)resvars.screen_buttons[i + 0x44].width, (s16)resvars.screen_buttons[i + 0x44].height))
+                reqspr_draw(resvars.screen_buttons[i + 0x44].sprite_x, resvars.screen_buttons[i + 0x44].sprite_y,
+                            &screen_sprites_tab_start[resvars.screen_buttons[i + 0x44].sprite]);
         }
     }
 }
@@ -1125,7 +1125,7 @@ void process_bid_button(u8 button)
     switch (button) {
     case 0:
     case 1:
-        if (myhosp->f35 >= plotbid.price) {
+        if (myhosp->balance >= plotbid.price) {
             D_001549d0[player].type = EV_PLOT_BID_MONEY;
             play_sound(10, SFX_YESX, -1, -1);
         } else {
@@ -1138,7 +1138,7 @@ void process_bid_button(u8 button)
 }
 
 // Draws the auction map: each tile coloured by owner, the plot for sale
-// (othervar.f78) highlighted and walls.
+// (othervar.bid_plot) highlighted and walls.
 // FUNCTION: 0x00067ed4
 extern "C" void draw_hilight_plot(void)
 {
@@ -1148,30 +1148,30 @@ extern "C" void draw_hilight_plot(void)
 
     for (x = 0; x < 128; x++) {
         for (y = 0; y < 128; y++) {
-            colour = color.unknown9;
-            if (map[(s16)x + ((s16)y << 7)].unknown7 & 2)
-                colour = color.unknownF;
-            if (map[(s16)x + ((s16)y << 7)].unknown7 & 4)
-                colour = color.unknownB;
-            if (map[(s16)x + ((s16)y << 7)].unknown7 & 8)
-                colour = color.unknownA;
-            if (background[map[(s16)x + ((s16)y << 7)].overlay].unknown0)
-                LbDrawBox(resvars.f3c_TownViewp->x + x * 2, resvars.f3c_TownViewp->y + y * 2, 2, 2, colour);
-            if (level->plots[(s16)x + ((s16)y << 7)] == othervar.f78)
-                LbDrawBox(resvars.f3c_TownViewp->x + x * 2, resvars.f3c_TownViewp->y + y * 2, 2, 2, color.unknownD);
-            if (map[(s16)x + ((s16)y << 7)].unknown3) {
-                if (map[(s16)x + ((s16)y << 7)].unknown3 < 0x95)
-                    LbDrawBox(resvars.f3c_TownViewp->x + x * 2, resvars.f3c_TownViewp->y + y * 2, 2, 1, 0);
+            colour = color.dark_blue;
+            if (map[(s16)x + ((s16)y << 7)].owner_flags & 2)
+                colour = color.purple;
+            if (map[(s16)x + ((s16)y << 7)].owner_flags & 4)
+                colour = color.orange;
+            if (map[(s16)x + ((s16)y << 7)].owner_flags & 8)
+                colour = color.green;
+            if (background[map[(s16)x + ((s16)y << 7)].overlay].show_on_map)
+                LbDrawBox(resvars.screen_boxes_TownViewp->x + x * 2, resvars.screen_boxes_TownViewp->y + y * 2, 2, 2, colour);
+            if (level->plots[(s16)x + ((s16)y << 7)] == othervar.bid_plot)
+                LbDrawBox(resvars.screen_boxes_TownViewp->x + x * 2, resvars.screen_boxes_TownViewp->y + y * 2, 2, 2, color.red);
+            if (map[(s16)x + ((s16)y << 7)].wall_n) {
+                if (map[(s16)x + ((s16)y << 7)].wall_n < 0x95)
+                    LbDrawBox(resvars.screen_boxes_TownViewp->x + x * 2, resvars.screen_boxes_TownViewp->y + y * 2, 2, 1, 0);
             }
-            if (map[(s16)x + ((s16)y << 7)].unknown4) {
-                if (map[(s16)x + ((s16)y << 7)].unknown4 < 0x95)
-                    LbDrawBox(resvars.f3c_TownViewp->x + x * 2, resvars.f3c_TownViewp->y + y * 2, 1, 2, 0);
+            if (map[(s16)x + ((s16)y << 7)].wall_w) {
+                if (map[(s16)x + ((s16)y << 7)].wall_w < 0x95)
+                    LbDrawBox(resvars.screen_boxes_TownViewp->x + x * 2, resvars.screen_boxes_TownViewp->y + y * 2, 1, 2, 0);
             }
         }
     }
-    othervar.f79++;
-    if (!hilight_plot[othervar.f79])
-        othervar.f79 = 0;
+    othervar.hilight_plot_idx++;
+    if (!hilight_plot[othervar.hilight_plot_idx])
+        othervar.hilight_plot_idx = 0;
 }
 
 // Draws the auction's current price and each player's last bid, marking
@@ -1191,40 +1191,40 @@ extern "C" void draw_bid_text(void)
     set_font_from_cache(0xc);
     lbDisplay.draw_flags = 0;
     sprintf(small, "%ld", plotbid.price);
-    LbTextDraw(resvars.f40[67].x, resvars.f40[67].y, small);
+    LbTextDraw(resvars.screen_coords[67].x, resvars.screen_coords[67].y, small);
     row = 0;
     for (i = 0; i < 4; i++) {
         switch (i) {
         case 0:
-            colour = color.unknown9;
+            colour = color.dark_blue;
             y = 0x61;
             break;
         case 1:
-            colour = color.unknownF;
+            colour = color.purple;
             y = 0xa0;
             break;
         case 2:
-            colour = color.unknownB;
+            colour = color.orange;
             y = 0xde;
             break;
         case 3:
-            colour = color.unknownA;
+            colour = color.green;
             y = 0x11c;
             break;
         }
         if (D_001609c4[i].active) {
-            sprintf(big, "%s", allhosps[i].unknown0);
+            sprintf(big, "%s", allhosps[i].name);
             sprintf(small, "%ld", plotbid.bids[i]);
             if (i == plotbid.bidder) {
                 LbDrawBox(0x10e, 0x187, 0xe, 0x19, colour);
-                draw_frame(0x10e, 0x187, 0xe, 0x19, (u16)color.unknown9);
-                LbTextDraw(resvars.f40[68].x, resvars.f40[68].y, big);
-                LbTextDraw(resvars.f40[69].x, resvars.f40[69].y, small);
+                draw_frame(0x10e, 0x187, 0xe, 0x19, (u16)color.dark_blue);
+                LbTextDraw(resvars.screen_coords[68].x, resvars.screen_coords[68].y, big);
+                LbTextDraw(resvars.screen_coords[69].x, resvars.screen_coords[69].y, small);
             }
             LbDrawBox(0x10e, y, 0xe, 0x19, colour);
-            draw_frame(0x10e, y, 0xe, 0x19, (u16)color.unknown9);
-            LbTextDraw(resvars.f40[56 + row].x, resvars.f40[56 + row].y, big);
-            LbTextDraw(resvars.f40[61 + row].x, resvars.f40[61 + row].y, small);
+            draw_frame(0x10e, y, 0xe, 0x19, (u16)color.dark_blue);
+            LbTextDraw(resvars.screen_coords[56 + row].x, resvars.screen_coords[56 + row].y, big);
+            LbTextDraw(resvars.screen_coords[61 + row].x, resvars.screen_coords[61 + row].y, small);
             row++;
         }
     }
@@ -1252,20 +1252,20 @@ void process_bid_time(void)
     } else {
         plotbid.timer = 100;
         if (plotbid.bidder != 0x63) {
-            LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+            LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
             if (plotbid.bidder == player) {
                 D_001549d0[player].type = EV_BUY_LAND;
-                D_001549d0[player].value = (u16)othervar.f78;
+                D_001549d0[player].value = (u16)othervar.bid_plot;
             } else {
-                town.unknown2 = 1;
+                town.state = 1;
             }
         } else {
-            town.unknown2 = 1;
+            town.state = 1;
         }
     }
     if (bid_hammer[plotbid.timer] == 3)
         play_sound(10, SFX_AUCTION, -1, -1);
-    reqspr_draw(resvars.f40[70].x, resvars.f40[70].y, &screen_sprites_tab_start[bid_hammer[plotbid.timer]]);
+    reqspr_draw(resvars.screen_coords[70].x, resvars.screen_coords[70].y, &screen_sprites_tab_start[bid_hammer[plotbid.timer]]);
 }
 
 // Draws this player's balance on the town map, rolling the changed digits
@@ -1284,8 +1284,8 @@ void draw_money_on_town(void)
     lbDisplay.draw_flags = 0;
     set_font_from_cache(0x1a);
     h = lbFontPtr ? lbFontPtr[18].height : 0;
-    if (othervar.f3b != myhosp->f35) {
-        diff = fn_000cb2db(othervar.f3b - myhosp->f35);
+    if (othervar.shown_balance != myhosp->balance) {
+        diff = fn_000cb2db(othervar.shown_balance - myhosp->balance);
         if (diff >= 1000000)
             digits = 0;
         else if (diff >= 100000)
@@ -1300,27 +1300,27 @@ void draw_money_on_town(void)
             digits = 5;
         else
             digits = 6;
-        LbTextSetClipWindow(resvars.f3c_TownViewp->f20 + resvars.f40[54].x * digits, resvars.f3c_TownViewp->f24,
-                            resvars.f3c_TownViewp->f28 - resvars.f40[54].x * digits, h);
-        sprintf(buf, "%7d", myhosp->f35);
-        LbTextDraw(resvars.f40[55].x, resvars.f40[55].y - (h - othervar.f3f * 6), buf);
-        sprintf(buf, "%7d", othervar.f3b);
-        LbTextDraw(resvars.f40[55].x, resvars.f40[55].y + othervar.f3f * 6, buf);
+        LbTextSetClipWindow(resvars.screen_boxes_TownViewp->f20 + resvars.screen_coords[54].x * digits, resvars.screen_boxes_TownViewp->f24,
+                            resvars.screen_boxes_TownViewp->f28 - resvars.screen_coords[54].x * digits, h);
+        sprintf(buf, "%7d", myhosp->balance);
+        LbTextDraw(resvars.screen_coords[55].x, resvars.screen_coords[55].y - (h - othervar.balance_roll_step * 6), buf);
+        sprintf(buf, "%7d", othervar.shown_balance);
+        LbTextDraw(resvars.screen_coords[55].x, resvars.screen_coords[55].y + othervar.balance_roll_step * 6, buf);
         if (digits) {
-            LbTextSetClipWindow(resvars.f3c_TownViewp->f30, resvars.f3c_TownViewp->f34, resvars.f40[54].x * (digits - 3) + resvars.f3c_TownViewp->f38, h);
-            sprintf(buf, "%7d", myhosp->f35);
-            LbTextDraw(resvars.f40[55].x, resvars.f40[55].y, buf);
+            LbTextSetClipWindow(resvars.screen_boxes_TownViewp->f30, resvars.screen_boxes_TownViewp->f34, resvars.screen_coords[54].x * (digits - 3) + resvars.screen_boxes_TownViewp->f38, h);
+            sprintf(buf, "%7d", myhosp->balance);
+            LbTextDraw(resvars.screen_coords[55].x, resvars.screen_coords[55].y, buf);
         }
-        othervar.f3f++;
-        if (othervar.f3f == 4) {
-            othervar.f3f = 0;
-            othervar.f3b = myhosp->f35;
+        othervar.balance_roll_step++;
+        if (othervar.balance_roll_step == 4) {
+            othervar.balance_roll_step = 0;
+            othervar.shown_balance = myhosp->balance;
             D_00156910 = 1;
         }
     } else {
-        LbTextSetClipWindow(resvars.f3c_TownViewp->f20, resvars.f3c_TownViewp->f24, resvars.f3c_TownViewp->f28, h);
-        sprintf(buf, "%7d", myhosp->f35);
-        LbTextDraw(resvars.f40[55].x, resvars.f40[55].y, buf);
+        LbTextSetClipWindow(resvars.screen_boxes_TownViewp->f20, resvars.screen_boxes_TownViewp->f24, resvars.screen_boxes_TownViewp->f28, h);
+        sprintf(buf, "%7d", myhosp->balance);
+        LbTextDraw(resvars.screen_coords[55].x, resvars.screen_coords[55].y, buf);
     }
 }
 
@@ -1328,7 +1328,7 @@ void draw_money_on_town(void)
 // FUNCTION: 0x000688c0
 void setup_town_bid(void)
 {
-    othervar.f9ef = display_mode;
+    othervar.town_bid_return_mode = display_mode;
 }
 
 // Leaves the town map or auction: back to the display mode saved by
@@ -1336,8 +1336,8 @@ void setup_town_bid(void)
 // FUNCTION: 0x000688e4
 extern "C" void remove_town_bid(void)
 {
-    if (othervar.f9ef) {
-        display_mode = othervar.f9ef;
+    if (othervar.town_bid_return_mode) {
+        display_mode = othervar.town_bid_return_mode;
         switch (display_mode) {
         case 9:
             D_00158192 = 0x5a;
@@ -1347,21 +1347,21 @@ extern "C" void remove_town_bid(void)
             return_from_screen(0, 1, 1);
             break;
         case 1:
-            bank.unknown2 = 0;
-            drugs.unknown2 = 0;
-            pol.unknown2 = 0;
-            research.unknown2 = 0;
-            graphs.unknown2 = 0;
-            slist.unknown2 = 0;
-            manager.unknown2 = 0;
-            reputation.unknown2 = 0;
-            variables.unknown2 = 0;
-            objs.unknown2 = 1;
-            options.unknown2 = 1;
-            que.unknown2 = 0;
+            bank.state = 0;
+            drugs.state = 0;
+            pol.state = 0;
+            research.state = 0;
+            graphs.state = 0;
+            slist.state = 0;
+            manager.state = 0;
+            reputation.state = 0;
+            variables.state = 0;
+            objs.state = 1;
+            options.state = 1;
+            que.state = 0;
             break;
         case 4:
-            town.unknown2 = 0;
+            town.state = 0;
             break;
         case 2:
         case 3:
@@ -1373,7 +1373,7 @@ extern "C" void remove_town_bid(void)
         default:
             break;
         }
-        othervar.f9ef = 0;
+        othervar.town_bid_return_mode = 0;
     } else {
         return_from_screen(0, 1, 1);
     }
@@ -1383,16 +1383,16 @@ extern "C" void remove_town_bid(void)
 // FUNCTION: 0x00068a14
 extern "C" void fn_00068a14(void)
 {
-    bank.unknown2 = 0;
-    drugs.unknown2 = 0;
-    pol.unknown2 = 0;
-    research.unknown2 = 0;
-    graphs.unknown2 = 0;
-    slist.unknown2 = 0;
-    manager.unknown2 = 0;
+    bank.state = 0;
+    drugs.state = 0;
+    pol.state = 0;
+    research.state = 0;
+    graphs.state = 0;
+    slist.state = 0;
+    manager.state = 0;
     D_00158166 = 0;
-    reputation.unknown2 = 0;
-    variables.unknown2 = 0;
-    yearend.unknown2 = 0;
-    hall.unknown2 = 0;
+    reputation.state = 0;
+    variables.state = 0;
+    yearend.state = 0;
+    hall.state = 0;
 }

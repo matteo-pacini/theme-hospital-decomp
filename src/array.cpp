@@ -189,7 +189,7 @@ PanelIcon panel_icons_ratfest_data[34] = {
 #pragma aux panel_icons_ratfest_data "W?panel_icons_ratfest$n[]$Icons$$"
 
 menuData pmenu_data = {
-    // unknown0 .. unknown7
+    // open_pulldown .. disabled
     0, 0, 0, 0, 0, 0, 0, 0,
     // pulldowns[0].active .. pulldowns[0].y
     1, 0, 0, 0, 0, 0, 0,

@@ -54,15 +54,15 @@ IconTableData icon_table_data[] = {
 void set_icon_value(Thing *const peep, const s8 icon)
 {
     if (peep->type != THING_PATIENT || peep->health > 0) {
-        if (icon_table[icon].unknown0 <= icon_table[fn_000cb2db(peep->icon_id)].unknown0) {
-            peep->icon_frame = start[icon_table[icon].unknown1].frame;
-            if (icon_table[icon].f5 < 0) {
+        if (icon_table[icon].priority <= icon_table[fn_000cb2db(peep->icon_id)].priority) {
+            peep->icon_frame = start[icon_table[icon].anim].frame;
+            if (icon_table[icon].mode < 0) {
                 peep->icon_id = -icon;
-                peep->icon_timer = icon_table[icon].f3;
-            } else if (icon_table[icon].f5 == 0) {
+                peep->icon_timer = icon_table[icon].duration;
+            } else if (icon_table[icon].mode == 0) {
                 peep->icon_id = icon;
-                peep->icon_timer = icon_table[icon].f3;
-            } else if (icon_table[icon].f5 > 0) {
+                peep->icon_timer = icon_table[icon].duration;
+            } else if (icon_table[icon].mode > 0) {
                 peep->icon_id = icon;
                 peep->icon_timer = 0xffff;
             }
@@ -90,8 +90,8 @@ void peep_icon(Thing *const peep)
         if (peep->icon_id < 0)
             play_sound(10, SFX_HLIGHTP2, -1, -1);
         peep->icon_id = fn_000cb2db(peep->icon_id);
-        if (icon_table[peep->icon_id].unknown1 > 0 && icon_table[peep->icon_id].f5 == -1)
-            peep->icon_timer = icon_table[peep->icon_id].f3;
+        if (icon_table[peep->icon_id].anim > 0 && icon_table[peep->icon_id].mode == -1)
+            peep->icon_timer = icon_table[peep->icon_id].duration;
     }
 }
 

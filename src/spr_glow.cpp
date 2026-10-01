@@ -71,14 +71,14 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
         if (lbDisplay.draw_flags & 2) {
             u8 old_bottom;
 
-            dst = x + (lbDisplay.unknown4 + (bottom + y - 1) * lbDisplay.graphics_screen_width) + left;
+            dst = x + (lbDisplay.wscreen + (bottom + y - 1) * lbDisplay.graphics_screen_width) + left;
             pitch = lbDisplay.graphics_screen_width;
             pitch = -pitch;
             old_bottom = bottom;
             bottom = h - top;
             top = h - old_bottom;
         } else {
-            dst = x + (lbDisplay.unknown4 + (top + y) * lbDisplay.graphics_screen_width) + left;
+            dst = x + (lbDisplay.wscreen + (top + y) * lbDisplay.graphics_screen_width) + left;
             pitch = lbDisplay.graphics_screen_width;
         }
         h = bottom - top;

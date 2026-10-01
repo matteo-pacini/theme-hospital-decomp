@@ -24,27 +24,27 @@ void req11(Window *win)
     s32 k;
 
     button = win->buttons;
-    croom = crequester.unknown8;
-    obj = crequester.unknown3;
+    croom = crequester.kind;
+    obj = crequester.item;
     k = 0x3e;
     for (i = 1; button; button = button->next) {
         if (button->flags & 6) {
-            debug.unknown8 = i;
-            if (i >= resvars.fe[0x30] && i <= resvars.fe[0x39]) {
-                clicked_buy_objects(i - resvars.fe[0x30], OldLeftButton ? 1 : 2);
-            } else if (i >= resvars.fe[0x45] && i <= resvars.fe[0x4e]) {
-                clicked_buy_objects(i - resvars.fe[0x45], 1);
-            } else if (i >= resvars.fe[0x3b] && i <= resvars.fe[0x44]) {
-                clicked_buy_objects(i - resvars.fe[0x3b], 2);
-            } else if (i == resvars.fe[0x2f]) {
-                if (crequester.unknown4 == 1) {
+            debug.last_action = i;
+            if (i >= resvars.requester_buttons[0x30] && i <= resvars.requester_buttons[0x39]) {
+                clicked_buy_objects(i - resvars.requester_buttons[0x30], OldLeftButton ? 1 : 2);
+            } else if (i >= resvars.requester_buttons[0x45] && i <= resvars.requester_buttons[0x4e]) {
+                clicked_buy_objects(i - resvars.requester_buttons[0x45], 1);
+            } else if (i >= resvars.requester_buttons[0x3b] && i <= resvars.requester_buttons[0x44]) {
+                clicked_buy_objects(i - resvars.requester_buttons[0x3b], 2);
+            } else if (i == resvars.requester_buttons[0x2f]) {
+                if (crequester.arg == 1) {
                     D_001549d0[player].type = 0x2b;
                 } else if (crequester.unknown9) {
                     D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
                     D_001549d0[player].value = 0;
                 }
                 play_sound(10, SFX_YESX, -1, -1);
-            } else if (i == resvars.fe[0x3a]) {
+            } else if (i == resvars.requester_buttons[0x3a]) {
                 if (crequester.unknown9) {
                     D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
                     D_001549d0[player].value = 1;
@@ -61,7 +61,7 @@ void req11(Window *win)
 }
 
 // Draws the buy objects requester: each listed object with its count, the
-// hovered one selected (crequester.unknown3) with its picture and price, the
+// hovered one selected (crequester.item) with its picture and price, the
 // total, and the advisor's flashing hints.
 // FUNCTION: 0x0009c97c
 void req11_overdraw(Window *win)
@@ -79,12 +79,12 @@ void req11_overdraw(Window *win)
     char buf[100];
 
     button = win->buttons;
-    obj = crequester.unknown3;
-    if (resvars.f1 == SCREEN_MODE_13 && loaded_requester != 10)
+    obj = crequester.item;
+    if (resvars.game_mode == SCREEN_MODE_13 && loaded_requester != 10)
         return;
     compute_help_text(0, 0, 5);
-    LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
-        window.unknown2cf - window.unknown2c7);
+    LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
+        window.clip_y1 - window.clip_y0);
     ox = win->x - lbDisplay.graphics_window_x;
     oy = win->y - lbDisplay.graphics_window_y;
     set_all_refresh_zones_in_window(ox, oy, win->width + ox, lbDisplay.graphics_screen_height, 3);
@@ -99,24 +99,24 @@ void req11_overdraw(Window *win)
             break;
         total += gamevar.buy_count[item] * myhosp->object_stats[item].cost;
     }
-    LbTextDraw(ox + resvars.f1c[0x19].x, oy + resvars.f1c[0x19].y, req1_help[3]);
+    LbTextDraw(ox + resvars.coords[0x19].x, oy + resvars.coords[0x19].y, req1_help[3]);
     sprintf(buf, "%s%d", req1_help[5], myhosp->object_stats[obj].cost);
-    LbTextDraw(ox + resvars.f1c[0x1a].x, oy + resvars.f1c[0x1a].y, buf);
+    LbTextDraw(ox + resvars.coords[0x1a].x, oy + resvars.coords[0x1a].y, buf);
     sprintf(buf, "%s%d", req1_help[6], total);
-    LbTextDraw(ox + resvars.f1c[0x1b].x, oy + resvars.f1c[0x1b].y, buf);
+    LbTextDraw(ox + resvars.coords[0x1b].x, oy + resvars.coords[0x1b].y, buf);
     if (obj) {
-        fr = &frame[start[objects[obj].f10].frame];
+        fr = &frame[start[objects[obj].preview_anim].frame];
         scale_x = 0x790000 / fr->width;
         scale_y = 0x790000 / fr->length;
         if (scale_y >= 0x10000 || scale_x >= 0x10000) {
-            draw_a_frame(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y, 0,
-                start[objects[obj].f10].flags);
+            draw_a_frame(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x, oy + resvars.coords[0x1c].y, 0,
+                start[objects[obj].preview_anim].flags);
         } else if (scale_y <= scale_x) {
-            draw_a_frame_scaled(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y,
-                0, start[objects[obj].f10].flags, scale_y);
+            draw_a_frame_scaled(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x, oy + resvars.coords[0x1c].y,
+                0, start[objects[obj].preview_anim].flags, scale_y);
         } else {
-            draw_a_frame_scaled(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y,
-                0, start[objects[obj].f10].flags, scale_x);
+            draw_a_frame_scaled(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x, oy + resvars.coords[0x1c].y,
+                0, start[objects[obj].preview_anim].flags, scale_x);
         }
     }
     for (i = 0; i < 10; i++) {
@@ -124,40 +124,40 @@ void req11_overdraw(Window *win)
         if (!item)
             break;
         set_font_from_cache(1);
-        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18[i + 0xb].x, oy + resvars.f18[i + 0xb].y,
-                resvars.f18[i + 0xb].w, resvars.f18[i + 0xb].h)) {
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes[i + 0xb].x, oy + resvars.boxes[i + 0xb].y,
+                resvars.boxes[i + 0xb].w, resvars.boxes[i + 0xb].h)) {
             set_font_from_cache(2);
-            if (crequester.unknown3 != item)
+            if (crequester.item != item)
                 play_sound(10, SFX_HLIGHT5, -1, -1);
-            crequester.unknown3 = item;
+            crequester.item = item;
         }
-        LbTextDraw(ox + resvars.f1c[i + 0x34].x, oy + resvars.f1c[i + 0x34].y, object_names[objects[item].name]);
+        LbTextDraw(ox + resvars.coords[i + 0x34].x, oy + resvars.coords[i + 0x34].y, object_names[objects[item].name]);
         sprintf(buf, "%d", gamevar.buy_count[item]);
-        LbTextDraw(ox + resvars.f1c[i + 0x3e].x, oy + resvars.f1c[i + 0x3e].y, buf);
+        LbTextDraw(ox + resvars.coords[i + 0x3e].x, oy + resvars.coords[i + 0x3e].y, buf);
     }
-    if (advisor.f11f & 1) {
+    if (advisor.flags & 1) {
         i = 1;
-        othervar.f9bc++;
-        if (othervar.f9bc % 10 == 0) {
-            switch (advisor.f120) {
+        othervar.flash_counter++;
+        if (othervar.flash_counter % 10 == 0) {
+            switch (advisor.tutorial_highlight) {
             case 0xa:
                 for (button = win->buttons; button; button = button->next) {
-                    if (i == resvars.fe[0x30])
+                    if (i == resvars.requester_buttons[0x30])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x12]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.requester_sprites[0x12]]);
                 break;
             case 9:
                 for (button = win->buttons; button; button = button->next) {
-                    if (i == resvars.fe[0x2f])
+                    if (i == resvars.requester_buttons[0x2f])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x13]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.requester_sprites[0x13]]);
                 break;
             }
-            othervar.f9bc = 0;
+            othervar.flash_counter = 0;
         }
     }
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -186,12 +186,12 @@ void clicked_buy_objects(const s32 idx, const u8 button)
     s32 amount;
 
     amount = (HospShift & MOD_CTRL) ? 10 : ((HospShift & MOD_SHIFT) ? 5 : 1);
-    obj = crequester.unknown3;
+    obj = crequester.item;
     if (req_indices[idx]) {
         if (button == 1) {
             if (cost_of_all_selected_objects() + allhosps[player].object_stats[obj].cost * amount
-                    <= (u32)allhosps[player].f35
-                && allhosps[player].f35 > 0) {
+                    <= (u32)allhosps[player].balance
+                && allhosps[player].balance > 0) {
                 D_001549d0[player].type = EV_BUY_OBJECT;
                 D_001549d0[player].value = obj;
                 D_001549d0[player].arg = amount;
@@ -219,35 +219,35 @@ void clicked_buy_objects(const s32 idx, const u8 button)
 }
 
 // Help text for an object entry of the buy objects requester, into
-// othervar.f96.
+// othervar.help_msg.
 // FUNCTION: 0x0009d36c
 void req11_help_object(void)
 {
     u8 idx;
 
-    idx = req_indices[resvars.f2c_HelpHotspotp[othervar.f8ac].unknownA];
+    idx = req_indices[resvars.help_hotspots_HelpHotspotp[othervar.help_hotspot].req_slot];
     if (idx)
-        fn_000bbff0(othervar.f96, object_help[idx]);
+        fn_000bbff0(othervar.help_msg, object_help[idx]);
 }
 
-// Help text for the plus button of a buy objects entry, into othervar.f96.
+// Help text for the plus button of a buy objects entry, into othervar.help_msg.
 // FUNCTION: 0x0009d3cc
 void req11_help_plus(void)
 {
     u8 idx;
 
-    idx = req_indices[resvars.f2c_HelpHotspotp[othervar.f8ac].unknownA];
+    idx = req_indices[resvars.help_hotspots_HelpHotspotp[othervar.help_hotspot].req_slot];
     if (idx)
-        fn_000bbff0(othervar.f96, help_text[0x29]);
+        fn_000bbff0(othervar.help_msg, help_text[0x29]);
 }
 
-// Help text for the minus button of a buy objects entry, into othervar.f96.
+// Help text for the minus button of a buy objects entry, into othervar.help_msg.
 // FUNCTION: 0x0009d424
 void req11_help_minus(void)
 {
     u8 idx;
 
-    idx = req_indices[resvars.f2c_HelpHotspotp[othervar.f8ac].unknownA];
+    idx = req_indices[resvars.help_hotspots_HelpHotspotp[othervar.help_hotspot].req_slot];
     if (idx)
-        fn_000bbff0(othervar.f96, help_text[0x2a]);
+        fn_000bbff0(othervar.help_msg, help_text[0x2a]);
 }

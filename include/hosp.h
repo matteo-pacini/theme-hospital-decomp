@@ -19,14 +19,25 @@ union MapPos {
     };
 };
 
+/*
+ * One map tile (map[], 128 per row).
+ */
 struct Map {
+    // 0x0: Head of the list of things on the tile (Thing.cell_next).
     s16 first;
+    // 0x2: Overlay block id.
     u8 overlay;
-    u8 unknown3;
-    u8 unknown4;
+    // 0x3: Block id of the wall on the tile's north edge, or 0.
+    u8 wall_n;
+    // 0x4: Block id of the wall on the tile's west edge, or 0.
+    u8 wall_w;
+    // 0x5: Tile flags.
     u8 flags;
+    // 0x6: Floor block id; the low nibble is tested for floor type.
     u8 floor;
-    u8 unknown7;
+    // 0x7: Bit (1 << owner) set on land the hospital owns; 0x10 set on outdoor
+    // tiles.
+    u8 owner_flags;
 };
 
 struct Blocks {
@@ -40,11 +51,13 @@ struct Blocks {
 
 struct RoomInfo {
     u8 type;
-    s8 f1;
-    s8 f2;
-    s8 f3;
-    u16 unknown4;
-    u16 unknown6;
+    s8 width;
+    s8 height;
+    // 0x3: <0 free slot, 0 normal, 1 staffed, 3 blueprint, 4 being edited, 5
+    // machine awaiting repair, 6 broken.
+    s8 state;
+    u16 door_tile;
+    u16 door_inside_tile;
     union {
         u16 pos;
         struct {
@@ -62,16 +75,18 @@ struct RoomInfo {
     u16 first;
     u16 staff[2];
     u16 count;
-    u32 unknown22;
-    u8 unknown26;
-    u8 f1b;
+    u32 created_turn;
+    u8 radiators;
+    u8 windows;
     u8 owner;
-    u8 unknown29;
-    u8 f1e;
-    u8 unknown31;
-    u8 unknown32;
-    u8 unknown33;
-    u8 f22;
+    // 0x1d: Set when the staff member arrives or finishes a step with a
+    // patient; cleared when they walk out.
+    u8 staff_free;
+    u8 queue_capacity;
+    u8 queue_length;
+    u8 queue_incoming;
+    u8 paid_for;
+    u8 being_edited;
 };
 
 /*
@@ -277,7 +292,7 @@ struct Thing {
             u16 warmth;
             // People: sprite to restore after a reaction animation.
             u16 saved_sprite;
-            // People: game time (othervar.f82) of the next modify_person or
+            // People: game time (othervar.cur_turn) of the next modify_person or
             // modify_staff.
             u16 modify_time;
         };
@@ -315,7 +330,7 @@ struct Thing {
     union {
         // 0x61, people: argument tile of complex_queued2.
         u8 queued2_arg_x;
-        // Objects: how people use it (objects[].unknown15[0]).
+        // Objects: how people use it (objects[].use_style[0]).
         u8 use_style;
     };
     union {
@@ -336,7 +351,8 @@ struct Thing {
             s8 interact_repeat;
             // State to enter on arriving or after the current action.
             u8 next_state;
-            // Step within the current state.
+            // Step within the current state. During a reaction animation
+            // (PS_SHOWANIM, setup_showanim): the state to return to.
             u8 substate;
             // While stuck or reacting: what to restore afterwards.
             u8 saved_flip;
@@ -390,7 +406,7 @@ struct Thing {
                 // 0x40 psychiatrist, 0x80 consultant, 0x100 researcher, ...).
                 u16 skills;
                 // Patients: grows while they wait or are unhappy; past
-                // gbv.f108 they go home.
+                // gbv.leave_max they go home.
                 u16 impatience;
             };
             union {
@@ -400,7 +416,7 @@ struct Thing {
                 u16 waiting_time;
             };
             union {
-                // 0x80, staff: grows while unhappy; past gbv.f10a they want
+                // 0x80, staff: grows while unhappy; past gbv.resign_max they want
                 // to resign.
                 u16 discontent;
                 s16 discontent_s;
@@ -418,10 +434,10 @@ struct Thing {
             s16 health_delta;
             // Patients: falls over time; below 30 they are thirsty.
             s16 refreshment;
-            // Patients: rises over time; they need the toilet past gbv.f116.
+            // Patients: rises over time; they need the toilet past gbv.bowel_full.
             s16 bladder;
             // Patients: rises near litter or dead plants and when too hot;
-            // past gbv.f11a they may vomit.
+            // past gbv.vomit_limit they may vomit.
             u16 nausea;
             // 0x8c, patients: the room whose queue they are in.
             u16 queue_room;
@@ -439,7 +455,7 @@ struct Thing {
             // 0x90, patients: subtracted from diagnosis progress.
             u16 diagnosis_handicap;
             union {
-                // 0x92, patients: diagnosis progress (done at gbv.ffc).
+                // 0x92, patients: diagnosis progress (done at gbv.diagnosis_complete).
                 s16 diagnosis;
                 struct {
                     u8 pad92_;
@@ -542,6 +558,9 @@ struct Thing {
                     u8 fuse;
                     u8 fuse_tick;
                 };
+                // Projectors: 1 once the consultant has started the lecture;
+                // cleared when he leaves the training room.
+                u8 lecture_started;
             };
             union {
                 struct {
@@ -582,7 +601,7 @@ struct Thing {
     u8 treatment;
     // Treatment that becomes `treatment` next (setup_next_treatment).
     u8 next_treatment;
-    // Bit of their insurance company (allhosps.f216), or 0.
+    // Bit of their insurance company (allhosps.insurance_accepted), or 0.
     u8 insurance;
     // Contagiousness: above 0 contagious, 0xff vaccinated.
     u8 contagion;
@@ -594,40 +613,81 @@ struct HospitalDrug {
     u8 effectiveness;
 };
 
+/*
+ * Per-hospital casebook entry for one treatment (illness/expertise index, 0x2f
+ * entries in AllHosps.rooms despite the name): reputation, pricing, drug and
+ * outcome counts.
+ */
 struct HospitalRoom {
-    s32 unknown0;
-    s32 f4;
-    s32 f8;
-    s32 unknownC;
-    s32 unknown10;
-    s32 unknown14;
+    // 0x0: Treatment reputation 0..1000, rep_points * 500 / rep_events
+    // (evaluate_reputation).
+    s32 reputation;
+    // 0x4: Accumulated reputation deltas for this treatment.
+    s32 rep_points;
+    // 0x8: Number of reputation events counted for this treatment.
+    s32 rep_events;
+    // 0xc: Price charged for the treatment: price_scale * the maximum price /
+    // 10000.
+    s32 price;
+    // 0x10: Price setting as percent * 100 of the maximum price, 5000..20000.
+    s32 price_scale;
+    // 0x14: Money earned from this treatment.
+    s32 income;
     union {
+        // 0x18: Drug researched for this treatment.
         HospitalDrug drug;
         struct {
-            u16 unknown18;
+            // 0x18: Same bytes as drug.cost (set to gbv StartCost by
+            // setup_drug).
+            u16 drug_cost;
             u8 unknown1A;
-            u8 unknown1B;
+            // 0x1b: Same bytes as drug.effectiveness (set to gbv StartRating by
+            // setup_drug).
+            u8 drug_effectiveness;
         };
     };
-    u8 unknown1C;
-    u8 unknown1D;
-    u16 unknown1E;
-    u16 unknown20;
+    // 0x1c: 1 when the hospital can treat it (rooms, staff, drug or machine in
+    // place).
+    u8 cure_available;
+    // 0x1d: 1 once the illness is known to the hospital.
+    u8 discovered;
+    // 0x1e: Patients cured of it.
+    u16 cured;
+    // 0x20: Patients who died of it.
+    u16 deaths;
     u8 unknown22[2];
-    u16 unknown24;
+    // 0x24: Patients with it sent home or leaving untreated.
+    u16 turned_away;
 };
 
+/*
+ * A request for a staff member with given skills to come to a room (pagers[]).
+ */
 struct SkillPager {
+    // 0x0: Skill bits a responder must have.
     u16 mask;
+    // 0x2: room_info index of the paging room.
     u16 room;
-    u32 unknown4;
-    u16 unknown8;
+    // 0x4: Turn until which the responder holds the page; others may take it
+    // after.
+    u32 claimed_until;
+    // 0x8: Thing id of the staff member answering, or 0.
+    u16 responder;
+    // 0xa: Hospital that sent the page.
     u8 owner;
 };
 
+/*
+ * Per-object research state, a view of AllHosps.object_stats entries starting
+ * at their byte 12.
+ */
 struct Equipment {
-    u8 unknown0;
-    u8 unknown1[13];
+    // 0x0: 1 once the object can be bought (researched or available from the
+    // start).
+    u8 available;
+    // 0x1: [0] counts research upgrades, +2 each, up to 40; the other bytes
+    // belong to the next object_stats entry.
+    u8 upgrade_level[13];
 };
 
 struct ObjectStats {
@@ -636,7 +696,7 @@ struct ObjectStats {
         u8 unknown4[4];
         u32 available;
     };
-    u16 unknown8;
+    u16 strength;
     u16 fA;
     u8 unknownC[2];
 };
@@ -659,16 +719,28 @@ struct ComputerStrategy {
     s16 count;
 };
 
+/*
+ * Personality of one computer opponent (computer[]), loaded from the level
+ * file's computer keys.
+ */
 struct ComputerPlayer {
-    u8 f0;
-    u8 f1;
+    // 0x0: Skill key; the random spread subtracted from speed when pacing
+    // actions.
+    u8 skill;
+    // 0x1: StaffLevels key; column of staff_max_nbs used for staff numbers.
+    u8 staff_levels;
     u8 unknown2;
-    u8 f3;
-    u8 f4;
-    u8 f5;
-    u8 f6;
+    // 0x3: Speed key; base pace of actions (higher waits longer).
+    u8 speed;
+    // 0x4: Comfort key; column of object_nbs used for comfort objects.
+    u8 comfort;
+    // 0x5: GuessAt key; diagnosis percentage at which it guesses a treatment.
+    u8 guess_at;
+    // 0x6: Copied into the hospital's AI strategy at setup.
+    u8 strategy;
     u8 unknown7;
-    u8 f8;
+    // 0x8: Playing key; nonzero when this opponent takes part.
+    u8 playing;
 };
 
 struct ComputerDecisions {
@@ -718,11 +790,11 @@ struct BuildState {
             u8 drag;
         };
     };
-    u8 unknownD;
+    u8 room_type;
     union {
         u8 unknownE[5];
         struct {
-            u8 unknownE_;
+            u8 draw_mode;
             u16 door_tile;
             u8 door_type;
             u8 door_state;
@@ -730,7 +802,7 @@ struct BuildState {
     };
     u16 objects[20];
     u8 state;
-    u8 unknown3c;
+    u8 saved_overlay;
 };
 
 struct ResearchWorkStations {
@@ -745,27 +817,29 @@ struct Population {
 };
 
 struct AllHosps {
-    u8 unknown0[0x29];
-    u8 f29;
-    u8 f2a;
-    u8 f2b;
-    u8 f2c;
-    s32 f2d;
-    s32 f31;
-    s32 f35;
+    u8 name[0x29];
+    u8 level;
+    // 0x2a: 0 unused, 1 human, 2 computer.
+    u8 player_type;
+    // 0x2b: 2 while the player is in the game; 0 after they quit.
+    u8 playing;
+    u8 win_progress;
+    s32 score;
+    s32 start_score;
+    s32 balance;
     u8 unknown39[4];
-    s32 f3d;
-    s32 f41;
+    s32 loan;
+    s32 max_loan;
     union {
         u8 unknown45[0x176];
         struct {
             u8 unknown45_[0x90];
-            s32 fd5;
+            s32 drinks_income;
             s32 fd9;
         };
         struct {
             u8 unknown45a_[0x90];
-            s32 fd5s[2];
+            s32 sales_income[2];
         };
         struct {
             u8 unknown45r_[0x98];
@@ -774,104 +848,116 @@ struct AllHosps {
             s32 research_cost[5];
             s16 research_alloc[5];
         };
-        s32 f45[3][12];
+        // 0x45: Fees owed by each of the three insurance companies, by the
+        // month they pay.
+        s32 insurance_claims[3][12];
     };
-    s32 f1bb;
-    s32 f1bf;
+    s32 hospital_value;
+    s32 object_value;
     union {
         u8 unknown1c3[8];
         struct {
-            s32 f1c3;
-            s32 f1c7;
+            s32 year_start_balance;
+            s32 year_start_visitors;
         };
     };
-    u16 f1cb;
+    u16 market_share;
     union {
         u8 unknown1cd[2];
-        s16 f1cd;
+        s16 month_visitors;
     };
-    s16 unknown1cf[4];
-    u16 f1d7;
+    s16 entrances[4];
+    u16 heli_pad_tile;
     union {
-        u16 f1d9;
-        s16 f1d9s;
+        u16 emergency_timer;
+        s16 emergency_timer_s;
     };
     union {
         u8 unknown1db[7];
         struct {
             u8 unknown1db_[2];
-            u16 f1dd;
+            u16 emergency_bonus;
         };
         struct {
             u8 unknown1db__[4];
-            u16 f1df;
-            u8 f1e1;
+            u16 emergency_heli;
+            u8 heli_landed;
         };
     };
     union {
-        u8 f1e2;
-        s8 f1e2s;
+        // 0x1e2: 0 none, 10 accepted (counts down), 5 summon helicopter, 3
+        // helicopter arriving, 2 in progress, 1 over.
+        u8 emergency_state;
+        s8 emergency_state_s;
     };
     union {
         u8 unknown1e3[2];
         struct {
-            s8 f1e3;
-            u8 f1e4;
+            s8 emergency_to_spawn;
+            u8 emergency_illness;
         };
     };
-    u8 f1e5;
+    u8 emergency_cured;
     union {
         u8 unknown1e6[3];
         struct {
-            u8 f1e6;
-            u8 f1e7;
-            u8 f1e8;
+            u8 emergency_patients;
+            u8 emergency_present;
+            u8 emergency_win_pct;
         };
     };
-    u16 f1e9;
-    u16 f1eb;
-    u16 f1ed;
-    u16 f1ef;
-    u16 f1f1;
-    u32 f1f3;
+    u16 cures;
+    u16 deaths;
+    u16 visitors;
+    u16 diagnosed;
+    u16 area;
+    u32 mayor_arrival_turn;
     union {
         u8 unknown1f7[2];
-        u16 f1f7;
+        u16 mayor;
     };
-    u8 f1f9;
-    u8 f1fa;
+    u8 mayor_name;
+    // 0x1fa: 0 none, 1 visit offered, 2 visit scheduled, 3 mayor on site, 4
+    // mayor gone.
+    u8 mayor_state;
     union {
         u8 unknown1fb[8];
         struct {
-            u16 f1fb;
-            u16 f1fd;
-            u16 f1ff;
-            u16 f201;
+            u16 mayor_verdict;
+            u16 mayor_postponed;
+            u16 mayor_launch_count;
+            u16 inspector;
         };
     };
-    u16 f203;
-    u16 f205;
-    u16 f207;
-    u8 unknown209[2];
-    u8 f20b;
-    u8 f20c;
-    u8 f20d;
-    u8 f20e;
+    // 0x203: Fine charged after the inspection; when no contagious patients are
+    // found, the compensation paid instead.
+    u16 epidemic_fine;
+    u16 contagious_count;
+    u16 epidemic_timer;
+    // 0x209: [0] inspector verdict 0..3, [1] 3 while the health inspector is on
+    // site.
+    u8 inspection[2];
+    u8 epidemic_illness;
+    u8 inspected_illness;
+    u8 epidemic_active;
+    u8 epidemic_over;
     union {
         u8 unknown20f[7];
         struct {
-            u16 f20f;
-            u16 f211;
-            u8 f213;
-            s8 f214;
+            u16 disaster_counter;
+            u16 saved_heating;
+            // 0x213: 0 none, 1 boiler fails cold, 2 boiler fails hot, 3 litter
+            // disaster.
+            u8 disaster_kind;
+            s8 disaster_timer;
         };
     };
-    u8 f216;
-    u16 f217;
-    u16 f219;
-    u16 f21b;
-    u16 f21d;
-    u8 f21f;
+    u8 insurance_accepted;
+    u16 diag_threshold;
+    u16 guess_cure_threshold;
+    u16 send_home_threshold;
+    u16 rest_threshold;
+    u8 staff_leave_rooms;
     HospitalRoom rooms[0x2e];
     union {
         struct {
@@ -880,9 +966,9 @@ struct AllHosps {
                 Equipment equipment[0x3e];
                 struct {
                     u8 unknown926[0x358];
-                    s32 unknownc7e;
-                    s32 fc82;
-                    s32 fc86;
+                    s32 reputation;
+                    s32 rep_points;
+                    s32 rep_events;
                 };
             };
         };
@@ -894,41 +980,43 @@ struct AllHosps {
     union {
         u8 unknownc8a[4];
         struct {
-            s16 fc8a;
-            s16 fc8c;
+            s16 avg_patient_happiness;
+            s16 avg_staff_happiness;
         };
     };
-    s16 fc8e;
-    u16 fc90;
-    u16 fc92;
-    u8 fc94;
-    u8 fc95;
-    u8 fc96;
-    u8 fc97;
+    s16 price_level;
+    u16 extinguisher_count;
+    u16 radiator_count;
+    u8 heating_level;
+    u8 heating_broken;
+    u8 object_count;
+    u8 machine_count;
     u16 fc98;
-    u16 fc9a;
-    u16 fc9c;
-    s16 fc9e[4];
-    s16 fca6;
-    u16 fca8;
-    u16 fcaa;
-    u16 fcac;
-    u8 fcae;
-    RatHole fcaf[0x28];
+    u16 amenity_count;
+    u16 staff_count;
+    // 0xc9e: Staff counts: [0] nurses, [1] doctors (surgeons included), [2]
+    // handymen, [3] receptionists.
+    s16 staff_by_kind[4];
+    s16 surgeon_count;
+    u16 leisure_count;
+    u16 litter_count;
+    u16 last_litter_tile;
+    u8 rathole_count;
+    RatHole ratholes[0x28];
     union {
-        s16 fd27;
-        u16 fd27u;
+        s16 rats_killed;
+        u16 rats_killed_u;
     };
-    u16 fd29;
+    u16 rat_shots;
     union {
         u8 unknownd2b[0x242];
-        ThingPager fd2b;
+        ThingPager plant_pager;
     };
-    ThingPager ff6d;
+    ThingPager repair_pager;
     union {
         struct {
             u8 unknownf6e[8];
-            u16 unknown11b7;
+            u16 edited_room;
             union {
                 u8 unknown11b9[3];
                 u16 f11b9;
@@ -944,25 +1032,29 @@ struct AllHosps {
             u16 vaccine_queue;
         };
     };
-    u16 unknown11ee;
-    u16 unknown11f0;
+    u16 idle_nurses_prev;
+    u16 idle_nurses;
     u16 vaccine_requests;
-    u16 f11f4;
-    u16 f11f6;
-    u32 f11f8;
+    u16 held_staff;
+    u16 held_staff_tile;
+    u32 next_action_turn;
     ComputerStrategy action;
-    u16 f1202;
+    u16 action_from_note;
     ComputerStrategy notes[8];
-    s32 f1234;
-    u32 f1238;
-    s32 f123c;
-    s16 f1240;
-    s16 f1242;
-    u8 f1244;
-    u8 f1245;
-    s16 f1246[8];
-    u8 unknown1256;
-    u16 unknown1257;
+    s32 wage_bill;
+    u32 rooms_built;
+    s32 patient_load;
+    s16 strategy_step;
+    s16 recheck_step;
+    u8 strategy;
+    u8 ai_index;
+    s16 staff_ability_sum[8];
+    // 0x1256: Single player: 1 once the opening countdown has ended. Network
+    // games: illness chosen for concentrated research.
+    u8 hospital_open;
+    // 0x1257: Turns until the hospital opens to patients (from
+    // gbv.open_countdown).
+    u16 opening_countdown;
 };
 
 struct BankEntry {
@@ -973,52 +1065,89 @@ struct BankEntry {
     u8 extra;
 };
 
+/*
+ * The local player's finances and calendar (instance *mycontrol): month and
+ * year totals, the bank statement and the graph history.
+ */
 struct GameControl {
     union {
         u8 unknown0[0x10];
         struct {
-            s32 f0;
-            s32 f4;
-            s32 f8;
-            s32 fc;
+            // 0x0: Wages and hiring costs paid this month (change_balance types
+            // 1 and 2); moved to history[0] at month end.
+            s32 wages_this_month;
+            // 0x4: Money received this month; moved to history[1] at month end.
+            s32 income_this_month;
+            // 0x8: Money spent this month (positive); moved to history[2] at
+            // month end.
+            s32 expenditure_this_month;
+            // 0xc: Own patients cured this month; cleared at month end.
+            s32 cures_this_month;
         };
     };
-    u32 unknown10;
+    // 0x10: Own patients who died this month; cleared at month end.
+    u32 deaths_this_month;
     union {
         u8 unknown14[0x63b];
         struct {
             u8 unknown14_[0x634];
-            u16 f648;
+            // 0x648: Years since the game started (shown as 2000 + year).
+            u16 year;
         };
         struct {
             u8 unknown14c_[0xc];
+            // 0x20: Graph data [row][scale][month], month 11 the newest: rows
+            // wages, income, expenditure, balance, visitors, deaths, cures,
+            // reputation.
             s32 history[8][3][12];
         };
         struct {
-            s32 f14;
-            s32 f18;
+            // 0x14: Sum of the last 12 months of income, computed at year end.
+            s32 income_last_year;
+            // 0x18: Sum of the last 12 months of expenditure, computed at year
+            // end.
+            s32 expenditure_last_year;
             u8 unknown1cb_[0x484];
-            s32 f4a0;
-            s32 f4a4;
-            s32 f4a8;
-            s32 f4ac;
-            s32 f4b0;
-            s32 f4b4;
+            // 0x4a0: Hospital reputation when the year ended.
+            s32 year_start_reputation;
+            // 0x4a4: Total cures when the year ended; cures this year are
+            // counted from it.
+            s32 year_start_cures;
+            // 0x4a8: Total deaths when the year ended.
+            s32 year_start_deaths;
+            // 0x4ac: Staff count when the year ended.
+            s32 year_start_staff;
+            // 0x4b0: Staff count when the year ended (second copy, never read).
+            s32 year_start_staff2;
+            // 0x4b4: Opening balance of the bank statement: grows by the
+            // amounts of entries dropped when the statement is full.
+            s32 statement_balance;
+            // 0x4b8: Bank statement lines, oldest first.
             BankEntry entries[0x32];
             u8 unknown648b_[2];
-            u16 f64a;
-            u16 f64c;
-            u8 f64e;
+            // 0x64a: Hospital area when the year ended.
+            u16 year_start_area;
+            // 0x64c: Heating cost factor (750): monthly bill is radiators *
+            // heating setting * heating_price / 100.
+            u16 heating_price;
+            // 0x64e: Number of used entries.
+            u8 entry_count;
         };
         struct {
             u8 unknown14a_[0x278];
-            s32 f28c;
+            // 0x28c: Alias of history[4][0][11]: visitors counted so far this
+            // month.
+            s32 history_visitors_now;
             u8 unknown290_[0x11c];
-            s32 f3ac;
+            // 0x3ac: Alias of history[6][0][11]: the cures entry for this
+            // month.
+            s32 history_cures_now;
         };
     };
-    u8 unknown64f;
-    u8 unknown650;
+    // 0x64f: Day of the month, from 1.
+    u8 day;
+    // 0x650: Month of the year, 0-11.
+    u8 month;
 };
 
 struct ListHead {
@@ -1108,17 +1237,17 @@ struct Window {
 };
 
 struct Expertise {
-    u16 unknown0;
+    u16 staff_mask;
     union {
         u8 unknown2[2];
-        u16 f2;
+        u16 start_price;
     };
     u8 kind;
     union {
         u8 unknown5[3];
         struct {
             u8 unknown5_[2];
-            u8 unknown7;
+            u8 needs_ward;
         };
     };
     u8 unknown8;
@@ -1146,38 +1275,38 @@ struct ObjectControl {
         };
         struct {
             u8 unknown6c_[6];
-            u16 fc;
+            u16 when_avail;
         };
     };
-    u16 unknownE;
+    u16 anim_start;
     union {
         u8 unknown10[4];
         struct {
             u8 unknown10_[2];
-            u16 f12;
+            u16 repair_aniseq;
         };
-        u16 f10;
+        u16 preview_anim;
     };
-    u8 unknown14;
-    u8 unknown15[1];
+    u8 category;
+    u8 use_style[1];
     s8 walls;
-    s8 unknown17;
+    s8 next_part_index;
     union {
         u8 unknown18[4];
         struct {
             u16 unknown18w;
-            u16 f1a;
+            u16 explosion_offset;
         };
     };
-    u8 unknown1c;
-    u8 unknown1d;
-    u16 unknown1e;
+    u8 available_for_level;
+    u8 start_strength;
+    u16 overlay_anim;
     union {
         u8 unknown20[3];
         u16 f20;
     };
-    u8 unknown23;
-    u8 unknown24;
+    u8 initial_state;
+    u8 is_machine;
 };
 
 struct RoomControl {
@@ -1186,7 +1315,7 @@ struct RoomControl {
         u8 unknown2[0xa];
         struct {
             u8 unknown2_[6];
-            u16 unknown8;
+            u16 doctor_skills;
         };
         struct {
             u8 unknown2__[2];
@@ -1194,19 +1323,19 @@ struct RoomControl {
         };
         struct {
             u8 unknown2a_[8];
-            u16 fa;
+            u16 main_object;
         };
     };
-    u8 fc;
+    u8 compulsory_count;
     union {
         u8 objects[0x15];
         struct {
             u8 objects_[0xa];
-            u8 f17;
-            u8 f18[0xa];
+            u8 buyable_count;
+            u8 buyable[0xa];
         };
     };
-    u8 unknown22;
+    u8 overlay;
     u8 unknown23;
     u8 unknown36;
     u8 unknown25;
@@ -1214,25 +1343,50 @@ struct RoomControl {
     u8 unknown27[3];
 };
 
+/*
+ * A department of the build-room requester (departments[]) and the room types
+ * it offers.
+ */
 struct DepartmentControl {
+    // 0x0: Number of entries in rooms.
     u8 count;
-    u8 unknown1;
+    // 0x1: Nonzero if the department appears in the requester list.
+    u8 listed;
+    // 0x2: Room types offered.
     u8 rooms[0xa];
 };
 
+/*
+ * One entry of shapes (ObjectControl.shapes per facing): an object's map
+ * footprint and use tiles as tile offsets (y * 128 + x) from the object's
+ * tile.
+ */
 struct Shapes {
+    // 0x0: Number of footprint points in points.
     s8 count;
     union {
+        // 0x1: Footprint tile offsets; only the first count are used, the rest
+        // of the array overlays the fields below.
         u16 points[0x15];
         struct {
             u8 unknown1[0x12];
-            s16 unknown13[3];
-            s16 unknown19[3];
-            u8 unknown1f[3];
-            u8 unknown22[9];
+            // 0x13: Tile offsets of use positions 0-2 (Thing.use_pos[0..2]);
+            // marked with map flag 4 while the object stands.
+            s16 use_offsets[3];
+            // 0x19: Tile offsets of use positions 3-5 (Thing.use_pos[3..5]);
+            // marked like use_offsets.
+            s16 extra_use_offsets[3];
+            // 0x1f: [0] and [1]: x and y tile delta of the use point (use_x,
+            // use_y); [2]: the object's depth.
+            u8 use_xy_depth[3];
+            // 0x22: Per footprint point: bit 0 and bit 1 forbid placing the
+            // point on a cell with the first or second wall byte set.
+            u8 point_wall_flags[9];
         };
     };
-    u8 unknown2b;
+    // 0x2b: Same wall test as point_wall_flags, applied to the three
+    // use_offsets tiles.
+    u8 use_wall_flags;
 };
 
 struct Blueprint {
@@ -1241,9 +1395,9 @@ struct Blueprint {
         u8 unknown2[6];
         struct {
             u16 kind;
-            u8 unknown4;
+            u8 build_type;
             u8 flags;
-            u8 f6;
+            u8 wall_layer;
             u8 unknown7;
         };
     };
@@ -1257,7 +1411,9 @@ struct DoorInfo {
     u16 door2;
     u16 overlays[3];
     u16 offset;
-    u8 f1b;
+    // 0x1b: Nonzero for doors: placing one sets the room's two door-side tiles
+    // from door1 and door2; zero for the window entries.
+    u8 is_entrance;
 };
 
 struct VXY {
@@ -1271,9 +1427,9 @@ struct AnimStart {
         struct {
             u16 idle;
             u8 unknown2[8];
-            u16 unknownA;
+            u16 staff_stand;
             u8 unknownC[6];
-            u16 unknown12;
+            u16 patient_stand;
             u8 unknown14[0x8e];
             u16 unknownA2;
             u8 unknownA4[0x74];
@@ -1289,12 +1445,12 @@ struct StaffControl {
 
 struct AnimTable {
     char name[0x28];
-    u16 f28;
+    u16 cd_install_level;
     u16 f2a;
     u16 f2c;
-    u32 f2e;
-    u32 f32;
-    u32 f36;
+    u32 text_frame;
+    u32 smk_flags;
+    u32 play_flags;
 };
 
 struct CompFrame {
@@ -1313,32 +1469,60 @@ struct CompElement {
     u16 flags;
 };
 
+/*
+ * One entry of icon_table, indexed by a person's icon_id: the mood/status icon
+ * drawn over a person.
+ */
 struct IconTable {
-    u8 unknown0;
-    u16 unknown1;
+    // 0x0: A new icon replaces the current one only if its priority value is
+    // lower or equal.
+    u8 priority;
+    // 0x1: start[] index of the icon's animation (sets icon_frame).
+    u16 anim;
     union {
         u8 unknown3[3];
         struct {
-            u16 f3;
-            s8 f5;
+            // 0x3: Turns the icon stays up (copied to icon_timer) unless mode
+            // is positive.
+            u16 duration;
+            // 0x5: Below 0: shown later with a sound by peep_icon (icon_id
+            // stored negated); 0: timed by duration; above 0: stays until
+            // reset.
+            s8 mode;
         };
     };
 };
 
+/*
+ * One entry of sfx_details, indexed by sound effect number: how play_sound
+ * picks and plays its sample.
+ */
 struct SfxDetail {
     union {
         u8 unknown0[0xc];
         struct {
             u8 unknown0_[4];
-            s8 f4;
+            // 0x4: Passed to play_sample_using_heap as the loop count.
+            s8 loop;
             u8 unknown5_[3];
+            // 0x8: How the sample is chosen: 1 plays sample, 2 stops sample, 3
+            // sample at a random pitch from pitch_group[group], 4 random sample
+            // from sample_group[group], 5 sample at a pitch in the range of
+            // pitch_group[group].
             u8 type;
+            // 0x9: Sample number for types 1, 2, 3 and 5.
             u8 sample;
+            // 0xa: pitch_group or sample_group index for types 3-5.
             u8 group;
-            u8 fb;
+            // 0xb: Channel policy passed to PlaySampleFromAddress as its type
+            // (1 any free channel, 2 skip if already playing for this source, 3
+            // reuse this source's channel).
+            u8 play_type;
         };
     };
-    u16 unknownC;
+    // 0xc: When set, an animation frame's sound plays every time the frame is
+    // drawn, not only when it differs from the person's last sound.
+    u16 allow_repeat;
 };
 
 struct CompStarts {
@@ -1362,8 +1546,11 @@ struct Refresh {
     union {
         u8 unknown0[4];
         struct {
-            s16 f0;
-            s16 f2;
+            // 0x0: Horizontal wrap offset of the background screen (bscreen),
+            // which scrolls circularly with the bscreen window's view.
+            s16 scroll_x;
+            // 0x2: Vertical wrap offset of the background screen.
+            s16 scroll_y;
         };
     };
     s16 x0;
@@ -1385,17 +1572,32 @@ struct PixBuffer {
     u8 *data;
 };
 
+/*
+ * One item of a pulldown menu.
+ */
 struct PulldownItem {
-    u8 f0;
-    u8 f1;
+    // 0x0: The item still works while the game is paused.
+    u8 usable_paused;
+    // 0x1: The item still works on the rat level (gamevar.rat_fest_level).
+    u8 usable_rat_level;
+    // 0x2: Menu text index.
     u8 text;
+    // 0x3: Byte toggled when the item is chosen and shown as its tick, or 0.
     u8 *check;
+    // 0x7: Byte shown as a tick without being toggled, or 0.
     u8 *check2;
+    // 0xb: Pulldown index of the item's submenu, 0 for none.
     u8 submenu;
+    // 0xc: Modifier keys sent with key.
     u8 shift;
+    // 0xd: Key sent as if pressed when the item is chosen, 0 for none.
     u8 key;
+    // 0xe: Value stored in othervar.pulldown_arg before the callback runs.
     u8 arg;
+    // 0xf: Bit 0: the item is disabled while statvar.num_players > 1
+    // (multiplayer).
     u8 flags;
+    // Called when the item is chosen.
     void (*callback)(void);
 };
 
@@ -1410,8 +1612,12 @@ struct Pulldown {
     PulldownItem items[30];
 };
 
+/*
+ * The pulldown menu bar (instance pmenu).
+ */
 struct menu {
-    u8 unknown0;
+    // 0x0: Index of the open pulldown, 0 when none is open.
+    u8 open_pulldown;
     union {
         u8 unknown1[6];
         struct {
@@ -1423,63 +1629,89 @@ struct menu {
             u8 subcount;
         };
     };
-    u8 unknown7;
+    // 0x7: Set while a modal requester is open; the menu bar then ignores the
+    // mouse.
+    u8 disabled;
     Pulldown pulldowns[13];
 };
 
 struct HospPlayerDetails {
     union {
-        char unknown0[0x11];
+        char name_chars[0x11];
         s8 name[0x11];
         struct {
             u8 unknown0_[0xc];
-            s8 fc;
-            s8 fd;
-            s8 fe;
-            u8 ff;
-            u8 f10;
+            s8 music_volume;
+            s8 sfx_volume;
+            s8 ambient_volume;
+            u8 sfx_on;
+            u8 ambients_on;
         };
         struct {
             u8 unknown0a_[9];
-            u16 f9;
+            u16 years_played;
             u8 fb;
         };
     };
-    u8 unknown11;
-    u8 unknown12[0xa];
+    u8 music_on;
+    u8 track_enabled[0xa];
     u8 f1c;
-    u8 f1d;
+    u8 shadows_on;
     union {
-        u16 f1e;
-        s16 f1es;
+        u16 game_speed;
+        s16 game_speed_s;
     };
-    u8 f20;
-    u8 f21;
-    u8 f22;
-    u8 f23[0x1e];
-    u8 f41[0x15];
-    u8 f56[6];
+    u8 speed_choice;
+    u8 language;
+    u8 autosave;
+    u8 room_help_seen[0x1e];
+    u8 advisor_flags[0x15];
+    u8 serial_config[6];
 };
 
+/*
+ * Palette indices of fixed colours, looked up by RGB in setup_colors (instance
+ * color), plus the wall colour chosen while building rooms.
+ */
 struct Colors {
-    u8 *unknown0;
-    s8 unknown4;
-    s8 unknown5;
-    s8 unknown6;
-    u8 unknown7;
-    u8 unknown8;
-    u8 unknown9;
-    u8 unknownA;
-    u8 unknownB;
-    u8 unknownC;
-    u8 unknownD;
-    u8 unknownE;
-    u8 unknownF;
-    u8 unknown10;
-    u8 unknown11;
-    u8 unknown12;
-    u8 unknown13;
-    u8 unknown14;
+    // 0x0: Palette the colours were looked up in.
+    u8 *palette;
+    // 0x4: Wall colour used by build_all_rooms (corner_wall_colour, else
+    // side_wall_colour, else 7).
+    s8 wall_colour;
+    // 0x5: Colour of a wall found beside the blueprint by
+    // search_for_outer_color, -1 if none.
+    s8 side_wall_colour;
+    // 0x6: Colour of a corner wall found by search_for_outer_color, -1 if none.
+    s8 corner_wall_colour;
+    // 0x7: RGB 63,63,63.
+    u8 white;
+    // 0x8: RGB 0,0,0.
+    u8 black;
+    // 0x9: RGB 0,0,16.
+    u8 dark_blue;
+    // 0xa: RGB 0,63,0.
+    u8 green;
+    // 0xb: RGB 63,48,23.
+    u8 orange;
+    // 0xc: RGB 63,23,23.
+    u8 light_red;
+    // 0xd: RGB 63,0,0.
+    u8 red;
+    // 0xe: RGB 27,55,57.
+    u8 cyan;
+    // 0xf: RGB 53,31,66.
+    u8 purple;
+    // 0x10: RGB 23,67,16; not read anywhere.
+    u8 light_green;
+    // 0x11: RGB 38,41,47.
+    u8 grey;
+    // 0x12: RGB 0,38,86.
+    u8 blue;
+    // 0x13: RGB 36,80,47.
+    u8 pale_green;
+    // 0x14: RGB 63,30,30.
+    u8 salmon;
 };
 
 struct CurrentText {
@@ -1491,143 +1723,162 @@ struct Packet {
     u8 unknown0[4];
 };
 
+/*
+ * One player's network chat message (net_text[]), used as a string through
+ * NET_TEXT.
+ */
 struct NetText {
-    u8 unknown0;
+    // 0x0: First character of the message; 0 empties it.
+    u8 text;
     u8 unknown1[0x31];
 };
 
+/*
+ * Per object type, objects bought but not yet placed (gamevar.buy_list).
+ */
 struct Blob63 {
-    u8 unknown0[0x3f];
+    // 0x0: Count per object type, at most 0x63.
+    u8 to_place[0x3f];
 };
 
+/*
+ * A pending emergency offer (gamevar.emergency_calls[]), copied into the
+ * accepting hospital by give_emergency_stats.
+ */
 struct EmergencyCall {
+    // 0x0: Player call id the offer belongs to.
     u16 call;
-    u16 f2;
+    // 0x2: Bonus paid per cured patient.
+    u16 bonus;
+    // 0x4: Nonzero while the slot holds an offer.
     u8 used;
+    // 0x5: Illness of the emergency patients.
     u8 illness;
+    // 0x6: Number of patients.
     u8 count;
-    u8 f7;
+    // 0x7: Percent of the patients that must be cured to earn the bonus.
+    u8 win_percent;
 };
 
 struct Game {
     union {
         u8 unknown0[0x1e];
         struct {
-            u32 f0;
-            u16 f4;
-            u16 f6[4];
+            u32 staff_seed;
+            u16 applicant_count;
+            u16 applicants[4];
             u8 unknowne[2];
-            u16 f10[4];
+            u16 applicants_wanted[4];
             u8 unknown18_[2];
-            u16 f1a;
-            s16 f1c;
+            u16 peeps_arrived;
+            s16 peep_interval;
         };
     };
-    u8 unknown1e;
+    u8 place_blueprint;
     u8 unknown1f;
     u8 unknown20;
-    u8 unknown21;
+    u8 paused;
     union {
         u8 unknown22[3];
         struct {
             u8 unknown22_;
-            u16 f23;
+            u16 place_tile;
         };
     };
-    u8 unknown25;
-    u8 unknown26;
+    u8 place_kind;
+    u8 place_mode;
     union {
         u8 unknown27[8];
         struct {
-            s8 f27;
-            u8 f28;
-            u8 f29;
-            u8 unknown2a;
-            s8 f2b;
-            s8 f2c;
-            s8 f2d;
-            s8 f2e;
+            s8 place_wall_hug;
+            u8 place_dir;
+            u8 place_redraw;
+            u8 place_ok;
+            s8 place_max_x;
+            s8 place_max_y;
+            s8 place_min_x;
+            s8 place_min_y;
         };
     };
-    u16 unknown2f;
-    s16 f31;
+    u16 place_room;
+    s16 place_offset;
     union {
-        Blob63 unknown33;
+        Blob63 buy_list;
         struct {
             u8 unknown33_[0x11];
             u8 unknown44;
             u8 unknown45[0x2c];
-            u8 unknown71;
+            u8 buy_kind_count;
         };
         u8 buy_count[0x3f];
     };
     union {
         u8 unknown72[3];
         struct {
-            u8 f72;
-            u16 f73;
+            u8 staff_place_ok;
+            u16 staff_cursor_anim;
         };
     };
-    u16 unknown75;
-    u16 unknown77;
-    u16 unknown79;
+    u16 held_staff;
+    u16 held_staff_kind;
+    u16 drawn_staff_kind;
     union {
         u8 unknown7b[0x70];
         u16 announce[14][4];
     };
-    u32 feb;
-    u8 fef;
+    u32 quake_timer;
+    u8 quake_phase;
     union {
-        u8 ff0;
-        s8 ff0s;
+        u8 quake_strength;
+        s8 quake_strength_s;
     };
-    u8 ff1;
-    s8 ff2;
-    u8 ff3;
+    u8 quake_shake_chance;
+    s8 quake_amplitude;
+    u8 quake_shake_index;
     union {
-        s8 ff4;
-        u8 ff4u;
+        s8 quake_ramp;
+        u8 quake_ramp_u;
     };
     u16 ff5;
     u16 ff7;
     u8 unknownf9[4];
-    EmergencyCall ffd[4];
-    u32 f11d;
-    u16 f121;
-    u8 f123;
-    u8 f124;
-    u8 f125;
-    u8 f126;
-    u32 f127;
-    u8 f12b;
-    u8 f12c;
-    u8 f12d;
-    u16 f12e;
-    u16 f130;
-    u16 f132;
-    u16 f134;
-    u16 f136;
-    u8 f138;
-    u8 f139;
-    u16 f13a;
+    EmergencyCall emergency_calls[4];
+    u32 next_emergency_turn;
+    u16 emergency_bonus;
+    u8 emergency_pending;
+    u8 emergency_illness;
+    u8 emergency_patients;
+    u8 emergency_win_percent;
+    u32 next_quake_turn;
+    u8 quake_severity;
+    u8 quake_pending;
+    u8 turn_skipped;
+    u16 mouse_mode;
+    u16 hover_action;
+    u16 scroll_min_tile;
+    u16 scroll_max_tile;
+    u16 research_illness;
+    u8 max_speed;
+    u8 turbo;
+    u16 queue_selected_person;
     u8 unknown13c[2];
-    u8 f13e;
-    u16 f13f;
-    u32 f141;
-    u16 f145;
-    u16 f147;
-    u16 f149;
-    u8 f14b[16];
-    u8 f15b[20];
-    u8 f16f;
-    u8 f170;
-    u8 f171;
-    u8 f172;
-    u8 f173;
-    u8 f174;
-    u8 f175;
+    u8 emergencies_active;
+    u16 rat_fest_kills_mark;
+    u32 rat_fest_rats;
+    u16 visitor_change;
+    u16 visitors_per_month;
+    u16 peep_owner_counter;
+    u8 quake_used[16];
+    u8 emergency_used[20];
+    u8 shrink_rate;
+    u8 surgeon_rate;
+    u8 researcher_rate;
+    u8 consultant_rate;
+    u8 junior_rate;
+    u8 rat_fest_level;
+    u8 rat_fest_powerup;
     u8 f176;
-    u8 f177;
+    u8 prev_year_deaths;
 };
 
 struct Bounds {
@@ -1638,18 +1889,18 @@ struct Bounds {
 };
 
 struct Statics {
-    s32 unknown0;
-    u16 unknown4;
-    s16 unknown6;
+    s32 save_game_size;
+    u16 view_height;
+    s16 panel_top;
     union {
         u8 unknown8[0x64];
         struct {
-            u16 f8;
-            u16 fa;
+            u16 visuals_total;
+            u16 non_visuals_total;
         };
         struct {
             u8 unknown8a_[0x62];
-            u16 f6a;
+            u16 illness_kind_count;
         };
         struct {
             u8 unknown8h_[4];
@@ -1661,175 +1912,245 @@ struct Statics {
         };
     };
     union {
-        char f6c[0x79];
+        char save_prefix[0x79];
         struct {
             u8 unknown6c_[0x64];
-            char fd0[0x14];
-            u8 fe4;
+            char sound_path[0x14];
+            u8 sound_ok;
         };
     };
-    u8 unknowne5;
+    u8 music_ok;
     u8 unknowne6;
     u8 unknowne7;
-    u8 unknowne8[0x14];
-    u8 unknownfc;
-    u8 unknownfd;
+    u8 interaction_start[0x14];
+    u8 quiet;
+    u8 num_players;
     u8 unknownfe;
-    Bounds fff[62][4];
-    u16 f4df[31];
-    u16 f51d[19];
-    u16 f543[12];
-    u16 f55b[9];
+    Bounds object_bounds[62][4];
+    u16 help_page0_start[31];
+    u16 help_page1_start[19];
+    u16 winlose_text_start[12];
+    u16 net_help_start[9];
     u16 f56d[1];
     u16 f56f[3];
-    char f575[100];
-    u8 f5d9;
-    u8 f5da;
-    u8 f5db;
+    char save_root[100];
+    u8 ref_general_count;
+    u8 ref_good_count;
+    u8 ref_bad_count;
     u8 f5dc;
-    u8 f5dd;
+    u8 midi_count;
     u8 f5de;
 };
 
+/*
+ * Scroll requests for this turn from the player's input flags (scroll);
+ * move_windows turns them into the active window's scroll velocity and clears
+ * them.
+ */
 struct Scroll {
-    u8 unknown0;
-    u8 unknown1;
-    u8 unknown2;
-    u8 unknown3;
+    // 0x0: Scroll up requested.
+    u8 up;
+    // 0x1: Scroll down requested.
+    u8 down;
+    // 0x2: Scroll left requested.
+    u8 left;
+    // 0x3: Scroll right requested.
+    u8 right;
 };
 
+/*
+ * Scratch results of the isometric cell/window helpers (instance info):
+ * find_cell_at_point and friends fill the cell_* fields,
+ * setup_stats_for_window_scan the scan_* fields read by the draw_* scanners,
+ * find_common_window/find_biggest_window the clip_* rectangle.
+ */
 struct Info {
     union {
         u8 unknown0[0x54];
         struct {
-            s32 f0;
-            s32 f4;
-            s32 f8;
-            s32 fc;
-            s32 f10;
-            s32 f14;
-            s32 f18;
-            s32 f1c;
-            s32 f20;
-            s32 f24;
+            // 0x0: Map index (col + row * 128) of the first cell of the window
+            // scan.
+            s32 scan_cell;
+            // 0x4: Column of scan_cell.
+            s32 scan_col;
+            // 0x8: Row of scan_cell.
+            s32 scan_row;
+            // 0xc: Screen x of scan_cell.
+            s32 scan_x;
+            // 0x10: Half-tile x offset between consecutive scan lines (+ or -
+            // resvars.tile_width / 2).
+            s32 scan_dx;
+            // 0x14: Screen y of scan_cell.
+            s32 scan_y;
+            // 0x18: Cells in the first scan line.
+            s32 line_len;
+            // 0x1c: Line length change applied on alternate scan lines (-1, 0
+            // or 1).
+            s32 line_len_step;
+            // 0x20: Scan lines needed to cover the window's floor.
+            s32 floor_lines;
+            // 0x24: Scan lines including the extra height for tall sprites.
+            s32 full_lines;
         };
     };
-    s32 unknown54;
-    s32 unknown58;
-    s32 unknown5c;
-    s32 unknown60;
-    s32 unknown64;
-    s32 unknown68;
-    s32 unknown6c;
-    s32 unknown70;
-    s32 unknown74;
-    u8 unknown78;
+    // 0x54: X of the cell last found or given (screen x, or absolute x from
+    // give_absolute_xy_of_cell_at_column_row).
+    s32 cell_x;
+    // 0x58: Y of that cell.
+    s32 cell_y;
+    // 0x5c: Column of the cell found by find_cell_at_point.
+    s32 cell_col;
+    // 0x60: Row of that cell.
+    s32 cell_row;
+    // 0x64: Map index of that cell (cell_col + cell_row * 128).
+    s32 cell;
+    // 0x68: Left edge of the rectangle clipped by find_common_window /
+    // find_biggest_window.
+    s32 clip_x0;
+    // 0x6c: Top edge of that rectangle.
+    s32 clip_y0;
+    // 0x70: Right edge of that rectangle.
+    s32 clip_x1;
+    // 0x74: Bottom edge of that rectangle.
+    s32 clip_y1;
+    // 0x78: 1 when the clipped rectangle has zero width or height.
+    u8 clip_empty;
     u8 unknown79[7];
 };
 
+/*
+ * The game view windows (window): up to two isometric views of the map, each
+ * with a scroll position, an on-screen rectangle (zone) and an open/close
+ * animation. Arrays are indexed by window number.
+ */
 struct HospWindow {
     union {
         u8 unknown0[0x30];
         struct {
-            s32 f0[3];
-            s32 fc[3];
-            s32 f18[3];
-            s32 f24[3];
+            // 0x0: Map scroll position: world screen x shown at the view
+            // centre.
+            s32 scroll_x[3];
+            s32 scroll_y[3];
+            // 0x18: scroll_x when the window was last drawn.
+            s32 prev_scroll_x[3];
+            s32 prev_scroll_y[3];
         };
     };
     union {
         struct {
-            s32 unknown30;
+            s32 zone0_x;
             u8 unknown34[8];
         };
         s32 zone_x[3];
     };
     union {
         struct {
-            s32 unknown3c;
+            s32 zone0_y;
             u8 unknown40[8];
         };
         s32 zone_y[3];
     };
     union {
         struct {
-            s32 unknown48;
+            s32 zone0_x1;
             u8 unknown4c[8];
         };
-        s32 zone_w[3];
+        // 0x48: Right edge of the window on screen (exclusive bound used by the
+        // clip code).
+        s32 zone_x1[3];
     };
     union {
         struct {
-            s32 unknown54;
+            s32 zone0_y1;
             u8 unknown58[0x38];
         };
-        s32 zone_h[3];
+        // 0x54: Bottom edge of the window on screen.
+        s32 zone_y1[3];
         struct {
             s32 zone_h_[3];
-            s32 f60[3];
-            s32 f6c[3];
-            s32 f78[3];
-            s32 f84[3];
+            // 0x60: Zone when the window was last drawn; the old rectangle to
+            // erase when it changes.
+            s32 prev_zone_x[3];
+            s32 prev_zone_y[3];
+            s32 prev_zone_x1[3];
+            s32 prev_zone_y1[3];
         };
     };
     union {
-        s32 unknown90;
-        s32 f90[3];
+        s32 center0_x;
+        // 0x90: Screen x of the view centre, (zone_x + zone_x1) / 2.
+        s32 center_x[3];
     };
     union {
-        s32 unknown9c;
-        s32 f9c[3];
+        s32 center0_y;
+        s32 center_y[3];
     };
     union {
         u8 unknowna8[0x218];
         struct {
             u8 unknowna8_[0x30];
-            u8 fd8[3];
-            u8 fdb[3];
+            // 0xd8: Set when the scroll position changed since the last draw.
+            u8 scrolled[3];
+            // 0xdb: Set when the zone changed since the last draw.
+            u8 zone_changed[3];
             u8 fde[3];
             u8 fe1[3];
         };
         struct {
-            s32 fa8[3];
-            s32 fb4[3];
-            s32 fc0[3];
-            s32 fcc[3];
+            // 0xa8: Scroll velocity, 16.16 fixed point; decays by 0xcd/0x100
+            // each turn.
+            s32 scroll_vel_x[3];
+            s32 scroll_vel_y[3];
+            // 0xc0: Fractional scroll carried between turns, 16.16.
+            s32 scroll_frac_x[3];
+            s32 scroll_frac_y[3];
             u8 fd8_[12];
-            s32 fe4[20];
-            s32 f134[20];
-            s32 f184[20];
-            s32 f1d4[20];
-            s32 f224[3];
-            s32 f230[3];
-            s32 f23c[3];
-            s32 f248[3];
-            s32 f254[3];
-            s32 f260[3];
-            s32 f26c[3];
-            s32 f278[3];
-            s32 f284[3];
-            s32 f290[3];
-            s32 f29c[3];
-            s32 f2a8[3];
-            s32 f2b4[3];
+            // 0xe4: Preset target rectangles (16 used) for open_new_window with
+            // source 1.
+            s32 preset_x0[20];
+            s32 preset_y0[20];
+            s32 preset_x1[20];
+            s32 preset_y1[20];
+            // 0x224: Animation steps left; the zone moves from its start
+            // towards anim_to_* by anim_step_* per step.
+            s32 anim_steps[3];
+            // 0x230: Zone the window opened from.
+            s32 open_x0[3];
+            s32 open_y0[3];
+            s32 open_x1[3];
+            s32 open_y1[3];
+            s32 anim_to_x0[3];
+            s32 anim_to_y0[3];
+            s32 anim_to_x1[3];
+            s32 anim_to_y1[3];
+            s32 anim_step_x0[3];
+            s32 anim_step_y0[3];
+            s32 anim_step_x1[3];
+            s32 anim_step_y1[3];
         };
     };
     union {
         struct {
-            u8 unknown2c0;
+            u8 anim_mode0;
             u8 unknown2c1[2];
         };
-        u8 f2c0[3];
+        // 0x2c0: 1 while opening, 2 to remove the window when its animation
+        // ends, 0 idle.
+        u8 anim_mode[3];
     };
-    s32 unknown2c3;
-    s32 unknown2c7;
-    s32 unknown2cb;
-    s32 unknown2cf;
+    // 0x2c3: Clip rectangle (x0, y0, x1, y1) for all window drawing; requesters
+    // swap in their own.
+    s32 clip_x0;
+    s32 clip_y0;
+    s32 clip_x1;
+    s32 clip_y1;
     union {
         u8 unknown2d3[0x18];
         struct {
             u8 unknown2d3_[0x17];
-            u8 f2ea;
+            // 0x2ea: Window drawn through the background screen; the others are
+            // drawn without it.
+            u8 bscreen_window;
         };
         struct {
             u8 unknown2d3a_[0x14];
@@ -1838,23 +2159,41 @@ struct HospWindow {
             u8 f2e9;
         };
     };
-    u8 unknown2eb;
-    u8 unknown2ec;
-    u8 unknown2ed;
+    // 0x2eb: Index of the active window.
+    u8 current_window;
+    // 0x2ec: Number of open windows (at most 2).
+    u8 window_count;
+    // 0x2ed: 1: open_new_window runs the opening animation at once; 0: animates
+    // over 12 turns.
+    u8 instant_open;
 };
 
+/*
+ * What a hospital still lacks to treat an illness, filled by what_is_required
+ * (instance required).
+ */
 struct Required {
     union {
-        u8 unknown0[3];
+        // 0x0: Byte view: [0] is the low byte of flags, [2] the drug's
+        // effectiveness when the illness is already treatable.
+        u8 raw[3];
+        // 0x0: Skill bits of staff the illness needs and the hospital lacks.
         u16 flags;
     };
-    u8 unknown3;
-    u8 unknown4;
-    u8 unknown5;
-    u8 unknown6;
-    u8 unknown7;
-    u8 unknown8;
-    u8 unknown9;
+    // 0x3: Bit index of the first missing skill (5 for surgeons).
+    u8 missing_skill;
+    // 0x4: Surgeons still to hire (the illness needs two).
+    u8 surgeons_needed;
+    // 0x5: The illness can already be treated; nothing else is filled in.
+    u8 treatable;
+    // 0x6: Room type the illness needs and the hospital lacks.
+    u8 missing_room;
+    // 0x7: That room type cannot be built yet.
+    u8 room_unavailable;
+    // 0x8: A ward is needed and missing.
+    u8 needs_ward;
+    // 0x9: A nurse is needed and missing.
+    u8 needs_nurse;
 };
 
 struct Debug {
@@ -1862,13 +2201,13 @@ struct Debug {
         u8 unknown0[8];
         struct {
             u32 unknown0_;
-            u32 unknown4;
+            u32 last_button;
         };
         u16 f0;
     };
-    u32 unknown8;
+    u32 last_action;
     u8 unknownc[0xc8];
-    u8 unknownd4;
+    u8 screenshot_request;
     u8 unknownd5[2];
     u8 unknownd7;
     union {
@@ -1899,11 +2238,11 @@ struct Debug {
     u16 unknown108;
     u8 unknown10a;
     u8 unknown10b[0xb];
-    char unknown116[0xc8];
-    u8 unknown1de;
+    char msg_text[0xc8];
+    u8 msg_timer;
     u8 unknown1df;
-    s32 unknown1e0;
-    u8 *unknown1e4;
+    s32 screenshot_number;
+    u8 *screenshot_buffer;
     union {
         u8 unknown1e8[0x12];
         struct {
@@ -1916,9 +2255,9 @@ struct Debug {
             u8 nav_debug;
         };
     };
-    u8 unknown1fa;
+    u8 direct_start;
     u8 unknown1fb[0x1e];
-    u8 f219;
+    u8 force_bonus_level;
 };
 
 struct RatFestLevel {
@@ -1931,120 +2270,237 @@ struct RatFestLevel {
     u16 staff_chance;
 };
 
+/*
+ * Trophy and award thresholds and bonuses (awards_trophies), loaded from the
+ * level file's #awards_trophies.<Key> entries; field names follow those keys.
+ * Trophies give a cash or reputation bonus; awards compare a year's figures
+ * with an Award (good) and a Poor (bad) threshold.
+ */
 struct TrophyBalance {
     union {
         struct {
-            u8 unknown0;
+            // 0x0: Rats to kill in a year for the rat trophy.
+            u8 rat_kills_absolute;
             u8 unknown1[0xd];
-            u8 unknowne;
+            // 0xe: Percentage of shots that must kill a rat for the marksman
+            // trophy.
+            u8 rat_kills_percentage;
             u8 unknownf[0x54];
         };
         struct {
             u8 unknown0_;
-            s16 f1;
-            u8 f3;
-            s16 f4;
-            s16 f6;
-            s16 f8;
-            u8 fa;
-            u8 fb;
-            u8 fc;
-            u8 fd;
+            // 0x1: Reputation bonus of the rat-kills trophy.
+            s16 rat_kills_absolute_bonus;
+            // 0x3: Drinks to sell in a year for the drinks trophy.
+            u8 cans_of_coke;
+            // 0x4: Cash bonus of the drinks trophy.
+            s16 cans_of_coke_bonus;
+            // 0x6: Reputation to stay above all year for the reputation trophy.
+            s16 reputation;
+            // 0x8: Cash bonus of the reputation trophy.
+            s16 trophy_reputation_bonus;
+            // 0xa: Mean plant health percentage needed for the plant trophy.
+            u8 plant;
+            // 0xb: Reputation bonus of the plant trophy.
+            u8 plant_bonus;
+            // 0xc: Mean staff happiness percentage to keep all year for the
+            // staff trophy.
+            u8 trophy_staff_happiness;
+            // 0xd: Reputation bonus of the staff happiness trophy.
+            u8 trophy_staff_happiness_bonus;
             u8 unknowne_;
-            s16 ff;
-            s16 f11;
-            s16 f13;
-            u8 f15;
-            u8 f16;
-            u8 f17;
-            u8 f18;
-            u8 f19;
-            u8 f1a;
-            u8 f1b;
-            u8 f1c;
-            u8 f1d;
-            u8 f1e;
-            u16 f1f;
-            u16 f21;
-            s32 f23;
-            s32 f27;
-            u8 f2b;
-            u8 f2c;
-            u8 f2d;
-            u8 f2e;
-            u8 f2f;
-            u8 f30;
-            u8 f31;
-            u8 f32;
-            u8 f33;
-            u8 f34;
-            u8 f35;
-            u8 f36;
-            u32 f37;
-            u32 f3b;
-            s16 f3f;
-            s16 f41;
-            s16 f43;
-            s16 f45;
-            s8 f47;
-            s8 f48;
-            s16 f49;
-            s16 f4b;
-            s16 f4d;
-            s16 f4f;
-            s16 f51;
-            s16 f53;
-            s8 f55[14];
+            // 0xf: Cash bonus of the marksman trophy.
+            s16 rat_kills_percentage_bonus;
+            // 0x11: Cash bonus of the cures trophy.
+            s16 trophy_cures_bonus;
+            // 0x13: Cash bonus of the no-deaths trophy.
+            s16 trophy_death_bonus;
+            // 0x15: Mean mayor score needed for the mayor trophy (low is good).
+            u8 trophy_mayor;
+            // 0x16: Reputation bonus of the mayor trophy.
+            u8 trophy_mayor_bonus;
+            // 0x17: Cures above which the cures award is won.
+            u8 cures_award;
+            // 0x18: Cures below which the poor cures award is given.
+            u8 cures_poor;
+            // 0x19: Deaths below which the deaths award is won.
+            u8 deaths_award;
+            // 0x1a: Deaths above which the poor deaths award is given.
+            u8 deaths_poor;
+            // 0x1b: Share of the town's patients above which the population
+            // award is won.
+            u8 population_percentage_award;
+            // 0x1c: Share of the town's patients below which the poor
+            // population award is given.
+            u8 population_percentage_poor;
+            // 0x1d: Cures-to-deaths ratio above which the award is won.
+            u8 cures_v_deaths_award;
+            // 0x1e: Cures-to-deaths ratio below which the poor award is given.
+            u8 cures_v_deaths_poor;
+            // 0x1f: Reputation above which the reputation award is won.
+            u16 reputation_award;
+            // 0x21: Reputation below which the poor reputation award is given.
+            u16 reputation_poor;
+            // 0x23: Hospital value above which the value award is won.
+            s32 hosp_value_award;
+            // 0x27: Hospital value below which the poor value award is given.
+            s32 hosp_value_poor;
+            // 0x2b: Litter level below which the cleanliness award is won.
+            u8 cleanliness_award;
+            // 0x2c: Litter level above which the poor cleanliness award is
+            // given.
+            u8 cleanliness_poor;
+            // 0x2d: Percentage of emergency patients saved above which the
+            // emergency award is won.
+            u8 emergency_award;
+            // 0x2e: Percentage of emergency patients saved below which the poor
+            // emergency award is given.
+            u8 emergency_poor;
+            // 0x2f: Mean staff happiness above which the staff happiness award
+            // is won.
+            u8 staff_happiness_award;
+            // 0x30: Mean staff happiness below which the poor staff happiness
+            // award is given.
+            u8 staff_happiness_poor;
+            // 0x31: Mean patient happiness above which the patient happiness
+            // award is won.
+            u8 peep_happiness_award;
+            // 0x32: Mean patient happiness below which the poor patient
+            // happiness award is given.
+            u8 peep_happiness_poor;
+            // 0x33: Waiting time (percent of leave_max) below which the waiting
+            // times award is won.
+            u8 waiting_times_award;
+            // 0x34: Waiting time (percent of leave_max) above which the poor
+            // waiting times award is given.
+            u8 waiting_times_poor;
+            // 0x35: Machine wear below which the well-kept machines award is
+            // won.
+            u8 well_kept_tech_award;
+            // 0x36: Machine wear above which the poor machines award is given.
+            u8 well_kept_tech_poor;
+            // 0x37: Research points spent in the year above which the research
+            // award is won.
+            u32 new_tech_award;
+            // 0x3b: Research points spent in the year below which the poor
+            // research award is given.
+            u32 new_tech_poor;
+            // 0x3f: Cash bonus of the cures award.
+            s16 cures_bonus;
+            // 0x41: Cash penalty of the poor cures award.
+            s16 cures_penalty;
+            // 0x43: Cash bonus of the deaths award.
+            s16 deaths_bonus;
+            // 0x45: Cash penalty of the poor deaths award.
+            s16 deaths_penalty;
+            // 0x47: Reputation bonus of the population award.
+            s8 population_percentage_bonus;
+            // 0x48: Reputation penalty of the poor population award.
+            s8 population_pct_penalty;
+            // 0x49: Cash bonus of the cures-to-deaths award.
+            s16 cures_v_deaths_bonus;
+            // 0x4b: Cash penalty of the poor cures-to-deaths award.
+            s16 cures_v_deaths_penalty;
+            // 0x4d: Bonus of the reputation award.
+            s16 award_reputation_bonus;
+            // 0x4f: Penalty of the poor reputation award.
+            s16 award_reputation_penalty;
+            // 0x51: Reputation bonus of the hospital value award.
+            s16 hosp_value_bonus;
+            // 0x53: Reputation penalty of the poor hospital value award.
+            s16 hosp_value_penalty;
+            // 0x55: Reputation (bonus, penalty) pairs of the cleanliness,
+            // emergency, staff happiness, patient happiness, waiting times,
+            // machines and research awards, in that order.
+            s8 bonus_penalty[14];
         };
     };
 };
 
+/*
+ * One row of the level's staff_levels table (vloader.cpp keys staff_levels.*):
+ * from the given month on, the job market is topped up to these applicant
+ * counts with these specialist chances.
+ */
 struct StaffLevels {
+    // 0x0: Game month (year*12 + month) from which this row applies.
     u16 month;
+    // 0x2: Applicants wanted per staff kind: nurses, doctors, handymen,
+    // receptionists (copied to gamevar.applicants_wanted).
     u16 counts[4];
-    u8 f0a[5];
+    // 0xa: 1-in-N chances that a new doctor is a psychiatrist, surgeon,
+    // researcher, consultant or junior (ShrkRate, SurgRate, RschRate, ConsRate,
+    // JrRate); 0 never.
+    u8 rates[5];
+    // 0xf: Level-file key staff_levels.Seed: seeds staffrand
+    // (gamevar.staff_seed) when the row takes effect.
     u32 fund;
 };
 
+/*
+ * Real-time clocks used to pace the game loop (instance gamecounts).
+ */
 struct GameCounts {
     u8 unknown0[0x14];
-    u32 unknown14;
-    u32 unknown18;
+    // 0x14: LbTimerClock() at the last game turn; start_turn waits until
+    // 1000/game speed ms have passed.
+    u32 last_turn_clock;
+    // 0x18: LbTimerClock() at the last frame; limit_framerate busy-waits for 40
+    // ms between frames.
+    u32 last_frame_clock;
 };
 
+/*
+ * State of one full-screen panel (bank, drugs, town, slist, yearend, ...).
+ */
 struct Menu {
-    u16 unknown0;
-    u8 unknown2;
+    // 0x0: Per-screen value: e.g. the hovered save slot, the town map filter
+    // bits, the selected staff member, or the year-end countdown.
+    u16 value;
+    // 0x2: The screen's state machine; 0 makes it (re)initialise.
+    u8 state;
     u8 unknown3;
 };
 
 struct Req {
-    u16 unknown0;
-    u8 unknown2;
-    u8 unknown3;
-    u16 unknown4;
-    u16 unknown6;
-    u8 unknown8;
+    u16 mode;
+    u8 id;
+    u8 item;
+    u16 arg;
+    u16 arg2;
+    u8 kind;
     u8 unknown9;
     u8 unknownA;
     u8 unknownB;
 };
 
+/*
+ * Contents of a levels/level.lN map file, loaded whole into *level by
+ * load_level.
+ */
 struct Level {
-    u16 f0;
-    u16 f2[4][4];
+    // 0x0: Hospitals the map has plots for (1 to 4).
+    u16 player_count;
+    // 0x2: Per hospital, the tiles of its four entrance rooms.
+    u16 entrances[4][4];
     union {
         u8 unknown22[0x28002];
         struct {
             u8 unknown22_[0x20000];
+            // 0x20022: Plot number of each map cell, 0 for unbuyable land.
             u16 plots[0x4000];
         };
+        // 0x22: Initial map cells.
         Map tiles[0x4000];
     };
-    u16 unknown28024[4];
-    u16 f2802c[4];
-    u16 f28034;
-    u16 f28036;
+    // 0x28024: Per hospital, the map cell the view starts centred on.
+    u16 camera_start[4];
+    // 0x2802c: Per hospital, the map cell where emergency patients arrive.
+    u16 emergency_tile[4];
+    // 0x28034: Map cell of the scroll limit's top corner.
+    u16 scroll_min;
+    // 0x28036: Map cell of the scroll limit's bottom corner.
+    u16 scroll_max;
 };
 
 struct Icons {
@@ -2053,471 +2509,841 @@ struct Icons {
     s16 y;
 };
 
+/*
+ * Saved choice-box and display state (choice_backup, year_end_backup),
+ * restored when the interrupting screen closes.
+ */
 struct ScreenInfo {
     union {
         u8 unknown0[0xa];
         struct {
+            // 0x0: Saved display_mode.
             u16 mode;
-            u8 unknown2[4];
-            s16 f6;
-            s16 f8;
+            // 0x2: Saved bytes of the current choice box (D_00158190).
+            u8 choice_state[4];
+            // 0x6: Saved choice_spare_data.
+            s16 spare_data;
+            // 0x8: Saved choice_time_out.
+            s16 time_out;
         };
     };
 };
 
+/*
+ * Running counts the advisor reads that persist between count passes
+ * (NRAdcounts), kept up to date as objects are placed and removed.
+ */
 struct NonResettingAdvisorCounts {
-    u16 unknown0;
-    u16 unknown2;
-    u16 unknown4;
-    s32 unknown6;
+    u16 plants;
+    u16 thirsty_plants;
+    u16 benches;
+    s32 bench_shortage;
     union {
         u8 unknowna[6];
         struct {
-            u8 unknowna_;
-            s32 unknownb;
+            u8 last_quake_size;
+            s32 plant_health_sum;
         };
     };
-    u8 unknown10;
+    u8 open_rooms;
 };
 
+/*
+ * State of the advisor character and its speech bubble (advisor).
+ */
 struct Advisor {
     union {
-        s16 f0;
-        u16 f0_u16;
-        u8 f0_u8a[2];
+        // 0x0: advice[] entry being shown, 0 for none.
+        s16 advice_id;
+        // 0x0: Unsigned view of advice_id.
+        u16 advice_id_u;
+        // 0x0: Byte view of the start of the struct, used to clear it.
+        u8 advice_id_bytes[2];
     };
     union {
-        u16 f2;
-        s16 f2_s16;
+        // 0x2: Event message to show next (D_001602e8 text), set by game
+        // events; 0 for none.
+        u16 forced_advice_id;
+        // 0x2: Signed view of forced_advice_id.
+        s16 forced_advice_id_s;
     };
-    s16 f4;
-    u16 f6;
+    // 0x4: Mouse-help message to show (D_001602ec text); 0 for none.
+    s16 mouse_advice_id;
+    // 0x6: Current animation frame of the advisor.
+    u16 anim_frame;
     union {
-        s16 f8;
-        u16 f8_u16;
+        // 0x8: Screen x of the advisor.
+        s16 x;
+        // 0x8: Unsigned view of x.
+        u16 x_u;
     };
     union {
-        s16 fa;
-        u16 fa_u16;
+        // 0xa: Screen y of the advisor.
+        s16 y;
+        // 0xa: Unsigned view of y.
+        u16 y_u;
     };
     union {
-        s16 fc;
-        u16 fc_u16;
+        // 0xc: Treatment last priced for a patient, named in the advice about
+        // patients who will not pay.
+        s16 unpaid_treatment;
+        // 0xc: Unsigned view of unpaid_treatment.
+        u16 unpaid_treatment_u;
     };
-    s16 fe;
-    char f10[270];
-    u8 f11e;
-    u8 f11f;
-    u16 f120;
-    u8 f122;
-    u8 f123;
-    u8 f124;
+    // 0xe: Turns until the advisor leaves after its message.
+    s16 time_left;
+    // 0x10: Text of the current message.
+    char text[270];
+    // 0x11e: Animation state (advisor_anims, next_advisor_state index).
+    u8 anim_state;
+    // 0x11f: Bit 0: tutorial running; bit 1: the cursor tile is invalid for
+    // building; bit 2: the room is too small.
+    u8 flags;
+    // 0x120: Control the tutorial is pointing at (panel button 0x10..0x1b, or a
+    // requester control).
+    u16 tutorial_highlight;
+    // 0x122: Lines of wrapped text in the speech bubble.
+    u8 line_count;
+    // 0x123: Speech bubble segments beyond the minimum width.
+    u8 extra_segments;
+    // 0x124: Set when new text must be wrapped into the bubble.
+    u8 rewrap;
     union {
-        s16 f125;
-        u16 f125_u16;
+        // 0x125: Left x of the speech bubble.
+        s16 box_left;
+        // 0x125: Unsigned view of box_left.
+        u16 box_left_u;
     };
-    u8 f127;
+    // 0x127: Set when an emergency helicopter landed, for the matching advice.
+    u8 heli_landed;
     union {
-        u8 f128;
-        u32 f128_u32;
-        u8 f128_u8a[4];
+        // 0x128: Events since the last advice: 1 staff resigning, 2 a patient
+        // would not pay, 4 new illness or treatment, 0x20 balance under 7/8 of
+        // the start cash, 0x40 cure, 0x80 death; find_advice clears what it
+        // reports.
+        u8 event_flags;
+        // 0x128: Dword view of event_flags.
+        u32 event_flags_u32;
+        // 0x128: Byte view of event_flags.
+        u8 event_flag_bytes[4];
     };
-    u8 f12c;
-    u8 f12d;
-    u8 f12e;
-    u8 f12f;
-    u8 f130;
-    u8 f131;
+    // 0x12c: Set once the idle advisor stepped to its next animation state;
+    // cleared on each state change.
+    u8 state_advanced;
+    // 0x12d: Set when a new member of staff started work in a room, for the
+    // matching advice.
+    u8 new_staff_pending;
+    // 0x12e: That staff member's kind.
+    u8 new_staff_kind;
+    // 0x12f: That room's type.
+    u8 new_staff_room;
+    // 0x130: Set by the patient count pass; patient-based advice waits for it.
+    u8 has_patients;
+    // 0x131: Current tutorial step.
+    u8 tutorial_step;
     u8 unknown132[0x2];
 };
 
 struct SampleInfo;
 
+/*
+ * Grab-bag of global game and UI state (instance othervar): screen and
+ * requester state, help text, mouse and drag state, sound and music state,
+ * level loading, net results. Zeroed at level start (start.cpp) except where
+ * saved.
+ */
 struct General {
-    s16 f0;
+    // 0x0: Random 0..99 rolled each turn by start_turn; staff code re-rolls it
+    // before each test.
+    s16 rand_pct;
     u8 unknown2[0xc];
-    u8 fe;
-    u8 ff;
-    u8 f10;
+    // 0xe: Random 0..5 rolled each turn: a patient this many tiles from a queue
+    // counts as arrived.
+    u8 queue_near_dist;
+    // 0xf: Player whose commands or blueprints are being processed.
+    u8 cur_player;
+    // 0x10: Set to force a full redraw of the main view on the next frame.
+    u8 full_redraw;
     u8 unknown11[0x5];
     u8 f16;
     u8 f17;
-    u8 f18[4];
-    u8 f1c;
+    // 0x18: Per player: the door position being placed for the blueprint is
+    // invalid.
+    u8 door_invalid[4];
+    // 0x1c: Set while drawing goes into the pixel buffer (DrawIntoPixBuffer).
+    u8 drawing_pixbuf;
     u8 unknown1d[0x2];
-    u8 *f1f;
-    u8 f23;
-    u8 *f24;
-    u16 f28;
-    u16 f2a;
-    TbScreenMode f2c;
-    u16 f2d;
-    u8 f2f;
-    u8 f30;
-    u8 f31;
-    u8 f32;
+    // 0x1f: Palette to fade to on the next frame, or null.
+    u8 *fade_palette;
+    // 0x23: Set to fade the screen to black on the next frame.
+    u8 fade_to_black;
+    // 0x24: Palette to switch to (without fading) on the next frame, or null.
+    u8 *pending_palette;
+    // 0x28: Map cell (x + y * 128) under the mouse.
+    u16 mouse_cell;
+    // 0x2a: mouse_cell before its last update.
+    u16 prev_mouse_cell;
+    // 0x2c: Screen mode to switch to on the next frame, or 0.
+    TbScreenMode pending_screen_mode;
+    // 0x2d: Graphs screen period: 0 months, 1 years, 2 four-year steps.
+    u16 graph_period;
+    // 0x2f: Random 1..4 rolled each turn: a person this many tiles from an
+    // object counts as arrived.
+    u8 object_near_dist;
+    // 0x30: Index of the current mouse pointer sprite.
+    u8 pointer_sprite;
+    // 0x31: Pointer sprite before the last set_mouse_sprite.
+    u8 prev_pointer_sprite;
+    // 0x32: Set on turns that are a multiple of 16.
+    u8 every_16_turns;
     u8 f33;
-    u8 f34[1];
-    u8 f35;
-    u8 f36;
+    // 0x34: Per info-requester slot (indexed 0..3 past its declared size):
+    // window to re-centre on the slot's tracked thing.
+    u8 track_window[1];
+    // 0x35: track_window entry for slot 1.
+    u8 track_window_1;
+    // 0x36: track_window entry for slot 2.
+    u8 track_window_2;
     u8 unknown37[0x1];
-    u8 f38;
+    // 0x38: Info-requester slot whose thing the main view should centre on, or
+    // 0.
+    u8 center_on_slot;
     u16 f39;
-    s32 f3b;
-    u8 f3f;
+    // 0x3b: Bank balance as currently shown; rolls toward the real balance.
+    s32 shown_balance;
+    // 0x3f: Step (0..3) of the balance roll animation.
+    u8 balance_roll_step;
     u8 f40;
     union {
-        u16 f41;
-        s16 f41_s16;
+        // 0x41: Thing under the mouse, found while drawing.
+        u16 pointed_thing;
+        // 0x41: Signed view of pointed_thing.
+        s16 pointed_thing_s;
     };
-    u16 f43;
-    u16 f45;
+    // 0x43: Pointed thing that can be picked up or edited; drawn highlighted.
+    u16 pickup_thing;
+    // 0x45: Person at queue_pos in the queue window; drawn highlighted.
+    u16 queue_hilight_thing;
     u8 unknown47[0x2];
-    u8 f49;
-    u8 f4a;
+    // 0x49: Staff list kinds shown: 1 doctors, 2 nurses, 4 handymen, 8
+    // receptionists.
+    u8 slist_filter;
+    // 0x4a: Set while the player is typing a network message.
+    u8 net_text_entering;
     u8 f4b;
-    u8 f4c;
+    // 0x4c: Bitmask of players the network message goes to.
+    u8 net_text_to;
     union {
-        s32 f4d;
+        // 0x4d: 16.16 x position of the scrolling received network text.
+        s32 net_text_scroll;
         struct {
             u16 unknown4d;
-            s16 f4f;
+            // 0x4f: Integer part of net_text_scroll.
+            s16 net_text_x;
         };
     };
     u8 unknown51[0x10];
-    u16 f61;
-    u16 f63;
+    // 0x61: room_info index of the room shown in the queue window.
+    u16 queue_win_room;
+    // 0x63: Selected position in that room's queue, or 0.
+    u16 queue_pos;
     u16 f65;
-    u8 f67;
-    u8 f68;
-    u8 f69;
+    // 0x67: Queue window drag: 0 none, 1 dragging a person, 2 dragging the
+    // queue bar.
+    u8 queue_drag;
+    // 0x68: Mouse mode saved while the pointer is over a window.
+    u8 saved_mouse_mode;
+    // 0x69: Set when the town overhead map must be redrawn.
+    u8 town_map_dirty;
     u8 f6a;
     union {
         s32 f6b;
         u32 f6b_u32;
     };
     union {
-        u16 f6f;
-        s16 f6f_s16;
+        // 0x6f: Rat under the mouse, or 0.
+        u16 pointed_rat;
+        // 0x6f: Signed view of pointed_rat.
+        s16 pointed_rat_s;
     };
-    u8 f71;
-    u16 f72;
+    // 0x71: Set when the mouse is near a rat but not on it.
+    u8 near_rat;
+    // 0x72: Level outcome to show: 1 won, 2 lost, 6 left the network game.
+    u16 winlose_result;
     union {
-        u32 f74;
-        s32 f74_s32;
+        // 0x74: Money offered for the next level after a win; becomes the next
+        // hospital's f2d.
+        u32 next_level_offer;
+        // 0x74: Signed view of next_level_offer.
+        s32 next_level_offer_s;
     };
-    u8 f78;
-    u8 f79;
-    u16 f7a;
-    u8 f7c;
-    u8 f7d;
-    u16 f7e;
-    u16 f80;
-    u16 f82;
-    u16 f84;
-    u8 f86;
-    u16 f87;
-    u8 f89;
-    u8 f8a;
-    u8 f8b;
-    u16 f8c;
-    u8 f8e;
-    s8 f8f;
-    u8 f90;
-    u8 f91;
-    u32 f92;
-    char f96[2048];
-    s16 f896;
-    s16 f898;
-    s16 f89a;
-    s16 f89c;
-    u32 f89e;
+    // 0x78: Plot number being bid for.
+    u8 bid_plot;
+    // 0x79: Cycling index into hilight_plot.
+    u8 hilight_plot_idx;
+    // 0x7a: Contagious patient under the mouse that can be vaccinated, or 0.
+    u16 vaccine_target;
+    // 0x7c: What the bottom panel describes: 0 none, 1 staff, 2 patient, 3
+    // object, 4 room, 5 mayor or inspector, 6 machine usage.
+    u8 panel_info;
+    // 0x7d: panel_info before its last change.
+    u8 prev_panel_info;
+    // 0x7e: Thing described in the bottom panel.
+    u16 panel_thing;
+    // 0x80: Frames left before panel_info reverts to 0 after the mouse leaves.
+    u16 panel_info_timer;
+    // 0x82: Current game turn (actual_game_turn), copied each turn.
+    u16 cur_turn;
+    // 0x84: Turn at which a person is next rebalanced (cur_turn + gbv
+    // ModifyFreq).
+    u16 next_modify_turn;
+    // 0x86: Set on turns that are a multiple of 32; gates the advisor counts.
+    u8 every_32_turns;
+    // 0x87: Number of contagious patients from spreading.
+    u16 contagious_count;
+    // 0x89: Own patients who left through impatience since the advisor last
+    // said so.
+    u8 patients_left_count;
+    // 0x8a: Set while the mouse is over the menu bar or a pulldown is open.
+    u8 menu_bar_active;
+    // 0x8b: Set once the pointer was switched to the arrow for the menu bar.
+    u8 menu_arrow_set;
+    // 0x8c: Expertise shown on the drugs screen.
+    u16 selected_illness;
+    // 0x8e: Number of level balance files found.
+    u8 balance_file_count;
+    // 0x8f: arg of the pulldown item being run.
+    s8 pulldown_arg;
+    // 0x90: Index of the pulldown item being run.
+    u8 pulldown_item;
+    // 0x91: Page of 10 rows shown in the staff list.
+    u8 slist_page;
+    // 0x92: Clock when the current help hotspot was first hovered.
+    u32 help_hover_start;
+    // 0x96: Text of the help message box.
+    char help_msg[2048];
+    // 0x896: Help box left.
+    s16 help_x;
+    // 0x898: Help box top.
+    s16 help_y;
+    // 0x89a: Help box width.
+    s16 help_w;
+    // 0x89c: Help box height.
+    s16 help_h;
+    // 0x89e: Clock when the help box was last shown, 0 when cancelled.
+    u32 help_shown_time;
     union {
-        u32 f8a2;
-        s32 f8a2_s32;
+        // 0x8a2: LbTimerClock() at the start of the frame.
+        u32 clock_ms;
+        // 0x8a2: Signed view of clock_ms.
+        s32 clock_ms_s;
     };
-    u8 f8a6;
-    u8 f8a7;
-    s16 f8a8;
-    s16 f8aa;
+    // 0x8a6: Help hotspot group of the current help.
+    u8 help_group;
+    // 0x8a7: Box style of the current help.
+    u8 help_style;
+    // 0x8a8: x of the close icon of the composite help box.
+    s16 help_close_x;
+    // 0x8aa: y of the close icon of the composite help box.
+    s16 help_close_y;
     union {
-        u16 f8ac;
+        // 0x8ac: Current help hotspot (resvars.help_hotspots index), 0 none.
+        u16 help_hotspot;
         s16 f8ac_s16a[2];
         u16 f8ac_u16a[2];
     };
-    u8 f8b0;
-    u8 f8b1;
-    u32 f8b2;
+    // 0x8b0: Set while the fast-forward key is held; turns run without the
+    // speed delay.
+    u8 turbo_key;
+    // 0x8b1: No windows or screens are open, so requesters may pop up.
+    u8 user_idle;
+    // 0x8b2: Clock when user_idle last became set.
+    u32 idle_since;
     u8 f8b6;
-    Blob63 f8b7;
-    u8 f8f6[63];
-    char f935[105];
-    u8 f99e;
-    u16 f99f;
+    // 0x8b7: Build palette counts saved on entering the shop.
+    Blob63 saved_build_palette;
+    // 0x8f6: Per object kind: count taken off the build palette while in the
+    // shop.
+    u8 shop_palette_adjust[63];
+    // 0x935: Text of the yes/no requester.
+    char yesno_msg[105];
+    // 0x99e: Command type sent when yes is pressed.
+    u8 yes_type;
+    // 0x99f: Command value sent when yes is pressed.
+    u16 yes_value;
     u8 unknown9a1[0x1];
-    u16 f9a2;
+    // 0x9a2: Command arg sent when yes is pressed.
+    u16 yes_arg;
     u8 unknown9a4[0x9];
-    u8 f9ad;
-    u16 f9ae;
+    // 0x9ad: Command type sent when no is pressed.
+    u8 no_type;
+    // 0x9ae: Command value sent when no is pressed.
+    u16 no_value;
     u8 unknown9b0[0x1];
-    u16 f9b1;
+    // 0x9b1: Command arg sent when no is pressed.
+    u16 no_arg;
     u8 unknown9b3[0x4];
-    u8 f9b7;
-    u8 f9b8;
-    u8 f9b9;
-    u8 f9ba;
-    u8 f9bb;
-    u8 f9bc;
-    u16 f9bd;
-    u8 f9bf;
-    u16 f9c0;
-    u8 f9c2;
-    u8 f9c3;
-    u8 f9c4;
-    u8 f9c5;
-    u8 f9c6;
-    u8 f9c7;
-    u8 f9c8;
-    u8 f9c9;
+    // 0x9b7: Set once the win criteria are met.
+    u8 level_won;
+    // 0x9b8: Slot of the open info requester, or 0.
+    u8 irequester_slot;
+    // 0x9b9: Set while a MIDI tune is playing.
+    u8 midi_playing;
+    // 0x9ba: midi_files index of the current tune.
+    u8 midi_track;
+    // 0x9bb: Set while adjust_mapwho re-places map objects; can_place_object
+    // then skips its checks.
+    u8 force_place_objects;
+    // 0x9bc: Frame counter for flashing the button the advisor points at;
+    // redrawn every 10th frame.
+    u8 flash_counter;
+    // 0x9bd: HelpHotspot index shown regardless of the mouse (set_force_help);
+    // 0 = none.
+    u16 forced_help_hotspot;
+    // 0x9bf: Help group in which forced_help_hotspot applies.
+    u8 forced_help_group;
+    // 0x9c0: Text index (D_001602a0) of the hint in the low-resolution
+    // edit-room requester.
+    u16 edit_room_hint;
+    // 0x9c2: Panel popup icon under the mouse; 0 = none.
+    u8 hovered_popup_icon;
+    // 0x9c3: Requester to reopen when the yes/no box closes (0x63 = none).
+    u8 yesno_saved_requester;
+    // 0x9c4: Mouse mode to restore when the yes/no box closes.
+    u8 yesno_saved_mouse_mode;
+    // 0x9c5: Set while an existing room is being edited; open_room clears it.
+    u8 editing_room;
+    // 0x9c6: Tile bounds of the object drag shape (0xff/0 when empty).
+    u8 drag_x0;
+    // 0x9c7: See drag_x0.
+    u8 drag_y0;
+    // 0x9c8: See drag_x0.
+    u8 drag_x1;
+    // 0x9c9: See drag_x0.
+    u8 drag_y1;
     u8 f9ca;
     u16 f9cb;
     u16 f9cd;
     u8 unknown9cf[0x2];
-    u16 f9d1;
+    // 0x9d1: Months since the start of the level (year * 12 + month); compared
+    // with level-file month fields.
+    u16 game_month;
     u8 unknown9d3[0x4];
-    u8 *f9d7;
-    s32 f9db;
+    // 0x9d7: lbDisplay.wscreen saved while drawing to another buffer.
+    u8 *saved_screen_ptr;
+    // 0x9db: lbDisplay.graphics_screen_width saved alongside saved_screen_ptr.
+    s32 saved_screen_width;
     union {
-        s32 f9df;
-        u32 f9df_u32;
+        // 0x9df: lbDisplay.graphics_screen_height saved alongside
+        // saved_screen_ptr.
+        s32 saved_screen_height;
+        // 0x9df: Unsigned view of saved_screen_height.
+        u32 saved_screen_height_u;
     };
     u8 unknown9e3[0x1];
-    u8 f9e4;
-    u16 f9e5;
-    u16 f9e7;
-    u8 f9e9;
+    // 0x9e4: 1 while the hall of fame (not shame) is on screen.
+    u8 showing_fame;
+    // 0x9e5: Pixels added around a rat's box for a near miss (sets f71).
+    u16 rat_near_margin;
+    // 0x9e7: Pixels around a rat's sprite box that still count as a hit;
+    // widened by rat power-ups.
+    u16 rat_hit_margin;
+    // 0x9e9: If nonzero, layer 0 for the next rat made (a power-up rat);
+    // cleared on use.
+    u8 next_rat_layer;
     u8 unknown9ea[0x1];
-    s16 f9eb;
-    u16 f9ed;
-    u16 f9ef;
-    u16 f9f1;
-    u32 f9f3;
-    u8 f9f7;
-    u8 f9f8;
-    u8 f9f9;
+    // 0x9eb: mmouse_x + mmouse_y at the last check, to detect mouse movement.
+    s16 last_mouse_sum;
+    // 0x9ed: Frames without mouse movement left before a screen advances on its
+    // own.
+    u16 idle_countdown;
+    // 0x9ef: display_mode to return to after the town bid screen; 0 = return to
+    // the game.
+    u16 town_bid_return_mode;
+    // 0x9f1: Step for held +/- buttons (drug price, research allocation), 8.8
+    // fixed point; grows while held, 0x100 after release.
+    u16 repeat_step;
+    // 0x9f3: Clock (f8a2) at the last held-button step.
+    u32 repeat_time;
+    // 0x9f7: Palette colour of the bank manager's text underline.
+    u8 manager_line_colour;
+    // 0x9f8: Palette colour of its shadow line.
+    u8 manager_line_shadow_colour;
+    // 0x9f9: Level (or picture map) currently held in level_block; 0 = none.
+    u8 loaded_level;
     u8 unknown9fa[0xc];
-    TbCacheUsedBlock *fa06;
+    // 0xa06: Cache block holding the loaded level file or in-game picture.
+    TbCacheUsedBlock *level_block;
     u8 unknowna0a[0x4];
-    u8 fa0e[11];
-    u8 fa19[11];
-    u8 fa24[11];
-    u8 fa2f[11];
-    u8 fa3a[1];
-    u8 fa3b;
-    u8 fa3c;
-    u8 fa3d;
-    u8 fa3e;
+    // 0xa0e: 1 per save slot whose file exists.
+    u8 save_slot_used[11];
+    // 0xa19: Pulldown radio ticks for the sound-effect volume (10 steps).
+    u8 sfx_volume_checked[11];
+    // 0xa24: Pulldown radio ticks for the ambient volume.
+    u8 ambient_volume_checked[11];
+    // 0xa2f: Pulldown radio ticks for the music volume.
+    u8 music_volume_checked[11];
+    // 0xa3a: Game speed radio ticks, used as a 5-entry array: [0] slowest, then
+    // the four fields that follow.
+    u8 speed_checked[1];
+    // 0xa3b: speed_checked[1]: slower.
+    u8 speed_checked_slower;
+    // 0xa3c: speed_checked[2]: normal.
+    u8 speed_checked_normal;
+    // 0xa3d: speed_checked[3]: max speed.
+    u8 speed_checked_max;
+    // 0xa3e: speed_checked[4]: fastest (frame skipping).
+    u8 speed_checked_and_more;
     u8 unknowna3f[0x1];
-    u8 fa40;
-    u8 fa41;
-    u8 fa42;
-    u16 fa43;
-    SampleInfo *fa45;
-    u8 fa49;
-    u8 fa4a;
+    // 0xa40: Resolution radio tick: low resolution.
+    u8 lores_checked;
+    // 0xa41: Resolution radio tick: high resolution.
+    u8 hires_checked;
+    // 0xa42: Sound id of the ambient sample playing; 0 = none.
+    u8 ambient_playing;
+    // 0xa43: Calls since the last ambient sound; a random one plays after 2000.
+    u16 ambient_timer;
+    // 0xa45: Sample of the ambient sound playing.
+    SampleInfo *ambient_sample;
+    // 0xa49: 1 = normal panel icons, 2 = mouse-over icons; a change forces a
+    // panel redraw.
+    u8 panel_icon_set;
+    // 0xa4a: Win-criteria group closest to completion (player only).
+    u8 best_win_group;
     union {
-        u8 fa4b;
-        s8 fa4b_s8;
+        // 0xa4b: Room type the player last built, for room-specific advice;
+        // cleared once advised.
+        u8 last_built_room;
+        // 0xa4b: Signed view of last_built_room.
+        s8 last_built_room_s;
     };
-    u8 fa4c;
-    u8 fa4d;
-    u8 fa4e;
-    u8 fa4f;
-    u8 fa50;
-    u8 fa51;
-    u8 fa52;
-    u8 fa53;
-    u8 fa54;
-    u8 fa55;
-    u8 fa56;
-    u8 fa57;
-    u8 fa58;
-    u8 fa59;
-    u8 fa5a;
-    u8 fa5b;
-    u8 fa5c;
-    u8 fa5d;
-    u8 fa5e;
-    u8 fa5f;
-    u8 fa60;
-    u8 fa61;
-    u8 fa62;
-    u16 fa63;
-    u8 fa65;
-    u8 fa66;
-    u16 fa67;
-    u16 fa69;
-    u8 fa6b;
-    u8 fa6c[6];
-    u16 fa72;
-    u8 fa74;
-    u8 fa75;
-    u8 fa76;
-    u8 fa77;
-    u16 fa78;
-    u8 fa7a;
-    u8 fa7b[4];
-    u16 fa7f;
-    u8 fa81;
-    u16 fa82;
-    u8 fa84;
+    // 0xa4c: Frame index into bank_manager_face1; 0 = idle.
+    u8 manager_face1_frame;
+    // 0xa4d: Frame index into bank_manager_face2; 0 = idle.
+    u8 manager_face2_frame;
+    // 0xa4e: Frame index into bank_manager_face3; 0 = idle.
+    u8 manager_face3_frame;
+    // 0xa4f: 1 while a MIDI track is playing (not the music option itself).
+    u8 music_playing;
+    // 0xa50: Jukebox loop button: replay the current track instead of moving
+    // on.
+    u8 loop_track;
+    // 0xa51: Copy of the emergency watch countdown when it starts; not read.
+    u8 emergency_timer_start;
+    // 0xa52: Set once the icon element of the thing being drawn has been
+    // handled; cleared after each thing.
+    u8 frame_icon_drawn;
+    // 0xa53: Right button pressed over the advisor; turned into
+    // dismiss_advisor.
+    u8 advisor_right_click;
+    // 0xa54: Ends the current advice and the advisor's animation.
+    u8 dismiss_advisor;
+    // 0xa55: Panel popup shutter: 1 closed, 2 opening, 3 open, 4 closing.
+    u8 popup_shutter_state;
+    // 0xa56: Shutter segments drawn (0 open .. 0x18 closed).
+    u8 popup_shutter_width;
+    // 0xa57: Frames the shutter has been open; closes after 0x28.
+    u8 popup_shutter_timer;
+    // 0xa58: Index into panel_emergency_spr for the emergency popup icon
+    // animation.
+    u8 emergency_anim_frame;
+    // 0xa59: Rats killed, for the rat-kills trophy plaque text.
+    u8 plaque_rat_kills;
+    // 0xa5a: Percentage of rats killed, for the rat-percentage trophy plaque
+    // text.
+    u8 plaque_rat_kill_pct;
+    // 0xa5b: Rows drawn on the current staff list page.
+    u8 slist_rows;
+    // 0xa5c: Show the level briefing help page when possible.
+    u8 show_level_brief;
+    // 0xa5d: Show the current network criterion help page when possible.
+    u8 show_net_criteria;
+    // 0xa5e: Network result help page (sub-page of page 3) to show; 0 = none.
+    u8 net_result_page;
+    // 0xa5f: Set when the player keeps playing after winning; skips one
+    // quarterly win check.
+    u8 win_declined;
+    // 0xa60: Selected staff list row, 1-based across pages (page * 10 + row +
+    // 1); 0 = none.
+    u8 slist_cursor;
+    // 0xa61: Right mouse button state in the previous requester frame.
+    u8 right_button_was_down;
+    // 0xa62: Left mouse button state in the previous requester frame.
+    u8 left_button_was_down;
+    // 0xa63: Extra game turns to run this frame, beyond two.
+    u16 extra_turns;
+    // 0xa65: A full-screen picture with its own pointers is loaded
+    // (load_ingame_pic).
+    u8 screen_pic_loaded;
+    // 0xa66: Text index (D_001602a0) shown in the panel info bar, e.g. save or
+    // load result; 0 = none.
+    u8 panel_message;
+    // 0xa67: Draws left before panel_message is cleared.
+    u16 panel_message_time;
+    // 0xa69: Frames the info bar stays up after pausing or resuming.
+    u16 panel_info_hold;
+    // 0xa6b: Mouse is over the emergency/epidemic watch (sound plays on entry).
+    u8 watch_hovered;
+    // 0xa6c: Per player, 1 if they met the last network criterion.
+    u8 net_winners[6];
+    // 0xa72: People drawn this turn; sets the crowd noise volume.
+    u16 visible_people;
+    // 0xa74: Volume last set on the crowd sample.
+    u8 crowd_volume;
+    // 0xa75: Level to continue with after the rat bonus level.
+    u8 level_after_bonus;
+    // 0xa76: Bonus level (13 or 14) to play next; 0 = none.
+    u8 bonus_level;
+    // 0xa77: Shots left with the current rat power-up.
+    u8 rat_powerup_shots;
+    // 0xa78: Frames the drugs screen shows the percentage instead of the price.
+    u16 drug_pct_display_time;
+    // 0xa7a: Volume last set on the emergency clock sound.
+    u8 emergency_clock_volume;
+    // 0xa7b: Per player: 0 active, 1 or 2 when the game window lost focus
+    // (network game).
+    u8 lost_focus[4];
+    // 0xa7f: display_mode to restore when focus returns.
+    u16 lost_focus_display_mode;
+    // 0xa81: Frames to do full screen swaps instead of special_refresh after
+    // focus returns.
+    u8 full_swap_frames;
+    // 0xa82: Staff member whose list entry the staff list opens on.
+    u16 slist_staff;
+    // 0xa84: Set when a research category has nothing left; cleared by the
+    // research screen.
+    u8 research_exhausted;
     u16 fa85;
-    u8 fa87;
-    u16 fa88;
-    u8 fa8a;
-    u16 fa8b;
-    u8 fa8d;
-    u8 fa8e;
+    // 0xa87: CD speed from GetCDSpeed; picks the intro movie.
+    u8 cd_speed;
+    // 0xa88: Last emergency patient viewed from the watch.
+    u16 emergency_patient;
+    // 0xa8a: Frames the heating icon stays on the town map.
+    u8 heat_icon_time;
+    // 0xa8b: Calls since the last random background noise; one plays after 400.
+    u16 ambient_noise_timer;
+    // 0xa8d: Use low-resolution faces and money digits; never set by the game
+    // code.
+    u8 use_lores_assets;
+    // 0xa8e: Cheat keys enabled (fax cheat).
+    u8 cheats_enabled;
     u8 unknowna8f[0x1];
-    u16 fa90;
-    u8 fa92;
-    u8 fa93;
-    u8 fa94;
-    u8 fa95;
+    // 0xa90: Last contagious patient viewed from the epidemic watch.
+    u16 epidemic_patient;
+    // 0xa92: Page of the help text shown (show_help_page).
+    u8 help_page;
+    // 0xa93: Sub-page of the help text shown.
+    u8 help_sub;
+    // 0xa94: Network game result to resend each turn: 1 lost, 2 won.
+    u8 net_result;
+    // 0xa95: The player won the network game.
+    u8 net_won;
 };
 
+/*
+ * Level balance variables (gbv), loaded from the level file's #gbv.<Key>
+ * entries through balance_variables[] in vloader.cpp; field names follow those
+ * keys.
+ */
 struct Balance {
     u8 unknown0[0x7c];
-    u16 f7c;
+    u16 land_cost_per_tile;
     u8 unknown7e[0x3a];
-    s16 fb8[6];
-    u16 fc4;
+    // 0xb8: SalaryAdd[3..8]: salary added for junior, doctor, surgeon,
+    // psychiatrist, consultant and researcher skills (the level key's array
+    // starts at 0xb2).
+    s16 salary_add[6];
+    u16 salary_ability_divisor;
     u8 unknownc6[2];
-    u8 fc8;
+    u8 start_rating;
     u8 unknownc9;
-    u16 fca;
+    u16 start_cost;
     u8 unknowncc[2];
-    u16 fce;
-    u16 fd0;
-    u16 fd2;
-    u16 fd4;
-    u16 fd6;
-    u16 fd8;
-    s16 fda;
-    s16 fdc;
-    s16 fde;
-    s16 fe0;
-    u16 fe2;
-    u16 fe4;
-    u16 fe6;
-    u16 fe8;
-    u16 fea;
-    u16 fec;
-    u16 fee;
-    u16 ff0;
-    u16 ff2;
-    u16 ff4;
-    u16 ff6[3];
-    u16 ffc;
+    u16 how_contagious;
+    u16 reduce_cont_months;
+    u16 reduce_cont_peep_count;
+    u16 reduce_cont_rate;
+    u16 hold_visual_months;
+    u16 hold_visual_peep_count;
+    s16 rest_standing;
+    s16 rest_sofa;
+    s16 rest_game;
+    s16 rest_snooker;
+    u16 work_light;
+    u16 modify_freq;
+    u16 not_tired;
+    u16 tired;
+    u16 very_tired;
+    u16 crack_up_tired;
+    u16 recovery_factor;
+    u16 recovery_minimum;
+    u16 max_object_strength;
+    u16 research_increment;
+    u16 training_value[3];
+    // 0xfc: Diagnosis progress at which a patient counts as diagnosed;
+    // percentages of diagnosis are taken against it.
+    u16 diagnosis_complete;
     s16 ffe;
-    u16 f100;
-    u16 f102;
-    u16 f104;
-    s16 f106;
-    s16 f108;
-    s16 f10a;
-    s16 f10c;
-    s16 f10e;
-    s16 f110;
-    s16 f112;
-    s16 f114;
-    s16 f116;
-    s16 f118;
-    s16 f11a;
-    u16 f11c;
-    u16 f11e;
-    u16 f120;
+    u16 q_points;
+    u16 dist_points;
+    u16 no_staff_points;
+    s16 litter_drop;
+    s16 leave_max;
+    s16 resign_max;
+    s16 happy;
+    s16 unhappy;
+    s16 very_unhappy;
+    s16 drink_happy;
+    s16 toilet_happy;
+    s16 bowel_full;
+    s16 bowel_overflows;
+    s16 vomit_limit;
+    u16 litter_random;
+    u16 salary_too_low;
+    u16 salary_too_high;
     u8 unknown122[2];
-    u16 f124;
-    u16 f126;
-    u16 f128;
+    u16 score_max_inc;
+    u16 vac_cost;
+    u16 mayor_launch;
     u8 unknown12a[2];
-    u16 f12c;
-    u16 f12e;
-    u16 f130;
-    u16 f132;
+    u16 disaster_launch;
+    u16 epidemic_fine;
+    u16 epidemic_comp_lo;
+    u16 epidemic_comp_hi;
     u8 unknown134[4];
-    u16 f138;
+    u16 autopsy_rsch_percent;
     u8 unknown13a[2];
-    u8 f13c;
+    u8 alloc_rand;
     u8 unknown13d;
-    u8 f13e;
-    u8 f13f;
-    u8 f140;
-    u16 f141;
-    u8 f143;
-    u8 f144;
-    u8 f145;
-    u16 f146;
-    u16 f148;
-    u16 f14a;
-    u8 f14c;
+    u8 alloc_ind_rep;
+    u8 alloc_delay;
+    u8 drug_improve_rate;
+    u16 training_rate;
+    u8 promo_doc;
+    u8 promo_con;
+    u8 contagious_spread_factor;
+    // 0x146: Training progress needed to qualify as a surgeon
+    // (AbilityThreshold[0]).
+    u16 ability_threshold_surgeon;
+    // 0x148: Training progress needed to qualify as a psychiatrist
+    // (AbilityThreshold[1]).
+    u16 ability_threshold_psych;
+    // 0x14a: Training progress needed to qualify as a researcher
+    // (AbilityThreshold[2]).
+    u16 ability_threshold_research;
+    // 0x14c: Walking speed given to new patients.
+    u8 peep_speed;
     u8 unknown14d;
-    u8 f14e;
+    // 0x14e: Animation speed given to new patients.
+    u8 peep_anim_speed;
     u8 unknown14f;
-    u8 f150;
-    u8 f151;
-    u8 f152;
-    u8 f153;
-    u16 f154;
-    u16 f156;
-    u16 f158;
-    u8 f15a;
-    u8 f15b;
+    // 0x150: Percent chance that a tile near an exploding litter bomb gets
+    // litter.
+    u8 bomb_litter_chance;
+    // 0x151: Largest ring radius a litter bomb spreads litter over.
+    u8 bomb_litter_radius;
+    // 0x152: Turns per fuse step of a litter bomb; it explodes after 8 steps.
+    u8 bomb_fuse_ticks;
+    // 0x153: Pieces of litter one litter bomb scatters.
+    u8 bomb_litter_count;
+    // 0x154: Turns before a new hospital opens to patients (the panel watch); 0
+    // opens it at once.
+    u16 open_countdown;
+    u16 doctor_threshold;
+    u16 consultant_threshold;
+    u8 rsch_improve_cost_percent;
+    u8 rsch_improve_inc_percent;
     u8 unknown15c[2];
     u16 f15e[1];
 };
 
+/*
+ * Figures for the year's awards and trophies (award_counts): monthly arrays
+ * indexed by month, the rest totals reset each year.
+ */
 struct AwardCounts {
-    s32 f0[13];
-    s32 f34[13];
-    s32 f68[13];
-    s32 f9c[13];
-    s32 fd0[13];
-    s32 f104[13];
-    u16 f138;
-    s32 f13a;
-    u8 f13e;
-    u8 f13f;
-    s32 f140;
-    u8 f144;
-    s32 f145;
-    s32 f149;
-    s32 f14d;
-    s32 f151;
+    // 0x0: Monthly mean staff happiness (scaled by 256).
+    s32 staff_happiness[13];
+    // 0x34: Monthly mean patient happiness (scaled by 256).
+    s32 peep_happiness[13];
+    // 0x68: Monthly mean plant health.
+    s32 plant_health[13];
+    // 0x9c: Monthly mean patient waiting time (scaled by 256).
+    s32 waiting_times[13];
+    // 0xd0: Monthly machine wear sum.
+    s32 machine_wear[13];
+    // 0x104: Monthly machine count.
+    s32 machines[13];
+    // 0x138: Drinks sold this year.
+    u16 cans_of_coke;
+    // 0x13a: Sum of this year's mayor scores.
+    s32 mayor_score_total;
+    // 0x13e: Mayor visits this year.
+    u8 mayor_visits;
+    // 0x13f: Emergencies this year; the emergency award needs more than 2.
+    u8 emergencies;
+    // 0x140: Percentage of emergency patients saved this year.
+    s32 emergency_saved_pct;
+    // 0x144: Set when a machine blew up; forces the poor machines award.
+    u8 machine_exploded;
+    // 0x145: Research points researchers produced this year.
+    s32 research_earned;
+    // 0x149: Research points allocated to research this year.
+    s32 research_spent;
+    // 0x14d: Rats killed this year.
+    s32 rats_killed;
+    // 0x151: Shots fired at rats this year.
+    s32 rat_shots;
 };
 
+/*
+ * One network-game objective (net_criteria[], and current_net_criteria for the
+ * one in force), loaded from the level file's net_criteria keys.
+ */
 struct WinLoseNet {
-    u16 unknown0;
+    // 0x0: Objective kind (Criteria key); 0 ends the list.
+    u16 criterion;
+    // 0x2: 1 once the objective was taken from the list or achieved.
     u16 done;
+    // 0x4: Value to reach.
     s32 value;
+    // 0x8: Month the objective starts (Month key); in current_net_criteria, the
+    // month it must be met by.
     u16 start;
-    u16 fa;
+    // 0xa: Months allowed (TimeToDo key); in current_net_criteria for kind 4,
+    // the cure count when the objective started.
+    u16 time_to_do;
 };
 
+/*
+ * One trophy of the year (trophy[], trophies_won[]).
+ */
 struct Trophies {
-    u8 unknown0;
-    u8 f1;
+    // 0x0: Trophy number, 0 for none; 2 when a reputation bonus had to be paid
+    // as cash.
+    u8 id;
+    // 0x1: Index of the trophy's text.
+    u8 text_index;
+    // 0x2: Cash or reputation change given.
     s16 value;
-    u8 f4;
+    // 0x4: 0 reputation, 1 cash: index of the reward text.
+    u8 reward_kind;
 };
 
+/*
+ * One award of the year (all_awards[], awards_won[]).
+ */
 struct Awards {
-    u8 unknown0;
-    u8 f1;
-    u8 f2;
+    // 0x0: 1 for an award won, -1 for a poor award, 0 for none.
+    u8 direction;
+    // 0x1: Award number.
+    u8 id;
+    // 0x2: Index of the award's title text.
+    u8 text_index;
+    // 0x3: Cash or reputation change given.
     s16 value;
-    u8 f5;
+    // 0x5: 0 reputation, 1 cash: index of the reward text.
+    u8 reward_kind;
 };
 
 struct ResearchTasks {
@@ -2526,89 +3352,138 @@ struct ResearchTasks {
     u16 action;
 };
 
+/*
+ * Counts of the player's patients, staff and machines, rebuilt every count
+ * pass (adcounts) for the advisor, awards and mayor.
+ */
 struct AdvisorCounts {
     union {
         u8 unknown0[0x8e];
         struct {
             u8 unknown0a_[4];
-            u16 f4;
+            // 0x4: Sum of staff happiness.
+            u16 staff_happiness_sum;
         };
         struct {
             u8 unknown0s_[4];
-            s16 f4s;
+            // 0x4: Signed view of staff_happiness_sum.
+            s16 staff_happiness_sum_s;
         };
         struct {
-            u16 f0;
-            s16 f2;
+            // 0x0: Patients counted (starts at 1 so it can divide).
+            u16 patients;
+            // 0x2: Sum of staff tiredness.
+            s16 staff_tiredness_sum;
             u8 unknown4_[6];
-            s16 fa;
+            // 0xa: Sum of patient happiness.
+            s16 happiness_sum;
             u8 unknownc_[4];
-            s16 f10;
+            // 0x10: Sum of patient refreshment.
+            s16 refreshment_sum;
             u8 unknown12_[2];
-            s16 f14;
-            s16 f16;
+            // 0x14: Sum of patient warmth.
+            s16 warmth_sum;
+            // 0x16: Sum of staff warmth.
+            s16 staff_warmth_sum;
             u8 unknown18_[4];
-            s16 f1c;
+            // 0x1c: Sum of patient bladder.
+            s16 bladder_sum;
             u8 unknown1e_[2];
-            u8 f20;
-            u8 f21;
+            // 0x20: Consultants counted.
+            u8 consultants;
+            // 0x21: Researchers counted.
+            u8 researchers;
             u8 unknown22_[0x26];
-            u16 f48;
-            s32 f4a;
-            s32 f4e;
-            s32 f52;
+            // 0x48: Sum of patient impatience.
+            u16 impatience_sum;
+            // 0x4a: Sum of patient waiting time.
+            s32 waiting_sum;
+            // 0x4e: wait_sums[0], read by the advice about too few nurses.
+            s32 nurse_wait_sum;
+            // 0x52: wait_sums[1], read by the advice about too few doctors.
+            s32 doctor_wait_sum;
             u8 unknown56_[0xc];
-            s32 f62;
-            s32 f66;
+            // 0x62: wait_counts[0].
+            s32 nurse_wait_count;
+            // 0x66: wait_counts[1].
+            s32 doctor_wait_count;
             u8 unknown6a_[0x10];
-            s16 f7a[4];
+            // 0x7a: Sum of tiredness per staff kind (STAFF_*).
+            s16 staff_tiredness_by_kind[4];
             u8 unknown82_[0xc];
         };
         struct {
             u8 unknown0e_[6];
-            u16 f6;
-            s16 f8;
+            // 0x6: Doctors (including surgeons) and nurses counted.
+            u16 doctors_and_nurses;
+            // 0x8: Highest staff tiredness.
+            s16 max_staff_tiredness;
             u8 unknownae_[2];
-            s16 fc;
-            s16 fe;
+            // 0xc: Highest patient happiness.
+            s16 max_happiness;
+            // 0xe: Lowest patient happiness (starts at 999).
+            s16 min_happiness;
             u8 unknown10e_[2];
-            s16 f12;
+            // 0x12: Lowest patient refreshment (starts at 999).
+            s16 min_refreshment;
             u8 unknown14e_[4];
-            s16 f18;
-            s16 f1a;
+            // 0x18: Highest patient warmth.
+            s16 max_warmth;
+            // 0x1a: Lowest patient warmth (starts at 999).
+            s16 min_warmth;
             u8 unknown1ce_[2];
-            s16 f1e;
+            // 0x1e: Highest patient bladder.
+            s16 max_bladder;
             u8 unknown20e_[2];
-            u8 f22;
-            u8 f23;
-            u8 f24[0x26];
+            // 0x22: Psychiatrists counted.
+            u8 psychiatrists;
+            // 0x23: Surgeons counted.
+            u8 surgeons;
+            // 0x24: Patients counted per illness.
+            u8 illness_counts[0x26];
             u8 unknown4ae_[4];
-            s32 f4e_arr[5];
-            s32 f62_arr[5];
+            // 0x4e: Per-staff-kind patient waiting sums; person_count adds
+            // every patient to all five.
+            s32 wait_sums[5];
+            // 0x62: Per-staff-kind patient counts; person_count adds every
+            // patient to all five.
+            s32 wait_counts[5];
             u8 unknown76e_[0xe];
-            s16 f84[4];
+            // 0x84: Sum of happiness per staff kind (STAFF_*).
+            s16 staff_happiness_by_kind[4];
         };
     };
-    u8 unknown8e;
+    // 0x8e: Doctors who cracked up since the advisor last said so (not cleared
+    // by the count pass).
+    u8 crackups;
     union {
         u8 unknown8f[0x19];
         struct {
-            u8 f8f;
-            s32 f90;
+            // 0x8f: Machines counted.
+            u8 machines;
+            // 0x90: Sum of machine wear (times_used * 512 / (strength * 3)).
+            s32 machine_wear_sum;
             u8 unknown94_[4];
-            u8 f98;
-            u8 f99;
-            u8 f9a;
+            // 0x98: Object kind of that machine.
+            u8 worst_machine;
+            // 0x99: idle_staff[STAFF_NURSE].
+            u8 idle_nurses;
+            // 0x9a: idle_staff[STAFF_DOCTOR].
+            u8 idle_doctors;
             u8 unknown9b_[3];
-            s32 f9e;
-            s32 fa2;
+            // 0x9e: Overall win-criteria progress from evaluate_criteria.
+            s32 win_progress;
+            // 0xa2: Overall lose-criteria progress from losing().
+            s32 lose_progress;
             u8 unknowna6_[2];
         };
         struct {
             u8 unknown8fe_[5];
-            s32 f94;
+            // 0x94: Highest wear of a machine past its strength.
+            s32 max_machine_wear;
             u8 unknown98e_;
-            u8 f99_arr[4];
+            // 0x99: Staff per kind wandering or in a room with nobody queueing.
+            u8 idle_staff[4];
         };
     };
 };
@@ -2618,21 +3493,44 @@ struct PathStep {
     u8 y;
 };
 
+/*
+ * One win or lose criterion of the level (win_criteria[], lose_criteria[]),
+ * loaded from the level file's win_criteria/lose_criteria keys.
+ */
 struct WinLose {
+    // 0x0: What is measured: 1 reputation, 2 balance (minus the loan when
+    // winning), 3 and 5 percentages of the patients seen, 4 cures, 6 hospital
+    // value; 0 is always met.
     u16 criterion;
+    // 0x2: MaxMin key: 1 met when the value is at least value, 0 when it is at
+    // most value.
     u16 op;
+    // 0x4: Value to reach.
     s32 value;
+    // 0x8: Bound key: the value at which progress counts as 0%.
     s32 base;
-    u16 fc;
-    u16 fe;
-    s32 f10;
-    s16 f14;
+    // 0xc: Criteria with the same group must all be met together.
+    u16 group;
+    // 0xe: 1 once the measured value reached value (check_criteria_values).
+    u16 met;
+    // 0x10: The value measured at the last check.
+    s32 current;
+    // 0x14: Percent progress from base to value, clamped to 0..200.
+    s16 progress;
 };
 
+/*
+ * Score growth per criteria-progress band (rating[]): the first entry whose
+ * threshold reaches the score applies.
+ */
 struct ScoreRatings {
+    // 0x0: Upper bound of criteria progress for this entry; 0 ends the table.
     s16 threshold;
-    u16 f2;
-    u16 f4;
+    // 0x2: Score growth in hundredths of a percent.
+    u16 growth;
+    // 0x4: Score growth used once the score is over 1000000 or over
+    // score_max_inc percent of the hospital's reference value.
+    u16 capped_growth;
 };
 
 struct InsuranceCo {
@@ -2640,10 +3538,10 @@ struct InsuranceCo {
         u8 unknown0[3];
         struct {
             u8 unknown0_;
-            u8 f1;
+            u8 payment_delay;
         };
     };
-    u8 f3;
+    u8 extra_pay_pct;
 };
 
 struct Sector {
@@ -2742,16 +3640,28 @@ struct Event {
     u8 unknownB[4];
 };
 
+/*
+ * Two boxes of ScreenBoxes (resvars.screen_boxes) read through a struct: box 0
+ * and box 46.
+ */
 struct View {
-    s32 unknown0;
-    s32 unknown4;
-    s32 unknown8;
-    s32 unknownC;
+    // 0x0: Box 0: text window of the drugs screen (display_drugs).
+    s32 drugs_text_x;
+    // 0x4: Box 0 y.
+    s32 drugs_text_y;
+    // 0x8: Box 0 width.
+    s32 drugs_text_w;
+    // 0xc: Box 0 height.
+    s32 drugs_text_h;
     u8 unknown10[0x2d0];
-    s32 unknown2e0;
-    s32 unknown2e4;
-    s32 unknown2e8;
-    s32 unknown2ec;
+    // 0x2e0: Box 46: graph area of the charts screen (draw_graphs x).
+    s32 graph_x;
+    // 0x2e4: Box 46 y.
+    s32 graph_y;
+    // 0x2e8: Box 46 width, passed to draw_graphs as its step.
+    s32 graph_step;
+    // 0x2ec: Box 46 height, passed to draw_graphs as its height.
+    s32 graph_h;
 };
 
 struct Point {
@@ -2759,14 +3669,20 @@ struct Point {
     s32 y;
 };
 
+/*
+ * A clickable button of a full-screen panel (resvars.screen_buttons).
+ */
 struct Button {
     s16 x;
     s16 y;
     u16 width;
     u16 height;
     void (*callback)(int index);
-    u16 unknownC;
-    u16 unknownE;
+    // 0xc: X where the pressed sprite is drawn.
+    u16 sprite_x;
+    // 0xe: Y where the pressed sprite is drawn.
+    u16 sprite_y;
+    // 0x10: Pressed sprite (screen_sprites_tab_start index).
     u16 sprite;
 };
 
@@ -2810,131 +3726,182 @@ struct TownView;
 struct View;
 struct WindowButton;
 
+/*
+ * Resolution-dependent settings and layout tables (resvars). swap_game_sprites
+ * and setup_host point the tables at the high-resolution (640x480) or
+ * low-resolution (320x200) set; the typed views (suffix after the name) are
+ * the same pointer read as the element type each screen expects.
+ */
 struct ResolutionInfo {
-    TbScreenMode f0;
-    TbScreenMode f1;
-    TbScreenMode f2;
-    u8 f3;
-    u8 f4;
-    u8 f5;
+    // 0x0: Screen mode currently set up (setup_any_screen).
+    TbScreenMode screen_mode;
+    // 0x1: Resolution of the game graphics: selects the low- or high-resolution
+    // sprite, block and requester files.
+    TbScreenMode game_mode;
+    // 0x2: Mode the game graphics were last loaded or swapped for.
+    TbScreenMode loaded_mode;
+    // 0x3: Height in pixels of a floor tile (0x20 high resolution, 0x10 low).
+    u8 tile_height;
+    // 0x4: Width in pixels of a floor tile (0x40 high resolution, 0x20 low).
+    u8 tile_width;
+    // 0x5: 2 while the game graphics files are loaded (load_game_files), 0
+    // otherwise.
+    u8 game_files_state;
     union {
-        u8 *f6;
-        char **f6_charpp;
-        const char *const *f6_names;
+        // 0x6: Requester file names (hires_req_filenames).
+        u8 *req_filenames;
+        char **req_filenames_charpp;
+        const char *const *req_filenames_names;
     };
     union {
-        int *fa;
-        char **fa_charpp;
+        // 0xa: Font file names for the font cache (hires_ or
+        // lores_font_filenames).
+        int *font_filenames;
+        char **font_filenames_charpp;
     };
     union {
-        u8 *fe;
-        QueueButtons *fe_QueueButtonsp;
+        // 0xe: Requester button numbers (hires_ or lores_requester_buttons).
+        u8 *requester_buttons;
+        QueueButtons *requester_buttons_QueueButtonsp;
     };
     union {
-        u16 *f12;
-        u8 *f12_u8p;
+        // 0x12: Requester button sprite numbers (hires_ or
+        // lores_requester_sprites).
+        u16 *requester_sprites;
+        u8 *requester_sprites_u8p;
     };
-    u8 f16;
-    u8 f17;
+    // 0x16: Fewest middle segments of the advisor's speech bubble (3 high
+    // resolution, 4 low).
+    u8 advisor_min_segments;
+    // 0x17: Most middle segments the advisor's speech bubble may grow to while
+    // wrapping text.
+    u8 advisor_max_segments;
     union {
-        Box *f18;
-        s32 *f18_s32p;
-        u8 *f18_u8p;
-        PanelLayout *f18_PanelLayoutp;
-        QueueLayout *f18_QueueLayoutp;
-        Rect *f18_Rectp;
-        Req13Layout *f18_Req13Layoutp;
-        Req2Layout *f18_Req2Layoutp;
-        ReqLayout *f18_ReqLayoutp;
-    };
-    union {
-        Point *f1c;
-        IconScreen *f1c_IconScreenp;
-        u8 *f1c_u8p;
-        AdvisorLayout *f1c_AdvisorLayoutp;
-        PanelLayout *f1c_PanelLayoutp;
-        QueuePanel *f1c_QueuePanelp;
-        ReqLayout *f1c_ReqLayoutp;
-        ScrollLayout *f1c_ScrollLayoutp;
-        Struct_0015f410 *f1c_Struct_0015f410p;
+        // 0x18: Boxes of the in-game panels and requesters (demo: HiresBoxes,
+        // LoresBoxes).
+        Box *boxes;
+        s32 *boxes_s32p;
+        u8 *boxes_u8p;
+        PanelLayout *boxes_PanelLayoutp;
+        QueueLayout *boxes_QueueLayoutp;
+        Rect *boxes_Rectp;
+        Req13Layout *boxes_Req13Layoutp;
+        Req2Layout *boxes_Req2Layoutp;
+        ReqLayout *boxes_ReqLayoutp;
     };
     union {
-        Window *f20;
-        u8 *f20_u8p;
+        // 0x1c: Positions on the in-game screen (demo: HiresCoords,
+        // LoresCoords).
+        Point *coords;
+        IconScreen *coords_IconScreenp;
+        u8 *coords_u8p;
+        AdvisorLayout *coords_AdvisorLayoutp;
+        PanelLayout *coords_PanelLayoutp;
+        QueuePanel *coords_QueuePanelp;
+        ReqLayout *coords_ReqLayoutp;
+        ScrollLayout *coords_ScrollLayoutp;
+        Struct_0015f410 *coords_Struct_0015f410p;
     };
     union {
-        u8 *f24;
-        WindowButton *f24_WindowButtonp;
+        // 0x20: Requester windows (demo: window_list, mcgawindow_list).
+        Window *window_list;
+        u8 *window_list_u8p;
     };
-    u8 *f28;
     union {
-        MenuItem *f2c;
-        HelpHotspot *f2c_HelpHotspotp;
-        int *f2c_intp;
-        ManagerHelp *f2c_ManagerHelpp;
-        SlistMenuItem *f2c_SlistMenuItemp;
+        // 0x24: Requester window buttons (demo: button_list, mcgabutton_list).
+        u8 *button_list;
+        WindowButton *button_list_WindowButtonp;
+    };
+    // 0x28: Buttons of the in-game screen (demo: hiresbuttons, loresbuttons).
+    u8 *buttons;
+    union {
+        // 0x2c: Help hotspots, grouped and terminated by negative x0 (demo:
+        // hireshelp, loreshelp).
+        MenuItem *help_hotspots;
+        HelpHotspot *help_hotspots_HelpHotspotp;
+        int *help_hotspots_intp;
+        ManagerHelp *help_hotspots_ManagerHelpp;
+        SlistMenuItem *help_hotspots_SlistMenuItemp;
     };
     u8 unknown30[0x4];
     union {
-        u8 *f34;
-        Point *f34_Pointp;
+        // 0x34: Offsets of the panel's popup icons (demo: panel_popup_coord,
+        // mcgapanel_popup_coord).
+        u8 *panel_popup_coords;
+        Point *panel_popup_coords_Pointp;
     };
     union {
-        u8 *f38;
-        Offset *f38_Offsetp;
+        // 0x38: Litter offsets within a map cell, chosen by a hash of the cell
+        // (demo: litter_pos).
+        u8 *litter_pos;
+        Offset *litter_pos_Offsetp;
     };
     union {
-        View *f3c;
-        ChoiceBox *f3c_ChoiceBoxp;
-        GraphRect *f3c_GraphRectp;
-        NetBox *f3c_NetBoxp;
-        Box *f3c_Boxp;
-        ManagerBox *f3c_ManagerBoxp;
-        PolicyRect *f3c_PolicyRectp;
-        ScreenBox *f3c_ScreenBoxp;
-        TownView *f3c_TownViewp;
-        u8 *f3c_u8p;
+        // 0x3c: Boxes of the full-screen menus (demo: ScreenBoxes); same table
+        // in both resolutions.
+        View *screen_boxes;
+        ChoiceBox *screen_boxes_ChoiceBoxp;
+        GraphRect *screen_boxes_GraphRectp;
+        NetBox *screen_boxes_NetBoxp;
+        Box *screen_boxes_Boxp;
+        ManagerBox *screen_boxes_ManagerBoxp;
+        PolicyRect *screen_boxes_PolicyRectp;
+        ScreenBox *screen_boxes_ScreenBoxp;
+        TownView *screen_boxes_TownViewp;
+        u8 *screen_boxes_u8p;
     };
     union {
-        Point *f40;
-        s32 *f40_s32p;
+        // 0x40: Positions on the full-screen menus (demo: ScreenCoords).
+        Point *screen_coords;
+        s32 *screen_coords_s32p;
     };
     union {
-        u8 *f44;
-        SlistArea *f44_SlistAreap;
+        // 0x44: Staff list area of the full-screen menus (demo: screenlistpos).
+        u8 *screen_list_pos;
+        SlistArea *screen_list_pos_SlistAreap;
     };
-    Button *f48;
+    // 0x48: Buttons of the full-screen menus (demo: screenbuttons).
+    Button *screen_buttons;
     u8 unknown4c[0x4];
     union {
-        u8 *f50;
-        AreaLayout *f50_AreaLayoutp;
-        GlassFrame *f50_GlassFramep;
-        GlassScreen *f50_GlassScreenp;
+        // 0x50: Glass frame animations (demo: hiresglass).
+        u8 *glass_frames;
+        AreaLayout *glass_frames_AreaLayoutp;
+        GlassFrame *glass_frames_GlassFramep;
+        GlassScreen *glass_frames_GlassScreenp;
     };
     u8 unknown54[0x4];
     union {
-        s32 f58;
-        u32 f58_u32;
+        // 0x58: Width of the border drawn left and right of a staff face
+        // (draw_face).
+        s32 face_border_w;
+        u32 face_border_w_u32;
     };
     union {
-        s32 f5c;
-        u32 f5c_u32;
+        // 0x5c: Height of the border drawn above and below a staff face.
+        s32 face_border_h;
+        u32 face_border_h_u32;
     };
     union {
-        s32 f60;
-        u32 f60_u32;
+        // 0x60: Width of a staff face; the face file holds 18 heads, then
+        // bodies, then legs.
+        s32 face_w;
+        u32 face_w_u32;
     };
     union {
-        s32 f64;
-        u32 f64_u32;
+        // 0x64: Height of a face's head part.
+        s32 face_head_h;
+        u32 face_head_h_u32;
     };
     union {
-        s32 f68;
-        u32 f68_u32;
+        // 0x68: Height of a face's body part.
+        s32 face_body_h;
+        u32 face_body_h_u32;
     };
     union {
-        s32 f6c;
-        u32 f6c_u32;
+        // 0x6c: Height of a face's legs part.
+        s32 face_legs_h;
+        u32 face_legs_h_u32;
     };
 };
 
@@ -2952,9 +3919,15 @@ struct ClickArea {
     u8 unknownf;
 };
 
+/*
+ * Properties of a floor overlay (background[], indexed by Map.overlay).
+ */
 struct Background {
-    u8 unknown0;
-    u8 unknown1[2];
+    // 0x0: Cells with this overlay are drawn on the town and plot-sale maps.
+    u8 show_on_map;
+    // 0x1: Initial Map bits for unbought cells: [0] Map.owner_flags, [1]
+    // Map.flags.
+    u8 map_defaults[2];
 };
 
 struct PlotBid {
@@ -2972,13 +3945,21 @@ struct Picture {
     u8 legs;
 };
 
+/*
+ * A help-tooltip rectangle of a requester
+ * (resvars.help_hotspots_HelpHotspotp).
+ */
 struct HelpHotspot {
     s16 x0;
     s16 y0;
     s16 x1;
     s16 y1;
+    // 0x8: Help text index.
     u16 text;
-    u16 unknownA;
+    // 0xa: Requester slot (req_indices index) of the room or object the hotspot
+    // describes.
+    u16 req_slot;
+    // Builds the help text when set.
     void (*func)(void);
 };
 
@@ -2987,23 +3968,29 @@ struct PlotAdjacent {
     u8 plot;
 };
 
+/*
+ * Outcome of a mayor visit per score band (mayor_result[]).
+ */
 struct MayorPoints {
-    s16 f0;
-    s16 f2;
-    s16 f4;
+    // 0x0: Highest mayor score in this band.
+    s16 max_score;
+    // 0x2: Event passed to reputation_affected, 0 for none.
+    s16 reputation_event;
+    // 0x4: Cash given (or taken), 0 for none.
+    s16 cash_bonus;
 };
 
 struct Town {
-    u32 f0;
+    u32 start_cash;
     union {
         u8 unknown4[0x19];
         struct {
             u8 unknown4_[0xc];
-            u16 f10;
+            u16 interest_rate;
         };
         struct {
             u8 unknown4e_[0xa];
-            u16 fe;
+            u16 inflation_rate;
         };
     };
 };
@@ -3053,11 +4040,18 @@ struct SlidingDoorControl {
     s16 offset[4];
 };
 
+/*
+ * One line of the graphs screen (graph[]).
+ */
 struct Graphs {
-    u8 unknown0;
+    // 0x0: 0 plots values upward, 1 downward.
+    u8 inverted;
+    // 0x1: The line is drawn.
     u8 visible;
+    // 0x2: Line colour (D_0015eb94 index).
     u8 colour;
-    u8 unknown3;
+    // 0x3: Legend text index (D_001602b0).
+    u8 label;
 };
 
 struct ShowAnim {
@@ -3069,8 +4063,13 @@ struct ShowAnim {
     u8 ability;
 };
 
+/*
+ * One entry of the panel popup's icon list (popup_icons[], 0-terminated from
+ * index 1).
+ */
 struct PopupIconControl {
-    u32 unknown0;
+    // 0x0: Panel sprite (game_panel index).
+    u32 sprite;
 };
 
 struct DoorAnim {
@@ -3122,14 +4121,20 @@ struct ComplexAnims {
     s16 anims[5];
 };
 
+/*
+ * A bottom-panel icon.
+ */
 struct PanelIcon {
     s16 x;
     s16 y;
     s16 x2;
     s16 y2;
+    // 0x8: Normal sprite.
     u8 sprite;
     u8 unknown9[2];
-    u16 unknownB;
+    // 0xb: 1 for a button with a pressed sprite, 0x40 for an icon without one.
+    u16 kind;
+    // 0xd: Pressed sprite.
     u8 pressed;
 };
 

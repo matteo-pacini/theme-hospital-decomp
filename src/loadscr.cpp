@@ -60,7 +60,7 @@ void draw_load_game(void)
     set_font_from_cache(1);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     width = lbFontPtr ? lbFontPtr[34].width : 0;
-    switch (loadgame.unknown2) {
+    switch (loadgame.state) {
     case 0:
         return_from_screen(9, 0, 1);
         lbDisplay.left_button = 0;
@@ -70,18 +70,18 @@ void draw_load_game(void)
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         for (D_00161138 = 0; D_00161138 < 0x1e; D_00161138++) {
             loadable[D_00161138] = 0;
-            sprintf(tmp, "%ssave\\", statvar.f575);
-            fn_000c93bf(tmp, myplayer.unknown0);
+            sprintf(tmp, "%ssave\\", statvar.save_root);
+            fn_000c93bf(tmp, myplayer.name_chars);
             sprintf(tmp, "%s.h%d", tmp, D_00161138);
             handle = LbFileOpen(tmp, 2);
             if (handle != -1) {
-                if (LbFileLengthRnc(tmp) == statvar.unknown0)
+                if (LbFileLengthRnc(tmp) == statvar.save_game_size)
                     loadable[D_00161138] = 1;
                 LbFileClose(handle);
             }
         }
-        loadgame.unknown2 = 3;
-        loadgame.unknown0 = 0xfa;
+        loadgame.state = 3;
+        loadgame.value = 0xfa;
         keybuffer_clear();
         BufferedInkey = 0;
         lbDisplay.rleft_button = 0;
@@ -91,7 +91,7 @@ void draw_load_game(void)
     case 3:
         next = next_map();
         if (next == 0)
-            loadgame.unknown2 = 4;
+            loadgame.state = 4;
         PendingDisplay = next;
         copy_screen_to_wscreen(bscreen);
         draw_zoom_boxes();
@@ -107,42 +107,42 @@ void draw_load_game(void)
         fade_out_menu();
         if (display_loading_screen()) {
             LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
-            resvars.f1 = SCREEN_MODE_13;
+            resvars.game_mode = SCREEN_MODE_13;
             load_game_files();
             level_no = read_level_number(load_game_number);
             if (level_no != -1) {
                 setup_new_level((u16)level_no, 1);
                 if (load_game((s8)load_game_number, -1)) {
                     clear_loading_screen(palette);
-                    othervar.fa65 = 0;
+                    othervar.screen_pic_loaded = 0;
                     fn_000110b0();
                     load_game_files();
                     set_mouse_mode(MM_NORMAL);
                     LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
                     display_mode = 0;
                     D_00156910 = 1;
-                    set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+                    set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
                     draw_it();
-                    othervar.f24 = palette;
+                    othervar.pending_palette = palette;
                     break;
                 }
             }
         }
-        othervar.f24 = palette;
+        othervar.pending_palette = palette;
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
-        loadgame.unknown2 = 4;
+        loadgame.state = 4;
         break;
     case 2:
-        loadgame.unknown0 = 0;
+        loadgame.value = 0;
         fade_out_menu();
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         display_mode = 2;
-        mainmenu.unknown2 = 0;
+        mainmenu.state = 0;
         set_mouse_mode(MM_NORMAL);
-        loadgame.unknown2 = 0;
+        loadgame.state = 0;
         break;
     default:
-        loadgame.unknown2 = 0;
+        loadgame.state = 0;
         break;
     }
 }
@@ -152,10 +152,10 @@ void draw_load_game(void)
 void process_loadgame_buttons(u8 slot)
 {
     if (slot == 9) {
-        loadgame.unknown2 = 2;
+        loadgame.state = 2;
     } else if (loadable[slot]) {
         load_game_number = slot;
-        loadgame.unknown2 = 1;
+        loadgame.state = 1;
     }
 }
 
@@ -166,7 +166,7 @@ void process_keys_load_game(void)
     switch (BufferedInkey) {
     case KC_ESCAPE:
         play_sound(10, SFX_NO4, -1, -1);
-        loadgame.unknown2 = 2;
+        loadgame.state = 2;
         BufferedInkey = 0;
         break;
     }
@@ -184,8 +184,8 @@ void process_mouse_load_game(void)
     s32 mask;
     s32 bit;
 
-    if (loadgame.unknown2 == 4) {
-        reqspr_draw((u16)resvars.f48[0x9e].x, (u16)resvars.f48[0x9e].y, &screen_sprites_tab_start[2]);
+    if (loadgame.state == 4) {
+        reqspr_draw((u16)resvars.screen_buttons[0x9e].x, (u16)resvars.screen_buttons[0x9e].y, &screen_sprites_tab_start[2]);
         mask = CurrentDisplay;
         while (mask) {
             bit = mask & -mask;
@@ -194,33 +194,33 @@ void process_mouse_load_game(void)
             if (!base)
                 continue;
             for (i = 0;; i++) {
-                if (resvars.f48[base + i].width == 0 || resvars.f48[base + i].height == 0)
+                if (resvars.screen_buttons[base + i].width == 0 || resvars.screen_buttons[base + i].height == 0)
                     break;
-                x = resvars.f48[base + i].x;
-                y = resvars.f48[base + i].y;
+                x = resvars.screen_buttons[base + i].x;
+                y = resvars.screen_buttons[base + i].y;
                 if (lbDisplay.rleft_button) {
-                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.f48[base + i].width - x + 1,
-                            resvars.f48[base + i].height - y + 1)) {
+                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
+                            resvars.screen_buttons[base + i].height - y + 1)) {
                         play_sound(10, SFX_YESX, -1, -1);
                         lbDisplay.rleft_button = 0;
-                        if (resvars.f48[base + i].sprite)
+                        if (resvars.screen_buttons[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
-                        if (resvars.f48[base + i].callback)
-                            resvars.f48[base + i].callback(i);
+                            draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
+                        if (resvars.screen_buttons[base + i].callback)
+                            resvars.screen_buttons[base + i].callback(i);
                         break;
                     }
                 }
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.f48[base + i].width - x + 1,
-                        resvars.f48[base + i].height - y + 1)) {
-                    if (resvars.f48[base + i].sprite)
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
+                        resvars.screen_buttons[base + i].height - y + 1)) {
+                    if (resvars.screen_buttons[base + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
-                    if (i != loadgame.unknown0) {
+                        draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
+                    if (i != loadgame.value) {
                         play_sound(10, SFX_HLIGHT5, -1, -1);
-                        loadgame.unknown0 = i;
+                        loadgame.value = i;
                     }
                 }
             }
@@ -236,12 +236,12 @@ void display_loadgame_screen(void)
 {
     s32 i;
 
-    for (i = 0; (!resvars.f48[i + 0x95].sprite && resvars.f48[i + 0x95].width != 0)
-                && resvars.f48[i + 0x95].height != 0; i++) {
+    for (i = 0; (!resvars.screen_buttons[i + 0x95].sprite && resvars.screen_buttons[i + 0x95].width != 0)
+                && resvars.screen_buttons[i + 0x95].height != 0; i++) {
         if (loadable[i])
             sprintf(tmp, "%s %d", load_text[0], i);
         else
             sprintf(tmp, "%s", load_text[1]);
-        draw_glass_text((SlistButton *)&resvars.f48[i + 0x95], tmp);
+        draw_glass_text((SlistButton *)&resvars.screen_buttons[i + 0x95], tmp);
     }
 }

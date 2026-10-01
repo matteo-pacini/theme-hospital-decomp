@@ -51,7 +51,7 @@ extern char **computer_names;
 
 }
 
-// Single player: fills the free hospital slots (allhosps.f2a 0) with computer
+// Single player: fills the free hospital slots (allhosps.player_type 0) with computer
 // players (f2a 2), first those computer[] marks (f8), then random unused ones,
 // giving each its name, personality (f1245) and strategy (f1244, f1240).
 // FUNCTION: 0x0004e760
@@ -63,23 +63,23 @@ void setup_computer_players(void)
     AllHosps *hosp;
     u8 used[20];
 
-    if (statvar.unknownfd > 1 || gamevar.f174) {
+    if (statvar.num_players > 1 || gamevar.rat_fest_level) {
         return;
     }
     for (i = 0; i < 20; i++) {
         used[i] = 0;
     }
     for (j = 0; j < 20; j++) {
-        if (computer[j].f8) {
+        if (computer[j].playing) {
             for (k = 0; k < 4; k++) {
                 hosp = &allhosps[k];
-                if (hosp->f2a == 0) {
+                if (hosp->player_type == 0) {
                     fn_000bbff0((char *)hosp, computer_names[j]);
-                    hosp->f2a = 2;
-                    hosp->f1245 = j;
-                    hosp->f1244 = computer[j].f6;
-                    hosp->f1240 = find_strategy_start(hosp->f1244);
-                    hosp->f1f1 = myhosp->f1f1;
+                    hosp->player_type = 2;
+                    hosp->ai_index = j;
+                    hosp->strategy = computer[j].strategy;
+                    hosp->strategy_step = find_strategy_start(hosp->strategy);
+                    hosp->area = myhosp->area;
                     used[j] = 1;
                     break;
                 }
@@ -92,20 +92,20 @@ void setup_computer_players(void)
     if (k < 4) {
         for (; k < 4; k++) {
             hosp = &allhosps[k];
-            if (hosp->f2a == 0) {
-                hosp->f2a = 2;
+            if (hosp->player_type == 0) {
+                hosp->player_type = 2;
                 fn_000bbff0((char *)hosp, "DEF 64");
                 for (i = 0; i < 1000; i++) {
                     j = (lbDisplay.mmouse_x + lbDisplay.mmouse_y + old_newrand()) % 20;
-                    hosp->f1245 = j;
+                    hosp->ai_index = j;
                     if (used[j] == 0) {
                         fn_000bbff0((char *)hosp, computer_names[j]);
                         used[j] = 1;
                         break;
                     }
                 }
-                hosp->f1244 = computer[j].f6;
-                hosp->f1240 = find_strategy_start(hosp->f1244);
+                hosp->strategy = computer[j].strategy;
+                hosp->strategy_step = find_strategy_start(hosp->strategy);
             }
         }
     }
@@ -119,10 +119,10 @@ void computer_year(void)
     u8 i;
     AllHosps *hosp;
 
-    if (statvar.unknownfd <= 1) {
+    if (statvar.num_players <= 1) {
         for (i = 0; i < 4; i++) {
             hosp = &allhosps[i];
-            if (hosp->f2a == 2) {
+            if (hosp->player_type == 2) {
                 calculate_value(i);
                 calculate_score(i);
             }
@@ -130,7 +130,7 @@ void computer_year(void)
     }
 }
 
-// Daily for computer players: every fifth day (mycontrol->unknown64f), adds
+// Daily for computer players: every fifth day (mycontrol->day), adds
 // each one's simulated results so far to its hospital (get_computer_bucket).
 // Single player only.
 // FUNCTION: 0x0004ea50
@@ -139,11 +139,11 @@ void computer_day(void)
     u8 i;
     AllHosps *hosp;
 
-    if (statvar.unknownfd <= 1) {
-        if (mycontrol->unknown64f % 5 == 0) {
+    if (statvar.num_players <= 1) {
+        if (mycontrol->day % 5 == 0) {
             for (i = 0; i < 4; i++) {
                 hosp = &allhosps[i];
-                if (hosp->f2a == 2) {
+                if (hosp->player_type == 2) {
                     get_computer_bucket(i);
                 }
             }
@@ -159,12 +159,12 @@ void computer_month(void)
     u8 i;
     AllHosps *hosp;
 
-    if (statvar.unknownfd <= 1) {
+    if (statvar.num_players <= 1) {
         for (i = 0; i < 4; i++) {
             hosp = &allhosps[i];
-            if (hosp->f2a == 2) {
+            if (hosp->player_type == 2) {
                 get_computer_bucket(i);
-                hosp->f35 = hosp->f35 - hosp->f1234;
+                hosp->balance = hosp->balance - hosp->wage_bill;
             }
         }
     }
@@ -183,16 +183,16 @@ void computer_action(void)
     AllHosps *hosp;
     ComputerPlayer *ai;
 
-    if (statvar.unknownfd > 1 || (advisor.f11f & 1)) {
+    if (statvar.num_players > 1 || (advisor.flags & 1)) {
         return;
     }
     for (i = 0; i < 4; i++) {
         hosp = &allhosps[i];
-        if (hosp->f2a != 2 || hosp->f11f8 > actual_game_turn) {
+        if (hosp->player_type != 2 || hosp->next_action_turn > actual_game_turn) {
             continue;
         }
-        ai = &computer[hosp->f1245];
-        pace = ai->f3 - old_newrand() % ai->f0;
+        ai = &computer[hosp->ai_index];
+        pace = ai->speed - old_newrand() % ai->skill;
         if (pace < 1) {
             pace = 1;
         } else if (pace > 100) {
@@ -204,27 +204,27 @@ void computer_action(void)
             break;
         case 1:
             if (computer_employ(hosp->action.arg, hosp->action.count, i)) {
-                if (hosp->f1202) {
+                if (hosp->action_from_note) {
                     remove_a_note(1, i);
                 }
-            } else if (hosp->f1202) {
+            } else if (hosp->action_from_note) {
                 declass_a_note(1, i);
             }
-            hosp->f1202 = 0;
+            hosp->action_from_note = 0;
             hosp->action.type = 0;
-            hosp->f11f8 = actual_game_turn + com_decide[0].delay * pace / 10;
+            hosp->next_action_turn = actual_game_turn + com_decide[0].delay * pace / 10;
             break;
         case 2:
             if (computer_build(hosp->action.arg, i)) {
-                if (hosp->f1202) {
+                if (hosp->action_from_note) {
                     remove_a_note(2, i);
                 }
-            } else if (hosp->f1202) {
+            } else if (hosp->action_from_note) {
                 declass_a_note(2, i);
             }
-            hosp->f1202 = 0;
+            hosp->action_from_note = 0;
             hosp->action.type = 0;
-            hosp->f11f8 = actual_game_turn + com_decide[0].delay * pace / 10;
+            hosp->next_action_turn = actual_game_turn + com_decide[0].delay * pace / 10;
             break;
         case 3:
             computer_place_object(hosp->action.arg, 0, i);
@@ -232,12 +232,12 @@ void computer_action(void)
             if (hosp->action.count <= 0) {
                 hosp->action.type = 0;
             }
-            hosp->f11f8 = actual_game_turn + com_decide[hosp->action.type].delay * pace / 10;
+            hosp->next_action_turn = actual_game_turn + com_decide[hosp->action.type].delay * pace / 10;
             break;
         case 4:
             computer_loan(hosp->action.arg, i);
             hosp->action.type = 0;
-            hosp->f11f8 = actual_game_turn + com_decide[0].delay * pace / 10;
+            hosp->next_action_turn = actual_game_turn + com_decide[0].delay * pace / 10;
             break;
         }
     }
@@ -257,10 +257,10 @@ void computer_decision(u8 owner)
     u32 action;
 
     hosp = &allhosps[owner];
-    ai = &computer[hosp->f1245];
-    step = hosp->f1240;
-    hosp->f1240++;
-    pace = ai->f3 - old_newrand() % ai->f0 + old_newrand() % 5;
+    ai = &computer[hosp->ai_index];
+    step = hosp->strategy_step;
+    hosp->strategy_step++;
+    pace = ai->speed - old_newrand() % ai->skill + old_newrand() % 5;
     if (pace < 1) {
         pace = 1;
     } else if (pace > 100) {
@@ -276,11 +276,11 @@ void computer_decision(u8 owner)
         hosp->action.type = action;
         hosp->action.arg = com_strategy[step].arg;
         hosp->action.count = com_strategy[step].count;
-        hosp->f11f8 = actual_game_turn + com_decide[action].delay * pace / 10;
+        hosp->next_action_turn = actual_game_turn + com_decide[action].delay * pace / 10;
         break;
     case 6:
-        hosp->f1244 = 2;
-        hosp->f1240 = find_strategy_start(2);
+        hosp->strategy = 2;
+        hosp->strategy_step = find_strategy_start(2);
         break;
     case 7:
         computer_choose_room(0, owner);
@@ -289,8 +289,8 @@ void computer_decision(u8 owner)
         computer_recheck_actions(com_strategy[step].arg, owner);
         break;
     case 10:
-        if (statvar.unknownfd <= 1) {
-            hosp->unknown1256 = 1;
+        if (statvar.num_players <= 1) {
+            hosp->hospital_open = 1;
         }
         announce_this(0xc, owner);
         break;
@@ -307,11 +307,11 @@ void computer_decision(u8 owner)
         computer_maintain_loan(owner);
         break;
     case 15:
-        hosp->f1240 = find_strategy_start(hosp->f1244);
+        hosp->strategy_step = find_strategy_start(hosp->strategy);
         break;
     case 16:
-        hosp->f1244 = 2;
-        hosp->f1240 = find_strategy_start(2);
+        hosp->strategy = 2;
+        hosp->strategy_step = find_strategy_start(2);
         break;
     case 9:
         break;
@@ -355,18 +355,18 @@ void process_computer_peep(Thing *patient, u8 owner)
     int pct;
 
     hosp = &allhosps[owner];
-    ai = &computer[hosp->f1245];
-    month = mycontrol->unknown650;
-    hours = mycontrol->unknown64f;
+    ai = &computer[hosp->ai_index];
+    month = mycontrol->month;
+    hours = mycontrol->day;
     bucket = &comp_buckets[owner][month];
     illness = patient->illness;
-    hosp->f123c++;
-    if (listhead[owner].objects[OBJ_DRINKS_MACHINE] * 10 > hosp->f123c) {
+    hosp->patient_load++;
+    if (listhead[owner].objects[OBJ_DRINKS_MACHINE] * 10 > hosp->patient_load) {
         busy = 1;
     }
-    if (hosp->f123c > 5) {
-        chance = 100 - hosp->f123c / ((hosp->f1238 + 1) * 10) - hosp->f123c / ((hosp->fc9c + 1) * 10)
-            - hosp->f123c / ((listhead[owner].objects[OBJ_BENCH] + 1) * 10);
+    if (hosp->patient_load > 5) {
+        chance = 100 - hosp->patient_load / ((hosp->rooms_built + 1) * 10) - hosp->patient_load / ((hosp->staff_count + 1) * 10)
+            - hosp->patient_load / ((listhead[owner].objects[OBJ_BENCH] + 1) * 10);
         if (chance < 0) {
             chance = 0;
         } else if (chance > 100) {
@@ -380,16 +380,16 @@ void process_computer_peep(Thing *patient, u8 owner)
     step = 5;
     for (;;) {
         ADVANCE_TIME();
-        if (allhosps[owner].rooms[ILL_GENERAL_PRACTICE].unknown1C == 1) {
+        if (allhosps[owner].rooms[ILL_GENERAL_PRACTICE].cure_available == 1) {
             update_single_cure_cost(1, owner);
-            bucket->f0 += hosp->rooms[ILL_GENERAL_PRACTICE].unknownC;
+            bucket->f0 += hosp->rooms[ILL_GENERAL_PRACTICE].price;
             patient->treatment = ILL_GENERAL_PRACTICE;
             computer_diag_progress(patient, owner);
             reputation_affected(1, 10, month % 12, patient->owner, 0);
-            if (patient->diagnosis > gbv.ffc) {
+            if (patient->diagnosis > gbv.diagnosis_complete) {
                 patient->treatment = patient->illness;
                 reputation_affected(illness, 6, month % 12, patient->owner, 0);
-                hosp->f1ef++;
+                hosp->diagnosed++;
                 result = 1;
                 break;
             }
@@ -422,13 +422,13 @@ void process_computer_peep(Thing *patient, u8 owner)
         find_possible_diagnosis(patient);
         if (patient->treatment == 0) {
             reputation_affected(illness, 7, month % 12, owner, 0);
-            pct = patient->diagnosis * 100 / gbv.ffc;
+            pct = patient->diagnosis * 100 / gbv.diagnosis_complete;
             if (pct < 0) {
                 pct = 0;
             } else if (pct > 99) {
                 pct = 99;
             }
-            if (ai->f5 <= pct) {
+            if (ai->guess_at <= pct) {
                 if (old_newrand() % 100 > pct) {
                     result = 2;
                 } else {
@@ -441,7 +441,7 @@ void process_computer_peep(Thing *patient, u8 owner)
         }
         ADVANCE_TIME();
         update_single_cure_cost(patient->treatment, owner);
-        bucket->f0 += hosp->rooms[patient->treatment].unknownC;
+        bucket->f0 += hosp->rooms[patient->treatment].price;
         add_treatment_to_history(patient);
         computer_diag_progress(patient, owner);
         reputation_affected(patient->treatment, 10, month % 12, patient->owner, 0);
@@ -453,8 +453,8 @@ void process_computer_peep(Thing *patient, u8 owner)
     reputation_affected(illness, 10, month % 12, patient->owner, 0);
     switch (result) {
     case 1:
-        if (allhosps[owner].rooms[illness].unknown1C == 1) {
-            if (expertise[illness].unknown5[0] == 1 && old_normal_rand(0, 99) >= hosp->rooms[illness].unknown1B) {
+        if (allhosps[owner].rooms[illness].cure_available == 1) {
+            if (expertise[illness].unknown5[0] == 1 && old_normal_rand(0, 99) >= hosp->rooms[illness].drug_effectiveness) {
                 bucket->f10++;
                 reputation_affected(illness, 3, month % 12, owner, 0);
             } else {
@@ -478,7 +478,7 @@ void process_computer_peep(Thing *patient, u8 owner)
     bucket->f14++;
 }
 
-// Moves the results in owner's bucket for the current month (othervar.f9d1)
+// Moves the results in owner's bucket for the current month (othervar.game_month)
 // into its hospital (money, cures, deaths, room statistics), updates its
 // reputations and empties the bucket.
 // FUNCTION: 0x0004f900
@@ -489,22 +489,22 @@ void get_computer_bucket(u8 owner)
     AllHosps *hosp;
     u32 i;
 
-    month = othervar.f9d1 % 12;
+    month = othervar.game_month % 12;
     bucket = &comp_buckets[owner][month];
     hosp = &allhosps[owner];
-    hosp->f35 += bucket->f0;
-    hosp->f1e9 += bucket->fc;
-    hosp->f1eb += bucket->f10;
-    hosp->fc82 += bucket->f4;
-    hosp->fc86 += bucket->f8;
+    hosp->balance += bucket->f0;
+    hosp->cures += bucket->fc;
+    hosp->deaths += bucket->f10;
+    hosp->rep_points += bucket->f4;
+    hosp->rep_events += bucket->f8;
     evaluate_reputation(0, owner);
-    hosp->f123c -= bucket->f14;
-    if (hosp->f123c < 0) {
-        hosp->f123c = 0;
+    hosp->patient_load -= bucket->f14;
+    if (hosp->patient_load < 0) {
+        hosp->patient_load = 0;
     }
     for (i = 0; i < 47; i++) {
-        hosp->rooms[i].f4 += bucket->f18[i];
-        hosp->rooms[i].f8 += bucket->fd4[i];
+        hosp->rooms[i].rep_points += bucket->f18[i];
+        hosp->rooms[i].rep_events += bucket->fd4[i];
         evaluate_reputation(i, owner);
     }
     memset(bucket, 0, 400);
@@ -523,7 +523,7 @@ u8 computer_employ(u8 type, u16 skills, u8 owner)
 
     for (candidate = thing + 1; candidate < end_things; candidate++) {
         if (candidate->type == THING_STAFF && candidate->state == SS_APPLICANT) {
-            if ((u16)(candidate - thing) != gamevar.unknown75) {
+            if ((u16)(candidate - thing) != gamevar.held_staff) {
                 if (type == candidate->subtype) {
             ok = 1;
             if (skills) {
@@ -537,12 +537,12 @@ u8 computer_employ(u8 type, u16 skills, u8 owner)
                 }
             }
             if (ok) {
-                if (allhosps[owner].f35 >= candidate->salary * 12 / 10 && allhosps[owner].f35 > 0) {
+                if (allhosps[owner].balance >= candidate->salary * 12 / 10 && allhosps[owner].balance > 0) {
                     hosp = &allhosps[owner];
                     inc_staff_stats(candidate, owner);
-                    hosp->f35 -= candidate->salary * 12 / 10;
-                    hosp->f1234 += candidate->salary;
-                    hosp->f1246[candidate->subtype] += candidate->ability;
+                    hosp->balance -= candidate->salary * 12 / 10;
+                    hosp->wage_bill += candidate->salary;
+                    hosp->staff_ability_sum[candidate->subtype] += candidate->ability;
                     candidate->owner = owner;
                     set_expertise_staff(candidate);
                     insert_skill(candidate->skills, owner);
@@ -568,11 +568,11 @@ u8 computer_build(u8 type, u8 owner)
     int i;
     RoomInfo room;
 
-    if (allhosps[owner].f35 >= rooms[type].cost && allhosps[owner].f35 > 0) {
+    if (allhosps[owner].balance >= rooms[type].cost && allhosps[owner].balance > 0) {
         hosp = &allhosps[owner];
-        hosp->f35 -= rooms[type].cost;
-        hosp->f1238++;
-        for (i = 0; i < rooms[type].fc; i++) {
+        hosp->balance -= rooms[type].cost;
+        hosp->rooms_built++;
+        for (i = 0; i < rooms[type].compulsory_count; i++) {
             computer_place_object(rooms[type].objects[i], 0, owner);
         }
         listhead[owner].rooms[type]++;
@@ -592,12 +592,12 @@ u8 computer_place_object(u8 obj, u8 free, u8 owner)
     AllHosps *hosp;
 
     hosp = &allhosps[owner];
-    if ((allhosps[owner].f35 >= (u32)hosp->object_stats[obj].cost && allhosps[owner].f35 > 0) || free) {
+    if ((allhosps[owner].balance >= (u32)hosp->object_stats[obj].cost && allhosps[owner].balance > 0) || free) {
         if (!free) {
-            hosp->f35 -= hosp->object_stats[obj].cost;
+            hosp->balance -= hosp->object_stats[obj].cost;
         }
         inc_hardware_stats(obj, owner);
-        if (objects[obj].unknown14 == 7) {
+        if (objects[obj].category == 7) {
             listhead[owner].rooms[ROOM_RECEPTION]++;
         }
         listhead[owner].objects[obj]++;
@@ -616,14 +616,14 @@ u8 computer_loan(s8 amount, u8 owner)
     AllHosps *hosp;
 
     hosp = &allhosps[owner];
-    if ((amount < 0 && hosp->f35 >= 5000) && hosp->f3d > 0) {
-        hosp->f35 += 5000;
-        hosp->f3d += 5000;
+    if ((amount < 0 && hosp->balance >= 5000) && hosp->loan > 0) {
+        hosp->balance += 5000;
+        hosp->loan += 5000;
         return 1;
     }
-    if (amount > 0 && hosp->f41 - 5000 >= hosp->f3d) {
-        hosp->f35 -= 5000;
-        hosp->f3d -= 5000;
+    if (amount > 0 && hosp->max_loan - 5000 >= hosp->loan) {
+        hosp->balance -= 5000;
+        hosp->loan -= 5000;
         return 1;
     }
     return 0;
@@ -642,36 +642,36 @@ u8 computer_recheck_actions(u8 a, u8 owner)
 
     hosp = &allhosps[owner];
     memset(counts, 0, 20);
-    i = find_strategy_start(hosp->f1244);
-    if (hosp->f1242) {
-        for (; i < hosp->f1242; i++) {
+    i = find_strategy_start(hosp->strategy);
+    if (hosp->recheck_step) {
+        for (; i < hosp->recheck_step; i++) {
             if (com_strategy[i].type == 1) {
                 counts[com_strategy[i].arg]++;
             }
         }
     }
-    for (; i < hosp->f1240; i++) {
+    for (; i < hosp->strategy_step; i++) {
         if (com_strategy[i].type == 1) {
             counts[com_strategy[i].arg]++;
-            if (hosp->fc9e[com_strategy[i].arg] < counts[com_strategy[i].arg]) {
+            if (hosp->staff_by_kind[com_strategy[i].arg] < counts[com_strategy[i].arg]) {
                 hosp->action.type = 1;
                 hosp->action.arg = com_strategy[i].arg;
                 hosp->action.count = com_strategy[i].count;
-                hosp->f11f8 = actual_game_turn;
+                hosp->next_action_turn = actual_game_turn;
                 if (a == 1) {
-                    hosp->f1240--;
+                    hosp->strategy_step--;
                 } else {
-                    hosp->f1242 = i + 1;
+                    hosp->recheck_step = i + 1;
                 }
                 break;
             }
         }
     }
-    if (a == 0 && i < hosp->f1240) {
-        hosp->f1240--;
+    if (a == 0 && i < hosp->strategy_step) {
+        hosp->strategy_step--;
     }
-    if (a == 1 || hosp->f1240 == i) {
-        hosp->f1242 = 0;
+    if (a == 1 || hosp->strategy_step == i) {
+        hosp->recheck_step = 0;
     }
     return 0;
 }
@@ -689,21 +689,21 @@ u8 computer_staff_levels(u8 owner)
     int max;
 
     hosp = &allhosps[owner];
-    ai = &computer[hosp->f1245];
+    ai = &computer[hosp->ai_index];
     if (find_a_note(1, owner)) {
-        pace = ai->f3 - old_newrand() % ai->f0;
+        pace = ai->speed - old_newrand() % ai->skill;
         if (pace < 1) {
             pace = 1;
         } else if (pace > 100) {
             pace = 100;
         }
-        hosp->f11f8 = actual_game_turn + com_decide[1].delay * pace / 10;
+        hosp->next_action_turn = actual_game_turn + com_decide[1].delay * pace / 10;
         return 1;
     }
     for (i = 0; i <= 3; i++) {
-        max = hosp->f123c / staff_max_nbs[i][ai->f1];
-        if (hosp->fc9e[i] < max) {
-            pace = ai->f3 - old_newrand() % ai->f0;
+        max = hosp->patient_load / staff_max_nbs[i][ai->staff_levels];
+        if (hosp->staff_by_kind[i] < max) {
+            pace = ai->speed - old_newrand() % ai->skill;
             if (pace < 1) {
                 pace = 1;
             } else if (pace > 100) {
@@ -711,7 +711,7 @@ u8 computer_staff_levels(u8 owner)
             }
             hosp->action.type = 1;
             hosp->action.arg = i;
-            hosp->f11f8 = actual_game_turn + com_decide[1].delay * pace / 10;
+            hosp->next_action_turn = actual_game_turn + com_decide[1].delay * pace / 10;
             return 1;
         }
     }
@@ -752,8 +752,8 @@ u8 computer_choose_room(u8 order, u8 owner)
 
     failed = 0;
     hosp = &allhosps[owner];
-    ai = &computer[hosp->f1245];
-    pace = ai->f3 - old_newrand() % ai->f0;
+    ai = &computer[hosp->ai_index];
+    pace = ai->speed - old_newrand() % ai->skill;
     if (pace < 1) {
         pace = 1;
     } else if (pace > 100) {
@@ -762,10 +762,10 @@ u8 computer_choose_room(u8 order, u8 owner)
     for (i = 1; i <= com_room_orders[order][0]; i++) {
         room = com_room_orders[order][i];
         if (listhead[owner].rooms[room] == 0 && room_available(room)) {
-            if (allhosps[owner].f35 >= rooms[room].cost && allhosps[owner].f35 > 0) {
+            if (allhosps[owner].balance >= rooms[room].cost && allhosps[owner].balance > 0) {
                 hosp->action.type = 2;
                 hosp->action.arg = room;
-                hosp->f11f8 = actual_game_turn + com_decide[2].delay * pace / 10;
+                hosp->next_action_turn = actual_game_turn + com_decide[2].delay * pace / 10;
                 return room;
             } else {
                 failed = 1;
@@ -812,7 +812,7 @@ u8 find_a_note(u16 type, u8 owner)
             hosp->action.type = type;
             hosp->action.arg = hosp->notes[i].arg;
             hosp->action.count = hosp->notes[i].count;
-            hosp->f1202 = 1;
+            hosp->action_from_note = 1;
             return 1;
         }
     }
@@ -868,7 +868,7 @@ void computer_diag_progress(Thing *patient, u8 owner)
     int val;
 
     hosp = &allhosps[owner];
-    skill = expertise[patient->treatment].unknown0;
+    skill = expertise[patient->treatment].staff_mask;
     for (i = 0; i < 9; i++) {
         if (skill & (1 << i)) {
             break;
@@ -876,7 +876,7 @@ void computer_diag_progress(Thing *patient, u8 owner)
     }
     who = skillnb_to_who[i];
     val = patient->diagnosis - patient->diagnosis_handicap;
-    val += hosp->f1246[who] / hosp->fc9e[who];
+    val += hosp->staff_ability_sum[who] / hosp->staff_by_kind[who];
     val += 250 - old_normal_rand(0, 500);
     if (patient->treatment >= 0x24) {
         val += diag_register[patient->illness][patient->treatment - 0x24];
@@ -900,22 +900,22 @@ u8 computer_free_build(u8 owner)
     int count;
 
     hosp = &allhosps[owner];
-    ai = &computer[hosp->f1245];
+    ai = &computer[hosp->ai_index];
     if (find_a_note(2, owner)) {
-        pace = ai->f3 - old_newrand() % ai->f0;
+        pace = ai->speed - old_newrand() % ai->skill;
         if (pace < 1) {
             pace = 1;
         } else if (pace > 100) {
             pace = 100;
         }
-        hosp->f11f8 = actual_game_turn + com_decide[2].delay * pace / 10;
+        hosp->next_action_turn = actual_game_turn + com_decide[2].delay * pace / 10;
         return 1;
     }
     room = computer_choose_room(0, owner);
     if (room != 0) {
         arg = rooms[room].f26;
         if (arg >= 0) {
-            count = rooms[room].unknown8;
+            count = rooms[room].doctor_skills;
             make_a_note(1, arg, count, owner);
         }
         return 1;
@@ -924,7 +924,7 @@ u8 computer_free_build(u8 owner)
     if (room != 0) {
         arg = rooms[room].f26;
         if (arg >= 0) {
-            count = rooms[room].unknown8;
+            count = rooms[room].doctor_skills;
             make_a_note(1, arg, count, owner);
         }
         return 1;
@@ -943,21 +943,21 @@ u8 computer_maintain_loan(u8 owner)
     int pace;
 
     hosp = &allhosps[owner];
-    ai = &computer[hosp->f1245];
+    ai = &computer[hosp->ai_index];
     if (find_a_note(4, owner)) {
-        pace = ai->f3 - old_newrand() % ai->f0;
+        pace = ai->speed - old_newrand() % ai->skill;
         if (pace < 1) {
             pace = 1;
         } else if (pace > 100) {
             pace = 100;
         }
-        hosp->f11f8 = actual_game_turn + com_decide[4].delay * pace / 10;
-        hosp->f1202 = 0;
+        hosp->next_action_turn = actual_game_turn + com_decide[4].delay * pace / 10;
+        hosp->action_from_note = 0;
         remove_a_note(4, owner);
         return 1;
     }
-    if (hosp->f3d != 0 && hosp->f35 > 6000) {
-        pace = ai->f3 - old_newrand() % ai->f0;
+    if (hosp->loan != 0 && hosp->balance > 6000) {
+        pace = ai->speed - old_newrand() % ai->skill;
         if (pace < 1) {
             pace = 1;
         } else if (pace > 100) {
@@ -965,7 +965,7 @@ u8 computer_maintain_loan(u8 owner)
         }
         hosp->action.type = 4;
         hosp->action.arg = -1;
-        hosp->f11f8 = actual_game_turn + com_decide[4].delay * pace / 10;
+        hosp->next_action_turn = actual_game_turn + com_decide[4].delay * pace / 10;
         return 1;
     }
     return 0;
@@ -986,12 +986,12 @@ u8 computer_object_levels(u8 owner)
     int n;
 
     hosp = &allhosps[owner];
-    ai = &computer[hosp->f1245];
+    ai = &computer[hosp->ai_index];
     for (i = 0; i < 4; i++) {
         obj = object_nbs[i][0];
-        max = hosp->f123c / object_nbs[i][ai->f4 + 1];
+        max = hosp->patient_load / object_nbs[i][ai->comfort + 1];
         if (hosp->object_stats[obj].fA < max) {
-            pace = ai->f3 - old_newrand() % ai->f0;
+            pace = ai->speed - old_newrand() % ai->skill;
             if (pace < 1) {
                 pace = 1;
             } else if (pace > 100) {
@@ -1006,7 +1006,7 @@ u8 computer_object_levels(u8 owner)
                 n = 4;
             }
             hosp->action.count = n;
-            hosp->f11f8 = actual_game_turn + com_decide[3].delay * pace / 10;
+            hosp->next_action_turn = actual_game_turn + com_decide[3].delay * pace / 10;
             return 1;
         }
     }
@@ -1023,12 +1023,12 @@ u8 computer_buy_land(u8 owner)
     int n;
 
     hosp = &allhosps[owner];
-    ai = &computer[hosp->f1245];
-    if (myhosp->f1f1 > hosp->f1f1) {
-        n = myhosp->f1f1 - hosp->f1f1;
-        if (gbv.f7c * n <= allhosps[owner].f35 && allhosps[owner].f35 > 0) {
-            hosp->f35 -= n * gbv.f7c;
-            hosp->f1f1 += n;
+    ai = &computer[hosp->ai_index];
+    if (myhosp->area > hosp->area) {
+        n = myhosp->area - hosp->area;
+        if (gbv.land_cost_per_tile * n <= allhosps[owner].balance && allhosps[owner].balance > 0) {
+            hosp->balance -= n * gbv.land_cost_per_tile;
+            hosp->area += n;
             return 1;
         }
         make_a_note(4, 0, 0, owner);

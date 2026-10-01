@@ -606,20 +606,20 @@ extern "C" void ProcessWindows(Window **windows)
 
     win = windows[0];
     front = 0;
-    if (gamevar.f12e == 0x13)
+    if (gamevar.mouse_mode == 0x13)
         return;
     CurrentWindow = -1;
     if (!win)
         return;
     if (MouseOnWindow(win)) {
         if (!mouse_was_on_window) {
-            othervar.f68 = gamevar.f12e;
+            othervar.saved_mouse_mode = gamevar.mouse_mode;
             set_mouse_mode(MM_NORMAL);
             mouse_was_on_window = 1;
         }
     } else if (mouse_was_on_window) {
         mouse_was_on_window = 0;
-        set_mouse_mode(othervar.f68);
+        set_mouse_mode(othervar.saved_mouse_mode);
     }
     if (win->flags & 0x600) {
         count = CountWindows(windows);
@@ -682,7 +682,7 @@ extern "C" void ProcessWindows(Window **windows)
         calculate_currentbuttonstore(windows[CurrentWindow]);
 }
 
-// Returns the index of button in the button list (resvars.f24), or -1 if it
+// Returns the index of button in the button list (resvars.button_list), or -1 if it
 // is not among the first 500.
 // FUNCTION: 0x0004e6f8
 extern "C" s16 get_button_no(WindowButton *button)
@@ -690,7 +690,7 @@ extern "C" s16 get_button_no(WindowButton *button)
     s32 i;
 
     for (i = 0; i < 500; i++) {
-        if (&resvars.f24_WindowButtonp[i] == button)
+        if (&resvars.button_list_WindowButtonp[i] == button)
             break;
     }
     if (i == 500)

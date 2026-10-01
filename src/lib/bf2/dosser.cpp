@@ -728,7 +728,7 @@ CommHandler::CommHandler()
     CH(this)->dial_func = 0;
     CH(this)->other_func = 0;
     CH(this)->hangup_func = 0;
-    CH(this)->unknown19c = 6000;
+    CH(this)->response_timeout = 6000;
     CH(this)->timeout = 1000;
     CH(this)->dial_timeout = 4000;
     strcpy(CH(this)->init_str, "ATZ");
@@ -1052,7 +1052,7 @@ long CommHandler::GetModemResponse(long timeout)
 // FUNCTION: 0xf72e8
 void CommHandler::SetModemResponseTimeOut(long seconds)
 {
-    CH(this)->unknown19c = seconds * 100;
+    CH(this)->response_timeout = seconds * 100;
 }
 
 // Sets the callback run while waiting during InitModem.

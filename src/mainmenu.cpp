@@ -35,7 +35,7 @@ s8 compare_products(s32 a, s32 b, s32 c, s32 d);
     0x74 0x08 0x0f 0x9c 0xc4 0x0f 0x9f 0xc0 0x28 0xe0 \
     parm [eax] [ebx] [ecx] [edx] value [al] modify [eax ebx ecx edx];
 
-// Runs one frame of the main menu's state machine (mainmenu.unknown2): loads
+// Runs one frame of the main menu's state machine (mainmenu.state): loads
 // and plays the intro animation, draws the menu with the hovered segment lit,
 // and carries out a chosen entry (new game, load, network, tutorial or quit)
 // by setting display_mode or quit_game. Also runs the attract loop and the
@@ -52,13 +52,13 @@ void draw_main_menu(void)
 
     timer = 0x3e8;
     count = 0;
-    switch (mainmenu.unknown2) {
+    switch (mainmenu.state) {
     case 0:
         return_from_screen(9, 0, 0);
     case 0x1f:
         lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         unload_game_files();
-        mainmenu.unknown2 = 0xe;
+        mainmenu.state = 0xe;
         break;
     case 0xe:
         clear_loading_screen(0);
@@ -75,39 +75,39 @@ void draw_main_menu(void)
         }
         play_main_menu_intro();
         set_mouse_mode(0x14);
-        LbMouseSetup(&screen_pointers_tab_start[othervar.f30]);
+        LbMouseSetup(&screen_pointers_tab_start[othervar.pointer_sprite]);
         setup_colors();
-        mainmenu.unknown2 = 3;
+        mainmenu.state = 3;
         break;
     case 0xf:
         LbMouseChangeSprite(0);
         play_main_menu_outro();
         fade_out_menu();
-        othervar.f2c = SCREEN_MODE_13;
+        othervar.pending_screen_mode = SCREEN_MODE_13;
         display_mode = 6;
-        mainmenu.unknown2 = 0;
-        loadgame.unknown2 = 0;
+        mainmenu.state = 0;
+        loadgame.state = 0;
         break;
     case 8:
         LbMouseChangeSprite(0);
         play_main_menu_outro();
         fade_out_menu();
         display_mode = 0xa;
-        nickname.unknown2 = 3;
-        mainmenu.unknown2 = 0;
-        othervar.f2c = SCREEN_MODE_13;
+        nickname.state = 3;
+        mainmenu.state = 0;
+        othervar.pending_screen_mode = SCREEN_MODE_13;
         level_number = 0;
         break;
     case 9:
         if (save_game_valid(0x63) == 0) {
-            mainmenu.unknown2 = 3;
+            mainmenu.state = 3;
             play_sound(10, SFX_WRONG2, -1, -1);
             break;
         }
         play_main_menu_outro();
         fade_out_menu();
-        othervar.f2c = SCREEN_MODE_13;
-        mainmenu.unknown2 = 0xd;
+        othervar.pending_screen_mode = SCREEN_MODE_13;
+        mainmenu.state = 0xd;
         break;
     case 0xd:
         return_from_screen(0, 0, 1);
@@ -120,33 +120,33 @@ void draw_main_menu(void)
             load_game_files();
             setup_new_level((u16)level_number, 1);
             if (load_game(0x63, -1)) {
-                othervar.fa65 = 0;
+                othervar.screen_pic_loaded = 0;
                 set_mouse_mode(MM_NORMAL);
                 LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
                 display_mode = 0;
-                mainmenu.unknown2 = 0;
+                mainmenu.state = 0;
                 load_game_files();
                 clear_loading_screen(palette);
                 D_00156910 = 1;
-                set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+                set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
                 draw_it();
-                othervar.f24 = palette;
+                othervar.pending_palette = palette;
                 break;
             }
         }
-        mainmenu.unknown2 = 0x1b;
+        mainmenu.state = 0x1b;
         break;
     case 0x1b:
         fn_0001102c();
-        mainmenu.unknown2 = 0;
+        mainmenu.state = 0;
         break;
     case 0xa:
         LbMouseChangeSprite(0);
         play_main_menu_outro();
         fade_out_menu();
         display_mode = 5;
-        mainmenu.unknown2 = 0;
-        othervar.f2c = SCREEN_MODE_13;
+        mainmenu.state = 0;
+        othervar.pending_screen_mode = SCREEN_MODE_13;
         break;
     case 0xb:
     case 0xc:
@@ -157,57 +157,57 @@ void draw_main_menu(void)
         break;
     case 3:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xb3].x, resvars.f40[0xb3].y, &screen_sprites_tab_start[2]);
+        reqspr_draw(resvars.screen_coords[0xb3].x, resvars.screen_coords[0xb3].y, &screen_sprites_tab_start[2]);
         draw_help_text();
         break;
     case 4:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xb4].x, resvars.f40[0xb4].y, &screen_sprites_tab_start[3]);
+        reqspr_draw(resvars.screen_coords[0xb4].x, resvars.screen_coords[0xb4].y, &screen_sprites_tab_start[3]);
         draw_help_text();
         break;
     case 5:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xb5].x, resvars.f40[0xb5].y, &screen_sprites_tab_start[1]);
+        reqspr_draw(resvars.screen_coords[0xb5].x, resvars.screen_coords[0xb5].y, &screen_sprites_tab_start[1]);
         draw_help_text();
         break;
     case 6:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xb6].x, resvars.f40[0xb6].y, &screen_sprites_tab_start[4]);
+        reqspr_draw(resvars.screen_coords[0xb6].x, resvars.screen_coords[0xb6].y, &screen_sprites_tab_start[4]);
         draw_help_text();
         break;
     case 7:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xb7].x, resvars.f40[0xb7].y, &screen_sprites_tab_start[5]);
+        reqspr_draw(resvars.screen_coords[0xb7].x, resvars.screen_coords[0xb7].y, &screen_sprites_tab_start[5]);
         draw_help_text();
         break;
     case 0x11:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xb8].x, resvars.f40[0xb8].y, &screen_sprites_tab_start[6]);
+        reqspr_draw(resvars.screen_coords[0xb8].x, resvars.screen_coords[0xb8].y, &screen_sprites_tab_start[6]);
         play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x12:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xb9].x, resvars.f40[0xb9].y, &screen_sprites_tab_start[7]);
+        reqspr_draw(resvars.screen_coords[0xb9].x, resvars.screen_coords[0xb9].y, &screen_sprites_tab_start[7]);
         play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x13:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xba].x, resvars.f40[0xba].y, &screen_sprites_tab_start[8]);
+        reqspr_draw(resvars.screen_coords[0xba].x, resvars.screen_coords[0xba].y, &screen_sprites_tab_start[8]);
         play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x14:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xbb].x, resvars.f40[0xbb].y, &screen_sprites_tab_start[9]);
+        reqspr_draw(resvars.screen_coords[0xbb].x, resvars.screen_coords[0xbb].y, &screen_sprites_tab_start[9]);
         play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x15:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xbc].x, resvars.f40[0xbc].y, &screen_sprites_tab_start[10]);
+        reqspr_draw(resvars.screen_coords[0xbc].x, resvars.screen_coords[0xbc].y, &screen_sprites_tab_start[10]);
         play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x16:
         display_main_menu();
-        reqspr_draw(resvars.f40[0xbd].x, resvars.f40[0xbd].y, &screen_sprites_tab_start[11]);
+        reqspr_draw(resvars.screen_coords[0xbd].x, resvars.screen_coords[0xbd].y, &screen_sprites_tab_start[11]);
         play_sound(10, SFX_HLIGHT5, -1, -1);
         break;
     case 0x17:
@@ -215,25 +215,25 @@ void draw_main_menu(void)
         LbMouseChangeSprite(0);
         play_intro();
         fade_out_menu();
-        othervar.f2c = SCREEN_MODE_13;
-        mainmenu.unknown2 = 0x18;
+        othervar.pending_screen_mode = SCREEN_MODE_13;
+        mainmenu.state = 0x18;
         break;
     case 0x18:
         load_ingame_pic(0x12, 1, 9, 0, SCREEN_MODE_13);
-        othervar.f9d7 = lbDisplay.unknown4;
-        othervar.f9db = lbDisplay.graphics_screen_width;
-        othervar.f9df = lbDisplay.graphics_screen_height;
-        lbDisplay.unknown4 = bscreen;
+        othervar.saved_screen_ptr = lbDisplay.wscreen;
+        othervar.saved_screen_width = lbDisplay.graphics_screen_width;
+        othervar.saved_screen_height = lbDisplay.graphics_screen_height;
+        lbDisplay.wscreen = bscreen;
         lbDisplay.graphics_screen_width = 0x280;
         lbDisplay.graphics_screen_height = 0x1e0;
         LbScreenSetGraphicsWindow(0, 0, 0x280, 0x1e0);
         fn_000905f4();
-        lbDisplay.unknown4 = othervar.f9d7;
-        lbDisplay.graphics_screen_width = othervar.f9db;
-        lbDisplay.graphics_screen_height = othervar.f9df;
-        LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
+        lbDisplay.wscreen = othervar.saved_screen_ptr;
+        lbDisplay.graphics_screen_width = othervar.saved_screen_width;
+        lbDisplay.graphics_screen_height = othervar.saved_screen_height;
+        LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
         fn_000905f4();
-        mainmenu.unknown2 = 0x19;
+        mainmenu.state = 0x19;
         break;
     case 0x19:
         while (lbInkey + lbDisplay.mleft_button + lbDisplay.mright_button) {
@@ -259,22 +259,22 @@ void draw_main_menu(void)
                         done = play_intro();
                     fade_out_menu();
                     load_ingame_pic(0x12, 1, 9, 0, SCREEN_MODE_13);
-                    othervar.f9d7 = lbDisplay.unknown4;
-                    othervar.f9db = lbDisplay.graphics_screen_width;
-                    othervar.f9df = lbDisplay.graphics_screen_height;
-                    lbDisplay.unknown4 = bscreen;
+                    othervar.saved_screen_ptr = lbDisplay.wscreen;
+                    othervar.saved_screen_width = lbDisplay.graphics_screen_width;
+                    othervar.saved_screen_height = lbDisplay.graphics_screen_height;
+                    lbDisplay.wscreen = bscreen;
                     lbDisplay.graphics_screen_width = 0x280;
                     lbDisplay.graphics_screen_height = 0x1e0;
                     LbScreenSetGraphicsWindow(0, 0, 0x280, 0x1e0);
                     fn_000905f4();
-                    lbDisplay.unknown4 = othervar.f9d7;
-                    lbDisplay.graphics_screen_width = othervar.f9db;
-                    lbDisplay.graphics_screen_height = othervar.f9df;
-                    LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
+                    lbDisplay.wscreen = othervar.saved_screen_ptr;
+                    lbDisplay.graphics_screen_width = othervar.saved_screen_width;
+                    lbDisplay.graphics_screen_height = othervar.saved_screen_height;
+                    LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
                     fn_000905f4();
                     timer = 0x3e8;
                     if (!done)
-                        hosp_fade_palette(othervar.f1f, 10, Lb_PALETTE_FADE_CLOSED);
+                        hosp_fade_palette(othervar.fade_palette, 10, Lb_PALETTE_FADE_CLOSED);
                 }
             }
             if (lbDisplay.mleft_button + lbDisplay.mright_button + lbInkey + lbDisplay.left_button + lbDisplay.right_button) {
@@ -282,7 +282,7 @@ void draw_main_menu(void)
                 done = 1;
             }
             if (done) {
-                mainmenu.unknown2 = 0x1a;
+                mainmenu.state = 0x1a;
                 lbDisplay.left_button = lbDisplay.right_button = 0;
             }
             LbScreenUnlock();
@@ -290,16 +290,16 @@ void draw_main_menu(void)
             while (LbScreenLock() != 1) {
             }
         }
-        set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+        set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
         break;
     case 0x1a:
         display_mode = 0xa;
-        nickname.unknown2 = 0;
-        mainmenu.unknown2 = 0;
+        nickname.state = 0;
+        mainmenu.state = 0;
         break;
     case 0x1c:
         load_ingame_pic(0x17, 1, 9, 0, SCREEN_MODE_13);
-        mainmenu.unknown2 = 0x1d;
+        mainmenu.state = 0x1d;
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0x72, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -322,15 +322,15 @@ void draw_main_menu(void)
             while (LbScreenLock() != 1) {
             }
         }
-        mainmenu.unknown2 = 0x1e;
+        mainmenu.state = 0x1e;
         break;
     case 0x1e:
-        mainmenu.unknown2 = 0x1f;
+        mainmenu.state = 0x1f;
         fade_out_menu();
         fn_0001102c();
         break;
     default:
-        mainmenu.unknown2 = 0;
+        mainmenu.state = 0;
         break;
     }
 }
@@ -340,10 +340,10 @@ void draw_main_menu(void)
 // FUNCTION: 0x00062730
 void process_keys_main_menu(void)
 {
-    switch (mainmenu.unknown2) {
+    switch (mainmenu.state) {
     case 0x19:
         if (lbInkey)
-            mainmenu.unknown2 = 0x1a;
+            mainmenu.state = 0x1a;
     case 0x17:
     case 0x1a:
         return;
@@ -363,11 +363,11 @@ void process_keys_main_menu(void)
 }
 
 // Main menu clicks: a release inside one of the menu's triangles selects
-// that entry by setting mainmenu.unknown2. Clears the button state.
+// that entry by setting mainmenu.state. Clears the button state.
 // FUNCTION: 0x000627cc
 void process_mouse_main_menu(void)
 {
-    switch (mainmenu.unknown2) {
+    switch (mainmenu.state) {
     case 0:
     case 8:
     case 0xa:
@@ -382,7 +382,7 @@ void process_mouse_main_menu(void)
         return;
     case 0x19:
         if (lbDisplay.left_button + lbDisplay.right_button)
-            mainmenu.unknown2 = 0x1a;
+            mainmenu.state = 0x1a;
     case 0x17:
     case 0x18:
     case 0x1a:
@@ -393,17 +393,17 @@ void process_mouse_main_menu(void)
     if (lbDisplay.rleft_button) {
         lbDisplay.rleft_button = 0;
         if (check_tri(0x2c, 0x13, 0x55, 0x3a, 0x7f, 0x13, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
-            mainmenu.unknown2 = 8;
+            mainmenu.state = 8;
         if (check_tri(0x55, 0x3a, 0x7f, 0x68, 0x7f, 0x13, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
-            mainmenu.unknown2 = 0xf;
+            mainmenu.state = 0xf;
         if (check_tri(0x2c, 0x13, 0x2c, 0x68, 0x55, 0x3a, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
-            mainmenu.unknown2 = 9;
+            mainmenu.state = 9;
         if (check_tri(0x2c, 0x68, 0x7f, 0x68, 0x55, 0x3a, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
-            mainmenu.unknown2 = 0xa;
+            mainmenu.state = 0xa;
         if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
-            mainmenu.unknown2 = 0xc;
+            mainmenu.state = 0xc;
         if (check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, lbDisplay.rmouse_x, lbDisplay.rmouse_y))
-            mainmenu.unknown2 = 0xc;
+            mainmenu.state = 0xc;
     }
     lbDisplay.left_button = lbDisplay.rleft_button = lbDisplay.right_button = lbDisplay.rright_button = 0;
 }
@@ -418,7 +418,7 @@ void display_main_menu(void)
 }
 
 // Hit-tests the mouse against the main menu's triangles and sets the hover
-// state in mainmenu.unknown2, or shows the entry's help when it is already
+// state in mainmenu.state, or shows the entry's help when it is already
 // hovered.
 // FUNCTION: 0x00062a7c
 void tri_test(void)
@@ -427,88 +427,88 @@ void tri_test(void)
 
     unused = 0;
     if (check_tri(0x2c, 0x13, 0x55, 0x3a, 0x7f, 0x13, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
-        if (mainmenu.unknown2 != 5) {
-            switch (mainmenu.unknown2) {
+        if (mainmenu.state != 5) {
+            switch (mainmenu.state) {
             case 3:
-                mainmenu.unknown2 = 0x11;
+                mainmenu.state = 0x11;
                 break;
             case 4:
-                mainmenu.unknown2 = 0x13;
+                mainmenu.state = 0x13;
                 break;
             case 6:
-                mainmenu.unknown2 = 0x12;
+                mainmenu.state = 0x12;
                 break;
             case 7:
-                mainmenu.unknown2 = 0x12;
+                mainmenu.state = 0x12;
                 break;
             default:
-                mainmenu.unknown2 = 5;
+                mainmenu.state = 5;
                 break;
             }
         } else {
             help_hotspot_detected(1, 1, 0, 0);
         }
     } else if (check_tri(0x55, 0x3a, 0x7f, 0x68, 0x7f, 0x13, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
-        if (mainmenu.unknown2 != 4) {
-            switch (mainmenu.unknown2) {
+        if (mainmenu.state != 4) {
+            switch (mainmenu.state) {
             case 5:
-                mainmenu.unknown2 = 0x13;
+                mainmenu.state = 0x13;
                 break;
             case 3:
-                mainmenu.unknown2 = 0x12;
+                mainmenu.state = 0x12;
                 break;
             case 6:
-                mainmenu.unknown2 = 0x14;
+                mainmenu.state = 0x14;
                 break;
             case 7:
-                mainmenu.unknown2 = 0x14;
+                mainmenu.state = 0x14;
                 break;
             default:
-                mainmenu.unknown2 = 4;
+                mainmenu.state = 4;
                 break;
             }
         } else {
             help_hotspot_detected(2, 1, 0, 0);
         }
     } else if (check_tri(0x2c, 0x13, 0x2c, 0x68, 0x55, 0x3a, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
-        if (mainmenu.unknown2 != 3) {
-            switch (mainmenu.unknown2) {
+        if (mainmenu.state != 3) {
+            switch (mainmenu.state) {
             case 5:
-                mainmenu.unknown2 = 0x11;
+                mainmenu.state = 0x11;
                 break;
             case 4:
-                mainmenu.unknown2 = 0x12;
+                mainmenu.state = 0x12;
                 break;
             case 6:
-                mainmenu.unknown2 = 0x16;
+                mainmenu.state = 0x16;
                 break;
             case 7:
-                mainmenu.unknown2 = 0x16;
+                mainmenu.state = 0x16;
                 break;
             default:
-                mainmenu.unknown2 = 3;
+                mainmenu.state = 3;
                 break;
             }
         } else {
             help_hotspot_detected(3, 1, 0, 0);
         }
     } else if (check_tri(0x2c, 0x68, 0x7f, 0x68, 0x55, 0x3a, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
-        if (mainmenu.unknown2 != 6) {
-            switch (mainmenu.unknown2) {
+        if (mainmenu.state != 6) {
+            switch (mainmenu.state) {
             case 5:
-                mainmenu.unknown2 = 0x12;
+                mainmenu.state = 0x12;
                 break;
             case 4:
-                mainmenu.unknown2 = 0x14;
+                mainmenu.state = 0x14;
                 break;
             case 3:
-                mainmenu.unknown2 = 0x16;
+                mainmenu.state = 0x16;
                 break;
             case 7:
-                mainmenu.unknown2 = 0x15;
+                mainmenu.state = 0x15;
                 break;
             default:
-                mainmenu.unknown2 = 6;
+                mainmenu.state = 6;
                 break;
             }
         } else {
@@ -516,42 +516,42 @@ void tri_test(void)
         }
     } else if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, lbDisplay.mmouse_x, lbDisplay.mmouse_y)
                || check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
-        if (mainmenu.unknown2 != 7) {
-            switch (mainmenu.unknown2) {
+        if (mainmenu.state != 7) {
+            switch (mainmenu.state) {
             case 5:
-                mainmenu.unknown2 = 0x12;
+                mainmenu.state = 0x12;
                 break;
             case 4:
-                mainmenu.unknown2 = 0x14;
+                mainmenu.state = 0x14;
                 break;
             case 3:
-                mainmenu.unknown2 = 0x16;
+                mainmenu.state = 0x16;
                 break;
             case 6:
-                mainmenu.unknown2 = 0x15;
+                mainmenu.state = 0x15;
                 break;
             default:
-                mainmenu.unknown2 = 7;
+                mainmenu.state = 7;
                 break;
             }
         } else {
             help_hotspot_detected(5, 1, 0, 0);
         }
     } else {
-        switch (mainmenu.unknown2) {
+        switch (mainmenu.state) {
         case 0x11:
         case 0x12:
         case 0x13:
         case 0x14:
         case 0x15:
         case 0x16:
-            mainmenu.unknown2 = 3;
+            mainmenu.state = 3;
             break;
         default:
             break;
         }
     }
-    switch (mainmenu.unknown2) {
+    switch (mainmenu.state) {
     case 0x11:
     case 0x12:
     case 0x13:
@@ -613,9 +613,9 @@ u8 play_intro(void)
     u8 was_locked;
     u8 result;
 
-    was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+    was_locked = lbDisplay.wscreen ? (u8)1 : (u8)0;
     aborted = 0;
-    sprintf(path, "%s%s", cd_install_path, animation_table[othervar.fa87 > 4 ? 0x1a : 0x19].name);
+    sprintf(path, "%s%s", cd_install_path, animation_table[othervar.cd_speed > 4 ? 0x1a : 0x19].name);
     if (!LbFileExists(path))
         return aborted;
     fade_out_menu();
@@ -628,7 +628,7 @@ u8 play_intro(void)
     lbDisplay.draw_flags = 0;
     set_mouse_mode(9);
     smack_draw_callback = 0;
-    if (othervar.fa87 > 4)
+    if (othervar.cd_speed > 4)
         result = hosp_play_smk(0x1a);
     else
         result = hosp_play_smk(0x19);
@@ -657,7 +657,7 @@ u8 play_attract_mode(void)
     u8 was_locked;
 
     aborted = 0;
-    was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+    was_locked = lbDisplay.wscreen ? (u8)1 : (u8)0;
     if (was_locked)
         LbScreenUnlock();
     fade_out_menu();
@@ -673,8 +673,8 @@ u8 play_attract_mode(void)
         smack_draw_callback = 0;
         othervar.f9ca = saferand();
         othervar.f9cb = 0;
-        othervar.f9cd = resvars.f18_s32p[0xab] / 2 + 100;
-        mainmenu.unknown0 = 0;
+        othervar.f9cd = resvars.boxes_s32p[0xab] / 2 + 100;
+        mainmenu.value = 0;
         aborted = 0;
         if (hosp_play_smk(0x1b) == 2)
             aborted = 1;

@@ -48,7 +48,7 @@ ServiceProvider::ServiceProvider()
     for (i = 0; i < 32; i++)
         sessions[i].in_use = 0;
     init_count = 0;
-    unknown528 = 0;
+    in_session = 0;
     player_count = 0;
     strcpy(name, "");
     started = 0;
@@ -79,7 +79,7 @@ TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
     callback_data = data;
     if (cbs)
         callbacks = cbs;
-    unknown528 = 0;
+    in_session = 0;
     started = 0;
     init_count++;
     return Lb_OK;
@@ -90,7 +90,7 @@ TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
 TbError ServiceProvider::Release(void)
 {
     fn_000c20c0("  LbNETWORK : Releasing ServiceProvider\n");
-    unknown528 = 0;
+    in_session = 0;
     if (init_count != 1)
         fn_000c20c0("Service Provider not setup!\n");
     init_count--;
@@ -124,7 +124,7 @@ TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 is_local, u32 is_host
         dst = players[i].name;
         if (dst && name)
             NameCopy(dst, name, 32);
-        players[i].unknown5 = is_local;
+        players[i].local = is_local;
         players[i].host = is_host;
         ret = Lb_OK;
         player_count++;

@@ -61,11 +61,11 @@ u8 draw_area_select(void)
     s32 next;
     char buf[128];
 
-    switch (area.unknown2) {
+    switch (area.state) {
     case 0:
         return_from_screen(9, 0, 1);
         unload_game_files();
-        if (animation_table[level_number + 7].f28 > install_type) {
+        if (animation_table[level_number + 7].cd_install_level > install_type) {
             sprintf(buf, "%s%s", cd_install_path, animation_table[level_number + 7].name);
             check_cd_available(buf);
         }
@@ -80,16 +80,16 @@ u8 draw_area_select(void)
         calculate_grey(ppalette.data);
         BufferedInkey = 0;
         keybuffer_clear();
-        area.unknown0 = 0;
-        area.unknown2 = 1;
+        area.value = 0;
+        area.state = 1;
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        othervar.fa65 = 0;
+        othervar.screen_pic_loaded = 0;
         set_mouse_mode(9);
         break;
     case 1:
         next = next_map();
         if (next == 0)
-            area.unknown2 = 3;
+            area.state = 3;
         PendingDisplay = next;
         copy_screen_to_wscreen(bscreen);
         break;
@@ -100,14 +100,14 @@ u8 draw_area_select(void)
         if (!display_loading_screen())
             return 0;
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
-        area.unknown2 = 0;
-        advisor.f131 = 0x1d;
+        area.state = 0;
+        advisor.tutorial_step = 0x1d;
         display_mode = 0;
         othervar.f33 = 0;
         LbScreenClear(0);
-        swap_game_sprites(resvars.f1);
-        if (resvars.f1 == SCREEN_MODE_1) {
-            was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+        swap_game_sprites(resvars.game_mode);
+        if (resvars.game_mode == SCREEN_MODE_1) {
+            was_locked = lbDisplay.wscreen ? (u8)1 : (u8)0;
             if (was_locked)
                 LbScreenUnlock();
             change_res(SCREEN_MODE_1);
@@ -115,15 +115,15 @@ u8 draw_area_select(void)
             while (LbScreenLock() != 1)
                 ;
         }
-        resvars.f2 = resvars.f1;
+        resvars.loaded_mode = resvars.game_mode;
         D_00156910 = 1;
         clear_loading_screen(palette);
         setup_new_level((u16)level_number, 1);
-        set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-        goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
-        othervar.fa5c = 1;
+        set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+        goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+        othervar.show_level_brief = 1;
         draw_it();
-        othervar.f24 = palette;
+        othervar.pending_palette = palette;
         init_ambients();
         break;
     case 3:
@@ -140,7 +140,7 @@ u8 draw_area_select(void)
         break;
     case 6:
         unload_game_files();
-        if (animation_table[level_number + 7].f28 > install_type) {
+        if (animation_table[level_number + 7].cd_install_level > install_type) {
             sprintf(buf, "%s%s", cd_install_path, animation_table[level_number + 7].name);
             check_cd_available(buf);
         }
@@ -155,14 +155,14 @@ u8 draw_area_select(void)
         calculate_grey(ppalette.data);
         BufferedInkey = 0;
         keybuffer_clear();
-        area.unknown0 = 0;
-        area.unknown2 = 1;
+        area.value = 0;
+        area.state = 1;
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        othervar.fa65 = 0;
+        othervar.screen_pic_loaded = 0;
         set_mouse_mode(9);
         break;
     default:
-        area.unknown2 = 0;
+        area.state = 0;
         break;
     }
     return 1;
@@ -175,14 +175,14 @@ void process_keys_area_select(void)
 {
     switch (BufferedInkey) {
     case KC_ESCAPE:
-        area.unknown2 = 0;
+        area.state = 0;
         display_mode = 2;
-        mainmenu.unknown2 = 0x1f;
+        mainmenu.state = 0x1f;
         D_001549d0[player].value = 0;
         set_mouse_mode(MM_NORMAL);
         break;
     case KC_C:
-        area.unknown2 = 5;
+        area.state = 5;
         break;
     }
     BufferedInkey = lbInkey = 0;
@@ -198,18 +198,18 @@ void process_mouse_area_select(void)
     u16 i;
     u8 kind;
 
-    switch (area.unknown2) {
+    switch (area.state) {
     case 3:
         break;
     case 5:
         if (lbDisplay.left_button) {
             for (i = 0; i < 0x15; i++) {
-                if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f18[i + 45].x, resvars.f18[i + 45].y, resvars.f18[i + 45].w, resvars.f18[i + 45].h)) {
+                if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.boxes[i + 45].x, resvars.boxes[i + 45].y, resvars.boxes[i + 45].w, resvars.boxes[i + 45].h)) {
                     set_mouse_mode(0x15);
                     play_area_smk(i + 1);
-                    area.unknown2 = 2;
+                    area.state = 2;
                     level_number = i + 1;
-                    allhosps->f29 = level_number;
+                    allhosps->level = level_number;
                     break;
                 }
             }
@@ -229,25 +229,25 @@ void process_mouse_area_select(void)
     while (area_towns[i].w > 0 && area_towns[i].h > 0) {
         kind = area_towns[i].kind;
         if (lbDisplay.left_button) {
-            if (allhosps->f29 == 0 || level_number == 0) {
+            if (allhosps->level == 0 || level_number == 0) {
                 level_number = 1;
-                allhosps->f29 = level_number;
+                allhosps->level = level_number;
             }
-            area.unknown2 = 2;
+            area.state = 2;
             lbDisplay.left_button = 0;
         }
         i++;
     }
-    if (othervar.f9eb != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
-        othervar.f9ed = 600;
-        othervar.f9eb = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
+    if (othervar.last_mouse_sum != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
+        othervar.idle_countdown = 600;
+        othervar.last_mouse_sum = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
     }
-    if (!(s16)othervar.f9ed--) {
-        if (allhosps->f29 == 0 || level_number == 0) {
+    if (!(s16)othervar.idle_countdown--) {
+        if (allhosps->level == 0 || level_number == 0) {
             level_number = 1;
-            allhosps->f29 = level_number;
+            allhosps->level = level_number;
         }
-        area.unknown2 = 2;
+        area.state = 2;
     }
 }
 
@@ -266,8 +266,8 @@ void display_area_select(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x27);
     lbDisplay.draw_flags = 0;
-    LbTextSetJustifyWindow(resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y, resvars.f50_AreaLayoutp->x1 - resvars.f50_AreaLayoutp->x);
-    LbTextSetClipWindow(resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y, resvars.f50_AreaLayoutp->x1 - resvars.f50_AreaLayoutp->x, resvars.f50_AreaLayoutp->y1 - resvars.f50_AreaLayoutp->y);
+    LbTextSetJustifyWindow(resvars.glass_frames_AreaLayoutp->x, resvars.glass_frames_AreaLayoutp->y, resvars.glass_frames_AreaLayoutp->x1 - resvars.glass_frames_AreaLayoutp->x);
+    LbTextSetClipWindow(resvars.glass_frames_AreaLayoutp->x, resvars.glass_frames_AreaLayoutp->y, resvars.glass_frames_AreaLayoutp->x1 - resvars.glass_frames_AreaLayoutp->x, resvars.glass_frames_AreaLayoutp->y1 - resvars.glass_frames_AreaLayoutp->y);
     lbDisplay.draw_flags |= 0x20;
     yofs_text = 0;
     for (i = 0; i < text_paragraph; i++) {
@@ -309,7 +309,7 @@ void display_select_level(void)
     char buf[144];
 
     setup_colors();
-    LbScreenClear(color.unknown9);
+    LbScreenClear(color.dark_blue);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x27);
     lbDisplay.draw_flags = 0;
@@ -326,25 +326,25 @@ void display_select_level(void)
             }
             handle = LbFileOpen(buf, 2);
             if (handle != -1) {
-                lbDisplay.draw_colour = color.unknown9;
+                lbDisplay.draw_colour = color.dark_blue;
                 lbDisplay.draw_flags |= 0x40;
                 found = 1;
                 LbFileClose(handle);
             } else {
-                lbDisplay.draw_colour = color.unknownA;
+                lbDisplay.draw_colour = color.green;
                 lbDisplay.draw_flags |= 0x40;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, col * 100, line_height * row, 100, line_height)) {
-                lbDisplay.draw_colour = color.unknown8;
+                lbDisplay.draw_colour = color.black;
                 *(volatile u16 *)&lbDisplay.draw_flags |= 0x40;
                 if (lbDisplay.left_button) {
                     lbDisplay.left_button = 0;
-                    area.unknown2 = 2;
+                    area.state = 2;
                     level_number = (u8)col * 20 + (u8)row;
                     if (level_number > 14)
-                        allhosps->f29 = 1;
+                        allhosps->level = 1;
                     else
-                        allhosps->f29 = level_number;
+                        allhosps->level = level_number;
                 }
             }
             sprintf(buf, "level-%d", col * 20 + row);

@@ -52,9 +52,9 @@ void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
 void draw_window_not_using_bscreen(const u8 n);
 void draw_face(Picture *pic, const u16 x, const u16 y);
 
-// Runs one frame of the staff management screen (slist.unknown2: 0 opening,
+// Runs one frame of the staff management screen (slist.state: 0 opening,
 // 1 shown, 2 leaving to the selected staff member's window (event 0x87), 3
-// closing). Opened from a staff window (othervar.fa82), it starts on that
+// closing). Opened from a staff window (othervar.slist_staff), it starts on that
 // staff member's kind and page.
 // FUNCTION: 0x000914e0
 void display_slist(void)
@@ -65,68 +65,68 @@ void display_slist(void)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(1);
     lbDisplay.draw_flags = 0;
-    switch (slist.unknown2) {
+    switch (slist.state) {
     case 0:
         load_ingame_pic(8, 1, 0x21, 0, SCREEN_MODE_13);
         D_001290d0 = 0xff;
         D_001290d1 = 0xff;
         D_001290d2 = 0xff;
         set_mouse_mode(0x21);
-        slist.unknown2 = 1;
-        slist.unknown0 = 0;
-        othervar.f49 = 1;
+        slist.state = 1;
+        slist.value = 0;
+        othervar.slist_filter = 1;
         close_irequesters();
-        open_new_window(0, 0, 0, resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y0, resvars.f44_SlistAreap->x1, resvars.f44_SlistAreap->y1);
-        window.unknown2eb = window.unknown2ec - 1;
-        othervar.f91 = 0;
-        if (othervar.fa82) {
-            switch ((thing + othervar.fa82)->subtype) {
+        open_new_window(0, 0, 0, resvars.screen_list_pos_SlistAreap->x0, resvars.screen_list_pos_SlistAreap->y0, resvars.screen_list_pos_SlistAreap->x1, resvars.screen_list_pos_SlistAreap->y1);
+        window.current_window = window.window_count - 1;
+        othervar.slist_page = 0;
+        if (othervar.slist_staff) {
+            switch ((thing + othervar.slist_staff)->subtype) {
             case STAFF_NURSE:
-                othervar.f49 = 2;
+                othervar.slist_filter = 2;
                 break;
             case STAFF_DOCTOR:
-                othervar.f49 = 1;
+                othervar.slist_filter = 1;
                 break;
             case STAFF_HANDYMAN:
-                othervar.f49 = 4;
+                othervar.slist_filter = 4;
                 break;
             case STAFF_RECEPTIONIST:
-                othervar.f49 = 8;
+                othervar.slist_filter = 8;
                 break;
             case STAFF_SURGEON:
-                othervar.f49 = 1;
+                othervar.slist_filter = 1;
                 break;
             default:
                 break;
             }
             for (;;) {
-                prev = slist.unknown0;
-                slist.unknown0 = get_slist_staff(0);
-                if (prev == slist.unknown0) {
-                    slist.unknown0 = 0;
+                prev = slist.value;
+                slist.value = get_slist_staff(0);
+                if (prev == slist.value) {
+                    slist.value = 0;
                     break;
                 }
-                if (slist.unknown0 == othervar.fa82)
+                if (slist.value == othervar.slist_staff)
                     break;
-                if (othervar.fa60 / 11 > 0 && othervar.fa60 % 11 == 0) {
-                    if (othervar.f91 < 150) {
-                        if (staff_on_page(othervar.f91 + 1))
-                            othervar.f91++;
+                if (othervar.slist_cursor / 11 > 0 && othervar.slist_cursor % 11 == 0) {
+                    if (othervar.slist_page < 150) {
+                        if (staff_on_page(othervar.slist_page + 1))
+                            othervar.slist_page++;
                     }
                 }
             }
         }
         copy_screen_to_wscreen(bscreen);
-        draw_slist_staff(slist.unknown0);
-        draw_slist_window(slist.unknown0);
+        draw_slist_staff(slist.value);
+        draw_slist_window(slist.value);
         draw_slist_panel();
         draw_slist_overall();
         draw_slist_nums();
         break;
     case 1:
         copy_screen_to_wscreen(bscreen);
-        draw_slist_staff(slist.unknown0);
-        draw_slist_window(slist.unknown0);
+        draw_slist_staff(slist.value);
+        draw_slist_window(slist.value);
         draw_slist_panel();
         draw_slist_overall();
         draw_slist_nums();
@@ -135,7 +135,7 @@ void display_slist(void)
     case 2:
         D_001549d0[player].type = 0x87;
         D_001549d0[player].value = 0;
-        D_001549d0[player].arg = slist.unknown0;
+        D_001549d0[player].arg = slist.value;
         cancel_helpmsg();
         break;
     case 3:
@@ -148,17 +148,17 @@ void display_slist(void)
     }
     slist_keys();
     lbDisplay.draw_flags = 0;
-    if (!staff_on_page(othervar.f91)) {
-        if (othervar.f91 > 0)
-            othervar.f91--;
+    if (!staff_on_page(othervar.slist_page)) {
+        if (othervar.slist_page > 0)
+            othervar.slist_page--;
     }
     lbDisplay.rleft_button = lbDisplay.left_button = 0;
     if (exit_quick_requester())
-        slist.unknown2 = 3;
+        slist.state = 3;
     compute_help_text(0, 0, 6);
 }
 
-// Staff management keys: left/right change the kind shown (othervar.f49),
+// Staff management keys: left/right change the kind shown (othervar.slist_filter),
 // up/down select the previous/next staff member, turning the page as
 // needed.
 // FUNCTION: 0x0009187c
@@ -169,38 +169,38 @@ void slist_keys(void)
 
     prev = 0;
     if (lbInkey == KC_NUMPAD6 || lbKeyOn[KC_RIGHT]) {
-        if (othervar.f49 != 8) {
-            othervar.f49 <<= 1;
-            slist.unknown0 = 0;
+        if (othervar.slist_filter != 8) {
+            othervar.slist_filter <<= 1;
+            slist.value = 0;
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
-            othervar.fa60 = 0;
+            othervar.slist_cursor = 0;
             play_sound(10, SFX_SELECTX, -1, -1);
         }
         lbInkey = 0;
     } else if (lbInkey == KC_NUMPAD4 || lbKeyOn[KC_LEFT]) {
-        if (othervar.f49 != 1) {
-            othervar.f49 >>= 1;
-            slist.unknown0 = 0;
+        if (othervar.slist_filter != 1) {
+            othervar.slist_filter >>= 1;
+            slist.value = 0;
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
-            othervar.fa60 = 0;
+            othervar.slist_cursor = 0;
             play_sound(10, SFX_SELECTX, -1, -1);
         }
         lbInkey = 0;
     }
     if (lbInkey == KC_NUMPAD2 || lbKeyOn[KC_DOWN]) {
-        prev = slist.unknown0;
-        slist.unknown0 = get_slist_staff(0);
-        if (prev != slist.unknown0) {
+        prev = slist.value;
+        slist.value = get_slist_staff(0);
+        if (prev != slist.value) {
             play_sound(10, SFX_SELECTX, -1, -1);
             lbDisplay.mouse_x = 0;
             lbDisplay.mouse_y = 0;
             lbInkey = 0;
-            if (othervar.fa60 / 11 > 0 && othervar.fa60 % 11 == 0) {
-                if (othervar.f91 < 150) {
-                    if (staff_on_page(othervar.f91 + 1)) {
-                        othervar.f91++;
+            if (othervar.slist_cursor / 11 > 0 && othervar.slist_cursor % 11 == 0) {
+                if (othervar.slist_page < 150) {
+                    if (staff_on_page(othervar.slist_page + 1)) {
+                        othervar.slist_page++;
                         play_sound(10, SFX_SELECTX, -1, -1);
                     } else {
                         play_sound(10, SFX_SELECTX, -1, -1);
@@ -211,16 +211,16 @@ void slist_keys(void)
             }
         }
     } else if (lbInkey == KC_NUMPAD8 || lbKeyOn[KC_UP]) {
-        prev = slist.unknown0;
-        slist.unknown0 = get_slist_staff(1);
-        if (prev != slist.unknown0) {
+        prev = slist.value;
+        slist.value = get_slist_staff(1);
+        if (prev != slist.value) {
             play_sound(10, SFX_SELECTX, -1, -1);
-            if (othervar.fa60 / 10 > 0 && othervar.fa60 % 10 == 0) {
-                if (othervar.f91 > 0) {
+            if (othervar.slist_cursor / 10 > 0 && othervar.slist_cursor % 10 == 0) {
+                if (othervar.slist_page > 0) {
                     play_sound(10, SFX_SELECTX, -1, -1);
-                    othervar.f91--;
+                    othervar.slist_page--;
                     for (i = 0; i < 10; i++)
-                        slist.unknown0 = get_slist_staff(1);
+                        slist.value = get_slist_staff(1);
                 } else {
                     play_sound(10, SFX_SELECTX, -1, -1);
                 }
@@ -233,23 +233,23 @@ void slist_keys(void)
 }
 
 // Returns the next (dir 0) or previous (dir 1) staff member of this player
-// of the kinds shown after the selected one (slist.unknown0), or the
-// selected one if there is none; counts the step in othervar.fa60.
+// of the kinds shown after the selected one (slist.value), or the
+// selected one if there is none; counts the step in othervar.slist_cursor.
 // FUNCTION: 0x00091bac
 u16 get_slist_staff(const u8 dir)
 {
     Thing *staff;
 
-    staff = &thing[slist.unknown0];
+    staff = &thing[slist.value];
     if (dir == 0) {
         while (++staff < end_things) {
             if (staff->type == THING_STAFF && staff->owner == player) {
                 if (staff->state != SS_APPLICANT) {
-                    if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
-                        || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
-                        || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
-                        || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
-                        othervar.fa60++;
+                    if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.slist_filter & 1))
+                        || (staff->subtype == STAFF_NURSE && (othervar.slist_filter & 2))
+                        || (staff->subtype == STAFF_RECEPTIONIST && (othervar.slist_filter & 8))
+                        || (staff->subtype == STAFF_HANDYMAN && (othervar.slist_filter & 4))) {
+                        othervar.slist_cursor++;
                         return staff - thing;
                     }
                 }
@@ -259,21 +259,21 @@ u16 get_slist_staff(const u8 dir)
         while (thing + 1 <= --staff) {
             if (staff->type == THING_STAFF && staff->owner == player) {
                 if (staff->state != SS_APPLICANT) {
-                    if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
-                        || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
-                        || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
-                        || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
-                        othervar.fa60--;
+                    if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.slist_filter & 1))
+                        || (staff->subtype == STAFF_NURSE && (othervar.slist_filter & 2))
+                        || (staff->subtype == STAFF_RECEPTIONIST && (othervar.slist_filter & 8))
+                        || (staff->subtype == STAFF_HANDYMAN && (othervar.slist_filter & 4))) {
+                        othervar.slist_cursor--;
                         return staff - thing;
                     }
                 }
             }
         }
     }
-    return slist.unknown0;
+    return slist.value;
 }
 
-// Draws the current page (othervar.f91, ten rows) of staff of the kinds
+// Draws the current page (othervar.slist_page, ten rows) of staff of the kinds
 // shown: number, name, wage and gauges, with `selected` framed; hovering
 // and clicking select a row. Draws the page marker.
 // FUNCTION: 0x00091dec
@@ -292,8 +292,8 @@ void draw_slist_staff(const u16 selected)
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     for (row = 0; row < 3; row++) {
         lbDisplay.draw_flags = 0x100;
-        LbTextSetWindow(resvars.f3c_Boxp[row + 61].x, resvars.f3c_Boxp[row + 61].y, resvars.f3c_Boxp[row + 61].w, resvars.f3c_Boxp[row + 61].h);
-        LbTextDraw(0, (resvars.f3c_Boxp[row + 61].h - height) / 2, slist_text[row + 2]);
+        LbTextSetWindow(resvars.screen_boxes_Boxp[row + 61].x, resvars.screen_boxes_Boxp[row + 61].y, resvars.screen_boxes_Boxp[row + 61].w, resvars.screen_boxes_Boxp[row + 61].h);
+        LbTextDraw(0, (resvars.screen_boxes_Boxp[row + 61].h - height) / 2, slist_text[row + 2]);
         lbDisplay.draw_flags = 0;
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     }
@@ -304,40 +304,40 @@ void draw_slist_staff(const u16 selected)
                 continue;
             if (row >= 10)
                 break;
-            if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
-                || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
-                || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
-                || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
-                if (listed >= othervar.f91 * 10 && listed < (othervar.f91 + 1) * 10) {
+            if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.slist_filter & 1))
+                || (staff->subtype == STAFF_NURSE && (othervar.slist_filter & 2))
+                || (staff->subtype == STAFF_RECEPTIONIST && (othervar.slist_filter & 8))
+                || (staff->subtype == STAFF_HANDYMAN && (othervar.slist_filter & 4))) {
+                if (listed >= othervar.slist_page * 10 && listed < (othervar.slist_page + 1) * 10) {
                     set_font_from_cache(1);
-                    if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
-                        if (othervar.fa60 != row + othervar.f91 * 10 + 1)
+                    if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_Boxp[row + 104].x, resvars.screen_boxes_Boxp[row + 104].y, resvars.screen_boxes_Boxp[row + 104].w, resvars.screen_boxes_Boxp[row + 104].h)) {
+                        if (othervar.slist_cursor != row + othervar.slist_page * 10 + 1)
                             play_sound(10, SFX_HLIGHT5, -1, -1);
                         set_font_from_cache(2);
-                        othervar.fa60 = othervar.f91 * 10 + row + 1;
+                        othervar.slist_cursor = othervar.slist_page * 10 + row + 1;
                     }
                     if (selected == (u16)(staff - thing)) {
                         set_font_from_cache(2);
-                        draw_frame(resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y - 1, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h, (u16)color.unknownD);
+                        draw_frame(resvars.screen_boxes_Boxp[row + 104].x, resvars.screen_boxes_Boxp[row + 104].y - 1, resvars.screen_boxes_Boxp[row + 104].w, resvars.screen_boxes_Boxp[row + 104].h, (u16)color.red);
                         draw_slist_button_overlays(staff);
                     }
                     sprintf(buf, "%d", listed + 1);
-                    LbTextDraw(resvars.f40[row + 114].x, resvars.f40[row + 114].y, buf);
+                    LbTextDraw(resvars.screen_coords[row + 114].x, resvars.screen_coords[row + 114].y, buf);
                     sprintf(buf, "%c. %s%s", staff->initial, staff_names_1[staff->surname_a], staff_names_2[staff->surname_b]);
-                    LbTextDraw(resvars.f40[row + 124].x, resvars.f40[row + 124].y, buf);
+                    LbTextDraw(resvars.screen_coords[row + 124].x, resvars.screen_coords[row + 124].y, buf);
                     sprintf(buf, "$%d", staff->salary);
-                    LbTextDraw(resvars.f40[row + 134].x, resvars.f40[row + 134].y, buf);
-                    draw_gauge(staff->happiness_s, resvars.f3c_Boxp[row + 71].x, resvars.f3c_Boxp[row + 71].y, resvars.f3c_Boxp[row + 71].w,
-                               &screen_sprites_tab_start[resvars.f3c_Boxp[row + 71].h], 100, 0, 100, 1);
-                    draw_gauge(staff->tiredness, resvars.f3c_Boxp[row + 81].x, resvars.f3c_Boxp[row + 81].y, resvars.f3c_Boxp[row + 81].w,
-                               &screen_sprites_tab_start[resvars.f3c_Boxp[row + 81].h], 1000, 0, 1000, 0);
-                    draw_gauge(staff->ability, resvars.f3c_Boxp[row + 91].x, resvars.f3c_Boxp[row + 91].y, resvars.f3c_Boxp[row + 91].w,
-                               &screen_sprites_tab_start[resvars.f3c_Boxp[row + 91].h], 1000, 30, 970, 1);
+                    LbTextDraw(resvars.screen_coords[row + 134].x, resvars.screen_coords[row + 134].y, buf);
+                    draw_gauge(staff->happiness_s, resvars.screen_boxes_Boxp[row + 71].x, resvars.screen_boxes_Boxp[row + 71].y, resvars.screen_boxes_Boxp[row + 71].w,
+                               &screen_sprites_tab_start[resvars.screen_boxes_Boxp[row + 71].h], 100, 0, 100, 1);
+                    draw_gauge(staff->tiredness, resvars.screen_boxes_Boxp[row + 81].x, resvars.screen_boxes_Boxp[row + 81].y, resvars.screen_boxes_Boxp[row + 81].w,
+                               &screen_sprites_tab_start[resvars.screen_boxes_Boxp[row + 81].h], 1000, 0, 1000, 0);
+                    draw_gauge(staff->ability, resvars.screen_boxes_Boxp[row + 91].x, resvars.screen_boxes_Boxp[row + 91].y, resvars.screen_boxes_Boxp[row + 91].w,
+                               &screen_sprites_tab_start[resvars.screen_boxes_Boxp[row + 91].h], 1000, 30, 970, 1);
                     if (lbDisplay.mleft_button) {
-                        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, resvars.f3c_Boxp[row + 104].h)) {
-                            if ((u16)(staff - thing) != slist.unknown0)
+                        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_Boxp[row + 104].x, resvars.screen_boxes_Boxp[row + 104].y, resvars.screen_boxes_Boxp[row + 104].w, resvars.screen_boxes_Boxp[row + 104].h)) {
+                            if ((u16)(staff - thing) != slist.value)
                                 play_sound(10, SFX_SELECTX, -1, -1);
-                            slist.unknown0 = staff - thing;
+                            slist.value = staff - thing;
                         }
                     }
                     row++;
@@ -347,15 +347,15 @@ void draw_slist_staff(const u16 selected)
         }
     }
     if (row < 10)
-        LbDrawBox(resvars.f3c_Boxp[row + 104].x, resvars.f3c_Boxp[row + 104].y, resvars.f3c_Boxp[row + 104].w, (10 - row) * resvars.f3c_Boxp[row + 104].h, 0x77);
-    othervar.fa5b = row;
+        LbDrawBox(resvars.screen_boxes_Boxp[row + 104].x, resvars.screen_boxes_Boxp[row + 104].y, resvars.screen_boxes_Boxp[row + 104].w, (10 - row) * resvars.screen_boxes_Boxp[row + 104].h, 0x77);
+    othervar.slist_rows = row;
     for (pages = 0; staff_on_page(pages); pages++)
         ;
     if (pages > 1) {
         u8 pos;
 
-        pos = resvars.f3c_Boxp[114].h / (pages - 1) * othervar.f91;
-        reqspr_draw(resvars.f3c_Boxp[114].x, pos + resvars.f3c_Boxp[114].y, &screen_sprites_tab_start[resvars.f3c_Boxp[114].w]);
+        pos = resvars.screen_boxes_Boxp[114].h / (pages - 1) * othervar.slist_page;
+        reqspr_draw(resvars.screen_boxes_Boxp[114].x, pos + resvars.screen_boxes_Boxp[114].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[114].w]);
     }
 }
 
@@ -380,66 +380,66 @@ void draw_slist_window(const u16 id)
     staff = &thing[id];
     if (!id)
         return;
-    if (resvars.f1 == SCREEN_MODE_13) {
+    if (resvars.game_mode == SCREEN_MODE_13) {
         give_absolute_xy_of_cell_at_column_row(staff->x.tile, staff->y.tile);
-        if (resvars.f0 == SCREEN_MODE_13)
+        if (resvars.screen_mode == SCREEN_MODE_13)
             dx = ((staff->x.frac - staff->y.frac) >> 3) + 32;
         else
             dx = ((staff->x.frac - staff->y.frac) >> 4) + 16;
-        window.f0[window.unknown2ec - 1] = dx + (info.unknown54 - *(s32 *)&resvars.f1c_u8p[0x558]);
-        if (resvars.f0 == SCREEN_MODE_13)
+        window.scroll_x[window.window_count - 1] = dx + (info.cell_x - *(s32 *)&resvars.coords_u8p[0x558]);
+        if (resvars.screen_mode == SCREEN_MODE_13)
             dy = (staff->y.frac + staff->x.frac) >> 4;
         else
             dy = (staff->y.frac + staff->x.frac) >> 5;
-        window.fc[window.unknown2ec - 1] = info.unknown58 - *(s32 *)&resvars.f1c_u8p[0x55c] + dy;
-        save_x = window.unknown2c3;
-        save_y = window.unknown2c7;
-        save_w = window.unknown2cb;
-        save_h = window.unknown2cf;
-        window.unknown2c3 = resvars.f44_SlistAreap->x0;
-        window.unknown2c7 = resvars.f44_SlistAreap->y0;
-        window.unknown2cb = resvars.f44_SlistAreap->x1;
-        window.unknown2cf = resvars.f44_SlistAreap->y1;
-        draw_window_not_using_bscreen(window.unknown2ec - 1);
-        window.unknown2c3 = save_x;
-        window.unknown2c7 = save_y;
-        window.unknown2cb = save_w;
-        window.unknown2cf = save_h;
+        window.scroll_y[window.window_count - 1] = info.cell_y - *(s32 *)&resvars.coords_u8p[0x55c] + dy;
+        save_x = window.clip_x0;
+        save_y = window.clip_y0;
+        save_w = window.clip_x1;
+        save_h = window.clip_y1;
+        window.clip_x0 = resvars.screen_list_pos_SlistAreap->x0;
+        window.clip_y0 = resvars.screen_list_pos_SlistAreap->y0;
+        window.clip_x1 = resvars.screen_list_pos_SlistAreap->x1;
+        window.clip_y1 = resvars.screen_list_pos_SlistAreap->y1;
+        draw_window_not_using_bscreen(window.window_count - 1);
+        window.clip_x0 = save_x;
+        window.clip_y0 = save_y;
+        window.clip_x1 = save_w;
+        window.clip_y1 = save_h;
     }
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
-    draw_face((Picture *)&thing[id].face_head, resvars.f44_SlistAreap->face_x, resvars.f44_SlistAreap->face_y);
+    draw_face((Picture *)&thing[id].face_head, resvars.screen_list_pos_SlistAreap->face_x, resvars.screen_list_pos_SlistAreap->face_y);
     if (staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) {
         i = 0;
         if ((staff->skills & SKILL_JUNIOR) && !(staff->skills & SKILL_CONSULTANT))
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h]);
         i++;
         if ((staff->skills & SKILL_DOCTOR) && !(staff->skills & SKILL_CONSULTANT) && !(staff->skills & SKILL_JUNIOR))
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h]);
         i++;
         if (staff->skills & SKILL_CONSULTANT)
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h]);
         i++;
         if (staff->skills & SKILL_SURGEON) {
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h]);
         } else if (staff->surgeon_training) {
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
-            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->surgeon_training, gbv.f146);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h - 3]);
+            draw_slist_training_bar(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, staff->surgeon_training, gbv.ability_threshold_surgeon);
         }
         i++;
         if (staff->skills & SKILL_PSYCHIATRIST) {
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h]);
         } else if (staff->psych_training) {
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
-            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->psych_training, gbv.f148);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h - 3]);
+            draw_slist_training_bar(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, staff->psych_training, gbv.ability_threshold_psych);
         }
         i++;
         if (staff->skills & SKILL_RESEARCHER) {
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h]);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h]);
         } else if (staff->research_training) {
-            reqspr_draw(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.f3c_Boxp[i + 64].h - 3]);
-            draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->research_training, gbv.f14a);
+            reqspr_draw(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[i + 64].h - 3]);
+            draw_slist_training_bar(resvars.screen_boxes_Boxp[i + 64].x, resvars.screen_boxes_Boxp[i + 64].y, staff->research_training, gbv.ability_threshold_research);
         }
     }
     delay = staff->work_delay;
@@ -449,7 +449,7 @@ void draw_slist_window(const u16 id)
         delay = 0;
     count = delay * 4200 / 1000;
     for (j = 0; j < count; j++)
-        reqspr_draw(resvars.f3c_Boxp[70].x + j, resvars.f3c_Boxp[70].y, &screen_sprites_tab_start[resvars.f3c_Boxp[70].h]);
+        reqspr_draw(resvars.screen_boxes_Boxp[70].x + j, resvars.screen_boxes_Boxp[70].y, &screen_sprites_tab_start[resvars.screen_boxes_Boxp[70].h]);
 }
 
 // Does nothing.
@@ -474,10 +474,10 @@ void draw_slist_overall(void)
     for (staff = thing + 1; staff < end_things; staff++) {
         if (staff->type == THING_STAFF && staff->owner == player) {
             if (staff->state != SS_APPLICANT) {
-                if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
-                    || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
-                    || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
-                    || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
+                if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.slist_filter & 1))
+                    || (staff->subtype == STAFF_NURSE && (othervar.slist_filter & 2))
+                    || (staff->subtype == STAFF_RECEPTIONIST && (othervar.slist_filter & 8))
+                    || (staff->subtype == STAFF_HANDYMAN && (othervar.slist_filter & 4))) {
                     happiness += staff->happiness_s;
                     tiredness += staff->tiredness;
                     ability += staff->ability;
@@ -486,62 +486,62 @@ void draw_slist_overall(void)
             }
         }
     }
-    if (!(othervar.f49 & 1))
+    if (!(othervar.slist_filter & 1))
         draw_slist_coverup();
     if (count) {
         ability /= count;
         happiness /= count;
         tiredness /= count;
         count = 0;
-        draw_gauge(happiness, resvars.f3c_Boxp[count + 101].x, resvars.f3c_Boxp[count + 101].y, resvars.f3c_Boxp[count + 101].w,
-                   &screen_sprites_tab_start[resvars.f3c_Boxp[count + 101].h], 100, 0, 100, 1);
+        draw_gauge(happiness, resvars.screen_boxes_Boxp[count + 101].x, resvars.screen_boxes_Boxp[count + 101].y, resvars.screen_boxes_Boxp[count + 101].w,
+                   &screen_sprites_tab_start[resvars.screen_boxes_Boxp[count + 101].h], 100, 0, 100, 1);
         count++;
-        draw_gauge(tiredness, resvars.f3c_Boxp[count + 101].x, resvars.f3c_Boxp[count + 101].y, resvars.f3c_Boxp[count + 101].w,
-                   &screen_sprites_tab_start[resvars.f3c_Boxp[count + 101].h], 1000, 0, 1000, 0);
+        draw_gauge(tiredness, resvars.screen_boxes_Boxp[count + 101].x, resvars.screen_boxes_Boxp[count + 101].y, resvars.screen_boxes_Boxp[count + 101].w,
+                   &screen_sprites_tab_start[resvars.screen_boxes_Boxp[count + 101].h], 1000, 0, 1000, 0);
         count++;
-        draw_gauge(ability, resvars.f3c_Boxp[count + 101].x, resvars.f3c_Boxp[count + 101].y, resvars.f3c_Boxp[count + 101].w,
-                   &screen_sprites_tab_start[resvars.f3c_Boxp[count + 101].h], 1000, 30, 970, 1);
+        draw_gauge(ability, resvars.screen_boxes_Boxp[count + 101].x, resvars.screen_boxes_Boxp[count + 101].y, resvars.screen_boxes_Boxp[count + 101].w,
+                   &screen_sprites_tab_start[resvars.screen_boxes_Boxp[count + 101].h], 1000, 30, 970, 1);
     }
 }
 
 // Staff management clicks: runs the callback of the button released over
 // (drawing it pressed while held), and a click on the view opens the
-// selected staff member's window (othervar.f38 2).
+// selected staff member's window (othervar.center_on_slot 2).
 // FUNCTION: 0x000931d4
 void process_slist_panel(void)
 {
     u8 i;
 
     if (lbDisplay.rleft_button) {
-        for (i = 0; resvars.f48[i + 0x30].width != 0 && resvars.f48[i + 0x30].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0x30].x, resvars.f48[i + 0x30].y, resvars.f48[i + 0x30].width, resvars.f48[i + 0x30].height)) {
-                resvars.f48[i + 0x30].callback(i);
-                reqspr_draw(resvars.f48[i + 0x30].unknownC, resvars.f48[i + 0x30].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0x30].sprite]);
+        for (i = 0; resvars.screen_buttons[i + 0x30].width != 0 && resvars.screen_buttons[i + 0x30].height != 0; i++) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x30].x, resvars.screen_buttons[i + 0x30].y, resvars.screen_buttons[i + 0x30].width, resvars.screen_buttons[i + 0x30].height)) {
+                resvars.screen_buttons[i + 0x30].callback(i);
+                reqspr_draw(resvars.screen_buttons[i + 0x30].sprite_x, resvars.screen_buttons[i + 0x30].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[i + 0x30].sprite]);
             }
         }
-        if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y0, resvars.f44_SlistAreap->x1 - resvars.f44_SlistAreap->x0, resvars.f44_SlistAreap->y1 - resvars.f44_SlistAreap->y0)) {
-            if (slist.unknown0) {
-                othervar.f38 = 2;
-                D_001581b2[2].value = slist.unknown0;
-                othervar.f10 = 1;
-                slist.unknown2 = 2;
+        if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_list_pos_SlistAreap->x0, resvars.screen_list_pos_SlistAreap->y0, resvars.screen_list_pos_SlistAreap->x1 - resvars.screen_list_pos_SlistAreap->x0, resvars.screen_list_pos_SlistAreap->y1 - resvars.screen_list_pos_SlistAreap->y0)) {
+            if (slist.value) {
+                othervar.center_on_slot = 2;
+                D_001581b2[2].value = slist.value;
+                othervar.full_redraw = 1;
+                slist.state = 2;
                 close_irequesters();
-                window.unknown2eb = 0;
+                window.current_window = 0;
                 play_sound(10, SFX_SELECTX, -1, -1);
             }
         }
-        if (slist.unknown0)
-            draw_slist_button_overlays(&thing[slist.unknown0]);
+        if (slist.value)
+            draw_slist_button_overlays(&thing[slist.value]);
     }
     if (lbDisplay.mleft_button) {
-        for (i = 0; resvars.f48[i + 0x30].width != 0 && resvars.f48[i + 0x30].height != 0; i++) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f48[i + 0x30].x, resvars.f48[i + 0x30].y, resvars.f48[i + 0x30].width, resvars.f48[i + 0x30].height)) {
-                reqspr_draw(resvars.f48[i + 0x30].unknownC, resvars.f48[i + 0x30].unknownE, &screen_sprites_tab_start[resvars.f48[i + 0x30].sprite]);
+        for (i = 0; resvars.screen_buttons[i + 0x30].width != 0 && resvars.screen_buttons[i + 0x30].height != 0; i++) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x30].x, resvars.screen_buttons[i + 0x30].y, resvars.screen_buttons[i + 0x30].width, resvars.screen_buttons[i + 0x30].height)) {
+                reqspr_draw(resvars.screen_buttons[i + 0x30].sprite_x, resvars.screen_buttons[i + 0x30].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[i + 0x30].sprite]);
                 break;
             }
         }
-        if (slist.unknown0)
-            draw_slist_button_overlays(&thing[slist.unknown0]);
+        if (slist.value)
+            draw_slist_button_overlays(&thing[slist.value]);
     }
 }
 
@@ -558,73 +558,73 @@ void process_slist_button(u8 button)
 
     switch (button) {
     case 0:
-        if (othervar.f49 != 1)
+        if (othervar.slist_filter != 1)
             play_sound(10, SFX_SELECTX, -1, -1);
-        othervar.f49 = 1;
-        slist.unknown0 = 0;
-        othervar.fa60 = 0;
+        othervar.slist_filter = 1;
+        slist.value = 0;
+        othervar.slist_cursor = 0;
         break;
     case 1:
-        if (othervar.f49 != 2)
+        if (othervar.slist_filter != 2)
             play_sound(10, SFX_SELECTX, -1, -1);
-        othervar.f49 = 2;
-        slist.unknown0 = 0;
-        othervar.fa60 = 0;
+        othervar.slist_filter = 2;
+        slist.value = 0;
+        othervar.slist_cursor = 0;
         break;
     case 2:
-        if (othervar.f49 != 8)
+        if (othervar.slist_filter != 8)
             play_sound(10, SFX_SELECTX, -1, -1);
-        othervar.f49 = 8;
-        slist.unknown0 = 0;
-        othervar.fa60 = 0;
+        othervar.slist_filter = 8;
+        slist.value = 0;
+        othervar.slist_cursor = 0;
         break;
     case 3:
-        if (othervar.f49 != 4)
+        if (othervar.slist_filter != 4)
             play_sound(10, SFX_SELECTX, -1, -1);
-        othervar.f49 = 4;
-        slist.unknown0 = 0;
-        othervar.fa60 = 0;
+        othervar.slist_filter = 4;
+        slist.value = 0;
+        othervar.slist_cursor = 0;
         break;
     case 4:
-        if (slist.unknown0) {
+        if (slist.value) {
             play_sound(10, SFX_SELECTX, -1, -1);
             close_irequesters();
             lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
-            set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-            sprintf(othervar.f935, "%s", yesno_text[5]);
-            open_yes_no_requester(0x47, slist.unknown0, 0, 0x88, slist.unknown0, 0);
-            slist.unknown0 = 0;
+            set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+            sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
+            open_yes_no_requester(0x47, slist.value, 0, 0x88, slist.value, 0);
+            slist.value = 0;
         }
         break;
     case 5:
-        if (slist.unknown0) {
+        if (slist.value) {
             D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
-            D_001549d0[player].value = thing[slist.unknown0].salary / 10;
-            D_001549d0[player].arg = slist.unknown0;
+            D_001549d0[player].value = thing[slist.value].salary / 10;
+            D_001549d0[player].arg = slist.value;
             play_sound(10, SFX_BONUSAL2, -1, -1);
         }
         break;
     case 6:
-        if (slist.unknown0) {
+        if (slist.value) {
             D_001549d0[player].type = EV_PAY_STAFF_BONUS;
-            D_001549d0[player].value = thing[slist.unknown0].salary / 10;
-            D_001549d0[player].arg = slist.unknown0;
+            D_001549d0[player].value = thing[slist.value].salary / 10;
+            D_001549d0[player].arg = slist.value;
             play_sound(10, SFX_BONUS2, -1, -1);
         }
         break;
     case 7:
-        slist.unknown2 = 3;
+        slist.state = 3;
         close_irequesters();
-        window.unknown2eb = 0;
+        window.current_window = 0;
         play_sound(10, SFX_NO4, -1, -1);
         break;
     case 8:
         sound = 8;
-        if (othervar.f91 > 0) {
-            if (staff_on_page(othervar.f91 - 1)) {
-                othervar.f91--;
+        if (othervar.slist_page > 0) {
+            if (staff_on_page(othervar.slist_page - 1)) {
+                othervar.slist_page--;
                 for (i = 0; i < 10; i++)
-                    slist.unknown0 = get_slist_staff(1);
+                    slist.value = get_slist_staff(1);
                 sound = 0x43;
             }
         }
@@ -632,11 +632,11 @@ void process_slist_button(u8 button)
         break;
     case 9:
         sound = 8;
-        if (othervar.f91 < 150) {
-            if (staff_on_page(othervar.f91 + 1)) {
-                othervar.f91++;
+        if (othervar.slist_page < 150) {
+            if (staff_on_page(othervar.slist_page + 1)) {
+                othervar.slist_page++;
                 for (i = 0; i < 10; i++)
-                    slist.unknown0 = get_slist_staff(0);
+                    slist.value = get_slist_staff(0);
                 sound = 0x43;
             }
         }
@@ -649,10 +649,10 @@ void process_slist_button(u8 button)
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 11:
-        if (slist.unknown0) {
+        if (slist.value) {
             D_001549d0[player].type = EV_INCREASE_STAFF_SALARIES;
             D_001549d0[player].value = 500;
-            D_001549d0[player].arg = slist.unknown0;
+            D_001549d0[player].arg = slist.value;
         }
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
@@ -673,10 +673,10 @@ u8 staff_on_page(const u8 page)
     for (staff = thing + 1; staff < end_things; staff++) {
         if (staff->type == THING_STAFF) {
             if (staff->state != SS_APPLICANT && staff->owner == player) {
-                if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.f49 & 1))
-                    || (staff->subtype == STAFF_NURSE && (othervar.f49 & 2))
-                    || (staff->subtype == STAFF_RECEPTIONIST && (othervar.f49 & 8))
-                    || (staff->subtype == STAFF_HANDYMAN && (othervar.f49 & 4))) {
+                if (((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (othervar.slist_filter & 1))
+                    || (staff->subtype == STAFF_NURSE && (othervar.slist_filter & 2))
+                    || (staff->subtype == STAFF_RECEPTIONIST && (othervar.slist_filter & 8))
+                    || (staff->subtype == STAFF_HANDYMAN && (othervar.slist_filter & 4))) {
                     if (listed >= page * 10 && listed < (page + 1) * 10)
                         return 1;
                     listed++;
@@ -697,14 +697,14 @@ void draw_slist_nums(void)
     u16 counts[4];
     char buf[100];
 
-    if (othervar.f49 & 1)
-        reqspr_draw(resvars.f48[0x30].unknownC, resvars.f48[0x30].unknownE, &screen_sprites_tab_start[resvars.f48[0x30].sprite]);
-    else if (othervar.f49 & 2)
-        reqspr_draw(resvars.f48[0x31].unknownC, resvars.f48[0x31].unknownE, &screen_sprites_tab_start[resvars.f48[0x31].sprite]);
-    else if (othervar.f49 & 8)
-        reqspr_draw(resvars.f48[0x32].unknownC, resvars.f48[0x32].unknownE, &screen_sprites_tab_start[resvars.f48[0x32].sprite]);
-    else if (othervar.f49 & 4)
-        reqspr_draw(resvars.f48[0x33].unknownC, resvars.f48[0x33].unknownE, &screen_sprites_tab_start[resvars.f48[0x33].sprite]);
+    if (othervar.slist_filter & 1)
+        reqspr_draw(resvars.screen_buttons[0x30].sprite_x, resvars.screen_buttons[0x30].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[0x30].sprite]);
+    else if (othervar.slist_filter & 2)
+        reqspr_draw(resvars.screen_buttons[0x31].sprite_x, resvars.screen_buttons[0x31].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[0x31].sprite]);
+    else if (othervar.slist_filter & 8)
+        reqspr_draw(resvars.screen_buttons[0x32].sprite_x, resvars.screen_buttons[0x32].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[0x32].sprite]);
+    else if (othervar.slist_filter & 4)
+        reqspr_draw(resvars.screen_buttons[0x33].sprite_x, resvars.screen_buttons[0x33].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[0x33].sprite]);
     for (i = 0; i < 4; i++)
         counts[i] = 0;
     for (staff = thing + 1; staff < end_things; staff++) {
@@ -726,7 +726,7 @@ void draw_slist_nums(void)
     lbDisplay.draw_flags = 0;
     for (i = 0; i < 4; i++) {
         sprintf(buf, "%d", counts[i]);
-        LbTextDraw(resvars.f40[i + 144].x, resvars.f40[i + 144].y, buf);
+        LbTextDraw(resvars.screen_coords[i + 144].x, resvars.screen_coords[i + 144].y, buf);
     }
 }
 
@@ -734,114 +734,114 @@ void draw_slist_nums(void)
 // FUNCTION: 0x00093eac
 void draw_slist_coverup(void)
 {
-    LbDrawBox(resvars.f3c_Boxp[116].x, resvars.f3c_Boxp[116].y, resvars.f3c_Boxp[116].w, resvars.f3c_Boxp[116].h, 0x76);
-    LbDrawBox(resvars.f3c_Boxp[117].x, resvars.f3c_Boxp[117].y, resvars.f3c_Boxp[117].w, resvars.f3c_Boxp[117].h, 0x76);
+    LbDrawBox(resvars.screen_boxes_Boxp[116].x, resvars.screen_boxes_Boxp[116].y, resvars.screen_boxes_Boxp[116].w, resvars.screen_boxes_Boxp[116].h, 0x76);
+    LbDrawBox(resvars.screen_boxes_Boxp[117].x, resvars.screen_boxes_Boxp[117].y, resvars.screen_boxes_Boxp[117].w, resvars.screen_boxes_Boxp[117].h, 0x76);
 }
 
-// Help text for a staff row's wage, into othervar.f96, if the row is
+// Help text for a staff row's wage, into othervar.help_msg, if the row is
 // filled.
 // FUNCTION: 0x00093f38
 void slist_salary_help_if_present(void)
 {
-    if (resvars.f2c_SlistMenuItemp[othervar.f8ac].row < othervar.fa5b)
-        fn_000bbff0(othervar.f96, help_text[50]);
+    if (resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].row < othervar.slist_rows)
+        fn_000bbff0(othervar.help_msg, help_text[50]);
 }
 
-// Help text for a staff row's happiness, into othervar.f96, if the row is
+// Help text for a staff row's happiness, into othervar.help_msg, if the row is
 // filled.
 // FUNCTION: 0x00093f88
 void slist_happiness_help_if_present(void)
 {
-    if (resvars.f2c_SlistMenuItemp[othervar.f8ac].row < othervar.fa5b)
-        fn_000bbff0(othervar.f96, help_text[51]);
+    if (resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].row < othervar.slist_rows)
+        fn_000bbff0(othervar.help_msg, help_text[51]);
 }
 
-// Help text for a staff row's tiredness, into othervar.f96, if the row is
+// Help text for a staff row's tiredness, into othervar.help_msg, if the row is
 // filled.
 // FUNCTION: 0x00093fd8
 void slist_tiredness_help_if_present(void)
 {
-    if (resvars.f2c_SlistMenuItemp[othervar.f8ac].row < othervar.fa5b)
-        fn_000bbff0(othervar.f96, help_text[52]);
+    if (resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].row < othervar.slist_rows)
+        fn_000bbff0(othervar.help_msg, help_text[52]);
 }
 
-// Help text for a staff row's ability, into othervar.f96, if the row is
+// Help text for a staff row's ability, into othervar.help_msg, if the row is
 // filled.
 // FUNCTION: 0x00094028
 void slist_ability_help_if_present(void)
 {
-    if (resvars.f2c_SlistMenuItemp[othervar.f8ac].row < othervar.fa5b)
-        fn_000bbff0(othervar.f96, help_text[53]);
+    if (resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].row < othervar.slist_rows)
+        fn_000bbff0(othervar.help_msg, help_text[53]);
 }
 
-// Help text for a doctor-only part, into othervar.f96, if doctors are
+// Help text for a doctor-only part, into othervar.help_msg, if doctors are
 // shown.
 // FUNCTION: 0x00094078
 void slist_help_if_doctor(void)
 {
-    if (othervar.f49 & 1)
-        fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
+    if (othervar.slist_filter & 1)
+        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
 }
 
 // Help text for the surgeon qualification of the selected doctor, or their
-// surgery training progress, into othervar.f96.
+// surgery training progress, into othervar.help_msg.
 // FUNCTION: 0x000940cc
 void slist_help_if_surgeon(void)
 {
     Thing *staff;
     s32 pct;
 
-    staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->skills & SKILL_SURGEON)) {
-        fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
+    staff = &thing[slist.value];
+    if ((othervar.slist_filter & 1) && staff > thing && (staff->skills & SKILL_SURGEON)) {
+        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
     } else {
         pct = staff->surgeon_training;
         if (pct != 0) {
-            pct = pct * 100 / gbv.f146;
+            pct = pct * 100 / gbv.ability_threshold_surgeon;
             pct > 100 ? pct = 100 : 0;
-            sprintf(othervar.f96, help_text[66], pct);
+            sprintf(othervar.help_msg, help_text[66], pct);
         }
     }
 }
 
 // Help text for the psychiatrist qualification of the selected doctor, or
-// their psychiatry training progress, into othervar.f96.
+// their psychiatry training progress, into othervar.help_msg.
 // FUNCTION: 0x000941bc
 void slist_help_if_shrink(void)
 {
     Thing *staff;
     s32 pct;
 
-    staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->skills & SKILL_PSYCHIATRIST)) {
-        fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
+    staff = &thing[slist.value];
+    if ((othervar.slist_filter & 1) && staff > thing && (staff->skills & SKILL_PSYCHIATRIST)) {
+        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
     } else {
         pct = staff->psych_training;
         if (pct != 0) {
-            pct = pct * 100 / gbv.f148;
+            pct = pct * 100 / gbv.ability_threshold_psych;
             pct > 100 ? pct = 100 : 0;
-            sprintf(othervar.f96, help_text[67], pct);
+            sprintf(othervar.help_msg, help_text[67], pct);
         }
     }
 }
 
 // Help text for the researcher qualification of the selected doctor, or
-// their research training progress, into othervar.f96.
+// their research training progress, into othervar.help_msg.
 // FUNCTION: 0x000942ac
 void slist_help_if_researcher(void)
 {
     Thing *staff;
     s32 pct;
 
-    staff = &thing[slist.unknown0];
-    if ((othervar.f49 & 1) && staff > thing && (staff->skills & SKILL_RESEARCHER)) {
-        fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
+    staff = &thing[slist.value];
+    if ((othervar.slist_filter & 1) && staff > thing && (staff->skills & SKILL_RESEARCHER)) {
+        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots_SlistMenuItemp[othervar.help_hotspot].text]);
     } else {
         pct = staff->research_training;
         if (pct != 0) {
-            pct = pct * 100 / gbv.f14a;
+            pct = pct * 100 / gbv.ability_threshold_research;
             pct > 100 ? pct = 100 : 0;
-            sprintf(othervar.f96, help_text[68], pct);
+            sprintf(othervar.help_msg, help_text[68], pct);
         }
     }
 }
@@ -855,9 +855,9 @@ void draw_slist_button_overlays(Thing *staff)
 
     set_font_from_cache(1);
     sprintf(buf, "$%d", staff->salary / 10 + staff->salary);
-    LbTextDraw(resvars.f40[149].x, resvars.f40[149].y, buf);
+    LbTextDraw(resvars.screen_coords[149].x, resvars.screen_coords[149].y, buf);
     sprintf(buf, "$%d", staff->salary / 10);
-    LbTextDraw(resvars.f40[150].x, resvars.f40[150].y, buf);
+    LbTextDraw(resvars.screen_coords[150].x, resvars.screen_coords[150].y, buf);
 }
 
 // Draws a training progress bar at (x, y) for value of max.
@@ -866,8 +866,8 @@ void draw_slist_training_bar(u16 x, u16 y, u16 value, u16 max)
 {
     u8 i;
 
-    for (i = 0; i < value / (max / resvars.f3c_Boxp[115].w); i++) {
-        if (i < resvars.f3c_Boxp[115].w)
-            reqspr_draw(x + resvars.f3c_Boxp[115].x + i, y + resvars.f3c_Boxp[115].y, &screen_sprites_tab_start[13]);
+    for (i = 0; i < value / (max / resvars.screen_boxes_Boxp[115].w); i++) {
+        if (i < resvars.screen_boxes_Boxp[115].w)
+            reqspr_draw(x + resvars.screen_boxes_Boxp[115].x + i, y + resvars.screen_boxes_Boxp[115].y, &screen_sprites_tab_start[13]);
     }
 }

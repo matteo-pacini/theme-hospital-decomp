@@ -41,7 +41,7 @@ u8 setup_host(void)
     char name[52];
 
     error_number = 0;
-    resvars.f5 = 0;
+    resvars.game_files_state = 0;
     LbDataLoadAll(screenfiles);
     LbDataLoadAll(palettefile);
     if (!setup_any_screen(palette, SCREEN_MODE_13)) {
@@ -58,36 +58,36 @@ u8 setup_host(void)
     } else {
         LbFileLoadAt(D_0013e80c, palette);
     }
-    if (debug.unknown1fa) {
+    if (debug.direct_start) {
         load_game_files();
     }
     LbDataLoadAll(hiresgamepointerfiles);
     LbSpriteSetup(pointer, end_pointers, pointer_data);
     statvar.unknowne6 = 0x1c;
     statvar.unknowne7 = 0x1f;
-    resvars.f3 = 0x20;
-    resvars.f4 = 0x40;
-    resvars.f4 = 0x40;
-    resvars.f3 = 0x20;
-    resvars.f18_u8p = D_0013bb0c;
-    resvars.f3c = &ScreenBoxes;
-    resvars.f1c_u8p = D_0013c0fc;
-    resvars.f40 = D_00146c8c;
-    resvars.f20_u8p = window_list;
-    resvars.f24 = button_list;
-    resvars.f44 = screenlistpos;
-    resvars.f28 = hiresbuttons;
-    resvars.f2c_intp = hireshelp;
-    resvars.f34 = panel_popup_coord;
-    resvars.f1 = SCREEN_MODE_13;
-    resvars.f38 = D_0012cc3c;
-    resvars.f16 = 3;
-    resvars.f17 = 0x20;
-    resvars.f0 = SCREEN_MODE_13;
-    resvars.fa_charpp = hires_font_filenames;
-    resvars.f50 = D_00147314;
-    resvars.f48 = screenbuttons;
-    resvars.f5 = 0;
+    resvars.tile_height = 0x20;
+    resvars.tile_width = 0x40;
+    resvars.tile_width = 0x40;
+    resvars.tile_height = 0x20;
+    resvars.boxes_u8p = D_0013bb0c;
+    resvars.screen_boxes = &ScreenBoxes;
+    resvars.coords_u8p = D_0013c0fc;
+    resvars.screen_coords = D_00146c8c;
+    resvars.window_list_u8p = window_list;
+    resvars.button_list = button_list;
+    resvars.screen_list_pos = screenlistpos;
+    resvars.buttons = hiresbuttons;
+    resvars.help_hotspots_intp = hireshelp;
+    resvars.panel_popup_coords = panel_popup_coord;
+    resvars.game_mode = SCREEN_MODE_13;
+    resvars.litter_pos = D_0012cc3c;
+    resvars.advisor_min_segments = 3;
+    resvars.advisor_max_segments = 0x20;
+    resvars.screen_mode = SCREEN_MODE_13;
+    resvars.font_filenames_charpp = hires_font_filenames;
+    resvars.glass_frames = D_00147314;
+    resvars.screen_buttons = screenbuttons;
+    resvars.game_files_state = 0;
     if (!display_loading_screen()) {
         return 0;
     }
@@ -104,7 +104,7 @@ u8 setup_host(void)
     }
     LbMouseChangeSprite(0);
     LbDataLoad(thingfiles);
-    othervar.f1f = 0;
+    othervar.fade_palette = 0;
     D_001581ee = 0;
     if (D_001581ec) {
         sprintf(name, "SAVE/PLAY.R%d", D_001581ef);
@@ -119,7 +119,7 @@ u8 setup_host(void)
             D_001581ee |= 2;
         }
     }
-    debug.unknown1e0 = -1;
+    debug.screenshot_number = -1;
     LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
     generate_bw_remap(palette, bw_remap);
     clear_loading_screen(palette);
@@ -140,7 +140,7 @@ void reset_host(void)
 {
     char error_string[200] = "";
 
-    if (lbDisplay.unknown4) {
+    if (lbDisplay.wscreen) {
         LbScreenUnlock();
     }
     LbNetwork_Stop();
@@ -182,7 +182,7 @@ void reset_host(void)
     if (error_string[0]) {
         hosp_dos_printf(error_string);
     }
-    switch (resvars.f0) {
+    switch (resvars.screen_mode) {
     case SCREEN_MODE_1:
         LbDataFreeAll(lorespointerfiles);
         break;
@@ -203,7 +203,7 @@ void reset_host(void)
     LbDataFreeAll(memfiles);
     LbDataFreeAll(complexfiles);
     LbDataFreeAll(screenfiles);
-    LbDataFree(&langfile[myplayer.f21]);
+    LbDataFree(&langfile[myplayer.language]);
     LbDataFreeAll(palettefile);
     if (face_file != -1) {
         LbFileClose(face_file);
@@ -229,15 +229,15 @@ void get_input(void)
 }
 
 // Loads the game's block, sprite, requester and animation files for the
-// current resolution (resvars.f1), unless already loaded, and lays out the
+// current resolution (resvars.game_mode), unless already loaded, and lays out the
 // panel.
 // FUNCTION: 0x00010e24
 void load_game_files(void)
 {
-    if (resvars.f5 == 2) {
+    if (resvars.game_files_state == 2) {
         return;
     }
-    if (resvars.f1 == SCREEN_MODE_1) {
+    if (resvars.game_mode == SCREEN_MODE_1) {
         LbDataLoadAll(loresblockfiles);
         LbDataLoadAll(mcgaspritefiles);
         LbDataLoadAll(mcgareqfiles);
@@ -252,17 +252,17 @@ void load_game_files(void)
         LbDataLoadAll(hiresanifiles);
         setup_panel_icons(13);
     }
-    resvars.f2 = resvars.f1;
+    resvars.loaded_mode = resvars.game_mode;
     setup_game_sprites();
-    resvars.f5 = 2;
+    resvars.game_files_state = 2;
 }
 
 // Frees the files load_game_files loaded, if loaded.
 // FUNCTION: 0x00010ee0
 void unload_game_files(void)
 {
-    if (resvars.f5 == 2) {
-        if (resvars.f1 == SCREEN_MODE_1) {
+    if (resvars.game_files_state == 2) {
+        if (resvars.game_mode == SCREEN_MODE_1) {
             LbDataFreeAll(loresblockfiles);
             LbDataFreeAll(mcgaspritefiles);
             LbDataFreeAll(mcgareqfiles);
@@ -273,7 +273,7 @@ void unload_game_files(void)
             LbDataFreeAll(reqfiles);
             LbDataFreeAll(hiresanifiles);
         }
-        resvars.f5 = 0;
+        resvars.game_files_state = 0;
         LbPackHeap();
     }
 }
@@ -286,7 +286,7 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
 {
     int variant;
 
-    if (mode == resvars.f0) {
+    if (mode == resvars.screen_mode) {
         return 1;
     }
     if (mode == SCREEN_MODE_13) {
@@ -304,7 +304,7 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
         }
         return 0;
     }
-    resvars.f0 = mode;
+    resvars.screen_mode = mode;
     return 1;
 }
 
@@ -320,16 +320,16 @@ void fn_0001102c(void)
 // FUNCTION: 0x00011058
 void use_hires_help_and_fonts(void)
 {
-    resvars.f2c_intp = hireshelp;
-    resvars.fa_charpp = hires_font_filenames;
+    resvars.help_hotspots_intp = hireshelp;
+    resvars.font_filenames_charpp = hires_font_filenames;
 }
 
 // Uses the 320x200 help layout and fonts.
 // FUNCTION: 0x00011084
 void use_lores_help_and_fonts(void)
 {
-    resvars.f2c_intp = D_0014be34;
-    resvars.fa_charpp = lores_font_filenames;
+    resvars.help_hotspots_intp = D_0014be34;
+    resvars.font_filenames_charpp = lores_font_filenames;
 }
 
 // Points resvars at the 640x480 layout tables, reopens the faces file
@@ -338,30 +338,30 @@ void use_lores_help_and_fonts(void)
 // FUNCTION: 0x000110b0
 void fn_000110b0(void)
 {
-    statvar.unknown4 = lbScreenModeInfo[SCREEN_MODE_13].height - 0x30;
+    statvar.view_height = lbScreenModeInfo[SCREEN_MODE_13].height - 0x30;
     statvar.unknowne6 = 0x1c;
     statvar.unknowne7 = 0x1f;
-    resvars.f1 = SCREEN_MODE_13;
-    resvars.f0 = SCREEN_MODE_13;
-    resvars.f18_u8p = D_0013bb0c;
-    resvars.f3c = &ScreenBoxes;
-    resvars.f1c_u8p = D_0013c0fc;
-    resvars.f40 = D_00146c8c;
-    resvars.f3 = 0x20;
-    resvars.f4 = 0x40;
-    resvars.f20_u8p = window_list;
-    resvars.f24 = button_list;
-    resvars.f44 = screenlistpos;
-    resvars.f28 = hiresbuttons;
-    resvars.f2c_intp = hireshelp;
-    resvars.f34 = panel_popup_coord;
-    resvars.f6_names = hires_req_filenames;
-    resvars.fe = hires_requester_buttons;
-    resvars.f12 = hires_requester_sprites;
-    resvars.fa_charpp = hires_font_filenames;
-    resvars.f16 = 3;
-    resvars.f17 = 0x20;
-    resvars.f38 = D_0012cc3c;
+    resvars.game_mode = SCREEN_MODE_13;
+    resvars.screen_mode = SCREEN_MODE_13;
+    resvars.boxes_u8p = D_0013bb0c;
+    resvars.screen_boxes = &ScreenBoxes;
+    resvars.coords_u8p = D_0013c0fc;
+    resvars.screen_coords = D_00146c8c;
+    resvars.tile_height = 0x20;
+    resvars.tile_width = 0x40;
+    resvars.window_list_u8p = window_list;
+    resvars.button_list = button_list;
+    resvars.screen_list_pos = screenlistpos;
+    resvars.buttons = hiresbuttons;
+    resvars.help_hotspots_intp = hireshelp;
+    resvars.panel_popup_coords = panel_popup_coord;
+    resvars.req_filenames_names = hires_req_filenames;
+    resvars.requester_buttons = hires_requester_buttons;
+    resvars.requester_sprites = hires_requester_sprites;
+    resvars.font_filenames_charpp = hires_font_filenames;
+    resvars.advisor_min_segments = 3;
+    resvars.advisor_max_segments = 0x20;
+    resvars.litter_pos = D_0012cc3c;
     if (face_file != -1) {
         LbFileClose(face_file);
         face_file = -1;
@@ -373,16 +373,16 @@ void fn_000110b0(void)
         reset_host();
         exit(1);
     }
-    othervar.fa41 = 1;
-    othervar.fa40 = 0;
-    window.unknown30 = 0;
-    window.unknown48 = lbScreenModeInfo[SCREEN_MODE_13].width;
-    window.unknown3c = 0;
-    window.unknown54 = lbScreenModeInfo[SCREEN_MODE_13].height;
-    window.unknown2c0 = 0;
-    window.unknown90 = (window.unknown30 + window.unknown48) / 2;
-    window.unknown9c = (window.unknown3c + window.unknown54) / 2;
-    window.unknown2eb = 0;
+    othervar.hires_checked = 1;
+    othervar.lores_checked = 0;
+    window.zone0_x = 0;
+    window.zone0_x1 = lbScreenModeInfo[SCREEN_MODE_13].width;
+    window.zone0_y = 0;
+    window.zone0_y1 = lbScreenModeInfo[SCREEN_MODE_13].height;
+    window.anim_mode0 = 0;
+    window.center0_x = (window.zone0_x + window.zone0_x1) / 2;
+    window.center0_y = (window.zone0_y + window.zone0_y1) / 2;
+    window.current_window = 0;
     setup_menus();
     LbDataFreeAll(lorespointerfiles);
     LbDataLoadAll(hiresgamepointerfiles);

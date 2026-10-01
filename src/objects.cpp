@@ -66,7 +66,7 @@ s32 remove_object(Thing *w, u8 owner);
 // Returns 1 if an object of kind `kind` (objects[] index) facing dir fits
 // with its corner at tile for player `owner`: no walls, objects or use tiles
 // in its footprint, all of it on the owner's land (litter bombs excepted),
-// and its use tiles free. Always 1 while othervar.f9bb is set.
+// and its use tiles free. Always 1 while othervar.force_place_objects is set.
 // FUNCTION: 0x00036930
 u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
 {
@@ -75,29 +75,29 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     Shapes *shape;
     u8 i;
 
-    if (othervar.f9bb) {
+    if (othervar.force_place_objects) {
         return 1;
     }
     cell = &map[tile];
     control = &objects[kind];
     shape = &shapes[control->shapes[dir]];
     for (i = 0; i < shape->count; i++) {
-        if ((cell[(s16)shape->points[i]].unknown3 && (shape->unknown22[i] & 1))
-            || (cell[(s16)shape->points[i]].unknown4 && (shape->unknown22[i] & 2))
+        if ((cell[(s16)shape->points[i]].wall_n && (shape->point_wall_flags[i] & 1))
+            || (cell[(s16)shape->points[i]].wall_w && (shape->point_wall_flags[i] & 2))
             || (cell[(s16)shape->points[i]].flags & 7)) {
             return 0;
         }
-        if (cell[(s16)shape->points[i]].unknown7 != 1 << owner && kind != 0x11) {
+        if (cell[(s16)shape->points[i]].owner_flags != 1 << owner && kind != 0x11) {
             return 0;
         }
-        if (cell->unknown7 & 0x10) {
+        if (cell->owner_flags & 0x10) {
             return 0;
         }
     }
     for (i = 0; i < 3; i++) {
-        if ((cell[shape->unknown13[i]].unknown3 && (shape->unknown2b & 1))
-            || (cell[shape->unknown13[i]].unknown4 && (shape->unknown2b & 2))
-            || (cell[shape->unknown13[i]].flags & 7)) {
+        if ((cell[shape->use_offsets[i]].wall_n && (shape->use_wall_flags & 1))
+            || (cell[shape->use_offsets[i]].wall_w && (shape->use_wall_flags & 2))
+            || (cell[shape->use_offsets[i]].flags & 7)) {
             return 0;
         }
     }
@@ -122,35 +122,35 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
     cell = &map[tile];
     control = &objects[obj->subtype];
     shape = &shapes[control->shapes[dir]];
-    obj->state = control->unknown23;
+    obj->state = control->initial_state;
     obj->facing = dir;
-    obj->sprite = start[control->unknownE + obj->facing].frame;
-    obj->flip = start[control->unknownE + obj->facing].flags;
+    obj->sprite = start[control->anim_start + obj->facing].frame;
+    obj->flip = start[control->anim_start + obj->facing].flags;
     mark_object_shape(cell, shape, dir, control, 1);
-    obj->use_pos[0] = tile + shape->unknown13[0];
-    obj->use_pos[1] = tile + shape->unknown13[1];
-    obj->use_pos[2] = tile + shape->unknown13[2];
-    obj->use_pos[3] = tile + shape->unknown19[0];
-    obj->use_pos[4] = tile + shape->unknown19[1];
-    obj->use_pos[5] = tile + shape->unknown19[2];
-    obj->depth = shape->unknown1f[2];
+    obj->use_pos[0] = tile + shape->use_offsets[0];
+    obj->use_pos[1] = tile + shape->use_offsets[1];
+    obj->use_pos[2] = tile + shape->use_offsets[2];
+    obj->use_pos[3] = tile + shape->extra_use_offsets[0];
+    obj->use_pos[4] = tile + shape->extra_use_offsets[1];
+    obj->use_pos[5] = tile + shape->extra_use_offsets[2];
+    obj->depth = shape->use_xy_depth[2];
     obj->x.tile = tile % 128;
     obj->y.tile = tile / 128;
-    obj->use_x.tile = obj->x.tile + shape->unknown1f[0];
-    obj->use_y.tile = obj->y.tile + shape->unknown1f[1];
+    obj->use_x.tile = obj->x.tile + shape->use_xy_depth[0];
+    obj->use_y.tile = obj->y.tile + shape->use_xy_depth[1];
     obj->x.frac = obj->use_x.frac = 0x80;
     obj->y.frac = obj->use_y.frac = 0x80;
     insert_node(obj, obj->x, obj->y);
     insert_object(tile, obj, obj->subtype);
     inc_hardware_stats(obj->subtype, obj->owner);
-    if (control->unknown14 == 6 && (room = which_room(tile)) != 0) {
-        room->unknown26++;
+    if (control->category == 6 && (room = which_room(tile)) != 0) {
+        room->radiators++;
     }
-    if (control->unknown14 == 7 && listhead[obj->owner].rooms[ROOM_RECEPTION] == 0) {
+    if (control->category == 7 && listhead[obj->owner].rooms[ROOM_RECEPTION] == 0) {
         listhead[obj->owner].rooms[ROOM_RECEPTION] = room - room_info;
     }
-    if (control->unknown17 != -1) {
-        part = &next_part[control->unknown17];
+    if (control->next_part_index != -1) {
+        part = &next_part[control->next_part_index];
         other = &thing[place_object((u16)(tile + part->dirs[dir].offset), part->kind, part->dirs[dir].dir, obj->owner)];
         if (other > thing) {
             other->pair = obj - thing;
@@ -168,19 +168,19 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
     case OBJ_PLANT:
         obj->sprite = compute_plant_frame(obj);
         if (obj->owner == player) {
-            NRAdcounts.unknown0++;
+            NRAdcounts.plants++;
         }
         break;
     case OBJ_BENCH:
         if (obj->owner == player) {
-            NRAdcounts.unknown4++;
+            NRAdcounts.benches++;
         }
         break;
     case OBJ_LITTER_BOMB:
         anim = check_frame(obj->fuse + 0x9bf, obj) + obj->facing;
         obj->sprite = start[anim].frame;
         obj->flip = start[anim].flags > 0;
-        obj->owner = (map[tile].unknown7 & 2) ? 1 : (map[tile].unknown7 & 4) ? 2 : (map[tile].unknown7 & 8) ? 3 : 0;
+        obj->owner = (map[tile].owner_flags & 2) ? 1 : (map[tile].owner_flags & 4) ? 2 : (map[tile].owner_flags & 8) ? 3 : 0;
         break;
     }
 }
@@ -202,7 +202,7 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     if (!(kind == 0x30 || can_place_object(tile, kind, dir, owner))) {
         return 0;
     }
-    othervar.f9bb = 0;
+    othervar.force_place_objects = 0;
     if (!which_room(tile)) {
         u8 blocked;
 
@@ -210,8 +210,8 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
         blocked = !check_room_access(owner);
         remove_object_shape(&map[tile], &shapes[objects[kind].shapes[dir]], dir, &objects[kind]);
         if (blocked) {
-            if (othervar.ff == player) {
-                advisor.f2 = 7;
+            if (othervar.cur_player == player) {
+                advisor.forced_advice_id = 7;
             }
             return 0;
         }
@@ -220,7 +220,7 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
         return 0;
     }
     if (kind == 0x37) {
-        allhosps[owner].rooms[ILL_AUTOPSY].unknown1C = 1;
+        allhosps[owner].rooms[ILL_AUTOPSY].cure_available = 1;
     }
     for (i = 0; i < 20; i++) {
         obj = &thing[build->objects[i]];
@@ -242,9 +242,9 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
         obj->type = THING_OBJECT;
         obj->subtype = kind;
         obj->anim_speed = 2;
-        obj->use_style = control->unknown15[0];
+        obj->use_style = control->use_style[0];
         obj->owner = owner;
-        obj->strength = allhosps[othervar.ff].object_stats[kind].unknown8;
+        obj->strength = allhosps[othervar.cur_player].object_stats[kind].strength;
         obj->times_used = 0;
         obj->layers[10] = 0;
         obj->layers[11] = old_newrand() & 3;
@@ -252,11 +252,11 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
         if (kind == 0x2d) {
             obj->plant_health = 400;
             if (obj->owner == player) {
-                NRAdcounts.unknownb += 0x37;
-                if (NRAdcounts.unknownb < 0) {
-                    NRAdcounts.unknownb = 0;
-                } else if (NRAdcounts.unknown0 * 0x37 < NRAdcounts.unknownb) {
-                    NRAdcounts.unknownb = NRAdcounts.unknown0 * 0x37;
+                NRAdcounts.plant_health_sum += 0x37;
+                if (NRAdcounts.plant_health_sum < 0) {
+                    NRAdcounts.plant_health_sum = 0;
+                } else if (NRAdcounts.plants * 0x37 < NRAdcounts.plant_health_sum) {
+                    NRAdcounts.plant_health_sum = NRAdcounts.plants * 0x37;
                 }
             }
         }
@@ -370,7 +370,7 @@ void delete_object(u16 tile, Thing *obj)
         obj->type_obj_prev = obj->type_obj_next = 0;
     }
     if (listhead[obj->owner].objects[OBJ_AUTO_AUTOPSY] == 0) {
-        allhosps[obj->owner].rooms[ILL_AUTOPSY].unknown1C = 0;
+        allhosps[obj->owner].rooms[ILL_AUTOPSY].cure_available = 0;
     }
 }
 
@@ -607,7 +607,7 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
 
 // Returns the reception desk with a receptionist that suits person: in room
 // `room` (0 any), with space in its queue if need_space, scoring queue length
-// and distance (gbv.f100, gbv.f102). 0 if none.
+// and distance (gbv.q_points, gbv.dist_points). 0 if none.
 // FUNCTION: 0x000382d8
 u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_space)
 {
@@ -626,12 +626,12 @@ u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_sp
             if (!staff->room || !(room == 0 || (u16)(staff->room - room_info) == room)) {
                 continue;
             }
-            free = staff->room->f1e - staff->room->unknown31;
+            free = staff->room->queue_capacity - staff->room->queue_length;
             if (free <= 0 && need_space) {
                 continue;
             }
-            score = staff->room->unknown31 * gbv.f100;
-            score += (fn_000cb2db(desk->x.tile - person->x.tile) + fn_000cb2db(desk->y.tile - person->y.tile)) * gbv.f102;
+            score = staff->room->queue_length * gbv.q_points;
+            score += (fn_000cb2db(desk->x.tile - person->x.tile) + fn_000cb2db(desk->y.tile - person->y.tile)) * gbv.dist_points;
             score -= free;
             if (score < best_score) {
                 best_score = score;
@@ -663,7 +663,7 @@ u8 can_place_door(u16 tile, u16 kind, u8 dir)
     return 1;
 }
 
-// Creates a door of kind `kind` at tile facing gamevar.f28, belonging to the
+// Creates a door of kind `kind` at tile facing gamevar.place_dir, belonging to the
 // room it opens into. Returns 1 if it was placed, 0 if blocked or no thing
 // was free.
 // FUNCTION: 0x00038548
@@ -678,8 +678,8 @@ s16 place_door(u16 tile, u16 kind)
 
     cell = &map[tile];
     control = &objects[kind];
-    shape = &shapes[control->shapes[gamevar.f28]];
-    if (!can_place_door(tile, kind, gamevar.f28)) {
+    shape = &shapes[control->shapes[gamevar.place_dir]];
+    if (!can_place_door(tile, kind, gamevar.place_dir)) {
         return 0;
     }
     door = allocate_thing(0);
@@ -688,17 +688,17 @@ s16 place_door(u16 tile, u16 kind)
             cell[(s16)shape->points[i]].flags |= 2;
         }
         door->type = THING_DOOR;
-        door->facing = gamevar.f28;
+        door->facing = gamevar.place_dir;
         door->subtype = kind;
-        door->sprite = start[control->unknownE + door->facing].frame;
-        door->flip = start[control->unknownE + door->facing].flags;
+        door->sprite = start[control->anim_start + door->facing].frame;
+        door->flip = start[control->anim_start + door->facing].flags;
         door->anim_speed = 2;
-        door->use_pos[0] = tile + shape->unknown13[0];
-        door->use_pos[3] = tile + shape->unknown19[0];
+        door->use_pos[0] = tile + shape->use_offsets[0];
+        door->use_pos[3] = tile + shape->extra_use_offsets[0];
         door->x.tile = tile % 128;
         door->y.tile = tile / 128;
         door->x.frac = door->y.frac = 0x80;
-        door->depth = shape->unknown1f[2];
+        door->depth = shape->use_xy_depth[2];
         door->state = OS_STATIC;
         insert_node(door, door->x, door->y);
         room = which_room(tile + door_to_room[door->facing]);
@@ -724,7 +724,7 @@ Thing *find_door(Thing *person)
     for (i = 0; i < 5; i++) {
         door = search_mapwho(&cell[special_around[i]], THING_DOOR);
         if (door > thing) {
-            if (person->room || (s16)person->x.tile + ((s16)person->y.tile << 7) == room_info[door->room_id].unknown4) {
+            if (person->room || (s16)person->x.tile + ((s16)person->y.tile << 7) == room_info[door->room_id].door_tile) {
                 return door;
             }
         }
@@ -795,54 +795,54 @@ void remove_object_from_map(Thing *obj)
     tile = (u16)obj->x.tile + ((u16)obj->y.tile << 7);
     switch (obj->subtype) {
     case OBJ_PLANT:
-        thingpage_cancel(&allhosps[obj->owner].fd2b, obj - thing);
-        NRAdcounts.unknownb -= (obj->plant_health * 2 + 0x50) / 16;
+        thingpage_cancel(&allhosps[obj->owner].plant_pager, obj - thing);
+        NRAdcounts.plant_health_sum -= (obj->plant_health * 2 + 0x50) / 16;
         if (obj->owner == player) {
-            NRAdcounts.unknown0--;
+            NRAdcounts.plants--;
             if (obj->plant_health < 0) {
-                NRAdcounts.unknown2--;
+                NRAdcounts.thirsty_plants--;
             }
         }
         break;
     case OBJ_BENCH:
         if (obj->owner == player) {
-            NRAdcounts.unknown4--;
+            NRAdcounts.benches--;
         }
         break;
     default:
         break;
     }
-    thingpage_cancel(&allhosps[obj->owner].ff6d, obj - thing);
+    thingpage_cancel(&allhosps[obj->owner].repair_pager, obj - thing);
     control = &objects[obj->subtype];
     shape = &shapes[control->shapes[obj->facing]];
     remove_object_shape(cell, shape, obj->facing, control);
-    switch (control->unknown14) {
+    switch (control->category) {
     case 1:
     case 2:
-        hosp->fc97--;
-        hosp->f1bf -= hosp->object_stats[obj->subtype].cost;
+        hosp->machine_count--;
+        hosp->object_value -= hosp->object_stats[obj->subtype].cost;
         break;
     case 3:
-        hosp->fca8--;
-        hosp->f1bf -= hosp->object_stats[obj->subtype].cost;
+        hosp->leisure_count--;
+        hosp->object_value -= hosp->object_stats[obj->subtype].cost;
         break;
     case 4:
-        hosp->fc9a--;
+        hosp->amenity_count--;
         break;
     case 5:
-        hosp->fc90--;
+        hosp->extinguisher_count--;
         break;
     case 6:
-        hosp->fc92--;
+        hosp->radiator_count--;
         room = which_room(tile);
         if (room) {
-            room->unknown26--;
+            room->radiators--;
         }
         break;
     default:
         break;
     }
-    hosp->fc96--;
+    hosp->object_count--;
     hosp->object_stats[obj->subtype].fA++;
     if (obj->state == 4) {
         user = &thing[obj->user];
@@ -864,7 +864,7 @@ s32 remove_object(Thing *obj, u8 owner)
     Map *cell;
 
     cell = &map[(s16)obj->x.tile + ((s16)obj->y.tile << 7)];
-    if (!(obj->subtype == OBJ_GATES_OF_HELL || obj->subtype == OBJ_LITTER_BOMB || cell->unknown7 == 1 << owner)) {
+    if (!(obj->subtype == OBJ_GATES_OF_HELL || obj->subtype == OBJ_LITTER_BOMB || cell->owner_flags == 1 << owner)) {
         return 0;
     }
     remove_object_from_map(obj);
@@ -886,7 +886,7 @@ u8 treatment_machine_used(const u16 illness, const u16 tile)
 
     kind = expertise[illness].kind;
     control = &objects[kind];
-    if (control->unknown1e) {
+    if (control->overlay_anim) {
         id = find_object(tile, kind, 0, 0x97, 0);
         machine = &thing[id];
         if (machine > thing) {
@@ -895,7 +895,7 @@ u8 treatment_machine_used(const u16 illness, const u16 tile)
             }
             if (machine->times_used > machine->strength / 3) {
                 percent = machine->times_used * 100 / (machine->strength + 1);
-                thingpage_request(&allhosps[machine->owner].ff6d, (u16)(machine - thing), percent < 100 ? percent : 100);
+                thingpage_request(&allhosps[machine->owner].repair_pager, (u16)(machine - thing), percent < 100 ? percent : 100);
             }
             if (machine->strength * 75 / 100 <= machine->times_used) {
                 return modify_machine(machine);
@@ -935,7 +935,7 @@ u8 modify_machine(Thing *machine)
                 machine->smoke[0] = 1;
                 machine->smoke[1] = 1;
                 machine->smoke[2] = 1;
-                machine->overlay_frame = start[control->unknown1e].frame;
+                machine->overlay_frame = start[control->overlay_anim].frame;
             } else if (count == 1) {
                 for (j = 0; j < 3; j++) {
                     if (machine->smoke[j] == 1) {
@@ -944,12 +944,12 @@ u8 modify_machine(Thing *machine)
                 }
                 j = (j + 1 + (old_newrand() & 1)) % 3;
                 machine->smoke[j] = 1;
-                machine->overlay_frame = start[control->unknown1e].frame;
+                machine->overlay_frame = start[control->overlay_anim].frame;
             }
         } else {
             j = old_newrand() % 3;
             machine->smoke[j] = 1;
-            machine->overlay_frame = start[control->unknown1e].frame;
+            machine->overlay_frame = start[control->overlay_anim].frame;
         }
     }
     if (machine->times_used >= machine->strength) {
@@ -982,16 +982,16 @@ void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *con
         }
         if (cleanse) {
             cell = &base_cell[(s16)shape->points[i]];
-            cleanse_area((cell->unknown7 & 2) ? 1 : (cell->unknown7 & 4) ? 2 : (cell->unknown7 & 8) ? 3 : 0,
+            cleanse_area((cell->owner_flags & 2) ? 1 : (cell->owner_flags & 4) ? 2 : (cell->owner_flags & 8) ? 3 : 0,
                          (u16)(cell - map) % 128, (u16)(cell - map) / 128, 1, 1);
         }
     }
-    base_cell[shape->unknown13[0]].flags |= 4;
-    base_cell[shape->unknown13[1]].flags |= 4;
-    base_cell[shape->unknown13[2]].flags |= 4;
-    base_cell[shape->unknown19[0]].flags |= 4;
-    base_cell[shape->unknown19[1]].flags |= 4;
-    base_cell[shape->unknown19[2]].flags |= 4;
+    base_cell[shape->use_offsets[0]].flags |= 4;
+    base_cell[shape->use_offsets[1]].flags |= 4;
+    base_cell[shape->use_offsets[2]].flags |= 4;
+    base_cell[shape->extra_use_offsets[0]].flags |= 4;
+    base_cell[shape->extra_use_offsets[1]].flags |= 4;
+    base_cell[shape->extra_use_offsets[2]].flags |= 4;
     if (control->walls != -1) {
         walls = &object_walls[control->walls * 4 + dir];
         for (i = 0; i < walls->count; i++) {
@@ -1010,12 +1010,12 @@ void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *contro
     for (i = 0; i < shape->count; i++) {
         cell[(s16)shape->points[i]].flags &= ~7;
     }
-    cell[shape->unknown13[0]].flags &= ~4;
-    cell[shape->unknown13[1]].flags &= ~4;
-    cell[shape->unknown13[2]].flags &= ~4;
-    cell[shape->unknown19[0]].flags &= ~4;
-    cell[shape->unknown19[1]].flags &= ~4;
-    cell[shape->unknown19[2]].flags &= ~4;
+    cell[shape->use_offsets[0]].flags &= ~4;
+    cell[shape->use_offsets[1]].flags &= ~4;
+    cell[shape->use_offsets[2]].flags &= ~4;
+    cell[shape->extra_use_offsets[0]].flags &= ~4;
+    cell[shape->extra_use_offsets[1]].flags &= ~4;
+    cell[shape->extra_use_offsets[2]].flags &= ~4;
     if (control->walls != -1) {
         walls = &object_walls[control->walls * 4 + dir];
         for (i = 0; i < walls->count; i++) {
@@ -1135,13 +1135,13 @@ u8 should_sliding_door_open(Thing *door)
     Map *cell;
 
     offset = sliding_doors[door->subtype - 0x3a].offset[door->facing];
-    cell = &map[((s16)door->y.tile << 7) + (s16)door->x.tile + shapes[objects[door->subtype].shapes[door->facing]].unknown13[1] + offset];
+    cell = &map[((s16)door->y.tile << 7) + (s16)door->x.tile + shapes[objects[door->subtype].shapes[door->facing]].use_offsets[1] + offset];
     for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
         if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR || occupant->type == THING_INSPECTOR) {
             return 1;
         }
     }
-    cell = &map[shapes[objects[door->subtype].shapes[door->facing]].unknown19[1] + (((s16)door->y.tile << 7) + (s16)door->x.tile) + offset];
+    cell = &map[shapes[objects[door->subtype].shapes[door->facing]].extra_use_offsets[1] + (((s16)door->y.tile << 7) + (s16)door->x.tile) + offset];
     for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
         if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR || occupant->type == THING_INSPECTOR) {
             return 1;
@@ -1213,41 +1213,41 @@ void inc_hardware_stats(u8 kind, u8 owner)
     AllHosps *hosp;
 
     hosp = &allhosps[owner];
-    switch (objects[kind].unknown14) {
+    switch (objects[kind].category) {
     case 1:
     case 2:
-        hosp->fc97++;
-        hosp->f1bf += hosp->object_stats[kind].cost;
+        hosp->machine_count++;
+        hosp->object_value += hosp->object_stats[kind].cost;
         break;
     case 3:
-        hosp->fca8++;
-        hosp->f1bf += hosp->object_stats[kind].cost;
+        hosp->leisure_count++;
+        hosp->object_value += hosp->object_stats[kind].cost;
         break;
     case 4:
-        hosp->fc9a++;
+        hosp->amenity_count++;
         break;
     case 5:
-        hosp->fc90++;
+        hosp->extinguisher_count++;
         break;
     case 6:
-        hosp->fc92++;
+        hosp->radiator_count++;
         break;
     default:
         break;
     }
-    hosp->fc96++;
+    hosp->object_count++;
     hosp->object_stats[kind].fA++;
 }
 
 // Object state OS_BOMB_TICKS (litter bomb): burns the fuse one step every
-// gbv.f152 turns while othervar.f32 is set, and at the end explodes,
+// gbv.bomb_fuse_ticks turns while othervar.every_16_turns is set, and at the end explodes,
 // scattering litter.
 // FUNCTION: 0x0003a098
 void bomb_ticks(Thing *bomb)
 {
-    if (othervar.f32) {
+    if (othervar.every_16_turns) {
         bomb->fuse_tick++;
-        if (bomb->fuse_tick >= gbv.f152) {
+        if (bomb->fuse_tick >= gbv.bomb_fuse_ticks) {
             bomb->fuse_tick = 0;
             bomb->fuse++;
             if (bomb->fuse >= 8) {
@@ -1266,7 +1266,7 @@ void bomb_ticks(Thing *bomb)
     }
 }
 
-// Scatters up to gbv.f153 pieces of litter in rings out to gbv.f151 tiles
+// Scatters up to gbv.bomb_litter_count pieces of litter in rings out to gbv.bomb_litter_radius tiles
 // around tile pos.
 // FUNCTION: 0x0003a200
 void litter_explosion(u32 pos, u8 owner)
@@ -1280,8 +1280,8 @@ void litter_explosion(u32 pos, u8 owner)
     u32 x;
     u32 y;
 
-    count = gbv.f153;
-    for (radius = 0; radius <= gbv.f151; radius++) {
+    count = gbv.bomb_litter_count;
+    for (radius = 0; radius <= gbv.bomb_litter_radius; radius++) {
         x0 = (pos & 0x7f) - radius;
         x1 = x0 + radius * 2;
         y0 = (pos >> 7) - radius;
@@ -1305,7 +1305,7 @@ void litter_explosion(u32 pos, u8 owner)
     }
 }
 
-// With a gbv.f150 percent chance, places a random piece of litter on tile
+// With a gbv.bomb_litter_chance percent chance, places a random piece of litter on tile
 // (x, y) if it is outside rooms and free. Decrements *count for each piece
 // and returns 1 when it reaches 0.
 // FUNCTION: 0x0003a310
@@ -1316,7 +1316,7 @@ u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner)
 
     pos = (s16)x + ((s16)y << 7);
     cell = &map[pos];
-    if (old_newrand() % 100 > gbv.f150) {
+    if (old_newrand() % 100 > gbv.bomb_litter_chance) {
         return 0;
     }
     if (which_room(pos) == 0 && !(cell->flags & 7) && !(cell->floor & 0xf)) {
@@ -1337,16 +1337,16 @@ void replace_machine(Thing *machine)
     s32 cost;
     s32 i;
 
-    cost = allhosps[othervar.ff].object_stats[machine->subtype].cost;
-    if (allhosps[player].f35 >= cost && allhosps[player].f35 > 0) {
+    cost = allhosps[othervar.cur_player].object_stats[machine->subtype].cost;
+    if (allhosps[player].balance >= cost && allhosps[player].balance > 0) {
         change_balance(TX_REPLACEMENT_MACHINE, -cost, 0, machine->owner);
-        machine->strength = allhosps[othervar.ff].object_stats[machine->subtype].unknown8;
+        machine->strength = allhosps[othervar.cur_player].object_stats[machine->subtype].strength;
         machine->times_used = 0;
         machine->overlay_frame = 0;
         machine->smoke[0] = 0;
         machine->smoke[1] = 0;
         machine->smoke[2] = 0;
-        pager = &allhosps[machine->owner].ff6d;
+        pager = &allhosps[machine->owner].repair_pager;
         for (i = ((PagerSlots *)pager)->count - 1; i >= 0; i--) {
             if (&thing[((PagerSlots *)pager)->slot[i].thing] == machine && ((PagerSlots *)pager)->slot[i].staff) {
                 interrupt_staff(&thing[((PagerSlots *)pager)->slot[i].staff]);
@@ -1377,7 +1377,7 @@ void check_invis_walls_around_object(Thing *obj)
         for (i = 0; i < walls->count; i++) {
             cell = &map[((s16)obj->y.tile << 7) + (s16)obj->x.tile + walls->pos[i]];
             side = walls->side[i];
-            if ((&cell->unknown3)[side] == 0) {
+            if ((&cell->wall_n)[side] == 0) {
                 insert_blank_wall(cell, side);
             }
         }

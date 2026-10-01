@@ -40,7 +40,7 @@ void doctor_is_trained(Thing *doctor)
         return;
     }
     doctor->orders |= ORD_RETURN_TO_TRAINING;
-    if (doctor->room->f22 || doctor->room->f3 == 4) {
+    if (doctor->room->being_edited || doctor->room->state == 4) {
         evacuate_staff(doctor);
         return;
     }
@@ -52,7 +52,7 @@ void doctor_is_trained(Thing *doctor)
         evacuate_staff(doctor);
         return;
     }
-    if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].f21d) && take_a_break(doctor)) {
+    if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].rest_threshold) && take_a_break(doctor)) {
         return;
     }
     if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_LECTURE_CHAIR, 1, 0x96, doctor->owner) && doctor->complex_action != 0x41a) {
@@ -66,8 +66,8 @@ void doctor_is_trained(Thing *doctor)
         return;
     }
     room = doctor->room;
-    x = old_newrand() % room->f1 + room->pos % 128;
-    y = old_newrand() % room->f2 + room->pos / 128;
+    x = old_newrand() % room->width + room->pos % 128;
+    y = old_newrand() % room->height + room->pos / 128;
     if (map[((s16)y << 7) + (s16)x].first == 0 && can_i_get_to(doctor, (s16)(x + (y << 7)))) {
         doctor->next_state = SS_DOCTOR_IS_TRAINED;
         doctor->resume_state = SS_DOCTOR_IS_TRAINED;
@@ -89,7 +89,7 @@ void consultant_trains(Thing *consultant)
     if (shall_i_resign(consultant)) {
         return;
     }
-    if (consultant->room->f22 || consultant->room->f3 == 4) {
+    if (consultant->room->being_edited || consultant->room->state == 4) {
         evacuate_staff(consultant);
         return;
     }
@@ -105,15 +105,15 @@ void consultant_trains(Thing *consultant)
         return;
     }
     consultant->orders |= ORD_RETURN_TO_TRAINING;
-    if (((consultant->orders & ORD_REST) || consultant->tiredness > allhosps[consultant->owner].f21d) && take_a_break(consultant)) {
+    if (((consultant->orders & ORD_REST) || consultant->tiredness > allhosps[consultant->owner].rest_threshold) && take_a_break(consultant)) {
         return;
     }
     projector = &thing[find_object(consultant->x.tile + ((u16)consultant->y.tile << 7), OBJ_PROJECTOR, 0, 0x97, consultant->owner)];
     if (projector <= thing) {
         return;
     }
-    if (!projector->data[0]) {
-        projector->data[0] = 1;
+    if (!projector->lecture_started) {
+        projector->lecture_started = 1;
         set_complex(consultant, 0x3fc, 0);
         consultant->next_state = SS_CONSULTANT_TRAINS;
         process_staff_complex(consultant);
@@ -190,11 +190,11 @@ u8 send_doctor_to_training(Thing *doctor)
     if (state && room) {
     staff_exit_room_check(doctor);
     if (doctor->room) {
-        set_complex(doctor, 0x136, doctor->room->unknown6);
+        set_complex(doctor, 0x136, doctor->room->door_inside_tile);
     }
     doctor->next_state = state;
     doctor->resume_state = SS_PROCESS_COMPLEX;
-    set_complex(doctor, 0x96, room_info[room].unknown4);
+    set_complex(doctor, 0x96, room_info[room].door_tile);
     doctor->dest_room = room;
     process_staff_complex(doctor);
     return 1;
@@ -282,7 +282,7 @@ void training_done(const Thing *consultant, const u8 kind)
     Thing *student;
     u32 learn;
 
-    base = gbv.ff6[kind];
+    base = gbv.training_value[kind];
     count = 1;
     students = 0;
     points = 0;
@@ -310,8 +310,8 @@ void training_done(const Thing *consultant, const u8 kind)
             } else if (learn == 0) {
             }
             if (student->ability < limit) {
-                if (gbv.f141 / (students * count) > 0) {
-                    student->ability += gbv.f141 / (count * students);
+                if (gbv.training_rate / (students * count) > 0) {
+                    student->ability += gbv.training_rate / (count * students);
                     if (student->ability < 30) {
                         student->ability = 30;
                     } else if (student->ability > 1000) {
@@ -331,9 +331,9 @@ void training_done(const Thing *consultant, const u8 kind)
                 }
                 if (learn & 0x20) {
                     student->surgeon_training += points;
-                    if (student->surgeon_training > gbv.f146) {
+                    if (student->surgeon_training > gbv.ability_threshold_surgeon) {
                         student->skills |= SKILL_SURGEON;
-                        allhosps[student->owner].fca6++;
+                        allhosps[student->owner].surgeon_count++;
                         if (student->owner == player) {
                             announce_this(4, 5);
                         }
@@ -343,7 +343,7 @@ void training_done(const Thing *consultant, const u8 kind)
                 }
                 if (learn & 0x40) {
                     student->psych_training += points;
-                    if (student->psych_training > gbv.f148) {
+                    if (student->psych_training > gbv.ability_threshold_psych) {
                         student->skills |= SKILL_PSYCHIATRIST;
                         if (student->owner == player) {
                             announce_this(4, 6);
@@ -354,7 +354,7 @@ void training_done(const Thing *consultant, const u8 kind)
                 }
                 if (learn & 0x100) {
                     student->research_training += points;
-                    if (student->research_training > gbv.f14a) {
+                    if (student->research_training > gbv.ability_threshold_research) {
                         student->skills |= SKILL_RESEARCHER;
                         if (student->owner == player) {
                             announce_this(4, 8);

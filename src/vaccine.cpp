@@ -8,25 +8,25 @@ void insert_person_in_vaccination_queue(Thing *w);
 
 char fingchk3[20] = { 0xad, 0xa9, 0xdd, 0xc9, 0x91, 0xad, 0xa9, 0x99 };
 
-// Returns 1 if the patient under the mouse (othervar.f41) is this player's,
-// contagious with the epidemic's illness (myhosp->f20b) and not yet queued
-// for a vaccination, recording them in othervar.f7a (0 otherwise). The flag
+// Returns 1 if the patient under the mouse (othervar.pointed_thing) is this player's,
+// contagious with the epidemic's illness (myhosp->epidemic_illness) and not yet queued
+// for a vaccination, recording them in othervar.vaccine_target (0 otherwise). The flag
 // parameter is ignored (overwritten with 0).
 // FUNCTION: 0x000986a0
 u8 is_person_highlighted_for_vaccination(u8 flag)
 {
     Thing *person;
 
-    person = &thing[othervar.f41];
+    person = &thing[othervar.pointed_thing];
     flag = 0;
     if (person > thing && person->type == THING_PATIENT && person->owner == player && (s8)person->contagion > 0
-        && myhosp->f20b == person->illness) {
+        && myhosp->epidemic_illness == person->illness) {
         if (flag || is_person_in_vaccine_queue(person) == 0) {
-            othervar.f7a = othervar.f41;
+            othervar.vaccine_target = othervar.pointed_thing;
             return 1;
         }
     }
-    othervar.f7a = 0;
+    othervar.vaccine_target = 0;
     return 0;
 }
 
@@ -118,9 +118,9 @@ u8 should_nurse_vaccinate(Thing *nurse)
     for (patient = &thing[allhosps[nurse->owner].vaccine_queue]; patient > thing; patient = &thing[patient->vaccine_next]) {
         if ((patient->flags & PF_VACCINE_REQUESTED) && !(patient->flags & PF_VACCINE_NURSE_SENT) && !patient->room) {
             u16 pos = can_i_go_near_point(nurse, patient->x.tile + (patient->y.tile << 7));
-            if (pos && !(map[pos].unknown7 & 0x10)) {
+            if (pos && !(map[pos].owner_flags & 0x10)) {
                 if (nurse->room)
-                    set_complex(nurse, 0x136, nurse->room->unknown6);
+                    set_complex(nurse, 0x136, nurse->room->door_inside_tile);
                 set_complex(nurse, 0xbe, pos);
                 nurse->next_state = SS_NURSE_VACCINATES;
                 nurse->resume_state = SS_NURSE_VACCINATES;
@@ -138,7 +138,7 @@ u8 should_nurse_vaccinate(Thing *nurse)
 }
 
 // Staff state SS_NURSE_VACCINATES: next to the patient, vaccinates them
-// (they stop being contagious, at gbv.f126's cost); otherwise follows them,
+// (they stop being contagious, at gbv.vac_cost's cost); otherwise follows them,
 // or gives up and puts the request back.
 // FUNCTION: 0x00098d0c
 void nurse_vaccinates(Thing *nurse)
@@ -156,10 +156,10 @@ void nurse_vaccinates(Thing *nurse)
         set_icon_value(patient, ICON_VACCINATED);
         if ((s8)patient->contagion > 0)
             patient->contagion = 0xff;
-        change_balance(TX_VACCINATION, -gbv.f126, 0, patient->owner);
+        change_balance(TX_VACCINATION, -gbv.vac_cost, 0, patient->owner);
     } else {
         u16 pos = can_i_go_near_point(nurse, patient->x.tile + (patient->y.tile << 7));
-        if (pos && !(map[pos].unknown7 & 0x10)) {
+        if (pos && !(map[pos].owner_flags & 0x10)) {
             set_complex(nurse, 0xbe, pos);
             nurse->next_state = SS_NURSE_VACCINATES;
             nurse->resume_state = SS_NURSE_VACCINATES;
@@ -184,14 +184,14 @@ u8 could_nurse_vaccinate(Thing *nurse)
     if (allhosps[nurse->owner].vaccine_requests == 0)
         return 0;
     if (nurse->room)
-        from = nurse->room->unknown4;
+        from = nurse->room->door_tile;
     else
         from = nurse->x.tile + (nurse->y.tile << 7);
     for (patient = &thing[allhosps[nurse->owner].vaccine_queue]; patient > thing; patient = &thing[patient->vaccine_next]) {
         if (!(patient->flags & PF_VACCINE_REQUESTED) || (patient->flags & PF_VACCINE_NURSE_SENT) || patient->room)
             continue;
         u16 pos = patient->x.tile + (patient->y.tile << 7);
-        if (!(map[pos].unknown7 & 0x10) && check_points_connected(pos, from))
+        if (!(map[pos].owner_flags & 0x10) && check_points_connected(pos, from))
             return 1;
     }
     return 0;

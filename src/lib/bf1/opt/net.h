@@ -17,7 +17,7 @@ struct __ic76sReceiveCallbacks;
 struct TbNetworkPlayerEntry {
     u8 unknown0;
     u32 id;
-    u32 unknown5;
+    u32 local;
     u32 host;
     char name[0x20];
 };
@@ -31,7 +31,7 @@ struct ServiceProvider {
     u32 local_id;
     TbNetworkSessionNameEntry sessions[32];
     u32 init_count;
-    u32 unknown528;
+    u32 in_session;
     u32 player_count;
     TbNetworkPlayerEntry players[32];
     char name[0x20];

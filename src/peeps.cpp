@@ -93,7 +93,7 @@ void person_in_queue(Thing *person)
                         if (abilities[person->subtype][1]) {
                             if (find_nearest_free_object(person - thing, OBJ_BENCH)) {
                                 if (person->owner == player) {
-                                    NRAdcounts.unknown6 -= 5;
+                                    NRAdcounts.bench_shortage -= 5;
                                 }
                                 person->resume_state = PS_ENTERTAINS_THEMSELF;
                                 person->next_state = PS_ENTERTAINS_THEMSELF;
@@ -102,13 +102,13 @@ void person_in_queue(Thing *person)
                                 return;
                             }
                             if (person->owner == player) {
-                                NRAdcounts.unknown6++;
+                                NRAdcounts.bench_shortage++;
                             }
                         }
                         {
                             u16 anim;
 
-                            anim = check_frame(anim_starts[person->subtype].unknown12, person) + (u16)person->facing;
+                            anim = check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
                             person->sprite = start[anim].frame;
                             person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                         }
@@ -149,9 +149,9 @@ void person_entertains_themself(Thing *person)
                     if (room > room_info) {
                         page_staff_i_need(person, room);
                     }
-                    if (person->impatience > gbv.f108 || (person->flags & PF_SENT_HOME_BY_INSPECTOR)) {
+                    if (person->impatience > gbv.leave_max || (person->flags & PF_SENT_HOME_BY_INSPECTOR)) {
                         if (person->owner == player) {
-                            othervar.f89++;
+                            othervar.patients_left_count++;
                         }
                         set_icon_value(person, ICON_FED_UP);
                         person_go_home(person);
@@ -167,14 +167,14 @@ void person_entertains_themself(Thing *person)
                             return;
                         }
                     }
-                    if (abilities[person->subtype][2] && person->bladder > gbv.f116 && person->complex_action != 90) {
+                    if (abilities[person->subtype][2] && person->bladder > gbv.bowel_full && person->complex_action != 90) {
                         room = get_nearest_room_info(person, ROOM_TOILETS);
                         if (room != 0) {
                             leave_queue(person);
                             person->resume_state = PS_ENTERTAINS_THEMSELF;
                             person->next_state = PS_IN_BOGS;
                             person->substate = 0;
-                            set_complex(person, 360, room->unknown4);
+                            set_complex(person, 360, room->door_tile);
                             process_person_complex(person);
                             return;
                         }
@@ -183,7 +183,7 @@ void person_entertains_themself(Thing *person)
                         if (abilities[person->subtype][1]) {
                             if (find_nearest_free_object(person - thing, OBJ_BENCH)) {
                                 if (person->owner == player) {
-                                    NRAdcounts.unknown6 -= 5;
+                                    NRAdcounts.bench_shortage -= 5;
                                 }
                                 person->resume_state = PS_ENTERTAINS_THEMSELF;
                                 person->next_state = PS_ENTERTAINS_THEMSELF;
@@ -192,13 +192,13 @@ void person_entertains_themself(Thing *person)
                                 return;
                             }
                             if (person->owner == player) {
-                                NRAdcounts.unknown6++;
+                                NRAdcounts.bench_shortage++;
                             }
                         }
                         {
                             u16 anim;
 
-                            anim = check_frame(anim_starts[person->subtype].unknown12, person) + (u16)person->facing;
+                            anim = check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
                             person->sprite = start[anim].frame;
                             person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                         }
@@ -230,7 +230,7 @@ u16 find_standing_place(Thing *person)
         for (i = old_newrand() % 12 + 1; i <= standing_place[0]; i++) {
             tile = base + standing_place[i];
             target = &map[tile];
-            if (target->first == 0 && !(target->flags & 7) && can_i_get_to(person, tile) > 0 && !(target->unknown7 & 0x10)) {
+            if (target->first == 0 && !(target->flags & 7) && can_i_get_to(person, tile) > 0 && !(target->owner_flags & 0x10)) {
                 break;
             }
         }
@@ -260,7 +260,7 @@ void person_go_home(Thing *person)
     record_person_as_patient(person);
     interrupt_person(person);
     leave_queue(person);
-    if (set_complex(person, 20, get_room_info(1, 0x65, person->owner)->unknown4)) {
+    if (set_complex(person, 20, get_room_info(1, 0x65, person->owner)->door_tile)) {
         process_person_complex(person);
     }
     set_icon_value(person, ICON_FED_UP);
@@ -364,7 +364,7 @@ void nav_debug_state(Thing *person)
             u16 anim;
 
             person->facing = *(u8 *)&next_angle[person->facing];
-            anim = check_frame(anim_starts[person->subtype].unknown12, person) + (u16)person->facing;
+            anim = check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
             person->sprite = start[anim].frame;
             person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
@@ -377,7 +377,7 @@ void nav_debug_state(Thing *person)
             u16 anim;
 
             person->facing = *(u8 *)&next_angle[person->facing];
-            anim = check_frame(staff_anim_starts[person->subtype].unknownA, person) + (u16)person->facing;
+            anim = check_frame(staff_anim_starts[person->subtype].staff_stand, person) + (u16)person->facing;
             person->sprite = start[anim].frame;
             person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
@@ -528,7 +528,7 @@ void send_person_to_bed(Thing *person)
             }
             page_member_of_staff(4, room - room_info, 1, 1, person->owner);
             person->dest_room = room - room_info;
-            set_destination_coords(person, room->unknown4);
+            set_destination_coords(person, room->door_tile);
             {
                 u16 anim;
 
@@ -537,12 +537,12 @@ void send_person_to_bed(Thing *person)
                 person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
             }
             person->state = PS_GOTO_QUEUE;
-            room->unknown32++;
+            room->queue_incoming++;
             return;
         }
     }
     room = get_expertise_dest(0x2a, person);
-    room->unknown32++;
+    room->queue_incoming++;
     page_member_of_staff(4, room - room_info, 1, 1, person->owner);
     person->dest_room = room - room_info;
     {
@@ -553,7 +553,7 @@ void send_person_to_bed(Thing *person)
         person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     }
     person->state = PS_GOTO_QUEUE;
-    set_destination_coords(person, room->unknown4);
+    set_destination_coords(person, room->door_tile);
 }
 
 // Patient state PS_IN_BED: recovers in bed until the timer runs out, then
@@ -637,7 +637,7 @@ void start_person_going(Thing *person)
     in_room = 0;
     go = 0;
     if (person->room > room_info) {
-        if (set_complex(person, 90, person->room->unknown6)) {
+        if (set_complex(person, 90, person->room->door_inside_tile)) {
             go = 1;
         }
         in_room = 1;
@@ -653,8 +653,8 @@ void start_person_going(Thing *person)
         found_desk = 1;
     }
     if (found_desk == 0) {
-        room = &room_info[allhosps[person->owner].unknown1cf[old_newrand() & 3]];
-        arg = room->unknown4;
+        room = &room_info[allhosps[person->owner].entrances[old_newrand() & 3]];
+        arg = room->door_tile;
         if (set_complex(person, 20, arg)) {
             go = 1;
         }
@@ -674,7 +674,7 @@ void person_nav_failure(Thing *person)
 
     if (person->room == 0) {
         room = which_room(person->dest_x + (person->dest_y << 7));
-        if (room != 0 && actual_game_turn - 500 < room->unknown22) {
+        if (room != 0 && actual_game_turn - 500 < room->created_turn) {
             start_person_going(person);
             return;
         }
@@ -787,7 +787,7 @@ void leave_toilets(Thing *person)
 {
     person->next_state = PS_GO_FOR_TREATMENT;
     person->resume_state = PS_LEAVE_TOILETS;
-    set_complex(person, 90, person->room->unknown6);
+    set_complex(person, 90, person->room->door_inside_tile);
     process_person_complex(person);
 }
 
@@ -813,7 +813,7 @@ void return_to_queue_area(Thing *person)
                 arg = desk->use_pos[1];
             }
         } else {
-            arg = room->unknown4;
+            arg = room->door_tile;
         }
         if (arg) {
             set_complex(person, 30, arg);
@@ -866,7 +866,7 @@ void page_staff_i_need(Thing *person, RoomInfo *room)
     } else {
         count = 1;
     }
-    page_member_of_staff(expertise[person->treatment].unknown0, room - room_info, 1, count, person->owner);
+    page_member_of_staff(expertise[person->treatment].staff_mask, room - room_info, 1, count, person->owner);
 }
 
 // Patient floating away: rises by their speed each turn and is removed at
@@ -889,7 +889,7 @@ void person_flys(Thing *person)
 void send_person_somewhere_else(Thing *person)
 {
     person->next_state = PS_GO_FOR_TREATMENT;
-    if (set_complex(person, 90, person->room->unknown6)) {
+    if (set_complex(person, 90, person->room->door_inside_tile)) {
         process_person_complex(person);
     }
 }
@@ -923,7 +923,7 @@ void refer_patient(Thing *person, u8 owner)
 
 // Patient state PS_WAITS_FOR_DECISION: waits while the player decides on
 // their call; goes on when a diagnosis or treatment becomes possible, or
-// home (counted as untreatable) after 1500 ticks of othervar.f82.
+// home (counted as untreatable) after 1500 ticks of othervar.cur_turn.
 // FUNCTION: 0x00017e30
 void person_waits_for_decision(Thing *person)
 {
@@ -940,7 +940,7 @@ void person_waits_for_decision(Thing *person)
             if (person->countdown <= 0) {
                 if (person->flags & 0x400) {
                     done = find_possible_diagnosis(person);
-                    if (done || (u16)(othervar.f82 - person->timer) >= 1500) {
+                    if (done || (u16)(othervar.cur_turn - person->timer) >= 1500) {
                         person->flags &= ~PF_AWAITING_DECISION;
                         reset_icon_value(person, ICON_AWAITING_DECISION);
                         if (!(person->flags & PF_WAITING_FOR_ROOM)) {
@@ -951,7 +951,7 @@ void person_waits_for_decision(Thing *person)
                             person->state = PS_GO_FOR_TREATMENT;
                         } else {
                             person_go_home(person);
-                            allhosps[person->owner].rooms[person->illness].unknown24++;
+                            allhosps[person->owner].rooms[person->illness].turned_away++;
                             person->flags2 |= (PF_NO_DIAGNOSIS >> 16);
                         }
                         person->flags &= 0xfb7f;
@@ -964,16 +964,16 @@ void person_waits_for_decision(Thing *person)
                         treatment = person->treatment;
                     }
                     category = expertise[treatment].category;
-                    done = allhosps[person->owner].rooms[treatment].unknown1C == 1 && listhead[person->owner].rooms[category]
+                    done = allhosps[person->owner].rooms[treatment].cure_available == 1 && listhead[person->owner].rooms[category]
                         ? (u8)1 : (u8)0;
-                    if (done || (u16)(othervar.f82 - person->timer) >= 1500) {
+                    if (done || (u16)(othervar.cur_turn - person->timer) >= 1500) {
                         person->flags &= ~PF_AWAITING_DECISION;
                         reset_icon_value(person, ICON_AWAITING_DECISION);
                         if (person->flags & PF_WAITING_FOR_ROOM) {
                             person->flags &= ~PF_WAITING_FOR_ROOM;
                             if (!done) {
                                 person_go_home(person);
-                                allhosps[person->owner].rooms[person->illness].unknown24++;
+                                allhosps[person->owner].rooms[person->illness].turned_away++;
                                 person->flags2 |= (PF_NO_TREATMENT >> 16);
                             } else {
                                 get_playercall(4, person->playercall, person->owner);
@@ -994,7 +994,7 @@ void person_waits_for_decision(Thing *person)
                 {
                     u16 anim;
 
-                    anim = check_frame(anim_starts[person->subtype].unknown12, person) + (u16)person->facing;
+                    anim = check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
                     person->sprite = start[anim].frame;
                     person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                 }
@@ -1015,7 +1015,7 @@ u16 make_a_playercall(const u16 type, const u16 subject, const s16 timeout, u8 o
 {
     PlayerCall *call;
 
-    if (gamevar.f174) {
+    if (gamevar.rat_fest_level) {
         return 0;
     }
     for (call = playercall + 1; call < end_playercall; call++) {
@@ -1081,11 +1081,11 @@ void save_popup(u16 type)
     int n = 1;
     PlayerCall *call;
 
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         n = 4;
     }
     for (i = 0; i < n; i++) {
-        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0) {
+        if (statvar.num_players > 1 && D_001609c4[i].active == 0) {
             continue;
         }
         call = playercall + listhead[i].first[type];
@@ -1109,11 +1109,11 @@ void restore_popup(u16 type)
     int n = 1;
     PlayerCall *call;
 
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         n = 4;
     }
     for (i = 0; i < n; i++) {
-        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0) {
+        if (statvar.num_players > 1 && D_001609c4[i].active == 0) {
             continue;
         }
         for (call = playercall + 1; call < end_playercall; call++) {
@@ -1198,14 +1198,14 @@ void expire_playercalls(void)
             }
             if (call->type == 6) {
                 owner1 = call->owner;
-                allhosps[owner1].f1f3 = actual_game_turn + 0x5dc;
-                allhosps[owner1].f1fa = 2;
+                allhosps[owner1].mayor_arrival_turn = actual_game_turn + 0x5dc;
+                allhosps[owner1].mayor_state = 2;
             } else if (call->type == 3) {
                 choice_spare_data = 0x63;
                 packet_choice_result(0xb);
             } else if (call->type == 5) {
                 if (call->x == 1) {
-                    allhosps[call->owner].f1e2 = 0;
+                    allhosps[call->owner].emergency_state = 0;
                 }
             }
             owner2 = call->owner;
@@ -1260,7 +1260,7 @@ u16 call_no_treatment(Thing *person, char **strs)
         room = exp->category;
     }
     for (i = 0; i < 9; i++) {
-        if ((exp->unknown0 & (1 << i)) && listhead[person->owner].staff[i] == 0) {
+        if ((exp->staff_mask & (1 << i)) && listhead[person->owner].staff[i] == 0) {
             staff = i;
             break;
         }
@@ -1274,13 +1274,13 @@ u16 call_no_treatment(Thing *person, char **strs)
     } else {
         sprintf(buf1, strs[3]);
     }
-    if (allhosps[person->owner].rooms[ILL_AUTOPSY].unknown1C != 1) {
+    if (allhosps[person->owner].rooms[ILL_AUTOPSY].cure_available != 1) {
         available_buttons &= ~4;
     }
     text_x = 0;
     text_y = 0;
     if (person->flags32 & PF_GUESSED) {
-        pct = person->diagnosis * 100 / gbv.ffc;
+        pct = person->diagnosis * 100 / gbv.diagnosis_complete;
         if (pct < 0) {
             pct = 0;
         } else if (pct > 99) {
@@ -1330,7 +1330,7 @@ void person_arrived_from_call(Thing *person)
                 return;
             }
         }
-        set_complex(person, 0x5a, person->room->unknown6);
+        set_complex(person, 0x5a, person->room->door_inside_tile);
         person->next_state = PS_GO_FOR_TREATMENT;
         process_person_complex(person);
     }
@@ -1384,12 +1384,12 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
         room = exp->category;
     }
     for (i = 0; i < 9; i++) {
-        if ((exp->unknown0 & (1 << i)) && listhead[player].staff[i] == 0) {
+        if ((exp->staff_mask & (1 << i)) && listhead[player].staff[i] == 0) {
             staff = i;
             break;
         }
     }
-    if (allhosps[player].rooms[kind].unknown1C == 1) {
+    if (allhosps[player].rooms[kind].cure_available == 1) {
         sprintf(buf1, strs[0]);
     } else if (room && staff) {
         sprintf(buf1, strs[1], real_room_names[rooms[room].id], skill_names[staff]);
@@ -1482,7 +1482,7 @@ void interrupt_person(Thing *person)
             set_complex(person, 0x276, 0);
             break;
         }
-        set_complex(person, 0x5a, person->room->unknown6);
+        set_complex(person, 0x5a, person->room->door_inside_tile);
         process_person_complex(person);
         person->next_state = state;
     } else if (was_deciding) {

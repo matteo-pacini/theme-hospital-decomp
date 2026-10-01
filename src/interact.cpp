@@ -121,7 +121,7 @@ extern "C" void setup_next_interaction(Thing *w)
     }
 }
 
-// Records in statvar.unknowne8 where each interaction sequence starts in
+// Records in statvar.interaction_start where each interaction sequence starts in
 // interaction[] (sequences end with -1, the table with -99).
 // FUNCTION: 0x00054d60
 extern "C" void setup_interactions(void)
@@ -131,10 +131,10 @@ extern "C" void setup_interactions(void)
 
     seq = 0;
     i = 0;
-    statvar.unknowne8[0] = 0;
+    statvar.interaction_start[0] = 0;
     for (;;) {
         if (interaction[i].v == -1) {
-            statvar.unknowne8[++seq] = i + 1;
+            statvar.interaction_start[++seq] = i + 1;
         } else if (interaction[i].v == -99) {
             break;
         }
@@ -142,7 +142,7 @@ extern "C" void setup_interactions(void)
     }
 }
 
-// Starts interaction sequence seq (statvar.unknowne8 index) for w (state 0x22
+// Starts interaction sequence seq (statvar.interaction_start index) for w (state 0x22
 // for a patient, 0x1a for staff) with its partner w->slave.
 // FUNCTION: 0x00054dd4
 void start_new_interaction(Thing *w, u8 seq)
@@ -157,7 +157,7 @@ void start_new_interaction(Thing *w, u8 seq)
     default:
         return;
     }
-    w->seq_index = statvar.unknowne8[seq] - 1;
+    w->seq_index = statvar.interaction_start[seq] - 1;
     w->interact_repeat = 0;
     setup_next_interaction(w);
 }

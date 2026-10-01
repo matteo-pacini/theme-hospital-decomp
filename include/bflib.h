@@ -46,7 +46,7 @@ struct TbDisplayStruct {
         u32 unknown0;
         u8 *physical_screen;
     };
-    u8 *unknown4;
+    u8 *wscreen;
     union {
         u8 unknown8[0x10];
         u8 *ghost;
@@ -58,8 +58,8 @@ struct TbDisplayStruct {
         };
     };
 
-    s32 unknown18;
-    s32 unknown1c;
+    s32 physical_screen_width;
+    s32 physical_screen_height;
     s32 graphics_screen_width;
     s32 graphics_screen_height;
     s32 graphics_window_x;

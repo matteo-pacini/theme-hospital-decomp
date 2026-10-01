@@ -1006,7 +1006,7 @@ void __stdcall AddMsgCallback(u32 id, char *name, void *data)
 
     player.id = id;
     strcpy(player.name, name);
-    player.unknown5 = 0;
+    player.local = 0;
     player.host = 0;
     AddAPlayer(&player);
 }
@@ -1129,7 +1129,7 @@ TbError AddAPlayer(TbNetworkPlayerEntry *player)
         if (ret == Lb_OK) {
             if (player->host)
                 hostId = player->id;
-            if (player->unknown5) {
+            if (player->local) {
                 localPlayerId = player->id;
                 localPlayerIndex = index;
             }

@@ -47,8 +47,8 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
 {
     u8 was_locked;
 
-    was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    if ((resvars.f1 == SCREEN_MODE_1 && in_game) || resvars.f0 == SCREEN_MODE_1) {
+    was_locked = lbDisplay.wscreen ? (u8)1 : (u8)0;
+    if ((resvars.game_mode == SCREEN_MODE_1 && in_game) || resvars.screen_mode == SCREEN_MODE_1) {
         if (was_locked)
             LbScreenUnlock();
         if (in_game)
@@ -57,40 +57,40 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
             reset_host();
             exit(1);
         }
-        if (in_game && othervar.fa4f)
+        if (in_game && othervar.music_playing)
             AIL_resume_sequence(GetSongHandle());
         while (LbScreenLock() != 1) {
         }
     }
-    othervar.fa65 = 0;
+    othervar.screen_pic_loaded = 0;
     if (sprites)
         LbSpriteReset(screen_sprites_tab_start, screen_sprites_tab_end, screen_sprites_data);
     LbMouseChangeSprite(0);
     StopAllSamples();
-    if (othervar.fa06)
-        cache.Free(othervar.fa06);
-    othervar.f9f9 = 0;
+    if (othervar.level_block)
+        cache.Free(othervar.level_block);
+    othervar.loaded_level = 0;
     hosp_fade_palette(0, 5, Lb_PALETTE_FADE_CLOSED);
-    set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+    set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
     LbMouseSetup(0);
     set_mouse_mode(mouse_mode);
-    set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+    set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
     if (in_game) {
-        if (resvars.f1 == SCREEN_MODE_1)
+        if (resvars.game_mode == SCREEN_MODE_1)
             setup_menus();
         D_001290d0 = 0xff;
         D_001290d1 = 0xff;
         D_001290d2 = 0xff;
-        othervar.f1f = palette;
+        othervar.fade_palette = palette;
         display_mode = 0;
-        othervar.f10 = 1;
+        othervar.full_redraw = 1;
         D_00156910 = 1;
         set_font_from_cache(1);
         close_irequesters();
-        window.unknown2eb = 0;
+        window.current_window = 0;
         draw_it();
-        if (crequester.unknown2 == 5) {
-            switch (crequester.unknown0) {
+        if (crequester.id == 5) {
+            switch (crequester.mode) {
             case 0:
                 set_mouse_mode(MM_BLUEPRINT);
                 break;
@@ -104,7 +104,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
 
                 obj = next_object_to_build();
                 if (obj)
-                    init_place_object(obj, gamevar.unknown26, gamevar.unknown2f, 0);
+                    init_place_object(obj, gamevar.place_mode, gamevar.place_room, 0);
                 break;
             }
             case 8:
@@ -119,8 +119,8 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
                 break;
             }
         }
-        if (crequester.unknown2 != 0x63)
-            open_requester(crequester.unknown2, 0);
+        if (crequester.id != 0x63)
+            open_requester(crequester.id, 0);
     }
 }
 
@@ -136,8 +136,8 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     char name[144];
     u8 *dest;
 
-    was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    if (resvars.f0 != mode) {
+    was_locked = lbDisplay.wscreen ? (u8)1 : (u8)0;
+    if (resvars.screen_mode != mode) {
         if (was_locked)
             LbScreenUnlock();
         AIL_stop_sequence(GetSongHandle());
@@ -145,7 +145,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
             reset_host();
             exit(1);
         }
-        if (othervar.fa4f)
+        if (othervar.music_playing)
             AIL_resume_sequence(GetSongHandle());
         while (LbScreenLock() != 1) {
         }
@@ -166,9 +166,9 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         len.map += LbFileLengthRnc(name);
     }
     clear_sound_heap();
-    othervar.fa06 = cache.Allocate(len.palette + len.pointers + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
-    if (othervar.fa06)
-        dest = fn_00022b60(othervar.fa06);
+    othervar.level_block = cache.Allocate(len.palette + len.pointers + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
+    if (othervar.level_block)
+        dest = fn_00022b60(othervar.level_block);
     else
         return;
     if (fade)
@@ -176,7 +176,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     if (strcmp(hiresscreens[idx], "")) {
         u8 is_locked;
 
-        is_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+        is_locked = lbDisplay.wscreen ? (u8)1 : (u8)0;
         if (!is_locked) {
             while (LbScreenLock() != 1) {
             }
@@ -189,12 +189,12 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
             while (LbScreenLock() != 1) {
             }
         }
-        othervar.fa65 = 1;
+        othervar.screen_pic_loaded = 1;
     }
     if (LbFileLoadAt(hiresscreenpointerfiles[0], dest) == len.palette) {
         screen_pointers_data = dest;
         dest += len.palette;
-        othervar.fa65 = 1;
+        othervar.screen_pic_loaded = 1;
     } else {
         return;
     }
@@ -225,7 +225,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     if (map) {
         level = (Level *)dest;
         if (LbFileLoadAt(name, level) == len.map) {
-            othervar.f9f9 = map;
+            othervar.loaded_level = map;
             recreate_map(1);
         } else {
             return;
@@ -248,14 +248,14 @@ u8 display_loading_screen(void)
 {
     u8 was_locked;
 
-    was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+    was_locked = lbDisplay.wscreen ? (u8)1 : (u8)0;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     if (was_locked)
         LbScreenUnlock();
     LbMouseChangeSprite(0);
-    if (resvars.f0 == SCREEN_MODE_1) {
+    if (resvars.screen_mode == SCREEN_MODE_1) {
         if (!change_res(SCREEN_MODE_13))
             return 0;
     }
@@ -266,7 +266,7 @@ u8 display_loading_screen(void)
     copy_screen_to_wscreen(bscreen);
     LbScreenUnlock();
     LbScreenSwap();
-    hosp_fade_palette(othervar.f1f, 10, Lb_PALETTE_FADE_CLOSED);
+    hosp_fade_palette(othervar.fade_palette, 10, Lb_PALETTE_FADE_CLOSED);
     if (was_locked) {
         while (LbScreenLock() != 1) {
         }
@@ -275,13 +275,13 @@ u8 display_loading_screen(void)
 }
 
 // Fades out and clears the loading screen; `palette` becomes the palette to
-// fade in next (othervar.f1f).
+// fade in next (othervar.fade_palette).
 // FUNCTION: 0x000b7b3c
 void clear_loading_screen(u8 *palette)
 {
     u8 was_locked;
 
-    was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+    was_locked = lbDisplay.wscreen ? (u8)1 : (u8)0;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
@@ -293,7 +293,7 @@ void clear_loading_screen(u8 *palette)
     LbScreenUnlock();
     LbScreenClear(0);
     LbScreenSwap();
-    othervar.f1f = palette;
+    othervar.fade_palette = palette;
     if (was_locked) {
         while (LbScreenLock() != 1) {
         }
@@ -307,8 +307,8 @@ void load_screen(const u8 idx)
 {
     if (LbFileLoadAt((char *)hiresscreens[idx], bscreen) == LbFileLengthRnc((char *)hiresscreens[idx])) {
         if (LbFileLoadAt((char *)screenpalettes[idx], ppalette.data) == LbFileLengthRnc((char *)screenpalettes[idx])) {
-            othervar.f24 = 0;
-            othervar.f1f = ppalette.data;
+            othervar.pending_palette = 0;
+            othervar.fade_palette = ppalette.data;
         }
     }
 }

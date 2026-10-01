@@ -33,9 +33,9 @@ void try_bonus_level(void);
 
 // Applies reputation event `event` (0-25) to player `owner`'s hospital, for
 // treatment (illness index, 0 for the hospital as a whole): each event adds a
-// fixed amount or a percentage of allhosps.fc86 to the reputation totals
+// fixed amount or a percentage of allhosps.rep_events to the reputation totals
 // (amount scales events 13, 23 and 24), and event 22 counts a case. Hospitals
-// on the map (allhosps.f2a 1) update their reputation now; computer ones (f2a
+// on the map (allhosps.player_type 1) update their reputation now; computer ones (f2a
 // 2) bank it in comp_buckets[owner][month].
 // FUNCTION: 0x00058370
 void reputation_affected(const u8 treatment, const u16 event, const u16 month, const u8 owner, const s32 amount)
@@ -66,63 +66,63 @@ void reputation_affected(const u8 treatment, const u16 event, const u16 month, c
     case 10:
         break;
     case 5:
-        delta = -(hosp->fc86 * 5) / 100;
+        delta = -(hosp->rep_events * 5) / 100;
         break;
     case 9:
         if (treatment)
-            delta = hosp->rooms[treatment].f8 * 5 / 100;
+            delta = hosp->rooms[treatment].rep_events * 5 / 100;
         else
-            delta = hosp->fc86 * 5 / 100;
+            delta = hosp->rep_events * 5 / 100;
         break;
     case 11:
-        delta = -(hosp->fc86 * 10) / 100;
+        delta = -(hosp->rep_events * 10) / 100;
         break;
     case 12:
-        delta = hosp->fc86 * 2 / 100;
+        delta = hosp->rep_events * 2 / 100;
         break;
     case 13:
-        delta = -(hosp->fc86 * (amount * 4)) / 100;
+        delta = -(hosp->rep_events * (amount * 4)) / 100;
         break;
     case 14:
-        delta = -(hosp->fc86 * 2) / 100;
+        delta = -(hosp->rep_events * 2) / 100;
         break;
     case 15:
-        delta = -(hosp->fc86 * 10) / 100;
+        delta = -(hosp->rep_events * 10) / 100;
         break;
     case 16:
-        delta = hosp->fc86 * 4 / 100;
+        delta = hosp->rep_events * 4 / 100;
         break;
     case 17:
-        delta = hosp->fc86 * 2 / 100;
+        delta = hosp->rep_events * 2 / 100;
         break;
     case 18:
-        delta = -(hosp->fc86 * 4) / 100;
+        delta = -(hosp->rep_events * 4) / 100;
         break;
     case 19:
-        delta = -(hosp->fc86 * 20) / 100;
+        delta = -(hosp->rep_events * 20) / 100;
         break;
     case 20:
         delta = -1;
         break;
     case 23:
     case 24:
-        delta += amount * hosp->fc86 / 100;
+        delta += amount * hosp->rep_events / 100;
         break;
     case 1:
     case 8:
     default:
         break;
     }
-    if (hosp->f2a == 1) {
+    if (hosp->player_type == 1) {
         if (treatment) {
-            hosp->rooms[treatment].f4 += delta;
-            hosp->rooms[treatment].f8 += count;
+            hosp->rooms[treatment].rep_points += delta;
+            hosp->rooms[treatment].rep_events += count;
             evaluate_reputation(treatment, owner);
         }
-        hosp->fc82 += delta;
-        hosp->fc86 += count;
+        hosp->rep_points += delta;
+        hosp->rep_events += count;
         evaluate_reputation(0, owner);
-    } else if (hosp->f2a == 2) {
+    } else if (hosp->player_type == 2) {
         ComputerBucket *bucket;
 
         bucket = &comp_buckets[owner][month];
@@ -147,27 +147,27 @@ void evaluate_reputation(const u8 treatment, const u8 owner)
 
     hosp = &allhosps[owner];
     if (treatment) {
-        if (hosp->rooms[treatment].f8 > 0)
-            hosp->rooms[treatment].unknown0 = hosp->rooms[treatment].f4 * 500 / hosp->rooms[treatment].f8;
+        if (hosp->rooms[treatment].rep_events > 0)
+            hosp->rooms[treatment].reputation = hosp->rooms[treatment].rep_points * 500 / hosp->rooms[treatment].rep_events;
         else
-            hosp->rooms[treatment].unknown0 = 500;
-        if (hosp->rooms[treatment].unknown0 < 0)
-            hosp->rooms[treatment].unknown0 = 0;
-        else if (hosp->rooms[treatment].unknown0 > 1000)
-            hosp->rooms[treatment].unknown0 = 1000;
+            hosp->rooms[treatment].reputation = 500;
+        if (hosp->rooms[treatment].reputation < 0)
+            hosp->rooms[treatment].reputation = 0;
+        else if (hosp->rooms[treatment].reputation > 1000)
+            hosp->rooms[treatment].reputation = 1000;
     } else {
-        if (hosp->fc86 > 0)
-            hosp->unknownc7e = hosp->fc82 * 500 / hosp->fc86;
+        if (hosp->rep_events > 0)
+            hosp->reputation = hosp->rep_points * 500 / hosp->rep_events;
         else
-            hosp->unknownc7e = 500;
-        if (hosp->unknownc7e < 0)
-            hosp->unknownc7e = 0;
-        else if (hosp->unknownc7e > 1000)
-            hosp->unknownc7e = 1000;
+            hosp->reputation = 500;
+        if (hosp->reputation < 0)
+            hosp->reputation = 0;
+        else if (hosp->reputation > 1000)
+            hosp->reputation = 1000;
     }
 }
 
-// Grows player `owner`'s score (allhosps.f2d) by the rating[] rate for
+// Grows player `owner`'s score (allhosps.score) by the rating[] rate for
 // how close they are to winning, capped at 200,000,000.
 // FUNCTION: 0x000588a8
 void calculate_score(u8 owner)
@@ -180,17 +180,17 @@ void calculate_score(u8 owner)
     score = evaluate_criteria(owner);
     for (i = 0; rating[i].threshold; i++) {
         if (rating[i].threshold >= score) {
-            if (hosp->f2d > 1000000)
-                hosp->f2d += rating[i].f4 * hosp->f2d / 10000;
-            else if (gbv.f124 * hosp->f31 / 100 < hosp->f2d)
-                hosp->f2d += rating[i].f4 * hosp->f2d / 10000;
+            if (hosp->score > 1000000)
+                hosp->score += rating[i].capped_growth * hosp->score / 10000;
+            else if (gbv.score_max_inc * hosp->start_score / 100 < hosp->score)
+                hosp->score += rating[i].capped_growth * hosp->score / 10000;
             else
-                hosp->f2d += rating[i].f2 * hosp->f2d / 10000;
+                hosp->score += rating[i].growth * hosp->score / 10000;
             break;
         }
     }
-    if (hosp->f2d > 200000000)
-        hosp->f2d = 200000000;
+    if (hosp->score > 200000000)
+        hosp->score = 200000000;
 }
 
 // Single player: ends the level if the player has met the win criteria
@@ -202,26 +202,26 @@ void check_game_over(void)
     s32 score;
     s32 pct;
 
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         check_net_criteria(player);
     } else {
         score = evaluate_criteria(player);
         if (score >= 100) {
-            othervar.f9b7 = 1;
-            pct = myhosp->f2c / 2;
+            othervar.level_won = 1;
+            pct = myhosp->win_progress / 2;
             pct += old_normal_rand(0x37, 0x3c);
-            othervar.f74 = myhosp->f2d * pct / 100;
-            if (othervar.f74 > 200000000)
-                othervar.f74 = 200000000;
+            othervar.next_level_offer = myhosp->score * pct / 100;
+            if (othervar.next_level_offer > 200000000)
+                othervar.next_level_offer = 200000000;
             year_end_type = 5;
-            othervar.f72 = 1;
-            winlose.unknown2 = othervar.f72;
-            othervar.fa5f = 0;
+            othervar.winlose_result = 1;
+            winlose.state = othervar.winlose_result;
+            othervar.win_declined = 0;
             try_bonus_level();
         } else if (check_criteria(1, player)) {
             year_end_type = 7;
-            othervar.f72 = 2;
-            winlose.unknown2 = othervar.f72;
+            othervar.winlose_result = 2;
+            winlose.state = othervar.winlose_result;
         }
     }
 }
@@ -234,32 +234,32 @@ void check_quarterly_game_over(void)
 {
     s32 pct;
 
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         check_net_criteria(player);
-    } else if (myhosp->f29 < 12) {
+    } else if (myhosp->level < 12) {
         if (evaluate_criteria(player) < 100)
             return;
-        if (!othervar.fa5f) {
-            othervar.f9b7 = 1;
-            pct = myhosp->f2c / 2;
+        if (!othervar.win_declined) {
+            othervar.level_won = 1;
+            pct = myhosp->win_progress / 2;
             pct += old_normal_rand(0x37, 0x3c);
-            othervar.f74 = myhosp->f2d * pct / 100;
-            if (othervar.f74 > 200000000)
-                othervar.f74 = 200000000;
+            othervar.next_level_offer = myhosp->score * pct / 100;
+            if (othervar.next_level_offer > 200000000)
+                othervar.next_level_offer = 200000000;
             if (display_mode == 9) {
-                fn_000c21e6(&year_end_backup.unknown2, choice, 10);
+                fn_000c21e6(&year_end_backup.choice_state, choice, 10);
                 year_end_backup.mode = display_mode;
-                year_end_backup.f6 = choice_spare_data;
-                year_end_backup.f8 = choice_time_out;
+                year_end_backup.spare_data = choice_spare_data;
+                year_end_backup.time_out = choice_time_out;
             } else {
                 fn_000c21e6(&year_end_backup, &choice_backup, 10);
             }
             year_end_type = 5;
             display_mode = 0xc;
-            winlose.unknown2 = 1;
+            winlose.state = 1;
             try_bonus_level();
         }
-        othervar.fa5f = 0;
+        othervar.win_declined = 0;
     }
 }
 
@@ -278,15 +278,15 @@ u16 shall_peep_pay(Thing *patient)
     s32 max;
 
     treatment = patient->treatment;
-    advisor.fc_u16 = patient->treatment;
+    advisor.unpaid_treatment_u = patient->treatment;
     for (attempt = 0; attempt < 2; attempt++) {
         pays = 0;
         update_single_cure_cost(treatment, patient->owner);
-        price = allhosps[patient->owner].rooms[treatment].unknownC;
+        price = allhosps[patient->owner].rooms[treatment].price;
         max = max_price_for_treatment(treatment, patient->owner);
-        ins = patient->insurance & allhosps[patient->owner].f216;
+        ins = patient->insurance & allhosps[patient->owner].insurance_accepted;
         if (ins)
-            max += insurance_co[ins_control[ins]].f3 * max / 100;
+            max += insurance_co[ins_control[ins]].extra_pay_pct * max / 100;
         else if (price > patient->cash)
             max = 0;
         max += old_newrand() % (price / 2 + 1);
@@ -301,7 +301,7 @@ u16 shall_peep_pay(Thing *patient)
         patient->flags2 |= (PF_TOO_EXPENSIVE >> 16);
         record_person_as_patient(patient);
         if (patient->owner == player)
-            advisor.f128 |= 2;
+            advisor.event_flags |= 2;
     }
     return pays;
 }
@@ -320,15 +320,15 @@ s32 max_price_for_treatment(const u16 treatment, const u8 owner)
     s32 price;
 
     monopoly = 0;
-    base = expertise[treatment].f2;
+    base = expertise[treatment].start_price;
     if (treatment >= 0x24 || treatment == 1)
-        rep = allhosps[owner].unknownc7e;
+        rep = allhosps[owner].reputation;
     else
-        rep = allhosps[owner].rooms[treatment].unknown0;
-    if (statvar.unknownfd > 1) {
+        rep = allhosps[owner].rooms[treatment].reputation;
+    if (statvar.num_players > 1) {
         monopoly = 1;
         for (i = 0; i < 4; i++) {
-            if (i != owner && allhosps[i].rooms[treatment].unknown1C == 1)
+            if (i != owner && allhosps[i].rooms[treatment].cure_available == 1)
                 monopoly = 0;
         }
     }
@@ -338,7 +338,7 @@ s32 max_price_for_treatment(const u16 treatment, const u8 owner)
     return price;
 }
 
-// Sets player `owner`'s overall price level (allhosps.fc8e, 0-300%) from
+// Sets player `owner`'s overall price level (allhosps.price_level, 0-300%) from
 // their prices against the maximums for their known treatments.
 // FUNCTION: 0x00058f7c
 void calc_pricing_factor(const u8 owner)
@@ -350,19 +350,19 @@ void calc_pricing_factor(const u8 owner)
     max_total = 0;
     price_total = 0;
     for (i = 0; i < 0x2f; i++) {
-        if (allhosps[owner].rooms[i].unknown1C == 1) {
+        if (allhosps[owner].rooms[i].cure_available == 1) {
             max_total += max_price_for_treatment(i, owner);
-            price_total += allhosps[owner].rooms[i].unknownC;
+            price_total += allhosps[owner].rooms[i].price;
         }
     }
     if (max_total > 0)
-        allhosps[owner].fc8e = price_total * 100 / max_total;
+        allhosps[owner].price_level = price_total * 100 / max_total;
     else
-        allhosps[owner].fc8e = 100;
-    if (allhosps[owner].fc8e < 0)
-        allhosps[owner].fc8e = 0;
-    else if (allhosps[owner].fc8e > 300)
-        allhosps[owner].fc8e = 300;
+        allhosps[owner].price_level = 100;
+    if (allhosps[owner].price_level < 0)
+        allhosps[owner].price_level = 0;
+    else if (allhosps[owner].price_level > 300)
+        allhosps[owner].price_level = 300;
 }
 
 // Returns the first group of win (mode 0) or lose (mode 1) criteria whose
@@ -389,9 +389,9 @@ s32 check_criteria(u16 mode, u8 owner)
         all = 1;
         any = 0;
         for (i = 0; i < 10; i++) {
-            if (table[i].fc == crit) {
+            if (table[i].group == crit) {
                 any = 1;
-                if (table[i].fe == 0) {
+                if (table[i].met == 0) {
                     all = 0;
                     break;
                 }
@@ -430,49 +430,49 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
     else
         table = lose_criteria;
     for (i = 0; i < 10; i++) {
-        table[i].fe = 0;
-        if (table[i].fc > max)
-            max = table[i].fc;
+        table[i].met = 0;
+        if (table[i].group > max)
+            max = table[i].group;
         switch (table[i].criterion) {
         case 0:
-            table[i].fe = 1;
+            table[i].met = 1;
             val = 0;
             break;
         case 1:
-            val = hosp->unknownc7e;
+            val = hosp->reputation;
             break;
         case 2:
             if (mode == 0)
-                val = hosp->f35 - hosp->f3d;
+                val = hosp->balance - hosp->loan;
             else
-                val = hosp->f35;
+                val = hosp->balance;
             break;
         case 3:
-            if (hosp->f1ed > 10)
-                val = hosp->f1ef * 100 / hosp->f1ed;
+            if (hosp->visitors > 10)
+                val = hosp->diagnosed * 100 / hosp->visitors;
             else
                 val = 0;
             break;
         case 4:
-            val = hosp->f1e9;
+            val = hosp->cures;
             break;
         case 5:
-            if (hosp->f1ed > 10)
-                val = hosp->f1eb * 100 / hosp->f1ed;
+            if (hosp->visitors > 10)
+                val = hosp->deaths * 100 / hosp->visitors;
             else
                 val = 0;
             break;
         case 6:
-            val = hosp->f1bb;
+            val = hosp->hospital_value;
             break;
         }
         if (table[i].op == 1) {
             if (val >= table[i].value)
-                table[i].fe = 1;
+                table[i].met = 1;
         } else if (val <= table[i].value) {
-            table[i].fe = 1;
+            table[i].met = 1;
         }
-        table[i].f14 = pct = 0;
+        table[i].progress = pct = 0;
         range = table[i].value - table[i].base;
         if (range != 0)
             pct = (val - table[i].base) * 100 / range;
@@ -480,8 +480,8 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
             pct = 0;
         else if (pct > 200)
             pct = 200;
-        table[i].f14 = pct;
-        table[i].f10 = val;
+        table[i].progress = pct;
+        table[i].current = val;
     }
     return max;
 }
@@ -489,8 +489,8 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 // Returns player `owner`'s progress towards winning (percent, the best of
-// the win criteria groups; 100 = won), stores it in allhosps.f2c, and for
-// this player the best group in othervar.fa4a.
+// the win criteria groups; 100 = won), stores it in allhosps.win_progress, and for
+// this player the best group in othervar.best_win_group.
 // FUNCTION: 0x000594d0
 s32 evaluate_criteria(const u8 owner)
 {
@@ -514,27 +514,27 @@ s32 evaluate_criteria(const u8 owner)
         count = 0;
         sum = 0;
         for (i = 0; i < 10; i++) {
-            if (win_criteria[i].fc != group)
+            if (win_criteria[i].group != group)
                 continue;
             count++;
-            if (win_criteria[i].fe == 1) {
+            if (win_criteria[i].met == 1) {
                 sum += 100;
                 continue;
             }
             if (win_criteria[i].op == 1) {
                 if (win_criteria[i].value != 0) {
-                    pct = ABS(win_criteria[i].f10 * 100 / win_criteria[i].value);
-                    if (win_criteria[i].criterion == 2 && win_criteria[i].f10 < 0)
+                    pct = ABS(win_criteria[i].current * 100 / win_criteria[i].value);
+                    if (win_criteria[i].criterion == 2 && win_criteria[i].current < 0)
                         pct = 0;
                 } else {
                     pct = 0;
                 }
-            } else if (win_criteria[i].f10 != 0) {
-                pct = ABS(win_criteria[i].value * 100 / win_criteria[i].f10);
+            } else if (win_criteria[i].current != 0) {
+                pct = ABS(win_criteria[i].value * 100 / win_criteria[i].current);
             } else {
                 pct = 0;
             }
-            if (othervar.f9b7 == 0) {
+            if (othervar.level_won == 0) {
                 if (pct < 0)
                     pct = 0;
                 else if (pct > 100)
@@ -557,10 +557,10 @@ s32 evaluate_criteria(const u8 owner)
         total /= groups;
     else
         total = 0;
-    adcounts.f9e = total;
-    hosp->f2c = best;
+    adcounts.win_progress = total;
+    hosp->win_progress = best;
     if (owner == player)
-        othervar.fa4a = best_group;
+        othervar.best_win_group = best_group;
     return best;
 }
 
@@ -584,10 +584,10 @@ u8 check_net_criteria(const u8 owner)
     fail = 0;
     better = 0;
     active = 0;
-    if (current_net_criteria.unknown0) {
-        if (othervar.f9d1 >= current_net_criteria.start) {
+    if (current_net_criteria.criterion) {
+        if (othervar.game_month >= current_net_criteria.start) {
             active = 1;
-            switch (current_net_criteria.unknown0) {
+            switch (current_net_criteria.criterion) {
             case 0:
                 current_net_criteria.done = 1;
                 active = 0;
@@ -598,25 +598,25 @@ u8 check_net_criteria(const u8 owner)
                 kind = 4;
                 break;
             case 4:
-                val = hosp->f1e9 - current_net_criteria.fa;
+                val = hosp->cures - current_net_criteria.time_to_do;
                 kind = 1;
                 break;
             case 5:
-                val = hosp->f35 - hosp->f3d;
+                val = hosp->balance - hosp->loan;
                 kind = 1;
                 break;
             case 6:
-                val = hosp->f1bb;
+                val = hosp->hospital_value;
                 kind = 1;
                 break;
             case 7:
-                val = hosp->unknownc7e;
+                val = hosp->reputation;
                 kind = 1;
                 break;
             case 8:
                 for (i = 0; i < 4; i++) {
                     if (D_001609c4[i].active) {
-                        if (i != player && hosp->unknownc7e >= allhosps[i].unknownc7e)
+                        if (i != player && hosp->reputation >= allhosps[i].reputation)
                             better = 1;
                     }
                 }
@@ -625,7 +625,7 @@ u8 check_net_criteria(const u8 owner)
             case 9:
                 for (i = 0; i < 4; i++) {
                     if (D_001609c4[i].active) {
-                        if (i != player && hosp->f35 - hosp->f3d >= allhosps[i].f35 - allhosps[i].f3d)
+                        if (i != player && hosp->balance - hosp->loan >= allhosps[i].balance - allhosps[i].loan)
                             better = 1;
                     }
                 }
@@ -659,14 +659,14 @@ u8 check_net_criteria(const u8 owner)
     if (owner == player) {
         if (evaluate_criteria(owner) >= 100) {
             D_001549d0[player].type = 0x90;
-            othervar.fa94 = 2;
-            othervar.fa95 = 1;
+            othervar.net_result = 2;
+            othervar.net_won = 1;
             return 0;
         }
         if (check_criteria(1, owner)) {
             D_001549d0[player].type = 0x7e;
             D_001549d0[player].value = 1;
-            othervar.fa94 = 1;
+            othervar.net_result = 1;
             return 0;
         }
     }
@@ -680,19 +680,19 @@ void setup_next_net_criteria(const u8 owner)
 {
     u8 i;
 
-    if (statvar.unknownfd > 1 && owner == player) {
-        current_net_criteria.unknown0 = 0;
+    if (statvar.num_players > 1 && owner == player) {
+        current_net_criteria.criterion = 0;
         for (i = 0; i < 20; i++) {
-            if (net_criteria[i].done == 0 && net_criteria[i].unknown0) {
-                if (othervar.f9d1 >= net_criteria[i].start) {
+            if (net_criteria[i].done == 0 && net_criteria[i].criterion) {
+                if (othervar.game_month >= net_criteria[i].start) {
                     net_criteria[i].done = 1;
-                    current_net_criteria.unknown0 = net_criteria[i].unknown0;
+                    current_net_criteria.criterion = net_criteria[i].criterion;
                     current_net_criteria.value = net_criteria[i].value;
-                    current_net_criteria.start = othervar.f9d1 + net_criteria[i].fa;
-                    if (current_net_criteria.unknown0 == 4)
-                        current_net_criteria.fa = allhosps[owner].f1e9;
+                    current_net_criteria.start = othervar.game_month + net_criteria[i].time_to_do;
+                    if (current_net_criteria.criterion == 4)
+                        current_net_criteria.time_to_do = allhosps[owner].cures;
                     current_net_criteria.done = 0;
-                    othervar.fa5d = 1;
+                    othervar.show_net_criteria = 1;
                     break;
                 }
             }
@@ -705,8 +705,8 @@ void setup_next_net_criteria(const u8 owner)
 // FUNCTION: 0x00059c38
 void satisfied_net_criteria(const u8 criterion, const u8 owner)
 {
-    if (statvar.unknownfd > 1 && owner == player) {
-        if (criterion == current_net_criteria.unknown0)
+    if (statvar.num_players > 1 && owner == player) {
+        if (criterion == current_net_criteria.criterion)
             current_net_criteria.done = 1;
     }
 }

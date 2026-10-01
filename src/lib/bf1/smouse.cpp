@@ -72,7 +72,7 @@ int LbMousePlace(void)
             save = D_00176bd4;
             sprite = D_00177bf4 + D_00177bdc + D_00177be0 * lbDisplay.mouse_sprite->width;
             D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * lbDisplay.graphics_screen_width;
-            screen = lbDisplay.unknown4 + D_00176bd0;
+            screen = lbDisplay.wscreen + D_00176bd0;
             for (y = 0; y < D_00176bcc; y++) {
                 scr = screen;
                 mask = sprite;
@@ -102,7 +102,7 @@ int LbMouseRemove(void)
 
     if (D_00176bc4) {
         save = D_00176bd4;
-        screen = lbDisplay.unknown4 + D_00176bd0;
+        screen = lbDisplay.wscreen + D_00176bd0;
         for (y = 0; y < D_00176bcc; y++) {
             scr = screen;
             for (x = 0; x < D_00176bc8; x++)
@@ -169,8 +169,8 @@ int LbMouseChangeSprite(TbSprite *sprite)
     lbDisplay.mouse_sprite = sprite;
     memset(D_00177bf4, 0xfe, 0x1000);
     if (sprite) {
-        screen = lbDisplay.unknown4;
-        lbDisplay.unknown4 = D_00177bf4;
+        screen = lbDisplay.wscreen;
+        lbDisplay.wscreen = D_00177bf4;
         win_x = lbDisplay.graphics_window_x;
         win_y = lbDisplay.graphics_window_y;
         win_width = lbDisplay.graphics_window_width;
@@ -181,7 +181,7 @@ int LbMouseChangeSprite(TbSprite *sprite)
         lbDisplay.draw_flags = 0;
         LbScreenSetGraphicsWindow(0, 0, sprite->width, sprite->height);
         LbSpriteDraw(0, 0, sprite);
-        lbDisplay.unknown4 = screen;
+        lbDisplay.wscreen = screen;
         lbDisplay.graphics_screen_width = screen_width;
         lbDisplay.draw_flags = flags;
         LbScreenSetGraphicsWindow(win_x, win_y, win_width, win_height);
@@ -590,10 +590,10 @@ long screen_place(void)
         if (D_00176bc4 == 1) {
             save = D_00176bd4;
             sprite = D_00177bf4 + D_00177bdc + lbDisplay.mouse_sprite->width * D_00177be0;
-            D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * lbDisplay.unknown18;
+            D_00176bd0 = D_00177bd4 + D_00177bdc + (D_00177bd8 + D_00177be0) * lbDisplay.physical_screen_width;
             if (!lbDisplay.vesa_is_set_up) {
                 screen = lbDisplay.physical_screen + D_00176bd0;
-                for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.unknown18, sprite += lbDisplay.mouse_sprite->width) {
+                for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.physical_screen_width, sprite += lbDisplay.mouse_sprite->width) {
                     scr = screen;
                     mask = sprite;
                     for (x = 0; x < D_00176bc8; x++, scr++, mask++) {
@@ -606,7 +606,7 @@ long screen_place(void)
                 page = D_00176bd0 >> 16;
                 LbVesaSetPage(page);
                 screen = lbDisplay.physical_screen + (D_00176bd0 & 0xffff);
-                for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.unknown18, sprite += lbDisplay.mouse_sprite->width) {
+                for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.physical_screen_width, sprite += lbDisplay.mouse_sprite->width) {
                     scr = screen;
                     mask = sprite;
                     after_bank = D_00176bc8;
@@ -659,7 +659,7 @@ long screen_remove(u32 force)
         save = D_00176bd4;
         if (!lbDisplay.vesa_is_set_up) {
             screen = lbDisplay.physical_screen + D_00176bd0;
-            for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.unknown18) {
+            for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.physical_screen_width) {
                 scr = screen;
                 for (x = 0; x < D_00176bc8; x++)
                     *scr++ = *save++;
@@ -668,7 +668,7 @@ long screen_remove(u32 force)
             page = D_00176bd0 >> 16;
             LbVesaSetPage(page);
             screen = lbDisplay.physical_screen + (D_00176bd0 & 0xffff);
-            for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.unknown18) {
+            for (rows_left = D_00176bcc; --rows_left != -1; screen += lbDisplay.physical_screen_width) {
                 scr = screen;
                 after_bank = D_00176bc8;
                 if ((u32)(scr + D_00176bc8) >= 0xb0000) {

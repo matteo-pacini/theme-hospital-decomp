@@ -11,7 +11,7 @@ void debug_msg(char *fmt, ...);
 void set_default_player_details(void);
 
 // Writes the player's settings (myplayer) to the player details file
-// (statvar.f575 + statvar.f6c + "dt"). Returns 1, 0 if the write was short, or
+// (statvar.save_root + statvar.save_prefix + "dt"). Returns 1, 0 if the write was short, or
 // 0xff (-1) if the file cannot be opened.
 // FUNCTION: 0x000ba8b0
 u8 save_player_details(void)
@@ -20,7 +20,7 @@ u8 save_player_details(void)
     s32 handle;
     s32 written;
 
-    sprintf(name, "%s%sdt", statvar.f575, statvar.f6c);
+    sprintf(name, "%s%sdt", statvar.save_root, statvar.save_prefix);
     handle = LbFileOpen(name, 0);
     if (handle == -1) {
         debug_msg("Cannot open player details file for writing - %s\n", name);
@@ -44,7 +44,7 @@ u8 load_player_details(void)
     char name[256];
     s32 handle;
 
-    sprintf(name, "%s%sdt", statvar.f575, statvar.f6c);
+    sprintf(name, "%s%sdt", statvar.save_root, statvar.save_prefix);
     if (!LbFileExists(name)) {
         set_default_player_details();
         fn_000baad0();
@@ -69,32 +69,32 @@ u8 load_player_details(void)
 // FUNCTION: 0x000baa28
 void set_default_player_details(void)
 {
-    myplayer.f1e = 0x19;
-    myplayer.f20 = 2;
-    myplayer.f9 = 0;
+    myplayer.game_speed = 0x19;
+    myplayer.speed_choice = 2;
+    myplayer.years_played = 0;
     myplayer.fb = 0;
-    myplayer.f1d = 1;
-    myplayer.f22 = 1;
-    LbMemorySet(myplayer.f23, 0x1e, 0);
-    LbMemorySet(myplayer.f41, 0x14, 0);
-    LbMemorySet(myplayer.unknown12, 0xb, 0);
-    myplayer.f41[20] = 1;
-    myplayer.ff = 1;
-    myplayer.fd = 0x7f;
-    myplayer.unknown11 = 1;
-    myplayer.fc = 0x7f;
-    myplayer.f10 = 1;
-    myplayer.fe = 0x7f;
+    myplayer.shadows_on = 1;
+    myplayer.autosave = 1;
+    LbMemorySet(myplayer.room_help_seen, 0x1e, 0);
+    LbMemorySet(myplayer.advisor_flags, 0x14, 0);
+    LbMemorySet(myplayer.track_enabled, 0xb, 0);
+    myplayer.advisor_flags[20] = 1;
+    myplayer.sfx_on = 1;
+    myplayer.sfx_volume = 0x7f;
+    myplayer.music_on = 1;
+    myplayer.music_volume = 0x7f;
+    myplayer.ambients_on = 1;
+    myplayer.ambient_volume = 0x7f;
 }
 
-// Applies the player's settings: music volume (myplayer.fc), pulldown menu
-// ticks, and the game speed from myplayer.f1e.
+// Applies the player's settings: music volume (myplayer.music_volume), pulldown menu
+// ticks, and the game speed from myplayer.game_speed.
 // FUNCTION: 0x000baad0
 void fn_000baad0(void)
 {
-    FadeMusic(1000, myplayer.fc);
+    FadeMusic(1000, myplayer.music_volume);
     setup_pulldown_menu_options();
-    switch (myplayer.f1e) {
+    switch (myplayer.game_speed) {
     case 1:
         vary_speed(10);
         break;

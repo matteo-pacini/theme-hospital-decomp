@@ -275,13 +275,13 @@ void process_things(Thing *first, Thing *last)
                 break;
             case SS_APPLICANT:
                 if (actual_game_turn > cur->hire_expiry) {
-                    if (statvar.unknownfd <= 1) {
-                        if ((u16)(cur - thing) != gamevar.unknown75)
+                    if (statvar.num_players <= 1) {
+                        if ((u16)(cur - thing) != gamevar.held_staff)
                             remove_staff_in_struct(cur);
                     } else {
-                        if ((u16)(cur - thing) == gamevar.unknown75) {
-                            gamevar.unknown75 = 0;
-                            gamevar.unknown77 = 0;
+                        if ((u16)(cur - thing) == gamevar.held_staff) {
+                            gamevar.held_staff = 0;
+                            gamevar.held_staff_kind = 0;
                             set_mouse_mode(MM_NORMAL);
                         }
                         remove_staff_in_struct(cur);
@@ -307,8 +307,8 @@ void process_things(Thing *first, Thing *last)
                 remove_node(cur);
                 cur->state = SS_APPLICANT;
                 cur->hire_time = actual_game_turn;
-                gamevar.f6[cur->subtype]++;
-                gamevar.f4++;
+                gamevar.applicants[cur->subtype]++;
+                gamevar.applicant_count++;
                 break;
             case SS_DOCTOR_RESEARCHES:
                 doctor_researches(cur);

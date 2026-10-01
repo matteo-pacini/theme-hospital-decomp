@@ -185,7 +185,7 @@ s16 button_index(s32 id);
 void add_number(char c);
 void add_phone_number(char *number);
 
-#define SLIST(n) ((SlistButton *)&resvars.f48[n])
+#define SLIST(n) ((SlistButton *)&resvars.screen_buttons[n])
 
 // Reads the modem command strings (init, dial, hang-up, auto-answer, in that
 // order, as "key=value" lines) from modem.ini, keeping the defaults for a
@@ -274,47 +274,47 @@ void set_glass_map(s32 mask)
             DesiredDisplay &= 0x1000;
             network_read_control(network_num_players());
             set_font_from_cache(0x22);
-            box.x = resvars.f3c_NetBoxp[126].x;
-            box.h = (s16)resvars.f3c_NetBoxp[126].h * net_control.f4 + 0x17;
+            box.x = resvars.screen_boxes_NetBoxp[126].x;
+            box.h = (s16)resvars.screen_boxes_NetBoxp[126].h * net_control.f4 + 0x17;
             box.y = (lbDisplay.graphics_screen_height - box.h) / 2;
             box.h += box.y;
-            box.w = box.x + resvars.f3c_NetBoxp[126].w;
+            box.w = box.x + resvars.screen_boxes_NetBoxp[126].w;
             box.f8 = 0x27;
             box.fe = 0;
             box.ff = 0;
             box.f10 = 7;
             box.f12 = 1;
             add_glass_box(&box, 0x1000, 0, 0);
-            box.x += resvars.f3c_NetBoxp[126].y;
+            box.x += resvars.screen_boxes_NetBoxp[126].y;
             box.y += 0xd;
-            box.h = box.y + resvars.f3c_NetBoxp[126].h - 3;
-            box.w = box.x + resvars.f3c_NetBoxp[126].w - resvars.f3c_NetBoxp[126].y * 2;
+            box.h = box.y + resvars.screen_boxes_NetBoxp[126].h - 3;
+            box.w = box.x + resvars.screen_boxes_NetBoxp[126].w - resvars.screen_boxes_NetBoxp[126].y * 2;
             box.fe = 1;
             box.ff = 1;
             box.f12 = 0;
             for (i = 0; i < net_control.f4; i++) {
-                resvars.f48[i + 0x8c].x = box.x;
-                resvars.f48[i + 0x8c].y = box.y;
-                resvars.f48[i + 0x8c].width = box.w;
-                resvars.f48[i + 0x8c].height = box.h;
+                resvars.screen_buttons[i + 0x8c].x = box.x;
+                resvars.screen_buttons[i + 0x8c].y = box.y;
+                resvars.screen_buttons[i + 0x8c].width = box.w;
+                resvars.screen_buttons[i + 0x8c].height = box.h;
                 add_glass_box(&box, 0x1000, i * 3, i * 3);
-                box.y += resvars.f3c_NetBoxp[126].h;
-                box.h += resvars.f3c_NetBoxp[126].h;
+                box.y += resvars.screen_boxes_NetBoxp[126].h;
+                box.h += resvars.screen_boxes_NetBoxp[126].h;
             }
-            resvars.f48[i + 0x8c].x = 0;
-            resvars.f48[i + 0x8c].y = 0;
-            resvars.f48[i + 0x8c].width = 0;
-            resvars.f48[i + 0x8c].height = 0;
+            resvars.screen_buttons[i + 0x8c].x = 0;
+            resvars.screen_buttons[i + 0x8c].y = 0;
+            resvars.screen_buttons[i + 0x8c].width = 0;
+            resvars.screen_buttons[i + 0x8c].height = 0;
             DesiredDisplay |= bit;
         }
         idx = glass_index(bit);
         if (idx) {
             if (!(DesiredDisplay & bit))
-                add_glass_frame(&resvars.f50_GlassFramep[idx], bit);
+                add_glass_frame(&resvars.glass_frames_GlassFramep[idx], bit);
             DesiredDisplay |= bit;
         }
     }
-    network.unknown2 = 3;
+    network.state = 3;
 }
 
 // Hides the network screen's glass panels whose bits are in mask.
@@ -322,7 +322,7 @@ void set_glass_map(s32 mask)
 void reset_glass_map(s32 mask)
 {
     DesiredDisplay &= ~mask;
-    network.unknown2 = 3;
+    network.state = 3;
 }
 
 // Hides the panels in mask if they are shown, else shows them.
@@ -343,10 +343,10 @@ void draw_network_select(void)
 {
     s32 next;
 
-    switch (network.unknown2) {
+    switch (network.state) {
     case 0:
         read_modem_ini_file();
-        statvar.unknownfd = 1;
+        statvar.num_players = 1;
         player = 0;
         return_from_screen(9, 0, 1);
         load_ingame_pic(0xc, 1, 0x19, 0, SCREEN_MODE_13);
@@ -355,30 +355,30 @@ void draw_network_select(void)
         keybuffer_clear();
         BufferedInkey = 0;
         login_control.f17 = 6;
-        lbDisplay.draw_colour = color.unknownA;
+        lbDisplay.draw_colour = color.green;
         session_index = 0;
         init_zoom_boxes(0x84);
         setup_balance_files(1);
-        network.unknown2 = 3;
-        if (myplayer.f56[0] == 0) {
-            myplayer.f56[0] = 4;
-            myplayer.f56[1] = 3;
-            myplayer.f56[2] = 4;
-            myplayer.f56[3] = 3;
-            myplayer.f56[4] = 2;
-            myplayer.f56[5] = 2;
+        network.state = 3;
+        if (myplayer.serial_config[0] == 0) {
+            myplayer.serial_config[0] = 4;
+            myplayer.serial_config[1] = 3;
+            myplayer.serial_config[2] = 4;
+            myplayer.serial_config[3] = 3;
+            myplayer.serial_config[4] = 2;
+            myplayer.serial_config[5] = 2;
         }
         break;
     case 3:
         next = next_map();
         if (next == 0) {
-            network.unknown2 = 2;
+            network.state = 2;
             if ((CurrentDisplay | DesiredDisplay) == 0) {
-                statvar.unknownfd = 1;
+                statvar.num_players = 1;
                 player = 0;
-                network.unknown2 = 0;
+                network.state = 0;
                 display_mode = 2;
-                mainmenu.unknown2 = 0;
+                mainmenu.state = 0;
             }
             break;
         }
@@ -392,7 +392,7 @@ void draw_network_select(void)
         display_loading_screen();
         free_balance_files();
         start_session();
-        network.unknown2 = 0;
+        network.state = 0;
         swap_level_number();
         LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         fn_000110b0();
@@ -413,10 +413,10 @@ void draw_network_select(void)
         login_control.f17 = 6;
         first_login_exchange = 0;
         clear_loading_screen(0);
-        othervar.f24 = palette;
+        othervar.pending_palette = palette;
         current_palette = palette;
         set_mouse_mode(MM_NORMAL);
-        set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+        set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
         break;
     case 2:
         BufferedInkey = keybuffer_get();
@@ -430,7 +430,7 @@ void draw_network_select(void)
         }
         break;
     default:
-        network.unknown2 = 0;
+        network.state = 0;
         break;
     }
 }
@@ -581,7 +581,7 @@ void display_button_text(s32 mask)
                 }
                 break;
             case 6:
-                if (!myplayer.f56[4] && (int)myplayer.f56[5] < 0)
+                if (!myplayer.serial_config[4] && (int)myplayer.serial_config[5] < 0)
                     lbDisplay.draw_flags |= 4;
                 if ((menu_turn & 7) > 3)
                     draw_glass_text_hilight_no_jump(SLIST(111), network_text[2]);
@@ -664,8 +664,8 @@ void display_button_text(s32 mask)
             }
             LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             set_font_from_cache(0x21);
-            LbTextDraw((resvars.f3c_NetBoxp[132].w - LbTextStringWidth(buf)) / 2 + resvars.f3c_NetBoxp[132].x,
-                       resvars.f3c_NetBoxp[132].y + (resvars.f3c_NetBoxp[132].h - (lbFontPtr ? lbFontPtr[66].height : 0)) / 2, buf);
+            LbTextDraw((resvars.screen_boxes_NetBoxp[132].w - LbTextStringWidth(buf)) / 2 + resvars.screen_boxes_NetBoxp[132].x,
+                       resvars.screen_boxes_NetBoxp[132].y + (resvars.screen_boxes_NetBoxp[132].h - (lbFontPtr ? lbFontPtr[66].height : 0)) / 2, buf);
             break;
         }
         case 0x200:
@@ -729,7 +729,7 @@ void display_button_text(s32 mask)
 }
 
 // Draws three COM ports from TopPort in the serial (modem 0) or modem panel;
-// clicking one selects it (bit in myplayer.f56[4]).
+// clicking one selects it (bit in myplayer.serial_config[4]).
 // FUNCTION: 0x00081284
 void draw_available_ports(u8 modem)
 {
@@ -742,25 +742,25 @@ void draw_available_ports(u8 modem)
         idx = 0x82;
     else
         idx = 0x80;
-    y = resvars.f3c_NetBoxp[idx].y + 4;
+    y = resvars.screen_boxes_NetBoxp[idx].y + 4;
     for (i = 0; i < 3; i++, y += character_height()) {
         sprintf(buf, network_text[15], i + 1 + TopPort);
-        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[idx].x, y, (s16)resvars.f3c_NetBoxp[idx].w,
+        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x, y, (s16)resvars.screen_boxes_NetBoxp[idx].w,
                          character_height())) {
             if (lbDisplay.mleft_button) {
-                myplayer.f56[4] = 1 << (i + TopPort);
+                myplayer.serial_config[4] = 1 << (i + TopPort);
                 lbDisplay.left_button = 0;
             }
         }
-        if (((s8)myplayer.f56[4] >> (i + TopPort)) == 1)
-            draw_small_highlight_centre_text(resvars.f3c_NetBoxp[idx].x, resvars.f3c_NetBoxp[idx].w, y, buf);
+        if (((s8)myplayer.serial_config[4] >> (i + TopPort)) == 1)
+            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
         else
-            draw_small_centre_text(resvars.f3c_NetBoxp[idx].x, resvars.f3c_NetBoxp[idx].w, y, buf);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
     }
 }
 
 // Draws three baud rates from TopBaud; clicking one selects it
-// (myplayer.f56[5], a Bauds index).
+// (myplayer.serial_config[5], a Bauds index).
 // FUNCTION: 0x00081408
 void draw_available_bauds(u8 modem)
 {
@@ -773,25 +773,25 @@ void draw_available_bauds(u8 modem)
         idx = 0x83;
     else
         idx = 0x81;
-    y = resvars.f3c_NetBoxp[idx].y + 4;
+    y = resvars.screen_boxes_NetBoxp[idx].y + 4;
     for (i = 0; i < 3; i++, y += character_height()) {
         sprintf(buf, "%d", Bauds[i + TopBaud]);
-        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[idx].x, y, (s16)resvars.f3c_NetBoxp[idx].w,
+        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x, y, (s16)resvars.screen_boxes_NetBoxp[idx].w,
                          character_height())) {
             if (lbDisplay.mleft_button) {
-                myplayer.f56[5] = TopBaud + i;
+                myplayer.serial_config[5] = TopBaud + i;
                 lbDisplay.left_button = 0;
             }
         }
-        if (myplayer.f56[5] == TopBaud + i)
-            draw_small_highlight_centre_text(resvars.f3c_NetBoxp[idx].x, resvars.f3c_NetBoxp[idx].w, y, buf);
+        if (myplayer.serial_config[5] == TopBaud + i)
+            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
         else
-            draw_small_centre_text(resvars.f3c_NetBoxp[idx].x, resvars.f3c_NetBoxp[idx].w, y, buf);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
     }
 }
 
 // Draws four IRQs from TopIRQ for the selected COM port; clicking one sets
-// that port's IRQ (myplayer.f56[port]).
+// that port's IRQ (myplayer.serial_config[port]).
 // FUNCTION: 0x00081588
 void draw_available_irqs(void)
 {
@@ -804,26 +804,26 @@ void draw_available_irqs(void)
 
     if (CurrentDisplay & 0x18000) {
         n = 0;
-        bits = (s8)myplayer.f56[4] >> 1;
+        bits = (s8)myplayer.serial_config[4] >> 1;
         while (bits != 0) {
             n++;
             bits >>= 1;
         }
         idx = 0x85;
-        y = resvars.f3c_NetBoxp[idx].y + 10;
+        y = resvars.screen_boxes_NetBoxp[idx].y + 10;
         for (i = 0; i < 4; i++, y += character_height()) {
             sprintf(buf, "IRQ %d", i + TopIRQ);
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[idx].x, y, (s16)resvars.f3c_NetBoxp[idx].w,
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x, y, (s16)resvars.screen_boxes_NetBoxp[idx].w,
                              character_height())) {
                 if (lbDisplay.mleft_button) {
-                    myplayer.f56[n] = TopIRQ + i;
+                    myplayer.serial_config[n] = TopIRQ + i;
                     lbDisplay.left_button = 0;
                 }
             }
-            if (myplayer.f56[n] == TopIRQ + i)
-                draw_small_highlight_centre_text(resvars.f3c_NetBoxp[idx].x, resvars.f3c_NetBoxp[idx].w, y, buf);
+            if (myplayer.serial_config[n] == TopIRQ + i)
+                draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
             else
-                draw_small_centre_text(resvars.f3c_NetBoxp[idx].x, resvars.f3c_NetBoxp[idx].w, y, buf);
+                draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
         }
     }
 }
@@ -847,9 +847,9 @@ void draw_serial_selection_screen(void)
         process_login_exchange();
         break;
     case 8:
-        if (statvar.unknownfd <= 1)
+        if (statvar.num_players <= 1)
             break;
-        network.unknown2 = 1;
+        network.state = 1;
         break;
     case 7:
     default:
@@ -876,9 +876,9 @@ void draw_modem_selection_screen(void)
         process_login_exchange();
         break;
     case 8:
-        if (statvar.unknownfd <= 1)
+        if (statvar.num_players <= 1)
             break;
-        network.unknown2 = 1;
+        network.state = 1;
         break;
     case 7:
     default:
@@ -925,7 +925,7 @@ void process_report_buttons(u8 button)
     if (!(login_control.f17 == 9 || login_control.f17 == 8)) {
         set_glass_map(RestoreDisplay);
         reset_glass_map(8);
-        network.unknown2 = 3;
+        network.state = 3;
     }
 }
 
@@ -938,9 +938,9 @@ void report_message(char *message)
 
     MessageText = message;
     set_font_from_cache(0x22);
-    box.w = LbTextStringWidth(message) + resvars.f3c_NetBoxp[126].y * 4;
+    box.w = LbTextStringWidth(message) + resvars.screen_boxes_NetBoxp[126].y * 4;
     box.x = (lbDisplay.graphics_screen_width - box.w) / 2;
-    box.h = resvars.f3c_NetBoxp[126].h + resvars.f3c_NetBoxp[126].y * 2;
+    box.h = resvars.screen_boxes_NetBoxp[126].h + resvars.screen_boxes_NetBoxp[126].y * 2;
     box.y = (lbDisplay.graphics_screen_height - box.h) / 2;
     box.h += box.y;
     box.w += box.x;
@@ -950,10 +950,10 @@ void report_message(char *message)
     box.f10 = 10;
     box.f12 = 1;
     add_glass_box(&box, 8, 0, 0);
-    box.x += resvars.f3c_NetBoxp[126].y;
-    box.y += resvars.f3c_NetBoxp[126].y;
-    box.w -= resvars.f3c_NetBoxp[126].y;
-    box.h -= resvars.f3c_NetBoxp[126].y;
+    box.x += resvars.screen_boxes_NetBoxp[126].y;
+    box.y += resvars.screen_boxes_NetBoxp[126].y;
+    box.w -= resvars.screen_boxes_NetBoxp[126].y;
+    box.h -= resvars.screen_boxes_NetBoxp[126].y;
     SLIST(147)->x = box.x;
     SLIST(147)->y = box.y;
     SLIST(147)->x1 = box.w;
@@ -965,7 +965,7 @@ void report_message(char *message)
     add_glass_box(&box, 8, 0, 0);
     RestoreDisplay = DesiredDisplay;
     DesiredDisplay = 8;
-    network.unknown2 = 3;
+    network.state = 3;
 }
 
 // Network screen keys: digits, Return, Escape and Backspace on the dial pad;
@@ -976,7 +976,7 @@ void process_keys_network_select(void)
 {
     u32 i;
 
-    if (network.unknown2 == 2) {
+    if (network.state == 2) {
         if (CurrentDisplay & 0x400) {
             switch (BufferedInkey) {
             case KC_1:
@@ -1082,8 +1082,8 @@ void process_mouse_network_select(void)
     s32 bit;
 
     if ((CurrentDisplay & DesiredDisplay) & 0x80)
-        reqspr_draw((u16)resvars.f48[92].x, (u16)resvars.f48[92].y, &screen_sprites_tab_start[2]);
-    if (network.unknown2 == 2) {
+        reqspr_draw((u16)resvars.screen_buttons[92].x, (u16)resvars.screen_buttons[92].y, &screen_sprites_tab_start[2]);
+    if (network.state == 2) {
         mask = CurrentDisplay;
         while (mask) {
             bit = mask & -mask;
@@ -1096,29 +1096,29 @@ void process_mouse_network_select(void)
                     if (base + i == 0x5e || base + i == 0x5f)
                         continue;
                 }
-                if (resvars.f48[base + i].width == 0 || resvars.f48[base + i].height == 0)
+                if (resvars.screen_buttons[base + i].width == 0 || resvars.screen_buttons[base + i].height == 0)
                     break;
-                x = resvars.f48[base + i].x;
-                y = resvars.f48[base + i].y;
+                x = resvars.screen_buttons[base + i].x;
+                y = resvars.screen_buttons[base + i].y;
                 if (lbDisplay.rleft_button) {
-                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.f48[base + i].width - x + 1,
-                                     resvars.f48[base + i].height - y + 1)) {
+                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
+                                     resvars.screen_buttons[base + i].height - y + 1)) {
                         lbDisplay.rleft_button = 0;
-                        if (resvars.f48[base + i].sprite)
+                        if (resvars.screen_buttons[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
-                        if (resvars.f48[base + i].callback)
-                            resvars.f48[base + i].callback(i);
+                            draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
+                        if (resvars.screen_buttons[base + i].callback)
+                            resvars.screen_buttons[base + i].callback(i);
                         break;
                     }
                 }
-                if (lbDisplay.mleft_button && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, x, y, resvars.f48[base + i].width - x + 1,
-                                               resvars.f48[base + i].height - y + 1)) {
-                    if (resvars.f48[base + i].sprite)
+                if (lbDisplay.mleft_button && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
+                                               resvars.screen_buttons[base + i].height - y + 1)) {
+                    if (resvars.screen_buttons[base + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
+                        draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
                 }
             }
         }
@@ -1424,16 +1424,16 @@ void process_serial_buttons(u8 button)
     case 3:
         if (login_control.f17 != 5) {
             play_sound(10, SFX_SELECTX, -1, -1);
-            if (myplayer.f56[4] && (int)myplayer.f56[5] >= 0) {
+            if (myplayer.serial_config[4] && (int)myplayer.serial_config[5] >= 0) {
                 service = NS_SERIAL;
-                bits = (s8)myplayer.f56[4] >> 1;
+                bits = (s8)myplayer.serial_config[4] >> 1;
                 serial_init_data.port = 0;
                 while (bits) {
                     bits >>= 1;
                     serial_init_data.port++;
                 }
-                serial_init_data.baud = Bauds[myplayer.f56[5]];
-                serial_init_data.irq = myplayer.f56[serial_init_data.port];
+                serial_init_data.baud = Bauds[myplayer.serial_config[5]];
+                serial_init_data.irq = myplayer.serial_config[serial_init_data.port];
                 serial_init_data.init = init_str;
                 serial_init_data.dial = dial_str;
                 serial_init_data.hangup = hangup_str;
@@ -1556,16 +1556,16 @@ void process_modem_buttons(u8 button)
                 if (button == 3 && BookHilight == -1)
                     break;
                 reset_glass_map(0x400);
-                if (myplayer.f56[4] && (int)myplayer.f56[5] >= 0) {
+                if (myplayer.serial_config[4] && (int)myplayer.serial_config[5] >= 0) {
                     service = NS_MODEM;
-                    bits = (s8)myplayer.f56[4] >> 1;
+                    bits = (s8)myplayer.serial_config[4] >> 1;
                     serial_init_data.port = 0;
                     while (bits) {
                         bits >>= 1;
                         serial_init_data.port++;
                     }
-                    serial_init_data.baud = Bauds[myplayer.f56[5]];
-                    serial_init_data.irq = myplayer.f56[serial_init_data.port];
+                    serial_init_data.baud = Bauds[myplayer.serial_config[5]];
+                    serial_init_data.irq = myplayer.serial_config[serial_init_data.port];
                     serial_init_data.init = init_str;
                     serial_init_data.dial = dial_str;
                     serial_init_data.hangup = hangup_str;
@@ -1765,9 +1765,9 @@ void draw_phone_numbers(void)
         start = 1;
     else
         start = 0;
-    y = resvars.f3c_NetBoxp[127].y + 4;
+    y = resvars.screen_boxes_NetBoxp[127].y + 4;
     for (i = start; i < 3 && i + BookIndex < BookCount; i++, y += character_height()) {
-        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[127].x, y, (s16)resvars.f3c_NetBoxp[127].w,
+        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[127].x, y, (s16)resvars.screen_boxes_NetBoxp[127].w,
                          character_height())) {
             if (lbDisplay.mleft_button) {
                 BookHilight = i + BookIndex;
@@ -1775,13 +1775,13 @@ void draw_phone_numbers(void)
             }
         }
         if (i + BookIndex == BookHilight)
-            draw_small_highlight_centre_text(resvars.f3c_NetBoxp[127].x, resvars.f3c_NetBoxp[127].w, y, PhoneBook[i + BookIndex]);
+            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[127].x, resvars.screen_boxes_NetBoxp[127].w, y, PhoneBook[i + BookIndex]);
         else
-            draw_small_centre_text(resvars.f3c_NetBoxp[127].x, resvars.f3c_NetBoxp[127].w, y, PhoneBook[i + BookIndex]);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[127].x, resvars.screen_boxes_NetBoxp[127].w, y, PhoneBook[i + BookIndex]);
     }
     if (DesiredDisplay & 0x400) {
         sprintf(buf, "%s*", PhoneNumber);
-        draw_small_centre_text(resvars.f3c_NetBoxp[127].x, resvars.f3c_NetBoxp[127].w, y, buf);
+        draw_small_centre_text(resvars.screen_boxes_NetBoxp[127].x, resvars.screen_boxes_NetBoxp[127].w, y, buf);
     }
 }
 
@@ -1811,9 +1811,9 @@ void draw_network_game_selection_screen(void)
         process_login_exchange();
         break;
     case 8:
-        if (statvar.unknownfd <= 1)
+        if (statvar.num_players <= 1)
             break;
-        network.unknown2 = 1;
+        network.state = 1;
         break;
     case 7:
     default:
@@ -1831,9 +1831,9 @@ void draw_report_selection_screen(void)
         process_login_exchange();
         break;
     case 8:
-        if (statvar.unknownfd <= 1)
+        if (statvar.num_players <= 1)
             break;
-        network.unknown2 = 1;
+        network.state = 1;
         break;
     }
 }
@@ -1848,9 +1848,9 @@ void draw_level_selection_screen(void)
         process_login_exchange();
         break;
     case 8:
-        if (statvar.unknownfd <= 1)
+        if (statvar.num_players <= 1)
             break;
-        network.unknown2 = 1;
+        network.state = 1;
         break;
     }
 }
@@ -1866,9 +1866,9 @@ void draw_message_box(void)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x1f);
     lbDisplay.draw_flags = 0;
-    y = resvars.f3c_NetBoxp[121].y;
+    y = resvars.screen_boxes_NetBoxp[121].y;
     for (i = TopMessage; i - TopMessage < 3 && NetMessageText[i][0]; i++, y += character_height())
-        draw_small_centre_text(resvars.f3c_NetBoxp[121].x, resvars.f3c_NetBoxp[121].w, y, NetMessageText[i]);
+        draw_small_centre_text(resvars.screen_boxes_NetBoxp[121].x, resvars.screen_boxes_NetBoxp[121].w, y, NetMessageText[i]);
 }
 
 void update_message_box(u8 c, u8 flag, u8 from);
@@ -1911,7 +1911,7 @@ void process_login_exchange(void)
             break;
         case 2:
             login_control.f17 = 8;
-            statvar.unknownfd = network_num_players();
+            statvar.num_players = network_num_players();
             LbNetwork_ChangeExchangeTimeout(0x1e);
             break;
         case 8:
@@ -2024,9 +2024,9 @@ void update_message_box(u8 key, u8 shift, u8 from)
             if (from == player)
                 play_sound(10, SFX_ENTANAME, -1, -1);
             if (login_control.players[from].len < 0x1e &&
-                LbTextStringWidth(login_control.players[from].text) < resvars.f3c_NetBoxp[120].w - 0x28) {
+                LbTextStringWidth(login_control.players[from].text) < resvars.screen_boxes_NetBoxp[120].w - 0x28) {
                 sprintf(buf, "%s:%s", &player_info[from], login_control.players[from].text);
-                if (LbTextStringWidth(buf) < resvars.f3c_NetBoxp[121].w - 0x14) {
+                if (LbTextStringWidth(buf) < resvars.screen_boxes_NetBoxp[121].w - 0x14) {
                     login_control.players[from].text[login_control.players[from].len++] = c;
                     login_control.players[from].text[login_control.players[from].len] = 0;
                 }
@@ -2075,7 +2075,7 @@ void draw_active_session(u8 com_panel)
         idx = 0x7d;
     else
         idx = 0x7b;
-    y = resvars.f3c_NetBoxp[idx].y + 4;
+    y = resvars.screen_boxes_NetBoxp[idx].y + 4;
     player_count = 0;
     for (i = 0; i < 4; i++) {
         if (D_001609c4[i].active)
@@ -2085,7 +2085,7 @@ void draw_active_session(u8 com_panel)
         login_control.f1f = 0;
     for (i = 0, j = login_control.f1f; i < 3 && j < 4; j++) {
         if (D_001609c4[j].active) {
-            draw_small_centre_text(resvars.f3c_NetBoxp[idx].x, resvars.f3c_NetBoxp[idx].w, y, player_info[j].name);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, player_info[j].name);
             y += character_height();
             i++;
         }
@@ -2165,19 +2165,19 @@ void draw_available_sessions(SessionInfo *sessions)
         }
         }
     }
-    y = resvars.f3c_NetBoxp[125].y + 4;
+    y = resvars.screen_boxes_NetBoxp[125].y + 4;
     for (i = TopSession; TopSession + session_count > i && TopSession + 3 > i; i++, y += character_height()) {
         if (i == hilighted_session && !found) {
-            draw_small_highlight_centre_text(resvars.f3c_NetBoxp[125].x, resvars.f3c_NetBoxp[125].w, y, SESSION_NAMES[i]);
+            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[125].x, resvars.screen_boxes_NetBoxp[125].w, y, SESSION_NAMES[i]);
             draw_players_on_session(i);
             found = 1;
         } else {
-            draw_small_centre_text(resvars.f3c_NetBoxp[125].x, resvars.f3c_NetBoxp[125].w, y, SESSION_NAMES[i]);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[125].x, resvars.screen_boxes_NetBoxp[125].w, y, SESSION_NAMES[i]);
         }
     }
-    y = resvars.f3c_NetBoxp[125].y + 4;
+    y = resvars.screen_boxes_NetBoxp[125].y + 4;
     for (i = TopSession; TopSession + session_count > i && TopSession + 3 > i; i++, y += character_height()) {
-        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.f3c_NetBoxp[125].x, y, (s16)resvars.f3c_NetBoxp[125].w,
+        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[125].x, y, (s16)resvars.screen_boxes_NetBoxp[125].w,
                          character_height())) {
             if (lbDisplay.mleft_button) {
                 if (hilighted_session != i) {
@@ -2224,10 +2224,10 @@ void draw_players_on_session(u32 session)
         return;
     if (player_count <= 3)
         login_control.f1f = 0;
-    y = resvars.f3c_NetBoxp[123].y + 4;
+    y = resvars.screen_boxes_NetBoxp[123].y + 4;
     for (count = 0, i = login_control.f1f; count < 3 && i < 4; i++) {
         if (player_names[i][0]) {
-            draw_small_centre_text(resvars.f3c_NetBoxp[123].x, resvars.f3c_NetBoxp[123].w, y, player_names[i]);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[123].x, resvars.screen_boxes_NetBoxp[123].w, y, player_names[i]);
             y += character_height();
             count++;
         }
@@ -2239,7 +2239,7 @@ void draw_players_on_session(u32 session)
 // FUNCTION: 0x00084864
 void swap_level_number(void)
 {
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         swap_level_packet[player].level = level_number;
         fn_000bbff0(swap_level_packet[player].balance, balance_id);
         LbNetwork_ChangeExchangeBuffer(swap_level_packet, 0xf);
@@ -2258,8 +2258,8 @@ void swap_month_end_packets(void)
 }
 
 // Network game: shares each player's result for the current criterion (fail:
-// 1 failed, 0 passed) and sets othervar.fa6c[i] for each player who failed.
-// When `active`, sets othervar.fa5e to the message to show: 1 nobody passed,
+// 1 failed, 0 passed) and sets othervar.net_winners[i] for each player who failed.
+// When `active`, sets othervar.net_result_page to the message to show: 1 nobody passed,
 // 2 this player failed, 3 this player passed.
 // FUNCTION: 0x0008493c
 void swap_criteria_packets(u8 fail, u8 active)
@@ -2270,32 +2270,32 @@ void swap_criteria_packets(u8 fail, u8 active)
 
     passed = 0;
     failed = 0;
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         criteria_packet[player].result = fail;
         LbNetwork_ChangeExchangeBuffer(criteria_packet, 6);
         LbNetwork_Exchange(&criteria_packet[player]);
         for (i = 0; i < 4; i++) {
-            othervar.fa6c[i] = 0;
+            othervar.net_winners[i] = 0;
             if (D_001609c4[i].active) {
                 if (criteria_packet[i].result == 0) {
                     passed++;
                 } else if (criteria_packet[i].result == 1) {
                     failed++;
-                    othervar.fa6c[i] = 1;
+                    othervar.net_winners[i] = 1;
                 }
             }
         }
         if (passed != 0) {
             if (failed)
-                advisor.f2 = 2;
+                advisor.forced_advice_id = 2;
         }
         if (active) {
             if (passed == 0)
-                othervar.fa5e = 1;
+                othervar.net_result_page = 1;
             else if (fail)
-                othervar.fa5e = 2;
+                othervar.net_result_page = 2;
             else
-                othervar.fa5e = 3;
+                othervar.net_result_page = 3;
         }
     }
 }
@@ -2343,60 +2343,60 @@ void swap_year_end_packets(void)
 {
     u8 i;
 
-    if (statvar.unknownfd <= 1)
+    if (statvar.num_players <= 1)
         return;
-    D_00154a48[player].f0 = myhosp->f2d;
-    D_00154a48[player].f4 = myhosp->f35;
-    D_00154a48[player].f8 = myhosp->f3d;
-    D_00154a48[player].fc = myhosp->f1e9;
-    D_00154a48[player].fe = myhosp->f1eb;
-    D_00154a48[player].f10 = myhosp->f1ed;
-    D_00154a48[player].f12 = myhosp->f1f1;
-    D_00154a48[player].f14 = myhosp->unknownc7e;
-    D_00154a48[player].f18 = myhosp->fc8a;
-    D_00154a48[player].f1a = myhosp->fc90;
-    D_00154a48[player].f1c = myhosp->fc92;
-    D_00154a48[player].f1e = myhosp->fc96;
-    D_00154a48[player].f1f = myhosp->fc97;
+    D_00154a48[player].f0 = myhosp->score;
+    D_00154a48[player].f4 = myhosp->balance;
+    D_00154a48[player].f8 = myhosp->loan;
+    D_00154a48[player].fc = myhosp->cures;
+    D_00154a48[player].fe = myhosp->deaths;
+    D_00154a48[player].f10 = myhosp->visitors;
+    D_00154a48[player].f12 = myhosp->area;
+    D_00154a48[player].f14 = myhosp->reputation;
+    D_00154a48[player].f18 = myhosp->avg_patient_happiness;
+    D_00154a48[player].f1a = myhosp->extinguisher_count;
+    D_00154a48[player].f1c = myhosp->radiator_count;
+    D_00154a48[player].f1e = myhosp->object_count;
+    D_00154a48[player].f1f = myhosp->machine_count;
     D_00154a48[player].f20 = myhosp->fc98;
-    D_00154a48[player].f22 = myhosp->fc9a;
-    D_00154a48[player].f24 = myhosp->fc9c;
-    D_00154a48[player].f26[1] = myhosp->fc9e[1];
-    D_00154a48[player].f26[0] = myhosp->fc9e[0];
-    D_00154a48[player].f30 = myhosp->fca8;
-    D_00154a48[player].f32 = myhosp->fcaa;
-    D_00154a48[player].f34 = myhosp->fcae;
-    D_00154a48[player].f35 = myhosp->f1bb;
-    D_00154a48[player].f39 = myhosp->fc82;
-    D_00154a48[player].f3d = myhosp->fc86;
+    D_00154a48[player].f22 = myhosp->amenity_count;
+    D_00154a48[player].f24 = myhosp->staff_count;
+    D_00154a48[player].f26[1] = myhosp->staff_by_kind[1];
+    D_00154a48[player].f26[0] = myhosp->staff_by_kind[0];
+    D_00154a48[player].f30 = myhosp->leisure_count;
+    D_00154a48[player].f32 = myhosp->litter_count;
+    D_00154a48[player].f34 = myhosp->rathole_count;
+    D_00154a48[player].f35 = myhosp->hospital_value;
+    D_00154a48[player].f39 = myhosp->rep_points;
+    D_00154a48[player].f3d = myhosp->rep_events;
     LbNetwork_ChangeExchangeBuffer(YEAR_END_PACKETS, 0x45);
     LbNetwork_Exchange(YEAR_END_PACKETS + player * 0x45);
     for (i = 0; i < 4; i++) {
         if (D_001609c4[i].active) {
-            allhosps[i].f2d = D_00154a48[i].f0;
-            allhosps[i].fc8a = D_00154a48[i].f18;
-            allhosps[i].f3d = D_00154a48[i].f8;
-            allhosps[i].f35 = D_00154a48[i].f4;
-            allhosps[i].f1e9 = D_00154a48[i].fc;
-            allhosps[i].f1eb = D_00154a48[i].fe;
-            allhosps[i].f1ed = D_00154a48[i].f10;
-            allhosps[i].f1f1 = D_00154a48[i].f12;
-            allhosps[i].unknownc7e = D_00154a48[i].f14;
-            allhosps[i].fc90 = D_00154a48[i].f1a;
-            allhosps[i].fc92 = D_00154a48[i].f1c;
-            allhosps[i].fc96 = D_00154a48[i].f1e;
-            allhosps[i].fc97 = D_00154a48[i].f1f;
+            allhosps[i].score = D_00154a48[i].f0;
+            allhosps[i].avg_patient_happiness = D_00154a48[i].f18;
+            allhosps[i].loan = D_00154a48[i].f8;
+            allhosps[i].balance = D_00154a48[i].f4;
+            allhosps[i].cures = D_00154a48[i].fc;
+            allhosps[i].deaths = D_00154a48[i].fe;
+            allhosps[i].visitors = D_00154a48[i].f10;
+            allhosps[i].area = D_00154a48[i].f12;
+            allhosps[i].reputation = D_00154a48[i].f14;
+            allhosps[i].extinguisher_count = D_00154a48[i].f1a;
+            allhosps[i].radiator_count = D_00154a48[i].f1c;
+            allhosps[i].object_count = D_00154a48[i].f1e;
+            allhosps[i].machine_count = D_00154a48[i].f1f;
             allhosps[i].fc98 = D_00154a48[i].f20;
-            allhosps[i].fc9a = D_00154a48[i].f22;
-            allhosps[i].fc9c = D_00154a48[i].f24;
-            allhosps[i].fc9e[1] = D_00154a48[i].f26[1];
-            allhosps[i].fc9e[0] = D_00154a48[i].f26[0];
-            allhosps[i].fca8 = D_00154a48[i].f30;
-            allhosps[i].fcaa = D_00154a48[i].f32;
-            allhosps[i].fcae = D_00154a48[i].f34;
-            allhosps[i].f1bb = D_00154a48[i].f35;
-            allhosps[i].fc82 = D_00154a48[i].f39;
-            allhosps[i].fc86 = D_00154a48[i].f3d;
+            allhosps[i].amenity_count = D_00154a48[i].f22;
+            allhosps[i].staff_count = D_00154a48[i].f24;
+            allhosps[i].staff_by_kind[1] = D_00154a48[i].f26[1];
+            allhosps[i].staff_by_kind[0] = D_00154a48[i].f26[0];
+            allhosps[i].leisure_count = D_00154a48[i].f30;
+            allhosps[i].litter_count = D_00154a48[i].f32;
+            allhosps[i].rathole_count = D_00154a48[i].f34;
+            allhosps[i].hospital_value = D_00154a48[i].f35;
+            allhosps[i].rep_points = D_00154a48[i].f39;
+            allhosps[i].rep_events = D_00154a48[i].f3d;
         }
     }
 }
@@ -2435,13 +2435,13 @@ s32 create_session(void)
     char name[28];
 
     reset_message_text();
-    if (strcmp(myplayer.unknown0, misc_text[1]) == 0) {
-        len = fn_000cd716(myplayer.unknown0);
-        myplayer.unknown0[len] = 'A';
-        myplayer.unknown0[len + 1] = 0;
+    if (strcmp(myplayer.name_chars, misc_text[1]) == 0) {
+        len = fn_000cd716(myplayer.name_chars);
+        myplayer.name_chars[len] = 'A';
+        myplayer.name_chars[len + 1] = 0;
     }
-    sprintf(name, "%s", myplayer.unknown0);
-    res = LbNetwork_Create(name, myplayer.unknown0, &player, D_0016053c);
+    sprintf(name, "%s", myplayer.name_chars);
+    res = LbNetwork_Create(name, myplayer.name_chars, &player, D_0016053c);
     if (res == Lb_OK) {
         login_control.f17 = 5;
         memset(login_control.players, 0, 0x540);
@@ -2463,12 +2463,12 @@ s32 join_session(void)
     reset_message_text();
     res = 0;
     if (hilighted_session >= 0 && hilighted_session < session_count) {
-        if (strcmp(myplayer.unknown0, misc_text[1]) == 0) {
-            res = fn_000cd716(myplayer.unknown0);
-            myplayer.unknown0[res] = player_count + 'A';
-            myplayer.unknown0[res + 1] = 0;
+        if (strcmp(myplayer.name_chars, misc_text[1]) == 0) {
+            res = fn_000cd716(myplayer.name_chars);
+            myplayer.name_chars[res] = player_count + 'A';
+            myplayer.name_chars[res + 1] = 0;
         }
-        res = LbNetwork_Join(session_pointers[hilighted_session], myplayer.unknown0, &player, D_0016053c);
+        res = LbNetwork_Join(session_pointers[hilighted_session], myplayer.name_chars, &player, D_0016053c);
         if (res == Lb_OK) {
             login_control.f17 = 5;
             reset_glass_map(0x80);
@@ -2485,7 +2485,7 @@ s32 join_session(void)
 // FUNCTION: 0x00085334
 void draw_small_centre_text(s16 x, s16 w, s16 y, char *text)
 {
-    LbTextSetWindow(x, 0, w, lbDisplay.unknown1c);
+    LbTextSetWindow(x, 0, w, lbDisplay.physical_screen_height);
     set_font_from_cache(0x21);
     lbDisplay.draw_flags = 0x100;
     LbTextDraw(0, y, text);
@@ -2495,7 +2495,7 @@ void draw_small_centre_text(s16 x, s16 w, s16 y, char *text)
 // FUNCTION: 0x00085388
 void draw_small_highlight_centre_text(s16 x, s16 w, s16 y, char *text)
 {
-    LbTextSetWindow(x, 0, w, lbDisplay.unknown1c);
+    LbTextSetWindow(x, 0, w, lbDisplay.physical_screen_height);
     set_font_from_cache(0x22);
     lbDisplay.draw_flags = 0x100;
     LbTextDraw(0, y, text);
@@ -2548,14 +2548,14 @@ void draw_current_message(char *text)
     s16 y;
     s16 h;
 
-    x = resvars.f3c_NetBoxp[120].x + 10;
-    y = (resvars.f3c_NetBoxp[120].y + resvars.f3c_NetBoxp[120].h - (lbFontPtr ? lbFontPtr[66].height : 0)) / 2;
+    x = resvars.screen_boxes_NetBoxp[120].x + 10;
+    y = (resvars.screen_boxes_NetBoxp[120].y + resvars.screen_boxes_NetBoxp[120].h - (lbFontPtr ? lbFontPtr[66].height : 0)) / 2;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x21);
     h = lbFontPtr ? lbFontPtr[34].height : 0;
     LbTextDraw(x, y, text);
     ClockTick -= LastClock;
-    LastClock = othervar.f8a2_s32;
+    LastClock = othervar.clock_ms_s;
     ClockTick += LastClock;
     if (BufferedInkey)
         ClockTick = 0;
@@ -2620,42 +2620,42 @@ void process_nettext_keys(u8 shift, u8 key)
 {
     switch (key) {
     case KC_ESCAPE:
-        othervar.f4a = 0;
+        othervar.net_text_entering = 0;
         break;
     case KC_F1:
-        if (statvar.unknownfd >= 2)
-            othervar.f4c = 1 << nth_other_active_player(1);
+        if (statvar.num_players >= 2)
+            othervar.net_text_to = 1 << nth_other_active_player(1);
         break;
     case KC_F2:
-        if (statvar.unknownfd >= 3)
-            othervar.f4c = 1 << nth_other_active_player(2);
+        if (statvar.num_players >= 3)
+            othervar.net_text_to = 1 << nth_other_active_player(2);
         break;
     case KC_F3:
-        if (statvar.unknownfd >= 4)
-            othervar.f4c = 1 << nth_other_active_player(3);
+        if (statvar.num_players >= 4)
+            othervar.net_text_to = 1 << nth_other_active_player(3);
         break;
     case KC_F4:
-        if (statvar.unknownfd == 1) {
-            othervar.f4c = 0xff;
+        if (statvar.num_players == 1) {
+            othervar.net_text_to = 0xff;
         } else {
-            othervar.f4c = 1 << player;
-            othervar.f4c = ~othervar.f4c;
+            othervar.net_text_to = 1 << player;
+            othervar.net_text_to = ~othervar.net_text_to;
         }
         break;
     case KC_RETURN:
     case KC_NUMPADENTER:
-        if (statvar.unknownfd <= 1) {
-            if (!cheat_mode(NET_TEXT(othervar.ff))) {
-                othervar.f4a = 0;
+        if (statvar.num_players <= 1) {
+            if (!cheat_mode(NET_TEXT(othervar.cur_player))) {
+                othervar.net_text_entering = 0;
                 D_001549d0[player].type = EV_NET_TEXT_DISPLAY;
-                D_001549d0[player].value = (u16)othervar.f4c;
+                D_001549d0[player].value = (u16)othervar.net_text_to;
             } else {
-                othervar.f4a = 0;
+                othervar.net_text_entering = 0;
             }
         } else {
-            othervar.f4a = 0;
+            othervar.net_text_entering = 0;
             D_001549d0[player].type = EV_NET_TEXT_DISPLAY;
-            D_001549d0[player].value = (u16)othervar.f4c;
+            D_001549d0[player].value = (u16)othervar.net_text_to;
         }
         break;
     case KC_BACKSPACE:
@@ -2695,8 +2695,8 @@ void do_net_text(void)
     Coord pager_text_entering = {40, 40};
     char buf[100];
 
-    TimeLapse = othervar.f8a2_s32 - TimeStamp;
-    TimeStamp = othervar.f8a2_s32;
+    TimeLapse = othervar.clock_ms_s - TimeStamp;
+    TimeStamp = othervar.clock_ms_s;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     saved = lbDisplay.draw_flags;
@@ -2706,26 +2706,26 @@ void do_net_text(void)
     if (current_text.text[0]) {
         len = fn_000cd716(current_text.text);
         k = (lbFontPtr ? lbFontPtr[current_text.text[0] - 0x1f].width : 0) << 16;
-        if (-othervar.f4d > k) {
+        if (-othervar.net_text_scroll > k) {
             memmove(current_text.text, current_text.text + 1, len);
-            othervar.f4d += k;
+            othervar.net_text_scroll += k;
             len--;
         }
         k = 0;
         while (current_text.text[k] == ' ')
             k++;
         memmove(current_text.text, current_text.text + k, len - k + 1);
-        othervar.f4d += k * (lbFontPtr ? lbFontPtr[1].width : 0) << 16;
+        othervar.net_text_scroll += k * (lbFontPtr ? lbFontPtr[1].width : 0) << 16;
         set_all_refresh_zones_in_window(0, pager_text_recieved.y, lbDisplay.graphics_screen_width, h + pager_text_recieved.y - 1, 3);
-        LbTextDraw(othervar.f4f, pager_text_recieved.y, current_text.text);
+        LbTextDraw(othervar.net_text_x, pager_text_recieved.y, current_text.text);
         if (TimeLapse)
-            othervar.f4d -= (TimeLapse * 0x23 << 16) / 1000;
+            othervar.net_text_scroll -= (TimeLapse * 0x23 << 16) / 1000;
     }
-    if (othervar.f4a) {
-        othervar.f4c &= (1 << statvar.unknownfd) - 1;
-        if ((-othervar.f4c & othervar.f4c) == othervar.f4c) {
+    if (othervar.net_text_entering) {
+        othervar.net_text_to &= (1 << statvar.num_players) - 1;
+        if ((-othervar.net_text_to & othervar.net_text_to) == othervar.net_text_to) {
             k = 0;
-            while (othervar.f4c >> (k + 1))
+            while (othervar.net_text_to >> (k + 1))
                 k++;
             sprintf(buf, "%s:", &allhosps[k]);
         } else {
@@ -2734,7 +2734,7 @@ void do_net_text(void)
         fn_000c93bf(buf, NET_TEXT(player));
         fn_000c93bf(buf, "  ");
         lbDisplay.draw_flags = 4;
-        LbDrawBox(0, pager_text_entering.y - 1, lbDisplay.graphics_screen_width, h, color.unknown8);
+        LbDrawBox(0, pager_text_entering.y - 1, lbDisplay.graphics_screen_width, h, color.black);
         lbDisplay.draw_flags = 0;
         set_all_refresh_zones_in_window(0, pager_text_entering.y - 1, lbDisplay.graphics_screen_width, h + pager_text_entering.y + 1, 3);
         LbTextDraw(pager_text_entering.x, pager_text_entering.y, buf);
@@ -2755,7 +2755,7 @@ void net_text_display(u8 from)
     len = fn_000cd716(current_text.text);
     set_font_from_cache(1);
     if (current_text.text[0]) {
-        n = (lbDisplay.graphics_screen_width - othervar.f4f - LbTextStringWidth(current_text.text)) /
+        n = (lbDisplay.graphics_screen_width - othervar.net_text_x - LbTextStringWidth(current_text.text)) /
                 (lbFontPtr ? lbFontPtr[1].width : 0) + 1;
         if (n < 4)
             n = 4;
@@ -2764,12 +2764,12 @@ void net_text_display(u8 from)
         if (n + len < sizeof(current_text.text))
             fn_000c93bf(current_text.text, buf);
     } else {
-        othervar.f4d = lbDisplay.graphics_screen_width << 16;
+        othervar.net_text_scroll = lbDisplay.graphics_screen_width << 16;
     }
     sprintf(buf, "%s:%s", &allhosps[from], NET_TEXT(from));
     if (fn_000cd716(buf) + len < sizeof(current_text.text))
         fn_000c93bf(current_text.text, buf);
-    net_text[from].unknown0 = 0;
+    net_text[from].text = 0;
     othervar.f4b = 0xc8;
 }
 
@@ -2824,11 +2824,11 @@ void network_button_quit(void)
         screen_packet[player].f5 = 8;
         break;
     case 6:
-        statvar.unknownfd = 1;
+        statvar.num_players = 1;
         player = 0;
-        network.unknown2 = 0;
+        network.state = 0;
         display_mode = 2;
-        mainmenu.unknown2 = 0;
+        mainmenu.state = 0;
         break;
     }
 }
@@ -2908,8 +2908,8 @@ void init_network_players(void)
 
     for (i = 0; i < 4; i++) {
         if (D_001609c4[i].active)
-            fn_000bbff0((char *)allhosps[i].unknown0, player_info[i].name);
-        allhosps[i].f2a = 1;
+            fn_000bbff0((char *)allhosps[i].name, player_info[i].name);
+        allhosps[i].player_type = 1;
     }
 }
 
@@ -2920,7 +2920,7 @@ char *strstr(char *s, char *sub);
 }
 
 // Reads levels/net<n>.dat, the levels for an n-player game, into net_control
-// (up to six: level number, title and the name for language myplayer.f21);
+// (up to six: level number, title and the name for language myplayer.language);
 // net_control.f4 is their count, -1 if none.
 // FUNCTION: 0x00086240
 void network_read_control(u8 n)
@@ -2969,7 +2969,7 @@ void network_read_control(u8 n)
             while (current_line[0] == '&') {
                 read_line_from_buf(current_line, 0x100, buf);
                 if (current_line[0] == '&') {
-                    if ((s8)current_line[1] - '0' == myplayer.f21) {
+                    if ((s8)current_line[1] - '0' == myplayer.language) {
                         sprintf(name, "%s", current_line + 2);
                         break;
                     }
@@ -3023,7 +3023,7 @@ u8 cheat_mode(char *text)
     found = 0;
     for (i = 0; strcmp(cheat_text[i], "..") != 0; i++) {
         if (strcmp(cheat_text[i], text) == 0) {
-            debug.unknown4 = debug.unknown8 = i;
+            debug.last_button = debug.last_action = i;
             found = 1;
             switch (i) {
             case 0:
@@ -3078,7 +3078,7 @@ s32 network_service_function(void)
     u8 first;
 
     first = 1;
-    while (network.unknown2 != 2 || first) {
+    while (network.state != 2 || first) {
         process_sound_heap();
         LbScreenUnlock();
         LbScreenSwap();
@@ -3136,11 +3136,11 @@ extern "C" {
 // FUNCTION: 0x00086834
 void network_lost_focus(s32 who)
 {
-    othervar.fa7b[who] = 2;
+    othervar.lost_focus[who] = 2;
     if (display_mode != 0xd) {
         if (display_mode == 0)
             set_mouse_sprite(9);
-        othervar.fa7f = display_mode;
+        othervar.lost_focus_display_mode = display_mode;
         display_mode = 0xd;
     }
 }
@@ -3153,11 +3153,11 @@ void network_gained_focus(s32 who)
     s32 unused;
 
     unused = 0;
-    othervar.fa7b[who] = 0;
+    othervar.lost_focus[who] = 0;
     if (!has_any_player_lost_focus()) {
-        display_mode = othervar.fa7f;
-        set_mouse_sprite(othervar.f31);
-        set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+        display_mode = othervar.lost_focus_display_mode;
+        set_mouse_sprite(othervar.prev_pointer_sprite);
+        set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
     }
 }
 
@@ -3181,27 +3181,27 @@ void draw_lost_focus_screen(void)
     gap = 10;
     set_font_from_cache(0x1d);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     lbDisplay.draw_flags = 0;
     for (i = 0; i < 4; i++) {
-        if (othervar.fa7b[i]) {
+        if (othervar.lost_focus[i]) {
             count++;
-            LbTextStringWidth((char *)allhosps[i].unknown0) > w ? w = LbTextStringWidth((char *)allhosps[i].unknown0) : 0;
+            LbTextStringWidth((char *)allhosps[i].name) > w ? w = LbTextStringWidth((char *)allhosps[i].name) : 0;
         }
     }
-    x = (lbDisplay.unknown18 - w) / 2;
+    x = (lbDisplay.physical_screen_width - w) / 2;
     h = count * (lbFontPtr ? lbFontPtr[34].height : 0) + (count - 1) * gap;
-    y = (lbDisplay.unknown1c - h) / 2;
-    LbDrawBox(x - border, y - border, border * 2 + w, border * 2 + h, color.unknown7);
+    y = (lbDisplay.physical_screen_height - h) / 2;
+    LbDrawBox(x - border, y - border, border * 2 + w, border * 2 + h, color.white);
     lbDisplay.draw_flags = 0x10;
-    LbDrawBox(x - border, y - border, border * 2 + w, border * 2 + h, color.unknown8);
+    LbDrawBox(x - border, y - border, border * 2 + w, border * 2 + h, color.black);
     for (i = 0; i < 4; i++) {
-        if (othervar.fa7b[i]) {
-            LbTextDraw(x, y, (char *)allhosps[i].unknown0);
+        if (othervar.lost_focus[i]) {
+            LbTextDraw(x, y, (char *)allhosps[i].name);
             y += gap + (lbFontPtr ? lbFontPtr[34].height : 0);
         }
     }
-    set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+    set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
 }
 
 // Returns 1 if any player has switched away from the game.
@@ -3211,7 +3211,7 @@ u8 has_any_player_lost_focus(void)
     u8 i;
 
     for (i = 0; i < 4; i++) {
-        if (othervar.fa7b[i] != 0)
+        if (othervar.lost_focus[i] != 0)
             return 1;
     }
     return 0;
@@ -3228,16 +3228,16 @@ u8 fn_00086b60(void)
 {
     if (network_num_players() == 1) {
         close_irequesters();
-        if (crequester.unknown2 != 0x63)
-            close_crequester(crequester.unknown2);
-        allhosps[player].f2b = 0;
+        if (crequester.id != 0x63)
+            close_crequester(crequester.id);
+        allhosps[player].playing = 0;
         LbNetwork_Stop();
         quit_game = 1;
         level_number = 0xc;
-        othervar.f72 = 6;
-        winlose.unknown2 = othervar.f72;
+        othervar.winlose_result = 6;
+        winlose.state = othervar.winlose_result;
         play_winlose();
-        statvar.unknownfd = 1;
+        statvar.num_players = 1;
         player = 0;
         return 1;
     }

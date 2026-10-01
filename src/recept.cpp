@@ -115,8 +115,8 @@ void receptionist_works(Thing *receptionist)
                     }
                 } else {
                     reset_icon_value(receptionist, ICON_CALLING);
-                    othervar.f0 = old_newrand() % 100;
-                    if (othervar.f0 >= 0 && othervar.f0 < 30) {
+                    othervar.rand_pct = old_newrand() % 100;
+                    if (othervar.rand_pct >= 0 && othervar.rand_pct < 30) {
                         receptionist->next_state = SS_RECEPTIONIST_WORKS;
                         action = recept_tasks[old_newrand() % recept_tasks[0] + 1];
                         set_complex(receptionist, action, 0);
@@ -148,7 +148,7 @@ void recept_waits_for_patient(Thing *receptionist)
     patient = &thing[receptionist->slave];
     if (patient > thing) {
         if (patient->state == PS_ARRIVED_FROM_CALL) {
-            if (allhosps[patient->owner].rooms[patient->treatment].unknown1C == 1)
+            if (allhosps[patient->owner].rooms[patient->treatment].cure_available == 1)
                 set_complex(receptionist, 0xe6, 0);
             else
                 set_complex(receptionist, 0xf0, 0);
@@ -204,7 +204,7 @@ void recept_admits_patient(Thing *receptionist)
         else
             patient->treatment = 0;
         patient->state = PS_GO_FOR_TREATMENT;
-        receptionist->room->f3 = 0;
+        receptionist->room->state = 0;
         receptionist->room->count++;
         receptionist->slave = 0;
         reset_icon_value(receptionist, ICON_CALLING);

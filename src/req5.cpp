@@ -31,23 +31,23 @@ void req5(Window *win)
     button = win->buttons;
     for (i = 1; button; button = button->next) {
         if (button->flags & 6) {
-            debug.unknown4 = i;
-            if (i == resvars.fe[0x12]) {
+            debug.last_button = i;
+            if (i == resvars.requester_buttons[0x12]) {
                 D_001549d0[player].type = EV_CLOSE_QUERY;
                 D_001549d0[player].value = 3;
                 play_sound(10, SFX_NO4, -1, -1);
-            } else if (i == resvars.fe[0x13]) {
+            } else if (i == resvars.requester_buttons[0x13]) {
                 D_001549d0[player].type = EV_THINGPAGE_REQUEST;
                 D_001549d0[player].value = D_001581b2[3].value;
                 play_sound(10, SFX_SELECTX, -1, -1);
-            } else if (i == resvars.fe[0x14]) {
+            } else if (i == resvars.requester_buttons[0x14]) {
                 u8 kind;
 
                 kind = thing[D_001581b2[3].value].subtype;
-                if ((u32)allhosps[player].f35 >= (u32)allhosps[player].object_stats[kind].cost
-                    && allhosps[player].f35 > 0) {
-                    sprintf(othervar.f935, yesno_text[2], object_names[objects[kind].name],
-                            allhosps[othervar.ff].object_stats[kind].cost);
+                if ((u32)allhosps[player].balance >= (u32)allhosps[player].object_stats[kind].cost
+                    && allhosps[player].balance > 0) {
+                    sprintf(othervar.yesno_msg, yesno_text[2], object_names[objects[kind].name],
+                            allhosps[othervar.cur_player].object_stats[kind].cost);
                     open_yes_no_requester(0x8a, D_001581b2[3].value, 0, 0x78, 0, 0);
                     play_sound(10, SFX_SELECTX, -1, -1);
                 }
@@ -76,20 +76,20 @@ void req5_overdraw(Window *win)
     compute_help_text(0, 0, 0xb);
     machine = &thing[D_001581b2[3].value];
     if (machine->type == THING_OBJECT) {
-        LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
-                                  window.unknown2cf - window.unknown2c7);
+        LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
+                                  window.clip_y1 - window.clip_y0);
         x = win->x - lbDisplay.graphics_window_x;
         y = win->y - lbDisplay.graphics_window_y;
         uses = machine->times_used;
-        max = allhosps[machine->owner].object_stats[machine->subtype].unknown8;
+        max = allhosps[machine->owner].object_stats[machine->subtype].strength;
         set_font_from_cache(1);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        if (is_thing_paged(&allhosps[player].ff6d, D_001581b2[3].value)) {
+        if (is_thing_paged(&allhosps[player].repair_pager, D_001581b2[3].value)) {
             sprintf(buf, "(%s)", object_names[machine->subtype]);
-            LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
+            LbTextDraw(x + resvars.coords[0x61].x, y + resvars.coords[0x61].y, buf);
         } else {
             sprintf(buf, "%s", object_names[machine->subtype]);
-            LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
+            LbTextDraw(x + resvars.coords[0x61].x, y + resvars.coords[0x61].y, buf);
         }
         {
             RoomInfo *room;
@@ -99,7 +99,7 @@ void req5_overdraw(Window *win)
             if (room > room_info) {
                 count = room->count;
                 sprintf(buf, "%d", count);
-                LbTextDraw(x + resvars.f1c[0x62].x, y + resvars.f1c[0x62].y, buf);
+                LbTextDraw(x + resvars.coords[0x62].x, y + resvars.coords[0x62].y, buf);
             }
             pct = (max - uses) * 100 / max;
             req5_draw_machine_usage_bar(x, y, pct, 100);
@@ -107,28 +107,28 @@ void req5_overdraw(Window *win)
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         set_font_from_cache(0);
         if (lbDisplay.mleft_button) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x54].x, y + resvars.f18[0x54].y, resvars.f18[0x54].w,
-                             resvars.f18[0x54].h)) {
-                othervar.f38 = 3;
-                othervar.f10 = 1;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x54].x, y + resvars.boxes[0x54].y, resvars.boxes[0x54].w,
+                             resvars.boxes[0x54].h)) {
+                othervar.center_on_slot = 3;
+                othervar.full_redraw = 1;
             }
         }
-        if (lbDisplay.mright_button && !othervar.fa61) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x54].x, y + resvars.f18[0x54].y, resvars.f18[0x54].w,
-                             resvars.f18[0x54].h)) {
+        if (lbDisplay.mright_button && !othervar.right_button_was_down) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x54].x, y + resvars.boxes[0x54].y, resvars.boxes[0x54].w,
+                             resvars.boxes[0x54].h)) {
                 D_001581b2[3].value = find_next_thing(machine, THING_OBJECT, -1, -1);
-                othervar.f38 = 3;
-                othervar.f10 = 1;
-                othervar.f7d = othervar.f7c;
-                othervar.f7c = 3;
-                othervar.f7e = D_001581b2[3].value;
+                othervar.center_on_slot = 3;
+                othervar.full_redraw = 1;
+                othervar.prev_panel_info = othervar.panel_info;
+                othervar.panel_info = 3;
+                othervar.panel_thing = D_001581b2[3].value;
                 play_sound(10, SFX_CAMCLICK, -1, -1);
             }
         }
         if (lbDisplay.mright_button)
-            othervar.fa61 = 1;
+            othervar.right_button_was_down = 1;
         else
-            othervar.fa61 = 0;
+            othervar.right_button_was_down = 0;
     }
 }
 
@@ -138,8 +138,8 @@ void req5_draw_machine_usage_bar(long x, long y, long filled, long total)
 {
     s32 i;
 
-    for (i = (filled << 16) / ((total << 16) / resvars.f18[0x53].w) - 1; i >= 0; i--)
-        reqspr_draw(x + resvars.f18[0x53].x + i, y + resvars.f18[0x53].y, &button_sprite[resvars.f12[4]]);
+    for (i = (filled << 16) / ((total << 16) / resvars.boxes[0x53].w) - 1; i >= 0; i--)
+        reqspr_draw(x + resvars.boxes[0x53].x + i, y + resvars.boxes[0x53].y, &button_sprite[resvars.requester_sprites[4]]);
 }
 
 // Returns 1 if thing id is among pager's requests, else 0.

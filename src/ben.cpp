@@ -78,9 +78,9 @@ char *modify_data_load_filename(TbLoadFiles *file)
 
 // Reads up to four KEY=value lines from hospital.cfg: INSTALL_PATH (also hooks
 // modify_data_load_filename into LbDataLoad), INSTALL_TYPE (install_type 1-3),
-// LANGUAGE (install_language and myplayer.f21: 0 English, 1 French, 2 German,
+// LANGUAGE (install_language and myplayer.language: 0 English, 1 French, 2 German,
 // 3 Italian, 4 Spanish, 5 another S... language) and SAVE_OVERRIDE
-// (statvar.f575). Returns 1, or -1 if the file is missing or a line is not
+// (statvar.save_root). Returns 1, or -1 if the file is missing or a line is not
 // understood.
 // FUNCTION: 0x0007a318
 s32 read_config_file(void)
@@ -153,9 +153,9 @@ s32 read_config_file(void)
                     install_language = 5;
                 break;
             }
-            myplayer.f21 = install_language;
+            myplayer.language = install_language;
         } else if (!strcmp(data + key, "SAVE_OVERRIDE")) {
-            fn_000bbff0(statvar.f575, data + value);
+            fn_000bbff0(statvar.save_root, data + value);
         } else {
             LbMemoryFree(data);
             return -1;

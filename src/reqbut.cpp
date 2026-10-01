@@ -1,7 +1,7 @@
 #include "hosp.h"
 
 // The requester button and sprite tables, one of each for high and low
-// resolution (resvars.fe and resvars.f12). Data only: config/sections.txt
+// resolution (resvars.requester_buttons and resvars.requester_sprites). Data only: config/sections.txt
 // places the module's _DATA.
 
 u8 hires_requester_buttons[496] = {

@@ -59,32 +59,32 @@ extern "C" void start_game(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     init_andys_variables();
     setup_req4_references();
-    crequester.unknown2 = D_001581a6 = 0x63;
-    myplayer.f1d = 1;
+    crequester.id = D_001581a6 = 0x63;
+    myplayer.shadows_on = 1;
     setup_menus();
     setup_interactions();
     setup_help_indices();
     setup_aniseq_indices();
-    setup_indices_for_composite_help(show_help_text_0, statvar.f4df, 0x1f);
-    setup_indices_for_composite_help(level_text, statvar.f51d, 0x13);
-    setup_indices_for_composite_help(win_text, statvar.f543, 0xd);
-    setup_indices_for_composite_help(D_00160398, statvar.f55b, 0xb);
+    setup_indices_for_composite_help(show_help_text_0, statvar.help_page0_start, 0x1f);
+    setup_indices_for_composite_help(level_text, statvar.help_page1_start, 0x13);
+    setup_indices_for_composite_help(win_text, statvar.winlose_text_start, 0xd);
+    setup_indices_for_composite_help(D_00160398, statvar.net_help_start, 0xb);
     setup_indices_for_composite_help(D_0016039c, statvar.f56f, 4);
     InitPixBuffer(0, 0, 0xb4, 0xb4, 0xfe, 1);
     init_midi();
     init_ambients();
-    gamecounts.unknown14 = LbTimerClock();
-    myplayer.f1e = 0x19;
+    gamecounts.last_turn_clock = LbTimerClock();
+    myplayer.game_speed = 0x19;
     init_wibble(xs, ys, pixBuf.width + 0x20, pixBuf.width + 0x20, pixBuf.width, 0x11, 2);
     measure_objects();
     choice_backup.mode = 0;
     current_text.text[0] = 0;
-    if (debug.unknown1fa) {
-        if (fn_000cd716(myplayer.unknown0) == 0)
-            fn_000bbff0(myplayer.unknown0, misc_text[1]);
+    if (debug.direct_start) {
+        if (fn_000cd716(myplayer.name_chars) == 0)
+            fn_000bbff0(myplayer.name_chars, misc_text[1]);
         setup_new_level((u16)level_number, 1);
         load_player_details();
-        othervar.f24 = palette;
+        othervar.pending_palette = palette;
         if (!new_game) {
             D_001549d0[player].type = 0x1e;
             D_001549d0[player].value = debug.unknown10a;
@@ -109,19 +109,19 @@ void setup_new_level(int level, u8 reload_balance)
     AllHosps backup;
 
     myhosp = &allhosps[player];
-    if (fn_000cd716(myplayer.unknown0) == 0)
-        fn_000bbff0(myplayer.unknown0, misc_text[1]);
-    fn_000bbff0((char *)myhosp->unknown0, myplayer.unknown0);
-    myhosp->f2a = 1;
+    if (fn_000cd716(myplayer.name_chars) == 0)
+        fn_000bbff0(myplayer.name_chars, misc_text[1]);
+    fn_000bbff0((char *)myhosp->name, myplayer.name_chars);
+    myhosp->player_type = 1;
     if ((u16)level > 14)
-        myhosp->f29 = 1;
+        myhosp->level = 1;
     else
-        myhosp->f29 = level;
+        myhosp->level = level;
     if (reload_balance)
         load_balance(level);
     copy_my_hosp(&backup, myhosp);
-    saved_fa75 = othervar.fa75;
-    myplayer.f9 += mycontrol->f648;
+    saved_fa75 = othervar.level_after_bonus;
+    myplayer.years_played += mycontrol->year;
     memset(thing, 0, 0x40164);
     memset(map, 0, 0x20000);
     memset(room_info, 0, 0xdac);
@@ -138,11 +138,11 @@ void setup_new_level(int level, u8 reload_balance)
     LbMemorySet(&adcounts, 0, 0xa6);
     LbMemorySet(&NRAdcounts, 0, 0x11);
     if ((u16)level != 1)
-        LbMemorySet(advisor.f0_u8a, 0, 0x133);
-    othervar.fa75 = saved_fa75;
+        LbMemorySet(advisor.advice_id_bytes, 0, 0x133);
+    othervar.level_after_bonus = saved_fa75;
     for (i = 0; i < 9; i++)
         popup_id[i] = 1;
-    mycontrol->unknown64f = 1;
+    mycontrol->day = 1;
     copy_my_hosp(myhosp, &backup);
     game_turn = 0;
     actual_game_turn = 1;
@@ -151,46 +151,46 @@ void setup_new_level(int level, u8 reload_balance)
     load_level(level, 1);
     free_level();
     clear_sound_heap();
-    if (towns[myhosp->f29].unknown4[2] == 1) {
-        gamevar.f174 = 1;
+    if (towns[myhosp->level].unknown4[2] == 1) {
+        gamevar.rat_fest_level = 1;
         setup_rat_fest_panel();
-        rat_fest_builder(towns[myhosp->f29].unknown4[1]);
-    } else if (towns[myhosp->f29].unknown4[2] == 2) {
-        training_builder(towns[myhosp->f29].unknown4[1]);
+        rat_fest_builder(towns[myhosp->level].unknown4[1]);
+    } else if (towns[myhosp->level].unknown4[2] == 2) {
+        training_builder(towns[myhosp->level].unknown4[1]);
     }
     create_job_market();
     for (i = 0; i < 4; i++)
         init_player(i);
-    othervar.f10 = 1;
+    othervar.full_redraw = 1;
     othervar.f33 = 1;
     calc_visitors_this_month();
-    adcounts.f0 = 1;
-    mycontrol->f4b4 = myhosp->f1c3;
-    mycontrol->f64c = 750;
-    sprintf(statvar.f6c, "save/%s.h", &myplayer);
+    adcounts.patients = 1;
+    mycontrol->statement_balance = myhosp->year_start_balance;
+    mycontrol->heating_price = 750;
+    sprintf(statvar.save_prefix, "save/%s.h", &myplayer);
     setup_insurances();
     setup_computer_players();
     setup_next_emergency();
     setup_next_quake();
     reset_advisor();
     LbMemorySet(tutorial_display_flags, 0, 0x26);
-    othervar.f8c = get_next_illness(1, 0);
+    othervar.selected_illness = get_next_illness(1, 0);
     check_save_games();
-    othervar.fa55 = 1;
-    othervar.fa58 = 0x39;
+    othervar.popup_shutter_state = 1;
+    othervar.emergency_anim_frame = 0x39;
     setup_pulldown_menu_options();
     setup_key_mappos();
     setup_next_net_criteria(player);
-    if (statvar.f5dd) {
-        othervar.f9b9 = 1;
-        if (myplayer.unknown11) {
-            othervar.fa4f = 1;
-            play_midi(LbTimerClock() % statvar.f5dd);
+    if (statvar.midi_count) {
+        othervar.midi_playing = 1;
+        if (myplayer.music_on) {
+            othervar.music_playing = 1;
+            play_midi(LbTimerClock() % statvar.midi_count);
         }
     }
     LbMemorySet(&current_text, 0, 0x5e7);
     LbMemorySet(net_text, 0, 0xfa);
-    othervar.f4a = 0;
+    othervar.net_text_entering = 0;
     close_irequesters();
 }
 
@@ -199,10 +199,10 @@ void setup_new_level(int level, u8 reload_balance)
 // FUNCTION: 0x00090c8c
 void copy_my_hosp(AllHosps *dst, AllHosps *src)
 {
-    fn_000bbff0((char *)dst->unknown0, (char *)src->unknown0);
-    dst->f29 = src->f29;
-    dst->f2a = src->f2a;
-    dst->f2d = src->f2d;
+    fn_000bbff0((char *)dst->name, (char *)src->name);
+    dst->level = src->level;
+    dst->player_type = src->player_type;
+    dst->score = src->score;
 }
 
 // Reads the balance settings: levels/<balance_id>00.sam, then the file for
@@ -244,15 +244,15 @@ void balance_control(void)
 
     count = 0;
     all = 1;
-    statvar.f8 = 0;
+    statvar.visuals_total = 0;
     for (i = 0; i < 14; i++) {
         if (visuals[i]) {
             all_illnesses[count++] = i + 2;
             kind = expertise[i + 2].kind;
-            objects[kind].unknown1c = 1;
+            objects[kind].available_for_level = 1;
         }
-        statvar.f8 += visuals[i];
-        visuals[i] = statvar.f8;
+        statvar.visuals_total += visuals[i];
+        visuals[i] = statvar.visuals_total;
     }
     for (i = 0; i < 20; i++) {
         if (non_visuals[i]) {
@@ -260,16 +260,16 @@ void balance_control(void)
             break;
         }
     }
-    statvar.fa = 0;
+    statvar.non_visuals_total = 0;
     for (i = 0; i < 20; i++) {
         if (all)
             non_visuals[i] = 1;
         all_illnesses[count++] = i + 16;
-        statvar.fa += non_visuals[i];
-        non_visuals[i] = statvar.fa;
+        statvar.non_visuals_total += non_visuals[i];
+        non_visuals[i] = statvar.non_visuals_total;
     }
     expertise[ILL_GENERAL_PRACTICE].unknown10[8] = 1;
-    statvar.f6a = count;
+    statvar.illness_kind_count = count;
 }
 
 // Chooses the level's three insurance companies at random out of eight
@@ -287,7 +287,7 @@ void setup_insurances(void)
     for (i = 0; i < 8; i++)
         pool[i] = i + 1;
     for (i = 0; i < 3; i++) {
-        if (statvar.unknownfd > 1) {
+        if (statvar.num_players > 1) {
             pick = old_newrand() % left;
             ins_control[i] = pool[pick];
         } else {
@@ -302,7 +302,7 @@ void setup_insurances(void)
 
 // Sets up player `owner`'s hospital for a new level: starting cash, object
 // prices and availability, illness prices, drugs and reputation, research
-// split evenly, default policy, and the opening countdown (gbv.f154) in a
+// split evenly, default policy, and the opening countdown (gbv.open_countdown) in a
 // single-player level.
 // FUNCTION: 0x000910a0
 void init_player(u8 owner)
@@ -311,61 +311,61 @@ void init_player(u8 owner)
     u16 i;
 
     hosp = &allhosps[owner];
-    hosp->f2b = 2;
-    hosp->f35 = towns[myhosp->f29].f0;
-    allhosps[owner].rooms[0].unknown1C = 1;
+    hosp->playing = 2;
+    hosp->balance = towns[myhosp->level].start_cash;
+    allhosps[owner].rooms[0].cure_available = 1;
     for (i = 0; i < 0x3e; i++) {
-        if (objects[i].unknown1c) {
+        if (objects[i].available_for_level) {
             hosp->object_stats[i].unknownC[0] = objects[i].unknown6[1];
-            hosp->object_stats[i].available = objects[i].fc;
+            hosp->object_stats[i].available = objects[i].when_avail;
         }
         hosp->object_stats[i].cost = objects[i].cost;
-        hosp->object_stats[i].unknown8 = objects[i].unknown1d;
+        hosp->object_stats[i].strength = objects[i].start_strength;
     }
-    hosp->fc94 = 5;
+    hosp->heating_level = 5;
     for (i = 0; i < 0x2f; i++) {
-        hosp->rooms[i].unknownC = expertise[i].f2;
-        hosp->rooms[i].unknown10 = 10000;
-        hosp->rooms[i].unknown1D = expertise[i].unknown10[8];
+        hosp->rooms[i].price = expertise[i].start_price;
+        hosp->rooms[i].price_scale = 10000;
+        hosp->rooms[i].discovered = expertise[i].unknown10[8];
         setup_drug((u16)owner, i);
-        hosp->rooms[i].f4 = 20;
-        hosp->rooms[i].f8 = 20;
+        hosp->rooms[i].rep_points = 20;
+        hosp->rooms[i].rep_events = 20;
         evaluate_reputation(i, owner);
     }
     for (i = 0; i < 5; i++)
         hosp->research_alloc[i] = 20;
     count_hospital_area((u16)owner);
-    if (myhosp->f29 == 1 || statvar.unknownfd > 1 || hosp->f2d == 0)
-        hosp->f2d = 10000;
+    if (myhosp->level == 1 || statvar.num_players > 1 || hosp->score == 0)
+        hosp->score = 10000;
     for (i = 0; i < 16; i++)
-        gamevar.f14b[i] = 0;
+        gamevar.quake_used[i] = 0;
     for (i = 0; i < 20; i++)
-        gamevar.f15b[i] = 0;
-    if (statvar.unknownfd > 1)
-        hosp->f1cb = 100 / network_num_players();
+        gamevar.emergency_used[i] = 0;
+    if (statvar.num_players > 1)
+        hosp->market_share = 100 / network_num_players();
     else
-        hosp->f1cb = 25;
-    hosp->f217 = 1000;
-    hosp->f219 = 90;
-    hosp->f21b = 10;
-    hosp->f21d = gbv.fe8;
-    hosp->f21f = 1;
-    hosp->f216 = 7;
+        hosp->market_share = 25;
+    hosp->diag_threshold = 1000;
+    hosp->guess_cure_threshold = 90;
+    hosp->send_home_threshold = 10;
+    hosp->rest_threshold = gbv.tired;
+    hosp->staff_leave_rooms = 1;
+    hosp->insurance_accepted = 7;
     hosp->unknown20f[6] = 1;
-    if (!(!gbv.f154 || statvar.unknownfd > 1 || gamevar.f174)) {
-        if (statvar.unknownfd <= 1)
-            hosp->unknown1256 = 0;
-        hosp->unknown1257 = gbv.f154;
+    if (!(!gbv.open_countdown || statvar.num_players > 1 || gamevar.rat_fest_level)) {
+        if (statvar.num_players <= 1)
+            hosp->hospital_open = 0;
+        hosp->opening_countdown = gbv.open_countdown;
     } else {
-        if (statvar.unknownfd <= 1)
-            hosp->unknown1256 = 1;
+        if (statvar.num_players <= 1)
+            hosp->hospital_open = 1;
     }
-    othervar.fa6b = 0;
-    hosp->f1c3 = hosp->f35;
-    hosp->f41 = 15000;
-    hosp->f31 = hosp->f2d;
-    hosp->fc82 = 20;
-    hosp->fc86 = 20;
+    othervar.watch_hovered = 0;
+    hosp->year_start_balance = hosp->balance;
+    hosp->max_loan = 15000;
+    hosp->start_score = hosp->score;
+    hosp->rep_points = 20;
+    hosp->rep_events = 20;
     evaluate_reputation(0, owner);
     calc_pricing_factor(owner);
 }

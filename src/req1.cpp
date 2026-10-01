@@ -6,8 +6,8 @@ extern "C" {
 void reset_dept_object(void);
 
 // Before buying more for an existing room: takes the room type's required
-// objects that room lacks off the shopping list (gamevar.unknown33),
-// remembering them in othervar.f8f6.
+// objects that room lacks off the shopping list (gamevar.buy_list),
+// remembering them in othervar.shop_palette_adjust.
 // FUNCTION: 0x00054e50
 void adjust_build_palette_for_shop(RoomInfo *room)
 {
@@ -19,12 +19,12 @@ void adjust_build_palette_for_shop(RoomInfo *room)
     memset(counts, 0, 0x3f);
     for (room_obj = &thing[room->first_object]; room_obj > thing; room_obj = &thing[room_obj->room_obj_next])
         counts[room_obj->subtype]++;
-    memset(othervar.f8f6, 0, 0x3f);
-    for (i = rooms[room->type].fc - 1; i >= 0; i--) {
+    memset(othervar.shop_palette_adjust, 0, 0x3f);
+    for (i = rooms[room->type].compulsory_count - 1; i >= 0; i--) {
         obj_type = rooms[room->type].objects[i];
         if (counts[obj_type] == 0) {
-            gamevar.unknown33.unknown0[obj_type]--;
-            othervar.f8f6[obj_type]++;
+            gamevar.buy_list.to_place[obj_type]--;
+            othervar.shop_palette_adjust[obj_type]++;
         } else {
             counts[obj_type]--;
         }
@@ -39,7 +39,7 @@ void post_shop_readjust_build_palette(void)
     s32 i;
 
     for (i = 0x3d; i >= 0; i--)
-        gamevar.unknown33.unknown0[i] += othervar.f8f6[i];
+        gamevar.buy_list.to_place[i] += othervar.shop_palette_adjust[i];
 }
 
 // Clears the requester's list of entries (req_indices).
@@ -50,7 +50,7 @@ void clear_req_indices(void)
 }
 
 // Lists the extra objects room type `room` can buy (up to ten available to
-// this player) in req_indices and opens the object list (crequester.unknown0
+// this player) in req_indices and opens the object list (crequester.mode
 // 3).
 // FUNCTION: 0x00054fc0
 void set_buyable_items(u16 room)
@@ -60,11 +60,11 @@ void set_buyable_items(u16 room)
     u16 i;
 
     count = 0;
-    crequester.unknown0 = 3;
-    crequester.unknown3 = 0;
-    for (i = 0; i < rooms[room].f17 && count < 10; i++) {
-        obj_type = rooms[room].f18[i];
-        if (allhosps[player].equipment[obj_type].unknown0 == 1 && objects[obj_type].unknown1c == 1)
+    crequester.mode = 3;
+    crequester.item = 0;
+    for (i = 0; i < rooms[room].buyable_count && count < 10; i++) {
+        obj_type = rooms[room].buyable[i];
+        if (allhosps[player].equipment[obj_type].available == 1 && objects[obj_type].available_for_level == 1)
             req_indices[count++] = obj_type;
     }
     while (count < 10)
@@ -72,7 +72,7 @@ void set_buyable_items(u16 room)
     reset_dept_object();
 }
 
-// Sets the shopping list (gamevar.unknown33) to just room type `room`'s
+// Sets the shopping list (gamevar.buy_list) to just room type `room`'s
 // required objects.
 // FUNCTION: 0x000550cc
 void buy_compulsory_items(const u16 room)
@@ -80,13 +80,13 @@ void buy_compulsory_items(const u16 room)
     u16 i;
 
     for (i = 0; i < 0x3e; i++)
-        gamevar.unknown33.unknown0[i] = 0;
-    for (i = 0; i < rooms[room].fc; i++) {
+        gamevar.buy_list.to_place[i] = 0;
+    for (i = 0; i < rooms[room].compulsory_count; i++) {
         u8 obj;
 
         obj
  = rooms[room].objects[i];
-        gamevar.unknown33.unknown0[obj]++;
+        gamevar.buy_list.to_place[obj]++;
     }
 }
 
@@ -116,9 +116,9 @@ u16 room_available(u16 room)
 {
     u16 i;
 
-    for (i = 0; i < rooms[room].fc; i++) {
-        if (allhosps[player].equipment[rooms[room].objects[i]].unknown0 == 0
-            || objects[rooms[room].objects[i]].unknown1c == 0)
+    for (i = 0; i < rooms[room].compulsory_count; i++) {
+        if (allhosps[player].equipment[rooms[room].objects[i]].available == 0
+            || objects[rooms[room].objects[i]].available_for_level == 0)
             return 0;
     }
     return 1;
@@ -129,10 +129,10 @@ u16 room_available(u16 room)
 // FUNCTION: 0x000552e8
 void req1_buy_object(const u16 obj, const s32 amount)
 {
-    if (gamevar.unknown33.unknown0[obj] + amount < 0x63)
-        gamevar.unknown33.unknown0[obj] += amount;
+    if (gamevar.buy_list.to_place[obj] + amount < 0x63)
+        gamevar.buy_list.to_place[obj] += amount;
     else
-        gamevar.unknown33.unknown0[obj] = 0x63;
+        gamevar.buy_list.to_place[obj] = 0x63;
 }
 
 // Returns the cost of everything on the shopping list at this player's
@@ -145,13 +145,13 @@ s32 cost_of_all_selected_objects(void)
 
     total = 0;
     for (i = 0; i < 0x3e; i++)
-        total += gamevar.unknown33.unknown0[i] * allhosps[player].object_stats[i].cost;
+        total += gamevar.buy_list.to_place[i] * allhosps[player].object_stats[i].cost;
     return total;
 }
 
-// Selects the current room type's first extra object (crequester.unknown3).
+// Selects the current room type's first extra object (crequester.item).
 // FUNCTION: 0x000553b4
 void reset_dept_object(void)
 {
-    crequester.unknown3 = rooms[crequester.unknown8].f18[0];
+    crequester.item = rooms[crequester.kind].buyable[0];
 }

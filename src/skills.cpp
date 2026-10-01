@@ -56,8 +56,8 @@ u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wante
         free_pager->mask = skill_mask;
         free_pager->room = room_id;
         free_pager->owner = owner;
-        free_pager->unknown4 = 0;
-        free_pager->unknown8 = 0;
+        free_pager->claimed_until = 0;
+        free_pager->responder = 0;
         if (owner == player) {
             if (room->type >= 0 && room->type <= 0x1e)
                 play_ambient(room->type);
@@ -85,14 +85,14 @@ u16 check_pager(Thing *staff)
     found = 0;
     best = 999;
     for (pager = pagers; pager < end_pagers; pager++) {
-        if ((pager->owner == staff->owner && (pager->mask & staff->skills) && pager->unknown4 < actual_game_turn)
-            || (u16)(staff - thing) == pager->unknown8) {
+        if ((pager->owner == staff->owner && (pager->mask & staff->skills) && pager->claimed_until < actual_game_turn)
+            || (u16)(staff - thing) == pager->responder) {
             room = &room_info[pager->room];
-            if (!(room->f3 == 1 || room->f3 == 0))
+            if (!(room->state == 1 || room->state == 0))
                 continue;
             {
-                dist = fn_000cb2db(staff->x.tile - room->unknown4 % 128)
-                     + fn_000cb2db(staff->y.tile - room->unknown4 / 128);
+                dist = fn_000cb2db(staff->x.tile - room->door_tile % 128)
+                     + fn_000cb2db(staff->y.tile - room->door_tile / 128);
                 if (best > dist) {
                     best = dist;
                     found = pager;
@@ -102,8 +102,8 @@ u16 check_pager(Thing *staff)
     }
     if (found) {
         room_id = found->room;
-        found->unknown4 = actual_game_turn + 3000;
-        found->unknown8 = staff - thing;
+        found->claimed_until = actual_game_turn + 3000;
+        found->responder = staff - thing;
     } else {
         room_id = 0;
     }
@@ -133,9 +133,9 @@ void pager_arrival(Thing *staff)
     blank = 0;
     for (pager = pagers; pager < end_pagers; pager++) {
         if ((pager->mask & staff->skills) && (u16)(staff->room - room_info) == pager->room && pager->owner == staff->owner) {
-            if ((u16)(staff - thing) == pager->unknown8)
+            if ((u16)(staff - thing) == pager->responder)
                 goto found;
-            if (pager->unknown8)
+            if (pager->responder)
                 other = pager;
             else
                 blank = pager;
@@ -147,7 +147,7 @@ void pager_arrival(Thing *staff)
         pager = blank;
 found:
     if (pager < end_pagers)
-        pager->mask = pager->room = pager->owner = pager->unknown4 = pager->unknown8 = 0;
+        pager->mask = pager->room = pager->owner = pager->claimed_until = pager->responder = 0;
 }
 
 // Marks every page to room room_id as unanswered.
@@ -158,8 +158,8 @@ void clear_pager_responses(u16 room_id)
 
     for (pager = pagers; pager < end_pagers; pager++) {
         if (pager->room == room_id) {
-            pager->unknown4 = 0;
-            pager->unknown8 = 0;
+            pager->claimed_until = 0;
+            pager->responder = 0;
         }
     }
 }
@@ -187,18 +187,18 @@ RoomInfo *get_expertise_dest(u16 type, Thing *patient)
     owner = patient->owner;
     exp = &expertise[type];
     kind = exp->category;
-    if (allhosps[owner].rooms[type].unknown1C == 1 && listhead[owner].rooms[kind]) {
+    if (allhosps[owner].rooms[type].cure_available == 1 && listhead[owner].rooms[kind]) {
         for (room = room_info + 1; room < end_room_info; room++) {
-            if (room->owner == owner && room->type == kind && room->unknown4 != 0) {
+            if (room->owner == owner && room->type == kind && room->door_tile != 0) {
                 fallback = room;
                 if (spare_queue_capacity(0, 1, room, owner)) {
-                    score = room->unknown31 * gbv.f100;
-                    score += (fn_000cb2db(patient->x.tile - room->unknown4 % 128)
-                            + fn_000cb2db(patient->y.tile - room->unknown4 / 128)) * gbv.f102;
-                    score += gbv.f104;
+                    score = room->queue_length * gbv.q_points;
+                    score += (fn_000cb2db(patient->x.tile - room->door_tile % 128)
+                            + fn_000cb2db(patient->y.tile - room->door_tile / 128)) * gbv.dist_points;
+                    score += gbv.no_staff_points;
                     for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
                         if (occupant->type == THING_STAFF) {
-                            score -= gbv.f104;
+                            score -= gbv.no_staff_points;
                             break;
                         }
                     }
@@ -253,9 +253,9 @@ void staff_abandon_pager_response(Thing *staff)
 
     id = staff - thing;
     for (pager = pagers; pager < end_pagers; pager++) {
-        if (pager->unknown8 == id) {
-            pager->unknown4 = 0;
-            pager->unknown8 = 0;
+        if (pager->responder == id) {
+            pager->claimed_until = 0;
+            pager->responder = 0;
         }
     }
 }
@@ -280,7 +280,7 @@ void room_deleted_update_listhead(RoomInfo *room)
 
 // A staff member joins: makes available each treatment that their skills
 // complete (it already has its room and machine; surgery needs two
-// surgeons, counted in allhosps.fca6), and those that need a ward.
+// surgeons, counted in allhosps.surgeon_count), and those that need a ward.
 // FUNCTION: 0x0004a2fc
 void set_expertise_staff(Thing *staff)
 {
@@ -289,26 +289,26 @@ void set_expertise_staff(Thing *staff)
     u32 kind;
     s32 ward;
 
-    ward = allhosps[staff->owner].rooms[ILL_DIAG_WARD].unknown1C == 1;
+    ward = allhosps[staff->owner].rooms[ILL_DIAG_WARD].cure_available == 1;
     for (i = 1; i < 0x2f; i++) {
-        if (allhosps[staff->owner].rooms[i].unknown1C == 0) {
+        if (allhosps[staff->owner].rooms[i].cure_available == 0) {
             exp = &expertise[i];
             if (listhead[staff->owner].rooms[exp->category] != 0) {
-                if ((exp->unknown0 & 0x20) && allhosps[staff->owner].fca6 < 2)
+                if ((exp->staff_mask & 0x20) && allhosps[staff->owner].surgeon_count < 2)
                     continue;
-                if (staff->skills & exp->unknown0) {
-                    if (exp->unknown7 && !ward)
+                if (staff->skills & exp->staff_mask) {
+                    if (exp->needs_ward && !ward)
                         continue;
                     kind = exp->kind;
                     if (kind == 0)
-                        allhosps[staff->owner].rooms[i].unknown1C = 1;
+                        allhosps[staff->owner].rooms[i].cure_available = 1;
                     else if (listhead[staff->owner].objects[kind])
-                        allhosps[staff->owner].rooms[i].unknown1C = 1;
+                        allhosps[staff->owner].rooms[i].cure_available = 1;
                 }
             }
         }
     }
-    if (!ward && allhosps[staff->owner].rooms[ILL_DIAG_WARD].unknown1C == 1)
+    if (!ward && allhosps[staff->owner].rooms[ILL_DIAG_WARD].cure_available == 1)
         set_expertise_ward(staff->owner);
 }
 
@@ -324,37 +324,37 @@ void set_expertise_room(RoomInfo *room)
     u32 j;
     s32 ward;
 
-    ward = allhosps[room->owner].rooms[ILL_DIAG_WARD].unknown1C == 1;
+    ward = allhosps[room->owner].rooms[ILL_DIAG_WARD].cure_available == 1;
     for (i = 1; i < 0x2f; i++) {
-        if (allhosps[room->owner].rooms[i].unknown1C == 0) {
+        if (allhosps[room->owner].rooms[i].cure_available == 0) {
             exp = &expertise[i];
-            if (exp->unknown7 && !ward)
+            if (exp->needs_ward && !ward)
                 continue;
             if (exp->category == room->type) {
-                mask = exp->unknown0;
+                mask = exp->staff_mask;
                 if (mask == 0) {
                     if (room->type != ROOM_RESEARCH)
-                        allhosps[room->owner].rooms[i].unknown1C = 1;
+                        allhosps[room->owner].rooms[i].cure_available = 1;
                 } else {
                     for (j = 0; j < 9; j++) {
-                        if (((1 << j) & mask) == 0x20 && allhosps[room->owner].fca6 < 2)
+                        if (((1 << j) & mask) == 0x20 && allhosps[room->owner].surgeon_count < 2)
                             break;
                         if ((mask & (1 << j)) && listhead[room->owner].staff[j] == 0)
                             break;
                     }
                     if (j >= 9)
-                        allhosps[room->owner].rooms[i].unknown1C = 1;
+                        allhosps[room->owner].rooms[i].cure_available = 1;
                 }
             }
         }
     }
-    if (!ward && allhosps[room->owner].rooms[ILL_DIAG_WARD].unknown1C == 1)
+    if (!ward && allhosps[room->owner].rooms[ILL_DIAG_WARD].cure_available == 1)
         set_expertise_ward(room->owner);
 }
 
 // A staff member leaves: uncounts their skills and makes unavailable the
 // treatments that needed the last of a skill (and surgery whenever the
-// surgeon count, allhosps.fca6, is below 3), and those that need a ward.
+// surgeon count, allhosps.surgeon_count, is below 3), and those that need a ward.
 // FUNCTION: 0x0004a754
 void remove_expertise_staff(Thing *staff)
 {
@@ -363,22 +363,22 @@ void remove_expertise_staff(Thing *staff)
     u16 mask;
     s32 ward;
 
-    ward = allhosps[staff->owner].rooms[ILL_DIAG_WARD].unknown1C == 1;
+    ward = allhosps[staff->owner].rooms[ILL_DIAG_WARD].cure_available == 1;
     remove_skill(staff->skills, staff->owner);
     mask = staff->skills;
     for (i = 0; i < 9; i++) {
         if (mask & (1 << i)) {
-            if (listhead[staff->owner].staff[i] == 0 || (i == 5 && allhosps[staff->owner].fca6 < 3)) {
+            if (listhead[staff->owner].staff[i] == 0 || (i == 5 && allhosps[staff->owner].surgeon_count < 3)) {
                 for (j = 1; j < 0x2f; j++) {
-                    if (allhosps[staff->owner].rooms[j].unknown1C == 1) {
-                        if ((1 << i) & expertise[j].unknown0)
-                            allhosps[staff->owner].rooms[j].unknown1C = 0;
+                    if (allhosps[staff->owner].rooms[j].cure_available == 1) {
+                        if ((1 << i) & expertise[j].staff_mask)
+                            allhosps[staff->owner].rooms[j].cure_available = 0;
                     }
                 }
             }
         }
     }
-    if (ward && allhosps[staff->owner].rooms[ILL_DIAG_WARD].unknown1C != 1)
+    if (ward && allhosps[staff->owner].rooms[ILL_DIAG_WARD].cure_available != 1)
         remove_expertise_ward(staff->owner);
 }
 
@@ -391,18 +391,18 @@ void remove_expertise_room(RoomInfo *room)
     RoomInfo *other;
     s32 ward;
 
-    ward = allhosps[room->owner].rooms[ILL_DIAG_WARD].unknown1C == 1;
+    ward = allhosps[room->owner].rooms[ILL_DIAG_WARD].cure_available == 1;
     for (other = room_info + 1; other < end_room_info; other++) {
         if (other->owner == room->owner && room->type == other->type && other != room)
             return;
     }
     for (i = 1; i < 0x2f; i++) {
-        if (allhosps[room->owner].rooms[i].unknown1C == 1) {
+        if (allhosps[room->owner].rooms[i].cure_available == 1) {
             if (room->type == expertise[i].category)
-                allhosps[room->owner].rooms[i].unknown1C = 0;
+                allhosps[room->owner].rooms[i].cure_available = 0;
         }
     }
-    if (ward && allhosps[room->owner].rooms[ILL_DIAG_WARD].unknown1C != 1)
+    if (ward && allhosps[room->owner].rooms[ILL_DIAG_WARD].cure_available != 1)
         remove_expertise_ward(room->owner);
 }
 
@@ -417,19 +417,19 @@ void set_expertise_ward(u8 owner)
     u32 j;
 
     for (i = 1; i < 0x2f; i++) {
-        if (allhosps[owner].rooms[i].unknown1C == 0) {
+        if (allhosps[owner].rooms[i].cure_available == 0) {
             exp = &expertise[i];
-            if (exp->unknown7) {
+            if (exp->needs_ward) {
                 if (listhead[owner].rooms[exp->category] != 0) {
-                    if ((exp->unknown0 & 0x20) && allhosps[owner].fca6 < 2)
+                    if ((exp->staff_mask & 0x20) && allhosps[owner].surgeon_count < 2)
                         continue;
-                    mask = exp->unknown0;
+                    mask = exp->staff_mask;
                     for (j = 0; j < 9; j++) {
                         if ((mask & (1 << j)) && listhead[owner].staff[j] == 0)
                             break;
                     }
                     if (j >= 9)
-                        allhosps[owner].rooms[i].unknown1C = 1;
+                        allhosps[owner].rooms[i].cure_available = 1;
                 }
             }
         }
@@ -443,7 +443,7 @@ void remove_expertise_ward(u8 owner)
     u32 i;
 
     for (i = 1; i < 0x2f; i++) {
-        if (allhosps[owner].rooms[i].unknown1C == 1 && expertise[i].unknown7)
-            allhosps[owner].rooms[i].unknown1C = 0;
+        if (allhosps[owner].rooms[i].cure_available == 1 && expertise[i].needs_ward)
+            allhosps[owner].rooms[i].cure_available = 0;
     }
 }

@@ -39,24 +39,24 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
     }
     switch (dir) {
     case 0:
-        if (cell->unknown3) {
+        if (cell->wall_n) {
             return 1;
         }
         break;
     case 1:
         cell = &map[(s16)(x + 1) + ((s16)y << 7)];
-        if (cell->unknown4) {
+        if (cell->wall_w) {
             return 1;
         }
         break;
     case 2:
         cell = &map[(s16)x + ((s16)(y + 1) << 7)];
-        if (cell->unknown3) {
+        if (cell->wall_n) {
             return 1;
         }
         break;
     case 3:
-        if (cell->unknown4) {
+        if (cell->wall_w) {
             return 1;
         }
         break;

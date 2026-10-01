@@ -46,34 +46,34 @@ void FillBoxInPixBuffer(u8 colour, s32 x, s32 y, s32 w, s32 h)
 }
 
 // Redirects drawing into the pixel buffer, saving the screen and graphics
-// window to restore. Sets othervar.f1c while active.
+// window to restore. Sets othervar.drawing_pixbuf while active.
 // FUNCTION: 0x000566ec
 void DrawIntoPixBuffer(void)
 {
     pixBuf.saved_width = lbDisplay.graphics_screen_width;
     pixBuf.saved_height = lbDisplay.graphics_screen_height;
-    pixBuf.saved_ptr = lbDisplay.unknown4;
+    pixBuf.saved_ptr = lbDisplay.wscreen;
     pixBuf.saved_x = lbDisplay.graphics_window_x;
     pixBuf.saved_y = lbDisplay.graphics_window_y;
     pixBuf.saved_w = lbDisplay.graphics_window_width;
     pixBuf.saved_h = lbDisplay.graphics_window_height;
     lbDisplay.graphics_screen_width = pixBuf.width;
     lbDisplay.graphics_screen_height = pixBuf.height;
-    lbDisplay.unknown4 = pixBuf.data;
+    lbDisplay.wscreen = pixBuf.data;
     LbScreenSetGraphicsWindow(0, 0, pixBuf.width, pixBuf.height);
-    othervar.f1c = 1;
+    othervar.drawing_pixbuf = 1;
 }
 
 // Restores drawing to the screen saved by DrawIntoPixBuffer and clears
-// othervar.f1c.
+// othervar.drawing_pixbuf.
 // FUNCTION: 0x00056790
 void RestoreFromPixBuffer(void)
 {
     lbDisplay.graphics_screen_width = pixBuf.saved_width;
     lbDisplay.graphics_screen_height = pixBuf.saved_height;
-    lbDisplay.unknown4 = pixBuf.saved_ptr;
+    lbDisplay.wscreen = pixBuf.saved_ptr;
     LbScreenSetGraphicsWindow(pixBuf.saved_x, pixBuf.saved_y, pixBuf.saved_w, pixBuf.saved_h);
-    othervar.f1c = 0;
+    othervar.drawing_pixbuf = 0;
 }
 
 // Copies the box (x, y, w, h) of the pixel buffer (clipped to 180 x 180) to
@@ -108,7 +108,7 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
         sx = x + pixBuf.x;
         sy = y + pixBuf.y;
         src = x + (pixBuf.width * y + pixBuf.data);
-        dst = sx + ((lbDisplay.graphics_window_y + sy) * lbDisplay.graphics_screen_width + lbDisplay.unknown4 + lbDisplay.graphics_window_x);
+        dst = sx + ((lbDisplay.graphics_window_y + sy) * lbDisplay.graphics_screen_width + lbDisplay.wscreen + lbDisplay.graphics_window_x);
         if (sx < 0) {
             cols = sx + w;
             if (cols < 0)

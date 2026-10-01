@@ -113,14 +113,14 @@ void insert_block_into_free_list(s8 block)
 }
 
 // Adds block to the used list, kept in buffer order, stamping it as just used
-// (othervar.f8a2).
+// (othervar.clock_ms).
 // FUNCTION: 0x000b6ac8
 void insert_block_into_used_list(s8 block)
 {
     s8 cur;
 
     cur = used_head;
-    font_memory[block].used = othervar.f8a2;
+    font_memory[block].used = othervar.clock_ms;
     if (cur == -1) {
         font_memory[block].next = -1;
         used_head = block;
@@ -293,7 +293,7 @@ s8 get_block_from_free_list(s32 size)
     return -1;
 }
 
-// Makes font (resvars.fa_charpp index) the current font (lbFontPtr), loading
+// Makes font (resvars.font_filenames_charpp index) the current font (lbFontPtr), loading
 // its .tab and .dat into the font cache if needed; the cache is emptied when
 // the screen mode changes. Leaves lbFontPtr unchanged if it cannot be loaded.
 // For an already cached font, the use stamp goes to record font instead of the
@@ -309,15 +309,15 @@ void set_font_from_cache(const s32 font)
     char **names;
     s8 block;
 
-    if (resvars.f0 != D_0016126d)
+    if (resvars.screen_mode != D_0016126d)
         init_font_cache();
-    D_0016126d = resvars.f0;
+    D_0016126d = resvars.screen_mode;
     if (cfonts[font]) {
         lbFontPtr = (TbSprite *)&font_buffer[font_memory[cfonts[font] - 1].offset];
-        font_memory[font].used = othervar.f8a2;
+        font_memory[font].used = othervar.clock_ms;
         return;
     }
-    names = resvars.fa_charpp;
+    names = resvars.font_filenames_charpp;
     sprintf(name, "%s.tab", names[font]);
     tab_len = LbFileLengthRnc(name);
     if (tab_len == -1)

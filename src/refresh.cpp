@@ -40,17 +40,17 @@ void refresh_to_VRAM(void)
     u8 *src;
 
     page = -1;
-    for (row = 0; row < lbDisplay.unknown1c / 32; row++) {
-        for (col = 0; col < lbDisplay.unknown18 / 32; col++) {
+    for (row = 0; row < lbDisplay.physical_screen_height / 32; row++) {
+        for (col = 0; col < lbDisplay.physical_screen_width / 32; col++) {
             if (D_001567c0[col][row] > 0) {
                 end = col;
                 do {
                     D_001567c0[end][row]--;
                     end++;
-                } while (D_001567c0[end][row] > 0 && end < lbDisplay.unknown18 / 32);
+                } while (D_001567c0[end][row] > 0 && end < lbDisplay.physical_screen_width / 32);
                 width = end - col;
-                offset = lbDisplay.unknown18 * (row << 5) + (col << 5);
-                src = lbDisplay.unknown4 + offset;
+                offset = lbDisplay.physical_screen_width * (row << 5) + (col << 5);
+                src = lbDisplay.wscreen + offset;
                 dst = (offset & 0xffff) + 0xa0000;
                 dst_next = dst + 0x280;
                 src_next = src + 0x280;
@@ -76,7 +76,7 @@ void refresh_to_VRAM(void)
                         LbVesaSetPage(page);
                     }
                     for (line = 0; !done; line++, src = src_next, dst = dst_next, src_next += 0x280, dst_next += 0x280,
-                         offset += lbDisplay.unknown18, bank = (offset & 0xffff0000) >> 16) {
+                         offset += lbDisplay.physical_screen_width, bank = (offset & 0xffff0000) >> 16) {
                         if (page != bank) {
                             page = bank;
                             LbVesaSetPage(page);
@@ -92,7 +92,7 @@ void refresh_to_VRAM(void)
                                 page = bank2;
                                 LbVesaSetPage(page);
                                 copy_dwords(0xa0000, (dwords << 2) + src, (width << 3) - dwords);
-                                dst_next = ((offset + lbDisplay.unknown18) & 0xffff) + 0xa0000;
+                                dst_next = ((offset + lbDisplay.physical_screen_width) & 0xffff) + 0xa0000;
                                 done = 1;
                             } else {
                                 copy_dwords(dst, src, width << 3);
@@ -131,20 +131,20 @@ void set_all_refresh_zones_in_window(const s32 x1, const s32 y1, const s32 x2, c
         cy2 = y2;
         if (cx1 < 0)
             cx1 = 0;
-        else if (cx1 > lbDisplay.unknown18)
-            cx1 = lbDisplay.unknown18;
+        else if (cx1 > lbDisplay.physical_screen_width)
+            cx1 = lbDisplay.physical_screen_width;
         if (cx2 < 0)
             cx2 = 0;
-        else if (cx2 > lbDisplay.unknown18)
-            cx2 = lbDisplay.unknown18;
+        else if (cx2 > lbDisplay.physical_screen_width)
+            cx2 = lbDisplay.physical_screen_width;
         if (cy1 < 0)
             cy1 = 0;
-        else if (cy1 > lbDisplay.unknown1c)
-            cy1 = lbDisplay.unknown1c;
+        else if (cy1 > lbDisplay.physical_screen_height)
+            cy1 = lbDisplay.physical_screen_height;
         if (cy2 < 0)
             cy2 = 0;
-        else if (cy2 > lbDisplay.unknown1c)
-            cy2 = lbDisplay.unknown1c;
+        else if (cy2 > lbDisplay.physical_screen_height)
+            cy2 = lbDisplay.physical_screen_height;
         zx1 = cx1 / 32;
         zy1 = cy1 / 32;
         zx2 = cx2 / 32;

@@ -94,7 +94,7 @@ int is_checksummed_region(int region)
 // FUNCTION: 0x0001c084
 void draw_sync_progress(int percent)
 {
-    u8 was_locked = lbDisplay.unknown4 != 0;
+    u8 was_locked = lbDisplay.wscreen != 0;
 
     if (display_mode == 0) {
         char buf[32];
@@ -105,10 +105,10 @@ void draw_sync_progress(int percent)
         }
         sprintf(buf, "%s (%d%%)", misc_text->f6c, percent);
         clear_panel_info_bar();
-        LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
+        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(0x2c);
-        LbTextDraw(resvars.f1c_Struct_0015f410p->f570, resvars.f1c_Struct_0015f410p->f584 + resvars.f1c_Struct_0015f410p->f594, buf);
-        set_all_refresh_zones_in_window(0, lbDisplay.unknown1c - 0x5c, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
+        LbTextDraw(resvars.coords_Struct_0015f410p->f570, resvars.coords_Struct_0015f410p->f584 + resvars.coords_Struct_0015f410p->f594, buf);
+        set_all_refresh_zones_in_window(0, lbDisplay.physical_screen_height - 0x5c, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
         LbScreenUnlock();
         special_refresh();
         if (was_locked) {
@@ -334,12 +334,12 @@ void process_turn(void)
         LbFileRead(D_001581e8, packet, 0xf);
         LbFileRead(D_001581e8, &mouse_x, 4);
         LbFileRead(D_001581e8, &mouse_y, 4);
-        LbFileRead(D_001581e8, &gamevar.f12e, 2);
+        LbFileRead(D_001581e8, &gamevar.mouse_mode, 2);
         LbFileRead(D_001581e8, &gamevar, 0x178);
         LbFileRead(D_001581e8, &recorded_seed, 4);
         if (seed != recorded_seed) {
-            fn_000bbff0(debug.unknown116, "PLAYBACK OUT OF SYNC");
-            debug.unknown1de = 200;
+            fn_000bbff0(debug.msg_text, "PLAYBACK OUT OF SYNC");
+            debug.msg_timer = 200;
         }
         LbMouseSetPosition(mouse_x, mouse_y);
     } else if (D_001581ee & 1) {
@@ -348,29 +348,29 @@ void process_turn(void)
         LbFileWrite(D_001581e8, packet, 0xf);
         LbFileWrite(D_001581e8, &mouse_x, 4);
         LbFileWrite(D_001581e8, &mouse_y, 4);
-        LbFileWrite(D_001581e8, &gamevar.f12e, 2);
+        LbFileWrite(D_001581e8, &gamevar.mouse_mode, 2);
         LbFileWrite(D_001581e8, &gamevar, 0x178);
         LbFileWrite(D_001581e8, &seed, 4);
     }
-    if (D_001549d0[player].flags && !pmenu.unknown0) {
+    if (D_001549d0[player].flags && !pmenu.open_pulldown) {
         if (D_001549d0[player].flags & 1) {
-            scroll.unknown0 = 1;
+            scroll.up = 1;
         } else if (D_001549d0[player].flags & 2) {
-            scroll.unknown1 = 1;
+            scroll.down = 1;
         }
         if (D_001549d0[player].flags & 4) {
-            scroll.unknown2 = 1;
+            scroll.left = 1;
         } else if (D_001549d0[player].flags & 8) {
-            scroll.unknown3 = 1;
+            scroll.right = 1;
         }
         if (D_001549d0[player].flags & 0x10) {
-            goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
-            othervar.f10 = 1;
+            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+            othervar.full_redraw = 1;
         }
         D_00154a0c[player].flags = D_001549d0[player].flags;
         D_001549d0[player].flags = 0;
     }
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         D_001549d0[player].checksum = check_sum();
         sprintf(buf, "size of pac %ld", 0xf);
         if (!fn_00086b60()) {
@@ -424,8 +424,8 @@ void process_turn(void)
         }
     }
     for (i = 0; i < 4; i++) {
-        othervar.ff = i;
-        if (allhosps[i].f2b != 2) {
+        othervar.cur_player = i;
+        if (allhosps[i].playing != 2) {
             switch (D_001549d0[i].type) {
             case 0x1c:
             case 0x7e:
@@ -462,7 +462,7 @@ void process_turn(void)
             break;
         case 0x14:
             if (i == player) {
-                crequester.unknown4 = 1;
+                crequester.arg = 1;
                 set_buyable_items(3);
             }
             break;
@@ -476,11 +476,11 @@ void process_turn(void)
             commit_doors(i);
             break;
         case 5: {
-            u8 empty = !allhosps[i].f11f4;
+            u8 empty = !allhosps[i].held_staff;
 
             if (place_staff_on_map(D_001549d0[i].value, D_001549d0[i].arg, 0, i)) {
                 if (empty) {
-                    change_balance(TX_HIRE_STAFF, -(thing[D_001549d0[i].arg].salary * 12) / 10, 0, othervar.ff);
+                    change_balance(TX_HIRE_STAFF, -(thing[D_001549d0[i].arg].salary * 12) / 10, 0, othervar.cur_player);
                 }
                 if (i == player) {
                     play_sound(10, SFX_PLAC_ST2, -1, -1);
@@ -511,7 +511,7 @@ void process_turn(void)
             case 1:
                 j = get_playercall(1, D_001549d0[i].arg, i);
                 if (j) {
-                    if (i == player && othervar.f8b1) {
+                    if (i == player && othervar.user_idle) {
                         open_staff_resign_requester(&thing[j]);
                     }
                 }
@@ -526,8 +526,8 @@ void process_turn(void)
                 break;
             case 3:
                 get_playercall(3, 0, i);
-                if (allhosps[i].f205) {
-                    allhosps[i].f203 = allhosps[i].f205 * gbv.f12e;
+                if (allhosps[i].contagious_count) {
+                    allhosps[i].epidemic_fine = allhosps[i].contagious_count * gbv.epidemic_fine;
                     display_choice_screen(i, 5, 0, 0);
                 }
                 break;
@@ -541,20 +541,20 @@ void process_turn(void)
                 j = get_playercall(5, 0, i);
                 switch (j) {
                 case 1:
-                    allhosps[i].f1e2 = 0;
+                    allhosps[i].emergency_state = 0;
                     if (i == player) {
                         display_choice_screen(i, 3, 0, 400);
                     }
                     break;
                 case 2:
-                    allhosps[i].f1fa = 0;
+                    allhosps[i].mayor_state = 0;
                     if (i == player) {
                         display_choice_screen(i, 9, 0, 400);
                     }
                     break;
                 case 3:
-                    allhosps[i].f20e = 0;
-                    display_choice_screen(i, 6, allhosps[i].f20c, 400);
+                    allhosps[i].epidemic_over = 0;
+                    display_choice_screen(i, 6, allhosps[i].inspected_illness, 400);
                     break;
                 }
                 break;
@@ -582,11 +582,11 @@ void process_turn(void)
             break;
         case 0xc:
             if (i == player) {
-                if (othervar.fa0e[D_001549d0[i].value] == 1) {
-                    if (allhosps[i].f11f4) {
-                        place_staff_on_map(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
-                    } else if (gamevar.unknown75) {
-                        req2_exit_employing(gamevar.unknown75);
+                if (othervar.save_slot_used[D_001549d0[i].value] == 1) {
+                    if (allhosps[i].held_staff) {
+                        place_staff_on_map(allhosps[i].held_staff_tile, allhosps[i].held_staff, 1, i);
+                    } else if (gamevar.held_staff) {
+                        req2_exit_employing(gamevar.held_staff);
                     }
                     close_yes_no_requester(0x63);
                     set_mouse_mode(MM_NORMAL);
@@ -613,38 +613,38 @@ void process_turn(void)
             break;
         case EV_REQ1_RESET_ROOMS:
             if (i == player) {
-                crequester.unknown4 = D_001549d0[i].value;
-                crequester.unknown0 = 4;
-                req1_reset_rooms(crequester.unknown4);
+                crequester.arg = D_001549d0[i].value;
+                crequester.mode = 4;
+                req1_reset_rooms(crequester.arg);
             }
             break;
         case 0x35:
             init_blueprint(i, D_001549d0[i].value);
             if (i == player) {
-                crequester.unknown8 = D_001549d0[i].value;
-                set_buyable_items(crequester.unknown8);
-                buy_compulsory_items(crequester.unknown8);
-                close_crequester(crequester.unknown2);
+                crequester.kind = D_001549d0[i].value;
+                set_buyable_items(crequester.kind);
+                buy_compulsory_items(crequester.kind);
+                close_crequester(crequester.id);
                 set_mouse_mode(MM_BLUEPRINT);
                 open_edit_room_requester();
                 set_edit_room_requester_mode(0);
-                pmenu.unknown7 = 0;
+                pmenu.disabled = 0;
             }
             allocate_roominfo(i, D_001549d0[i].value);
             break;
         case 0x1c:
             if (i == player) {
-                if (crequester.unknown2 == 4) {
+                if (crequester.id == 4) {
                     close_crequester(4);
-                    pmenu.unknown7 = 0;
+                    pmenu.disabled = 0;
                 }
             }
-            if (statvar.unknownfd > 1) {
+            if (statvar.num_players > 1) {
                 LbNetwork_Stop();
-                if (othervar.fa4f) {
+                if (othervar.music_playing) {
                     stop_midi();
                 }
-                statvar.unknownfd = 1;
+                statvar.num_players = 1;
                 player = 0;
                 find_other_player(-1);
             }
@@ -663,7 +663,7 @@ void process_turn(void)
                             D_001581ef = 1;
                         }
                         LbFileClose(D_001581e8);
-                        sprintf(name, "%ssave/hosp.r%d", statvar.f575, D_001581ef);
+                        sprintf(name, "%ssave/hosp.r%d", statvar.save_root, D_001581ef);
                         D_001581e8 = LbFileOpen(name, 2);
                         if (D_001581e8 > 0) {
                             D_001581ee |= 2;
@@ -676,39 +676,39 @@ void process_turn(void)
         case 0x1e:
             if (i == player) {
                 if (load_game((s8)D_001549d0[i].value, -1) == 0) {
-                    goto_cell_in_window(0, get_room_info(1, 0x65, othervar.ff)->unknown4);
-                    othervar.f10 = 1;
+                    goto_cell_in_window(0, get_room_info(1, 0x65, othervar.cur_player)->door_tile);
+                    othervar.full_redraw = 1;
                 }
             }
             break;
         case EV_GOTO_COLUMN_ROW:
-            goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
-            othervar.fa5c = 1;
-            othervar.f10 = 1;
+            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+            othervar.show_level_brief = 1;
+            othervar.full_redraw = 1;
             break;
         case 0x21:
             break;
         case EV_PAUSE:
-            yearend.unknown0--;
-            if (display_mode != 8 || yearend.unknown0 == 0) {
-                gamevar.unknown21 = !gamevar.unknown21;
+            yearend.value--;
+            if (display_mode != 8 || yearend.value == 0) {
+                gamevar.paused = !gamevar.paused;
                 if (i == player) {
                     int handle;
 
-                    if (gamevar.unknown21) {
+                    if (gamevar.paused) {
                         StopAllSamples();
-                        othervar.fa69 = 0x32;
-                        if (othervar.fa4f) {
+                        othervar.panel_info_hold = 0x32;
+                        if (othervar.music_playing) {
                             handle = GetSongHandle();
                             AIL_stop_sequence(handle);
-                            othervar.fa4f = 0;
+                            othervar.music_playing = 0;
                         }
                     } else {
-                        othervar.fa69 = 0x32;
-                        if (myplayer.unknown11 && statvar.unknowne5 && othervar.f9b9) {
+                        othervar.panel_info_hold = 0x32;
+                        if (myplayer.music_on && statvar.music_ok && othervar.midi_playing) {
                             handle = GetSongHandle();
                             AIL_resume_sequence(handle);
-                            othervar.fa4f = 1;
+                            othervar.music_playing = 1;
                         }
                     }
                 }
@@ -716,17 +716,17 @@ void process_turn(void)
             break;
         case 0x26:
             if (i == player) {
-                close_crequester(crequester.unknown2);
+                close_crequester(crequester.id);
                 close_irequesters();
-                set_mouse_sprite(othervar.f31);
-                pmenu.unknown7 = 0;
+                set_mouse_sprite(othervar.prev_pointer_sprite);
+                pmenu.disabled = 0;
             }
             break;
         case 0x27:
             if (i == player) {
-                close_crequester(crequester.unknown2);
-                set_mouse_sprite(othervar.f31);
-                pmenu.unknown7 = 0;
+                close_crequester(crequester.id);
+                set_mouse_sprite(othervar.prev_pointer_sprite);
+                pmenu.disabled = 0;
             }
             break;
         case EV_BUY_OBJECT:
@@ -738,12 +738,12 @@ void process_turn(void)
             if (i == player) {
                 u16 k;
 
-                close_crequester(crequester.unknown2);
+                close_crequester(crequester.id);
                 k = next_object_to_build();
                 if (k) {
                     init_place_object(k, 2, 0, 0);
                 }
-                pmenu.unknown7 = 0;
+                pmenu.disabled = 0;
             }
             break;
         case 0x29:
@@ -757,55 +757,55 @@ void process_turn(void)
         case 0x2e:
             if (i == player) {
                 cancel_top_level_requesters(0xb);
-                if (crequester.unknown2 == 0x63) {
+                if (crequester.id == 0x63) {
                     req2_reset();
                     close_irequesters();
-                    open_requester(crequester.unknown2, 1);
+                    open_requester(crequester.id, 1);
                     set_mouse_sprite(1);
-                    pmenu.unknown7 = 1;
+                    pmenu.disabled = 1;
                 }
             }
             break;
         case 0x2f:
             if (i == player) {
-                crequester.unknown0 = 2;
-                crequester.unknown4 = D_001549d0[i].value;
-                crequester.unknown6 = req2_alter_staff(1, 0, crequester.unknown4);
+                crequester.mode = 2;
+                crequester.arg = D_001549d0[i].value;
+                crequester.arg2 = req2_alter_staff(1, 0, crequester.arg);
             }
             break;
         case EV_MARK_EMPLOYING:
             if (i == player) {
                 if (thing[D_001549d0[i].arg].state != PS_WAITS_FOR_DECISION) {
-                    close_crequester(crequester.unknown2);
-                    gamevar.unknown77 = D_001549d0[i].value;
-                    gamevar.unknown75 = D_001549d0[i].arg;
-                    gamevar.unknown79 = 0xffff;
+                    close_crequester(crequester.id);
+                    gamevar.held_staff_kind = D_001549d0[i].value;
+                    gamevar.held_staff = D_001549d0[i].arg;
+                    gamevar.drawn_staff_kind = 0xffff;
                     set_mouse_mode(MM_PLACE_STAFF);
-                    pmenu.unknown7 = 0;
+                    pmenu.disabled = 0;
                 }
             }
             req2_mark_employing(D_001549d0[i].arg);
             break;
         case 0x32:
             if (i == player) {
-                crequester.unknown6 = req2_alter_staff((u8)D_001549d0[i].value, crequester.unknown6, crequester.unknown4);
+                crequester.arg2 = req2_alter_staff((u8)D_001549d0[i].value, crequester.arg2, crequester.arg);
             }
             break;
         case EV_CLOSE_SCREEN:
             if (display_mode != 0) {
                 display_mode = 0;
-                othervar.f10 = 1;
+                othervar.full_redraw = 1;
                 D_00156910 = 1;
-                othervar.f1f = palette;
+                othervar.fade_palette = palette;
             }
             break;
         case EV_OPEN_SCREEN:
-            if (i == player && gamevar.f12e == 0xe) {
+            if (i == player && gamevar.mouse_mode == 0xe) {
                 play_sound(10, SFX_WRONG2, -1, -1);
                 break;
             }
-            if (allhosps[i].f11f4) {
-                place_staff_on_map(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
+            if (allhosps[i].held_staff) {
+                place_staff_on_map(allhosps[i].held_staff_tile, allhosps[i].held_staff, 1, i);
             }
             update_cure_costs();
             if (i == player) {
@@ -813,51 +813,51 @@ void process_turn(void)
                 chart_type = D_001549d0[i].value;
                 switch (chart_type) {
                 case 0:
-                    bank.unknown2 = 0;
+                    bank.state = 0;
                     break;
                 case 1:
-                    drugs.unknown2 = 0;
+                    drugs.state = 0;
                     break;
                 case 2:
-                    pol.unknown2 = 0;
+                    pol.state = 0;
                     break;
                 case 3:
-                    research.unknown2 = 0;
+                    research.state = 0;
                     break;
                 case 4:
-                    graphs.unknown2 = 0;
+                    graphs.state = 0;
                     break;
                 case 5:
-                    slist.unknown2 = 0;
+                    slist.state = 0;
                     break;
                 case 6:
                     calculate_value(player);
-                    manager.unknown2 = 0;
+                    manager.state = 0;
                     break;
                 case 7:
                     D_00158166 = 0;
                     calculate_value(player);
                     break;
                 case 8:
-                    reputation.unknown2 = 0;
+                    reputation.state = 0;
                     break;
                 case 9:
-                    variables.unknown2 = 0;
+                    variables.state = 0;
                     break;
                 case 0xd:
-                    yearend.unknown2 = 0;
+                    yearend.state = 0;
                     break;
                 case 0xf:
-                    hall.unknown2 = 0;
+                    hall.state = 0;
                     break;
                 }
-                othervar.f10 = 1;
+                othervar.full_redraw = 1;
                 D_00156910 = 1;
             }
             break;
         case EV_BUY_LAND:
-            if (statvar.unknownfd > 1) {
-                town.unknown2 = 1;
+            if (statvar.num_players > 1) {
+                town.state = 1;
             }
             buy_land(D_001549d0[i].value);
             satisfied_net_criteria(3, i);
@@ -865,37 +865,37 @@ void process_turn(void)
         case 0x37:
             if (i == player) {
                 cancel_top_level_requesters(9);
-                if (crequester.unknown2 == 0x63) {
-                    crequester.unknown2 = 9;
-                    crequester.unknown0 = 1;
+                if (crequester.id == 0x63) {
+                    crequester.id = 9;
+                    crequester.mode = 1;
                     close_irequesters();
-                    open_requester(crequester.unknown2, 1);
-                    crequester.unknown6 = 0;
+                    open_requester(crequester.id, 1);
+                    crequester.arg2 = 0;
                     set_mouse_sprite(1);
-                    crequester.unknown8 = 0;
+                    crequester.kind = 0;
                     crequester.unknown9 = 0;
                     clear_req_indices();
-                    pmenu.unknown7 = 1;
+                    pmenu.disabled = 1;
                 }
             }
             break;
         case 0x3b:
             if (i == player) {
-                if (crequester.unknown2 == 0x63 && &room_info[D_001549d0[i].value] > room_info) {
-                    crequester.unknown2 = 6;
-                    crequester.unknown0 = 0;
-                    crequester.unknown4 = 0;
-                    crequester.unknown6 = 0;
-                    crequester.unknown8 = 0;
+                if (crequester.id == 0x63 && &room_info[D_001549d0[i].value] > room_info) {
+                    crequester.id = 6;
+                    crequester.mode = 0;
+                    crequester.arg = 0;
+                    crequester.arg2 = 0;
+                    crequester.kind = 0;
                     crequester.unknown9 = 0;
                     crequester.unknownA = 0;
                     close_irequesters();
-                    open_requester(crequester.unknown2, 1);
+                    open_requester(crequester.id, 1);
                     set_mouse_sprite(1);
-                    othervar.f63 = 0;
-                    othervar.f61 = D_001549d0[i].value;
+                    othervar.queue_pos = 0;
+                    othervar.queue_win_room = D_001549d0[i].value;
                     othervar.f65 = D_001549d0[i].arg;
-                    pmenu.unknown7 = 1;
+                    pmenu.disabled = 1;
                 }
             }
             break;
@@ -906,8 +906,8 @@ void process_turn(void)
             back_queue(D_001549d0[i].value, D_001549d0[i].arg);
             break;
         case 0x38:
-            if (allhosps[i].f11f4) {
-                place_staff_on_map(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
+            if (allhosps[i].held_staff) {
+                place_staff_on_map(allhosps[i].held_staff_tile, allhosps[i].held_staff, 1, i);
             } else if (D_001549d0[i].value) {
                 req2_exit_employing(D_001549d0[i].value);
             }
@@ -923,14 +923,14 @@ void process_turn(void)
                     close_crequester(0xc);
                     close_crequester(5);
                     close_irequesters();
-                    gamevar.unknown75 = 0;
-                    gamevar.unknown77 = 0;
-                    gamevar.unknown25 = 0;
-                    gamevar.unknown1e = 0;
+                    gamevar.held_staff = 0;
+                    gamevar.held_staff_kind = 0;
+                    gamevar.place_kind = 0;
+                    gamevar.place_blueprint = 0;
                     set_mouse_mode(MM_NORMAL);
-                    pmenu.unknown7 = 0;
+                    pmenu.disabled = 0;
                 } else {
-                    init_place_object(0x11, gamevar.unknown26, gamevar.unknown2f, 0);
+                    init_place_object(0x11, gamevar.place_mode, gamevar.place_room, 0);
                 }
             }
             break;
@@ -972,18 +972,18 @@ void process_turn(void)
                 }
                 if (slot) {
                     close_irequesters();
-                    othervar.f9b8 = slot;
+                    othervar.irequester_slot = slot;
                     open_requester(D_001581b2[slot].kind, 1);
                     D_001581b2[slot].value = D_001549d0[i].value;
                     set_mouse_sprite(1);
                 }
                 if (kind) {
-                    int x = resvars.f20[slot].x;
-                    int y = resvars.f20[slot].y;
+                    int x = resvars.window_list[slot].x;
+                    int y = resvars.window_list[slot].y;
 
-                    open_new_window(0, 0, 0, x + resvars.f18_Rectp[kind].x0, y + resvars.f18_Rectp[kind].y0, x + resvars.f18_Rectp[kind].x1, y + resvars.f18_Rectp[kind].y1);
-                    othervar.f34[slot] = window.unknown2ec - 1;
-                    window.unknown2eb = 0;
+                    open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0, x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
+                    othervar.track_window[slot] = window.window_count - 1;
+                    window.current_window = 0;
                 }
             }
             break;
@@ -1013,41 +1013,41 @@ void process_turn(void)
             break;
         case EV_PAY_STAFF_BONUS:
             if (D_001549d0[i].arg) {
-                if (allhosps[i].f35 >= D_001549d0[i].value && allhosps[i].f35 > 0) {
+                if (allhosps[i].balance >= D_001549d0[i].value && allhosps[i].balance > 0) {
                     pay_staff_bonus(&thing[D_001549d0[i].arg], D_001549d0[i].value, 0, 1, i);
                 }
             } else {
-                if (allhosps[i].f35 >= pay_staff_bonus(0, D_001549d0[i].value, 0, 0, i) && allhosps[i].f35 > 0) {
+                if (allhosps[i].balance >= pay_staff_bonus(0, D_001549d0[i].value, 0, 0, i) && allhosps[i].balance > 0) {
                     pay_staff_bonus(0, D_001549d0[i].value, 0, 1, i);
                 }
             }
             break;
         case EV_INIT_EDIT_ROOM:
-            othervar.f9c5 = 1;
+            othervar.editing_room = 1;
             init_edit_room(&room_info[D_001549d0[i].value]);
             break;
         case 0x49:
             if (i == player) {
-                if (crequester.unknown2 == 0x63) {
-                    crequester.unknown2 = 0xd;
-                    crequester.unknown0 = 1;
-                    crequester.unknown4 = 0;
-                    crequester.unknown6 = 0;
-                    crequester.unknown8 = 0;
+                if (crequester.id == 0x63) {
+                    crequester.id = 0xd;
+                    crequester.mode = 1;
+                    crequester.arg = 0;
+                    crequester.arg2 = 0;
+                    crequester.kind = 0;
                     crequester.unknown9 = 0;
                     crequester.unknownA = 0;
                     close_irequesters();
-                    open_requester(crequester.unknown2, 1);
+                    open_requester(crequester.id, 1);
                     set_mouse_sprite(1);
-                    pmenu.unknown7 = 1;
+                    pmenu.disabled = 1;
                 }
             }
             break;
         case 0x4a:
-            allhosps[i].f1e2 = 10;
-            allhosps[i].f1d9 = 100;
-            allhosps[i].f1e5 = 0;
-            othervar.fa51 = allhosps[i].f1d9;
+            allhosps[i].emergency_state = 10;
+            allhosps[i].emergency_timer = 100;
+            allhosps[i].emergency_cured = 0;
+            othervar.emergency_timer_start = allhosps[i].emergency_timer;
             if (i == player) {
                 return_from_screen(0, 1, 1);
             }
@@ -1056,7 +1056,7 @@ void process_turn(void)
             if (D_001549d0[i].value & (1 << player)) {
                 net_text_display(i);
             }
-            net_text[i].unknown0 = 0;
+            net_text[i].text = 0;
             break;
         case EV_NET_TEXT_DELETE:
             net_text_delete(i);
@@ -1065,14 +1065,14 @@ void process_turn(void)
             net_text_keypress(D_001549d0[i].value, i);
             break;
         case 0x4e:
-            net_text[i].unknown0 = 0;
+            net_text[i].text = 0;
             if (i == player) {
-                othervar.f4a = 1;
+                othervar.net_text_entering = 1;
             }
             break;
         case 0x4f:
-            if (allhosps[i].fc95 == 0) {
-                allhosps[i].fc94 = D_001549d0[i].value;
+            if (allhosps[i].heating_broken == 0) {
+                allhosps[i].heating_level = D_001549d0[i].value;
             }
             break;
         case EV_ALTER_RESEARCH:
@@ -1085,13 +1085,13 @@ void process_turn(void)
             }
             break;
         case 0x53:
-            if (room_info[D_001549d0[i].value].f1e < 0x1e) {
-                room_info[D_001549d0[i].value].f1e++;
+            if (room_info[D_001549d0[i].value].queue_capacity < 0x1e) {
+                room_info[D_001549d0[i].value].queue_capacity++;
             }
             break;
         case 0x54:
-            if (room_info[D_001549d0[i].value].f1e) {
-                room_info[D_001549d0[i].value].f1e--;
+            if (room_info[D_001549d0[i].value].queue_capacity) {
+                room_info[D_001549d0[i].value].queue_capacity--;
             }
             break;
         case EV_QUEUE_PERSON_GO_RECEPTION:
@@ -1103,16 +1103,16 @@ void process_turn(void)
                 display_mode = 0;
                 close_crequester(0xc);
                 close_irequesters();
-                window.unknown2eb = 0;
-                pmenu.unknown7 = 0;
+                window.current_window = 0;
+                pmenu.disabled = 0;
             }
             break;
         case EV_SETUP_TOWN_BID:
             finish_composite_help();
             setup_town_bid();
             display_mode = 0xe;
-            town.unknown2 = 0xb;
-            othervar.f78 = D_001549d0[i].value;
+            town.state = 0xb;
+            othervar.bid_plot = D_001549d0[i].value;
             break;
         case EV_PLOT_BID_MONEY:
             plot_bid_money(i);
@@ -1128,16 +1128,16 @@ void process_turn(void)
             if (i == player) {
                 close_irequesters();
                 close_crequester(5);
-                othervar.f8b7 = gamevar.unknown33;
-                adjust_build_palette_for_shop(&room_info[allhosps[i].unknown11b7]);
-                set_buyable_items(room_info[allhosps[i].unknown11b7].type);
-                crequester.unknown2 = 10;
-                open_requester(crequester.unknown2, 1);
-                crequester.unknown8 = allhosps[i].f11bc;
-                crequester.unknown9 = room_info[allhosps[i].unknown11b7].f8;
-                crequester.unknown0 = 3;
-                crequester.unknown3 = req_indices[0];
-                pmenu.unknown7 = 0;
+                othervar.saved_build_palette = gamevar.buy_list;
+                adjust_build_palette_for_shop(&room_info[allhosps[i].edited_room]);
+                set_buyable_items(room_info[allhosps[i].edited_room].type);
+                crequester.id = 10;
+                open_requester(crequester.id, 1);
+                crequester.kind = allhosps[i].f11bc;
+                crequester.unknown9 = room_info[allhosps[i].edited_room].f8;
+                crequester.mode = 3;
+                crequester.item = req_indices[0];
+                pmenu.disabled = 0;
             }
             break;
         case EV_BACK_TO_PLACE_OBJECT:
@@ -1168,18 +1168,18 @@ void process_turn(void)
         case 0x62:
             if (i == player) {
                 cancel_top_level_requesters(10);
-                if (crequester.unknown2 == 0x63) {
-                    crequester.unknown4 = 1;
+                if (crequester.id == 0x63) {
+                    crequester.arg = 1;
                     set_buyable_items(3);
                     close_irequesters();
-                    crequester.unknown2 = 10;
-                    open_requester(crequester.unknown2, 1);
-                    allhosps[i].unknown11b7 = 0;
-                    crequester.unknown8 = 3;
+                    crequester.id = 10;
+                    open_requester(crequester.id, 1);
+                    allhosps[i].edited_room = 0;
+                    crequester.kind = 3;
                     crequester.unknown9 = 0;
-                    crequester.unknown0 = 3;
-                    crequester.unknown3 = req_indices[0];
-                    pmenu.unknown7 = 1;
+                    crequester.mode = 3;
+                    crequester.item = req_indices[0];
+                    pmenu.disabled = 1;
                 }
             }
             break;
@@ -1192,28 +1192,28 @@ void process_turn(void)
             if (i == player) {
                 close_crequester(10);
                 close_irequesters();
-                set_mouse_sprite(othervar.f31);
-                pmenu.unknown7 = 0;
+                set_mouse_sprite(othervar.prev_pointer_sprite);
+                pmenu.disabled = 0;
             }
             break;
         case 0x65:
-            mycontrol->unknown64f = calendar[mycontrol->unknown650] - 1;
+            mycontrol->day = calendar[mycontrol->month] - 1;
             break;
         case 0x66:
             change_balance(TX_BANK_LOAN, 5000, 0, i);
-            allhosps[i].f3d += 5000;
+            allhosps[i].loan += 5000;
             break;
         case 0x67:
-            if (allhosps[i].f35 >= 5000 && allhosps[i].f35 > 0) {
+            if (allhosps[i].balance >= 5000 && allhosps[i].balance > 0) {
                 change_balance(TX_LOAN_REPAYMENT, -5000, 0, i);
-                allhosps[i].f3d -= 5000;
+                allhosps[i].loan -= 5000;
             }
             break;
         case 0x57:
             patient = &thing[D_001549d0[i].value];
-            allhosps[patient->owner].rooms[patient->illness].unknown24++;
+            allhosps[patient->owner].rooms[patient->illness].turned_away++;
             if (patient->flags0 & PF_CONTAGIOUS) {
-                allhosps[patient->owner].f207 = 0;
+                allhosps[patient->owner].epidemic_timer = 0;
             }
             refer_patient(patient, D_001549d0[i].arg);
             if (i == player) {
@@ -1223,7 +1223,7 @@ void process_turn(void)
             break;
         case 0x68:
             employee = &thing[D_001549d0[i].value];
-            allhosps[i].f11f4 = D_001549d0[i].value;
+            allhosps[i].held_staff = D_001549d0[i].value;
             if (!(employee->orders & ORD_RESIGN)) {
                 if (fn_0002d11c(employee)) {
                     interrupt_staff(employee);
@@ -1260,14 +1260,14 @@ void process_turn(void)
                 }
                 break;
             }
-            award_counts.f151++;
-            allhosps[i].fd29++;
+            award_counts.rat_shots++;
+            allhosps[i].rat_shots++;
             if (D_001549d0[i].argb[1]) {
-                award_counts.f14d++;
+                award_counts.rats_killed++;
                 if (i == player) {
                     play_sound(10, SFX_DEADRAT2, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
-                create_numfx(NUMFX_NUMBER, ++allhosps[i].fd27, rat->x.tile + (rat->y.tile << 7), color.unknown9, 0x20);
+                create_numfx(NUMFX_NUMBER, ++allhosps[i].rats_killed, rat->x.tile + (rat->y.tile << 7), color.dark_blue, 0x20);
                 place_litter(rat->x.tile + (rat->y.tile << 7), (s8)rat->owner, 4);
                 remove_thing(rat);
             }
@@ -1280,7 +1280,7 @@ void process_turn(void)
                     sack_staff(&thing[D_001549d0[i].value], 1);
                 } else {
                     employee->orders &= 0xdf;
-                    advisor.f128 &= 0xfe;
+                    advisor.event_flags &= 0xfe;
                     employee->discontent = 0;
                     reset_icon_value(&thing[D_001549d0[i].value], ICON_LEAVING);
                 }
@@ -1288,16 +1288,16 @@ void process_turn(void)
                     display_mode = 0;
                     close_crequester(0xc);
                     close_irequesters();
-                    window.unknown2eb = 0;
+                    window.current_window = 0;
                 }
-                pmenu.unknown7 = 0;
+                pmenu.disabled = 0;
             }
             break;
         case 0x6c:
             employee = &thing[D_001549d0[i].value];
             if (employee > thing) {
                 employee->orders &= 0xdf;
-                advisor.f128 &= 0xfe;
+                advisor.event_flags &= 0xfe;
                 employee->salary += D_001549d0[i].arg;
                 employee->happiness = 100;
                 employee->discontent = 0;
@@ -1307,15 +1307,15 @@ void process_turn(void)
                 display_mode = 0;
                 close_crequester(0xc);
                 close_irequesters();
-                window.unknown2eb = 0;
-                pmenu.unknown7 = 0;
+                window.current_window = 0;
+                pmenu.disabled = 0;
             }
             break;
         case 0x6d:
             employee = &thing[D_001549d0[i].value];
             if (employee > thing) {
                 employee->orders &= 0xdf;
-                advisor.f128 &= 0xfe;
+                advisor.event_flags &= 0xfe;
                 pay_staff_bonus(employee, D_001549d0[i].arg, 0, 1, i);
                 employee->happiness = 100;
                 employee->discontent = 0;
@@ -1325,22 +1325,22 @@ void process_turn(void)
                 display_mode = 0;
                 close_crequester(0xc);
                 close_irequesters();
-                window.unknown2eb = 0;
-                pmenu.unknown7 = 0;
+                window.current_window = 0;
+                pmenu.disabled = 0;
             }
             break;
         case 0x6e: {
             int illness = D_001549d0[i].arg;
             int max_price = max_price_for_treatment(illness, i);
 
-            if (allhosps[i].rooms[illness].unknown10 < 20000) {
-                allhosps[i].rooms[illness].unknown10 += D_001549d0[i].value * 100;
-                if (allhosps[i].rooms[illness].unknown10 < 5000) {
-                    allhosps[i].rooms[illness].unknown10 = 5000;
-                } else if (allhosps[i].rooms[illness].unknown10 > 20000) {
-                    allhosps[i].rooms[illness].unknown10 = 20000;
+            if (allhosps[i].rooms[illness].price_scale < 20000) {
+                allhosps[i].rooms[illness].price_scale += D_001549d0[i].value * 100;
+                if (allhosps[i].rooms[illness].price_scale < 5000) {
+                    allhosps[i].rooms[illness].price_scale = 5000;
+                } else if (allhosps[i].rooms[illness].price_scale > 20000) {
+                    allhosps[i].rooms[illness].price_scale = 20000;
                 }
-                allhosps[i].rooms[illness].unknownC = allhosps[i].rooms[illness].unknown10 * max_price / 10000;
+                allhosps[i].rooms[illness].price = allhosps[i].rooms[illness].price_scale * max_price / 10000;
             }
             break;
         }
@@ -1348,19 +1348,19 @@ void process_turn(void)
             int illness = D_001549d0[i].arg;
             int max_price = max_price_for_treatment(illness, i);
 
-            if (allhosps[i].rooms[illness].unknown10 > 5000) {
-                allhosps[i].rooms[illness].unknown10 -= D_001549d0[i].value * 100;
-                if (allhosps[i].rooms[illness].unknown10 < 5000) {
-                    allhosps[i].rooms[illness].unknown10 = 5000;
-                } else if (allhosps[i].rooms[illness].unknown10 > 20000) {
-                    allhosps[i].rooms[illness].unknown10 = 20000;
+            if (allhosps[i].rooms[illness].price_scale > 5000) {
+                allhosps[i].rooms[illness].price_scale -= D_001549d0[i].value * 100;
+                if (allhosps[i].rooms[illness].price_scale < 5000) {
+                    allhosps[i].rooms[illness].price_scale = 5000;
+                } else if (allhosps[i].rooms[illness].price_scale > 20000) {
+                    allhosps[i].rooms[illness].price_scale = 20000;
                 }
-                allhosps[i].rooms[illness].unknownC = allhosps[i].rooms[illness].unknown10 * max_price / 10000;
+                allhosps[i].rooms[illness].price = allhosps[i].rooms[illness].price_scale * max_price / 10000;
             }
             break;
         }
         case EV_RETURN_FROM_SCREEN:
-            if (othervar.ff == player) {
+            if (othervar.cur_player == player) {
                 lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
                 return_from_screen(D_001549d0[i].value, 1, 1);
             }
@@ -1368,42 +1368,42 @@ void process_turn(void)
         case 0x71:
             switch (D_001549d0[i].value) {
             case 1:
-                if (D_001549d0[i].arg <= allhosps[i].f219) {
-                    allhosps[i].f21b = D_001549d0[i].arg;
+                if (D_001549d0[i].arg <= allhosps[i].guess_cure_threshold) {
+                    allhosps[i].send_home_threshold = D_001549d0[i].arg;
                 } else {
-                    allhosps[i].f21b = allhosps[i].f219;
+                    allhosps[i].send_home_threshold = allhosps[i].guess_cure_threshold;
                 }
                 break;
             case 2:
-                if (D_001549d0[i].arg >= allhosps[i].f21b) {
-                    allhosps[i].f219 = D_001549d0[i].arg;
+                if (D_001549d0[i].arg >= allhosps[i].send_home_threshold) {
+                    allhosps[i].guess_cure_threshold = D_001549d0[i].arg;
                 } else {
-                    allhosps[i].f219 = allhosps[i].f21b;
+                    allhosps[i].guess_cure_threshold = allhosps[i].send_home_threshold;
                 }
                 break;
             case 3:
-                allhosps[i].f217 = D_001549d0[i].arg;
+                allhosps[i].diag_threshold = D_001549d0[i].arg;
                 break;
             case 4:
-                allhosps[i].f21d = D_001549d0[i].arg;
+                allhosps[i].rest_threshold = D_001549d0[i].arg;
                 break;
             case 5:
-                allhosps[i].f21f = D_001549d0[i].arg;
+                allhosps[i].staff_leave_rooms = D_001549d0[i].arg;
                 break;
             }
             break;
         case 0x72:
-            if (D_001549d0[i].value == (statvar.unknownfd > 1 ? allhosps[i].unknown1256 : gamevar.f136)) {
-                if (statvar.unknownfd > 1) {
-                    allhosps[i].unknown1256 = 0;
+            if (D_001549d0[i].value == (statvar.num_players > 1 ? allhosps[i].hospital_open : gamevar.research_illness)) {
+                if (statvar.num_players > 1) {
+                    allhosps[i].hospital_open = 0;
                 } else {
-                    gamevar.f136 = 0;
+                    gamevar.research_illness = 0;
                 }
             } else {
-                if (statvar.unknownfd > 1) {
-                    allhosps[i].unknown1256 = D_001549d0[i].value;
+                if (statvar.num_players > 1) {
+                    allhosps[i].hospital_open = D_001549d0[i].value;
                 } else {
-                    gamevar.f136 = D_001549d0[i].value;
+                    gamevar.research_illness = D_001549d0[i].value;
                 }
             }
             break;
@@ -1413,39 +1413,39 @@ void process_turn(void)
         case EV_PERSON_GO_HOME:
             patient = &thing[D_001549d0[i].value];
             patient->treatment = 0;
-            allhosps[patient->owner].rooms[patient->illness].unknown24++;
+            allhosps[patient->owner].rooms[patient->illness].turned_away++;
             person_go_home(patient);
             patient->flags1 |= (PF_SENT_HOME >> 8);
             if (patient->flags0 & PF_CONTAGIOUS) {
-                allhosps[patient->owner].f207 = 0;
+                allhosps[patient->owner].epidemic_timer = 0;
             }
             break;
         case EV_THINGPAGE_REQUEST:
-            thingpage_request(&allhosps[i].ff6d, D_001549d0[i].value, 0xff);
+            thingpage_request(&allhosps[i].repair_pager, D_001549d0[i].value, 0xff);
             set_icon_value(&thing[D_001549d0[i].value], ICON_NEEDS_REPAIR);
             break;
         case 0x77:
             if (i == player) {
-                if (othervar.fa65) {
+                if (othervar.screen_pic_loaded) {
                     return_from_screen(0, 1, 1);
                 }
-                othervar.f9c4 = gamevar.f12e;
+                othervar.yesno_saved_mouse_mode = gamevar.mouse_mode;
                 display_mode = 0xb;
                 close_irequesters();
-                othervar.f9c3 = crequester.unknown2;
-                if (crequester.unknown2 != 0x63) {
-                    close_crequester(crequester.unknown2);
+                othervar.yesno_saved_requester = crequester.id;
+                if (crequester.id != 0x63) {
+                    close_crequester(crequester.id);
                 }
-                crequester.unknown2 = 4;
-                open_requester(crequester.unknown2, 1);
-                pmenu.unknown7 = 1;
+                crequester.id = 4;
+                open_requester(crequester.id, 1);
+                pmenu.disabled = 1;
             }
             break;
         case 0x78:
             if (i == player) {
                 close_yes_no_requester((u8)D_001549d0[i].value);
-                if (othervar.f9b1) {
-                    set_mouse_mode((u8)othervar.f9b1);
+                if (othervar.no_arg) {
+                    set_mouse_mode((u8)othervar.no_arg);
                     lbDisplay.left_button = 0;
                 }
             }
@@ -1455,7 +1455,7 @@ void process_turn(void)
             clear_build_objects(i);
             delete_blueprint_room(i);
             D_001549d0[i].type = 0x38;
-            D_001549d0[i].arg = gamevar.f12e;
+            D_001549d0[i].arg = gamevar.mouse_mode;
             goto dispatch;
         case 0x7b:
             fn_0002994c(i);
@@ -1473,7 +1473,7 @@ void process_turn(void)
                 patient = &thing[D_001549d0[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = 0;
-                    allhosps[patient->owner].rooms[patient->illness].unknown24++;
+                    allhosps[patient->owner].rooms[patient->illness].turned_away++;
                     person_go_home(patient);
                     patient->flags2 |= (PF_NO_TREATMENT >> 16);
                 }
@@ -1487,7 +1487,7 @@ void process_turn(void)
                     patient->flags0 &= 0xef;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
                     patient->flags0 |= PF_WAITING_FOR_ROOM;
-                    patient->timer = othervar.f82;
+                    patient->timer = othervar.cur_turn;
                 }
                 if (patient->type == THING_PATIENT) {
                     patient->playercall = 0;
@@ -1506,33 +1506,33 @@ void process_turn(void)
                 }
                 break;
             case 0xa:
-                count_and_flag_contagious_peeps(allhosps[i].f20b, 2, i);
-                allhosps[i].f20b = 0;
-                allhosps[i].f20d = 0;
-                change_balance(TX_EPIDEMIC_FINE, -allhosps[i].f203, 0, i);
+                count_and_flag_contagious_peeps(allhosps[i].epidemic_illness, 2, i);
+                allhosps[i].epidemic_illness = 0;
+                allhosps[i].epidemic_active = 0;
+                change_balance(TX_EPIDEMIC_FINE, -allhosps[i].epidemic_fine, 0, i);
                 reputation_affected(0, 0xe, 0, i, 0);
                 if (i == player) {
                     play_sound(10, 0xce, -1, -1);
                 }
                 break;
             case 0xb:
-                count_and_flag_contagious_peeps(allhosps[i].f20b, 1, i);
-                allhosps[i].f20d = 1;
-                allhosps[i].f207 = 100;
+                count_and_flag_contagious_peeps(allhosps[i].epidemic_illness, 1, i);
+                allhosps[i].epidemic_active = 1;
+                allhosps[i].epidemic_timer = 100;
                 if (i == player) {
                     play_sound(10, 0xcd, -1, -1);
                 }
                 quiet = D_001549d0[i].arg;
                 break;
             case 0x15:
-                allhosps[i].f1fa = 0;
+                allhosps[i].mayor_state = 0;
                 break;
             case 0x14:
-                allhosps[i].f1f3 = actual_game_turn + 1500;
-                allhosps[i].f1fa = 2;
+                allhosps[i].mayor_arrival_turn = actual_game_turn + 1500;
+                allhosps[i].mayor_state = 2;
                 break;
             case 0x1e:
-                if (statvar.unknownfd > 1) {
+                if (statvar.num_players > 1) {
                     restore_popup(2);
                 }
                 break;
@@ -1544,7 +1544,7 @@ void process_turn(void)
                 patient = &thing[D_001549d0[i].arg];
                 if (patient->type == THING_PATIENT && (patient->flags0 & PF_AWAITING_DECISION)) {
                     patient->treatment = 0;
-                    allhosps[patient->owner].rooms[patient->illness].unknown24++;
+                    allhosps[patient->owner].rooms[patient->illness].turned_away++;
                     person_go_home(patient);
                     patient->flags2 |= (PF_NO_DIAGNOSIS >> 16);
                 }
@@ -1571,7 +1571,7 @@ void process_turn(void)
                     patient->flags0 &= 0xef;
                     reset_icon_value(patient, ICON_AWAITING_DECISION);
                     patient->flags0 |= PF_WAITING_FOR_ROOM;
-                    patient->timer = othervar.f82;
+                    patient->timer = othervar.cur_turn;
                 }
                 if (patient->type == THING_PATIENT) {
                     patient->playercall = 0;
@@ -1580,8 +1580,8 @@ void process_turn(void)
             }
             if (i == player && quiet == 0) {
                 restore_display_screen();
-                othervar.f1f = palette;
-                othervar.f10 = 1;
+                othervar.fade_palette = palette;
+                othervar.full_redraw = 1;
                 D_00156910 = 1;
             }
             break;
@@ -1592,14 +1592,14 @@ void process_turn(void)
             case 0:
                 break;
             case 1:
-                if (allhosps[i].f2b == 2) {
+                if (allhosps[i].playing == 2) {
                     Thing *o;
 
                     for (o = thing + 1; o < end_things; o++) {
                         if (o->owner == i) {
                             switch (o->type) {
                             case THING_OBJECT:
-                                if (objects[o->subtype].unknown1e) {
+                                if (objects[o->subtype].overlay_anim) {
                                     o->times_used = o->strength * 2;
                                     machine_disaster(o);
                                 }
@@ -1608,7 +1608,7 @@ void process_turn(void)
                                 sack_staff(o, 0);
                                 break;
                             case THING_PATIENT:
-                                if (!(map[(s16)o->x.tile + ((s16)o->y.tile << 7)].unknown7 & 0x10)) {
+                                if (!(map[(s16)o->x.tile + ((s16)o->y.tile << 7)].owner_flags & 0x10)) {
                                     o->flags0 &= 0xdf;
                                     o->contagion = 0;
                                     o->flags1 |= (PF_SENT_HOME_BY_INSPECTOR >> 8);
@@ -1617,24 +1617,24 @@ void process_turn(void)
                             }
                         }
                     }
-                    allhosps[i].f2b = 0;
+                    allhosps[i].playing = 0;
                     D_001549d0[i].checksum = 0;
                     if (i == player) {
                         close_yes_no_requester(0);
                         LbNetwork_Stop();
                         quit_game = 1;
-                        othervar.f74 = 100000;
-                        if (othervar.fa95) {
-                            allhosps[player].f2b = 0;
+                        othervar.next_level_offer = 100000;
+                        if (othervar.net_won) {
+                            allhosps[player].playing = 0;
                             level_number = 0xc;
-                            othervar.f72 = 6;
-                            winlose.unknown2 = othervar.f72;
+                            othervar.winlose_result = 6;
+                            winlose.state = othervar.winlose_result;
                         } else {
-                            othervar.f72 = 2;
-                            winlose.unknown2 = othervar.f72;
+                            othervar.winlose_result = 2;
+                            winlose.state = othervar.winlose_result;
                         }
                         play_winlose();
-                        statvar.unknownfd = 1;
+                        statvar.num_players = 1;
                         player = 0;
                     }
                     find_other_player((s8)i);
@@ -1651,7 +1651,7 @@ void process_turn(void)
             patient->flags0 &= 0xef;
             reset_icon_value(patient, ICON_AWAITING_DECISION);
             patient->flags0 |= PF_WAITING_FOR_ROOM;
-            patient->timer = othervar.f82;
+            patient->timer = othervar.cur_turn;
             break;
         case 0x80:
             patient = &thing[D_001549d0[i].value];
@@ -1684,8 +1684,8 @@ void process_turn(void)
             }
             break;
         case 0x83:
-            room_info[allhosps[i].unknown11b7].f3 = 4;
-            room_info[allhosps[i].unknown11b7].f22 = 0;
+            room_info[allhosps[i].edited_room].state = 4;
+            room_info[allhosps[i].edited_room].being_edited = 0;
             if (i == player) {
                 setup_place_object_requester();
                 set_mouse_mode(MM_NORMAL);
@@ -1693,14 +1693,14 @@ void process_turn(void)
             break;
         case 0x84:
             if (i == player) {
-                othervar.f63 = 0;
-                othervar.f45 = 0;
+                othervar.queue_pos = 0;
+                othervar.queue_hilight_thing = 0;
                 display_mode = 0;
                 close_irequesters();
                 close_crequester(6);
-                window.unknown2eb = 0;
+                window.current_window = 0;
                 set_mouse_mode(MM_NORMAL);
-                pmenu.unknown7 = 0;
+                pmenu.disabled = 0;
             }
             break;
         case 0x85:
@@ -1709,7 +1709,7 @@ void process_turn(void)
             force_peep_to_be_cured(&thing[D_001549d0[i].value]);
             break;
         case 0x87:
-            if (othervar.ff == player) {
+            if (othervar.cur_player == player) {
                 lbDisplay.rleft_button = lbDisplay.rright_button = lbDisplay.left_button = lbDisplay.right_button = 0;
                 return_from_screen(D_001549d0[i].value, 1, 1);
                 if (i == player) {
@@ -1750,21 +1750,21 @@ void process_turn(void)
                     if (slot) {
                         close_irequesters();
                         cancel_top_level_requesters(0x63);
-                        if (crequester.unknown2 != 0x63) {
+                        if (crequester.id != 0x63) {
                             break;
                         }
-                        othervar.f9b8 = slot;
+                        othervar.irequester_slot = slot;
                         open_requester(D_001581b2[slot].kind, 1);
                         D_001581b2[slot].value = D_001549d0[i].arg;
                         set_mouse_sprite(1);
                     }
                     if (kind) {
-                        int x = resvars.f20[slot].x;
-                        int y = resvars.f20[slot].y;
+                        int x = resvars.window_list[slot].x;
+                        int y = resvars.window_list[slot].y;
 
-                        open_new_window(0, 0, 0, x + resvars.f18_Rectp[kind].x0, y + resvars.f18_Rectp[kind].y0, x + resvars.f18_Rectp[kind].x1, y + resvars.f18_Rectp[kind].y1);
-                        othervar.f34[slot] = window.unknown2ec - 1;
-                        window.unknown2eb = 0;
+                        open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0, x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
+                        othervar.track_window[slot] = window.window_count - 1;
+                        window.current_window = 0;
                     }
                 }
             }
@@ -1777,8 +1777,8 @@ void process_turn(void)
 
                 close_yes_no_requester(1);
                 close_irequesters();
-                if (othervar.f9b1) {
-                    set_mouse_mode((u8)othervar.f9b1);
+                if (othervar.no_arg) {
+                    set_mouse_mode((u8)othervar.no_arg);
                     lbDisplay.left_button = 0;
                 }
                 obj = &thing[D_001549d0[i].value];
@@ -1798,25 +1798,25 @@ void process_turn(void)
                 }
                 if (slot) {
                     close_irequesters();
-                    othervar.f9b8 = slot;
+                    othervar.irequester_slot = slot;
                     open_requester(D_001581b2[slot].kind, 1);
                     D_001581b2[slot].value = D_001549d0[i].value;
                     set_mouse_sprite(1);
                 }
                 if (kind) {
-                    int x = resvars.f20[slot].x;
-                    int y = resvars.f20[slot].y;
+                    int x = resvars.window_list[slot].x;
+                    int y = resvars.window_list[slot].y;
 
-                    open_new_window(0, 0, 0, x + resvars.f18_Rectp[kind].x0, y + resvars.f18_Rectp[kind].y0, x + resvars.f18_Rectp[kind].x1, y + resvars.f18_Rectp[kind].y1);
-                    othervar.f34[slot] = window.unknown2ec - 1;
-                    window.unknown2eb = 0;
+                    open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0, x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
+                    othervar.track_window[slot] = window.window_count - 1;
+                    window.current_window = 0;
                 }
                 play_sound(10, SFX_NO4, -1, -1);
             }
             break;
         case 0x89:
-            mycontrol->unknown650 = 0xb;
-            mycontrol->unknown64f = calendar[mycontrol->unknown650] - 2;
+            mycontrol->month = 0xb;
+            mycontrol->day = calendar[mycontrol->month] - 2;
             break;
         case EV_REPLACE_MACHINE:
             if (i == player) {
@@ -1825,9 +1825,9 @@ void process_turn(void)
             replace_machine(&thing[D_001549d0[i].value]);
             break;
         case EV_ANNOUNCE:
-            allhosps[i].unknown1257 = 0;
-            if (statvar.unknownfd <= 1) {
-                allhosps[i].unknown1256 = 1;
+            allhosps[i].opening_countdown = 0;
+            if (statvar.num_players <= 1) {
+                allhosps[i].hospital_open = 1;
             }
             if (i != player) {
                 announce_this(0xc, i);
@@ -1836,21 +1836,21 @@ void process_turn(void)
         case 0x8c:
             if (i == player) {
                 close_yes_no_requester((u8)D_001549d0[i].value);
-                if (othervar.f9b1) {
-                    set_mouse_mode((u8)othervar.f9b1);
+                if (othervar.no_arg) {
+                    set_mouse_mode((u8)othervar.no_arg);
                     lbDisplay.left_button = 0;
                 }
-                if (othervar.f99f < 10) {
-                    othervar.fa0e[othervar.f99f] = 1;
+                if (othervar.yes_value < 10) {
+                    othervar.save_slot_used[othervar.yes_value] = 1;
                 }
                 check_save_games();
             }
             break;
         case 0x90:
             if (i == player) {
-                othervar.fa94 = 0;
+                othervar.net_result = 0;
             } else {
-                othervar.fa94 = 1;
+                othervar.net_result = 1;
             }
             break;
         case 0x91:
@@ -1869,7 +1869,7 @@ void process_turn(void)
         D_001549d0[i].value = 0;
         D_001549d0[i].arg = 0;
     }
-    othervar.ff = player;
+    othervar.cur_player = player;
     check_autosave();
 }
 
@@ -1882,8 +1882,8 @@ s16 save_game_valid(const s8 slot)
     char buf[64];
     int handle;
 
-    sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
-    if (LbFileLengthRnc(buf) == statvar.unknown0) {
+    sprintf(buf, "%s%s%d", statvar.save_root, statvar.save_prefix, slot);
+    if (LbFileLengthRnc(buf) == statvar.save_game_size) {
         handle = LbFileOpen(buf, 2);
         if (handle != -1) {
             LbFileRead(handle, &version, 2);
@@ -1895,16 +1895,16 @@ s16 save_game_valid(const s8 slot)
                 return 1;
             } else {
                 LbFileClose(handle);
-                othervar.fa66 = 0x1c;
-                othervar.fa67 = 0x46;
+                othervar.panel_message = 0x1c;
+                othervar.panel_message_time = 0x46;
             }
         } else {
-            othervar.fa66 = 0x1c;
-            othervar.fa67 = 0x46;
+            othervar.panel_message = 0x1c;
+            othervar.panel_message_time = 0x46;
         }
     } else {
-        othervar.fa66 = 0x1c;
-        othervar.fa67 = 0x46;
+        othervar.panel_message = 0x1c;
+        othervar.panel_message_time = 0x46;
     }
     return 0;
 }
@@ -1924,26 +1924,26 @@ u16 save_game(s8 slot, s8 port)
     u16 ok;
     int tries;
 
-    if (statvar.unknownfd > 1 && port == -1) {
+    if (statvar.num_players > 1 && port == -1) {
         return 0;
     }
-    if (statvar.unknownfd <= 1) {
+    if (statvar.num_players <= 1) {
         if (!check_okay_to_save(1)) {
             return 0;
         }
     }
-    if (resvars.f1 == SCREEN_MODE_1) {
-        find_cell_at_point(window.unknown2eb, window.f90[window.unknown2eb], window.f9c[window.unknown2eb]);
-        cell = info.unknown64;
-        window.unknown30 = 0;
-        window.unknown48 = lbScreenModeInfo[SCREEN_MODE_13].width;
-        window.unknown3c = 0;
-        window.unknown54 = lbScreenModeInfo[SCREEN_MODE_13].height;
-        resvars.f4 = 0x40;
-        resvars.f3 = 0x20;
-        window.unknown90 = (window.unknown30 + window.unknown48) / 2;
-        window.unknown9c = (window.unknown3c + window.unknown54) / 2;
-        goto_cell_in_window(window.unknown2eb, cell);
+    if (resvars.game_mode == SCREEN_MODE_1) {
+        find_cell_at_point(window.current_window, window.center_x[window.current_window], window.center_y[window.current_window]);
+        cell = info.cell;
+        window.zone0_x = 0;
+        window.zone0_x1 = lbScreenModeInfo[SCREEN_MODE_13].width;
+        window.zone0_y = 0;
+        window.zone0_y1 = lbScreenModeInfo[SCREEN_MODE_13].height;
+        resvars.tile_width = 0x40;
+        resvars.tile_height = 0x20;
+        window.center0_x = (window.zone0_x + window.zone0_x1) / 2;
+        window.center0_y = (window.zone0_y + window.zone0_y1) / 2;
+        goto_cell_in_window(window.current_window, cell);
     }
     setup_addresses();
     for (w = thing + 1; w < end_things; w++) {
@@ -1952,20 +1952,20 @@ u16 save_game(s8 slot, s8 port)
         }
     }
     if (port == -1) {
-        sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
+        sprintf(buf, "%s%s%d", statvar.save_root, statvar.save_prefix, slot);
         handle = LbFileOpen(buf, 0);
         if (handle != -1) {
             for (i = 0; D_001290d4[i].addr; i++) {
                 LbFileWrite(handle, (void *)D_001290d4[i].addr, D_001290d4[i].size);
             }
             LbFileClose(handle);
-            othervar.fa66 = 0x18;
-            othervar.fa67 = 3;
+            othervar.panel_message = 0x18;
+            othervar.panel_message_time = 3;
             save_player_details();
             ok = 1;
         } else {
-            othervar.fa66 = 0x19;
-            othervar.fa67 = 0x14;
+            othervar.panel_message = 0x19;
+            othervar.panel_message_time = 0x14;
             ok = 0;
         }
     } else {
@@ -1990,18 +1990,18 @@ u16 save_game(s8 slot, s8 port)
             w->room = &room_info[w->room_index];
         }
     }
-    if (resvars.f1 == SCREEN_MODE_1) {
-        window.unknown30 = 0;
-        window.unknown48 = lbScreenModeInfo[SCREEN_MODE_1].width;
-        window.unknown3c = 0;
-        window.unknown54 = lbScreenModeInfo[SCREEN_MODE_1].height;
-        resvars.f4 = 0x20;
-        resvars.f3 = 0x10;
-        window.unknown2c0 = 0;
-        window.unknown90 = (window.unknown30 + window.unknown48) / 2;
-        window.unknown9c = (window.unknown3c + window.unknown54) / 2;
-        window.unknown2eb = 0;
-        goto_cell_in_window(window.unknown2eb, cell);
+    if (resvars.game_mode == SCREEN_MODE_1) {
+        window.zone0_x = 0;
+        window.zone0_x1 = lbScreenModeInfo[SCREEN_MODE_1].width;
+        window.zone0_y = 0;
+        window.zone0_y1 = lbScreenModeInfo[SCREEN_MODE_1].height;
+        resvars.tile_width = 0x20;
+        resvars.tile_height = 0x10;
+        window.anim_mode0 = 0;
+        window.center0_x = (window.zone0_x + window.zone0_x1) / 2;
+        window.center0_y = (window.zone0_y + window.zone0_y1) / 2;
+        window.current_window = 0;
+        goto_cell_in_window(window.current_window, cell);
     }
     return ok;
 }
@@ -2021,11 +2021,11 @@ s16 load_game(s8 slot, s8 port)
     Thing *w;
     int tries;
 
-    saved_level = myhosp->f29;
-    if (statvar.unknownfd > 1 && port == -1) {
+    saved_level = myhosp->level;
+    if (statvar.num_players > 1 && port == -1) {
         return 0;
     }
-    if (statvar.unknownfd <= 1) {
+    if (statvar.num_players <= 1) {
         if (save_game_valid(slot) == 0) {
             return 0;
         }
@@ -2033,13 +2033,13 @@ s16 load_game(s8 slot, s8 port)
     if (port == -1) {
         reset_earthquake_variables();
         close_irequesters();
-        if (crequester.unknown2 != 0x63) {
-            close_crequester(crequester.unknown2);
+        if (crequester.id != 0x63) {
+            close_crequester(crequester.id);
         }
         if (load_level(level_number, 1)) {
             ok = 1;
             setup_addresses();
-            sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
+            sprintf(buf, "%s%s%d", statvar.save_root, statvar.save_prefix, slot);
             handle = LbFileOpen(buf, 2);
             if (handle != -1) {
                 for (i = 0; D_001290d4[i].addr; i++) {
@@ -2047,26 +2047,26 @@ s16 load_game(s8 slot, s8 port)
                 }
                 LbFileClose(handle);
             }
-            if (resvars.f1 == SCREEN_MODE_1) {
-                window.unknown30 = 0;
-                window.unknown48 = lbScreenModeInfo[SCREEN_MODE_13].width;
-                window.unknown3c = 0;
-                window.unknown54 = lbScreenModeInfo[SCREEN_MODE_13].height;
-                resvars.f4 = 0x40;
-                resvars.f3 = 0x20;
-                window.unknown90 = (window.unknown30 + window.unknown48) / 2;
-                window.unknown9c = (window.unknown3c + window.unknown54) / 2;
-                find_cell_at_point(window.unknown2eb, window.f90[window.unknown2eb], window.f9c[window.unknown2eb]);
-                cell = info.unknown64;
-                window.unknown30 = 0;
-                window.unknown48 = lbScreenModeInfo[SCREEN_MODE_1].width;
-                window.unknown3c = 0;
-                window.unknown54 = lbScreenModeInfo[SCREEN_MODE_1].height;
-                window.unknown90 = (window.unknown30 + window.unknown48) / 2;
-                window.unknown9c = (window.unknown3c + window.unknown54) / 2;
-                resvars.f4 = 0x20;
-                resvars.f3 = 0x10;
-                goto_cell_in_window(window.unknown2eb, cell);
+            if (resvars.game_mode == SCREEN_MODE_1) {
+                window.zone0_x = 0;
+                window.zone0_x1 = lbScreenModeInfo[SCREEN_MODE_13].width;
+                window.zone0_y = 0;
+                window.zone0_y1 = lbScreenModeInfo[SCREEN_MODE_13].height;
+                resvars.tile_width = 0x40;
+                resvars.tile_height = 0x20;
+                window.center0_x = (window.zone0_x + window.zone0_x1) / 2;
+                window.center0_y = (window.zone0_y + window.zone0_y1) / 2;
+                find_cell_at_point(window.current_window, window.center_x[window.current_window], window.center_y[window.current_window]);
+                cell = info.cell;
+                window.zone0_x = 0;
+                window.zone0_x1 = lbScreenModeInfo[SCREEN_MODE_1].width;
+                window.zone0_y = 0;
+                window.zone0_y1 = lbScreenModeInfo[SCREEN_MODE_1].height;
+                window.center0_x = (window.zone0_x + window.zone0_x1) / 2;
+                window.center0_y = (window.zone0_y + window.zone0_y1) / 2;
+                resvars.tile_width = 0x20;
+                resvars.tile_height = 0x10;
+                goto_cell_in_window(window.current_window, cell);
             }
             for (w = thing + 1; w < end_things; w++) {
                 if ((w->type == THING_PATIENT || w->type == THING_STAFF) && w->room > 0) {
@@ -2074,13 +2074,13 @@ s16 load_game(s8 slot, s8 port)
                 }
             }
             recreate_map(1);
-            othervar.f10 = 1;
+            othervar.full_redraw = 1;
             reset_advisor();
             myhosp = &allhosps[player];
-            if (statvar.unknownfd > 1) {
-                myhosp->f29 = saved_level;
+            if (statvar.num_players > 1) {
+                myhosp->level = saved_level;
             }
-            othervar.f8c = get_next_illness(1, 0);
+            othervar.selected_illness = get_next_illness(1, 0);
             free_level();
             return 1;
         }
@@ -2113,11 +2113,11 @@ s16 load_game(s8 slot, s8 port)
                     }
                 }
             }
-            othervar.f10 = 1;
+            othervar.full_redraw = 1;
             reset_advisor();
             myhosp = &allhosps[player];
-            if (statvar.unknownfd > 1) {
-                myhosp->f29 = saved_level;
+            if (statvar.num_players > 1) {
+                myhosp->level = saved_level;
             }
         }
         return ok;
@@ -2142,7 +2142,7 @@ void setup_addresses(void)
     D_001290d4[9].addr = (u32)allhosps;
     D_001290d4[10].addr = (u32)playercall;
     D_001290d4[11].addr = (u32)for_sale;
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         D_0016028c = 0;
         for (i = 0; D_001290d4[i].addr; i++) {
             if (is_checksummed_region(i)) {
@@ -2168,17 +2168,17 @@ s8 load_level(const u8 lvl, const u8 full)
     u16 j;
 
     if (lvl) {
-        if (othervar.f9f9 == lvl) {
+        if (othervar.loaded_level == lvl) {
             return 1;
         }
-        if (othervar.f9f9 > 0) {
+        if (othervar.loaded_level > 0) {
             free_level();
         }
     }
     clear_sound_heap();
-    othervar.fa06 = cache.Allocate(0x2806c, 0x63);
-    if (othervar.fa06) {
-        level = (Level *)fn_00022b60(othervar.fa06);
+    othervar.level_block = cache.Allocate(0x2806c, 0x63);
+    if (othervar.level_block) {
+        level = (Level *)fn_00022b60(othervar.level_block);
     } else {
         return 0;
     }
@@ -2190,53 +2190,53 @@ s8 load_level(const u8 lvl, const u8 full)
     }
     if (LbFileLoadAt(buf, level) == LbFileLengthRnc(buf)) {
         if (!full) {
-            othervar.f9f9 = lvl;
+            othervar.loaded_level = lvl;
             recreate_map(1);
             return 1;
         }
-        if (level->f0 < 1 || level->f0 > 4) {
-            level->f0 = 1;
+        if (level->player_count < 1 || level->player_count > 4) {
+            level->player_count = 1;
         }
         room = room_info + 1;
         for (i = 0; i < 4; i++) {
-            if (D_001609c4[i].active || (statvar.unknownfd <= 1 && i == player)) {
+            if (D_001609c4[i].active || (statvar.num_players <= 1 && i == player)) {
                 for (j = 0; j < 4; j++) {
                     for (; room < end_room_info; room++) {
                         if (room->type == ROOM_FREE) {
                             room->type = 1;
                             switch (j) {
                             case 0:
-                                room->pos = room->unknown4 = room->unknown6 = level->f2[i][0];
+                                room->pos = room->door_tile = room->door_inside_tile = level->entrances[i][0];
                                 break;
                             case 1:
-                                room->pos = room->unknown4 = room->unknown6 = level->f2[i][1];
+                                room->pos = room->door_tile = room->door_inside_tile = level->entrances[i][1];
                                 break;
                             case 2:
-                                room->pos = room->unknown4 = room->unknown6 = level->f2[i][2];
+                                room->pos = room->door_tile = room->door_inside_tile = level->entrances[i][2];
                                 break;
                             case 3:
-                                room->pos = room->unknown4 = room->unknown6 = level->f2[i][3];
+                                room->pos = room->door_tile = room->door_inside_tile = level->entrances[i][3];
                                 break;
                             }
                             room->owner = i;
-                            allhosps[i].unknown1cf[j] = room - room_info;
+                            allhosps[i].entrances[j] = room - room_info;
                             break;
                         }
                     }
                 }
-                allhosps[i].f1d7 = level->f2802c[i];
+                allhosps[i].heli_pad_tile = level->emergency_tile[i];
             }
-            goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
-            gamevar.f132 = level->f28034;
-            gamevar.f134 = level->f28036;
+            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+            gamevar.scroll_min_tile = level->scroll_min;
+            gamevar.scroll_max_tile = level->scroll_max;
         }
         for (i = 0; i < 4; i++) {
-            fn_000c21e6(&allhosps[i].unknown1cf, &allhosps[D_00160508].unknown1cf, 8);
+            fn_000c21e6(&allhosps[i].entrances, &allhosps[D_00160508].entrances, 8);
         }
         recreate_map(0);
         add_static_shadows();
-        othervar.f10 = 1;
-        othervar.f9f9 = lvl;
+        othervar.full_redraw = 1;
+        othervar.loaded_level = lvl;
         return 1;
     }
     return 0;
@@ -2246,8 +2246,8 @@ s8 load_level(const u8 lvl, const u8 full)
 // FUNCTION: 0x00022764
 void free_level(void)
 {
-    othervar.f9f9 = 0;
-    cache.Free(othervar.fa06);
+    othervar.loaded_level = 0;
+    cache.Free(othervar.level_block);
 }
 
 // Returns the game state checksum compared between network players: the
@@ -2275,10 +2275,10 @@ u32 check_sum(void)
 // FUNCTION: 0x00022820
 void reset_earthquake_variables(void)
 {
-    gamevar.ff0 = 0;
-    gamevar.ff3 = 0;
-    gamevar.ff4u = 1;
-    gamevar.fef = 0;
+    gamevar.quake_strength = 0;
+    gamevar.quake_shake_index = 0;
+    gamevar.quake_ramp_u = 1;
+    gamevar.quake_phase = 0;
 }
 
 // Returns 1 if the game can be saved now (normal mouse mode, no building or
@@ -2286,17 +2286,17 @@ void reset_earthquake_variables(void)
 // FUNCTION: 0x00022854
 u8 check_okay_to_save(u8 warn)
 {
-    if (gamevar.f12e != MM_NORMAL) {
+    if (gamevar.mouse_mode != MM_NORMAL) {
         if (warn) {
-            othervar.fa66 = 0x19;
-            othervar.fa67 = 0x14;
+            othervar.panel_message = 0x19;
+            othervar.panel_message_time = 0x14;
         }
         return 0;
     }
-    if (is_player_building() || allhosps[player].unknown11b7) {
+    if (is_player_building() || allhosps[player].edited_room) {
         if (warn) {
-            othervar.fa66 = 0x19;
-            othervar.fa67 = 0x14;
+            othervar.panel_message = 0x19;
+            othervar.panel_message_time = 0x14;
         }
         return 0;
     }
@@ -2304,18 +2304,18 @@ u8 check_okay_to_save(u8 warn)
 }
 
 // Autosaves to slot 8 on day 28 of each month (or as soon as possible after,
-// if saving was not possible then), when autosave is on (myplayer.f22).
+// if saving was not possible then), when autosave is on (myplayer.autosave).
 // Single player only.
 // FUNCTION: 0x000228e0
 void check_autosave(void)
 {
-    if (myplayer.f22) {
-        if (statvar.unknownfd <= 1) {
-            if (mycontrol->unknown64f == 0x1c || need_a_save) {
-                if (mycontrol->unknown650 + mycontrol->unknown64f != last_saved || need_a_save) {
+    if (myplayer.autosave) {
+        if (statvar.num_players <= 1) {
+            if (mycontrol->day == 0x1c || need_a_save) {
+                if (mycontrol->month + mycontrol->day != last_saved || need_a_save) {
                     if (check_okay_to_save(0)) {
                         save_game(8, -1);
-                        last_saved = mycontrol->unknown650 + mycontrol->unknown64f;
+                        last_saved = mycontrol->month + mycontrol->day;
                         need_a_save = 0;
                     } else {
                         need_a_save = 1;
@@ -2335,7 +2335,7 @@ s32 read_level_number(s32 slot)
     char buf[64];
     u8 level_no;
 
-    sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
+    sprintf(buf, "%s%s%d", statvar.save_root, statvar.save_prefix, slot);
     handle = LbFileOpen(buf, 2);
     if (handle == -1) {
         return -1;
@@ -2354,20 +2354,20 @@ s32 read_level_number(s32 slot)
 // FUNCTION: 0x00022a58
 void restart_level(void)
 {
-    if (statvar.unknownfd <= 1) {
+    if (statvar.num_players <= 1) {
         reset_earthquake_variables();
         reset_advisor();
         close_irequesters();
-        if (crequester.unknown2 != 0x63) {
-            close_crequester(crequester.unknown2);
+        if (crequester.id != 0x63) {
+            close_crequester(crequester.id);
         }
         D_00156910 = 1;
         setup_new_level((u16)level_number, 1);
-        set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-        goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
-        othervar.fa5c = 1;
+        set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+        goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+        othervar.show_level_brief = 1;
         draw_it();
-        othervar.f24 = palette;
+        othervar.pending_palette = palette;
         init_ambients();
     }
 }

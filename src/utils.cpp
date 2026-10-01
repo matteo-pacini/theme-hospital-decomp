@@ -49,7 +49,7 @@ u8 pick_random_player(void)
     u8 i;
     u8 count;
 
-    if (statvar.unknownfd <= 1) {
+    if (statvar.num_players <= 1) {
         return 0;
     }
     for (i = count = 0; i < 4; i++) {
@@ -76,21 +76,21 @@ u16 div_err(void)
 // FUNCTION: 0x00019770
 void setup_colors(void)
 {
-    color.unknown0 = current_palette;
-    color.unknown7 = LbPaletteFindColour(current_palette, 0x3f, 0x3f, 0x3f);
-    color.unknown8 = LbPaletteFindColour(current_palette, 0, 0, 0);
-    color.unknown9 = LbPaletteFindColour(current_palette, 0, 0, 0x10);
-    color.unknownA = LbPaletteFindColour(current_palette, 0, 0x3f, 0);
-    color.unknownB = LbPaletteFindColour(current_palette, 0x3f, 0x30, 0x17);
-    color.unknownC = LbPaletteFindColour(current_palette, 0x3f, 0x17, 0x17);
-    color.unknownD = LbPaletteFindColour(current_palette, 0x3f, 0, 0);
-    color.unknownE = LbPaletteFindColour(current_palette, 0x1b, 0x37, 0x39);
-    color.unknownF = LbPaletteFindColour(current_palette, 0x35, 0x1f, 0x42);
-    color.unknown10 = LbPaletteFindColour(current_palette, 0x17, 0x43, 0x10);
-    color.unknown11 = LbPaletteFindColour(current_palette, 0x26, 0x29, 0x2f);
-    color.unknown12 = LbPaletteFindColour(current_palette, 0, 0x26, 0x56);
-    color.unknown13 = LbPaletteFindColour(current_palette, 0x24, 0x50, 0x2f);
-    color.unknown14 = LbPaletteFindColour(current_palette, 0x3f, 0x1e, 0x1e);
+    color.palette = current_palette;
+    color.white = LbPaletteFindColour(current_palette, 0x3f, 0x3f, 0x3f);
+    color.black = LbPaletteFindColour(current_palette, 0, 0, 0);
+    color.dark_blue = LbPaletteFindColour(current_palette, 0, 0, 0x10);
+    color.green = LbPaletteFindColour(current_palette, 0, 0x3f, 0);
+    color.orange = LbPaletteFindColour(current_palette, 0x3f, 0x30, 0x17);
+    color.light_red = LbPaletteFindColour(current_palette, 0x3f, 0x17, 0x17);
+    color.red = LbPaletteFindColour(current_palette, 0x3f, 0, 0);
+    color.cyan = LbPaletteFindColour(current_palette, 0x1b, 0x37, 0x39);
+    color.purple = LbPaletteFindColour(current_palette, 0x35, 0x1f, 0x42);
+    color.light_green = LbPaletteFindColour(current_palette, 0x17, 0x43, 0x10);
+    color.grey = LbPaletteFindColour(current_palette, 0x26, 0x29, 0x2f);
+    color.blue = LbPaletteFindColour(current_palette, 0, 0x26, 0x56);
+    color.pale_green = LbPaletteFindColour(current_palette, 0x24, 0x50, 0x2f);
+    color.salmon = LbPaletteFindColour(current_palette, 0x3f, 0x1e, 0x1e);
 }
 
 // Returns the number of waypoints of a path from mover's tile (an object's
@@ -118,7 +118,7 @@ void remove_thing(Thing *target)
     memset(target, 0, sizeof(Thing));
 }
 
-// Counts the tiles player `owner` owns into allhosps.f1f1 (not for a
+// Counts the tiles player `owner` owns into allhosps.area (not for a
 // hospital with f2a 2).
 // FUNCTION: 0x00019a1c
 void count_hospital_area(u16 owner)
@@ -126,11 +126,11 @@ void count_hospital_area(u16 owner)
     AllHosps *hosp = allhosps + owner;
     Map *cell;
 
-    if (hosp->f2a != 2) {
-        hosp->f1f1 = 0;
+    if (hosp->player_type != 2) {
+        hosp->area = 0;
         for (cell = map; cell < end_map; cell++) {
-            if (cell->unknown7 & (1 << owner)) {
-                hosp->f1f1++;
+            if (cell->owner_flags & (1 << owner)) {
+                hosp->area++;
             }
         }
     }
@@ -185,29 +185,29 @@ void screen_shot(void)
     u8 tmp;
 
     fmt = "scrshots\\hosp%04d.lbm";
-    if (debug.unknown1e4 == 0) {
-        debug.unknown1e4 = (u8 *)LbMemoryAlloc(400000);
-        if (debug.unknown1e4 == 0) {
+    if (debug.screenshot_buffer == 0) {
+        debug.screenshot_buffer = (u8 *)LbMemoryAlloc(400000);
+        if (debug.screenshot_buffer == 0) {
             return;
         }
     }
-    if (debug.unknown1e0 == -1) {
+    if (debug.screenshot_number == -1) {
         for (i = 0; i < 10000; i++) {
             sprintf(path, fmt, i);
             handle = LbFileOpen(path, 2);
             if (handle == -1) {
-                debug.unknown1e0 = i - 1;
+                debug.screenshot_number = i - 1;
                 break;
             }
             LbFileClose(handle);
         }
     }
-    shot_no = ++debug.unknown1e0;
+    shot_no = ++debug.screenshot_number;
     sprintf(path, fmt, shot_no);
     if (shot_no >= 10000) {
         return;
     }
-    out = debug.unknown1e4;
+    out = debug.screenshot_buffer;
     *out = 'm';
     out++;
     *out = 'h';
@@ -221,8 +221,8 @@ void screen_shot(void)
     *out = 'h';
     out++;
     PUT16BE(out, 4);
-    PUT16BE(out, lbDisplay.unknown18);
-    PUT16BE(out, lbDisplay.unknown1c);
+    PUT16BE(out, lbDisplay.physical_screen_width);
+    PUT16BE(out, lbDisplay.physical_screen_height);
     PUT16BE(out, 0x100);
     PUT16BE(out, 0x100);
     PUT16BE(out, 0x100);
@@ -235,9 +235,9 @@ void screen_shot(void)
             out++;
         }
     }
-    LbMemoryCopy(out, (void *)lbDisplay.unknown4, lbDisplay.unknown18 * lbDisplay.unknown1c);
-    out += lbDisplay.unknown18 * lbDisplay.unknown1c;
-    LbFileSaveAt(path, debug.unknown1e4, out - debug.unknown1e4);
+    LbMemoryCopy(out, (void *)lbDisplay.wscreen, lbDisplay.physical_screen_width * lbDisplay.physical_screen_height);
+    out += lbDisplay.physical_screen_width * lbDisplay.physical_screen_height;
+    LbFileSaveAt(path, debug.screenshot_buffer, out - debug.screenshot_buffer);
 }
 
 // Returns a random room of type kind of player `owner` (mode 0x65: any;
@@ -250,10 +250,10 @@ RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner)
     RoomInfo *list[30];
 
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->f3 < 0 || room->owner != owner) {
+        if (room->state < 0 || room->owner != owner) {
             continue;
         }
-        if (room->type != kind || !(mode == 0x65 || room->f3 == 0)) {
+        if (room->type != kind || !(mode == 0x65 || room->state == 0)) {
             continue;
         }
         if (count < 30) {
@@ -276,10 +276,10 @@ RoomInfo *get_room_info(u8 kind, u8 mode, u8 owner)
     RoomInfo *room;
 
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (room->f3 >= 0) {
+        if (room->state >= 0) {
             if (room->owner == owner) {
                 if (room->type == kind) {
-                    if (room->f3 == 0) {
+                    if (room->state == 0) {
                         return room;
                     }
                     if (mode == 0x65) {
@@ -311,13 +311,13 @@ RoomInfo *get_nearest_room_info(Thing *person, u8 kind)
 
     pos = person->x.tile + (person->y.tile << 7);
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (!(room->f3 == 0 || room->f3 == 1)) {
+        if (!(room->state == 0 || room->state == 1)) {
             continue;
         }
         if (room->owner == person->owner) {
             if (room->type == kind) {
-                dist = (pos % 128 - room->unknown4 % 128) * (pos % 128 - room->unknown4 % 128)
-                    + (pos / 128 - room->unknown4 / 128) * (pos / 128 - room->unknown4 / 128);
+                dist = (pos % 128 - room->door_tile % 128) * (pos % 128 - room->door_tile % 128)
+                    + (pos / 128 - room->door_tile / 128) * (pos / 128 - room->door_tile / 128);
                 if (dist < bestDist) {
                     best = room;
                     bestDist = dist;
@@ -328,7 +328,7 @@ RoomInfo *get_nearest_room_info(Thing *person, u8 kind)
     return best;
 }
 
-// Single player, cheats enabled (othervar.fa8e): flags 2 makes this level's
+// Single player, cheats enabled (othervar.cheats_enabled): flags 2 makes this level's
 // objects available, 4 every object, 8 adds 1000 cash and 0x10 takes 1000.
 // FUNCTION: 0x0001a238
 void cheat(u32 flags)
@@ -337,20 +337,20 @@ void cheat(u32 flags)
     u32 unused2;
     u32 i;
 
-    if (statvar.unknownfd <= 1) {
-        if (othervar.fa8e != 0) {
+    if (statvar.num_players <= 1) {
+        if (othervar.cheats_enabled != 0) {
             play_ambient(saferand() % 2 + 0xc4);
             if (flags & 2) {
                 for (i = 1; i < 0x3e; i++) {
-                    if (objects[i].unknown1c) {
-                        allhosps[player].equipment[i].unknown0 = 1;
+                    if (objects[i].available_for_level) {
+                        allhosps[player].equipment[i].available = 1;
                     }
                 }
             }
             if (flags & 4) {
                 for (i = 1; i < 0x3e; i++) {
-                    objects[i].unknown1c = 1;
-                    allhosps[player].equipment[i].unknown0 = 1;
+                    objects[i].available_for_level = 1;
+                    allhosps[player].equipment[i].available = 1;
                 }
             }
             if (flags & 8) {
@@ -363,108 +363,108 @@ void cheat(u32 flags)
     }
 }
 
-// Sets mouse mode `mode` (gamevar.f12e, MM_*) and its pointer sprite
-// (othervar.f30), unless the mouse is on a window.
+// Sets mouse mode `mode` (gamevar.mouse_mode, MM_*) and its pointer sprite
+// (othervar.pointer_sprite), unless the mouse is on a window.
 // FUNCTION: 0x0001a374
 void set_mouse_mode(const u8 mode)
 {
     switch (mode) {
     case MM_NORMAL:
-        othervar.f30 = 1;
+        othervar.pointer_sprite = 1;
         break;
     case MM_BLUEPRINT:
     case 2:
     case 7:
-        othervar.f30 = 3;
+        othervar.pointer_sprite = 3;
         break;
     case 10:
-        othervar.f30 = 0xd;
+        othervar.pointer_sprite = 0xd;
         break;
     case 9:
-        othervar.f30 = 0;
+        othervar.pointer_sprite = 0;
         break;
     case 11:
-        othervar.f30 = 0xe;
+        othervar.pointer_sprite = 0xe;
         break;
     case MM_EDIT_ROOM:
-        othervar.f30 = 4;
+        othervar.pointer_sprite = 4;
         break;
     case 14:
-        othervar.f30 = 9;
+        othervar.pointer_sprite = 9;
         break;
     case MM_VACCINATE:
-        othervar.f30 = 0xc;
+        othervar.pointer_sprite = 0xc;
         break;
     case 16:
-        othervar.f30 = 9;
+        othervar.pointer_sprite = 9;
         break;
     case 18:
-        othervar.f30 = 0xf;
+        othervar.pointer_sprite = 0xf;
         break;
     case 20:
-        othervar.f30 = 0xf;
+        othervar.pointer_sprite = 0xf;
         break;
     case 21:
-        othervar.f30 = 1;
+        othervar.pointer_sprite = 1;
         break;
     case 22:
-        othervar.f30 = 0x1a;
+        othervar.pointer_sprite = 0x1a;
         break;
     case 23:
-        othervar.f30 = 0x10;
+        othervar.pointer_sprite = 0x10;
         break;
     case 24:
-        othervar.f30 = 0xb;
+        othervar.pointer_sprite = 0xb;
         break;
     case 25:
-        othervar.f30 = 3;
+        othervar.pointer_sprite = 3;
         break;
     case 26:
-        othervar.f30 = 0x18;
+        othervar.pointer_sprite = 0x18;
         break;
     case 27:
-        othervar.f30 = 5;
+        othervar.pointer_sprite = 5;
         break;
     case 28:
-        othervar.f30 = 0x12;
+        othervar.pointer_sprite = 0x12;
         break;
     case 29:
-        othervar.f30 = 1;
+        othervar.pointer_sprite = 1;
         break;
     case 30:
-        othervar.f30 = 0x16;
+        othervar.pointer_sprite = 0x16;
         break;
     case 31:
-        othervar.f30 = 9;
+        othervar.pointer_sprite = 9;
         break;
     case 32:
-        othervar.f30 = 9;
+        othervar.pointer_sprite = 9;
         break;
     case 33:
-        othervar.f30 = 0x20;
+        othervar.pointer_sprite = 0x20;
         break;
     case 34:
-        othervar.f30 = 9;
+        othervar.pointer_sprite = 9;
         break;
     case 36:
-        othervar.f30 = 7;
+        othervar.pointer_sprite = 7;
         break;
     case 38:
-        othervar.f30 = 0x14;
+        othervar.pointer_sprite = 0x14;
         break;
     case 40:
-        othervar.f30 = 0x1c;
+        othervar.pointer_sprite = 0x1c;
         break;
     case 41:
-        othervar.f30 = 0x1e;
+        othervar.pointer_sprite = 0x1e;
         break;
     default:
-        othervar.f30 = 1;
+        othervar.pointer_sprite = 1;
         break;
     }
-    gamevar.f12e = mode;
+    gamevar.mouse_mode = mode;
     if (!mouse_was_on_window) {
-        set_mouse_sprite(othervar.f30);
+        set_mouse_sprite(othervar.pointer_sprite);
     } else {
         mouse_was_on_window = 0;
     }
@@ -541,7 +541,7 @@ void convert_MW_to_xy(u16 pos, s8 *x, s8 *y)
 }
 
 // Stores the footprint bounds of every object shape in each direction in
-// statvar.fff, for placing objects.
+// statvar.object_bounds, for placing objects.
 // FUNCTION: 0x0001a854
 void measure_objects(void)
 {
@@ -572,10 +572,10 @@ void measure_objects(void)
                 maxX < x ? maxX = x : 0;
                 maxY < y ? maxY = y : 0;
             }
-            statvar.fff[i][j].minX = minX;
-            statvar.fff[i][j].minY = minY;
-            statvar.fff[i][j].maxX = maxX;
-            statvar.fff[i][j].maxY = maxY;
+            statvar.object_bounds[i][j].minX = minX;
+            statvar.object_bounds[i][j].minY = minY;
+            statvar.object_bounds[i][j].maxX = maxX;
+            statvar.object_bounds[i][j].maxY = maxY;
         }
     }
 }
@@ -596,14 +596,14 @@ int ascend(const void *a, const void *b)
 
 // Sets the mouse pointer to sprite idx of the in-game or full-screen
 // pointer set, with its hotspot at the corner or the centre; the previous
-// one is kept in othervar.f31.
+// one is kept in othervar.prev_pointer_sprite.
 // FUNCTION: 0x0001aa8c
 void set_mouse_sprite(const u8 idx)
 {
     const u8 *kinds;
     TbSprite *cursors;
 
-    if (othervar.fa65) {
+    if (othervar.screen_pic_loaded) {
         kinds = screen_pointer_hotspots;
         cursors = screen_pointers_tab_start;
         pointer_second_frame_check = screen_pointer_second_frame;
@@ -612,14 +612,14 @@ void set_mouse_sprite(const u8 idx)
         cursors = pointer;
         pointer_second_frame_check = ingame_pointer_second_frame;
     }
-    othervar.f31 = othervar.f30;
-    othervar.f30 = idx;
+    othervar.prev_pointer_sprite = othervar.pointer_sprite;
+    othervar.pointer_sprite = idx;
     switch (kinds[idx]) {
     case 1:
-        LbMouseChangeSpriteAndHotspot(cursors + othervar.f30, 0, 0);
+        LbMouseChangeSpriteAndHotspot(cursors + othervar.pointer_sprite, 0, 0);
         break;
     case 2:
-        LbMouseChangeSpriteAndHotspot(cursors + othervar.f30, cursors[idx].width / 2, cursors[idx].height / 2);
+        LbMouseChangeSpriteAndHotspot(cursors + othervar.pointer_sprite, cursors[idx].width / 2, cursors[idx].height / 2);
         break;
     }
 }
@@ -670,76 +670,76 @@ void vary_speed(s16 speed)
     u8 i;
 
     for (i = 0; i < 5; i++) {
-        othervar.fa3a[i] = 0;
+        othervar.speed_checked[i] = 0;
     }
     switch (speed) {
     case -1:
-        gamevar.f138 = 0;
-        myplayer.f1es--;
-        gamevar.f139 = 0;
-        if (myplayer.f1es < 1) {
-            myplayer.f1es = 1;
-        } else if (myplayer.f1es > 0x7d00) {
-            myplayer.f1es = 0x7d00;
+        gamevar.max_speed = 0;
+        myplayer.game_speed_s--;
+        gamevar.turbo = 0;
+        if (myplayer.game_speed_s < 1) {
+            myplayer.game_speed_s = 1;
+        } else if (myplayer.game_speed_s > 0x7d00) {
+            myplayer.game_speed_s = 0x7d00;
         }
-        othervar.fa3b = 1;
+        othervar.speed_checked_slower = 1;
         break;
     case 1:
-        gamevar.f138 = 0;
-        myplayer.f1es++;
-        gamevar.f139 = 0;
-        if (myplayer.f1es < 1) {
-            myplayer.f1es = 1;
-        } else if (myplayer.f1es > 0x7d00) {
-            myplayer.f1es = 0x7d00;
+        gamevar.max_speed = 0;
+        myplayer.game_speed_s++;
+        gamevar.turbo = 0;
+        if (myplayer.game_speed_s < 1) {
+            myplayer.game_speed_s = 1;
+        } else if (myplayer.game_speed_s > 0x7d00) {
+            myplayer.game_speed_s = 0x7d00;
         }
-        othervar.fa3d = 1;
+        othervar.speed_checked_max = 1;
         break;
     case 10:
-        gamevar.f138 = 0;
-        myplayer.f1es = 1;
-        gamevar.f139 = 0;
-        othervar.fa3a[0] = 1;
+        gamevar.max_speed = 0;
+        myplayer.game_speed_s = 1;
+        gamevar.turbo = 0;
+        othervar.speed_checked[0] = 1;
         break;
     case 20:
-        gamevar.f138 = 0;
-        myplayer.f1es = 5;
-        gamevar.f139 = 0;
-        othervar.fa3b = 1;
+        gamevar.max_speed = 0;
+        myplayer.game_speed_s = 5;
+        gamevar.turbo = 0;
+        othervar.speed_checked_slower = 1;
         break;
     case 30:
-        gamevar.f138 = 0;
-        myplayer.f1es = 0x16;
-        gamevar.f139 = 0;
-        othervar.fa3c = 1;
+        gamevar.max_speed = 0;
+        myplayer.game_speed_s = 0x16;
+        gamevar.turbo = 0;
+        othervar.speed_checked_normal = 1;
         break;
     case 40:
-        gamevar.f138 = 0;
-        myplayer.f1es = 0x19;
-        gamevar.f139 = 0;
-        othervar.fa3d = 1;
+        gamevar.max_speed = 0;
+        myplayer.game_speed_s = 0x19;
+        gamevar.turbo = 0;
+        othervar.speed_checked_max = 1;
         break;
     case 50:
-        gamevar.f138 = 1;
-        myplayer.f1es = 0x7d00;
-        gamevar.f139 = 1;
-        othervar.fa3e = 1;
+        gamevar.max_speed = 1;
+        myplayer.game_speed_s = 0x7d00;
+        gamevar.turbo = 1;
+        othervar.speed_checked_and_more = 1;
         break;
     }
 }
 
-// Notes the time (othervar.f8a2 into f8b2) when the player becomes idle: no
-// windows, no full-screen window, no debug display. othervar.f8b1 holds
+// Notes the time (othervar.clock_ms into f8b2) when the player becomes idle: no
+// windows, no full-screen window, no debug display. othervar.user_idle holds
 // whether they are.
 // FUNCTION: 0x0001afd8
 void compute_whether_user_not_busy(void)
 {
     u8 idle = CountWindows(open_windows) == 0 && display_mode == 0 && !debug.unknownd7;
 
-    if (idle && !othervar.f8b1) {
-        othervar.f8b2 = othervar.f8a2;
+    if (idle && !othervar.user_idle) {
+        othervar.idle_since = othervar.clock_ms;
     }
-    othervar.f8b1 = idle;
+    othervar.user_idle = idle;
 }
 
 // Returns how well furnished room is: its size plus the objects beyond the
@@ -756,12 +756,12 @@ u32 calc_room_value(RoomInfo *room)
     if (room <= room_info || room >= end_room_info) {
         return 0;
     }
-    base = (room->f1 + room->f2) * 5;
+    base = (room->width + room->height) * 5;
     for (obj = thing + room->first_object; obj > thing; obj = thing + obj->room_obj_next) {
         count++;
     }
-    count -= rooms[room->type].fc;
-    count += room->f1b / 2;
+    count -= rooms[room->type].compulsory_count;
+    count += room->windows / 2;
     score = base + count * 5;
     if (score < 0) {
         score = 0;
@@ -793,30 +793,30 @@ Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
 // FUNCTION: 0x0001b1f8
 void setup_abort_all_requesters(void)
 {
-    if (gamevar.f12e == 0xe) {
+    if (gamevar.mouse_mode == 0xe) {
         D_001549d0[player].type = 0x7b;
         return;
     }
-    switch (crequester.unknown2) {
+    switch (crequester.id) {
     case 10:
         if (crequester.unknown9) {
             D_001549d0[player].type = EV_BACK_TO_PLACE_OBJECT;
             D_001549d0[player].value = 1;
-            othervar.f9c5 = 1;
+            othervar.editing_room = 1;
             return;
         }
         break;
     case 5:
-        if (crequester.unknown0 == 0) {
-            if (othervar.f9c5 == 1) {
-                sprintf(othervar.f935, "%s", yesno_text[4]);
+        if (crequester.mode == 0) {
+            if (othervar.editing_room == 1) {
+                sprintf(othervar.yesno_msg, "%s", yesno_text[4]);
                 open_yes_no_requester(0x79, 0, 0, 0x78, 1, 1);
                 return;
             }
             D_001549d0[player].type = EV_DELETE_ROOM;
             return;
         }
-        if (crequester.unknown8 != 3) {
+        if (crequester.kind != 3) {
             D_001549d0[player].type = EV_EDIT_BLUEPRINT;
             return;
         }
@@ -826,26 +826,26 @@ void setup_abort_all_requesters(void)
         return;
     }
     D_001549d0[player].type = 0x38;
-    if (gamevar.unknown75) {
-        D_001549d0[player].value = gamevar.unknown75;
+    if (gamevar.held_staff) {
+        D_001549d0[player].value = gamevar.held_staff;
     } else {
         D_001549d0[player].value = 0;
     }
-    D_001549d0[player].arg = gamevar.f12e;
+    D_001549d0[player].arg = gamevar.mouse_mode;
 }
 
 // Copies the whole screen from src (a background) to the back buffer.
 // FUNCTION: 0x0001b388
 void copy_screen_to_wscreen(const u8 *src)
 {
-    LbScreenCopyBox(src, lbDisplay.unknown4, lbDisplay.unknown1c);
+    LbScreenCopyBox(src, lbDisplay.wscreen, lbDisplay.physical_screen_height);
 }
 
 // Copies the back buffer to dst.
 // FUNCTION: 0x0001b3b8
 void copy_screen_from_wscreen(u8 *dst)
 {
-    LbScreenCopyBox(lbDisplay.unknown4, dst, lbDisplay.unknown1c);
+    LbScreenCopyBox(lbDisplay.wscreen, dst, lbDisplay.physical_screen_height);
 }
 
 // Closes the open build, buy-objects or hire requester unless it is
@@ -853,16 +853,16 @@ void copy_screen_from_wscreen(u8 *dst)
 // FUNCTION: 0x0001b3e8
 void cancel_top_level_requesters(s32 keep)
 {
-    if (crequester.unknown2 != keep) {
-        switch (crequester.unknown2) {
+    if (crequester.id != keep) {
+        switch (crequester.id) {
         case 9:
         case 11:
-            close_crequester(crequester.unknown2);
+            close_crequester(crequester.id);
             break;
         case 10:
             if (!crequester.unknown9) {
-                clear_build_objects(othervar.ff);
-                close_crequester(crequester.unknown2);
+                clear_build_objects(othervar.cur_player);
+                close_crequester(crequester.id);
             }
             break;
         }
@@ -907,14 +907,14 @@ void draw_frame(const s16 x, const s16 y, const s16 w, const s16 h, const u16 co
 // FUNCTION: 0x0001b610
 u8 hosp_play_smk(const u8 idx)
 {
-    u8 wasPlaying = lbDisplay.unknown4 != 0;
+    u8 wasPlaying = lbDisplay.wscreen != 0;
     u8 ok;
 
     ok = 1;
     if (wasPlaying) {
         LbScreenUnlock();
     }
-    if (resvars.f1 == SCREEN_MODE_1 && resvars.f0 == SCREEN_MODE_1 && idx != 0x16 && idx != 0x17) {
+    if (resvars.game_mode == SCREEN_MODE_1 && resvars.screen_mode == SCREEN_MODE_1 && idx != 0x16 && idx != 0x17) {
         if (!change_res(SCREEN_MODE_13)) {
             reset_host();
             exit(1);
@@ -922,14 +922,14 @@ u8 hosp_play_smk(const u8 idx)
         LbScreenClear(0);
         LbScreenSwap();
     }
-    if (animation_table[idx].f28 > install_type) {
+    if (animation_table[idx].cd_install_level > install_type) {
         sprintf(D_0015fde4, "%s%s", cd_install_path, animation_table[idx].name);
         check_cd_available(D_0015fde4);
     } else {
         fn_000bbff0(D_0015fde4, animation_table[idx].name);
     }
     if (LbFileExists(D_0015fde4)) {
-        ok = play_smk(D_0015fde4, animation_table[idx].f32, animation_table[idx].f36);
+        ok = play_smk(D_0015fde4, animation_table[idx].smk_flags, animation_table[idx].play_flags);
     } else {
         ok = 0;
     }
@@ -1047,20 +1047,20 @@ void record_mappos(u8 key)
     int x;
 
     if (key < 12) {
-        find_cell_at_point(window.unknown2eb, lbDisplay.graphics_screen_width / 2, lbDisplay.graphics_screen_height / 2);
-        if (info.unknown5c < 0) {
+        find_cell_at_point(window.current_window, lbDisplay.graphics_screen_width / 2, lbDisplay.graphics_screen_height / 2);
+        if (info.cell_col < 0) {
             x = 0;
-        } else if (info.unknown5c >= 0x80) {
+        } else if (info.cell_col >= 0x80) {
             x = 0x7f;
         } else {
-            x = info.unknown5c;
+            x = info.cell_col;
         }
-        if (info.unknown60 >= 0x80) {
+        if (info.cell_row >= 0x80) {
             y = 0x7f;
-        } else if (info.unknown60 < 0) {
+        } else if (info.cell_row < 0) {
             y = 0;
         } else {
-            y = info.unknown60;
+            y = info.cell_row;
         }
         key_mappos[key] = x + (y << 7);
     }
@@ -1093,7 +1093,7 @@ void setup_key_mappos(void)
 // FUNCTION: 0x0001bc48
 void hosp_fade_palette(u8 *palette, u8 steps, TbPaletteFadeFlag flag)
 {
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         LbPaletteFade(palette, 1, flag);
     } else {
         LbPaletteFade(palette, steps, flag);
@@ -1109,9 +1109,9 @@ void open_requester(u8 idx, u8 flag)
     char path[20];
     int size;
 
-    name = resvars.f6_charpp[idx];
+    name = resvars.req_filenames_charpp[idx];
 
-    if (resvars.f0 == SCREEN_MODE_13) {
+    if (resvars.screen_mode == SCREEN_MODE_13) {
         if (idx != loaded_requester) {
             fn_000bbff0(path, name);
             fn_000c93bf(path, ".tab");
@@ -1136,16 +1136,16 @@ void open_requester(u8 idx, u8 flag)
         }
     }
     if (flag) {
-        OpenWindow(open_windows, resvars.f20, idx);
+        OpenWindow(open_windows, resvars.window_list, idx);
     }
 }
 
-// Closes requester window i and clears crequester.unknown2.
+// Closes requester window i and clears crequester.id.
 // FUNCTION: 0x0001bdb8
 void close_crequester(u8 i)
 {
-    remove_window(open_windows, resvars.f20 + i);
-    crequester.unknown2 = 0x63;
+    remove_window(open_windows, resvars.window_list + i);
+    crequester.id = 0x63;
     cancel_helpmsg();
 }
 
@@ -1185,7 +1185,7 @@ void fn_0001be78(u8 dir)
 }
 
 // Reopens the faces file for the current resolution (low-res faces when
-// othervar.fa8d is set) and sets its face sizes. Exits the program if it
+// othervar.use_lores_assets is set) and sets its face sizes. Exits the program if it
 // cannot be opened.
 // FUNCTION: 0x0001bee4
 void open_face_file(void)
@@ -1194,7 +1194,7 @@ void open_face_file(void)
         LbFileClose(face_file);
         face_file = -1;
     }
-    if (resvars.f0 == SCREEN_MODE_1 || othervar.fa8d) {
+    if (resvars.screen_mode == SCREEN_MODE_1 || othervar.use_lores_assets) {
         face_file = LbFileOpen((char *)lores_faces, 2);
         if (face_file == -1) {
             error_number = 9;
@@ -1202,13 +1202,13 @@ void open_face_file(void)
             reset_host();
             exit(1);
         }
-        resvars.f60_u32 = D_0014bcc4;
-        resvars.f64_u32 = D_0014bcd0;
-        resvars.f68_u32 = D_0014bcd8;
-        resvars.f6c_u32 = D_0014bce0;
-        resvars.f58_u32 = D_0014bce4;
-        resvars.f5c_u32 = D_0014bce8;
-    } else if (resvars.f0 == SCREEN_MODE_13) {
+        resvars.face_w_u32 = D_0014bcc4;
+        resvars.face_head_h_u32 = D_0014bcd0;
+        resvars.face_body_h_u32 = D_0014bcd8;
+        resvars.face_legs_h_u32 = D_0014bce0;
+        resvars.face_border_w_u32 = D_0014bce4;
+        resvars.face_border_h_u32 = D_0014bce8;
+    } else if (resvars.screen_mode == SCREEN_MODE_13) {
         face_file = LbFileOpen((char *)hires_faces, 2);
         if (face_file == -1) {
             error_number = 9;
@@ -1216,11 +1216,11 @@ void open_face_file(void)
             reset_host();
             exit(1);
         }
-        resvars.f60_u32 = D_0013c60c;
-        resvars.f64_u32 = D_0013c618;
-        resvars.f68_u32 = D_0013c620;
-        resvars.f6c_u32 = D_0013c628;
-        resvars.f58_u32 = D_0013c62c;
-        resvars.f5c_u32 = D_0013c630;
+        resvars.face_w_u32 = D_0013c60c;
+        resvars.face_head_h_u32 = D_0013c618;
+        resvars.face_body_h_u32 = D_0013c620;
+        resvars.face_legs_h_u32 = D_0013c628;
+        resvars.face_border_w_u32 = D_0013c62c;
+        resvars.face_border_h_u32 = D_0013c630;
     }
 }

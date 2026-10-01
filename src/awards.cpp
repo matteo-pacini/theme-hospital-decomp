@@ -8,7 +8,7 @@ void general_award(s32 *field, s32 value, const u8 award, const s32 high, const 
 // Year end: decides the player's 13 awards (all_awards, cleared first) from
 // this year's figures, the monthly award_counts and the level's thresholds
 // (awards_trophies), paying their money or reputation. Gives none unless the
-// year's history[4] total exceeds three times myhosp->f29.
+// year's history[4] total exceeds three times myhosp->level.
 // FUNCTION: 0x000b3430
 void check_awards_won(void)
 {
@@ -26,96 +26,96 @@ void check_awards_won(void)
         a += mycontrol->history[4][0][i];
         cures += mycontrol->history[6][0][i];
     }
-    if (myhosp->f29 * 3 < a) {
+    if (myhosp->level * 3 < a) {
         for (i = 0; i < 13; i++) {
             switch (i) {
             case 0:
-                if (myhosp->f29 * 2 <= cures)
-                    general_award(&myhosp->unknownc7e, myhosp->unknownc7e, 0, awards_trophies.f1f, awards_trophies.f21, 4, 0,
-                                  2, awards_trophies.f4d, awards_trophies.f4f);
+                if (myhosp->level * 2 <= cures)
+                    general_award(&myhosp->reputation, myhosp->reputation, 0, awards_trophies.reputation_award, awards_trophies.reputation_poor, 4, 0,
+                                  2, awards_trophies.award_reputation_bonus, awards_trophies.award_reputation_penalty);
                 break;
             case 1:
-                if (myhosp->f1ed > myhosp->f1c7)
-                    general_award((s32 *)&myhosp->f1e9, myhosp->f1e9, 1,
-                                  awards_trophies.f17 * (myhosp->f1ed - myhosp->f1c7),
-                                  awards_trophies.f18 * (myhosp->f1ed - myhosp->f1c7), 2, 0, 2, awards_trophies.f3f,
-                                  awards_trophies.f41);
+                if (myhosp->visitors > myhosp->year_start_visitors)
+                    general_award((s32 *)&myhosp->cures, myhosp->cures, 1,
+                                  awards_trophies.cures_award * (myhosp->visitors - myhosp->year_start_visitors),
+                                  awards_trophies.cures_poor * (myhosp->visitors - myhosp->year_start_visitors), 2, 0, 2, awards_trophies.cures_bonus,
+                                  awards_trophies.cures_penalty);
                 break;
             case 2:
-                if (myhosp->f1ed > myhosp->f1c7 && myhosp->f1e9)
-                    general_award((s32 *)&myhosp->f1eb, myhosp->f1eb, 2,
-                                  awards_trophies.f19 * (myhosp->f1ed - myhosp->f1c7),
-                                  awards_trophies.f1a * (myhosp->f1ed - myhosp->f1c7), 2, 0, 2, awards_trophies.f43,
-                                  awards_trophies.f45);
+                if (myhosp->visitors > myhosp->year_start_visitors && myhosp->cures)
+                    general_award((s32 *)&myhosp->deaths, myhosp->deaths, 2,
+                                  awards_trophies.deaths_award * (myhosp->visitors - myhosp->year_start_visitors),
+                                  awards_trophies.deaths_poor * (myhosp->visitors - myhosp->year_start_visitors), 2, 0, 2, awards_trophies.deaths_bonus,
+                                  awards_trophies.deaths_penalty);
                 break;
             case 3:
-                if (myhosp->f29 * 2 <= cures)
-                    general_award((s32 *)&myhosp->f1cb, myhosp->f1cb, 3, awards_trophies.f1b, awards_trophies.f1c, 2, 0, 1,
-                                  awards_trophies.f47, awards_trophies.f48);
+                if (myhosp->level * 2 <= cures)
+                    general_award((s32 *)&myhosp->market_share, myhosp->market_share, 3, awards_trophies.population_percentage_award, awards_trophies.population_percentage_poor, 2, 0, 1,
+                                  awards_trophies.population_percentage_bonus, awards_trophies.population_pct_penalty);
                 break;
             case 4:
-                if (myhosp->f1eb > 0) {
-                    a = myhosp->f1e9 * 0x6400 / myhosp->f1eb;
-                    if (awards_trophies.f1d << 8 < a)
-                        set_award_value(i, 1, 0, awards_trophies.f49, 2);
-                    else if (awards_trophies.f1e << 8 > a)
-                        set_award_value(i, -1, 0, awards_trophies.f4b, 2);
-                } else if (myhosp->f1ed > myhosp->f1c7 && awards_trophies.f3f <= cures) {
-                    set_award_value(i, 1, 0, awards_trophies.f49, 2);
+                if (myhosp->deaths > 0) {
+                    a = myhosp->cures * 0x6400 / myhosp->deaths;
+                    if (awards_trophies.cures_v_deaths_award << 8 < a)
+                        set_award_value(i, 1, 0, awards_trophies.cures_v_deaths_bonus, 2);
+                    else if (awards_trophies.cures_v_deaths_poor << 8 > a)
+                        set_award_value(i, -1, 0, awards_trophies.cures_v_deaths_penalty, 2);
+                } else if (myhosp->visitors > myhosp->year_start_visitors && awards_trophies.cures_bonus <= cures) {
+                    set_award_value(i, 1, 0, awards_trophies.cures_v_deaths_bonus, 2);
                 }
                 break;
             case 5:
-                if (year_check(award_counts.f34, awards_trophies.f31, 1))
-                    set_award_value(i, 1, 0, awards_trophies.f55[6], 1);
-                else if (year_check(award_counts.f34, awards_trophies.f32, 0))
-                    set_award_value(i, -1, 0, awards_trophies.f55[7], 1);
+                if (year_check(award_counts.peep_happiness, awards_trophies.peep_happiness_award, 1))
+                    set_award_value(i, 1, 0, awards_trophies.bonus_penalty[6], 1);
+                else if (year_check(award_counts.peep_happiness, awards_trophies.peep_happiness_poor, 0))
+                    set_award_value(i, -1, 0, awards_trophies.bonus_penalty[7], 1);
                 break;
             case 6:
-                general_award(&myhosp->f1bb, myhosp->f1bb, 6, awards_trophies.f23, awards_trophies.f27, 4, 0, 1,
-                              awards_trophies.f51, awards_trophies.f53);
+                general_award(&myhosp->hospital_value, myhosp->hospital_value, 6, awards_trophies.hosp_value_award, awards_trophies.hosp_value_poor, 4, 0, 1,
+                              awards_trophies.hosp_value_bonus, awards_trophies.hosp_value_penalty);
                 break;
             case 7:
-                if (year_check(award_counts.f0, awards_trophies.f2f, 1))
-                    set_award_value(i, 1, 0, awards_trophies.f55[4], 1);
-                else if (year_check(award_counts.f0, awards_trophies.f30, 0))
-                    set_award_value(i, -1, 0, awards_trophies.f55[5], 1);
+                if (year_check(award_counts.staff_happiness, awards_trophies.staff_happiness_award, 1))
+                    set_award_value(i, 1, 0, awards_trophies.bonus_penalty[4], 1);
+                else if (year_check(award_counts.staff_happiness, awards_trophies.staff_happiness_poor, 0))
+                    set_award_value(i, -1, 0, awards_trophies.bonus_penalty[5], 1);
                 break;
             case 8:
-                if (myhosp->f1f1 > 0) {
-                    a = (myhosp->fcaa + myhosp->fcae * 2 << 14) / myhosp->f1f1;
-                    if ((awards_trophies.f2b << 14) / 100 > a)
-                        set_award_value(i, 1, 0, awards_trophies.f55[0], 1);
-                    else if (0x4000 / awards_trophies.f2c < a)
-                        set_award_value(i, -1, 0, awards_trophies.f55[1], 1);
+                if (myhosp->area > 0) {
+                    a = (myhosp->litter_count + myhosp->rathole_count * 2 << 14) / myhosp->area;
+                    if ((awards_trophies.cleanliness_award << 14) / 100 > a)
+                        set_award_value(i, 1, 0, awards_trophies.bonus_penalty[0], 1);
+                    else if (0x4000 / awards_trophies.cleanliness_poor < a)
+                        set_award_value(i, -1, 0, awards_trophies.bonus_penalty[1], 1);
                 }
                 break;
             case 9:
-                if (year_check(award_counts.f9c, awards_trophies.f33, 0))
-                    set_award_value(i, 1, 0, awards_trophies.f55[8], 1);
-                else if (year_check(award_counts.f9c, awards_trophies.f34, 1))
-                    set_award_value(i, -1, 0, awards_trophies.f55[9], 1);
+                if (year_check(award_counts.waiting_times, awards_trophies.waiting_times_award, 0))
+                    set_award_value(i, 1, 0, awards_trophies.bonus_penalty[8], 1);
+                else if (year_check(award_counts.waiting_times, awards_trophies.waiting_times_poor, 1))
+                    set_award_value(i, -1, 0, awards_trophies.bonus_penalty[9], 1);
                 break;
             case 10:
-                if (award_counts.f13f > 2) {
-                    if (awards_trophies.f2d < award_counts.f140)
-                        set_award_value(i, 1, 0, awards_trophies.f55[2], 1);
-                    else if (awards_trophies.f2e > award_counts.f140)
-                        set_award_value(i, -1, 0, awards_trophies.f55[3], 1);
+                if (award_counts.emergencies > 2) {
+                    if (awards_trophies.emergency_award < award_counts.emergency_saved_pct)
+                        set_award_value(i, 1, 0, awards_trophies.bonus_penalty[2], 1);
+                    else if (awards_trophies.emergency_poor > award_counts.emergency_saved_pct)
+                        set_award_value(i, -1, 0, awards_trophies.bonus_penalty[3], 1);
                 }
                 break;
             case 11:
-                if (award_counts.f149 > 100) {
-                    if (award_counts.f149 > awards_trophies.f37)
-                        set_award_value(i, 1, 0, awards_trophies.f55[12], 1);
-                    else if (award_counts.f149 < awards_trophies.f3b)
-                        set_award_value(i, -1, 0, awards_trophies.f55[13], 1);
+                if (award_counts.research_spent > 100) {
+                    if (award_counts.research_spent > awards_trophies.new_tech_award)
+                        set_award_value(i, 1, 0, awards_trophies.bonus_penalty[12], 1);
+                    else if (award_counts.research_spent < awards_trophies.new_tech_poor)
+                        set_award_value(i, -1, 0, awards_trophies.bonus_penalty[13], 1);
                 }
                 break;
             case 12:
-                if (year_check(award_counts.f104, 1, 1) && year_check(award_counts.fd0, awards_trophies.f35, 0))
-                    set_award_value(i, 1, 0, awards_trophies.f55[10], 1);
-                else if (award_counts.f144 || (year_check(award_counts.f104, 1, 1) && year_check(award_counts.fd0, awards_trophies.f36, 1)))
-                    set_award_value(i, -1, 0, awards_trophies.f55[11], 1);
+                if (year_check(award_counts.machines, 1, 1) && year_check(award_counts.machine_wear, awards_trophies.well_kept_tech_award, 0))
+                    set_award_value(i, 1, 0, awards_trophies.bonus_penalty[10], 1);
+                else if (award_counts.machine_exploded || (year_check(award_counts.machines, 1, 1) && year_check(award_counts.machine_wear, awards_trophies.well_kept_tech_poor, 1)))
+                    set_award_value(i, -1, 0, awards_trophies.bonus_penalty[11], 1);
                 break;
             default:
                 break;
@@ -142,56 +142,56 @@ void check_trophies_won(void)
         for (i = 0; i < 9; i++) {
             switch (i) {
             case 0:
-                if (myhosp->f1ed > myhosp->f1c7) {
-                    if ((myhosp->f1e9 - mycontrol->f4a4 << 8) / (myhosp->f1ed - myhosp->f1c7) > 0xf3) {
-                        set_trophy_value(i, awards_trophies.f11, 2);
-                        change_balance(TX_TROPHY_BONUS, (u16)awards_trophies.f11, 0, player);
+                if (myhosp->visitors > myhosp->year_start_visitors) {
+                    if ((myhosp->cures - mycontrol->year_start_cures << 8) / (myhosp->visitors - myhosp->year_start_visitors) > 0xf3) {
+                        set_trophy_value(i, awards_trophies.trophy_cures_bonus, 2);
+                        change_balance(TX_TROPHY_BONUS, (u16)awards_trophies.trophy_cures_bonus, 0, player);
                     }
-                } else if (myhosp->f1ed == myhosp->f1e9) {
-                    set_trophy_value(i, awards_trophies.f11, 2);
-                    change_balance(TX_TROPHY_BONUS, (u16)awards_trophies.f11 * 2, 0, player);
+                } else if (myhosp->visitors == myhosp->cures) {
+                    set_trophy_value(i, awards_trophies.trophy_cures_bonus, 2);
+                    change_balance(TX_TROPHY_BONUS, (u16)awards_trophies.trophy_cures_bonus * 2, 0, player);
                 }
                 break;
             case 1:
-                if (year_check(mycontrol->history[7][0], awards_trophies.f6, 1))
-                    set_trophy_value(i, awards_trophies.f8, 2);
+                if (year_check(mycontrol->history[7][0], awards_trophies.reputation, 1))
+                    set_trophy_value(i, awards_trophies.trophy_reputation_bonus, 2);
                 break;
             case 2:
-                if (year_check(award_counts.f0, awards_trophies.fc, 1))
-                    set_trophy_value(i, awards_trophies.fd, 1);
+                if (year_check(award_counts.staff_happiness, awards_trophies.trophy_staff_happiness, 1))
+                    set_trophy_value(i, awards_trophies.trophy_staff_happiness_bonus, 1);
                 break;
             case 3:
-                if (award_counts.f13e > 1) {
-                    if ((award_counts.f13a << 8) / award_counts.f13e < awards_trophies.f15 << 8)
-                        set_trophy_value(i, awards_trophies.f16, 1);
+                if (award_counts.mayor_visits > 1) {
+                    if ((award_counts.mayor_score_total << 8) / award_counts.mayor_visits < awards_trophies.trophy_mayor << 8)
+                        set_trophy_value(i, awards_trophies.trophy_mayor_bonus, 1);
                 }
                 break;
             case 4:
-                if (gamevar.f177 == myhosp->f1eb)
-                    set_trophy_value(i, awards_trophies.f13, 2);
-                gamevar.f177 = myhosp->f1eb;
+                if (gamevar.prev_year_deaths == myhosp->deaths)
+                    set_trophy_value(i, awards_trophies.trophy_death_bonus, 2);
+                gamevar.prev_year_deaths = myhosp->deaths;
                 break;
             case 5:
-                if (awards_trophies.unknown0 < award_counts.f14d) {
-                    set_trophy_value(i, awards_trophies.f1, 1);
-                    othervar.fa59 = award_counts.f14d;
+                if (awards_trophies.rat_kills_absolute < award_counts.rats_killed) {
+                    set_trophy_value(i, awards_trophies.rat_kills_absolute_bonus, 1);
+                    othervar.plaque_rat_kills = award_counts.rats_killed;
                 }
                 break;
             case 6:
-                if (award_counts.f151 > 0 && awards_trophies.unknown0 / 2 < award_counts.f14d) {
-                    if ((award_counts.f14d << 8) / award_counts.f151 > (awards_trophies.unknowne << 8) / 100) {
-                        set_trophy_value(i, awards_trophies.ff, 2);
-                        othervar.fa5a = award_counts.f14d * 100 / award_counts.f151;
+                if (award_counts.rat_shots > 0 && awards_trophies.rat_kills_absolute / 2 < award_counts.rats_killed) {
+                    if ((award_counts.rats_killed << 8) / award_counts.rat_shots > (awards_trophies.rat_kills_percentage << 8) / 100) {
+                        set_trophy_value(i, awards_trophies.rat_kills_percentage_bonus, 2);
+                        othervar.plaque_rat_kill_pct = award_counts.rats_killed * 100 / award_counts.rat_shots;
                     }
                 }
                 break;
             case 7:
-                if (year_check(award_counts.f68, awards_trophies.fa << 14, 1))
-                    set_trophy_value(i, awards_trophies.fb, 1);
+                if (year_check(award_counts.plant_health, awards_trophies.plant << 14, 1))
+                    set_trophy_value(i, awards_trophies.plant_bonus, 1);
                 break;
             case 8:
-                if (award_counts.f138 > awards_trophies.f3)
-                    set_trophy_value(i, awards_trophies.f4, 2);
+                if (award_counts.cans_of_coke > awards_trophies.cans_of_coke)
+                    set_trophy_value(i, awards_trophies.cans_of_coke_bonus, 2);
                 break;
             default:
                 break;
@@ -223,42 +223,42 @@ u8 year_check(s32 *values, const s32 limit, const u8 above)
 }
 
 // Month end: stores this month's ratios (from adcounts and NRAdcounts) in the
-// award_counts arrays at index mycontrol->unknown650, for year_check.
+// award_counts arrays at index mycontrol->month, for year_check.
 // FUNCTION: 0x000b4170
 void monthly_update_of_award_counts(void)
 {
-    if (myhosp->fc9c > 3)
-        award_counts.f0[mycontrol->unknown650] = (adcounts.f4s << 8) / myhosp->fc9c;
+    if (myhosp->staff_count > 3)
+        award_counts.staff_happiness[mycontrol->month] = (adcounts.staff_happiness_sum_s << 8) / myhosp->staff_count;
     else
-        award_counts.f0[mycontrol->unknown650] = 0;
-    if (adcounts.f0 > 3) {
-        award_counts.f34[mycontrol->unknown650] = (adcounts.fa << 8) / adcounts.f0;
-        award_counts.f9c[mycontrol->unknown650] = (adcounts.f4a << 8) / adcounts.f0;
+        award_counts.staff_happiness[mycontrol->month] = 0;
+    if (adcounts.patients > 3) {
+        award_counts.peep_happiness[mycontrol->month] = (adcounts.happiness_sum << 8) / adcounts.patients;
+        award_counts.waiting_times[mycontrol->month] = (adcounts.waiting_sum << 8) / adcounts.patients;
     } else {
-        award_counts.f34[mycontrol->unknown650] = 0;
-        award_counts.f9c[mycontrol->unknown650] = gbv.f108 << 8;
+        award_counts.peep_happiness[mycontrol->month] = 0;
+        award_counts.waiting_times[mycontrol->month] = gbv.leave_max << 8;
     }
-    if (NRAdcounts.unknown0 > 7)
-        award_counts.f68[mycontrol->unknown650] = NRAdcounts.unknownb * 0x190000 / NRAdcounts.unknown0;
+    if (NRAdcounts.plants > 7)
+        award_counts.plant_health[mycontrol->month] = NRAdcounts.plant_health_sum * 0x190000 / NRAdcounts.plants;
     else
-        award_counts.f68[mycontrol->unknown650] = 0;
-    award_counts.fd0[mycontrol->unknown650] = adcounts.f90;
-    award_counts.f104[mycontrol->unknown650] = adcounts.f8f;
+        award_counts.plant_health[mycontrol->month] = 0;
+    award_counts.machine_wear[mycontrol->month] = adcounts.machine_wear_sum;
+    award_counts.machines[mycontrol->month] = adcounts.machines;
 }
 
 // Clears the award_counts totals kept over a year (not the monthly arrays).
 // FUNCTION: 0x000b4358
 void annual_update_of_award_counts(void)
 {
-    award_counts.f138 = 0;
-    award_counts.f13a = 0;
-    award_counts.f13e = 0;
-    award_counts.f13f = 0;
-    award_counts.f140 = 0;
-    award_counts.f145 = 0;
-    award_counts.f149 = 0;
-    award_counts.f14d = 0;
-    award_counts.f151 = 0;
+    award_counts.cans_of_coke = 0;
+    award_counts.mayor_score_total = 0;
+    award_counts.mayor_visits = 0;
+    award_counts.emergencies = 0;
+    award_counts.emergency_saved_pct = 0;
+    award_counts.research_earned = 0;
+    award_counts.research_spent = 0;
+    award_counts.rats_killed = 0;
+    award_counts.rat_shots = 0;
 }
 
 // Awards trophy trophy_no: picks one of its three texts at random and pays
@@ -267,25 +267,25 @@ void annual_update_of_award_counts(void)
 // FUNCTION: 0x000b43c0
 void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
 {
-    trophy[trophy_no].unknown0 = trophy_no;
-    trophy[trophy_no].f1 = trophy_no * 3 + saferand() % 3 + 1;
+    trophy[trophy_no].id = trophy_no;
+    trophy[trophy_no].text_index = trophy_no * 3 + saferand() % 3 + 1;
     if (type == 1) {
         s32 rep;
 
-        rep = myhosp->unknownc7e;
+        rep = myhosp->reputation;
         reputation_affected(0, 0x17, 0, player, value);
-        if (myhosp->unknownc7e != rep) {
-            trophy[trophy_no].value = myhosp->unknownc7e - rep;
+        if (myhosp->reputation != rep) {
+            trophy[trophy_no].value = myhosp->reputation - rep;
         } else {
             change_balance(TX_TROPHY_BONUS, 5000, 0, player);
             trophy[trophy_no].value = 5000;
-            trophy[trophy_no].unknown0 = 2;
+            trophy[trophy_no].id = 2;
         }
     } else if (type == 2) {
         change_balance(TX_TROPHY_BONUS, value, 0, player);
         trophy[trophy_no].value = value;
     }
-    trophy[trophy_no].f4 = saferand() % 1 + type - 1;
+    trophy[trophy_no].reward_kind = saferand() % 1 + type - 1;
 }
 
 // Records award award as won (dir 1) or lost (dir -1), with text variant tier
@@ -295,19 +295,19 @@ void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
 // FUNCTION: 0x000b4510
 void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 value, u8 type)
 {
-    all_awards[award].unknown0 = dir;
-    all_awards[award].f1 = award;
-    all_awards[award].f2 = tier + award * 3 + saferand() % 1 + 1;
+    all_awards[award].direction = dir;
+    all_awards[award].id = award;
+    all_awards[award].text_index = tier + award * 3 + saferand() % 1 + 1;
     if (type == 2) {
         change_balance(TX_YEAR_END_BONUS, value, 0, player);
         all_awards[award].value = value;
     } else if (type == 1) {
         s32 rep;
 
-        rep = myhosp->unknownc7e;
+        rep = myhosp->reputation;
         reputation_affected(0, 0x18, 0, player, value);
-        if (myhosp->unknownc7e != rep) {
-            all_awards[award].value = myhosp->unknownc7e - rep;
+        if (myhosp->reputation != rep) {
+            all_awards[award].value = myhosp->reputation - rep;
         } else {
             if (dir > 0) {
                 change_balance(TX_YEAR_END_BONUS, 2500, 0, player);
@@ -319,7 +319,7 @@ void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 valu
             type = 2;
         }
     }
-    all_awards[award].f5 = saferand() % 1 + type - 1;
+    all_awards[award].reward_kind = saferand() % 1 + type - 1;
 }
 
 // Gives award award from a statistic compared with the other active hospitals:
@@ -343,7 +343,7 @@ void general_award(s32 *field, s32 value, const u8 award, const s32 high, const 
     bottom = 1;
     hosp_no = 4;
     while (--hosp_no >= 0) {
-        if (statvar.unknownfd > 1 && D_001609c4[hosp_no].active == 0)
+        if (statvar.num_players > 1 && D_001609c4[hosp_no].active == 0)
             continue;
         if (&allhosps[hosp_no] == myhosp)
             continue;

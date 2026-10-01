@@ -60,7 +60,7 @@ int main(u16 argc, char **argv)
                     goto next_arg;
                 case 'C':
                 case 'c':
-                    myplayer.f21 = atoi(arg);
+                    myplayer.language = atoi(arg);
                     goto next_arg;
                 case 'E':
                 case 'e':
@@ -72,14 +72,14 @@ int main(u16 argc, char **argv)
                     goto next_arg;
                 case 'S':
                 case 's':
-                    debug.unknown1fa = 1;
+                    debug.direct_start = 1;
                     level_number = 1;
                     goto next_arg;
                 case 'L':
                 case 'l':
                     level_number = atoi(arg);
                     new_game = 1;
-                    debug.unknown1fa = 1;
+                    debug.direct_start = 1;
                     goto next_arg;
                 case 'N':
                 case 'n':
@@ -92,7 +92,7 @@ int main(u16 argc, char **argv)
                     goto next_arg;
                 case 'Q':
                 case 'q':
-                    statvar.unknownfc = 1;
+                    statvar.quiet = 1;
                     goto next_arg;
                 case 'R':
                 case 'r':
@@ -106,7 +106,7 @@ int main(u16 argc, char **argv)
         }
     next_arg:;
     }
-    if (statvar.unknownfc == 0) {
+    if (statvar.quiet == 0) {
         display_copyright();
     }
     if (setup_host() == 0) {
@@ -135,55 +135,55 @@ void init_game_vars(void)
     memset(all_awards, 0, 0x4e);
     memset(trophy, 0, 0x2d);
     LbMemorySet(&award_counts, 0, sizeof(award_counts));
-    resvars.f2 = SCREEN_MODE_13;
-    resvars.f3 = 0x20;
-    resvars.f4 = 0x40;
-    resvars.f18_u8p = D_0013bb0c;
-    resvars.f3c = &ScreenBoxes;
-    resvars.f1c_u8p = D_0013c0fc;
-    resvars.f40 = D_00146c8c;
-    resvars.f20_u8p = window_list;
-    resvars.f24 = button_list;
-    resvars.f44 = screenlistpos;
-    resvars.f28 = hiresbuttons;
-    resvars.f48 = screenbuttons;
-    resvars.f2c_intp = hireshelp;
-    resvars.f50 = D_00147314;
-    resvars.f6_names = hires_req_filenames;
-    resvars.fe = hires_requester_buttons;
-    resvars.f12 = hires_requester_sprites;
-    resvars.fa_charpp = hires_font_filenames;
-    resvars.f34 = panel_popup_coord;
-    resvars.f16 = 3;
-    resvars.f17 = 0x20;
-    resvars.f38 = D_0012cc3c;
-    resvars.f5 = 0;
-    advisor.f11f &= 0xfe;
-    NRAdcounts.unknown2 = 0;
-    NRAdcounts.unknown0 = 0;
-    NRAdcounts.unknown6 = 0;
-    othervar.fa4b = 0;
-    othervar.f9c5 = 0;
+    resvars.loaded_mode = SCREEN_MODE_13;
+    resvars.tile_height = 0x20;
+    resvars.tile_width = 0x40;
+    resvars.boxes_u8p = D_0013bb0c;
+    resvars.screen_boxes = &ScreenBoxes;
+    resvars.coords_u8p = D_0013c0fc;
+    resvars.screen_coords = D_00146c8c;
+    resvars.window_list_u8p = window_list;
+    resvars.button_list = button_list;
+    resvars.screen_list_pos = screenlistpos;
+    resvars.buttons = hiresbuttons;
+    resvars.screen_buttons = screenbuttons;
+    resvars.help_hotspots_intp = hireshelp;
+    resvars.glass_frames = D_00147314;
+    resvars.req_filenames_names = hires_req_filenames;
+    resvars.requester_buttons = hires_requester_buttons;
+    resvars.requester_sprites = hires_requester_sprites;
+    resvars.font_filenames_charpp = hires_font_filenames;
+    resvars.panel_popup_coords = panel_popup_coord;
+    resvars.advisor_min_segments = 3;
+    resvars.advisor_max_segments = 0x20;
+    resvars.litter_pos = D_0012cc3c;
+    resvars.game_files_state = 0;
+    advisor.flags &= 0xfe;
+    NRAdcounts.thirsty_plants = 0;
+    NRAdcounts.plants = 0;
+    NRAdcounts.bench_shortage = 0;
+    othervar.last_built_room = 0;
+    othervar.editing_room = 0;
     D_001581ed = D_001581ec = D_001581ee = D_001581ef = 0;
     D_001581f0 = 0;
-    statvar.unknownfd = 1;
+    statvar.num_players = 1;
     player = 0;
-    statvar.unknownfc = 0;
+    statvar.quiet = 0;
     for (i = 0; D_001290d4[i].size != 0; i++) {
-        statvar.unknown0 += D_001290d4[i].size;
+        statvar.save_game_size += D_001290d4[i].size;
     }
     othervar.f16 = 1;
     statvar.f5dc = 0x40;
-    advisor.f2 = 0;
-    advisor.f0_u16 = 0;
-    advisor.f11e = 0;
-    statvar.unknown4 = 0x1b0;
+    advisor.forced_advice_id = 0;
+    advisor.advice_id_u = 0;
+    advisor.anim_state = 0;
+    statvar.view_height = 0x1b0;
     initialise_shadows();
     set_default_player_details();
 }
 
 // Measures the CD's read speed by reading animation_table[25]'s file from
-// cd_install_path, storing the result in othervar.fa87 (2 if no buffer could
+// cd_install_path, storing the result in othervar.cd_speed (2 if no buffer could
 // be allocated).
 // FUNCTION: 0x00010584
 void get_cd_speed(void)
@@ -196,10 +196,10 @@ void get_cd_speed(void)
     if (buf != 0) {
         sprintf(path, "%s%s", cd_install_path, animation_table[25].name);
         count = LbFileLengthRnc(path) / 12;
-        othervar.fa87 = GetCDSpeed(path, buf, 0x10000, count);
+        othervar.cd_speed = GetCDSpeed(path, buf, 0x10000, count);
         LbMemoryFree(buf);
     } else {
-        othervar.fa87 = 2;
+        othervar.cd_speed = 2;
     }
 }
 

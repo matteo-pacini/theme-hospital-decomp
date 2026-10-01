@@ -25,7 +25,7 @@ typedef enum {
 struct TbNetworkPlayerEntry {
     u8 unknown0;
     u32 id;
-    u32 unknown5;
+    u32 local;
     u32 host;
     char name[0x20];
 };
@@ -47,7 +47,7 @@ struct ServiceProvider {
     u32 local_id;
     TbNetworkSessionNameEntry sessions[32];
     u32 init_count;
-    u32 unknown528;
+    u32 in_session;
     u32 player_count;
     TbNetworkPlayerEntry players[32];
     char name[0x20];
@@ -130,7 +130,7 @@ struct CommHandlerData {
     char hangup_str[0x50];
     char reset_str[0x50];
     long port;
-    long unknown19c;
+    long response_timeout;
     char last_cmd[0x50];
     u8 online;
     long (*init_func)(void);
@@ -373,7 +373,7 @@ extern char IPXDEBUGSTRING[];
 
 struct IPXHandler {
     u32 stamp;
-    u32 unknown4;
+    u32 last_update;
     u32 socket_open;
     u8 net[4];
     u8 node[6];
@@ -428,7 +428,7 @@ struct IPXPlayerEntry {
     char name[0x20];
     __3ljac5NETSOCKET addr;
     u16 ack;
-    u16 unknown36;
+    u16 abort_acked;
 };
 
 struct IPXSessionInfo {

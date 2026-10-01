@@ -26,14 +26,14 @@ void req13(Window *win)
 
     for (button = win->buttons, i = 1; button; button = button->next) {
         if (button->flags & 6) {
-            debug.unknown4 = i;
-            if (i == resvars.fe[1]) {
+            debug.last_button = i;
+            if (i == resvars.requester_buttons[1]) {
                 req13_no_pressed();
                 play_sound(10, SFX_NO4, -1, -1);
-            } else if (i == resvars.fe[0]) {
-                D_001549d0[player].type = othervar.f99e;
-                D_001549d0[player].value = othervar.f99f;
-                D_001549d0[player].arg = othervar.f9a2;
+            } else if (i == resvars.requester_buttons[0]) {
+                D_001549d0[player].type = othervar.yes_type;
+                D_001549d0[player].value = othervar.yes_value;
+                D_001549d0[player].arg = othervar.yes_arg;
                 play_sound(10, SFX_YESX, -1, -1);
             }
         }
@@ -41,7 +41,7 @@ void req13(Window *win)
     }
 }
 
-// Draws the yes/no requester's question (othervar.f935).
+// Draws the yes/no requester's question (othervar.yesno_msg).
 // FUNCTION: 0x0006fcc4
 void req13_overdraw(Window *win)
 {
@@ -49,47 +49,47 @@ void req13_overdraw(Window *win)
     s32 y;
 
     compute_help_text(0, 0, 8);
-    LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
-                              window.unknown2cf - window.unknown2c7);
+    LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
+                              window.clip_y1 - window.clip_y0);
     x = win->x - lbDisplay.graphics_window_x;
     y = win->y - lbDisplay.graphics_window_y;
     set_font_from_cache(1);
     lbDisplay.draw_flags = 0x20;
-    LbTextSetWindow(resvars.f18_Req13Layoutp->text_x, resvars.f18_Req13Layoutp->text_y, resvars.f18_Req13Layoutp->text_w, resvars.f18_Req13Layoutp->text_h);
-    LbTextDraw(0, 0, othervar.f935);
+    LbTextSetWindow(resvars.boxes_Req13Layoutp->text_x, resvars.boxes_Req13Layoutp->text_y, resvars.boxes_Req13Layoutp->text_w, resvars.boxes_Req13Layoutp->text_h);
+    LbTextDraw(0, 0, othervar.yesno_msg);
     lbDisplay.draw_flags = 0;
 }
 
-// Opens the yes/no requester (event 0x77) for the question in othervar.f935,
+// Opens the yes/no requester (event 0x77) for the question in othervar.yesno_msg,
 // which sends event yes_type (with yes_value, yes_arg) on yes and no_type
 // (no_value, no_arg) on no.
 // FUNCTION: 0x0006fd98
 void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, u16 no_value, u16 no_arg)
 {
-    othervar.f99e = yes_type;
-    othervar.f99f = yes_value;
-    othervar.f9a2 = yes_arg;
-    othervar.f9ad = no_type;
-    othervar.f9ae = no_value;
-    othervar.f9b1 = no_arg;
+    othervar.yes_type = yes_type;
+    othervar.yes_value = yes_value;
+    othervar.yes_arg = yes_arg;
+    othervar.no_type = no_type;
+    othervar.no_value = no_value;
+    othervar.no_arg = no_arg;
     D_001549d0[player].type = 0x77;
 }
 
 // Closes the yes/no requester if it is open, and with reopen set reopens the
-// requester and mouse mode it covered (othervar.f9c3, f9c4).
+// requester and mouse mode it covered (othervar.yesno_saved_requester, f9c4).
 // FUNCTION: 0x0006fdfc
 void close_yes_no_requester(u8 reopen)
 {
-    if (crequester.unknown2 == 4) {
-        pmenu.unknown7 = 0;
+    if (crequester.id == 4) {
+        pmenu.disabled = 0;
         display_mode = 0;
-        close_crequester(crequester.unknown2);
+        close_crequester(crequester.id);
         close_irequesters();
-        window.unknown2eb = 0;
-        if (reopen && othervar.f9c3 != 0x63) {
-            crequester.unknown2 = othervar.f9c3;
-            open_requester(crequester.unknown2, 1);
-            set_mouse_mode(othervar.f9c4);
+        window.current_window = 0;
+        if (reopen && othervar.yesno_saved_requester != 0x63) {
+            crequester.id = othervar.yesno_saved_requester;
+            open_requester(crequester.id, 1);
+            set_mouse_mode(othervar.yesno_saved_mouse_mode);
         }
     }
 }
@@ -98,9 +98,9 @@ void close_yes_no_requester(u8 reopen)
 // FUNCTION: 0x0006fe88
 void req13_no_pressed(void)
 {
-    D_001549d0[player].type = othervar.f9ad;
-    D_001549d0[player].value = othervar.f9ae;
-    D_001549d0[player].arg = othervar.f9b1;
+    D_001549d0[player].type = othervar.no_type;
+    D_001549d0[player].value = othervar.no_value;
+    D_001549d0[player].arg = othervar.no_arg;
 }
 
 // Answers no to the open yes/no requester on Escape or a right click outside
@@ -108,7 +108,7 @@ void req13_no_pressed(void)
 // FUNCTION: 0x0006fed8
 void req13_cancel_check(void)
 {
-    if (crequester.unknown2 == 4) {
+    if (crequester.id == 4) {
         if (lbInkey == KC_ESCAPE || (lbDisplay.right_button && !mouse_was_on_window)) {
             req13_no_pressed();
             lbDisplay.right_button = 0;

@@ -39,7 +39,7 @@ u16 count_emergency_staff(u8 owner);
 u16 create_shadow(u16 tile, u16 caster, u8 owner, u16 anim);
 
 // Daily emergency handling: sends a helicopter to each hospital that has just
-// accepted an emergency (allhosps.f1e2 5, then 3 once summoned, or 0 if no
+// accepted an emergency (allhosps.emergency_state 5, then 3 once summoned, or 0 if no
 // thing was free); when the next scheduled emergency is due (and some hospital
 // has seen its illness) offers it to every active hospital by fax, then
 // schedules the following one; counts down the waits (f1e2 above 5).
@@ -54,50 +54,50 @@ void try_to_generate_emergency(void)
 
     found = 0;
     hosp_count = 1;
-    if (statvar.unknownfd > 1)
+    if (statvar.num_players > 1)
         hosp_count = 4;
     for (i = 0; i < hosp_count; i++) {
-        if (statvar.unknownfd <= 1 || D_001609c4[i].active != 0 || 0) {
+        if (statvar.num_players <= 1 || D_001609c4[i].active != 0 || 0) {
             hosp = &allhosps[i];
-            if (hosp->f1e2s == 5) {
-                hosp->f1df = summon_vehicle(i, 0, allhosps[i].f1d7 + 0x80, 0x4cc, 0x7a7);
-                if (hosp->f1df) {
-                    hosp->f1e2 = 3;
-                    hosp->f1e1 = 0;
+            if (hosp->emergency_state_s == 5) {
+                hosp->emergency_heli = summon_vehicle(i, 0, allhosps[i].heli_pad_tile + 0x80, 0x4cc, 0x7a7);
+                if (hosp->emergency_heli) {
+                    hosp->emergency_state = 3;
+                    hosp->heli_landed = 0;
                 } else {
-                    hosp->f1e3 = 0;
-                    hosp->f1e2 = 0;
+                    hosp->emergency_to_spawn = 0;
+                    hosp->emergency_state = 0;
                 }
             }
         }
     }
     if (check_emergency_criteria()) {
         for (j = 0; j < hosp_count; j++) {
-            if (statvar.unknownfd <= 1 || D_001609c4[j].active != 0 || 0) {
-                if (allhosps[j].rooms[gamevar.f124].unknown1D == 1)
+            if (statvar.num_players <= 1 || D_001609c4[j].active != 0 || 0) {
+                if (allhosps[j].rooms[gamevar.emergency_illness].discovered == 1)
                     found = 1;
             }
         }
         if (found) {
             for (j = 0; j < hosp_count; j++) {
-                if (statvar.unknownfd <= 1 || D_001609c4[j].active != 0 || 0)
+                if (statvar.num_players <= 1 || D_001609c4[j].active != 0 || 0)
                     setup_emergency_stats(make_a_playercall(2, 0, 0x14, j), j);
             }
         }
         setup_next_emergency();
     }
     for (i = 0; i < hosp_count; i++) {
-        if (statvar.unknownfd <= 1 || D_001609c4[i].active != 0 || 0) {
+        if (statvar.num_players <= 1 || D_001609c4[i].active != 0 || 0) {
             hosp = &allhosps[i];
-            if (hosp->f1e2s > 5)
-                hosp->f1e2--;
+            if (hosp->emergency_state_s > 5)
+                hosp->emergency_state--;
         }
     }
 }
 
-// Returns 1 if the scheduled emergency (gamevar.f11d) is due, statvar.f6a is
+// Returns 1 if the scheduled emergency (gamevar.next_emergency_turn) is due, statvar.illness_kind_count is
 // set, fewer than 4 offers are outstanding, and no active hospital has an
-// emergency call (type 3) pending, allhosps.f20d set, an emergency running
+// emergency call (type 3) pending, allhosps.epidemic_active set, an emergency running
 // (f1e2), or, in single player, unknown1256 clear; else 0. Never while a single
 // player is viewing an epidemic fax.
 // FUNCTION: 0x000af118
@@ -107,32 +107,32 @@ u32 check_emergency_criteria(void)
     s32 hosp_count;
 
     hosp_count = 1;
-    if (statvar.unknownfd > 1)
+    if (statvar.num_players > 1)
         hosp_count = 4;
-    if (statvar.unknownfd <= 1 && display_mode == 9 && choice == 5)
+    if (statvar.num_players <= 1 && display_mode == 9 && choice == 5)
         return 0;
-    if (actual_game_turn >= gamevar.f11d && gamevar.f123) {
+    if (actual_game_turn >= gamevar.next_emergency_turn && gamevar.emergency_pending) {
         for (i = 0; i < hosp_count; i++) {
-            if (statvar.unknownfd <= 1 || D_001609c4[i].active != 0 || 0) {
+            if (statvar.num_players <= 1 || D_001609c4[i].active != 0 || 0) {
                 if (check_playercall(3, 0, i))
                     return 0;
-                if (allhosps[i].f20d)
+                if (allhosps[i].epidemic_active)
                     return 0;
-                if (allhosps[i].f1e2s != 0)
+                if (allhosps[i].emergency_state_s != 0)
                     return 0;
-                if (!(statvar.unknownfd > 1 ? 1 : allhosps[i].unknown1256))
+                if (!(statvar.num_players > 1 ? 1 : allhosps[i].hospital_open))
                     return 0;
             }
         }
-        if (statvar.f6a && gamevar.f13e < 4)
+        if (statvar.illness_kind_count && gamevar.emergencies_active < 4)
             return 1;
     }
     return 0;
 }
 
 // Schedules the next emergency from emergency_control: the first unused entry
-// still ahead picks the turn (gamevar.f11d, within its months), illness,
-// patient count and terms. Clears gamevar.f123 if none is left.
+// still ahead picks the turn (gamevar.next_emergency_turn, within its months), illness,
+// patient count and terms. Clears gamevar.emergency_pending if none is left.
 // FUNCTION: 0x000af2c0
 void setup_next_emergency(void)
 {
@@ -140,20 +140,20 @@ void setup_next_emergency(void)
     u32 r;
     u32 month;
 
-    month = mycontrol->f648 * 12 + mycontrol->unknown650;
-    gamevar.f123 = 0;
+    month = mycontrol->year * 12 + mycontrol->month;
+    gamevar.emergency_pending = 0;
     for (i = 0; i < 20; i++) {
-        if (gamevar.f15b[i] == 0) {
-            gamevar.f15b[i] = 1;
+        if (gamevar.emergency_used[i] == 0) {
+            gamevar.emergency_used[i] = 1;
             if (emergency_control[i].end > month && emergency_control[i].end > emergency_control[i].start) {
                 r = old_newrand() % ((emergency_control[i].end + 1 - emergency_control[i].start) * 0x5dc);
-                gamevar.f11d = r + emergency_control[i].start * 0x5dc;
-                gamevar.f124 = emergency_control[i].illness;
+                gamevar.next_emergency_turn = r + emergency_control[i].start * 0x5dc;
+                gamevar.emergency_illness = emergency_control[i].illness;
                 r = old_newrand() % (emergency_control[i].max + 1 - emergency_control[i].min);
-                gamevar.f125 = r + emergency_control[i].min;
-                gamevar.f126 = emergency_control[i].f7;
-                gamevar.f121 = emergency_control[i].f8;
-                gamevar.f123 = 1;
+                gamevar.emergency_patients = r + emergency_control[i].min;
+                gamevar.emergency_win_percent = emergency_control[i].f7;
+                gamevar.emergency_bonus = emergency_control[i].f8;
+                gamevar.emergency_pending = 1;
                 break;
             }
         }
@@ -161,7 +161,7 @@ void setup_next_emergency(void)
 }
 
 // Stores the scheduled emergency's details for the local player's offer fax
-// (call is its player call), in a free gamevar.ffd slot.
+// (call is its player call), in a free gamevar.emergency_calls slot.
 // FUNCTION: 0x000af448
 void setup_emergency_stats(u16 call, u8 owner)
 {
@@ -169,17 +169,17 @@ void setup_emergency_stats(u16 call, u8 owner)
 
     if (owner == player) {
         for (i = 0; i < 4; i++) {
-            if (gamevar.ffd[i].used == 0)
+            if (gamevar.emergency_calls[i].used == 0)
                 break;
         }
-        gamevar.ffd[i].used = 1;
-        gamevar.ffd[i].call = call;
-        gamevar.ffd[i].f2 = gamevar.f121;
-        gamevar.ffd[i].illness = gamevar.f124;
-        gamevar.ffd[i].count = gamevar.f125;
-        gamevar.ffd[i].f7 = gamevar.f126;
-        gamevar.f13e++;
-        othervar.fa88 = 0;
+        gamevar.emergency_calls[i].used = 1;
+        gamevar.emergency_calls[i].call = call;
+        gamevar.emergency_calls[i].bonus = gamevar.emergency_bonus;
+        gamevar.emergency_calls[i].illness = gamevar.emergency_illness;
+        gamevar.emergency_calls[i].count = gamevar.emergency_patients;
+        gamevar.emergency_calls[i].win_percent = gamevar.emergency_win_percent;
+        gamevar.emergencies_active++;
+        othervar.emergency_patient = 0;
     }
 }
 
@@ -193,16 +193,16 @@ void give_emergency_stats(u16 call, u8 owner)
 
     hosp = &allhosps[owner];
     for (i = 0; i < 4; i++) {
-        if (gamevar.ffd[i].call == call && gamevar.ffd[i].used != 0)
+        if (gamevar.emergency_calls[i].call == call && gamevar.emergency_calls[i].used != 0)
             break;
     }
-    hosp->f1e4 = gamevar.ffd[i].illness;
-    hosp->f1e6 = gamevar.ffd[i].count;
-    hosp->f1e3 = hosp->f1e6;
-    hosp->f1dd = gamevar.ffd[i].f2;
-    hosp->f1e8 = gamevar.ffd[i].f7;
-    gamevar.ffd[i].used = 0;
-    gamevar.f13e--;
+    hosp->emergency_illness = gamevar.emergency_calls[i].illness;
+    hosp->emergency_patients = gamevar.emergency_calls[i].count;
+    hosp->emergency_to_spawn = hosp->emergency_patients;
+    hosp->emergency_bonus = gamevar.emergency_calls[i].bonus;
+    hosp->emergency_win_pct = gamevar.emergency_calls[i].win_percent;
+    gamevar.emergency_calls[i].used = 0;
+    gamevar.emergencies_active--;
 }
 
 // Composes the emergency fax for owner from strs: who is calling, the patient
@@ -240,27 +240,27 @@ u32 announce_emergency(u8 owner, char **strs)
     char new_line[] = "\n";
     line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     hosp = &allhosps[owner];
-    if (hosp->f1e2s != 0)
+    if (hosp->emergency_state_s != 0)
         available_buttons &= ~1;
     call = D_0015f5c2[owner].call;
     for (i = 0; i < 4; i++) {
-        if (gamevar.ffd[i].call == call && gamevar.ffd[i].used)
+        if (gamevar.emergency_calls[i].call == call && gamevar.emergency_calls[i].used)
             break;
     }
     staff_count = count_emergency_staff(owner);
-    patients = gamevar.ffd[i].count;
-    bonus = patients * gamevar.ffd[i].f2;
-    illness = gamevar.ffd[i].illness;
+    patients = gamevar.emergency_calls[i].count;
+    bonus = patients * gamevar.emergency_calls[i].bonus;
+    illness = gamevar.emergency_calls[i].illness;
     exp = &expertise[illness];
-    if (allhosps[owner].rooms[illness].unknown1C == 1) {
+    if (allhosps[owner].rooms[illness].cure_available == 1) {
         cured = 1;
         if (exp->kind == 0x27)
-            count = hosp->rooms[illness].unknown1B;
+            count = hosp->rooms[illness].drug_effectiveness;
     } else {
         if (listhead[owner].rooms[exp->category] == 0 && room_available(exp->category))
             missing_room = exp->category;
         for (i = 0; i < 9; i++) {
-            if ((exp->unknown0 & (1 << i)) && listhead[owner].staff[i] == 0) {
+            if ((exp->staff_mask & (1 << i)) && listhead[owner].staff[i] == 0) {
                 missing_staff = i;
                 break;
             }
@@ -331,17 +331,17 @@ void emergency_over(u8 owner, char **strs)
 
     line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     hosp = &allhosps[owner];
-    if (hosp->f1e5 * 100 / hosp->f1e6 >= hosp->f1e8)
-        bonus = hosp->f1dd * hosp->f1e5;
+    if (hosp->emergency_cured * 100 / hosp->emergency_patients >= hosp->emergency_win_pct)
+        bonus = hosp->emergency_bonus * hosp->emergency_cured;
     else
         bonus = 0;
-    total = hosp->f1dd * hosp->f1e6;
+    total = hosp->emergency_bonus * hosp->emergency_patients;
     text[0] = 0;
     x = 0;
     y = 0;
     sprintf(buf, strs[0], total, bonus);
     fn_000c93bf(text, buf);
-    sprintf(buf, strs[1], hosp->f1e5, hosp->f1e6);
+    sprintf(buf, strs[1], hosp->emergency_cured, hosp->emergency_patients);
     fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
     LbTextDraw(x, y, text);
@@ -387,8 +387,8 @@ u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
         if (owner == player) {
             if (anim == 0x792)
                 play_ambient(saferand() % 5 + 0xc7);
-            else if (myhosp->f1e4 >= 0 && myhosp->f1e4 < 0x24)
-                play_ambient(myhosp->f1e4 + 0x1f);
+            else if (myhosp->emergency_illness >= 0 && myhosp->emergency_illness < 0x24)
+                play_ambient(myhosp->emergency_illness + 0x1f);
         }
         return vehicle - thing;
     }
@@ -409,9 +409,9 @@ void helicopter_lands(Thing *heli)
         case 0:
             heli->altitude = 0;
             heli->state = 4;
-            allhosps[heli->owner].f1e1 = 1;
+            allhosps[heli->owner].heli_landed = 1;
             if (heli->owner == player)
-                advisor.f127 = 1;
+                advisor.heli_landed = 1;
             break;
         case 1:
             heli->sprite = start[0x7a8].frame;
@@ -437,8 +437,8 @@ void helicopter_leaves(Thing *heli)
     } else {
         switch (heli->subtype) {
         case 0:
-            hosp->f1e1 = 0;
-            hosp->f1df = 0;
+            hosp->heli_landed = 0;
+            hosp->emergency_heli = 0;
             break;
         case 1:
             gamevar.ff5 = 0;

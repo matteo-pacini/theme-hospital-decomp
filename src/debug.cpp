@@ -73,28 +73,28 @@ void note_in_error_log(char *text)
 }
 
 // Switches to screen mode SCREEN_MODE_13 (high resolution), first setting
-// resvars.f0 to SCREEN_MODE_1 if it was SCREEN_MODE_13. Exits if the mode
+// resvars.screen_mode to SCREEN_MODE_1 if it was SCREEN_MODE_13. Exits if the mode
 // cannot be set.
 // FUNCTION: 0x0008de24
 extern "C" void fn_0008de24(void)
 {
-    if (resvars.f0 == SCREEN_MODE_13)
-        resvars.f0 = SCREEN_MODE_1;
+    if (resvars.screen_mode == SCREEN_MODE_13)
+        resvars.screen_mode = SCREEN_MODE_1;
     if (!change_res(SCREEN_MODE_13))
         exit(1);
 }
 
-// Formats a debug message into debug.unknown116 and shows it for 200 frames
-// (debug.unknown1de).
+// Formats a debug message into debug.msg_text and shows it for 200 frames
+// (debug.msg_timer).
 // FUNCTION: 0x0008de64
 void debug_msg(char *fmt, ...)
 {
     va_list args;
 
     va_start(args, fmt);
-    vsprintf(debug.unknown116, fmt, args);
+    vsprintf(debug.msg_text, fmt, args);
     va_end(args);
-    debug.unknown1de = 200;
+    debug.msg_timer = 200;
 }
 
 // Does nothing (a disabled log writer).

@@ -62,8 +62,8 @@ int LbScreenSetupAnyMode(TbScreenMode mode, s32 width, s32 height, u8 *palette, 
         int386(0x10, &in, &out);
     }
     lbDisplay.physical_screen = (u8 *)0xa0000;
-    lbDisplay.unknown18 = lbScreenModeInfo[mode].width;
-    lbDisplay.unknown1c = lbScreenModeInfo[mode].height;
+    lbDisplay.physical_screen_width = lbScreenModeInfo[mode].width;
+    lbDisplay.physical_screen_height = lbScreenModeInfo[mode].height;
     lbDisplay.graphics_screen_width = width;
     lbDisplay.graphics_screen_height = height;
     lbDisplay.screen_mode = mode;
@@ -98,7 +98,7 @@ int LbScreenClearGraphicsWindow(u8 colour, ...)
 // FUNCTION: 0x000becd0
 int LbScreenClear(u8 colour, ...)
 {
-    LbMemorySet(lbDisplay.unknown4, colour, lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height);
+    LbMemorySet(lbDisplay.wscreen, colour, lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height);
     return 1;
 }
 
@@ -190,10 +190,10 @@ int LbScreenSwap(void)
 
     LbMousePlace();
     if (!lbDisplay.vesa_is_set_up) {
-        rep_movsd(lbDisplay.physical_screen, lbDisplay.unknown4, (lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height) >> 2);
+        rep_movsd(lbDisplay.physical_screen, lbDisplay.wscreen, (lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height) >> 2);
     } else {
         remaining = lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height;
-        src = lbDisplay.unknown4;
+        src = lbDisplay.wscreen;
         for (page = 0; remaining != 0; src += 0x10000) {
             chunk = remaining < 0x10000 ? remaining : 0x10000;
             remaining -= chunk;
@@ -223,14 +223,14 @@ int LbScreenSwapBoxClear(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32
     u16 i;
 
     LbMousePlace();
-    offset = dest_x + dest_y * lbDisplay.unknown18;
-    end_offset = dest_x + width + dest_y * lbDisplay.unknown18;
+    offset = dest_x + dest_y * lbDisplay.physical_screen_width;
+    end_offset = dest_x + width + dest_y * lbDisplay.physical_screen_width;
     src = source + source_x + source_y * lbDisplay.graphics_screen_width;
     last_bank = bank = (offset & 0xffff0000) >> 16;
     if (lbDisplay.vesa_is_set_up)
         LbVesaSetPage(bank);
     for (i = 0; i < height;
-         i++, offset += lbDisplay.graphics_screen_width, end_offset += lbDisplay.unknown18,
+         i++, offset += lbDisplay.graphics_screen_width, end_offset += lbDisplay.physical_screen_width,
          src += lbDisplay.graphics_screen_width, dst += width) {
         bank = (offset & 0xffff0000) >> 16;
         if (bank != last_bank)
@@ -271,11 +271,11 @@ int LbScreenSwapClear(u8 colour, ...)
 
     LbMousePlace();
     if (!lbDisplay.vesa_is_set_up) {
-        swap_clear(lbDisplay.physical_screen, lbDisplay.unknown4, (lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height) >> 2,
+        swap_clear(lbDisplay.physical_screen, lbDisplay.wscreen, (lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height) >> 2,
             colour + (colour << 8) + (colour << 16) + (colour << 24));
     } else {
         remaining = lbDisplay.graphics_screen_width * lbDisplay.graphics_screen_height;
-        src = lbDisplay.unknown4;
+        src = lbDisplay.wscreen;
         for (page = 0; remaining != 0; src += 0x10000) {
             chunk = remaining < 0x10000 ? remaining : 0x10000;
             LbVesaSetPage(page++);
@@ -304,14 +304,14 @@ int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest
     u16 i;
 
     LbMousePlace();
-    offset = dest_x + dest_y * lbDisplay.unknown18;
-    end_offset = dest_x + width + dest_y * lbDisplay.unknown18;
+    offset = dest_x + dest_y * lbDisplay.physical_screen_width;
+    end_offset = dest_x + width + dest_y * lbDisplay.physical_screen_width;
     src = source + source_x + source_y * lbDisplay.graphics_screen_width;
     last_bank = bank = (offset & 0xffff0000) >> 16;
     if (lbDisplay.vesa_is_set_up)
         LbVesaSetPage(bank);
     for (i = 0; i < height;
-         i++, offset += lbDisplay.graphics_screen_width, end_offset += lbDisplay.unknown18,
+         i++, offset += lbDisplay.graphics_screen_width, end_offset += lbDisplay.physical_screen_width,
          src += lbDisplay.graphics_screen_width, dst += width) {
         bank = (offset & 0xffff0000) >> 16;
         if (bank != last_bank)

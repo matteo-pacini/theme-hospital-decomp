@@ -8,7 +8,7 @@ void fn_000c93bf(char *dst, char *src);
 }
 
 
-// With a chance that grows with warmth (gbv.f145 + warmth / 2 percent), passes
+// With a chance that grows with warmth (gbv.contagious_spread_factor + warmth / 2 percent), passes
 // carrier's contagious illness to one undiagnosed, uncontagious patient on or
 // next to carrier's tile (half the time each; not to those whose illness has
 // expertise unknown10[1] set), splitting carrier's contagion with them. Note
@@ -24,8 +24,8 @@ void spread_epidemic(Thing *carrier, u16 warmth)
     u8 illness;
     u8 other;
 
-    othervar.f0 = old_newrand() % 100;
-    if (othervar.f0 < 0 || othervar.f0 >= gbv.f145 + warmth / 2)
+    othervar.rand_pct = old_newrand() % 100;
+    if (othervar.rand_pct < 0 || othervar.rand_pct >= gbv.contagious_spread_factor + warmth / 2)
         return;
     illness = carrier->illness;
     cell = &map[(s16)carrier->x.tile + ((s16)carrier->y.tile << 7)];
@@ -40,7 +40,7 @@ void spread_epidemic(Thing *carrier, u16 warmth)
             other = victim->illness;
             if (expertise[other].unknown10[1] != 0 || (s8)victim->contagion != 0 || old_newrand() & 1)
                 continue;
-            othervar.f87++;
+            othervar.contagious_count++;
             if (other != illness) {
                 victim->illness = illness;
                 effect_illness(carrier, illness, 0);
@@ -56,7 +56,7 @@ void spread_epidemic(Thing *carrier, u16 warmth)
 }
 
 // Composes the epidemic fax for the local player from strs: the illness
-// (myhosp->f20b), the number of contagious patients (f203), and the choices.
+// (myhosp->epidemic_illness), the number of contagious patients (f203), and the choices.
 // FUNCTION: 0x000a0240
 void declare_epidemic(char **strs)
 {
@@ -71,10 +71,10 @@ void declare_epidemic(char **strs)
     text[0] = 0;
     x = 0;
     y = 0;
-    sprintf(line, strs[0], illness_text[myhosp->f20b]);
+    sprintf(line, strs[0], illness_text[myhosp->epidemic_illness]);
     fn_000c93bf(text, line);
     fn_000c93bf(text, new_line);
-    sprintf(line, strs[1], myhosp->f203);
+    sprintf(line, strs[1], myhosp->epidemic_fine);
     fn_000c93bf(text, line);
     fn_000c93bf(text, new_line);
     sprintf(line, strs[2]);
@@ -97,7 +97,7 @@ void process_epidemic_start_buttons(u8 button)
         break;
     case 1:
         packet_choice_result(11);
-        advisor.f128_u8a[1] |= 1;
+        advisor.event_flag_bytes[1] |= 1;
         break;
     }
 }
@@ -110,15 +110,15 @@ void alert_epidemic(u8 illness, u8 owner)
 {
     AllHosps *hosp;
 
-    if ((statvar.unknownfd <= 1 && display_mode == 9) && choice == 2)
+    if ((statvar.num_players <= 1 && display_mode == 9) && choice == 2)
         return;
     hosp = &allhosps[owner];
-    if (hosp->f20b != 0 || hosp->f1e2s != 0)
+    if (hosp->epidemic_illness != 0 || hosp->emergency_state_s != 0)
         return;
     get_playercall(2, 0, owner);
     if (owner == player)
-        advisor.f128_u8a[0] |= 8;
-    hosp->f20b = illness;
+        advisor.event_flag_bytes[0] |= 8;
+    hosp->epidemic_illness = illness;
     make_a_playercall(3, 1, 0x14, owner);
 }
 
@@ -140,7 +140,7 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
             continue;
         if (!peep->contagion || peep->illness != illness)
             continue;
-        if (!(map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].unknown7 & 0x10)) {
+        if (!(map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].owner_flags & 0x10)) {
             if ((s8)peep->contagion > max)
                 max = (s8)peep->contagion;
             if (mode == 1) {
@@ -165,7 +165,7 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
     return count;
 }
 
-// Counts down owner's epidemic cover-up (allhosps.f20d): it ends when no
+// Counts down owner's epidemic cover-up (allhosps.epidemic_active): it ends when no
 // contagious patient is left or time (f207) runs out. On ending, clears the
 // cover-up and sets f20e. Returns 1 if it ended this call.
 // FUNCTION: 0x000a0654
@@ -176,10 +176,10 @@ u32 epidemic_status(u8 owner)
 
     over = 0;
     hosp = &allhosps[owner];
-    if (hosp->f20d) {
-        if (hosp->f205) {
-            hosp->f207--;
-            if ((s16)hosp->f207 <= 0)
+    if (hosp->epidemic_active) {
+        if (hosp->contagious_count) {
+            hosp->epidemic_timer--;
+            if ((s16)hosp->epidemic_timer <= 0)
                 over = 1;
         } else {
             if (owner == player)
@@ -189,16 +189,16 @@ u32 epidemic_status(u8 owner)
     }
     if (over) {
         if (owner == player)
-            advisor.f2 = 9;
-        hosp->f207 = 0;
-        hosp->f20d = 0;
-        hosp->f20e = 1;
+            advisor.forced_advice_id = 9;
+        hosp->epidemic_timer = 0;
+        hosp->epidemic_active = 0;
+        hosp->epidemic_over = 1;
     }
     return over;
 }
 
 // Composes the epidemic result fax for owner from strs, by its outcome
-// (allhosps.unknown209[0]: 0 to 3) and the illness in choice_spare_data.
+// (allhosps.inspection[0]: 0 to 3) and the illness in choice_spare_data.
 // FUNCTION: 0x000a073c
 void epidemic_over(const u8 owner, char **strs)
 {
@@ -216,21 +216,21 @@ void epidemic_over(const u8 owner, char **strs)
     line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     hosp = &allhosps[owner];
     illness = choice_spare_data;
-    switch (hosp->unknown209[0]) {
+    switch (hosp->inspection[0]) {
     case 0:
         sprintf(buf1, strs[2], illness_text[illness]);
         sprintf(buf2, strs[3]);
-        sprintf(buf3, strs[4], hosp->f203);
+        sprintf(buf3, strs[4], hosp->epidemic_fine);
         break;
     case 1:
         sprintf(buf1, strs[0], illness_text[illness]);
         sprintf(buf2, strs[1]);
-        sprintf(buf3, strs[5], hosp->f203);
+        sprintf(buf3, strs[5], hosp->epidemic_fine);
         break;
     case 2:
         sprintf(buf1, strs[0], illness_text[illness]);
         sprintf(buf2, strs[1]);
-        sprintf(buf3, strs[6], hosp->f203);
+        sprintf(buf3, strs[6], hosp->epidemic_fine);
         break;
     case 3:
         sprintf(buf1, strs[0], illness_text[illness]);
@@ -271,7 +271,7 @@ void send_peeps_home(u8 all, u8 owner)
     for (peep = thing + 1; peep < end_things; peep++) {
         if (peep->type != THING_PATIENT || peep->owner != owner)
             continue;
-        if (map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].unknown7 & 0x10)
+        if (map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].owner_flags & 0x10)
             continue;
         if (all || (peep->flags & PF_CONTAGIOUS)) {
             peep->flags &= ~PF_CONTAGIOUS;
@@ -293,6 +293,6 @@ void clean_contagious_peep(Thing *peep)
     reset_icon_value(peep, ICON_VACCINATED);
     reset_icon_value(peep, ICON_CONTAGIOUS);
     remove_person_from_vaccination_queue(peep);
-    if (othervar.f87 >= 1)
-        othervar.f87--;
+    if (othervar.contagious_count >= 1)
+        othervar.contagious_count--;
 }

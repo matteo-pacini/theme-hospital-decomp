@@ -25,18 +25,18 @@ void machine_disaster(Thing *machine)
     RoomInfo *room;
 
     room = &room_info[machine->room_id];
-    tile = (s16)(machine->x.tile + (machine->y.tile << 7)) + objects[machine->subtype].f1a;
+    tile = (s16)(machine->x.tile + (machine->y.tile << 7)) + objects[machine->subtype].explosion_offset;
     create_explosion(tile, 0x97);
     blast_effect(tile, room);
     explosion_kills_dudes_in_room(room);
     remove_expertise_room(room);
     room_deleted_update_listhead(room);
     room->type = ROOM_DESTROYED;
-    room->f3 = 6;
+    room->state = 6;
     allhosps[machine->owner].fc98++;
     reputation_affected(0, 0xb, 0, machine->owner, 0);
     if (machine->owner == player)
-        award_counts.f144 = 1;
+        award_counts.machine_exploded = 1;
     restart_entire_queue(room);
 }
 
@@ -66,7 +66,7 @@ void process_bang(Thing *bang)
 
             x0 = room->pos % 128;
             y0 = room->pos / 128;
-            if (x.tile < x0 || x.tile == x0 + room->f1 - 1 || y.tile < y0 || y.tile == y0 + room->f2 - 1)
+            if (x.tile < x0 || x.tile == x0 + room->width - 1 || y.tile < y0 || y.tile == y0 + room->height - 1)
                 goto die;
         }
         if (actual_game_turn % bang->anim_speed == 0) {
@@ -174,7 +174,7 @@ void blast_effect(u16 tile, RoomInfo *room)
     r2 = radius * radius;
     for (x = cx - radius; x <= cx + radius; x++) {
         for (y = cy - radius; y <= cy + radius; y++) {
-            if (x >= rx && x < rx + room->f1 && y >= ry && y < ry + room->f2) {
+            if (x >= rx && x < rx + room->width && y >= ry && y < ry + room->height) {
                 cell = (s16)x + ((s16)y << 7);
                 m = &map[(s16)x + ((s16)y << 7)];
                 d2 = (x - cx) * (x - cx) + (y - cy) * (y - cy);
@@ -184,7 +184,7 @@ void blast_effect(u16 tile, RoomInfo *room)
             }
         }
     }
-    othervar.f10 = 1;
+    othervar.full_redraw = 1;
 }
 
 // Damages tile's north and west walls, each with a 70% chance, by placing
@@ -198,7 +198,7 @@ void blast_walls_and_floor(u16 tile)
 
     m = &map[tile];
     if (old_newrand() % 1000 > 300) {
-        block = m->unknown3;
+        block = m->wall_n;
         flags = blocks[block].width;
         if (flags & 2) {
             if (!(flags & 0x10))
@@ -211,7 +211,7 @@ void blast_walls_and_floor(u16 tile)
         }
     }
     if (old_newrand() % 1000 > 300) {
-        block = m->unknown4;
+        block = m->wall_w;
         flags = blocks[block].width;
         if (flags & 2) {
             if (!(flags & 0x10))
@@ -278,7 +278,7 @@ void restart_entire_queue(RoomInfo *room)
     Thing *patient;
 
     while ((patient = &thing[room->queue_head]) > thing) {
-        if (allhosps[patient->owner].rooms[patient->treatment].unknown1C != 1)
+        if (allhosps[patient->owner].rooms[patient->treatment].cure_available != 1)
             patient->treatment = ILL_GENERAL_PRACTICE;
         leave_queue(patient);
         interrupt_person(patient);
@@ -286,10 +286,10 @@ void restart_entire_queue(RoomInfo *room)
     }
 }
 
-// Daily: runs owner's random disaster (allhosps.f213). Every gbv.f12c days a
+// Daily: runs owner's random disaster (allhosps.disaster_kind). Every gbv.disaster_launch days a
 // new one may start: 1 or 2 the heating fails cold or hot (when there are
-// radiators and fewer than one handyman per 8 of allhosps.fc92), 3 everyone
-// feels sick (while there are over 10 pieces of litter, allhosps.fcaa). A
+// radiators and fewer than one handyman per 8 of allhosps.radiator_count), 3 everyone
+// feels sick (while there are over 10 pieces of litter, allhosps.litter_count). A
 // running one counts down (faster for the heating with more handymen) and then
 // ends, with advisor messages at start and end.
 // FUNCTION: 0x00075b54
@@ -298,44 +298,44 @@ void generate_disaster(u8 owner)
     AllHosps *hosp;
 
     hosp = &allhosps[owner];
-    switch (hosp->f213) {
+    switch (hosp->disaster_kind) {
     case 0:
-        hosp->f20f++;
-        if (hosp->f20f > gbv.f12c) {
-            hosp->f20f = 0;
-            hosp->f213 = old_newrand() & 3;
-            switch (hosp->f213) {
+        hosp->disaster_counter++;
+        if (hosp->disaster_counter > gbv.disaster_launch) {
+            hosp->disaster_counter = 0;
+            hosp->disaster_kind = old_newrand() & 3;
+            switch (hosp->disaster_kind) {
             case 0:
                 break;
             case 1:
-                if (listhead[owner].objects[OBJ_RADIATOR] && hosp->fc9e[2] * 8 < hosp->fc92) {
-                    hosp->f211 = hosp->fc94;
-                    hosp->fc94 = 0;
-                    hosp->fc95 = 1;
-                    advisor.f2 = 0xb;
-                    hosp->f214 = old_normal_rand(10, 0x1e);
+                if (listhead[owner].objects[OBJ_RADIATOR] && hosp->staff_by_kind[2] * 8 < hosp->radiator_count) {
+                    hosp->saved_heating = hosp->heating_level;
+                    hosp->heating_level = 0;
+                    hosp->heating_broken = 1;
+                    advisor.forced_advice_id = 0xb;
+                    hosp->disaster_timer = old_normal_rand(10, 0x1e);
                 } else {
-                    hosp->f213 = 0;
+                    hosp->disaster_kind = 0;
                 }
                 break;
             case 2:
-                if (listhead[owner].objects[OBJ_RADIATOR] && hosp->fc9e[2] * 8 < hosp->fc92) {
-                    hosp->f211 = hosp->fc94;
-                    hosp->fc94 = 0xa;
-                    hosp->fc95 = 1;
-                    advisor.f2 = 0xa;
-                    hosp->f214 = old_normal_rand(10, 0x1e);
+                if (listhead[owner].objects[OBJ_RADIATOR] && hosp->staff_by_kind[2] * 8 < hosp->radiator_count) {
+                    hosp->saved_heating = hosp->heating_level;
+                    hosp->heating_level = 0xa;
+                    hosp->heating_broken = 1;
+                    advisor.forced_advice_id = 0xa;
+                    hosp->disaster_timer = old_normal_rand(10, 0x1e);
                 } else {
-                    hosp->f213 = 0;
+                    hosp->disaster_kind = 0;
                 }
                 break;
             case 3:
-                if (hosp->fcaa > 10) {
+                if (hosp->litter_count > 10) {
                     disaster_peeps(0, owner);
-                    advisor.f2 = 0xd;
-                    hosp->f214 = old_normal_rand(5, 10);
+                    advisor.forced_advice_id = 0xd;
+                    hosp->disaster_timer = old_normal_rand(5, 10);
                 } else {
-                    hosp->f213 = 0;
+                    hosp->disaster_kind = 0;
                 }
                 break;
             }
@@ -343,27 +343,27 @@ void generate_disaster(u8 owner)
         break;
     case 1:
     case 2:
-        if (hosp->fc9e[2] * 8 > hosp->fc92)
-            hosp->f214--;
-        if (hosp->fc9e[2] * 5 > hosp->fc92)
-            hosp->f214--;
-        hosp->f214--;
-        if (hosp->f214 <= 0) {
-            hosp->f213 = 0;
-            hosp->fc94 = hosp->f211;
-            hosp->fc95 = 0;
-            advisor.f2 = 0xc;
+        if (hosp->staff_by_kind[2] * 8 > hosp->radiator_count)
+            hosp->disaster_timer--;
+        if (hosp->staff_by_kind[2] * 5 > hosp->radiator_count)
+            hosp->disaster_timer--;
+        hosp->disaster_timer--;
+        if (hosp->disaster_timer <= 0) {
+            hosp->disaster_kind = 0;
+            hosp->heating_level = hosp->saved_heating;
+            hosp->heating_broken = 0;
+            advisor.forced_advice_id = 0xc;
         }
         break;
     case 3:
-        if (hosp->fcaa > 10)
+        if (hosp->litter_count > 10)
             disaster_peeps(0, owner);
         else
-            hosp->f214--;
-        hosp->f214--;
-        if (hosp->f214 <= 0) {
-            hosp->f213 = 0;
-            advisor.f2 = 0xe;
+            hosp->disaster_timer--;
+        hosp->disaster_timer--;
+        if (hosp->disaster_timer <= 0) {
+            hosp->disaster_kind = 0;
+            advisor.forced_advice_id = 0xe;
         }
         break;
     }
@@ -380,7 +380,7 @@ void disaster_peeps(u8 mode, s8 owner)
     for (peep = thing + 1; peep < end_things; peep++) {
         if (peep->type == THING_PATIENT && (peep->owner == owner || owner == -1)) {
             if (mode == 0)
-                peep->nausea = (u16)gbv.f11a + 10;
+                peep->nausea = (u16)gbv.vomit_limit + 10;
             else if (mode == 1 && abilities[peep->subtype][5])
                 peep->flags |= 0x200;
             else if (mode == 2 && abilities[peep->subtype][5])
@@ -394,7 +394,7 @@ void disaster_peeps(u8 mode, s8 owner)
 // Fills required with what owner lacks to handle illness (an expertise index):
 // the room, whether it is available, staff with the needed skill (two
 // surgeons for surgery), a ward and nurse, or that nothing is lacking
-// (required.unknown5).
+// (required.treatable).
 // FUNCTION: 0x00075fe4
 void what_is_required(u8 illness, u8 owner)
 {
@@ -405,42 +405,42 @@ void what_is_required(u8 illness, u8 owner)
     unused = 0;
     memset(&required, 0, 10);
     exp = &expertise[illness];
-    if (allhosps[owner].rooms[illness].unknown1C == 1) {
-        required.unknown5 = 1;
+    if (allhosps[owner].rooms[illness].cure_available == 1) {
+        required.treatable = 1;
         if (exp->kind == 0x27)
-            required.unknown0[2] = allhosps[owner].rooms[illness].unknown1B;
+            required.raw[2] = allhosps[owner].rooms[illness].drug_effectiveness;
         return;
     }
     if (listhead[owner].rooms[exp->category] == 0) {
-        required.unknown6 = exp->category;
+        required.missing_room = exp->category;
         if (room_available((u16)exp->category) == 0)
-            required.unknown7 = 1;
+            required.room_unavailable = 1;
     }
-    if (exp->unknown0 & 0x20) {
+    if (exp->staff_mask & 0x20) {
         if (listhead[owner].staff[5] == 0) {
             required.flags = 0x20;
-            required.unknown3 = 5;
-            required.unknown4 = 2;
-        } else if (allhosps[owner].fca6 < 2) {
-            required.unknown4 = 2 - allhosps[owner].fca6;
+            required.missing_skill = 5;
+            required.surgeons_needed = 2;
+        } else if (allhosps[owner].surgeon_count < 2) {
+            required.surgeons_needed = 2 - allhosps[owner].surgeon_count;
             required.flags = 0x20;
-            required.unknown3 = 5;
+            required.missing_skill = 5;
         }
     } else {
         for (i = 0; i < 9; i++) {
-            if ((exp->unknown0 & (1 << i)) && listhead[owner].staff[i] == 0) {
-                required.flags = exp->unknown0;
-                required.unknown3 = i;
+            if ((exp->staff_mask & (1 << i)) && listhead[owner].staff[i] == 0) {
+                required.flags = exp->staff_mask;
+                required.missing_skill = i;
                 break;
             }
         }
     }
-    if (exp->unknown7) {
-        if (allhosps[owner].rooms[ILL_DIAG_WARD].unknown1C == 0) {
+    if (exp->needs_ward) {
+        if (allhosps[owner].rooms[ILL_DIAG_WARD].cure_available == 0) {
             if (listhead[owner].rooms[ROOM_WARD] == 0)
-                required.unknown8 = 1;
+                required.needs_ward = 1;
             if (listhead[owner].staff[2] == 0)
-                required.unknown9 = 1;
+                required.needs_nurse = 1;
         }
     }
 }

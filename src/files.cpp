@@ -253,7 +253,7 @@ TbLoadFiles complexfiles[] = {
 };
 
 TbLoadFiles screenfiles[] = {
-    { "*W_SCREEN", (u8 **)&lbDisplay.unknown4, 0, 0x4b000 },
+    { "*W_SCREEN", (u8 **)&lbDisplay.wscreen, 0, 0x4b000 },
     { "*B_SCREEN", (u8 **)&bscreen, 0, 0x4b000 },
     { "*VESA", (u8 **)&lbVesaData, 0, 0x200, 1 },
     { 0 },
@@ -486,9 +486,9 @@ void check_cd_available(char *path)
     u8 find[0xe4];
     char fname[0x80];
 
-    had_screen = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    mode = resvars.f0;
-    flag = othervar.fa8d;
+    had_screen = lbDisplay.wscreen ? (u8)1 : (u8)0;
+    mode = resvars.screen_mode;
+    flag = othervar.use_lores_assets;
     unused = 0;
     if (*path == '*')
         return;
@@ -506,18 +506,18 @@ void check_cd_available(char *path)
     }
     if (had_screen)
         LbScreenUnlock();
-    if (resvars.f0 != SCREEN_MODE_13 || othervar.fa8d)
+    if (resvars.screen_mode != SCREEN_MODE_13 || othervar.use_lores_assets)
         setup_any_screen(palette, SCREEN_MODE_13);
     LbFileLoadAt((char *)screenpalettes[21], palette);
     while (LbScreenLock() != 1)
         ;
-    LbFileLoadAt((char *)hiresscreens[21], lbDisplay.unknown4);
+    LbFileLoadAt((char *)hiresscreens[21], lbDisplay.wscreen);
     lbDisplay.draw_flags = 0;
     set_font_from_cache(0x2f);
-    text = D_0013f704[myplayer.f21];
-    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-    LbTextSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-    LbTextDraw((lbDisplay.unknown18 - LbTextStringWidth(text)) / 2, 0x1a4, text);
+    text = D_0013f704[myplayer.language];
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
+    LbTextDraw((lbDisplay.physical_screen_width - LbTextStringWidth(text)) / 2, 0x1a4, text);
     if (lbKeyOn[KC_F] && lbKeyOn[KC_LALT])
         LbTextDraw(0, 0x1c2, path);
     LbScreenUnlock();
@@ -530,7 +530,7 @@ void check_cd_available(char *path)
             exit(1);
         }
     }
-    if (resvars.f0 != mode)
+    if (resvars.screen_mode != mode)
         setup_any_screen(palette, mode);
     if (flag)
         fn_0001102c();
@@ -538,8 +538,8 @@ void check_cd_available(char *path)
         while (LbScreenLock() != 1)
             ;
     }
-    set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
-    othervar.f10 = 1;
+    set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+    othervar.full_redraw = 1;
     if (install_type < 2) {
         sprintf(fname, "%s%s", cd_install_path, D_0013e80c);
         check_cd_available(fname);

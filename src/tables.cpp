@@ -1159,7 +1159,7 @@ Coord D_0012cc3c[8] = {
     { 0 }, { 10, 4 }, { -21, -2 }, { 9, -8 }, { -10, 5 }, { -16, -3 }, { 0, 9 }, { 16, 3 },
 };
 
-// not in the demo; the code selects it like D_0012cc3c, through resvars.f38
+// not in the demo; the code selects it like D_0012cc3c, through resvars.litter_pos
 Coord D_0012cc7c[8] = {
     { 0 }, { 5, 2 }, { -10, -1 }, { 4, -4 }, { -5, 2 }, { -8, -1 }, { 0, 4 }, { 8, 1 },
 };
@@ -1388,7 +1388,7 @@ u8 panel_emergency_spr[0x10] = {
 };
 
 TrophyBalanceData awards_trophies_data = {
-    // unknown0 .. f55
+    // rat_kills_absolute .. bonus_penalty
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1,

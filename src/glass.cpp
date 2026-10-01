@@ -97,7 +97,7 @@ void init_zoom_boxes(s32 mask)
         mask ^= bit;
         idx = glass_index(bit);
         if (idx) {
-            add_glass_frame((GlassFrame *)&resvars.f50_GlassScreenp[idx], bit);
+            add_glass_frame((GlassFrame *)&resvars.glass_frames_GlassScreenp[idx], bit);
             DesiredDisplay |= bit;
         }
     }
@@ -382,7 +382,7 @@ s32 next_map(void)
     return diff & -diff;
 }
 
-// Returns the resvars.f50 screen layout index of the panels for the lowest
+// Returns the resvars.glass_frames screen layout index of the panels for the lowest
 // display bit in mask, or 0 if it has none.
 // FUNCTION: 0x000b973c
 s16 glass_index(s32 mask)
@@ -422,7 +422,7 @@ s16 glass_index(s32 mask)
     }
 }
 
-// Returns the resvars.f48 index of the first button for the lowest display bit
+// Returns the resvars.screen_buttons index of the first button for the lowest display bit
 // in mask, or 0 if it has none.
 // FUNCTION: 0x000b991c
 s16 button_index(s32 mask)

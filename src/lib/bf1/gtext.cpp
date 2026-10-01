@@ -53,7 +53,7 @@ int LbTextSetJustifyWindow(s32 x, s32 y, s32 width)
     lbTextJustifyWindow.x = x;
     lbTextJustifyWindow.y = y;
     lbTextJustifyWindow.width = width;
-    lbTextJustifyWindow.ptr = x + (lbDisplay.unknown4 + y * lbDisplay.graphics_screen_width);
+    lbTextJustifyWindow.ptr = x + (lbDisplay.wscreen + y * lbDisplay.graphics_screen_width);
     return 1;
 }
 
@@ -101,7 +101,7 @@ int LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height)
     lbTextClipWindow.y = y1;
     lbTextClipWindow.width = x2 - x1;
     lbTextClipWindow.height = y2 - y1;
-    lbTextClipWindow.ptr = x + (lbDisplay.unknown4 + y * lbDisplay.graphics_screen_width);
+    lbTextClipWindow.ptr = x + (lbDisplay.wscreen + y * lbDisplay.graphics_screen_width);
     return 1;
 }
 

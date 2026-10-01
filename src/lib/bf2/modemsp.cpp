@@ -25,7 +25,7 @@ ModemSP::ModemSP(__4dn7ojSerialInitData *init_data) : SerialSP(init_data)
 TbError ModemSP::Release(void)
 {
     fn_000c20c0("  LbNETWORK : Releasing ModemSP\n");
-    if (unknown528)
+    if (in_session)
         Stop();
     return SerialSP::Release();
 }
@@ -53,7 +53,7 @@ TbError ModemSP::Start(char *session, char *name, u32 max_players, void *data)
     TbError ret = Lb_FAIL;
 
     if (started) {
-        if (unknown528)
+        if (in_session)
             Stop();
         if (data) {
             init = (ModemStartData *)data;
@@ -132,7 +132,7 @@ TbError ModemSP::Start(TbNetworkSessionNameEntry *session, char *name, void *dat
     TbError ret = Lb_FAIL;
 
     if (started) {
-        if (unknown528)
+        if (in_session)
             Stop();
         if (data) {
             init = (ModemStartData *)data;
@@ -227,7 +227,7 @@ TbError ModemSP::Stop(void)
 {
     TbError ret;
 
-    if (unknown528) {
+    if (in_session) {
         ret = SerialSP::Stop();
         fn_000c20c0("CALLING HANGUPMODEM\n");
         comm->HangUpModem();

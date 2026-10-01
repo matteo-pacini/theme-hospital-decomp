@@ -126,7 +126,7 @@ void close_sound_heap(void)
 
 // Per frame, with sound effects on and available: unlocks every cached
 // sample, then relocks the samples still playing and the full-screen
-// picture's block (othervar.fa06).
+// picture's block (othervar.level_block).
 // FUNCTION: 0x000a2960
 void process_sound_heap(void)
 {
@@ -134,13 +134,13 @@ void process_sound_heap(void)
     SampleInfo *info;
     SampleInfo *end;
 
-    if (!myplayer.unknown0[0xf] || !statvar.f6c[0x78])
+    if (!myplayer.name_chars[0xf] || !statvar.save_prefix[0x78])
         return;
     cache.UnlockAll();
-    if (othervar.f9f9)
-        fn_000a2ed0(othervar.fa06);
-    if (othervar.fa65)
-        fn_000a2ed0(othervar.fa06);
+    if (othervar.loaded_level)
+        fn_000a2ed0(othervar.level_block);
+    if (othervar.screen_pic_loaded)
+        fn_000a2ed0(othervar.level_block);
     end = GetLastSampleInfoStructure();
     for (info = GetFirstSampleInfoStructure(); info <= end; info++) {
         if (info->SampleHandle == 0 || !(info->flags & 1))

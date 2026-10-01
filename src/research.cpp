@@ -44,7 +44,7 @@ void do_research(void)
             amount = hosp->research_alloc[category] * hosp->research_points / 100;
             if (hosp->research_alloc[category] > 0 && amount > 0) {
                 hosp->research_points -= amount;
-                award_counts.f149 += amount;
+                award_counts.research_spent += amount;
                 exhausted = 0;
                 switch (category) {
                 case 0:
@@ -85,13 +85,13 @@ void do_research(void)
                         exhausted = 1;
                     break;
                 case 4:
-                    if ((statvar.unknownfd > 1 ? allhosps[owner].unknown1256 : gamevar.f136) != 0)
-                        do_illness_research(owner, statvar.unknownfd > 1 ? allhosps[owner].unknown1256 : gamevar.f136, amount, 4);
+                    if ((statvar.num_players > 1 ? allhosps[owner].hospital_open : gamevar.research_illness) != 0)
+                        do_illness_research(owner, statvar.num_players > 1 ? allhosps[owner].hospital_open : gamevar.research_illness, amount, 4);
                     break;
                 }
                 if (exhausted) {
                     hosp->research_points += amount;
-                    award_counts.f149 -= amount;
+                    award_counts.research_spent -= amount;
                 }
             }
         }
@@ -109,10 +109,10 @@ void item_researched(u16 item, u16 illness, u8 owner)
     u16 date;
 
     pay = 1;
-    if (statvar.unknownfd > 1) {
-        date = mycontrol->f648 * 12 + mycontrol->unknown650;
+    if (statvar.num_players > 1) {
+        date = mycontrol->year * 12 + mycontrol->month;
         for (i = 0; i < 4; i++) {
-            if (allhosps[i].equipment[item].unknown0 == 1 && objects[item].unknown1c == 1)
+            if (allhosps[i].equipment[item].available == 1 && objects[item].available_for_level == 1)
                 pay = 0;
             if (owner != i) {
                 if (allhosps[i].object_stats[item].available == 0)
@@ -125,14 +125,14 @@ void item_researched(u16 item, u16 illness, u8 owner)
                 reputation_affected(illness, 9, 0, owner, 0);
         }
     }
-    allhosps[owner].equipment[item].unknown0 = 1;
+    allhosps[owner].equipment[item].available = 1;
     if (owner == player)
         announce_this(5, item);
 }
 
 // Improves player `owner`'s drug for illness: at random, its cost falls by
 // 5% (to at least 10, sometimes also raising its effectiveness) or its
-// effectiveness rises by gbv.f140 (to at most 100; sometimes the cost then
+// effectiveness rises by gbv.drug_improve_rate (to at most 100; sometimes the cost then
 // drops, but the code caps it at 10 instead). Announced for this player.
 // FUNCTION: 0x0006d428
 void drug_improved(u16 illness, u8 owner)
@@ -155,7 +155,7 @@ void drug_improved(u16 illness, u8 owner)
             cost < 10 ? cost = 10 : 0;
             hosp->rooms[illness].drug.cost = cost;
             if (old_newrand() % 7 == 0) {
-                hosp->rooms[illness].drug.effectiveness += gbv.f140;
+                hosp->rooms[illness].drug.effectiveness += gbv.drug_improve_rate;
                 hosp->rooms[illness].drug.effectiveness > 100 ? hosp->rooms[illness].drug.effectiveness = 100 : 0;
             }
             done = 1;
@@ -163,7 +163,7 @@ void drug_improved(u16 illness, u8 owner)
     } else {
         effect = hosp->rooms[illness].drug.effectiveness;
         if (effect < 100) {
-            effect += gbv.f140;
+            effect += gbv.drug_improve_rate;
             hosp->rooms[illness].drug.effectiveness = effect;
             hosp->rooms[illness].drug.effectiveness > 100 ? hosp->rooms[illness].drug.effectiveness = 100 : 0;
             if (old_newrand() % 7 == 0) {
@@ -178,22 +178,22 @@ void drug_improved(u16 illness, u8 owner)
 }
 
 // Gives player `owner` the drug for illness at the starting effectiveness
-// and cost (gbv.fc8, gbv.fca), announced for this player.
+// and cost (gbv.start_rating, gbv.start_cost), announced for this player.
 // FUNCTION: 0x0006d6a0
 void drug_researched(u16 illness, u8 owner)
 {
     AllHosps *hosp;
 
     hosp = &allhosps[owner];
-    hosp->rooms[illness].drug.effectiveness = gbv.fc8;
-    hosp->rooms[illness].drug.cost = gbv.fca;
-    allhosps[owner].rooms[illness].unknown1C = 1;
+    hosp->rooms[illness].drug.effectiveness = gbv.start_rating;
+    hosp->rooms[illness].drug.cost = gbv.start_cost;
+    allhosps[owner].rooms[illness].cure_available = 1;
     if (owner == player)
         announce_this(6, illness);
 }
 
 // Upgrades player `owner`'s object item by one level: every third level
-// raises its strength (up to gbv.ff2) and every third lowers its price by an
+// raises its strength (up to gbv.max_object_strength) and every third lowers its price by an
 // eighth (not below a third of the base), announced for this player.
 // FUNCTION: 0x0006d748
 void item_upgraded(u16 item, u8 owner)
@@ -201,12 +201,12 @@ void item_upgraded(u16 item, u8 owner)
     AllHosps *hosp;
 
     hosp = &allhosps[owner];
-    switch (hosp->equipment[item].unknown1[0] % 6) {
+    switch (hosp->equipment[item].upgrade_level[0] % 6) {
     case 0:
         break;
     case 2:
-        if (hosp->object_stats[item].unknown8 < gbv.ff2)
-            hosp->object_stats[item].unknown8 += gbv.ff4;
+        if (hosp->object_stats[item].strength < gbv.max_object_strength)
+            hosp->object_stats[item].strength += gbv.research_increment;
         break;
     case 4:
         hosp->object_stats[item].cost = (u32)hosp->object_stats[item].cost * 7 / 8;
@@ -215,7 +215,7 @@ void item_upgraded(u16 item, u8 owner)
             hosp->object_stats[item].cost = objects[item].cost / 3;
         break;
     }
-    hosp->equipment[item].unknown1[0] += 2;
+    hosp->equipment[item].upgrade_level[0] += 2;
     if (owner == player)
         announce_this(8, item);
 }
@@ -230,13 +230,13 @@ void auto_available(void)
     u16 date;
     AllHosps *hosp;
 
-    date = mycontrol->f648 * 12 + mycontrol->unknown650;
+    date = mycontrol->year * 12 + mycontrol->month;
     for (owner = 0; owner < 4; owner++) {
         hosp = &allhosps[owner];
         for (item = 0; item < 0x3e; item++) {
-            if (allhosps[owner].equipment[item].unknown0 == 0 && objects[item].unknown1c == 1) {
+            if (allhosps[owner].equipment[item].available == 0 && objects[item].available_for_level == 1) {
                 if (hosp->object_stats[item].available != 0 && date >= hosp->object_stats[item].available) {
-                    allhosps[owner].equipment[item].unknown0 = 1;
+                    allhosps[owner].equipment[item].available = 1;
                     if (owner == player)
                         announce_this(9, item);
                 }
@@ -251,16 +251,16 @@ void auto_available(void)
 // FUNCTION: 0x0006da40
 void research_contribution(Thing *researcher, s16 amount)
 {
-    if (researcher->tiredness > gbv.fea)
+    if (researcher->tiredness > gbv.very_tired)
         amount += researcher->ability / 4;
-    else if (researcher->tiredness > gbv.fe8)
+    else if (researcher->tiredness > gbv.tired)
         amount += researcher->ability / 2;
     else
         amount += researcher->ability;
     if (researcher->subtype == STAFF_DOCTOR && researcher->crazy)
         amount = -amount / 2;
     allhosps[researcher->owner].research_points += amount;
-    award_counts.f145 += amount;
+    award_counts.research_earned += amount;
     if (allhosps[researcher->owner].research_points < 0)
         allhosps[researcher->owner].research_points = 0;
 }
@@ -274,14 +274,14 @@ void send_person_for_research(Thing *patient)
     RoomInfo *room;
 
     room = get_expertise_dest(0x2c, patient);
-    room->unknown32++;
+    room->queue_incoming++;
     page_staff_i_need(patient, room);
     patient->dest_room = room - room_info;
     idx = check_frame(anim_starts[patient->subtype].idle, patient) + patient->facing;
     patient->sprite = start[idx].frame;
     patient->flip = start[idx].flags > 0 ? (u8)1 : (u8)0;
     patient->state = PS_GOTO_QUEUE;
-    set_destination_coords(patient, room->unknown4);
+    set_destination_coords(patient, room->door_tile);
 }
 
 // Returns player `owner`'s research room with the most free workstations
@@ -357,8 +357,8 @@ u8 send_doctor_to_research(Thing *doctor)
         return 0;
     staff_exit_room_check(doctor);
     if (doctor->room)
-        set_complex(doctor, 0x136, doctor->room->unknown6);
-    set_complex(doctor, 0x96, room_info[id].unknown4);
+        set_complex(doctor, 0x136, doctor->room->door_inside_tile);
+    set_complex(doctor, 0x96, room_info[id].door_tile);
     doctor->next_state = SS_DOCTOR_RESEARCHES;
     doctor->resume_state = SS_PROCESS_COMPLEX;
     doctor->dest_room = id;
@@ -383,8 +383,8 @@ void person_autopsied(Thing *patient)
         if ((staff->type == THING_STAFF && staff->state != SS_APPLICANT) && staff->owner == patient->owner)
             staff_happiness += staff->happiness_s;
     }
-    do_illness_research(patient->owner, patient->illness, gbv.f138 * expertise[patient->illness].cost / 100, 4);
-    if ((staff_happiness << 8) / hosp->fc9c < 0x1900)
+    do_illness_research(patient->owner, patient->illness, gbv.autopsy_rsch_percent * expertise[patient->illness].cost / 100, 4);
+    if ((staff_happiness << 8) / hosp->staff_count < 0x1900)
         bad = old_newrand() % 3 != 0;
     else
         bad = old_newrand() % 3 == 0;
@@ -407,7 +407,7 @@ u8 find_best_drug_rating(u8 illness, u8 owner)
 // FUNCTION: 0x0006e1c8
 s32 find_new_cure_cost(u8 illness, u8 owner)
 {
-    if ((allhosps[owner].equipment[expertise[illness].kind].unknown0 == 0 && objects[expertise[illness].kind].unknown1c == 1)
+    if ((allhosps[owner].equipment[expertise[illness].kind].available == 0 && objects[expertise[illness].kind].available_for_level == 1)
         && expertise[illness].unknown5[0] == 2)
         return expertise[illness].cost;
     return -1;
@@ -418,19 +418,19 @@ s32 find_new_cure_cost(u8 illness, u8 owner)
 // FUNCTION: 0x0006e27c
 s32 find_new_diag_cost(u8 illness, u8 owner)
 {
-    if ((allhosps[owner].equipment[expertise[illness].kind].unknown0 == 0 && objects[expertise[illness].kind].unknown1c == 1)
+    if ((allhosps[owner].equipment[expertise[illness].kind].available == 0 && objects[expertise[illness].kind].available_for_level == 1)
         && expertise[illness].unknown5[0] == 3)
         return expertise[illness].cost;
     return -1;
 }
 
 // Research cost of the drug for illness if player `owner` has the illness
-// known (rooms[illness].unknown1D) and no drug yet, else -1.
+// known (rooms[illness].discovered) and no drug yet, else -1.
 // FUNCTION: 0x0006e330
 s32 find_new_drug_cost(u8 illness, u8 owner)
 {
-    if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].unknown1D == 1)
-        && allhosps[owner].rooms[illness].unknown1C == 0)
+    if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].discovered == 1)
+        && allhosps[owner].rooms[illness].cure_available == 0)
         return expertise[illness].cost;
     return -1;
 }
@@ -442,11 +442,11 @@ s32 find_drug_improve_cost(u8 illness, u8 owner)
 {
     u8 rating;
 
-    if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].unknown1D == 1)
-        && allhosps[owner].rooms[illness].unknown1C == 1) {
+    if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].discovered == 1)
+        && allhosps[owner].rooms[illness].cure_available == 1) {
         rating = find_best_drug_rating(illness, owner);
         if (rating < 100)
-            return (gbv.f15a + rating / 25 * gbv.f15b) * expertise[illness].cost / 100;
+            return (gbv.rsch_improve_cost_percent + rating / 25 * gbv.rsch_improve_inc_percent) * expertise[illness].cost / 100;
     }
     return -1;
 }
@@ -460,11 +460,11 @@ s32 find_hw_improve_cost(u8 illness, u8 owner)
     s32 level;
 
     kind = expertise[illness].kind;
-    if ((allhosps[owner].equipment[kind].unknown0 == 1 && objects[kind].unknown1c == 1)
+    if ((allhosps[owner].equipment[kind].available == 1 && objects[kind].available_for_level == 1)
         && (expertise[illness].unknown5[0] == 2 || expertise[illness].unknown5[0] == 3)
-        && allhosps[owner].equipment[kind].unknown1[0] < 40) {
-        level = allhosps[owner].equipment[kind].unknown1[0] / 2;
-        return (gbv.f15a + gbv.f15b * level) * expertise[illness].cost / 100;
+        && allhosps[owner].equipment[kind].upgrade_level[0] < 40) {
+        level = allhosps[owner].equipment[kind].upgrade_level[0] / 2;
+        return (gbv.rsch_improve_cost_percent + gbv.rsch_improve_inc_percent * level) * expertise[illness].cost / 100;
     }
     return -1;
 }
@@ -504,7 +504,7 @@ void research_category_exhausted(const u8 owner, const u8 category)
     hosp->research_alloc[category] = -1;
     if (owner == player) {
         announce_this(3, category);
-        othervar.fa84 = 1;
+        othervar.research_exhausted = 1;
         othervar.fa85 = 10;
         play_sound(10, 0xdb, -1, -1);
     }
@@ -536,32 +536,32 @@ void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category)
     }
     hosp->illness_research[illness] += amount;
     if ((expertise[illness].unknown5[0] == 2 || expertise[illness].unknown5[0] == 3)
-        && (allhosps[owner].equipment[kind].unknown0 == 0 && objects[kind].unknown1c == 1)) {
+        && (allhosps[owner].equipment[kind].available == 0 && objects[kind].available_for_level == 1)) {
         cost = hosp->research_cost[category] = expertise[illness].cost;
         if (hosp->illness_research[illness] >= cost) {
             hosp->illness_research[illness] -= cost;
             item_researched(expertise[illness].kind, illness, owner);
         }
-    } else if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].unknown1D == 1)
-               && allhosps[owner].rooms[illness].unknown1C == 0) {
+    } else if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].discovered == 1)
+               && allhosps[owner].rooms[illness].cure_available == 0) {
         cost = hosp->research_cost[category] = expertise[illness].cost;
         if (hosp->illness_research[illness] >= cost) {
             hosp->illness_research[illness] -= cost;
             drug_researched(illness, owner);
         }
-    } else if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].unknown1D == 1)
-               && allhosps[owner].rooms[illness].unknown1C == 1) {
+    } else if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].discovered == 1)
+               && allhosps[owner].rooms[illness].cure_available == 1) {
         rating = find_best_drug_rating(illness, owner);
-        cost = (gbv.f15a + rating / 25 * gbv.f15b) * expertise[illness].cost / 100;
+        cost = (gbv.rsch_improve_cost_percent + rating / 25 * gbv.rsch_improve_inc_percent) * expertise[illness].cost / 100;
         if (hosp->illness_research[illness] >= cost) {
             hosp->illness_research[illness] -= cost;
             drug_improved(illness, owner);
         }
     } else if (((expertise[illness].unknown5[0] == 2 || expertise[illness].unknown5[0] == 3)
-                && (allhosps[owner].equipment[kind].unknown0 == 1 && objects[kind].unknown1c == 1))
-               && hosp->equipment[kind].unknown1[0] < 40) {
-        level = hosp->equipment[kind].unknown1[0] / 2;
-        cost = (gbv.f15a + gbv.f15b * level) * expertise[illness].cost / 100;
+                && (allhosps[owner].equipment[kind].available == 1 && objects[kind].available_for_level == 1))
+               && hosp->equipment[kind].upgrade_level[0] < 40) {
+        level = hosp->equipment[kind].upgrade_level[0] / 2;
+        cost = (gbv.rsch_improve_cost_percent + gbv.rsch_improve_inc_percent * level) * expertise[illness].cost / 100;
         if (hosp->illness_research[illness] >= cost) {
             hosp->illness_research[illness] -= cost;
             item_upgraded(kind, owner);

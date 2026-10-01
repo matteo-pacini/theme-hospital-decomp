@@ -98,7 +98,7 @@ int LbScreenSetGraphicsWindow(s32 x, s32 y, s32 w, s32 h)
     lbDisplay.graphics_window_y = y1;
     lbDisplay.graphics_window_width = x2 - x1;
     lbDisplay.graphics_window_height = y2 - y1;
-    lbDisplay.graphics_window = x + (lbDisplay.unknown4 + lbDisplay.graphics_screen_width * y);
+    lbDisplay.graphics_window = x + (lbDisplay.wscreen + lbDisplay.graphics_screen_width * y);
     return 1;
 }
 

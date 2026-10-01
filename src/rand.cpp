@@ -43,14 +43,14 @@ u16 saferand(void)
     return safeseed;
 }
 
-// Advances the random generator used for new staff (gamevar.f0) and returns
+// Advances the random generator used for new staff (gamevar.staff_seed) and returns
 // its low 16 bits.
 // FUNCTION: 0x000b01e4
 u16 staffrand(void)
 {
-    gamevar.f0 = gamevar.f0 * 0x24a1 + 0x24df;
-    gamevar.f0 = ror13(gamevar.f0);
-    return gamevar.f0;
+    gamevar.staff_seed = gamevar.staff_seed * 0x24a1 + 0x24df;
+    gamevar.staff_seed = ror13(gamevar.staff_seed);
+    return gamevar.staff_seed;
 }
 
 // As old_normal_rand, from staffrand.

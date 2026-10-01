@@ -35,7 +35,7 @@ void front_queue(const u16 room_id, const u16 pos)
                             id = room->queue_head;
                             head = &thing[id];
                             room->queue_head = person - thing;
-                            room->unknown31++;
+                            room->queue_length++;
                             person->queue_room = room - room_info;
                             person->queue_prev = 0;
                             person->queue_next = id;
@@ -116,9 +116,9 @@ void join_queue(Thing *person, RoomInfo *room)
     }
     person->queue_next = 0;
     person->queue_room = room - room_info;
-    room->unknown31++;
-    if (room->unknown32) {
-        room->unknown32--;
+    room->queue_length++;
+    if (room->queue_incoming) {
+        room->queue_incoming--;
     }
 }
 
@@ -145,13 +145,13 @@ void leave_queue(Thing *person)
         } else if ((thing[person->queue_prev].queue_next = person->queue_next) > 0) {
             thing[person->queue_next].queue_prev = person->queue_prev;
         }
-        if (room->unknown31 > 0) {
-            room->unknown31--;
+        if (room->queue_length > 0) {
+            room->queue_length--;
         }
     } else if (person->dest_room) {
         if (room_info[person->dest_room].type != ROOM_RECEPTION) {
-            if (room_info[person->dest_room].unknown32 != 0) {
-                room_info[person->dest_room].unknown32--;
+            if (room_info[person->dest_room].queue_incoming != 0) {
+                room_info[person->dest_room].queue_incoming--;
             }
         }
         person->dest_room = 0;
@@ -165,7 +165,7 @@ void leave_queue(Thing *person)
 // FUNCTION: 0x0004b21c
 u16 queue_size(RoomInfo *room)
 {
-    return room->unknown31;
+    return room->queue_length;
 }
 
 // Returns the room (room_info index) whose queue person is in, or 0.
@@ -187,88 +187,88 @@ u16 which_queue(Thing *person)
     return 0;
 }
 
-// Queue window button `button` for queue position othervar.f63 of room
-// othervar.f61: 0/1 to the front/back, 4 home, 5 to reception, 6 picks the
+// Queue window button `button` for queue position othervar.queue_pos of room
+// othervar.queue_win_room: 0/1 to the front/back, 4 home, 5 to reception, 6 picks the
 // patient up to move to another queue, 7 closes, 8-10 refer to the 1st-3rd
 // other player (network game), 2/3 raise/lower the queue's limit (events
 // 0x53/0x54).
 // FUNCTION: 0x0004b2f4
 void process_queue_button(u8 button)
 {
-    debug.unknown8 = button;
+    debug.last_action = button;
     switch (button) {
     case 0:
-        if (othervar.f63) {
+        if (othervar.queue_pos) {
             D_001549d0[player].type = EV_FRONT_QUEUE;
-            D_001549d0[player].value = othervar.f61;
-            D_001549d0[player].arg = othervar.f63;
+            D_001549d0[player].value = othervar.queue_win_room;
+            D_001549d0[player].arg = othervar.queue_pos;
         }
         break;
     case 1:
-        if (othervar.f63) {
+        if (othervar.queue_pos) {
             D_001549d0[player].type = EV_BACK_QUEUE;
-            D_001549d0[player].value = othervar.f61;
-            D_001549d0[player].arg = othervar.f63;
+            D_001549d0[player].value = othervar.queue_win_room;
+            D_001549d0[player].arg = othervar.queue_pos;
         }
         break;
     case 2:
         D_001549d0[player].type = 0x53;
-        D_001549d0[player].value = othervar.f61;
+        D_001549d0[player].value = othervar.queue_win_room;
         break;
     case 3:
         D_001549d0[player].type = 0x54;
-        D_001549d0[player].value = othervar.f61;
+        D_001549d0[player].value = othervar.queue_win_room;
         break;
     case 4:
-        if (othervar.f63) {
+        if (othervar.queue_pos) {
             D_001549d0[player].type = EV_QUEUE_PERSON_GO_HOME;
-            D_001549d0[player].value = othervar.f61;
-            D_001549d0[player].arg = othervar.f63;
+            D_001549d0[player].value = othervar.queue_win_room;
+            D_001549d0[player].arg = othervar.queue_pos;
         }
         break;
     case 5:
-        if (othervar.f63) {
+        if (othervar.queue_pos) {
             D_001549d0[player].type = EV_QUEUE_PERSON_GO_RECEPTION;
-            D_001549d0[player].value = othervar.f61;
-            D_001549d0[player].arg = othervar.f63;
+            D_001549d0[player].value = othervar.queue_win_room;
+            D_001549d0[player].arg = othervar.queue_pos;
         }
         break;
     case 6:
-        if (othervar.f63) {
-            gamevar.f13a = get_real_person_from_room(othervar.f61, othervar.f63);
-            que.unknown2 = 3;
+        if (othervar.queue_pos) {
+            gamevar.queue_selected_person = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
+            que.state = 3;
         }
         break;
     case 7:
-        que.unknown2 = 2;
+        que.state = 2;
         break;
     case 8:
-        if (statvar.unknownfd > 1) {
-            if (othervar.f63) {
+        if (statvar.num_players > 1) {
+            if (othervar.queue_pos) {
                 D_001549d0[player].type = EV_REFER_PATIENT;
-                D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
+                D_001549d0[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
                 D_001549d0[player].arg = nth_other_active_player(1);
-                othervar.f63 = 0;
+                othervar.queue_pos = 0;
             }
         }
         break;
     case 9:
-        if (statvar.unknownfd > 2) {
-            if (othervar.f63) {
+        if (statvar.num_players > 2) {
+            if (othervar.queue_pos) {
                 D_001549d0[player].type = EV_REFER_PATIENT;
-                D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
+                D_001549d0[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
                 D_001549d0[player].arg = nth_other_active_player(2);
-                othervar.f63 = 0;
+                othervar.queue_pos = 0;
             }
         }
         break;
     case 10:
-        if (statvar.unknownfd > 3) {
-            if (othervar.f63) {
+        if (statvar.num_players > 3) {
+            if (othervar.queue_pos) {
                 D_001549d0[player].type = EV_REFER_PATIENT;
-                D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
+                D_001549d0[player].value = get_real_person_from_room(othervar.queue_win_room, othervar.queue_pos);
                 D_001549d0[player].arg = nth_other_active_player(3);
-                othervar.f63 = 0;
+                othervar.queue_pos = 0;
             }
         }
         break;
@@ -356,9 +356,9 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                         set_destination_coords(person, thing[reception].use_pos[1]);
                     }
                 } else {
-                    room->unknown32++;
+                    room->queue_incoming++;
                     page_staff_i_need(person, room);
-                    set_destination_coords(person, room->unknown4);
+                    set_destination_coords(person, room->door_tile);
                 }
                 person->dest_room = room - room_info;
                 {
@@ -387,11 +387,11 @@ s16 spare_queue_capacity(const u16 type, const u8 waiting, RoomInfo *room, const
     exp = &expertise[type];
     if (room == 0) {
         for (cand = room_info + 1; cand < end_room_info; cand++) {
-            if (cand->f3 >= 0 && cand->owner == owner) {
+            if (cand->state >= 0 && cand->owner == owner) {
                 if (cand->type == exp->category) {
-                    spare = cand->f1e - cand->unknown31;
+                    spare = cand->queue_capacity - cand->queue_length;
                     if (waiting) {
-                        spare -= cand->unknown32;
+                        spare -= cand->queue_incoming;
                     }
                     if (spare > 0) {
                         return spare;
@@ -400,9 +400,9 @@ s16 spare_queue_capacity(const u16 type, const u8 waiting, RoomInfo *room, const
             }
         }
     } else {
-        spare = room->f1e - room->unknown31;
+        spare = room->queue_capacity - room->queue_length;
         if (waiting) {
-            spare -= room->unknown32;
+            spare -= room->queue_incoming;
         }
         if (spare > 0) {
             return spare;
@@ -422,16 +422,16 @@ s16 all_queue_capacity(const u16 type, const u8 waiting, const u8 owner)
     s32 spare;
 
     total = 0;
-    if (allhosps[owner].rooms[type].unknown1C == 0) {
+    if (allhosps[owner].rooms[type].cure_available == 0) {
         return 0;
     }
     exp = &expertise[type];
     for (cand = room_info + 1; cand < end_room_info; cand++) {
-        if (cand->f3 >= 0 && cand->owner == owner) {
+        if (cand->state >= 0 && cand->owner == owner) {
             if (cand->type == exp->category) {
-                spare = cand->f1e - cand->unknown31;
+                spare = cand->queue_capacity - cand->queue_length;
                 if (waiting) {
-                    spare -= cand->unknown32;
+                    spare -= cand->queue_incoming;
                 }
                 if (spare > 0) {
                     total += spare;

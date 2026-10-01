@@ -75,14 +75,14 @@ void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win);
 // FUNCTION: 0x000a6b20
 void draw_it(void)
 {
-    window.unknown2cf = statvar.unknown4;
-    window.unknown2c3 = 0;
-    window.unknown2c7 = 0;
-    window.unknown2cb = lbDisplay.unknown18;
+    window.clip_y1 = statvar.view_height;
+    window.clip_x0 = 0;
+    window.clip_y0 = 0;
+    window.clip_x1 = lbDisplay.physical_screen_width;
     process_tracking_windows();
-    othervar.f41 = 0;
-    othervar.f6f = othervar.f71 = 0;
-    if (window.unknown2ec > 0) {
+    othervar.pointed_thing = 0;
+    othervar.pointed_rat = othervar.near_rat = 0;
+    if (window.window_count > 0) {
         animate_windows();
         move_windows();
         fn_000a6c7c();
@@ -94,8 +94,8 @@ void draw_it(void)
     draw_emergency();
     if (!debug.unknownd7)
         compute_help_text(0, 0, 3);
-    if (gamevar.f12e == MM_BLUEPRINT)
-        draw_cell_no(othervar.f28, color.unknownD);
+    if (gamevar.mouse_mode == MM_BLUEPRINT)
+        draw_cell_no(othervar.mouse_cell, color.red);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_map_cur_and_mcur_x_and_y();
 }
@@ -108,10 +108,10 @@ void draw_all_windows(void)
 {
     u8 i;
 
-    for (i = 0; i < window.unknown2ec; i++)
+    for (i = 0; i < window.window_count; i++)
         remove_moved_windows_not_using_bscreen_from_wscreen(i);
-    for (i = 0; i < window.unknown2ec; i++) {
-        if (i != window.f2ea)
+    for (i = 0; i < window.window_count; i++) {
+        if (i != window.bscreen_window)
             draw_window_not_using_bscreen(i);
         else
             draw_window_using_bscreen(i);
@@ -124,7 +124,7 @@ void fn_000a6c7c(void)
 {
     u8 i = 0;
 
-    draw_window_using_bscreen(window.f2ea);
+    draw_window_using_bscreen(window.bscreen_window);
 }
 
 // Draws every view window except the main one, directly.
@@ -133,21 +133,21 @@ void fn_000a6ca4(void)
 {
     u8 i = 0;
 
-    for (i = 0; i < window.unknown2ec; i++) {
-        if (i != window.f2ea)
+    for (i = 0; i < window.window_count; i++) {
+        if (i != window.bscreen_window)
             draw_window_not_using_bscreen(i);
     }
 }
 
 // Draws view window win through the background buffer: if nothing changed (not
-// moved or resized, window.fde 0 and unchanged, othervar.f10 clear) only the
+// moved or resized, window.fde 0 and unchanged, othervar.full_redraw clear) only the
 // dirty cells are copied; otherwise the floor and walls are redrawn into
 // bscreen and copied whole. Then draws the things on top and records the
 // window's position and zone as drawn.
 // FUNCTION: 0x000a6cf0
 void draw_window_using_bscreen(u8 win)
 {
-    if ((((window.fd8[win] == 0 && window.fdb[win] == 0) && window.fe1[win] == window.fde[win]) && window.fde[win] == 0) && !othervar.f10) {
+    if ((((window.scrolled[win] == 0 && window.zone_changed[win] == 0) && window.fe1[win] == window.fde[win]) && window.fde[win] == 0) && !othervar.full_redraw) {
         refresh_wscreen();
     } else {
         s32 x;
@@ -156,40 +156,40 @@ void draw_window_using_bscreen(u8 win)
         s32 h;
         u8 empty;
 
-        find_common_window(window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win],
-                           window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-        x = info.unknown68;
-        y = info.unknown6c;
-        w = info.unknown70;
-        h = info.unknown74;
-        empty = info.unknown78;
-        refresh.f0 = 0;
-        refresh.f2 = 0;
-        draw_all_mk7_no_sprites_bscreen(0, 0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-        find_common_window(window.f60[win], window.f6c[win], window.f78[win], window.f84[win],
-                           window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-        if (info.unknown78 == 0)
-            set_all_refresh_zones_in_window(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, 1);
-        find_common_window(window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win],
-                           window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-        if (info.unknown78 == 0)
-            set_all_refresh_zones_in_window(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, 1);
-        remove_old_window_image_from_wscreen(window.f60[win], window.f6c[win], window.f78[win], window.f84[win],
-                                             window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win]);
+        find_common_window(window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win],
+                           window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+        x = info.clip_x0;
+        y = info.clip_y0;
+        w = info.clip_x1;
+        h = info.clip_y1;
+        empty = info.clip_empty;
+        refresh.scroll_x = 0;
+        refresh.scroll_y = 0;
+        draw_all_mk7_no_sprites_bscreen(0, 0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
+        find_common_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win],
+                           window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+        if (info.clip_empty == 0)
+            set_all_refresh_zones_in_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, 1);
+        find_common_window(window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win],
+                           window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+        if (info.clip_empty == 0)
+            set_all_refresh_zones_in_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, 1);
+        remove_old_window_image_from_wscreen(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win],
+                                             window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
         if (empty == 0)
-            copy_bscreen_window_to_wscreen_mk1(x, y, w, h, refresh.f0, refresh.f2);
+            copy_bscreen_window_to_wscreen_mk1(x, y, w, h, refresh.scroll_x, refresh.scroll_y);
     }
-    draw_all_sprites_on_wscreen_selectively_using_pix_buffer(0, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    othervar.f10 = 0;
-    window.f18[win] = window.f0[win];
-    window.f24[win] = window.fc[win];
-    window.f60[win] = window.zone_x[win];
-    window.f6c[win] = window.zone_y[win];
-    window.f78[win] = window.zone_w[win];
-    window.f84[win] = window.zone_h[win];
+    draw_all_sprites_on_wscreen_selectively_using_pix_buffer(0, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    othervar.full_redraw = 0;
+    window.prev_scroll_x[win] = window.scroll_x[win];
+    window.prev_scroll_y[win] = window.scroll_y[win];
+    window.prev_zone_x[win] = window.zone_x[win];
+    window.prev_zone_y[win] = window.zone_y[win];
+    window.prev_zone_x1[win] = window.zone_x1[win];
+    window.prev_zone_y1[win] = window.zone_y1[win];
     window.fe1[win] = window.fde[win];
-    window.fdb[win] = 0;
-    window.fd8[win] = 0;
+    window.zone_changed[win] = 0;
+    window.scrolled[win] = 0;
 }
 
 // If view window win was resized, clears what its old zone left uncovered and
@@ -197,10 +197,10 @@ void draw_window_using_bscreen(u8 win)
 // FUNCTION: 0x000a70d0
 void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win)
 {
-    if (window.fdb[win] == 1) {
-        remove_old_window_image_from_wscreen_replacing_detail(window.f60[win], window.f6c[win], window.f78[win], window.f84[win],
-                                                              window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win]);
-        set_all_refresh_zones_in_window(window.f60[win], window.f6c[win], window.f78[win], window.f84[win], 2);
+    if (window.zone_changed[win] == 1) {
+        remove_old_window_image_from_wscreen_replacing_detail(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win],
+                                                              window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+        set_all_refresh_zones_in_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win], 2);
     }
 }
 
@@ -210,20 +210,20 @@ void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win)
 // FUNCTION: 0x000a71bc
 void draw_window_not_using_bscreen(const u8 win)
 {
-    set_all_refresh_zones_in_window(window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win], 2);
-    if (window.fdb[win] == 1)
-        set_all_refresh_zones_in_window(window.f60[win], window.f6c[win], window.f78[win], window.f84[win], 3);
+    set_all_refresh_zones_in_window(window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win], 2);
+    if (window.zone_changed[win] == 1)
+        set_all_refresh_zones_in_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win], 3);
     if (window.fde[win] == 0)
-        draw_all_mk7_selective_sprites_wscreen(win, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    draw_boundry(win, window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win]);
-    window.f18[win] = window.f0[win];
-    window.f24[win] = window.fc[win];
-    window.f60[win] = window.zone_x[win];
-    window.f6c[win] = window.zone_y[win];
-    window.f78[win] = window.zone_w[win];
-    window.f84[win] = window.zone_h[win];
-    window.fdb[win] = 0;
-    window.fd8[win] = 0;
+        draw_all_mk7_selective_sprites_wscreen(win, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    draw_boundry(win, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    window.prev_scroll_x[win] = window.scroll_x[win];
+    window.prev_scroll_y[win] = window.scroll_y[win];
+    window.prev_zone_x[win] = window.zone_x[win];
+    window.prev_zone_y[win] = window.zone_y[win];
+    window.prev_zone_x1[win] = window.zone_x1[win];
+    window.prev_zone_y1[win] = window.zone_y1[win];
+    window.zone_changed[win] = 0;
+    window.scrolled[win] = 0;
 }
 
 // Fills with the background colour the parts of the old zone x0,y0 to x1,y1
@@ -234,55 +234,55 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
 {
     u8 colour;
 
-    colour = color.unknown8;
-    find_common_window(x0, y0, x1, y1, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    x0 = info.unknown68;
-    y0 = info.unknown6c;
-    x1 = info.unknown70;
-    y1 = info.unknown74;
-    find_common_window(nx0, ny0, nx1, ny1, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    nx0 = info.unknown68;
-    ny0 = info.unknown6c;
-    nx1 = info.unknown70;
-    ny1 = info.unknown74;
+    colour = color.black;
+    find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    x0 = info.clip_x0;
+    y0 = info.clip_y0;
+    x1 = info.clip_x1;
+    y1 = info.clip_y1;
+    find_common_window(nx0, ny0, nx1, ny1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    nx0 = info.clip_x0;
+    ny0 = info.clip_y0;
+    nx1 = info.clip_x1;
+    ny1 = info.clip_y1;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (y1 > y0) {
         if (x0 < nx0) {
             LbDrawBox(x0, y0, nx0 - x0, y1 - y0, colour);
-            if (window.fde[window.f2ea] == 0) {
-                find_common_window(x0, y0, nx0, y1, window.zone_x[window.f2ea], window.zone_y[window.f2ea],
-                                   window.zone_w[window.f2ea], window.zone_h[window.f2ea]);
-                if (info.unknown78 == 0)
-                    copy_bscreen_window_to_wscreen_mk1(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, refresh.f0, refresh.f2);
+            if (window.fde[window.bscreen_window] == 0) {
+                find_common_window(x0, y0, nx0, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
+                                   window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
+                if (info.clip_empty == 0)
+                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, refresh.scroll_x, refresh.scroll_y);
             }
         }
         if (x1 > nx1) {
             LbDrawBox(nx1, y0, x1 - nx1, y1 - y0, colour);
-            if (window.fde[window.f2ea] == 0) {
-                find_common_window(nx1, y0, x1, y1, window.zone_x[window.f2ea], window.zone_y[window.f2ea],
-                                   window.zone_w[window.f2ea], window.zone_h[window.f2ea]);
-                if (info.unknown78 == 0)
-                    copy_bscreen_window_to_wscreen_mk1(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, refresh.f0, refresh.f2);
+            if (window.fde[window.bscreen_window] == 0) {
+                find_common_window(nx1, y0, x1, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
+                                   window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
+                if (info.clip_empty == 0)
+                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, refresh.scroll_x, refresh.scroll_y);
             }
         }
     }
     if (x1 > x0) {
         if (y0 < ny0) {
             LbDrawBox(x0, y0, x1 - x0, ny0 - y0, colour);
-            if (window.fde[window.f2ea] == 0) {
-                find_common_window(x0, y0, x1, ny0, window.zone_x[window.f2ea], window.zone_y[window.f2ea],
-                                   window.zone_w[window.f2ea], window.zone_h[window.f2ea]);
-                if (info.unknown78 == 0)
-                    copy_bscreen_window_to_wscreen_mk1(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, refresh.f0, refresh.f2);
+            if (window.fde[window.bscreen_window] == 0) {
+                find_common_window(x0, y0, x1, ny0, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
+                                   window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
+                if (info.clip_empty == 0)
+                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, refresh.scroll_x, refresh.scroll_y);
             }
         }
         if (y1 > ny1) {
             LbDrawBox(x0, ny1, x1 - x0, y1 - ny1, colour);
-            if (window.fde[window.f2ea] == 0) {
-                find_common_window(x0, ny1, x1, y1, window.zone_x[window.f2ea], window.zone_y[window.f2ea],
-                                   window.zone_w[window.f2ea], window.zone_h[window.f2ea]);
-                if (info.unknown78 == 0)
-                    copy_bscreen_window_to_wscreen_mk1(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, refresh.f0, refresh.f2);
+            if (window.fde[window.bscreen_window] == 0) {
+                find_common_window(x0, ny1, x1, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
+                                   window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
+                if (info.clip_empty == 0)
+                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, refresh.scroll_x, refresh.scroll_y);
             }
         }
     }
@@ -296,17 +296,17 @@ void remove_old_window_image_from_wscreen(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx
 {
     u8 colour;
 
-    colour = color.unknown8;
-    find_common_window(x0, y0, x1, y1, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    x0 = info.unknown68;
-    y0 = info.unknown6c;
-    x1 = info.unknown70;
-    y1 = info.unknown74;
-    find_common_window(nx0, ny0, nx1, ny1, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    nx0 = info.unknown68;
-    ny0 = info.unknown6c;
-    nx1 = info.unknown70;
-    ny1 = info.unknown74;
+    colour = color.black;
+    find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    x0 = info.clip_x0;
+    y0 = info.clip_y0;
+    x1 = info.clip_x1;
+    y1 = info.clip_y1;
+    find_common_window(nx0, ny0, nx1, ny1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    nx0 = info.clip_x0;
+    ny0 = info.clip_y0;
+    nx1 = info.clip_x1;
+    ny1 = info.clip_y1;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (y1 > y1) {
         if (x0 < nx0)
@@ -327,17 +327,17 @@ void remove_old_window_image_from_wscreen(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx
 // FUNCTION: 0x000a7950
 void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h)
 {
-    find_common_window(x, y, w, h, window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    if (info.unknown78 == 0) {
-        set_all_refresh_zones_in_window(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, 3);
+    find_common_window(x, y, w, h, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    if (info.clip_empty == 0) {
+        set_all_refresh_zones_in_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, 3);
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        LbDrawBox(info.unknown68, info.unknown6c, info.unknown70 - info.unknown68, info.unknown74 - info.unknown6c, color.unknown8);
+        LbDrawBox(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0, info.clip_y1 - info.clip_y0, color.black);
     }
 }
 
 // Prepares the scan of the map cells covering screen rectangle x,y to w,h
 // (right and bottom edges) in view window win, row by row from the top: sets
-// info.f0 to f24 to the first cell, its screen position, the row length, the
+// info.scan_cell to f24 to the first cell, its screen position, the row length, the
 // row counts for floors and for walls and things (taller), and how rows
 // alternate.
 // FUNCTION: 0x000a7a0c
@@ -361,93 +361,93 @@ void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const 
     top = 1;
     right = 1;
     bottom = 1;
-    extra = resvars.f3 * 19 / 10;
-    x -= resvars.f4 / 2;
-    w += resvars.f4 / 2;
+    extra = resvars.tile_height * 19 / 10;
+    x -= resvars.tile_width / 2;
+    w += resvars.tile_width / 2;
     find_cell_at_point(win, x, y);
-    info.fc = info.unknown54;
-    info.f14 = info.unknown58;
-    info.f4 = info.unknown5c;
-    info.f8 = info.unknown60;
-    info.f0 = info.unknown64;
-    dx = x - info.fc - resvars.f4 / 2;
+    info.scan_x = info.cell_x;
+    info.scan_y = info.cell_y;
+    info.scan_col = info.cell_col;
+    info.scan_row = info.cell_row;
+    info.scan_cell = info.cell;
+    dx = x - info.scan_x - resvars.tile_width / 2;
     if (dx >= 0)
         left = 0;
-    dy = y - info.f14 + resvars.f3 / 2;
+    dy = y - info.scan_y + resvars.tile_height / 2;
     if (dy >= 0)
         top = 0;
-    span = w - x + (dx - resvars.f4 / 2);
-    cnt = span / resvars.f4;
-    prod = cnt * resvars.f4;
+    span = w - x + (dx - resvars.tile_width / 2);
+    cnt = span / resvars.tile_width;
+    prod = cnt * resvars.tile_width;
     if (prod < span) {
         rem = span - prod;
-        if (resvars.f4 / 2 >= rem)
+        if (resvars.tile_width / 2 >= rem)
             odd = 0;
         cnt++;
     }
-    info.f18 = cnt + 1;
-    dy -= resvars.f3 / 2;
+    info.line_len = cnt + 1;
+    dy -= resvars.tile_height / 2;
     span = dy + (h - y);
-    cnt = span / resvars.f3;
-    prod = cnt * resvars.f3;
+    cnt = span / resvars.tile_height;
+    prod = cnt * resvars.tile_height;
     if (prod < span) {
         rem = span - prod;
-        if (resvars.f3 / 2 >= rem)
+        if (resvars.tile_height / 2 >= rem)
             right = 0;
         cnt++;
     }
-    info.f20 = cnt * 2 + 1;
+    info.floor_lines = cnt * 2 + 1;
     span = dy + (h + extra - y);
-    cnt = span / resvars.f3;
-    prod = cnt * resvars.f3;
+    cnt = span / resvars.tile_height;
+    prod = cnt * resvars.tile_height;
     if (prod < span) {
         rem = span - prod;
-        if (resvars.f3 / 2 >= rem)
+        if (resvars.tile_height / 2 >= rem)
             bottom = 0;
         cnt++;
     }
-    info.f24 = cnt * 2 + 1;
-    info.f10 = resvars.f4 / 2;
-    info.f1c = -1;
+    info.full_lines = cnt * 2 + 1;
+    info.scan_dx = resvars.tile_width / 2;
+    info.line_len_step = -1;
     if (top) {
-        info.f24++;
-        info.f20++;
-        info.f14 -= resvars.f3 / 2;
+        info.full_lines++;
+        info.floor_lines++;
+        info.scan_y -= resvars.tile_height / 2;
         if (left) {
-            info.f4--;
-            info.f0--;
-            info.fc -= resvars.f4 / 2;
+            info.scan_col--;
+            info.scan_cell--;
+            info.scan_x -= resvars.tile_width / 2;
             if (odd)
-                info.f18++;
+                info.line_len++;
             else
-                info.f1c = 0;
+                info.line_len_step = 0;
         } else {
-            info.f8--;
-            info.f0 -= 0x80;
-            info.fc += resvars.f4 / 2;
-            info.f10 = resvars.f4 / 2;
-            info.f10 = -info.f10;
+            info.scan_row--;
+            info.scan_cell -= 0x80;
+            info.scan_x += resvars.tile_width / 2;
+            info.scan_dx = resvars.tile_width / 2;
+            info.scan_dx = -info.scan_dx;
             if (odd) {
-                info.f1c = 0;
+                info.line_len_step = 0;
             } else {
-                info.f1c = 1;
-                info.f18--;
+                info.line_len_step = 1;
+                info.line_len--;
             }
         }
     } else if (left) {
-        info.f10 = resvars.f4 / 2;
-        info.f10 = -info.f10;
+        info.scan_dx = resvars.tile_width / 2;
+        info.scan_dx = -info.scan_dx;
         if (odd)
-            info.f1c = 1;
+            info.line_len_step = 1;
         else
-            info.f1c = 0;
+            info.line_len_step = 0;
     } else if (odd) {
-        info.f1c = 0;
+        info.line_len_step = 0;
     }
     if (right)
-        info.f20++;
+        info.floor_lines++;
     if (bottom)
-        info.f24++;
+        info.full_lines++;
 }
 
 // Draws the things on map cell cell at screen x,y (z,w are the cell's column
@@ -472,24 +472,24 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
     m = &map[cell];
     if ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0)) {
         if (m->flags & 0x10) {
-            ox = 0x5a - resvars.f4 / 2;
-            oy = 0xb4 - resvars.f3 * 3 / 2;
+            ox = 0x5a - resvars.tile_width / 2;
+            oy = 0xb4 - resvars.tile_height * 3 / 2;
             DrawIntoPixBuffer();
             do_mapwho(m, ox, oy, cx0 + x - ox, cy0 + y - 0xb4);
             px = D_001567b0[0];
             py = D_001567b0[1];
             D_001567b0[0] += x - ox;
-            D_001567b0[1] += y - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
+            D_001567b0[1] += y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
             D_001567b0[2] += x - ox;
-            D_001567b0[3] += y - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
+            D_001567b0[3] += y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
             pixBuf.x = x - ox;
-            pixBuf.y = y - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
+            pixBuf.y = y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
             find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0, cx1, cy1);
-            if (info.unknown78 == 0) {
-                bx0 = info.unknown68;
-                by0 = info.unknown6c;
-                bx1 = info.unknown70;
-                by1 = info.unknown74;
+            if (info.clip_empty == 0) {
+                bx0 = info.clip_x0;
+                by0 = info.clip_y0;
+                bx1 = info.clip_x1;
+                by1 = info.clip_y1;
                 draw_window_into_pix_buffer(0, bx0, by0, bx1, by1, z, w);
                 set_all_refresh_zones_in_window(bx0, by0, bx1, by1, 3);
             }
@@ -499,13 +499,13 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
             FillBoxInPixBuffer(0xfe, px, py, D_001567b0[2] - D_001567b0[0], D_001567b0[3] - D_001567b0[1]);
         } else {
             LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
-            do_mapwho(m, x, y - resvars.f3, 0, 0);
+            do_mapwho(m, x, y - resvars.tile_height, 0, 0);
             find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0, cx1, cy1);
-            if (info.unknown78 == 0) {
-                bx0 = info.unknown68;
-                by0 = info.unknown6c;
-                bx1 = info.unknown70;
-                by1 = info.unknown74;
+            if (info.clip_empty == 0) {
+                bx0 = info.clip_x0;
+                by0 = info.clip_y0;
+                bx1 = info.clip_x1;
+                by1 = info.clip_y1;
                 draw_window_on_wscreen_mk2(win, bx0, by0, bx1, by1, cell);
                 set_all_refresh_zones_in_window(bx0, by0, bx1, by1, 3);
             }
@@ -533,23 +533,23 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
     s32 miny;
     s32 j;
 
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win]);
-    if (info.unknown78 == 0) {
-        x0 = info.unknown68;
-        y0 = info.unknown6c;
-        x1 = info.unknown70;
-        y1 = info.unknown74;
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    if (info.clip_empty == 0) {
+        x0 = info.clip_x0;
+        y0 = info.clip_y0;
+        x1 = info.clip_x1;
+        y1 = info.clip_y1;
         setup_stats_for_window_scan(win, x0, y0, x1, y1);
-        line_len = info.f18;
-        floor_lines = info.f20;
-        full_lines = info.f24;
-        step = info.f1c;
-        base = info.f0;
-        bx = info.f4;
-        by = info.f8;
-        dx = info.f10;
-        px = info.fc;
-        py = info.f14;
+        line_len = info.line_len;
+        floor_lines = info.floor_lines;
+        full_lines = info.full_lines;
+        step = info.line_len_step;
+        base = info.scan_cell;
+        bx = info.scan_col;
+        by = info.scan_row;
+        dx = info.scan_dx;
+        px = info.scan_x;
+        py = info.scan_y;
         minx = 0;
         miny = 0;
         LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
@@ -559,10 +559,10 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
             minx = window.zone_x[win];
         if (window.zone_y[win] > 0)
             miny = window.zone_y[win];
-        if (window.unknown2c3 > minx)
-            minx = window.unknown2c3;
-        if (window.unknown2c7 > miny)
-            miny = window.unknown2c7;
+        if (window.clip_x0 > minx)
+            minx = window.clip_x0;
+        if (window.clip_y0 > miny)
+            miny = window.clip_y0;
         for (j = 0; j < full_lines; j++) {
             s32 c;
             s32 x;
@@ -621,17 +621,17 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
                     x = bx + i;
                     y = by - i;
                     c = base - i * 0x7f;
-                    do_cell(win, px + resvars.f4 * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
+                    do_cell(win, px + resvars.tile_width * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
                 }
             }
             for (i = last; i >= 0; i = draw_precedence[i].next) {
                 x = bx + i;
                 y = by - i;
                 c = base - i * 0x7f;
-                do_cell(win, px + resvars.f4 * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
+                do_cell(win, px + resvars.tile_width * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
             }
             px += dx;
-            py += resvars.f3 / 2;
+            py += resvars.tile_height / 2;
             if (dx < 0) {
                 by++;
                 base += 0x80;
@@ -678,24 +678,24 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
     TbSprite overlay;
 
     mp = map;
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win]);
-    if (info.unknown78 == 0) {
-        x0 = info.unknown68;
-        y0 = info.unknown6c;
-        x1 = info.unknown70;
-        y1 = info.unknown74;
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    if (info.clip_empty == 0) {
+        x0 = info.clip_x0;
+        y0 = info.clip_y0;
+        x1 = info.clip_x1;
+        y1 = info.clip_y1;
         setup_stats_for_window_scan(win, x0, y0, x1, y1);
-        line_len = info.f18;
-        floor_lines = info.f20;
-        full_lines = info.f24;
-        step = info.f1c;
-        base = info.f0;
-        bx = info.f4;
-        by = info.f8;
-        px = info.fc;
-        py = info.f14;
-        dx = info.f10;
-        half = resvars.f3 / 2;
+        line_len = info.line_len;
+        floor_lines = info.floor_lines;
+        full_lines = info.full_lines;
+        step = info.line_len_step;
+        base = info.scan_cell;
+        bx = info.scan_col;
+        by = info.scan_row;
+        px = info.scan_x;
+        py = info.scan_y;
+        dx = info.scan_dx;
+        half = resvars.tile_height / 2;
         sx = px;
         sy = py;
         LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
@@ -711,31 +711,31 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
             for (i = 0; i < line_len; i++) {
                 if ((((active == 1 && cx >= 0) && cx < 0x80) && cy >= 0) && cy < 0x80) {
                     m = &mp[c];
-                    if (m->unknown3) {
-                        if (myplayer.f1d) {
+                    if (m->wall_n) {
+                        if (myplayer.shadows_on) {
                             if (!(m->floor & 0x20))
-                                LbSpriteDraw(x, sy - blocks[m->unknown3].info->height, blocks[m->unknown3].info);
+                                LbSpriteDraw(x, sy - blocks[m->wall_n].info->height, blocks[m->wall_n].info);
                             if (m->floor & 0x20) {
-                                if (m->unknown3 == InteriorWallHalf.block) {
+                                if (m->wall_n == InteriorWallHalf.block) {
                                     LbSpriteDraw(x, sy - InteriorWallHalf.sprite.height, &InteriorWallHalf.sprite);
                                 } else {
-                                    overlay.width = blocks[m->unknown3].info->width;
-                                    overlay.height = blocks[m->unknown3].info->height;
+                                    overlay.width = blocks[m->wall_n].info->width;
+                                    overlay.height = blocks[m->wall_n].info->height;
                                     overlay.data = (u32)ShadowBuffer;
-                                    create_overlay_sprite(blocks[m->unknown3].info, blocks[150].info, &overlay);
+                                    create_overlay_sprite(blocks[m->wall_n].info, blocks[150].info, &overlay);
                                     LbSpriteDraw(x, sy - overlay.height, &overlay);
                                 }
                             }
                         } else {
-                            LbSpriteDraw(x, sy - blocks[m->unknown3].info->height, blocks[m->unknown3].info);
+                            LbSpriteDraw(x, sy - blocks[m->wall_n].info->height, blocks[m->wall_n].info);
                         }
                     }
-                    if (m->unknown4)
-                        LbSpriteDraw(x, sy - blocks[m->unknown4].info->height, blocks[m->unknown4].info);
+                    if (m->wall_w)
+                        LbSpriteDraw(x, sy - blocks[m->wall_w].info->height, blocks[m->wall_w].info);
                 }
                 if (c == cell)
                     reached = 1;
-                x += resvars.f4;
+                x += resvars.tile_width;
                 cx++;
                 cy--;
                 c += -0x7f;
@@ -790,23 +790,23 @@ void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, c
 
     mp = map;
     setup_stats_for_window_scan(win, x0, y0, x1, y1);
-    line_len = info.f18;
-    floor_lines = info.f20;
-    full_lines = info.f24;
-    step = info.f1c;
-    base = info.f0;
-    bx = info.f4;
-    by = info.f8;
-    px = info.fc;
-    py = info.f14;
-    dx = info.f10;
-    half = resvars.f3 / 2;
+    line_len = info.line_len;
+    floor_lines = info.floor_lines;
+    full_lines = info.full_lines;
+    step = info.line_len_step;
+    base = info.scan_cell;
+    bx = info.scan_col;
+    by = info.scan_row;
+    px = info.scan_x;
+    py = info.scan_y;
+    dx = info.scan_dx;
+    half = resvars.tile_height / 2;
     give_absolute_xy_of_cell_at_column_row(bx, by);
-    ax = info.unknown54;
-    ay = info.unknown58;
+    ax = info.cell_x;
+    ay = info.cell_y;
     give_absolute_xy_of_cell_at_column_row(lx, ly);
-    ax -= info.unknown54;
-    ay -= info.unknown58;
+    ax -= info.cell_x;
+    ay -= info.cell_y;
     for (j = 0; j < full_lines; j++) {
         x = ax;
         sx = px;
@@ -816,17 +816,17 @@ void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, c
         for (i = 0; i < line_len; i++) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80) && (cx > lx || cy > ly)) {
                 m = &mp[c];
-                if (m->unknown3)
-                    LbSpriteDrawOneColour(0x5a - resvars.f4 / 2 + x,
-                                 ay - blocks[m->unknown3].info->height + 0xb4 - resvars.f3 * 3 / 2 + resvars.f3,
-                                 blocks[m->unknown3].info, 0xfe);
-                if (m->unknown4)
-                    LbSpriteDrawOneColour(0x5a - resvars.f4 / 2 + x,
-                                 ay - blocks[m->unknown4].info->height + 0xb4 - resvars.f3 * 3 / 2 + resvars.f3,
-                                 blocks[m->unknown4].info, 0xfe);
+                if (m->wall_n)
+                    LbSpriteDrawOneColour(0x5a - resvars.tile_width / 2 + x,
+                                 ay - blocks[m->wall_n].info->height + 0xb4 - resvars.tile_height * 3 / 2 + resvars.tile_height,
+                                 blocks[m->wall_n].info, 0xfe);
+                if (m->wall_w)
+                    LbSpriteDrawOneColour(0x5a - resvars.tile_width / 2 + x,
+                                 ay - blocks[m->wall_w].info->height + 0xb4 - resvars.tile_height * 3 / 2 + resvars.tile_height,
+                                 blocks[m->wall_w].info, 0xfe);
             }
-            x += resvars.f4;
-            sx += resvars.f4;
+            x += resvars.tile_width;
+            sx += resvars.tile_width;
             cx++;
             cy--;
             c += -0x7f;
@@ -858,20 +858,20 @@ void draw_boundry(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
     s32 right;
     s32 bottom;
 
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win]);
-    find_common_window(info.unknown68, info.unknown6c, info.unknown70, info.unknown74,
-                       window.unknown2c3, window.unknown2c7, window.unknown2cb, window.unknown2cf);
-    LbScreenSetGraphicsWindow(info.unknown68, info.unknown6c, info.unknown70 - info.unknown68, info.unknown74 - info.unknown6c);
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    find_common_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1,
+                       window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0, info.clip_y1 - info.clip_y0);
     left = 0;
     top = 0;
-    right = window.zone_w[win] - window.zone_x[win] - 1;
-    bottom = window.zone_h[win] - window.zone_y[win] - 1;
-    if (window.zone_x[win] < info.unknown68) {
-        left = window.zone_x[win] - info.unknown68;
+    right = window.zone_x1[win] - window.zone_x[win] - 1;
+    bottom = window.zone_y1[win] - window.zone_y[win] - 1;
+    if (window.zone_x[win] < info.clip_x0) {
+        left = window.zone_x[win] - info.clip_x0;
         right += left;
     }
-    if (window.zone_y[win] < info.unknown6c) {
-        top = window.zone_y[win] - info.unknown6c;
+    if (window.zone_y[win] < info.clip_y0) {
+        top = window.zone_y[win] - info.clip_y0;
         bottom += top;
     }
     fn_000c9be0(left, top, right, top, 3);
@@ -989,7 +989,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 
                 shape = objects[obj->subtype].shapes[obj->facing];
                 record_covering_cell(row, 0);
-                off = (s16)-(s8)shapes[shape].unknown1f[0] + -(s8)shapes[shape].unknown1f[1] * 128;
+                off = (s16)-(s8)shapes[shape].use_xy_depth[0] + -(s8)shapes[shape].use_xy_depth[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
                     pos = shapes[shape].points[k] + off;
                     v = record_covering_cell(row, pos);
@@ -1014,7 +1014,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 
                 shape = objects[obj->subtype].shapes[obj->facing];
                 record_covering_cell(row, 0);
-                off = (s16)-(s8)shapes[shape].unknown1f[0] + -(s8)shapes[shape].unknown1f[1] * 128;
+                off = (s16)-(s8)shapes[shape].use_xy_depth[0] + -(s8)shapes[shape].use_xy_depth[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
                     pos = shapes[shape].points[k] + off;
                     v = record_covering_cell(row, pos);
@@ -1049,7 +1049,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 }
 
 // Draws view window win within x0,y0 to x1,y1 straight onto the work screen:
-// floor (with shadows if enabled, myplayer.f1d), then walls and things row by
+// floor (with shadows if enabled, myplayer.shadows_on), then walls and things row by
 // row.
 // FUNCTION: 0x000a9744
 void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
@@ -1098,25 +1098,25 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
     s32 b3;
 
     mp = map;
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win]);
-    if (info.unknown78 != 0)
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    if (info.clip_empty != 0)
         return;
-    x0 = info.unknown68;
-    y0 = info.unknown6c;
-    x1 = info.unknown70;
-    y1 = info.unknown74;
+    x0 = info.clip_x0;
+    y0 = info.clip_y0;
+    x1 = info.clip_x1;
+    y1 = info.clip_y1;
     setup_stats_for_window_scan(win, x0, y0, x1, y1);
-    line_len = info.f18;
-    floor_lines = info.f20;
-    full_lines = info.f24;
-    step = info.f1c;
-    base = info.f0;
-    bx = info.f4;
-    by = info.f8;
-    px = info.fc;
-    py = info.f14;
-    dx = info.f10;
-    half = resvars.f3 / 2;
+    line_len = info.line_len;
+    floor_lines = info.floor_lines;
+    full_lines = info.full_lines;
+    step = info.line_len_step;
+    base = info.scan_cell;
+    bx = info.scan_col;
+    by = info.scan_row;
+    px = info.scan_x;
+    py = info.scan_y;
+    dx = info.scan_dx;
+    half = resvars.tile_height / 2;
     sx = px;
     sy = py;
     LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
@@ -1138,10 +1138,10 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
         minx = window.zone_x[win];
     if (window.zone_y[win] > 0)
         miny = window.zone_y[win];
-    if (window.unknown2c3 > minx)
-        minx = window.unknown2c3;
-    if (window.unknown2c7 > miny)
-        miny = window.unknown2c7;
+    if (window.clip_x0 > minx)
+        minx = window.clip_x0;
+    if (window.clip_y0 > miny)
+        miny = window.clip_y0;
     for (j = 0; j < floor_lines; j++) {
         x = sx;
         wx = px;
@@ -1152,7 +1152,7 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 tile = m->overlay;
-                if (myplayer.f1d) {
+                if (myplayer.shadows_on) {
                     if (!(m->floor & 0x10) && !(m->floor & 0x40)) {
                         LbSpriteDraw(x, sy - blocks[tile].info->height, blocks[tile].info);
                     } else if (m->floor & 0x40) {
@@ -1198,8 +1198,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
             } else {
                 LbSpriteDraw(x, sy - blocks[4].info->height, blocks[4].info);
             }
-            x += resvars.f4;
-            wx += resvars.f4;
+            x += resvars.tile_width;
+            wx += resvars.tile_width;
             cx++;
             cy--;
             c += -0x7f;
@@ -1238,34 +1238,34 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
         for (i = 0; i < line_len; i++) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
-                if (m->unknown3) {
-                    if (myplayer.f1d) {
+                if (m->wall_n) {
+                    if (myplayer.shadows_on) {
                         if (!(m->floor & 0x20)) {
-                            LbSpriteDraw(x, sy - blocks[m->unknown3].info->height, blocks[m->unknown3].info);
+                            LbSpriteDraw(x, sy - blocks[m->wall_n].info->height, blocks[m->wall_n].info);
                         } else if (m->floor & 0x20) {
-                            if (m->unknown3 == InteriorWallHalf.block) {
+                            if (m->wall_n == InteriorWallHalf.block) {
                                 LbSpriteDraw(x, sy - InteriorWallHalf.sprite.height, &InteriorWallHalf.sprite);
-                            } else if (m->unknown3 == InteriorWallHalf.block) {
+                            } else if (m->wall_n == InteriorWallHalf.block) {
                                 LbSpriteDraw(x, sy - InteriorWallHalf.sprite.height, &InteriorWallHalf.sprite);
                             } else {
-                                overlay.width = blocks[m->unknown3].info->width;
-                                overlay.height = blocks[m->unknown3].info->height;
+                                overlay.width = blocks[m->wall_n].info->width;
+                                overlay.height = blocks[m->wall_n].info->height;
                                 overlay.data = (u32)ShadowBuffer;
-                                create_overlay_sprite(blocks[m->unknown3].info, blocks[150].info, &overlay);
+                                create_overlay_sprite(blocks[m->wall_n].info, blocks[150].info, &overlay);
                                 LbSpriteDraw(x, sy - blocks[150].info->height, &overlay);
                             }
                         }
                     } else {
-                        LbSpriteDraw(x, sy - blocks[m->unknown3].info->height, blocks[m->unknown3].info);
+                        LbSpriteDraw(x, sy - blocks[m->wall_n].info->height, blocks[m->wall_n].info);
                     }
                 }
-                if (m->unknown4)
-                    LbSpriteDraw(x, sy - blocks[m->unknown4].info->height, blocks[m->unknown4].info);
+                if (m->wall_w)
+                    LbSpriteDraw(x, sy - blocks[m->wall_w].info->height, blocks[m->wall_w].info);
             } else {
                 break;
             }
-            x += resvars.f4;
-            wx += resvars.f4;
+            x += resvars.tile_width;
+            wx += resvars.tile_width;
             cx++;
             cy--;
             c += -0x7f;
@@ -1280,24 +1280,24 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
                 m = &mp[c];
                 if ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0)) {
                     if (!(m->flags & 0x10)) {
-                        do_mapwho(m, x, sy - resvars.f3, 0, 0);
+                        do_mapwho(m, x, sy - resvars.tile_height, 0, 0);
                     } else {
                         DrawIntoPixBuffer();
-                        do_mapwho(m, 0x5a - resvars.f4 / 2, 0xb4 - resvars.f3 * 3 / 2, 0, 0);
+                        do_mapwho(m, 0x5a - resvars.tile_width / 2, 0xb4 - resvars.tile_height * 3 / 2, 0, 0);
                         ppx = D_001567b0[0];
                         ppy = D_001567b0[1];
-                        D_001567b0[0] += x - (0x5a - resvars.f4 / 2);
-                        D_001567b0[1] += sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
-                        D_001567b0[2] += x - (0x5a - resvars.f4 / 2);
-                        D_001567b0[3] += sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
-                        pixBuf.x = x - 0x5a + resvars.f4 / 2;
-                        pixBuf.y = sy - 0xb4 + resvars.f3 * 3 / 2 - resvars.f3;
+                        D_001567b0[0] += x - (0x5a - resvars.tile_width / 2);
+                        D_001567b0[1] += sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
+                        D_001567b0[2] += x - (0x5a - resvars.tile_width / 2);
+                        D_001567b0[3] += sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
+                        pixBuf.x = x - 0x5a + resvars.tile_width / 2;
+                        pixBuf.y = sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
                         find_common_window(D_001567b0[0] + minx, D_001567b0[1] + miny, D_001567b0[2] + minx, D_001567b0[3] + miny, x0, y0, x1, y1);
-                        b0 = info.unknown68;
-                        b1 = info.unknown6c;
-                        b2 = info.unknown70;
-                        b3 = info.unknown74;
-                        if (info.unknown78 == 0) {
+                        b0 = info.clip_x0;
+                        b1 = info.clip_y0;
+                        b2 = info.clip_x1;
+                        b3 = info.clip_y1;
+                        if (info.clip_empty == 0) {
                             draw_window_into_pix_buffer(win, b0, b1, b2, b3, cx, cy);
                             if (win == 0)
                                 set_all_refresh_zones_in_window(b0, b1, b2, b3, 3);
@@ -1309,8 +1309,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
                     }
                 }
             }
-            x += resvars.f4;
-            wx += resvars.f4;
+            x += resvars.tile_width;
+            wx += resvars.tile_width;
             cx++;
             cy--;
             c += -0x7f;
@@ -1372,25 +1372,25 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
     TbSprite overlay;
 
     mp = map;
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_w[win], window.zone_h[win]);
-    if (info.unknown78 != 0)
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    if (info.clip_empty != 0)
         return;
-    x0 = info.unknown68;
-    y0 = info.unknown6c;
-    x1 = info.unknown70;
-    y1 = info.unknown74;
+    x0 = info.clip_x0;
+    y0 = info.clip_y0;
+    x1 = info.clip_x1;
+    y1 = info.clip_y1;
     setup_stats_for_window_scan(win, x0, y0, x1, y1);
-    line_len = info.f18;
-    floor_lines = info.f20;
-    full_lines = info.f24;
-    step = info.f1c;
-    base = info.f0;
-    bx = info.f4;
-    by = info.f8;
-    px = info.fc;
-    py = info.f14;
-    dx = info.f10;
-    half = resvars.f3 / 2;
+    line_len = info.line_len;
+    floor_lines = info.floor_lines;
+    full_lines = info.full_lines;
+    step = info.line_len_step;
+    base = info.scan_cell;
+    bx = info.scan_col;
+    by = info.scan_row;
+    px = info.scan_x;
+    py = info.scan_y;
+    dx = info.scan_dx;
+    half = resvars.tile_height / 2;
     sx = px;
     sy = py;
     LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
@@ -1406,13 +1406,13 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
     bx0 = bx;
     by0 = by;
     base0 = base;
-    othervar.f9d7 = lbDisplay.unknown4;
-    othervar.f9db = lbDisplay.graphics_screen_width;
-    othervar.f9df = lbDisplay.graphics_screen_height;
-    lbDisplay.unknown4 = bscreen;
-    lbDisplay.graphics_screen_width = lbDisplay.unknown18;
-    lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
-    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+    othervar.saved_screen_ptr = lbDisplay.wscreen;
+    othervar.saved_screen_width = lbDisplay.graphics_screen_width;
+    othervar.saved_screen_height = lbDisplay.graphics_screen_height;
+    lbDisplay.wscreen = bscreen;
+    lbDisplay.graphics_screen_width = lbDisplay.physical_screen_width;
+    lbDisplay.graphics_screen_height = lbDisplay.physical_screen_height;
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     for (j = floor_lines; --j >= 0;) {
         x = px;
         c = base;
@@ -1422,7 +1422,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 tile = m->overlay;
-                if (myplayer.f1d) {
+                if (myplayer.shadows_on) {
                     if (!(m->floor & 0x10) && !(m->floor & 0x40)) {
                         draw_a_clipped_four_zone_floor_tile(x, py, blocks[tile].info, x0, y0, x1, y1);
                     } else if (m->floor & 0x40) {
@@ -1468,7 +1468,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
             } else {
                 draw_a_clipped_four_zone_floor_tile(x, py, blocks[4].info, x0, y0, x1, y1);
             }
-            x += resvars.f4;
+            x += resvars.tile_width;
             cx++;
             cy--;
             c += -0x7f;
@@ -1504,33 +1504,33 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
         for (i = line_len; --i >= 0;) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
-                if (m->unknown3) {
-                    if (myplayer.f1d) {
+                if (m->wall_n) {
+                    if (myplayer.shadows_on) {
                         if (!(m->floor & 0x20)) {
-                            tile = blocks[m->unknown3].data;
-                            draw_a_clipped_four_zone_wall_0(x, py, blocks[m->unknown3].info, x0, y0, x1, y1);
+                            tile = blocks[m->wall_n].data;
+                            draw_a_clipped_four_zone_wall_0(x, py, blocks[m->wall_n].info, x0, y0, x1, y1);
                         } else if (m->floor & 0x20) {
-                            if (m->unknown3 == InteriorWallHalf.block) {
+                            if (m->wall_n == InteriorWallHalf.block) {
                                 draw_a_clipped_four_zone_wall_0(x, py, &InteriorWallHalf.sprite, x0, y0, x1, y1);
                             } else {
-                                tile = blocks[m->unknown3].data;
-                                overlay.width = blocks[m->unknown3].info->width;
-                                overlay.height = blocks[m->unknown3].info->height;
+                                tile = blocks[m->wall_n].data;
+                                overlay.width = blocks[m->wall_n].info->width;
+                                overlay.height = blocks[m->wall_n].info->height;
                                 overlay.data = (u32)ShadowBuffer;
-                                create_overlay_sprite(blocks[m->unknown3].info, blocks[150].info, &overlay);
+                                create_overlay_sprite(blocks[m->wall_n].info, blocks[150].info, &overlay);
                                 draw_a_clipped_four_zone_wall_0(x, py, &overlay, x0, y0, x1, y1);
                             }
                         }
                     } else {
-                        tile = blocks[m->unknown3].data;
-                        draw_a_clipped_four_zone_wall_0(x, py, blocks[m->unknown3].info, x0, y0, x1, y1);
+                        tile = blocks[m->wall_n].data;
+                        draw_a_clipped_four_zone_wall_0(x, py, blocks[m->wall_n].info, x0, y0, x1, y1);
                     }
                 }
-                if (m->unknown4) {
-                    tile = blocks[m->unknown4].data;
+                if (m->wall_w) {
+                    tile = blocks[m->wall_w].data;
                     draw_a_clipped_four_zone_wall_1(x, py, c, x0, y0, x1, y1);
                 }
-                x += resvars.f4;
+                x += resvars.tile_width;
                 cx++;
                 cy--;
                 c += -0x7f;
@@ -1551,8 +1551,8 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
         }
         dx = -dx;
     }
-    lbDisplay.unknown4 = othervar.f9d7;
-    lbDisplay.graphics_screen_width = othervar.f9db;
-    lbDisplay.graphics_screen_height = othervar.f9df;
-    LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
+    lbDisplay.wscreen = othervar.saved_screen_ptr;
+    lbDisplay.graphics_screen_width = othervar.saved_screen_width;
+    lbDisplay.graphics_screen_height = othervar.saved_screen_height;
+    LbScreenSetGraphicsWindow(0, 0, othervar.saved_screen_width, othervar.saved_screen_height);
 }

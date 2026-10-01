@@ -70,12 +70,12 @@ void spread_graph_labels(u16 gap)
             below = i > 0 && GraphTextPos[i].value - GraphTextPos[i - 1].value < gap ? (u8)1 : (u8)0;
             above = i < NumText - 1 && GraphTextPos[i + 1].value - GraphTextPos[i].value < gap ? (u8)1 : (u8)0;
             if (below && !above) {
-                if (GraphTextPos[i].value < resvars.f3c_GraphRectp[46].y)
+                if (GraphTextPos[i].value < resvars.screen_boxes_GraphRectp[46].y)
                     GraphTextPos[i].value++;
                 moved = 1;
             }
             if (!below && above) {
-                if (GraphTextPos[i].value > resvars.f3c_GraphRectp[46].y - resvars.f3c_GraphRectp[46].h - gap)
+                if (GraphTextPos[i].value > resvars.screen_boxes_GraphRectp[46].y - resvars.screen_boxes_GraphRectp[46].h - gap)
                     GraphTextPos[i].value--;
                 moved = 1;
             }
@@ -83,10 +83,10 @@ void spread_graph_labels(u16 gap)
     }
 }
 
-// Runs one frame of the graphs screen (graphs.unknown2: 0 loads it, 1 shows
+// Runs one frame of the graphs screen (graphs.state: 0 loads it, 1 shows
 // it, 2 asks to return to the game): draws each visible statistic's last 12
 // points from the local player's history at the chosen time scale
-// (othervar.f2d: months, years or 4-year spans) as a line, from right edge x
+// (othervar.graph_period: months, years or 4-year spans) as a line, from right edge x
 // and baseline y, h pixels tall and step pixels between points, with its
 // latest value labelled, and the time axis.
 // FUNCTION: 0x00078fc4
@@ -109,17 +109,17 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
 
     compute_help_text(0, 0, 0x11);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    switch (graphs.unknown2) {
+    switch (graphs.state) {
     case 0:
         load_ingame_pic(4, 1, 0x1f, 0, SCREEN_MODE_13);
-        graphs.unknown2 = 1;
+        graphs.state = 1;
         lbDisplay.draw_flags = 0;
         break;
     case 1:
         copy_screen_to_wscreen(bscreen);
         process_graph_panel();
         if (exit_quick_requester())
-            graphs.unknown2 = 2;
+            graphs.state = 2;
         break;
     case 2:
         D_001549d0[player].type = EV_RETURN_FROM_SCREEN;
@@ -129,27 +129,27 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     set_font_from_cache(0xb);
     font_height = lbFontPtr ? lbFontPtr[34].height : 0;
     h2 = lbFontPtr ? lbFontPtr[34].height : 0;
-    colour[0] = color.unknownD;
-    colour[1] = color.unknownC;
-    colour[2] = color.unknownB;
-    colour[3] = color.unknownA;
-    colour[4] = color.unknown12;
-    colour[5] = color.unknown9;
-    colour[6] = color.unknownF;
-    colour[7] = color.unknown14;
+    colour[0] = color.red;
+    colour[1] = color.light_red;
+    colour[2] = color.orange;
+    colour[3] = color.green;
+    colour[4] = color.blue;
+    colour[5] = color.dark_blue;
+    colour[6] = color.purple;
+    colour[7] = color.salmon;
     for (i = 0; i < 8; i++) {
         if (!graph[i].visible)
-            reqspr_draw(resvars.f48[i + 0x25].unknownC, resvars.f48[i + 0x25].unknownE,
-                        &screen_sprites_tab_start[resvars.f48[i + 0x25].sprite]);
-        LbTextSetWindow(resvars.f3c_GraphRectp[i + 47].x, resvars.f3c_GraphRectp[i + 47].y, resvars.f3c_GraphRectp[i + 47].w, resvars.f3c_GraphRectp[i + 47].h);
+            reqspr_draw(resvars.screen_buttons[i + 0x25].sprite_x, resvars.screen_buttons[i + 0x25].sprite_y,
+                        &screen_sprites_tab_start[resvars.screen_buttons[i + 0x25].sprite]);
+        LbTextSetWindow(resvars.screen_boxes_GraphRectp[i + 47].x, resvars.screen_boxes_GraphRectp[i + 47].y, resvars.screen_boxes_GraphRectp[i + 47].w, resvars.screen_boxes_GraphRectp[i + 47].h);
         lbDisplay.draw_flags |= 0x140;
         lbDisplay.draw_colour = colour[graph[i].colour];
         lbDisplay.draw_flags |= 0x40;
-        LbTextDraw(0, (resvars.f3c_GraphRectp[i + 47].h - font_height) >> 1, report_text[i + 3]);
+        LbTextDraw(0, (resvars.screen_boxes_GraphRectp[i + 47].h - font_height) >> 1, report_text[i + 3]);
     }
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
-    switch (othervar.f2d) {
+    switch (othervar.graph_period) {
     case 0:
         scale = 1;
         break;
@@ -203,10 +203,10 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             max = -100000000;
             min = 100000000;
             for (; k >= 0 && (12 - k - 1) * 1500 * scale < actual_game_turn; k--) {
-                if (values[othervar.f2d][k] > max)
-                    max = values[othervar.f2d][k];
-                if (values[othervar.f2d][k] < min)
-                    min = values[othervar.f2d][k];
+                if (values[othervar.graph_period][k] > max)
+                    max = values[othervar.graph_period][k];
+                if (values[othervar.graph_period][k] < min)
+                    min = values[othervar.graph_period][k];
             }
             if (max == min) {
                 max <<= 1;
@@ -215,17 +215,17 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             range = max - min;
             if (range == 0)
                 range = 1;
-            if (graph[i].unknown0 == 0)
-                py = y - (values[othervar.f2d][11] - min) * h / range;
-            else if (graph[i].unknown0 == 1)
-                py = y + (values[othervar.f2d][11] - min) * h / range - h;
-            insert_graph_label(i, py - font_height / 2, values[othervar.f2d][11]);
+            if (graph[i].inverted == 0)
+                py = y - (values[othervar.graph_period][11] - min) * h / range;
+            else if (graph[i].inverted == 1)
+                py = y + (values[othervar.graph_period][11] - min) * h / range - h;
+            insert_graph_label(i, py - font_height / 2, values[othervar.graph_period][11]);
             for (k = 11; k > 0 && (12 - k) * 1500 * scale < actual_game_turn; k--) {
                 nx = x - (12 - k) * step;
-                if (graph[i].unknown0 == 0)
-                    ny = y - (values[othervar.f2d][k - 1] - min) * h / range;
-                else if (graph[i].unknown0 == 1)
-                    ny = y + (values[othervar.f2d][k - 1] - min) * h / range - h;
+                if (graph[i].inverted == 0)
+                    ny = y - (values[othervar.graph_period][k - 1] - min) * h / range;
+                else if (graph[i].inverted == 1)
+                    ny = y + (values[othervar.graph_period][k - 1] - min) * h / range - h;
                 if (ny < y - h)
                     ny = y - h;
                 else if (ny > y)
@@ -240,12 +240,12 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     spread_graph_labels(font_height);
     for (k = 0; k < NumText; k++) {
         i = GraphTextPos[k].kind;
-        sprintf(buf, "%s:%d", report_text[graph[i].unknown3], GraphTextPos[k].data);
+        sprintf(buf, "%s:%d", report_text[graph[i].label], GraphTextPos[k].data);
         lbDisplay.draw_colour = colour[graph[i].colour];
         lbDisplay.draw_flags |= 0x40;
         LbTextDraw(x + 4, GraphTextPos[k].value, buf);
     }
-    month = mycontrol->unknown650;
+    month = mycontrol->month;
     year = actual_game_turn / 0x4650;
     quarter = actual_game_turn / 0x4650 - (actual_game_turn / 0x4650 & 3);
     lbDisplay.draw_flags = 0;
@@ -253,32 +253,32 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         if (i * 1500 * scale >= actual_game_turn)
             break;
         px = x - i * step;
-        switch (othervar.f2d) {
+        switch (othervar.graph_period) {
         case 0:
             sprintf(buf, "%s", month_text[month]);
-            lbDisplay.draw_colour = color.unknown8;
+            lbDisplay.draw_colour = color.black;
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
             month--;
             if (month < 0)
                 month = 0xb;
-            fn_000c9be0(px, y + 2, px, y + 6, color.unknown8);
+            fn_000c9be0(px, y + 2, px, y + 6, color.black);
             break;
         case 1:
             sprintf(buf, "%d", year);
-            lbDisplay.draw_colour = color.unknown8;
+            lbDisplay.draw_colour = color.black;
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
             year--;
-            fn_000c9be0(px, y + 2, px, y + 6, color.unknown8);
+            fn_000c9be0(px, y + 2, px, y + 6, color.black);
             break;
         case 2:
             sprintf(buf, "%d", quarter);
-            lbDisplay.draw_colour = color.unknown8;
+            lbDisplay.draw_colour = color.black;
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
             quarter += -4;
-            fn_000c9be0(px, y + 2, px, y + 6, color.unknown8);
+            fn_000c9be0(px, y + 2, px, y + 6, color.black);
             break;
         }
     }
@@ -292,23 +292,23 @@ void process_graph_panel(void)
     u8 i;
 
     if (lbDisplay.rleft_button || lbDisplay.rright_button) {
-        for (i = 0; resvars.f48[i + 0x25].width != 0 && resvars.f48[i + 0x25].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i + 0x25].x, resvars.f48[i + 0x25].y,
-                             resvars.f48[i + 0x25].width, resvars.f48[i + 0x25].height)) {
-                resvars.f48[i + 0x25].callback(i);
-                reqspr_draw(resvars.f48[i + 0x25].unknownC, resvars.f48[i + 0x25].unknownE,
-                            &screen_sprites_tab_start[resvars.f48[i + 0x25].sprite]);
+        for (i = 0; resvars.screen_buttons[i + 0x25].width != 0 && resvars.screen_buttons[i + 0x25].height != 0; i++) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x25].x, resvars.screen_buttons[i + 0x25].y,
+                             resvars.screen_buttons[i + 0x25].width, resvars.screen_buttons[i + 0x25].height)) {
+                resvars.screen_buttons[i + 0x25].callback(i);
+                reqspr_draw(resvars.screen_buttons[i + 0x25].sprite_x, resvars.screen_buttons[i + 0x25].sprite_y,
+                            &screen_sprites_tab_start[resvars.screen_buttons[i + 0x25].sprite]);
                 break;
             }
         }
         lbDisplay.rleft_button = lbDisplay.rright_button = 0;
     }
     if (lbDisplay.mleft_button || lbDisplay.mright_button) {
-        for (i = 0; resvars.f48[i + 0x25].width != 0 && resvars.f48[i + 0x25].height != 0; i++) {
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.f48[i + 0x25].x, resvars.f48[i + 0x25].y,
-                             resvars.f48[i + 0x25].width, resvars.f48[i + 0x25].height)) {
-                reqspr_draw(resvars.f48[i + 0x25].unknownC, resvars.f48[i + 0x25].unknownE,
-                            &screen_sprites_tab_start[resvars.f48[i + 0x25].sprite]);
+        for (i = 0; resvars.screen_buttons[i + 0x25].width != 0 && resvars.screen_buttons[i + 0x25].height != 0; i++) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x25].x, resvars.screen_buttons[i + 0x25].y,
+                             resvars.screen_buttons[i + 0x25].width, resvars.screen_buttons[i + 0x25].height)) {
+                reqspr_draw(resvars.screen_buttons[i + 0x25].sprite_x, resvars.screen_buttons[i + 0x25].sprite_y,
+                            &screen_sprites_tab_start[resvars.screen_buttons[i + 0x25].sprite]);
                 break;
             }
         }
@@ -347,21 +347,21 @@ void process_graph_button(u8 button)
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 8:
-        switch (othervar.f2d) {
+        switch (othervar.graph_period) {
         case 0:
-            othervar.f2d = 1;
+            othervar.graph_period = 1;
             break;
         case 1:
-            othervar.f2d = 2;
+            othervar.graph_period = 2;
             break;
         case 2:
-            othervar.f2d = 0;
+            othervar.graph_period = 0;
             break;
         }
         play_sound(10, SFX_SELECTX, -1, -1);
         break;
     case 9:
-        graphs.unknown2 = 2;
+        graphs.state = 2;
         play_sound(10, SFX_NO4, -1, -1);
         break;
     }

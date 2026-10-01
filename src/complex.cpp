@@ -170,7 +170,7 @@ u8 process_staff_complex(Thing *employee)
             move_node(employee, *(MapPos *)&obj->use_x, *(MapPos *)&obj->use_y);
             obj->state = 4;
             employee->depth = obj->depth;
-            if (objects[obj->subtype].unknown1e) {
+            if (objects[obj->subtype].overlay_anim) {
                 obj->saved_depth = obj->depth;
                 obj->depth = 8;
             }
@@ -192,7 +192,7 @@ u8 process_staff_complex(Thing *employee)
             x.frac = y.frac = 0x80;
             move_node(employee, x, y);
             employee->depth = 0;
-            if (objects[obj->subtype].unknown1e) {
+            if (objects[obj->subtype].overlay_anim) {
                 obj->depth = obj->saved_depth;
                 obj->saved_depth = 0;
             }
@@ -207,7 +207,7 @@ u8 process_staff_complex(Thing *employee)
                 }
             }
         }
-        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].unknownA);
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].staff_stand);
         employee->layers[10] = employee->layers[11] = employee->layers[12] = 0;
         break;
     case 10:
@@ -251,8 +251,8 @@ u8 process_staff_complex(Thing *employee)
                 return 4;
             }
             if (employee->room == 0
-                && ((room_info[door->room_id].f22 || room_info[door->room_id].f3 == 4)
-                    || door->room_id == allhosps[door->owner].unknown11b7)) {
+                && ((room_info[door->room_id].being_edited || room_info[door->room_id].state == 4)
+                    || door->room_id == allhosps[door->owner].edited_room)) {
                 fail_staff_complex(employee);
                 return 4;
             }
@@ -294,7 +294,7 @@ u8 process_staff_complex(Thing *employee)
         move_node(employee, x, y);
         move_person_in_room_list(employee, employee->exit_tile);
         if (employee->room) {
-            employee->room->unknown29 = 0;
+            employee->room->staff_free = 0;
             pager_arrival(employee);
         }
         cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
@@ -390,7 +390,7 @@ u8 process_staff_complex(Thing *employee)
                 d = face_dirns[face].dirs[thing[obj_id].facing];
                 if (d != -1) {
                     employee->facing = d;
-                    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].unknownA);
+                    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].staff_stand);
                 }
             }
         }
@@ -631,7 +631,7 @@ u8 process_person_complex(Thing *person)
             move_node(person, *(MapPos *)&obj->use_x, *(MapPos *)&obj->use_y);
             obj->state = 4;
             person->depth = obj->depth;
-            if (objects[obj->subtype].unknown1e) {
+            if (objects[obj->subtype].overlay_anim) {
                 obj->saved_depth = obj->depth;
                 obj->depth = 8;
             }
@@ -658,13 +658,13 @@ u8 process_person_complex(Thing *person)
             x.frac = y.frac = 0x80;
             move_node(person, x, y);
             person->depth = 0;
-            if (objects[obj->subtype].unknown1e) {
+            if (objects[obj->subtype].overlay_anim) {
                 obj->depth = obj->saved_depth;
                 obj->saved_depth = 0;
             }
             obj->state = OS_STATIC;
         }
-        PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
+        PLAY_FRAME(person, anim_starts[person->subtype].patient_stand);
         person->layers[10] = person->layers[11] = person->layers[12] = 0;
         break;
     case 10:
@@ -695,7 +695,7 @@ u8 process_person_complex(Thing *person)
                 person->state = 0x2a;
                 return 3;
             }
-            if (person->room == 0 && (room_info[door->room_id].f22 || room_info[door->room_id].f3 == 4)) {
+            if (person->room == 0 && (room_info[door->room_id].being_edited || room_info[door->room_id].state == 4)) {
                 fail_person_complex(person);
                 return 3;
             }
@@ -792,7 +792,7 @@ u8 process_person_complex(Thing *person)
                 d = face_dirns[face].dirs[thing[obj_id].facing + 4];
                 if (d != -1) {
                     person->facing = d;
-                    PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
+                    PLAY_FRAME(person, anim_starts[person->subtype].patient_stand);
                 }
             }
         }
@@ -994,12 +994,12 @@ void fail_staff_complex(Thing *employee)
         employee->state = employee->resume_state;
         employee->complex_pc = employee->complex_queued = employee->complex_queued2 = 0;
         employee->complex_action = employee->complex_resume = 0;
-        anim = check_frame(staff_anim_starts[employee->subtype].unknownA, employee) + (u16)employee->facing;
+        anim = check_frame(staff_anim_starts[employee->subtype].staff_stand, employee) + (u16)employee->facing;
         employee->sprite = start[anim].frame;
         employee->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         if (employee->subtype == STAFF_HANDYMAN) {
-            thingpage_cancel_my_response(&allhosps[employee->owner].fd2b, employee);
-            thingpage_cancel_my_response(&allhosps[employee->owner].ff6d, employee);
+            thingpage_cancel_my_response(&allhosps[employee->owner].plant_pager, employee);
+            thingpage_cancel_my_response(&allhosps[employee->owner].repair_pager, employee);
         }
     } else {
         employee->state = SS_COMPLEX_RETRY;
@@ -1016,7 +1016,7 @@ void fail_person_complex(Thing *person)
         person->state = person->resume_state;
         person->complex_pc = person->complex_queued = person->complex_queued2 = 0;
         person->complex_action = person->complex_resume = 0;
-        anim = check_frame(anim_starts[person->subtype].unknown12, person) + (u16)person->facing;
+        anim = check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
         person->sprite = start[anim].frame;
         person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     } else {
@@ -1145,7 +1145,7 @@ void abandon_complex(Thing *w)
     case THING_PATIENT: {
         u16 anim;
 
-        anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->facing;
+        anim = check_frame(anim_starts[w->subtype].patient_stand, w) + (u16)w->facing;
         w->sprite = start[anim].frame;
         w->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         break;
@@ -1153,7 +1153,7 @@ void abandon_complex(Thing *w)
     case THING_STAFF: {
         u16 anim;
 
-        anim = check_frame(staff_anim_starts[w->subtype].unknownA, w) + (u16)w->facing;
+        anim = check_frame(staff_anim_starts[w->subtype].staff_stand, w) + (u16)w->facing;
         w->sprite = start[anim].frame;
         w->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         break;
@@ -1175,30 +1175,30 @@ void complex_success(Thing *w, u8 kind)
 {
     switch (kind) {
     case 2:
-        award_counts.f138++;
+        award_counts.cans_of_coke++;
         reset_icon_value(w, ICON_THIRSTY);
         w->refreshment = 100;
-        w->happiness += gbv.f112;
+        w->happiness += gbv.drink_happy;
         w->litter_urge += 10;
         w->bladder += 10;
         if ((s16)w->warmth > 60) {
             w->warmth = 60;
         }
         w->cash -= 20;
-        create_numfx(NUMFX_MONEY, 20, (u16)w->x.tile + ((u16)w->y.tile << 7), color.unknownD, 0x40);
-        allhosps[w->owner].fd5 += 20;
+        create_numfx(NUMFX_MONEY, 20, (u16)w->x.tile + ((u16)w->y.tile << 7), color.red, 0x40);
+        allhosps[w->owner].drinks_income += 20;
         break;
     case 4:
         w->happiness++;
         w->cash -= 10;
-        create_numfx(NUMFX_MONEY, 10, (u16)w->x.tile + ((u16)w->y.tile << 7), color.unknownD, 0x40);
+        create_numfx(NUMFX_MONEY, 10, (u16)w->x.tile + ((u16)w->y.tile << 7), color.red, 0x40);
         allhosps[w->owner].fd9 += 10;
         break;
     case 6:
         reset_icon_value(w, ICON_TOILET);
-        w->happiness += gbv.f114;
+        w->happiness += gbv.toilet_happy;
         if (w->illness == ILL_THE_SQUITS) {
-            w->bladder = gbv.f116 / 2;
+            w->bladder = gbv.bowel_full / 2;
         } else {
             w->bladder = 0;
         }
@@ -1221,13 +1221,13 @@ void complex_success(Thing *w, u8 kind)
         research_contribution(w, 100);
         break;
     case 18:
-        rest_staff(w, gbv.fdc);
+        rest_staff(w, gbv.rest_sofa);
         break;
     case 20:
-        rest_staff(w, gbv.fe0);
+        rest_staff(w, gbv.rest_snooker);
         break;
     case 22:
-        rest_staff(w, gbv.fde);
+        rest_staff(w, gbv.rest_game);
         break;
     case 24:
         thing[w->object].times_used++;
@@ -1290,8 +1290,8 @@ void interrupt_complex(Thing *w)
         } else {
             set_complex(w, 0xa0, 0);
             process_person_complex(w);
-            w->speed = gbv.f14c;
-            w->anim_speed = gbv.f14e;
+            w->speed = gbv.peep_speed;
+            w->anim_speed = gbv.peep_anim_speed;
         }
     }
 }

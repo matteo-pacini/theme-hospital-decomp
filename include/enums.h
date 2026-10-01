@@ -764,7 +764,7 @@ enum {
     ICON_NEEDS_REPAIR = 0x1c
 };
 
-// set_mouse_mode's mode (kept in gamevar.f12e): what a click on the map does.
+// set_mouse_mode's mode (kept in gamevar.mouse_mode): what a click on the map does.
 enum {
     MM_NORMAL = 0,
     // Dragging out a room's blueprint.

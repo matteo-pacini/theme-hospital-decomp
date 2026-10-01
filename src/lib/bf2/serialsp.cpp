@@ -51,7 +51,7 @@ TbError SerialSP::Release(void)
     if (!comm) {
         fn_000c20c0("  WARNING network: SerialSP::Release() NULL m_commHandlerPtr\n");
     } else {
-        if (unknown528)
+        if (in_session)
             Stop();
         start = LbTimerClock();
         while (LbTimerClock() - start < 1000)
@@ -122,14 +122,14 @@ TbError SerialSP::Start(char *session, char *name, u32 max_players, void *data)
             fn_000c20c0("  WARNING network: SerialSP::Start() NULL m_commHandlerPtr\n");
             return ret;
         }
-        if (unknown528)
+        if (in_session)
             Stop();
         local_id = 0;
         is_host = 1;
         ClearPlayers();
         if (AddPlayer(local_id, name, 1, 1) != Lb_OK)
             fn_000c20c0("  WARNING network: Win95SerialSP::Start() failure on AddPlayer()\n");
-        unknown528 = 1;
+        in_session = 1;
         ret = Lb_OK;
     }
     return ret;
@@ -153,7 +153,7 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
     if (!comm) {
         fn_000c20c0("  WARNING network: SerialSP::Start() NULL m_commHandlerPtr\n");
     } else {
-        if (unknown528)
+        if (in_session)
             Stop();
         local_id = 1;
         is_host = 0;
@@ -171,7 +171,7 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
                     waiting = 0;
                     if (AddPlayer(local_id, name, 1, 0) != Lb_OK)
                         fn_000c20c0("  WARNING network: SerialSP::Start() failure on AddPlayer()\n");
-                    unknown528 = 1;
+                    in_session = 1;
                     ret = Lb_OK;
                 } else if (LbTimerClock() - start > 10000) {
                     waiting = 0;
@@ -305,7 +305,7 @@ TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall 
         return Lb_FAIL;
     }
     ret = Lb_OK;
-    if (unknown528) {
+    if (in_session) {
         if (LookForSystemMessages() == Lb_OK) {
             if (EnumeratePlayers(callback, data) != Lb_OK) {
                 ret = Lb_FAIL;
@@ -315,7 +315,7 @@ TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall 
             fn_000c20c0("  WARNING network: SerialSP::Enumerate() failure on LookForSystemMessages()\n");
         }
     } else {
-        D_0018cfc4.unknown5 = 0;
+        D_0018cfc4.local = 0;
         D_0018cfc4.host = 0;
         D_0018cfc4.id = 0;
         strcpy(D_0018cfc4.name, "REMOTE_PLAYER");
@@ -336,7 +336,7 @@ TbError SerialSP::Stop(void)
     if (!started) {
         fn_000c20c0("  WARNING network: SerialSP::Stop() not initialised\n");
     } else {
-        if (!unknown528) {
+        if (!in_session) {
             fn_000c20c0("  WARNING network: SerialSP::Stop() not connected to a session\n");
             return ret;
         }
@@ -346,7 +346,7 @@ TbError SerialSP::Stop(void)
         }
         EncodeDeletePlayerMsg(D_0018d428, local_id);
         BroadcastSystemMessage(D_0018d428);
-        unknown528 = 0;
+        in_session = 0;
         ClearPlayers();
         ret = Lb_OK;
     }

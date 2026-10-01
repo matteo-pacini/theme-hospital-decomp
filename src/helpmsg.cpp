@@ -34,9 +34,9 @@ void setup_help_indices(void)
     help_group = 0;
     done = 0;
     while (!done) {
-        while (resvars.f2c_HelpHotspotp[i].x0 >= 0)
+        while (resvars.help_hotspots_HelpHotspotp[i].x0 >= 0)
             i++;
-        if (resvars.f2c_HelpHotspotp[i].x0 == -2)
+        if (resvars.help_hotspots_HelpHotspotp[i].x0 == -2)
             done = 1;
         ++i;
         ++help_group;
@@ -57,22 +57,22 @@ void compute_help_text(s16 x, s16 y, u8 help_group)
 
     dx = lbDisplay.mmouse_x - x;
     dy = lbDisplay.mmouse_y - y;
-    if (gamevar.f12e == MM_HELP)
+    if (gamevar.mouse_mode == MM_HELP)
         return;
-    if (othervar.f9bd) {
-        if (help_group == othervar.f9bf)
-            set_help_from_index(othervar.f9bd, x, y);
+    if (othervar.forced_help_hotspot) {
+        if (help_group == othervar.forced_help_group)
+            set_help_from_index(othervar.forced_help_hotspot, x, y);
         return;
     }
-    for (i = statvar.help_start[help_group]; resvars.f2c_HelpHotspotp[i].x0 >= 0; i++) {
-        if (dx >= resvars.f2c_HelpHotspotp[i].x0 && dx <= resvars.f2c_HelpHotspotp[i].x1 && dy >= resvars.f2c_HelpHotspotp[i].y0
-            && dy <= resvars.f2c_HelpHotspotp[i].y1) {
+    for (i = statvar.help_start[help_group]; resvars.help_hotspots_HelpHotspotp[i].x0 >= 0; i++) {
+        if (dx >= resvars.help_hotspots_HelpHotspotp[i].x0 && dx <= resvars.help_hotspots_HelpHotspotp[i].x1 && dy >= resvars.help_hotspots_HelpHotspotp[i].y0
+            && dy <= resvars.help_hotspots_HelpHotspotp[i].y1) {
             help_hotspot_detected(i, help_group, x, y);
             return;
         }
     }
-    if (help_group == othervar.f8a6)
-        othervar.f8ac = 0;
+    if (help_group == othervar.help_group)
+        othervar.help_hotspot = 0;
 }
 
 // Prepares a help box with text strs: mode 1 a tooltip (strs[0] wrapped) above
@@ -91,31 +91,31 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
     s32 mx;
     s32 my;
 
-    othervar.f8a7 = mode;
+    othervar.help_style = mode;
     set_font_from_cache(display_mode == 2 ? 0x2d : 0);
     lbDisplay.draw_flags = 0;
     switch (mode) {
     case 1:
-        copy_and_format(othervar.f96, strs[0]);
+        copy_and_format(othervar.help_msg, strs[0]);
         border = 3;
-        othervar.f89a = LbTextStringWidth(othervar.f96) + border * 2;
-        othervar.f89c = LbTextStringHeight(othervar.f96) + border * 2;
+        othervar.help_w = LbTextStringWidth(othervar.help_msg) + border * 2;
+        othervar.help_h = LbTextStringHeight(othervar.help_msg) + border * 2;
         break;
     case 2:
-        copy_and_format_composite(othervar.f96, strs);
+        copy_and_format_composite(othervar.help_msg, strs);
         border = pulldv[12].height + 0xc;
-        othervar.f89a = LbTextStringWidth(othervar.f96) + border * 2;
-        othervar.f89c = LbTextStringHeight(othervar.f96) + border * 2 + pulldv[19].height;
+        othervar.help_w = LbTextStringWidth(othervar.help_msg) + border * 2;
+        othervar.help_h = LbTextStringHeight(othervar.help_msg) + border * 2 + pulldv[19].height;
         break;
     }
     if (x == -1 && y == -1) {
-        othervar.f896 = (lbDisplay.unknown18 - othervar.f89a) / 2;
-        othervar.f898 = (lbDisplay.unknown1c - othervar.f89c) / 2;
-        LbMouseSetWindow(othervar.f896, othervar.f898, othervar.f89a, othervar.f89c);
-        x0 = othervar.f896;
-        y0 = othervar.f898;
-        x1 = x0 + othervar.f89a;
-        y1 = y0 + othervar.f89c;
+        othervar.help_x = (lbDisplay.physical_screen_width - othervar.help_w) / 2;
+        othervar.help_y = (lbDisplay.physical_screen_height - othervar.help_h) / 2;
+        LbMouseSetWindow(othervar.help_x, othervar.help_y, othervar.help_w, othervar.help_h);
+        x0 = othervar.help_x;
+        y0 = othervar.help_y;
+        x1 = x0 + othervar.help_w;
+        y1 = y0 + othervar.help_h;
         if (!((lbDisplay.mmouse_x >= x0 && lbDisplay.mmouse_x < x1) && lbDisplay.mmouse_y >= y0 && lbDisplay.mmouse_y < y1)) {
             mx = lbDisplay.mmouse_x;
             my = lbDisplay.mmouse_y;
@@ -126,15 +126,15 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
             LbMouseSetPosition(mx, my);
         }
     } else {
-        othervar.f896 = x - border;
-        othervar.f898 = y - border;
-        othervar.f898 -= othervar.f89c;
-        othervar.f898 += 6;
+        othervar.help_x = x - border;
+        othervar.help_y = y - border;
+        othervar.help_y -= othervar.help_h;
+        othervar.help_y += 6;
     }
-    othervar.f896 < 0 ? othervar.f896 = 0 : 0;
-    othervar.f898 < 0 ? othervar.f898 = 0 : 0;
-    othervar.f896 > lbDisplay.unknown18 - othervar.f89a ? othervar.f896 = lbDisplay.unknown18 - othervar.f89a : 0;
-    othervar.f898 > lbDisplay.unknown18 - othervar.f89c ? othervar.f898 = lbDisplay.unknown18 - othervar.f89c : 0;
+    othervar.help_x < 0 ? othervar.help_x = 0 : 0;
+    othervar.help_y < 0 ? othervar.help_y = 0 : 0;
+    othervar.help_x > lbDisplay.physical_screen_width - othervar.help_w ? othervar.help_x = lbDisplay.physical_screen_width - othervar.help_w : 0;
+    othervar.help_y > lbDisplay.physical_screen_width - othervar.help_h ? othervar.help_y = lbDisplay.physical_screen_width - othervar.help_h : 0;
 }
 
 // Draws the prepared help box and its text, with a close button for help
@@ -150,68 +150,68 @@ void draw_help_text(void)
     s32 bottom;
     s32 border;
 
-    if (!(othervar.f96[0] && (mouse_mode_help_allowed[gamevar.f12e] || (advisor.f11f & 1))))
+    if (!(othervar.help_msg[0] && (mouse_mode_help_allowed[gamevar.mouse_mode] || (advisor.flags & 1))))
         return;
-    set_all_refresh_zones_in_window(othervar.f896, othervar.f898, othervar.f896 + othervar.f89a + 0xc,
-        othervar.f898 + othervar.f89c + 0xc, 3);
-    if (othervar.f8a6 == 3)
+    set_all_refresh_zones_in_window(othervar.help_x, othervar.help_y, othervar.help_x + othervar.help_w + 0xc,
+        othervar.help_y + othervar.help_h + 0xc, 3);
+    if (othervar.help_group == 3)
         D_00156910 = 1;
-    LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-    LbTextSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown18);
+    LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
+    LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_width);
     lbDisplay.draw_flags = 0;
-    LbDrawBox(othervar.f896, othervar.f898, othervar.f89a, othervar.f89c, othervar.fa65 ? color.unknown7 : 0xab);
-    switch (othervar.f8a7) {
+    LbDrawBox(othervar.help_x, othervar.help_y, othervar.help_w, othervar.help_h, othervar.screen_pic_loaded ? color.white : 0xab);
+    switch (othervar.help_style) {
     case 1:
         lbDisplay.draw_flags = 0x10;
-        LbDrawBox(othervar.f896, othervar.f898, othervar.f89a, othervar.f89c, color.unknown8);
+        LbDrawBox(othervar.help_x, othervar.help_y, othervar.help_w, othervar.help_h, color.black);
         border = 3;
         break;
     case 2:
         step = pulldv[12].width;
-        j = othervar.f898;
-        bottom = othervar.f898 + othervar.f89c - pulldv[16].height;
-        for (i = othervar.f896; othervar.f896 + othervar.f89a - step > i; i += step) {
+        j = othervar.help_y;
+        bottom = othervar.help_y + othervar.help_h - pulldv[16].height;
+        for (i = othervar.help_x; othervar.help_x + othervar.help_w - step > i; i += step) {
             reqspr_draw(i, j, &pulldv[12]);
             reqspr_draw(i, bottom, &pulldv[16]);
         }
         step = pulldv[18].height;
-        i = othervar.f896;
-        right = othervar.f896 + othervar.f89a - pulldv[14].width;
-        for (j = othervar.f898; othervar.f898 + othervar.f89c - step > j; j += step) {
+        i = othervar.help_x;
+        right = othervar.help_x + othervar.help_w - pulldv[14].width;
+        for (j = othervar.help_y; othervar.help_y + othervar.help_h - step > j; j += step) {
             reqspr_draw(i, j, &pulldv[18]);
             reqspr_draw(right, j, &pulldv[14]);
         }
-        reqspr_draw(othervar.f896, othervar.f898, &pulldv[11]);
-        reqspr_draw(othervar.f896 + othervar.f89a - pulldv[13].width, othervar.f898, &pulldv[13]);
-        reqspr_draw(othervar.f896, othervar.f898 + othervar.f89c - pulldv[17].height, &pulldv[17]);
-        reqspr_draw(othervar.f896 + othervar.f89a - pulldv[15].width, othervar.f898 + othervar.f89c - pulldv[15].height,
+        reqspr_draw(othervar.help_x, othervar.help_y, &pulldv[11]);
+        reqspr_draw(othervar.help_x + othervar.help_w - pulldv[13].width, othervar.help_y, &pulldv[13]);
+        reqspr_draw(othervar.help_x, othervar.help_y + othervar.help_h - pulldv[17].height, &pulldv[17]);
+        reqspr_draw(othervar.help_x + othervar.help_w - pulldv[15].width, othervar.help_y + othervar.help_h - pulldv[15].height,
             &pulldv[15]);
         border = pulldv[12].height + 0xc;
-        othervar.f8a8 = othervar.f896 + othervar.f89a - 0xc - pulldv[19].width;
-        othervar.f8aa = othervar.f898 + othervar.f89c - 0xc - pulldv[19].height;
-        if ((othervar.f8a8 <= lbDisplay.mmouse_x && othervar.f8a8 + pulldv[19].width > lbDisplay.mmouse_x)
-            && othervar.f8aa <= lbDisplay.mmouse_y && othervar.f8aa + pulldv[19].height > lbDisplay.mmouse_y) {
-            reqspr_draw(othervar.f8a8, othervar.f8aa, &pulldv[20]);
+        othervar.help_close_x = othervar.help_x + othervar.help_w - 0xc - pulldv[19].width;
+        othervar.help_close_y = othervar.help_y + othervar.help_h - 0xc - pulldv[19].height;
+        if ((othervar.help_close_x <= lbDisplay.mmouse_x && othervar.help_close_x + pulldv[19].width > lbDisplay.mmouse_x)
+            && othervar.help_close_y <= lbDisplay.mmouse_y && othervar.help_close_y + pulldv[19].height > lbDisplay.mmouse_y) {
+            reqspr_draw(othervar.help_close_x, othervar.help_close_y, &pulldv[20]);
             if (!D_00161134)
                 play_sound(10, SFX_HLIGHT5, -1, -1);
             D_00161134 = 1;
         } else {
-            reqspr_draw(othervar.f8a8, othervar.f8aa, &pulldv[19]);
+            reqspr_draw(othervar.help_close_x, othervar.help_close_y, &pulldv[19]);
             D_00161134 = 0;
         }
         lbDisplay.draw_flags = 4;
-        LbDrawBox(othervar.f896 + othervar.f89a, othervar.f898 + 0xc, 0xc, othervar.f89c, color.unknown8);
-        LbDrawBox(othervar.f896 + 0xc, othervar.f898 + othervar.f89c, othervar.f89a - 0xc, 0xc, color.unknown8);
+        LbDrawBox(othervar.help_x + othervar.help_w, othervar.help_y + 0xc, 0xc, othervar.help_h, color.black);
+        LbDrawBox(othervar.help_x + 0xc, othervar.help_y + othervar.help_h, othervar.help_w - 0xc, 0xc, color.black);
         lbDisplay.draw_flags = 0;
         break;
     }
     lbDisplay.draw_flags = 0x40;
     set_font_from_cache(display_mode == 2 ? 0x2d : 0);
-    lbDisplay.draw_colour = color.unknown8;
-    LbTextDraw(othervar.f896 + border, othervar.f898 + border, othervar.f96);
+    lbDisplay.draw_colour = color.black;
+    LbTextDraw(othervar.help_x + border, othervar.help_y + border, othervar.help_msg);
     lbDisplay.draw_flags = 0;
-    if (gamevar.f12e != MM_HELP)
-        othervar.f96[0] = 0;
+    if (gamevar.mouse_mode != MM_HELP)
+        othervar.help_msg[0] = 0;
 }
 
 // Copies src to dst, breaking lines at spaces once a line reaches a width
@@ -278,7 +278,7 @@ void copy_and_format_composite(char *dst, char **strs)
         ;
     set_font_from_cache(display_mode == 2 ? 0x2d : 0);
     limit = limit * (lbFontPtr ? lbFontPtr[46].width : 0);
-    limit > lbDisplay.unknown18 * 3 / 4 ? limit = lbDisplay.unknown18 * 3 / 4 : 0;
+    limit > lbDisplay.physical_screen_width * 3 / 4 ? limit = lbDisplay.physical_screen_width * 3 / 4 : 0;
     dst_start = dst;
     cur = 0;
     for (; strcmp(*strs, ".") != 0; strs++) {
@@ -320,9 +320,9 @@ void copy_and_format_composite(char *dst, char **strs)
 // FUNCTION: 0x0009ab54
 void cancel_helpmsg(void)
 {
-    othervar.f8ac = 0;
-    othervar.f89e = 0;
-    othervar.f96[0] = 0;
+    othervar.help_hotspot = 0;
+    othervar.help_shown_time = 0;
+    othervar.help_msg[0] = 0;
 }
 
 // Handles the mouse resting on help hotspot hotspot of group help_group: its
@@ -334,24 +334,24 @@ void help_hotspot_detected(u16 hotspot, u8 help_group, s16 x, s16 y)
 {
     s32 slot;
 
-    if (statvar.unknownfd > 1) {
+    if (statvar.num_players > 1) {
         slot = hotspot - statvar.help_start[help_group];
         if (help_group == 0x18) {
             if (slot < 4 && network_num_players() <= slot)
                 return;
         }
     }
-    if (hotspot == othervar.f8ac) {
-        if (othervar.f92 + 0x2ee < othervar.f8a2)
-            othervar.f89e = othervar.f8a2;
+    if (hotspot == othervar.help_hotspot) {
+        if (othervar.help_hover_start + 0x2ee < othervar.clock_ms)
+            othervar.help_shown_time = othervar.clock_ms;
     } else {
-        othervar.f8a6 = help_group;
-        othervar.f8ac = hotspot;
-        othervar.f92 = othervar.f8a2;
+        othervar.help_group = help_group;
+        othervar.help_hotspot = hotspot;
+        othervar.help_hover_start = othervar.clock_ms;
     }
-    if (othervar.f89e + 0x1f4 > othervar.f8a2) {
-        othervar.f89e = othervar.f8a2;
-        othervar.f8a6 = help_group;
+    if (othervar.help_shown_time + 0x1f4 > othervar.clock_ms) {
+        othervar.help_shown_time = othervar.clock_ms;
+        othervar.help_group = help_group;
         set_help_from_index(hotspot, x, y);
     }
 }
@@ -365,14 +365,14 @@ void set_help_from_index(u16 hotspot, s16 x, s16 y)
     s16 cx;
     char *text;
 
-    cx = x + (resvars.f2c_HelpHotspotp[hotspot].x0 + resvars.f2c_HelpHotspotp[hotspot].x1) / 2;
-    cy = y + resvars.f2c_HelpHotspotp[hotspot].y0;
-    if (resvars.f2c_HelpHotspotp[hotspot].func) {
-        text = othervar.f96;
-        resvars.f2c_HelpHotspotp[hotspot].func();
+    cx = x + (resvars.help_hotspots_HelpHotspotp[hotspot].x0 + resvars.help_hotspots_HelpHotspotp[hotspot].x1) / 2;
+    cy = y + resvars.help_hotspots_HelpHotspotp[hotspot].y0;
+    if (resvars.help_hotspots_HelpHotspotp[hotspot].func) {
+        text = othervar.help_msg;
+        resvars.help_hotspots_HelpHotspotp[hotspot].func();
         set_help_text(1, cx, cy, &text);
     } else {
-        set_help_text(1, cx, cy, &help_text[resvars.f2c_HelpHotspotp[hotspot].text]);
+        set_help_text(1, cx, cy, &help_text[resvars.help_hotspots_HelpHotspotp[hotspot].text]);
     }
 }
 
@@ -386,10 +386,10 @@ void set_force_help(u8 help_group, u16 id)
 
     i = 0;
     found = 0;
-    othervar.f9bf = help_group;
-    for (i = 0; resvars.f2c_HelpHotspotp[i].x0 != -2; i++) {
-        if (id == resvars.f2c_HelpHotspotp[i].text) {
-            othervar.f9bd = i;
+    othervar.forced_help_group = help_group;
+    for (i = 0; resvars.help_hotspots_HelpHotspotp[i].x0 != -2; i++) {
+        if (id == resvars.help_hotspots_HelpHotspotp[i].text) {
+            othervar.forced_help_hotspot = i;
             break;
         }
     }
@@ -399,7 +399,7 @@ void set_force_help(u8 help_group, u16 id)
 // FUNCTION: 0x0009ade8
 void clear_force_help(void)
 {
-    othervar.f9bd = 0;
+    othervar.forced_help_hotspot = 0;
 }
 
 // Opens help page sub of kind page in help mode: 0 a room's help, 1 a level's
@@ -413,15 +413,15 @@ void show_help_page(u32 page, u32 sub)
     set_mouse_mode(MM_HELP);
     switch (page) {
     case 0:
-        set_help_text(2, -1, -1, &show_help_text_0[statvar.f4df[sub]]);
+        set_help_text(2, -1, -1, &show_help_text_0[statvar.help_page0_start[sub]]);
         break;
     case 1:
-        set_help_text(2, -1, -1, &level_text[statvar.f51d[sub]]);
+        set_help_text(2, -1, -1, &level_text[statvar.help_page1_start[sub]]);
         break;
     case 2: {
         char buf[500];
 
-        switch (current_net_criteria.unknown0) {
+        switch (current_net_criteria.criterion) {
         case 0:
             set_mouse_mode(MM_NORMAL);
             return;
@@ -430,34 +430,34 @@ void show_help_page(u32 page, u32 sub)
         case 2:
         case 8:
         case 3:
-            sprintf(buf, D_00160398[statvar.f55b[sub]], current_net_criteria.start - othervar.f9d1);
-            saved = D_00160398[statvar.f55b[sub]];
-            D_00160398[statvar.f55b[sub]] = buf;
+            sprintf(buf, D_00160398[statvar.net_help_start[sub]], current_net_criteria.start - othervar.game_month);
+            saved = D_00160398[statvar.net_help_start[sub]];
+            D_00160398[statvar.net_help_start[sub]] = buf;
             break;
         case 4:
         case 6:
         case 5:
         case 7:
-            if (current_net_criteria.unknown0 == 7 && myplayer.f21 == 2)
-                sprintf(buf, D_00160398[statvar.f55b[sub]], current_net_criteria.start - othervar.f9d1,
+            if (current_net_criteria.criterion == 7 && myplayer.language == 2)
+                sprintf(buf, D_00160398[statvar.net_help_start[sub]], current_net_criteria.start - othervar.game_month,
                     current_net_criteria.value);
             else
-                sprintf(buf, D_00160398[statvar.f55b[sub]], current_net_criteria.value,
-                    current_net_criteria.start - othervar.f9d1);
-            saved = D_00160398[statvar.f55b[sub]];
-            D_00160398[statvar.f55b[sub]] = buf;
+                sprintf(buf, D_00160398[statvar.net_help_start[sub]], current_net_criteria.value,
+                    current_net_criteria.start - othervar.game_month);
+            saved = D_00160398[statvar.net_help_start[sub]];
+            D_00160398[statvar.net_help_start[sub]] = buf;
             break;
         }
-        set_help_text(2, -1, -1, &D_00160398[statvar.f55b[sub]]);
-        D_00160398[statvar.f55b[sub]] = saved;
+        set_help_text(2, -1, -1, &D_00160398[statvar.net_help_start[sub]]);
+        D_00160398[statvar.net_help_start[sub]] = saved;
         break;
     }
     case 3:
         set_help_text(2, -1, -1, &D_0016039c[statvar.f56d[sub]]);
         break;
     }
-    othervar.fa92 = page;
-    othervar.fa93 = sub;
+    othervar.help_page = page;
+    othervar.help_sub = sub;
 }
 
 // Fills idx with the index in strs of the start of each "."-ended section, up
@@ -486,24 +486,24 @@ void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n)
 // FUNCTION: 0x0009b1f0
 void finish_composite_help(void)
 {
-    LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
+    LbMouseSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     D_00161134 = 0;
     D_00156910 = 1;
-    othervar.f96[0] = 0;
-    if (gamevar.f12e == MM_HELP) {
+    othervar.help_msg[0] = 0;
+    if (gamevar.mouse_mode == MM_HELP) {
         set_mouse_mode(MM_NORMAL);
         play_sound(10, SFX_YESX, -1, -1);
-        switch (othervar.fa92) {
+        switch (othervar.help_page) {
         case 1:
-            switch (othervar.fa93) {
+            switch (othervar.help_sub) {
             case 0xf:
             case 0x10:
-                show_help_page(1, othervar.fa93 + 1);
+                show_help_page(1, othervar.help_sub + 1);
                 break;
             }
             break;
         case 3:
-            if (othervar.fa93 == 2) {
+            if (othervar.help_sub == 2) {
                 D_001549d0[player].type = 0x7e;
                 D_001549d0[player].value = 1;
             }

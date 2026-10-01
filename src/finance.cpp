@@ -81,9 +81,9 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
     u16 i;
 
     if (owner == player) {
-        count = (u16)mycontrol->f64e;
-        day = (u16)mycontrol->unknown64f;
-        month = (u16)mycontrol->unknown650;
+        count = (u16)mycontrol->entry_count;
+        day = (u16)mycontrol->day;
+        month = (u16)mycontrol->month;
         if (count && mycontrol->entries[count - 1].type == type && mycontrol->entries[count - 1].day == day
             && mycontrol->entries[count - 1].month == month) {
             mycontrol->entries[count - 1].amount += amount;
@@ -104,39 +104,39 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
                 break;
             }
             if (count < 0x31) {
-                mycontrol->f64e++;
+                mycontrol->entry_count++;
             } else {
                 for (i = 0; i < 40; i++) {
                     if (i < 10)
-                        mycontrol->f4b4 += mycontrol->entries[i].amount;
+                        mycontrol->statement_balance += mycontrol->entries[i].amount;
                     mycontrol->entries[i] = mycontrol->entries[i + 10];
                 }
-                mycontrol->f64e += -9;
+                mycontrol->entry_count += -9;
             }
         }
         switch (type) {
         case TX_WAGES:
         case TX_HIRE_STAFF:
-            mycontrol->f0 -= amount;
-            myhosp->f35 += amount;
+            mycontrol->wages_this_month -= amount;
+            myhosp->balance += amount;
             break;
         default:
-            myhosp->f35 += amount;
+            myhosp->balance += amount;
             break;
         }
         if (type != TX_CHEAT_MONEY) {
             if (amount > 0)
-                mycontrol->f4 += amount;
+                mycontrol->income_this_month += amount;
             else if (amount < 0)
-                mycontrol->f8 -= amount;
+                mycontrol->expenditure_this_month -= amount;
         }
-        if ((towns[myhosp->f29].f0 - myhosp->f35) * 8 > towns[myhosp->f29].f0)
-            advisor.f128 |= 0x20;
+        if ((towns[myhosp->level].start_cash - myhosp->balance) * 8 > towns[myhosp->level].start_cash)
+            advisor.event_flags |= 0x20;
     } else {
-        allhosps[owner].f35 += amount;
+        allhosps[owner].balance += amount;
     }
-    if (allhosps[owner].f35 > 9999999)
-        allhosps[owner].f35 = 9999999;
+    if (allhosps[owner].balance > 9999999)
+        allhosps[owner].balance = 9999999;
 }
 
 // With kind 2, charges patient for their current treatment: the fee quoted
@@ -155,12 +155,12 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
     u16 month;
 
     fee = 0;
-    price = allhosps[patient->owner].rooms[patient->treatment].unknownC;
+    price = allhosps[patient->owner].rooms[patient->treatment].price;
     room = &allhosps[patient->owner].rooms[patient->treatment];
     if (kind == 2) {
         if (patient->fee == 0)
             patient->fee = price;
-        room->unknown14 += patient->fee;
+        room->income += patient->fee;
         fee = patient->fee;
         type = TX_TREAT;
         patient->fee = 0;
@@ -169,16 +169,16 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
     }
     if (fee > 0) {
         ins = (u16)patient->insurance;
-        if (ins & allhosps[patient->owner].f216) {
+        if (ins & allhosps[patient->owner].insurance_accepted) {
             for (i = 0; i < 3; i++) {
                 if (ins & (1 << i)) {
-                    month = mycontrol->unknown650 + insurance_co[ins_control[i]].f1;
+                    month = mycontrol->month + insurance_co[ins_control[i]].payment_delay;
                     if (month >= 12)
                         month -= 12;
                     if (month >= 12)
                         month = 0;
-                    allhosps[patient->owner].f45[i][month] += fee;
-                    create_numfx(NUMFX_MONEY, fee, patient->x.tile + (patient->y.tile << 7), color.unknownD, 0x40);
+                    allhosps[patient->owner].insurance_claims[i][month] += fee;
+                    create_numfx(NUMFX_MONEY, fee, patient->x.tile + (patient->y.tile << 7), color.red, 0x40);
                     break;
                 }
             }
@@ -186,7 +186,7 @@ u16 pay_for_treatment(Thing *patient, u16 kind)
             if (fee <= patient->cash) {
                 patient->cash -= fee;
                 change_balance(type, fee, (u16)patient->treatment, (u16)patient->owner);
-                create_numfx(NUMFX_MONEY, fee, patient->x.tile + (patient->y.tile << 7), color.unknown8, 0x40);
+                create_numfx(NUMFX_MONEY, fee, patient->x.tile + (patient->y.tile << 7), color.black, 0x40);
             } else {
                 return 0;
             }
@@ -212,7 +212,7 @@ void month_end(void)
     s32 wages[4];
 
     total = 0;
-    mycontrol->unknown64f--;
+    mycontrol->day--;
     auto_available();
     for (i = 0; i < 4; i++)
         wages[i] = 0;
@@ -227,41 +227,41 @@ void month_end(void)
         if (wages[i] != 0)
             change_balance(TX_WAGES, -wages[i], 0, i);
         for (j = 0; j < 2; j++) {
-            if (allhosps[i].fd5s[j] != 0) {
-                change_balance(j + TX_INCOME_DRINKS, allhosps[i].fd5s[j], 0, i);
-                allhosps[i].fd5s[j] = 0;
+            if (allhosps[i].sales_income[j] != 0) {
+                change_balance(j + TX_INCOME_DRINKS, allhosps[i].sales_income[j], 0, i);
+                allhosps[i].sales_income[j] = 0;
             }
         }
         for (j = 0; j < 3; j++) {
-            amount = allhosps[i].f45[j][mycontrol->unknown650];
+            amount = allhosps[i].insurance_claims[j][mycontrol->month];
             if (amount != 0) {
-                allhosps[i].f45[j][mycontrol->unknown650] = 0;
+                allhosps[i].insurance_claims[j][mycontrol->month] = 0;
                 change_balance(TX_INSURANCE, amount, j, i);
             }
         }
-        amount = allhosps[i].fc92 * allhosps[i].fc94 * mycontrol->f64c / 100;
+        amount = allhosps[i].radiator_count * allhosps[i].heating_level * mycontrol->heating_price / 100;
         if (amount != 0)
             change_balance(TX_HEATING, -amount, 0, i);
-        if (allhosps[i].f3d != 0)
-            change_balance(TX_LOAN_INTEREST, -(towns[allhosps[i].f29].f10 * allhosps[i].f3d / 10000 / 12), 0, i);
-        if (allhosps[i].f35 < 0)
-            change_balance(TX_OVERDRAFT_INTEREST, towns[allhosps[i].f29].f10 * allhosps[i].f35 * 2 / 10000 / 12, 0, i);
+        if (allhosps[i].loan != 0)
+            change_balance(TX_LOAN_INTEREST, -(towns[allhosps[i].level].interest_rate * allhosps[i].loan / 10000 / 12), 0, i);
+        if (allhosps[i].balance < 0)
+            change_balance(TX_OVERDRAFT_INTEREST, towns[allhosps[i].level].interest_rate * allhosps[i].balance * 2 / 10000 / 12, 0, i);
         calc_pricing_factor(i);
-        total += allhosps[i].f1cd;
+        total += allhosps[i].month_visitors;
     }
     computer_month();
     adjust_monthly_figures();
     for (i = 0; i < 4; i++) {
         if (total != 0)
-            allhosps[i].f1cb = allhosps[i].f1cd * 100 / total;
+            allhosps[i].market_share = allhosps[i].month_visitors * 100 / total;
         else
-            allhosps[i].f1cb = 0;
-        allhosps[i].f1cd = 0;
+            allhosps[i].market_share = 0;
+        allhosps[i].month_visitors = 0;
     }
     calc_visitors_this_month();
-    mycontrol->unknown64f = 1;
-    mycontrol->unknown650++;
-    othervar.f9d1 = mycontrol->f648 * 12 + mycontrol->unknown650;
+    mycontrol->day = 1;
+    mycontrol->month++;
+    othervar.game_month = mycontrol->year * 12 + mycontrol->month;
     create_job_market();
     swap_month_end_packets();
     monthly_update_of_award_counts();
@@ -286,19 +286,19 @@ void adjust_monthly_figures(void)
         fn_000c21e6(mycontrol->history[5][i], &mycontrol->history[5][i][1], 0x2c);
         fn_000c21e6(mycontrol->history[6][i], &mycontrol->history[6][i][1], 0x2c);
         fn_000c21e6(mycontrol->history[7][i], &mycontrol->history[7][i][1], 0x2c);
-        mycontrol->history[3][i][11] = myhosp->f35;
-        mycontrol->history[1][i][11] = mycontrol->f4;
-        mycontrol->history[2][i][11] = mycontrol->f8;
-        mycontrol->history[0][i][11] = mycontrol->f0;
-        mycontrol->history[5][i][11] = myhosp->f1eb;
-        mycontrol->history[6][i][11] = myhosp->f1e9;
-        mycontrol->history[7][i][11] = myhosp->unknownc7e;
+        mycontrol->history[3][i][11] = myhosp->balance;
+        mycontrol->history[1][i][11] = mycontrol->income_this_month;
+        mycontrol->history[2][i][11] = mycontrol->expenditure_this_month;
+        mycontrol->history[0][i][11] = mycontrol->wages_this_month;
+        mycontrol->history[5][i][11] = myhosp->deaths;
+        mycontrol->history[6][i][11] = myhosp->cures;
+        mycontrol->history[7][i][11] = myhosp->reputation;
     }
-    mycontrol->f4 = 0;
-    mycontrol->f8 = 0;
-    mycontrol->f0 = 0;
-    mycontrol->unknown10 = 0;
-    mycontrol->fc = 0;
+    mycontrol->income_this_month = 0;
+    mycontrol->expenditure_this_month = 0;
+    mycontrol->wages_this_month = 0;
+    mycontrol->deaths_this_month = 0;
+    mycontrol->cures_this_month = 0;
 }
 
 // Year end: values and scores the hospitals, totals the year's income and
@@ -312,39 +312,39 @@ void year_end(void)
 
     calculate_value(player);
     calculate_score(player);
-    for (i = mycontrol->f14 = mycontrol->f18 = 0; i < 12; i++) {
-        mycontrol->f14 += mycontrol->history[1][0][i];
-        mycontrol->f18 += mycontrol->history[2][0][i];
+    for (i = mycontrol->income_last_year = mycontrol->expenditure_last_year = 0; i < 12; i++) {
+        mycontrol->income_last_year += mycontrol->history[1][0][i];
+        mycontrol->expenditure_last_year += mycontrol->history[2][0][i];
     }
     computer_year();
-    mycontrol->unknown650 = 0;
-    if (++mycontrol->f648 > 999)
-        mycontrol->f648 = 0;
-    othervar.f9d1 = mycontrol->f648 * 12 + mycontrol->unknown650;
-    mycontrol->f64e = 0;
+    mycontrol->month = 0;
+    if (++mycontrol->year > 999)
+        mycontrol->year = 0;
+    othervar.game_month = mycontrol->year * 12 + mycontrol->month;
+    mycontrol->entry_count = 0;
     swap_year_end_packets();
     for (i = 0; i < 4; i++) {
-        allhosps[i].f1c3 = allhosps[i].f35;
-        allhosps[i].f1c7 = allhosps[i].f1ed;
+        allhosps[i].year_start_balance = allhosps[i].balance;
+        allhosps[i].year_start_visitors = allhosps[i].visitors;
     }
-    mycontrol->f4b4 = myhosp->f1c3;
-    mycontrol->f4a0 = myhosp->unknownc7e;
-    mycontrol->f64a = myhosp->f1f1;
-    mycontrol->f4a4 = myhosp->f1e9;
-    mycontrol->f4a8 = myhosp->f1eb;
-    mycontrol->f4ac = myhosp->fc9c;
-    mycontrol->f4b0 = myhosp->fc9c;
+    mycontrol->statement_balance = myhosp->year_start_balance;
+    mycontrol->year_start_reputation = myhosp->reputation;
+    mycontrol->year_start_area = myhosp->area;
+    mycontrol->year_start_cures = myhosp->cures;
+    mycontrol->year_start_deaths = myhosp->deaths;
+    mycontrol->year_start_staff = myhosp->staff_count;
+    mycontrol->year_start_staff2 = myhosp->staff_count;
     create_chart_data();
     check_trophies_won();
     annual_update_of_award_counts();
     start_year_end();
     check_awards_won();
     swap_year_end_packets();
-    mycontrol->f4b4 = myhosp->f1c3;
-    mycontrol->f4a0 = myhosp->unknownc7e;
+    mycontrol->statement_balance = myhosp->year_start_balance;
+    mycontrol->year_start_reputation = myhosp->reputation;
 }
 
-// Runs one frame of the bank statement screen (bank.unknown2: 0 loads it, 1
+// Runs one frame of the bank statement screen (bank.state: 0 loads it, 1
 // shows it, 2 asks to return to the game): the latest entries that fit, with
 // the running balance.
 // FUNCTION: 0x00052038
@@ -360,10 +360,10 @@ void bank_statement(void)
     char buf[100];
 
     compute_help_text(0, 0, 0xf);
-    switch (bank.unknown2) {
+    switch (bank.state) {
     case 0:
         load_ingame_pic(3, 1, 0x1a, 0, (TbScreenMode)0xd);
-        bank.unknown2 = 1;
+        bank.state = 1;
         break;
     case 1:
         copy_screen_to_wscreen(bscreen);
@@ -379,10 +379,10 @@ void bank_statement(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0x100;
     for (i = 0; i < 6; i++) {
-        LbTextSetWindow(resvars.f3c_Boxp[i + 4].x, resvars.f3c_Boxp[i + 4].y, resvars.f3c_Boxp[i + 4].w,
-                        resvars.f3c_Boxp[i + 4].h);
+        LbTextSetWindow(resvars.screen_boxes_Boxp[i + 4].x, resvars.screen_boxes_Boxp[i + 4].y, resvars.screen_boxes_Boxp[i + 4].w,
+                        resvars.screen_boxes_Boxp[i + 4].h);
         sprintf(buf, "%s", stat_text[i]);
-        LbTextDraw(resvars.f40[71].x, resvars.f40[71].y * 2, buf);
+        LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y * 2, buf);
     }
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
@@ -391,7 +391,7 @@ void bank_statement(void)
     for (i = 0; banktext[i].type; i++) {
         switch (banktext[i].type) {
         case 1:
-            sprintf(buf, "%s", myhosp->unknown0 + 9);
+            sprintf(buf, "%s", myhosp->name + 9);
             LbTextDraw(banktext[i].x, banktext[i].y, buf);
             break;
         case 2:
@@ -399,15 +399,15 @@ void bank_statement(void)
         case 3:
             row = 0;
             first = (banktext[7].y - banktext[i].y) / line_h;
-            first = mycontrol->f64e - first > 0 ? mycontrol->f64e - first : 0;
-            balance = mycontrol->f4b4;
+            first = mycontrol->entry_count - first > 0 ? mycontrol->entry_count - first : 0;
+            balance = mycontrol->statement_balance;
             for (k = 0; k < first; k++)
                 balance += mycontrol->entries[k].amount;
-            for (; first < mycontrol->f64e && row < banktext[7].y - line_h; first++) {
-                if (row + resvars.f40[72].y > resvars.f40[72].y + line_h * 0x1b)
+            for (; first < mycontrol->entry_count && row < banktext[7].y - line_h; first++) {
+                if (row + resvars.screen_coords[72].y > resvars.screen_coords[72].y + line_h * 0x1b)
                     break;
                 sprintf(buf, "%d %s", mycontrol->entries[first].day, month_text[mycontrol->entries[first].month]);
-                LbTextDraw(resvars.f40[72].x, row + resvars.f40[72].y, buf);
+                LbTextDraw(resvars.screen_coords[72].x, row + resvars.screen_coords[72].y, buf);
                 switch (mycontrol->entries[first].type) {
                 case TX_INSURANCE:
                     sprintf(buf, "%s %s", finance_text[mycontrol->entries[first].type],
@@ -424,29 +424,29 @@ void bank_statement(void)
                     sprintf(buf, "%s", finance_text[mycontrol->entries[first].type]);
                     break;
                 }
-                LbTextDraw(resvars.f40[73].x, row + resvars.f40[73].y, buf);
+                LbTextDraw(resvars.screen_coords[73].x, row + resvars.screen_coords[73].y, buf);
                 if (mycontrol->entries[first].amount < 0) {
                     sprintf(buf, "$ %7d", -mycontrol->entries[first].amount);
-                    LbTextDraw(resvars.f40[74].x, row + resvars.f40[74].y, buf);
+                    LbTextDraw(resvars.screen_coords[74].x, row + resvars.screen_coords[74].y, buf);
                 } else if (mycontrol->entries[first].amount != 0) {
                     sprintf(buf, "$ %7d", mycontrol->entries[first].amount);
-                    LbTextDraw(resvars.f40[75].x, row + resvars.f40[75].y, buf);
+                    LbTextDraw(resvars.screen_coords[75].x, row + resvars.screen_coords[75].y, buf);
                 }
                 balance += mycontrol->entries[first].amount;
                 sprintf(buf, "$ %7d", balance);
                 if (balance < 0)
-                    LbTextDraw(resvars.f40[76].x, row + resvars.f40[76].y, buf);
+                    LbTextDraw(resvars.screen_coords[76].x, row + resvars.screen_coords[76].y, buf);
                 else
-                    LbTextDraw(resvars.f40[76].x, row + resvars.f40[76].y, buf);
+                    LbTextDraw(resvars.screen_coords[76].x, row + resvars.screen_coords[76].y, buf);
                 row += line_h;
             }
             break;
         case 8:
             sprintf(buf, "$ %7d", balance);
             if (balance < 0)
-                LbTextDraw(resvars.f40[77].x, resvars.f40[77].y, buf);
+                LbTextDraw(resvars.screen_coords[77].x, resvars.screen_coords[77].y, buf);
             else
-                LbTextDraw(resvars.f40[77].x, resvars.f40[77].y, buf);
+                LbTextDraw(resvars.screen_coords[77].x, resvars.screen_coords[77].y, buf);
             break;
         case 4:
         case 5:
@@ -458,7 +458,7 @@ void bank_statement(void)
     }
     lbDisplay.draw_flags = 0;
     if (exit_quick_requester())
-        bank.unknown2 = 2;
+        bank.state = 2;
 }
 
 // Draws pressed and runs the callbacks of the bank statement's buttons under
@@ -469,21 +469,21 @@ void process_stat_panel(void)
     u8 i;
 
     if (lbDisplay.rleft_button) {
-        for (i = 0; resvars.f48[i].width != 0 && resvars.f48[i].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f48[i].x, resvars.f48[i].y, resvars.f48[i].width,
-                             resvars.f48[i].height)) {
-                resvars.f48[i].callback(i);
-                reqspr_draw(resvars.f48[i].unknownC, resvars.f48[i].unknownE,
-                            &screen_sprites_tab_start[resvars.f48[i].sprite]);
+        for (i = 0; resvars.screen_buttons[i].width != 0 && resvars.screen_buttons[i].height != 0; i++) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i].x, resvars.screen_buttons[i].y, resvars.screen_buttons[i].width,
+                             resvars.screen_buttons[i].height)) {
+                resvars.screen_buttons[i].callback(i);
+                reqspr_draw(resvars.screen_buttons[i].sprite_x, resvars.screen_buttons[i].sprite_y,
+                            &screen_sprites_tab_start[resvars.screen_buttons[i].sprite]);
             }
         }
     }
     if (lbDisplay.mleft_button) {
-        for (i = 0; resvars.f48[i].width != 0 && resvars.f48[i].height != 0; i++) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f48[i].x, resvars.f48[i].y, resvars.f48[i].width,
-                             resvars.f48[i].height)) {
-                reqspr_draw(resvars.f48[i].unknownC, resvars.f48[i].unknownE,
-                            &screen_sprites_tab_start[resvars.f48[i].sprite]);
+        for (i = 0; resvars.screen_buttons[i].width != 0 && resvars.screen_buttons[i].height != 0; i++) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i].x, resvars.screen_buttons[i].y, resvars.screen_buttons[i].width,
+                             resvars.screen_buttons[i].height)) {
+                reqspr_draw(resvars.screen_buttons[i].sprite_x, resvars.screen_buttons[i].sprite_y,
+                            &screen_sprites_tab_start[resvars.screen_buttons[i].sprite]);
                 break;
             }
         }
@@ -497,7 +497,7 @@ void process_stat_button(u8 button)
 {
     switch (button) {
     case 0:
-        bank.unknown2 = 2;
+        bank.state = 2;
         play_sound(10, SFX_NO4, -1, -1);
         break;
     case 1:
@@ -531,25 +531,25 @@ void daily_admin(void)
     s32 i;
     s32 hosp_count;
 
-    mycontrol->unknown64f++;
+    mycontrol->day++;
     D_00156910 = 1;
     try_to_generate_emergency();
     generate_mayors();
     hosp_count = 1;
-    if (statvar.unknownfd > 1)
+    if (statvar.num_players > 1)
         hosp_count = 4;
     for (i = 0; i < hosp_count; i++) {
-        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+        if (statvar.num_players > 1 && D_001609c4[i].active == 0)
             continue;
-        if (allhosps[i].f1e2s == 2) {
-            if (allhosps[i].f1e7 == 0) {
-                allhosps[i].f1e2 = 1;
-                if (allhosps[i].f1e5 * 100 / allhosps[i].f1e6 >= allhosps[i].f1e8) {
-                    change_balance(TX_EMERGENCY_BONUS, allhosps[i].f1dd * allhosps[i].f1e5, 0, i);
+        if (allhosps[i].emergency_state_s == 2) {
+            if (allhosps[i].emergency_present == 0) {
+                allhosps[i].emergency_state = 1;
+                if (allhosps[i].emergency_cured * 100 / allhosps[i].emergency_patients >= allhosps[i].emergency_win_pct) {
+                    change_balance(TX_EMERGENCY_BONUS, allhosps[i].emergency_bonus * allhosps[i].emergency_cured, 0, i);
                     reputation_affected(0, 0xc, 0, i, 0);
                     satisfied_net_criteria(1, i);
                 } else {
-                    reputation_affected(0, 0xd, 0, i, allhosps[i].f1e6 - allhosps[i].f1e5);
+                    reputation_affected(0, 0xd, 0, i, allhosps[i].emergency_patients - allhosps[i].emergency_cured);
                 }
                 make_a_playercall(5, 1, 0x14, i);
             }
@@ -563,7 +563,7 @@ void daily_admin(void)
     do_research();
 }
 
-// Twice a day: counts down each hospital's emergency clock (allhosps.f1d9),
+// Twice a day: counts down each hospital's emergency clock (allhosps.emergency_timer),
 // ends cover-ups and sends the inspector, then admits new patients, runs the
 // rat level and the computer players' actions.
 // FUNCTION: 0x00052e70
@@ -575,16 +575,16 @@ void twice_daily_admin(void)
 
     hosp = allhosps;
     hosp_count = 1;
-    if (statvar.unknownfd > 1)
+    if (statvar.num_players > 1)
         hosp_count = 4;
     for (i = 0; i < hosp_count; i++, hosp++) {
-        if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
+        if (statvar.num_players > 1 && D_001609c4[i].active == 0)
             continue;
-        if (hosp->f1d9s > 0) {
-            hosp->f1d9--;
-            if (hosp->f1d9s == 0 && hosp->f1e2s > 0)
-                hosp->f1e2--;
-            if (myhosp->f1d9s == 0)
+        if (hosp->emergency_timer_s > 0) {
+            hosp->emergency_timer--;
+            if (hosp->emergency_timer_s == 0 && hosp->emergency_state_s > 0)
+                hosp->emergency_state--;
+            if (myhosp->emergency_timer_s == 0)
                 StopSample(0xd, 0xa9);
         }
         if (epidemic_status(i))
@@ -595,7 +595,7 @@ void twice_daily_admin(void)
     computer_action();
 }
 
-// Recalculates owner's hospital value (allhosps.f1bb: rooms, land,
+// Recalculates owner's hospital value (allhosps.hospital_value: rooms, land,
 // reputation, f1bf and a base 10000) and from it the loan limit (f41, a third
 // of it plus 10000, at most 100000).
 // FUNCTION: 0x00052f7c
@@ -610,20 +610,20 @@ void calculate_value(const u8 owner)
 
     total = 0;
     hosp = &allhosps[owner];
-    base = hosp->f1bf;
-    rep_value = hosp->unknownc7e / 50 * 1000;
+    base = hosp->object_value;
+    rep_value = hosp->reputation / 50 * 1000;
     for (room = room_info + 1; room < end_room_info; room++) {
         if (room->owner == owner)
             total += rooms[room->type].cost;
     }
     count_hospital_area((u16)owner);
-    area_value = hosp->f1f1 * gbv.f7c;
-    hosp->f1bb = area_value + (base + rep_value + total) + 10000;
-    if (hosp->f1bb < 0)
-        hosp->f1bb = 0;
-    hosp->f41 = hosp->f1bb / 3 + 10000;
-    if (hosp->f41 < 0)
-        hosp->f41 = 0;
-    else if (hosp->f41 > 100000)
-        hosp->f41 = 100000;
+    area_value = hosp->area * gbv.land_cost_per_tile;
+    hosp->hospital_value = area_value + (base + rep_value + total) + 10000;
+    if (hosp->hospital_value < 0)
+        hosp->hospital_value = 0;
+    hosp->max_loan = hosp->hospital_value / 3 + 10000;
+    if (hosp->max_loan < 0)
+        hosp->max_loan = 0;
+    else if (hosp->max_loan > 100000)
+        hosp->max_loan = 100000;
 }

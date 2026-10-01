@@ -46,30 +46,30 @@ void req4(Window *win)
     case STAFF_HANDYMAN:
         for (i = 1; button; button = button->next) {
             if (button->flags & 6) {
-                debug.unknown4 = i;
-                debug.unknown8 = button->flags;
-                if (i == resvars.fe[0x26]) {
+                debug.last_button = i;
+                debug.last_action = button->flags;
+                if (i == resvars.requester_buttons[0x26]) {
                     D_001549d0[player].type = EV_CLOSE_QUERY;
                     D_001549d0[player].value = 2;
                     play_sound(10, SFX_NO4, -1, -1);
-                } else if (i == resvars.fe[0x27]) {
+                } else if (i == resvars.requester_buttons[0x27]) {
                     D_001549d0[player].type = EV_ADJUST_HANDYMAN_VALUES;
                     D_001549d0[player].value = D_001581b2[2].value;
-                    D_001549d0[player].arg = resvars.fe[0x27];
-                } else if (i == resvars.fe[0x28]) {
+                    D_001549d0[player].arg = resvars.requester_buttons[0x27];
+                } else if (i == resvars.requester_buttons[0x28]) {
                     D_001549d0[player].type = EV_ADJUST_HANDYMAN_VALUES;
                     D_001549d0[player].value = D_001581b2[2].value;
-                    D_001549d0[player].arg = resvars.fe[0x28];
-                } else if (i == resvars.fe[0x29]) {
+                    D_001549d0[player].arg = resvars.requester_buttons[0x28];
+                } else if (i == resvars.requester_buttons[0x29]) {
                     D_001549d0[player].type = EV_ADJUST_HANDYMAN_VALUES;
                     D_001549d0[player].value = D_001581b2[2].value;
-                    D_001549d0[player].arg = resvars.fe[0x29];
-                } else if (i == resvars.fe[0x2a]) {
+                    D_001549d0[player].arg = resvars.requester_buttons[0x29];
+                } else if (i == resvars.requester_buttons[0x2a]) {
                     close_query(2);
                     play_sound(10, SFX_SELECTX, -1, -1);
-                    sprintf(othervar.f935, "%s", yesno_text[5]);
+                    sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
                     open_yes_no_requester(0x47, D_001581b2[2].value, 0, 0x88, D_001581b2[2].value, 0);
-                } else if (i == resvars.fe[0x2b]) {
+                } else if (i == resvars.requester_buttons[0x2b]) {
                     D_001549d0[player].type = 0x68;
                     D_001549d0[player].value = D_001581b2[2].value;
                     play_sound(10, SFX_PICKUP, -1, -1);
@@ -81,17 +81,17 @@ void req4(Window *win)
     default:
         for (i = 1; button; button = button->next) {
             if (button->flags & 6) {
-                debug.unknown4 = i;
-                if (i == resvars.fe[0x2c]) {
+                debug.last_button = i;
+                if (i == resvars.requester_buttons[0x2c]) {
                     D_001549d0[player].type = EV_CLOSE_QUERY;
                     D_001549d0[player].value = 2;
                     play_sound(10, SFX_NO4, -1, -1);
-                } else if (i == resvars.fe[0x2d]) {
+                } else if (i == resvars.requester_buttons[0x2d]) {
                     close_query(2);
                     play_sound(10, SFX_SELECTX, -1, -1);
-                    sprintf(othervar.f935, "%s", yesno_text[5]);
+                    sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
                     open_yes_no_requester(0x47, D_001581b2[2].value, 0, 0x88, D_001581b2[2].value, 0);
-                } else if (i == resvars.fe[0x2e]) {
+                } else if (i == resvars.requester_buttons[0x2e]) {
                     D_001549d0[player].type = 0x68;
                     D_001549d0[player].value = D_001581b2[2].value;
                     play_sound(10, SFX_PICKUP, -1, -1);
@@ -122,8 +122,8 @@ void req4_overdraw(Window *win)
     unused_a = 0;
     unused_b = 0;
     unused_c = 0;
-    LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
-                              window.unknown2cf - window.unknown2c7);
+    LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
+                              window.clip_y1 - window.clip_y0);
     x = win->x - lbDisplay.graphics_window_x;
     y = win->y - lbDisplay.graphics_window_y;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -132,80 +132,80 @@ void req4_overdraw(Window *win)
     case STAFF_HANDYMAN:
         compute_help_text(0, 0, 0xc);
         set_font_from_cache(1);
-        othervar.f36 = window.unknown2ec - 1;
+        othervar.track_window_2 = window.window_count - 1;
         sprintf(buf, "%d", staff->salary);
-        LbTextDraw(x + resvars.f1c[0x6b].x, y + resvars.f1c[0x6b].y, buf);
-        draw_staff_handyman_bars(staff, x, y, &button_sprite[resvars.f12[3]]);
+        LbTextDraw(x + resvars.coords[0x6b].x, y + resvars.coords[0x6b].y, buf);
+        draw_staff_handyman_bars(staff, x, y, &button_sprite[resvars.requester_sprites[3]]);
         if (lbDisplay.mleft_button) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x4e].x, y + resvars.f18[0x4e].y, resvars.f18[0x4e].w,
-                             resvars.f18[0x4e].h)) {
-                othervar.f38 = 2;
-                othervar.f10 = 1;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4e].x, y + resvars.boxes[0x4e].y, resvars.boxes[0x4e].w,
+                             resvars.boxes[0x4e].h)) {
+                othervar.center_on_slot = 2;
+                othervar.full_redraw = 1;
             }
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x5d].x, y + resvars.f18[0x5d].y, resvars.f18[0x5d].w,
-                             resvars.f18[0x5d].h)) {
-                othervar.fa82 = staff - thing;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x5d].x, y + resvars.boxes[0x5d].y, resvars.boxes[0x5d].w,
+                             resvars.boxes[0x5d].h)) {
+                othervar.slist_staff = staff - thing;
                 D_001549d0[player].type = EV_OPEN_SCREEN;
                 D_001549d0[player].value = 5;
                 play_sound(10, SFX_SELECTX, -1, -1);
             }
         }
-        if (lbDisplay.mright_button && !othervar.fa61) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x4e].x, y + resvars.f18[0x4e].y, resvars.f18[0x4e].w,
-                             resvars.f18[0x4e].h)) {
+        if (lbDisplay.mright_button && !othervar.right_button_was_down) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4e].x, y + resvars.boxes[0x4e].y, resvars.boxes[0x4e].w,
+                             resvars.boxes[0x4e].h)) {
                 D_001581b2[2].value = find_next_thing(staff, THING_STAFF, staff->subtype, -1);
                 play_sound(10, SFX_CAMCLICK, -1, -1);
             }
         }
         if (lbDisplay.mright_button)
-            othervar.fa61 = 1;
+            othervar.right_button_was_down = 1;
         else
-            othervar.fa61 = 0;
+            othervar.right_button_was_down = 0;
         break;
     default:
         compute_help_text(0, 0, 10);
         set_font_from_cache(1);
-        othervar.f36 = window.unknown2ec - 1;
+        othervar.track_window_2 = window.window_count - 1;
         sprintf(buf, "%d", staff->salary);
-        LbTextDraw(x + resvars.f1c[0x66].x, y + resvars.f1c[0x66].y, buf);
+        LbTextDraw(x + resvars.coords[0x66].x, y + resvars.coords[0x66].y, buf);
         slot = 0;
         slot++;
         if (staff->skills & SKILL_JUNIOR)
-            reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[10]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[10]]);
         slot++;
         if (staff->skills & SKILL_DOCTOR && !(staff->skills & SKILL_CONSULTANT) && !(staff->skills & SKILL_JUNIOR))
-            reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[10]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[10]]);
         slot++;
         if (staff->skills & SKILL_CONSULTANT)
-            reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[10]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[10]]);
         slot++;
         if (staff->skills & SKILL_SURGEON)
-            reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[11]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[11]]);
         slot++;
         if (staff->skills & SKILL_PSYCHIATRIST)
-            reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[12]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[12]]);
         slot++;
         if (staff->skills & SKILL_RESEARCHER)
-            reqspr_draw(x + resvars.f18[slot + 0x19].x, y + resvars.f18[slot + 0x19].y, &button_sprite[resvars.f12[13]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[13]]);
         if (!(staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON))
-            LbDrawBox(x + resvars.f18[0x40].x, y + resvars.f18[0x40].y, resvars.f18[0x40].w, resvars.f18[0x40].h, 0x7a);
+            LbDrawBox(x + resvars.boxes[0x40].x, y + resvars.boxes[0x40].y, resvars.boxes[0x40].w, resvars.boxes[0x40].h, 0x7a);
         if (lbDisplay.mleft_button) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x4d].x, y + resvars.f18[0x4d].y, resvars.f18[0x4d].w,
-                             resvars.f18[0x4d].h)) {
-                othervar.f38 = 2;
-                othervar.f10 = 1;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4d].x, y + resvars.boxes[0x4d].y, resvars.boxes[0x4d].w,
+                             resvars.boxes[0x4d].h)) {
+                othervar.center_on_slot = 2;
+                othervar.full_redraw = 1;
             }
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x5d].x, y + resvars.f18[0x5d].y, resvars.f18[0x5d].w,
-                             resvars.f18[0x5d].h)) {
-                othervar.fa82 = staff - thing;
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x5d].x, y + resvars.boxes[0x5d].y, resvars.boxes[0x5d].w,
+                             resvars.boxes[0x5d].h)) {
+                othervar.slist_staff = staff - thing;
                 D_001549d0[player].type = EV_OPEN_SCREEN;
                 D_001549d0[player].value = 5;
                 play_sound(10, SFX_SELECTX, -1, -1);
             }
         }
-        if (lbDisplay.mright_button && !othervar.fa61) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x4d].x, y + resvars.f18[0x4d].y, resvars.f18[0x4d].w,
-                             resvars.f18[0x4d].h)) {
+        if (lbDisplay.mright_button && !othervar.right_button_was_down) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4d].x, y + resvars.boxes[0x4d].y, resvars.boxes[0x4d].w,
+                             resvars.boxes[0x4d].h)) {
                 if (staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON)
                     D_001581b2[2].value = find_next_thing(staff, THING_STAFF, STAFF_DOCTOR, STAFF_SURGEON);
                 else
@@ -214,20 +214,20 @@ void req4_overdraw(Window *win)
             }
         }
         if (lbDisplay.mright_button)
-            othervar.fa61 = 1;
+            othervar.right_button_was_down = 1;
         else
-            othervar.fa61 = 0;
+            othervar.right_button_was_down = 0;
         break;
     }
-    draw_face((Picture *)&staff->face_head, x + resvars.f1c[0x65].x, y + resvars.f1c[0x65].y);
-    draw_gauge(staff->happiness_s, x + resvars.f1c[0x67].x, y + resvars.f1c[0x67].y, resvars.f1c[0x69].x,
-               &button_sprite[resvars.f12[0]], 100, 0, 100, 1);
-    draw_gauge(staff->tiredness, x + resvars.f1c[0x68].x, y + resvars.f1c[0x68].y, resvars.f1c[0x69].x,
-               &button_sprite[resvars.f12[1]], 1000, 0, 1000, 0);
-    draw_gauge(staff->ability, x + resvars.f1c[0x6a].x, y + resvars.f1c[0x6a].y, resvars.f1c[0x76].x,
-               &button_sprite[resvars.f12[2]], 1000, 30, 970, 1);
+    draw_face((Picture *)&staff->face_head, x + resvars.coords[0x65].x, y + resvars.coords[0x65].y);
+    draw_gauge(staff->happiness_s, x + resvars.coords[0x67].x, y + resvars.coords[0x67].y, resvars.coords[0x69].x,
+               &button_sprite[resvars.requester_sprites[0]], 100, 0, 100, 1);
+    draw_gauge(staff->tiredness, x + resvars.coords[0x68].x, y + resvars.coords[0x68].y, resvars.coords[0x69].x,
+               &button_sprite[resvars.requester_sprites[1]], 1000, 0, 1000, 0);
+    draw_gauge(staff->ability, x + resvars.coords[0x6a].x, y + resvars.coords[0x6a].y, resvars.coords[0x76].x,
+               &button_sprite[resvars.requester_sprites[2]], 1000, 30, 970, 1);
     sprintf(buf, "%c. %s%s", staff->initial, staff_names_1[staff->surname_a], staff_names_2[staff->surname_b]);
-    LbTextDraw(x + resvars.f1c[0x64].x, y + resvars.f1c[0x64].y, buf);
+    LbTextDraw(x + resvars.coords[0x64].x, y + resvars.coords[0x64].y, buf);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0);
@@ -243,25 +243,25 @@ void close_irequesters(void)
     s32 w;
     s32 h;
 
-    remove_window(open_windows, &resvars.f20[2]);
-    remove_window(open_windows, &resvars.f20[0]);
-    remove_window(open_windows, &resvars.f20[1]);
-    remove_window(open_windows, &resvars.f20[3]);
-    while (window.unknown2ec > 1) {
-        x = window.zone_x[window.unknown2ec - 1];
-        y = window.zone_y[window.unknown2ec - 1];
-        w = window.zone_w[window.unknown2ec - 1];
-        h = window.zone_h[window.unknown2ec - 1];
+    remove_window(open_windows, &resvars.window_list[2]);
+    remove_window(open_windows, &resvars.window_list[0]);
+    remove_window(open_windows, &resvars.window_list[1]);
+    remove_window(open_windows, &resvars.window_list[3]);
+    while (window.window_count > 1) {
+        x = window.zone_x[window.window_count - 1];
+        y = window.zone_y[window.window_count - 1];
+        w = window.zone_x1[window.window_count - 1];
+        h = window.zone_y1[window.window_count - 1];
         set_all_refresh_zones_in_window(x, y, w, h, 3);
-        remove_window_from_list(window.unknown2ec - 1);
+        remove_window_from_list(window.window_count - 1);
     }
-    window.unknown2eb = 0;
+    window.current_window = 0;
     cancel_helpmsg();
-    othervar.f9b8 = 0;
+    othervar.irequester_slot = 0;
 }
 
 // Raises handyman id's priority for the job of button `button` (a
-// resvars.fe index: litter, plants or repairs) by 6, taking it from the
+// resvars.requester_buttons index: litter, plants or repairs) by 6, taking it from the
 // larger of the other two so the three sum to at most 100; from 94 it
 // becomes 100 and the others 0. Resets their job counts.
 // FUNCTION: 0x00087c44
@@ -273,15 +273,15 @@ void adjust_handyman_values(const u16 id, const u8 button)
     u8 other2;
 
     handyman = &thing[id];
-    if (button == resvars.fe[0x27]) {
+    if (button == resvars.requester_buttons[0x27]) {
         raised = handyman->prio_litter;
         other1 = handyman->prio_plants;
         other2 = handyman->prio_repair;
-    } else if (button == resvars.fe[0x28]) {
+    } else if (button == resvars.requester_buttons[0x28]) {
         raised = handyman->prio_plants;
         other1 = handyman->prio_litter;
         other2 = handyman->prio_repair;
-    } else if (button == resvars.fe[0x29]) {
+    } else if (button == resvars.requester_buttons[0x29]) {
         raised = handyman->prio_repair;
         other1 = handyman->prio_plants;
         other2 = handyman->prio_litter;
@@ -301,15 +301,15 @@ void adjust_handyman_values(const u16 id, const u8 button)
         other1 = 0;
         other2 = 0;
     }
-    if (button == resvars.fe[0x27]) {
+    if (button == resvars.requester_buttons[0x27]) {
         handyman->prio_litter = raised;
         handyman->prio_plants = other1;
         handyman->prio_repair = other2;
-    } else if (button == resvars.fe[0x28]) {
+    } else if (button == resvars.requester_buttons[0x28]) {
         handyman->prio_plants = raised;
         handyman->prio_litter = other1;
         handyman->prio_repair = other2;
-    } else if (button == resvars.fe[0x29]) {
+    } else if (button == resvars.requester_buttons[0x29]) {
         handyman->prio_repair = raised;
         handyman->prio_plants = other1;
         handyman->prio_litter = other2;
@@ -324,13 +324,13 @@ void adjust_handyman_values(const u16 id, const u8 button)
 // FUNCTION: 0x00087e7c
 void draw_staff_handyman_bars(const Thing *const handyman, const u16 x, const u16 y, TbSprite *spr)
 {
-    draw_gauge(handyman->prio_litter, x + resvars.f1c[0x72].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
-    draw_gauge(handyman->prio_plants, x + resvars.f1c[0x73].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
-    draw_gauge(handyman->prio_repair, x + resvars.f1c[0x74].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_litter, x + resvars.coords[0x72].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x, spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_plants, x + resvars.coords[0x73].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x, spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_repair, x + resvars.coords[0x74].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x, spr, 100, 0, 100, 1);
 }
 
 // Counts the reference texts (general, good and bad, each list ending at
-// ".") into statvar.f5d9-f5db.
+// ".") into statvar.ref_general_count-f5db.
 // FUNCTION: 0x00087fb8
 void setup_req4_references(void)
 {
@@ -339,15 +339,15 @@ void setup_req4_references(void)
 
     sprintf(buf, ".");
     for (i = 0; ref_general_text[i][0] != buf[0]; i++) {}
-    statvar.f5d9 = i;
+    statvar.ref_general_count = i;
     for (i = 0; ref_good_text[i][0] != buf[0]; i++) {}
-    statvar.f5da = i;
+    statvar.ref_good_count = i;
     for (i = 0; ref_bad_text[i][0] != buf[0]; i++) {}
-    statvar.f5db = i;
+    statvar.ref_bad_count = i;
 }
 
 // Help text for a doctor qualification of the staff window's staff member,
-// into othervar.f96, if they are a doctor.
+// into othervar.help_msg, if they are a doctor.
 // FUNCTION: 0x00088068
 void req4_help_if_doctor(void)
 {
@@ -355,7 +355,7 @@ void req4_help_if_doctor(void)
 
     staff = &thing[D_001581b2[2].value];
     if (staff > thing && staff->skills & SKILL_DOCTOR)
-        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
+        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req4_help_if_doctor, if they are a surgeon.
@@ -366,7 +366,7 @@ void req4_help_if_surgeon(void)
 
     staff = &thing[D_001581b2[2].value];
     if (staff > thing && staff->skills & SKILL_SURGEON)
-        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
+        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req4_help_if_doctor, if they are a psychiatrist.
@@ -377,7 +377,7 @@ void req4_help_if_shrink(void)
 
     staff = &thing[D_001581b2[2].value];
     if (staff > thing && staff->skills & SKILL_PSYCHIATRIST)
-        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
+        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
 // As req4_help_if_doctor, if they are a researcher.
@@ -388,5 +388,5 @@ void req4_help_if_research(void)
 
     staff = &thing[D_001581b2[2].value];
     if (staff > thing && staff->skills & SKILL_RESEARCHER)
-        fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
+        fn_000bbff0(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
