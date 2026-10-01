@@ -123,7 +123,7 @@ void close_sound_heap(void)
 void process_sound_heap(void)
 {
     SampleTable *st;
-    SampleInfo *s;
+    SampleInfo *info;
     SampleInfo *end;
 
     if (!myplayer.unknown0[0xf] || !statvar.f6c[0x78])
@@ -134,15 +134,15 @@ void process_sound_heap(void)
     if (othervar.fa65)
         fn_000a2ed0(othervar.fa06);
     end = GetLastSampleInfoStructure();
-    for (s = GetFirstSampleInfoStructure(); s <= end; s++) {
-        if (s->SampleHandle == 0 || !(s->flags & 1))
+    for (info = GetFirstSampleInfoStructure(); info <= end; info++) {
+        if (info->SampleHandle == 0 || !(info->flags & 1))
             continue;
-        if (IsSamplePlaying(0, 0, s->SampleHandle)) {
-            st = &sample_table[s->SampleNumber];
+        if (IsSamplePlaying(0, 0, info->SampleHandle)) {
+            st = &sample_table[info->SampleNumber];
             if (st->block)
                 fn_000a2ed0(st->block);
         } else {
-            s->flags &= ~1;
+            info->flags &= ~1;
         }
     }
 }
@@ -196,36 +196,36 @@ s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate)
     u8 header[0x12];
     SoundBankEntry dir[9];
     SoundBankSample rec;
-    s32 idx;
+    s32 rate_index;
     u32 base;
 
     switch (rate) {
     case 0x66c:
-        idx = 0;
+        rate_index = 0;
         break;
     case 0x668:
-        idx = 1;
+        rate_index = 1;
         break;
     case 0x656:
-        idx = 2;
+        rate_index = 2;
         break;
     case 0x654:
-        idx = 3;
+        rate_index = 3;
         break;
     case 0x64b:
-        idx = 4;
+        rate_index = 4;
         break;
     case 0x64a:
-        idx = 5;
+        rate_index = 5;
         break;
     case 0x336:
-        idx = 6;
+        rate_index = 6;
         break;
     case 0x32b:
-        idx = 7;
+        rate_index = 7;
         break;
     case 0x320:
-        idx = 8;
+        rate_index = 8;
         break;
     default:
         return 0;
@@ -238,7 +238,7 @@ s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate)
     LbFileRead(file, header, 0x12);
     LbFileRead(file, dir, 0x90);
     entry = dir;
-    entry += idx;
+    entry += rate_index;
     if (entry->offset == 0 || entry->size == 0)
         return 0;
     *count = entry->size >> 5;

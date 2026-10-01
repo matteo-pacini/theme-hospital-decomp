@@ -20,59 +20,59 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
         return 1;
     {
         u8 w;
-        s32 d;
+        s32 overhang;
         u8 *dst;
         s32 pitch;
         s8 *src;
         s32 rows;
-        u8 *next;
+        u8 *next_row;
         s32 remaining;
 
         x += lbDisplay.graphics_window_x;
         y += lbDisplay.graphics_window_y;
         w = spr->width;
-        d = lbDisplay.graphics_window_x - x;
-        if (d > 0) {
-            if (w <= d)
+        overhang = lbDisplay.graphics_window_x - x;
+        if (overhang > 0) {
+            if (w <= overhang)
                 return 1;
-            left = d;
+            left = overhang;
         } else {
             left = 0;
         }
-        d = x + w - (lbDisplay.graphics_window_x + lbDisplay.graphics_window_width);
-        if (d > 0) {
-            if (w <= d)
+        overhang = x + w - (lbDisplay.graphics_window_x + lbDisplay.graphics_window_width);
+        if (overhang > 0) {
+            if (w <= overhang)
                 return 1;
-            right = w - d;
+            right = w - overhang;
         } else {
             right = w;
         }
         h = spr->height;
-        d = lbDisplay.graphics_window_y - y;
-        if (d > 0) {
-            if (h <= d)
+        overhang = lbDisplay.graphics_window_y - y;
+        if (overhang > 0) {
+            if (h <= overhang)
                 return 1;
-            top = d;
+            top = overhang;
         } else {
             top = 0;
         }
-        d = y + h - (lbDisplay.graphics_window_y + lbDisplay.graphics_window_height);
-        if (d > 0) {
-            if (h <= d)
+        overhang = y + h - (lbDisplay.graphics_window_y + lbDisplay.graphics_window_height);
+        if (overhang > 0) {
+            if (h <= overhang)
                 return 1;
-            bottom = h - d;
+            bottom = h - overhang;
         } else {
             bottom = h;
         }
         if (lbDisplay.draw_flags & 2) {
-            u8 tmp;
+            u8 old_bottom;
 
             dst = x + (lbDisplay.unknown4 + (bottom + y - 1) * lbDisplay.graphics_screen_width) + left;
             pitch = lbDisplay.graphics_screen_width;
             pitch = -pitch;
-            tmp = bottom;
+            old_bottom = bottom;
             bottom = h - top;
-            top = h - tmp;
+            top = h - old_bottom;
         } else {
             dst = x + (lbDisplay.unknown4 + (top + y) * lbDisplay.graphics_screen_width) + left;
             pitch = lbDisplay.graphics_screen_width;
@@ -92,21 +92,21 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
             }
         }
         if (lbDisplay.draw_flags & 0xd) {
-            u8 tmp2;
-            u8 sw;
+            u8 old_right;
+            u8 sprite_width;
             u8 xflip;
 
             if (lbDisplay.draw_flags & 1) {
                 dst += w - 1;
                 xflip = 1;
-                sw = spr->width;
-                tmp2 = right;
-                right = sw - left;
-                left = sw - tmp2;
+                sprite_width = spr->width;
+                old_right = right;
+                right = sprite_width - left;
+                left = sprite_width - old_right;
             } else {
                 xflip = 0;
             }
-            next = dst + pitch;
+            next_row = dst + pitch;
             remaining = w;
             rows = h;
             if (lbDisplay.draw_flags & 0xc) {
@@ -115,27 +115,27 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                 for (;;) {
                     if (remaining > 0) {
                         if (*src > 0) {
-                            u8 n;
+                            u8 run;
                             u8 i;
-                            u8 *p;
+                            u8 *pixel;
 
-                            n = *src < remaining ? *src : remaining;
-                            p = (u8 *)src + 1;
+                            run = *src < remaining ? *src : remaining;
+                            pixel = (u8 *)src + 1;
                             if (xflip) {
                                 if (lbDisplay.draw_flags & 4) {
-                                    for (i = 0; i < n; i++, p++, dst--)
-                                        *dst = *(lbDisplay.ghost + (*p << 8) + glow);
+                                    for (i = 0; i < run; i++, pixel++, dst--)
+                                        *dst = *(lbDisplay.ghost + (*pixel << 8) + glow);
                                 } else {
-                                    for (i = 0; i < n; i++, p++, dst--)
-                                        *dst = *(lbDisplay.ghost + (glow << 8) + *p);
+                                    for (i = 0; i < run; i++, pixel++, dst--)
+                                        *dst = *(lbDisplay.ghost + (glow << 8) + *pixel);
                                 }
                             } else {
                                 if (lbDisplay.draw_flags & 4) {
-                                    for (i = 0; i < n; i++, p++, dst++)
-                                        *dst = *(lbDisplay.ghost + (*p << 8) + glow);
+                                    for (i = 0; i < run; i++, pixel++, dst++)
+                                        *dst = *(lbDisplay.ghost + (*pixel << 8) + glow);
                                 } else {
-                                    for (i = 0; i < n; i++, p++, dst++)
-                                        *dst = *(lbDisplay.ghost + (glow << 8) + *p);
+                                    for (i = 0; i < run; i++, pixel++, dst++)
+                                        *dst = *(lbDisplay.ghost + (glow << 8) + *pixel);
                                 }
                             }
                             remaining -= *src;
@@ -149,8 +149,8 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                             src++;
                         } else {
                             if (--rows != 0) {
-                                dst = next;
-                                next += pitch;
+                                dst = next_row;
+                                next_row += pitch;
                                 remaining = w;
                                 src++;
                                 goto glow_skip;
@@ -167,8 +167,8 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                                 break;
                             }
                         }
-                        dst = next;
-                        next += pitch;
+                        dst = next_row;
+                        next_row += pitch;
                         remaining = w;
                     glow_skip:
                         if (left) {
@@ -179,27 +179,27 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                                 if (*src > 0) {
                                     if (*src > skip) {
                                         u8 j;
-                                        u8 *p;
+                                        u8 *pixel;
 
-                                        p = (u8 *)src + 1 + skip;
+                                        pixel = (u8 *)src + 1 + skip;
                                         len = *src - skip;
                                         if (len > w)
                                             len = w;
                                         if (xflip) {
                                             if (lbDisplay.draw_flags & 4) {
-                                                for (j = 0; j < len; j++, p++, dst--)
-                                                    *dst = *(lbDisplay.ghost + (*p << 8) + glow);
+                                                for (j = 0; j < len; j++, pixel++, dst--)
+                                                    *dst = *(lbDisplay.ghost + (*pixel << 8) + glow);
                                             } else {
-                                                for (j = 0; j < len; j++, p++, dst--)
-                                                    *dst = *(lbDisplay.ghost + (glow << 8) + *p);
+                                                for (j = 0; j < len; j++, pixel++, dst--)
+                                                    *dst = *(lbDisplay.ghost + (glow << 8) + *pixel);
                                             }
                                         } else {
                                             if (lbDisplay.draw_flags & 4) {
-                                                for (j = 0; j < len; j++, p++, dst++)
-                                                    *dst = *(lbDisplay.ghost + (*p << 8) + glow);
+                                                for (j = 0; j < len; j++, pixel++, dst++)
+                                                    *dst = *(lbDisplay.ghost + (*pixel << 8) + glow);
                                             } else {
-                                                for (j = 0; j < len; j++, p++, dst++)
-                                                    *dst = *(lbDisplay.ghost + (glow << 8) + *p);
+                                                for (j = 0; j < len; j++, pixel++, dst++)
+                                                    *dst = *(lbDisplay.ghost + (glow << 8) + *pixel);
                                             }
                                         }
                                         src += *src + 1;
@@ -236,14 +236,14 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                 for (;;) {
                     if (remaining > 0) {
                         if (*src > 0) {
-                            u8 n;
+                            u8 run;
                             u8 i;
-                            u8 *p;
+                            u8 *pixel;
 
-                            n = *src < remaining ? *src : remaining;
-                            p = (u8 *)src + 1;
-                            for (i = 0; i < n; i++, p++, dst--)
-                                *dst = *p;
+                            run = *src < remaining ? *src : remaining;
+                            pixel = (u8 *)src + 1;
+                            for (i = 0; i < run; i++, pixel++, dst--)
+                                *dst = *pixel;
                             remaining -= *src;
                             src += *src + 1;
                         } else if (*src < 0) {
@@ -252,8 +252,8 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                             src++;
                         } else {
                             if (--rows != 0) {
-                                dst = next;
-                                next += pitch;
+                                dst = next_row;
+                                next_row += pitch;
                                 remaining = w;
                                 src++;
                                 goto flip_skip;
@@ -270,8 +270,8 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                                 break;
                             }
                         }
-                        dst = next;
-                        next += pitch;
+                        dst = next_row;
+                        next_row += pitch;
                         remaining = w;
                     flip_skip:
                         if (left) {
@@ -282,14 +282,14 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                                 if (*src > 0) {
                                     if (*src > skip) {
                                         u8 j;
-                                        u8 *p;
+                                        u8 *pixel;
 
                                         len = *src - skip;
                                         if (len > w)
                                             len = w;
-                                        p = (u8 *)src + 1 + skip;
-                                        for (j = 0; j < len; j++, p++, dst--)
-                                            *dst = *p;
+                                        pixel = (u8 *)src + 1 + skip;
+                                        for (j = 0; j < len; j++, pixel++, dst--)
+                                            *dst = *pixel;
                                         src += *src + 1;
                                         remaining -= len;
                                         break;
@@ -317,7 +317,7 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                 }
             }
         } else {
-            next = dst + pitch;
+            next_row = dst + pitch;
             remaining = w;
             rows = h;
             if (left)
@@ -335,8 +335,8 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                         src++;
                     } else {
                         if (--rows != 0) {
-                            dst = next;
-                            next += pitch;
+                            dst = next_row;
+                            next_row += pitch;
                             remaining = w;
                             src++;
                             goto plain_skip;
@@ -353,8 +353,8 @@ s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
                             break;
                         }
                     }
-                    dst = next;
-                    next += pitch;
+                    dst = next_row;
+                    next_row += pitch;
                     remaining = w;
                 plain_skip:
                     if (left) {

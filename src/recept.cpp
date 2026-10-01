@@ -7,50 +7,50 @@ void staff_in_corridor(Thing *w);
 RoomInfo *allocate_reception_roominfo(u8 owner);
 
 // FUNCTION: 0x00097ce0
-void receptionist_finds_reception(Thing *w)
+void receptionist_finds_reception(Thing *receptionist)
 {
     u16 pos;
     u16 id;
     Thing *desk;
 
-    if (listhead[w->owner].rooms[4]) {
-        id = find_free_object_anywhere(w - thing, 0xb);
+    if (listhead[receptionist->owner].rooms[4]) {
+        id = find_free_object_anywhere(receptionist - thing, 0xb);
         if (id) {
             desk = &thing[id];
             if (desk > thing) {
                 pos = desk->room_prev;
-                reset_icon_value(w, 0x19);
-                w->state_b = 0x4a;
-                w->unknown69 = id;
-                set_complex(w, 0x50, pos);
-                w->unknown94 = 0xc;
-                fn_0003e724(w);
-                w->unknown73 = 0;
+                reset_icon_value(receptionist, 0x19);
+                receptionist->state_b = 0x4a;
+                receptionist->unknown69 = id;
+                set_complex(receptionist, 0x50, pos);
+                receptionist->unknown94 = 0xc;
+                fn_0003e724(receptionist);
+                receptionist->unknown73 = 0;
             }
         } else {
-            staff_in_corridor(w);
+            staff_in_corridor(receptionist);
         }
     } else {
-        staff_in_corridor(w);
+        staff_in_corridor(receptionist);
     }
 }
 
 // FUNCTION: 0x00097de0
-void receptionist_setup(Thing *w)
+void receptionist_setup(Thing *receptionist)
 {
-    Thing *o;
-    Thing *desk;
+    Thing *other_desk;
+    Thing *desk_user;
     RoomInfo *room;
 
     room = 0;
-    for (o = &thing[listhead[w->owner].objects[0xb]]; o > thing; o = &thing[o->unknown75w]) {
-        if ((u16)(o - thing) != w->unknown69) {
-            if (o->unknown98 != 0) {
-                if ((o->x.tile - w->x.tile < 0 ? -(o->x.tile - w->x.tile) : (o->x.tile - w->x.tile)) <= 10) {
-                    if ((o->y.tile - w->y.tile < 0 ? -(o->y.tile - w->y.tile) : (o->y.tile - w->y.tile)) <= 10) {
-                        desk = &thing[o->unknown91];
-                        if (desk > thing) {
-                            room = desk->room;
+    for (other_desk = &thing[listhead[receptionist->owner].objects[0xb]]; other_desk > thing; other_desk = &thing[other_desk->unknown75w]) {
+        if ((u16)(other_desk - thing) != receptionist->unknown69) {
+            if (other_desk->unknown98 != 0) {
+                if ((other_desk->x.tile - receptionist->x.tile < 0 ? -(other_desk->x.tile - receptionist->x.tile) : (other_desk->x.tile - receptionist->x.tile)) <= 10) {
+                    if ((other_desk->y.tile - receptionist->y.tile < 0 ? -(other_desk->y.tile - receptionist->y.tile) : (other_desk->y.tile - receptionist->y.tile)) <= 10) {
+                        desk_user = &thing[other_desk->unknown91];
+                        if (desk_user > thing) {
+                            room = desk_user->room;
                             break;
                         }
                     }
@@ -59,68 +59,68 @@ void receptionist_setup(Thing *w)
         }
     }
     if (room)
-        w->room = room;
+        receptionist->room = room;
     else
-        w->room = allocate_reception_roominfo(w->owner);
-    w->kind = 10;
+        receptionist->room = allocate_reception_roominfo(receptionist->owner);
+    receptionist->kind = 10;
 }
 
 // FUNCTION: 0x00097fac
-void receptionist_works(Thing *w)
+void receptionist_works(Thing *receptionist)
 {
     Thing *desk;
     u16 action;
     u16 id;
     u16 capacity;
     u16 pos;
-    CompFrame *fr;
+    CompFrame *cur_frame;
     u16 kind;
 
-    if (w->room > room_info) {
-        if (actual_game_turn % w->anim_speed == 0) {
-            w->sprite = frame[w->sprite].next;
-            fr = &frame[w->sprite];
-            if (fr->flags & 1) {
-                id = w->room->queue_head;
+    if (receptionist->room > room_info) {
+        if (actual_game_turn % receptionist->anim_speed == 0) {
+            receptionist->sprite = frame[receptionist->sprite].next;
+            cur_frame = &frame[receptionist->sprite];
+            if (cur_frame->flags & 1) {
+                id = receptionist->room->queue_head;
                 if (id) {
                     for (; id; id = thing[id].queue_next) {
                         if (thing[id].flags & 0x40)
                             break;
                     }
                     if (id == 0)
-                        id = w->room->queue_head;
+                        id = receptionist->room->queue_head;
                     for (; id; id = thing[id].queue_next) {
                         kind = thing[id].unknown171;
-                        capacity = all_queue_capacity(kind, 1, w->owner);
+                        capacity = all_queue_capacity(kind, 1, receptionist->owner);
                         if (capacity > 0) {
-                            desk = &thing[w->unknown69];
+                            desk = &thing[receptionist->unknown69];
                             if (desk > thing) {
                                 pos = desk->room_next;
-                                if (call_person_to_room(w, id, 0x6e, pos, 0)) {
-                                    set_icon_value(w, 0x19);
-                                    w->state_b = 0x20;
-                                    set_complex(w, 0x1e, 0);
-                                    fn_0003e724(w);
+                                if (call_person_to_room(receptionist, id, 0x6e, pos, 0)) {
+                                    set_icon_value(receptionist, 0x19);
+                                    receptionist->state_b = 0x20;
+                                    set_complex(receptionist, 0x1e, 0);
+                                    fn_0003e724(receptionist);
                                     break;
                                 }
                             }
                         }
                     }
                 } else {
-                    reset_icon_value(w, 0x19);
+                    reset_icon_value(receptionist, 0x19);
                     othervar.f0 = old_newrand() % 100;
                     if (othervar.f0 >= 0 && othervar.f0 < 30) {
-                        w->state_b = 10;
+                        receptionist->state_b = 10;
                         action = recept_tasks[old_newrand() % recept_tasks[0] + 1];
-                        set_complex(w, action, 0);
-                        fn_0003e724(w);
+                        set_complex(receptionist, action, 0);
+                        fn_0003e724(receptionist);
                     } else {
                         u16 anim;
 
-                        anim = check_frame(staff_anim_starts[w->subtype].anims[2], w) + w->unknown17;
-                        w->sprite = start[anim].frame;
-                        w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
-                        w->kind = 10;
+                        anim = check_frame(staff_anim_starts[receptionist->subtype].anims[2], receptionist) + receptionist->unknown17;
+                        receptionist->sprite = start[anim].frame;
+                        receptionist->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                        receptionist->kind = 10;
                     }
                 }
             }
@@ -129,95 +129,95 @@ void receptionist_works(Thing *w)
 }
 
 // FUNCTION: 0x000982a8
-void recept_waits_for_patient(Thing *w)
+void recept_waits_for_patient(Thing *receptionist)
 {
     u8 result;
     u16 pos;
     Thing *desk;
-    Thing *p;
+    Thing *patient;
 
-    p = &thing[w->unknown73];
-    if (p > thing) {
-        if (p->kind == 0x46) {
-            if (allhosps[p->owner].rooms[p->unknown171].unknown1C == 1)
-                set_complex(w, 0xe6, 0);
+    patient = &thing[receptionist->unknown73];
+    if (patient > thing) {
+        if (patient->kind == 0x46) {
+            if (allhosps[patient->owner].rooms[patient->unknown171].unknown1C == 1)
+                set_complex(receptionist, 0xe6, 0);
             else
-                set_complex(w, 0xf0, 0);
-            p->unknown17 = opposite_angle[w->unknown17];
-            w->state_b = 0x22;
-            fn_0003e724(w);
+                set_complex(receptionist, 0xf0, 0);
+            patient->unknown17 = opposite_angle[receptionist->unknown17];
+            receptionist->state_b = 0x22;
+            fn_0003e724(receptionist);
             othervar.f8ac_u16a[1] = 0;
         } else {
-            w->timer--;
-            if (w->timer <= 0) {
-                desk = &thing[w->unknown69];
+            receptionist->timer--;
+            if (receptionist->timer <= 0) {
+                desk = &thing[receptionist->unknown69];
                 if (desk > thing) {
                     pos = desk->room_next;
-                    reset_icon_value(w, 0x19);
-                    result = call_person_again(w, 0x6e, pos);
+                    reset_icon_value(receptionist, 0x19);
+                    result = call_person_again(receptionist, 0x6e, pos);
                     if (result == 0) {
-                        w->kind = 10;
-                        w->unknown73 = 0;
+                        receptionist->kind = 10;
+                        receptionist->unknown73 = 0;
                     } else if (result == 1) {
-                        w->kind = 10;
-                        interrupt_person(p);
-                        start_person_going(p);
-                        w->unknown73 = 0;
+                        receptionist->kind = 10;
+                        interrupt_person(patient);
+                        start_person_going(patient);
+                        receptionist->unknown73 = 0;
                         othervar.f8ac_u16a[1] = 0;
                     }
                 }
-            } else if (fn_0003c1e8(w, 0x6e)) {
-                w->kind = 10;
-                w->unknown73 = 0;
+            } else if (fn_0003c1e8(receptionist, 0x6e)) {
+                receptionist->kind = 10;
+                receptionist->unknown73 = 0;
             }
         }
     } else {
-        reset_icon_value(w, 0x19);
-        w->unknown73 = 0;
-        w->kind = 10;
+        reset_icon_value(receptionist, 0x19);
+        receptionist->unknown73 = 0;
+        receptionist->kind = 10;
         othervar.f8ac_u16a[1] = 0;
     }
 }
 
 // FUNCTION: 0x000984a0
-void recept_admits_patient(Thing *w)
+void recept_admits_patient(Thing *receptionist)
 {
-    Thing *p;
+    Thing *patient;
 
-    p = &thing[w->unknown73];
-    if (p > thing) {
-        p->unknown124 = 0;
-        p->unknown126 = 0;
-        if (shall_peep_pay(p))
-            pay_for_treatment(p, 3);
+    patient = &thing[receptionist->unknown73];
+    if (patient > thing) {
+        patient->unknown124 = 0;
+        patient->unknown126 = 0;
+        if (shall_peep_pay(patient))
+            pay_for_treatment(patient, 3);
         else
-            p->unknown171 = 0;
-        p->kind = 0x26;
-        w->room->f3 = 0;
-        w->room->count++;
-        w->unknown73 = 0;
-        reset_icon_value(w, 0x19);
-        w->kind = 10;
+            patient->unknown171 = 0;
+        patient->kind = 0x26;
+        receptionist->room->f3 = 0;
+        receptionist->room->count++;
+        receptionist->unknown73 = 0;
+        reset_icon_value(receptionist, 0x19);
+        receptionist->kind = 10;
     }
 }
 
 // FUNCTION: 0x00098554
-void receptionist_reset(Thing *w)
+void receptionist_reset(Thing *receptionist)
 {
     u8 found;
-    Thing *desk;
+    Thing *desk_user;
     RoomInfo *room;
-    Thing *o;
+    Thing *other_desk;
 
     room = 0;
     found = 0;
-    if (w->room && w->room->type == 4) {
-        for (o = &thing[listhead[w->owner].objects[0xb]]; o > thing; o = &thing[o->unknown75w]) {
-            if ((u16)(o - thing) != w->unknown69) {
-                if (o->unknown98 != 0) {
-                    desk = &thing[o->unknown91];
-                    if (desk > thing) {
-                        if (w->room == desk->room) {
+    if (receptionist->room && receptionist->room->type == 4) {
+        for (other_desk = &thing[listhead[receptionist->owner].objects[0xb]]; other_desk > thing; other_desk = &thing[other_desk->unknown75w]) {
+            if ((u16)(other_desk - thing) != receptionist->unknown69) {
+                if (other_desk->unknown98 != 0) {
+                    desk_user = &thing[other_desk->unknown91];
+                    if (desk_user > thing) {
+                        if (receptionist->room == desk_user->room) {
                             found = 1;
                             break;
                         }
@@ -226,10 +226,10 @@ void receptionist_reset(Thing *w)
             }
         }
         if (found == 0) {
-            room = w->room;
+            room = receptionist->room;
             restart_all_queue_peeps(room);
             memset(room, 0, 0x23);
         }
-        w->room = 0;
+        receptionist->room = 0;
     }
 }

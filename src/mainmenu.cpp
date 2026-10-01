@@ -589,16 +589,16 @@ u8 fn_00063174(void)
 {
     u8 aborted;
     char path[0x80];
-    u8 active;
+    u8 was_locked;
     u8 result;
 
-    active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+    was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
     aborted = 0;
     sprintf(path, "%s%s", cd_install_path, animation_table[othervar.fa87 > 4 ? 0x1a : 0x19].name);
     if (!LbFileExists(path))
         return aborted;
     fade_out_menu();
-    if (active)
+    if (was_locked)
         LbScreenUnlock();
     LbScreenClear(0);
     fn_0001102c();
@@ -619,7 +619,7 @@ u8 fn_00063174(void)
         reset_host();
         return 1;
     }
-    if (active) {
+    if (was_locked) {
         while (LbScreenLock() != 1) {
         }
     }
@@ -631,11 +631,11 @@ u8 fn_00063174(void)
 u8 fn_00063300(void)
 {
     u8 aborted;
-    u8 active;
+    u8 was_locked;
 
     aborted = 0;
-    active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-    if (active)
+    was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+    if (was_locked)
         LbScreenUnlock();
     fade_out_menu();
     if (change_res(SCREEN_MODE_13)) {
@@ -659,7 +659,7 @@ u8 fn_00063300(void)
         change_res(SCREEN_MODE_13);
         LbScreenClear(0);
     }
-    if (active) {
+    if (was_locked) {
         while (LbScreenLock() != 1) {
         }
     }

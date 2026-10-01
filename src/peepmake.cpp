@@ -59,43 +59,43 @@ void create_a_peep(void)
     s8 i;
     u8 illness;
     Thing *t;
-    Thing *p;
-    AllHosps *h;
+    Thing *patient;
+    AllHosps *hosp;
     RoomInfo *room;
-    s32 n;
+    s32 nplayers;
 
-    n = 1;
+    nplayers = 1;
     if (statvar.unknownfd > 1)
-        n = 4;
+        nplayers = 4;
     if (gamevar.f174)
         return;
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < nplayers; i++) {
         if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
             continue;
-        h = &allhosps[i];
-        if (h->f1e3 > 0 && h->f1e1 == 1) {
-            p = make_a_peep(h->f1d7, h->f1e4, i);
-            if (p) {
-                p->unknown169 = p->style;
-                p->unknown171 = p->unknown169;
-                if (shall_peep_pay(p))
-                    pay_for_treatment(p, 3);
+        hosp = &allhosps[i];
+        if (hosp->f1e3 > 0 && hosp->f1e1 == 1) {
+            patient = make_a_peep(hosp->f1d7, hosp->f1e4, i);
+            if (patient) {
+                patient->unknown169 = patient->style;
+                patient->unknown171 = patient->unknown169;
+                if (shall_peep_pay(patient))
+                    pay_for_treatment(patient, 3);
                 else
-                    p->unknown171 = 0;
-                p->kind = 0x26;
-                p->unknown18 = 0x20;
-                p->anim_speed = 1;
-                p->flags |= 0x40;
-                h->f1ed++;
-                h->f1cd++;
-                set_icon_value(p, 6);
+                    patient->unknown171 = 0;
+                patient->kind = 0x26;
+                patient->unknown18 = 0x20;
+                patient->anim_speed = 1;
+                patient->flags |= 0x40;
+                hosp->f1ed++;
+                hosp->f1cd++;
+                set_icon_value(patient, 6);
             }
-            h->f1e3--;
-            if (h->f1e3 == 0) {
-                t = &thing[h->f1df];
+            hosp->f1e3--;
+            if (hosp->f1e3 == 0) {
+                t = &thing[hosp->f1df];
                 if (t > thing)
                     t->kind = 6;
-                h->f1e1 = 0;
+                hosp->f1e1 = 0;
             }
         }
     }
@@ -105,22 +105,22 @@ void create_a_peep(void)
         illness = create_an_illness();
         i = who_owns_peep(illness);
         if (i >= 0) {
-            h = &allhosps[i];
-            if (h->f2a == 1) {
-                room = &room_info[h->unknown1cf[old_newrand() & 3]];
-                p = make_a_peep(room->unknown4, illness, i);
-                if (p)
-                    start_person_going(p);
+            hosp = &allhosps[i];
+            if (hosp->f2a == 1) {
+                room = &room_info[hosp->unknown1cf[old_newrand() & 3]];
+                patient = make_a_peep(room->unknown4, illness, i);
+                if (patient)
+                    start_person_going(patient);
             } else {
-                p = make_a_peep(0, illness, i);
-                if (p) {
-                    process_computer_peep(p, i);
-                    remove_thing(p);
+                patient = make_a_peep(0, illness, i);
+                if (patient) {
+                    process_computer_peep(patient, i);
+                    remove_thing(patient);
                 }
             }
             gamevar.f1a++;
-            h->f1ed++;
-            h->f1cd++;
+            hosp->f1ed++;
+            hosp->f1cd++;
         }
     }
 }
@@ -178,7 +178,7 @@ s8 who_owns_peep(u8 illness)
     s32 pct[4];
     s32 total;
     s32 j;
-    s32 r;
+    s32 roll;
 
     best = -9999;
     owner = -1;
@@ -220,9 +220,9 @@ s8 who_owns_peep(u8 illness)
             bids[j].score = total;
         }
         if (total) {
-            r = old_newrand() % total;
+            roll = old_newrand() % total;
             for (j = 0; j < 4; j++) {
-                if (bids[j].score > r) {
+                if (bids[j].score > roll) {
                     owner = bids[j].player;
                     break;
                 }
@@ -240,13 +240,13 @@ s8 who_owns_peep(u8 illness)
 }
 
 // FUNCTION: 0x000707f4
-void add_contagiousness(Thing *w)
+void add_contagiousness(Thing *patient)
 {
     u8 chance;
     u8 boost;
 
-    if (!expertise[w->style].unknown10[1]) {
-        chance = expertise[w->style].unknown10[0];
+    if (!expertise[patient->style].unknown10[1]) {
+        chance = expertise[patient->style].unknown10[0];
         if (chance) {
             boost = 0;
             if (gbv.fd0 && othervar.f9d1 < gbv.fd0)
@@ -255,10 +255,10 @@ void add_contagiousness(Thing *w)
                 boost = 1;
             if (boost)
                 chance = chance * gbv.fd4 / 100;
-            if (allhosps[w->owner].f20d)
+            if (allhosps[patient->owner].f20d)
                 chance = 0;
             if (chance && old_newrand() % chance == 0)
-                w->unknown174 = old_newrand() % gbv.fce + 1;
+                patient->unknown174 = old_newrand() % gbv.fce + 1;
         }
     }
 }
@@ -266,29 +266,29 @@ void add_contagiousness(Thing *w)
 // FUNCTION: 0x00070918
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
 {
-    Thing *p;
+    Thing *peep;
     s32 total;
     s32 i;
     s32 r;
     s32 k;
     PeepPalette *pal;
-    s32 n;
+    s32 nchoices;
     PeepChoice choices[10];
     u32 pick;
     s32 j;
 
-    p = allocate_thing(0x32);
-    if (p) {
-        p->owner = owner;
-        p->renderer = 2;
-        p->x.tile = pos % 128;
-        p->y.tile = pos / 128;
-        p->x.frac = 0x80;
-        p->y.frac = 0x80;
-        p->unknown19 = p->x.tile;
-        p->unknown20 = p->y.tile;
-        p->unknown18 = gbv.f14c;
-        p->anim_speed = gbv.f14e;
+    peep = allocate_thing(0x32);
+    if (peep) {
+        peep->owner = owner;
+        peep->renderer = 2;
+        peep->x.tile = pos % 128;
+        peep->y.tile = pos / 128;
+        peep->x.frac = 0x80;
+        peep->y.frac = 0x80;
+        peep->unknown19 = peep->x.tile;
+        peep->unknown20 = peep->y.tile;
+        peep->unknown18 = gbv.f14c;
+        peep->anim_speed = gbv.f14e;
         if (illness >= 16) {
             total = 0;
             for (i = 4; i >= 0; i--)
@@ -299,67 +299,67 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
                 if (r >= total)
                     break;
             }
-            p->subtype = D_0012b7d4[i].kind;
+            peep->subtype = D_0012b7d4[i].kind;
             k = old_newrand() % D_0012b7d4[i].count;
-            p->layers[0] = D_0012b7d4[i].head[k];
+            peep->layers[0] = D_0012b7d4[i].head[k];
             pal = &D_0012b818[D_0012b7d4[i].palette[k]];
         } else {
-            n = 0;
+            nchoices = 0;
             for (i = 4; i >= 0; i--) {
                 if (illness >= 16 || suitable_illness[illness][i]) {
                     for (k = D_0012b7d4[i].count - 1; k >= 0; k--) {
-                        choices[n].kind = D_0012b7d4[i].kind;
-                        choices[n].head = D_0012b7d4[i].head[k];
-                        choices[n].palette = D_0012b7d4[i].palette[k];
-                        n++;
+                        choices[nchoices].kind = D_0012b7d4[i].kind;
+                        choices[nchoices].head = D_0012b7d4[i].head[k];
+                        choices[nchoices].palette = D_0012b7d4[i].palette[k];
+                        nchoices++;
                     }
                 }
             }
-            pick = old_newrand() % n;
-            p->subtype = choices[pick].kind;
-            p->layers[0] = choices[pick].head;
+            pick = old_newrand() % nchoices;
+            peep->subtype = choices[pick].kind;
+            peep->layers[0] = choices[pick].head;
             pal = &D_0012b818[choices[pick].palette];
         }
         if (statvar.unknownfd > 1 && pal->count1 == 4)
-            p->unknown30[0] = pal->layer1[owner];
+            peep->unknown30[0] = pal->layer1[owner];
         else
-            p->unknown30[0] = pal->layer1[old_newrand() % pal->count1];
-        p->unknown30[1] = pal->layer2[old_newrand() % pal->count2];
-        p->unknown30[2] = pal->layer3[old_newrand() % pal->count3];
-        p->unknown30[3] = 0;
-        effect_illness(p, illness, 0);
-        add_contagiousness(p);
-        p->unknown24 = 0;
+            peep->unknown30[0] = pal->layer1[old_newrand() % pal->count1];
+        peep->unknown30[1] = pal->layer2[old_newrand() % pal->count2];
+        peep->unknown30[2] = pal->layer3[old_newrand() % pal->count3];
+        peep->unknown30[3] = 0;
+        effect_illness(peep, illness, 0);
+        add_contagiousness(peep);
+        peep->unknown24 = 0;
         {
             u16 idx;
 
-            idx = check_frame(anim_starts[p->subtype].idle, p) + p->unknown17;
-            p->sprite = start[idx].frame;
-            p->palette = start[idx].flags > 0 ? (u8)1 : (u8)0;
+            idx = check_frame(anim_starts[peep->subtype].idle, peep) + peep->unknown17;
+            peep->sprite = start[idx].frame;
+            peep->palette = start[idx].flags > 0 ? (u8)1 : (u8)0;
         }
-        p->unknown81 = 100;
-        p->unknown83w = 50;
-        p->unknown134 = 100;
+        peep->unknown81 = 100;
+        peep->unknown83w = 50;
+        peep->unknown134 = 100;
         if (illness == 0x1d)
-            p->unknown136 = gbv.f116 / 2;
+            peep->unknown136 = gbv.f116 / 2;
         else
-            p->unknown136 = 0;
-        p->unknown130 = old_normal_rand(200, 1000);
+            peep->unknown136 = 0;
+        peep->unknown130 = old_normal_rand(200, 1000);
         for (j = 0; j < 10; j++)
-            p->unknown158[j] = p->unknown130;
-        p->unknown171 = 1;
-        p->unknown169 = 1;
-        p->unknown144 = old_normal_rand(1, *(u16 *)&expertise[illness].unknown10[6]);
+            peep->unknown158[j] = peep->unknown130;
+        peep->unknown171 = 1;
+        peep->unknown169 = 1;
+        peep->unknown144 = old_normal_rand(1, *(u16 *)&expertise[illness].unknown10[6]);
         if (old_newrand() % *(u16 *)&towns[myhosp->f29].unknown4[0xe] == 0)
-            p->unknown172[1] = 1 << old_newrand() % 3;
+            peep->unknown172[1] = 1 << old_newrand() % 3;
         else
-            p->unknown172[1] = 0;
-        p->f70 = old_newrand() % 95000 + 5000;
+            peep->unknown172[1] = 0;
+        peep->f70 = old_newrand() % 95000 + 5000;
         if (allhosps[owner].f2a == 1) {
-            fn_000444e0(p);
-            insert_node(p, p->x, p->y);
+            fn_000444e0(peep);
+            insert_node(peep, peep->x, peep->y);
         }
-        return p;
+        return peep;
     }
     return 0;
 }

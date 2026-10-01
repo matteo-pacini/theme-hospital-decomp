@@ -13,23 +13,23 @@ u8 mayor_judges_hospital(u8 owner);
 // FUNCTION: 0x000a0b70
 void mayor_requester(u8 idx, char **strs)
 {
-    int v;
-    u16 a;
-    u16 b;
+    int line_height;
+    u16 text_x;
+    u16 text_y;
     char buf[200];
 
-    v = lbFontPtr ? lbFontPtr[34].height : 0;
-    a = 0;
-    b = v * 2;
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    text_x = 0;
+    text_y = line_height * 2;
     sprintf(buf, strs[0], mayor_names[idx]);
-    LbTextDraw(a, b, buf);
+    LbTextDraw(text_x, text_y, buf);
     D_00156910 = 1;
 }
 
 // FUNCTION: 0x000a0c08
-void process_mayor_start_buttons(u8 n)
+void process_mayor_start_buttons(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 1:
         packet_choice_result(0x15);
         if (++allhosps[player].f1fd <= 5 || othervar.f0 >= 10)
@@ -48,7 +48,7 @@ void generate_mayors(void)
     u8 made;
     s16 count;
     s16 i;
-    AllHosps *h;
+    AllHosps *hosp;
 
     found = 0;
     made = 0;
@@ -68,16 +68,16 @@ void generate_mayors(void)
             if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                 continue;
             if (&thing[listhead[i].objects[11]] > thing) {
-                h = &allhosps[i];
-                h->f1ff++;
-                if ((s16)h->f1ff >= gbv.f128) {
-                    u8 r;
-                    r = old_newrand() % 11;
-                    h->f1f9 = r;
-                    h->f1fa = 1;
-                    h->f1ff = 0;
+                hosp = &allhosps[i];
+                hosp->f1ff++;
+                if ((s16)hosp->f1ff >= gbv.f128) {
+                    u8 mayor_idx;
+                    mayor_idx = old_newrand() % 11;
+                    hosp->f1f9 = mayor_idx;
+                    hosp->f1fa = 1;
+                    hosp->f1ff = 0;
                     made = 1;
-                    make_a_playercall(6, (u16)r, 0x14, (u8)i);
+                    make_a_playercall(6, (u16)mayor_idx, 0x14, (u8)i);
                 }
             }
         }
@@ -85,17 +85,17 @@ void generate_mayors(void)
         for (i = 0; i < count; i++) {
             if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                 continue;
-            h = &allhosps[i];
-            switch (h->f1fa) {
+            hosp = &allhosps[i];
+            switch (hosp->f1fa) {
             case 2:
-                if (actual_game_turn > h->f1f3) {
-                    h->f1f7 = create_mayor((u8)i);
-                    if (h->f1f7) {}
-                    h->f1fa = 3;
+                if (actual_game_turn > hosp->f1f3) {
+                    hosp->f1f7 = create_mayor((u8)i);
+                    if (hosp->f1f7) {}
+                    hosp->f1fa = 3;
                     if (i == player) {
                         advisor.f2 = 8;
-                        if (h->f1f9 >= 0 && h->f1f9 < 6)
-                            play_ambient(h->f1f9 + 0xb7);
+                        if (hosp->f1f9 >= 0 && hosp->f1f9 < 6)
+                            play_ambient(hosp->f1f9 + 0xb7);
                     }
                 }
                 break;
@@ -107,142 +107,142 @@ void generate_mayors(void)
 // FUNCTION: 0x000a0f6c
 u16 create_mayor(u8 owner)
 {
-    Thing *w;
+    Thing *mayor;
     u16 pos;
-    u16 f;
+    u16 anim;
 
-    w = allocate_thing(0x19);
-    if (w != 0) {
-    Thing *obj;
-    w->renderer = 0x14;
-    w->owner = owner;
+    mayor = allocate_thing(0x19);
+    if (mayor != 0) {
+    Thing *reception_desk;
+    mayor->renderer = 0x14;
+    mayor->owner = owner;
     pos = room_info[allhosps[owner].unknown1cf[old_newrand() & 3]].unknown4;
-    w->x.tile = pos % 128;
-    w->y.tile = pos / 128;
-    w->x.frac = 0x80;
-    w->y.frac = 0x80;
-    w->unknown18 = 0x10;
-    w->anim_speed = 2;
-    w->unknown17 = 1;
-    insert_node(w, w->x, w->y);
-    f = check_frame(0x89, w) + w->unknown17;
-    w->sprite = start[f].frame;
-    w->palette = start[f].flags > 0 ? (u8)1 : (u8)0;
-    obj = &thing[listhead[owner].objects[11]];
-    if (obj > thing) {
-        fn_0004195c(w, obj->use_pos[1]);
-        w->kind = 2;
-        w->f6e = 4;
-        w->f6c = 0;
+    mayor->x.tile = pos % 128;
+    mayor->y.tile = pos / 128;
+    mayor->x.frac = 0x80;
+    mayor->y.frac = 0x80;
+    mayor->unknown18 = 0x10;
+    mayor->anim_speed = 2;
+    mayor->unknown17 = 1;
+    insert_node(mayor, mayor->x, mayor->y);
+    anim = check_frame(0x89, mayor) + mayor->unknown17;
+    mayor->sprite = start[anim].frame;
+    mayor->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+    reception_desk = &thing[listhead[owner].objects[11]];
+    if (reception_desk > thing) {
+        fn_0004195c(mayor, reception_desk->use_pos[1]);
+        mayor->kind = 2;
+        mayor->f6e = 4;
+        mayor->f6c = 0;
     } else {
-        fn_0004195c(w, room_info[allhosps[w->owner].unknown1cf[old_newrand() & 3]].unknown4);
-        w->kind = 2;
-        w->f6e = 6;
-        allhosps[w->owner].f1fb = 0xe;
+        fn_0004195c(mayor, room_info[allhosps[mayor->owner].unknown1cf[old_newrand() & 3]].unknown4);
+        mayor->kind = 2;
+        mayor->f6e = 6;
+        allhosps[mayor->owner].f1fb = 0xe;
     }
-    return w - thing;
+    return mayor - thing;
     }
     return 0;
 }
 
 // FUNCTION: 0x000a11b8
-void mayor_pauses(Thing *w)
+void mayor_pauses(Thing *mayor)
 {
     RoomInfo *room;
-    AllHosps *h;
+    AllHosps *hosp;
     s32 value;
 
-    if (--w->timer != 0)
+    if (--mayor->timer != 0)
         return;
     for (;;) {
-        w->f6c++;
-        room = &room_info[w->f6c];
+        mayor->f6c++;
+        room = &room_info[mayor->f6c];
         if (room >= end_room_info)
             break;
-        if (room->owner == w->owner && rooms[room->type].fa) {
+        if (room->owner == mayor->owner && rooms[room->type].fa) {
             if (rooms[room->type].unknown36 == 0 || !(old_newrand() & 1)) {
-                fn_0004195c(w, room->unknown4);
-                w->kind = 2;
-                w->f6e = 4;
+                fn_0004195c(mayor, room->unknown4);
+                mayor->kind = 2;
+                mayor->f6e = 4;
                 return;
             }
         }
     }
-    h = &allhosps[w->owner];
-    fn_0004195c(w, room_info[h->unknown1cf[old_newrand() & 3]].unknown4);
-    w->kind = 2;
-    w->f6e = 6;
-    h->f1fb = mayor_judges_hospital(w->owner);
-    value = mayor_result[h->f1fb].f4;
+    hosp = &allhosps[mayor->owner];
+    fn_0004195c(mayor, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
+    mayor->kind = 2;
+    mayor->f6e = 6;
+    hosp->f1fb = mayor_judges_hospital(mayor->owner);
+    value = mayor_result[hosp->f1fb].f4;
     if (value != 0)
-        change_balance(0x20, value, 0, (u16)w->owner);
-    value = mayor_result[h->f1fb].f2;
+        change_balance(0x20, value, 0, (u16)mayor->owner);
+    value = mayor_result[hosp->f1fb].f2;
     if (value != 0)
-        reputation_affected(0, value, 0, w->owner, 0);
+        reputation_affected(0, value, 0, mayor->owner, 0);
     if (value != 0x12)
-        satisfied_net_criteria(2, w->owner);
+        satisfied_net_criteria(2, mayor->owner);
 }
 
 // FUNCTION: 0x000a13a4
 u8 mayor_judges_hospital(u8 owner)
 {
     int score;
-    int staff;
-    int tired;
-    int angry;
+    int doctors;
+    int juniors;
+    int consultants;
     int nrooms;
+    int nstaff;
+    int fatigue_sum;
+    int max_fatigue;
     int npatients;
-    int sum;
-    int max;
-    int n;
     int sum2;
-    Thing *t;
-    AllHosps *h;
+    Thing *person;
+    AllHosps *hosp;
     int avg;
     RoomInfo *room;
 
     score = 0;
-    staff = 0;
-    tired = 0;
-    angry = 0;
+    doctors = 0;
+    juniors = 0;
+    consultants = 0;
     nrooms = 0;
     if (statvar.unknownfd > 1) {
+        nstaff = 0;
+        fatigue_sum = 0;
+        max_fatigue = 0;
         npatients = 0;
-        sum = 0;
-        max = 0;
-        n = 0;
         sum2 = 0;
-        for (t = thing + 1; t < end_things; t++) {
-            if (t->owner != owner)
+        for (person = thing + 1; person < end_things; person++) {
+            if (person->owner != owner)
                 continue;
-            switch (t->renderer) {
+            switch (person->renderer) {
             case 4:
-                sum += t->f78;
-                t->f78 > max ? max = t->f78 : 0;
-                npatients++;
+                fatigue_sum += person->f78;
+                person->f78 > max_fatigue ? max_fatigue = person->f78 : 0;
+                nstaff++;
                 break;
             case 2:
-                sum2 += (s16)t->unknown83w;
-                n++;
+                sum2 += (s16)person->unknown83w;
+                npatients++;
                 break;
             }
         }
     } else {
-        sum = adcounts.f2;
-        max = adcounts.f8;
-        n = adcounts.f0;
+        fatigue_sum = adcounts.f2;
+        max_fatigue = adcounts.f8;
+        npatients = adcounts.f0;
         sum2 = adcounts.f14;
     }
-    h = &allhosps[owner];
-    if (h->fcaa > 10)
+    hosp = &allhosps[owner];
+    if (hosp->fcaa > 10)
         ++score;
-    else if (h->fcaa > 20)
+    else if (hosp->fcaa > 20)
         score += 2;
     else
         --score;
-    if (h->fc9c > 2) {
-        avg = sum / h->fc9c;
-        if (gbv.fea < max)
+    if (hosp->fc9c > 2) {
+        avg = fatigue_sum / hosp->fc9c;
+        if (gbv.fea < max_fatigue)
             score += 2;
         else if (gbv.fe8 < avg)
             ++score;
@@ -251,27 +251,27 @@ u8 mayor_judges_hospital(u8 owner)
     } else {
         score += 4;
     }
-    if (n > 10) {
-        avg = sum2 / n;
+    if (npatients > 10) {
+        avg = sum2 / npatients;
         if (avg > 0x50 || avg < 0x14)
             ++score;
         else
             --score;
     }
-    for (t = thing + 1; t < end_things; t++) {
-        if ((t->renderer == 4 && t->subtype == 1) && t->owner == owner) {
-            staff++;
-            if (t->unknown124 & 8)
-                tired++;
-            else if (t->unknown124 & 0x80)
-                angry++;
+    for (person = thing + 1; person < end_things; person++) {
+        if ((person->renderer == 4 && person->subtype == 1) && person->owner == owner) {
+            doctors++;
+            if (person->unknown124 & 8)
+                juniors++;
+            else if (person->unknown124 & 0x80)
+                consultants++;
         }
     }
-    if (staff / 2 < tired)
+    if (doctors / 2 < juniors)
         score += 2;
-    if (staff / 2 < angry)
+    if (doctors / 2 < consultants)
         score += -2;
-    if (staff == 0)
+    if (doctors == 0)
         score += 4;
     for (room = room_info + 1; room < end_room_info; room++) {
         if ((room->type != 0 && room->owner == owner) && room->type != 1)
@@ -298,15 +298,15 @@ u8 mayor_judges_hospital(u8 owner)
 }
 
 // FUNCTION: 0x000a1754
-void mayor_gone(Thing *w)
+void mayor_gone(Thing *mayor)
 {
-    if (w->renderer == 0x14) {
-        allhosps[w->owner].f1fa = 4;
-        make_a_playercall(5, 2, 0, w->owner);
+    if (mayor->renderer == 0x14) {
+        allhosps[mayor->owner].f1fa = 4;
+        make_a_playercall(5, 2, 0, mayor->owner);
     } else {
-        allhosps[w->owner].unknown209[1] = 0;
+        allhosps[mayor->owner].unknown209[1] = 0;
     }
-    remove_thing(w);
+    remove_thing(mayor);
 }
 
 // FUNCTION: 0x000a17e8
@@ -315,15 +315,15 @@ void report_mayor_result(u8 owner, char **strs)
     int value;
     char buf[200];
     char text[2000];
-    u16 a;
-    u16 b;
-    int v;
+    u16 text_x;
+    u16 text_y;
+    int line_height;
     char new_line[] = "\n";
 
-    v = lbFontPtr ? lbFontPtr[34].height : 0;
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     text[0] = 0;
-    a = 0;
-    b = 0;
+    text_x = 0;
+    text_y = 0;
     sprintf(buf, strs[0], allhosps[othervar.ff].unknown0);
     fn_000c93bf(text, buf);
     sprintf(buf, strs[1], mayor_names[allhosps[owner].f1f9]);
@@ -350,14 +350,14 @@ void report_mayor_result(u8 owner, char **strs)
         fn_000c93bf(text, new_line);
         fn_000c93bf(text, buf);
     }
-    LbTextDraw(a, b, text);
+    LbTextDraw(text_x, text_y, text);
     D_00156910 = 1;
 }
 
 // FUNCTION: 0x000a1ab4
-void process_mayor_end_buttons(u8 n)
+void process_mayor_end_buttons(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
         D_00158192 = 0x5c;
         break;
@@ -365,24 +365,24 @@ void process_mayor_end_buttons(u8 n)
 }
 
 // FUNCTION: 0x000a1af0
-void mayor_inspects(Thing *w)
+void mayor_inspects(Thing *mayor)
 {
     Thing *door;
-    Thing *obj;
+    Thing *reception_desk;
 
-    if (w->f6c == 0) {
-        obj = &thing[listhead[w->owner].objects[11]];
-        if (obj > thing)
-            w->unknown17 = opposite_angle[obj->unknown17];
+    if (mayor->f6c == 0) {
+        reception_desk = &thing[listhead[mayor->owner].objects[11]];
+        if (reception_desk > thing)
+            mayor->unknown17 = opposite_angle[reception_desk->unknown17];
     } else {
-        door = find_door(w);
+        door = find_door(mayor);
         if (door > thing)
-            w->unknown17 = opposite_angle[door->unknown17];
+            mayor->unknown17 = opposite_angle[door->unknown17];
     }
     {
-        u16 f = check_frame(0x89, w) + w->unknown17;
-        w->sprite = start[f].frame;
-        w->palette = start[f].flags > 0 ? (u8)1 : (u8)0;
+        u16 anim = check_frame(0x89, mayor) + mayor->unknown17;
+        mayor->sprite = start[anim].frame;
+        mayor->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
     }
-    w->timer = 0x32;
+    mayor->timer = 0x32;
 }

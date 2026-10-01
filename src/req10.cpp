@@ -14,13 +14,13 @@ void req10(Window *win)
     s32 room;
     s32 total;
     u32 k;
-    WindowButton *b;
+    WindowButton *button;
 
-    b = win->buttons;
+    button = win->buttons;
     switch (crequester.unknown0) {
     case 1:
-        for (i = 1; b; b = b->next) {
-            if (b->flags & 6) {
+        for (i = 1; button; button = button->next) {
+            if (button->flags & 6) {
                 debug.unknown8 = i;
                 if (i == resvars.fe[0x17]) {
                     D_001549d0[player].type = 0x20;
@@ -47,8 +47,8 @@ void req10(Window *win)
         }
         break;
     case 4:
-        for (i = 1; b; b = b->next) {
-            if (b->flags & 6) {
+        for (i = 1; button; button = button->next) {
+            if (button->flags & 6) {
                 debug.unknown8 = i;
                 if (i == resvars.fe[0x17]) {
                     D_001549d0[player].type = 0x20;
@@ -112,12 +112,12 @@ void req10_overdraw(Window *win)
     s32 total;
     s32 oy;
     s32 ox;
-    WindowButton *b;
+    WindowButton *button;
     CompFrame *fr;
-    u32 sx;
-    u32 sy;
+    u32 scale_x;
+    u32 scale_y;
 
-    b = win->buttons;
+    button = win->buttons;
     croom = crequester.unknown8;
     obj = crequester.unknown3;
     if (resvars.f1 == SCREEN_MODE_13 && loaded_requester != 9)
@@ -139,20 +139,20 @@ void req10_overdraw(Window *win)
         if (othervar.f9bc % 10 == 0) {
             switch (advisor.f120) {
             case 8:
-                for (b = win->buttons; b; b = b->next) {
+                for (button = win->buttons; button; button = button->next) {
                     if (i == resvars.fe[0x17])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x2f]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x2f]]);
                 break;
             case 0xb:
-                for (b = win->buttons; b; b = b->next) {
+                for (button = win->buttons; button; button = button->next) {
                     if (i == resvars.fe[0x1b])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x30]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x30]]);
                 break;
             }
             othervar.f9bc = 0;
@@ -167,17 +167,17 @@ void req10_overdraw(Window *win)
         if (croom) {
             obj = rooms[croom].fa;
             fr = &frame[start[objects[obj].f10].frame];
-            sx = 0x790000 / fr->width;
-            sy = 0x790000 / fr->length;
-            if (sy >= 0x10000 && sx >= 0x10000) {
+            scale_x = 0x790000 / fr->width;
+            scale_y = 0x790000 / fr->length;
+            if (scale_y >= 0x10000 && scale_x >= 0x10000) {
                 draw_a_frame(start[objects[obj].f10].frame, ox + resvars.f1c[0x18].x, oy + resvars.f1c[0x18].y, 0,
                     start[objects[obj].f10].flags);
-            } else if (sy <= sx) {
+            } else if (scale_y <= scale_x) {
                 draw_a_frame_scaled(start[objects[obj].f10].frame, ox + resvars.f1c[0x18].x,
-                    oy + resvars.f1c[0x18].y, 0, start[objects[obj].f10].flags, sy >> 8 << 8);
+                    oy + resvars.f1c[0x18].y, 0, start[objects[obj].f10].flags, scale_y >> 8 << 8);
             } else {
                 draw_a_frame_scaled(start[objects[obj].f10].frame, ox + resvars.f1c[0x18].x,
-                    oy + resvars.f1c[0x18].y, 0, start[objects[obj].f10].flags, sx >> 8 << 8);
+                    oy + resvars.f1c[0x18].y, 0, start[objects[obj].f10].flags, scale_x >> 8 << 8);
             }
         }
         for (i = 0; i < 10; i++) {
@@ -195,10 +195,10 @@ void req10_overdraw(Window *win)
         }
         total = 0;
         for (k = 0; k < rooms[croom].fc; k++) {
-            u8 o;
+            u8 obj_kind;
 
-            o = rooms[croom].objects[k];
-            total += allhosps[player].object_stats[o].cost;
+            obj_kind = rooms[croom].objects[k];
+            total += allhosps[player].object_stats[obj_kind].cost;
         }
         {
             char buf[100];

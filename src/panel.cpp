@@ -638,23 +638,23 @@ void display_panel_person_info(void)
     u8 lines;
     char *text;
     RoomInfo *room;
-    Thing *w;
+    Thing *person;
     char buf[100];
 
-    w = &thing[othervar.f7e];
+    person = &thing[othervar.f7e];
     line = 0;
     height = resvars.f1c_PanelLayoutp->unknown57c;
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
     text = 0;
-    if (w->unknown118 & 4)
+    if (person->unknown118 & 4)
         text = info_bar_text[4];
-    else if (w->unknown118 & 8)
+    else if (person->unknown118 & 8)
         text = info_bar_text[15];
-    else if (w->unknown118 & 0x10)
+    else if (person->unknown118 & 0x10)
         text = info_bar_text[16];
-    else if (w->unknown118 & 0x80)
+    else if (person->unknown118 & 0x80)
         text = info_bar_text[19];
     if (text) {
         line = 1;
@@ -665,54 +665,54 @@ void display_panel_person_info(void)
         lines = 2;
     else
         lines = 1;
-    if (w->f74 & 0x10) {
+    if (person->f74 & 0x10) {
         fn_00036730(info_bar_text[5], &line, lines);
-    } else if (w->f74 & 0x80) {
-        if (w->f75 & 4)
+    } else if (person->f74 & 0x80) {
+        if (person->f75 & 4)
             fn_00036730(info_bar_text[17], &line, lines);
         else
             fn_00036730(info_bar_text[18], &line, lines);
     } else {
-        room = &room_info[w->unknown140];
+        room = &room_info[person->unknown140];
         if (room > room_info && room < end_room_info) {
             sprintf(buf, info_bar_text[6], D_001602cc[rooms[room->type].id]);
             fn_00036730(buf, &line, lines);
         }
-        room = &room_info[w->unknown89];
-        if (room > room_info && room < end_room_info && w->unknown89 != w->unknown140) {
+        room = &room_info[person->unknown89];
+        if (room > room_info && room < end_room_info && person->unknown89 != person->unknown140) {
             sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
             fn_00036730(buf, &line, lines);
         }
     }
-    if (w->f75 & 0x20)
+    if (person->f75 & 0x20)
         fn_00036730(info_bar_text[8], &line, lines);
-    else if (w->f75 & 1)
+    else if (person->f75 & 1)
         fn_00036730(info_bar_text[24], &line, lines);
-    else if (w->f75 & 0x40)
+    else if (person->f75 & 0x40)
         fn_00036730(info_bar_text[9], &line, lines);
-    else if (w->f75 & 0x80)
+    else if (person->f75 & 0x80)
         fn_00036730(info_bar_text[10], &line, lines);
-    else if (w->unknown118 & 1)
+    else if (person->unknown118 & 1)
         fn_00036730(info_bar_text[11], &line, lines);
-    else if (w->f74 & 0x20)
+    else if (person->f74 & 0x20)
         fn_00036730(info_bar_text[25], &line, lines);
-    if (line < 3 && w->style != 0) {
-        if (w->f74 & 0x40) {
+    if (line < 3 && person->style != 0) {
+        if (person->f74 & 0x40) {
             line = 2;
-            sprintf(buf, info_bar_text[22], D_001602a4[w->style]);
+            sprintf(buf, info_bar_text[22], D_001602a4[person->style]);
             fn_00036730(buf, &line, 3);
-        } else if (w->flags32 & 0x21000) {
+        } else if (person->flags32 & 0x21000) {
             u8 k;
 
-            k = w->unknown169;
+            k = person->unknown169;
             line = 2;
-            if (w->unknown118 & 2)
+            if (person->unknown118 & 2)
                 sprintf(buf, info_bar_text[12], D_001602a4[k]);
             else
                 sprintf(buf, info_bar_text[13], D_001602a4[k]);
             fn_00036730(buf, &line, 3);
         } else {
-            fn_00036594(w->unknown146 * 100 / gbv.ffc, info_bar_text[14]);
+            fn_00036594(person->unknown146 * 100 / gbv.ffc, info_bar_text[14]);
         }
     }
 }
@@ -726,29 +726,29 @@ void display_panel_staff_info(void)
     u8 i;
     u8 pct;
     u8 line;
-    Thing *w;
+    Thing *staff;
     RoomInfo *room;
     char buf[100];
     char names[4][50];
 
-    w = &thing[othervar.f7e];
+    staff = &thing[othervar.f7e];
     line = 0;
     height = resvars.f1c_PanelLayoutp->unknown57c;
-    if (w->owner != 0x63) {
+    if (staff->owner != 0x63) {
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
-        fn_000bbff0(buf, D_00160298[w->subtype]);
-        if ((w->subtype == 1 || w->subtype == 4) && (w->unknown124 & 0x1e0)) {
+        fn_000bbff0(buf, D_00160298[staff->subtype]);
+        if ((staff->subtype == 1 || staff->subtype == 4) && (staff->unknown124 & 0x1e0)) {
             fn_000bbff0(buf, "");
             n = 0;
-            if (w->unknown124 & 0x80)
+            if (staff->unknown124 & 0x80)
                 fn_000bbff0(names[n++], D_00160318[7]);
-            if (w->unknown124 & 0x100)
+            if (staff->unknown124 & 0x100)
                 fn_000bbff0(names[n++], D_00160318[8]);
-            if (w->unknown124 & 0x20)
+            if (staff->unknown124 & 0x20)
                 fn_000bbff0(names[n++], D_00160318[5]);
-            if (w->unknown124 & 0x40) {
+            if (staff->unknown124 & 0x40) {
                 if (n == 3)
                     fn_000bbff0(names[n++], info_bar_text[26]);
                 else
@@ -760,19 +760,19 @@ void display_panel_staff_info(void)
         }
         fn_00036730(buf, &line, 2);
         if (resvars.f1 == SCREEN_MODE_13) {
-            room = &room_info[w->unknown89];
+            room = &room_info[staff->unknown89];
             if (room > room_info) {
                 sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
                 fn_00036730(buf, &line, 2);
-            } else if ((w->subtype == 1 && w->kind == 0x14) || w->state_b == 0x20) {
+            } else if ((staff->subtype == 1 && staff->kind == 0x14) || staff->state_b == 0x20) {
                 fn_00036730(info_bar_text[23], &line, 2);
-            } else if (w->kind == 0x34) {
+            } else if (staff->kind == 0x34) {
                 fn_00036730(info_bar_text[27], &line, 2);
             }
         }
-        pct = allhosps[w->owner].f21d * 100 / 1000;
+        pct = allhosps[staff->owner].f21d * 100 / 1000;
         pct > 100 ? pct = 100 : 0;
-        fn_00036594(w->f78 * 100 / 1000, info_bar_text[28]);
+        fn_00036594(staff->f78 * 100 / 1000, info_bar_text[28]);
         fn_000ccac4(pct * (resvars.f18_PanelLayoutp->unknown5e8 - 2) / 100 + (resvars.f18_PanelLayoutp->unknown5e0 + panel->x + 1),
                     resvars.f18_PanelLayoutp->unknown5e4 + (panel->y + resvars.f1c_PanelLayoutp->unknown584 + resvars.f1c_PanelLayoutp->unknown57c * 2 + 1),
                     panel->x + resvars.f18_PanelLayoutp->unknown5e0 + 1 + pct * (resvars.f18_PanelLayoutp->unknown5e8 - 2) / 100,
@@ -785,25 +785,25 @@ void display_panel_staff_info(void)
 // FUNCTION: 0x000345e0
 void display_panel_object_info(void)
 {
-    Thing *w;
+    Thing *obj;
     u8 line;
     char buf[100];
 
-    w = &thing[othervar.f7e];
+    obj = &thing[othervar.f7e];
     line = 0;
     clear_panel_info_bar();
-    if (w->renderer == 6) {
+    if (obj->renderer == 6) {
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
-        fn_00036730(D_0016029c[w->subtype], &line, 3);
+        fn_00036730(D_0016029c[obj->subtype], &line, 3);
         if (resvars.f1 == SCREEN_MODE_13) {
-            sprintf(buf, info_bar_text[30], w->value);
+            sprintf(buf, info_bar_text[30], obj->value);
             fn_00036730(buf, &line, 3);
-            sprintf(buf, info_bar_text[31], w->mode);
+            sprintf(buf, info_bar_text[31], obj->mode);
             fn_00036730(buf, &line, 3);
         } else {
-            sprintf(buf, info_bar_text[31], w->mode);
-            sprintf(buf, "%s/%d", buf, w->value);
+            sprintf(buf, info_bar_text[31], obj->mode);
+            sprintf(buf, "%s/%d", buf, obj->value);
             line = 2;
             fn_00036730(buf, &line, 3);
         }
@@ -813,19 +813,19 @@ void display_panel_object_info(void)
 // FUNCTION: 0x0003474c
 void display_panel_queue_info(void)
 {
-    Thing *w;
+    Thing *selected;
     RoomInfo *room;
     u8 line;
     u8 height;
     char buf[100];
 
-    w = &thing[othervar.f7e];
+    selected = &thing[othervar.f7e];
     line = 0;
     height = resvars.f1c_PanelLayoutp->unknown57c;
-    if (w->renderer == 4)
-        room = w->room;
+    if (selected->renderer == 4)
+        room = selected->room;
     else
-        room = &room_info[w->unknown89];
+        room = &room_info[selected->unknown89];
     if (room > room_info) {
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
@@ -845,18 +845,18 @@ void display_panel_queue_info(void)
 // FUNCTION: 0x000348d4
 void display_panel_mayor_info(void)
 {
-    Thing *w;
+    Thing *mayor;
     u8 line;
 
-    w = &thing[othervar.f7e];
+    mayor = &thing[othervar.f7e];
     line = 0;
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
-    if (w->renderer == 0x14) {
+    if (mayor->renderer == 0x14) {
         fn_00036730(info_bar_text[20], &line, 3);
-        fn_00036730(mayor_names[allhosps[w->owner].f1f9], &line, 3);
-    } else if (w->renderer == 0x16) {
+        fn_00036730(mayor_names[allhosps[mayor->owner].f1f9], &line, 3);
+    } else if (mayor->renderer == 0x16) {
         fn_00036730(info_bar_text[21], &line, 3);
     }
 }
@@ -864,19 +864,19 @@ void display_panel_mayor_info(void)
 // FUNCTION: 0x000349e8
 void display_panel_usage_info(void)
 {
-    Thing *w;
+    Thing *machine;
     u8 line;
     char buf[100];
 
-    w = &thing[othervar.f7e];
+    machine = &thing[othervar.f7e];
     line = 0;
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
-    fn_00036730(D_0016029c[w->subtype], &line, 3);
+    fn_00036730(D_0016029c[machine->subtype], &line, 3);
     if (resvars.f1 != SCREEN_MODE_13)
         line = 2;
-    sprintf(buf, info_bar_text[31], w->mode);
+    sprintf(buf, info_bar_text[31], machine->mode);
     fn_00036730(buf, &line, 3);
 }
 
@@ -888,7 +888,7 @@ void draw_popup_icons(void)
     u8 j;
     s32 y;
     s32 y1;
-    PlayerCall *p;
+    PlayerCall *call;
     TbSprite *spr;
     s32 i;
     s32 x;
@@ -919,48 +919,48 @@ void draw_popup_icons(void)
         for (i = 1; popup_icons[i].unknown0 != 0; i++) {
             if (listhead[player].first[i]) {
                 spr = &game_panel[popup_icons[i].unknown0];
-                p = &playercall[listhead[player].first[i]];
-                if (p->slot < 9) {
-                    if (p->flash) {
-                        if (p->flash > 0x22)
-                            x = resvars.f1c_PanelLayoutp->slots[p->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
+                call = &playercall[listhead[player].first[i]];
+                if (call->slot < 9) {
+                    if (call->flash) {
+                        if (call->flash > 0x22)
+                            x = resvars.f1c_PanelLayoutp->slots[call->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
                         else
                             x = resvars.f1c_PanelLayoutp->slots[0].x + resvars.f1c_PanelLayoutp->unknown4a8;
                     } else {
-                        x = resvars.f1c_PanelLayoutp->slots[p->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
+                        x = resvars.f1c_PanelLayoutp->slots[call->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
                     }
                     y = 0;
-                    if (p->flash) {
-                        x += resvars.f34_Pointp[p->flash].x;
-                        y += resvars.f34_Pointp[p->flash].y;
-                        if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
-                            p->flash = 0;
+                    if (call->flash) {
+                        x += resvars.f34_Pointp[call->flash].x;
+                        y += resvars.f34_Pointp[call->flash].y;
+                        if (resvars.f34_Pointp[call->flash].x == 0 && resvars.f34_Pointp[call->flash].y == 0) {
+                            call->flash = 0;
                         } else {
-                            if (p->flash == 1 && othervar.fa55 != 3) {
+                            if (call->flash == 1 && othervar.fa55 != 3) {
                             } else {
-                                p->flash++;
+                                call->flash++;
                             }
                             for (;;) {
-                                if (resvars.f34_Pointp[p->flash].x < resvars.f1c_PanelLayoutp->slots[p->slot].x) {
-                                    if (resvars.f34_Pointp[p->flash].x == 0 && resvars.f34_Pointp[p->flash].y == 0) {
-                                        if (p->flash > 0x22) {
-                                            p->flash = 0;
+                                if (resvars.f34_Pointp[call->flash].x < resvars.f1c_PanelLayoutp->slots[call->slot].x) {
+                                    if (resvars.f34_Pointp[call->flash].x == 0 && resvars.f34_Pointp[call->flash].y == 0) {
+                                        if (call->flash > 0x22) {
+                                            call->flash = 0;
                                         } else {
-                                            switch (p->slot) {
+                                            switch (call->slot) {
                                             case 4:
                                             case 5:
                                             case 6:
                                             case 7:
-                                                p->flash = 0;
+                                                call->flash = 0;
                                                 break;
                                             default:
-                                                p->flash = 0x22;
+                                                call->flash = 0x22;
                                                 break;
                                             }
                                         }
                                         break;
                                     }
-                                    p->flash++;
+                                    call->flash++;
                                 } else {
                                     break;
                                 }
@@ -1002,20 +1002,20 @@ void draw_popup_icons(void)
         for (i = 1; popup_icons[i].unknown0 != 0; i++) {
             if (listhead[player].first[i]) {
                 spr = &game_panel[popup_icons[i].unknown0];
-                p = &playercall[listhead[player].first[i]];
-                if (p->slot < 9) {
-                    if (p->flash) {
-                        if (p->flash > 0x22)
-                            x = resvars.f1c_PanelLayoutp->slots[p->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
+                call = &playercall[listhead[player].first[i]];
+                if (call->slot < 9) {
+                    if (call->flash) {
+                        if (call->flash > 0x22)
+                            x = resvars.f1c_PanelLayoutp->slots[call->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
                         else
                             x = resvars.f1c_PanelLayoutp->slots[0].x + resvars.f1c_PanelLayoutp->unknown4a8;
                     } else {
-                        x = resvars.f1c_PanelLayoutp->slots[p->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
+                        x = resvars.f1c_PanelLayoutp->slots[call->slot].x + resvars.f1c_PanelLayoutp->unknown4a8;
                     }
                     y = 0;
-                    if (p->flash) {
-                        x += resvars.f34_Pointp[p->flash].x;
-                        y += resvars.f34_Pointp[p->flash].y;
+                    if (call->flash) {
+                        x += resvars.f34_Pointp[call->flash].x;
+                        y += resvars.f34_Pointp[call->flash].y;
                     }
                     if (y == 0) {
                         x1 = x + spr->width;
@@ -1101,13 +1101,13 @@ void draw_popup_icons(void)
 
 
 // FUNCTION: 0x00035624
-void delete_panel_popup(PlayerCall *p)
+void delete_panel_popup(PlayerCall *call)
 {
     u8 i;
 
-    if (p->owner == player) {
+    if (call->owner == player) {
         for (i = 0; i < 9; i++) {
-            if (panel_popup_pos[i] == p - playercall)
+            if (panel_popup_pos[i] == call - playercall)
                 remove_panel_popup(i);
             if (panel_popup_pos[i] == 0)
                 remove_panel_popup(i);
@@ -1119,33 +1119,33 @@ void delete_panel_popup(PlayerCall *p)
 void remove_panel_popup(const u8 slot)
 {
     u8 i;
-    PlayerCall *p;
+    PlayerCall *call;
 
     for (i = slot + 1; i < 9; i++) {
-        p = &playercall[panel_popup_pos[i]];
-        if (p->slot > 0)
-            p->slot--;
+        call = &playercall[panel_popup_pos[i]];
+        if (call->slot > 0)
+            call->slot--;
         panel_popup_pos[i - 1] = panel_popup_pos[i];
     }
     panel_popup_pos[8] = 0;
 }
 
 // FUNCTION: 0x00035760
-void add_panel_popup(PlayerCall *p)
+void add_panel_popup(PlayerCall *call)
 {
     u8 i;
 
     fn_00035824();
-    if (p->owner == player) {
+    if (call->owner == player) {
         for (i = 0; panel_popup_pos[i] != 0; i++)
             ;
         if (i < 9) {
-            p->slot = i;
-            panel_popup_pos[i] = p - playercall;
-            p->flash = 1;
+            call->slot = i;
+            panel_popup_pos[i] = call - playercall;
+            call->flash = 1;
             othervar.fa55 = 2;
         } else {
-            p->slot = 9;
+            call->slot = 9;
         }
         play_sound(10, 0xdd, -1, -1);
     }
@@ -1156,14 +1156,14 @@ void fn_00035824(void)
 {
     u8 i;
     u16 j;
-    PlayerCall *p;
+    PlayerCall *call;
 
     for (i = 0; i < 9; i++)
         panel_popup_pos[i] = 0;
     for (j = 1; popup_icons[j].unknown0 != 0; j++) {
         if (listhead[player].first[j]) {
-            p = &playercall[listhead[player].first[j]];
-            panel_popup_pos[p->slot] = p - playercall;
+            call = &playercall[listhead[player].first[j]];
+            panel_popup_pos[call->slot] = call - playercall;
         }
     }
 }
@@ -1176,13 +1176,13 @@ void maintain_panel_popup(void)
     u16 j;
     u16 k;
     u16 i;
-    PlayerCall *p;
-    PlayerCall *q;
+    PlayerCall *call;
+    PlayerCall *other_call;
 
     fn_00035824();
     for (i = 0; i < 9; i++) {
         if (panel_popup_pos[i]) {
-            p = &playercall[panel_popup_pos[i]];
+            call = &playercall[panel_popup_pos[i]];
             found = 1;
             for (j = 1; popup_icons[j].unknown0 != 0; j++) {
                 if (panel_popup_pos[i] == listhead[player].first[j])
@@ -1196,29 +1196,29 @@ void maintain_panel_popup(void)
     }
     for (j = 1; popup_icons[j].unknown0 != 0; j++) {
         if (listhead[player].first[j]) {
-            p = &playercall[listhead[player].first[j]];
-            if (p->slot < 9 && p->slot > 0) {
-                if (!panel_popup_pos[p->slot - 1]) {
-                    remove_panel_popup(p->slot - 1);
-                    p->slot--;
-                    panel_popup_pos[p->slot] = p - playercall;
-                    p->flash = 1;
+            call = &playercall[listhead[player].first[j]];
+            if (call->slot < 9 && call->slot > 0) {
+                if (!panel_popup_pos[call->slot - 1]) {
+                    remove_panel_popup(call->slot - 1);
+                    call->slot--;
+                    panel_popup_pos[call->slot] = call - playercall;
+                    call->flash = 1;
                 }
             }
         }
     }
     for (j = 1; popup_icons[j].unknown0 != 0; j++) {
         if (listhead[player].first[j]) {
-            p = &playercall[listhead[player].first[j]];
-            if (p->slot < 9) {
-                slot = p->slot;
+            call = &playercall[listhead[player].first[j]];
+            if (call->slot < 9) {
+                slot = call->slot;
                 for (k = 1; popup_icons[k].unknown0 != 0; k++) {
                     if (listhead[player].first[k]) {
-                        q = &playercall[listhead[player].first[k]];
-                        if (q->slot < 9) {
-                            if (q != p) {
-                                if (slot == q->slot)
-                                    q->slot++;
+                        other_call = &playercall[listhead[player].first[k]];
+                        if (other_call->slot < 9) {
+                            if (other_call != call) {
+                                if (slot == other_call->slot)
+                                    other_call->slot++;
                             }
                         }
                     }
@@ -1361,9 +1361,9 @@ u8 display_panel_special_info(void)
     u8 line;
     u8 y;
     s16 x;
-    Thing *w;
+    Thing *selected;
 
-    w = &thing[othervar.f7e];
+    selected = &thing[othervar.f7e];
     line = 0;
     y = resvars.f1c_PanelLayoutp->unknown594;
     i = 0;
@@ -1463,7 +1463,7 @@ void fn_00036730(char *text, u8 *line, u8 lines)
     s32 height;
     s32 width;
     s32 total;
-    char *p;
+    char *cursor;
     char *last;
 
     height = resvars.f1c_PanelLayoutp->unknown57c;
@@ -1475,16 +1475,16 @@ void fn_00036730(char *text, u8 *line, u8 lines)
         }
     } else if (*line + 2 <= lines) {
         total = 0;
-        p = text;
-        while (total < width && *p) {
-            last = p;
-            while (*p && *p != ' ') {
-                total += lbFontPtr ? lbFontPtr[*p - 0x1f].width : 0;
-                p++;
+        cursor = text;
+        while (total < width && *cursor) {
+            last = cursor;
+            while (*cursor && *cursor != ' ') {
+                total += lbFontPtr ? lbFontPtr[*cursor - 0x1f].width : 0;
+                cursor++;
             }
-            if (*p) {
-                total += lbFontPtr ? lbFontPtr[*p - 0x1f].width : 0;
-                p++;
+            if (*cursor) {
+                total += lbFontPtr ? lbFontPtr[*cursor - 0x1f].width : 0;
+                cursor++;
             }
         }
         last[-1] = 0;

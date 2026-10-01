@@ -26,13 +26,13 @@ extern "C" Thing *fn_00019aac(Map *t, u16 kind);
 u8 fn_000b0630(u16 tile, u8 parity)
 {
     Map *cell = &map[(u16)tile];
-    Thing *e = fn_00019aac(cell, 8);
+    Thing *obj = fn_00019aac(cell, 8);
 
-    if (e == 0) {
+    if (obj == 0) {
         return 0;
-    } else if (e->unknown17 % 2 == parity) {
+    } else if (obj->unknown17 % 2 == parity) {
         return 1;
-    } else if (e->unknown17 % 2 != parity) {
+    } else if (obj->unknown17 % 2 != parity) {
         return 0;
     } else {
         return 0;
@@ -126,63 +126,63 @@ void precalculate_shadow_blocks(void)
 void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSprite *dst)
 {
     u8 line[64];
-    s8 *o;
-    u8 *p;
-    s8 *s;
-    s8 *d;
+    s8 *ovr_data;
+    u8 *line_ptr;
+    s8 *src_data;
+    s8 *dst_data;
     u8 row;
-    s8 n;
+    s8 run;
 
     row = 0;
-    s = (s8 *)src->data;
-    d = (s8 *)dst->data;
-    o = (s8 *)ovr->data;
+    src_data = (s8 *)src->data;
+    dst_data = (s8 *)dst->data;
+    ovr_data = (s8 *)ovr->data;
     while (++row <= src->height) {
         if (row <= ovr->height) {
-            p = line;
-            while (*o != 0) {
-                if (*o < 0) {
-                    LbMemorySet(p, 0, -*o);
-                    p -= *o;
-                    o++;
+            line_ptr = line;
+            while (*ovr_data != 0) {
+                if (*ovr_data < 0) {
+                    LbMemorySet(line_ptr, 0, -*ovr_data);
+                    line_ptr -= *ovr_data;
+                    ovr_data++;
                 } else {
-                    n = *o++;
-                    while (n-- > 0)
-                        *p++ = *o++;
+                    run = *ovr_data++;
+                    while (run-- > 0)
+                        *line_ptr++ = *ovr_data++;
                 }
             }
             if (row < src->height)
-                o++;
-            LbMemorySet(p, 0, line + 64 - p);
-            p = line;
-            while (*s != 0) {
-                if (*s > 0) {
-                    n = *s;
-                    *d++ = *s++;
-                    while (n-- > 0) {
-                        if (*p == 0) {
-                            *d++ = *s++;
-                            p++;
+                ovr_data++;
+            LbMemorySet(line_ptr, 0, line + 64 - line_ptr);
+            line_ptr = line;
+            while (*src_data != 0) {
+                if (*src_data > 0) {
+                    run = *src_data;
+                    *dst_data++ = *src_data++;
+                    while (run-- > 0) {
+                        if (*line_ptr == 0) {
+                            *dst_data++ = *src_data++;
+                            line_ptr++;
                         } else {
-                            *d++ = lbDisplay.ghost[(*p++ << 8) + *s++];
+                            *dst_data++ = lbDisplay.ghost[(*line_ptr++ << 8) + *src_data++];
                         }
                     }
                 } else {
-                    p -= *s;
-                    *d++ = *s++;
+                    line_ptr -= *src_data;
+                    *dst_data++ = *src_data++;
                 }
             }
             if (row < src->height)
-                *d++ = *s++;
+                *dst_data++ = *src_data++;
             else
-                *d = *s;
+                *dst_data = *src_data;
         } else {
-            while (*s != 0)
-                *d++ = *s++;
+            while (*src_data != 0)
+                *dst_data++ = *src_data++;
             if (row <= src->height)
-                *d++ = *s++;
+                *dst_data++ = *src_data++;
             else
-                *d = *s;
+                *dst_data = *src_data;
         }
     }
 }

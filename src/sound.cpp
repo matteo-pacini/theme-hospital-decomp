@@ -273,23 +273,23 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
 // FUNCTION: 0x00089204
 void manage_sound(void)
 {
-    SampleInfo *s;
-    Thing *w;
+    SampleInfo *sample;
+    Thing *source;
     s32 volume;
     s32 pan;
     s32 half;
 
-    for (s = GetFirstSampleInfoStructure(); s <= GetLastSampleInfoStructure(); s++) {
-        if (IsSamplePlaying(0, 0, s->SampleHandle)) {
-            if (s->SourceID > 0xe) {
-            if ((Thing *)s->SourceID > thing && (Thing *)s->SourceID < end_things) {
-                w = (Thing *)s->SourceID;
-                give_screen_xy_of_cell_at_column_row(window.unknown2eb, w->x.tile, w->y.tile);
+    for (sample = GetFirstSampleInfoStructure(); sample <= GetLastSampleInfoStructure(); sample++) {
+        if (IsSamplePlaying(0, 0, sample->SampleHandle)) {
+            if (sample->SourceID > 0xe) {
+            if ((Thing *)sample->SourceID > thing && (Thing *)sample->SourceID < end_things) {
+                source = (Thing *)sample->SourceID;
+                give_screen_xy_of_cell_at_column_row(window.unknown2eb, source->x.tile, source->y.tile);
                 info.unknown54 += resvars.f4 / 2;
                 info.unknown58 += resvars.f3 / 2;
-                if (s->SourceID == 0xd) {
+                if (sample->SourceID == 0xd) {
                     if (myhosp->f1d9s == 0)
-                        StopSample(s->SourceID, s->SampleNumber);
+                        StopSample(sample->SourceID, sample->SampleNumber);
                 } else if (info.unknown54 > 0 && info.unknown54 < lbDisplay.unknown18 && info.unknown58 > 0 && info.unknown58 < lbDisplay.unknown1c) {
                     half = lbDisplay.unknown18 / 2;
                     volume = (half - ABS(info.unknown54 - half)) * myplayer.fd / half;
@@ -302,15 +302,15 @@ void manage_sound(void)
                         pan = 0;
                     else if (pan > 0x7f)
                         pan = 0x7f;
-                    if (s->SamplePan != pan)
-                        SetSamplePan(0, 0, pan, s->SampleHandle);
-                    if (s->SampleVolume != volume)
-                        SetSampleVolume(0, 0, volume, s->SampleHandle);
+                    if (sample->SamplePan != pan)
+                        SetSamplePan(0, 0, pan, sample->SampleHandle);
+                    if (sample->SampleVolume != volume)
+                        SetSampleVolume(0, 0, volume, sample->SampleHandle);
                 } else {
-                    StopSample(s->SourceID, s->SampleNumber);
+                    StopSample(sample->SourceID, sample->SampleNumber);
                 }
             } else {
-                StopSample(s->SourceID, s->SampleNumber);
+                StopSample(sample->SourceID, sample->SampleNumber);
             }
             }
         }

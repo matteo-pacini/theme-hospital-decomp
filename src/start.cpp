@@ -93,10 +93,10 @@ extern "C" void fn_00090610(void)
 }
 
 // FUNCTION: 0x00090804
-void fn_00090804(int level, u8 flag)
+void fn_00090804(int level, u8 reload_balance)
 {
     u32 i;
-    u8 saved;
+    u8 saved_fa75;
     AllHosps backup;
 
     myhosp = &allhosps[player];
@@ -108,10 +108,10 @@ void fn_00090804(int level, u8 flag)
         myhosp->f29 = 1;
     else
         myhosp->f29 = level;
-    if (flag)
+    if (reload_balance)
         load_balance(level);
     copy_my_hosp(&backup, myhosp);
-    saved = othervar.fa75;
+    saved_fa75 = othervar.fa75;
     myplayer.f9 += mycontrol->f648;
     memset(thing, 0, 0x40164);
     memset(map, 0, 0x20000);
@@ -130,7 +130,7 @@ void fn_00090804(int level, u8 flag)
     LbMemorySet(&NRAdcounts, 0, 0x11);
     if ((u16)level != 1)
         LbMemorySet(advisor.f0_u8a, 0, 0x133);
-    othervar.fa75 = saved;
+    othervar.fa75 = saved_fa75;
     for (i = 0; i < 9; i++)
         popup_id[i] = 1;
     mycontrol->unknown64f = 1;
@@ -281,69 +281,69 @@ void setup_insurances(void)
 }
 
 // FUNCTION: 0x000910a0
-void init_player(u8 p)
+void init_player(u8 owner)
 {
-    AllHosps *h;
+    AllHosps *hosp;
     u16 i;
 
-    h = &allhosps[p];
-    h->f2b = 2;
-    h->f35 = towns[myhosp->f29].f0;
-    allhosps[p].rooms[0].unknown1C = 1;
+    hosp = &allhosps[owner];
+    hosp->f2b = 2;
+    hosp->f35 = towns[myhosp->f29].f0;
+    allhosps[owner].rooms[0].unknown1C = 1;
     for (i = 0; i < 0x3e; i++) {
         if (objects[i].unknown1c) {
-            h->object_stats[i].unknownC[0] = objects[i].unknown6[1];
-            h->object_stats[i].available = objects[i].fc;
+            hosp->object_stats[i].unknownC[0] = objects[i].unknown6[1];
+            hosp->object_stats[i].available = objects[i].fc;
         }
-        h->object_stats[i].cost = objects[i].cost;
-        h->object_stats[i].unknown8 = objects[i].unknown1d;
+        hosp->object_stats[i].cost = objects[i].cost;
+        hosp->object_stats[i].unknown8 = objects[i].unknown1d;
     }
-    h->fc94 = 5;
+    hosp->fc94 = 5;
     for (i = 0; i < 0x2f; i++) {
-        h->rooms[i].unknownC = expertise[i].f2;
-        h->rooms[i].unknown10 = 10000;
-        h->rooms[i].unknown1D = expertise[i].unknown10[8];
-        setup_drug((u16)p, i);
-        h->rooms[i].f4 = 20;
-        h->rooms[i].f8 = 20;
-        evaluate_reputation(i, p);
+        hosp->rooms[i].unknownC = expertise[i].f2;
+        hosp->rooms[i].unknown10 = 10000;
+        hosp->rooms[i].unknown1D = expertise[i].unknown10[8];
+        setup_drug((u16)owner, i);
+        hosp->rooms[i].f4 = 20;
+        hosp->rooms[i].f8 = 20;
+        evaluate_reputation(i, owner);
     }
     for (i = 0; i < 5; i++)
-        h->research_alloc[i] = 20;
-    count_hospital_area((u16)p);
-    if (myhosp->f29 == 1 || statvar.unknownfd > 1 || h->f2d == 0)
-        h->f2d = 10000;
+        hosp->research_alloc[i] = 20;
+    count_hospital_area((u16)owner);
+    if (myhosp->f29 == 1 || statvar.unknownfd > 1 || hosp->f2d == 0)
+        hosp->f2d = 10000;
     for (i = 0; i < 16; i++)
         gamevar.f14b[i] = 0;
     for (i = 0; i < 20; i++)
         gamevar.f15b[i] = 0;
     if (statvar.unknownfd > 1)
-        h->f1cb = 100 / network_num_players();
+        hosp->f1cb = 100 / network_num_players();
     else
-        h->f1cb = 25;
-    h->f217 = 1000;
-    h->f219 = 90;
-    h->f21b = 10;
-    h->f21d = gbv.fe8;
-    h->f21f = 1;
-    h->f216 = 7;
-    h->unknown20f[6] = 1;
+        hosp->f1cb = 25;
+    hosp->f217 = 1000;
+    hosp->f219 = 90;
+    hosp->f21b = 10;
+    hosp->f21d = gbv.fe8;
+    hosp->f21f = 1;
+    hosp->f216 = 7;
+    hosp->unknown20f[6] = 1;
     if (!(!gbv.f154 || statvar.unknownfd > 1 || gamevar.f174)) {
         if (statvar.unknownfd <= 1)
-            h->unknown1256 = 0;
-        h->unknown1257 = gbv.f154;
+            hosp->unknown1256 = 0;
+        hosp->unknown1257 = gbv.f154;
     } else {
         if (statvar.unknownfd <= 1)
-            h->unknown1256 = 1;
+            hosp->unknown1256 = 1;
     }
     othervar.fa6b = 0;
-    h->f1c3 = h->f35;
-    h->f41 = 15000;
-    h->f31 = h->f2d;
-    h->fc82 = 20;
-    h->fc86 = 20;
-    evaluate_reputation(0, p);
-    calc_pricing_factor(p);
+    hosp->f1c3 = hosp->f35;
+    hosp->f41 = 15000;
+    hosp->f31 = hosp->f2d;
+    hosp->fc82 = 20;
+    hosp->fc86 = 20;
+    evaluate_reputation(0, owner);
+    calc_pricing_factor(owner);
 }
 
 // FUNCTION: 0x000914bc

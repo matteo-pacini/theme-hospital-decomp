@@ -15,41 +15,41 @@ void fn_000444e0(Thing *w);
 }
 
 // FUNCTION: 0x0005c230
-u8 summon_the_reaper(Thing *w)
+u8 summon_the_reaper(Thing *victim)
 {
-    Thing *r;
-    Thing *obj;
-    u16 base;
-    u16 pos2;
-    u16 pos;
+    Thing *reaper;
+    Thing *gate;
+    u16 victim_pos;
+    u16 reaper_pos;
+    u16 gate_pos;
     u16 i;
-    u16 obj_id;
+    u16 gate_id;
     u16 found;
 
-    obj_id = 0;
+    gate_id = 0;
     found = 0;
-    r = &thing[w->unknown73];
-    if (r > thing) {
-        if (r->renderer == 10)
+    reaper = &thing[victim->unknown73];
+    if (reaper > thing) {
+        if (reaper->renderer == 10)
             return 0;
     }
-    r = allocate_thing(0x32);
-    if (r) {
-        r->renderer = 10;
-        base = (u16)w->x.tile + ((u16)w->y.tile << 7);
+    reaper = allocate_thing(0x32);
+    if (reaper) {
+        reaper->renderer = 10;
+        victim_pos = (u16)victim->x.tile + ((u16)victim->y.tile << 7);
         for (i = 1; i <= gate_arrive[0]; i++) {
-            pos = base + gate_arrive[i];
-            if (can_i_get_to(w, pos) > 0) {
-                if (can_place_object(pos, 0x30, 0, w->owner)) {
-                    if (corridor_object_nav_check(pos, 0x30, 0)) {
-                        obj_id = fn_00037098(pos, 0x30, 0, w->owner);
-                        if (obj_id) {
-                            obj = &thing[obj_id];
-                            obj->unknown100__ = start[0x4fa].frame;
-                            obj->unknown102 = start[0x4fa].flags;
-                            if (can_i_get_to(w, obj->room_next) == 0) {
-                                fn_00038d04(obj, obj->owner);
-                                obj_id = 0;
+            gate_pos = victim_pos + gate_arrive[i];
+            if (can_i_get_to(victim, gate_pos) > 0) {
+                if (can_place_object(gate_pos, 0x30, 0, victim->owner)) {
+                    if (corridor_object_nav_check(gate_pos, 0x30, 0)) {
+                        gate_id = fn_00037098(gate_pos, 0x30, 0, victim->owner);
+                        if (gate_id) {
+                            gate = &thing[gate_id];
+                            gate->unknown100__ = start[0x4fa].frame;
+                            gate->unknown102 = start[0x4fa].flags;
+                            if (can_i_get_to(victim, gate->room_next) == 0) {
+                                fn_00038d04(gate, gate->owner);
+                                gate_id = 0;
                             } else {
                                 break;
                             }
@@ -58,46 +58,46 @@ u8 summon_the_reaper(Thing *w)
                 }
             }
         }
-        if (obj_id) {
+        if (gate_id) {
             for (i = 1; i <= reap_arrive[0]; i++) {
-                pos2 = pos + reap_arrive[i];
-                r->x.tile = pos2 % 128;
-                r->y.tile = pos2 / 128;
-                if (can_i_get_to(r, obj->room_prev) > 0) {
+                reaper_pos = gate_pos + reap_arrive[i];
+                reaper->x.tile = reaper_pos % 128;
+                reaper->y.tile = reaper_pos / 128;
+                if (can_i_get_to(reaper, gate->room_prev) > 0) {
                     found = 1;
                     break;
                 }
             }
             if (found) {
-                r->gate = obj_id;
-                r->x.tile = pos2 % 128;
-                r->y.tile = pos2 / 128;
-                r->x.frac = 0x80;
-                r->y.frac = 0x80;
-                r->unknown18 = 0x10;
-                r->anim_speed = 2;
-                r->unknown17 = 1;
-                insert_node(r, r->x, r->y);
-                r->unknown73 = w - thing;
-                w->unknown73 = r - thing;
-                r->sprite = start[check_frame(0x33d, r) + r->unknown17].frame;
-                r->palette = start[check_frame(0x33d, r) + r->unknown17].flags > 0 ? (u8)1 : (u8)0;
-                r->kind = 2;
-                r->timer = 0x5dc;
-                r->unknown19 = obj->room_prev % 128;
-                r->unknown20 = obj->room_prev / 128;
-                r->height = 0;
-                r->next_kind = 8;
-                r->next_sprite = start[check_frame(0x1f1, r) + r->unknown17].frame;
-                r->next_palette = start[check_frame(0x1f1, r) + r->unknown17].flags > 0 ? (u8)1 : (u8)0;
-                fn_000444e0(r);
+                reaper->gate = gate_id;
+                reaper->x.tile = reaper_pos % 128;
+                reaper->y.tile = reaper_pos / 128;
+                reaper->x.frac = 0x80;
+                reaper->y.frac = 0x80;
+                reaper->unknown18 = 0x10;
+                reaper->anim_speed = 2;
+                reaper->unknown17 = 1;
+                insert_node(reaper, reaper->x, reaper->y);
+                reaper->unknown73 = victim - thing;
+                victim->unknown73 = reaper - thing;
+                reaper->sprite = start[check_frame(0x33d, reaper) + reaper->unknown17].frame;
+                reaper->palette = start[check_frame(0x33d, reaper) + reaper->unknown17].flags > 0 ? (u8)1 : (u8)0;
+                reaper->kind = 2;
+                reaper->timer = 0x5dc;
+                reaper->unknown19 = gate->room_prev % 128;
+                reaper->unknown20 = gate->room_prev / 128;
+                reaper->height = 0;
+                reaper->next_kind = 8;
+                reaper->next_sprite = start[check_frame(0x1f1, reaper) + reaper->unknown17].frame;
+                reaper->next_palette = start[check_frame(0x1f1, reaper) + reaper->unknown17].flags > 0 ? (u8)1 : (u8)0;
+                fn_000444e0(reaper);
             } else {
-                fn_00038d04(obj, obj->owner);
-                r->renderer = 0;
+                fn_00038d04(gate, gate->owner);
+                reaper->renderer = 0;
                 return 0;
             }
         } else {
-            r->renderer = 0;
+            reaper->renderer = 0;
             return 0;
         }
     }
@@ -105,44 +105,44 @@ u8 summon_the_reaper(Thing *w)
 }
 
 // FUNCTION: 0x0005c6f8
-void reaper_play_anim(Thing *w)
+void reaper_play_anim(Thing *reaper)
 {
-    CompFrame *f;
+    CompFrame *cur_frame;
 
-    if (actual_game_turn % w->anim_speed == 0) {
-        w->sprite = frame[w->sprite].next;
-        f = &frame[w->sprite];
-        if (f->flags & 1) {
-            if (w->next_kind) {
-                w->kind = w->next_kind;
-                if (w->next_sprite) {
-                    w->sprite = w->next_sprite;
-                    w->palette = w->next_palette;
+    if (actual_game_turn % reaper->anim_speed == 0) {
+        reaper->sprite = frame[reaper->sprite].next;
+        cur_frame = &frame[reaper->sprite];
+        if (cur_frame->flags & 1) {
+            if (reaper->next_kind) {
+                reaper->kind = reaper->next_kind;
+                if (reaper->next_sprite) {
+                    reaper->sprite = reaper->next_sprite;
+                    reaper->palette = reaper->next_palette;
                 }
             } else {
-                reaper_leaves_normally(w);
+                reaper_leaves_normally(reaper);
             }
         }
     }
 }
 
 // FUNCTION: 0x0005c7b4
-void reaper_calls_victim(Thing *w)
+void reaper_calls_victim(Thing *reaper)
 {
     Thing *victim;
     Thing *gate;
 
-    w->unknown17 = 0;
-    w->sprite = start[check_frame(0x1f5, w) + w->unknown17].frame;
-    w->palette = start[check_frame(0x1f5, w) + w->unknown17].flags > 0 ? (u8)1 : (u8)0;
-    w->kind = 4;
-    victim = &thing[w->unknown73];
+    reaper->unknown17 = 0;
+    reaper->sprite = start[check_frame(0x1f5, reaper) + reaper->unknown17].frame;
+    reaper->palette = start[check_frame(0x1f5, reaper) + reaper->unknown17].flags > 0 ? (u8)1 : (u8)0;
+    reaper->kind = 4;
+    victim = &thing[reaper->unknown73];
     if (victim > thing) {
-        gate = &thing[w->gate];
+        gate = &thing[reaper->gate];
         if (gate > thing) {
             if (set_complex(victim, 0x136, gate->room_next)) {
                 victim->depth = 0;
-                victim->unknown69 = w->gate;
+                victim->unknown69 = reaper->gate;
                 victim->state_b = 0x42;
                 process_person_complex(victim);
             }
@@ -151,66 +151,66 @@ void reaper_calls_victim(Thing *w)
 }
 
 // FUNCTION: 0x0005c8e0
-void reaper_waits(Thing *w)
+void reaper_waits(Thing *reaper)
 {
-    CompFrame *f;
+    CompFrame *cur_frame;
     Thing *victim;
     Thing *gate;
 
-    if (actual_game_turn % w->anim_speed == 0) {
-        w->sprite = frame[w->sprite].next;
-        f = &frame[w->sprite];
-        if (f->flags & 1) {
-            victim = &thing[w->unknown73];
+    if (actual_game_turn % reaper->anim_speed == 0) {
+        reaper->sprite = frame[reaper->sprite].next;
+        cur_frame = &frame[reaper->sprite];
+        if (cur_frame->flags & 1) {
+            victim = &thing[reaper->unknown73];
             if (victim > thing) {
                 if (victim->kind == 0x42) {
-                    reaper_leaves_normally(w);
+                    reaper_leaves_normally(reaper);
                     remove_person(victim);
                 } else {
-                    gate = &thing[w->gate];
+                    gate = &thing[reaper->gate];
                     if (gate > thing) {
                         if (((s16)victim->y.tile << 7) + (s16)victim->x.tile == gate->room_next) {
-                            w->sprite = start[check_frame(0x343, w) + w->unknown17].frame;
-                            w->palette = start[check_frame(0x343, w) + w->unknown17].flags > 0 ? (u8)1 : (u8)0;
-                            w->kind = 2;
-                            w->next_kind = 4;
-                            w->next_sprite = start[check_frame(0x1f5, w) + w->unknown17].frame;
-                            w->next_palette = start[check_frame(0x1f5, w) + w->unknown17].flags > 0 ? (u8)1 : (u8)0;
-                        } else if (--w->timer <= 0 || victim->state_b != 0x42) {
-                            reaper_leaves_normally(w);
+                            reaper->sprite = start[check_frame(0x343, reaper) + reaper->unknown17].frame;
+                            reaper->palette = start[check_frame(0x343, reaper) + reaper->unknown17].flags > 0 ? (u8)1 : (u8)0;
+                            reaper->kind = 2;
+                            reaper->next_kind = 4;
+                            reaper->next_sprite = start[check_frame(0x1f5, reaper) + reaper->unknown17].frame;
+                            reaper->next_palette = start[check_frame(0x1f5, reaper) + reaper->unknown17].flags > 0 ? (u8)1 : (u8)0;
+                        } else if (--reaper->timer <= 0 || victim->state_b != 0x42) {
+                            reaper_leaves_normally(reaper);
                         }
                     }
                 }
             } else {
-                reaper_leaves_normally(w);
+                reaper_leaves_normally(reaper);
             }
         }
     }
 }
 
 // FUNCTION: 0x0005cb34
-void reaper_leaves_normally(Thing *w)
+void reaper_leaves_normally(Thing *reaper)
 {
-    w->unknown17 = 0;
-    w->sprite = start[check_frame(0x347, w) + w->unknown17].frame;
-    w->palette = start[check_frame(0x347, w) + w->unknown17].flags > 0 ? (u8)1 : (u8)0;
-    w->kind = 2;
-    w->next_kind = 6;
-    w->next_sprite = 0;
-    w->next_palette = 0;
+    reaper->unknown17 = 0;
+    reaper->sprite = start[check_frame(0x347, reaper) + reaper->unknown17].frame;
+    reaper->palette = start[check_frame(0x347, reaper) + reaper->unknown17].flags > 0 ? (u8)1 : (u8)0;
+    reaper->kind = 2;
+    reaper->next_kind = 6;
+    reaper->next_sprite = 0;
+    reaper->next_palette = 0;
 }
 
 // FUNCTION: 0x0005cbe4
-void remove_reaper(Thing *w)
+void remove_reaper(Thing *reaper)
 {
     Thing *gate;
 
-    gate = &thing[w->gate];
+    gate = &thing[reaper->gate];
     if (gate > thing) {
         gate->kind = 6;
         gate->unknown100__ = start[0x4fc].frame;
         gate->unknown102 = start[0x4fc].flags;
         gate->unknown104w = 1;
     }
-    remove_thing(w);
+    remove_thing(reaper);
 }

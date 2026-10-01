@@ -7,13 +7,13 @@ void fn_000a2770(TbCacheUsedBlock *block);
 // FUNCTION: 0x000a2260
 void TbCache::UsedAndLocked(long &used, long &locked)
 {
-    TbCacheUsedBlock *b;
+    TbCacheUsedBlock *block;
 
     used = 0;
     locked = 0;
-    for (b = oldest; b != 0; b = b->next) {
+    for (block = oldest; block != 0; block = block->next) {
         ++used;
-        if (b->locked)
+        if (block->locked)
             ++locked;
     }
 }
@@ -36,10 +36,10 @@ int TbCache::Initialise(void *mem, u32 size)
 // FUNCTION: 0x000a2344
 void TbCache::UnlockAll(void)
 {
-    TbCacheUsedBlock *b;
+    TbCacheUsedBlock *block;
 
-    for (b = oldest; b != 0; b = b->next)
-        fn_000a2770(b);
+    for (block = oldest; block != 0; block = block->next)
+        fn_000a2770(block);
 }
 
 // FUNCTION: 0x000a2384
@@ -47,36 +47,36 @@ TbCacheUsedBlock *TbCache::Allocate(u32 size, u32 tag)
 {
     u32 total;
     TbCacheFreeBlock *prev;
-    TbCacheFreeBlock *f;
+    TbCacheFreeBlock *free_block;
     TbCacheFreeBlock *rest;
-    TbCacheUsedBlock *b;
+    TbCacheUsedBlock *used_block;
 
     total = size + 0x14;
-    for (f = free, prev = 0; f != 0; prev = f, f = f->next) {
-        if (f->size < total)
+    for (free_block = free, prev = 0; free_block != 0; prev = free_block, free_block = free_block->next) {
+        if (free_block->size < total)
             continue;
-        if (total + 0x14 < f->size) {
-            rest = (TbCacheFreeBlock *)((u32)f + total);
-            rest->next = f->next;
-            f->next = rest;
-            rest->size = f->size - total;
+        if (total + 0x14 < free_block->size) {
+            rest = (TbCacheFreeBlock *)((u32)free_block + total);
+            rest->next = free_block->next;
+            free_block->next = rest;
+            rest->size = free_block->size - total;
         }
         if (prev)
-            prev->next = f->next;
+            prev->next = free_block->next;
         else
-            free = f->next;
+            free = free_block->next;
         count++;
-        b = (TbCacheUsedBlock *)f;
-        b->next = 0;
-        b->prev = newest;
+        used_block = (TbCacheUsedBlock *)free_block;
+        used_block->next = 0;
+        used_block->prev = newest;
         if (newest)
-            newest->next = b;
-        newest = b;
+            newest->next = used_block;
+        newest = used_block;
         if (count == 1)
-            oldest = b;
-        b->tag = tag;
-        b->size = total;
-        return b;
+            oldest = used_block;
+        used_block->tag = tag;
+        used_block->size = total;
+        return used_block;
     }
     return 0;
 }
@@ -84,13 +84,13 @@ TbCacheUsedBlock *TbCache::Allocate(u32 size, u32 tag)
 // FUNCTION: 0x000a24b0
 void TbCache::Free(TbCacheUsedBlock *block)
 {
-    TbCacheFreeBlock *f;
-    TbCacheFreeBlock *p;
+    TbCacheFreeBlock *freed;
+    TbCacheFreeBlock *node;
     u32 size;
     u32 gap;
     int merged;
 
-    f = (TbCacheFreeBlock *)block;
+    freed = (TbCacheFreeBlock *)block;
     size = block->size;
     if (--count == 0) {
         oldest = newest = 0;
@@ -107,32 +107,32 @@ void TbCache::Free(TbCacheUsedBlock *block)
         block->prev->next = block->next;
     else
         oldest = block->next;
-    f->size = size;
+    freed->size = size;
     if (free == 0) {
-        free = f;
-        f->next = 0;
-    } else if (free > f) {
-        f->next = free;
-        free = f;
+        free = freed;
+        freed->next = 0;
+    } else if (free > freed) {
+        freed->next = free;
+        free = freed;
     } else {
-        for (p = free; p->next != 0; p = p->next) {
-            if (p->next > f)
+        for (node = free; node->next != 0; node = node->next) {
+            if (node->next > freed)
                 break;
         }
-        f->next = p->next;
-        p->next = f;
+        freed->next = node->next;
+        node->next = freed;
     }
-    for (p = free; p != 0 && p->next != 0; p = p->next) {
+    for (node = free; node != 0 && node->next != 0; node = node->next) {
         do {
-            gap = (u32)p->next - ((u32)p + p->size);
+            gap = (u32)node->next - ((u32)node + node->size);
             if (gap < 8) {
-                p->size = gap + (p->size + p->next->size);
-                p->next = p->next->next;
+                node->size = gap + (node->size + node->next->size);
+                node->next = node->next->next;
                 merged = 1;
             } else {
                 merged = 0;
             }
-        } while (merged && p->next != 0);
+        } while (merged && node->next != 0);
     }
 }
 
@@ -155,13 +155,13 @@ void TbCache::MakeNewest(TbCacheUsedBlock *block)
 // FUNCTION: 0x000a2704
 u32 TbCache::ThrowOutOldest(void)
 {
-    TbCacheUsedBlock *b;
+    TbCacheUsedBlock *block;
     u32 tag;
 
-    for (b = oldest; b != 0; b = b->next) {
-        if (b->locked == 0) {
-            tag = b->tag;
-            Free(b);
+    for (block = oldest; block != 0; block = block->next) {
+        if (block->locked == 0) {
+            tag = block->tag;
+            Free(block);
             return tag;
         }
     }

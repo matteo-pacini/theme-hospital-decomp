@@ -73,40 +73,40 @@ void __stdcall lose_call(void *buf, u32 a, u32 b)
 // FUNCTION: 0x0009e010
 void format_text(char *text, s16 width)
 {
-    u8 c;
+    u8 saved;
     char *line;
-    char *p;
+    char *cursor;
 
     line = text;
-    p = line;
+    cursor = line;
     for (;;) {
-        c = *p;
-        *p = 0;
+        saved = *cursor;
+        *cursor = 0;
         while (LbTextStringWidth(line) <= width) {
-            *p = c;
-            if (!c)
+            *cursor = saved;
+            if (!saved)
                 return;
-            p++;
-            c = *p;
-            *p = 0;
+            cursor++;
+            saved = *cursor;
+            *cursor = 0;
         }
-        *p = c;
+        *cursor = saved;
         do {
-            --p;
-        } while (*p != ' ');
-        *p = '\n';
-        ++p;
-        line = p;
+            --cursor;
+        } while (*cursor != ' ');
+        *cursor = '\n';
+        ++cursor;
+        line = cursor;
     }
 }
 
 // FUNCTION: 0x0009e0a0
-void remove_newlines(char *s)
+void remove_newlines(char *text)
 {
-    while (*s) {
-        if (*s == '\n')
-            *s = ' ';
-        s++;
+    while (*text) {
+        if (*text == '\n')
+            *text = ' ';
+        text++;
     }
 }
 
@@ -386,12 +386,12 @@ void play_winlose(void)
 void letter_format_text(char *dst, char *src, s16 width)
 {
     s32 unused;
-    u32 col;
-    char *q;
-    u32 w;
+    u32 line_width;
+    char *word_end;
+    u32 word_width;
 
     unused = 0;
-    col = 0;
+    line_width = 0;
     while (*src) {
         while (*src == ' ')
             src++;
@@ -399,24 +399,24 @@ void letter_format_text(char *dst, char *src, s16 width)
             continue;
         if (*src == '/') {
             *dst++ = '\n';
-            col = 0;
+            line_width = 0;
             src++;
             continue;
         }
-        q = src;
-        w = 0;
-        while (!(*q == ' ' || *q == '/' || (s8)*q == 0)) {
-            w += lbFontPtr ? lbFontPtr[*q - 31].width : 0;
-            q++;
+        word_end = src;
+        word_width = 0;
+        while (!(*word_end == ' ' || *word_end == '/' || (s8)*word_end == 0)) {
+            word_width += lbFontPtr ? lbFontPtr[*word_end - 31].width : 0;
+            word_end++;
         }
-        if (w + col > width) {
+        if (word_width + line_width > width) {
             *dst++ = '\n';
-            col = 0;
+            line_width = 0;
         }
         while (!(*src == ' ' || *src == '/' || (s8)*src == 0))
             *dst++ = *src++;
         *dst++ = ' ';
-        col += w + (lbFontPtr ? lbFontPtr[1].width : 0);
+        line_width += word_width + (lbFontPtr ? lbFontPtr[1].width : 0);
     }
     *dst = 0;
 }

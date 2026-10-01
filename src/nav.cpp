@@ -80,23 +80,23 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
 }
 
 // FUNCTION: 0x00044210
-s16 person_head_for(Thing *w, u8 a)
+s16 person_head_for(Thing *person, u8 a)
 {
-    if (THING_PATH(w)->result == 0) {
-        fn_000444e0(w);
+    if (THING_PATH(person)->result == 0) {
+        fn_000444e0(person);
     }
-    nav_person = w;
-    if (w->unknown19 != THING_PATH(w)->x1 || w->unknown20 != THING_PATH(w)->y1) {
-        fn_000444e0(w);
+    nav_person = person;
+    if (person->unknown19 != THING_PATH(person)->x1 || person->unknown20 != THING_PATH(person)->y1) {
+        fn_000444e0(person);
     }
-    return orthonav_whatnext(THING_PATH(w), w->x.tile, w->y.tile, w->unknown17);
+    return orthonav_whatnext(THING_PATH(person), person->x.tile, person->y.tile, person->unknown17);
 }
 
 // FUNCTION: 0x000442a0
 s32 person_in_way(u32 x, u32 y, u32 dir)
 {
     Map *cell;
-    Thing *t;
+    Thing *other;
     s16 id;
     u8 i;
 
@@ -118,17 +118,17 @@ s32 person_in_way(u32 x, u32 y, u32 dir)
     id = cell->first;
     for (i = 0; i < 4; i++) {
         if (id > 0) {
-        t = &thing[id];
-        switch (t->renderer) {
+        other = &thing[id];
+        switch (other->renderer) {
         case 2:
         case 4:
-            if (t != nav_person) {
-                if (t->unknown17 == opposite_angle[nav_person->unknown17])
+            if (other != nav_person) {
+                if (other->unknown17 == opposite_angle[nav_person->unknown17])
                     return 0x8000;
             }
             break;
         }
-        id = t->next;
+        id = other->next;
         } else {
             break;
         }
@@ -140,7 +140,7 @@ s32 person_in_way(u32 x, u32 y, u32 dir)
 s32 person_overlap(void)
 {
     Map *cell;
-    Thing *t;
+    Thing *other;
     s16 id;
     u8 i;
 
@@ -148,18 +148,18 @@ s32 person_overlap(void)
     id = cell->first;
     for (i = 0; i < 4; i++) {
         if (id > 0) {
-        t = &thing[id];
-        switch (t->renderer) {
+        other = &thing[id];
+        switch (other->renderer) {
         case 2:
         case 4:
-            if (t > nav_person) {
-                if (t->unknown17 == nav_person->unknown17) {
+            if (other > nav_person) {
+                if (other->unknown17 == nav_person->unknown17) {
                     return 0x8000;
                 }
             }
             break;
         }
-        id = t->next;
+        id = other->next;
         } else {
             break;
         }
@@ -170,9 +170,9 @@ s32 person_overlap(void)
 extern "C" {
 
 // FUNCTION: 0x000444e0
-void fn_000444e0(Thing *w)
+void fn_000444e0(Thing *person)
 {
-    orthonav_init(THING_PATH(w), w->x.tile, w->y.tile, w->unknown19, w->unknown20);
+    orthonav_init(THING_PATH(person), person->x.tile, person->y.tile, person->unknown19, person->unknown20);
 }
 
 }

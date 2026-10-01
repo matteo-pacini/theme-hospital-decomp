@@ -127,7 +127,7 @@ void draw_menus(void)
     u8 h1;
     u8 h2;
     u8 h3;
-    u8 w;
+    u8 tile_width;
     u8 y0;
     u16 i;
     u16 last;
@@ -144,12 +144,12 @@ void draw_menus(void)
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetClipWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        w = pulldv[1].width;
-        last = lbDisplay.graphics_screen_width - w;
+        tile_width = pulldv[1].width;
+        last = lbDisplay.graphics_screen_width - tile_width;
         reqspr_draw(0, y0, &pulldv[1]);
         reqspr_draw(0, h1, &pulldv[4]);
         reqspr_draw(0, h1 + h2, &pulldv[7]);
-        for (i = w; i < lbDisplay.graphics_screen_width - w; i += w) {
+        for (i = tile_width; i < lbDisplay.graphics_screen_width - tile_width; i += tile_width) {
             reqspr_draw(i, y0, &pulldv[2]);
             reqspr_draw(i, h1, &pulldv[5]);
             reqspr_draw(i, h1 + h2, &pulldv[8]);
@@ -294,7 +294,7 @@ extern "C" void fn_0008add8(void)
     u16 x2;
     u16 x;
     u16 y;
-    u16 n;
+    u16 item_no;
 
     y0 = 0;
     h1 = pulldv[1].height;
@@ -305,14 +305,14 @@ extern "C" void fn_0008add8(void)
             y = pmenu.pulldowns[pmenu.unknown0].y;
         else
             y = pmenu.line_height;
-        n = 0;
+        item_no = 0;
         for (i = 1; i < pmenu.count + pmenu.subcount; i++) {
             if (pmenu.pulldowns[i].active) {
                 if (pmenu.unknown0 == i) {
                     for (j = 0; j < pmenu.pulldowns[i].count; j++) {
                         if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, pmenu.line_height * j + y, pmenu.pulldowns[i].width * pmenu.char_width, pmenu.line_height)) {
-                            debug.unknown8 = n;
-                            othervar.f40 = n;
+                            debug.unknown8 = item_no;
+                            othervar.f40 = item_no;
                             if (!(((pmenu.pulldowns[i].items[j].flags & 1) && statvar.unknownfd > 1) || (!pmenu.pulldowns[i].items[j].f0 && gamevar.unknown21))) {
                                 if (gamevar.f174 && !pmenu.pulldowns[i].items[j].f1) {
                                     play_sound(10, 8, -1, -1);
@@ -337,10 +337,10 @@ extern "C" void fn_0008add8(void)
                             }
                             break;
                         }
-                        n++;
+                        item_no++;
                     }
                 } else {
-                    n += pmenu.pulldowns[i].count;
+                    item_no += pmenu.pulldowns[i].count;
                 }
                 if (pmenu.unknown0 < pmenu.count) {
                     x += pmenu.pulldowns[i].length * pmenu.char_width;
@@ -412,31 +412,31 @@ extern "C" void fn_0008add8(void)
 // FUNCTION: 0x0008b6a0
 extern "C" void fn_0008b6a0(void)
 {
-    u8 n;
+    u8 slot;
 
-    n = othervar.f90 + 1;
-    if (n < 10) {
-        debug.unknown8 = n;
+    slot = othervar.f90 + 1;
+    if (slot < 10) {
+        debug.unknown8 = slot;
         D_001549d0[player].type = 0xd;
-        D_001549d0[player].value = n;
+        D_001549d0[player].value = slot;
     }
 }
 
 // FUNCTION: 0x0008b6f8
 extern "C" void fn_0008b6f8(void)
 {
-    u8 n;
+    u8 slot;
 
-    n = othervar.f90 + 1;
-    debug.unknown8 = n;
-    if (othervar.fa0e[n] == 1) {
+    slot = othervar.f90 + 1;
+    debug.unknown8 = slot;
+    if (othervar.fa0e[slot] == 1) {
         sprintf(othervar.f935, "%s", yesno_text[3]);
-        open_yes_no_requester(0xc, (u16)n, 0, 0x8c, 0x63, 0);
+        open_yes_no_requester(0xc, (u16)slot, 0, 0x8c, 0x63, 0);
     } else {
         D_001549d0[player].type = 0xc;
-        D_001549d0[player].value = n;
-        if (n < 10)
-            othervar.fa0e[n] = 1;
+        D_001549d0[player].value = slot;
+        if (slot < 10)
+            othervar.fa0e[slot] = 1;
     }
 }
 
@@ -592,13 +592,13 @@ extern "C" void fn_0008bb98(void)
 // FUNCTION: 0x0008bcb4
 extern "C" void fn_0008bcb4(void)
 {
-    CompElement *e;
+    CompElement *elem;
 
-    e = element;
-    while (e <= D_00153f70) {
-        e->x = e->x / 2 + 0x46;
-        e->y = e->y / 2 + 0x65;
-        e++;
+    elem = element;
+    while (elem <= D_00153f70) {
+        elem->x = elem->x / 2 + 0x46;
+        elem->y = elem->y / 2 + 0x65;
+        elem++;
     }
 }
 

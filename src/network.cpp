@@ -190,7 +190,7 @@ void add_phone_number(char *number);
 // FUNCTION: 0x0007f9f0
 void read_modem_ini_file(void)
 {
-    char *p;
+    char *value;
     char *buf;
     s32 len;
     char line[128];
@@ -210,21 +210,21 @@ void read_modem_ini_file(void)
     buf[len] = 0xff;
     read_line_from_buf(0, 0, buf);
     read_line_from_buf(line, 0x7f, buf);
-    p = strchr(line, '=');
-    if (p && fn_000cd716(++p) <= 0x50)
-        fn_000bbff0(init_str, p);
+    value = strchr(line, '=');
+    if (value && fn_000cd716(++value) <= 0x50)
+        fn_000bbff0(init_str, value);
     read_line_from_buf(line, 0x7f, buf);
-    p = strchr(line, '=');
-    if (p && fn_000cd716(++p) <= 0x50)
-        fn_000bbff0(dial_str, p);
+    value = strchr(line, '=');
+    if (value && fn_000cd716(++value) <= 0x50)
+        fn_000bbff0(dial_str, value);
     read_line_from_buf(line, 0x7f, buf);
-    p = strchr(line, '=');
-    if (p && fn_000cd716(++p) <= 0x50)
-        fn_000bbff0(hangup_str, p);
+    value = strchr(line, '=');
+    if (value && fn_000cd716(++value) <= 0x50)
+        fn_000bbff0(hangup_str, value);
     read_line_from_buf(line, 0x7f, buf);
-    p = strchr(line, '=');
-    if (p && fn_000cd716(++p) <= 0x50)
-        fn_000bbff0(auto_ans_str, p);
+    value = strchr(line, '=');
+    if (value && fn_000cd716(++value) <= 0x50)
+        fn_000bbff0(auto_ans_str, value);
     read_line_from_buf(0, 1, 0);
     LbMemoryFree(buf);
 }
@@ -889,7 +889,7 @@ void add_number(char c)
 }
 
 // FUNCTION: 0x00081958
-void process_report_buttons(u8 n)
+void process_report_buttons(u8 button)
 {
     if (!(login_control.f17 == 9 || login_control.f17 == 8)) {
         set_glass_map(RestoreDisplay);
@@ -1127,11 +1127,11 @@ s32 network_service_function_init(void);
 s32 network_service_function_connect(void);
 
 // FUNCTION: 0x000822c0
-void process_network_buttons(u8 n)
+void process_network_buttons(u8 button)
 {
     TbNetworkService service;
 
-    switch (n) {
+    switch (button) {
     case 0:
         play_sound(10, 0x43, -1, -1);
         if (CurrentDisplay & 0x40) {
@@ -1170,17 +1170,17 @@ void process_network_buttons(u8 n)
 }
 
 // FUNCTION: 0x0008242c
-void process_level_buttons(u8 n)
+void process_level_buttons(u8 button)
 {
     play_sound(10, 0x43, -1, -1);
-    level_number = net_control.players[n].level;
+    level_number = net_control.players[button].level;
     screen_packet[player].f5 = 2;
 }
 
 // FUNCTION: 0x00082480
-void process_ipx_buttons(u8 n)
+void process_ipx_buttons(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 2:
         if (D_001606cc) {
             play_sound(10, 0x43, -1, -1);
@@ -1246,9 +1246,9 @@ void process_ipx_buttons(u8 n)
 }
 
 // FUNCTION: 0x00082740
-void process_message_buttons(u8 n)
+void process_message_buttons(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
         network_button_message();
         break;
@@ -1272,9 +1272,9 @@ void process_message_buttons(u8 n)
 }
 
 // FUNCTION: 0x00082838
-void process_balance_buttons(u8 n)
+void process_balance_buttons(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
         if (current_balance_file != current_balance_file->next)
             play_sound(10, 0x43, -1, -1);
@@ -1289,9 +1289,9 @@ void process_balance_buttons(u8 n)
 }
 
 // FUNCTION: 0x000828d4
-void process_irq_buttons(u8 n)
+void process_irq_buttons(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
         if (TopIRQ) {
             play_sound(10, 0x43, -1, -1);
@@ -1312,12 +1312,12 @@ void process_irq_buttons(u8 n)
 }
 
 // FUNCTION: 0x000829a4
-void process_serial_buttons(u8 n)
+void process_serial_buttons(u8 button)
 {
     TbNetworkService service;
     s8 bits;
 
-    switch (n) {
+    switch (button) {
     case 0:
         if (login_control.f17 != 5) {
             if (D_001606c8) {
@@ -1387,7 +1387,7 @@ void process_serial_buttons(u8 n)
                 D_0016051c.hangup = hangup_str;
                 D_0016051c.auto_ans = auto_ans_str;
                 if (setup_network(service, &D_0016051c, 2)) {
-                    if (n == 3) {
+                    if (button == 3) {
                         if (network_button_create() == -1) {
                             LbNetwork_Stop();
                             report_message(D_00160308[29]);
@@ -1408,7 +1408,7 @@ void process_serial_buttons(u8 n)
                 }
             }
         } else {
-            if (n == 3) {
+            if (button == 3) {
                 play_sound(10, 0x42, -1, -1);
                 network_button_quit();
             } else {
@@ -1422,14 +1422,14 @@ void process_serial_buttons(u8 n)
 }
 
 // FUNCTION: 0x00082da0
-void process_modem_buttons(u8 n)
+void process_modem_buttons(u8 button)
 {
     if (!(CurrentDisplay & 0x400)) {
         s8 bits;
         TbNetworkService service;
         s32 res;
 
-        switch (n) {
+        switch (button) {
         case 0:
             if (login_control.f17 != 5) {
                 if (D_001605f1) {
@@ -1497,7 +1497,7 @@ void process_modem_buttons(u8 n)
         case 4:
             if (login_control.f17 != 5) {
                 play_sound(10, 0x43, -1, -1);
-                if (n == 3 && BookHilight == -1)
+                if (button == 3 && BookHilight == -1)
                     break;
                 reset_glass_map(0x400);
                 if (myplayer.f56[4] && (int)myplayer.f56[5] >= 0) {
@@ -1516,7 +1516,7 @@ void process_modem_buttons(u8 n)
                     D_0016051c.auto_ans = auto_ans_str;
                     if (setup_network(service, &D_0016051c, 2)) {
                         fn_000bbff0(D_00160594, PhoneBook[BookHilight]);
-                        if (n == 4) {
+                        if (button == 4) {
                             D_001605e8 = network_service_function_init;
                             RestoreDisplay = DesiredDisplay;
                             DesiredDisplay = 4;
@@ -1634,7 +1634,7 @@ void process_modem_buttons(u8 n)
                     }
                 }
             } else {
-                if (n == 3) {
+                if (button == 3) {
                     play_sound(10, 0x42, -1, -1);
                     network_button_quit();
                 } else {
@@ -1649,10 +1649,10 @@ void process_modem_buttons(u8 n)
 }
 
 // FUNCTION: 0x00083554
-void process_number_buttons(u8 n)
+void process_number_buttons(u8 button)
 {
     play_sound(10, 0x43, -1, -1);
-    switch (n) {
+    switch (button) {
     case 0:
         add_number('1');
         break;
@@ -2130,7 +2130,7 @@ void __stdcall players_callback(TbNetworkCallbackData *data, void *arg)
 void draw_players_on_session(u32 session)
 {
     s16 y;
-    u32 n;
+    u32 count;
     u32 i;
 
     player_count = 0;
@@ -2139,11 +2139,11 @@ void draw_players_on_session(u32 session)
     if (player_count <= 3)
         login_control.f1f = 0;
     y = resvars.f3c_NetBoxp[123].y + 4;
-    for (n = 0, i = login_control.f1f; n < 3 && i < 4; i++) {
+    for (count = 0, i = login_control.f1f; count < 3 && i < 4; i++) {
         if (player_names[i][0]) {
             draw_small_centre_text(resvars.f3c_NetBoxp[123].x, resvars.f3c_NetBoxp[123].w, y, player_names[i]);
             y += character_height();
-            n++;
+            count++;
         }
     }
 }
@@ -2462,15 +2462,15 @@ s32 fn_000856c8(s32 n);
 }
 
 // FUNCTION: 0x00085660
-s32 fn_00085660(s32 n)
+s32 fn_00085660(s32 nth)
 {
     s32 i;
 
     for (i = 0; i < 4; i++) {
         if (i != player) {
             if (D_001609c4[i].active) {
-                n--;
-                if (n == 0)
+                nth--;
+                if (nth == 0)
                     return i;
             }
         }
@@ -2479,14 +2479,14 @@ s32 fn_00085660(s32 n)
 }
 
 // FUNCTION: 0x000856c8
-s32 fn_000856c8(s32 n)
+s32 fn_000856c8(s32 nth)
 {
     s32 i;
 
     for (i = 0; i < 4; i++) {
         if (D_001609c4[i].active) {
-            n--;
-            if (n == 0)
+            nth--;
+            if (nth == 0)
                 return i;
         }
     }
@@ -2796,7 +2796,7 @@ void network_read_control(u8 n)
     s32 len;
     char *buf;
     char path[144];
-    char *p;
+    char *cursor;
     char num[4];
     char title[32];
     char name[32];
@@ -2824,8 +2824,8 @@ void network_read_control(u8 n)
     read_line_from_buf(0, 0, buf);
     count = 0;
     while (read_line_from_buf(current_line, 0x100, buf)) {
-        p = strstr(current_line, "#");
-        if (p) {
+        cursor = strstr(current_line, "#");
+        if (cursor) {
             LbMemorySet(num, 0, 3);
             LbMemorySet(title, 0, 0x20);
             LbMemorySet(name, 0, 0x20);
@@ -2861,18 +2861,18 @@ void network_read_control(u8 n)
 // FUNCTION: 0x000864f4
 u8 network_num_players(void)
 {
-    u8 n;
+    u8 count;
 
-    n = 0;
+    count = 0;
     {
         u32 i;
 
         for (i = 0; i < 4; i++) {
             if (D_001609c4[i].active)
-                n++;
+                count++;
         }
     }
-    return n;
+    return count;
 }
 
 extern "C" {
@@ -2964,7 +2964,7 @@ s32 network_service_function(void)
 }
 
 // FUNCTION: 0x00086788
-void process_connecting_buttons(u8 n)
+void process_connecting_buttons(u8 button)
 {
     aborted_net = 1;
 }

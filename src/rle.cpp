@@ -5,30 +5,30 @@ extern "C" {
 // FUNCTION: 0x000bbce0
 s32 fn_000bbce0(s8 *data, s32 len)
 {
-    s8 *p;
+    s8 *src;
     s8 *end;
-    s32 n;
-    s8 c;
+    s32 size;
+    s8 value;
 
-    p = data;
+    src = data;
     end = data + len;
-    n = 0;
-    c = *p++;
-    while (p < end) {
-        if (*p != c) {
-            if (c == 0)
-                n++;
+    size = 0;
+    value = *src++;
+    while (src < end) {
+        if (*src != value) {
+            if (value == 0)
+                size++;
             else
-                n += 2;
-            c = *p;
+                size += 2;
+            value = *src;
         }
-        p++;
+        src++;
     }
-    if (c == 0)
-        n++;
+    if (value == 0)
+        size++;
     else
-        n += 2;
-    return n;
+        size += 2;
+    return size;
 }
 
 // FUNCTION: 0x000bbd70
@@ -36,40 +36,40 @@ s32 fn_000bbd70(s8 *data, s32 len)
 {
     s8 *buf;
     s8 *out;
-    s8 *p;
+    s8 *src;
     s8 *end;
     s32 size;
     s8 run;
-    s8 c;
+    s8 value;
 
-    p = data;
+    src = data;
     end = data + len;
-    c = *p++;
+    value = *src++;
     run = 1;
     size = fn_000bbce0(data, len);
     buf = (s8 *)LbMemoryAlloc(size);
     if (buf == 0)
         return len;
     out = buf;
-    while (p < end) {
-        if (*p != c || run == 0x7f) {
-            if (c == 0)
+    while (src < end) {
+        if (*src != value || run == 0x7f) {
+            if (value == 0)
                 *out++ = -run;
             else {
                 *out++ = run;
-                *out++ = c;
+                *out++ = value;
             }
             run = 0;
-            c = *p;
+            value = *src;
         }
-        p++;
+        src++;
         run++;
     }
-    if (c == 0)
+    if (value == 0)
         *out++ = -run;
     else {
         *out++ = run;
-        *out++ = c;
+        *out++ = value;
     }
     size = out - buf;
     if (size < len)
@@ -83,23 +83,23 @@ s32 fn_000bbd70(s8 *data, s32 len)
 // FUNCTION: 0x000bbea0
 s32 fn_000bbea0(s8 *data, s32 len)
 {
-    s8 *p;
+    s8 *src;
     s8 *end;
-    s32 n;
+    s32 size;
 
-    p = data;
+    src = data;
     end = data + len;
-    n = 0;
-    while (p < end) {
-        if (*p < 0)
-            n -= *p;
+    size = 0;
+    while (src < end) {
+        if (*src < 0)
+            size -= *src;
         else {
-            n += *p;
-            p++;
+            size += *src;
+            src++;
         }
-        p++;
+        src++;
     }
-    return n;
+    return size;
 }
 
 // FUNCTION: 0x000bbf10
@@ -108,24 +108,24 @@ s32 fn_000bbf10(s8 *data, s32 len)
     s8 *buf;
     s8 *out;
     s32 size;
-    s8 *p;
+    s8 *src;
     s8 *end;
 
-    p = data;
+    src = data;
     end = data + len;
     size = fn_000bbea0(data, len);
     buf = (s8 *)LbMemoryAlloc(size);
     if (buf == 0)
         return size;
     out = buf;
-    while (p < end) {
-        if (*p < 0) {
-            memset(out, 0, -*p);
-            out += -*p++;
+    while (src < end) {
+        if (*src < 0) {
+            memset(out, 0, -*src);
+            out += -*src++;
         } else {
-            memset(out, p[1], *p);
-            out += *p;
-            p += 2;
+            memset(out, src[1], *src);
+            out += *src;
+            src += 2;
         }
     }
     fn_000c21e6(data, buf, size);

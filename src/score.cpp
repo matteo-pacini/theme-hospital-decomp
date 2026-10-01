@@ -226,27 +226,27 @@ void fn_00094d34(void)
     u8 i;
     u8 c;
     u16 height;
-    char *p;
+    char *letter;
     s32 x;
     char buf[100];
 
     set_font_from_cache(0x10);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     if (othervar.f9e4)
-        p = TitleText;
+        letter = TitleText;
     else
-        p = &TitleText[TitleLen - 1];
+        letter = &TitleText[TitleLen - 1];
     for (i = 0; i < TitleLen; i++) {
         x = (TitlePos[i] + 0x8000) >> 16;
-        c = p[1];
-        p[1] = 0;
-        LbTextDraw(x, resvars.f40[205].y, p);
-        x += LbTextStringWidth(p);
-        p[1] = c;
+        c = letter[1];
+        letter[1] = 0;
+        LbTextDraw(x, resvars.f40[205].y, letter);
+        x += LbTextStringWidth(letter);
+        letter[1] = c;
         if (othervar.f9e4)
-            p++;
+            letter++;
         else
-            p--;
+            letter--;
     }
     for (i = 0; i < 10; i++) {
         x = (TextPos[i] + 0x8000) >> 16;
@@ -368,9 +368,9 @@ void fn_000951c8(void)
 }
 
 // FUNCTION: 0x0009536c
-void process_hall_buttons(u8 n)
+void process_hall_buttons(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
     case 1:
         if (othervar.f9e4) {

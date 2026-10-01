@@ -48,11 +48,11 @@ void pie_render(s32 x, s32 y, s32 r, s32 h, s32 d, s32 n, Sector *s);
 // FUNCTION: 0x00056d50
 void display_peep_overview(void)
 {
-    u8 n;
-    s32 j;
+    u8 nplayers;
+    s32 slot;
     s32 i;
 
-    n = 4;
+    nplayers = 4;
     switch (D_00158166) {
     case 0:
         load_ingame_pic(0x14, 1, 0x26, 0, SCREEN_MODE_13);
@@ -69,31 +69,31 @@ void display_peep_overview(void)
             D_00158164 = player;
         copy_screen_to_wscreen(bscreen);
         if (lbDisplay.mleft_button) {
-            j = 0;
-            for (i = 0; i < n; i++) {
+            slot = 0;
+            for (i = 0; i < nplayers; i++) {
                 if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                     continue;
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_ScreenBoxp[0x37 + j].x, resvars.f3c_ScreenBoxp[0x37 + j].y,
-                                 resvars.f3c_ScreenBoxp[0x37 + j].w, resvars.f3c_ScreenBoxp[0x37 + j].h))
-                    reqspr_draw(resvars.f3c_ScreenBoxp[0x37 + j].x + 0x13, resvars.f3c_ScreenBoxp[0x37 + j].y, &screen_sprites_tab_start[9]);
-                j++;
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_ScreenBoxp[0x37 + slot].x, resvars.f3c_ScreenBoxp[0x37 + slot].y,
+                                 resvars.f3c_ScreenBoxp[0x37 + slot].w, resvars.f3c_ScreenBoxp[0x37 + slot].h))
+                    reqspr_draw(resvars.f3c_ScreenBoxp[0x37 + slot].x + 0x13, resvars.f3c_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
+                slot++;
             }
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, resvars.f3c_ScreenBoxp[0x3c].w,
                              resvars.f3c_ScreenBoxp[0x3c].h))
                 reqspr_draw(resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, &screen_sprites_tab_start[8]);
         }
         if (lbDisplay.rleft_button) {
-            j = 0;
-            for (i = 0; i < n; i++) {
+            slot = 0;
+            for (i = 0; i < nplayers; i++) {
                 if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                     continue;
-                if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f3c_ScreenBoxp[0x37 + j].x, resvars.f3c_ScreenBoxp[0x37 + j].y,
-                                 resvars.f3c_ScreenBoxp[0x37 + j].w, resvars.f3c_ScreenBoxp[0x37 + j].h)) {
+                if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f3c_ScreenBoxp[0x37 + slot].x, resvars.f3c_ScreenBoxp[0x37 + slot].y,
+                                 resvars.f3c_ScreenBoxp[0x37 + slot].w, resvars.f3c_ScreenBoxp[0x37 + slot].h)) {
                     D_00158164 = i;
                     play_sound(10, 0x43, -1, -1);
-                    reqspr_draw(resvars.f3c_ScreenBoxp[0x37 + j].x + 0x13, resvars.f3c_ScreenBoxp[0x37 + j].y, &screen_sprites_tab_start[9]);
+                    reqspr_draw(resvars.f3c_ScreenBoxp[0x37 + slot].x + 0x13, resvars.f3c_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
                 }
-                j++;
+                slot++;
             }
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f3c_ScreenBoxp[0x3c].x, resvars.f3c_ScreenBoxp[0x3c].y, resvars.f3c_ScreenBoxp[0x3c].w,
                              resvars.f3c_ScreenBoxp[0x3c].h)) {
@@ -125,13 +125,13 @@ void display_peep_overview(void)
 void draw_overview_screen(void)
 {
     s32 height;
-    u8 n;
+    u8 nplayers;
     s32 i;
-    s32 j;
+    s32 slot;
     s32 pct;
 
 
-    n = 4;
+    nplayers = 4;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     set_font_from_cache(0x24);
@@ -141,8 +141,8 @@ void draw_overview_screen(void)
 
         sprintf(buf, "%s %4.4d", D_00160378[0], mycontrol->f648 + 2000);
         LbTextDraw(resvars.f40[0x6f].x, resvars.f40[0x6f].y, buf);
-        j = 0;
-        for (i = 0; i < n; i++) {
+        slot = 0;
+        for (i = 0; i < nplayers; i++) {
             if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                 continue;
             if (D_00158164 == i)
@@ -150,8 +150,8 @@ void draw_overview_screen(void)
             else
                 set_font_from_cache(0x24);
             sprintf(buf, "%s", &allhosps[i]);
-            LbTextDraw(resvars.f40[0x68 + j].x, resvars.f40[0x68 + j].y, buf);
-            j++;
+            LbTextDraw(resvars.f40[0x68 + slot].x, resvars.f40[0x68 + slot].y, buf);
+            slot++;
         }
         buf[0] = 0;
         if (adcounts.f0 > 1) {
@@ -204,27 +204,27 @@ void calculate_piechart(void)
     u8 owner;
     u16 prev;
     u16 total;
-    s32 n;
+    s32 nplayers;
 
     i = 0;
     owner = 0;
     prev = 0;
     total = 0;
-    n = network_num_players();
+    nplayers = network_num_players();
     if (statvar.unknownfd > 1) {
         for (i = 0; i < 4; i++) {
             if (D_001609c4[i].active != 0)
                 total += allhosps[i].f1cb;
         }
         if (total == 0) {
-            for (i = 0; i < n; i++) {
+            for (i = 0; i < nplayers; i++) {
                 slices[i].start = prev;
-                slices[i].end = (slices[i].start + (100 / n << 11) / 100) & 0x7ff;
+                slices[i].end = (slices[i].start + (100 / nplayers << 11) / 100) & 0x7ff;
                 prev = slices[i].end;
             }
             slices[3].end = 0x7ff;
         } else {
-            for (i = 0; i < n; i++) {
+            for (i = 0; i < nplayers; i++) {
                 owner = fn_000856c8(i + 1);
                 slices[i].start = prev;
                 slices[i].end = (slices[i].start + (allhosps[owner].f1cb << 11) / 100) & 0x7ff;
@@ -277,21 +277,21 @@ void draw_piechart(void)
 {
     char buf[0x50];
     s32 i;
-    s32 n;
+    s32 nplayers;
     s32 x;
     s32 y;
-    s32 r;
-    s32 h;
+    s32 rx;
+    s32 ry;
 
-    n = network_num_players();
+    nplayers = network_num_players();
     x = 0x1fa;
     y = 0x78;
-    r = 0x40;
-    h = 0x1e;
+    rx = 0x40;
+    ry = 0x1e;
     set_font_from_cache(0x26);
     if (statvar.unknownfd > 1) {
-        pie_render(x, y, r, h, 0x14, n, slices);
-        for (i = 0; i < n; i++) {
+        pie_render(x, y, rx, ry, 0x14, nplayers, slices);
+        for (i = 0; i < nplayers; i++) {
             s32 tx;
             s32 ty;
 
@@ -301,7 +301,7 @@ void draw_piechart(void)
             LbTextDraw(tx, ty, buf);
         }
     } else {
-        pie_render(x, y, r, h, 0x14, 4, slices);
+        pie_render(x, y, rx, ry, 0x14, 4, slices);
         for (i = 0; i < 4u; i++) {
             s32 tx;
             s32 ty;

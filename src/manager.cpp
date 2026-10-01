@@ -234,9 +234,9 @@ void process_bank_panel(void)
 }
 
 // FUNCTION: 0x0007f50c
-void process_bank_button(u8 n)
+void process_bank_button(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
         if (myhosp->f35 >= 5000 && myhosp->f3d > 0) {
             D_001549d0[player].type = 0x67;

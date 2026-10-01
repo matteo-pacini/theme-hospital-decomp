@@ -61,7 +61,7 @@ void refresh_to_VRAM(void)
                     u8 done;
                     u32 bank;
                     u32 bank2;
-                    u32 n;
+                    u32 dwords;
 
                     bytes = width << 5;
                     done = 0;
@@ -82,11 +82,11 @@ void refresh_to_VRAM(void)
                         } else {
                             bank2 = ((offset + bytes) & 0xffff0000) >> 16;
                             if (bank != bank2) {
-                                n = (0x10000 - (offset & 0xffff)) >> 2;
-                                copy_dwords(dst, src, n);
+                                dwords = (0x10000 - (offset & 0xffff)) >> 2;
+                                copy_dwords(dst, src, dwords);
                                 page = bank2;
                                 LbVesaSetPage(page);
-                                copy_dwords(0xa0000, (n << 2) + src, (width << 3) - n);
+                                copy_dwords(0xa0000, (dwords << 2) + src, (width << 3) - dwords);
                                 dst_next = ((offset + lbDisplay.unknown18) & 0xffff) + 0xa0000;
                                 done = 1;
                             } else {
@@ -104,7 +104,7 @@ void refresh_to_VRAM(void)
 }
 
 // FUNCTION: 0x000ab49c
-void set_all_refresh_zones_in_window(const s32 x1, const s32 y1, const s32 x2, const s32 y2, const u8 a)
+void set_all_refresh_zones_in_window(const s32 x1, const s32 y1, const s32 x2, const s32 y2, const u8 refresh_count)
 {
     s32 zy2;
     s32 zx2;
@@ -144,6 +144,6 @@ void set_all_refresh_zones_in_window(const s32 x1, const s32 y1, const s32 x2, c
         zy2 = cy2 / 32;
         for (y = zy1; y <= (u8)zy2; y++)
             for (x = zx1; x <= (u8)zx2; x++)
-                D_001567c0[x][y] = a;
+                D_001567c0[x][y] = refresh_count;
     }
 }

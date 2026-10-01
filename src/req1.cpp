@@ -9,21 +9,21 @@ void reset_dept_object(void);
 void adjust_build_palette_for_shop(RoomInfo *room)
 {
     u8 counts[0x3f];
-    Thing *w;
+    Thing *room_obj;
     s32 i;
-    s32 obj;
+    s32 obj_type;
 
     memset(counts, 0, 0x3f);
-    for (w = &thing[room->first_object]; w > thing; w = &thing[w->unknown71])
-        counts[w->subtype]++;
+    for (room_obj = &thing[room->first_object]; room_obj > thing; room_obj = &thing[room_obj->unknown71])
+        counts[room_obj->subtype]++;
     memset(othervar.f8f6, 0, 0x3f);
     for (i = rooms[room->type].fc - 1; i >= 0; i--) {
-        obj = rooms[room->type].objects[i];
-        if (counts[obj] == 0) {
-            gamevar.unknown33.unknown0[obj]--;
-            othervar.f8f6[obj]++;
+        obj_type = rooms[room->type].objects[i];
+        if (counts[obj_type] == 0) {
+            gamevar.unknown33.unknown0[obj_type]--;
+            othervar.f8f6[obj_type]++;
         } else {
-            counts[obj]--;
+            counts[obj_type]--;
         }
     }
 }
@@ -46,20 +46,20 @@ void clear_req_indices(void)
 // FUNCTION: 0x00054fc0
 void set_buyable_items(u16 room)
 {
-    u8 obj;
-    u16 n;
+    u8 obj_type;
+    u16 count;
     u16 i;
 
-    n = 0;
+    count = 0;
     crequester.unknown0 = 3;
     crequester.unknown3 = 0;
-    for (i = 0; i < rooms[room].f17 && n < 10; i++) {
-        obj = rooms[room].f18[i];
-        if (allhosps[player].equipment[obj].unknown0 == 1 && objects[obj].unknown1c == 1)
-            req_indices[n++] = obj;
+    for (i = 0; i < rooms[room].f17 && count < 10; i++) {
+        obj_type = rooms[room].f18[i];
+        if (allhosps[player].equipment[obj_type].unknown0 == 1 && objects[obj_type].unknown1c == 1)
+            req_indices[count++] = obj_type;
     }
-    while (n < 10)
-        req_indices[n++] = 0;
+    while (count < 10)
+        req_indices[count++] = 0;
     reset_dept_object();
 }
 
@@ -83,17 +83,17 @@ void buy_compulsory_items(const u16 room)
 void req1_reset_rooms(u16 dept)
 {
     u16 i;
-    u16 n;
+    u16 count;
     u16 room;
 
-    n = 0;
+    count = 0;
     for (i = 0; i < departments[dept].count; i++) {
         room = departments[dept].rooms[i];
         if (room_available(room))
-            req_indices[n++] = room;
+            req_indices[count++] = room;
     }
-    while (n < 10)
-        req_indices[n++] = 0;
+    while (count < 10)
+        req_indices[count++] = 0;
 }
 
 // FUNCTION: 0x00055214
@@ -110,10 +110,10 @@ u16 room_available(u16 room)
 }
 
 // FUNCTION: 0x000552e8
-void req1_buy_object(const u16 obj, const s32 n)
+void req1_buy_object(const u16 obj, const s32 amount)
 {
-    if (gamevar.unknown33.unknown0[obj] + n < 0x63)
-        gamevar.unknown33.unknown0[obj] += n;
+    if (gamevar.unknown33.unknown0[obj] + amount < 0x63)
+        gamevar.unknown33.unknown0[obj] += amount;
     else
         gamevar.unknown33.unknown0[obj] = 0x63;
 }

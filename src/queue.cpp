@@ -17,7 +17,7 @@ void front_queue(const u16 room_id, const u16 pos)
     u16 size;
     u16 i;
     u16 id;
-    Thing *w;
+    Thing *person;
     Thing *head;
 
     room = &room_info[room_id];
@@ -26,25 +26,25 @@ void front_queue(const u16 room_id, const u16 pos)
             if (size = queue_size(room)) {
                 i = 1;
                 if (id = room->queue_head) {
-                    w = &thing[id];
+                    person = &thing[id];
                     while (1) {
                         if (pos == i) {
-                            leave_queue(w);
+                            leave_queue(person);
                             id = room->queue_head;
                             head = &thing[id];
-                            room->queue_head = w - thing;
+                            room->queue_head = person - thing;
                             room->unknown31++;
-                            w->unknown140 = room - room_info;
-                            w->queue_prev = 0;
-                            w->queue_next = id;
-                            head->queue_prev = w - thing;
+                            person->unknown140 = room - room_info;
+                            person->queue_prev = 0;
+                            person->queue_next = id;
+                            head->queue_prev = person - thing;
                             return;
                         }
-                        if (w->queue_next == 0) {
+                        if (person->queue_next == 0) {
                             return;
                         }
-                        id = w->queue_next;
-                        w = &thing[id];
+                        id = person->queue_next;
+                        person = &thing[id];
                         i++;
                     }
                 }
@@ -60,7 +60,7 @@ void back_queue(const u16 room_id, const u16 pos)
     u16 size;
     u16 id;
     u16 i;
-    Thing *w;
+    Thing *person;
 
     room = &room_info[room_id];
     if (room > room_info) {
@@ -68,18 +68,18 @@ void back_queue(const u16 room_id, const u16 pos)
             i = 1;
             if (size = queue_size(room)) {
                 if (id = room->queue_head) {
-                    w = &thing[id];
+                    person = &thing[id];
                     while (1) {
                         if (pos == i) {
-                            leave_queue(w);
-                            join_queue(w, room);
+                            leave_queue(person);
+                            join_queue(person, room);
                             return;
                         }
-                        if (w->queue_next == 0) {
+                        if (person->queue_next == 0) {
                             return;
                         }
-                        id = w->queue_next;
-                        w = &thing[id];
+                        id = person->queue_next;
+                        person = &thing[id];
                         i++;
                     }
                 }
@@ -89,26 +89,26 @@ void back_queue(const u16 room_id, const u16 pos)
 }
 
 // FUNCTION: 0x0004af50
-void join_queue(Thing *w, RoomInfo *room)
+void join_queue(Thing *person, RoomInfo *room)
 {
     u16 id;
     Thing *tail;
 
-    leave_queue(w);
+    leave_queue(person);
     if (id = room->queue_head) {
         tail = &thing[id];
         while (tail->queue_next != 0) {
             id = tail->queue_next;
             tail = &thing[id];
         }
-        tail->queue_next = w - thing;
-        w->queue_prev = id;
+        tail->queue_next = person - thing;
+        person->queue_prev = id;
     } else {
-        room->queue_head = w - thing;
-        w->queue_prev = 0;
+        room->queue_head = person - thing;
+        person->queue_prev = 0;
     }
-    w->queue_next = 0;
-    w->unknown140 = room - room_info;
+    person->queue_next = 0;
+    person->unknown140 = room - room_info;
     room->unknown31++;
     if (room->unknown32) {
         room->unknown32--;
@@ -116,40 +116,40 @@ void join_queue(Thing *w, RoomInfo *room)
 }
 
 // FUNCTION: 0x0004b058
-void leave_queue(Thing *w)
+void leave_queue(Thing *person)
 {
     u16 id;
     Thing *next;
     RoomInfo *room;
 
-    room = &room_info[w->unknown140];
+    room = &room_info[person->unknown140];
     if (room > room_info && room < end_room_info) {
-        if (w->queue_prev == 0) {
-            if ((u16)(w - thing) == room->queue_head) {
-                id = w->queue_next;
+        if (person->queue_prev == 0) {
+            if ((u16)(person - thing) == room->queue_head) {
+                id = person->queue_next;
                 next = &thing[id];
                 if (next > thing) {
                     next->queue_prev = 0;
                 }
                 room->queue_head = id;
             }
-        } else if ((thing[w->queue_prev].queue_next = w->queue_next) > 0) {
-            thing[w->queue_next].queue_prev = w->queue_prev;
+        } else if ((thing[person->queue_prev].queue_next = person->queue_next) > 0) {
+            thing[person->queue_next].queue_prev = person->queue_prev;
         }
         if (room->unknown31 > 0) {
             room->unknown31--;
         }
-    } else if (w->unknown89) {
-        if (room_info[w->unknown89].type != 4) {
-            if (room_info[w->unknown89].unknown32 != 0) {
-                room_info[w->unknown89].unknown32--;
+    } else if (person->unknown89) {
+        if (room_info[person->unknown89].type != 4) {
+            if (room_info[person->unknown89].unknown32 != 0) {
+                room_info[person->unknown89].unknown32--;
             }
         }
-        w->unknown89 = 0;
+        person->unknown89 = 0;
     }
-    w->queue_next = 0;
-    w->queue_prev = 0;
-    w->unknown140 = 0;
+    person->queue_next = 0;
+    person->queue_prev = 0;
+    person->unknown140 = 0;
 }
 
 // FUNCTION: 0x0004b21c
@@ -159,12 +159,12 @@ u16 queue_size(RoomInfo *room)
 }
 
 // FUNCTION: 0x0004b244
-u16 which_queue(Thing *w)
+u16 which_queue(Thing *person)
 {
     Thing *head;
     RoomInfo *room;
 
-    head = w;
+    head = person;
     while (head->queue_prev) {
         head = &thing[head->queue_prev];
     }
@@ -177,10 +177,10 @@ u16 which_queue(Thing *w)
 }
 
 // FUNCTION: 0x0004b2f4
-void process_queue_button(u8 n)
+void process_queue_button(u8 button)
 {
-    debug.unknown8 = n;
-    switch (n) {
+    debug.unknown8 = button;
+    switch (button) {
     case 0:
         if (othervar.f63) {
             D_001549d0[player].type = 0x3c;
@@ -263,12 +263,12 @@ void process_queue_button(u8 n)
 void queue_person_go_home(const u16 room_id, const u16 pos)
 {
     u16 id;
-    Thing *w;
+    Thing *person;
 
     id = get_real_person_from_room(room_id, pos);
-    w = &thing[id];
-    if (w > thing) {
-        person_go_home(w);
+    person = &thing[id];
+    if (person > thing) {
+        person_go_home(person);
     }
 }
 
@@ -276,14 +276,14 @@ void queue_person_go_home(const u16 room_id, const u16 pos)
 void queue_person_go_reception(const u16 room_id, const u16 pos)
 {
     u16 id;
-    Thing *w;
+    Thing *person;
 
     id = get_real_person_from_room(room_id, pos);
-    w = &thing[id];
-    if (w > thing) {
-        leave_queue(w);
-        interrupt_person(w);
-        start_person_going(w);
+    person = &thing[id];
+    if (person > thing) {
+        leave_queue(person);
+        interrupt_person(person);
+        start_person_going(person);
     }
 }
 
@@ -292,20 +292,20 @@ u16 get_real_person_from_room(const u16 room_id, const u16 pos)
 {
     u32 i;
     RoomInfo *room;
-    Thing *w;
+    Thing *person;
 
     i = 1;
     room = &room_info[room_id];
-    w = &thing[room->queue_head];
-    if (w > thing) {
+    person = &thing[room->queue_head];
+    if (person > thing) {
         while (1) {
             if (pos == i) {
-                return w - thing;
+                return person - thing;
             }
-            if (w->queue_next == 0) {
+            if (person->queue_next == 0) {
                 break;
             }
-            w = &thing[w->queue_next];
+            person = &thing[person->queue_next];
             i++;
         }
     }
@@ -316,35 +316,35 @@ u16 get_real_person_from_room(const u16 room_id, const u16 pos)
 void queue_person_to_new_queue(const u16 room_id, const u16 id)
 {
     RoomInfo *room;
-    Thing *w;
+    Thing *person;
     u8 reception;
 
     room = &room_info[room_id];
     if (room > room_info) {
-        w = &thing[id];
-        if (w > thing) {
-            if (person_ok_to_call(w)) {
-                leave_queue(w);
-                interrupt_person(w);
+        person = &thing[id];
+        if (person > thing) {
+            if (person_ok_to_call(person)) {
+                leave_queue(person);
+                interrupt_person(person);
                 if (room->type == 4) {
-                    reception = find_nearest_manned_reception(w, room - room_info, 0);
+                    reception = find_nearest_manned_reception(person, room - room_info, 0);
                     if (reception) {
-                        fn_0004195c(w, thing[reception].room_next);
+                        fn_0004195c(person, thing[reception].room_next);
                     }
                 } else {
                     room->unknown32++;
-                    page_staff_i_need(w, room);
-                    fn_0004195c(w, room->unknown4);
+                    page_staff_i_need(person, room);
+                    fn_0004195c(person, room->unknown4);
                 }
-                w->unknown89 = room - room_info;
+                person->unknown89 = room - room_info;
                 {
                     u16 frame;
 
-                    frame = check_frame(anim_starts[w->subtype].idle, w) + (u16)w->unknown17;
-                    w->sprite = start[frame].frame;
-                    w->palette = start[frame].flags > 0 ? (u8)1 : (u8)0;
+                    frame = check_frame(anim_starts[person->subtype].idle, person) + (u16)person->unknown17;
+                    person->sprite = start[frame].frame;
+                    person->palette = start[frame].flags > 0 ? (u8)1 : (u8)0;
                 }
-                w->kind = 0x24;
+                person->kind = 0x24;
             }
         }
     }
@@ -353,18 +353,18 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
 // FUNCTION: 0x0004b988
 s16 spare_queue_capacity(const u16 type, const u8 waiting, RoomInfo *room, const u8 owner)
 {
-    Expertise *e;
-    RoomInfo *r;
+    Expertise *exp;
+    RoomInfo *cand;
     s16 spare;
 
-    e = &expertise[type];
+    exp = &expertise[type];
     if (room == 0) {
-        for (r = room_info + 1; r < end_room_info; r++) {
-            if (r->f3 >= 0 && r->owner == owner) {
-                if (r->type == e->category) {
-                    spare = r->f1e - r->unknown31;
+        for (cand = room_info + 1; cand < end_room_info; cand++) {
+            if (cand->f3 >= 0 && cand->owner == owner) {
+                if (cand->type == exp->category) {
+                    spare = cand->f1e - cand->unknown31;
                     if (waiting) {
-                        spare -= r->unknown32;
+                        spare -= cand->unknown32;
                     }
                     if (spare > 0) {
                         return spare;
@@ -388,21 +388,21 @@ s16 spare_queue_capacity(const u16 type, const u8 waiting, RoomInfo *room, const
 s16 all_queue_capacity(const u16 type, const u8 waiting, const u8 owner)
 {
     s32 total;
-    Expertise *e;
-    RoomInfo *r;
+    Expertise *exp;
+    RoomInfo *cand;
     s32 spare;
 
     total = 0;
     if (allhosps[owner].rooms[type].unknown1C == 0) {
         return 0;
     }
-    e = &expertise[type];
-    for (r = room_info + 1; r < end_room_info; r++) {
-        if (r->f3 >= 0 && r->owner == owner) {
-            if (r->type == e->category) {
-                spare = r->f1e - r->unknown31;
+    exp = &expertise[type];
+    for (cand = room_info + 1; cand < end_room_info; cand++) {
+        if (cand->f3 >= 0 && cand->owner == owner) {
+            if (cand->type == exp->category) {
+                spare = cand->f1e - cand->unknown31;
                 if (waiting) {
-                    spare -= r->unknown32;
+                    spare -= cand->unknown32;
                 }
                 if (spare > 0) {
                     total += spare;
@@ -416,29 +416,29 @@ s16 all_queue_capacity(const u16 type, const u8 waiting, const u8 owner)
 // FUNCTION: 0x0004bb90
 void restart_all_queue_peeps(RoomInfo *room)
 {
-    Thing *w;
+    Thing *person;
 
-    while ((w = &thing[room->queue_head]) > thing) {
-        interrupt_person(w);
-        leave_queue(w);
-        start_person_going(w);
+    while ((person = &thing[room->queue_head]) > thing) {
+        interrupt_person(person);
+        leave_queue(person);
+        start_person_going(person);
     }
 }
 
 // FUNCTION: 0x0004bbec
 void flag_all_queue_members(RoomInfo *room)
 {
-    Thing *w;
+    Thing *person;
 
     if (room > room_info) {
-        w = &thing[room->queue_head];
-        if (w > thing) {
+        person = &thing[room->queue_head];
+        if (person > thing) {
             while (1) {
-                set_icon_value(w, 0x1a);
-                if (w->queue_next == 0) {
+                set_icon_value(person, 0x1a);
+                if (person->queue_next == 0) {
                     break;
                 }
-                w = &thing[w->queue_next];
+                person = &thing[person->queue_next];
             }
             if (game_turn - 1 != D_001603d0 || D_001603d4 != room)
                 play_sound(10, 1, -1, -1);

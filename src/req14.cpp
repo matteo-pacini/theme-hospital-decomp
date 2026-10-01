@@ -17,12 +17,12 @@ u8 does_room_contain_compulsory_objects(RoomInfo *room);
 // FUNCTION: 0x0009f0c0
 void req14(Window *win)
 {
-    WindowButton *b;
+    WindowButton *button;
     s32 i;
 
-    b = win->buttons;
-    for (b = win->buttons, i = 1; b; b = b->next, i++) {
-        if (!(b->flags & 6) || (crequester.unknown4 & (1 << i)))
+    button = win->buttons;
+    for (button = win->buttons, i = 1; button; button = button->next, i++) {
+        if (!(button->flags & 6) || (crequester.unknown4 & (1 << i)))
             continue;
         if (resvars.fe[0x4f] == i) {
             setup_abort_all_requesters();
@@ -68,23 +68,23 @@ void req14_overdraw(Window *win)
 {
     u8 i;
     u8 hover;
-    s32 off;
-    WindowButton *b;
+    s32 off_sprite;
+    WindowButton *button;
     s32 ox;
     s32 oy;
     s32 by;
-    s32 n;
-    s32 on;
+    s32 rows;
+    s32 on_sprite;
     s32 j;
     s32 bx;
-    u32 k;
+    u32 obj;
     s32 count;
     s32 top;
     char buf[8];
 
     ox = win->x;
     oy = win->y;
-    n = 0;
+    rows = 0;
     bx = ox + resvars.f1c[0x6e].x;
     hover = 0;
     if (advisor.f11f & 1) {
@@ -92,33 +92,33 @@ void req14_overdraw(Window *win)
         othervar.f9bc++;
         if (othervar.f9bc % 10 == 0) {
             if (advisor.f120 == resvars.fe[0x4f]) {
-                for (b = win->buttons; b; b = b->next) {
+                for (button = win->buttons; button; button = button->next) {
                     if (i == resvars.fe[0x4f])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x18]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x18]]);
             } else if (advisor.f120 == resvars.fe[0x50]) {
-                for (b = win->buttons; b; b = b->next) {
+                for (button = win->buttons; button; button = button->next) {
                     if (i == resvars.fe[0x50])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x19]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x19]]);
             } else if (advisor.f120 == resvars.fe[0x51]) {
-                for (b = win->buttons; b; b = b->next) {
+                for (button = win->buttons; button; button = button->next) {
                     if (i == resvars.fe[0x51])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x1a]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x1a]]);
             } else if (advisor.f120 == resvars.fe[0x52]) {
-                for (b = win->buttons; b; b = b->next) {
+                for (button = win->buttons; button; button = button->next) {
                     if (i == resvars.fe[0x52])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x1b]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x1b]]);
             }
             othervar.f9bc = 0;
         }
@@ -126,28 +126,28 @@ void req14_overdraw(Window *win)
     compute_help_text(ox, oy, 0xd);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
-    for (b = win->buttons, j = 1; b; b = b->next, j++) {
-        off = 0;
-        on = 0;
+    for (button = win->buttons, j = 1; button; button = button->next, j++) {
+        off_sprite = 0;
+        on_sprite = 0;
         if (!((crequester.unknown4 & (1 << j)) || (crequester.unknown6 & (1 << j))))
             continue;
         if (resvars.fe[0x4f] == j) {
-            on = resvars.f12[0x14];
-            off = resvars.f12[0x18];
+            on_sprite = resvars.f12[0x14];
+            off_sprite = resvars.f12[0x18];
         } else if (resvars.fe[0x50] == j) {
-            on = resvars.f12[0x15];
-            off = resvars.f12[0x19];
+            on_sprite = resvars.f12[0x15];
+            off_sprite = resvars.f12[0x19];
         } else if (resvars.fe[0x51] == j) {
-            on = resvars.f12[0x16];
-            off = resvars.f12[0x1a];
+            on_sprite = resvars.f12[0x16];
+            off_sprite = resvars.f12[0x1a];
         } else if (resvars.fe[0x52] == j) {
-            on = resvars.f12[0x17];
-            off = resvars.f12[0x1b];
+            on_sprite = resvars.f12[0x17];
+            off_sprite = resvars.f12[0x1b];
         }
         if (crequester.unknown4 & (1 << j))
-            reqspr_draw(b->x + ox, b->y + oy, &button_sprite[on]);
+            reqspr_draw(button->x + ox, button->y + oy, &button_sprite[on_sprite]);
         else
-            reqspr_draw(b->x + ox, b->y + oy, &button_sprite[off]);
+            reqspr_draw(button->x + ox, button->y + oy, &button_sprite[off_sprite]);
     }
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
@@ -164,61 +164,61 @@ void req14_overdraw(Window *win)
     top = oy + resvars.f1c[0x6e].y;
     by = top;
     if (crequester.unknown0 >= 6) {
-        for (k = 0; k < 0x3e && n < (resvars.f1 == SCREEN_MODE_13 ? 8 : 6); k++) {
-            count = gamevar.buy_count[k];
+        for (obj = 0; obj < 0x3e && rows < (resvars.f1 == SCREEN_MODE_13 ? 8 : 6); obj++) {
+            count = gamevar.buy_count[obj];
             if (count) {
                 reqspr_draw(bx, by, &button_sprite[resvars.f12[0x1d]]);
                 if ((ox + resvars.f18[0x27].x <= lbDisplay.mmouse_x && ox + resvars.f18[0x27].x + resvars.f18[0x27].w > lbDisplay.mmouse_x)
                     && by + resvars.f18[0x29].y <= lbDisplay.mmouse_y
                     && by + resvars.f18[0x27].y + resvars.f18[0x27].h > lbDisplay.mmouse_y) {
-                    if (D_00145328 != k)
+                    if (D_00145328 != obj)
                         play_sound(10, 0x44, -1, -1);
-                    D_00145328 = k;
+                    D_00145328 = obj;
                     hover = 1;
                     if (lbDisplay.mleft_button) {
-                        if (crequester.unknown9 != k)
+                        if (crequester.unknown9 != obj)
                             play_sound(10, 0x43, -1, -1);
-                        crequester.unknown9 = k;
-                        init_place_object(k, gamevar.unknown26, gamevar.unknown2f, 0);
+                        crequester.unknown9 = obj;
+                        init_place_object(obj, gamevar.unknown26, gamevar.unknown2f, 0);
                         set_edit_room_requester_mode(6);
                     }
                 }
                 by += resvars.f1c[0x6f].y;
-                n++;
+                rows++;
             }
         }
         if (!hover)
             D_00145328 = -1;
-        if (n) {
+        if (rows) {
             reqspr_draw(bx, by + resvars.f1c[0x71].y, &button_sprite[resvars.f12[0x1e]]);
             reqspr_draw(bx, oy + resvars.f1c[0x70].y, &button_sprite[resvars.f12[0x1c]]);
         }
-        gamevar.unknown71 = n;
+        gamevar.unknown71 = rows;
         lbDisplay.draw_flags = 0x100;
         by = top;
-        n = 0;
-        for (k = 0; k < 0x3e && n < (resvars.f1 == SCREEN_MODE_13 ? 8 : 6); k++) {
-            count = gamevar.buy_count[k];
+        rows = 0;
+        for (obj = 0; obj < 0x3e && rows < (resvars.f1 == SCREEN_MODE_13 ? 8 : 6); obj++) {
+            count = gamevar.buy_count[obj];
             if (count) {
-                if (crequester.unknown9 == k) {
+                if (crequester.unknown9 == obj) {
                     lbDisplay.draw_flags |= 0x10;
                     LbDrawBox(ox + resvars.f18[0x27].x, by + resvars.f18[0x27].y, resvars.f18[0x27].w, resvars.f18[0x27].h,
                         color.unknownD);
                     lbDisplay.draw_flags ^= 0x10;
                 }
-                if (k == D_00145328)
+                if (obj == D_00145328)
                     set_font_from_cache(2);
                 else
                     set_font_from_cache(1);
                 LbTextSetClipWindow(ox + resvars.f18[0x27].x, by + resvars.f18[0x27].y,
                     resvars.f18[0x29].w + resvars.f18[0x28].w + 0x14, resvars.f18[0x27].h);
                 LbTextSetJustifyWindow(ox + resvars.f18[0x28].x, by + resvars.f18[0x28].y, resvars.f18[0x28].w);
-                LbTextDraw(0, 0, D_0016029c[k]);
+                LbTextDraw(0, 0, D_0016029c[obj]);
                 LbTextSetJustifyWindow(ox + resvars.f18[0x29].x, by + resvars.f18[0x29].y, resvars.f18[0x29].w);
                 sprintf(buf, "%d", count);
                 LbTextDraw(0, 0, buf);
                 by += resvars.f1c[0x6f].y;
-                n++;
+                rows++;
             }
         }
         lbDisplay.draw_flags = 0;

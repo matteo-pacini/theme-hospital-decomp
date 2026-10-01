@@ -16,15 +16,15 @@ void req11(Window *win)
     u16 i;
     u16 croom;
     u16 obj;
-    WindowButton *b;
+    WindowButton *button;
     s32 k;
 
-    b = win->buttons;
+    button = win->buttons;
     croom = crequester.unknown8;
     obj = crequester.unknown3;
     k = 0x3e;
-    for (i = 1; b; b = b->next) {
-        if (b->flags & 6) {
+    for (i = 1; button; button = button->next) {
+        if (button->flags & 6) {
             debug.unknown8 = i;
             if (i >= resvars.fe[0x30] && i <= resvars.fe[0x39]) {
                 clicked_buy_objects(i - resvars.fe[0x30], OldLeftButton ? 1 : 2);
@@ -60,18 +60,18 @@ void req11(Window *win)
 void req11_overdraw(Window *win)
 {
     u8 i;
-    u16 room;
+    u16 item;
     u16 obj;
     s32 total;
-    u32 sx;
-    u32 sy;
+    u32 scale_x;
+    u32 scale_y;
     CompFrame *fr;
-    WindowButton *b;
+    WindowButton *button;
     s32 oy;
     s32 ox;
     char buf[100];
 
-    b = win->buttons;
+    button = win->buttons;
     obj = crequester.unknown3;
     if (resvars.f1 == SCREEN_MODE_13 && loaded_requester != 10)
         return;
@@ -87,10 +87,10 @@ void req11_overdraw(Window *win)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     total = 0;
     for (i = 0; i < 10; i++) {
-        room = req_indices[i];
-        if (!room)
+        item = req_indices[i];
+        if (!item)
             break;
-        total += gamevar.buy_count[room] * myhosp->object_stats[room].cost;
+        total += gamevar.buy_count[item] * myhosp->object_stats[item].cost;
     }
     LbTextDraw(ox + resvars.f1c[0x19].x, oy + resvars.f1c[0x19].y, D_001602d4[3]);
     sprintf(buf, "%s%d", D_001602d4[5], myhosp->object_stats[obj].cost);
@@ -99,33 +99,33 @@ void req11_overdraw(Window *win)
     LbTextDraw(ox + resvars.f1c[0x1b].x, oy + resvars.f1c[0x1b].y, buf);
     if (obj) {
         fr = &frame[start[objects[obj].f10].frame];
-        sx = 0x790000 / fr->width;
-        sy = 0x790000 / fr->length;
-        if (sy >= 0x10000 || sx >= 0x10000) {
+        scale_x = 0x790000 / fr->width;
+        scale_y = 0x790000 / fr->length;
+        if (scale_y >= 0x10000 || scale_x >= 0x10000) {
             draw_a_frame(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y, 0,
                 start[objects[obj].f10].flags);
-        } else if (sy <= sx) {
+        } else if (scale_y <= scale_x) {
             draw_a_frame_scaled(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y,
-                0, start[objects[obj].f10].flags, sy);
+                0, start[objects[obj].f10].flags, scale_y);
         } else {
             draw_a_frame_scaled(start[objects[obj].f10].frame, ox + resvars.f1c[0x1c].x, oy + resvars.f1c[0x1c].y,
-                0, start[objects[obj].f10].flags, sx);
+                0, start[objects[obj].f10].flags, scale_x);
         }
     }
     for (i = 0; i < 10; i++) {
-        room = req_indices[i];
-        if (!room)
+        item = req_indices[i];
+        if (!item)
             break;
         set_font_from_cache(1);
         if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.f18[i + 0xb].x, oy + resvars.f18[i + 0xb].y,
                 resvars.f18[i + 0xb].w, resvars.f18[i + 0xb].h)) {
             set_font_from_cache(2);
-            if (crequester.unknown3 != room)
+            if (crequester.unknown3 != item)
                 play_sound(10, 0x44, -1, -1);
-            crequester.unknown3 = room;
+            crequester.unknown3 = item;
         }
-        LbTextDraw(ox + resvars.f1c[i + 0x34].x, oy + resvars.f1c[i + 0x34].y, D_0016029c[objects[room].name]);
-        sprintf(buf, "%d", gamevar.buy_count[room]);
+        LbTextDraw(ox + resvars.f1c[i + 0x34].x, oy + resvars.f1c[i + 0x34].y, D_0016029c[objects[item].name]);
+        sprintf(buf, "%d", gamevar.buy_count[item]);
         LbTextDraw(ox + resvars.f1c[i + 0x3e].x, oy + resvars.f1c[i + 0x3e].y, buf);
     }
     if (advisor.f11f & 1) {
@@ -134,20 +134,20 @@ void req11_overdraw(Window *win)
         if (othervar.f9bc % 10 == 0) {
             switch (advisor.f120) {
             case 0xa:
-                for (b = win->buttons; b; b = b->next) {
+                for (button = win->buttons; button; button = button->next) {
                     if (i == resvars.fe[0x30])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x12]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x12]]);
                 break;
             case 9:
-                for (b = win->buttons; b; b = b->next) {
+                for (button = win->buttons; button; button = button->next) {
                     if (i == resvars.fe[0x2f])
                         break;
                     i++;
                 }
-                reqspr_draw((s16)ox + b->x, (s16)oy + b->y, &button_sprite[resvars.f12[0x13]]);
+                reqspr_draw((s16)ox + button->x, (s16)oy + button->y, &button_sprite[resvars.f12[0x13]]);
                 break;
             }
             othervar.f9bc = 0;
@@ -158,10 +158,10 @@ void req11_overdraw(Window *win)
 }
 
 // FUNCTION: 0x0009d114
-void req11_sell_object(const u16 idx, const s32 n)
+void req11_sell_object(const u16 idx, const s32 amount)
 {
-    if (gamevar.buy_count[idx] >= n)
-        gamevar.buy_count[idx] -= n;
+    if (gamevar.buy_count[idx] >= amount)
+        gamevar.buy_count[idx] -= amount;
     else
         gamevar.buy_count[idx] = 0;
 }

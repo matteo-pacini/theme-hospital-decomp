@@ -17,13 +17,13 @@ extern Event D_001549d0[];
 void req13_no_pressed(void);
 
 // FUNCTION: 0x0006fbc0
-void req13(Window *w)
+void req13(Window *win)
 {
     u16 i;
-    WindowButton *b;
+    WindowButton *button;
 
-    for (b = w->buttons, i = 1; b; b = b->next) {
-        if (b->flags & 6) {
+    for (button = win->buttons, i = 1; button; button = button->next) {
+        if (button->flags & 6) {
             debug.unknown4 = i;
             if (i == resvars.fe[1]) {
                 req13_no_pressed();
@@ -40,7 +40,7 @@ void req13(Window *w)
 }
 
 // FUNCTION: 0x0006fcc4
-void req13_overdraw(Window *w)
+void req13_overdraw(Window *win)
 {
     s32 x;
     s32 y;
@@ -48,8 +48,8 @@ void req13_overdraw(Window *w)
     compute_help_text(0, 0, 8);
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                               window.unknown2cf - window.unknown2c7);
-    x = w->x - lbDisplay.graphics_window_x;
-    y = w->y - lbDisplay.graphics_window_y;
+    x = win->x - lbDisplay.graphics_window_x;
+    y = win->y - lbDisplay.graphics_window_y;
     set_font_from_cache(1);
     lbDisplay.draw_flags = 0x20;
     LbTextSetWindow(resvars.f18_Req13Layoutp->text_x, resvars.f18_Req13Layoutp->text_y, resvars.f18_Req13Layoutp->text_w, resvars.f18_Req13Layoutp->text_h);
@@ -58,14 +58,14 @@ void req13_overdraw(Window *w)
 }
 
 // FUNCTION: 0x0006fd98
-void open_yes_no_requester(u8 a, u16 b, u16 c, u8 d, u16 e, u16 f)
+void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, u16 no_value, u16 no_arg)
 {
-    othervar.f99e = a;
-    othervar.f99f = b;
-    othervar.f9a2 = c;
-    othervar.f9ad = d;
-    othervar.f9ae = e;
-    othervar.f9b1 = f;
+    othervar.f99e = yes_type;
+    othervar.f99f = yes_value;
+    othervar.f9a2 = yes_arg;
+    othervar.f9ad = no_type;
+    othervar.f9ae = no_value;
+    othervar.f9b1 = no_arg;
     D_001549d0[player].type = 0x77;
 }
 

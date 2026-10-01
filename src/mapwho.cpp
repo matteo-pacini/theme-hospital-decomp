@@ -26,21 +26,21 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     u16 screen_x;
     ToDraw *node;
     int i;
-    Thing *w;
+    Thing *occupant;
 
     node = draw_cells;
     memset(D_00153fa4, 0, sizeof(D_00153fa4));
     D_001567b0[0] = D_001567b0[1] = 999;
     D_001567b0[2] = D_001567b0[3] = 0;
-    for (id = cell->first; id > 0; id = w->next) {
-        w = &thing[id];
-        screen_x = resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 0x20 : ((w->x.frac - w->y.frac) >> 4) + 0x10;
-        screen_y = resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5;
-        bucket = ((w->y.frac + w->x.frac) >> 4) + w->depth;
+    for (id = cell->first; id > 0; id = occupant->next) {
+        occupant = &thing[id];
+        screen_x = resvars.f0 == SCREEN_MODE_13 ? ((occupant->x.frac - occupant->y.frac) >> 3) + 0x20 : ((occupant->x.frac - occupant->y.frac) >> 4) + 0x10;
+        screen_y = resvars.f0 == SCREEN_MODE_13 ? (occupant->y.frac + occupant->x.frac) >> 4 : (occupant->y.frac + occupant->x.frac) >> 5;
+        bucket = ((occupant->y.frac + occupant->x.frac) >> 4) + occupant->depth;
         if (node < (ToDraw *)&pixBuf) {
             node->next = D_00153fa4[bucket];
             D_00153fa4[bucket] = node;
-            node->widget = w;
+            node->widget = occupant;
             node->x = screen_x;
             node->y = screen_y;
             node++;
@@ -120,10 +120,10 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 }
 
 // FUNCTION: 0x00014b88
-void mapwho_person(Thing *w, s32 x, s32 y, s32 left, s32 top)
+void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
 {
     othervar.fa72++;
-    switch (w->kind) {
+    switch (person->kind) {
     case 4:
     case 6:
     case 8:
@@ -150,33 +150,33 @@ void mapwho_person(Thing *w, s32 x, s32 y, s32 left, s32 top)
     case 68:
     case 70:
     case 240:
-        if (w->style == 6) {
-            fn_0002f47c(w, x, y);
-        } else if (w->style == 12 && othervar.f1c == 0 && w->unknown69 == 0) {
-            fn_0002e804(w, x, y);
-        } else if ((u16)(w - thing) == othervar.f43) {
-            draw_hilight_frame(w, x, y);
-        } else if ((u16)(w - thing) == othervar.f45) {
-            draw_hilight_frame(w, x, y);
+        if (person->style == 6) {
+            fn_0002f47c(person, x, y);
+        } else if (person->style == 12 && othervar.f1c == 0 && person->unknown69 == 0) {
+            fn_0002e804(person, x, y);
+        } else if ((u16)(person - thing) == othervar.f43) {
+            draw_hilight_frame(person, x, y);
+        } else if ((u16)(person - thing) == othervar.f45) {
+            draw_hilight_frame(person, x, y);
         } else {
-            draw_special_id_frame(w, x, y);
+            draw_special_id_frame(person, x, y);
         }
         break;
     case 46:
-        draw_split_frame(w, x, y);
+        draw_split_frame(person, x, y);
         break;
     case 48:
         if (othervar.f1c == 0) {
-            draw_energise_frame(w, x, y);
+            draw_energise_frame(person, x, y);
         } else {
-            draw_special_id_frame(w, x, y);
+            draw_special_id_frame(person, x, y);
         }
         break;
     case 0xf2:
         break;
     case 52:
     case 72:
-        draw_special_id_frame(w, x, y - w->height);
+        draw_special_id_frame(person, x, y - person->height);
         break;
     case 14:
     case 40:
@@ -187,15 +187,15 @@ void mapwho_person(Thing *w, s32 x, s32 y, s32 left, s32 top)
     }
     if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
         && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
-        othervar.f41_s16 = w - thing;
+        othervar.f41_s16 = person - thing;
     }
 }
 
 // FUNCTION: 0x00014fbc
-void mapwho_staff(Thing *w, s32 x, s32 y, s32 left, s32 top)
+void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
 {
     othervar.fa72++;
-    switch (w->kind) {
+    switch (staff->kind) {
     case 2:
     case 4:
     case 6:
@@ -231,10 +231,10 @@ void mapwho_staff(Thing *w, s32 x, s32 y, s32 left, s32 top)
     case 78:
     case 80:
     case 240:
-        if ((u16)(w - thing) == othervar.f43) {
-            draw_hilight_frame(w, x, y);
+        if ((u16)(staff - thing) == othervar.f43) {
+            draw_hilight_frame(staff, x, y);
         } else {
-            draw_special_id_frame(w, x, y);
+            draw_special_id_frame(staff, x, y);
         }
         break;
     case 42:
@@ -246,14 +246,14 @@ void mapwho_staff(Thing *w, s32 x, s32 y, s32 left, s32 top)
     }
     if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
         && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
-        othervar.f41_s16 = w - thing;
+        othervar.f41_s16 = staff - thing;
     }
 }
 
 // FUNCTION: 0x00015334
-void mapwho_object(Thing *w, const s32 x, const s32 y, const s32 left, const s32 top)
+void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s32 top)
 {
-    switch (w->kind) {
+    switch (obj->kind) {
     case 2:
     case 6:
     case 10:
@@ -264,40 +264,40 @@ void mapwho_object(Thing *w, const s32 x, const s32 y, const s32 left, const s32
     case 24:
     case 26:
     case 28:
-        if ((u16)(w - thing) == othervar.f43 || (w->group && w->group == othervar.f43)) {
-            draw_hilight_frame(w, x, y);
+        if ((u16)(obj - thing) == othervar.f43 || (obj->group && obj->group == othervar.f43)) {
+            draw_hilight_frame(obj, x, y);
         } else {
-            draw_special_id_frame(w, x, y);
+            draw_special_id_frame(obj, x, y);
         }
         if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
             && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
-            othervar.f41_s16 = w - thing;
+            othervar.f41_s16 = obj - thing;
         }
-        if (w->icon) {
-            draw_from_special_id_frame(w->icon, x, y, 0, (u8 *)w->label, w->palette);
+        if (obj->icon) {
+            draw_from_special_id_frame(obj->icon, x, y, 0, (u8 *)obj->label, obj->palette);
         }
         break;
     case 4:
-        if (w->icon) {
-            draw_from_special_id_frame(w->icon, x, y, 0, (u8 *)w->label, w->palette);
+        if (obj->icon) {
+            draw_from_special_id_frame(obj->icon, x, y, 0, (u8 *)obj->label, obj->palette);
         }
         break;
     }
 }
 
 // FUNCTION: 0x0001557c
-void mapwho_reaper(Thing *w, s32 x, s32 y)
+void mapwho_reaper(Thing *reaper, s32 x, s32 y)
 {
-    if (w->kind != 0xf2 || !(game_turn & 1)) {
-        if (w->kind == 6) {
+    if (reaper->kind != 0xf2 || !(game_turn & 1)) {
+        if (reaper->kind == 6) {
             return;
         }
-        draw_special_id_frame(w, x, y);
+        draw_special_id_frame(reaper, x, y);
     }
 }
 
 // FUNCTION: 0x000155d4
-void mapwho_rat(Thing *w, const s32 x, const s32 y, const s32 left0, const s32 top0)
+void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32 top0)
 {
     int mouse_x;
     int mouse_y;
@@ -308,7 +308,7 @@ void mapwho_rat(Thing *w, const s32 x, const s32 y, const s32 left0, const s32 t
 
     mouse_x = lbDisplay.mmouse_x;
     mouse_y = lbDisplay.mmouse_y;
-    draw_special_id_frame(w, x, y);
+    draw_special_id_frame(rat, x, y);
     left = left0 + D_001567b0[4] - othervar.f9e5;
     right = left + D_001567b0[6] + othervar.f9e5 * 2;
     top = top0 + D_001567b0[5] - othervar.f9e5;
@@ -316,8 +316,8 @@ void mapwho_rat(Thing *w, const s32 x, const s32 y, const s32 left0, const s32 t
     if (mouse_x > left && mouse_x < right && mouse_y > top && mouse_y < bottom) {
         if (left + othervar.f9e5 - othervar.f9e7 < mouse_x && right - othervar.f9e5 + othervar.f9e7 > mouse_x
             && top + othervar.f9e5 - othervar.f9e7 < mouse_y && bottom - othervar.f9e5 + othervar.f9e7 > mouse_y) {
-            othervar.f41_s16 = w - thing;
-            othervar.f6f_s16 = w - thing;
+            othervar.f41_s16 = rat - thing;
+            othervar.f6f_s16 = rat - thing;
         } else {
             othervar.f71 = 1;
         }
@@ -325,54 +325,54 @@ void mapwho_rat(Thing *w, const s32 x, const s32 y, const s32 left0, const s32 t
 }
 
 // FUNCTION: 0x00015760
-void mapwho_bang(Thing *w, s32 x, s32 y)
+void mapwho_bang(Thing *bang, s32 x, s32 y)
 {
-    draw_a_frame(w->sprite, x, y - (w->offset >> 8), 0, w->palette);
+    draw_a_frame(bang->sprite, x, y - (bang->offset >> 8), 0, bang->palette);
 }
 
 // FUNCTION: 0x000157b8
-void mapwho_helicopter(Thing *w, s32 x, s32 y)
+void mapwho_helicopter(Thing *helicopter, s32 x, s32 y)
 {
-    draw_special_id_frame(w, x, y - w->offset);
+    draw_special_id_frame(helicopter, x, y - helicopter->offset);
 }
 
 // FUNCTION: 0x000157f0
-void mapwho_numfx(Thing *w, s32 x, s32 y)
+void mapwho_numfx(Thing *fx, s32 x, s32 y)
 {
     char buf[100];
 
-    switch (w->mode) {
+    switch (fx->mode) {
     case 3:
-        draw_money(x, w->unknown18 + y - w->anim_speed, w->value);
+        draw_money(x, fx->unknown18 + y - fx->anim_speed, fx->value);
         break;
     default:
-        if (w->mode == 0) {
-            sprintf(buf, "%d", w->value);
-        } else if (w->mode == 1) {
-            fn_000bbff0(buf, w->text);
-        } else if (w->mode == 2) {
-            sprintf(buf, w->text, w->value);
+        if (fx->mode == 0) {
+            sprintf(buf, "%d", fx->value);
+        } else if (fx->mode == 1) {
+            fn_000bbff0(buf, fx->text);
+        } else if (fx->mode == 2) {
+            sprintf(buf, fx->text, fx->value);
         }
-        draw_text_on_map(buf, w->subtype, x, y + w->unknown18 - w->anim_speed);
+        draw_text_on_map(buf, fx->subtype, x, y + fx->unknown18 - fx->anim_speed);
         break;
     }
 }
 
 // FUNCTION: 0x000158e8
-void mapwho_mayor(Thing *w, s32 x, s32 y, s32 left, s32 top)
+void mapwho_mayor(Thing *mayor, s32 x, s32 y, s32 left, s32 top)
 {
-    draw_special_id_frame(w, x, y);
+    draw_special_id_frame(mayor, x, y);
     if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
         && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
-        othervar.f41_s16 = w - thing;
+        othervar.f41_s16 = mayor - thing;
     }
 }
 
 // FUNCTION: 0x0001599c
-void mapwho_shadow(Thing *w, s32 x, s32 y)
+void mapwho_shadow(Thing *shadow, s32 x, s32 y)
 {
-    Thing *other;
+    Thing *caster;
 
-    other = &thing[w->link];
-    draw_a_frame_scaled(w->sprite, x, y, 0, w->palette, 0x640000 / (other->offset + 100));
+    caster = &thing[shadow->link];
+    draw_a_frame_scaled(shadow->sprite, x, y, 0, shadow->palette, 0x640000 / (caster->offset + 100));
 }

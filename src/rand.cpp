@@ -16,17 +16,17 @@ u32 old_newrand(void)
 }
 
 // FUNCTION: 0x000b0144
-u32 old_normal_rand(u32 a, u32 b)
+u32 old_normal_rand(u32 low, u32 high)
 {
     s32 range;
-    u32 r;
+    u32 sum;
 
-    range = (b - a) / 2 + 1;
+    range = (high - low) / 2 + 1;
     if (range <= 0)
         range = 1;
-    r = old_newrand() % range;
-    r += old_newrand() % range;
-    return r + a;
+    sum = old_newrand() % range;
+    sum += old_newrand() % range;
+    return sum + low;
 }
 
 // FUNCTION: 0x000b01a0
@@ -46,29 +46,29 @@ u16 staffrand(void)
 }
 
 // FUNCTION: 0x000b0228
-u32 normal_staffrand(u32 a, u32 b)
+u32 normal_staffrand(u32 low, u32 high)
 {
     s32 range;
-    u32 r;
+    u32 sum;
 
-    range = (b - a) / 2 + 1;
+    range = (high - low) / 2 + 1;
     if (range <= 0)
         range = 1;
-    r = staffrand() % range;
-    r += staffrand() % range;
-    return r + a;
+    sum = staffrand() % range;
+    sum += staffrand() % range;
+    return sum + low;
 }
 
 // FUNCTION: 0x000b0294
-u32 safe_normal_rand(u32 a, u32 b)
+u32 safe_normal_rand(u32 low, u32 high)
 {
     s32 range;
-    u32 r;
+    u32 sum;
 
-    range = (b - a) / 2 + 1;
+    range = (high - low) / 2 + 1;
     if (range <= 0)
         range = 1;
-    r = saferand() % range;
-    r += saferand() % range;
-    return r + a;
+    sum = saferand() % range;
+    sum += saferand() % range;
+    return sum + low;
 }

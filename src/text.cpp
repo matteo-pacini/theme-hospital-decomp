@@ -327,29 +327,29 @@ s16 setup_lang(void)
     s32 i;
     s32 total;
     s32 j;
-    char **starts;
-    char *p;
+    char **next_start;
+    char *text;
 
     if (LbDataLoad(&langfile[myplayer.f21]) != 1)
         return 0;
     groups = *(s16 *)text_buffer;
     counts = (s16 *)(text_buffer + 2);
-    p = (char *)(text_buffer + groups * 2 + 2);
+    text = (char *)(text_buffer + groups * 2 + 2);
     total = 0;
     for (i = 0; i < groups; i++)
         total += counts[i];
     text_starts = (char **)LbMemoryAlloc(total * 4);
     if (text_starts == 0)
         return 0;
-    starts = text_starts;
+    next_start = text_starts;
     for (i = 0; i < groups; i++) {
-        if (!set_group_address(i, starts))
+        if (!set_group_address(i, next_start))
             return 0;
         for (j = 0; j < counts[i]; j++) {
-            *starts++ = p;
-            while (*p)
-                p++;
-            p++;
+            *next_start++ = text;
+            while (*text)
+                text++;
+            text++;
         }
     }
     return 1;

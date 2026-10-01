@@ -22,12 +22,12 @@ u8 is_thing_paged(ThingPager *pager, u16 id);
 // FUNCTION: 0x00088260
 void req5(Window *win)
 {
-    WindowButton *b;
+    WindowButton *button;
     u16 i;
 
-    b = win->buttons;
-    for (i = 1; b; b = b->next) {
-        if (b->flags & 6) {
+    button = win->buttons;
+    for (i = 1; button; button = button->next) {
+        if (button->flags & 6) {
             debug.unknown4 = i;
             if (i == resvars.fe[0x12]) {
                 D_001549d0[player].type = 0x43;
@@ -62,33 +62,33 @@ void req5_overdraw(Window *win)
     s32 age;
     s32 y;
     s32 x;
-    Thing *w;
+    Thing *machine;
     s32 count;
 
     count = 0;
     compute_help_text(0, 0, 0xb);
-    w = &thing[D_001581b2[3].value];
-    if (w->renderer == 6) {
+    machine = &thing[D_001581b2[3].value];
+    if (machine->renderer == 6) {
         LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                                   window.unknown2cf - window.unknown2c7);
         x = win->x - lbDisplay.graphics_window_x;
         y = win->y - lbDisplay.graphics_window_y;
-        age = w->mode;
-        max = allhosps[w->owner].object_stats[w->subtype].unknown8;
+        age = machine->mode;
+        max = allhosps[machine->owner].object_stats[machine->subtype].unknown8;
         set_font_from_cache(1);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         if (is_thing_paged(&allhosps[player].ff6d, D_001581b2[3].value)) {
-            sprintf(buf, "(%s)", D_0016029c[w->subtype]);
+            sprintf(buf, "(%s)", D_0016029c[machine->subtype]);
             LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
         } else {
-            sprintf(buf, "%s", D_0016029c[w->subtype]);
+            sprintf(buf, "%s", D_0016029c[machine->subtype]);
             LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
         }
         {
             RoomInfo *room;
             s32 pct;
 
-            room = &room_info[w->unknown89];
+            room = &room_info[machine->unknown89];
             if (room > room_info) {
                 count = room->count;
                 sprintf(buf, "%d", count);
@@ -109,7 +109,7 @@ void req5_overdraw(Window *win)
         if (lbDisplay.mright_button && !othervar.fa61) {
             if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.f18[0x54].x, y + resvars.f18[0x54].y, resvars.f18[0x54].w,
                              resvars.f18[0x54].h)) {
-                D_001581b2[3].value = find_next_thing(w, 6, -1, -1);
+                D_001581b2[3].value = find_next_thing(machine, 6, -1, -1);
                 othervar.f38 = 3;
                 othervar.f10 = 1;
                 othervar.f7d = othervar.f7c;

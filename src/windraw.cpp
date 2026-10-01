@@ -6,29 +6,29 @@ extern "C" {
 }
 
 // FUNCTION: 0x0004bcc0
-void draw_buttons(Window *w)
+void draw_buttons(Window *win)
 {
     s32 unused1c;
     s32 unused18;
     s32 unused14;
-    WindowButton *b;
+    WindowButton *button;
     s32 x;
     s32 y;
 
-    b = w->buttons;
+    button = win->buttons;
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                               window.unknown2cf - window.unknown2c7);
-    for (; b; b = b->next) {
-        if (b->flags & 0x20001000)
+    for (; button; button = button->next) {
+        if (button->flags & 0x20001000)
             continue;
-        x = w->x - lbDisplay.graphics_window_x;
-        y = w->y - lbDisplay.graphics_window_y;
-        if (b->flags & 1)
-            reqspr_draw((s16)x + b->x20, (s16)y + b->y22, &button_sprite[b->sprite1c]);
-        else if ((b->flags & 6) && (!(b->flags & 2) || !(b->flags & 4)))
-            reqspr_draw((s16)x + b->x24, (s16)y + b->y26, &button_sprite[b->sprite18]);
+        x = win->x - lbDisplay.graphics_window_x;
+        y = win->y - lbDisplay.graphics_window_y;
+        if (button->flags & 1)
+            reqspr_draw((s16)x + button->x20, (s16)y + button->y22, &button_sprite[button->sprite1c]);
+        else if ((button->flags & 6) && (!(button->flags & 2) || !(button->flags & 4)))
+            reqspr_draw((s16)x + button->x24, (s16)y + button->y26, &button_sprite[button->sprite18]);
         else
-            reqspr_draw((s16)x + b->x, (s16)y + b->y, &button_sprite[b->sprite]);
+            reqspr_draw((s16)x + button->x, (s16)y + button->y, &button_sprite[button->sprite]);
     }
 }
 
@@ -152,22 +152,22 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
 }
 
 // FUNCTION: 0x0004c670
-void draw_window(Window *w)
+void draw_window(Window *win)
 {
     s16 width;
     s16 height;
     s16 x;
     s16 y;
 
-    GetWindowDimensions(w, (u16 *)&width, (u16 *)&height);
-    x = w->x;
-    y = w->y;
-    if (w->flags & 1) {
+    GetWindowDimensions(win, (u16 *)&width, (u16 *)&height);
+    x = win->x;
+    y = win->y;
+    if (win->flags & 1) {
         lbDisplay.draw_flags = 0;
         set_all_refresh_zones_in_window(x, y, x + width, y + height, 3);
-    } else if (w->flags & 2) {
+    } else if (win->flags & 2) {
         draw_a_window(x, y, width, height, 0);
-    } else if (w->flags & 4) {
+    } else if (win->flags & 4) {
         draw_a_window(x, y, width, height, 1);
     }
 }
@@ -177,14 +177,14 @@ void DrawWindows(Window **windows)
 {
     s16 i;
     u16 count;
-    Window *w;
+    Window *win;
 
     count = CountWindows(windows);
     for (i = count - 1; i >= 0; i--) {
-        w = windows[i];
-        draw_window(w);
-        draw_buttons(w);
-        if (w->draw)
-            w->draw(w);
+        win = windows[i];
+        draw_window(win);
+        draw_buttons(win);
+        if (win->draw)
+            win->draw(win);
     }
 }

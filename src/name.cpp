@@ -255,7 +255,7 @@ void process_mouse_nickname(void)
 {
     u8 i;
     s16 x;
-    s16 base;
+    s16 first_button;
     s16 y;
     s32 mask;
     s32 bit;
@@ -267,55 +267,55 @@ void process_mouse_nickname(void)
         while (mask) {
             bit = mask & -mask;
             mask ^= bit;
-            base = button_index(bit);
-            if (!base)
+            first_button = button_index(bit);
+            if (!first_button)
                 continue;
             for (i = 0;; i++) {
                 if (current_balance_file == current_balance_file->prev) {
-                    if (base + i == 0xa4 || base + i == 0xa5)
+                    if (first_button + i == 0xa4 || first_button + i == 0xa5)
                         continue;
                 }
-                if (resvars.f48[base + i].width == 0 || resvars.f48[base + i].height == 0)
+                if (resvars.f48[first_button + i].width == 0 || resvars.f48[first_button + i].height == 0)
                     break;
-                x = resvars.f48[base + i].x;
-                y = resvars.f48[base + i].y;
+                x = resvars.f48[first_button + i].x;
+                y = resvars.f48[first_button + i].y;
                 if (lbDisplay.rleft_button) {
-                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.f48[base + i].width - x + 1,
-                                     resvars.f48[base + i].height - y + 1)) {
+                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.f48[first_button + i].width - x + 1,
+                                     resvars.f48[first_button + i].height - y + 1)) {
                         lbDisplay.rleft_button = 0;
-                        if (resvars.f48[base + i].sprite)
+                        if (resvars.f48[first_button + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
-                        if (resvars.f48[base + i].callback)
-                            resvars.f48[base + i].callback(i);
+                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
+                        if (resvars.f48[first_button + i].callback)
+                            resvars.f48[first_button + i].callback(i);
                         continue;
                     }
                 }
-                if (lbDisplay.mleft_button && over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.f48[base + i].width - x + 1,
-                                               resvars.f48[base + i].height - y + 1)) {
-                    if (resvars.f48[base + i].sprite)
+                if (lbDisplay.mleft_button && over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.f48[first_button + i].width - x + 1,
+                                               resvars.f48[first_button + i].height - y + 1)) {
+                    if (resvars.f48[first_button + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
+                        draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
                 }
-                if (base == 0xa0) {
+                if (first_button == 0xa0) {
                     switch (i) {
                     case 0:
                         if (advisor.f11f & 1)
-                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
                         break;
                     case 1:
                         if (!(advisor.f11f & 1))
-                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
                         break;
                     case 6:
                         if (resvars.f1 == SCREEN_MODE_1)
-                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
                         break;
                     case 7:
                         if (resvars.f1 == SCREEN_MODE_13)
-                            draw_button_edges(x, y, resvars.f48[base + i].width - x, resvars.f48[base + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.f48[first_button + i].width - x, resvars.f48[first_button + i].height - y, 1);
                         break;
                     case 2:
                     case 3:
@@ -441,31 +441,31 @@ void draw_new_prefs_screen(void)
 }
 
 // FUNCTION: 0x0008ffb0
-u8 setup_balance_files(u8 cd)
+u8 setup_balance_files(u8 net_game)
 {
-    BalanceFileInfo *b;
+    BalanceFileInfo *entry;
     BalanceFileInfo *last;
     u8 done;
     char path[144];
     s32 handle;
     char fname[16];
     u8 len;
-    u8 value;
+    u8 level;
     char num[4];
 
-    b = 0;
+    entry = 0;
     last = 0;
     if (current_balance_file)
         free_balance_files();
     done = 0;
     if (install_type < 3) {
-        if (cd) {
+        if (net_game) {
             sprintf(path, "%slevels/net00.sam", cd_install_path);
             check_cd_available(path);
         } else {
             sprintf(path, "%slevels/*00.sam", cd_install_path);
         }
-    } else if (cd) {
+    } else if (net_game) {
         sprintf(path, "levels/net00.sam");
     } else {
         sprintf(path, "levels/*00.sam");
@@ -479,27 +479,27 @@ u8 setup_balance_files(u8 cd)
         len = fn_000cd716(fname);
         strncpy(num, &fname[len] - 2, 2);
         num[2] = 0;
-        value = atoi(num);
-        if (cd == 0) {
+        level = atoi(num);
+        if (net_game == 0) {
             if (toupper((s8)fname[0]) == 'N' && toupper((s8)fname[1]) == 'E' && toupper((s8)fname[2]) == 'T')
-                value = 1;
+                level = 1;
         }
-        if (value == 0) {
-            b = (BalanceFileInfo *)LbMemoryAlloc(sizeof(BalanceFileInfo));
-            if (b == 0)
+        if (level == 0) {
+            entry = (BalanceFileInfo *)LbMemoryAlloc(sizeof(BalanceFileInfo));
+            if (entry == 0)
                 break;
             if (current_balance_file == 0)
-                current_balance_file = b;
+                current_balance_file = entry;
             if (last == 0)
-                last = b;
-            b->prev = last;
-            b->next = current_balance_file;
-            b->prev->next = b;
-            current_balance_file->prev = b;
-            strncpy(b->name, fname, len - 2);
-            b->name[len - 2] = 0;
+                last = entry;
+            entry->prev = last;
+            entry->next = current_balance_file;
+            entry->prev->next = entry;
+            current_balance_file->prev = entry;
+            strncpy(entry->name, fname, len - 2);
+            entry->name[len - 2] = 0;
             othervar.f8e++;
-            last = b;
+            last = entry;
         }
         handle = LbFileFindNext(&balance_file);
         if (handle == -1)
@@ -507,9 +507,9 @@ u8 setup_balance_files(u8 cd)
     }
     if (othervar.f8e != 0) {
         if (stricmp(current_balance_file->name, "full") != 0) {
-            b = current_balance_file;
-            current_balance_file = b->next;
-            while (current_balance_file != b) {
+            entry = current_balance_file;
+            current_balance_file = entry->next;
+            while (current_balance_file != entry) {
                 if (stricmp(current_balance_file->name, "full") == 0)
                     break;
                 current_balance_file = current_balance_file->next;

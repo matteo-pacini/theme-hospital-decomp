@@ -52,39 +52,39 @@ void display_panel_person_info(void);
 void compute_room_pointed(u16 tile);
 
 // FUNCTION: 0x000957f0
-void req7(Window *w)
+void req7(Window *win)
 {
-    u16 n;
-    WindowButton *b;
+    u16 button_no;
+    WindowButton *button;
 
-    for (b = w->buttons, n = 1; b != 0; b = b->next) {
-        if (b->flags & 6) {
-            debug.unknown4 = n;
-            if (n == resvars.fe_QueueButtonsp->fb) {
+    for (button = win->buttons, button_no = 1; button != 0; button = button->next) {
+        if (button->flags & 6) {
+            debug.unknown4 = button_no;
+            if (button_no == resvars.fe_QueueButtonsp->fb) {
                 D_001549d0[player].type = 0x54;
                 D_001549d0[player].value = othervar.f61;
                 if (room_info[D_001549d0[player].value].f1e)
                     play_sound(10, 0x43, -1, -1);
                 else
                     play_sound(10, 8, -1, -1);
-            } else if (n == resvars.fe_QueueButtonsp->fa) {
+            } else if (button_no == resvars.fe_QueueButtonsp->fa) {
                 D_001549d0[player].type = 0x53;
                 D_001549d0[player].value = othervar.f61;
                 if (room_info[D_001549d0[player].value].f1e < 30)
                     play_sound(10, 0x43, -1, -1);
                 else
                     play_sound(10, 8, -1, -1);
-            } else if (n == resvars.fe_QueueButtonsp->fc) {
+            } else if (button_no == resvars.fe_QueueButtonsp->fc) {
                 D_001549d0[player].type = 0x84;
                 play_sound(10, 0x42, -1, -1);
             }
         }
-        n++;
+        button_no++;
     }
 }
 
 // FUNCTION: 0x000959c8
-void req7_overdraw(Window *w)
+void req7_overdraw(Window *win)
 {
     u8 unusedc;
     u8 unused8;
@@ -104,10 +104,10 @@ void req7_overdraw(Window *w)
     unusedc = 0;
     unused8 = 0;
     unused10 = 0;
-    compute_help_text(w->x, w->y, 7);
+    compute_help_text(win->x, win->y, 7);
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3, window.unknown2cf - window.unknown2c7);
-    ox = w->x - lbDisplay.graphics_window_x;
-    oy = w->y - lbDisplay.graphics_window_y;
+    ox = win->x - lbDisplay.graphics_window_x;
+    oy = win->y - lbDisplay.graphics_window_y;
     set_font_from_cache(1);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[0].x, oy + resvars.f1c_QueuePanelp->labels[0].y, D_00160354[0]);
     LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[1].x, oy + resvars.f1c_QueuePanelp->labels[1].y, D_00160354[1]);
@@ -152,12 +152,12 @@ void req7_overdraw(Window *w)
             if (MouseOnWindow(open_windows[0])) {
                 set_mouse_mode(0);
             } else {
-                RoomInfo *r;
+                RoomInfo *room_under_mouse;
 
-                r = which_room(othervar.f28);
+                room_under_mouse = which_room(othervar.f28);
                 set_mouse_mode(0x12);
                 gamevar.f13a = get_real_person_from_room(othervar.f61, othervar.f63);
-                if (r && r->type == room_info[othervar.f61].type)
+                if (room_under_mouse && room_under_mouse->type == room_info[othervar.f61].type)
                     compute_room_pointed(othervar.f28);
             }
         }
@@ -212,16 +212,16 @@ void req7_overdraw(Window *w)
                 }
                 {
                     RoomInfo *dest;
-                    Thing *t;
+                    Thing *selected;
 
                     dest = &room_info[allhosps[player].f11b9];
                     if (dest == 0) {
-                        t = &thing[othervar.f43];
-                        if (t > thing) {
-                            if (t->renderer == 4 && t->subtype == 3)
-                                dest = t->room;
-                            else if (t->renderer == 6 && t->subtype == 0xb && t->unknown91)
-                                dest = thing[t->unknown91].room;
+                        selected = &thing[othervar.f43];
+                        if (selected > thing) {
+                            if (selected->renderer == 4 && selected->subtype == 3)
+                                dest = selected->room;
+                            else if (selected->renderer == 6 && selected->subtype == 0xb && selected->unknown91)
+                                dest = thing[selected->unknown91].room;
                         }
                     }
                     if (dest) {
@@ -308,21 +308,21 @@ void req7_overdraw(Window *w)
 // FUNCTION: 0x000969f4
 u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
 {
-    u16 n;
+    u16 position;
     RoomInfo *room;
     u16 size;
     s32 step;
     u16 px;
     u16 py;
     u16 id;
-    Thing *w;
+    Thing *person;
     CompFrame *fr;
     u16 x0;
     u16 x1;
     u16 y0;
     u16 y1;
 
-    n = 1;
+    position = 1;
     room = &room_info[room_id];
     size = queue_size(room);
     if (size) {
@@ -331,11 +331,11 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
         py = y + resvars.f1c_QueuePanelp->queue_y;
         id = room->queue_head;
         if (id) {
-            w = &thing[id];
+            person = &thing[id];
             for (;;) {
-                if (n == sel)
+                if (position == sel)
                     px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
-                fr = &frame[w->sprite];
+                fr = &frame[person->sprite];
                 x0 = px - fr->width / 2;
                 x1 = x0 + fr->width;
                 y0 = py - fr->length;
@@ -344,17 +344,17 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                     if (y0 < lbDisplay.mmouse_y && y1 > lbDisplay.mmouse_y) {
                         othervar.f7e = id;
                         display_panel_person_info();
-                        return n;
+                        return position;
                     }
                 }
                 px += step;
-                if (n == sel)
+                if (position == sel)
                     px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
-                if (w->queue_next == 0)
+                if (person->queue_next == 0)
                     break;
-                id = w->queue_next;
-                w = &thing[id];
-                n++;
+                id = person->queue_next;
+                person = &thing[id];
+                position++;
             }
         }
     }
@@ -364,7 +364,7 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
 // FUNCTION: 0x00096c34
 void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
 {
-    u16 n;
+    u16 position;
     RoomInfo *room;
     u16 size;
     s32 step;
@@ -372,9 +372,9 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
     u16 py;
     u8 old_17;
     u16 id;
-    Thing *w;
+    Thing *person;
 
-    n = 1;
+    position = 1;
     room = &room_info[room_id];
     size = queue_size(room);
     if (size) {
@@ -383,7 +383,7 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
         py = y + resvars.f1c_QueuePanelp->queue_y;
         id = room->queue_head;
         if (id) {
-            w = &thing[id];
+            person = &thing[id];
             for (;;) {
                 u16 old_sprite;
                 u16 anim;
@@ -391,45 +391,45 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                 u16 y0;
                 u16 y1;
 
-                old_17 = w->unknown17;
-                old_sprite = w->sprite;
-                old_palette = w->palette;
-                w->unknown17 = 2;
-                anim = check_frame(anim_starts[w->subtype].unknown12, w) + w->unknown17;
-                w->sprite = start[anim].frame;
-                w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
-                if (n == sel)
+                old_17 = person->unknown17;
+                old_sprite = person->sprite;
+                old_palette = person->palette;
+                person->unknown17 = 2;
+                anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->unknown17;
+                person->sprite = start[anim].frame;
+                person->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                if (position == sel)
                     px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
-                if (w->style == 6)
-                    fn_0002f47c(w, px, py);
-                else if (w->style == 12 && othervar.f1c == 0)
-                    fn_0002e804(w, px, py);
-                else if ((u16)(w - thing) == othervar.f43)
-                    draw_hilight_frame(w, px, py);
+                if (person->style == 6)
+                    fn_0002f47c(person, px, py);
+                else if (person->style == 12 && othervar.f1c == 0)
+                    fn_0002e804(person, px, py);
+                else if ((u16)(person - thing) == othervar.f43)
+                    draw_hilight_frame(person, px, py);
                 else
-                    draw_special_id_frame(w, px, py);
-                if (n == sel)
+                    draw_special_id_frame(person, px, py);
+                if (position == sel)
                     px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
-                w->unknown17 = old_17;
-                w->sprite = old_sprite;
-                w->palette = old_palette;
+                person->unknown17 = old_17;
+                person->sprite = old_sprite;
+                person->palette = old_palette;
                 {
                     CompFrame *fr;
                     u16 x0;
                     u16 x1;
 
-                    fr = &frame[w->sprite];
+                    fr = &frame[person->sprite];
                     x0 = px - fr->width / 2;
                     x1 = x0 + fr->width;
                     y0 = py - fr->length;
                     y1 = y0 + fr->length;
                 }
                 px += step;
-                if (w->queue_next == 0)
+                if (person->queue_next == 0)
                     break;
-                id = w->queue_next;
-                w = &thing[id];
-                n++;
+                id = person->queue_next;
+                person = &thing[id];
+                position++;
             }
         }
     }
@@ -438,36 +438,36 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
 // FUNCTION: 0x00096f50
 void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
 {
-    u16 n;
+    u16 position;
     RoomInfo *room;
     u16 size;
     u16 id;
-    Thing *w;
+    Thing *person;
     u8 old_17;
     u16 old_sprite;
     u8 old_palette;
     u16 anim;
     CompFrame *fr;
 
-    n = 1;
+    position = 1;
     room = &room_info[room_id];
     size = queue_size(room);
     if (size) {
         id = room->queue_head;
         if (id) {
-            w = &thing[id];
+            person = &thing[id];
             for (;;) {
-                if (n == sel) {
-                    old_17 = w->unknown17;
-                    old_sprite = w->sprite;
-                    old_palette = w->palette;
-                    w->unknown17 = 2;
-                    anim = check_frame(anim_starts[w->subtype].unknown12, w) + w->unknown17;
-                    w->sprite = start[anim].frame;
-                    w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                if (position == sel) {
+                    old_17 = person->unknown17;
+                    old_sprite = person->sprite;
+                    old_palette = person->palette;
+                    person->unknown17 = 2;
+                    anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->unknown17;
+                    person->sprite = start[anim].frame;
+                    person->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
                     InitPixBuffer(0, 0, 0x40, 0x40, 0, 0);
                     DrawIntoPixBuffer();
-                    full_draw_frame(w, w->sprite, 0x20, 0x3a, 0, 0, w->palette);
+                    full_draw_frame(person, person->sprite, 0x20, 0x3a, 0, 0, person->palette);
                     RestoreFromPixBuffer();
                     pixBuf.x = x - 0x20;
                     pixBuf.y = y - 0x3a;
@@ -475,18 +475,18 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                     FillPixBuffer(0xfe);
                     InitPixBuffer(0, 0, 0xb4, 0xb4, 0, 0);
                     lbDisplay.draw_flags = 0;
-                    fr = &frame[w->sprite];
+                    fr = &frame[person->sprite];
                     set_all_refresh_zones_in_window(x + D_001567b0[4], y + D_001567b0[5], x + D_001567b0[4] + fr->width, y + D_001567b0[5] + fr->length, 3);
-                    w->unknown17 = old_17;
-                    w->sprite = old_sprite;
-                    w->palette = old_palette;
+                    person->unknown17 = old_17;
+                    person->sprite = old_sprite;
+                    person->palette = old_palette;
                     break;
                 }
-                if (w->queue_next == 0)
+                if (person->queue_next == 0)
                     break;
-                id = w->queue_next;
-                w = &thing[id];
-                n++;
+                id = person->queue_next;
+                person = &thing[id];
+                position++;
             }
         }
     }
@@ -549,16 +549,16 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
     u16 px;
     u16 x1;
     CompFrame *fr;
-    Thing *w;
+    Thing *person;
     u16 size;
     u16 id;
     s32 step;
     u16 py;
     RoomInfo *room;
-    u16 n;
+    u16 position;
     u16 x0;
 
-    n = 1;
+    position = 1;
     room = &room_info[room_id];
     size = queue_size(room);
     if (size) {
@@ -569,7 +569,7 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
         if (id) {
             u16 y1;
 
-            w = &thing[id];
+            person = &thing[id];
             for (;;) {
                 u16 y0;
                 u8 old_17;
@@ -577,29 +577,29 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
                 u8 old_palette;
                 u16 anim;
 
-                old_17 = w->unknown17;
-                old_sprite = w->sprite;
-                old_palette = w->palette;
-                w->unknown17 = 2;
-                anim = check_frame(anim_starts[w->subtype].unknown12, w) + w->unknown17;
-                w->sprite = start[anim].frame;
-                w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
-                w->unknown17 = old_17;
-                w->sprite = old_sprite;
-                w->palette = old_palette;
-                if (n == sel)
+                old_17 = person->unknown17;
+                old_sprite = person->sprite;
+                old_palette = person->palette;
+                person->unknown17 = 2;
+                anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->unknown17;
+                person->sprite = start[anim].frame;
+                person->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                person->unknown17 = old_17;
+                person->sprite = old_sprite;
+                person->palette = old_palette;
+                if (position == sel)
                     return px;
-                fr = &frame[w->sprite];
+                fr = &frame[person->sprite];
                 x0 = px - fr->width / 2;
                 x1 = x0 + fr->width;
                 y0 = py - fr->length;
                 y1 = y0 + fr->length;
                 px += step;
-                if (w->queue_next == 0)
+                if (person->queue_next == 0)
                     break;
-                id = w->queue_next;
-                w = &thing[id];
-                n++;
+                id = person->queue_next;
+                person = &thing[id];
+                position++;
             }
         }
     }
@@ -609,27 +609,27 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
 // FUNCTION: 0x00097b40
 u8 queue_person_valid(u16 room_id, u8 sel)
 {
-    u16 n;
+    u16 position;
     RoomInfo *room;
     u16 size;
     u16 id;
-    Thing *w;
+    Thing *person;
 
-    n = 1;
+    position = 1;
     room = &room_info[room_id];
     size = queue_size(room);
     if (size) {
         id = room->queue_head;
         if (id) {
-            w = &thing[id];
+            person = &thing[id];
             for (;;) {
-                if (n == sel)
+                if (position == sel)
                     return 1;
-                if (w->queue_next == 0)
+                if (person->queue_next == 0)
                     break;
-                id = w->queue_next;
-                w = &thing[id];
-                n++;
+                id = person->queue_next;
+                person = &thing[id];
+                position++;
             }
         }
     }
@@ -639,27 +639,27 @@ u8 queue_person_valid(u16 room_id, u8 sel)
 // FUNCTION: 0x00097c0c
 u16 get_queue_person(u16 room_id, u8 sel)
 {
-    u16 n;
+    u16 position;
     RoomInfo *room;
     u16 size;
     u16 id;
-    Thing *w;
+    Thing *person;
 
-    n = 1;
+    position = 1;
     room = &room_info[room_id];
     size = queue_size(room);
     if (size) {
         id = room->queue_head;
         if (id) {
-            w = &thing[id];
+            person = &thing[id];
             for (;;) {
-                if (n == sel)
+                if (position == sel)
                     return id;
-                if (w->queue_next == 0)
+                if (person->queue_next == 0)
                     break;
-                id = w->queue_next;
-                w = &thing[id];
-                n++;
+                id = person->queue_next;
+                person = &thing[id];
+                position++;
             }
         }
     }

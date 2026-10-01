@@ -199,11 +199,11 @@ retry:
     }
     if ((s32)(old_newrand() % 0xffff) < 0xa000) {
         if (wall_in_way(nx, ny, dir)) {
-            s32 t;
+            s32 old_dir;
 
-            t = dir;
+            old_dir = dir;
             dir = other_wherefacing;
-            other_wherefacing = t;
+            other_wherefacing = old_dir;
             switch (dir) {
             case 3:
                 nx = x - 1;
@@ -245,11 +245,11 @@ retry:
                 break;
             }
             if (wall_in_way(nx2, ny2, dir)) {
-                s32 t;
+                s32 old_dir;
 
-                t = dir;
+                old_dir = dir;
                 dir = other_wherefacing;
-                other_wherefacing = t;
+                other_wherefacing = old_dir;
                 switch (dir) {
                 case 3:
                     nx = x - 1;
@@ -343,105 +343,105 @@ other:
 // FUNCTION: 0x00056028
 s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
 {
-    s32 d;
+    s32 next_dir;
     s32 r;
     s32 blocked;
-    s32 nd;
+    s32 alt_dir;
 
     if (path->result == 0) {
         if (wall_in_way(x, y, 0) && wall_in_way(x, y, 2) && wall_in_way(x, y, 3) && wall_in_way(x, y, 1))
             return -2;
         return -3;
     }
-    d = orthonav_wn(path, x, y, dir);
-    if (d == 4) {
+    next_dir = orthonav_wn(path, x, y, dir);
+    if (next_dir == 4) {
         if (path->x1 != x || path->y1 != y) {
             orthonav_init(path, x, y, (s8)path->x1, (s8)path->y1);
-            d = orthonav_wn(path, x, y, dir);
+            next_dir = orthonav_wn(path, x, y, dir);
         } else {
             return 4;
         }
     }
-    if (wall_in_way(x, y, d)) {
+    if (wall_in_way(x, y, next_dir)) {
         orthonav_init(path, x, y, (s8)path->x1, (s8)path->y1);
-        d = orthonav_wn(path, x, y, dir);
-        if (!wall_in_way(x, y, d))
+        next_dir = orthonav_wn(path, x, y, dir);
+        if (!wall_in_way(x, y, next_dir))
             goto unblocked;
-        d = -2;
+        next_dir = -2;
         r = old_newrand() % 0xffff + 0xffff;
         do {
             if (!wall_in_way(x, y, 0))
-                d = 0;
+                next_dir = 0;
             if (path->steps[0].y <= y)
                 r -= 0x4000;
             if (r < 0)
                 break;
             if (!wall_in_way(x, y, 2))
-                d = 2;
+                next_dir = 2;
             if (path->steps[0].y >= y)
                 r -= 0x4000;
             if (r < 0)
                 break;
             if (!wall_in_way(x, y, 3))
-                d = 3;
+                next_dir = 3;
             if (path->steps[0].x <= x)
                 r -= 0x4000;
             if (r < 0)
                 break;
             if (!wall_in_way(x, y, 1))
-                d = 1;
+                next_dir = 1;
             if (path->steps[0].x >= x)
                 r -= 0x4000;
         } while (r >= 0);
-        if (d == -2) {
+        if (next_dir == -2) {
             path->x1 = 0xff;
             return -2;
         }
     } else {
     unblocked:
-        blocked = person_in_way(x, y, d) | person_overlap();
+        blocked = person_in_way(x, y, next_dir) | person_overlap();
         if (blocked == 0)
-            return d;
+            return next_dir;
         if (!wall_in_way(x, y, other_wherefacing) && !person_in_way(x, y, other_wherefacing)
             && (s32)(old_newrand() % 0xffff) < blocked + 0x3000) {
-            d = other_wherefacing;
+            next_dir = other_wherefacing;
         } else {
             switch (other_wherefacing) {
             case 3:
-                nd = 1;
+                alt_dir = 1;
                 break;
             case 1:
-                nd = 3;
+                alt_dir = 3;
                 break;
             case 0:
-                nd = 2;
+                alt_dir = 2;
                 break;
             case 2:
-                nd = 0;
+                alt_dir = 0;
                 break;
             }
-            if (!wall_in_way(x, y, nd) && !person_in_way(x, y, nd)
+            if (!wall_in_way(x, y, alt_dir) && !person_in_way(x, y, alt_dir)
                 && (s32)(old_newrand() % 0xffff) < blocked + 0x3000) {
-                d = nd;
+                next_dir = alt_dir;
             } else if ((s32)(old_newrand() % 0xffff) < blocked - 0x2000) {
-                return d;
+                return next_dir;
             } else {
-                switch (d) {
+                switch (next_dir) {
                 case 3:
-                    nd = 1;
+                    alt_dir = 1;
                     break;
                 case 1:
-                    nd = 3;
+                    alt_dir = 3;
                     break;
                 case 0:
-                    nd = 2;
+                    alt_dir = 2;
                     break;
                 case 2:
-                    nd = 0;
+                    alt_dir = 0;
                     break;
                 }
-                if (!wall_in_way(x, y, nd) && !person_in_way(x, y, nd) && blocked + 0xffff > 0x8000) {
-                    d = nd;
+                if (!wall_in_way(x, y, alt_dir) && !person_in_way(x, y, alt_dir) && blocked + 0xffff > 0x8000) {
+                    next_dir = alt_dir;
                 } else {
                     path->x1 = 0xff;
                     return -1;
@@ -450,6 +450,6 @@ s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
         }
     }
     path->x1 = 0xff;
-    return d;
+    return next_dir;
 }
 

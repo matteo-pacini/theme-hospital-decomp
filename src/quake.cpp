@@ -93,25 +93,25 @@ void setup_next_quake(void)
 void do_earthquake(void)
 {
     RoomInfo *room;
-    Thing *t;
+    Thing *obj;
 
-    for (t = thing + 1; t < end_things; t++) {
-        if (t->renderer == 6) {
-            if (objects[t->subtype].unknown1e) {
+    for (obj = thing + 1; obj < end_things; obj++) {
+        if (obj->renderer == 6) {
+            if (objects[obj->subtype].unknown1e) {
             if (statvar.unknownfd > 1) {
-                room = &room_info[t->unknown89];
+                room = &room_info[obj->unknown89];
                 if (room > room_info && (room->f3 == 4 || room->f22)) {
                     continue;
                 }
             } else {
-                if (t->unknown89 && t->unknown89 == allhosps[t->owner].unknown11b7) {
+                if (obj->unknown89 && obj->unknown89 == allhosps[obj->owner].unknown11b7) {
                     continue;
                 }
             }
-            if (t->kind != 0x12) {
-                t->mode += gamevar.f12b;
-                if (t->value * 75 / 100 <= t->mode) {
-                    modify_machine(t);
+            if (obj->kind != 0x12) {
+                obj->mode += gamevar.f12b;
+                if (obj->value * 75 / 100 <= obj->mode) {
+                    modify_machine(obj);
                 }
             }
             }

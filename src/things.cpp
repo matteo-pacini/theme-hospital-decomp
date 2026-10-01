@@ -80,61 +80,61 @@ void fn_00054870(Thing *w);
 // FUNCTION: 0x0005cc70
 void process_things(Thing *first, Thing *last)
 {
-    Thing *w;
-    s32 total;
-    s32 count;
+    Thing *cur;
+    s32 happiness_sum;
+    s32 happiness_count;
 
-    total = 0;
-    count = 0;
+    happiness_sum = 0;
+    happiness_count = 0;
     debug.thing_count = 0;
     debug.bang_count = 0;
     reset_all_count();
     check_win_status();
-    for (w = first; w < last; w++) {
-        switch (w->renderer) {
+    for (cur = first; cur < last; cur++) {
+        switch (cur->renderer) {
         case 0:
             break;
         case 2:
             debug.thing_count++;
-            person_count(w);
-            if (w->owner == player) {
-                total += w->unknown81s;
-                count++;
+            person_count(cur);
+            if (cur->owner == player) {
+                happiness_sum += cur->unknown81s;
+                happiness_count++;
             }
-            update_icon_counter(w);
-            switch (w->kind) {
+            update_icon_counter(cur);
+            switch (cur->kind) {
             case 4:
-                person_waits_for_busy(w);
+                person_waits_for_busy(cur);
                 break;
             case 6:
-                person_goto_destination(w);
+                person_goto_destination(cur);
                 break;
             case 8:
-                return_to_queue_area(w);
+                return_to_queue_area(cur);
                 break;
             case 0xc:
-                person_go_home(w);
+                person_go_home(cur);
                 break;
             case 0xe:
-                fn_0001673c(w);
+                fn_0001673c(cur);
                 break;
             case 0x10:
-                person_complex_retry(w);
+                person_complex_retry(cur);
                 break;
             case 0x12:
-                person_arrives_at_door(w);
+                person_arrives_at_door(cur);
                 break;
             case 0x14:
-                person_in_queue(w);
+                person_in_queue(cur);
                 break;
             case 0x16:
-                person_goto_object(w);
+                person_goto_object(cur);
                 break;
             case 0x18:
-                person_entertains_themself(w);
+                person_entertains_themself(cur);
                 break;
             case 0x1a:
-                fn_00041b08(w);
+                fn_00041b08(cur);
                 break;
             case 0x1c:
                 break;
@@ -142,58 +142,58 @@ void process_things(Thing *first, Thing *last)
             case 0x42:
                 break;
             case 0x22:
-                fn_00054870(w);
+                fn_00054870(cur);
                 break;
             case 0x24:
-                person_goto_queue(w);
+                person_goto_queue(cur);
                 break;
             case 0x26:
-                person_go_for_treatment(w);
+                person_go_for_treatment(cur);
                 break;
             case 0x28:
             case 0xf2:
                 break;
             case 0xf0:
-                nav_debug_state(w);
+                nav_debug_state(cur);
                 break;
             case 0x2a:
-                fn_00041a54(w);
+                fn_00041a54(cur);
                 break;
             case 0x2c:
-                person_in_bed(w);
+                person_in_bed(cur);
                 break;
             case 0x2e:
-                person_fills(w);
+                person_fills(cur);
                 break;
             case 0x30:
-                person_energises(w);
+                person_energises(cur);
                 break;
             case 0x32:
-                person_dead(w);
+                person_dead(cur);
                 break;
             case 0x34:
-                fn_00017cb0(w);
+                fn_00017cb0(cur);
                 break;
             case 0x36:
-                person_in_bogs(w);
+                person_in_bogs(cur);
                 break;
             case 0x38:
-                leave_toilets(w);
+                leave_toilets(cur);
                 break;
             case 0x3a:
-                play_person_showanim(w);
+                play_person_showanim(cur);
                 break;
             case 0x3c:
-                peep_stuck(w);
+                peep_stuck(cur);
                 break;
             case 0x40:
-                peep_bp_goto(w);
+                peep_bp_goto(cur);
                 break;
             case 0x44:
-                person_waits_for_decision(w);
+                person_waits_for_decision(cur);
                 break;
             case 0x46:
-                person_arrived_from_call(w);
+                person_arrived_from_call(cur);
                 break;
             case 0x48:
                 break;
@@ -203,138 +203,138 @@ void process_things(Thing *first, Thing *last)
             break;
         case 4:
             debug.thing_count++;
-            staff_count(w);
-            update_icon_counter(w);
-            modify_staff(w);
-            switch (w->kind) {
+            staff_count(cur);
+            update_icon_counter(cur);
+            modify_staff(cur);
+            switch (cur->kind) {
             case 2:
             case 4:
-                staff_waits(w);
+                staff_waits(cur);
                 break;
             case 6:
-                doctor_in_office(w);
+                doctor_in_office(cur);
                 break;
             case 8:
-                doctor_works_at_desk(w);
+                doctor_works_at_desk(cur);
                 break;
             case 0xa:
-                receptionist_works(w);
+                receptionist_works(cur);
                 break;
             case 0xc:
-                receptionist_finds_reception(w);
+                receptionist_finds_reception(cur);
                 break;
             case 0xe:
-                play_complex_staff_anim(w);
+                play_complex_staff_anim(cur);
                 break;
             case 0x10:
-                surgeon_waits(w);
+                surgeon_waits(cur);
                 break;
             case 0x12:
-                staff_goto_object(w);
+                staff_goto_object(cur);
                 break;
             case 0x1e:
                 break;
             case 0x14:
-                doctor_waits_for_patient_to_arrive(w);
+                doctor_waits_for_patient_to_arrive(cur);
                 break;
             case 0x18:
                 break;
             case 0x1a:
-                fn_00054870(w);
+                fn_00054870(cur);
                 break;
             case 0x1c:
-                doctor_carries_out_examination(w);
+                doctor_carries_out_examination(cur);
                 break;
             case 0x3c:
-                handyman_works(w);
+                handyman_works(cur);
                 break;
             case 0x20:
-                recept_waits_for_patient(w);
+                recept_waits_for_patient(cur);
                 break;
             case 0x22:
-                recept_admits_patient(w);
+                recept_admits_patient(cur);
                 break;
             case 0x24:
-                doctor_in_machine_room(w);
+                doctor_in_machine_room(cur);
                 break;
             case 0x26:
-                staff_wait_for_complex_slave(w);
+                staff_wait_for_complex_slave(cur);
                 break;
             case 0x28:
-                staff_in_corridor(w);
+                staff_in_corridor(cur);
                 break;
             case 0x2a:
             case 0x3a:
             case 0xf2:
                 break;
             case 0x2c:
-                staff_complex_retry(w);
+                staff_complex_retry(cur);
                 break;
             case 0x2e:
-                if (actual_game_turn > w->unknown148d) {
+                if (actual_game_turn > cur->unknown148d) {
                     if (statvar.unknownfd <= 1) {
-                        if ((u16)(w - thing) != gamevar.unknown75)
-                            remove_staff_in_struct(w);
+                        if ((u16)(cur - thing) != gamevar.unknown75)
+                            remove_staff_in_struct(cur);
                     } else {
-                        if ((u16)(w - thing) == gamevar.unknown75) {
+                        if ((u16)(cur - thing) == gamevar.unknown75) {
                             gamevar.unknown75 = 0;
                             gamevar.unknown77 = 0;
                             set_mouse_mode(0);
                         }
-                        remove_staff_in_struct(w);
+                        remove_staff_in_struct(cur);
                     }
                 }
                 break;
             case 0xf0:
-                nav_debug_state(w);
+                nav_debug_state(cur);
                 break;
             case 0x30:
-                staff_in_staff_room(w);
+                staff_in_staff_room(cur);
                 break;
             case 0x32:
-                nurse_in_ward(w);
+                nurse_in_ward(cur);
                 break;
             case 0x34:
-                staff_wanders(w);
+                staff_wanders(cur);
                 break;
             case 0x36:
-                process_staff_complex(w);
+                process_staff_complex(cur);
                 break;
             case 0x38:
-                fn_00015b68(w);
-                w->kind = 0x2e;
-                w->unknown130 = actual_game_turn;
-                gamevar.f6[w->subtype]++;
+                fn_00015b68(cur);
+                cur->kind = 0x2e;
+                cur->unknown130 = actual_game_turn;
+                gamevar.f6[cur->subtype]++;
                 gamevar.f4++;
                 break;
             case 0x3e:
-                doctor_researches(w);
+                doctor_researches(cur);
                 break;
             case 0x40:
-                nurse_vaccinates(w);
+                nurse_vaccinates(cur);
                 break;
             case 0x42:
-                doctor_in_theatre(w);
+                doctor_in_theatre(cur);
                 break;
             case 0x46:
-                doctor_is_trained(w);
+                doctor_is_trained(cur);
                 break;
             case 0x48:
-                consultant_trains(w);
+                consultant_trains(cur);
                 break;
             case 0x4a:
-                receptionist_setup(w);
+                receptionist_setup(cur);
                 break;
             case 0x44:
                 break;
             case 0x4c:
-                peep_bp_goto(w);
+                peep_bp_goto(cur);
                 break;
             case 0x4e:
-                peep_stuck(w);
+                peep_stuck(cur);
                 break;
             case 0x50:
-                play_aniseq(w);
+                play_aniseq(cur);
                 break;
             default:
                 break;
@@ -342,41 +342,41 @@ void process_things(Thing *first, Thing *last)
             break;
         case 6:
             debug.thing_count++;
-            object_count(w);
-            update_icon_counter(w);
-            switch (w->kind) {
+            object_count(cur);
+            update_icon_counter(cur);
+            switch (cur->kind) {
             case 2:
-                object_static(w);
+                object_static(cur);
                 break;
             case 4:
-                if (w->icon)
-                    w->icon = frame[w->icon].next;
+                if (cur->icon)
+                    cur->icon = frame[cur->icon].next;
             case 0xe:
             case 0x12:
                 break;
             case 6:
-                fn_0003751c(w);
+                fn_0003751c(cur);
                 break;
             case 0xa:
-                plant_ages(w);
+                plant_ages(cur);
                 break;
             case 0x10:
-                double_door_swings(w);
+                double_door_swings(cur);
                 break;
             case 0x14:
-                sliding_door_closed(w);
+                sliding_door_closed(cur);
                 break;
             case 0x16:
-                sliding_door_opens(w);
+                sliding_door_opens(cur);
                 break;
             case 0x18:
-                sliding_door_open(w);
+                sliding_door_open(cur);
                 break;
             case 0x1a:
-                sliding_door_closes(w);
+                sliding_door_closes(cur);
                 break;
             case 0x1c:
-                bomb_ticks(w);
+                bomb_ticks(cur);
                 break;
             default:
                 break;
@@ -384,30 +384,30 @@ void process_things(Thing *first, Thing *last)
             break;
         case 8:
             debug.thing_count++;
-            switch (w->kind) {
+            switch (cur->kind) {
             case 0x10:
-                double_door_swings(w);
+                double_door_swings(cur);
                 break;
             default:
-                if (actual_game_turn % w->anim_speed == 0)
-                    w->sprite = frame[w->sprite].next;
+                if (actual_game_turn % cur->anim_speed == 0)
+                    cur->sprite = frame[cur->sprite].next;
                 break;
             }
             break;
         case 0xa:
             debug.thing_count++;
-            switch (w->kind) {
+            switch (cur->kind) {
             case 2:
-                reaper_play_anim(w);
+                reaper_play_anim(cur);
                 break;
             case 4:
-                reaper_waits(w);
+                reaper_waits(cur);
                 break;
             case 6:
-                remove_reaper(w);
+                remove_reaper(cur);
                 break;
             case 8:
-                reaper_goto_hell(w);
+                reaper_goto_hell(cur);
                 break;
             case 0xf2:
                 break;
@@ -417,15 +417,15 @@ void process_things(Thing *first, Thing *last)
             break;
         case 0xc:
             debug.thing_count++;
-            switch (w->kind) {
+            switch (cur->kind) {
             case 2:
-                rat_scurries(w);
+                rat_scurries(cur);
                 break;
             case 4:
-                rat_arrives(w);
+                rat_arrives(cur);
                 break;
             case 6:
-                rat_leaves(w);
+                rat_leaves(cur);
                 break;
             default:
                 break;
@@ -435,22 +435,22 @@ void process_things(Thing *first, Thing *last)
             debug.thing_count++;
             debug.bang_count++;
             debug.bang_max < debug.bang_count ? (debug.bang_max = debug.bang_count) : 0;
-            process_bang(w);
+            process_bang(cur);
             break;
         case 0x10:
             debug.thing_count++;
-            switch (w->kind) {
+            switch (cur->kind) {
             case 2:
-                helicopter_lands(w);
+                helicopter_lands(cur);
                 break;
             case 4:
-                w->sprite = frame[w->sprite].next;
+                cur->sprite = frame[cur->sprite].next;
                 break;
             case 6:
-                helicopter_leaves(w);
+                helicopter_leaves(cur);
                 break;
             case 8:
-                saucer_abducts(w);
+                saucer_abducts(cur);
                 break;
             default:
                 break;
@@ -458,19 +458,19 @@ void process_things(Thing *first, Thing *last)
             break;
         case 0x12:
             debug.thing_count++;
-            numfx_ages(w);
+            numfx_ages(cur);
             break;
         case 0x14:
             debug.thing_count++;
-            switch (w->kind) {
+            switch (cur->kind) {
             case 2:
-                mayor_goto(w);
+                mayor_goto(cur);
                 break;
             case 4:
-                mayor_pauses(w);
+                mayor_pauses(cur);
                 break;
             case 6:
-                mayor_gone(w);
+                mayor_gone(cur);
                 break;
             default:
                 break;
@@ -478,18 +478,18 @@ void process_things(Thing *first, Thing *last)
             break;
         case 0x16:
             debug.thing_count++;
-            switch (w->kind) {
+            switch (cur->kind) {
             case 2:
-                mayor_goto(w);
+                mayor_goto(cur);
                 break;
             case 4:
-                inspector_pauses(w);
+                inspector_pauses(cur);
                 break;
             case 6:
-                mayor_gone(w);
+                mayor_gone(cur);
                 break;
             case 8:
-                inspector_pauses(w);
+                inspector_pauses(cur);
                 break;
             default:
                 break;

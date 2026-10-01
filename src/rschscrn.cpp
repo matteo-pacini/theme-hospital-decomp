@@ -116,21 +116,21 @@ void draw_research_text(void)
 void alter_research(u8 cat, u8 value, u8 owner)
 {
     u8 old;
-    AllHosps *h;
+    AllHosps *hosp;
     u8 total;
     u8 i;
 
-    h = &allhosps[owner];
-    old = h->research_alloc[cat];
+    hosp = &allhosps[owner];
+    old = hosp->research_alloc[cat];
     if (old >= 0) {
-        h->research_alloc[cat] = value;
+        hosp->research_alloc[cat] = value;
         total = 0;
         for (i = 0; i < 5; i++) {
-            if (h->research_alloc[i] > 0)
-                total += h->research_alloc[i];
+            if (hosp->research_alloc[i] > 0)
+                total += hosp->research_alloc[i];
         }
         if (total > 100)
-            h->research_alloc[cat] = old;
+            hosp->research_alloc[cat] = old;
     }
 }
 
@@ -172,12 +172,12 @@ void process_res_panel(void)
 }
 
 // FUNCTION: 0x000b3060
-void process_res_button(u8 n)
+void process_res_button(u8 button)
 {
     u16 i;
     u32 total;
 
-    switch (n) {
+    switch (button) {
     case 0:
         research.unknown2 = 2;
         play_sound(10, 0x42, -1, -1);
@@ -187,13 +187,13 @@ void process_res_button(u8 n)
     case 3:
     case 4:
     case 5:
-        if (myhosp->research_alloc[n - 1] >= 0) {
-            i = myhosp->research_alloc[n - 1];
+        if (myhosp->research_alloc[button - 1] >= 0) {
+            i = myhosp->research_alloc[button - 1];
             if (i > 0) {
                 if (othervar.f8a2 - othervar.f9f3 > 0xfa || othervar.f9f1 == 0x100) {
                     D_001549d0[player].type = 0x50;
-                    D_001549d0[player].value = n - 1;
-                    D_001549d0[player].arg = myhosp->research_alloc[n - 1];
+                    D_001549d0[player].value = button - 1;
+                    D_001549d0[player].arg = myhosp->research_alloc[button - 1];
                     if (othervar.f9f1 < 0xa00)
                         othervar.f9f1 += 0x10;
                     else
@@ -214,20 +214,20 @@ void process_res_button(u8 n)
     case 8:
     case 9:
     case 10:
-        if (myhosp->research_alloc[n - 6] >= 0) {
+        if (myhosp->research_alloc[button - 6] >= 0) {
             total = 0;
             for (i = 0; i < 5; i++) {
-                if (i != n - 6) {
+                if (i != button - 6) {
                     if (myhosp->research_alloc[i] >= 0)
                         total += myhosp->research_alloc[i];
                 }
             }
-            i = myhosp->research_alloc[n - 6];
+            i = myhosp->research_alloc[button - 6];
             if (i + total < 100) {
                 if (othervar.f8a2 - othervar.f9f3 > 0xfa || othervar.f9f1 == 0x100) {
                     D_001549d0[player].type = 0x50;
-                    D_001549d0[player].value = n - 6;
-                    D_001549d0[player].arg = myhosp->research_alloc[n - 6];
+                    D_001549d0[player].value = button - 6;
+                    D_001549d0[player].arg = myhosp->research_alloc[button - 6];
                     if (othervar.f9f1 < 0xa00)
                         othervar.f9f1 += 0x10;
                     else

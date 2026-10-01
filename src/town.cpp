@@ -487,17 +487,17 @@ void place_partition_walls(void)
 void remove_partition_walls(void)
 {
     u16 i;
-    u8 b;
-    u8 a;
+    u8 next_open;
+    u8 prev_open;
 
     for (i = 0; i < 0x4000; i++) {
         if (map[i].unknown3 == 0x8c) {
-            b = a = 0;
+            next_open = prev_open = 0;
             if (!(map[i + 128].unknown7 & 0x10))
-                b = 1;
+                next_open = 1;
             if (!(map[i - 128].unknown7 & 0x10))
-                a = 1;
-            if (b && a) {
+                prev_open = 1;
+            if (next_open && prev_open) {
                 if (which_room(i + 128) || which_room(i - 128))
                     map[i].unknown3 = 0x52;
                 else
@@ -505,12 +505,12 @@ void remove_partition_walls(void)
             }
         }
         if (map[i].unknown4 == 0x8d) {
-            b = a = 0;
+            next_open = prev_open = 0;
             if (!(map[i + 1].unknown7 & 0x10))
-                b = 1;
+                next_open = 1;
             if (!(map[i - 1].unknown7 & 0x10))
-                a = 1;
-            if (b && a) {
+                prev_open = 1;
+            if (next_open && prev_open) {
                 if (which_room(i + 1) || which_room(i - 1))
                     map[i].unknown4 = 0x53;
                 else
@@ -663,7 +663,7 @@ void adjust_mapwho(u16 tile)
     u8 dir;
     u8 kind;
     u16 id;
-    Thing *t;
+    Thing *obj;
 
     if (map[tile].first) {
         kind = map[tile].first >> 8;
@@ -672,8 +672,8 @@ void adjust_mapwho(u16 tile)
         othervar.f9bb = 1;
         id = fn_00037098(tile, (u16)kind, dir, othervar.ff);
         if (id) {
-            t = &thing[id];
-            t->owner = 0;
+            obj = &thing[id];
+            obj->owner = 0;
         }
         othervar.f9bb = 0;
     }
@@ -686,15 +686,15 @@ void display_plot_under_mouse(void)
     s16 y;
     u16 i;
     u16 plot;
-    u16 h;
+    u16 line_height;
     s32 price;
-    Map *m;
+    Map *cell;
     char buf[100];
 
     i = 5;
     set_font_from_cache(0x18);
-    h = lbFontPtr ? lbFontPtr[34].height : 0;
-    LbTextSetWindow(0xe6, 0x30 - h / 2, 0x180, 0x18);
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    LbTextSetWindow(0xe6, 0x30 - line_height / 2, 0x180, 0x18);
     lbDisplay.draw_flags = 0x100;
     sprintf(buf, "%s", D_001602c4[myhosp->f29]);
     fn_0001b7e0(buf, (s8 *)buf, 0);
@@ -724,12 +724,12 @@ void display_plot_under_mouse(void)
             sprintf(buf, ": $%d", price);
             LbTextDraw(resvars.f40[53].x, resvars.f40[53].y, buf);
         } else {
-            m = &map[x + (y << 7)];
+            cell = &map[x + (y << 7)];
             sprintf(buf, ": -");
             LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
             sprintf(buf, ": %s", D_001602c8[3]);
             for (i = 0; i < 4; i++) {
-                if (m->unknown7 & (1 << i)) {
+                if (cell->unknown7 & (1 << i)) {
                     sprintf(buf, ": %s", allhosps[i].unknown0);
                     break;
                 }
@@ -846,16 +846,16 @@ void draw_things_on_map(void)
     u16 x;
     u16 i;
     u16 y;
-    Thing *t;
+    Thing *occupant;
     char buf[50];
 
     for (x = 0; x < 128; x++) {
         for (y = 0; y < 128; y++) {
             if (map[(s16)x + ((s16)y << 7)].first > 0) {
-                t = &thing[map[(s16)x + ((s16)y << 7)].first];
-                switch (t->renderer) {
+                occupant = &thing[map[(s16)x + ((s16)y << 7)].first];
+                switch (occupant->renderer) {
                 case 6:
-                    switch (t->subtype) {
+                    switch (occupant->subtype) {
                     case 0x2d:
                         if (town.unknown0 & 2)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
@@ -871,7 +871,7 @@ void draw_things_on_map(void)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 1, 1, color.unknownC);
                             lbDisplay.draw_flags = 4;
-                            if (t->owner == player) {
+                            if (occupant->owner == player) {
                                 if (othervar.fa8a) {
                                     if (myhosp->fc94)
                                         reqspr_draw(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width - screen_sprites_tab_start[myhosp->fc94 + 9].width / 2,
@@ -884,7 +884,7 @@ void draw_things_on_map(void)
                         break;
                     case 0x3a:
                     case 0x3b:
-                        if (t->unknown17 == 0 || t->unknown17 == 2)
+                        if (occupant->unknown17 == 0 || occupant->unknown17 == 2)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 7, 3, color.unknown11);
                         else
@@ -898,7 +898,7 @@ void draw_things_on_map(void)
                                   area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknown11);
                         break;
                     default:
-                        if (objects[t->subtype].unknown14 == 1 || objects[t->subtype].unknown14 == 2) {
+                        if (objects[occupant->subtype].unknown14 == 1 || objects[occupant->subtype].unknown14 == 2) {
                             if (town.unknown0 & 8)
                             LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                       area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 3, 3, color.unknownE);
@@ -914,7 +914,7 @@ void draw_things_on_map(void)
                                   area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 2, 2, color.unknown12);
                     break;
                 case 2:
-                    if ((town.unknown0 & 1) && !(map[((s16)(u16)t->y.tile << 7) + (s16)(u16)t->x.tile].unknown7 & 0x10))
+                    if ((town.unknown0 & 1) && !(map[((s16)(u16)occupant->y.tile << 7) + (s16)(u16)occupant->x.tile].unknown7 & 0x10))
                         LbDrawBox(area_towns[myhosp->f29].x + x * area_towns[myhosp->f29].width,
                                   area_towns[myhosp->f29].y + y * area_towns[myhosp->f29].height, 2, 2, color.unknown7);
                     break;
@@ -979,9 +979,9 @@ u8 process_town_panel(void)
 }
 
 // FUNCTION: 0x000678dc
-void process_town_button(u8 n)
+void process_town_button(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
         if (lbDisplay.rright_button)
             town.unknown0 = 0;
@@ -1068,9 +1068,9 @@ void process_bid_panel(void)
 }
 
 // FUNCTION: 0x00067e44
-void process_bid_button(u8 n)
+void process_bid_button(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
     case 1:
         if (myhosp->f35 >= plotbid.price) {

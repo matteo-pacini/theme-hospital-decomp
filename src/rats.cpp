@@ -23,7 +23,7 @@ void try_create_rathole(u8 owner)
     u8 side;
     u16 tile;
     int i;
-    int n;
+    int slot;
 
     cell = &map[allhosps[owner].fcac];
     side = old_newrand() & 3;
@@ -71,9 +71,9 @@ found:
             return;
         }
     }
-    n = allhosps[owner].fcae++;
-    allhosps[owner].fcaf[n].tile = tile;
-    allhosps[owner].fcaf[n].side = side;
+    slot = allhosps[owner].fcae++;
+    allhosps[owner].fcaf[slot].tile = tile;
+    allhosps[owner].fcaf[slot].side = side;
     if (side == 0) {
         remove_litter(tile, owner);
         cell->floor &= 0xf0;
@@ -132,13 +132,13 @@ extern "C" void fn_0007d2a8(u8 owner, u16 tile)
 void manage_rats(void)
 {
     s8 i;
-    int n;
+    int nplayers;
 
-    n = 1;
+    nplayers = 1;
     if (statvar.unknownfd > 1) {
-        n = 4;
+        nplayers = 4;
     }
-    for (i = n - 1; i >= 0; i--) {
+    for (i = nplayers - 1; i >= 0; i--) {
         if (statvar.unknownfd > 1 && D_001609c4[i].active == 0) {
             continue;
         }
@@ -210,71 +210,71 @@ void make_a_rat(u8 owner)
 }
 
 // FUNCTION: 0x0007d6cc
-void rat_scurries(Thing *w)
+void rat_scurries(Thing *rat)
 {
     MapPos x;
     MapPos y;
 
-    x.raw = (w->value >> 8) + (s16)w->x.raw;
-    y.raw = (w->f3f >> 8) + (s16)w->y.raw;
-    move_node(w, x, y);
-    if (--w->mode == 0) {
-        ratnav_init(w);
+    x.raw = (rat->value >> 8) + (s16)rat->x.raw;
+    y.raw = (rat->f3f >> 8) + (s16)rat->y.raw;
+    move_node(rat, x, y);
+    if (--rat->mode == 0) {
+        ratnav_init(rat);
     } else {
-        w->sprite = frame[w->sprite].next;
+        rat->sprite = frame[rat->sprite].next;
     }
 }
 
 // FUNCTION: 0x0007d760
-void ratnav_init(Thing *w)
+void ratnav_init(Thing *rat)
 {
     s32 dx;
     s32 dy;
     int i;
 
-    fn_000444e0(w);
-    if ((w->x.tile == w->unknown19 && w->y.tile == w->unknown20) || w->f36 == 0) {
-        for (i = allhosps[w->owner].fcae - 1; i >= 0; i--) {
-            if (allhosps[w->owner].fcaf[i].tile == ((s16)w->y.tile << 7) + (s16)w->x.tile) {
-                switch (allhosps[w->owner].fcaf[i].side) {
+    fn_000444e0(rat);
+    if ((rat->x.tile == rat->unknown19 && rat->y.tile == rat->unknown20) || rat->f36 == 0) {
+        for (i = allhosps[rat->owner].fcae - 1; i >= 0; i--) {
+            if (allhosps[rat->owner].fcaf[i].tile == ((s16)rat->y.tile << 7) + (s16)rat->x.tile) {
+                switch (allhosps[rat->owner].fcaf[i].side) {
                 case 0:
-                    w->sprite = start[0x3c2].frame;
-                    w->palette = start[0x3c2].flags;
+                    rat->sprite = start[0x3c2].frame;
+                    rat->palette = start[0x3c2].flags;
                     break;
                 case 3:
-                    w->sprite = start[0x3c3].frame;
-                    w->palette = start[0x3c3].flags;
+                    rat->sprite = start[0x3c3].frame;
+                    rat->palette = start[0x3c3].flags;
                     break;
                 default:
-                    remove_thing(w);
+                    remove_thing(rat);
                     return;
                 }
-                w->kind = 6;
-                w->y.frac = 0x80;
-                w->x.frac = w->y.frac;
-                w->depth = -9;
+                rat->kind = 6;
+                rat->y.frac = 0x80;
+                rat->x.frac = rat->y.frac;
+                rat->depth = -9;
                 return;
             }
         }
-        remove_thing(w);
+        remove_thing(rat);
         return;
     }
-    if (w->x.tile == w->f2e && w->y.tile == w->f2f) {
-        if (w->f36 > 1 && (w->x.tile != w->f30 || w->y.tile != w->f31)) {
-            w->f2e_raw = w->f30_raw;
-            w->f36 = 1;
+    if (rat->x.tile == rat->f2e && rat->y.tile == rat->f2f) {
+        if (rat->f36 > 1 && (rat->x.tile != rat->f30 || rat->y.tile != rat->f31)) {
+            rat->f2e_raw = rat->f30_raw;
+            rat->f36 = 1;
         } else {
-            remove_thing(w);
+            remove_thing(rat);
             return;
         }
     }
-    dx = w->f2e - w->x.tile;
-    dy = w->f2f - w->y.tile;
-    w->mode = LbSqrL((dx << 8) * (dx << 8) + (dy << 8) * (dy << 8)) / w->unknown18;
-    w->value = (dx << 16) / w->mode;
-    w->f3f = (dy << 16) / w->mode;
-    w->sprite = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].frame;
-    w->palette = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].flags;
+    dx = rat->f2e - rat->x.tile;
+    dy = rat->f2f - rat->y.tile;
+    rat->mode = LbSqrL((dx << 8) * (dx << 8) + (dy << 8) * (dy << 8)) / rat->unknown18;
+    rat->value = (dx << 16) / rat->mode;
+    rat->f3f = (dy << 16) / rat->mode;
+    rat->sprite = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].frame;
+    rat->palette = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].flags;
 }
 
 // FUNCTION: 0x0007dab4
@@ -301,22 +301,22 @@ void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h)
 }
 
 // FUNCTION: 0x0007dc44
-void rat_arrives(Thing *w)
+void rat_arrives(Thing *rat)
 {
-    w->sprite = frame[w->sprite].next;
-    if (frame[w->sprite].flags & 1) {
-        w->depth = 0;
-        w->kind = 2;
-        ratnav_init(w);
+    rat->sprite = frame[rat->sprite].next;
+    if (frame[rat->sprite].flags & 1) {
+        rat->depth = 0;
+        rat->kind = 2;
+        ratnav_init(rat);
     }
 }
 
 // FUNCTION: 0x0007dcb4
-void rat_leaves(Thing *w)
+void rat_leaves(Thing *rat)
 {
-    w->sprite = frame[w->sprite].next;
-    if (frame[w->sprite].flags & 1) {
-        remove_thing(w);
+    rat->sprite = frame[rat->sprite].next;
+    if (frame[rat->sprite].flags & 1) {
+        remove_thing(rat);
     }
 }
 

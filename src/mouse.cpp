@@ -48,8 +48,8 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
 // FUNCTION: 0x00059d00
 void process_mouse(void)
 {
-    Thing *w;
-    Thing *other;
+    Thing *hovered;
+    Thing *used_object;
     u16 scroll;
     u8 icon;
 
@@ -147,33 +147,33 @@ void process_mouse(void)
                     set_mouse_sprite(0xa);
                 gamevar.f130 = 5;
                 set = 1;
-            } else if (crequester.unknown2 == 0x63 && (w = &thing[othervar.f41]) > thing) {
+            } else if (crequester.unknown2 == 0x63 && (hovered = &thing[othervar.f41]) > thing) {
                 if (gamevar.f174)
                     return;
-                if ((w->renderer == 2 || w->renderer == 4)
-                    && (other = &thing[w->unknown69
-                                               && (thing[w->unknown69].renderer == 6 || thing[w->unknown69].renderer == 8)
-                                               && (u16)(w - thing) == thing[w->unknown69].unknown91
-                                           ? w->unknown69
+                if ((hovered->renderer == 2 || hovered->renderer == 4)
+                    && (used_object = &thing[hovered->unknown69
+                                               && (thing[hovered->unknown69].renderer == 6 || thing[hovered->unknown69].renderer == 8)
+                                               && (u16)(hovered - thing) == thing[hovered->unknown69].unknown91
+                                           ? hovered->unknown69
                                            : 0])
                            > thing) {
-                    if (other->subtype == 0xb) {
+                    if (used_object->subtype == 0xb) {
                         othervar.f7d = othervar.f7c;
                         othervar.f7c = 4;
                         gamevar.f130 = 3;
                         hit = 1;
-                        peep_icon(w);
+                        peep_icon(hovered);
                         if (othervar.f30 != 0x13)
                             set_mouse_sprite(0x13);
                         goto done;
                     }
-                    if (objects[other->subtype].f20)
-                        w = other;
+                    if (objects[used_object->subtype].f20)
+                        hovered = used_object;
                 }
-                if (w->renderer == 6) {
-                    if (w->group && objects[thing[w->group].subtype].unknown17 != -1)
-                        w = &thing[w->group];
-                    if (objects[w->subtype].f20) {
+                if (hovered->renderer == 6) {
+                    if (hovered->group && objects[thing[hovered->group].subtype].unknown17 != -1)
+                        hovered = &thing[hovered->group];
+                    if (objects[hovered->subtype].f20) {
                         othervar.f7d = othervar.f7c;
                         othervar.f7c = 3;
                         gamevar.f130 = 3;
@@ -182,7 +182,7 @@ void process_mouse(void)
                         hit = 1;
                         goto done;
                     }
-                    if (objects[w->subtype].unknown20[2] & 2) {
+                    if (objects[hovered->subtype].unknown20[2] & 2) {
                         othervar.f7d = othervar.f7c;
                         othervar.f7c = 6;
                         gamevar.f130 = 3;
@@ -190,14 +190,14 @@ void process_mouse(void)
                         goto done;
                     }
                 }
-                w = &thing[othervar.f41];
-                if (w->renderer == 6 && (w->subtype == 0x34 || w->subtype == 0x35) && w->unknown102)
-                    w = &thing[w->unknown102];
-                if (w->renderer == 2) {
+                hovered = &thing[othervar.f41];
+                if (hovered->renderer == 6 && (hovered->subtype == 0x34 || hovered->subtype == 0x35) && hovered->unknown102)
+                    hovered = &thing[hovered->unknown102];
+                if (hovered->renderer == 2) {
                     othervar.f7d = othervar.f7c;
                     othervar.f7c = 2;
                     gamevar.f130 = 3;
-                    peep_icon(w);
+                    peep_icon(hovered);
                     hit = 1;
                     if (othervar.f30 != 0x12)
                         set_mouse_sprite(0x12);
@@ -205,18 +205,18 @@ void process_mouse(void)
                         gamevar.f130 = 1;
                         set_mouse_sprite(0xd);
                     }
-                } else if (w->renderer == 4) {
+                } else if (hovered->renderer == 4) {
                     othervar.f7d = othervar.f7c;
                     othervar.f7c = 1;
                     gamevar.f130 = 3;
-                    peep_icon(w);
+                    peep_icon(hovered);
                     hit = 1;
                     if (othervar.f30 != 0x10)
                         set_mouse_sprite(0x10);
-                } else if (w->renderer == 8) {
+                } else if (hovered->renderer == 8) {
                     RoomInfo *room;
 
-                    room = &room_info[w->unknown89];
+                    room = &room_info[hovered->unknown89];
                     if (rooms[room->type].unknown27[2]) {
                         othervar.f7d = othervar.f7c;
                         othervar.f7c = 4;
@@ -225,7 +225,7 @@ void process_mouse(void)
                         if (othervar.f30 != 0x13)
                             set_mouse_sprite(0x13);
                     }
-                } else if (w->renderer == 0x14 || w->renderer == 0x16) {
+                } else if (hovered->renderer == 0x14 || hovered->renderer == 0x16) {
                     othervar.f7d = othervar.f7c;
                     othervar.f7c = 5;
                     gamevar.f130 = 3;
@@ -235,7 +235,7 @@ void process_mouse(void)
         done:
             if (hit) {
                 othervar.f80 = 100;
-                othervar.f7e = w - thing;
+                othervar.f7e = hovered - thing;
             } else if (!set && (othervar.f30 != 1 || gamevar.f130 != 0)) {
                 set_mouse_sprite(1);
                 gamevar.f130 = 0;
@@ -281,7 +281,7 @@ void process_mouse(void)
 // FUNCTION: 0x0005a750
 void process_left_button(u16 icon)
 {
-    Thing *w;
+    Thing *clicked;
 
     cancel_helpmsg();
     switch (icon) {
@@ -333,25 +333,25 @@ void process_left_button(u16 icon)
                 case 0:
                     break;
                 case 3:
-                    w = &thing[othervar.f7e];
-                    if (w->owner == player) {
-                        switch (w->renderer) {
+                    clicked = &thing[othervar.f7e];
+                    if (clicked->owner == player) {
+                        switch (clicked->renderer) {
                         case 6:
-                            switch (w->subtype) {
+                            switch (clicked->subtype) {
                             case 0xb: {
-                                Thing *other;
+                                Thing *receptionist;
 
-                                other = &thing[w->unknown91];
-                                if (other > thing) {
-                                    if (other->room) {
+                                receptionist = &thing[clicked->unknown91];
+                                if (receptionist > thing) {
+                                    if (receptionist->room) {
                                         D_001549d0[player].type = 0x3b;
-                                        D_001549d0[player].value = other->room - room_info;
+                                        D_001549d0[player].value = receptionist->room - room_info;
                                     }
                                 }
                                 break;
                             }
                             default:
-                                if (!(objects[w->subtype].unknown20[2] & 4)) {
+                                if (!(objects[clicked->subtype].unknown20[2] & 4)) {
                                     D_001549d0[player].type = 0x42;
                                     D_001549d0[player].value = othervar.f7e;
                                 }
@@ -359,7 +359,7 @@ void process_left_button(u16 icon)
                             }
                             break;
                         case 4:
-                            switch (w->subtype) {
+                            switch (clicked->subtype) {
                             case 3:
                                 if (PARTNER(&thing[othervar.f7e]) && thing[PARTNER(&thing[othervar.f7e])].subtype == 0xb) {
                                     if (thing[othervar.f7e].room) {
@@ -371,10 +371,10 @@ void process_left_button(u16 icon)
                             default:
                                 if (crequester.unknown2 == 0x63) {
                                     close_irequesters();
-                                    if ((w->f8e & 0x20) && w->unknown91) {
+                                    if ((clicked->f8e & 0x20) && clicked->unknown91) {
                                         D_001549d0[player].type = 0xa;
                                         D_001549d0[player].value = 1;
-                                        D_001549d0[player].arg = w->unknown91;
+                                        D_001549d0[player].arg = clicked->unknown91;
                                     } else {
                                         D_001549d0[player].type = 0x42;
                                         D_001549d0[player].value = othervar.f7e;
@@ -386,14 +386,14 @@ void process_left_button(u16 icon)
                         case 2:
                             if (crequester.unknown2 == 0x63) {
                                 close_irequesters();
-                                if ((w->f75 & 4) && w->unknown91) {
+                                if ((clicked->f75 & 4) && clicked->unknown91) {
                                     D_001549d0[player].type = 0xa;
                                     D_001549d0[player].value = 8;
-                                    D_001549d0[player].arg = w->unknown91;
-                                } else if ((w->f74 & 0x10) && w->unknown91) {
+                                    D_001549d0[player].arg = clicked->unknown91;
+                                } else if ((clicked->f74 & 0x10) && clicked->unknown91) {
                                     D_001549d0[player].type = 0xa;
                                     D_001549d0[player].value = 4;
-                                    D_001549d0[player].arg = w->unknown91;
+                                    D_001549d0[player].arg = clicked->unknown91;
                                 } else {
                                     D_001549d0[player].type = 0x42;
                                     D_001549d0[player].value = othervar.f7e;
@@ -405,15 +405,15 @@ void process_left_button(u16 icon)
                             D_001549d0[player].value = othervar.f7e;
                             break;
                         }
-                    } else if (statvar.unknownfd > 1 && w->renderer == 4 && w->owner != 0x63) {
-                        if (w->f93) {
-                            if (w->f93 != 1 << player)
+                    } else if (statvar.unknownfd > 1 && clicked->renderer == 4 && clicked->owner != 0x63) {
+                        if (clicked->f93) {
+                            if (clicked->f93 != 1 << player)
                                 advisor.f2 = 0xf;
-                        } else if (w->unknown128s < gbv.f10a / 4) {
+                        } else if (clicked->unknown128s < gbv.f10a / 4) {
                             advisor.f2 = 0x10;
                         } else {
                             D_001549d0[player].type = 0x81;
-                            D_001549d0[player].value = w - thing;
+                            D_001549d0[player].value = clicked - thing;
                             advisor.f2 = 0x11;
                         }
                     }
@@ -530,14 +530,14 @@ void process_left_button(u16 icon)
 
                 room = &room_info[allhosps[player].f11b9];
                 if (room == 0) {
-                    Thing *t;
+                    Thing *selected;
 
-                    t = &thing[othervar.f43];
-                    if (t > thing) {
-                        if (t->renderer == 4 && t->subtype == 3)
-                            room = t->room;
-                        else if (t->renderer == 6 && t->subtype == 0xb && t->unknown91)
-                            room = thing[t->unknown91].room;
+                    selected = &thing[othervar.f43];
+                    if (selected > thing) {
+                        if (selected->renderer == 4 && selected->subtype == 3)
+                            room = selected->room;
+                        else if (selected->renderer == 6 && selected->subtype == 0xb && selected->unknown91)
+                            room = thing[selected->unknown91].room;
                     }
                 }
                 if (room) {
@@ -629,7 +629,7 @@ void process_mright_button(u16 icon)
 // FUNCTION: 0x0005b95c
 void process_right_button(u16 icon)
 {
-    Thing *w;
+    Thing *hovered;
 
     if (!gamevar.f174) {
         switch (icon) {
@@ -678,11 +678,11 @@ void process_right_button(u16 icon)
                                 && (crequester.unknown2 != 0x63 || othervar.f9b8 != 0)) {
                                 fn_00074220(0, 1);
                             } else {
-                                w = &thing[othervar.f41];
-                                if (w->owner == player) {
+                                hovered = &thing[othervar.f41];
+                                if (hovered->owner == player) {
                                     if (allhosps[player].unknown11b7) {
                                         check_object_right_click_in_room_edit();
-                                    } else if (gamevar.f130 == 3 && w > thing && w->renderer == 4) {
+                                    } else if (gamevar.f130 == 3 && hovered > thing && hovered->renderer == 4) {
                                         D_001549d0[player].type = 0x68;
                                         D_001549d0[player].value = othervar.f41;
                                         play_sound(10, 0x99, -1, -1);
@@ -746,7 +746,7 @@ void process_right_button(u16 icon)
 void process_no_button(u16 icon)
 {
     RoomInfo *room;
-    Thing *w;
+    Thing *hovered;
 
     switch (icon) {
     case 0x27:
@@ -757,9 +757,9 @@ void process_no_button(u16 icon)
                 if (room && room->owner == player) {
                     flag_all_queue_members(room);
                 } else {
-                    w = &thing[othervar.f41];
-                    if (w > thing && w->owner == player) {
-                        if ((w->renderer == 6 && w->subtype == 0xb) || (w->renderer == 4 && w->subtype == 3))
+                    hovered = &thing[othervar.f41];
+                    if (hovered > thing && hovered->owner == player) {
+                        if ((hovered->renderer == 6 && hovered->subtype == 0xb) || (hovered->renderer == 4 && hovered->subtype == 3))
                             flag_all_queue_members(thing[othervar.f7e].room);
                     }
                 }

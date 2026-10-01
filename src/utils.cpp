@@ -90,52 +90,52 @@ void setup_colors(void)
 }
 
 // FUNCTION: 0x00019918
-u16 can_i_get_to(Thing *e, u16 pos)
+u16 can_i_get_to(Thing *mover, u16 pos)
 {
     orthonav_path path;
     u16 x = pos % 128;
     u16 y = pos / 128;
 
-    if (e->renderer == 6) {
-        orthonav_init(&path, e->room_next % 128, e->room_next / 128, x, y);
+    if (mover->renderer == 6) {
+        orthonav_init(&path, mover->room_next % 128, mover->room_next / 128, x, y);
     } else {
-        orthonav_init(&path, e->x.tile, e->y.tile, x, y);
+        orthonav_init(&path, mover->x.tile, mover->y.tile, x, y);
     }
     return path.result;
 }
 
 // FUNCTION: 0x000199e8
-void remove_thing(Thing *e)
+void remove_thing(Thing *target)
 {
-    fn_00015b68(e);
-    memset(e, 0, sizeof(Thing));
+    fn_00015b68(target);
+    memset(target, 0, sizeof(Thing));
 }
 
 // FUNCTION: 0x00019a1c
 void count_hospital_area(u16 player)
 {
-    AllHosps *h = allhosps + player;
-    Map *t;
+    AllHosps *hosp = allhosps + player;
+    Map *cell;
 
-    if (h->f2a != 2) {
-        h->f1f1 = 0;
-        for (t = map; t < end_map; t++) {
-            if (t->unknown7 & (1 << player)) {
-                h->f1f1++;
+    if (hosp->f2a != 2) {
+        hosp->f1f1 = 0;
+        for (cell = map; cell < end_map; cell++) {
+            if (cell->unknown7 & (1 << player)) {
+                hosp->f1f1++;
             }
         }
     }
 }
 
 // FUNCTION: 0x00019aac
-Thing *fn_00019aac(Map *t, u16 kind)
+Thing *fn_00019aac(Map *cell, u16 kind)
 {
-    Thing *e;
+    Thing *occupant;
 
-    if (!(t < map || t >= end_map)) {
-        for (e = thing + t->first; e > thing; e = thing + e->next) {
-            if (e->renderer == kind) {
-                return e;
+    if (!(cell < map || cell >= end_map)) {
+        for (occupant = thing + cell->first; occupant > thing; occupant = thing + occupant->next) {
+            if (occupant->renderer == kind) {
+                return occupant;
             }
         }
     }
@@ -143,14 +143,14 @@ Thing *fn_00019aac(Map *t, u16 kind)
 }
 
 // FUNCTION: 0x00019b44
-Thing *search_mapwho_for_room_door(Map *t, u16 id)
+Thing *search_mapwho_for_room_door(Map *cell, u16 id)
 {
-    Thing *e;
+    Thing *occupant;
 
-    if (!(t < map || t >= end_map)) {
-        for (e = thing + t->first; e > thing; e = thing + e->next) {
-            if (e->renderer == 8 && e->unknown89 == id) {
-                return e;
+    if (!(cell < map || cell >= end_map)) {
+        for (occupant = thing + cell->first; occupant > thing; occupant = thing + occupant->next) {
+            if (occupant->renderer == 8 && occupant->unknown89 == id) {
+                return occupant;
             }
         }
     }
@@ -163,8 +163,8 @@ void screen_shot(void)
     u8 palette[0x300];
     char path[0x80];
     int i;
-    u8 *p;
-    int n;
+    u8 *out;
+    int shot_no;
     s32 handle;
     int j;
     char *fmt;
@@ -188,86 +188,86 @@ void screen_shot(void)
             LbFileClose(handle);
         }
     }
-    n = ++debug.unknown1e0;
-    sprintf(path, fmt, n);
-    if (n >= 10000) {
+    shot_no = ++debug.unknown1e0;
+    sprintf(path, fmt, shot_no);
+    if (shot_no >= 10000) {
         return;
     }
-    p = debug.unknown1e4;
-    *p = 'm';
-    p++;
-    *p = 'h';
-    p++;
-    *p = 'w';
-    p++;
-    *p = 'a';
-    p++;
-    *p = 'n';
-    p++;
-    *p = 'h';
-    p++;
-    PUT16BE(p, 4);
-    PUT16BE(p, lbDisplay.unknown18);
-    PUT16BE(p, lbDisplay.unknown1c);
-    PUT16BE(p, 0x100);
-    PUT16BE(p, 0x100);
-    PUT16BE(p, 0x100);
-    PUT16BE(p, 0x100);
-    p += 0xc;
+    out = debug.unknown1e4;
+    *out = 'm';
+    out++;
+    *out = 'h';
+    out++;
+    *out = 'w';
+    out++;
+    *out = 'a';
+    out++;
+    *out = 'n';
+    out++;
+    *out = 'h';
+    out++;
+    PUT16BE(out, 4);
+    PUT16BE(out, lbDisplay.unknown18);
+    PUT16BE(out, lbDisplay.unknown1c);
+    PUT16BE(out, 0x100);
+    PUT16BE(out, 0x100);
+    PUT16BE(out, 0x100);
+    PUT16BE(out, 0x100);
+    out += 0xc;
     LbPaletteGet(palette);
     for (i = 0; i < 0x100; i++) {
         for (j = 0; j < 3; j++) {
-            *p = palette[i * 3 + j] << 2;
-            p++;
+            *out = palette[i * 3 + j] << 2;
+            out++;
         }
     }
-    LbMemoryCopy(p, (void *)lbDisplay.unknown4, lbDisplay.unknown18 * lbDisplay.unknown1c);
-    p += lbDisplay.unknown18 * lbDisplay.unknown1c;
-    LbFileSaveAt(path, debug.unknown1e4, p - debug.unknown1e4);
+    LbMemoryCopy(out, (void *)lbDisplay.unknown4, lbDisplay.unknown18 * lbDisplay.unknown1c);
+    out += lbDisplay.unknown18 * lbDisplay.unknown1c;
+    LbFileSaveAt(path, debug.unknown1e4, out - debug.unknown1e4);
 }
 
 // FUNCTION: 0x00019ef8
 RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner)
 {
-    u8 n = 0;
-    RoomInfo *p;
+    u8 count = 0;
+    RoomInfo *room;
     RoomInfo *list[30];
 
-    for (p = room_info + 1; p < end_room_info; p++) {
-        if (p->f3 < 0 || p->owner != owner) {
+    for (room = room_info + 1; room < end_room_info; room++) {
+        if (room->f3 < 0 || room->owner != owner) {
             continue;
         }
-        if (p->type != kind || !(mode == 0x65 || p->f3 == 0)) {
+        if (room->type != kind || !(mode == 0x65 || room->f3 == 0)) {
             continue;
         }
-        if (n < 30) {
-            list[n++] = p;
+        if (count < 30) {
+            list[count++] = room;
         }
     }
-    if (n == 0) {
+    if (count == 0) {
         return 0;
     }
-    return list[old_newrand() % n];
+    return list[old_newrand() % count];
 }
 
 // FUNCTION: 0x00019fe0
 RoomInfo *get_room_info(u8 kind, u8 mode, u8 owner)
 {
     RoomInfo *found = 0;
-    RoomInfo *p;
+    RoomInfo *room;
 
-    for (p = room_info + 1; p < end_room_info; p++) {
-        if (p->f3 >= 0) {
-            if (p->owner == owner) {
-                if (p->type == kind) {
-                    if (p->f3 == 0) {
-                        return p;
+    for (room = room_info + 1; room < end_room_info; room++) {
+        if (room->f3 >= 0) {
+            if (room->owner == owner) {
+                if (room->type == kind) {
+                    if (room->f3 == 0) {
+                        return room;
                     }
                     if (mode == 0x65) {
-                        return p;
+                        return room;
                     }
                     if (mode == 0x64) {
-                        found = p;
+                        found = room;
                     }
                 }
             }
@@ -280,25 +280,25 @@ RoomInfo *get_room_info(u8 kind, u8 mode, u8 owner)
 }
 
 // FUNCTION: 0x0001a0a0
-RoomInfo *get_nearest_room_info(Thing *e, u8 kind)
+RoomInfo *get_nearest_room_info(Thing *person, u8 kind)
 {
     u16 dist;
-    RoomInfo *p;
+    RoomInfo *room;
     u16 pos;
     RoomInfo *best = 0;
     u16 bestDist = 9999;
 
-    pos = e->x.tile + (e->y.tile << 7);
-    for (p = room_info + 1; p < end_room_info; p++) {
-        if (!(p->f3 == 0 || p->f3 == 1)) {
+    pos = person->x.tile + (person->y.tile << 7);
+    for (room = room_info + 1; room < end_room_info; room++) {
+        if (!(room->f3 == 0 || room->f3 == 1)) {
             continue;
         }
-        if (p->owner == e->owner) {
-            if (p->type == kind) {
-                dist = (pos % 128 - p->unknown4 % 128) * (pos % 128 - p->unknown4 % 128)
-                    + (pos / 128 - p->unknown4 / 128) * (pos / 128 - p->unknown4 / 128);
+        if (room->owner == person->owner) {
+            if (room->type == kind) {
+                dist = (pos % 128 - room->unknown4 % 128) * (pos % 128 - room->unknown4 % 128)
+                    + (pos / 128 - room->unknown4 / 128) * (pos / 128 - room->unknown4 / 128);
                 if (dist < bestDist) {
-                    best = p;
+                    best = room;
                     bestDist = dist;
                 }
             }
@@ -448,17 +448,17 @@ void set_mouse_mode(const u8 mode)
 // FUNCTION: 0x0001a5f4
 void generate_bw_remap(u8 *palette, u8 *out)
 {
-    u32 v;
+    u32 grey;
     u8 *src;
     u8 i;
-    u8 c;
+    u8 colour;
 
     for (i = 0xff, src = (u8 *)palette; i != 0; i--, src += 3) {
-        v = LbSqrL(src[0] * src[0] + src[1] * src[1]);
-        v = LbSqrL(v * v + src[2] * src[2]);
-        v = (v * 0x3f + 0x36) / 0x6d;
-        c = LbPaletteFindColour(palette, (u8)v, (u8)v, (u8)v);
-        *out++ = c;
+        grey = LbSqrL(src[0] * src[0] + src[1] * src[1]);
+        grey = LbSqrL(grey * grey + src[2] * src[2]);
+        grey = (grey * 0x3f + 0x36) / 0x6d;
+        colour = LbPaletteFindColour(palette, (u8)grey, (u8)grey, (u8)grey);
+        *out++ = colour;
     }
 }
 
@@ -472,21 +472,21 @@ u8 check_points_connected(u16 from, u16 to)
 }
 
 // FUNCTION: 0x0001a764
-u8 direction_to_face(Thing *a, Thing *b)
+u8 direction_to_face(Thing *self, Thing *target)
 {
-    if (b->y.tile > a->y.tile) {
+    if (target->y.tile > self->y.tile) {
         return 0;
     }
-    if (b->x.tile < a->x.tile) {
+    if (target->x.tile < self->x.tile) {
         return 1;
     }
-    if (b->y.tile < a->y.tile) {
+    if (target->y.tile < self->y.tile) {
         return 2;
     }
-    if (b->x.tile > a->x.tile) {
+    if (target->x.tile > self->x.tile) {
         return 3;
     }
-    return a->unknown17;
+    return self->unknown17;
 }
 
 // FUNCTION: 0x0001a7dc
@@ -585,7 +585,7 @@ void set_mouse_sprite(const u8 idx)
 }
 
 // FUNCTION: 0x0001ab90
-u16 can_i_go_near_point(Thing *e, u16 target)
+u16 can_i_go_near_point(Thing *person, u16 target)
 {
     u16 best = 0xffff;
     u16 cand;
@@ -594,11 +594,11 @@ u16 can_i_go_near_point(Thing *e, u16 target)
     u16 dist;
     u8 i;
 
-    pos = e->x.tile + (e->y.tile << 7);
+    pos = person->x.tile + (person->y.tile << 7);
     for (i = 0; i < 4; i++) {
         cand = target + around[i];
         dist = ABS(pos % 128 - cand % 128) + ABS(pos / 128 - cand / 128);
-        if (dist < best && can_i_get_to(e, cand)) {
+        if (dist < best && can_i_get_to(person, cand)) {
             best = dist;
             result = cand;
         }
@@ -607,12 +607,12 @@ u16 can_i_go_near_point(Thing *e, u16 target)
 }
 
 // FUNCTION: 0x0001ad58
-u8 am_i_near_point(Thing *e, u16 pos)
+u8 am_i_near_point(Thing *person, u16 pos)
 {
     u8 i;
 
     for (i = 0; i < 4; i++) {
-        if ((s16)e->x.tile + ((s16)e->y.tile << 7) == pos + around[i]) {
+        if ((s16)person->x.tile + ((s16)person->y.tile << 7) == pos + around[i]) {
             return 1;
         }
     }
@@ -695,22 +695,22 @@ void compute_whether_user_not_busy(void)
 }
 
 // FUNCTION: 0x0001b050
-u32 calc_room_value(RoomInfo *r)
+u32 calc_room_value(RoomInfo *room)
 {
-    Thing *q;
+    Thing *obj;
     int score;
     int base;
     int count = 0;
 
-    if (r <= room_info || r >= end_room_info) {
+    if (room <= room_info || room >= end_room_info) {
         return 0;
     }
-    base = (r->f1 + r->f2) * 5;
-    for (q = thing + r->first_object; q > thing; q = thing + q->unknown71) {
+    base = (room->f1 + room->f2) * 5;
+    for (obj = thing + room->first_object; obj > thing; obj = thing + obj->unknown71) {
         count++;
     }
-    count -= rooms[r->type].fc;
-    count += r->f1b / 2;
+    count -= rooms[room->type].fc;
+    count += room->f1b / 2;
     score = base + count * 5;
     if (score < 0) {
         score = 0;
@@ -721,13 +721,13 @@ u32 calc_room_value(RoomInfo *r)
 // FUNCTION: 0x0001b150
 Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
 {
-    Thing *q;
+    Thing *person;
 
     if (room) {
-        for (q = thing + room->first; q > thing; q = thing + q->room_next) {
-            if (q->renderer == kind) {
-                if (q->subtype == sub) {
-                    return q;
+        for (person = thing + room->first; person > thing; person = thing + person->room_next) {
+            if (person->renderer == kind) {
+                if (person->subtype == sub) {
+                    return person;
                 }
             }
         }
@@ -792,9 +792,9 @@ void copy_screen_from_wscreen(u8 *dst)
 }
 
 // FUNCTION: 0x0001b3e8
-void cancel_top_level_requesters(s32 n)
+void cancel_top_level_requesters(s32 keep)
 {
-    if (crequester.unknown2 != n) {
+    if (crequester.unknown2 != keep) {
         switch (crequester.unknown2) {
         case 9:
         case 11:
@@ -811,13 +811,13 @@ void cancel_top_level_requesters(s32 n)
 }
 
 // FUNCTION: 0x0001b474
-Thing *allocate_thing(u32 n)
+Thing *allocate_thing(u32 reserve)
 {
-    Thing *e;
+    Thing *slot;
 
-    for (e = thing + 1; e < end_things - n; e++) {
-        if (e->renderer == 0) {
-            return e;
+    for (slot = thing + 1; slot < end_things - reserve; slot++) {
+        if (slot->renderer == 0) {
+            return slot;
         }
     }
     return 0;
@@ -906,15 +906,15 @@ void fn_0001b7e0(char *dst, s8 *src, u8 mode)
 }
 
 // FUNCTION: 0x0001b874
-int fn_0001b874(u8 c)
+int fn_0001b874(u8 ch)
 {
-    if (c < 0x80) {
-        return toupper(c);
+    if (ch < 0x80) {
+        return toupper(ch);
     }
-    if (c > 0xa5) {
-        return c;
+    if (ch > 0xa5) {
+        return ch;
     }
-    switch (c) {
+    switch (ch) {
     case 0x81:
         return 0x9a;
     case 0x82:
@@ -964,17 +964,17 @@ int fn_0001b874(u8 c)
     case 0xa4:
         return 0xa5;
     default:
-        return c;
+        return ch;
     }
 }
 
 // FUNCTION: 0x0001bab4
-void fn_0001bab4(u8 i)
+void fn_0001bab4(u8 key)
 {
     int y;
     int x;
 
-    if (i < 12) {
+    if (key < 12) {
         find_cell_at_point(window.unknown2eb, lbDisplay.graphics_screen_width / 2, lbDisplay.graphics_screen_height / 2);
         if (info.unknown5c < 0) {
             x = 0;
@@ -990,7 +990,7 @@ void fn_0001bab4(u8 i)
         } else {
             y = info.unknown60;
         }
-        key_mappos[i] = x + (y << 7);
+        key_mappos[key] = x + (y << 7);
     }
 }
 

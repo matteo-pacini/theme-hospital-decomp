@@ -33,19 +33,19 @@ void play_last_midi(void);
 // FUNCTION: 0x0008dee0
 extern "C" void fn_0008dee0(Requester *req)
 {
-    ReqButton *b;
+    ReqButton *button;
     u16 idx;
     s32 song;
 
-    b = req->buttons;
+    button = req->buttons;
     idx = 1;
     switch (crequester.unknown0) {
     case 0:
         break;
     case 1:
         if (crequester.unknown8 == 0) {
-            for (; b; b = b->next) {
-                if (b->flags & 6) {
+            for (; button; button = button->next) {
+                if (button->flags & 6) {
                     debug.unknown4 = idx;
                     song = GetSongHandle();
                     if (idx == resvars.fe[0x55]) {

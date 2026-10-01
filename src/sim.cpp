@@ -36,11 +36,11 @@ void reputation_affected(const u8 room, const u16 event, const u16 month, const 
 {
     s32 delta;
     s32 count;
-    AllHosps *h;
+    AllHosps *hosp;
 
     delta = 0;
     count = 0;
-    h = &allhosps[owner];
+    hosp = &allhosps[owner];
     switch (event) {
     case 0:
     case 6:
@@ -60,63 +60,63 @@ void reputation_affected(const u8 room, const u16 event, const u16 month, const 
     case 10:
         break;
     case 5:
-        delta = -(h->fc86 * 5) / 100;
+        delta = -(hosp->fc86 * 5) / 100;
         break;
     case 9:
         if (room)
-            delta = h->rooms[room].f8 * 5 / 100;
+            delta = hosp->rooms[room].f8 * 5 / 100;
         else
-            delta = h->fc86 * 5 / 100;
+            delta = hosp->fc86 * 5 / 100;
         break;
     case 11:
-        delta = -(h->fc86 * 10) / 100;
+        delta = -(hosp->fc86 * 10) / 100;
         break;
     case 12:
-        delta = h->fc86 * 2 / 100;
+        delta = hosp->fc86 * 2 / 100;
         break;
     case 13:
-        delta = -(h->fc86 * (amount * 4)) / 100;
+        delta = -(hosp->fc86 * (amount * 4)) / 100;
         break;
     case 14:
-        delta = -(h->fc86 * 2) / 100;
+        delta = -(hosp->fc86 * 2) / 100;
         break;
     case 15:
-        delta = -(h->fc86 * 10) / 100;
+        delta = -(hosp->fc86 * 10) / 100;
         break;
     case 16:
-        delta = h->fc86 * 4 / 100;
+        delta = hosp->fc86 * 4 / 100;
         break;
     case 17:
-        delta = h->fc86 * 2 / 100;
+        delta = hosp->fc86 * 2 / 100;
         break;
     case 18:
-        delta = -(h->fc86 * 4) / 100;
+        delta = -(hosp->fc86 * 4) / 100;
         break;
     case 19:
-        delta = -(h->fc86 * 20) / 100;
+        delta = -(hosp->fc86 * 20) / 100;
         break;
     case 20:
         delta = -1;
         break;
     case 23:
     case 24:
-        delta += amount * h->fc86 / 100;
+        delta += amount * hosp->fc86 / 100;
         break;
     case 1:
     case 8:
     default:
         break;
     }
-    if (h->f2a == 1) {
+    if (hosp->f2a == 1) {
         if (room) {
-            h->rooms[room].f4 += delta;
-            h->rooms[room].f8 += count;
+            hosp->rooms[room].f4 += delta;
+            hosp->rooms[room].f8 += count;
             evaluate_reputation(room, owner);
         }
-        h->fc82 += delta;
-        h->fc86 += count;
+        hosp->fc82 += delta;
+        hosp->fc86 += count;
         evaluate_reputation(0, owner);
-    } else if (h->f2a == 2) {
+    } else if (hosp->f2a == 2) {
         ComputerBucket *bucket;
 
         bucket = &comp_buckets[owner][month];
@@ -134,52 +134,52 @@ void reputation_affected(const u8 room, const u16 event, const u16 month, const 
 // FUNCTION: 0x00058730
 void evaluate_reputation(const u8 room, const u8 owner)
 {
-    AllHosps *h;
+    AllHosps *hosp;
 
-    h = &allhosps[owner];
+    hosp = &allhosps[owner];
     if (room) {
-        if (h->rooms[room].f8 > 0)
-            h->rooms[room].unknown0 = h->rooms[room].f4 * 500 / h->rooms[room].f8;
+        if (hosp->rooms[room].f8 > 0)
+            hosp->rooms[room].unknown0 = hosp->rooms[room].f4 * 500 / hosp->rooms[room].f8;
         else
-            h->rooms[room].unknown0 = 500;
-        if (h->rooms[room].unknown0 < 0)
-            h->rooms[room].unknown0 = 0;
-        else if (h->rooms[room].unknown0 > 1000)
-            h->rooms[room].unknown0 = 1000;
+            hosp->rooms[room].unknown0 = 500;
+        if (hosp->rooms[room].unknown0 < 0)
+            hosp->rooms[room].unknown0 = 0;
+        else if (hosp->rooms[room].unknown0 > 1000)
+            hosp->rooms[room].unknown0 = 1000;
     } else {
-        if (h->fc86 > 0)
-            h->unknownc7e = h->fc82 * 500 / h->fc86;
+        if (hosp->fc86 > 0)
+            hosp->unknownc7e = hosp->fc82 * 500 / hosp->fc86;
         else
-            h->unknownc7e = 500;
-        if (h->unknownc7e < 0)
-            h->unknownc7e = 0;
-        else if (h->unknownc7e > 1000)
-            h->unknownc7e = 1000;
+            hosp->unknownc7e = 500;
+        if (hosp->unknownc7e < 0)
+            hosp->unknownc7e = 0;
+        else if (hosp->unknownc7e > 1000)
+            hosp->unknownc7e = 1000;
     }
 }
 
 // FUNCTION: 0x000588a8
 void calculate_score(u8 owner)
 {
-    AllHosps *h;
+    AllHosps *hosp;
     s32 score;
     s32 i;
 
-    h = &allhosps[owner];
+    hosp = &allhosps[owner];
     score = evaluate_criteria(owner);
     for (i = 0; rating[i].threshold; i++) {
         if (rating[i].threshold >= score) {
-            if (h->f2d > 1000000)
-                h->f2d += rating[i].f4 * h->f2d / 10000;
-            else if (gbv.f124 * h->f31 / 100 < h->f2d)
-                h->f2d += rating[i].f4 * h->f2d / 10000;
+            if (hosp->f2d > 1000000)
+                hosp->f2d += rating[i].f4 * hosp->f2d / 10000;
+            else if (gbv.f124 * hosp->f31 / 100 < hosp->f2d)
+                hosp->f2d += rating[i].f4 * hosp->f2d / 10000;
             else
-                h->f2d += rating[i].f2 * h->f2d / 10000;
+                hosp->f2d += rating[i].f2 * hosp->f2d / 10000;
             break;
         }
     }
-    if (h->f2d > 200000000)
-        h->f2d = 200000000;
+    if (hosp->f2d > 200000000)
+        hosp->f2d = 200000000;
 }
 
 // FUNCTION: 0x000589f0
@@ -247,7 +247,7 @@ void check_quarterly_game_over(void)
 }
 
 // FUNCTION: 0x00058c54
-u16 shall_peep_pay(Thing *w)
+u16 shall_peep_pay(Thing *patient)
 {
     u16 room;
     u16 pays;
@@ -256,30 +256,30 @@ u16 shall_peep_pay(Thing *w)
     u16 price;
     s32 max;
 
-    room = w->unknown171;
-    advisor.fc_u16 = w->unknown171;
+    room = patient->unknown171;
+    advisor.fc_u16 = patient->unknown171;
     for (attempt = 0; attempt < 2; attempt++) {
         pays = 0;
-        update_single_cure_cost(room, w->owner);
-        price = allhosps[w->owner].rooms[room].unknownC;
-        max = max_price_for_treatment(room, w->owner);
-        ins = w->unknown172[1] & allhosps[w->owner].f216;
+        update_single_cure_cost(room, patient->owner);
+        price = allhosps[patient->owner].rooms[room].unknownC;
+        max = max_price_for_treatment(room, patient->owner);
+        ins = patient->unknown172[1] & allhosps[patient->owner].f216;
         if (ins)
             max += insurance_co[ins_control[ins]].f3 * max / 100;
-        else if (price > w->f70)
+        else if (price > patient->f70)
             max = 0;
         max += old_newrand() % (price / 2 + 1);
         if (price <= max)
             pays = 1;
-        room = w->unknown172[0];
+        room = patient->unknown172[0];
         if (room == 0 || pays == 0)
             break;
     }
     if (!pays) {
-        set_icon_value(w, 0x13);
-        w->unknown118 |= 0x80;
-        record_person_as_patient(w);
-        if (w->owner == player)
+        set_icon_value(patient, 0x13);
+        patient->unknown118 |= 0x80;
+        record_person_as_patient(patient);
+        if (patient->owner == player)
             advisor.f128 |= 2;
     }
     return pays;
@@ -379,7 +379,7 @@ s32 check_criteria(u16 mode, u8 owner)
 // FUNCTION: 0x000591d4
 u32 check_criteria_values(const u32 mode, const u8 owner)
 {
-    AllHosps *h;
+    AllHosps *hosp;
     s32 max;
     WinLose *table;
 
@@ -388,7 +388,7 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
     s32 pct;
     s32 range;
 
-    h = &allhosps[owner];
+    hosp = &allhosps[owner];
     max = 0;
     if (owner == 0xff)
         return 0;
@@ -406,31 +406,31 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
             val = 0;
             break;
         case 1:
-            val = h->unknownc7e;
+            val = hosp->unknownc7e;
             break;
         case 2:
             if (mode == 0)
-                val = h->f35 - h->f3d;
+                val = hosp->f35 - hosp->f3d;
             else
-                val = h->f35;
+                val = hosp->f35;
             break;
         case 3:
-            if (h->f1ed > 10)
-                val = h->f1ef * 100 / h->f1ed;
+            if (hosp->f1ed > 10)
+                val = hosp->f1ef * 100 / hosp->f1ed;
             else
                 val = 0;
             break;
         case 4:
-            val = h->f1e9;
+            val = hosp->f1e9;
             break;
         case 5:
-            if (h->f1ed > 10)
-                val = h->f1eb * 100 / h->f1ed;
+            if (hosp->f1ed > 10)
+                val = hosp->f1eb * 100 / hosp->f1ed;
             else
                 val = 0;
             break;
         case 6:
-            val = h->f1bb;
+            val = hosp->f1bb;
             break;
         }
         if (table[i].op == 1) {
@@ -458,29 +458,29 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
 // FUNCTION: 0x000594d0
 s32 evaluate_criteria(const u8 owner)
 {
-    AllHosps *h;
+    AllHosps *hosp;
     s32 best;
     s32 best_group;
     s32 total;
     s32 groups;
     s32 group;
-    s32 n;
+    s32 count;
     s32 sum;
     s32 i;
     s32 pct;
 
-    h = &allhosps[owner];
+    hosp = &allhosps[owner];
     best = 0;
     best_group = 0;
     total = 0;
     groups = check_criteria_values(0, owner);
     for (group = 1; group <= groups; group++) {
-        n = 0;
+        count = 0;
         sum = 0;
         for (i = 0; i < 10; i++) {
             if (win_criteria[i].fc != group)
                 continue;
-            n++;
+            count++;
             if (win_criteria[i].fe == 1) {
                 sum += 100;
                 continue;
@@ -511,18 +511,18 @@ s32 evaluate_criteria(const u8 owner)
             }
             sum += pct;
         }
-        if (sum / n > best) {
-            best = sum / n;
+        if (sum / count > best) {
+            best = sum / count;
             best_group = group;
         }
-        total += sum / n;
+        total += sum / count;
     }
     if (total > 0 && groups > 0)
         total /= groups;
     else
         total = 0;
     adcounts.f9e = total;
-    h->f2c = best;
+    hosp->f2c = best;
     if (owner == player)
         othervar.fa4a = best_group;
     return best;
@@ -533,13 +533,13 @@ u8 check_net_criteria(const u8 owner)
 {
     s32 i;
     s32 val;
-    AllHosps *h;
+    AllHosps *hosp;
     u8 kind;
     u8 fail;
     u8 better;
     u8 active;
 
-    h = &allhosps[owner];
+    hosp = &allhosps[owner];
     kind = 0;
     fail = 0;
     better = 0;
@@ -558,25 +558,25 @@ u8 check_net_criteria(const u8 owner)
                 kind = 4;
                 break;
             case 4:
-                val = h->f1e9 - current_net_criteria.fa;
+                val = hosp->f1e9 - current_net_criteria.fa;
                 kind = 1;
                 break;
             case 5:
-                val = h->f35 - h->f3d;
+                val = hosp->f35 - hosp->f3d;
                 kind = 1;
                 break;
             case 6:
-                val = h->f1bb;
+                val = hosp->f1bb;
                 kind = 1;
                 break;
             case 7:
-                val = h->unknownc7e;
+                val = hosp->unknownc7e;
                 kind = 1;
                 break;
             case 8:
                 for (i = 0; i < 4; i++) {
                     if (D_001609c4[i].active) {
-                        if (i != player && h->unknownc7e >= allhosps[i].unknownc7e)
+                        if (i != player && hosp->unknownc7e >= allhosps[i].unknownc7e)
                             better = 1;
                     }
                 }
@@ -585,7 +585,7 @@ u8 check_net_criteria(const u8 owner)
             case 9:
                 for (i = 0; i < 4; i++) {
                     if (D_001609c4[i].active) {
-                        if (i != player && h->f35 - h->f3d >= allhosps[i].f35 - allhosps[i].f3d)
+                        if (i != player && hosp->f35 - hosp->f3d >= allhosps[i].f35 - allhosps[i].f3d)
                             better = 1;
                     }
                 }

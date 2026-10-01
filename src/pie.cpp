@@ -68,8 +68,8 @@ void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i
     s32 ex;
     s32 ey;
     Sector *sec;
-    s32 tr;
-    s32 n;
+    s32 text_radius;
+    s32 segments;
     s32 ang;
     s32 step;
     s32 x1;
@@ -89,9 +89,9 @@ void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i
     sy = oy - fixmul(lbSinTable[start & 0x7ff], ry);
     ex = ox + fixmul(lbSinTable[(end & 0x7ff) + 0x200], rx);
     ey = oy - fixmul(lbSinTable[end & 0x7ff], ry);
-    tr = sec->text_offset + sec->radius;
-    sec->text_x = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * tr) >> 8);
-    sec->text_y = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * tr) >> 8);
+    text_radius = sec->text_offset + sec->radius;
+    sec->text_x = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * text_radius) >> 8);
+    sec->text_y = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * text_radius) >> 8);
     sec->text_right = lbSinTable[(mid & 0x7ff) + 0x200] >= 0 ? 1 : 0;
     if (side_off != 1) {
         LbDrawTriangleFilled(ox, oy, sx, sy, sx, sy + h, sec->side_colour1);
@@ -101,18 +101,18 @@ void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i
         LbDrawTriangleFilled(ox, oy, ox, oy + h, ex, ey, sec->side_colour2);
         LbDrawTriangleFilled(ex, ey, ox, oy + h, ex, ey + h, sec->side_colour2);
     }
-    n = (end - start) / 50;
-    if (n == 0)
-        n = 1;
+    segments = (end - start) / 50;
+    if (segments == 0)
+        segments = 1;
     ang = start;
-    step = (end - start) / n;
+    step = (end - start) / segments;
     x2 = ox + fixmul(lbSinTable[(ang & 0x7ff) + 0x200], rx);
     y2 = oy - fixmul(lbSinTable[ang & 0x7ff], ry);
-    while (--n >= 0) {
+    while (--segments >= 0) {
         x1 = x2;
         y1 = y2;
         ang += step;
-        if (n == 0)
+        if (segments == 0)
             ang = end;
         x2 = ox + fixmul(lbSinTable[(ang & 0x7ff) + 0x200], rx);
         y2 = oy - fixmul(lbSinTable[ang & 0x7ff], ry);
@@ -144,7 +144,7 @@ void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i
 }
 
 // FUNCTION: 0x000b852c
-s32 sector_behind(Sector *s, s32 a, s32 b)
+s32 sector_behind(Sector *sectors, s32 a, s32 b)
 {
     s32 as;
     s32 ae;
@@ -153,10 +153,10 @@ s32 sector_behind(Sector *s, s32 a, s32 b)
     s32 asin;
     s32 bsin;
 
-    as = lbSinTable[(s[a].start & 0x7ff) + 0x200];
-    ae = lbSinTable[(s[a].end & 0x7ff) + 0x200];
-    bs = lbSinTable[(s[b].start & 0x7ff) + 0x200];
-    be = lbSinTable[(s[b].end & 0x7ff) + 0x200];
+    as = lbSinTable[(sectors[a].start & 0x7ff) + 0x200];
+    ae = lbSinTable[(sectors[a].end & 0x7ff) + 0x200];
+    bs = lbSinTable[(sectors[b].start & 0x7ff) + 0x200];
+    be = lbSinTable[(sectors[b].end & 0x7ff) + 0x200];
     if (!(as > 0 || ae < 0))
         return 0;
     if (!(ae > 0 || as < 0))
@@ -169,13 +169,13 @@ s32 sector_behind(Sector *s, s32 a, s32 b)
         return 0;
     if (as > 0 && bs < 0)
         return 0;
-    asin = -lbSinTable[s[a].start & 0x7ff];
-    bsin = -lbSinTable[s[b].start & 0x7ff];
+    asin = -lbSinTable[sectors[a].start & 0x7ff];
+    bsin = -lbSinTable[sectors[b].start & 0x7ff];
     return asin < bsin ? 1 : 0;
 }
 
 // FUNCTION: 0x000b86a8
-void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
+void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sectors)
 {
     s32 flag;
     s32 oy;
@@ -186,72 +186,72 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 n, Sector *s)
     s32 i;
     s32 j;
 
-    if (n > 0x101)
+    if (count > 0x101)
         return;
     pie_sector_return = -1;
     split = -1;
-    for (i = 0; i < n; i++) {
-        span = s[i].end - s[i].start;
+    for (i = 0; i < count; i++) {
+        span = sectors[i].end - sectors[i].start;
         if (span < 0)
             span += 0x800;
         if (span > 0x400) {
-            if (lbSinTable[(s[i].start & 0x7ff) + 0x200] < 0 && lbSinTable[(s[i].end & 0x7ff) + 0x200] > 0) {
+            if (lbSinTable[(sectors[i].start & 0x7ff) + 0x200] < 0 && lbSinTable[(sectors[i].end & 0x7ff) + 0x200] > 0) {
             } else {
                 Sector *sec;
                 s32 mid;
-                s32 tr;
+                s32 text_radius;
 
-                sec = &s[i];
-                mid = s[i].start + (span >> 1);
+                sec = &sectors[i];
+                mid = sectors[i].start + (span >> 1);
                 ox = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * sec->radius) >> 8);
                 oy = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * sec->radius) >> 8);
-                tr = sec->text_offset + sec->radius;
-                sec->text_x = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * tr) >> 8);
-                sec->text_y = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * tr) >> 8);
+                text_radius = sec->text_offset + sec->radius;
+                sec->text_x = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * text_radius) >> 8);
+                sec->text_y = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * text_radius) >> 8);
                 sec->text_right = lbSinTable[(mid & 0x7ff) + 0x200] >= 0 ? 1 : 0;
                 split = i;
-                fn_000c21e6(&copy, &s[split], 0x21);
-                s[split].radius = 0;
-                flag = lbSinTable[(s[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
+                fn_000c21e6(&copy, &sectors[split], 0x21);
+                sectors[split].radius = 0;
+                flag = lbSinTable[(sectors[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
                 if (flag) {
-                    s[i].end = mid;
+                    sectors[i].end = mid;
                     side_off = 2;
-                    sector_render(ox, oy, rx, ry, h, s, i);
-                    s[i].end = copy.end;
-                    s[i].start = mid;
+                    sector_render(ox, oy, rx, ry, h, sectors, i);
+                    sectors[i].end = copy.end;
+                    sectors[i].start = mid;
                 } else {
-                    s[i].start = mid;
+                    sectors[i].start = mid;
                     side_off = 1;
-                    sector_render(ox, oy, rx, ry, h, s, i);
-                    s[i].start = copy.start;
-                    s[i].end = mid;
+                    sector_render(ox, oy, rx, ry, h, sectors, i);
+                    sectors[i].start = copy.start;
+                    sectors[i].end = mid;
                 }
             }
             break;
         }
     }
     memset(done, 0, 0x101);
-    j = n;
+    j = count;
     while (--j >= 0) {
         s32 best;
         s32 k;
 
         best = -1;
-        for (k = 0; k < n; k++) {
+        for (k = 0; k < count; k++) {
             if (done[k] == 0) {
-                if (best == -1 || sector_behind(s, k, best))
+                if (best == -1 || sector_behind(sectors, k, best))
                     best = k;
             }
         }
         done[best] = 1;
         if (best == split) {
             side_off = flag ? 1 : 2;
-            sector_render(ox, oy, rx, ry, h, s, best);
+            sector_render(ox, oy, rx, ry, h, sectors, best);
         } else {
             side_off = 0;
-            sector_render(cx, cy, rx, ry, h, s, best);
+            sector_render(cx, cy, rx, ry, h, sectors, best);
         }
     }
     if (split != -1)
-        fn_000c21e6(&s[split], &copy, 0x21);
+        fn_000c21e6(&sectors[split], &copy, 0x21);
 }
