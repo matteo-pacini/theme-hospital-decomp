@@ -574,13 +574,13 @@ void person_go_for_treatment(Thing *patient)
     }
     switch (treatment) {
     case 0: {
-        u16 frame;
+        u16 anim;
 
         action = 20;
         pos = get_room_info(1, 0x65, patient->owner)->unknown4;
-        frame = check_frame(anim_starts[patient->subtype].idle, patient) + (u16)patient->facing;
-        patient->sprite = start[frame].frame;
-        patient->flip = start[frame].flags > 0 ? (u8)1 : (u8)0;
+        anim = check_frame(anim_starts[patient->subtype].idle, patient) + (u16)patient->facing;
+        patient->sprite = start[anim].frame;
+        patient->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         set_complex(patient, action, pos);
         process_person_complex(patient);
         break;
@@ -602,11 +602,11 @@ void person_go_for_treatment(Thing *patient)
         page_staff_i_need(patient, room);
         patient->dest_room = room - room_info;
         {
-            u16 frame;
+            u16 anim;
 
-            frame = check_frame(anim_starts[patient->subtype].idle, patient) + (u16)patient->facing;
-            patient->sprite = start[frame].frame;
-            patient->flip = start[frame].flags > 0 ? (u8)1 : (u8)0;
+            anim = check_frame(anim_starts[patient->subtype].idle, patient) + (u16)patient->facing;
+            patient->sprite = start[anim].frame;
+            patient->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
         patient->state = 0x24;
         fn_0004195c(patient, pos);

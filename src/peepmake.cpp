@@ -58,7 +58,7 @@ void create_a_peep(void)
 {
     s8 i;
     u8 illness;
-    Thing *t;
+    Thing *vehicle;
     Thing *patient;
     AllHosps *hosp;
     RoomInfo *room;
@@ -92,9 +92,9 @@ void create_a_peep(void)
             }
             hosp->f1e3--;
             if (hosp->f1e3 == 0) {
-                t = &thing[hosp->f1df];
-                if (t > thing)
-                    t->state = 6;
+                vehicle = &thing[hosp->f1df];
+                if (vehicle > thing)
+                    vehicle->state = 6;
                 hosp->f1e1 = 0;
             }
         }

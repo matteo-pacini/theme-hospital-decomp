@@ -566,7 +566,7 @@ void calculate_value(const u8 owner)
     s32 base;
     s32 rep_value;
     RoomInfo *room;
-    s32 staff_value;
+    s32 area_value;
 
     total = 0;
     hosp = &allhosps[owner];
@@ -577,8 +577,8 @@ void calculate_value(const u8 owner)
             total += rooms[room->type].cost;
     }
     count_hospital_area((u16)owner);
-    staff_value = hosp->f1f1 * gbv.f7c;
-    hosp->f1bb = staff_value + (base + rep_value + total) + 10000;
+    area_value = hosp->f1f1 * gbv.f7c;
+    hosp->f1bb = area_value + (base + rep_value + total) + 10000;
     if (hosp->f1bb < 0)
         hosp->f1bb = 0;
     hosp->f41 = hosp->f1bb / 3 + 10000;

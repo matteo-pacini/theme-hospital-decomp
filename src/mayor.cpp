@@ -195,7 +195,7 @@ u8 mayor_judges_hospital(u8 owner)
     int fatigue_sum;
     int max_fatigue;
     int npatients;
-    int sum2;
+    int warmth_sum;
     Thing *person;
     AllHosps *hosp;
     int avg;
@@ -211,7 +211,7 @@ u8 mayor_judges_hospital(u8 owner)
         fatigue_sum = 0;
         max_fatigue = 0;
         npatients = 0;
-        sum2 = 0;
+        warmth_sum = 0;
         for (person = thing + 1; person < end_things; person++) {
             if (person->owner != owner)
                 continue;
@@ -222,7 +222,7 @@ u8 mayor_judges_hospital(u8 owner)
                 nstaff++;
                 break;
             case 2:
-                sum2 += (s16)person->warmth;
+                warmth_sum += (s16)person->warmth;
                 npatients++;
                 break;
             }
@@ -231,7 +231,7 @@ u8 mayor_judges_hospital(u8 owner)
         fatigue_sum = adcounts.f2;
         max_fatigue = adcounts.f8;
         npatients = adcounts.f0;
-        sum2 = adcounts.f14;
+        warmth_sum = adcounts.f14;
     }
     hosp = &allhosps[owner];
     if (hosp->fcaa > 10)
@@ -252,7 +252,7 @@ u8 mayor_judges_hospital(u8 owner)
         score += 4;
     }
     if (npatients > 10) {
-        avg = sum2 / npatients;
+        avg = warmth_sum / npatients;
         if (avg > 0x50 || avg < 0x14)
             ++score;
         else

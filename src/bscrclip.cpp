@@ -4,7 +4,7 @@ extern "C" {
 extern u8 D_001567c0[][16];
 }
 
-void copy_region(const s16 x, const s16 y, const s16 dx, const s16 dy, const s16 w, const s16 h);
+void copy_region(const s16 src_x, const s16 src_y, const s16 dst_x, const s16 dst_y, const s16 w, const s16 h);
 void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1, const s32 y1, const s16 dx, const s16 dy);
 
 // FUNCTION: 0x000adad0
@@ -16,10 +16,10 @@ void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1
     s16 sy;
     s16 w;
     s16 h;
-    s16 rx;
-    s16 ry;
-    s16 ex;
-    s16 ey;
+    s16 fit_w;
+    s16 fit_h;
+    s16 wrap_w;
+    s16 wrap_h;
 
     wrap_x = 0;
     wrap_y = 0;
@@ -27,50 +27,50 @@ void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1
     sy = y0;
     w = x1 - x0;
     h = y1 - y0;
-    rx = lbDisplay.unknown18 - (dx + x0);
-    ry = lbDisplay.unknown1c - (dy + y0);
-    ex = dx + x1 - lbDisplay.unknown18;
-    ey = dy + y1 - lbDisplay.unknown1c;
-    if (rx < 0)
-        wrap_x = -rx;
+    fit_w = lbDisplay.unknown18 - (dx + x0);
+    fit_h = lbDisplay.unknown1c - (dy + y0);
+    wrap_w = dx + x1 - lbDisplay.unknown18;
+    wrap_h = dy + y1 - lbDisplay.unknown1c;
+    if (fit_w < 0)
+        wrap_x = -fit_w;
     else
-        sx += rx;
-    if (ry < 0)
-        wrap_y = -ry;
+        sx += fit_w;
+    if (fit_h < 0)
+        wrap_y = -fit_h;
     else
-        sy += ry;
-    if ((s32)rx > (s32)w)
-        rx = w;
-    if ((s32)ry > (s32)h)
-        ry = h;
-    if ((s32)ex > (s32)w)
-        ex = w;
-    if ((s32)ey > (s32)h)
-        ey = h;
-    if (ry > 0 && dy + y0 < lbDisplay.unknown1c) {
-        if (rx > 0 && dx + x0 < lbDisplay.unknown18)
-            copy_region(dx + x0, dy + y0, x0, y0, rx, ry);
-        if (ex > 0)
-            copy_region(wrap_x, dy + y0, sx, y0, ex, ry);
+        sy += fit_h;
+    if ((s32)fit_w > (s32)w)
+        fit_w = w;
+    if ((s32)fit_h > (s32)h)
+        fit_h = h;
+    if ((s32)wrap_w > (s32)w)
+        wrap_w = w;
+    if ((s32)wrap_h > (s32)h)
+        wrap_h = h;
+    if (fit_h > 0 && dy + y0 < lbDisplay.unknown1c) {
+        if (fit_w > 0 && dx + x0 < lbDisplay.unknown18)
+            copy_region(dx + x0, dy + y0, x0, y0, fit_w, fit_h);
+        if (wrap_w > 0)
+            copy_region(wrap_x, dy + y0, sx, y0, wrap_w, fit_h);
     }
-    if (ey > 0) {
-        if (rx > 0 && dx + x0 < lbDisplay.unknown18)
-            copy_region(dx + x0, wrap_y, x0, sy, rx, ey);
-        if (ex > 0)
-            copy_region(wrap_x, wrap_y, sx, sy, ex, ey);
+    if (wrap_h > 0) {
+        if (fit_w > 0 && dx + x0 < lbDisplay.unknown18)
+            copy_region(dx + x0, wrap_y, x0, sy, fit_w, wrap_h);
+        if (wrap_w > 0)
+            copy_region(wrap_x, wrap_y, sx, sy, wrap_w, wrap_h);
     }
 }
 
 // FUNCTION: 0x000adcc8
-void copy_region(const s16 x, const s16 y, const s16 dx, const s16 dy, const s16 w, const s16 h)
+void copy_region(const s16 src_x, const s16 src_y, const s16 dst_x, const s16 dst_y, const s16 w, const s16 h)
 {
     u32 i;
     u8 *src;
     u8 *dst;
 
     i = 0;
-    src = bscreen + y * lbDisplay.unknown18 + x;
-    dst = lbDisplay.unknown4 + dy * lbDisplay.graphics_screen_width + dx;
+    src = bscreen + src_y * lbDisplay.unknown18 + src_x;
+    dst = lbDisplay.unknown4 + dst_y * lbDisplay.graphics_screen_width + dst_x;
     for (; i < h; i++, src += lbDisplay.unknown18, dst += lbDisplay.graphics_screen_width)
         fn_000c21e6(dst, src, w);
 }

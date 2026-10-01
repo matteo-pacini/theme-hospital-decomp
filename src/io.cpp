@@ -300,9 +300,9 @@ void fn_0001c5e4(void)
 void process_turn(void)
 {
     char buf[100];
-    Thing *obj2;
+    Thing *employee;
     int mouse_x;
-    Thing *obj1;
+    Thing *patient;
     int mouse_y;
     u16 j;
     u16 i;
@@ -1126,24 +1126,24 @@ void process_turn(void)
             }
             break;
         case 0x5e:
-            obj2 = &thing[D_001549d0[i].value];
-            obj2->orders &= 0xf0;
-            obj2->orders |= 1;
+            employee = &thing[D_001549d0[i].value];
+            employee->orders &= 0xf0;
+            employee->orders |= 1;
             break;
         case 0x5f:
-            obj2 = &thing[D_001549d0[i].value];
-            obj2->orders &= 0xf0;
-            obj2->orders |= 4;
+            employee = &thing[D_001549d0[i].value];
+            employee->orders &= 0xf0;
+            employee->orders |= 4;
             break;
         case 0x60:
-            obj2 = &thing[D_001549d0[i].value];
-            obj2->orders &= 0xf0;
-            obj2->orders |= 2;
+            employee = &thing[D_001549d0[i].value];
+            employee->orders &= 0xf0;
+            employee->orders |= 2;
             break;
         case 0x61:
-            obj2 = &thing[D_001549d0[i].value];
-            obj2->orders &= 0xf0;
-            obj2->orders |= 8;
+            employee = &thing[D_001549d0[i].value];
+            employee->orders &= 0xf0;
+            employee->orders |= 8;
             break;
         case 0x62:
             if (i == player) {
@@ -1190,23 +1190,23 @@ void process_turn(void)
             }
             break;
         case 0x57:
-            obj1 = &thing[D_001549d0[i].value];
-            allhosps[obj1->owner].rooms[obj1->illness].unknown24++;
-            if (obj1->flags0 & 0x20) {
-                allhosps[obj1->owner].f207 = 0;
+            patient = &thing[D_001549d0[i].value];
+            allhosps[patient->owner].rooms[patient->illness].unknown24++;
+            if (patient->flags0 & 0x20) {
+                allhosps[patient->owner].f207 = 0;
             }
-            refer_patient(obj1, D_001549d0[i].arg);
+            refer_patient(patient, D_001549d0[i].arg);
             if (i == player) {
                 close_query(1);
                 play_sound(10, 0xaa, -1, -1);
             }
             break;
         case 0x68:
-            obj2 = &thing[D_001549d0[i].value];
+            employee = &thing[D_001549d0[i].value];
             allhosps[i].f11f4 = D_001549d0[i].value;
-            if (!(obj2->orders & 0x20)) {
-                if (fn_0002d11c(obj2)) {
-                    interrupt_staff(obj2);
+            if (!(employee->orders & 0x20)) {
+                if (fn_0002d11c(employee)) {
+                    interrupt_staff(employee);
                     staff_picked_up(&thing[D_001549d0[i].value]);
                 }
             }
@@ -1218,7 +1218,7 @@ void process_turn(void)
             staff_picked_up(&thing[D_001549d0[i].value]);
             break;
         case 0x6a: {
-            Thing *o = &thing[D_001549d0[i].value];
+            Thing *rat = &thing[D_001549d0[i].value];
 
             switch (D_001549d0[i].argb[0]) {
             case 1:
@@ -1232,7 +1232,7 @@ void process_turn(void)
                 }
                 break;
             case 3:
-                create_explosion(o->x.tile + (o->y.tile << 7), 0x902);
+                create_explosion(rat->x.tile + (rat->y.tile << 7), 0x902);
                 break;
             default:
                 if (i == player) {
@@ -1247,21 +1247,21 @@ void process_turn(void)
                 if (i == player) {
                     play_sound(10, 0x40, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
-                create_numfx(0, ++allhosps[i].fd27, o->x.tile + (o->y.tile << 7), color.unknown9, 0x20);
-                place_litter(o->x.tile + (o->y.tile << 7), (s8)o->owner, 4);
-                remove_thing(o);
+                create_numfx(0, ++allhosps[i].fd27, rat->x.tile + (rat->y.tile << 7), color.unknown9, 0x20);
+                place_litter(rat->x.tile + (rat->y.tile << 7), (s8)rat->owner, 4);
+                remove_thing(rat);
             }
             break;
         }
         case 0x6b:
-            obj2 = &thing[D_001549d0[i].value];
-            if (obj2 > thing) {
-                if (old_newrand() % (obj2->resign_count + 1)) {
+            employee = &thing[D_001549d0[i].value];
+            if (employee > thing) {
+                if (old_newrand() % (employee->resign_count + 1)) {
                     sack_staff(&thing[D_001549d0[i].value], 1);
                 } else {
-                    obj2->orders &= 0xdf;
+                    employee->orders &= 0xdf;
                     advisor.f128 &= 0xfe;
-                    obj2->discontent = 0;
+                    employee->discontent = 0;
                     reset_icon_value(&thing[D_001549d0[i].value], 9);
                 }
                 if (i == player) {
@@ -1274,13 +1274,13 @@ void process_turn(void)
             }
             break;
         case 0x6c:
-            obj2 = &thing[D_001549d0[i].value];
-            if (obj2 > thing) {
-                obj2->orders &= 0xdf;
+            employee = &thing[D_001549d0[i].value];
+            if (employee > thing) {
+                employee->orders &= 0xdf;
                 advisor.f128 &= 0xfe;
-                obj2->salary += D_001549d0[i].arg;
-                obj2->happiness = 100;
-                obj2->discontent = 0;
+                employee->salary += D_001549d0[i].arg;
+                employee->happiness = 100;
+                employee->discontent = 0;
                 reset_icon_value(&thing[D_001549d0[i].value], 9);
             }
             if (i == player) {
@@ -1292,13 +1292,13 @@ void process_turn(void)
             }
             break;
         case 0x6d:
-            obj2 = &thing[D_001549d0[i].value];
-            if (obj2 > thing) {
-                obj2->orders &= 0xdf;
+            employee = &thing[D_001549d0[i].value];
+            if (employee > thing) {
+                employee->orders &= 0xdf;
                 advisor.f128 &= 0xfe;
-                pay_staff_bonus(obj2, D_001549d0[i].arg, 0, 1, i);
-                obj2->happiness = 100;
-                obj2->discontent = 0;
+                pay_staff_bonus(employee, D_001549d0[i].arg, 0, 1, i);
+                employee->happiness = 100;
+                employee->discontent = 0;
                 reset_icon_value(&thing[D_001549d0[i].value], 9);
             }
             if (i == player) {
@@ -1310,32 +1310,32 @@ void process_turn(void)
             }
             break;
         case 0x6e: {
-            int dept = D_001549d0[i].arg;
-            int rate = max_price_for_treatment(dept, i);
+            int illness = D_001549d0[i].arg;
+            int max_price = max_price_for_treatment(illness, i);
 
-            if (allhosps[i].rooms[dept].unknown10 < 20000) {
-                allhosps[i].rooms[dept].unknown10 += D_001549d0[i].value * 100;
-                if (allhosps[i].rooms[dept].unknown10 < 5000) {
-                    allhosps[i].rooms[dept].unknown10 = 5000;
-                } else if (allhosps[i].rooms[dept].unknown10 > 20000) {
-                    allhosps[i].rooms[dept].unknown10 = 20000;
+            if (allhosps[i].rooms[illness].unknown10 < 20000) {
+                allhosps[i].rooms[illness].unknown10 += D_001549d0[i].value * 100;
+                if (allhosps[i].rooms[illness].unknown10 < 5000) {
+                    allhosps[i].rooms[illness].unknown10 = 5000;
+                } else if (allhosps[i].rooms[illness].unknown10 > 20000) {
+                    allhosps[i].rooms[illness].unknown10 = 20000;
                 }
-                allhosps[i].rooms[dept].unknownC = allhosps[i].rooms[dept].unknown10 * rate / 10000;
+                allhosps[i].rooms[illness].unknownC = allhosps[i].rooms[illness].unknown10 * max_price / 10000;
             }
             break;
         }
         case 0x6f: {
-            int dept = D_001549d0[i].arg;
-            int rate = max_price_for_treatment(dept, i);
+            int illness = D_001549d0[i].arg;
+            int max_price = max_price_for_treatment(illness, i);
 
-            if (allhosps[i].rooms[dept].unknown10 > 5000) {
-                allhosps[i].rooms[dept].unknown10 -= D_001549d0[i].value * 100;
-                if (allhosps[i].rooms[dept].unknown10 < 5000) {
-                    allhosps[i].rooms[dept].unknown10 = 5000;
-                } else if (allhosps[i].rooms[dept].unknown10 > 20000) {
-                    allhosps[i].rooms[dept].unknown10 = 20000;
+            if (allhosps[i].rooms[illness].unknown10 > 5000) {
+                allhosps[i].rooms[illness].unknown10 -= D_001549d0[i].value * 100;
+                if (allhosps[i].rooms[illness].unknown10 < 5000) {
+                    allhosps[i].rooms[illness].unknown10 = 5000;
+                } else if (allhosps[i].rooms[illness].unknown10 > 20000) {
+                    allhosps[i].rooms[illness].unknown10 = 20000;
                 }
-                allhosps[i].rooms[dept].unknownC = allhosps[i].rooms[dept].unknown10 * rate / 10000;
+                allhosps[i].rooms[illness].unknownC = allhosps[i].rooms[illness].unknown10 * max_price / 10000;
             }
             break;
         }
@@ -1391,13 +1391,13 @@ void process_turn(void)
             adjust_handyman_values(D_001549d0[i].value, D_001549d0[i].argb[0]);
             break;
         case 0x74:
-            obj1 = &thing[D_001549d0[i].value];
-            obj1->treatment = 0;
-            allhosps[obj1->owner].rooms[obj1->illness].unknown24++;
-            person_go_home(obj1);
-            obj1->flags1 |= 0x80;
-            if (obj1->flags0 & 0x20) {
-                allhosps[obj1->owner].f207 = 0;
+            patient = &thing[D_001549d0[i].value];
+            patient->treatment = 0;
+            allhosps[patient->owner].rooms[patient->illness].unknown24++;
+            person_go_home(patient);
+            patient->flags1 |= 0x80;
+            if (patient->flags0 & 0x20) {
+                allhosps[patient->owner].f207 = 0;
             }
             break;
         case 0x76:
@@ -1450,39 +1450,39 @@ void process_turn(void)
 
             switch (D_001549d0[i].value) {
             case 0:
-                obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
-                    obj1->treatment = 0;
-                    allhosps[obj1->owner].rooms[obj1->illness].unknown24++;
-                    person_go_home(obj1);
-                    obj1->flags2 |= 0x10;
+                patient = &thing[D_001549d0[i].arg];
+                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                    patient->treatment = 0;
+                    allhosps[patient->owner].rooms[patient->illness].unknown24++;
+                    person_go_home(patient);
+                    patient->flags2 |= 0x10;
                 }
-                if (obj1->type == 2) {
-                    obj1->playercall = 0;
+                if (patient->type == 2) {
+                    patient->playercall = 0;
                 }
                 break;
             case 1:
-                obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
-                    obj1->flags0 &= 0xef;
-                    reset_icon_value(obj1, 0x1b);
-                    obj1->flags0 |= 0x80;
-                    obj1->timer = othervar.f82;
+                patient = &thing[D_001549d0[i].arg];
+                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                    patient->flags0 &= 0xef;
+                    reset_icon_value(patient, 0x1b);
+                    patient->flags0 |= 0x80;
+                    patient->timer = othervar.f82;
                 }
-                if (obj1->type == 2) {
-                    obj1->playercall = 0;
+                if (patient->type == 2) {
+                    patient->playercall = 0;
                 }
                 break;
             case 2:
-                obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
-                    obj1->treatment = 0x2c;
-                    obj1->flags0 &= 0xef;
-                    reset_icon_value(obj1, 0x1b);
-                    obj1->state = 0x26;
+                patient = &thing[D_001549d0[i].arg];
+                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                    patient->treatment = 0x2c;
+                    patient->flags0 &= 0xef;
+                    reset_icon_value(patient, 0x1b);
+                    patient->state = 0x26;
                 }
-                if (obj1->type == 2) {
-                    obj1->playercall = 0;
+                if (patient->type == 2) {
+                    patient->playercall = 0;
                 }
                 break;
             case 0xa:
@@ -1521,40 +1521,40 @@ void process_turn(void)
                 D_001549d0[i].type = 0x4a;
                 goto dispatch;
             case 0x28:
-                obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
-                    obj1->treatment = 0;
-                    allhosps[obj1->owner].rooms[obj1->illness].unknown24++;
-                    person_go_home(obj1);
-                    obj1->flags2 |= 8;
+                patient = &thing[D_001549d0[i].arg];
+                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                    patient->treatment = 0;
+                    allhosps[patient->owner].rooms[patient->illness].unknown24++;
+                    person_go_home(patient);
+                    patient->flags2 |= 8;
                 }
-                if (obj1->type == 2) {
-                    obj1->playercall = 0;
+                if (patient->type == 2) {
+                    patient->playercall = 0;
                 }
                 break;
             case 0x29:
-                obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
-                    obj1->flags0 &= 0xef;
-                    reset_icon_value(obj1, 0x1b);
-                    interrupt_complex(obj1);
-                    best_guess_treatment(obj1);
-                    next_treatment_now_setup(obj1, 0);
+                patient = &thing[D_001549d0[i].arg];
+                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                    patient->flags0 &= 0xef;
+                    reset_icon_value(patient, 0x1b);
+                    interrupt_complex(patient);
+                    best_guess_treatment(patient);
+                    next_treatment_now_setup(patient, 0);
                 }
-                if (obj1->type == 2) {
-                    obj1->playercall = 0;
+                if (patient->type == 2) {
+                    patient->playercall = 0;
                 }
                 break;
             case 0x2a:
-                obj1 = &thing[D_001549d0[i].arg];
-                if (obj1->type == 2 && (obj1->flags0 & 0x10)) {
-                    obj1->flags0 &= 0xef;
-                    reset_icon_value(obj1, 0x1b);
-                    obj1->flags0 |= 0x80;
-                    obj1->timer = othervar.f82;
+                patient = &thing[D_001549d0[i].arg];
+                if (patient->type == 2 && (patient->flags0 & 0x10)) {
+                    patient->flags0 &= 0xef;
+                    reset_icon_value(patient, 0x1b);
+                    patient->flags0 |= 0x80;
+                    patient->timer = othervar.f82;
                 }
-                if (obj1->type == 2) {
-                    obj1->playercall = 0;
+                if (patient->type == 2) {
+                    patient->playercall = 0;
                 }
                 break;
             }
@@ -1627,40 +1627,40 @@ void process_turn(void)
             }
             break;
         case 0x7f:
-            obj1 = &thing[D_001549d0[i].value];
-            obj1->flags0 &= 0xef;
-            reset_icon_value(obj1, 0x1b);
-            obj1->flags0 |= 0x80;
-            obj1->timer = othervar.f82;
+            patient = &thing[D_001549d0[i].value];
+            patient->flags0 &= 0xef;
+            reset_icon_value(patient, 0x1b);
+            patient->flags0 |= 0x80;
+            patient->timer = othervar.f82;
             break;
         case 0x80:
-            obj1 = &thing[D_001549d0[i].value];
-            obj1->treatment = 0x2c;
-            obj1->flags0 &= 0xef;
-            reset_icon_value(obj1, 0x1b);
-            obj1->state = 0x26;
+            patient = &thing[D_001549d0[i].value];
+            patient->treatment = 0x2c;
+            patient->flags0 &= 0xef;
+            reset_icon_value(patient, 0x1b);
+            patient->state = 0x26;
             break;
         case 0x81:
-            obj2 = &thing[D_001549d0[i].value];
-            if (obj2 > thing) {
-                obj2->poach_offers = 1 << (u8)i;
+            employee = &thing[D_001549d0[i].value];
+            if (employee > thing) {
+                employee->poach_offers = 1 << (u8)i;
             }
             break;
         case 0x82:
-            obj1 = &thing[D_001549d0[i].value];
-            if (obj1->flags0 & 1) {
+            patient = &thing[D_001549d0[i].value];
+            if (patient->flags0 & 1) {
                 if (i == player) {
                     play_sound(10, 0xdf, -1, -1);
                 }
-                cancel_vaccination_request(obj1);
-                if (obj1->flags0 & 0x20) {
-                    set_icon_value(obj1, 0xd);
+                cancel_vaccination_request(patient);
+                if (patient->flags0 & 0x20) {
+                    set_icon_value(patient, 0xd);
                 }
             } else {
                 if (i == player) {
                     play_sound(10, 0xde, -1, -1);
                 }
-                request_vaccination(obj1);
+                request_vaccination(patient);
             }
             break;
         case 0x83:
@@ -2285,7 +2285,7 @@ s32 read_level_number(s32 slot)
 {
     int handle;
     char buf[64];
-    u8 level;
+    u8 level_no;
 
     sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
     handle = LbFileOpen(buf, 2);
@@ -2293,9 +2293,9 @@ s32 read_level_number(s32 slot)
         return -1;
     }
     if (LbFileSeek(handle, 2, 0) != -1) {
-        if (LbFileRead(handle, &level, 2) != -1) {
+        if (LbFileRead(handle, &level_no, 2) != -1) {
             LbFileClose(handle);
-            return level;
+            return level_no;
         }
     }
     LbFileClose(handle);

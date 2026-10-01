@@ -712,14 +712,14 @@ void display_button_text(s32 mask)
 }
 
 // FUNCTION: 0x00081284
-void fn_00081284(u8 flag)
+void fn_00081284(u8 modem)
 {
     s32 idx;
     s16 y;
     s16 i;
     char buf[52];
 
-    if (flag)
+    if (modem)
         idx = 0x82;
     else
         idx = 0x80;
@@ -741,14 +741,14 @@ void fn_00081284(u8 flag)
 }
 
 // FUNCTION: 0x00081408
-void fn_00081408(u8 flag)
+void fn_00081408(u8 modem)
 {
     s32 idx;
     s16 y;
     s16 i;
     char buf[52];
 
-    if (flag)
+    if (modem)
         idx = 0x83;
     else
         idx = 0x81;
@@ -1987,14 +1987,14 @@ void draw_players_on_session(u32 session);
 void balance_filename(char *name);
 
 // FUNCTION: 0x000841b8
-void fn_000841b8(u8 flag)
+void fn_000841b8(u8 com_panel)
 {
     s32 idx;
     s16 y;
     s16 i;
     s16 j;
 
-    if (flag)
+    if (com_panel)
         idx = 0x7d;
     else
         idx = 0x7b;
@@ -2032,7 +2032,7 @@ void fn_00084324(SessionInfo *sessions)
     u8 swapped;
     u8 found;
     s16 y;
-    TbNetworkSessionNameEntry *t;
+    TbNetworkSessionNameEntry *entry;
     s32 i;
     char name[32];
 
@@ -2048,9 +2048,9 @@ void fn_00084324(SessionInfo *sessions)
                 fn_000bbff0(name, SESSION_NAMES[i]);
                 fn_000bbff0(SESSION_NAMES[i], SESSION_NAMES[i + 1]);
                 fn_000bbff0(SESSION_NAMES[i + 1], name);
-                t = D_00160e34[i];
+                entry = D_00160e34[i];
                 D_00160e34[i] = D_00160e34[i + 1];
-                D_00160e34[i + 1] = t;
+                D_00160e34[i + 1] = entry;
                 swapped = 1;
                 break;
             }

@@ -479,9 +479,9 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
 // FUNCTION: 0x000a8198
 void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
 {
-    s32 rows;
-    s32 f20;
-    s32 count;
+    s32 line_len;
+    s32 floor_lines;
+    s32 full_lines;
     s32 step;
     s32 base;
     s32 bx;
@@ -500,9 +500,9 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
         x1 = info.unknown70;
         y1 = info.unknown74;
         setup_stats_for_window_scan(win, x0, y0, x1, y1);
-        rows = info.f18;
-        f20 = info.f20;
-        count = info.f24;
+        line_len = info.f18;
+        floor_lines = info.f20;
+        full_lines = info.f24;
         step = info.f1c;
         base = info.f0;
         bx = info.f4;
@@ -523,7 +523,7 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
             minx = window.unknown2c3;
         if (window.unknown2c7 > miny)
             miny = window.unknown2c7;
-        for (j = 0; j < count; j++) {
+        for (j = 0; j < full_lines; j++) {
             s32 c;
             s32 x;
             s32 y;
@@ -541,7 +541,7 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
             x = bx;
             y = by;
             memset(covers, 0xff, 0x38);
-            for (i = 0; i < rows; i++) {
+            for (i = 0; i < line_len; i++) {
                 m = &map[c];
                 if ((((x >= 0 && x < 0x80) && y >= 0) && y < 0x80) && ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0))) {
                     if (m->flags & 0x20) {
@@ -595,11 +595,11 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
             if (dx < 0) {
                 by++;
                 base += 0x80;
-                rows += step;
+                line_len += step;
             } else if (dx > 0) {
                 bx++;
                 base++;
-                rows -= step;
+                line_len -= step;
             }
             dx = -dx;
         }
@@ -610,9 +610,9 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
 void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, const s32 cell)
 {
     Map *mp;
-    s32 rows;
-    s32 f20;
-    s32 count;
+    s32 line_len;
+    s32 floor_lines;
+    s32 full_lines;
     s32 step;
     s32 base;
     s32 bx;
@@ -642,9 +642,9 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
         x1 = info.unknown70;
         y1 = info.unknown74;
         setup_stats_for_window_scan(win, x0, y0, x1, y1);
-        rows = info.f18;
-        f20 = info.f20;
-        count = info.f24;
+        line_len = info.f18;
+        floor_lines = info.f20;
+        full_lines = info.f24;
         step = info.f1c;
         base = info.f0;
         bx = info.f4;
@@ -660,12 +660,12 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
         sy -= y0;
         active = 0;
         reached = 0;
-        for (j = 0; j < count; j++) {
+        for (j = 0; j < full_lines; j++) {
             x = sx;
             c = base;
             cx = bx;
             cy = by;
-            for (i = 0; i < rows; i++) {
+            for (i = 0; i < line_len; i++) {
                 if ((((active == 1 && cx >= 0) && cx < 0x80) && cy >= 0) && cy < 0x80) {
                     m = &mp[c];
                     if (m->unknown3) {
@@ -706,11 +706,11 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
             if (dx < 0) {
                 by++;
                 base += 0x80;
-                rows += step;
+                line_len += step;
             } else if (dx > 0) {
                 bx++;
                 base++;
-                rows -= step;
+                line_len -= step;
             }
             dx = -dx;
         }
@@ -721,9 +721,9 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
 void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, const s32 lx, const s32 ly)
 {
     Map *mp;
-    s32 rows;
-    s32 f20;
-    s32 count;
+    s32 line_len;
+    s32 floor_lines;
+    s32 full_lines;
     s32 step;
     s32 base;
     s32 bx;
@@ -745,9 +745,9 @@ void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, c
 
     mp = map;
     setup_stats_for_window_scan(win, x0, y0, x1, y1);
-    rows = info.f18;
-    f20 = info.f20;
-    count = info.f24;
+    line_len = info.f18;
+    floor_lines = info.f20;
+    full_lines = info.f24;
     step = info.f1c;
     base = info.f0;
     bx = info.f4;
@@ -762,13 +762,13 @@ void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, c
     give_absolute_xy_of_cell_at_column_row(lx, ly);
     ax -= info.unknown54;
     ay -= info.unknown58;
-    for (j = 0; j < count; j++) {
+    for (j = 0; j < full_lines; j++) {
         x = ax;
         sx = px;
         c = base;
         cx = bx;
         cy = by;
-        for (i = 0; i < rows; i++) {
+        for (i = 0; i < line_len; i++) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80) && (cx > lx || cy > ly)) {
                 m = &mp[c];
                 if (m->unknown3)
@@ -793,11 +793,11 @@ void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, c
         if (dx < 0) {
             by++;
             base += 0x80;
-            rows += step;
+            line_len += step;
         } else if (dx > 0) {
             bx++;
             base++;
-            rows -= step;
+            line_len -= step;
         }
         dx = -dx;
     }
@@ -837,15 +837,15 @@ void draw_boundry(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
 void adjust_big_cell_flag(const u16 cell)
 {
     Thing *t;
-    Thing *o;
+    Thing *obj;
     u16 shape;
 
     for (t = &thing[map[cell].first]; t > thing; t = &thing[t->cell_next]) {
         switch (t->type) {
         case 2:
         case 4:
-            o = &thing[t->object];
-            if (o > thing && (u16)(t - thing) == o->user) {
+            obj = &thing[t->object];
+            if (obj > thing && (u16)(t - thing) == obj->user) {
                 map[cell].flags |= 0x20;
                 return;
             }
@@ -915,7 +915,7 @@ s8 record_covering_cell(const s8 row, const s16 pos)
 // FUNCTION: 0x000a9358
 s8 compute_cell_precedence(const s8 row, Thing *t)
 {
-    Thing *o;
+    Thing *obj;
     s8 v;
 
     for (; t > thing; t = &thing[t->cell_next]) {
@@ -923,14 +923,14 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
         case 4:
             if (t->state == 0x2a || t->state == 0x2e)
                 break;
-            o = &thing[t->object];
-            if (o > thing && (u16)(t - thing) == o->user) {
+            obj = &thing[t->object];
+            if (obj > thing && (u16)(t - thing) == obj->user) {
                 u16 shape;
                 s16 off;
                 u8 k;
                 s16 pos;
 
-                shape = objects[o->subtype].shapes[o->facing];
+                shape = objects[obj->subtype].shapes[obj->facing];
                 record_covering_cell(row, 0);
                 off = (s16)-(s8)shapes[shape].unknown1f[0] + -(s8)shapes[shape].unknown1f[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
@@ -948,14 +948,14 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
         case 2:
             if (t->state == 0x28)
                 break;
-            o = &thing[t->object];
-            if (o > thing && (u16)(t - thing) == o->user) {
+            obj = &thing[t->object];
+            if (obj > thing && (u16)(t - thing) == obj->user) {
                 u16 shape;
                 s16 off;
                 u8 k;
                 s16 pos;
 
-                shape = objects[o->subtype].shapes[o->facing];
+                shape = objects[obj->subtype].shapes[obj->facing];
                 record_covering_cell(row, 0);
                 off = (s16)-(s8)shapes[shape].unknown1f[0] + -(s8)shapes[shape].unknown1f[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
@@ -995,9 +995,9 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
 {
     Map *mp;
-    s32 rows;
-    s32 f20;
-    s32 count;
+    s32 line_len;
+    s32 floor_lines;
+    s32 full_lines;
     s32 step;
     s32 base;
     s32 bx;
@@ -1008,7 +1008,7 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
     s32 half;
     s32 sx;
     s32 sy;
-    s32 rows0;
+    s32 line_len0;
     s32 px0;
     s32 py0;
     s32 sx0;
@@ -1046,9 +1046,9 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
     x1 = info.unknown70;
     y1 = info.unknown74;
     setup_stats_for_window_scan(win, x0, y0, x1, y1);
-    rows = info.f18;
-    f20 = info.f20;
-    count = info.f24;
+    line_len = info.f18;
+    floor_lines = info.f20;
+    full_lines = info.f24;
     step = info.f1c;
     base = info.f0;
     bx = info.f4;
@@ -1062,7 +1062,7 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
     LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
     sx -= x0;
     sy -= y0;
-    rows0 = rows;
+    line_len0 = line_len;
     px0 = px;
     py0 = py;
     sx0 = sx;
@@ -1082,13 +1082,13 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
         minx = window.unknown2c3;
     if (window.unknown2c7 > miny)
         miny = window.unknown2c7;
-    for (j = 0; j < f20; j++) {
+    for (j = 0; j < floor_lines; j++) {
         x = sx;
         wx = px;
         c = base;
         cx = bx;
         cy = by;
-        for (i = 0; i < rows; i++) {
+        for (i = 0; i < line_len; i++) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 tile = m->overlay;
@@ -1151,11 +1151,11 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
         if (dx < 0) {
             by++;
             base += 0x80;
-            rows += step;
+            line_len += step;
         } else if (dx > 0) {
             bx++;
             base++;
-            rows -= step;
+            line_len -= step;
         }
         dx = -dx;
     }
@@ -1165,17 +1165,17 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
     sy = sy0;
     step = step0;
     dx = dx0;
-    rows = rows0;
+    line_len = line_len0;
     bx = bx0;
     by = by0;
     base = base0;
-    for (j = 0; j < count; j++) {
+    for (j = 0; j < full_lines; j++) {
         x = sx;
         wx = px;
         c = base;
         cx = bx;
         cy = by;
-        for (i = 0; i < rows; i++) {
+        for (i = 0; i < line_len; i++) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 if (m->unknown3) {
@@ -1215,7 +1215,7 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
         c = base;
         cx = bx;
         cy = by;
-        for (i = 0; i < rows; i++) {
+        for (i = 0; i < line_len; i++) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 if ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0)) {
@@ -1262,11 +1262,11 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
         if (dx < 0) {
             by++;
             base += 0x80;
-            rows += step;
+            line_len += step;
         } else if (dx > 0) {
             bx++;
             base++;
-            rows -= step;
+            line_len -= step;
         }
         dx = -dx;
     }
@@ -1277,9 +1277,9 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
 {
     s32 cy;
     Map *mp;
-    s32 rows;
-    s32 f20;
-    s32 count;
+    s32 line_len;
+    s32 floor_lines;
+    s32 full_lines;
     s32 step;
     s32 base;
     s32 bx;
@@ -1290,7 +1290,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
     s32 half;
     s32 sx;
     s32 sy;
-    s32 rows0;
+    s32 line_len0;
     s32 px0;
     s32 py0;
     s32 sx0;
@@ -1318,9 +1318,9 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
     x1 = info.unknown70;
     y1 = info.unknown74;
     setup_stats_for_window_scan(win, x0, y0, x1, y1);
-    rows = info.f18;
-    f20 = info.f20;
-    count = info.f24;
+    line_len = info.f18;
+    floor_lines = info.f20;
+    full_lines = info.f24;
     step = info.f1c;
     base = info.f0;
     bx = info.f4;
@@ -1334,7 +1334,7 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
     LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
     sx -= x0;
     sy -= y0;
-    rows0 = rows;
+    line_len0 = line_len;
     px0 = px;
     py0 = py;
     sx0 = sx;
@@ -1351,12 +1351,12 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
     lbDisplay.graphics_screen_width = lbDisplay.unknown18;
     lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
-    for (j = f20; --j >= 0;) {
+    for (j = floor_lines; --j >= 0;) {
         x = px;
         c = base;
         cx = bx;
         cy = by;
-        for (i = rows; --i >= 0;) {
+        for (i = line_len; --i >= 0;) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 tile = m->overlay;
@@ -1418,11 +1418,11 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
         if (dx < 0) {
             by++;
             base += 0x80;
-            rows += step;
+            line_len += step;
         } else if (dx > 0) {
             bx++;
             base++;
-            rows -= step;
+            line_len -= step;
         }
         dx = -dx;
     }
@@ -1430,16 +1430,16 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
     py = py0;
     step = step0;
     dx = dx0;
-    rows = rows0;
+    line_len = line_len0;
     bx = bx0;
     by = by0;
     base = base0;
-    for (j = count; --j >= 0;) {
+    for (j = full_lines; --j >= 0;) {
         x = px;
         c = base;
         cx = bx;
         cy = by;
-        for (i = rows; --i >= 0;) {
+        for (i = line_len; --i >= 0;) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
                 if (m->unknown3) {
@@ -1481,11 +1481,11 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
         if (dx < 0) {
             by++;
             base += 0x80;
-            rows += step;
+            line_len += step;
         } else if (dx > 0) {
             bx++;
             base++;
-            rows -= step;
+            line_len -= step;
         }
         dx = -dx;
     }

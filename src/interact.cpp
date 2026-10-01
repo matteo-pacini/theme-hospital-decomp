@@ -41,19 +41,19 @@ extern "C" void fn_00054870(Thing *w)
 // FUNCTION: 0x000549bc
 extern "C" void fn_000549bc(Thing *w)
 {
-    u8 idx;
+    u8 step;
     s16 anim;
     Thing *partner;
 
     if (w->interact_repeat > 0) {
-        idx = w->seq_index;
+        step = w->seq_index;
         w->interact_repeat--;
     } else {
         w->seq_index++;
-        idx = w->seq_index;
-        w->interact_repeat = D_0012b598[idx].count - 1;
+        step = w->seq_index;
+        w->interact_repeat = D_0012b598[step].count - 1;
     }
-    anim = D_0012b598[idx].v;
+    anim = D_0012b598[step].v;
     if (anim) {
         if (anim == -1) {
             w->seq_index = 0;
@@ -75,38 +75,38 @@ extern "C" void fn_000549bc(Thing *w)
         }
         w->interact_anim = 1;
         if (w->type == 4) {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(staff_anim_starts[w->subtype].anims[anim], w) + w->facing;
-            w->sprite = start[f].frame;
-            w->flip = start[f].flags > 0;
+            entry = check_frame(staff_anim_starts[w->subtype].anims[anim], w) + w->facing;
+            w->sprite = start[entry].frame;
+            w->flip = start[entry].flags > 0;
         } else {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(anim_starts[w->subtype].anims[anim], w) + w->facing;
-            w->sprite = start[f].frame;
-            w->flip = start[f].flags > 0;
+            entry = check_frame(anim_starts[w->subtype].anims[anim], w) + w->facing;
+            w->sprite = start[entry].frame;
+            w->flip = start[entry].flags > 0;
         }
     } else {
         w->interact_anim = 0;
     }
     partner = &thing[w->slave];
     if (partner > thing) {
-        anim = D_0012b598[idx].other;
+        anim = D_0012b598[step].other;
         if (anim) {
             partner->interact_anim = 1;
             if (partner->type == 2) {
-                u16 f;
+                u16 entry;
 
-                f = check_frame(anim_starts[partner->subtype].anims[anim], partner) + partner->facing;
-                partner->sprite = start[f].frame;
-                partner->flip = start[f].flags > 0;
+                entry = check_frame(anim_starts[partner->subtype].anims[anim], partner) + partner->facing;
+                partner->sprite = start[entry].frame;
+                partner->flip = start[entry].flags > 0;
             } else {
-                u16 f;
+                u16 entry;
 
-                f = check_frame(staff_anim_starts[partner->subtype].anims[anim], partner) + partner->facing;
-                partner->sprite = start[f].frame;
-                partner->flip = start[f].flags > 0;
+                entry = check_frame(staff_anim_starts[partner->subtype].anims[anim], partner) + partner->facing;
+                partner->sprite = start[entry].frame;
+                partner->flip = start[entry].flags > 0;
             }
         } else {
             partner->interact_anim = 0;

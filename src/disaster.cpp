@@ -209,7 +209,7 @@ void blast_walls_and_floor(u16 tile)
 // FUNCTION: 0x000758b8
 void blast_things(Map *m)
 {
-    u8 pal;
+    u8 facing;
     u8 debris;
     Thing *obj;
 
@@ -217,10 +217,10 @@ restart:
     for (obj = &thing[m->first]; obj > thing; obj = &thing[obj->cell_next]) {
         if (obj->type == 6) {
             debris = objects[obj->subtype].unknown20[0];
-            pal = obj->facing;
+            facing = obj->facing;
             fn_00038d04(obj, obj->owner);
             if (debris)
-                place_small_thing(m - map, debris + pal, 0);
+                place_small_thing(m - map, debris + facing, 0);
             goto restart;
         }
     }
@@ -362,7 +362,7 @@ void disaster_peeps(u8 mode, s8 owner)
 }
 
 // FUNCTION: 0x00075fe4
-void what_is_required(u8 room, u8 owner)
+void what_is_required(u8 illness, u8 owner)
 {
     s32 unused;
     Expertise *exp;
@@ -370,11 +370,11 @@ void what_is_required(u8 room, u8 owner)
 
     unused = 0;
     memset(&required, 0, 10);
-    exp = &expertise[room];
-    if (allhosps[owner].rooms[room].unknown1C == 1) {
+    exp = &expertise[illness];
+    if (allhosps[owner].rooms[illness].unknown1C == 1) {
         required.unknown5 = 1;
         if (exp->kind == 0x27)
-            required.unknown0[2] = allhosps[owner].rooms[room].unknown1B;
+            required.unknown0[2] = allhosps[owner].rooms[illness].unknown1B;
         return;
     }
     if (listhead[owner].rooms[exp->category] == 0) {
@@ -423,7 +423,7 @@ void saucer_abducts(Thing *w)
 }
 
 // FUNCTION: 0x000762cc
-u16 create_shadow(u16 tile, u16 height, u8 owner, u16 anim)
+u16 create_shadow(u16 tile, u16 caster, u8 owner, u16 anim)
 {
     Thing *shadow;
 
@@ -438,7 +438,7 @@ u16 create_shadow(u16 tile, u16 height, u8 owner, u16 anim)
         insert_node(shadow, shadow->x, shadow->y);
         shadow->sprite = start[anim].frame;
         shadow->flip = start[anim].flags;
-        shadow->altitude = height;
+        shadow->caster = caster;
         shadow->depth = -8;
         return shadow - thing;
     }

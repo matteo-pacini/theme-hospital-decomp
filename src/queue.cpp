@@ -338,11 +338,11 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                 }
                 person->dest_room = room - room_info;
                 {
-                    u16 frame;
+                    u16 anim;
 
-                    frame = check_frame(anim_starts[person->subtype].idle, person) + (u16)person->facing;
-                    person->sprite = start[frame].frame;
-                    person->flip = start[frame].flags > 0 ? (u8)1 : (u8)0;
+                    anim = check_frame(anim_starts[person->subtype].idle, person) + (u16)person->facing;
+                    person->sprite = start[anim].frame;
+                    person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                 }
                 person->state = 0x24;
             }

@@ -32,7 +32,7 @@ void setup_next_net_criteria(const u8 owner);
 void try_bonus_level(void);
 
 // FUNCTION: 0x00058370
-void reputation_affected(const u8 room, const u16 event, const u16 month, const u8 owner, const s32 amount)
+void reputation_affected(const u8 treatment, const u16 event, const u16 month, const u8 owner, const s32 amount)
 {
     s32 delta;
     s32 count;
@@ -63,8 +63,8 @@ void reputation_affected(const u8 room, const u16 event, const u16 month, const 
         delta = -(hosp->fc86 * 5) / 100;
         break;
     case 9:
-        if (room)
-            delta = hosp->rooms[room].f8 * 5 / 100;
+        if (treatment)
+            delta = hosp->rooms[treatment].f8 * 5 / 100;
         else
             delta = hosp->fc86 * 5 / 100;
         break;
@@ -108,10 +108,10 @@ void reputation_affected(const u8 room, const u16 event, const u16 month, const 
         break;
     }
     if (hosp->f2a == 1) {
-        if (room) {
-            hosp->rooms[room].f4 += delta;
-            hosp->rooms[room].f8 += count;
-            evaluate_reputation(room, owner);
+        if (treatment) {
+            hosp->rooms[treatment].f4 += delta;
+            hosp->rooms[treatment].f8 += count;
+            evaluate_reputation(treatment, owner);
         }
         hosp->fc82 += delta;
         hosp->fc86 += count;
@@ -120,32 +120,32 @@ void reputation_affected(const u8 room, const u16 event, const u16 month, const 
         ComputerBucket *bucket;
 
         bucket = &comp_buckets[owner][month];
-        if (room) {
-            bucket->f18[room] += delta;
-            bucket->fd4[room] += count;
+        if (treatment) {
+            bucket->f18[treatment] += delta;
+            bucket->fd4[treatment] += count;
         }
         bucket->f4 += delta;
         bucket->f8 += count;
     }
-    if (room)
-        update_single_cure_cost(room, owner);
+    if (treatment)
+        update_single_cure_cost(treatment, owner);
 }
 
 // FUNCTION: 0x00058730
-void evaluate_reputation(const u8 room, const u8 owner)
+void evaluate_reputation(const u8 treatment, const u8 owner)
 {
     AllHosps *hosp;
 
     hosp = &allhosps[owner];
-    if (room) {
-        if (hosp->rooms[room].f8 > 0)
-            hosp->rooms[room].unknown0 = hosp->rooms[room].f4 * 500 / hosp->rooms[room].f8;
+    if (treatment) {
+        if (hosp->rooms[treatment].f8 > 0)
+            hosp->rooms[treatment].unknown0 = hosp->rooms[treatment].f4 * 500 / hosp->rooms[treatment].f8;
         else
-            hosp->rooms[room].unknown0 = 500;
-        if (hosp->rooms[room].unknown0 < 0)
-            hosp->rooms[room].unknown0 = 0;
-        else if (hosp->rooms[room].unknown0 > 1000)
-            hosp->rooms[room].unknown0 = 1000;
+            hosp->rooms[treatment].unknown0 = 500;
+        if (hosp->rooms[treatment].unknown0 < 0)
+            hosp->rooms[treatment].unknown0 = 0;
+        else if (hosp->rooms[treatment].unknown0 > 1000)
+            hosp->rooms[treatment].unknown0 = 1000;
     } else {
         if (hosp->fc86 > 0)
             hosp->unknownc7e = hosp->fc82 * 500 / hosp->fc86;
@@ -249,20 +249,20 @@ void check_quarterly_game_over(void)
 // FUNCTION: 0x00058c54
 u16 shall_peep_pay(Thing *patient)
 {
-    u16 room;
+    u16 treatment;
     u16 pays;
     u16 attempt;
     u16 ins;
     u16 price;
     s32 max;
 
-    room = patient->treatment;
+    treatment = patient->treatment;
     advisor.fc_u16 = patient->treatment;
     for (attempt = 0; attempt < 2; attempt++) {
         pays = 0;
-        update_single_cure_cost(room, patient->owner);
-        price = allhosps[patient->owner].rooms[room].unknownC;
-        max = max_price_for_treatment(room, patient->owner);
+        update_single_cure_cost(treatment, patient->owner);
+        price = allhosps[patient->owner].rooms[treatment].unknownC;
+        max = max_price_for_treatment(treatment, patient->owner);
         ins = patient->insurance & allhosps[patient->owner].f216;
         if (ins)
             max += insurance_co[ins_control[ins]].f3 * max / 100;
@@ -271,8 +271,8 @@ u16 shall_peep_pay(Thing *patient)
         max += old_newrand() % (price / 2 + 1);
         if (price <= max)
             pays = 1;
-        room = patient->next_treatment;
-        if (room == 0 || pays == 0)
+        treatment = patient->next_treatment;
+        if (treatment == 0 || pays == 0)
             break;
     }
     if (!pays) {
@@ -286,28 +286,28 @@ u16 shall_peep_pay(Thing *patient)
 }
 
 // FUNCTION: 0x00058e34
-s32 max_price_for_treatment(const u16 room, const u8 owner)
+s32 max_price_for_treatment(const u16 treatment, const u8 owner)
 {
-    u8 flag;
+    u8 monopoly;
     u16 base;
     s32 rep;
     u16 i;
     s32 price;
 
-    flag = 0;
-    base = expertise[room].f2;
-    if (room >= 0x24 || room == 1)
+    monopoly = 0;
+    base = expertise[treatment].f2;
+    if (treatment >= 0x24 || treatment == 1)
         rep = allhosps[owner].unknownc7e;
     else
-        rep = allhosps[owner].rooms[room].unknown0;
+        rep = allhosps[owner].rooms[treatment].unknown0;
     if (statvar.unknownfd > 1) {
-        flag = 1;
+        monopoly = 1;
         for (i = 0; i < 4; i++) {
-            if (i != owner && allhosps[i].rooms[room].unknown1C == 1)
-                flag = 0;
+            if (i != owner && allhosps[i].rooms[treatment].unknown1C == 1)
+                monopoly = 0;
         }
     }
-    price = base * rep / 500 + flag * base;
+    price = base * rep / 500 + monopoly * base;
     if (base > price)
         return base;
     return price;

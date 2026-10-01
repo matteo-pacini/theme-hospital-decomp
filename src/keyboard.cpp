@@ -6,7 +6,7 @@ extern u8 D_00189688;
 extern u8 D_0018978d;
 extern u8 D_0018978e;
 extern u8 D_0018978f;
-void fn_0007424c(u8 shift, u8 key);
+void fn_0007424c(u8 modifiers, u8 key);
 unsigned fn_000cd1bf(unsigned port);
 unsigned fn_000cd1c7(unsigned port, unsigned value);
 void (__interrupt __far *_dos_getvect(unsigned num))();
@@ -19,9 +19,9 @@ extern volatile long keybufferout;
 extern void (__interrupt __far *myOldInt)();
 
 // FUNCTION: 0x00074220
-void fn_00074220(u8 shift, u8 key)
+void fn_00074220(u8 modifiers, u8 key)
 {
-    fn_0007424c(shift, key);
+    fn_0007424c(modifiers, key);
 }
 
 
@@ -35,7 +35,7 @@ void process_nettext_keys(u8 shift, u8 key);
 void make_a_rat(u8 owner);
 
 // FUNCTION: 0x0007424c
-void fn_0007424c(u8 shift, u8 key)
+void fn_0007424c(u8 modifiers, u8 key)
 {
     if (gamevar.f12e == 0x25) {
         if (key == 0x39 || key == 1)
@@ -44,11 +44,11 @@ void fn_0007424c(u8 shift, u8 key)
         return;
     }
     if (statvar.unknownfd <= 1) {
-        if ((lbKeyOn[0x11] || lbKeyOn[0x91]) && !(shift & 2))
+        if ((lbKeyOn[0x11] || lbKeyOn[0x91]) && !(modifiers & 2))
             othervar.f8b0 = 1;
     }
     if (othervar.f4a) {
-        process_nettext_keys(shift, key);
+        process_nettext_keys(modifiers, key);
         lbInkey = 0;
         return;
     }
@@ -66,7 +66,7 @@ void fn_0007424c(u8 shift, u8 key)
         D_001549d0[player].flags &= ~0xc;
     switch (key) {
     case 2:
-        if (statvar.unknownfd > 1 && (shift & 4)) {
+        if (statvar.unknownfd > 1 && (modifiers & 4)) {
             if (display_mode == 0) {
                 if (statvar.unknownfd >= 2) {
                     othervar.f4c = 1 << fn_00085660(1);
@@ -75,11 +75,11 @@ void fn_0007424c(u8 shift, u8 key)
                     D_001549d0[player].type = 0x4e;
                 }
             }
-        } else if (!(shift & 1) && gamevar.f174 == 0) {
+        } else if (!(modifiers & 1) && gamevar.f174 == 0) {
             D_001549d0[player].type = 0xe;
             D_001549d0[player].value = 10;
             lbInkey = 0;
-        } else if (shift & 1) {
+        } else if (modifiers & 1) {
             if (othervar.fa8e) {
                 D_001549d0[player].type = 0x17;
                 D_001549d0[player].value = othervar.f28;
@@ -89,7 +89,7 @@ void fn_0007424c(u8 shift, u8 key)
         }
         break;
     case 3:
-        if (statvar.unknownfd > 1 && (shift & 4)) {
+        if (statvar.unknownfd > 1 && (modifiers & 4)) {
             if (display_mode == 0) {
                 if (statvar.unknownfd >= 3) {
                     othervar.f4c = 1 << fn_00085660(2);
@@ -105,7 +105,7 @@ void fn_0007424c(u8 shift, u8 key)
         lbInkey = 0;
         break;
     case 4:
-        if (statvar.unknownfd > 1 && (shift & 4)) {
+        if (statvar.unknownfd > 1 && (modifiers & 4)) {
             if (display_mode == 0) {
                 if (statvar.unknownfd >= 4) {
                     othervar.f4c = 1 << fn_00085660(3);
@@ -121,7 +121,7 @@ void fn_0007424c(u8 shift, u8 key)
         lbInkey = 0;
         break;
     case 5:
-        if (statvar.unknownfd > 1 && (shift & 4)) {
+        if (statvar.unknownfd > 1 && (modifiers & 4)) {
             if (display_mode == 0) {
                 if (statvar.unknownfd <= 1) {
                     othervar.f4c = 0xff;
@@ -147,7 +147,7 @@ void fn_0007424c(u8 shift, u8 key)
         break;
     case 0x10:
     case 0x2d:
-        if (((shift & 1) || (shift & 4)) || (shift & 2)) {
+        if (((modifiers & 1) || (modifiers & 4)) || (modifiers & 2)) {
             sprintf(othervar.f935, "%s", yesno_text[0]);
             if (statvar.unknownfd > 1)
                 open_yes_no_requester(0x7e, 1, 0, 0x78, 1, 0);
@@ -157,14 +157,14 @@ void fn_0007424c(u8 shift, u8 key)
         }
         break;
     case 1:
-        if ((shift & 1) && ((shift & 2) || lbKeyOn[0xf])) {
+        if ((modifiers & 1) && ((modifiers & 2) || lbKeyOn[0xf])) {
             if (statvar.unknownfd > 1)
                 D_001549d0[player].type = 0x7e;
             else
                 D_001549d0[player].type = 0x1c;
             D_001549d0[player].value = 0;
             D_001549d0[player].arg = 0;
-        } else if (shift & 1) {
+        } else if (modifiers & 1) {
             sprintf(othervar.f935, "%s", yesno_text[0]);
             if (statvar.unknownfd > 1)
                 open_yes_no_requester(0x7e, 1, 0, 0x78, 1, 0);
@@ -185,7 +185,7 @@ void fn_0007424c(u8 shift, u8 key)
         break;
     case 0x24:
         if (!gamevar.unknown21) {
-            if (!(shift & 1)) {
+            if (!(modifiers & 1)) {
                 if (resvars.f1 == SCREEN_MODE_13)
                     D_001549d0[player].type = 0x49;
                 lbInkey = 0;
@@ -194,10 +194,10 @@ void fn_0007424c(u8 shift, u8 key)
         break;
     case 0x3e:
         if (!gamevar.unknown21) {
-            if (shift & 4) {
+            if (modifiers & 4) {
                 play_sound(10, 0xda, -1, -1);
                 fn_0001bab4(key - 0x3b);
-            } else if (shift & 2) {
+            } else if (modifiers & 2) {
                 recall_mappos(key - 0x3b);
             } else if (listhead[player].rooms[0x1c] == 0) {
                 play_sound(10, 8, -1, -1);
@@ -216,10 +216,10 @@ void fn_0007424c(u8 shift, u8 key)
     case 0x41:
     case 0x42:
         if (!gamevar.unknown21 && gamevar.f174 == 0) {
-            if (shift & 4) {
+            if (modifiers & 4) {
                 play_sound(10, 0xda, -1, -1);
                 fn_0001bab4(key - 0x3b);
-            } else if (shift & 2) {
+            } else if (modifiers & 2) {
                 recall_mappos(key - 0x3b);
             } else {
                 D_001549d0[player].type = 0x33;
@@ -229,41 +229,41 @@ void fn_0007424c(u8 shift, u8 key)
         }
         break;
     case 0x1e:
-        if (shift & 1) {
+        if (modifiers & 1) {
             myplayer.f41[20] = myplayer.f41[20] == 1 ? 0 : 1;
             LbMemorySet(gamevar.unknown7b, 0, 0x70);
             lbInkey = 0;
         }
         break;
     case 0x2e:
-        if (shift & 4) {
+        if (modifiers & 4) {
             debug.unknownd4 = 1;
             lbInkey = 0;
-        } else if (shift & 2) {
-            if (shift & 1)
+        } else if (modifiers & 2) {
+            if (modifiers & 1)
                 cheat(4);
             else
                 cheat(2);
-        } else if (shift & 1) {
+        } else if (modifiers & 1) {
             cheat(8);
         }
         break;
     case 0x1f:
-        if (shift & 4) {
+        if (modifiers & 4) {
             D_001549d0[player].type = 0xc;
             D_001549d0[player].value = (u16)debug.unknown10a;
             lbInkey = 0;
         }
         break;
     case 0x26:
-        if (shift & 4) {
+        if (modifiers & 4) {
             D_001549d0[player].type = 0xd;
             D_001549d0[player].value = (u16)debug.unknown10a;
             lbInkey = 0;
         }
         break;
     case 0x20:
-        if ((shift & 4) && (shift & 2)) {
+        if ((modifiers & 4) && (modifiers & 2)) {
             if (othervar.fa8e) {
                 gamevar.f132 = 0;
                 gamevar.f134 = 0x3fff;
@@ -272,7 +272,7 @@ void fn_0007424c(u8 shift, u8 key)
         }
         break;
     case 0x13:
-        if (shift & 1) {
+        if (modifiers & 1) {
             if (othervar.fa8e) {
                 make_a_rat(player);
                 lbInkey = 0;
@@ -280,7 +280,7 @@ void fn_0007424c(u8 shift, u8 key)
         }
         break;
     case 0x15:
-        if (shift & 2) {
+        if (modifiers & 2) {
             if (othervar.fa8e) {
                 D_001549d0[player].type = 0x89;
                 lbInkey = 0;
@@ -288,7 +288,7 @@ void fn_0007424c(u8 shift, u8 key)
         }
         break;
     case 0x32:
-        if (shift & 2) {
+        if (modifiers & 2) {
             if (othervar.fa8e) {
                 D_001549d0[player].type = 0x65;
                 lbInkey = 0;

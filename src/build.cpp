@@ -46,8 +46,8 @@ s8 get_wall_color(Map *cell);
 void recolour_all_rooms(void);
 u16 which_room_number(u16 tile);
 void add_static_shadows(void);
-void recolour_inside_room(RoomInfo *room, u16 a, u16 b);
-void recolour_outside_room(RoomInfo *room, u16 a, u16 b);
+void recolour_inside_room(RoomInfo *room, u16 wall_base, u16 b);
+void recolour_outside_room(RoomInfo *room, u16 wall_base, u16 b);
 void fill_in_window(u16 x, u16 y, u8 side);
 void pixel_buffer_map(void);
 void mark_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *obj, u8 mark);
@@ -73,7 +73,7 @@ void temp_place_door(u16 pos, u8 owner)
     u8 end_y;
     u8 start_x;
     u8 type;
-    u8 flag;
+    u8 check_valid;
     u8 start_y;
     u8 min_w;
     u8 min_h;
@@ -101,7 +101,7 @@ void temp_place_door(u16 pos, u8 owner)
         end_y = 3;
         start_x = 1;
         start_y = 1;
-        flag = 1;
+        check_valid = 1;
         break;
     case 4:
         min_w = 3;
@@ -110,7 +110,7 @@ void temp_place_door(u16 pos, u8 owner)
         end_y = 2;
         start_x = 2;
         start_y = 2;
-        flag = 0;
+        check_valid = 0;
         break;
     case 3:
         min_w = 3;
@@ -119,7 +119,7 @@ void temp_place_door(u16 pos, u8 owner)
         end_y = 1;
         start_x = 1;
         start_y = 1;
-        flag = 0;
+        check_valid = 0;
         break;
     default:
         min_w = 3;
@@ -128,7 +128,7 @@ void temp_place_door(u16 pos, u8 owner)
         end_y = 2;
         start_x = 1;
         start_y = 1;
-        flag = 1;
+        check_valid = 1;
         break;
     }
     cell0 = &map[room->pos];
@@ -203,7 +203,7 @@ void temp_place_door(u16 pos, u8 owner)
         give_screen_xy_of_cell_at_column_row(window.unknown2eb, cx, cy - 1);
         d = info.unknown54;
         i = info.unknown58;
-        if (flag || blocked) {
+        if (check_valid || blocked) {
             if (blocked || !is_valid_door((cy << 7) + cx, owner, type)) {
                 if (owner == player) {
                     draw_a_one_colour_frame(start[doortype[type].tiles[3]].frame, d, i, (u16)color.unknownD, start[doortype[type].tiles[3]].flags);
@@ -231,7 +231,7 @@ void place_bp_door(u8 owner, u8 swap)
     u16 tile;
     Thing *t;
     u16 id;
-    u8 sprite;
+    u8 piece;
 
     room = &room_info[allhosps[owner].build.room];
     bs = &allhosps[owner].build;
@@ -282,11 +282,11 @@ void place_bp_door(u8 owner, u8 swap)
         } else {
             id = -map[tile].first;
         }
-        sprite = doortype[type].sprites[i];
+        piece = doortype[type].sprites[i];
         if ((blueprint[id].flags & 3) == 3) {
-            sprite += 6;
+            piece += 6;
         }
-        place_small_thing(tile, (u16)sprite, 0);
+        place_small_thing(tile, (u16)piece, 0);
         map[tile - doortype[type].offset].overlay = doortype[type].overlays[i];
     }
     othervar.f10 = 1;
@@ -872,7 +872,7 @@ void delete_room(RoomInfo *room)
 }
 
 // FUNCTION: 0x000250f8
-void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
+void recolour_inside_room(RoomInfo *room, u16 wall_base, u16 b)
 {
     u8 ok;
     u16 tile;
@@ -908,7 +908,7 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
             case 0x5a:
             case 0x5c:
             case 0x5e:
-                map[tile].unknown3 = a;
+                map[tile].unknown3 = wall_base;
                 break;
             case 0xc3:
             case 0xc5:
@@ -918,7 +918,7 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
             case 0xcd:
             case 0xcf:
             case 0xd1:
-                map[tile].unknown3 = a + 0x73;
+                map[tile].unknown3 = wall_base + 0x73;
                 break;
             case 0x60:
             case 0x62:
@@ -928,7 +928,7 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
             case 0x6a:
             case 0x6c:
             case 0x6e:
-                map[tile].unknown3 = a + 0x10;
+                map[tile].unknown3 = wall_base + 0x10;
                 break;
             }
         }
@@ -961,7 +961,7 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
             case 0x5b:
             case 0x5d:
             case 0x5f:
-                map[tile].unknown4 = a + 1;
+                map[tile].unknown4 = wall_base + 1;
                 break;
             case 0xc4:
             case 0xc6:
@@ -971,7 +971,7 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
             case 0xce:
             case 0xd0:
             case 0xd2:
-                map[tile].unknown4 = a + 0x74;
+                map[tile].unknown4 = wall_base + 0x74;
                 break;
             case 0x61:
             case 0x63:
@@ -981,7 +981,7 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
             case 0x6b:
             case 0x6d:
             case 0x6f:
-                map[tile].unknown4 = a + 0x11;
+                map[tile].unknown4 = wall_base + 0x11;
                 break;
             }
         }
@@ -989,7 +989,7 @@ void recolour_inside_room(RoomInfo *room, u16 a, u16 b)
 }
 
 // FUNCTION: 0x0002583c
-void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
+void recolour_outside_room(RoomInfo *room, u16 wall_base, u16 b)
 {
     u8 ok;
     u16 x;
@@ -1022,7 +1022,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0x5a:
             case 0x5c:
             case 0x5e:
-                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = a;
+                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = wall_base;
                 break;
             case 0xc3:
             case 0xc5:
@@ -1032,7 +1032,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0xcd:
             case 0xcf:
             case 0xd1:
-                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = a + 0x73;
+                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = wall_base + 0x73;
                 break;
             case 0x60:
             case 0x62:
@@ -1042,7 +1042,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0x6a:
             case 0x6c:
             case 0x6e:
-                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = a + 0x10;
+                map[(s16)x + ((s16)(room->pos / 128 + room->f2) << 7)].unknown3 = wall_base + 0x10;
                 break;
             }
         }
@@ -1074,7 +1074,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0x5b:
             case 0x5d:
             case 0x5f:
-                map[((s16)y << 7) + (s16)(room->pos % 128 + room->f1)].unknown4 = a + 1;
+                map[((s16)y << 7) + (s16)(room->pos % 128 + room->f1)].unknown4 = wall_base + 1;
                 break;
             case 0xc4:
             case 0xc6:
@@ -1084,7 +1084,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0xce:
             case 0xd0:
             case 0xd2:
-                map[((s16)y << 7) + (s16)(room->pos % 128 + room->f1)].unknown4 = a + 0x74;
+                map[((s16)y << 7) + (s16)(room->pos % 128 + room->f1)].unknown4 = wall_base + 0x74;
                 break;
             case 0x61:
             case 0x63:
@@ -1094,7 +1094,7 @@ void recolour_outside_room(RoomInfo *room, u16 a, u16 b)
             case 0x6b:
             case 0x6d:
             case 0x6f:
-                map[((s16)y << 7) + (s16)(room->pos % 128 + room->f1)].unknown4 = a + 0x11;
+                map[((s16)y << 7) + (s16)(room->pos % 128 + room->f1)].unknown4 = wall_base + 0x11;
                 break;
             }
         }
@@ -1187,18 +1187,18 @@ void recolour_all_rooms(void)
 u8 search_fill_in_window(u8 wall)
 {
     u8 i;
-    u8 window;
+    u8 fill_block;
 
     i = 0;
-    window = 0;
+    fill_block = 0;
     while (fill_in_windows[i].wall != 0) {
         if (fill_in_windows[i].wall == wall) {
-            window = fill_in_windows[i].window;
+            fill_block = fill_in_windows[i].window;
             break;
         }
         i++;
     }
-    return window;
+    return fill_block;
 }
 
 // FUNCTION: 0x000264f8
@@ -1227,14 +1227,14 @@ void fill_in_window(u16 x, u16 y, u8 side)
 // FUNCTION: 0x000265e4
 void check_inside_w_wall(u16 x, u16 y)
 {
-    u8 window;
+    u8 fill_block;
 
-    window = search_fill_in_window(map[(s16)x + ((s16)y << 7)].unknown4);
-    if (window) {
+    fill_block = search_fill_in_window(map[(s16)x + ((s16)y << 7)].unknown4);
+    if (fill_block) {
         if (map[(s16)x + ((s16)y << 7)].unknown4 == 0x7d) {
-            map[(s16)x + ((s16)y << 7)].unknown4 = window;
+            map[(s16)x + ((s16)y << 7)].unknown4 = fill_block;
             if (map[(s16)x + ((s16)(y - 1) << 7)].unknown4 == 0x7b) {
-                map[(s16)x + ((s16)(y - 1) << 7)].unknown4 = window;
+                map[(s16)x + ((s16)(y - 1) << 7)].unknown4 = fill_block;
             }
         }
     }
@@ -1243,14 +1243,14 @@ void check_inside_w_wall(u16 x, u16 y)
 // FUNCTION: 0x000266bc
 void check_inside_n_wall(u16 x, u16 y)
 {
-    u8 window;
+    u8 fill_block;
 
-    window = search_fill_in_window(map[(s16)x + ((s16)y << 7)].unknown3);
-    if (window) {
+    fill_block = search_fill_in_window(map[(s16)x + ((s16)y << 7)].unknown3);
+    if (fill_block) {
         if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x7c) {
-            map[(s16)x + ((s16)y << 7)].unknown3 = window;
+            map[(s16)x + ((s16)y << 7)].unknown3 = fill_block;
             if (map[(s16)(x - 1) + ((s16)y << 7)].unknown3 == 0x7a) {
-                map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = window;
+                map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = fill_block;
             }
         }
     }
@@ -1259,27 +1259,27 @@ void check_inside_n_wall(u16 x, u16 y)
 // FUNCTION: 0x00026798
 void check_outside_s_wall(u16 x, u16 y)
 {
-    u8 window;
+    u8 fill_block;
 
-    window = search_fill_in_window(map[(s16)(x - 1) + ((s16)y << 7)].unknown3);
-    if (window) {
+    fill_block = search_fill_in_window(map[(s16)(x - 1) + ((s16)y << 7)].unknown3);
+    if (fill_block) {
         if (map[(s16)(x - 1) + ((s16)y << 7)].unknown3 == 0x72) {
-            map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = window;
+            map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = fill_block;
             if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x74) {
-                map[(s16)x + ((s16)y << 7)].unknown3 = window;
+                map[(s16)x + ((s16)y << 7)].unknown3 = fill_block;
                 if (map[(s16)(x + 1) + ((s16)y << 7)].unknown3 == 0x76) {
-                    map[(s16)(x + 1) + ((s16)y << 7)].unknown3 = window;
+                    map[(s16)(x + 1) + ((s16)y << 7)].unknown3 = fill_block;
                 }
             } else if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x76) {
-                map[(s16)x + ((s16)y << 7)].unknown3 = window;
+                map[(s16)x + ((s16)y << 7)].unknown3 = fill_block;
             }
         } else if (map[(s16)(x - 1) + ((s16)y << 7)].unknown3 == 0x74) {
-            map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = window;
+            map[(s16)(x - 1) + ((s16)y << 7)].unknown3 = fill_block;
             if (map[(s16)(x - 2) + ((s16)y << 7)].unknown3 == 0x72) {
-                map[(s16)(x - 2) + ((s16)y << 7)].unknown3 = window;
+                map[(s16)(x - 2) + ((s16)y << 7)].unknown3 = fill_block;
             }
             if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x76) {
-                map[(s16)x + ((s16)y << 7)].unknown3 = window;
+                map[(s16)x + ((s16)y << 7)].unknown3 = fill_block;
             }
         }
     }
@@ -1288,27 +1288,27 @@ void check_outside_s_wall(u16 x, u16 y)
 // FUNCTION: 0x000269e8
 void check_outside_e_wall(u16 x, u16 y)
 {
-    u8 window;
+    u8 fill_block;
 
-    window = search_fill_in_window(map[(s16)x + ((s16)(y - 1) << 7)].unknown4);
-    if (window) {
+    fill_block = search_fill_in_window(map[(s16)x + ((s16)(y - 1) << 7)].unknown4);
+    if (fill_block) {
         if (map[(s16)x + ((s16)(y - 1) << 7)].unknown4 == 0x73) {
-            map[(s16)x + ((s16)(y - 1) << 7)].unknown4 = window;
+            map[(s16)x + ((s16)(y - 1) << 7)].unknown4 = fill_block;
             if (map[(s16)x + ((s16)y << 7)].unknown4 == 0x75) {
-                map[(s16)x + ((s16)y << 7)].unknown4 = window;
+                map[(s16)x + ((s16)y << 7)].unknown4 = fill_block;
                 if (map[(s16)x + ((s16)(y + 1) << 7)].unknown4 == 0x77) {
-                    map[(s16)x + ((s16)(y + 1) << 7)].unknown4 = window;
+                    map[(s16)x + ((s16)(y + 1) << 7)].unknown4 = fill_block;
                 }
             } else if (map[(s16)x + ((s16)y << 7)].unknown4 == 0x77) {
-                map[(s16)x + ((s16)y << 7)].unknown4 = window;
+                map[(s16)x + ((s16)y << 7)].unknown4 = fill_block;
             }
         } else if (map[(s16)x + ((s16)(y - 1) << 7)].unknown3 == 0x75) {
-            map[(s16)x + ((s16)(y - 1) << 7)].unknown3 = window;
+            map[(s16)x + ((s16)(y - 1) << 7)].unknown3 = fill_block;
             if (map[(s16)x + ((s16)(y - 2) << 7)].unknown3 == 0x73) {
-                map[(s16)x + ((s16)(y - 2) << 7)].unknown3 = window;
+                map[(s16)x + ((s16)(y - 2) << 7)].unknown3 = fill_block;
             }
             if (map[(s16)x + ((s16)y << 7)].unknown3 == 0x77) {
-                map[(s16)x + ((s16)y << 7)].unknown3 = window;
+                map[(s16)x + ((s16)y << 7)].unknown3 = fill_block;
             }
         }
     }
@@ -1418,10 +1418,10 @@ fail:
 // FUNCTION: 0x000271fc
 u16 place_object_restrict_to_room(u16 pos, u16 offset, u8 kind, u8 dir)
 {
-    s8 newY;
-    s8 newX;
-    s8 roomY;
-    s8 roomX;
+    s8 new_y;
+    s8 new_x;
+    s8 room_y;
+    s8 room_x;
     s8 y;
     s8 x;
     Bounds *bounds;
@@ -1431,23 +1431,23 @@ u16 place_object_restrict_to_room(u16 pos, u16 offset, u8 kind, u8 dir)
     bounds = &statvar.fff[kind][dir];
     x = (pos + offset) % 128;
     y = (pos + offset) / 128;
-    roomX = room->pos % 128;
-    roomY = room->pos / 128;
-    newX = pos % 128;
-    newY = pos / 128;
-    if (x + bounds->maxX >= roomX + room->f1) {
-        newX -= x + bounds->maxX - roomX - room->f1 + 1;
+    room_x = room->pos % 128;
+    room_y = room->pos / 128;
+    new_x = pos % 128;
+    new_y = pos / 128;
+    if (x + bounds->maxX >= room_x + room->f1) {
+        new_x -= x + bounds->maxX - room_x - room->f1 + 1;
     }
-    if (x + bounds->minX < roomX) {
-        newX += roomX - x - bounds->minX;
+    if (x + bounds->minX < room_x) {
+        new_x += room_x - x - bounds->minX;
     }
-    if (y + bounds->maxY >= roomY + room->f2) {
-        newY -= y + bounds->maxY - roomY - room->f2 + 1;
+    if (y + bounds->maxY >= room_y + room->f2) {
+        new_y -= y + bounds->maxY - room_y - room->f2 + 1;
     }
-    if (y + bounds->minY < roomY) {
-        newY += roomY - y - bounds->minY;
+    if (y + bounds->minY < room_y) {
+        new_y += room_y - y - bounds->minY;
     }
-    return newX + (newY << 7);
+    return new_x + (new_y << 7);
 }
 
 // FUNCTION: 0x000273bc
@@ -1622,15 +1622,15 @@ u8 next_object_to_build(void)
 }
 
 // FUNCTION: 0x00027b44
-void open_room(u8 p)
+void open_room(u8 owner)
 {
     RoomInfo *room;
     BuildState *build;
     u8 x;
     u8 y;
 
-    room = &room_info[allhosps[p].unknown11b7];
-    build = &allhosps[p].build;
+    room = &room_info[allhosps[owner].unknown11b7];
+    build = &allhosps[owner].build;
     if (room > room_info) {
         room->f3 = 0;
         clear_pager_responses(room - room_info);
@@ -1639,12 +1639,12 @@ void open_room(u8 p)
                 place_small_thing((s16)(x + (y << 7)), 0, 0);
             }
         }
-        clear_build_objects(p);
+        clear_build_objects(owner);
         if (room->unknown33 == 0) {
-            change_balance(4, -rooms[room->type].cost, 0, (u16)p);
+            change_balance(4, -rooms[room->type].cost, 0, (u16)owner);
             room->unknown33 = 1;
         }
-        if (p == player && othervar.f9c5 == 0) {
+        if (owner == player && othervar.f9c5 == 0) {
             othervar.fa4b = room->type;
         }
         add_static_shadows();
@@ -1658,7 +1658,7 @@ void open_room(u8 p)
                 myplayer.f23[room->type] = 1;
             }
         }
-        allhosps[p].unknown11b7 = 0;
+        allhosps[owner].unknown11b7 = 0;
         NRAdcounts.unknown10++;
     }
 }
@@ -2120,7 +2120,7 @@ u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
     Map *cell;
     Shapes *shape;
     Thing *occupant;
-    Thing *other;
+    Thing *obj;
     u8 ok;
 
     cell = &map[pos];
@@ -2131,12 +2131,12 @@ u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
     }
     mark_object_shape(cell, shape, dir, &objects[kind], 0);
     for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
-        other = &thing[LINKED_OBJECT(occupant)];
-        if (other > thing) {
+        obj = &thing[LINKED_OBJECT(occupant)];
+        if (obj > thing) {
             if (occupant->type == 4) {
-                pos2 = other->use_pos[3];
+                pos2 = obj->use_pos[3];
             } else {
-                pos2 = other->use_pos[4];
+                pos2 = obj->use_pos[4];
             }
         } else {
             pos2 = (u16)occupant->x.tile + ((u16)occupant->y.tile << 7);

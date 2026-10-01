@@ -67,9 +67,9 @@ void handyman_works(Thing *handyman)
     Thing *machine;
     RoomInfo *room;
     u32 scores[3];
-    s32 litter;
+    s32 litter_score;
     s32 plant_score;
-    s32 fix;
+    s32 fix_score;
     u32 n;
     u32 idx;
     u32 best;
@@ -78,7 +78,7 @@ void handyman_works(Thing *handyman)
     u16 pos;
     u16 id;
     u8 i;
-    u8 level;
+    u8 stage;
 
     switch (handyman->substate) {
     case 0:
@@ -107,14 +107,14 @@ void handyman_works(Thing *handyman)
         }
         if (thingpage_find_highest_priority(&allhosps[handyman->owner].ff6d) && handyman_try_fix(handyman))
             break;
-        litter = handyman->litter_count * 100 / (handyman->prio_litter + 1);
+        litter_score = handyman->litter_count * 100 / (handyman->prio_litter + 1);
         plant_score = handyman->plant_count * 1000 / (handyman->prio_plants + 1);
-        fix = handyman->repair_count * 2000 / (handyman->prio_repair + 1);
-        scores[0] = litter;
+        fix_score = handyman->repair_count * 2000 / (handyman->prio_repair + 1);
+        scores[0] = litter_score;
         funcs[0] = handyman_try_litter;
         scores[1] = plant_score;
         funcs[1] = handyman_try_plant;
-        scores[2] = fix;
+        scores[2] = fix_score;
         funcs[2] = handyman_try_fix;
         best = 1000000;
         while (best != 2000000) {
@@ -188,7 +188,7 @@ void handyman_works(Thing *handyman)
         set_complex(handyman, 0x258, 0);
         fn_0003e724(handyman);
         plant->plant_health < 0 ? plant->plant_health = 0 : 0;
-        level = (400 - plant->plant_health) / 80;
+        stage = (400 - plant->plant_health) / 80;
         {
             u16 anim;
 
@@ -196,7 +196,7 @@ void handyman_works(Thing *handyman)
             plant->sprite = start[anim].frame;
             plant->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
-        for (i = 0; i < 5 - level - 1; i++)
+        for (i = 0; i < 5 - stage - 1; i++)
             plant->sprite = frame[plant->sprite].next;
         plant->state = 0xe;
         break;
@@ -319,21 +319,21 @@ void handyman_check_for_litter(Thing *handyman)
     {
         u16 nearest;
         u16 second;
-        u32 dn;
-        u32 db;
-        u32 da;
+        u32 dist_new;
+        u32 dist_second;
+        u32 dist_nearest;
 
         nearest = handyman->work_target;
         second = handyman->work_target2;
-        da = (nearest % 128 - handyman->x.tile) * (nearest % 128 - handyman->x.tile) + (nearest / 128 - handyman->y.tile) * (nearest / 128 - handyman->y.tile);
-        db = (second % 128 - handyman->x.tile) * (second % 128 - handyman->x.tile) + (second / 128 - handyman->y.tile) * (second / 128 - handyman->y.tile);
-        dn = (pos % 128 - handyman->x.tile) * (pos % 128 - handyman->x.tile) + (pos / 128 - handyman->y.tile) * (pos / 128 - handyman->y.tile);
+        dist_nearest = (nearest % 128 - handyman->x.tile) * (nearest % 128 - handyman->x.tile) + (nearest / 128 - handyman->y.tile) * (nearest / 128 - handyman->y.tile);
+        dist_second = (second % 128 - handyman->x.tile) * (second % 128 - handyman->x.tile) + (second / 128 - handyman->y.tile) * (second / 128 - handyman->y.tile);
+        dist_new = (pos % 128 - handyman->x.tile) * (pos % 128 - handyman->x.tile) + (pos / 128 - handyman->y.tile) * (pos / 128 - handyman->y.tile);
         if (pos == nearest || pos == handyman->work_target2)
             return;
-        if (dn < da) {
+        if (dist_new < dist_nearest) {
             handyman->work_target2 = nearest;
             handyman->work_target = pos;
-        } else if (dn < db) {
+        } else if (dist_new < dist_second) {
             handyman->work_target2 = pos;
         }
     }
@@ -342,7 +342,7 @@ void handyman_check_for_litter(Thing *handyman)
 // FUNCTION: 0x0007b88c
 void plant_ages(Thing *plant)
 {
-    u8 level;
+    u8 stage;
     u32 next;
 
     if (!othervar.f32 || (old_newrand() & 1))
@@ -350,12 +350,12 @@ void plant_ages(Thing *plant)
     plant->plant_health--;
     if (plant->plant_health > 0) {
         if (plant->plant_health % 80 == 0) {
-            level = (400 - plant->plant_health) / 80;
+            stage = (400 - plant->plant_health) / 80;
             next = frame[plant->sprite].next;
             if (!(frame[next].flags & 1))
                 plant->sprite = next;
             if (!fn_0007cc88(plant))
-                thingpage_request(&allhosps[plant->owner].fd2b, plant - thing, level);
+                thingpage_request(&allhosps[plant->owner].fd2b, plant - thing, stage);
             NRAdcounts.unknown2++;
             NRAdcounts.unknownb -= 11;
         }

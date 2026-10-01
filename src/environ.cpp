@@ -18,7 +18,7 @@ s16 check_feelgood(Thing *w);
 void check_around(Thing *w);
 void setup_showanim(Thing *w, u16 anim);
 s16 staff_check_around(Thing *w);
-void spread_epidemic(Thing *w, u16 a);
+void spread_epidemic(Thing *carrier, u16 warmth);
 void calculate_speed(Thing *w);
 void doctor_cracks_up(Thing *w);
 s32 evaluate_criteria(const u8 player);

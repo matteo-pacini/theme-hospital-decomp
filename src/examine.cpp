@@ -10,7 +10,7 @@ extern s16 D_001567b0[8];
 void doctor_carries_out_examination(Thing *doctor)
 {
     Thing *patient;
-    Thing *t;
+    Thing *obj;
 
     patient = &thing[doctor->slave];
     if (patient <= thing)
@@ -146,24 +146,24 @@ void doctor_carries_out_examination(Thing *doctor)
     case 240:
         doctor->substate++;
         patient->state = 0x2e;
-        t = &thing[patient->object];
+        obj = &thing[patient->object];
         {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(anim_starts[patient->subtype].anims[0x79], patient) + patient->facing;
-            patient->sprite = start[f].frame;
-            patient->flip = start[f].flags > 0;
+            entry = check_frame(anim_starts[patient->subtype].anims[0x79], patient) + patient->facing;
+            patient->sprite = start[entry].frame;
+            patient->flip = start[entry].flags > 0;
         }
         {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(anim_starts[patient->orig_subtype].anims[0x79], patient) + patient->facing;
-            t->aux_sprite = start[f].frame;
-            t->aux_flip = start[f].flags > 0;
+            entry = check_frame(anim_starts[patient->orig_subtype].anims[0x79], patient) + patient->facing;
+            obj->aux_sprite = start[entry].frame;
+            obj->aux_flip = start[entry].flags > 0;
         }
         D_001567b0[4] = D_001567b0[5] = 999;
         full_draw_frame(patient, patient->sprite, 0, 0, 0, 1, patient->flip);
-        t->split_height = -((TbSprite *)(element[elelist[frame[patient->sprite].list]].sprite + (u32)sprite))->height
+        obj->split_height = -((TbSprite *)(element[elelist[frame[patient->sprite].list]].sprite + (u32)sprite))->height
                       - D_001567b0[5];
         break;
     case 241:
@@ -200,27 +200,27 @@ void doctor_carries_out_examination(Thing *doctor)
         break;
     case 71:
         {
-            Thing *h;
+            Thing *assistant;
 
-            h = &thing[doctor->work_target];
-            if (h->state != 0x18)
+            assistant = &thing[doctor->work_target];
+            if (assistant->state != 0x18)
                 break;
-            h->next_state = 0x18;
-            set_complex(h, 0x33e, 0);
-            fn_0003e724(h);
+            assistant->next_state = 0x18;
+            set_complex(assistant, 0x33e, 0);
+            fn_0003e724(assistant);
             doctor->substate = 72;
         }
         break;
     case 72:
         {
-            Thing *h;
+            Thing *assistant;
 
-            h = &thing[doctor->work_target];
-            if (h->state != 0x18)
+            assistant = &thing[doctor->work_target];
+            if (assistant->state != 0x18)
                 break;
-            h->next_state = 0x24;
-            set_complex(h, 0x352, 0);
-            fn_0003e724(h);
+            assistant->next_state = 0x24;
+            set_complex(assistant, 0x352, 0);
+            fn_0003e724(assistant);
             doctor->next_state = 0x1c;
             set_complex(doctor, 0x348, 0);
             fn_0003e724(doctor);
@@ -271,37 +271,37 @@ void doctor_carries_out_examination(Thing *doctor)
         break;
     case 190:
         {
-            u16 f;
+            u16 entry;
 
             doctor->substate++;
-            f = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
-            doctor->sprite = start[f].frame;
-            doctor->flip = start[f].flags > 0;
+            entry = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
+            doctor->sprite = start[entry].frame;
+            doctor->flip = start[entry].flags > 0;
         }
         patient->state = 0x2e;
         patient->object = doctor->object;
-        t = &thing[patient->object];
+        obj = &thing[patient->object];
         {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(anim_starts[patient->subtype].anims[43], patient) + patient->facing;
-            patient->sprite = start[f].frame;
-            patient->flip = start[f].flags > 0;
+            entry = check_frame(anim_starts[patient->subtype].anims[43], patient) + patient->facing;
+            patient->sprite = start[entry].frame;
+            patient->flip = start[entry].flags > 0;
         }
         if (patient->subtype == 6) {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(anim_starts[0].anims[43], patient) + patient->facing;
-            t->aux_sprite = start[f].frame;
-            t->aux_flip = start[f].flags > 0;
+            entry = check_frame(anim_starts[0].anims[43], patient) + patient->facing;
+            obj->aux_sprite = start[entry].frame;
+            obj->aux_flip = start[entry].flags > 0;
         } else {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(anim_starts[1].anims[43], patient) + patient->facing;
-            t->aux_sprite = start[f].frame;
-            t->aux_flip = start[f].flags > 0;
+            entry = check_frame(anim_starts[1].anims[43], patient) + patient->facing;
+            obj->aux_sprite = start[entry].frame;
+            obj->aux_flip = start[entry].flags > 0;
         }
-        t->split_height = 0;
+        obj->split_height = 0;
         break;
     case 191:
         if (patient->state != 0x20)
@@ -315,94 +315,94 @@ void doctor_carries_out_examination(Thing *doctor)
         break;
     case 200:
         {
-            u16 f;
+            u16 entry;
 
             doctor->substate++;
-            f = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
-            doctor->sprite = start[f].frame;
-            doctor->flip = start[f].flags > 0;
+            entry = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
+            doctor->sprite = start[entry].frame;
+            doctor->flip = start[entry].flags > 0;
         }
         patient->state = 0x30;
         patient->object = doctor->object;
-        t = &thing[patient->object];
+        obj = &thing[patient->object];
         {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(anim_starts[patient->subtype].anims[43], patient) + patient->facing;
-            patient->sprite = start[f].frame;
-            patient->flip = start[f].flags > 0;
+            entry = check_frame(anim_starts[patient->subtype].anims[43], patient) + patient->facing;
+            patient->sprite = start[entry].frame;
+            patient->flip = start[entry].flags > 0;
         }
-        t->aux_draw_flags = 4;
+        obj->aux_draw_flags = 4;
         {
-            u16 f;
+            u16 entry;
 
-            f = check_frame(anim_starts[0].anims[43], patient) + patient->facing;
-            t->aux_sprite = start[f].frame;
-            t->aux_flip = start[f].flags > 0;
+            entry = check_frame(anim_starts[0].anims[43], patient) + patient->facing;
+            obj->aux_sprite = start[entry].frame;
+            obj->aux_flip = start[entry].flags > 0;
         }
-        t->aux_param = 0;
-        t->split_height = 0;
+        obj->aux_param = 0;
+        obj->split_height = 0;
         break;
     case 201:
-        t = &thing[patient->object];
-        if (t->split_height == 200) {
+        obj = &thing[patient->object];
+        if (obj->split_height == 200) {
             doctor->substate++;
-            t->aux_draw_flags = 8;
-            t->aux_param = 1;
-            t->split_height = 0;
+            obj->aux_draw_flags = 8;
+            obj->aux_param = 1;
+            obj->split_height = 0;
         } else {
-            t->split_height += 10;
+            obj->split_height += 10;
         }
         break;
     case 202:
-        t = &thing[patient->object];
-        if (t->split_height == 200) {
+        obj = &thing[patient->object];
+        if (obj->split_height == 200) {
             doctor->substate++;
-            t->aux_draw_flags = 0xff;
-            t->aux_param = 1;
-            t->split_height = 0;
+            obj->aux_draw_flags = 0xff;
+            obj->aux_param = 1;
+            obj->split_height = 0;
         } else {
-            t->split_height += 10;
+            obj->split_height += 10;
         }
         break;
     case 203:
-        t = &thing[patient->object];
-        if (t->split_height == 200) {
+        obj = &thing[patient->object];
+        if (obj->split_height == 200) {
             doctor->substate++;
-            patient->sprite = t->aux_sprite;
-            patient->flip = t->aux_flip;
-            t->aux_draw_flags = 0xff;
-            t->aux_param = 1;
-            t->split_height = 200;
+            patient->sprite = obj->aux_sprite;
+            patient->flip = obj->aux_flip;
+            obj->aux_draw_flags = 0xff;
+            obj->aux_param = 1;
+            obj->split_height = 200;
         } else {
-            t->split_height += 10;
+            obj->split_height += 10;
         }
         break;
     case 204:
-        t = &thing[patient->object];
-        if (t->split_height == 0) {
+        obj = &thing[patient->object];
+        if (obj->split_height == 0) {
             doctor->substate++;
-            t->aux_draw_flags = 8;
-            t->aux_param = 5;
-            t->split_height = 200;
+            obj->aux_draw_flags = 8;
+            obj->aux_param = 5;
+            obj->split_height = 200;
         } else {
-            t->split_height -= 10;
+            obj->split_height -= 10;
         }
         break;
     case 205:
-        t = &thing[patient->object];
-        if (t->split_height == 0) {
+        obj = &thing[patient->object];
+        if (obj->split_height == 0) {
             doctor->substate++;
-            t->aux_draw_flags = 4;
-            t->aux_param = 0;
-            t->split_height = 200;
+            obj->aux_draw_flags = 4;
+            obj->aux_param = 0;
+            obj->split_height = 200;
         } else {
-            t->split_height -= 10;
+            obj->split_height -= 10;
         }
         break;
     case 206:
-        t = &thing[patient->object];
-        if (t->split_height == 0) {
+        obj = &thing[patient->object];
+        if (obj->split_height == 0) {
             transform_peep_who(patient, 0xa);
             doctor->next_state = 0x1c;
             set_complex(doctor, 0x230, 0);
@@ -410,7 +410,7 @@ void doctor_carries_out_examination(Thing *doctor)
             doctor->substate = 181;
             patient->state = 0x28;
         } else {
-            t->split_height -= 10;
+            obj->split_height -= 10;
         }
         break;
     case 220:

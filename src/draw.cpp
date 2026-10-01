@@ -44,14 +44,14 @@ u32 ror13(u32 x);
 static u8 glow_path[] = { 0x4d, 0x4e, 0x4f, 0x50, 0x50, 0x4f, 0x4e, 0x4d };
 
 // FUNCTION: 0x0002d910
-void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, const u8 flip)
+void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 flip)
 {
     CompFrame *f;
     u16 *el;
     CompElement *elem;
     TbSprite *spr;
 
-    f = &frame[anim];
+    f = &frame[frame_id];
     D_001567b0.x = D_001567b0.y = 999;
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
@@ -104,14 +104,14 @@ void draw_a_frame(const u16 anim, const s16 x, const s16 y, const u8 flags, cons
 }
 
 // FUNCTION: 0x0002dd1c
-void draw_a_one_colour_frame(const u16 anim, const s16 x, const s16 y, const u16 colour, const u8 flip)
+void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const u16 colour, const u8 flip)
 {
     CompFrame *f;
     u16 *el;
     CompElement *elem;
     TbSprite *spr;
 
-    f = &frame[anim];
+    f = &frame[frame_id];
     D_001567b0.x = D_001567b0.y = 999;
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
@@ -545,19 +545,19 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
 {
     s32 old_top;
     s32 old_height;
-    Thing *o;
+    Thing *obj;
     CompFrame *f;
     u8 split_height;
     u8 rest;
 
     old_top = lbDisplay.graphics_window_y;
     old_height = lbDisplay.graphics_window_height;
-    o = &thing[w->object];
-    if (o > thing) {
+    obj = &thing[w->object];
+    if (obj > thing) {
         if (w->subtype == 0xe)
-            draw_special_id_frame(o, x, y);
+            draw_special_id_frame(obj, x, y);
         f = &frame[w->sprite];
-        split_height = o->split_height;
+        split_height = obj->split_height;
         rest = f->length - split_height;
         D_001567b0.x = D_001567b0.y = 999;
         {
@@ -572,7 +572,7 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
             lbDisplay.graphics_window_y = top > old_top ? top : old_top;
         }
         lbDisplay.graphics_window_height = old_height + old_top - lbDisplay.graphics_window_y;
-        full_draw_frame(w, o->aux_sprite, x, y - lbDisplay.graphics_window_y, 0, 0, o->aux_flip);
+        full_draw_frame(w, obj->aux_sprite, x, y - lbDisplay.graphics_window_y, 0, 0, obj->aux_flip);
         lbDisplay.graphics_window_y = old_top;
         lbDisplay.graphics_window_height = old_height;
         lbDisplay.draw_flags = 0;
@@ -616,21 +616,21 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
 {
     CompFrame *f;
     u32 rng;
-    Thing *o;
+    Thing *obj;
     u16 i;
 
-    o = &thing[w->object];
+    obj = &thing[w->object];
     rng = 0x546b1;
-    if (o > thing) {
+    if (obj > thing) {
         f = &frame[w->sprite];
         D_001567b0.x = D_001567b0.y = 999;
-        if (o->aux_draw_flags != 0xff)
-            full_draw_frame(w, w->sprite, x, y, o->aux_draw_flags, 0, w->flip);
+        if (obj->aux_draw_flags != 0xff)
+            full_draw_frame(w, w->sprite, x, y, obj->aux_draw_flags, 0, w->flip);
         InitPixBuffer(0, 0, 0x40, 0x40, 0, 0);
         DrawIntoPixBuffer();
         full_draw_frame(w, w->sprite, 0x20, 0x3a, 0, 0, w->flip);
         RestoreFromPixBuffer();
-        for (i = o->split_height * 10; i > 0; i--) {
+        for (i = obj->split_height * 10; i > 0; i--) {
             pixBuf.data[rng & 0xfff] = 0xfe;
             pixBuf.data[(rng >> 10) & 0xfff] = 0xfe;
             pixBuf.data[(rng >> 20) & 0xfff] = 0xfe;
@@ -639,7 +639,7 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
         }
         pixBuf.x = x - 0x20;
         pixBuf.y = y - 0x3a;
-        DrawPixBuffer(o->aux_param, 0, 0, 0x40, 0x40);
+        DrawPixBuffer(obj->aux_param, 0, 0, 0x40, 0x40);
         FillPixBuffer(0xfe);
         InitPixBuffer(0, 0, 0xb4, 0xb4, 0, 0);
         if (f->sound && gamevar.f12d == 0 && (sfx_details[f->sound].unknownC || w->last_sound != f->sound))
@@ -668,14 +668,14 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
 }
 
 // FUNCTION: 0x00030198
-void draw_a_frame_scaled(const u16 anim, const s16 x, const s16 y, u8 flags, const u8 flip, s32 scale)
+void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags, const u8 flip, s32 scale)
 {
     CompFrame *f;
     u16 *el;
     CompElement *elem;
     TbSprite *spr;
 
-    f = &frame[anim];
+    f = &frame[frame_id];
     D_001567b0.x = D_001567b0.y = 999;
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
@@ -786,14 +786,14 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
 
 
 // FUNCTION: 0x000308a0
-void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const u8 flip)
+void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, const u8 flip)
 {
     CompFrame *f;
     u16 *el;
     CompElement *elem;
     TbSprite *spr;
 
-    f = &frame[anim];
+    f = &frame[frame_id];
     D_001567b0.x0 = D_001567b0.y0 = 999;
     D_001567b0.x1 = D_001567b0.y1 = 0;
     D_001567b0.x = D_001567b0.y = 999;
@@ -879,7 +879,7 @@ void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const 
 
 
 // FUNCTION: 0x00030f34
-void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, u8 *layers, const u8 flip)
+void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, u8 *layers, const u8 flip)
 {
     CompFrame *f;
     u16 *el;
@@ -887,7 +887,7 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
     ElementBits *bits;
     TbSprite *spr;
 
-    f = &frame[anim];
+    f = &frame[frame_id];
     D_001567b0.x = D_001567b0.y = 999;
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
@@ -956,7 +956,7 @@ void draw_from_special_id_frame(const u16 anim, const s16 x, const s16 y, u8 *re
 
 
 // FUNCTION: 0x00031434
-void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip)
+void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip)
 {
     CompFrame *f;
     u16 *el;
@@ -964,7 +964,7 @@ void full_draw_frame(Thing *w, const u16 anim, const s16 x, const s16 y, const u
     ElementBits *bits;
     TbSprite *spr;
 
-    f = &frame[anim];
+    f = &frame[frame_id];
     if (flip) {
         for (el = &elelist[f->list]; *el != (u16)0xffff; el++) {
             elem = &element[*el];

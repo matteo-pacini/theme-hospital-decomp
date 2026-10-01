@@ -50,8 +50,8 @@ void draw_load_game(void)
     u8 height;
     u8 width;
     s32 handle;
-    s32 map;
-    s32 level;
+    s32 next;
+    s32 level_no;
 
     set_font_from_cache(1);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
@@ -85,10 +85,10 @@ void draw_load_game(void)
         init_zoom_boxes(0x2000);
         break;
     case 3:
-        map = next_map();
-        if (map == 0)
+        next = next_map();
+        if (next == 0)
             loadgame.unknown2 = 4;
-        PendingDisplay = map;
+        PendingDisplay = next;
         copy_screen_to_wscreen(bscreen);
         draw_zoom_boxes();
         break;
@@ -105,9 +105,9 @@ void draw_load_game(void)
             LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
             resvars.f1 = SCREEN_MODE_13;
             load_game_files();
-            level = read_level_number(load_game_number);
-            if (level != -1) {
-                fn_00090804((u16)level, 1);
+            level_no = read_level_number(load_game_number);
+            if (level_no != -1) {
+                fn_00090804((u16)level_no, 1);
                 if (fn_00021c38((s8)load_game_number, -1)) {
                     clear_loading_screen(D_00153f34);
                     othervar.fa65 = 0;

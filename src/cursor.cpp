@@ -33,8 +33,8 @@ extern NextPart next_part[];
 // FUNCTION: 0x000b10b0
 void draw_cell_no(s32 cell, u8 colour)
 {
-    s32 b;
-    s32 a;
+    s32 top_y;
+    s32 top_x;
     s32 y;
     s32 x;
     s32 col;
@@ -57,9 +57,9 @@ void draw_cell_no(s32 cell, u8 colour)
                                   info.unknown74 - info.unknown6c);
         x -= info.unknown68;
         y -= info.unknown6c;
-        a = x - resvars.f4 / 2;
-        b = y + resvars.f3;
-        draw_cell_no_editor(a, b, colour);
+        top_x = x - resvars.f4 / 2;
+        top_y = y + resvars.f3;
+        draw_cell_no_editor(top_x, top_y, colour);
     }
 }
 
@@ -78,7 +78,7 @@ void draw_cell_no_editor(s32 x, s32 y, u8 colour)
 // FUNCTION: 0x000b14f0
 void draw_object_cursor(void)
 {
-    u8 flag;
+    u8 force;
     u8 flip;
     u8 flip2;
     u8 dir;
@@ -88,7 +88,7 @@ void draw_object_cursor(void)
     u16 kind;
     u16 tile;
     u16 kind2;
-    u32 frame2;
+    u32 part_frame;
     RoomInfo *room;
     s32 row;
     s32 col;
@@ -96,7 +96,7 @@ void draw_object_cursor(void)
     s32 y;
     s32 x2;
     s32 y2;
-    u32 frame;
+    u32 obj_frame;
     u8 *remap;
 
     tile2 = 0;
@@ -105,8 +105,8 @@ void draw_object_cursor(void)
     dir2 = 0;
     dir = gamevar.f28;
     part = objects[gamevar.unknown25].unknown17;
-    flag = gamevar.f29;
-    if (othervar.f28 == othervar.f2a && !flag)
+    force = gamevar.f29;
+    if (othervar.f28 == othervar.f2a && !force)
         goto draw;
     gamevar.f29 = 0;
     switch (gamevar.unknown26) {
@@ -126,7 +126,7 @@ void draw_object_cursor(void)
     default:
         break;
     }
-    if (tile == gamevar.f23 && !flag)
+    if (tile == gamevar.f23 && !force)
         goto draw;
     gamevar.f23 = tile;
     gamevar.unknown2a = can_place_object(tile, kind, dir, player);
@@ -172,15 +172,15 @@ draw:
         + resvars.f3 / 2;
     switch (kind) {
     case 0x11:
-        frame = get_frame_for_placing_bomb();
+        obj_frame = get_frame_for_placing_bomb();
         flip = 0;
         break;
     case 0x2d:
-        frame = get_frame_for_placing_plant();
+        obj_frame = get_frame_for_placing_plant();
         flip = 0;
         break;
     default:
-        frame = start[objects[kind].unknownE + dir].frame;
+        obj_frame = start[objects[kind].unknownE + dir].frame;
         flip = start[objects[kind].unknownE + dir].flags;
         break;
     }
@@ -198,17 +198,17 @@ draw:
         x2 = resvars.f4 * col / 2 - resvars.f4 * row / 2 - window.f0[window.unknown2eb] + window.f90[window.unknown2eb];
         y2 = resvars.f3 * col / 2 + resvars.f3 * row / 2 - window.fc[window.unknown2eb] + window.f9c[window.unknown2eb]
             + resvars.f3 / 2;
-        frame2 = start[objects[kind].unknownE + dir2].frame;
+        part_frame = start[objects[kind].unknownE + dir2].frame;
         flip2 = start[objects[kind].unknownE + dir2].flags;
         if (next_part[part].dirs[dir].unknown3[2]) {
-            draw_from_frame(frame2, x2, y2, remap, flip2);
-            draw_from_frame(frame, x, y, remap, flip);
+            draw_from_frame(part_frame, x2, y2, remap, flip2);
+            draw_from_frame(obj_frame, x, y, remap, flip);
         } else {
-            draw_from_frame(frame, x, y, remap, flip);
-            draw_from_frame(frame2, x2, y2, remap, flip2);
+            draw_from_frame(obj_frame, x, y, remap, flip);
+            draw_from_frame(part_frame, x2, y2, remap, flip2);
         }
     } else {
-        draw_from_frame(frame, x, y, remap, flip);
+        draw_from_frame(obj_frame, x, y, remap, flip);
     }
 }
 

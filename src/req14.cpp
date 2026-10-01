@@ -292,14 +292,14 @@ void open_edit_room_requester(void)
 }
 
 // FUNCTION: 0x0009ffa8
-void go_back_to_place_object_requester(u8 flag)
+void go_back_to_place_object_requester(u8 restore_purchases)
 {
     u8 obj;
 
     close_irequesters();
     close_crequester(10);
     open_edit_room_requester();
-    if (flag)
+    if (restore_purchases)
         gamevar.unknown33 = othervar.f8b7;
     else
         post_shop_readjust_build_palette();

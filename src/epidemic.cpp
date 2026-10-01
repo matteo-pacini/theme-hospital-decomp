@@ -9,7 +9,7 @@ void fn_000c93bf(char *dst, char *src);
 
 
 // FUNCTION: 0x000a0040
-void spread_epidemic(Thing *carrier, u16 n)
+void spread_epidemic(Thing *carrier, u16 warmth)
 {
     Thing *victim;
     Map *adj;
@@ -20,7 +20,7 @@ void spread_epidemic(Thing *carrier, u16 n)
     u8 other;
 
     othervar.f0 = old_newrand() % 100;
-    if (othervar.f0 < 0 || othervar.f0 >= gbv.f145 + n / 2)
+    if (othervar.f0 < 0 || othervar.f0 >= gbv.f145 + warmth / 2)
         return;
     illness = carrier->illness;
     cell = &map[(s16)carrier->x.tile + ((s16)carrier->y.tile << 7)];

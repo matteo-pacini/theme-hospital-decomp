@@ -136,11 +136,11 @@ void insert_block_into_used_list(s8 block)
 }
 
 // FUNCTION: 0x000b6bf4
-void realign_sprites(TbSprite *start, TbSprite *end, s32 delta)
+void realign_sprites(TbSprite *first, TbSprite *last, s32 delta)
 {
     TbSprite *s;
 
-    for (s = start; s < end; s++)
+    for (s = first; s < last; s++)
         s->data += delta;
 }
 
@@ -220,7 +220,7 @@ s8 get_block_from_free_list(s32 size)
 {
     s32 left;
     s32 total;
-    s8 got;
+    s8 rest;
     s8 block;
     s8 cur;
 
@@ -236,12 +236,12 @@ s8 get_block_from_free_list(s32 size)
         D_00175239 = font_memory[cur].next;
         font_memory[cur].next = -1;
         if (left > 0) {
-            got = get_fontmem();
-            if (got != -1) {
+            rest = get_fontmem();
+            if (rest != -1) {
                 font_memory[cur].size = size;
-                font_memory[got].offset = font_memory[cur].offset + size;
-                font_memory[got].size = left;
-                insert_block_into_free_list(got);
+                font_memory[rest].offset = font_memory[cur].offset + size;
+                font_memory[rest].size = left;
+                insert_block_into_free_list(rest);
             }
         }
         return cur;
@@ -254,12 +254,12 @@ s8 get_block_from_free_list(s32 size)
             font_memory[cur].next = font_memory[font_memory[cur].next].next;
             font_memory[block].next = -1;
             if (left > 0) {
-                got = get_fontmem();
-                if (got != -1) {
+                rest = get_fontmem();
+                if (rest != -1) {
                     font_memory[block].size = size;
-                    font_memory[got].offset = font_memory[block].offset + size;
-                    font_memory[got].size = left;
-                    insert_block_into_free_list(got);
+                    font_memory[rest].offset = font_memory[block].offset + size;
+                    font_memory[rest].size = left;
+                    insert_block_into_free_list(rest);
                 }
             }
             return block;

@@ -177,7 +177,7 @@ s32 sector_behind(Sector *sectors, s32 a, s32 b)
 // FUNCTION: 0x000b86a8
 void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sectors)
 {
-    s32 flag;
+    s32 start_half_first;
     s32 oy;
     s32 ox;
     Sector copy;
@@ -212,8 +212,8 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sector
                 split = i;
                 fn_000c21e6(&copy, &sectors[split], 0x21);
                 sectors[split].radius = 0;
-                flag = lbSinTable[(sectors[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
-                if (flag) {
+                start_half_first = lbSinTable[(sectors[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
+                if (start_half_first) {
                     sectors[i].end = mid;
                     side_off = 2;
                     sector_render(ox, oy, rx, ry, h, sectors, i);
@@ -245,7 +245,7 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sector
         }
         done[best] = 1;
         if (best == split) {
-            side_off = flag ? 1 : 2;
+            side_off = start_half_first ? 1 : 2;
             sector_render(ox, oy, rx, ry, h, sectors, best);
         } else {
             side_off = 0;

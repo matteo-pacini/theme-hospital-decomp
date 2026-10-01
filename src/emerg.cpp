@@ -36,7 +36,7 @@ u32 old_newrand(void);
 
 u16 saferand(void);
 u16 count_emergency_staff(u8 owner);
-u16 create_shadow(u16 tile, u16 height, u8 owner, u16 anim);
+u16 create_shadow(u16 tile, u16 caster, u8 owner, u16 anim);
 
 // FUNCTION: 0x000aeec0
 void try_to_generate_emergency(void)

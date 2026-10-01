@@ -103,18 +103,18 @@ void req4(Window *win)
 // FUNCTION: 0x0008704c
 void req4_overdraw(Window *win)
 {
-    u8 a;
-    u8 b;
-    u8 c;
+    u8 unused_a;
+    u8 unused_b;
+    u8 unused_c;
     u8 slot;
     s32 y;
     s32 x;
     Thing *staff;
     char buf[100];
 
-    a = 0;
-    b = 0;
-    c = 0;
+    unused_a = 0;
+    unused_b = 0;
+    unused_c = 0;
     LbScreenSetGraphicsWindow(window.unknown2c3, window.unknown2c7, window.unknown2cb - window.unknown2c3,
                               window.unknown2cf - window.unknown2c7);
     x = win->x - lbDisplay.graphics_window_x;

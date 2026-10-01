@@ -22,11 +22,11 @@ void setup_aniseq_indices(void)
 }
 
 // FUNCTION: 0x0009b380
-void setup_aniseq(Thing *w, u8 seq, u8 mode)
+void setup_aniseq(Thing *w, u8 seq, u8 next_state)
 {
     if (w->type == 4)
         w->state = 0x50;
-    w->next_state = mode;
+    w->next_state = next_state;
     w->seq_index = statvar.aniseq_start[seq];
     setup_next_aniseq(w);
 }
@@ -61,11 +61,11 @@ void play_aniseq(Thing *w)
 }
 
 // FUNCTION: 0x0009b510
-void choose_aniseq(Thing *w, u8 group, u8 mode)
+void choose_aniseq(Thing *w, u8 group, u8 next_state)
 {
     u8 count;
 
     for (count = 0; ani_seq_choice[group][count]; count++)
         ;
-    setup_aniseq(w, ani_seq_choice[group][old_newrand() % count], mode);
+    setup_aniseq(w, ani_seq_choice[group][old_newrand() % count], next_state);
 }

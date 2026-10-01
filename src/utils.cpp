@@ -112,15 +112,15 @@ void remove_thing(Thing *target)
 }
 
 // FUNCTION: 0x00019a1c
-void count_hospital_area(u16 player)
+void count_hospital_area(u16 owner)
 {
-    AllHosps *hosp = allhosps + player;
+    AllHosps *hosp = allhosps + owner;
     Map *cell;
 
     if (hosp->f2a != 2) {
         hosp->f1f1 = 0;
         for (cell = map; cell < end_map; cell++) {
-            if (cell->unknown7 & (1 << player)) {
+            if (cell->unknown7 & (1 << owner)) {
                 hosp->f1f1++;
             }
         }

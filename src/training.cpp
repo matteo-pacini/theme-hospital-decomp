@@ -75,7 +75,7 @@ void doctor_is_trained(Thing *doctor)
 // FUNCTION: 0x00042c90
 void consultant_trains(Thing *consultant)
 {
-    Thing *student;
+    Thing *projector;
 
     consultant->orders &= ~4;
     if (shall_i_resign(consultant)) {
@@ -100,12 +100,12 @@ void consultant_trains(Thing *consultant)
     if (((consultant->orders & 1) || consultant->tiredness > allhosps[consultant->owner].f21d) && take_a_break(consultant)) {
         return;
     }
-    student = &thing[find_object(consultant->x.tile + ((u16)consultant->y.tile << 7), 0x25, 0, 0x97, consultant->owner)];
-    if (student <= thing) {
+    projector = &thing[find_object(consultant->x.tile + ((u16)consultant->y.tile << 7), 0x25, 0, 0x97, consultant->owner)];
+    if (projector <= thing) {
         return;
     }
-    if (!student->data[0]) {
-        student->data[0] = 1;
+    if (!projector->data[0]) {
+        projector->data[0] = 1;
         set_complex(consultant, 0x3fc, 0);
         consultant->next_state = 0x48;
         fn_0003e724(consultant);

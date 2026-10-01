@@ -220,14 +220,14 @@ int fn_000bc63c(char *src, char *dst)
 }
 
 // FUNCTION: 0x000bc75c
-int fn_000bc75c(s8 *a, s8 *b, u32 len, int ignore_case)
+int fn_000bc75c(s8 *s1, s8 *s2, u32 len, int ignore_case)
 {
     u32 i;
 
     if (!ignore_case)
-        return strncmp((char *)a, (char *)b, len) == 0;
+        return strncmp((char *)s1, (char *)s2, len) == 0;
     for (i = 0; i < len; i++) {
-        if (toupper(*a++) != toupper(*b++))
+        if (toupper(*s1++) != toupper(*s2++))
             return 0;
     }
     return 1;

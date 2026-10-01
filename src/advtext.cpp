@@ -99,7 +99,7 @@ void fn_000b2124(void)
 // FUNCTION: 0x000b2178
 void fn_000b2178(u8 segments)
 {
-    u32 max;
+    u32 max_width;
     u32 width;
     u8 lines;
     char wrapped[0x10e];
@@ -107,9 +107,9 @@ void fn_000b2178(u8 segments)
     char text[0x118];
     char *p;
     char *brk;
-    char *start;
+    char *line_start;
 
-    max = segments * resvars.f1c_AdvisorLayoutp->f4d8 + resvars.f1c_AdvisorLayoutp->f4e8 + resvars.f1c_AdvisorLayoutp->f4e0 - resvars.f1c_AdvisorLayoutp->f4c8 - resvars.f1c_AdvisorLayoutp->f4d0;
+    max_width = segments * resvars.f1c_AdvisorLayoutp->f4d8 + resvars.f1c_AdvisorLayoutp->f4e8 + resvars.f1c_AdvisorLayoutp->f4e0 - resvars.f1c_AdvisorLayoutp->f4c8 - resvars.f1c_AdvisorLayoutp->f4d0;
     width = 0;
     lines = 0;
     out = wrapped;
@@ -118,30 +118,30 @@ void fn_000b2178(u8 segments)
     fn_000bbff0(text, advisor.f10);
     p = text;
     brk = text;
-    start = text;
+    line_start = text;
     do {
         do {
             width += lbFontPtr ? lbFontPtr[(u8)*p - 0x1f].width : 0;
             if (*p == ' ' || *p == ',' || *p == '.' || *p == ';' || *p == ':')
                 brk = p;
             p++;
-        } while (width <= max && *p != '\0');
+        } while (width <= max_width && *p != '\0');
         if (!*p)
             brk = p;
         width = 0;
         lines++;
         if (lines == 1) {
-            strncpy(wrapped, start, brk - start);
-            out += brk - start;
+            strncpy(wrapped, line_start, brk - line_start);
+            out += brk - line_start;
         } else {
-            strncat(out, start, brk - start);
-            out += brk - start + 1;
+            strncat(out, line_start, brk - line_start);
+            out += brk - line_start + 1;
         }
         *out = '\n';
         if (*p) {
             p = brk + 1;
             brk = p;
-            start = p;
+            line_start = p;
         }
     } while (lines < 3 && *p != '\0');
     if (!*p) {

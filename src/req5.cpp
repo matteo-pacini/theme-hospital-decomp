@@ -59,7 +59,7 @@ void req5_overdraw(Window *win)
 {
     char buf[100];
     s32 max;
-    s32 age;
+    s32 uses;
     s32 y;
     s32 x;
     Thing *machine;
@@ -73,7 +73,7 @@ void req5_overdraw(Window *win)
                                   window.unknown2cf - window.unknown2c7);
         x = win->x - lbDisplay.graphics_window_x;
         y = win->y - lbDisplay.graphics_window_y;
-        age = machine->times_used;
+        uses = machine->times_used;
         max = allhosps[machine->owner].object_stats[machine->subtype].unknown8;
         set_font_from_cache(1);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -94,7 +94,7 @@ void req5_overdraw(Window *win)
                 sprintf(buf, "%d", count);
                 LbTextDraw(x + resvars.f1c[0x62].x, y + resvars.f1c[0x62].y, buf);
             }
-            pct = (max - age) * 100 / max;
+            pct = (max - uses) * 100 / max;
             req5_draw_machine_usage_bar(x, y, pct, 100);
         }
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -126,11 +126,11 @@ void req5_overdraw(Window *win)
 }
 
 // FUNCTION: 0x00088880
-void req5_draw_machine_usage_bar(long x, long y, long used, long total)
+void req5_draw_machine_usage_bar(long x, long y, long filled, long total)
 {
     s32 i;
 
-    for (i = (used << 16) / ((total << 16) / resvars.f18[0x53].w) - 1; i >= 0; i--)
+    for (i = (filled << 16) / ((total << 16) / resvars.f18[0x53].w) - 1; i >= 0; i--)
         reqspr_draw(x + resvars.f18[0x53].x + i, y + resvars.f18[0x53].y, &button_sprite[resvars.f12[4]]);
 }
 

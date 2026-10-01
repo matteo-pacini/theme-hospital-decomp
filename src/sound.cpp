@@ -53,8 +53,8 @@ void play_last_midi(void);
 char *read_line_from_buf(char *line, s32 max, char *src);
 extern SampleGroup sample_group[];
 
-s32 init_sound_heap(u8 *heap, s32 size, char *path, s32 count);
-SampleInfo *play_sample_using_heap(u32 a, s16 b, u32 c, u32 d, u32 e, s8 f, u8 g);
+s32 init_sound_heap(u8 *heap, s32 size, char *path, s32 rate);
+SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, u32 pitch, s8 loop, u8 type);
 
 extern "C" {
 

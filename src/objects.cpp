@@ -67,7 +67,7 @@ s32 fn_00038d04(Thing *w, u8 owner);
 u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
 {
     Map *cell;
-    ObjectControl *obj;
+    ObjectControl *control;
     Shapes *shape;
     u8 i;
 
@@ -75,8 +75,8 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
         return 1;
     }
     cell = &map[tile];
-    obj = &objects[kind];
-    shape = &shapes[obj->shapes[dir]];
+    control = &objects[kind];
+    shape = &shapes[control->shapes[dir]];
     for (i = 0; i < shape->count; i++) {
         if ((cell[(s16)shape->points[i]].unknown3 && (shape->unknown22[i] & 1))
             || (cell[(s16)shape->points[i]].unknown4 && (shape->unknown22[i] & 2))
@@ -109,7 +109,7 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
     RoomInfo *room;
     NextPart *part;
     Thing *other;
-    u16 frame;
+    u16 anim;
 
     cell = &map[tile];
     control = &objects[obj->subtype];
@@ -169,9 +169,9 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
         }
         break;
     case 0x11:
-        frame = check_frame(obj->fuse + 0x9bf, obj) + obj->facing;
-        obj->sprite = start[frame].frame;
-        obj->flip = start[frame].flags > 0;
+        anim = check_frame(obj->fuse + 0x9bf, obj) + obj->facing;
+        obj->sprite = start[anim].frame;
+        obj->flip = start[anim].flags > 0;
         obj->owner = (map[tile].unknown7 & 2) ? 1 : (map[tile].unknown7 & 4) ? 2 : (map[tile].unknown7 & 8) ? 3 : 0;
         break;
     }
@@ -575,7 +575,7 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
 }
 
 // FUNCTION: 0x000382d8
-u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 flag)
+u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_space)
 {
     Thing *best;
     s32 best_score;
@@ -593,7 +593,7 @@ u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 flag)
                 continue;
             }
             free = staff->room->f1e - staff->room->unknown31;
-            if (free <= 0 && flag) {
+            if (free <= 0 && need_space) {
                 continue;
             }
             score = staff->room->unknown31 * gbv.f100;
@@ -612,13 +612,13 @@ u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 flag)
 u8 can_place_door(u16 tile, u16 kind, u8 dir)
 {
     Map *cell;
-    ObjectControl *obj;
+    ObjectControl *control;
     Shapes *shape;
     u8 i;
 
     cell = &map[tile];
-    obj = &objects[kind];
-    shape = &shapes[obj->shapes[dir]];
+    control = &objects[kind];
+    shape = &shapes[control->shapes[dir]];
     for (i = 0; i < shape->count; i++) {
         if (cell[(s16)shape->points[i]].flags & 7) {
             return 0;
@@ -692,7 +692,7 @@ Thing *find_door(Thing *person)
 }
 
 // FUNCTION: 0x00038870
-s16 place_small_thing(u16 tile, u16 id, u8 flag)
+s16 place_small_thing(u16 tile, u16 id, u8 keep_existing)
 {
     Map *cell;
     Thing *last;
@@ -709,7 +709,7 @@ s16 place_small_thing(u16 tile, u16 id, u8 flag)
     } else {
         link = &cell->first;
     }
-    if (flag == 0 || *link == 0) {
+    if (keep_existing == 0 || *link == 0) {
         *link = id;
         *link = -*link;
         if (id >= 0x4b) {
@@ -825,15 +825,15 @@ s32 fn_00038d04(Thing *obj, u8 owner)
 // FUNCTION: 0x00038db0
 u8 treatment_machine_used(const u16 illness, const u16 tile)
 {
-    ObjectControl *obj;
+    ObjectControl *control;
     u16 id;
     u16 kind;
     Thing *machine;
     s32 percent;
 
     kind = expertise[illness].kind;
-    obj = &objects[kind];
-    if (obj->unknown1e) {
+    control = &objects[kind];
+    if (control->unknown1e) {
         id = find_object(tile, kind, 0, 0x97, 0);
         machine = &thing[id];
         if (machine > thing) {
@@ -855,13 +855,13 @@ u8 treatment_machine_used(const u16 illness, const u16 tile)
 // FUNCTION: 0x00038f14
 u8 modify_machine(Thing *machine)
 {
-    ObjectControl *obj;
+    ObjectControl *control;
     s32 j;
     s32 i;
     s32 count;
 
     count = 0;
-    obj = &objects[machine->subtype];
+    control = &objects[machine->subtype];
     if (machine->strength * 75 / 100 <= machine->times_used) {
         if (machine->owner == player) {
             if (machine->subtype >= 0 && machine->subtype < 0x3e) {
@@ -879,7 +879,7 @@ u8 modify_machine(Thing *machine)
                 machine->smoke[0] = 1;
                 machine->smoke[1] = 1;
                 machine->smoke[2] = 1;
-                machine->overlay_frame = start[obj->unknown1e].frame;
+                machine->overlay_frame = start[control->unknown1e].frame;
             } else if (count == 1) {
                 for (j = 0; j < 3; j++) {
                     if (machine->smoke[j] == 1) {
@@ -888,12 +888,12 @@ u8 modify_machine(Thing *machine)
                 }
                 j = (j + 1 + (old_newrand() & 1)) % 3;
                 machine->smoke[j] = 1;
-                machine->overlay_frame = start[obj->unknown1e].frame;
+                machine->overlay_frame = start[control->unknown1e].frame;
             }
         } else {
             j = old_newrand() % 3;
             machine->smoke[j] = 1;
-            machine->overlay_frame = start[obj->unknown1e].frame;
+            machine->overlay_frame = start[control->unknown1e].frame;
         }
     }
     if (machine->times_used >= machine->strength) {
@@ -907,7 +907,7 @@ u8 modify_machine(Thing *machine)
 }
 
 // FUNCTION: 0x0003917c
-void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *obj, u8 cleanse)
+void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *control, u8 cleanse)
 {
     u8 i;
     Map *cell;
@@ -933,8 +933,8 @@ void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *obj
     base_cell[shape->unknown19[0]].flags |= 4;
     base_cell[shape->unknown19[1]].flags |= 4;
     base_cell[shape->unknown19[2]].flags |= 4;
-    if (obj->walls != -1) {
-        walls = &object_walls[obj->walls * 4 + dir];
+    if (control->walls != -1) {
+        walls = &object_walls[control->walls * 4 + dir];
         for (i = 0; i < walls->count; i++) {
             remove_blank_wall(&base_cell[walls->pos[i]], walls->side[i]);
         }
@@ -942,7 +942,7 @@ void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *obj
 }
 
 // FUNCTION: 0x00039470
-void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *obj)
+void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *control)
 {
     u8 i;
     ObjectWalls *walls;
@@ -956,8 +956,8 @@ void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *obj)
     cell[shape->unknown19[0]].flags &= ~4;
     cell[shape->unknown19[1]].flags &= ~4;
     cell[shape->unknown19[2]].flags &= ~4;
-    if (obj->walls != -1) {
-        walls = &object_walls[obj->walls * 4 + dir];
+    if (control->walls != -1) {
+        walls = &object_walls[control->walls * 4 + dir];
         for (i = 0; i < walls->count; i++) {
             insert_blank_wall(&cell[walls->pos[i]], walls->side[i]);
         }

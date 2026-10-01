@@ -130,8 +130,8 @@ void goto_column_row_in_window(const u8 win, const s32 x, const s32 y)
 void move_windows(void)
 {
     u8 i;
-    s32 ex;
-    s32 ey;
+    s32 carry_x;
+    s32 carry_y;
     s32 dx;
     s32 dy;
 
@@ -154,12 +154,12 @@ void move_windows(void)
         dy = window.fb4[i] >> 16;
         window.fc0[i] += window.fa8[i] - (dx << 16);
         window.fcc[i] += window.fb4[i] - (dy << 16);
-        ex = window.fc0[i] >> 16;
-        ey = window.fcc[i] >> 16;
-        window.fc0[i] -= ex << 16;
-        window.fcc[i] -= ey << 16;
-        dx += ex;
-        dy += ey;
+        carry_x = window.fc0[i] >> 16;
+        carry_y = window.fcc[i] >> 16;
+        window.fc0[i] -= carry_x << 16;
+        window.fcc[i] -= carry_y << 16;
+        dx += carry_x;
+        dy += carry_y;
         if (check_if_point_beyond_scroll_limit(window.f0[i] + dx, window.fc[i] + dy, 0)) {
             window.fa8[i] = 0;
             window.fb4[i] = 0;
@@ -392,12 +392,12 @@ void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0,
 }
 
 // FUNCTION: 0x000acc4c
-void set_window_animating(const u8 win, const u8 a, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
+void set_window_animating(const u8 win, const u8 mode, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
 {
     if (steps == 0)
         steps = 1;
     if (x0 < x1 && y0 < y1 && steps > 0) {
-        window.f2c0[win] = a;
+        window.f2c0[win] = mode;
         window.f224[win] = steps + 1;
         window.f260[win] = x0;
         window.f26c[win] = y0;

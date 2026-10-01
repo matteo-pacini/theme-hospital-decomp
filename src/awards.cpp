@@ -10,23 +10,23 @@ void check_awards_won(void)
 {
     s8 i;
     s32 a;
-    s32 b;
-    s32 c;
+    s32 cures;
+    s32 unused;
 
     i = 12;
     a = 0;
-    b = 0;
-    c = 0;
+    cures = 0;
+    unused = 0;
     LbMemorySet(all_awards, 0, 0x4e);
     while (--i >= 0) {
         a += mycontrol->history[4][0][i];
-        b += mycontrol->history[6][0][i];
+        cures += mycontrol->history[6][0][i];
     }
     if (myhosp->f29 * 3 < a) {
         for (i = 0; i < 13; i++) {
             switch (i) {
             case 0:
-                if (myhosp->f29 * 2 <= b)
+                if (myhosp->f29 * 2 <= cures)
                     general_award(&myhosp->unknownc7e, myhosp->unknownc7e, 0, awards_trophies.f1f, awards_trophies.f21, 4, 0,
                                   2, awards_trophies.f4d, awards_trophies.f4f);
                 break;
@@ -45,7 +45,7 @@ void check_awards_won(void)
                                   awards_trophies.f45);
                 break;
             case 3:
-                if (myhosp->f29 * 2 <= b)
+                if (myhosp->f29 * 2 <= cures)
                     general_award((s32 *)&myhosp->f1cb, myhosp->f1cb, 3, awards_trophies.f1b, awards_trophies.f1c, 2, 0, 1,
                                   awards_trophies.f47, awards_trophies.f48);
                 break;
@@ -56,7 +56,7 @@ void check_awards_won(void)
                         fn_000b4510(i, 1, 0, awards_trophies.f49, 2);
                     else if (awards_trophies.f1e << 8 > a)
                         fn_000b4510(i, -1, 0, awards_trophies.f4b, 2);
-                } else if (myhosp->f1ed > myhosp->f1c7 && awards_trophies.f3f <= b) {
+                } else if (myhosp->f1ed > myhosp->f1c7 && awards_trophies.f3f <= cures) {
                     fn_000b4510(i, 1, 0, awards_trophies.f49, 2);
                 }
                 break;
@@ -124,14 +124,14 @@ void check_awards_won(void)
 void check_trophies_won(void)
 {
     s8 i;
-    s32 a;
+    s32 visitors;
 
     i = 12;
-    a = 0;
+    visitors = 0;
     LbMemorySet(trophy, 0, 0x2d);
     while (--i >= 0)
-        a += mycontrol->history[4][0][i];
-    if (a > 5) {
+        visitors += mycontrol->history[4][0][i];
+    if (visitors > 5) {
         for (i = 0; i < 9; i++) {
             switch (i) {
             case 0:
@@ -274,11 +274,11 @@ void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
 }
 
 // FUNCTION: 0x000b4510
-void fn_000b4510(const u8 award, const s8 dir, const u8 level, const s16 value, u8 type)
+void fn_000b4510(const u8 award, const s8 dir, const u8 tier, const s16 value, u8 type)
 {
     all_awards[award].unknown0 = dir;
     all_awards[award].f1 = award;
-    all_awards[award].f2 = level + award * 3 + saferand() % 1 + 1;
+    all_awards[award].f2 = tier + award * 3 + saferand() % 1 + 1;
     if (type == 2) {
         change_balance(0x22, value, 0, player);
         all_awards[award].value = value;

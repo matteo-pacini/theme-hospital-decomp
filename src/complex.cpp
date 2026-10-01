@@ -220,9 +220,9 @@ u8 fn_0003e724(Thing *employee)
     case 20:
         door = find_door(employee);
         if (door > thing) {
-            u8 flag;
+            u8 double_door;
 
-            flag = door->subtype != 3 ? (u8)1 : (u8)0;
+            double_door = door->subtype != 3 ? (u8)1 : (u8)0;
             if (door->in_use == 1) {
                 employee->state = 0x2c;
                 return 3;
@@ -247,7 +247,7 @@ u8 fn_0003e724(Thing *employee)
                 fn_00041c0c(employee);
                 return 4;
             }
-            if (flag) {
+            if (double_door) {
                 PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[8]);
             } else {
                 PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[6]);
@@ -260,7 +260,7 @@ u8 fn_0003e724(Thing *employee)
             cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
             door->aux_param = cell->flags & 0x10 ? (u8)1 : (u8)0;
             cell->flags |= 0x10;
-            if (flag) {
+            if (double_door) {
                 other = &thing[door->door_partner];
                 other->state = 0x10;
                 other->sprite = start[employee->facing + 0x3f8].frame;
@@ -668,9 +668,9 @@ u8 process_person_complex(Thing *person)
     case 20:
         door = find_door(person);
         if (door > thing) {
-            u8 flag;
+            u8 double_door;
 
-            flag = door->subtype != 3 ? (u8)1 : (u8)0;
+            double_door = door->subtype != 3 ? (u8)1 : (u8)0;
             if (door->in_use == 1) {
                 person->state = 0x2a;
                 return 3;
@@ -690,7 +690,7 @@ u8 process_person_complex(Thing *person)
             } else {
                 person->exit_tile = door->use_pos[0];
             }
-            if (flag) {
+            if (double_door) {
                 PLAY_FRAME(person, anim_starts[person->subtype].anims[67]);
             } else {
                 PLAY_FRAME(person, anim_starts[person->subtype].anims[7]);
@@ -702,7 +702,7 @@ u8 process_person_complex(Thing *person)
             cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
             door->aux_param = cell->flags & 0x10 ? (u8)1 : (u8)0;
             cell->flags |= 0x10;
-            if (flag) {
+            if (double_door) {
                 other = &thing[door->door_partner];
                 other->state = 0x10;
                 other->sprite = start[person->facing + 0x3f8].frame;
@@ -923,27 +923,27 @@ void fn_00041a54(Thing *person)
 // FUNCTION: 0x00041b08
 void fn_00041b08(Thing *person)
 {
-    Thing *other;
-    Thing *src;
+    Thing *slave;
+    Thing *obj;
 
-    other = &thing[person->slave];
-    if (other > thing) {
-        if (other->state == 0x18) {
+    slave = &thing[person->slave];
+    if (slave > thing) {
+        if (slave->state == 0x18) {
         person->state = person->next_state;
         person->next_state = 0;
         process_person_complex(person);
-        other->state = 0x2a;
-        src = &thing[person->object];
-        if (src > thing) {
-            person->layers[5] = other->layers[5];
-            person->layers[6] = other->layers[6];
-            person->layers[7] = other->layers[7];
-            person->layers[8] = other->layers[8];
-            person->layers[9] = other->layers[9];
+        slave->state = 0x2a;
+        obj = &thing[person->object];
+        if (obj > thing) {
+            person->layers[5] = slave->layers[5];
+            person->layers[6] = slave->layers[6];
+            person->layers[7] = slave->layers[7];
+            person->layers[8] = slave->layers[8];
+            person->layers[9] = slave->layers[9];
         }
-        person->layers[10] = src->layers[10];
-        person->layers[11] = src->layers[11];
-        person->layers[12] = src->layers[12];
+        person->layers[10] = obj->layers[10];
+        person->layers[11] = obj->layers[11];
+        person->layers[12] = obj->layers[12];
         }
     }
 }
@@ -990,28 +990,28 @@ void fail_person_complex(Thing *person)
 u8 check_room_mutex_on_entry(Thing *w)
 {
     RoomInfo *room;
-    u16 *staff;
+    u16 *room_staff;
 
     room = which_room(w->exit_tile);
     if (room <= room_info) {
         return 1;
     }
-    staff = room->staff;
-    if ((u16)(w - thing) == staff[0] || (u16)(w - thing) == staff[1]) {
+    room_staff = room->staff;
+    if ((u16)(w - thing) == room_staff[0] || (u16)(w - thing) == room_staff[1]) {
         return 1;
     }
     if (room->type == 10) {
-        if (staff[0] == 0) {
-            staff[0] = w - thing;
-        } else if (staff[1] == 0) {
-            staff[1] = w - thing;
+        if (room_staff[0] == 0) {
+            room_staff[0] = w - thing;
+        } else if (room_staff[1] == 0) {
+            room_staff[1] = w - thing;
         } else {
             return 0;
         }
         return 1;
     }
-    if (staff[0] == 0) {
-        staff[0] = w - thing;
+    if (room_staff[0] == 0) {
+        room_staff[0] = w - thing;
         return 1;
     }
     return 0;

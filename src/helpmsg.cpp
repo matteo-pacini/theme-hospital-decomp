@@ -238,7 +238,7 @@ void copy_and_format_composite(char *dst, char **strs)
     char **pp;
     char *p;
     char *q;
-    char *start;
+    char *dst_start;
     char last;
 
     most = 0;
@@ -261,13 +261,13 @@ void copy_and_format_composite(char *dst, char **strs)
     set_font_from_cache(display_mode == 2 ? 0x2d : 0);
     limit = limit * (lbFontPtr ? lbFontPtr[46].width : 0);
     limit > lbDisplay.unknown18 * 3 / 4 ? limit = lbDisplay.unknown18 * 3 / 4 : 0;
-    start = dst;
+    dst_start = dst;
     cur = 0;
     for (; strcmp(*strs, ".") != 0; strs++) {
         for (p = *strs; *p; p++) {
             if (cur > limit) {
                 q = dst;
-                while (--q > start) {
+                while (--q > dst_start) {
                     if (*q == '\n')
                         break;
                     if (*q == ' ') {

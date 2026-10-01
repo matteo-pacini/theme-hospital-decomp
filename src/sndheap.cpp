@@ -52,7 +52,7 @@ int LbFilePosition(int handle);
 char IsSamplePlaying(s32 a, s32 b, void *handle);
 SampleInfo *GetFirstSampleInfoStructure(void);
 SampleInfo *GetLastSampleInfoStructure(void);
-SampleInfo *PlaySampleFromAddress(u32 source, s16 sample, u32 volume, u32 pitch, u16 pan, s8 loop, u8 type, void *data, u32 length);
+SampleInfo *PlaySampleFromAddress(u32 source, s16 sample, u32 volume, u32 pan, u16 pitch, s8 loop, u8 type, void *data, u32 length);
 void *fn_00022b60(TbCacheUsedBlock *block);
 void fn_000a2ed0(TbCacheUsedBlock *block);
 }
@@ -148,7 +148,7 @@ void process_sound_heap(void)
 }
 
 // FUNCTION: 0x000a2a3c
-SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pitch, u32 pan, s8 loop, u8 type)
+SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, u32 pitch, s8 loop, u8 type)
 {
     SampleTable *st;
     u32 tag;
@@ -177,7 +177,7 @@ SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pitch
         cache.MakeNewest(st->block);
     }
     data = fn_00022b60(st->block);
-    info = PlaySampleFromAddress(source, sample, volume, pitch, pan, loop, type, fn_00022b60(st->block), st->unknown8);
+    info = PlaySampleFromAddress(source, sample, volume, pan, pitch, loop, type, fn_00022b60(st->block), st->unknown8);
     if (info == 0)
         return 0;
     info->flags |= 1;

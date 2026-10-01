@@ -359,7 +359,7 @@ void draw_slist_window(const u16 id)
     u16 save_x;
     int dx;
     int dy;
-    int ability;
+    int delay;
 
     staff = &thing[id];
     if (!id)
@@ -426,12 +426,12 @@ void draw_slist_window(const u16 id)
             draw_slist_training_bar(resvars.f3c_Boxp[i + 64].x, resvars.f3c_Boxp[i + 64].y, staff->research_training, gbv.f14a);
         }
     }
-    ability = staff->work_delay;
-    if (ability > 10)
-        ability = 10;
-    if (ability < 0)
-        ability = 0;
-    count = ability * 4200 / 1000;
+    delay = staff->work_delay;
+    if (delay > 10)
+        delay = 10;
+    if (delay < 0)
+        delay = 0;
+    count = delay * 4200 / 1000;
     for (j = 0; j < count; j++)
         reqspr_draw(resvars.f3c_Boxp[70].x + j, resvars.f3c_Boxp[70].y, &screen_sprites_tab_start[resvars.f3c_Boxp[70].h]);
 }

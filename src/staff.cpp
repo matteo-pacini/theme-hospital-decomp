@@ -81,13 +81,13 @@ void create_job_market(void)
 }
 
 // FUNCTION: 0x00029c4c
-u16 fn_00029c4c(u16 tile, u16 id, u8 flag, u8 owner)
+u16 fn_00029c4c(u16 tile, u16 id, u8 force, u8 owner)
 {
     Thing *new_staff;
 
     new_staff = &thing[id];
     if (new_staff > thing) {
-        if (flag || map[tile].unknown7 == (1 << owner)) {
+        if (force || map[tile].unknown7 == (1 << owner)) {
             new_staff->owner = owner;
             if (new_staff->facing > 3) {
                 new_staff->facing = 0;
@@ -180,7 +180,7 @@ void remove_staff_in_struct(Thing *staff)
 }
 
 // FUNCTION: 0x0002a178
-s16 place_staff_in_struct(u16 kind, u16 flags)
+s16 place_staff_in_struct(u16 kind, u16 extra_skills)
 {
     Thing *new_staff;
     u32 mean;
@@ -286,7 +286,7 @@ s16 place_staff_in_struct(u16 kind, u16 flags)
             }
             break;
         }
-        new_staff->skills |= flags;
+        new_staff->skills |= extra_skills;
         new_staff->ability = normal_staffrand(mean, spread);
         appraise_staff(new_staff);
         new_staff->salary = new_staff->wage_demand;
@@ -744,26 +744,26 @@ void remove_person_from_room_list(Thing *staff)
 // FUNCTION: 0x0002bbdc
 void staff_exit_room_check(Thing *staff)
 {
-    Thing *obj;
+    Thing *projector;
 
     if (staff->room) {
         if (staff->subtype == 4) {
             change_surgeon_to_doc(staff);
         }
         if (staff->room->type == 0x16 && &thing[staff->room->staff[0]] == staff) {
-            obj = &thing[find_object((u16)staff->x.tile + ((u16)staff->y.tile << 7), 0x25, 0, 0x97, staff->owner)];
-            if (obj > thing && obj->fuse) {
+            projector = &thing[find_object((u16)staff->x.tile + ((u16)staff->y.tile << 7), 0x25, 0, 0x97, staff->owner)];
+            if (projector > thing && projector->fuse) {
                 staff->complex_pc = 0;
                 staff->complex_queued = 0;
                 staff->complex_queued2 = 0;
                 staff->complex_resume = 0;
                 if (&thing[staff->object && (thing[staff->object].type == 6 || thing[staff->object].type == 8)
-                           && (u16)(staff - thing) == thing[staff->object].user ? staff->object : 0] == obj) {
+                           && (u16)(staff - thing) == thing[staff->object].user ? staff->object : 0] == projector) {
                     set_complex(staff, 0x3b6, 0);
                 } else {
                     set_complex(staff, 0xa0, 0);
                 }
-                obj->fuse = 0;
+                projector->fuse = 0;
             }
         }
         if (staff->subtype == 0 && staff->room->type == 9) {

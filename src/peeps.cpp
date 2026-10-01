@@ -39,11 +39,11 @@ void person_waits_for_busy(Thing *person)
 void person_arrives_at_door(Thing *person)
 {
     u16 tile;
-    RoomInfo *info;
+    RoomInfo *room;
 
     tile = person->x.tile + (person->y.tile << 7);
-    info = is_this_a_door(tile);
-    if (info != 0 && rooms[info->type].unknown36 != 0) {
+    room = is_this_a_door(tile);
+    if (room != 0 && rooms[room->type].unknown36 != 0) {
         set_complex(person, 0x32, 0);
         process_person_complex(person);
     } else {
@@ -333,33 +333,33 @@ void fn_000168a0(Thing *person)
 }
 
 // FUNCTION: 0x00016974
-void nav_debug_state(Thing *w)
+void nav_debug_state(Thing *person)
 {
-    if (w->type == 2) {
+    if (person->type == 2) {
         if (actual_game_turn % 6 == 0) {
             u16 anim;
 
-            w->facing = *(u8 *)&next_angle[w->facing];
-            anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->facing;
-            w->sprite = start[anim].frame;
-            w->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
+            person->facing = *(u8 *)&next_angle[person->facing];
+            anim = check_frame(anim_starts[person->subtype].unknown12, person) + (u16)person->facing;
+            person->sprite = start[anim].frame;
+            person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
         if (!(actual_game_turn & 0xf)) {
-            w->state = w->resume_state;
-            fn_000444e0(w);
+            person->state = person->resume_state;
+            fn_000444e0(person);
         }
     } else {
         if (actual_game_turn % 6 == 0) {
             u16 anim;
 
-            w->facing = *(u8 *)&next_angle[w->facing];
-            anim = check_frame(staff_anim_starts[w->subtype].unknownA, w) + (u16)w->facing;
-            w->sprite = start[anim].frame;
-            w->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
+            person->facing = *(u8 *)&next_angle[person->facing];
+            anim = check_frame(staff_anim_starts[person->subtype].unknownA, person) + (u16)person->facing;
+            person->sprite = start[anim].frame;
+            person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
         if (!(actual_game_turn & 0xf)) {
-            w->state = w->resume_state;
-            fn_000444e0(w);
+            person->state = person->resume_state;
+            fn_000444e0(person);
         }
     }
 }
@@ -480,15 +480,15 @@ u8 call_person_again(Thing *caller, u16 action, u16 arg)
 void send_person_to_bed(Thing *person)
 {
     RoomInfo *room;
-    Thing *other;
+    Thing *bed;
 
     person->timer = old_newrand() % 300 + 300;
     for (room = room_info + 1; room < end_room_info; room++) {
         if (room->owner != person->owner || room->type != 9) {
             continue;
         }
-        for (other = &thing[room->first_object]; other > thing; other = &thing[other->room_obj_next]) {
-            if (other->subtype != 8 || other->user != 0) {
+        for (bed = &thing[room->first_object]; bed > thing; bed = &thing[bed->room_obj_next]) {
+            if (bed->subtype != 8 || bed->user != 0) {
                 continue;
             }
             page_member_of_staff(4, room - room_info, 1, 1, person->owner);
@@ -538,7 +538,7 @@ void person_in_bed(Thing *person)
 }
 
 // FUNCTION: 0x0001720c
-u16 find_peep(u16 room_id, u8 random, u8 renderer, u8 kind, u8 owner)
+u16 find_peep(u16 room_id, u8 random, u8 type, u8 state, u8 owner)
 {
     u16 count;
     RoomInfo *room;
@@ -549,10 +549,10 @@ u16 find_peep(u16 room_id, u8 random, u8 renderer, u8 kind, u8 owner)
     if (random) {
         for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
             if (person->owner == owner) {
-                if (renderer && person->type != renderer) {
+                if (type && person->type != type) {
                     continue;
                 }
-                if (kind && person->state != kind) {
+                if (state && person->state != state) {
                     continue;
                 }
                 count++;
@@ -567,10 +567,10 @@ u16 find_peep(u16 room_id, u8 random, u8 renderer, u8 kind, u8 owner)
     }
     for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
         if (person->owner == owner) {
-            if (renderer && person->type != renderer) {
+            if (type && person->type != type) {
                 continue;
             }
-            if (kind && person->state != kind) {
+            if (state && person->state != state) {
                 continue;
             }
             if (--count == 0) {
@@ -585,33 +585,33 @@ u16 find_peep(u16 room_id, u8 random, u8 renderer, u8 kind, u8 owner)
 void start_person_going(Thing *person)
 {
     u8 go;
-    u16 done;
-    u16 flag;
+    u16 found_desk;
+    u16 in_room;
     u16 id;
     u16 arg;
-    Thing *other;
+    Thing *desk;
     RoomInfo *room;
 
-    done = 0;
-    flag = 0;
+    found_desk = 0;
+    in_room = 0;
     go = 0;
     if (person->room > room_info) {
         if (set_complex(person, 90, person->room->unknown6)) {
             go = 1;
         }
-        flag = 1;
+        in_room = 1;
     }
     id = find_nearest_manned_reception(person, 0, 1);
     if (id) {
-        other = &thing[id];
-        arg = other->use_pos[1];
-        person->dest_room = thing[other->user].room - room_info;
+        desk = &thing[id];
+        arg = desk->use_pos[1];
+        person->dest_room = thing[desk->user].room - room_info;
         if (set_complex(person, 470, arg)) {
             go = 1;
         }
-        done = 1;
+        found_desk = 1;
     }
-    if (done == 0) {
+    if (found_desk == 0) {
         room = &room_info[allhosps[person->owner].unknown1cf[old_newrand() & 3]];
         arg = room->unknown4;
         if (set_complex(person, 20, arg)) {
@@ -653,26 +653,26 @@ void person_nav_failure(Thing *person)
 void person_fills(Thing *person)
 {
     Thing *found;
-    Thing *other;
+    Thing *machine;
     CompFrame *cur;
 
-    other = &thing[person->object];
-    if (other > thing) {
+    machine = &thing[person->object];
+    if (machine > thing) {
         if (actual_game_turn % person->anim_speed == 0) {
             person->sprite = frame[person->sprite].next;
-            other->aux_sprite = frame[other->aux_sprite].next;
+            machine->aux_sprite = frame[machine->aux_sprite].next;
         }
         if (person->subtype == 14) {
-            other->substate += 2;
-            cur = &frame[other->aux_sprite];
+            machine->split_height += 2;
+            cur = &frame[machine->aux_sprite];
         } else {
-            other->substate++;
+            machine->split_height++;
             cur = &frame[person->sprite];
         }
-        if (other->substate > cur->length) {
+        if (machine->split_height > cur->length) {
             person->state = 0x20;
-            person->sprite = other->aux_sprite;
-            person->flip = other->next_state;
+            person->sprite = machine->aux_sprite;
+            person->flip = machine->aux_flip;
             if (person->subtype == 14) {
                 found = find_person_in_room(person->room, 4, 1);
                 if (found != 0) {
@@ -687,15 +687,15 @@ void person_fills(Thing *person)
 void person_energises(Thing *person)
 {
     u16 next;
-    Thing *other;
+    Thing *machine;
 
-    other = &thing[person->object];
-    if (other > thing) {
+    machine = &thing[person->object];
+    if (machine > thing) {
         if (actual_game_turn % person->anim_speed == 0) {
             next = frame[person->sprite].next;
             if (!(frame[next].flags & 1)) {
                 person->sprite = frame[person->sprite].next;
-                other->aux_sprite = frame[other->aux_sprite].next;
+                machine->aux_sprite = frame[machine->aux_sprite].next;
             }
         }
     }
@@ -744,7 +744,7 @@ void return_to_queue_area(Thing *person)
     u16 id;
     u16 arg;
     RoomInfo *room;
-    Thing *other;
+    Thing *desk;
 
     arg = 0;
     if (person->queue_room) {
@@ -754,8 +754,8 @@ void return_to_queue_area(Thing *person)
         if (room->type == 4) {
             id = find_object_anywhere(11, 0, 0, person->owner);
             if (id) {
-                other = &thing[id];
-                arg = other->use_pos[1];
+                desk = &thing[id];
+                arg = desk->use_pos[1];
             }
         } else {
             arg = room->unknown4;
@@ -859,7 +859,7 @@ void refer_patient(Thing *person, u8 owner)
 // FUNCTION: 0x00017e30
 void person_waits_for_decision(Thing *person)
 {
-    u8 style;
+    u8 treatment;
     u8 category;
     u8 done;
     CompFrame *cur;
@@ -891,12 +891,12 @@ void person_waits_for_decision(Thing *person)
                     }
                 } else {
                     if (person->next_treatment) {
-                        style = person->next_treatment;
+                        treatment = person->next_treatment;
                     } else {
-                        style = person->treatment;
+                        treatment = person->treatment;
                     }
-                    category = expertise[style].category;
-                    done = allhosps[person->owner].rooms[style].unknown1C == 1 && listhead[person->owner].rooms[category]
+                    category = expertise[treatment].category;
+                    done = allhosps[person->owner].rooms[treatment].unknown1C == 1 && listhead[person->owner].rooms[category]
                         ? (u8)1 : (u8)0;
                     if (done || (u16)(othervar.f82 - person->timer) >= 1500) {
                         person->flags &= ~0x10;
@@ -1154,11 +1154,11 @@ u16 call_no_treatment(Thing *person, char **strs)
     int unused30;
     int staff;
     int i;
-    Expertise *info;
+    Expertise *exp;
     u16 text_y;
     u16 unused1c;
     s16 pct;
-    u16 v14;
+    u16 line_height;
     u16 text_x;
 
     room = 0;
@@ -1169,13 +1169,13 @@ u16 call_no_treatment(Thing *person, char **strs)
     if (person <= thing) {
         return 0;
     }
-    v14 = lbFontPtr ? lbFontPtr[34].height : 0;
-    info = &expertise[person->illness];
-    if (listhead[person->owner].rooms[info->category] == 0 && room_available((u16)info->category)) {
-        room = info->category;
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    exp = &expertise[person->illness];
+    if (listhead[person->owner].rooms[exp->category] == 0 && room_available((u16)exp->category)) {
+        room = exp->category;
     }
     for (i = 0; i < 9; i++) {
-        if ((info->unknown0 & (1 << i)) && listhead[person->owner].staff[i] == 0) {
+        if ((exp->unknown0 & (1 << i)) && listhead[person->owner].staff[i] == 0) {
             staff = i;
             break;
         }
@@ -1270,8 +1270,8 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     char buf2[0x7d0];
     char buf1[0xc8];
     int i;
-    Expertise *info;
-    u16 v28;
+    Expertise *exp;
+    u16 line_height;
     int unused18;
     int unused14;
     int staff;
@@ -1287,13 +1287,13 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     if (kind <= 1) {
         return 0;
     }
-    v28 = lbFontPtr ? lbFontPtr[34].height : 0;
-    info = &expertise[kind];
-    if (listhead[player].rooms[info->category] == 0 && room_available((u16)info->category)) {
-        room = info->category;
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    exp = &expertise[kind];
+    if (listhead[player].rooms[exp->category] == 0 && room_available((u16)exp->category)) {
+        room = exp->category;
     }
     for (i = 0; i < 9; i++) {
-        if ((info->unknown0 & (1 << i)) && listhead[player].staff[i] == 0) {
+        if ((exp->unknown0 & (1 << i)) && listhead[player].staff[i] == 0) {
             staff = i;
             break;
         }
@@ -1352,7 +1352,7 @@ void force_peep_to_be_cured(Thing *person)
 // FUNCTION: 0x000194f0
 void interrupt_person(Thing *person)
 {
-    u8 was44 = person->state == 0x44 || person->next_state == 0x44;
+    u8 was_deciding = person->state == 0x44 || person->next_state == 0x44;
     u8 state;
     Thing *staff;
 
@@ -1387,7 +1387,7 @@ void interrupt_person(Thing *person)
         set_complex(person, 0x5a, person->room->unknown6);
         process_person_complex(person);
         person->next_state = state;
-    } else if (was44) {
+    } else if (was_deciding) {
         person->state = 0x44;
     } else {
         person->state = state;

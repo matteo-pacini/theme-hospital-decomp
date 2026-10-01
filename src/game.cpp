@@ -26,12 +26,12 @@ void fn_00094b28(void);
 // FUNCTION: 0x000112b0
 void game(void)
 {
-    u8 redraw;
-    u8 quit;
+    u8 run_things;
+    u8 unused;
     int i;
     char path[128];
 
-    quit = 0;
+    unused = 0;
     sprintf(path, "%s%s", cd_install_path, animation_table[25].name);
     check_cd_available(path);
     get_cd_speed();
@@ -56,9 +56,9 @@ void game(void)
         }
         check_if_active();
         if (LbScreenLock() != 1) {
-            redraw = display_mode_control[display_mode];
+            run_things = display_mode_control[display_mode];
             if (display_mode == 13) {
-                redraw = process_lost_focus_display(0);
+                run_things = process_lost_focus_display(0);
             } else {
                 set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
             }
@@ -66,7 +66,7 @@ void game(void)
             if (display_mode_control[display_mode]) {
                 start_turn();
             }
-            redraw = display_mode_control[display_mode];
+            run_things = display_mode_control[display_mode];
             D_001606bc++;
             switch (display_mode) {
             case 0:
@@ -189,7 +189,7 @@ void game(void)
                 process_turn();
                 break;
             case 13:
-                redraw = process_lost_focus_display(1);
+                run_things = process_lost_focus_display(1);
                 break;
             case 99:
                 process_turn();
@@ -202,7 +202,7 @@ void game(void)
                 process_sound_heap();
                 process_turn();
                 if (town.unknown2 >= 0x45 && statvar.unknownfd > 1) {
-                    redraw = 0;
+                    run_things = 0;
                 }
                 break;
             default:
@@ -230,7 +230,7 @@ void game(void)
             }
             LbScreenSwap();
         }
-        if (redraw && !gamevar.unknown21 && gamevar.f12d == 0 && frame && quit_game != 1) {
+        if (run_things && !gamevar.unknown21 && gamevar.f12d == 0 && frame && quit_game != 1) {
             process_things(thing + 1, end_things);
             process_blueprint_zones();
             if (gamevar.f139 || othervar.f8b0 || othervar.fa63) {

@@ -2,7 +2,7 @@
 
 u8 is_tile_valid(u16 tile, u8 owner);
 u8 is_valid_room(s16 x0, s16 y0, s16 x1, s16 y1, u8 owner);
-void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 flag);
+void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay);
 void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h);
 void remove_object_from_map(Thing *t);
 void room_deleted_update_listhead(RoomInfo *room);
@@ -175,7 +175,7 @@ outline:
 }
 
 // FUNCTION: 0x00046174
-void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 flag)
+void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay)
 {
     u16 block;
     u16 base;
@@ -211,7 +211,7 @@ void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 flag)
                 piece = 0;
             }
             cell = &map[x + (y << 7)];
-            if (flag && y != y1 + 1 && x != x1 + 1) {
+            if (set_overlay && y != y1 + 1 && x != x1 + 1) {
                 if (height % 2 == 0 && width % 2 == 0) {
                     if (y == (height - 1) / 2 + y0 && x == (width - 1) / 2 + x0)
                         cell->overlay = 0x26;

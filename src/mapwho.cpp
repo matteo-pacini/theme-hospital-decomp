@@ -62,17 +62,17 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     floor = cell->floor & 0xf;
     if (floor) {
         u16 frame;
-        u8 palette;
+        u8 flip;
 
         frame = start[D_001379f0[floor].anim].frame;
-        palette = start[D_001379f0[floor].anim].flags;
+        flip = start[D_001379f0[floor].anim].flags;
         if (D_001379f0[floor].animated) {
-            draw_a_frame(frame, x + (resvars.f0 == SCREEN_MODE_13 ? 32 : 16), y + (resvars.f0 == SCREEN_MODE_13 ? 16 : 8), 0, palette);
+            draw_a_frame(frame, x + (resvars.f0 == SCREEN_MODE_13 ? 32 : 16), y + (resvars.f0 == SCREEN_MODE_13 ? 16 : 8), 0, flip);
         } else {
             Offset *offset;
 
             offset = &resvars.f38_Offsetp[((u16)(cell - map) * 0x2e4a4321 >> 16) & 7];
-            draw_a_frame(frame, x + resvars.f4 / 2 + offset->x, y + resvars.f3 / 2 + offset->y, 0, palette);
+            draw_a_frame(frame, x + resvars.f4 / 2 + offset->x, y + resvars.f3 / 2 + offset->y, 0, flip);
         }
     }
     for (i = 0; i < 32; i++) {

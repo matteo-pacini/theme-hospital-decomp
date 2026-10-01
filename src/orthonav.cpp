@@ -344,7 +344,7 @@ other:
 s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
 {
     s32 next_dir;
-    s32 r;
+    s32 roll;
     s32 blocked;
     s32 alt_dir;
 
@@ -368,31 +368,31 @@ s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
         if (!wall_in_way(x, y, next_dir))
             goto unblocked;
         next_dir = -2;
-        r = old_newrand() % 0xffff + 0xffff;
+        roll = old_newrand() % 0xffff + 0xffff;
         do {
             if (!wall_in_way(x, y, 0))
                 next_dir = 0;
             if (path->steps[0].y <= y)
-                r -= 0x4000;
-            if (r < 0)
+                roll -= 0x4000;
+            if (roll < 0)
                 break;
             if (!wall_in_way(x, y, 2))
                 next_dir = 2;
             if (path->steps[0].y >= y)
-                r -= 0x4000;
-            if (r < 0)
+                roll -= 0x4000;
+            if (roll < 0)
                 break;
             if (!wall_in_way(x, y, 3))
                 next_dir = 3;
             if (path->steps[0].x <= x)
-                r -= 0x4000;
-            if (r < 0)
+                roll -= 0x4000;
+            if (roll < 0)
                 break;
             if (!wall_in_way(x, y, 1))
                 next_dir = 1;
             if (path->steps[0].x >= x)
-                r -= 0x4000;
-        } while (r >= 0);
+                roll -= 0x4000;
+        } while (roll >= 0);
         if (next_dir == -2) {
             path->x1 = 0xff;
             return -2;

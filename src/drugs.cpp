@@ -22,9 +22,9 @@ void display_drugs(void)
     u8 unused30;
     u8 count;
     u8 unused18;
-    u8 noStaff;
+    u8 no_room;
     u8 unavailable;
-    u8 lowFee;
+    u8 low_fee;
     u8 i;
     u8 unused28;
     u8 unused24;
@@ -32,7 +32,7 @@ void display_drugs(void)
     u8 unused1c;
     u16 value;
     s16 line_height;
-    u16 room;
+    u16 illness;
     Expertise *def;
     int result;
     int n;
@@ -45,9 +45,9 @@ void display_drugs(void)
     unused20 = 0;
     unused1c = 0;
     unused18 = 0;
-    noStaff = 0;
+    no_room = 0;
     unavailable = 0;
-    lowFee = 0;
+    low_fee = 0;
     unused30 = 0;
     compute_help_text(0, 0, 0xe);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -76,37 +76,37 @@ void display_drugs(void)
     line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     LbTextSetWindow(resvars.f3c->unknown0, resvars.f3c->unknown4, resvars.f3c->unknown8, resvars.f3c->unknownC);
     lbDisplay.draw_flags = 0x100;
-    room = othervar.f8c;
-    def = &expertise[room];
-    result = max_price_for_treatment(room, player);
+    illness = othervar.f8c;
+    def = &expertise[illness];
+    result = max_price_for_treatment(illness, player);
     for (i = 0; i + 0x11 != 0x1d; i++) {
         switch (i) {
         case 6:
-            if (room >= 0x24 || room == 1) {
+            if (illness >= 0x24 || illness == 1) {
                 sprintf(buf, "%d", myhosp->unknownc7e);
             } else {
-                sprintf(buf, "%d", myhosp->rooms[room].unknown0);
+                sprintf(buf, "%d", myhosp->rooms[illness].unknown0);
             }
             break;
         case 7:
             if (othervar.fa78) {
                 othervar.fa78--;
-                sprintf(buf, "%d%%", myhosp->rooms[room].unknown10 / 100);
+                sprintf(buf, "%d%%", myhosp->rooms[illness].unknown10 / 100);
             } else {
-                sprintf(buf, "$%d", myhosp->rooms[room].unknownC);
+                sprintf(buf, "$%d", myhosp->rooms[illness].unknownC);
             }
             break;
         case 8:
-            sprintf(buf, "$%d", myhosp->rooms[room].unknown14);
+            sprintf(buf, "$%d", myhosp->rooms[illness].unknown14);
             break;
         case 9:
-            sprintf(buf, "%d", myhosp->rooms[room].unknown1E);
+            sprintf(buf, "%d", myhosp->rooms[illness].unknown1E);
             break;
         case 10:
-            sprintf(buf, "%d", myhosp->rooms[room].unknown20);
+            sprintf(buf, "%d", myhosp->rooms[illness].unknown20);
             break;
         case 11:
-            sprintf(buf, "%d", myhosp->rooms[room].unknown24);
+            sprintf(buf, "%d", myhosp->rooms[illness].unknown24);
             break;
         default:
             sprintf(buf, "%s", D_00160304[i]);
@@ -185,10 +185,10 @@ void display_drugs(void)
     LbTextDraw(0, (0x1a - (lbFontPtr ? lbFontPtr[34].height : 0)) / 2, D_00160304[7]);
     lbDisplay.draw_flags = 0;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    if (!(room >= 0x24 || room == 1)) {
-        if (allhosps[player].rooms[room].unknown1C == 1) {
+    if (!(illness >= 0x24 || illness == 1)) {
+        if (allhosps[player].rooms[illness].unknown1C == 1) {
             if (def->kind == 0x27) {
-                value = allhosps[player].rooms[room].unknown1B;
+                value = allhosps[player].rooms[illness].unknown1B;
                 reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 7);
                 set_font_from_cache(0x2e);
                 sprintf(buf, "%d", value);
@@ -196,7 +196,7 @@ void display_drugs(void)
                 lbDisplay.draw_flags = 0x100;
                 LbTextDraw(0, 0, buf);
                 if (value < 100) {
-                    lowFee = 1;
+                    low_fee = 1;
                 }
                 LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
                 lbDisplay.draw_flags = 0;
@@ -223,7 +223,7 @@ void display_drugs(void)
                            && objects[def->kind].unknown1c == 1) {
                     reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 6);
                     if (listhead[player].rooms[def->category] == 0) {
-                        noStaff = 1;
+                        no_room = 1;
                     }
                     if (def->unknown0 == 0x40) {
                         reqspr_draw(resvars.f40[0x1f].x, resvars.f40[0x1f].y, screen_sprites_tab_start + 10);
@@ -237,15 +237,15 @@ void display_drugs(void)
                 }
             }
         }
-    } else if (room >= 0x24) {
-        if (allhosps[player].rooms[room].unknown1C == 1) {
+    } else if (illness >= 0x24) {
+        if (allhosps[player].rooms[illness].unknown1C == 1) {
             reqspr_draw(resvars.f40[0x20].x, resvars.f40[0x20].y, screen_sprites_tab_start + 11);
         } else {
             reqspr_draw(resvars.f40[0x20].x, resvars.f40[0x20].y, screen_sprites_tab_start + 12);
         }
     }
-    if (expertise[room].unknown5[0] != 0) {
-        if (room == (statvar.unknownfd > 1 ? allhosps[player].unknown1256 : gamevar.f136)) {
+    if (expertise[illness].unknown5[0] != 0) {
+        if (illness == (statvar.unknownfd > 1 ? allhosps[player].unknown1256 : gamevar.f136)) {
             set_font_from_cache(0xf);
         } else {
             set_font_from_cache(0xe);
@@ -346,21 +346,21 @@ void price_down(void)
 // FUNCTION: 0x00013a7c
 void process_drug_keys(void)
 {
-    u8 room;
+    u8 illness;
 
     if (lbKeyOn[0x48] || lbKeyOn[0xc8]) {
-        room = get_next_illness(0, othervar.f8c);
-        if (room != 0xfa) {
-            othervar.f8c = room;
+        illness = get_next_illness(0, othervar.f8c);
+        if (illness != 0xfa) {
+            othervar.f8c = illness;
             play_sound(10, 0xa8, -1, -1);
         } else {
             play_sound(10, 8, -1, -1);
         }
     }
     if (lbKeyOn[0x50] || lbKeyOn[0xd0]) {
-        room = get_next_illness(1, othervar.f8c);
-        if (room != 0xfa) {
-            othervar.f8c = room;
+        illness = get_next_illness(1, othervar.f8c);
+        if (illness != 0xfa) {
+            othervar.f8c = illness;
             play_sound(10, 0xa8, -1, -1);
         } else {
             play_sound(10, 8, -1, -1);
@@ -379,7 +379,7 @@ void process_drug_keys(void)
 // FUNCTION: 0x00013bc4
 void process_drug_button(u8 action)
 {
-    u8 room;
+    u8 illness;
 
     debug.unknown8 = action;
     switch (action) {
@@ -392,9 +392,9 @@ void process_drug_button(u8 action)
         othervar.fa78 = 0x32;
         break;
     case 2:
-        room = get_next_illness(0, othervar.f8c);
-        if (room != 0xfa) {
-            othervar.f8c = room;
+        illness = get_next_illness(0, othervar.f8c);
+        if (illness != 0xfa) {
+            othervar.f8c = illness;
             play_sound(10, 0xa8, -1, -1);
         } else {
             play_sound(10, 8, -1, -1);
@@ -402,9 +402,9 @@ void process_drug_button(u8 action)
         othervar.fa78 = 0x32;
         break;
     case 3:
-        room = get_next_illness(1, othervar.f8c);
-        if (room != 0xfa) {
-            othervar.f8c = room;
+        illness = get_next_illness(1, othervar.f8c);
+        if (illness != 0xfa) {
+            othervar.f8c = illness;
             play_sound(10, 0xa8, -1, -1);
         } else {
             play_sound(10, 8, -1, -1);
@@ -424,14 +424,14 @@ void process_drug_button(u8 action)
 }
 
 // FUNCTION: 0x00013d8c
-u8 get_next_illness(const u8 forward, const u8 start)
+u8 get_next_illness(const u8 forward, const u8 from)
 {
     u8 i;
 
     switch (forward) {
     case 0:
-        if (start - 1 > 0) {
-            for (i = start - 1; i > 0; i--) {
+        if (from - 1 > 0) {
+            for (i = from - 1; i > 0; i--) {
                 if ((i < 0x24 && myhosp->rooms[i].unknown1D)
                     || (i >= 0x24 && allhosps[player].rooms[i].unknown1C == 1)
                     || (i == 0x2c && (allhosps[player].equipment[55].unknown0 != 0 && objects[55].unknown1c != 0)
@@ -442,8 +442,8 @@ u8 get_next_illness(const u8 forward, const u8 start)
         }
         break;
     default:
-        if (start + 1 < 0x2e) {
-            for (i = start + 1; i < 0x2e; i++) {
+        if (from + 1 < 0x2e) {
+            for (i = from + 1; i < 0x2e; i++) {
                 if ((i < 0x24 && myhosp->rooms[i].unknown1D)
                     || (i >= 0x24 && allhosps[player].rooms[i].unknown1C == 1)
                     || (i == 0x2c && (allhosps[player].equipment[55].unknown0 != 0 && objects[55].unknown1c != 0)
@@ -526,30 +526,30 @@ void drugs_help_handled(void)
 void update_cure_costs(void)
 {
     u32 hospital;
-    u32 room;
+    u32 illness;
 
     for (hospital = 0; hospital < 4; hospital++) {
-        for (room = 0; room < 0x2f; room++) {
-            update_single_cure_cost(room, hospital);
+        for (illness = 0; illness < 0x2f; illness++) {
+            update_single_cure_cost(illness, hospital);
         }
     }
 }
 
 // FUNCTION: 0x000143e0
-void update_single_cure_cost(u8 room, u8 hospital)
+void update_single_cure_cost(u8 illness, u8 hospital)
 {
     s32 max_price;
     s32 target;
     s32 diff;
 
-    max_price = max_price_for_treatment(room, hospital);
-    target = max_price * allhosps[hospital].rooms[room].unknown10 / 10000;
-    if (target - allhosps[hospital].rooms[room].unknownC < 0) {
-        diff = -(target - allhosps[hospital].rooms[room].unknownC);
+    max_price = max_price_for_treatment(illness, hospital);
+    target = max_price * allhosps[hospital].rooms[illness].unknown10 / 10000;
+    if (target - allhosps[hospital].rooms[illness].unknownC < 0) {
+        diff = -(target - allhosps[hospital].rooms[illness].unknownC);
     } else {
-        diff = target - allhosps[hospital].rooms[room].unknownC;
+        diff = target - allhosps[hospital].rooms[illness].unknownC;
     }
     if (target / 100 <= diff) {
-        allhosps[hospital].rooms[room].unknownC = target;
+        allhosps[hospital].rooms[illness].unknownC = target;
     }
 }

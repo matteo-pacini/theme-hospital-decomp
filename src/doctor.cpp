@@ -297,7 +297,7 @@ void fn_0003b234(Thing *w)
 void doctor_in_machine_room(Thing *doctor)
 {
     u16 queue;
-    Thing *e;
+    Thing *lead;
     CompFrame *f;
 
     if (actual_game_turn % doctor->anim_speed == 0) {
@@ -327,16 +327,16 @@ void doctor_in_machine_room(Thing *doctor)
                                             doctor->timer = 200;
                                             doctor->state = 0x10;
                                         } else {
-                                            e = fn_0003c154(doctor->room, 0x10);
-                                            if (e > thing && call_person_to_room(e, queue, 0x28, doctor->room->unknown4, 1)) {
+                                            lead = fn_0003c154(doctor->room, 0x10);
+                                            if (lead > thing && call_person_to_room(lead, queue, 0x28, doctor->room->unknown4, 1)) {
                                                 u16 anim;
 
                                                 doctor->state = 0x18;
-                                                set_icon_value(e, 0x19);
-                                                anim = check_frame(staff_anim_starts[e->subtype].unknownA, e) + (u16)e->facing;
-                                                e->sprite = start[anim].frame;
-                                                e->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
-                                                e->state = 0x14;
+                                                set_icon_value(lead, 0x19);
+                                                anim = check_frame(staff_anim_starts[lead->subtype].unknownA, lead) + (u16)lead->facing;
+                                                lead->sprite = start[anim].frame;
+                                                lead->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
+                                                lead->state = 0x14;
                                             }
                                         }
                                     } else if (call_person_to_room(doctor, queue, 0x28, doctor->room->unknown4, 1)) {
@@ -589,12 +589,12 @@ void surgeon_waits(Thing *surgeon)
 }
 
 // FUNCTION: 0x0003c154
-Thing *fn_0003c154(RoomInfo *room, u8 kind)
+Thing *fn_0003c154(RoomInfo *room, u8 state)
 {
     Thing *person;
 
     for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
-        if (person->type == 4 && person->state == kind) {
+        if (person->type == 4 && person->state == state) {
             return person;
         }
     }
@@ -604,9 +604,9 @@ Thing *fn_0003c154(RoomInfo *room, u8 kind)
 // FUNCTION: 0x0003c1e8
 u8 fn_0003c1e8(Thing *w, u16 action)
 {
-    Thing *e;
+    Thing *desk;
     Thing *slave;
-    u16 room;
+    u16 tile;
     u8 result;
 
     result = 0;
@@ -622,15 +622,15 @@ u8 fn_0003c1e8(Thing *w, u16 action)
             if (slave->next_state != 0x18) {
                 result = 1;
             } else if (w->subtype == 3) {
-                e = &thing[w->object];
-                if (e > thing) {
-                    room = e->use_pos[1];
-                    call_person_to_room(w, w->slave, action, room, 0);
+                desk = &thing[w->object];
+                if (desk > thing) {
+                    tile = desk->use_pos[1];
+                    call_person_to_room(w, w->slave, action, tile, 0);
                 }
             } else {
-                room = w->room->unknown4;
-                if (room) {
-                    call_person_to_room(w, w->slave, action, room, 0);
+                tile = w->room->unknown4;
+                if (tile) {
+                    call_person_to_room(w, w->slave, action, tile, 0);
                 }
             }
         }

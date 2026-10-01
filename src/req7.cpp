@@ -370,7 +370,7 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
     s32 step;
     u16 px;
     u16 py;
-    u8 old_17;
+    u8 old_facing;
     u16 id;
     Thing *person;
 
@@ -387,13 +387,13 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
             for (;;) {
                 u16 old_sprite;
                 u16 anim;
-                u8 old_palette;
+                u8 old_flip;
                 u16 y0;
                 u16 y1;
 
-                old_17 = person->facing;
+                old_facing = person->facing;
                 old_sprite = person->sprite;
-                old_palette = person->flip;
+                old_flip = person->flip;
                 person->facing = 2;
                 anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->facing;
                 person->sprite = start[anim].frame;
@@ -410,9 +410,9 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                     draw_special_id_frame(person, px, py);
                 if (position == sel)
                     px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
-                person->facing = old_17;
+                person->facing = old_facing;
                 person->sprite = old_sprite;
-                person->flip = old_palette;
+                person->flip = old_flip;
                 {
                     CompFrame *fr;
                     u16 x0;
@@ -443,9 +443,9 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
     u16 size;
     u16 id;
     Thing *person;
-    u8 old_17;
+    u8 old_facing;
     u16 old_sprite;
-    u8 old_palette;
+    u8 old_flip;
     u16 anim;
     CompFrame *fr;
 
@@ -458,9 +458,9 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
             person = &thing[id];
             for (;;) {
                 if (position == sel) {
-                    old_17 = person->facing;
+                    old_facing = person->facing;
                     old_sprite = person->sprite;
-                    old_palette = person->flip;
+                    old_flip = person->flip;
                     person->facing = 2;
                     anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->facing;
                     person->sprite = start[anim].frame;
@@ -477,9 +477,9 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                     lbDisplay.draw_flags = 0;
                     fr = &frame[person->sprite];
                     set_all_refresh_zones_in_window(x + D_001567b0[4], y + D_001567b0[5], x + D_001567b0[4] + fr->width, y + D_001567b0[5] + fr->length, 3);
-                    person->facing = old_17;
+                    person->facing = old_facing;
                     person->sprite = old_sprite;
-                    person->flip = old_palette;
+                    person->flip = old_flip;
                     break;
                 }
                 if (person->queue_next == 0)
@@ -572,21 +572,21 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
             person = &thing[id];
             for (;;) {
                 u16 y0;
-                u8 old_17;
+                u8 old_facing;
                 u16 old_sprite;
-                u8 old_palette;
+                u8 old_flip;
                 u16 anim;
 
-                old_17 = person->facing;
+                old_facing = person->facing;
                 old_sprite = person->sprite;
-                old_palette = person->flip;
+                old_flip = person->flip;
                 person->facing = 2;
                 anim = check_frame(anim_starts[person->subtype].unknown12, person) + person->facing;
                 person->sprite = start[anim].frame;
                 person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
-                person->facing = old_17;
+                person->facing = old_facing;
                 person->sprite = old_sprite;
-                person->flip = old_palette;
+                person->flip = old_flip;
                 if (position == sel)
                     return px;
                 fr = &frame[person->sprite];

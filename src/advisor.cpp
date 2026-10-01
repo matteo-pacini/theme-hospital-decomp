@@ -137,7 +137,7 @@ extern char **D_001602ec;
 // FUNCTION: 0x0005dbb0
 void display_advisor(void)
 {
-    u8 flag;
+    u8 stale;
     u16 i;
     u16 elapsed;
 
@@ -157,19 +157,19 @@ void display_advisor(void)
                 return;
             }
         } else {
-            flag = 0;
+            stale = 0;
             if (advisor.f0) {
                 if (resvars.f1 != SCREEN_MODE_1 || (crequester.unknown2 == 0x63 || crequester.unknown2 == 5)) {
                     elapsed = actual_game_turn - advice[advisor.f0].time;
                     if (elapsed > 0x64 || othervar.fa54 == 1)
-                        flag = 1;
+                        stale = 1;
                     if (elapsed >= advice[advisor.f0].f2 || othervar.fa54 == 1)
                         advisor.f0 = 0;
                 } else {
                     advice[advisor.f0].time = actual_game_turn - advice[advisor.f0].f2 / 4;
                 }
             }
-            if (advisor.f0 == 0 || flag == 1) {
+            if (advisor.f0 == 0 || stale == 1) {
                 for (i = 1; advice[i].id; i++) {
                     if (actual_game_turn > advice[i].time) {
                         if ((advice[i].f6 * advice[i].f4 << 10) / (actual_game_turn - advice[i].time) < 10) {
@@ -1090,13 +1090,13 @@ u8 advisor_toilets(void)
 u8 advisor_plants(void)
 {
     s32 per_area;
-    s32 need;
-    s32 unhappy;
+    s32 impatience;
+    s32 happiness;
 
     per_area = (NRAdcounts.unknown0 << 14) / myhosp->f1f1;
-    need = (adcounts.f48 << 6) / (adcounts.f0 * gbv.f108);
-    unhappy = (adcounts.fa << 10) / adcounts.f0;
-    if (need > 0x30) {
+    impatience = (adcounts.f48 << 6) / (adcounts.f0 * gbv.f108);
+    happiness = (adcounts.fa << 10) / adcounts.f0;
+    if (impatience > 0x30) {
         if (per_area < 0x100) {
             sprintf(advisor.f10, extra_advice[0x14]);
             return 1;
@@ -1104,7 +1104,7 @@ u8 advisor_plants(void)
             sprintf(advisor.f10, extra_advice[0x15]);
             return 1;
         }
-    } else if ((gbv.f110 << 10) > unhappy) {
+    } else if ((gbv.f110 << 10) > happiness) {
         if (per_area < 0x100) {
             sprintf(advisor.f10, extra_advice[0x16]);
             return 1;
@@ -1341,28 +1341,28 @@ u8 advisor_staff_tired(void)
     s32 average;
     s32 tired;
     u8 i;
-    u8 level;
+    u8 severity;
 
     average = (adcounts.f2 << 8) / myhosp->fc9c;
     i = 0;
-    level = 0;
+    severity = 0;
     if ((gbv.fea << 8) < average)
-        level = 0;
+        severity = 0;
     else if ((gbv.fe8 << 8) < average)
-        level = 0x10;
+        severity = 0x10;
     else if ((gbv.fe6 << 8) > average)
-        level = 0x20;
+        severity = 0x20;
     else
-        level = 0x30;
+        severity = 0x30;
     for (; i < 4; i++) {
         if (myhosp->fc9e[i]) {
             tired = (adcounts.f7a[i] << 8) / myhosp->fc9e[i];
             if ((gbv.fea << 8) < tired) {
                 if (((average - tired) << 8) / (myhosp->fc9c - myhosp->fc9e[i])
                     < (gbv.fea << 8))
-                    ++level;
-                if (staff_unhappy[level])
-                    return staff_unhappy[level];
+                    ++severity;
+                if (staff_unhappy[severity])
+                    return staff_unhappy[severity];
             }
         }
     }

@@ -15,7 +15,7 @@ extern "C" void fn_00041c0c(Thing *w);
 extern "C" void fn_000444e0(Thing *w);
 u16 find_free_object_anywhere(u16 id, u8 kind);
 u8 should_nurse_vaccinate(Thing *w);
-u8 try_staff_wander(Thing *w, s8 dx, s8 dy, u8 state);
+u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate);
 
 #define PLAY_FRAME(t, a) \
     { \
@@ -77,7 +77,7 @@ s16 person_goto_destination(Thing *person)
 // FUNCTION: 0x00076768
 s16 person_goto_object(Thing *person)
 {
-    u8 save;
+    u8 saved_in_use;
     MapPos x;
     MapPos y;
     s16 dir;
@@ -118,10 +118,10 @@ s16 person_goto_object(Thing *person)
         case -3:
             obj = &thing[person->object];
             if (obj > thing) {
-                save = obj->in_use;
+                saved_in_use = obj->in_use;
                 obj->in_use = 1;
                 process_person_complex(person);
-                obj->in_use = save;
+                obj->in_use = saved_in_use;
             } else {
                 person_nav_failure(person);
             }
@@ -324,7 +324,7 @@ s16 staff_goto_object(Thing *employee)
 }
 
 // FUNCTION: 0x000778b4
-u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 state)
+u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate)
 {
     s16 x;
     s16 y;
@@ -349,7 +349,7 @@ u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 state)
     PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
     fn_000444e0(employee);
     employee->countdown = 1;
-    employee->substate = state;
+    employee->substate = substate;
     return 1;
 }
 
