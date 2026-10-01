@@ -13,7 +13,7 @@ As of 2026-09-30, `ninja report` counts all 2938 functions matched (100% of
 code bytes): 1381 in the game, 813 in Bullfrog's libraries and 744 in the
 runtime (Watcom C library, Miles, Smacker). Of these:
 
-- 62 are assembly stand-ins (`*.standin.s`, listed in
+- 53 are assembly stand-ins (`*.standin.s`, listed in
   [docs/MATCHING.md](docs/MATCHING.md)): functions whose C has not yet been
   made to match (mostly register or stack-slot choices), after flag sweeps
   and source attempts. They count as matched, not as decompiled;
@@ -29,34 +29,105 @@ original `HOSPITAL.EXE`. `ninja link` also links the units with Open
 Watcom's wlink into `build/link/hosp.exe` (see `tools/link.py`), which runs
 in DOSBox-X but does not reproduce the original's layout.
 
-## Setup
+## What you need
 
-1. Extract the game from GOG's installer into `orig/`. The app checks the
-   installer's name and sha256 and the game's `HOSPITAL.EXE` (sha1
-   `d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae`):
+The game's files come from GOG's offline installer for Theme Hospital, from
+your GOG library (Theme Hospital → offline backup installers). Only this
+build is supported:
 
-   ```sh
-   nix run .#gog-unpack -- 'PATH/setup_theme_hospital_v3_(28027).exe'
-   ```
+| | |
+| --- | --- |
+| File | `setup_theme_hospital_v3_(28027).exe` |
+| Size | 174,951,008 bytes |
+| SHA-256 | `3475c2bb4b262156af4d92e6b1e9e20075f1788a8776835b534e2917c7921e93` |
+| SHA-1 | `9e26a9eafc59ba6a85894a6365391843ccdb42ca` |
+| MD5 | `cb1a467f48532d3607fa5b9dd571a342` |
 
-   To build, rebuild `HOSPITAL.EXE` and play it in DOSBox in one step:
+Check it with `sha256sum` (Linux), `shasum -a 256` (macOS) or
+`certutil -hashfile <file> SHA256` (Windows). The game executable it
+contains, which every build is compared against, is:
 
-   ```sh
-   nix run .                # DOSBox Staging; --dosbox-x or --dosbox for the others
-   nix run . -- --wlink     # play the wlink-linked build/link/hosp.exe instead
-   ```
+| | |
+| --- | --- |
+| `HOSPITAL.EXE` SHA-256 | `2bd86130c9c44bb9c76f993c3c0365e032414cb873f5740dc0aff9cf0a08bade` |
+| `HOSPITAL.EXE` SHA-1 | `d108d34d4e435ce4ad1e9c9b76ab3ad6f000d6ae` |
+| `HOSPITAL.EXE` MD5 | `a4a934ec18b66d131c53bdc71a429f93` |
 
-2. Enter the dev shell and build:
+You also need Nix with flakes enabled. The first `nix develop` downloads the
+Watcom 10.5 and 10.6 CD images from WinWorld for their runtime libraries
+(about 600 MB); everything else comes from nixpkgs.
 
-   ```sh
-   nix develop
-   python3 configure.py
-   ninja            # target + base objects
-   ninja report     # build/report.json and a progress summary
-   ninja link       # trial link; unresolved symbols in build/link/report.txt
-   ```
+## Unpacking
 
-   `objdiff` (GUI) can open the project root directly; it reads `objdiff.json`.
+```sh
+nix run .#gog-unpack -- 'PATH/setup_theme_hospital_v3_(28027).exe'
+```
+
+This checks the installer's name and SHA-256, extracts it with innoextract,
+checks `HOSPITAL.EXE`'s SHA-1, and copies the game into `orig/`:
+`HOSPITAL.EXE`, `DOS4GW.EXE`, `HOSPITAL.CFG`, `MODEM.INI` and the `ANIMS`,
+`DATA`, `DATAM`, `INTRO`, `LEVELS`, `QDATA`, `QDATAM` and `SOUND`
+directories. The installer holds one `HOSPITAL.CFG` per language; the
+English one is extracted (`LANGUAGE=ENG`; edit it for another of FRE, GER,
+ITA, SPA, SWE). Other files already in `orig/` are left alone. `orig/` is
+gitignored: never commit game files.
+
+## Playing
+
+```sh
+nix run .                # DOSBox Staging
+nix run . -- --dosbox-x  # or DOSBox-X, or --dosbox for DOSBox 0.74
+nix run . -- --wlink     # play the wlink-linked build/link/hosp.exe instead
+```
+
+This builds every unit, rebuilds `HOSPITAL.EXE` from them with
+`tools/lewrite.py --strict`, checks it is byte-identical to `orig/`'s, links
+`build/link/hosp.exe`, and starts the rebuilt game in DOSBox from a run
+directory `build/run` (game data linked from `orig/`; its own
+`HOSPITAL.CFG`, set to English on first run, and its saves). Run it from the
+repository root.
+
+## Developing
+
+Enter the dev shell and build:
+
+```sh
+nix develop
+python3 configure.py     # writes build.ninja and objdiff.json; rerun after adding a source file
+ninja                    # target and base objects
+ninja build/report.json  # objdiff report and progress summary (plain `ninja` does not rebuild it)
+ninja link               # trial link with wlink; unresolved symbols in build/link/report.txt
+```
+
+`objdiff` (GUI) can open the project root directly; it reads `objdiff.json`.
+
+Before committing, check that everything still matches:
+
+```sh
+ninja build/report.json                       # every function matched (build/report.json measures)
+python3 tools/lewrite.py --strict             # rebuild HOSPITAL.EXE from the units alone
+cmp build/hospital.exe orig/HOSPITAL.EXE      # byte-identical
+```
+
+Day-to-day tools (see [Matching a function](#matching-a-function) and
+[docs/MATCHING.md](docs/MATCHING.md)):
+
+- `tools/fn.py 0xADDR`: disassembly of a function with relocations named,
+  then rz-ghidra pseudo-C.
+- `tools/check.py src/FILE.cpp`: builds one file's unit in isolation and
+  shows each function's match; safe to run while other builds run.
+- `tools/variants.py src/FILE.cpp 0xADDR`: searches source rewrites
+  (operand and declaration order, block scopes, zero tests, variable reuse)
+  for a near-miss.
+- `tools/setfn.py 0xADDR NAME`: rename or add one entry in
+  `config/functions.txt`.
+
+Renaming is safe as long as the build still matches: locals and parameters
+can be renamed freely; functions and globals need their entries in
+`config/functions.txt` / `config/symbols.txt` changed with them; never
+reorder declarations, since order decides stack slots and (for C files)
+the layout of statics, whose names also decide their order (see "Static
+data layout" in docs/MATCHING.md).
 
 ## Names from the 1997 demo
 
