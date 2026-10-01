@@ -121,6 +121,9 @@ Day-to-day tools (see [Matching a function](#matching-a-function) and
   for a near-miss.
 - `tools/setfn.py 0xADDR NAME`: rename or add one entry in
   `config/functions.txt`.
+- `tools/format.py FILE...`: clang-format (`.clang-format`) with Watcom
+  `#pragma`s left exactly as written; `--check` lists files that would
+  change. Formatting never changes the build, but check it as above.
 
 Renaming is safe as long as the build still matches: locals and parameters
 can be renamed freely; functions and globals need their entries in

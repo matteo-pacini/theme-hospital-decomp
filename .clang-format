@@ -1,0 +1,21 @@
+# Formatting for the decompiled sources (src/, include/). Formatting must
+# never change the build: check `ninja build/report.json` and
+# `tools/lewrite.py --strict` after running it.
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+BreakBeforeBraces: Linux
+IndentExternBlock: NoIndent
+# Include order can matter in this codebase; keep it as written.
+SortIncludes: Never
+# Keep Watcom pragmas (#pragma aux ...) exactly as written.
+IndentPPDirectives: None
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+PointerAlignment: Right
+SpaceAfterCStyleCast: false
+AlignConsecutiveMacros: false
+ReflowComments: false

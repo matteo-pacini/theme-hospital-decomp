@@ -187,6 +187,7 @@
               (rizin.withPlugins (p: [ p.rz-ghidra ]))
               jq
               innoextract
+              clang-tools # clang-format for src/ and include/ (.clang-format)
             ]);
         }
         // watcomEnv
