@@ -4,7 +4,8 @@
 # Usage: gog-unpack PATH/setup_theme_hospital_v3_(28027).exe
 #
 # Only GOG's v3 (28027) installer is accepted, checked by file name and
-# sha256. Files already in orig/ other than the game's are left alone.
+# sha256. HOSPITAL.CFG is the English one (the installer has one per
+# language). Files already in orig/ other than the game's are left alone.
 
 setup_name='setup_theme_hospital_v3_(28027).exe'
 setup_sha256=3475c2bb4b262156af4d92e6b1e9e20075f1788a8776835b534e2917c7921e93
@@ -32,7 +33,7 @@ fi
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-innoextract --silent -d "$tmp" "$setup"
+innoextract --silent --language en-US -d "$tmp" "$setup"
 if [ "$(sha1sum "$tmp/HOSPITAL.EXE" | cut -d' ' -f1)" != "$exe_sha1" ]; then
   echo "the installer's HOSPITAL.EXE is not the one this project matches ($exe_sha1)" >&2
   exit 1
