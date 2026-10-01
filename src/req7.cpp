@@ -51,6 +51,8 @@ u16 get_queue_person(u16 room_id, u8 sel);
 void display_panel_person_info(void);
 void compute_room_pointed(u16 tile);
 
+// Queue window clicks (room othervar.f61): raise (event 0x53, up to 30) or
+// lower (0x54) the queue's limit (f1e), and close (event 0x84).
 // FUNCTION: 0x000957f0
 void req7(Window *win)
 {
@@ -83,6 +85,11 @@ void req7(Window *win)
     }
 }
 
+// Draws the queue window for room othervar.f61 (queue length, people on the
+// way, admitted, limit) with its patients, and handles dragging them:
+// dropping a patient picked up with the left button moves them to the
+// front, back or another room's queue; the right button's menu sends them
+// home, to reception or to another player.
 // FUNCTION: 0x000959c8
 void req7_overdraw(Window *win)
 {
@@ -305,6 +312,9 @@ void req7_overdraw(Window *win)
         othervar.fa61 = 0;
 }
 
+// Returns the queue position (1-based) of the patient under the mouse in the
+// queue window at (x, y) for room room_id, showing them on the info bar; 0
+// if none. sel is the position drawn with a gap around it.
 // FUNCTION: 0x000969f4
 u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
 {
@@ -361,6 +371,8 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
     return 0;
 }
 
+// Draws room room_id's queue in the queue window at (x, y), each patient
+// facing forward, leaving a gap around position sel.
 // FUNCTION: 0x00096c34
 void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
 {
@@ -435,6 +447,8 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
     }
 }
 
+// Draws the patient at queue position sel of room room_id under the mouse
+// at (x, y), blended, while it is dragged.
 // FUNCTION: 0x00096f50
 void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
 {
@@ -492,6 +506,8 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
     }
 }
 
+// Draws the right-click menu for a queued patient at (x, y): to reception,
+// home, and one entry per other player to refer them to.
 // FUNCTION: 0x000971f8
 void display_queue_bar(u16 x, u16 y)
 {
@@ -543,6 +559,8 @@ void display_queue_bar(u16 x, u16 y)
     }
 }
 
+// Returns the screen x of the patient at queue position sel (1-based) of
+// room room_id in the queue window at (x, y), or 0.
 // FUNCTION: 0x00097904
 u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
 {
@@ -606,6 +624,7 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
     return 0;
 }
 
+// Returns 1 if room room_id's queue has a position sel (1-based), else 0.
 // FUNCTION: 0x00097b40
 u8 queue_person_valid(u16 room_id, u8 sel)
 {
@@ -636,6 +655,7 @@ u8 queue_person_valid(u16 room_id, u8 sel)
     return 0;
 }
 
+// Returns the patient at queue position sel (1-based) of room room_id, or 0.
 // FUNCTION: 0x00097c0c
 u16 get_queue_person(u16 room_id, u8 sel)
 {

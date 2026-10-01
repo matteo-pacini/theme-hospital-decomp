@@ -2,6 +2,12 @@
 
 extern "C" {
 
+// Plays the sample file at address as sample `number` of source source_id,
+// at volume and pan (0-127), pitch (percent of its rate) and loop count
+// loop + 1 (0 forever). type chooses the voice: 1 any free one, 2 a free
+// one unless that sample is already playing, 3 the voice of the same sample
+// (or of the same extra data, if any) or a free one. Returns the voice, or
+// 0 if none was used.
 // FUNCTION: 0x000ce990
 SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, s32 volume, s32 pan, u16 pitch,
                                   s8 loop, u8 type, void *address, u32 extra)

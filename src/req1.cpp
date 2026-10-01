@@ -5,6 +5,9 @@ extern "C" {
 
 void reset_dept_object(void);
 
+// Before buying more for an existing room: takes the room type's required
+// objects that room lacks off the shopping list (gamevar.unknown33),
+// remembering them in othervar.f8f6.
 // FUNCTION: 0x00054e50
 void adjust_build_palette_for_shop(RoomInfo *room)
 {
@@ -28,6 +31,8 @@ void adjust_build_palette_for_shop(RoomInfo *room)
     }
 }
 
+// Puts back the shopping list counts that adjust_build_palette_for_shop
+// took off.
 // FUNCTION: 0x00054f58
 void post_shop_readjust_build_palette(void)
 {
@@ -37,12 +42,16 @@ void post_shop_readjust_build_palette(void)
         gamevar.unknown33.unknown0[i] += othervar.f8f6[i];
 }
 
+// Clears the requester's list of entries (req_indices).
 // FUNCTION: 0x00054f98
 void clear_req_indices(void)
 {
     memset(req_indices, 0, 10);
 }
 
+// Lists the extra objects room type `room` can buy (up to ten available to
+// this player) in req_indices and opens the object list (crequester.unknown0
+// 3).
 // FUNCTION: 0x00054fc0
 void set_buyable_items(u16 room)
 {
@@ -63,6 +72,8 @@ void set_buyable_items(u16 room)
     reset_dept_object();
 }
 
+// Sets the shopping list (gamevar.unknown33) to just room type `room`'s
+// required objects.
 // FUNCTION: 0x000550cc
 void buy_compulsory_items(const u16 room)
 {
@@ -79,6 +90,8 @@ void buy_compulsory_items(const u16 room)
     }
 }
 
+// Lists department dept's room types this player can build (up to ten) in
+// req_indices.
 // FUNCTION: 0x00055164
 void req1_reset_rooms(u16 dept)
 {
@@ -96,6 +109,8 @@ void req1_reset_rooms(u16 dept)
         req_indices[count++] = 0;
 }
 
+// Returns 1 if this player has every object room type `room` requires, else
+// 0.
 // FUNCTION: 0x00055214
 u16 room_available(u16 room)
 {
@@ -109,6 +124,8 @@ u16 room_available(u16 room)
     return 1;
 }
 
+// Adds amount (may be negative) of object obj to the shopping list, capped
+// at 99.
 // FUNCTION: 0x000552e8
 void req1_buy_object(const u16 obj, const s32 amount)
 {
@@ -118,6 +135,8 @@ void req1_buy_object(const u16 obj, const s32 amount)
         gamevar.unknown33.unknown0[obj] = 0x63;
 }
 
+// Returns the cost of everything on the shopping list at this player's
+// prices.
 // FUNCTION: 0x0005533c
 s32 cost_of_all_selected_objects(void)
 {
@@ -130,6 +149,7 @@ s32 cost_of_all_selected_objects(void)
     return total;
 }
 
+// Selects the current room type's first extra object (crequester.unknown3).
 // FUNCTION: 0x000553b4
 void reset_dept_object(void)
 {

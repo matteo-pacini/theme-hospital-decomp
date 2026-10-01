@@ -17,6 +17,8 @@ void process_policy_sliders(void);
 
 }
 
+// Runs one frame of the policy screen (pol.unknown2: 0 opening, 1 shown, 2-3
+// closing, which queues EV_RETURN_FROM_SCREEN).
 // FUNCTION: 0x00044530
 void display_policy(void)
 {
@@ -53,6 +55,8 @@ void display_policy(void)
 
 extern "C" {
 
+// Policy screen clicks: runs the callback of the resvars.f48 button released
+// over.
 // FUNCTION: 0x00044664
 void process_policy_panel(void)
 {
@@ -69,6 +73,8 @@ void process_policy_panel(void)
     }
 }
 
+// Policy screen button `action`: 0 and 1 set the staff pager option
+// (allhosps.f21f) on and off through event 0x71, 2 closes the screen.
 // FUNCTION: 0x0004477c
 void process_policy_button(u8 action)
 {
@@ -93,6 +99,10 @@ void process_policy_button(u8 action)
     }
 }
 
+// Draws the policy sliders at this player's settings (allhosps.f219 and
+// f21b 0-100, f217 1000-2000, f21d 0-1000 rest threshold) and the pager
+// option; dragging a slider sends its new value as event 0x71 (value =
+// slider 1-4).
 // FUNCTION: 0x0004488c
 void process_policy_sliders(void)
 {

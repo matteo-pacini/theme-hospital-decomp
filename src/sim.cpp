@@ -31,6 +31,12 @@ u8 check_net_criteria(const u8 owner);
 void setup_next_net_criteria(const u8 owner);
 void try_bonus_level(void);
 
+// Applies reputation event `event` (0-25) to player `owner`'s hospital, for
+// treatment (illness index, 0 for the hospital as a whole): each event adds a
+// fixed amount or a percentage of allhosps.fc86 to the reputation totals
+// (amount scales events 13, 23 and 24), and event 22 counts a case. Hospitals
+// on the map (allhosps.f2a 1) update their reputation now; computer ones (f2a
+// 2) bank it in comp_buckets[owner][month].
 // FUNCTION: 0x00058370
 void reputation_affected(const u8 treatment, const u16 event, const u16 month, const u8 owner, const s32 amount)
 {
@@ -131,6 +137,9 @@ void reputation_affected(const u8 treatment, const u16 event, const u16 month, c
         update_single_cure_cost(treatment, owner);
 }
 
+// Recomputes player `owner`'s reputation (0-1000) for treatment, or the
+// hospital's overall reputation (unknownc7e) for treatment 0, from its
+// running totals; 500 when nothing is counted yet.
 // FUNCTION: 0x00058730
 void evaluate_reputation(const u8 treatment, const u8 owner)
 {
@@ -158,6 +167,8 @@ void evaluate_reputation(const u8 treatment, const u8 owner)
     }
 }
 
+// Grows player `owner`'s score (allhosps.f2d) by the rating[] rate for
+// how close they are to winning, capped at 200,000,000.
 // FUNCTION: 0x000588a8
 void calculate_score(u8 owner)
 {
@@ -182,6 +193,9 @@ void calculate_score(u8 owner)
         hosp->f2d = 200000000;
 }
 
+// Single player: ends the level if the player has met the win criteria
+// (winlose state 1, with the final score) or a lose criterion (state 2).
+// Network game: checks the current criterion.
 // FUNCTION: 0x000589f0
 void check_game_over(void)
 {
@@ -212,6 +226,9 @@ void check_game_over(void)
     }
 }
 
+// Single player, levels before 12: offers the win as soon as the criteria
+// are met (saving the screen in progress to return to). Network game:
+// checks the current criterion.
 // FUNCTION: 0x00058b00
 void check_quarterly_game_over(void)
 {
@@ -246,6 +263,10 @@ void check_quarterly_game_over(void)
     }
 }
 
+// Returns 1 if patient will pay for their treatment (and the next, if
+// any) at the hospital's price, given its maximum price, their insurance or
+// cash and a random allowance. If not, marks them PF_TOO_EXPENSIVE with its
+// icon and records them.
 // FUNCTION: 0x00058c54
 u16 shall_peep_pay(Thing *patient)
 {
@@ -285,6 +306,10 @@ u16 shall_peep_pay(Thing *patient)
     return pays;
 }
 
+// Returns the most patients will pay player `owner` for treatment: the
+// base price scaled by the reputation for it (or the hospital's), plus the
+// base again in a network game when no rival offers it; never below the
+// base.
 // FUNCTION: 0x00058e34
 s32 max_price_for_treatment(const u16 treatment, const u8 owner)
 {
@@ -313,6 +338,8 @@ s32 max_price_for_treatment(const u16 treatment, const u8 owner)
     return price;
 }
 
+// Sets player `owner`'s overall price level (allhosps.fc8e, 0-300%) from
+// their prices against the maximums for their known treatments.
 // FUNCTION: 0x00058f7c
 void calc_pricing_factor(const u8 owner)
 {
@@ -338,6 +365,8 @@ void calc_pricing_factor(const u8 owner)
         allhosps[owner].fc8e = 300;
 }
 
+// Returns the first group of win (mode 0) or lose (mode 1) criteria whose
+// conditions are all met for player `owner`, or 0.
 // FUNCTION: 0x000590e0
 s32 check_criteria(u16 mode, u8 owner)
 {
@@ -376,6 +405,10 @@ s32 check_criteria(u16 mode, u8 owner)
     return result;
 }
 
+// Evaluates every win (mode 0) or lose (mode 1) criterion for player
+// `owner`: its current value (f10), whether it is met (fe) and its progress
+// (f14, 0-200%). Returns the highest criteria group number, 0 for owner
+// 0xff.
 // FUNCTION: 0x000591d4
 u32 check_criteria_values(const u32 mode, const u8 owner)
 {
@@ -455,6 +488,9 @@ u32 check_criteria_values(const u32 mode, const u8 owner)
 
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
+// Returns player `owner`'s progress towards winning (percent, the best of
+// the win criteria groups; 100 = won), stores it in allhosps.f2c, and for
+// this player the best group in othervar.fa4a.
 // FUNCTION: 0x000594d0
 s32 evaluate_criteria(const u8 owner)
 {
@@ -528,6 +564,10 @@ s32 evaluate_criteria(const u8 owner)
     return best;
 }
 
+// Network game: once the current criterion's time is up, checks player
+// `owner` against it and sets up the next one, shares the result, and ends
+// the game for this player when they win or lose. Returns 1 if they failed
+// the criterion.
 // FUNCTION: 0x000597c4
 u8 check_net_criteria(const u8 owner)
 {
@@ -633,6 +673,8 @@ u8 check_net_criteria(const u8 owner)
     return fail;
 }
 
+// Network game, this player only: makes the next criterion whose start
+// month has come the current one.
 // FUNCTION: 0x00059af8
 void setup_next_net_criteria(const u8 owner)
 {
@@ -658,6 +700,8 @@ void setup_next_net_criteria(const u8 owner)
     }
 }
 
+// Network game: marks the current criterion met if it is `criterion` and
+// owner is this player.
 // FUNCTION: 0x00059c38
 void satisfied_net_criteria(const u8 criterion, const u8 owner)
 {
@@ -667,6 +711,8 @@ void satisfied_net_criteria(const u8 criterion, const u8 owner)
     }
 }
 
+// Returns the index of the last entry of table (10 criteria) for criterion,
+// or 0 if there is none (indistinguishable from entry 0).
 // FUNCTION: 0x00059c88
 u8 is_relevant_criterion(const u8 criterion, const WinLose *const table)
 {
@@ -679,6 +725,7 @@ u8 is_relevant_criterion(const u8 criterion, const WinLose *const table)
     return 0;
 }
 
+// Does nothing.
 // FUNCTION: 0x00059ce0
 void force_win_lose_criteria(const u32 mode, const u8 owner)
 {

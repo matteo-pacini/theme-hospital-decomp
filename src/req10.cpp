@@ -7,6 +7,10 @@ extern char **req1_help;
 extern char **department_names;
 }
 
+// Build room requester clicks (crequester.unknown0 1 departments, 4 rooms):
+// the department buttons list that department's rooms (EV_REQ1_RESET_ROOMS
+// 3-6), a room button starts building the hovered room type if affordable
+// (event 0x35), and the close button sends event 0x26.
 // FUNCTION: 0x0009b870
 void req10(Window *win)
 {
@@ -100,6 +104,9 @@ void req10(Window *win)
     }
 }
 
+// Draws the build room requester: the departments, the department's rooms
+// with the hovered one selected (crequester.unknown8), its picture and its
+// cost with its required objects, and the advisor's flashing hints.
 // FUNCTION: 0x0009be80
 void req10_overdraw(Window *win)
 {
@@ -224,6 +231,8 @@ void req10_overdraw(Window *win)
     set_font_from_cache(0);
 }
 
+// Help text for a room entry of the build room requester, into
+// othervar.f96.
 // FUNCTION: 0x0009c690
 void req10_help_room(void)
 {

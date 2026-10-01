@@ -45,6 +45,9 @@ extern "C" {
 extern s16 D_001567b0[8];
 }
 
+// At each month end (and level start): takes this month's staff_levels entry
+// (applicant numbers per kind and the odds of each doctor skill) and creates
+// applicants until each kind has its number.
 // FUNCTION: 0x00029ad0
 void create_job_market(void)
 {
@@ -80,6 +83,10 @@ void create_job_market(void)
     }
 }
 
+// Puts staff member id (an applicant or a picked-up one) on tile for player
+// `owner`, if the tile is theirs or force is set, entering the state for
+// the room there. A new hire is counted in the hospital's statistics and
+// skills. Returns 1 if placed, 0 otherwise.
 // FUNCTION: 0x00029c4c
 u16 place_staff_on_map(u16 tile, u16 id, u8 force, u8 owner)
 {
@@ -161,6 +168,8 @@ u16 place_staff_on_map(u16 tile, u16 id, u8 force, u8 owner)
     return 0;
 }
 
+// Counts staff in player `owner`'s staff statistics (total, per kind and
+// surgeons).
 // FUNCTION: 0x0002a094
 void inc_staff_stats(Thing *staff, u8 owner)
 {
@@ -171,6 +180,7 @@ void inc_staff_stats(Thing *staff, u8 owner)
     allhosps[owner].fc9c++;
 }
 
+// Deletes applicant staff (not hired), freeing the thing.
 // FUNCTION: 0x0002a130
 void remove_staff_in_struct(Thing *staff)
 {
@@ -179,6 +189,10 @@ void remove_staff_in_struct(Thing *staff)
     memset(staff, 0, 0xaf);
 }
 
+// Creates an applicant of staff kind `kind` (STAFF_*) with skills
+// extra_skills added: random looks, face, doctor skills by the job market's
+// odds, ability, wage, name and references; expires after 2500-5000 turns.
+// Returns the thing index, 0 if none was free.
 // FUNCTION: 0x0002a178
 s16 place_staff_in_struct(u16 kind, u16 extra_skills)
 {
@@ -301,6 +315,9 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
     return 0;
 }
 
+// Dismisses staff: mode 0 sacks them with severance pay, 1 lets them resign,
+// both walking them off the map; mode 2 removes them at once. Takes them
+// out of the hospital's statistics and skills (owner 0x63 after).
 // FUNCTION: 0x0002a804
 void sack_staff(Thing *staff, u16 mode)
 {
@@ -350,6 +367,7 @@ void sack_staff(Thing *staff, u16 mode)
     }
 }
 
+// Staff waiting state: animates and turns randomly at each step. Returns 0.
 // FUNCTION: 0x0002aa54
 s16 staff_waits(Thing *worker)
 {
@@ -370,6 +388,7 @@ s16 staff_waits(Thing *worker)
     return 0;
 }
 
+// Sends staff wandering the corridor from where they stand (SS_WANDERS).
 // FUNCTION: 0x0002abb0
 void staff_in_corridor(Thing *staff)
 {
@@ -385,6 +404,8 @@ void staff_in_corridor(Thing *staff)
     staff->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
 }
 
+// If a page for staff's skills is waiting in another room (check_pager),
+// sends them there. Returns 1 if they went.
 // FUNCTION: 0x0002ac70
 u8 obey_pager(Thing *staff)
 {
@@ -411,6 +432,8 @@ u8 obey_pager(Thing *staff)
     return 1;
 }
 
+// Walks staff out of their room into the corridor (SS_IN_CORRIDOR).
+// Returns 1.
 // FUNCTION: 0x0002ad8c
 u8 evacuate_staff(Thing *staff)
 {
@@ -428,6 +451,8 @@ u8 evacuate_staff(Thing *staff)
     return 1;
 }
 
+// Sends staff to the nearest staff room for a rest. Returns 0 if there is
+// none.
 // FUNCTION: 0x0002adfc
 u8 take_a_break(Thing *staff)
 {
@@ -456,6 +481,9 @@ u8 take_a_break(Thing *staff)
     return 1;
 }
 
+// Staff state SS_IN_STAFF_ROOM: rests them, plays pool, video games or sits
+// on a sofa, and once fully rested cures a crazy doctor and sends everyone
+// back to work (research, training, the pager or the corridor).
 // FUNCTION: 0x0002af04
 void staff_in_staff_room(Thing *staff)
 {
@@ -558,6 +586,9 @@ void staff_in_staff_room(Thing *staff)
     }
 }
 
+// Claims staff's room for them (the lock: one holder, two in an operating
+// theatre). Returns 1 if they hold it or are not in a room, 0 if it is
+// taken.
 // FUNCTION: 0x0002b400
 u8 check_room_mutex(Thing *staff)
 {
@@ -590,6 +621,8 @@ u8 check_room_mutex(Thing *staff)
     return 1;
 }
 
+// Returns 1 if staff holds their room's first lock (in an operating
+// theatre, only once both surgeons are there).
 // FUNCTION: 0x0002b528
 u8 am_i_lead_staff(Thing *staff)
 {
@@ -607,6 +640,8 @@ u8 am_i_lead_staff(Thing *staff)
     return 0;
 }
 
+// A staff member whose path failed: leaves a recently built destination
+// room, or gets stuck (SS_STUCK), announced for this player.
 // FUNCTION: 0x0002b5cc
 void staff_nav_failure(Thing *staff)
 {
@@ -629,6 +664,8 @@ void staff_nav_failure(Thing *staff)
     }
 }
 
+// Draws the staff member being placed under the mouse, greyed where they
+// cannot be dropped (gamevar.f72 0).
 // FUNCTION: 0x0002b690
 void draw_staff_cursor(void)
 {
@@ -679,6 +716,11 @@ void draw_staff_cursor(void)
     }
 }
 
+// Pays staff (or, if staff is not a thing, every staff member of player
+// `owner`) a bonus of percent of their wage or of amount, raising their
+// happiness by 50 when morale is set (the money is only charged then).
+// Returns the total. For one staff member the charge is amount, even with
+// a percentage.
 // FUNCTION: 0x0002b998
 s32 pay_staff_bonus(Thing *staff, u16 amount, u16 percent, u16 morale, u8 owner)
 {
@@ -726,6 +768,7 @@ s32 pay_staff_bonus(Thing *staff, u16 amount, u16 percent, u16 morale, u8 owner)
     return total;
 }
 
+// Releases staff's lock on their room.
 // FUNCTION: 0x0002bb58
 void clear_my_mutex(Thing *staff)
 {
@@ -741,6 +784,9 @@ void clear_my_mutex(Thing *staff)
     }
 }
 
+// Tidies up as staff leave their room: a surgeon becomes a doctor again,
+// the training room's consultant stops the projector, and a nurse frees
+// her ward.
 // FUNCTION: 0x0002bbdc
 void staff_exit_room_check(Thing *staff)
 {
@@ -772,6 +818,8 @@ void staff_exit_room_check(Thing *staff)
     }
 }
 
+// Lowers staff's tiredness by amount (by less when very tired, but at least
+// gbv.ff0) and raises their happiness by 1.
 // FUNCTION: 0x0002be14
 void rest_staff(Thing *staff, s16 amount)
 {
@@ -789,6 +837,8 @@ void rest_staff(Thing *staff, s16 amount)
     }
 }
 
+// Staff picked up by the player: takes them off the map and, on this
+// player's machine, starts placing them (MM_PLACE_STAFF).
 // FUNCTION: 0x0002becc
 void staff_picked_up(Thing *staff)
 {
@@ -806,6 +856,7 @@ void staff_picked_up(Thing *staff)
     staff->state = 0x44;
 }
 
+// Takes staff off the map and out of their room's list.
 // FUNCTION: 0x0002bf94
 void remove_staff_from_map(Thing *staff)
 {
@@ -815,6 +866,10 @@ void remove_staff_from_map(Thing *staff)
     remove_node(staff);
 }
 
+// Handles a staff member's resignation: once given notice, leaves when it
+// runs out; otherwise hands in notice (with a call to the player) after six
+// to nine months if discontented, or when poached. Returns 1 if they
+// resigned or handed in notice this turn.
 // FUNCTION: 0x0002bfc8
 u32 shall_i_resign(Thing *staff)
 {
@@ -855,6 +910,8 @@ u32 shall_i_resign(Thing *staff)
     return 0;
 }
 
+// Returns the number of player `owner`'s doctors who are not tired
+// (tiredness below gbv.fe8).
 // FUNCTION: 0x0002c1cc
 u16 count_emergency_staff(u8 owner)
 {
@@ -872,6 +929,8 @@ u16 count_emergency_staff(u8 owner)
     return count;
 }
 
+// Sets staff's walking speed and animation speed from their tiredness and
+// ability (slow in the training room). Only when at a tile's centre.
 // FUNCTION: 0x0002c268
 void calculate_speed(Thing *staff)
 {
@@ -919,6 +978,8 @@ void calculate_speed(Thing *staff)
     }
 }
 
+// Interrupts staff (see private_interrupt_staff), and a surgeon's partner
+// too.
 // FUNCTION: 0x0002c3bc
 void interrupt_staff(Thing *staff)
 {
@@ -943,6 +1004,9 @@ void interrupt_staff(Thing *staff)
     }
 }
 
+// Stops what staff is doing: drops their pages and repair job, frees the
+// patient they were dealing with, and returns them to the state for their
+// room.
 // FUNCTION: 0x0002c484
 void private_interrupt_staff(Thing *staff)
 {
@@ -990,6 +1054,8 @@ void private_interrupt_staff(Thing *staff)
     }
 }
 
+// Network game: staff id leaves for player `owner`'s hospital at double
+// wage, walking to its reception; they are sacked at once if it has none.
 // FUNCTION: 0x0002c700
 void staff_join_new_employer(u16 id, u16 owner)
 {
@@ -1036,6 +1102,9 @@ void staff_join_new_employer(u16 id, u16 owner)
     }
 }
 
+// Makes staff room's lock holder in place of the first current holder,
+// interrupting and evacuating that one (except in an operating theatre with
+// a free slot). Does nothing if no one holds the room.
 // FUNCTION: 0x0002c9cc
 void change_lockholder(Thing *staff, RoomInfo *room)
 {
@@ -1058,6 +1127,8 @@ void change_lockholder(Thing *staff, RoomInfo *room)
     }
 }
 
+// Returns the state for staff entering a room of type `type` (0 for the
+// corridor), or SS_PROCESS_COMPLEX for a doctor lacking the room's skill.
 // FUNCTION: 0x0002ca88
 s16 get_state(const u16 type, const Thing *staff)
 {
@@ -1072,6 +1143,10 @@ s16 get_state(const u16 type, const Thing *staff)
     return state;
 }
 
+// Raises staff's wage (or, if staff is not a thing, every staff member's of
+// player `owner`) by percent or amount, up to 90,000, clearing discontent
+// and raising happiness by 50. In the all-staff case the cap is applied to
+// staff, not to each member.
 // FUNCTION: 0x0002cb2c
 void increase_staff_salaries(Thing *staff, u16 amount, u16 percent, u8 owner)
 {
@@ -1118,6 +1193,9 @@ void increase_staff_salaries(Thing *staff, u16 amount, u16 percent, u8 owner)
     }
 }
 
+// Sets up training level `level` from rat_fest_level: places a consultant
+// psychiatrist, a surgeon and a researcher on the first chosen tile of the
+// player's land.
 // FUNCTION: 0x0002cccc
 void training_builder(u8 level)
 {
@@ -1158,6 +1236,8 @@ void training_builder(u8 level)
     }
 }
 
+// Returns 1 if another staff member shares staff's tile (later in the
+// tile's list), else 0.
 // FUNCTION: 0x0002ce9c
 u8 is_staff_stepping_on_toes(Thing *staff)
 {
@@ -1171,6 +1251,9 @@ u8 is_staff_stepping_on_toes(Thing *staff)
     return 0;
 }
 
+// Moves staff to a random spot in their room if they block the door, share
+// a tile, stand on an object they are not using, or now and then; resumes
+// state afterwards. Returns 1 if they moved.
 // FUNCTION: 0x0002cf14
 u8 overlapping_staff_check(Thing *staff, s32 state)
 {
@@ -1197,6 +1280,8 @@ u8 overlapping_staff_check(Thing *staff, s32 state)
     return 0;
 }
 
+// Returns 0 if staff is a surgeon whose room's surgeon screen is in use,
+// else 1.
 // FUNCTION: 0x0002d11c
 u8 fn_0002d11c(Thing *staff)
 {

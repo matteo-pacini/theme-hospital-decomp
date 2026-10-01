@@ -4,6 +4,7 @@ s32 wall_in_way(u32 x, u32 y, u32 dir);
 s32 person_in_way(u32 x, u32 y, u32 dir);
 s32 person_overlap(void);
 
+// Drops the path's first waypoint, which becomes its start (x0, y0).
 // FUNCTION: 0x000553e0
 void delete_first_path_entry(orthonav_path *path)
 {
@@ -16,6 +17,9 @@ void delete_first_path_entry(orthonav_path *path)
         path->steps[i] = path->steps[i + 1];
 }
 
+// Plans a path from (x0, y0) to (x1, y1) with wallhug_tricky, keeping its
+// first four waypoints; path->result is the waypoint count, 0 if no route was
+// found.
 // FUNCTION: 0x00055454
 void orthonav_init(orthonav_path *path, s8 x0, s8 y0, s8 x1, s8 y1)
 {
@@ -44,6 +48,8 @@ void orthonav_init(orthonav_path *path, s8 x0, s8 y0, s8 x1, s8 y1)
     }
 }
 
+// Returns 1 if a person can walk the straight row or column from (x1, y1) to
+// (x2, y2) without crossing a wall, else 0. The points must share x or y.
 // FUNCTION: 0x00055568
 s32 free_orthog_line(s32 x1, s32 y1, s32 x2, s32 y2)
 {
@@ -73,6 +79,10 @@ s32 free_orthog_line(s32 x1, s32 y1, s32 x2, s32 y2)
 
 extern s32 other_wherefacing;
 
+// Chooses the direction (0-3, see wall_in_way) to step from (x, y) towards
+// the path's next waypoint, given the current facing dir, with some
+// randomness. Returns 4 on reaching the last waypoint. Consumes reached
+// waypoints and leaves the second-best direction in other_wherefacing.
 // FUNCTION: 0x0005562c
 s32 orthonav_wn(orthonav_path *path, s32 x, s32 y, s32 dir)
 {
@@ -340,6 +350,10 @@ other:
     return other_wherefacing;
 }
 
+// Returns the direction (0-3) of the next step from (x, y) along path, given
+// the current facing dir, sidestepping walls and people in the way: 4 when
+// arrived, -1 when blocked by people, -2 when walled in, -3 when there is no
+// path. A detour sets path->x1 to 0xff, so the caller replans next time.
 // FUNCTION: 0x00056028
 s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
 {

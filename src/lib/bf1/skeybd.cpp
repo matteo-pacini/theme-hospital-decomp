@@ -49,6 +49,8 @@ void (__interrupt __far *_dos_getvect(unsigned num))();
 void _dos_setvect(unsigned num, void (__interrupt __far *handler)());
 void LbDosKeyboard(void);
 
+// Returns 1 if the library's keyboard interrupt handler is installed, else
+// 0.
 // FUNCTION: 0xec9a0
 int LbIsIKeyboardInstalled(void)
 {
@@ -57,18 +59,22 @@ int LbIsIKeyboardInstalled(void)
     return 0;
 }
 
+// Does nothing. Returns 1.
 // FUNCTION: 0xec9c4
 int LbKeyboardOpen(void)
 {
     return 1;
 }
 
+// Does nothing. Returns 1.
 // FUNCTION: 0xec9d0
 int LbKeyboardClose(void)
 {
     return 1;
 }
 
+// Polls the BIOS keyboard (LbDosKeyboard) and returns the ASCII code of the
+// key pressed, or 0.
 // FUNCTION: 0xec9dc
 int LbKeyboard(void)
 {
@@ -78,6 +84,8 @@ int LbKeyboard(void)
     return 0;
 }
 
+// Installs the keyboard interrupt handler (KInt) on IRQ 1, clearing
+// lbKeyOn. Returns 1.
 // FUNCTION: 0xeca0c
 int LbIKeyboardOpen(void)
 {
@@ -89,6 +97,7 @@ int LbIKeyboardOpen(void)
     return 1;
 }
 
+// Restores the previous keyboard interrupt handler. Returns 1.
 // FUNCTION: 0xeca68
 int LbIKeyboardClose(void)
 {
@@ -99,6 +108,8 @@ int LbIKeyboardClose(void)
     return 1;
 }
 
+// Polls the BIOS: sets lbShift (1 shift, 2 ctrl, 4 alt) and lbInkey to the
+// scan code of a waiting key, or 0.
 // FUNCTION: 0xecab4
 void LbDosKeyboard(void)
 {
@@ -119,6 +130,10 @@ void LbDosKeyboard(void)
 
 }
 
+// Keyboard interrupt handler: reads the scan code into lbInkey, updates
+// lbKeyOn (0xe0-prefixed keys at code | 0x80, held keys tagged with the
+// shift 0x10, ctrl 0x20 and alt 0x40 bits), and latches the first new
+// press in lbIInkey and lbIInkeyFlags.
 // FUNCTION: 0xecb20
 void __interrupt __far KInt(void)
 {

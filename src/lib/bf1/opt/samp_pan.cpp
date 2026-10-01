@@ -2,6 +2,8 @@
 
 extern "C" {
 
+// Sets the pan of a playing sample, chosen by handle (source_id and number
+// both 0) or by source and number.
 // FUNCTION: 0x000cdfc0
 void SetSamplePan(u32 source_id, s16 number, u16 pan, u32 handle)
 {

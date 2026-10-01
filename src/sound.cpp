@@ -83,6 +83,10 @@ SampleInfo *GetLastSampleInfoStructure(void);
 
 }
 
+// Starts the sound and music drivers and loads the sound bank for the
+// language (or the minimal bank without sound), setting which of sound
+// effects (statvar.fe4) and music (statvar.unknowne5) are available and
+// turning them on. Returns 0, or an error number for error_number.
 // FUNCTION: 0x00088980
 u8 setup_sound(void)
 {
@@ -153,6 +157,9 @@ u8 setup_sound(void)
     return 0;
 }
 
+// Per turn: plays the next queued announcement once the last has finished,
+// and every 2000 turns queues a random one. Only with ambient sounds on and
+// the game running.
 // FUNCTION: 0x00088bdc
 void do_ambients(void)
 {
@@ -179,6 +186,7 @@ void do_ambients(void)
     }
 }
 
+// Empties the announcement queue.
 // FUNCTION: 0x00088d44
 void init_ambients(void)
 {
@@ -190,6 +198,10 @@ void init_ambients(void)
     }
 }
 
+// Queues announcement `sound` (an Ambients index) if ambient sounds are on
+// and the hospital has a receptionist; when the four slots are full it
+// replaces the last queued entry of lower priority, if any (never the
+// first).
 // FUNCTION: 0x00088d90
 void play_ambient(u8 sound)
 {
@@ -215,6 +227,10 @@ void play_ambient(u8 sound)
     }
 }
 
+// Plays sound effect sfx (SFX_*) for sample source `source`, choosing the
+// sample and pitch by its sfx_details entry (or stopping it). (x, y) is a
+// screen position for its volume and pan, -1 for full volume in the centre.
+// Does nothing with sound effects off.
 // FUNCTION: 0x00088ebc
 void play_sound(u32 source, u16 sfx, s32 x, s32 y)
 {
@@ -270,6 +286,9 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
     }
 }
 
+// Per frame: adjusts the volume and pan of samples whose source is a thing
+// to its position on screen, stopping those whose thing is off screen or
+// whose source is not a thing.
 // FUNCTION: 0x00089204
 void manage_sound(void)
 {
@@ -317,6 +336,9 @@ void manage_sound(void)
     }
 }
 
+// Per turn: keeps the crowd sound looping at a volume set by the people on
+// screen (othervar.fa72), plays random background samples, the emergency
+// clock (louder as time runs out) and the earthquake rumble.
 // FUNCTION: 0x00089468
 void manage_background_sounds(void)
 {
@@ -359,6 +381,8 @@ void manage_background_sounds(void)
     }
 }
 
+// Resets the jukebox: all ten tracks on, track 8 current, and loads the
+// track list.
 // FUNCTION: 0x000896b0
 void init_midi(void)
 {
@@ -373,6 +397,8 @@ void init_midi(void)
     load_midi();
 }
 
+// If no track is playing, plays the next enabled track (or repeats the
+// current one when looping), clearing othervar.f9b9 if none can be loaded.
 // FUNCTION: 0x00089718
 void play_next_midi(void)
 {
@@ -411,6 +437,8 @@ void play_next_midi(void)
     }
 }
 
+// Plays music track `track`, or the next enabled one if it is disabled or
+// cannot be loaded. Does nothing with music off or unavailable.
 // FUNCTION: 0x0008987c
 void play_midi(u8 track)
 {
@@ -433,6 +461,8 @@ void play_midi(u8 track)
     }
 }
 
+// If no track is playing, plays the previous enabled track (or repeats the
+// current one when looping), clearing othervar.f9b9 if none can be loaded.
 // FUNCTION: 0x00089940
 void play_last_midi(void)
 {
@@ -472,6 +502,8 @@ void play_last_midi(void)
     }
 }
 
+// Returns 0 if music should be playing but the current song has finished,
+// else 1 (always 1 while the game is paused).
 // FUNCTION: 0x00089aa8
 u8 is_midi_playing(void)
 {
@@ -488,6 +520,10 @@ u8 is_midi_playing(void)
     return 1;
 }
 
+// Reads the jukebox's track list (file name and title pairs) from
+// midi/midi.txt, keeping up to ten tracks whose files exist; statvar.f5dd
+// is their count. On failure, or with no tracks, it turns off the sound
+// effects flags (statvar.fe4, myplayer.ff), not the music ones.
 // FUNCTION: 0x00089b14
 void load_midi(void)
 {

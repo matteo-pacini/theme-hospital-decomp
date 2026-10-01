@@ -21,6 +21,9 @@ void draw_research_text(void);
 s32 find_new_cure_cost(u8 illness, u8 owner);
 u8 choose_next_research_illness(u8 owner, s32 (*cost)(u8, u8));
 
+// Runs one frame of the research screen (research.unknown2: 0 opening, 1
+// shown, 2 closing, which queues EV_RETURN_FROM_SCREEN): animates it, takes
+// clicks and draws the allocations.
 // FUNCTION: 0x000b26d0
 void display_research(void)
 {
@@ -63,6 +66,8 @@ void display_research(void)
         research.unknown2 = 2;
 }
 
+// Draws each research category's allocation (or "closed") and progress bar,
+// and the total allocated. Every bar shows the progress of the next cure.
 // FUNCTION: 0x000b28b4
 void draw_research_text(void)
 {
@@ -112,6 +117,9 @@ void draw_research_text(void)
     LbTextDraw(resvars.f40[0x67].x, resvars.f40[0x67].y, buf);
 }
 
+// Sets player `owner`'s research allocation for category cat to value
+// (percent), keeping the old value if the total would pass 100. A closed
+// category (-1) is not protected: the old value is read into a u8.
 // FUNCTION: 0x000b2c74
 void alter_research(u8 cat, u8 value, u8 owner)
 {
@@ -134,6 +142,8 @@ void alter_research(u8 cat, u8 value, u8 owner)
     }
 }
 
+// Research screen clicks: the close button on release, the allocation
+// buttons repeatedly while held, with an accelerating step (othervar.f9f1).
 // FUNCTION: 0x000b2d44
 void process_res_panel(void)
 {
@@ -171,6 +181,9 @@ void process_res_panel(void)
     }
 }
 
+// Research screen button `button`: 0 closes, 1-5 lower and 6-10 raise
+// category button - 1 or button - 6 (EV_ALTER_RESEARCH), by an amount that
+// grows while the button is held, keeping the total at most 100.
 // FUNCTION: 0x000b3060
 void process_res_button(u8 button)
 {

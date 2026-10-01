@@ -38,6 +38,11 @@ extern u8 D_0016121d;
 void set_force_help(u8 kind, u16 text);
 void clear_force_help(void);
 
+// Runs the tutorial's current step (advisor.f131): shows that step's advisor
+// text and points at the control to use, and moves to the next step when the
+// player's event for it arrives (or back when they cancel). Returns 1 when a
+// message was just shown, 0 when a hint is forced in 320x200 (where the
+// message is dropped), -1 otherwise.
 // FUNCTION: 0x000a4830
 s8 tutorial(void)
 {

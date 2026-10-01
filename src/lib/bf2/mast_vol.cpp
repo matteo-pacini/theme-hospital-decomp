@@ -1,5 +1,7 @@
 #include "snd.h"
 
+// Sets the music master volume (0-127), unless overridden by the
+// environment.
 // FUNCTION: 0xefed0
 void SetMusicMasterVolume(s32 volume)
 {
@@ -10,6 +12,8 @@ void SetMusicMasterVolume(s32 volume)
     }
 }
 
+// Sets the sound effects master volume (0-127), unless overridden by the
+// environment.
 // FUNCTION: 0xeff20
 void SetSoundMasterVolume(s32 volume)
 {

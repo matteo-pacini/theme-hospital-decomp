@@ -42,18 +42,26 @@ long play_smk_via_buffer(char *name, long smk_flags, long flags);
 
 extern "C" {
 
+// Sets the allocator Smacker uses (via RADMALLOC); defaults to LbMemoryAlloc.
 // FUNCTION: 0xca350
 void set_smack_malloc(void *(*fn)(u32 bytes))
 {
     smack_malloc = fn;
 }
 
+// Sets the deallocator Smacker uses (via RADFREE); defaults to LbMemoryFree.
 // FUNCTION: 0xca358
 void set_smack_free(void (*fn)(void *ptr))
 {
     smack_free = fn;
 }
 
+// Plays the Smacker video file name, centred, clearing the left button first.
+// flags: 1 no sound, 2 cannot be skipped, 4 double height, 8 double height
+// with blank alternate rows, 0x80 double width, 0x100 draw straight to VGA
+// memory (320x200 mode only), 0x400 loop forever. smk_flags is unused.
+// Uses an offscreen buffer when scaling or a draw callback is set. Returns 0
+// if the file cannot be opened, 1 when played to the end, 2 if skipped.
 // FUNCTION: 0xca360
 u8 play_smk(char *name, u32 smk_flags, u32 flags)
 {
@@ -69,6 +77,10 @@ u8 play_smk(char *name, u32 smk_flags, u32 flags)
 
 }
 
+// Plays name decoding straight into the screen buffer (or VGA memory with
+// flag 0x100); flags as play_smk except no scaling. Esc, Enter, Space or the
+// left button skip it unless flag 2 is set. Returns 0 if the file cannot be
+// opened, 1 when played to the end, 2 if skipped.
 // FUNCTION: 0xca398
 long play_smk_direct(char *name, long smk_flags, long flags)
 {
@@ -139,6 +151,9 @@ long play_smk_direct(char *name, long smk_flags, long flags)
     return 1;
 }
 
+// Plays name decoding into an allocated frame buffer that copy_to_screen
+// scales and centres; flags and return value as play_smk (0 also when the
+// buffer cannot be allocated).
 // FUNCTION: 0xca568
 long play_smk_via_buffer(char *name, long smk_flags, long flags)
 {
@@ -196,6 +211,8 @@ long play_smk_via_buffer(char *name, long smk_flags, long flags)
 
 extern "C" {
 
+// Smacker's allocator hook: returns 0 for 0 or 0xffffffff bytes, else
+// smack_malloc(bytes).
 // FUNCTION: 0xca6cc
 void *__pascal RADMALLOC(u32 bytes)
 {
@@ -207,6 +224,7 @@ void *__pascal RADMALLOC(u32 bytes)
     return (void *)bytes;
 }
 
+// Smacker's deallocator hook: passes ptr to smack_free.
 // FUNCTION: 0xca6e8
 void __pascal RADFREE(void *ptr)
 {
@@ -247,6 +265,10 @@ void copy_line_double_width(u8 *dst, u8 *src, u32 width);
     0xd5 0x5d \
     parm [edi] [esi] [eax] modify [eax ebx ecx edx esi edi];
 
+// Copies a width x height video frame from buf to the centre of the screen
+// (VGA memory in 320x200 mode with no draw callback), scaled by the play_smk
+// flags 4, 8 and 0x80, then calls smack_draw_callback if set and swaps the
+// screen unless writing to VGA memory.
 // FUNCTION: 0xca6f8
 void copy_to_screen(u8 *buf, u32 width, u32 height, u32 flags)
 {

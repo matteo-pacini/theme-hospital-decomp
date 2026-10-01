@@ -6,6 +6,8 @@ u8 inp_(u16 port);
 void outp_(u16 port, u32 value);
 #pragma aux outp_ = 0xee parm [dx] [al] modify exact [];
 
+// Reads the 256-colour VGA palette (6-bit RGB triples) into palette. Returns
+// 1.
 // FUNCTION: 0x000c2210
 int LbPaletteGet(u8 *palette, ...)
 {
@@ -20,6 +22,8 @@ int LbPaletteGet(u8 *palette, ...)
     return 1;
 }
 
+// Writes the 256-colour VGA palette from palette (6-bit RGB triples).
+// Returns 1.
 // FUNCTION: 0x000c2274
 int LbPaletteSet(u8 *palette, ...)
 {
@@ -37,6 +41,7 @@ int LbPaletteSet(u8 *palette, ...)
     return 1;
 }
 
+// Reads count palette entries from entry start into palette. Returns 1.
 // FUNCTION: 0x000c22d8
 int LbPaletteGetRange(u8 *palette, u32 start, u32 count)
 {
@@ -52,6 +57,7 @@ int LbPaletteGetRange(u8 *palette, u32 start, u32 count)
     return 1;
 }
 
+// Writes count palette entries from entry start out of palette. Returns 1.
 // FUNCTION: 0x000c2350
 int LbPaletteSetRange(u8 *palette, u32 start, u32 count)
 {

@@ -10,6 +10,8 @@ u8 check_room_mutex(Thing *w);
 
 u16 find_unallocated_bed(RoomInfo *room);
 
+// Puts nurse back into the state for the room she stands in (or the corridor
+// state), re-entering her in that room's list of people.
 // FUNCTION: 0x0006c640
 void reinit_nurse(Thing *nurse)
 {
@@ -31,6 +33,8 @@ void reinit_nurse(Thing *nurse)
     nurse->substate = 0;
 }
 
+// Sends nurse to a random ward of her hospital. Returns 1 if there was one,
+// 0 otherwise.
 // FUNCTION: 0x0006c6f4
 u8 nurse_check_for_work(Thing *nurse)
 {
@@ -49,6 +53,7 @@ u8 nurse_check_for_work(Thing *nurse)
     return 1;
 }
 
+// Returns a bed in room (a ward) that no one uses or is assigned to, or 0.
 // FUNCTION: 0x0006c79c
 u16 find_unallocated_bed(RoomInfo *room)
 {
@@ -68,6 +73,10 @@ u16 find_unallocated_bed(RoomInfo *room)
     return 0;
 }
 
+// Nurse working in a ward. Substate 0: leaves for a break, the pager,
+// vaccinations or an evacuation as needed; otherwise calls the next queued
+// patient to a free bed, or visits the desk, a patient in bed, or a random
+// spot. Substate 1: waits for the called patient and puts them to bed.
 // FUNCTION: 0x0006c8d8
 void nurse_in_ward(Thing *nurse)
 {

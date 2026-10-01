@@ -16,6 +16,10 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y);
 
 }
 
+// Draws everything on one map cell: its overlay and floor litter, a
+// blueprint marker, then its things in depth order through the mapwho_*
+// routine for each type. (x, y) is the cell's screen position; (left, top)
+// is the view's origin, used to test which thing is under the mouse.
 // FUNCTION: 0x00014510
 void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, const s32 top)
 {
@@ -119,6 +123,9 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     }
 }
 
+// Draws a patient (glowing, wobbling, split or highlighted as its illness and
+// state require) and, if the mouse is over the frame drawn, records it in
+// othervar.f41_s16 as the thing under the mouse.
 // FUNCTION: 0x00014b88
 void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
 {
@@ -191,6 +198,9 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
     }
 }
 
+// Draws a staff member (highlighted if othervar.f43) and records it in
+// othervar.f41_s16 if under the mouse. Applicants and some hidden states are
+// not drawn.
 // FUNCTION: 0x00014fbc
 void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
 {
@@ -250,6 +260,8 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
     }
 }
 
+// Draws an object or door with its overlay animation (highlighted if it or its
+// pair is othervar.f43) and records it in othervar.f41_s16 if under the mouse.
 // FUNCTION: 0x00015334
 void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s32 top)
 {
@@ -285,6 +297,7 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
     }
 }
 
+// Draws the grim reaper unless it is being removed (blinking in state 0xf2).
 // FUNCTION: 0x0001557c
 void mapwho_reaper(Thing *reaper, s32 x, s32 y)
 {
@@ -296,6 +309,9 @@ void mapwho_reaper(Thing *reaper, s32 x, s32 y)
     }
 }
 
+// Draws a rat. A mouse over the rat's frame (within othervar.f9e7 of it)
+// records it in othervar.f41_s16 and f6f_s16; a near miss (within
+// othervar.f9e5) sets othervar.f71.
 // FUNCTION: 0x000155d4
 void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32 top0)
 {
@@ -324,18 +340,21 @@ void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32
     }
 }
 
+// Draws a piece of explosion debris raised by its altitude (1/256 pixel).
 // FUNCTION: 0x00015760
 void mapwho_bang(Thing *bang, s32 x, s32 y)
 {
     draw_a_frame(bang->sprite, x, y - (bang->altitude >> 8), 0, bang->flip);
 }
 
+// Draws a helicopter raised by its altitude (pixels).
 // FUNCTION: 0x000157b8
 void mapwho_helicopter(Thing *helicopter, s32 x, s32 y)
 {
     draw_special_id_frame(helicopter, x, y - helicopter->altitude);
 }
 
+// Draws a floating number or text (Thing.numfx_type), risen by its speed.
 // FUNCTION: 0x000157f0
 void mapwho_numfx(Thing *fx, s32 x, s32 y)
 {
@@ -358,6 +377,8 @@ void mapwho_numfx(Thing *fx, s32 x, s32 y)
     }
 }
 
+// Draws the mayor or inspector and records them in othervar.f41_s16 if under
+// the mouse.
 // FUNCTION: 0x000158e8
 void mapwho_mayor(Thing *mayor, s32 x, s32 y, s32 left, s32 top)
 {
@@ -368,6 +389,7 @@ void mapwho_mayor(Thing *mayor, s32 x, s32 y, s32 left, s32 top)
     }
 }
 
+// Draws a helicopter's shadow, scaled down as its caster's altitude rises.
 // FUNCTION: 0x0001599c
 void mapwho_shadow(Thing *shadow, s32 x, s32 y)
 {

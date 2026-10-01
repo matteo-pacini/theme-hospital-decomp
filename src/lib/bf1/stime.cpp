@@ -32,6 +32,7 @@ extern "C" {
 void _dos_getdate(dosdate_t *date);
 void _dos_gettime(dostime_t *time);
 
+// Fills curr_date with today's date from DOS. Returns 1.
 // FUNCTION: 0x000c2140
 int LbDate(TbDate *curr_date)
 {
@@ -45,6 +46,7 @@ int LbDate(TbDate *curr_date)
     return 1;
 }
 
+// Fills curr_time with the time of day from DOS. Returns 1.
 // FUNCTION: 0x000c2180
 int LbTime(TbTime *curr_time)
 {
@@ -58,6 +60,8 @@ int LbTime(TbTime *curr_time)
     return 1;
 }
 
+// Returns the time since the program started in milliseconds (100 Hz
+// resolution).
 // FUNCTION: 0x000c21c0
 s32 LbTimerClock(void)
 {

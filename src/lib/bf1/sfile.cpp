@@ -64,12 +64,14 @@ void convert_find_info(TbFileFind *ff);
 
 extern "C" {
 
+// Returns 1 if file path exists, else 0.
 // FUNCTION: 0x000be290
 int LbFileExists(char *path)
 {
     return access(path, 0) == 0;
 }
 
+// Returns the current position in the open file, or -1.
 // FUNCTION: 0x000be2b4
 int LbFilePosition(int handle)
 {
@@ -84,6 +86,9 @@ int LbFilePosition(int handle)
 int LbFileOpenMode(char *path, TbFileOpenMode mode);
 #pragma aux LbFileOpenMode "LbFileOpen_"
 
+// Opens file path: Lb_FILE_MODE_NEW creates or empties it, OLD opens it for
+// reading and writing (creating it if missing), READ_ONLY opens an existing
+// file for reading. Binary, shared. Returns the handle, or -1.
 // FUNCTION: 0x000be2e0
 int LbFileOpenMode(char *path, TbFileOpenMode mode)
 {
@@ -117,6 +122,7 @@ int LbFileOpenMode(char *path, TbFileOpenMode mode)
     return handle;
 }
 
+// Closes the open file. Returns 1, or -1 on failure.
 // FUNCTION: 0x000be3bc
 int LbFileClose(int handle)
 {
@@ -125,6 +131,8 @@ int LbFileClose(int handle)
     return -1;
 }
 
+// Moves the open file's position to offset from the start (origin 0), the
+// current position (1) or the end (2). Returns the new position, or -1.
 // FUNCTION: 0x000be3e4
 int LbFileSeek(int handle, int offset, u8 origin)
 {
@@ -145,6 +153,8 @@ int LbFileSeek(int handle, int offset, u8 origin)
     return result;
 }
 
+// Reads up to len bytes from the open file into buf. Returns the count read,
+// or -1.
 // FUNCTION: 0x000be458
 int LbFileRead(int handle, void *buf, int len)
 {
@@ -156,6 +166,8 @@ int LbFileRead(int handle, void *buf, int len)
     return result;
 }
 
+// Writes len bytes from buf to the open file. Returns the count written, or
+// -1.
 // FUNCTION: 0x000be490
 int LbFileWrite(int handle, void *buf, int len)
 {
@@ -167,6 +179,7 @@ int LbFileWrite(int handle, void *buf, int len)
     return result;
 }
 
+// Returns the size of file path, or -1.
 // FUNCTION: 0x000be4c8
 int LbFileLength(char *path)
 {
@@ -183,6 +196,8 @@ int LbFileLength(char *path)
     return length;
 }
 
+// Starts a search for files matching path with attributes attr, filling ff
+// with the first match. Returns 1, or -1 if none.
 // FUNCTION: 0x000be51c
 int LbFileFindFirst(char *path, TbFileFind *ff, u32 attr)
 {
@@ -192,6 +207,7 @@ int LbFileFindFirst(char *path, TbFileFind *ff, u32 attr)
     return 1;
 }
 
+// Fills ff with the search's next match. Returns 1, or -1 if none is left.
 // FUNCTION: 0x000be560
 int LbFileFindNext(TbFileFind *ff)
 {
@@ -201,12 +217,14 @@ int LbFileFindNext(TbFileFind *ff)
     return 1;
 }
 
+// Ends a file search (nothing to do under DOS). Returns 1.
 // FUNCTION: 0x000be594
 int LbFileFindEnd(TbFileFind *ff)
 {
     return 1;
 }
 
+// Renames file from to to. Returns 1, or -1 on failure.
 // FUNCTION: 0x000be5a8
 int LbFileRename(char *from, char *to)
 {
@@ -215,6 +233,7 @@ int LbFileRename(char *from, char *to)
     return 1;
 }
 
+// Deletes file path. Returns 1, or -1 on failure.
 // FUNCTION: 0x000be5d8
 int LbFileDelete(char *path)
 {
@@ -225,6 +244,8 @@ int LbFileDelete(char *path)
 
 }
 
+// Fills ff's name, size, attributes and last-write date and time from the
+// DOS search record (the creation date and time are zeroed).
 // FUNCTION: 0x000be600
 void convert_find_info(TbFileFind *ff)
 {

@@ -12,6 +12,9 @@ void fn_000c93bf(char *dst, char *src);
 
 }
 
+// staff has given patient their current treatment: applies its diagnosis
+// progress, records it and sets up the next step (unless the room has been
+// destroyed).
 // FUNCTION: 0x0003c360
 void done_treatment(Thing *staff, Thing *patient)
 {
@@ -23,6 +26,10 @@ void done_treatment(Thing *staff, Thing *patient)
     setup_next_treatment(staff, patient);
 }
 
+// For a diagnosis treatment (GP or a diagnosis room), raises patient's
+// diagnosis progress by staff's diagnostic ability (calc_ability) plus the
+// room's bonus for the illness, less the patient's handicap; a room bad for
+// the illness costs 5 health. staff's ability rises by 1.
 // FUNCTION: 0x0003c3b8
 void affect_diagnosis(Thing *staff, Thing *patient)
 {
@@ -52,6 +59,12 @@ void affect_diagnosis(Thing *staff, Thing *patient)
     }
 }
 
+// After a treatment step: charges for it and moves patient on, by the
+// treatment's kind: home, back to the GP, cured (or killed after a wrong
+// guess), diagnosed, or on to the next treatment. When diagnosis is
+// inconclusive, guesses the illness or gives up by the hospital's policy
+// thresholds (f219, f21b). Then sets up the next state
+// (next_treatment_now_setup).
 // FUNCTION: 0x0003c4ec
 void setup_next_treatment(Thing *staff, Thing *patient)
 {
@@ -141,6 +154,11 @@ void setup_next_treatment(Thing *staff, Thing *patient)
     next_treatment_now_setup(patient, 1);
 }
 
+// Chooses patient's next state: while the diagnosis awaits a decision
+// (flags 0x400) or the treatment's room is missing (PF_AWAITING_DECISION),
+// calls the player (at most a few such calls at a time, else gives up);
+// otherwise goes for treatment. Walks them out of the room first if in_room
+// is set.
 // FUNCTION: 0x0003c8d8
 void next_treatment_now_setup(Thing *patient, u8 in_room)
 {
@@ -193,6 +211,9 @@ void next_treatment_now_setup(Thing *patient, u8 in_room)
     }
 }
 
+// Adds amount to patient's health (0-1000), setting the health icon; while
+// they are in a room the change is held back (health_delta) until they
+// leave. The patient dies at 0.
 // FUNCTION: 0x0003cb5c
 void change_health(Thing *patient, s16 amount)
 {
@@ -234,6 +255,8 @@ void change_health(Thing *patient, s16 amount)
     }
 }
 
+// Patient dies: walks to a free spot nearby to fall over (PS_DEAD), and is
+// counted as a death, with reputation lost and the call answered.
 // FUNCTION: 0x0003ccc8
 void person_dies(Thing *patient)
 {
@@ -286,6 +309,9 @@ void person_dies(Thing *patient)
     }
 }
 
+// Patient state PS_DEAD: plays the death animation, then either floats up
+// (substate 0x2f) or, for some patients at random, summons the grim reaper
+// (0x30), floating up instead if the reaper cannot come.
 // FUNCTION: 0x0003cf5c
 void person_dead(Thing *patient)
 {
@@ -348,6 +374,9 @@ void person_dead(Thing *patient)
     }
 }
 
+// Records patient's health (in tens) in health_history when it has changed
+// by 50 or more since the last entry, dropping the oldest (after entry 0)
+// when full.
 // FUNCTION: 0x0003d188
 void add_health_to_history(Thing *patient)
 {
@@ -377,6 +406,10 @@ void add_health_to_history(Thing *patient)
     }
 }
 
+// Applies a diagnosis to patient: if complete, the illness is known (new
+// ones announced) and treatment set, or awaits a room; if hopeless, the
+// patient may be sent to autopsy or dies; otherwise a treatment to try is
+// guessed (find_possible_diagnosis). Ward illnesses go via the ward.
 // FUNCTION: 0x0003d28c
 void diagnose_patient(Thing *staff, Thing *patient)
 {
@@ -457,6 +490,8 @@ void diagnose_patient(Thing *staff, Thing *patient)
     }
 }
 
+// Returns staff's diagnostic ability: their ability with random, grade,
+// tiredness, crazy-doctor and room adjustments.
 // FUNCTION: 0x0003d658
 s32 calc_ability(Thing *staff)
 {
@@ -502,6 +537,8 @@ s32 calc_ability(Thing *staff)
     return total;
 }
 
+// Adds patient's current treatment to their treatment history (the last
+// ten).
 // FUNCTION: 0x0003d7c0
 void add_treatment_to_history(Thing *patient)
 {
@@ -523,6 +560,7 @@ void add_treatment_to_history(Thing *patient)
     }
 }
 
+// Returns 1 if patient's treatment history contains treatment.
 // FUNCTION: 0x0003d89c
 u8 treatment_already_done(Thing *patient, u16 treatment)
 {
@@ -542,6 +580,9 @@ u8 treatment_already_done(Thing *patient, u16 treatment)
     return found;
 }
 
+// Patient state PS_GO_FOR_TREATMENT: sends them to the room for their
+// treatment (the ward, research for autopsy), home if they will not pay or
+// it is unavailable, or to wait for a decision if the room is not built.
 // FUNCTION: 0x0003d91c
 void person_go_for_treatment(Thing *patient)
 {
@@ -615,6 +656,7 @@ void person_go_for_treatment(Thing *patient)
     }
 }
 
+// Returns 1 if the hospital has a drug for patient's illness, else 0.
 // FUNCTION: 0x0003dcfc
 s16 pre_administer_drugs(Thing *patient)
 {
@@ -631,6 +673,10 @@ s16 pre_administer_drugs(Thing *patient)
     return 1;
 }
 
+// staff gives patient their drug: cured with a chance equal to its
+// effectiveness (never after a wrong guess); otherwise health is lost (all
+// of it for emergencies and some illnesses) and they go back to the GP. The
+// drug's cost is charged.
 // FUNCTION: 0x0003dd7c
 void administer_drugs(Thing *staff, Thing *patient)
 {
@@ -683,6 +729,8 @@ void administer_drugs(Thing *staff, Thing *patient)
     change_balance(TX_DRUG_COST, -drug->cost, 0, (u16)staff->owner);
 }
 
+// Marks illness as discovered for player `owner` (rooms[].unknown1D),
+// sending the new illness fax the first time.
 // FUNCTION: 0x0003dfcc
 void announce_new_illness(const u16 illness, const u16 owner)
 {
@@ -695,6 +743,9 @@ void announce_new_illness(const u16 illness, const u16 owner)
     allhosps[owner].rooms[illness].unknown1D = 1;
 }
 
+// Draws the "no diagnosis" call for patient: the diagnosis so far and,
+// when the treatment is available, the best guess. Disables the guess
+// button otherwise. Returns 0.
 // FUNCTION: 0x0003e06c
 u16 call_no_diagnosis(Thing *patient, char **strs)
 {
@@ -733,6 +784,8 @@ u16 call_no_diagnosis(Thing *patient, char **strs)
     return 0;
 }
 
+// "No diagnosis" call buttons 0-2: sends that choice (packet_choice_result
+// 0x28-0x2a).
 // FUNCTION: 0x0003e2c4
 void process_no_diagnosis_buttons(u8 button)
 {
@@ -749,6 +802,9 @@ void process_no_diagnosis_buttons(u8 button)
     }
 }
 
+// Treats patient's real illness as the diagnosis (PF_GUESSED): the guess is
+// wrong (flags 0x800, fatal when treated) with a chance falling as the
+// diagnosis progresses.
 // FUNCTION: 0x0003e330
 void best_guess_treatment(Thing *patient)
 {
@@ -777,6 +833,9 @@ void best_guess_treatment(Thing *patient)
     }
 }
 
+// Picks a diagnosis room for patient's illness that the hospital has and
+// they have not tried yet, as their treatment. Returns it, or 0 (also set
+// as the treatment) if none is left.
 // FUNCTION: 0x0003e468
 u16 find_possible_diagnosis(Thing *patient)
 {
@@ -823,6 +882,7 @@ u16 find_possible_diagnosis(Thing *patient)
     return result;
 }
 
+// Counts patient once in the hospital's patient statistics (PF_RECORDED).
 // FUNCTION: 0x0003e668
 void record_person_as_patient(Thing *patient)
 {

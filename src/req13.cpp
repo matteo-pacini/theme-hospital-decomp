@@ -16,6 +16,8 @@ extern Event D_001549d0[];
 
 void req13_no_pressed(void);
 
+// Yes/no requester clicks: yes sends the event set by open_yes_no_requester,
+// no its no event.
 // FUNCTION: 0x0006fbc0
 void req13(Window *win)
 {
@@ -39,6 +41,7 @@ void req13(Window *win)
     }
 }
 
+// Draws the yes/no requester's question (othervar.f935).
 // FUNCTION: 0x0006fcc4
 void req13_overdraw(Window *win)
 {
@@ -57,6 +60,9 @@ void req13_overdraw(Window *win)
     lbDisplay.draw_flags = 0;
 }
 
+// Opens the yes/no requester (event 0x77) for the question in othervar.f935,
+// which sends event yes_type (with yes_value, yes_arg) on yes and no_type
+// (no_value, no_arg) on no.
 // FUNCTION: 0x0006fd98
 void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, u16 no_value, u16 no_arg)
 {
@@ -69,6 +75,8 @@ void open_yes_no_requester(u8 yes_type, u16 yes_value, u16 yes_arg, u8 no_type, 
     D_001549d0[player].type = 0x77;
 }
 
+// Closes the yes/no requester if it is open, and with reopen set reopens the
+// requester and mouse mode it covered (othervar.f9c3, f9c4).
 // FUNCTION: 0x0006fdfc
 void close_yes_no_requester(u8 reopen)
 {
@@ -86,6 +94,7 @@ void close_yes_no_requester(u8 reopen)
     }
 }
 
+// Sends the yes/no requester's no event.
 // FUNCTION: 0x0006fe88
 void req13_no_pressed(void)
 {
@@ -94,6 +103,8 @@ void req13_no_pressed(void)
     D_001549d0[player].arg = othervar.f9b1;
 }
 
+// Answers no to the open yes/no requester on Escape or a right click outside
+// any window.
 // FUNCTION: 0x0006fed8
 void req13_cancel_check(void)
 {

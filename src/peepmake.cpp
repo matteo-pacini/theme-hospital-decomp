@@ -31,6 +31,9 @@ void add_contagiousness(Thing *w);
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner);
 void process_computer_peep(Thing *w, u8 player);
 
+// Starts a month's arrivals: adds the popn[] count for month othervar.f9d1
+// to the visitor total (gamevar.f147) and sets the spawn interval
+// gamevar.f1c to 1500 / that total (0 if none).
 // FUNCTION: 0x0006ff30
 void calc_visitors_this_month(void)
 {
@@ -53,6 +56,11 @@ void calc_visitors_this_month(void)
         gamevar.f1c = 0;
 }
 
+// Creates this turn's patients: one emergency patient per hospital whose
+// emergency helicopter has landed (sending it off after the last), and, in
+// the first 25 turns of each gamevar.f1c-turn period, a visitor with a random
+// illness for the hospital that wins them (who_owns_peep). A hospital not on
+// the map (allhosps.f2a != 1) treats theirs at once (process_computer_peep).
 // FUNCTION: 0x0006ffec
 void create_a_peep(void)
 {
@@ -125,6 +133,9 @@ void create_a_peep(void)
     }
 }
 
+// Picks a random illness for a new visitor by the town's weights: sometimes
+// a visual illness (2-15, once available), otherwise a non-visual one
+// (16-35). Returns 0 if none was drawn.
 // FUNCTION: 0x000702c4
 u8 create_an_illness(void)
 {
@@ -166,6 +177,10 @@ u8 create_an_illness(void)
     return illness;
 }
 
+// Picks the hospital a new patient with illness goes to: round robin early in
+// the level, sometimes at random, otherwise weighted by each hospital's
+// rooms[illness].unknown0 and price. Returns the player, or -1 if a
+// single-player hospital does not take patients (allhosps.unknown1256 0).
 // FUNCTION: 0x00070458
 s8 who_owns_peep(u8 illness)
 {
@@ -239,6 +254,9 @@ s8 who_owns_peep(u8 illness)
     return -1;
 }
 
+// Randomly makes a new patient contagious, as their illness allows
+// (Thing.contagion = 1 to gbv.fce); more likely early in the level, never while
+// the hospital's allhosps.f20d is set.
 // FUNCTION: 0x000707f4
 void add_contagiousness(Thing *patient)
 {
@@ -263,6 +281,10 @@ void add_contagiousness(Thing *patient)
     }
 }
 
+// Creates a patient for player `owner` with illness on tile pos (y * 128 +
+// x): appearance to suit the illness, needs, health, insurance and cash.
+// Puts them on the map if the hospital is on it (allhosps.f2a 1). Returns
+// the patient, or 0 if no thing was free.
 // FUNCTION: 0x00070918
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
 {
@@ -364,6 +386,8 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
     return 0;
 }
 
+// Sorts the first three of the four bids by ascending score (bids[3] is not
+// compared).
 // FUNCTION: 0x00070e50
 void sort_peep_bids(PeepBid *bids)
 {

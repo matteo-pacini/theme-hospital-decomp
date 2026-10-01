@@ -13,6 +13,7 @@ u16 Swap16(u16 v)
     return r;
 }
 
+// Constructs an IPX handler with nothing allocated.
 // FUNCTION: 0xd3500
 IPXHandler::IPXHandler()
 {
@@ -28,6 +29,7 @@ IPXHandler::IPXHandler()
     memset(IPXDEBUGSTRING, 0, 0x50);
 }
 
+// Clears the IPX handler's state (DeInit frees its memory).
 // FUNCTION: 0xd3558
 IPXHandler::~IPXHandler()
 {
@@ -41,6 +43,10 @@ IPXHandler::~IPXHandler()
     memset(IPXDEBUGSTRING, 0, 0x50);
 }
 
+// Sets up IPX: allocates the DOS buffer (with the real-mode event service
+// routines and batch code), 32 send and 32 receive packets, finds the IPX
+// driver (INT 2Fh 7A00h) and a free interrupt vector (0x60-0x65) for the
+// batch code, and reads this machine's address. Returns 0, or 1 on failure.
 // FUNCTION: 0xd35a0
 // NONMATCHING: frame slots of the inlined DOS allocations' register blocks, and
 // register choice in them
@@ -144,6 +150,7 @@ long IPXHandler::Init(void)
     }
 }
 
+// Closes the socket, restores the vector and frees the IPX DOS memory.
 // FUNCTION: 0xd3eb8
 void IPXHandler::DeInit(void)
 {
@@ -183,6 +190,8 @@ void IPXHandler::DeInit(void)
     }
 }
 
+// Points the first free interrupt vector from 0x60 to 0x65 (unset or an
+// IRET) at the DOS buffer's batch code. Returns 1, or 0 if none is free.
 // FUNCTION: 0xd422c
 // NONMATCHING: register choice: the target copies used to ebx and builds the
 // real-mode address in eax
@@ -222,6 +231,8 @@ long IPXHandler::SetupVector(void)
     return 0;
 }
 
+// Allocates size bytes of DOS memory (DPMI), storing its selector in *sel.
+// Returns its linear address, or 0.
 // FUNCTION: 0x000d4150
 void *IPXHandler::AllocDosMem(u32 size, u16 *sel)
 {
@@ -237,6 +248,7 @@ void *IPXHandler::AllocDosMem(u32 size, u16 *sel)
     return (void *)((r.x.eax & 0xffff) << 4);
 }
 
+// Frees the DOS memory with selector sel.
 // FUNCTION: 0x000d41a0
 void IPXHandler::FreeDosMem(u16 sel)
 {
@@ -247,6 +259,8 @@ void IPXHandler::FreeDosMem(u16 sel)
     int386(0x31, (REGS *)&r, (REGS *)&r);
 }
 
+// Calls real-mode interrupt intno with registers rm (on the handler's own
+// real-mode stack). Returns rm's eax.
 // FUNCTION: 0xd41c8
 long IPXHandler::CallRealModeInterrupt(u16 intno, RMREGS *rm)
 {
@@ -264,6 +278,8 @@ long IPXHandler::CallRealModeInterrupt(u16 intno, RMREGS *rm)
     return rm->eax;
 }
 
+// Reads this machine's IPX network and node address into addr (10 bytes),
+// net and node. Returns the driver's result.
 // FUNCTION: 0xd4348
 long IPXHandler::GetAddress(u8 *addr)
 {
@@ -282,6 +298,9 @@ long IPXHandler::GetAddress(u8 *addr)
     return rm.eax;
 }
 
+// Opens IPX socket sock->socket (0: dynamic) with longevity mode, filling
+// in the socket number and this machine's address. Returns the driver's
+// result, 0 on success.
 // FUNCTION: 0xd44a4
 long IPXHandler::OpenSocket(__3ljac5NETSOCKET *sock, u16 mode)
 {
@@ -297,6 +316,7 @@ long IPXHandler::OpenSocket(__3ljac5NETSOCKET *sock, u16 mode)
     return rm.eax;
 }
 
+// Closes IPX socket sock.
 // FUNCTION: 0xd4584
 void IPXHandler::CloseSocket(__3ljac5NETSOCKET *sock)
 {
@@ -310,6 +330,8 @@ void IPXHandler::CloseSocket(__3ljac5NETSOCKET *sock)
     IPXDebug("SOCKET CLOSED\n");
 }
 
+// Queues len bytes of data from socket sock to dest in the next free send
+// packet.
 // FUNCTION: 0xd4634
 // NONMATCHING: this and dest parameter spill slots swapped
 void IPXHandler::Send(__3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *dest, u8 *data, long len)
@@ -338,6 +360,7 @@ void IPXHandler::Send(__3ljac5NETSOCKET *sock, __3ljac5NETSOCKET *dest, u8 *data
     SendEcb((ECB *)p);
 }
 
+// Queues receive packet p to listen on socket sock.
 // FUNCTION: 0xd4800
 void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
 {
@@ -361,6 +384,8 @@ void IPXHandler::Listen(IPXPacket *p, __3ljac5NETSOCKET *sock)
     AddBatch(&entry);
 }
 
+// If receive packet p has arrived, fills from with its sender and returns
+// its data length, else 0. (The socket parameter is unused.)
 // FUNCTION: 0xd48f0
 // NONMATCHING: register choice (the target keeps p in ebp, from in ebx and the
 // swapped length in edx) and the flag bytes are loaded with movzx, not xor/mov
@@ -378,6 +403,7 @@ long IPXHandler::RecPkt(IPXPacket *p, __3ljac5NETSOCKET *sock, __3ljac5NETSOCKET
     return len;
 }
 
+// Returns the next send packet not in use (cycling through 31).
 // FUNCTION: 0xd4964
 IPXPacket *IPXHandler::GetNextSendPkt(void)
 {
@@ -392,6 +418,7 @@ IPXPacket *IPXHandler::GetNextSendPkt(void)
     return p;
 }
 
+// Queues ECB ecb for sending.
 // FUNCTION: 0xd4998
 void IPXHandler::SendEcb(ECB *ecb)
 {
@@ -403,6 +430,7 @@ void IPXHandler::SendEcb(ECB *ecb)
     AddBatch(&entry);
 }
 
+// Adds IPX call entry to the batch, running the batch when it is full.
 // FUNCTION: 0xd4a1c
 void IPXHandler::AddBatch(__2aq9p8IPXPARAMS *entry)
 {
@@ -414,6 +442,7 @@ void IPXHandler::AddBatch(__2aq9p8IPXPARAMS *entry)
     }
 }
 
+// Runs the batched IPX calls through the real-mode batch code.
 // FUNCTION: 0xd4a74
 void IPXHandler::BatchProcess(void)
 {
@@ -435,6 +464,8 @@ void IPXHandler::BatchProcess(void)
     }
 }
 
+// Allocates and clears count IPX packets in DOS memory, storing the
+// selector in *sel. Returns them, or 0.
 // FUNCTION: 0xd4b7c
 IPXPacket *IPXHandler::AllocIPXPackets(long count, u32 *sel)
 {
@@ -452,6 +483,7 @@ IPXPacket *IPXHandler::AllocIPXPackets(long count, u32 *sel)
     return p;
 }
 
+// Frees the IPX packets with selector sel.
 // FUNCTION: 0xd4bf8
 void IPXHandler::FreeIPXPackets(u32 sel)
 {
@@ -462,6 +494,9 @@ void IPXHandler::FreeIPXPackets(u32 sel)
     int386(0x31, (REGS *)&r, (REGS *)&r);
 }
 
+// Opens the SAP listening socket if needed (0x452, else 0x4141) and
+// broadcasts a SAP advertisement of server name of type `type` on socket
+// sock. Returns 0, or 1 if no socket could be opened.
 // FUNCTION: 0xd4c20
 long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
 {
@@ -509,6 +544,7 @@ long IPXHandler::AdvertiseServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
     return 1;
 }
 
+// Broadcasts SAP query `query` for servers of type `type` from socket sock.
 // FUNCTION: 0xd5010
 void IPXHandler::QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock)
 {
@@ -525,6 +561,9 @@ void IPXHandler::QueryServer(u16 type, u16 query, __3ljac5NETSOCKET *sock)
     BatchProcess();
 }
 
+// Answers SAP queries for type `type` received on the listening socket with
+// server name's details, requeues the packets, and re-advertises every 4000
+// clock ticks.
 // FUNCTION: 0xd508c
 void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
 {
@@ -571,6 +610,7 @@ void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
     }
 }
 
+// Debug printf; does nothing in this build.
 // FUNCTION: 0xd5340 COMDAT
 inline void IPXDebug(char *fmt, ...)
 {

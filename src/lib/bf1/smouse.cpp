@@ -49,6 +49,9 @@ void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y);
 
 extern "C" {
 
+// Draws the mouse pointer into the back buffer at the mouse position,
+// saving what it covers for LbMouseRemove, and holds off the interrupt
+// handler's own drawing. Returns 1.
 // FUNCTION: 0x000bcfc0
 int LbMousePlace(void)
 {
@@ -86,6 +89,8 @@ int LbMousePlace(void)
     return 1;
 }
 
+// Restores what LbMousePlace covered, applies any movement made meanwhile
+// and lets the interrupt handler draw the pointer again. Returns 1.
 // FUNCTION: 0x000bd118
 int LbMouseRemove(void)
 {
@@ -119,6 +124,8 @@ int LbMouseRemove(void)
     return 1;
 }
 
+// Sets the pointer's hotspot to (x, y) within its sprite. Returns 1, or -1
+// if the mouse is not set up.
 // FUNCTION: 0x000bd1f4
 int LbMouseSetPointerHotspot(s32 x, s32 y)
 {
@@ -137,6 +144,8 @@ int LbMouseSetPointerHotspot(s32 x, s32 y)
     return 1;
 }
 
+// Makes sprite (at most 64 x 64; 0 for none) the mouse pointer. Returns 1,
+// or -1 if the mouse is not set up or the sprite is too big.
 // FUNCTION: 0x000bd278
 int LbMouseChangeSprite(TbSprite *sprite)
 {
@@ -183,6 +192,8 @@ int LbMouseChangeSprite(TbSprite *sprite)
     return 1;
 }
 
+// Changes the pointer sprite and sets its hotspot to (x, y). Returns 1, or
+// -1 on failure.
 // FUNCTION: 0x000bd400
 int LbMouseChangeSpriteAndHotspot(TbSprite *sprite, s32 x, s32 y)
 {
@@ -195,6 +206,8 @@ int LbMouseChangeSpriteAndHotspot(TbSprite *sprite, s32 x, s32 y)
 
 }
 
+// Sets the mickeys per pixel in x and y (1-63). Returns 1, or -1 if out of
+// range or the mouse is not set up.
 // FUNCTION: 0x000bd43c
 long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y)
 {
@@ -211,6 +224,7 @@ long LbMouseChangeMoveRatio(u8 ratio_x, u8 ratio_y)
 
 extern "C" {
 
+// Returns 1 if the mouse is set up, else -1.
 // FUNCTION: 0x000bd4b4
 int LbMouseIsInstalled(void)
 {
@@ -219,6 +233,9 @@ int LbMouseIsInstalled(void)
     return -1;
 }
 
+// Sets up the mouse driver (INT 33h) with pointer sprite, the whole screen
+// as its window, centred, and installs the event handler. Returns 1, or -1
+// if already set up or there is no mouse.
 // FUNCTION: 0x000bd4d0
 int LbMouseSetup(TbSprite *sprite)
 {
@@ -275,6 +292,8 @@ int LbMouseSetup(TbSprite *sprite)
     return 1;
 }
 
+// Removes the pointer and resets the mouse driver. Returns 1, or -1 if the
+// mouse is not set up.
 // FUNCTION: 0x000bd688
 int LbMouseReset(void)
 {
@@ -296,6 +315,8 @@ int LbMouseReset(void)
     return 1;
 }
 
+// Removes the pointer and marks the mouse as not set up, without resetting
+// the driver. Returns 1, or -1 if it was not set up.
 // FUNCTION: 0x000bd70c
 int LbMouseSuspend(void)
 {
@@ -311,6 +332,8 @@ int LbMouseSuspend(void)
     return 1;
 }
 
+// Confines the mouse to the box at (x, y), width x height. Returns 1, or -1
+// if the mouse is not set up.
 // FUNCTION: 0x000bd770
 int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height)
 {
@@ -325,6 +348,8 @@ int LbMouseSetWindow(s32 x, s32 y, s32 width, s32 height)
     return 1;
 }
 
+// Moves the mouse to (x, y), within its window. Returns 1, or -1 if the
+// mouse is not set up.
 // FUNCTION: 0x000bd7dc
 int LbMouseSetPosition(s32 x, s32 y)
 {
@@ -344,6 +369,8 @@ int LbMouseSetPosition(s32 x, s32 y)
 
 }
 
+// Applies movement the interrupt handler has stored but not yet applied.
+// Returns 1.
 // FUNCTION: 0x000bd868
 long LbMouseUpdatePosition(void)
 {
@@ -356,6 +383,9 @@ long LbMouseUpdatePosition(void)
     return 1;
 }
 
+// Mouse driver event handler: records button presses and releases (with
+// their positions) in lbDisplay, turns movement into pixels by the move
+// ratio, and redraws the pointer on screen unless LbMousePlace is active.
 // FUNCTION: 0x000bd8ac
 void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y)
 {
@@ -475,6 +505,7 @@ void __interrupt __far MouseHandler256(int events, int raw_x, int raw_y)
     }
 }
 
+// Clamps (*x, *y) into the mouse window. Returns 1 if it moved, else 0.
 // FUNCTION: 0x000bdc58
 u32 adjust_point(long *x, long *y)
 {
@@ -502,6 +533,8 @@ u32 adjust_point(long *x, long *y)
     return changed;
 }
 
+// Works out the part of the pointer sprite that lies on screen at its
+// position. Returns 0 if none of it does, else 1.
 // FUNCTION: 0x000bdcfc
 u32 mouse_setup_range(void)
 {
@@ -530,6 +563,8 @@ u32 mouse_setup_range(void)
     return 1;
 }
 
+// Draws the pointer directly into video memory (banked under VESA), saving
+// what it covers. Returns 1, or -1 if the mouse is not set up.
 // FUNCTION: 0x000bde14
 long screen_place(void)
 {
@@ -602,6 +637,8 @@ long screen_place(void)
     return 1;
 }
 
+// Restores the video memory under the pointer if it has moved or force is
+// set. Returns 1, or -1 if the mouse is not set up.
 // FUNCTION: 0x000be0cc
 long screen_remove(u32 force)
 {

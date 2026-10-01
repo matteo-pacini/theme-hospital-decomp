@@ -2,6 +2,8 @@
 
 extern "C" {
 
+// Sets the volume (0-127) of a playing sample, chosen by handle (source_id
+// and number both 0) or by source and number.
 // FUNCTION: 0x000ce0b0
 void SetSampleVolume(u32 source_id, s16 number, s16 volume, u32 handle)
 {

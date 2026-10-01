@@ -30,6 +30,9 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
 void draw_face(Picture *p, const u16 x, const u16 y);
 void draw_staff_handyman_bars(const Thing *const w, const u16 x, const u16 y, TbSprite *spr);
 
+// Staff window clicks (staff D_001581b2[2].value): close, sack (asks to
+// confirm), pick up (event 0x68), and for a handyman the three priority
+// buttons (EV_ADJUST_HANDYMAN_VALUES).
 // FUNCTION: 0x00086c10
 void req4(Window *win)
 {
@@ -100,6 +103,10 @@ void req4(Window *win)
     }
 }
 
+// Draws the staff window: wage, qualifications or a handyman's priorities,
+// face, happiness, tiredness and ability gauges and name. A left click on
+// the view centres the map on them, a right click moves to the next staff
+// member of their kind; the staff list button opens it on them.
 // FUNCTION: 0x0008704c
 void req4_overdraw(Window *win)
 {
@@ -226,6 +233,8 @@ void req4_overdraw(Window *win)
     set_font_from_cache(0);
 }
 
+// Closes the patient, staff and other query windows and every window opened
+// over the view, and cancels the help message.
 // FUNCTION: 0x00087b4c
 void close_irequesters(void)
 {
@@ -251,6 +260,10 @@ void close_irequesters(void)
     othervar.f9b8 = 0;
 }
 
+// Raises handyman id's priority for the job of button `button` (a
+// resvars.fe index: litter, plants or repairs) by 6, taking it from the
+// larger of the other two so the three sum to at most 100; from 94 it
+// becomes 100 and the others 0. Resets their job counts.
 // FUNCTION: 0x00087c44
 void adjust_handyman_values(const u16 id, const u8 button)
 {
@@ -306,6 +319,8 @@ void adjust_handyman_values(const u16 id, const u8 button)
     handyman->repair_count = 0;
 }
 
+// Draws a handyman's three priority gauges (litter, plants, repairs) at
+// window (x, y) with sprite spr.
 // FUNCTION: 0x00087e7c
 void draw_staff_handyman_bars(const Thing *const handyman, const u16 x, const u16 y, TbSprite *spr)
 {
@@ -314,6 +329,8 @@ void draw_staff_handyman_bars(const Thing *const handyman, const u16 x, const u1
     draw_gauge(handyman->prio_repair, x + resvars.f1c[0x74].x, y + resvars.f1c[0x72].y, resvars.f1c[0xaa].x, spr, 100, 0, 100, 1);
 }
 
+// Counts the reference texts (general, good and bad, each list ending at
+// ".") into statvar.f5d9-f5db.
 // FUNCTION: 0x00087fb8
 void setup_req4_references(void)
 {
@@ -329,6 +346,8 @@ void setup_req4_references(void)
     statvar.f5db = i;
 }
 
+// Help text for a doctor qualification of the staff window's staff member,
+// into othervar.f96, if they are a doctor.
 // FUNCTION: 0x00088068
 void req4_help_if_doctor(void)
 {
@@ -339,6 +358,7 @@ void req4_help_if_doctor(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req4_help_if_doctor, if they are a surgeon.
 // FUNCTION: 0x000880e4
 void req4_help_if_surgeon(void)
 {
@@ -349,6 +369,7 @@ void req4_help_if_surgeon(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req4_help_if_doctor, if they are a psychiatrist.
 // FUNCTION: 0x00088160
 void req4_help_if_shrink(void)
 {
@@ -359,6 +380,7 @@ void req4_help_if_shrink(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req4_help_if_doctor, if they are a researcher.
 // FUNCTION: 0x000881dc
 void req4_help_if_research(void)
 {

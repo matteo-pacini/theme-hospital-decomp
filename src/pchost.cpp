@@ -29,6 +29,11 @@ void fn_000110b0(void);
 
 }
 
+// Starts up the machine side: the 640x480 screen and palette, the language
+// files, sound, keyboard, mouse, the data files and the faces file, and opens
+// the PLAY.R<n> replay file for the -R/-P switches. Returns 1 on failure with
+// error_number set, else 0 (also, early, if the loading screen cannot be
+// shown).
 // FUNCTION: 0x000107c0
 u8 setup_host(void)
 {
@@ -128,6 +133,8 @@ u8 setup_host(void)
     return 0;
 }
 
+// Shuts down everything setup_host started, freeing the data files and
+// memory, and prints the message for error_number (and sub_error_number).
 // FUNCTION: 0x00010b20
 void reset_host(void)
 {
@@ -204,6 +211,8 @@ void reset_host(void)
     LbMemoryReset();
 }
 
+// Sets HospShift from the shift, alt and control keys held (MOD_SHIFT,
+// MOD_ALT, MOD_CTRL).
 // FUNCTION: 0x00010dbc
 void get_input(void)
 {
@@ -219,6 +228,9 @@ void get_input(void)
     }
 }
 
+// Loads the game's block, sprite, requester and animation files for the
+// current resolution (resvars.f1), unless already loaded, and lays out the
+// panel.
 // FUNCTION: 0x00010e24
 void load_game_files(void)
 {
@@ -245,6 +257,7 @@ void load_game_files(void)
     resvars.f5 = 2;
 }
 
+// Frees the files load_game_files loaded, if loaded.
 // FUNCTION: 0x00010ee0
 void unload_game_files(void)
 {
@@ -265,6 +278,9 @@ void unload_game_files(void)
     }
 }
 
+// Switches to screen mode `mode` (SCREEN_MODE_13 640x480 or SCREEN_MODE_1
+// 320x200) with `palette`, using that mode's help layout and fonts. Returns
+// 1 on success or if already in it; 0 with error_number 4 or 3 on failure.
 // FUNCTION: 0x00010f68
 u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
 {
@@ -292,6 +308,7 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
     return 1;
 }
 
+// Switches to 320x200 with the low-resolution help layout and fonts.
 // FUNCTION: 0x0001102c
 void fn_0001102c(void)
 {
@@ -299,6 +316,7 @@ void fn_0001102c(void)
     setup_any_screen(palette, SCREEN_MODE_1);
 }
 
+// Uses the 640x480 help layout and fonts.
 // FUNCTION: 0x00011058
 void use_hires_help_and_fonts(void)
 {
@@ -306,6 +324,7 @@ void use_hires_help_and_fonts(void)
     resvars.fa_charpp = hires_font_filenames;
 }
 
+// Uses the 320x200 help layout and fonts.
 // FUNCTION: 0x00011084
 void use_lores_help_and_fonts(void)
 {
@@ -313,6 +332,9 @@ void use_lores_help_and_fonts(void)
     resvars.fa_charpp = lores_font_filenames;
 }
 
+// Points resvars at the 640x480 layout tables, reopens the faces file
+// (exiting the program if it cannot), resets the view window and rebuilds
+// the menus and pointer sprites. The screen mode itself is not changed.
 // FUNCTION: 0x000110b0
 void fn_000110b0(void)
 {

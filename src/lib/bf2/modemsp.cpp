@@ -13,11 +13,14 @@ struct ModemStartData {
     long (*dial_func)(void);
 };
 
+// Constructs a modem provider for the port, baud and modem settings in
+// init_data.
 // FUNCTION: 0xee6b0
 ModemSP::ModemSP(__4dn7ojSerialInitData *init_data) : SerialSP(init_data)
 {
 }
 
+// Leaves any session (hanging up), then releases as the serial provider.
 // FUNCTION: 0xee718
 TbError ModemSP::Release(void)
 {
@@ -27,12 +30,18 @@ TbError ModemSP::Release(void)
     return SerialSP::Release();
 }
 
+// Initialises the provider for game guid with callbacks (as the serial
+// provider).
 // FUNCTION: 0xee748
 TbError ModemSP::Init(__tibcaGUID guid, __ic76sReceiveCallbacks *callbacks, void *data)
 {
     return SerialSP::Init(guid, 0, callbacks, data);
 }
 
+// Hosts session `session` as player name: initialises the modem with the
+// timeouts and waiting callback in data (a ModemStartData, which also
+// receives the modem's result and response), sets it to auto-answer and
+// starts the serial session. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xee77c
 // NONMATCHING: register choice: the target keeps the InitModem result on the stack and the
 // response buffer address in ecx
@@ -109,6 +118,11 @@ TbError ModemSP::Start(char *session, char *name, u32 max_players, void *data)
     return ret;
 }
 
+// Joins by modem as player name: initialises the modem, dials data's
+// number and, once connected, joins the serial session. data (a
+// ModemStartData) gives the timeouts and waiting callbacks and receives the
+// modem's result (-2 if the join failed) and response. Returns Lb_OK, or
+// Lb_FAIL.
 // FUNCTION: 0xeea58
 // NONMATCHING: register choice for the first timeout multiply (eax/edx, here ebx)
 TbError ModemSP::Start(TbNetworkSessionNameEntry *session, char *name, void *data)
@@ -199,12 +213,15 @@ TbError ModemSP::Start(TbNetworkSessionNameEntry *session, char *name, void *dat
     return ret;
 }
 
+// Sends message buf to the other machine (as the serial provider).
 // FUNCTION: 0xeedcc
 TbError ModemSP::SendMessage(u32 to, void *buf, TbMessageType type)
 {
     return SerialSP::SendMessage(0, buf, type);
 }
 
+// Leaves the running session and hangs up. Returns the serial Stop's result
+// (undefined if no session was running).
 // FUNCTION: 0xeedd8
 TbError ModemSP::Stop(void)
 {
@@ -218,12 +235,14 @@ TbError ModemSP::Stop(void)
     return ret;
 }
 
+// Takes the next received message (as the serial provider).
 // FUNCTION: 0xeee0c
 u32 ModemSP::ReadMessage(u32 *from, void *buf, u32 *size)
 {
     return SerialSP::ReadMessage(from, buf, size);
 }
 
+// Looks at the next received message (as the serial provider).
 // FUNCTION: 0xeee14
 u32 ModemSP::PeekMessage(u32 *from, void *buf, u32 *size)
 {

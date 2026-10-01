@@ -17,6 +17,9 @@ int vsprintf(char *buf, char *fmt, va_list args);
 char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 
+// Opens the error log file (filename, default ERROR.LOG, in directory),
+// appending to it if append is set. Returns 1, or -1 if already open or on
+// failure.
 // FUNCTION: 0x000cd1e0
 int LbErrorLogSetup(char *directory, char *filename, u8 append)
 {
@@ -38,6 +41,8 @@ int LbErrorLogSetup(char *directory, char *filename, u8 append)
     return 1;
 }
 
+// Closes the error log. Returns 1, or -1 if it was not open or failed to
+// close.
 // FUNCTION: 0x000cd294
 int LbErrorLogReset(void)
 {
@@ -49,6 +54,9 @@ int LbErrorLogReset(void)
     return 1;
 }
 
+// Formats a printf-style line for the error log and passes it to LbLog,
+// which is a stub in this build (nothing is written). Returns LbLog's result
+// (-1), or -1 if the log is not open.
 // FUNCTION: 0x000cd2cc
 int LbErrorLog(char *fmt, ...)
 {

@@ -15,6 +15,8 @@ void __cdecl AIL_start_sample(_SAMPLE *sample);
 void cb_sample_queue_callback(_SAMPLE *sample);
 #pragma aux cb_sample_queue_callback "*_" parm routine [] modify [eax ebx ecx edx];
 
+// End-of-sample callback of the sample queue: starts the queue's next
+// sample (up to eight), if any.
 // FUNCTION: 0xe7460
 void cb_sample_queue_callback(_SAMPLE *sample)
 {
@@ -32,6 +34,8 @@ void cb_sample_queue_callback(_SAMPLE *sample)
     AIL_start_sample(sample_queue_handle);
 }
 
+// Plays the sound bank samples sfx0-sfx7 one after another on the queue's
+// voice (a 0 ends the list), replacing any list playing.
 // FUNCTION: 0xe7520
 void PlaySampleList(s32 sfx0, s32 sfx1, s32 sfx2, s32 sfx3, s32 sfx4, s32 sfx5, s32 sfx6, s32 sfx7)
 {
@@ -58,6 +62,7 @@ void PlaySampleList(s32 sfx0, s32 sfx1, s32 sfx2, s32 sfx3, s32 sfx4, s32 sfx5, 
 
 }
 
+// Stops the sample queue and clears its list.
 // FUNCTION: 0xe7650
 void StopSampleQueueList(void)
 {

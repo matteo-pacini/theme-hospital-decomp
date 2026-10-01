@@ -45,6 +45,11 @@ void compute_room_pointed(u16 tile);
 void draw_from_frame(const u16 anim, const s16 x, const s16 y, u8 *remap, const u8 flip);
 
 
+// Per-frame mouse handling in the game view: edge scrolling, the pointer
+// over menus, windows and the bottom panel, and in MM_NORMAL what the pointer
+// is over (gamevar.f130: 3 person or object, 4 room door, 5/6 near/on a rat,
+// 7 a pending call, 8 the advisor, 1/2 vaccination target or not), then
+// dispatches the button state to the process_*_button routines.
 // FUNCTION: 0x00059d00
 void process_mouse(void)
 {
@@ -278,6 +283,10 @@ void process_mouse(void)
     }
 }
 
+// Left click. icon 0x27 is the map: by mouse mode (gamevar.f12e) it opens
+// the clicked thing's window or call, sends the blueprint, door, staff and
+// object placement events, or toggles vaccination; any other icon is a panel
+// button (panel_l_button).
 // FUNCTION: 0x0005a750
 void process_left_button(u16 icon)
 {
@@ -568,6 +577,10 @@ void process_left_button(u16 icon)
         break;
     }
 }
+
+// Left button held. On the map it drags out a blueprint (MM_BLUEPRINT) or
+// presses the emergency and vaccination watch buttons; otherwise
+// panel_ml_button.
 // FUNCTION: 0x0005b70c
 void process_mleft_button(u16 icon)
 {
@@ -609,6 +622,8 @@ void process_mleft_button(u16 icon)
     }
 }
 
+// Right button held: on the map in MM_PLACE_OBJECT, as with no button;
+// otherwise panel_ml_button.
 // FUNCTION: 0x0005b8f0
 void process_mright_button(u16 icon)
 {
@@ -626,6 +641,10 @@ void process_mright_button(u16 icon)
     }
 }
 
+// Right click. On the map: the emergency/epidemic watch buttons jump to the
+// next such patient; otherwise picks up the staff member or object under the
+// pointer, rotates the object being placed, or cancels the current mode (as
+// key 1, Escape). Other icons go to panel_r_button.
 // FUNCTION: 0x0005b95c
 void process_right_button(u16 icon)
 {
@@ -742,6 +761,9 @@ void process_right_button(u16 icon)
     }
 }
 
+// No button pressed: on the map, highlights the queue of the room (or
+// reception) under the pointer in MM_NORMAL, or updates the blueprint, door,
+// staff, object or room-edit cursor for the current mouse mode.
 // FUNCTION: 0x0005be7c
 void process_no_button(u16 icon)
 {

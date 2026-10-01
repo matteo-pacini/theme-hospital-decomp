@@ -10,6 +10,8 @@ void refresh_to_VRAM(void);
 void copy_dwords(u32 dst, u8 *src, u32 count);
 #pragma aux copy_dwords = "rep movsd" parm [edi] [esi] [ecx] modify [edi esi ecx];
 
+// Copies the dirty parts of the screen to video memory with the mouse
+// pointer drawn in.
 // FUNCTION: 0x000ab120
 void special_refresh(void)
 {
@@ -18,6 +20,9 @@ void special_refresh(void)
     LbMouseRemove();
 }
 
+// Copies each 32x32 zone of the back buffer marked in D_001567c0 to the
+// 640-wide banked VESA screen, switching banks as needed, and decrements
+// the zones' counts.
 // FUNCTION: 0x000ab144
 void refresh_to_VRAM(void)
 {
@@ -103,6 +108,8 @@ void refresh_to_VRAM(void)
     }
 }
 
+// Marks the 32x32 zones covering the box (x1, y1)-(x2, y2), clipped to the
+// screen, to be copied to video memory for the next refresh_count frames.
 // FUNCTION: 0x000ab49c
 void set_all_refresh_zones_in_window(const s32 x1, const s32 y1, const s32 x2, const s32 y2, const u8 refresh_count)
 {

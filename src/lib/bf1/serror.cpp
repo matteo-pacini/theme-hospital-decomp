@@ -16,6 +16,7 @@ char *strcat(char *dst, const char *src);
 void *memcpy(void *dst, const void *src, u32 n);
 #pragma intrinsic(strcat, memcpy)
 
+// Does nothing under DOS. Returns 1.
 // FUNCTION: 0x000d0800
 int LbWindowsControl(void)
 {
@@ -24,6 +25,7 @@ int LbWindowsControl(void)
 
 }
 
+// printf-style debug output to the console (512-byte buffer).
 // FUNCTION: 0x000d080c
 void LbDebugString(char *fmt, ...)
 {
@@ -36,6 +38,8 @@ void LbDebugString(char *fmt, ...)
     printf(buf);
 }
 
+// Reports a failed library assertion (expr at file:line) on screen or the
+// console and waits for K (exit the program) or C (continue). Returns 0.
 // FUNCTION: 0x000d0848
 int LbAssertMessage(const char *expr, const char *file, unsigned long line)
 {

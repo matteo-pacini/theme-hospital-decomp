@@ -71,6 +71,8 @@ void LoadAwe32Soundfont(char *prefix);
 void FreeAwe32Soundfont(void);
 }
 
+// Allocates size bytes of DOS memory (DPMI). Returns a far pointer through
+// its selector, with a null selector on failure.
 // FUNCTION: 0xef390
 void __far *AllocDOSmem(s32 size)
 {
@@ -87,6 +89,7 @@ void __far *AllocDOSmem(s32 size)
     return MK_FP(sel, 0);
 }
 
+// Frees the DOS memory at far pointer p. Returns 0, or -1 on failure.
 // FUNCTION: 0xef3d0
 s32 FreeDOSmem(void __far *p)
 {
@@ -98,6 +101,7 @@ s32 FreeDOSmem(void __far *p)
     return (r.x.cflag == 0) - 1;
 }
 
+// Returns a selector for real-mode segment `segment`, or -1.
 // FUNCTION: 0xef410
 s32 CreateSelector(u32 segment)
 {
@@ -111,6 +115,7 @@ s32 CreateSelector(u32 segment)
     return r.w.ax;
 }
 
+// Returns the real-mode segment of selector's base, or -1.
 // FUNCTION: 0xef450
 s32 GetDOSseg(u32 selector)
 {
@@ -124,6 +129,7 @@ s32 GetDOSseg(u32 selector)
     return (r.w.cx << 12) + (r.w.dx >> 4);
 }
 
+// Returns the AWE32's sound RAM size in bytes, or -1.
 // FUNCTION: 0xef4a0
 s32 AWEGetTotalRAM(AWEDriver *mdi)
 {
@@ -136,6 +142,8 @@ s32 AWEGetTotalRAM(AWEDriver *mdi)
     return -1;
 }
 
+// Tells the AWE32 driver the memory map at map (count dwords). Returns the
+// driver's status, 0 for success.
 // FUNCTION: 0xef4f0
 s32 AWEDefMemMap(AWEDriver *mdi, u16 count, void __far *map)
 {
@@ -155,6 +163,8 @@ s32 AWEDefMemMap(AWEDriver *mdi, u16 count, void __far *map)
     return regs.AX;
 }
 
+// Passes the soundfont header in buf (bank `bank`) to the AWE32 driver.
+// Returns a far pointer to the soundfont's layout (AWEInfo), or 0.
 // FUNCTION: 0xef5a0
 void __far *AWEGetSFInfo(AWEDriver *mdi, u16 bank, void __far *buf)
 {
@@ -176,6 +186,8 @@ void __far *AWEGetSFInfo(AWEDriver *mdi, u16 bank, void __far *buf)
     return 0;
 }
 
+// Streams the 512-byte sample block in buf into bank `bank`. Returns the
+// driver's status, 0 for success.
 // FUNCTION: 0xef670
 s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
 {
@@ -195,6 +207,8 @@ s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
     return regs.AX;
 }
 
+// Loads the presets in buf into bank `bank`. Returns the driver's status, 0
+// for success.
 // FUNCTION: 0xef720
 s32 AWELoadPreset(AWEDriver *mdi, u16 bank, void __far *buf)
 {
@@ -214,6 +228,7 @@ s32 AWELoadPreset(AWEDriver *mdi, u16 bank, void __far *buf)
     return regs.AX;
 }
 
+// Frees bank `bank`'s sound RAM and the driver call block.
 // FUNCTION: 0xef7d0
 s32 AWEFreeMem(AWEDriver *mdi, u16 bank)
 {
@@ -227,6 +242,9 @@ s32 AWEFreeMem(AWEDriver *mdi, u16 bank)
     return regs.AX;
 }
 
+// Loads soundfont <MusicDataPath>/<prefix>.sbk into the AWE32 (only with
+// the SBAWE32 driver and MusicType "w"), setting Awe32SoundfontLoaded on
+// success; with UseCurrentAwe32Soundfont it keeps the one loaded.
 // FUNCTION: 0xef830
 void LoadAwe32Soundfont(char *prefix)
 {
@@ -286,6 +304,7 @@ void LoadAwe32Soundfont(char *prefix)
     LbFileClose(sbkHandle);
 }
 
+// Frees the loaded AWE32 soundfont and its DOS buffers.
 // FUNCTION: 0xefad0
 void FreeAwe32Soundfont(void)
 {

@@ -22,6 +22,11 @@ u8 choose_next_research_illness(u8 owner, s32 (*cost)(u8, u8));
 void research_category_exhausted(const u8 owner, const u8 category);
 void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category);
 
+// Spends each hospital's research points by its allocation to the five
+// categories (0 cures, 1 diagnosis, 2 drugs, 3 improvements, 4 the
+// specialisation): each goes to the cheapest open item of its category.
+// Points for a category with nothing left are kept, and categories 0 and 1
+// are then closed (research_category_exhausted).
 // FUNCTION: 0x0006cf80
 void do_research(void)
 {
@@ -93,6 +98,9 @@ void do_research(void)
     }
 }
 
+// Makes object item available to player `owner` (researched through
+// illness), announcing it. In a network game the first to research it gets
+// a 500 bonus and reputation, and the others get it three months later.
 // FUNCTION: 0x0006d288
 void item_researched(u16 item, u16 illness, u8 owner)
 {
@@ -122,6 +130,10 @@ void item_researched(u16 item, u16 illness, u8 owner)
         announce_this(5, item);
 }
 
+// Improves player `owner`'s drug for illness: at random, its cost falls by
+// 5% (to at least 10, sometimes also raising its effectiveness) or its
+// effectiveness rises by gbv.f140 (to at most 100; sometimes the cost then
+// drops, but the code caps it at 10 instead). Announced for this player.
 // FUNCTION: 0x0006d428
 void drug_improved(u16 illness, u8 owner)
 {
@@ -165,6 +177,8 @@ void drug_improved(u16 illness, u8 owner)
         announce_this(7, illness);
 }
 
+// Gives player `owner` the drug for illness at the starting effectiveness
+// and cost (gbv.fc8, gbv.fca), announced for this player.
 // FUNCTION: 0x0006d6a0
 void drug_researched(u16 illness, u8 owner)
 {
@@ -178,6 +192,9 @@ void drug_researched(u16 illness, u8 owner)
         announce_this(6, illness);
 }
 
+// Upgrades player `owner`'s object item by one level: every third level
+// raises its strength (up to gbv.ff2) and every third lowers its price by an
+// eighth (not below a third of the base), announced for this player.
 // FUNCTION: 0x0006d748
 void item_upgraded(u16 item, u8 owner)
 {
@@ -203,6 +220,8 @@ void item_upgraded(u16 item, u8 owner)
         announce_this(8, item);
 }
 
+// Monthly: makes available each object whose availability date has come
+// (object_stats.available, in months), announcing it to this player.
 // FUNCTION: 0x0006d8fc
 void auto_available(void)
 {
@@ -226,6 +245,9 @@ void auto_available(void)
     }
 }
 
+// Adds researcher's work (ability, less when tired) plus amount to their
+// hospital's research points; a crazy doctor takes half instead. Points
+// never go below 0.
 // FUNCTION: 0x0006da40
 void research_contribution(Thing *researcher, s16 amount)
 {
@@ -243,6 +265,8 @@ void research_contribution(Thing *researcher, s16 amount)
         allhosps[researcher->owner].research_points = 0;
 }
 
+// Sends a dead patient to the nearest autopsy room (via queue) and pages
+// its staff.
 // FUNCTION: 0x0006db78
 void send_person_for_research(Thing *patient)
 {
@@ -260,6 +284,8 @@ void send_person_for_research(Thing *patient)
     set_destination_coords(patient, room->unknown4);
 }
 
+// Returns player `owner`'s research room with the most free workstations
+// (desks and machines minus staff in it), or 0 if none.
 // FUNCTION: 0x0006dc64
 u16 emptiest_research_room(u8 owner)
 {
@@ -294,6 +320,8 @@ u16 emptiest_research_room(u8 owner)
     return found;
 }
 
+// Returns a random research room of player `owner` other than exclude, or 0
+// if none.
 // FUNCTION: 0x0006ddf0
 u16 find_rand_research_room(u8 owner, u16 exclude)
 {
@@ -314,6 +342,8 @@ u16 find_rand_research_room(u8 owner, u16 exclude)
     return list[old_newrand() % count];
 }
 
+// Sends doctor to research: to another research room if already in one,
+// else the emptiest. Returns 0 if there is none to go to.
 // FUNCTION: 0x0006dedc
 u8 send_doctor_to_research(Thing *doctor)
 {
@@ -336,6 +366,9 @@ u8 send_doctor_to_research(Thing *doctor)
     return 1;
 }
 
+// A patient autopsied: their illness gains research points, and with a
+// chance that is higher when staff are unhappy, the hospital loses
+// reputation (announced for this player).
 // FUNCTION: 0x0006dfe8
 void person_autopsied(Thing *patient)
 {
@@ -362,12 +395,15 @@ void person_autopsied(Thing *patient)
     }
 }
 
+// Returns player `owner`'s drug effectiveness for illness (0-100).
 // FUNCTION: 0x0006e184
 u8 find_best_drug_rating(u8 illness, u8 owner)
 {
     return allhosps[owner].rooms[illness].drug.effectiveness;
 }
 
+// Research cost of the treatment machine for illness if player `owner` lacks
+// it and it is a cure, else -1.
 // FUNCTION: 0x0006e1c8
 s32 find_new_cure_cost(u8 illness, u8 owner)
 {
@@ -377,6 +413,8 @@ s32 find_new_cure_cost(u8 illness, u8 owner)
     return -1;
 }
 
+// Research cost of the diagnosis machine for illness if player `owner` lacks
+// it, else -1.
 // FUNCTION: 0x0006e27c
 s32 find_new_diag_cost(u8 illness, u8 owner)
 {
@@ -386,6 +424,8 @@ s32 find_new_diag_cost(u8 illness, u8 owner)
     return -1;
 }
 
+// Research cost of the drug for illness if player `owner` has the illness
+// known (rooms[illness].unknown1D) and no drug yet, else -1.
 // FUNCTION: 0x0006e330
 s32 find_new_drug_cost(u8 illness, u8 owner)
 {
@@ -395,6 +435,8 @@ s32 find_new_drug_cost(u8 illness, u8 owner)
     return -1;
 }
 
+// Cost of improving player `owner`'s drug for illness (rising with its
+// effectiveness), or -1 if there is none or it is at 100.
 // FUNCTION: 0x0006e3e0
 s32 find_drug_improve_cost(u8 illness, u8 owner)
 {
@@ -409,6 +451,8 @@ s32 find_drug_improve_cost(u8 illness, u8 owner)
     return -1;
 }
 
+// Cost of upgrading player `owner`'s machine for illness (rising with its
+// level), or -1 if they lack it or it is at the top level.
 // FUNCTION: 0x0006e4dc
 s32 find_hw_improve_cost(u8 illness, u8 owner)
 {
@@ -425,6 +469,8 @@ s32 find_hw_improve_cost(u8 illness, u8 owner)
     return -1;
 }
 
+// Returns the illness (0-0x2e) with the lowest positive cost for player
+// `owner` by cost(illness, owner), or 0 if none has one.
 // FUNCTION: 0x0006e624
 u8 choose_next_research_illness(u8 owner, s32 (*cost)(u8, u8))
 {
@@ -447,6 +493,8 @@ u8 choose_next_research_illness(u8 owner, s32 (*cost)(u8, u8))
     return found;
 }
 
+// Closes research category `category` for player `owner`
+// (research_alloc -1), announcing it to this player.
 // FUNCTION: 0x0006e694
 void research_category_exhausted(const u8 owner, const u8 category)
 {
@@ -462,6 +510,10 @@ void research_category_exhausted(const u8 owner, const u8 category)
     }
 }
 
+// Adds amount research points to illness for player `owner` (for a machine,
+// to the first illness that uses it), and once enough are banked completes
+// whatever is next for it: a new machine, a drug, a drug improvement or a
+// machine upgrade.
 // FUNCTION: 0x0006e720
 void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category)
 {

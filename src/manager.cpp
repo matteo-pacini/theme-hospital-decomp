@@ -29,6 +29,8 @@ void display_manager_text(void);
 void display_manager_face(void);
 void process_bank_panel(void);
 
+// Runs one frame of the bank manager screen (manager.unknown2: 0 loading,
+// 1 shown, 2 closing, which queues EV_RETURN_FROM_SCREEN for this player).
 // FUNCTION: 0x0007e210
 void display_manager(void)
 {
@@ -69,6 +71,9 @@ void display_manager(void)
         manager.unknown2 = 2;
 }
 
+// Draws the bank manager's figures: balance, loan, interest, the three
+// insurance companies' yearly totals and the rates; with manager.unknown0
+// set (1-3), the chosen company's monthly payments as a line graph.
 // FUNCTION: 0x0007e42c
 void display_manager_text(void)
 {
@@ -206,6 +211,8 @@ void display_manager_text(void)
     lbDisplay.draw_flags = 0;
 }
 
+// Bank screen clicks: runs the callback of the resvars.f48 button released
+// over and draws the button pressed while the left button is held.
 // FUNCTION: 0x0007f258
 void process_bank_panel(void)
 {
@@ -233,6 +240,9 @@ void process_bank_panel(void)
     }
 }
 
+// Carries out bank screen button `button`: 0 repays and 1 borrows 5000 (as
+// event 0x67 / 0x66, if the balance or the loan limit allows), 2-4 show an
+// insurance company's graph (4 again goes back), 5 closes the screen.
 // FUNCTION: 0x0007f50c
 void process_bank_button(u8 button)
 {
@@ -279,6 +289,8 @@ void process_bank_button(u8 button)
     }
 }
 
+// Animates the bank manager's face: randomly starts and advances the three
+// face animations (othervar.fa4c-fa4e, bank_manager_face1-3).
 // FUNCTION: 0x0007f6e4
 void display_manager_face(void)
 {
@@ -317,6 +329,8 @@ void display_manager_face(void)
     }
 }
 
+// Help text for an insurance company row of the list: formats the hovered
+// help entry with that company's name into othervar.f96.
 // FUNCTION: 0x0007f8cc
 void manager_help_pointed_ins(void)
 {
@@ -328,6 +342,8 @@ void manager_help_pointed_ins(void)
     sprintf(othervar.f96, help_text[text], insurance_names[insurance_co[ins_control[idx]].unknown0[0]]);
 }
 
+// Help text for the insurance graph: formats the hovered help entry with the
+// shown company's name into othervar.f96.
 // FUNCTION: 0x0007f968
 void manager_help_displayed_ins(void)
 {

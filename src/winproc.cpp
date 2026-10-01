@@ -12,6 +12,8 @@ extern u8 update_state;
 extern u16 text_position;
 #pragma aux text_position "W?text_position$:.0$:?process_buttons$n(pnpn$Window$$pn$2$)vnus"
 
+// After win is resized by (dx, dy), moves or stretches its buttons by their
+// anchoring flags (stretch, keep to the right/bottom, or centre).
 // FUNCTION: 0x0004c7a0
 void reposition_buttons(Window *win, s32 dx, s32 dy)
 {
@@ -37,6 +39,8 @@ void reposition_buttons(Window *win, s32 dx, s32 dy)
     }
 }
 
+// Clears every button's highlight and pressed state in win (except the
+// pressed state of toggle buttons, flag 0x4000000).
 // FUNCTION: 0x0004c89c
 void clear_buttons(Window *win)
 {
@@ -52,6 +56,8 @@ void clear_buttons(Window *win)
     }
 }
 
+// Returns 1 if the mouse lies within (x1, y1)-(x2, y2) (inclusive) in the
+// graphics window, else 0.
 // FUNCTION: 0x0004c8fc
 u8 mouse_over(s32 x1, s32 y1, s32 x2, s32 y2)
 {
@@ -61,6 +67,7 @@ u8 mouse_over(s32 x1, s32 y1, s32 x2, s32 y2)
     return 0;
 }
 
+// As mouse_over, for the position of the last button press.
 // FUNCTION: 0x0004c96c
 u8 mouse_pressed_over(s32 x1, s32 y1, s32 x2, s32 y2)
 {
@@ -70,6 +77,8 @@ u8 mouse_pressed_over(s32 x1, s32 y1, s32 x2, s32 y2)
     return 0;
 }
 
+// Removes win from the window list (two at most), clearing its buttons.
+// Returns 1 if it was there.
 // FUNCTION: 0x0004c9dc
 u8 remove_window(Window **windows, Window *win)
 {
@@ -97,6 +106,7 @@ u8 remove_window(Window **windows, Window *win)
     return removed;
 }
 
+// Records in buttonstore the first enabled button of win under the mouse.
 // FUNCTION: 0x0004cac0
 void calculate_currentbuttonstore(Window *win)
 {
@@ -112,6 +122,12 @@ void calculate_currentbuttonstore(Window *win)
     }
 }
 
+// Handles win's buttons for one frame when nothing is being dragged:
+// highlights the one under the mouse and, when its trigger (press, release,
+// hold, left or right, or the D key) happens, presses or toggles it and
+// runs its action: minimise/maximise, starting a resize or drag, closing,
+// or moving its slider, then its callback. Returns update_state (1 resize,
+// 2 drag, 3 slider). pos is unused.
 // FUNCTION: 0x0004cb80
 u8 process_buttons_normal_state(Window **windows, Window *win, u16 *pos)
 {
@@ -314,6 +330,9 @@ u8 process_buttons_normal_state(Window **windows, Window *win, u16 *pos)
     return update_state;
 }
 
+// Handles win's buttons for one frame: continues a resize (update_state 1)
+// or slider drag (3) while the button is held, else processes them
+// normally. Counts frames without mouse movement for tool tips.
 // FUNCTION: 0x0004d740
 void process_buttons(Window **windows, Window *win)
 {
@@ -435,6 +454,8 @@ void process_buttons(Window **windows, Window *win)
     }
 }
 
+// Puts win at the front of the window list if there is room. Returns 1 if
+// added.
 // FUNCTION: 0x0004df88
 u8 insert_window(Window **windows, Window *win)
 {
@@ -451,6 +472,8 @@ u8 insert_window(Window **windows, Window *win)
     return 0;
 }
 
+// Moves win to the front of the window list if it is in it. Returns 1 if
+// found.
 // FUNCTION: 0x0004e024
 u8 make_front_window(Window **windows, Window *win)
 {
@@ -467,6 +490,8 @@ u8 make_front_window(Window **windows, Window *win)
     return 0;
 }
 
+// Opens window idx of list in front of the others, unless the front window
+// is modal (flags 0x600). Returns 1 if it is open at the front.
 // FUNCTION: 0x0004e0c0
 u8 OpenWindow(Window **windows, Window *list, u16 idx)
 {
@@ -480,6 +505,7 @@ u8 OpenWindow(Window **windows, Window *list, u16 idx)
     return 1;
 }
 
+// Returns the number of open windows (0-2).
 // FUNCTION: 0x0004e154
 u16 CountWindows(Window **windows)
 {
@@ -490,6 +516,8 @@ u16 CountWindows(Window **windows)
     return i;
 }
 
+// Returns win's current size (maximised, minimised or normal) through width
+// and height; 1 x 1 for no window.
 // FUNCTION: 0x0004e1a8
 void GetWindowDimensions(Window *win, u16 *width, u16 *height)
 {
@@ -510,6 +538,7 @@ void GetWindowDimensions(Window *win, u16 *width, u16 *height)
     }
 }
 
+// Returns 1 if the mouse is over win, else 0.
 // FUNCTION: 0x0004e240
 u8 MouseOnWindow(Window *win)
 {
@@ -523,6 +552,7 @@ u8 MouseOnWindow(Window *win)
     return 0;
 }
 
+// Returns 1 if the last button press was over win, else 0.
 // FUNCTION: 0x0004e2b4
 u8 MousePressedOnWindow(Window *win)
 {
@@ -536,6 +566,8 @@ u8 MousePressedOnWindow(Window *win)
     return 0;
 }
 
+// Processes win's buttons for the frame and keeps it centred if its flags
+// ask for it.
 // FUNCTION: 0x0004e328
 void process_window(Window **windows, Window *win)
 {
@@ -560,6 +592,10 @@ void process_window(Window **windows, Window *win)
     }
 }
 
+// Per frame: brings a clicked window to the front (unless the front one is
+// modal), switches the mouse mode to normal while over a window (restoring
+// it after), and processes the front window. Sets CurrentWindow to the
+// window under the mouse.
 // FUNCTION: 0x0004e47c
 extern "C" void ProcessWindows(Window **windows)
 {
@@ -646,6 +682,8 @@ extern "C" void ProcessWindows(Window **windows)
         calculate_currentbuttonstore(windows[CurrentWindow]);
 }
 
+// Returns the index of button in the button list (resvars.f24), or -1 if it
+// is not among the first 500.
 // FUNCTION: 0x0004e6f8
 extern "C" s16 get_button_no(WindowButton *button)
 {

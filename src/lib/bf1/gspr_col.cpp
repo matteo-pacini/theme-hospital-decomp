@@ -2,6 +2,9 @@
 
 extern "C" {
 
+// Draws the shape of RLE sprite spr at (x, y) in the graphics window in a
+// single colour, clipped, honouring draw_flags (1 mirror, 2 vertical flip,
+// 4/8 blend with the ghost table). Always returns 1.
 // FUNCTION: 0xcb2f0
 int LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour)
 {

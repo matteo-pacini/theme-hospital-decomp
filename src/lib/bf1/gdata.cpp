@@ -14,6 +14,8 @@ void LbErrorLog(char *s, ...);
 void int3(void);
 #pragma aux int3 = 0xcc;
 
+// Sets the function LbDataLoad uses to turn an entry into the file name to
+// load.
 // FUNCTION: 0xbccf0
 void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *files))
 {
@@ -22,6 +24,7 @@ void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *files))
 
 }
 
+// Default file name function: the entry's own name.
 // FUNCTION: 0xbcd08
 static char *_defaultModifyDataLoadFilename(TbLoadFiles *files)
 {
@@ -30,6 +33,10 @@ static char *_defaultModifyDataLoadFilename(TbLoadFiles *files)
 
 extern "C" {
 
+// Loads data file entry `files` into newly allocated memory (low memory if
+// Flags bit 0; a name starting with '*' only allocates SLength bytes),
+// setting *Start and *SEnd, after freeing what it held. Returns 1, -100 if
+// memory ran out, -101 if the file could not be read.
 // NONMATCHING: register choice (target loads operands into registers before compares)
 // FUNCTION: 0x000bcd18
 int LbDataLoad(TbLoadFiles *files)
@@ -66,6 +73,8 @@ int LbDataLoad(TbLoadFiles *files)
     return 1;
 }
 
+// Frees, then loads every entry of the list ending with a null Start,
+// asserting on each failure. Returns the number of entries that failed.
 // FUNCTION: 0x000bce44
 int LbDataLoadAll(TbLoadFiles *files)
 {
@@ -102,6 +111,7 @@ int LbDataLoadAll(TbLoadFiles *files)
     return count;
 }
 
+// Frees the memory of data file entry `files`, if loaded. Returns 1.
 // FUNCTION: 0x000bcf5c
 int LbDataFree(TbLoadFiles *files)
 {
@@ -112,6 +122,7 @@ int LbDataFree(TbLoadFiles *files)
     return 1;
 }
 
+// Frees every entry of the list ending with a null Start. Returns 1.
 // FUNCTION: 0x000bcf90
 int LbDataFreeAll(TbLoadFiles *files)
 {

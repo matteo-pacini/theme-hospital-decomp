@@ -67,6 +67,10 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
 extern "C" {
 }
 
+// Hire staff requester clicks: the four kind buttons choose doctors, nurses,
+// handymen or receptionists (event 0x2f), the arrows page through that
+// kind's applicants (event 0x32), hire takes on the shown applicant if
+// affordable (EV_MARK_EMPLOYING), and close aborts.
 // FUNCTION: 0x000697e0
 void req2(Window *win)
 {
@@ -161,6 +165,10 @@ void req2(Window *win)
     }
 }
 
+// Draws the hire staff requester: each kind's applicant count and the shown
+// applicant (crequester.unknown6): name, wage, face, qualifications, ability
+// gauge and reference, plus the advisor's flashing hints. Moves on to the
+// next applicant if the shown one was taken.
 // FUNCTION: 0x00069d34
 void req2_overdraw(Window *win)
 {
@@ -346,6 +354,8 @@ void req2_overdraw(Window *win)
     }
 }
 
+// Resets the hire staff requester (crequester.unknown2 0xb) to no kind
+// chosen.
 // FUNCTION: 0x0006aab0
 void req2_reset(void)
 {
@@ -354,6 +364,9 @@ void req2_reset(void)
     crequester.unknown4 = 0;
 }
 
+// Returns the next (dir 1) or previous (dir 0) applicant of staff kind
+// `kind` after applicant cur, or the first one if cur is 0. Returns cur if
+// there is none further, 0 if cur is not found or there are none.
 // FUNCTION: 0x0006aae0
 u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
 {
@@ -430,6 +443,8 @@ u16 req2_alter_staff(u8 dir, u16 cur, u16 kind)
     return 0;
 }
 
+// Draws a staff member's face (head, body and legs from the faces file,
+// cached in face_buffer) in a frame whose bottom left is (x, y).
 // FUNCTION: 0x0006ae00
 void draw_face(Picture *face, const u16 x, const u16 y)
 {
@@ -470,6 +485,7 @@ void draw_face(Picture *face, const u16 x, const u16 y)
     LbDrawBox(x + resvars.f60 + resvars.f58, y - (resvars.f64 + resvars.f68 + resvars.f6c) - resvars.f5c * 2, resvars.f58, resvars.f64 + resvars.f68 + resvars.f6c + resvars.f5c * 2, 0x9c);
 }
 
+// Marks applicant id as being hired (state 0x44).
 // FUNCTION: 0x0006b174
 void req2_mark_employing(const u16 id)
 {
@@ -480,6 +496,7 @@ void req2_mark_employing(const u16 id)
     adcounts.f4 += candidate->happiness;
 }
 
+// Returns applicant id to the list of applicants (SS_APPLICANT).
 // FUNCTION: 0x0006b1bc
 void req2_exit_employing(const u16 id)
 {
@@ -489,6 +506,10 @@ void req2_exit_employing(const u16 id)
     candidate->state = SS_APPLICANT;
 }
 
+// Staff demand requester clicks: the accept button grants what the staff
+// member asks (by request kind crequester.unknown8: events 0x6b, 0x6c or
+// 0x6d, or matching a rival's offer), the other lets them go
+// (req12_clicked_sack).
 // FUNCTION: 0x0006b1f4
 void req12(Window *win)
 {
@@ -552,6 +573,9 @@ extern char **misc_text;
 void draw_window_not_using_bscreen(const u8 idx);
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
 
+// Draws the staff demand requester: the staff member's details, the request
+// text for crequester.unknown8 with its amounts, and a view of them on the
+// map.
 // FUNCTION: 0x0006b464
 void req12_overdraw(Window *win)
 {
@@ -665,6 +689,10 @@ void req12_overdraw(Window *win)
     compute_help_text(0, 0, 0x1a);
 }
 
+// Opens the staff demand requester for a staff member who wants to leave,
+// choosing the request (crequester.unknown8, amount in unknown6): a rival's
+// offer (9), quitting after many requests (2), their wage demand plus 10%
+// (7), or 10-30% of their salary (3/4 when tired, 5/6 by happiness, else 8).
 // FUNCTION: 0x0006bda8
 void open_staff_resign_requester(Thing *staff)
 {
@@ -722,6 +750,8 @@ void open_staff_resign_requester(Thing *staff)
     crequester.unknown0 = 0;
 }
 
+// Covers the doctor-only parts of the hire staff requester at window (x,
+// y).
 // FUNCTION: 0x0006c05c
 void draw_req2_coverup(const u16 x, const u16 y)
 {
@@ -729,6 +759,8 @@ void draw_req2_coverup(const u16 x, const u16 y)
     LbDrawBox(x + resvars.f18_Req2Layoutp->cover1_x, y + resvars.f18_Req2Layoutp->cover1_y, resvars.f18_Req2Layoutp->cover1_w, resvars.f18_Req2Layoutp->cover1_h, 0x77);
 }
 
+// Help text for a doctor qualification of the shown applicant, into
+// othervar.f96, if they are a doctor.
 // FUNCTION: 0x0006c108
 void req2_help_if_doctor(void)
 {
@@ -739,6 +771,7 @@ void req2_help_if_doctor(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req2_help_if_doctor, if they are a surgeon.
 // FUNCTION: 0x0006c184
 void req2_help_if_surgeon(void)
 {
@@ -751,6 +784,7 @@ void req2_help_if_surgeon(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req2_help_if_doctor, if they are a psychiatrist.
 // FUNCTION: 0x0006c214
 void req2_help_if_psycho(void)
 {
@@ -763,6 +797,7 @@ void req2_help_if_psycho(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req2_help_if_doctor, if they are a researcher.
 // FUNCTION: 0x0006c2a4
 void req2_help_if_researcher(void)
 {
@@ -775,6 +810,8 @@ void req2_help_if_researcher(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// Help text for the hovered entry, into othervar.f96, if an applicant is
+// shown.
 // FUNCTION: 0x0006c334
 void req2_help_if_selected(void)
 {
@@ -782,6 +819,7 @@ void req2_help_if_selected(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req2_help_if_doctor for the staff member of the demand requester.
 // FUNCTION: 0x0006c38c
 void req12_help_if_doctor(void)
 {
@@ -792,6 +830,7 @@ void req12_help_if_doctor(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req2_help_if_surgeon for the staff member of the demand requester.
 // FUNCTION: 0x0006c408
 void req12_help_if_surgeon(void)
 {
@@ -804,6 +843,7 @@ void req12_help_if_surgeon(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req2_help_if_psycho for the staff member of the demand requester.
 // FUNCTION: 0x0006c498
 void req12_help_if_shrink(void)
 {
@@ -816,6 +856,7 @@ void req12_help_if_shrink(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// As req2_help_if_researcher for the staff member of the demand requester.
 // FUNCTION: 0x0006c528
 void req12_help_if_research(void)
 {
@@ -828,6 +869,8 @@ void req12_help_if_research(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// Refuses the staff member's demand: they join the rival who made the offer
+// (EV_STAFF_JOIN_NEW_EMPLOYER) or leave (event 0x6b).
 // FUNCTION: 0x0006c5b8
 void req12_clicked_sack(void)
 {

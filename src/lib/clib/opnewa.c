@@ -4,6 +4,7 @@
 void *__op_new(unsigned size);
 #pragma aux __op_new "W?$nwn(ui)pnv"
 
+// operator new[]: allocates size bytes through operator new.
 // FUNCTION: 0xed344
 void *fn_000ed344(unsigned size)
 {

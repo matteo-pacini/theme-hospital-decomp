@@ -2,6 +2,8 @@
 
 extern "C" {
 
+// Returns the size data[0..len) would have run-length encoded (see
+// rle_compress).
 // FUNCTION: 0x000bbce0
 s32 rle_compressed_size(s8 *data, s32 len)
 {
@@ -31,6 +33,10 @@ s32 rle_compressed_size(s8 *data, s32 len)
     return size;
 }
 
+// Run-length encodes data[0..len) in place: a run of n zero bytes becomes
+// the byte -n, any other run of n bytes the pair n, value (runs of at most
+// 127). Returns the new size, or len (data unchanged) if encoding would not
+// shrink it or memory ran out.
 // FUNCTION: 0x000bbd70
 s32 rle_compress(s8 *data, s32 len)
 {
@@ -80,6 +86,8 @@ s32 rle_compress(s8 *data, s32 len)
     return size;
 }
 
+// Returns the decoded size of len bytes of run-length data (see
+// rle_compress).
 // FUNCTION: 0x000bbea0
 s32 rle_decompressed_size(s8 *data, s32 len)
 {
@@ -102,6 +110,9 @@ s32 rle_decompressed_size(s8 *data, s32 len)
     return size;
 }
 
+// Decodes len bytes of run-length data in place; data must have room for
+// the decoded size, which is returned. If memory runs out, data is left
+// encoded but the decoded size is still returned.
 // FUNCTION: 0x000bbf10
 s32 rle_decompress(s8 *data, s32 len)
 {

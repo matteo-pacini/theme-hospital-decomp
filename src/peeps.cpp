@@ -24,6 +24,8 @@ void fn_000c93bf(char *dst, char *src);
 
 }
 
+// Patient state PS_WAITS_FOR_BUSY: animates and goes home when the timer
+// runs out.
 // FUNCTION: 0x00015c50
 void person_waits_for_busy(Thing *person)
 {
@@ -35,6 +37,8 @@ void person_waits_for_busy(Thing *person)
     }
 }
 
+// Patient state PS_ARRIVES_AT_DOOR: enters the room whose door they stand at
+// if it admits patients, else queues (PS_IN_QUEUE).
 // FUNCTION: 0x00015cc0
 void person_arrives_at_door(Thing *person)
 {
@@ -51,6 +55,9 @@ void person_arrives_at_door(Thing *person)
     }
 }
 
+// Patient state PS_IN_QUEUE: at each step pages the staff the room needs and
+// fetches a drink or a bench if wanted, else finds a standing place, then
+// moves on to PS_ENTERTAINS_THEMSELF.
 // FUNCTION: 0x00015d48
 void person_in_queue(Thing *person)
 {
@@ -117,6 +124,9 @@ void person_in_queue(Thing *person)
     }
 }
 
+// Patient state PS_ENTERTAINS_THEMSELF (waiting in a queue area): at each
+// step goes home if fed up, pages the room's staff, and fetches a drink, the
+// toilet or a bench as needed, else finds a standing place.
 // FUNCTION: 0x000160a8
 void person_entertains_themself(Thing *person)
 {
@@ -203,6 +213,8 @@ void person_entertains_themself(Thing *person)
     }
 }
 
+// If person shares a tile or stands on an object, sends them to a random
+// free nearby tile. Returns 1 if they were sent.
 // FUNCTION: 0x000164f4
 u16 find_standing_place(Thing *person)
 {
@@ -233,6 +245,8 @@ u16 find_standing_place(Thing *person)
     return 0;
 }
 
+// Sends a patient home: answers their pending call, records them in the
+// statistics, leaves any queue and walks them off the map.
 // FUNCTION: 0x0001665c
 void person_go_home(Thing *person)
 {
@@ -252,12 +266,15 @@ void person_go_home(Thing *person)
     set_icon_value(person, ICON_FED_UP);
 }
 
+// The person has left the map: removes them (remove_person).
 // FUNCTION: 0x0001673c
 void person_gone(Thing *person)
 {
     remove_person(person);
 }
 
+// Removes a person from the game: leaves their queue, complex and room, drops
+// their vaccination request, closes their window if open, and frees the thing.
 // FUNCTION: 0x00016760
 void remove_person(Thing *person)
 {
@@ -271,12 +288,14 @@ void remove_person(Thing *person)
     remove_thing(person);
 }
 
+// Adds person to the people list of the room at tile, or takes them out of
+// their room's list when tile is outside rooms.
 // FUNCTION: 0x000167c4
-void move_person_in_room_list(Thing *person, u16 id)
+void move_person_in_room_list(Thing *person, u16 tile)
 {
     RoomInfo *room;
 
-    room = which_room(id);
+    room = which_room(tile);
     if (room != 0) {
         insert_person_in_room_list(room, person);
     } else {
@@ -284,6 +303,8 @@ void move_person_in_room_list(Thing *person, u16 id)
     }
 }
 
+// Links person at the head of room's people list and sets person->room;
+// counts patients in room->count. room must not be 0 for a patient.
 // FUNCTION: 0x00016808
 void insert_person_in_room_list(RoomInfo *room, Thing *person)
 {
@@ -305,6 +326,7 @@ void insert_person_in_room_list(RoomInfo *room, Thing *person)
     }
 }
 
+// Unlinks person from their room's people list and clears person->room.
 // FUNCTION: 0x000168a0
 void remove_person_from_room_list(Thing *person)
 {
@@ -332,6 +354,8 @@ void remove_person_from_room_list(Thing *person)
     }
 }
 
+// Nav debug state: turns the person on the spot, and every 16 turns returns
+// to resume_state with a new path.
 // FUNCTION: 0x00016974
 void nav_debug_state(Thing *person)
 {
@@ -364,6 +388,9 @@ void nav_debug_state(Thing *person)
     }
 }
 
+// Changes person's sprite set to change_person_who[level]'s replacement,
+// remembering a patient's original (orig_subtype). Returns 1 if changed, 0 if
+// there is none.
 // FUNCTION: 0x00016b30
 u8 transform_peep_who(Thing *person, u8 level)
 {
@@ -380,6 +407,9 @@ u8 transform_peep_who(Thing *person, u8 level)
     return 0;
 }
 
+// Calls the queued patient id (or, with follow, the first callable one after
+// it, skipping the dead) to caller's room with complex action at tile arg,
+// making them caller's slave. Returns the patient called, or 0.
 // FUNCTION: 0x00016ba8
 u16 call_person_to_room(Thing *caller, u16 id, u16 action, u16 arg, u8 follow)
 {
@@ -419,6 +449,9 @@ u16 call_person_to_room(Thing *caller, u16 id, u16 action, u16 arg, u8 follow)
     return 0;
 }
 
+// Re-sends caller's call to its slave (as call_person_to_room). Returns 0 if
+// the call is void (the slave is gone, dead or busy elsewhere), 1 when the
+// retries have run out, 2 to keep waiting.
 // FUNCTION: 0x00016cdc
 u8 call_person_again(Thing *caller, u16 action, u16 arg)
 {
@@ -476,6 +509,8 @@ u8 call_person_again(Thing *caller, u16 action, u16 arg)
     return 2;
 }
 
+// Sends a patient to a ward with a free bed (or the nearest ward) and pages a
+// nurse there.
 // FUNCTION: 0x00016eb0
 void send_person_to_bed(Thing *person)
 {
@@ -521,6 +556,8 @@ void send_person_to_bed(Thing *person)
     set_destination_coords(person, room->unknown4);
 }
 
+// Patient state PS_IN_BED: recovers in bed until the timer runs out, then
+// gets up and goes on to the next treatment.
 // FUNCTION: 0x00017194
 void person_in_bed(Thing *person)
 {
@@ -537,6 +574,8 @@ void person_in_bed(Thing *person)
     }
 }
 
+// Returns a person in room room_id of player `owner` (type and state 0 match
+// any): the first match, or a random one if random is set. 0 if none.
 // FUNCTION: 0x0001720c
 u16 find_peep(u16 room_id, u8 random, u8 type, u8 state, u8 owner)
 {
@@ -581,6 +620,8 @@ u16 find_peep(u16 room_id, u8 random, u8 type, u8 state, u8 owner)
     return 0;
 }
 
+// Sends a person off: out of their room, then to the nearest manned
+// reception desk with space, or home if there is none.
 // FUNCTION: 0x000173c0
 void start_person_going(Thing *person)
 {
@@ -623,6 +664,9 @@ void start_person_going(Thing *person)
     }
 }
 
+// A person whose path failed: retries a recently built destination room,
+// goes back to queueing, or else gets stuck (PS_STUCK), announced for this
+// player.
 // FUNCTION: 0x0001752c
 void person_nav_failure(Thing *person)
 {
@@ -649,6 +693,9 @@ void person_nav_failure(Thing *person)
     }
 }
 
+// Patient state PS_FILLS: fills the machine's split animation (twice as fast
+// for subtype 14) until complete, then waits (state 0x20) and wakes the
+// doctor for subtype 14.
 // FUNCTION: 0x00017620
 void person_fills(Thing *person)
 {
@@ -683,6 +730,8 @@ void person_fills(Thing *person)
     }
 }
 
+// Patient state PS_ENERGISES: plays the patient's and machine's animations
+// to their last frame and holds there.
 // FUNCTION: 0x00017780
 void person_energises(Thing *person)
 {
@@ -701,6 +750,8 @@ void person_energises(Thing *person)
     }
 }
 
+// Patient state PS_IN_BOGS: uses a free toilet, then a sink if their illness
+// is non-visual, then leaves (PS_LEAVE_TOILETS).
 // FUNCTION: 0x00017854
 void person_in_bogs(Thing *person)
 {
@@ -729,6 +780,8 @@ void person_in_bogs(Thing *person)
     }
 }
 
+// Patient state PS_LEAVE_TOILETS: walks out of the toilets and carries on
+// with treatment.
 // FUNCTION: 0x000179a8
 void leave_toilets(Thing *person)
 {
@@ -738,6 +791,8 @@ void leave_toilets(Thing *person)
     process_person_complex(person);
 }
 
+// Patient state PS_RETURN_TO_QUEUE_AREA: walks back to their queue's room
+// (or a reception desk), then waits there.
 // FUNCTION: 0x000179f8
 void return_to_queue_area(Thing *person)
 {
@@ -769,6 +824,9 @@ void return_to_queue_area(Thing *person)
     person->state = PS_ENTERTAINS_THEMSELF;
 }
 
+// Plays a one-off reaction animation (PS_SHOWANIM), then restores the saved
+// state and sprite and drops vomit or a puddle if flagged (PF_VOMITS,
+// PF_WETS).
 // FUNCTION: 0x00017ae0
 void play_person_showanim(Thing *person)
 {
@@ -796,6 +854,8 @@ void play_person_showanim(Thing *person)
     }
 }
 
+// Pages the staff person's treatment needs to room (two for an operating
+// theatre).
 // FUNCTION: 0x00017c28
 void page_staff_i_need(Thing *person, RoomInfo *room)
 {
@@ -809,6 +869,8 @@ void page_staff_i_need(Thing *person, RoomInfo *room)
     page_member_of_staff(expertise[person->treatment].unknown0, room - room_info, 1, count, person->owner);
 }
 
+// Patient floating away: rises by their speed each turn and is removed at
+// height 400.
 // FUNCTION: 0x00017cb0
 void person_flys(Thing *person)
 {
@@ -822,6 +884,7 @@ void person_flys(Thing *person)
     }
 }
 
+// Walks a person out of their room and on to their next treatment.
 // FUNCTION: 0x00017d2c
 void send_person_somewhere_else(Thing *person)
 {
@@ -831,6 +894,8 @@ void send_person_somewhere_else(Thing *person)
     }
 }
 
+// Hands a non-emergency patient over to player `owner`'s hospital, resetting
+// their diagnosis and contagion, and sends them to reception.
 // FUNCTION: 0x00017d78
 void refer_patient(Thing *person, u8 owner)
 {
@@ -856,6 +921,9 @@ void refer_patient(Thing *person, u8 owner)
     }
 }
 
+// Patient state PS_WAITS_FOR_DECISION: waits while the player decides on
+// their call; goes on when a diagnosis or treatment becomes possible, or
+// home (counted as untreatable) after 1500 ticks of othervar.f82.
 // FUNCTION: 0x00017e30
 void person_waits_for_decision(Thing *person)
 {
@@ -939,6 +1007,9 @@ void person_waits_for_decision(Thing *person)
     }
 }
 
+// Creates a call (fax) of type `type` about subject for player `owner`, with
+// timeout turns before it expires (0 never), and shows it on the panel.
+// Returns its id, or 0 if none was free or in the rat game.
 // FUNCTION: 0x0001824c
 u16 make_a_playercall(const u16 type, const u16 subject, const s16 timeout, u8 owner)
 {
@@ -981,6 +1052,8 @@ u16 make_a_playercall(const u16 type, const u16 subject, const s16 timeout, u8 o
     return 0;
 }
 
+// Makes the oldest of player `owner`'s calls of type `type` the head of
+// listhead.first[type].
 // FUNCTION: 0x00018438
 void get_new_popup_head(u16 type, u8 owner)
 {
@@ -999,6 +1072,8 @@ void get_new_popup_head(u16 type, u8 owner)
     }
 }
 
+// Takes the head call of type `type` of each player off the panel into
+// popup_store, to put back with restore_popup.
 // FUNCTION: 0x000184f4
 void save_popup(u16 type)
 {
@@ -1025,6 +1100,7 @@ void save_popup(u16 type)
     }
 }
 
+// Puts each player's call of type `type` saved by save_popup back.
 // FUNCTION: 0x00018620
 void restore_popup(u16 type)
 {
@@ -1051,6 +1127,8 @@ void restore_popup(u16 type)
     }
 }
 
+// Removes player `owner`'s call of type `type` with id `id` (id 0: the first
+// one). Returns its subject, or 0 if none was found.
 // FUNCTION: 0x00018710
 u16 get_playercall(const u16 type, u16 id, u8 owner)
 {
@@ -1075,6 +1153,8 @@ u16 get_playercall(const u16 type, u16 id, u8 owner)
     return result;
 }
 
+// Counts player `owner`'s calls of type `type`; for types other than 2, 3, 4
+// and 8, only those about subject.
 // FUNCTION: 0x00018838
 u16 check_playercall(u16 type, u16 subject, u8 owner)
 {
@@ -1100,6 +1180,8 @@ u16 check_playercall(u16 type, u16 subject, u8 owner)
     return count;
 }
 
+// Ages the calls with a timeout, removing those that expire and applying the
+// default answer for some (an accepted VIP visit, choice 0xb for type 3).
 // FUNCTION: 0x00018908
 void expire_playercalls(void)
 {
@@ -1144,6 +1226,9 @@ void expire_playercalls(void)
     }
 }
 
+// Draws the "no treatment" call for patient person: their illness or best
+// guess, and the room and staff the hospital lacks for it. Disables the
+// autopsy button without the machine. Returns 0.
 // FUNCTION: 0x00018b78
 u16 call_no_treatment(Thing *person, char **strs)
 {
@@ -1215,6 +1300,7 @@ u16 call_no_treatment(Thing *person, char **strs)
     return 0;
 }
 
+// "No treatment" call buttons 0-2: sends that choice (packet_choice_result).
 // FUNCTION: 0x00018f20
 void process_no_treatment_buttons(u8 button)
 {
@@ -1231,6 +1317,8 @@ void process_no_treatment_buttons(u8 button)
     }
 }
 
+// Patient state PS_ARRIVED_FROM_CALL: waits for the staff member who called
+// them; if none is waiting in the room, carries on with treatment.
 // FUNCTION: 0x00018f88
 void person_arrived_from_call(Thing *person)
 {
@@ -1248,6 +1336,7 @@ void person_arrived_from_call(Thing *person)
     }
 }
 
+// Returns 0 if person is in or on the way to the toilets, else 1.
 // FUNCTION: 0x0001905c
 u32 person_ok_to_call(Thing *person)
 {
@@ -1263,6 +1352,8 @@ u32 person_ok_to_call(Thing *person)
     return 1;
 }
 
+// Draws the fax announcing new illness kind: its description and what this
+// player lacks to treat it. Returns 0.
 // FUNCTION: 0x000190c4
 u16 announce_new_illness_fax(const u8 kind, char **strs)
 {
@@ -1328,6 +1419,7 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     return 0;
 }
 
+// New illness fax button 0 closes it (D_00158192 = 0x5c).
 // FUNCTION: 0x00019464
 void process_announce_new_illness_buttons(u8 button)
 {
@@ -1338,6 +1430,9 @@ void process_announce_new_illness_buttons(u8 button)
     }
 }
 
+// Cures a patient by order (EV_FORCE_CURE): clears their status, takes them
+// out of their queue and sends them to the treatment for their best-guess
+// illness.
 // FUNCTION: 0x000194a0
 void force_peep_to_be_cured(Thing *person)
 {
@@ -1349,6 +1444,9 @@ void force_peep_to_be_cured(Thing *person)
     next_treatment_now_setup(person, 0);
 }
 
+// Interrupts a person's current complex and frees the staff member dealing
+// with them, then walks them out of their room to their queue or
+// destination, or back to waiting for a decision.
 // FUNCTION: 0x000194f0
 void interrupt_person(Thing *person)
 {

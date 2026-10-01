@@ -11,6 +11,9 @@ extern s32 *yoffptr;
 extern s32 srcwidth;
 extern s32 aamp;
 
+// Builds the wobble tables for draw_wibble: h row offsets (yoff) and w
+// column steps (xoff) following a sine of freq cycles per 0x800 entries and
+// amplitude amp pixels, for source buffers width pixels wide.
 // FUNCTION: 0x0006ec10
 void init_wibble(void *xoff, void *yoff, s32 w, s32 h, s32 width, s32 freq, s32 amp)
 {
@@ -40,6 +43,9 @@ void init_wibble(void *xoff, void *yoff, s32 w, s32 h, s32 width, s32 freq, s32 
     srcwidth = width;
 }
 
+// Draws the w x h image in buf (as set up by init_wibble; colour 0xfe is
+// transparent) at (x, y) in the graphics window, clipped, wobbling it with
+// the tables shifted by phase.
 // FUNCTION: 0x0006ed58
 void draw_wibble(s32 x, s32 y, u8 *buf, s32 w, s32 h, s32 phase)
 {

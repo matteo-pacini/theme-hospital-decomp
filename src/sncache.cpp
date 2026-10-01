@@ -4,6 +4,7 @@ extern "C" {
 void fn_000a2770(TbCacheUsedBlock *block);
 }
 
+// Counts the cache's used blocks into used and the locked ones into locked.
 // FUNCTION: 0x000a2260
 void TbCache::UsedAndLocked(long &used, long &locked)
 {
@@ -18,6 +19,8 @@ void TbCache::UsedAndLocked(long &used, long &locked)
     }
 }
 
+// Sets up the cache to manage size bytes at mem, all free. Returns 0 if size
+// is too small for a block header (0x14 bytes), else 1.
 // FUNCTION: 0x000a22bc
 int TbCache::Initialise(void *mem, u32 size)
 {
@@ -33,6 +36,7 @@ int TbCache::Initialise(void *mem, u32 size)
     return 1;
 }
 
+// Unlocks every used block.
 // FUNCTION: 0x000a2344
 void TbCache::UnlockAll(void)
 {
@@ -42,6 +46,9 @@ void TbCache::UnlockAll(void)
         fn_000a2770(block);
 }
 
+// Allocates a block of size bytes (plus a 0x14-byte header) tagged tag from
+// the first free block that fits, as the newest used block. Returns it, or
+// 0 if nothing fits.
 // FUNCTION: 0x000a2384
 TbCacheUsedBlock *TbCache::Allocate(u32 size, u32 tag)
 {
@@ -81,6 +88,8 @@ TbCacheUsedBlock *TbCache::Allocate(u32 size, u32 tag)
     return 0;
 }
 
+// Frees block, returning it to the address-ordered free list and merging
+// free blocks less than 8 bytes apart.
 // FUNCTION: 0x000a24b0
 void TbCache::Free(TbCacheUsedBlock *block)
 {
@@ -136,6 +145,7 @@ void TbCache::Free(TbCacheUsedBlock *block)
     }
 }
 
+// Moves used block to the newest end of the age list.
 // FUNCTION: 0x000a2678
 void TbCache::MakeNewest(TbCacheUsedBlock *block)
 {
@@ -152,6 +162,8 @@ void TbCache::MakeNewest(TbCacheUsedBlock *block)
     newest = block;
 }
 
+// Frees the oldest unlocked block. Returns its tag, or 0 if every block is
+// locked.
 // FUNCTION: 0x000a2704
 u32 TbCache::ThrowOutOldest(void)
 {
@@ -168,6 +180,7 @@ u32 TbCache::ThrowOutOldest(void)
     return 0;
 }
 
+// Unlocks block.
 // FUNCTION: 0x000a2770 COMDAT
 inline void fn_000a2770(TbCacheUsedBlock *block)
 {

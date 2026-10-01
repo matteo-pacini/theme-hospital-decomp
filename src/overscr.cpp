@@ -45,6 +45,9 @@ s32 evaluate_criteria(const u8 owner);
 u32 check_criteria_values(const u32 mode, const u8 owner);
 void pie_render(s32 x, s32 y, s32 r, s32 h, s32 d, s32 n, Sector *s);
 
+// Runs one frame of the status (overview) screen (state D_00158166: 0
+// opening, 1 shown, 2 closing): clicking a hospital's name shows its
+// figures, the close button queues EV_RETURN_FROM_SCREEN.
 // FUNCTION: 0x00056d50
 void display_peep_overview(void)
 {
@@ -121,6 +124,9 @@ void display_peep_overview(void)
         D_00158166 = 2;
 }
 
+// Draws the status screen for hospital `overview`: the year, the players'
+// names, the patients' happiness, thirst and warmth gauges with a warning,
+// its share (allhosps.f1cb percent) and the criteria bars.
 // FUNCTION: 0x000571ec
 void draw_overview_screen(void)
 {
@@ -197,6 +203,9 @@ void draw_overview_screen(void)
     }
 }
 
+// Sizes the pie chart's slices from each hospital's allhosps.f1cb percentage
+// (equal slices if all are 0), and grows the selected hospital's slice out
+// of the pie while shrinking the others back.
 // FUNCTION: 0x00057684
 void calculate_piechart(void)
 {
@@ -272,6 +281,7 @@ void calculate_piechart(void)
         slices[overview].radius += 2;
 }
 
+// Draws the pie chart and each slice's hospital name.
 // FUNCTION: 0x00057b0c
 void draw_piechart(void)
 {
@@ -314,6 +324,8 @@ void draw_piechart(void)
     }
 }
 
+// Draws up to five criteria bars (lose criteria in place of the win
+// criterion of the same kind) and their icons. The parameter is unused.
 // FUNCTION: 0x00057c70
 void display_overview_bars(u8 who)
 {
@@ -362,6 +374,8 @@ void display_overview_bars(u8 who)
     }
 }
 
+// Status screen help: formats the hovered help entry with the hospital name
+// of its argument into othervar.f96.
 // FUNCTION: 0x00057f18
 void overscr_help_add_name(void)
 {
@@ -373,6 +387,8 @@ void overscr_help_add_name(void)
     sprintf(othervar.f96, help_text[text], &allhosps[owner]);
 }
 
+// Status screen help for a criteria bar: formats the hovered bar's target
+// and the shown hospital's current value into othervar.f96.
 // FUNCTION: 0x00057f98
 void overscr_help_win_criteria(void)
 {

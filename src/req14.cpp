@@ -14,6 +14,10 @@ void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
 void post_shop_readjust_build_palette(void);
 u8 does_room_contain_compulsory_objects(RoomInfo *room);
 
+// Edit room requester clicks on the enabled buttons (crequester.unknown4
+// marks the disabled ones): cancel aborts building, one button sends event
+// 0x5b, one switches to picking up objects (mode 8), and confirm commits the
+// current step (blueprint, doors, or opens the room).
 // FUNCTION: 0x0009f0c0
 void req14(Window *win)
 {
@@ -63,6 +67,10 @@ void req14(Window *win)
     }
 }
 
+// Draws the edit room requester: its buttons (lit or greyed), the room
+// name, the step's instructions (misc_text[othervar.f9c0]) and, while
+// placing objects, the list of objects still to place; clicking one selects
+// it for placing (crequester.unknown9). Sets the window's height to fit.
 // FUNCTION: 0x0009f2e0
 void req14_overdraw(Window *win)
 {
@@ -227,6 +235,11 @@ void req14_overdraw(Window *win)
     set_all_refresh_zones_in_window(ox, oy, win->width + ox, win->height + oy, 3);
 }
 
+// Moves the edit room requester to step `mode` (0 and 2 blueprint, 4 doors,
+// 6 placing objects, 8 picking objects up, 0xa corridor objects), setting
+// which buttons are disabled and the instructions, and opens it if needed.
+// In modes 6 and 8, confirm is only enabled once the room has its required
+// objects.
 // FUNCTION: 0x0009fcbc
 void set_edit_room_requester_mode(const u8 mode)
 {
@@ -281,6 +294,8 @@ void set_edit_room_requester_mode(const u8 mode)
         open_edit_room_requester();
 }
 
+// Opens the edit room requester (crequester.unknown2 5) if no requester is
+// open.
 // FUNCTION: 0x0009ff68
 void open_edit_room_requester(void)
 {
@@ -291,6 +306,10 @@ void open_edit_room_requester(void)
     }
 }
 
+// Returns from the buy objects requester to placing: restores the shopping
+// list saved in othervar.f8b7 (restore_purchases set) or re-adds the
+// required objects taken off it, then places the next object to build or
+// shows the place-object requester.
 // FUNCTION: 0x0009ffa8
 void go_back_to_place_object_requester(u8 restore_purchases)
 {

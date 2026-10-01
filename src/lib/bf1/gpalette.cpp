@@ -16,6 +16,10 @@ u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b);
 
 extern "C" {
 
+// Fades the palette towards to_pal (0: black) over fade_steps steps, waiting
+// for the vertical blank before each. With Lb_PALETTE_FADE_CLOSED it runs
+// the whole fade; otherwise it takes one step per call, starting a new fade
+// when none is under way. Returns the current step.
 // FUNCTION: 0x000c9400
 s32 LbPaletteFade(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
 {
@@ -62,6 +66,7 @@ s32 LbPaletteFade(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
     return fade_count;
 }
 
+// Abandons a step-by-step fade, so the next call starts afresh. Returns 1.
 // FUNCTION: 0x000c95f8
 int LbPaletteStopOpenFade(void)
 {
@@ -79,6 +84,9 @@ struct Rgb {
 
 #define SQR(x) ((x) * (x))
 
+// Returns the palette index nearest to (r, g, b) (0-63 each): least squared
+// distance, ties broken by the smallest sum of differences, then the
+// darkest.
 // FUNCTION: 0x000c960c
 u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b)
 {
@@ -160,6 +168,8 @@ u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b)
 
 extern "C" {
 
+// Draws the 256 colours as a 16 x 16 grid of w x h boxes from (x, y), with
+// their numbers if show_numbers is set. Returns 1.
 // FUNCTION: 0x000c99d8
 int LbPaletteDraw(s32 x, s32 y, s32 w, s32 h, u8 show_numbers)
 {

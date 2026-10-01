@@ -19,6 +19,9 @@ u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
 void req5_draw_machine_usage_bar(long x, long y, long used, long total);
 u8 is_thing_paged(ThingPager *pager, u16 id);
 
+// Machine window clicks (machine D_001581b2[3].value): close, call a
+// handyman (EV_THINGPAGE_REQUEST), and replace it if affordable (asks to
+// confirm).
 // FUNCTION: 0x00088260
 void req5(Window *win)
 {
@@ -54,6 +57,10 @@ void req5(Window *win)
     }
 }
 
+// Draws the machine window: its name (in brackets while a handyman is
+// paged), the room's patient count and the strength left as a bar. A left
+// click on the view centres the map on it, a right click moves to the next
+// machine.
 // FUNCTION: 0x00088490
 void req5_overdraw(Window *win)
 {
@@ -125,6 +132,7 @@ void req5_overdraw(Window *win)
     }
 }
 
+// Draws the machine window's bar filled to filled / total of its width.
 // FUNCTION: 0x00088880
 void req5_draw_machine_usage_bar(long x, long y, long filled, long total)
 {
@@ -134,6 +142,7 @@ void req5_draw_machine_usage_bar(long x, long y, long filled, long total)
         reqspr_draw(x + resvars.f18[0x53].x + i, y + resvars.f18[0x53].y, &button_sprite[resvars.f12[4]]);
 }
 
+// Returns 1 if thing id is among pager's requests, else 0.
 // FUNCTION: 0x00088918
 u8 is_thing_paged(ThingPager *pager, u16 id)
 {

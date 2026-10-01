@@ -13,6 +13,9 @@ void nav_init(Thing *w);
 
 }
 
+// Returns 1 if a step from tile (x, y) in direction dir (0 -y, 1 +x, 2 +y,
+// 3 -x) is blocked: by the map's edge, a wall on the edge between the tiles,
+// or either tile being impassable (Map.flags bit 0 without bit 1). 0 if free.
 // FUNCTION: 0x00043ff0
 s32 wall_in_way(u32 x, u32 y, u32 dir)
 {
@@ -79,6 +82,9 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
     return 0;
 }
 
+// Returns person's next step towards (dest_x, dest_y) as orthonav_whatnext
+// does, replanning the path first if there is none or the destination
+// changed. Sets nav_person. The second parameter is unused.
 // FUNCTION: 0x00044210
 s16 person_head_for(Thing *person, u8 a)
 {
@@ -92,6 +98,9 @@ s16 person_head_for(Thing *person, u8 a)
     return orthonav_whatnext(THING_PATH(person), person->x.tile, person->y.tile, person->facing);
 }
 
+// Returns 0x8000 if a patient or staff member on the tile next to (x, y) in
+// direction dir faces nav_person head-on, else 0. Looks at the tile's first
+// four things only.
 // FUNCTION: 0x000442a0
 s32 person_in_way(u32 x, u32 y, u32 dir)
 {
@@ -136,6 +145,9 @@ s32 person_in_way(u32 x, u32 y, u32 dir)
     return 0;
 }
 
+// Returns 0x8000 if a patient or staff member with a higher thing index
+// shares nav_person's tile facing the same way, else 0. Looks at the tile's
+// first four things only.
 // FUNCTION: 0x000443ec
 s32 person_overlap(void)
 {
@@ -169,6 +181,7 @@ s32 person_overlap(void)
 
 extern "C" {
 
+// Plans a new path for person from its tile to (dest_x, dest_y).
 // FUNCTION: 0x000444e0
 void nav_init(Thing *person)
 {

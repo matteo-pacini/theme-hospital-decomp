@@ -4,6 +4,7 @@ extern "C" {
 void StopAllSampleFadeTimers(void);
 void StopSampleQueueList(void);
 
+// Stops every sample, its fades and the sample queue.
 // FUNCTION: 0x000c8320
 void StopAllSamples(void)
 {

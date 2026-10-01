@@ -9,6 +9,7 @@ void FreeRedbook(void);
 void FreeMusic(void);
 void FreeSound(void);
 
+// Shuts down streamed sound, Red Book audio, music and sound effects.
 // FUNCTION: 0xc20f0
 void FreeAudio(void)
 {

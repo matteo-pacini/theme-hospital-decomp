@@ -6,6 +6,8 @@ u16 find_free_object_anywhere(u16 id, u8 kind);
 void staff_in_corridor(Thing *w);
 RoomInfo *allocate_reception_roominfo(u8 owner);
 
+// Staff state SS_RECEPTIONIST_FINDS_RECEPTION: sends the receptionist to a
+// free reception desk, or wanders the corridor if there is none.
 // FUNCTION: 0x00097ce0
 void receptionist_finds_reception(Thing *receptionist)
 {
@@ -35,6 +37,8 @@ void receptionist_finds_reception(Thing *receptionist)
     }
 }
 
+// Staff state SS_RECEPTIONIST_SETUP: joins the reception (shared queue
+// room) of a manned desk within 10 tiles, or starts a new one, then works.
 // FUNCTION: 0x00097de0
 void receptionist_setup(Thing *receptionist)
 {
@@ -65,6 +69,9 @@ void receptionist_setup(Thing *receptionist)
     receptionist->state = SS_RECEPTIONIST_WORKS;
 }
 
+// Staff state SS_RECEPTIONIST_WORKS: calls the first queued patient
+// (emergencies first) whose treatment has room to spare to the desk, or
+// idles with random desk tasks while the queue is empty.
 // FUNCTION: 0x00097fac
 void receptionist_works(Thing *receptionist)
 {
@@ -128,6 +135,8 @@ void receptionist_works(Thing *receptionist)
     }
 }
 
+// Staff state SS_RECEPT_WAITS_FOR_PATIENT: admits the called patient on
+// arrival, or calls again and gives up after the retries (sending them on).
 // FUNCTION: 0x000982a8
 void recept_waits_for_patient(Thing *receptionist)
 {
@@ -179,6 +188,8 @@ void recept_waits_for_patient(Thing *receptionist)
     }
 }
 
+// Staff state SS_RECEPT_ADMITS_PATIENT: the patient pays (or not) and goes
+// for treatment; counts them in the reception's admissions.
 // FUNCTION: 0x000984a0
 void recept_admits_patient(Thing *receptionist)
 {
@@ -201,6 +212,8 @@ void recept_admits_patient(Thing *receptionist)
     }
 }
 
+// Takes the receptionist off their reception; if no other desk shares it,
+// sends its queue back out and clears the reception's room record.
 // FUNCTION: 0x00098554
 void receptionist_reset(Thing *receptionist)
 {

@@ -11,6 +11,10 @@ u8 DangerMusicVolumeChange = 255;
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
 
+// Starts the music driver (from BF_FORCE_MIDI_DRIVER or MDI.INI), chooses
+// the music bank type for the card (MusicType: f FM, g General MIDI, r
+// MT-32, w AWE32 with its soundfont) and allocates the bank. On failure
+// music stays disabled (MusicAble 0).
 // FUNCTION: 0xdd210
 void InitMusic(void)
 {
@@ -202,6 +206,7 @@ void InitMusic(void)
 
 extern "C" int access(const char *path, int mode);
 
+// Returns 1 if file path exists, else 0.
 // FUNCTION: 0xdda20
 int fm_instrument_file_exists(u8 *path)
 {

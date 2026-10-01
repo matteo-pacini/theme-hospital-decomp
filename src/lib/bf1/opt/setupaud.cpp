@@ -2,6 +2,8 @@
 
 extern "C" {
 
+// Fills ao with the default audio options ("Sound" paths, ten samples,
+// sound and music on).
 // FUNCTION: 0x000cd7f0
 void SetupAudioOptionDefaults(AudioInitOptions *ao)
 {

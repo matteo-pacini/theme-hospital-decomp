@@ -5,6 +5,10 @@ extern u8 D_00178c0c[];
 
 u8 LbPaletteFindColour(u8 *palette, u8 r, u8 g, u8 b);
 
+// Makes lbDisplay.ghost the 256 x 256 blend table for palette: loaded from
+// file name, or computed (entry [a][b] is the colour intensity percent of
+// the way from a to b) and saved to it. Returns 1, or -1 if the computed
+// table could not be saved.
 // FUNCTION: 0x000be7a0
 int LbGhostTableGenerate(u8 *palette, u8 intensity, char *name)
 {

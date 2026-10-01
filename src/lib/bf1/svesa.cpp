@@ -34,6 +34,9 @@ void vesa_set_window(u32 window, u32 position, u32 zero);
 #pragma aux vesa_set_window = 0xb8 0x05 0x4f 0x00 0x00 0x66 0x55 0xcd 0x10 0x66 0x5d \
     parm [ebx] [edx] [ecx] modify [eax];
 
+// Reads VESA mode `mode`'s window granularity, bytes per line and
+// resolution (lbVesaGran, lbVesaBytesPerLine, lbVesaHRes, lbVesaVRes)
+// through the DOS-memory buffer lbVesaData. Returns 1.
 // FUNCTION: 0x000ce630
 int LbVesaGetGran(s16 mode)
 {
@@ -63,6 +66,7 @@ int LbVesaGetGran(s16 mode)
     return 1;
 }
 
+// Sets VESA mode `mode` and reads its details. Returns 1.
 // FUNCTION: 0x000ce738
 int LbVesaSetMode(s16 mode)
 {
@@ -79,6 +83,8 @@ int LbVesaSetMode(s16 mode)
     return 1;
 }
 
+// Maps 64K bank `page` of video memory into both VESA windows, unless it is
+// already mapped. Returns 1.
 // FUNCTION: 0x000ce794
 int LbVesaSetPage(s16 page)
 {
@@ -90,6 +96,8 @@ int LbVesaSetPage(s16 page)
     return 1;
 }
 
+// Reads the VESA controller information into lbVesaData. Returns 1 if a
+// VESA BIOS answered, else -1.
 // FUNCTION: 0x000ce814
 int LbVesaGetInfo(void)
 {
@@ -118,6 +126,7 @@ int LbVesaGetInfo(void)
         return -1;
 }
 
+// Returns 1 if the VESA BIOS lists video mode `mode`, else 0.
 // FUNCTION: 0x000ce8d8
 int LbVesaIsModeAvailable(s16 mode)
 {

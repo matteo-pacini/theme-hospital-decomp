@@ -49,6 +49,9 @@ extern char **D_0016039c;
 
 }
 
+// Points language string table `group` (the section number in the language
+// file: 0 staff_names, 1 object_names, 2 misc_text, ...) at address. Returns
+// 1 (also for an unknown group).
 // FUNCTION: 0x0002d1c0
 u8 set_group_address(s32 group, char **address)
 {
@@ -319,6 +322,9 @@ u8 set_group_address(s32 group, char **address)
     return 1;
 }
 
+// Loads the language file for myplayer.f21 and splits it into its string
+// tables (set_group_address), allocating text_starts. Returns 1 on success,
+// 0 if the file or memory could not be had.
 // FUNCTION: 0x0002d7c4
 s16 setup_lang(void)
 {

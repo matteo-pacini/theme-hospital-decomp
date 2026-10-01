@@ -2,6 +2,7 @@
 
 extern "C" {
 
+// Stops sample `number` of source source_id if it is playing.
 // FUNCTION: 0x000cccc0
 void StopSample(u32 source_id, s16 number)
 {

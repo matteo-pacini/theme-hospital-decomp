@@ -56,6 +56,9 @@ u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
 void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *spr, const long max, const long min,
                 const long range, const u8 up);
 
+// Patient window clicks (patient D_001581b2[1].value): close, the casebook
+// for their illness once diagnosed, send home, their queue's window, and
+// force a cure (EV_FORCE_CURE) when diagnosed and the cure is known.
 // FUNCTION: 0x00072d60
 void req3(Window *win)
 {
@@ -115,6 +118,10 @@ void req3(Window *win)
     }
 }
 
+// Draws the patient window: greys the unavailable buttons, the happiness,
+// thirst and warmth gauges, and the health graph or diagnosis list (toggled
+// by clicking it); a left click on the next button centres the view on the
+// patient, a right click moves to the next patient.
 // FUNCTION: 0x0007308c
 void req3_overdraw(Window *win)
 {
@@ -190,6 +197,7 @@ void req3_overdraw(Window *win)
     compute_help_text(0, 0, 9);
 }
 
+// Closes the query window in slot i (D_001581b2[i]).
 // FUNCTION: 0x000736d4
 void close_query(u8 i)
 {
@@ -197,6 +205,8 @@ void close_query(u8 i)
     D_001581b2[i].kind = 0x63;
 }
 
+// Draws patient's recorded health (health_history[1-9]) as a line graph at
+// window (x, y) in colour.
 // FUNCTION: 0x00073704
 void draw_health_graph(Thing *patient, u16 x, u16 y, u16 colour)
 {
@@ -235,6 +245,7 @@ void draw_health_graph(Thing *patient, u16 x, u16 y, u16 colour)
     }
 }
 
+// Draws patient's treatments so far (and "cured") at window (x, y).
 // FUNCTION: 0x000738e8
 void draw_diagnosis(Thing *patient, u16 x, u16 y)
 {
@@ -273,6 +284,11 @@ void draw_diagnosis(Thing *patient, u16 x, u16 y)
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
 }
 
+// Returns the next thing after cand of type kind belonging to this player for
+// which check_if_point_beyond_scroll_limit(tile x, tile y, 0) is nonzero,
+// wrapping round: with sub1 >= 0 only subtypes sub1 or sub2, otherwise objects
+// only if they have a window (objects[].f20). If none matches it returns the
+// thing count (an index past the last).
 // FUNCTION: 0x00073bb0
 u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
 {
@@ -345,6 +361,9 @@ u16 find_next_thing(Thing *cand, u8 kind, s8 sub1, s8 sub2)
     return cand - thing;
 }
 
+// Draws a gauge of len pixels at (x, y) by repeating spr: value (clamped to
+// min-max) as a fraction of range, filled from the left if up is set, else
+// the rest.
 // FUNCTION: 0x00073fbc
 void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *spr, const long max, const long min,
                 const long range, const u8 up)
@@ -364,6 +383,8 @@ void draw_gauge(long value, const u16 x, const u16 y, const u16 len, TbSprite *s
         reqspr_draw(x + i, y, spr);
 }
 
+// Help text for a patient window button that needs a diagnosis, into
+// othervar.f96.
 // FUNCTION: 0x00074064
 extern "C" void fn_00074064(void)
 {
@@ -374,6 +395,8 @@ extern "C" void fn_00074064(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// Help text for the patient window's cure button, into othervar.f96, when
+// it is available.
 // FUNCTION: 0x000740e4
 extern "C" void fn_000740e4(void)
 {
@@ -385,6 +408,8 @@ extern "C" void fn_000740e4(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// Help text for the patient window's queue button, into othervar.f96, when
+// the patient is queueing.
 // FUNCTION: 0x000741a4
 extern "C" void fn_000741a4(void)
 {
@@ -395,6 +420,10 @@ extern "C" void fn_000741a4(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c[othervar.f8ac].text]);
 }
 
+// Returns the next patient after thing id with any of flags in flags32
+// (PF_EMERGENCY, PF_CONTAGIOUS, ...), of this player, for which
+// check_if_point_beyond_scroll_limit(tile x, tile y, 0) is nonzero, wrapping
+// round. If none matches it returns the thing count.
 // FUNCTION: 0x00073e64
 u16 find_next_emergency_person(u16 id, u32 flags)
 {

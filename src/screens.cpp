@@ -36,6 +36,12 @@ int strcmp(const char *a, const char *b);
 void fade_out_menu(void);
 void load_screen(const u8 idx);
 
+// Leaves a full-screen window: back to 320x200 if that is the game's mode
+// (in_game) or the current one, frees the screen's cached data, fades out
+// and sets mouse mode mouse_mode. With sprites set, resets the screen
+// sprites. With in_game set, returns to the map view and reopens the
+// requester and placing mode that were active. Exits the program if the
+// screen mode cannot be restored.
 // FUNCTION: 0x000b73a0
 void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
 {
@@ -118,6 +124,10 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
     }
 }
 
+// Loads full-screen picture idx (with its palette, pointer and sprite files,
+// and level map map if nonzero) into a cache block, switching to screen mode
+// `mode` first and fading out the old screen if fade is set; then sets mouse
+// mode mouse_mode. Gives up quietly if a load fails.
 // FUNCTION: 0x000b7648
 void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 map, TbScreenMode mode)
 {
@@ -224,12 +234,15 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     set_mouse_mode(mouse_mode);
 }
 
+// Fades the palette to black.
 // FUNCTION: 0x000b7a1c
 void fade_out_menu(void)
 {
     hosp_fade_palette(0, 10, Lb_PALETTE_FADE_CLOSED);
 }
 
+// Shows the loading screen, switching to 640x480 if needed. Returns 0 if the
+// mode could not be set, else 1.
 // FUNCTION: 0x000b7a44
 u8 display_loading_screen(void)
 {
@@ -261,6 +274,8 @@ u8 display_loading_screen(void)
     return 1;
 }
 
+// Fades out and clears the loading screen; `palette` becomes the palette to
+// fade in next (othervar.f1f).
 // FUNCTION: 0x000b7b3c
 void clear_loading_screen(u8 *palette)
 {
@@ -285,6 +300,8 @@ void clear_loading_screen(u8 *palette)
     }
 }
 
+// Loads full-screen picture idx into the background screen (bscreen) and its
+// palette, which becomes the next to fade in.
 // FUNCTION: 0x000b7bf0
 void load_screen(const u8 idx)
 {

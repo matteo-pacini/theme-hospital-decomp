@@ -68,6 +68,9 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
 
 u8 testcol = 0x94;
 
+// Runs one frame of the town map (town.unknown2: 0 opening, 7 shown, 1
+// closing back to the game) and of the network land auction (0xb, 0xc
+// setting it up, 0x45 running).
 // FUNCTION: 0x00063680
 void draw_town_select(void)
 {
@@ -168,6 +171,7 @@ void draw_town_select(void)
         othervar.fa8a--;
 }
 
+// Town map keys: Escape closes it.
 // FUNCTION: 0x00063a64
 void process_keys_town_select(void)
 {
@@ -194,6 +198,9 @@ void process_keys_town_select(void)
     lbInkey = 0;
 }
 
+// Town map clicks: the panel buttons, a left click on a plot for sale buys
+// it if affordable (EV_BUY_LAND, or an auction in a network game), and a
+// right click elsewhere centres the view there and closes the map.
 // FUNCTION: 0x00063ae8
 void process_mouse_town_select(void)
 {
@@ -252,6 +259,9 @@ void process_mouse_town_select(void)
     }
 }
 
+// Returns plot if this player may buy it: it has no adjacency rule for this
+// level, or borders land the player owns (for_sale). Returns 0 otherwise,
+// and 1 for plot 0.
 // FUNCTION: 0x00063d6c
 u8 can_buy_plot(const u8 plot)
 {
@@ -276,6 +286,8 @@ u8 can_buy_plot(const u8 plot)
     return plot;
 }
 
+// Returns the plot under the mouse on the town map if this player may buy
+// it, else 0.
 // FUNCTION: 0x00063e54
 u16 check_for_sale(void)
 {
@@ -293,6 +305,8 @@ u16 check_for_sale(void)
     return 0;
 }
 
+// Draws the hospital's walls (all but the 0x8e-0x91 kinds) onto the town
+// map.
 // FUNCTION: 0x00064030
 void display_hospital_map_overhead(void)
 {
@@ -337,6 +351,8 @@ void display_hospital_map_overhead(void)
     }
 }
 
+// Draws the town map: each tile coloured by owner, plots for sale this
+// player may buy highlighted, plot outlines and walls.
 // FUNCTION: 0x00064338
 void display_hospital_map_sale(void)
 {
@@ -385,6 +401,8 @@ void display_hospital_map_sale(void)
     }
 }
 
+// Draws the outline between tile (x, y) and its neighbours where they
+// belong to different plots.
 // FUNCTION: 0x00064a60
 void draw_sale_area_outlines(u16 x, u16 y)
 {
@@ -407,6 +425,9 @@ void draw_sale_area_outlines(u16 x, u16 y)
     }
 }
 
+// Gives plot `plot` to player othervar.ff: copies its tiles from the level
+// (placing its objects), marks it as theirs, rebuilds the partition walls
+// and grass, and charges the price (the winning bid in a network game).
 // FUNCTION: 0x00064db0
 void buy_land(u16 plot)
 {
@@ -441,6 +462,7 @@ void buy_land(u16 plot)
     add_static_shadows();
 }
 
+// Lays the two grass tiles in a chequer pattern over all grass cells.
 // FUNCTION: 0x00065014
 void mow_grass(void)
 {
@@ -461,6 +483,7 @@ void mow_grass(void)
     }
 }
 
+// Puts back the partition walls along the edges of land not yet bought.
 // FUNCTION: 0x000650f4
 void place_partition_walls(void)
 {
@@ -483,6 +506,8 @@ void place_partition_walls(void)
     }
 }
 
+// Removes partition walls that no longer separate unbought land (keeping a
+// plain wall where a room borders it), and recolours the rooms.
 // FUNCTION: 0x00065248
 void remove_partition_walls(void)
 {
@@ -521,6 +546,10 @@ void remove_partition_walls(void)
     recolour_all_rooms();
 }
 
+// With flag set, drops already-sold plots from the level's plot map.
+// Otherwise rebuilds the map from the level: the public land and each
+// player's starting plot, everything else blank with grass and random
+// decorations, then the partition walls and shadow blocks.
 // FUNCTION: 0x0006541c
 void recreate_map(const u8 flag)
 {
@@ -657,6 +686,8 @@ void recreate_map(const u8 flag)
         precalculate_shadow_blocks();
 }
 
+// Places the object a level tile starts with (kind and direction packed in
+// Map.first), owned by player 0, and clears it from the cell.
 // FUNCTION: 0x00065fc0
 void adjust_mapwho(u16 tile)
 {
@@ -679,6 +710,8 @@ void adjust_mapwho(u16 tile)
     }
 }
 
+// Draws the town map's details for the tile under the mouse: plot number,
+// whether it is for sale or whose it is, its size and price.
 // FUNCTION: 0x00066094
 void display_plot_under_mouse(void)
 {
@@ -752,6 +785,7 @@ void display_plot_under_mouse(void)
     }
 }
 
+// Counts the tiles of each plot (land_amount).
 // FUNCTION: 0x000666d4
 void calculate_land_amount(void)
 {
@@ -767,6 +801,7 @@ void calculate_land_amount(void)
     }
 }
 
+// Draws the hospital's walls into the town map's background (bscreen).
 // FUNCTION: 0x00066764
 void setup_overhead_map(void)
 {
@@ -787,6 +822,8 @@ void setup_overhead_map(void)
     othervar.f69 = 0;
 }
 
+// Loads the auction screen and draws the map with the plot for sale into
+// its background.
 // FUNCTION: 0x0006680c
 extern "C" void setup_bid_map(void)
 {
@@ -810,6 +847,8 @@ extern "C" void setup_bid_map(void)
     othervar.f69 = 0;
 }
 
+// Draws the town map with the shown overlays (town.unknown0 bits) and the
+// details under the mouse.
 // FUNCTION: 0x00066914
 extern "C" void display_overhead_map(void)
 {
@@ -830,6 +869,7 @@ extern "C" void display_overhead_map(void)
     display_plot_under_mouse();
 }
 
+// Draws the auction screen: the map with the plot for sale and the bids.
 // FUNCTION: 0x000669fc
 extern "C" void display_bid_map(void)
 {
@@ -840,6 +880,9 @@ extern "C" void display_bid_map(void)
     draw_bid_text();
 }
 
+// Draws the overlay markers on the town map (people, plants, fire
+// extinguishers, machines, radiators by town.unknown0 bits; doors always)
+// and the hospital's counts and heating level.
 // FUNCTION: 0x00066a34
 void draw_things_on_map(void)
 {
@@ -941,6 +984,8 @@ void draw_things_on_map(void)
     }
 }
 
+// Town map panel clicks: runs the callback of the button released over,
+// drawing it pressed while held. Returns 1 if the mouse was on a button.
 // FUNCTION: 0x000675a8
 u8 process_town_panel(void)
 {
@@ -978,6 +1023,9 @@ u8 process_town_panel(void)
     return hit;
 }
 
+// Town map buttons: 0-4 toggle the people, plant, fire extinguisher,
+// machine and radiator overlays (a right click shows only that one), 5/6
+// lower or raise the heating (event 0x4f, 1-10), 7 closes the map.
 // FUNCTION: 0x000678dc
 void process_town_button(u8 button)
 {
@@ -1041,6 +1089,8 @@ void process_town_button(u8 button)
     }
 }
 
+// Auction screen clicks: runs the callback of the button released over,
+// drawing it pressed while held.
 // FUNCTION: 0x00067b80
 void process_bid_panel(void)
 {
@@ -1067,6 +1117,8 @@ void process_bid_panel(void)
     }
 }
 
+// Auction buttons 0 and 1: bid the current price (EV_PLOT_BID_MONEY) if
+// affordable.
 // FUNCTION: 0x00067e44
 void process_bid_button(u8 button)
 {
@@ -1085,6 +1137,8 @@ void process_bid_button(u8 button)
     }
 }
 
+// Draws the auction map: each tile coloured by owner, the plot for sale
+// (othervar.f78) highlighted and walls.
 // FUNCTION: 0x00067ed4
 extern "C" void draw_hilight_plot(void)
 {
@@ -1120,6 +1174,8 @@ extern "C" void draw_hilight_plot(void)
         othervar.f79 = 0;
 }
 
+// Draws the auction's current price and each player's last bid, marking
+// the leading bidder.
 // FUNCTION: 0x00068194
 extern "C" void draw_bid_text(void)
 {
@@ -1174,6 +1230,8 @@ extern "C" void draw_bid_text(void)
     }
 }
 
+// Player who bids the current price; the price rises by a step and the
+// auction clock restarts (100 frames).
 // FUNCTION: 0x00068480
 void plot_bid_money(u8 who)
 {
@@ -1183,6 +1241,9 @@ void plot_bid_money(u8 who)
     plotbid.timer = 100;
 }
 
+// Runs the auction clock: when it runs out the plot goes to the leading
+// bidder (EV_BUY_LAND if it is this player) and the auction closes. Draws
+// the hammer.
 // FUNCTION: 0x000684d0
 void process_bid_time(void)
 {
@@ -1207,6 +1268,8 @@ void process_bid_time(void)
     reqspr_draw(resvars.f40[70].x, resvars.f40[70].y, &screen_sprites_tab_start[bid_hammer[plotbid.timer]]);
 }
 
+// Draws this player's balance on the town map, rolling the changed digits
+// as draw_money_on_panel does.
 // FUNCTION: 0x000685cc
 void draw_money_on_town(void)
 {
@@ -1261,12 +1324,15 @@ void draw_money_on_town(void)
     }
 }
 
+// Remembers the display mode to return to after a land auction.
 // FUNCTION: 0x000688c0
 void setup_town_bid(void)
 {
     othervar.f9ef = display_mode;
 }
 
+// Leaves the town map or auction: back to the display mode saved by
+// setup_town_bid, or to the game.
 // FUNCTION: 0x000688e4
 extern "C" void remove_town_bid(void)
 {
@@ -1313,6 +1379,7 @@ extern "C" void remove_town_bid(void)
     }
 }
 
+// Resets the full-screen windows' states so they reopen from scratch.
 // FUNCTION: 0x00068a14
 extern "C" void fn_00068a14(void)
 {

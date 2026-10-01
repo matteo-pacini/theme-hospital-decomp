@@ -9,6 +9,9 @@ extern "C" {
 
 extern volatile s8 CurrentSoundBank;
 
+// Stops all samples and loads sample bank `bank` of SOUND.DAT for the
+// current SoundType, unless it is already loaded. Returns 0 on success, 1
+// otherwise (also when sound effects are off).
 // NONMATCHING: bank-offset multiply uses eax instead of ecx; volatile load order
 // FUNCTION: 0xeff70
 u32 LoadSounds(u8 bank)
@@ -96,6 +99,8 @@ u32 LoadSounds(u8 bank)
 
 }
 
+// Turns the loaded sample table's offsets into pointers into the sample
+// data and counts the samples (NumberOfSamples).
 // FUNCTION: 0xf0220
 void format_sounds(void)
 {
@@ -110,6 +115,9 @@ void format_sounds(void)
     }
 }
 
+// Reads bank `bank` (SoundType index 0-8) of the open sound file at its
+// current position into the sample buffers, unpacking RNC data. Returns 1,
+// or 0 if the bank is missing or the buffers are not allocated.
 // FUNCTION: 0xf0280
 // NONMATCHING: the else branches compute head[bank] into the argument register
 // (ebx/edx) and load file into eax first; ours goes through eax
@@ -162,6 +170,9 @@ u8 load_sound_bank(long file, u8 bank)
     return 0;
 }
 
+// Allocates the sample buffers for sound type `type`'s banks, sized from the
+// end of SOUND.DAT. Returns 1, 0 if memory ran out, -1 if there is no
+// SOUND.DAT, -2 if it has no bank of that type.
 // FUNCTION: 0xf04a0
 s32 AllocateSoundBankMemory(u16 type)
 {
@@ -239,6 +250,7 @@ s32 AllocateSoundBankMemory(u16 type)
     return -2;
 }
 
+// Frees the sample buffers.
 // FUNCTION: 0xf0710
 void DeInitSoundBank(void)
 {

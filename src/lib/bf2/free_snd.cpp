@@ -2,6 +2,8 @@
 
 extern "C" {
 
+// Stops the song and shuts down music: frees the AWE32 soundfont and the
+// music bank, and the Miles library if sound effects are not installed.
 // FUNCTION: 0xdc820
 void FreeMusic(void)
 {
@@ -27,6 +29,8 @@ void FreeMusic(void)
     MusicInstalled = 0;
 }
 
+// Stops all samples and shuts down sound effects: frees the sample bank,
+// and the Miles library if music is not installed.
 // FUNCTION: 0xdc8d0
 void FreeSound(void)
 {

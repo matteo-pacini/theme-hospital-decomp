@@ -57,6 +57,10 @@ void *fn_00022b60(TbCacheUsedBlock *block);
 void fn_000a2ed0(TbCacheUsedBlock *block);
 }
 
+// Opens sound bank file path, reads the sample directory for sample rate
+// rate into the start of mem (size bytes) and makes the rest a cache for
+// loaded samples. Returns 1 on success, 0 with sub_error_number (2-6) set on
+// failure.
 // FUNCTION: 0x000a27a0
 s32 init_sound_heap(u8 *mem, s32 size, char *path, s32 rate)
 {
@@ -110,6 +114,7 @@ s32 init_sound_heap(u8 *mem, s32 size, char *path, s32 rate)
     return 1;
 }
 
+// Closes the sound bank file.
 // FUNCTION: 0x000a292c
 void close_sound_heap(void)
 {
@@ -119,6 +124,9 @@ void close_sound_heap(void)
     }
 }
 
+// Per frame, with sound effects on and available: unlocks every cached
+// sample, then relocks the samples still playing and the full-screen
+// picture's block (othervar.fa06).
 // FUNCTION: 0x000a2960
 void process_sound_heap(void)
 {
@@ -147,6 +155,9 @@ void process_sound_heap(void)
     }
 }
 
+// Plays sample `sample` of the bank, loading it into the cache first if
+// needed (throwing out the oldest unlocked samples to make room). Returns
+// the playing sample's info, or 0 if it could not be played.
 // FUNCTION: 0x000a2a3c
 SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, u32 pitch, s8 loop, u8 type)
 {
@@ -185,6 +196,10 @@ SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, 
     return info;
 }
 
+// Reads the sound bank's directory for sound type `rate` (one of the nine
+// SoundType codes, decimal bits * 100 + kHz: 1644 ... 800) from the end of file
+// into buf as *count SampleTable entries. Returns the bytes used, or 0 for an
+// unknown rate, a missing directory or one that does not fit in size.
 // FUNCTION: 0x000a2bd0
 s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate)
 {
@@ -257,6 +272,7 @@ s32 parse_sound_file(s32 file, u8 *buf, s32 *count, s32 size, s32 rate)
     return *count * sizeof(SampleTable);
 }
 
+// Stops all samples and throws every sample out of the cache.
 // FUNCTION: 0x000a2e74
 void clear_sound_heap(void)
 {
@@ -268,6 +284,7 @@ void clear_sound_heap(void)
         sample_table[tag - 1].block = 0;
 }
 
+// Locks block.
 // FUNCTION: 0x000a2ed0 COMDAT
 inline void fn_000a2ed0(TbCacheUsedBlock *block)
 {

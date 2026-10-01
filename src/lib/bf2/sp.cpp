@@ -37,6 +37,8 @@ inline void NameCopy(char *dst, char *src, u32 size)
 extern "C" {
 }
 
+// Constructs a service provider with no players or sessions and the
+// do-nothing callbacks.
 // FUNCTION: 0x000d1310
 ServiceProvider::ServiceProvider()
 {
@@ -54,12 +56,15 @@ ServiceProvider::ServiceProvider()
     callbacks = &nilReceiveAspect;
 }
 
+// Destroys a service provider.
 // FUNCTION: 0x000d13bc
 ServiceProvider::~ServiceProvider()
 {
     fn_000c20c0("  LbNETWORK : Destructing ServiceProvider\n");
 }
 
+// Base initialisation: clears the player and session tables and installs
+// callbacks cbs (with data passed back to them). Returns Lb_OK.
 // FUNCTION: 0x000d13dc
 TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
 {
@@ -80,6 +85,7 @@ TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
     return Lb_OK;
 }
 
+// Base release: undoes one Initialise. Returns Lb_OK.
 // FUNCTION: 0x000d145c
 TbError ServiceProvider::Release(void)
 {
@@ -91,6 +97,9 @@ TbError ServiceProvider::Release(void)
     return Lb_OK;
 }
 
+// Adds player id named name (truncated to 31 characters) to the player
+// table, marking whether they are this machine's player and the host.
+// Returns Lb_OK, also if already there; Lb_FAIL if the table (32) is full.
 // FUNCTION: 0x000d14a4
 TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 is_local, u32 is_host)
 {
@@ -123,6 +132,7 @@ TbError ServiceProvider::AddPlayer(u32 id, char *name, u32 is_local, u32 is_host
     return ret;
 }
 
+// Removes player id from the player table, if there. Returns Lb_OK.
 // FUNCTION: 0x000d15d8
 TbError ServiceProvider::DeletePlayer(u32 id)
 {
@@ -147,12 +157,15 @@ TbError ServiceProvider::DeletePlayer(u32 id)
     return Lb_OK;
 }
 
+// Empties the player table.
 // FUNCTION: 0x000d1668
 void ServiceProvider::ClearPlayers(void)
 {
     player_count = 0;
 }
 
+// Returns the session table entry for session id, adding it with name if
+// new; 0 if the table (32) is full.
 // FUNCTION: 0x000d1674
 TbNetworkSessionNameEntry *ServiceProvider::AddSession(u32 id, char *name)
 {
@@ -192,6 +205,7 @@ TbNetworkSessionNameEntry *ServiceProvider::AddSession(u32 id, char *name)
     return session;
 }
 
+// Empties the session table.
 // FUNCTION: 0xd17a8
 void ServiceProvider::ClearSessions(void)
 {
@@ -201,6 +215,7 @@ void ServiceProvider::ClearSessions(void)
         sessions[i].in_use = 0;
 }
 
+// Calls callback with each player of the table. Returns Lb_OK.
 // FUNCTION: 0xd17c4
 TbError ServiceProvider::EnumeratePlayers(void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data)
 {
@@ -212,12 +227,14 @@ TbError ServiceProvider::EnumeratePlayers(void (__stdcall *callback)(TbNetworkCa
     return ret;
 }
 
+// Returns the size of an add-player message for name.
 // FUNCTION: 0xd180c
 u32 ServiceProvider::GetAddPlayerMsgSize(char *name)
 {
     return strlen(name) + 9;
 }
 
+// Writes an add-player message (type 1) for player id named name into buf.
 // FUNCTION: 0xd1820
 void ServiceProvider::EncodeAddPlayerMsg(u8 *buf, u32 id, char *name)
 {
@@ -226,6 +243,8 @@ void ServiceProvider::EncodeAddPlayerMsg(u8 *buf, u32 id, char *name)
     strcpy((char *)buf + 8, name);
 }
 
+// Reads player id and (if name is not 0) the name from an add-player
+// message. Returns 1.
 // FUNCTION: 0xd189c
 u32 ServiceProvider::DecodeAddPlayerMsg(u8 *buf, u32 &id, char *name)
 {
@@ -237,12 +256,14 @@ u32 ServiceProvider::DecodeAddPlayerMsg(u8 *buf, u32 &id, char *name)
     return ret;
 }
 
+// Returns the size of a request-composite message (8 bytes).
 // FUNCTION: 0xd18f8
 u32 GetRequestCompositeExchangeDataMsgSize(void)
 {
     return 8;
 }
 
+// Writes a delete-player message (type 2) for player id into buf.
 // FUNCTION: 0xd1900
 void EncodeDeletePlayerMsg(u8 *buf, u32 id)
 {
@@ -250,6 +271,7 @@ void EncodeDeletePlayerMsg(u8 *buf, u32 id)
     memcpy(buf + 4, &id, 4);
 }
 
+// Reads the player id from a request-exchange-data message. Returns 1.
 // FUNCTION: 0xd1948
 u32 DecodeRequestExchangeDataMsg(u8 *buf, u32 &id)
 {
@@ -257,6 +279,8 @@ u32 DecodeRequestExchangeDataMsg(u8 *buf, u32 &id)
     return 1;
 }
 
+// Writes a request-exchange-data message (type 5) from player id for
+// sequence number seq into buf.
 // FUNCTION: 0xd1970
 void EncodeRequestExchangeDataMsg(u8 *buf, u32 id, u32 seq)
 {
@@ -264,6 +288,8 @@ void EncodeRequestExchangeDataMsg(u8 *buf, u32 id, u32 seq)
     memcpy(buf + 4, &id, 4);
 }
 
+// Writes a request-composite-exchange-data message (type 6) from player id
+// for sequence number seq into buf.
 // FUNCTION: 0xd19c0
 void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq)
 {
@@ -271,6 +297,8 @@ void EncodeRequestCompositeExchangeDataMsg(u8 *buf, u32 id, u32 seq)
     memcpy(buf + 4, &id, 4);
 }
 
+// Reads the player id from a request-composite or delete-player message.
+// Returns 1.
 // FUNCTION: 0x000d1a10
 u32 DecodeRequestCompositeExchangeDataMsg(u8 *buf, u32 &id)
 {
@@ -278,6 +306,8 @@ u32 DecodeRequestCompositeExchangeDataMsg(u8 *buf, u32 &id)
     return 1;
 }
 
+// Applies an add-player message to the player table. Returns Lb_OK, or
+// Lb_FAIL if the table is full.
 // FUNCTION: 0xd1a38
 TbError ServiceProvider::SystemAddPlayerHandler(u8 *msg)
 {
@@ -291,6 +321,8 @@ TbError ServiceProvider::SystemAddPlayerHandler(u8 *msg)
     return ret;
 }
 
+// Applies a delete-player message to the player table, choosing a new host
+// if it was the host. Returns Lb_OK.
 // FUNCTION: 0xd1ab4
 TbError ServiceProvider::SystemDeletePlayerHandler(u8 *msg)
 {
@@ -304,6 +336,8 @@ TbError ServiceProvider::SystemDeletePlayerHandler(u8 *msg)
     return ret;
 }
 
+// Copies src into dst (size bytes), truncating and terminating it. Does
+// nothing if either is 0.
 // FUNCTION: 0xd1b04
 void StrCpyTrunc(char *dst, char *src, u32 size)
 {
@@ -317,6 +351,8 @@ void StrCpyTrunc(char *dst, char *src, u32 size)
     }
 }
 
+// Writes a message header at buf: size (20 bits), sequence number seq (4
+// bits) and type (8 bits).
 // FUNCTION: 0xd1b64
 void EncodeMessageStub(void *buf, u32 size, TbMessageType type, u32 seq)
 {
@@ -327,6 +363,8 @@ void EncodeMessageStub(void *buf, u32 size, TbMessageType type, u32 seq)
     *(u32 *)buf = (size & 0xfffff) | ((seq & 0xf) << 20) | (type << 24);
 }
 
+// Reads a message header at buf into whichever of size, type and seq are
+// not 0.
 // FUNCTION: 0xd1b90
 void DecodeMessageStub(void *buf, u32 *size, TbMessageType *type, u32 *seq)
 {
@@ -344,30 +382,35 @@ void DecodeMessageStub(void *buf, u32 *size, TbMessageType *type, u32 *seq)
         *type = (TbMessageType)((*p >> 24) & 0xff);
 }
 
+// Default callback: ignores a joining player.
 // FUNCTION: 0xd1bd4
 void __stdcall NilAddMsgCallback(u32 id, char *name, void *data)
 {
     fn_000c20c0("  WARNING network: NilAddMsgCallback(%d, %s) hit\n", id, name);
 }
 
+// Default callback: ignores a leaving player.
 // FUNCTION: 0xd1bf0
 void __stdcall NilDeleteMsgCallback(u32 id, void *data)
 {
     fn_000c20c0("  WARNING network: NilDeleteMsgCallback(%d) hit\n", id);
 }
 
+// Default callback: ignores a new host.
 // FUNCTION: 0xd1c08
 void __stdcall NilHostMsgCallback(u32 id, void *data)
 {
     fn_000c20c0("  WARNING network: NilHostMsgCallback(%d) hit\n", id);
 }
 
+// Default callback: does nothing.
 // FUNCTION: 0xd1c20
 void __stdcall NilUserSysMsgCallback(void *data)
 {
     fn_000c20c0("  WARNING network: NilUserSysMsgCallback() hit\n");
 }
 
+// Default callback: discards exchange data (returns 0).
 // FUNCTION: 0xd1c30
 void *__stdcall NilUserDataMsgCallback(u32 id, u32 size, u32 seq, void *data)
 {
@@ -375,18 +418,21 @@ void *__stdcall NilUserDataMsgCallback(u32 id, u32 size, u32 seq, void *data)
     return 0;
 }
 
+// Default callback: ignores a request for exchange data.
 // FUNCTION: 0xd1c54
 void __stdcall NilRequestExchangeDataMsgCallback(u32 id, u32 seq, void *data)
 {
     fn_000c20c0("  WARNING network: NilRequestExchangeDataMsgCallback(%d %d) hit\n", id, seq);
 }
 
+// Default callback: ignores a request for composite data.
 // FUNCTION: 0xd1c70
 void __stdcall NilRequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data)
 {
     fn_000c20c0("  WARNING network: NilRequestCompositeExchangeDataMsgCallback(%d %d) hit\n", id, seq);
 }
 
+// Default callback: discards a one-way message (returns 0).
 // FUNCTION: 0xd1c8c
 void *__stdcall NilUnidirectionalMsgCallback(u32 id, u32 size, void *data)
 {
@@ -394,12 +440,16 @@ void *__stdcall NilUnidirectionalMsgCallback(u32 id, u32 size, void *data)
     return 0;
 }
 
+// Default callback: ignores a system message.
 // FUNCTION: 0xd1cac
 void __stdcall NilSystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
 {
     fn_000c20c0("  WARNING network: NilSystemUserMsgCallback(%d %d) hit\n", id, size);
 }
 
+// If the delete-player message msg removes the host, makes the remaining
+// player with the lowest id the host and reports it (hostMsg). Returns
+// Lb_OK.
 // FUNCTION: 0xd1cc8
 // NONMATCHING: found flag kept in a register instead of its frame slot; range also holds the Receive jump table
 TbError ServiceProvider::CheckForDeletedHost(u8 *msg)
@@ -443,6 +493,12 @@ TbError ServiceProvider::CheckForDeletedHost(u8 *msg)
     return Lb_OK;
 }
 
+// Handles the messages waiting, by type, for the kinds selected in flags (1
+// data, 2 add player, 4 delete player, 0x10 / 0x20 requests for exchange or
+// composite data, 0x40 one-way, 0x80 system, 0x100 type 8; 8 all), calling
+// the callbacks. Stops after a data or one-way message, or at an
+// unselected kind (left waiting). Returns Lb_FAIL if not started or a read
+// failed, else Lb_OK.
 // FUNCTION: 0xd1e24
 // NONMATCHING: the inlined DecodeMessageStub swaps ecx/edx (buffer and sequence pointer); its jump table sits in the preceding range
 TbError ServiceProvider::Receive(u32 flags)
@@ -606,6 +662,9 @@ TbError ServiceProvider::Receive(u32 flags)
     return ret;
 }
 
+// Sends message buf to player to: messages to this machine's own player are
+// handled at once; others go out guaranteed except exchange data and its
+// requests. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd25ac
 TbError ServiceProvider::Send(u32 to, void *buf)
 {
@@ -684,12 +743,16 @@ TbError ServiceProvider::Send(u32 to, void *buf)
     return ret;
 }
 
+// Handles waiting add-player, delete-player, request and system messages.
+// Returns Receive's result.
 // FUNCTION: 0xd29d8
 TbError ServiceProvider::LookForSystemMessages(void)
 {
     return Receive(0xb6);
 }
 
+// Sends an add- or delete-player message to every other player but the one
+// it is about. Returns Lb_OK, or Lb_FAIL for another type or a failed send.
 // FUNCTION: 0xd29e8
 TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
 {
@@ -729,6 +792,8 @@ TbError ServiceProvider::BroadcastSystemMessage(u8 *msg)
     return ret;
 }
 
+// Handles waiting system messages, then calls callback with each player.
+// Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd2af8
 // NONMATCHING: register allocation: the target keeps this in esi and copies it to ebp for the
 // inlined EnumeratePlayers
@@ -749,6 +814,7 @@ TbError ServiceProvider::EnumeratePlayersForSessionRunning(void (__stdcall *call
     return ret;
 }
 
+// Base version: does nothing. Returns Lb_OK.
 // FUNCTION: 0xd2b78
 TbError ServiceProvider::EnableNewPlayers(u32 allow)
 {

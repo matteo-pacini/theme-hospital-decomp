@@ -17,6 +17,10 @@ s32 SystemPlaybackRate = 22050;
 /* Built without inline expansion: callees in this file stay calls. */
 #pragma inline_depth(0)
 
+// Starts the sound effects driver (from BF_FORCE_SOUND_DRIVER or DIG.INI),
+// picks the best sound bank type that can be loaded (SoundType, see
+// DetermineSoundType) and allocates the sample voices. On failure sound
+// effects stay disabled (SoundAble 0).
 // FUNCTION: 0xdc970
 // NONMATCHING: MaxNumberOfSamples - 1 for end_sample_id is computed in ebx, not edx
 void InitSound(void)
@@ -199,6 +203,9 @@ void InitSound(void)
     }
 }
 
+// Allocates the sound bank for SoundType, stepping down through the types
+// (decimal bits * 100 + kHz: 1644, 1640, 1622, 1620, 1611, 1610, 822, 811,
+// 800) until one loads; SoundType 0 if none does or there is no sound.dat.
 // FUNCTION: 0xdd040
 void DetermineSoundType(void)
 {

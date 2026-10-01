@@ -6,6 +6,8 @@ extern u8 *lbSpriteReMapPtr;
 u32 LbSpriteSetScalingData(int x, int y, int width, int height, int dest_width, int dest_height);
 int LbSpriteDrawUsingScalingData(int x, int y, TbSprite *sprite);
 
+// Turns the data pointers of sprites start..end back into offsets from
+// data. Returns 1.
 // FUNCTION: 0x000bc7e0
 int LbSpriteReset(TbSprite *start, TbSprite *end, void *data)
 {
@@ -22,6 +24,8 @@ struct TbSetupSprite {
     u8 **Data;
 };
 
+// Runs LbSpriteReset for each set of the list ending with a null Start.
+// Returns 1.
 // FUNCTION: 0x000bc824
 int LbSpriteResetAll(TbSetupSprite *setup)
 {
@@ -30,6 +34,8 @@ int LbSpriteResetAll(TbSetupSprite *setup)
     return 1;
 }
 
+// Turns the data offsets of sprites start..end into pointers into data
+// (leaving ones already converted). Returns 1.
 // FUNCTION: 0x000bc86c
 int LbSpriteSetup(TbSprite *start, TbSprite *end, void *data)
 {
@@ -40,6 +46,8 @@ int LbSpriteSetup(TbSprite *start, TbSprite *end, void *data)
     return 1;
 }
 
+// Runs LbSpriteSetup for each set of the list ending with a null Start.
+// Returns 1.
 // FUNCTION: 0x000bc8b0
 int LbSpriteSetupAll(TbSetupSprite *setup)
 {
@@ -48,6 +56,9 @@ int LbSpriteSetupAll(TbSetupSprite *setup)
     return 1;
 }
 
+// Draws sprite at (x, y) scaled to dest_width x dest_height (with the fade
+// table selected by fade_step under draw_flags 0x800). Returns 1 for an
+// empty size, else the draw's result.
 // FUNCTION: 0x000bc8f8
 int LbSpriteDrawScaled(int x, int y, TbSprite *sprite, int dest_width, int dest_height)
 {
@@ -59,6 +70,7 @@ int LbSpriteDrawScaled(int x, int y, TbSprite *sprite, int dest_width, int dest_
     return LbSpriteDrawUsingScalingData(0, 0, sprite);
 }
 
+// As LbSpriteDrawScaled, with every pixel mapped through fade_table.
 // FUNCTION: 0x000bc980
 int LbSpriteDrawFadedScaled(int x, int y, TbSprite *sprite, u8 *fade_table, int dest_width, int dest_height)
 {

@@ -9,11 +9,14 @@ extern u8 deliveryBuffer[];
 extern TbNetworkPlayerEntry D_0018cfc4;
 }
 
+// Constructs an unconfigured serial provider.
 // FUNCTION: 0xed350
 SerialSP::SerialSP()
 {
 }
 
+// Constructs a serial provider for the port, baud and modem settings in
+// init_data.
 // FUNCTION: 0xed3c4
 SerialSP::SerialSP(__4dn7ojSerialInitData *init_data)
 {
@@ -25,12 +28,16 @@ SerialSP::SerialSP(__4dn7ojSerialInitData *init_data)
     awaiting_ack = 0;
 }
 
+// No settings to change over a serial link. Returns Lb_OK.
 // FUNCTION: 0xed494
 TbError SerialSP::ChangeSettings(u32 setting, void *data)
 {
     return Lb_OK;
 }
 
+// Leaves any session, keeps handling messages for 10 seconds, then closes
+// the port. Returns Lb_FAIL if not initialised, else the base Release's
+// result.
 // FUNCTION: 0xed498
 TbError SerialSP::Release(void)
 {
@@ -57,6 +64,8 @@ TbError SerialSP::Release(void)
     return ServiceProvider::Release();
 }
 
+// Initialises the provider for game guid with callbacks: opens the COM port
+// and sets its speed. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xed558
 // NONMATCHING: operator new and exception-table relocations carry the target's misnamed symbols
 TbError SerialSP::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallbacks *cb, void *data)
@@ -93,6 +102,8 @@ TbError SerialSP::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallb
     return ret;
 }
 
+// Hosts session `session` as player name (player 0); only two-player
+// sessions are allowed. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xed6c8
 // NONMATCHING: register allocation differs
 TbError SerialSP::Start(char *session, char *name, u32 max_players, void *data)
@@ -124,6 +135,9 @@ TbError SerialSP::Start(char *session, char *name, u32 max_players, void *data)
     return ret;
 }
 
+// Joins the other machine's session as player name (player 1): sends an
+// add-player message and waits up to 10 seconds for the host's reply.
+// Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xed798
 TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *data)
 {
@@ -170,6 +184,10 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
     return ret;
 }
 
+// Sends message buf over the link: guaranteed (type 1, with a sequence
+// number, resent every 2.5 seconds until acknowledged, up to eight
+// retries) or not (type 0). Each packet carries a header and a 16-bit
+// checksum. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xed8ec
 TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
 {
@@ -256,6 +274,8 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
     return ret;
 }
 
+// Calls callback with the one serial session ("SERIAL_SESSION"). Returns
+// Lb_OK, or Lb_FAIL if not initialised.
 // FUNCTION: 0xedc2c
 TbError SerialSP::Enumerate(void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data)
 {
@@ -272,6 +292,9 @@ TbError SerialSP::Enumerate(void (__stdcall *callback)(TbNetworkCallbackData *, 
     return Lb_OK;
 }
 
+// Calls callback with each player of the running session, or with a
+// placeholder "REMOTE_PLAYER" when none is running. Returns Lb_OK, or
+// Lb_FAIL.
 // FUNCTION: 0xedc7c
 TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall *callback)(TbNetworkCallbackData *, void *), void *data)
 {
@@ -301,6 +324,8 @@ TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall 
     return ret;
 }
 
+// Leaves the running session, telling the other machine. Returns Lb_OK, or
+// Lb_FAIL if none was running.
 // FUNCTION: 0xedd3c
 TbError SerialSP::Stop(void)
 {
@@ -328,6 +353,8 @@ TbError SerialSP::Stop(void)
     return ret;
 }
 
+// Takes the next complete message received into buf (*size: its room, then
+// its length); *from is the other player. Returns 1 if there was one.
 // FUNCTION: 0xeddc8
 u32 SerialSP::ReadMessage(u32 *from, void *buf, u32 *size)
 {
@@ -350,6 +377,7 @@ u32 SerialSP::ReadMessage(u32 *from, void *buf, u32 *size)
     return ret;
 }
 
+// As ReadMessage, leaving the message waiting.
 // FUNCTION: 0xede14
 u32 SerialSP::PeekMessage(u32 *from, void *buf, u32 *size)
 {
@@ -372,6 +400,7 @@ u32 SerialSP::PeekMessage(u32 *from, void *buf, u32 *size)
     return ret;
 }
 
+// Sends the acknowledgement for guaranteed message seq.
 // FUNCTION: 0xede60
 void SerialSP::SendAck(u8 seq)
 {
@@ -393,6 +422,9 @@ void SerialSP::SendAck(u8 seq)
         fn_000c20c0("  WARNING network: SerialSP::SendAck() failure on CommHandler::WriteBytes\n");
 }
 
+// Feeds the received bytes to the packet parsers (up to ten partial
+// packets) until a message is complete, then copies it into buf (removing
+// it if mode is 0, peeking if 1). Returns 1 if a message was copied.
 // FUNCTION: 0xedf24
 // NONMATCHING: register allocation differs
 u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
@@ -446,6 +478,11 @@ u32 SerialSP::PrivateReceive(void *buf, u32 *size, TbMessageType mode)
     return got;
 }
 
+// Handles the first complete packet: delivers a plain or in-sequence
+// guaranteed message into buf (acknowledging and, if remove is set,
+// consuming it; an add-player message is answered with the host's name),
+// and applies acknowledgements. *size is set to the message's length.
+// Returns 1 if a message was delivered.
 // FUNCTION: 0xee050
 // NONMATCHING: stack slots and register choice
 u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
@@ -541,6 +578,7 @@ u32 SerialSP::ProcessAvailableMsg(void *buf, u32 *size, u32 remove)
     return got;
 }
 
+// Constructs an idle packet parser.
 // FUNCTION: 0xee308
 Parser::Parser()
 {
@@ -549,6 +587,7 @@ Parser::Parser()
     state = PS_HEADER;
 }
 
+// Starts the parser on a new packet.
 // FUNCTION: 0xee31c
 void Parser::Init(void)
 {
@@ -557,24 +596,28 @@ void Parser::Init(void)
     active = 1;
 }
 
+// Returns nonzero if the parser is working on a packet.
 // FUNCTION: 0xee330
 u32 Parser::InUse(void)
 {
     return active;
 }
 
+// Frees the parser.
 // FUNCTION: 0xee334
 void Parser::TakeDown(void)
 {
     active = 0;
 }
 
+// Returns the parser's message buffer.
 // FUNCTION: 0xee33c
 u8 *Parser::GetMessageBuffer(void)
 {
     return msg;
 }
 
+// Returns 1 if the parser holds a complete, checksummed packet, else 0.
 // FUNCTION: 0xee340
 u32 Parser::GotCompleteMessage(void)
 {
@@ -585,18 +628,24 @@ u32 Parser::GotCompleteMessage(void)
     return ret;
 }
 
+// Returns the first byte of the parser's packet header (0x1b message, 0x1e
+// guaranteed message, 4 acknowledgement).
 // FUNCTION: 0xee358
 u8 Parser::GetFirstHeaderByte(void)
 {
     return header[0];
 }
 
+// Returns the parsed packet's sequence number.
 // FUNCTION: 0xee360
 u8 Parser::GetSequenceNumber(void)
 {
     return seq;
 }
 
+// Feeds one received byte to the parser: header, sequence number, message
+// size and data, then the checksum; a bad header, size or checksum frees
+// the parser. Returns Lb_OK.
 // FUNCTION: 0xee380
 TbError Parser::InputByte(u8 byte)
 {

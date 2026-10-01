@@ -3,6 +3,11 @@
 extern "C" {
 }
 
+// Pages staff with the skills in skill_mask (SKILL_* bits, one page per
+// skill) to room room_id for player `owner`, unless `wanted` of them are
+// already in the room (when count_present is set) or paged; posts up to
+// `wanted` pages. Never pages to a reception. Returns 1 if no new page was
+// needed, else 0.
 // FUNCTION: 0x00049820
 u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wanted, u8 owner)
 {
@@ -63,6 +68,10 @@ u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wante
     return 0;
 }
 
+// Takes the nearest page staff answers (matching their skills, not answered
+// in the last 3000 turns, or already theirs) and marks it as answered by
+// them. Returns the paged room, or 0 if none (dropping pages to a room that
+// no longer exists).
 // FUNCTION: 0x00049acc
 u16 check_pager(Thing *staff)
 {
@@ -109,6 +118,8 @@ u16 check_pager(Thing *staff)
     return room_id;
 }
 
+// Staff arriving in a room clear the page there that matches their skills:
+// their own, else one answered by someone else, else an unanswered one.
 // FUNCTION: 0x00049ce0
 void pager_arrival(Thing *staff)
 {
@@ -139,6 +150,7 @@ found:
         pager->mask = pager->room = pager->owner = pager->unknown4 = pager->unknown8 = 0;
 }
 
+// Marks every page to room room_id as unanswered.
 // FUNCTION: 0x00049e30
 void clear_pager_responses(u16 room_id)
 {
@@ -152,6 +164,10 @@ void clear_pager_responses(u16 room_id)
     }
 }
 
+// Returns the room of player `owner`'s for treatment type (an expertise
+// index) that patient should go to: the one with the best score from queue
+// length, distance and staff present among those with space, else any
+// room of the kind, or 0 if the treatment is unavailable.
 // FUNCTION: 0x00049e88
 RoomInfo *get_expertise_dest(u16 type, Thing *patient)
 {
@@ -200,6 +216,8 @@ RoomInfo *get_expertise_dest(u16 type, Thing *patient)
         return fallback;
 }
 
+// Counts a staff member with skill bits mask in player `owner`'s per-skill
+// staff counts (listhead.staff).
 // FUNCTION: 0x0004a0d0
 void insert_skill(u16 mask, u8 owner)
 {
@@ -211,6 +229,8 @@ void insert_skill(u16 mask, u8 owner)
     }
 }
 
+// Uncounts a staff member with skill bits mask from player `owner`'s
+// per-skill staff counts.
 // FUNCTION: 0x0004a140
 void remove_skill(u16 mask, u8 owner)
 {
@@ -224,6 +244,7 @@ void remove_skill(u16 mask, u8 owner)
     }
 }
 
+// Drops staff's answer to any page (the page becomes unanswered).
 // FUNCTION: 0x0004a1d4
 void staff_abandon_pager_response(Thing *staff)
 {
@@ -239,6 +260,8 @@ void staff_abandon_pager_response(Thing *staff)
     }
 }
 
+// Before room is removed: points the owner's room list for its kind
+// (listhead.rooms) at another room of the kind, or 0.
 // FUNCTION: 0x0004a244
 void room_deleted_update_listhead(RoomInfo *room)
 {
@@ -255,6 +278,9 @@ void room_deleted_update_listhead(RoomInfo *room)
     listhead[room->owner].rooms[room->type] = id;
 }
 
+// A staff member joins: makes available each treatment that their skills
+// complete (it already has its room and machine; surgery needs two
+// surgeons, counted in allhosps.fca6), and those that need a ward.
 // FUNCTION: 0x0004a2fc
 void set_expertise_staff(Thing *staff)
 {
@@ -286,6 +312,9 @@ void set_expertise_staff(Thing *staff)
         set_expertise_ward(staff->owner);
 }
 
+// A room is built: makes available each treatment done in it whose skills
+// the hospital has (none for research rooms without skills), and those that
+// need a ward.
 // FUNCTION: 0x0004a520
 void set_expertise_room(RoomInfo *room)
 {
@@ -323,6 +352,9 @@ void set_expertise_room(RoomInfo *room)
         set_expertise_ward(room->owner);
 }
 
+// A staff member leaves: uncounts their skills and makes unavailable the
+// treatments that needed the last of a skill (and surgery whenever the
+// surgeon count, allhosps.fca6, is below 3), and those that need a ward.
 // FUNCTION: 0x0004a754
 void remove_expertise_staff(Thing *staff)
 {
@@ -350,6 +382,8 @@ void remove_expertise_staff(Thing *staff)
         remove_expertise_ward(staff->owner);
 }
 
+// A room is removed: if it was the owner's last of its kind, makes the
+// treatments done in it unavailable, and those that need a ward.
 // FUNCTION: 0x0004a964
 void remove_expertise_room(RoomInfo *room)
 {
@@ -372,6 +406,8 @@ void remove_expertise_room(RoomInfo *room)
         remove_expertise_ward(room->owner);
 }
 
+// Makes available player `owner`'s ward treatments whose room and staff
+// they have.
 // FUNCTION: 0x0004aae4
 void set_expertise_ward(u8 owner)
 {
@@ -400,6 +436,7 @@ void set_expertise_ward(u8 owner)
     }
 }
 
+// Makes all of player `owner`'s ward treatments unavailable.
 // FUNCTION: 0x0004ac4c
 void remove_expertise_ward(u8 owner)
 {

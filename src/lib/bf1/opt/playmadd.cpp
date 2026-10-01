@@ -2,6 +2,8 @@
 
 extern "C" {
 
+// Starts the MIDI song at address (replacing the one playing) at volume
+// (127: left at full).
 // FUNCTION: 0x000ce1b0
 void PlayMidiFromAddress(u8 volume, void *address)
 {

@@ -22,6 +22,8 @@ void reset_precalculated_shadows(void);
 void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSprite *dst);
 extern "C" Thing *search_mapwho(Map *t, u16 kind);
 
+// Returns 1 if a door stands on tile facing a direction of parity `parity`
+// (facing % 2), else 0.
 // FUNCTION: 0x000b0630
 u8 door(u16 tile, u8 parity)
 {
@@ -39,6 +41,8 @@ u8 door(u16 tile, u8 parity)
     }
 }
 
+// Recomputes the wall shadow bits of every map cell's floor (0x10, 0x20,
+// 0x40) from the walls and doors that cast them.
 // FUNCTION: 0x000b06d0
 void add_static_shadows(void)
 {
@@ -64,6 +68,9 @@ void add_static_shadows(void)
     }
 }
 
+// Builds the shadowed versions of the floor and wall blocks (a full and a
+// half shadow over the player's interior floor and wall, and over four room
+// floors) used to draw shadows.
 // FUNCTION: 0x000b0928
 void precalculate_shadow_blocks(void)
 {
@@ -122,6 +129,9 @@ void precalculate_shadow_blocks(void)
     create_overlay_sprite(blocks[0x14].info, blocks[74].info, &RoomTileHalf[3].sprite);
 }
 
+// Writes into dst the RLE sprite src with sprite ovr's opaque pixels laid
+// over it through the ghost table. Rows of ovr are at most 64 pixels; dst
+// must have room for src's data.
 // FUNCTION: 0x000b0d40
 void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSprite *dst)
 {
@@ -187,6 +197,8 @@ void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSpr
     }
 }
 
+// Points the precalculated shadow sprites at their buffers. Called once at
+// startup.
 // FUNCTION: 0x000b0f80
 void initialise_shadows(void)
 {
@@ -201,6 +213,7 @@ void initialise_shadows(void)
     }
 }
 
+// Clears the shadow buffers and the precalculated shadow sprites.
 // FUNCTION: 0x000b1008
 void reset_precalculated_shadows(void)
 {

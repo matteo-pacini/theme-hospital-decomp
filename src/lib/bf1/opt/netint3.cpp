@@ -43,6 +43,10 @@ extern u32 unidirectionalMsgReceived;
 extern "C" {
 }
 
+// Sends len bytes from buf to player (a player table index) outside the
+// exchange: announces the size, then sends the 512-byte blocks the receiver
+// asks for until it reports the end. Gives up after 30 seconds without
+// reply. Returns Lb_OK when the receiver confirms, else Lb_FAIL.
 // NONMATCHING: stack slots of buf, len and msg, and register choice in the data loop
 // FUNCTION: 0x000caac0
 TbError LbNetwork_Send(u32 player, void *buf, u32 len)
@@ -124,6 +128,10 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len)
     return ret;
 }
 
+// Receives a message of at most len bytes from player (a player table
+// index) sent with LbNetwork_Send into buf, asking for its blocks a window
+// at a time. Waits up to 30 seconds for each step. Returns the size
+// received, or 0 on failure.
 // NONMATCHING: block layout (the target places the RTS handling of the first loop
 // after the request loop's first test) and register choice (len stays in ebp)
 // FUNCTION: 0x000cade4

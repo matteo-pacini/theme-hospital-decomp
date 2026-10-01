@@ -47,6 +47,10 @@ void setup_aniseq_indices(void);
 void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n);
 void init_wibble(void *xoff, void *yoff, s32 w, s32 h, s32 width, s32 freq, s32 amp);
 
+// One-time game setup after startup: menus, interaction and help tables,
+// the pixel buffer, music and announcements. With -L or -S it starts the
+// level at once (with -S, also sending event 0x1e with the -G value);
+// otherwise it only queues EV_GOTO_COLUMN_ROW.
 // FUNCTION: 0x00090610
 extern "C" void start_game(void)
 {
@@ -92,6 +96,11 @@ extern "C" void start_game(void)
     }
 }
 
+// Starts level `level` (1-14; others play as 1) for this player: clears the
+// game state (keeping the hospital's name, level, simulation flag and
+// score), reloads the balance files if reload_balance is set, loads the
+// map, builds a rat or training level, and sets up the players, staff,
+// visitors, insurers, rivals, disasters and music.
 // FUNCTION: 0x00090804
 void setup_new_level(int level, u8 reload_balance)
 {
@@ -185,6 +194,8 @@ void setup_new_level(int level, u8 reload_balance)
     close_irequesters();
 }
 
+// Copies a hospital's name, level (f29), simulation flag (f2a) and score
+// (f2d) from src to dst.
 // FUNCTION: 0x00090c8c
 void copy_my_hosp(AllHosps *dst, AllHosps *src)
 {
@@ -194,6 +205,9 @@ void copy_my_hosp(AllHosps *dst, AllHosps *src)
     dst->f2d = src->f2d;
 }
 
+// Reads the balance settings: levels/<balance_id>00.sam, then the file for
+// level `level`, and derives the illness odds (balance_control). An empty
+// balance_id becomes "FULL".
 // FUNCTION: 0x00090cd8
 void load_balance(const u16 level)
 {
@@ -216,6 +230,10 @@ void load_balance(const u16 level)
     balance_control();
 }
 
+// Turns the illness weights read from the balance file into cumulative
+// tables (visuals, non_visuals; every non-visual illness if none is set),
+// lists the illnesses in play in all_illnesses and makes their treatment
+// machines researchable.
 // FUNCTION: 0x00090dd4
 void balance_control(void)
 {
@@ -254,6 +272,8 @@ void balance_control(void)
     statvar.f6a = count;
 }
 
+// Chooses the level's three insurance companies at random out of eight
+// (ins_control).
 // FUNCTION: 0x00090f70
 void setup_insurances(void)
 {
@@ -280,6 +300,10 @@ void setup_insurances(void)
     }
 }
 
+// Sets up player `owner`'s hospital for a new level: starting cash, object
+// prices and availability, illness prices, drugs and reputation, research
+// split evenly, default policy, and the opening countdown (gbv.f154) in a
+// single-player level.
 // FUNCTION: 0x000910a0
 void init_player(u8 owner)
 {
@@ -346,6 +370,7 @@ void init_player(u8 owner)
     calc_pricing_factor(owner);
 }
 
+// Does nothing.
 // FUNCTION: 0x000914bc
 void init_mcga_coords(void)
 {

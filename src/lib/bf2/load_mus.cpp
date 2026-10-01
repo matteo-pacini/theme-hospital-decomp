@@ -8,6 +8,8 @@ u8 load_music_bank(long file, u8 bank);
 extern "C" {
 
 
+// Stops the music and loads song bank `bank` of MUSIC.DAT for the current
+// MusicType. Returns 0 on success, 1 otherwise (also when music is off).
 // FUNCTION: 0xf0740
 u32 LoadMusic(u16 bank)
 {
@@ -81,6 +83,8 @@ u32 LoadMusic(u16 bank)
 
 }
 
+// Turns the loaded song table's offsets into pointers into the music data
+// and counts the songs (NumberOfSongs).
 // FUNCTION: 0xf0960
 void format_music(void)
 {
@@ -95,6 +99,10 @@ void format_music(void)
     }
 }
 
+// Reads bank `bank` (MusicType index: 0 g, 1 r, 2 f, 3 w) of the open music
+// file at its current position into the music buffers, unpacking RNC data,
+// and prepares its songs. Returns 1, or 0 if the bank is missing or the
+// buffers are not allocated.
 // FUNCTION: 0xf09c0
 // NONMATCHING: the tab_offset seek and the else branch compute head[bank] into
 // the argument register and load file into eax first; ours goes through eax
@@ -145,6 +153,9 @@ u8 load_music_bank(long file, u8 bank)
     return 0;
 }
 
+// Allocates the music buffers for MusicType's banks, sized from the end of
+// MUSIC.DAT. Returns 1, 0 if memory ran out, -1 if there is no MUSIC.DAT,
+// -2 if it has no bank of that type.
 // FUNCTION: 0xf0bc0
 s32 AllocateMusicBankMemory(void)
 {
@@ -203,6 +214,7 @@ s32 AllocateMusicBankMemory(void)
     return -2;
 }
 
+// Frees the music buffers.
 // FUNCTION: 0xf0d80
 void DeInitMusicBank(void)
 {

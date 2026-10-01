@@ -2,6 +2,9 @@
 
 extern "C" {
 
+// Draws RLE sprite spr at (x, y) in the graphics window with each pixel
+// mapped through the colour table remap, clipped, honouring draw_flags (1
+// mirror, 2 vertical flip, 4/8 blend with the ghost table).
 // FUNCTION: 0xcbe20
 // NONMATCHING: the byte locals' stack slots are permuted
 int LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap)

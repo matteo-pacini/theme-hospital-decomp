@@ -21,6 +21,8 @@ s32 point_in_triangle(s32 px, s32 py, s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s3
 s32 point_in_quad(s32 px, s32 py, s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 x3, s32 y3);
 s32 mouse_in_slice(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 h);
 
+// Returns 1 if (px, py) lies inside or on the triangle (x0, y0), (x1, y1),
+// (x2, y2), given in counterclockwise order on screen (y down), else 0.
 // FUNCTION: 0x000b7c90
 s32 point_in_triangle(s32 px, s32 py, s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2)
 {
@@ -31,6 +33,8 @@ s32 point_in_triangle(s32 px, s32 py, s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s3
     return !outside;
 }
 
+// As point_in_triangle for a convex quadrilateral with corners in the same
+// order.
 // FUNCTION: 0x000b7d54
 s32 point_in_quad(s32 px, s32 py, s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 x3, s32 y3)
 {
@@ -41,6 +45,9 @@ s32 point_in_quad(s32 px, s32 py, s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2
     return !outside;
 }
 
+// Returns 1 if the pie mouse position (pie_mouse_x, pie_mouse_y) is over the
+// pie segment with top corners (x0, y0), (x1, y1), (x2, y2) and side height
+// h, including its sides.
 // FUNCTION: 0x000b7e3c
 s32 mouse_in_slice(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 h)
 {
@@ -55,6 +62,11 @@ s32 mouse_in_slice(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 h)
            || point_in_quad(mx, my, x1, y1, x1, y1 + h, x2, y2 + h, x2, y2);
 }
 
+// Draws sector i of a pie centred on (cx, cy) with radii rx, ry and
+// thickness h (pixels): its top, rim and visible sides (side_off 1 or 2
+// leaves out the start or end side), pulled out from the centre by its
+// radius (1/256 of the radii). Sets its label position, and
+// pie_sector_return to i if the mouse is over it. Angles: 0x800 a full turn.
 // FUNCTION: 0x000b7f48
 void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i)
 {
@@ -143,6 +155,8 @@ void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i
     }
 }
 
+// Returns 1 if sector a lies further back than sector b, so that it must be
+// drawn first.
 // FUNCTION: 0x000b852c
 s32 sector_behind(Sector *sectors, s32 a, s32 b)
 {
@@ -174,6 +188,9 @@ s32 sector_behind(Sector *sectors, s32 a, s32 b)
     return asin < bsin ? 1 : 0;
 }
 
+// Draws a 3D pie chart of count sectors (at most 0x101) back to front,
+// splitting a sector over half the pie in two so that it overlaps correctly.
+// Sets pie_sector_return to the sector under the mouse, or -1.
 // FUNCTION: 0x000b86a8
 void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sectors)
 {

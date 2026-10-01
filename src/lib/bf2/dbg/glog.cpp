@@ -18,6 +18,7 @@ char *strcpy(char *dst, const char *src);
 #pragma intrinsic(strlen, strcpy)
 }
 
+// Writing to a log is stubbed out in this build: always returns -1.
 // FUNCTION: 0xeb3ac
 int LbLog(TbLog *log, char *fmt, ...)
 {
@@ -31,6 +32,7 @@ int LbLog(TbLog *log, char *fmt, ...)
     return 1;
 }
 
+// Closes log, clearing its settings. Returns 1, or -1 if it was not set up.
 // FUNCTION: 0xeb3c8
 int LbLogClose(TbLog *log)
 {
@@ -47,6 +49,8 @@ int LbLogClose(TbLog *log)
 
 extern "C" {
 
+// Sets up log for file filename (at most 0x90 characters); flags must
+// select exactly one of bits 0 and 1 (the open mode). Returns 1, or -1.
 // FUNCTION: 0xeb2c0
 int LbLogSetup(TbLog *log, char *filename, u32 flags)
 {
@@ -66,6 +70,8 @@ int LbLogSetup(TbLog *log, char *filename, u32 flags)
     return 1;
 }
 
+// Sets log's line prefix (at most 32 characters; 0 for none). Returns 1,
+// or -1.
 // FUNCTION: 0xeb448
 int LbLogSetPrefix(TbLog *log, char *prefix)
 {
@@ -81,6 +87,7 @@ int LbLogSetPrefix(TbLog *log, char *prefix)
     return 1;
 }
 
+// Deletes log's file. Returns 1, or -1.
 // FUNCTION: 0xeb4dc
 int LbLogDelete(TbLog *log)
 {
@@ -92,6 +99,7 @@ int LbLogDelete(TbLog *log)
     return 1;
 }
 
+// Suspends logging to log. Returns 1, or -1 if it is not set up.
 // FUNCTION: 0xeb528
 int LbLogSuspend(TbLog *log)
 {
@@ -101,6 +109,7 @@ int LbLogSuspend(TbLog *log)
     return 1;
 }
 
+// Resumes logging to log. Returns 1, or -1 if it is not set up.
 // FUNCTION: 0xeb55c
 int LbLogRestart(TbLog *log)
 {

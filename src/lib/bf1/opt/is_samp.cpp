@@ -2,6 +2,9 @@
 
 extern "C" {
 
+// Returns 1 if a sample is playing: by handle when source_id and number are
+// both 0, any sample of source_id when number is 0, else sample `number`
+// of source_id.
 // FUNCTION: 0x000cdee0
 u8 IsSamplePlaying(u32 source_id, s16 number, u32 handle)
 {

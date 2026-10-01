@@ -14,6 +14,10 @@ s32 remove_object(Thing *w, u8 owner);
 void nav_init(Thing *w);
 }
 
+// Summons the grim reaper for a dead patient: raises the gates of hell on a
+// reachable tile near them and places the reaper near the gates, linked to
+// the victim through slave. Returns 0 if a reaper is already coming or no
+// place was found; 1 otherwise, including when no thing was free.
 // FUNCTION: 0x0005c230
 u8 summon_the_reaper(Thing *victim)
 {
@@ -104,6 +108,8 @@ u8 summon_the_reaper(Thing *victim)
     return 1;
 }
 
+// Reaper state REAPER_PLAY_ANIM: plays the current animation, then enters
+// reaper_next_state with next_sprite, or leaves.
 // FUNCTION: 0x0005c6f8
 void reaper_play_anim(Thing *reaper)
 {
@@ -126,6 +132,9 @@ void reaper_play_anim(Thing *reaper)
     }
 }
 
+// The reaper has reached the gates (from REAPER_GOTO_HELL): turns to call the
+// victim, who walks to the gates (victim state 0x42 on arrival), and waits
+// (REAPER_WAITS).
 // FUNCTION: 0x0005c7b4
 void reaper_calls_victim(Thing *reaper)
 {
@@ -150,6 +159,9 @@ void reaper_calls_victim(Thing *reaper)
     }
 }
 
+// Reaper state REAPER_WAITS: swings at the victim when they reach the gates,
+// removes them once they have gone in (state 0x42), and leaves if they do
+// not come before the timer runs out.
 // FUNCTION: 0x0005c8e0
 void reaper_waits(Thing *reaper)
 {
@@ -188,6 +200,8 @@ void reaper_waits(Thing *reaper)
     }
 }
 
+// Starts the reaper's leaving animation, after which it is removed
+// (REAPER_REMOVE).
 // FUNCTION: 0x0005cb34
 void reaper_leaves_normally(Thing *reaper)
 {
@@ -200,6 +214,8 @@ void reaper_leaves_normally(Thing *reaper)
     reaper->next_flip = 0;
 }
 
+// Removes the reaper and makes its gates of hell sink away (state 6, then
+// removed when the animation ends).
 // FUNCTION: 0x0005cbe4
 void remove_reaper(Thing *reaper)
 {

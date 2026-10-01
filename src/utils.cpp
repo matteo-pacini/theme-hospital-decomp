@@ -42,6 +42,7 @@ void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 
 char fingchk2[20] = { 0xd6, 0xd4, 0xee, 0xe4, 0xc8, 0xd6, 0xd4, 0xcc };
 
+// Returns a random active player in a network game (0xff if none), else 0.
 // FUNCTION: 0x000196c0
 u8 pick_random_player(void)
 {
@@ -63,12 +64,15 @@ u8 pick_random_player(void)
     return nth_active_player(count + 1);
 }
 
+// Stands in for a division by zero (a zero speed): returns 1.
 // FUNCTION: 0x0001974c
 u16 div_err(void)
 {
     return 1;
 }
 
+// Finds the palette indexes nearest the interface's fixed colours (black,
+// white, red, ...) in current_palette and stores them in color.
 // FUNCTION: 0x00019770
 void setup_colors(void)
 {
@@ -89,6 +93,8 @@ void setup_colors(void)
     color.unknown14 = LbPaletteFindColour(current_palette, 0x3f, 0x1e, 0x1e);
 }
 
+// Returns the number of waypoints of a path from mover's tile (an object's
+// use tile 1) to tile pos; 0 if pos cannot be reached.
 // FUNCTION: 0x00019918
 u16 can_i_get_to(Thing *mover, u16 pos)
 {
@@ -104,6 +110,7 @@ u16 can_i_get_to(Thing *mover, u16 pos)
     return path.result;
 }
 
+// Unlinks target from the map and frees its thing.
 // FUNCTION: 0x000199e8
 void remove_thing(Thing *target)
 {
@@ -111,6 +118,8 @@ void remove_thing(Thing *target)
     memset(target, 0, sizeof(Thing));
 }
 
+// Counts the tiles player `owner` owns into allhosps.f1f1 (not for a
+// hospital with f2a 2).
 // FUNCTION: 0x00019a1c
 void count_hospital_area(u16 owner)
 {
@@ -127,6 +136,8 @@ void count_hospital_area(u16 owner)
     }
 }
 
+// Returns the first thing of type kind on map cell `cell`, or 0 (also for a
+// cell outside the map).
 // FUNCTION: 0x00019aac
 Thing *search_mapwho(Map *cell, u16 kind)
 {
@@ -142,6 +153,7 @@ Thing *search_mapwho(Map *cell, u16 kind)
     return 0;
 }
 
+// Returns the door of room id on map cell `cell`, or 0.
 // FUNCTION: 0x00019b44
 Thing *search_mapwho_for_room_door(Map *cell, u16 id)
 {
@@ -157,6 +169,8 @@ Thing *search_mapwho_for_room_door(Map *cell, u16 id)
     return 0;
 }
 
+// Saves the screen as the next free scrshots\hospNNNN.lbm (raw "mhwanh"
+// format, despite the name), with the palette.
 // FUNCTION: 0x00019bec
 void screen_shot(void)
 {
@@ -226,6 +240,8 @@ void screen_shot(void)
     LbFileSaveAt(path, debug.unknown1e4, out - debug.unknown1e4);
 }
 
+// Returns a random room of type kind of player `owner` (mode 0x65: any;
+// otherwise only rooms not in use, f3 0), or 0 if none.
 // FUNCTION: 0x00019ef8
 RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner)
 {
@@ -250,6 +266,9 @@ RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner)
     return list[old_newrand() % count];
 }
 
+// Returns player `owner`'s first room of type kind not in use (f3 0); with
+// mode 0x65 the first of the kind at all, with mode 0x64 else the last of
+// the kind. Returns room_info (the null room), not 0, if none is found.
 // FUNCTION: 0x00019fe0
 RoomInfo *get_room_info(u8 kind, u8 mode, u8 owner)
 {
@@ -279,6 +298,8 @@ RoomInfo *get_room_info(u8 kind, u8 mode, u8 owner)
     return room_info;
 }
 
+// Returns the nearest room of type kind of person's owner that is usable
+// (f3 0 or 1) to person, or 0.
 // FUNCTION: 0x0001a0a0
 RoomInfo *get_nearest_room_info(Thing *person, u8 kind)
 {
@@ -307,6 +328,8 @@ RoomInfo *get_nearest_room_info(Thing *person, u8 kind)
     return best;
 }
 
+// Single player, cheats enabled (othervar.fa8e): flags 2 makes this level's
+// objects available, 4 every object, 8 adds 1000 cash and 0x10 takes 1000.
 // FUNCTION: 0x0001a238
 void cheat(u32 flags)
 {
@@ -340,6 +363,8 @@ void cheat(u32 flags)
     }
 }
 
+// Sets mouse mode `mode` (gamevar.f12e, MM_*) and its pointer sprite
+// (othervar.f30), unless the mouse is on a window.
 // FUNCTION: 0x0001a374
 void set_mouse_mode(const u8 mode)
 {
@@ -445,6 +470,8 @@ void set_mouse_mode(const u8 mode)
     }
 }
 
+// Fills out[0-254] with the palette index of the grey matching each of the
+// first 255 colours of palette, for greyed-out drawing.
 // FUNCTION: 0x0001a5f4
 void generate_bw_remap(u8 *palette, u8 *out)
 {
@@ -462,6 +489,7 @@ void generate_bw_remap(u8 *palette, u8 *out)
     }
 }
 
+// Returns 1 if there is a path from tile `from` to tile `to`, else 0.
 // FUNCTION: 0x0001a6cc
 u8 check_points_connected(u16 from, u16 to)
 {
@@ -471,6 +499,9 @@ u8 check_points_connected(u16 from, u16 to)
     return path.result != 0;
 }
 
+// Returns the facing for self to look towards target: 0 if target has a
+// greater y, 1 a smaller x, 2 a smaller y, 3 a greater x (tested in that
+// order), else self's facing.
 // FUNCTION: 0x0001a764
 u8 direction_to_face(Thing *self, Thing *target)
 {
@@ -489,6 +520,8 @@ u8 direction_to_face(Thing *self, Thing *target)
     return self->facing;
 }
 
+// Splits map offset pos (dy * 128 + dx, with negative deltas wrapped) into
+// signed dx and dy.
 // FUNCTION: 0x0001a7dc
 void convert_MW_to_xy(u16 pos, s8 *x, s8 *y)
 {
@@ -507,6 +540,8 @@ void convert_MW_to_xy(u16 pos, s8 *x, s8 *y)
     *y = ly;
 }
 
+// Stores the footprint bounds of every object shape in each direction in
+// statvar.fff, for placing objects.
 // FUNCTION: 0x0001a854
 void measure_objects(void)
 {
@@ -545,18 +580,23 @@ void measure_objects(void)
     }
 }
 
+// qsort comparator: orders 27-bit keys descending.
 // FUNCTION: 0x0001aa10
 int descend(const void *a, const void *b)
 {
     return -(((const SortEntry *)a)->key - ((const SortEntry *)b)->key);
 }
 
+// qsort comparator: orders 27-bit keys ascending.
 // FUNCTION: 0x0001aa50
 int ascend(const void *a, const void *b)
 {
     return ((const SortEntry *)a)->key - ((const SortEntry *)b)->key;
 }
 
+// Sets the mouse pointer to sprite idx of the in-game or full-screen
+// pointer set, with its hotspot at the corner or the centre; the previous
+// one is kept in othervar.f31.
 // FUNCTION: 0x0001aa8c
 void set_mouse_sprite(const u8 idx)
 {
@@ -584,6 +624,8 @@ void set_mouse_sprite(const u8 idx)
     }
 }
 
+// Returns the tile next to target nearest to person that they can reach, or
+// 0 if none.
 // FUNCTION: 0x0001ab90
 u16 can_i_go_near_point(Thing *person, u16 target)
 {
@@ -606,6 +648,7 @@ u16 can_i_go_near_point(Thing *person, u16 target)
     return result;
 }
 
+// Returns 1 if person stands on a tile next to pos, else 0.
 // FUNCTION: 0x0001ad58
 u8 am_i_near_point(Thing *person, u16 pos)
 {
@@ -619,6 +662,8 @@ u8 am_i_near_point(Thing *person, u16 pos)
     return 0;
 }
 
+// Sets the game speed: -1/+1 step it down or up, 10-50 select the five
+// menu speeds (50 runs as fast as possible). Updates the menu's check marks.
 // FUNCTION: 0x0001add0
 void vary_speed(s16 speed)
 {
@@ -683,6 +728,9 @@ void vary_speed(s16 speed)
     }
 }
 
+// Notes the time (othervar.f8a2 into f8b2) when the player becomes idle: no
+// windows, no full-screen window, no debug display. othervar.f8b1 holds
+// whether they are.
 // FUNCTION: 0x0001afd8
 void compute_whether_user_not_busy(void)
 {
@@ -694,6 +742,9 @@ void compute_whether_user_not_busy(void)
     othervar.f8b1 = idle;
 }
 
+// Returns how well furnished room is: its size plus the objects beyond the
+// required ones (and half its f1b), never below 0; 0 for an invalid room.
+// Used as a diagnosis bonus.
 // FUNCTION: 0x0001b050
 u32 calc_room_value(RoomInfo *room)
 {
@@ -718,6 +769,7 @@ u32 calc_room_value(RoomInfo *room)
     return score;
 }
 
+// Returns the first person in room of type kind and subtype sub, or 0.
 // FUNCTION: 0x0001b150
 Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
 {
@@ -735,6 +787,9 @@ Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
     return 0;
 }
 
+// Cancels what the player is building or placing, by the open requester:
+// back to placing, a confirm to delete a new room, editing the blueprint,
+// refusing a staff demand, or dropping what is held (event 0x38).
 // FUNCTION: 0x0001b1f8
 void setup_abort_all_requesters(void)
 {
@@ -779,18 +834,22 @@ void setup_abort_all_requesters(void)
     D_001549d0[player].arg = gamevar.f12e;
 }
 
+// Copies the whole screen from src (a background) to the back buffer.
 // FUNCTION: 0x0001b388
 void copy_screen_to_wscreen(const u8 *src)
 {
     LbScreenCopyBox(src, lbDisplay.unknown4, lbDisplay.unknown1c);
 }
 
+// Copies the back buffer to dst.
 // FUNCTION: 0x0001b3b8
 void copy_screen_from_wscreen(u8 *dst)
 {
     LbScreenCopyBox(lbDisplay.unknown4, dst, lbDisplay.unknown1c);
 }
 
+// Closes the open build, buy-objects or hire requester unless it is
+// requester keep (the buy requester only when not placing).
 // FUNCTION: 0x0001b3e8
 void cancel_top_level_requesters(s32 keep)
 {
@@ -810,6 +869,8 @@ void cancel_top_level_requesters(s32 keep)
     }
 }
 
+// Returns the first free thing, keeping the last reserve things in
+// reserve, or 0 if none is free.
 // FUNCTION: 0x0001b474
 Thing *allocate_thing(u32 reserve)
 {
@@ -823,12 +884,14 @@ Thing *allocate_thing(u32 reserve)
     return 0;
 }
 
+// Returns 1 if (x, y) lies in the box at (rx, ry), w x h, else 0.
 // FUNCTION: 0x0001b4e0
 s32 over_hotspot(s16 x, s16 y, s16 rx, s16 ry, s16 w, s16 h)
 {
     return (x >= rx && x < rx + w) && (y >= ry && y < ry + h);
 }
 
+// Draws the outline of the box at (x, y), w x h, in color.
 // FUNCTION: 0x0001b554
 void draw_frame(const s16 x, const s16 y, const s16 w, const s16 h, const u16 color)
 {
@@ -838,6 +901,9 @@ void draw_frame(const s16 x, const s16 y, const s16 w, const s16 h, const u16 co
     fn_000c9be0(x, y + h, x + w, y + h, color);
 }
 
+// Plays animation idx of animation_table (from the CD when needed),
+// switching from 320x200 to 640x480 first except for the main menu's.
+// Returns play_smk's result, 0 if the file is missing.
 // FUNCTION: 0x0001b610
 u8 hosp_play_smk(const u8 idx)
 {
@@ -878,6 +944,7 @@ u8 hosp_play_smk(const u8 idx)
     return ok;
 }
 
+// printf to the DOS console, flushed at once.
 // FUNCTION: 0x0001b7a4
 void hosp_dos_printf(char *fmt, ...)
 {
@@ -889,6 +956,8 @@ void hosp_dos_printf(char *fmt, ...)
     fflush(&__iob[1]);
 }
 
+// Copies src to dst upper-cased (mode 0, accented letters too) or
+// lower-cased (mode 1).
 // FUNCTION: 0x0001b7e0
 void conv_string(char *dst, s8 *src, u8 mode)
 {
@@ -905,6 +974,8 @@ void conv_string(char *dst, s8 *src, u8 mode)
     }
 }
 
+// Returns ch in upper case, mapping the code page 437 accented letters to
+// their upper-case or plain forms.
 // FUNCTION: 0x0001b874
 int to_upper_char(u8 ch)
 {
@@ -968,6 +1039,7 @@ int to_upper_char(u8 ch)
     }
 }
 
+// Stores the map tile at the centre of the view as bookmark key (0-11).
 // FUNCTION: 0x0001bab4
 void record_mappos(u8 key)
 {
@@ -994,6 +1066,7 @@ void record_mappos(u8 key)
     }
 }
 
+// Moves the view to bookmark i (0-11), if set.
 // FUNCTION: 0x0001bb8c
 void recall_mappos(u8 i)
 {
@@ -1004,6 +1077,7 @@ void recall_mappos(u8 i)
     }
 }
 
+// Clears the twelve view bookmarks.
 // FUNCTION: 0x0001bc08
 void setup_key_mappos(void)
 {
@@ -1014,6 +1088,8 @@ void setup_key_mappos(void)
     }
 }
 
+// Fades the palette to palette in steps steps (in one step in a network
+// game).
 // FUNCTION: 0x0001bc48
 void hosp_fade_palette(u8 *palette, u8 steps, TbPaletteFadeFlag flag)
 {
@@ -1024,6 +1100,8 @@ void hosp_fade_palette(u8 *palette, u8 steps, TbPaletteFadeFlag flag)
     }
 }
 
+// Loads requester idx's button sprites (640x480 only, unless already
+// loaded) and, with flag set, opens its window.
 // FUNCTION: 0x0001bc94
 void open_requester(u8 idx, u8 flag)
 {
@@ -1062,6 +1140,7 @@ void open_requester(u8 idx, u8 flag)
     }
 }
 
+// Closes requester window i and clears crequester.unknown2.
 // FUNCTION: 0x0001bdb8
 void close_crequester(u8 i)
 {
@@ -1070,6 +1149,8 @@ void close_crequester(u8 i)
     cancel_helpmsg();
 }
 
+// Prints the copyright, version and recording or playback notice to the
+// console.
 // FUNCTION: 0x0001bdf8
 void display_copyright(void)
 {
@@ -1084,6 +1165,8 @@ void display_copyright(void)
     }
 }
 
+// Debug: steps the mouse pointer sprite up (dir 0) or down (1) and prints
+// its number.
 // FUNCTION: 0x0001be78
 void fn_0001be78(u8 dir)
 {
@@ -1101,6 +1184,9 @@ void fn_0001be78(u8 dir)
     set_mouse_sprite(D_0015fe74);
 }
 
+// Reopens the faces file for the current resolution (low-res faces when
+// othervar.fa8d is set) and sets its face sizes. Exits the program if it
+// cannot be opened.
 // FUNCTION: 0x0001bee4
 void open_face_file(void)
 {

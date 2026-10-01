@@ -10,6 +10,8 @@ void fn_000c93bf(char *dst, char *src);
 u16 create_mayor(u8 owner);
 u8 mayor_judges_hospital(u8 owner);
 
+// Draws the VIP visit request's text: strs[0] formatted with VIP idx's name
+// (mayor_names).
 // FUNCTION: 0x000a0b70
 void mayor_requester(u8 idx, char **strs)
 {
@@ -26,6 +28,9 @@ void mayor_requester(u8 idx, char **strs)
     D_00156910 = 1;
 }
 
+// VIP request buttons: 0 accepts the visit (choice 0x14), 1 refuses it
+// (0x15). After more than five refusals in a row, while othervar.f0 < 10, a
+// refusal is followed by an acceptance.
 // FUNCTION: 0x000a0c08
 void process_mayor_start_buttons(u8 button)
 {
@@ -41,6 +46,9 @@ void process_mayor_start_buttons(u8 button)
     }
 }
 
+// Daily VIP check: once a hospital with a reception desk has waited gbv.f128
+// days, asks it to accept a random VIP (allhosps.f1fa = 1). An accepted
+// visit (f1fa 2) starts at its time with create_mayor (f1fa 3).
 // FUNCTION: 0x000a0cac
 void generate_mayors(void)
 {
@@ -104,6 +112,10 @@ void generate_mayors(void)
     }
 }
 
+// Creates the visiting VIP for player `owner` at one of the hospital's four
+// entry points (unknown1cf), walking to the reception desk, or straight back
+// out with verdict 14 if there is none. Returns the thing index, 0 if no
+// thing was free.
 // FUNCTION: 0x000a0f6c
 u16 create_mayor(u8 owner)
 {
@@ -145,6 +157,9 @@ u16 create_mayor(u8 owner)
     return 0;
 }
 
+// VIP waiting state: when the timer runs out, walks to the next room of
+// interest (some at random), or, after the last room, leaves and applies the
+// verdict of mayor_judges_hospital (cash award, reputation).
 // FUNCTION: 0x000a11b8
 void mayor_pauses(Thing *mayor)
 {
@@ -183,6 +198,9 @@ void mayor_pauses(Thing *mayor)
         satisfied_net_criteria(2, mayor->owner);
 }
 
+// Scores player `owner`'s hospital for a VIP visit (staff tiredness, room
+// warmth, doctor grades, rooms, a random part) and returns the verdict, a
+// mayor_result index 0-14.
 // FUNCTION: 0x000a13a4
 u8 mayor_judges_hospital(u8 owner)
 {
@@ -297,6 +315,8 @@ u8 mayor_judges_hospital(u8 owner)
     return 14;
 }
 
+// A VIP who has left the map: removes the thing and, for the mayor, marks
+// the visit over and queues the report call.
 // FUNCTION: 0x000a1754
 void mayor_gone(Thing *mayor)
 {
@@ -309,6 +329,8 @@ void mayor_gone(Thing *mayor)
     remove_thing(mayor);
 }
 
+// Draws the VIP report: strs[0-4] and the verdict text strs[f1fb + 5], with
+// the cash award and reputation change when there are any.
 // FUNCTION: 0x000a17e8
 void report_mayor_result(u8 owner, char **strs)
 {
@@ -354,6 +376,7 @@ void report_mayor_result(u8 owner, char **strs)
     D_00156910 = 1;
 }
 
+// VIP report button 0 closes the report (D_00158192 = 0x5c).
 // FUNCTION: 0x000a1ab4
 void process_mayor_end_buttons(u8 button)
 {
@@ -364,6 +387,8 @@ void process_mayor_end_buttons(u8 button)
     }
 }
 
+// A VIP arriving at a stop: faces the reception desk (first stop) or the
+// room's door and waits 50 turns.
 // FUNCTION: 0x000a1af0
 void mayor_inspects(Thing *mayor)
 {

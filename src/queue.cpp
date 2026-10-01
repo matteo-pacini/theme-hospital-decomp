@@ -10,6 +10,8 @@ u16 nth_other_active_player(int n);
 
 }
 
+// Moves the patient at position pos (1-based) of room room_id's queue to its
+// front.
 // FUNCTION: 0x0004ace0
 void front_queue(const u16 room_id, const u16 pos)
 {
@@ -53,6 +55,8 @@ void front_queue(const u16 room_id, const u16 pos)
     }
 }
 
+// Moves the patient at position pos (1-based) of room room_id's queue to its
+// back.
 // FUNCTION: 0x0004ae60
 void back_queue(const u16 room_id, const u16 pos)
 {
@@ -88,6 +92,9 @@ void back_queue(const u16 room_id, const u16 pos)
     }
 }
 
+// Appends person to room's queue, leaving any queue they were in. Counts
+// them in the queue length (unknown31) and no longer as on the way
+// (unknown32).
 // FUNCTION: 0x0004af50
 void join_queue(Thing *person, RoomInfo *room)
 {
@@ -115,6 +122,8 @@ void join_queue(Thing *person, RoomInfo *room)
     }
 }
 
+// Takes person out of their queue (adjusting its length), or, if not in one,
+// cancels their trip to dest_room (no longer counted as on the way).
 // FUNCTION: 0x0004b058
 void leave_queue(Thing *person)
 {
@@ -152,12 +161,14 @@ void leave_queue(Thing *person)
     person->queue_room = 0;
 }
 
+// Returns the number of people in room's queue.
 // FUNCTION: 0x0004b21c
 u16 queue_size(RoomInfo *room)
 {
     return room->unknown31;
 }
 
+// Returns the room (room_info index) whose queue person is in, or 0.
 // FUNCTION: 0x0004b244
 u16 which_queue(Thing *person)
 {
@@ -176,6 +187,11 @@ u16 which_queue(Thing *person)
     return 0;
 }
 
+// Queue window button `button` for queue position othervar.f63 of room
+// othervar.f61: 0/1 to the front/back, 4 home, 5 to reception, 6 picks the
+// patient up to move to another queue, 7 closes, 8-10 refer to the 1st-3rd
+// other player (network game), 2/3 raise/lower the queue's limit (events
+// 0x53/0x54).
 // FUNCTION: 0x0004b2f4
 void process_queue_button(u8 button)
 {
@@ -259,6 +275,7 @@ void process_queue_button(u8 button)
     }
 }
 
+// Sends the patient at position pos of room room_id's queue home.
 // FUNCTION: 0x0004b654
 void queue_person_go_home(const u16 room_id, const u16 pos)
 {
@@ -272,6 +289,8 @@ void queue_person_go_home(const u16 room_id, const u16 pos)
     }
 }
 
+// Sends the patient at position pos of room room_id's queue back to
+// reception.
 // FUNCTION: 0x0004b6b0
 void queue_person_go_reception(const u16 room_id, const u16 pos)
 {
@@ -287,6 +306,8 @@ void queue_person_go_reception(const u16 room_id, const u16 pos)
     }
 }
 
+// Returns the patient at position pos (1-based) of room room_id's queue, or
+// 0.
 // FUNCTION: 0x0004b71c
 u16 get_real_person_from_room(const u16 room_id, const u16 pos)
 {
@@ -312,6 +333,9 @@ u16 get_real_person_from_room(const u16 room_id, const u16 pos)
     return 0;
 }
 
+// Moves patient id to room room_id's queue (to the nearest manned desk for
+// a reception), unless they are in or going to the toilets. The desk's thing
+// index is kept in a u8, so a desk past index 255 is looked up wrongly.
 // FUNCTION: 0x0004b7e0
 void queue_person_to_new_queue(const u16 room_id, const u16 id)
 {
@@ -350,6 +374,9 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
     }
 }
 
+// Returns the free places (capacity f1e minus queue length, and minus those
+// on the way if waiting is set) in room, or, with room 0, in the first of
+// player `owner`'s rooms for illness type that has any. 0 if none.
 // FUNCTION: 0x0004b988
 s16 spare_queue_capacity(const u16 type, const u8 waiting, RoomInfo *room, const u8 owner)
 {
@@ -384,6 +411,8 @@ s16 spare_queue_capacity(const u16 type, const u8 waiting, RoomInfo *room, const
     return 0;
 }
 
+// Returns the free places in all of player `owner`'s rooms for illness type
+// (as spare_queue_capacity), or 0 if the hospital cannot treat it.
 // FUNCTION: 0x0004ba8c
 s16 all_queue_capacity(const u16 type, const u8 waiting, const u8 owner)
 {
@@ -413,6 +442,7 @@ s16 all_queue_capacity(const u16 type, const u8 waiting, const u8 owner)
     return total;
 }
 
+// Empties room's queue, sending everyone in it back to reception.
 // FUNCTION: 0x0004bb90
 void restart_all_queue_peeps(RoomInfo *room)
 {
@@ -425,6 +455,8 @@ void restart_all_queue_peeps(RoomInfo *room)
     }
 }
 
+// Marks everyone in room's queue with ICON_QUEUE, with a sound when a new
+// queue is highlighted.
 // FUNCTION: 0x0004bbec
 void flag_all_queue_members(RoomInfo *room)
 {

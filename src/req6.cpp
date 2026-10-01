@@ -30,6 +30,8 @@ void play_last_midi(void);
 
 #define BSPR(i) (button_sprite + resvars.f12[i])
 
+// Jukebox clicks: previous and next track (unless looping), stop, play or
+// pause, loop the current track on/off (othervar.fa50), and close.
 // FUNCTION: 0x0008dee0
 extern "C" void req6(Requester *req)
 {
@@ -94,6 +96,10 @@ extern "C" void req6(Requester *req)
     }
 }
 
+// Draws the jukebox: the playing track's title, the loop and play lights,
+// and the track list; clicking a title plays it, clicking its light turns
+// the track on or off in the playlist (myplayer.unknown12), skipping it if
+// it is playing.
 // FUNCTION: 0x0008e184
 extern "C" void req6_overdraw(Requester *req)
 {
@@ -187,6 +193,8 @@ extern "C" void req6_overdraw(Requester *req)
     set_font_from_cache(0);
 }
 
+// Stops the music and clears the playing and loop flags (othervar.fa4f,
+// fa50).
 // FUNCTION: 0x0008ee10
 void stop_midi(void)
 {

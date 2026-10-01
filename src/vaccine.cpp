@@ -8,6 +8,10 @@ void insert_person_in_vaccination_queue(Thing *w);
 
 char fingchk3[20] = { 0xad, 0xa9, 0xdd, 0xc9, 0x91, 0xad, 0xa9, 0x99 };
 
+// Returns 1 if the patient under the mouse (othervar.f41) is this player's,
+// contagious with the epidemic's illness (myhosp->f20b) and not yet queued
+// for a vaccination, recording them in othervar.f7a (0 otherwise). The flag
+// parameter is ignored (overwritten with 0).
 // FUNCTION: 0x000986a0
 u8 is_person_highlighted_for_vaccination(u8 flag)
 {
@@ -26,6 +30,8 @@ u8 is_person_highlighted_for_vaccination(u8 flag)
     return 0;
 }
 
+// Queues person for a vaccination (PF_VACCINE_REQUESTED) and counts the
+// request.
 // FUNCTION: 0x00098770
 void request_vaccination(Thing *person)
 {
@@ -35,6 +41,8 @@ void request_vaccination(Thing *person)
     allhosps[person->owner].vaccine_requests++;
 }
 
+// Drops person's vaccination request or nurse visit, clearing the flags,
+// icons and queue entry.
 // FUNCTION: 0x000987c8
 void cancel_vaccination_request(Thing *person)
 {
@@ -46,6 +54,7 @@ void cancel_vaccination_request(Thing *person)
     reset_icon_value(person, ICON_VACCINE_NURSE_SENT);
 }
 
+// Appends person to their hospital's vaccination queue.
 // FUNCTION: 0x00098844
 void insert_person_in_vaccination_queue(Thing *person)
 {
@@ -62,6 +71,8 @@ void insert_person_in_vaccination_queue(Thing *person)
     }
 }
 
+// Takes person out of their hospital's vaccination queue. Returns 1 if they
+// were in it.
 // FUNCTION: 0x00098950
 u8 remove_person_from_vaccination_queue(Thing *person)
 {
@@ -82,6 +93,7 @@ u8 remove_person_from_vaccination_queue(Thing *person)
     return 0;
 }
 
+// Returns 1 if person is in their hospital's vaccination queue.
 // FUNCTION: 0x00098a98
 u8 is_person_in_vaccine_queue(Thing *person)
 {
@@ -94,6 +106,8 @@ u8 is_person_in_vaccine_queue(Thing *person)
     return 0;
 }
 
+// Sends nurse to the first queued patient outside rooms she can reach that
+// no nurse is on the way to (PF_VACCINE_NURSE_SENT). Returns 1 if she went.
 // FUNCTION: 0x00098b2c
 u8 should_nurse_vaccinate(Thing *nurse)
 {
@@ -123,6 +137,9 @@ u8 should_nurse_vaccinate(Thing *nurse)
     return 0;
 }
 
+// Staff state SS_NURSE_VACCINATES: next to the patient, vaccinates them
+// (they stop being contagious, at gbv.f126's cost); otherwise follows them,
+// or gives up and puts the request back.
 // FUNCTION: 0x00098d0c
 void nurse_vaccinates(Thing *nurse)
 {
@@ -156,6 +173,8 @@ void nurse_vaccinates(Thing *nurse)
     }
 }
 
+// Returns 1 if a queued patient outside rooms, with no nurse on the way, can
+// be reached from nurse's room (or tile).
 // FUNCTION: 0x00098eb4
 u8 could_nurse_vaccinate(Thing *nurse)
 {

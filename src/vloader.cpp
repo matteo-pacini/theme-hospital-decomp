@@ -259,6 +259,10 @@ char *read_line_from_buf(char *line, s32 max, char *src);
 
 #define isspace(c) (__IsTable[(u8)((c) + 1)] & 2)
 
+// Sets element index of balance variable name (a balance_variables entry)
+// to value, if index and value are within the entry's bounds. The entry's
+// flags give the size (1 byte, 2 word, 4 dword) and whether the bounds are
+// signed (8) or unsigned (0x10). Returns 1 if set, -1 otherwise.
 // FUNCTION: 0x00099020
 s8 assign_value(char *name, u32 value, u16 index)
 {
@@ -340,6 +344,7 @@ s8 assign_value(char *name, u32 value, u16 index)
     }
 }
 
+// Returns the balance_variables index of variable name, or -1.
 // FUNCTION: 0x00099494
 s32 variable_address(char *name)
 {
@@ -354,6 +359,9 @@ s32 variable_address(char *name)
     return -1;
 }
 
+// Reads a balance file: each line "#table[index].member value", or
+// "#table[index].a.b ... value value ..." for several members, sets those
+// balance variables. A value that cannot be set skips the rest of the file.
 // FUNCTION: 0x000994f0
 void read_variable_file(char *name)
 {
@@ -467,6 +475,8 @@ void read_variable_file(char *name)
     file_buffer = 0;
 }
 
+// Removes the "[n]" from variable name in place and returns n, or 0 if there
+// is none.
 // FUNCTION: 0x00099a00
 u16 array_index(char *name)
 {
@@ -513,6 +523,8 @@ u16 array_index(char *name)
     return 0;
 }
 
+// Returns the number of ".member" parts in variable name (counting the
+// first).
 // FUNCTION: 0x00099b8c
 u8 number_of_members(char *name)
 {
@@ -531,6 +543,8 @@ u8 number_of_members(char *name)
     return count;
 }
 
+// If the current line (current_line) holds a tab and a space, cuts name at
+// its first tab or space.
 // FUNCTION: 0x00099bf4
 void strip_formatting(char *name)
 {

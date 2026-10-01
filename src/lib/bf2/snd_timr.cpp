@@ -13,6 +13,7 @@ s32 __cdecl AIL_register_timer(void *callback);
 void __cdecl AIL_set_timer_frequency(s32 timer, u32 hertz);
 void __cdecl AIL_start_timer(s32 timer);
 
+// Frees all five Bullfrog sound timer slots.
 // FUNCTION: 0xeb5b0
 void InitAllBullfrogSoundTimers(void)
 {
@@ -20,6 +21,8 @@ void InitAllBullfrogSoundTimers(void)
         memset(sound_timer, 0, sizeof(sound_timer));
 }
 
+// Starts a Miles timer calling callback frequency times a second. Returns
+// its slot number (1-5), or 0 if none is free or audio is not installed.
 // FUNCTION: 0xeb5e0
 u32 SetupBullfrogSoundTimer(u16 frequency, void *callback)
 {
@@ -40,6 +43,7 @@ u32 SetupBullfrogSoundTimer(u16 frequency, void *callback)
     return 0;
 }
 
+// Stops and frees sound timer slot number (1-5).
 // FUNCTION: 0xeb660
 void ReleaseBullfrogSoundTimer(s32 number)
 {

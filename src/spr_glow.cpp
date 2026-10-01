@@ -4,6 +4,10 @@ extern "C" {
 }
 
 
+// Draws RLE sprite spr at (x, y) in the graphics window, clipped, honouring
+// lbDisplay.draw_flags: 1 mirrors it, 2 flips it vertically, and 4 or 8
+// blend each pixel with colour glow through the ghost table (4 with the
+// pixel first, 8 with glow first). Always returns 1.
 // FUNCTION: 0x0006ef70
 s32 sprite_draw_glow(s32 x, s32 y, TbSprite *spr, u8 glow)
 {

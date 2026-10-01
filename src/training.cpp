@@ -20,6 +20,10 @@ u8 check_room_mutex(Thing *w);
 
 }
 
+// Staff state SS_DOCTOR_IS_TRAINED (a student in the training room): a
+// consultant switches to teaching; otherwise leaves for a rest, new orders
+// or an evacuation as needed, else sits on a free lecture chair or walks to
+// a random spot. Marks them to return here after a rest.
 // FUNCTION: 0x00042a10
 void doctor_is_trained(Thing *doctor)
 {
@@ -72,6 +76,10 @@ void doctor_is_trained(Thing *doctor)
     }
 }
 
+// Staff state SS_CONSULTANT_TRAINS: the consultant holds the room, starts the
+// projector, and gives lectures (training_done kind 0), or now and then
+// teaches from the bookcase (2) or skeleton (1); leaves for a rest, new
+// orders or an evacuation as needed.
 // FUNCTION: 0x00042c90
 void consultant_trains(Thing *consultant)
 {
@@ -144,6 +152,8 @@ void consultant_trains(Thing *consultant)
     process_staff_complex(consultant);
 }
 
+// If doctor has been ordered to train (ORD_TRAIN) and a training room is
+// available, sends them there and clears the order. Returns 1 if sent.
 // FUNCTION: 0x00042ff0
 u8 check_training_command(Thing *doctor)
 {
@@ -154,6 +164,9 @@ u8 check_training_command(Thing *doctor)
     return 0;
 }
 
+// Sends doctor to a training room other than their current one: a
+// consultant to one without a consultant (to teach), others to the one
+// with the most free lecture chairs. Returns 1 if sent, 0 if there is none.
 // FUNCTION: 0x0004303c
 u8 send_doctor_to_training(Thing *doctor)
 {
@@ -189,6 +202,8 @@ u8 send_doctor_to_training(Thing *doctor)
     return 0;
 }
 
+// Returns a training room of player `owner` other than exclude with no
+// consultant in it, or 0.
 // FUNCTION: 0x00043168
 u16 find_training_room_no_consultant(u8 owner, u16 exclude)
 {
@@ -214,6 +229,8 @@ u16 find_training_room_no_consultant(u8 owner, u16 exclude)
     return 0;
 }
 
+// Returns player `owner`'s training room other than exclude with the most
+// lecture chairs left free by students, or 0 if none.
 // FUNCTION: 0x00043294
 u16 find_emptiest_training_room(u8 owner, u16 exclude)
 {
@@ -247,6 +264,12 @@ u16 find_emptiest_training_room(u8 owner, u16 exclude)
     return found;
 }
 
+// A lesson of kind `kind` (0 lecture, 1 skeleton, 2 bookcase) by consultant:
+// each seated student whose ability is below a random part of the
+// consultant's raises it, and gains training points towards the
+// consultant's surgeon, psychiatrist and researcher skills they lack,
+// getting each skill (announced for this player) once past its threshold.
+// More students share the gain.
 // FUNCTION: 0x00043434
 void training_done(const Thing *consultant, const u8 kind)
 {

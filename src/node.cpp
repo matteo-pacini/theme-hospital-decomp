@@ -6,6 +6,9 @@ void remove_node(Thing *w);
 
 }
 
+// Links node at the head of the thing list of map cell (x, y) (Map.first).
+// Neither sets node's position nor clears its cell_prev; the node must not be
+// in a list.
 // FUNCTION: 0x00015a20
 void insert_node(Thing *node, MapPos x, MapPos y)
 {
@@ -27,6 +30,9 @@ void insert_node(Thing *node, MapPos x, MapPos y)
     cell->first = id;
 }
 
+// Moves node to (x, y), relinking it into the new cell's list when the tile
+// changes. Returns 1 if the tile changed; 0 if not, or if (x, y) is off the
+// map, in which case nothing moves.
 // FUNCTION: 0x00015ac4
 u16 move_node(Thing *node, MapPos x, MapPos y)
 {
@@ -45,6 +51,7 @@ u16 move_node(Thing *node, MapPos x, MapPos y)
     return 0;
 }
 
+// Unlinks node from its map cell's thing list and clears its links.
 // FUNCTION: 0x00015b68
 void remove_node(Thing *node)
 {

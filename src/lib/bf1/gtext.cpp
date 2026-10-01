@@ -35,6 +35,8 @@ void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *sprite, u8 colour);
 int LbTextSetJustifyWindow(s32 x, s32 y, s32 width);
 int LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 
+// Sets both the text justify window and the clip window to the box at (x,
+// y), width x height. Returns 1.
 // FUNCTION: 0x000c84f0
 int LbTextSetWindow(s32 x, s32 y, s32 width, s32 height)
 {
@@ -43,6 +45,8 @@ int LbTextSetWindow(s32 x, s32 y, s32 width, s32 height)
     return 1;
 }
 
+// Sets the text justify window (where lines start and wrap) to x, y and
+// width. Returns 1.
 // FUNCTION: 0x000c852c
 int LbTextSetJustifyWindow(s32 x, s32 y, s32 width)
 {
@@ -53,6 +57,8 @@ int LbTextSetJustifyWindow(s32 x, s32 y, s32 width)
     return 1;
 }
 
+// Sets the text clip window to the box at (x, y), width x height, clipped
+// to the screen. Returns 1.
 // FUNCTION: 0x000c857c
 int LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height)
 {
@@ -99,6 +105,8 @@ int LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height)
     return 1;
 }
 
+// Returns the width in pixels of the widest line of text in the current
+// font (tabs count lbSpacesPerTab spaces), 0 with no font.
 // FUNCTION: 0x000c86a4
 s32 LbTextStringWidth(char *text)
 {
@@ -124,6 +132,8 @@ s32 LbTextStringWidth(char *text)
     return max;
 }
 
+// Returns the width in pixels of the word starting at text, up to a space,
+// tab, newline or the end.
 // FUNCTION: 0x000c877c
 s32 LbTextWordWidth(char *text)
 {
@@ -139,6 +149,8 @@ s32 LbTextWordWidth(char *text)
     return width;
 }
 
+// Returns the height in pixels of text's lines in the current font
+// (asserting on a null text).
 // FUNCTION: 0x000c8800
 s32 LbTextStringHeight(char *text)
 {
@@ -161,6 +173,10 @@ s32 LbTextStringHeight(char *text)
     return 0;
 }
 
+// Draws text at (x, y) relative to the justify window, clipped to the clip
+// window, wrapping words at its width: draw_flags 0x20 wraps left-aligned,
+// 0x80 right-aligned, 0x100 centred, 0x200 justified (none: no wrapping).
+// Codes 6-9 in text toggle those flags. Returns 1.
 // NONMATCHING: the register zeroing count differs per line-break tail, so the
 // tails are merged differently; jump table placement
 // FUNCTION: 0x000c889c
@@ -335,6 +351,10 @@ int LbTextDraw(s32 x, s32 y, char *text)
 
 }
 
+// Draws the characters from sbegin up to send at (x, y), spaces space_len
+// wide, in the font's sprites or (draw_flags 0x40) in draw_colour,
+// underlined with 0x400. Control codes toggle drawing flags (1-5, 11, 12)
+// or set draw_colour from the next byte (14).
 // FUNCTION: 0x000c90f0
 void put_down_sprites(char *sbegin, char *send, long x, long y, long space_len)
 {

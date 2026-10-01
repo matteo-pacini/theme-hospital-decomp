@@ -40,6 +40,8 @@ TbScreenModeInfo lbScreenModeInfo[] = {
 
 int LbScreenFindVideoModes(void);
 
+// Returns whether screen mode `mode` is available, probing the video modes
+// the first time.
 // FUNCTION: 0x000be900
 s32 LbScreenIsModeAvailable(TbScreenMode mode)
 {
@@ -51,6 +53,9 @@ s32 LbScreenIsModeAvailable(TbScreenMode mode)
     return lbScreenModeInfo[mode].Available;
 }
 
+// Sets the graphics window to the box at (x, y), w x h (either corner
+// order), clipped to the screen; graphics_window points at its unclipped
+// corner. Returns 1.
 // FUNCTION: 0x000be948
 int LbScreenSetGraphicsWindow(s32 x, s32 y, s32 w, s32 h)
 {
@@ -97,6 +102,7 @@ int LbScreenSetGraphicsWindow(s32 x, s32 y, s32 w, s32 h)
     return 1;
 }
 
+// Returns nonzero if a screen mode has been set up.
 // FUNCTION: 0x000bea70
 u32 LbScreenIsInitialised(void)
 {

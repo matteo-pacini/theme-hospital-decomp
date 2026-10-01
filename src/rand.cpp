@@ -7,6 +7,8 @@ u32 ror13(u32 x);
 
 u16 staffrand(void);
 
+// Advances the simulation's random generator (seed) and returns its new
+// value.
 // FUNCTION: 0x000b0100
 u32 old_newrand(void)
 {
@@ -15,6 +17,8 @@ u32 old_newrand(void)
     return seed;
 }
 
+// Returns a random number from low to high (high - 1 when high - low is
+// odd), triangularly distributed (the sum of two draws), from old_newrand.
 // FUNCTION: 0x000b0144
 u32 old_normal_rand(u32 low, u32 high)
 {
@@ -29,6 +33,8 @@ u32 old_normal_rand(u32 low, u32 high)
     return sum + low;
 }
 
+// Advances the random generator for things outside the simulation, such as
+// sounds and the advisor (safeseed), and returns its low 16 bits.
 // FUNCTION: 0x000b01a0
 u16 saferand(void)
 {
@@ -37,6 +43,8 @@ u16 saferand(void)
     return safeseed;
 }
 
+// Advances the random generator used for new staff (gamevar.f0) and returns
+// its low 16 bits.
 // FUNCTION: 0x000b01e4
 u16 staffrand(void)
 {
@@ -45,6 +53,7 @@ u16 staffrand(void)
     return gamevar.f0;
 }
 
+// As old_normal_rand, from staffrand.
 // FUNCTION: 0x000b0228
 u32 normal_staffrand(u32 low, u32 high)
 {
@@ -59,6 +68,7 @@ u32 normal_staffrand(u32 low, u32 high)
     return sum + low;
 }
 
+// As old_normal_rand, from saferand.
 // FUNCTION: 0x000b0294
 u32 safe_normal_rand(u32 low, u32 high)
 {

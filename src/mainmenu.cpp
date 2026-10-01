@@ -35,6 +35,11 @@ s8 compare_products(s32 a, s32 b, s32 c, s32 d);
     0x74 0x08 0x0f 0x9c 0xc4 0x0f 0x9f 0xc0 0x28 0xe0 \
     parm [eax] [ebx] [ecx] [edx] value [al] modify [eax ebx ecx edx];
 
+// Runs one frame of the main menu's state machine (mainmenu.unknown2): loads
+// and plays the intro animation, draws the menu with the hovered segment lit,
+// and carries out a chosen entry (new game, load, network, tutorial or quit)
+// by setting display_mode or quit_game. Also runs the attract loop and the
+// credits.
 // FUNCTION: 0x00061bd0
 void draw_main_menu(void)
 {
@@ -330,6 +335,8 @@ void draw_main_menu(void)
     }
 }
 
+// Main menu keys: Escape or Q quits the game (quit_game = 3); any key ends
+// the attract loop.
 // FUNCTION: 0x00062730
 void process_keys_main_menu(void)
 {
@@ -355,6 +362,8 @@ void process_keys_main_menu(void)
     }
 }
 
+// Main menu clicks: a release inside one of the menu's triangles selects
+// that entry by setting mainmenu.unknown2. Clears the button state.
 // FUNCTION: 0x000627cc
 void process_mouse_main_menu(void)
 {
@@ -399,6 +408,7 @@ void process_mouse_main_menu(void)
     lbDisplay.left_button = lbDisplay.rleft_button = lbDisplay.right_button = lbDisplay.rright_button = 0;
 }
 
+// Draws the main menu background and updates the hovered entry.
 // FUNCTION: 0x00062a50
 void display_main_menu(void)
 {
@@ -407,6 +417,9 @@ void display_main_menu(void)
     set_font_from_cache(0);
 }
 
+// Hit-tests the mouse against the main menu's triangles and sets the hover
+// state in mainmenu.unknown2, or shows the entry's help when it is already
+// hovered.
 // FUNCTION: 0x00062a7c
 void tri_test(void)
 {
@@ -551,6 +564,8 @@ void tri_test(void)
     }
 }
 
+// Returns 1 if point (x, y) lies inside or on the triangle (x1, y1), (x2, y2),
+// (x3, y3), given in counterclockwise order on screen (y down).
 // FUNCTION: 0x00062f34
 u8 check_tri(u16 x1, u16 y1, u16 x2, u16 y2, u16 x3, u16 y3, u16 x, u16 y)
 {
@@ -562,6 +577,7 @@ u8 check_tri(u16 x1, u16 y1, u16 x2, u16 y2, u16 x3, u16 y3, u16 x, u16 y)
     return outside == 0;
 }
 
+// Plays the main menu's opening animation (smacker 0x16) full screen.
 // FUNCTION: 0x000630a4
 void play_main_menu_intro(void)
 {
@@ -573,6 +589,7 @@ void play_main_menu_intro(void)
     hosp_play_smk(0x16);
 }
 
+// Plays the main menu's closing animation (smacker 0x17) full screen.
 // FUNCTION: 0x0006310c
 void play_main_menu_outro(void)
 {
@@ -584,6 +601,10 @@ void play_main_menu_outro(void)
     hosp_play_smk(0x17);
 }
 
+// Plays the intro movie from the CD (the high-quality version if the CD is
+// fast enough), then restores the 320x200 mode. Returns 1 if the player
+// skipped it or the screen mode could not be restored, 0 otherwise or if
+// the movie is missing.
 // FUNCTION: 0x00063174
 u8 play_intro(void)
 {
@@ -627,6 +648,8 @@ u8 play_intro(void)
     return aborted;
 }
 
+// Plays the attract-mode movie (smacker 0x1b) in 320x200. Returns 1 if the
+// player skipped it.
 // FUNCTION: 0x00063300
 u8 play_attract_mode(void)
 {
@@ -666,6 +689,9 @@ u8 play_attract_mode(void)
     return aborted;
 }
 
+// Draws one frame of the scrolling credits from credit_text. *scroll is the
+// pixel offset into the current top line and *line its index; both advance.
+// Returns 1 at the '.' end marker or on a click.
 // FUNCTION: 0x0006344c
 u8 play_credits(s16 *scroll, u16 *line)
 {

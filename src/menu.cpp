@@ -52,6 +52,10 @@ void LbTextSetClipWindow(u32 x, u32 y, u32 w, u32 h);
 
 }
 
+// Builds the pull-down menu bar from pulldown_text (titles up to ".", then
+// each menu's items up to ".", the last ending with ".."): sets each menu's
+// item count and width, numbers the submenus and the font metrics. Call after
+// a resolution change.
 // FUNCTION: 0x00089df0
 void setup_menus(void)
 {
@@ -121,6 +125,9 @@ void setup_menus(void)
     pmenu.subcount = sub;
 }
 
+// Draws the menu bar while the mouse is over the top of the screen or a menu
+// is open, with the open menu (and its parent, for a submenu) while the left
+// button is held. Sets othervar.f8a while the bar is shown.
 // FUNCTION: 0x0008a1f0
 void draw_menus(void)
 {
@@ -187,6 +194,9 @@ void draw_menus(void)
     }
 }
 
+// Draws pulldown idx at (x, y): its box, items (greyed when disabled in a
+// network game), check marks, and the item under the mouse highlighted, which
+// becomes selected_option (1-based) with last_p = idx.
 // FUNCTION: 0x0008a618
 void draw_pulldown(u16 x, u16 y, u16 idx)
 {
@@ -235,6 +245,8 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
     }
 }
 
+// Draws an empty pull-down box with its border, w x h pixels inside, at
+// (x, y), and marks it for redraw.
 // FUNCTION: 0x0008aaf8
 void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h)
 {
@@ -283,6 +295,10 @@ void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h)
     set_all_refresh_zones_in_window(x, y, dw + (x + w), dh + (y + h), 3);
 }
 
+// Menu bar mouse handling: on a release over an item of the open menu,
+// toggles its check flag, sends its key and calls its callback (othervar.f8f
+// = the item's arg, f90 = its index); while held, opens the menu or submenu
+// under the mouse. Closes the menu when the button is up.
 // FUNCTION: 0x0008add8
 extern "C" void process_menus(void)
 {
@@ -409,6 +425,7 @@ extern "C" void process_menus(void)
     }
 }
 
+// Load menu item: queues event 0xd to load save slot othervar.f90 + 1 (1-9).
 // FUNCTION: 0x0008b6a0
 extern "C" void pulldown_load(void)
 {
@@ -422,6 +439,8 @@ extern "C" void pulldown_load(void)
     }
 }
 
+// Save menu item: queues event 0xc to save to slot othervar.f90 + 1, asking
+// first if the slot is already used.
 // FUNCTION: 0x0008b6f8
 extern "C" void pulldown_save(void)
 {
@@ -440,6 +459,8 @@ extern "C" void pulldown_save(void)
     }
 }
 
+// Shows the level's briefing (or the network game's criteria); refused in
+// mouse mode 0xe.
 // FUNCTION: 0x0008b7b4
 void pulldown_briefing(void)
 {
@@ -451,6 +472,7 @@ void pulldown_briefing(void)
         show_help_page(2, current_net_criteria.unknown0);
 }
 
+// Toggles the shadows option (myplayer.f1d) and redraws the view.
 // FUNCTION: 0x0008b824
 extern "C" void pulldown_toggle_shadows(void)
 {
@@ -466,6 +488,8 @@ extern "C" void pulldown_toggle_shadows(void)
     }
 }
 
+// Sound effects volume item: item othervar.f90 (0 loudest, 9 quietest) sets
+// myplayer.fd to 0-127 and moves the menu's check mark.
 // FUNCTION: 0x0008b8a0
 extern "C" void pulldown_svol(void)
 {
@@ -481,6 +505,8 @@ extern "C" void pulldown_svol(void)
     }
 }
 
+// Music volume item: as pulldown_svol for myplayer.fc, fading the music to
+// the new volume.
 // FUNCTION: 0x0008b91c
 extern "C" void pulldown_smusic(void)
 {
@@ -497,6 +523,7 @@ extern "C" void pulldown_smusic(void)
     }
 }
 
+// Announcer volume item: as pulldown_svol for myplayer.fe.
 // FUNCTION: 0x0008b99c
 extern "C" void pulldown_sannounce(void)
 {
@@ -512,6 +539,8 @@ extern "C" void pulldown_sannounce(void)
     }
 }
 
+// Toggles the music (myplayer.unknown11), starting or stopping the MIDI song;
+// off if there is no music driver.
 // FUNCTION: 0x0008ba18
 extern "C" void pulldown_toggle_music(void)
 {
@@ -526,6 +555,8 @@ extern "C" void pulldown_toggle_music(void)
     }
 }
 
+// Toggles the sound effects (myplayer.ff), stopping all samples when off;
+// off if there is no sound driver.
 // FUNCTION: 0x0008ba78
 extern "C" void pulldown_toggle_sound(void)
 {
@@ -537,6 +568,7 @@ extern "C" void pulldown_toggle_sound(void)
         StopAllSamples();
 }
 
+// Toggles the ambient sounds (myplayer.f10); off if there is no sound driver.
 // FUNCTION: 0x0008bacc
 extern "C" void pulldown_toggle_ambient(void)
 {
@@ -546,6 +578,8 @@ extern "C" void pulldown_toggle_ambient(void)
         myplayer.f10 = 0;
 }
 
+// Game speed item: item othervar.f90 (0-4) becomes myplayer.f20 and queues
+// EV_VARY_SPEED with the item's arg.
 // FUNCTION: 0x0008bb10
 extern "C" void pulldown_vary_speed(void)
 {
@@ -563,6 +597,9 @@ extern "C" void pulldown_vary_speed(void)
     }
 }
 
+// Screen mode item: switches between 320x200 (SCREEN_MODE_1) and 640x480
+// (SCREEN_MODE_13), closing open requesters, unless the item is the current
+// mode or a requester that must stay open is shown.
 // FUNCTION: 0x0008bb98
 extern "C" void pulldown_toggle_screen_mode(void)
 {
@@ -589,6 +626,7 @@ extern "C" void pulldown_toggle_screen_mode(void)
     }
 }
 
+// Scales the CompElement positions of element[] to the 320x200 layout.
 // FUNCTION: 0x0008bcb4
 extern "C" void setup_mcga_elements(void)
 {
@@ -602,6 +640,7 @@ extern "C" void setup_mcga_elements(void)
     }
 }
 
+// Marks which of the player's ten save slots exist (othervar.fa0e).
 // FUNCTION: 0x0008bd24
 void check_save_games(void)
 {
@@ -622,6 +661,8 @@ void check_save_games(void)
     }
 }
 
+// Sets the menus' check marks (screen mode, volume levels, game speed) from
+// the current settings and finds the used save slots.
 // FUNCTION: 0x0008bdd4
 extern "C" void setup_pulldown_menu_options(void)
 {
@@ -654,6 +695,7 @@ extern "C" void setup_pulldown_menu_options(void)
 }
 
 
+// Overwrites the 320x200 layout tables with that mode's coordinates.
 // FUNCTION: 0x0008bf24
 void mcga_coords(void)
 {
@@ -1081,6 +1123,9 @@ void mcga_coords(void)
     resvars.f18_s32p[0x115] = 0xc;
 }
 
+// Loads the pointer sprites and points resvars at the layout tables for
+// screen mode `mode` (SCREEN_MODE_1 or SCREEN_MODE_13), reloading the game
+// sprites, then resets the view window and rebuilds the menus.
 // FUNCTION: 0x0008d77c
 void swap_game_sprites(TbScreenMode mode)
 {
@@ -1177,6 +1222,8 @@ void swap_game_sprites(TbScreenMode mode)
     LbSpriteSetup(pointer, end_pointers, pointer_data);
 }
 
+// Switches the game to screen mode `mode`, keeping the view centred on the
+// same cell. Exits the program if the mode cannot be set.
 // FUNCTION: 0x0008db38
 extern "C" void change_screen_mode(TbScreenMode mode)
 {
@@ -1212,6 +1259,7 @@ extern "C" void change_screen_mode(TbScreenMode mode)
     goto_cell_in_window(window.unknown2eb, cell);
 }
 
+// Asks the player to confirm restarting the level (single player only).
 // FUNCTION: 0x0008dc7c
 extern "C" void ask_restart_level(void)
 {

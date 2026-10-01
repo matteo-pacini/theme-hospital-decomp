@@ -23,12 +23,15 @@ void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address);
 #pragma aux fn_000db4c8 "W?AddIPXSession$:IPXServiceProvider$n(pn$__1snc1aHOSTINFOPACKET$$pn$__3ljac5NETSOCKET$$)v"
 }
 
+// No settings to change over IPX. Returns Lb_OK.
 // FUNCTION: 0xd5350
 TbError IPXServiceProvider::ChangeSettings(u32 setting, void *data)
 {
     return Lb_OK;
 }
 
+// Lets new players join the running session (allow nonzero) or not. Returns
+// Lb_OK, or Lb_FAIL if no session is running.
 // FUNCTION: 0xd5354
 TbError IPXServiceProvider::EnableNewPlayers(u32 allow)
 {
@@ -41,6 +44,7 @@ TbError IPXServiceProvider::EnableNewPlayers(u32 allow)
     return ret;
 }
 
+// Destroys the IPX service provider.
 // FUNCTION: 0xd5374
 IPXServiceProvider::~IPXServiceProvider()
 {
@@ -48,6 +52,9 @@ IPXServiceProvider::~IPXServiceProvider()
     session_count = 0;
 }
 
+// Initialises the IPX provider for game guid with callbacks: allocates the
+// receive queue, opens a socket and starts listening. Returns Lb_OK, or
+// Lb_FAIL.
 // FUNCTION: 0xd5428
 TbError IPXServiceProvider::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallbacks *callbacks, void *data)
 {
@@ -104,6 +111,8 @@ void IPXServiceProvider::BatchProcess(u8 delay)
     }
 }
 
+// Base initialisation plus IPX setup: opens a dynamic socket and queues 32
+// receive packets. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd5510
 TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
 {
@@ -137,6 +146,9 @@ TbError IPXServiceProvider::Initialise(__ic76sReceiveCallbacks *cb, void *data)
     return ret;
 }
 
+// Stops any session, closes the socket, shuts down IPX and frees the
+// provider's memory. Returns Lb_FAIL if not initialised, else the base
+// Release's result.
 // FUNCTION: 0xd569c
 TbError IPXServiceProvider::Release(void)
 {
@@ -167,6 +179,9 @@ u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
 u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size);
 #pragma aux fn_000d6590 "W?PeekMessage$:IPXServiceProvider$n(pnulpnvpnul)ul"
 
+// Hosts session session_name (up to max_players, at most 32) as player
+// player_name: advertises it over SAP as "BU.GI.<guid>" and makes this
+// player 0 and the host. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd5760
 TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max_players, void *data)
 {
@@ -226,6 +241,9 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
     return ret;
 }
 
+// Joins the session listed as entry: asks its host for its details, sends a
+// join request (resent every 25 ticks for up to 10 seconds) and fetches the
+// player list. Returns Lb_OK, or Lb_FAIL if it is full or does not answer.
 // FUNCTION: 0xd59ec
 // NONMATCHING: stack slots only: the target places done and begin above the other dword
 // temporaries, and orders the ret and inlined BatchProcess argument bytes differently
@@ -350,6 +368,8 @@ TbError IPXServiceProvider::Start(TbNetworkSessionNameEntry *entry, char *player
     return ret;
 }
 
+// Leaves the running session, telling the other players (BUSD) after a
+// short wait, and frees the player list. Returns Lb_FAIL.
 // FUNCTION: 0xd63e4
 TbError IPXServiceProvider::Stop(void)
 {
@@ -398,6 +418,8 @@ TbError IPXServiceProvider::Stop(void)
     return Lb_FAIL;
 }
 
+// Sends message buf to player to, guaranteed (BUDG) or not (BUDN).
+// Returns SendMessageToPlayerId's result.
 // FUNCTION: 0x000d6550
 TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
 {
@@ -418,12 +440,15 @@ TbError fn_000d6550(IPXServiceProvider *sp, u32 to, void *buf, u8 guaranteed)
     return ret;
 }
 
+// Takes the next received message (see fn_000d6598).
 // FUNCTION: 0xd6588
 u32 fn_000d6588(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
 {
     return fn_000d6598(sp, from, buf, size, 0);
 }
 
+// Looks at the next received message without taking it (see
+// fn_000d6598).
 // FUNCTION: 0xd6590
 u32 fn_000d6590(IPXServiceProvider *sp, u32 *from, void *buf, u32 *size)
 {
@@ -448,6 +473,10 @@ static inline IPXQueueEntry *GetNextFullReceiveBuffer(IPXServiceProvider *self)
     return 0;
 }
 
+// Copies the next queued received message (and its sender, into *from)
+// into buf if it fits in *size, setting *size; with peek 0 it is removed
+// from the queue. With nothing queued, sets *size to 0 and polls the
+// network. Returns 1 if a message was copied, else 0.
 // FUNCTION: 0xd6598
 u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 peek)
 {
@@ -473,6 +502,10 @@ u32 fn_000d6598(IPXServiceProvider *self, u32 *from, void *buf, u32 *size, u8 pe
     return ret;
 }
 
+// Calls callback with the running session, or else queries the network
+// for sessions of this game (SAP, then a host query to each), keeps the
+// session list (dropping ones silent for 3000 ticks) and calls callback with
+// each. Returns Lb_OK, or Lb_FAIL if not initialised.
 // FUNCTION: 0xd6668
 // NONMATCHING: stack slots; the session-expiry loop keeps the memset size 0x34 in ebp where
 // ours keeps 0, and the AddSession name pointer is built in another register
@@ -573,6 +606,9 @@ struct IPXEnumPlayer {
     char name[0x20];
 };
 
+// Calls callback with each player of session (the running one, or a listed
+// one, asking its host page by page for up to 10 seconds). Returns Lb_OK,
+// or Lb_FAIL if the host does not answer.
 // FUNCTION: 0xd6e2c
 // NONMATCHING: frame 4 bytes smaller, stack slots and register choice; done is tested as a byte
 // here, the target loads it with the sar trick
@@ -688,6 +724,10 @@ TbError IPXServiceProvider::Enumerate(TbNetworkSessionNameEntry *session, TbNetw
     return ret;
 }
 
+// Polls the IPX packets: as host, answers session and player queries and
+// join requests and keeps advertising; as host or client, acknowledges
+// system messages and queues data messages. Returns Lb_OK if a session is
+// running, else Lb_FAIL.
 // FUNCTION: 0xd7768
 TbError IPXServiceProvider::Update(void)
 {
@@ -775,6 +815,8 @@ TbError IPXServiceProvider::Update(void)
     return ret;
 }
 
+// Returns Lb_OK if SAP server name is this game's ("BU.GI." and its guid),
+// else Lb_FAIL.
 // FUNCTION: 0xd8138
 TbError IPXServiceProvider::BullfrogIPXServer(char *name)
 {
@@ -789,6 +831,7 @@ TbError IPXServiceProvider::BullfrogIPXServer(char *name)
     return ret;
 }
 
+// Writes guid as four hex words, each followed by '.', into str.
 // FUNCTION: 0xd8214
 void IPXServiceProvider::ConvertGuidToString(__tibcaGUID *guid, char *str)
 {
@@ -803,6 +846,7 @@ void IPXServiceProvider::ConvertGuidToString(__tibcaGUID *guid, char *str)
     }
 }
 
+// Reads four '.'-separated hex words from str into guid.
 // FUNCTION: 0xd8274
 void IPXServiceProvider::ConvertStringToGuid(char *str, __tibcaGUID *guid)
 {
@@ -827,6 +871,9 @@ void IPXServiceProvider::ConvertStringToGuid(char *str, __tibcaGUID *guid)
     }
 }
 
+// Host: sends a page of the player list (six players, page info->page) to
+// `to`. Returns Lb_OK, or Lb_FAIL if not hosting or the page is past the
+// end.
 // FUNCTION: 0xd82f4
 TbError IPXServiceProvider::SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3ljac5NETSOCKET *to)
 {
@@ -872,6 +919,9 @@ TbError IPXServiceProvider::SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3lj
     return ret;
 }
 
+// Host: adds the player asking to join (if there is room and new players
+// are allowed), replies with their slot (BUNP) and tells everyone (BUSA).
+// Returns Lb_OK, or Lb_FAIL if not hosting or the player table is full.
 // FUNCTION: 0xd852c
 // NONMATCHING: frame layout and register allocation differ
 TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, __3ljac5NETSOCKET *from)
@@ -923,6 +973,9 @@ TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, _
     return ret;
 }
 
+// Host: if the player asking to join is already in the session (same
+// node), updates their socket and repeats the reply. Returns 1 if so, else
+// 0.
 // FUNCTION: 0xd8c58
 u32 IPXServiceProvider::CheckIfPlayerWantingToJoinIsInSession(__35ct5sCLIENTJOINPACKET *join, __3ljac5NETSOCKET *from)
 {
@@ -946,6 +999,8 @@ u32 IPXServiceProvider::CheckIfPlayerWantingToJoinIsInSession(__35ct5sCLIENTJOIN
     return ret;
 }
 
+// Client: fetches the session's player list from server page by page into
+// the player tables (up to 30 seconds). Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd8e34
 // NONMATCHING: stack slots, register choice in the inlined BatchProcess, and the
 // target shares one Listen-and-break tail between the done and give-up paths
@@ -1043,6 +1098,9 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
     return ret;
 }
 
+// Sends system message msg to every other player and waits up to 10
+// seconds for all to acknowledge (resending every 50 ticks, answering
+// queries meanwhile); players who do not are removed. Returns Lb_FAIL.
 // FUNCTION: 0xd9480
 // NONMATCHING: stack slots of last, start and the ret and inlined BatchProcess argument
 // bytes, and the register of the ack store
@@ -1146,6 +1204,9 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
     return ret;
 }
 
+// Removes each player who did not acknowledge the last system message,
+// telling the others (BUSD) and waiting for their acknowledgements. Returns
+// Lb_OK, or Lb_FAIL if no session is running.
 // FUNCTION: 0xd9a98
 // NONMATCHING: stack slots and register choice; the target places the packet loop's RecPkt
 // call ahead of the loop body, ours after it
@@ -1287,6 +1348,8 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
     return ret;
 }
 
+// Acknowledges system message msg to its sender (BUSK) and queues the
+// player addition or removal it carries. Returns Lb_FAIL.
 // FUNCTION: 0xda35c
 // NONMATCHING: stack slots of msg, ret, the inlined BatchProcess argument and the inlined
 // AddToReceiveBuffer temporaries
@@ -1322,6 +1385,8 @@ TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *m
     return ret;
 }
 
+// Polls for the acknowledgement (BUDA) of guaranteed message seq sent to
+// player id, queuing data messages meanwhile. Returns 1 if it arrived.
 // FUNCTION: 0xdba58
 u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
 {
@@ -1354,6 +1419,8 @@ u32 IPXServiceProvider::HaveIGotAckDataMessage(u8 seq, u32 id)
     return got;
 }
 
+// As Update, without advertising: handles waiting system messages and
+// queues data messages. Returns 1 if any system message was handled.
 // FUNCTION: 0xdac14
 // NONMATCHING: stack slots of the hoisted member addresses, register choice in the
 // inlined BatchProcess
@@ -1443,6 +1510,8 @@ u32 IPXServiceProvider::CheckForSystemMessages(void)
     return got;
 }
 
+// Allocates and clears the receive queue (32 entries). Returns Lb_OK, or
+// Lb_FAIL.
 // FUNCTION: 0xdb668
 TbError IPXServiceProvider::AllocateSpStuff(void)
 {
@@ -1456,6 +1525,7 @@ TbError IPXServiceProvider::AllocateSpStuff(void)
     return ret;
 }
 
+// Frees the receive queue.
 // FUNCTION: 0xdb698
 void IPXServiceProvider::FreeAllocSpStuff(void)
 {
@@ -1465,12 +1535,16 @@ void IPXServiceProvider::FreeAllocSpStuff(void)
     }
 }
 
+// Empties the receive queue.
 // FUNCTION: 0xdb6bc
 void IPXServiceProvider::ClearSpStuff(void)
 {
     memset(queue, 0, 0x4380);
 }
 
+// Sends message buf to player id wrapped as magic (BUDG guaranteed, BUDN
+// not); a guaranteed message is resent every 100 ticks until acknowledged,
+// for up to 5 seconds. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xdb6d4
 TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
 {
@@ -1543,6 +1617,9 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
     return ret;
 }
 
+// Queues received data message msg; a guaranteed one (BUDG) only if it is
+// the next expected from its sender, and it is acknowledged either way.
+// Returns 1 if an acknowledgement was sent.
 // FUNCTION: 0xdbb58
 // NONMATCHING: stack slots, and register choice in the inlined AddToReceiveBuffer copies
 u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
@@ -1588,6 +1665,10 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
     return ret;
 }
 
+// Puts message msg into the next free receive queue entry, as a delete- or
+// add-player message for system messages, and keeps the player tables in
+// step. When the player list changes it re-adds every player, passing the
+// local and host flags to AddPlayer in swapped order.
 // FUNCTION: 0x000dc440 COMDAT
 // NONMATCHING: stack slots of msg, q, id, size, seq and changed
 void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
@@ -1684,6 +1765,7 @@ void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
     }
 }
 
+// Returns the first free receive queue entry, or 0.
 // FUNCTION: 0x000dc400 COMDAT
 inline IPXQueueEntry *IPXServiceProvider::GetNextEmptyReceiveBuffer(void)
 {
@@ -1701,6 +1783,8 @@ inline IPXQueueEntry *IPXServiceProvider::GetNextEmptyReceiveBuffer(void)
     return 0;
 }
 
+// Returns Lb_OK if msg is a message of this protocol (with game guid id,
+// except for data messages), else Lb_FAIL.
 // FUNCTION: 0xdc740
 TbError IPXServiceProvider::BullfrogIPXMessage(__407tigIPXMESSAGEBLOCK *msg, __tibcaGUID *id)
 {
@@ -1733,6 +1817,9 @@ TbError IPXServiceProvider::BullfrogIPXMessage(__407tigIPXMESSAGEBLOCK *msg, __t
 extern "C" {
 
 
+// Records the host info packet info from address in the session list
+// (updating or adding its entry) and rebuilds the provider's session
+// table.
 // FUNCTION: 0xdb4c8
 void fn_000db4c8(IPXServiceProvider *sp, u8 *info, u8 *address)
 {

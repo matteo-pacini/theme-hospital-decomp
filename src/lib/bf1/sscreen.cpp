@@ -34,6 +34,10 @@ u8 *invert_column(u8 *p, u8 *end, s32 stride);
 void wait_vbi(void);
 #pragma aux wait_vbi = 0xba 0xda 0x03 0x00 0x00 0x29 0xc0 0xec 0xa8 0x08 0x74 0xf4 modify [eax edx];
 
+// Switches the display to screen mode `mode` (VGA or VESA), with a back
+// buffer of width x height, resetting the graphics and text windows and
+// setting palette if given. Saves the old video mode the first time.
+// Returns 1, or -1 if the mode is unavailable.
 // FUNCTION: 0x000bea80
 int LbScreenSetupAnyMode(TbScreenMode mode, s32 width, s32 height, u8 *palette, ...)
 {
@@ -74,6 +78,7 @@ int LbScreenSetupAnyMode(TbScreenMode mode, s32 width, s32 height, u8 *palette, 
     return 1;
 }
 
+// Fills the graphics window of the back buffer with colour. Returns 1.
 // FUNCTION: 0x000bec84
 int LbScreenClearGraphicsWindow(u8 colour, ...)
 {
@@ -89,6 +94,7 @@ int LbScreenClearGraphicsWindow(u8 colour, ...)
     return 1;
 }
 
+// Fills the whole back buffer with colour. Returns 1.
 // FUNCTION: 0x000becd0
 int LbScreenClear(u8 colour, ...)
 {
@@ -96,6 +102,8 @@ int LbScreenClear(u8 colour, ...)
     return 1;
 }
 
+// Restores the video mode in use before the first LbScreenSetupAnyMode.
+// Returns 1, or -1 if no mode was set.
 // FUNCTION: 0x000becfc
 int LbScreenReset(void)
 {
@@ -112,12 +120,14 @@ int LbScreenReset(void)
     return 1;
 }
 
+// Does nothing under DOS (the screen needs no locking). Returns 1.
 // FUNCTION: 0x000bed50
 int LbScreenLock(void)
 {
     return 1;
 }
 
+// Does nothing under DOS. Returns 1.
 // FUNCTION: 0x000bed5c
 int LbScreenUnlock(void)
 {
@@ -129,6 +139,7 @@ u32 LbScreenSetDoubleBuffering(u32 state);
 u32 LbScreenSetWScreenInVideo(u32 state);
 #pragma aux LbScreenSetWScreenInVideo parm caller []
 
+// Sets the double-buffering flag (unused under DOS). Returns its old value.
 // FUNCTION: 0x000bed68
 u32 LbScreenSetDoubleBuffering(u32 state)
 {
@@ -139,6 +150,8 @@ u32 LbScreenSetDoubleBuffering(u32 state)
     return old;
 }
 
+// Sets the work-screen-in-video-memory flag (unused under DOS). Returns its
+// old value.
 // FUNCTION: 0x000bed88
 u32 LbScreenSetWScreenInVideo(u32 state)
 {
@@ -149,6 +162,8 @@ u32 LbScreenSetWScreenInVideo(u32 state)
     return old;
 }
 
+// Queries VESA and marks which VESA modes of lbScreenModeInfo are
+// available (320x200 always is). Returns 1.
 // FUNCTION: 0x000beda8
 int LbScreenFindVideoModes(void)
 {
@@ -163,6 +178,8 @@ int LbScreenFindVideoModes(void)
     return 1;
 }
 
+// Copies the back buffer to the screen (in 64K banks under VESA) with the
+// mouse pointer drawn in. Returns 1.
 // FUNCTION: 0x000bee60
 int LbScreenSwap(void)
 {
@@ -188,6 +205,9 @@ int LbScreenSwap(void)
     return 1;
 }
 
+// Copies the width x height box at (source_x, source_y) of source to the
+// screen at (dest_x, dest_y). Meant to clear the source box to colour too,
+// but the memset arguments are swapped (see the note inside). Returns 1.
 // FUNCTION: 0x000bef14
 int LbScreenSwapBoxClear(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest_y, u32 width, u32 height, u8 colour, ...)
 {
@@ -239,6 +259,8 @@ int LbScreenSwapBoxClear(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32
     return 1;
 }
 
+// Copies the back buffer to the screen and fills the back buffer with
+// colour. Returns 1.
 // FUNCTION: 0x000bf0e4
 int LbScreenSwapClear(u8 colour, ...)
 {
@@ -265,6 +287,8 @@ int LbScreenSwapClear(u8 colour, ...)
     return 1;
 }
 
+// Copies the width x height box at (source_x, source_y) of source to the
+// screen at (dest_x, dest_y), across VESA banks. Returns 1.
 // FUNCTION: 0x000bf1e8
 int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest_y, u32 width, u32 height, ...)
 {
@@ -312,6 +336,9 @@ int LbScreenSwapBox(u8 *source, s32 source_x, s32 source_y, s32 dest_x, s32 dest
     return 1;
 }
 
+// Draws a horizontal or vertical line from (x1, y1) to (x2, y2) straight on
+// the screen by adding 0x80 to each pixel (an inverting cursor line),
+// clipped to the graphics window. Returns 1, or -1 if wholly outside.
 // FUNCTION: 0x000bf374
 int LbScreenDrawHVLineDirect(s32 x1, s32 y1, s32 x2, s32 y2, ...)
 {
@@ -437,6 +464,7 @@ int LbScreenDrawHVLineDirect(s32 x1, s32 y1, s32 x2, s32 y2, ...)
     return 1;
 }
 
+// Waits for the start of the vertical blank. Returns 1.
 // FUNCTION: 0x000bf760
 int LbScreenWaitVbi(void)
 {
@@ -444,6 +472,7 @@ int LbScreenWaitVbi(void)
     return 1;
 }
 
+// Returns 1 (the application is always active under DOS).
 // FUNCTION: 0x000bf778
 int LbIsActive(void)
 {

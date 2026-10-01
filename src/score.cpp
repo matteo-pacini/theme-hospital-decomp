@@ -65,6 +65,9 @@ void check_hall_buttons(void);
 void save_highscores(void);
 void load_highscores(void);
 
+// Moves the hall of fame's rows and title letters an eighth of the way to
+// their targets (16.16 fixed point), and switches the title between fame
+// and shame (othervar.f9e4) when the rows cross over.
 // FUNCTION: 0x00094500
 void move_text(void)
 {
@@ -106,6 +109,8 @@ void move_text(void)
     }
 }
 
+// Sets the row and title letter positions (16.16 fixed point) for showing
+// the hall of fame.
 // FUNCTION: 0x000947f0
 void set_fame_pos(s32 *text, s32 *title)
 {
@@ -128,6 +133,8 @@ void set_fame_pos(s32 *text, s32 *title)
     TitleText = saved;
 }
 
+// Sets the row and title letter positions (16.16 fixed point) for showing
+// the hall of shame.
 // FUNCTION: 0x00094914
 void set_shame_pos(s32 *text, s32 *title)
 {
@@ -146,6 +153,7 @@ void set_shame_pos(s32 *text, s32 *title)
     TitleText = saved;
 }
 
+// Draws the hall of fame's fixed labels into the background screen.
 // FUNCTION: 0x00094a18
 void modify_background(void)
 {
@@ -167,6 +175,9 @@ void modify_background(void)
     LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df_u32);
 }
 
+// Runs one frame of the hall of fame screen (hall.unknown2: 0 opening, 1
+// shown, 2 done, which moves on to the next year-end screen); closes by
+// itself after 1200 frames without mouse movement.
 // FUNCTION: 0x00094b28
 void display_hall(void)
 {
@@ -220,6 +231,7 @@ void display_hall(void)
         hall.unknown2 = 2;
 }
 
+// Draws the sliding title and the ten rows of the hall of fame or shame.
 // FUNCTION: 0x00094d34
 void draw_fame_text(void)
 {
@@ -264,6 +276,8 @@ void draw_fame_text(void)
     }
 }
 
+// Writes this player's hospital name and score (allhosps.f2d) into hall of
+// fame slot `slot`.
 // FUNCTION: 0x00094f5c
 void add_highscore_fame(s8 slot)
 {
@@ -271,6 +285,7 @@ void add_highscore_fame(s8 slot)
     hosp_scores.fame[slot].score = allhosps[player].f2d;
 }
 
+// Sorts the hall of fame by descending score.
 // FUNCTION: 0x00094fc8
 void bubble_sort_fame(void)
 {
@@ -294,6 +309,8 @@ void bubble_sort_fame(void)
     }
 }
 
+// Writes this player's hospital name and score into hall of shame slot
+// `slot`.
 // FUNCTION: 0x00095094
 void add_highscore_shame(s8 slot)
 {
@@ -301,6 +318,7 @@ void add_highscore_shame(s8 slot)
     hosp_scores.shame[slot].score = allhosps[player].f2d;
 }
 
+// Sorts the hall of shame by ascending score.
 // FUNCTION: 0x00095100
 void bubble_sort_shame(void)
 {
@@ -324,6 +342,10 @@ void bubble_sort_shame(void)
     }
 }
 
+// Enters this player's score in the hall of fame if it beats the lowest
+// entry, else in the hall of shame if it beats its lowest, replacing their
+// own entry if they have one with a lower score, and saves the table. Sets
+// which hall is shown (othervar.f9e4).
 // FUNCTION: 0x000951c8
 void insert_hall_details(void)
 {
@@ -367,6 +389,7 @@ void insert_hall_details(void)
     }
 }
 
+// Hall of fame buttons: 0 and 1 switch between fame and shame, 2 closes.
 // FUNCTION: 0x0009536c
 void process_hall_buttons(u8 button)
 {
@@ -390,6 +413,8 @@ void process_hall_buttons(u8 button)
     }
 }
 
+// Hall of fame clicks: presses the button under the mouse and runs its
+// callback on release.
 // FUNCTION: 0x0009542c
 void check_hall_buttons(void)
 {
@@ -415,6 +440,8 @@ void check_hall_buttons(void)
     }
 }
 
+// Writes the high score table to save/hiscore.dat (in a network game only on
+// player 0's machine).
 // FUNCTION: 0x00095710
 void save_highscores(void)
 {
@@ -431,6 +458,7 @@ void save_highscores(void)
     }
 }
 
+// Reads the high score table from save/hiscore.dat, if present.
 // FUNCTION: 0x00095790
 void load_highscores(void)
 {

@@ -16,6 +16,10 @@ extern Event D_001549d0[];
 void nav_init(Thing *w);
 }
 
+// Tries to make a rat hole for player `owner`: walks from tile allhosps.fcac in
+// a random direction over the owner's land to the first wall, and adds a hole
+// there (40 at most) unless it is in a room or already has one. Holes on sides
+// 0 and 3 also get a floor sprite.
 // FUNCTION: 0x0007cd80
 void try_create_rathole(u8 owner)
 {
@@ -85,6 +89,7 @@ found:
     }
 }
 
+// Removes one of player `owner`'s rat holes at random.
 // FUNCTION: 0x0007d114
 void remove_rand_rathole(u8 owner)
 {
@@ -94,6 +99,8 @@ void remove_rand_rathole(u8 owner)
     remove_rathole(owner, old_newrand() % allhosps[owner].fcae);
 }
 
+// Removes player `owner`'s rat hole idx (moving the last one into its place)
+// and its floor sprite.
 // FUNCTION: 0x0007d184
 void remove_rathole(u8 owner, u8 idx)
 {
@@ -111,6 +118,8 @@ void remove_rathole(u8 owner, u8 idx)
     allhosps[owner].fcae--;
 }
 
+// Removes player `owner`'s rat hole on tile, if any. The last hole in the
+// list is never checked.
 // FUNCTION: 0x0007d2a8
 extern "C" void clear_cell_of_ratholes(u8 owner, u16 tile)
 {
@@ -128,6 +137,8 @@ extern "C" void clear_cell_of_ratholes(u8 owner, u16 tile)
     }
 }
 
+// Daily rats: for each hospital, may make a rat hole (more likely with
+// higher allhosps.fcaa), rarely removes one, and may send out a rat.
 // FUNCTION: 0x0007d364
 void manage_rats(void)
 {
@@ -154,6 +165,9 @@ void manage_rats(void)
     }
 }
 
+// Sends a rat from one of player `owner`'s rat holes to another, if there
+// are two or more. In the rat game, the next rat takes the look in
+// othervar.f9e9.
 // FUNCTION: 0x0007d448
 void make_a_rat(u8 owner)
 {
@@ -209,6 +223,8 @@ void make_a_rat(u8 owner)
     }
 }
 
+// Rat state RAT_SCURRIES: moves the rat a step towards its next waypoint,
+// planning the next leg when it gets there.
 // FUNCTION: 0x0007d6cc
 void rat_scurries(Thing *rat)
 {
@@ -225,6 +241,9 @@ void rat_scurries(Thing *rat)
     }
 }
 
+// Plans a rat's next leg: at its destination it dives into the hole there
+// (RAT_LEAVES) or vanishes; otherwise sets its step and sprite towards the
+// next waypoint.
 // FUNCTION: 0x0007d760
 void ratnav_init(Thing *rat)
 {
@@ -277,6 +296,8 @@ void ratnav_init(Thing *rat)
     rat->flip = start[(LbArcTan(dx, dy) + 0x80) % 0x800 * 8 / 0x800 + 0x3ba].flags;
 }
 
+// Removes player `owner`'s rat holes and the litter in the box (x, y, w, h)
+// of tiles.
 // FUNCTION: 0x0007dab4
 void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h)
 {
@@ -300,6 +321,8 @@ void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h)
     }
 }
 
+// Rat state RAT_ARRIVES: plays the rat coming out of its hole, then
+// scurries.
 // FUNCTION: 0x0007dc44
 void rat_arrives(Thing *rat)
 {
@@ -311,6 +334,7 @@ void rat_arrives(Thing *rat)
     }
 }
 
+// Rat state RAT_LEAVES: plays the rat going into its hole, then removes it.
 // FUNCTION: 0x0007dcb4
 void rat_leaves(Thing *rat)
 {
@@ -320,6 +344,10 @@ void rat_leaves(Thing *rat)
     }
 }
 
+// Per-turn control of the rat game (gamevar.f174 set): a new random weapon
+// after every ten kills or so, more rats, extra handymen, and the end of the
+// game when allhosps.fcaa falls to 4 or by turn 9000. Outside it, resets the
+// rat hit radii.
 // FUNCTION: 0x0007dd18
 void rat_fest_control(void)
 {
@@ -380,6 +408,9 @@ void rat_fest_control(void)
     }
 }
 
+// Sets up rat game level `level` from rat_fest_level: seeds the random
+// generators and scatters litter, rat holes and handymen over the player's
+// land, then starts the game.
 // FUNCTION: 0x0007df1c
 void rat_fest_builder(u8 level)
 {
@@ -423,6 +454,9 @@ void rat_fest_builder(u8 level)
     vary_speed(0x1e);
 }
 
+// After a level in 640x480, unlocks a bonus rat level (othervar.fa76 13 or 14)
+// if the rats killed (myhosp->fd27u), and their ratio to fd29, beat
+// awards_trophies' targets, or by the debug flag.
 // FUNCTION: 0x0007e140
 void try_bonus_level(void)
 {

@@ -30,6 +30,10 @@ char D_00128f24[0xdc] = "";
 
 u8 no_cd = 1;
 
+// Program entry: sets up memory, defaults and HOSPITAL.CFG, applies the
+// command-line switches (-L<n> starts level n as a new game, -N<name> sets the
+// player name, among others), shows the copyright screen unless -Q, then
+// runs the game. Returns the DOS exit code: 1 if the memory setup failed.
 // FUNCTION: 0x00010010
 int main(u16 argc, char **argv)
 {
@@ -115,6 +119,9 @@ int main(u16 argc, char **argv)
     return 0;
 }
 
+// Resets the game, debug, player and award globals and points resvars at the
+// high-resolution layout tables. Called once at startup, before
+// read_config_file.
 // FUNCTION: 0x00010330
 void init_game_vars(void)
 {
@@ -175,6 +182,9 @@ void init_game_vars(void)
     set_default_player_details();
 }
 
+// Measures the CD's read speed by reading animation_table[25]'s file from
+// cd_install_path, storing the result in othervar.fa87 (2 if no buffer could
+// be allocated).
 // FUNCTION: 0x00010584
 void get_cd_speed(void)
 {
@@ -193,6 +203,9 @@ void get_cd_speed(void)
     }
 }
 
+// Rebuilds blocks[] from blocks_backup and turns each entry's tile number into
+// a pointer into tile[] (entries from 0x50 on skip 0x51 sprites), then sets up
+// the tile sprites.
 // FUNCTION: 0x00010618
 void setup_blocks(void)
 {
@@ -209,6 +222,8 @@ void setup_blocks(void)
     LbSpriteSetup(tile, end_tiles, tile_data);
 }
 
+// Sets up the map tiles and the panel, button, pull-down, game, watch and
+// money sprite tables after their files are loaded.
 // FUNCTION: 0x000106c0
 void setup_game_sprites(void)
 {
@@ -221,6 +236,8 @@ void setup_game_sprites(void)
     LbSpriteSetup(money, end_money, money_data);
 }
 
+// Restores every blocks[] entry's data from blocks_backup (tile numbers, not
+// pointers).
 // FUNCTION: 0x00010760
 void reset_blocks(void)
 {

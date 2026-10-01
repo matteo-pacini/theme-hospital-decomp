@@ -10,6 +10,9 @@ extern volatile u8 a_sample_is_fading;
 void cbfadesample(u32 user);
 #pragma aux (__pascal) cbfadesample "W?cbfadesample$n(ul)v"
 
+// Sample fade timer callback (20 Hz): moves each fading sample's volume up
+// or down by its rate towards its target, ending samples that were to stop
+// once reached, and releases the timer when nothing is fading.
 // The target range also holds FadeSample's jump table.
 // FUNCTION: 0x000ccd30
 void cbfadesample(u32 user)
@@ -101,8 +104,11 @@ void cbfadesample(u32 user)
     }
 }
 
+// Fades the playing sample `number` of source source_id to volume (0-127),
+// by rate (1-5) volume steps per 50 ms tick, ending it when the target is
+// reached if stop_when_done is set. Starts the fade timer if needed.
 // FUNCTION: 0x000ccfb0
-void FadeSample(u32 source_id, s16 number, s16 volume, u8 stop_flag, u8 step)
+void FadeSample(u32 source_id, s16 number, s16 volume, u8 rate, u8 stop_when_done)
 {
     SampleInfo *smp;
 
@@ -116,9 +122,9 @@ void FadeSample(u32 source_id, s16 number, s16 volume, u8 stop_flag, u8 step)
                     return;
                 smp->FadeState = 0;
                 smp->FadeToVolume = volume;
-                smp->FadeStep = step;
+                smp->FadeStep = stop_when_done;
                 smp->FadeState = (volume <= smp->SampleVolume) + 1;
-                switch (stop_flag) {
+                switch (rate) {
                 case 1:
                     smp->FadeStopFlag = 1;
                     break;
@@ -149,6 +155,7 @@ void FadeSample(u32 source_id, s16 number, s16 volume, u8 stop_flag, u8 step)
     }
 }
 
+// Stops all sample fades and releases the fade timer.
 // FUNCTION: 0x000cd100
 void StopAllSampleFadeTimers(void)
 {

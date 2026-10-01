@@ -82,6 +82,10 @@ int stricmp(char *a, char *b);
 
 }
 
+// Runs one frame of the name-entry and preferences screens' state machine
+// (nickname.unknown2): zooms the boxes in, takes key presses, and on leaving
+// loads the player's details (name screen) or goes on to the level map or
+// back to the main menu (preferences, display_mode 3 or 2).
 // FUNCTION: 0x0008ee50
 void draw_nickname(void)
 {
@@ -179,6 +183,10 @@ void draw_nickname(void)
     }
 }
 
+// Name entry keys: letters append to myplayer.name, upper-cased (8 at most),
+// Backspace deletes, Return accepts (an empty name becomes the default) and
+// Escape quits the game. On the preferences screen Escape goes back to the
+// main menu.
 // FUNCTION: 0x0008f188
 void process_keys_nickname(void)
 {
@@ -250,6 +258,8 @@ void process_keys_nickname(void)
     BufferedInkey = 0;
 }
 
+// Preferences screen clicks: presses the button under the mouse and runs its
+// callback, and draws the selected advisor and resolution options pressed.
 // FUNCTION: 0x0008f448
 void process_mouse_nickname(void)
 {
@@ -331,6 +341,7 @@ void process_mouse_nickname(void)
     lbDisplay.rleft_button = 0;
 }
 
+// Draws the name prompt with the name typed so far.
 // FUNCTION: 0x0008f9d4
 void display_nick_name_screen(void)
 {
@@ -348,6 +359,8 @@ void display_nick_name_screen(void)
     LbTextDraw(x, y, buf);
 }
 
+// Preferences screen button `index`: 0/1 advisor on/off (advisor.f11f bit 0),
+// 2 accept, 3 cancel, 4/5 previous/next balance file, 6/7 320x200 or 640x480.
 // FUNCTION: 0x0008fa90
 extern "C" void fn_0008fa90(u8 index)
 {
@@ -389,11 +402,14 @@ extern "C" void fn_0008fa90(u8 index)
     }
 }
 
+// Does nothing.
 // FUNCTION: 0x0008fc30
 void draw_balance_file_explanation(void)
 {
 }
 
+// Draws the preferences screen's options, highlighting the current ones, and
+// the selected balance file's description.
 // FUNCTION: 0x0008fc48
 void draw_new_prefs_screen(void)
 {
@@ -440,6 +456,10 @@ void draw_new_prefs_screen(void)
     draw_balance_file_explanation();
 }
 
+// Builds the ring of balance files (levels/*00.sam, or net00.sam when
+// net_game is set, from the CD for a small install), choosing "full" if
+// present, and sets balance_id and the description. Returns 1 if any were
+// found.
 // FUNCTION: 0x0008ffb0
 u8 setup_balance_files(u8 net_game)
 {
@@ -524,6 +544,8 @@ u8 setup_balance_files(u8 net_game)
     }
 }
 
+// Unlinks and frees current_balance_file and clears the list; only that one
+// entry is freed, since the loop never moves to the next.
 // FUNCTION: 0x000902d0
 void free_balance_files(void)
 {
@@ -543,6 +565,7 @@ void free_balance_files(void)
     othervar.f8e = 0;
 }
 
+// Selects the next balance file in the ring and loads its description.
 // FUNCTION: 0x00090360
 void next_balance_file(void)
 {
@@ -553,6 +576,7 @@ void next_balance_file(void)
     }
 }
 
+// Selects the previous balance file in the ring and loads its description.
 // FUNCTION: 0x000903a8
 void prev_balance_file(void)
 {
@@ -563,6 +587,9 @@ void prev_balance_file(void)
     }
 }
 
+// Loads the description of balance file `name` (levels/<name>00.sam) into
+// balance_file_name: the "&<n>" line for language myplayer.f21, else the
+// first line, or the "not found" text.
 // FUNCTION: 0x000903f0
 void balance_filename(char *name)
 {
@@ -618,6 +645,7 @@ void balance_filename(char *name)
     LbMemoryFree(buf);
 }
 
+// Does nothing.
 // FUNCTION: 0x000905f4
 extern "C" void fn_000905f4(void)
 {

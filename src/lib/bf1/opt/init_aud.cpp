@@ -35,6 +35,10 @@ void InitAllBullfrogSoundTimers(void);
 void InitStreamedSound(void);
 void InitRedbook(void);
 
+// Starts the audio system from options ao (overridable through the
+// BF_FORCE_* environment variables, BF_DEBUG_AUDIO logs progress): data and
+// driver paths, sample count, sound type, then sound, music, timers and
+// optionally streamed sound and Red Book audio.
 // FUNCTION: 0x000cd840
 void InitAudio(AudioInitOptions *ao)
 {

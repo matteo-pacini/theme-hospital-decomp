@@ -63,6 +63,10 @@ s32 remove_object(Thing *w, u8 owner);
 #pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
 }
 
+// Returns 1 if an object of kind `kind` (objects[] index) facing dir fits
+// with its corner at tile for player `owner`: no walls, objects or use tiles
+// in its footprint, all of it on the owner's land (litter bombs excepted),
+// and its use tiles free. Always 1 while othervar.f9bb is set.
 // FUNCTION: 0x00036930
 u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
 {
@@ -100,6 +104,10 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     return 1;
 }
 
+// Puts the existing object obj on the map at tile facing dir: marks its
+// footprint, sets its use tiles, links it into the map, room and owner
+// lists, counts it in the statistics, and places its second part if it has
+// one. Does not check that it fits.
 // FUNCTION: 0x00036b28
 void place_existing_object(Thing *obj, u16 tile, u8 dir)
 {
@@ -177,6 +185,10 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
     }
 }
 
+// Places an object of kind `kind` at tile facing dir for player `owner`,
+// reusing one the player picked up (allhosps.build.objects) or buying a new
+// one. Refuses (returning 0) if it does not fit, would block access to a
+// room, or someone is in the way; otherwise returns the object's thing index.
 // FUNCTION: 0x00037098
 u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
 {
@@ -254,6 +266,7 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     return 0;
 }
 
+// Object state OS_STATIC: advances its animation and overlay.
 // FUNCTION: 0x0003749c
 void object_static(Thing *obj)
 {
@@ -265,6 +278,8 @@ void object_static(Thing *obj)
     }
 }
 
+// Animates an object playing a one-off animation: at its end the object
+// switches to aux_sprite, or is removed if remove_after_anim is set.
 // FUNCTION: 0x0003751c
 void object_hell(Thing *obj)
 {
@@ -286,6 +301,8 @@ void object_hell(Thing *obj)
     }
 }
 
+// Links obj at the head of the object list of the room at tile (setting
+// room_id, 0 outside rooms) and of its owner's list of kind `kind`.
 // FUNCTION: 0x000375ec
 void insert_object(u16 tile, Thing *obj, u16 kind)
 {
@@ -314,6 +331,8 @@ void insert_object(u16 tile, Thing *obj, u16 kind)
     listhead[obj->owner].objects[kind] = id;
 }
 
+// Unlinks obj from its room's and owner's object lists (see insert_object),
+// clearing the auto-autopsy flag when the owner has none left.
 // FUNCTION: 0x00037718
 void delete_object(u16 tile, Thing *obj)
 {
@@ -355,6 +374,9 @@ void delete_object(u16 tile, Thing *obj)
     }
 }
 
+// Finds an object of kind `kind` for tile: in the room at tile, or outside
+// rooms within 7 tiles of it and reachable. flag 0x96 skips objects in use;
+// random picks among up to 30 matches. Returns the thing index, or 0.
 // FUNCTION: 0x0003791c
 u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
 {
@@ -413,6 +435,9 @@ u16 find_object(u16 tile, u16 kind, u8 random, u8 flag, u8 owner)
     return 0;
 }
 
+// Returns player `owner`'s object of kind `kind`: the first, a random one if
+// random is set, or the one after thing `after` in the owner's list (0 if
+// none).
 // FUNCTION: 0x00037bec
 u16 find_object_anywhere(u16 kind, u8 random, u16 after, u8 owner)
 {
@@ -447,6 +472,9 @@ u16 find_object_anywhere(u16 kind, u8 random, u16 after, u8 owner)
     return 0;
 }
 
+// Returns a free object of kind `kind` for person id: a random one in their
+// room, or the nearest reachable one outside rooms within 7 tiles. 0 if
+// none.
 // FUNCTION: 0x00037d28
 u16 find_nearest_free_object(u16 id, u8 kind)
 {
@@ -508,6 +536,9 @@ u16 find_nearest_free_object(u16 id, u8 kind)
     return best - thing;
 }
 
+// As find_nearest_free_object, without the 7-tile limit outside rooms. In a
+// room, an object of the kind that is in use makes it loop forever (the loop
+// never advances past it).
 // FUNCTION: 0x0003800c
 u16 find_free_object_anywhere(u16 id, u8 kind)
 {
@@ -574,6 +605,9 @@ u16 find_free_object_anywhere(u16 id, u8 kind)
     return best - thing;
 }
 
+// Returns the reception desk with a receptionist that suits person: in room
+// `room` (0 any), with space in its queue if need_space, scoring queue length
+// and distance (gbv.f100, gbv.f102). 0 if none.
 // FUNCTION: 0x000382d8
 u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_space)
 {
@@ -608,6 +642,8 @@ u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_sp
     return best - thing;
 }
 
+// Returns 1 if no object stands in the footprint of a door of kind `kind`
+// facing dir at tile.
 // FUNCTION: 0x000384a4
 u8 can_place_door(u16 tile, u16 kind, u8 dir)
 {
@@ -627,6 +663,9 @@ u8 can_place_door(u16 tile, u16 kind, u8 dir)
     return 1;
 }
 
+// Creates a door of kind `kind` at tile facing gamevar.f28, belonging to the
+// room it opens into. Returns 1 if it was placed, 0 if blocked or no thing
+// was free.
 // FUNCTION: 0x00038548
 s16 place_door(u16 tile, u16 kind)
 {
@@ -672,6 +711,8 @@ s16 place_door(u16 tile, u16 kind)
     return 0;
 }
 
+// Returns the door on or next to person's tile that leads to their room (or,
+// outside a room, whose room's entrance tile they stand on), or 0.
 // FUNCTION: 0x00038788
 Thing *find_door(Thing *person)
 {
@@ -691,6 +732,9 @@ Thing *find_door(Thing *person)
     return 0;
 }
 
+// Puts small thing (blueprint marker) id on tile, stored negated at the end
+// of the cell's thing list. With keep_existing, an existing one stays. Ids
+// from 0x4b also set the marker's cell flags. Returns 0.
 // FUNCTION: 0x00038870
 s16 place_small_thing(u16 tile, u16 id, u8 keep_existing)
 {
@@ -719,6 +763,7 @@ s16 place_small_thing(u16 tile, u16 id, u8 keep_existing)
     return 0;
 }
 
+// Returns the small thing (blueprint marker) id on tile, 0 if none.
 // FUNCTION: 0x00038950
 s16 find_small_thing(u16 tile)
 {
@@ -731,6 +776,9 @@ s16 find_small_thing(u16 tile)
     return -id;
 }
 
+// Takes obj off the map: cancels its pages, unmarks its footprint, updates
+// the statistics, interrupts a person using it, and unlinks it from the map
+// and object lists. The thing stays allocated.
 // FUNCTION: 0x000389b8
 void remove_object_from_map(Thing *obj)
 {
@@ -808,6 +856,8 @@ void remove_object_from_map(Thing *obj)
     remove_node(obj);
 }
 
+// Removes obj and frees its thing, if it stands on player `owner`'s land (or
+// is the gates of hell or a litter bomb). Returns 1 if removed.
 // FUNCTION: 0x00038d04
 s32 remove_object(Thing *obj, u8 owner)
 {
@@ -822,6 +872,9 @@ s32 remove_object(Thing *obj, u8 owner)
     return 1;
 }
 
+// Counts a use of the treatment machine for illness in the room at tile:
+// pages a handyman once it is worn past a third and calls modify_machine
+// from 75%. Returns 1 if the machine broke down (machine_disaster).
 // FUNCTION: 0x00038db0
 u8 treatment_machine_used(const u16 illness, const u16 tile)
 {
@@ -852,6 +905,9 @@ u8 treatment_machine_used(const u16 illness, const u16 tile)
     return 0;
 }
 
+// Updates a worn machine: smoke and warnings from 75% of its strength, and
+// from 100% a random breakdown (machine_disaster), certain by 150%. Returns
+// 1 if it broke down.
 // FUNCTION: 0x00038f14
 u8 modify_machine(Thing *machine)
 {
@@ -906,6 +962,9 @@ u8 modify_machine(Thing *machine)
     return 0;
 }
 
+// Marks an object's footprint on the map from base_cell (flags bit 0, bit 1
+// on its door tiles), its use tiles (bit 2) and its invisible walls. With
+// cleanse, also cleans the litter under it.
 // FUNCTION: 0x0003917c
 void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *control, u8 cleanse)
 {
@@ -941,6 +1000,7 @@ void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *con
     }
 }
 
+// Clears what mark_object_shape marked.
 // FUNCTION: 0x00039470
 void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *control)
 {
@@ -964,6 +1024,8 @@ void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *contro
     }
 }
 
+// Door state OS_DOUBLE_DOOR_SWINGS: plays the swing and returns to the
+// closed frame and OS_STATIC.
 // FUNCTION: 0x000395b0
 void double_door_swings(Thing *door)
 {
@@ -985,6 +1047,7 @@ void double_door_swings(Thing *door)
     }
 }
 
+// Door state OS_SLIDING_DOOR_CLOSED: opens when someone is at the door.
 // FUNCTION: 0x00039704
 void sliding_door_closed(Thing *door)
 {
@@ -993,6 +1056,8 @@ void sliding_door_closed(Thing *door)
     }
 }
 
+// Door state OS_SLIDING_DOOR_OPENS: plays the opening animation, then stays
+// open for 50 turns.
 // FUNCTION: 0x00039734
 void sliding_door_opens(Thing *door)
 {
@@ -1009,6 +1074,8 @@ void sliding_door_opens(Thing *door)
     }
 }
 
+// Door state OS_SLIDING_DOOR_OPEN: closes 50 turns after the last person
+// passes.
 // FUNCTION: 0x000397b4
 void sliding_door_open(Thing *door)
 {
@@ -1025,6 +1092,8 @@ void sliding_door_open(Thing *door)
     }
 }
 
+// Door state OS_SLIDING_DOOR_CLOSES: plays the closing animation, reopening
+// from the same position if someone arrives.
 // FUNCTION: 0x00039880
 void sliding_door_closes(Thing *door)
 {
@@ -1056,6 +1125,8 @@ void sliding_door_closes(Thing *door)
     }
 }
 
+// Returns 1 if a person, the mayor or the inspector stands on a sliding
+// door's tile on either side.
 // FUNCTION: 0x00039a90
 u8 should_sliding_door_open(Thing *door)
 {
@@ -1078,6 +1149,10 @@ u8 should_sliding_door_open(Thing *door)
     }
     return 0;
 }
+
+// Returns 1 if no one stands in the footprint of an object of kind `kind`
+// facing dir at tile, or faces into it from a neighbouring tile of the same
+// room (see check_no_peeps_on_cell).
 // FUNCTION: 0x00039cb4
 u8 check_no_peeps_in_way(u16 tile, u8 kind, u8 dir)
 {
@@ -1099,6 +1174,9 @@ u8 check_no_peeps_in_way(u16 tile, u8 kind, u8 dir)
     return 1;
 }
 
+// Returns 0 if a person (or the mayor, inspector or reaper) stands on tile in
+// room `room` and, unless side is -1, faces direction side (patients idling or
+// awaiting a decision excepted); 1 otherwise, or if tile is not in room.
 // FUNCTION: 0x00039e10
 u8 check_no_peeps_on_cell(RoomInfo *room, u16 tile, s8 side)
 {
@@ -1127,6 +1205,8 @@ u8 check_no_peeps_on_cell(RoomInfo *room, u16 tile, s8 side)
     return 1;
 }
 
+// Counts a new object of kind `kind` in player `owner`'s hardware statistics
+// and hospital value.
 // FUNCTION: 0x00039f8c
 void inc_hardware_stats(u8 kind, u8 owner)
 {
@@ -1159,6 +1239,9 @@ void inc_hardware_stats(u8 kind, u8 owner)
     hosp->object_stats[kind].fA++;
 }
 
+// Object state OS_BOMB_TICKS (litter bomb): burns the fuse one step every
+// gbv.f152 turns while othervar.f32 is set, and at the end explodes,
+// scattering litter.
 // FUNCTION: 0x0003a098
 void bomb_ticks(Thing *bomb)
 {
@@ -1183,6 +1266,8 @@ void bomb_ticks(Thing *bomb)
     }
 }
 
+// Scatters up to gbv.f153 pieces of litter in rings out to gbv.f151 tiles
+// around tile pos.
 // FUNCTION: 0x0003a200
 void litter_explosion(u32 pos, u8 owner)
 {
@@ -1220,6 +1305,9 @@ void litter_explosion(u32 pos, u8 owner)
     }
 }
 
+// With a gbv.f150 percent chance, places a random piece of litter on tile
+// (x, y) if it is outside rooms and free. Decrements *count for each piece
+// and returns 1 when it reaches 0.
 // FUNCTION: 0x0003a310
 u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner)
 {
@@ -1239,6 +1327,9 @@ u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner)
     return 0;
 }
 
+// Replaces a worn machine with a new one for its cost, if this player can
+// afford it (the check uses this player's balance, the charge the owner's),
+// cancelling its repair pages.
 // FUNCTION: 0x0003a3e0
 void replace_machine(Thing *machine)
 {
@@ -1270,6 +1361,7 @@ void replace_machine(Thing *machine)
     }
 }
 
+// Restores any of an object's invisible walls that are missing.
 // FUNCTION: 0x0003a5e0
 void check_invis_walls_around_object(Thing *obj)
 {

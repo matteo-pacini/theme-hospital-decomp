@@ -37,6 +37,9 @@ void fn_000c93bf(char *dst, char *src);
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 }
 
+// Smacker frame callback for the losing animation: once its text frame is
+// reached, draws the chosen losing line (text1) over the frame in the back
+// buffer, with scan lines over the top half.
 // FUNCTION: 0x0009ded0
 void __stdcall lose_call(void *buf, u32 a, u32 b)
 {
@@ -70,6 +73,8 @@ void __stdcall lose_call(void *buf, u32 a, u32 b)
     }
 }
 
+// Breaks text in place into lines at most width pixels wide in the current
+// font, turning spaces into newlines.
 // FUNCTION: 0x0009e010
 void format_text(char *text, s16 width)
 {
@@ -100,6 +105,7 @@ void format_text(char *text, s16 width)
     }
 }
 
+// Turns the newlines in text into spaces.
 // FUNCTION: 0x0009e0a0
 void remove_newlines(char *text)
 {
@@ -110,6 +116,12 @@ void remove_newlines(char *text)
     }
 }
 
+// Runs the end-of-level sequence (winlose.unknown2): 2 lose (a random losing
+// animation and line, then the hall of fame or, in a network game, the main
+// menu; 4 waits for a key), 1 win (the animation and a typed-out letter, 5:
+// accept to go to the next level or the bonus level, or decline to keep
+// playing), 3 the game's ending, 6 a win letter that returns to the main
+// menu.
 // FUNCTION: 0x0009e0d8
 void play_winlose(void)
 {
@@ -382,6 +394,8 @@ void play_winlose(void)
     }
 }
 
+// Copies src to dst word-wrapped to width pixels in the current font, '/'
+// forcing a new line.
 // FUNCTION: 0x0009ef00
 void letter_format_text(char *dst, char *src, s16 width)
 {
@@ -421,6 +435,7 @@ void letter_format_text(char *dst, char *src, s16 width)
     *dst = 0;
 }
 
+// Appends the strings from strs up to the "." entry to dst.
 // FUNCTION: 0x0009f06c
 void concat_composite(char *dst, char **strs)
 {

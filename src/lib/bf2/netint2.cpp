@@ -2,6 +2,9 @@
 
 static u32 actualTimeout;
 
+// Creates and initialises the serial-cable service provider with the port
+// settings in init_data, switching to the two-player exchange. Returns
+// Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd2ba0
 TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
 {
@@ -28,6 +31,9 @@ TbError GenericSerialInit(__tibcaGUID guid, void *init_data)
     return ret;
 }
 
+// Two-player model: sends this player's packet buf to the other player
+// (keeping the last two sent for resends) and stores it in the exchange
+// buffer. Returns Lb_OK, or Lb_FAIL if the send failed.
 // FUNCTION: 0xd2cb0
 TbError StartTwoPlayerExchange(void *buf)
 {
@@ -61,6 +67,10 @@ TbError StartTwoPlayerExchange(void *buf)
     return ret;
 }
 
+// Two-player model: waits for the other player's packet, asking for it
+// again on timeout and dropping the other player after ten retries; adapts
+// the timeout to the measured round trip and advances the sequence number.
+// Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0xd2e40
 TbError CompleteTwoPlayerExchange(void *buf)
 {
@@ -149,6 +159,9 @@ extern "C" {
 extern "C" {
 }
 
+// Two-player provider callback for a packet with sequence number seq:
+// returns where to store it, or 0 (asking for a resend if it is a packet
+// behind).
 // NONMATCHING: sequenceNumber cached in eax instead of ebx (size stays live in eax in the target)
 // FUNCTION: 0xd309c
 void *TwoPlayerCallback(u32 id, u32 size, u32 seq, void *data)
@@ -220,6 +233,8 @@ void *TwoPlayerCallback(u32 id, u32 size, u32 seq, void *data)
     return ret;
 }
 
+// Two-player provider callback: the other player asks again for packet
+// seq; resends the last or last-but-one packet sent.
 // FUNCTION: 0xd32fc
 void TwoPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
 {
@@ -253,6 +268,9 @@ void TwoPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
     startTime = LbTimerClock();
 }
 
+// Creates and initialises the modem service provider with the settings in
+// init_data, switching to the two-player exchange. Returns Lb_OK, or
+// Lb_FAIL.
 // FUNCTION: 0xd33e0
 TbError GenericModemInit(__tibcaGUID guid, void *init_data)
 {

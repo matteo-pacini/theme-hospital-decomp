@@ -2,6 +2,7 @@
 
 extern "C" {
 
+// Fades the playing song to volume (0-127) over rate milliseconds.
 // FUNCTION: 0x000ce290
 void FadeMusic(u16 rate, u8 volume)
 {

@@ -29,6 +29,8 @@ u32 wallhug_add_huggers_path(wallhug_path *path, wallhug_hugger *hugger);
 void wallhug_hugstep(wallhug_hugger *hugger);
 }
 
+// Starts stepping a straight orthogonal line from `from` to `to`
+// (Bresenham, in the globals dx, dy, bresval, x_dirn, y_dirn).
 // FUNCTION: 0x00048960
 void bresenham_start(wallhug_waypoint from, wallhug_waypoint to)
 {
@@ -60,6 +62,7 @@ void bresenham_start(wallhug_waypoint from, wallhug_waypoint to)
     bresval = dx / 2 + dy / 2;
 }
 
+// Returns the direction (0-3, see wall_in_way) of the line's next step.
 // FUNCTION: 0x00048a6c
 u32 bresenham(void)
 {
@@ -72,6 +75,7 @@ u32 bresenham(void)
     }
 }
 
+// Returns 1 if the stepped line from `from` to `to` crosses no wall, else 0.
 // FUNCTION: 0x00048abc
 u32 line_of_sight(wallhug_waypoint from, wallhug_waypoint to)
 {
@@ -91,6 +95,9 @@ u32 line_of_sight(wallhug_waypoint from, wallhug_waypoint to)
     return 1;
 }
 
+// Shortens path from waypoint first on: drops waypoints that can be skipped
+// (up to four ahead) by a clear line of sight, until none can. Returns 1 if
+// anything was dropped.
 // FUNCTION: 0x00048b64
 u32 line_of_sight_cleanup(wallhug_path *path, u32 first)
 {
@@ -130,6 +137,9 @@ u32 line_of_sight_cleanup(wallhug_path *path, u32 first)
     return changed;
 }
 
+// Smooths path: removes skippable waypoints, then replaces corners with
+// shorter detours found by wallhug_trivial (up to ten rounds). Returns
+// result unchanged.
 // FUNCTION: 0x00048c78
 u32 wallhug_cleanup(wallhug_path *path, u32 result)
 {
@@ -178,6 +188,9 @@ restart:
     return result;
 }
 
+// Moves wall-following hugger one step along the wall on its side (turn),
+// recording its corners. Sets dir 0x32 once it is back on the line to its
+// end past where it hit the wall, 0x33 if its route is full.
 // FUNCTION: 0x00049400 COMDAT
 inline void wallhug_hugstep(wallhug_hugger *hugger)
 {
@@ -273,6 +286,9 @@ inline void wallhug_hugstep(wallhug_hugger *hugger)
     hugger->dir = 0x32;
 }
 
+// Finds a path from path->start to path->end by walking straight and
+// following walls around obstacles, then smooths it. Returns the steps
+// taken, or 0x70000000 if no path was found.
 // FUNCTION: 0x00048e6c
 u32 wallhug_tricky(wallhug_path *path)
 {
@@ -282,6 +298,8 @@ u32 wallhug_tricky(wallhug_path *path)
     return wallhug_cleanup(path, result);
 }
 
+// Returns 1 if the two wall huggers have met face to face (the obstacle is
+// enclosed), else 0.
 // FUNCTION: 0x000492f0 COMDAT
 inline u32 huggers_met_again(wallhug_info *info)
 {
@@ -300,6 +318,8 @@ inline u32 huggers_met_again(wallhug_info *info)
     return 0;
 }
 
+// Appends hugger's corners and position to path. Returns 0 if they do not
+// fit, else 1.
 // FUNCTION: 0x00049230 COMDAT
 inline u32 wallhug_add_huggers_path(wallhug_path *path, wallhug_hugger *hugger)
 {
@@ -316,6 +336,10 @@ inline u32 wallhug_add_huggers_path(wallhug_path *path, wallhug_hugger *hugger)
     return 1;
 }
 
+// Continues path from cur towards path->end, sending a left and a right
+// wall hugger around each wall met and keeping the first to get back on
+// course, for at most limit steps in all (wallhug_current_count). Returns
+// the step count on arriving, 0x70000000 on failure.
 // FUNCTION: 0x00048ea4
 u32 wallhug_continue_trivial(wallhug_path *path, wallhug_waypoint cur, u32 limit)
 {
@@ -400,6 +424,9 @@ fail:
     return 0x70000000;
 }
 
+// Finds path from path->start to path->end by walking and wall hugging
+// (up to 60000 steps), without smoothing. Returns as
+// wallhug_continue_trivial.
 // FUNCTION: 0x000491d8
 u32 wallhug_trivial(wallhug_path *path)
 {

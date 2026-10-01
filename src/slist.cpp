@@ -52,6 +52,10 @@ void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
 void draw_window_not_using_bscreen(const u8 n);
 void draw_face(Picture *pic, const u16 x, const u16 y);
 
+// Runs one frame of the staff management screen (slist.unknown2: 0 opening,
+// 1 shown, 2 leaving to the selected staff member's window (event 0x87), 3
+// closing). Opened from a staff window (othervar.fa82), it starts on that
+// staff member's kind and page.
 // FUNCTION: 0x000914e0
 void display_slist(void)
 {
@@ -154,6 +158,9 @@ void display_slist(void)
     compute_help_text(0, 0, 6);
 }
 
+// Staff management keys: left/right change the kind shown (othervar.f49),
+// up/down select the previous/next staff member, turning the page as
+// needed.
 // FUNCTION: 0x0009187c
 void slist_keys(void)
 {
@@ -225,6 +232,9 @@ void slist_keys(void)
     }
 }
 
+// Returns the next (dir 0) or previous (dir 1) staff member of this player
+// of the kinds shown after the selected one (slist.unknown0), or the
+// selected one if there is none; counts the step in othervar.fa60.
 // FUNCTION: 0x00091bac
 u16 get_slist_staff(const u8 dir)
 {
@@ -263,6 +273,9 @@ u16 get_slist_staff(const u8 dir)
     return slist.unknown0;
 }
 
+// Draws the current page (othervar.f91, ten rows) of staff of the kinds
+// shown: number, name, wage and gauges, with `selected` framed; hovering
+// and clicking select a row. Draws the page marker.
 // FUNCTION: 0x00091dec
 void draw_slist_staff(const u16 selected)
 {
@@ -346,6 +359,9 @@ void draw_slist_staff(const u16 selected)
     }
 }
 
+// Draws the details of staff member id: a view of them on the map, their
+// face, their qualifications with training progress, and a bar from their
+// work_delay (0-10).
 // FUNCTION: 0x000926ec
 void draw_slist_window(const u16 id)
 {
@@ -436,11 +452,14 @@ void draw_slist_window(const u16 id)
         reqspr_draw(resvars.f3c_Boxp[70].x + j, resvars.f3c_Boxp[70].y, &screen_sprites_tab_start[resvars.f3c_Boxp[70].h]);
 }
 
+// Does nothing.
 // FUNCTION: 0x00092e88
 void draw_slist_panel(void)
 {
 }
 
+// Draws the average happiness, tiredness and ability of the staff of the
+// kinds shown, covering the doctor-only parts for other kinds.
 // FUNCTION: 0x00092ea0
 void draw_slist_overall(void)
 {
@@ -485,6 +504,9 @@ void draw_slist_overall(void)
     }
 }
 
+// Staff management clicks: runs the callback of the button released over
+// (drawing it pressed while held), and a click on the view opens the
+// selected staff member's window (othervar.f38 2).
 // FUNCTION: 0x000931d4
 void process_slist_panel(void)
 {
@@ -523,6 +545,11 @@ void process_slist_panel(void)
     }
 }
 
+// Staff management button `button`: 0-3 show doctors, nurses,
+// receptionists or handymen, 4 sacks the selected staff member (asks to
+// confirm), 5 raises their wage by 10%, 6 pays them a 10% bonus, 7 closes,
+// 8/9 previous/next page, 10 and 11 send EV_INCREASE_STAFF_SALARIES 500 for
+// everyone or the selected one.
 // FUNCTION: 0x00093574
 void process_slist_button(u8 button)
 {
@@ -634,6 +661,8 @@ void process_slist_button(u8 button)
     }
 }
 
+// Returns 1 if page `page` (ten per page) of staff of the kinds shown has
+// anyone on it.
 // FUNCTION: 0x00093a74
 u8 staff_on_page(const u8 page)
 {
@@ -658,6 +687,8 @@ u8 staff_on_page(const u8 page)
     return 0;
 }
 
+// Draws the selected kind's tab pressed and the number of staff of each
+// kind.
 // FUNCTION: 0x00093bb8
 void draw_slist_nums(void)
 {
@@ -699,6 +730,7 @@ void draw_slist_nums(void)
     }
 }
 
+// Covers the doctor-only parts of the staff management screen.
 // FUNCTION: 0x00093eac
 void draw_slist_coverup(void)
 {
@@ -706,6 +738,8 @@ void draw_slist_coverup(void)
     LbDrawBox(resvars.f3c_Boxp[117].x, resvars.f3c_Boxp[117].y, resvars.f3c_Boxp[117].w, resvars.f3c_Boxp[117].h, 0x76);
 }
 
+// Help text for a staff row's wage, into othervar.f96, if the row is
+// filled.
 // FUNCTION: 0x00093f38
 void slist_salary_help_if_present(void)
 {
@@ -713,6 +747,8 @@ void slist_salary_help_if_present(void)
         fn_000bbff0(othervar.f96, help_text[50]);
 }
 
+// Help text for a staff row's happiness, into othervar.f96, if the row is
+// filled.
 // FUNCTION: 0x00093f88
 void slist_happiness_help_if_present(void)
 {
@@ -720,6 +756,8 @@ void slist_happiness_help_if_present(void)
         fn_000bbff0(othervar.f96, help_text[51]);
 }
 
+// Help text for a staff row's tiredness, into othervar.f96, if the row is
+// filled.
 // FUNCTION: 0x00093fd8
 void slist_tiredness_help_if_present(void)
 {
@@ -727,6 +765,8 @@ void slist_tiredness_help_if_present(void)
         fn_000bbff0(othervar.f96, help_text[52]);
 }
 
+// Help text for a staff row's ability, into othervar.f96, if the row is
+// filled.
 // FUNCTION: 0x00094028
 void slist_ability_help_if_present(void)
 {
@@ -734,6 +774,8 @@ void slist_ability_help_if_present(void)
         fn_000bbff0(othervar.f96, help_text[53]);
 }
 
+// Help text for a doctor-only part, into othervar.f96, if doctors are
+// shown.
 // FUNCTION: 0x00094078
 void slist_help_if_doctor(void)
 {
@@ -741,6 +783,8 @@ void slist_help_if_doctor(void)
         fn_000bbff0(othervar.f96, help_text[resvars.f2c_SlistMenuItemp[othervar.f8ac].text]);
 }
 
+// Help text for the surgeon qualification of the selected doctor, or their
+// surgery training progress, into othervar.f96.
 // FUNCTION: 0x000940cc
 void slist_help_if_surgeon(void)
 {
@@ -760,6 +804,8 @@ void slist_help_if_surgeon(void)
     }
 }
 
+// Help text for the psychiatrist qualification of the selected doctor, or
+// their psychiatry training progress, into othervar.f96.
 // FUNCTION: 0x000941bc
 void slist_help_if_shrink(void)
 {
@@ -779,6 +825,8 @@ void slist_help_if_shrink(void)
     }
 }
 
+// Help text for the researcher qualification of the selected doctor, or
+// their research training progress, into othervar.f96.
 // FUNCTION: 0x000942ac
 void slist_help_if_researcher(void)
 {
@@ -798,6 +846,8 @@ void slist_help_if_researcher(void)
     }
 }
 
+// Draws the selected staff member's wage after a 10% rise, and the 10%
+// bonus, by their buttons.
 // FUNCTION: 0x0009439c
 void draw_slist_button_overlays(Thing *staff)
 {
@@ -810,6 +860,7 @@ void draw_slist_button_overlays(Thing *staff)
     LbTextDraw(resvars.f40[150].x, resvars.f40[150].y, buf);
 }
 
+// Draws a training progress bar at (x, y) for value of max.
 // FUNCTION: 0x00094458
 void draw_slist_training_bar(u16 x, u16 y, u16 value, u16 max)
 {

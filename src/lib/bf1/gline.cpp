@@ -7,6 +7,10 @@ void draw_b_line(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 int abs(int n);
 #pragma intrinsic(abs)
 
+// Draws a line from (x1, y1) to (x2, y2) in colour, clipped to the graphics
+// window (nothing if wholly outside on one side). Returns 1 if it was
+// clipped or not drawn; when no clipping is needed the return value is
+// undefined (clipped is never set).
 // FUNCTION: 0x000c9be0
 u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
 {
@@ -178,6 +182,9 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
     return clipped;
 }
 
+// Draws an unclipped Bresenham line from (x1, y1) to (x2, y2) in the
+// graphics window, in colour or, with draw_flags 4 or 8, blended through
+// the ghost table.
 // FUNCTION: 0x000ca028
 void draw_b_line(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
 {

@@ -5,6 +5,8 @@ void LbDrawLine(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 void LbDrawBoxClip(s32 x, s32 y, s32 w, s32 h, u8 colour);
 
 
+// Draws a w x h box at (x, y) in colour: filled and clipped, or only its
+// outline with draw_flags 0x10. Returns 1, or -1 for an empty outline.
 // FUNCTION: 0x000c8390
 int LbDrawBox(s32 x, s32 y, s32 w, s32 h, u8 colour)
 {
@@ -23,6 +25,8 @@ int LbDrawBox(s32 x, s32 y, s32 w, s32 h, u8 colour)
     return 1;
 }
 
+// Draws the box with corners (x1, y1) and (x2, y2), inclusive, in either
+// order. Returns 1.
 // FUNCTION: 0x000c8474
 int LbDrawBoxCoords(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
 {

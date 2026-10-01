@@ -31,6 +31,8 @@ unsigned strlen(const char *s);
 char *strcpy(char *dst, const char *src);
 #pragma intrinsic(strlen, strcpy)
 
+// Copies the current directory into buf (size bytes), without drive letter
+// or trailing backslash. Returns 1, or -1 on failure.
 // FUNCTION: 0x000d0460
 int LbDirectoryCurrent(char *buf, u32 size)
 {
@@ -49,6 +51,7 @@ int LbDirectoryCurrent(char *buf, u32 size)
     return -1;
 }
 
+// Returns 1 if path exists and is a directory, else 0.
 // FUNCTION: 0x000d04f0
 int LbDirectoryExists(char *path)
 {
@@ -59,6 +62,7 @@ int LbDirectoryExists(char *path)
     return 0;
 }
 
+// Removes directory path. Returns 1, or -1 on failure.
 // FUNCTION: 0x000d0538
 int LbDirectoryRemove(char *path)
 {

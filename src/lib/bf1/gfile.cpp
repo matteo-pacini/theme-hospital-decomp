@@ -15,6 +15,8 @@ void *memcpy(void *dst, const void *src, u32 n);
 #pragma intrinsic(strlen, strcpy, strcat, memcpy)
 int compare(s8 *a, s8 *b, u32 len, int ignore_case);
 
+// Returns the unpacked length of file path: from its header if it is
+// RNC-packed, else its size. -1 if it cannot be read.
 // FUNCTION: 0x000bc170
 int LbFileLengthRnc(char *path)
 {
@@ -51,6 +53,8 @@ int LbFileLengthRnc(char *path)
     return length;
 }
 
+// Loads file path into buf, unpacking it in place if RNC-packed (buf must
+// hold the unpacked size). Returns the length loaded, or -1 on failure.
 // FUNCTION: 0x000bc23c
 int LbFileLoadAt(char *path, void *buf)
 {
@@ -78,6 +82,8 @@ int LbFileLoadAt(char *path, void *buf)
     return -1;
 }
 
+// Writes size bytes from buf to file path, replacing it. Returns
+// LbFileWrite's result, or -1 if the file cannot be created.
 // FUNCTION: 0x000bc2dc
 int LbFileSaveAt(char *path, void *buf, u32 size)
 {
@@ -93,6 +99,11 @@ int LbFileSaveAt(char *path, void *buf, u32 size)
     return -1;
 }
 
+// Searches the open file from its current position for string (at the start
+// of a line with flags bit 1; ignoring case with bit 0), using buf (at least
+// 256 bytes) as the window, and restores the position. Returns the match's
+// offset, -2 if not found, -1 on a file error, -3 for a small buffer, -4
+// for a string over 128 characters.
 // FUNCTION: 0x000bc328
 int LbFileStringSearch(int handle, char *string, u8 *buf, u32 buflen, u32 flags)
 {
@@ -148,6 +159,9 @@ int LbFileStringSearch(int handle, char *string, u8 *buf, u32 buflen, u32 flags)
     return -1;
 }
 
+// Builds a path in buf (buflen bytes): the current directory if current_dir
+// is set, then directory, then filename, separated by backslashes. Returns
+// 1, or -1 if it does not fit.
 // FUNCTION: 0x000bc504
 int LbFileMakeFullPath(int current_dir, char *directory, char *filename, char *buf, u32 buflen)
 {
@@ -180,6 +194,7 @@ int LbFileMakeFullPath(int current_dir, char *directory, char *filename, char *b
     return 1;
 }
 
+// Copies file src to dst. Returns 1, or -1 on failure.
 // FUNCTION: 0x000bc63c
 int LbFileCopy(char *src, char *dst)
 {
@@ -219,6 +234,8 @@ int LbFileCopy(char *src, char *dst)
     return 1;
 }
 
+// Returns 1 if the first len characters of s1 and s2 match (ignoring case
+// if ignore_case is set), else 0.
 // FUNCTION: 0x000bc75c
 int compare(s8 *s1, s8 *s2, u32 len, int ignore_case)
 {

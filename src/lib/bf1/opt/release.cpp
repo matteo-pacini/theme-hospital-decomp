@@ -2,6 +2,8 @@
 
 extern "C" {
 
+// Lets looping sample `number` of source source_id finish its current loop
+// and stop.
 // FUNCTION: 0x000cecb0
 void ReleaseLoopedSample(u32 source_id, s16 number)
 {

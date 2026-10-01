@@ -133,12 +133,14 @@ u32 fn_000cd716(char *s);
 
 }
 
+// Global operator new: allocates with LbMemoryAlloc.
 // FUNCTION: 0x000bf790
 void *operator new(unsigned size)
 {
     return LbMemoryAlloc(size);
 }
 
+// Global operator delete: frees with LbMemoryFree.
 // FUNCTION: 0x000bf798
 void operator delete(void *p)
 {
@@ -147,6 +149,8 @@ void operator delete(void *p)
 
 extern "C" {
 
+// Sets the exchange timeout to timeout seconds
+// (LbNetwork_ChangeExchangeTimeout).
 // FUNCTION: 0x000bf7a0
 void fn_000bf7a0(u32 timeout)
 {
@@ -155,6 +159,7 @@ void fn_000bf7a0(u32 timeout)
 
 }
 
+// Fills version with the network library's version text and number (1.1).
 // FUNCTION: 0x000bf7b8
 void LbNetwork_LibraryVersion(__ctcl4TbNetworkVersion *version)
 {
@@ -172,6 +177,7 @@ extern "C" {
 TbError LbNetwork_AreWeBeingLobbied(u32 a, u32 b, u32 c, u32 d, u32 e);
 #pragma aux LbNetwork_AreWeBeingLobbied "W?LbNetwork_AreWeBeingLobbied$n(ulpnvulpn$__7308jnTbNetworkPlayerInfo$$pnul)$TbError$$"
 
+// Lobbies are not supported under DOS: returns Lb_FAIL.
 // FUNCTION: 0x000bf810
 TbError LbNetwork_AreWeBeingLobbied(u32 a, u32 b, u32 c, u32 d, u32 e)
 {
@@ -182,6 +188,8 @@ TbError LbNetwork_AreWeBeingLobbied(u32 a, u32 b, u32 c, u32 d, u32 e)
 
 void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg);
 
+// Lets new players join the session (allow nonzero) or not. Returns the
+// service provider's result, Lb_FAIL if none is running.
 // FUNCTION: 0x000bf818
 TbError LbNetwork_EnableNewPlayers(u32 allow)
 {
@@ -203,6 +211,8 @@ struct ServiceEntry {
     char name[0x43];
 };
 
+// Calls callback with each available service: Serial, Modem and IPX.
+// Returns Lb_OK.
 // FUNCTION: 0x000bf854
 TbError LbNetwork_EnumerateServices(TbNetworkCallbackFunc callback, void *data)
 {
@@ -253,6 +263,8 @@ union TbNetworkInitParams {
 
 extern "C" {
 
+// LbNetwork_Init for service `service` taking the serial or modem settings
+// as TbNetworkInitParams (0 for none), converted to the provider's form.
 // FUNCTION: 0x000bf91c
 TbError fn_000bf91c(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                     u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, TbNetworkInitParams *params)
@@ -300,6 +312,10 @@ TbError fn_000bf91c(TbNetworkService service, __tibcaGUID guid, u32 max_players,
 
 }
 
+// Starts network service `service` (NS_SERIAL, NS_MODEM, NS_IPX) for up to
+// max_players players exchanging exchange_size-byte packets in exchange_buf,
+// with player names in info. Returns Lb_OK, or Lb_FAIL for an unknown
+// service or a failed start.
 // FUNCTION: 0x000bfac0
 TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -333,6 +349,7 @@ TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_playe
 
 extern "C" {
 
+// As fn_000bf91c, by provider index (0 serial, 1 modem, 2 IPX).
 // FUNCTION: 0x000bfb78
 TbError fn_000bfb78(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                     u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, TbNetworkInitParams *params)
@@ -368,6 +385,9 @@ TbError fn_000bfb78(u32 index, __tibcaGUID guid, u32 max_players, void *exchange
 
 }
 
+// Starts the service provider at index (0 serial, 1 modem, 2 IPX) with the
+// exchange settings, allocating the composite buffer and clearing the
+// player table. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0x000bfc4c
 TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *exchange_buf,
                        u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data)
@@ -437,6 +457,8 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     return ret;
 }
 
+// Creates session `session` as player name and allows new players. Stores
+// this player's index in *player. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0x000bff98
 TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
 {
@@ -464,6 +486,9 @@ TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data)
     return ret;
 }
 
+// Joins session as player name, waiting up to 10 seconds for the host's
+// player map. Stores this player's index in *player. Returns Lb_OK, or
+// Lb_FAIL.
 // FUNCTION: 0x000c0110
 TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *player, void *data)
 {
@@ -506,6 +531,8 @@ TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *play
     return ret;
 }
 
+// Shuts down the service provider and frees the composite buffer. Returns
+// Lb_OK, or Lb_FAIL if the release failed or nothing was running.
 // FUNCTION: 0x000c02fc
 TbError LbNetwork_Stop(void)
 {
@@ -527,6 +554,8 @@ TbError LbNetwork_Stop(void)
     return ret;
 }
 
+// Calls callback with each session found. Returns Lb_OK (also with no
+// provider running), or Lb_FAIL.
 // FUNCTION: 0x000c036c
 TbError LbNetwork_EnumerateSessions(TbNetworkCallbackFunc callback, void *data)
 {
@@ -542,6 +571,7 @@ TbError LbNetwork_EnumerateSessions(TbNetworkCallbackFunc callback, void *data)
     return ret;
 }
 
+// Calls callback with each player of session. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0x000c03b8
 TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetworkCallbackFunc callback, void *data)
 {
@@ -557,6 +587,7 @@ TbError LbNetwork_EnumeratePlayers(TbNetworkSessionNameEntry *session, TbNetwork
 
 static TbError StartMultiPlayerExchange(void *buf);
 
+// Starts an exchange of this player's packet buf with everyone's.
 // FUNCTION: 0x000c03f8
 TbError LbNetwork_StartExchange(void *buf)
 {
@@ -565,6 +596,9 @@ TbError LbNetwork_StartExchange(void *buf)
     return StartMultiPlayerExchange(buf);
 }
 
+// Starts a multi-player exchange: stores buf in this player's slot of the
+// exchange buffer and, on a client, sends it to the host. Returns Lb_OK, or
+// Lb_FAIL if the send failed.
 // FUNCTION: 0x000c0524
 static TbError StartMultiPlayerExchange(void *buf)
 {
@@ -596,6 +630,8 @@ static TbError StartMultiPlayerExchange(void *buf)
 
 static TbError CompleteMultiPlayerExchange(void *buf);
 
+// Completes an exchange started by LbNetwork_StartExchange, leaving every
+// player's packet in the exchange buffer. Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0x000c0640
 // NONMATCHING: register choice in the inlined timeout bookkeeping, as in CompleteMultiPlayerExchange
 TbError LbNetwork_CompleteExchange(void *buf)
@@ -605,6 +641,11 @@ TbError LbNetwork_CompleteExchange(void *buf)
     return CompleteMultiPlayerExchange(buf);
 }
 
+// Completes a multi-player exchange: the host collects every packet and
+// broadcasts the composite; a client waits for it, asking again on timeout,
+// dropping the host after ten retries and taking over if it becomes host.
+// Adapts the timeout to the measured round trip. Advances the sequence
+// number (0-14). Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0x000c08e4
 // NONMATCHING: register choice: the target copies the elapsed time into ebp and tests timeCount in eax
 static TbError CompleteMultiPlayerExchange(void *buf)
@@ -700,6 +741,8 @@ static TbError CompleteMultiPlayerExchange(void *buf)
     return ret;
 }
 
+// Exchanges this player's packet buf with everyone's (start and complete).
+// Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0x000c0b74
 // NONMATCHING: register choice in the inlined exchange code
 TbError LbNetwork_Exchange(void *buf)
@@ -718,6 +761,9 @@ TbError LbNetwork_Exchange(void *buf)
     return ret;
 }
 
+// Makes buf (size bytes per player) the exchange buffer, growing the
+// composite buffer if needed. Returns Lb_OK, or Lb_FAIL if it could not be
+// allocated.
 // FUNCTION: 0x000c0f68
 TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
 {
@@ -754,6 +800,8 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
     return ret;
 }
 
+// Refreshes the player table and the caller's player info. Returns Lb_OK,
+// or Lb_FAIL.
 // FUNCTION: 0x000c1028
 TbError LbNetwork_GetPlayerInfo(void)
 {
@@ -771,6 +819,8 @@ TbError LbNetwork_GetPlayerInfo(void)
     return ret;
 }
 
+// Copies the active players' names into the caller's player info. Returns
+// Lb_OK.
 // FUNCTION: 0xc1130
 static TbError GetPlayerInfo(void)
 {
@@ -788,6 +838,9 @@ static TbError GetPlayerInfo(void)
     return ret;
 }
 
+// Host: waits until every active client's packet has arrived, asking
+// missing clients again on timeout and dropping them after ten retries.
+// Adapts the timeout to the measured round trip. Returns Lb_OK.
 // NONMATCHING: register choice and block layout
 // FUNCTION: 0x000c11b8
 static TbError HostDataCollection(void)
@@ -862,6 +915,8 @@ static TbError HostDataCollection(void)
     return ret;
 }
 
+// Host: sends the composite of all packets to every client. Returns Lb_OK,
+// or Lb_FAIL if a send failed.
 // FUNCTION: 0x000c1458
 // The target returns through GetPlayerInfo's epilogue (the module was built without -zm)
 static TbError HostDataBroadcast(void)
@@ -882,6 +937,10 @@ static TbError HostDataBroadcast(void)
     return ret;
 }
 
+// Provider callback for an exchange packet from player id: returns where to
+// store it (a client's slot on the host, the whole exchange buffer for the
+// host's composite on a client), checking its size and sequence number
+// seq; 0 to discard it.
 // FUNCTION: 0x000c1518
 static void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data)
 {
@@ -939,6 +998,7 @@ static void *__stdcall MultiPlayerCallback(u32 id, u32 size, u32 seq, void *data
     return ret;
 }
 
+// Provider callback: a player id named name has joined.
 // FUNCTION: 0x000c1810
 void __stdcall AddMsgCallback(u32 id, char *name, void *data)
 {
@@ -951,6 +1011,7 @@ void __stdcall AddMsgCallback(u32 id, char *name, void *data)
     AddAPlayer(&player);
 }
 
+// Provider callback: player id has left; marks them inactive.
 // FUNCTION: 0x000c1858
 void __stdcall DeleteMsgCallback(u32 id, void *data)
 {
@@ -967,12 +1028,15 @@ void __stdcall DeleteMsgCallback(u32 id, void *data)
     }
 }
 
+// Provider callback: player id is now the host.
 // FUNCTION: 0x000c18c4
 void __stdcall HostMsgCallback(u32 id, void *data)
 {
     hostId = id;
 }
 
+// Rebuilds the player table from the provider's player list. Returns Lb_OK
+// if this player was found, else Lb_FAIL.
 // FUNCTION: 0x000c18d0
 static TbError GetCurrentPlayers(void)
 {
@@ -991,12 +1055,15 @@ static TbError GetCurrentPlayers(void)
     return ret;
 }
 
+// Player enumeration callback: adds the player to the table.
 // FUNCTION: 0x000c1934
 void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg)
 {
     AddAPlayer((TbNetworkPlayerEntry *)data);
 }
 
+// Provider callback for a one-way message of size bytes: returns the buffer
+// to receive it into, or 0 if it is too big (over 0x20c bytes).
 // FUNCTION: 0x000c1940
 void *__stdcall UnidirectionalMsgCallback(u32 id, u32 size, void *data)
 {
@@ -1013,6 +1080,9 @@ void *__stdcall UnidirectionalMsgCallback(u32 id, u32 size, void *data)
 
 extern "C" {
 
+// Adds player to the player table (if not already there), recording the
+// host and this player's own id and index. Returns Lb_OK, or Lb_FAIL if the
+// table is full.
 // NONMATCHING: register choice and block layout
 // FUNCTION: 0x000c197c
 TbError AddAPlayer(TbNetworkPlayerEntry *player)
@@ -1070,6 +1140,8 @@ TbError AddAPlayer(TbNetworkPlayerEntry *player)
 
 }
 
+// Replaces player id id by its index in the player table. Returns 1 if
+// found, else 0 (id unchanged).
 // FUNCTION: 0x000c1ad0
 static u32 IdToIndex(u32 &id)
 {
@@ -1091,6 +1163,8 @@ static u32 IdToIndex(u32 &id)
     return found;
 }
 
+// Provider callback: the host asks for this player's packet again; resends
+// it if the sequence number seq matches.
 // FUNCTION: 0x000c1b24
 void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
 {
@@ -1114,6 +1188,8 @@ void __stdcall MultiPlayerReqExDataMsgCallback(u32 id, u32 seq, void *data)
     }
 }
 
+// Provider callback: a client asks for the composite again; resends it if
+// seq is the current or previous sequence number.
 // FUNCTION: 0x000c1bc8
 void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *data)
 {
@@ -1125,6 +1201,8 @@ void __stdcall RequestCompositeExchangeDataMsgCallback(u32 id, u32 seq, void *da
     }
 }
 
+// Creates and initialises the IPX service provider (replacing any other).
+// Returns Lb_OK, or Lb_FAIL.
 // FUNCTION: 0x000c1c20
 static TbError GenericIPXInit(__tibcaGUID guid)
 {
@@ -1145,6 +1223,8 @@ static TbError GenericIPXInit(__tibcaGUID guid)
     return ret;
 }
 
+// Sends system message type with size bytes of buf to player id. Returns
+// the send's result, or Lb_FAIL if it does not fit.
 // FUNCTION: 0x000c1d5c
 static TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 size)
 {
@@ -1164,6 +1244,8 @@ static TbError SendSystemUserMessage(u32 id, TbMessageType type, void *buf, u32 
 
 static void PlayerMapMsgHandler(u32 id, void *buf, u32 size);
 
+// Provider callback for a system message from player id: passes player-map
+// messages on to PlayerMapMsgHandler.
 // FUNCTION: 0x000c1de8
 void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
 {
@@ -1187,6 +1269,7 @@ void __stdcall SystemUserMsgCallback(u32 id, void *msg, u32 size, void *data)
 // IPXServiceProvider constructor last. In the module's segment (built without -zm), the empty
 // fn_000c20c0 would let the optimiser drop every call to it.
 
+// Constructs an empty session entry.
 // FUNCTION: 0x000c20d0 COMDAT
 inline TbNetworkSessionNameEntry::TbNetworkSessionNameEntry()
 {
@@ -1197,6 +1280,7 @@ inline TbNetworkSessionNameEntry::TbNetworkSessionNameEntry()
 
 extern "C" {
 
+// Debug printf; does nothing in this build.
 // FUNCTION: 0x000c20c0 COMDAT
 inline void fn_000c20c0(char *fmt, ...)
 {
@@ -1204,6 +1288,8 @@ inline void fn_000c20c0(char *fmt, ...)
 
 }
 
+// Player-map message: an empty one asks for the player table, which is sent
+// back; a full one answers this player's request and replaces the table.
 // FUNCTION: 0x000c1f24
 static void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
 {
@@ -1223,6 +1309,7 @@ static void PlayerMapMsgHandler(u32 id, void *buf, u32 size)
     }
 }
 
+// Constructs the IPX service provider.
 // FUNCTION: 0x000c2020 COMDAT
 inline IPXServiceProvider::IPXServiceProvider()
 {

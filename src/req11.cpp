@@ -10,6 +10,10 @@ extern char **req1_help;
 s32 cost_of_all_selected_objects(void);
 void clicked_buy_objects(const s32 idx, const u8 button);
 
+// Buy objects requester clicks: the item, plus and minus buttons buy or sell
+// one (5 with Shift, 10 with Ctrl) of the selected object, the accept button
+// places them (event 0x2b, or back to placing), and the cancel button
+// empties the list (event 0x64) or returns to placing.
 // FUNCTION: 0x0009c6f0
 void req11(Window *win)
 {
@@ -56,6 +60,9 @@ void req11(Window *win)
     }
 }
 
+// Draws the buy objects requester: each listed object with its count, the
+// hovered one selected (crequester.unknown3) with its picture and price, the
+// total, and the advisor's flashing hints.
 // FUNCTION: 0x0009c97c
 void req11_overdraw(Window *win)
 {
@@ -157,6 +164,8 @@ void req11_overdraw(Window *win)
     set_font_from_cache(0);
 }
 
+// Takes amount of object idx off the buy list (gamevar.buy_count), stopping
+// at 0.
 // FUNCTION: 0x0009d114
 void req11_sell_object(const u16 idx, const s32 amount)
 {
@@ -166,6 +175,10 @@ void req11_sell_object(const u16 idx, const s32 amount)
         gamevar.buy_count[idx] = 0;
 }
 
+// Buys (button 1) or sells back (2) amount of the selected object, 1, 5 with
+// Shift or 10 with Ctrl, through EV_BUY_OBJECT / EV_SELL_OBJECT, if the
+// player can afford it or has that many. idx is the list entry clicked,
+// which must not be empty.
 // FUNCTION: 0x0009d164
 void clicked_buy_objects(const s32 idx, const u8 button)
 {
@@ -205,6 +218,8 @@ void clicked_buy_objects(const s32 idx, const u8 button)
     play_sound(10, SFX_WRONG2, -1, -1);
 }
 
+// Help text for an object entry of the buy objects requester, into
+// othervar.f96.
 // FUNCTION: 0x0009d36c
 void req11_help_object(void)
 {
@@ -215,6 +230,7 @@ void req11_help_object(void)
         fn_000bbff0(othervar.f96, object_help[idx]);
 }
 
+// Help text for the plus button of a buy objects entry, into othervar.f96.
 // FUNCTION: 0x0009d3cc
 void req11_help_plus(void)
 {
@@ -225,6 +241,7 @@ void req11_help_plus(void)
         fn_000bbff0(othervar.f96, help_text[0x29]);
 }
 
+// Help text for the minus button of a buy objects entry, into othervar.f96.
 // FUNCTION: 0x0009d424
 void req11_help_minus(void)
 {

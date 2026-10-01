@@ -144,6 +144,8 @@ void __interrupt __loadds com_handler1(void);
 void __interrupt __loadds com_handler2(void);
 void __interrupt __loadds com_handler3(void);
 
+// Sets up the four COM ports' default addresses and IRQs (COM1/3 0x3f8/
+// 0x3e8 on IRQ 4, COM2/4 0x2f8/0x2e8 on IRQ 3), all closed.
 // FUNCTION: 0xf5254
 SerialHandler::SerialHandler()
 {
@@ -184,6 +186,7 @@ SerialHandler::SerialHandler()
     }
 }
 
+// Destroys the serial handler (nothing to do).
 // NONMATCHING: the entry also covers SerialHandler::Init's body, where the size
 // _D_001100fe - _D_00110068 is computed in other registers
 // FUNCTION: 0xf534c
@@ -191,6 +194,9 @@ SerialHandler::~SerialHandler()
 {
 }
 
+// Opens COM port `port` (0-3): copies the interrupt code and buffers into
+// DOS memory, hooks its IRQ and sets the UART to 9600 baud, 8N1. Returns
+// the port's device block, or 0.
 // FUNCTION: 0xf6348
 long SerialHandler::Init(long port)
 {
@@ -226,6 +232,8 @@ long SerialHandler::Init(long port)
     return (long)dev;
 }
 
+// Closes COM port `port`: disables its interrupts, restores the IRQ
+// vectors and frees its DOS memory. Returns 0, or -1 for a bad port.
 // FUNCTION: 0xf5544
 long SerialHandler::DeInit(long port)
 {
@@ -260,6 +268,7 @@ long SerialHandler::DeInit(long port)
     return 0;
 }
 
+// Returns the next received byte of COM port `port`, or -1 if none.
 // FUNCTION: 0xf5714
 long SerialHandler::ReadByte(long port)
 {
@@ -279,6 +288,8 @@ long SerialHandler::ReadByte(long port)
     return -1;
 }
 
+// Sends byte c on dev's port, waiting for the transmitter and keeping any
+// bytes received meanwhile.
 // FUNCTION: 0xf5780
 void SerialHandler::WriteChar(TbSerialDev *dev, u8 c)
 {
@@ -302,6 +313,8 @@ void SerialHandler::WriteChar(TbSerialDev *dev, u8 c)
     _enable();
 }
 
+// Queues byte c in dev's port's transmit buffer (sent by
+// EmptyOutputBuffer).
 // FUNCTION: 0xf5818
 void SerialHandler::WriteCharNoWait(TbSerialDev *dev, u8 c)
 {
@@ -312,6 +325,8 @@ void SerialHandler::WriteCharNoWait(TbSerialDev *dev, u8 c)
         info->tx_tail = 0;
 }
 
+// Keeps the bytes received on COM port `port` and, if the transmitter is
+// free, sends one queued byte.
 // FUNCTION: 0xf5864
 void SerialHandler::EmptyOutputBuffer(long port)
 {
@@ -344,6 +359,8 @@ void SerialHandler::EmptyOutputBuffer(long port)
     _enable();
 }
 
+// Sends len bytes from buf on COM port `port`, waiting for each. Returns
+// the count sent (0 for a bad port).
 // FUNCTION: 0xf5948
 long SerialHandler::WriteBytes(long port, u8 *buf, long len)
 {
@@ -361,6 +378,7 @@ long SerialHandler::WriteBytes(long port, u8 *buf, long len)
     return n;
 }
 
+// Queues len bytes from buf for COM port `port`. Returns the count queued.
 // FUNCTION: 0xf59a8
 long SerialHandler::WriteBytesNoWait(long port, u8 *buf, long len)
 {
@@ -378,6 +396,8 @@ long SerialHandler::WriteBytesNoWait(long port, u8 *buf, long len)
     return n;
 }
 
+// Sets COM port `port`'s speed to baud (300-115200), 8N1. Returns 0, or -1
+// for a bad port.
 // FUNCTION: 0xf5a3c
 long SerialHandler::SetBaud(long port, long baud)
 {
@@ -402,6 +422,7 @@ long SerialHandler::SetBaud(long port, long baud)
     return -1;
 }
 
+// Raises DTR on COM port `port`.
 // FUNCTION: 0xf5ad0
 void SerialHandler::SetDtr(long port)
 {
@@ -413,6 +434,7 @@ void SerialHandler::SetDtr(long port)
     }
 }
 
+// Raises RTS on COM port `port`.
 // FUNCTION: 0xf5b0c
 void SerialHandler::SetRts(long port)
 {
@@ -424,6 +446,7 @@ void SerialHandler::SetRts(long port)
     }
 }
 
+// Drops DTR on COM port `port`.
 // FUNCTION: 0xf5b48
 void SerialHandler::ClearDtr(long port)
 {
@@ -435,6 +458,7 @@ void SerialHandler::ClearDtr(long port)
     }
 }
 
+// Drops RTS on COM port `port`.
 // FUNCTION: 0xf5b84
 void SerialHandler::ClearRts(long port)
 {
@@ -446,12 +470,15 @@ void SerialHandler::ClearRts(long port)
     }
 }
 
+// Does nothing. Returns 0.
 // FUNCTION: 0xf5bc0
 long SerialHandler::TerminateInputIO(long port)
 {
     return 0;
 }
 
+// Allocates size bytes of DOS memory (DPMI), storing its selector in *sel.
+// Returns its linear address, or 0.
 // FUNCTION: 0xf5bc4
 void *SerialHandler::AllocDosMem(u32 size, u16 *sel)
 {
@@ -467,6 +494,7 @@ void *SerialHandler::AllocDosMem(u32 size, u16 *sel)
     return (void *)((r.x.eax & 0xffff) << 4);
 }
 
+// Frees the DOS memory with selector sel.
 // FUNCTION: 0xf5c14
 void SerialHandler::FreeDosMem(u16 sel)
 {
@@ -477,6 +505,7 @@ void SerialHandler::FreeDosMem(u16 sel)
     int386(0x31, &r, &r);
 }
 
+// Saves dev's IRQ vector (real and protected mode) for restoring.
 // FUNCTION: 0xf5c3c
 void SerialHandler::backup_serial_int_vectors(TbSerialDev *dev)
 {
@@ -510,6 +539,8 @@ static inline void lock_region(REGS *r, u32 addr, u32 len)
     int386(0x31, r, r);
 }
 
+// Points dev's IRQ at the port's handler (protected mode) and at the copy
+// in DOS memory (real mode), and locks the interrupt code.
 // FUNCTION: 0xf5d40
 void SerialHandler::setup_serial_int_vectors(TbSerialDev *dev)
 {
@@ -546,6 +577,8 @@ void SerialHandler::setup_serial_int_vectors(TbSerialDev *dev)
     lock_region(&r, (u32)lock_code_start, (u32)lock_code_end - (u32)lock_code_start);
 }
 
+// Programs dev's UART (FIFO if present, receive interrupts, DTR and RTS
+// on) and unmasks its IRQ, at 9600 baud.
 // FUNCTION: 0xf5e74
 void SerialHandler::init_com_port(TbSerialDev *dev)
 {
@@ -582,11 +615,13 @@ void SerialHandler::init_com_port(TbSerialDev *dev)
     SetBaud(dev->port, 9600);
 }
 
+// Marks the start of the code locked for the serial interrupts.
 // FUNCTION: 0xf6024
 void lock_code_start(void)
 {
 }
 
+// COM1 interrupt handler.
 // FUNCTION: 0xf6028
 void __interrupt __loadds com_handler0(void)
 {
@@ -594,6 +629,7 @@ void __interrupt __loadds com_handler0(void)
     outp(0x20, 0x20);
 }
 
+// COM2 interrupt handler.
 // FUNCTION: 0xf6054
 void __interrupt __loadds com_handler1(void)
 {
@@ -601,6 +637,7 @@ void __interrupt __loadds com_handler1(void)
     outp(0x20, 0x20);
 }
 
+// COM3 interrupt handler.
 // FUNCTION: 0xf6080
 void __interrupt __loadds com_handler2(void)
 {
@@ -608,6 +645,7 @@ void __interrupt __loadds com_handler2(void)
     outp(0x20, 0x20);
 }
 
+// COM4 interrupt handler.
 // FUNCTION: 0xf60ac
 void __interrupt __loadds com_handler3(void)
 {
@@ -615,6 +653,7 @@ void __interrupt __loadds com_handler3(void)
     outp(0x20, 0x20);
 }
 
+// Moves the bytes received on dev's port into its 2K receive buffer.
 // FUNCTION: 0xf60d8
 void handle_com(TbSerialDev *dev)
 {
@@ -640,6 +679,7 @@ void handle_com(TbSerialDev *dev)
     outp(0x20, 0x20);
 }
 
+// Advances dev's transmit head (wrapping at 2K).
 // FUNCTION: 0xf6184
 void inc_head(TbSerialDev *dev)
 {
@@ -647,6 +687,7 @@ void inc_head(TbSerialDev *dev)
         dev->head = 0;
 }
 
+// Advances dev's transmit tail (wrapping at 2K).
 // FUNCTION: 0xf61a8
 void inc_tail(TbSerialDev *dev)
 {
@@ -654,6 +695,7 @@ void inc_tail(TbSerialDev *dev)
         dev->tail = 0;
 }
 
+// Advances dev's receive head (wrapping at 2K).
 // FUNCTION: 0xf61cc
 void inc_rec_head(TbSerialDev *dev)
 {
@@ -661,6 +703,7 @@ void inc_rec_head(TbSerialDev *dev)
         dev->rx_head = 0;
 }
 
+// Advances dev's receive tail (wrapping at 2K).
 // FUNCTION: 0xf61f0
 void inc_rec_tail(TbSerialDev *dev)
 {
@@ -668,11 +711,14 @@ void inc_rec_tail(TbSerialDev *dev)
         dev->rx_tail = 0;
 }
 
+// Marks the end of the code locked for the serial interrupts.
 // FUNCTION: 0xf6214
 void lock_code_end(void)
 {
 }
 
+// Sets up a modem/serial connection with the default modem strings (ATZ,
+// ATDT, ATH, ATS0=1) and timeouts, offline.
 // FUNCTION: 0xf6218
 CommHandler::CommHandler()
 {
@@ -691,6 +737,7 @@ CommHandler::CommHandler()
     strcpy(CH(this)->reset_str, "ATS0=1");
 }
 
+// Clears the connection's callbacks and online flag.
 // FUNCTION: 0xf630c
 CommHandler::~CommHandler()
 {
@@ -701,6 +748,8 @@ CommHandler::~CommHandler()
     CH(this)->online = 0;
 }
 
+// Opens COM port `port` for this connection. Returns the port's device
+// block, or 0.
 // FUNCTION: 0xf633c
 long CommHandler::Init(long port)
 {
@@ -708,18 +757,21 @@ long CommHandler::Init(long port)
     return SerialCommHandler.Init(port);
 }
 
+// Closes this connection's COM port. Returns 0, or -1.
 // FUNCTION: 0xf636c
 long CommHandler::DeInit(void)
 {
     return SerialCommHandler.DeInit(CH(this)->port);
 }
 
+// Returns the next received byte, or -1 if none.
 // FUNCTION: 0xf6380
 long CommHandler::ReadByte(void)
 {
     return SerialCommHandler.ReadByte(CH(this)->port);
 }
 
+// Reads up to len received bytes into buf. Returns the count read.
 // FUNCTION: 0xf63f4
 u32 CommHandler::ReadBytes(void *buf, u32 len)
 {
@@ -744,30 +796,36 @@ u32 CommHandler::ReadBytes(void *buf, u32 len)
     return n;
 }
 
+// Sends len bytes from buf, waiting for each. Returns the count sent.
 // FUNCTION: 0xf64bc
 long CommHandler::WriteBytes(u8 *buf, long len)
 {
     return SerialCommHandler.WriteBytes(CH(this)->port, buf, len);
 }
 
+// Queues len bytes from buf for sending. Returns the count queued.
 // FUNCTION: 0xf651c
 long CommHandler::WriteBytesNoWait(u8 *buf, long len)
 {
     return SerialCommHandler.WriteBytesNoWait(CH(this)->port, buf, len);
 }
 
+// Sends one queued byte if the port is free (see
+// SerialHandler::EmptyOutputBuffer).
 // FUNCTION: 0xf65bc
 void CommHandler::EmptyOutputBuffer(void)
 {
     SerialCommHandler.EmptyOutputBuffer(CH(this)->port);
 }
 
+// Sets the port's speed to baud. Returns 0, or -1.
 // FUNCTION: 0xf65d0
 long CommHandler::SetBaud(long baud)
 {
     return SerialCommHandler.SetBaud(CH(this)->port, baud);
 }
 
+// Sends modem command str followed by a carriage return.
 // FUNCTION: 0xf65e8
 void CommHandler::SendModemString(char *str)
 {
@@ -779,6 +837,8 @@ void CommHandler::SendModemString(char *str)
     strcpy(CH(this)->last_cmd, buf);
 }
 
+// Sends the init string and returns the modem's response (see
+// GetModemResponse).
 // FUNCTION: 0xf66bc
 long CommHandler::InitModem(void)
 {
@@ -791,6 +851,8 @@ long CommHandler::InitModem(void)
     return ret;
 }
 
+// Dials number and returns the modem's response; 2 (CONNECT) puts the
+// connection online.
 // FUNCTION: 0xf67c0
 long CommHandler::DialModem(char *number)
 {
@@ -808,6 +870,8 @@ long CommHandler::DialModem(char *number)
     return ret;
 }
 
+// Hangs up: drops DTR, sends +++, the hang-up string and ATS0=0, then
+// drops DTR and RTS. Returns -1.
 // FUNCTION: 0xf6940
 long CommHandler::HangUpModem(void)
 {
@@ -841,6 +905,9 @@ long CommHandler::HangUpModem(void)
     return ret;
 }
 
+// Sets the modem to answer (the auto-answer string) and waits through RING
+// and OK for the call. Returns the modem's response; 2 (CONNECT) puts the
+// connection online.
 // FUNCTION: 0xf6d00
 long CommHandler::AnswerModem(void)
 {
@@ -857,6 +924,8 @@ long CommHandler::AnswerModem(void)
     return ret;
 }
 
+// Reads the modem strings from config file filename (lines 14-17). Returns
+// 0, or -1 if it cannot be opened.
 // FUNCTION: 0xf6e1c
 long CommHandler::ReadConfigFile(char *filename)
 {
@@ -886,6 +955,8 @@ long CommHandler::ReadConfigFile(char *filename)
     return -1;
 }
 
+// Applies data's IRQ to its port and, for a modem (mode 2), its modem
+// strings (or fills in the defaults where it has none).
 // FUNCTION: 0xf6fb0
 void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
 {
@@ -917,6 +988,7 @@ void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
     }
 }
 
+// Reads a line (up to a carriage return or line feed) from f into p.
 // FUNCTION: 0xf70d8
 void CommHandler::read_a_line(FILE *f, char *p)
 {
@@ -927,6 +999,9 @@ void CommHandler::read_a_line(FILE *f, char *p)
     *p = 0;
 }
 
+// Waits up to timeout clock ticks for a modem response line. Returns 1 OK,
+// 2 CONNECT, 3 RING, 4 BUSY, 5 ERROR, 6 NO CARRIER, 7 NO DIALTONE, -1 on
+// timeout, or -7 if the current callback asks to abort.
 // FUNCTION: 0xf70f8
 long CommHandler::GetModemResponse(long timeout)
 {
@@ -973,36 +1048,42 @@ long CommHandler::GetModemResponse(long timeout)
     return ret;
 }
 
+// Sets the modem response time-out in seconds.
 // FUNCTION: 0xf72e8
 void CommHandler::SetModemResponseTimeOut(long seconds)
 {
     CH(this)->unknown19c = seconds * 100;
 }
 
+// Sets the callback run while waiting during InitModem.
 // FUNCTION: 0xf7304
 void CommHandler::SetInitModemFunc(long (*fn)(void))
 {
     CH(this)->init_func = fn;
 }
 
+// Sets the callback run while waiting during DialModem.
 // FUNCTION: 0xf730c
 void CommHandler::SetDialModemFunc(long (*fn)(void))
 {
     CH(this)->dial_func = fn;
 }
 
+// Sets the callback run while waiting during HangUpModem.
 // FUNCTION: 0xf7314
 void CommHandler::SetHangUpModemFunc(long (*fn)(void))
 {
     CH(this)->hangup_func = fn;
 }
 
+// Sets the callback run while waiting during AnswerModem.
 // FUNCTION: 0xf731c
 void CommHandler::SetAnswerModemFunc(long (*fn)(void))
 {
     CH(this)->other_func = fn;
 }
 
+// Raises DTR.
 // FUNCTION: 0xf7324
 void CommHandler::SetDtr(void)
 {
@@ -1014,24 +1095,28 @@ void CommHandler::SetDtr(void)
     }
 }
 
+// Raises RTS.
 // FUNCTION: 0xf7368
 void CommHandler::SetRts(void)
 {
     SerialCommHandler.SetRts(CH(this)->port);
 }
 
+// Drops DTR.
 // FUNCTION: 0xf73ac
 void CommHandler::ClearDtr(void)
 {
     SerialCommHandler.ClearDtr(CH(this)->port);
 }
 
+// Drops RTS.
 // FUNCTION: 0xf73f0
 void CommHandler::ClearRts(void)
 {
     SerialCommHandler.ClearRts(CH(this)->port);
 }
 
+// Runs callback fn, if any. Returns its result, or 0.
 // FUNCTION: 0xf7434
 long CommHandler::RunModemFunc(long (*fn)(void))
 {

@@ -150,6 +150,10 @@ Coord panel_popup_coord[40] = {
 };
 }
 
+// Per-frame bottom panel update: redraws it when the mouse moves on or off
+// it or the balance changes, then fills the info bar for what the pointer is
+// over (othervar.f7c: 1 staff, 2 patient, 3 object, 4 queue, 5 VIP or
+// inspector, 6 machine use).
 // FUNCTION: 0x00031c70
 void update_panel(void)
 {
@@ -206,6 +210,8 @@ void update_panel(void)
     }
 }
 
+// Draws the panel's icons with the balance, date and reputation (only when
+// all is 1 or a full-screen window is shown), or the rat game's panel.
 // FUNCTION: 0x00031e20
 void draw_panel(u8 all)
 {
@@ -227,6 +233,8 @@ void draw_panel(u8 all)
     panel_flash();
 }
 
+// Chooses the panel icon set: raised while the mouse is over the panel
+// (othervar.fa49 2), normal otherwise (1), or the rat game's.
 // FUNCTION: 0x00031f5c
 void choose_panel_icons(void)
 {
@@ -244,6 +252,7 @@ void choose_panel_icons(void)
     advisor.fa_u16 = statvar.unknown6;
 }
 
+// Lays out the panel icon sets along the bottom of screen mode `mode`.
 // FUNCTION: 0x00031ffc
 void setup_panel_icons(const u8 mode)
 {
@@ -279,6 +288,8 @@ void setup_panel_icons(const u8 mode)
     othervar.fa55 = 1;
 }
 
+// Returns the index of the panel icon under the mouse, or 0x63 if the mouse
+// is not over the panel.
 // FUNCTION: 0x000321b4
 u8 which_icon_is_mouse_over(void)
 {
@@ -300,6 +311,7 @@ u8 which_icon_is_mouse_over(void)
     return over;
 }
 
+// Draws panel icon `icon` pressed while the button is held (0x63: none).
 // FUNCTION: 0x00032268
 void panel_ml_button(const u16 icon)
 {
@@ -311,6 +323,11 @@ void panel_ml_button(const u16 icon)
     }
 }
 
+// Left click on panel icon `icon` (0x63: none): opens the screen, requester
+// or mode it stands for (0 bank manager, 2, 3 and 5 the requesters of events
+// 0x37, 0x62 and 0x2e, 4 room editing on/off, 6 staff list, 7 town map,
+// 8 casebook, 9 research, 10 status, 11 charts, 12 policy). Refused while
+// placing a room, door or staff member.
 // FUNCTION: 0x00032308
 void panel_l_button(const u16 icon)
 {
@@ -416,6 +433,8 @@ void panel_l_button(const u16 icon)
 }
 
 
+// Right click on panel icon `icon`: 0 opens the bank statement, 5 the staff
+// list.
 // FUNCTION: 0x000328c0
 void panel_r_button(const u16 icon)
 {
@@ -441,6 +460,8 @@ void panel_r_button(const u16 icon)
     }
 }
 
+// Draws this player's balance on the panel, rolling the changed digits from
+// the shown value (othervar.f3b) to the new one over four frames.
 // FUNCTION: 0x000329d4
 void draw_money_on_panel(void)
 {
@@ -491,6 +512,7 @@ void draw_money_on_panel(void)
 }
 
 
+// Draws the date (day and month) on the panel.
 // FUNCTION: 0x00032cc4
 void draw_date_on_panel(void)
 {
@@ -505,6 +527,7 @@ void draw_date_on_panel(void)
     lbDisplay.draw_flags = 0;
 }
 
+// Draws the reputation marker on the panel's scale (reputation 0-1000).
 // FUNCTION: 0x00032da0
 void draw_rep_on_panel(void)
 {
@@ -515,6 +538,9 @@ void draw_rep_on_panel(void)
     reqspr_draw(resvars.f1c_PanelLayoutp->unknown258 + offset, resvars.f1c_PanelLayoutp->unknown25c, &game_panel[36]);
 }
 
+// Draws the panel's watch for an emergency, an epidemic (myhosp->f207) or
+// the timed event of myhosp->unknown1257, with its time left and the button
+// for vaccinating (epidemic) or announcing (the other event).
 // FUNCTION: 0x00032e20
 void draw_emergency(void)
 {
@@ -607,6 +633,7 @@ void draw_emergency(void)
 }
 
 
+// Clears the panel's info bar.
 // FUNCTION: 0x00033a40
 void clear_panel_info_bar(void)
 {
@@ -630,6 +657,8 @@ void clear_panel_info_bar(void)
 }
 
 
+// Fills the info bar for the patient under the pointer: their status, the
+// room they queue for or are heading to, and the diagnosis or its progress.
 // FUNCTION: 0x00033c8c
 void display_panel_person_info(void)
 {
@@ -718,6 +747,9 @@ void display_panel_person_info(void)
 }
 
 
+// Fills the info bar for the staff member under the pointer: their kind and
+// skills, where they are heading, and their tiredness with the hospital's
+// rest threshold.
 // FUNCTION: 0x00034118
 void display_panel_staff_info(void)
 {
@@ -782,6 +814,8 @@ void display_panel_staff_info(void)
 }
 
 
+// Fills the info bar for the object under the pointer: its name, strength and
+// uses.
 // FUNCTION: 0x000345e0
 void display_panel_object_info(void)
 {
@@ -810,6 +844,8 @@ void display_panel_object_info(void)
     }
 }
 
+// Fills the info bar for the queue of the room under the pointer (or of a
+// receptionist's desk): the room and its queue lengths.
 // FUNCTION: 0x0003474c
 void display_panel_queue_info(void)
 {
@@ -842,6 +878,7 @@ void display_panel_queue_info(void)
     }
 }
 
+// Fills the info bar for the VIP or inspector under the pointer.
 // FUNCTION: 0x000348d4
 void display_panel_mayor_info(void)
 {
@@ -861,6 +898,7 @@ void display_panel_mayor_info(void)
     }
 }
 
+// Fills the info bar for the machine under the pointer: its name and uses.
 // FUNCTION: 0x000349e8
 void display_panel_usage_info(void)
 {
@@ -880,6 +918,9 @@ void display_panel_usage_info(void)
     draw_panel_info_line(buf, &line, 3);
 }
 
+// Draws this player's pending calls (faxes) above the panel, sliding new ones
+// in, records the one under the mouse in othervar.f9c2, and animates the
+// panel's message bar.
 // FUNCTION: 0x00034acc
 void draw_popup_icons(void)
 {
@@ -1100,6 +1141,8 @@ void draw_popup_icons(void)
 }
 
 
+// Removes call's icon from the panel if it is this player's, and closes up
+// any empty slot.
 // FUNCTION: 0x00035624
 void delete_panel_popup(PlayerCall *call)
 {
@@ -1115,6 +1158,7 @@ void delete_panel_popup(PlayerCall *call)
     }
 }
 
+// Removes the call icon in panel slot `slot` (0-8), moving later ones down.
 // FUNCTION: 0x000356c4
 void remove_panel_popup(const u8 slot)
 {
@@ -1130,6 +1174,8 @@ void remove_panel_popup(const u8 slot)
     panel_popup_pos[8] = 0;
 }
 
+// Gives a new call of this player a panel slot (9 if all are taken) and
+// starts its slide-in with a fax sound.
 // FUNCTION: 0x00035760
 void add_panel_popup(PlayerCall *call)
 {
@@ -1151,6 +1197,7 @@ void add_panel_popup(PlayerCall *call)
     }
 }
 
+// Rebuilds panel_popup_pos from the calls' slots.
 // FUNCTION: 0x00035824
 void rebuild_panel_popup_pos(void)
 {
@@ -1168,6 +1215,8 @@ void rebuild_panel_popup_pos(void)
     }
 }
 
+// Keeps the panel's call icons packed: drops slots whose call has gone,
+// moves calls down into empty slots and separates calls sharing a slot.
 // FUNCTION: 0x00035914
 void maintain_panel_popup(void)
 {
@@ -1229,6 +1278,8 @@ void maintain_panel_popup(void)
 }
 
 
+// Flashes the panel icon the advisor points at (advisor.f120 0x10-0x1b)
+// every ten frames.
 // FUNCTION: 0x00035c68
 void panel_flash(void)
 {
@@ -1244,6 +1295,8 @@ void panel_flash(void)
     }
 }
 
+// Draws the rat game's panel: the score, the chosen weapon and a
+// four-segment bar from myhosp->fcaa.
 // FUNCTION: 0x00035d5c
 void draw_ratfest_on_panel(void)
 {
@@ -1354,6 +1407,8 @@ void draw_ratfest_on_panel(void)
 }
 
 
+// While the game is paused, or a panel message (othervar.fa66, a misc_text
+// index) is timed, shows it on the info bar. Returns 1 if it did.
 // FUNCTION: 0x000361a4
 u8 display_panel_special_info(void)
 {
@@ -1405,6 +1460,8 @@ u8 display_panel_special_info(void)
 }
 
 
+// Help text for the panel's watch: emergency, epidemic or the other timed
+// event, into othervar.f96.
 // FUNCTION: 0x0003646c
 void panel_watch_help(void)
 {
@@ -1421,6 +1478,8 @@ void panel_watch_help(void)
     fn_000bbff0(othervar.f96, help_text[text]);
 }
 
+// Help text for the reputation scale, with the reputation value, into
+// othervar.f96.
 // FUNCTION: 0x000364e0
 void panel_rep_help(void)
 {
@@ -1431,6 +1490,7 @@ void panel_rep_help(void)
     fn_000c93bf(othervar.f96, buf);
 }
 
+// Loads the rat game's panel sprites (not in 320x200) and lays them out.
 // FUNCTION: 0x00036534
 void setup_rat_fest_panel(void)
 {
@@ -1442,6 +1502,8 @@ void setup_rat_fest_panel(void)
     }
 }
 
+// Draws text on the info bar's third line with a percentage bar of value
+// (capped at 100).
 // FUNCTION: 0x00036594
 void draw_panel_percent_bar(s32 value, char *text)
 {
@@ -1457,6 +1519,8 @@ void draw_panel_percent_bar(s32 value, char *text)
     LbDrawBox(x + 1 + (resvars.f18_PanelLayoutp->unknown5e8 - 2) * value / 100, y + 1, resvars.f18_PanelLayoutp->unknown5e8 - 2 - (resvars.f18_PanelLayoutp->unknown5e8 - 2) * value / 100, resvars.f18_PanelLayoutp->unknown5ec - 2, color.unknown8);
 }
 
+// Draws text on info bar line *line, wrapping it onto a second line if too
+// wide, and advances *line. Draws nothing if it would pass line `lines`.
 // FUNCTION: 0x00036730
 void draw_panel_info_line(char *text, u8 *line, u8 lines)
 {

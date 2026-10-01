@@ -5,6 +5,8 @@ extern "C" {
 
 }
 
+// Draws win's visible buttons in their pressed, highlighted or normal
+// sprite.
 // FUNCTION: 0x0004bcc0
 void draw_buttons(Window *win)
 {
@@ -32,6 +34,9 @@ void draw_buttons(Window *win)
     }
 }
 
+// Draws a window frame of style `style` (0 or 1) at (x, y), w x h: the
+// tiled background, edges and corners from the bord sprites, clipped to the
+// view area; marks it for redraw.
 // FUNCTION: 0x0004be18
 void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
 {
@@ -151,6 +156,8 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     set_all_refresh_zones_in_window(x, y, x + w, y + h, 3);
 }
 
+// Draws win's frame by its flags: 1 none (only marks the area for redraw),
+// 2 frame style 0, 4 frame style 1.
 // FUNCTION: 0x0004c670
 void draw_window(Window *win)
 {
@@ -172,6 +179,8 @@ void draw_window(Window *win)
     }
 }
 
+// Draws the open windows (bottom one first): frame, buttons and each one's
+// own drawing routine.
 // FUNCTION: 0x0004c730
 void DrawWindows(Window **windows)
 {

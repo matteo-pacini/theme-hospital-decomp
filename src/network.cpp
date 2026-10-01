@@ -187,6 +187,9 @@ void add_phone_number(char *number);
 
 #define SLIST(n) ((SlistButton *)&resvars.f48[n])
 
+// Reads the modem command strings (init, dial, hang-up, auto-answer, in that
+// order, as "key=value" lines) from modem.ini, keeping the defaults for a
+// missing file or a value over 80 characters.
 // FUNCTION: 0x0007f9f0
 void read_modem_ini_file(void)
 {
@@ -229,6 +232,8 @@ void read_modem_ini_file(void)
     LbMemoryFree(buf);
 }
 
+// Sets D_00160508 to the first active player other than `me` (0 if none);
+// with me = -1, the first active player, who runs the session.
 // FUNCTION: 0x0007fbb8
 void find_other_player(s8 me)
 {
@@ -243,6 +248,11 @@ void find_other_player(s8 me)
     }
 }
 
+// Shows the network screen's glass panels whose bits are in mask (0x10 modem,
+// 0x20 serial, 0x40 IPX sessions, 0x80 connection type, 0x100 balance file,
+// 0x200 chat, 0x400 dial pad, 0x800 connecting, 0x1000 level choice, ...),
+// zooming them in. Showing a connection panel (0x10-0x40) first hides all
+// others but 0x80 and 4.
 // FUNCTION: 0x0007fc14
 void set_glass_map(s32 mask)
 {
@@ -307,6 +317,7 @@ void set_glass_map(s32 mask)
     network.unknown2 = 3;
 }
 
+// Hides the network screen's glass panels whose bits are in mask.
 // FUNCTION: 0x0007ff24
 void reset_glass_map(s32 mask)
 {
@@ -314,6 +325,7 @@ void reset_glass_map(s32 mask)
     network.unknown2 = 3;
 }
 
+// Hides the panels in mask if they are shown, else shows them.
 // FUNCTION: 0x0007ff50
 void toggle_glass_map(s32 mask)
 {
@@ -323,6 +335,9 @@ void toggle_glass_map(s32 mask)
         set_glass_map(mask);
 }
 
+// Runs one frame of the network game screen's state machine
+// (network.unknown2): sets up the screen, zooms panels in and out, draws them,
+// and once a session starts (state 1) loads the level and enters the game.
 // FUNCTION: 0x0007ff88
 void draw_network_select(void)
 {
@@ -420,6 +435,8 @@ void draw_network_select(void)
     }
 }
 
+// Draws the text and buttons of each shown glass panel in mask, greying the
+// scroll arrows at either end and flashing the button to press next.
 // FUNCTION: 0x000802c4
 void display_button_text(s32 mask)
 {
@@ -711,6 +728,8 @@ void display_button_text(s32 mask)
     }
 }
 
+// Draws three COM ports from TopPort in the serial (modem 0) or modem panel;
+// clicking one selects it (bit in myplayer.f56[4]).
 // FUNCTION: 0x00081284
 void draw_available_ports(u8 modem)
 {
@@ -740,6 +759,8 @@ void draw_available_ports(u8 modem)
     }
 }
 
+// Draws three baud rates from TopBaud; clicking one selects it
+// (myplayer.f56[5], a Bauds index).
 // FUNCTION: 0x00081408
 void draw_available_bauds(u8 modem)
 {
@@ -769,6 +790,8 @@ void draw_available_bauds(u8 modem)
     }
 }
 
+// Draws four IRQs from TopIRQ for the selected COM port; clicking one sets
+// that port's IRQ (myplayer.f56[port]).
 // FUNCTION: 0x00081588
 void draw_available_irqs(void)
 {
@@ -805,6 +828,8 @@ void draw_available_irqs(void)
     }
 }
 
+// Serial panel: the port, baud and IRQ lists while choosing, the players and
+// the login exchange once connected; starts the game when it begins.
 // FUNCTION: 0x0008172c
 void draw_serial_selection_screen(void)
 {
@@ -832,6 +857,7 @@ void draw_serial_selection_screen(void)
     }
 }
 
+// Modem panel: as draw_serial_selection_screen, plus the phone book.
 // FUNCTION: 0x000817c4
 void draw_modem_selection_screen(void)
 {
@@ -860,6 +886,8 @@ void draw_modem_selection_screen(void)
     }
 }
 
+// Adds `number` to the phone book (15 entries; when full, overwrites the
+// first) and highlights it. Ignores an empty string.
 // FUNCTION: 0x0008186c
 void add_phone_number(char *number)
 {
@@ -874,6 +902,7 @@ void add_phone_number(char *number)
     }
 }
 
+// Appends digit c to the number being typed on the dial pad (12 at most).
 // FUNCTION: 0x000818e8
 void add_number(char c)
 {
@@ -888,6 +917,8 @@ void add_number(char c)
     }
 }
 
+// Closes the message box and restores the panels shown before it, unless the
+// game is starting.
 // FUNCTION: 0x00081958
 void process_report_buttons(u8 button)
 {
@@ -898,6 +929,8 @@ void process_report_buttons(u8 button)
     }
 }
 
+// Shows `message` in a box over the network screen, hiding the other panels
+// until it is closed (process_report_buttons).
 // FUNCTION: 0x000819a8
 void report_message(char *message)
 {
@@ -935,6 +968,9 @@ void report_message(char *message)
     network.unknown2 = 3;
 }
 
+// Network screen keys: digits, Return, Escape and Backspace on the dial pad;
+// Backspace deletes the highlighted phone book entry; Escape leaves; other
+// keys go to the chat line.
 // FUNCTION: 0x00081b38
 void process_keys_network_select(void)
 {
@@ -1033,6 +1069,8 @@ void process_keys_network_select(void)
     BufferedInkey = 0;
 }
 
+// Network screen clicks: presses the button under the mouse in each shown
+// panel and runs its callback.
 // FUNCTION: 0x00081f14
 void process_mouse_network_select(void)
 {
@@ -1126,6 +1164,8 @@ void next_balance_file(void);
 s32 network_service_function_init(void);
 s32 network_service_function_connect(void);
 
+// Connection type buttons: 0 IPX (starts the IPX service and lists the
+// sessions), 1 serial, 2 modem, 3 back to the main menu.
 // FUNCTION: 0x000822c0
 void process_network_buttons(u8 button)
 {
@@ -1169,6 +1209,8 @@ void process_network_buttons(u8 button)
     }
 }
 
+// Level choice button: chooses net_control.players[button]'s level and
+// starts the game.
 // FUNCTION: 0x0008242c
 void process_level_buttons(u8 button)
 {
@@ -1177,6 +1219,9 @@ void process_level_buttons(u8 button)
     screen_packet[player].f5 = 2;
 }
 
+// IPX session panel buttons: 0 create a session (or leave one), 1 join the
+// highlighted session (or, for the session's first player, go on to the
+// level choice), 2-5 scroll the session and player lists.
 // FUNCTION: 0x00082480
 void process_ipx_buttons(u8 button)
 {
@@ -1245,6 +1290,7 @@ void process_ipx_buttons(u8 button)
     }
 }
 
+// Chat buttons: 0 sends the line typed, 1/2 scroll the messages.
 // FUNCTION: 0x00082740
 void process_message_buttons(u8 button)
 {
@@ -1271,6 +1317,7 @@ void process_message_buttons(u8 button)
     }
 }
 
+// Balance file buttons: 0 previous, 1 next.
 // FUNCTION: 0x00082838
 void process_balance_buttons(u8 button)
 {
@@ -1288,6 +1335,7 @@ void process_balance_buttons(u8 button)
     }
 }
 
+// IRQ list buttons: 0 scrolls up, 1 down (TopIRQ 0-4).
 // FUNCTION: 0x000828d4
 void process_irq_buttons(u8 button)
 {
@@ -1311,6 +1359,10 @@ void process_irq_buttons(u8 button)
     }
 }
 
+// Serial panel buttons: 0/1 scroll the baud or player list, 4/5 the port
+// list, 2 joins and 3 creates a serial session on the chosen port, baud and
+// IRQ. Once connected, 2 goes on to the level choice (first player only)
+// and 3 leaves.
 // FUNCTION: 0x000829a4
 void process_serial_buttons(u8 button)
 {
@@ -1421,6 +1473,10 @@ void process_serial_buttons(u8 button)
     }
 }
 
+// Modem panel buttons: 0/1 scroll the phone book or player list, 5/6 the
+// baud list, 2 opens the dial pad, 3 dials the highlighted number and 4
+// waits for a call. Once connected, 4 goes on to the level choice (first
+// player only) and 3 leaves. Ignored while the dial pad is open.
 // FUNCTION: 0x00082da0
 void process_modem_buttons(u8 button)
 {
@@ -1648,6 +1704,8 @@ void process_modem_buttons(u8 button)
     }
 }
 
+// Dial pad buttons: 0-8 type 1-9, 9 types 0, 10 adds the number to the
+// phone book.
 // FUNCTION: 0x00083554
 void process_number_buttons(u8 button)
 {
@@ -1693,6 +1751,8 @@ void process_number_buttons(u8 button)
 extern "C" {
 }
 
+// Draws three phone book entries from BookIndex (and the number being
+// typed); clicking one highlights it (BookHilight).
 // FUNCTION: 0x00083684
 void draw_phone_numbers(void)
 {
@@ -1734,6 +1794,8 @@ extern "C" {
 void draw_available_sessions(SessionInfo *sessions);
 }
 
+// IPX session panel: the players once connected, else the session list.
+// Starts the game when it begins.
 // FUNCTION: 0x0008385c
 void draw_network_game_selection_screen(void)
 {
@@ -1759,6 +1821,8 @@ void draw_network_game_selection_screen(void)
     }
 }
 
+// Message box: runs the login exchange or starts the game, as the other
+// panels.
 // FUNCTION: 0x000838e8
 void draw_report_selection_screen(void)
 {
@@ -1774,6 +1838,8 @@ void draw_report_selection_screen(void)
     }
 }
 
+// Level choice panel: runs the login exchange or starts the game, as the
+// other panels.
 // FUNCTION: 0x00083944
 void draw_level_selection_screen(void)
 {
@@ -1789,6 +1855,7 @@ void draw_level_selection_screen(void)
     }
 }
 
+// Draws three chat messages from TopMessage.
 // FUNCTION: 0x000839a0
 void draw_message_box(void)
 {
@@ -1806,6 +1873,9 @@ void draw_message_box(void)
 
 void update_message_box(u8 c, u8 flag, u8 from);
 
+// Exchanges each player's screen_packet and acts on their requests: chat
+// keys, starting the game (all players), leaving the session, and opening the
+// level choice (the first player) when the game is to start.
 // FUNCTION: 0x00083a78
 void process_login_exchange(void)
 {
@@ -1880,6 +1950,7 @@ void process_login_exchange(void)
     }
 }
 
+// Requests the start of the network game. Returns 0.
 // FUNCTION: 0x00083d98
 u8 start_session(void)
 {
@@ -1890,6 +1961,9 @@ u8 start_session(void)
 extern "C" {
 }
 
+// Applies chat key `key` (scan code; shift is nonzero for upper case) from
+// player `from` to their chat line: Escape clears, Return posts the line to
+// the message list (9 kept), Backspace deletes, other keys append.
 // FUNCTION: 0x00083dc4
 void update_message_box(u8 key, u8 shift, u8 from)
 {
@@ -1986,6 +2060,9 @@ extern LevelPacket swap_level_packet[];
 void draw_players_on_session(u32 session);
 void balance_filename(char *name);
 
+// Draws the names of the session's players from login_control.f1f in the
+// modem/serial panel (com_panel set) or the IPX panel, and counts them in
+// player_count.
 // FUNCTION: 0x000841b8
 void draw_active_session(u8 com_panel)
 {
@@ -2015,6 +2092,8 @@ void draw_active_session(u8 com_panel)
     }
 }
 
+// LbNetwork_EnumerateSessions callback: appends the session's name and entry
+// to the session list (session_count).
 // FUNCTION: 0x000842d4
 void sessions_callback(TbNetworkCallbackData *data, void *arg)
 {
@@ -2026,6 +2105,9 @@ void sessions_callback(TbNetworkCallbackData *data, void *arg)
     session_count++;
 }
 
+// Lists the sessions on the network sorted by name, keeps the highlight on
+// the same session by name, draws three of them from TopSession with the
+// highlighted session's players, and lets a click highlight another.
 // FUNCTION: 0x00084324
 void draw_available_sessions(SessionInfo *sessions)
 {
@@ -2116,6 +2198,8 @@ void draw_available_sessions(SessionInfo *sessions)
     }
 }
 
+// LbNetwork_EnumeratePlayers callback: appends the player's name to
+// player_names (player_count).
 // FUNCTION: 0x00084748
 void __stdcall players_callback(TbNetworkCallbackData *data, void *arg)
 {
@@ -2126,6 +2210,8 @@ void __stdcall players_callback(TbNetworkCallbackData *data, void *arg)
     player_count++;
 }
 
+// Draws the names of the players in session `session` (a session_pointers
+// index), from login_control.f1f.
 // FUNCTION: 0x00084784
 void draw_players_on_session(u32 session)
 {
@@ -2148,6 +2234,8 @@ void draw_players_on_session(u32 session)
     }
 }
 
+// Network game: makes every player use the session runner's level_number and
+// balance file.
 // FUNCTION: 0x00084864
 void swap_level_number(void)
 {
@@ -2163,20 +2251,25 @@ void swap_level_number(void)
     }
 }
 
+// Does nothing.
 // FUNCTION: 0x00084924
 void swap_month_end_packets(void)
 {
 }
 
+// Network game: shares each player's result for the current criterion (fail:
+// 1 failed, 0 passed) and sets othervar.fa6c[i] for each player who failed.
+// When `active`, sets othervar.fa5e to the message to show: 1 nobody passed,
+// 2 this player failed, 3 this player passed.
 // FUNCTION: 0x0008493c
 void swap_criteria_packets(u8 fail, u8 active)
 {
-    u8 losers;
-    u8 winners;
+    u8 passed;
+    u8 failed;
     u8 i;
 
-    losers = 0;
-    winners = 0;
+    passed = 0;
+    failed = 0;
     if (statvar.unknownfd > 1) {
         criteria_packet[player].result = fail;
         LbNetwork_ChangeExchangeBuffer(criteria_packet, 6);
@@ -2185,19 +2278,19 @@ void swap_criteria_packets(u8 fail, u8 active)
             othervar.fa6c[i] = 0;
             if (D_001609c4[i].active) {
                 if (criteria_packet[i].result == 0) {
-                    losers++;
+                    passed++;
                 } else if (criteria_packet[i].result == 1) {
-                    winners++;
+                    failed++;
                     othervar.fa6c[i] = 1;
                 }
             }
         }
-        if (losers != 0) {
-            if (winners)
+        if (passed != 0) {
+            if (failed)
                 advisor.f2 = 2;
         }
         if (active) {
-            if (losers == 0)
+            if (passed == 0)
                 othervar.fa5e = 1;
             else if (fail)
                 othervar.fa5e = 2;
@@ -2243,6 +2336,8 @@ extern YearEndPacket D_00154a48[];
 /* The exchanged packets start with a 4-byte header, which overlaps D_00154a0c. */
 #define YEAR_END_PACKETS ((u8 *)D_00154a0c + 0x38)
 
+// Network game: shares each hospital's year-end figures (balance, loan,
+// value, statistics) so every machine has all players' allhosps entries.
 // FUNCTION: 0x00084a68
 void swap_year_end_packets(void)
 {
@@ -2310,6 +2405,8 @@ extern "C" {
 extern u8 D_0016053c[];
 }
 
+// Starts network service `service` (data: the serial or modem settings, or 0)
+// for up to max_players players. Returns 1 on success.
 // FUNCTION: 0x000850f4
 u8 setup_network(TbNetworkService service, void *data, u8 max_players)
 {
@@ -2328,6 +2425,8 @@ u8 setup_network(TbNetworkService service, void *data, u8 max_players)
 
 void reset_message_text(void);
 
+// Creates a session named after the player (a default name gets an "A"
+// added). Returns the LbNetwork_Create result, 0 (Lb_OK) on success.
 // FUNCTION: 0x00085198
 s32 create_session(void)
 {
@@ -2350,6 +2449,9 @@ s32 create_session(void)
     return res;
 }
 
+// Joins the highlighted session (a default name gets a letter added) and
+// shows the chat panel. Returns the LbNetwork_Join result, 0 (Lb_OK) on
+// success or if no session is highlighted.
 // FUNCTION: 0x00085248
 s32 join_session(void)
 {
@@ -2378,6 +2480,8 @@ s32 join_session(void)
     return res;
 }
 
+// Draws text centred in the column from x, w wide, at height y, in the small
+// font.
 // FUNCTION: 0x00085334
 void draw_small_centre_text(s16 x, s16 w, s16 y, char *text)
 {
@@ -2387,6 +2491,7 @@ void draw_small_centre_text(s16 x, s16 w, s16 y, char *text)
     LbTextDraw(0, y, text);
 }
 
+// As draw_small_centre_text, in the highlighted font.
 // FUNCTION: 0x00085388
 void draw_small_highlight_centre_text(s16 x, s16 w, s16 y, char *text)
 {
@@ -2396,12 +2501,15 @@ void draw_small_highlight_centre_text(s16 x, s16 w, s16 y, char *text)
     LbTextDraw(0, y, text);
 }
 
+// Returns the current font's line height (the height of its 'A').
 // FUNCTION: 0x000853dc
 s16 character_height(void)
 {
     return lbFontPtr ? lbFontPtr[34].height : 0;
 }
 
+// Sends the key in BufferedInkey (keypad keys mapped to the main keys, 0x80
+// added for Shift) as this player's chat key, and clears it. Returns 0.
 // FUNCTION: 0x00085420
 u8 send_message(void)
 {
@@ -2432,6 +2540,7 @@ extern s32 ClockTick;
 extern "C" {
 }
 
+// Draws the chat line being typed with a blinking cursor.
 // FUNCTION: 0x00085538
 void draw_current_message(char *text)
 {
@@ -2461,6 +2570,7 @@ s32 nth_other_active_player(s32 n);
 s32 nth_active_player(s32 n);
 }
 
+// Returns the nth (1-based) active player other than this one, or -1.
 // FUNCTION: 0x00085660
 s32 nth_other_active_player(s32 nth)
 {
@@ -2478,6 +2588,7 @@ s32 nth_other_active_player(s32 nth)
     return -1;
 }
 
+// Returns the nth (1-based) active player, or -1.
 // FUNCTION: 0x000856c8
 s32 nth_active_player(s32 nth)
 {
@@ -2501,6 +2612,9 @@ void fn_000c93bf(char *dst, char *src);
 
 u8 cheat_mode(char *text);
 
+// In-game message keys: F1-F3 address another player, F4 everyone, Return
+// sends the message (or, in a single-player game, tries it as a cheat
+// code), Escape cancels; other keys are typed via events.
 // FUNCTION: 0x00085724
 void process_nettext_keys(u8 shift, u8 key)
 {
@@ -2568,6 +2682,8 @@ void process_nettext_keys(u8 shift, u8 key)
 extern u32 TimeStamp;
 extern u32 TimeLapse;
 
+// Draws the scrolling message ticker and, while a message is being typed,
+// the line being typed with its addressee.
 // FUNCTION: 0x000859b4
 void do_net_text(void)
 {
@@ -2626,6 +2742,8 @@ void do_net_text(void)
     lbDisplay.draw_flags = saved;
 }
 
+// Appends player `from`'s finished message to the scrolling ticker and
+// clears it.
 // FUNCTION: 0x00085ce8
 void net_text_display(u8 from)
 {
@@ -2655,6 +2773,8 @@ void net_text_display(u8 from)
     othervar.f4b = 0xc8;
 }
 
+// Appends key `key` (scan code, 0x80 set for Shift) to player `who`'s message
+// being typed (49 characters at most).
 // FUNCTION: 0x00085e50
 void net_text_keypress(u8 key, u8 who)
 {
@@ -2677,6 +2797,7 @@ void net_text_keypress(u8 key, u8 who)
     }
 }
 
+// Deletes the last character of player `who`'s message being typed.
 // FUNCTION: 0x00085f3c
 void net_text_delete(u8 who)
 {
@@ -2694,6 +2815,7 @@ void net_text_delete(u8 who)
     }
 }
 
+// Leaves the session, or the network screen when not in one.
 // FUNCTION: 0x00085fc4
 void network_button_quit(void)
 {
@@ -2711,6 +2833,7 @@ void network_button_quit(void)
     }
 }
 
+// Clears the chat messages and lines.
 // FUNCTION: 0x00086040
 void reset_message_text(void)
 {
@@ -2726,6 +2849,8 @@ void reset_message_text(void)
 s32 create_session(void);
 s32 join_session(void);
 
+// Creates a session if not in one and shows its panels. Returns
+// create_session's result (0 if already in a session).
 // FUNCTION: 0x000860a4
 s32 network_button_create(void)
 {
@@ -2748,6 +2873,7 @@ s32 network_button_create(void)
     return res;
 }
 
+// Sends Return as this player's chat key, posting the line typed.
 // FUNCTION: 0x00086130
 void network_button_message(void)
 {
@@ -2755,6 +2881,8 @@ void network_button_message(void)
     screen_packet[player].f5 = 7;
 }
 
+// Joins the highlighted session if not in one. Returns join_session's result
+// (0 if already in a session).
 // FUNCTION: 0x00086164
 s32 network_button_join(void)
 {
@@ -2771,6 +2899,8 @@ s32 network_button_join(void)
     return res;
 }
 
+// Names each active player's hospital after the player, and sets every
+// hospital's f2a to 1.
 // FUNCTION: 0x000861c0
 void init_network_players(void)
 {
@@ -2789,6 +2919,9 @@ extern "C" {
 char *strstr(char *s, char *sub);
 }
 
+// Reads levels/net<n>.dat, the levels for an n-player game, into net_control
+// (up to six: level number, title and the name for language myplayer.f21);
+// net_control.f4 is their count, -1 if none.
 // FUNCTION: 0x00086240
 void network_read_control(u8 n)
 {
@@ -2858,6 +2991,7 @@ void network_read_control(u8 n)
     LbMemoryFree(buf);
 }
 
+// Returns the number of active players in the session.
 // FUNCTION: 0x000864f4
 u8 network_num_players(void)
 {
@@ -2878,6 +3012,8 @@ u8 network_num_players(void)
 extern "C" {
 }
 
+// Applies the cheat whose code is `text` (cheat_text). Returns 1 if text is
+// a cheat code.
 // FUNCTION: 0x00086544
 u8 cheat_mode(char *text)
 {
@@ -2934,6 +3070,8 @@ extern "C" {
 int LbScreenLock(void);
 }
 
+// Keeps the network screen running while the network layer waits for a
+// connection. Returns -7 if the player cancels, 1 when the screen is ready.
 // FUNCTION: 0x000866cc
 s32 network_service_function(void)
 {
@@ -2963,12 +3101,15 @@ s32 network_service_function(void)
     return 1;
 }
 
+// Cancel button of the connecting box: aborts the connection attempt.
 // FUNCTION: 0x00086788
 void process_connecting_buttons(u8 button)
 {
     aborted_net = 1;
 }
 
+// Waiting callback while the modem initialises: shows "initialising" and
+// runs network_service_function.
 // FUNCTION: 0x000867ac
 s32 network_service_function_init(void)
 {
@@ -2977,6 +3118,8 @@ s32 network_service_function_init(void)
     return network_service_function();
 }
 
+// Waiting callback while the modem connects: shows "dialling" and runs
+// network_service_function.
 // FUNCTION: 0x000867f0
 s32 network_service_function_connect(void)
 {
@@ -2988,6 +3131,8 @@ s32 network_service_function_connect(void)
 extern "C" {
 }
 
+// Player `who` has switched away from the game: pauses with the lost focus
+// screen (display_mode 0xd), remembering the previous display mode.
 // FUNCTION: 0x00086834
 void network_lost_focus(s32 who)
 {
@@ -3000,6 +3145,8 @@ void network_lost_focus(s32 who)
     }
 }
 
+// Player `who` is back: resumes the previous display mode once no player is
+// away.
 // FUNCTION: 0x00086890
 void network_gained_focus(s32 who)
 {
@@ -3014,6 +3161,8 @@ void network_gained_focus(s32 who)
     }
 }
 
+// Draws the names of the players who are away in a box in the middle of the
+// screen.
 // FUNCTION: 0x000868f8
 void draw_lost_focus_screen(void)
 {
@@ -3055,6 +3204,7 @@ void draw_lost_focus_screen(void)
     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
 }
 
+// Returns 1 if any player has switched away from the game.
 // FUNCTION: 0x00086b10
 u8 has_any_player_lost_focus(void)
 {
@@ -3071,6 +3221,8 @@ extern "C" {
 u8 fn_00086b60(void);
 }
 
+// If this is the only player left in a network game, stops the network and
+// ends the game (winlose state 6). Returns 1 if it did.
 // FUNCTION: 0x00086b60
 u8 fn_00086b60(void)
 {

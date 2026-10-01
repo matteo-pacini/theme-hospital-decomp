@@ -19,6 +19,10 @@ extern "C" {
 
 }
 
+// Earthquake state machine (gamevar.fef): at the scheduled turn
+// (gamevar.f127) a warning tremor, then the main quake shaking the screen
+// and scaring people, damage to the machines (do_earthquake), and once it
+// dies down the next quake is scheduled.
 // FUNCTION: 0x00043b90
 void generate_quake(void)
 {
@@ -66,6 +70,9 @@ void generate_quake(void)
     }
 }
 
+// Schedules the next unused quake_control entry that ends after the current
+// month at a random turn within its months (1500 turns a month), with its
+// magnitude (gamevar.f12b). Clears gamevar.f12c if none is left.
 // FUNCTION: 0x00043d88
 void setup_next_quake(void)
 {
@@ -89,6 +96,9 @@ void setup_next_quake(void)
     }
 }
 
+// Wears every machine by the quake's magnitude (gamevar.f12b uses),
+// updating those past 75% of their strength (modify_machine). Machines in a
+// room being edited or rebuilt are spared.
 // FUNCTION: 0x00043eac
 void do_earthquake(void)
 {
