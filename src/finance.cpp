@@ -46,7 +46,7 @@ struct StatItem {
 extern "C" {
 extern Event D_001549d0[];
 // demo: banktext
-StatItem D_00136388[] = {
+StatItem banktext[] = {
     { 1, 32, 8 },
     { 2, 8, 24 },
     { 3, 2, 40 },
@@ -59,9 +59,9 @@ StatItem D_00136388[] = {
     { 9, 568, 405, { 0x30, 0, 0x1e } },
     { 0, 0, 0 },
 };
-extern char **D_0016032c;
-extern char **D_001602b4;
-extern char **D_001602a4;
+extern char **stat_text;
+extern char **finance_text;
+extern char **illness_text;
 extern u8 D_00156910;
 void StopSample(u32 a, u32 b);
 }
@@ -355,47 +355,47 @@ void bank_statement(void)
     for (i = 0; i < 6; i++) {
         LbTextSetWindow(resvars.f3c_Boxp[i + 4].x, resvars.f3c_Boxp[i + 4].y, resvars.f3c_Boxp[i + 4].w,
                         resvars.f3c_Boxp[i + 4].h);
-        sprintf(buf, "%s", D_0016032c[i]);
+        sprintf(buf, "%s", stat_text[i]);
         LbTextDraw(resvars.f40[71].x, resvars.f40[71].y * 2, buf);
     }
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     line_h = lbFontPtr ? lbFontPtr[34].height : 0;
     char_w = lbFontPtr ? lbFontPtr[34].width : 0;
-    for (i = 0; D_00136388[i].type; i++) {
-        switch (D_00136388[i].type) {
+    for (i = 0; banktext[i].type; i++) {
+        switch (banktext[i].type) {
         case 1:
             sprintf(buf, "%s", myhosp->unknown0 + 9);
-            LbTextDraw(D_00136388[i].x, D_00136388[i].y, buf);
+            LbTextDraw(banktext[i].x, banktext[i].y, buf);
             break;
         case 2:
             break;
         case 3:
             row = 0;
-            first = (D_00136388[7].y - D_00136388[i].y) / line_h;
+            first = (banktext[7].y - banktext[i].y) / line_h;
             first = mycontrol->f64e - first > 0 ? mycontrol->f64e - first : 0;
             balance = mycontrol->f4b4;
             for (k = 0; k < first; k++)
                 balance += mycontrol->entries[k].amount;
-            for (; first < mycontrol->f64e && row < D_00136388[7].y - line_h; first++) {
+            for (; first < mycontrol->f64e && row < banktext[7].y - line_h; first++) {
                 if (row + resvars.f40[72].y > resvars.f40[72].y + line_h * 0x1b)
                     break;
                 sprintf(buf, "%d %s", mycontrol->entries[first].day, month_text[mycontrol->entries[first].month]);
                 LbTextDraw(resvars.f40[72].x, row + resvars.f40[72].y, buf);
                 switch (mycontrol->entries[first].type) {
                 case TX_INSURANCE:
-                    sprintf(buf, "%s %s", D_001602b4[mycontrol->entries[first].type],
+                    sprintf(buf, "%s %s", finance_text[mycontrol->entries[first].type],
                             insurance_names[mycontrol->entries[first].extra]);
                     break;
                 case TX_TREAT:
                 case TX_FINAL_TREAT:
                 case TX_CURE_TREATMENT:
                 case TX_ADVANCE:
-                    sprintf(buf, "%s %s", D_001602b4[mycontrol->entries[first].type],
-                            D_001602a4[mycontrol->entries[first].extra]);
+                    sprintf(buf, "%s %s", finance_text[mycontrol->entries[first].type],
+                            illness_text[mycontrol->entries[first].extra]);
                     break;
                 default:
-                    sprintf(buf, "%s", D_001602b4[mycontrol->entries[first].type]);
+                    sprintf(buf, "%s", finance_text[mycontrol->entries[first].type]);
                     break;
                 }
                 LbTextDraw(resvars.f40[73].x, row + resvars.f40[73].y, buf);
@@ -473,7 +473,7 @@ void process_stat_button(u8 button)
         break;
     case 1:
         play_sound(10, SFX_SELECTX, -1, -1);
-        fn_00074220(0, 0x41);
+        process_keys(0, 0x41);
         break;
     }
 }

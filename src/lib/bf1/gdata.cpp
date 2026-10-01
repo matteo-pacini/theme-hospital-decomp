@@ -10,7 +10,7 @@ int LbAssertMessage(const char *expr, const char *file, unsigned long line);
 extern "C" {
 
 void *LbMemoryAllocLow(u32 size);
-void fn_000cd2cc(char *s, ...);
+void LbErrorLog(char *s, ...);
 void int3(void);
 #pragma aux int3 = 0xcc;
 
@@ -74,7 +74,7 @@ int LbDataLoadAll(TbLoadFiles *files)
     TbLoadFiles *file;
 
     count = 0;
-    fn_000cd2cc("LbDataLoadAll");
+    LbErrorLog("LbDataLoadAll");
     for (file = files; file->Start; file++)
         LbDataFree(file);
     for (file = files; file->Start; file++) {

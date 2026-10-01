@@ -6,7 +6,7 @@ extern s16 diag_register[][8];
 
 extern "C" {
 
-extern char **D_001602a4;
+extern char **illness_text;
 
 void fn_000c93bf(char *dst, char *src);
 
@@ -609,7 +609,7 @@ void person_go_for_treatment(Thing *patient)
             patient->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
         patient->state = PS_GOTO_QUEUE;
-        fn_0004195c(patient, pos);
+        set_destination_coords(patient, pos);
         break;
     }
     }
@@ -716,7 +716,7 @@ u16 call_no_diagnosis(Thing *patient, char **strs)
     } else if (pct > 99) {
         pct = 99;
     }
-    sprintf(buf1, strs[2], pct, D_001602a4[patient->illness]);
+    sprintf(buf1, strs[2], pct, illness_text[patient->illness]);
     if (allhosps[patient->owner].rooms[patient->illness].unknown1C != 1 || allhosps[patient->owner].rooms[patient->illness].unknown1D == 0) {
         available_buttons &= ~2;
     }

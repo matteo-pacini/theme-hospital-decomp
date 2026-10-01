@@ -2,48 +2,48 @@
 
 extern "C" {
 
-extern char **D_00160298;
-extern char **D_0016029c;
-extern char **D_001602a0;
-extern char **D_001602a4;
-extern char **D_001602a8;
-extern char **D_001602b0;
-extern char **D_001602b4;
-extern char **D_001602c4;
-extern char **D_001602c8;
-extern char **D_001602cc;
-extern char **D_001602d0;
-extern char **D_001602d4;
-extern char **D_001602d8;
-extern char **D_001602dc;
-extern char **D_001602e0;
-extern char **D_001602e8;
-extern char **D_001602ec;
-extern char **D_001602f0;
-extern char **D_001602f4;
-extern char **D_001602fc;
-extern char **D_00160364;
-extern char **D_00160304;
-extern char **D_00160308;
-extern char **D_00160318;
-extern char **D_0016032c;
-extern char **D_0016031c;
-extern char **D_00160320;
-extern char **D_0016033c;
-extern char **D_00160354;
-extern char **D_00160358;
-extern char **D_0016035c;
-extern char **D_00160360;
-extern char **D_00160370;
-extern char **D_00160374;
-extern char **D_0016036c;
-extern char **D_00160368;
-extern char **D_0016037c;
-extern char **D_00160380;
-extern char **D_00160378;
-extern char **D_00160388;
-extern char **D_00160390;
-extern char **D_00160394;
+extern char **staff_names;
+extern char **object_names;
+extern char **misc_text;
+extern char **illness_text;
+extern char **computer_names;
+extern char **report_text;
+extern char **finance_text;
+extern char **town_names;
+extern char **town_details;
+extern char **room_names;
+extern char **supplier_names;
+extern char **req1_help;
+extern char **research_names;
+extern char **policy_names;
+extern char **department_names;
+extern char **forced_advice_text;
+extern char **mouse_advice_text;
+extern char **pulldown_text;
+extern char **slist_text;
+extern char **chart_types;
+extern char **trophy_text;
+extern char **cabinet_text;
+extern char **network_text;
+extern char **skill_names;
+extern char **stat_text;
+extern char **win_lose;
+extern char **win_text;
+extern char **credit_text;
+extern char **queue_text;
+extern char **winlose_text;
+extern char **progress_text;
+extern char **debug_msgs;
+extern char **real_room_names;
+extern char **level_text;
+extern char **good_awards_text;
+extern char **bad_awards_text;
+extern char **show_help_text_0;
+extern char **show_help_text_1;
+extern char **overview_text;
+extern char **staff_unhappy_text;
+extern char **trophy_bonus_messages;
+extern char **win_criteria_help;
 extern char **D_00160398;
 extern char **D_0016039c;
 
@@ -53,23 +53,23 @@ extern char **D_0016039c;
 u8 set_group_address(s32 group, char **address)
 {
     if (group == 0) {
-        D_00160298 = address;
+        staff_names = address;
         return 1;
     }
     if (group == 1) {
-        D_0016029c = address;
+        object_names = address;
         return 1;
     }
     if (group == 2) {
-        D_001602a0 = address;
+        misc_text = address;
         return 1;
     }
     if (group == 3) {
-        D_001602a4 = address;
+        illness_text = address;
         return 1;
     }
     if (group == 4) {
-        D_001602a8 = address;
+        computer_names = address;
         return 1;
     }
     if (group == 5) {
@@ -77,11 +77,11 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 6) {
-        D_001602b0 = address;
+        report_text = address;
         return 1;
     }
     if (group == 7) {
-        D_001602b4 = address;
+        finance_text = address;
         return 1;
     }
     if (group == 8) {
@@ -97,35 +97,35 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0xb) {
-        D_001602c4 = address;
+        town_names = address;
         return 1;
     }
     if (group == 0xc) {
-        D_001602c8 = address;
+        town_details = address;
         return 1;
     }
     if (group == 0xd) {
-        D_001602cc = address;
+        room_names = address;
         return 1;
     }
     if (group == 0xe) {
-        D_001602d0 = address;
+        supplier_names = address;
         return 1;
     }
     if (group == 0xf) {
-        D_001602d4 = address;
+        req1_help = address;
         return 1;
     }
     if (group == 0x10) {
-        D_001602d8 = address;
+        research_names = address;
         return 1;
     }
     if (group == 0x11) {
-        D_001602dc = address;
+        policy_names = address;
         return 1;
     }
     if (group == 0x12) {
-        D_001602e0 = address;
+        department_names = address;
         return 1;
     }
     if (group == 0x13) {
@@ -133,19 +133,19 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x14) {
-        D_001602e8 = address;
+        forced_advice_text = address;
         return 1;
     }
     if (group == 0x15) {
-        D_001602ec = address;
+        mouse_advice_text = address;
         return 1;
     }
     if (group == 0x16) {
-        D_001602f0 = address;
+        pulldown_text = address;
         return 1;
     }
     if (group == 0x17) {
-        D_001602f4 = address;
+        slist_text = address;
         return 1;
     }
     if (group == 0x18) {
@@ -153,11 +153,11 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x19) {
-        D_001602fc = address;
+        chart_types = address;
         return 1;
     }
     if (group == 0x1a) {
-        D_00160364 = address;
+        trophy_text = address;
         return 1;
     }
     if (group == 0x1b) {
@@ -165,11 +165,11 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x1c) {
-        D_00160304 = address;
+        cabinet_text = address;
         return 1;
     }
     if (group == 0x1d) {
-        D_00160308 = address;
+        network_text = address;
         return 1;
     }
     if (group == 0x1e) {
@@ -185,7 +185,7 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x21) {
-        D_00160318 = address;
+        skill_names = address;
         return 1;
     }
     if (group == 0x22) {
@@ -197,15 +197,15 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x24) {
-        D_0016032c = address;
+        stat_text = address;
         return 1;
     }
     if (group == 0x25) {
-        D_0016031c = address;
+        win_lose = address;
         return 1;
     }
     if (group == 0x26) {
-        D_00160320 = address;
+        win_text = address;
         return 1;
     }
     if (group == 0x27) {
@@ -221,7 +221,7 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x2a) {
-        D_0016033c = address;
+        credit_text = address;
         return 1;
     }
     if (group == 0x2b) {
@@ -245,43 +245,43 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x30) {
-        D_00160354 = address;
+        queue_text = address;
         return 1;
     }
     if (group == 0x31) {
-        D_00160358 = address;
+        winlose_text = address;
         return 1;
     }
     if (group == 0x32) {
-        D_0016035c = address;
+        progress_text = address;
         return 1;
     }
     if (group == 0x33) {
-        D_00160360 = address;
+        debug_msgs = address;
         return 1;
     }
     if (group == 0x34) {
-        D_00160370 = address;
+        real_room_names = address;
         return 1;
     }
     if (group == 0x35) {
-        D_00160374 = address;
+        level_text = address;
         return 1;
     }
     if (group == 0x36) {
-        D_0016036c = address;
+        good_awards_text = address;
         return 1;
     }
     if (group == 0x37) {
-        D_00160368 = address;
+        bad_awards_text = address;
         return 1;
     }
     if (group == 0x38) {
-        D_0016037c = address;
+        show_help_text_0 = address;
         return 1;
     }
     if (group == 0x39) {
-        D_00160380 = address;
+        show_help_text_1 = address;
         return 1;
     }
     if (group == 0x3a) {
@@ -289,11 +289,11 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x3b) {
-        D_00160378 = address;
+        overview_text = address;
         return 1;
     }
     if (group == 0x3c) {
-        D_00160388 = address;
+        staff_unhappy_text = address;
         return 1;
     }
     if (group == 0x3d) {
@@ -301,11 +301,11 @@ u8 set_group_address(s32 group, char **address)
         return 1;
     }
     if (group == 0x3e) {
-        D_00160390 = address;
+        trophy_bonus_messages = address;
         return 1;
     }
     if (group == 0x3f) {
-        D_00160394 = address;
+        win_criteria_help = address;
         return 1;
     }
     if (group == 0x42) {

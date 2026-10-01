@@ -10,7 +10,7 @@ struct ComputerBucket {
 };
 
 extern "C" {
-extern u16 D_00158190[];
+extern u16 choice[];
 extern Event D_001549d0[];
 }
 
@@ -230,7 +230,7 @@ void check_quarterly_game_over(void)
             if (othervar.f74 > 200000000)
                 othervar.f74 = 200000000;
             if (display_mode == 9) {
-                fn_000c21e6(&year_end_backup.unknown2, D_00158190, 10);
+                fn_000c21e6(&year_end_backup.unknown2, choice, 10);
                 year_end_backup.mode = display_mode;
                 year_end_backup.f6 = choice_spare_data;
                 year_end_backup.f8 = choice_time_out;
@@ -615,7 +615,7 @@ u8 check_net_criteria(const u8 owner)
     } else {
         setup_next_net_criteria(owner);
     }
-    fn_0008493c(fail, active);
+    swap_criteria_packets(fail, active);
     if (owner == player) {
         if (evaluate_criteria(owner) >= 100) {
             D_001549d0[player].type = 0x90;

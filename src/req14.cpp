@@ -3,9 +3,9 @@
 extern "C" {
 extern Event D_001549d0[];
 s32 D_00145328 = -1;
-extern char **D_0016029c;
-extern char **D_001602a0;
-extern char **D_001602cc;
+extern char **object_names;
+extern char **misc_text;
+extern char **room_names;
 
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
@@ -154,11 +154,11 @@ void req14_overdraw(Window *win)
     LbTextSetJustifyWindow(ox + resvars.f18[0x25].x, oy + resvars.f18[0x25].y, resvars.f18[0x25].w);
     set_font_from_cache(1);
     lbDisplay.draw_flags = 0x100;
-    LbTextDraw(0, 0, D_001602cc[rooms[crequester.unknown8].id]);
+    LbTextDraw(0, 0, room_names[rooms[crequester.unknown8].id]);
     if (resvars.f0 == SCREEN_MODE_13) {
         lbDisplay.draw_flags = 0x20;
         LbTextSetJustifyWindow(ox + resvars.f18[0x26].x, oy + resvars.f18[0x26].y, resvars.f18[0x26].w);
-        LbTextDraw(0, 0, D_001602a0[othervar.f9c0]);
+        LbTextDraw(0, 0, misc_text[othervar.f9c0]);
         lbDisplay.draw_flags = 0;
     }
     top = oy + resvars.f1c[0x6e].y;
@@ -213,7 +213,7 @@ void req14_overdraw(Window *win)
                 LbTextSetClipWindow(ox + resvars.f18[0x27].x, by + resvars.f18[0x27].y,
                     resvars.f18[0x29].w + resvars.f18[0x28].w + 0x14, resvars.f18[0x27].h);
                 LbTextSetJustifyWindow(ox + resvars.f18[0x28].x, by + resvars.f18[0x28].y, resvars.f18[0x28].w);
-                LbTextDraw(0, 0, D_0016029c[obj]);
+                LbTextDraw(0, 0, object_names[obj]);
                 LbTextSetJustifyWindow(ox + resvars.f18[0x29].x, by + resvars.f18[0x29].y, resvars.f18[0x29].w);
                 sprintf(buf, "%d", count);
                 LbTextDraw(0, 0, buf);
@@ -287,7 +287,7 @@ void open_edit_room_requester(void)
     if (crequester.unknown2 == 0x63) {
         close_irequesters();
         crequester.unknown2 = 5;
-        fn_0001bc94(crequester.unknown2, 1);
+        open_requester(crequester.unknown2, 1);
     }
 }
 

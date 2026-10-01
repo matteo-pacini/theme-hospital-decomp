@@ -3589,7 +3589,7 @@ void clean_contagious_peep(Thing *w);
 Thing *find_door(Thing *w);
 u32 old_normal_rand(u32 a, u32 b);
 s16 get_state(const u16 room, const Thing *w);
-u8 process_staff_complex(Thing *w);
+u8 evacuate_staff(Thing *w);
 u8 take_a_break(Thing *w);
 u32 shall_i_resign(Thing *w);
 u8 obey_pager(Thing *w);
@@ -3797,7 +3797,7 @@ s8 load_level(const u8 level, const u8 full);
 s16 save_game_valid(const s8 slot);
 void setup_addresses(void);
 void free_level(void);
-void check_autosave(void);
+void reset_earthquake_variables(void);
 s32 read_level_number(s32 n);
 void load_balance(const u16 level);
 void reset_advisor(void);
@@ -3811,41 +3811,41 @@ extern u8 for_sale[];
  * keep their address names and are bound to that symbol explicitly.
  */
 extern "C" {
-u16 fn_00021818(s8 slot, s8 player);
-#pragma aux fn_00021818 "W?save_game$n(xc)s"
-s16 fn_00021c38(s8 slot, s8 player);
-#pragma aux fn_00021c38 "W?load_game$n(xc)s"
-u16 fn_00029c4c(u16 tile, u16 id, u8 flag, u8 owner);
-#pragma aux fn_00029c4c "W?place_staff_on_map$n(xusxusuc)s"
-u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner);
-#pragma aux fn_00037098 "W?place_object$n(ususuc)us"
-void fn_0004195c(Thing *w, u16 a);
-#pragma aux fn_0004195c "W?nav_init$n(pn$Thing$$)v"
-void fn_00074220(u8 a, u8 b);
-#pragma aux fn_00074220 "W?keybuffer_clear$n()v"
+u16 save_game(s8 slot, s8 player);
+#pragma aux save_game "W?save_game$n(xc)s"
+s16 load_game(s8 slot, s8 player);
+#pragma aux load_game "W?load_game$n(xc)s"
+u16 place_staff_on_map(u16 tile, u16 id, u8 flag, u8 owner);
+#pragma aux place_staff_on_map "W?place_staff_on_map$n(xusxusuc)s"
+u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner);
+#pragma aux place_object "W?place_object$n(ususuc)us"
+void set_destination_coords(Thing *w, u16 a);
+#pragma aux set_destination_coords "W?set_destination_coords$n(pn$Thing$$us)v"
+void process_keys(u8 a, u8 b);
+#pragma aux process_keys "W?process_keys$n(ucuc)v"
 u8 LbPaletteFindColour(u8 *palette, int r, int g, int b);
-void fn_0001bc94(u8 idx, u8 flag);
-u8 fn_0003e724(Thing *w);
-#pragma aux fn_0003e724 "W?fail_staff_complex$n(pn$Thing$$)v"
-#pragma aux fn_0001bc94 "W?open_requester$n(uc)v"
-void fn_0007d2a8(u8 owner, u16 tile);
-#pragma aux fn_0007d2a8 "W?delete_wall$n(ususuc)v"
-u8 fn_000b0630(u16 tile, u8 parity);
-#pragma aux fn_000b0630 "W?search_mapwho$n(pn$Map$$us)pn$Thing$$"
-u8 fn_00022854(u8 warn);
-#pragma aux fn_00022854 "W?is_player_building$n()uc"
-void fn_00090804(int level, u8 flag);
-#pragma aux fn_00090804 "W?setup_new_level$n(xus)v"
-Thing *fn_0003c154(RoomInfo *room, u8 kind);
-#pragma aux fn_0003c154 "W?find_waiting_surgeon$n(pn$RoomInfo$$)pn$Thing$$"
-u8 fn_0003c1e8(Thing *w, u16 action);
-#pragma aux fn_0003c1e8 "W?forget_about_my_slave$n(us)uc"
-void fn_0008493c(u8 fail, u8 active);
-#pragma aux fn_0008493c "W?swap_criteria_packets$n(uc)v"
-u16 fn_00073e64(u16 id, u32 flags);
-#pragma aux fn_00073e64 "W?find_next_emergency_person$n(us)us"
-void fn_000b4510(const u8 a, const s8 dir, const u8 level, const s16 value, u8 type);
-#pragma aux fn_000b4510 "W?set_award_value$n(xucxucxucxsuc)v"
+void open_requester(u8 idx, u8 flag);
+u8 process_staff_complex(Thing *w);
+#pragma aux process_staff_complex "W?process_staff_complex$n(pn$Thing$$)uc"
+#pragma aux open_requester "W?open_requester$n(uc)v"
+void clear_cell_of_ratholes(u8 owner, u16 tile);
+#pragma aux clear_cell_of_ratholes "W?clear_cell_of_ratholes$n(ucus)v"
+u8 door(u16 tile, u8 parity);
+#pragma aux door "W?door$n(xusxuc)uc"
+u8 check_okay_to_save(u8 warn);
+#pragma aux check_okay_to_save "W?check_okay_to_save$n(uc)uc"
+void setup_new_level(int level, u8 flag);
+#pragma aux setup_new_level "W?setup_new_level$n(xus)v"
+Thing *find_waiting_surgeon(RoomInfo *room, u8 kind);
+#pragma aux find_waiting_surgeon "W?find_waiting_surgeon$n(pn$RoomInfo$$)pn$Thing$$"
+u8 forget_about_my_slave(Thing *w, u16 action);
+#pragma aux forget_about_my_slave "W?forget_about_my_slave$n(us)uc"
+void swap_criteria_packets(u8 fail, u8 active);
+#pragma aux swap_criteria_packets "W?swap_criteria_packets$n(uc)v"
+u16 find_next_emergency_person(u16 id, u32 flags);
+#pragma aux find_next_emergency_person "W?find_next_emergency_person$n(us)us"
+void set_award_value(const u8 a, const s8 dir, const u8 level, const s16 value, u8 type);
+#pragma aux set_award_value "W?set_award_value$n(xucxucxucxsuc)v"
 
 
 }
@@ -3862,7 +3862,7 @@ struct PlayerSlot {
 };
 
 extern PlayerSlot D_001609c4[];
-#pragma aux D_001609c4 "W?popup_store$n[][9]$PlayerCall$$"
+#pragma aux D_001609c4 "_D_001609c4"
 }
 
 #endif

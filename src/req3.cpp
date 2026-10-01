@@ -43,8 +43,8 @@ struct ReqLayout {
 extern "C" {
 extern Slot D_001581b2[];
 extern Event D_001549d0[];
-extern char **D_001602a4;
-void fn_0001b7e0(char *dst, char *src, u8 mode);
+extern char **illness_text;
+void conv_string(char *dst, char *src, u8 mode);
 void fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 }
@@ -250,10 +250,10 @@ void draw_diagnosis(Thing *patient, u16 x, u16 y)
         if (!patient->treatments[i])
             break;
         if (resvars.f1 == SCREEN_MODE_13) {
-            sprintf(buf, " %s", D_001602a4[patient->treatments[i]]);
-            fn_0001b7e0(buf, buf, 0);
+            sprintf(buf, " %s", illness_text[patient->treatments[i]]);
+            conv_string(buf, buf, 0);
         } else {
-            sprintf(buf, "%s", D_001602a4[patient->treatments[i]]);
+            sprintf(buf, "%s", illness_text[patient->treatments[i]]);
         }
         dy += lbFontPtr ? lbFontPtr[34].height : 0;
         LbTextDraw(x + resvars.f18_ReqLayoutp->diag.x, dy + y + resvars.f18_ReqLayoutp->diag.y, buf);
@@ -261,7 +261,7 @@ void draw_diagnosis(Thing *patient, u16 x, u16 y)
     if (patient->flags & PF_CURED) {
         if (resvars.f1 == SCREEN_MODE_13) {
             sprintf(buf, " %s", info_bar_text[8]);
-            fn_0001b7e0(buf, buf, 0);
+            conv_string(buf, buf, 0);
         } else {
             sprintf(buf, "%s", info_bar_text[8]);
         }
@@ -396,7 +396,7 @@ extern "C" void fn_000741a4(void)
 }
 
 // FUNCTION: 0x00073e64
-u16 fn_00073e64(u16 id, u32 flags)
+u16 find_next_emergency_person(u16 id, u32 flags)
 {
     Thing *person;
     u8 found;

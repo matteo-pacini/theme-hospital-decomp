@@ -24,9 +24,9 @@ u32 LoadSounds(u8 bank)
     SoundProgressLog(SoundProgressMessage);
     if (SoundInstalled && SoundAble && CurrentSoundBank != number && !DisableLoadSounds) {
         StopAllSamples();
-        file = LbFileOpen(D_0018d4c4, 2);
+        file = LbFileOpen(full_sound_data_path, 2);
         if (file != -1) {
-            LbFileSeek(file, LbFileLength(D_0018d4c4) - 4, 0);
+            LbFileSeek(file, LbFileLength(full_sound_data_path) - 4, 0);
             LbFileRead(file, &offset, 4);
             LbFileSeek(file, offset, 0);
             LbFileRead(file, counts, sizeof(counts));
@@ -170,54 +170,54 @@ s32 AllocateSoundBankMemory(u16 type)
     s32 data_size;
     s32 tab_size;
 
-    sprintf(D_0018d4c4, "%s/SOUND.DAT", SoundDataPath);
-    file = LbFileOpen(D_0018d4c4, 2);
+    sprintf(full_sound_data_path, "%s/SOUND.DAT", SoundDataPath);
+    file = LbFileOpen(full_sound_data_path, 2);
     if (file == -1)
         return -1;
     tab_size = 0;
     data_size = 0;
-    length = LbFileLength(D_0018d4c4);
-    memset(D_0018d474, 0, 0x48);
+    length = LbFileLength(full_sound_data_path);
+    memset(sound_bank_size_info, 0, 0x48);
     LbFileSeek(file, 0, 2);
     LbFileSeek(file, length - 0x4c, 0);
-    LbFileRead(file, D_0018d474, 0x48);
+    LbFileRead(file, sound_bank_size_info, 0x48);
     LbFileClose(file);
     switch (type) {
     case 0x66c:
-        data_size = D_0018d474[0].data_size;
-        tab_size = D_0018d474[0].tab_size;
+        data_size = sound_bank_size_info[0].data_size;
+        tab_size = sound_bank_size_info[0].tab_size;
         break;
     case 0x668:
-        data_size = D_0018d474[1].data_size;
-        tab_size = D_0018d474[1].tab_size;
+        data_size = sound_bank_size_info[1].data_size;
+        tab_size = sound_bank_size_info[1].tab_size;
         break;
     case 0x656:
-        data_size = D_0018d474[2].data_size;
-        tab_size = D_0018d474[2].tab_size;
+        data_size = sound_bank_size_info[2].data_size;
+        tab_size = sound_bank_size_info[2].tab_size;
         break;
     case 0x654:
-        data_size = D_0018d474[3].data_size;
-        tab_size = D_0018d474[3].tab_size;
+        data_size = sound_bank_size_info[3].data_size;
+        tab_size = sound_bank_size_info[3].tab_size;
         break;
     case 0x64b:
-        data_size = D_0018d474[4].data_size;
-        tab_size = D_0018d474[4].tab_size;
+        data_size = sound_bank_size_info[4].data_size;
+        tab_size = sound_bank_size_info[4].tab_size;
         break;
     case 0x64a:
-        data_size = D_0018d474[5].data_size;
-        tab_size = D_0018d474[5].tab_size;
+        data_size = sound_bank_size_info[5].data_size;
+        tab_size = sound_bank_size_info[5].tab_size;
         break;
     case 0x336:
-        data_size = D_0018d474[6].data_size;
-        tab_size = D_0018d474[6].tab_size;
+        data_size = sound_bank_size_info[6].data_size;
+        tab_size = sound_bank_size_info[6].tab_size;
         break;
     case 0x32b:
-        data_size = D_0018d474[7].data_size;
-        tab_size = D_0018d474[7].tab_size;
+        data_size = sound_bank_size_info[7].data_size;
+        tab_size = sound_bank_size_info[7].tab_size;
         break;
     case 0x320:
-        data_size = D_0018d474[8].data_size;
-        tab_size = D_0018d474[8].tab_size;
+        data_size = sound_bank_size_info[8].data_size;
+        tab_size = sound_bank_size_info[8].tab_size;
         break;
     }
     if (data_size != 0 && tab_size != 0) {

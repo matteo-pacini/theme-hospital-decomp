@@ -20,13 +20,13 @@ struct GraphRect {
 };
 
 extern "C" {
-extern GraphLabel D_0015eba0[];
-extern s16 D_0015eb9c;
-extern u8 D_0015eb94[];
+extern GraphLabel GraphTextPos[];
+extern s16 NumText;
+extern u8 colour[];
 extern Event D_001549d0[];
-extern char **D_001602b0;
-void fn_00078d70(s16 kind, s16 value, s32 data);
-void fn_00078e38(u16 gap);
+extern char **report_text;
+void insert_graph_label(s16 kind, s16 value, s32 data);
+void spread_graph_labels(u16 gap);
 void fn_000c9be0(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
 s32 LbTextWordWidth(char *text);
 }
@@ -37,22 +37,22 @@ extern "C" {
 }
 
 // FUNCTION: 0x00078d70
-void fn_00078d70(s16 kind, s16 value, s32 data)
+void insert_graph_label(s16 kind, s16 value, s32 data)
 {
     u8 i;
 
     i = 0;
-    while (D_0015eba0[i].value <= value && i < D_0015eb9c)
+    while (GraphTextPos[i].value <= value && i < NumText)
         i++;
-    memmove(&D_0015eba0[i + 1], &D_0015eba0[i], (D_0015eb9c - i) * 7);
-    D_0015eba0[i].kind = kind;
-    D_0015eba0[i].value = value;
-    D_0015eba0[i].data = data;
-    D_0015eb9c++;
+    memmove(&GraphTextPos[i + 1], &GraphTextPos[i], (NumText - i) * 7);
+    GraphTextPos[i].kind = kind;
+    GraphTextPos[i].value = value;
+    GraphTextPos[i].data = data;
+    NumText++;
 }
 
 // FUNCTION: 0x00078e38
-void fn_00078e38(u16 gap)
+void spread_graph_labels(u16 gap)
 {
     u8 moved;
     s16 i;
@@ -62,17 +62,17 @@ void fn_00078e38(u16 gap)
     moved = 1;
     while (moved) {
         moved = 0;
-        for (i = 0; i < D_0015eb9c; i++) {
-            below = i > 0 && D_0015eba0[i].value - D_0015eba0[i - 1].value < gap ? (u8)1 : (u8)0;
-            above = i < D_0015eb9c - 1 && D_0015eba0[i + 1].value - D_0015eba0[i].value < gap ? (u8)1 : (u8)0;
+        for (i = 0; i < NumText; i++) {
+            below = i > 0 && GraphTextPos[i].value - GraphTextPos[i - 1].value < gap ? (u8)1 : (u8)0;
+            above = i < NumText - 1 && GraphTextPos[i + 1].value - GraphTextPos[i].value < gap ? (u8)1 : (u8)0;
             if (below && !above) {
-                if (D_0015eba0[i].value < resvars.f3c_GraphRectp[46].y)
-                    D_0015eba0[i].value++;
+                if (GraphTextPos[i].value < resvars.f3c_GraphRectp[46].y)
+                    GraphTextPos[i].value++;
                 moved = 1;
             }
             if (!below && above) {
-                if (D_0015eba0[i].value > resvars.f3c_GraphRectp[46].y - resvars.f3c_GraphRectp[46].h - gap)
-                    D_0015eba0[i].value--;
+                if (GraphTextPos[i].value > resvars.f3c_GraphRectp[46].y - resvars.f3c_GraphRectp[46].h - gap)
+                    GraphTextPos[i].value--;
                 moved = 1;
             }
         }
@@ -119,23 +119,23 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     set_font_from_cache(0xb);
     font_height = lbFontPtr ? lbFontPtr[34].height : 0;
     h2 = lbFontPtr ? lbFontPtr[34].height : 0;
-    D_0015eb94[0] = color.unknownD;
-    D_0015eb94[1] = color.unknownC;
-    D_0015eb94[2] = color.unknownB;
-    D_0015eb94[3] = color.unknownA;
-    D_0015eb94[4] = color.unknown12;
-    D_0015eb94[5] = color.unknown9;
-    D_0015eb94[6] = color.unknownF;
-    D_0015eb94[7] = color.unknown14;
+    colour[0] = color.unknownD;
+    colour[1] = color.unknownC;
+    colour[2] = color.unknownB;
+    colour[3] = color.unknownA;
+    colour[4] = color.unknown12;
+    colour[5] = color.unknown9;
+    colour[6] = color.unknownF;
+    colour[7] = color.unknown14;
     for (i = 0; i < 8; i++) {
         if (!graph[i].visible)
             reqspr_draw(resvars.f48[i + 0x25].unknownC, resvars.f48[i + 0x25].unknownE,
                         &screen_sprites_tab_start[resvars.f48[i + 0x25].sprite]);
         LbTextSetWindow(resvars.f3c_GraphRectp[i + 47].x, resvars.f3c_GraphRectp[i + 47].y, resvars.f3c_GraphRectp[i + 47].w, resvars.f3c_GraphRectp[i + 47].h);
         lbDisplay.draw_flags |= 0x140;
-        lbDisplay.draw_colour = D_0015eb94[graph[i].colour];
+        lbDisplay.draw_colour = colour[graph[i].colour];
         lbDisplay.draw_flags |= 0x40;
-        LbTextDraw(0, (resvars.f3c_GraphRectp[i + 47].h - font_height) >> 1, D_001602b0[i + 3]);
+        LbTextDraw(0, (resvars.f3c_GraphRectp[i + 47].h - font_height) >> 1, report_text[i + 3]);
     }
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
@@ -150,7 +150,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         scale = 0x30;
         break;
     }
-    D_0015eb9c = 0;
+    NumText = 0;
     for (i = 0; i < 8; i++) {
         if (graph[i].visible == 1) {
             s32 max;
@@ -209,7 +209,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
                 py = y - (values[othervar.f2d][11] - min) * h / range;
             else if (graph[i].unknown0 == 1)
                 py = y + (values[othervar.f2d][11] - min) * h / range - h;
-            fn_00078d70(i, py - font_height / 2, values[othervar.f2d][11]);
+            insert_graph_label(i, py - font_height / 2, values[othervar.f2d][11]);
             for (k = 11; k > 0 && (12 - k) * 1500 * scale < actual_game_turn; k--) {
                 nx = x - (12 - k) * step;
                 if (graph[i].unknown0 == 0)
@@ -220,20 +220,20 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
                     ny = y - h;
                 else if (ny > y)
                     ny = y;
-                fn_000c9be0(px, py, nx, ny, D_0015eb94[graph[i].colour]);
-                fn_000c9be0(px - 1, py, nx - 1, ny, D_0015eb94[graph[i].colour]);
+                fn_000c9be0(px, py, nx, ny, colour[graph[i].colour]);
+                fn_000c9be0(px - 1, py, nx - 1, ny, colour[graph[i].colour]);
                 px = nx;
                 py = ny;
             }
         }
     }
-    fn_00078e38(font_height);
-    for (k = 0; k < D_0015eb9c; k++) {
-        i = D_0015eba0[k].kind;
-        sprintf(buf, "%s:%d", D_001602b0[graph[i].unknown3], D_0015eba0[k].data);
-        lbDisplay.draw_colour = D_0015eb94[graph[i].colour];
+    spread_graph_labels(font_height);
+    for (k = 0; k < NumText; k++) {
+        i = GraphTextPos[k].kind;
+        sprintf(buf, "%s:%d", report_text[graph[i].unknown3], GraphTextPos[k].data);
+        lbDisplay.draw_colour = colour[graph[i].colour];
         lbDisplay.draw_flags |= 0x40;
-        LbTextDraw(x + 4, D_0015eba0[k].value, buf);
+        LbTextDraw(x + 4, GraphTextPos[k].value, buf);
     }
     month = mycontrol->unknown650;
     year = actual_game_turn / 0x4650;

@@ -15,9 +15,9 @@ extern s8 used_head;
 extern u8 cfonts[];
 
 extern "C" {
-extern s8 D_00175239;
-extern u8 D_00161270[];
-extern u8 D_0016126c;
+extern s8 free_head;
+extern u8 font_buffer[];
+extern u8 call_level;
 extern u8 D_0016126d;
 }
 
@@ -70,10 +70,10 @@ void init_font_cache(void)
     font_memory[i - 1].next = -1;
     fontmem_head = 0;
     used_head = -1;
-    D_00175239 = get_fontmem();
-    if (D_00175239 != -1) {
-        font_memory[D_00175239].offset = 0;
-        font_memory[D_00175239].size = 81000;
+    free_head = get_fontmem();
+    if (free_head != -1) {
+        font_memory[free_head].offset = 0;
+        font_memory[free_head].size = 81000;
     }
 }
 
@@ -82,10 +82,10 @@ void insert_block_into_free_list(s8 block)
 {
     s8 cur;
 
-    cur = D_00175239;
+    cur = free_head;
     if (cur == -1) {
         font_memory[block].next = -1;
-        D_00175239 = block;
+        free_head = block;
         return;
     }
     while (cur != -1) {
@@ -102,8 +102,8 @@ void insert_block_into_free_list(s8 block)
         }
         cur = font_memory[cur].next;
     }
-    font_memory[block].next = D_00175239;
-    D_00175239 = block;
+    font_memory[block].next = free_head;
+    free_head = block;
 }
 
 // FUNCTION: 0x000b6ac8
@@ -154,24 +154,24 @@ void defrag_cache(void)
     i = used_head;
     while (i != -1) {
         if (font_memory[i].offset != pos) {
-            memmove(&D_00161270[pos], &D_00161270[font_memory[i].offset], font_memory[i].size);
+            memmove(&font_buffer[pos], &font_buffer[font_memory[i].offset], font_memory[i].size);
             font_memory[i].end -= font_memory[i].offset - pos;
-            realign_sprites((TbSprite *)&D_00161270[pos], (TbSprite *)&D_00161270[font_memory[i].end],
+            realign_sprites((TbSprite *)&font_buffer[pos], (TbSprite *)&font_buffer[font_memory[i].end],
                             pos - font_memory[i].offset);
             font_memory[i].offset = pos;
         }
         pos += font_memory[i].size;
         i = font_memory[i].next;
     }
-    while (D_00175239 != -1) {
-        i = D_00175239;
-        D_00175239 = font_memory[i].next;
+    while (free_head != -1) {
+        i = free_head;
+        free_head = font_memory[i].next;
         put_fontmem(i);
     }
-    D_00175239 = get_fontmem();
-    if (D_00175239 != -1) {
-        font_memory[D_00175239].offset = pos;
-        font_memory[D_00175239].size = 81000 - pos;
+    free_head = get_fontmem();
+    if (free_head != -1) {
+        font_memory[free_head].offset = pos;
+        font_memory[free_head].size = 81000 - pos;
     }
 }
 
@@ -227,13 +227,13 @@ s8 get_block_from_free_list(s32 size)
     total = 0;
     if (size > 81000)
         return -1;
-    cur = D_00175239;
+    cur = free_head;
     if (cur == -1)
         return -1;
     left = font_memory[cur].size - size;
     total += font_memory[cur].size;
     if (left >= 0) {
-        D_00175239 = font_memory[cur].next;
+        free_head = font_memory[cur].next;
         font_memory[cur].next = -1;
         if (left > 0) {
             rest = get_fontmem();
@@ -266,12 +266,12 @@ s8 get_block_from_free_list(s32 size)
         }
         cur = font_memory[cur].next;
     }
-    if (!D_0016126c) {
+    if (!call_level) {
         throw_out(size - total);
         defrag_cache();
-        D_0016126c = 1;
+        call_level = 1;
         block = get_block_from_free_list(size);
-        D_0016126c = 0;
+        call_level = 0;
         return block;
     }
     return -1;
@@ -292,7 +292,7 @@ void set_font_from_cache(const s32 font)
         init_font_cache();
     D_0016126d = resvars.f0;
     if (cfonts[font]) {
-        lbFontPtr = (TbSprite *)&D_00161270[font_memory[cfonts[font] - 1].offset];
+        lbFontPtr = (TbSprite *)&font_buffer[font_memory[cfonts[font] - 1].offset];
         font_memory[font].used = othervar.f8a2;
         return;
     }
@@ -310,16 +310,16 @@ void set_font_from_cache(const s32 font)
     if (block == -1)
         return;
     sprintf(name, "%s.tab", names[font]);
-    loaded = LbFileLoadAt(name, &D_00161270[font_memory[block].offset]);
+    loaded = LbFileLoadAt(name, &font_buffer[font_memory[block].offset]);
     if (loaded != -1) {
         font_memory[block].end = font_memory[block].offset + loaded;
         sprintf(name, "%s.dat", names[font]);
-        loaded = LbFileLoadAt(name, &D_00161270[font_memory[block].end]);
+        loaded = LbFileLoadAt(name, &font_buffer[font_memory[block].end]);
         if (loaded != -1) {
-            realign_sprites((TbSprite *)&D_00161270[font_memory[block].offset],
-                            (TbSprite *)&D_00161270[font_memory[block].end],
-                            (s32)&D_00161270[font_memory[block].end]);
-            lbFontPtr = (TbSprite *)&D_00161270[font_memory[block].offset];
+            realign_sprites((TbSprite *)&font_buffer[font_memory[block].offset],
+                            (TbSprite *)&font_buffer[font_memory[block].end],
+                            (s32)&font_buffer[font_memory[block].end]);
+            lbFontPtr = (TbSprite *)&font_buffer[font_memory[block].offset];
             cfonts[font] = block + 1;
             font_memory[block].font = font;
             insert_block_into_used_list(block);

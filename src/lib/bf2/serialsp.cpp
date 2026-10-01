@@ -5,7 +5,7 @@ static u8 deliveryHeader[] = { 0x1e, 0xca, 0x67, 0x72 };
 static u8 acknowledgementHeader[] = { 0x04, 0x3e, 0xbe, 0x38 };
 
 extern "C" {
-extern u8 D_0018d01c[];
+extern u8 deliveryBuffer[];
 extern TbNetworkPlayerEntry D_0018cfc4;
 }
 
@@ -202,16 +202,16 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
             fn_000c20c0("  WARNING network: SerialSP::SendMessage() deliveryBuffer is too small\n");
             return ret;
         }
-        memcpy(D_0018d01c, deliveryHeader, 4);
-        memcpy(D_0018d01c + 4, &send_seq, 1);
-        memcpy(D_0018d01c + 5, buf, size + 4);
+        memcpy(deliveryBuffer, deliveryHeader, 4);
+        memcpy(deliveryBuffer + 4, &send_seq, 1);
+        memcpy(deliveryBuffer + 5, buf, size + 4);
         for (i = 0; i < 4; i++)
             sum += deliveryHeader[i];
         sum += send_seq;
         for (i = 0; i < size + 4; i++)
             sum += data[i];
-        memcpy(&D_0018d01c[size + 9], &sum, 2);
-        if (comm->WriteBytes(D_0018d01c, total) == total) {
+        memcpy(&deliveryBuffer[size + 9], &sum, 2);
+        if (comm->WriteBytes(deliveryBuffer, total) == total) {
             awaiting_ack = 1;
             start = LbTimerClock();
             while (awaiting_ack) {
@@ -221,7 +221,7 @@ TbError SerialSP::SendMessage(u32 to, void *buf, TbMessageType type)
                         if (++retries > 8) {
                             fn_000c20c0("  WARNING network: SerialSP::SendMessage() delivery failure\n");
                             awaiting_ack = 0;
-                        } else if (comm->WriteBytes(D_0018d01c, total) == total) {
+                        } else if (comm->WriteBytes(deliveryBuffer, total) == total) {
                             start = LbTimerClock();
                         } else {
                             fn_000c20c0("  WARNING network: SerialSP::SendMessage() failure on CommHandler::WriteBytes()\n");

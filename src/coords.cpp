@@ -173,7 +173,7 @@ Coord D_0013c0fc[181] = {
 };
 
 // demo: hiresbuttons
-SlistButton D_0013c6a4[12] = {
+SlistButton hiresbuttons[12] = {
     { 42, 258, 104, 30, process_queue_button },
     { 446, 258, 104, 30, process_queue_button },
     { 356, 265, 16, 16, process_queue_button },
@@ -188,7 +188,7 @@ SlistButton D_0013c6a4[12] = {
 };
 
 // demo: hireshelp
-HelpControl D_0013c77c[350] = {
+HelpControl hireshelp[350] = {
     { -1 },
     { 72, 32, 95, 49, 80 },
     { 99, 53, 116, 72, 81 },

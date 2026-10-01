@@ -15,13 +15,13 @@ struct PeepChoice {
 
 extern "C" {
 
-extern u16 D_0015fc20[];
+extern u16 visuals_available[];
 extern PeepType D_0012b7d4[];
 extern PeepPalette D_0012b818[];
 
-s8 fn_000856c8(int player);
-void fn_00070e50(PeepBid *bids);
-void fn_000444e0(Thing *w);
+s8 nth_active_player(int player);
+void sort_peep_bids(PeepBid *bids);
+void nav_init(Thing *w);
 
 }
 
@@ -146,7 +146,7 @@ u8 create_an_illness(void)
         r = old_newrand() % statvar.f8;
         for (i = 0; i < 14; i++) {
             if (r < visuals[i]) {
-                if (othervar.f9d1 < D_0015fc20[i])
+                if (othervar.f9d1 < visuals_available[i])
                     ok = 0;
                 else
                     illness = i + 2;
@@ -190,11 +190,11 @@ s8 who_owns_peep(u8 illness)
         owner = gamevar.f149 % players;
         gamevar.f149++;
         if (statvar.unknownfd > 1)
-            owner = fn_000856c8(owner + 1);
+            owner = nth_active_player(owner + 1);
     } else if (old_newrand() % gbv.f13c == 0) {
         owner = old_newrand() % players;
         if (statvar.unknownfd > 1)
-            owner = fn_000856c8(owner + 1);
+            owner = nth_active_player(owner + 1);
     } else {
         for (i = 0; i < 4; i++) {
             bids[i].player = i;
@@ -213,7 +213,7 @@ s8 who_owns_peep(u8 illness)
                 pct[i] = 150;
             bids[i].score = bids[i].score * pct[i] / 100;
         }
-        fn_00070e50(bids);
+        sort_peep_bids(bids);
         total = 0;
         for (j = 0; j < 4; j++) {
             total += bids[j].score;
@@ -231,7 +231,7 @@ s8 who_owns_peep(u8 illness)
         if (owner < 0) {
             owner = old_newrand() % players;
             if (statvar.unknownfd > 1)
-                owner = fn_000856c8(owner + 1);
+                owner = nth_active_player(owner + 1);
         }
     }
     if (statvar.unknownfd > 1 ? 1 : allhosps[owner].unknown1256)
@@ -356,7 +356,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
             peep->insurance = 0;
         peep->cash = old_newrand() % 95000 + 5000;
         if (allhosps[owner].f2a == 1) {
-            fn_000444e0(peep);
+            nav_init(peep);
             insert_node(peep, peep->x, peep->y);
         }
         return peep;
@@ -365,7 +365,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
 }
 
 // FUNCTION: 0x00070e50
-void fn_00070e50(PeepBid *bids)
+void sort_peep_bids(PeepBid *bids)
 {
     u8 swapped;
     s32 tmp;

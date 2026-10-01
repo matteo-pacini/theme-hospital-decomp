@@ -1,8 +1,8 @@
 #include "hosp.h"
 
 extern "C" {
-extern char **D_001602a4;
-extern u16 D_00158190;
+extern char **illness_text;
+extern u16 choice;
 extern u8 D_00158192;
 void fn_000c93bf(char *dst, char *src);
 }
@@ -64,7 +64,7 @@ void declare_epidemic(char **strs)
     text[0] = 0;
     x = 0;
     y = 0;
-    sprintf(line, strs[0], D_001602a4[myhosp->f20b]);
+    sprintf(line, strs[0], illness_text[myhosp->f20b]);
     fn_000c93bf(text, line);
     fn_000c93bf(text, new_line);
     sprintf(line, strs[1], myhosp->f203);
@@ -98,7 +98,7 @@ void alert_epidemic(u8 illness, u8 owner)
 {
     AllHosps *hosp;
 
-    if ((statvar.unknownfd <= 1 && display_mode == 9) && D_00158190 == 2)
+    if ((statvar.unknownfd <= 1 && display_mode == 9) && choice == 2)
         return;
     hosp = &allhosps[owner];
     if (hosp->f20b != 0 || hosp->f1e2s != 0)
@@ -197,22 +197,22 @@ void epidemic_over(const u8 owner, char **strs)
     illness = choice_spare_data;
     switch (hosp->unknown209[0]) {
     case 0:
-        sprintf(buf1, strs[2], D_001602a4[illness]);
+        sprintf(buf1, strs[2], illness_text[illness]);
         sprintf(buf2, strs[3]);
         sprintf(buf3, strs[4], hosp->f203);
         break;
     case 1:
-        sprintf(buf1, strs[0], D_001602a4[illness]);
+        sprintf(buf1, strs[0], illness_text[illness]);
         sprintf(buf2, strs[1]);
         sprintf(buf3, strs[5], hosp->f203);
         break;
     case 2:
-        sprintf(buf1, strs[0], D_001602a4[illness]);
+        sprintf(buf1, strs[0], illness_text[illness]);
         sprintf(buf2, strs[1]);
         sprintf(buf3, strs[6], hosp->f203);
         break;
     case 3:
-        sprintf(buf1, strs[0], D_001602a4[illness]);
+        sprintf(buf1, strs[0], illness_text[illness]);
         sprintf(buf2, strs[1]);
         sprintf(buf3, strs[7]);
         break;

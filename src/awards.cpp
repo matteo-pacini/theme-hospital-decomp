@@ -53,18 +53,18 @@ void check_awards_won(void)
                 if (myhosp->f1eb > 0) {
                     a = myhosp->f1e9 * 0x6400 / myhosp->f1eb;
                     if (awards_trophies.f1d << 8 < a)
-                        fn_000b4510(i, 1, 0, awards_trophies.f49, 2);
+                        set_award_value(i, 1, 0, awards_trophies.f49, 2);
                     else if (awards_trophies.f1e << 8 > a)
-                        fn_000b4510(i, -1, 0, awards_trophies.f4b, 2);
+                        set_award_value(i, -1, 0, awards_trophies.f4b, 2);
                 } else if (myhosp->f1ed > myhosp->f1c7 && awards_trophies.f3f <= cures) {
-                    fn_000b4510(i, 1, 0, awards_trophies.f49, 2);
+                    set_award_value(i, 1, 0, awards_trophies.f49, 2);
                 }
                 break;
             case 5:
                 if (year_check(award_counts.f34, awards_trophies.f31, 1))
-                    fn_000b4510(i, 1, 0, awards_trophies.f55[6], 1);
+                    set_award_value(i, 1, 0, awards_trophies.f55[6], 1);
                 else if (year_check(award_counts.f34, awards_trophies.f32, 0))
-                    fn_000b4510(i, -1, 0, awards_trophies.f55[7], 1);
+                    set_award_value(i, -1, 0, awards_trophies.f55[7], 1);
                 break;
             case 6:
                 general_award(&myhosp->f1bb, myhosp->f1bb, 6, awards_trophies.f23, awards_trophies.f27, 4, 0, 1,
@@ -72,46 +72,46 @@ void check_awards_won(void)
                 break;
             case 7:
                 if (year_check(award_counts.f0, awards_trophies.f2f, 1))
-                    fn_000b4510(i, 1, 0, awards_trophies.f55[4], 1);
+                    set_award_value(i, 1, 0, awards_trophies.f55[4], 1);
                 else if (year_check(award_counts.f0, awards_trophies.f30, 0))
-                    fn_000b4510(i, -1, 0, awards_trophies.f55[5], 1);
+                    set_award_value(i, -1, 0, awards_trophies.f55[5], 1);
                 break;
             case 8:
                 if (myhosp->f1f1 > 0) {
                     a = (myhosp->fcaa + myhosp->fcae * 2 << 14) / myhosp->f1f1;
                     if ((awards_trophies.f2b << 14) / 100 > a)
-                        fn_000b4510(i, 1, 0, awards_trophies.f55[0], 1);
+                        set_award_value(i, 1, 0, awards_trophies.f55[0], 1);
                     else if (0x4000 / awards_trophies.f2c < a)
-                        fn_000b4510(i, -1, 0, awards_trophies.f55[1], 1);
+                        set_award_value(i, -1, 0, awards_trophies.f55[1], 1);
                 }
                 break;
             case 9:
                 if (year_check(award_counts.f9c, awards_trophies.f33, 0))
-                    fn_000b4510(i, 1, 0, awards_trophies.f55[8], 1);
+                    set_award_value(i, 1, 0, awards_trophies.f55[8], 1);
                 else if (year_check(award_counts.f9c, awards_trophies.f34, 1))
-                    fn_000b4510(i, -1, 0, awards_trophies.f55[9], 1);
+                    set_award_value(i, -1, 0, awards_trophies.f55[9], 1);
                 break;
             case 10:
                 if (award_counts.f13f > 2) {
                     if (awards_trophies.f2d < award_counts.f140)
-                        fn_000b4510(i, 1, 0, awards_trophies.f55[2], 1);
+                        set_award_value(i, 1, 0, awards_trophies.f55[2], 1);
                     else if (awards_trophies.f2e > award_counts.f140)
-                        fn_000b4510(i, -1, 0, awards_trophies.f55[3], 1);
+                        set_award_value(i, -1, 0, awards_trophies.f55[3], 1);
                 }
                 break;
             case 11:
                 if (award_counts.f149 > 100) {
                     if (award_counts.f149 > awards_trophies.f37)
-                        fn_000b4510(i, 1, 0, awards_trophies.f55[12], 1);
+                        set_award_value(i, 1, 0, awards_trophies.f55[12], 1);
                     else if (award_counts.f149 < awards_trophies.f3b)
-                        fn_000b4510(i, -1, 0, awards_trophies.f55[13], 1);
+                        set_award_value(i, -1, 0, awards_trophies.f55[13], 1);
                 }
                 break;
             case 12:
                 if (year_check(award_counts.f104, 1, 1) && year_check(award_counts.fd0, awards_trophies.f35, 0))
-                    fn_000b4510(i, 1, 0, awards_trophies.f55[10], 1);
+                    set_award_value(i, 1, 0, awards_trophies.f55[10], 1);
                 else if (award_counts.f144 || (year_check(award_counts.f104, 1, 1) && year_check(award_counts.fd0, awards_trophies.f36, 1)))
-                    fn_000b4510(i, -1, 0, awards_trophies.f55[11], 1);
+                    set_award_value(i, -1, 0, awards_trophies.f55[11], 1);
                 break;
             default:
                 break;
@@ -274,7 +274,7 @@ void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
 }
 
 // FUNCTION: 0x000b4510
-void fn_000b4510(const u8 award, const s8 dir, const u8 tier, const s16 value, u8 type)
+void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 value, u8 type)
 {
     all_awards[award].unknown0 = dir;
     all_awards[award].f1 = award;
@@ -382,16 +382,16 @@ void general_award(s32 *field, s32 value, const u8 award, const s32 high, const 
     if (value > high) {
         if (top) {
             if (value > total && !bottom)
-                fn_000b4510(award, 1, 2, good * 3, type);
+                set_award_value(award, 1, 2, good * 3, type);
             else if (top == 1)
-                fn_000b4510(award, 1, 1, good * 2, type);
+                set_award_value(award, 1, 1, good * 2, type);
         } else {
-            fn_000b4510(award, 1, 0, good, type);
+            set_award_value(award, 1, 0, good, type);
         }
     } else if (value < low) {
         if (!bottom)
-            fn_000b4510(award, -1, 0, bad, type);
+            set_award_value(award, -1, 0, bad, type);
         else
-            fn_000b4510(award, -1, 1, bad * 2, type);
+            set_award_value(award, -1, 1, bad * 2, type);
     }
 }

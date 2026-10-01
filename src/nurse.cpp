@@ -3,8 +3,8 @@
 extern "C" {
 
 
-void fn_000168a0(Thing *w);
-u8 fn_0002b400(Thing *w);
+void remove_person_from_room_list(Thing *w);
+u8 check_room_mutex(Thing *w);
 
 }
 
@@ -16,7 +16,7 @@ void reinit_nurse(Thing *nurse)
     RoomInfo *room;
     u16 pos;
 
-    fn_000168a0(nurse);
+    remove_person_from_room_list(nurse);
     pos = nurse->x.tile + (nurse->y.tile << 7);
     room = which_room(pos);
     if (room > 0) {
@@ -45,7 +45,7 @@ u8 nurse_check_for_work(Thing *nurse)
     nurse->next_state = SS_NURSE_IN_WARD;
     nurse->resume_state = SS_IN_CORRIDOR;
     nurse->dest_room = room - room_info;
-    fn_0003e724(nurse);
+    process_staff_complex(nurse);
     return 1;
 }
 
@@ -84,7 +84,7 @@ void nurse_in_ward(Thing *nurse)
     switch (nurse->substate) {
     case 0:
         nurse->room->f3 == 4 ? 0 : (nurse->room->f3 = 1);
-        if (!(fn_0002b400(nurse) ? 1 : (process_staff_complex(nurse), 0)))
+        if (!(check_room_mutex(nurse) ? 1 : (evacuate_staff(nurse), 0)))
             return;
         if (shall_i_resign(nurse))
             return;
@@ -97,11 +97,11 @@ void nurse_in_ward(Thing *nurse)
         if (nurse->tiredness > allhosps[nurse->owner].f21d && take_a_break(nurse))
             return;
         if (nurse->room->f22 || nurse->room->f3 == 4) {
-            process_staff_complex(nurse);
+            evacuate_staff(nurse);
             return;
         }
         if (allhosps[nurse->owner].unknown11f0 == 0 && could_nurse_vaccinate(nurse)) {
-            process_staff_complex(nurse);
+            evacuate_staff(nurse);
             return;
         }
         queue = nurse->room->queue_head;
@@ -113,7 +113,7 @@ void nurse_in_ward(Thing *nurse)
                     nurse->next_state = SS_NURSE_IN_WARD;
                     nurse->substate = 1;
                     set_complex(nurse, 0x15e, 0);
-                    fn_0003e724(nurse);
+                    process_staff_complex(nurse);
                     return;
                 }
             }
@@ -122,7 +122,7 @@ void nurse_in_ward(Thing *nurse)
             nurse->work_target = obj;
             set_complex(nurse, 0x168, 0);
             nurse->next_state = SS_NURSE_IN_WARD;
-            fn_0003e724(nurse);
+            process_staff_complex(nurse);
             return;
         }
         patient = &thing[find_peep(nurse->room - room_info, 1, THING_PATIENT, PS_IN_BED, nurse->owner)];
@@ -132,7 +132,7 @@ void nurse_in_ward(Thing *nurse)
                 nurse->object = patient->object;
                 nurse->next_state = SS_NURSE_IN_WARD;
                 set_complex(nurse, 0x17c, 0);
-                fn_0003e724(nurse);
+                process_staff_complex(nurse);
                 return;
             }
         }
@@ -146,7 +146,7 @@ void nurse_in_ward(Thing *nurse)
         if (cur != target && can_i_get_to(nurse, target)) {
             nurse->next_state = nurse->resume_state = SS_NURSE_IN_WARD;
             set_complex(nurse, 0xbe, target);
-            fn_0003e724(nurse);
+            process_staff_complex(nurse);
             return;
         }
         othervar.f0 = old_newrand() % 100;
@@ -175,7 +175,7 @@ void nurse_in_ward(Thing *nurse)
                 interrupt_person(patient);
                 start_person_going(patient);
             }
-        } else if (fn_0003c1e8(nurse, 0x28)) {
+        } else if (forget_about_my_slave(nurse, 0x28)) {
             nurse->substate = 0;
             nurse->slave = 0;
         }

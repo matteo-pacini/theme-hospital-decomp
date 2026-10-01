@@ -5,7 +5,7 @@ extern volatile u8 switch_off_sample_fade_timer;
 extern long sample_fade_handle;
 
 extern "C" {
-extern volatile u8 D_0018a57d;
+extern volatile u8 a_sample_is_fading;
 
 void cbfadesample(u32 user);
 #pragma aux (__pascal) cbfadesample "W?cbfadesample$n(ul)v"
@@ -22,11 +22,11 @@ void cbfadesample(u32 user)
             AIL_release_timer_handle(sample_fade_handle);
             return;
         }
-        D_0018a57d = 0;
+        a_sample_is_fading = 0;
         for (smp = sample_id; smp <= end_sample_id; smp++) {
             switch (smp->FadeState) {
             case 1:
-                D_0018a57d = 1;
+                a_sample_is_fading = 1;
                 if (AIL_sample_status(smp->SampleHandle) == 4) {
                     if ((u16)smp->FadeToVolume > 127)
                         smp->FadeToVolume = 127;
@@ -57,7 +57,7 @@ void cbfadesample(u32 user)
                 }
                 break;
             case 2:
-                D_0018a57d = 1;
+                a_sample_is_fading = 1;
                 if (AIL_sample_status(smp->SampleHandle) == 4) {
                     if ((u16)smp->FadeToVolume >= smp->SampleVolume) {
                         smp->FadeState = 0;
@@ -87,7 +87,7 @@ void cbfadesample(u32 user)
                 break;
             }
         }
-        if (D_0018a57d == 0) {
+        if (a_sample_is_fading == 0) {
             switch_off_sample_fade_timer = 1;
             samples_currently_fading = 0;
         }

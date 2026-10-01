@@ -15,15 +15,15 @@ struct ScreenBox {
 };
 
 extern "C" {
-extern u16 D_00158164;
+extern u16 overview;
 extern u8 D_00158166;
 extern Event D_001549d0[];
-extern char **D_00160378;
-extern char **D_00160394;
+extern char **overview_text;
+extern char **win_criteria_help;
 
 void fn_000c93bf(char *dst, char *src);
-void fn_0001b7e0(char *dst, s8 *src, u8 mode);
-s32 fn_000856c8(int player);
+void conv_string(char *dst, s8 *src, u8 mode);
+s32 nth_active_player(int player);
 }
 
 
@@ -57,7 +57,7 @@ void display_peep_overview(void)
     case 0:
         load_ingame_pic(0x14, 1, 0x26, 0, SCREEN_MODE_13);
         D_00158166 = 1;
-        D_00158164 = player;
+        overview = player;
         close_irequesters();
         copy_screen_to_wscreen(bscreen);
         draw_overview_screen();
@@ -65,8 +65,8 @@ void display_peep_overview(void)
         draw_piechart();
         break;
     case 1:
-        if (statvar.unknownfd > 1 && D_001609c4[D_00158164].active == 0)
-            D_00158164 = player;
+        if (statvar.unknownfd > 1 && D_001609c4[overview].active == 0)
+            overview = player;
         copy_screen_to_wscreen(bscreen);
         if (lbDisplay.mleft_button) {
             slot = 0;
@@ -89,7 +89,7 @@ void display_peep_overview(void)
                     continue;
                 if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.f3c_ScreenBoxp[0x37 + slot].x, resvars.f3c_ScreenBoxp[0x37 + slot].y,
                                  resvars.f3c_ScreenBoxp[0x37 + slot].w, resvars.f3c_ScreenBoxp[0x37 + slot].h)) {
-                    D_00158164 = i;
+                    overview = i;
                     play_sound(10, SFX_SELECTX, -1, -1);
                     reqspr_draw(resvars.f3c_ScreenBoxp[0x37 + slot].x + 0x13, resvars.f3c_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
                 }
@@ -103,9 +103,9 @@ void display_peep_overview(void)
             }
             lbDisplay.rleft_button = 0;
         }
-        calculate_value(D_00158164);
-        evaluate_criteria(D_00158164);
-        check_criteria_values(1, D_00158164);
+        calculate_value(overview);
+        evaluate_criteria(overview);
+        check_criteria_values(1, overview);
         draw_overview_screen();
         calculate_piechart();
         draw_piechart();
@@ -139,13 +139,13 @@ void draw_overview_screen(void)
     {
         char buf[500];
 
-        sprintf(buf, "%s %4.4d", D_00160378[0], mycontrol->f648 + 2000);
+        sprintf(buf, "%s %4.4d", overview_text[0], mycontrol->f648 + 2000);
         LbTextDraw(resvars.f40[0x6f].x, resvars.f40[0x6f].y, buf);
         slot = 0;
         for (i = 0; i < nplayers; i++) {
             if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
                 continue;
-            if (D_00158164 == i)
+            if (overview == i)
                 set_font_from_cache(0x25);
             else
                 set_font_from_cache(0x24);
@@ -159,23 +159,23 @@ void draw_overview_screen(void)
             if (pct > 100)
                 pct = 100;
             if (gbv.f110 > pct)
-                fn_000c93bf(buf, D_00160378[1]);
+                fn_000c93bf(buf, overview_text[1]);
             else if (gbv.f10e > pct)
-                fn_000c93bf(buf, D_00160378[2]);
+                fn_000c93bf(buf, overview_text[2]);
             reqspr_draw(resvars.f40[0x6c].x + pct, resvars.f40[0x6c].y, &screen_sprites_tab_start[5]);
             pct = adcounts.f10 / adcounts.f0;
             if (pct > 100)
                 pct = 100;
             if (pct < 30)
-                fn_000c93bf(buf, D_00160378[3]);
+                fn_000c93bf(buf, overview_text[3]);
             reqspr_draw(resvars.f40[0x6d].x + pct, resvars.f40[0x6d].y, &screen_sprites_tab_start[5]);
             pct = adcounts.f14 / adcounts.f0;
             if (pct > 100)
                 pct = 100;
             if (pct > 80)
-                fn_000c93bf(buf, D_00160378[4]);
+                fn_000c93bf(buf, overview_text[4]);
             else if (pct < 20)
-                fn_000c93bf(buf, D_00160378[5]);
+                fn_000c93bf(buf, overview_text[5]);
             reqspr_draw(resvars.f40[0x6e].x + pct, resvars.f40[0x6e].y, &screen_sprites_tab_start[5]);
             reqspr_draw(0xf5, 0x12c, &screen_sprites_tab_start[7]);
             set_font_from_cache(0x24);
@@ -186,13 +186,13 @@ void draw_overview_screen(void)
         set_font_from_cache(0x26);
         lbDisplay.draw_flags = 0;
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        sprintf(buf, "%s (%d%%)", D_00160378[6], allhosps[D_00158164].f1cb);
-        fn_0001b7e0(buf, (s8 *)buf, 0);
+        sprintf(buf, "%s (%d%%)", overview_text[6], allhosps[overview].f1cb);
+        conv_string(buf, (s8 *)buf, 0);
         LbTextDraw(resvars.f40[0x70].x, resvars.f40[0x70].y, buf);
-        sprintf(buf, "%s", D_00160378[7]);
+        sprintf(buf, "%s", overview_text[7]);
         LbTextDraw(resvars.f40[0x71].x, resvars.f40[0x71].y, buf);
         set_font_from_cache(0x24);
-        display_overview_bars(D_00158164);
+        display_overview_bars(overview);
         compute_help_text(0, 0, 0x18);
     }
 }
@@ -225,7 +225,7 @@ void calculate_piechart(void)
             slices[3].end = 0x7ff;
         } else {
             for (i = 0; i < nplayers; i++) {
-                owner = fn_000856c8(i + 1);
+                owner = nth_active_player(i + 1);
                 slices[i].start = prev;
                 slices[i].end = (slices[i].start + (allhosps[owner].f1cb << 11) / 100) & 0x7ff;
                 prev = slices[i].end;
@@ -265,11 +265,11 @@ void calculate_piechart(void)
     for (i = 0; i < 4u; i++) {
         slices[i].start += 4;
         slices[i].end += 4;
-        if (slices[i].radius != 0 && i != D_00158164)
+        if (slices[i].radius != 0 && i != overview)
             slices[i].radius -= 2;
     }
-    if (slices[D_00158164].radius < 0x50)
-        slices[D_00158164].radius += 2;
+    if (slices[overview].radius < 0x50)
+        slices[overview].radius += 2;
 }
 
 // FUNCTION: 0x00057b0c
@@ -297,7 +297,7 @@ void draw_piechart(void)
 
             tx = slices[i].text_x;
             ty = slices[i].text_y;
-            sprintf(buf, "%s", &allhosps[fn_000856c8(i + 1)]);
+            sprintf(buf, "%s", &allhosps[nth_active_player(i + 1)]);
             LbTextDraw(tx, ty, buf);
         }
     } else {
@@ -391,7 +391,7 @@ void overscr_help_win_criteria(void)
     count = 0;
     found = 0;
     hit = 0;
-    owner = D_00158164;
+    owner = overview;
     for (crit = 0; crit <= 6; crit++) {
         found = 0;
         for (i = 0; i < 10; i++) {
@@ -420,28 +420,28 @@ void overscr_help_win_criteria(void)
         if (hit) {
             switch (which) {
             case 1:
-                sprintf(othervar.f96, D_00160394[0], value, allhosps[owner].unknownc7e);
+                sprintf(othervar.f96, win_criteria_help[0], value, allhosps[owner].unknownc7e);
                 break;
             case 2:
-                sprintf(othervar.f96, D_00160394[1], value, allhosps[owner].f35 - allhosps[owner].f3d);
+                sprintf(othervar.f96, win_criteria_help[1], value, allhosps[owner].f35 - allhosps[owner].f3d);
                 break;
             case 3:
                 if (allhosps[owner].f1ed > 10)
-                    sprintf(othervar.f96, D_00160394[6], value, allhosps[owner].f1ef * 100 / allhosps[owner].f1ed);
+                    sprintf(othervar.f96, win_criteria_help[6], value, allhosps[owner].f1ef * 100 / allhosps[owner].f1ed);
                 else
-                    sprintf(othervar.f96, D_00160394[6], value, 0);
+                    sprintf(othervar.f96, win_criteria_help[6], value, 0);
                 break;
             case 4:
-                sprintf(othervar.f96, D_00160394[3], value, allhosps[owner].f1e9);
+                sprintf(othervar.f96, win_criteria_help[3], value, allhosps[owner].f1e9);
                 break;
             case 5:
                 if (allhosps[owner].f1ed > 10)
-                    sprintf(othervar.f96, D_00160394[4], value, allhosps[owner].f1eb * 100 / allhosps[owner].f1ed);
+                    sprintf(othervar.f96, win_criteria_help[4], value, allhosps[owner].f1eb * 100 / allhosps[owner].f1ed);
                 else
-                    sprintf(othervar.f96, D_00160394[4], value, 0);
+                    sprintf(othervar.f96, win_criteria_help[4], value, 0);
                 break;
             case 6:
-                sprintf(othervar.f96, D_00160394[5], value, allhosps[owner].f1bb);
+                sprintf(othervar.f96, win_criteria_help[5], value, allhosps[owner].f1bb);
                 break;
             }
             break;

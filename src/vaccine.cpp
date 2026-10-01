@@ -110,7 +110,7 @@ u8 should_nurse_vaccinate(Thing *nurse)
                 set_complex(nurse, 0xbe, pos);
                 nurse->next_state = SS_NURSE_VACCINATES;
                 nurse->resume_state = SS_NURSE_VACCINATES;
-                fn_0003e724(nurse);
+                process_staff_complex(nurse);
                 nurse->slave = patient - thing;
                 patient->flags |= PF_VACCINE_NURSE_SENT;
                 reset_icon_value(patient, ICON_VACCINE_REQUESTED);
@@ -146,7 +146,7 @@ void nurse_vaccinates(Thing *nurse)
             set_complex(nurse, 0xbe, pos);
             nurse->next_state = SS_NURSE_VACCINATES;
             nurse->resume_state = SS_NURSE_VACCINATES;
-            fn_0003e724(nurse);
+            process_staff_complex(nurse);
             nurse->slave = patient - thing;
         } else {
             nurse->state = SS_IN_CORRIDOR;

@@ -18,12 +18,12 @@ extern const char *screenpalettes[];
 extern TbIffPalette ppalette;
 
 extern "C" {
-extern TbSprite *D_00153f18;
-extern u8 *D_00153f10;
-extern u8 *D_00153f04;
-extern TbSprite *D_00153f0c;
+extern TbSprite *screen_sprites_tab_end;
+extern u8 *screen_sprites_data;
+extern u8 *screen_pointers_data;
+extern TbSprite *screen_pointers_tab_end;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
-extern u8 *D_00153f34;
+extern u8 *palette;
 extern u8 D_00156910;
 extern PicLengths D_0017526c;
 
@@ -58,7 +58,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
     }
     othervar.fa65 = 0;
     if (sprites)
-        LbSpriteReset(screen_sprites_tab_start, D_00153f18, D_00153f10);
+        LbSpriteReset(screen_sprites_tab_start, screen_sprites_tab_end, screen_sprites_data);
     LbMouseChangeSprite(0);
     StopAllSamples();
     if (othervar.fa06)
@@ -75,7 +75,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
         D_001290d0 = 0xff;
         D_001290d1 = 0xff;
         D_001290d2 = 0xff;
-        othervar.f1f = D_00153f34;
+        othervar.f1f = palette;
         display_mode = 0;
         othervar.f10 = 1;
         D_00156910 = 1;
@@ -114,7 +114,7 @@ void return_from_screen(const u8 mouse_mode, const u8 in_game, const u8 sprites)
             }
         }
         if (crequester.unknown2 != 0x63)
-            fn_0001bc94(crequester.unknown2, 0);
+            open_requester(crequester.unknown2, 0);
     }
 }
 
@@ -182,7 +182,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         othervar.fa65 = 1;
     }
     if (LbFileLoadAt(hiresscreenpointerfiles[0], dest) == len.palette) {
-        D_00153f04 = dest;
+        screen_pointers_data = dest;
         dest += len.palette;
         othervar.fa65 = 1;
     } else {
@@ -191,8 +191,8 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     if (LbFileLoadAt(hiresscreenpointerfiles[1], dest) == len.pointers) {
         screen_pointers_tab_start = (TbSprite *)dest;
         dest += len.pointers;
-        D_00153f0c = (TbSprite *)dest;
-        LbSpriteSetup(screen_pointers_tab_start, D_00153f0c, D_00153f04);
+        screen_pointers_tab_end = (TbSprite *)dest;
+        LbSpriteSetup(screen_pointers_tab_start, screen_pointers_tab_end, screen_pointers_data);
     } else {
         return;
     }
@@ -200,10 +200,10 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         if (LbFileLoadAt((char *)hiresscreen_sprites_tabs[idx], dest) == len.sprite_tab) {
             screen_sprites_tab_start = (TbSprite *)dest;
             dest += len.sprite_tab;
-            D_00153f18 = (TbSprite *)dest;
+            screen_sprites_tab_end = (TbSprite *)dest;
             if (LbFileLoadAt((char *)hiresscreen_sprites_data[idx], dest) == len.sprites) {
-                D_00153f10 = dest;
-                LbSpriteSetup(screen_sprites_tab_start, D_00153f18, D_00153f10);
+                screen_sprites_data = dest;
+                LbSpriteSetup(screen_sprites_tab_start, screen_sprites_tab_end, screen_sprites_data);
                 dest += len.sprites;
             } else {
                 return;

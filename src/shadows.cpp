@@ -20,13 +20,13 @@ extern s8 RoomTileHalfData[][32][64];
 
 void reset_precalculated_shadows(void);
 void create_overlay_sprite(const TbSprite *src, const TbSprite *ovr, const TbSprite *dst);
-extern "C" Thing *fn_00019aac(Map *t, u16 kind);
+extern "C" Thing *search_mapwho(Map *t, u16 kind);
 
 // FUNCTION: 0x000b0630
-u8 fn_000b0630(u16 tile, u8 parity)
+u8 door(u16 tile, u8 parity)
 {
     Map *cell = &map[(u16)tile];
-    Thing *door = fn_00019aac(cell, THING_DOOR);
+    Thing *door = search_mapwho(cell, THING_DOOR);
 
     if (door == 0) {
         return 0;
@@ -48,14 +48,14 @@ void add_static_shadows(void)
         map[i].floor &= 0x8f;
         if ((map[i].unknown4 && (blocks[map[i].unknown4].width & 1) && !(blocks[map[i].unknown4].width & 0x40)
              && !(blocks[map[i].unknown4].width & 0x80))
-            || fn_000b0630((u16)i, 1)) {
+            || door((u16)i, 1)) {
             map[i].floor |= 0x40;
-            if ((!map[i + 128].unknown4 || (blocks[map[i + 128].unknown4].width & 0xe0)) && !fn_000b0630((u16)(i + 0x80), 1)) {
+            if ((!map[i + 128].unknown4 || (blocks[map[i + 128].unknown4].width & 0xe0)) && !door((u16)(i + 0x80), 1)) {
                 map[i].floor &= 0xbf;
                 map[i].floor |= 0x10;
             }
-            if (((!map[i - 128].unknown4 && !fn_000b0630((u16)(i - 0x80), 1)) || (blocks[map[i - 128].unknown4].width & 0x60))
-                && ((!map[i].unknown3 && !fn_000b0630((u16)(i - 0x80), 1)) || (blocks[map[i].unknown3].width & 0x60))) {
+            if (((!map[i - 128].unknown4 && !door((u16)(i - 0x80), 1)) || (blocks[map[i - 128].unknown4].width & 0x60))
+                && ((!map[i].unknown3 && !door((u16)(i - 0x80), 1)) || (blocks[map[i].unknown3].width & 0x60))) {
                 map[i - 128].floor |= 0x40;
                 map[i - 128 - 1].floor |= 0x40;
             }

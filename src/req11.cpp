@@ -3,8 +3,8 @@
 extern "C" {
 extern Event D_001549d0[];
 extern u8 D_00156910;
-extern char **D_0016029c;
-extern char **D_001602d4;
+extern char **object_names;
+extern char **req1_help;
 }
 
 s32 cost_of_all_selected_objects(void);
@@ -92,10 +92,10 @@ void req11_overdraw(Window *win)
             break;
         total += gamevar.buy_count[item] * myhosp->object_stats[item].cost;
     }
-    LbTextDraw(ox + resvars.f1c[0x19].x, oy + resvars.f1c[0x19].y, D_001602d4[3]);
-    sprintf(buf, "%s%d", D_001602d4[5], myhosp->object_stats[obj].cost);
+    LbTextDraw(ox + resvars.f1c[0x19].x, oy + resvars.f1c[0x19].y, req1_help[3]);
+    sprintf(buf, "%s%d", req1_help[5], myhosp->object_stats[obj].cost);
     LbTextDraw(ox + resvars.f1c[0x1a].x, oy + resvars.f1c[0x1a].y, buf);
-    sprintf(buf, "%s%d", D_001602d4[6], total);
+    sprintf(buf, "%s%d", req1_help[6], total);
     LbTextDraw(ox + resvars.f1c[0x1b].x, oy + resvars.f1c[0x1b].y, buf);
     if (obj) {
         fr = &frame[start[objects[obj].f10].frame];
@@ -124,7 +124,7 @@ void req11_overdraw(Window *win)
                 play_sound(10, SFX_HLIGHT5, -1, -1);
             crequester.unknown3 = item;
         }
-        LbTextDraw(ox + resvars.f1c[i + 0x34].x, oy + resvars.f1c[i + 0x34].y, D_0016029c[objects[item].name]);
+        LbTextDraw(ox + resvars.f1c[i + 0x34].x, oy + resvars.f1c[i + 0x34].y, object_names[objects[item].name]);
         sprintf(buf, "%d", gamevar.buy_count[item]);
         LbTextDraw(ox + resvars.f1c[i + 0x3e].x, oy + resvars.f1c[i + 0x3e].y, buf);
     }

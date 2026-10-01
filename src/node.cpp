@@ -2,7 +2,7 @@
 
 extern "C" {
 
-void fn_00015b68(Thing *w);
+void remove_node(Thing *w);
 
 }
 
@@ -34,7 +34,7 @@ u16 move_node(Thing *node, MapPos x, MapPos y)
         return 0;
     }
     if (x.tile != node->x.tile || y.tile != node->y.tile) {
-        fn_00015b68(node);
+        remove_node(node);
         insert_node(node, x, y);
         node->x = x;
         node->y = y;
@@ -46,7 +46,7 @@ u16 move_node(Thing *node, MapPos x, MapPos y)
 }
 
 // FUNCTION: 0x00015b68
-void fn_00015b68(Thing *node)
+void remove_node(Thing *node)
 {
     Map *cell;
     Thing *other;

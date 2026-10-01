@@ -1,12 +1,12 @@
 #include "hosp.h"
 
 extern "C" {
-extern u8 D_0016041c;
+extern u8 oinkey;
 extern u8 D_00189688;
-extern u8 D_0018978d;
-extern u8 D_0018978e;
-extern u8 D_0018978f;
-void fn_0007424c(u8 modifiers, u8 key);
+extern u8 lbInkeyFlags;
+extern u8 lbIInkey;
+extern u8 lbIInkeyFlags;
+void process_game_keys(u8 modifiers, u8 key);
 unsigned fn_000cd1bf(unsigned port);
 unsigned fn_000cd1c7(unsigned port, unsigned value);
 void (__interrupt __far *_dos_getvect(unsigned num))();
@@ -19,23 +19,23 @@ extern volatile long keybufferout;
 extern void (__interrupt __far *myOldInt)();
 
 // FUNCTION: 0x00074220
-void fn_00074220(u8 modifiers, u8 key)
+void process_keys(u8 modifiers, u8 key)
 {
-    fn_0007424c(modifiers, key);
+    process_game_keys(modifiers, key);
 }
 
 
 extern "C" {
 extern Event D_001549d0[];
-s32 fn_00085660(s32 n);
-void fn_0001bab4(u8 slot);
+s32 nth_other_active_player(s32 n);
+void record_mappos(u8 slot);
 }
 
 void process_nettext_keys(u8 shift, u8 key);
 void make_a_rat(u8 owner);
 
 // FUNCTION: 0x0007424c
-void fn_0007424c(u8 modifiers, u8 key)
+void process_game_keys(u8 modifiers, u8 key)
 {
     if (gamevar.f12e == MM_HELP) {
         if (key == KC_SPACE || key == KC_ESCAPE)
@@ -69,7 +69,7 @@ void fn_0007424c(u8 modifiers, u8 key)
         if (statvar.unknownfd > 1 && (modifiers & MOD_ALT)) {
             if (display_mode == 0) {
                 if (statvar.unknownfd >= 2) {
-                    othervar.f4c = 1 << fn_00085660(1);
+                    othervar.f4c = 1 << nth_other_active_player(1);
                     othervar.f4a = 1;
                     net_text[player].unknown0 = 0;
                     D_001549d0[player].type = 0x4e;
@@ -92,7 +92,7 @@ void fn_0007424c(u8 modifiers, u8 key)
         if (statvar.unknownfd > 1 && (modifiers & MOD_ALT)) {
             if (display_mode == 0) {
                 if (statvar.unknownfd >= 3) {
-                    othervar.f4c = 1 << fn_00085660(2);
+                    othervar.f4c = 1 << nth_other_active_player(2);
                     othervar.f4a = 1;
                     net_text[player].unknown0 = 0;
                     D_001549d0[player].type = 0x4e;
@@ -108,7 +108,7 @@ void fn_0007424c(u8 modifiers, u8 key)
         if (statvar.unknownfd > 1 && (modifiers & MOD_ALT)) {
             if (display_mode == 0) {
                 if (statvar.unknownfd >= 4) {
-                    othervar.f4c = 1 << fn_00085660(3);
+                    othervar.f4c = 1 << nth_other_active_player(3);
                     othervar.f4a = 1;
                     net_text[player].unknown0 = 0;
                     D_001549d0[player].type = 0x4e;
@@ -196,7 +196,7 @@ void fn_0007424c(u8 modifiers, u8 key)
         if (!gamevar.unknown21) {
             if (modifiers & MOD_ALT) {
                 play_sound(10, SFX_SNAPSHOT, -1, -1);
-                fn_0001bab4(key - KC_F1);
+                record_mappos(key - KC_F1);
             } else if (modifiers & MOD_CTRL) {
                 recall_mappos(key - KC_F1);
             } else if (listhead[player].rooms[ROOM_RESEARCH] == 0) {
@@ -218,7 +218,7 @@ void fn_0007424c(u8 modifiers, u8 key)
         if (!gamevar.unknown21 && gamevar.f174 == 0) {
             if (modifiers & MOD_ALT) {
                 play_sound(10, SFX_SNAPSHOT, -1, -1);
-                fn_0001bab4(key - KC_F1);
+                record_mappos(key - KC_F1);
             } else if (modifiers & MOD_CTRL) {
                 recall_mappos(key - KC_F1);
             } else {
@@ -298,7 +298,7 @@ void fn_0007424c(u8 modifiers, u8 key)
     }
 }
 // FUNCTION: 0x00074cd8
-extern "C" void fn_00074cd8(void)
+extern "C" void keybuffer_clear(void)
 {
     keybufferin = keybufferout = 0;
 }
@@ -341,7 +341,7 @@ void __interrupt __far myKInt(void)
     s32 port61;
 
     lbInkey = fn_000cd1bf(0x60);
-    if (D_0016041c == 0xe0) {
+    if (oinkey == 0xe0) {
         D_00189688 = 1;
         if (lbInkey == KC_LSHIFT || lbInkey == 0xaa) {
             lbInkey = 0x80;
@@ -363,24 +363,24 @@ void __interrupt __far myKInt(void)
                 keybufferin = next;
         }
     }
-    D_0016041c = lbInkey;
-    D_0018978d = 0;
+    oinkey = lbInkey;
+    lbInkeyFlags = 0;
     if (lbKeyOn[KC_LSHIFT] || lbKeyOn[KC_RSHIFT])
-        D_0018978d |= 0x10;
+        lbInkeyFlags |= 0x10;
     if (lbKeyOn[KC_LCONTROL] || lbKeyOn[KC_RCONTROL])
-        D_0018978d |= 0x20;
+        lbInkeyFlags |= 0x20;
     if (lbKeyOn[KC_LALT] || lbKeyOn[KC_RALT])
-        D_0018978d |= 0x40;
+        lbInkeyFlags |= 0x40;
     if (lbKeyOn[key])
-        lbKeyOn[key] |= D_0018978d;
+        lbKeyOn[key] |= lbInkeyFlags;
     key = (s16)fn_000cd1bf(0x61);
     port61 = key;
     key |= 0x80;
     fn_000cd1c7(0x61, key);
     fn_000cd1c7(0x61, port61);
-    if (!(lbInkey >= 0x80 || D_0018978e)) {
-        D_0018978e = lbInkey;
-        D_0018978f = D_0018978d;
+    if (!(lbInkey >= 0x80 || lbIInkey)) {
+        lbIInkey = lbInkey;
+        lbIInkeyFlags = lbInkeyFlags;
     }
     fn_000cd1c7(0x20, 0x20);
 }

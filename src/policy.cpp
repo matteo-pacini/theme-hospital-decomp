@@ -10,10 +10,10 @@ struct PolicyRect {
 extern "C" {
 
 extern Event D_001549d0[];
-extern char **D_001602dc;
+extern char **policy_names;
 
-void fn_00044664(void);
-void fn_0004488c(void);
+void process_policy_panel(void);
+void process_policy_sliders(void);
 
 }
 
@@ -26,14 +26,14 @@ void display_policy(void)
         pol.unknown2 = 1;
         pol.unknown0 = 0;
         lbDisplay.draw_flags = 0;
-        fn_0004488c();
+        process_policy_sliders();
         lbDisplay.left_button = lbDisplay.mleft_button = lbDisplay.rleft_button = 0;
         break;
     case 1:
         lbDisplay.draw_flags = 0;
         copy_screen_to_wscreen(bscreen);
-        fn_00044664();
-        fn_0004488c();
+        process_policy_panel();
+        process_policy_sliders();
         break;
     case 2:
         pol.unknown2 = 3;
@@ -54,7 +54,7 @@ void display_policy(void)
 extern "C" {
 
 // FUNCTION: 0x00044664
-void fn_00044664(void)
+void process_policy_panel(void)
 {
     u8 i;
 
@@ -70,7 +70,7 @@ void fn_00044664(void)
 }
 
 // FUNCTION: 0x0004477c
-void fn_0004477c(u8 action)
+void process_policy_button(u8 action)
 {
     debug.unknown8 = action;
     switch (action) {
@@ -94,7 +94,7 @@ void fn_0004477c(u8 action)
 }
 
 // FUNCTION: 0x0004488c
-void fn_0004488c(void)
+void process_policy_sliders(void)
 {
     u16 i;
     s32 x;
@@ -104,7 +104,7 @@ void fn_0004488c(void)
     set_font_from_cache(7);
     for (i = 0; i < 5; i++) {
         LbTextSetWindow(resvars.f3c_PolicyRectp[i + 0x20].x, resvars.f3c_PolicyRectp[i + 0x20].y, resvars.f3c_PolicyRectp[i + 0x20].w, resvars.f3c_PolicyRectp[i + 0x20].h);
-        sprintf(buf, "%s", D_001602dc[i]);
+        sprintf(buf, "%s", policy_names[i]);
         LbTextDraw(0, 0, buf);
         lbDisplay.draw_flags = 0x20;
     }
@@ -118,7 +118,7 @@ void fn_0004488c(void)
     reqspr_draw(resvars.f3c_PolicyRectp[0x25].x + x, resvars.f3c_PolicyRectp[0x25].y, &screen_sprites_tab_start[2]);
     LbTextSetWindow((resvars.f3c_PolicyRectp[0x25].x + x) + resvars.f40[0x54].x, resvars.f3c_PolicyRectp[0x25].y + resvars.f40[0x54].y,
                     screen_sprites_tab_start[2].width, screen_sprites_tab_start[2].height);
-    sprintf(buf, "%s", D_001602dc[i++]);
+    sprintf(buf, "%s", policy_names[i++]);
     LbTextDraw(0, 0, buf);
     x = allhosps[player].f21b * 3;
     if (x < 0)
@@ -128,7 +128,7 @@ void fn_0004488c(void)
     reqspr_draw(resvars.f3c_PolicyRectp[0x26].x + x, resvars.f3c_PolicyRectp[0x26].y, &screen_sprites_tab_start[1]);
     LbTextSetWindow((resvars.f3c_PolicyRectp[0x26].x + x) + resvars.f40[0x54].x, resvars.f3c_PolicyRectp[0x26].y + resvars.f40[0x54].y,
                     screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height);
-    sprintf(buf, "%s", D_001602dc[i++]);
+    sprintf(buf, "%s", policy_names[i++]);
     LbTextDraw(0, 0, buf);
     x = (allhosps[player].f217 - 1000) / 0x42 * 20;
     if (x < 0)
@@ -138,7 +138,7 @@ void fn_0004488c(void)
     reqspr_draw(resvars.f3c_PolicyRectp[0x27].x + x, resvars.f3c_PolicyRectp[0x27].y, &screen_sprites_tab_start[3]);
     LbTextSetWindow((resvars.f3c_PolicyRectp[0x27].x + x) + resvars.f40[0x54].x, resvars.f3c_PolicyRectp[0x27].y + resvars.f40[0x54].y,
                     screen_sprites_tab_start[3].width, screen_sprites_tab_start[3].height);
-    sprintf(buf, "%s", D_001602dc[i++]);
+    sprintf(buf, "%s", policy_names[i++]);
     LbTextDraw(0, 0, buf);
     x = allhosps[player].f21d / 0x27 * 10;
     if (x < 0)
@@ -148,7 +148,7 @@ void fn_0004488c(void)
     reqspr_draw(resvars.f3c_PolicyRectp[0x28].x + x, resvars.f3c_PolicyRectp[0x28].y, &screen_sprites_tab_start[3]);
     LbTextSetWindow((resvars.f3c_PolicyRectp[0x28].x + x) + resvars.f40[0x54].x, resvars.f3c_PolicyRectp[0x28].y + resvars.f40[0x54].y,
                     screen_sprites_tab_start[3].width, screen_sprites_tab_start[3].height);
-    sprintf(buf, "%s", D_001602dc[i++]);
+    sprintf(buf, "%s", policy_names[i++]);
     LbTextDraw(0, 0, buf);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (allhosps[player].f21f)

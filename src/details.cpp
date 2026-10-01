@@ -3,7 +3,7 @@
 extern "C" {
 
 void fn_000baad0(void);
-void fn_0008bdd4(void);
+void setup_pulldown_menu_options(void);
 void FadeMusic(u32 time, u8 volume);
 }
 
@@ -83,7 +83,7 @@ void set_default_player_details(void)
 void fn_000baad0(void)
 {
     FadeMusic(1000, myplayer.fc);
-    fn_0008bdd4();
+    setup_pulldown_menu_options();
     switch (myplayer.f1e) {
     case 1:
         vary_speed(10);

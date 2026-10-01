@@ -31,7 +31,7 @@ void play_last_midi(void);
 #define BSPR(i) (button_sprite + resvars.f12[i])
 
 // FUNCTION: 0x0008dee0
-extern "C" void fn_0008dee0(Requester *req)
+extern "C" void req6(Requester *req)
 {
     ReqButton *button;
     u16 idx;
@@ -95,7 +95,7 @@ extern "C" void fn_0008dee0(Requester *req)
 }
 
 // FUNCTION: 0x0008e184
-extern "C" void fn_0008e184(Requester *req)
+extern "C" void req6_overdraw(Requester *req)
 {
     u8 sel;
     u8 i;

@@ -17,14 +17,14 @@ struct PlayerPopup {
 
 extern "C" {
 extern PlayerPopup D_0015f5c2[];
-extern char **D_001602a4;
-extern char **D_001602cc;
-extern char **D_00160318;
+extern char **illness_text;
+extern char **room_names;
+extern char **skill_names;
 void fn_000c93bf(char *dst, char *src);
-extern u16 D_00158190;
+extern u16 choice;
 extern u8 D_00158192;
 extern Event D_001549d0[];
-extern EmergencyDef D_0015fc3c[];
+extern EmergencyDef emergency_control[];
 }
 
 u32 check_emergency_criteria(void);
@@ -99,7 +99,7 @@ u32 check_emergency_criteria(void)
     hosp_count = 1;
     if (statvar.unknownfd > 1)
         hosp_count = 4;
-    if (statvar.unknownfd <= 1 && display_mode == 9 && D_00158190 == 5)
+    if (statvar.unknownfd <= 1 && display_mode == 9 && choice == 5)
         return 0;
     if (actual_game_turn >= gamevar.f11d && gamevar.f123) {
         for (i = 0; i < hosp_count; i++) {
@@ -132,14 +132,14 @@ void setup_next_emergency(void)
     for (i = 0; i < 20; i++) {
         if (gamevar.f15b[i] == 0) {
             gamevar.f15b[i] = 1;
-            if (D_0015fc3c[i].end > month && D_0015fc3c[i].end > D_0015fc3c[i].start) {
-                r = old_newrand() % ((D_0015fc3c[i].end + 1 - D_0015fc3c[i].start) * 0x5dc);
-                gamevar.f11d = r + D_0015fc3c[i].start * 0x5dc;
-                gamevar.f124 = D_0015fc3c[i].illness;
-                r = old_newrand() % (D_0015fc3c[i].max + 1 - D_0015fc3c[i].min);
-                gamevar.f125 = r + D_0015fc3c[i].min;
-                gamevar.f126 = D_0015fc3c[i].f7;
-                gamevar.f121 = D_0015fc3c[i].f8;
+            if (emergency_control[i].end > month && emergency_control[i].end > emergency_control[i].start) {
+                r = old_newrand() % ((emergency_control[i].end + 1 - emergency_control[i].start) * 0x5dc);
+                gamevar.f11d = r + emergency_control[i].start * 0x5dc;
+                gamevar.f124 = emergency_control[i].illness;
+                r = old_newrand() % (emergency_control[i].max + 1 - emergency_control[i].min);
+                gamevar.f125 = r + emergency_control[i].min;
+                gamevar.f126 = emergency_control[i].f7;
+                gamevar.f121 = emergency_control[i].f8;
                 gamevar.f123 = 1;
                 break;
             }
@@ -251,20 +251,20 @@ u32 announce_emergency(u8 owner, char **strs)
     y = 0;
     sprintf(buf, strs[0], name);
     fn_000c93bf(text, buf);
-    sprintf(buf, strs[1], patients, D_001602a4[illness]);
+    sprintf(buf, strs[1], patients, illness_text[illness]);
     fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
     if (cured) {
         if (count)
-            sprintf(buf, strs[2], D_001602a4[illness], count);
+            sprintf(buf, strs[2], illness_text[illness], count);
         else
             sprintf(buf, strs[3]);
     } else if (missing_room && missing_staff) {
-        sprintf(buf, strs[4], D_001602cc[rooms[missing_room].id], D_00160318[missing_staff]);
+        sprintf(buf, strs[4], room_names[rooms[missing_room].id], skill_names[missing_staff]);
     } else if (missing_room) {
-        sprintf(buf, strs[5], D_001602cc[rooms[missing_room].id]);
+        sprintf(buf, strs[5], room_names[rooms[missing_room].id]);
     } else if (missing_staff) {
-        sprintf(buf, strs[6], D_00160318[missing_staff]);
+        sprintf(buf, strs[6], skill_names[missing_staff]);
     } else {
         sprintf(buf, strs[7]);
     }

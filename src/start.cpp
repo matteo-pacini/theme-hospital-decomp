@@ -1,20 +1,20 @@
 #include "hosp.h"
 
 extern "C" {
-extern char **D_001602a0;
-extern u8 D_00161200[];
-extern u16 D_00154834[];
+extern char **misc_text;
+extern u8 tutorial_display_flags[];
+extern u16 all_illnesses[];
 
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
-void fn_0008bdd4(void);
-extern u8 *D_00153f34;
+void setup_pulldown_menu_options(void);
+extern u8 *palette;
 extern u8 D_001581a6;
-extern char **D_0016037c, **D_00160374, **D_00160320, **D_00160398, **D_0016039c;
-extern u8 D_00156c04[], D_00157624[];
-extern u8 D_0015f99f;
+extern char **show_help_text_0, **level_text, **win_text, **D_00160398, **D_0016039c;
+extern u8 xs[], ys[];
+extern u8 new_game;
 extern Event D_001549d0[];
-void fn_00054d60(void);
+void setup_interactions(void);
 }
 
 extern WinLoseNet net_criteria[];
@@ -48,7 +48,7 @@ void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n);
 void init_wibble(void *xoff, void *yoff, s32 w, s32 h, s32 width, s32 freq, s32 amp);
 
 // FUNCTION: 0x00090610
-extern "C" void fn_00090610(void)
+extern "C" void start_game(void)
 {
     init_mcga_coords();
     set_font_from_cache(0);
@@ -58,12 +58,12 @@ extern "C" void fn_00090610(void)
     crequester.unknown2 = D_001581a6 = 0x63;
     myplayer.f1d = 1;
     setup_menus();
-    fn_00054d60();
+    setup_interactions();
     setup_help_indices();
     setup_aniseq_indices();
-    setup_indices_for_composite_help(D_0016037c, statvar.f4df, 0x1f);
-    setup_indices_for_composite_help(D_00160374, statvar.f51d, 0x13);
-    setup_indices_for_composite_help(D_00160320, statvar.f543, 0xd);
+    setup_indices_for_composite_help(show_help_text_0, statvar.f4df, 0x1f);
+    setup_indices_for_composite_help(level_text, statvar.f51d, 0x13);
+    setup_indices_for_composite_help(win_text, statvar.f543, 0xd);
     setup_indices_for_composite_help(D_00160398, statvar.f55b, 0xb);
     setup_indices_for_composite_help(D_0016039c, statvar.f56f, 4);
     InitPixBuffer(0, 0, 0xb4, 0xb4, 0xfe, 1);
@@ -71,17 +71,17 @@ extern "C" void fn_00090610(void)
     init_ambients();
     gamecounts.unknown14 = LbTimerClock();
     myplayer.f1e = 0x19;
-    init_wibble(D_00156c04, D_00157624, pixBuf.width + 0x20, pixBuf.width + 0x20, pixBuf.width, 0x11, 2);
+    init_wibble(xs, ys, pixBuf.width + 0x20, pixBuf.width + 0x20, pixBuf.width, 0x11, 2);
     measure_objects();
     choice_backup.mode = 0;
     current_text.text[0] = 0;
     if (debug.unknown1fa) {
         if (fn_000cd716(myplayer.unknown0) == 0)
-            fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
-        fn_00090804((u16)level_number, 1);
+            fn_000bbff0(myplayer.unknown0, misc_text[1]);
+        setup_new_level((u16)level_number, 1);
         load_player_details();
-        othervar.f24 = D_00153f34;
-        if (!D_0015f99f) {
+        othervar.f24 = palette;
+        if (!new_game) {
             D_001549d0[player].type = 0x1e;
             D_001549d0[player].value = debug.unknown10a;
         } else {
@@ -93,7 +93,7 @@ extern "C" void fn_00090610(void)
 }
 
 // FUNCTION: 0x00090804
-void fn_00090804(int level, u8 reload_balance)
+void setup_new_level(int level, u8 reload_balance)
 {
     u32 i;
     u8 saved_fa75;
@@ -101,7 +101,7 @@ void fn_00090804(int level, u8 reload_balance)
 
     myhosp = &allhosps[player];
     if (fn_000cd716(myplayer.unknown0) == 0)
-        fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
+        fn_000bbff0(myplayer.unknown0, misc_text[1]);
     fn_000bbff0((char *)myhosp->unknown0, myplayer.unknown0);
     myhosp->f2a = 1;
     if ((u16)level > 14)
@@ -164,12 +164,12 @@ void fn_00090804(int level, u8 reload_balance)
     setup_next_emergency();
     setup_next_quake();
     reset_advisor();
-    LbMemorySet(D_00161200, 0, 0x26);
+    LbMemorySet(tutorial_display_flags, 0, 0x26);
     othervar.f8c = get_next_illness(1, 0);
     check_save_games();
     othervar.fa55 = 1;
     othervar.fa58 = 0x39;
-    fn_0008bdd4();
+    setup_pulldown_menu_options();
     setup_key_mappos();
     setup_next_net_criteria(player);
     if (statvar.f5dd) {
@@ -229,7 +229,7 @@ void balance_control(void)
     statvar.f8 = 0;
     for (i = 0; i < 14; i++) {
         if (visuals[i]) {
-            D_00154834[count++] = i + 2;
+            all_illnesses[count++] = i + 2;
             kind = expertise[i + 2].kind;
             objects[kind].unknown1c = 1;
         }
@@ -246,7 +246,7 @@ void balance_control(void)
     for (i = 0; i < 20; i++) {
         if (all)
             non_visuals[i] = 1;
-        D_00154834[count++] = i + 16;
+        all_illnesses[count++] = i + 16;
         statvar.fa += non_visuals[i];
         non_visuals[i] = statvar.fa;
     }

@@ -4,12 +4,12 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_ma
 
 extern "C" {
 // demo: earthquake_table
-s8 D_00145338[16][2] = {
+s8 earthquake_table[16][2] = {
     { 4, 4 }, { 1, 2 }, { 3, 1 }, { 2, 1 }, { 0, -2 }, { -1, -2 }, { 4, -4 }, { 1, -2 },
     { -4, 4 }, { -3, -1 }, { -2, 0 }, { 0, 2 }, { -2, -1 }, { -4, -4 }, { 2, 0 }, { -1, 2 },
 };
 void ReleaseLoopedSample(u32 source, s16 sample);
-void fn_000a30f0(s8 dx, s8 dy);
+void shake_screen(s8 dx, s8 dy);
 }
 
 // FUNCTION: 0x000a2f00
@@ -22,7 +22,7 @@ u8 earthquake(const s8 magnitude, const u8 chance)
             } else {
                 gamevar.ff3 += saferand() % 16;
                 gamevar.ff3 = gamevar.ff3 % 16;
-                fn_000a30f0(gamevar.ff2 * D_00145338[gamevar.ff3][0], gamevar.ff2 * D_00145338[gamevar.ff3][1]);
+                shake_screen(gamevar.ff2 * earthquake_table[gamevar.ff3][0], gamevar.ff2 * earthquake_table[gamevar.ff3][1]);
                 return 1;
             }
         }
@@ -35,7 +35,7 @@ u8 earthquake(const s8 magnitude, const u8 chance)
             } else {
                 gamevar.ff3 += saferand() % 16;
                 gamevar.ff3 = gamevar.ff3 % 16;
-                fn_000a30f0(gamevar.ff2 * D_00145338[gamevar.ff3][0], gamevar.ff2 * D_00145338[gamevar.ff3][1]);
+                shake_screen(gamevar.ff2 * earthquake_table[gamevar.ff3][0], gamevar.ff2 * earthquake_table[gamevar.ff3][1]);
                 return 1;
             }
         }
@@ -49,7 +49,7 @@ u8 earthquake(const s8 magnitude, const u8 chance)
 }
 
 // FUNCTION: 0x000a30f0
-void fn_000a30f0(s8 dx, s8 dy)
+void shake_screen(s8 dx, s8 dy)
 {
     if (!check_if_point_beyond_scroll_limit(window.f0[0] + dx, window.fc[0] + dy, 0)) {
         window.f0[0] += dx;

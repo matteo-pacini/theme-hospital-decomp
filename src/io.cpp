@@ -46,40 +46,40 @@ extern u16 D_0015fe86[];
 extern u32 D_0015fe78, D_0015fe7c, D_0015fe80;
 extern u32 D_0016028c, D_00160290;
 extern u8 D_00160294;
-extern Struct_001602a0 *D_001602a0;
+extern Struct_001602a0 *misc_text;
 extern u8 D_001581ee;
 extern s32 D_001581e8;
 extern u8 D_001581ef, D_001581f0;
-extern u8 *D_00153f34;
+extern u8 *palette;
 extern u8 D_00156910;
-extern u8 D_0015fe84;
-extern u8 D_0015fe85;
+extern u8 last_saved;
+extern u8 need_a_save;
 extern u8 D_00158166;
 extern Slot D_001581b2[];
 extern Stride6c D_0015f5c2[];
 
 int LbScreenLock(void);
-u32 fn_00022790(void);
+u32 check_sum(void);
 u8 fn_00086b60(void);
 void fn_0008debc(char *s);
-u8 fn_00029748(void);
-void fn_000228e0(void);
-void fn_00022a58(void);
-void fn_0007fbb8(int a);
+u8 is_player_building(void);
+void check_autosave(void);
+void restart_level(void);
+void find_other_player(int a);
 void fn_0002994c(u8 a);
 u8 fn_0002d11c(Thing *o);
-int fn_0001c030(int region);
-void fn_0001c084(int percent);
-u16 fn_0001c1b4(u16 *p, int len);
-void fn_0001c234(void);
-int fn_0001c318(s8 port, u32 base, int len);
-void fn_0001c5e4(void);
+int is_checksummed_region(int region);
+void draw_sync_progress(int percent);
+u16 checksum16(u16 *p, int len);
+void checksum_memory_regions(void);
+int sync_memory_region(s8 port, u32 base, int len);
+void resync_network_game(void);
 void *fn_00022b60(TbCacheUsedBlock *block);
 
 }
 
 // FUNCTION: 0x0001c030
-int fn_0001c030(int region)
+int is_checksummed_region(int region)
 {
     if (!(region >= 0x11 || region == 0xc || region == 0xd || region == 7 || region == 9)) {
         return 1;
@@ -88,7 +88,7 @@ int fn_0001c030(int region)
 }
 
 // FUNCTION: 0x0001c084
-void fn_0001c084(int percent)
+void draw_sync_progress(int percent)
 {
     u8 was_locked = lbDisplay.unknown4 != 0;
 
@@ -99,7 +99,7 @@ void fn_0001c084(int percent)
             while (LbScreenLock() != 1) {
             }
         }
-        sprintf(buf, "%s (%d%%)", D_001602a0->f6c, percent);
+        sprintf(buf, "%s (%d%%)", misc_text->f6c, percent);
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(0x2c);
@@ -115,7 +115,7 @@ void fn_0001c084(int percent)
 }
 
 // FUNCTION: 0x0001c1b4
-u16 fn_0001c1b4(u16 *p, int len)
+u16 checksum16(u16 *p, int len)
 {
     u32 sum = 0;
 
@@ -133,7 +133,7 @@ u16 fn_0001c1b4(u16 *p, int len)
 }
 
 // FUNCTION: 0x0001c234
-void fn_0001c234(void)
+void checksum_memory_regions(void)
 {
     int i;
     u32 p;
@@ -143,7 +143,7 @@ void fn_0001c234(void)
 
     D_00160288 = 0;
     for (i = 0; D_001290d4[i].addr != 0; i++) {
-        if (fn_0001c030(i)) {
+        if (is_checksummed_region(i)) {
             p = base = D_001290d4[i].addr;
             size = D_001290d4[i].size;
             while (base + size > p) {
@@ -152,7 +152,7 @@ void fn_0001c234(void)
                     chunk = base + size - p;
                 }
                 if (D_00160288 < 0x200) {
-                    D_0015fe86[D_00160288++] = fn_0001c1b4((u16 *)p, chunk);
+                    D_0015fe86[D_00160288++] = checksum16((u16 *)p, chunk);
                 }
                 p += chunk;
             }
@@ -162,7 +162,7 @@ void fn_0001c234(void)
 }
 
 // FUNCTION: 0x0001c318
-int fn_0001c318(s8 port, u32 base, int len)
+int sync_memory_region(s8 port, u32 base, int len)
 {
     int tries;
     int chunk;
@@ -178,7 +178,7 @@ int fn_0001c318(s8 port, u32 base, int len)
             if (off + chunk > len) {
                 chunk = len - off;
             }
-            if (D_0015fe86[D_0015fe78++] != fn_0001c1b4((u16 *)(base + off), chunk)) {
+            if (D_0015fe86[D_0015fe78++] != checksum16((u16 *)(base + off), chunk)) {
                 tries = 0;
                 do {
                 } while (LbNetwork_Send(D_00160508, &off, 4) == -1 && tries++ < 8);
@@ -192,7 +192,7 @@ int fn_0001c318(s8 port, u32 base, int len)
                     return 0;
                 }
                 if ((D_0015fe7c++ & 0xf) == 0) {
-                    fn_0001c084((D_00160290 + chunk) * 100 / D_0016028c);
+                    draw_sync_progress((D_00160290 + chunk) * 100 / D_0016028c);
                 }
             }
             off += chunk;
@@ -230,18 +230,18 @@ int fn_0001c318(s8 port, u32 base, int len)
                 end = off + chunk;
             }
             if ((D_0015fe7c++ & 0xf) == 0) {
-                fn_0001c084((D_00160290 + end) * 100 / D_0016028c);
+                draw_sync_progress((D_00160290 + end) * 100 / D_0016028c);
             }
         }
         D_00160290 += len;
-        fn_0001c084(D_00160290 * 100 / D_0016028c);
+        draw_sync_progress(D_00160290 * 100 / D_0016028c);
     }
     D_0015fe80++;
     return 1;
 }
 
 // FUNCTION: 0x0001c5e4
-void fn_0001c5e4(void)
+void resync_network_game(void)
 {
     int value;
     int i;
@@ -252,7 +252,7 @@ void fn_0001c5e4(void)
         for (i = 0; i < 4; i++) {
             if (D_001549d0[i].checksum != 0) {
                 if (D_001549d0[player].checksum != D_001549d0[i].checksum) {
-                    fn_0001c084(0);
+                    draw_sync_progress(0);
                     D_00160290 = 0;
                     tries = 0;
                     do {
@@ -260,10 +260,10 @@ void fn_0001c5e4(void)
                     if (tries >= 8) {
                         return;
                     }
-                    if (!fn_00021818(0, i)) {
+                    if (!save_game(0, i)) {
                         return;
                     }
-                    fn_0001c084(100);
+                    draw_sync_progress(100);
                 }
             }
         }
@@ -280,14 +280,14 @@ void fn_0001c5e4(void)
         }
     } else {
         if (D_001549d0[player].checksum != D_001549d0[D_00160508].checksum) {
-            fn_0001c084(0);
+            draw_sync_progress(0);
             D_00160290 = 0;
             value = 0;
             while (value == 0) {
                 LbNetwork_Receive(D_00160508, &value, 4);
             }
-            fn_00021c38(0, 1);
-            fn_0001c084(100);
+            load_game(0, 1);
+            draw_sync_progress(100);
         }
         value = 0;
         while (value == 0) {
@@ -351,7 +351,7 @@ void process_turn(void)
         D_001549d0[player].flags = 0;
     }
     if (statvar.unknownfd > 1) {
-        D_001549d0[player].checksum = fn_00022790();
+        D_001549d0[player].checksum = check_sum();
         sprintf(buf, "size of pac %ld", 0xf);
         if (!fn_00086b60()) {
             LbNetwork_ChangeExchangeBuffer(packet, 0xf);
@@ -378,7 +378,7 @@ void process_turn(void)
             if (changed) {
                 finish_composite_help();
                 D_00160294 = 1;
-                fn_0001c5e4();
+                resync_network_game();
                 D_00160294 = 0;
             }
         }
@@ -458,7 +458,7 @@ void process_turn(void)
         case 5: {
             u8 empty = !allhosps[i].f11f4;
 
-            if (fn_00029c4c(D_001549d0[i].value, D_001549d0[i].arg, 0, i)) {
+            if (place_staff_on_map(D_001549d0[i].value, D_001549d0[i].arg, 0, i)) {
                 if (empty) {
                     change_balance(TX_HIRE_STAFF, -(thing[D_001549d0[i].arg].salary * 12) / 10, 0, othervar.ff);
                 }
@@ -470,7 +470,7 @@ void process_turn(void)
             break;
         }
         case EV_PLACE_OBJECT:
-            if (fn_00037098(D_001549d0[i].value, D_001549d0[i].argb[0], D_001549d0[i].argb[1], i) != 0) {
+            if (place_object(D_001549d0[i].value, D_001549d0[i].argb[0], D_001549d0[i].argb[1], i) != 0) {
                 if (i == player) {
                     play_sound(10, SFX_PLACE_R, -1, -1);
                     object_placed();
@@ -564,7 +564,7 @@ void process_turn(void)
             if (i == player) {
                 if (othervar.fa0e[D_001549d0[i].value] == 1) {
                     if (allhosps[i].f11f4) {
-                        fn_00029c4c(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
+                        place_staff_on_map(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
                     } else if (gamevar.unknown75) {
                         req2_exit_employing(gamevar.unknown75);
                     }
@@ -572,13 +572,13 @@ void process_turn(void)
                     set_mouse_mode(MM_NORMAL);
                     lbDisplay.left_button = 0;
                 }
-                fn_00021818((s8)D_001549d0[i].value, -1);
+                save_game((s8)D_001549d0[i].value, -1);
                 check_save_games();
             }
             break;
         case 0xd:
             if (i == player) {
-                fn_00021c38((s8)D_001549d0[i].value, -1);
+                load_game((s8)D_001549d0[i].value, -1);
             }
             break;
         case EV_VARY_SPEED:
@@ -626,7 +626,7 @@ void process_turn(void)
                 }
                 statvar.unknownfd = 1;
                 player = 0;
-                fn_0007fbb8(-1);
+                find_other_player(-1);
             }
             quit_game = 1;
             if (debug.unknowne2 == 1) {
@@ -655,7 +655,7 @@ void process_turn(void)
             break;
         case 0x1e:
             if (i == player) {
-                if (fn_00021c38((s8)D_001549d0[i].value, -1) == 0) {
+                if (load_game((s8)D_001549d0[i].value, -1) == 0) {
                     goto_cell_in_window(0, get_room_info(1, 0x65, othervar.ff)->unknown4);
                     othervar.f10 = 1;
                 }
@@ -731,7 +731,7 @@ void process_turn(void)
             break;
         case 0x2a:
             if (i == player) {
-                hosp_fade_palette(D_00153f34, 0x32, Lb_PALETTE_FADE_CLOSED);
+                hosp_fade_palette(palette, 0x32, Lb_PALETTE_FADE_CLOSED);
             }
             break;
         case 0x2e:
@@ -740,7 +740,7 @@ void process_turn(void)
                 if (crequester.unknown2 == 0x63) {
                     req2_reset();
                     close_irequesters();
-                    fn_0001bc94(crequester.unknown2, 1);
+                    open_requester(crequester.unknown2, 1);
                     set_mouse_sprite(1);
                     pmenu.unknown7 = 1;
                 }
@@ -776,7 +776,7 @@ void process_turn(void)
                 display_mode = 0;
                 othervar.f10 = 1;
                 D_00156910 = 1;
-                othervar.f1f = D_00153f34;
+                othervar.f1f = palette;
             }
             break;
         case EV_OPEN_SCREEN:
@@ -785,7 +785,7 @@ void process_turn(void)
                 break;
             }
             if (allhosps[i].f11f4) {
-                fn_00029c4c(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
+                place_staff_on_map(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
             }
             update_cure_costs();
             if (i == player) {
@@ -849,7 +849,7 @@ void process_turn(void)
                     crequester.unknown2 = 9;
                     crequester.unknown0 = 1;
                     close_irequesters();
-                    fn_0001bc94(crequester.unknown2, 1);
+                    open_requester(crequester.unknown2, 1);
                     crequester.unknown6 = 0;
                     set_mouse_sprite(1);
                     crequester.unknown8 = 0;
@@ -870,7 +870,7 @@ void process_turn(void)
                     crequester.unknown9 = 0;
                     crequester.unknownA = 0;
                     close_irequesters();
-                    fn_0001bc94(crequester.unknown2, 1);
+                    open_requester(crequester.unknown2, 1);
                     set_mouse_sprite(1);
                     othervar.f63 = 0;
                     othervar.f61 = D_001549d0[i].value;
@@ -887,7 +887,7 @@ void process_turn(void)
             break;
         case 0x38:
             if (allhosps[i].f11f4) {
-                fn_00029c4c(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
+                place_staff_on_map(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
             } else if (D_001549d0[i].value) {
                 req2_exit_employing(D_001549d0[i].value);
             }
@@ -953,7 +953,7 @@ void process_turn(void)
                 if (slot) {
                     close_irequesters();
                     othervar.f9b8 = slot;
-                    fn_0001bc94(D_001581b2[slot].kind, 1);
+                    open_requester(D_001581b2[slot].kind, 1);
                     D_001581b2[slot].value = D_001549d0[i].value;
                     set_mouse_sprite(1);
                 }
@@ -1017,7 +1017,7 @@ void process_turn(void)
                     crequester.unknown9 = 0;
                     crequester.unknownA = 0;
                     close_irequesters();
-                    fn_0001bc94(crequester.unknown2, 1);
+                    open_requester(crequester.unknown2, 1);
                     set_mouse_sprite(1);
                     pmenu.unknown7 = 1;
                 }
@@ -1112,7 +1112,7 @@ void process_turn(void)
                 adjust_build_palette_for_shop(&room_info[allhosps[i].unknown11b7]);
                 set_buyable_items(room_info[allhosps[i].unknown11b7].type);
                 crequester.unknown2 = 10;
-                fn_0001bc94(crequester.unknown2, 1);
+                open_requester(crequester.unknown2, 1);
                 crequester.unknown8 = allhosps[i].f11bc;
                 crequester.unknown9 = room_info[allhosps[i].unknown11b7].f8;
                 crequester.unknown0 = 3;
@@ -1153,7 +1153,7 @@ void process_turn(void)
                     set_buyable_items(3);
                     close_irequesters();
                     crequester.unknown2 = 10;
-                    fn_0001bc94(crequester.unknown2, 1);
+                    open_requester(crequester.unknown2, 1);
                     allhosps[i].unknown11b7 = 0;
                     crequester.unknown8 = 3;
                     crequester.unknown9 = 0;
@@ -1417,7 +1417,7 @@ void process_turn(void)
                     close_crequester(crequester.unknown2);
                 }
                 crequester.unknown2 = 4;
-                fn_0001bc94(crequester.unknown2, 1);
+                open_requester(crequester.unknown2, 1);
                 pmenu.unknown7 = 1;
             }
             break;
@@ -1560,7 +1560,7 @@ void process_turn(void)
             }
             if (i == player && quiet == 0) {
                 restore_display_screen();
-                othervar.f1f = D_00153f34;
+                othervar.f1f = palette;
                 othervar.f10 = 1;
                 D_00156910 = 1;
             }
@@ -1617,7 +1617,7 @@ void process_turn(void)
                         statvar.unknownfd = 1;
                         player = 0;
                     }
-                    fn_0007fbb8((s8)i);
+                    find_other_player((s8)i);
                 }
                 break;
             case 2:
@@ -1734,7 +1734,7 @@ void process_turn(void)
                             break;
                         }
                         othervar.f9b8 = slot;
-                        fn_0001bc94(D_001581b2[slot].kind, 1);
+                        open_requester(D_001581b2[slot].kind, 1);
                         D_001581b2[slot].value = D_001549d0[i].arg;
                         set_mouse_sprite(1);
                     }
@@ -1779,7 +1779,7 @@ void process_turn(void)
                 if (slot) {
                     close_irequesters();
                     othervar.f9b8 = slot;
-                    fn_0001bc94(D_001581b2[slot].kind, 1);
+                    open_requester(D_001581b2[slot].kind, 1);
                     D_001581b2[slot].value = D_001549d0[i].value;
                     set_mouse_sprite(1);
                 }
@@ -1835,7 +1835,7 @@ void process_turn(void)
             break;
         case 0x91:
             close_yes_no_requester(0);
-            fn_00022a58();
+            restart_level();
             break;
         default:
             break;
@@ -1850,7 +1850,7 @@ void process_turn(void)
         D_001549d0[i].arg = 0;
     }
     othervar.ff = player;
-    fn_000228e0();
+    check_autosave();
 }
 
 // FUNCTION: 0x00021700
@@ -1887,7 +1887,7 @@ s16 save_game_valid(const s8 slot)
 }
 
 // FUNCTION: 0x00021818
-u16 fn_00021818(s8 slot, s8 port)
+u16 save_game(s8 slot, s8 port)
 {
     s32 cell;
     Thing *w;
@@ -1901,7 +1901,7 @@ u16 fn_00021818(s8 slot, s8 port)
         return 0;
     }
     if (statvar.unknownfd <= 1) {
-        if (!fn_00022854(1)) {
+        if (!check_okay_to_save(1)) {
             return 0;
         }
     }
@@ -1949,8 +1949,8 @@ u16 fn_00021818(s8 slot, s8 port)
         if (tries < 8) {
             ok = 1;
             for (i = 0; D_001290d4[i].addr; i++) {
-                if (fn_0001c030(i)) {
-                    if (!fn_0001c318(port, D_001290d4[i].addr, D_001290d4[i].size)) {
+                if (is_checksummed_region(i)) {
+                    if (!sync_memory_region(port, D_001290d4[i].addr, D_001290d4[i].size)) {
                         ok = 0;
                         break;
                     }
@@ -1980,7 +1980,7 @@ u16 fn_00021818(s8 slot, s8 port)
 }
 
 // FUNCTION: 0x00021c38
-s16 fn_00021c38(s8 slot, s8 port)
+s16 load_game(s8 slot, s8 port)
 {
     u8 saved_level;
     u16 ok;
@@ -2001,7 +2001,7 @@ s16 fn_00021c38(s8 slot, s8 port)
         }
     }
     if (port == -1) {
-        check_autosave();
+        reset_earthquake_variables();
         close_irequesters();
         if (crequester.unknown2 != 0x63) {
             close_crequester(crequester.unknown2);
@@ -2066,8 +2066,8 @@ s16 fn_00021c38(s8 slot, s8 port)
             ok = 1;
             setup_addresses();
             for (i = 0; D_001290d4[i].addr; i++) {
-                if (fn_0001c030(i)) {
-                    if (!fn_0001c318(-1, D_001290d4[i].addr, D_001290d4[i].size)) {
+                if (is_checksummed_region(i)) {
+                    if (!sync_memory_region(-1, D_001290d4[i].addr, D_001290d4[i].size)) {
                         ok = 0;
                         break;
                     }
@@ -2112,12 +2112,12 @@ void setup_addresses(void)
     if (statvar.unknownfd > 1) {
         D_0016028c = 0;
         for (i = 0; D_001290d4[i].addr; i++) {
-            if (fn_0001c030(i)) {
+            if (is_checksummed_region(i)) {
                 D_0016028c += D_001290d4[i].size;
             }
         }
         if (D_00160508 == player) {
-            fn_0001c234();
+            checksum_memory_regions();
         }
     }
 }
@@ -2213,7 +2213,7 @@ void free_level(void)
 }
 
 // FUNCTION: 0x00022790
-u32 fn_00022790(void)
+u32 check_sum(void)
 {
     u32 sum;
     int j;
@@ -2232,7 +2232,7 @@ u32 fn_00022790(void)
 }
 
 // FUNCTION: 0x00022820
-void check_autosave(void)
+void reset_earthquake_variables(void)
 {
     gamevar.ff0 = 0;
     gamevar.ff3 = 0;
@@ -2241,7 +2241,7 @@ void check_autosave(void)
 }
 
 // FUNCTION: 0x00022854
-u8 fn_00022854(u8 warn)
+u8 check_okay_to_save(u8 warn)
 {
     if (gamevar.f12e != MM_NORMAL) {
         if (warn) {
@@ -2250,7 +2250,7 @@ u8 fn_00022854(u8 warn)
         }
         return 0;
     }
-    if (fn_00029748() || allhosps[player].unknown11b7) {
+    if (is_player_building() || allhosps[player].unknown11b7) {
         if (warn) {
             othervar.fa66 = 0x19;
             othervar.fa67 = 0x14;
@@ -2261,18 +2261,18 @@ u8 fn_00022854(u8 warn)
 }
 
 // FUNCTION: 0x000228e0
-void fn_000228e0(void)
+void check_autosave(void)
 {
     if (myplayer.f22) {
         if (statvar.unknownfd <= 1) {
-            if (mycontrol->unknown64f == 0x1c || D_0015fe85) {
-                if (mycontrol->unknown650 + mycontrol->unknown64f != D_0015fe84 || D_0015fe85) {
-                    if (fn_00022854(0)) {
-                        fn_00021818(8, -1);
-                        D_0015fe84 = mycontrol->unknown650 + mycontrol->unknown64f;
-                        D_0015fe85 = 0;
+            if (mycontrol->unknown64f == 0x1c || need_a_save) {
+                if (mycontrol->unknown650 + mycontrol->unknown64f != last_saved || need_a_save) {
+                    if (check_okay_to_save(0)) {
+                        save_game(8, -1);
+                        last_saved = mycontrol->unknown650 + mycontrol->unknown64f;
+                        need_a_save = 0;
                     } else {
-                        D_0015fe85 = 1;
+                        need_a_save = 1;
                     }
                 }
             }
@@ -2303,22 +2303,22 @@ s32 read_level_number(s32 slot)
 }
 
 // FUNCTION: 0x00022a58
-void fn_00022a58(void)
+void restart_level(void)
 {
     if (statvar.unknownfd <= 1) {
-        check_autosave();
+        reset_earthquake_variables();
         reset_advisor();
         close_irequesters();
         if (crequester.unknown2 != 0x63) {
             close_crequester(crequester.unknown2);
         }
         D_00156910 = 1;
-        fn_00090804((u16)level_number, 1);
+        setup_new_level((u16)level_number, 1);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
         goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
         othervar.fa5c = 1;
         draw_it();
-        othervar.f24 = D_00153f34;
+        othervar.f24 = palette;
         init_ambients();
     }
 }

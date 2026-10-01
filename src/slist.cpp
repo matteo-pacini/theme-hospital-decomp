@@ -30,7 +30,7 @@ struct Slot {
 extern "C" {
 extern u8 D_001290d0, D_001290d1, D_001290d2;
 extern Event D_001549d0[];
-extern char **D_001602f4;
+extern char **slist_text;
 extern Slot D_001581b2[];
 }
 
@@ -280,7 +280,7 @@ void draw_slist_staff(const u16 selected)
     for (row = 0; row < 3; row++) {
         lbDisplay.draw_flags = 0x100;
         LbTextSetWindow(resvars.f3c_Boxp[row + 61].x, resvars.f3c_Boxp[row + 61].y, resvars.f3c_Boxp[row + 61].w, resvars.f3c_Boxp[row + 61].h);
-        LbTextDraw(0, (resvars.f3c_Boxp[row + 61].h - height) / 2, D_001602f4[row + 2]);
+        LbTextDraw(0, (resvars.f3c_Boxp[row + 61].h - height) / 2, slist_text[row + 2]);
         lbDisplay.draw_flags = 0;
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     }

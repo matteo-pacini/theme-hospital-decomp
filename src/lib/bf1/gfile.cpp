@@ -6,14 +6,14 @@ int strncmp(const char *a, const char *b, u32 n);
 int UnpackM1(void *src, void *dst);
 int LbFileLength(char *path);
 int LbFilePosition(int handle);
-void fn_000cd2cc(char *s, ...);
+void LbErrorLog(char *s, ...);
 int LbDirectoryCurrent(char *buf, u32 size);
 unsigned strlen(const char *s);
 char *strcpy(char *dst, const char *src);
 char *strcat(char *dst, const char *src);
 void *memcpy(void *dst, const void *src, u32 n);
 #pragma intrinsic(strlen, strcpy, strcat, memcpy)
-int fn_000bc75c(s8 *a, s8 *b, u32 len, int ignore_case);
+int compare(s8 *a, s8 *b, u32 len, int ignore_case);
 
 // FUNCTION: 0x000bc170
 int LbFileLengthRnc(char *path)
@@ -66,7 +66,7 @@ int LbFileLoadAt(char *path, void *buf)
                 LbFileClose(handle);
                 result = UnpackM1(buf, buf);
                 if (result < 0) {
-                    fn_000cd2cc("ERROR decompressing %s\n", path);
+                    LbErrorLog("ERROR decompressing %s\n", path);
                     return -1;
                 }
                 if (result == 0)
@@ -94,7 +94,7 @@ int LbFileSaveAt(char *path, void *buf, u32 size)
 }
 
 // FUNCTION: 0x000bc328
-int fn_000bc328(int handle, char *string, u8 *buf, u32 buflen, u32 flags)
+int LbFileStringSearch(int handle, char *string, u8 *buf, u32 buflen, u32 flags)
 {
     int start;
     int i;
@@ -126,7 +126,7 @@ int fn_000bc328(int handle, char *string, u8 *buf, u32 buflen, u32 flags)
     count = LbFileRead(handle, buf, buflen);
     while (found == -2 && count >= len) {
         for (i = 0; i <= count - len; i++) {
-            if (fn_000bc75c((s8 *)buf + i, search, len, flags)) {
+            if (compare((s8 *)buf + i, search, len, flags)) {
                 found = start + offset + i;
                 if (search[0] == '\n')
                     found++;
@@ -149,7 +149,7 @@ int fn_000bc328(int handle, char *string, u8 *buf, u32 buflen, u32 flags)
 }
 
 // FUNCTION: 0x000bc504
-int fn_000bc504(int current_dir, char *directory, char *filename, char *buf, u32 buflen)
+int LbFileMakeFullPath(int current_dir, char *directory, char *filename, char *buf, u32 buflen)
 {
     u32 len;
 
@@ -181,7 +181,7 @@ int fn_000bc504(int current_dir, char *directory, char *filename, char *buf, u32
 }
 
 // FUNCTION: 0x000bc63c
-int fn_000bc63c(char *src, char *dst)
+int LbFileCopy(char *src, char *dst)
 {
     u8 buf[1024];
     u32 chunk;
@@ -220,7 +220,7 @@ int fn_000bc63c(char *src, char *dst)
 }
 
 // FUNCTION: 0x000bc75c
-int fn_000bc75c(s8 *s1, s8 *s2, u32 len, int ignore_case)
+int compare(s8 *s1, s8 *s2, u32 len, int ignore_case)
 {
     u32 i;
 

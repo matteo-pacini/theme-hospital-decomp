@@ -2,24 +2,24 @@
 
 extern "C" {
 
-extern u8 D_0015f99f;
+extern u8 new_game;
 extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef, D_001581f0;
-extern View D_0014619c;
+extern View ScreenBoxes;
 extern Point D_00146c8c[];
-extern Button D_00145378[];
-extern u8 D_0013bb0c[], D_0013c0fc[], D_001361ac[], D_001310e4[], D_00145358[];
-extern u8 D_0013c6a4[], D_00130288[], D_0012cc3c[];
+extern Button screenbuttons[];
+extern u8 D_0013bb0c[], D_0013c0fc[], window_list[], button_list[], screenlistpos[];
+extern u8 hiresbuttons[], panel_popup_coord[], D_0012cc3c[];
 extern u8 D_00147314[];
-extern int D_0013c77c[];
+extern int hireshelp[];
 extern MemRegion D_001290d4[];
-extern TbSprite *D_00153f44, *D_00153f48;
-extern u8 *D_00153f40;
-extern TbSprite *D_00153f88, *D_00153f94, *D_00153f24, *D_00153f54;
-extern TbSprite *D_00153f5c, *D_00153f60;
-extern u8 *D_00153f80, *D_00153f8c, *D_00153f1c, *D_00153f4c, *D_00153f58;
+extern TbSprite *tile, *end_tiles;
+extern u8 *tile_data;
+extern TbSprite *end_game_panel, *end_pulldv, *end_sprites, *end_watch;
+extern TbSprite *money, *end_money;
+extern u8 *game_panel_data, *pulldv_data, *sprite_data, *watch_data, *money_data;
 
-void fn_0001b7e0(void *dst, char *text, int flags);
-void fn_0001bdf8(void);
+void conv_string(void *dst, char *text, int flags);
+void display_copyright(void);
 
 // No code refers to it, and its type is unknown: its zeros are in _DATA,
 // where a string initialiser puts them (a zero initialiser puts them in
@@ -74,12 +74,12 @@ int main(u16 argc, char **argv)
                 case 'L':
                 case 'l':
                     level_number = atoi(arg);
-                    D_0015f99f = 1;
+                    new_game = 1;
                     debug.unknown1fa = 1;
                     goto next_arg;
                 case 'N':
                 case 'n':
-                    fn_0001b7e0(&myplayer, arg, 0);
+                    conv_string(&myplayer, arg, 0);
                     goto next_arg;
                 case 'P':
                 case 'p':
@@ -103,7 +103,7 @@ int main(u16 argc, char **argv)
     next_arg:;
     }
     if (statvar.unknownfc == 0) {
-        fn_0001bdf8();
+        display_copyright();
     }
     if (setup_host() == 0) {
         game();
@@ -132,21 +132,21 @@ void init_game_vars(void)
     resvars.f3 = 0x20;
     resvars.f4 = 0x40;
     resvars.f18_u8p = D_0013bb0c;
-    resvars.f3c = &D_0014619c;
+    resvars.f3c = &ScreenBoxes;
     resvars.f1c_u8p = D_0013c0fc;
     resvars.f40 = D_00146c8c;
-    resvars.f20_u8p = D_001361ac;
-    resvars.f24 = D_001310e4;
-    resvars.f44 = D_00145358;
-    resvars.f28 = D_0013c6a4;
-    resvars.f48 = D_00145378;
-    resvars.f2c_intp = D_0013c77c;
+    resvars.f20_u8p = window_list;
+    resvars.f24 = button_list;
+    resvars.f44 = screenlistpos;
+    resvars.f28 = hiresbuttons;
+    resvars.f48 = screenbuttons;
+    resvars.f2c_intp = hireshelp;
     resvars.f50 = D_00147314;
     resvars.f6_names = hires_req_filenames;
     resvars.fe = hires_requester_buttons;
     resvars.f12 = hires_requester_sprites;
     resvars.fa_charpp = hires_font_filenames;
-    resvars.f34 = D_00130288;
+    resvars.f34 = panel_popup_coord;
     resvars.f16 = 3;
     resvars.f17 = 0x20;
     resvars.f38 = D_0012cc3c;
@@ -201,24 +201,24 @@ void setup_blocks(void)
     reset_blocks();
     for (; blocks[i].height >= 0; i++) {
         if (i >= 0x50) {
-            blocks[i].data = (u32)&D_00153f44[(u8)blocks[i].data + 0x51];
+            blocks[i].data = (u32)&tile[(u8)blocks[i].data + 0x51];
         } else {
-            blocks[i].data = (u32)&D_00153f44[(u8)blocks[i].data];
+            blocks[i].data = (u32)&tile[(u8)blocks[i].data];
         }
     }
-    LbSpriteSetup(D_00153f44, D_00153f48, D_00153f40);
+    LbSpriteSetup(tile, end_tiles, tile_data);
 }
 
 // FUNCTION: 0x000106c0
 void setup_game_sprites(void)
 {
     setup_blocks();
-    LbSpriteSetup(game_panel, D_00153f88, D_00153f80);
+    LbSpriteSetup(game_panel, end_game_panel, game_panel_data);
     LbSpriteSetup(button_sprite, end_button_sprites, button_sprite_data);
-    LbSpriteSetup(pulldv, D_00153f94, D_00153f8c);
-    LbSpriteSetup(sprite, D_00153f24, D_00153f1c);
-    LbSpriteSetup(watch, D_00153f54, D_00153f4c);
-    LbSpriteSetup(D_00153f5c, D_00153f60, D_00153f58);
+    LbSpriteSetup(pulldv, end_pulldv, pulldv_data);
+    LbSpriteSetup(sprite, end_sprites, sprite_data);
+    LbSpriteSetup(watch, end_watch, watch_data);
+    LbSpriteSetup(money, end_money, money_data);
 }
 
 // FUNCTION: 0x00010760

@@ -3,7 +3,7 @@
 extern "C" {
 
 // FUNCTION: 0xdc820
-void fn_000dc820(void)
+void FreeMusic(void)
 {
     if (!MusicInstalled)
         return;
@@ -28,7 +28,7 @@ void fn_000dc820(void)
 }
 
 // FUNCTION: 0xdc8d0
-void fn_000dc8d0(void)
+void FreeSound(void)
 {
     if (!SoundInstalled)
         return;

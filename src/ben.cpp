@@ -3,7 +3,7 @@
 extern "C" {
 
 void fn_000c93bf(char *dst, char *src);
-void fn_000cd2cc(char *s, ...);
+void LbErrorLog(char *s, ...);
 int strcmp(const char *a, const char *b);
 void LbDataLoadSetModifyFilenameFunction(char *(*fn)(TbLoadFiles *));
 }
@@ -63,7 +63,7 @@ char *modify_data_load_filename(TbLoadFiles *file)
         fn_000bbff0(filename, (char *)file);
     }
     check_cd_available(filename);
-    fn_000cd2cc(filename);
+    LbErrorLog(filename);
     return filename;
 }
 

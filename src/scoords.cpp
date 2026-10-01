@@ -6,7 +6,7 @@
 // demo's names for them.
 
 extern "C" {
-void fn_0004477c(u8 button);
+void process_policy_button(u8 button);
 void fn_0008fa90(u8 button);
 }
 
@@ -35,12 +35,12 @@ void process_yearend_buttons(u8 button);
 
 extern "C" {
 // demo: screenlistpos, of type SlistPos (layout unknown)
-s16 D_00145358[16] = {
+s16 screenlistpos[16] = {
     496, 372, 0, 581, 456, 0, 0, 0, 0, 65, 455,
 };
 
 // demo: screenbuttons
-SlistButton D_00145378[201] = {
+SlistButton screenbuttons[201] = {
     { 601, 442, 26, 26, process_stat_button, 89, 2, 186, 1, 1 },
     { 0, 0, 600, 440, process_stat_button },
     { 0 },
@@ -51,13 +51,13 @@ SlistButton D_00145378[201] = {
     { 547, 277, 40, 20, process_bank_button, 35, 2, 21, 1, 3 },
     { 607, 448, 26, 26, process_bank_button, 95, 2, 192, 1, 4 },
     { 0 },
-    { 348, 373, 48, 17, fn_0004477c },
-    { 395, 373, 48, 17, fn_0004477c },
-    { 607, 447, 26, 26, fn_0004477c },
+    { 348, 373, 48, 17, process_policy_button },
+    { 395, 373, 48, 17, process_policy_button },
+    { 607, 447, 26, 26, process_policy_button },
     { 0 },
-    { 0, 0, 0, 0, fn_0004477c },
-    { 0, 0, 0, 0, fn_0004477c },
-    { 0, 0, 0, 0, fn_0004477c },
+    { 0, 0, 0, 0, process_policy_button },
+    { 0, 0, 0, 0, process_policy_button },
+    { 0, 0, 0, 0, process_policy_button },
     { 0 },
     { 355, 134, 22, 22, process_drug_button, 98, 1, 133, 0, 5 },
     { 238, 134, 22, 22, process_drug_button, 237, 0, 133, 0, 4 },
@@ -244,7 +244,7 @@ SlistButton D_00145378[201] = {
 };
 
 // demo: ScreenBoxes
-BoxCoord D_0014619c[175] = {
+BoxCoord ScreenBoxes[175] = {
     { 249, 70, 113, 385 },
     { 343, 105, 3, 3 },
     { 50, 431, 89 },

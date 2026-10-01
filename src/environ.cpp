@@ -9,7 +9,7 @@ extern WinLose lose_criteria[];
 extern "C" {
 
 
-u8 fn_0007628c(Thing *w);
+u8 shall_i_be_abducted(Thing *w);
 
 }
 
@@ -264,7 +264,7 @@ u8 do_reaction(Thing *peep)
             change_health(peep, -10);
             return 1;
         }
-        if (fn_0007628c(peep))
+        if (shall_i_be_abducted(peep))
             return 1;
         if (old_newrand() % 200 == 0) {
             for (i = 0; i < 5; i++) {
@@ -453,7 +453,7 @@ void appraise_staff(Thing *employee)
                 if (employee->room != 0 && employee->room->type == ROOM_TRAINING) {
                     employee->next_state = SS_IN_CORRIDOR;
                     set_complex(employee, 0x136, employee->room->unknown6);
-                    fn_0003e724(employee);
+                    process_staff_complex(employee);
                 }
             }
         }

@@ -81,22 +81,22 @@ extern u8 panel_emergency_spr[];
 
 extern "C" {
 
-extern char **D_001602cc;
-extern char **D_0016029c;
+extern char **room_names;
+extern char **object_names;
 extern Event D_001549d0[];
 extern u8 D_00156910;
-extern TbSprite *D_00153f80;
-extern TbSprite *D_00153f88;
-extern char **D_001602a0;
-extern char **D_00160298;
-extern char **D_00160318;
-extern char **D_001602a4;
+extern TbSprite *game_panel_data;
+extern TbSprite *end_game_panel;
+extern char **misc_text;
+extern char **staff_names;
+extern char **skill_names;
+extern char **illness_text;
 
 void fn_000c93bf(char *dst, char *src);
 void LbDataLoadAll(TbLoadFiles *files);
-void fn_00035824(void);
-void fn_00036594(s32 value, char *text);
-void fn_00036730(char *text, u8 *line, u8 lines);
+void rebuild_panel_popup_pos(void);
+void draw_panel_percent_bar(s32 value, char *text);
+void draw_panel_info_line(char *text, u8 *line, u8 lines);
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 void fn_000ccac4(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
@@ -106,7 +106,7 @@ void fn_000ccac4(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
 
 extern "C" {
 // demo: panel_popup_coord
-Coord D_00130288[40] = {
+Coord panel_popup_coord[40] = {
     { 0, 0 },
     { 174, 29 },
     { 174, 29 },
@@ -658,7 +658,7 @@ void display_panel_person_info(void)
         text = info_bar_text[19];
     if (text) {
         line = 1;
-        fn_00036730(text, &line, 3);
+        draw_panel_info_line(text, &line, 3);
         return;
     }
     if (resvars.f1 == SCREEN_MODE_13)
@@ -666,53 +666,53 @@ void display_panel_person_info(void)
     else
         lines = 1;
     if (person->flags0 & PF_AWAITING_DECISION) {
-        fn_00036730(info_bar_text[5], &line, lines);
+        draw_panel_info_line(info_bar_text[5], &line, lines);
     } else if (person->flags0 & PF_WAITING_FOR_ROOM) {
         if (person->flags1 & 4)
-            fn_00036730(info_bar_text[17], &line, lines);
+            draw_panel_info_line(info_bar_text[17], &line, lines);
         else
-            fn_00036730(info_bar_text[18], &line, lines);
+            draw_panel_info_line(info_bar_text[18], &line, lines);
     } else {
         room = &room_info[person->queue_room];
         if (room > room_info && room < end_room_info) {
-            sprintf(buf, info_bar_text[6], D_001602cc[rooms[room->type].id]);
-            fn_00036730(buf, &line, lines);
+            sprintf(buf, info_bar_text[6], room_names[rooms[room->type].id]);
+            draw_panel_info_line(buf, &line, lines);
         }
         room = &room_info[person->dest_room];
         if (room > room_info && room < end_room_info && person->dest_room != person->queue_room) {
-            sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
-            fn_00036730(buf, &line, lines);
+            sprintf(buf, info_bar_text[7], room_names[rooms[room->type].id]);
+            draw_panel_info_line(buf, &line, lines);
         }
     }
     if (person->flags1 & (PF_CURED >> 8))
-        fn_00036730(info_bar_text[8], &line, lines);
+        draw_panel_info_line(info_bar_text[8], &line, lines);
     else if (person->flags1 & (PF_SENT_HOME_BY_INSPECTOR >> 8))
-        fn_00036730(info_bar_text[24], &line, lines);
+        draw_panel_info_line(info_bar_text[24], &line, lines);
     else if (person->flags1 & (PF_FED_UP >> 8))
-        fn_00036730(info_bar_text[9], &line, lines);
+        draw_panel_info_line(info_bar_text[9], &line, lines);
     else if (person->flags1 & (PF_SENT_HOME >> 8))
-        fn_00036730(info_bar_text[10], &line, lines);
+        draw_panel_info_line(info_bar_text[10], &line, lines);
     else if (person->flags2 & (PF_REFERRED >> 16))
-        fn_00036730(info_bar_text[11], &line, lines);
+        draw_panel_info_line(info_bar_text[11], &line, lines);
     else if (person->flags0 & PF_CONTAGIOUS)
-        fn_00036730(info_bar_text[25], &line, lines);
+        draw_panel_info_line(info_bar_text[25], &line, lines);
     if (line < 3 && person->illness != 0) {
         if (person->flags0 & PF_EMERGENCY) {
             line = 2;
-            sprintf(buf, info_bar_text[22], D_001602a4[person->illness]);
-            fn_00036730(buf, &line, 3);
+            sprintf(buf, info_bar_text[22], illness_text[person->illness]);
+            draw_panel_info_line(buf, &line, 3);
         } else if (person->flags32 & (PF_GUESSED | PF_DIAGNOSED)) {
             u8 k;
 
             k = person->known_illness;
             line = 2;
             if (person->flags2 & (PF_DIAGNOSED >> 16))
-                sprintf(buf, info_bar_text[12], D_001602a4[k]);
+                sprintf(buf, info_bar_text[12], illness_text[k]);
             else
-                sprintf(buf, info_bar_text[13], D_001602a4[k]);
-            fn_00036730(buf, &line, 3);
+                sprintf(buf, info_bar_text[13], illness_text[k]);
+            draw_panel_info_line(buf, &line, 3);
         } else {
-            fn_00036594(person->diagnosis * 100 / gbv.ffc, info_bar_text[14]);
+            draw_panel_percent_bar(person->diagnosis * 100 / gbv.ffc, info_bar_text[14]);
         }
     }
 }
@@ -738,41 +738,41 @@ void display_panel_staff_info(void)
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
-        fn_000bbff0(buf, D_00160298[staff->subtype]);
+        fn_000bbff0(buf, staff_names[staff->subtype]);
         if ((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (staff->skills & 0x1e0)) {
             fn_000bbff0(buf, "");
             n = 0;
             if (staff->skills & SKILL_CONSULTANT)
-                fn_000bbff0(names[n++], D_00160318[7]);
+                fn_000bbff0(names[n++], skill_names[7]);
             if (staff->skills & SKILL_RESEARCHER)
-                fn_000bbff0(names[n++], D_00160318[8]);
+                fn_000bbff0(names[n++], skill_names[8]);
             if (staff->skills & SKILL_SURGEON)
-                fn_000bbff0(names[n++], D_00160318[5]);
+                fn_000bbff0(names[n++], skill_names[5]);
             if (staff->skills & SKILL_PSYCHIATRIST) {
                 if (n == 3)
                     fn_000bbff0(names[n++], info_bar_text[26]);
                 else
-                    fn_000bbff0(names[n++], D_00160318[6]);
+                    fn_000bbff0(names[n++], skill_names[6]);
             }
             fn_000bbff0(buf, names[0]);
             for (i = 1; i < n; i++)
                 sprintf(buf, "%s %s", buf, names[i]);
         }
-        fn_00036730(buf, &line, 2);
+        draw_panel_info_line(buf, &line, 2);
         if (resvars.f1 == SCREEN_MODE_13) {
             room = &room_info[staff->dest_room];
             if (room > room_info) {
-                sprintf(buf, info_bar_text[7], D_001602cc[rooms[room->type].id]);
-                fn_00036730(buf, &line, 2);
+                sprintf(buf, info_bar_text[7], room_names[rooms[room->type].id]);
+                draw_panel_info_line(buf, &line, 2);
             } else if ((staff->subtype == STAFF_DOCTOR && staff->state == SS_DOCTOR_WAITS_FOR_PATIENT) || staff->next_state == SS_RECEPT_WAITS_FOR_PATIENT) {
-                fn_00036730(info_bar_text[23], &line, 2);
+                draw_panel_info_line(info_bar_text[23], &line, 2);
             } else if (staff->state == SS_WANDERS) {
-                fn_00036730(info_bar_text[27], &line, 2);
+                draw_panel_info_line(info_bar_text[27], &line, 2);
             }
         }
         pct = allhosps[staff->owner].f21d * 100 / 1000;
         pct > 100 ? pct = 100 : 0;
-        fn_00036594(staff->tiredness * 100 / 1000, info_bar_text[28]);
+        draw_panel_percent_bar(staff->tiredness * 100 / 1000, info_bar_text[28]);
         fn_000ccac4(pct * (resvars.f18_PanelLayoutp->unknown5e8 - 2) / 100 + (resvars.f18_PanelLayoutp->unknown5e0 + panel->x + 1),
                     resvars.f18_PanelLayoutp->unknown5e4 + (panel->y + resvars.f1c_PanelLayoutp->unknown584 + resvars.f1c_PanelLayoutp->unknown57c * 2 + 1),
                     panel->x + resvars.f18_PanelLayoutp->unknown5e0 + 1 + pct * (resvars.f18_PanelLayoutp->unknown5e8 - 2) / 100,
@@ -795,17 +795,17 @@ void display_panel_object_info(void)
     if (obj->type == THING_OBJECT) {
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
-        fn_00036730(D_0016029c[obj->subtype], &line, 3);
+        draw_panel_info_line(object_names[obj->subtype], &line, 3);
         if (resvars.f1 == SCREEN_MODE_13) {
             sprintf(buf, info_bar_text[30], obj->strength);
-            fn_00036730(buf, &line, 3);
+            draw_panel_info_line(buf, &line, 3);
             sprintf(buf, info_bar_text[31], obj->times_used);
-            fn_00036730(buf, &line, 3);
+            draw_panel_info_line(buf, &line, 3);
         } else {
             sprintf(buf, info_bar_text[31], obj->times_used);
             sprintf(buf, "%s/%d", buf, obj->strength);
             line = 2;
-            fn_00036730(buf, &line, 3);
+            draw_panel_info_line(buf, &line, 3);
         }
     }
 }
@@ -830,14 +830,14 @@ void display_panel_queue_info(void)
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(1);
-        fn_00036730(D_001602cc[rooms[room->type].id], &line, 3);
+        draw_panel_info_line(room_names[rooms[room->type].id], &line, 3);
         sprintf(buf, info_bar_text[32], room->unknown31);
         if (resvars.f1 != SCREEN_MODE_13)
             line = 2;
-        fn_00036730(buf, &line, 3);
+        draw_panel_info_line(buf, &line, 3);
         if (resvars.f1 == SCREEN_MODE_13) {
             sprintf(buf, info_bar_text[33], room->unknown32);
-            fn_00036730(buf, &line, 3);
+            draw_panel_info_line(buf, &line, 3);
         }
     }
 }
@@ -854,10 +854,10 @@ void display_panel_mayor_info(void)
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
     if (mayor->type == THING_MAYOR) {
-        fn_00036730(info_bar_text[20], &line, 3);
-        fn_00036730(mayor_names[allhosps[mayor->owner].f1f9], &line, 3);
+        draw_panel_info_line(info_bar_text[20], &line, 3);
+        draw_panel_info_line(mayor_names[allhosps[mayor->owner].f1f9], &line, 3);
     } else if (mayor->type == THING_INSPECTOR) {
-        fn_00036730(info_bar_text[21], &line, 3);
+        draw_panel_info_line(info_bar_text[21], &line, 3);
     }
 }
 
@@ -873,11 +873,11 @@ void display_panel_usage_info(void)
     clear_panel_info_bar();
     LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
     set_font_from_cache(1);
-    fn_00036730(D_0016029c[machine->subtype], &line, 3);
+    draw_panel_info_line(object_names[machine->subtype], &line, 3);
     if (resvars.f1 != SCREEN_MODE_13)
         line = 2;
     sprintf(buf, info_bar_text[31], machine->times_used);
-    fn_00036730(buf, &line, 3);
+    draw_panel_info_line(buf, &line, 3);
 }
 
 // FUNCTION: 0x00034acc
@@ -1135,7 +1135,7 @@ void add_panel_popup(PlayerCall *call)
 {
     u8 i;
 
-    fn_00035824();
+    rebuild_panel_popup_pos();
     if (call->owner == player) {
         for (i = 0; panel_popup_pos[i] != 0; i++)
             ;
@@ -1152,7 +1152,7 @@ void add_panel_popup(PlayerCall *call)
 }
 
 // FUNCTION: 0x00035824
-void fn_00035824(void)
+void rebuild_panel_popup_pos(void)
 {
     u8 i;
     u16 j;
@@ -1179,7 +1179,7 @@ void maintain_panel_popup(void)
     PlayerCall *call;
     PlayerCall *other_call;
 
-    fn_00035824();
+    rebuild_panel_popup_pos();
     for (i = 0; i < 9; i++) {
         if (panel_popup_pos[i]) {
             call = &playercall[panel_popup_pos[i]];
@@ -1392,9 +1392,9 @@ u8 display_panel_special_info(void)
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(0x2c);
         if (gamevar.unknown21) {
-            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, D_001602a0[21]);
+            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, misc_text[21]);
         } else if (othervar.fa66) {
-            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, D_001602a0[othervar.fa66]);
+            LbTextDraw(resvars.f1c_PanelLayoutp->unknown570, y + resvars.f1c_PanelLayoutp->unknown584, misc_text[othervar.fa66]);
             othervar.fa67--;
             if (othervar.fa67 == 0)
                 othervar.fa66 = 0;
@@ -1434,16 +1434,16 @@ void panel_rep_help(void)
 // FUNCTION: 0x00036534
 void setup_rat_fest_panel(void)
 {
-    LbSpriteReset(game_panel, D_00153f88, D_00153f80);
+    LbSpriteReset(game_panel, end_game_panel, game_panel_data);
     if (resvars.f0 != SCREEN_MODE_1) {
         LbDataLoadAll(hiresratfestpanelfiles);
-        LbSpriteSetup(game_panel, D_00153f88, D_00153f80);
+        LbSpriteSetup(game_panel, end_game_panel, game_panel_data);
         setup_panel_icons(resvars.f0);
     }
 }
 
 // FUNCTION: 0x00036594
-void fn_00036594(s32 value, char *text)
+void draw_panel_percent_bar(s32 value, char *text)
 {
     s32 x;
     s32 y;
@@ -1458,7 +1458,7 @@ void fn_00036594(s32 value, char *text)
 }
 
 // FUNCTION: 0x00036730
-void fn_00036730(char *text, u8 *line, u8 lines)
+void draw_panel_info_line(char *text, u8 *line, u8 lines)
 {
     s32 height;
     s32 width;

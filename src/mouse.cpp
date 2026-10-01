@@ -640,7 +640,7 @@ void process_right_button(u16 icon)
                     if (myhosp->f207) {
                         if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x86].x, resvars.f1c[0x86].y,
                                          watch[13].width, watch[13].height)) {
-                            othervar.fa90 = fn_00073e64(othervar.fa88, 0x20);
+                            othervar.fa90 = find_next_emergency_person(othervar.fa88, 0x20);
                             if (othervar.fa90) {
                                 D_001549d0[player].type = 0x42;
                                 D_001549d0[player].value = othervar.fa90;
@@ -656,7 +656,7 @@ void process_right_button(u16 icon)
                     if (myhosp->f1d9) {
                         if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f1c[0x84].x, resvars.f1c[0x84].y,
                                          watch[13].width, watch[13].height)) {
-                            othervar.fa88 = fn_00073e64(othervar.fa88, 0x40);
+                            othervar.fa88 = find_next_emergency_person(othervar.fa88, 0x40);
                             if (othervar.fa88) {
                                 D_001549d0[player].type = 0x42;
                                 D_001549d0[player].value = othervar.fa88;
@@ -676,7 +676,7 @@ void process_right_button(u16 icon)
                             if (!mouse_was_on_window
                                 && (!allhosps[player].unknown11b7 || crequester.unknown2 != 5)
                                 && (crequester.unknown2 != 0x63 || othervar.f9b8 != 0)) {
-                                fn_00074220(0, 1);
+                                process_keys(0, 1);
                             } else {
                                 hovered = &thing[othervar.f41];
                                 if (hovered->owner == player) {
@@ -726,7 +726,7 @@ void process_right_button(u16 icon)
                 case MM_EDIT_ROOM:
                 case MM_VACCINATE:
                     if (!mouse_was_on_window)
-                        fn_00074220(0, 1);
+                        process_keys(0, 1);
                     break;
                 case 0xe:
                     D_001549d0[player].type = 0x7b;

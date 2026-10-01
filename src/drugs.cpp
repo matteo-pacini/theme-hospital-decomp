@@ -9,10 +9,10 @@ struct MenuItem {
 extern "C" {
 
 extern Event D_001549d0[];
-extern char **D_00160304, **D_001602a4;
-extern char **D_00160318;
+extern char **cabinet_text, **illness_text;
+extern char **skill_names;
 
-void fn_0001b7e0(void *dst, char *text, int flags);
+void conv_string(void *dst, char *text, int flags);
 
 }
 
@@ -109,8 +109,8 @@ void display_drugs(void)
             sprintf(buf, "%d", myhosp->rooms[illness].unknown24);
             break;
         default:
-            sprintf(buf, "%s", D_00160304[i]);
-            fn_0001b7e0(buf, buf, 1);
+            sprintf(buf, "%s", cabinet_text[i]);
+            conv_string(buf, buf, 1);
             break;
         }
         LbTextDraw(resvars.f40[i + 0x11].x, resvars.f40[i + 0x11].y, buf);
@@ -158,8 +158,8 @@ void display_drugs(void)
     n = 0;
     for (i = 0; i < 0x11; i++) {
         if (list[i]) {
-            sprintf(buf, "%s", D_001602a4[list[i]]);
-            fn_0001b7e0(buf, buf, 0);
+            sprintf(buf, "%s", illness_text[list[i]]);
+            conv_string(buf, buf, 0);
             if (i == 8) {
                 set_font_from_cache(0xf);
             } else {
@@ -182,7 +182,7 @@ void display_drugs(void)
     set_font_from_cache(0xe);
     lbDisplay.draw_flags = 0x100;
     LbTextSetWindow(resvars.f40[0x1e].x, resvars.f40[0x1e].y, 0x36, 0x1a);
-    LbTextDraw(0, (0x1a - (lbFontPtr ? lbFontPtr[34].height : 0)) / 2, D_00160304[7]);
+    LbTextDraw(0, (0x1a - (lbFontPtr ? lbFontPtr[34].height : 0)) / 2, cabinet_text[7]);
     lbDisplay.draw_flags = 0;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     if (!(illness >= 0x24 || illness == 1)) {
@@ -250,7 +250,7 @@ void display_drugs(void)
         } else {
             set_font_from_cache(0xe);
         }
-        fn_0001b7e0(buf, D_00160304[6], 1);
+        conv_string(buf, cabinet_text[6], 1);
         LbTextDraw(resvars.f40[0x1d].x, resvars.f40[0x1d].y, buf);
     }
     process_drug_panel();
@@ -512,7 +512,7 @@ void drugs_help_handled(void)
     } else if (required.unknown4 == 1) {
         fn_000bbff0(othervar.f96, help_text[156]);
     } else if (required.unknown3) {
-        sprintf(othervar.f96, help_text[157], D_00160318[required.unknown3]);
+        sprintf(othervar.f96, help_text[157], skill_names[required.unknown3]);
     } else if (required.unknown8) {
         fn_000bbff0(othervar.f96, help_text[158]);
     } else if (required.unknown9) {

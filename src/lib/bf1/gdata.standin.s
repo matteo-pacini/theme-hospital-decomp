@@ -19,7 +19,7 @@
     xor edx, edx
     .byte 0x68; .long _D_00121dfc  # push 0x1dfc
     mov dword ptr [ebp + 0x7e], edx
-    call "fn_000cd2cc_"
+    call "LbErrorLog_"
     add esp, 4
     mov eax, dword ptr [ebp + 0x7a]
     mov dword ptr [ebp + 0x76], eax

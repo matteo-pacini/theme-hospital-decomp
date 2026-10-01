@@ -58,14 +58,14 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
 
 extern "C" {
 extern s16 D_001567b0[8];
-extern CellLink D_00157dc4[];
+extern CellLink draw_precedence[];
 void fn_000c9be0(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *sprite, s32 colour);
-void fn_000a6c08(void);
+void draw_all_windows(void);
 void fn_000a6c7c(void);
 void fn_000a6ca4(void);
-void fn_000a6cf0(u8 win);
-void fn_000a70d0(u8 win);
+void draw_window_using_bscreen(u8 win);
+void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win);
 }
 
 // FUNCTION: 0x000a6b20
@@ -97,17 +97,17 @@ void draw_it(void)
 }
 
 // FUNCTION: 0x000a6c08
-void fn_000a6c08(void)
+void draw_all_windows(void)
 {
     u8 i;
 
     for (i = 0; i < window.unknown2ec; i++)
-        fn_000a70d0(i);
+        remove_moved_windows_not_using_bscreen_from_wscreen(i);
     for (i = 0; i < window.unknown2ec; i++) {
         if (i != window.f2ea)
             draw_window_not_using_bscreen(i);
         else
-            fn_000a6cf0(i);
+            draw_window_using_bscreen(i);
     }
 }
 
@@ -116,7 +116,7 @@ void fn_000a6c7c(void)
 {
     u8 i = 0;
 
-    fn_000a6cf0(window.f2ea);
+    draw_window_using_bscreen(window.f2ea);
 }
 
 // FUNCTION: 0x000a6ca4
@@ -131,7 +131,7 @@ void fn_000a6ca4(void)
 }
 
 // FUNCTION: 0x000a6cf0
-void fn_000a6cf0(u8 win)
+void draw_window_using_bscreen(u8 win)
 {
     if ((((window.fd8[win] == 0 && window.fdb[win] == 0) && window.fe1[win] == window.fde[win]) && window.fde[win] == 0) && !othervar.f10) {
         refresh_wscreen();
@@ -179,7 +179,7 @@ void fn_000a6cf0(u8 win)
 }
 
 // FUNCTION: 0x000a70d0
-void fn_000a70d0(u8 win)
+void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win)
 {
     if (window.fdb[win] == 1) {
         remove_old_window_image_from_wscreen_replacing_detail(window.f60[win], window.f6c[win], window.f78[win], window.f84[win],
@@ -549,15 +549,15 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
 
                         prec = compute_cell_precedence(i, &thing[m->first]);
                         if (prec >= 0) {
-                            D_00157dc4[i].behind = D_00157dc4[prec].behind;
-                            D_00157dc4[i].front = prec;
-                            D_00157dc4[prec].behind = i;
+                            draw_precedence[i].behind = draw_precedence[prec].behind;
+                            draw_precedence[i].front = prec;
+                            draw_precedence[prec].behind = i;
                         } else {
-                            D_00157dc4[i].behind = -1;
-                            D_00157dc4[i].front = -1;
-                            D_00157dc4[i].next = -1;
+                            draw_precedence[i].behind = -1;
+                            draw_precedence[i].front = -1;
+                            draw_precedence[i].next = -1;
                             if (head >= 0) {
-                                D_00157dc4[tail].next = i;
+                                draw_precedence[tail].next = i;
                                 tail = i;
                             } else {
                                 head = i;
@@ -565,7 +565,7 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
                             }
                         }
                     } else {
-                        D_00157dc4[i].next = last;
+                        draw_precedence[i].next = last;
                         last = i;
                     }
                 }
@@ -573,18 +573,18 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
                 y--;
                 c += -0x7f;
             }
-            for (k = head; k >= 0; k = D_00157dc4[k].next) {
+            for (k = head; k >= 0; k = draw_precedence[k].next) {
                 i = k;
-                while (D_00157dc4[i].behind >= 0)
-                    i = D_00157dc4[i].behind;
-                for (; i >= 0; i = D_00157dc4[i].front) {
+                while (draw_precedence[i].behind >= 0)
+                    i = draw_precedence[i].behind;
+                for (; i >= 0; i = draw_precedence[i].front) {
                     x = bx + i;
                     y = by - i;
                     c = base - i * 0x7f;
                     do_cell(win, px + resvars.f4 * i, py, x, y, c, minx, miny, x0, y0, x1, y1);
                 }
             }
-            for (i = last; i >= 0; i = D_00157dc4[i].next) {
+            for (i = last; i >= 0; i = draw_precedence[i].next) {
                 x = bx + i;
                 y = by - i;
                 c = base - i * 0x7f;

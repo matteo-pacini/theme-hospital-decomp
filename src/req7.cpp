@@ -31,14 +31,14 @@ struct QueueButtons {
 };
 
 extern "C" {
-extern char **D_00160354;
+extern char **queue_text;
 extern Event D_001549d0[];
 extern s16 D_001567b0[8];
 
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
-void fn_0002f47c(Thing *w, s16 x, s16 y);
-void fn_0002e804(Thing *w, s16 x, s16 y);
-u32 fn_000856c8(u32 n);
+void draw_glow_frame(Thing *w, s16 x, s16 y);
+void draw_wibble_frame(Thing *w, s16 x, s16 y);
+u32 nth_active_player(u32 n);
 }
 
 u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel);
@@ -109,12 +109,12 @@ void req7_overdraw(Window *win)
     ox = win->x - lbDisplay.graphics_window_x;
     oy = win->y - lbDisplay.graphics_window_y;
     set_font_from_cache(1);
-    LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[0].x, oy + resvars.f1c_QueuePanelp->labels[0].y, D_00160354[0]);
-    LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[1].x, oy + resvars.f1c_QueuePanelp->labels[1].y, D_00160354[1]);
-    LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[2].x, oy + resvars.f1c_QueuePanelp->labels[2].y, D_00160354[2]);
+    LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[0].x, oy + resvars.f1c_QueuePanelp->labels[0].y, queue_text[0]);
+    LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[1].x, oy + resvars.f1c_QueuePanelp->labels[1].y, queue_text[1]);
+    LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[2].x, oy + resvars.f1c_QueuePanelp->labels[2].y, queue_text[2]);
     if (resvars.f1 == SCREEN_MODE_1)
         LbTextSetClipWindow(ox + resvars.f1c_QueuePanelp->labels[3].x, oy + resvars.f1c_QueuePanelp->labels[3].y, 0x1c, 9);
-    LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[3].x, oy + resvars.f1c_QueuePanelp->labels[3].y, D_00160354[3]);
+    LbTextDraw(ox + resvars.f1c_QueuePanelp->labels[3].x, oy + resvars.f1c_QueuePanelp->labels[3].y, queue_text[3]);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     LbTextSetWindow(0, 0, lbDisplay.unknown18, statvar.unknown4);
     sprintf(buf, "%d", queue_size(&room_info[othervar.f61]));
@@ -270,7 +270,7 @@ void req7_overdraw(Window *win)
                                 if (statvar.unknownfd > 1) {
                                     D_001549d0[player].type = 0x57;
                                     D_001549d0[player].value = get_queue_person(othervar.f61, othervar.f63);
-                                    D_001549d0[player].arg = fn_000856c8(i + 1);
+                                    D_001549d0[player].arg = nth_active_player(i + 1);
                                 } else {
                                     D_001549d0[player].type = EV_QUEUE_PERSON_GO_HOME;
                                     D_001549d0[player].value = othervar.f61;
@@ -401,9 +401,9 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                 if (position == sel)
                     px += lbDisplay.graphics_screen_width / resvars.f1c_QueuePanelp->f5a0;
                 if (person->illness == ILL_SERIOUS_RADIATION)
-                    fn_0002f47c(person, px, py);
+                    draw_glow_frame(person, px, py);
                 else if (person->illness == ILL_JELLYITIS && othervar.f1c == 0)
-                    fn_0002e804(person, px, py);
+                    draw_wibble_frame(person, px, py);
                 else if ((u16)(person - thing) == othervar.f43)
                     draw_hilight_frame(person, px, py);
                 else
@@ -525,7 +525,7 @@ void display_queue_bar(u16 x, u16 y)
             LbTextSetWindow(x - resvars.f18_QueueLayoutp->r[4].x + resvars.f18_QueueLayoutp->r[23].x, y + off + resvars.f18_QueueLayoutp->r[4].y + resvars.f18_QueueLayoutp->r[5].y + resvars.f18_QueueLayoutp->r[23].y, resvars.f18_QueueLayoutp->r[23].w, resvars.f18_QueueLayoutp->r[23].h);
             lbDisplay.draw_flags = 0x100;
             if (statvar.unknownfd > 1)
-                sprintf(buf, "%s", &allhosps[fn_000856c8(i + 1)]);
+                sprintf(buf, "%s", &allhosps[nth_active_player(i + 1)]);
             else
                 sprintf(buf, "%s", &allhosps[i]);
             LbTextDraw(0, 0, buf);

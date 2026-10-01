@@ -122,7 +122,7 @@ src/lib/smk/*.c      wcc386  -s -oneatx -oe=25 -5
 # alloc.cpp holds global objects with constructors: its static initialiser
 # registers them for exception cleanup (-xs).
 src/alloc.cpp        wpp386  -s -ot -d2 -xs
-# wallhug: one segment (no-op filler between its functions); fn_00049400 is an
+# wallhug: one segment (no-op filler between its functions); wallhug_hugstep is an
 # inline COMDAT emitted before wallhug_tricky, which takes its alignment filler.
 src/wallhug.cpp      wpp386  -s -ot -d2 -zm-
 src/*.cpp            wpp386  -s -ot -d2

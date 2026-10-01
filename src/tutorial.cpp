@@ -3,7 +3,7 @@
 extern "C" {
 extern Event D_001549d0[];
 extern Event D_00154a0c[];
-extern u8 D_00161200;
+extern u8 tutorial_display_flags;
 extern u8 D_00161201;
 extern u8 D_00161202;
 extern u8 D_00161203;
@@ -43,19 +43,19 @@ s8 tutorial(void)
 {
     switch (advisor.f131) {
     case 0x1d:
-        if (D_00161200 != 2) {
+        if (tutorial_display_flags != 2) {
             if (D_00154a0c[player].type != 0x62) {
-                if (D_00161200 == 0) {
+                if (tutorial_display_flags == 0) {
                     sprintf(advisor.f10, advisor_text[29]);
                     advisor.f124 = 1;
                     advisor.f122 = 0;
                     advisor.f123 = 0;
                     advisor.f120 = 0x13;
-                    D_00161200 = 1;
+                    tutorial_display_flags = 1;
                     return 1;
                 }
             } else {
-                D_00161200 = 2;
+                tutorial_display_flags = 2;
                 advisor.f131 = 0x28;
                 advisor.f120 = 0;
                 clear_force_help();
@@ -65,13 +65,13 @@ s8 tutorial(void)
     case 0x28:
         if (D_0016120b != 2) {
             if (D_001549d0[player].type == 0x64) {
-                D_00161200 = 0;
+                tutorial_display_flags = 0;
                 D_0016120b = 0;
                 advisor.f131 = 0x1d;
                 clear_force_help();
                 advisor.f120 = 0;
             } else if (D_00154a0c[player].type == 0x2b) {
-                D_00161200 = 0;
+                tutorial_display_flags = 0;
                 D_0016120b = 0;
                 advisor.f131 = 0x1d;
                 clear_force_help();
@@ -103,7 +103,7 @@ s8 tutorial(void)
     case 0x2a:
         if (D_0016120d != 2) {
             if (D_001549d0[player].type == 0x64) {
-                D_00161200 = 0;
+                tutorial_display_flags = 0;
                 D_0016120b = 0;
                 D_0016120d = 0;
                 advisor.f131 = 0x1d;
@@ -145,7 +145,7 @@ s8 tutorial(void)
                 D_0016120c = 0;
                 D_0016120d = 0;
                 D_0016120b = 0;
-                D_00161200 = 0;
+                tutorial_display_flags = 0;
                 advisor.f131 = 0x1d;
                 clear_force_help();
                 advisor.f120 = 0;

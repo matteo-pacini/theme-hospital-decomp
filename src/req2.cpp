@@ -54,8 +54,8 @@ struct Req2Layout {
 extern "C" {
 extern Event D_001549d0[];
 extern u8 D_001290d0, D_001290d1, D_001290d2;
-extern u8 *D_0015479c;
-void fn_0001bee4(void);
+extern u8 *face_buffer;
+void open_face_file(void);
 }
 
 u32 safe_normal_rand(u32 a, u32 b);
@@ -438,23 +438,23 @@ void draw_face(Picture *face, const u16 x, const u16 y)
     s32 width;
     s32 rows;
 
-    fn_0001bee4();
+    open_face_file();
     if (face->head != D_001290d0) {
         LbFileSeek(face_file, face->head * (resvars.f60 * resvars.f64), 0);
-        LbFileRead(face_file, D_0015479c, resvars.f60 * resvars.f64);
+        LbFileRead(face_file, face_buffer, resvars.f60 * resvars.f64);
         D_001290d0 = face->head;
     }
     if (face->body != D_001290d1) {
         LbFileSeek(face_file, resvars.f60 * resvars.f64 * 18 + face->body * (resvars.f60 * resvars.f68), 0);
-        LbFileRead(face_file, D_0015479c + resvars.f60 * resvars.f64, resvars.f60 * resvars.f68);
+        LbFileRead(face_file, face_buffer + resvars.f60 * resvars.f64, resvars.f60 * resvars.f68);
         D_001290d1 = face->body;
     }
     if (face->legs != D_001290d2) {
         LbFileSeek(face_file, resvars.f60 * resvars.f64 * 18 + resvars.f60 * resvars.f68 * 18 + (u8)face->legs * (resvars.f60 * resvars.f6c), 0);
-        LbFileRead(face_file, resvars.f60 * resvars.f64 + resvars.f60 * resvars.f68 + D_0015479c, resvars.f60 * resvars.f6c);
+        LbFileRead(face_file, resvars.f60 * resvars.f64 + resvars.f60 * resvars.f68 + face_buffer, resvars.f60 * resvars.f6c);
         D_001290d2 = face->legs;
     }
-    src = D_0015479c;
+    src = face_buffer;
     dst = x + resvars.f58 + lbDisplay.unknown4 + lbDisplay.graphics_screen_width * (y - (resvars.f64 + resvars.f68 + resvars.f6c) - resvars.f5c);
     width = resvars.f60;
     rows = resvars.f64 + resvars.f68 + resvars.f6c;
@@ -546,7 +546,7 @@ void req12(Window *win)
 }
 
 extern "C" {
-extern char **D_001602a0;
+extern char **misc_text;
 }
 
 void draw_window_not_using_bscreen(const u8 idx);
@@ -618,21 +618,21 @@ void req12_overdraw(Window *win)
         }
         switch (crequester.unknown8) {
         case 2:
-            sprintf(buf, D_001602a0[crequester.unknown8]);
+            sprintf(buf, misc_text[crequester.unknown8]);
             break;
         case 3:
         case 5:
         case 7:
         case 8:
-            sprintf(buf, D_001602a0[crequester.unknown8], crequester.unknown6);
+            sprintf(buf, misc_text[crequester.unknown8], crequester.unknown6);
             break;
         case 4:
         case 6:
-            sprintf(buf, D_001602a0[crequester.unknown8], crequester.unknown6,
+            sprintf(buf, misc_text[crequester.unknown8], crequester.unknown6,
                     crequester.unknown6 + staff->salary);
             break;
         case 9:
-            sprintf(buf, D_001602a0[crequester.unknown8], staff->salary * 2, &allhosps[crequester.unknown6]);
+            sprintf(buf, misc_text[crequester.unknown8], staff->salary * 2, &allhosps[crequester.unknown6]);
             break;
         }
         lbDisplay.draw_flags = 0x20;
@@ -679,7 +679,7 @@ void open_staff_resign_requester(Thing *staff)
     display_mode = 0xb;
     close_irequesters();
     crequester.unknown2 = 0xc;
-    fn_0001bc94(crequester.unknown2, 1);
+    open_requester(crequester.unknown2, 1);
     crequester.unknown4 = staff - thing;
     crequester.unknown9 = 0;
     if (staff->poach_offers) {

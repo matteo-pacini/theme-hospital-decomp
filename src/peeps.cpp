@@ -9,17 +9,17 @@ struct SelectionState {
 extern "C" {
 
 extern SelectionState D_001581b2;
-extern PlayerCall D_0015f5a4[][9];
+extern PlayerCall popup_store[][9];
 extern u8 D_00158192;
-extern char **D_00160370;
-extern char **D_00160318;
-extern char **D_001602a4;
+extern char **real_room_names;
+extern char **skill_names;
+extern char **illness_text;
 
-void fn_000444e0(Thing *w);
-void fn_000b05f0(Thing *w);
-void fn_0001673c(Thing *w);
-void fn_000168a0(Thing *w);
-void fn_00017cb0(Thing *w);
+void nav_init(Thing *w);
+void clear_peep_icon(Thing *w);
+void person_gone(Thing *w);
+void remove_person_from_room_list(Thing *w);
+void person_flys(Thing *w);
 void fn_000c93bf(char *dst, char *src);
 
 }
@@ -253,7 +253,7 @@ void person_go_home(Thing *person)
 }
 
 // FUNCTION: 0x0001673c
-void fn_0001673c(Thing *person)
+void person_gone(Thing *person)
 {
     remove_person(person);
 }
@@ -263,7 +263,7 @@ void remove_person(Thing *person)
 {
     leave_queue(person);
     abandon_complex(person);
-    fn_000168a0(person);
+    remove_person_from_room_list(person);
     cancel_vaccination_request(person);
     if (&thing[D_001581b2.widget] == person) {
         close_irequesters();
@@ -280,7 +280,7 @@ void move_person_in_room_list(Thing *person, u16 id)
     if (room != 0) {
         insert_person_in_room_list(room, person);
     } else {
-        fn_000168a0(person);
+        remove_person_from_room_list(person);
     }
 }
 
@@ -306,7 +306,7 @@ void insert_person_in_room_list(RoomInfo *room, Thing *person)
 }
 
 // FUNCTION: 0x000168a0
-void fn_000168a0(Thing *person)
+void remove_person_from_room_list(Thing *person)
 {
     RoomInfo *room;
     Thing *prev;
@@ -346,7 +346,7 @@ void nav_debug_state(Thing *person)
         }
         if (!(actual_game_turn & 0xf)) {
             person->state = person->resume_state;
-            fn_000444e0(person);
+            nav_init(person);
         }
     } else {
         if (actual_game_turn % 6 == 0) {
@@ -359,7 +359,7 @@ void nav_debug_state(Thing *person)
         }
         if (!(actual_game_turn & 0xf)) {
             person->state = person->resume_state;
-            fn_000444e0(person);
+            nav_init(person);
         }
     }
 }
@@ -493,7 +493,7 @@ void send_person_to_bed(Thing *person)
             }
             page_member_of_staff(4, room - room_info, 1, 1, person->owner);
             person->dest_room = room - room_info;
-            fn_0004195c(person, room->unknown4);
+            set_destination_coords(person, room->unknown4);
             {
                 u16 anim;
 
@@ -518,7 +518,7 @@ void send_person_to_bed(Thing *person)
         person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     }
     person->state = PS_GOTO_QUEUE;
-    fn_0004195c(person, room->unknown4);
+    set_destination_coords(person, room->unknown4);
 }
 
 // FUNCTION: 0x00017194
@@ -810,7 +810,7 @@ void page_staff_i_need(Thing *person, RoomInfo *room)
 }
 
 // FUNCTION: 0x00017cb0
-void fn_00017cb0(Thing *person)
+void person_flys(Thing *person)
 {
     if (actual_game_turn % person->anim_speed == 0) {
         person->sprite = frame[person->sprite].next;
@@ -842,7 +842,7 @@ void refer_patient(Thing *person, u8 owner)
         person->owner = owner;
         person->flags2 |= (PF_REFERRED >> 16);
         if (person->flags & PF_CONTAGIOUS) {
-            fn_000b05f0(person);
+            clear_peep_icon(person);
             person->contagion = 100;
             person->flags &= ~PF_CONTAGIOUS;
             remove_person_from_vaccination_queue(person);
@@ -1017,7 +1017,7 @@ void save_popup(u16 type)
         if (call->type == 0) {
             return;
         }
-        memmove(&D_0015f5a4[i][type], call, 12);
+        memmove(&popup_store[i][type], call, 12);
         delete_panel_popup(call);
         call->type = 0;
         listhead[i].first[type] = 0;
@@ -1042,7 +1042,7 @@ void restore_popup(u16 type)
         }
         for (call = playercall + 1; call < end_playercall; call++) {
             if (call->type == 0) {
-                memmove(call, &D_0015f5a4[i][type], 12);
+                memmove(call, &popup_store[i][type], 12);
                 add_panel_popup(call);
                 break;
             }
@@ -1181,11 +1181,11 @@ u16 call_no_treatment(Thing *person, char **strs)
         }
     }
     if (room && staff) {
-        sprintf(buf1, strs[0], D_00160370[rooms[room].id], D_00160318[staff]);
+        sprintf(buf1, strs[0], real_room_names[rooms[room].id], skill_names[staff]);
     } else if (room) {
-        sprintf(buf1, strs[1], D_00160370[rooms[room].id]);
+        sprintf(buf1, strs[1], real_room_names[rooms[room].id]);
     } else if (staff) {
-        sprintf(buf1, strs[2], D_00160318[staff]);
+        sprintf(buf1, strs[2], skill_names[staff]);
     } else {
         sprintf(buf1, strs[3]);
     }
@@ -1201,9 +1201,9 @@ u16 call_no_treatment(Thing *person, char **strs)
         } else if (pct > 99) {
             pct = 99;
         }
-        sprintf(buf2, strs[6], pct, D_001602a4[person->illness]);
+        sprintf(buf2, strs[6], pct, illness_text[person->illness]);
     } else {
-        sprintf(buf2, strs[4], D_001602a4[person->illness]);
+        sprintf(buf2, strs[4], illness_text[person->illness]);
     }
     fn_000c93bf(buf2, new_line);
     fn_000c93bf(buf2, new_line);
@@ -1301,18 +1301,18 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
     if (allhosps[player].rooms[kind].unknown1C == 1) {
         sprintf(buf1, strs[0]);
     } else if (room && staff) {
-        sprintf(buf1, strs[1], D_00160370[rooms[room].id], D_00160318[staff]);
+        sprintf(buf1, strs[1], real_room_names[rooms[room].id], skill_names[staff]);
     } else if (room) {
-        sprintf(buf1, strs[2], D_00160370[rooms[room].id]);
+        sprintf(buf1, strs[2], real_room_names[rooms[room].id]);
     } else if (staff) {
-        sprintf(buf1, strs[3], D_00160318[staff]);
+        sprintf(buf1, strs[3], skill_names[staff]);
     } else {
         sprintf(buf1, "");
     }
     buf2[0] = 0;
     text_x = 0;
     text_y = 0;
-    sprintf(buf3, strs[4], D_001602a4[kind]);
+    sprintf(buf3, strs[4], illness_text[kind]);
     fn_000c93bf(buf2, buf3);
     fn_000c93bf(buf2, new_line);
     sprintf(buf3, strs[kind * 3 - 1]);

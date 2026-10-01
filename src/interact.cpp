@@ -1,13 +1,13 @@
 #include "hosp.h"
 
 extern "C" {
-extern DoorAnim D_0012b598[];
+extern DoorAnim interaction[];
 
-void fn_000549bc(Thing *w);
+void setup_next_interaction(Thing *w);
 }
 
 // FUNCTION: 0x00054870
-extern "C" void fn_00054870(Thing *w)
+extern "C" void two_peeps_interact(Thing *w)
 {
     Thing *partner;
     CompFrame *fr;
@@ -35,11 +35,11 @@ extern "C" void fn_00054870(Thing *w)
         }
     }
     if (w->interact_anim != 1 && partner->interact_anim != 1)
-        fn_000549bc(w);
+        setup_next_interaction(w);
 }
 
 // FUNCTION: 0x000549bc
-extern "C" void fn_000549bc(Thing *w)
+extern "C" void setup_next_interaction(Thing *w)
 {
     u8 step;
     s16 anim;
@@ -51,9 +51,9 @@ extern "C" void fn_000549bc(Thing *w)
     } else {
         w->seq_index++;
         step = w->seq_index;
-        w->interact_repeat = D_0012b598[step].count - 1;
+        w->interact_repeat = interaction[step].count - 1;
     }
-    anim = D_0012b598[step].v;
+    anim = interaction[step].v;
     if (anim) {
         if (anim == -1) {
             w->seq_index = 0;
@@ -68,7 +68,7 @@ extern "C" void fn_000549bc(Thing *w)
                 process_person_complex(w);
                 break;
             case THING_STAFF:
-                fn_0003e724(w);
+                process_staff_complex(w);
                 break;
             }
             return;
@@ -92,7 +92,7 @@ extern "C" void fn_000549bc(Thing *w)
     }
     partner = &thing[w->slave];
     if (partner > thing) {
-        anim = D_0012b598[step].other;
+        anim = interaction[step].other;
         if (anim) {
             partner->interact_anim = 1;
             if (partner->type == THING_PATIENT) {
@@ -115,7 +115,7 @@ extern "C" void fn_000549bc(Thing *w)
 }
 
 // FUNCTION: 0x00054d60
-extern "C" void fn_00054d60(void)
+extern "C" void setup_interactions(void)
 {
     s16 seq;
     s16 i;
@@ -124,9 +124,9 @@ extern "C" void fn_00054d60(void)
     i = 0;
     statvar.unknowne8[0] = 0;
     for (;;) {
-        if (D_0012b598[i].v == -1) {
+        if (interaction[i].v == -1) {
             statvar.unknowne8[++seq] = i + 1;
-        } else if (D_0012b598[i].v == -99) {
+        } else if (interaction[i].v == -99) {
             break;
         }
         i++;
@@ -148,5 +148,5 @@ void start_new_interaction(Thing *w, u8 interaction)
     }
     w->seq_index = statvar.unknowne8[interaction] - 1;
     w->interact_repeat = 0;
-    fn_000549bc(w);
+    setup_next_interaction(w);
 }

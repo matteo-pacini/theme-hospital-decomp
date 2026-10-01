@@ -19,8 +19,8 @@ extern QuakeControl quake_control[];
 extern ComputerPlayer computer[];
 
 extern "C" {
-extern u16 D_0015fc20[];
-extern u8 D_0015fc3c[];
+extern u16 visuals_available[];
+extern u8 emergency_control[];
 }
 
 VariableTable balance_variables[0xcb] = {
@@ -135,13 +135,13 @@ VariableTable balance_variables[0xcb] = {
     { "staff_levels.ConsRate", 0x11, (u32)((u8 *)staff_levels + 0xd), 19, 30, 0, 255 },
     { "staff_levels.JrRate", 0x11, (u32)((u8 *)staff_levels + 0xe), 19, 30, 0, 255 },
     { "staff_levels.Seed", 0x14, (u32)((u8 *)staff_levels + 0xf), 19, 30, 0, 9999999 },
-    { "emergency_control.StartMonth", 0x12, (u32)D_0015fc3c, 10, 20, 0, 500 },
-    { "emergency_control.EndMonth", 0x12, (u32)((u8 *)D_0015fc3c + 0x2), 10, 20, 0, 500 },
-    { "emergency_control.Min", 0x11, (u32)((u8 *)D_0015fc3c + 0x4), 10, 20, 0, 20 },
-    { "emergency_control.Max", 0x11, (u32)((u8 *)D_0015fc3c + 0x5), 10, 20, 0, 20 },
-    { "emergency_control.Illness", 0x11, (u32)((u8 *)D_0015fc3c + 0x6), 10, 20, 0, 36 },
-    { "emergency_control.PercWin", 0x11, (u32)((u8 *)D_0015fc3c + 0x7), 10, 20, 0, 100 },
-    { "emergency_control.Bonus", 0x12, (u32)((u8 *)D_0015fc3c + 0x8), 10, 20, 0, 20000 },
+    { "emergency_control.StartMonth", 0x12, (u32)emergency_control, 10, 20, 0, 500 },
+    { "emergency_control.EndMonth", 0x12, (u32)((u8 *)emergency_control + 0x2), 10, 20, 0, 500 },
+    { "emergency_control.Min", 0x11, (u32)((u8 *)emergency_control + 0x4), 10, 20, 0, 20 },
+    { "emergency_control.Max", 0x11, (u32)((u8 *)emergency_control + 0x5), 10, 20, 0, 20 },
+    { "emergency_control.Illness", 0x11, (u32)((u8 *)emergency_control + 0x6), 10, 20, 0, 36 },
+    { "emergency_control.PercWin", 0x11, (u32)((u8 *)emergency_control + 0x7), 10, 20, 0, 100 },
+    { "emergency_control.Bonus", 0x12, (u32)((u8 *)emergency_control + 0x8), 10, 20, 0, 20000 },
     { "quake_control.StartMonth", 0x12, (u32)quake_control, 6, 16, 0, 500 },
     { "quake_control.EndMonth", 0x12, (u32)((u8 *)quake_control + 0x2), 6, 16, 0, 500 },
     { "quake_control.Severity", 0x12, (u32)((u8 *)quake_control + 0x4), 6, 16, 0, 20 },
@@ -222,7 +222,7 @@ VariableTable balance_variables[0xcb] = {
     { "awards_trophies.ResearchPenalty", 0x9, (u32)((u8 *)&awards_trophies + 0x62), 1, 1, -127, 127 },
     { "non_visuals", 0x12, (u32)non_visuals, 2, 20, 0, 10000 },
     { "visuals", 0x12, (u32)visuals, 2, 14, 0, 10000 },
-    { "visuals_available", 0x12, (u32)D_0015fc20, 2, 14, 0, 1000 },
+    { "visuals_available", 0x12, (u32)visuals_available, 2, 14, 0, 1000 },
     { "gbv.AbilityThreshold", 0x12, (u32)((u8 *)&gbv + 0x146), 2, 3, 0, 1000 },
     { "gbv.RschImproveCostPercent", 0x11, (u32)((u8 *)&gbv + 0x15a), 1, 1, 0, 100 },
     { "gbv.RschImproveIncrementPercent", 0x11, (u32)((u8 *)&gbv + 0x15b), 1, 1, 0, 100 },
@@ -232,9 +232,9 @@ extern char *file_buffer;
 extern char current_line[];
 
 extern "C" {
-extern s32 D_00160f2c;
-extern char D_00161034[];
-extern char D_001610b4[];
+extern s32 file_len;
+extern char var_front[];
+extern char var_back[];
 extern u8 __IsTable[];
 #pragma aux __IsTable "*"
 
@@ -370,14 +370,14 @@ void read_variable_file(char *name)
 
     len = 0;
     value = 0;
-    D_00160f2c = LbFileLengthRnc(name);
-    if (D_00160f2c == -1) {
+    file_len = LbFileLengthRnc(name);
+    if (file_len == -1) {
         hosp_dos_printf("rvf failed to read %s\n", name);
         return;
     }
-    file_buffer = (char *)LbMemoryAlloc(D_00160f2c + 1);
+    file_buffer = (char *)LbMemoryAlloc(file_len + 1);
     if (file_buffer == 0) {
-        hosp_dos_printf("rvf failed to alloc %d\n", D_00160f2c + 1);
+        hosp_dos_printf("rvf failed to alloc %d\n", file_len + 1);
         return;
     }
     if (LbFileLoadAt(name, file_buffer) == -1) {
@@ -385,7 +385,7 @@ void read_variable_file(char *name)
         LbMemoryFree(file_buffer);
         return;
     }
-    *(file_buffer + D_00160f2c) = 0xff;
+    *(file_buffer + file_len) = 0xff;
     LbMemorySet(current_line, 0, 0x100);
     read_line_from_buf(0, 0, file_buffer);
     while (read_line_from_buf(current_line, 0x100, file_buffer)) {
@@ -393,7 +393,7 @@ void read_variable_file(char *name)
         if (cursor) {
             LbMemorySet(var, 0, 0x80);
             LbMemorySet(num, 0, 0x10);
-            LbMemorySet(D_00161034, 0, 0x80);
+            LbMemorySet(var_front, 0, 0x80);
             cursor++;
             start = cursor;
             len = 0;
@@ -406,11 +406,11 @@ void read_variable_file(char *name)
             value_ptr = cursor;
             while (isspace(*value_ptr))
                 value_ptr++;
-            strncpy(D_00161034, var, fn_000cd716(var) + 1);
+            strncpy(var_front, var, fn_000cd716(var) + 1);
             if (strchr(var, '.')) {
                 LbMemorySet(full, 0, 0x80);
-                LbMemorySet(D_001610b4, 0, 0x80);
-                strtok(D_00161034, ".");
+                LbMemorySet(var_back, 0, 0x80);
+                strtok(var_front, ".");
                 cursor = strchr(var, '.');
                 members = number_of_members(var);
                 while (members-- > 0) {
@@ -420,9 +420,9 @@ void read_variable_file(char *name)
                         len++;
                         cursor++;
                     }
-                    strncpy(D_001610b4, start, len);
-                    strncpy(full, D_00161034, fn_000cd716(D_00161034) + 1);
-                    fn_000c93bf(full, D_001610b4);
+                    strncpy(var_back, start, len);
+                    strncpy(full, var_front, fn_000cd716(var_front) + 1);
+                    fn_000c93bf(full, var_back);
                     start = value_ptr;
                     len = 0;
                     while (!isspace(*value_ptr) && *value_ptr) {
@@ -436,11 +436,11 @@ void read_variable_file(char *name)
                         read_line_from_buf(0, 1, 0);
                     while (isspace(*value_ptr))
                         value_ptr++;
-                    LbMemorySet(D_001610b4, 0, 0x80);
+                    LbMemorySet(var_back, 0, 0x80);
                     LbMemorySet(full, 0, 0x80);
                     LbMemorySet(num, 0, 0x10);
                 }
-                LbMemorySet(D_00161034, 0, 0x80);
+                LbMemorySet(var_front, 0, 0x80);
             } else {
                 start = value_ptr;
                 len = 0;
@@ -459,8 +459,8 @@ void read_variable_file(char *name)
         LbMemorySet(current_line, 0, 0x100);
         LbMemorySet(var, 0, 0x80);
         LbMemorySet(num, 0, 0x10);
-        LbMemorySet(D_00161034, 0, 0x80);
-        LbMemorySet(D_001610b4, 0, 0x80);
+        LbMemorySet(var_front, 0, 0x80);
+        LbMemorySet(var_back, 0, 0x80);
         LbMemorySet(full, 0, 0x80);
     }
     LbMemoryFree(file_buffer);

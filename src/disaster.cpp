@@ -1,8 +1,8 @@
 #include "hosp.h"
 
 extern "C" {
-s32 fn_00038d04(Thing *w, u8 owner);
-#pragma aux fn_00038d04 "W?remove_object$n(pn$Thing$$)s"
+s32 remove_object(Thing *w, u8 owner);
+#pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
 }
 
 void remove_expertise_room(RoomInfo *room);
@@ -218,7 +218,7 @@ restart:
         if (obj->type == THING_OBJECT) {
             debris = objects[obj->subtype].unknown20[0];
             facing = obj->facing;
-            fn_00038d04(obj, obj->owner);
+            remove_object(obj, obj->owner);
             if (debris)
                 place_small_thing(m - map, debris + facing, 0);
             goto restart;
@@ -412,7 +412,7 @@ void what_is_required(u8 illness, u8 owner)
 }
 
 // FUNCTION: 0x0007628c
-extern "C" u8 fn_0007628c(Thing *w)
+extern "C" u8 shall_i_be_abducted(Thing *w)
 {
     return 0;
 }

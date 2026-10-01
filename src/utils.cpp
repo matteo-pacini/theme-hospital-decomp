@@ -18,21 +18,21 @@ extern "C" {
 
 extern char D_0015fde4[];
 extern Event D_001549d0[];
-extern u8 D_0015f982;
+extern u8 error_number;
 extern u32 D_0014bcc4, D_0014bcd0, D_0014bcd8, D_0014bce0, D_0014bce4, D_0014bce8;
 extern u32 D_0013c60c, D_0013c618, D_0013c620, D_0013c628, D_0013c62c, D_0013c630;
 extern u8 D_001581ec, D_001581ed, D_001581ef;
 extern u8 D_0015fe74;
 
-void fn_00015b68(Thing *w);
-Thing *fn_00019aac(Map *t, u16 kind);
-void fn_0001b7e0(char *dst, s8 *src, u8 mode);
-int fn_0001b874(u8 c);
-void fn_0001bab4(u8 i);
-void fn_0001bdf8(void);
+void remove_node(Thing *w);
+Thing *search_mapwho(Map *t, u16 kind);
+void conv_string(char *dst, s8 *src, u8 mode);
+int to_upper_char(u8 c);
+void record_mappos(u8 i);
+void display_copyright(void);
 void fn_0001be78(u8 dir);
-void fn_0001bee4(void);
-u8 fn_000856c8(int player);
+void open_face_file(void);
+u8 nth_active_player(int player);
 int LbScreenLock(void);
 void fn_000c93bf(char *dst, char *src);
 void LbPaletteFade(u8 *palette, int steps, int flag);
@@ -60,7 +60,7 @@ u8 pick_random_player(void)
         return 0xff;
     }
     count = old_newrand() % count;
-    return fn_000856c8(count + 1);
+    return nth_active_player(count + 1);
 }
 
 // FUNCTION: 0x0001974c
@@ -107,7 +107,7 @@ u16 can_i_get_to(Thing *mover, u16 pos)
 // FUNCTION: 0x000199e8
 void remove_thing(Thing *target)
 {
-    fn_00015b68(target);
+    remove_node(target);
     memset(target, 0, sizeof(Thing));
 }
 
@@ -128,7 +128,7 @@ void count_hospital_area(u16 owner)
 }
 
 // FUNCTION: 0x00019aac
-Thing *fn_00019aac(Map *cell, u16 kind)
+Thing *search_mapwho(Map *cell, u16 kind)
 {
     Thing *occupant;
 
@@ -890,11 +890,11 @@ void hosp_dos_printf(char *fmt, ...)
 }
 
 // FUNCTION: 0x0001b7e0
-void fn_0001b7e0(char *dst, s8 *src, u8 mode)
+void conv_string(char *dst, s8 *src, u8 mode)
 {
     if (mode == 0) {
         for (; *src; src++, dst++) {
-            *dst = fn_0001b874(*src);
+            *dst = to_upper_char(*src);
         }
         *dst = 0;
     } else if (mode == 1) {
@@ -906,7 +906,7 @@ void fn_0001b7e0(char *dst, s8 *src, u8 mode)
 }
 
 // FUNCTION: 0x0001b874
-int fn_0001b874(u8 ch)
+int to_upper_char(u8 ch)
 {
     if (ch < 0x80) {
         return toupper(ch);
@@ -969,7 +969,7 @@ int fn_0001b874(u8 ch)
 }
 
 // FUNCTION: 0x0001bab4
-void fn_0001bab4(u8 key)
+void record_mappos(u8 key)
 {
     int y;
     int x;
@@ -1025,7 +1025,7 @@ void hosp_fade_palette(u8 *palette, u8 steps, TbPaletteFadeFlag flag)
 }
 
 // FUNCTION: 0x0001bc94
-void fn_0001bc94(u8 idx, u8 flag)
+void open_requester(u8 idx, u8 flag)
 {
     char *name;
     char path[20];
@@ -1071,7 +1071,7 @@ void close_crequester(u8 i)
 }
 
 // FUNCTION: 0x0001bdf8
-void fn_0001bdf8(void)
+void display_copyright(void)
 {
     hosp_dos_printf("Copyright (c) 1997 Bullfrog Productions Ltd.\n");
     hosp_dos_printf("All rights reserved.\n");
@@ -1102,7 +1102,7 @@ void fn_0001be78(u8 dir)
 }
 
 // FUNCTION: 0x0001bee4
-void fn_0001bee4(void)
+void open_face_file(void)
 {
     if (face_file != -1) {
         LbFileClose(face_file);
@@ -1111,7 +1111,7 @@ void fn_0001bee4(void)
     if (resvars.f0 == SCREEN_MODE_1 || othervar.fa8d) {
         face_file = LbFileOpen((char *)lores_faces, 2);
         if (face_file == -1) {
-            D_0015f982 = 9;
+            error_number = 9;
             sub_error_number = 8;
             reset_host();
             exit(1);
@@ -1125,7 +1125,7 @@ void fn_0001bee4(void)
     } else if (resvars.f0 == SCREEN_MODE_13) {
         face_file = LbFileOpen((char *)hires_faces, 2);
         if (face_file == -1) {
-            D_0015f982 = 9;
+            error_number = 9;
             sub_error_number = 7;
             reset_host();
             exit(1);

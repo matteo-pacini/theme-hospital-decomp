@@ -9,9 +9,9 @@ u8 corridor_object_nav_check(u16 pos, u8 kind, u8 dir);
 void reaper_leaves_normally(Thing *w);
 
 extern "C" {
-s32 fn_00038d04(Thing *w, u8 owner);
-#pragma aux fn_00038d04 "W?remove_object$n(pn$Thing$$)s"
-void fn_000444e0(Thing *w);
+s32 remove_object(Thing *w, u8 owner);
+#pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
+void nav_init(Thing *w);
 }
 
 // FUNCTION: 0x0005c230
@@ -42,13 +42,13 @@ u8 summon_the_reaper(Thing *victim)
             if (can_i_get_to(victim, gate_pos) > 0) {
                 if (can_place_object(gate_pos, OBJ_GATES_OF_HELL, 0, victim->owner)) {
                     if (corridor_object_nav_check(gate_pos, 0x30, 0)) {
-                        gate_id = fn_00037098(gate_pos, OBJ_GATES_OF_HELL, 0, victim->owner);
+                        gate_id = place_object(gate_pos, OBJ_GATES_OF_HELL, 0, victim->owner);
                         if (gate_id) {
                             gate = &thing[gate_id];
                             gate->aux_sprite = start[0x4fa].frame;
                             gate->aux_flip_w = start[0x4fa].flags;
                             if (can_i_get_to(victim, gate->use_pos[1]) == 0) {
-                                fn_00038d04(gate, gate->owner);
+                                remove_object(gate, gate->owner);
                                 gate_id = 0;
                             } else {
                                 break;
@@ -90,9 +90,9 @@ u8 summon_the_reaper(Thing *victim)
                 reaper->reaper_next_state = 8;
                 reaper->next_sprite = start[check_frame(0x1f1, reaper) + reaper->facing].frame;
                 reaper->next_flip = start[check_frame(0x1f1, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
-                fn_000444e0(reaper);
+                nav_init(reaper);
             } else {
-                fn_00038d04(gate, gate->owner);
+                remove_object(gate, gate->owner);
                 reaper->type = THING_FREE;
                 return 0;
             }

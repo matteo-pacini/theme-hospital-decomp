@@ -16,7 +16,7 @@ void insert_skill(u16 skill, u8 owner);
 extern "C" {
 
 
-u8 fn_0002b400(Thing *w);
+u8 check_room_mutex(Thing *w);
 
 }
 
@@ -37,7 +37,7 @@ void doctor_is_trained(Thing *doctor)
     }
     doctor->orders |= ORD_RETURN_TO_TRAINING;
     if (doctor->room->f22 || doctor->room->f3 == 4) {
-        process_staff_complex(doctor);
+        evacuate_staff(doctor);
         return;
     }
     if (check_training_command(doctor)) {
@@ -45,7 +45,7 @@ void doctor_is_trained(Thing *doctor)
     }
     if (doctor->orders & 8) {
         doctor->orders &= 0xf0;
-        process_staff_complex(doctor);
+        evacuate_staff(doctor);
         return;
     }
     if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].f21d) && take_a_break(doctor)) {
@@ -55,7 +55,7 @@ void doctor_is_trained(Thing *doctor)
         doctor->next_state = SS_DOCTOR_IS_TRAINED;
         doctor->resume_state = SS_DOCTOR_IS_TRAINED;
         set_complex(doctor, 0x41a, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         return;
     }
     if (doctor->complex_action == 0x41a) {
@@ -68,7 +68,7 @@ void doctor_is_trained(Thing *doctor)
         doctor->next_state = SS_DOCTOR_IS_TRAINED;
         doctor->resume_state = SS_DOCTOR_IS_TRAINED;
         set_complex(doctor, 0xbe, (s16)(x + (y << 7)));
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
     }
 }
 
@@ -82,7 +82,7 @@ void consultant_trains(Thing *consultant)
         return;
     }
     if (consultant->room->f22 || consultant->room->f3 == 4) {
-        process_staff_complex(consultant);
+        evacuate_staff(consultant);
         return;
     }
     if (check_training_command(consultant)) {
@@ -90,10 +90,10 @@ void consultant_trains(Thing *consultant)
     }
     if (consultant->orders & 8) {
         consultant->orders &= 0xf0;
-        process_staff_complex(consultant);
+        evacuate_staff(consultant);
         return;
     }
-    if (!(fn_0002b400(consultant) ? 1 : (process_staff_complex(consultant), 0))) {
+    if (!(check_room_mutex(consultant) ? 1 : (evacuate_staff(consultant), 0))) {
         return;
     }
     consultant->orders |= ORD_RETURN_TO_TRAINING;
@@ -108,7 +108,7 @@ void consultant_trains(Thing *consultant)
         projector->data[0] = 1;
         set_complex(consultant, 0x3fc, 0);
         consultant->next_state = SS_CONSULTANT_TRAINS;
-        fn_0003e724(consultant);
+        process_staff_complex(consultant);
         return;
     }
     if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile, OBJ_BOOKCASE, 1, 0x96, consultant->owner)) {
@@ -116,7 +116,7 @@ void consultant_trains(Thing *consultant)
         consultant->next_state = SS_CONSULTANT_TRAINS;
         consultant->resume_state = SS_CONSULTANT_TRAINS;
         set_complex(consultant, 0x370, 0);
-        fn_0003e724(consultant);
+        process_staff_complex(consultant);
         return;
     }
     if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile, OBJ_SKELETON, 1, 0x96, consultant->owner)) {
@@ -124,14 +124,14 @@ void consultant_trains(Thing *consultant)
         consultant->next_state = SS_CONSULTANT_TRAINS;
         consultant->resume_state = SS_CONSULTANT_TRAINS;
         set_complex(consultant, 0x410, 0);
-        fn_0003e724(consultant);
+        process_staff_complex(consultant);
         return;
     }
     if (consultant->complex_action != 0x3de && consultant->complex_action != 0x3e8) {
         consultant->next_state = SS_CONSULTANT_TRAINS;
         consultant->resume_state = SS_PROCESS_COMPLEX;
         set_complex(consultant, 0x3de, 0);
-        fn_0003e724(consultant);
+        process_staff_complex(consultant);
         return;
     }
     training_done(consultant, 0);
@@ -141,7 +141,7 @@ void consultant_trains(Thing *consultant)
     consultant->complex_resume = 0;
     consultant->next_state = SS_CONSULTANT_TRAINS;
     set_complex(consultant, 0x3e8, 0);
-    fn_0003e724(consultant);
+    process_staff_complex(consultant);
 }
 
 // FUNCTION: 0x00042ff0
@@ -183,7 +183,7 @@ u8 send_doctor_to_training(Thing *doctor)
     doctor->resume_state = SS_PROCESS_COMPLEX;
     set_complex(doctor, 0x96, room_info[room].unknown4);
     doctor->dest_room = room;
-    fn_0003e724(doctor);
+    process_staff_complex(doctor);
     return 1;
     }
     return 0;

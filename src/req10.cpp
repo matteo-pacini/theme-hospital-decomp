@@ -2,9 +2,9 @@
 
 extern "C" {
 extern Event D_001549d0[];
-extern char **D_001602cc;
-extern char **D_001602d4;
-extern char **D_001602e0;
+extern char **room_names;
+extern char **req1_help;
+extern char **department_names;
 }
 
 // FUNCTION: 0x0009b870
@@ -160,10 +160,10 @@ void req10_overdraw(Window *win)
     }
     switch (crequester.unknown0) {
     case 1:
-        LbTextDraw(ox + resvars.f1c[0x16].x, oy + resvars.f1c[0x16].y, D_001602d4[1]);
+        LbTextDraw(ox + resvars.f1c[0x16].x, oy + resvars.f1c[0x16].y, req1_help[1]);
         break;
     case 4:
-        LbTextDraw(ox + resvars.f1c[0x16].x, oy + resvars.f1c[0x16].y, D_001602d4[2]);
+        LbTextDraw(ox + resvars.f1c[0x16].x, oy + resvars.f1c[0x16].y, req1_help[2]);
         if (croom) {
             obj = rooms[croom].fa;
             fr = &frame[start[objects[obj].f10].frame];
@@ -191,7 +191,7 @@ void req10_overdraw(Window *win)
                 set_font_from_cache(2);
             }
             if (room)
-                LbTextDraw(ox + resvars.f1c[i + 0x2a].x, oy + resvars.f1c[i + 0x2a].y, D_001602cc[rooms[room].id]);
+                LbTextDraw(ox + resvars.f1c[i + 0x2a].x, oy + resvars.f1c[i + 0x2a].y, room_names[rooms[room].id]);
         }
         total = 0;
         for (k = 0; k < rooms[croom].fc; k++) {
@@ -204,7 +204,7 @@ void req10_overdraw(Window *win)
             char buf[100];
 
             set_font_from_cache(1);
-            sprintf(buf, "%s%d", D_001602d4[4], rooms[croom].cost + total);
+            sprintf(buf, "%s%d", req1_help[4], rooms[croom].cost + total);
             LbTextDraw(ox + resvars.f1c[0x17].x, oy + resvars.f1c[0x17].y, buf);
         }
         break;
@@ -216,7 +216,7 @@ void req10_overdraw(Window *win)
                 set_font_from_cache(2);
             else
                 set_font_from_cache(1);
-            LbTextDraw(ox + resvars.f1c[row + 0x26].x, oy + resvars.f1c[row + 0x26].y, D_001602e0[i]);
+            LbTextDraw(ox + resvars.f1c[row + 0x26].x, oy + resvars.f1c[row + 0x26].y, department_names[i]);
             row++;
         }
     }

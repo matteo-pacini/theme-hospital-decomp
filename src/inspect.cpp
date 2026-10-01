@@ -32,12 +32,12 @@ u16 create_inspector(u8 owner)
     inspector->flip = start[entry].flags > 0 ? (u8)1 : (u8)0;
     obj = &thing[listhead[owner].objects[OBJ_RECEPTION_DESK]];
     if (obj > thing) {
-        fn_0004195c(inspector, obj->use_pos[1]);
+        set_destination_coords(inspector, obj->use_pos[1]);
         inspector->state = MAYOR_GOTO;
         inspector->goto_state = 8;
         inspector->inspect_room = 0;
     } else {
-        fn_0004195c(inspector, room_info[allhosps[inspector->owner].unknown1cf[old_newrand() & 3]].unknown4);
+        set_destination_coords(inspector, room_info[allhosps[inspector->owner].unknown1cf[old_newrand() & 3]].unknown4);
         inspector->state = MAYOR_GOTO;
         inspector->goto_state = MAYOR_GONE;
     }
@@ -66,7 +66,7 @@ void inspector_pauses(Thing *inspector)
     if (--inspector->timer != 0)
         return;
     hosp = &allhosps[inspector->owner];
-    fn_0004195c(inspector, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
+    set_destination_coords(inspector, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
     inspector->state = MAYOR_GOTO;
     inspector->goto_state = MAYOR_GONE;
     contagious = count_and_flag_contagious_peeps(hosp->f20b, 2, inspector->owner);

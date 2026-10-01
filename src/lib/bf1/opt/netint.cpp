@@ -90,7 +90,7 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
                        __7308jnTbNetworkPlayerInfo *info, void *init_data);
 
 extern "C" {
-extern u32 D_00188cb8;
+extern u32 compositeBufferSize;
 
 }
 
@@ -126,8 +126,8 @@ extern "C" {
 
 void fn_000bf7a0(u32 timeout);
 #pragma aux fn_000bf7a0 "W?LbNetwork_ChangeExchangeTimeout$n(ul)v"
-TbError fn_000c197c(TbNetworkPlayerEntry *player);
-#pragma aux fn_000c197c "W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$"
+TbError AddAPlayer(TbNetworkPlayerEntry *player);
+#pragma aux AddAPlayer "W?AddAPlayer$n(pn$TbNetworkPlayerNameEntry$$)$TbError$$"
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
 
@@ -388,15 +388,15 @@ TbError LbNetwork_Init(u32 index, __tibcaGUID guid, u32 max_players, void *excha
     maxTime = 0;
     runningTwoPlayerModel = 0;
     waitingForPlayerMapResponse = 0;
-    D_00188cb8 = 0;
+    compositeBufferSize = 0;
     exchangeBuffer = (u8 *)exchange_buf;
     localPlayerInfoPtr = info;
     receiveCallbacks.multiPlayer = MultiPlayerCallback;
     receiveCallbacks.unknown24 = 0;
     receiveCallbacks.mpReqExDataMsg = MultiPlayerReqExDataMsgCallback;
     if (exchange_size > 0) {
-        D_00188cb8 = max_players * exchange_size;
-        compositeBuffer = LbMemoryAlloc(D_00188cb8);
+        compositeBufferSize = max_players * exchange_size;
+        compositeBuffer = LbMemoryAlloc(compositeBufferSize);
         if (!compositeBuffer) {
             fn_000c20c0("  WARNING network: LbNetwork_Init() failure on compositeBuffer allocation\n");
             return ret;
@@ -734,19 +734,19 @@ TbError LbNetwork_ChangeExchangeBuffer(void *buf, u32 size)
         if (!compositeBuffer) {
             fn_000c20c0("  WARNING network: LbNetwork_ChangeExchangeBuffer() failure on buffer allocation\n");
         } else {
-            D_00188cb8 = total;
+            compositeBufferSize = total;
             ret = Lb_OK;
         }
-    } else if (total > D_00188cb8) {
+    } else if (total > compositeBufferSize) {
         new_buf = LbMemoryAlloc(total);
         if (!new_buf) {
             fn_000c20c0("  WARNING network: LbNetwork_ChangeExchangeBuffer() failure on buffer allocation\n");
         } else {
-            memcpy(new_buf, compositeBuffer, D_00188cb8);
+            memcpy(new_buf, compositeBuffer, compositeBufferSize);
             ret = Lb_OK;
             LbMemoryFree(compositeBuffer);
             compositeBuffer = new_buf;
-            D_00188cb8 = total;
+            compositeBufferSize = total;
         }
     } else {
         ret = Lb_OK;
@@ -948,7 +948,7 @@ void __stdcall AddMsgCallback(u32 id, char *name, void *data)
     strcpy(player.name, name);
     player.unknown5 = 0;
     player.host = 0;
-    fn_000c197c(&player);
+    AddAPlayer(&player);
 }
 
 // FUNCTION: 0x000c1858
@@ -994,7 +994,7 @@ static TbError GetCurrentPlayers(void)
 // FUNCTION: 0x000c1934
 void __stdcall GetCurrentPlayersCallback(TbNetworkCallbackData *data, void *arg)
 {
-    fn_000c197c((TbNetworkPlayerEntry *)data);
+    AddAPlayer((TbNetworkPlayerEntry *)data);
 }
 
 // FUNCTION: 0x000c1940
@@ -1015,7 +1015,7 @@ extern "C" {
 
 // NONMATCHING: register choice and block layout
 // FUNCTION: 0x000c197c
-TbError fn_000c197c(TbNetworkPlayerEntry *player)
+TbError AddAPlayer(TbNetworkPlayerEntry *player)
 {
     u32 i;
     u32 found;

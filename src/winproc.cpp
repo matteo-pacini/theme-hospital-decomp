@@ -561,7 +561,7 @@ void process_window(Window **windows, Window *win)
 }
 
 // FUNCTION: 0x0004e47c
-extern "C" void fn_0004e47c(Window **windows)
+extern "C" void ProcessWindows(Window **windows)
 {
     u8 front;
     s32 i;
@@ -647,7 +647,7 @@ extern "C" void fn_0004e47c(Window **windows)
 }
 
 // FUNCTION: 0x0004e6f8
-extern "C" s16 fn_0004e6f8(WindowButton *button)
+extern "C" s16 get_button_no(WindowButton *button)
 {
     s32 i;
 

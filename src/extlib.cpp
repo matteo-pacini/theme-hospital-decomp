@@ -3,22 +3,22 @@
 extern "C" {
 
 // FUNCTION: 0x000bbb50
-void fn_000bbb50(void)
+void InitStreamedSound(void)
 {
 }
 
 // FUNCTION: 0x000bbb68
-void fn_000bbb68(void)
+void FreeStreamedSound(void)
 {
 }
 
 // FUNCTION: 0x000bbb80
-void fn_000bbb80(void)
+void InitRedbook(void)
 {
 }
 
 // FUNCTION: 0x000bbb98
-void fn_000bbb98(void)
+void FreeRedbook(void)
 {
 }
 

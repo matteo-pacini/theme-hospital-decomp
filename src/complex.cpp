@@ -1,18 +1,18 @@
 #include "hosp.h"
 
 extern "C" {
-void fn_000419bc(Thing *w, u16 arg);
-void fn_00041a08(Thing *w, u16 arg);
-u8 fn_0003e6c0(Thing *w);
-void fn_00041a54(Thing *w);
-void fn_00041b08(Thing *w);
-void fn_000444e0(Thing *w);
+void set_next_destination_coords(Thing *w, u16 arg);
+void set_next2_destination_coords(Thing *w, u16 arg);
+u8 process_complex_either(Thing *w);
+void person_complex_retry(Thing *w);
+void person_wait_for_complex_slave(Thing *w);
+void nav_init(Thing *w);
 }
 
 extern "C" {
-extern u8 *D_00153f9c;
-extern ComplexAnims D_001310ac[];
-void fn_00041c0c(Thing *w);
+extern u8 *staff_complex_group;
+extern ComplexAnims group_anim[];
+void fail_staff_complex(Thing *w);
 }
 
 extern Complex person_complex[];
@@ -26,7 +26,7 @@ Thing *find_door(Thing *w);
 void adjust_big_cell_flag(const u16 tile);
 void start_new_interaction(Thing *w, u8 who);
 void pager_arrival(Thing *w);
-void remove_person_from_room_list(Thing *w);
+void clear_my_mutex(Thing *w);
 u8 count_surgeons(RoomInfo *room);
 u8 check_room_mutex_on_entry(Thing *w);
 void merge_slave(Thing *w);
@@ -48,11 +48,11 @@ void research_contribution(Thing *w, s16 amount);
 void person_autopsied(Thing *w);
 
 // FUNCTION: 0x0003e6c0
-extern "C" u8 fn_0003e6c0(Thing *w)
+extern "C" u8 process_complex_either(Thing *w)
 {
     switch (w->type) {
     case THING_STAFF:
-        return fn_0003e724(w);
+        return process_staff_complex(w);
     case THING_PATIENT:
         return process_person_complex(w);
     }
@@ -60,7 +60,7 @@ extern "C" u8 fn_0003e6c0(Thing *w)
 }
 
 // FUNCTION: 0x0003e724
-u8 fn_0003e724(Thing *employee)
+u8 process_staff_complex(Thing *employee)
 {
     u8 run_things;
     s8 choice;
@@ -84,7 +84,7 @@ u8 fn_0003e724(Thing *employee)
     if (employee->complex_pc == 0) {
         return 2;
     }
-    op = D_00153f9c[employee->complex_pc];
+    op = staff_complex_group[employee->complex_pc];
     if (op == 0) {
         employee->complex_pc = 0;
         return 2;
@@ -96,7 +96,7 @@ u8 fn_0003e724(Thing *employee)
         if (obj_id) {
             obj = &thing[obj_id];
         } else {
-            fn_00041c0c(employee);
+            fail_staff_complex(employee);
             return 0;
         }
     } else {
@@ -117,7 +117,7 @@ u8 fn_0003e724(Thing *employee)
             PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
             employee->countdown = 0;
         } else {
-            fn_00041c0c(employee);
+            fail_staff_complex(employee);
             return 0;
         }
         break;
@@ -125,7 +125,7 @@ u8 fn_0003e724(Thing *employee)
         employee->object = obj_id;
     case 44:
         obj = &thing[employee->object];
-        fn_0004195c(employee, obj->use_pos[employee->subtype == STAFF_HANDYMAN ? 2 : 0]);
+        set_destination_coords(employee, obj->use_pos[employee->subtype == STAFF_HANDYMAN ? 2 : 0]);
         dir = person_head_for(employee, 1);
         if (dir >= 0 && dir < 4) {
             employee->facing = dir;
@@ -150,7 +150,7 @@ u8 fn_0003e724(Thing *employee)
         obj = &thing[employee->object];
         if ((obj->in_use == 1 || obj->state == 0x12) || obj->type != THING_OBJECT
             || obj->use_pos[employee->subtype == STAFF_HANDYMAN ? 2 : 0] != ((s16)employee->y.tile << 7) + (s16)employee->x.tile) {
-            fn_00041c0c(employee);
+            fail_staff_complex(employee);
             return 3;
         }
         obj->in_use = 1;
@@ -208,8 +208,8 @@ u8 fn_0003e724(Thing *employee)
         }
         break;
     case 16:
-        choice = old_newrand() % D_001310ac[entry->anim].count;
-        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[D_001310ac[entry->anim].anims[choice]]);
+        choice = old_newrand() % group_anim[entry->anim].count;
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[group_anim[entry->anim].anims[choice]]);
         break;
     case 14:
         obj = find_door(employee);
@@ -238,13 +238,13 @@ u8 fn_0003e724(Thing *employee)
                 employee->exit_tile = door->use_pos[0];
             }
             if (entry->anim == 1 && !check_room_mutex_on_entry(employee)) {
-                fn_00041c0c(employee);
+                fail_staff_complex(employee);
                 return 4;
             }
             if (employee->room == 0
                 && ((room_info[door->room_id].f22 || room_info[door->room_id].f3 == 4)
                     || door->room_id == allhosps[door->owner].unknown11b7)) {
-                fn_00041c0c(employee);
+                fail_staff_complex(employee);
                 return 4;
             }
             if (double_door) {
@@ -268,12 +268,12 @@ u8 fn_0003e724(Thing *employee)
                 other->anim_speed = employee->anim_speed;
             }
         } else {
-            fn_00041c0c(employee);
+            fail_staff_complex(employee);
             return 4;
         }
         break;
     case 22:
-        remove_person_from_room_list(employee);
+        clear_my_mutex(employee);
         door = &thing[employee->object];
         door->user = 0;
         employee->object = 0;
@@ -303,7 +303,7 @@ u8 fn_0003e724(Thing *employee)
         break;
     case 24:
         employee->complex_pc++;
-        employee->complex_resume = (u16)D_00153f9c[employee->complex_pc] * 10;
+        employee->complex_resume = (u16)staff_complex_group[employee->complex_pc] * 10;
         break;
     case 26:
         employee->complex_pc = employee->complex_queued - 1;
@@ -311,7 +311,7 @@ u8 fn_0003e724(Thing *employee)
         break;
     case 28:
         employee->complex_pc++;
-        start_new_interaction(employee, D_00153f9c[employee->complex_pc] + 1);
+        start_new_interaction(employee, staff_complex_group[employee->complex_pc] + 1);
         break;
     case 30:
         merge_slave(employee);
@@ -333,10 +333,10 @@ u8 fn_0003e724(Thing *employee)
         if (patient > thing) {
             employee->complex_pc++;
             patient->next_state = 0x20;
-            set_complex(patient, (u16)D_00153f9c[employee->complex_pc] * 10, 0);
-            fn_0003e6c0(patient);
+            set_complex(patient, (u16)staff_complex_group[employee->complex_pc] * 10, 0);
+            process_complex_either(patient);
         } else {
-            fn_00041c0c(employee);
+            fail_staff_complex(employee);
             return 0;
         }
         break;
@@ -345,9 +345,9 @@ u8 fn_0003e724(Thing *employee)
         if (patient > thing) {
             employee->complex_pc++;
             patient->next_state = 0x20;
-            set_complex(patient, (u16)D_00153f9c[employee->complex_pc] * 10, 0);
+            set_complex(patient, (u16)staff_complex_group[employee->complex_pc] * 10, 0);
         } else {
-            fn_00041c0c(employee);
+            fail_staff_complex(employee);
             return 0;
         }
         break;
@@ -433,7 +433,7 @@ u8 fn_0003e724(Thing *employee)
     } else {
         employee->complex_pc++;
     }
-    if (D_00153f9c[employee->complex_pc] == 0) {
+    if (staff_complex_group[employee->complex_pc] == 0) {
         employee->complex_pc = 0;
         action = employee->complex_queued;
         if (action) {
@@ -445,14 +445,14 @@ u8 fn_0003e724(Thing *employee)
             employee->queued_arg_y = employee->queued2_arg_y;
             employee->queued2_arg_y = 0;
             if (set_complex(employee, action, arg)) {
-                fn_0003e724(employee);
+                process_staff_complex(employee);
             }
         } else if (employee->next_state) {
             employee->state = employee->next_state;
             employee->next_state = 0;
         }
     } else if (entry->chain) {
-        fn_0003e724(employee);
+        process_staff_complex(employee);
     }
     if (run_things) {
         process_things(employee, employee + 1);
@@ -470,7 +470,7 @@ void play_complex_staff_anim(Thing *employee)
         next = frame[employee->sprite].next;
         f = &frame[next];
         if (f->flags & 1) {
-            fn_0003e724(employee);
+            process_staff_complex(employee);
         } else {
             employee->sprite = next;
         }
@@ -486,7 +486,7 @@ void staff_complex_retry(Thing *employee)
         employee->sprite = frame[employee->sprite].next;
         f = &frame[employee->sprite];
         if (f->flags & 1) {
-            fn_0003e724(employee);
+            process_staff_complex(employee);
             sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(employee - thing), 0);
         }
     }
@@ -500,7 +500,7 @@ void staff_wait_for_complex_slave(Thing *employee)
     slave = &thing[employee->slave];
     if (slave > thing) {
         if (slave->state == 0x20) {
-            fn_0003e724(employee);
+            process_staff_complex(employee);
         }
     }
 }
@@ -585,7 +585,7 @@ u8 process_person_complex(Thing *person)
         person->object = obj_id;
     case 44:
         obj = &thing[person->object];
-        fn_0004195c(person, obj->use_pos[1]);
+        set_destination_coords(person, obj->use_pos[1]);
         dir = person_head_for(person, 1);
         if (dir >= 0 && dir < 4) {
             person->facing = dir;
@@ -656,8 +656,8 @@ u8 process_person_complex(Thing *person)
     case 12:
         break;
     case 16:
-        choice = old_newrand() % D_001310ac[entry->anim].count;
-        PLAY_FRAME(person, anim_starts[person->subtype].anims[D_001310ac[entry->anim].anims[choice]]);
+        choice = old_newrand() % group_anim[entry->anim].count;
+        PLAY_FRAME(person, anim_starts[person->subtype].anims[group_anim[entry->anim].anims[choice]]);
         break;
     case 14:
         obj = find_door(person);
@@ -837,16 +837,16 @@ u8 set_complex(Thing *w, u16 action, u16 arg)
             w->complex_action = action;
             if (w->complex_queued) {
                 w->complex_queued2 = action;
-                fn_00041a08(w, arg);
+                set_next2_destination_coords(w, arg);
             } else {
                 w->complex_queued = action;
-                fn_000419bc(w, arg);
+                set_next_destination_coords(w, arg);
             }
             w->complex_resume = 0;
         } else {
             w->complex_pc = w->complex_action = action;
             if (arg) {
-                fn_0004195c(w, arg);
+                set_destination_coords(w, arg);
             }
         }
         return 1;
@@ -854,19 +854,19 @@ u8 set_complex(Thing *w, u16 action, u16 arg)
     if (w->complex_queued) {
         w->complex_queued2 = action;
         if (arg) {
-            fn_00041a08(w, arg);
+            set_next2_destination_coords(w, arg);
         }
         return 0;
     }
     w->complex_queued = w->complex_action = action;
     if (arg) {
-        fn_000419bc(w, arg);
+        set_next_destination_coords(w, arg);
     }
     return 0;
 }
 
 // FUNCTION: 0x000418dc
-void person_complex_retry(Thing *person)
+void play_complex_person_anim(Thing *person)
 {
     CompFrame *f;
     u16 next;
@@ -883,30 +883,30 @@ void person_complex_retry(Thing *person)
 }
 
 // FUNCTION: 0x0004195c
-void fn_0004195c(Thing *w, u16 pos)
+void set_destination_coords(Thing *w, u16 pos)
 {
     w->dest_x = pos % 128;
     w->dest_y = pos / 128;
     w->countdown = 0;
-    fn_000444e0(w);
+    nav_init(w);
 }
 
 // FUNCTION: 0x000419bc
-void fn_000419bc(Thing *w, u16 pos)
+void set_next_destination_coords(Thing *w, u16 pos)
 {
     w->queued_arg_x = pos % 128;
     w->queued_arg_y = pos / 128;
 }
 
 // FUNCTION: 0x00041a08
-void fn_00041a08(Thing *w, u16 pos)
+void set_next2_destination_coords(Thing *w, u16 pos)
 {
     w->queued2_arg_x = pos % 128;
     w->queued2_arg_y = pos / 128;
 }
 
 // FUNCTION: 0x00041a54
-void fn_00041a54(Thing *person)
+void person_complex_retry(Thing *person)
 {
     CompFrame *f;
 
@@ -921,7 +921,7 @@ void fn_00041a54(Thing *person)
 }
 
 // FUNCTION: 0x00041b08
-void fn_00041b08(Thing *person)
+void person_wait_for_complex_slave(Thing *person)
 {
     Thing *slave;
     Thing *obj;
@@ -949,7 +949,7 @@ void fn_00041b08(Thing *person)
 }
 
 // FUNCTION: 0x00041c0c
-void fn_00041c0c(Thing *employee)
+void fail_staff_complex(Thing *employee)
 {
     if (employee->resume_state) {
         u16 anim;
@@ -1047,7 +1047,7 @@ void abandon_complex(Thing *w)
                 x.tile = w->dest_x;
                 y.tile = w->dest_y;
                 move_node(w, x, y);
-                if (fn_0003e6c0(w) != 1) {
+                if (process_complex_either(w) != 1) {
                     break;
                 }
             }
@@ -1063,7 +1063,7 @@ void abandon_complex(Thing *w)
                 x.tile = w->dest_x;
                 y.tile = w->dest_y;
                 move_node(w, x, y);
-                if (fn_0003e6c0(w) != 1) {
+                if (process_complex_either(w) != 1) {
                     break;
                 }
             }
@@ -1078,7 +1078,7 @@ void abandon_complex(Thing *w)
             x.tile = w->dest_x;
             y.tile = w->dest_y;
             move_node(w, x, y);
-            if (fn_0003e6c0(w) != 1) {
+            if (process_complex_either(w) != 1) {
                 break;
             }
         }
@@ -1201,7 +1201,7 @@ u8 staff_go_near_object(Thing *w)
 
     pos = can_i_go_near_point(w, (s16)((thing[w->object].y.tile << 7) + (u16)thing[w->object].x.tile));
     if (pos) {
-        fn_0004195c(w, pos);
+        set_destination_coords(w, pos);
         return 1;
     }
     return 0;
@@ -1226,14 +1226,14 @@ void interrupt_complex(Thing *w)
         if (obj->type == THING_DOOR) {
             if (w->type == THING_STAFF) {
                 set_complex(w, 0x4ce, 0);
-                fn_0003e724(w);
+                process_staff_complex(w);
             } else {
                 set_complex(w, 0x26c, 0);
                 process_person_complex(w);
             }
         } else if (w->type == THING_STAFF) {
             set_complex(w, 0x1b8, 0);
-            fn_0003e724(w);
+            process_staff_complex(w);
         } else {
             set_complex(w, 0xa0, 0);
             process_person_complex(w);

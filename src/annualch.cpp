@@ -12,15 +12,15 @@ extern u8 current_display;
 extern u8 current_award;
 
 extern "C" {
-extern u16 D_00158190;
-extern char **D_001602fc;
-extern char **D_00160364;
-extern char **D_00160368;
-extern char **D_0016036c;
-extern char **D_00160390;
+extern u16 choice;
+extern char **chart_types;
+extern char **trophy_text;
+extern char **bad_awards_text;
+extern char **good_awards_text;
+extern char **trophy_bonus_messages;
 extern Event D_001549d0[];
 
-void fn_0001b7e0(void *dst, char *text, int flags);
+void conv_string(void *dst, char *text, int flags);
 
 void qsort(void *base, u32 n, u32 size, int (*cmp)(const void *, const void *));
 }
@@ -39,7 +39,7 @@ void start_year_end(void)
 
     finish_composite_help();
     if (display_mode == 9) {
-        fn_000c21e6(year_end_backup.unknown2, &D_00158190, 10);
+        fn_000c21e6(year_end_backup.unknown2, &choice, 10);
         year_end_backup.mode = display_mode;
         year_end_backup.f6 = choice_spare_data;
         year_end_backup.f8 = choice_time_out;
@@ -51,7 +51,7 @@ void start_year_end(void)
     year_end_type = 0;
     for (i = 0; i < 4; i++) {
         if (allhosps[i].f11f4)
-            fn_00029c4c(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
+            place_staff_on_map(allhosps[i].f11f6, allhosps[i].f11f4, 1, i);
     }
     LbMemorySet(awards_won, 0, 0x24);
     LbMemorySet(trophies_won, 0, 0xf);
@@ -104,7 +104,7 @@ void create_chart_data(void)
 }
 
 // FUNCTION: 0x000b4e88
-extern "C" void fn_000b4e88(void)
+extern "C" void display_year_charts(void)
 {
     u8 i;
     s8 cat;
@@ -140,7 +140,7 @@ extern "C" void fn_000b4e88(void)
         LbTextSetWindow(0xe0, 0x24 - height / 2, 0xc0, 0x16);
         lbDisplay.draw_flags = 0x100;
         sprintf(buf, "%s %4.4d", help_text[20], mycontrol->f648 + 0x7cf);
-        fn_0001b7e0(buf, buf, 0);
+        conv_string(buf, buf, 0);
         LbTextDraw(0, 0, buf);
         for (i = 0, cat = -1; i < 6; i++) {
             for (cat++; cat < 11 && !chart_in_use[cat]; cat++) {
@@ -152,7 +152,7 @@ extern "C" void fn_000b4e88(void)
             x = 0;
             y = 0;
             lbDisplay.draw_flags = 0x100;
-            LbTextDraw(x, y, D_001602fc[cat]);
+            LbTextDraw(x, y, chart_types[cat]);
             y += height;
             for (j = 0; j < count; j++) {
                 if (statvar.unknownfd > 1 && D_001609c4[chart[cat][j].hosp].active == 0)
@@ -228,11 +228,11 @@ void display_plaque(void)
     switch (current_display) {
     case 1:
         if (awards_won[current_award].value > 0) {
-            sprintf(text1, "%s", D_0016036c[awards_won[current_award].f2]);
-            sprintf(text2, "%s\n+%d", D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
+            sprintf(text1, "%s", good_awards_text[awards_won[current_award].f2]);
+            sprintf(text2, "%s\n+%d", trophy_bonus_messages[awards_won[current_award].f5], awards_won[current_award].value);
         } else {
-            sprintf(text1, "%s", D_0016036c[awards_won[current_award].f2]);
-            sprintf(text2, "%s\n%d", D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
+            sprintf(text1, "%s", good_awards_text[awards_won[current_award].f2]);
+            sprintf(text2, "%s\n%d", trophy_bonus_messages[awards_won[current_award].f5], awards_won[current_award].value);
         }
     case 2:
         reqspr_draw(resvars.f40[0xa0].x, resvars.f40[0xa0].y, &screen_sprites_tab_start[16]);
@@ -240,11 +240,11 @@ void display_plaque(void)
         reqspr_draw(resvars.f40[0xa2].x, resvars.f40[0xa2].y, &screen_sprites_tab_start[18]);
         if (current_display == 2) {
             if (awards_won[current_award].value > 0) {
-                sprintf(text1, D_00160368[awards_won[current_award].f2]);
-                sprintf(text2, "%s\n+%d", D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
+                sprintf(text1, bad_awards_text[awards_won[current_award].f2]);
+                sprintf(text2, "%s\n+%d", trophy_bonus_messages[awards_won[current_award].f5], awards_won[current_award].value);
             } else {
-                sprintf(text1, D_00160368[awards_won[current_award].f2]);
-                sprintf(text2, "%s\n%d", D_00160390[awards_won[current_award].f5], awards_won[current_award].value);
+                sprintf(text1, bad_awards_text[awards_won[current_award].f2]);
+                sprintf(text2, "%s\n%d", trophy_bonus_messages[awards_won[current_award].f5], awards_won[current_award].value);
             }
             reqspr_draw(resvars.f40[0xa6].x, resvars.f40[0xa6].y, &screen_sprites_tab_start[15]);
         }
@@ -263,16 +263,16 @@ void display_plaque(void)
         set_font_from_cache(0x11);
         lbDisplay.draw_flags = 0x100;
         if (trophies_won[current_award].unknown0 == 5) {
-            sprintf(text1, D_00160364[trophies_won[current_award].f1], othervar.fa59);
-            sprintf(text2, D_00160390[trophies_won[current_award].f4]);
+            sprintf(text1, trophy_text[trophies_won[current_award].f1], othervar.fa59);
+            sprintf(text2, trophy_bonus_messages[trophies_won[current_award].f4]);
             sprintf(text3, "+%d", trophies_won[current_award].value);
         } else if (trophies_won[current_award].unknown0 == 6 && award_counts.f151 > 0) {
-            sprintf(text1, D_00160364[trophies_won[current_award].f1], othervar.fa5a);
-            sprintf(text2, D_00160390[trophies_won[current_award].f4]);
+            sprintf(text1, trophy_text[trophies_won[current_award].f1], othervar.fa5a);
+            sprintf(text2, trophy_bonus_messages[trophies_won[current_award].f4]);
             sprintf(text3, "+%d", trophies_won[current_award].value);
         } else {
-            sprintf(text1, D_00160364[trophies_won[current_award].f1]);
-            sprintf(text2, D_00160390[trophies_won[current_award].f4]);
+            sprintf(text1, trophy_text[trophies_won[current_award].f1]);
+            sprintf(text2, trophy_bonus_messages[trophies_won[current_award].f4]);
             sprintf(text3, "+%d", trophies_won[current_award].value);
         }
         LbTextSetWindow(0xe1, 0x6a, 0xb4, 0xe0);

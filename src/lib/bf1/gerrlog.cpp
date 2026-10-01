@@ -5,10 +5,10 @@ typedef char *va_list[1];
 #define va_end(ap) ((ap)[0] = 0)
 
 extern "C" {
-extern u32 D_0018a580;
-extern u8 D_0018a584[];
+extern u32 error_log_initialised;
+extern u8 error_log[];
 
-int fn_000bc504(int current_dir, char *directory, char *filename, char *buf, u32 buflen);
+int LbFileMakeFullPath(int current_dir, char *directory, char *filename, char *buf, u32 buflen);
 int LbLogSetup(void *log, char *filename, u32 flags);
 int LbLogSetPrefix(void *log, char *title);
 int LbLog(void *log, char *fmt, ...);
@@ -18,50 +18,50 @@ char *strcat(char *dst, const char *src);
 #pragma intrinsic(strcat)
 
 // FUNCTION: 0x000cd1e0
-int fn_000cd1e0(char *directory, char *filename, u8 append)
+int LbErrorLogSetup(char *directory, char *filename, u8 append)
 {
     char path[144];
     u32 flags;
 
-    if (D_0018a580)
+    if (error_log_initialised)
         return -1;
-    if (fn_000bc504(1, directory, filename ? filename : "ERROR.LOG", path, 144) == -1)
+    if (LbFileMakeFullPath(1, directory, filename ? filename : "ERROR.LOG", path, 144) == -1)
         return -1;
     if (append)
         flags = 0x35;
     else
         flags = 0x36;
-    if (LbLogSetup(D_0018a584, path, flags) != 1)
+    if (LbLogSetup(error_log, path, flags) != 1)
         return -1;
-    LbLogSetPrefix(D_0018a584, "Error: ");
-    D_0018a580 = 1;
+    LbLogSetPrefix(error_log, "Error: ");
+    error_log_initialised = 1;
     return 1;
 }
 
 // FUNCTION: 0x000cd294
-int fn_000cd294(void)
+int LbErrorLogReset(void)
 {
-    if (!D_0018a580)
+    if (!error_log_initialised)
         return -1;
-    if (LbLogClose(D_0018a584) != 1)
+    if (LbLogClose(error_log) != 1)
         return -1;
-    D_0018a580 = 0;
+    error_log_initialised = 0;
     return 1;
 }
 
 // FUNCTION: 0x000cd2cc
-int fn_000cd2cc(char *fmt, ...)
+int LbErrorLog(char *fmt, ...)
 {
     char buf[512];
     va_list args;
 
-    if (!D_0018a580)
+    if (!error_log_initialised)
         return -1;
     va_start(args, fmt);
     vsprintf(buf, fmt, args);
     va_end(args);
     strcat(buf, "\n");
-    return LbLog(D_0018a584, buf);
+    return LbLog(error_log, buf);
 }
 
 }

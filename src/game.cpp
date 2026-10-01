@@ -2,24 +2,24 @@
 
 extern "C" {
 
-extern u32 D_001606bc;
-extern u8 D_0015f99f;
+extern u32 menu_turn;
+extern u8 new_game;
 extern Event D_001549d0[];
-extern u8 *D_00153f34;
+extern u8 *palette;
 extern u8 D_00156910;
 
-void fn_00090610(void);
+void start_game(void);
 void fn_000110b0(void);
 int LbScreenLock(void);
-void fn_0008add8(void);
-void fn_0004e47c(Window **windows);
+void process_menus(void);
+void ProcessWindows(Window **windows);
 void fn_000a6ca4(void);
-void fn_00063680(void);
-void fn_00063a64(void);
+void draw_town_select(void);
+void process_keys_town_select(void);
 u8 fn_00029a54(RoomInfo *room);
-void fn_000b4e88(void);
-void fn_000951c8(void);
-void fn_00094b28(void);
+void display_year_charts(void);
+void insert_hall_details(void);
+void display_hall(void);
 
 }
 
@@ -35,7 +35,7 @@ void game(void)
     sprintf(path, "%s%s", cd_install_path, animation_table[25].name);
     check_cd_available(path);
     get_cd_speed();
-    fn_00090610();
+    start_game();
     if (debug.unknown1fa) {
         display_mode = 0;
         gamevar.unknown21 = 0;
@@ -67,14 +67,14 @@ void game(void)
                 start_turn();
             }
             run_things = display_mode_control[display_mode];
-            D_001606bc++;
+            menu_turn++;
             switch (display_mode) {
             case 0:
                 draw_it();
                 do_net_text();
-                fn_0008add8();
-                fn_00074220(HospShift, lbInkey);
-                fn_0004e47c(open_windows);
+                process_menus();
+                process_keys(HospShift, lbInkey);
+                ProcessWindows(open_windows);
                 clear_object_drag_shape();
                 process_mouse();
                 display_advisor();
@@ -91,7 +91,7 @@ void game(void)
                 break;
             case 1:
                 do_charts();
-                fn_00074220(HospShift, lbInkey);
+                process_keys(HospShift, lbInkey);
                 process_sound_heap();
                 draw_help_text();
                 process_turn();
@@ -113,9 +113,9 @@ void game(void)
                 process_turn();
                 break;
             case 4:
-                fn_00063680();
-                fn_0004e47c(open_windows);
-                fn_00063a64();
+                draw_town_select();
+                ProcessWindows(open_windows);
+                process_keys_town_select();
                 process_mouse_town_select();
                 process_sound_heap();
                 process_turn();
@@ -172,7 +172,7 @@ void game(void)
             case 11:
                 draw_it();
                 do_net_text();
-                fn_0004e47c(open_windows);
+                ProcessWindows(open_windows);
                 req13_cancel_check();
                 display_advisor();
                 process_sound_heap();
@@ -195,9 +195,9 @@ void game(void)
                 process_turn();
                 break;
             case 14:
-                fn_00063680();
-                fn_0004e47c(open_windows);
-                fn_00063a64();
+                draw_town_select();
+                ProcessWindows(open_windows);
+                process_keys_town_select();
                 process_mouse_town_select();
                 process_sound_heap();
                 process_turn();
@@ -277,14 +277,14 @@ void game(void)
             LbScreenClear(0);
             LbScreenSwap();
             quit_game = 0;
-            fn_00021818(0x63, -1);
+            save_game(0x63, -1);
             stop_midi();
             if (debug.unknown1fa) {
                 quit_game = 1;
             }
             break;
         case 2:
-            D_0015f99f = 1;
+            new_game = 1;
             quit_game = 0;
             othervar.f10 = 1;
             break;
@@ -427,7 +427,7 @@ u8 change_res(TbScreenMode mode)
         mouse_x <<= 1;
         mouse_y = mouse_y * 12 / 5;
     }
-    if (!setup_any_screen(D_00153f34, mode)) {
+    if (!setup_any_screen(palette, mode)) {
         return 0;
     } else {
         TbSprite *cursor_sprites;
@@ -473,7 +473,7 @@ void do_charts(void)
         display_peep_overview();
         break;
     case 13:
-        fn_000b4e88();
+        display_year_charts();
         break;
     case 8:
     case 9:
@@ -498,7 +498,7 @@ void do_year_end(void)
             hall.unknown2 = 0;
             year_end_type++;
             yearend.unknown0 = 1;
-            fn_000951c8();
+            insert_hall_details();
         }
         yearend.unknown2 = 0;
         exit_the_yearend_screen = 0;
@@ -506,10 +506,10 @@ void do_year_end(void)
         StopAllSamples();
         break;
     case 1:
-        fn_00094b28();
+        display_hall();
         break;
     case 2:
-        fn_000b4e88();
+        display_year_charts();
         break;
     case 3:
         year_end_type = 4;

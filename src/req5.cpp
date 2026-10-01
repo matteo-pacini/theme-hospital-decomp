@@ -12,7 +12,7 @@ struct Slot {
 extern "C" {
 extern Slot D_001581b2[];
 extern Event D_001549d0[];
-extern char **D_0016029c;
+extern char **object_names;
 }
 
 u16 find_next_thing(Thing *w, u8 kind, s8 sub1, s8 sub2);
@@ -43,7 +43,7 @@ void req5(Window *win)
                 kind = thing[D_001581b2[3].value].subtype;
                 if ((u32)allhosps[player].f35 >= (u32)allhosps[player].object_stats[kind].cost
                     && allhosps[player].f35 > 0) {
-                    sprintf(othervar.f935, yesno_text[2], D_0016029c[objects[kind].name],
+                    sprintf(othervar.f935, yesno_text[2], object_names[objects[kind].name],
                             allhosps[othervar.ff].object_stats[kind].cost);
                     open_yes_no_requester(0x8a, D_001581b2[3].value, 0, 0x78, 0, 0);
                     play_sound(10, SFX_SELECTX, -1, -1);
@@ -78,10 +78,10 @@ void req5_overdraw(Window *win)
         set_font_from_cache(1);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         if (is_thing_paged(&allhosps[player].ff6d, D_001581b2[3].value)) {
-            sprintf(buf, "(%s)", D_0016029c[machine->subtype]);
+            sprintf(buf, "(%s)", object_names[machine->subtype]);
             LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
         } else {
-            sprintf(buf, "%s", D_0016029c[machine->subtype]);
+            sprintf(buf, "%s", object_names[machine->subtype]);
             LbTextDraw(x + resvars.f1c[0x61].x, y + resvars.f1c[0x61].y, buf);
         }
         {

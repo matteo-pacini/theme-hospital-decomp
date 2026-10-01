@@ -6,15 +6,15 @@ extern u8 *person_complex_group;
 extern ComputerBucket (*comp_buckets)[12];
 
 extern "C" {
-extern u8 *D_00153f34;
+extern u8 *palette;
 extern u8 *lbVesaData;
-extern u8 *D_00153f1c, *D_00153f24, *D_00153f28, *D_00153f30, *D_00153f40;
-extern u8 *D_00153f44, *D_00153f48, *D_00153f4c, *D_00153f54, *D_00153f58;
-extern u8 *D_00153f5c, *D_00153f60, *D_00153f68, *D_00153f70, *D_00153f80;
-extern u8 *D_00153f88, *D_00153f8c, *D_00153f94, *D_00153f9c, *D_0015479c;
-extern u8 *D_001547b8, *D_00154830, *D_001580fc, *D_00158334;
+extern u8 *sprite_data, *end_sprites, *pointer_data, *end_pointers, *tile_data;
+extern u8 *tile, *end_tiles, *watch_data, *end_watch, *money_data;
+extern u8 *money, *end_money, *end_frames, *end_elements, *game_panel_data;
+extern u8 *end_game_panel, *pulldv_data, *end_pulldv, *staff_complex_group, *face_buffer;
+extern u8 *end_allhosps, *end_comp_buckets, *end_text_buffer, *heapptr;
 
-int __far fn_0009b590(unsigned deverr, unsigned errcode, unsigned __far *devhdr);
+int __far harderr_handler(unsigned deverr, unsigned errcode, unsigned __far *devhdr);
 void fn_000ce546(int (__far *handler)(unsigned, unsigned, unsigned __far *));
 char *strchr(const char *s, int c);
 int LbFileFindFirst(char *spec, void *find, u32 attributes);
@@ -23,71 +23,71 @@ void fn_0001102c(void);
 }
 
 TbLoadFiles mcgaspritefiles[] = {
-    { "datam/mspr-0.dat", (u8 **)&D_00153f1c, 0, 0, 0, 2 },
-    { "datam/mspr-0.tab", (u8 **)&sprite, (u8 **)&D_00153f24, 0, 0, 2 },
-    { "datam/panel02m.dat", (u8 **)&D_00153f80, 0, 0, 0, 2 },
-    { "datam/panel02m.tab", (u8 **)&game_panel, (u8 **)&D_00153f88, 0, 0, 2 },
-    { "datam/pulldm.dat", (u8 **)&D_00153f8c, 0, 0, 0, 2 },
-    { "datam/pulldm.tab", (u8 **)&pulldv, (u8 **)&D_00153f94, 0, 0, 2 },
-    { "datam/watch01m.dat", (u8 **)&D_00153f4c, 0, 0, 0, 2 },
-    { "datam/watch01m.tab", (u8 **)&watch, (u8 **)&D_00153f54, 0, 0, 2 },
-    { "datam/money01m.dat", (u8 **)&D_00153f58, 0, 0, 0, 2 },
-    { "datam/money01m.tab", (u8 **)&D_00153f5c, (u8 **)&D_00153f60, 0, 0, 2 },
+    { "datam/mspr-0.dat", (u8 **)&sprite_data, 0, 0, 0, 2 },
+    { "datam/mspr-0.tab", (u8 **)&sprite, (u8 **)&end_sprites, 0, 0, 2 },
+    { "datam/panel02m.dat", (u8 **)&game_panel_data, 0, 0, 0, 2 },
+    { "datam/panel02m.tab", (u8 **)&game_panel, (u8 **)&end_game_panel, 0, 0, 2 },
+    { "datam/pulldm.dat", (u8 **)&pulldv_data, 0, 0, 0, 2 },
+    { "datam/pulldm.tab", (u8 **)&pulldv, (u8 **)&end_pulldv, 0, 0, 2 },
+    { "datam/watch01m.dat", (u8 **)&watch_data, 0, 0, 0, 2 },
+    { "datam/watch01m.tab", (u8 **)&watch, (u8 **)&end_watch, 0, 0, 2 },
+    { "datam/money01m.dat", (u8 **)&money_data, 0, 0, 0, 2 },
+    { "datam/money01m.tab", (u8 **)&money, (u8 **)&end_money, 0, 0, 2 },
     { 0 },
 };
 
 TbLoadFiles hiresspritefiles[] = {
-    { "data/vspr-0.dat", (u8 **)&D_00153f1c, 0, 0, 0, 2 },
-    { "data/vspr-0.tab", (u8 **)&sprite, (u8 **)&D_00153f24, 0, 0, 2 },
-    { "data/panel02v.dat", (u8 **)&D_00153f80, 0, 0, 0, 2 },
-    { "data/panel02v.tab", (u8 **)&game_panel, (u8 **)&D_00153f88, 0, 0, 2 },
-    { "data/pulldv.dat", (u8 **)&D_00153f8c, 0, 0, 0, 2 },
-    { "data/pulldv.tab", (u8 **)&pulldv, (u8 **)&D_00153f94, 0, 0, 2 },
-    { "data/watch01v.dat", (u8 **)&D_00153f4c, 0, 0, 0, 2 },
-    { "data/watch01v.tab", (u8 **)&watch, (u8 **)&D_00153f54, 0, 0, 2 },
-    { "data/money01v.dat", (u8 **)&D_00153f58, 0, 0, 0, 2 },
-    { "data/money01v.tab", (u8 **)&D_00153f5c, (u8 **)&D_00153f60, 0, 0, 2 },
+    { "data/vspr-0.dat", (u8 **)&sprite_data, 0, 0, 0, 2 },
+    { "data/vspr-0.tab", (u8 **)&sprite, (u8 **)&end_sprites, 0, 0, 2 },
+    { "data/panel02v.dat", (u8 **)&game_panel_data, 0, 0, 0, 2 },
+    { "data/panel02v.tab", (u8 **)&game_panel, (u8 **)&end_game_panel, 0, 0, 2 },
+    { "data/pulldv.dat", (u8 **)&pulldv_data, 0, 0, 0, 2 },
+    { "data/pulldv.tab", (u8 **)&pulldv, (u8 **)&end_pulldv, 0, 0, 2 },
+    { "data/watch01v.dat", (u8 **)&watch_data, 0, 0, 0, 2 },
+    { "data/watch01v.tab", (u8 **)&watch, (u8 **)&end_watch, 0, 0, 2 },
+    { "data/money01v.dat", (u8 **)&money_data, 0, 0, 0, 2 },
+    { "data/money01v.tab", (u8 **)&money, (u8 **)&end_money, 0, 0, 2 },
     { 0 },
 };
 
 TbLoadFiles hiresblockfiles[] = {
-    { "data/vblk-0.dat", (u8 **)&D_00153f40, 0, 0, 0, 2 },
-    { "data/vblk-0.tab", (u8 **)&D_00153f44, (u8 **)&D_00153f48, 0, 0, 2 },
+    { "data/vblk-0.dat", (u8 **)&tile_data, 0, 0, 0, 2 },
+    { "data/vblk-0.tab", (u8 **)&tile, (u8 **)&end_tiles, 0, 0, 2 },
     { 0 },
 };
 
 TbLoadFiles loresblockfiles[] = {
-    { "datam/mblk-0.dat", (u8 **)&D_00153f40, 0, 0, 0, 2 },
-    { "datam/mblk-0.tab", (u8 **)&D_00153f44, (u8 **)&D_00153f48, 0, 0, 2 },
+    { "datam/mblk-0.dat", (u8 **)&tile_data, 0, 0, 0, 2 },
+    { "datam/mblk-0.tab", (u8 **)&tile, (u8 **)&end_tiles, 0, 0, 2 },
     { 0 },
 };
 
 TbLoadFiles hiresgamepointerfiles[] = {
-    { "data/mpointer.dat", (u8 **)&D_00153f28, 0, 0, 0, 2 },
-    { "data/mpointer.tab", (u8 **)&pointer, (u8 **)&D_00153f30, 0, 0, 2 },
+    { "data/mpointer.dat", (u8 **)&pointer_data, 0, 0, 0, 2 },
+    { "data/mpointer.tab", (u8 **)&pointer, (u8 **)&end_pointers, 0, 0, 2 },
     { 0 },
 };
 
 char *hiresscreenpointerfiles[] = { "qdata/spointer.dat", "qdata/spointer.tab" };
 
 TbLoadFiles lorespointerfiles[] = {
-    { "datam/mpointer.dat", (u8 **)&D_00153f28, 0, 0, 0, 2 },
-    { "datam/mpointer.tab", (u8 **)&pointer, (u8 **)&D_00153f30, 0, 0, 2 },
+    { "datam/mpointer.dat", (u8 **)&pointer_data, 0, 0, 0, 2 },
+    { "datam/mpointer.tab", (u8 **)&pointer, (u8 **)&end_pointers, 0, 0, 2 },
     { 0 },
 };
 
 TbLoadFiles hiresanifiles[] = {
-    { "data/vfra-1.ani", (u8 **)&frame, (u8 **)&D_00153f68, 0, 0, 2 },
+    { "data/vfra-1.ani", (u8 **)&frame, (u8 **)&end_frames, 0, 0, 2 },
     { "data/vstart-1.ani", (u8 **)&start, 0, 0, 0, 2 },
-    { "data/vele-1.ani", (u8 **)&element, (u8 **)&D_00153f70, 0, 0, 2 },
+    { "data/vele-1.ani", (u8 **)&element, (u8 **)&end_elements, 0, 0, 2 },
     { "data/vlist-1.ani", (u8 **)&elelist, 0, 0, 0, 2 },
     { 0 },
 };
 
 TbLoadFiles loresanifiles[] = {
-    { "datam/mfra-1.ani", (u8 **)&frame, (u8 **)&D_00153f68, 0, 0, 2 },
+    { "datam/mfra-1.ani", (u8 **)&frame, (u8 **)&end_frames, 0, 0, 2 },
     { "datam/mstart-1.ani", (u8 **)&start, 0, 0, 0, 2 },
-    { "datam/mele-1.ani", (u8 **)&element, (u8 **)&D_00153f70, 0, 0, 2 },
+    { "datam/mele-1.ani", (u8 **)&element, (u8 **)&end_elements, 0, 0, 2 },
     { "datam/mlist-1.ani", (u8 **)&elelist, 0, 0, 0, 2 },
     { 0 },
 };
@@ -228,7 +228,7 @@ char *lores_font_filenames[] = {
 };
 
 TbLoadFiles palettefile[] = {
-    { "qdata/load01v.pal", (u8 **)&D_00153f34, 0, 0, 0, 1 },
+    { "qdata/load01v.pal", (u8 **)&palette, 0, 0, 0, 1 },
     { 0 },
 };
 
@@ -237,17 +237,17 @@ char *D_0013e80c = "data/mpalette.dat";
 }
 
 TbLoadFiles langfile[] = {
-    { "data/lang-0.dat", (u8 **)&text_buffer, (u8 **)&D_001580fc, 0, 0, 2 },
-    { "data/lang-1.dat", (u8 **)&text_buffer, (u8 **)&D_001580fc, 0, 0, 2 },
-    { "data/lang-2.dat", (u8 **)&text_buffer, (u8 **)&D_001580fc, 0, 0, 2 },
-    { "data/lang-3.dat", (u8 **)&text_buffer, (u8 **)&D_001580fc, 0, 0, 2 },
-    { "data/lang-4.dat", (u8 **)&text_buffer, (u8 **)&D_001580fc, 0, 0, 2 },
-    { "data/lang-5.dat", (u8 **)&text_buffer, (u8 **)&D_001580fc, 0, 0, 2 },
+    { "data/lang-0.dat", (u8 **)&text_buffer, (u8 **)&end_text_buffer, 0, 0, 2 },
+    { "data/lang-1.dat", (u8 **)&text_buffer, (u8 **)&end_text_buffer, 0, 0, 2 },
+    { "data/lang-2.dat", (u8 **)&text_buffer, (u8 **)&end_text_buffer, 0, 0, 2 },
+    { "data/lang-3.dat", (u8 **)&text_buffer, (u8 **)&end_text_buffer, 0, 0, 2 },
+    { "data/lang-4.dat", (u8 **)&text_buffer, (u8 **)&end_text_buffer, 0, 0, 2 },
+    { "data/lang-5.dat", (u8 **)&text_buffer, (u8 **)&end_text_buffer, 0, 0, 2 },
     { 0 },
 };
 
 TbLoadFiles complexfiles[] = {
-    { "data/s_comp.lex", (u8 **)&D_00153f9c, 0, 0, 0, 2 },
+    { "data/s_comp.lex", (u8 **)&staff_complex_group, 0, 0, 0, 2 },
     { "data/p_comp.lex", (u8 **)&person_complex_group, 0, 0, 0, 2 },
     { 0 },
 };
@@ -263,13 +263,13 @@ TbLoadFiles memfiles[] = {
     { "*MAP", (u8 **)&map, (u8 **)&end_map, 0x20000 },
     { "*ROOMS", (u8 **)&room_info, (u8 **)&end_room_info, 0xdac },
     { "*PAGERS", (u8 **)&pagers, (u8 **)&end_pagers, 0x14a },
-    { "*HOSPITAL", (u8 **)&allhosps, (u8 **)&D_001547b8, 0x4964 },
+    { "*HOSPITAL", (u8 **)&allhosps, (u8 **)&end_allhosps, 0x4964 },
     { "*CONTROL", (u8 **)&mycontrol, 0, 0x651 },
     { "*PIXBUFF", (u8 **)((u8 *)&pixBuf + 0x28), 0, 0x7e90 },
     { "*LISTHEAD", (u8 **)&listhead, 0, 0x3a8 },
     { "*PLAYERCALL", (u8 **)&playercall, (u8 **)&end_playercall, 0x258 },
-    { "*COMPUTERBUCKETS", (u8 **)&comp_buckets, (u8 **)&D_00154830, 0x4b00 },
-    { "*FACEBUFFER", (u8 **)&D_0015479c, 0, 0x130b },
+    { "*COMPUTERBUCKETS", (u8 **)&comp_buckets, (u8 **)&end_comp_buckets, 0x4b00 },
+    { "*FACEBUFFER", (u8 **)&face_buffer, 0, 0x130b },
     { 0 },
 };
 
@@ -279,14 +279,14 @@ TbLoadFiles thingfiles[] = {
 };
 
 TbLoadFiles soundfiles[] = {
-    { "*HEAPBUFFER1", (u8 **)&D_00158334, 0, 0x70800 },
-    { "*HEAPBUFFER2", (u8 **)&D_00158334, 0, 0x96000 },
-    { "*HEAPBUFFER3", (u8 **)&D_00158334, 0, 0xc8000 },
+    { "*HEAPBUFFER1", (u8 **)&heapptr, 0, 0x70800 },
+    { "*HEAPBUFFER2", (u8 **)&heapptr, 0, 0x96000 },
+    { "*HEAPBUFFER3", (u8 **)&heapptr, 0, 0xc8000 },
     { 0 },
 };
 
 TbLoadFiles nosoundfiles[] = {
-    { "*HEAPBUFFER", (u8 **)&D_00158334, 0, 0x32000 },
+    { "*HEAPBUFFER", (u8 **)&heapptr, 0, 0x32000 },
     { 0 },
 };
 
@@ -439,14 +439,14 @@ const char *const hiresscreen_sprites_tabs[] = {
 };
 
 TbLoadFiles mcgaratfestpanelfiles[] = {
-    { "datam/panel04m.dat", (u8 **)&D_00153f80, 0, 0, 0, 2 },
-    { "datam/panel04m.tab", (u8 **)&game_panel, (u8 **)&D_00153f88, 0, 0, 2 },
+    { "datam/panel04m.dat", (u8 **)&game_panel_data, 0, 0, 0, 2 },
+    { "datam/panel04m.tab", (u8 **)&game_panel, (u8 **)&end_game_panel, 0, 0, 2 },
     { 0 },
 };
 
 TbLoadFiles hiresratfestpanelfiles[] = {
-    { "data/panel04v.dat", (u8 **)&D_00153f80, 0, 0, 0, 2 },
-    { "data/panel04v.tab", (u8 **)&game_panel, (u8 **)&D_00153f88, 0, 0, 2 },
+    { "data/panel04v.dat", (u8 **)&game_panel_data, 0, 0, 0, 2 },
+    { "data/panel04v.tab", (u8 **)&game_panel, (u8 **)&end_game_panel, 0, 0, 2 },
     { 0 },
 };
 
@@ -462,7 +462,7 @@ char *D_0013f704[] = {
 }
 
 // FUNCTION: 0x0009b590
-extern "C" int __far fn_0009b590(unsigned deverr, unsigned errcode, unsigned __far *devhdr)
+extern "C" int __far harderr_handler(unsigned deverr, unsigned errcode, unsigned __far *devhdr)
 {
     return 3;
 }
@@ -486,7 +486,7 @@ void check_cd_available(char *path)
     unused = 0;
     if (*path == '*')
         return;
-    fn_000ce546(fn_0009b590);
+    fn_000ce546(harderr_handler);
     handle = LbFileOpen(path, 2);
     if (handle != -1) {
         if (LbFileRead(handle, &probe, 4) != -1) {
@@ -501,8 +501,8 @@ void check_cd_available(char *path)
     if (had_screen)
         LbScreenUnlock();
     if (resvars.f0 != SCREEN_MODE_13 || othervar.fa8d)
-        setup_any_screen(D_00153f34, SCREEN_MODE_13);
-    LbFileLoadAt((char *)screenpalettes[21], D_00153f34);
+        setup_any_screen(palette, SCREEN_MODE_13);
+    LbFileLoadAt((char *)screenpalettes[21], palette);
     while (LbScreenLock() != 1)
         ;
     LbFileLoadAt((char *)hiresscreens[21], lbDisplay.unknown4);
@@ -517,7 +517,7 @@ void check_cd_available(char *path)
     LbScreenUnlock();
     LbMouseChangeSprite(0);
     LbScreenSwap();
-    LbPaletteSet(D_00153f34);
+    LbPaletteSet(palette);
     while (!LbFileExists(path)) {
         if (lbKeyOn[KC_ESCAPE]) {
             reset_host();
@@ -525,7 +525,7 @@ void check_cd_available(char *path)
         }
     }
     if (resvars.f0 != mode)
-        setup_any_screen(D_00153f34, mode);
+        setup_any_screen(palette, mode);
     if (flag)
         fn_0001102c();
     if (had_screen) {
@@ -537,8 +537,8 @@ void check_cd_available(char *path)
     if (install_type < 2) {
         sprintf(fname, "%s%s", cd_install_path, D_0013e80c);
         check_cd_available(fname);
-        LbFileLoadAt(fname, D_00153f34);
+        LbFileLoadAt(fname, palette);
     } else {
-        LbFileLoadAt(D_0013e80c, D_00153f34);
+        LbFileLoadAt(D_0013e80c, palette);
     }
 }

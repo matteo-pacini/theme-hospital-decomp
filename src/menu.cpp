@@ -23,27 +23,27 @@ u32 fn_000cd716(char *s);
 
 extern "C" {
 
-extern char **D_001602f0;
-extern u16 D_00160f18, D_00160f1a;
+extern char **pulldown_text;
+extern u16 last_p, selected_option;
 extern Event D_001549d0[];
 void FadeMusic(u32 time, u8 volume);
-extern CompElement *D_00153f70;
+extern CompElement *end_elements;
 extern u8 D_001290d0, D_001290d1, D_001290d2;
-extern u8 D_0015f982;
-extern TbSprite *D_00153f30;
-extern u8 *D_00153f28;
+extern u8 error_number;
+extern TbSprite *end_pointers;
+extern u8 *pointer_data;
 extern u8 D_00156910;
 void fn_000c93bf(char *dst, char *src);
 int LbScreenLock(void);
-void fn_0008db38(TbScreenMode mode);
+void change_screen_mode(TbScreenMode mode);
 extern s32 D_0014b1c4[], D_0013bb0c[], D_00146c8c[];
 extern IconScreen D_0014b7b4, D_0013c0fc;
-extern u8 D_0014619c[], D_00145108[], D_0013fd80[], D_00145358[], D_0014bd5c[], D_0014d414[];
+extern u8 ScreenBoxes[], D_00145108[], mcgabutton_list[], screenlistpos[], D_0014bd5c[], mcgapanel_popup_coord[];
 extern u8 D_0012cc7c[];
-extern u8 D_001361ac[], D_001310e4[], D_0013c6a4[], D_00130288[], D_0012cc3c[];
-extern int D_0014be34[], D_0013c77c[];
-extern TbSprite *D_00153f44, *D_00153f48, *D_00153f24, *D_00153f88, *D_00153f94;
-extern u8 *D_00153f40, *D_00153f1c, *D_00153f80, *D_00153f8c;
+extern u8 window_list[], button_list[], hiresbuttons[], panel_popup_coord[], D_0012cc3c[];
+extern int D_0014be34[], hireshelp[];
+extern TbSprite *tile, *end_tiles, *end_sprites, *end_game_panel, *end_pulldv;
+extern u8 *tile_data, *sprite_data, *game_panel_data, *pulldv_data;
 void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
 int LbDataLoadAll(TbLoadFiles *files);
 
@@ -72,39 +72,39 @@ void setup_menus(void)
     set_font_from_cache(0);
     sprintf(sep, ".");
     sprintf(end, "..");
-    for (i = 1; (pmenu.pulldowns[i].length = fn_000cd716(D_001602f0[i])), strcmp(sep, D_001602f0[i]); i++)
+    for (i = 1; (pmenu.pulldowns[i].length = fn_000cd716(pulldown_text[i])), strcmp(sep, pulldown_text[i]); i++)
         ;
     pmenu.count = i;
     i++;
     for (j = 1; j < pmenu.count; j++) {
         pmenu.pulldowns[j].width = 0;
         for (sub = 0;; sub++) {
-            if (strcmp(sep, D_001602f0[i]) == 0) {
+            if (strcmp(sep, pulldown_text[i]) == 0) {
                 pmenu.pulldowns[j].count = sub;
                 i++;
                 break;
             }
-            if (fn_000cd716(D_001602f0[i]) > pmenu.pulldowns[j].width)
-                pmenu.pulldowns[j].width = fn_000cd716(D_001602f0[i]);
+            if (fn_000cd716(pulldown_text[i]) > pmenu.pulldowns[j].width)
+                pmenu.pulldowns[j].width = fn_000cd716(pulldown_text[i]);
             i++;
         }
     }
     for (done = 0; !done; j++) {
         pmenu.pulldowns[j].width = 0;
         for (sub = 0;; sub++) {
-            if (strcmp(end, D_001602f0[i]) == 0) {
+            if (strcmp(end, pulldown_text[i]) == 0) {
                 pmenu.pulldowns[j].count = sub;
                 i++;
                 done = 1;
                 break;
             }
-            if (strcmp(sep, D_001602f0[i]) == 0) {
+            if (strcmp(sep, pulldown_text[i]) == 0) {
                 pmenu.pulldowns[j].count = sub;
                 i++;
                 break;
             }
-            if (fn_000cd716(D_001602f0[i]) > pmenu.pulldowns[j].width)
-                pmenu.pulldowns[j].width = fn_000cd716(D_001602f0[i]);
+            if (fn_000cd716(pulldown_text[i]) > pmenu.pulldowns[j].width)
+                pmenu.pulldowns[j].width = fn_000cd716(pulldown_text[i]);
             i++;
         }
     }
@@ -163,7 +163,7 @@ void draw_menus(void)
         for (i = 1; i < pmenu.count; i++) {
             lbDisplay.draw_flags = 0;
             if (pmenu.pulldowns[i].active) {
-                LbTextDraw(x, resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[i].text]);
+                LbTextDraw(x, resvars.f1c_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[i].text]);
                 if (lbDisplay.mleft_button) {
                     if (pmenu.unknown0 == i)
                         draw_pulldown(x, (u16)pmenu.line_height, i);
@@ -210,25 +210,25 @@ void draw_pulldown(u16 x, u16 y, u16 idx)
         if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.unknownfd > 1) {
             saved = lbDisplay.draw_flags;
             lbDisplay.draw_flags = 4;
-            LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
+            LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
             lbDisplay.draw_flags = saved;
         } else {
-            LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
+            LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
         }
         if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, i * pmenu.line_height + y, pmenu.pulldowns[idx].width * pmenu.char_width, pmenu.line_height)) {
             set_font_from_cache(pmenu.font_hi);
-            if (D_00160f1a != i + 1 || D_00160f18 != idx) {
-                D_00160f18 = idx;
+            if (selected_option != i + 1 || last_p != idx) {
+                last_p = idx;
                 play_sound(10, SFX_HLIGHT5, -1, -1);
             }
-            D_00160f1a = i + 1;
+            selected_option = i + 1;
             if ((pmenu.pulldowns[idx].items[i].flags & 1) && statvar.unknownfd > 1) {
                 saved2 = lbDisplay.draw_flags;
                 lbDisplay.draw_flags = 4;
-                LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
+                LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
                 lbDisplay.draw_flags = saved2;
             } else {
-                LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, D_001602f0[pmenu.pulldowns[idx].items[i].text]);
+                LbTextDraw(x, y + i * pmenu.line_height + resvars.f1c_IconScreenp->unknown54c, pulldown_text[pmenu.pulldowns[idx].items[i].text]);
             }
             set_font_from_cache(pmenu.font);
         }
@@ -284,7 +284,7 @@ void draw_pmenu_box(u16 x, u16 y, u16 w, u16 h)
 }
 
 // FUNCTION: 0x0008add8
-extern "C" void fn_0008add8(void)
+extern "C" void process_menus(void)
 {
     u8 h1;
     u8 y0;
@@ -324,7 +324,7 @@ extern "C" void fn_0008add8(void)
                                             *pmenu.pulldowns[i].items[j].check = 1;
                                     }
                                     if (pmenu.pulldowns[i].items[j].key)
-                                        fn_00074220(pmenu.pulldowns[i].items[j].shift, pmenu.pulldowns[i].items[j].key);
+                                        process_keys(pmenu.pulldowns[i].items[j].shift, pmenu.pulldowns[i].items[j].key);
                                     if (pmenu.pulldowns[i].items[j].callback) {
                                         othervar.f8f = pmenu.pulldowns[i].items[j].arg;
                                         othervar.f90 = j;
@@ -410,7 +410,7 @@ extern "C" void fn_0008add8(void)
 }
 
 // FUNCTION: 0x0008b6a0
-extern "C" void fn_0008b6a0(void)
+extern "C" void pulldown_load(void)
 {
     u8 slot;
 
@@ -423,7 +423,7 @@ extern "C" void fn_0008b6a0(void)
 }
 
 // FUNCTION: 0x0008b6f8
-extern "C" void fn_0008b6f8(void)
+extern "C" void pulldown_save(void)
 {
     u8 slot;
 
@@ -452,7 +452,7 @@ void pulldown_briefing(void)
 }
 
 // FUNCTION: 0x0008b824
-extern "C" void fn_0008b824(void)
+extern "C" void pulldown_toggle_shadows(void)
 {
     if (myplayer.f1d > 0) {
         myplayer.f1d = 0;
@@ -467,7 +467,7 @@ extern "C" void fn_0008b824(void)
 }
 
 // FUNCTION: 0x0008b8a0
-extern "C" void fn_0008b8a0(void)
+extern "C" void pulldown_svol(void)
 {
     u8 sel;
     u8 i;
@@ -482,7 +482,7 @@ extern "C" void fn_0008b8a0(void)
 }
 
 // FUNCTION: 0x0008b91c
-extern "C" void fn_0008b91c(void)
+extern "C" void pulldown_smusic(void)
 {
     u8 i;
     u32 sel;
@@ -498,7 +498,7 @@ extern "C" void fn_0008b91c(void)
 }
 
 // FUNCTION: 0x0008b99c
-extern "C" void fn_0008b99c(void)
+extern "C" void pulldown_sannounce(void)
 {
     u8 sel;
     u8 i;
@@ -513,7 +513,7 @@ extern "C" void fn_0008b99c(void)
 }
 
 // FUNCTION: 0x0008ba18
-extern "C" void fn_0008ba18(void)
+extern "C" void pulldown_toggle_music(void)
 {
     if (statvar.unknowne5) {
         myplayer.unknown11 = !myplayer.unknown11 ? (u8)1 : (u8)0;
@@ -527,7 +527,7 @@ extern "C" void fn_0008ba18(void)
 }
 
 // FUNCTION: 0x0008ba78
-extern "C" void fn_0008ba78(void)
+extern "C" void pulldown_toggle_sound(void)
 {
     if (statvar.fe4)
         myplayer.ff = !myplayer.ff ? (u8)1 : (u8)0;
@@ -538,7 +538,7 @@ extern "C" void fn_0008ba78(void)
 }
 
 // FUNCTION: 0x0008bacc
-extern "C" void fn_0008bacc(void)
+extern "C" void pulldown_toggle_ambient(void)
 {
     if (statvar.fe4)
         myplayer.f10 = !myplayer.f10 ? (u8)1 : (u8)0;
@@ -547,7 +547,7 @@ extern "C" void fn_0008bacc(void)
 }
 
 // FUNCTION: 0x0008bb10
-extern "C" void fn_0008bb10(void)
+extern "C" void pulldown_vary_speed(void)
 {
     u8 sel;
     u8 i;
@@ -564,7 +564,7 @@ extern "C" void fn_0008bb10(void)
 }
 
 // FUNCTION: 0x0008bb98
-extern "C" void fn_0008bb98(void)
+extern "C" void pulldown_toggle_screen_mode(void)
 {
     if (!((resvars.f0 == SCREEN_MODE_1 && othervar.f90 == 1) || (resvars.f0 == SCREEN_MODE_13 && othervar.f90 == 0))) {
         if (!(crequester.unknown2 == 5 || (crequester.unknown2 == 10 && crequester.unknown4 != 1))) {
@@ -575,13 +575,13 @@ extern "C" void fn_0008bb98(void)
             if (resvars.f1 == SCREEN_MODE_13) {
                 if (othervar.fa4f)
                     AIL_stop_sequence(GetSongHandle());
-                fn_0008db38(SCREEN_MODE_1);
+                change_screen_mode(SCREEN_MODE_1);
                 if (othervar.fa4f)
                     AIL_resume_sequence(GetSongHandle());
             } else if (resvars.f1 == SCREEN_MODE_1) {
                 if (othervar.fa4f)
                     AIL_stop_sequence(GetSongHandle());
-                fn_0008db38(SCREEN_MODE_13);
+                change_screen_mode(SCREEN_MODE_13);
                 if (othervar.fa4f)
                     AIL_resume_sequence(GetSongHandle());
             }
@@ -590,12 +590,12 @@ extern "C" void fn_0008bb98(void)
 }
 
 // FUNCTION: 0x0008bcb4
-extern "C" void fn_0008bcb4(void)
+extern "C" void setup_mcga_elements(void)
 {
     CompElement *elem;
 
     elem = element;
-    while (elem <= D_00153f70) {
+    while (elem <= end_elements) {
         elem->x = elem->x / 2 + 0x46;
         elem->y = elem->y / 2 + 0x65;
         elem++;
@@ -623,7 +623,7 @@ void check_save_games(void)
 }
 
 // FUNCTION: 0x0008bdd4
-extern "C" void fn_0008bdd4(void)
+extern "C" void setup_pulldown_menu_options(void)
 {
     u8 i;
 
@@ -1088,12 +1088,12 @@ void swap_game_sprites(TbScreenMode mode)
 
     active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
     if (resvars.f5 == 2) {
-        LbSpriteReset(pointer, D_00153f30, D_00153f28);
-        LbSpriteReset(D_00153f44, D_00153f48, D_00153f40);
-        LbSpriteReset(sprite, D_00153f24, D_00153f1c);
+        LbSpriteReset(pointer, end_pointers, pointer_data);
+        LbSpriteReset(tile, end_tiles, tile_data);
+        LbSpriteReset(sprite, end_sprites, sprite_data);
         LbSpriteReset(button_sprite, end_button_sprites, button_sprite_data);
-        LbSpriteReset(game_panel, D_00153f88, D_00153f80);
-        LbSpriteReset(pulldv, D_00153f94, D_00153f8c);
+        LbSpriteReset(game_panel, end_game_panel, game_panel_data);
+        LbSpriteReset(pulldv, end_pulldv, pulldv_data);
         unload_game_files();
     }
     switch (mode) {
@@ -1108,17 +1108,17 @@ void swap_game_sprites(TbScreenMode mode)
         resvars.f1 = SCREEN_MODE_1;
         load_game_files();
         resvars.f18_s32p = D_0014b1c4;
-        resvars.f3c_u8p = D_0014619c;
+        resvars.f3c_u8p = ScreenBoxes;
         resvars.f1c_IconScreenp = &D_0014b7b4;
         resvars.f40_s32p = D_00146c8c;
         resvars.f3 = 0x10;
         resvars.f4 = 0x20;
         resvars.f20_u8p = D_00145108;
-        resvars.f24 = D_0013fd80;
-        resvars.f44 = D_00145358;
+        resvars.f24 = mcgabutton_list;
+        resvars.f44 = screenlistpos;
         resvars.f28 = D_0014bd5c;
         resvars.f2c_intp = D_0014be34;
-        resvars.f34 = D_0014d414;
+        resvars.f34 = mcgapanel_popup_coord;
         resvars.fe = lores_requester_buttons;
         resvars.f12 = lores_requester_sprites;
         resvars.fa_charpp = lores_font_filenames;
@@ -1140,17 +1140,17 @@ void swap_game_sprites(TbScreenMode mode)
         resvars.f1 = SCREEN_MODE_13;
         load_game_files();
         resvars.f18_s32p = D_0013bb0c;
-        resvars.f3c_u8p = D_0014619c;
+        resvars.f3c_u8p = ScreenBoxes;
         resvars.f1c_IconScreenp = &D_0013c0fc;
         resvars.f40_s32p = D_00146c8c;
         resvars.f3 = 0x20;
         resvars.f4 = 0x40;
-        resvars.f20_u8p = D_001361ac;
-        resvars.f24 = D_001310e4;
-        resvars.f44 = D_00145358;
-        resvars.f28 = D_0013c6a4;
-        resvars.f2c_intp = D_0013c77c;
-        resvars.f34 = D_00130288;
+        resvars.f20_u8p = window_list;
+        resvars.f24 = button_list;
+        resvars.f44 = screenlistpos;
+        resvars.f28 = hiresbuttons;
+        resvars.f2c_intp = hireshelp;
+        resvars.f34 = panel_popup_coord;
         resvars.f6_names = hires_req_filenames;
         resvars.fe = hires_requester_buttons;
         resvars.f12 = hires_requester_sprites;
@@ -1174,11 +1174,11 @@ void swap_game_sprites(TbScreenMode mode)
     window.unknown9c = (window.unknown3c + window.unknown54) / 2;
     window.unknown2eb = 0;
     setup_menus();
-    LbSpriteSetup(pointer, D_00153f30, D_00153f28);
+    LbSpriteSetup(pointer, end_pointers, pointer_data);
 }
 
 // FUNCTION: 0x0008db38
-extern "C" void fn_0008db38(TbScreenMode mode)
+extern "C" void change_screen_mode(TbScreenMode mode)
 {
     u8 active;
     s32 cell;
@@ -1192,13 +1192,13 @@ extern "C" void fn_0008db38(TbScreenMode mode)
     if (active)
         LbScreenUnlock();
     if (!change_res(mode)) {
-        D_0015f982 = 10;
+        error_number = 10;
         sub_error_number = resvars.f0;
         reset_host();
         exit(1);
     }
     swap_game_sprites(mode);
-    LbSpriteSetup(pointer, D_00153f30, D_00153f28);
+    LbSpriteSetup(pointer, end_pointers, pointer_data);
     LbMouseSetup(&pointer[othervar.f30]);
     D_00156910 = 1;
     othervar.f10 = 1;
@@ -1213,7 +1213,7 @@ extern "C" void fn_0008db38(TbScreenMode mode)
 }
 
 // FUNCTION: 0x0008dc7c
-extern "C" void fn_0008dc7c(void)
+extern "C" void ask_restart_level(void)
 {
     if (statvar.unknownfd <= 1) {
         fn_000bbff0(othervar.f935, yesno_text[6]);

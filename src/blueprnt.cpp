@@ -8,8 +8,8 @@ void remove_object_from_map(Thing *t);
 void room_deleted_update_listhead(RoomInfo *room);
 void delete_room(RoomInfo *room);
 void repair_invis_walls_around_room(RoomInfo *room);
-void remove_blank_wall(Map *cell, u8 side);
 void insert_blank_wall(Map *cell, u8 side);
+void remove_blank_wall(Map *cell, u8 side);
 u8 is_room_clear_yet(RoomInfo *room);
 void build_all_rooms(void);
 void price_all_rooms(u16 type, u8 owner);
@@ -665,20 +665,20 @@ void blank_wall_around_blueprint(u8 owner, u8 blank)
     y1 = allhosps[owner].build.y1;
     for (x = x0; x <= x1; x++) {
         if (blank) {
-            remove_blank_wall(&map[(s16)x + ((s16)y0 << 7)], 0);
-            remove_blank_wall(&map[(s16)x + ((s16)(y1 + 1) << 7)], 0);
-        } else {
             insert_blank_wall(&map[(s16)x + ((s16)y0 << 7)], 0);
             insert_blank_wall(&map[(s16)x + ((s16)(y1 + 1) << 7)], 0);
+        } else {
+            remove_blank_wall(&map[(s16)x + ((s16)y0 << 7)], 0);
+            remove_blank_wall(&map[(s16)x + ((s16)(y1 + 1) << 7)], 0);
         }
     }
     for (y = y0; y <= y1; y++) {
         if (blank) {
-            remove_blank_wall(&map[(s16)x0 + ((s16)y << 7)], 1);
-            remove_blank_wall(&map[(s16)(x1 + 1) + ((s16)y << 7)], 1);
-        } else {
             insert_blank_wall(&map[(s16)x0 + ((s16)y << 7)], 1);
             insert_blank_wall(&map[(s16)(x1 + 1) + ((s16)y << 7)], 1);
+        } else {
+            remove_blank_wall(&map[(s16)x0 + ((s16)y << 7)], 1);
+            remove_blank_wall(&map[(s16)(x1 + 1) + ((s16)y << 7)], 1);
         }
     }
 }

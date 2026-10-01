@@ -221,7 +221,7 @@ AnimStartData staff_anim_starts_data[5] = {
 
 extern "C" {
 // demo: litter_starts, of type LitterStarts
-FloorDef D_001379f0[16] = {
+FloorDef litter_starts[16] = {
     { 9999 }, { 947 }, { 948 }, { 949 }, { 1121, 1 }, { 951, 1 }, { 1124, 1 }, { 952, 1 },
     { 953, 1 },
 };

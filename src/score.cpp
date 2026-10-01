@@ -15,14 +15,14 @@ extern "C" {
 u32 fn_000cd716(char *s);
 #pragma aux fn_000cd716 "fn_000cd716_"
 int strcmp(const char *a, const char *b);
-void fn_00094a18(void);
-void fn_00094b28(void);
-void fn_000951c8(void);
-void fn_00094d34(void);
-void fn_00094f5c(s8 slot);
-void fn_00094fc8(void);
-void fn_00095094(s8 slot);
-void fn_00095100(void);
+void modify_background(void);
+void display_hall(void);
+void insert_hall_details(void);
+void draw_fame_text(void);
+void add_highscore_fame(s8 slot);
+void bubble_sort_fame(void);
+void add_highscore_shame(s8 slot);
+void bubble_sort_shame(void);
 }
 
 extern s32 TextPos[];
@@ -147,7 +147,7 @@ void set_shame_pos(s32 *text, s32 *title)
 }
 
 // FUNCTION: 0x00094a18
-void fn_00094a18(void)
+void modify_background(void)
 {
     s16 i;
 
@@ -168,7 +168,7 @@ void fn_00094a18(void)
 }
 
 // FUNCTION: 0x00094b28
-void fn_00094b28(void)
+void display_hall(void)
 {
     s8 i;
 
@@ -180,7 +180,7 @@ void fn_00094b28(void)
     case 0:
         load_ingame_pic(0xe, 1, 0x16, 0, SCREEN_MODE_13);
         load_highscores();
-        fn_00094a18();
+        modify_background();
         hall.unknown2 = 1;
         othervar.f9ed = 1200;
         for (i = 0; i < 20; i++)
@@ -196,12 +196,12 @@ void fn_00094b28(void)
         }
         TitleLen = fn_000cd716(TitleText);
         move_text();
-        fn_00094d34();
+        draw_fame_text();
         break;
     case 1:
         copy_screen_to_wscreen(bscreen);
         move_text();
-        fn_00094d34();
+        draw_fame_text();
         break;
     case 2:
         set_font_from_cache(1);
@@ -221,7 +221,7 @@ void fn_00094b28(void)
 }
 
 // FUNCTION: 0x00094d34
-void fn_00094d34(void)
+void draw_fame_text(void)
 {
     u8 i;
     u8 c;
@@ -265,14 +265,14 @@ void fn_00094d34(void)
 }
 
 // FUNCTION: 0x00094f5c
-void fn_00094f5c(s8 slot)
+void add_highscore_fame(s8 slot)
 {
     sprintf(hosp_scores.fame[slot].name, "%s", &allhosps[player]);
     hosp_scores.fame[slot].score = allhosps[player].f2d;
 }
 
 // FUNCTION: 0x00094fc8
-void fn_00094fc8(void)
+void bubble_sort_fame(void)
 {
     s8 i;
     s8 j;
@@ -295,14 +295,14 @@ void fn_00094fc8(void)
 }
 
 // FUNCTION: 0x00095094
-void fn_00095094(s8 slot)
+void add_highscore_shame(s8 slot)
 {
     sprintf(hosp_scores.shame[slot].name, "%s", &allhosps[player]);
     hosp_scores.shame[slot].score = allhosps[player].f2d;
 }
 
 // FUNCTION: 0x00095100
-void fn_00095100(void)
+void bubble_sort_shame(void)
 {
     s8 i;
     s8 j;
@@ -325,7 +325,7 @@ void fn_00095100(void)
 }
 
 // FUNCTION: 0x000951c8
-void fn_000951c8(void)
+void insert_hall_details(void)
 {
     s8 i;
 
@@ -337,12 +337,12 @@ void fn_000951c8(void)
         }
         if (i == 10) {
             i--;
-            fn_00094f5c(i);
-            fn_00094fc8();
+            add_highscore_fame(i);
+            bubble_sort_fame();
             save_highscores();
         } else if (allhosps[player].f2d > hosp_scores.fame[i].score) {
-            fn_00094f5c(i);
-            fn_00094fc8();
+            add_highscore_fame(i);
+            bubble_sort_fame();
             save_highscores();
         }
         othervar.f9e4 = 1;
@@ -354,12 +354,12 @@ void fn_000951c8(void)
             }
             if (i == 10) {
                 i--;
-                fn_00095094(i);
-                fn_00095100();
+                add_highscore_shame(i);
+                bubble_sort_shame();
                 save_highscores();
             } else if (allhosps[player].f2d > hosp_scores.shame[i].score) {
-                fn_00095094(i);
-                fn_00095100();
+                add_highscore_shame(i);
+                bubble_sort_shame();
                 save_highscores();
             }
         }

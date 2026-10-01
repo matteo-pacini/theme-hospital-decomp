@@ -25,8 +25,8 @@ extern u32 wallhug_last_hug_count;
 extern u32 wallhug_looking_for_last;
 
 extern "C" {
-u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger);
-void fn_00049400(wallhug_hugger *hugger);
+u32 wallhug_add_huggers_path(wallhug_path *path, wallhug_hugger *hugger);
+void wallhug_hugstep(wallhug_hugger *hugger);
 }
 
 // FUNCTION: 0x00048960
@@ -179,7 +179,7 @@ restart:
 }
 
 // FUNCTION: 0x00049400 COMDAT
-inline void fn_00049400(wallhug_hugger *hugger)
+inline void wallhug_hugstep(wallhug_hugger *hugger)
 {
     u32 dir;
 
@@ -301,7 +301,7 @@ inline u32 huggers_met_again(wallhug_info *info)
 }
 
 // FUNCTION: 0x00049230 COMDAT
-inline u32 fn_00049230(wallhug_path *path, wallhug_hugger *hugger)
+inline u32 wallhug_add_huggers_path(wallhug_path *path, wallhug_hugger *hugger)
 {
     u32 i;
 
@@ -350,21 +350,21 @@ u32 wallhug_continue_trivial(wallhug_path *path, wallhug_waypoint cur, u32 limit
             info.hugger[0].count = 0;
             info.hugger[1].count = 0;
             while (wallhug_current_count < limit) {
-                fn_00049400(&info.hugger[0]);
+                wallhug_hugstep(&info.hugger[0]);
                 if (huggers_met_again(&info))
                     goto fail;
-                fn_00049400(&info.hugger[1]);
+                wallhug_hugstep(&info.hugger[1]);
                 if (huggers_met_again(&info))
                     goto fail;
                 if (info.hugger[0].dir == 0x32) {
-                    if (!fn_00049230(path, &info.hugger[0]))
+                    if (!wallhug_add_huggers_path(path, &info.hugger[0]))
                         goto fail;
                     if (wallhug_looking_for_last)
                         wallhug_last_handed = 0xff;
                     break;
                 }
                 if (info.hugger[1].dir == 0x32) {
-                    if (!fn_00049230(path, &info.hugger[1]))
+                    if (!wallhug_add_huggers_path(path, &info.hugger[1]))
                         goto fail;
                     if (wallhug_looking_for_last)
                         wallhug_last_handed = 1;

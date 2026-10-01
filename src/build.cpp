@@ -24,14 +24,14 @@ extern "C" {
 
 extern Event D_001549d0[];
 
-s32 fn_00038d04(Thing *w, u8 owner);
-#pragma aux fn_00038d04 "W?remove_object$n(pn$Thing$$)s"
-void fn_00024a34(u16 tile, u16 room, u8 side);
-#pragma aux fn_00024a34 "W?clear_cell_of_ratholes$n(ucus)v"
-void fn_0007d2a8(u8 owner, u16 tile);
-#pragma aux fn_0007d2a8 "W?delete_wall$n(ususuc)v"
+s32 remove_object(Thing *w, u8 owner);
+#pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
+void delete_wall(u16 tile, u16 room, u8 side);
+#pragma aux delete_wall "W?delete_wall$n(ususuc)v"
+void clear_cell_of_ratholes(u8 owner, u16 tile);
+#pragma aux clear_cell_of_ratholes "W?clear_cell_of_ratholes$n(ucus)v"
 u8 fn_00029a54(RoomInfo *room);
-Thing *fn_00019aac(Map *t, u16 kind);
+Thing *search_mapwho(Map *t, u16 kind);
 
 }
 
@@ -40,7 +40,7 @@ u8 can_place_door(u16 tile, u16 a, u8 b);
 u8 is_valid_door(u16 tile, u8 owner, u8 type);
 s16 place_door(u16 tile, u16 kind);
 s8 search_for_outer_color(Map *cell);
-void remove_blank_wall(Map *cell, u8 side);
+void insert_blank_wall(Map *cell, u8 side);
 s16 find_bluep_who(Map *cell);
 s8 get_wall_color(Map *cell);
 void recolour_all_rooms(void);
@@ -557,7 +557,7 @@ void build_all_rooms(void)
                     saved = gamevar.f28;
                     gamevar.f28 = blueprint[bp].unknown4 - 1;
                     if (place_door(cell - map, blueprint[bp].kind)) {
-                        remove_blank_wall(cell, gamevar.f28 % 2);
+                        insert_blank_wall(cell, gamevar.f28 % 2);
                     } else {
                         place_small_thing(cell - map, gamevar.f28 % 2 + 1, 0);
                         cell--;
@@ -613,13 +613,13 @@ void build_all_rooms(void)
                     case 2:
                         place_small_thing(cell - map, 0, 0);
                         place_small_thing(cell + 1 - map, 0, 0);
-                        fn_00037098(cell - map, (u16)blueprint[bp].kind, saved, othervar.ff);
+                        place_object(cell - map, (u16)blueprint[bp].kind, saved, othervar.ff);
                         break;
                     case 1:
                     case 3:
                         place_small_thing(cell - map, 0, 0);
                         place_small_thing(cell + 0x80 - map, 0, 0);
-                        fn_00037098(cell - map, (u16)blueprint[bp].kind, saved, othervar.ff);
+                        place_object(cell - map, (u16)blueprint[bp].kind, saved, othervar.ff);
                         break;
                     }
                     break;
@@ -763,7 +763,7 @@ void price_all_rooms(u16 type, u8 owner)
 }
 
 // FUNCTION: 0x00024a34
-void fn_00024a34(u16 tile, u16 room, u8 side)
+void delete_wall(u16 tile, u16 room, u8 side)
 {
     s16 x;
     s16 y;
@@ -828,7 +828,7 @@ void delete_room(RoomInfo *room)
         for (x = room->pos % 128; x < room->pos % 128 + room->f1; x++) {
             for (obj = &thing[map[(s16)x + ((s16)y << 7)].first]; obj > thing; obj = &thing[obj->cell_next]) {
                 if (obj->type == THING_OBJECT) {
-                    fn_00038d04(obj, othervar.ff);
+                    remove_object(obj, othervar.ff);
                 }
             }
         }
@@ -837,12 +837,12 @@ void delete_room(RoomInfo *room)
         for (x = room->pos % 128; x < room->pos % 128 + room->f1 + 1; x++) {
             if (x < room->pos % 128 + room->f1) {
                 if (map[(s16)x + ((s16)y << 7)].unknown3) {
-                    fn_00024a34((y << 7) + x, id, 0);
+                    delete_wall((y << 7) + x, id, 0);
                 }
             }
             if (y < room->pos / 128 + room->f2) {
                 if (map[(s16)x + ((s16)y << 7)].unknown4) {
-                    fn_00024a34((y << 7) + x, id, 1);
+                    delete_wall((y << 7) + x, id, 1);
                 }
             }
             for (obj = &thing[map[(s16)x + ((s16)y << 7)].first]; obj > thing; obj = &thing[obj->cell_next]) {
@@ -851,19 +851,19 @@ void delete_room(RoomInfo *room)
                     case 0:
                     case 2:
                         if (x < room->pos % 128 + room->f1) {
-                            fn_00038d04(obj, othervar.ff);
+                            remove_object(obj, othervar.ff);
                         }
                         break;
                     case 1:
                     case 3:
                         if (y < room->pos / 128 + room->f2) {
-                            fn_00038d04(obj, othervar.ff);
+                            remove_object(obj, othervar.ff);
                         }
                         break;
                     }
                 }
             }
-            fn_0007d2a8(room->owner, (y << 7) + x);
+            clear_cell_of_ratholes(room->owner, (y << 7) + x);
         }
     }
     debug.unknown108 = 0;
@@ -1315,7 +1315,7 @@ void check_outside_e_wall(u16 x, u16 y)
 }
 
 // FUNCTION: 0x00026c28
-void remove_blank_wall(Map *cell, u8 side)
+void insert_blank_wall(Map *cell, u8 side)
 {
     if ((&cell->unknown3)[side] == 0) {
         (&cell->unknown3)[side] = side + 0x8e;
@@ -1325,7 +1325,7 @@ void remove_blank_wall(Map *cell, u8 side)
 }
 
 // FUNCTION: 0x00026c98
-void insert_blank_wall(Map *cell, u8 side)
+void remove_blank_wall(Map *cell, u8 side)
 {
     if ((&cell->unknown3)[side] == side + 0x8e) {
         (&cell->unknown3)[side] = 0;
@@ -2166,7 +2166,7 @@ void pick_up_object_right_click(void)
 }
 
 // FUNCTION: 0x00029748
-extern "C" u8 fn_00029748(void)
+extern "C" u8 is_player_building(void)
 {
     Map *m;
     int i;
@@ -2244,7 +2244,7 @@ extern "C" u8 fn_00029a54(RoomInfo *room)
     if (room->first) {
         return 0;
     }
-    door = fn_00019aac(&map[room->unknown4], THING_DOOR);
+    door = search_mapwho(&map[room->unknown4], THING_DOOR);
     if (door > thing) {
         if (door->user) {
             return 0;

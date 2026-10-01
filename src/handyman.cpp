@@ -1,9 +1,9 @@
 #include "hosp.h"
 
 extern "C" {
-u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner);
-#pragma aux fn_0007cbdc "W?trapped_plant_check$n(pn$RoomInfo$$l)uc"
-u8 fn_0007cc88(Thing *w);
+u8 trapped_plant_check(RoomInfo *room, s32 pos, u8 owner);
+#pragma aux trapped_plant_check "W?trapped_plant_check$n(pn$RoomInfo$$l)uc"
+u8 is_plant_trapped(Thing *w);
 }
 
 extern s16 special_around[];
@@ -137,7 +137,7 @@ void handyman_works(Thing *handyman)
         if (map[pos].unknown7 == 1 << handyman->owner && can_i_get_to(handyman, pos) && !(map[pos].unknown7 & 0x10)) {
             handyman->next_state = handyman->resume_state = SS_HANDYMAN_WORKS;
             set_complex(handyman, 0xbe, (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx));
-            fn_0003e724(handyman);
+            process_staff_complex(handyman);
         }
         break;
     case 1:
@@ -153,13 +153,13 @@ void handyman_works(Thing *handyman)
         handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->substate = 3;
         set_complex(handyman, 0x46, 0);
-        fn_0003e724(handyman);
+        process_staff_complex(handyman);
         break;
     case 3:
         remove_litter((u16)handyman->x.tile + ((u16)handyman->y.tile << 7), handyman->owner);
         set_complex(handyman, 0x30c, 0);
         handyman->next_state = SS_HANDYMAN_WORKS;
-        fn_0003e724(handyman);
+        process_staff_complex(handyman);
         handyman->substate = 0;
         handyman->litter_count++;
         break;
@@ -169,7 +169,7 @@ void handyman_works(Thing *handyman)
         handyman->substate = 5;
         handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->resume_state = SS_PROCESS_COMPLEX;
-        fn_0003e724(handyman);
+        process_staff_complex(handyman);
         break;
     case 5:
         id = handyman->object;
@@ -186,7 +186,7 @@ void handyman_works(Thing *handyman)
         handyman->resume_state = SS_PROCESS_COMPLEX;
         handyman->substate = 6;
         set_complex(handyman, 0x258, 0);
-        fn_0003e724(handyman);
+        process_staff_complex(handyman);
         plant->plant_health < 0 ? plant->plant_health = 0 : 0;
         stage = (400 - plant->plant_health) / 80;
         {
@@ -229,7 +229,7 @@ void handyman_works(Thing *handyman)
                 if (handyman->room)
                     set_complex(handyman, 0x136, handyman->room->unknown6);
                 handyman->next_state = SS_HANDYMAN_WORKS;
-                fn_0003e724(handyman);
+                process_staff_complex(handyman);
                 NRAdcounts.unknown2--;
             }
         }
@@ -247,7 +247,7 @@ void handyman_works(Thing *handyman)
                 if (pos2 != TILE_POS(handyman) && can_i_get_to(handyman, pos2)) {
                     handyman->next_state = handyman->resume_state = SS_HANDYMAN_WORKS;
                     set_complex(handyman, 0xbe, pos2);
-                    fn_0003e724(handyman);
+                    process_staff_complex(handyman);
                 }
             }
         } else {
@@ -256,7 +256,7 @@ void handyman_works(Thing *handyman)
             handyman->resume_state = SS_PROCESS_COMPLEX;
             handyman->object = thingpage_remind_me(&allhosps[handyman->owner].ff6d, handyman);
             set_complex(handyman, 0x2d0, 0);
-            fn_0003e724(handyman);
+            process_staff_complex(handyman);
         }
         break;
     case 9: {
@@ -292,7 +292,7 @@ void handyman_works(Thing *handyman)
         handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->substate = 0;
         handyman->repair_count++;
-        fn_0003e724(handyman);
+        process_staff_complex(handyman);
         break;
     case 7:
     default:
@@ -354,13 +354,13 @@ void plant_ages(Thing *plant)
             next = frame[plant->sprite].next;
             if (!(frame[next].flags & 1))
                 plant->sprite = next;
-            if (!fn_0007cc88(plant))
+            if (!is_plant_trapped(plant))
                 thingpage_request(&allhosps[plant->owner].fd2b, plant - thing, stage);
             NRAdcounts.unknown2++;
             NRAdcounts.unknownb -= 11;
         }
     } else if (plant->plant_health == -40) {
-        if (!fn_0007cc88(plant))
+        if (!is_plant_trapped(plant))
             thingpage_request(&allhosps[plant->owner].fd2b, plant - thing, 10);
         plant->plant_health = 0;
         NRAdcounts.unknown2 += 2;
@@ -521,7 +521,7 @@ u8 handyman_try_fix(Thing *handyman)
             handyman->substate = 8;
             handyman->resume_state = SS_PROCESS_COMPLEX;
             handyman->dest_room = room - room_info;
-            fn_0003e724(handyman);
+            process_staff_complex(handyman);
             if (room->f3 != 6)
                 room->f3 = 5;
             return 1;
@@ -550,7 +550,7 @@ u8 handyman_try_plant(Thing *handyman)
         }
         handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->resume_state = SS_PROCESS_COMPLEX;
-        fn_0003e724(handyman);
+        process_staff_complex(handyman);
         return 1;
     }
     return 0;
@@ -583,7 +583,7 @@ u8 handyman_try_litter(Thing *handyman)
         handyman->next_state = SS_HANDYMAN_WORKS;
         handyman->resume_state = SS_HANDYMAN_WORKS;
         set_complex(handyman, 0xbe, target);
-        fn_0003e724(handyman);
+        process_staff_complex(handyman);
         handyman->substate = 2;
         return 1;
     }
@@ -614,7 +614,7 @@ u8 is_next_to_plant(Thing *handyman, Thing *plant)
 }
 
 // FUNCTION: 0x0007cbdc
-u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner)
+u8 trapped_plant_check(RoomInfo *room, s32 pos, u8 owner)
 {
     if (room > room_info) {
         if (which_room(pos) == room) {
@@ -632,20 +632,20 @@ u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner)
 }
 
 // FUNCTION: 0x0007cc88
-u8 fn_0007cc88(Thing *plant)
+u8 is_plant_trapped(Thing *plant)
 {
     RoomInfo *room;
     s32 pos;
 
     room = &room_info[plant->room_id];
     pos = (s16)plant->x.tile + ((s16)plant->y.tile << 7);
-    if (fn_0007cbdc(room, pos + 1, plant->owner))
+    if (trapped_plant_check(room, pos + 1, plant->owner))
         return 0;
-    if (fn_0007cbdc(room, pos + 0x80, plant->owner))
+    if (trapped_plant_check(room, pos + 0x80, plant->owner))
         return 0;
-    if (fn_0007cbdc(room, pos - 1, plant->owner))
+    if (trapped_plant_check(room, pos - 1, plant->owner))
         return 0;
-    if (fn_0007cbdc(room, pos - 0x80, plant->owner))
+    if (trapped_plant_check(room, pos - 0x80, plant->owner))
         return 0;
     return 1;
 }

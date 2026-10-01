@@ -13,7 +13,7 @@ extern Menu area;
 
 extern "C" {
 extern Event D_001549d0[];
-void fn_000444e0(Thing *w);
+void nav_init(Thing *w);
 }
 
 // FUNCTION: 0x0007cd80
@@ -112,7 +112,7 @@ void remove_rathole(u8 owner, u8 idx)
 }
 
 // FUNCTION: 0x0007d2a8
-extern "C" void fn_0007d2a8(u8 owner, u16 tile)
+extern "C" void clear_cell_of_ratholes(u8 owner, u16 tile)
 {
     RatHole *first;
     RatHole *last;
@@ -232,7 +232,7 @@ void ratnav_init(Thing *rat)
     s32 dy;
     int i;
 
-    fn_000444e0(rat);
+    nav_init(rat);
     if ((rat->x.tile == rat->dest_x && rat->y.tile == rat->dest_y) || rat->path_step_count == 0) {
         for (i = allhosps[rat->owner].fcae - 1; i >= 0; i--) {
             if (allhosps[rat->owner].fcaf[i].tile == ((s16)rat->y.tile << 7) + (s16)rat->x.tile) {
@@ -371,7 +371,7 @@ void rat_fest_control(void)
         if (actual_game_turn % (200 - othervar.fa75 * 2) == 0) {
             id = place_staff_in_struct(2, 0);
             if (id) {
-                fn_00029c4c(0x1a32, id, 0, player);
+                place_staff_on_map(0x1a32, id, 0, player);
             }
         }
     } else {
@@ -410,7 +410,7 @@ void rat_fest_builder(u8 level)
             if (lvl->staff_max > staff && saferand() % lvl->staff_chance == 0) {
                 id = place_staff_in_struct(2, 0);
                 if (id) {
-                    fn_00029c4c(cell - map, id, 0, player);
+                    place_staff_on_map(cell - map, id, 0, player);
                     staff++;
                 }
             }

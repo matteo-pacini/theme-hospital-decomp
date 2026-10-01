@@ -46,10 +46,10 @@ void process_mayor_end_buttons(u8 n);
 
 extern "C" {
 extern u8 D_00158192;
-extern u16 D_00158190;
-extern s16 D_0015f760;
-extern u32 D_001611f0;
-extern u8 D_001611f8[];
+extern u16 choice;
+extern s16 choice_mouse_position;
+extern u32 choice_actual_game_turn;
+extern u8 fax_no[];
 extern Event D_001549d0[];
 
 }
@@ -75,11 +75,11 @@ FaxNo cheat_numbers[] = {
 
 extern "C" {
 int strcmp(const char *a, const char *b);
-void fn_000a3140(void);
+void display_cheat_mode(void);
 }
 
 // FUNCTION: 0x000a3140
-void fn_000a3140(void)
+void display_cheat_mode(void)
 {
 }
 
@@ -102,9 +102,9 @@ void display_choice(void)
         lbDisplay.graphics_screen_height = lbDisplay.unknown1c;
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-        calculate_buttons(D_00158190);
+        calculate_buttons(choice);
         LbTextSetWindow(resvars.f3c_ChoiceBoxp[173].x, resvars.f3c_ChoiceBoxp[173].y, resvars.f3c_ChoiceBoxp[173].w, resvars.f3c_ChoiceBoxp[173].h);
-        display_choice_text(D_00158190);
+        display_choice_text(choice);
         display_buttons();
         if (!choice_time_out)
             reqspr_draw(resvars.f40[0xbe].x, resvars.f40[0xbe].y, &screen_sprites_tab_start[20]);
@@ -113,7 +113,7 @@ void display_choice(void)
         lbDisplay.graphics_screen_height = othervar.f9df;
         LbScreenSetGraphicsWindow(0, 0, othervar.f9db, othervar.f9df);
         D_00158192 = 0x5b;
-        D_001611f0 = actual_game_turn;
+        choice_actual_game_turn = actual_game_turn;
         NumPressed = 0;
         copy_screen_to_wscreen(bscreen);
         play_sound(10, SFX_FAX_IN, -1, -1);
@@ -122,18 +122,18 @@ void display_choice(void)
         copy_screen_to_wscreen(bscreen);
         check_choice_buttons();
         check_fax_buttons();
-        fn_000a3140();
+        display_cheat_mode();
         if (choice_time_out) {
             if (lbInkey == KC_ESCAPE || lbInkey == KC_SPACE) {
                 lbInkey = 0;
                 play_sound(10, SFX_NO4, -1, -1);
                 D_00158192 = 0x5c;
             }
-            if (D_0015f760 != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
-                D_001611f0 = actual_game_turn;
-                D_0015f760 = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
+            if (choice_mouse_position != lbDisplay.mmouse_x + lbDisplay.mmouse_y) {
+                choice_actual_game_turn = actual_game_turn;
+                choice_mouse_position = lbDisplay.mmouse_x + lbDisplay.mmouse_y;
             }
-            if (actual_game_turn - D_001611f0 > choice_time_out || exit_quick_requester())
+            if (actual_game_turn - choice_actual_game_turn > choice_time_out || exit_quick_requester())
                 D_00158192 = 0x5c;
         }
         break;
@@ -347,7 +347,7 @@ void display_choice_screen(const u8 owner, const u8 type, const s16 data, const 
         save_display_screen();
         display_mode = 9;
         D_00158192 = 0x5a;
-        D_00158190 = type;
+        choice = type;
         choice_spare_data = data;
         choice_time_out = timeout;
     }
@@ -364,7 +364,7 @@ void packet_choice_result(u8 choice)
 // FUNCTION: 0x000a41b8
 void save_display_screen(void)
 {
-    memmove(choice_backup.unknown2, &D_00158190, 3);
+    memmove(choice_backup.unknown2, &choice, 3);
     choice_backup.mode = display_mode;
     choice_backup.f6 = choice_spare_data;
     choice_backup.f8 = choice_time_out;
@@ -373,7 +373,7 @@ void save_display_screen(void)
 // FUNCTION: 0x000a4208
 void restore_display_screen(void)
 {
-    memmove(&D_00158190, choice_backup.unknown2, 3);
+    memmove(&choice, choice_backup.unknown2, 3);
     display_mode = choice_backup.mode;
     choice_spare_data = choice_backup.f6;
     choice_time_out = choice_backup.f8;
@@ -425,52 +425,52 @@ void process_fax_buttons(u8 button)
     switch (button) {
     case 0xb9:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_0, -1, -1);
         break;
     case 0xba:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_1, -1, -1);
         break;
     case 0xbb:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_2, -1, -1);
         break;
     case 0xbc:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_3, -1, -1);
         break;
     case 0xbd:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_4, -1, -1);
         break;
     case 0xbe:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_5, -1, -1);
         break;
     case 0xbf:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_6, -1, -1);
         break;
     case 0xc0:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_7, -1, -1);
         break;
     case 0xc1:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_8, -1, -1);
         break;
     case 0xc2:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = button;
+            fax_no[NumPressed++] = button;
         play_sound(10, SFX_FAX_9, -1, -1);
         break;
     case 0xc3:
@@ -482,7 +482,7 @@ void process_fax_buttons(u8 button)
     case 0xc6:
         i = found = 0;
         while (cheat_numbers[i].digits[0]) {
-            if (fax_no_equal(cheat_numbers[i], D_001611f8)) {
+            if (fax_no_equal(cheat_numbers[i], fax_no)) {
                 found = 1;
                 switch (cheat_numbers[i].action) {
                 case 1:

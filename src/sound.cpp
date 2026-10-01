@@ -60,7 +60,7 @@ extern "C" {
 
 extern s32 D_00156433;
 extern s32 D_0015642f;
-extern u8 *D_00158334;
+extern u8 *heapptr;
 extern u8 __IsTable[];
 #pragma aux __IsTable "*"
 void PlayMidiFromAddress(u8 volume, void *data);
@@ -114,10 +114,10 @@ u8 setup_sound(void)
     InitAudio(&options);
     if (GetSoundInstalled() && GetSoundAble()) {
         LbDataLoad(&soundfiles[D_00156433]);
-        if (D_00158334) {
+        if (heapptr) {
             loaded = 1;
             sprintf(buf, "%s\\data\\sound-%1d.dat", options.unknown0, myplayer.f21);
-            if (init_sound_heap(D_00158334, D_0015642f, buf, options.unknownc)) {
+            if (init_sound_heap(heapptr, D_0015642f, buf, options.unknownc)) {
                 window.unknown30 = 0;
                 window.unknown48 = lbDisplay.unknown18;
                 window.unknown3c = 0;
@@ -141,9 +141,9 @@ u8 setup_sound(void)
         myplayer.unknown11 = 1;
     if (!loaded) {
         LbDataLoadAll(nosoundfiles);
-        if (D_00158334) {
+        if (heapptr) {
             sprintf(buf, "%s\\data\\minheap.dat", options.unknown0);
-            if (!init_sound_heap(D_00158334, 0x32000, buf, options.unknownc))
+            if (!init_sound_heap(heapptr, 0x32000, buf, options.unknownc))
                 return 7;
         } else {
             sub_error_number = 1;

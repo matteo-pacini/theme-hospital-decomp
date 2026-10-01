@@ -15,18 +15,18 @@ extern void *smack_draw_callback;
 
 int LbScreenLock(void);
 void fn_0001102c(void);
-void fn_00011058(void);
+void use_hires_help_and_fonts(void);
 void fn_000110b0(void);
 void fn_000905f4(void);
-void fn_0006310c(void);
-u8 fn_00063174(void);
-u8 fn_00063300(void);
-u8 fn_0006344c(s16 *scroll, u16 *line);
+void play_main_menu_outro(void);
+u8 play_intro(void);
+u8 play_attract_mode(void);
+u8 play_credits(s16 *scroll, u16 *line);
 
-extern u8 *D_00153f34;
+extern u8 *palette;
 extern u8 D_00156910;
-extern u8 D_0015f489;
-extern char **D_0016033c;
+extern u8 anim_choice;
+extern char **credit_text;
 }
 
 s8 compare_products(s32 a, s32 b, s32 c, s32 d);
@@ -60,7 +60,7 @@ void draw_main_menu(void)
         LbMouseReset();
         LbMouseChangeSprite(0);
         fn_0001102c();
-        fn_00011058();
+        use_hires_help_and_fonts();
         lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         load_ingame_pic(0xd, 1, 0x14, 0, SCREEN_MODE_1);
         LbScreenUnlock();
@@ -76,7 +76,7 @@ void draw_main_menu(void)
         break;
     case 0xf:
         LbMouseChangeSprite(0);
-        fn_0006310c();
+        play_main_menu_outro();
         fade_out_menu();
         othervar.f2c = SCREEN_MODE_13;
         display_mode = 6;
@@ -85,7 +85,7 @@ void draw_main_menu(void)
         break;
     case 8:
         LbMouseChangeSprite(0);
-        fn_0006310c();
+        play_main_menu_outro();
         fade_out_menu();
         display_mode = 0xa;
         nickname.unknown2 = 3;
@@ -99,7 +99,7 @@ void draw_main_menu(void)
             play_sound(10, SFX_WRONG2, -1, -1);
             break;
         }
-        fn_0006310c();
+        play_main_menu_outro();
         fade_out_menu();
         othervar.f2c = SCREEN_MODE_13;
         mainmenu.unknown2 = 0xd;
@@ -113,19 +113,19 @@ void draw_main_menu(void)
         if (level_number != -1) {
             fn_000110b0();
             load_game_files();
-            fn_00090804((u16)level_number, 1);
-            if (fn_00021c38(0x63, -1)) {
+            setup_new_level((u16)level_number, 1);
+            if (load_game(0x63, -1)) {
                 othervar.fa65 = 0;
                 set_mouse_mode(MM_NORMAL);
-                LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+                LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
                 display_mode = 0;
                 mainmenu.unknown2 = 0;
                 load_game_files();
-                clear_loading_screen(D_00153f34);
+                clear_loading_screen(palette);
                 D_00156910 = 1;
                 set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
                 draw_it();
-                othervar.f24 = D_00153f34;
+                othervar.f24 = palette;
                 break;
             }
         }
@@ -137,7 +137,7 @@ void draw_main_menu(void)
         break;
     case 0xa:
         LbMouseChangeSprite(0);
-        fn_0006310c();
+        play_main_menu_outro();
         fade_out_menu();
         display_mode = 5;
         mainmenu.unknown2 = 0;
@@ -146,7 +146,7 @@ void draw_main_menu(void)
     case 0xb:
     case 0xc:
         LbMouseChangeSprite(0);
-        fn_0006310c();
+        play_main_menu_outro();
         fade_out_menu();
         quit_game = 3;
         break;
@@ -208,7 +208,7 @@ void draw_main_menu(void)
     case 0x17:
         lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         LbMouseChangeSprite(0);
-        fn_00063174();
+        play_intro();
         fade_out_menu();
         othervar.f2c = SCREEN_MODE_13;
         mainmenu.unknown2 = 0x18;
@@ -249,9 +249,9 @@ void draw_main_menu(void)
                     fade_out_menu();
                     count++;
                     if (count % 2 == 1)
-                        done = fn_00063300();
+                        done = play_attract_mode();
                     else
-                        done = fn_00063174();
+                        done = play_intro();
                     fade_out_menu();
                     load_ingame_pic(0x12, 1, 9, 0, SCREEN_MODE_13);
                     othervar.f9d7 = lbDisplay.unknown4;
@@ -306,11 +306,11 @@ void draw_main_menu(void)
         lbInkey = 0;
         scroll = 0;
         line = 0;
-        fn_0006344c(&scroll, &line);
+        play_credits(&scroll, &line);
         done = 0;
         while (!done) {
             copy_screen_to_wscreen(bscreen);
-            if (fn_0006344c(&scroll, &line))
+            if (play_credits(&scroll, &line))
                 done = 1;
             LbScreenUnlock();
             LbScreenSwap();
@@ -574,7 +574,7 @@ void play_main_menu_intro(void)
 }
 
 // FUNCTION: 0x0006310c
-void fn_0006310c(void)
+void play_main_menu_outro(void)
 {
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -585,7 +585,7 @@ void fn_0006310c(void)
 }
 
 // FUNCTION: 0x00063174
-u8 fn_00063174(void)
+u8 play_intro(void)
 {
     u8 aborted;
     char path[0x80];
@@ -615,7 +615,7 @@ u8 fn_00063174(void)
         aborted = 1;
     hosp_fade_palette(0, 10, Lb_PALETTE_FADE_CLOSED);
     LbScreenClear(0);
-    if (!setup_any_screen(D_00153f34, SCREEN_MODE_13)) {
+    if (!setup_any_screen(palette, SCREEN_MODE_13)) {
         reset_host();
         return 1;
     }
@@ -628,7 +628,7 @@ u8 fn_00063174(void)
 }
 
 // FUNCTION: 0x00063300
-u8 fn_00063300(void)
+u8 play_attract_mode(void)
 {
     u8 aborted;
     u8 was_locked;
@@ -645,7 +645,7 @@ u8 fn_00063300(void)
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         lbDisplay.draw_flags = 0;
         set_mouse_mode(9);
-        D_0015f489 = 0;
+        anim_choice = 0;
         current_frame = 0;
         smack_draw_callback = 0;
         othervar.f9ca = saferand();
@@ -667,7 +667,7 @@ u8 fn_00063300(void)
 }
 
 // FUNCTION: 0x0006344c
-u8 fn_0006344c(s16 *scroll, u16 *line)
+u8 play_credits(s16 *scroll, u16 *line)
 {
     u8 i;
     u8 height;
@@ -684,7 +684,7 @@ u8 fn_0006344c(s16 *scroll, u16 *line)
     y = -*scroll;
     for (i = 0; y < lbDisplay.graphics_screen_height; y += height, i++) {
         if (*scroll >= -0x32) {
-            sprintf(text, "%s", D_0016033c[i + *line]);
+            sprintf(text, "%s", credit_text[i + *line]);
             switch (text[0]) {
             case '!':
                 break;

@@ -89,10 +89,10 @@ extern char SoundDataPath[];
 extern char MusicDataPath[];
 extern char MusicType[];
 extern char SoundProgressMessage[];
-extern char D_0018d4c4[];
-extern char D_0018d5c4[];
-extern BankSizes D_0018d474[];
-extern BankSizes D_0018d5a4[];
+extern char full_sound_data_path[];
+extern char full_music_data_path[];
+extern BankSizes sound_bank_size_info[];
+extern BankSizes music_bank_size_info[];
 
 extern u8 AILStartupAlreadyInitiated;
 extern u8 StereoSound;

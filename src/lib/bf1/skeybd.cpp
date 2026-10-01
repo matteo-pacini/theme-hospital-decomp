@@ -2,11 +2,11 @@
 
 extern "C" {
 
-extern u8 D_00189790;
+extern u8 lbShift;
 extern u8 D_00189688;
-extern volatile u8 D_0018978d;
-extern u8 D_0018978e;
-extern u8 D_0018978f;
+extern volatile u8 lbInkeyFlags;
+extern u8 lbIInkey;
+extern u8 lbIInkeyFlags;
 extern u8 D_0018cfb8;
 
 s16 in_port(u32 port);
@@ -106,13 +106,13 @@ void LbDosKeyboard(void)
 
     r.h.ah = 0x12;
     int386(0x16, &r, &r);
-    D_00189790 = 0;
+    lbShift = 0;
     if (r.h.al & 3)
-        D_00189790 = 1;
+        lbShift = 1;
     if (r.h.al & 4)
-        D_00189790 |= 2;
+        lbShift |= 2;
     if (r.h.al & 8)
-        D_00189790 |= 4;
+        lbShift |= 4;
     lbInkey = 0;
     read_key();
 }
@@ -141,23 +141,23 @@ void __interrupt __far KInt(void)
         KEYON[key] = INKEY <= 0x7f;
     }
     D_0018cfb8 = INKEY;
-    D_0018978d = 0;
+    lbInkeyFlags = 0;
     if (KEYON[0x2a] || KEYON[0x36])
-        D_0018978d |= 0x10;
+        lbInkeyFlags |= 0x10;
     if (KEYON[0x1d] || KEYON[0x9d])
-        D_0018978d |= 0x20;
+        lbInkeyFlags |= 0x20;
     if (KEYON[0x38] || KEYON[0xb8])
-        D_0018978d |= 0x40;
+        lbInkeyFlags |= 0x40;
     if (KEYON[key])
-        KEYON[key] |= D_0018978d;
+        KEYON[key] |= lbInkeyFlags;
     key = in_port(0x61);
     old = key;
     key |= 0x80;
     out_port(0x61, key);
     out_port(0x61, old);
-    if (INKEY < 0x80 && !D_0018978e) {
-        D_0018978e = INKEY;
-        D_0018978f = D_0018978d;
+    if (INKEY < 0x80 && !lbIInkey) {
+        lbIInkey = INKEY;
+        lbIInkeyFlags = lbInkeyFlags;
     }
     out_port_b(0x20, 0x20);
 }

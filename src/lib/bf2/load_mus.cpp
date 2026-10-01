@@ -20,7 +20,7 @@ u32 LoadMusic(u16 bank)
     SoundProgressLog(SoundProgressMessage);
     if (MusicInstalled && MusicAble && DisableLoadMusic == 0) {
         StopMusic();
-        file = LbFileOpen(D_0018d5c4, 2);
+        file = LbFileOpen(full_music_data_path, 2);
         if (file != -1) {
             LbFileSeek(file, 0, 2);
             LbFileSeek(file, LbFilePosition(file) - 4, 0);
@@ -153,39 +153,39 @@ s32 AllocateMusicBankMemory(void)
     s32 data_size;
     s32 tab_size;
 
-    sprintf(D_0018d5c4, "%s/MUSIC.DAT", MusicDataPath);
-    file = LbFileOpen(D_0018d5c4, 2);
+    sprintf(full_music_data_path, "%s/MUSIC.DAT", MusicDataPath);
+    file = LbFileOpen(full_music_data_path, 2);
     if (file == -1)
         return -1;
     tab_size = 0;
     data_size = 0;
-    memset(D_0018d5a4, 0, 0x20);
+    memset(music_bank_size_info, 0, 0x20);
     LbFileSeek(file, 0, 2);
     length = LbFilePosition(file);
     LbFileSeek(file, 0, 2);
     LbFileSeek(file, length - 0x24, 0);
-    LbFileRead(file, D_0018d5a4, 0x20);
+    LbFileRead(file, music_bank_size_info, 0x20);
     LbFileClose(file);
     switch (MusicType[0]) {
     case 'G':
     case 'g':
-        data_size = D_0018d5a4[2].data_size;
-        tab_size = D_0018d5a4[2].tab_size;
+        data_size = music_bank_size_info[2].data_size;
+        tab_size = music_bank_size_info[2].tab_size;
         break;
     case 'R':
     case 'r':
-        data_size = D_0018d5a4[1].data_size;
-        tab_size = D_0018d5a4[1].tab_size;
+        data_size = music_bank_size_info[1].data_size;
+        tab_size = music_bank_size_info[1].tab_size;
         break;
     case 'F':
     case 'f':
-        data_size = D_0018d5a4[0].data_size;
-        tab_size = D_0018d5a4[0].tab_size;
+        data_size = music_bank_size_info[0].data_size;
+        tab_size = music_bank_size_info[0].tab_size;
         break;
     case 'W':
     case 'w':
-        data_size = D_0018d5a4[3].data_size;
-        tab_size = D_0018d5a4[3].tab_size;
+        data_size = music_bank_size_info[3].data_size;
+        tab_size = music_bank_size_info[3].tab_size;
         break;
     }
     if (data_size != 0 && tab_size != 0) {

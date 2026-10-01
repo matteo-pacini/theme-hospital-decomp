@@ -3,7 +3,7 @@
 extern "C" {
 
 // FUNCTION: 0x000bbce0
-s32 fn_000bbce0(s8 *data, s32 len)
+s32 rle_compressed_size(s8 *data, s32 len)
 {
     s8 *src;
     s8 *end;
@@ -32,7 +32,7 @@ s32 fn_000bbce0(s8 *data, s32 len)
 }
 
 // FUNCTION: 0x000bbd70
-s32 fn_000bbd70(s8 *data, s32 len)
+s32 rle_compress(s8 *data, s32 len)
 {
     s8 *buf;
     s8 *out;
@@ -46,7 +46,7 @@ s32 fn_000bbd70(s8 *data, s32 len)
     end = data + len;
     value = *src++;
     run = 1;
-    size = fn_000bbce0(data, len);
+    size = rle_compressed_size(data, len);
     buf = (s8 *)LbMemoryAlloc(size);
     if (buf == 0)
         return len;
@@ -81,7 +81,7 @@ s32 fn_000bbd70(s8 *data, s32 len)
 }
 
 // FUNCTION: 0x000bbea0
-s32 fn_000bbea0(s8 *data, s32 len)
+s32 rle_decompressed_size(s8 *data, s32 len)
 {
     s8 *src;
     s8 *end;
@@ -103,7 +103,7 @@ s32 fn_000bbea0(s8 *data, s32 len)
 }
 
 // FUNCTION: 0x000bbf10
-s32 fn_000bbf10(s8 *data, s32 len)
+s32 rle_decompress(s8 *data, s32 len)
 {
     s8 *buf;
     s8 *out;
@@ -113,7 +113,7 @@ s32 fn_000bbf10(s8 *data, s32 len)
 
     src = data;
     end = data + len;
-    size = fn_000bbea0(data, len);
+    size = rle_decompressed_size(data, len);
     buf = (s8 *)LbMemoryAlloc(size);
     if (buf == 0)
         return size;

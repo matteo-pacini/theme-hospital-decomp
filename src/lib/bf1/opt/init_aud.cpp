@@ -32,8 +32,8 @@ char *strcpy(char *dst, const char *src);
 void InitSound(void);
 void InitMusic(void);
 void InitAllBullfrogSoundTimers(void);
-void fn_000bbb50(void);
-void fn_000bbb80(void);
+void InitStreamedSound(void);
+void InitRedbook(void);
 
 // FUNCTION: 0x000cd840
 void InitAudio(AudioInitOptions *ao)
@@ -172,9 +172,9 @@ void InitAudio(AudioInitOptions *ao)
     InitMusic();
     InitAllBullfrogSoundTimers();
     if (ao->unknown18 == 1)
-        fn_000bbb50();
+        InitStreamedSound();
     if (ao->unknown19 == 1)
-        fn_000bbb80();
+        InitRedbook();
     sprintf(SoundProgressMessage, "BF54 - MA   %d\n", MusicAble);
     SoundProgressLog(SoundProgressMessage);
     sprintf(SoundProgressMessage, "BF55 - SA   %d\n", SoundAble);

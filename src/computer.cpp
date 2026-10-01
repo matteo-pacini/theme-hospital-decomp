@@ -47,7 +47,7 @@ u8 computer_buy_land(u8 owner);
 
 extern "C" {
 
-extern char **D_001602a8;
+extern char **computer_names;
 
 }
 
@@ -71,7 +71,7 @@ void setup_computer_players(void)
             for (k = 0; k < 4; k++) {
                 hosp = &allhosps[k];
                 if (hosp->f2a == 0) {
-                    fn_000bbff0((char *)hosp, D_001602a8[j]);
+                    fn_000bbff0((char *)hosp, computer_names[j]);
                     hosp->f2a = 2;
                     hosp->f1245 = j;
                     hosp->f1244 = computer[j].f6;
@@ -96,7 +96,7 @@ void setup_computer_players(void)
                     j = (lbDisplay.mmouse_x + lbDisplay.mmouse_y + old_newrand()) % 20;
                     hosp->f1245 = j;
                     if (used[j] == 0) {
-                        fn_000bbff0((char *)hosp, D_001602a8[j]);
+                        fn_000bbff0((char *)hosp, computer_names[j]);
                         used[j] = 1;
                         break;
                     }

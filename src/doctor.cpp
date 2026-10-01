@@ -3,8 +3,8 @@
 extern "C" {
 
 
-u8 fn_0002b400(Thing *w);
-Thing *fn_00019aac(Map *t, u16 kind);
+u8 check_room_mutex(Thing *w);
+Thing *search_mapwho(Map *t, u16 kind);
 void fn_0003b234(Thing *w);
 
 }
@@ -12,15 +12,15 @@ void fn_0003b234(Thing *w);
 // FUNCTION: 0x0003a6e0
 void doctor_in_office(Thing *doctor)
 {
-    if (fn_0002b400(doctor) ? 1 : (process_staff_complex(doctor), 0)) {
+    if (check_room_mutex(doctor) ? 1 : (evacuate_staff(doctor), 0)) {
         if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_DESK, 1, 0x96, doctor->owner)) {
             reset_icon_value(doctor, ICON_CALLING);
             doctor->next_state = SS_DOCTOR_WORKS_AT_DESK;
             doctor->resume_state = SS_DOCTOR_IN_OFFICE;
             set_complex(doctor, 10, 0);
-            fn_0003e724(doctor);
-        } else {
             process_staff_complex(doctor);
+        } else {
+            evacuate_staff(doctor);
         }
     }
 }
@@ -36,10 +36,10 @@ void doctor_works_at_desk(Thing *doctor)
         f = &frame[doctor->sprite];
         if (f->flags & 1) {
             doctor->orders &= 0xaf;
-            if (fn_0002b400(doctor) ? 1 : (process_staff_complex(doctor), 0)) {
+            if (check_room_mutex(doctor) ? 1 : (evacuate_staff(doctor), 0)) {
                 if (!shall_i_resign(doctor)) {
                     if (doctor->room->f22 || doctor->room->f3 == 4) {
-                        process_staff_complex(doctor);
+                        evacuate_staff(doctor);
                     } else if ((doctor->orders & ORD_REST) && take_a_break(doctor)) {
                     } else {
                         othervar.f0 = old_newrand() % 100;
@@ -51,7 +51,7 @@ void doctor_works_at_desk(Thing *doctor)
                                     if (find_object((u16)doctor->x.tile + ((u16)doctor->y.tile << 7), OBJ_CABINET, 1, 0x96, doctor->owner)) {
                                         doctor->next_state = SS_DOCTOR_WAITS_FOR_PATIENT;
                                         set_complex(doctor, 0x32, 0);
-                                        fn_0003e724(doctor);
+                                        process_staff_complex(doctor);
                                     } else {
                                         doctor->state = SS_DOCTOR_WAITS_FOR_PATIENT;
                                     }
@@ -63,7 +63,7 @@ void doctor_works_at_desk(Thing *doctor)
                                 if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_CABINET, 1, 0x96, doctor->owner)) {
                                     doctor->resume_state = SS_DOCTOR_IN_OFFICE;
                                     set_complex(doctor, 0x14, 0);
-                                    fn_0003e724(doctor);
+                                    process_staff_complex(doctor);
                                 }
                             } else if (doctor->room->unknown29) {
                                 u8 paged;
@@ -120,13 +120,13 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 1;
                 set_complex(doctor, 0xfa, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_INFLATION:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 10;
                 set_complex(doctor, 0x1e0, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_CARDIO:
                 patient->next_state = 0x20;
@@ -135,7 +135,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x1e;
                 set_complex(doctor, 0xb4, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_SCANNER:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
@@ -145,7 +145,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 } else {
                     set_complex(doctor, 0x500, 0);
                 }
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_PSYCH:
                 if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_BOOKCASE, 1, 0x96, doctor->owner)) {
@@ -154,7 +154,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x3c;
                 set_complex(doctor, 0x37a, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 patient->next_state = 0x20;
                 set_complex(patient, 0x1e0, 0);
                 process_person_complex(patient);
@@ -166,90 +166,90 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x46;
                 set_complex(doctor, 0x316, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 assistant = &thing[doctor->work_target];
                 assistant->next_state = 0x18;
                 set_complex(assistant, 0x32a, 0);
-                fn_0003e724(assistant);
+                process_staff_complex(assistant);
                 break;
             }
             case ROOM_ULTRASCAN:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x50;
                 set_complex(doctor, 0x492, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_BLOOD_MACHINE:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x5a;
                 set_complex(doctor, 0x398, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_XRAY:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x64;
                 set_complex(doctor, 0x276, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_GENERAL_DIAG:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x6e;
                 set_complex(doctor, 0x442, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_HAIR_RESTORER:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x78;
                 set_complex(doctor, 0x2bc, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_SLACK_TONGUE:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x82;
                 set_complex(doctor, 0x1cc, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_FRACTURE:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0x8c;
                 set_complex(doctor, 0x42e, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_ELECTROLYSIS:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0xa0;
                 set_complex(doctor, 0x186, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_JELLY_VAT:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0xaa;
                 set_complex(doctor, 0x19a, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_PHARMACY:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0xb4;
                 set_complex(doctor, 0x244, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_DECONTAMINATION:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0xd2;
                 set_complex(doctor, 0x28a, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_RESEARCH:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0xdc;
                 set_complex(doctor, 0x35c, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_DNA_FIXER:
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 doctor->substate = 0xf0;
                 set_complex(doctor, 0x47e, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
                 break;
             case ROOM_WARD:
             case ROOM_TRAINING:
@@ -270,7 +270,7 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                     interrupt_person(patient);
                     start_person_going(patient);
                 }
-            } else if (fn_0003c1e8(doctor, 0x28)) {
+            } else if (forget_about_my_slave(doctor, 0x28)) {
                 fn_0003b234(doctor);
             }
         }
@@ -285,7 +285,7 @@ void fn_0003b234(Thing *w)
     w->state = get_state(w->room->type, w);
     w->slave = 0;
     if (w->subtype == STAFF_SURGEON) {
-        w = fn_0003c154(w->room, 0x18);
+        w = find_waiting_surgeon(w->room, 0x18);
         if (w) {
             w->state = get_state(w->room->type, w);
             w->slave = 0;
@@ -308,13 +308,13 @@ void doctor_in_machine_room(Thing *doctor)
                 doctor->state = SS_DOCTOR_IN_THEATRE;
             } else {
                 doctor->orders &= 0xaf;
-                if (fn_0002b400(doctor) ? 1 : (process_staff_complex(doctor), 0)) {
+                if (check_room_mutex(doctor) ? 1 : (evacuate_staff(doctor), 0)) {
                     if (!shall_i_resign(doctor)) {
                         if (doctor->room->f22 || doctor->room->f3 == 4) {
-                            process_staff_complex(doctor);
+                            evacuate_staff(doctor);
                         } else if ((doctor->orders & ORD_REST) && take_a_break(doctor)) {
                         } else if ((doctor->subtype == STAFF_NURSE && allhosps[doctor->owner].unknown11f0 == 0) && could_nurse_vaccinate(doctor)) {
-                            process_staff_complex(doctor);
+                            evacuate_staff(doctor);
                         } else {
                             if (doctor->room->f3 == 5) {
                                 doctor->room->f3 = 6;
@@ -327,7 +327,7 @@ void doctor_in_machine_room(Thing *doctor)
                                             doctor->timer = 200;
                                             doctor->state = SS_SURGEON_WAITS;
                                         } else {
-                                            lead = fn_0003c154(doctor->room, 0x10);
+                                            lead = find_waiting_surgeon(doctor->room, 0x10);
                                             if (lead > thing && call_person_to_room(lead, queue, 0x28, doctor->room->unknown4, 1)) {
                                                 u16 anim;
 
@@ -368,7 +368,7 @@ void doctor_in_machine_room(Thing *doctor)
                                     if (tile != pos && can_i_get_to(doctor, pos)) {
                                         doctor->next_state = doctor->resume_state = SS_DOCTOR_IN_MACHINE_ROOM;
                                         set_complex(doctor, 0xbe, pos);
-                                        fn_0003e724(doctor);
+                                        process_staff_complex(doctor);
                                     }
                                 } else if (doctor->room->unknown29) {
                                     u8 paged;
@@ -412,14 +412,14 @@ void doctor_researches(Thing *doctor)
         f = &frame[doctor->sprite];
         if (f->flags & 1) {
             if (!(doctor->skills & SKILL_RESEARCHER)) {
-                process_staff_complex(doctor);
+                evacuate_staff(doctor);
             } else if (!shall_i_resign(doctor)) {
                 doctor->orders |= ORD_RETURN_TO_RESEARCH;
                 if (doctor->room->f22 || doctor->room->f3 == 4) {
-                    process_staff_complex(doctor);
+                    evacuate_staff(doctor);
                 } else if (doctor->orders & 8) {
                     doctor->orders &= 0xf0;
-                    process_staff_complex(doctor);
+                    evacuate_staff(doctor);
                 } else if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].f21d) && take_a_break(doctor)) {
                 } else {
                     othervar.f0 = old_newrand() % 100;
@@ -446,7 +446,7 @@ void doctor_researches(Thing *doctor)
                         for (i = 0; i < 4; i++) {
                             obj = find_object((u16)doctor->x.tile + ((u16)doctor->y.tile << 7), research_tasks[i].object, 1, 0x96, doctor->owner);
                             if (obj) {
-                                user = fn_00019aac(&map[thing[obj].use_pos[0]], THING_STAFF);
+                                user = search_mapwho(&map[thing[obj].use_pos[0]], THING_STAFF);
                                 if (!(user == 0 || user == doctor)) {
                                     continue;
                                 }
@@ -454,7 +454,7 @@ void doctor_researches(Thing *doctor)
                                     doctor->resume_state = SS_DOCTOR_RESEARCHES;
                                     doctor->next_state = SS_DOCTOR_RESEARCHES;
                                     set_complex(doctor, research_tasks[i].action, 0);
-                                    fn_0003e724(doctor);
+                                    process_staff_complex(doctor);
                                     return;
                                 }
                             }
@@ -526,7 +526,7 @@ void doctor_in_theatre(Thing *doctor)
     count = count_surgeons(doctor->room);
     doctor->object = 0;
     if (!(doctor->skills & SKILL_SURGEON)) {
-        process_staff_complex(doctor);
+        evacuate_staff(doctor);
         return;
     }
     switch (count) {
@@ -536,7 +536,7 @@ void doctor_in_theatre(Thing *doctor)
             set_complex(doctor, 0x4d8, 0);
             doctor->resume_state = SS_DOCTOR_IN_THEATRE;
             doctor->next_state = SS_DOCTOR_IN_MACHINE_ROOM;
-            fn_0003e724(doctor);
+            process_staff_complex(doctor);
             return;
         }
         break;
@@ -546,19 +546,19 @@ void doctor_in_theatre(Thing *doctor)
             set_complex(doctor, 0x4ec, 0);
             doctor->resume_state = SS_DOCTOR_IN_THEATRE;
             doctor->next_state = SS_DOCTOR_IN_MACHINE_ROOM;
-            fn_0003e724(doctor);
+            process_staff_complex(doctor);
             return;
         }
         break;
     default:
-        process_staff_complex(doctor);
+        evacuate_staff(doctor);
         return;
     }
     pos = (s16)(old_newrand() % room->f1) + ((s16)(old_newrand() % room->f2) << 7) + room->pos;
     if (can_i_get_to(doctor, pos)) {
         doctor->next_state = SS_DOCTOR_IN_THEATRE;
         set_complex(doctor, 0xbe, pos);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
     }
 }
 
@@ -589,7 +589,7 @@ void surgeon_waits(Thing *surgeon)
 }
 
 // FUNCTION: 0x0003c154
-Thing *fn_0003c154(RoomInfo *room, u8 state)
+Thing *find_waiting_surgeon(RoomInfo *room, u8 state)
 {
     Thing *person;
 
@@ -602,7 +602,7 @@ Thing *fn_0003c154(RoomInfo *room, u8 state)
 }
 
 // FUNCTION: 0x0003c1e8
-u8 fn_0003c1e8(Thing *w, u16 action)
+u8 forget_about_my_slave(Thing *w, u16 action)
 {
     Thing *desk;
     Thing *slave;

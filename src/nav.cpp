@@ -9,7 +9,7 @@ s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 a);
 
 extern "C" {
 
-void fn_000444e0(Thing *w);
+void nav_init(Thing *w);
 
 }
 
@@ -83,11 +83,11 @@ s32 wall_in_way(u32 x, u32 y, u32 dir)
 s16 person_head_for(Thing *person, u8 a)
 {
     if (THING_PATH(person)->result == 0) {
-        fn_000444e0(person);
+        nav_init(person);
     }
     nav_person = person;
     if (person->dest_x != THING_PATH(person)->x1 || person->dest_y != THING_PATH(person)->y1) {
-        fn_000444e0(person);
+        nav_init(person);
     }
     return orthonav_whatnext(THING_PATH(person), person->x.tile, person->y.tile, person->facing);
 }
@@ -170,7 +170,7 @@ s32 person_overlap(void)
 extern "C" {
 
 // FUNCTION: 0x000444e0
-void fn_000444e0(Thing *person)
+void nav_init(Thing *person)
 {
     orthonav_init(THING_PATH(person), person->x.tile, person->y.tile, person->dest_x, person->dest_y);
 }

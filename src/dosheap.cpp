@@ -8,7 +8,7 @@ extern "C" {
 
 int vsprintf(char *buf, char *fmt, va_list args);
 void fn_000bb5cc(CDosHeapStats *stats);
-u32 fn_000bbaf4(CDosHeap *heap);
+u32 GetFreeFragCount(CDosHeap *heap);
 }
 
 // FUNCTION: 0x000bb2e0
@@ -52,7 +52,7 @@ void *CDosHeap::Alloc(u32 size)
             rec->next = used_list;
             used_list = rec;
             stats.RecordAlloc(rec);
-            Report("Allocated block (Count%d,Frags%d)of %d bytes, \t%d allocated", stats.GetAllocCount(), fn_000bbaf4(this), size, stats.GetTotalAllocation());
+            Report("Allocated block (Count%d,Frags%d)of %d bytes, \t%d allocated", stats.GetAllocCount(), GetFreeFragCount(this), size, stats.GetTotalAllocation());
             return rec->ptr;
         }
     }
@@ -121,10 +121,10 @@ void CDosHeap::Free(void *p)
         if (!MergeRecord(rec)) {
             rec->next = free_list;
             free_list = rec;
-            Report("freed block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(), fn_000bbaf4(this), rec->size, stats.GetTotalAllocation());
+            Report("freed block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(), GetFreeFragCount(this), rec->size, stats.GetTotalAllocation());
         } else {
             ReleaseRecord(rec);
-            Report("freed & merged block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(), fn_000bbaf4(this), rec->size, stats.GetTotalAllocation());
+            Report("freed & merged block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(), GetFreeFragCount(this), rec->size, stats.GetTotalAllocation());
         }
     } else
         Error("Free failed to free block at address %d", rec->ptr);
@@ -202,7 +202,7 @@ void CDosHeap::Repack(void)
     u32 merged;
 
     free_block = free_list;
-    before = fn_000bbaf4(this);
+    before = GetFreeFragCount(this);
     merged = 1;
     while (merged) {
         merged = 0;
@@ -213,7 +213,7 @@ void CDosHeap::Repack(void)
             free_block = free_block->next;
         }
     }
-    Report("Repacking the heap, %d to %d", before, fn_000bbaf4(this));
+    Report("Repacking the heap, %d to %d", before, GetFreeFragCount(this));
 }
 
 // FUNCTION: 0x000bb97c
@@ -277,7 +277,7 @@ u32 CDosHeapStats::GetAllocCount(void)
 extern "C" {
 
 // FUNCTION: 0x000bbaf4
-u32 fn_000bbaf4(CDosHeap *heap)
+u32 GetFreeFragCount(CDosHeap *heap)
 {
     u32 frags;
     CDosHeapItem *free_block;

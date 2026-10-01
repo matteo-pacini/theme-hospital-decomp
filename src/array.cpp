@@ -1,18 +1,18 @@
 #include "hosp.h"
 
 extern "C" {
-void fn_0008b6a0(void);
-void fn_0008b6f8(void);
-void fn_0008b824(void);
-void fn_0008b8a0(void);
-void fn_0008b91c(void);
-void fn_0008b99c(void);
-void fn_0008ba18(void);
-void fn_0008ba78(void);
-void fn_0008bacc(void);
-void fn_0008bb10(void);
-void fn_0008bb98(void);
-void fn_0008dc7c(void);
+void pulldown_load(void);
+void pulldown_save(void);
+void pulldown_toggle_shadows(void);
+void pulldown_svol(void);
+void pulldown_smusic(void);
+void pulldown_sannounce(void);
+void pulldown_toggle_music(void);
+void pulldown_toggle_sound(void);
+void pulldown_toggle_ambient(void);
+void pulldown_vary_speed(void);
+void pulldown_toggle_screen_mode(void);
+void ask_restart_level(void);
 }
 
 void nav_debug_mode();
@@ -229,7 +229,7 @@ menuData pmenu_data = {
     // pulldowns[1].items
     0, 0, 7, 0, 0, 1, 0, 0, 255, 1, 0,
     0, 0, 8, 0, 0, 1, 0, 0, 255, 1, 0,
-    1, 1, 9, 0, 0, 0, 0, 0, 255, 1, fn_0008dc7c,
+    1, 1, 9, 0, 0, 0, 0, 0, 255, 1, ask_restart_level,
     1, 1, 10, 0, 0, 0, 1, 1, 255, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -260,9 +260,9 @@ menuData pmenu_data = {
     // pulldowns[2].active .. pulldowns[2].y
     1, 0, 2, 0, 0, 0, 0,
     // pulldowns[2].items
-    1, 1, 12, 0, (u8 *)&myplayer + 0xf, 0, 0, 0, 255, 0, fn_0008ba78,
-    1, 1, 13, 0, (u8 *)&myplayer + 0x10, 0, 0, 0, 255, 0, fn_0008bacc,
-    1, 1, 14, 0, (u8 *)&myplayer + 0x11, 0, 0, 0, 255, 0, fn_0008ba18,
+    1, 1, 12, 0, (u8 *)&myplayer + 0xf, 0, 0, 0, 255, 0, pulldown_toggle_sound,
+    1, 1, 13, 0, (u8 *)&myplayer + 0x10, 0, 0, 0, 255, 0, pulldown_toggle_ambient,
+    1, 1, 14, 0, (u8 *)&myplayer + 0x11, 0, 0, 0, 255, 0, pulldown_toggle_music,
     1, 1, 15, 0, 0, 1, 0, 0, 255, 0, 0,
     1, 1, 16, 0, 0, 1, 0, 0, 255, 0, 0,
     1, 1, 17, 0, 0, 1, 0, 0, 255, 0, 0,
@@ -293,9 +293,9 @@ menuData pmenu_data = {
     // pulldowns[3].active .. pulldowns[3].y
     1, 0, 3, 0, 0, 0, 0,
     // pulldowns[3].items
-    1, 0, 22, 0, (u8 *)&othervar + 0xa41, 0, 0, 0, 255, 1, fn_0008bb98,
-    1, 0, 23, 0, (u8 *)&othervar + 0xa40, 0, 0, 0, 255, 1, fn_0008bb98,
-    1, 1, 24, 0, (u8 *)&myplayer + 0x1d, 0, 0, 0, 255, 0, fn_0008b824,
+    1, 0, 22, 0, (u8 *)&othervar + 0xa41, 0, 0, 0, 255, 1, pulldown_toggle_screen_mode,
+    1, 0, 23, 0, (u8 *)&othervar + 0xa40, 0, 0, 0, 255, 1, pulldown_toggle_screen_mode,
+    1, 1, 24, 0, (u8 *)&myplayer + 0x1d, 0, 0, 0, 255, 0, pulldown_toggle_shadows,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -392,14 +392,14 @@ menuData pmenu_data = {
     // pulldowns[6].active .. pulldowns[6].y
     1, 0, 0, 0, 0, 0, 0,
     // pulldowns[6].items
-    1, 0, 63, 0, (u8 *)&othervar + 0xa0f, 0, 0, 0, 255, 0, fn_0008b6a0,
-    1, 0, 64, 0, (u8 *)&othervar + 0xa10, 0, 0, 0, 255, 0, fn_0008b6a0,
-    1, 0, 65, 0, (u8 *)&othervar + 0xa11, 0, 0, 0, 255, 0, fn_0008b6a0,
-    1, 0, 66, 0, (u8 *)&othervar + 0xa12, 0, 0, 0, 255, 0, fn_0008b6a0,
-    1, 0, 67, 0, (u8 *)&othervar + 0xa13, 0, 0, 0, 255, 0, fn_0008b6a0,
-    1, 0, 68, 0, (u8 *)&othervar + 0xa14, 0, 0, 0, 255, 0, fn_0008b6a0,
-    1, 0, 69, 0, (u8 *)&othervar + 0xa15, 0, 0, 0, 255, 0, fn_0008b6a0,
-    1, 0, 70, 0, (u8 *)&othervar + 0xa16, 0, 0, 0, 255, 0, fn_0008b6a0,
+    1, 0, 63, 0, (u8 *)&othervar + 0xa0f, 0, 0, 0, 255, 0, pulldown_load,
+    1, 0, 64, 0, (u8 *)&othervar + 0xa10, 0, 0, 0, 255, 0, pulldown_load,
+    1, 0, 65, 0, (u8 *)&othervar + 0xa11, 0, 0, 0, 255, 0, pulldown_load,
+    1, 0, 66, 0, (u8 *)&othervar + 0xa12, 0, 0, 0, 255, 0, pulldown_load,
+    1, 0, 67, 0, (u8 *)&othervar + 0xa13, 0, 0, 0, 255, 0, pulldown_load,
+    1, 0, 68, 0, (u8 *)&othervar + 0xa14, 0, 0, 0, 255, 0, pulldown_load,
+    1, 0, 69, 0, (u8 *)&othervar + 0xa15, 0, 0, 0, 255, 0, pulldown_load,
+    1, 0, 70, 0, (u8 *)&othervar + 0xa16, 0, 0, 0, 255, 0, pulldown_load,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -425,14 +425,14 @@ menuData pmenu_data = {
     // pulldowns[7].active .. pulldowns[7].y
     1, 0, 0, 0, 0, 0, 0,
     // pulldowns[7].items
-    1, 0, 72, 0, (u8 *)&othervar + 0xa0f, 0, 0, 0, 255, 0, fn_0008b6f8,
-    1, 0, 73, 0, (u8 *)&othervar + 0xa10, 0, 0, 0, 255, 0, fn_0008b6f8,
-    1, 0, 74, 0, (u8 *)&othervar + 0xa11, 0, 0, 0, 255, 0, fn_0008b6f8,
-    1, 0, 75, 0, (u8 *)&othervar + 0xa12, 0, 0, 0, 255, 0, fn_0008b6f8,
-    1, 0, 76, 0, (u8 *)&othervar + 0xa13, 0, 0, 0, 255, 0, fn_0008b6f8,
-    1, 0, 77, 0, (u8 *)&othervar + 0xa14, 0, 0, 0, 255, 0, fn_0008b6f8,
-    1, 0, 78, 0, (u8 *)&othervar + 0xa15, 0, 0, 0, 255, 0, fn_0008b6f8,
-    1, 0, 79, 0, (u8 *)&othervar + 0xa16, 0, 0, 0, 255, 0, fn_0008b6f8,
+    1, 0, 72, 0, (u8 *)&othervar + 0xa0f, 0, 0, 0, 255, 0, pulldown_save,
+    1, 0, 73, 0, (u8 *)&othervar + 0xa10, 0, 0, 0, 255, 0, pulldown_save,
+    1, 0, 74, 0, (u8 *)&othervar + 0xa11, 0, 0, 0, 255, 0, pulldown_save,
+    1, 0, 75, 0, (u8 *)&othervar + 0xa12, 0, 0, 0, 255, 0, pulldown_save,
+    1, 0, 76, 0, (u8 *)&othervar + 0xa13, 0, 0, 0, 255, 0, pulldown_save,
+    1, 0, 77, 0, (u8 *)&othervar + 0xa14, 0, 0, 0, 255, 0, pulldown_save,
+    1, 0, 78, 0, (u8 *)&othervar + 0xa15, 0, 0, 0, 255, 0, pulldown_save,
+    1, 0, 79, 0, (u8 *)&othervar + 0xa16, 0, 0, 0, 255, 0, pulldown_save,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -458,16 +458,16 @@ menuData pmenu_data = {
     // pulldowns[8].active .. pulldowns[8].y
     1, 0, 0, 0, 0, 0, 0,
     // pulldowns[8].items
-    1, 1, 81, 0, (u8 *)&othervar + 0xa19, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 82, 0, (u8 *)&othervar + 0xa1a, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 83, 0, (u8 *)&othervar + 0xa1b, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 84, 0, (u8 *)&othervar + 0xa1c, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 85, 0, (u8 *)&othervar + 0xa1d, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 86, 0, (u8 *)&othervar + 0xa1e, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 87, 0, (u8 *)&othervar + 0xa1f, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 88, 0, (u8 *)&othervar + 0xa20, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 89, 0, (u8 *)&othervar + 0xa21, 0, 0, 0, 255, 0, fn_0008b8a0,
-    1, 1, 90, 0, (u8 *)&othervar + 0xa22, 0, 0, 0, 255, 0, fn_0008b8a0,
+    1, 1, 81, 0, (u8 *)&othervar + 0xa19, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 82, 0, (u8 *)&othervar + 0xa1a, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 83, 0, (u8 *)&othervar + 0xa1b, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 84, 0, (u8 *)&othervar + 0xa1c, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 85, 0, (u8 *)&othervar + 0xa1d, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 86, 0, (u8 *)&othervar + 0xa1e, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 87, 0, (u8 *)&othervar + 0xa1f, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 88, 0, (u8 *)&othervar + 0xa20, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 89, 0, (u8 *)&othervar + 0xa21, 0, 0, 0, 255, 0, pulldown_svol,
+    1, 1, 90, 0, (u8 *)&othervar + 0xa22, 0, 0, 0, 255, 0, pulldown_svol,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -491,16 +491,16 @@ menuData pmenu_data = {
     // pulldowns[9].active .. pulldowns[9].y
     1, 0, 0, 0, 0, 0, 0,
     // pulldowns[9].items
-    1, 1, 92, 0, (u8 *)&othervar + 0xa24, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 93, 0, (u8 *)&othervar + 0xa25, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 94, 0, (u8 *)&othervar + 0xa26, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 95, 0, (u8 *)&othervar + 0xa27, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 96, 0, (u8 *)&othervar + 0xa28, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 97, 0, (u8 *)&othervar + 0xa29, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 98, 0, (u8 *)&othervar + 0xa2a, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 99, 0, (u8 *)&othervar + 0xa2b, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 100, 0, (u8 *)&othervar + 0xa2c, 0, 0, 0, 255, 0, fn_0008b99c,
-    1, 1, 101, 0, (u8 *)&othervar + 0xa2d, 0, 0, 0, 255, 0, fn_0008b99c,
+    1, 1, 92, 0, (u8 *)&othervar + 0xa24, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 93, 0, (u8 *)&othervar + 0xa25, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 94, 0, (u8 *)&othervar + 0xa26, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 95, 0, (u8 *)&othervar + 0xa27, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 96, 0, (u8 *)&othervar + 0xa28, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 97, 0, (u8 *)&othervar + 0xa29, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 98, 0, (u8 *)&othervar + 0xa2a, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 99, 0, (u8 *)&othervar + 0xa2b, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 100, 0, (u8 *)&othervar + 0xa2c, 0, 0, 0, 255, 0, pulldown_sannounce,
+    1, 1, 101, 0, (u8 *)&othervar + 0xa2d, 0, 0, 0, 255, 0, pulldown_sannounce,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -524,16 +524,16 @@ menuData pmenu_data = {
     // pulldowns[10].active .. pulldowns[10].y
     1, 0, 0, 0, 0, 0, 0,
     // pulldowns[10].items
-    1, 1, 103, 0, (u8 *)&othervar + 0xa2f, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 104, 0, (u8 *)&othervar + 0xa30, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 105, 0, (u8 *)&othervar + 0xa31, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 106, 0, (u8 *)&othervar + 0xa32, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 107, 0, (u8 *)&othervar + 0xa33, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 108, 0, (u8 *)&othervar + 0xa34, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 109, 0, (u8 *)&othervar + 0xa35, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 110, 0, (u8 *)&othervar + 0xa36, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 111, 0, (u8 *)&othervar + 0xa37, 0, 0, 0, 255, 0, fn_0008b91c,
-    1, 1, 112, 0, (u8 *)&othervar + 0xa38, 0, 0, 0, 255, 0, fn_0008b91c,
+    1, 1, 103, 0, (u8 *)&othervar + 0xa2f, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 104, 0, (u8 *)&othervar + 0xa30, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 105, 0, (u8 *)&othervar + 0xa31, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 106, 0, (u8 *)&othervar + 0xa32, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 107, 0, (u8 *)&othervar + 0xa33, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 108, 0, (u8 *)&othervar + 0xa34, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 109, 0, (u8 *)&othervar + 0xa35, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 110, 0, (u8 *)&othervar + 0xa36, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 111, 0, (u8 *)&othervar + 0xa37, 0, 0, 0, 255, 0, pulldown_smusic,
+    1, 1, 112, 0, (u8 *)&othervar + 0xa38, 0, 0, 0, 255, 0, pulldown_smusic,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -557,10 +557,10 @@ menuData pmenu_data = {
     // pulldowns[11].active .. pulldowns[11].y
     1, 0, 0, 0, 0, 0, 0,
     // pulldowns[11].items
-    0, 0, 114, 0, (u8 *)&othervar + 0xa3a, 0, 0, 0, 10, 0, fn_0008bb10,
-    0, 0, 115, 0, (u8 *)&othervar + 0xa3b, 0, 0, 0, 20, 0, fn_0008bb10,
-    0, 0, 116, 0, (u8 *)&othervar + 0xa3c, 0, 0, 0, 30, 0, fn_0008bb10,
-    0, 0, 117, 0, (u8 *)&othervar + 0xa3d, 0, 0, 0, 40, 0, fn_0008bb10,
-    0, 0, 118, 0, (u8 *)&othervar + 0xa3e, 0, 0, 0, 50, 0, fn_0008bb10,
+    0, 0, 114, 0, (u8 *)&othervar + 0xa3a, 0, 0, 0, 10, 0, pulldown_vary_speed,
+    0, 0, 115, 0, (u8 *)&othervar + 0xa3b, 0, 0, 0, 20, 0, pulldown_vary_speed,
+    0, 0, 116, 0, (u8 *)&othervar + 0xa3c, 0, 0, 0, 30, 0, pulldown_vary_speed,
+    0, 0, 117, 0, (u8 *)&othervar + 0xa3d, 0, 0, 0, 40, 0, pulldown_vary_speed,
+    0, 0, 118, 0, (u8 *)&othervar + 0xa3e, 0, 0, 0, 50, 0, pulldown_vary_speed,
 };
 #pragma aux pmenu_data "W?pmenu$n$menu$$"

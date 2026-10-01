@@ -8,11 +8,11 @@ struct Offset {
 extern "C" {
 
 extern s16 D_001567b0[8];
-extern ToDraw *D_00153fa4[32];
-extern FloorDef D_001379f0[];
+extern ToDraw *buckets[32];
+extern FloorDef litter_starts[];
 
-void fn_0002f47c(Thing *w, s16 x, s16 y);
-void fn_0002e804(Thing *w, s16 x, s16 y);
+void draw_glow_frame(Thing *w, s16 x, s16 y);
+void draw_wibble_frame(Thing *w, s16 x, s16 y);
 
 }
 
@@ -29,7 +29,7 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     Thing *occupant;
 
     node = draw_cells;
-    memset(D_00153fa4, 0, sizeof(D_00153fa4));
+    memset(buckets, 0, sizeof(buckets));
     D_001567b0[0] = D_001567b0[1] = 999;
     D_001567b0[2] = D_001567b0[3] = 0;
     for (id = cell->first; id > 0; id = occupant->cell_next) {
@@ -38,8 +38,8 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
         screen_y = resvars.f0 == SCREEN_MODE_13 ? (occupant->y.frac + occupant->x.frac) >> 4 : (occupant->y.frac + occupant->x.frac) >> 5;
         bucket = ((occupant->y.frac + occupant->x.frac) >> 4) + occupant->depth;
         if (node < (ToDraw *)&pixBuf) {
-            node->next = D_00153fa4[bucket];
-            D_00153fa4[bucket] = node;
+            node->next = buckets[bucket];
+            buckets[bucket] = node;
             node->widget = occupant;
             node->x = screen_x;
             node->y = screen_y;
@@ -64,9 +64,9 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
         u16 frame;
         u8 flip;
 
-        frame = start[D_001379f0[floor].anim].frame;
-        flip = start[D_001379f0[floor].anim].flags;
-        if (D_001379f0[floor].animated) {
+        frame = start[litter_starts[floor].anim].frame;
+        flip = start[litter_starts[floor].anim].flags;
+        if (litter_starts[floor].animated) {
             draw_a_frame(frame, x + (resvars.f0 == SCREEN_MODE_13 ? 32 : 16), y + (resvars.f0 == SCREEN_MODE_13 ? 16 : 8), 0, flip);
         } else {
             Offset *offset;
@@ -76,7 +76,7 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
         }
     }
     for (i = 0; i < 32; i++) {
-        for (node = D_00153fa4[i]; node != 0; node = node->next) {
+        for (node = buckets[i]; node != 0; node = node->next) {
             int draw_x;
             int draw_y;
 
@@ -151,9 +151,9 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
     case PS_ARRIVED_FROM_CALL:
     case PS_NAV_DEBUG:
         if (person->illness == ILL_SERIOUS_RADIATION) {
-            fn_0002f47c(person, x, y);
+            draw_glow_frame(person, x, y);
         } else if (person->illness == ILL_JELLYITIS && othervar.f1c == 0 && person->object == 0) {
-            fn_0002e804(person, x, y);
+            draw_wibble_frame(person, x, y);
         } else if ((u16)(person - thing) == othervar.f43) {
             draw_hilight_frame(person, x, y);
         } else if ((u16)(person - thing) == othervar.f45) {

@@ -2,29 +2,29 @@
 
 extern "C" {
 
-extern u8 D_0015f982;
-extern View D_0014619c;
+extern u8 error_number;
+extern View ScreenBoxes;
 extern Point D_00146c8c[];
-extern Button D_00145378[];
-extern u8 D_0013bb0c[], D_0013c0fc[], D_001361ac[], D_001310e4[], D_00145358[];
-extern u8 D_0013c6a4[], D_00130288[], D_0012cc3c[];
+extern Button screenbuttons[];
+extern u8 D_0013bb0c[], D_0013c0fc[], window_list[], button_list[], screenlistpos[];
+extern u8 hiresbuttons[], panel_popup_coord[], D_0012cc3c[];
 extern u8 D_00147314[];
-extern int D_0013c77c[], D_0014be34[];
-extern u8 *D_00153f34;
-extern TbSprite *D_00153f30;
-extern u8 *D_00153f28;
+extern int hireshelp[], D_0014be34[];
+extern u8 *palette;
+extern TbSprite *end_pointers;
+extern u8 *pointer_data;
 extern char *D_0013e80c;
 extern u8 D_001581ec, D_001581ed, D_001581ee, D_001581ef;
 extern s32 D_001581e8;
-extern void *D_00158334;
+extern void *heapptr;
 
 void LbDataLoadAll(TbLoadFiles *files);
-void fn_0008bcb4(void);
-void fn_000c20f0(void);
+void setup_mcga_elements(void);
+void FreeAudio(void);
 int LbScreenSetupAnyMode(int mode, ...);
 void fn_0001102c(void);
-void fn_00011058(void);
-void fn_00011084(void);
+void use_hires_help_and_fonts(void);
+void use_lores_help_and_fonts(void);
 void fn_000110b0(void);
 
 }
@@ -35,29 +35,29 @@ u8 setup_host(void)
     char path[128];
     char name[52];
 
-    D_0015f982 = 0;
+    error_number = 0;
     resvars.f5 = 0;
     LbDataLoadAll(screenfiles);
     LbDataLoadAll(palettefile);
-    if (!setup_any_screen(D_00153f34, SCREEN_MODE_13)) {
+    if (!setup_any_screen(palette, SCREEN_MODE_13)) {
         return 1;
     }
     if (setup_lang() == 0) {
-        D_0015f982 = 1;
+        error_number = 1;
         return 1;
     }
     if (install_type < 2) {
         sprintf(path, "%s%s", cd_install_path, D_0013e80c);
         check_cd_available(path);
-        LbFileLoadAt(path, D_00153f34);
+        LbFileLoadAt(path, palette);
     } else {
-        LbFileLoadAt(D_0013e80c, D_00153f34);
+        LbFileLoadAt(D_0013e80c, palette);
     }
     if (debug.unknown1fa) {
         load_game_files();
     }
     LbDataLoadAll(hiresgamepointerfiles);
-    LbSpriteSetup(pointer, D_00153f30, D_00153f28);
+    LbSpriteSetup(pointer, end_pointers, pointer_data);
     statvar.unknowne6 = 0x1c;
     statvar.unknowne7 = 0x1f;
     resvars.f3 = 0x20;
@@ -65,15 +65,15 @@ u8 setup_host(void)
     resvars.f4 = 0x40;
     resvars.f3 = 0x20;
     resvars.f18_u8p = D_0013bb0c;
-    resvars.f3c = &D_0014619c;
+    resvars.f3c = &ScreenBoxes;
     resvars.f1c_u8p = D_0013c0fc;
     resvars.f40 = D_00146c8c;
-    resvars.f20_u8p = D_001361ac;
-    resvars.f24 = D_001310e4;
-    resvars.f44 = D_00145358;
-    resvars.f28 = D_0013c6a4;
-    resvars.f2c_intp = D_0013c77c;
-    resvars.f34 = D_00130288;
+    resvars.f20_u8p = window_list;
+    resvars.f24 = button_list;
+    resvars.f44 = screenlistpos;
+    resvars.f28 = hiresbuttons;
+    resvars.f2c_intp = hireshelp;
+    resvars.f34 = panel_popup_coord;
     resvars.f1 = SCREEN_MODE_13;
     resvars.f38 = D_0012cc3c;
     resvars.f16 = 3;
@@ -81,20 +81,20 @@ u8 setup_host(void)
     resvars.f0 = SCREEN_MODE_13;
     resvars.fa_charpp = hires_font_filenames;
     resvars.f50 = D_00147314;
-    resvars.f48 = D_00145378;
+    resvars.f48 = screenbuttons;
     resvars.f5 = 0;
     if (!display_loading_screen()) {
         return 0;
     }
-    D_0015f982 = setup_sound();
-    if (D_0015f982) {
+    error_number = setup_sound();
+    if (error_number) {
         return 1;
     }
     LbDataLoadAll(memfiles);
     LbDataLoadAll(complexfiles);
     SWIKeyboardOpen();
     if (LbMouseSetup(pointer + 1) != 1) {
-        D_0015f982 = 2;
+        error_number = 2;
         return 1;
     }
     LbMouseChangeSprite(0);
@@ -115,12 +115,12 @@ u8 setup_host(void)
         }
     }
     debug.unknown1e0 = -1;
-    LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
-    generate_bw_remap(D_00153f34, bw_remap);
-    clear_loading_screen(D_00153f34);
+    LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
+    generate_bw_remap(palette, bw_remap);
+    clear_loading_screen(palette);
     face_file = LbFileOpen((char *)hires_faces, 2);
     if (face_file == -1) {
-        D_0015f982 = 9;
+        error_number = 9;
         sub_error_number = 7;
         return 1;
     }
@@ -140,7 +140,7 @@ void reset_host(void)
     LbMouseReset();
     SWIKeyboardClose();
     LbScreenReset();
-    switch (D_0015f982) {
+    switch (error_number) {
     case 1:
         fn_000bbff0(error_string, "Language Setup Failed.\n");
         break;
@@ -188,9 +188,9 @@ void reset_host(void)
         LbFileClose(D_001581e8);
     }
     close_sound_heap();
-    fn_000c20f0();
+    FreeAudio();
     LbMemoryFree(midi_buffer);
-    LbMemoryFree(D_00158334);
+    LbMemoryFree(heapptr);
     LbMemoryFree(text_starts);
     LbDataFreeAll(thingfiles);
     LbDataFreeAll(memfiles);
@@ -231,7 +231,7 @@ void load_game_files(void)
         LbDataLoadAll(mcgareqfiles);
         LbDataLoadAll(loresanifiles);
         setup_panel_icons(1);
-        fn_0008bcb4();
+        setup_mcga_elements();
     } else {
         LbDataLoadAll(hiresspritefiles);
         LbDataLoadAll(hiresblockfiles);
@@ -275,16 +275,16 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
     }
     if (mode == SCREEN_MODE_13) {
         variant = 1;
-        fn_00011058();
+        use_hires_help_and_fonts();
     } else if (mode == SCREEN_MODE_1) {
         variant = 2;
-        fn_00011084();
+        use_lores_help_and_fonts();
     }
     if (LbScreenSetupAnyMode(mode, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height, palette, variant, 0) != 1) {
         if (mode == SCREEN_MODE_13) {
-            D_0015f982 = 4;
+            error_number = 4;
         } else {
-            D_0015f982 = 3;
+            error_number = 3;
         }
         return 0;
     }
@@ -295,19 +295,19 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
 // FUNCTION: 0x0001102c
 void fn_0001102c(void)
 {
-    fn_00011084();
-    setup_any_screen(D_00153f34, SCREEN_MODE_1);
+    use_lores_help_and_fonts();
+    setup_any_screen(palette, SCREEN_MODE_1);
 }
 
 // FUNCTION: 0x00011058
-void fn_00011058(void)
+void use_hires_help_and_fonts(void)
 {
-    resvars.f2c_intp = D_0013c77c;
+    resvars.f2c_intp = hireshelp;
     resvars.fa_charpp = hires_font_filenames;
 }
 
 // FUNCTION: 0x00011084
-void fn_00011084(void)
+void use_lores_help_and_fonts(void)
 {
     resvars.f2c_intp = D_0014be34;
     resvars.fa_charpp = lores_font_filenames;
@@ -322,17 +322,17 @@ void fn_000110b0(void)
     resvars.f1 = SCREEN_MODE_13;
     resvars.f0 = SCREEN_MODE_13;
     resvars.f18_u8p = D_0013bb0c;
-    resvars.f3c = &D_0014619c;
+    resvars.f3c = &ScreenBoxes;
     resvars.f1c_u8p = D_0013c0fc;
     resvars.f40 = D_00146c8c;
     resvars.f3 = 0x20;
     resvars.f4 = 0x40;
-    resvars.f20_u8p = D_001361ac;
-    resvars.f24 = D_001310e4;
-    resvars.f44 = D_00145358;
-    resvars.f28 = D_0013c6a4;
-    resvars.f2c_intp = D_0013c77c;
-    resvars.f34 = D_00130288;
+    resvars.f20_u8p = window_list;
+    resvars.f24 = button_list;
+    resvars.f44 = screenlistpos;
+    resvars.f28 = hiresbuttons;
+    resvars.f2c_intp = hireshelp;
+    resvars.f34 = panel_popup_coord;
     resvars.f6_names = hires_req_filenames;
     resvars.fe = hires_requester_buttons;
     resvars.f12 = hires_requester_sprites;
@@ -346,7 +346,7 @@ void fn_000110b0(void)
     }
     face_file = LbFileOpen((char *)hires_faces, 2);
     if (face_file == -1) {
-        D_0015f982 = 9;
+        error_number = 9;
         sub_error_number = 7;
         reset_host();
         exit(1);
@@ -364,5 +364,5 @@ void fn_000110b0(void)
     setup_menus();
     LbDataFreeAll(lorespointerfiles);
     LbDataLoadAll(hiresgamepointerfiles);
-    LbSpriteSetup(pointer, D_00153f30, D_00153f28);
+    LbSpriteSetup(pointer, end_pointers, pointer_data);
 }

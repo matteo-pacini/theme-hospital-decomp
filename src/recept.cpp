@@ -24,7 +24,7 @@ void receptionist_finds_reception(Thing *receptionist)
                 receptionist->object = id;
                 set_complex(receptionist, 0x50, pos);
                 receptionist->resume_state = SS_RECEPTIONIST_FINDS_RECEPTION;
-                fn_0003e724(receptionist);
+                process_staff_complex(receptionist);
                 receptionist->slave = 0;
             }
         } else {
@@ -100,7 +100,7 @@ void receptionist_works(Thing *receptionist)
                                     set_icon_value(receptionist, ICON_CALLING);
                                     receptionist->next_state = SS_RECEPT_WAITS_FOR_PATIENT;
                                     set_complex(receptionist, 0x1e, 0);
-                                    fn_0003e724(receptionist);
+                                    process_staff_complex(receptionist);
                                     break;
                                 }
                             }
@@ -113,7 +113,7 @@ void receptionist_works(Thing *receptionist)
                         receptionist->next_state = SS_RECEPTIONIST_WORKS;
                         action = recept_tasks[old_newrand() % recept_tasks[0] + 1];
                         set_complex(receptionist, action, 0);
-                        fn_0003e724(receptionist);
+                        process_staff_complex(receptionist);
                     } else {
                         u16 anim;
 
@@ -145,7 +145,7 @@ void recept_waits_for_patient(Thing *receptionist)
                 set_complex(receptionist, 0xf0, 0);
             patient->facing = opposite_angle[receptionist->facing];
             receptionist->next_state = SS_RECEPT_ADMITS_PATIENT;
-            fn_0003e724(receptionist);
+            process_staff_complex(receptionist);
             othervar.f8ac_u16a[1] = 0;
         } else {
             receptionist->timer--;
@@ -166,7 +166,7 @@ void recept_waits_for_patient(Thing *receptionist)
                         othervar.f8ac_u16a[1] = 0;
                     }
                 }
-            } else if (fn_0003c1e8(receptionist, 0x6e)) {
+            } else if (forget_about_my_slave(receptionist, 0x6e)) {
                 receptionist->state = SS_RECEPTIONIST_WORKS;
                 receptionist->slave = 0;
             }

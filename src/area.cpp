@@ -15,10 +15,10 @@ struct AreaLayout {
 
 extern "C" {
 extern Event D_001549d0[];
-extern u8 *D_00153f34;
+extern u8 *palette;
 extern u8 D_00156910;
 extern void *smack_draw_callback;
-void fn_00074cd8(void);
+void keybuffer_clear(void);
 int LbScreenLock(void);
 void FadeSample(int a, int b, int c, int d, u8 e);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
@@ -72,7 +72,7 @@ u8 draw_area_select(void)
         LbGhostTableGenerate(ppalette.data, 0x19, "qdata/ghost2.dat");
         calculate_grey(ppalette.data);
         BufferedInkey = 0;
-        fn_00074cd8();
+        keybuffer_clear();
         area.unknown0 = 0;
         area.unknown2 = 1;
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
@@ -92,7 +92,7 @@ u8 draw_area_select(void)
         LbScreenClear(0);
         if (!display_loading_screen())
             return 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+        LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         area.unknown2 = 0;
         advisor.f131 = 0x1d;
         display_mode = 0;
@@ -110,13 +110,13 @@ u8 draw_area_select(void)
         }
         resvars.f2 = resvars.f1;
         D_00156910 = 1;
-        clear_loading_screen(D_00153f34);
-        fn_00090804((u16)level_number, 1);
+        clear_loading_screen(palette);
+        setup_new_level((u16)level_number, 1);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
         goto_column_row_in_window(window.unknown2eb, level->unknown28024[player] % 128, level->unknown28024[player] / 128);
         othervar.fa5c = 1;
         draw_it();
-        othervar.f24 = D_00153f34;
+        othervar.f24 = palette;
         init_ambients();
         break;
     case 3:
@@ -147,7 +147,7 @@ u8 draw_area_select(void)
         LbGhostTableGenerate(ppalette.data, 0x19, "qdata/ghost2.dat");
         calculate_grey(ppalette.data);
         BufferedInkey = 0;
-        fn_00074cd8();
+        keybuffer_clear();
         area.unknown0 = 0;
         area.unknown2 = 1;
         lbDisplay.left_button = lbDisplay.rleft_button = 0;

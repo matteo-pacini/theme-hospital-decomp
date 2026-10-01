@@ -30,7 +30,7 @@ extern "C" {
 
 extern FrameBox D_001567b0;
 extern s32 D_00156911;
-extern TbSprite *D_00153f5c;
+extern TbSprite *money;
 
 void LbSpriteDrawOneColour(s32 x, s32 y, TbSprite *spr, u8 colour);
 void LbSpriteDrawScaled(s32 x, s32 y, TbSprite *spr, s32 w, s32 h);
@@ -274,7 +274,7 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
 extern "C" {
 
 // FUNCTION: 0x0002e804
-void fn_0002e804(Thing *w, s16 x, s16 y)
+void draw_wibble_frame(Thing *w, s16 x, s16 y)
 {
     u16 drawn;
     u8 icon;
@@ -449,7 +449,7 @@ void fn_0002e804(Thing *w, s16 x, s16 y)
 }
 
 // FUNCTION: 0x0002f47c
-void fn_0002f47c(Thing *w, s16 x, s16 y)
+void draw_glow_frame(Thing *w, s16 x, s16 y)
 {
     u8 g;
     u8 glow;
@@ -1070,24 +1070,24 @@ void draw_money(s32 x, s32 y, s32 value)
 
     x += -2;
     lbDisplay.draw_flags = 0;
-    LbSpriteDraw(x, y, D_00153f5c + 1);
+    LbSpriteDraw(x, y, money + 1);
     D_001567b0.x = x;
     D_001567b0.y = y;
-    D_001567b0.w = D_00153f5c[1].width;
-    D_001567b0.h = D_00153f5c[1].height;
+    D_001567b0.w = money[1].width;
+    D_001567b0.h = money[1].height;
     if (resvars.f1 == SCREEN_MODE_13 && !othervar.fa8d) {
         sprintf(buf, "%d", value);
         width = -1;
         for (p = buf; *p; p++) {
             digit = *p - '0';
-            width += D_00153f5c[digit + 2].width + 1;
+            width += money[digit + 2].width + 1;
         }
         px = x + resvars.f1c_IconScreenp->unknown568 + (resvars.f1c_IconScreenp->unknown560 - width) / 2;
         py = y + resvars.f1c_IconScreenp->unknown564;
         for (p = buf; *p; p++) {
             digit = *p - '0';
-            LbSpriteDraw(px, py, &D_00153f5c[digit + 2]);
-            px += D_00153f5c[digit + 2].width + 1;
+            LbSpriteDraw(px, py, &money[digit + 2]);
+            px += money[digit + 2].width + 1;
         }
     }
     if (D_001567b0.x0 > D_001567b0.x)

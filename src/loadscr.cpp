@@ -34,12 +34,12 @@ void draw_button_edges(s16 x, s16 y, s16 w, s16 h, u8 style);
 void draw_glass_text(SlistButton *b, char *text);
 
 extern "C" {
-extern u8 *D_00153f34;
+extern u8 *palette;
 extern u16 D_00161138;
 extern u8 D_00156910;
 
 void fn_000c93bf(char *dst, char *src);
-void fn_00074cd8(void);
+void keybuffer_clear(void);
 void fn_000110b0(void);
 void delay(u32 ms);
 }
@@ -78,7 +78,7 @@ void draw_load_game(void)
         }
         loadgame.unknown2 = 3;
         loadgame.unknown0 = 0xfa;
-        fn_00074cd8();
+        keybuffer_clear();
         BufferedInkey = 0;
         lbDisplay.rleft_button = 0;
         delay(800);
@@ -102,36 +102,36 @@ void draw_load_game(void)
     case 1:
         fade_out_menu();
         if (display_loading_screen()) {
-            LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+            LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
             resvars.f1 = SCREEN_MODE_13;
             load_game_files();
             level_no = read_level_number(load_game_number);
             if (level_no != -1) {
-                fn_00090804((u16)level_no, 1);
-                if (fn_00021c38((s8)load_game_number, -1)) {
-                    clear_loading_screen(D_00153f34);
+                setup_new_level((u16)level_no, 1);
+                if (load_game((s8)load_game_number, -1)) {
+                    clear_loading_screen(palette);
                     othervar.fa65 = 0;
                     fn_000110b0();
                     load_game_files();
                     set_mouse_mode(MM_NORMAL);
-                    LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+                    LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
                     display_mode = 0;
                     D_00156910 = 1;
                     set_all_refresh_zones_in_window(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
                     draw_it();
-                    othervar.f24 = D_00153f34;
+                    othervar.f24 = palette;
                     break;
                 }
             }
         }
-        othervar.f24 = D_00153f34;
+        othervar.f24 = palette;
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         loadgame.unknown2 = 4;
         break;
     case 2:
         loadgame.unknown0 = 0;
         fade_out_menu();
-        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+        LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         display_mode = 2;
         mainmenu.unknown2 = 0;
         set_mouse_mode(MM_NORMAL);

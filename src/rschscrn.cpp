@@ -9,8 +9,8 @@ struct ChoiceBox {
 
 extern "C" {
 extern Event D_001549d0[];
-extern char **D_001602d8;
-extern char **D_001602a0;
+extern char **research_names;
+extern char **misc_text;
 void StopSample(u32 a, u32 b);
 }
 
@@ -79,7 +79,7 @@ void draw_research_text(void)
     set_font_from_cache(9);
     height = lbFontPtr ? lbFontPtr[34].height : 0;
     for (i = 0; i < 5; i++) {
-        LbTextDraw(resvars.f40[i + 0x57].x, resvars.f40[i + 0x57].y, D_001602d8[i]);
+        LbTextDraw(resvars.f40[i + 0x57].x, resvars.f40[i + 0x57].y, research_names[i]);
         if (myhosp->research_alloc[i] >= 0) {
             sprintf(buf, "%d", myhosp->research_alloc[i]);
             LbTextDraw(resvars.f40[i + 0x61].x, resvars.f40[i + 0x61].y, buf);
@@ -98,7 +98,7 @@ void draw_research_text(void)
         } else {
             LbDrawBox(resvars.f3c_ChoiceBoxp[i + 0x29].x, resvars.f3c_ChoiceBoxp[i + 0x29].y, resvars.f3c_ChoiceBoxp[i + 0x29].w, resvars.f3c_ChoiceBoxp[i + 0x29].h,
                       0xb);
-            LbTextDraw(resvars.f40[i + 0x61].x, resvars.f40[i + 0x61].y, D_001602a0[0x14]);
+            LbTextDraw(resvars.f40[i + 0x61].x, resvars.f40[i + 0x61].y, misc_text[0x14]);
         }
     }
     total = 0;
@@ -106,7 +106,7 @@ void draw_research_text(void)
         if (myhosp->research_alloc[i] > 0)
             total += myhosp->research_alloc[i];
     }
-    sprintf(buf, D_001602d8[6]);
+    sprintf(buf, research_names[6]);
     LbTextDraw(resvars.f40[0x66].x, resvars.f40[0x66].y, buf);
     sprintf(buf, "%d", total);
     LbTextDraw(resvars.f40[0x67].x, resvars.f40[0x67].y, buf);

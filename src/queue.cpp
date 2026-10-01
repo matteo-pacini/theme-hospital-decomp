@@ -6,7 +6,7 @@ extern Event D_001549d0[];
 extern u32 D_001603d0;
 extern RoomInfo *D_001603d4;
 
-u16 fn_00085660(int n);
+u16 nth_other_active_player(int n);
 
 }
 
@@ -231,7 +231,7 @@ void process_queue_button(u8 button)
             if (othervar.f63) {
                 D_001549d0[player].type = EV_REFER_PATIENT;
                 D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
-                D_001549d0[player].arg = fn_00085660(1);
+                D_001549d0[player].arg = nth_other_active_player(1);
                 othervar.f63 = 0;
             }
         }
@@ -241,7 +241,7 @@ void process_queue_button(u8 button)
             if (othervar.f63) {
                 D_001549d0[player].type = EV_REFER_PATIENT;
                 D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
-                D_001549d0[player].arg = fn_00085660(2);
+                D_001549d0[player].arg = nth_other_active_player(2);
                 othervar.f63 = 0;
             }
         }
@@ -251,7 +251,7 @@ void process_queue_button(u8 button)
             if (othervar.f63) {
                 D_001549d0[player].type = EV_REFER_PATIENT;
                 D_001549d0[player].value = get_real_person_from_room(othervar.f61, othervar.f63);
-                D_001549d0[player].arg = fn_00085660(3);
+                D_001549d0[player].arg = nth_other_active_player(3);
                 othervar.f63 = 0;
             }
         }
@@ -329,12 +329,12 @@ void queue_person_to_new_queue(const u16 room_id, const u16 id)
                 if (room->type == ROOM_RECEPTION) {
                     reception = find_nearest_manned_reception(person, room - room_info, 0);
                     if (reception) {
-                        fn_0004195c(person, thing[reception].use_pos[1]);
+                        set_destination_coords(person, thing[reception].use_pos[1]);
                     }
                 } else {
                     room->unknown32++;
                     page_staff_i_need(person, room);
-                    fn_0004195c(person, room->unknown4);
+                    set_destination_coords(person, room->unknown4);
                 }
                 person->dest_room = room - room_info;
                 {

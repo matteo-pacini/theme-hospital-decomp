@@ -28,7 +28,7 @@ void doctor_carries_out_examination(Thing *doctor)
             if (othervar.f0 >= 30 && othervar.f0 < 32) {
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 set_complex(doctor, 0x10e, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
             }
             break;
         }
@@ -43,14 +43,14 @@ void doctor_carries_out_examination(Thing *doctor)
             if (othervar.f0 >= 33 && othervar.f0 < 35) {
                 doctor->next_state = SS_DOCTOR_EXAMINES;
                 set_complex(doctor, 0x10e, 0);
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
             }
             break;
         }
         doctor->substate++;
         doctor->next_state = SS_DOCTOR_EXAMINES;
         set_complex(doctor, 0x118, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         break;
     case 32:
         othervar.f0 = old_newrand() % 100;
@@ -74,12 +74,12 @@ void doctor_carries_out_examination(Thing *doctor)
                         process_person_complex(patient);
                         doctor->next_state = SS_DOCTOR_EXAMINES;
                         set_complex(doctor, 0x10e, 0);
-                        fn_0003e724(doctor);
+                        process_staff_complex(doctor);
                         break;
                     } else {
                         doctor->next_state = SS_DOCTOR_EXAMINES;
                         set_complex(doctor, 0x122, 0);
-                        fn_0003e724(doctor);
+                        process_staff_complex(doctor);
                         break;
                     }
                 }
@@ -87,7 +87,7 @@ void doctor_carries_out_examination(Thing *doctor)
         }
         doctor->next_state = SS_DOCTOR_EXAMINES;
         set_complex(doctor, 0x118, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         break;
     case 33:
         if (patient->state != 0x20)
@@ -114,10 +114,10 @@ void doctor_carries_out_examination(Thing *doctor)
             patient->next_state = 0x20;
             if (find_object(doctor->x.tile + (doctor->y.tile << 7), OBJ_BOOKCASE, 1, 0x96, doctor->owner)) {
                 if (set_complex(doctor, 0x370, 0))
-                    fn_0003e724(doctor);
+                    process_staff_complex(doctor);
             }
             if (set_complex(doctor, 0x2b2, 0))
-                fn_0003e724(doctor);
+                process_staff_complex(doctor);
             doctor->next_state = SS_DOCTOR_EXAMINES;
         }
         doctor->substate = 230;
@@ -139,7 +139,7 @@ void doctor_carries_out_examination(Thing *doctor)
         done_treatment(doctor, patient);
         doctor->next_state = SS_DOCTOR_IN_MACHINE_ROOM;
         set_complex(doctor, 0x154, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         doctor->slave = 0;
         doctor->room->unknown29 = 1;
         break;
@@ -173,7 +173,7 @@ void doctor_carries_out_examination(Thing *doctor)
         effect_illness(patient, ILL_ALIEN_DNA, 1);
         set_complex(doctor, 0x488, 0);
         doctor->next_state = SS_DOCTOR_EXAMINES;
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         doctor->substate = 230;
         break;
     case 110:
@@ -183,19 +183,19 @@ void doctor_carries_out_examination(Thing *doctor)
             doctor->substate = 111;
             doctor->next_state = SS_DOCTOR_EXAMINES;
             set_complex(doctor, complexes[old_newrand() % 3], 0);
-            fn_0003e724(doctor);
+            process_staff_complex(doctor);
         }
         break;
     case 111:
         doctor->substate = 230;
         doctor->next_state = SS_DOCTOR_EXAMINES;
         set_complex(doctor, 0x474, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         break;
     case 70:
         doctor->next_state = SS_DOCTOR_EXAMINES;
         set_complex(doctor, 0x334, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         doctor->substate = 71;
         break;
     case 71:
@@ -207,7 +207,7 @@ void doctor_carries_out_examination(Thing *doctor)
                 break;
             assistant->next_state = 0x18;
             set_complex(assistant, 0x33e, 0);
-            fn_0003e724(assistant);
+            process_staff_complex(assistant);
             doctor->substate = 72;
         }
         break;
@@ -220,10 +220,10 @@ void doctor_carries_out_examination(Thing *doctor)
                 break;
             assistant->next_state = SS_DOCTOR_IN_MACHINE_ROOM;
             set_complex(assistant, 0x352, 0);
-            fn_0003e724(assistant);
+            process_staff_complex(assistant);
             doctor->next_state = SS_DOCTOR_EXAMINES;
             set_complex(doctor, 0x348, 0);
-            fn_0003e724(doctor);
+            process_staff_complex(doctor);
             doctor->substate = 73;
             doctor->work_target = 0;
         }
@@ -248,24 +248,24 @@ void doctor_carries_out_examination(Thing *doctor)
             doctor->next_state = SS_DOCTOR_EXAMINES;
             doctor->substate = 190;
             set_complex(doctor, 0x21c, 0);
-            fn_0003e724(doctor);
+            process_staff_complex(doctor);
         } else if (patient->illness == ILL_INVISIBILITY) {
             doctor->next_state = SS_DOCTOR_EXAMINES;
             doctor->substate = 200;
             set_complex(doctor, 0x21c, 0);
-            fn_0003e724(doctor);
+            process_staff_complex(doctor);
         } else {
             doctor->next_state = SS_DOCTOR_EXAMINES;
             doctor->substate = 181;
             set_complex(doctor, 500, 0);
-            fn_0003e724(doctor);
+            process_staff_complex(doctor);
         }
         break;
     case 181:
         doctor->next_state = SS_DOCTOR_IN_MACHINE_ROOM;
         doctor->slave = 0;
         set_complex(doctor, 0x154, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         administer_drugs(doctor, patient);
         doctor->room->unknown29 = 1;
         break;
@@ -309,7 +309,7 @@ void doctor_carries_out_examination(Thing *doctor)
         transform_peep_who(patient, 4);
         doctor->next_state = SS_DOCTOR_EXAMINES;
         set_complex(doctor, 0x230, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         doctor->substate = 181;
         patient->state = 0x28;
         break;
@@ -406,7 +406,7 @@ void doctor_carries_out_examination(Thing *doctor)
             transform_peep_who(patient, 0xa);
             doctor->next_state = SS_DOCTOR_EXAMINES;
             set_complex(doctor, 0x230, 0);
-            fn_0003e724(doctor);
+            process_staff_complex(doctor);
             doctor->substate = 181;
             patient->state = 0x28;
         } else {
@@ -418,7 +418,7 @@ void doctor_carries_out_examination(Thing *doctor)
             break;
         doctor->next_state = SS_DOCTOR_RESEARCHES;
         set_complex(doctor, 0x154, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         doctor->slave = 0;
         doctor->room->unknown29 = 1;
         remove_person(patient);
@@ -426,7 +426,7 @@ void doctor_carries_out_examination(Thing *doctor)
     default:
         doctor->substate = 1;
         set_complex(doctor, 0xfa, 0);
-        fn_0003e724(doctor);
+        process_staff_complex(doctor);
         done_treatment(doctor, patient);
         break;
     }

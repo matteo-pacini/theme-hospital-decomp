@@ -67,12 +67,12 @@ u32 fn_000cd716(char *s);
 
 extern "C" {
 
-extern u8 *D_00153f34;
-extern char **D_001602a0;
+extern u8 *palette;
+extern char **misc_text;
 extern s8 __IsTable[];
 #pragma aux __IsTable "*"
 
-void fn_00074cd8(void);
+void keybuffer_clear(void);
 void delay(int ms);
 int LbFileFindFirst(char *spec, void *find, u32 attributes);
 int LbFileFindNext(void *find);
@@ -95,7 +95,7 @@ void draw_nickname(void)
         calculate_grey(ppalette.data);
         nickname.unknown0 = 0;
         BufferedInkey = 0;
-        fn_00074cd8();
+        keybuffer_clear();
         nickname.unknown2 = 7;
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
         myplayer.unknown0[0] = 0;
@@ -113,11 +113,11 @@ void draw_nickname(void)
     case 1:
         fade_out_menu();
         nickname.unknown2 = 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+        LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         mainmenu.unknown2 = 0;
         display_mode = 2;
         if (fn_000cd716(myplayer.unknown0) == 0)
-            fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
+            fn_000bbff0(myplayer.unknown0, misc_text[1]);
         sprintf(statvar.f6c, "save/%s.h", myplayer.unknown0);
         load_player_details();
         break;
@@ -139,7 +139,7 @@ void draw_nickname(void)
         nickname.unknown2 = 6;
         nickname.unknown0 = 0;
         BufferedInkey = 0;
-        fn_00074cd8();
+        keybuffer_clear();
         delay(800);
         init_zoom_boxes(1);
         break;
@@ -163,7 +163,7 @@ void draw_nickname(void)
             display_mode = 2;
         }
         nickname.unknown2 = 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+        LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         free_balance_files();
         break;
     case 5:
@@ -198,7 +198,7 @@ void process_keys_nickname(void)
                 nickname.unknown2 = 1;
                 play_sound(10, SFX_YESX, -1, -1);
                 if (myplayer.name[0] == 0)
-                    fn_000bbff0(myplayer.unknown0, D_001602a0[1]);
+                    fn_000bbff0(myplayer.unknown0, misc_text[1]);
                 break;
             case KC_BACKSPACE:
             case KC_DECIMAL:
@@ -431,9 +431,9 @@ void draw_new_prefs_screen(void)
     LbTextDraw(x, y, nickname_text[6]);
     y = 0x155;
     y += (0x176 - y - character_height()) >> 1;
-    LbTextDraw(x, y, D_001602a0[0x1d]);
-    LbTextDraw(resvars.f3c_NetBoxp[122].x + (resvars.f3c_NetBoxp[122].w - LbTextStringWidth(D_001602a0[0x1e])) / 2,
-               resvars.f3c_NetBoxp[122].y + (resvars.f3c_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2, D_001602a0[0x1e]);
+    LbTextDraw(x, y, misc_text[0x1d]);
+    LbTextDraw(resvars.f3c_NetBoxp[122].x + (resvars.f3c_NetBoxp[122].w - LbTextStringWidth(misc_text[0x1e])) / 2,
+               resvars.f3c_NetBoxp[122].y + (resvars.f3c_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2, misc_text[0x1e]);
     LbTextDraw(resvars.f3c_NetBoxp[122].x + (resvars.f3c_NetBoxp[122].w - LbTextStringWidth(balance_file_name)) / 2,
                resvars.f3c_NetBoxp[122].y + (resvars.f3c_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2 + LbTextCharHeight('B'),
                balance_file_name);

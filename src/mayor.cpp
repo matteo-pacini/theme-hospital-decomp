@@ -130,12 +130,12 @@ u16 create_mayor(u8 owner)
     mayor->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
     reception_desk = &thing[listhead[owner].objects[OBJ_RECEPTION_DESK]];
     if (reception_desk > thing) {
-        fn_0004195c(mayor, reception_desk->use_pos[1]);
+        set_destination_coords(mayor, reception_desk->use_pos[1]);
         mayor->state = MAYOR_GOTO;
         mayor->goto_state = MAYOR_PAUSES;
         mayor->inspect_room = 0;
     } else {
-        fn_0004195c(mayor, room_info[allhosps[mayor->owner].unknown1cf[old_newrand() & 3]].unknown4);
+        set_destination_coords(mayor, room_info[allhosps[mayor->owner].unknown1cf[old_newrand() & 3]].unknown4);
         mayor->state = MAYOR_GOTO;
         mayor->goto_state = MAYOR_GONE;
         allhosps[mayor->owner].f1fb = 0xe;
@@ -161,7 +161,7 @@ void mayor_pauses(Thing *mayor)
             break;
         if (room->owner == mayor->owner && rooms[room->type].fa) {
             if (rooms[room->type].unknown36 == 0 || !(old_newrand() & 1)) {
-                fn_0004195c(mayor, room->unknown4);
+                set_destination_coords(mayor, room->unknown4);
                 mayor->state = MAYOR_GOTO;
                 mayor->goto_state = MAYOR_PAUSES;
                 return;
@@ -169,7 +169,7 @@ void mayor_pauses(Thing *mayor)
         }
     }
     hosp = &allhosps[mayor->owner];
-    fn_0004195c(mayor, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
+    set_destination_coords(mayor, room_info[hosp->unknown1cf[old_newrand() & 3]].unknown4);
     mayor->state = MAYOR_GOTO;
     mayor->goto_state = MAYOR_GONE;
     hosp->f1fb = mayor_judges_hospital(mayor->owner);

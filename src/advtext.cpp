@@ -35,13 +35,13 @@ struct AdvisorLayout {
 };
 
 extern "C" {
-extern u8 D_00161230;
+extern u8 no_pieces;
 extern u8 D_00156910;
 extern FrameBox D_001567b0;
 char *strncpy(char *dst, const char *src, u32 n);
 char *strncat(char *dst, const char *src, u32 n);
-void fn_000b2124(void);
-void fn_000b2178(u8 segments);
+void process_advisor_text(void);
+void format_advisor_text(u8 segments);
 }
 
 extern const u16 advisor_anims[];
@@ -57,14 +57,14 @@ void advisor_text_box(void)
     if (advisor.f10[0]) {
         set_font_from_cache(0x1d);
         if (advisor.f124)
-            fn_000b2124();
+            process_advisor_text();
         if (advisor.f122 == 3)
             y = resvars.f1c_AdvisorLayoutp->f4b4;
         else if (advisor.f122 == 2)
             y = resvars.f1c_AdvisorLayoutp->f4bc;
         else if (advisor.f122 == 1)
             y = resvars.f1c_AdvisorLayoutp->f4c4;
-        if (D_00161230 <= resvars.f17) {
+        if (no_pieces <= resvars.f17) {
             reqspr_draw(resvars.f1c_AdvisorLayoutp->f4f0, resvars.f1c_AdvisorLayoutp->f4f4, &game_panel[39]);
             reqspr_draw(resvars.f1c_AdvisorLayoutp->f4f0 - game_panel[37].width - (advisor.f123 + resvars.f16) * game_panel[38].width,
                         resvars.f1c_AdvisorLayoutp->f49c, &game_panel[37]);
@@ -86,18 +86,18 @@ void advisor_text_box(void)
 }
 
 // FUNCTION: 0x000b2124
-void fn_000b2124(void)
+void process_advisor_text(void)
 {
-    D_00161230 = resvars.f16;
+    no_pieces = resvars.f16;
     do {
-        fn_000b2178(D_00161230);
-        D_00161230++;
-    } while (D_00161230 <= resvars.f17 && !advisor.f122);
+        format_advisor_text(no_pieces);
+        no_pieces++;
+    } while (no_pieces <= resvars.f17 && !advisor.f122);
     advisor.f124 = 0;
 }
 
 // FUNCTION: 0x000b2178
-void fn_000b2178(u8 segments)
+void format_advisor_text(u8 segments)
 {
     u32 max_width;
     u32 width;

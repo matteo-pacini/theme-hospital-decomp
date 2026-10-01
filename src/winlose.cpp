@@ -16,18 +16,18 @@ void letter_format_text(char *dst, char *src, s16 width);
 void __stdcall lose_call(void *buf, u32 a, u32 b);
 
 extern "C" {
-extern s8 D_0015f489;
-extern s8 D_0015f48a;
+extern s8 anim_choice;
+extern s8 text_choice;
 extern void *smack_draw_callback;
-extern u8 *D_00153f34;
+extern u8 *palette;
 extern Event D_001549d0[];
-extern char **D_0016031c;
-extern char **D_00160320;
-extern char **D_001602c4;
+extern char **win_lose;
+extern char **win_text;
+extern char **town_names;
 
 u32 time(u32 *t);
 void fn_0001102c(void);
-void fn_000951c8(void);
+void insert_hall_details(void);
 int LbScreenLock(void);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
 void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
@@ -47,15 +47,15 @@ void __stdcall lose_call(void *buf, u32 a, u32 b)
     if (buf == lbDisplay.unknown4) {
         a = b;
         current_frame++;
-        if (current_frame >= animation_table[D_0015f489].f2e) {
+        if (current_frame >= animation_table[anim_choice].f2e) {
             y = 0;
-            if (D_0015f489 != 2)
+            if (anim_choice != 2)
                 set_font_from_cache(0x13);
             else
                 set_font_from_cache(0x15);
             width = LbTextStringWidth(text1);
             if (width > lbDisplay.unknown18) {
-                if (D_0015f489 != 2)
+                if (anim_choice != 2)
                     set_font_from_cache(0x14);
                 else
                     set_font_from_cache(0x16);
@@ -128,30 +128,30 @@ void play_winlose(void)
         finish_composite_help();
         clear_loading_screen(0);
         safeseed = time(0);
-        D_0015f489 = saferand() % 6;
-        n = D_0015f489;
-        if (D_0015f489 == 2) {
-            D_0015f489 = 1;
-            n = D_0015f489;
+        anim_choice = saferand() % 6;
+        n = anim_choice;
+        if (anim_choice == 2) {
+            anim_choice = 1;
+            n = anim_choice;
         }
         if (othervar.fa4f)
             stop_midi();
-        D_0015f48a = 0;
+        text_choice = 0;
         for (; n != 0; n--) {
-            while (strcmp(D_0016031c[D_0015f48a++], "."))
+            while (strcmp(win_lose[text_choice++], "."))
                 ;
         }
-        while (strcmp(D_0016031c[D_0015f48a + n], ".") != 0)
+        while (strcmp(win_lose[text_choice + n], ".") != 0)
             n++;
-        D_0015f48a += saferand() % n;
-        text1 = D_0016031c[D_0015f48a];
+        text_choice += saferand() % n;
+        text1 = win_lose[text_choice];
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         lbDisplay.draw_flags = 0;
         current_frame = 0;
         set_mouse_mode(9);
         smack_draw_callback = (void *)lose_call;
-        hosp_play_smk(D_0015f489);
+        hosp_play_smk(anim_choice);
         if (statvar.unknownfd > 1) {
             mainmenu.unknown2 = 0x1f;
             display_mode = 2;
@@ -160,7 +160,7 @@ void play_winlose(void)
         } else {
             winlose.unknown2 = 4;
             lbDisplay.left_button = 0;
-            fn_000951c8();
+            insert_hall_details();
             lbDisplay.rleft_button = 0;
             lbInkey = 0;
         }
@@ -190,7 +190,7 @@ void play_winlose(void)
         load_ingame_pic(0x18, 0, 0x29, 0, SCREEN_MODE_13);
         winlose.unknown2 = 5;
         lbDisplay.left_button = 0;
-        fn_000951c8();
+        insert_hall_details();
         set_font_from_cache(0x17);
         lbDisplay.draw_flags = text_ofs = text_paragraph = 0;
         text_delay = 1;
@@ -199,13 +199,13 @@ void play_winlose(void)
             pick = saferand() % 4;
             if (gamevar.f176 % 2 == 1)
                 pick += 4;
-            concat_composite(othervar.f96, &D_00160320[statvar.f543[pick]]);
-            sprintf(buf, othervar.f96, myhosp, othervar.f74_s32, D_001602c4[level_number + 1]);
+            concat_composite(othervar.f96, &win_text[statvar.f543[pick]]);
+            sprintf(buf, othervar.f96, myhosp, othervar.f74_s32, town_names[level_number + 1]);
             letter_format_text(othervar.f96, buf, resvars.f3c_Boxp[0xae].w);
             lbDisplay.rleft_button = 0;
         } else {
             pick = saferand() % 4 + 8;
-            concat_composite(othervar.f96, &D_00160320[statvar.f543[pick]]);
+            concat_composite(othervar.f96, &win_text[statvar.f543[pick]]);
             sprintf(buf, othervar.f96, myhosp, othervar.f74_s32);
             letter_format_text(othervar.f96, buf, resvars.f3c_Boxp[0xae].w);
             lbDisplay.rleft_button = 0;
@@ -289,7 +289,7 @@ void play_winlose(void)
                 pick = display_loading_screen();
                 load_game_files();
                 if (pick)
-                    clear_loading_screen(D_00153f34);
+                    clear_loading_screen(palette);
                 restore_display_screen();
                 if (othervar.f9b9 && myplayer.unknown11)
                     play_midi(othervar.f9ba);
@@ -317,7 +317,7 @@ void play_winlose(void)
         lbDisplay.draw_flags = text_ofs = text_paragraph = 0;
         text_delay = 1;
         pick = saferand() % 4 + 8;
-        concat_composite(othervar.f96, &D_00160320[statvar.f543[pick]]);
+        concat_composite(othervar.f96, &win_text[statvar.f543[pick]]);
         sprintf(buf, othervar.f96, myhosp, 100000);
         letter_format_text(othervar.f96, buf, resvars.f3c_Boxp[0xae].w);
         lbDisplay.left_button = 0;

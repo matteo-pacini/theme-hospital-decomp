@@ -16,24 +16,24 @@ struct TownView {
 
 extern "C" {
 extern Event D_001549d0[];
-extern char **D_001602c4;
-extern char **D_001602c8;
+extern char **town_names;
+extern char **town_details;
 extern u8 D_00156910;
 extern u8 D_00158166;
 extern u8 D_00158192;
 void LbMouseSetWindow(s32 x, s32 y, s32 w, s32 h);
 void LbTextSetClipWindow(s32 x, s32 y, s32 w, s32 h);
-void fn_0001b7e0(char *dst, s8 *src, u8 mode);
-void fn_0006680c(void);
-void fn_00067ed4(void);
-void fn_00068194(void);
-void fn_00066914(void);
-void fn_00063680(void);
-void fn_00063a64(void);
-void fn_000688e4(void);
+void conv_string(char *dst, s8 *src, u8 mode);
+void setup_bid_map(void);
+void draw_hilight_plot(void);
+void draw_bid_text(void);
+void display_overhead_map(void);
+void draw_town_select(void);
+void process_keys_town_select(void);
+void remove_town_bid(void);
 void fn_00068a14(void);
-void fn_000669fc(void);
-extern u8 *D_00153f34;
+void display_bid_map(void);
+extern u8 *palette;
 }
 
 extern ClickArea area_towns[];
@@ -69,7 +69,7 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
 u8 testcol = 0x94;
 
 // FUNCTION: 0x00063680
-void fn_00063680(void)
+void draw_town_select(void)
 {
     u32 i;
     u32 total;
@@ -91,7 +91,7 @@ void fn_00063680(void)
         setup_overhead_map();
         town.unknown2 = 7;
         othervar.f69 = 1;
-        fn_00066914();
+        display_overhead_map();
         draw_money_on_town();
         set_font_from_cache(0);
         othervar.fa8a = 0x1e;
@@ -99,24 +99,24 @@ void fn_00063680(void)
         break;
     case 1:
         lbDisplay.left_button = lbDisplay.rleft_button = 0;
-        LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+        LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
         display_mode = 0;
-        fn_000688e4();
+        remove_town_bid();
         town.unknown2 = 0;
         LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
         fn_00068a14();
         break;
     case 7:
         compute_help_text(0, 0, 0x13);
-        fn_00066914();
+        display_overhead_map();
         draw_money_on_town();
         set_font_from_cache(0);
         draw_help_text();
         set_mouse_mode(0xa);
         if (lbDisplay.rleft_button) {
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0xd, 0x1a6, 0xc0, 0x2e)) {
-                fn_00074220(0, 0x41);
-                LbGhostTableGenerate(D_00153f34, 0x42, "qdata/ghost66.dat");
+                process_keys(0, 0x41);
+                LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
                 town.unknown2 = 0;
             }
         }
@@ -136,13 +136,13 @@ void fn_00063680(void)
         LbMouseSetWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
         break;
     case 0x45:
-        fn_000669fc();
+        display_bid_map();
         process_bid_panel();
         process_bid_time();
         break;
     case 0xc:
         othervar.f69 = 1;
-        fn_0006680c();
+        setup_bid_map();
         town.unknown2 = 0x45;
         total = 0;
         for (i = 0; i < 0x4000; i++) {
@@ -169,7 +169,7 @@ void fn_00063680(void)
 }
 
 // FUNCTION: 0x00063a64
-void fn_00063a64(void)
+void process_keys_town_select(void)
 {
     switch (town.unknown2) {
     case 0:
@@ -670,7 +670,7 @@ void adjust_mapwho(u16 tile)
         dir = map[tile].first;
         map[tile].first = 0;
         othervar.f9bb = 1;
-        id = fn_00037098(tile, (u16)kind, dir, othervar.ff);
+        id = place_object(tile, (u16)kind, dir, othervar.ff);
         if (id) {
             obj = &thing[id];
             obj->owner = 0;
@@ -696,18 +696,18 @@ void display_plot_under_mouse(void)
     line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     LbTextSetWindow(0xe6, 0x30 - line_height / 2, 0x180, 0x18);
     lbDisplay.draw_flags = 0x100;
-    sprintf(buf, "%s", D_001602c4[myhosp->f29]);
-    fn_0001b7e0(buf, (s8 *)buf, 0);
+    sprintf(buf, "%s", town_names[myhosp->f29]);
+    conv_string(buf, (s8 *)buf, 0);
     LbTextDraw(0, 0, buf);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
-    sprintf(buf, "%s", D_001602c8[4]);
+    sprintf(buf, "%s", town_details[4]);
     LbTextDraw(resvars.f40[46].x, resvars.f40[46].y, buf);
-    sprintf(buf, "%s", D_001602c8[5]);
+    sprintf(buf, "%s", town_details[5]);
     LbTextDraw(resvars.f40[47].x, resvars.f40[47].y, buf);
-    sprintf(buf, "%s", D_001602c8[6]);
+    sprintf(buf, "%s", town_details[6]);
     LbTextDraw(resvars.f40[48].x, resvars.f40[48].y, buf);
-    sprintf(buf, "%s", D_001602c8[7]);
+    sprintf(buf, "%s", town_details[7]);
     LbTextDraw(resvars.f40[49].x, resvars.f40[49].y, buf);
     x = (lbDisplay.mmouse_x - area_towns[myhosp->f29].x) / area_towns[myhosp->f29].width;
     y = (lbDisplay.mmouse_y - area_towns[myhosp->f29].y) / area_towns[myhosp->f29].height;
@@ -717,7 +717,7 @@ void display_plot_under_mouse(void)
             price = land_amount[plot] * gbv.f7c;
             sprintf(buf, ": %d", plot);
             LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
-            sprintf(buf, ": %s", D_001602c8[2]);
+            sprintf(buf, ": %s", town_details[2]);
             LbTextDraw(resvars.f40[51].x, resvars.f40[51].y, buf);
             sprintf(buf, ": %d", land_amount[plot]);
             LbTextDraw(resvars.f40[52].x, resvars.f40[52].y, buf);
@@ -727,7 +727,7 @@ void display_plot_under_mouse(void)
             cell = &map[x + (y << 7)];
             sprintf(buf, ": -");
             LbTextDraw(resvars.f40[50].x, resvars.f40[50].y, buf);
-            sprintf(buf, ": %s", D_001602c8[3]);
+            sprintf(buf, ": %s", town_details[3]);
             for (i = 0; i < 4; i++) {
                 if (cell->unknown7 & (1 << i)) {
                     sprintf(buf, ": %s", allhosps[i].unknown0);
@@ -788,7 +788,7 @@ void setup_overhead_map(void)
 }
 
 // FUNCTION: 0x0006680c
-extern "C" void fn_0006680c(void)
+extern "C" void setup_bid_map(void)
 {
     s32 unused;
 
@@ -802,7 +802,7 @@ extern "C" void fn_0006680c(void)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.unknown18, lbDisplay.unknown1c);
     LbDrawBox(0x14c, 0x49, 0x103, 0x107, 0x6c);
     draw_frame(0x14b, 0x48, 0x104, 0x108, 0x68);
-    fn_00067ed4();
+    draw_hilight_plot();
     lbDisplay.unknown4 = othervar.f9d7;
     lbDisplay.graphics_screen_width = othervar.f9db;
     lbDisplay.graphics_screen_height = othervar.f9df;
@@ -811,7 +811,7 @@ extern "C" void fn_0006680c(void)
 }
 
 // FUNCTION: 0x00066914
-extern "C" void fn_00066914(void)
+extern "C" void display_overhead_map(void)
 {
     u8 i;
 
@@ -831,13 +831,13 @@ extern "C" void fn_00066914(void)
 }
 
 // FUNCTION: 0x000669fc
-extern "C" void fn_000669fc(void)
+extern "C" void display_bid_map(void)
 {
     if (othervar.f69)
-        fn_0006680c();
+        setup_bid_map();
     copy_screen_to_wscreen(bscreen);
-    fn_00067ed4();
-    fn_00068194();
+    draw_hilight_plot();
+    draw_bid_text();
 }
 
 // FUNCTION: 0x00066a34
@@ -1086,7 +1086,7 @@ void process_bid_button(u8 button)
 }
 
 // FUNCTION: 0x00067ed4
-extern "C" void fn_00067ed4(void)
+extern "C" void draw_hilight_plot(void)
 {
     u16 x;
     u16 y;
@@ -1121,7 +1121,7 @@ extern "C" void fn_00067ed4(void)
 }
 
 // FUNCTION: 0x00068194
-extern "C" void fn_00068194(void)
+extern "C" void draw_bid_text(void)
 {
     u8 i;
     u8 row;
@@ -1268,7 +1268,7 @@ void setup_town_bid(void)
 }
 
 // FUNCTION: 0x000688e4
-extern "C" void fn_000688e4(void)
+extern "C" void remove_town_bid(void)
 {
     if (othervar.f9ef) {
         display_mode = othervar.f9ef;

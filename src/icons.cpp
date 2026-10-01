@@ -106,7 +106,7 @@ void update_icon_counter(Thing *const peep)
 extern "C" {
 
 // FUNCTION: 0x000b05f0
-void fn_000b05f0(Thing *peep)
+void clear_peep_icon(Thing *peep)
 {
     peep->icon_id = 0;
     peep->icon_timer = 0;

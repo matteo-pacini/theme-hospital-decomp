@@ -423,7 +423,7 @@ Complex person_complex[175] = {
 
 extern "C" {
 // demo: group_anim, of type GroupAnim
-ComplexAnims D_001310ac[3] = {
+ComplexAnims group_anim[3] = {
     { 3, 4, 5, 6 },
     { 4, 53, 54, 55, 53 },
 };

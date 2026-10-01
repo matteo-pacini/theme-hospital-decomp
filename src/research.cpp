@@ -257,7 +257,7 @@ void send_person_for_research(Thing *patient)
     patient->sprite = start[idx].frame;
     patient->flip = start[idx].flags > 0 ? (u8)1 : (u8)0;
     patient->state = PS_GOTO_QUEUE;
-    fn_0004195c(patient, room->unknown4);
+    set_destination_coords(patient, room->unknown4);
 }
 
 // FUNCTION: 0x0006dc64
@@ -332,7 +332,7 @@ u8 send_doctor_to_research(Thing *doctor)
     doctor->next_state = SS_DOCTOR_RESEARCHES;
     doctor->resume_state = SS_PROCESS_COMPLEX;
     doctor->dest_room = id;
-    fn_0003e724(doctor);
+    process_staff_complex(doctor);
     return 1;
 }
 

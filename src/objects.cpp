@@ -47,8 +47,8 @@ void remove_object_from_map(Thing *w);
 u8 modify_machine(Thing *w);
 u8 should_sliding_door_open(Thing *w);
 u8 check_no_peeps_on_cell(RoomInfo *room, u16 tile, s8 side);
-void remove_blank_wall(Map *cell, u8 side);
 void insert_blank_wall(Map *cell, u8 side);
+void remove_blank_wall(Map *cell, u8 side);
 void cleanse_area(u8 type, u8 x, u8 y, u8 w, u8 h);
 void litter_explosion(u32 pos, u8 owner);
 u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner);
@@ -56,11 +56,11 @@ u8 thingpage_cancel(ThingPager *p, u16 id);
 void interrupt_peep(Thing *w);
 
 extern "C" {
-void fn_0003751c(Thing *w);
-void fn_00015b68(Thing *w);
-Thing *fn_00019aac(Map *t, u16 kind);
-s32 fn_00038d04(Thing *w, u8 owner);
-#pragma aux fn_00038d04 "W?remove_object$n(pn$Thing$$)s"
+void object_hell(Thing *w);
+void remove_node(Thing *w);
+Thing *search_mapwho(Map *t, u16 kind);
+s32 remove_object(Thing *w, u8 owner);
+#pragma aux remove_object "W?remove_object$n(pn$Thing$$)s"
 }
 
 // FUNCTION: 0x00036930
@@ -143,7 +143,7 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
     }
     if (control->unknown17 != -1) {
         part = &next_part[control->unknown17];
-        other = &thing[fn_00037098((u16)(tile + part->dirs[dir].offset), part->kind, part->dirs[dir].dir, obj->owner)];
+        other = &thing[place_object((u16)(tile + part->dirs[dir].offset), part->kind, part->dirs[dir].dir, obj->owner)];
         if (other > thing) {
             other->pair = obj - thing;
             obj->pair = other - thing;
@@ -178,7 +178,7 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
 }
 
 // FUNCTION: 0x00037098
-u16 fn_00037098(u16 tile, u16 kind, u8 dir, u8 owner)
+u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
 {
     BuildState *build;
     u8 i;
@@ -266,7 +266,7 @@ void object_static(Thing *obj)
 }
 
 // FUNCTION: 0x0003751c
-void fn_0003751c(Thing *obj)
+void object_hell(Thing *obj)
 {
     CompFrame *cur_frame;
 
@@ -280,7 +280,7 @@ void fn_0003751c(Thing *obj)
                 obj->aux_sprite = 0;
                 obj->aux_flip_w = 0;
             } else if (obj->remove_after_anim) {
-                fn_00038d04(obj, obj->owner);
+                remove_object(obj, obj->owner);
             }
         }
     }
@@ -681,7 +681,7 @@ Thing *find_door(Thing *person)
 
     cell = &map[((s16)person->y.tile << 7) + (s16)person->x.tile];
     for (i = 0; i < 5; i++) {
-        door = fn_00019aac(&cell[special_around[i]], THING_DOOR);
+        door = search_mapwho(&cell[special_around[i]], THING_DOOR);
         if (door > thing) {
             if (person->room || (s16)person->x.tile + ((s16)person->y.tile << 7) == room_info[door->room_id].unknown4) {
                 return door;
@@ -805,11 +805,11 @@ void remove_object_from_map(Thing *obj)
     obj->state = 0x12;
     delete_object(tile, obj);
     adjust_big_cell_flag(tile);
-    fn_00015b68(obj);
+    remove_node(obj);
 }
 
 // FUNCTION: 0x00038d04
-s32 fn_00038d04(Thing *obj, u8 owner)
+s32 remove_object(Thing *obj, u8 owner)
 {
     Map *cell;
 
@@ -936,7 +936,7 @@ void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *con
     if (control->walls != -1) {
         walls = &object_walls[control->walls * 4 + dir];
         for (i = 0; i < walls->count; i++) {
-            remove_blank_wall(&base_cell[walls->pos[i]], walls->side[i]);
+            insert_blank_wall(&base_cell[walls->pos[i]], walls->side[i]);
         }
     }
 }
@@ -959,7 +959,7 @@ void remove_object_shape(Map *cell, Shapes *shape, u8 dir, ObjectControl *contro
     if (control->walls != -1) {
         walls = &object_walls[control->walls * 4 + dir];
         for (i = 0; i < walls->count; i++) {
-            insert_blank_wall(&cell[walls->pos[i]], walls->side[i]);
+            remove_blank_wall(&cell[walls->pos[i]], walls->side[i]);
         }
     }
 }
@@ -1170,7 +1170,7 @@ void bomb_ticks(Thing *bomb)
             if (bomb->fuse >= 8) {
                 create_explosion(((u16)bomb->y.tile << 7) + (u16)bomb->x.tile, 0x97);
                 litter_explosion(((s16)bomb->y.tile << 7) + (s16)bomb->x.tile, bomb->owner);
-                fn_00038d04(bomb, bomb->owner);
+                remove_object(bomb, bomb->owner);
                 return;
             }
             u16 anim = check_frame(bomb->fuse + 0x9bf, bomb) + bomb->facing;
@@ -1286,7 +1286,7 @@ void check_invis_walls_around_object(Thing *obj)
             cell = &map[((s16)obj->y.tile << 7) + (s16)obj->x.tile + walls->pos[i]];
             side = walls->side[i];
             if ((&cell->unknown3)[side] == 0) {
-                remove_blank_wall(cell, side);
+                insert_blank_wall(cell, side);
             }
         }
     }

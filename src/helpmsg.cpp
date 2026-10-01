@@ -3,8 +3,8 @@
 extern "C" {
 extern u8 D_00156910;
 extern u8 D_00161134;
-extern char **D_0016037c;
-extern char **D_00160374;
+extern char **show_help_text_0;
+extern char **level_text;
 extern char **D_00160398;
 extern char **D_0016039c;
 extern Event D_001549d0[];
@@ -382,10 +382,10 @@ void show_help_page(u32 page, u32 sub)
     set_mouse_mode(MM_HELP);
     switch (page) {
     case 0:
-        set_help_text(2, -1, -1, &D_0016037c[statvar.f4df[sub]]);
+        set_help_text(2, -1, -1, &show_help_text_0[statvar.f4df[sub]]);
         break;
     case 1:
-        set_help_text(2, -1, -1, &D_00160374[statvar.f51d[sub]]);
+        set_help_text(2, -1, -1, &level_text[statvar.f51d[sub]]);
         break;
     case 2: {
         char buf[500];

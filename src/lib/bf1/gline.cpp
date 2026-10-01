@@ -2,7 +2,7 @@
 
 extern "C" {
 
-void fn_000ca028(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
+void draw_b_line(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour);
 
 int abs(int n);
 #pragma intrinsic(abs)
@@ -174,12 +174,12 @@ u8 fn_000c9be0(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
         x2 -= shift;
         clipped = 1;
     }
-    fn_000ca028(x1, y1, x2, y2, colour);
+    draw_b_line(x1, y1, x2, y2, colour);
     return clipped;
 }
 
 // FUNCTION: 0x000ca028
-void fn_000ca028(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
+void draw_b_line(s32 x1, s32 y1, s32 x2, s32 y2, u8 colour)
 {
     s32 d;
     s32 x;

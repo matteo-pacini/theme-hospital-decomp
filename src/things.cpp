@@ -8,7 +8,7 @@ void staff_count(Thing *w);
 void object_count(const Thing *w);
 void update_icon_counter(Thing *const w);
 s16 person_goto_destination(Thing *w);
-void person_complex_retry(Thing *w);
+void play_complex_person_anim(Thing *w);
 s16 person_goto_object(Thing *w);
 void person_goto_queue(Thing *w);
 void peep_stuck(Thing *w);
@@ -68,13 +68,13 @@ void mayor_gone(Thing *w);
 void inspector_pauses(Thing *w);
 
 extern "C" {
-void fn_00015b68(Thing *w);
-void fn_0001673c(Thing *w);
-void fn_00017cb0(Thing *w);
-void fn_0003751c(Thing *w);
-void fn_00041a54(Thing *w);
-void fn_00041b08(Thing *w);
-void fn_00054870(Thing *w);
+void remove_node(Thing *w);
+void person_gone(Thing *w);
+void person_flys(Thing *w);
+void object_hell(Thing *w);
+void person_complex_retry(Thing *w);
+void person_wait_for_complex_slave(Thing *w);
+void two_peeps_interact(Thing *w);
 }
 
 // FUNCTION: 0x0005cc70
@@ -116,10 +116,10 @@ void process_things(Thing *first, Thing *last)
                 person_go_home(cur);
                 break;
             case 0xe:
-                fn_0001673c(cur);
+                person_gone(cur);
                 break;
             case PS_COMPLEX_RETRY:
-                person_complex_retry(cur);
+                play_complex_person_anim(cur);
                 break;
             case PS_ARRIVES_AT_DOOR:
                 person_arrives_at_door(cur);
@@ -134,7 +134,7 @@ void process_things(Thing *first, Thing *last)
                 person_entertains_themself(cur);
                 break;
             case 0x1a:
-                fn_00041b08(cur);
+                person_wait_for_complex_slave(cur);
                 break;
             case 0x1c:
                 break;
@@ -142,7 +142,7 @@ void process_things(Thing *first, Thing *last)
             case 0x42:
                 break;
             case 0x22:
-                fn_00054870(cur);
+                two_peeps_interact(cur);
                 break;
             case PS_GOTO_QUEUE:
                 person_goto_queue(cur);
@@ -157,7 +157,7 @@ void process_things(Thing *first, Thing *last)
                 nav_debug_state(cur);
                 break;
             case 0x2a:
-                fn_00041a54(cur);
+                person_complex_retry(cur);
                 break;
             case PS_IN_BED:
                 person_in_bed(cur);
@@ -172,7 +172,7 @@ void process_things(Thing *first, Thing *last)
                 person_dead(cur);
                 break;
             case 0x34:
-                fn_00017cb0(cur);
+                person_flys(cur);
                 break;
             case PS_IN_BOGS:
                 person_in_bogs(cur);
@@ -240,7 +240,7 @@ void process_things(Thing *first, Thing *last)
             case 0x18:
                 break;
             case 0x1a:
-                fn_00054870(cur);
+                two_peeps_interact(cur);
                 break;
             case SS_DOCTOR_EXAMINES:
                 doctor_carries_out_examination(cur);
@@ -298,10 +298,10 @@ void process_things(Thing *first, Thing *last)
                 staff_wanders(cur);
                 break;
             case SS_PROCESS_COMPLEX:
-                process_staff_complex(cur);
+                evacuate_staff(cur);
                 break;
             case 0x38:
-                fn_00015b68(cur);
+                remove_node(cur);
                 cur->state = SS_APPLICANT;
                 cur->hire_time = actual_game_turn;
                 gamevar.f6[cur->subtype]++;
@@ -355,7 +355,7 @@ void process_things(Thing *first, Thing *last)
             case 0x12:
                 break;
             case 6:
-                fn_0003751c(cur);
+                object_hell(cur);
                 break;
             case OS_PLANT_AGES:
                 plant_ages(cur);

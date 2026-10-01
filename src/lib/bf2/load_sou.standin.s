@@ -214,7 +214,7 @@
     jne .L000f01be
     call "StopAllSamples_"
     mov edx, 2
-    .byte 0xb8; .long _D_0018d4c4  # mov eax, 0x6d4c4
+    .byte 0xb8; .long _full_sound_data_path  # mov eax, 0x6d4c4
     call "LbFileOpen_"
     mov ecx, eax
     mov esi, eax
@@ -250,7 +250,7 @@
     mov dword ptr [esp + 0x18], 8
     jmp .L000f0125
 .L000f0073:
-    .byte 0xb8; .long _D_0018d4c4  # mov eax, 0x6d4c4
+    .byte 0xb8; .long _full_sound_data_path  # mov eax, 0x6d4c4
     call "LbFileLength_"
     lea edx, [eax - 4]
     xor ebx, ebx

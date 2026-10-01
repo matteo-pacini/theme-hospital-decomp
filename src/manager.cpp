@@ -59,9 +59,9 @@ void display_manager(void)
     if (lbDisplay.rleft_button) {
         if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, (s16)resvars.f3c_ManagerBoxp[31].x, (s16)resvars.f3c_ManagerBoxp[31].y,
                          (s16)resvars.f3c_ManagerBoxp[31].w, (s16)resvars.f3c_ManagerBoxp[31].h))
-            fn_00074220(0, 0x3b);
+            process_keys(0, 0x3b);
         if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0x15b, 0x198, 0x87, 0x45))
-            fn_00074220(0, 0x14);
+            process_keys(0, 0x14);
     }
     lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = lbDisplay.rright_button = 0;
     lbDisplay.draw_flags = 0;

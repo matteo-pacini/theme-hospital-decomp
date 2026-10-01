@@ -102,7 +102,7 @@ void init_zoom_boxes(s32 mask)
 }
 
 // FUNCTION: 0x000b8b50
-extern "C" s32 fn_000b8b50(GlassBox *box, ZoomBox *zoom)
+extern "C" s32 glass_box_matches_zoom(GlassBox *box, ZoomBox *zoom)
 {
     if (box->x != zoom->to[0])
         return 0;
@@ -126,7 +126,7 @@ s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay)
     }
     if (i < 0x2e) {
         ZoomBoxes[i].active = 1;
-        if (fn_000b8b50(box, &ZoomBoxes[i]))
+        if (glass_box_matches_zoom(box, &ZoomBoxes[i]))
             return i;
         ZoomBoxes[i].f1 = 0;
         ZoomBoxes[i].f2 = box->f10;

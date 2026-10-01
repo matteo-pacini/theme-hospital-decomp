@@ -11,8 +11,8 @@ void join_queue(Thing *w, RoomInfo *room);
 void reaper_calls_victim(Thing *w);
 void handyman_check_for_litter(Thing *w);
 void staff_nav_failure(Thing *w);
-extern "C" void fn_00041c0c(Thing *w);
-extern "C" void fn_000444e0(Thing *w);
+extern "C" void fail_staff_complex(Thing *w);
+extern "C" void nav_init(Thing *w);
 u16 find_free_object_anywhere(u16 id, u8 kind);
 u8 should_nurse_vaccinate(Thing *w);
 u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate);
@@ -189,7 +189,7 @@ void person_goto_queue(Thing *person)
                 }
                 if (fn_000cb2db(person->x.tile - room->unknown4 % 128) > othervar.fe
                     || fn_000cb2db(person->y.tile - room->unknown4 / 128) > othervar.fe) {
-                    fn_0004195c(person, room->unknown4);
+                    set_destination_coords(person, room->unknown4);
                     person->countdown = 0;
                     return;
                 }
@@ -290,7 +290,7 @@ s16 staff_goto_object(Thing *employee)
         switch (dir) {
         case 4:
             employee->dest_room = 0;
-            fn_0003e724(employee);
+            process_staff_complex(employee);
             return 0;
         case -1:
             PLAY_FRAME(employee, staff_anim_starts[employee->subtype].unknownA);
@@ -301,7 +301,7 @@ s16 staff_goto_object(Thing *employee)
             return 0;
         case -3:
             if (employee->resume_state)
-                fn_00041c0c(employee);
+                fail_staff_complex(employee);
             else
                 staff_nav_failure(employee);
             return 0;
@@ -347,7 +347,7 @@ u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate)
     employee->dest_x += dx;
     employee->dest_y += dy;
     PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
-    fn_000444e0(employee);
+    nav_init(employee);
     employee->countdown = 1;
     employee->substate = substate;
     return 1;

@@ -5,7 +5,7 @@ extern u8 fade_started;
 extern "C" {
 extern u8 D_00189ad4[];
 extern u8 D_001897d4[];
-extern s32 D_00189dd4;
+extern s32 fade_count;
 
 int LbScreenWaitVbi(void);
 int abs(int n);
@@ -29,10 +29,10 @@ s32 LbPaletteFade(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
             to_pal = D_001897d4;
             memset(to_pal, 0, 768);
         }
-        for (D_00189dd4 = 0; D_00189dd4 <= fade_steps; D_00189dd4++) {
+        for (fade_count = 0; fade_count <= fade_steps; fade_count++) {
             for (i = 0; i < 768; i++) {
                 diff = to_pal[i] - D_00189ad4[i];
-                palette[i] = diff * D_00189dd4 / (s16)fade_steps + D_00189ad4[i];
+                palette[i] = diff * fade_count / (s16)fade_steps + D_00189ad4[i];
             }
             LbScreenWaitVbi();
             LbPaletteSet(palette);
@@ -40,26 +40,26 @@ s32 LbPaletteFade(u8 *to_pal, u8 fade_steps, TbPaletteFadeFlag flag)
         fade_started = 0;
     } else {
         if (!fade_started) {
-            D_00189dd4 = 0;
+            fade_count = 0;
             fade_started = 1;
             LbPaletteGet(D_00189ad4);
             if (!to_pal)
                 memset(D_001897d4, 0, 768);
         } else {
-            D_00189dd4++;
-            if (fade_steps == D_00189dd4)
+            fade_count++;
+            if (fade_steps == fade_count)
                 fade_started = 0;
         }
         if (!to_pal)
             to_pal = D_001897d4;
         for (i = 0; i < 768; i++) {
             diff = to_pal[i] - D_00189ad4[i];
-            palette[i] = diff * D_00189dd4 / fade_steps + D_00189ad4[i];
+            palette[i] = diff * fade_count / fade_steps + D_00189ad4[i];
         }
         LbScreenWaitVbi();
         LbPaletteSet(palette);
     }
-    return D_00189dd4;
+    return fade_count;
 }
 
 // FUNCTION: 0x000c95f8

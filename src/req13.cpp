@@ -80,7 +80,7 @@ void close_yes_no_requester(u8 reopen)
         window.unknown2eb = 0;
         if (reopen && othervar.f9c3 != 0x63) {
             crequester.unknown2 = othervar.f9c3;
-            fn_0001bc94(crequester.unknown2, 1);
+            open_requester(crequester.unknown2, 1);
             set_mouse_mode(othervar.f9c4);
         }
     }
