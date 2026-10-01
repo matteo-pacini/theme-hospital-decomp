@@ -19,9 +19,9 @@ extern volatile long keybufferout;
 extern void (__interrupt __far *myOldInt)();
 
 // FUNCTION: 0x00074220
-void fn_00074220(u8 a, u8 b)
+void fn_00074220(u8 shift, u8 key)
 {
-    fn_0007424c(a, b);
+    fn_0007424c(shift, key);
 }
 
 
@@ -338,7 +338,7 @@ s32 SWIKeyboardClose(void)
 void __interrupt __far myKInt(void)
 {
     u32 key;
-    s32 ctrl;
+    s32 port61;
 
     lbInkey = fn_000cd1bf(0x60);
     if (D_0016041c == 0xe0) {
@@ -374,10 +374,10 @@ void __interrupt __far myKInt(void)
     if (lbKeyOn[key])
         lbKeyOn[key] |= D_0018978d;
     key = (s16)fn_000cd1bf(0x61);
-    ctrl = key;
+    port61 = key;
     key |= 0x80;
     fn_000cd1c7(0x61, key);
-    fn_000cd1c7(0x61, ctrl);
+    fn_000cd1c7(0x61, port61);
     if (!(lbInkey >= 0x80 || D_0018978e)) {
         D_0018978e = lbInkey;
         D_0018978f = D_0018978d;

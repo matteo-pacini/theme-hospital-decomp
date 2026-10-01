@@ -30,7 +30,7 @@ extern EmergencyDef D_0015fc3c[];
 u32 check_emergency_criteria(void);
 void setup_next_emergency(void);
 void setup_emergency_stats(u16 call, u8 owner);
-u16 summon_vehicle(u16 owner, u8 a, u16 b, u16 c, u16 d);
+u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim);
 u32 old_newrand(void);
 
 
@@ -44,48 +44,48 @@ void try_to_generate_emergency(void)
     s32 found;
     s32 i;
     s32 j;
-    AllHosps *h;
-    s32 n;
+    AllHosps *hosp;
+    s32 hosp_count;
 
     found = 0;
-    n = 1;
+    hosp_count = 1;
     if (statvar.unknownfd > 1)
-        n = 4;
-    for (i = 0; i < n; i++) {
+        hosp_count = 4;
+    for (i = 0; i < hosp_count; i++) {
         if (statvar.unknownfd <= 1 || D_001609c4[i].active != 0 || 0) {
-            h = &allhosps[i];
-            if (h->f1e2s == 5) {
-                h->f1df = summon_vehicle(i, 0, allhosps[i].f1d7 + 0x80, 0x4cc, 0x7a7);
-                if (h->f1df) {
-                    h->f1e2 = 3;
-                    h->f1e1 = 0;
+            hosp = &allhosps[i];
+            if (hosp->f1e2s == 5) {
+                hosp->f1df = summon_vehicle(i, 0, allhosps[i].f1d7 + 0x80, 0x4cc, 0x7a7);
+                if (hosp->f1df) {
+                    hosp->f1e2 = 3;
+                    hosp->f1e1 = 0;
                 } else {
-                    h->f1e3 = 0;
-                    h->f1e2 = 0;
+                    hosp->f1e3 = 0;
+                    hosp->f1e2 = 0;
                 }
             }
         }
     }
     if (check_emergency_criteria()) {
-        for (j = 0; j < n; j++) {
+        for (j = 0; j < hosp_count; j++) {
             if (statvar.unknownfd <= 1 || D_001609c4[j].active != 0 || 0) {
                 if (allhosps[j].rooms[gamevar.f124].unknown1D == 1)
                     found = 1;
             }
         }
         if (found) {
-            for (j = 0; j < n; j++) {
+            for (j = 0; j < hosp_count; j++) {
                 if (statvar.unknownfd <= 1 || D_001609c4[j].active != 0 || 0)
                     setup_emergency_stats(make_a_playercall(2, 0, 0x14, j), j);
             }
         }
         setup_next_emergency();
     }
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < hosp_count; i++) {
         if (statvar.unknownfd <= 1 || D_001609c4[i].active != 0 || 0) {
-            h = &allhosps[i];
-            if (h->f1e2s > 5)
-                h->f1e2--;
+            hosp = &allhosps[i];
+            if (hosp->f1e2s > 5)
+                hosp->f1e2--;
         }
     }
 }
@@ -94,15 +94,15 @@ void try_to_generate_emergency(void)
 u32 check_emergency_criteria(void)
 {
     u8 i;
-    s32 n;
+    s32 hosp_count;
 
-    n = 1;
+    hosp_count = 1;
     if (statvar.unknownfd > 1)
-        n = 4;
+        hosp_count = 4;
     if (statvar.unknownfd <= 1 && display_mode == 9 && D_00158190 == 5)
         return 0;
     if (actual_game_turn >= gamevar.f11d && gamevar.f123) {
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < hosp_count; i++) {
             if (statvar.unknownfd <= 1 || D_001609c4[i].active != 0 || 0) {
                 if (check_playercall(3, 0, i))
                     return 0;
@@ -171,19 +171,19 @@ void setup_emergency_stats(u16 call, u8 owner)
 // FUNCTION: 0x000af510
 void give_emergency_stats(u16 call, u8 owner)
 {
-    AllHosps *h;
+    AllHosps *hosp;
     u32 i;
 
-    h = &allhosps[owner];
+    hosp = &allhosps[owner];
     for (i = 0; i < 4; i++) {
         if (gamevar.ffd[i].call == call && gamevar.ffd[i].used != 0)
             break;
     }
-    h->f1e4 = gamevar.ffd[i].illness;
-    h->f1e6 = gamevar.ffd[i].count;
-    h->f1e3 = h->f1e6;
-    h->f1dd = gamevar.ffd[i].f2;
-    h->f1e8 = gamevar.ffd[i].f7;
+    hosp->f1e4 = gamevar.ffd[i].illness;
+    hosp->f1e6 = gamevar.ffd[i].count;
+    hosp->f1e3 = hosp->f1e6;
+    hosp->f1dd = gamevar.ffd[i].f2;
+    hosp->f1e8 = gamevar.ffd[i].f7;
     gamevar.ffd[i].used = 0;
     gamevar.f13e--;
 }
@@ -192,12 +192,12 @@ void give_emergency_stats(u16 call, u8 owner)
 u32 announce_emergency(u8 owner, char **strs)
 {
     s32 width;
-    s32 room;
-    s32 staff;
+    s32 missing_room;
+    s32 missing_staff;
     s32 cured;
     s32 count;
-    s32 v;
-    AllHosps *h;
+    s32 line_height;
+    AllHosps *hosp;
     u16 call;
     s32 i;
     s32 staff_count;
@@ -207,19 +207,19 @@ u32 announce_emergency(u8 owner, char **strs)
     Expertise *exp;
     char name[200];
     char text[1000];
-    u16 a;
-    u16 b;
+    u16 x;
+    u16 y;
     char buf[200];
 
     width = 400;
-    room = 0;
-    staff = 0;
+    missing_room = 0;
+    missing_staff = 0;
     cured = 0;
     count = 0;
     char new_line[] = "\n";
-    v = lbFontPtr ? lbFontPtr[34].height : 0;
-    h = &allhosps[owner];
-    if (h->f1e2s != 0)
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    hosp = &allhosps[owner];
+    if (hosp->f1e2s != 0)
         available_buttons &= ~1;
     call = D_0015f5c2[owner].call;
     for (i = 0; i < 4; i++) {
@@ -234,21 +234,21 @@ u32 announce_emergency(u8 owner, char **strs)
     if (allhosps[owner].rooms[illness].unknown1C == 1) {
         cured = 1;
         if (exp->kind == 0x27)
-            count = h->rooms[illness].unknown1B;
+            count = hosp->rooms[illness].unknown1B;
     } else {
         if (listhead[owner].rooms[exp->category] == 0 && room_available(exp->category))
-            room = exp->category;
+            missing_room = exp->category;
         for (i = 0; i < 9; i++) {
             if ((exp->unknown0 & (1 << i)) && listhead[owner].staff[i] == 0) {
-                staff = i;
+                missing_staff = i;
                 break;
             }
         }
     }
     fn_000bbff0(name, strs[saferand() % 4 + 9]);
     text[0] = 0;
-    a = 0;
-    b = 0;
+    x = 0;
+    y = 0;
     sprintf(buf, strs[0], name);
     fn_000c93bf(text, buf);
     sprintf(buf, strs[1], patients, D_001602a4[illness]);
@@ -259,12 +259,12 @@ u32 announce_emergency(u8 owner, char **strs)
             sprintf(buf, strs[2], D_001602a4[illness], count);
         else
             sprintf(buf, strs[3]);
-    } else if (room && staff) {
-        sprintf(buf, strs[4], D_001602cc[rooms[room].id], D_00160318[staff]);
-    } else if (room) {
-        sprintf(buf, strs[5], D_001602cc[rooms[room].id]);
-    } else if (staff) {
-        sprintf(buf, strs[6], D_00160318[staff]);
+    } else if (missing_room && missing_staff) {
+        sprintf(buf, strs[4], D_001602cc[rooms[missing_room].id], D_00160318[missing_staff]);
+    } else if (missing_room) {
+        sprintf(buf, strs[5], D_001602cc[rooms[missing_room].id]);
+    } else if (missing_staff) {
+        sprintf(buf, strs[6], D_00160318[missing_staff]);
     } else {
         sprintf(buf, strs[7]);
     }
@@ -273,7 +273,7 @@ u32 announce_emergency(u8 owner, char **strs)
     sprintf(buf, strs[8], bonus);
     fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
-    LbTextDraw(a, b, text);
+    LbTextDraw(x, y, text);
     return 0;
 }
 
@@ -296,31 +296,31 @@ void process_emergency_start_buttons(u8 button)
 void emergency_over(u8 owner, char **strs)
 {
     char new_line[] = "\n";
-    s32 v;
-    AllHosps *h;
+    s32 line_height;
+    AllHosps *hosp;
     s32 bonus;
     s32 total;
     char text[2000];
-    u16 a;
-    u16 b;
+    u16 x;
+    u16 y;
     char buf[200];
 
-    v = lbFontPtr ? lbFontPtr[34].height : 0;
-    h = &allhosps[owner];
-    if (h->f1e5 * 100 / h->f1e6 >= h->f1e8)
-        bonus = h->f1dd * h->f1e5;
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    hosp = &allhosps[owner];
+    if (hosp->f1e5 * 100 / hosp->f1e6 >= hosp->f1e8)
+        bonus = hosp->f1dd * hosp->f1e5;
     else
         bonus = 0;
-    total = h->f1dd * h->f1e6;
+    total = hosp->f1dd * hosp->f1e6;
     text[0] = 0;
-    a = 0;
-    b = 0;
+    x = 0;
+    y = 0;
     sprintf(buf, strs[0], total, bonus);
     fn_000c93bf(text, buf);
-    sprintf(buf, strs[1], h->f1e5, h->f1e6);
+    sprintf(buf, strs[1], hosp->f1e5, hosp->f1e6);
     fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf);
-    LbTextDraw(a, b, text);
+    LbTextDraw(x, y, text);
 }
 
 // FUNCTION: 0x000afcd0
@@ -334,86 +334,86 @@ void process_emergency_end_buttons(u8 button)
 }
 
 // FUNCTION: 0x000afd0c
-u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 e)
+u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim)
 {
-    Thing *w;
+    Thing *vehicle;
 
-    w = allocate_thing(0x19);
-    if (w) {
-        w->renderer = 0x10;
-        w->subtype = kind;
-        w->owner = owner;
-        w->x.tile = cell % 128;
-        w->y.tile = cell / 128;
-        w->x.frac = 0x80;
-        w->y.frac = 0x80;
-        w->anim_speed = 2;
-        w->unknown17 = 1;
-        insert_node(w, w->x, w->y);
-        w->unknown18 = 8;
-        w->f37 = 0x190;
-        w->sprite = start[anim].frame;
-        w->palette = start[anim].flags;
-        w->kind = 2;
-        w->f39 = create_shadow(cell, w - thing, owner, e);
+    vehicle = allocate_thing(0x19);
+    if (vehicle) {
+        vehicle->renderer = 0x10;
+        vehicle->subtype = kind;
+        vehicle->owner = owner;
+        vehicle->x.tile = cell % 128;
+        vehicle->y.tile = cell / 128;
+        vehicle->x.frac = 0x80;
+        vehicle->y.frac = 0x80;
+        vehicle->anim_speed = 2;
+        vehicle->unknown17 = 1;
+        insert_node(vehicle, vehicle->x, vehicle->y);
+        vehicle->unknown18 = 8;
+        vehicle->f37 = 0x190;
+        vehicle->sprite = start[anim].frame;
+        vehicle->palette = start[anim].flags;
+        vehicle->kind = 2;
+        vehicle->f39 = create_shadow(cell, vehicle - thing, owner, shadow_anim);
         if (owner == player) {
             if (anim == 0x792)
                 play_ambient(saferand() % 5 + 0xc7);
             else if (myhosp->f1e4 >= 0 && myhosp->f1e4 < 0x24)
                 play_ambient(myhosp->f1e4 + 0x1f);
         }
-        return w - thing;
+        return vehicle - thing;
     }
     return 0;
 }
 
 // FUNCTION: 0x000afef4
-void helicopter_lands(Thing *w)
+void helicopter_lands(Thing *heli)
 {
-    w->sprite = frame[w->sprite].next;
-    if (w->f37 > 0) {
-        w->f37 -= w->unknown18;
+    heli->sprite = frame[heli->sprite].next;
+    if (heli->f37 > 0) {
+        heli->f37 -= heli->unknown18;
     } else {
-        switch (w->subtype) {
+        switch (heli->subtype) {
         case 0:
-            w->f37 = 0;
-            w->kind = 4;
-            allhosps[w->owner].f1e1 = 1;
-            if (w->owner == player)
+            heli->f37 = 0;
+            heli->kind = 4;
+            allhosps[heli->owner].f1e1 = 1;
+            if (heli->owner == player)
                 advisor.f127 = 1;
             break;
         case 1:
-            w->sprite = start[0x7a8].frame;
-            w->palette = start[0x7a8].flags;
-            w->f37 = 0;
-            w->kind = 8;
+            heli->sprite = start[0x7a8].frame;
+            heli->palette = start[0x7a8].flags;
+            heli->f37 = 0;
+            heli->kind = 8;
             break;
         }
     }
 }
 
 // FUNCTION: 0x000b0000
-void helicopter_leaves(Thing *w)
+void helicopter_leaves(Thing *heli)
 {
-    AllHosps *h;
+    AllHosps *hosp;
 
-    h = &allhosps[w->owner];
-    w->sprite = frame[w->sprite].next;
-    if (w->f37 < 0x190) {
-        w->f37 += w->unknown18;
+    hosp = &allhosps[heli->owner];
+    heli->sprite = frame[heli->sprite].next;
+    if (heli->f37 < 0x190) {
+        heli->f37 += heli->unknown18;
     } else {
-        switch (w->subtype) {
+        switch (heli->subtype) {
         case 0:
-            h->f1e1 = 0;
-            h->f1df = 0;
+            hosp->f1e1 = 0;
+            hosp->f1df = 0;
             break;
         case 1:
             gamevar.ff5 = 0;
             gamevar.ff7 = 0;
             break;
         }
-        if (w->f39)
-            remove_thing(&thing[(u16)w->f39]);
-        remove_thing(w);
+        if (heli->f39)
+            remove_thing(&thing[(u16)heli->f39]);
+        remove_thing(heli);
     }
 }

@@ -144,23 +144,23 @@ _CMemory::~_CMemory()
 // FUNCTION: 0x000baf94
 void *_CMemory::Alloc(u32 size, u32 low)
 {
-    _CMemoryBlock *b;
+    _CMemoryBlock *block;
 
     if (size == 0)
         return 0;
     if (free_list == 0)
         return 0;
-    b = free_list;
+    block = free_list;
     if (low) {
         u32 seg;
 
         seg = dos_alloc(size);
         if (seg == 0)
             return 0;
-        b->seg = seg >> 16;
-        b->ptr = (void *)((seg & 0xffff) << 4);
-        b->size = size;
-        memset(b->ptr, 0, size);
+        block->seg = seg >> 16;
+        block->ptr = (void *)((seg & 0xffff) << 4);
+        block->size = size;
+        memset(block->ptr, 0, size);
     } else {
         void *p;
 
@@ -168,14 +168,14 @@ void *_CMemory::Alloc(u32 size, u32 low)
         if (p == 0)
             return 0;
         memset(p, 0, ((size + 31) >> 5) << 5);
-        b->seg = 0;
-        b->ptr = p;
-        b->size = size;
+        block->seg = 0;
+        block->ptr = p;
+        block->size = size;
     }
     free_list = free_list->next;
-    b->next = used_list;
-    used_list = b;
-    return b->ptr;
+    block->next = used_list;
+    used_list = block;
+    return block->ptr;
 }
 
 extern "C" {
@@ -190,31 +190,31 @@ void fn_000bb0d0(_CMemory *mem)
 // FUNCTION: 0x000bb10c
 u32 fn_000bb10c(_CMemory *mem, void *p)
 {
-    _CMemoryBlock *b;
+    _CMemoryBlock *block;
     _CMemoryBlock *prev;
 
     if (p == 0)
         return 1;
-    b = mem->used_list;
+    block = mem->used_list;
     prev = mem->used_list;
-    while (b) {
-        if (b->ptr == p)
+    while (block) {
+        if (block->ptr == p)
             break;
-        prev = b;
-        b = b->next;
+        prev = block;
+        block = block->next;
     }
-    if (b == 0)
+    if (block == 0)
         return 0;
-    if (b->seg)
-        dos_free(b->seg);
+    if (block->seg)
+        dos_free(block->seg);
     else
-        free(b->ptr);
-    if (b == mem->used_list)
-        mem->used_list = b->next;
+        free(block->ptr);
+    if (block == mem->used_list)
+        mem->used_list = block->next;
     else
-        prev->next = b->next;
-    b->next = mem->free_list;
-    mem->free_list = b;
+        prev->next = block->next;
+    block->next = mem->free_list;
+    mem->free_list = block;
     return 1;
 }
 

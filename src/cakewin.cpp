@@ -26,11 +26,11 @@ extern s16 mcurx;
 extern s16 mcury;
 
 void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y);
-u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
-void set_window_animating(const u8 n, const u8 a, s32 b, const s32 x0, const s32 y0, const s32 x1, const s32 y1);
-void animate_single_window(const u8 n);
-void remove_window_from_list(const u8 n);
-void copy_window_from_a_to_b(const u8 a, const u8 b);
+u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_margin);
+void set_window_animating(const u8 win, const u8 a, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1);
+void animate_single_window(const u8 win);
+void remove_window_from_list(const u8 win);
+void copy_window_from_a_to_b(const u8 from, const u8 to);
 void remove_window_from_screen(s32 x, s32 y, s32 w, s32 h);
 void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32 wy0, const s32 wx1, const s32 wy1);
 
@@ -38,21 +38,21 @@ void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s3
 void process_tracking_windows(void)
 {
     u8 i;
-    Thing *w;
+    Thing *tracked;
 
     for (i = 0; i < 4; i++) {
         if (othervar.f34[i]) {
-            w = &thing[D_001581b2[i].value];
-            give_absolute_xy_of_cell_at_column_row(w->x.tile, w->y.tile);
+            tracked = &thing[D_001581b2[i].value];
+            give_absolute_xy_of_cell_at_column_row(tracked->x.tile, tracked->y.tile);
             if (!check_if_point_beyond_scroll_limit(
                     info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558
-                        + (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16),
-                    (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+                        + (resvars.f0 == SCREEN_MODE_13 ? ((tracked->x.frac - tracked->y.frac) >> 3) + 32 : ((tracked->x.frac - tracked->y.frac) >> 4) + 16),
+                    (resvars.f0 == SCREEN_MODE_13 ? (tracked->y.frac + tracked->x.frac) >> 4 : (tracked->y.frac + tracked->x.frac) >> 5)
                         + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown55c),
                     1)) {
-                window.f0[othervar.f34[i]] = (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16)
+                window.f0[othervar.f34[i]] = (resvars.f0 == SCREEN_MODE_13 ? ((tracked->x.frac - tracked->y.frac) >> 3) + 32 : ((tracked->x.frac - tracked->y.frac) >> 4) + 16)
                     + (info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558);
-                window.fc[othervar.f34[i]] = (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+                window.fc[othervar.f34[i]] = (resvars.f0 == SCREEN_MODE_13 ? (tracked->y.frac + tracked->x.frac) >> 4 : (tracked->y.frac + tracked->x.frac) >> 5)
                     + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown55c);
             } else {
                 close_irequesters();
@@ -61,17 +61,17 @@ void process_tracking_windows(void)
         }
     }
     if (othervar.f38) {
-        w = &thing[D_001581b2[othervar.f38].value];
-        give_absolute_xy_of_cell_at_column_row(w->x.tile, w->y.tile);
+        tracked = &thing[D_001581b2[othervar.f38].value];
+        give_absolute_xy_of_cell_at_column_row(tracked->x.tile, tracked->y.tile);
         if (!check_if_point_beyond_scroll_limit(
                 info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558
-                    + (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16),
-                (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+                    + (resvars.f0 == SCREEN_MODE_13 ? ((tracked->x.frac - tracked->y.frac) >> 3) + 32 : ((tracked->x.frac - tracked->y.frac) >> 4) + 16),
+                (resvars.f0 == SCREEN_MODE_13 ? (tracked->y.frac + tracked->x.frac) >> 4 : (tracked->y.frac + tracked->x.frac) >> 5)
                     + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown558),
                 0)) {
-            window.f0[0] = (resvars.f0 == SCREEN_MODE_13 ? ((w->x.frac - w->y.frac) >> 3) + 32 : ((w->x.frac - w->y.frac) >> 4) + 16)
+            window.f0[0] = (resvars.f0 == SCREEN_MODE_13 ? ((tracked->x.frac - tracked->y.frac) >> 3) + 32 : ((tracked->x.frac - tracked->y.frac) >> 4) + 16)
                 + (info.unknown54 - resvars.f1c_ScrollLayoutp->unknown558);
-            window.fc[0] = (resvars.f0 == SCREEN_MODE_13 ? (w->y.frac + w->x.frac) >> 4 : (w->y.frac + w->x.frac) >> 5)
+            window.fc[0] = (resvars.f0 == SCREEN_MODE_13 ? (tracked->y.frac + tracked->x.frac) >> 4 : (tracked->y.frac + tracked->x.frac) >> 5)
                 + (info.unknown58 - resvars.f1c_ScrollLayoutp->unknown55c);
         } else {
             close_irequesters();
@@ -111,18 +111,18 @@ void set_map_cur_and_mcur_x_and_y(void)
 }
 
 // FUNCTION: 0x000abb80
-void goto_cell_in_window(const u8 a, const s32 b)
+void goto_cell_in_window(const u8 win, const s32 cell)
 {
-    goto_column_row_in_window(a, b % 128, b / 128);
+    goto_column_row_in_window(win, cell % 128, cell / 128);
 }
 
 // FUNCTION: 0x000abbc8
-void goto_column_row_in_window(const u8 a, const s32 x, const s32 y)
+void goto_column_row_in_window(const u8 win, const s32 x, const s32 y)
 {
     if (x >= 0 && x < 128 && y >= 0 && y < 128) {
         give_absolute_xy_of_cell_at_column_row(x, y);
-        window.f0[a] = info.unknown54;
-        window.fc[a] = info.unknown58;
+        window.f0[win] = info.unknown54;
+        window.fc[win] = info.unknown58;
     }
 }
 
@@ -213,7 +213,7 @@ void move_windows(void)
 }
 
 // FUNCTION: 0x000ac264
-void find_cell_at_point(const u8 a, const s32 x, const s32 y)
+void find_cell_at_point(const u8 win, const s32 x, const s32 y)
 {
     s32 area;
     s32 u;
@@ -222,22 +222,22 @@ void find_cell_at_point(const u8 a, const s32 x, const s32 y)
     s32 col;
 
     area = resvars.f4 * resvars.f3;
-    u = ((x + window.f0[a] - window.f90[a]) << 8) * resvars.f3;
-    v = ((y + window.fc[a] - window.f9c[a]) << 8) * resvars.f4;
+    u = ((x + window.f0[win] - window.f90[win]) << 8) * resvars.f3;
+    v = ((y + window.fc[win] - window.f9c[win]) << 8) * resvars.f4;
     row = (v - u) / area >> 8;
     col = (u + v) / area >> 8;
     info.unknown64 = col + (row << 7);
     info.unknown5c = col;
     info.unknown60 = row;
-    info.unknown54 = resvars.f4 * (col - row - 1) / 2 - window.f0[a] + window.f90[a];
-    info.unknown58 = resvars.f3 * (col + row + 2) / 2 - window.fc[a] + window.f9c[a];
+    info.unknown54 = resvars.f4 * (col - row - 1) / 2 - window.f0[win] + window.f90[win];
+    info.unknown58 = resvars.f3 * (col + row + 2) / 2 - window.fc[win] + window.f9c[win];
 }
 
 // FUNCTION: 0x000ac3c4
-void give_screen_xy_of_cell_at_column_row(const u8 a, const s32 x, const s32 y)
+void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y)
 {
-    info.unknown54 = resvars.f4 * (x - y - 1) / 2 - window.f0[a] + window.f90[a];
-    info.unknown58 = (x + y + 2) * resvars.f3 / 2 - window.fc[a] + window.f9c[a];
+    info.unknown54 = resvars.f4 * (x - y - 1) / 2 - window.f0[win] + window.f90[win];
+    info.unknown58 = (x + y + 2) * resvars.f3 / 2 - window.fc[win] + window.f9c[win];
 }
 
 // FUNCTION: 0x000ac464
@@ -248,7 +248,7 @@ void give_absolute_xy_of_cell_at_column_row(const s32 x, const s32 y)
 }
 
 // FUNCTION: 0x000ac4bc
-u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n)
+u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_margin)
 {
     s32 area;
     s32 u;
@@ -263,7 +263,7 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n)
     col = (u + v) / area >> 8;
     row = (v - u) / area >> 8;
     margin = 0;
-    if (n)
+    if (with_margin)
         margin = 10;
     if (col + margin < gamevar.f132 % 128 || col - margin >= gamevar.f134 % 128)
         return 1;
@@ -331,12 +331,12 @@ void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s3
 }
 
 // FUNCTION: 0x000ac78c
-void open_new_window(const u8 a, const u8 b, const u8 c, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
+void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
 {
-    s32 t0;
-    s32 t1;
-    s32 t2;
-    s32 t3;
+    s32 old_x0;
+    s32 old_y0;
+    s32 old_x1;
+    s32 old_y1;
 
     if (window.unknown2ec < 2) {
         window.unknown2ec++;
@@ -364,27 +364,27 @@ void open_new_window(const u8 a, const u8 b, const u8 c, const s32 x0, const s32
         window.f23c[window.unknown2ec - 1] = window.zone_y[window.unknown2ec - 1];
         window.f248[window.unknown2ec - 1] = window.zone_w[window.unknown2ec - 1];
         window.f254[window.unknown2ec - 1] = window.zone_h[window.unknown2ec - 1];
-        if (b == 0)
+        if (source == 0)
             set_window_animating(window.unknown2ec - 1, window.f2c0[window.unknown2ec - 1], window.f224[window.unknown2ec - 1],
                                  x0, y0, x1, y1);
-        else if (b == 1)
+        else if (source == 1)
             set_window_animating(window.unknown2ec - 1, window.f2c0[window.unknown2ec - 1], window.f224[window.unknown2ec - 1],
-                                 window.fe4[c], window.f134[c], window.f184[c], window.f1d4[c]);
+                                 window.fe4[preset], window.f134[preset], window.f184[preset], window.f1d4[preset]);
         if (window.unknown2ed == 1) {
             while (window.f224[window.unknown2ec - 1] > 0) {
-                t0 = window.zone_x[window.unknown2ec - 1];
-                t1 = window.zone_y[window.unknown2ec - 1];
-                t2 = window.zone_w[window.unknown2ec - 1];
-                t3 = window.zone_h[window.unknown2ec - 1];
+                old_x0 = window.zone_x[window.unknown2ec - 1];
+                old_y0 = window.zone_y[window.unknown2ec - 1];
+                old_x1 = window.zone_w[window.unknown2ec - 1];
+                old_y1 = window.zone_h[window.unknown2ec - 1];
                 animate_single_window(window.unknown2ec - 1);
                 find_biggest_window(window.zone_x[window.unknown2ec - 1], window.zone_y[window.unknown2ec - 1],
-                                    window.zone_w[window.unknown2ec - 1], window.zone_h[window.unknown2ec - 1], t0, t1, t2, t3);
+                                    window.zone_w[window.unknown2ec - 1], window.zone_h[window.unknown2ec - 1], old_x0, old_y0, old_x1, old_y1);
                 find_common_window(info.unknown68, info.unknown6c, info.unknown70, info.unknown74, window.unknown2c3,
                                    window.unknown2c7, window.unknown2cb, window.unknown2cf);
-                t0 = info.unknown68;
-                t1 = info.unknown6c;
-                t2 = info.unknown70;
-                t3 = info.unknown74;
+                old_x0 = info.unknown68;
+                old_y0 = info.unknown6c;
+                old_x1 = info.unknown70;
+                old_y1 = info.unknown74;
             }
         }
         window.unknown2eb = window.unknown2ec - 1;
@@ -392,21 +392,21 @@ void open_new_window(const u8 a, const u8 b, const u8 c, const s32 x0, const s32
 }
 
 // FUNCTION: 0x000acc4c
-void set_window_animating(const u8 n, const u8 a, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
+void set_window_animating(const u8 win, const u8 a, s32 steps, const s32 x0, const s32 y0, const s32 x1, const s32 y1)
 {
     if (steps == 0)
         steps = 1;
     if (x0 < x1 && y0 < y1 && steps > 0) {
-        window.f2c0[n] = a;
-        window.f224[n] = steps + 1;
-        window.f260[n] = x0;
-        window.f26c[n] = y0;
-        window.f278[n] = x1;
-        window.f284[n] = y1;
-        window.f290[n] = ((window.zone_x[n] - x0) << 16) / steps;
-        window.f29c[n] = ((window.zone_y[n] - y0) << 16) / steps;
-        window.f2a8[n] = ((window.zone_w[n] - x1) << 16) / steps;
-        window.f2b4[n] = ((window.zone_h[n] - y1) << 16) / steps;
+        window.f2c0[win] = a;
+        window.f224[win] = steps + 1;
+        window.f260[win] = x0;
+        window.f26c[win] = y0;
+        window.f278[win] = x1;
+        window.f284[win] = y1;
+        window.f290[win] = ((window.zone_x[win] - x0) << 16) / steps;
+        window.f29c[win] = ((window.zone_y[win] - y0) << 16) / steps;
+        window.f2a8[win] = ((window.zone_w[win] - x1) << 16) / steps;
+        window.f2b4[win] = ((window.zone_h[win] - y1) << 16) / steps;
     }
 }
 
@@ -447,81 +447,81 @@ void animate_windows(void)
 }
 
 // FUNCTION: 0x000ad034
-void animate_single_window(const u8 n)
+void animate_single_window(const u8 win)
 {
     s32 x;
     s32 y;
     s32 w;
     s32 h;
 
-    if (window.f224[n] > 0) {
-        window.f224[n]--;
-        window.zone_x[n] = (window.f290[n] * window.f224[n] >> 16) + window.f260[n];
-        window.zone_y[n] = (window.f29c[n] * window.f224[n] >> 16) + window.f26c[n];
-        window.zone_w[n] = window.f278[n] + (window.f2a8[n] * window.f224[n] >> 16);
-        window.zone_h[n] = window.f284[n] + (window.f2b4[n] * window.f224[n] >> 16);
-        window.f90[n] = (window.zone_x[n] + window.zone_w[n]) / 2;
-        window.f9c[n] = (window.zone_y[n] + window.zone_h[n]) / 2;
-    } else if (window.f2c0[n] == 2) {
-        x = window.zone_x[n];
-        y = window.zone_y[n];
-        w = window.zone_w[n];
-        h = window.zone_h[n];
-        window.f2c0[n] = 0;
-        remove_window_from_list(n);
-        if ((int)window.unknown2eb > (int)n)
+    if (window.f224[win] > 0) {
+        window.f224[win]--;
+        window.zone_x[win] = (window.f290[win] * window.f224[win] >> 16) + window.f260[win];
+        window.zone_y[win] = (window.f29c[win] * window.f224[win] >> 16) + window.f26c[win];
+        window.zone_w[win] = window.f278[win] + (window.f2a8[win] * window.f224[win] >> 16);
+        window.zone_h[win] = window.f284[win] + (window.f2b4[win] * window.f224[win] >> 16);
+        window.f90[win] = (window.zone_x[win] + window.zone_w[win]) / 2;
+        window.f9c[win] = (window.zone_y[win] + window.zone_h[win]) / 2;
+    } else if (window.f2c0[win] == 2) {
+        x = window.zone_x[win];
+        y = window.zone_y[win];
+        w = window.zone_w[win];
+        h = window.zone_h[win];
+        window.f2c0[win] = 0;
+        remove_window_from_list(win);
+        if ((int)window.unknown2eb > (int)win)
             window.unknown2eb--;
     } else {
-        window.f2c0[n] = 0;
+        window.f2c0[win] = 0;
     }
 }
 
 // FUNCTION: 0x000ad284
-void copy_window_from_a_to_b(const u8 a, const u8 b)
+void copy_window_from_a_to_b(const u8 from, const u8 to)
 {
-    window.f90[b] = window.f90[a];
-    window.f9c[b] = window.f9c[a];
-    window.zone_x[b] = window.zone_x[a];
-    window.zone_w[b] = window.zone_w[a];
-    window.zone_y[b] = window.zone_y[a];
-    window.zone_h[b] = window.zone_h[a];
-    window.f60[b] = window.f60[a];
-    window.f6c[b] = window.f6c[a];
-    window.f78[b] = window.f78[a];
-    window.f84[b] = window.f84[a];
-    window.fa8[b] = window.fa8[a];
-    window.fb4[b] = window.fb4[a];
-    window.fc0[b] = window.fc0[a];
-    window.fcc[b] = window.fcc[a];
-    window.f0[b] = window.f0[a];
-    window.fc[b] = window.fc[a];
-    window.f18[b] = window.f18[a];
-    window.f24[b] = window.f24[a];
-    window.fde[b] = window.fde[a];
-    window.f230[b] = window.f230[a];
-    window.f23c[b] = window.f23c[a];
-    window.f248[b] = window.f248[a];
-    window.f254[b] = window.f254[a];
-    window.f260[b] = window.f260[a];
-    window.f26c[b] = window.f26c[a];
-    window.f278[b] = window.f278[a];
-    window.f284[b] = window.f284[a];
-    window.f290[b] = window.f290[a];
-    window.f29c[b] = window.f29c[a];
-    window.f2a8[b] = window.f2a8[a];
-    window.f2b4[b] = window.f2b4[a];
-    window.f2c0[b] = window.f2c0[a];
-    window.f224[b] = window.f224[a];
+    window.f90[to] = window.f90[from];
+    window.f9c[to] = window.f9c[from];
+    window.zone_x[to] = window.zone_x[from];
+    window.zone_w[to] = window.zone_w[from];
+    window.zone_y[to] = window.zone_y[from];
+    window.zone_h[to] = window.zone_h[from];
+    window.f60[to] = window.f60[from];
+    window.f6c[to] = window.f6c[from];
+    window.f78[to] = window.f78[from];
+    window.f84[to] = window.f84[from];
+    window.fa8[to] = window.fa8[from];
+    window.fb4[to] = window.fb4[from];
+    window.fc0[to] = window.fc0[from];
+    window.fcc[to] = window.fcc[from];
+    window.f0[to] = window.f0[from];
+    window.fc[to] = window.fc[from];
+    window.f18[to] = window.f18[from];
+    window.f24[to] = window.f24[from];
+    window.fde[to] = window.fde[from];
+    window.f230[to] = window.f230[from];
+    window.f23c[to] = window.f23c[from];
+    window.f248[to] = window.f248[from];
+    window.f254[to] = window.f254[from];
+    window.f260[to] = window.f260[from];
+    window.f26c[to] = window.f26c[from];
+    window.f278[to] = window.f278[from];
+    window.f284[to] = window.f284[from];
+    window.f290[to] = window.f290[from];
+    window.f29c[to] = window.f29c[from];
+    window.f2a8[to] = window.f2a8[from];
+    window.f2b4[to] = window.f2b4[from];
+    window.f2c0[to] = window.f2c0[from];
+    window.f224[to] = window.f224[from];
 }
 
 // FUNCTION: 0x000ad6cc
-void remove_window_from_list(const u8 n)
+void remove_window_from_list(const u8 win)
 {
     u8 i;
 
     window.unknown2ec--;
-    if ((int)n < (int)window.unknown2ec) {
-        for (i = n; i < window.unknown2ec; i++)
+    if ((int)win < (int)window.unknown2ec) {
+        for (i = win; i < window.unknown2ec; i++)
             copy_window_from_a_to_b(i + 1, i);
     }
 }

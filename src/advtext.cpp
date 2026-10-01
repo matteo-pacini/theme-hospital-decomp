@@ -41,7 +41,7 @@ extern FrameBox D_001567b0;
 char *strncpy(char *dst, const char *src, u32 n);
 char *strncat(char *dst, const char *src, u32 n);
 void fn_000b2124(void);
-void fn_000b2178(u8 n);
+void fn_000b2178(u8 segments);
 }
 
 extern const u16 advisor_anims[];
@@ -97,28 +97,28 @@ void fn_000b2124(void)
 }
 
 // FUNCTION: 0x000b2178
-void fn_000b2178(u8 n)
+void fn_000b2178(u8 segments)
 {
     u32 max;
     u32 width;
     u8 lines;
-    char buf2[0x10e];
+    char wrapped[0x10e];
     char *out;
-    char buf1[0x118];
+    char text[0x118];
     char *p;
     char *brk;
     char *start;
 
-    max = n * resvars.f1c_AdvisorLayoutp->f4d8 + resvars.f1c_AdvisorLayoutp->f4e8 + resvars.f1c_AdvisorLayoutp->f4e0 - resvars.f1c_AdvisorLayoutp->f4c8 - resvars.f1c_AdvisorLayoutp->f4d0;
+    max = segments * resvars.f1c_AdvisorLayoutp->f4d8 + resvars.f1c_AdvisorLayoutp->f4e8 + resvars.f1c_AdvisorLayoutp->f4e0 - resvars.f1c_AdvisorLayoutp->f4c8 - resvars.f1c_AdvisorLayoutp->f4d0;
     width = 0;
     lines = 0;
-    out = buf2;
-    LbMemorySet(buf1, 0, 0x118);
-    LbMemorySet(buf2, 0, 0x10e);
-    fn_000bbff0(buf1, advisor.f10);
-    p = buf1;
-    brk = buf1;
-    start = buf1;
+    out = wrapped;
+    LbMemorySet(text, 0, 0x118);
+    LbMemorySet(wrapped, 0, 0x10e);
+    fn_000bbff0(text, advisor.f10);
+    p = text;
+    brk = text;
+    start = text;
     do {
         do {
             width += lbFontPtr ? lbFontPtr[(u8)*p - 0x1f].width : 0;
@@ -131,7 +131,7 @@ void fn_000b2178(u8 n)
         width = 0;
         lines++;
         if (lines == 1) {
-            strncpy(buf2, start, brk - start);
+            strncpy(wrapped, start, brk - start);
             out += brk - start;
         } else {
             strncat(out, start, brk - start);
@@ -145,12 +145,12 @@ void fn_000b2178(u8 n)
         }
     } while (lines < 3 && *p != '\0');
     if (!*p) {
-        fn_000bbff0(advisor.f10, buf2);
+        fn_000bbff0(advisor.f10, wrapped);
         if (lines < 3)
             advisor.f122 = lines;
         else
             advisor.f122 = lines;
-        advisor.f123 = n - resvars.f16;
+        advisor.f123 = segments - resvars.f16;
     }
 }
 

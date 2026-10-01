@@ -547,7 +547,7 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
     s32 old_height;
     Thing *o;
     CompFrame *f;
-    u8 h;
+    u8 split_height;
     u8 rest;
 
     old_top = lbDisplay.graphics_window_y;
@@ -557,17 +557,17 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         if (w->subtype == 0xe)
             draw_special_id_frame(o, x, y);
         f = &frame[w->sprite];
-        h = o->unknown103;
-        rest = f->length - h;
+        split_height = o->unknown103;
+        rest = f->length - split_height;
         D_001567b0.x = D_001567b0.y = 999;
         {
-            s32 top = y - h;
+            s32 top = y - split_height;
 
             lbDisplay.graphics_window_height = top - lbDisplay.graphics_window_y > lbDisplay.graphics_window_height ? lbDisplay.graphics_window_height : top - lbDisplay.graphics_window_y;
         }
         full_draw_frame(w, w->sprite, x, y, 0, 0, w->palette);
         {
-            s32 top = y - h;
+            s32 top = y - split_height;
 
             lbDisplay.graphics_window_y = top > old_top ? top : old_top;
         }
@@ -605,7 +605,7 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
             else
                 anim = 0x784;
             anim += actual_game_turn % 3;
-            draw_a_frame(start[anim].frame, x, y - h, 0, start[anim].flags > 0);
+            draw_a_frame(start[anim].frame, x, y - split_height, 0, start[anim].flags > 0);
         }
     }
 }
@@ -615,12 +615,12 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
 void draw_energise_frame(Thing *w, const s16 x, const s16 y)
 {
     CompFrame *f;
-    u32 r;
+    u32 rng;
     Thing *o;
     u16 i;
 
     o = &thing[w->unknown69];
-    r = 0x546b1;
+    rng = 0x546b1;
     if (o > thing) {
         f = &frame[w->sprite];
         D_001567b0.x = D_001567b0.y = 999;
@@ -631,11 +631,11 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
         full_draw_frame(w, w->sprite, 0x20, 0x3a, 0, 0, w->palette);
         RestoreFromPixBuffer();
         for (i = o->unknown103 * 10; i > 0; i--) {
-            pixBuf.data[r & 0xfff] = 0xfe;
-            pixBuf.data[(r >> 10) & 0xfff] = 0xfe;
-            pixBuf.data[(r >> 20) & 0xfff] = 0xfe;
-            r = r * 0x24a1 + 0x24df;
-            r = ror13(r);
+            pixBuf.data[rng & 0xfff] = 0xfe;
+            pixBuf.data[(rng >> 10) & 0xfff] = 0xfe;
+            pixBuf.data[(rng >> 20) & 0xfff] = 0xfe;
+            rng = rng * 0x24a1 + 0x24df;
+            rng = ror13(rng);
         }
         pixBuf.x = x - 0x20;
         pixBuf.y = y - 0x3a;

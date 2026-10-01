@@ -60,10 +60,10 @@ extern "C" u8 fn_0003e6c0(Thing *w)
 }
 
 // FUNCTION: 0x0003e724
-u8 fn_0003e724(Thing *w)
+u8 fn_0003e724(Thing *employee)
 {
     u8 run_things;
-    s8 r;
+    s8 choice;
     MapPos x;
     s8 repeat;
     u8 op;
@@ -81,115 +81,115 @@ u8 fn_0003e724(Thing *w)
     Thing *door;
 
     run_things = 0;
-    if (w->unknown61 == 0) {
+    if (employee->unknown61 == 0) {
         return 2;
     }
-    op = D_00153f9c[w->unknown61];
+    op = D_00153f9c[employee->unknown61];
     if (op == 0) {
-        w->unknown61 = 0;
+        employee->unknown61 = 0;
         return 2;
     }
-    tile = w->x.tile + (w->y.tile << 7);
+    tile = employee->x.tile + (employee->y.tile << 7);
     entry = &staff_complex[op];
     if (entry->object) {
-        obj_id = find_nearest_free_object(w - thing, entry->object);
+        obj_id = find_nearest_free_object(employee - thing, entry->object);
         if (obj_id) {
             obj = &thing[obj_id];
         } else {
-            fn_00041c0c(w);
+            fn_00041c0c(employee);
             return 0;
         }
     } else {
         obj = 0;
     }
     if (entry->kind) {
-        w->kind = entry->kind;
+        employee->kind = entry->kind;
     }
     switch (entry->action) {
     case 0:
         break;
     case 56:
-        if (staff_go_near_object(w)) {
-            dir = person_head_for(w, 1);
+        if (staff_go_near_object(employee)) {
+            dir = person_head_for(employee, 1);
             if (dir >= 0 && dir < 4) {
-                w->unknown17 = dir;
+                employee->unknown17 = dir;
             }
-            PLAY_FRAME(w, staff_anim_starts[w->subtype].idle);
-            w->height = 0;
+            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
+            employee->height = 0;
         } else {
-            fn_00041c0c(w);
+            fn_00041c0c(employee);
             return 0;
         }
         break;
     case 2:
-        w->unknown69 = obj_id;
+        employee->unknown69 = obj_id;
     case 44:
-        obj = &thing[w->unknown69];
-        fn_0004195c(w, obj->use_pos[w->subtype == 2 ? 2 : 0]);
-        dir = person_head_for(w, 1);
+        obj = &thing[employee->unknown69];
+        fn_0004195c(employee, obj->use_pos[employee->subtype == 2 ? 2 : 0]);
+        dir = person_head_for(employee, 1);
         if (dir >= 0 && dir < 4) {
-            w->unknown17 = dir;
+            employee->unknown17 = dir;
         }
-        PLAY_FRAME(w, staff_anim_starts[w->subtype].idle);
-        w->height = 0;
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
+        employee->height = 0;
         break;
     case 4:
-        PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[entry->anim]);
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[entry->anim]);
         break;
     case 54:
-        patient = &thing[w->unknown73];
+        patient = &thing[employee->unknown73];
         if (patient > thing) {
             u16 anim;
 
-            anim = check_frame(anim_starts[patient->subtype].anims[entry->anim], thing) + (u16)w->unknown17;
-            w->sprite = start[anim].frame;
-            w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+            anim = check_frame(anim_starts[patient->subtype].anims[entry->anim], thing) + (u16)employee->unknown17;
+            employee->sprite = start[anim].frame;
+            employee->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
         }
         break;
     case 6:
-        obj = &thing[w->unknown69];
+        obj = &thing[employee->unknown69];
         if ((obj->unknown98 == 1 || obj->kind == 0x12) || obj->renderer != 6
-            || obj->use_pos[w->subtype == 2 ? 2 : 0] != ((s16)w->y.tile << 7) + (s16)w->x.tile) {
-            fn_00041c0c(w);
+            || obj->use_pos[employee->subtype == 2 ? 2 : 0] != ((s16)employee->y.tile << 7) + (s16)employee->x.tile) {
+            fn_00041c0c(employee);
             return 3;
         }
         obj->unknown98 = 1;
-        obj->unknown91 = w - thing;
-        w->unknown17 = obj->unknown17;
+        obj->unknown91 = employee - thing;
+        employee->unknown17 = obj->unknown17;
         if (obj->unknown97 == 1 || obj->unknown97 == 2) {
-            w->unknown71 = obj->use_pos[(w->subtype == 2 ? 2 : 0) + 3];
-            move_node(w, *(MapPos *)&obj->unknown63, *(MapPos *)&obj->unknown65);
+            employee->unknown71 = obj->use_pos[(employee->subtype == 2 ? 2 : 0) + 3];
+            move_node(employee, *(MapPos *)&obj->unknown63, *(MapPos *)&obj->unknown65);
             obj->kind = 4;
-            w->depth = obj->depth;
+            employee->depth = obj->depth;
             if (objects[obj->subtype].unknown1e) {
                 obj->unknown112[1] = obj->depth;
                 obj->depth = 8;
             }
-            map[(s16)w->x.tile + ((s16)w->y.tile << 7)].flags |= 0x20;
+            map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].flags |= 0x20;
         }
-        w->unknown39 = obj->unknown39;
-        w->unknown40 = obj->unknown40;
-        w->unknown41 = obj->unknown41;
+        employee->unknown39 = obj->unknown39;
+        employee->unknown40 = obj->unknown40;
+        employee->unknown41 = obj->unknown41;
         break;
     case 8:
-        obj = &thing[w->unknown69];
+        obj = &thing[employee->unknown69];
         obj->unknown91 = 0;
-        w->unknown69 = 0;
+        employee->unknown69 = 0;
         obj->unknown98 = 0;
         if (obj->unknown97 == 2 || obj->unknown97 == 1) {
             adjust_big_cell_flag(tile);
-            x.tile = obj->use_pos[(w->subtype == 2 ? 2 : 0) + 3] % 128;
-            y.tile = obj->use_pos[(w->subtype == 2 ? 2 : 0) + 3] / 128;
+            x.tile = obj->use_pos[(employee->subtype == 2 ? 2 : 0) + 3] % 128;
+            y.tile = obj->use_pos[(employee->subtype == 2 ? 2 : 0) + 3] / 128;
             x.frac = y.frac = 0x80;
-            move_node(w, x, y);
-            w->depth = 0;
+            move_node(employee, x, y);
+            employee->depth = 0;
             if (objects[obj->subtype].unknown1e) {
                 obj->depth = obj->unknown112[1];
                 obj->unknown112[1] = 0;
             }
             obj->kind = 2;
             if (obj->unknown97 == 2) {
-                patient = &thing[w->unknown73];
+                patient = &thing[employee->unknown73];
                 if (patient > thing) {
                     x.tile = obj->unknown85 % 128;
                     y.tile = obj->unknown85 / 128;
@@ -198,64 +198,64 @@ u8 fn_0003e724(Thing *w)
                 }
             }
         }
-        PLAY_FRAME(w, staff_anim_starts[w->subtype].unknownA);
-        w->unknown39 = w->unknown40 = w->unknown41 = 0;
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].unknownA);
+        employee->unknown39 = employee->unknown40 = employee->unknown41 = 0;
         break;
     case 10:
-        obj = &thing[w->unknown69];
+        obj = &thing[employee->unknown69];
         if (obj > thing) {
             PLAY_FRAME(obj, entry->anim);
         }
         break;
     case 16:
-        r = old_newrand() % D_001310ac[entry->anim].count;
-        PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[D_001310ac[entry->anim].anims[r]]);
+        choice = old_newrand() % D_001310ac[entry->anim].count;
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[D_001310ac[entry->anim].anims[choice]]);
         break;
     case 14:
-        obj = find_door(w);
+        obj = find_door(employee);
         if (obj > thing) {
-            w->unknown17 = opposite_angle[obj->unknown17];
+            employee->unknown17 = opposite_angle[obj->unknown17];
         }
         break;
     case 20:
-        door = find_door(w);
+        door = find_door(employee);
         if (door > thing) {
             u8 flag;
 
             flag = door->subtype != 3 ? (u8)1 : (u8)0;
             if (door->unknown98 == 1) {
-                w->kind = 0x2c;
+                employee->kind = 0x2c;
                 return 3;
             }
-            if (w->room) {
-                w->unknown17 = door->unknown17;
+            if (employee->room) {
+                employee->unknown17 = door->unknown17;
             } else {
-                w->unknown17 = opposite_angle[door->unknown17];
+                employee->unknown17 = opposite_angle[door->unknown17];
             }
             if (tile == door->use_pos[0]) {
-                w->unknown71 = door->use_pos[3];
+                employee->unknown71 = door->use_pos[3];
             } else {
-                w->unknown71 = door->use_pos[0];
+                employee->unknown71 = door->use_pos[0];
             }
-            if (entry->anim == 1 && !check_room_mutex_on_entry(w)) {
-                fn_00041c0c(w);
+            if (entry->anim == 1 && !check_room_mutex_on_entry(employee)) {
+                fn_00041c0c(employee);
                 return 4;
             }
-            if (w->room == 0
+            if (employee->room == 0
                 && ((room_info[door->unknown89].f22 || room_info[door->unknown89].f3 == 4)
                     || door->unknown89 == allhosps[door->owner].unknown11b7)) {
-                fn_00041c0c(w);
+                fn_00041c0c(employee);
                 return 4;
             }
             if (flag) {
-                PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[8]);
+                PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[8]);
             } else {
-                PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[6]);
+                PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[6]);
             }
             door->unknown98 = 1;
-            w->unknown69 = door - thing;
-            door->unknown91 = w - thing;
-            move_node(w, door->x, door->y);
+            employee->unknown69 = door - thing;
+            door->unknown91 = employee - thing;
+            move_node(employee, door->x, door->y);
             door->kind = 4;
             cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
             door->unknown104 = cell->flags & 0x10 ? (u8)1 : (u8)0;
@@ -263,30 +263,30 @@ u8 fn_0003e724(Thing *w)
             if (flag) {
                 other = &thing[door->unknown100];
                 other->kind = 0x10;
-                other->sprite = start[w->unknown17 + 0x3f8].frame;
-                other->palette = start[w->unknown17 + 0x3f8].flags;
-                other->anim_speed = w->anim_speed;
+                other->sprite = start[employee->unknown17 + 0x3f8].frame;
+                other->palette = start[employee->unknown17 + 0x3f8].flags;
+                other->anim_speed = employee->anim_speed;
             }
         } else {
-            fn_00041c0c(w);
+            fn_00041c0c(employee);
             return 4;
         }
         break;
     case 22:
-        remove_person_from_room_list(w);
-        door = &thing[w->unknown69];
+        remove_person_from_room_list(employee);
+        door = &thing[employee->unknown69];
         door->unknown91 = 0;
-        w->unknown69 = 0;
-        x.tile = w->unknown71 % 128;
-        y.tile = w->unknown71 / 128;
+        employee->unknown69 = 0;
+        x.tile = employee->unknown71 % 128;
+        y.tile = employee->unknown71 / 128;
         x.frac = y.frac = 0x80;
-        w->unknown19 = x.tile;
-        w->unknown20 = y.tile;
-        move_node(w, x, y);
-        move_person_in_room_list(w, w->unknown71);
-        if (w->room) {
-            w->room->unknown29 = 0;
-            pager_arrival(w);
+        employee->unknown19 = x.tile;
+        employee->unknown20 = y.tile;
+        move_node(employee, x, y);
+        move_person_in_room_list(employee, employee->unknown71);
+        if (employee->room) {
+            employee->room->unknown29 = 0;
+            pager_arrival(employee);
         }
         cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
         if (!door->unknown104) {
@@ -297,24 +297,24 @@ u8 fn_0003e724(Thing *w)
             door->kind = 2;
         } else {
             door->kind = 0x10;
-            door->sprite = start[w->unknown17 + 0x400].frame;
-            door->palette = start[w->unknown17 + 0x400].flags;
+            door->sprite = start[employee->unknown17 + 0x400].frame;
+            door->palette = start[employee->unknown17 + 0x400].flags;
         }
         break;
     case 24:
-        w->unknown61++;
-        w->unknown65 = (u16)D_00153f9c[w->unknown61] * 10;
+        employee->unknown61++;
+        employee->unknown65 = (u16)D_00153f9c[employee->unknown61] * 10;
         break;
     case 26:
-        w->unknown61 = w->unknown63 - 1;
-        w->unknown63 = 0;
+        employee->unknown61 = employee->unknown63 - 1;
+        employee->unknown63 = 0;
         break;
     case 28:
-        w->unknown61++;
-        start_new_interaction(w, D_00153f9c[w->unknown61] + 1);
+        employee->unknown61++;
+        start_new_interaction(employee, D_00153f9c[employee->unknown61] + 1);
         break;
     case 30:
-        merge_slave(w);
+        merge_slave(employee);
         break;
     case 36: {
         s8 *list;
@@ -325,42 +325,42 @@ u8 fn_0003e724(Thing *w)
         while (list[n] != -1 && n < 5) {
             n++;
         }
-        start_new_interaction(w, list[old_newrand() % n]);
+        start_new_interaction(employee, list[old_newrand() % n]);
         break;
     }
     case 38:
-        patient = &thing[w->unknown73];
+        patient = &thing[employee->unknown73];
         if (patient > thing) {
-            w->unknown61++;
+            employee->unknown61++;
             patient->state_b = 0x20;
-            set_complex(patient, (u16)D_00153f9c[w->unknown61] * 10, 0);
+            set_complex(patient, (u16)D_00153f9c[employee->unknown61] * 10, 0);
             fn_0003e6c0(patient);
         } else {
-            fn_00041c0c(w);
+            fn_00041c0c(employee);
             return 0;
         }
         break;
     case 40:
-        patient = &thing[w->unknown73];
+        patient = &thing[employee->unknown73];
         if (patient > thing) {
-            w->unknown61++;
+            employee->unknown61++;
             patient->state_b = 0x20;
-            set_complex(patient, (u16)D_00153f9c[w->unknown61] * 10, 0);
+            set_complex(patient, (u16)D_00153f9c[employee->unknown61] * 10, 0);
         } else {
-            fn_00041c0c(w);
+            fn_00041c0c(employee);
             return 0;
         }
         break;
     case 46:
-        dir = person_head_for(w, 1);
+        dir = person_head_for(employee, 1);
         if (dir >= 0 && dir < 4) {
-            w->unknown17 = dir;
+            employee->unknown17 = dir;
         }
-        PLAY_FRAME(w, staff_anim_starts[w->subtype].idle);
+        PLAY_FRAME(employee, staff_anim_starts[employee->subtype].idle);
         break;
     case 48:
-        patient = &thing[w->unknown73];
-        if (patient > thing && (obj = &thing[w->unknown69]) > thing) {
+        patient = &thing[employee->unknown73];
+        if (patient > thing && (obj = &thing[employee->unknown69]) > thing) {
             x.tile = obj->unknown85 % 128;
             y.tile = obj->unknown85 / 128;
             x.frac = y.frac = 0x80;
@@ -369,7 +369,7 @@ u8 fn_0003e724(Thing *w)
         }
         break;
     case 18:
-        obj_id = w->unknown69;
+        obj_id = employee->unknown69;
         if (obj_id) {
             s8 kind;
             s8 face;
@@ -380,8 +380,8 @@ u8 fn_0003e724(Thing *w)
             if (face != -1) {
                 d = face_dirns[face].dirs[thing[obj_id].unknown17];
                 if (d != -1) {
-                    w->unknown17 = d;
-                    PLAY_FRAME(w, staff_anim_starts[w->subtype].unknownA);
+                    employee->unknown17 = d;
+                    PLAY_FRAME(employee, staff_anim_starts[employee->subtype].unknownA);
                 }
             }
         }
@@ -390,28 +390,28 @@ u8 fn_0003e724(Thing *w)
         run_things = 1;
         break;
     case 52:
-        complex_success(w, entry->anim);
+        complex_success(employee, entry->anim);
         break;
     case 58:
-        w->subtype = entry->anim;
+        employee->subtype = entry->anim;
         break;
     case 60:
-        obj = &thing[w->unknown69];
-        if (count_surgeons(w->room) == 1) {
-            PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[19]);
+        obj = &thing[employee->unknown69];
+        if (count_surgeons(employee->room) == 1) {
+            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[19]);
             PLAY_FRAME(obj, 0x56c);
         } else {
-            PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[20]);
+            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[20]);
             PLAY_FRAME(obj, 0x56b);
         }
         break;
     case 62:
-        obj = &thing[w->unknown69];
-        if (count_surgeons(w->room) == 2) {
-            PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[22]);
+        obj = &thing[employee->unknown69];
+        if (count_surgeons(employee->room) == 2) {
+            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[22]);
             PLAY_FRAME(obj, 0x56c);
         } else {
-            PLAY_FRAME(w, staff_anim_starts[w->subtype].anims[21]);
+            PLAY_FRAME(employee, staff_anim_starts[employee->subtype].anims[21]);
             PLAY_FRAME(obj, 0x56a);
         }
         break;
@@ -420,113 +420,113 @@ u8 fn_0003e724(Thing *w)
     }
     repeat = entry->repeat;
     if (repeat) {
-        if (w->unknown93) {
-            w->unknown93--;
-            if ((s8)w->unknown93 == 0) {
-                w->unknown61++;
+        if (employee->unknown93) {
+            employee->unknown93--;
+            if ((s8)employee->unknown93 == 0) {
+                employee->unknown61++;
             }
         } else if (repeat < 0) {
-            w->unknown93 = old_newrand() % -repeat + 1;
+            employee->unknown93 = old_newrand() % -repeat + 1;
         } else {
-            w->unknown93 = repeat;
+            employee->unknown93 = repeat;
         }
     } else {
-        w->unknown61++;
+        employee->unknown61++;
     }
-    if (D_00153f9c[w->unknown61] == 0) {
-        w->unknown61 = 0;
-        action = w->unknown63;
+    if (D_00153f9c[employee->unknown61] == 0) {
+        employee->unknown61 = 0;
+        action = employee->unknown63;
         if (action) {
-            arg = w->unknown95 + (w->unknown96 << 7);
-            w->unknown63 = w->unknown75w;
-            w->unknown75w = 0;
-            w->unknown95 = w->unknown97;
-            w->unknown97 = 0;
-            w->unknown96 = w->unknown98;
-            w->unknown98 = 0;
-            if (set_complex(w, action, arg)) {
-                fn_0003e724(w);
+            arg = employee->unknown95 + (employee->unknown96 << 7);
+            employee->unknown63 = employee->unknown75w;
+            employee->unknown75w = 0;
+            employee->unknown95 = employee->unknown97;
+            employee->unknown97 = 0;
+            employee->unknown96 = employee->unknown98;
+            employee->unknown98 = 0;
+            if (set_complex(employee, action, arg)) {
+                fn_0003e724(employee);
             }
-        } else if (w->state_b) {
-            w->kind = w->state_b;
-            w->state_b = 0;
+        } else if (employee->state_b) {
+            employee->kind = employee->state_b;
+            employee->state_b = 0;
         }
     } else if (entry->chain) {
-        fn_0003e724(w);
+        fn_0003e724(employee);
     }
     if (run_things) {
-        process_things(w, w + 1);
+        process_things(employee, employee + 1);
     }
     return 1;
 }
 
 // FUNCTION: 0x0004029c
-void play_complex_staff_anim(Thing *w)
+void play_complex_staff_anim(Thing *employee)
 {
     CompFrame *f;
     u16 next;
 
-    if (actual_game_turn % w->anim_speed == 0) {
-        next = frame[w->sprite].next;
+    if (actual_game_turn % employee->anim_speed == 0) {
+        next = frame[employee->sprite].next;
         f = &frame[next];
         if (f->flags & 1) {
-            fn_0003e724(w);
+            fn_0003e724(employee);
         } else {
-            w->sprite = next;
+            employee->sprite = next;
         }
     }
 }
 
 // FUNCTION: 0x0004031c
-void staff_complex_retry(Thing *w)
+void staff_complex_retry(Thing *employee)
 {
     CompFrame *f;
 
-    if (actual_game_turn % w->anim_speed == 0) {
-        w->sprite = frame[w->sprite].next;
-        f = &frame[w->sprite];
+    if (actual_game_turn % employee->anim_speed == 0) {
+        employee->sprite = frame[employee->sprite].next;
+        f = &frame[employee->sprite];
         if (f->flags & 1) {
-            fn_0003e724(w);
-            sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(w - thing), 0);
+            fn_0003e724(employee);
+            sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(employee - thing), 0);
         }
     }
 }
 
 // FUNCTION: 0x000403d0
-void staff_wait_for_complex_slave(Thing *w)
+void staff_wait_for_complex_slave(Thing *employee)
 {
     Thing *slave;
 
-    slave = &thing[w->unknown73];
+    slave = &thing[employee->unknown73];
     if (slave > thing) {
         if (slave->kind == 0x20) {
-            fn_0003e724(w);
+            fn_0003e724(employee);
         }
     }
 }
 
 // FUNCTION: 0x0004042c
-void merge_slave(Thing *w)
+void merge_slave(Thing *employee)
 {
     Thing *slave;
     Thing *obj;
 
-    slave = &thing[w->unknown73];
+    slave = &thing[employee->unknown73];
     if (slave > thing) {
         if (slave->kind == 0x20) {
             slave->kind = 0x28;
-            obj = &thing[w->unknown69];
+            obj = &thing[employee->unknown69];
             if (obj > thing) {
-                w->unknown39 = obj->unknown39;
-                w->unknown40 = obj->unknown40;
-                w->unknown41 = obj->unknown41;
+                employee->unknown39 = obj->unknown39;
+                employee->unknown40 = obj->unknown40;
+                employee->unknown41 = obj->unknown41;
             }
-            w->unknown29 = slave->unknown29;
-            w->unknown30[0] = slave->unknown30[0];
-            w->unknown30[1] = slave->unknown30[1];
-            w->unknown30[2] = slave->unknown30[2];
-            w->unknown30[3] = slave->unknown30[3];
-            slave->unknown69 = w->unknown69;
+            employee->unknown29 = slave->unknown29;
+            employee->unknown30[0] = slave->unknown30[0];
+            employee->unknown30[1] = slave->unknown30[1];
+            employee->unknown30[2] = slave->unknown30[2];
+            employee->unknown30[3] = slave->unknown30[3];
+            slave->unknown69 = employee->unknown69;
         }
     }
 }
@@ -534,13 +534,13 @@ void merge_slave(Thing *w)
 
 // NONMATCHING: register choice
 // FUNCTION: 0x00040524
-u8 process_person_complex(Thing *w)
+u8 process_person_complex(Thing *person)
 {
     s8 dir;
     u8 run_things;
     u8 op;
     s8 repeat;
-    s8 r;
+    s8 choice;
     u16 action;
     u16 arg;
     u16 tile;
@@ -554,101 +554,101 @@ u8 process_person_complex(Thing *w)
     Thing *door;
 
     run_things = 0;
-    if (w->unknown61 == 0) {
+    if (person->unknown61 == 0) {
         return 2;
     }
-    op = person_complex_group[w->unknown61];
+    op = person_complex_group[person->unknown61];
     if (op == 0) {
-        w->unknown61 = 0;
+        person->unknown61 = 0;
         return 2;
     }
-    tile = w->x.tile + (w->y.tile << 7);
+    tile = person->x.tile + (person->y.tile << 7);
     entry = &person_complex[op];
     if (entry->object) {
-        obj_id = find_nearest_free_object(w - thing, entry->object);
+        obj_id = find_nearest_free_object(person - thing, entry->object);
         if (obj_id) {
             obj = &thing[obj_id];
         } else {
-            fail_person_complex(w);
+            fail_person_complex(person);
             return 0;
         }
     } else {
         obj = 0;
     }
     if (entry->kind) {
-        w->kind = entry->kind;
+        person->kind = entry->kind;
     }
     switch (entry->action) {
     case 0:
         break;
     case 2:
-        w->unknown69 = obj_id;
+        person->unknown69 = obj_id;
     case 44:
-        obj = &thing[w->unknown69];
-        fn_0004195c(w, obj->use_pos[1]);
-        dir = person_head_for(w, 1);
+        obj = &thing[person->unknown69];
+        fn_0004195c(person, obj->use_pos[1]);
+        dir = person_head_for(person, 1);
         if (dir >= 0 && dir < 4) {
-            w->unknown17 = dir;
+            person->unknown17 = dir;
         }
-        PLAY_FRAME(w, anim_starts[w->subtype].idle);
-        w->height = 0;
+        PLAY_FRAME(person, anim_starts[person->subtype].idle);
+        person->height = 0;
         break;
     case 4:
-        PLAY_FRAME(w, anim_starts[w->subtype].anims[entry->anim]);
+        PLAY_FRAME(person, anim_starts[person->subtype].anims[entry->anim]);
         break;
     case 6:
-        obj = &thing[w->unknown69];
+        obj = &thing[person->unknown69];
         if ((obj->unknown98 == 1 || obj->kind == 0x12) || obj->renderer != 6
-            || obj->use_pos[1] != ((s16)w->y.tile << 7) + (s16)w->x.tile) {
-            fail_person_complex(w);
+            || obj->use_pos[1] != ((s16)person->y.tile << 7) + (s16)person->x.tile) {
+            fail_person_complex(person);
             return 3;
         }
         obj->unknown98 = 1;
-        obj->unknown91 = w - thing;
-        w->unknown17 = obj->unknown17;
+        obj->unknown91 = person - thing;
+        person->unknown17 = obj->unknown17;
         if ((obj->unknown97 == 1 || obj->unknown97 == 2) || obj->unknown97 == 3) {
-            w->unknown71 = obj->unknown85;
-            move_node(w, *(MapPos *)&obj->unknown63, *(MapPos *)&obj->unknown65);
+            person->unknown71 = obj->unknown85;
+            move_node(person, *(MapPos *)&obj->unknown63, *(MapPos *)&obj->unknown65);
             obj->kind = 4;
-            w->depth = obj->depth;
+            person->depth = obj->depth;
             if (objects[obj->subtype].unknown1e) {
                 obj->unknown112[1] = obj->depth;
                 obj->depth = 8;
             }
-            map[(s16)w->x.tile + ((s16)w->y.tile << 7)].flags |= 0x20;
+            map[(s16)person->x.tile + ((s16)person->y.tile << 7)].flags |= 0x20;
         }
-        w->unknown39 = obj->unknown39;
-        w->unknown40 = obj->unknown40;
-        w->unknown41 = obj->unknown41;
-        obj->unknown29 = w->unknown29;
-        obj->unknown30[0] = w->unknown30[0];
-        obj->unknown30[1] = w->unknown30[1];
-        obj->unknown30[2] = w->unknown30[2];
-        obj->unknown30[3] = w->unknown30[3];
+        person->unknown39 = obj->unknown39;
+        person->unknown40 = obj->unknown40;
+        person->unknown41 = obj->unknown41;
+        obj->unknown29 = person->unknown29;
+        obj->unknown30[0] = person->unknown30[0];
+        obj->unknown30[1] = person->unknown30[1];
+        obj->unknown30[2] = person->unknown30[2];
+        obj->unknown30[3] = person->unknown30[3];
         break;
     case 8:
-        obj = &thing[w->unknown69];
+        obj = &thing[person->unknown69];
         obj->unknown91 = 0;
-        w->unknown69 = 0;
+        person->unknown69 = 0;
         obj->unknown98 = 0;
         if (obj->unknown97 == 1 || obj->unknown97 == 3) {
             adjust_big_cell_flag(tile);
             x.tile = obj->use_pos[1] % 128;
             y.tile = obj->use_pos[1] / 128;
             x.frac = y.frac = 0x80;
-            move_node(w, x, y);
-            w->depth = 0;
+            move_node(person, x, y);
+            person->depth = 0;
             if (objects[obj->subtype].unknown1e) {
                 obj->depth = obj->unknown112[1];
                 obj->unknown112[1] = 0;
             }
             obj->kind = 2;
         }
-        PLAY_FRAME(w, anim_starts[w->subtype].unknown12);
-        w->unknown39 = w->unknown40 = w->unknown41 = 0;
+        PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
+        person->unknown39 = person->unknown40 = person->unknown41 = 0;
         break;
     case 10:
-        obj = &thing[w->unknown69];
+        obj = &thing[person->unknown69];
         if (obj > thing) {
             PLAY_FRAME(obj, entry->anim);
         }
@@ -656,48 +656,48 @@ u8 process_person_complex(Thing *w)
     case 12:
         break;
     case 16:
-        r = old_newrand() % D_001310ac[entry->anim].count;
-        PLAY_FRAME(w, anim_starts[w->subtype].anims[D_001310ac[entry->anim].anims[r]]);
+        choice = old_newrand() % D_001310ac[entry->anim].count;
+        PLAY_FRAME(person, anim_starts[person->subtype].anims[D_001310ac[entry->anim].anims[choice]]);
         break;
     case 14:
-        obj = find_door(w);
+        obj = find_door(person);
         if (obj > thing) {
-            w->unknown17 = opposite_angle[obj->unknown17];
+            person->unknown17 = opposite_angle[obj->unknown17];
         }
         break;
     case 20:
-        door = find_door(w);
+        door = find_door(person);
         if (door > thing) {
             u8 flag;
 
             flag = door->subtype != 3 ? (u8)1 : (u8)0;
             if (door->unknown98 == 1) {
-                w->kind = 0x2a;
+                person->kind = 0x2a;
                 return 3;
             }
-            if (w->room == 0 && (room_info[door->unknown89].f22 || room_info[door->unknown89].f3 == 4)) {
-                fail_person_complex(w);
+            if (person->room == 0 && (room_info[door->unknown89].f22 || room_info[door->unknown89].f3 == 4)) {
+                fail_person_complex(person);
                 return 3;
             }
             door->unknown98 = 1;
-            if (w->room) {
-                w->unknown17 = door->unknown17;
+            if (person->room) {
+                person->unknown17 = door->unknown17;
             } else {
-                w->unknown17 = opposite_angle[door->unknown17];
+                person->unknown17 = opposite_angle[door->unknown17];
             }
             if (tile == door->use_pos[0]) {
-                w->unknown71 = door->use_pos[3];
+                person->unknown71 = door->use_pos[3];
             } else {
-                w->unknown71 = door->use_pos[0];
+                person->unknown71 = door->use_pos[0];
             }
             if (flag) {
-                PLAY_FRAME(w, anim_starts[w->subtype].anims[67]);
+                PLAY_FRAME(person, anim_starts[person->subtype].anims[67]);
             } else {
-                PLAY_FRAME(w, anim_starts[w->subtype].anims[7]);
+                PLAY_FRAME(person, anim_starts[person->subtype].anims[7]);
             }
-            w->unknown69 = door - thing;
-            door->unknown91 = w - thing;
-            move_node(w, door->x, door->y);
+            person->unknown69 = door - thing;
+            door->unknown91 = person - thing;
+            move_node(person, door->x, door->y);
             door->kind = 4;
             cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
             door->unknown104 = cell->flags & 0x10 ? (u8)1 : (u8)0;
@@ -705,26 +705,26 @@ u8 process_person_complex(Thing *w)
             if (flag) {
                 other = &thing[door->unknown100];
                 other->kind = 0x10;
-                other->sprite = start[w->unknown17 + 0x3f8].frame;
-                other->palette = start[w->unknown17 + 0x3f8].flags;
-                other->anim_speed = w->anim_speed;
+                other->sprite = start[person->unknown17 + 0x3f8].frame;
+                other->palette = start[person->unknown17 + 0x3f8].flags;
+                other->anim_speed = person->anim_speed;
             }
         } else {
-            fail_person_complex(w);
+            fail_person_complex(person);
             return 0;
         }
         break;
     case 22:
-        door = &thing[w->unknown69];
-        x.tile = w->unknown71 % 128;
-        y.tile = w->unknown71 / 128;
+        door = &thing[person->unknown69];
+        x.tile = person->unknown71 % 128;
+        y.tile = person->unknown71 / 128;
         x.frac = y.frac = 0x80;
-        w->unknown19 = x.tile;
-        w->unknown20 = y.tile;
-        move_node(w, x, y);
+        person->unknown19 = x.tile;
+        person->unknown20 = y.tile;
+        move_node(person, x, y);
         door->unknown91 = 0;
-        w->unknown69 = 0;
-        move_person_in_room_list(w, w->unknown71);
+        person->unknown69 = 0;
+        move_person_in_room_list(person, person->unknown71);
         cell = &map[(s16)door->x.tile + ((s16)door->y.tile << 7)];
         if (!door->unknown104) {
             cell->flags &= ~0x10;
@@ -734,33 +734,33 @@ u8 process_person_complex(Thing *w)
             door->kind = 2;
         } else {
             door->kind = 0x10;
-            door->sprite = start[w->unknown17 + 0x400].frame;
-            door->palette = start[w->unknown17 + 0x400].flags;
+            door->sprite = start[person->unknown17 + 0x400].frame;
+            door->palette = start[person->unknown17 + 0x400].flags;
         }
         break;
     case 24:
-        w->unknown61++;
-        w->unknown65 = (u16)person_complex_group[w->unknown61] * 10;
+        person->unknown61++;
+        person->unknown65 = (u16)person_complex_group[person->unknown61] * 10;
         break;
     case 26:
         break;
     case 32:
-        if (transform_peep_who(w, entry->anim)) {
-            PLAY_FRAME(w, anim_starts[w->subtype].idle);
+        if (transform_peep_who(person, entry->anim)) {
+            PLAY_FRAME(person, anim_starts[person->subtype].idle);
         }
         break;
     case 34:
-        w->subtype = w->unknown170;
+        person->subtype = person->unknown170;
         break;
     case 46:
-        dir = person_head_for(w, 1);
+        dir = person_head_for(person, 1);
         if (dir >= 0 && dir < 4) {
-            w->unknown17 = dir;
+            person->unknown17 = dir;
         }
-        PLAY_FRAME(w, anim_starts[w->subtype].idle);
+        PLAY_FRAME(person, anim_starts[person->subtype].idle);
         break;
     case 18:
-        obj_id = w->unknown69;
+        obj_id = person->unknown69;
         if (obj_id) {
             s8 kind;
             s8 face;
@@ -771,14 +771,14 @@ u8 process_person_complex(Thing *w)
             if (face != -1) {
                 d = face_dirns[face].dirs[thing[obj_id].unknown17 + 4];
                 if (d != -1) {
-                    w->unknown17 = d;
-                    PLAY_FRAME(w, anim_starts[w->subtype].unknown12);
+                    person->unknown17 = d;
+                    PLAY_FRAME(person, anim_starts[person->subtype].unknown12);
                 }
             }
         }
         break;
     case 52:
-        complex_success(w, entry->anim);
+        complex_success(person, entry->anim);
         break;
     case 50:
         run_things = 1;
@@ -788,42 +788,42 @@ u8 process_person_complex(Thing *w)
     }
     repeat = entry->repeat;
     if (repeat) {
-        if (w->unknown93) {
-            w->unknown93--;
-            if ((s8)w->unknown93 == 0) {
-                w->unknown61++;
+        if (person->unknown93) {
+            person->unknown93--;
+            if ((s8)person->unknown93 == 0) {
+                person->unknown61++;
             }
         } else if (repeat < 0) {
-            w->unknown93 = old_newrand() % -repeat + 1;
+            person->unknown93 = old_newrand() % -repeat + 1;
         } else {
-            w->unknown93 = repeat;
+            person->unknown93 = repeat;
         }
     } else {
-        w->unknown61++;
+        person->unknown61++;
     }
-    if (person_complex_group[w->unknown61] == 0) {
-        w->unknown61 = 0;
-        action = w->unknown63;
+    if (person_complex_group[person->unknown61] == 0) {
+        person->unknown61 = 0;
+        action = person->unknown63;
         if (action) {
-            arg = w->unknown95 + (w->unknown96 << 7);
-            w->unknown63 = w->unknown75w;
-            w->unknown75w = 0;
-            w->unknown95 = w->unknown97;
-            w->unknown97 = 0;
-            w->unknown96 = w->unknown98;
-            w->unknown98 = 0;
-            if (set_complex(w, action, arg)) {
-                process_person_complex(w);
+            arg = person->unknown95 + (person->unknown96 << 7);
+            person->unknown63 = person->unknown75w;
+            person->unknown75w = 0;
+            person->unknown95 = person->unknown97;
+            person->unknown97 = 0;
+            person->unknown96 = person->unknown98;
+            person->unknown98 = 0;
+            if (set_complex(person, action, arg)) {
+                process_person_complex(person);
             }
-        } else if (w->state_b) {
-            w->kind = w->state_b;
-            w->state_b = 0;
+        } else if (person->state_b) {
+            person->kind = person->state_b;
+            person->state_b = 0;
         }
     } else if (entry->chain) {
-        process_person_complex(w);
+        process_person_complex(person);
     }
     if (run_things) {
-        process_things(w, w + 1);
+        process_things(person, person + 1);
     }
     return 1;
 }
@@ -866,18 +866,18 @@ u8 set_complex(Thing *w, u16 action, u16 arg)
 }
 
 // FUNCTION: 0x000418dc
-void person_complex_retry(Thing *w)
+void person_complex_retry(Thing *person)
 {
     CompFrame *f;
     u16 next;
 
-    if (actual_game_turn % w->anim_speed == 0) {
-        next = frame[w->sprite].next;
+    if (actual_game_turn % person->anim_speed == 0) {
+        next = frame[person->sprite].next;
         f = &frame[next];
         if (f->flags & 1) {
-            process_person_complex(w);
+            process_person_complex(person);
         } else {
-            w->sprite = next;
+            person->sprite = next;
         }
     }
 }
@@ -906,83 +906,83 @@ void fn_00041a08(Thing *w, u16 pos)
 }
 
 // FUNCTION: 0x00041a54
-void fn_00041a54(Thing *w)
+void fn_00041a54(Thing *person)
 {
     CompFrame *f;
 
-    if (actual_game_turn % w->anim_speed == 0) {
-        w->sprite = frame[w->sprite].next;
-        f = &frame[w->sprite];
+    if (actual_game_turn % person->anim_speed == 0) {
+        person->sprite = frame[person->sprite].next;
+        f = &frame[person->sprite];
         if (f->flags & 1) {
-            process_person_complex(w);
-            sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(w - thing), 0);
+            process_person_complex(person);
+            sprintf((char *)&debug.unknownc[0x64], "COMPLEX RETRY OCCURRING PEEP %d", (u16)(person - thing), 0);
         }
     }
 }
 
 // FUNCTION: 0x00041b08
-void fn_00041b08(Thing *w)
+void fn_00041b08(Thing *person)
 {
     Thing *other;
     Thing *src;
 
-    other = &thing[w->unknown73];
+    other = &thing[person->unknown73];
     if (other > thing) {
         if (other->kind == 0x18) {
-        w->kind = w->state_b;
-        w->state_b = 0;
-        process_person_complex(w);
+        person->kind = person->state_b;
+        person->state_b = 0;
+        process_person_complex(person);
         other->kind = 0x2a;
-        src = &thing[w->unknown69];
+        src = &thing[person->unknown69];
         if (src > thing) {
-            w->unknown30[4] = other->unknown30[4];
-            w->unknown30[5] = other->unknown30[5];
-            w->unknown30[6] = other->unknown30[6];
-            w->unknown30[7] = other->unknown30[7];
-            w->unknown30[8] = other->unknown30[8];
+            person->unknown30[4] = other->unknown30[4];
+            person->unknown30[5] = other->unknown30[5];
+            person->unknown30[6] = other->unknown30[6];
+            person->unknown30[7] = other->unknown30[7];
+            person->unknown30[8] = other->unknown30[8];
         }
-        w->unknown30[9] = src->unknown30[9];
-        w->unknown30[0xa] = src->unknown30[0xa];
-        w->unknown30[0xb] = src->unknown30[0xb];
+        person->unknown30[9] = src->unknown30[9];
+        person->unknown30[0xa] = src->unknown30[0xa];
+        person->unknown30[0xb] = src->unknown30[0xb];
         }
     }
 }
 
 // FUNCTION: 0x00041c0c
-void fn_00041c0c(Thing *w)
+void fn_00041c0c(Thing *employee)
 {
-    if (w->state_a) {
+    if (employee->state_a) {
         u16 anim;
 
-        w->kind = w->state_a;
-        w->unknown61 = w->unknown63 = w->unknown75w = 0;
-        w->icon = w->unknown65 = 0;
-        anim = check_frame(staff_anim_starts[w->subtype].unknownA, w) + (u16)w->unknown17;
-        w->sprite = start[anim].frame;
-        w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
-        if (w->subtype == 2) {
-            thingpage_cancel_my_response(&allhosps[w->owner].fd2b, w);
-            thingpage_cancel_my_response(&allhosps[w->owner].ff6d, w);
+        employee->kind = employee->state_a;
+        employee->unknown61 = employee->unknown63 = employee->unknown75w = 0;
+        employee->icon = employee->unknown65 = 0;
+        anim = check_frame(staff_anim_starts[employee->subtype].unknownA, employee) + (u16)employee->unknown17;
+        employee->sprite = start[anim].frame;
+        employee->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+        if (employee->subtype == 2) {
+            thingpage_cancel_my_response(&allhosps[employee->owner].fd2b, employee);
+            thingpage_cancel_my_response(&allhosps[employee->owner].ff6d, employee);
         }
     } else {
-        w->kind = 0x2c;
+        employee->kind = 0x2c;
     }
 }
 
 // FUNCTION: 0x00041d54
-void fail_person_complex(Thing *w)
+void fail_person_complex(Thing *person)
 {
-    if (w->state_a) {
+    if (person->state_a) {
         u16 anim;
 
-        w->kind = w->state_a;
-        w->unknown61 = w->unknown63 = w->unknown75w = 0;
-        w->icon = w->unknown65 = 0;
-        anim = check_frame(anim_starts[w->subtype].unknown12, w) + (u16)w->unknown17;
-        w->sprite = start[anim].frame;
-        w->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
+        person->kind = person->state_a;
+        person->unknown61 = person->unknown63 = person->unknown75w = 0;
+        person->icon = person->unknown65 = 0;
+        anim = check_frame(anim_starts[person->subtype].unknown12, person) + (u16)person->unknown17;
+        person->sprite = start[anim].frame;
+        person->palette = start[anim].flags > 0 ? (u8)1 : (u8)0;
     } else {
-        w->kind = 0x2a;
+        person->kind = 0x2a;
     }
 }
 

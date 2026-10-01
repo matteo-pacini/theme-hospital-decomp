@@ -9,32 +9,32 @@ void fn_000549bc(Thing *w);
 // FUNCTION: 0x00054870
 extern "C" void fn_00054870(Thing *w)
 {
-    Thing *o;
+    Thing *partner;
     CompFrame *fr;
-    u16 f;
+    u16 next_frame;
 
     if (w->f64 != 0) {
         if (actual_game_turn % w->anim_speed == 0) {
-            f = frame[w->sprite].next;
-            w->sprite = f;
-            fr = &frame[f];
+            next_frame = frame[w->sprite].next;
+            w->sprite = next_frame;
+            fr = &frame[next_frame];
             if (fr->flags & 1)
                 w->f64 = 2;
         }
     }
-    o = &thing[w->unknown73];
-    if (o > thing) {
-        if (o->f64 != 0) {
-            if (actual_game_turn % o->anim_speed == 0) {
-                f = frame[o->sprite].next;
-                o->sprite = f;
-                fr = &frame[f];
+    partner = &thing[w->unknown73];
+    if (partner > thing) {
+        if (partner->f64 != 0) {
+            if (actual_game_turn % partner->anim_speed == 0) {
+                next_frame = frame[partner->sprite].next;
+                partner->sprite = next_frame;
+                fr = &frame[next_frame];
                 if (fr->flags & 1)
-                    o->f64 = 2;
+                    partner->f64 = 2;
             }
         }
     }
-    if (w->f64 != 1 && o->f64 != 1)
+    if (w->f64 != 1 && partner->f64 != 1)
         fn_000549bc(w);
 }
 
@@ -43,7 +43,7 @@ extern "C" void fn_000549bc(Thing *w)
 {
     u8 idx;
     s16 anim;
-    Thing *o;
+    Thing *partner;
 
     if (w->f65 > 0) {
         idx = w->unknown99;
@@ -58,10 +58,10 @@ extern "C" void fn_000549bc(Thing *w)
         if (anim == -1) {
             w->unknown99 = 0;
             w->f64 = 0;
-            o = &thing[w->unknown73];
-            if (o > thing) {
-                o->unknown99 = 0;
-                o->f64 = 0;
+            partner = &thing[w->unknown73];
+            if (partner > thing) {
+                partner->unknown99 = 0;
+                partner->f64 = 0;
             }
             switch (w->renderer) {
             case 2:
@@ -90,26 +90,26 @@ extern "C" void fn_000549bc(Thing *w)
     } else {
         w->f64 = 0;
     }
-    o = &thing[w->unknown73];
-    if (o > thing) {
+    partner = &thing[w->unknown73];
+    if (partner > thing) {
         anim = D_0012b598[idx].other;
         if (anim) {
-            o->f64 = 1;
-            if (o->renderer == 2) {
+            partner->f64 = 1;
+            if (partner->renderer == 2) {
                 u16 f;
 
-                f = check_frame(anim_starts[o->subtype].anims[anim], o) + o->unknown17;
-                o->sprite = start[f].frame;
-                o->palette = start[f].flags > 0;
+                f = check_frame(anim_starts[partner->subtype].anims[anim], partner) + partner->unknown17;
+                partner->sprite = start[f].frame;
+                partner->palette = start[f].flags > 0;
             } else {
                 u16 f;
 
-                f = check_frame(staff_anim_starts[o->subtype].anims[anim], o) + o->unknown17;
-                o->sprite = start[f].frame;
-                o->palette = start[f].flags > 0;
+                f = check_frame(staff_anim_starts[partner->subtype].anims[anim], partner) + partner->unknown17;
+                partner->sprite = start[f].frame;
+                partner->palette = start[f].flags > 0;
             }
         } else {
-            o->f64 = 0;
+            partner->f64 = 0;
         }
     }
 }
@@ -117,15 +117,15 @@ extern "C" void fn_000549bc(Thing *w)
 // FUNCTION: 0x00054d60
 extern "C" void fn_00054d60(void)
 {
-    s16 n;
+    s16 seq;
     s16 i;
 
-    n = 0;
+    seq = 0;
     i = 0;
     statvar.unknowne8[0] = 0;
     for (;;) {
         if (D_0012b598[i].v == -1) {
-            statvar.unknowne8[++n] = i + 1;
+            statvar.unknowne8[++seq] = i + 1;
         } else if (D_0012b598[i].v == -99) {
             break;
         }
@@ -134,7 +134,7 @@ extern "C" void fn_00054d60(void)
 }
 
 // FUNCTION: 0x00054dd4
-void start_new_interaction(Thing *w, u8 who)
+void start_new_interaction(Thing *w, u8 interaction)
 {
     switch (w->renderer) {
     case 2:
@@ -146,7 +146,7 @@ void start_new_interaction(Thing *w, u8 who)
     default:
         return;
     }
-    w->unknown99 = statvar.unknowne8[who] - 1;
+    w->unknown99 = statvar.unknowne8[interaction] - 1;
     w->label[1] = 0;
     fn_000549bc(w);
 }

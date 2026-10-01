@@ -72,9 +72,9 @@ void LbTextSetJustifyWindow(s32 x, s32 y, s32 w);
 void fn_000c9be0(int x0, int y0, int x1, int y1, u8 color);
 }
 
-s8 add_glass_box(GlassBox *b, s32 id, s8 c1, s8 c2);
-void add_glass_frame(GlassFrame *f, s32 mask);
-void draw_a_box(u8 n);
+s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay);
+void add_glass_frame(GlassFrame *frames, s32 mask);
+void draw_a_box(u8 zoom);
 s16 glass_index(s32 mask);
 void draw_background_box(s16 x, s16 y, s16 w, s16 h, u8 style);
 void draw_foreground_box(s16 x, s16 y, s16 w, s16 h);
@@ -102,21 +102,21 @@ void init_zoom_boxes(s32 mask)
 }
 
 // FUNCTION: 0x000b8b50
-extern "C" s32 fn_000b8b50(GlassBox *b, ZoomBox *z)
+extern "C" s32 fn_000b8b50(GlassBox *box, ZoomBox *zoom)
 {
-    if (b->x != z->to[0])
+    if (box->x != zoom->to[0])
         return 0;
-    if (b->y != z->to[1])
+    if (box->y != zoom->to[1])
         return 0;
-    if (b->x1 - b->x + 1 != z->to[2])
+    if (box->x1 - box->x + 1 != zoom->to[2])
         return 0;
-    if (b->y1 - b->y + 1 != z->to[3])
+    if (box->y1 - box->y + 1 != zoom->to[3])
         return 0;
     return 1;
 }
 
 // FUNCTION: 0x000b8bf0
-s8 add_glass_box(GlassBox *b, s32 id, s8 c1, s8 c2)
+s8 add_glass_box(GlassBox *box, s32 id, s8 open_delay, s8 close_delay)
 {
     s16 i;
 
@@ -126,32 +126,32 @@ s8 add_glass_box(GlassBox *b, s32 id, s8 c1, s8 c2)
     }
     if (i < 0x2e) {
         ZoomBoxes[i].active = 1;
-        if (fn_000b8b50(b, &ZoomBoxes[i]))
+        if (fn_000b8b50(box, &ZoomBoxes[i]))
             return i;
         ZoomBoxes[i].f1 = 0;
-        ZoomBoxes[i].f2 = b->f10;
+        ZoomBoxes[i].f2 = box->f10;
         ZoomBoxes[i].id = id;
-        ZoomBoxes[i].type = b->fe;
-        ZoomBoxes[i].fa = b->f8;
-        ZoomBoxes[i].fb = b->ff;
-        if (c1 == -1)
-            ZoomBoxes[i].f3 = b->f11;
+        ZoomBoxes[i].type = box->fe;
+        ZoomBoxes[i].fa = box->f8;
+        ZoomBoxes[i].fb = box->ff;
+        if (open_delay == -1)
+            ZoomBoxes[i].f3 = box->f11;
         else
-            ZoomBoxes[i].f3 = c1;
-        if (c2 == -1)
-            ZoomBoxes[i].f4 = b->f11;
+            ZoomBoxes[i].f3 = open_delay;
+        if (close_delay == -1)
+            ZoomBoxes[i].f4 = box->f11;
         else
-            ZoomBoxes[i].f4 = c2;
-        switch (b->f12) {
+            ZoomBoxes[i].f4 = close_delay;
+        switch (box->f12) {
         case 1:
-            ZoomBoxes[i].from[0] = b->x + (b->x1 - b->x) / 2;
-            ZoomBoxes[i].from[1] = b->y;
+            ZoomBoxes[i].from[0] = box->x + (box->x1 - box->x) / 2;
+            ZoomBoxes[i].from[1] = box->y;
             ZoomBoxes[i].from[2] = 0;
-            ZoomBoxes[i].from[3] = b->y1 - b->y + 1;
+            ZoomBoxes[i].from[3] = box->y1 - box->y + 1;
             break;
         case 0:
-            ZoomBoxes[i].from[0] = b->x + (b->x1 - b->x) / 2;
-            ZoomBoxes[i].from[1] = b->y + (b->y1 - b->y) / 2;
+            ZoomBoxes[i].from[0] = box->x + (box->x1 - box->x) / 2;
+            ZoomBoxes[i].from[1] = box->y + (box->y1 - box->y) / 2;
             ZoomBoxes[i].from[2] = 0;
             ZoomBoxes[i].from[3] = 0;
             break;
@@ -164,10 +164,10 @@ s8 add_glass_box(GlassBox *b, s32 id, s8 c1, s8 c2)
         default:
             break;
         }
-        ZoomBoxes[i].to[0] = b->x;
-        ZoomBoxes[i].to[1] = b->y;
-        ZoomBoxes[i].to[2] = b->x1 - b->x + 1;
-        ZoomBoxes[i].to[3] = b->y1 - b->y + 1;
+        ZoomBoxes[i].to[0] = box->x;
+        ZoomBoxes[i].to[1] = box->y;
+        ZoomBoxes[i].to[2] = box->x1 - box->x + 1;
+        ZoomBoxes[i].to[3] = box->y1 - box->y + 1;
     } else {
         hosp_dos_printf("Not enough ZoomBoxes!\n");
     }
@@ -175,19 +175,19 @@ s8 add_glass_box(GlassBox *b, s32 id, s8 c1, s8 c2)
 }
 
 // FUNCTION: 0x000b8f64
-void add_glass_frame(GlassFrame *f, s32 mask)
+void add_glass_frame(GlassFrame *frames, s32 mask)
 {
     s16 i;
 
     mask &= -mask;
     i = 0;
-    while (f[i].x1)
-        add_glass_box((GlassBox *)&f[i++], mask, -1, -1);
+    while (frames[i].x1)
+        add_glass_box((GlassBox *)&frames[i++], mask, -1, -1);
     DesiredDisplay |= mask;
 }
 
 // FUNCTION: 0x000b8fcc
-void draw_a_box(u8 n)
+void draw_a_box(u8 zoom)
 {
     s32 *from;
     s32 *to;
@@ -201,24 +201,24 @@ void draw_a_box(u8 n)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 4;
-    from = ZoomBoxes[n].from;
-    to = ZoomBoxes[n].to;
-    step = ZoomBoxes[n].f1;
-    total = ZoomBoxes[n].f2 - 1;
+    from = ZoomBoxes[zoom].from;
+    to = ZoomBoxes[zoom].to;
+    step = ZoomBoxes[zoom].f1;
+    total = ZoomBoxes[zoom].f2 - 1;
     x = (to[0] * step + (total - step) * from[0]) / total;
     y = ((total - step) * from[1] + to[1] * step) / total;
     w = ((total - step) * from[2] + to[2] * step) / total;
     h = ((total - step) * from[3] + to[3] * step) / total;
     if (step != 0) {
         lbDisplay.draw_flags = 0;
-        if (ZoomBoxes[n].fb) {
-            if (!((((s8)ZoomBoxes[n].type != 2 && display_mode == 10) || (to[0] == 0x213 && display_mode == 5))
+        if (ZoomBoxes[zoom].fb) {
+            if (!((((s8)ZoomBoxes[zoom].type != 2 && display_mode == 10) || (to[0] == 0x213 && display_mode == 5))
                   && current_balance_file && current_balance_file == current_balance_file->next)) {
                 draw_button_box(x, y, w, h);
                 draw_button_edges(x, y, w - 1, h - 1, 0);
             }
         } else {
-            switch (ZoomBoxes[n].type) {
+            switch (ZoomBoxes[zoom].type) {
             case -1:
                 draw_background_box(x, y, w, h, 1);
                 break;
@@ -351,12 +351,12 @@ s8 draw_zoom_boxes(void)
 s32 next_map(void)
 {
     s32 diff;
-    s32 r;
+    s32 closing;
 
     diff = CurrentDisplay ^ DesiredDisplay;
-    r = diff & CurrentDisplay;
-    if (r)
-        return r;
+    closing = diff & CurrentDisplay;
+    if (closing)
+        return closing;
     if ((CurrentDisplay | DesiredDisplay) & 8)
         return CurrentDisplay ^ DesiredDisplay;
     return diff & -diff;
@@ -439,57 +439,57 @@ s16 button_index(s32 mask)
 }
 
 // FUNCTION: 0x000b9b04
-void draw_glass_text(SlistButton *b, char *text)
+void draw_glass_text(SlistButton *button, char *text)
 {
     s16 x;
 
     lbDisplay.draw_flags &= 4;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
+    LbTextSetJustifyWindow(button->x, 0, button->x1 - button->x + 1);
     if ((lbDisplay.mleft_button
-         && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))
+         && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, button->x, button->y, button->x1 - button->x + 1, button->y1 - button->y + 1))
         || (lbDisplay.rleft_button
-            && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))) {
+            && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, button->x, button->y, button->x1 - button->x + 1, button->y1 - button->y + 1))) {
         set_font_from_cache(0x22);
-        x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
-        LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
+        x = (button->x1 - button->x + 1 - LbTextStringWidth(text)) >> 1;
+        LbTextDraw(x + 1, ((button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
     } else {
         set_font_from_cache(0x21);
-        x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
-        LbTextDraw(x, (b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);
+        x = (button->x1 - button->x + 1 - LbTextStringWidth(text)) >> 1;
+        LbTextDraw(x, (button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);
     }
 }
 
 // FUNCTION: 0x000b9d20
-void draw_glass_text_hilight(SlistButton *b, char *text)
+void draw_glass_text_hilight(SlistButton *button, char *text)
 {
     s16 x;
 
     lbDisplay.draw_flags &= 4;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
+    LbTextSetJustifyWindow(button->x, 0, button->x1 - button->x + 1);
     set_font_from_cache(0x22);
-    x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
-    LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
+    x = (button->x1 - button->x + 1 - LbTextStringWidth(text)) >> 1;
+    LbTextDraw(x + 1, ((button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
 }
 
 // FUNCTION: 0x000b9e14
-void draw_glass_text_hilight_no_jump(SlistButton *b, char *text)
+void draw_glass_text_hilight_no_jump(SlistButton *button, char *text)
 {
     s16 x;
 
     lbDisplay.draw_flags &= 4;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    LbTextSetJustifyWindow(b->x, 0, b->x1 - b->x + 1);
+    LbTextSetJustifyWindow(button->x, 0, button->x1 - button->x + 1);
     set_font_from_cache(0x22);
-    x = (b->x1 - b->x + 1 - LbTextStringWidth(text)) >> 1;
+    x = (button->x1 - button->x + 1 - LbTextStringWidth(text)) >> 1;
     if ((lbDisplay.mleft_button
-         && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1))
+         && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, button->x, button->y, button->x1 - button->x + 1, button->y1 - button->y + 1))
         || (lbDisplay.rleft_button
-            && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, b->x, b->y, b->x1 - b->x + 1, b->y1 - b->y + 1)))
-        LbTextDraw(x + 1, ((b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
+            && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, button->x, button->y, button->x1 - button->x + 1, button->y1 - button->y + 1)))
+        LbTextDraw(x + 1, ((button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
     else
-        LbTextDraw(x, (b->y1 + b->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);
+        LbTextDraw(x, (button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);
 }
 
 // FUNCTION: 0x000b9ffc

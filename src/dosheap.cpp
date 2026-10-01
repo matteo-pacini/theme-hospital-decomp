@@ -39,16 +39,16 @@ void *CDosHeap::Alloc(u32 size)
 
     rec = GetNextRecord();
     if (rec) {
-        CDosHeapItem *f;
+        CDosHeapItem *free_block;
 
-        f = free_list;
-        while (f && f->size < size)
-            f = f->next;
-        if (f) {
-            rec->ptr = f->ptr;
+        free_block = free_list;
+        while (free_block && free_block->size < size)
+            free_block = free_block->next;
+        if (free_block) {
+            rec->ptr = free_block->ptr;
             rec->size = size;
-            f->ptr += size;
-            f->size -= size;
+            free_block->ptr += size;
+            free_block->size -= size;
             rec->next = used_list;
             used_list = rec;
             stats.RecordAlloc(rec);
@@ -176,19 +176,19 @@ u32 CDosHeap::ReleaseFreeBlock(CDosHeapItem *item)
 // FUNCTION: 0x000bb830
 u32 CDosHeap::MergeRecord(CDosHeapItem *item)
 {
-    CDosHeapItem *f;
+    CDosHeapItem *free_block;
     u8 *start;
     u8 *end;
 
-    f = free_list;
+    free_block = free_list;
     start = item->ptr;
     end = item->ptr + item->size;
-    while (f && f->ptr != end && f->ptr + f->size != start)
-        f = f->next;
-    if (f) {
-        if (f->ptr == end)
-            f->ptr -= item->size;
-        f->size += item->size;
+    while (free_block && free_block->ptr != end && free_block->ptr + free_block->size != start)
+        free_block = free_block->next;
+    if (free_block) {
+        if (free_block->ptr == end)
+            free_block->ptr -= item->size;
+        free_block->size += item->size;
         return 1;
     }
     return 0;
@@ -197,20 +197,20 @@ u32 CDosHeap::MergeRecord(CDosHeapItem *item)
 // FUNCTION: 0x000bb8dc
 void CDosHeap::Repack(void)
 {
-    CDosHeapItem *f;
+    CDosHeapItem *free_block;
     u32 before;
     u32 merged;
 
-    f = free_list;
+    free_block = free_list;
     before = fn_000bbaf4(this);
     merged = 1;
     while (merged) {
         merged = 0;
-        while (f && !merged) {
-            merged = MergeRecord(f);
+        while (free_block && !merged) {
+            merged = MergeRecord(free_block);
             if (merged)
-                ReleaseFreeBlock(f);
-            f = f->next;
+                ReleaseFreeBlock(free_block);
+            free_block = free_block->next;
         }
     }
     Report("Repacking the heap, %d to %d", before, fn_000bbaf4(this));
@@ -279,16 +279,16 @@ extern "C" {
 // FUNCTION: 0x000bbaf4
 u32 fn_000bbaf4(CDosHeap *heap)
 {
-    u32 n;
-    CDosHeapItem *f;
+    u32 frags;
+    CDosHeapItem *free_block;
 
-    n = 0;
-    f = heap->free_list;
-    while (f) {
-        n++;
-        f = f->next;
+    frags = 0;
+    free_block = heap->free_list;
+    while (free_block) {
+        frags++;
+        free_block = free_block->next;
     }
-    return n;
+    return frags;
 }
 
 }

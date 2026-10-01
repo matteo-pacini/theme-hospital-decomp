@@ -68,8 +68,8 @@ void fn_00022a58(void);
 void fn_0007fbb8(int a);
 void fn_0002994c(u8 a);
 u8 fn_0002d11c(Thing *o);
-int fn_0001c030(int n);
-void fn_0001c084(int n);
+int fn_0001c030(int region);
+void fn_0001c084(int percent);
 u16 fn_0001c1b4(u16 *p, int len);
 void fn_0001c234(void);
 int fn_0001c318(s8 port, u32 base, int len);
@@ -79,27 +79,27 @@ void *fn_00022b60(TbCacheUsedBlock *block);
 }
 
 // FUNCTION: 0x0001c030
-int fn_0001c030(int n)
+int fn_0001c030(int region)
 {
-    if (!(n >= 0x11 || n == 0xc || n == 0xd || n == 7 || n == 9)) {
+    if (!(region >= 0x11 || region == 0xc || region == 0xd || region == 7 || region == 9)) {
         return 1;
     }
     return 0;
 }
 
 // FUNCTION: 0x0001c084
-void fn_0001c084(int n)
+void fn_0001c084(int percent)
 {
-    u8 flag = lbDisplay.unknown4 != 0;
+    u8 was_locked = lbDisplay.unknown4 != 0;
 
     if (display_mode == 0) {
         char buf[32];
 
-        if (!flag) {
+        if (!was_locked) {
             while (LbScreenLock() != 1) {
             }
         }
-        sprintf(buf, "%s (%d%%)", D_001602a0->f6c, n);
+        sprintf(buf, "%s (%d%%)", D_001602a0->f6c, percent);
         clear_panel_info_bar();
         LbTextSetWindow(panel->x, panel->y, lbDisplay.unknown18 - panel->x, lbDisplay.unknown1c - panel->y);
         set_font_from_cache(0x2c);
@@ -107,7 +107,7 @@ void fn_0001c084(int n)
         set_all_refresh_zones_in_window(0, lbDisplay.unknown1c - 0x5c, lbDisplay.unknown18, lbDisplay.unknown1c, 3);
         LbScreenUnlock();
         special_refresh();
-        if (flag) {
+        if (was_locked) {
             while (LbScreenLock() != 1) {
             }
         }
@@ -301,33 +301,33 @@ void process_turn(void)
 {
     char buf[100];
     Thing *obj2;
-    int w;
+    int mouse_x;
     Thing *obj1;
-    int h;
+    int mouse_y;
     u16 j;
     u16 i;
     u8 changed;
 
     if (D_001581ee & 2) {
-        u32 version;
+        u32 recorded_seed;
 
         LbFileRead(D_001581e8, packet, 0xf);
-        LbFileRead(D_001581e8, &w, 4);
-        LbFileRead(D_001581e8, &h, 4);
+        LbFileRead(D_001581e8, &mouse_x, 4);
+        LbFileRead(D_001581e8, &mouse_y, 4);
         LbFileRead(D_001581e8, &gamevar.f12e, 2);
         LbFileRead(D_001581e8, &gamevar, 0x178);
-        LbFileRead(D_001581e8, &version, 4);
-        if (seed != version) {
+        LbFileRead(D_001581e8, &recorded_seed, 4);
+        if (seed != recorded_seed) {
             fn_000bbff0(debug.unknown116, "PLAYBACK OUT OF SYNC");
             debug.unknown1de = 200;
         }
-        LbMouseSetPosition(w, h);
+        LbMouseSetPosition(mouse_x, mouse_y);
     } else if (D_001581ee & 1) {
-        w = lbDisplay.mmouse_x;
-        h = lbDisplay.mmouse_y;
+        mouse_x = lbDisplay.mmouse_x;
+        mouse_y = lbDisplay.mmouse_y;
         LbFileWrite(D_001581e8, packet, 0xf);
-        LbFileWrite(D_001581e8, &w, 4);
-        LbFileWrite(D_001581e8, &h, 4);
+        LbFileWrite(D_001581e8, &mouse_x, 4);
+        LbFileWrite(D_001581e8, &mouse_y, 4);
         LbFileWrite(D_001581e8, &gamevar.f12e, 2);
         LbFileWrite(D_001581e8, &gamevar, 0x178);
         LbFileWrite(D_001581e8, &seed, 4);
@@ -1857,21 +1857,21 @@ void process_turn(void)
 s16 save_game_valid(const s8 slot)
 {
     char buf[64];
-    int h;
+    int handle;
 
     sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
     if (LbFileLengthRnc(buf) == statvar.unknown0) {
-        h = LbFileOpen(buf, 2);
-        if (h != -1) {
-            LbFileRead(h, &version, 2);
+        handle = LbFileOpen(buf, 2);
+        if (handle != -1) {
+            LbFileRead(handle, &version, 2);
             if (version == 3) {
-                LbFileRead(h, &level_number, 1);
-                LbFileRead(h, balance_id, 10);
-                LbFileClose(h);
+                LbFileRead(handle, &level_number, 1);
+                LbFileRead(handle, balance_id, 10);
+                LbFileClose(handle);
                 load_balance((u16)level_number);
                 return 1;
             } else {
-                LbFileClose(h);
+                LbFileClose(handle);
                 othervar.fa66 = 0x1c;
                 othervar.fa67 = 0x46;
             }
@@ -1887,17 +1887,17 @@ s16 save_game_valid(const s8 slot)
 }
 
 // FUNCTION: 0x00021818
-u16 fn_00021818(s8 slot, s8 player)
+u16 fn_00021818(s8 slot, s8 port)
 {
     s32 cell;
     Thing *w;
     char buf[64];
-    int h;
+    int handle;
     u16 i;
     u16 ok;
     int tries;
 
-    if (statvar.unknownfd > 1 && player == -1) {
+    if (statvar.unknownfd > 1 && port == -1) {
         return 0;
     }
     if (statvar.unknownfd <= 1) {
@@ -1924,14 +1924,14 @@ u16 fn_00021818(s8 slot, s8 player)
             w->mode = w->room - room_info;
         }
     }
-    if (player == -1) {
+    if (port == -1) {
         sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
-        h = LbFileOpen(buf, 0);
-        if (h != -1) {
+        handle = LbFileOpen(buf, 0);
+        if (handle != -1) {
             for (i = 0; D_001290d4[i].addr; i++) {
-                LbFileWrite(h, (void *)D_001290d4[i].addr, D_001290d4[i].size);
+                LbFileWrite(handle, (void *)D_001290d4[i].addr, D_001290d4[i].size);
             }
-            LbFileClose(h);
+            LbFileClose(handle);
             othervar.fa66 = 0x18;
             othervar.fa67 = 3;
             save_player_details();
@@ -1945,12 +1945,12 @@ u16 fn_00021818(s8 slot, s8 player)
         ok = 0;
         tries = 0;
         do {
-        } while (LbNetwork_Send(player, D_0015fe86, 0x400) == -1 && tries++ < 8);
+        } while (LbNetwork_Send(port, D_0015fe86, 0x400) == -1 && tries++ < 8);
         if (tries < 8) {
             ok = 1;
             for (i = 0; D_001290d4[i].addr; i++) {
                 if (fn_0001c030(i)) {
-                    if (!fn_0001c318(player, D_001290d4[i].addr, D_001290d4[i].size)) {
+                    if (!fn_0001c318(port, D_001290d4[i].addr, D_001290d4[i].size)) {
                         ok = 0;
                         break;
                     }
@@ -1982,16 +1982,16 @@ u16 fn_00021818(s8 slot, s8 player)
 // FUNCTION: 0x00021c38
 s16 fn_00021c38(s8 slot, s8 port)
 {
-    u8 owner;
+    u8 saved_level;
     u16 ok;
     char buf[64];
-    int h;
+    int handle;
     u16 i;
     s32 cell;
     Thing *w;
     int tries;
 
-    owner = myhosp->f29;
+    saved_level = myhosp->f29;
     if (statvar.unknownfd > 1 && port == -1) {
         return 0;
     }
@@ -2010,12 +2010,12 @@ s16 fn_00021c38(s8 slot, s8 port)
             ok = 1;
             setup_addresses();
             sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
-            h = LbFileOpen(buf, 2);
-            if (h != -1) {
+            handle = LbFileOpen(buf, 2);
+            if (handle != -1) {
                 for (i = 0; D_001290d4[i].addr; i++) {
-                    LbFileRead(h, (void *)D_001290d4[i].addr, D_001290d4[i].size);
+                    LbFileRead(handle, (void *)D_001290d4[i].addr, D_001290d4[i].size);
                 }
-                LbFileClose(h);
+                LbFileClose(handle);
             }
             if (resvars.f1 == SCREEN_MODE_1) {
                 window.unknown30 = 0;
@@ -2048,7 +2048,7 @@ s16 fn_00021c38(s8 slot, s8 port)
             reset_advisor();
             myhosp = &allhosps[player];
             if (statvar.unknownfd > 1) {
-                myhosp->f29 = owner;
+                myhosp->f29 = saved_level;
             }
             othervar.f8c = get_next_illness(1, 0);
             free_level();
@@ -2087,7 +2087,7 @@ s16 fn_00021c38(s8 slot, s8 port)
             reset_advisor();
             myhosp = &allhosps[player];
             if (statvar.unknownfd > 1) {
-                myhosp->f29 = owner;
+                myhosp->f29 = saved_level;
             }
         }
         return ok;
@@ -2126,7 +2126,7 @@ void setup_addresses(void)
 s8 load_level(const u8 lvl, const u8 full)
 {
     char buf[144];
-    RoomInfo *r;
+    RoomInfo *room;
     u16 i;
     u16 j;
 
@@ -2160,29 +2160,29 @@ s8 load_level(const u8 lvl, const u8 full)
         if (level->f0 < 1 || level->f0 > 4) {
             level->f0 = 1;
         }
-        r = room_info + 1;
+        room = room_info + 1;
         for (i = 0; i < 4; i++) {
             if (D_001609c4[i].active || (statvar.unknownfd <= 1 && i == player)) {
                 for (j = 0; j < 4; j++) {
-                    for (; r < end_room_info; r++) {
-                        if (r->type == 0) {
-                            r->type = 1;
+                    for (; room < end_room_info; room++) {
+                        if (room->type == 0) {
+                            room->type = 1;
                             switch (j) {
                             case 0:
-                                r->pos = r->unknown4 = r->unknown6 = level->f2[i][0];
+                                room->pos = room->unknown4 = room->unknown6 = level->f2[i][0];
                                 break;
                             case 1:
-                                r->pos = r->unknown4 = r->unknown6 = level->f2[i][1];
+                                room->pos = room->unknown4 = room->unknown6 = level->f2[i][1];
                                 break;
                             case 2:
-                                r->pos = r->unknown4 = r->unknown6 = level->f2[i][2];
+                                room->pos = room->unknown4 = room->unknown6 = level->f2[i][2];
                                 break;
                             case 3:
-                                r->pos = r->unknown4 = r->unknown6 = level->f2[i][3];
+                                room->pos = room->unknown4 = room->unknown6 = level->f2[i][3];
                                 break;
                             }
-                            r->owner = i;
-                            allhosps[i].unknown1cf[j] = r - room_info;
+                            room->owner = i;
+                            allhosps[i].unknown1cf[j] = room - room_info;
                             break;
                         }
                     }
@@ -2281,24 +2281,24 @@ void fn_000228e0(void)
 }
 
 // FUNCTION: 0x000229b0
-s32 read_level_number(s32 n)
+s32 read_level_number(s32 slot)
 {
-    int h;
+    int handle;
     char buf[64];
     u8 level;
 
-    sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, n);
-    h = LbFileOpen(buf, 2);
-    if (h == -1) {
+    sprintf(buf, "%s%s%d", statvar.f575, statvar.f6c, slot);
+    handle = LbFileOpen(buf, 2);
+    if (handle == -1) {
         return -1;
     }
-    if (LbFileSeek(h, 2, 0) != -1) {
-        if (LbFileRead(h, &level, 2) != -1) {
-            LbFileClose(h);
+    if (LbFileSeek(handle, 2, 0) != -1) {
+        if (LbFileRead(handle, &level, 2) != -1) {
+            LbFileClose(handle);
             return level;
         }
     }
-    LbFileClose(h);
+    LbFileClose(handle);
     return -1;
 }
 

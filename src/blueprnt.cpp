@@ -14,8 +14,8 @@ u8 is_room_clear_yet(RoomInfo *room);
 void build_all_rooms(void);
 void price_all_rooms(u16 type, u8 owner);
 void init_double_doors(RoomInfo *room);
-u8 try_move_peep_to_wall(Thing *w, u8 side);
-u8 try_move_peep_cell(Thing *w, u8 x, u8 y);
+u8 try_move_peep_to_wall(Thing *peep, u8 side);
+u8 try_move_peep_cell(Thing *peep, u8 x, u8 y);
 s32 room_depreciation(void);
 void remove_expertise_room(RoomInfo *room);
 u8 is_valid_no_room(u16 tile);
@@ -391,11 +391,11 @@ void modify_blueprint(u8 owner, u8 dragging, u16 tile)
 u8 commit_blueprint(u8 owner)
 {
     BuildState *build;
-    u8 w;
+    u8 width;
     u8 x;
     u8 y;
     RoomInfo *room;
-    u8 h;
+    u8 height;
 
     build = &allhosps[owner].build;
     if (!is_valid_room(build->x0, build->y0, build->x1, build->y1, owner)) {
@@ -428,10 +428,10 @@ u8 commit_blueprint(u8 owner)
         set_edit_room_requester_mode(2);
         set_mouse_mode(2);
     }
-    w = build->x1 - build->x0 + 1;
-    h = build->y1 - build->y0 + 1;
-    for (y = build->y0; y < build->y0 + h; y++) {
-        for (x = build->x0; x < build->x0 + w; x++) {
+    width = build->x1 - build->x0 + 1;
+    height = build->y1 - build->y0 + 1;
+    for (y = build->y0; y < build->y0 + height; y++) {
+        for (x = build->x0; x < build->x0 + width; x++) {
             map[(s16)x + ((s16)y << 7)].floor &= 0xaf;
         }
     }
@@ -465,10 +465,10 @@ void uncommit_blueprint(u8 owner)
 // FUNCTION: 0x00046f88
 u8 is_tile_valid(u16 tile, u8 owner)
 {
-    Thing *t;
+    Thing *occupant;
 
-    for (t = &thing[map[tile].first]; t > thing; t = &thing[t->next]) {
-        if (t->renderer != 2 && t->renderer != 4) {
+    for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->next]) {
+        if (occupant->renderer != 2 && occupant->renderer != 4) {
             advisor.f11f |= 2;
             return 0;
         }
@@ -539,18 +539,18 @@ void edit_blueprint(u8 owner)
     BuildState *build;
     RoomInfo *room;
     u8 i;
-    Thing *t;
+    Thing *obj;
 
     build = &allhosps[owner].build;
     room = &room_info[allhosps[owner].build.room];
     i = 0;
-    while ((t = &thing[room->first_object]) > thing) {
-        if (othervar.ff == player && (!t->group || objects[thing[t->group].subtype].unknown17 == -1))
-            gamevar.unknown33.unknown0[t->subtype]++;
-        remove_object_from_map(t);
+    while ((obj = &thing[room->first_object]) > thing) {
+        if (othervar.ff == player && (!obj->group || objects[thing[obj->group].subtype].unknown17 == -1))
+            gamevar.unknown33.unknown0[obj->subtype]++;
+        remove_object_from_map(obj);
         for (; i < 20; i++) {
             if (build->objects[i] == 0) {
-                build->objects[i] = t - thing;
+                build->objects[i] = obj - thing;
                 break;
             }
         }
@@ -578,7 +578,7 @@ void compute_room_pointed(u16 tile)
 {
     RoomInfo *room;
     BuildState *build;
-    Thing *t;
+    Thing *pointed;
 
     room = which_room(tile);
     build = &allhosps[player].build;
@@ -592,17 +592,17 @@ void compute_room_pointed(u16 tile)
     } else {
         build->edit_room = 0;
         build->unknownE_ = 0;
-        t = &thing[othervar.f41];
-        if (t > thing) {
-            switch (t->renderer) {
+        pointed = &thing[othervar.f41];
+        if (pointed > thing) {
+            switch (pointed->renderer) {
             case 6:
-                if (t->unknown89 == 0 && !(objects[t->subtype].unknown20[2] & 1) && t->owner == player)
+                if (pointed->unknown89 == 0 && !(objects[pointed->subtype].unknown20[2] & 1) && pointed->owner == player)
                     othervar.f43 = othervar.f41;
                 break;
             case 2:
             case 4:
-                if (t->unknown69 && (u16)(t - thing) == thing[t->unknown69].unknown91
-                    && thing[t->unknown69].unknown89 == 0 && t->owner == player)
+                if (pointed->unknown69 && (u16)(pointed - thing) == thing[pointed->unknown69].unknown91
+                    && thing[pointed->unknown69].unknown89 == 0 && pointed->owner == player)
                     othervar.f43 = othervar.f41;
                 break;
             }
@@ -615,7 +615,7 @@ u8 check_room_access(u8 owner)
 {
     u16 pos;
     RoomInfo *room;
-    Thing *t;
+    Thing *obj;
 
     pos = room_info[allhosps[owner].unknown1cf[0]].unknown4;
     for (room = room_info + 1; room < end_room_info; room++) {
@@ -625,11 +625,11 @@ u8 check_room_access(u8 owner)
             pos = room->unknown4;
         }
     }
-    for (t = thing + 1; t < end_things; t++) {
-        if ((t->renderer == 6 && t->subtype == 0xb) && t->owner == owner) {
-            if (!check_points_connected(pos, t->use_pos[0]))
+    for (obj = thing + 1; obj < end_things; obj++) {
+        if ((obj->renderer == 6 && obj->subtype == 0xb) && obj->owner == owner) {
+            if (!check_points_connected(pos, obj->use_pos[0]))
                 return 0;
-            if (!check_points_connected(pos, t->use_pos[1]))
+            if (!check_points_connected(pos, obj->use_pos[1]))
                 return 0;
         }
     }
@@ -746,7 +746,7 @@ void commit_doors(u8 owner)
 }
 
 // FUNCTION: 0x00047ed0
-u8 move_peep_from_blueprint(Thing *w)
+u8 move_peep_from_blueprint(Thing *peep)
 {
     s8 i;
     u8 x;
@@ -756,9 +756,9 @@ u8 move_peep_from_blueprint(Thing *w)
     u8 dist[4];
     BuildState *build;
 
-    build = &allhosps[w->owner].build;
-    x = w->x.tile;
-    y = w->y.tile;
+    build = &allhosps[peep->owner].build;
+    x = peep->x.tile;
+    y = peep->y.tile;
     if (!(x >= build->x0 && x <= build->x1 && y >= build->y0 && y <= build->y1))
         return 0;
     dist[0] = y - build->y0;
@@ -775,7 +775,7 @@ u8 move_peep_from_blueprint(Thing *w)
         }
         if (best != 0xff) {
             dist[side] = 0xff;
-            if (try_move_peep_to_wall(w, side))
+            if (try_move_peep_to_wall(peep, side))
                 return 1;
         }
     } while (best != 0xff);
@@ -783,7 +783,7 @@ u8 move_peep_from_blueprint(Thing *w)
 }
 
 // FUNCTION: 0x00047ffc
-u8 try_move_peep_to_wall(Thing *w, u8 side)
+u8 try_move_peep_to_wall(Thing *peep, u8 side)
 {
     u8 i;
     BuildState *build;
@@ -792,34 +792,34 @@ u8 try_move_peep_to_wall(Thing *w, u8 side)
     u8 idx;
     u8 cells[128];
 
-    build = &allhosps[w->owner].build;
+    build = &allhosps[peep->owner].build;
     if (side == 0 || side == 2) {
         count = build->x1 - build->x0 + 1;
         base = build->x0;
-        idx = w->x.tile - base;
+        idx = peep->x.tile - base;
     } else {
         count = build->y1 - build->y0 + 1;
         base = build->y0;
-        idx = w->y.tile - base;
+        idx = peep->y.tile - base;
     }
     for (i = 0; i < count; i++)
         cells[i] = base + i;
     for (;;) {
         switch (side) {
         case 0:
-            if (try_move_peep_cell(w, cells[idx], build->y0 - 1))
+            if (try_move_peep_cell(peep, cells[idx], build->y0 - 1))
                 return 1;
             break;
         case 1:
-            if (try_move_peep_cell(w, build->x1 + 1, cells[idx]))
+            if (try_move_peep_cell(peep, build->x1 + 1, cells[idx]))
                 return 1;
             break;
         case 2:
-            if (try_move_peep_cell(w, cells[idx], build->y1 + 1))
+            if (try_move_peep_cell(peep, cells[idx], build->y1 + 1))
                 return 1;
             break;
         case 3:
-            if (try_move_peep_cell(w, build->x0 - 1, cells[idx]))
+            if (try_move_peep_cell(peep, build->x0 - 1, cells[idx]))
                 return 1;
             break;
         }
@@ -833,22 +833,22 @@ u8 try_move_peep_to_wall(Thing *w, u8 side)
 }
 
 // FUNCTION: 0x00048224
-u8 try_move_peep_cell(Thing *w, u8 x, u8 y)
+u8 try_move_peep_cell(Thing *peep, u8 x, u8 y)
 {
     u16 pos;
     u16 tile;
 
-    pos = room_info[allhosps[w->owner].unknown1cf[0]].unknown4;
+    pos = room_info[allhosps[peep->owner].unknown1cf[0]].unknown4;
     tile = (s16)(x + (y << 7));
     if ((!(map[tile].unknown7 & 0x10) && !which_room(tile)) && check_points_connected(tile, pos)) {
-        w->unknown105 = w->kind;
-        w->unknown106 = x;
-        w->unknown107 = y;
-        if (w->renderer == 2)
-            w->kind = 0x40;
+        peep->unknown105 = peep->kind;
+        peep->unknown106 = x;
+        peep->unknown107 = y;
+        if (peep->renderer == 2)
+            peep->kind = 0x40;
         else
-            w->kind = 0x4c;
-        w->height = 0;
+            peep->kind = 0x4c;
+        peep->height = 0;
         return 1;
     }
     return 0;

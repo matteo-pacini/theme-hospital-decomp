@@ -38,7 +38,7 @@ extern s16 yofs_text;
 extern s16 text_delay;
 extern char text_buf;
 
-void play_area_smk(const u8 n);
+void play_area_smk(const u8 level_no);
 void display_area_select(void);
 void display_select_level(void);
 void calculate_grey(u8 *palette);
@@ -50,7 +50,7 @@ void swap_game_sprites(TbScreenMode mode);
 // FUNCTION: 0x00068a80
 u8 draw_area_select(void)
 {
-    u8 active;
+    u8 was_locked;
     s32 next;
     char buf[128];
 
@@ -100,8 +100,8 @@ u8 draw_area_select(void)
         LbScreenClear(0);
         swap_game_sprites(resvars.f1);
         if (resvars.f1 == SCREEN_MODE_1) {
-            active = lbDisplay.unknown4 ? (u8)1 : (u8)0;
-            if (active)
+            was_locked = lbDisplay.unknown4 ? (u8)1 : (u8)0;
+            if (was_locked)
                 LbScreenUnlock();
             change_res(SCREEN_MODE_1);
             setup_menus();
@@ -281,12 +281,12 @@ void display_area_select(void)
 // FUNCTION: 0x000694e8
 void display_select_level(void)
 {
-    u8 w;
-    u8 h;
+    u8 char_width;
+    u8 line_height;
     u8 found;
     u16 row;
     u16 col;
-    s32 fh;
+    s32 handle;
     char buf[144];
 
     setup_colors();
@@ -294,8 +294,8 @@ void display_select_level(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x27);
     lbDisplay.draw_flags = 0;
-    h = lbFontPtr ? lbFontPtr[34].height : 0;
-    w = lbFontPtr ? lbFontPtr[34].width : 0;
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    char_width = lbFontPtr ? lbFontPtr[34].width : 0;
     for (col = 0; col < 6; col++) {
         for (row = 0; row < 20; row++) {
             found = 0;
@@ -305,17 +305,17 @@ void display_select_level(void)
             } else {
                 sprintf(buf, "levels/level.l%d", col * 20 + row);
             }
-            fh = LbFileOpen(buf, 2);
-            if (fh != -1) {
+            handle = LbFileOpen(buf, 2);
+            if (handle != -1) {
                 lbDisplay.draw_colour = color.unknown9;
                 lbDisplay.draw_flags |= 0x40;
                 found = 1;
-                LbFileClose(fh);
+                LbFileClose(handle);
             } else {
                 lbDisplay.draw_colour = color.unknownA;
                 lbDisplay.draw_flags |= 0x40;
             }
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, col * 100, h * row, 100, h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, col * 100, line_height * row, 100, line_height)) {
                 lbDisplay.draw_colour = color.unknown8;
                 *(volatile u16 *)&lbDisplay.draw_flags |= 0x40;
                 if (lbDisplay.left_button) {
@@ -329,18 +329,18 @@ void display_select_level(void)
                 }
             }
             sprintf(buf, "level-%d", col * 20 + row);
-            LbTextDraw(col * 100, h * row, buf);
+            LbTextDraw(col * 100, line_height * row, buf);
         }
     }
 }
 
 // FUNCTION: 0x00069770
-void play_area_smk(const u8 n)
+void play_area_smk(const u8 level_no)
 {
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
     smack_draw_callback = 0;
-    hosp_play_smk(n + 7);
+    hosp_play_smk(level_no + 7);
     copy_screen_from_wscreen(bscreen);
 }

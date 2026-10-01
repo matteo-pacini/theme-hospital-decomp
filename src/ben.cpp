@@ -19,9 +19,9 @@ extern u8 install_language;
 // FUNCTION: 0x0007a190
 char *read_line_from_buf(char *line, s32 max, char *src)
 {
-    s32 n;
+    s32 count;
 
-    n = 0;
+    count = 0;
     if (close_next_time) {
         close_next_time = 0;
         if (line)
@@ -35,15 +35,15 @@ char *read_line_from_buf(char *line, s32 max, char *src)
         return 0;
     }
     *line = 0;
-    while ((s8)*buf != '\n' && n < max && (s8)*buf != -1) {
+    while ((s8)*buf != '\n' && count < max && (s8)*buf != -1) {
         *line++ = *buf++;
-        n++;
+        count++;
     }
-    if (n) {
+    if (count) {
         if ((s8)*buf != -1) {
             line[-1] = 0;
             buf++;
-        } else if (n == max) {
+        } else if (count == max) {
             *line = 0;
         } else {
             line[-1] = 0;
@@ -70,9 +70,9 @@ char *modify_data_load_filename(TbLoadFiles *file)
 // FUNCTION: 0x0007a318
 s32 read_config_file(void)
 {
-    u32 p;
+    u32 pos;
     u32 key;
-    u32 j;
+    u32 value;
     u32 i;
     char *data;
     s32 len;
@@ -87,25 +87,25 @@ s32 read_config_file(void)
         LbMemoryFree(data);
         return -1;
     }
-    p = 0;
+    pos = 0;
     for (i = 0; i < 4; i++) {
-        if (len - 1 <= p)
+        if (len - 1 <= pos)
             break;
-        key = j = p;
-        while ((s8)data[p++] != '\n')
+        key = value = pos;
+        while ((s8)data[pos++] != '\n')
             ;
-        data[p - 2] = 0;
-        data[p - 1] = 0;
-        while (data[j] != '=' && (s8)data[j] != 0)
-            j++;
-        if (data[j] != '=')
+        data[pos - 2] = 0;
+        data[pos - 1] = 0;
+        while (data[value] != '=' && (s8)data[value] != 0)
+            value++;
+        if (data[value] != '=')
             return -1;
-        data[j++] = 0;
+        data[value++] = 0;
         if (!strcmp(data + key, "INSTALL_PATH")) {
-            fn_000bbff0(cd_install_path, data + j);
+            fn_000bbff0(cd_install_path, data + value);
             LbDataLoadSetModifyFilenameFunction(modify_data_load_filename);
         } else if (!strcmp(data + key, "INSTALL_TYPE")) {
-            switch (tolower((s8)data[j + 1])) {
+            switch (tolower((s8)data[value + 1])) {
             case 'i':
                 install_type = 1;
                 break;
@@ -118,7 +118,7 @@ s32 read_config_file(void)
             }
         } else if (!strcmp(data + key, "LANGUAGE")) {
             install_language = 0;
-            switch (tolower((s8)data[j])) {
+            switch (tolower((s8)data[value])) {
             case 'e':
                 install_language = 0;
                 break;
@@ -132,7 +132,7 @@ s32 read_config_file(void)
                 install_language = 3;
                 break;
             case 's':
-                if (tolower((s8)data[j + 1]) == 'p')
+                if (tolower((s8)data[value + 1]) == 'p')
                     install_language = 4;
                 else
                     install_language = 5;
@@ -140,7 +140,7 @@ s32 read_config_file(void)
             }
             myplayer.f21 = install_language;
         } else if (!strcmp(data + key, "SAVE_OVERRIDE")) {
-            fn_000bbff0(statvar.f575, data + j);
+            fn_000bbff0(statvar.f575, data + value);
         } else {
             LbMemoryFree(data);
             return -1;

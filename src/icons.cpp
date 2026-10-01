@@ -1,6 +1,6 @@
 #include "hosp.h"
 
-void reset_icon_value(Thing *const w, const s8 v);
+void reset_icon_value(Thing *const peep, const s8 icon);
 
 // Watcom 10.6 cannot initialise IconTable's union of an array and an
 // anonymous struct; the table is defined with this layout of the same size,
@@ -47,70 +47,70 @@ IconTableData icon_table_data[] = {
 #pragma aux icon_table_data "W?icon_table$n[]x$IconTable$$"
 
 // FUNCTION: 0x000b0300
-void set_icon_value(Thing *const w, const s8 v)
+void set_icon_value(Thing *const peep, const s8 icon)
 {
-    if (w->renderer != 2 || w->unknown130 > 0) {
-        if (icon_table[v].unknown0 <= icon_table[fn_000cb2db(w->unknown24)].unknown0) {
-            w->unknown27 = start[icon_table[v].unknown1].frame;
-            if (icon_table[v].f5 < 0) {
-                w->unknown24 = -v;
-                w->unknown25w = icon_table[v].f3;
-            } else if (icon_table[v].f5 == 0) {
-                w->unknown24 = v;
-                w->unknown25w = icon_table[v].f3;
-            } else if (icon_table[v].f5 > 0) {
-                w->unknown24 = v;
-                w->unknown25w = 0xffff;
+    if (peep->renderer != 2 || peep->unknown130 > 0) {
+        if (icon_table[icon].unknown0 <= icon_table[fn_000cb2db(peep->unknown24)].unknown0) {
+            peep->unknown27 = start[icon_table[icon].unknown1].frame;
+            if (icon_table[icon].f5 < 0) {
+                peep->unknown24 = -icon;
+                peep->unknown25w = icon_table[icon].f3;
+            } else if (icon_table[icon].f5 == 0) {
+                peep->unknown24 = icon;
+                peep->unknown25w = icon_table[icon].f3;
+            } else if (icon_table[icon].f5 > 0) {
+                peep->unknown24 = icon;
+                peep->unknown25w = 0xffff;
             }
         }
     }
 }
 
 // FUNCTION: 0x000b0428
-void reset_icon_value(Thing *const w, const s8 v)
+void reset_icon_value(Thing *const peep, const s8 icon)
 {
-    if (w->unknown24 == fn_000cb2db(v)) {
-        w->unknown24 = 0;
-        w->unknown25w = 0;
-        w->unknown27 = 0;
+    if (peep->unknown24 == fn_000cb2db(icon)) {
+        peep->unknown24 = 0;
+        peep->unknown25w = 0;
+        peep->unknown27 = 0;
     }
 }
 
 // FUNCTION: 0x000b0474
-void peep_icon(Thing *const w)
+void peep_icon(Thing *const peep)
 {
-    if (w->renderer != 2 || w->unknown130 > 0) {
-        if (w->unknown24 < 0)
+    if (peep->renderer != 2 || peep->unknown130 > 0) {
+        if (peep->unknown24 < 0)
             play_sound(10, 1, -1, -1);
-        w->unknown24 = fn_000cb2db(w->unknown24);
-        if (icon_table[w->unknown24].unknown1 > 0 && icon_table[w->unknown24].f5 == -1)
-            w->unknown25w = icon_table[w->unknown24].f3;
+        peep->unknown24 = fn_000cb2db(peep->unknown24);
+        if (icon_table[peep->unknown24].unknown1 > 0 && icon_table[peep->unknown24].f5 == -1)
+            peep->unknown25w = icon_table[peep->unknown24].f3;
     }
 }
 
 // FUNCTION: 0x000b0540
-void update_icon_counter(Thing *const w)
+void update_icon_counter(Thing *const peep)
 {
-    if (w->unknown24 > 0) {
-        if ((s16)w->unknown25w > 0) {
-            w->unknown25w--;
-            w->unknown27 = frame[w->unknown27].next;
+    if (peep->unknown24 > 0) {
+        if ((s16)peep->unknown25w > 0) {
+            peep->unknown25w--;
+            peep->unknown27 = frame[peep->unknown27].next;
         }
-        if ((s16)w->unknown25w == 0)
-            reset_icon_value(w, w->unknown24);
-        else if ((s16)w->unknown25w < 0)
-            w->unknown27 = frame[w->unknown27].next;
+        if ((s16)peep->unknown25w == 0)
+            reset_icon_value(peep, peep->unknown24);
+        else if ((s16)peep->unknown25w < 0)
+            peep->unknown27 = frame[peep->unknown27].next;
     }
 }
 
 extern "C" {
 
 // FUNCTION: 0x000b05f0
-void fn_000b05f0(Thing *w)
+void fn_000b05f0(Thing *peep)
 {
-    w->unknown24 = 0;
-    w->unknown25w = 0;
-    w->unknown27 = 0;
+    peep->unknown24 = 0;
+    peep->unknown25w = 0;
+    peep->unknown27 = 0;
 }
 
 }

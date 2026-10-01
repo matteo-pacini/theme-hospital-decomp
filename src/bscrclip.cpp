@@ -10,8 +10,8 @@ void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1
 // FUNCTION: 0x000adad0
 void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1, const s32 y1, const s16 dx, const s16 dy)
 {
-    s16 b;
-    s16 a;
+    s16 wrap_y;
+    s16 wrap_x;
     s16 sx;
     s16 sy;
     s16 w;
@@ -21,8 +21,8 @@ void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1
     s16 ex;
     s16 ey;
 
-    a = 0;
-    b = 0;
+    wrap_x = 0;
+    wrap_y = 0;
     sx = x0;
     sy = y0;
     w = x1 - x0;
@@ -32,11 +32,11 @@ void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1
     ex = dx + x1 - lbDisplay.unknown18;
     ey = dy + y1 - lbDisplay.unknown1c;
     if (rx < 0)
-        a = -rx;
+        wrap_x = -rx;
     else
         sx += rx;
     if (ry < 0)
-        b = -ry;
+        wrap_y = -ry;
     else
         sy += ry;
     if ((s32)rx > (s32)w)
@@ -51,13 +51,13 @@ void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1
         if (rx > 0 && dx + x0 < lbDisplay.unknown18)
             copy_region(dx + x0, dy + y0, x0, y0, rx, ry);
         if (ex > 0)
-            copy_region(a, dy + y0, sx, y0, ex, ry);
+            copy_region(wrap_x, dy + y0, sx, y0, ex, ry);
     }
     if (ey > 0) {
         if (rx > 0 && dx + x0 < lbDisplay.unknown18)
-            copy_region(dx + x0, b, x0, sy, rx, ey);
+            copy_region(dx + x0, wrap_y, x0, sy, rx, ey);
         if (ex > 0)
-            copy_region(a, b, sx, sy, ex, ey);
+            copy_region(wrap_x, wrap_y, sx, sy, ex, ey);
     }
 }
 

@@ -31,7 +31,7 @@ void display_drugs(void)
     u8 unused20;
     u8 unused1c;
     u16 value;
-    s16 offset;
+    s16 line_height;
     u16 room;
     Expertise *def;
     int result;
@@ -73,7 +73,7 @@ void display_drugs(void)
         break;
     }
     set_font_from_cache(0xe);
-    offset = lbFontPtr ? lbFontPtr[34].height : 0;
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
     LbTextSetWindow(resvars.f3c->unknown0, resvars.f3c->unknown4, resvars.f3c->unknown8, resvars.f3c->unknownC);
     lbDisplay.draw_flags = 0x100;
     room = othervar.f8c;
@@ -166,7 +166,7 @@ void display_drugs(void)
                 set_font_from_cache(0xe);
                 if (lbDisplay.left_button) {
                     if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.f40[i].x, resvars.f40[i].y,
-                                    lbDisplay.graphics_screen_width - resvars.f40[i].y, offset)) {
+                                    lbDisplay.graphics_screen_width - resvars.f40[i].y, line_height)) {
                         othervar.f8c = list[i];
                         play_sound(10, 0xa8, -1, -1);
                         lbDisplay.left_button = 0;
@@ -458,11 +458,11 @@ u8 get_next_illness(const u8 forward, const u8 start)
 }
 
 // FUNCTION: 0x00013fb0
-void setup_drug(u16 a, u16 b)
+void setup_drug(u16 hospital, u16 illness)
 {
-    if (expertise[b].kind == 0x27) {
-        allhosps[a].rooms[b].unknown1B = gbv.fc8;
-        allhosps[a].rooms[b].unknown18 = gbv.fca;
+    if (expertise[illness].kind == 0x27) {
+        allhosps[hospital].rooms[illness].unknown1B = gbv.fc8;
+        allhosps[hospital].rooms[illness].unknown18 = gbv.fca;
     }
 }
 
@@ -538,12 +538,12 @@ void update_cure_costs(void)
 // FUNCTION: 0x000143e0
 void update_single_cure_cost(u8 room, u8 hospital)
 {
-    s32 count;
+    s32 max_price;
     s32 target;
     s32 diff;
 
-    count = max_price_for_treatment(room, hospital);
-    target = count * allhosps[hospital].rooms[room].unknown10 / 10000;
+    max_price = max_price_for_treatment(room, hospital);
+    target = max_price * allhosps[hospital].rooms[room].unknown10 / 10000;
     if (target - allhosps[hospital].rooms[room].unknownC < 0) {
         diff = -(target - allhosps[hospital].rooms[room].unknownC);
     } else {

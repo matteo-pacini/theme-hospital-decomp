@@ -313,10 +313,10 @@ void limit_framerate(void)
 // FUNCTION: 0x00011b90
 void start_turn(void)
 {
-    u8 count;
+    u8 hosp_count;
     u8 i;
     u32 now;
-    RoomInfo *obj;
+    RoomInfo *room;
 
     now = LbTimerClock();
     game_turn++;
@@ -358,11 +358,11 @@ void start_turn(void)
             }
         }
     }
-    count = 1;
+    hosp_count = 1;
     if (statvar.unknownfd > 1) {
-        count = 4;
+        hosp_count = 4;
     }
-    for (i = 0; i < count; i++) {
+    for (i = 0; i < hosp_count; i++) {
         if (statvar.unknownfd > 1 && D_001609c4[i].active == 0) {
             continue;
         }
@@ -387,9 +387,9 @@ void start_turn(void)
     if (gamevar.ff0s) {
         earthquake(gamevar.ff0s, gamevar.ff1);
     }
-    obj = &room_info[allhosps[player].unknown11b7];
-    if (obj > room_info) {
-        if (obj->f22 && fn_00029a54(&room_info[allhosps[player].unknown11b7])) {
+    room = &room_info[allhosps[player].unknown11b7];
+    if (room > room_info) {
+        if (room->f22 && fn_00029a54(&room_info[allhosps[player].unknown11b7])) {
             if (gamevar.f12e == 0xe) {
                 if (room_info[allhosps[player].unknown11b7].first == 0) {
                     D_001549d0[player].type = 0x83;
@@ -417,28 +417,28 @@ void start_turn(void)
 // FUNCTION: 0x00012068
 u8 change_res(TbScreenMode mode)
 {
-    s32 width = lbDisplay.mmouse_x;
-    s32 height = lbDisplay.mmouse_y;
+    s32 mouse_x = lbDisplay.mmouse_x;
+    s32 mouse_y = lbDisplay.mmouse_y;
 
     if (resvars.f0 == SCREEN_MODE_13 && mode != SCREEN_MODE_13) {
-        width = width / 2;
-        height = height * 5 / 12;
+        mouse_x = mouse_x / 2;
+        mouse_y = mouse_y * 5 / 12;
     } else if (resvars.f0 != SCREEN_MODE_13 && mode == SCREEN_MODE_13) {
-        width <<= 1;
-        height = height * 12 / 5;
+        mouse_x <<= 1;
+        mouse_y = mouse_y * 12 / 5;
     }
     if (!setup_any_screen(D_00153f34, mode)) {
         return 0;
     } else {
-        TbSprite *font;
+        TbSprite *cursor_sprites;
 
         if (othervar.fa65) {
-            font = screen_pointers_tab_start;
+            cursor_sprites = screen_pointers_tab_start;
         } else {
-            font = pointer;
+            cursor_sprites = pointer;
         }
-        LbMouseSetup(font + othervar.f30);
-        LbMouseSetPosition(width, height);
+        LbMouseSetup(cursor_sprites + othervar.f30);
+        LbMouseSetPosition(mouse_x, mouse_y);
         return 1;
     }
 }
@@ -570,7 +570,7 @@ void check_if_active(void)
 }
 
 // FUNCTION: 0x00012500
-u8 process_lost_focus_display(u8 flag)
+u8 process_lost_focus_display(u8 draw)
 {
     u8 result;
 
@@ -580,7 +580,7 @@ u8 process_lost_focus_display(u8 flag)
     } else {
         result = 0;
     }
-    if (flag) {
+    if (draw) {
         switch (othervar.fa7f) {
         case 0:
         case 11:

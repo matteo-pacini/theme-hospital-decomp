@@ -18,18 +18,18 @@ void LbMouseSetWindow(s32 x, s32 y, s32 w, s32 h);
 void set_help_text(u8 mode, s16 x, s16 y, char **strs);
 void copy_and_format(char *dst, char *src);
 void copy_and_format_composite(char *dst, char **strs);
-void help_hotspot_detected(u16 i, u8 c, s16 x, s16 y);
-void set_help_from_index(u16 i, s16 x, s16 y);
+void help_hotspot_detected(u16 hotspot, u8 help_group, s16 x, s16 y);
+void set_help_from_index(u16 hotspot, s16 x, s16 y);
 
 // FUNCTION: 0x00099c70
 void setup_help_indices(void)
 {
-    u8 n;
+    u8 help_group;
     u8 done;
     u16 i;
 
     i = 0;
-    n = 0;
+    help_group = 0;
     done = 0;
     while (!done) {
         while (resvars.f2c_HelpHotspotp[i].x0 >= 0)
@@ -37,14 +37,14 @@ void setup_help_indices(void)
         if (resvars.f2c_HelpHotspotp[i].x0 == -2)
             done = 1;
         ++i;
-        ++n;
-        statvar.help_start[n] = i;
+        ++help_group;
+        statvar.help_start[help_group] = i;
         if (i == 0x1b) {}
     }
 }
 
 // FUNCTION: 0x00099d00
-void compute_help_text(s16 x, s16 y, u8 c)
+void compute_help_text(s16 x, s16 y, u8 help_group)
 {
     s16 dx;
     s16 dy;
@@ -55,18 +55,18 @@ void compute_help_text(s16 x, s16 y, u8 c)
     if (gamevar.f12e == 0x25)
         return;
     if (othervar.f9bd) {
-        if (c == othervar.f9bf)
+        if (help_group == othervar.f9bf)
             set_help_from_index(othervar.f9bd, x, y);
         return;
     }
-    for (i = statvar.help_start[c]; resvars.f2c_HelpHotspotp[i].x0 >= 0; i++) {
+    for (i = statvar.help_start[help_group]; resvars.f2c_HelpHotspotp[i].x0 >= 0; i++) {
         if (dx >= resvars.f2c_HelpHotspotp[i].x0 && dx <= resvars.f2c_HelpHotspotp[i].x1 && dy >= resvars.f2c_HelpHotspotp[i].y0
             && dy <= resvars.f2c_HelpHotspotp[i].y1) {
-            help_hotspot_detected(i, c, x, y);
+            help_hotspot_detected(i, help_group, x, y);
             return;
         }
     }
-    if (c == othervar.f8a6)
+    if (help_group == othervar.f8a6)
         othervar.f8ac = 0;
 }
 
@@ -307,59 +307,59 @@ void cancel_helpmsg(void)
 }
 
 // FUNCTION: 0x0009ab84
-void help_hotspot_detected(u16 i, u8 c, s16 x, s16 y)
+void help_hotspot_detected(u16 hotspot, u8 help_group, s16 x, s16 y)
 {
-    s32 d;
+    s32 slot;
 
     if (statvar.unknownfd > 1) {
-        d = i - statvar.help_start[c];
-        if (c == 0x18) {
-            if (d < 4 && network_num_players() <= d)
+        slot = hotspot - statvar.help_start[help_group];
+        if (help_group == 0x18) {
+            if (slot < 4 && network_num_players() <= slot)
                 return;
         }
     }
-    if (i == othervar.f8ac) {
+    if (hotspot == othervar.f8ac) {
         if (othervar.f92 + 0x2ee < othervar.f8a2)
             othervar.f89e = othervar.f8a2;
     } else {
-        othervar.f8a6 = c;
-        othervar.f8ac = i;
+        othervar.f8a6 = help_group;
+        othervar.f8ac = hotspot;
         othervar.f92 = othervar.f8a2;
     }
     if (othervar.f89e + 0x1f4 > othervar.f8a2) {
         othervar.f89e = othervar.f8a2;
-        othervar.f8a6 = c;
-        set_help_from_index(i, x, y);
+        othervar.f8a6 = help_group;
+        set_help_from_index(hotspot, x, y);
     }
 }
 
 // FUNCTION: 0x0009ac70
-void set_help_from_index(u16 i, s16 x, s16 y)
+void set_help_from_index(u16 hotspot, s16 x, s16 y)
 {
     s16 cy;
     s16 cx;
     char *text;
 
-    cx = x + (resvars.f2c_HelpHotspotp[i].x0 + resvars.f2c_HelpHotspotp[i].x1) / 2;
-    cy = y + resvars.f2c_HelpHotspotp[i].y0;
-    if (resvars.f2c_HelpHotspotp[i].func) {
+    cx = x + (resvars.f2c_HelpHotspotp[hotspot].x0 + resvars.f2c_HelpHotspotp[hotspot].x1) / 2;
+    cy = y + resvars.f2c_HelpHotspotp[hotspot].y0;
+    if (resvars.f2c_HelpHotspotp[hotspot].func) {
         text = othervar.f96;
-        resvars.f2c_HelpHotspotp[i].func();
+        resvars.f2c_HelpHotspotp[hotspot].func();
         set_help_text(1, cx, cy, &text);
     } else {
-        set_help_text(1, cx, cy, &help_text[resvars.f2c_HelpHotspotp[i].text]);
+        set_help_text(1, cx, cy, &help_text[resvars.f2c_HelpHotspotp[hotspot].text]);
     }
 }
 
 // FUNCTION: 0x0009ad68
-void set_force_help(u8 c, u16 id)
+void set_force_help(u8 help_group, u16 id)
 {
     u16 i;
     u8 found;
 
     i = 0;
     found = 0;
-    othervar.f9bf = c;
+    othervar.f9bf = help_group;
     for (i = 0; resvars.f2c_HelpHotspotp[i].x0 != -2; i++) {
         if (id == resvars.f2c_HelpHotspotp[i].text) {
             othervar.f9bd = i;

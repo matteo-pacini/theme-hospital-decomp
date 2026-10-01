@@ -60,11 +60,11 @@ void remove_litter(u16 tile, u8 owner)
 }
 
 // FUNCTION: 0x0007a8a8
-void handyman_works(Thing *w)
+void handyman_works(Thing *handyman)
 {
     u8 (*funcs[3])(Thing *);
     Thing *plant;
-    Thing *t;
+    Thing *machine;
     RoomInfo *room;
     u32 scores[3];
     s32 litter;
@@ -80,36 +80,36 @@ void handyman_works(Thing *w)
     u8 i;
     u8 level;
 
-    switch (w->unknown103) {
+    switch (handyman->unknown103) {
     case 0:
-        if (shall_i_resign(w))
+        if (shall_i_resign(handyman))
             break;
-        if (((w->f8e & 1) || w->f78 > allhosps[w->owner].f21d) && take_a_break(w))
+        if (((handyman->f8e & 1) || handyman->f78 > allhosps[handyman->owner].f21d) && take_a_break(handyman))
             break;
-        room = w->room;
+        room = handyman->room;
         if (room) {
-            for (t = &thing[w->room->first_object]; t > thing; t = &thing[t->unknown71]) {
-                if (t->renderer == 6 && objects[t->subtype].unknown24) {
-                    if (t->mode > 0) {
-                        thingpage_request(&allhosps[t->owner].ff6d, t - thing, 100);
+            for (machine = &thing[handyman->room->first_object]; machine > thing; machine = &thing[machine->unknown71]) {
+                if (machine->renderer == 6 && objects[machine->subtype].unknown24) {
+                    if (machine->mode > 0) {
+                        thingpage_request(&allhosps[machine->owner].ff6d, machine - thing, 100);
                         break;
                     }
                 }
             }
-            if (thingpage_respond(&allhosps[w->owner].ff6d, w, w->room - room_info, 0)) {
-                w->unknown103 = 8;
+            if (thingpage_respond(&allhosps[handyman->owner].ff6d, handyman, handyman->room - room_info, 0)) {
+                handyman->unknown103 = 8;
                 if (room->f3 != 6)
                     room->f3 = 5;
                 break;
             }
-            w->kind = 0x36;
+            handyman->kind = 0x36;
             break;
         }
-        if (thingpage_find_highest_priority(&allhosps[w->owner].ff6d) && handyman_try_fix(w))
+        if (thingpage_find_highest_priority(&allhosps[handyman->owner].ff6d) && handyman_try_fix(handyman))
             break;
-        litter = w->f98 * 100 / (w->f9e + 1);
-        plant_score = w->f9a * 1000 / (w->f9f + 1);
-        fix = w->f9c * 2000 / (w->fa0 + 1);
+        litter = handyman->f98 * 100 / (handyman->f9e + 1);
+        plant_score = handyman->f9a * 1000 / (handyman->f9f + 1);
+        fix = handyman->f9c * 2000 / (handyman->fa0 + 1);
         scores[0] = litter;
         funcs[0] = handyman_try_litter;
         scores[1] = plant_score;
@@ -127,66 +127,66 @@ void handyman_works(Thing *w)
             }
             if (best < 1000000) {
                 scores[idx] = 2000000;
-                if (funcs[idx](w))
+                if (funcs[idx](handyman))
                     return;
             }
         }
         dx = old_newrand() % 15 - 7;
         dy = old_newrand() % 15 - 7;
-        pos = (u16)w->x.tile + ((u16)w->y.tile << 7) + ((dy << 7) + dx);
-        if (map[pos].unknown7 == 1 << w->owner && can_i_get_to(w, pos) && !(map[pos].unknown7 & 0x10)) {
-            w->state_b = w->unknown94 = 0x3c;
-            set_complex(w, 0xbe, (u16)w->x.tile + ((u16)w->y.tile << 7) + ((dy << 7) + dx));
-            fn_0003e724(w);
+        pos = (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx);
+        if (map[pos].unknown7 == 1 << handyman->owner && can_i_get_to(handyman, pos) && !(map[pos].unknown7 & 0x10)) {
+            handyman->state_b = handyman->unknown94 = 0x3c;
+            set_complex(handyman, 0xbe, (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx));
+            fn_0003e724(handyman);
         }
         break;
     case 1:
         break;
     case 2:
-        if (w->x.tile != w->unknown19 || w->y.tile != w->unknown20) {
-            w->unknown103 = 0;
+        if (handyman->x.tile != handyman->unknown19 || handyman->y.tile != handyman->unknown20) {
+            handyman->unknown103 = 0;
             break;
         }
-        if (w->unknown148w == TILE_POS(w))
-            w->unknown148w = 0;
-        w->unknown17 = showanim_angle[w->unknown17];
-        w->state_b = 0x3c;
-        w->unknown103 = 3;
-        set_complex(w, 0x46, 0);
-        fn_0003e724(w);
+        if (handyman->unknown148w == TILE_POS(handyman))
+            handyman->unknown148w = 0;
+        handyman->unknown17 = showanim_angle[handyman->unknown17];
+        handyman->state_b = 0x3c;
+        handyman->unknown103 = 3;
+        set_complex(handyman, 0x46, 0);
+        fn_0003e724(handyman);
         break;
     case 3:
-        remove_litter((u16)w->x.tile + ((u16)w->y.tile << 7), w->owner);
-        set_complex(w, 0x30c, 0);
-        w->state_b = 0x3c;
-        fn_0003e724(w);
-        w->unknown103 = 0;
-        w->f98++;
+        remove_litter((u16)handyman->x.tile + ((u16)handyman->y.tile << 7), handyman->owner);
+        set_complex(handyman, 0x30c, 0);
+        handyman->state_b = 0x3c;
+        fn_0003e724(handyman);
+        handyman->unknown103 = 0;
+        handyman->f98++;
         break;
     case 4:
-        w->unknown69 = thingpage_remind_me(&allhosps[w->owner].fd2b, w);
-        set_complex(w, 0x26c, 0);
-        w->unknown103 = 5;
-        w->state_b = 0x3c;
-        w->unknown94 = 0x36;
-        fn_0003e724(w);
+        handyman->unknown69 = thingpage_remind_me(&allhosps[handyman->owner].fd2b, handyman);
+        set_complex(handyman, 0x26c, 0);
+        handyman->unknown103 = 5;
+        handyman->state_b = 0x3c;
+        handyman->unknown94 = 0x36;
+        fn_0003e724(handyman);
         break;
     case 5:
-        id = w->unknown69;
+        id = handyman->unknown69;
         plant = &thing[id];
         thingpage_cancel(&allhosps[plant->owner].fd2b, id);
         if (plant->unknown98 == 1 || plant->renderer != 6 || plant->subtype != 0x2d || plant->kind != 10
-            || !is_next_to_plant(w, plant)) {
-            w->kind = 0x36;
+            || !is_next_to_plant(handyman, plant)) {
+            handyman->kind = 0x36;
             break;
         }
         plant->unknown98 = 1;
-        w->unknown17 = direction_to_face(plant, w);
-        w->state_b = 0x3c;
-        w->unknown94 = 0x36;
-        w->unknown103 = 6;
-        set_complex(w, 0x258, 0);
-        fn_0003e724(w);
+        handyman->unknown17 = direction_to_face(plant, handyman);
+        handyman->state_b = 0x3c;
+        handyman->unknown94 = 0x36;
+        handyman->unknown103 = 6;
+        set_complex(handyman, 0x258, 0);
+        fn_0003e724(handyman);
         plant->unknown100s < 0 ? plant->unknown100s = 0 : 0;
         level = (400 - plant->unknown100s) / 80;
         {
@@ -201,7 +201,7 @@ void handyman_works(Thing *w)
         plant->kind = 0xe;
         break;
     case 6:
-        id = w->unknown69;
+        id = handyman->unknown69;
         plant = &thing[id];
         if (!(actual_game_turn & 1)) {
             plant->sprite = frame[plant->sprite].next;
@@ -223,19 +223,19 @@ void handyman_works(Thing *w)
                         NRAdcounts.unknownb = NRAdcounts.unknown0 * 0x37;
                 }
                 plant->unknown100s = 400;
-                w->unknown103 = 0;
-                w->f9a++;
-                set_complex(w, 0x262, 0);
-                if (w->room)
-                    set_complex(w, 0x136, w->room->unknown6);
-                w->state_b = 0x3c;
-                fn_0003e724(w);
+                handyman->unknown103 = 0;
+                handyman->f9a++;
+                set_complex(handyman, 0x262, 0);
+                if (handyman->room)
+                    set_complex(handyman, 0x136, handyman->room->unknown6);
+                handyman->state_b = 0x3c;
+                fn_0003e724(handyman);
                 NRAdcounts.unknown2--;
             }
         }
         break;
     case 8:
-        room = w->room;
+        room = handyman->room;
         if (room->f3 != 6) {
             if (!(find_person_in_room(room, 4, 1) || find_person_in_room(room, 4, 0)
                   || find_person_in_room(room, 4, 4))) {
@@ -244,55 +244,55 @@ void handyman_works(Thing *w)
                 u16 pos2;
 
                 pos2 = room->pos + (((s16)(old_newrand() % room->f2) << 7) + (s16)(old_newrand() % room->f1));
-                if (pos2 != TILE_POS(w) && can_i_get_to(w, pos2)) {
-                    w->state_b = w->unknown94 = 0x3c;
-                    set_complex(w, 0xbe, pos2);
-                    fn_0003e724(w);
+                if (pos2 != TILE_POS(handyman) && can_i_get_to(handyman, pos2)) {
+                    handyman->state_b = handyman->unknown94 = 0x3c;
+                    set_complex(handyman, 0xbe, pos2);
+                    fn_0003e724(handyman);
                 }
             }
         } else {
-            w->state_b = 0x3c;
-            w->unknown103 = 9;
-            w->unknown94 = 0x36;
-            w->unknown69 = thingpage_remind_me(&allhosps[w->owner].ff6d, w);
-            set_complex(w, 0x2d0, 0);
-            fn_0003e724(w);
+            handyman->state_b = 0x3c;
+            handyman->unknown103 = 9;
+            handyman->unknown94 = 0x36;
+            handyman->unknown69 = thingpage_remind_me(&allhosps[handyman->owner].ff6d, handyman);
+            set_complex(handyman, 0x2d0, 0);
+            fn_0003e724(handyman);
         }
         break;
     case 9: {
         u16 seq;
 
-        seq = objects[thing[w->unknown69].subtype].f12;
-        reset_icon_value(&thing[w->unknown69], 0x1c);
+        seq = objects[thing[handyman->unknown69].subtype].f12;
+        reset_icon_value(&thing[handyman->unknown69], 0x1c);
         if (seq)
-            choose_aniseq(w, seq, 0x3c);
-        t = &thing[w->unknown69];
-        if (t > thing)
-            t->smoke[old_newrand() % 3] = 0;
-        w->unknown103 = 10;
+            choose_aniseq(handyman, seq, 0x3c);
+        machine = &thing[handyman->unknown69];
+        if (machine > thing)
+            machine->smoke[old_newrand() % 3] = 0;
+        handyman->unknown103 = 10;
         break;
     }
     case 10:
-        t = &thing[w->unknown69];
-        if (t > thing) {
-            thingpage_cancel(&allhosps[w->owner].ff6d, w->unknown69);
-            if (t->value > 2) {
-                if (old_newrand() % t->value < t->mode)
-                    t->value--;
+        machine = &thing[handyman->unknown69];
+        if (machine > thing) {
+            thingpage_cancel(&allhosps[handyman->owner].ff6d, handyman->unknown69);
+            if (machine->value > 2) {
+                if (old_newrand() % machine->value < machine->mode)
+                    machine->value--;
             }
-            t->mode = 0;
-            t->icon = 0;
-            t->smoke[0] = 0;
-            t->smoke[1] = 0;
-            t->smoke[2] = 0;
+            machine->mode = 0;
+            machine->icon = 0;
+            machine->smoke[0] = 0;
+            machine->smoke[1] = 0;
+            machine->smoke[2] = 0;
         }
-        w->room->f3 = 0;
-        set_complex(w, 0x136, w->room->unknown6);
-        w->unknown94 = 0x36;
-        w->state_b = 0x3c;
-        w->unknown103 = 0;
-        w->f9c++;
-        fn_0003e724(w);
+        handyman->room->f3 = 0;
+        set_complex(handyman, 0x136, handyman->room->unknown6);
+        handyman->unknown94 = 0x36;
+        handyman->state_b = 0x3c;
+        handyman->unknown103 = 0;
+        handyman->f9c++;
+        fn_0003e724(handyman);
         break;
     case 7:
     default:
@@ -301,7 +301,7 @@ void handyman_works(Thing *w)
 }
 
 // FUNCTION: 0x0007b554
-void handyman_check_for_litter(Thing *w)
+void handyman_check_for_litter(Thing *handyman)
 {
     u8 range;
     u16 pos;
@@ -309,74 +309,74 @@ void handyman_check_for_litter(Thing *w)
     s32 dx;
     s32 dy;
 
-    range = 10 - w->unknown126 / 100 < 1 ? 1 : 10 - w->unknown126 / 100;
+    range = 10 - handyman->unknown126 / 100 < 1 ? 1 : 10 - handyman->unknown126 / 100;
     dx = old_newrand() % (range * 2) - range;
     dy = old_newrand() % (range * 2) - range;
-    pos = ((u16)w->y.tile << 7) + (u16)w->x.tile + ((dy << 7) + dx);
+    pos = ((u16)handyman->y.tile << 7) + (u16)handyman->x.tile + ((dy << 7) + dx);
     m = &map[pos];
-    if (!(m->floor & 0xf) || (m->floor & 0xf) == 7 || (m->floor & 0xf) == 8 || m->unknown7 != (1 << w->owner))
+    if (!(m->floor & 0xf) || (m->floor & 0xf) == 7 || (m->floor & 0xf) == 8 || m->unknown7 != (1 << handyman->owner))
         return;
     {
-        u16 a;
-        u16 b;
+        u16 nearest;
+        u16 second;
         u32 dn;
         u32 db;
         u32 da;
 
-        a = w->unknown148w;
-        b = w->unknown150;
-        da = (a % 128 - w->x.tile) * (a % 128 - w->x.tile) + (a / 128 - w->y.tile) * (a / 128 - w->y.tile);
-        db = (b % 128 - w->x.tile) * (b % 128 - w->x.tile) + (b / 128 - w->y.tile) * (b / 128 - w->y.tile);
-        dn = (pos % 128 - w->x.tile) * (pos % 128 - w->x.tile) + (pos / 128 - w->y.tile) * (pos / 128 - w->y.tile);
-        if (pos == a || pos == w->unknown150)
+        nearest = handyman->unknown148w;
+        second = handyman->unknown150;
+        da = (nearest % 128 - handyman->x.tile) * (nearest % 128 - handyman->x.tile) + (nearest / 128 - handyman->y.tile) * (nearest / 128 - handyman->y.tile);
+        db = (second % 128 - handyman->x.tile) * (second % 128 - handyman->x.tile) + (second / 128 - handyman->y.tile) * (second / 128 - handyman->y.tile);
+        dn = (pos % 128 - handyman->x.tile) * (pos % 128 - handyman->x.tile) + (pos / 128 - handyman->y.tile) * (pos / 128 - handyman->y.tile);
+        if (pos == nearest || pos == handyman->unknown150)
             return;
         if (dn < da) {
-            w->unknown150 = a;
-            w->unknown148w = pos;
+            handyman->unknown150 = nearest;
+            handyman->unknown148w = pos;
         } else if (dn < db) {
-            w->unknown150 = pos;
+            handyman->unknown150 = pos;
         }
     }
 }
 
 // FUNCTION: 0x0007b88c
-void plant_ages(Thing *w)
+void plant_ages(Thing *plant)
 {
     u8 level;
     u32 next;
 
     if (!othervar.f32 || (old_newrand() & 1))
         return;
-    w->unknown100s--;
-    if (w->unknown100s > 0) {
-        if (w->unknown100s % 80 == 0) {
-            level = (400 - w->unknown100s) / 80;
-            next = frame[w->sprite].next;
+    plant->unknown100s--;
+    if (plant->unknown100s > 0) {
+        if (plant->unknown100s % 80 == 0) {
+            level = (400 - plant->unknown100s) / 80;
+            next = frame[plant->sprite].next;
             if (!(frame[next].flags & 1))
-                w->sprite = next;
-            if (!fn_0007cc88(w))
-                thingpage_request(&allhosps[w->owner].fd2b, w - thing, level);
+                plant->sprite = next;
+            if (!fn_0007cc88(plant))
+                thingpage_request(&allhosps[plant->owner].fd2b, plant - thing, level);
             NRAdcounts.unknown2++;
             NRAdcounts.unknownb -= 11;
         }
-    } else if (w->unknown100s == -40) {
-        if (!fn_0007cc88(w))
-            thingpage_request(&allhosps[w->owner].fd2b, w - thing, 10);
-        w->unknown100s = 0;
+    } else if (plant->unknown100s == -40) {
+        if (!fn_0007cc88(plant))
+            thingpage_request(&allhosps[plant->owner].fd2b, plant - thing, 10);
+        plant->unknown100s = 0;
         NRAdcounts.unknown2 += 2;
     }
 }
 
 // FUNCTION: 0x0007ba18
-u32 compute_plant_frame(Thing *w)
+u32 compute_plant_frame(Thing *plant)
 {
     u32 f;
-    s32 n;
+    s32 stage;
 
     f = start[0x3cf].frame;
-    n = (400 - w->unknown100s) / 80;
-    n > 4 ? n = 4 : 0;
-    for (; n > 0; n--)
+    stage = (400 - plant->unknown100s) / 80;
+    stage > 4 ? stage = 4 : 0;
+    for (; stage > 0; stage--)
         f = frame[f].next;
     return f;
 }
@@ -418,7 +418,7 @@ u8 thingpage_cancel(ThingPager *p, u16 id)
 }
 
 // FUNCTION: 0x0007bc4c
-u16 thingpage_respond(ThingPager *p, Thing *w, u16 room, u8 min)
+u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min)
 {
     s32 best_priority;
     s32 best;
@@ -433,36 +433,36 @@ u16 thingpage_respond(ThingPager *p, Thing *w, u16 room, u8 min)
     for (i = p->count - 1; i >= 0; i--) {
         if (room && thing[p->pages[i].id].unknown89 != room)
             continue;
-        if (p->pages[i].responder != (u16)(w - thing) && p->pages[i].time > actual_game_turn)
+        if (p->pages[i].responder != (u16)(handyman - thing) && p->pages[i].time > actual_game_turn)
             continue;
         if (p->pages[i].priority < min)
             continue;
         room_id = thing[p->pages[i].id].unknown89;
         if (room_id != 0
             && (room_info[room_id].f22 || room_info[room_id].f3 == 4
-                || allhosps[w->owner].unknown11b7 == room_id))
+                || allhosps[handyman->owner].unknown11b7 == room_id))
             continue;
         if (p->pages[i].priority == best_priority) {
-            dist = (TILE_POS(w) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
-                     * (TILE_POS(w) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
-                 + (TILE_POS(w) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128)
-                     * (TILE_POS(w) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128);
+            dist = (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
+                     * (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
+                 + (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128)
+                     * (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128);
             if (dist < best_dist) {
                 best = i;
                 best_dist = dist;
             }
         } else if (p->pages[i].priority > best_priority) {
             best = i;
-            best_dist = (TILE_POS(w) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
-                          * (TILE_POS(w) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
-                      + (TILE_POS(w) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128)
-                          * (TILE_POS(w) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128);
+            best_dist = (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
+                          * (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
+                      + (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128)
+                          * (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128);
             best_priority = p->pages[i].priority;
         }
     }
     if (best == -1)
         return 0;
-    p->pages[best].responder = w - thing;
+    p->pages[best].responder = handyman - thing;
     p->pages[best].time = actual_game_turn + 3000;
     return p->pages[best].id;
 }
@@ -480,24 +480,24 @@ u8 thingpage_find_highest_priority(ThingPager *p)
 }
 
 // FUNCTION: 0x0007c37c
-u16 thingpage_remind_me(ThingPager *p, Thing *w)
+u16 thingpage_remind_me(ThingPager *p, Thing *handyman)
 {
     s32 i;
 
     for (i = p->count - 1; i >= 0; i--) {
-        if (p->pages[i].responder == (u16)(w - thing))
+        if (p->pages[i].responder == (u16)(handyman - thing))
             return p->pages[i].id;
     }
     return 0;
 }
 
 // FUNCTION: 0x0007c3f8
-void thingpage_cancel_my_response(ThingPager *p, Thing *w)
+void thingpage_cancel_my_response(ThingPager *p, Thing *handyman)
 {
     u32 id;
     s32 i;
 
-    id = (u16)(w - thing);
+    id = (u16)(handyman - thing);
     for (i = p->count - 1; i >= 0; i--) {
         if (p->pages[i].responder == id) {
             p->pages[i].responder = 0;
@@ -507,21 +507,21 @@ void thingpage_cancel_my_response(ThingPager *p, Thing *w)
 }
 
 // FUNCTION: 0x0007c488
-u8 handyman_try_fix(Thing *w)
+u8 handyman_try_fix(Thing *handyman)
 {
     u16 id;
     RoomInfo *room;
 
-    id = thingpage_respond(&allhosps[w->owner].ff6d, w, 0, (100 - w->fa0) * 3 / 4);
+    id = thingpage_respond(&allhosps[handyman->owner].ff6d, handyman, 0, (100 - handyman->fa0) * 3 / 4);
     if (id) {
         room = &room_info[thing[id].unknown89];
         if (room > room_info) {
-            set_complex(w, 0x96, room->unknown4);
-            w->state_b = 0x3c;
-            w->unknown103 = 8;
-            w->unknown94 = 0x36;
-            w->unknown89 = room - room_info;
-            fn_0003e724(w);
+            set_complex(handyman, 0x96, room->unknown4);
+            handyman->state_b = 0x3c;
+            handyman->unknown103 = 8;
+            handyman->unknown94 = 0x36;
+            handyman->unknown89 = room - room_info;
+            fn_0003e724(handyman);
             if (room->f3 != 6)
                 room->f3 = 5;
             return 1;
@@ -531,40 +531,40 @@ u8 handyman_try_fix(Thing *w)
 }
 
 // FUNCTION: 0x0007c5ac
-u8 handyman_try_plant(Thing *w)
+u8 handyman_try_plant(Thing *handyman)
 {
     u16 id;
     u16 room_id;
 
-    id = thingpage_respond(&allhosps[w->owner].fd2b, w, 0, 0);
+    id = thingpage_respond(&allhosps[handyman->owner].fd2b, handyman, 0, 0);
     if (id) {
         room_id = thing[id].unknown89;
         if (room_id) {
-            w->unknown89 = room_id;
-            set_complex(w, 0x96, room_info[room_id].unknown4);
-            w->unknown103 = 4;
+            handyman->unknown89 = room_id;
+            set_complex(handyman, 0x96, room_info[room_id].unknown4);
+            handyman->unknown103 = 4;
         } else {
-            set_complex(w, 0x26c, 0);
-            w->unknown69 = id;
-            w->unknown103 = 5;
+            set_complex(handyman, 0x26c, 0);
+            handyman->unknown69 = id;
+            handyman->unknown103 = 5;
         }
-        w->state_b = 0x3c;
-        w->unknown94 = 0x36;
-        fn_0003e724(w);
+        handyman->state_b = 0x3c;
+        handyman->unknown94 = 0x36;
+        fn_0003e724(handyman);
         return 1;
     }
     return 0;
 }
 
 // FUNCTION: 0x0007c6a0
-u8 handyman_try_litter(Thing *w)
+u8 handyman_try_litter(Thing *handyman)
 {
     u16 target;
     u16 pos;
     u32 i;
 
     target = 0;
-    pos = (u16)w->x.tile + ((u16)w->y.tile << 7);
+    pos = (u16)handyman->x.tile + ((u16)handyman->y.tile << 7);
     for (i = 0; i < 9; i++) {
         if (!(!(map[pos + special_around[i]].floor & 0xf) || (map[pos + special_around[i]].floor & 0xf) == 7
               || (map[pos + special_around[i]].floor & 0xf) == 8)) {
@@ -572,43 +572,43 @@ u8 handyman_try_litter(Thing *w)
             break;
         }
     }
-    if (target == 0 && w->unknown148w) {
-        if (!(!(map[w->unknown148w].floor & 0xf) || (map[w->unknown148w].floor & 0xf) == 7
-              || (map[w->unknown148w].floor & 0xf) == 8))
-            target = w->unknown148w;
-        w->unknown148w = w->unknown150;
-        w->unknown150 = 0;
+    if (target == 0 && handyman->unknown148w) {
+        if (!(!(map[handyman->unknown148w].floor & 0xf) || (map[handyman->unknown148w].floor & 0xf) == 7
+              || (map[handyman->unknown148w].floor & 0xf) == 8))
+            target = handyman->unknown148w;
+        handyman->unknown148w = handyman->unknown150;
+        handyman->unknown150 = 0;
     }
     if (target) {
-        w->state_b = 0x3c;
-        w->unknown94 = 0x3c;
-        set_complex(w, 0xbe, target);
-        fn_0003e724(w);
-        w->unknown103 = 2;
+        handyman->state_b = 0x3c;
+        handyman->unknown94 = 0x3c;
+        set_complex(handyman, 0xbe, target);
+        fn_0003e724(handyman);
+        handyman->unknown103 = 2;
         return 1;
     }
     return 0;
 }
 
 // FUNCTION: 0x0007c884
-u8 is_next_to_plant(Thing *w, Thing *plant)
+u8 is_next_to_plant(Thing *handyman, Thing *plant)
 {
     s32 here;
     s32 there;
 
-    here = TILE_POS(w);
+    here = TILE_POS(handyman);
     there = TILE_POS(plant);
-    if ((TILE_POS(plant) % 128 - TILE_POS(w) % 128) * (TILE_POS(plant) % 128 - TILE_POS(w) % 128)
-            + (TILE_POS(plant) / 128 - TILE_POS(w) / 128) * (TILE_POS(plant) / 128 - TILE_POS(w) / 128)
+    if ((TILE_POS(plant) % 128 - TILE_POS(handyman) % 128) * (TILE_POS(plant) % 128 - TILE_POS(handyman) % 128)
+            + (TILE_POS(plant) / 128 - TILE_POS(handyman) / 128) * (TILE_POS(plant) / 128 - TILE_POS(handyman) / 128)
         > 1)
         return 0;
-    if (w->y.tile == plant->y.tile + 1)
+    if (handyman->y.tile == plant->y.tile + 1)
         return map[here].unknown3 >= 0x8e && map[here].unknown3 <= 0x91 ? (u8)1 : (u8)0;
-    if (w->x.tile == plant->x.tile + 1)
+    if (handyman->x.tile == plant->x.tile + 1)
         return map[here].unknown4 >= 0x8e && map[here].unknown4 <= 0x91 ? (u8)1 : (u8)0;
-    if (w->y.tile == plant->y.tile - 1)
+    if (handyman->y.tile == plant->y.tile - 1)
         return map[there].unknown3 >= 0x8e && map[there].unknown3 <= 0x91 ? (u8)1 : (u8)0;
-    if (w->x.tile == plant->x.tile - 1)
+    if (handyman->x.tile == plant->x.tile - 1)
         return map[there].unknown4 >= 0x8e && map[there].unknown4 <= 0x91 ? (u8)1 : (u8)0;
     return 0;
 }
@@ -632,20 +632,20 @@ u8 fn_0007cbdc(RoomInfo *room, s32 pos, u8 owner)
 }
 
 // FUNCTION: 0x0007cc88
-u8 fn_0007cc88(Thing *w)
+u8 fn_0007cc88(Thing *plant)
 {
     RoomInfo *room;
     s32 pos;
 
-    room = &room_info[w->unknown89];
-    pos = (s16)w->x.tile + ((s16)w->y.tile << 7);
-    if (fn_0007cbdc(room, pos + 1, w->owner))
+    room = &room_info[plant->unknown89];
+    pos = (s16)plant->x.tile + ((s16)plant->y.tile << 7);
+    if (fn_0007cbdc(room, pos + 1, plant->owner))
         return 0;
-    if (fn_0007cbdc(room, pos + 0x80, w->owner))
+    if (fn_0007cbdc(room, pos + 0x80, plant->owner))
         return 0;
-    if (fn_0007cbdc(room, pos - 1, w->owner))
+    if (fn_0007cbdc(room, pos - 1, plant->owner))
         return 0;
-    if (fn_0007cbdc(room, pos - 0x80, w->owner))
+    if (fn_0007cbdc(room, pos - 0x80, plant->owner))
         return 0;
     return 1;
 }

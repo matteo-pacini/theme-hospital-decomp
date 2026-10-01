@@ -26,9 +26,9 @@ void qsort(void *base, u32 n, u32 size, int (*cmp)(const void *, const void *));
 }
 
 void display_plaque(void);
-void process_yearend_buttons(u8 b);
+void process_yearend_buttons(u8 button);
 void check_stats_buttons(void);
-u8 button_available(const u8 b);
+u8 button_available(const u8 button);
 void check_awards_buttons(void);
 void display_awards(void);
 
@@ -60,47 +60,47 @@ void start_year_end(void)
 // FUNCTION: 0x000b4aac
 void create_chart_data(void)
 {
-    u16 n;
+    u16 hosp_count;
     u16 i;
     s32 k;
-    AllHosps *h;
+    AllHosps *hospital;
     s32 j;
     s32 total;
 
     total = 0;
     i = 0;
-    n = 4;
-    for (i = 0; i < n; i++) {
-        h = &allhosps[i];
+    hosp_count = 4;
+    for (i = 0; i < hosp_count; i++) {
+        hospital = &allhosps[i];
         for (j = 0; j < 3; j++) {
             for (k = 0; k < 12; k++)
-                total += h->f45[j][k];
+                total += hospital->f45[j][k];
         }
         chart[0][i].hosp = i;
-        chart[0][i].value = h->f35 - h->f3d + total;
+        chart[0][i].value = hospital->f35 - hospital->f3d + total;
         chart[1][i].hosp = i;
-        chart[1][i].value = h->f2d;
+        chart[1][i].value = hospital->f2d;
         chart[3][i].hosp = i;
-        chart[3][i].value = h->f1e9;
+        chart[3][i].value = hospital->f1e9;
         chart[4][i].hosp = i;
-        chart[4][i].value = h->f1eb;
+        chart[4][i].value = hospital->f1eb;
         chart[5][i].hosp = i;
-        chart[5][i].value = h->f1e9 * 100 / (h->f1e9 + h->f1eb + 1);
+        chart[5][i].value = hospital->f1e9 * 100 / (hospital->f1e9 + hospital->f1eb + 1);
         chart[8][i].hosp = i;
-        chart[8][i].value = h->fc9c;
+        chart[8][i].value = hospital->fc9c;
         chart[9][i].hosp = i;
-        chart[9][i].value = h->f1ed;
+        chart[9][i].value = hospital->f1ed;
         chart[10][i].hosp = i;
-        chart[10][i].value = h->f1bb;
+        chart[10][i].value = hospital->f1bb;
     }
-    qsort(chart[0], n, 5, descend);
-    qsort(chart[1], n, 5, descend);
-    qsort(chart[3], n, 5, descend);
-    qsort(chart[4], n, 5, ascend);
-    qsort(chart[5], n, 5, descend);
-    qsort(chart[8], n, 5, descend);
-    qsort(chart[9], n, 5, descend);
-    qsort(chart[10], n, 5, descend);
+    qsort(chart[0], hosp_count, 5, descend);
+    qsort(chart[1], hosp_count, 5, descend);
+    qsort(chart[3], hosp_count, 5, descend);
+    qsort(chart[4], hosp_count, 5, ascend);
+    qsort(chart[5], hosp_count, 5, descend);
+    qsort(chart[8], hosp_count, 5, descend);
+    qsort(chart[9], hosp_count, 5, descend);
+    qsort(chart[10], hosp_count, 5, descend);
 }
 
 // FUNCTION: 0x000b4e88
@@ -290,9 +290,9 @@ void display_plaque(void)
 }
 
 // FUNCTION: 0x000b5b38
-void process_yearend_buttons(u8 b)
+void process_yearend_buttons(u8 button)
 {
-    switch (b) {
+    switch (button) {
     case 0:
         play_sound(10, 0x42, -1, -1);
         if (!exit_the_yearend_screen) {
@@ -325,7 +325,7 @@ void process_yearend_buttons(u8 b)
     case 7:
     case 9:
         play_sound(10, 0x41, -1, -1);
-        switch (awards_won[b - 4].unknown0) {
+        switch (awards_won[button - 4].unknown0) {
         case 0:
             current_display = 0;
             break;
@@ -338,14 +338,14 @@ void process_yearend_buttons(u8 b)
         default:
             break;
         }
-        current_award = b - 4;
+        current_award = button - 4;
         break;
     case 12:
     case 11:
     case 10:
         play_sound(10, 0x41, -1, -1);
         current_display = 3;
-        current_award = b - 10;
+        current_award = button - 10;
         break;
     default:
         break;
@@ -385,9 +385,9 @@ void check_stats_buttons(void)
 }
 
 // FUNCTION: 0x000b601c
-u8 button_available(const u8 b)
+u8 button_available(const u8 button)
 {
-    switch (b) {
+    switch (button) {
     case 0:
     case 1:
         return 1;
@@ -401,11 +401,11 @@ u8 button_available(const u8 b)
     case 5:
     case 7:
     case 9:
-        return awards_won[b - 4].f2 != 0;
+        return awards_won[button - 4].f2 != 0;
     case 10:
     case 11:
     case 12:
-        return trophies_won[b - 10].f1 != 0;
+        return trophies_won[button - 10].f1 != 0;
     default:
         return 0;
     }
@@ -451,37 +451,37 @@ void check_awards_buttons(void)
 void display_awards(void)
 {
     u8 i;
-    u8 t;
-    u8 a;
+    u8 trophy_count;
+    u8 award_count;
 
-    for (i = 0, t = 0, a = 0; i < 9 && t < 3; i++) {
+    for (i = 0, trophy_count = 0, award_count = 0; i < 9 && trophy_count < 3; i++) {
         if (trophy[i].unknown0) {
-            reqspr_draw(resvars.f48[t + 0x55].unknownC, resvars.f48[t + 0x55].unknownE,
-                        &screen_sprites_tab_start[t + 12]);
-            trophies_won[t].unknown0 = trophy[i].unknown0;
-            trophies_won[t].f1 = trophy[i].f1;
-            trophies_won[t].value = trophy[i].value;
-            trophies_won[t++].f4 = trophy[i].f4;
+            reqspr_draw(resvars.f48[trophy_count + 0x55].unknownC, resvars.f48[trophy_count + 0x55].unknownE,
+                        &screen_sprites_tab_start[trophy_count + 12]);
+            trophies_won[trophy_count].unknown0 = trophy[i].unknown0;
+            trophies_won[trophy_count].f1 = trophy[i].f1;
+            trophies_won[trophy_count].value = trophy[i].value;
+            trophies_won[trophy_count++].f4 = trophy[i].f4;
         }
     }
-    for (i = 0; i < 13 && a < 6; i++) {
+    for (i = 0; i < 13 && award_count < 6; i++) {
         if (all_awards[i].f2) {
-            if (t == 3 && a == 5)
-                reqspr_draw(resvars.f48[a + 0x4f].unknownC, resvars.f48[a + 0x4f].unknownE, &screen_sprites_tab_start[24]);
+            if (trophy_count == 3 && award_count == 5)
+                reqspr_draw(resvars.f48[award_count + 0x4f].unknownC, resvars.f48[award_count + 0x4f].unknownE, &screen_sprites_tab_start[24]);
             else
-                reqspr_draw(resvars.f48[a + 0x4f].unknownC, resvars.f48[a + 0x4f].unknownE,
-                            (TbSprite *)((u32)screen_sprites_tab_start + (a + 4) * 6));
-            reqspr_draw(resvars.f48[a + 0x4f].unknownC, resvars.f48[a + 0x4f].unknownE, &screen_sprites_tab_start[23]);
+                reqspr_draw(resvars.f48[award_count + 0x4f].unknownC, resvars.f48[award_count + 0x4f].unknownE,
+                            (TbSprite *)((u32)screen_sprites_tab_start + (award_count + 4) * 6));
+            reqspr_draw(resvars.f48[award_count + 0x4f].unknownC, resvars.f48[award_count + 0x4f].unknownE, &screen_sprites_tab_start[23]);
             if ((s8)all_awards[i].unknown0 == 1)
-                reqspr_draw(resvars.f40[a + 0x9a].x, resvars.f40[a + 0x9a].y, &screen_sprites_tab_start[10]);
+                reqspr_draw(resvars.f40[award_count + 0x9a].x, resvars.f40[award_count + 0x9a].y, &screen_sprites_tab_start[10]);
             else
-                reqspr_draw(resvars.f40[a + 0x9a].x, resvars.f40[a + 0x9a].y, &screen_sprites_tab_start[11]);
-            awards_won[a].f1 = all_awards[i].f1;
-            awards_won[a].f2 = all_awards[i].f2;
-            awards_won[a].unknown0 = all_awards[i].unknown0;
-            awards_won[a].value = all_awards[i].value;
-            awards_won[a].f5 = all_awards[i].f5;
-            a++;
+                reqspr_draw(resvars.f40[award_count + 0x9a].x, resvars.f40[award_count + 0x9a].y, &screen_sprites_tab_start[11]);
+            awards_won[award_count].f1 = all_awards[i].f1;
+            awards_won[award_count].f2 = all_awards[i].f2;
+            awards_won[award_count].unknown0 = all_awards[i].unknown0;
+            awards_won[award_count].value = all_awards[i].value;
+            awards_won[award_count].f5 = all_awards[i].f5;
+            award_count++;
         }
     }
 }

@@ -37,10 +37,10 @@ void declare_epidemic(char **strs);
 void epidemic_over(const u8 owner, char **strs);
 void mayor_requester(u8 idx, char **strs);
 void report_mayor_result(u8 owner, char **strs);
-void process_emergency_start_buttons(u8 n);
-void process_emergency_end_buttons(u8 n);
-void process_epidemic_start_buttons(u8 n);
-void process_epidemic_end_buttons(u8 n);
+void process_emergency_start_buttons(u8 button);
+void process_emergency_end_buttons(u8 button);
+void process_epidemic_start_buttons(u8 button);
+void process_epidemic_end_buttons(u8 button);
 void process_mayor_start_buttons(u8 n);
 void process_mayor_end_buttons(u8 n);
 
@@ -354,10 +354,10 @@ void display_choice_screen(const u8 owner, const u8 type, const s16 data, const 
 }
 
 // FUNCTION: 0x000a4168
-void packet_choice_result(u8 n)
+void packet_choice_result(u8 choice)
 {
     D_001549d0[player].type = 0x7d;
-    D_001549d0[player].value = n;
+    D_001549d0[player].value = choice;
     D_001549d0[player].arg = choice_spare_data;
 }
 
@@ -417,60 +417,60 @@ u8 fax_no_equal(FaxNo fax, u8 *pressed)
 }
 
 // FUNCTION: 0x000a4384
-void process_fax_buttons(u8 n)
+void process_fax_buttons(u8 button)
 {
     u8 i;
     u8 found;
 
-    switch (n) {
+    switch (button) {
     case 0xb9:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xbe, -1, -1);
         break;
     case 0xba:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xbf, -1, -1);
         break;
     case 0xbb:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xc0, -1, -1);
         break;
     case 0xbc:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xc1, -1, -1);
         break;
     case 0xbd:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xc2, -1, -1);
         break;
     case 0xbe:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xc3, -1, -1);
         break;
     case 0xbf:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xc4, -1, -1);
         break;
     case 0xc0:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xc5, -1, -1);
         break;
     case 0xc1:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xc6, -1, -1);
         break;
     case 0xc2:
         if (NumPressed < 6)
-            D_001611f8[NumPressed++] = n;
+            D_001611f8[NumPressed++] = button;
         play_sound(10, 0xc7, -1, -1);
         break;
     case 0xc3:

@@ -16,13 +16,13 @@ u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim);
 void disaster_peeps(u8 mode, s8 owner);
 
 // FUNCTION: 0x00075010
-void machine_disaster(Thing *e)
+void machine_disaster(Thing *machine)
 {
     u16 tile;
     RoomInfo *room;
 
-    room = &room_info[e->unknown89];
-    tile = (s16)(e->x.tile + (e->y.tile << 7)) + objects[e->subtype].f1a;
+    room = &room_info[machine->unknown89];
+    tile = (s16)(machine->x.tile + (machine->y.tile << 7)) + objects[machine->subtype].f1a;
     create_explosion(tile, 0x97);
     blast_effect(tile, room);
     explosion_kills_dudes_in_room(room);
@@ -30,30 +30,30 @@ void machine_disaster(Thing *e)
     room_deleted_update_listhead(room);
     room->type = 6;
     room->f3 = 6;
-    allhosps[e->owner].fc98++;
-    reputation_affected(0, 0xb, 0, e->owner, 0);
-    if (e->owner == player)
+    allhosps[machine->owner].fc98++;
+    reputation_affected(0, 0xb, 0, machine->owner, 0);
+    if (machine->owner == player)
         award_counts.f144 = 1;
     restart_entire_queue(room);
 }
 
 // FUNCTION: 0x00075110
-void process_bang(Thing *w)
+void process_bang(Thing *bang)
 {
     MapPos x;
     MapPos y;
     RoomInfo *room;
 
-    x.raw = w->x.raw + w->f39;
-    y.raw = w->y.raw + w->f3b;
-    move_node(w, x, y);
-    w->f37 += w->f3d;
-    w->f3d -= 0x200;
-    w->f39 = w->f39 - (w->f39 >> 2);
-    w->f3b = w->f3b - (w->f3b >> 2);
-    w->f3d = w->f3d - (w->f3d >> 2);
-    if (w->f37 >= 0) {
-        room = &room_info[w->unknown63];
+    x.raw = bang->x.raw + bang->f39;
+    y.raw = bang->y.raw + bang->f3b;
+    move_node(bang, x, y);
+    bang->f37 += bang->f3d;
+    bang->f3d -= 0x200;
+    bang->f39 = bang->f39 - (bang->f39 >> 2);
+    bang->f3b = bang->f3b - (bang->f3b >> 2);
+    bang->f3d = bang->f3d - (bang->f3d >> 2);
+    if (bang->f37 >= 0) {
+        room = &room_info[bang->unknown63];
         if (room > room_info) {
             u8 x0;
             u8 y0;
@@ -63,49 +63,49 @@ void process_bang(Thing *w)
             if (x.tile < x0 || x.tile == x0 + room->f1 - 1 || y.tile < y0 || y.tile == y0 + room->f2 - 1)
                 goto die;
         }
-        if (actual_game_turn % w->anim_speed == 0) {
+        if (actual_game_turn % bang->anim_speed == 0) {
             u16 next;
 
-            next = frame[w->sprite].next;
+            next = frame[bang->sprite].next;
             if (frame[next].flags & 1)
                 goto die;
-            w->sprite = next;
+            bang->sprite = next;
         }
         return;
     }
 die:
-    remove_thing(w);
+    remove_thing(bang);
 }
 
 // FUNCTION: 0x000752e8
 u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim)
 {
     RoomInfo *room;
-    Thing *w;
+    Thing *bang;
     u8 x;
     u8 y;
 
     room = which_room(tile);
     x = tile % 128;
     y = tile / 128;
-    for (w = &thing[id]; w < end_things - 50; w++) {
-        if (w->renderer == 0) {
-            w->renderer = 0xe;
-            w->sprite = start[anim].frame;
-            w->palette = start[anim].flags;
-            w->anim_speed = (old_newrand() & 1) + 1;
-            w->x.tile = x;
-            w->y.tile = y;
-            w->x.frac = 0x80;
-            w->y.frac = 0x80;
-            insert_node(w, w->x, w->y);
-            w->f37 = 0;
-            w->f39 = dx;
-            w->f3b = dy;
-            w->f3d = dz;
+    for (bang = &thing[id]; bang < end_things - 50; bang++) {
+        if (bang->renderer == 0) {
+            bang->renderer = 0xe;
+            bang->sprite = start[anim].frame;
+            bang->palette = start[anim].flags;
+            bang->anim_speed = (old_newrand() & 1) + 1;
+            bang->x.tile = x;
+            bang->y.tile = y;
+            bang->x.frac = 0x80;
+            bang->y.frac = 0x80;
+            insert_node(bang, bang->x, bang->y);
+            bang->f37 = 0;
+            bang->f39 = dx;
+            bang->f3b = dy;
+            bang->f3d = dz;
             if (room > room_info)
-                w->unknown63 = room - room_info;
-            return w - thing;
+                bang->unknown63 = room - room_info;
+            return bang - thing;
         }
     }
     return 0;
@@ -115,22 +115,22 @@ u16 create_bang(u16 id, u16 tile, s16 dx, s16 dy, s16 dz, u16 anim)
 void create_explosion(u16 tile, u16 anim)
 {
     u16 id;
-    s32 a;
-    s32 b;
-    s32 r;
-    s32 h;
+    s32 elevation;
+    s32 heading;
+    s32 speed;
+    s32 horiz_speed;
     s32 dx;
     s32 dy;
     s32 dz;
 
     id = 1;
-    for (a = 0; a < 0x200; a += 0x55) {
-        for (b = 0; b < 0x800; b += 0x800 / ((lbSinTable[a + 0x200] << 0xb >> 0x10) / 0x5f + 1)) {
-            r = old_newrand() % 50 + 100;
-            h = r * lbSinTable[a + 0x200] >> 0x10;
-            dx = h * lbSinTable[b + 0x200] >> 0x10;
-            dy = h * lbSinTable[b] >> 0x10;
-            dz = r * lbSinTable[a] >> 0xa;
+    for (elevation = 0; elevation < 0x200; elevation += 0x55) {
+        for (heading = 0; heading < 0x800; heading += 0x800 / ((lbSinTable[elevation + 0x200] << 0xb >> 0x10) / 0x5f + 1)) {
+            speed = old_newrand() % 50 + 100;
+            horiz_speed = speed * lbSinTable[elevation + 0x200] >> 0x10;
+            dx = horiz_speed * lbSinTable[heading + 0x200] >> 0x10;
+            dy = horiz_speed * lbSinTable[heading] >> 0x10;
+            dz = speed * lbSinTable[elevation] >> 0xa;
             id = create_bang(id, tile, dx, dy, dz, anim);
         }
     }
@@ -148,7 +148,7 @@ void blast_effect(u16 tile, RoomInfo *room)
     s8 rx;
     s8 ry;
     s32 r2;
-    u16 t;
+    u16 cell;
     Map *m;
     s32 d2;
 
@@ -161,12 +161,12 @@ void blast_effect(u16 tile, RoomInfo *room)
     for (x = cx - radius; x <= cx + radius; x++) {
         for (y = cy - radius; y <= cy + radius; y++) {
             if (x >= rx && x < rx + room->f1 && y >= ry && y < ry + room->f2) {
-                t = (s16)x + ((s16)y << 7);
+                cell = (s16)x + ((s16)y << 7);
                 m = &map[(s16)x + ((s16)y << 7)];
                 d2 = (x - cx) * (x - cx) + (y - cy) * (y - cy);
                 blast_things(m);
                 if ((old_newrand() & 0x3ff) > (d2 << 10) / r2)
-                    blast_walls_and_floor(t);
+                    blast_walls_and_floor(cell);
             }
         }
     }
@@ -177,13 +177,13 @@ void blast_effect(u16 tile, RoomInfo *room)
 void blast_walls_and_floor(u16 tile)
 {
     u8 flags;
-    u8 b;
+    u8 block;
     Map *m;
 
     m = &map[tile];
     if (old_newrand() % 1000 > 300) {
-        b = m->unknown3;
-        flags = blocks[b].width;
+        block = m->unknown3;
+        flags = blocks[block].width;
         if (flags & 2) {
             if (!(flags & 0x10))
                 place_small_thing(tile, 0x67, 1);
@@ -195,8 +195,8 @@ void blast_walls_and_floor(u16 tile)
         }
     }
     if (old_newrand() % 1000 > 300) {
-        b = m->unknown4;
-        flags = blocks[b].width;
+        block = m->unknown4;
+        flags = blocks[block].width;
         if (flags & 2) {
             if (!(flags & 0x10))
                 place_small_thing(tile, 0x68, 1);
@@ -210,17 +210,17 @@ void blast_walls_and_floor(u16 tile)
 void blast_things(Map *m)
 {
     u8 pal;
-    u8 obj;
-    Thing *w;
+    u8 debris;
+    Thing *obj;
 
 restart:
-    for (w = &thing[m->first]; w > thing; w = &thing[w->next]) {
-        if (w->renderer == 6) {
-            obj = objects[w->subtype].unknown20[0];
-            pal = w->unknown17;
-            fn_00038d04(w, w->owner);
-            if (obj)
-                place_small_thing(m - map, obj + pal, 0);
+    for (obj = &thing[m->first]; obj > thing; obj = &thing[obj->next]) {
+        if (obj->renderer == 6) {
+            debris = objects[obj->subtype].unknown20[0];
+            pal = obj->unknown17;
+            fn_00038d04(obj, obj->owner);
+            if (debris)
+                place_small_thing(m - map, debris + pal, 0);
             goto restart;
         }
     }
@@ -231,84 +231,84 @@ void explosion_kills_dudes_in_room(RoomInfo *room)
 {
     u8 again;
     s32 tries;
-    Thing *w;
+    Thing *person;
 
     again = 1;
     tries = 50;
     while (again && --tries >= 0) {
         again = 0;
-        for (w = &thing[room->first]; w > thing; w = &thing[w->room_next]) {
-            if (w->renderer == 4) {
-                sack_staff(w, 2);
+        for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
+            if (person->renderer == 4) {
+                sack_staff(person, 2);
                 again = 1;
                 break;
             }
         }
     }
-    for (w = &thing[room->first]; w > thing; w = &thing[w->room_next]) {
-        if (w->renderer == 2)
-            person_dies(w);
+    for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
+        if (person->renderer == 2)
+            person_dies(person);
     }
 }
 
 // FUNCTION: 0x00075aac
 void restart_entire_queue(RoomInfo *room)
 {
-    Thing *w;
+    Thing *patient;
 
-    while ((w = &thing[room->queue_head]) > thing) {
-        if (allhosps[w->owner].rooms[w->unknown171].unknown1C != 1)
-            w->unknown171 = 1;
-        leave_queue(w);
-        interrupt_person(w);
-        start_person_going(w);
+    while ((patient = &thing[room->queue_head]) > thing) {
+        if (allhosps[patient->owner].rooms[patient->unknown171].unknown1C != 1)
+            patient->unknown171 = 1;
+        leave_queue(patient);
+        interrupt_person(patient);
+        start_person_going(patient);
     }
 }
 
 // FUNCTION: 0x00075b54
 void generate_disaster(u8 owner)
 {
-    AllHosps *h;
+    AllHosps *hosp;
 
-    h = &allhosps[owner];
-    switch (h->f213) {
+    hosp = &allhosps[owner];
+    switch (hosp->f213) {
     case 0:
-        h->f20f++;
-        if (h->f20f > gbv.f12c) {
-            h->f20f = 0;
-            h->f213 = old_newrand() & 3;
-            switch (h->f213) {
+        hosp->f20f++;
+        if (hosp->f20f > gbv.f12c) {
+            hosp->f20f = 0;
+            hosp->f213 = old_newrand() & 3;
+            switch (hosp->f213) {
             case 0:
                 break;
             case 1:
-                if (listhead[owner].objects[0x2c] && h->fc9e[2] * 8 < h->fc92) {
-                    h->f211 = h->fc94;
-                    h->fc94 = 0;
-                    h->fc95 = 1;
+                if (listhead[owner].objects[0x2c] && hosp->fc9e[2] * 8 < hosp->fc92) {
+                    hosp->f211 = hosp->fc94;
+                    hosp->fc94 = 0;
+                    hosp->fc95 = 1;
                     advisor.f2 = 0xb;
-                    h->f214 = old_normal_rand(10, 0x1e);
+                    hosp->f214 = old_normal_rand(10, 0x1e);
                 } else {
-                    h->f213 = 0;
+                    hosp->f213 = 0;
                 }
                 break;
             case 2:
-                if (listhead[owner].objects[0x2c] && h->fc9e[2] * 8 < h->fc92) {
-                    h->f211 = h->fc94;
-                    h->fc94 = 0xa;
-                    h->fc95 = 1;
+                if (listhead[owner].objects[0x2c] && hosp->fc9e[2] * 8 < hosp->fc92) {
+                    hosp->f211 = hosp->fc94;
+                    hosp->fc94 = 0xa;
+                    hosp->fc95 = 1;
                     advisor.f2 = 0xa;
-                    h->f214 = old_normal_rand(10, 0x1e);
+                    hosp->f214 = old_normal_rand(10, 0x1e);
                 } else {
-                    h->f213 = 0;
+                    hosp->f213 = 0;
                 }
                 break;
             case 3:
-                if (h->fcaa > 10) {
+                if (hosp->fcaa > 10) {
                     disaster_peeps(0, owner);
                     advisor.f2 = 0xd;
-                    h->f214 = old_normal_rand(5, 10);
+                    hosp->f214 = old_normal_rand(5, 10);
                 } else {
-                    h->f213 = 0;
+                    hosp->f213 = 0;
                 }
                 break;
             }
@@ -316,26 +316,26 @@ void generate_disaster(u8 owner)
         break;
     case 1:
     case 2:
-        if (h->fc9e[2] * 8 > h->fc92)
-            h->f214--;
-        if (h->fc9e[2] * 5 > h->fc92)
-            h->f214--;
-        h->f214--;
-        if (h->f214 <= 0) {
-            h->f213 = 0;
-            h->fc94 = h->f211;
-            h->fc95 = 0;
+        if (hosp->fc9e[2] * 8 > hosp->fc92)
+            hosp->f214--;
+        if (hosp->fc9e[2] * 5 > hosp->fc92)
+            hosp->f214--;
+        hosp->f214--;
+        if (hosp->f214 <= 0) {
+            hosp->f213 = 0;
+            hosp->fc94 = hosp->f211;
+            hosp->fc95 = 0;
             advisor.f2 = 0xc;
         }
         break;
     case 3:
-        if (h->fcaa > 10)
+        if (hosp->fcaa > 10)
             disaster_peeps(0, owner);
         else
-            h->f214--;
-        h->f214--;
-        if (h->f214 <= 0) {
-            h->f213 = 0;
+            hosp->f214--;
+        hosp->f214--;
+        if (hosp->f214 <= 0) {
+            hosp->f213 = 0;
             advisor.f2 = 0xe;
         }
         break;
@@ -345,18 +345,18 @@ void generate_disaster(u8 owner)
 // FUNCTION: 0x00075ed0
 void disaster_peeps(u8 mode, s8 owner)
 {
-    Thing *w;
+    Thing *peep;
 
-    for (w = thing + 1; w < end_things; w++) {
-        if (w->renderer == 2 && (w->owner == owner || owner == -1)) {
+    for (peep = thing + 1; peep < end_things; peep++) {
+        if (peep->renderer == 2 && (peep->owner == owner || owner == -1)) {
             if (mode == 0)
-                w->unknown138w = (u16)gbv.f11a + 10;
-            else if (mode == 1 && abilities[w->subtype][5])
-                w->flags |= 0x200;
-            else if (mode == 2 && abilities[w->subtype][5])
-                w->flags &= ~0x200;
+                peep->unknown138w = (u16)gbv.f11a + 10;
+            else if (mode == 1 && abilities[peep->subtype][5])
+                peep->flags |= 0x200;
+            else if (mode == 2 && abilities[peep->subtype][5])
+                peep->flags &= ~0x200;
             else if (mode == 3)
-                change_health(w, -w->unknown130);
+                change_health(peep, -peep->unknown130);
         }
     }
 }
@@ -365,24 +365,24 @@ void disaster_peeps(u8 mode, s8 owner)
 void what_is_required(u8 room, u8 owner)
 {
     s32 unused;
-    Expertise *e;
+    Expertise *exp;
     s32 i;
 
     unused = 0;
     memset(&required, 0, 10);
-    e = &expertise[room];
+    exp = &expertise[room];
     if (allhosps[owner].rooms[room].unknown1C == 1) {
         required.unknown5 = 1;
-        if (e->kind == 0x27)
+        if (exp->kind == 0x27)
             required.unknown0[2] = allhosps[owner].rooms[room].unknown1B;
         return;
     }
-    if (listhead[owner].rooms[e->category] == 0) {
-        required.unknown6 = e->category;
-        if (room_available((u16)e->category) == 0)
+    if (listhead[owner].rooms[exp->category] == 0) {
+        required.unknown6 = exp->category;
+        if (room_available((u16)exp->category) == 0)
             required.unknown7 = 1;
     }
-    if (e->unknown0 & 0x20) {
+    if (exp->unknown0 & 0x20) {
         if (listhead[owner].staff[5] == 0) {
             required.flags = 0x20;
             required.unknown3 = 5;
@@ -394,14 +394,14 @@ void what_is_required(u8 room, u8 owner)
         }
     } else {
         for (i = 0; i < 9; i++) {
-            if ((e->unknown0 & (1 << i)) && listhead[owner].staff[i] == 0) {
-                required.flags = e->unknown0;
+            if ((exp->unknown0 & (1 << i)) && listhead[owner].staff[i] == 0) {
+                required.flags = exp->unknown0;
                 required.unknown3 = i;
                 break;
             }
         }
     }
-    if (e->unknown7) {
+    if (exp->unknown7) {
         if (allhosps[owner].rooms[0x2a].unknown1C == 0) {
             if (listhead[owner].rooms[9] == 0)
                 required.unknown8 = 1;
@@ -425,22 +425,22 @@ void saucer_abducts(Thing *w)
 // FUNCTION: 0x000762cc
 u16 create_shadow(u16 tile, u16 height, u8 owner, u16 anim)
 {
-    Thing *w;
+    Thing *shadow;
 
-    w = allocate_thing(0x32);
-    if (w) {
-        w->renderer = 0x18;
-        w->owner = owner;
-        w->x.tile = tile % 128;
-        w->y.tile = tile / 128;
-        w->x.frac = 0x80;
-        w->y.frac = 0x80;
-        insert_node(w, w->x, w->y);
-        w->sprite = start[anim].frame;
-        w->palette = start[anim].flags;
-        w->f37 = height;
-        w->depth = -8;
-        return w - thing;
+    shadow = allocate_thing(0x32);
+    if (shadow) {
+        shadow->renderer = 0x18;
+        shadow->owner = owner;
+        shadow->x.tile = tile % 128;
+        shadow->y.tile = tile / 128;
+        shadow->x.frac = 0x80;
+        shadow->y.frac = 0x80;
+        insert_node(shadow, shadow->x, shadow->y);
+        shadow->sprite = start[anim].frame;
+        shadow->palette = start[anim].flags;
+        shadow->f37 = height;
+        shadow->depth = -8;
+        return shadow - thing;
     }
     return 0;
 }

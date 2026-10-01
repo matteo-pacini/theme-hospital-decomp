@@ -9,9 +9,9 @@ void fn_000c93bf(char *dst, char *src);
 
 
 // FUNCTION: 0x000a0040
-void spread_epidemic(Thing *w, u16 n)
+void spread_epidemic(Thing *carrier, u16 n)
 {
-    Thing *t;
+    Thing *victim;
     Map *adj;
     Map *cell;
     s16 i;
@@ -22,29 +22,29 @@ void spread_epidemic(Thing *w, u16 n)
     othervar.f0 = old_newrand() % 100;
     if (othervar.f0 < 0 || othervar.f0 >= gbv.f145 + n / 2)
         return;
-    illness = w->style;
-    cell = &map[(s16)w->x.tile + ((s16)w->y.tile << 7)];
+    illness = carrier->style;
+    cell = &map[(s16)carrier->x.tile + ((s16)carrier->y.tile << 7)];
     for (i = 0; i < 5; i++) {
         adj = &cell[around[i]];
-        for (id = adj->first; id > 0; id = t->next) {
-            t = &thing[id];
-            if (t->renderer != 2 || t == w)
+        for (id = adj->first; id > 0; id = victim->next) {
+            victim = &thing[id];
+            if (victim->renderer != 2 || victim == carrier)
                 continue;
-            if (t->style == t->unknown169)
+            if (victim->style == victim->unknown169)
                 continue;
-            other = t->style;
-            if (expertise[other].unknown10[1] != 0 || (s8)t->unknown174 != 0 || old_newrand() & 1)
+            other = victim->style;
+            if (expertise[other].unknown10[1] != 0 || (s8)victim->unknown174 != 0 || old_newrand() & 1)
                 continue;
             othervar.f87++;
             if (other != illness) {
-                t->style = illness;
-                effect_illness(w, illness, 0);
+                victim->style = illness;
+                effect_illness(carrier, illness, 0);
             }
             othervar.f39 = illness;
-            t->unknown174 = (s8)w->unknown174 / 2;
-            w->unknown174 -= t->unknown174;
-            if (w->flags & 0x20)
-                t->flags |= 0x20;
+            victim->unknown174 = (s8)carrier->unknown174 / 2;
+            carrier->unknown174 -= victim->unknown174;
+            if (carrier->flags & 0x20)
+                victim->flags |= 0x20;
             return;
         }
     }
@@ -53,36 +53,36 @@ void spread_epidemic(Thing *w, u16 n)
 // FUNCTION: 0x000a0240
 void declare_epidemic(char **strs)
 {
-    int v;
-    char buf2[1000];
-    int a;
-    int b;
-    char buf1[200];
+    int line_height;
+    char text[1000];
+    int x;
+    int y;
+    char line[200];
     char new_line[] = "\n";
 
-    v = lbFontPtr ? lbFontPtr[34].height : 0;
-    buf2[0] = 0;
-    a = 0;
-    b = 0;
-    sprintf(buf1, strs[0], D_001602a4[myhosp->f20b]);
-    fn_000c93bf(buf2, buf1);
-    fn_000c93bf(buf2, new_line);
-    sprintf(buf1, strs[1], myhosp->f203);
-    fn_000c93bf(buf2, buf1);
-    fn_000c93bf(buf2, new_line);
-    sprintf(buf1, strs[2]);
-    fn_000c93bf(buf2, buf1);
-    fn_000c93bf(buf2, new_line);
-    sprintf(buf1, strs[3]);
-    fn_000c93bf(buf2, buf1);
-    LbTextDraw(a, b, buf2);
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    text[0] = 0;
+    x = 0;
+    y = 0;
+    sprintf(line, strs[0], D_001602a4[myhosp->f20b]);
+    fn_000c93bf(text, line);
+    fn_000c93bf(text, new_line);
+    sprintf(line, strs[1], myhosp->f203);
+    fn_000c93bf(text, line);
+    fn_000c93bf(text, new_line);
+    sprintf(line, strs[2]);
+    fn_000c93bf(text, line);
+    fn_000c93bf(text, new_line);
+    sprintf(line, strs[3]);
+    fn_000c93bf(text, line);
+    LbTextDraw(x, y, text);
 }
 
 // FUNCTION: 0x000a03b0
-void process_epidemic_start_buttons(u8 n)
+void process_epidemic_start_buttons(u8 button)
 {
     choice_spare_data = 0;
-    switch (n) {
+    switch (button) {
     case 0:
         packet_choice_result(10);
         break;
@@ -96,17 +96,17 @@ void process_epidemic_start_buttons(u8 n)
 // FUNCTION: 0x000a0414
 void alert_epidemic(u8 illness, u8 owner)
 {
-    AllHosps *h;
+    AllHosps *hosp;
 
     if ((statvar.unknownfd <= 1 && display_mode == 9) && D_00158190 == 2)
         return;
-    h = &allhosps[owner];
-    if (h->f20b != 0 || h->f1e2s != 0)
+    hosp = &allhosps[owner];
+    if (hosp->f20b != 0 || hosp->f1e2s != 0)
         return;
     get_playercall(2, 0, owner);
     if (owner == player)
         advisor.f128_u8a[0] |= 8;
-    h->f20b = illness;
+    hosp->f20b = illness;
     make_a_playercall(3, 1, 0x14, owner);
 }
 
@@ -115,35 +115,35 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
 {
     u32 count;
     u32 max;
-    Thing *t;
+    Thing *peep;
 
     count = 0;
     max = 0;
-    for (t = thing + 1; t < end_things; t++) {
-        if (t->renderer != 2 || t->owner != owner)
+    for (peep = thing + 1; peep < end_things; peep++) {
+        if (peep->renderer != 2 || peep->owner != owner)
             continue;
-        if (!t->unknown174 || t->style != illness)
+        if (!peep->unknown174 || peep->style != illness)
             continue;
-        if (!(map[(s16)t->x.tile + ((s16)t->y.tile << 7)].unknown7 & 0x10)) {
-            if ((s8)t->unknown174 > max)
-                max = (s8)t->unknown174;
+        if (!(map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].unknown7 & 0x10)) {
+            if ((s8)peep->unknown174 > max)
+                max = (s8)peep->unknown174;
             if (mode == 1) {
-                if (t->flags & 0x4000) {
-                    t->flags &= ~0x20;
-                    t->unknown174 = 0;
+                if (peep->flags & 0x4000) {
+                    peep->flags &= ~0x20;
+                    peep->unknown174 = 0;
                     continue;
                 }
                 count++;
-                set_icon_value(t, 0xd);
-                t->flags |= 0x20;
+                set_icon_value(peep, 0xd);
+                peep->flags |= 0x20;
             } else if (mode == 2) {
-                if (t->flags & 0x20)
+                if (peep->flags & 0x20)
                     count++;
-                clean_contagious_peep(t);
+                clean_contagious_peep(peep);
             }
         } else {
-            t->flags &= ~0x20;
-            t->unknown174 = 0;
+            peep->flags &= ~0x20;
+            peep->unknown174 = 0;
         }
     }
     return count;
@@ -153,14 +153,14 @@ u32 count_and_flag_contagious_peeps(const u8 illness, const u8 mode, const u8 ow
 u32 epidemic_status(u8 owner)
 {
     u32 over;
-    AllHosps *h;
+    AllHosps *hosp;
 
     over = 0;
-    h = &allhosps[owner];
-    if (h->f20d) {
-        if (h->f205) {
-            h->f207--;
-            if ((s16)h->f207 <= 0)
+    hosp = &allhosps[owner];
+    if (hosp->f20d) {
+        if (hosp->f205) {
+            hosp->f207--;
+            if ((s16)hosp->f207 <= 0)
                 over = 1;
         } else {
             if (owner == player)
@@ -171,9 +171,9 @@ u32 epidemic_status(u8 owner)
     if (over) {
         if (owner == player)
             advisor.f2 = 9;
-        h->f207 = 0;
-        h->f20d = 0;
-        h->f20e = 1;
+        hosp->f207 = 0;
+        hosp->f20d = 0;
+        hosp->f20e = 1;
     }
     return over;
 }
@@ -181,57 +181,57 @@ u32 epidemic_status(u8 owner)
 // FUNCTION: 0x000a073c
 void epidemic_over(const u8 owner, char **strs)
 {
-    int kind;
-    AllHosps *h;
-    int v;
+    int illness;
+    AllHosps *hosp;
+    int line_height;
     char new_line[] = "\n";
     char buf1[200];
     char buf2[200];
     char buf3[200];
     char text[600];
-    u16 a;
-    u16 b;
+    u16 x;
+    u16 y;
 
-    v = lbFontPtr ? lbFontPtr[34].height : 0;
-    h = &allhosps[owner];
-    kind = choice_spare_data;
-    switch (h->unknown209[0]) {
+    line_height = lbFontPtr ? lbFontPtr[34].height : 0;
+    hosp = &allhosps[owner];
+    illness = choice_spare_data;
+    switch (hosp->unknown209[0]) {
     case 0:
-        sprintf(buf1, strs[2], D_001602a4[kind]);
+        sprintf(buf1, strs[2], D_001602a4[illness]);
         sprintf(buf2, strs[3]);
-        sprintf(buf3, strs[4], h->f203);
+        sprintf(buf3, strs[4], hosp->f203);
         break;
     case 1:
-        sprintf(buf1, strs[0], D_001602a4[kind]);
+        sprintf(buf1, strs[0], D_001602a4[illness]);
         sprintf(buf2, strs[1]);
-        sprintf(buf3, strs[5], h->f203);
+        sprintf(buf3, strs[5], hosp->f203);
         break;
     case 2:
-        sprintf(buf1, strs[0], D_001602a4[kind]);
+        sprintf(buf1, strs[0], D_001602a4[illness]);
         sprintf(buf2, strs[1]);
-        sprintf(buf3, strs[6], h->f203);
+        sprintf(buf3, strs[6], hosp->f203);
         break;
     case 3:
-        sprintf(buf1, strs[0], D_001602a4[kind]);
+        sprintf(buf1, strs[0], D_001602a4[illness]);
         sprintf(buf2, strs[1]);
         sprintf(buf3, strs[7]);
         break;
     }
     text[0] = 0;
-    a = 0;
-    b = 0;
+    x = 0;
+    y = 0;
     fn_000c93bf(text, buf1);
     fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf2);
     fn_000c93bf(text, new_line);
     fn_000c93bf(text, buf3);
-    LbTextDraw(a, b, text);
+    LbTextDraw(x, y, text);
 }
 
 // FUNCTION: 0x000a09f4
-void process_epidemic_end_buttons(u8 n)
+void process_epidemic_end_buttons(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
         D_00158192 = 0x5c;
         break;
@@ -241,31 +241,31 @@ void process_epidemic_end_buttons(u8 n)
 // FUNCTION: 0x000a0a30
 void send_peeps_home(u8 all, u8 owner)
 {
-    Thing *t;
+    Thing *peep;
 
-    for (t = thing + 1; t < end_things; t++) {
-        if (t->renderer != 2 || t->owner != owner)
+    for (peep = thing + 1; peep < end_things; peep++) {
+        if (peep->renderer != 2 || peep->owner != owner)
             continue;
-        if (map[(s16)t->x.tile + ((s16)t->y.tile << 7)].unknown7 & 0x10)
+        if (map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].unknown7 & 0x10)
             continue;
-        if (all || (t->flags & 0x20)) {
-            t->flags &= ~0x20;
-            t->unknown174 = 0;
-            t->flags |= 0x100;
+        if (all || (peep->flags & 0x20)) {
+            peep->flags &= ~0x20;
+            peep->unknown174 = 0;
+            peep->flags |= 0x100;
         }
     }
 }
 
 // FUNCTION: 0x000a0ae8
-void clean_contagious_peep(Thing *w)
+void clean_contagious_peep(Thing *peep)
 {
-    w->flags &= ~0x20;
-    w->unknown174 = 0;
-    reset_icon_value(w, 0xe);
-    reset_icon_value(w, 0xf);
-    reset_icon_value(w, 0x10);
-    reset_icon_value(w, 0xd);
-    remove_person_from_vaccination_queue(w);
+    peep->flags &= ~0x20;
+    peep->unknown174 = 0;
+    reset_icon_value(peep, 0xe);
+    reset_icon_value(peep, 0xf);
+    reset_icon_value(peep, 0x10);
+    reset_icon_value(peep, 0xd);
+    remove_person_from_vaccination_queue(peep);
     if (othervar.f87 >= 1)
         othervar.f87--;
 }

@@ -84,12 +84,12 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
 {
     s8 scale;
     s8 k;
-    s8 m;
+    s8 month;
     s8 j;
     s8 i;
     u16 px;
     u16 nx;
-    u16 h1;
+    u16 font_height;
     u16 h2;
     s16 year;
     u16 py;
@@ -117,7 +117,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         break;
     }
     set_font_from_cache(0xb);
-    h1 = lbFontPtr ? lbFontPtr[34].height : 0;
+    font_height = lbFontPtr ? lbFontPtr[34].height : 0;
     h2 = lbFontPtr ? lbFontPtr[34].height : 0;
     D_0015eb94[0] = color.unknownD;
     D_0015eb94[1] = color.unknownC;
@@ -135,7 +135,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         lbDisplay.draw_flags |= 0x140;
         lbDisplay.draw_colour = D_0015eb94[graph[i].colour];
         lbDisplay.draw_flags |= 0x40;
-        LbTextDraw(0, (resvars.f3c_GraphRectp[i + 47].h - h1) >> 1, D_001602b0[i + 3]);
+        LbTextDraw(0, (resvars.f3c_GraphRectp[i + 47].h - font_height) >> 1, D_001602b0[i + 3]);
     }
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
@@ -209,7 +209,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
                 py = y - (values[othervar.f2d][11] - min) * h / range;
             else if (graph[i].unknown0 == 1)
                 py = y + (values[othervar.f2d][11] - min) * h / range - h;
-            fn_00078d70(i, py - h1 / 2, values[othervar.f2d][11]);
+            fn_00078d70(i, py - font_height / 2, values[othervar.f2d][11]);
             for (k = 11; k > 0 && (12 - k) * 1500 * scale < actual_game_turn; k--) {
                 nx = x - (12 - k) * step;
                 if (graph[i].unknown0 == 0)
@@ -227,7 +227,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
             }
         }
     }
-    fn_00078e38(h1);
+    fn_00078e38(font_height);
     for (k = 0; k < D_0015eb9c; k++) {
         i = D_0015eba0[k].kind;
         sprintf(buf, "%s:%d", D_001602b0[graph[i].unknown3], D_0015eba0[k].data);
@@ -235,7 +235,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         lbDisplay.draw_flags |= 0x40;
         LbTextDraw(x + 4, D_0015eba0[k].value, buf);
     }
-    m = mycontrol->unknown650;
+    month = mycontrol->unknown650;
     year = actual_game_turn / 0x4650;
     quarter = actual_game_turn / 0x4650 - (actual_game_turn / 0x4650 & 3);
     lbDisplay.draw_flags = 0;
@@ -245,13 +245,13 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         px = x - i * step;
         switch (othervar.f2d) {
         case 0:
-            sprintf(buf, "%s", month_text[m]);
+            sprintf(buf, "%s", month_text[month]);
             lbDisplay.draw_colour = color.unknown8;
             lbDisplay.draw_flags |= 0x40;
             LbTextDraw(px + 2 - LbTextWordWidth(buf) / 2, y + 10, buf);
-            m--;
-            if (m < 0)
-                m = 0xb;
+            month--;
+            if (month < 0)
+                month = 0xb;
             fn_000c9be0(px, y + 2, px, y + 6, color.unknown8);
             break;
         case 1:
@@ -304,9 +304,9 @@ void process_graph_panel(void)
 }
 
 // FUNCTION: 0x0007a008
-void process_graph_button(u8 n)
+void process_graph_button(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
     case 1:
     case 2:
@@ -324,11 +324,11 @@ void process_graph_button(u8 n)
             graph[5].visible = 0;
             graph[6].visible = 0;
             graph[7].visible = 0;
-            graph[n].visible = 1;
-        } else if (graph[n].visible) {
-            graph[n].visible = 0;
+            graph[button].visible = 1;
+        } else if (graph[button].visible) {
+            graph[button].visible = 0;
         } else {
-            graph[n].visible = 1;
+            graph[button].visible = 1;
         }
         play_sound(10, 0x43, -1, -1);
         break;

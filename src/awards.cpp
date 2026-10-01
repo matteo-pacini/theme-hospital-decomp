@@ -1,8 +1,8 @@
 #include "hosp.h"
 
 u8 year_check(s32 *values, const s32 limit, const u8 above);
-void set_trophy_value(const u8 t, const s16 value, u8 type);
-void general_award(s32 *p, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
+void set_trophy_value(const u8 trophy_no, const s16 value, u8 type);
+void general_award(s32 *field, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
                    const u8 type, const s16 good, const s16 bad);
 
 // FUNCTION: 0x000b3430
@@ -250,64 +250,64 @@ void annual_update_of_award_counts(void)
 }
 
 // FUNCTION: 0x000b43c0
-void set_trophy_value(const u8 t, const s16 value, u8 type)
+void set_trophy_value(const u8 trophy_no, const s16 value, u8 type)
 {
-    trophy[t].unknown0 = t;
-    trophy[t].f1 = t * 3 + saferand() % 3 + 1;
+    trophy[trophy_no].unknown0 = trophy_no;
+    trophy[trophy_no].f1 = trophy_no * 3 + saferand() % 3 + 1;
     if (type == 1) {
         s32 rep;
 
         rep = myhosp->unknownc7e;
         reputation_affected(0, 0x17, 0, player, value);
         if (myhosp->unknownc7e != rep) {
-            trophy[t].value = myhosp->unknownc7e - rep;
+            trophy[trophy_no].value = myhosp->unknownc7e - rep;
         } else {
             change_balance(0x23, 5000, 0, player);
-            trophy[t].value = 5000;
-            trophy[t].unknown0 = 2;
+            trophy[trophy_no].value = 5000;
+            trophy[trophy_no].unknown0 = 2;
         }
     } else if (type == 2) {
         change_balance(0x23, value, 0, player);
-        trophy[t].value = value;
+        trophy[trophy_no].value = value;
     }
-    trophy[t].f4 = saferand() % 1 + type - 1;
+    trophy[trophy_no].f4 = saferand() % 1 + type - 1;
 }
 
 // FUNCTION: 0x000b4510
-void fn_000b4510(const u8 a, const s8 dir, const u8 level, const s16 value, u8 type)
+void fn_000b4510(const u8 award, const s8 dir, const u8 level, const s16 value, u8 type)
 {
-    all_awards[a].unknown0 = dir;
-    all_awards[a].f1 = a;
-    all_awards[a].f2 = level + a * 3 + saferand() % 1 + 1;
+    all_awards[award].unknown0 = dir;
+    all_awards[award].f1 = award;
+    all_awards[award].f2 = level + award * 3 + saferand() % 1 + 1;
     if (type == 2) {
         change_balance(0x22, value, 0, player);
-        all_awards[a].value = value;
+        all_awards[award].value = value;
     } else if (type == 1) {
         s32 rep;
 
         rep = myhosp->unknownc7e;
         reputation_affected(0, 0x18, 0, player, value);
         if (myhosp->unknownc7e != rep) {
-            all_awards[a].value = myhosp->unknownc7e - rep;
+            all_awards[award].value = myhosp->unknownc7e - rep;
         } else {
             if (dir > 0) {
                 change_balance(0x22, 2500, 0, player);
-                all_awards[a].value = 2500;
+                all_awards[award].value = 2500;
             } else if (dir < 0) {
                 change_balance(0x22, -2500, 0, player);
-                all_awards[a].value = -2500;
+                all_awards[award].value = -2500;
             }
             type = 2;
         }
     }
-    all_awards[a].f5 = saferand() % 1 + type - 1;
+    all_awards[award].f5 = saferand() % 1 + type - 1;
 }
 
 // FUNCTION: 0x000b4698
-void general_award(s32 *p, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
+void general_award(s32 *field, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
                    const u8 type, const s16 good, const s16 bad)
 {
-    s32 h;
+    s32 hosp_no;
     s32 total;
     s8 top;
     s8 bottom;
@@ -317,63 +317,63 @@ void general_award(s32 *p, s32 value, const u8 award, const s32 high, const s32 
     best = 1;
     top = 1;
     bottom = 1;
-    h = 4;
-    while (--h >= 0) {
-        if (statvar.unknownfd > 1 && D_001609c4[h].active == 0)
+    hosp_no = 4;
+    while (--hosp_no >= 0) {
+        if (statvar.unknownfd > 1 && D_001609c4[hosp_no].active == 0)
             continue;
-        if (&allhosps[h] == myhosp)
+        if (&allhosps[hosp_no] == myhosp)
             continue;
         if (size == 4) {
             if (is_signed) {
-                if (value < *(s32 *)((u8 *)p + h * 0x1259)) {
+                if (value < *(s32 *)((u8 *)field + hosp_no * 0x1259)) {
                     best = 0;
                     top = 0;
                 } else {
-                    total += *(s32 *)(h * 0x1259 + (u32)p);
+                    total += *(s32 *)(hosp_no * 0x1259 + (u32)field);
                     bottom = 0;
                 }
             } else {
-                if ((u32)value < *(u32 *)((u8 *)p + h * 0x1259)) {
+                if ((u32)value < *(u32 *)((u8 *)field + hosp_no * 0x1259)) {
                     best = 0;
                     top = 0;
                 } else {
-                    total += *(u32 *)(h * 0x1259 + (u32)p);
+                    total += *(u32 *)(hosp_no * 0x1259 + (u32)field);
                     bottom = 0;
                 }
             }
         } else if (size == 2) {
             if (is_signed) {
-                if (*(s16 *)(h * 0x1259 + (u32)p) > value) {
+                if (*(s16 *)(hosp_no * 0x1259 + (u32)field) > value) {
                     best = 0;
                     top = 0;
                 } else {
-                    total += *(s16 *)(h * 0x1259 + (u32)p);
+                    total += *(s16 *)(hosp_no * 0x1259 + (u32)field);
                     bottom = 0;
                 }
             } else {
-                if (*(u16 *)(h * 0x1259 + (u32)p) > value) {
+                if (*(u16 *)(hosp_no * 0x1259 + (u32)field) > value) {
                     best = 0;
                     top = 0;
                 } else {
-                    total += *(u16 *)(h * 0x1259 + (u32)p);
+                    total += *(u16 *)(hosp_no * 0x1259 + (u32)field);
                     bottom = 0;
                 }
             }
         } else if (size == 1) {
             if (is_signed) {
-                if (*(s8 *)(h * 0x1259 + (u32)p) > value) {
+                if (*(s8 *)(hosp_no * 0x1259 + (u32)field) > value) {
                     best = 0;
                     top = 0;
                 } else {
-                    total += *(s8 *)(h * 0x1259 + (u32)p);
+                    total += *(s8 *)(hosp_no * 0x1259 + (u32)field);
                     bottom = 0;
                 }
             } else {
-                if (*(u8 *)(h * 0x1259 + (u32)p) > value) {
+                if (*(u8 *)(hosp_no * 0x1259 + (u32)field) > value) {
                     best = 0;
                     top = 0;
                 } else {
-                    total += *(u8 *)(h * 0x1259 + (u32)p);
+                    total += *(u8 *)(hosp_no * 0x1259 + (u32)field);
                     bottom = 0;
                 }
             }

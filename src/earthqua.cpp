@@ -1,6 +1,6 @@
 #include "hosp.h"
 
-u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 n);
+u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_margin);
 
 extern "C" {
 // demo: earthquake_table

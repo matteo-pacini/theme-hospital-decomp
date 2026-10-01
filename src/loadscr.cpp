@@ -144,12 +144,12 @@ void draw_load_game(void)
 }
 
 // FUNCTION: 0x0009d988
-void process_loadgame_buttons(u8 n)
+void process_loadgame_buttons(u8 slot)
 {
-    if (n == 9) {
+    if (slot == 9) {
         loadgame.unknown2 = 2;
-    } else if (loadable[n]) {
-        load_game_number = n;
+    } else if (loadable[slot]) {
+        load_game_number = slot;
         loadgame.unknown2 = 1;
     }
 }

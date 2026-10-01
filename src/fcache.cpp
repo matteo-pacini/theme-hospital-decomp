@@ -22,10 +22,10 @@ extern u8 D_0016126d;
 }
 
 s8 get_fontmem(void);
-void put_fontmem(s8 i);
+void put_fontmem(s8 block);
 void init_font_cache(void);
-void insert_block_into_free_list(s8 i);
-void insert_block_into_used_list(s8 i);
+void insert_block_into_free_list(s8 block);
+void insert_block_into_used_list(s8 block);
 void realign_sprites(TbSprite *start, TbSprite *end, s32 delta);
 void defrag_cache(void);
 void throw_out(s32 size);
@@ -34,26 +34,26 @@ s8 get_block_from_free_list(s32 size);
 // FUNCTION: 0x000b6800
 s8 get_fontmem(void)
 {
-    s8 i;
+    s8 block;
 
-    i = fontmem_head;
-    if (i == -1) {
+    block = fontmem_head;
+    if (block == -1) {
         hosp_dos_printf("FONT CACHE IS PANICKED! Increase MAX_NB_FONTS (number of FontMem structures)!\n");
         return -1;
     }
-    i = fontmem_head;
-    fontmem_head = font_memory[i].next;
-    font_memory[i].next = -1;
-    return i;
+    block = fontmem_head;
+    fontmem_head = font_memory[block].next;
+    font_memory[block].next = -1;
+    return block;
 }
 
 // FUNCTION: 0x000b6870
-void put_fontmem(s8 i)
+void put_fontmem(s8 block)
 {
-    font_memory[i].offset = 0;
-    font_memory[i].size = 0;
-    font_memory[i].next = fontmem_head;
-    fontmem_head = i;
+    font_memory[block].offset = 0;
+    font_memory[block].size = 0;
+    font_memory[block].next = fontmem_head;
+    fontmem_head = block;
 }
 
 // FUNCTION: 0x000b68c8
@@ -78,61 +78,61 @@ void init_font_cache(void)
 }
 
 // FUNCTION: 0x000b6988
-void insert_block_into_free_list(s8 i)
+void insert_block_into_free_list(s8 block)
 {
-    s8 p;
+    s8 cur;
 
-    p = D_00175239;
-    if (p == -1) {
-        font_memory[i].next = -1;
-        D_00175239 = i;
+    cur = D_00175239;
+    if (cur == -1) {
+        font_memory[block].next = -1;
+        D_00175239 = block;
         return;
     }
-    while (p != -1) {
-        if (font_memory[p].offset + font_memory[p].size == font_memory[i].offset) {
-            font_memory[p].size += font_memory[i].size;
-            put_fontmem(i);
+    while (cur != -1) {
+        if (font_memory[cur].offset + font_memory[cur].size == font_memory[block].offset) {
+            font_memory[cur].size += font_memory[block].size;
+            put_fontmem(block);
             return;
         }
-        if (font_memory[i].offset + font_memory[i].size == font_memory[p].offset) {
-            font_memory[p].size += font_memory[i].size;
-            font_memory[p].offset -= font_memory[i].size;
-            put_fontmem(i);
+        if (font_memory[block].offset + font_memory[block].size == font_memory[cur].offset) {
+            font_memory[cur].size += font_memory[block].size;
+            font_memory[cur].offset -= font_memory[block].size;
+            put_fontmem(block);
             return;
         }
-        p = font_memory[p].next;
+        cur = font_memory[cur].next;
     }
-    font_memory[i].next = D_00175239;
-    D_00175239 = i;
+    font_memory[block].next = D_00175239;
+    D_00175239 = block;
 }
 
 // FUNCTION: 0x000b6ac8
-void insert_block_into_used_list(s8 i)
+void insert_block_into_used_list(s8 block)
 {
-    s8 p;
+    s8 cur;
 
-    p = used_head;
-    font_memory[i].used = othervar.f8a2;
-    if (p == -1) {
-        font_memory[i].next = -1;
-        used_head = i;
+    cur = used_head;
+    font_memory[block].used = othervar.f8a2;
+    if (cur == -1) {
+        font_memory[block].next = -1;
+        used_head = block;
         return;
     }
-    if (font_memory[i].offset <= font_memory[p].offset) {
-        font_memory[i].next = p;
-        used_head = i;
+    if (font_memory[block].offset <= font_memory[cur].offset) {
+        font_memory[block].next = cur;
+        used_head = block;
         return;
     }
-    while (font_memory[p].next != -1) {
-        if (font_memory[i].offset <= font_memory[font_memory[p].next].offset) {
-            font_memory[i].next = font_memory[p].next;
-            font_memory[p].next = i;
+    while (font_memory[cur].next != -1) {
+        if (font_memory[block].offset <= font_memory[font_memory[cur].next].offset) {
+            font_memory[block].next = font_memory[cur].next;
+            font_memory[cur].next = block;
             return;
         }
-        p = font_memory[p].next;
+        cur = font_memory[cur].next;
     }
-    font_memory[p].next = i;
-    font_memory[i].next = -1;
+    font_memory[cur].next = block;
+    font_memory[block].next = -1;
 }
 
 // FUNCTION: 0x000b6bf4
@@ -222,36 +222,36 @@ s8 get_block_from_free_list(s32 size)
     s32 total;
     s8 got;
     s8 block;
-    s8 p;
+    s8 cur;
 
     total = 0;
     if (size > 81000)
         return -1;
-    p = D_00175239;
-    if (p == -1)
+    cur = D_00175239;
+    if (cur == -1)
         return -1;
-    left = font_memory[p].size - size;
-    total += font_memory[p].size;
+    left = font_memory[cur].size - size;
+    total += font_memory[cur].size;
     if (left >= 0) {
-        D_00175239 = font_memory[p].next;
-        font_memory[p].next = -1;
+        D_00175239 = font_memory[cur].next;
+        font_memory[cur].next = -1;
         if (left > 0) {
             got = get_fontmem();
             if (got != -1) {
-                font_memory[p].size = size;
-                font_memory[got].offset = font_memory[p].offset + size;
+                font_memory[cur].size = size;
+                font_memory[got].offset = font_memory[cur].offset + size;
                 font_memory[got].size = left;
                 insert_block_into_free_list(got);
             }
         }
-        return p;
+        return cur;
     }
-    while (font_memory[p].next != -1) {
-        total += font_memory[font_memory[p].next].size;
-        left = font_memory[font_memory[p].next].size - size;
+    while (font_memory[cur].next != -1) {
+        total += font_memory[font_memory[cur].next].size;
+        left = font_memory[font_memory[cur].next].size - size;
         if (left >= 0) {
-            block = font_memory[p].next;
-            font_memory[p].next = font_memory[font_memory[p].next].next;
+            block = font_memory[cur].next;
+            font_memory[cur].next = font_memory[font_memory[cur].next].next;
             font_memory[block].next = -1;
             if (left > 0) {
                 got = get_fontmem();
@@ -264,7 +264,7 @@ s8 get_block_from_free_list(s32 size)
             }
             return block;
         }
-        p = font_memory[p].next;
+        cur = font_memory[cur].next;
     }
     if (!D_0016126c) {
         throw_out(size - total);
@@ -281,8 +281,8 @@ s8 get_block_from_free_list(s32 size)
 void set_font_from_cache(const s32 font)
 {
     char name[32];
-    s32 len1;
-    s32 len2;
+    s32 tab_len;
+    s32 dat_len;
     s32 total;
     s32 loaded;
     char **names;
@@ -298,14 +298,14 @@ void set_font_from_cache(const s32 font)
     }
     names = resvars.fa_charpp;
     sprintf(name, "%s.tab", names[font]);
-    len1 = LbFileLengthRnc(name);
-    if (len1 == -1)
+    tab_len = LbFileLengthRnc(name);
+    if (tab_len == -1)
         return;
     sprintf(name, "%s.dat", names[font]);
-    len2 = LbFileLengthRnc(name);
-    if (len2 == -1)
+    dat_len = LbFileLengthRnc(name);
+    if (dat_len == -1)
         return;
-    total = len1 + len2;
+    total = tab_len + dat_len;
     block = get_block_from_free_list(total);
     if (block == -1)
         return;

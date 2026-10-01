@@ -7,15 +7,15 @@ void setup_next_aniseq(Thing *w);
 // FUNCTION: 0x0009b300
 void setup_aniseq_indices(void)
 {
-    u32 n;
+    u32 seq;
     u32 i;
 
-    n = 0;
+    seq = 0;
     i = 0;
     while (ani_seq[i] != -2) {
         ++i;
-        ++n;
-        statvar.aniseq_start[n] = i;
+        ++seq;
+        statvar.aniseq_start[seq] = i;
         while (ani_seq[i] != -1 && ani_seq[i] != -2)
             i++;
     }
@@ -37,11 +37,11 @@ void setup_next_aniseq(Thing *w)
     if (ani_seq[w->unknown99] == -1) {
         w->kind = w->state_b;
     } else {
-        u16 f;
+        u16 entry;
 
-        f = check_frame(ani_seq[w->unknown99], w) + w->unknown17;
-        w->sprite = start[f].frame;
-        w->palette = start[f].flags > 0 ? (u8)1 : (u8)0;
+        entry = check_frame(ani_seq[w->unknown99], w) + w->unknown17;
+        w->sprite = start[entry].frame;
+        w->palette = start[entry].flags > 0 ? (u8)1 : (u8)0;
         w->unknown99++;
     }
 }
@@ -63,9 +63,9 @@ void play_aniseq(Thing *w)
 // FUNCTION: 0x0009b510
 void choose_aniseq(Thing *w, u8 group, u8 mode)
 {
-    u8 n;
+    u8 count;
 
-    for (n = 0; ani_seq_choice[group][n]; n++)
+    for (count = 0; ani_seq_choice[group][count]; count++)
         ;
-    setup_aniseq(w, ani_seq_choice[group][old_newrand() % n], mode);
+    setup_aniseq(w, ani_seq_choice[group][old_newrand() % count], mode);
 }

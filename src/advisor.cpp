@@ -213,7 +213,7 @@ u8 find_advice(const u16 id)
     u16 found;
     u32 extra;
     s32 crit;
-    s32 tmp;
+    s32 win_crit;
     s32 value;
 
     found = 0;
@@ -253,8 +253,8 @@ u8 find_advice(const u16 id)
     case 0x48:
         crit = is_relevant_criterion(2, lose_criteria);
         if (crit && (statvar.unknownfd > 1 ? 1 : myhosp->unknown1256)) {
-            tmp = is_relevant_criterion(2, win_criteria);
-            if (tmp && myhosp->f35 - myhosp->f3d < win_criteria[tmp].value) {
+            win_crit = is_relevant_criterion(2, win_criteria);
+            if (win_crit && myhosp->f35 - myhosp->f3d < win_criteria[win_crit].value) {
                 u8 i;
 
                 for (i = 0; i < 4; i++) {
@@ -831,14 +831,14 @@ u8 find_advice(const u16 id)
         break;
     case 0x72:
         if (myhosp->f29 > 1 && mycontrol->unknown650 > 6 && advisor.f130) {
-            tmp = 100 - adcounts.fa2;
-            if (tmp < 0x32 && tmp > 0x19) {
+            win_crit = 100 - adcounts.fa2;
+            if (win_crit < 0x32 && win_crit > 0x19) {
                 sprintf(advisor.f10, advisor_text[0x74]);
                 found = 1;
-            } else if (tmp < 0x19 && tmp > 5) {
+            } else if (win_crit < 0x19 && win_crit > 5) {
                 sprintf(advisor.f10, advisor_text[0x73]);
                 found = 1;
-            } else if (tmp < 5 && tmp > 0) {
+            } else if (win_crit < 5 && win_crit > 0) {
                 sprintf(advisor.f10, advisor_text[0x72]);
                 found = 1;
             }
@@ -846,14 +846,14 @@ u8 find_advice(const u16 id)
         break;
     case 0x6f:
         if (myhosp->f29 > 1 && mycontrol->unknown650 > myhosp->f29 + 3 && advisor.f130) {
-            tmp = 100 - adcounts.f9e;
-            if (tmp < 0x32 && tmp > 0x19) {
+            win_crit = 100 - adcounts.f9e;
+            if (win_crit < 0x32 && win_crit > 0x19) {
                 sprintf(advisor.f10, advisor_text[0x71]);
                 found = 1;
-            } else if (tmp < 0x19 && tmp > 5) {
+            } else if (win_crit < 0x19 && win_crit > 5) {
                 sprintf(advisor.f10, advisor_text[0x70]);
                 found = 1;
-            } else if (tmp < 5 && tmp > 0) {
+            } else if (win_crit < 5 && win_crit > 0) {
                 sprintf(advisor.f10, advisor_text[0x6f]);
                 found = 1;
             }
@@ -924,7 +924,7 @@ u8 find_advice(const u16 id)
             found = 1;
         }
         crit = myplayer.f41[8];
-        tmp = 8;
+        win_crit = 8;
         break;
     case 0x8a:
         if (!myplayer.f41[6] && (advisor.f128_u32 & 0x100)) {

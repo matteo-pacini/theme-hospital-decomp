@@ -470,7 +470,7 @@ extern "C" int __far fn_0009b590(unsigned deverr, unsigned errcode, unsigned __f
 // FUNCTION: 0x0009b5b8
 void check_cd_available(char *path)
 {
-    s32 buf;
+    s32 probe;
     s32 handle;
     char *text;
     s32 unused;
@@ -489,7 +489,7 @@ void check_cd_available(char *path)
     fn_000ce546(fn_0009b590);
     handle = LbFileOpen(path, 2);
     if (handle != -1) {
-        if (LbFileRead(handle, &buf, 4) != -1) {
+        if (LbFileRead(handle, &probe, 4) != -1) {
             LbFileClose(handle);
             return;
         }

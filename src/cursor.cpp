@@ -217,14 +217,14 @@ u32 get_frame_for_placing_bomb(void)
 {
     u8 i;
     BuildState *bs;
-    Thing *w;
+    Thing *obj;
 
     bs = &allhosps[othervar.ff].build;
     for (i = 0; i < 20; i++) {
-        w = &thing[bs->objects[i]];
-        if (w > thing) {
-            if (w->subtype == 0x11 && w->owner == player)
-                return start[w->f64 + 0x9bf].frame;
+        obj = &thing[bs->objects[i]];
+        if (obj > thing) {
+            if (obj->subtype == 0x11 && obj->owner == player)
+                return start[obj->f64 + 0x9bf].frame;
         }
     }
     return start[0x9bf].frame;
@@ -235,14 +235,14 @@ u32 get_frame_for_placing_plant(void)
 {
     u8 i;
     BuildState *bs;
-    Thing *w;
+    Thing *obj;
 
     bs = &allhosps[othervar.ff].build;
     for (i = 0; i < 20; i++) {
-        w = &thing[bs->objects[i]];
-        if (w > thing) {
-            if (w->subtype == 0x2d && w->owner == player)
-                return compute_plant_frame(w);
+        obj = &thing[bs->objects[i]];
+        if (obj > thing) {
+            if (obj->subtype == 0x2d && obj->owner == player)
+                return compute_plant_frame(obj);
         }
     }
     return start[0x3cf].frame;

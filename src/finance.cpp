@@ -69,35 +69,35 @@ void StopSample(u32 a, u32 b);
 // FUNCTION: 0x00050ef0
 void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 owner)
 {
-    u16 n;
+    u16 count;
     u16 day;
     u16 month;
     u16 i;
 
     if (owner == player) {
-        n = (u16)mycontrol->f64e;
+        count = (u16)mycontrol->f64e;
         day = (u16)mycontrol->unknown64f;
         month = (u16)mycontrol->unknown650;
-        if (n && mycontrol->entries[n - 1].type == type && mycontrol->entries[n - 1].day == day
-            && mycontrol->entries[n - 1].month == month) {
-            mycontrol->entries[n - 1].amount += amount;
+        if (count && mycontrol->entries[count - 1].type == type && mycontrol->entries[count - 1].day == day
+            && mycontrol->entries[count - 1].month == month) {
+            mycontrol->entries[count - 1].amount += amount;
         } else {
-            mycontrol->entries[n].day = day;
-            mycontrol->entries[n].month = month;
-            mycontrol->entries[n].type = type;
-            mycontrol->entries[n].amount = amount;
+            mycontrol->entries[count].day = day;
+            mycontrol->entries[count].month = month;
+            mycontrol->entries[count].type = type;
+            mycontrol->entries[count].amount = amount;
             switch (type) {
             case 17:
-                mycontrol->entries[n].extra = ins_control[arg];
+                mycontrol->entries[count].extra = ins_control[arg];
                 break;
             case 7:
             case 8:
             case 9:
             case 11:
-                mycontrol->entries[n].extra = arg;
+                mycontrol->entries[count].extra = arg;
                 break;
             }
-            if (n < 0x31) {
+            if (count < 0x31) {
                 mycontrol->f64e++;
             } else {
                 for (i = 0; i < 40; i++) {
@@ -134,7 +134,7 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
 }
 
 // FUNCTION: 0x00051280
-u16 pay_for_treatment(Thing *w, u16 kind)
+u16 pay_for_treatment(Thing *patient, u16 kind)
 {
     HospitalRoom *room;
     s32 price;
@@ -145,21 +145,21 @@ u16 pay_for_treatment(Thing *w, u16 kind)
     u16 month;
 
     fee = 0;
-    price = allhosps[w->owner].rooms[w->unknown171].unknownC;
-    room = &allhosps[w->owner].rooms[w->unknown171];
+    price = allhosps[patient->owner].rooms[patient->unknown171].unknownC;
+    room = &allhosps[patient->owner].rooms[patient->unknown171];
     if (kind == 2) {
-        if (w->unknown108 == 0)
-            w->unknown108 = price;
-        room->unknown14 += w->unknown108;
-        fee = w->unknown108;
+        if (patient->unknown108 == 0)
+            patient->unknown108 = price;
+        room->unknown14 += patient->unknown108;
+        fee = patient->unknown108;
         type = 7;
-        w->unknown108 = 0;
+        patient->unknown108 = 0;
     } else {
-        w->unknown108 = price;
+        patient->unknown108 = price;
     }
     if (fee > 0) {
-        ins = (u16)w->unknown172[1];
-        if (ins & allhosps[w->owner].f216) {
+        ins = (u16)patient->unknown172[1];
+        if (ins & allhosps[patient->owner].f216) {
             for (i = 0; i < 3; i++) {
                 if (ins & (1 << i)) {
                     month = mycontrol->unknown650 + insurance_co[ins_control[i]].f1;
@@ -167,16 +167,16 @@ u16 pay_for_treatment(Thing *w, u16 kind)
                         month -= 12;
                     if (month >= 12)
                         month = 0;
-                    allhosps[w->owner].f45[i][month] += fee;
-                    create_numfx(3, fee, w->x.tile + (w->y.tile << 7), color.unknownD, 0x40);
+                    allhosps[patient->owner].f45[i][month] += fee;
+                    create_numfx(3, fee, patient->x.tile + (patient->y.tile << 7), color.unknownD, 0x40);
                     break;
                 }
             }
         } else {
-            if (fee <= w->f70) {
-                w->f70 -= fee;
-                change_balance(type, fee, (u16)w->unknown171, (u16)w->owner);
-                create_numfx(3, fee, w->x.tile + (w->y.tile << 7), color.unknown8, 0x40);
+            if (fee <= patient->f70) {
+                patient->f70 -= fee;
+                change_balance(type, fee, (u16)patient->unknown171, (u16)patient->owner);
+                create_numfx(3, fee, patient->x.tile + (patient->y.tile << 7), color.unknown8, 0x40);
             } else {
                 return 0;
             }
@@ -192,7 +192,7 @@ void month_end(void)
     u16 j;
     s32 amount;
     s32 total;
-    Thing *w;
+    Thing *employee;
     s32 wages[4];
 
     total = 0;
@@ -200,10 +200,10 @@ void month_end(void)
     auto_available();
     for (i = 0; i < 4; i++)
         wages[i] = 0;
-    for (w = thing + 1; w < end_things; w++) {
-        if (w->renderer == 4 && w->kind != 0x2e) {
-            wages[w->owner] += w->unknown108;
-            appraise_staff(w);
+    for (employee = thing + 1; employee < end_things; employee++) {
+        if (employee->renderer == 4 && employee->kind != 0x2e) {
+            wages[employee->owner] += employee->unknown108;
+            appraise_staff(employee);
         }
     }
     for (i = 0; i < 4; i++) {
@@ -464,9 +464,9 @@ void process_stat_panel(void)
 }
 
 // FUNCTION: 0x00052b48
-void process_stat_button(u8 n)
+void process_stat_button(u8 button)
 {
-    switch (n) {
+    switch (button) {
     case 0:
         bank.unknown2 = 2;
         play_sound(10, 0x42, -1, -1);
@@ -495,16 +495,16 @@ u16 exit_quick_requester(void)
 void daily_admin(void)
 {
     s32 i;
-    s32 n;
+    s32 hosp_count;
 
     mycontrol->unknown64f++;
     D_00156910 = 1;
     try_to_generate_emergency();
     generate_mayors();
-    n = 1;
+    hosp_count = 1;
     if (statvar.unknownfd > 1)
-        n = 4;
-    for (i = 0; i < n; i++) {
+        hosp_count = 4;
+    for (i = 0; i < hosp_count; i++) {
         if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
             continue;
         if (allhosps[i].f1e2s == 2) {
@@ -532,21 +532,21 @@ void daily_admin(void)
 // FUNCTION: 0x00052e70
 void twice_daily_admin(void)
 {
-    u8 n;
+    u8 hosp_count;
     u8 i;
-    AllHosps *h;
+    AllHosps *hosp;
 
-    h = allhosps;
-    n = 1;
+    hosp = allhosps;
+    hosp_count = 1;
     if (statvar.unknownfd > 1)
-        n = 4;
-    for (i = 0; i < n; i++, h++) {
+        hosp_count = 4;
+    for (i = 0; i < hosp_count; i++, hosp++) {
         if (statvar.unknownfd > 1 && D_001609c4[i].active == 0)
             continue;
-        if (h->f1d9s > 0) {
-            h->f1d9--;
-            if (h->f1d9s == 0 && h->f1e2s > 0)
-                h->f1e2--;
+        if (hosp->f1d9s > 0) {
+            hosp->f1d9--;
+            if (hosp->f1d9s == 0 && hosp->f1e2s > 0)
+                hosp->f1e2--;
             if (myhosp->f1d9s == 0)
                 StopSample(0xd, 0xa9);
         }
@@ -562,28 +562,28 @@ void twice_daily_admin(void)
 void calculate_value(const u8 owner)
 {
     s32 total;
-    AllHosps *h;
+    AllHosps *hosp;
     s32 base;
-    s32 bank;
+    s32 rep_value;
     RoomInfo *room;
-    s32 staff;
+    s32 staff_value;
 
     total = 0;
-    h = &allhosps[owner];
-    base = h->f1bf;
-    bank = h->unknownc7e / 50 * 1000;
+    hosp = &allhosps[owner];
+    base = hosp->f1bf;
+    rep_value = hosp->unknownc7e / 50 * 1000;
     for (room = room_info + 1; room < end_room_info; room++) {
         if (room->owner == owner)
             total += rooms[room->type].cost;
     }
     count_hospital_area((u16)owner);
-    staff = h->f1f1 * gbv.f7c;
-    h->f1bb = staff + (base + bank + total) + 10000;
-    if (h->f1bb < 0)
-        h->f1bb = 0;
-    h->f41 = h->f1bb / 3 + 10000;
-    if (h->f41 < 0)
-        h->f41 = 0;
-    else if (h->f41 > 100000)
-        h->f41 = 100000;
+    staff_value = hosp->f1f1 * gbv.f7c;
+    hosp->f1bb = staff_value + (base + rep_value + total) + 10000;
+    if (hosp->f1bb < 0)
+        hosp->f1bb = 0;
+    hosp->f41 = hosp->f1bb / 3 + 10000;
+    if (hosp->f41 < 0)
+        hosp->f41 = 0;
+    else if (hosp->f41 > 100000)
+        hosp->f41 = 100000;
 }

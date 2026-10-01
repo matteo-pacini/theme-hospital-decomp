@@ -23,12 +23,12 @@ int fclose(FILE *fp);
 }
 
 // FUNCTION: 0x0008dcd0
-u16 check_frame(u16 anim, Thing *w)
+u16 check_frame(u16 anim, Thing *peep)
 {
     char buf[100];
 
     if (anim == 9999) {
-        sprintf(buf, "Invalid Frame Lookup. Peep %d", (u16)(w - thing));
+        sprintf(buf, "Invalid Frame Lookup. Peep %d", (u16)(peep - thing));
         note_in_error_log(buf);
         return 0;
     }
