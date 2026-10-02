@@ -140,6 +140,13 @@ reorder declarations, since order decides stack slots and (for C files)
 the layout of statics, whose names also decide their order (see "Static
 data layout" in docs/MATCHING.md).
 
+Named constants live in `include/enums.h`. Enumerators only replace
+literals: fields, parameters and variables keep their integer types, since
+an enum-typed declaration changes layout and mangled names. Bit masks are
+`#define`s, because Watcom compiles `field & ENUMERATOR` differently from
+`field & 8`. The data-only table files start with `// clang-format off` to
+keep their hand-laid-out initialisers.
+
 ## Names from the 1997 demo
 
 The March 1997 demo of the game (`HOSPITAL.EXE`, sha1
