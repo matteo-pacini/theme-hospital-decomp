@@ -1,6 +1,6 @@
 .intel_syntax noprefix
 
-// __Init_FPE_handler: if _D_00150814 (the 80x87 type, which the emulator sets to 3) is nonzero and no hook is installed yet, install the FPU exception interrupt hook for the DOS extender in use and enable FP exceptions; __Fini_FPE_handler, 0x5d bytes in, masks them and removes the hook.
+// __Init_FPE_handler: if __8087 (C _8087, the 80x87 type, which the emulator sets to 3) is nonzero and no hook is installed yet, install the FPU exception interrupt hook for the DOS extender in use and enable FP exceptions; __Fini_FPE_handler, 0x5d bytes in, masks them and removes the hook.
 // FUNCTION: 0x000fd8d8
 
 .section _TEXT,"ax",@progbits,unique,1038552
@@ -9,7 +9,7 @@
 "__Init_FPE_handler_":
     cmp word ptr ["___PMSeg"], 0
     jne .L000fd8ed
-    cmp byte ptr [_D_00150814], 0
+    cmp byte ptr [__8087], 0
     je .L000fd8ed
     jmp .L000fd8ee
 .L000fd8ed:

@@ -258,7 +258,7 @@ void display_drugs(void)
         }
     }
     if (expertise[illness].research_type != 0) {
-        if (illness == (statvar.num_players > 1 ? allhosps[player].hospital_open : gamevar.research_illness)) {
+        if (illness == (statvar.num_players > 1 ? allhosps[player].net_research_illness : gamevar.research_illness)) {
             set_font_from_cache(0xf);
         } else {
             set_font_from_cache(0xe);

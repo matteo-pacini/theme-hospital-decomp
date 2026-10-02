@@ -2775,7 +2775,7 @@
 000f9d61     66 emu_fprem
 000f9dc7     7b emu_fprem_core
 000f9e42     ee emu_fxam
-000f9f30     19 emu_ld_add_one
+000f9f30     19 emu_fyl2xp1
 000f9f49     43 emu_fyl2x
 000f9f8c    298 emu_ld_log
 000fa224    1f7 emu_ld_trig

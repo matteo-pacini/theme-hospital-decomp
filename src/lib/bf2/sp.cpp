@@ -50,7 +50,7 @@ ServiceProvider::ServiceProvider()
     init_count = 0;
     in_session = 0;
     player_count = 0;
-    strcpy(name, "");
+    strcpy(session_name, "");
     started = 0;
     callback_data = 0;
     callbacks = &nilReceiveAspect;

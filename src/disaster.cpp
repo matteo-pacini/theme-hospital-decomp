@@ -188,9 +188,9 @@ void blast_effect(u16 tile, RoomInfo *room)
     othervar.full_redraw = 1;
 }
 
-// Damages tile's north wall with a 70% chance, by placing a damage marker
-// (small thing 0x65 or 0x67); if the north wall was not hit, tries its west
-// wall the same way (0x66 or 0x68). The floor is left alone.
+// Despite its name, never touches the floor: damages tile's north wall with
+// a 70% chance, by placing a damage marker (small thing 0x65 or 0x67); if the
+// north wall was not hit, tries its west wall the same way (0x66 or 0x68).
 // FUNCTION: 0x000757a0
 void blast_walls_and_floor(u16 tile)
 {

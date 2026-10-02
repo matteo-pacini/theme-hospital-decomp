@@ -1418,15 +1418,15 @@ void process_turn(void)
             break;
         case EV_CONCENTRATE_RESEARCH:
             if (player_events[i].value ==
-                (statvar.num_players > 1 ? allhosps[i].hospital_open : gamevar.research_illness)) {
+                (statvar.num_players > 1 ? allhosps[i].net_research_illness : gamevar.research_illness)) {
                 if (statvar.num_players > 1) {
-                    allhosps[i].hospital_open = 0;
+                    allhosps[i].net_research_illness = 0;
                 } else {
                     gamevar.research_illness = 0;
                 }
             } else {
                 if (statvar.num_players > 1) {
-                    allhosps[i].hospital_open = player_events[i].value;
+                    allhosps[i].net_research_illness = player_events[i].value;
                 } else {
                     gamevar.research_illness = player_events[i].value;
                 }

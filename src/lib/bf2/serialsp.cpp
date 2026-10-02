@@ -116,7 +116,7 @@ TbError SerialSP::Start(char *session, char *name, u32 max_players, void *data)
             NetworkDebugPrintf("  WARNING network: SerialSP::Start() maxPlayers != 2\n");
             return ret;
         }
-        StrCpyTrunc(this->name, session, 0x20);
+        StrCpyTrunc(session_name, session, 0x20);
         if (!comm) {
             NetworkDebugPrintf("  WARNING network: SerialSP::Start() NULL m_commHandlerPtr\n");
             return ret;

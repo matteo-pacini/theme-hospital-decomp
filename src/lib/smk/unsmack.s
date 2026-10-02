@@ -850,7 +850,7 @@
     ret
 .size "smk_mark_tree_values",.-"smk_mark_tree_values"
 
-// smk_prepare_tree_values: rewrite the eax-byte tree at esi + 7468h: each leaf's low word becomes its value, every other node's the unused marker value; the frame decoder's block routines follow it.
+// smk_prepare_tree_values: rewrite the eax-byte tree at esi + 7468h: each leaf's low word becomes its value, every other node's the unused marker value. The name fits only the first 0x30 bytes: the symbol's span (to 0x10e820) also holds the frame decoder's block routines (as bytes), which Unsmack reaches through the smk_prepare_tree_values+N addresses it stores at .Ldata+0x50..0x5c.
 // FUNCTION: 0x0010bf10
 
 .section _TEXT,"ax",@progbits,unique,1097488

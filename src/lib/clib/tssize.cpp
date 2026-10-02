@@ -7,9 +7,9 @@ enum TS_TYPE {
     TS_SCALAR,
     TS_CLASS_ARRAY,
     TS_ANY,
-    TS_UNUSED6,
-    TS_UNUSED7,
-    TS_UNUSED8
+    TS_POINTER_KIND6,
+    TS_POINTER_KIND7,
+    TS_SCALAR_KIND8
 };
 
 #pragma pack(1)

@@ -1068,9 +1068,13 @@ struct AllHosps {
     u8 strategy;
     u8 ai_index;
     s16 staff_ability_sum[8];
-    // 0x1256: Single player: 1 once the opening countdown has ended. Network
-    // games: illness chosen for concentrated research.
-    u8 hospital_open;
+    union {
+        // 0x1256: Single player: 1 once the opening countdown has ended.
+        u8 hospital_open;
+        // 0x1256: Network games: illness chosen for concentrated research
+        // (gamevar.research_illness in single player).
+        u8 net_research_illness;
+    };
     // 0x1257: Turns until the hospital opens to patients (from
     // gbv.open_countdown).
     u16 opening_countdown;
@@ -3312,8 +3316,9 @@ struct General {
     u16 panel_info_hold;
     // 0xa6b: Mouse is over the emergency/epidemic watch (sound plays on entry).
     u8 watch_hovered;
-    // 0xa6c: Per player, 1 if they met the last network criterion.
-    u8 net_winners[6];
+    // 0xa6c: Per player, 1 if they failed the last network criterion
+    // (named by forced advice 2).
+    u8 net_losers[6];
     // 0xa72: People drawn this turn; sets the crowd noise volume.
     u16 visible_people;
     // 0xa74: Volume last set on the crowd sample.
@@ -5122,7 +5127,7 @@ void find_common_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32
 void goto_cell_in_window(const u8 win, const s32 cell);
 void goto_column_row_in_window(const u8 win, const s32 x, const s32 y);
 void find_cell_at_point(const u8 win, const s32 x, const s32 y);
-void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1,
+void open_new_window(const u8 blank, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1,
                      const s32 y1);
 void give_emergency_stats(u16 call, u8 owner);
 void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y);

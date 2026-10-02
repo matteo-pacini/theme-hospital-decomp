@@ -1506,7 +1506,7 @@
     and word ptr ds:[ebp + 4], 0xc7ff
     or word ptr ds:[ebp + 4], bx
     lea edx, [edi + ebp + 0x1c]
-    call "emu_ld_add_one"
+    call "emu_fyl2xp1"
     notrack jmp dword ptr ds:[ebp + 0x76]
 .L000f8a5f:
     lea eax, [edi + ebp + 0x1c]
@@ -3692,13 +3692,13 @@
     .byte 0xc0; .byte 0x08; .byte 0xc0
 .size "emu_fxam",.-"emu_fxam"
 
-// emu_ld_add_one: fyl2xp1: add 1.0 to the long double at eax, then fall through into emu_fyl2x, so *edx = *edx * log2(*eax + 1).
+// emu_fyl2xp1: fyl2xp1: add 1.0 to the long double at eax, then fall through into emu_fyl2x, so *edx = *edx * log2(*eax + 1).
 // FUNCTION: 0x000f9f30
 
 .section _TEXT,"ax",@progbits,unique,1023792
-.globl "emu_ld_add_one"
-.type "emu_ld_add_one",@function
-"emu_ld_add_one":
+.globl "emu_fyl2xp1"
+.type "emu_fyl2xp1",@function
+"emu_fyl2xp1":
     push ebx
     push edx
     push eax
@@ -3710,7 +3710,7 @@
     pop eax
     pop edx
     pop ebx
-.size "emu_ld_add_one",.-"emu_ld_add_one"
+.size "emu_fyl2xp1",.-"emu_fyl2xp1"
 
 // emu_fyl2x: fyl2x: *edx = *edx * log2(*eax), computed as ln (left in *eax) times log2(e).
 // FUNCTION: 0x000f9f49

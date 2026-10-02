@@ -380,10 +380,10 @@ void find_biggest_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s3
 
 // Opens a second view window (at most two exist) at the mouse with the current
 // view's scroll position, growing it to x0,y0 to x1,y1 (source 0) or to preset
-// rectangle preset (source 1); a is kept in window.blank. With window.instant_open
+// rectangle preset (source 1); blank is kept in window.blank. With window.instant_open
 // 1 the growth completes at once. Makes the new window current.
 // FUNCTION: 0x000ac78c
-void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1,
+void open_new_window(const u8 blank, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1,
                      const s32 y1)
 {
     s32 old_x0;
@@ -409,7 +409,7 @@ void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0,
             (window.zone_y[window.window_count - 1] + window.zone_y1[window.window_count - 1]) / 2;
         window.scroll_x[window.window_count - 1] = window.scroll_x[window.current_window];
         window.scroll_y[window.window_count - 1] = window.scroll_y[window.current_window];
-        window.blank[window.window_count - 1] = a;
+        window.blank[window.window_count - 1] = blank;
         window.anim_mode[window.window_count - 1] = 1;
         if (window.instant_open == 0)
             window.anim_steps[window.window_count - 1] = 12;

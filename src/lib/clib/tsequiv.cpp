@@ -7,9 +7,9 @@ enum TS_TYPE {
     TS_SCALAR,
     TS_CLASS_ARRAY,
     TS_ANY,
-    TS_UNUSED6,
-    TS_UNUSED7,
-    TS_UNUSED8
+    TS_POINTER_KIND6,
+    TS_POINTER_KIND7,
+    TS_SCALAR_KIND8
 };
 
 #pragma pack(1)
@@ -36,12 +36,11 @@ RT_TYPE_SIG *catBaseSig(RT_TYPE_SIG *sig)
 
 extern "C" {
 
-int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero);
-#pragma aux ts_equiv "__wcpp_2_ts_equiv__"
+int __wcpp_2_ts_equiv_(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero);
 
 // __wcpp_2_ts_equiv__: nonzero if a catch with catch_sig (NULL = catch(...)) accepts a throw of throw_sig; with zero set (a thrown 0), only catch types 1, 6 and 7 (after stripping a pointer) match.
 // FUNCTION: 0xfb841
-int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero)
+int __wcpp_2_ts_equiv_(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero)
 {
     if (catch_sig == 0)
         return 1;
@@ -49,8 +48,8 @@ int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero)
     if (zero) {
         switch (catch_sig->type) {
         case TS_POINTER_SCALAR:
-        case TS_UNUSED6:
-        case TS_UNUSED7:
+        case TS_POINTER_KIND6:
+        case TS_POINTER_KIND7:
             return 1;
         }
         return 0;

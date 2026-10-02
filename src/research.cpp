@@ -83,10 +83,12 @@ void do_research(void)
                         exhausted = 1;
                     break;
                 case RC_SPECIALISATION:
-                    if ((statvar.num_players > 1 ? allhosps[owner].hospital_open : gamevar.research_illness) != 0)
-                        do_illness_research(
-                            owner, statvar.num_players > 1 ? allhosps[owner].hospital_open : gamevar.research_illness,
-                            amount, RC_SPECIALISATION);
+                    if ((statvar.num_players > 1 ? allhosps[owner].net_research_illness : gamevar.research_illness) !=
+                        0)
+                        do_illness_research(owner,
+                                            statvar.num_players > 1 ? allhosps[owner].net_research_illness
+                                                                    : gamevar.research_illness,
+                                            amount, RC_SPECIALISATION);
                     break;
                 }
                 if (exhausted) {

@@ -51,7 +51,7 @@ struct ServiceProvider {
     u32 in_session;
     u32 player_count;
     TbNetworkPlayerEntry players[32];
-    char name[0x20];
+    char session_name[0x20];
     __ic76sReceiveCallbacks *callbacks;
     u32 started;
     void *callback_data;

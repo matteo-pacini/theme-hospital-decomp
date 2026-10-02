@@ -292,6 +292,7 @@
 001507dc W?nilReceiveAspect$n$__ic76sReceiveCallbacks$$ 28
 00150804 W?ipxsendesr$n[]a 8
 0015080c W?ipxrecvesr$n[]a 8
+00150814 __8087 1
 00150815 __real87 1
 00150818 _MaxNumberOfSamples 4
 0015081c _SoundAble 1

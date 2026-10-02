@@ -229,7 +229,7 @@ struct __4dn7ojSerialInitData {
     char *init_str;
     char *dial_str;
     char *hangup_str;
-    char *reset_str;
+    char *answer_str;
 };
 
 struct TbSerialInitParams {
@@ -246,7 +246,7 @@ struct TbModemInitParams {
     char *init_str;
     char *dial_str;
     char *hangup_str;
-    char *reset_str;
+    char *answer_str;
     s32 irq;
 };
 
@@ -287,7 +287,7 @@ TbError LbNetwork_InitWithParams(TbNetworkService service, __tibcaGUID guid, u32
             data.init_str = params->modem.init_str;
             data.dial_str = params->modem.dial_str;
             data.hangup_str = params->modem.hangup_str;
-            data.reset_str = params->modem.reset_str;
+            data.answer_str = params->modem.answer_str;
             break;
         case (TbNetworkService)5:
             data.port = params->modem.port;
@@ -295,7 +295,7 @@ TbError LbNetwork_InitWithParams(TbNetworkService service, __tibcaGUID guid, u32
             data.init_str = params->modem.init_str;
             data.dial_str = params->modem.dial_str;
             data.hangup_str = params->modem.hangup_str;
-            data.reset_str = params->modem.reset_str;
+            data.answer_str = params->modem.answer_str;
             break;
         default:
             init_data = params;
@@ -368,7 +368,7 @@ TbError LbNetwork_InitIndexWithParams(u32 index, __tibcaGUID guid, u32 max_playe
             data.init_str = params->modem.init_str;
             data.dial_str = params->modem.dial_str;
             data.hangup_str = params->modem.hangup_str;
-            data.reset_str = params->modem.reset_str;
+            data.answer_str = params->modem.answer_str;
             break;
         default:
             init_data = params;

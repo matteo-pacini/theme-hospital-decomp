@@ -148,7 +148,7 @@ void process_sound_heap(void)
     SampleInfo *info;
     SampleInfo *end;
 
-    if (!myplayer.name_chars[0xf] || !statvar.save_prefix[0x78])
+    if (!myplayer.sfx_on || !statvar.sound_ok)
         return;
     cache.UnlockAll();
     if (othervar.loaded_level)

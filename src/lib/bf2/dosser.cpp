@@ -736,7 +736,7 @@ CommHandler::CommHandler()
     strcpy(CH(this)->init_str, "ATZ");
     strcpy(CH(this)->dial_str, "ATDT");
     strcpy(CH(this)->hangup_str, "ATH");
-    strcpy(CH(this)->reset_str, "ATS0=1");
+    strcpy(CH(this)->answer_str, "ATS0=1");
 }
 
 // Clears the connection's callbacks and online flag.
@@ -917,7 +917,7 @@ long CommHandler::AnswerModem(void)
     long ret;
 
     CH(this)->cur_func = CH(this)->other_func;
-    SendModemString(CH(this)->reset_str);
+    SendModemString(CH(this)->answer_str);
     ret = 3;
     while (ret == 3 || ret == 1)
         ret = GetModemResponse(CH(this)->dial_timeout);
@@ -950,7 +950,7 @@ long CommHandler::ReadConfigFile(char *filename)
             read_a_line(f, CH(this)->init_str);
             read_a_line(f, CH(this)->dial_str);
             read_a_line(f, CH(this)->hangup_str);
-            read_a_line(f, CH(this)->reset_str);
+            read_a_line(f, CH(this)->answer_str);
             fclose(f);
             return 0;
         }
@@ -981,10 +981,10 @@ void CommHandler::ReadSerialDev(__4dn7ojSerialInitData *data)
                 strcpy(CH(this)->hangup_str, data->hangup_str);
             else
                 data->hangup_str = CH(this)->hangup_str;
-            if (data->reset_str)
-                strcpy(CH(this)->reset_str, data->reset_str);
+            if (data->answer_str)
+                strcpy(CH(this)->answer_str, data->answer_str);
             else
-                data->reset_str = CH(this)->reset_str;
+                data->answer_str = CH(this)->answer_str;
         }
     } else {
         NetworkDebugPrintf("CommHandler::ReadSerialDev NULL parameter passed\n");

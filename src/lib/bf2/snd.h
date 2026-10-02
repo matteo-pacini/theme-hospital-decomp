@@ -42,8 +42,10 @@ struct SampleInfo {
     u32 SourceID;
     s16 SampleNumber;
     volatile u8 FadeState;
-    volatile u8 FadeStep;
-    u8 FadeStopFlag;
+    // Nonzero: end the sample once the fade reaches FadeToVolume.
+    volatile u8 FadeStopFlag;
+    // Volume steps per 50 ms fade tick (1-5).
+    u8 FadeStep;
     // 0x17: Zeroed by InitSound; no code reads it.
     u8 unused_set_by_InitSound;
     u8 unknown18;

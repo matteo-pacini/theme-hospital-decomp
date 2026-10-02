@@ -468,8 +468,10 @@ void play_midi(u8 track)
     }
 }
 
-// If no track is playing, plays the previous enabled track (or repeats the
-// current one when looping), clearing othervar.midi_playing if none can be loaded.
+// Despite its name, plays the previous track, not the last one (the mirror of
+// play_next_midi): if no track is playing, plays the previous enabled track
+// (or repeats the current one when looping), clearing othervar.midi_playing
+// if none can be loaded.
 // FUNCTION: 0x00089940
 void play_last_midi(void)
 {

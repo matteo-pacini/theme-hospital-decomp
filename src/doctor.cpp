@@ -648,7 +648,9 @@ void surgeon_waits(Thing *surgeon)
     }
 }
 
-// Returns the first staff member in room whose state is state, or 0.
+// Returns the first staff member in room whose state is state, or 0. Despite
+// its name, not limited to surgeons: callers pass SS_SURGEON_WAITS or
+// SS_ASSISTANT_READY.
 // FUNCTION: 0x0003c154
 Thing *find_waiting_surgeon(RoomInfo *room, u8 state)
 {

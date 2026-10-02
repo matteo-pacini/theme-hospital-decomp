@@ -957,9 +957,9 @@ void forced_advice(void)
     case 2:
         lib_strcpy(advisor.text, forced_advice_text[advisor.forced_advice_id_s]);
         for (i = 0; i < 4; i++) {
-            if (othervar.net_winners[i]) {
+            if (othervar.net_losers[i]) {
                 sprintf(advisor.text, "%s %s", advisor.text, allhosps[i].name);
-                othervar.net_winners[i] = 0;
+                othervar.net_losers[i] = 0;
             }
         }
         break;

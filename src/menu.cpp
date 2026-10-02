@@ -543,7 +543,8 @@ extern "C" void pulldown_smusic(void)
     }
 }
 
-// Announcer volume item: as pulldown_svol for myplayer.ambient_volume.
+// Announcer volume item: as pulldown_svol for myplayer.ambient_volume (the
+// game calls the announcements ambients; see do_ambients).
 // FUNCTION: 0x0008b99c
 extern "C" void pulldown_sannounce(void)
 {

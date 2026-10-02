@@ -44,7 +44,7 @@
 .globl "emu_install_int7"
 .type "emu_install_int7",@function
 "emu_install_int7":
-    mov byte ptr [_D_00150814], 3
+    mov byte ptr [__8087], 3
     mov byte ptr [_D_00151b54], 1
     .byte 0x66; .byte 0x0f; .byte 0x01; .byte 0x25; .long _D_00151b52  # smsw word ptr [0x31b52]
     and word ptr [_D_00151b52], 6
@@ -312,7 +312,7 @@
     .byte 0xc3
 .L000ef347:
     .byte 0x52
-    .byte 0x8a; .byte 0x25; .long _D_00150814
+    .byte 0x8a; .byte 0x25; .long __8087
     .byte 0x84; .byte 0xe4
     .byte 0x75; .byte .L000ef38b-.-1
     .byte 0x88; .byte 0x25; .long __real87
@@ -331,7 +331,7 @@
 .L000ef376:
     .byte 0x80; .byte 0x3d; .long "__no87"; .byte 0x00
     .byte 0x75; .byte .L000ef38b-.-1
-    .byte 0x88; .byte 0x15; .long _D_00150814
+    .byte 0x88; .byte 0x15; .long __8087
     .byte 0x88; .byte 0x15; .long __real87
 .L000ef38b:
     .byte 0x5a

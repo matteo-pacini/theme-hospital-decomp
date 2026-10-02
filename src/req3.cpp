@@ -441,8 +441,9 @@ extern "C" void req3_help_if_queueing(void)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 
-// Returns the next patient after thing id with any of flags in flags32
-// (PF_EMERGENCY, PF_CONTAGIOUS, ...), of this player, for which
+// Despite its name, not limited to emergencies: returns the next patient
+// after thing id with any of flags in flags32 (PF_EMERGENCY, PF_CONTAGIOUS,
+// ...), of this player, for which
 // check_if_point_beyond_scroll_limit(tile x, tile y, 0) is nonzero, wrapping
 // round. If none matches it returns the thing count.
 // FUNCTION: 0x00073e64

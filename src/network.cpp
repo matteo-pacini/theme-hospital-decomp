@@ -2302,7 +2302,7 @@ void swap_month_end_packets(void)
 }
 
 // Network game: shares each player's result for the current criterion (fail:
-// 1 failed, 0 passed) and sets othervar.net_winners[i] for each player who failed.
+// 1 failed, 0 passed) and sets othervar.net_losers[i] for each player who failed.
 // If some passed and some failed, forces advice 2. When `active`, sets othervar.net_result_page to the message to show: 1 nobody passed,
 // 2 this player failed, 3 this player passed.
 // FUNCTION: 0x0008493c
@@ -2319,13 +2319,13 @@ void swap_criteria_packets(u8 fail, u8 active)
         LbNetwork_ChangeExchangeBuffer(criteria_packet, 6);
         LbNetwork_Exchange(&criteria_packet[player]);
         for (i = 0; i < 4; i++) {
-            othervar.net_winners[i] = 0;
+            othervar.net_losers[i] = 0;
             if (player_info[i].active) {
                 if (criteria_packet[i].result == 0) {
                     passed++;
                 } else if (criteria_packet[i].result == 1) {
                     failed++;
-                    othervar.net_winners[i] = 1;
+                    othervar.net_losers[i] = 1;
                 }
             }
         }

@@ -6,8 +6,8 @@ struct TbIffPalette {
 };
 
 struct PicLengths {
-    s32 palette;
-    s32 pointers;
+    s32 pointer_data;
+    s32 pointer_tab;
     s32 sprites;
     s32 sprite_tab;
     s32 map;
@@ -153,8 +153,8 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         while (LbScreenLock() != 1) {
         }
     }
-    len.palette = LbFileLengthRnc(hiresscreenpointerfiles[0]);
-    len.pointers = LbFileLengthRnc(hiresscreenpointerfiles[1]);
+    len.pointer_data = LbFileLengthRnc(hiresscreenpointerfiles[0]);
+    len.pointer_tab = LbFileLengthRnc(hiresscreenpointerfiles[1]);
     if (strcmp(hiresscreen_sprites_data[idx], "")) {
         len.sprites = LbFileLengthRnc((char *)hiresscreen_sprites_data[idx]);
         len.sprite_tab = LbFileLengthRnc((char *)hiresscreen_sprites_tabs[idx]);
@@ -170,7 +170,7 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
     }
     clear_sound_heap();
     othervar.level_block =
-        cache.Allocate(len.palette + len.pointers + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
+        cache.Allocate(len.pointer_data + len.pointer_tab + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
     if (othervar.level_block)
         dest = cache_block_data(othervar.level_block);
     else
@@ -195,16 +195,16 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         }
         othervar.screen_pic_loaded = 1;
     }
-    if (LbFileLoadAt(hiresscreenpointerfiles[0], dest) == len.palette) {
+    if (LbFileLoadAt(hiresscreenpointerfiles[0], dest) == len.pointer_data) {
         screen_pointers_data = dest;
-        dest += len.palette;
+        dest += len.pointer_data;
         othervar.screen_pic_loaded = 1;
     } else {
         return;
     }
-    if (LbFileLoadAt(hiresscreenpointerfiles[1], dest) == len.pointers) {
+    if (LbFileLoadAt(hiresscreenpointerfiles[1], dest) == len.pointer_tab) {
         screen_pointers_tab_start = (TbSprite *)dest;
-        dest += len.pointers;
+        dest += len.pointer_tab;
         screen_pointers_tab_end = (TbSprite *)dest;
         LbSpriteSetup(screen_pointers_tab_start, screen_pointers_tab_end, screen_pointers_data);
     } else {

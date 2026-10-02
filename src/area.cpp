@@ -253,9 +253,10 @@ void process_mouse_area_select(void)
     }
 }
 
-// Draws the briefing text: the paragraphs already shown, then the current one
-// (text_paragraph) revealed one more character per call, moving on to the
-// next paragraph with a pause (text_delay) once it is complete.
+// Despite its name, selects no area: draws the briefing text, the paragraphs
+// already shown, then the current one (text_paragraph) revealed one more
+// character per call, moving on to the next paragraph with a pause
+// (text_delay) once it is complete.
 // FUNCTION: 0x00069268
 void display_area_select(void)
 {

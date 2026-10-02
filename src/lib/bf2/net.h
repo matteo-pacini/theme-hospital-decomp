@@ -73,7 +73,7 @@ struct ServiceProvider {
     u32 in_session;
     u32 player_count;
     TbNetworkPlayerEntry players[32];
-    char name[0x20];
+    char session_name[0x20];
     __ic76sReceiveCallbacks *callbacks;
     u32 started;
     void *callback_data;
@@ -139,7 +139,7 @@ struct __4dn7ojSerialInitData {
     char *init_str;
     char *dial_str;
     char *hangup_str;
-    char *reset_str;
+    char *answer_str;
 };
 
 struct __iobuf;
@@ -151,7 +151,7 @@ struct CommHandlerData {
     char init_str[0x50];
     char dial_str[0x50];
     char hangup_str[0x50];
-    char reset_str[0x50];
+    char answer_str[0x50];
     long port;
     long response_timeout;
     char last_cmd[0x50];
@@ -459,7 +459,7 @@ struct IPXSessionInfo {
     u8 unknown4[8];
     __tibcaGUID guid;
     char name[0x20];
-    u32 local_id;
+    u32 session_id;
     u32 host_id;
     u16 num_players;
     u16 max_players;
@@ -473,8 +473,9 @@ struct __5303ctCLIENTINFOPACKET {
     __tibcaGUID guid;
     char name[0x20];
     u32 session_id;
-    u32 local_id;
     u32 host_id;
+    // 0x44: A client's own player id, from the join reply's player entry.
+    u32 local_id;
     u16 num_players;
     u16 max_players;
     u32 page;

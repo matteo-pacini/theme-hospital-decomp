@@ -90,7 +90,7 @@ TbError ModemSP::Start(char *session, char *name, u32 max_players, void *data)
         strcpy(init->response, CH(comm)->response);
         init->result = result;
         NetworkDebugPrintf("MODEM RESPONSE CODE = %s\n", comm);
-        comm->SendModemString(CH(comm)->reset_str);
+        comm->SendModemString(CH(comm)->answer_str);
         response = comm->GetModemResponse(CH(comm)->timeout);
         NetworkDebugPrintf("ANSWER MODEM RESPONSE CODE = %s\n", comm);
         if (response == 1 || response == 3 || response == 2) {

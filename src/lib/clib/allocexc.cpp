@@ -21,9 +21,9 @@ enum TS_TYPE {
     TS_SCALAR,
     TS_CLASS_ARRAY,
     TS_ANY,
-    TS_UNUSED6,
-    TS_UNUSED7,
-    TS_UNUSED8
+    TS_POINTER_KIND6,
+    TS_POINTER_KIND7,
+    TS_SCALAR_KIND8
 };
 
 struct RT_TYPE_SIG {
@@ -142,7 +142,7 @@ active_exc *__wcpp_2_alloc_exc_(void *object, THROW_RO *ro, thread_ctl *thr)
     exc->throw_ro = ro;
     switch (sig->type) {
     case TS_SCALAR:
-    case TS_UNUSED8:
+    case TS_SCALAR_KIND8:
         memcpy(exc->data, object, sig->size);
         break;
     case TS_CLASS:
@@ -152,8 +152,8 @@ active_exc *__wcpp_2_alloc_exc_(void *object, THROW_RO *ro, thread_ctl *thr)
         ((void (*)(void *, int, void *))sig->clss.ctor)(exc->data, 0, object);
         break;
     case TS_POINTER_SCALAR:
-    case TS_UNUSED6:
-    case TS_UNUSED7:
+    case TS_POINTER_KIND6:
+    case TS_POINTER_KIND7:
         memcpy(exc->data, object, sizeof(void *));
         break;
     }

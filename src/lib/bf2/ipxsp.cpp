@@ -209,7 +209,7 @@ TbError IPXServiceProvider::Start(char *session_name, char *player_name, u32 max
     ConvertGuidToString(&guid, server_name + 6);
     NetworkDebugPrintf("%s\n", server_name);
     if (ipx.AdvertiseServer(0xbe08, server_name, &socket) == 0) {
-        session.local_id = 0;
+        session.session_id = 0;
         session.host_id = 0;
         session.guid = guid;
         session.num_players = 1;
@@ -337,8 +337,8 @@ TbError IPXServiceProvider::Start(TbNetworkSessionNameEntry *entry, char *player
                                 strcpy(remote.name, session_list[entry->id].name);
                                 remote.session_id = entry->id;
                                 remote.guid = guid;
-                                remote.host_id = *(u32 *)(reply + 0x50);
-                                remote.local_id = *(u32 *)(reply + 0x40);
+                                remote.local_id = *(u32 *)(reply + 0x50);
+                                remote.host_id = *(u32 *)(reply + 0x40);
                                 ipx.Listen(p, &socket);
                                 done = 1;
                                 break;
@@ -358,7 +358,7 @@ TbError IPXServiceProvider::Start(TbNetworkSessionNameEntry *entry, char *player
                             acked_b[i] = 0;
                         }
                         ret = Lb_OK;
-                        local_id = remote.host_id;
+                        local_id = remote.local_id;
                     } else {
                         LbMemoryFree(players);
                     }
@@ -392,7 +392,7 @@ TbError IPXServiceProvider::Stop(void)
                 me = session.host_id;
                 num = session.num_players;
             } else {
-                me = remote.host_id;
+                me = remote.local_id;
                 num = remote.num_players;
             }
             if (num > 1) {
@@ -528,7 +528,7 @@ TbError IPXServiceProvider::Enumerate(TbNetworkCallbackFunc callback, void *data
         if (in_session) {
             if (host_state == 1) {
                 strcpy(entry.name, session.name);
-                entry.id = session.local_id;
+                entry.id = session.session_id;
             } else if (host_state == 2) {
                 strcpy(entry.name, remote.name);
                 entry.id = remote.session_id;
@@ -1059,7 +1059,7 @@ TbError IPXServiceProvider::EnumerateAndAddPlayers(__3ljac5NETSOCKET *server)
                                     added++;
                                     is_local = 0;
                                     is_host = 0;
-                                    if (entry->id == remote.host_id)
+                                    if (entry->id == remote.local_id)
                                         is_local = 1;
                                     if (entry->id == msg->host_id)
                                         is_host = 1;
@@ -1134,7 +1134,7 @@ TbError IPXServiceProvider::BroadcastSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *msg
             num = session.num_players;
         } else {
             max = remote.max_players;
-            me = remote.host_id;
+            me = remote.local_id;
             num = remote.num_players;
         }
         if (max > 1) {
@@ -1240,7 +1240,7 @@ TbError IPXServiceProvider::RemoveAbortedPlayer(void)
             me = session.host_id;
             max = session.max_players;
         } else {
-            me = remote.host_id;
+            me = remote.local_id;
             max = remote.max_players;
         }
         ret = Lb_OK;
@@ -1370,7 +1370,7 @@ TbError IPXServiceProvider::ResponsedToSystemMessage(__1p5pi1IPXSYSTEMMESSAGE *m
         if (host_state == 1)
             me = session.host_id;
         else
-            me = remote.host_id;
+            me = remote.local_id;
         memset(&ack, 0, sizeof(ack));
         ack.magic = MSG_BUSK;
         ack.guid = guid;
@@ -1570,7 +1570,7 @@ TbError IPXServiceProvider::SendMessageToPlayerId(u32 id, void *buf, u32 magic)
             me = session.host_id;
             max = session.max_players;
         } else {
-            me = remote.host_id;
+            me = remote.local_id;
             max = remote.max_players;
         }
         if (id < max) {
@@ -1644,7 +1644,7 @@ u32 IPXServiceProvider::ProcessDataMessage(__6eas9nIPXDATAMESSAGE *msg)
         me = session.host_id;
         max = session.max_players;
     } else {
-        me = remote.host_id;
+        me = remote.local_id;
         max = remote.max_players;
     }
     switch (msg->magic) {
@@ -1750,11 +1750,11 @@ void IPXServiceProvider::AddToReceiveBuffer(__6eas9nIPXDATAMESSAGE *msg)
             me = session.host_id;
             host = session.host_id;
         } else {
-            // A client's remote.host_id is its own player id (from the join
-            // reply's player entry) and remote.local_id the host's.
+            // A client's remote.local_id is its own player id (from the join
+            // reply's player entry) and remote.host_id the host's.
             max = remote.max_players;
-            me = remote.host_id;
-            host = remote.local_id;
+            me = remote.local_id;
+            host = remote.host_id;
         }
         count = 0;
         for (p = players; p < players + max; p++) {

@@ -759,9 +759,9 @@ void object_placed(void)
     }
 }
 
-// Gives owner's room under construction the floor of room type type and its
-// wall colours; for the local player starts placing its objects and sets
-// gamevar.new_room_index to the room's index.
+// Despite its name, prices nothing: gives owner's room under construction the
+// floor of room type type and its wall colours; for the local player starts
+// placing its objects and sets gamevar.new_room_index to the room's index.
 // FUNCTION: 0x00024874
 void price_all_rooms(u16 type, u8 owner)
 {
@@ -2123,7 +2123,8 @@ void clear_object_drag_shape(void)
     init_object_drag_shape();
 }
 
-// Recomputes map flag 0x10 on the cells next to visible walls.
+// Despite its name, touches no pixel buffer: only recomputes map flag 0x10 on
+// the cells next to visible walls.
 // FUNCTION: 0x00028e80
 void pixel_buffer_map(void)
 {
@@ -2236,7 +2237,8 @@ u8 does_room_contain_compulsory_objects(RoomInfo *room)
     return 1;
 }
 
-// Returns 1 if placing an object of kind at pos facing dir in room keeps the
+// Despite its name, checks an object placed inside a room, not in a corridor:
+// returns 1 if placing an object of kind at pos facing dir in room keeps the
 // room's objects usable and everyone inside able to reach its door, else 0.
 // FUNCTION: 0x000292d0
 u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)

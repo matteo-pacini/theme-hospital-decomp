@@ -17,7 +17,7 @@ void StopAllSamples(void)
             smp->SampleNumber = 0;
             smp->SourceID = 0;
             smp->FadeState = 0;
-            smp->FadeStep = 0;
+            smp->FadeStopFlag = 0;
         }
         StopSampleQueueList();
     }

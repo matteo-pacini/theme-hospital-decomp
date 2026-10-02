@@ -35,13 +35,13 @@ void cbfadesample(u32 user)
                         smp->FadeToVolume = 127;
                     if ((u16)smp->FadeToVolume <= smp->SampleVolume) {
                         smp->FadeState = 0;
-                        if (smp->FadeStep) {
+                        if (smp->FadeStopFlag) {
                             AIL_end_sample(smp->SampleHandle);
-                            smp->FadeStep = 0;
+                            smp->FadeStopFlag = 0;
                         }
                     }
                     if (smp->FadeState == 1) {
-                        for (i = 1; i <= smp->FadeStopFlag; i++) {
+                        for (i = 1; i <= smp->FadeStep; i++) {
                             ++smp->SampleVolume;
                             if (smp->SampleVolume >= 127) {
                                 smp->SampleVolume = 127;
@@ -56,7 +56,7 @@ void cbfadesample(u32 user)
                     }
                 } else {
                     smp->FadeState = 0;
-                    smp->FadeStep = 0;
+                    smp->FadeStopFlag = 0;
                 }
                 break;
             case 2:
@@ -64,13 +64,13 @@ void cbfadesample(u32 user)
                 if (AIL_sample_status(smp->SampleHandle) == SMP_PLAYING) {
                     if ((u16)smp->FadeToVolume >= smp->SampleVolume) {
                         smp->FadeState = 0;
-                        if (smp->FadeStep) {
+                        if (smp->FadeStopFlag) {
                             AIL_end_sample(smp->SampleHandle);
-                            smp->FadeStep = 0;
+                            smp->FadeStopFlag = 0;
                         }
                     }
                     if (smp->FadeState == 2) {
-                        for (i = 1; i <= smp->FadeStopFlag; i++) {
+                        for (i = 1; i <= smp->FadeStep; i++) {
                             --smp->SampleVolume;
                             if (smp->SampleVolume <= 0) {
                                 smp->SampleVolume = 0;
@@ -85,7 +85,7 @@ void cbfadesample(u32 user)
                     }
                 } else {
                     smp->FadeState = 0;
-                    smp->FadeStep = 0;
+                    smp->FadeStopFlag = 0;
                 }
                 break;
             }
@@ -99,7 +99,7 @@ void cbfadesample(u32 user)
         samples_currently_fading = 0;
         for (smp = sample_id; smp <= end_sample_id; smp++) {
             smp->FadeState = 0;
-            smp->FadeStep = 0;
+            smp->FadeStopFlag = 0;
         }
     }
 }
@@ -123,24 +123,24 @@ void FadeSample(u32 source_id, s16 number, s16 volume, u8 rate, u8 stop_when_don
                     return;
                 smp->FadeState = 0;
                 smp->FadeToVolume = volume;
-                smp->FadeStep = stop_when_done;
+                smp->FadeStopFlag = stop_when_done;
                 smp->FadeState = (volume <= smp->SampleVolume) + 1;
                 switch (rate) {
                 case 1:
-                    smp->FadeStopFlag = 1;
+                    smp->FadeStep = 1;
                     break;
                 case 2:
-                    smp->FadeStopFlag = 2;
+                    smp->FadeStep = 2;
                     break;
                 case 3:
                 default:
-                    smp->FadeStopFlag = 3;
+                    smp->FadeStep = 3;
                     break;
                 case 4:
-                    smp->FadeStopFlag = 4;
+                    smp->FadeStep = 4;
                     break;
                 case 5:
-                    smp->FadeStopFlag = 5;
+                    smp->FadeStep = 5;
                     break;
                 }
                 if (samples_currently_fading == 0) {
@@ -168,7 +168,7 @@ void StopAllSampleFadeTimers(void)
         samples_currently_fading = 0;
         for (smp = sample_id; smp <= end_sample_id; smp++) {
             smp->FadeState = 0;
-            smp->FadeStep = 0;
+            smp->FadeStopFlag = 0;
         }
     }
 }

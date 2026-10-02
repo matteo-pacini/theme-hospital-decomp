@@ -55,9 +55,9 @@ enum TS_TYPE {
     TS_SCALAR,
     TS_CLASS_ARRAY,
     TS_ANY,
-    TS_UNUSED6,
-    TS_UNUSED7,
-    TS_UNUSED8
+    TS_POINTER_KIND6,
+    TS_POINTER_KIND7,
+    TS_SCALAR_KIND8
 };
 
 struct RT_TYPE_SIG {
@@ -158,10 +158,10 @@ active_exc *__wcpp_2_pop_exc_(thread_ctl *thr);
 void __wcpp_2_push_exc_(thread_ctl *thr, active_exc *exc);
 char *ltoa(long value, char *buffer, int radix);
 
-int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero);
-#pragma aux ts_equiv "__wcpp_2_ts_equiv__"
-void unexpected(void);
-#pragma aux unexpected "__wcpp_2_call_unexpected__"
+int __wcpp_2_ts_equiv_(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero);
+#pragma aux __wcpp_2_ts_equiv_ "__wcpp_2_ts_equiv__"
+void __wcpp_2_call_unexpected_(void);
+#pragma aux __wcpp_2_call_unexpected_ "__wcpp_2_call_unexpected__"
 void longjmp(void *env, int val);
 #pragma aux longjmp aborts
 
@@ -193,14 +193,14 @@ active_exc *getActiveExc(thread_ctl *thr);
 #pragma aux getActiveExc "W?getActiveExc$n(pn$thread_ctl$$)pn$active_exc$$"
 void dispatch_init(dispatch_exc *dispatch, THROW_RO *ro, int zero);
 #pragma aux dispatch_init "W?dispatch_init$n(pn$dispatch_exc$$pn$throw_ro$$i)v"
-void throwIt(void *object, THROW_RO *ro, int zero);
+void processThrow(void *object, THROW_RO *ro, int zero);
 /* The library's name for the common throw code. */
-#pragma aux throwIt "W?processThrow$n(pnvpn$throw_ro$$i)v"
-void popCatches(dispatch_exc *dispatch, rw_dtreg *rw);
+#pragma aux processThrow "W?processThrow$n(pnvpn$throw_ro$$i)v"
+void longjmpExcPop(dispatch_exc *dispatch, rw_dtreg *rw);
 /* The library's name for this longjmp helper. */
-#pragma aux popCatches "W?longjmpExcPop$n(pn$dispatch_exc$$pn$rw_dtreg$$)v"
-void __wcpp_2_lj_handler_(rw_dtreg *bound);
-#pragma aux __wcpp_2_lj_handler_ "W?longjmpDtoring$n(pfv)v" modify [edx]
+#pragma aux longjmpExcPop "W?longjmpExcPop$n(pn$dispatch_exc$$pn$rw_dtreg$$)v"
+void longjmpDtoring(rw_dtreg *bound);
+#pragma aux longjmpDtoring "W?longjmpDtoring$n(pfv)v" modify [edx]
 
 void __wcpp_2_corrupted_stack_(void);
 DISPATCHABLE __wcpp_2_dispatchable_(dispatch_exc *dispatch, rw_dtreg *rw);
@@ -256,7 +256,7 @@ unsigned typesigIndex(dispatch_exc *dispatch, unsigned count, RT_TYPE_SIG **sigs
         for (ctr = 0; ctr < throw_ro->count; ++ctr) {
             cnv = &cnv_base[ctr];
             dispatch->cnv = cnv;
-            if (ts_equiv(sig, cnv->sig, zero))
+            if (__wcpp_2_ts_equiv_(sig, cnv->sig, zero))
                 return index + 1;
         }
         ++index;
@@ -278,7 +278,7 @@ int dispatchableFnExc(dispatch_exc *dispatch, DTOR_CMD *cmd)
     return 0;
 }
 
-// fneDispatch: exception-specification violation; mark the exception and call unexpected().
+// fneDispatch: exception-specification violation; mark the exception and call unexpected() (through __wcpp_2_call_unexpected__).
 // FUNCTION: 0xf3f07
 void fneDispatch(dispatch_exc *dispatch)
 {
@@ -287,7 +287,7 @@ void fneDispatch(dispatch_exc *dispatch)
     thr = dispatch->thr;
     thr->abort_msg = stabthrw_msg_fn_exc_spec;
     thr->excepts->state = 2;
-    unexpected();
+    __wcpp_2_call_unexpected_();
 }
 
 // dispatchableCatch: 1 if try block cmd has a catch for the thrown type, recording the try and the catch number in dispatch; else 0.
@@ -707,9 +707,9 @@ void __wcpp_2_dispatch_(dispatch_exc *dispatch, DISPATCHABLE kind)
     }
 }
 
-// throwIt: throw object of type ro: find a handler, save the exception, unwind the stack and dispatch.
+// processThrow: throw object of type ro: find a handler, save the exception, unwind the stack and dispatch.
 // FUNCTION: 0xf4551
-void throwIt(void *object, THROW_RO *ro, int zero)
+void processThrow(void *object, THROW_RO *ro, int zero)
 {
     dispatch_exc dispatch;
     rw_dtreg *rw;
@@ -727,14 +727,14 @@ void throwIt(void *object, THROW_RO *ro, int zero)
 // FUNCTION: 0xf4598
 void __wcpp_2_rethrow_(void)
 {
-    throwIt(0, 0, 0);
+    processThrow(0, 0, 0);
 }
 
 // __wcpp_2_throw_: throw object of type ro.
 // FUNCTION: 0xf45a8
 void __wcpp_2_throw_(void *object, THROW_RO *ro)
 {
-    throwIt(object, ro, 0);
+    processThrow(object, ro, 0);
 }
 
 // __wcpp_2_throw_zero_: throw object of type ro, a 0 constant (convertible to any pointer).
@@ -744,12 +744,12 @@ void __wcpp_2_throw_(void *object, THROW_RO *ro)
 // getActiveExc's jump table until dispatchable matches
 void __wcpp_2_throw_zero_(void *object, THROW_RO *ro)
 {
-    throwIt(object, ro, 1);
+    processThrow(object, ro, 1);
 }
 
-// popCatches: step dispatch->exc past the exceptions caught by the active catch blocks of registration rw.
+// longjmpExcPop: step dispatch->exc past the exceptions caught by the active catch blocks of registration rw.
 // FUNCTION: 0xf45ba
-void popCatches(dispatch_exc *dispatch, rw_dtreg *rw)
+void longjmpExcPop(dispatch_exc *dispatch, rw_dtreg *rw)
 {
     STAB_TRAVERSE ctl;
     RO_STATE *state;
@@ -769,9 +769,9 @@ void popCatches(dispatch_exc *dispatch, rw_dtreg *rw)
     dispatch->exc = exc;
 }
 
-// __wcpp_2_lj_handler_: longjmp hook; destroy registered objects and finish exceptions above bound before the jump.
+// longjmpDtoring: longjmp hook; destroy registered objects and finish exceptions above bound before the jump.
 // FUNCTION: 0xf4605
-void __wcpp_2_lj_handler_(rw_dtreg *bound)
+void longjmpDtoring(rw_dtreg *bound)
 {
     dispatch_exc dispatch;
     rw_dtreg *rw;
@@ -811,17 +811,17 @@ void __wcpp_2_lj_handler_(rw_dtreg *bound)
         case 0:
             break;
         }
-        popCatches(&dispatch, rw);
+        longjmpExcPop(&dispatch, rw);
     }
     unwindExc(&dispatch);
     unwindStack(&dispatch);
 }
 
-// __wcpp_2_lj_init_: install __wcpp_2_lj_handler_ as the longjmp handler.
+// __wcpp_2_lj_init_: install longjmpDtoring as the longjmp handler.
 // FUNCTION: 0xf46a5
 void __wcpp_2_lj_init_(void)
 {
-    __longjmp_handler = (void (*)(rw_dtreg *))__wcpp_2_lj_handler_;
+    __longjmp_handler = (void (*)(rw_dtreg *))longjmpDtoring;
 }
 
 }

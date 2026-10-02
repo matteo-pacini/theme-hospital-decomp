@@ -13,7 +13,8 @@ unsigned short FP_SEG(const volatile void __far *p);
 #pragma aux FP_SEG = parm caller [eax dx] value [dx];
 
 struct __38rogeSF_DATA {
-    u16 count;
+    // The AWE32 driver call's word argument: AWEDefMemMap's dword count, else a bank number.
+    u16 arg;
     u16 segment;
 };
 
@@ -155,7 +156,7 @@ s32 AWEDefMemMap(AWEDriver *mdi, u16 count, void __far *map)
         if (!data)
             return -1;
     }
-    data->count = count;
+    data->arg = count;
     data->segment = GetDOSseg(FP_SEG(map));
     regs.CX = 0x11;
     regs.DX = GetDOSseg(FP_SEG(data));
@@ -176,7 +177,7 @@ void __far *AWEGetSFInfo(AWEDriver *mdi, u16 bank, void __far *buf)
         if (!data)
             return 0;
     }
-    data->count = bank;
+    data->arg = bank;
     data->segment = GetDOSseg(FP_SEG(buf));
     regs.CX = 0x17;
     regs.DX = GetDOSseg(FP_SEG(data));
@@ -200,7 +201,7 @@ s32 AWEStreamSample(AWEDriver *mdi, u16 bank, void __far *buf)
         if (!data)
             return -1;
     }
-    data->count = bank;
+    data->arg = bank;
     data->segment = GetDOSseg(FP_SEG(buf));
     regs.CX = 0x18;
     regs.DX = GetDOSseg(FP_SEG(data));
@@ -221,7 +222,7 @@ s32 AWELoadPreset(AWEDriver *mdi, u16 bank, void __far *buf)
         if (!data)
             return -1;
     }
-    data->count = bank;
+    data->arg = bank;
     data->segment = GetDOSseg(FP_SEG(buf));
     regs.CX = 0x19;
     regs.DX = GetDOSseg(FP_SEG(data));

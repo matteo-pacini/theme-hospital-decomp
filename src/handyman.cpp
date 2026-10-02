@@ -657,8 +657,10 @@ u8 is_next_to_plant(Thing *handyman, Thing *plant)
     return 0;
 }
 
-// Returns 1 if tile pos can be reached: from room's door when room is a room
-// (and pos is in it), else from owner's entrance. Otherwise 0.
+// Despite its name, 1 means reachable, not trapped: returns 1 if tile pos can
+// be reached, from room's door when room is a room (and pos is in it), else
+// from owner's entrance. Otherwise 0. is_plant_trapped asks it for each tile
+// beside a plant.
 // FUNCTION: 0x0007cbdc
 u8 trapped_plant_check(RoomInfo *room, s32 pos, u8 owner)
 {

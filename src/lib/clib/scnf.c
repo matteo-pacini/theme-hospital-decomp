@@ -672,7 +672,6 @@ done:
 }
 
 static int radix_value(int c);
-#pragma aux radix_value "fn_000fb6d6_"
 
 // radix_value: hex digit value of c (case-insensitive), 16 if not a hex digit.
 // FUNCTION: 0xfb6d6

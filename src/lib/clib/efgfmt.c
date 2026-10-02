@@ -66,7 +66,7 @@ FAR_STRING _EFG_Format(char *buffer, va_list *args, SPECS *specs)
     return result;
 }
 
-// forcedecpt: unless '#' was given, remove a trailing '.' (and, for %g, trailing zeros) before any exponent in p.
+// forcedecpt (the runtime's own name; despite it, it never forces a point in): unless '#' was given, remove a trailing '.' (and, for %g, trailing zeros) before any exponent in p.
 // FUNCTION: 0xf752f
 static void forcedecpt(char *p, SPECS *specs)
 {
