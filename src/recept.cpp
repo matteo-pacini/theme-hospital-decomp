@@ -212,7 +212,7 @@ void recept_admits_patient(Thing *receptionist)
             patient->treatment = 0;
         patient->state = PS_GO_FOR_TREATMENT;
         receptionist->room->state = 0;
-        receptionist->room->count++;
+        receptionist->room->patients_seen++;
         receptionist->slave = 0;
         reset_icon_value(receptionist, ICON_CALLING);
         receptionist->state = SS_RECEPTIONIST_WORKS;

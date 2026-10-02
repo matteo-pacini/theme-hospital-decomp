@@ -364,11 +364,11 @@ void report_mayor_result(u8 owner, char **strs)
         strcat(text, buf);
     }
     value = mayor_result[allhosps[owner].mayor_verdict].reputation_event;
-    if (value == 0x10) {
+    if (value == REP_VIP_GOOD) {
         sprintf(buf, strs[3], value);
         strcat(text, new_line);
         strcat(text, buf);
-    } else if (value == 0x12) {
+    } else if (value == REP_VIP_BAD) {
         sprintf(buf, strs[4], value);
         strcat(text, new_line);
         strcat(text, buf);

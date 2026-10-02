@@ -18,7 +18,7 @@ _CMemory _lbMemory;
 CDosHeap _lbHeap;
 
 u32 dos_alloc(u32 size);
-void dos_free(u16 seg);
+void dos_free(u16 sel);
 
 // Compacts the game heap (_lbHeap), merging adjacent free blocks.
 // FUNCTION: 0x000bac20
@@ -265,14 +265,14 @@ u32 dos_alloc(u32 size)
 
 // Frees DOS memory by its selector (DPMI function 0x101); 0 is ignored.
 // FUNCTION: 0x000bb268
-void dos_free(u16 seg)
+void dos_free(u16 sel)
 {
     REGS in;
     REGS out;
 
-    if (seg) {
+    if (sel) {
         in.x.eax = 0x101;
-        in.x.edx = seg & 0xffff;
+        in.x.edx = sel & 0xffff;
         int386(0x31, &in, &out);
     }
 }

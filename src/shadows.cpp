@@ -50,16 +50,16 @@ void add_static_shadows(void)
 
     for (i = 0; i < 0x4000; i++) {
         map[i].floor &= 0x8f;
-        if ((map[i].wall_w && (blocks[map[i].wall_w].width & 1) && !(blocks[map[i].wall_w].width & 0x40) &&
-             !(blocks[map[i].wall_w].width & 0x80)) ||
+        if ((map[i].wall_w && (blocks[map[i].wall_w].flags & 1) && !(blocks[map[i].wall_w].flags & 0x40) &&
+             !(blocks[map[i].wall_w].flags & 0x80)) ||
             door((u16)i, 1)) {
             map[i].floor |= 0x40;
-            if ((!map[i + 128].wall_w || (blocks[map[i + 128].wall_w].width & 0xe0)) && !door((u16)(i + 0x80), 1)) {
+            if ((!map[i + 128].wall_w || (blocks[map[i + 128].wall_w].flags & 0xe0)) && !door((u16)(i + 0x80), 1)) {
                 map[i].floor &= 0xbf;
                 map[i].floor |= 0x10;
             }
-            if (((!map[i - 128].wall_w && !door((u16)(i - 0x80), 1)) || (blocks[map[i - 128].wall_w].width & 0x60)) &&
-                ((!map[i].wall_n && !door((u16)(i - 0x80), 1)) || (blocks[map[i].wall_n].width & 0x60))) {
+            if (((!map[i - 128].wall_w && !door((u16)(i - 0x80), 1)) || (blocks[map[i - 128].wall_w].flags & 0x60)) &&
+                ((!map[i].wall_n && !door((u16)(i - 0x80), 1)) || (blocks[map[i].wall_n].flags & 0x60))) {
                 map[i - 128].floor |= 0x40;
                 map[i - 128 - 1].floor |= 0x40;
             }

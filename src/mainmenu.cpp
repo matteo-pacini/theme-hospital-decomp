@@ -365,7 +365,9 @@ void process_keys_main_menu(void)
 }
 
 // Main menu clicks: a release inside one of the menu's triangles selects
-// that entry by setting mainmenu.state. Clears the button state.
+// that entry by setting mainmenu.state, then clears the button state. During
+// the attract video a click goes to MMS_TO_NICKNAME; then, as in the intro,
+// title and the states acting on a choice, it returns leaving the buttons.
 // FUNCTION: 0x000627cc
 void process_mouse_main_menu(void)
 {

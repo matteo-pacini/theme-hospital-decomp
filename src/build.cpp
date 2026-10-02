@@ -65,7 +65,7 @@ u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 pos2, u8
 void check_invis_walls_around_object(Thing *obj);
 
 // Door placing stage: finds the wall tile of owner's blueprint room nearest
-// tile pos where the current door kind (build.door_state; 2 is a window) can
+// tile pos where the current door kind (build.door_kind; 2 is a window) can
 // go, draws the preview there for the local player, and records it in
 // build.door_tile and build.door_type. Sets othervar.door_invalid[owner] if the door
 // cannot be placed there.
@@ -97,7 +97,7 @@ void temp_place_door(u16 pos, u8 owner)
     blocked = 0;
     othervar.door_invalid[owner] = 0;
     room = &room_info[build->room];
-    switch (build->door_state) {
+    switch (build->door_kind) {
     case 0:
         min_w = 3;
         min_h = 3;
@@ -140,7 +140,7 @@ void temp_place_door(u16 pos, u8 owner)
         for (i = start_y, best = 9999; i <= room->height - end_y; i++) {
             for (j = 0; j <= room->width; j += room->width) {
                 tile = &cell0[j + (i << 7)] - map;
-                if (build->door_state || (-map[tile + 128].first & 3) == 2) {
+                if (build->door_kind || (-map[tile + 128].first & 3) == 2) {
                     d = abs((s16)pos % 128 - tile % 128) + abs((s16)pos / 128 - tile / 128);
                     if (d < best) {
                         best = d;
@@ -159,7 +159,7 @@ void temp_place_door(u16 pos, u8 owner)
         for (i = start_x; i <= room->width - end_x; i++) {
             for (j = 0; j <= room->height; j += room->height) {
                 tile = &cell0[i + (j << 7)] - map;
-                if (build->door_state || (-map[tile - 1].first & 3) == 1) {
+                if (build->door_kind || (-map[tile - 1].first & 3) == 1) {
                     d = abs((s16)pos % 128 - tile % 128) + abs((s16)pos / 128 - tile / 128);
                     if (d < best) {
                         best = d;
@@ -182,7 +182,7 @@ void temp_place_door(u16 pos, u8 owner)
     if (best == 9999) {
         return;
     }
-    type += build->door_state << 2;
+    type += build->door_kind << 2;
     for (j = 0; j < doortype[type].count; j++) {
         cx = (best_tile + (s16)doortype[type].tiles[j] - doortype[type].offset) % 128;
         cy = (best_tile + (s16)doortype[type].tiles[j] - doortype[type].offset) / 128;
@@ -197,7 +197,7 @@ void temp_place_door(u16 pos, u8 owner)
         }
         cx = (best_tile + (s16)doortype[type].tiles[j]) % 128;
         cy = (best_tile + (s16)doortype[type].tiles[j]) / 128;
-        if (build->door_state != 2) {
+        if (build->door_kind != 2) {
             blocked =
                 !can_place_door((cy << 7) + cx, 3, blueprint[(s16)doortype[type % 4 + 4].sprites[0]].build_type - 1)
                     ? (u8)1
@@ -256,8 +256,8 @@ void place_bp_door(u8 owner, u8 swap)
         return;
     }
     if (doortype[bs->door_type].is_entrance) {
-        room->door_tile = bs->door_tile + doortype[bs->door_type].door1;
-        room->door_inside_tile = bs->door_tile + doortype[bs->door_type].door2;
+        room->door_tile = bs->door_tile + doortype[bs->door_type].door_offset;
+        room->door_inside_tile = bs->door_tile + doortype[bs->door_type].door_inside_offset;
     }
     if (!check_room_access_with_blueprint(owner)) {
         if (owner == player) {
@@ -268,7 +268,7 @@ void place_bp_door(u8 owner, u8 swap)
     }
     type = bs->door_type;
     if (swap) {
-        if (blueprint[find_small_thing(bs->door_tile + doortype[type].tiles[0])].kind == 0x7e && bs->door_state == 2) {
+        if (blueprint[find_small_thing(bs->door_tile + doortype[type].tiles[0])].kind == 0x7e && bs->door_kind == 2) {
             type %= 4;
             type += 0x14;
             delta = -1;
@@ -277,7 +277,7 @@ void place_bp_door(u8 owner, u8 swap)
             return;
         }
     } else if (owner == player) {
-        if (bs->door_state == 2 && blueprint[find_small_thing(bs->door_tile + doortype[type].tiles[0])].kind == 0x7e) {
+        if (bs->door_kind == 2 && blueprint[find_small_thing(bs->door_tile + doortype[type].tiles[0])].kind == 0x7e) {
             play_sound(SNDSRC_GENERAL, SFX_WRONG2, -1, -1);
         } else {
             play_sound(SNDSRC_GENERAL, SFX_BUILDCLK, -1, -1);
@@ -303,14 +303,14 @@ void place_bp_door(u8 owner, u8 swap)
         map[tile - doortype[type].offset].overlay = doortype[type].overlays[i];
     }
     othervar.full_redraw = 1;
-    if (bs->door_state == 2) {
+    if (bs->door_kind == 2) {
         room->windows += delta;
     }
-    if (bs->door_state == 1 || bs->door_state == 0) {
+    if (bs->door_kind == 1 || bs->door_kind == 0) {
         if (othervar.cur_player == player) {
             set_edit_room_requester_mode(4);
         }
-        bs->door_state = 2;
+        bs->door_kind = 2;
     }
 }
 
@@ -484,10 +484,10 @@ void build_all_rooms(void)
                 place_small_thing(cell - map, 0, 0);
                 col = color.wall_colour * 2;
                 walls[0] = walls[1] = 0;
-                if (blocks[cell->wall_n].width & 0x10) {
+                if (blocks[cell->wall_n].flags & 0x10) {
                     walls[0] = 1;
                 }
-                if (blocks[cell->wall_w].width & 0x10) {
+                if (blocks[cell->wall_w].flags & 0x10) {
                     walls[1] = 1;
                 }
                 room = which_room(cell - map);
@@ -671,7 +671,7 @@ void build_all_rooms(void)
     }
     for (cell = map; cell < end_map; cell++) {
         if (cell->owner_flags & mask) {
-            if (blocks[cell->overlay].width == 0x20) {
+            if (blocks[cell->overlay].flags == 0x20) {
                 cell->overlay = 0x13;
             }
         }
@@ -820,7 +820,7 @@ void delete_wall(u16 tile, u16 room, u8 side)
                 clear = 0;
             }
         }
-        if (blocks[map[x + (y << 7)].wall_n].width & 0x10) {
+        if (blocks[map[x + (y << 7)].wall_n].flags & 0x10) {
             clear = 0;
         }
         if (clear) {
@@ -839,7 +839,7 @@ void delete_wall(u16 tile, u16 room, u8 side)
                 clear = 0;
             }
         }
-        if (blocks[map[x + (y << 7)].wall_w].width & 0x10) {
+        if (blocks[map[x + (y << 7)].wall_w].flags & 0x10) {
             clear = 0;
         }
         if (clear) {

@@ -201,7 +201,7 @@ void blast_walls_and_floor(u16 tile)
     m = &map[tile];
     if (old_newrand() % 1000 > 300) {
         block = m->wall_n;
-        flags = blocks[block].width;
+        flags = blocks[block].flags;
         if (flags & 2) {
             if (!(flags & 0x10))
                 place_small_thing(tile, 0x67, 1);
@@ -214,7 +214,7 @@ void blast_walls_and_floor(u16 tile)
     }
     if (old_newrand() % 1000 > 300) {
         block = m->wall_w;
-        flags = blocks[block].width;
+        flags = blocks[block].flags;
         if (flags & 2) {
             if (!(flags & 0x10))
                 place_small_thing(tile, 0x68, 1);
@@ -310,7 +310,8 @@ void generate_disaster(u8 owner)
             case 0:
                 break;
             case 1:
-                if (listhead[owner].objects[OBJ_RADIATOR] && hosp->staff_by_kind[2] * 8 < hosp->radiator_count) {
+                if (listhead[owner].objects[OBJ_RADIATOR] &&
+                    hosp->staff_by_kind[STAFF_HANDYMAN] * 8 < hosp->radiator_count) {
                     hosp->saved_heating = hosp->heating_level;
                     hosp->heating_level = 0;
                     hosp->heating_broken = 1;
@@ -321,7 +322,8 @@ void generate_disaster(u8 owner)
                 }
                 break;
             case 2:
-                if (listhead[owner].objects[OBJ_RADIATOR] && hosp->staff_by_kind[2] * 8 < hosp->radiator_count) {
+                if (listhead[owner].objects[OBJ_RADIATOR] &&
+                    hosp->staff_by_kind[STAFF_HANDYMAN] * 8 < hosp->radiator_count) {
                     hosp->saved_heating = hosp->heating_level;
                     hosp->heating_level = 0xa;
                     hosp->heating_broken = 1;
@@ -345,9 +347,9 @@ void generate_disaster(u8 owner)
         break;
     case 1:
     case 2:
-        if (hosp->staff_by_kind[2] * 8 > hosp->radiator_count)
+        if (hosp->staff_by_kind[STAFF_HANDYMAN] * 8 > hosp->radiator_count)
             hosp->disaster_timer--;
-        if (hosp->staff_by_kind[2] * 5 > hosp->radiator_count)
+        if (hosp->staff_by_kind[STAFF_HANDYMAN] * 5 > hosp->radiator_count)
             hosp->disaster_timer--;
         hosp->disaster_timer--;
         if (hosp->disaster_timer <= 0) {
@@ -420,18 +422,18 @@ void what_is_required(u8 illness, u8 owner)
     }
     if (exp->staff_mask & 0x20) {
         if (listhead[owner].staff[5] == 0) {
-            required.flags = 0x20;
+            required.staff_mask = 0x20;
             required.missing_skill = 5;
             required.surgeons_needed = 2;
         } else if (allhosps[owner].surgeon_count < 2) {
             required.surgeons_needed = 2 - allhosps[owner].surgeon_count;
-            required.flags = 0x20;
+            required.staff_mask = 0x20;
             required.missing_skill = 5;
         }
     } else {
         for (i = 0; i < 9; i++) {
             if ((exp->staff_mask & (1 << i)) && listhead[owner].staff[i] == 0) {
-                required.flags = exp->staff_mask;
+                required.staff_mask = exp->staff_mask;
                 required.missing_skill = i;
                 break;
             }

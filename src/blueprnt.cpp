@@ -138,7 +138,7 @@ outline:
                 tx = x;
                 ty = y;
                 if (mode != 2) {
-                    if (!((blocks[cell->wall_n].width & 0x10) || (blocks[cell->wall_w].width & 0x10))) {
+                    if (!((blocks[cell->wall_n].flags & 0x10) || (blocks[cell->wall_w].flags & 0x10))) {
                         if (y == y1 + 1 || x == x1 + 1) {
                             if (x == x1 + 1 && y != y1 + 1) {
                                 tx--;
@@ -234,7 +234,7 @@ void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay)
                 }
             }
             if (piece) {
-                if (!((blocks[cell->wall_n].width & 0x10) || (blocks[cell->wall_w].width & 0x10))) {
+                if (!((blocks[cell->wall_n].flags & 0x10) || (blocks[cell->wall_w].flags & 0x10))) {
                     place_small_thing((s16)((y << 7) + x), 0, 0);
                     place_small_thing((y << 7) + x, (u16)piece + base, 0);
                 } else {
@@ -429,7 +429,7 @@ u8 commit_blueprint(u8 owner)
         return 0;
     }
     room = &room_info[build->room];
-    build->door_state = rooms[build->room_type].door_kind;
+    build->door_kind = rooms[build->room_type].door_kind;
     allhosps[owner].build.draw_mode = 0;
     build->saved_overlay = map[(s16)build->x0 + ((s16)build->y0 << 7)].overlay;
     mark_blueprint_on_map(build->x0, build->y0, build->x1, build->y1, 1);
@@ -545,7 +545,7 @@ u8 is_valid_door(u16 tile, u8 owner, u8 type)
 {
     s32 pos;
 
-    pos = tile + (s16)doortype[type % 4 + 4].door1;
+    pos = tile + (s16)doortype[type % 4 + 4].door_offset;
     return !(map[pos].owner_flags & MAP_OUTDOOR) && which_room(pos) == 0;
 }
 
@@ -1031,9 +1031,9 @@ RoomInfo *allocate_reception_roominfo(u8 owner)
 // FUNCTION: 0x0004873c
 u8 check_near_half_wall(u8 x, u8 y, u8 x0, u8 y0, u8 x1, u8 y1)
 {
-    if (y != y1 + 1 && (blocks[map[(s16)x + ((s16)y << 7)].wall_w].width & 4))
+    if (y != y1 + 1 && (blocks[map[(s16)x + ((s16)y << 7)].wall_w].flags & 4))
         return 1;
-    if (x != x1 + 1 && (blocks[map[(s16)x + ((s16)y << 7)].wall_n].width & 4))
+    if (x != x1 + 1 && (blocks[map[(s16)x + ((s16)y << 7)].wall_n].flags & 4))
         return 1;
     return 0;
 }

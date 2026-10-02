@@ -229,7 +229,7 @@ void process_mouse_area_select(void)
     i = 0;
     kind = 0x63;
     while (area_towns[i].w > 0 && area_towns[i].h > 0) {
-        kind = area_towns[i].kind;
+        kind = area_towns[i].unknown8;
         if (lbDisplay.left_button) {
             if (allhosps->level == 0 || level_number == 0) {
                 level_number = 1;

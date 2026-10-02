@@ -508,7 +508,7 @@ void doctor_researches(Thing *doctor)
                             }
                         }
                     }
-                    overlapping_staff_check(doctor, 0x3e);
+                    overlapping_staff_check(doctor, SS_DOCTOR_RESEARCHES);
                 }
             }
         }

@@ -151,7 +151,7 @@ void req7_overdraw(Window *win)
     LbTextDraw(ox + resvars.coords_QueuePanelp->labels[4].x, oy + resvars.coords_QueuePanelp->labels[4].y, buf);
     sprintf(buf, "%d", room_info[othervar.queue_win_room].queue_incoming);
     LbTextDraw(ox + resvars.coords_QueuePanelp->labels[5].x, oy + resvars.coords_QueuePanelp->labels[5].y, buf);
-    sprintf(buf, "%d", room_info[othervar.queue_win_room].count);
+    sprintf(buf, "%d", room_info[othervar.queue_win_room].patients_seen);
     LbTextDraw(ox + resvars.coords_QueuePanelp->labels[6].x, oy + resvars.coords_QueuePanelp->labels[6].y, buf);
     sprintf(buf, "%d", room_info[othervar.queue_win_room].queue_capacity);
     LbTextDraw(ox + resvars.coords_QueuePanelp->labels[7].x, oy + resvars.coords_QueuePanelp->labels[7].y, buf);
@@ -397,8 +397,8 @@ u8 over_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                 fr = &frame[person->sprite];
                 x0 = px - fr->width / 2;
                 x1 = x0 + fr->width;
-                y0 = py - fr->length;
-                y1 = y0 + fr->length;
+                y0 = py - fr->height;
+                y1 = y0 + fr->height;
                 if (x0 < lbDisplay.mmouse_x && x1 - lbDisplay.graphics_screen_width / 32 > lbDisplay.mmouse_x) {
                     if (y0 < lbDisplay.mmouse_y && y1 > lbDisplay.mmouse_y) {
                         othervar.panel_thing = id;
@@ -482,8 +482,8 @@ void display_queue_people(u16 x, u16 y, u16 room_id, u8 sel)
                     fr = &frame[person->sprite];
                     x0 = px - fr->width / 2;
                     x1 = x0 + fr->width;
-                    y0 = py - fr->length;
-                    y1 = y0 + fr->length;
+                    y0 = py - fr->height;
+                    y1 = y0 + fr->height;
                 }
                 px += step;
                 if (person->queue_next == 0)
@@ -540,7 +540,7 @@ void display_queue_person(u16 x, u16 y, u16 room_id, u8 sel)
                     lbDisplay.draw_flags = 0;
                     fr = &frame[person->sprite];
                     set_all_refresh_zones_in_window(x + frame_bounds[4], y + frame_bounds[5],
-                                                    x + frame_bounds[4] + fr->width, y + frame_bounds[5] + fr->length,
+                                                    x + frame_bounds[4] + fr->width, y + frame_bounds[5] + fr->height,
                                                     3);
                     person->facing = old_facing;
                     person->sprite = old_sprite;
@@ -693,8 +693,8 @@ u16 queue_person_x(u16 x, u16 y, u16 room_id, u8 sel)
                 fr = &frame[person->sprite];
                 x0 = px - fr->width / 2;
                 x1 = x0 + fr->width;
-                y0 = py - fr->length;
-                y1 = y0 + fr->length;
+                y0 = py - fr->height;
+                y1 = y0 + fr->height;
                 px += step;
                 if (person->queue_next == 0)
                     break;

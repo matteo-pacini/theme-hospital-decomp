@@ -97,7 +97,7 @@ void req5_overdraw(Window *win)
 
             room = &room_info[machine->room_id];
             if (room > room_info) {
-                count = room->count;
+                count = room->patients_seen;
                 sprintf(buf, "%d", count);
                 LbTextDraw(x + resvars.coords[0x62].x, y + resvars.coords[0x62].y, buf);
             }

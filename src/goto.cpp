@@ -41,7 +41,7 @@ s16 person_goto_destination(Thing *person)
         person->sprite = frame[person->sprite].next;
     person->countdown--;
     if (person->countdown <= 0) {
-        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 &&
+        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].flags == 0x20 &&
             move_peep_from_blueprint(person))
             return 0;
         modify_person(person);
@@ -97,7 +97,7 @@ s16 person_goto_object(Thing *person)
         person->sprite = frame[person->sprite].next;
     person->countdown--;
     if (person->countdown <= 0) {
-        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 &&
+        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].flags == 0x20 &&
             move_peep_from_blueprint(person))
             return 0;
         modify_person(person);
@@ -176,7 +176,7 @@ void person_goto_queue(Thing *person)
         person->sprite = frame[person->sprite].next;
     person->countdown--;
     if (person->countdown <= 0) {
-        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 &&
+        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].flags == 0x20 &&
             move_peep_from_blueprint(person))
             return;
         modify_person(person);
@@ -309,7 +309,7 @@ s16 staff_goto_object(Thing *employee)
         employee->sprite = frame[employee->sprite].next;
     employee->countdown--;
     if (employee->countdown <= 0) {
-        if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 &&
+        if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].flags == 0x20 &&
             move_peep_from_blueprint(employee))
             return 0;
         employee->countdown = employee->speed == 0 ? div_err() : 0x100 / employee->speed;
@@ -408,7 +408,7 @@ void staff_wanders(Thing *employee)
     if (shall_i_resign(employee))
         return;
     if (employee->substate == 0) {
-        if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 &&
+        if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].flags == 0x20 &&
             move_peep_from_blueprint(employee))
             return;
         employee->countdown--;
@@ -427,7 +427,7 @@ void staff_wanders(Thing *employee)
                     return;
                 }
             }
-            if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 &&
+            if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].flags == 0x20 &&
                 move_peep_from_blueprint(employee))
                 return;
             if (shall_i_resign(employee))
@@ -532,7 +532,7 @@ void peep_bp_goto(Thing *peep)
         peep->sprite = frame[peep->sprite].next;
     peep->countdown--;
     if (peep->countdown <= 0) {
-        if (blocks[map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].overlay].width != 0x20 ||
+        if (blocks[map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].overlay].flags != 0x20 ||
             (peep->x.tile == peep->saved_dest_x && peep->y.tile == peep->saved_dest_y)) {
             peep->state = peep->saved_state;
             return;
@@ -558,7 +558,7 @@ void peep_bp_goto(Thing *peep)
                     dir = 3;
             }
             if (!retry ||
-                blocks[map[(s16)((u16)peep->x.tile + ((u16)peep->y.tile << 7)) + around[dir]].overlay].width == 0x20)
+                blocks[map[(s16)((u16)peep->x.tile + ((u16)peep->y.tile << 7)) + around[dir]].overlay].flags == 0x20)
                 break;
             vertical = !vertical;
             retry = 0;

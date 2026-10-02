@@ -695,7 +695,8 @@ u8 find_advice(const u16 id)
         break;
     case 0x56:
         what_is_required(0x13, player);
-        if (!required.flags && required.missing_room != 10 && required.needs_ward && othervar.last_built_room_s == 10) {
+        if (!required.staff_mask && required.missing_room != 10 && required.needs_ward &&
+            othervar.last_built_room_s == 10) {
             sprintf(advisor.text, advisor_text[0x56]);
             found = 1;
             othervar.last_built_room_s = 0;

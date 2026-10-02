@@ -98,10 +98,10 @@ void draw_a_frame(const u16 frame_id, const s16 x, const s16 y, const u8 flags, 
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     if (frame_bounds.x0 > frame_bounds.x)
         frame_bounds.x0 = frame_bounds.x;
@@ -158,10 +158,10 @@ void draw_a_one_colour_frame(const u16 frame_id, const s16 x, const s16 y, const
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     if (frame_bounds.x0 > frame_bounds.x)
         frame_bounds.x0 = frame_bounds.x;
@@ -275,10 +275,10 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     frame_extra_height = 0;
     if (frame_bounds.x0 > frame_bounds.x)
@@ -362,9 +362,9 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
                     draw_wibble(x + frame_bounds.x - 4, y + frame_bounds.y - 4,
                                 pixBuf.data + 0x3a + frame_bounds.x - 4 + (frame_bounds.y + 0x70) * 0xb4,
                                 f->width + 8 < 0x7a - frame_bounds.x + 3 ? f->width + 8 : 0x7a - frame_bounds.x + 3,
-                                f->length + 8 < 0x40 - frame_bounds.y + 3 ? f->length + 8 : 0x40 - frame_bounds.y + 3,
+                                f->height + 8 < 0x40 - frame_bounds.y + 3 ? f->height + 8 : 0x40 - frame_bounds.y + 3,
                                 phase);
-                    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->length);
+                    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->height);
                 }
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
@@ -420,9 +420,9 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
                     draw_wibble(x + frame_bounds.x - 4, y + frame_bounds.y - 4,
                                 pixBuf.data + 0x3a + frame_bounds.x - 4 + (frame_bounds.y + 0x70) * 0xb4,
                                 f->width + 8 < 0x7a - frame_bounds.x + 3 ? f->width + 8 : 0x7a - frame_bounds.x + 3,
-                                f->length + 8 < 0x40 - frame_bounds.y + 3 ? f->length + 8 : 0x40 - frame_bounds.y + 3,
+                                f->height + 8 < 0x40 - frame_bounds.y + 3 ? f->height + 8 : 0x40 - frame_bounds.y + 3,
                                 phase);
-                    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->length);
+                    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->height);
                 }
                 spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                 if (spr > sprite) {
@@ -440,9 +440,9 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
         draw_wibble(x + frame_bounds.x - 4, y + frame_bounds.y - 4,
                     pixBuf.data + 0x3a + frame_bounds.x - 4 + (frame_bounds.y + 0x70) * 0xb4,
                     f->width + 8 < 0x7a - frame_bounds.x + 3 ? f->width + 8 : 0x7a - frame_bounds.x + 3,
-                    f->length + 8 < 0x40 - frame_bounds.y + 3 ? f->length + 8 : 0x40 - frame_bounds.y + 3, phase);
+                    f->height + 8 < 0x40 - frame_bounds.y + 3 ? f->height + 8 : 0x40 - frame_bounds.y + 3, phase);
     }
-    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->length);
+    FillBoxInPixBuffer(0xfe, frame_bounds.x + 0x3a, frame_bounds.y + 0x74, f->width, f->height);
     if (f->sound && gamevar.turn_skipped == 0 &&
         (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
@@ -452,10 +452,10 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     frame_extra_height = 0;
     frame_bounds.x -= 4;
@@ -551,10 +551,10 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     frame_extra_height = 0;
     if (frame_bounds.x0 > frame_bounds.x)
@@ -593,7 +593,7 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
             draw_special_id_frame(obj, x, y);
         f = &frame[w->sprite];
         split_height = obj->split_height;
-        rest = f->length - split_height;
+        rest = f->height - split_height;
         frame_bounds.x = frame_bounds.y = 999;
         {
             s32 top = y - split_height;
@@ -621,10 +621,10 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         frame_bounds.y += y;
         frame_bounds.w = f->width;
         if (resvars.screen_mode == SCREEN_MODE_13) {
-            frame_bounds.h = f->length + frame_extra_height;
+            frame_bounds.h = f->height + frame_extra_height;
         } else {
             frame_bounds.w /= 2;
-            frame_bounds.h = f->length / 2 + frame_extra_height;
+            frame_bounds.h = f->height / 2 + frame_extra_height;
         }
         if (frame_bounds.x0 > frame_bounds.x)
             frame_bounds.x0 = frame_bounds.x;
@@ -690,10 +690,10 @@ void draw_energise_frame(Thing *w, const s16 x, const s16 y)
         frame_bounds.y += y;
         frame_bounds.w = f->width;
         if (resvars.screen_mode == SCREEN_MODE_13) {
-            frame_bounds.h = f->length + frame_extra_height;
+            frame_bounds.h = f->height + frame_extra_height;
         } else {
             frame_bounds.w /= 2;
-            frame_bounds.h = f->length / 2 + frame_extra_height;
+            frame_bounds.h = f->height / 2 + frame_extra_height;
         }
         if (frame_bounds.x0 > frame_bounds.x)
             frame_bounds.x0 = frame_bounds.x;
@@ -756,10 +756,10 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     if (frame_bounds.x0 > frame_bounds.x)
         frame_bounds.x0 = frame_bounds.x;
@@ -813,10 +813,10 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     if (frame_bounds.x0 > frame_bounds.x)
         frame_bounds.x0 = frame_bounds.x;
@@ -907,10 +907,10 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     if (frame_bounds.x0 > frame_bounds.x)
         frame_bounds.x0 = frame_bounds.x;
@@ -985,10 +985,10 @@ void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8
     frame_bounds.y += y;
     frame_bounds.w = f->width;
     if (resvars.screen_mode == SCREEN_MODE_13) {
-        frame_bounds.h = f->length + frame_extra_height;
+        frame_bounds.h = f->height + frame_extra_height;
     } else {
         frame_bounds.w /= 2;
-        frame_bounds.h = f->length / 2 + frame_extra_height;
+        frame_bounds.h = f->height / 2 + frame_extra_height;
     }
     if (frame_bounds.x0 > frame_bounds.x)
         frame_bounds.x0 = frame_bounds.x;
@@ -1102,12 +1102,12 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
         if (spr > sprite) {
             lbDisplay.draw_flags = elem->flags & 0xf;
             LbSpriteDraw(x + dx - spr->width / 2,
-                         (y + dy) + (elem->y - 0xca) - f->length - resvars.coords_IconScreenp->icon_gap, spr);
+                         (y + dy) + (elem->y - 0xca) - f->height - resvars.coords_IconScreenp->icon_gap, spr);
             if (frame_bounds.x > dx - spr->width / 2)
                 frame_bounds.x = dx - spr->width / 2;
-            if (frame_bounds.y > dy - f->length - resvars.coords_IconScreenp->icon_gap) {
-                frame_bounds.y = dy - f->length - resvars.coords_IconScreenp->icon_gap;
-                frame_extra_height = resvars.coords_IconScreenp->icon_gap + f->length;
+            if (frame_bounds.y > dy - f->height - resvars.coords_IconScreenp->icon_gap) {
+                frame_bounds.y = dy - f->height - resvars.coords_IconScreenp->icon_gap;
+                frame_extra_height = resvars.coords_IconScreenp->icon_gap + f->height;
             }
         }
     }

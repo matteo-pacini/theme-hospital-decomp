@@ -1161,7 +1161,7 @@ s16 get_state(const u16 type, const Thing *staff)
     state = staff_states[rooms[type].staff_state_row][staff->subtype];
     if (staff->subtype == STAFF_DOCTOR && rooms[type].doctor_skills) {
         if ((staff->skills & rooms[type].doctor_skills) == 0) {
-            state = 0x36;
+            state = SS_EVACUATE;
         }
     }
     return state;

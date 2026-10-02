@@ -23,7 +23,9 @@ union MapPos {
  * One map tile (map[], 128 per row).
  */
 struct Map {
-    // 0x0: Head of the list of things on the tile (Thing.cell_next).
+    // 0x0: Head of the list of things on the tile (Thing.cell_next). The list
+    // ends at a value <= 0: the negated id of the tile's small thing (blueprint
+    // marker, find_small_thing), or 0.
     s16 first;
     // 0x2: Overlay block id.
     u8 overlay;
@@ -45,7 +47,8 @@ struct Blocks {
         u32 data;
         TbSprite *info;
     };
-    u8 width;
+    // 0x4: Flag bits of the block, tested on wall and overlay blocks.
+    u8 flags;
     s8 height;
 };
 
@@ -74,7 +77,9 @@ struct RoomInfo {
     u16 first_object;
     u16 first;
     u16 staff[2];
-    u16 count;
+    // 0x14: Patients who have entered the room, or been served by its
+    // receptionist; shown by the queue and machine windows.
+    u16 patients_seen;
     u32 created_turn;
     u8 radiators;
     u8 windows;
@@ -459,7 +464,7 @@ struct Thing {
                 s16 diagnosis;
                 struct {
                     u8 pad92_;
-                    // Staff: a bit per player who has offered them a job.
+                    // Staff: 1 << the player who last offered them a job, or 0.
                     u8 poach_offers;
                 };
             };
@@ -819,8 +824,10 @@ struct BuildState {
     u16 door_tile;
     // 0x11: doortype[] index of the door being placed.
     u8 door_type;
-    // 0x12: Kind of door being placed (from rooms[].door_kind); 2 is a window.
-    u8 door_state;
+    // 0x12: Kind of door being placed (from rooms[].door_kind), selecting a
+    // block of 4 doortype[] entries; set to 2 (a window) once the door is
+    // placed.
+    u8 door_kind;
     // 0x13: Object ids the player picked up and may place again.
     u16 objects[20];
     // 0x3b: Building step (2 while waiting for the room to clear).
@@ -1421,7 +1428,8 @@ struct ObjectControl {
  * properties. The level-file key rooms.Cost sets cost (vloader.cpp).
  */
 struct RoomControl {
-    // 0x0: Name index in language section 52.
+    // 0x0: Index of the room's name in room_names (language section 13) and
+    // real_room_names (section 52).
     u16 id;
     // 0x2: Wall colour style recolour_all_rooms paints the room in (3-6; 1 and
     // 2 none).
@@ -1452,7 +1460,7 @@ struct RoomControl {
     u8 overlay;
     u8 unknown23;
     // 0x24: 0 for double doors (init_double_doors), else a single door that
-    // patients enter straight through; copied to build.door_state.
+    // patients enter straight through; copied to build.door_kind.
     u8 door_kind;
     u8 unknown25;
     // 0x26: Staff kind (STAFF_*) the AI hires for the room, or -1.
@@ -1546,15 +1554,15 @@ struct DoorInfo {
     // 0x9: Blueprint ids of its pieces.
     u16 sprites[3];
     // 0xf: Tile offset of the room's door_tile.
-    u16 door1;
+    u16 door_offset;
     // 0x11: Tile offset of the room's door_inside_tile.
-    u16 door2;
+    u16 door_inside_offset;
     // 0x13: Map overlays set on its tiles.
     u16 overlays[3];
     // 0x19: Tile offset subtracted for the overlay and preview tiles.
     u16 offset;
     // 0x1b: Nonzero for doors: placing one sets the room's two door-side tiles
-    // from door1 and door2; zero for the window entries.
+    // from door_offset and door_inside_offset; zero for the window entries.
     u8 is_entrance;
 };
 
@@ -1612,7 +1620,7 @@ struct AnimTable {
 struct CompFrame {
     u32 list;
     u8 width;
-    u8 length;
+    u8 height;
     u8 sound;
     u8 flags;
     u16 next;
@@ -1671,8 +1679,8 @@ struct SfxDetail {
             // 0xa: pitch_group or sample_group index for types 3-5.
             u8 group;
             // 0xb: Channel policy passed to PlaySampleFromAddress as its type
-            // (1 any free channel, 2 skip if already playing for this source, 3
-            // reuse this source's channel).
+            // (1 any free channel, 2 none if this source is already playing the
+            // sample, 3 reuse the channel of this source's sample).
             u8 play_type;
         };
     };
@@ -1688,7 +1696,7 @@ struct CompStarts {
 
 struct ToDraw {
     ToDraw *next;
-    Thing *widget;
+    Thing *thing;
     int x;
     int y;
 };
@@ -1898,7 +1906,8 @@ struct Packet {
 struct NetText {
     // 0x0: First character of the message; 0 empties it.
     u8 text;
-    u8 unknown1[0x31];
+    // 0x1: The rest of the message.
+    u8 text_tail[0x31];
 };
 
 /*
@@ -2361,11 +2370,13 @@ struct HospWindow {
  */
 struct Required {
     union {
-        // 0x0: Byte view: [0] is the low byte of flags, [2] the drug's
+        // 0x0: Byte view: [0] is the low byte of staff_mask, [2] the drug's
         // effectiveness when the illness is already treatable.
         u8 raw[3];
-        // 0x0: Skill bits of staff the illness needs and the hospital lacks.
-        u16 flags;
+        // 0x0: When the hospital lacks a staff skill the illness needs: all the
+        // skill bits it needs (expertise staff_mask), or 0x20 for surgeons;
+        // else 0.
+        u16 staff_mask;
     };
     // 0x3: Bit index of the first missing skill (5 for surgeons).
     u8 missing_skill;
@@ -3487,7 +3498,9 @@ struct Balance {
     u16 consultant_threshold;
     u8 rsch_improve_cost_percent;
     u8 rsch_improve_inc_percent;
-    u8 unknown15c[2];
+    // 0x15c: Low half of the RemoveRatHoleChance key, which the level loader
+    // writes as 4 bytes (over ins_control_base too); no code reads it.
+    u8 remove_rathole_chance_lo[2];
     u16 ins_control_base[1];
 };
 
@@ -3520,7 +3533,8 @@ struct AwardCounts {
     // 0x140: Percentage of emergency patients saved this year, for the
     // emergency award; nothing writes it.
     s32 emergency_saved_pct;
-    // 0x144: Set when a machine blew up; forces the poor machines award.
+    // 0x144: Set when a machine blew up; gives the poor machines award unless
+    // the good one is earned.
     u8 machine_exploded;
     // 0x145: Research points researchers produced this year.
     s32 research_earned;
@@ -4199,8 +4213,8 @@ struct ClickArea {
     u16 w;
     // 0x6: Height; 0 ends the list.
     u16 h;
-    // 0x8: Read by draw_area_select, which does not use it.
-    u8 kind;
+    // 0x8: Read by process_mouse_area_select, which does not use it.
+    u8 unknown8;
     // 0x9: Screen x of the town map's map cell 0.
     u16 x;
     // 0xb: Screen y of the town map's map cell 0.

@@ -45,7 +45,7 @@ u8 summon_the_reaper(Thing *victim)
             gate_pos = victim_pos + gate_arrive[i];
             if (can_i_get_to(victim, gate_pos) > 0) {
                 if (can_place_object(gate_pos, OBJ_GATES_OF_HELL, 0, victim->owner)) {
-                    if (corridor_object_nav_check(gate_pos, 0x30, 0)) {
+                    if (corridor_object_nav_check(gate_pos, OBJ_GATES_OF_HELL, 0)) {
                         gate_id = place_object(gate_pos, OBJ_GATES_OF_HELL, 0, victim->owner);
                         if (gate_id) {
                             gate = &thing[gate_id];

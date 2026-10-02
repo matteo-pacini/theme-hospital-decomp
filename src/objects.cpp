@@ -85,7 +85,7 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
             (cell[(s16)shape->points[i]].flags & 7)) {
             return 0;
         }
-        if (cell[(s16)shape->points[i]].owner_flags != 1 << owner && kind != 0x11) {
+        if (cell[(s16)shape->points[i]].owner_flags != 1 << owner && kind != OBJ_LITTER_BOMB) {
             return 0;
         }
         if (cell->owner_flags & MAP_OUTDOOR) {

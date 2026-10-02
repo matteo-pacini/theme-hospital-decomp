@@ -263,9 +263,10 @@ RoomInfo *get_room_info_rand(u8 kind, u8 mode, u8 owner)
     return list[old_newrand() % count];
 }
 
-// Returns player `owner`'s first room of type kind not in use (state 0); with
-// mode 0x65 the first of the kind at all, with mode 0x64 else the last of
-// the kind. Returns room_info (the null room), not 0, if none is found.
+// Returns player `owner`'s first room of type kind in state 0 (in use: not a
+// blueprint, being edited or closed); failing that, with mode 0x65 the first
+// of the kind in any state, with mode 0x64 the last. Returns room_info (the
+// null room), not 0, if none is found.
 // FUNCTION: 0x00019fe0
 RoomInfo *get_room_info(u8 kind, u8 mode, u8 owner)
 {

@@ -395,24 +395,24 @@ void display_hospital_map_sale(void)
                           area_towns[myhosp->level].width, area_towns[myhosp->level].height, color.red);
             draw_sale_area_outlines(x, y);
             if (map[(s16)x + ((s16)y << 7)].wall_n) {
-                if ((blocks[map[(s16)x + ((s16)y << 7)].wall_n].width & 1) &&
-                    !(blocks[map[(s16)x + ((s16)y << 7)].wall_n].width & 0x40))
+                if ((blocks[map[(s16)x + ((s16)y << 7)].wall_n].flags & 1) &&
+                    !(blocks[map[(s16)x + ((s16)y << 7)].wall_n].flags & 0x40))
                     LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
                               area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
                               area_towns[myhosp->level].width, area_towns[myhosp->level].height / 2, color.white);
             }
             if (map[(s16)x + ((s16)y << 7)].wall_w) {
-                if ((blocks[map[(s16)x + ((s16)y << 7)].wall_w].width & 1) &&
-                    !(blocks[map[(s16)x + ((s16)y << 7)].wall_w].width & 0x40))
+                if ((blocks[map[(s16)x + ((s16)y << 7)].wall_w].flags & 1) &&
+                    !(blocks[map[(s16)x + ((s16)y << 7)].wall_w].flags & 0x40))
                     LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
                               area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
                               area_towns[myhosp->level].width / 2, area_towns[myhosp->level].height, color.white);
             }
             if (map[(s16)(x - 1) + ((s16)y << 7)].wall_n && map[(s16)x + ((s16)(y - 1) << 7)].wall_w) {
-                if ((blocks[map[(s16)(x - 1) + ((s16)y << 7)].wall_n].width & 1) &&
-                    !(blocks[map[(s16)(x - 1) + ((s16)y << 7)].wall_n].width & 0x40)) {
-                    if ((blocks[map[(s16)x + ((s16)(y - 1) << 7)].wall_w].width & 1) &&
-                        !(blocks[map[(s16)x + ((s16)(y - 1) << 7)].wall_w].width & 0x40))
+                if ((blocks[map[(s16)(x - 1) + ((s16)y << 7)].wall_n].flags & 1) &&
+                    !(blocks[map[(s16)(x - 1) + ((s16)y << 7)].wall_n].flags & 0x40)) {
+                    if ((blocks[map[(s16)x + ((s16)(y - 1) << 7)].wall_w].flags & 1) &&
+                        !(blocks[map[(s16)x + ((s16)(y - 1) << 7)].wall_w].flags & 0x40))
                         LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
                                   area_towns[myhosp->level].y + y * area_towns[myhosp->level].height, 1, 1,
                                   color.white);

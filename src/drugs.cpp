@@ -499,7 +499,7 @@ u8 get_next_illness(const u8 forward, const u8 from)
 // FUNCTION: 0x00013fb0
 void setup_drug(u16 hospital, u16 illness)
 {
-    if (expertise[illness].kind == 0x27) {
+    if (expertise[illness].kind == OBJ_PHARMACY_CABINET) {
         allhosps[hospital].rooms[illness].drug_effectiveness = gbv.start_rating;
         allhosps[hospital].rooms[illness].drug_cost = gbv.start_cost;
     }

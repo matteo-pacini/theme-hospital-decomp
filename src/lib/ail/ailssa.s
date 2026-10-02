@@ -431,8 +431,8 @@
 .size "_DC_25",.-"_DC_25"
 
 // DMA copy routine 26: converts ECX frames of the 32-bit build buffer at ESI to
-// unsigned 8-bit stereo output at EDI, right channel first, left and right to
-// separate buffers (EDI and EBX), unclipped.
+// unsigned 8-bit stereo output in separate buffers, channels swapped: the right
+// channel to EDI and the left to EBX, unclipped.
 // FUNCTION: 0x000f125a
 
 .section _TEXT,"ax",@progbits,unique,987738

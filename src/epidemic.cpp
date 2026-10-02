@@ -280,8 +280,9 @@ void send_peeps_home(u8 all, u8 owner)
     }
 }
 
-// Cures peep of contagion: clears the flag, vaccination icons and queue place,
-// and the count of spread infections.
+// Cures peep of contagion: zeroes their contagion, clears PF_CONTAGIOUS, the
+// contagious and vaccination icons and their place in the vaccination queue,
+// and takes one off othervar.contagious_count (if above 0).
 // FUNCTION: 0x000a0ae8
 void clean_contagious_peep(Thing *peep)
 {

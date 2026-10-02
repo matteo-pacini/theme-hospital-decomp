@@ -772,9 +772,10 @@ void process_right_button(u16 icon)
     }
 }
 
-// No button pressed: on the map, highlights the queue of the room (or
-// reception) under the pointer in MM_NORMAL, or updates the blueprint, door,
-// staff, object or room-edit cursor for the current mouse mode.
+// No button pressed: on the map in the hospital view (DM_GAME), highlights
+// the queue of the room (or reception) under the pointer in MM_NORMAL, or
+// updates the blueprint, door, staff, object, small thing, picked object,
+// queue target room or room-edit cursor for the current mouse mode.
 // FUNCTION: 0x0005be7c
 void process_no_button(u16 icon)
 {

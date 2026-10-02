@@ -237,8 +237,8 @@ void req14_overdraw(Window *win)
     set_all_refresh_zones_in_window(ox, oy, win->width + ox, win->height + oy, 3);
 }
 
-// Moves the edit room requester to step `mode` (0 and 2 blueprint, 4 doors,
-// 6 placing objects, 8 picking objects up, 0xa corridor objects), setting
+// Moves the edit room requester to step `mode` (0 blueprint, 2 placing the
+// door, 4 windows once the door is placed, 6 placing objects, 8 picking objects up, 0xa corridor objects), setting
 // which buttons are disabled and the instructions, and opens it if needed.
 // In modes 6 and 8, confirm is only enabled once the room has its required
 // objects.

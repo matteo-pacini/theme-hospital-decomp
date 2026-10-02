@@ -69,7 +69,7 @@ void person_in_queue(Thing *person)
         if (cur->flags & 1) {
             person->countdown--;
             if (person->countdown <= 0) {
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20 &&
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].flags == 0x20 &&
                     move_peep_from_blueprint(person)) {
                     return;
                 }
@@ -126,8 +126,10 @@ void person_in_queue(Thing *person)
 }
 
 // Patient state PS_ENTERTAINS_THEMSELF (waiting in a queue area): at each
-// step goes home if fed up, pages the room's staff, and fetches a drink, the
-// toilet or a bench as needed, else finds a standing place.
+// step first moves off a blueprint they stand on; then, while alive, pages
+// the staff of the room they queue for, goes home if fed up (or sent home by
+// the inspector), and fetches a drink, the toilet or a bench as needed, else
+// finds a standing place.
 // FUNCTION: 0x000160a8
 void person_entertains_themself(Thing *person)
 {
@@ -140,7 +142,7 @@ void person_entertains_themself(Thing *person)
         if (cur->flags & 1) {
             person->countdown--;
             if (person->countdown <= 0) {
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20 &&
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].flags == 0x20 &&
                     move_peep_from_blueprint(person)) {
                     return;
                 }
@@ -251,7 +253,8 @@ u16 find_standing_place(Thing *person)
 }
 
 // Sends a patient home: removes their pending calls (types 8 and 4), records them in the
-// statistics, leaves any queue and walks them off the map.
+// statistics, leaves any queue, walks them to the entrance and off the map,
+// and shows the fed-up icon (ICON_FED_UP) over them.
 // FUNCTION: 0x0001665c
 void person_go_home(Thing *person)
 {
@@ -309,7 +312,7 @@ void move_person_in_room_list(Thing *person, u16 tile)
 }
 
 // Links person at the head of room's people list and sets person->room;
-// counts patients in room->count. room must not be 0 for a patient.
+// counts patients in room->patients_seen. room must not be 0 for a patient.
 // FUNCTION: 0x00016808
 void insert_person_in_room_list(RoomInfo *room, Thing *person)
 {
@@ -327,7 +330,7 @@ void insert_person_in_room_list(RoomInfo *room, Thing *person)
     }
     person->room = room;
     if (person->type == THING_PATIENT) {
-        room->count++;
+        room->patients_seen++;
     }
 }
 
@@ -722,7 +725,7 @@ void person_fills(Thing *person)
             machine->split_height++;
             cur = &frame[person->sprite];
         }
-        if (machine->split_height > cur->length) {
+        if (machine->split_height > cur->height) {
             person->state = PS_SLAVE_READY;
             person->sprite = machine->aux_sprite;
             person->flip = machine->aux_flip;
@@ -919,7 +922,7 @@ void refer_patient(Thing *person, u8 owner)
             person->flags &= ~PF_CONTAGIOUS;
             remove_person_from_vaccination_queue(person);
         }
-        person->known_illness = 1;
+        person->known_illness = ILL_GENERAL_PRACTICE;
         person->treatment = ILL_GENERAL_PRACTICE;
         for (i = 0; i < 10; i++) {
             person->treatments[i] = 0;
@@ -997,7 +1000,7 @@ void person_waits_for_decision(Thing *person)
                         return;
                     }
                 }
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20 &&
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].flags == 0x20 &&
                     move_peep_from_blueprint(person)) {
                     return;
                 }
@@ -1365,8 +1368,10 @@ u32 person_ok_to_call(Thing *person)
     return 1;
 }
 
-// Draws the fax announcing new illness kind: its description and what this
-// player lacks to treat it. Returns 0.
+// Draws the fax announcing new illness kind: its name (strs[4]) and its three
+// description lines (strs[kind * 3 - 1] on). What this player lacks to treat
+// it (strs[0-3]) is formatted but never drawn. Draws nothing for kind 0 or 1.
+// Returns 0.
 // FUNCTION: 0x000190c4
 u16 announce_new_illness_fax(const u8 kind, char **strs)
 {

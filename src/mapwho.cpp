@@ -45,7 +45,7 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
         if (node < (ToDraw *)&pixBuf) {
             node->next = buckets[bucket];
             buckets[bucket] = node;
-            node->widget = occupant;
+            node->thing = occupant;
             node->x = screen_x;
             node->y = screen_y;
             node++;
@@ -89,38 +89,38 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 
             draw_x = node->x + x;
             draw_y = node->y + y;
-            switch (node->widget->type) {
+            switch (node->thing->type) {
             case THING_PATIENT:
-                mapwho_person(node->widget, draw_x, draw_y, left, top);
+                mapwho_person(node->thing, draw_x, draw_y, left, top);
                 break;
             case THING_STAFF:
-                mapwho_staff(node->widget, draw_x, draw_y, left, top);
+                mapwho_staff(node->thing, draw_x, draw_y, left, top);
                 break;
             case THING_OBJECT:
             case THING_DOOR:
-                mapwho_object(node->widget, draw_x, draw_y, left, top);
+                mapwho_object(node->thing, draw_x, draw_y, left, top);
                 break;
             case THING_REAPER:
-                mapwho_reaper(node->widget, draw_x, draw_y);
+                mapwho_reaper(node->thing, draw_x, draw_y);
                 break;
             case THING_RAT:
-                mapwho_rat(node->widget, draw_x, draw_y, left, top);
+                mapwho_rat(node->thing, draw_x, draw_y, left, top);
                 break;
             case THING_DEBRIS:
-                mapwho_bang(node->widget, draw_x, draw_y);
+                mapwho_bang(node->thing, draw_x, draw_y);
                 break;
             case THING_HELICOPTER:
-                mapwho_helicopter(node->widget, draw_x, draw_y);
+                mapwho_helicopter(node->thing, draw_x, draw_y);
                 break;
             case THING_NUMFX:
-                mapwho_numfx(node->widget, draw_x, draw_y);
+                mapwho_numfx(node->thing, draw_x, draw_y);
                 break;
             case THING_MAYOR:
             case THING_INSPECTOR:
-                mapwho_mayor(node->widget, draw_x, draw_y, left, top);
+                mapwho_mayor(node->thing, draw_x, draw_y, left, top);
                 break;
             case THING_SHADOW:
-                mapwho_shadow(node->widget, draw_x, draw_y);
+                mapwho_shadow(node->thing, draw_x, draw_y);
             }
         }
     }

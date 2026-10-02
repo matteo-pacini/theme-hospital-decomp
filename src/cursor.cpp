@@ -189,11 +189,11 @@ draw:
     y = resvars.tile_height * col / 2 + resvars.tile_height * row / 2 - window.scroll_y[window.current_window] +
         window.center_y[window.current_window] + resvars.tile_height / 2;
     switch (kind) {
-    case 0x11:
+    case OBJ_LITTER_BOMB:
         obj_frame = get_frame_for_placing_bomb();
         flip = 0;
         break;
-    case 0x2d:
+    case OBJ_PLANT:
         obj_frame = get_frame_for_placing_plant();
         flip = 0;
         break;

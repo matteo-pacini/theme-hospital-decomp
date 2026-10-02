@@ -176,7 +176,7 @@ void req10_overdraw(Window *win)
             obj = rooms[croom].main_object;
             fr = &frame[start[objects[obj].preview_anim].frame];
             scale_x = 0x790000 / fr->width;
-            scale_y = 0x790000 / fr->length;
+            scale_y = 0x790000 / fr->height;
             if (scale_y >= 0x10000 && scale_x >= 0x10000) {
                 draw_a_frame(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x18].x,
                              oy + resvars.coords[0x18].y, 0, start[objects[obj].preview_anim].flags);

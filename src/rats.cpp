@@ -439,7 +439,7 @@ void rat_fest_builder(u8 level)
                 holes++;
             }
             if (lvl->staff_max > staff && saferand() % lvl->staff_chance == 0) {
-                id = place_staff_in_struct(2, 0);
+                id = place_staff_in_struct(STAFF_HANDYMAN, 0);
                 if (id) {
                     place_staff_on_map(cell - map, id, 0, player);
                     staff++;
