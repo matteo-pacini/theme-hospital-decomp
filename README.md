@@ -215,3 +215,19 @@ source idioms that reproduce it.
 
 [docs/BUGS.md](docs/BUGS.md) lists bugs in the original code that the
 decompilation keeps.
+
+## Legal
+
+This is an unofficial, non-commercial fan project, not affiliated with or
+endorsed by Electronic Arts, Bullfrog Productions, RAD Game Tools or
+Sybase. Theme Hospital is (C) 1997 Bullfrog Productions Ltd / Electronic
+Arts Inc.; trademarks belong to their owners. The repository holds no game
+assets and no original binaries: you need your own copy of the game (the
+GOG release) to build it. Please don't open issues or pull requests with
+game files or leaked material.
+
+The tools, build system and documentation are GPLv3 ([COPYING](COPYING)).
+The reconstructed code in `src/` and `include/`, including the Miles Sound
+System, Smacker and Watcom runtime code linked into the game, is not ours to
+license; see [LICENSE](LICENSE). If you hold rights to any of it and object,
+open an issue and it will be taken down.

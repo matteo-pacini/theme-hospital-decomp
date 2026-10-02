@@ -1,0 +1,29 @@
+Theme Hospital decompilation
+Copyright (C) 2026 Matteo Pacini and contributors
+
+The project's own work (the build system and tools in tools/, configure.py,
+flake.nix, the configuration in config/ and the documentation) is licensed
+under the GNU General Public License, version 3 or any later version; see
+COPYING for the full text.
+
+The code in src/ and include/ is not covered by that licence. It is a
+reconstruction, by reverse engineering, of the program code of Theme
+Hospital's HOSPITAL.EXE (1997), and of the third-party code linked into it:
+
+  - the game and Bullfrog's libraries, (C) Bullfrog Productions Ltd /
+    Electronic Arts Inc.;
+  - the Miles Sound System, (C) RAD Game Tools / Miles Design;
+  - RAD Smacker, (C) RAD Game Tools;
+  - the Watcom C/C++ 10.x runtime library, (C) Watcom International /
+    Sybase.
+
+No rights in that code are claimed, and none are granted by this file; it
+remains the property of its respective owners. Names, comments and
+documentation that contributors added to those files are offered under the
+GPL to the extent the contributors hold any rights in them.
+
+The project contains no game assets and no original binaries: building it
+needs your own copy of the game. It is distributed without charge and in
+good faith, for those who own Theme Hospital and want to study, preserve
+and document it. Should the original copyright holders object, we will take
+down the code they have the rights to.
