@@ -87,21 +87,31 @@ void advisor_text_box(void)
         else if (advisor.line_count == 1)
             y = resvars.coords_AdvisorLayoutp->text_y_1_line;
         if (no_pieces <= resvars.advisor_max_segments) {
-            reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x, resvars.coords_AdvisorLayoutp->right_piece_y, &game_panel[39]);
-            reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x - game_panel[37].width - (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width,
+            reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x, resvars.coords_AdvisorLayoutp->right_piece_y,
+                        &game_panel[39]);
+            reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x - game_panel[37].width -
+                            (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width,
                         resvars.coords_AdvisorLayoutp->bubble_y, &game_panel[37]);
             for (i = 0; i < resvars.advisor_min_segments + advisor.extra_segments; i++)
-                reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x - (advisor.extra_segments + resvars.advisor_min_segments - i) * game_panel[38].width, resvars.coords_AdvisorLayoutp->bubble_y,
-                            &game_panel[38]);
-            set_all_refresh_zones_in_window(
-                resvars.coords_AdvisorLayoutp->right_piece_x - (advisor.extra_segments + resvars.advisor_min_segments + 1) * game_panel[38].width - game_panel[39].width,
-                resvars.coords_AdvisorLayoutp->right_piece_y, resvars.coords_AdvisorLayoutp->right_piece_x + game_panel[39].width, resvars.coords_AdvisorLayoutp->right_piece_y + game_panel[39].height, 3);
-            advisor.box_left = resvars.coords_AdvisorLayoutp->right_piece_x - game_panel[38].width * (u16)(advisor.extra_segments + resvars.advisor_min_segments + 1) - game_panel[39].width;
+                reqspr_draw(resvars.coords_AdvisorLayoutp->right_piece_x -
+                                (advisor.extra_segments + resvars.advisor_min_segments - i) * game_panel[38].width,
+                            resvars.coords_AdvisorLayoutp->bubble_y, &game_panel[38]);
+            set_all_refresh_zones_in_window(resvars.coords_AdvisorLayoutp->right_piece_x -
+                                                (advisor.extra_segments + resvars.advisor_min_segments + 1) *
+                                                    game_panel[38].width -
+                                                game_panel[39].width,
+                                            resvars.coords_AdvisorLayoutp->right_piece_y,
+                                            resvars.coords_AdvisorLayoutp->right_piece_x + game_panel[39].width,
+                                            resvars.coords_AdvisorLayoutp->right_piece_y + game_panel[39].height, 3);
+            advisor.box_left = resvars.coords_AdvisorLayoutp->right_piece_x -
+                               game_panel[38].width * (u16)(advisor.extra_segments + resvars.advisor_min_segments + 1) -
+                               game_panel[39].width;
             LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
             LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
             lbDisplay.draw_flags = 0;
-            LbTextDraw(resvars.coords_AdvisorLayoutp->right_piece_x - (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width + resvars.coords_AdvisorLayoutp->text_left_margin
-                           - game_panel[37].width,
+            LbTextDraw(resvars.coords_AdvisorLayoutp->right_piece_x -
+                           (advisor.extra_segments + resvars.advisor_min_segments) * game_panel[38].width +
+                           resvars.coords_AdvisorLayoutp->text_left_margin - game_panel[37].width,
                        y, advisor.text);
         }
     }
@@ -139,7 +149,9 @@ void format_advisor_text(u8 segments)
     char *brk;
     char *line_start;
 
-    max_width = segments * resvars.coords_AdvisorLayoutp->middle_text_width + resvars.coords_AdvisorLayoutp->right_text_width + resvars.coords_AdvisorLayoutp->left_text_width - resvars.coords_AdvisorLayoutp->text_left_margin - resvars.coords_AdvisorLayoutp->text_right_margin;
+    max_width = segments * resvars.coords_AdvisorLayoutp->middle_text_width +
+                resvars.coords_AdvisorLayoutp->right_text_width + resvars.coords_AdvisorLayoutp->left_text_width -
+                resvars.coords_AdvisorLayoutp->text_left_margin - resvars.coords_AdvisorLayoutp->text_right_margin;
     width = 0;
     lines = 0;
     out = wrapped;
@@ -230,7 +242,8 @@ void advisor_character(void)
     }
     if (speed) {
         draw_a_frame(advisor.anim_frame, advisor.x, advisor.y, 0, 0);
-        set_all_refresh_zones_in_window(D_001567b0.x, D_001567b0.y, D_001567b0.x + D_001567b0.w, D_001567b0.y + D_001567b0.h, 3);
+        set_all_refresh_zones_in_window(D_001567b0.x, D_001567b0.y, D_001567b0.x + D_001567b0.w,
+                                        D_001567b0.y + D_001567b0.h, 3);
         if (actual_game_turn % speed == 0 && !gamevar.paused) {
             advisor.anim_frame = frame[advisor.anim_frame].next;
             f = &frame[advisor.anim_frame];

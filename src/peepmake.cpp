@@ -22,7 +22,6 @@ extern PeepPalette variations[];
 s8 nth_active_player(int nth);
 void sort_peep_bids(PeepBid *bids);
 void nav_init(Thing *person);
-
 }
 
 u8 create_an_illness(void);

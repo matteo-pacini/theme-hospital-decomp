@@ -61,7 +61,6 @@ u8 computer_buy_land(u8 owner);
 extern "C" {
 
 extern char **computer_names;
-
 }
 
 // Single player: fills the free hospital slots (allhosps.player_type 0) with computer
@@ -337,13 +336,13 @@ void computer_decision(u8 owner)
     }
 }
 
-#define ADVANCE_TIME()                                         \
-    hours += step;                                             \
-    if (hours > 30) {                                          \
-        hours = 0;                                             \
-        month++;                                               \
-        month = month % 12;                                    \
-        bucket = &comp_buckets[owner][month];                  \
+#define ADVANCE_TIME()                                                                                                 \
+    hours += step;                                                                                                     \
+    if (hours > 30) {                                                                                                  \
+        hours = 0;                                                                                                     \
+        month++;                                                                                                       \
+        month = month % 12;                                                                                            \
+        bucket = &comp_buckets[owner][month];                                                                          \
     }
 
 // Simulates patient's whole visit to computer player owner's hospital at once:
@@ -378,8 +377,9 @@ void process_computer_peep(Thing *patient, u8 owner)
         busy = 1;
     }
     if (hosp->patient_load > 5) {
-        chance = 100 - hosp->patient_load / ((hosp->rooms_built + 1) * 10) - hosp->patient_load / ((hosp->staff_count + 1) * 10)
-            - hosp->patient_load / ((listhead[owner].objects[OBJ_BENCH] + 1) * 10);
+        chance = 100 - hosp->patient_load / ((hosp->rooms_built + 1) * 10) -
+                 hosp->patient_load / ((hosp->staff_count + 1) * 10) -
+                 hosp->patient_load / ((listhead[owner].objects[OBJ_BENCH] + 1) * 10);
         if (chance < 0) {
             chance = 0;
         } else if (chance > 100) {
@@ -467,7 +467,8 @@ void process_computer_peep(Thing *patient, u8 owner)
     switch (result) {
     case 1:
         if (allhosps[owner].rooms[illness].cure_available == 1) {
-            if (expertise[illness].research_type == 1 && old_normal_rand(0, 99) >= hosp->rooms[illness].drug_effectiveness) {
+            if (expertise[illness].research_type == 1 &&
+                old_normal_rand(0, 99) >= hosp->rooms[illness].drug_effectiveness) {
                 bucket->deaths++;
                 reputation_affected(illness, REP_DIED, month % 12, owner, 0);
             } else {
@@ -538,32 +539,32 @@ u8 computer_employ(u8 type, u16 skills, u8 owner)
         if (candidate->type == THING_STAFF && candidate->state == SS_APPLICANT) {
             if ((u16)(candidate - thing) != gamevar.held_staff) {
                 if (type == candidate->subtype) {
-            ok = 1;
-            if (skills) {
-                for (i = 0; i < 9; i++) {
-                    if (skills & (1 << i)) {
-                        if ((candidate->skills & (1 << i)) == 0) {
-                            ok = 0;
-                            break;
+                    ok = 1;
+                    if (skills) {
+                        for (i = 0; i < 9; i++) {
+                            if (skills & (1 << i)) {
+                                if ((candidate->skills & (1 << i)) == 0) {
+                                    ok = 0;
+                                    break;
+                                }
+                            }
                         }
                     }
-                }
-            }
-            if (ok) {
-                if (allhosps[owner].balance >= candidate->salary * 12 / 10 && allhosps[owner].balance > 0) {
-                    hosp = &allhosps[owner];
-                    inc_staff_stats(candidate, owner);
-                    hosp->balance -= candidate->salary * 12 / 10;
-                    hosp->wage_bill += candidate->salary;
-                    hosp->staff_ability_sum[candidate->subtype] += candidate->ability;
-                    candidate->owner = owner;
-                    set_expertise_staff(candidate);
-                    insert_skill(candidate->skills, owner);
-                    remove_staff_in_struct(candidate);
-                    return 1;
-                }
-                return 0;
-            }
+                    if (ok) {
+                        if (allhosps[owner].balance >= candidate->salary * 12 / 10 && allhosps[owner].balance > 0) {
+                            hosp = &allhosps[owner];
+                            inc_staff_stats(candidate, owner);
+                            hosp->balance -= candidate->salary * 12 / 10;
+                            hosp->wage_bill += candidate->salary;
+                            hosp->staff_ability_sum[candidate->subtype] += candidate->ability;
+                            candidate->owner = owner;
+                            set_expertise_staff(candidate);
+                            insert_skill(candidate->skills, owner);
+                            remove_staff_in_struct(candidate);
+                            return 1;
+                        }
+                        return 0;
+                    }
                 }
             }
         }

@@ -33,8 +33,8 @@ s8 compute_cell_precedence(const s8 row, Thing *t);
 s8 check_obscuring_column(const s8 row, s8 x, s8 y);
 s8 record_covering_cell(const s8 row, const s16 pos);
 void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const s32 h);
-void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, const s32 cell, const s32 wx, const s32 wy,
-             const s32 cx0, const s32 cy0, const s32 cx1, const s32 cy1);
+void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, const s32 cell, const s32 wx,
+             const s32 wy, const s32 cx0, const s32 cy0, const s32 cx1, const s32 cy1);
 void animate_windows(void);
 void move_windows(void);
 void draw_overdrawn_blueprints(void);
@@ -45,9 +45,11 @@ void draw_emergency(void);
 void draw_cell_no(s32 cell, u8 colour);
 void set_map_cur_and_mcur_x_and_y(void);
 void refresh_wscreen(void);
-void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1, const s32 y1, const s16 dx, const s16 dy);
+void copy_bscreen_window_to_wscreen_mk1(const s32 x0, const s32 y0, const s32 x1, const s32 y1, const s16 dx,
+                                        const s16 dy);
 void draw_window_not_using_bscreen(const u8 win);
-void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1, s32 ny1);
+void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1,
+                                                           s32 ny1);
 void remove_old_window_image_from_wscreen(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1, s32 ny1);
 void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1);
 void draw_boundry(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1);
@@ -147,7 +149,10 @@ void draw_other_windows(void)
 // FUNCTION: 0x000a6cf0
 void draw_window_using_bscreen(u8 win)
 {
-    if ((((window.scrolled[win] == 0 && window.zone_changed[win] == 0) && window.prev_blank[win] == window.blank[win]) && window.blank[win] == 0) && !othervar.full_redraw) {
+    if ((((window.scrolled[win] == 0 && window.zone_changed[win] == 0) &&
+          window.prev_blank[win] == window.blank[win]) &&
+         window.blank[win] == 0) &&
+        !othervar.full_redraw) {
         refresh_wscreen();
     } else {
         s32 x;
@@ -166,20 +171,22 @@ void draw_window_using_bscreen(u8 win)
         refresh.scroll_x = 0;
         refresh.scroll_y = 0;
         draw_all_mk7_no_sprites_bscreen(0, 0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
-        find_common_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win],
-                           window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+        find_common_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win],
+                           window.prev_zone_y1[win], window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
         if (info.clip_empty == 0)
             set_all_refresh_zones_in_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, 1);
         find_common_window(window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win],
                            window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
         if (info.clip_empty == 0)
             set_all_refresh_zones_in_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, 1);
-        remove_old_window_image_from_wscreen(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win],
-                                             window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+        remove_old_window_image_from_wscreen(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win],
+                                             window.prev_zone_y1[win], window.zone_x[win], window.zone_y[win],
+                                             window.zone_x1[win], window.zone_y1[win]);
         if (empty == 0)
             copy_bscreen_window_to_wscreen_mk1(x, y, w, h, refresh.scroll_x, refresh.scroll_y);
     }
-    draw_all_sprites_on_wscreen_selectively_using_pix_buffer(0, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    draw_all_sprites_on_wscreen_selectively_using_pix_buffer(0, window.clip_x0, window.clip_y0, window.clip_x1,
+                                                             window.clip_y1);
     othervar.full_redraw = 0;
     window.prev_scroll_x[win] = window.scroll_x[win];
     window.prev_scroll_y[win] = window.scroll_y[win];
@@ -198,9 +205,11 @@ void draw_window_using_bscreen(u8 win)
 void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win)
 {
     if (window.zone_changed[win] == 1) {
-        remove_old_window_image_from_wscreen_replacing_detail(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win],
-                                                              window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
-        set_all_refresh_zones_in_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win], 2);
+        remove_old_window_image_from_wscreen_replacing_detail(
+            window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win],
+            window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+        set_all_refresh_zones_in_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win],
+                                        window.prev_zone_y1[win], 2);
     }
 }
 
@@ -210,9 +219,11 @@ void remove_moved_windows_not_using_bscreen_from_wscreen(u8 win)
 // FUNCTION: 0x000a71bc
 void draw_window_not_using_bscreen(const u8 win)
 {
-    set_all_refresh_zones_in_window(window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win], 2);
+    set_all_refresh_zones_in_window(window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win],
+                                    2);
     if (window.zone_changed[win] == 1)
-        set_all_refresh_zones_in_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win], window.prev_zone_y1[win], 3);
+        set_all_refresh_zones_in_window(window.prev_zone_x[win], window.prev_zone_y[win], window.prev_zone_x1[win],
+                                        window.prev_zone_y1[win], 3);
     if (window.blank[win] == 0)
         draw_all_mk7_selective_sprites_wscreen(win, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
     draw_boundry(win, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
@@ -230,7 +241,8 @@ void draw_window_not_using_bscreen(const u8 win)
 // that the new zone nx0,ny0 to nx1,ny1 does not cover, then copies back the
 // main view under them.
 // FUNCTION: 0x000a73c0
-void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1, s32 ny1)
+void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x1, s32 y1, s32 nx0, s32 ny0, s32 nx1,
+                                                           s32 ny1)
 {
     u8 colour;
 
@@ -250,19 +262,23 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
         if (x0 < nx0) {
             LbDrawBox(x0, y0, nx0 - x0, y1 - y0, colour);
             if (window.blank[window.bscreen_window] == 0) {
-                find_common_window(x0, y0, nx0, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
-                                   window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
+                find_common_window(x0, y0, nx0, y1, window.zone_x[window.bscreen_window],
+                                   window.zone_y[window.bscreen_window], window.zone_x1[window.bscreen_window],
+                                   window.zone_y1[window.bscreen_window]);
                 if (info.clip_empty == 0)
-                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, refresh.scroll_x, refresh.scroll_y);
+                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1,
+                                                       refresh.scroll_x, refresh.scroll_y);
             }
         }
         if (x1 > nx1) {
             LbDrawBox(nx1, y0, x1 - nx1, y1 - y0, colour);
             if (window.blank[window.bscreen_window] == 0) {
-                find_common_window(nx1, y0, x1, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
-                                   window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
+                find_common_window(nx1, y0, x1, y1, window.zone_x[window.bscreen_window],
+                                   window.zone_y[window.bscreen_window], window.zone_x1[window.bscreen_window],
+                                   window.zone_y1[window.bscreen_window]);
                 if (info.clip_empty == 0)
-                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, refresh.scroll_x, refresh.scroll_y);
+                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1,
+                                                       refresh.scroll_x, refresh.scroll_y);
             }
         }
     }
@@ -270,19 +286,23 @@ void remove_old_window_image_from_wscreen_replacing_detail(s32 x0, s32 y0, s32 x
         if (y0 < ny0) {
             LbDrawBox(x0, y0, x1 - x0, ny0 - y0, colour);
             if (window.blank[window.bscreen_window] == 0) {
-                find_common_window(x0, y0, x1, ny0, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
-                                   window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
+                find_common_window(x0, y0, x1, ny0, window.zone_x[window.bscreen_window],
+                                   window.zone_y[window.bscreen_window], window.zone_x1[window.bscreen_window],
+                                   window.zone_y1[window.bscreen_window]);
                 if (info.clip_empty == 0)
-                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, refresh.scroll_x, refresh.scroll_y);
+                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1,
+                                                       refresh.scroll_x, refresh.scroll_y);
             }
         }
         if (y1 > ny1) {
             LbDrawBox(x0, ny1, x1 - x0, y1 - ny1, colour);
             if (window.blank[window.bscreen_window] == 0) {
-                find_common_window(x0, ny1, x1, y1, window.zone_x[window.bscreen_window], window.zone_y[window.bscreen_window],
-                                   window.zone_x1[window.bscreen_window], window.zone_y1[window.bscreen_window]);
+                find_common_window(x0, ny1, x1, y1, window.zone_x[window.bscreen_window],
+                                   window.zone_y[window.bscreen_window], window.zone_x1[window.bscreen_window],
+                                   window.zone_y1[window.bscreen_window]);
                 if (info.clip_empty == 0)
-                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, refresh.scroll_x, refresh.scroll_y);
+                    copy_bscreen_window_to_wscreen_mk1(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1,
+                                                       refresh.scroll_x, refresh.scroll_y);
             }
         }
     }
@@ -456,8 +476,8 @@ void setup_stats_for_window_scan(const u8 win, s32 x, const s32 y, s32 w, const 
 // only the visible parts show. wx,wy offset the redraw area. Flags the area
 // for redraw.
 // FUNCTION: 0x000a7df0
-void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, const s32 cell, const s32 wx, const s32 wy,
-             const s32 cx0, const s32 cy0, const s32 cx1, const s32 cy1)
+void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, const s32 cell, const s32 wx,
+             const s32 wy, const s32 cx0, const s32 cy0, const s32 cx1, const s32 cy1)
 {
     Map *m;
     s32 ox;
@@ -484,7 +504,8 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
             D_001567b0[3] += y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
             pixBuf.x = x - ox;
             pixBuf.y = y - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
-            find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0, cx1, cy1);
+            find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0,
+                               cx1, cy1);
             if (info.clip_empty == 0) {
                 bx0 = info.clip_x0;
                 by0 = info.clip_y0;
@@ -500,7 +521,8 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 z, const s32 w, c
         } else {
             LbScreenSetGraphicsWindow(cx0, cy0, cx1 - cx0, cy1 - cy0);
             do_mapwho(m, x, y - resvars.tile_height, 0, 0);
-            find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0, cx1, cy1);
+            find_common_window(D_001567b0[0] + wx, D_001567b0[1] + wy, D_001567b0[2] + wx, D_001567b0[3] + wy, cx0, cy0,
+                               cx1, cy1);
             if (info.clip_empty == 0) {
                 bx0 = info.clip_x0;
                 by0 = info.clip_y0;
@@ -533,7 +555,8 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
     s32 miny;
     s32 j;
 
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win],
+                       window.zone_y1[win]);
     if (info.clip_empty == 0) {
         x0 = info.clip_x0;
         y0 = info.clip_y0;
@@ -583,7 +606,8 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
             memset(covers, 0xff, 0x38);
             for (i = 0; i < line_len; i++) {
                 m = &map[c];
-                if ((((x >= 0 && x < 0x80) && y >= 0) && y < 0x80) && ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0))) {
+                if ((((x >= 0 && x < 0x80) && y >= 0) && y < 0x80) &&
+                    ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0))) {
                     if (m->flags & MAP_BIG_CELL) {
                         s8 prec;
 
@@ -678,7 +702,8 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
     TbSprite overlay;
 
     mp = map;
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win],
+                       window.zone_y1[win]);
     if (info.clip_empty == 0) {
         x0 = info.clip_x0;
         y0 = info.clip_y0;
@@ -818,12 +843,14 @@ void draw_window_into_pix_buffer(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, c
                 m = &mp[c];
                 if (m->wall_n)
                     LbSpriteDrawOneColour(0x5a - resvars.tile_width / 2 + x,
-                                 ay - blocks[m->wall_n].info->height + 0xb4 - resvars.tile_height * 3 / 2 + resvars.tile_height,
-                                 blocks[m->wall_n].info, 0xfe);
+                                          ay - blocks[m->wall_n].info->height + 0xb4 - resvars.tile_height * 3 / 2 +
+                                              resvars.tile_height,
+                                          blocks[m->wall_n].info, 0xfe);
                 if (m->wall_w)
                     LbSpriteDrawOneColour(0x5a - resvars.tile_width / 2 + x,
-                                 ay - blocks[m->wall_w].info->height + 0xb4 - resvars.tile_height * 3 / 2 + resvars.tile_height,
-                                 blocks[m->wall_w].info, 0xfe);
+                                          ay - blocks[m->wall_w].info->height + 0xb4 - resvars.tile_height * 3 / 2 +
+                                              resvars.tile_height,
+                                          blocks[m->wall_w].info, 0xfe);
             }
             x += resvars.tile_width;
             sx += resvars.tile_width;
@@ -858,9 +885,10 @@ void draw_boundry(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1)
     s32 right;
     s32 bottom;
 
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
-    find_common_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1,
-                       window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win],
+                       window.zone_y1[win]);
+    find_common_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, window.clip_x0, window.clip_y0,
+                       window.clip_x1, window.clip_y1);
     LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0, info.clip_y1 - info.clip_y0);
     left = 0;
     top = 0;
@@ -960,7 +988,8 @@ s8 record_covering_cell(const s8 row, const s16 pos)
     if (((idx < 0 || idx > 14) || col < 0) || col > 4)
         return -1;
     v = check_obscuring_column(row, x, y + 1);
-    if (v >= 0 || (v = check_obscuring_column(row, x + 1, y)) >= 0 || (v = check_obscuring_column(row, x + 1, y + 1)) >= 0)
+    if (v >= 0 || (v = check_obscuring_column(row, x + 1, y)) >= 0 ||
+        (v = check_obscuring_column(row, x + 1, y + 1)) >= 0)
         return v;
     covers[idx][col] = row;
     return -1;
@@ -989,7 +1018,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 
                 shape = objects[obj->subtype].shapes[obj->facing];
                 record_covering_cell(row, 0);
-                off = (s16)-(s8)shapes[shape].use_xy_depth[0] + -(s8)shapes[shape].use_xy_depth[1] * 128;
+                off = (s16) - (s8)shapes[shape].use_xy_depth[0] + -(s8)shapes[shape].use_xy_depth[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
                     pos = shapes[shape].points[k] + off;
                     v = record_covering_cell(row, pos);
@@ -1014,7 +1043,7 @@ s8 compute_cell_precedence(const s8 row, Thing *t)
 
                 shape = objects[obj->subtype].shapes[obj->facing];
                 record_covering_cell(row, 0);
-                off = (s16)-(s8)shapes[shape].use_xy_depth[0] + -(s8)shapes[shape].use_xy_depth[1] * 128;
+                off = (s16) - (s8)shapes[shape].use_xy_depth[0] + -(s8)shapes[shape].use_xy_depth[1] * 128;
                 for (k = 0; k < shapes[shape].count; k++) {
                     pos = shapes[shape].points[k] + off;
                     v = record_covering_cell(row, pos);
@@ -1098,7 +1127,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
     s32 b3;
 
     mp = map;
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win],
+                       window.zone_y1[win]);
     if (info.clip_empty != 0)
         return;
     x0 = info.clip_x0;
@@ -1292,7 +1322,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
                         D_001567b0[3] += sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
                         pixBuf.x = x - 0x5a + resvars.tile_width / 2;
                         pixBuf.y = sy - 0xb4 + resvars.tile_height * 3 / 2 - resvars.tile_height;
-                        find_common_window(D_001567b0[0] + minx, D_001567b0[1] + miny, D_001567b0[2] + minx, D_001567b0[3] + miny, x0, y0, x1, y1);
+                        find_common_window(D_001567b0[0] + minx, D_001567b0[1] + miny, D_001567b0[2] + minx,
+                                           D_001567b0[3] + miny, x0, y0, x1, y1);
                         b0 = info.clip_x0;
                         b1 = info.clip_y0;
                         b2 = info.clip_x1;
@@ -1305,7 +1336,8 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
                         RestoreFromPixBuffer();
                         LbScreenSetGraphicsWindow(x0, y0, x1 - x0, y1 - y0);
                         DrawPixBuffer(0, ppx, ppy, D_001567b0[2] - D_001567b0[0], D_001567b0[3] - D_001567b0[1]);
-                        FillBoxInPixBuffer(0xfe, ppx, ppy, D_001567b0[2] - D_001567b0[0], D_001567b0[3] - D_001567b0[1]);
+                        FillBoxInPixBuffer(0xfe, ppx, ppy, D_001567b0[2] - D_001567b0[0],
+                                           D_001567b0[3] - D_001567b0[1]);
                     }
                 }
             }
@@ -1372,7 +1404,8 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
     TbSprite overlay;
 
     mp = map;
-    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win], window.zone_y1[win]);
+    find_common_window(x0, y0, x1, y1, window.zone_x[win], window.zone_y[win], window.zone_x1[win],
+                       window.zone_y1[win]);
     if (info.clip_empty != 0)
         return;
     x0 = info.clip_x0;

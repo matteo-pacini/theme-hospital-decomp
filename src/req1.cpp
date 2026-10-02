@@ -84,8 +84,7 @@ void buy_compulsory_items(const u16 room)
     for (i = 0; i < rooms[room].compulsory_count; i++) {
         u8 obj;
 
-        obj
- = rooms[room].objects[i];
+        obj = rooms[room].objects[i];
         gamevar.buy_list.to_place[obj]++;
     }
 }
@@ -117,8 +116,8 @@ u16 room_available(u16 room)
     u16 i;
 
     for (i = 0; i < rooms[room].compulsory_count; i++) {
-        if (allhosps[player].equipment[rooms[room].objects[i]].available == 0
-            || objects[rooms[room].objects[i]].available_for_level == 0)
+        if (allhosps[player].equipment[rooms[room].objects[i]].available == 0 ||
+            objects[rooms[room].objects[i]].available_for_level == 0)
             return 0;
     }
     return 1;

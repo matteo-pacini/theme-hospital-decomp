@@ -25,7 +25,6 @@ void conv_string(char *dst, s8 *src, u8 mode);
 s32 nth_active_player(int nth);
 }
 
-
 static Sector slices[] = {
     {0x000, 0x300, 0, 0xca, 0xce, 0xc6, 0xce, 0xce, 0xaf, 0, 0, 0},
     {0x300, 0x578, 0, 0xfd, 0xdc, 0xd8, 0xdc, 0xd8, 0xaf, 0, 0, 0},
@@ -75,33 +74,43 @@ void display_peep_overview(void)
             for (i = 0; i < nplayers; i++) {
                 if (statvar.num_players > 1 && D_001609c4[i].active == 0)
                     continue;
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_ScreenBoxp[0x37 + slot].x, resvars.screen_boxes_ScreenBoxp[0x37 + slot].y,
-                                 resvars.screen_boxes_ScreenBoxp[0x37 + slot].w, resvars.screen_boxes_ScreenBoxp[0x37 + slot].h))
-                    reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x37 + slot].x + 0x13, resvars.screen_boxes_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_ScreenBoxp[0x37 + slot].x,
+                                 resvars.screen_boxes_ScreenBoxp[0x37 + slot].y,
+                                 resvars.screen_boxes_ScreenBoxp[0x37 + slot].w,
+                                 resvars.screen_boxes_ScreenBoxp[0x37 + slot].h))
+                    reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x37 + slot].x + 0x13,
+                                resvars.screen_boxes_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
                 slot++;
             }
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y, resvars.screen_boxes_ScreenBoxp[0x3c].w,
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_boxes_ScreenBoxp[0x3c].x,
+                             resvars.screen_boxes_ScreenBoxp[0x3c].y, resvars.screen_boxes_ScreenBoxp[0x3c].w,
                              resvars.screen_boxes_ScreenBoxp[0x3c].h))
-                reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y, &screen_sprites_tab_start[8]);
+                reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y,
+                            &screen_sprites_tab_start[8]);
         }
         if (lbDisplay.rleft_button) {
             slot = 0;
             for (i = 0; i < nplayers; i++) {
                 if (statvar.num_players > 1 && D_001609c4[i].active == 0)
                     continue;
-                if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x37 + slot].x, resvars.screen_boxes_ScreenBoxp[0x37 + slot].y,
-                                 resvars.screen_boxes_ScreenBoxp[0x37 + slot].w, resvars.screen_boxes_ScreenBoxp[0x37 + slot].h)) {
+                if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x37 + slot].x,
+                                 resvars.screen_boxes_ScreenBoxp[0x37 + slot].y,
+                                 resvars.screen_boxes_ScreenBoxp[0x37 + slot].w,
+                                 resvars.screen_boxes_ScreenBoxp[0x37 + slot].h)) {
                     overview.value = i;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
-                    reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x37 + slot].x + 0x13, resvars.screen_boxes_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
+                    reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x37 + slot].x + 0x13,
+                                resvars.screen_boxes_ScreenBoxp[0x37 + slot].y, &screen_sprites_tab_start[9]);
                 }
                 slot++;
             }
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y, resvars.screen_boxes_ScreenBoxp[0x3c].w,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_boxes_ScreenBoxp[0x3c].x,
+                             resvars.screen_boxes_ScreenBoxp[0x3c].y, resvars.screen_boxes_ScreenBoxp[0x3c].w,
                              resvars.screen_boxes_ScreenBoxp[0x3c].h)) {
                 overview.state = 2;
                 play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
-                reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y, &screen_sprites_tab_start[8]);
+                reqspr_draw(resvars.screen_boxes_ScreenBoxp[0x3c].x, resvars.screen_boxes_ScreenBoxp[0x3c].y,
+                            &screen_sprites_tab_start[8]);
             }
             lbDisplay.rleft_button = 0;
         }
@@ -135,7 +144,6 @@ void draw_overview_screen(void)
     s32 slot;
     s32 pct;
 
-
     nplayers = 4;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0;
@@ -167,13 +175,15 @@ void draw_overview_screen(void)
                 strcat(buf, overview_text[1]);
             else if (gbv.unhappy > pct)
                 strcat(buf, overview_text[2]);
-            reqspr_draw(resvars.screen_coords[0x6c].x + pct, resvars.screen_coords[0x6c].y, &screen_sprites_tab_start[5]);
+            reqspr_draw(resvars.screen_coords[0x6c].x + pct, resvars.screen_coords[0x6c].y,
+                        &screen_sprites_tab_start[5]);
             pct = adcounts.refreshment_sum / adcounts.patients;
             if (pct > 100)
                 pct = 100;
             if (pct < 30)
                 strcat(buf, overview_text[3]);
-            reqspr_draw(resvars.screen_coords[0x6d].x + pct, resvars.screen_coords[0x6d].y, &screen_sprites_tab_start[5]);
+            reqspr_draw(resvars.screen_coords[0x6d].x + pct, resvars.screen_coords[0x6d].y,
+                        &screen_sprites_tab_start[5]);
             pct = adcounts.warmth_sum / adcounts.patients;
             if (pct > 100)
                 pct = 100;
@@ -181,11 +191,13 @@ void draw_overview_screen(void)
                 strcat(buf, overview_text[4]);
             else if (pct < 20)
                 strcat(buf, overview_text[5]);
-            reqspr_draw(resvars.screen_coords[0x6e].x + pct, resvars.screen_coords[0x6e].y, &screen_sprites_tab_start[5]);
+            reqspr_draw(resvars.screen_coords[0x6e].x + pct, resvars.screen_coords[0x6e].y,
+                        &screen_sprites_tab_start[5]);
             reqspr_draw(0xf5, 0x12c, &screen_sprites_tab_start[7]);
             set_font_from_cache(0x24);
             lbDisplay.draw_flags = 0x20;
-            LbTextSetWindow(resvars.screen_boxes_ScreenBoxp[0x3b].x, resvars.screen_boxes_ScreenBoxp[0x3b].y, resvars.screen_boxes_ScreenBoxp[0x3b].w, resvars.screen_boxes_ScreenBoxp[0x3b].h);
+            LbTextSetWindow(resvars.screen_boxes_ScreenBoxp[0x3b].x, resvars.screen_boxes_ScreenBoxp[0x3b].y,
+                            resvars.screen_boxes_ScreenBoxp[0x3b].w, resvars.screen_boxes_ScreenBoxp[0x3b].h);
             LbTextDraw(0, 0, buf);
         }
         set_font_from_cache(0x26);
@@ -401,7 +413,6 @@ void overscr_help_win_criteria(void)
     s32 i;
     s32 count;
 
-
     idx = resvars.help_hotspots[othervar.help_hotspot].arg;
     count = 0;
     found = 0;
@@ -442,7 +453,8 @@ void overscr_help_win_criteria(void)
                 break;
             case 3:
                 if (allhosps[owner].visitors > 10)
-                    sprintf(othervar.help_msg, win_criteria_help[6], value, allhosps[owner].diagnosed * 100 / allhosps[owner].visitors);
+                    sprintf(othervar.help_msg, win_criteria_help[6], value,
+                            allhosps[owner].diagnosed * 100 / allhosps[owner].visitors);
                 else
                     sprintf(othervar.help_msg, win_criteria_help[6], value, 0);
                 break;
@@ -451,7 +463,8 @@ void overscr_help_win_criteria(void)
                 break;
             case 5:
                 if (allhosps[owner].visitors > 10)
-                    sprintf(othervar.help_msg, win_criteria_help[4], value, allhosps[owner].deaths * 100 / allhosps[owner].visitors);
+                    sprintf(othervar.help_msg, win_criteria_help[4], value,
+                            allhosps[owner].deaths * 100 / allhosps[owner].visitors);
                 else
                     sprintf(othervar.help_msg, win_criteria_help[4], value, 0);
                 break;

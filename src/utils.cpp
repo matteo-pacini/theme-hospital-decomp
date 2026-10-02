@@ -6,9 +6,8 @@ typedef char *va_list[1];
 
 #define ABS(a) ((a) < 0 ? -(a) : (a))
 
-#define PUT16BE(p, v) \
-    (*(u16 *)(p) = (v), tmp = *(u8 *)((u32)(p) + 1), \
-     *(u8 *)((u32)(p) + 1) = *(p), *(p) = tmp, (*(u16 **)&(p))++)
+#define PUT16BE(p, v)                                                                                                  \
+    (*(u16 *)(p) = (v), tmp = *(u8 *)((u32)(p) + 1), *(u8 *)((u32)(p) + 1) = *(p), *(p) = tmp, (*(u16 **)&(p))++)
 
 struct SortEntry {
     signed int key : 27;
@@ -36,10 +35,9 @@ int LbScreenLock(void);
 void strcat(char *dst, char *src);
 void LbPaletteFade(u8 *to_pal, int fade_steps, int flag);
 void LbDrawLine(int x1, int y1, int x2, int y2, u8 colour);
-
 }
 
-char fingchk2[20] = { 0xd6, 0xd4, 0xee, 0xe4, 0xc8, 0xd6, 0xd4, 0xcc };
+char fingchk2[20] = {0xd6, 0xd4, 0xee, 0xe4, 0xc8, 0xd6, 0xd4, 0xcc};
 
 // Returns a random active player in a network game (0xff if none), else 0.
 // FUNCTION: 0x000196c0
@@ -315,8 +313,8 @@ RoomInfo *get_nearest_room_info(Thing *person, u8 kind)
         }
         if (room->owner == person->owner) {
             if (room->type == kind) {
-                dist = (pos % 128 - room->door_tile % 128) * (pos % 128 - room->door_tile % 128)
-                    + (pos / 128 - room->door_tile / 128) * (pos / 128 - room->door_tile / 128);
+                dist = (pos % 128 - room->door_tile % 128) * (pos % 128 - room->door_tile % 128) +
+                       (pos / 128 - room->door_tile / 128) * (pos / 128 - room->door_tile / 128);
                 if (dist < bestDist) {
                     best = room;
                     bestDist = dist;
@@ -618,7 +616,8 @@ void set_mouse_sprite(const u8 idx)
         LbMouseChangeSpriteAndHotspot(cursors + othervar.pointer_sprite, 0, 0);
         break;
     case 2:
-        LbMouseChangeSpriteAndHotspot(cursors + othervar.pointer_sprite, cursors[idx].width / 2, cursors[idx].height / 2);
+        LbMouseChangeSpriteAndHotspot(cursors + othervar.pointer_sprite, cursors[idx].width / 2,
+                                      cursors[idx].height / 2);
         break;
     }
 }
@@ -1046,7 +1045,8 @@ void record_mappos(u8 key)
     int x;
 
     if (key < 12) {
-        find_cell_at_point(window.current_window, lbDisplay.graphics_screen_width / 2, lbDisplay.graphics_screen_height / 2);
+        find_cell_at_point(window.current_window, lbDisplay.graphics_screen_width / 2,
+                           lbDisplay.graphics_screen_height / 2);
         if (info.cell_col < 0) {
             x = 0;
         } else if (info.cell_col >= 0x80) {

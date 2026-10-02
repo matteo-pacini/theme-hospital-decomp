@@ -136,7 +136,8 @@ void create_explosion(u16 tile, u16 anim)
 
     id = 1;
     for (elevation = 0; elevation < 0x200; elevation += 0x55) {
-        for (heading = 0; heading < 0x800; heading += 0x800 / ((lbSinTable[elevation + 0x200] << 0xb >> 0x10) / 0x5f + 1)) {
+        for (heading = 0; heading < 0x800;
+             heading += 0x800 / ((lbSinTable[elevation + 0x200] << 0xb >> 0x10) / 0x5f + 1)) {
             speed = old_newrand() % 50 + 100;
             horiz_speed = speed * lbSinTable[elevation + 0x200] >> 0x10;
             dx = horiz_speed * lbSinTable[heading + 0x200] >> 0x10;

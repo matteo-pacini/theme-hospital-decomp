@@ -15,8 +15,6 @@ void disaster_peeps(u8 mode, s8 owner);
 u8 modify_machine(Thing *machine);
 
 extern "C" {
-
-
 }
 
 // Earthquake state machine (gamevar.quake_phase): at the scheduled turn
@@ -108,22 +106,22 @@ void do_earthquake(void)
     for (obj = thing + 1; obj < end_things; obj++) {
         if (obj->type == THING_OBJECT) {
             if (objects[obj->subtype].overlay_anim) {
-            if (statvar.num_players > 1) {
-                room = &room_info[obj->room_id];
-                if (room > room_info && (room->state == RS_EDITED || room->being_edited)) {
-                    continue;
+                if (statvar.num_players > 1) {
+                    room = &room_info[obj->room_id];
+                    if (room > room_info && (room->state == RS_EDITED || room->being_edited)) {
+                        continue;
+                    }
+                } else {
+                    if (obj->room_id && obj->room_id == allhosps[obj->owner].edited_room) {
+                        continue;
+                    }
                 }
-            } else {
-                if (obj->room_id && obj->room_id == allhosps[obj->owner].edited_room) {
-                    continue;
+                if (obj->state != 0x12) {
+                    obj->times_used += gamevar.quake_severity;
+                    if (obj->strength * 75 / 100 <= obj->times_used) {
+                        modify_machine(obj);
+                    }
                 }
-            }
-            if (obj->state != 0x12) {
-                obj->times_used += gamevar.quake_severity;
-                if (obj->strength * 75 / 100 <= obj->times_used) {
-                    modify_machine(obj);
-                }
-            }
             }
         }
     }

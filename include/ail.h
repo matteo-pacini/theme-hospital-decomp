@@ -21,7 +21,7 @@ typedef unsigned char U8;
 typedef struct _SAMPLE *HSAMPLE;
 typedef struct _DIG_DRIVER *HDIGDRIVER;
 
-typedef void (__pascal *AILSAMPLECB)(HSAMPLE sample);
+typedef void(__pascal *AILSAMPLECB)(HSAMPLE sample);
 
 typedef struct _SAMPLE {
     char tag[4];
@@ -130,7 +130,7 @@ typedef struct _AIL_DRIVER {
     S32 initialized;
     S32 PM_ISR;
     HTIMER server;
-    void (__cdecl *destructor)(void *descriptor);
+    void(__cdecl *destructor)(void *descriptor);
     void *descriptor;
 } AIL_DRIVER;
 
@@ -215,15 +215,13 @@ typedef struct _SEQUENCE *HSEQUENCE;
 typedef struct _WAVE_SYNTH *HWAVESYNTH;
 typedef struct _AUDIO_TYPE *HAUDIO;
 
-typedef void (__pascal *AILTIMERCB)(U32 user);
-typedef S32 (__pascal *AILPREFIXCB)(HSEQUENCE seq, S32 log, S32 data);
-typedef void (__pascal *AILTRIGGERCB)(HSEQUENCE seq, S32 log, S32 data);
-typedef void (__pascal *AILSEQUENCECB)(HSEQUENCE seq);
-typedef void (__pascal *AILBEATCB)(HMDIDRIVER mdi, HSEQUENCE seq, S32 beat,
-                                   S32 measure);
-typedef S32 (__pascal *AILEVENTCB)(HMDIDRIVER mdi, HSEQUENCE seq, S32 status,
-                                   S32 data_1, S32 data_2);
-typedef S32 (__pascal *AILTIMBRECB)(HMDIDRIVER mdi, S32 bank, S32 patch);
+typedef void(__pascal *AILTIMERCB)(U32 user);
+typedef S32(__pascal *AILPREFIXCB)(HSEQUENCE seq, S32 log, S32 data);
+typedef void(__pascal *AILTRIGGERCB)(HSEQUENCE seq, S32 log, S32 data);
+typedef void(__pascal *AILSEQUENCECB)(HSEQUENCE seq);
+typedef void(__pascal *AILBEATCB)(HMDIDRIVER mdi, HSEQUENCE seq, S32 beat, S32 measure);
+typedef S32(__pascal *AILEVENTCB)(HMDIDRIVER mdi, HSEQUENCE seq, S32 status, S32 data_1, S32 data_2);
+typedef S32(__pascal *AILTIMBRECB)(HMDIDRIVER mdi, S32 bank, S32 patch);
 
 #define NUM_CHANS 16
 #define MAX_NOTES 32
@@ -349,8 +347,7 @@ extern S32 AIL_debug;
 extern S32 AIL_sys_debug;
 extern S32 AIL_starttime;
 extern S32 AIL_debugfile;
-extern void (__pascal *AIL_sprintf)(char *dest, char const *fmt, S32 nargs,
-                                    S32 *args);
+extern void(__pascal *AIL_sprintf)(char *dest, char const *fmt, S32 nargs, S32 *args);
 
 void __pascal AIL_DEBUGOUTSTR(char const *str);
 S32 __pascal TIME_WRITE(void);
@@ -371,8 +368,7 @@ U32 __cdecl AIL_disable_interrupts(void);
 void __cdecl AIL_restore_interrupts(U32 FD_register);
 S32 __cdecl AIL_background(void);
 S32 __cdecl AIL_read_INI(AIL_INI *INI, char *filename);
-void __cdecl AIL_digital_configuration(HDIGDRIVER dig, S32 *rate, S32 *format,
-                                       char *string);
+void __cdecl AIL_digital_configuration(HDIGDRIVER dig, S32 *rate, S32 *format, char *string);
 void __cdecl AIL_sequence_position(HSEQUENCE S, S32 *beat, S32 *measure);
 S32 __cdecl AIL_set_preference(U32 number, S32 value);
 REALFAR __cdecl AIL_get_real_vect(U32 vectnum);
@@ -619,15 +615,13 @@ char strnicmp(char const *s1, char const *s2, unsigned n);
 
 /* memfile.c */
 extern void *(__pascal *AIL_mem_alloc)(U32 size);
-extern void (__pascal *AIL_mem_free)(void *ptr);
-extern int (__pascal *AIL_int386)(int intno, union REGS *in, union REGS *out);
+extern void(__pascal *AIL_mem_free)(void *ptr);
+extern int(__pascal *AIL_int386)(int intno, union REGS *in, union REGS *out);
 
 void *__cdecl AIL_mem_alloc_lock(U32 size);
 void __cdecl AIL_mem_free_lock(void *ptr);
-S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr,
-                              U32 *segment_far_ptr, U32 *selector);
-void __cdecl AIL_mem_free_DOS(void *protected_ptr, U32 segment_far_ptr,
-                              U32 selector);
+S32 __cdecl AIL_mem_alloc_DOS(U32 n_paras, void **protected_ptr, U32 *segment_far_ptr, U32 *selector);
+void __cdecl AIL_mem_free_DOS(void *protected_ptr, U32 segment_far_ptr, U32 selector);
 void *__cdecl AIL_file_read(char *filename, void *dest);
 
 #define FILE_READ_WITH_SIZE ((void *)-1)

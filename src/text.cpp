@@ -46,7 +46,6 @@ extern char **trophy_bonus_messages;
 extern char **win_criteria_help;
 extern char **net_mission_text;
 extern char **beta_demo_text_short;
-
 }
 
 // Points language string table `group` (the section number in the language

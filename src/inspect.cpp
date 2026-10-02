@@ -18,33 +18,34 @@ u16 create_inspector(u8 owner)
 
     inspector = allocate_thing(0x19);
     if (inspector != 0) {
-    Thing *obj;
-    inspector->type = THING_INSPECTOR;
-    inspector->owner = owner;
-    pos = room_info[allhosps[owner].entrances[old_newrand() & 3]].door_tile;
-    inspector->x.tile = pos % 128;
-    inspector->y.tile = pos / 128;
-    inspector->x.frac = 0x80;
-    inspector->y.frac = 0x80;
-    inspector->speed = 0x20;
-    inspector->anim_speed = 1;
-    inspector->facing = 1;
-    insert_node(inspector, inspector->x, inspector->y);
-    entry = check_frame(0x89, inspector) + inspector->facing;
-    inspector->sprite = start[entry].frame;
-    inspector->flip = start[entry].flags > 0 ? (u8)1 : (u8)0;
-    obj = &thing[listhead[owner].objects[OBJ_RECEPTION_DESK]];
-    if (obj > thing) {
-        set_destination_coords(inspector, obj->use_pos[1]);
-        inspector->state = MAYOR_GOTO;
-        inspector->goto_state = MAYOR_INSPECTS;
-        inspector->inspect_room = 0;
-    } else {
-        set_destination_coords(inspector, room_info[allhosps[inspector->owner].entrances[old_newrand() & 3]].door_tile);
-        inspector->state = MAYOR_GOTO;
-        inspector->goto_state = MAYOR_GONE;
-    }
-    return inspector - thing;
+        Thing *obj;
+        inspector->type = THING_INSPECTOR;
+        inspector->owner = owner;
+        pos = room_info[allhosps[owner].entrances[old_newrand() & 3]].door_tile;
+        inspector->x.tile = pos % 128;
+        inspector->y.tile = pos / 128;
+        inspector->x.frac = 0x80;
+        inspector->y.frac = 0x80;
+        inspector->speed = 0x20;
+        inspector->anim_speed = 1;
+        inspector->facing = 1;
+        insert_node(inspector, inspector->x, inspector->y);
+        entry = check_frame(0x89, inspector) + inspector->facing;
+        inspector->sprite = start[entry].frame;
+        inspector->flip = start[entry].flags > 0 ? (u8)1 : (u8)0;
+        obj = &thing[listhead[owner].objects[OBJ_RECEPTION_DESK]];
+        if (obj > thing) {
+            set_destination_coords(inspector, obj->use_pos[1]);
+            inspector->state = MAYOR_GOTO;
+            inspector->goto_state = MAYOR_INSPECTS;
+            inspector->inspect_room = 0;
+        } else {
+            set_destination_coords(inspector,
+                                   room_info[allhosps[inspector->owner].entrances[old_newrand() & 3]].door_tile);
+            inspector->state = MAYOR_GOTO;
+            inspector->goto_state = MAYOR_GONE;
+        }
+        return inspector - thing;
     }
     return 0;
 }
@@ -56,7 +57,8 @@ void generate_inspector(u8 owner)
 {
     if (allhosps[owner].inspection[1] != 0)
         return;
-    if (allhosps[owner].inspector = create_inspector(owner)) {}
+    if (allhosps[owner].inspector = create_inspector(owner)) {
+    }
     lib_strcpy(debug.msg_text, "Inspector Generated");
     debug.msg_timer = 0xc8;
     allhosps[owner].inspection[1] = 3;

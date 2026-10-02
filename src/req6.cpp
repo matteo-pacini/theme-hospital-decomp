@@ -114,7 +114,8 @@ extern "C" void req6_overdraw(Requester *req)
 
     unused = resvars.requester_sprites[0x2e] + 0xd;
     compute_help_text(0, 0, 0x14);
-    LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0, window.clip_y1 - window.clip_y0);
+    LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
+                              window.clip_y1 - window.clip_y0);
     ox = req->x - lbDisplay.graphics_window_x;
     oy = req->y - lbDisplay.graphics_window_y;
     if (lbDisplay.mleft_button)
@@ -124,22 +125,28 @@ extern "C" void req6_overdraw(Requester *req)
     set_font_from_cache(2);
     lbDisplay.draw_flags = 0;
     if (othervar.midi_playing)
-        LbTextDraw(ox + resvars.coords_IconScreenp->v[0xfe], oy + resvars.coords_IconScreenp->v[0xff], midi_files[othervar.midi_track].title);
+        LbTextDraw(ox + resvars.coords_IconScreenp->v[0xfe], oy + resvars.coords_IconScreenp->v[0xff],
+                   midi_files[othervar.midi_track].title);
     if (othervar.loop_track)
         reqspr_draw(ox + resvars.coords_IconScreenp->v[0x140], oy + resvars.coords_IconScreenp->v[0x141], BSPR(0x1f));
     if (othervar.music_playing)
         reqspr_draw(ox + resvars.coords_IconScreenp->v[0x142], oy + resvars.coords_IconScreenp->v[0x143], BSPR(0x27));
     i = 0;
-    for (y = resvars.coords_IconScreenp->v[0x101]; y < BSPR(0x21)->height * statvar.midi_count + resvars.coords_IconScreenp->v[0x101]; y += BSPR(0x21)->height, i++) {
+    for (y = resvars.coords_IconScreenp->v[0x101];
+         y < BSPR(0x21)->height * statvar.midi_count + resvars.coords_IconScreenp->v[0x101];
+         y += BSPR(0x21)->height, i++) {
         sel = 0xff;
         x = resvars.coords_IconScreenp->v[0x100];
         reqspr_draw(x + ox, y + oy, BSPR(0x20));
         set_all_refresh_zones_in_window(x + ox, y + oy, x + ox + BSPR(0x20)->width, y + oy + BSPR(0x20)->height, 3);
         for (; x < BSPR(0x21)->width * 7; x += BSPR(0x21)->width) {
             reqspr_draw(x + ox + BSPR(0x20)->width, y + oy, BSPR(0x21));
-            set_all_refresh_zones_in_window(x + ox + BSPR(0x20)->width, y + oy, x + ox + BSPR(0x20)->width + BSPR(0x21)->width, y + oy + BSPR(0x20)->height + BSPR(0x21)->height, 3);
+            set_all_refresh_zones_in_window(x + ox + BSPR(0x20)->width, y + oy,
+                                            x + ox + BSPR(0x20)->width + BSPR(0x21)->width,
+                                            y + oy + BSPR(0x20)->height + BSPR(0x21)->height, 3);
             if (!lbDisplay.mleft_button && crequester.arg) {
-                if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, ox + x + BSPR(0x20)->width, oy + y, BSPR(0x21)->width, BSPR(0x21)->height)) {
+                if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, ox + x + BSPR(0x20)->width, oy + y,
+                                 BSPR(0x21)->width, BSPR(0x21)->height)) {
                     if (i != othervar.midi_track) {
                         othervar.loop_track = 0;
                         othervar.music_playing = 1;
@@ -159,9 +166,12 @@ extern "C" void req6_overdraw(Requester *req)
         } else {
             reqspr_draw(x + ox + BSPR(0x20)->width, y + oy, BSPR(0x22));
         }
-        set_all_refresh_zones_in_window(x + ox + BSPR(0x20)->width, y + oy, x + ox + BSPR(0x20)->width + BSPR(0x22)->width, y + oy + BSPR(0x20)->height + BSPR(0x22)->height, 3);
+        set_all_refresh_zones_in_window(x + ox + BSPR(0x20)->width, y + oy,
+                                        x + ox + BSPR(0x20)->width + BSPR(0x22)->width,
+                                        y + oy + BSPR(0x20)->height + BSPR(0x22)->height, 3);
         if (!lbDisplay.mleft_button && crequester.arg) {
-            if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, ox + x + BSPR(0x20)->width, oy + y, BSPR(0x22)->width, BSPR(0x22)->height)) {
+            if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, ox + x + BSPR(0x20)->width, oy + y,
+                             BSPR(0x22)->width, BSPR(0x22)->height)) {
                 song = GetSongHandle();
                 myplayer.track_enabled[i] = !myplayer.track_enabled[i] ? (u8)1 : (u8)0;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
@@ -176,7 +186,8 @@ extern "C" void req6_overdraw(Requester *req)
             set_font_from_cache(2);
         else
             set_font_from_cache(1);
-        LbTextDraw(ox + resvars.coords_IconScreenp->v[0x104], y - BSPR(0x21)->height + oy + resvars.coords_IconScreenp->v[0x105], midi_files[i].title);
+        LbTextDraw(ox + resvars.coords_IconScreenp->v[0x104],
+                   y - BSPR(0x21)->height + oy + resvars.coords_IconScreenp->v[0x105], midi_files[i].title);
     }
     x = resvars.coords_IconScreenp->v[0x102];
     y -= resvars.coords_IconScreenp->v[0x103];
@@ -184,10 +195,13 @@ extern "C" void req6_overdraw(Requester *req)
     set_all_refresh_zones_in_window(x + ox, y + oy, x + ox + BSPR(0x24)->width, y + oy + BSPR(0x24)->height, 3);
     for (; x < BSPR(0x25)->width * 7; x += BSPR(0x25)->width) {
         reqspr_draw(x + ox + BSPR(0x24)->width, y + oy, BSPR(0x25));
-        set_all_refresh_zones_in_window(x + ox + BSPR(0x24)->width, y + oy, x + ox + BSPR(0x24)->width + BSPR(0x25)->width, y + oy + BSPR(0x24)->height + BSPR(0x25)->height, 3);
+        set_all_refresh_zones_in_window(x + ox + BSPR(0x24)->width, y + oy,
+                                        x + ox + BSPR(0x24)->width + BSPR(0x25)->width,
+                                        y + oy + BSPR(0x24)->height + BSPR(0x25)->height, 3);
     }
     reqspr_draw(x + ox + BSPR(0x24)->width, y + oy, BSPR(0x26));
-    set_all_refresh_zones_in_window(x + ox + BSPR(0x24)->width, y + oy, x + ox + BSPR(0x24)->width + BSPR(0x26)->width, y + oy + BSPR(0x24)->height + BSPR(0x26)->height, 3);
+    set_all_refresh_zones_in_window(x + ox + BSPR(0x24)->width, y + oy, x + ox + BSPR(0x24)->width + BSPR(0x26)->width,
+                                    y + oy + BSPR(0x24)->height + BSPR(0x26)->height, 3);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0);

@@ -108,7 +108,8 @@ void DrawPixBuffer(u8 flags, s32 x, s32 y, s32 w, s32 h)
         sx = x + pixBuf.x;
         sy = y + pixBuf.y;
         src = x + (pixBuf.width * y + pixBuf.data);
-        dst = sx + ((lbDisplay.graphics_window_y + sy) * lbDisplay.graphics_screen_width + lbDisplay.wscreen + lbDisplay.graphics_window_x);
+        dst = sx + ((lbDisplay.graphics_window_y + sy) * lbDisplay.graphics_screen_width + lbDisplay.wscreen +
+                    lbDisplay.graphics_window_x);
         if (sx < 0) {
             cols = sx + w;
             if (cols < 0)

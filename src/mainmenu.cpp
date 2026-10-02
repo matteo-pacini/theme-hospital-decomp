@@ -128,7 +128,8 @@ void draw_main_menu(void)
                 load_game_files();
                 clear_loading_screen(palette);
                 D_00156910 = 1;
-                set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+                set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height,
+                                                3);
                 draw_it();
                 othervar.pending_palette = palette;
                 break;
@@ -277,7 +278,8 @@ void draw_main_menu(void)
                         hosp_fade_palette(othervar.fade_palette, 10, Lb_PALETTE_FADE_CLOSED);
                 }
             }
-            if (lbDisplay.mleft_button + lbDisplay.mright_button + lbInkey + lbDisplay.left_button + lbDisplay.right_button) {
+            if (lbDisplay.mleft_button + lbDisplay.mright_button + lbInkey + lbDisplay.left_button +
+                lbDisplay.right_button) {
                 lbDisplay.left_button = lbDisplay.rleft_button = lbDisplay.right_button = lbInkey = 0;
                 done = 1;
             }
@@ -514,8 +516,8 @@ void tri_test(void)
         } else {
             help_hotspot_detected(4, 1, 0, 0);
         }
-    } else if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, lbDisplay.mmouse_x, lbDisplay.mmouse_y)
-               || check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
+    } else if (check_tri(0x30, 0x77, 0x30, 0x96, 0x74, 0x79, lbDisplay.mmouse_x, lbDisplay.mmouse_y) ||
+               check_tri(0x74, 0x79, 0x30, 0x96, 0x74, 0x96, lbDisplay.mmouse_x, lbDisplay.mmouse_y)) {
         if (mainmenu.state != MMS_HOVER_QUIT) {
             switch (mainmenu.state) {
             case MMS_HOVER_NEW_GAME:
@@ -571,9 +573,9 @@ u8 check_tri(u16 x1, u16 y1, u16 x2, u16 y2, u16 x3, u16 y3, u16 x, u16 y)
 {
     s32 outside;
 
-    outside = compare_products(x2 - x1, y2 - y1, x - x1, y - y1) > 0
-              || compare_products(x3 - x2, y3 - y2, x - x2, y - y2) > 0
-              || compare_products(x1 - x3, y1 - y3, x - x3, y - y3) > 0;
+    outside = compare_products(x2 - x1, y2 - y1, x - x1, y - y1) > 0 ||
+              compare_products(x3 - x2, y3 - y2, x - x2, y - y2) > 0 ||
+              compare_products(x1 - x3, y1 - y3, x - x3, y - y3) > 0;
     return outside == 0;
 }
 

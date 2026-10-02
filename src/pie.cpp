@@ -28,8 +28,8 @@ s32 point_in_triangle(s32 px, s32 py, s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s3
 {
     s32 outside;
 
-    outside = (x1 - x0) * (py - y0) > (y1 - y0) * (px - x0) || (x2 - x1) * (py - y1) > (y2 - y1) * (px - x1)
-              || (x0 - x2) * (py - y2) > (y0 - y2) * (px - x2);
+    outside = (x1 - x0) * (py - y0) > (y1 - y0) * (px - x0) || (x2 - x1) * (py - y1) > (y2 - y1) * (px - x1) ||
+              (x0 - x2) * (py - y2) > (y0 - y2) * (px - x2);
     return !outside;
 }
 
@@ -40,8 +40,8 @@ s32 point_in_quad(s32 px, s32 py, s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2
 {
     s32 outside;
 
-    outside = (x1 - x0) * (py - y0) > (y1 - y0) * (px - x0) || (x2 - x1) * (py - y1) > (y2 - y1) * (px - x1)
-              || (x3 - x2) * (py - y2) > (y3 - y2) * (px - x2) || (x0 - x3) * (py - y3) > (y0 - y3) * (px - x3);
+    outside = (x1 - x0) * (py - y0) > (y1 - y0) * (px - x0) || (x2 - x1) * (py - y1) > (y2 - y1) * (px - x1) ||
+              (x3 - x2) * (py - y2) > (y3 - y2) * (px - x2) || (x0 - x3) * (py - y3) > (y0 - y3) * (px - x3);
     return !outside;
 }
 
@@ -56,10 +56,10 @@ s32 mouse_in_slice(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 h)
 
     mx = pie_mouse_x;
     my = pie_mouse_y;
-    return point_in_triangle(mx, my, x0, y0, x1, y1, x2, y2)
-           || point_in_quad(mx, my, x0, y0, x0, y0 + h, x1, y1 + h, x1, y1)
-           || point_in_quad(mx, my, x0, y0, x2, y2, x2, y2 + h, x0, y0 + h)
-           || point_in_quad(mx, my, x1, y1, x1, y1 + h, x2, y2 + h, x2, y2);
+    return point_in_triangle(mx, my, x0, y0, x1, y1, x2, y2) ||
+           point_in_quad(mx, my, x0, y0, x0, y0 + h, x1, y1 + h, x1, y1) ||
+           point_in_quad(mx, my, x0, y0, x2, y2, x2, y2 + h, x0, y0 + h) ||
+           point_in_quad(mx, my, x1, y1, x1, y1 + h, x2, y2 + h, x2, y2);
 }
 
 // Draws sector i of a pie centred on (cx, cy) with radii rx, ry and
@@ -212,7 +212,8 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sector
         if (span < 0)
             span += 0x800;
         if (span > 0x400) {
-            if (lbSinTable[(sectors[i].start & 0x7ff) + 0x200] < 0 && lbSinTable[(sectors[i].end & 0x7ff) + 0x200] > 0) {
+            if (lbSinTable[(sectors[i].start & 0x7ff) + 0x200] < 0 &&
+                lbSinTable[(sectors[i].end & 0x7ff) + 0x200] > 0) {
             } else {
                 Sector *sec;
                 s32 mid;
@@ -229,7 +230,8 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sector
                 split = i;
                 lib_memcpy(&copy, &sectors[split], 0x21);
                 sectors[split].radius = 0;
-                start_half_first = lbSinTable[(sectors[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
+                start_half_first =
+                    lbSinTable[(sectors[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
                 if (start_half_first) {
                     sectors[i].end = mid;
                     side_off = 2;

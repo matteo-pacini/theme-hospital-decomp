@@ -169,8 +169,8 @@ void doctor_carries_out_examination(Thing *doctor)
         }
         D_001567b0[4] = D_001567b0[5] = 999;
         full_draw_frame(patient, patient->sprite, 0, 0, 0, 1, patient->flip);
-        obj->split_height = -((TbSprite *)(element[elelist[frame[patient->sprite].list]].sprite + (u32)sprite))->height
-                      - D_001567b0[5];
+        obj->split_height =
+            -((TbSprite *)(element[elelist[frame[patient->sprite].list]].sprite + (u32)sprite))->height - D_001567b0[5];
         break;
     case 241:
         if (patient->state != PS_SLAVE_READY)
@@ -182,16 +182,14 @@ void doctor_carries_out_examination(Thing *doctor)
         process_staff_complex(doctor);
         doctor->substate = 230;
         break;
-    case 110:
-        {
-            u32 complexes[] = { 0x456, 0x460, 0x46a };
+    case 110: {
+        u32 complexes[] = {0x456, 0x460, 0x46a};
 
-            doctor->substate = 111;
-            doctor->next_state = SS_DOCTOR_EXAMINES;
-            set_complex(doctor, complexes[old_newrand() % 3], 0);
-            process_staff_complex(doctor);
-        }
-        break;
+        doctor->substate = 111;
+        doctor->next_state = SS_DOCTOR_EXAMINES;
+        set_complex(doctor, complexes[old_newrand() % 3], 0);
+        process_staff_complex(doctor);
+    } break;
     case 111:
         doctor->substate = 230;
         doctor->next_state = SS_DOCTOR_EXAMINES;
@@ -204,36 +202,32 @@ void doctor_carries_out_examination(Thing *doctor)
         process_staff_complex(doctor);
         doctor->substate = 71;
         break;
-    case 71:
-        {
-            Thing *assistant;
+    case 71: {
+        Thing *assistant;
 
-            assistant = &thing[doctor->work_target];
-            if (assistant->state != SS_ASSISTANT_READY)
-                break;
-            assistant->next_state = SS_ASSISTANT_READY;
-            set_complex(assistant, 0x33e, 0);
-            process_staff_complex(assistant);
-            doctor->substate = 72;
-        }
-        break;
-    case 72:
-        {
-            Thing *assistant;
+        assistant = &thing[doctor->work_target];
+        if (assistant->state != SS_ASSISTANT_READY)
+            break;
+        assistant->next_state = SS_ASSISTANT_READY;
+        set_complex(assistant, 0x33e, 0);
+        process_staff_complex(assistant);
+        doctor->substate = 72;
+    } break;
+    case 72: {
+        Thing *assistant;
 
-            assistant = &thing[doctor->work_target];
-            if (assistant->state != SS_ASSISTANT_READY)
-                break;
-            assistant->next_state = SS_DOCTOR_IN_MACHINE_ROOM;
-            set_complex(assistant, 0x352, 0);
-            process_staff_complex(assistant);
-            doctor->next_state = SS_DOCTOR_EXAMINES;
-            set_complex(doctor, 0x348, 0);
-            process_staff_complex(doctor);
-            doctor->substate = 73;
-            doctor->work_target = 0;
-        }
-        break;
+        assistant = &thing[doctor->work_target];
+        if (assistant->state != SS_ASSISTANT_READY)
+            break;
+        assistant->next_state = SS_DOCTOR_IN_MACHINE_ROOM;
+        set_complex(assistant, 0x352, 0);
+        process_staff_complex(assistant);
+        doctor->next_state = SS_DOCTOR_EXAMINES;
+        set_complex(doctor, 0x348, 0);
+        process_staff_complex(doctor);
+        doctor->substate = 73;
+        doctor->work_target = 0;
+    } break;
     case 73:
         if (treatment_machine_used((u16)patient->treatment, patient->x.tile + (patient->y.tile << 7)))
             break;
@@ -275,15 +269,14 @@ void doctor_carries_out_examination(Thing *doctor)
         administer_drugs(doctor, patient);
         doctor->room->staff_free = 1;
         break;
-    case 190:
-        {
-            u16 entry;
+    case 190: {
+        u16 entry;
 
-            doctor->substate++;
-            entry = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
-            doctor->sprite = start[entry].frame;
-            doctor->flip = start[entry].flags > 0;
-        }
+        doctor->substate++;
+        entry = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
+        doctor->sprite = start[entry].frame;
+        doctor->flip = start[entry].flags > 0;
+    }
         patient->state = PS_FILLS;
         patient->object = doctor->object;
         obj = &thing[patient->object];
@@ -319,15 +312,14 @@ void doctor_carries_out_examination(Thing *doctor)
         doctor->substate = 181;
         patient->state = PS_MERGED;
         break;
-    case 200:
-        {
-            u16 entry;
+    case 200: {
+        u16 entry;
 
-            doctor->substate++;
-            entry = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
-            doctor->sprite = start[entry].frame;
-            doctor->flip = start[entry].flags > 0;
-        }
+        doctor->substate++;
+        entry = check_frame(staff_anim_starts[doctor->subtype].anims[15], doctor) + doctor->facing;
+        doctor->sprite = start[entry].frame;
+        doctor->flip = start[entry].flags > 0;
+    }
         patient->state = PS_ENERGISES;
         patient->object = doctor->object;
         obj = &thing[patient->object];

@@ -94,11 +94,13 @@ void handyman_works(Thing *handyman)
     case 0:
         if (shall_i_resign(handyman))
             break;
-        if (((handyman->orders & ORD_REST) || handyman->tiredness > allhosps[handyman->owner].rest_threshold) && take_a_break(handyman))
+        if (((handyman->orders & ORD_REST) || handyman->tiredness > allhosps[handyman->owner].rest_threshold) &&
+            take_a_break(handyman))
             break;
         room = handyman->room;
         if (room) {
-            for (machine = &thing[handyman->room->first_object]; machine > thing; machine = &thing[machine->room_obj_next]) {
+            for (machine = &thing[handyman->room->first_object]; machine > thing;
+                 machine = &thing[machine->room_obj_next]) {
                 if (machine->type == THING_OBJECT && objects[machine->subtype].is_machine) {
                     if (machine->times_used > 0) {
                         thingpage_request(&allhosps[machine->owner].repair_pager, machine - thing, 100);
@@ -144,7 +146,8 @@ void handyman_works(Thing *handyman)
         dx = old_newrand() % 15 - 7;
         dy = old_newrand() % 15 - 7;
         pos = (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx);
-        if (map[pos].owner_flags == 1 << handyman->owner && can_i_get_to(handyman, pos) && !(map[pos].owner_flags & MAP_OUTDOOR)) {
+        if (map[pos].owner_flags == 1 << handyman->owner && can_i_get_to(handyman, pos) &&
+            !(map[pos].owner_flags & MAP_OUTDOOR)) {
             handyman->next_state = handyman->resume_state = SS_HANDYMAN_WORKS;
             set_complex(handyman, 0xbe, (u16)handyman->x.tile + ((u16)handyman->y.tile << 7) + ((dy << 7) + dx));
             process_staff_complex(handyman);
@@ -185,8 +188,8 @@ void handyman_works(Thing *handyman)
         id = handyman->object;
         plant = &thing[id];
         thingpage_cancel(&allhosps[plant->owner].plant_pager, id);
-        if (plant->in_use == 1 || plant->type != THING_OBJECT || plant->subtype != OBJ_PLANT || plant->state != OS_PLANT_AGES
-            || !is_next_to_plant(handyman, plant)) {
+        if (plant->in_use == 1 || plant->type != THING_OBJECT || plant->subtype != OBJ_PLANT ||
+            plant->state != OS_PLANT_AGES || !is_next_to_plant(handyman, plant)) {
             handyman->state = SS_EVACUATE;
             break;
         }
@@ -247,8 +250,9 @@ void handyman_works(Thing *handyman)
     case 8:
         room = handyman->room;
         if (room->state != RS_CLOSED) {
-            if (!(find_person_in_room(room, THING_STAFF, STAFF_DOCTOR) || find_person_in_room(room, THING_STAFF, STAFF_NURSE)
-                  || find_person_in_room(room, THING_STAFF, STAFF_SURGEON))) {
+            if (!(find_person_in_room(room, THING_STAFF, STAFF_DOCTOR) ||
+                  find_person_in_room(room, THING_STAFF, STAFF_NURSE) ||
+                  find_person_in_room(room, THING_STAFF, STAFF_SURGEON))) {
                 room->state = RS_CLOSED;
             } else {
                 u16 pos2;
@@ -338,9 +342,12 @@ void handyman_check_for_litter(Thing *handyman)
 
         nearest = handyman->work_target;
         second = handyman->work_target2;
-        dist_nearest = (nearest % 128 - handyman->x.tile) * (nearest % 128 - handyman->x.tile) + (nearest / 128 - handyman->y.tile) * (nearest / 128 - handyman->y.tile);
-        dist_second = (second % 128 - handyman->x.tile) * (second % 128 - handyman->x.tile) + (second / 128 - handyman->y.tile) * (second / 128 - handyman->y.tile);
-        dist_new = (pos % 128 - handyman->x.tile) * (pos % 128 - handyman->x.tile) + (pos / 128 - handyman->y.tile) * (pos / 128 - handyman->y.tile);
+        dist_nearest = (nearest % 128 - handyman->x.tile) * (nearest % 128 - handyman->x.tile) +
+                       (nearest / 128 - handyman->y.tile) * (nearest / 128 - handyman->y.tile);
+        dist_second = (second % 128 - handyman->x.tile) * (second % 128 - handyman->x.tile) +
+                      (second / 128 - handyman->y.tile) * (second / 128 - handyman->y.tile);
+        dist_new = (pos % 128 - handyman->x.tile) * (pos % 128 - handyman->x.tile) +
+                   (pos / 128 - handyman->y.tile) * (pos / 128 - handyman->y.tile);
         if (pos == nearest || pos == handyman->work_target2)
             return;
         if (dist_new < dist_nearest) {
@@ -463,25 +470,24 @@ u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min)
         if (p->pages[i].priority < min)
             continue;
         room_id = thing[p->pages[i].id].room_id;
-        if (room_id != 0
-            && (room_info[room_id].being_edited || room_info[room_id].state == RS_EDITED
-                || allhosps[handyman->owner].edited_room == room_id))
+        if (room_id != 0 && (room_info[room_id].being_edited || room_info[room_id].state == RS_EDITED ||
+                             allhosps[handyman->owner].edited_room == room_id))
             continue;
         if (p->pages[i].priority == best_priority) {
-            dist = (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
-                     * (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
-                 + (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128)
-                     * (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128);
+            dist = (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128) *
+                       (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128) +
+                   (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128) *
+                       (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128);
             if (dist < best_dist) {
                 best = i;
                 best_dist = dist;
             }
         } else if (p->pages[i].priority > best_priority) {
             best = i;
-            best_dist = (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
-                          * (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128)
-                      + (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128)
-                          * (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128);
+            best_dist = (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128) *
+                            (TILE_POS(handyman) % 128 - TILE_POS(&thing[p->pages[i].id]) % 128) +
+                        (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128) *
+                            (TILE_POS(handyman) / 128 - TILE_POS(&thing[p->pages[i].id]) / 128);
             best_priority = p->pages[i].priority;
         }
     }
@@ -601,15 +607,15 @@ u8 handyman_try_litter(Thing *handyman)
     target = 0;
     pos = (u16)handyman->x.tile + ((u16)handyman->y.tile << 7);
     for (i = 0; i < 9; i++) {
-        if (!(!(map[pos + special_around[i]].floor & 0xf) || (map[pos + special_around[i]].floor & 0xf) == 7
-              || (map[pos + special_around[i]].floor & 0xf) == 8)) {
+        if (!(!(map[pos + special_around[i]].floor & 0xf) || (map[pos + special_around[i]].floor & 0xf) == 7 ||
+              (map[pos + special_around[i]].floor & 0xf) == 8)) {
             target = pos + special_around[i];
             break;
         }
     }
     if (target == 0 && handyman->work_target) {
-        if (!(!(map[handyman->work_target].floor & 0xf) || (map[handyman->work_target].floor & 0xf) == 7
-              || (map[handyman->work_target].floor & 0xf) == 8))
+        if (!(!(map[handyman->work_target].floor & 0xf) || (map[handyman->work_target].floor & 0xf) == 7 ||
+              (map[handyman->work_target].floor & 0xf) == 8))
             target = handyman->work_target;
         handyman->work_target = handyman->work_target2;
         handyman->work_target2 = 0;
@@ -635,9 +641,9 @@ u8 is_next_to_plant(Thing *handyman, Thing *plant)
 
     here = TILE_POS(handyman);
     there = TILE_POS(plant);
-    if ((TILE_POS(plant) % 128 - TILE_POS(handyman) % 128) * (TILE_POS(plant) % 128 - TILE_POS(handyman) % 128)
-            + (TILE_POS(plant) / 128 - TILE_POS(handyman) / 128) * (TILE_POS(plant) / 128 - TILE_POS(handyman) / 128)
-        > 1)
+    if ((TILE_POS(plant) % 128 - TILE_POS(handyman) % 128) * (TILE_POS(plant) % 128 - TILE_POS(handyman) % 128) +
+            (TILE_POS(plant) / 128 - TILE_POS(handyman) / 128) * (TILE_POS(plant) / 128 - TILE_POS(handyman) / 128) >
+        1)
         return 0;
     if (handyman->y.tile == plant->y.tile + 1)
         return map[here].wall_n >= 0x8e && map[here].wall_n <= 0x91 ? (u8)1 : (u8)0;

@@ -46,10 +46,9 @@ void LbSpriteDrawRemap(s32 x, s32 y, TbSprite *spr, u8 *remap);
 
 u32 ror13(u32 x);
 #pragma aux ror13 = "ror eax,13" parm [eax] value [eax];
-
 }
 
-static u8 glow_path[] = { 0x4d, 0x4e, 0x4f, 0x50, 0x50, 0x4f, 0x4e, 0x4d };
+static u8 glow_path[] = {0x4d, 0x4e, 0x4f, 0x50, 0x50, 0x4f, 0x4e, 0x4d};
 
 // Draws composite frame frame_id with its origin at screen x,y, mirrored if
 // flip, with flags ORed into each element's draw flags; plays the frame's
@@ -202,7 +201,9 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].anim > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
-                            icon_draw_from_special_id_frame(w->icon_frame, x, y, (s16)-((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
+                            icon_draw_from_special_id_frame(w->icon_frame, x, y,
+                                                            (s16) - ((elem->x - 0x8d) + spr->width / 2),
+                                                            (s16)(elem->y - 0xca));
                     } else if (w->type == THING_OBJECT) {
                         icon = 1;
                         othervar.frame_icon_drawn = 1;
@@ -236,7 +237,8 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
                     if ((kind == 0x200 || kind == 0x250) && icon_table[w->icon_id].anim > 0) {
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite)
-                            icon_draw_from_special_id_frame(w->icon_frame, x, y, (s16)((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
+                            icon_draw_from_special_id_frame(
+                                w->icon_frame, x, y, (s16)((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                     } else if (w->type == THING_OBJECT) {
                         icon = 1;
                         othervar.frame_icon_drawn = 1;
@@ -261,7 +263,8 @@ void draw_special_id_frame(Thing *w, const s16 x, const s16 y)
             }
         }
     }
-    if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
+    if (f->sound && gamevar.turn_skipped == 0 &&
+        (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
@@ -434,11 +437,11 @@ void draw_wibble_frame(Thing *w, s16 x, s16 y)
         draw_wibble(x + D_001567b0.x - 4, y + D_001567b0.y - 4,
                     pixBuf.data + 0x3a + D_001567b0.x - 4 + (D_001567b0.y + 0x70) * 0xb4,
                     f->width + 8 < 0x7a - D_001567b0.x + 3 ? f->width + 8 : 0x7a - D_001567b0.x + 3,
-                    f->length + 8 < 0x40 - D_001567b0.y + 3 ? f->length + 8 : 0x40 - D_001567b0.y + 3,
-                    phase);
+                    f->length + 8 < 0x40 - D_001567b0.y + 3 ? f->length + 8 : 0x40 - D_001567b0.y + 3, phase);
     }
     FillBoxInPixBuffer(0xfe, D_001567b0.x + 0x3a, D_001567b0.y + 0x74, f->width, f->length);
-    if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
+    if (f->sound && gamevar.turn_skipped == 0 &&
+        (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
@@ -495,9 +498,11 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
                         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
                         if (spr > sprite) {
                             if (w->flip)
-                                icon_draw_from_special_id_frame(w->icon_frame, x, y, -((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
+                                icon_draw_from_special_id_frame(
+                                    w->icon_frame, x, y, -((elem->x - 0x8d) + spr->width / 2), (s16)(elem->y - 0xca));
                             else
-                                icon_draw_from_special_id_frame(w->icon_frame, x, y, (elem->x - 0x8d) + spr->width / 2, (s16)(elem->y - 0xca));
+                                icon_draw_from_special_id_frame(w->icon_frame, x, y, (elem->x - 0x8d) + spr->width / 2,
+                                                                (s16)(elem->y - 0xca));
                         }
                     }
                 } else {
@@ -534,7 +539,8 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
             }
         }
     }
-    if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
+    if (f->sound && gamevar.turn_skipped == 0 &&
+        (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
@@ -559,7 +565,6 @@ void draw_glow_frame(Thing *w, s16 x, s16 y)
     lbDisplay.draw_flags = 0;
     othervar.frame_icon_drawn = 0;
 }
-
 }
 
 // Draws w using a machine (its object): w's own frame above the machine's
@@ -588,7 +593,9 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         {
             s32 top = y - split_height;
 
-            lbDisplay.graphics_window_height = top - lbDisplay.graphics_window_y > lbDisplay.graphics_window_height ? lbDisplay.graphics_window_height : top - lbDisplay.graphics_window_y;
+            lbDisplay.graphics_window_height = top - lbDisplay.graphics_window_y > lbDisplay.graphics_window_height
+                                                   ? lbDisplay.graphics_window_height
+                                                   : top - lbDisplay.graphics_window_y;
         }
         full_draw_frame(w, w->sprite, x, y, 0, 0, w->flip);
         {
@@ -634,7 +641,6 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
         }
     }
 }
-
 
 // Draws w using an energising machine: w normally (with the machine's
 // aux_draw_flags, unless 0xff), then a speckled copy in colour aux_param whose
@@ -715,8 +721,9 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
             if (spr > sprite) {
                 lbDisplay.draw_flags = elem->flags | flags;
                 lbDisplay.draw_flags ^= 1;
-                LbSpriteDrawScaled(x - ((elem->x - 0x8d + spr->width) * scale >> 16), y + ((elem->y - 0xca) * scale >> 16),
-                                   spr, spr->width * scale >> 16, spr->height * scale >> 16);
+                LbSpriteDrawScaled(x - ((elem->x - 0x8d + spr->width) * scale >> 16),
+                                   y + ((elem->y - 0xca) * scale >> 16), spr, spr->width * scale >> 16,
+                                   spr->height * scale >> 16);
                 if (D_001567b0.x > -(elem->x - 0x8d + spr->width))
                     D_001567b0.x = -(elem->x - 0x8d + spr->width);
                 if (D_001567b0.y > elem->y - 0xca)
@@ -729,8 +736,8 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
             spr = (TbSprite *)((u8 *)sprite + elem->sprite);
             if (spr > sprite) {
                 lbDisplay.draw_flags = elem->flags | flags;
-                LbSpriteDrawScaled(x + ((elem->x - 0x8d) * scale >> 16), y + ((elem->y - 0xca) * scale >> 16),
-                                   spr, spr->width * scale >> 16, spr->height * scale >> 16);
+                LbSpriteDrawScaled(x + ((elem->x - 0x8d) * scale >> 16), y + ((elem->y - 0xca) * scale >> 16), spr,
+                                   spr->width * scale >> 16, spr->height * scale >> 16);
                 if (D_001567b0.x > elem->x - 0x8d)
                     D_001567b0.x = elem->x - 0x8d;
                 if (D_001567b0.y > elem->y - 0xca)
@@ -759,7 +766,6 @@ void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags,
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
     lbDisplay.draw_flags = 0;
 }
-
 
 // Draws w's frame flashing (cycling the draw flags every turn, hidden one turn
 // in six), as for a highlighted thing.
@@ -793,7 +799,8 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
         break;
     }
     full_draw_frame(w, w->sprite, x, y, colour, hidden, w->flip);
-    if (f->sound && gamevar.turn_skipped == 0 && (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
+    if (f->sound && gamevar.turn_skipped == 0 &&
+        (sfx_details[f->sound].allow_repeat || (int)w->last_sound != (int)f->sound))
         play_sound((u32)w, f->sound, x, y);
     if (gamevar.turn_skipped == 0)
         w->last_sound = f->sound;
@@ -816,7 +823,6 @@ void draw_hilight_frame(Thing *w, const s16 x, const s16 y)
         D_001567b0.y1 = D_001567b0.y + D_001567b0.h;
     lbDisplay.draw_flags = 0;
 }
-
 
 // Draws composite frame frame_id at x,y, through the colour table remap if not
 // 0, mirrored if flip. Resets the dirty rectangle to this frame's box and flags
@@ -913,7 +919,6 @@ void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, co
     lbDisplay.draw_flags = 0;
 }
 
-
 // As draw_from_frame, showing only the layered elements that match layers.
 // Grows rather than resets the dirty rectangle.
 // FUNCTION: 0x00030f34
@@ -992,13 +997,13 @@ void draw_from_special_id_frame(const u16 frame_id, const s16 x, const s16 y, u8
     lbDisplay.draw_flags = 0;
 }
 
-
 // Draws frame frame_id at x,y for w (only the layered elements matching w's
 // layers), with flags ORed into the draw flags and mirrored if flip; with
 // hidden set nothing is drawn. Only grows D_001567b0's x,y to the frame's top
 // left (relative to x,y), for the caller to finish.
 // FUNCTION: 0x00031434
-void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip)
+void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 hidden,
+                     const u8 flip)
 {
     CompFrame *f;
     u16 *el;
@@ -1091,7 +1096,8 @@ void icon_draw_from_special_id_frame(const u16 icon, const s16 x, const s16 y, c
         spr = (TbSprite *)((u8 *)sprite + elem->sprite);
         if (spr > sprite) {
             lbDisplay.draw_flags = elem->flags & 0xf;
-            LbSpriteDraw(x + dx - spr->width / 2, (y + dy) + (elem->y - 0xca) - f->length - resvars.coords_IconScreenp->icon_gap, spr);
+            LbSpriteDraw(x + dx - spr->width / 2,
+                         (y + dy) + (elem->y - 0xca) - f->length - resvars.coords_IconScreenp->icon_gap, spr);
             if (D_001567b0.x > dx - spr->width / 2)
                 D_001567b0.x = dx - spr->width / 2;
             if (D_001567b0.y > dy - f->length - resvars.coords_IconScreenp->icon_gap) {

@@ -22,7 +22,7 @@ extern Event D_001549d0[];
 
 void conv_string(void *dst, char *src, int mode);
 
-void qsort(void *base, u32 n, u32 size, int (comparp)(const void *, const void *));
+void qsort(void *base, u32 n, u32 size, int(comparp)(const void *, const void *));
 }
 
 void display_plaque(void);
@@ -158,7 +158,8 @@ extern "C" void display_year_charts(void)
             }
             if (cat == 11)
                 break;
-            LbTextSetWindow(resvars.screen_coords[i % 2 + 0x97].x, resvars.screen_coords[i / 2 + 0x97].y, resvars.screen_coords[0x99].x,
+            LbTextSetWindow(resvars.screen_coords[i % 2 + 0x97].x, resvars.screen_coords[i / 2 + 0x97].y,
+                            resvars.screen_coords[0x99].x,
                             resvars.screen_coords[0x98].y - resvars.screen_coords[0x97].y);
             x = 0;
             y = 0;
@@ -243,10 +244,12 @@ void display_plaque(void)
     case 1:
         if (awards_won[current_award].value > 0) {
             sprintf(text1, "%s", good_awards_text[awards_won[current_award].text_index]);
-            sprintf(text2, "%s\n+%d", trophy_bonus_messages[awards_won[current_award].reward_kind], awards_won[current_award].value);
+            sprintf(text2, "%s\n+%d", trophy_bonus_messages[awards_won[current_award].reward_kind],
+                    awards_won[current_award].value);
         } else {
             sprintf(text1, "%s", good_awards_text[awards_won[current_award].text_index]);
-            sprintf(text2, "%s\n%d", trophy_bonus_messages[awards_won[current_award].reward_kind], awards_won[current_award].value);
+            sprintf(text2, "%s\n%d", trophy_bonus_messages[awards_won[current_award].reward_kind],
+                    awards_won[current_award].value);
         }
     case 2:
         reqspr_draw(resvars.screen_coords[0xa0].x, resvars.screen_coords[0xa0].y, &screen_sprites_tab_start[16]);
@@ -255,10 +258,12 @@ void display_plaque(void)
         if (current_display == 2) {
             if (awards_won[current_award].value > 0) {
                 sprintf(text1, bad_awards_text[awards_won[current_award].text_index]);
-                sprintf(text2, "%s\n+%d", trophy_bonus_messages[awards_won[current_award].reward_kind], awards_won[current_award].value);
+                sprintf(text2, "%s\n+%d", trophy_bonus_messages[awards_won[current_award].reward_kind],
+                        awards_won[current_award].value);
             } else {
                 sprintf(text1, bad_awards_text[awards_won[current_award].text_index]);
-                sprintf(text2, "%s\n%d", trophy_bonus_messages[awards_won[current_award].reward_kind], awards_won[current_award].value);
+                sprintf(text2, "%s\n%d", trophy_bonus_messages[awards_won[current_award].reward_kind],
+                        awards_won[current_award].value);
             }
             reqspr_draw(resvars.screen_coords[0xa6].x, resvars.screen_coords[0xa6].y, &screen_sprites_tab_start[15]);
         }
@@ -300,7 +305,8 @@ void display_plaque(void)
         break;
     }
     if (trophies_won[1].id)
-        reqspr_draw(resvars.screen_buttons[0x56].sprite_x, resvars.screen_buttons[0x56].sprite_y, &screen_sprites_tab_start[13]);
+        reqspr_draw(resvars.screen_buttons[0x56].sprite_x, resvars.screen_buttons[0x56].sprite_y,
+                    &screen_sprites_tab_start[13]);
 }
 
 // Handles year-end screen button button: 0 leaves the screen, 1 switches
@@ -381,8 +387,9 @@ void check_stats_buttons(void)
                     &screen_sprites_tab_start[resvars.screen_buttons[0x48].sprite]);
     if (lbDisplay.mleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0x48].width != 0 && resvars.screen_buttons[i + 0x48].height != 0; i++) {
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x48].x, resvars.screen_buttons[i + 0x48].y,
-                             (s16)resvars.screen_buttons[i + 0x48].width, (s16)resvars.screen_buttons[i + 0x48].height)) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x48].x,
+                             resvars.screen_buttons[i + 0x48].y, (s16)resvars.screen_buttons[i + 0x48].width,
+                             (s16)resvars.screen_buttons[i + 0x48].height)) {
                 reqspr_draw(resvars.screen_buttons[i + 0x48].sprite_x, resvars.screen_buttons[i + 0x48].sprite_y,
                             &screen_sprites_tab_start[resvars.screen_buttons[i + 0x48].sprite]);
                 break;
@@ -391,8 +398,9 @@ void check_stats_buttons(void)
     }
     if (lbDisplay.rleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0x48].width != 0 && resvars.screen_buttons[i + 0x48].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x48].x, resvars.screen_buttons[i + 0x48].y,
-                             (s16)resvars.screen_buttons[i + 0x48].width, (s16)resvars.screen_buttons[i + 0x48].height)) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x48].x,
+                             resvars.screen_buttons[i + 0x48].y, (s16)resvars.screen_buttons[i + 0x48].width,
+                             (s16)resvars.screen_buttons[i + 0x48].height)) {
                 resvars.screen_buttons[i + 0x48].callback(i);
                 reqspr_draw(resvars.screen_buttons[i + 0x48].sprite_x, resvars.screen_buttons[i + 0x48].sprite_y,
                             &screen_sprites_tab_start[resvars.screen_buttons[i + 0x48].sprite]);
@@ -446,8 +454,9 @@ void check_awards_buttons(void)
     if (lbDisplay.mleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0x4b].width != 0 && resvars.screen_buttons[i + 0x4b].height != 0; i++) {
             if (button_available(i)) {
-                if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x4b].x, resvars.screen_buttons[i + 0x4b].y,
-                                 (s16)resvars.screen_buttons[i + 0x4b].width, (s16)resvars.screen_buttons[i + 0x4b].height)) {
+                if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x4b].x,
+                                 resvars.screen_buttons[i + 0x4b].y, (s16)resvars.screen_buttons[i + 0x4b].width,
+                                 (s16)resvars.screen_buttons[i + 0x4b].height)) {
                     reqspr_draw(resvars.screen_buttons[i + 0x4b].sprite_x, resvars.screen_buttons[i + 0x4b].sprite_y,
                                 &screen_sprites_tab_start[resvars.screen_buttons[i + 0x4b].sprite]);
                     break;
@@ -458,8 +467,9 @@ void check_awards_buttons(void)
     if (lbDisplay.rleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0x4b].width != 0 && resvars.screen_buttons[i + 0x4b].height != 0; i++) {
             if (button_available(i)) {
-                if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x4b].x, resvars.screen_buttons[i + 0x4b].y,
-                                 (s16)resvars.screen_buttons[i + 0x4b].width, (s16)resvars.screen_buttons[i + 0x4b].height)) {
+                if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x4b].x,
+                                 resvars.screen_buttons[i + 0x4b].y, (s16)resvars.screen_buttons[i + 0x4b].width,
+                                 (s16)resvars.screen_buttons[i + 0x4b].height)) {
                     resvars.screen_buttons[i + 0x4b].callback(i);
                     reqspr_draw(resvars.screen_buttons[i + 0x4b].sprite_x, resvars.screen_buttons[i + 0x4b].sprite_y,
                                 &screen_sprites_tab_start[resvars.screen_buttons[i + 0x4b].sprite]);
@@ -482,7 +492,8 @@ void display_awards(void)
 
     for (i = 0, trophy_count = 0, award_count = 0; i < 9 && trophy_count < 3; i++) {
         if (trophy[i].id) {
-            reqspr_draw(resvars.screen_buttons[trophy_count + 0x55].sprite_x, resvars.screen_buttons[trophy_count + 0x55].sprite_y,
+            reqspr_draw(resvars.screen_buttons[trophy_count + 0x55].sprite_x,
+                        resvars.screen_buttons[trophy_count + 0x55].sprite_y,
                         &screen_sprites_tab_start[trophy_count + 12]);
             trophies_won[trophy_count].id = trophy[i].id;
             trophies_won[trophy_count].text_index = trophy[i].text_index;
@@ -493,15 +504,20 @@ void display_awards(void)
     for (i = 0; i < 13 && award_count < 6; i++) {
         if (all_awards[i].text_index) {
             if (trophy_count == 3 && award_count == 5)
-                reqspr_draw(resvars.screen_buttons[award_count + 0x4f].sprite_x, resvars.screen_buttons[award_count + 0x4f].sprite_y, &screen_sprites_tab_start[24]);
+                reqspr_draw(resvars.screen_buttons[award_count + 0x4f].sprite_x,
+                            resvars.screen_buttons[award_count + 0x4f].sprite_y, &screen_sprites_tab_start[24]);
             else
-                reqspr_draw(resvars.screen_buttons[award_count + 0x4f].sprite_x, resvars.screen_buttons[award_count + 0x4f].sprite_y,
+                reqspr_draw(resvars.screen_buttons[award_count + 0x4f].sprite_x,
+                            resvars.screen_buttons[award_count + 0x4f].sprite_y,
                             (TbSprite *)((u32)screen_sprites_tab_start + (award_count + 4) * 6));
-            reqspr_draw(resvars.screen_buttons[award_count + 0x4f].sprite_x, resvars.screen_buttons[award_count + 0x4f].sprite_y, &screen_sprites_tab_start[23]);
+            reqspr_draw(resvars.screen_buttons[award_count + 0x4f].sprite_x,
+                        resvars.screen_buttons[award_count + 0x4f].sprite_y, &screen_sprites_tab_start[23]);
             if ((s8)all_awards[i].direction == 1)
-                reqspr_draw(resvars.screen_coords[award_count + 0x9a].x, resvars.screen_coords[award_count + 0x9a].y, &screen_sprites_tab_start[10]);
+                reqspr_draw(resvars.screen_coords[award_count + 0x9a].x, resvars.screen_coords[award_count + 0x9a].y,
+                            &screen_sprites_tab_start[10]);
             else
-                reqspr_draw(resvars.screen_coords[award_count + 0x9a].x, resvars.screen_coords[award_count + 0x9a].y, &screen_sprites_tab_start[11]);
+                reqspr_draw(resvars.screen_coords[award_count + 0x9a].x, resvars.screen_coords[award_count + 0x9a].y,
+                            &screen_sprites_tab_start[11]);
             awards_won[award_count].id = all_awards[i].id;
             awards_won[award_count].text_index = all_awards[i].text_index;
             awards_won[award_count].direction = all_awards[i].direction;

@@ -120,7 +120,8 @@ u8 draw_area_select(void)
         clear_loading_screen(palette);
         setup_new_level((u16)level_number, 1);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
-        goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+        goto_column_row_in_window(window.current_window, level->camera_start[player] % 128,
+                                  level->camera_start[player] / 128);
         othervar.show_level_brief = 1;
         draw_it();
         othervar.pending_palette = palette;
@@ -204,7 +205,8 @@ void process_mouse_area_select(void)
     case 5:
         if (lbDisplay.left_button) {
             for (i = 0; i < 0x15; i++) {
-                if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.boxes[i + 45].x, resvars.boxes[i + 45].y, resvars.boxes[i + 45].w, resvars.boxes[i + 45].h)) {
+                if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.boxes[i + 45].x, resvars.boxes[i + 45].y,
+                                 resvars.boxes[i + 45].w, resvars.boxes[i + 45].h)) {
                     set_mouse_mode(MM_AREA_SMK);
                     play_area_smk(i + 1);
                     area.state = 2;
@@ -266,8 +268,11 @@ void display_area_select(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x27);
     lbDisplay.draw_flags = 0;
-    LbTextSetJustifyWindow(resvars.glass_frames_AreaLayoutp->x, resvars.glass_frames_AreaLayoutp->y, resvars.glass_frames_AreaLayoutp->x1 - resvars.glass_frames_AreaLayoutp->x);
-    LbTextSetClipWindow(resvars.glass_frames_AreaLayoutp->x, resvars.glass_frames_AreaLayoutp->y, resvars.glass_frames_AreaLayoutp->x1 - resvars.glass_frames_AreaLayoutp->x, resvars.glass_frames_AreaLayoutp->y1 - resvars.glass_frames_AreaLayoutp->y);
+    LbTextSetJustifyWindow(resvars.glass_frames_AreaLayoutp->x, resvars.glass_frames_AreaLayoutp->y,
+                           resvars.glass_frames_AreaLayoutp->x1 - resvars.glass_frames_AreaLayoutp->x);
+    LbTextSetClipWindow(resvars.glass_frames_AreaLayoutp->x, resvars.glass_frames_AreaLayoutp->y,
+                        resvars.glass_frames_AreaLayoutp->x1 - resvars.glass_frames_AreaLayoutp->x,
+                        resvars.glass_frames_AreaLayoutp->y1 - resvars.glass_frames_AreaLayoutp->y);
     lbDisplay.draw_flags |= 0x20;
     yofs_text = 0;
     for (i = 0; i < text_paragraph; i++) {

@@ -3,7 +3,6 @@
 extern "C" {
 
 void remove_node(Thing *node);
-
 }
 
 // Links node at the head of the thing list of map cell (x, y) (Map.first).

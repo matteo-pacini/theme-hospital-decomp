@@ -8,9 +8,7 @@ extern WinLose lose_criteria[];
 
 extern "C" {
 
-
 u8 shall_i_be_abducted(Thing *w);
-
 }
 
 u16 check_warmth(Thing *person);
@@ -561,8 +559,9 @@ void staff_count(Thing *employee)
             adcounts.staff_tiredness_sum += employee->tiredness;
             if (employee->tiredness > adcounts.max_staff_tiredness)
                 adcounts.max_staff_tiredness = employee->tiredness;
-            if (employee->state == SS_WANDERS
-                || (((employee->room != 0 && employee->room->type != ROOM_TRAINING) && employee->room->queue_length == 0) && employee->room->queue_incoming == 0))
+            if (employee->state == SS_WANDERS || (((employee->room != 0 && employee->room->type != ROOM_TRAINING) &&
+                                                   employee->room->queue_length == 0) &&
+                                                  employee->room->queue_incoming == 0))
                 adcounts.idle_staff[employee->subtype]++;
             adcounts.staff_warmth_sum += employee->warmth;
         }

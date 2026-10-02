@@ -99,7 +99,6 @@ void checksum_memory_regions(void);
 int sync_memory_region(s8 port, u32 base, int len);
 void resync_network_game(void);
 void *cache_block_data(TbCacheUsedBlock *block);
-
 }
 
 // Returns 1 if save region region (save index) is checksummed and
@@ -129,10 +128,14 @@ void draw_sync_progress(int percent)
         }
         sprintf(buf, "%s (%d%%)", misc_text->out_of_sync, percent);
         clear_panel_info_bar();
-        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
+        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x,
+                        lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(0x2c);
-        LbTextDraw(resvars.coords_Struct_0015f410p->info_text_x, resvars.coords_Struct_0015f410p->info_text_y + resvars.coords_Struct_0015f410p->info_message_dy, buf);
-        set_all_refresh_zones_in_window(0, lbDisplay.physical_screen_height - 0x5c, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+        LbTextDraw(resvars.coords_Struct_0015f410p->info_text_x,
+                   resvars.coords_Struct_0015f410p->info_text_y + resvars.coords_Struct_0015f410p->info_message_dy,
+                   buf);
+        set_all_refresh_zones_in_window(0, lbDisplay.physical_screen_height - 0x5c, lbDisplay.physical_screen_width,
+                                        lbDisplay.physical_screen_height, 3);
         LbScreenUnlock();
         special_refresh();
         if (was_locked) {
@@ -388,7 +391,8 @@ void process_turn(void)
             scroll.right = 1;
         }
         if (D_001549d0[player].flags & 0x10) {
-            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128,
+                                      level->camera_start[player] / 128);
             othervar.full_redraw = 1;
         }
         old_packet[player].flags = D_001549d0[player].flags;
@@ -410,7 +414,8 @@ void process_turn(void)
             for (j = 0; j < 4; j++) {
                 if (D_001609c4[j].active && D_001549d0[j].checksum) {
                     if (D_001549d0[host_player].checksum != D_001549d0[j].checksum) {
-                        if (D_001549d0[j].type != EV_NETWORK_GAINED_FOCUS && D_001549d0[j].type != EV_NETWORK_LOST_FOCUS) {
+                        if (D_001549d0[j].type != EV_NETWORK_GAINED_FOCUS &&
+                            D_001549d0[j].type != EV_NETWORK_LOST_FOCUS) {
                             D_001549d0[j].type = EV_NONE;
                             D_001549d0[j].value = 0;
                             D_001549d0[j].arg = 0;
@@ -706,7 +711,8 @@ void process_turn(void)
             }
             break;
         case EV_GOTO_COLUMN_ROW:
-            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128,
+                                      level->camera_start[player] / 128);
             othervar.show_level_brief = 1;
             othervar.full_redraw = 1;
             break;
@@ -1005,7 +1011,8 @@ void process_turn(void)
                     int x = resvars.window_list[slot].x;
                     int y = resvars.window_list[slot].y;
 
-                    open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0, x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
+                    open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0,
+                                    x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
                     othervar.track_window[slot] = window.window_count - 1;
                     window.current_window = 0;
                 }
@@ -1041,7 +1048,8 @@ void process_turn(void)
                     pay_staff_bonus(&thing[D_001549d0[i].arg], D_001549d0[i].value, 0, 1, i);
                 }
             } else {
-                if (allhosps[i].balance >= pay_staff_bonus(0, D_001549d0[i].value, 0, 0, i) && allhosps[i].balance > 0) {
+                if (allhosps[i].balance >= pay_staff_bonus(0, D_001549d0[i].value, 0, 0, i) &&
+                    allhosps[i].balance > 0) {
                     pay_staff_bonus(0, D_001549d0[i].value, 0, 1, i);
                 }
             }
@@ -1291,7 +1299,8 @@ void process_turn(void)
                 if (i == player) {
                     play_sound(SNDSRC_GENERAL, SFX_DEADRAT2, lbDisplay.mmouse_x, lbDisplay.mmouse_y);
                 }
-                create_numfx(NUMFX_NUMBER, ++allhosps[i].rats_killed, rat->x.tile + (rat->y.tile << 7), color.dark_blue, 0x20);
+                create_numfx(NUMFX_NUMBER, ++allhosps[i].rats_killed, rat->x.tile + (rat->y.tile << 7), color.dark_blue,
+                             0x20);
                 place_litter(rat->x.tile + (rat->y.tile << 7), (s8)rat->owner, 4);
                 remove_thing(rat);
             }
@@ -1417,7 +1426,8 @@ void process_turn(void)
             }
             break;
         case EV_CONCENTRATE_RESEARCH:
-            if (D_001549d0[i].value == (statvar.num_players > 1 ? allhosps[i].hospital_open : gamevar.research_illness)) {
+            if (D_001549d0[i].value ==
+                (statvar.num_players > 1 ? allhosps[i].hospital_open : gamevar.research_illness)) {
                 if (statvar.num_players > 1) {
                     allhosps[i].hospital_open = 0;
                 } else {
@@ -1786,7 +1796,8 @@ void process_turn(void)
                         int x = resvars.window_list[slot].x;
                         int y = resvars.window_list[slot].y;
 
-                        open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0, x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
+                        open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0,
+                                        x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
                         othervar.track_window[slot] = window.window_count - 1;
                         window.current_window = 0;
                     }
@@ -1831,7 +1842,8 @@ void process_turn(void)
                     int x = resvars.window_list[slot].x;
                     int y = resvars.window_list[slot].y;
 
-                    open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0, x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
+                    open_new_window(0, 0, 0, x + resvars.boxes_Rectp[kind].x0, y + resvars.boxes_Rectp[kind].y0,
+                                    x + resvars.boxes_Rectp[kind].x1, y + resvars.boxes_Rectp[kind].y1);
                     othervar.track_window[slot] = window.window_count - 1;
                     window.current_window = 0;
                 }
@@ -1957,7 +1969,8 @@ u16 save_game(s8 slot, s8 port)
         }
     }
     if (resvars.game_mode == SCREEN_MODE_1) {
-        find_cell_at_point(window.current_window, window.center_x[window.current_window], window.center_y[window.current_window]);
+        find_cell_at_point(window.current_window, window.center_x[window.current_window],
+                           window.center_y[window.current_window]);
         cell = info.cell;
         window.zone0_x = 0;
         window.zone0_x1 = lbScreenModeInfo[SCREEN_MODE_13].width;
@@ -2080,7 +2093,8 @@ s16 load_game(s8 slot, s8 port)
                 resvars.tile_height = 0x20;
                 window.center0_x = (window.zone0_x + window.zone0_x1) / 2;
                 window.center0_y = (window.zone0_y + window.zone0_y1) / 2;
-                find_cell_at_point(window.current_window, window.center_x[window.current_window], window.center_y[window.current_window]);
+                find_cell_at_point(window.current_window, window.center_x[window.current_window],
+                                   window.center_y[window.current_window]);
                 cell = info.cell;
                 window.zone0_x = 0;
                 window.zone0_x1 = lbScreenModeInfo[SCREEN_MODE_1].width;
@@ -2250,7 +2264,8 @@ s8 load_level(const u8 lvl, const u8 full)
                 }
                 allhosps[i].heli_pad_tile = level->emergency_tile[i];
             }
-            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+            goto_column_row_in_window(window.current_window, level->camera_start[player] % 128,
+                                      level->camera_start[player] / 128);
             gamevar.scroll_min_tile = level->scroll_min;
             gamevar.scroll_max_tile = level->scroll_max;
         }
@@ -2388,7 +2403,8 @@ void restart_level(void)
         D_00156910 = 1;
         setup_new_level((u16)level_number, 1);
         set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
-        goto_column_row_in_window(window.current_window, level->camera_start[player] % 128, level->camera_start[player] / 128);
+        goto_column_row_in_window(window.current_window, level->camera_start[player] % 128,
+                                  level->camera_start[player] / 128);
         othervar.show_level_brief = 1;
         draw_it();
         othervar.pending_palette = palette;

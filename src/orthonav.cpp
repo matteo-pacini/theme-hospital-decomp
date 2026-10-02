@@ -144,8 +144,8 @@ again:
         other_wherefacing = xdir;
     }
     if (path->count > 1) {
-        if (!deleted && !wall_in_way(x, y, dir)
-            && ((path->steps[0].x == x && dir == xdir) || (path->steps[0].y == y && dir == ydir))) {
+        if (!deleted && !wall_in_way(x, y, dir) &&
+            ((path->steps[0].x == x && dir == xdir) || (path->steps[0].y == y && dir == ydir))) {
             s32 ex;
             s32 ey;
 
@@ -416,8 +416,8 @@ s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
         blocked = person_in_way(x, y, next_dir) | person_overlap();
         if (blocked == 0)
             return next_dir;
-        if (!wall_in_way(x, y, other_wherefacing) && !person_in_way(x, y, other_wherefacing)
-            && (s32)(old_newrand() % 0xffff) < blocked + 0x3000) {
+        if (!wall_in_way(x, y, other_wherefacing) && !person_in_way(x, y, other_wherefacing) &&
+            (s32)(old_newrand() % 0xffff) < blocked + 0x3000) {
             next_dir = other_wherefacing;
         } else {
             switch (other_wherefacing) {
@@ -434,8 +434,8 @@ s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
                 alt_dir = 0;
                 break;
             }
-            if (!wall_in_way(x, y, alt_dir) && !person_in_way(x, y, alt_dir)
-                && (s32)(old_newrand() % 0xffff) < blocked + 0x3000) {
+            if (!wall_in_way(x, y, alt_dir) && !person_in_way(x, y, alt_dir) &&
+                (s32)(old_newrand() % 0xffff) < blocked + 0x3000) {
                 next_dir = alt_dir;
             } else if ((s32)(old_newrand() % 0xffff) < blocked - 0x2000) {
                 return next_dir;
@@ -466,4 +466,3 @@ s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir)
     path->x1 = 0xff;
     return next_dir;
 }
-

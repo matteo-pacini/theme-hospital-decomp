@@ -12,14 +12,12 @@ u32 lib_strlen(char *s);
 
 extern "C" {
 
-
 char *getenv(char *name);
 int vsprintf(char *dest, char *format, va_list arg);
 typedef struct __iobuf FILE;
 FILE *fopen(const char *name, const char *access_mode);
 int fprintf(FILE *fp, const char *format, ...);
 int fclose(FILE *fp);
-
 }
 
 // Returns anim unchanged, unless it is 9999 (no animation for peep): then logs

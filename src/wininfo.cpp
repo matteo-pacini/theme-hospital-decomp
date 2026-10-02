@@ -1,3 +1,4 @@
+// clang-format off: tables are laid out by hand.
 #include "hosp.h"
 
 // The in-game windows and their buttons. Data only: config/sections.txt

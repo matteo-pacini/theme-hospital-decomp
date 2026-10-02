@@ -6,7 +6,6 @@ extern Menu choice;
 void strcat(char *dst, char *src);
 }
 
-
 // With a chance that grows with warmth (gbv.contagious_spread_factor + warmth / 2 percent), passes
 // carrier's contagious illness to one undiagnosed, uncontagious patient on or
 // next to carrier's tile (half the time each; not to those whose illness has

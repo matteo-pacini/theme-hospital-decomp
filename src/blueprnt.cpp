@@ -28,7 +28,6 @@ void set_expertise_room(RoomInfo *room);
 extern "C" {
 
 extern s16 D_001567b0[8];
-
 }
 
 // Draws the blueprint x0,y0 to x1,y1 (inclusive tiles) on the local player's
@@ -88,9 +87,9 @@ void draw_blueprint_area(const s16 x0, const s16 y0, const s16 x1, const s16 y1,
             sx = info.cell_x;
             sy = info.cell_y;
             set_all_refresh_zones_in_window(sx, sy - resvars.tile_height, sx + resvars.tile_width, sy, 3);
-            if (!(is_room_size_valid(x0, y0, x1, y1, owner) && is_valid_no_room((y << 7) + x)
-                  && is_tile_valid((y << 7) + x, owner))
-                || is_tile_near_half_wall(x, y, x0, y0, x1, y1)) {
+            if (!(is_room_size_valid(x0, y0, x1, y1, owner) && is_valid_no_room((y << 7) + x) &&
+                  is_tile_valid((y << 7) + x, owner)) ||
+                is_tile_near_half_wall(x, y, x0, y0, x1, y1)) {
                 LbSpriteDraw(sx, sy - blocks[66].info->height, blocks[66].info);
                 othervar.blueprint_has_invalid = 1;
             } else if ((height % 2 == 0 && width % 2 == 0) && width > 3 && height > 3) {
@@ -161,10 +160,9 @@ outline:
                         }
                     }
                 }
-                if (mode != 2
-                    && (!(is_valid_no_room((ty << 7) + tx) && is_tile_valid((ty << 7) + tx, owner)
-                          && is_room_size_valid(x0, y0, x1, y1, owner))
-                        || is_tile_near_half_wall(x, y, x0, y0, x1, y1)))
+                if (mode != 2 && (!(is_valid_no_room((ty << 7) + tx) && is_tile_valid((ty << 7) + tx, owner) &&
+                                    is_room_size_valid(x0, y0, x1, y1, owner)) ||
+                                  is_tile_near_half_wall(x, y, x0, y0, x1, y1)))
                     draw_a_one_colour_frame(start[blueprint[piece + base].anim].frame, sx, sy, color.red,
                                             start[blueprint[piece + base].anim].flags);
                 else
@@ -639,8 +637,8 @@ void compute_room_pointed(u16 tile)
                 break;
             case THING_PATIENT:
             case THING_STAFF:
-                if (pointed->object && (u16)(pointed - thing) == thing[pointed->object].user
-                    && thing[pointed->object].room_id == 0 && pointed->owner == player)
+                if (pointed->object && (u16)(pointed - thing) == thing[pointed->object].user &&
+                    thing[pointed->object].room_id == 0 && pointed->owner == player)
                     othervar.pickup_thing = othervar.pointed_thing;
                 break;
             }
@@ -659,7 +657,9 @@ u8 check_room_access(u8 owner)
 
     pos = room_info[allhosps[owner].entrances[0]].door_tile;
     for (room = room_info + 1; room < end_room_info; room++) {
-        if (((!(room->type == ROOM_FREE || room->state == RS_BLUEPRINT) && room->owner == owner) && room->type != ROOM_ENTRANCE) && room->type != ROOM_RECEPTION) {
+        if (((!(room->type == ROOM_FREE || room->state == RS_BLUEPRINT) && room->owner == owner) &&
+             room->type != ROOM_ENTRANCE) &&
+            room->type != ROOM_RECEPTION) {
             if (!check_points_connected(pos, room->door_tile))
                 return 0;
             pos = room->door_tile;

@@ -166,7 +166,8 @@ void load_ingame_pic(const u8 idx, const u8 fade, const u8 mouse_mode, const u8 
         len.map += LbFileLengthRnc(name);
     }
     clear_sound_heap();
-    othervar.level_block = cache.Allocate(len.palette + len.pointers + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
+    othervar.level_block =
+        cache.Allocate(len.palette + len.pointers + len.sprites + len.sprite_tab + len.map + 0x40, 0x63);
     if (othervar.level_block)
         dest = cache_block_data(othervar.level_block);
     else

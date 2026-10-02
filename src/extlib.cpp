@@ -25,5 +25,4 @@ void InitRedbook(void)
 void FreeRedbook(void)
 {
 }
-
 }

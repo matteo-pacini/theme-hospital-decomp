@@ -1,3 +1,4 @@
+// clang-format off: tables are laid out by hand.
 #include "hosp.h"
 
 // The staff and patient action sequences ("complexes"). Data only:

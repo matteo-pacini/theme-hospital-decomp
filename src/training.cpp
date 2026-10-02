@@ -9,15 +9,15 @@ void staff_exit_room_check(Thing *staff);
 void set_expertise_staff(Thing *staff);
 void insert_skill(u16 mask, u8 owner);
 
-#define TRAINING_OBJECT(t) \
-    ((t)->object && (thing[(t)->object].type == THING_OBJECT || thing[(t)->object].type == THING_DOOR) \
-        && (u16)((t) - thing) == thing[(t)->object].user ? (u32)(t)->object : 0)
+#define TRAINING_OBJECT(t)                                                                                             \
+    ((t)->object && (thing[(t)->object].type == THING_OBJECT || thing[(t)->object].type == THING_DOOR) &&              \
+             (u16)((t) - thing) == thing[(t)->object].user                                                             \
+         ? (u32)(t)->object                                                                                            \
+         : 0)
 
 extern "C" {
 
-
 u8 check_room_mutex(Thing *staff);
-
 }
 
 // Staff state SS_DOCTOR_IS_TRAINED (a student in the training room): a
@@ -52,10 +52,12 @@ void doctor_is_trained(Thing *doctor)
         evacuate_staff(doctor);
         return;
     }
-    if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].rest_threshold) && take_a_break(doctor)) {
+    if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].rest_threshold) &&
+        take_a_break(doctor)) {
         return;
     }
-    if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_LECTURE_CHAIR, 1, 0x96, doctor->owner) && doctor->complex_action != 0x41a) {
+    if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_LECTURE_CHAIR, 1, 0x96, doctor->owner) &&
+        doctor->complex_action != 0x41a) {
         doctor->next_state = SS_DOCTOR_IS_TRAINED;
         doctor->resume_state = SS_DOCTOR_IS_TRAINED;
         set_complex(doctor, 0x41a, 0);
@@ -105,10 +107,12 @@ void consultant_trains(Thing *consultant)
         return;
     }
     consultant->orders |= ORD_RETURN_TO_TRAINING;
-    if (((consultant->orders & ORD_REST) || consultant->tiredness > allhosps[consultant->owner].rest_threshold) && take_a_break(consultant)) {
+    if (((consultant->orders & ORD_REST) || consultant->tiredness > allhosps[consultant->owner].rest_threshold) &&
+        take_a_break(consultant)) {
         return;
     }
-    projector = &thing[find_object(consultant->x.tile + ((u16)consultant->y.tile << 7), OBJ_PROJECTOR, 0, 0x97, consultant->owner)];
+    projector = &thing[find_object(consultant->x.tile + ((u16)consultant->y.tile << 7), OBJ_PROJECTOR, 0, 0x97,
+                                   consultant->owner)];
     if (projector <= thing) {
         return;
     }
@@ -119,7 +123,8 @@ void consultant_trains(Thing *consultant)
         process_staff_complex(consultant);
         return;
     }
-    if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile, OBJ_BOOKCASE, 1, 0x96, consultant->owner)) {
+    if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile,
+                                                  OBJ_BOOKCASE, 1, 0x96, consultant->owner)) {
         training_done(consultant, 2);
         consultant->next_state = SS_CONSULTANT_TRAINS;
         consultant->resume_state = SS_CONSULTANT_TRAINS;
@@ -127,7 +132,8 @@ void consultant_trains(Thing *consultant)
         process_staff_complex(consultant);
         return;
     }
-    if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile, OBJ_SKELETON, 1, 0x96, consultant->owner)) {
+    if (old_newrand() % 1000 < 100 && find_object(((u16)consultant->y.tile << 7) + (u16)consultant->x.tile,
+                                                  OBJ_SKELETON, 1, 0x96, consultant->owner)) {
         training_done(consultant, 1);
         consultant->next_state = SS_CONSULTANT_TRAINS;
         consultant->resume_state = SS_CONSULTANT_TRAINS;
@@ -188,16 +194,16 @@ u8 send_doctor_to_training(Thing *doctor)
         state = SS_DOCTOR_IS_TRAINED;
     }
     if (state && room) {
-    staff_exit_room_check(doctor);
-    if (doctor->room) {
-        set_complex(doctor, 0x136, doctor->room->door_inside_tile);
-    }
-    doctor->next_state = state;
-    doctor->resume_state = SS_EVACUATE;
-    set_complex(doctor, 0x96, room_info[room].door_tile);
-    doctor->dest_room = room;
-    process_staff_complex(doctor);
-    return 1;
+        staff_exit_room_check(doctor);
+        if (doctor->room) {
+            set_complex(doctor, 0x136, doctor->room->door_inside_tile);
+        }
+        doctor->next_state = state;
+        doctor->resume_state = SS_EVACUATE;
+        set_complex(doctor, 0x96, room_info[room].door_tile);
+        doctor->dest_room = room;
+        process_staff_complex(doctor);
+        return 1;
     }
     return 0;
 }
@@ -216,7 +222,8 @@ u16 find_training_room_no_consultant(u8 owner, u16 exclude)
 
             free = 1;
             for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
-                if (occupant->type == THING_STAFF && occupant->subtype == STAFF_DOCTOR && (occupant->skills & SKILL_CONSULTANT)) {
+                if (occupant->type == THING_STAFF && occupant->subtype == STAFF_DOCTOR &&
+                    (occupant->skills & SKILL_CONSULTANT)) {
                     free = 0;
                     break;
                 }
@@ -289,15 +296,15 @@ void training_done(const Thing *consultant, const u8 kind)
     limit = old_newrand() % consultant->ability;
     skills = (u16)(consultant->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_RESEARCHER));
     for (student = &thing[consultant->room->first]; student > thing; student = &thing[student->room_next]) {
-        if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT)
-            && (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
+        if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT) &&
+            (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
             students++;
         }
     }
     students = (students >> 2) + 1;
     for (student = &thing[consultant->room->first]; student > thing; student = &thing[student->room_next]) {
-        if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT)
-            && (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
+        if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT) &&
+            (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
             learn = skills & ~(u16)(student->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_RESEARCHER));
             if (learn & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_RESEARCHER)) {
                 if (learn & 0x20) {

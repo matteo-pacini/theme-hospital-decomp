@@ -148,52 +148,15 @@ void LbSpriteReset(TbSprite *start, TbSprite *end, void *data);
 void LbTextSetClipWindow(s32 x, s32 y, s32 width, s32 height);
 void LbDrawHVLine(s32 x0, s32 y0, s32 x1, s32 y1, u8 colour);
 #pragma aux LbDrawHVLine "LbDrawHVLine_";
-
 }
 
 extern "C" {
 // demo: panel_popup_coord
 Coord panel_popup_coord[40] = {
-    { 0, 0 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 29 },
-    { 174, 25 },
-    { 174, 20 },
-    { 174, 14 },
-    { 174, 7 },
-    { 174, 0 },
-    { 174, 0 },
-    { 174, 0 },
-    { 174, 0 },
-    { 174, 0 },
-    { 174, 0 },
-    { 170, 0 },
-    { 165, 0 },
-    { 153, 0 },
-    { 140, 0 },
-    { 125, 0 },
-    { 113, 0 },
-    { 93, 0 },
-    { 73, 0 },
-    { 53, 0 },
-    { 33, 0 },
-    { 1, 0 },
-    { 1, 0 },
-    { 2, 0 },
-    { 4, 0 },
-    { 4, 0 },
-    { 2, 0 },
-    { 0, 0 },
+    {0, 0},    {174, 29}, {174, 29}, {174, 29}, {174, 29}, {174, 29}, {174, 29}, {174, 29}, {174, 29}, {174, 29},
+    {174, 29}, {174, 29}, {174, 29}, {174, 25}, {174, 20}, {174, 14}, {174, 7},  {174, 0},  {174, 0},  {174, 0},
+    {174, 0},  {174, 0},  {174, 0},  {170, 0},  {165, 0},  {153, 0},  {140, 0},  {125, 0},  {113, 0},  {93, 0},
+    {73, 0},   {53, 0},   {33, 0},   {1, 0},    {1, 0},    {2, 0},    {4, 0},    {4, 0},    {2, 0},    {0, 0},
 };
 }
 
@@ -225,7 +188,8 @@ void update_panel(void)
         D_00156910 = 0;
         drawn = 1;
         draw_panel(1);
-        set_all_refresh_zones_in_window(0, statvar.view_height, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+        set_all_refresh_zones_in_window(0, statvar.view_height, lbDisplay.physical_screen_width,
+                                        lbDisplay.physical_screen_height, 3);
     }
     if (!gamevar.rat_fest_level) {
         if (!display_panel_special_info() && othervar.panel_icon_set == 1) {
@@ -268,11 +232,13 @@ void draw_panel(u8 all)
     unused = 0;
     if (gamevar.rat_fest_level) {
         for (i = 0; ((PanelIcon *)panel)[i].sprite > 0; i++)
-            reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y, &game_panel[((PanelIcon *)panel)[i].sprite]);
+            reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y,
+                        &game_panel[((PanelIcon *)panel)[i].sprite]);
         draw_ratfest_on_panel();
     } else if (all == 1 || display_mode != DM_GAME) {
         for (i = 0; ((PanelIcon *)panel)[i].sprite > 0; i++)
-            reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y, &game_panel[((PanelIcon *)panel)[i].sprite]);
+            reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y,
+                        &game_panel[((PanelIcon *)panel)[i].sprite]);
         draw_money_on_panel();
         draw_date_on_panel();
         draw_rep_on_panel();
@@ -323,7 +289,8 @@ void setup_panel_icons(const u8 mode)
             i = 0;
         }
         while (((PanelIcon *)panel)[i].sprite > 0) {
-            ((PanelIcon *)panel)[i].y = lbScreenModeInfo[mode].height - game_panel[((PanelIcon *)panel)[i].sprite].height;
+            ((PanelIcon *)panel)[i].y =
+                lbScreenModeInfo[mode].height - game_panel[((PanelIcon *)panel)[i].sprite].height;
             ((PanelIcon *)panel)[i].y2 = lbScreenModeInfo[mode].height;
             ((PanelIcon *)panel)[i].x = x;
             ((PanelIcon *)panel)[i].x2 = x + game_panel[((PanelIcon *)panel)[i].sprite].width;
@@ -364,7 +331,8 @@ void panel_ml_button(const u16 icon)
 {
     if (icon != 0x63) {
         if (((PanelIcon *)panel)[icon].kind != 0x40) {
-            reqspr_draw(((PanelIcon *)panel)[icon].x, ((PanelIcon *)panel)[icon].y, &game_panel[((PanelIcon *)panel)[icon].pressed]);
+            reqspr_draw(((PanelIcon *)panel)[icon].x, ((PanelIcon *)panel)[icon].y,
+                        &game_panel[((PanelIcon *)panel)[icon].pressed]);
             D_00156910 = 1;
         }
     }
@@ -388,7 +356,9 @@ void panel_l_button(const u16 icon)
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             break;
         case 2:
-            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT || gamevar.mouse_mode == 0x10)) {
+            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR ||
+                  gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT ||
+                  gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
                 D_001549d0[player].type = EV_OPEN_BUILD_ROOM;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
@@ -397,7 +367,9 @@ void panel_l_button(const u16 icon)
             }
             break;
         case 5:
-            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT || gamevar.mouse_mode == 0x10)) {
+            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR ||
+                  gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT ||
+                  gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
                 D_001549d0[player].type = EV_OPEN_HIRE_STAFF;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
@@ -419,7 +391,9 @@ void panel_l_button(const u16 icon)
             }
             break;
         case 3:
-            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR || gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT || gamevar.mouse_mode == 0x10)) {
+            if (!(gamevar.mouse_mode == MM_BLUEPRINT || gamevar.mouse_mode == MM_PLACE_DOOR ||
+                  gamevar.mouse_mode == MM_PLACE_STAFF || gamevar.mouse_mode == MM_EDIT_ROOM_WAIT ||
+                  gamevar.mouse_mode == 0x10)) {
                 set_mouse_mode(MM_NORMAL);
                 D_001549d0[player].type = EV_OPEN_FURNISH_CORRIDOR;
                 play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
@@ -479,7 +453,6 @@ void panel_l_button(const u16 icon)
     }
 }
 
-
 // Right click on panel icon `icon`: 0 opens the bank statement, 5 the staff
 // list.
 // FUNCTION: 0x000328c0
@@ -533,15 +506,23 @@ void draw_money_on_panel(void)
                 break;
             }
         }
-        LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_clip_x + resvars.coords_PanelLayoutp->balance_digit_width * digits, resvars.boxes_PanelLayoutp->balance_clip_y,
-                            resvars.boxes_PanelLayoutp->balance_clip_w - resvars.coords_PanelLayoutp->balance_digit_width * digits, height);
+        LbTextSetClipWindow(
+            resvars.boxes_PanelLayoutp->balance_clip_x + resvars.coords_PanelLayoutp->balance_digit_width * digits,
+            resvars.boxes_PanelLayoutp->balance_clip_y,
+            resvars.boxes_PanelLayoutp->balance_clip_w - resvars.coords_PanelLayoutp->balance_digit_width * digits,
+            height);
         sprintf(buf, "%7d", myhosp->balance);
-        LbTextDraw(resvars.coords_PanelLayoutp->balance_x, resvars.coords_PanelLayoutp->balance_y - (height - othervar.balance_roll_step * 6), buf);
+        LbTextDraw(resvars.coords_PanelLayoutp->balance_x,
+                   resvars.coords_PanelLayoutp->balance_y - (height - othervar.balance_roll_step * 6), buf);
         sprintf(buf, "%7d", othervar.shown_balance);
-        LbTextDraw(resvars.coords_PanelLayoutp->balance_x, resvars.coords_PanelLayoutp->balance_y + othervar.balance_roll_step * 6, buf);
+        LbTextDraw(resvars.coords_PanelLayoutp->balance_x,
+                   resvars.coords_PanelLayoutp->balance_y + othervar.balance_roll_step * 6, buf);
         if (digits) {
-            LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_fixed_clip_x, resvars.boxes_PanelLayoutp->balance_fixed_clip_y,
-                                resvars.coords_PanelLayoutp->balance_digit_width * (digits - 3) + resvars.boxes_PanelLayoutp->balance_fixed_clip_w, height);
+            LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_fixed_clip_x,
+                                resvars.boxes_PanelLayoutp->balance_fixed_clip_y,
+                                resvars.coords_PanelLayoutp->balance_digit_width * (digits - 3) +
+                                    resvars.boxes_PanelLayoutp->balance_fixed_clip_w,
+                                height);
             sprintf(buf, "%7d", myhosp->balance);
             LbTextDraw(resvars.coords_PanelLayoutp->balance_x, resvars.coords_PanelLayoutp->balance_y, buf);
         }
@@ -552,12 +533,12 @@ void draw_money_on_panel(void)
             D_00156910 = 1;
         }
     } else {
-        LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_clip_x, resvars.boxes_PanelLayoutp->balance_clip_y, resvars.boxes_PanelLayoutp->balance_clip_w, height);
+        LbTextSetClipWindow(resvars.boxes_PanelLayoutp->balance_clip_x, resvars.boxes_PanelLayoutp->balance_clip_y,
+                            resvars.boxes_PanelLayoutp->balance_clip_w, height);
         sprintf(buf, "%7d", myhosp->balance);
         LbTextDraw(resvars.coords_PanelLayoutp->balance_x, resvars.coords_PanelLayoutp->balance_y, buf);
     }
 }
-
 
 // Draws the date (day and month) on the panel.
 // FUNCTION: 0x00032cc4
@@ -567,7 +548,8 @@ void draw_date_on_panel(void)
 
     set_font_from_cache(6);
     lbDisplay.draw_flags = 0x100;
-    LbTextSetWindow(resvars.boxes_PanelLayoutp->date_box_x, resvars.boxes_PanelLayoutp->date_box_y, resvars.boxes_PanelLayoutp->date_box_w, resvars.boxes_PanelLayoutp->date_box_h);
+    LbTextSetWindow(resvars.boxes_PanelLayoutp->date_box_x, resvars.boxes_PanelLayoutp->date_box_y,
+                    resvars.boxes_PanelLayoutp->date_box_w, resvars.boxes_PanelLayoutp->date_box_h);
     sprintf(buf, "%d %s", mycontrol->day, month_text[mycontrol->month]);
     LbTextDraw(resvars.coords_PanelLayoutp->date_x, resvars.coords_PanelLayoutp->date_y, buf);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
@@ -580,9 +562,11 @@ void draw_rep_on_panel(void)
 {
     s32 offset;
 
-    offset = (resvars.coords_PanelLayoutp->rep_scale_x1 - resvars.coords_PanelLayoutp->rep_scale_x0) * myhosp->reputation / 1000;
+    offset = (resvars.coords_PanelLayoutp->rep_scale_x1 - resvars.coords_PanelLayoutp->rep_scale_x0) *
+             myhosp->reputation / 1000;
     lbDisplay.draw_flags = 0;
-    reqspr_draw(resvars.coords_PanelLayoutp->rep_scale_x0 + offset, resvars.coords_PanelLayoutp->rep_marker_y, &game_panel[36]);
+    reqspr_draw(resvars.coords_PanelLayoutp->rep_scale_x0 + offset, resvars.coords_PanelLayoutp->rep_marker_y,
+                &game_panel[36]);
 }
 
 // Draws the panel's watch for an emergency, an epidemic (myhosp->epidemic_timer) or
@@ -600,35 +584,58 @@ void draw_emergency(void)
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         set_font_from_cache(6);
         height = lbFontPtr ? lbFontPtr[25].height : 0;
-        if (myhosp->emergency_timer || (myhosp->opening_countdown && !(advisor.flags & 1)) || myhosp->epidemic_timer || myhosp->epidemic_over || (s8)myhosp->emergency_state > 1) {
+        if (myhosp->emergency_timer || (myhosp->opening_countdown && !(advisor.flags & 1)) || myhosp->epidemic_timer ||
+            myhosp->epidemic_over || (s8)myhosp->emergency_state > 1) {
             reqspr_draw(resvars.coords_PanelLayoutp->watch_x, resvars.coords_PanelLayoutp->watch_y, &watch[13]);
             set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x, resvars.coords_PanelLayoutp->watch_y,
-                                            watch[13].width + resvars.coords_PanelLayoutp->watch_x, resvars.coords_PanelLayoutp->watch_y + watch[13].height, 3);
+                                            watch[13].width + resvars.coords_PanelLayoutp->watch_x,
+                                            resvars.coords_PanelLayoutp->watch_y + watch[13].height, 3);
             if (myhosp->emergency_timer) {
                 if ((s16)myhosp->emergency_timer / 8 >= 6) {
-                    reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy, &watch[1]);
-                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
-                                                    resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx + watch[1].width,
-                                                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy + watch[1].height, 3);
+                    reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                                resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                &watch[1]);
+                    set_all_refresh_zones_in_window(
+                        resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                        resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                        resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx +
+                            watch[1].width,
+                        resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy +
+                            watch[1].height,
+                        3);
                 }
-                reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                            resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
                             &watch[watch_face[(s16)myhosp->emergency_timer / 8]]);
-                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
-                                                (resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx) + watch[watch_face[(s16)myhosp->emergency_timer / 8]].width,
-                                                (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) + watch[watch_face[(s16)myhosp->emergency_timer / 8]].height, 3);
+                set_all_refresh_zones_in_window(
+                    resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                    (resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx) +
+                        watch[watch_face[(s16)myhosp->emergency_timer / 8]].width,
+                    (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) +
+                        watch[watch_face[(s16)myhosp->emergency_timer / 8]].height,
+                    3);
             } else if (myhosp->epidemic_timer) {
                 if (myhosp->emergency_timer)
                     off = watch[15].width / 4 + watch[15].width;
                 if (myhosp->epidemic_illness && !myhosp->epidemic_timer)
                     lbDisplay.draw_flags = 4;
-                reqspr_draw(off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, &watch[14]);
-                set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
-                                                off + resvars.coords_PanelLayoutp->watch_button_x + watch[14].width, watch[14].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
+                reqspr_draw(off + resvars.coords_PanelLayoutp->watch_button_x,
+                            resvars.coords_PanelLayoutp->watch_button_y, &watch[14]);
+                set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_button_x,
+                                                resvars.coords_PanelLayoutp->watch_button_y,
+                                                off + resvars.coords_PanelLayoutp->watch_button_x + watch[14].width,
+                                                watch[14].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
                 lbDisplay.draw_flags = 0;
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, watch[14].width, watch[14].height)) {
-                    reqspr_draw(off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, &watch[15]);
-                    set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
-                                                    watch[15].width + (off + resvars.coords_PanelLayoutp->watch_button_x), watch[15].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y,
+                                 off + resvars.coords_PanelLayoutp->watch_button_x,
+                                 resvars.coords_PanelLayoutp->watch_button_y, watch[14].width, watch[14].height)) {
+                    reqspr_draw(off + resvars.coords_PanelLayoutp->watch_button_x,
+                                resvars.coords_PanelLayoutp->watch_button_y, &watch[15]);
+                    set_all_refresh_zones_in_window(
+                        off + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
+                        watch[15].width + (off + resvars.coords_PanelLayoutp->watch_button_x),
+                        watch[15].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
                     if (!othervar.watch_hovered)
                         play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                     othervar.watch_hovered = 1;
@@ -638,25 +645,45 @@ void draw_emergency(void)
                 if (myhosp->epidemic_illness && !myhosp->epidemic_timer)
                     lbDisplay.draw_flags = 4;
                 if ((s16)myhosp->epidemic_timer / 8 >= 6) {
-                    reqspr_draw(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy, &watch[1]);
-                    set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
-                                                    watch[1].width + (off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx),
-                                                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy + watch[1].height, 3);
+                    reqspr_draw(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                                resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                &watch[1]);
+                    set_all_refresh_zones_in_window(
+                        off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                        resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                        watch[1].width +
+                            (off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx),
+                        resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy +
+                            watch[1].height,
+                        3);
                 }
-                reqspr_draw(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                reqspr_draw(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                            resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
                             &watch[watch_face[(s16)myhosp->epidemic_timer / 8]]);
-                set_all_refresh_zones_in_window(off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
-                                                watch[watch_face[(s16)myhosp->epidemic_timer / 8]].width + (off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx),
-                                                (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) + watch[watch_face[(s16)myhosp->epidemic_timer / 8]].height, 3);
+                set_all_refresh_zones_in_window(
+                    off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                    watch[watch_face[(s16)myhosp->epidemic_timer / 8]].width +
+                        (off + resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx),
+                    (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) +
+                        watch[watch_face[(s16)myhosp->epidemic_timer / 8]].height,
+                    3);
                 lbDisplay.draw_flags = 0;
             } else if (myhosp->opening_countdown) {
-                reqspr_draw(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, &watch[16]);
-                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
-                                                watch[16].width + resvars.coords_PanelLayoutp->watch_button_x, watch[16].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, watch[14].width, watch[14].height)) {
-                    reqspr_draw(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y, &watch[17]);
-                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
-                                                    watch[17].width + resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y + watch[17].height, 3);
+                reqspr_draw(resvars.coords_PanelLayoutp->watch_button_x, resvars.coords_PanelLayoutp->watch_button_y,
+                            &watch[16]);
+                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_button_x,
+                                                resvars.coords_PanelLayoutp->watch_button_y,
+                                                watch[16].width + resvars.coords_PanelLayoutp->watch_button_x,
+                                                watch[16].height + resvars.coords_PanelLayoutp->watch_button_y, 3);
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.coords_PanelLayoutp->watch_button_x,
+                                 resvars.coords_PanelLayoutp->watch_button_y, watch[14].width, watch[14].height)) {
+                    reqspr_draw(resvars.coords_PanelLayoutp->watch_button_x,
+                                resvars.coords_PanelLayoutp->watch_button_y, &watch[17]);
+                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_button_x,
+                                                    resvars.coords_PanelLayoutp->watch_button_y,
+                                                    watch[17].width + resvars.coords_PanelLayoutp->watch_button_x,
+                                                    resvars.coords_PanelLayoutp->watch_button_y + watch[17].height, 3);
                     if (!othervar.watch_hovered)
                         play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                     othervar.watch_hovered = 1;
@@ -664,21 +691,33 @@ void draw_emergency(void)
                     othervar.watch_hovered = 0;
                 }
                 if (myhosp->opening_countdown / (gbv.open_countdown / 13) >= 6) {
-                    reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy, &watch[1]);
-                    set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
-                                                    resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx + watch[1].width,
-                                                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy + watch[1].height, 3);
+                    reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                                resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                                &watch[1]);
+                    set_all_refresh_zones_in_window(
+                        resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                        resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                        resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx +
+                            watch[1].width,
+                        resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy +
+                            watch[1].height,
+                        3);
                 }
-                reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                reqspr_draw(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                            resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
                             &watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]]);
-                set_all_refresh_zones_in_window(resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx, resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
-                                                (resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx) + watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]].width,
-                                                (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) + watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]].height, 3);
+                set_all_refresh_zones_in_window(
+                    resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx,
+                    resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy,
+                    (resvars.coords_PanelLayoutp->watch_x + resvars.coords_PanelLayoutp->watch_face_dx) +
+                        watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]].width,
+                    (resvars.coords_PanelLayoutp->watch_y + resvars.coords_PanelLayoutp->watch_face_dy) +
+                        watch[watch_face[myhosp->opening_countdown / (gbv.open_countdown / 13)]].height,
+                    3);
             }
         }
     }
 }
-
 
 // Clears the panel's info bar.
 // FUNCTION: 0x00033a40
@@ -688,21 +727,24 @@ void clear_panel_info_bar(void)
 
     if (!gamevar.rat_fest_level) {
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
-        reqspr_draw(((PanelIcon *)panel)[13].x, ((PanelIcon *)panel)[13].y, &game_panel[((PanelIcon *)panel)[13].sprite]);
+        reqspr_draw(((PanelIcon *)panel)[13].x, ((PanelIcon *)panel)[13].y,
+                    &game_panel[((PanelIcon *)panel)[13].sprite]);
         set_all_refresh_zones_in_window(((PanelIcon *)panel)[13].x, ((PanelIcon *)panel)[13].y,
                                         ((PanelIcon *)panel)[13].x + game_panel[((PanelIcon *)panel)[13].sprite].width,
-                                        ((PanelIcon *)panel)[13].y + game_panel[((PanelIcon *)panel)[13].sprite].height, 3);
+                                        ((PanelIcon *)panel)[13].y + game_panel[((PanelIcon *)panel)[13].sprite].height,
+                                        3);
         for (i = 0; ((PanelIcon *)panel)[i].sprite > 0; i++) {
             if (((PanelIcon *)panel)[i].sprite == 0xd) {
-                reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y, &game_panel[((PanelIcon *)panel)[i].sprite]);
-                set_all_refresh_zones_in_window(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y,
-                                                ((PanelIcon *)panel)[i].x + game_panel[((PanelIcon *)panel)[i].sprite].width,
-                                                ((PanelIcon *)panel)[i].y + game_panel[((PanelIcon *)panel)[i].sprite].height, 3);
+                reqspr_draw(((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y,
+                            &game_panel[((PanelIcon *)panel)[i].sprite]);
+                set_all_refresh_zones_in_window(
+                    ((PanelIcon *)panel)[i].x, ((PanelIcon *)panel)[i].y,
+                    ((PanelIcon *)panel)[i].x + game_panel[((PanelIcon *)panel)[i].sprite].width,
+                    ((PanelIcon *)panel)[i].y + game_panel[((PanelIcon *)panel)[i].sprite].height, 3);
             }
         }
     }
 }
-
 
 // Fills the info bar for the patient under the pointer: their status, the
 // room they queue for or are heading to, and the diagnosis or its progress.
@@ -721,7 +763,8 @@ void display_panel_person_info(void)
     line = 0;
     height = resvars.coords_PanelLayoutp->info_line_height;
     clear_panel_info_bar();
-    LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
+    LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x,
+                    lbDisplay.physical_screen_height - panel->y);
     set_font_from_cache(1);
     text = 0;
     if (person->flags2 & (PF_DYING >> 16))
@@ -793,7 +836,6 @@ void display_panel_person_info(void)
     }
 }
 
-
 // Fills the info bar for the staff member under the pointer: their kind and
 // skills, where they are heading, and their tiredness with the hospital's
 // rest threshold.
@@ -815,10 +857,12 @@ void display_panel_staff_info(void)
     height = resvars.coords_PanelLayoutp->info_line_height;
     if (staff->owner != 0x63) {
         clear_panel_info_bar();
-        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
+        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x,
+                        lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(1);
         lib_strcpy(buf, staff_names[staff->subtype]);
-        if ((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) && (staff->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_CONSULTANT | SKILL_RESEARCHER))) {
+        if ((staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON) &&
+            (staff->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_CONSULTANT | SKILL_RESEARCHER))) {
             lib_strcpy(buf, "");
             n = 0;
             if (staff->skills & SKILL_CONSULTANT)
@@ -843,7 +887,8 @@ void display_panel_staff_info(void)
             if (room > room_info) {
                 sprintf(buf, info_bar_text[7], room_names[rooms[room->type].id]);
                 draw_panel_info_line(buf, &line, 2);
-            } else if ((staff->subtype == STAFF_DOCTOR && staff->state == SS_DOCTOR_WAITS_FOR_PATIENT) || staff->next_state == SS_RECEPT_WAITS_FOR_PATIENT) {
+            } else if ((staff->subtype == STAFF_DOCTOR && staff->state == SS_DOCTOR_WAITS_FOR_PATIENT) ||
+                       staff->next_state == SS_RECEPT_WAITS_FOR_PATIENT) {
                 draw_panel_info_line(info_bar_text[23], &line, 2);
             } else if (staff->state == SS_WANDERS) {
                 draw_panel_info_line(info_bar_text[27], &line, 2);
@@ -852,14 +897,18 @@ void display_panel_staff_info(void)
         pct = allhosps[staff->owner].rest_threshold * 100 / 1000;
         pct > 100 ? pct = 100 : 0;
         draw_panel_percent_bar(staff->tiredness * 100 / 1000, info_bar_text[28]);
-        LbDrawHVLine(pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100 + (resvars.boxes_PanelLayoutp->info_bar_x + panel->x + 1),
-                    resvars.boxes_PanelLayoutp->info_bar_y + (panel->y + resvars.coords_PanelLayoutp->info_text_y + resvars.coords_PanelLayoutp->info_line_height * 2 + 1),
-                    panel->x + resvars.boxes_PanelLayoutp->info_bar_x + 1 + pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100,
-                    panel->y + resvars.coords_PanelLayoutp->info_text_y + resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.boxes_PanelLayoutp->info_bar_h - 1 + resvars.boxes_PanelLayoutp->info_bar_y,
-                    color.white);
+        LbDrawHVLine(pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100 +
+                         (resvars.boxes_PanelLayoutp->info_bar_x + panel->x + 1),
+                     resvars.boxes_PanelLayoutp->info_bar_y + (panel->y + resvars.coords_PanelLayoutp->info_text_y +
+                                                               resvars.coords_PanelLayoutp->info_line_height * 2 + 1),
+                     panel->x + resvars.boxes_PanelLayoutp->info_bar_x + 1 +
+                         pct * (resvars.boxes_PanelLayoutp->info_bar_w - 2) / 100,
+                     panel->y + resvars.coords_PanelLayoutp->info_text_y +
+                         resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.boxes_PanelLayoutp->info_bar_h -
+                         1 + resvars.boxes_PanelLayoutp->info_bar_y,
+                     color.white);
     }
 }
-
 
 // Fills the info bar for the object under the pointer: its name, strength and
 // uses.
@@ -874,7 +923,8 @@ void display_panel_object_info(void)
     line = 0;
     clear_panel_info_bar();
     if (obj->type == THING_OBJECT) {
-        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
+        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x,
+                        lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(1);
         draw_panel_info_line(object_names[obj->subtype], &line, 3);
         if (resvars.game_mode == SCREEN_MODE_13) {
@@ -911,7 +961,8 @@ void display_panel_queue_info(void)
         room = &room_info[selected->room_id];
     if (room > room_info) {
         clear_panel_info_bar();
-        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
+        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x,
+                        lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(1);
         draw_panel_info_line(room_names[rooms[room->type].id], &line, 3);
         sprintf(buf, info_bar_text[32], room->queue_length);
@@ -935,7 +986,8 @@ void display_panel_mayor_info(void)
     mayor = &thing[othervar.panel_thing];
     line = 0;
     clear_panel_info_bar();
-    LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
+    LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x,
+                    lbDisplay.physical_screen_height - panel->y);
     set_font_from_cache(1);
     if (mayor->type == THING_MAYOR) {
         draw_panel_info_line(info_bar_text[20], &line, 3);
@@ -956,7 +1008,8 @@ void display_panel_usage_info(void)
     machine = &thing[othervar.panel_thing];
     line = 0;
     clear_panel_info_bar();
-    LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
+    LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x,
+                    lbDisplay.physical_screen_height - panel->y);
     set_font_from_cache(1);
     draw_panel_info_line(object_names[machine->subtype], &line, 3);
     if (resvars.game_mode != SCREEN_MODE_13)
@@ -1002,7 +1055,9 @@ void draw_popup_icons(void)
             redraw = 1;
             break;
         }
-        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height + resvars.coords_PanelLayoutp->popup_window_dy,
+        LbScreenSetGraphicsWindow(0,
+                                  ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height +
+                                      resvars.coords_PanelLayoutp->popup_window_dy,
                                   lbDisplay.graphics_screen_width, game_panel[popup_icons[1].sprite].height);
         for (i = 1; popup_icons[i].sprite != 0; i++) {
             if (listhead[player].first[i]) {
@@ -1011,17 +1066,20 @@ void draw_popup_icons(void)
                 if (call->slot < 9) {
                     if (call->flash) {
                         if (call->flash > 0x22)
-                            x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->popup_icon_dx;
+                            x = resvars.coords_PanelLayoutp->slots[call->slot].x +
+                                resvars.coords_PanelLayoutp->popup_icon_dx;
                         else
                             x = resvars.coords_PanelLayoutp->slots[0].x + resvars.coords_PanelLayoutp->popup_icon_dx;
                     } else {
-                        x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->popup_icon_dx;
+                        x = resvars.coords_PanelLayoutp->slots[call->slot].x +
+                            resvars.coords_PanelLayoutp->popup_icon_dx;
                     }
                     y = 0;
                     if (call->flash) {
                         x += resvars.panel_popup_coords_Pointp[call->flash].x;
                         y += resvars.panel_popup_coords_Pointp[call->flash].y;
-                        if (resvars.panel_popup_coords_Pointp[call->flash].x == 0 && resvars.panel_popup_coords_Pointp[call->flash].y == 0) {
+                        if (resvars.panel_popup_coords_Pointp[call->flash].x == 0 &&
+                            resvars.panel_popup_coords_Pointp[call->flash].y == 0) {
                             call->flash = 0;
                         } else {
                             if (call->flash == 1 && othervar.popup_shutter_state != 3) {
@@ -1029,8 +1087,10 @@ void draw_popup_icons(void)
                                 call->flash++;
                             }
                             for (;;) {
-                                if (resvars.panel_popup_coords_Pointp[call->flash].x < resvars.coords_PanelLayoutp->slots[call->slot].x) {
-                                    if (resvars.panel_popup_coords_Pointp[call->flash].x == 0 && resvars.panel_popup_coords_Pointp[call->flash].y == 0) {
+                                if (resvars.panel_popup_coords_Pointp[call->flash].x <
+                                    resvars.coords_PanelLayoutp->slots[call->slot].x) {
+                                    if (resvars.panel_popup_coords_Pointp[call->flash].x == 0 &&
+                                        resvars.panel_popup_coords_Pointp[call->flash].y == 0) {
                                         if (call->flash > 0x22) {
                                             call->flash = 0;
                                         } else {
@@ -1060,14 +1120,17 @@ void draw_popup_icons(void)
                     if (y) {
                         reqspr_draw(x, y, spr);
                         if (popup_icons[i].sprite == 0x2b)
-                            reqspr_draw(x + resvars.coords_PanelLayoutp->emergency_anim_dx, y + resvars.coords_PanelLayoutp->emergency_anim_dy, &game_panel[panel_emergency_spr[othervar.emergency_anim_frame]]);
+                            reqspr_draw(x + resvars.coords_PanelLayoutp->emergency_anim_dx,
+                                        y + resvars.coords_PanelLayoutp->emergency_anim_dy,
+                                        &game_panel[panel_emergency_spr[othervar.emergency_anim_frame]]);
                         othervar.popup_shutter_state = 2;
                         no_flash = 0;
                     }
                     redraw = 1;
                     y += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height;
                     y1 += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height;
-                    if (lbDisplay.mmouse_x >= x && lbDisplay.mmouse_x < x1 && lbDisplay.mmouse_y >= y && lbDisplay.mmouse_y < y1)
+                    if (lbDisplay.mmouse_x >= x && lbDisplay.mmouse_x < x1 && lbDisplay.mmouse_y >= y &&
+                        lbDisplay.mmouse_y < y1)
                         othervar.hovered_popup_icon = i;
                     set_all_refresh_zones_in_window(x, y, x1, y1, 3);
                 }
@@ -1077,15 +1140,19 @@ void draw_popup_icons(void)
         if (no_flash)
             othervar.popup_shutter_state = 4;
         if (redraw) {
-            reqspr_draw(((PanelIcon *)panel)[0].x, ((PanelIcon *)panel)[0].y, &game_panel[((PanelIcon *)panel)[0].sprite]);
-            reqspr_draw(((PanelIcon *)panel)[1].x, ((PanelIcon *)panel)[1].y, &game_panel[((PanelIcon *)panel)[1].sprite]);
+            reqspr_draw(((PanelIcon *)panel)[0].x, ((PanelIcon *)panel)[0].y,
+                        &game_panel[((PanelIcon *)panel)[0].sprite]);
+            reqspr_draw(((PanelIcon *)panel)[1].x, ((PanelIcon *)panel)[1].y,
+                        &game_panel[((PanelIcon *)panel)[1].sprite]);
             draw_money_on_panel();
             draw_date_on_panel();
             draw_rep_on_panel();
             set_all_refresh_zones_in_window(((PanelIcon *)panel)[0].x, ((PanelIcon *)panel)[0].y,
                                             ((PanelIcon *)panel)[0].x2, ((PanelIcon *)panel)[0].y2, 3);
         }
-        LbScreenSetGraphicsWindow(0, ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height + resvars.coords_PanelLayoutp->popup_window_dy,
+        LbScreenSetGraphicsWindow(0,
+                                  ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height +
+                                      resvars.coords_PanelLayoutp->popup_window_dy,
                                   lbDisplay.graphics_screen_width, game_panel[popup_icons[1].sprite].height);
         for (i = 1; popup_icons[i].sprite != 0; i++) {
             if (listhead[player].first[i]) {
@@ -1094,11 +1161,13 @@ void draw_popup_icons(void)
                 if (call->slot < 9) {
                     if (call->flash) {
                         if (call->flash > 0x22)
-                            x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->popup_icon_dx;
+                            x = resvars.coords_PanelLayoutp->slots[call->slot].x +
+                                resvars.coords_PanelLayoutp->popup_icon_dx;
                         else
                             x = resvars.coords_PanelLayoutp->slots[0].x + resvars.coords_PanelLayoutp->popup_icon_dx;
                     } else {
-                        x = resvars.coords_PanelLayoutp->slots[call->slot].x + resvars.coords_PanelLayoutp->popup_icon_dx;
+                        x = resvars.coords_PanelLayoutp->slots[call->slot].x +
+                            resvars.coords_PanelLayoutp->popup_icon_dx;
                     }
                     y = 0;
                     if (call->flash) {
@@ -1110,7 +1179,9 @@ void draw_popup_icons(void)
                         y1 = y + spr->height;
                         reqspr_draw(x, y, spr);
                         if (popup_icons[i].sprite == 0x2b)
-                            reqspr_draw(x + resvars.coords_PanelLayoutp->emergency_anim_dx, y + resvars.coords_PanelLayoutp->emergency_anim_dy, &game_panel[panel_emergency_spr[othervar.emergency_anim_frame]]);
+                            reqspr_draw(x + resvars.coords_PanelLayoutp->emergency_anim_dx,
+                                        y + resvars.coords_PanelLayoutp->emergency_anim_dy,
+                                        &game_panel[panel_emergency_spr[othervar.emergency_anim_frame]]);
                         y += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height;
                         y1 += ((PanelIcon *)panel)[0].y - game_panel[popup_icons[1].sprite].height;
                         set_all_refresh_zones_in_window(x, y, x1, y1, 3);
@@ -1186,7 +1257,6 @@ void draw_popup_icons(void)
         lbDisplay.draw_flags = 0;
     }
 }
-
 
 // Removes call's icon from the panel if it is this player's, and closes up
 // any empty slot.
@@ -1324,7 +1394,6 @@ void maintain_panel_popup(void)
     }
 }
 
-
 // Flashes the panel icon the advisor points at (advisor.tutorial_highlight 0x10-0x1b)
 // every ten frames.
 // FUNCTION: 0x00035c68
@@ -1335,7 +1404,9 @@ void panel_flash(void)
     if (advisor.tutorial_highlight >= 0x10 && advisor.tutorial_highlight <= 0x1b) {
         othervar.flash_counter++;
         if (othervar.flash_counter % 10 == 0) {
-            reqspr_draw(((PanelIcon *)panel)[advisor.tutorial_highlight - 0x10].x, ((PanelIcon *)panel)[advisor.tutorial_highlight - 0x10].y, &game_panel[((PanelIcon *)panel)[advisor.tutorial_highlight - 0x10].pressed]);
+            reqspr_draw(((PanelIcon *)panel)[advisor.tutorial_highlight - 0x10].x,
+                        ((PanelIcon *)panel)[advisor.tutorial_highlight - 0x10].y,
+                        &game_panel[((PanelIcon *)panel)[advisor.tutorial_highlight - 0x10].pressed]);
             othervar.flash_counter = 0;
             D_00156910 = 1;
         }
@@ -1361,16 +1432,20 @@ void draw_ratfest_on_panel(void)
     LbTextDraw(0x5d, 0x1be, buf);
     switch (gamevar.rat_fest_powerup) {
     case 0:
-        reqspr_draw(((PanelIcon *)panel)[1].x, ((PanelIcon *)panel)[1].y + 0xb, &game_panel[((PanelIcon *)panel)[1].pressed]);
+        reqspr_draw(((PanelIcon *)panel)[1].x, ((PanelIcon *)panel)[1].y + 0xb,
+                    &game_panel[((PanelIcon *)panel)[1].pressed]);
         break;
     case 1:
-        reqspr_draw(((PanelIcon *)panel)[2].x, ((PanelIcon *)panel)[2].y + 0xb, &game_panel[((PanelIcon *)panel)[2].pressed]);
+        reqspr_draw(((PanelIcon *)panel)[2].x, ((PanelIcon *)panel)[2].y + 0xb,
+                    &game_panel[((PanelIcon *)panel)[2].pressed]);
         break;
     case 2:
-        reqspr_draw(((PanelIcon *)panel)[3].x, ((PanelIcon *)panel)[3].y + 0xb, &game_panel[((PanelIcon *)panel)[3].pressed]);
+        reqspr_draw(((PanelIcon *)panel)[3].x, ((PanelIcon *)panel)[3].y + 0xb,
+                    &game_panel[((PanelIcon *)panel)[3].pressed]);
         break;
     case 3:
-        reqspr_draw(((PanelIcon *)panel)[4].x, ((PanelIcon *)panel)[4].y + 0xb, &game_panel[((PanelIcon *)panel)[4].pressed]);
+        reqspr_draw(((PanelIcon *)panel)[4].x, ((PanelIcon *)panel)[4].y + 0xb,
+                    &game_panel[((PanelIcon *)panel)[4].pressed]);
         break;
     }
     if (myhosp->litter_count < 100)
@@ -1448,11 +1523,13 @@ void draw_ratfest_on_panel(void)
         break;
     }
     reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c, ((PanelIcon *)panel)[5].y + 0xc, &game_panel[s0]);
-    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width, ((PanelIcon *)panel)[5].y + 0xc, &game_panel[s1]);
-    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width * 2, ((PanelIcon *)panel)[5].y + 0xc, &game_panel[s2]);
-    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width * 3, ((PanelIcon *)panel)[5].y + 0xc, &game_panel[s3]);
+    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width, ((PanelIcon *)panel)[5].y + 0xc,
+                &game_panel[s1]);
+    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width * 2, ((PanelIcon *)panel)[5].y + 0xc,
+                &game_panel[s2]);
+    reqspr_draw(((PanelIcon *)panel)[5].x + 0x2c + game_panel[26].width * 3, ((PanelIcon *)panel)[5].y + 0xc,
+                &game_panel[s3]);
 }
-
 
 // While the game is paused, or a panel message (othervar.panel_message, a misc_text
 // index) is timed, shows it on the info bar. Returns 1 if it did.
@@ -1482,7 +1559,8 @@ u8 display_panel_special_info(void)
         }
         panel = panel_icons_normal;
         while (((PanelIcon *)panel)[i].sprite > 0) {
-            ((PanelIcon *)panel)[i].y = lbDisplay.physical_screen_height - game_panel[((PanelIcon *)panel)[i].sprite].height;
+            ((PanelIcon *)panel)[i].y =
+                lbDisplay.physical_screen_height - game_panel[((PanelIcon *)panel)[i].sprite].height;
             ((PanelIcon *)panel)[i].y2 = lbDisplay.physical_screen_height;
             ((PanelIcon *)panel)[i].x = x;
             ((PanelIcon *)panel)[i].x2 = x + game_panel[((PanelIcon *)panel)[i].sprite].width;
@@ -1491,12 +1569,15 @@ u8 display_panel_special_info(void)
         }
         statvar.panel_top = ((PanelIcon *)panel)[1].y;
         clear_panel_info_bar();
-        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x, lbDisplay.physical_screen_height - panel->y);
+        LbTextSetWindow(panel->x, panel->y, lbDisplay.physical_screen_width - panel->x,
+                        lbDisplay.physical_screen_height - panel->y);
         set_font_from_cache(0x2c);
         if (gamevar.paused) {
-            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, y + resvars.coords_PanelLayoutp->info_text_y, misc_text[21]);
+            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, y + resvars.coords_PanelLayoutp->info_text_y,
+                       misc_text[21]);
         } else if (othervar.panel_message) {
-            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, y + resvars.coords_PanelLayoutp->info_text_y, misc_text[othervar.panel_message]);
+            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, y + resvars.coords_PanelLayoutp->info_text_y,
+                       misc_text[othervar.panel_message]);
             othervar.panel_message_time--;
             if (othervar.panel_message_time == 0)
                 othervar.panel_message = 0;
@@ -1505,7 +1586,6 @@ u8 display_panel_special_info(void)
     }
     return 0;
 }
-
 
 // Help text for the panel's watch: emergency, epidemic or the other timed
 // event, into othervar.help_msg.
@@ -1558,12 +1638,17 @@ void draw_panel_percent_bar(s32 value, char *text)
     s32 y;
 
     x = resvars.boxes_PanelLayoutp->info_bar_x + panel->x;
-    y = resvars.coords_PanelLayoutp->info_text_y + panel->y + resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.boxes_PanelLayoutp->info_bar_y;
+    y = resvars.coords_PanelLayoutp->info_text_y + panel->y + resvars.coords_PanelLayoutp->info_line_height * 2 +
+        resvars.boxes_PanelLayoutp->info_bar_y;
     value > 100 ? (value = 100) : 0;
-    LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.coords_PanelLayoutp->info_text_y, text);
+    LbTextDraw(resvars.coords_PanelLayoutp->info_text_x,
+               resvars.coords_PanelLayoutp->info_line_height * 2 + resvars.coords_PanelLayoutp->info_text_y, text);
     LbDrawBox(x, y, resvars.boxes_PanelLayoutp->info_bar_w, resvars.boxes_PanelLayoutp->info_bar_h, color.white);
-    LbDrawBox(x + 1, y + 1, (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100, resvars.boxes_PanelLayoutp->info_bar_h - 2, color.red);
-    LbDrawBox(x + 1 + (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100, y + 1, resvars.boxes_PanelLayoutp->info_bar_w - 2 - (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100, resvars.boxes_PanelLayoutp->info_bar_h - 2, color.black);
+    LbDrawBox(x + 1, y + 1, (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100,
+              resvars.boxes_PanelLayoutp->info_bar_h - 2, color.red);
+    LbDrawBox(x + 1 + (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100, y + 1,
+              resvars.boxes_PanelLayoutp->info_bar_w - 2 - (resvars.boxes_PanelLayoutp->info_bar_w - 2) * value / 100,
+              resvars.boxes_PanelLayoutp->info_bar_h - 2, color.black);
 }
 
 // Draws text on info bar line *line, wrapping it onto a second line if too
@@ -1581,7 +1666,8 @@ void draw_panel_info_line(char *text, u8 *line, u8 lines)
     width = lbDisplay.physical_screen_width - panel->x - resvars.coords_PanelLayoutp->info_text_x * 2;
     if (LbTextStringWidth(text) < width) {
         if (*line + 1 <= lines) {
-            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_text_y + *line * height, text);
+            LbTextDraw(resvars.coords_PanelLayoutp->info_text_x,
+                       resvars.coords_PanelLayoutp->info_text_y + *line * height, text);
             (*line)++;
         }
     } else if (*line + 2 <= lines) {
@@ -1599,10 +1685,12 @@ void draw_panel_info_line(char *text, u8 *line, u8 lines)
             }
         }
         last[-1] = 0;
-        LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_text_y + *line * height, text);
+        LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_text_y + *line * height,
+                   text);
         last[-1] = ' ';
         (*line)++;
-        LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_text_y + *line * height, last);
+        LbTextDraw(resvars.coords_PanelLayoutp->info_text_x, resvars.coords_PanelLayoutp->info_text_y + *line * height,
+                   last);
         (*line)++;
     }
 }

@@ -41,7 +41,8 @@ void setup_help_indices(void)
         ++i;
         ++help_group;
         statvar.help_start[help_group] = i;
-        if (i == 0x1b) {}
+        if (i == 0x1b) {
+        }
     }
 }
 
@@ -65,8 +66,8 @@ void compute_help_text(s16 x, s16 y, u8 help_group)
         return;
     }
     for (i = statvar.help_start[help_group]; resvars.help_hotspots_HelpHotspotp[i].x0 >= 0; i++) {
-        if (dx >= resvars.help_hotspots_HelpHotspotp[i].x0 && dx <= resvars.help_hotspots_HelpHotspotp[i].x1 && dy >= resvars.help_hotspots_HelpHotspotp[i].y0
-            && dy <= resvars.help_hotspots_HelpHotspotp[i].y1) {
+        if (dx >= resvars.help_hotspots_HelpHotspotp[i].x0 && dx <= resvars.help_hotspots_HelpHotspotp[i].x1 &&
+            dy >= resvars.help_hotspots_HelpHotspotp[i].y0 && dy <= resvars.help_hotspots_HelpHotspotp[i].y1) {
             help_hotspot_detected(i, help_group, x, y);
             return;
         }
@@ -116,7 +117,8 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
         y0 = othervar.help_y;
         x1 = x0 + othervar.help_w;
         y1 = y0 + othervar.help_h;
-        if (!((lbDisplay.mmouse_x >= x0 && lbDisplay.mmouse_x < x1) && lbDisplay.mmouse_y >= y0 && lbDisplay.mmouse_y < y1)) {
+        if (!((lbDisplay.mmouse_x >= x0 && lbDisplay.mmouse_x < x1) && lbDisplay.mmouse_y >= y0 &&
+              lbDisplay.mmouse_y < y1)) {
             mx = lbDisplay.mmouse_x;
             my = lbDisplay.mmouse_y;
             mx < x0 ? mx = x0 : 0;
@@ -133,8 +135,12 @@ void set_help_text(u8 mode, s16 x, s16 y, char **strs)
     }
     othervar.help_x < 0 ? othervar.help_x = 0 : 0;
     othervar.help_y < 0 ? othervar.help_y = 0 : 0;
-    othervar.help_x > lbDisplay.physical_screen_width - othervar.help_w ? othervar.help_x = lbDisplay.physical_screen_width - othervar.help_w : 0;
-    othervar.help_y > lbDisplay.physical_screen_width - othervar.help_h ? othervar.help_y = lbDisplay.physical_screen_width - othervar.help_h : 0;
+    othervar.help_x > lbDisplay.physical_screen_width - othervar.help_w
+        ? othervar.help_x = lbDisplay.physical_screen_width - othervar.help_w
+        : 0;
+    othervar.help_y > lbDisplay.physical_screen_width - othervar.help_h
+        ? othervar.help_y = lbDisplay.physical_screen_width - othervar.help_h
+        : 0;
 }
 
 // Draws the prepared help box and its text, with a close button for help
@@ -153,13 +159,14 @@ void draw_help_text(void)
     if (!(othervar.help_msg[0] && (mouse_mode_help_allowed[gamevar.mouse_mode] || (advisor.flags & 1))))
         return;
     set_all_refresh_zones_in_window(othervar.help_x, othervar.help_y, othervar.help_x + othervar.help_w + 0xc,
-        othervar.help_y + othervar.help_h + 0xc, 3);
+                                    othervar.help_y + othervar.help_h + 0xc, 3);
     if (othervar.help_group == 3)
         D_00156910 = 1;
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_width);
     lbDisplay.draw_flags = 0;
-    LbDrawBox(othervar.help_x, othervar.help_y, othervar.help_w, othervar.help_h, othervar.screen_pic_loaded ? color.white : 0xab);
+    LbDrawBox(othervar.help_x, othervar.help_y, othervar.help_w, othervar.help_h,
+              othervar.screen_pic_loaded ? color.white : 0xab);
     switch (othervar.help_style) {
     case 1:
         lbDisplay.draw_flags = 0x10;
@@ -184,13 +191,15 @@ void draw_help_text(void)
         reqspr_draw(othervar.help_x, othervar.help_y, &pulldv[11]);
         reqspr_draw(othervar.help_x + othervar.help_w - pulldv[13].width, othervar.help_y, &pulldv[13]);
         reqspr_draw(othervar.help_x, othervar.help_y + othervar.help_h - pulldv[17].height, &pulldv[17]);
-        reqspr_draw(othervar.help_x + othervar.help_w - pulldv[15].width, othervar.help_y + othervar.help_h - pulldv[15].height,
-            &pulldv[15]);
+        reqspr_draw(othervar.help_x + othervar.help_w - pulldv[15].width,
+                    othervar.help_y + othervar.help_h - pulldv[15].height, &pulldv[15]);
         border = pulldv[12].height + 0xc;
         othervar.help_close_x = othervar.help_x + othervar.help_w - 0xc - pulldv[19].width;
         othervar.help_close_y = othervar.help_y + othervar.help_h - 0xc - pulldv[19].height;
-        if ((othervar.help_close_x <= lbDisplay.mmouse_x && othervar.help_close_x + pulldv[19].width > lbDisplay.mmouse_x)
-            && othervar.help_close_y <= lbDisplay.mmouse_y && othervar.help_close_y + pulldv[19].height > lbDisplay.mmouse_y) {
+        if ((othervar.help_close_x <= lbDisplay.mmouse_x &&
+             othervar.help_close_x + pulldv[19].width > lbDisplay.mmouse_x) &&
+            othervar.help_close_y <= lbDisplay.mmouse_y &&
+            othervar.help_close_y + pulldv[19].height > lbDisplay.mmouse_y) {
             reqspr_draw(othervar.help_close_x, othervar.help_close_y, &pulldv[20]);
             if (!help_close_hover)
                 play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
@@ -430,7 +439,8 @@ void show_help_page(u32 page, u32 sub)
         case 2:
         case 8:
         case 3:
-            sprintf(buf, net_mission_text[statvar.net_help_start[sub]], current_net_criteria.start - othervar.game_month);
+            sprintf(buf, net_mission_text[statvar.net_help_start[sub]],
+                    current_net_criteria.start - othervar.game_month);
             saved = net_mission_text[statvar.net_help_start[sub]];
             net_mission_text[statvar.net_help_start[sub]] = buf;
             break;
@@ -439,11 +449,11 @@ void show_help_page(u32 page, u32 sub)
         case 5:
         case 7:
             if (current_net_criteria.criterion == 7 && myplayer.language == 2)
-                sprintf(buf, net_mission_text[statvar.net_help_start[sub]], current_net_criteria.start - othervar.game_month,
-                    current_net_criteria.value);
+                sprintf(buf, net_mission_text[statvar.net_help_start[sub]],
+                        current_net_criteria.start - othervar.game_month, current_net_criteria.value);
             else
                 sprintf(buf, net_mission_text[statvar.net_help_start[sub]], current_net_criteria.value,
-                    current_net_criteria.start - othervar.game_month);
+                        current_net_criteria.start - othervar.game_month);
             saved = net_mission_text[statvar.net_help_start[sub]];
             net_mission_text[statvar.net_help_start[sub]] = buf;
             break;
@@ -470,7 +480,8 @@ void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n)
 
     count = 0;
     i = 0;
-    if (strs) {}
+    if (strs) {
+    }
     for (; strcmp(*strs, "..") != 0 && count < n; count++) {
         *idx++ = i;
         for (; strcmp(*strs, ".") != 0; i++)
@@ -478,7 +489,8 @@ void setup_indices_for_composite_help(char **strs, u16 *idx, u32 n)
         strs++;
         i++;
     }
-    if (count == n && strcmp(*strs, "..") != 0) {}
+    if (count == n && strcmp(*strs, "..") != 0) {
+    }
 }
 
 // Closes a help page and leaves help mode; after some briefing pages opens

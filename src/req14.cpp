@@ -176,9 +176,10 @@ void req14_overdraw(Window *win)
             count = gamevar.buy_count[obj];
             if (count) {
                 reqspr_draw(bx, by, &button_sprite[resvars.requester_sprites[0x1d]]);
-                if ((ox + resvars.boxes[0x27].x <= lbDisplay.mmouse_x && ox + resvars.boxes[0x27].x + resvars.boxes[0x27].w > lbDisplay.mmouse_x)
-                    && by + resvars.boxes[0x29].y <= lbDisplay.mmouse_y
-                    && by + resvars.boxes[0x27].y + resvars.boxes[0x27].h > lbDisplay.mmouse_y) {
+                if ((ox + resvars.boxes[0x27].x <= lbDisplay.mmouse_x &&
+                     ox + resvars.boxes[0x27].x + resvars.boxes[0x27].w > lbDisplay.mmouse_x) &&
+                    by + resvars.boxes[0x29].y <= lbDisplay.mmouse_y &&
+                    by + resvars.boxes[0x27].y + resvars.boxes[0x27].h > lbDisplay.mmouse_y) {
                     if (hilighted_object != obj)
                         play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                     hilighted_object = obj;
@@ -210,8 +211,8 @@ void req14_overdraw(Window *win)
             if (count) {
                 if (crequester.arg3 == obj) {
                     lbDisplay.draw_flags |= 0x10;
-                    LbDrawBox(ox + resvars.boxes[0x27].x, by + resvars.boxes[0x27].y, resvars.boxes[0x27].w, resvars.boxes[0x27].h,
-                        color.red);
+                    LbDrawBox(ox + resvars.boxes[0x27].x, by + resvars.boxes[0x27].y, resvars.boxes[0x27].w,
+                              resvars.boxes[0x27].h, color.red);
                     lbDisplay.draw_flags ^= 0x10;
                 }
                 if (obj == hilighted_object)
@@ -219,7 +220,7 @@ void req14_overdraw(Window *win)
                 else
                     set_font_from_cache(1);
                 LbTextSetClipWindow(ox + resvars.boxes[0x27].x, by + resvars.boxes[0x27].y,
-                    resvars.boxes[0x29].w + resvars.boxes[0x28].w + 0x14, resvars.boxes[0x27].h);
+                                    resvars.boxes[0x29].w + resvars.boxes[0x28].w + 0x14, resvars.boxes[0x27].h);
                 LbTextSetJustifyWindow(ox + resvars.boxes[0x28].x, by + resvars.boxes[0x28].y, resvars.boxes[0x28].w);
                 LbTextDraw(0, 0, object_names[obj]);
                 LbTextSetJustifyWindow(ox + resvars.boxes[0x29].x, by + resvars.boxes[0x29].y, resvars.boxes[0x29].w);
@@ -251,7 +252,8 @@ void set_edit_room_requester_mode(const u8 mode)
         othervar.edit_room_hint = 0xa;
         break;
     case 2:
-        crequester.arg = (1 << resvars.requester_buttons[0x50]) | (1 << resvars.requester_buttons[0x51]) | (1 << resvars.requester_buttons[0x52]);
+        crequester.arg = (1 << resvars.requester_buttons[0x50]) | (1 << resvars.requester_buttons[0x51]) |
+                         (1 << resvars.requester_buttons[0x52]);
         othervar.edit_room_hint = 0xb;
         break;
     case 4:
@@ -276,7 +278,8 @@ void set_edit_room_requester_mode(const u8 mode)
         }
         break;
     case 0xa:
-        crequester.arg = (1 << resvars.requester_buttons[0x52]) | (1 << resvars.requester_buttons[0x50]) | (1 << resvars.requester_buttons[0x51]);
+        crequester.arg = (1 << resvars.requester_buttons[0x52]) | (1 << resvars.requester_buttons[0x50]) |
+                         (1 << resvars.requester_buttons[0x51]);
         othervar.edit_room_hint = 0x10;
         crequester.kind = 3;
         break;

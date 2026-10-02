@@ -238,8 +238,9 @@ void draw_a_box(u8 zoom)
     if (step != 0) {
         lbDisplay.draw_flags = 0;
         if (ZoomBoxes[zoom].button) {
-            if (!((((s8)ZoomBoxes[zoom].type != 2 && display_mode == DM_NICKNAME) || (to[0] == 0x213 && display_mode == DM_NETWORK_SELECT))
-                  && current_balance_file && current_balance_file == current_balance_file->next)) {
+            if (!((((s8)ZoomBoxes[zoom].type != 2 && display_mode == DM_NICKNAME) ||
+                   (to[0] == 0x213 && display_mode == DM_NETWORK_SELECT)) &&
+                  current_balance_file && current_balance_file == current_balance_file->next)) {
                 draw_button_box(x, y, w, h);
                 draw_button_edges(x, y, w - 1, h - 1, 0);
             }
@@ -292,8 +293,8 @@ s8 draw_zoom_boxes(void)
     found = 0;
     for (i = 0; i < 0x2e; i++) {
         if (ZoomBoxes[i].active) {
-            if ((ZoomBoxes[i].step > 0 && ZoomBoxes[i].step < ZoomBoxes[i].steps - 1)
-                || (ZoomBoxes[i].step && !(DesiredDisplay & ZoomBoxes[i].id))) {
+            if ((ZoomBoxes[i].step > 0 && ZoomBoxes[i].step < ZoomBoxes[i].steps - 1) ||
+                (ZoomBoxes[i].step && !(DesiredDisplay & ZoomBoxes[i].id))) {
                 found = 1;
                 if (ZoomBoxes[i].type > hi)
                     hi = ZoomBoxes[i].type;
@@ -326,8 +327,8 @@ s8 draw_zoom_boxes(void)
                         if (!ZoomBoxes[i].open_delay) {
                             if (++ZoomBoxes[i].step >= ZoomBoxes[i].steps - 1) {
                                 for (j = 0; j < 0x2e; j++) {
-                                    if (((ZoomBoxes[j].active && i != j) && ZoomBoxes[j].id == ZoomBoxes[i].id)
-                                        && ZoomBoxes[j].step != ZoomBoxes[j].steps - 1)
+                                    if (((ZoomBoxes[j].active && i != j) && ZoomBoxes[j].id == ZoomBoxes[i].id) &&
+                                        ZoomBoxes[j].step != ZoomBoxes[j].steps - 1)
                                         break;
                                 }
                                 if (j == 0x2e)
@@ -485,10 +486,10 @@ void draw_glass_text(SlistButton *button, char *text)
     lbDisplay.draw_flags &= 4;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetJustifyWindow(button->x, 0, button->x1 - button->x + 1);
-    if ((lbDisplay.mleft_button
-         && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, button->x, button->y, button->x1 - button->x + 1, button->y1 - button->y + 1))
-        || (lbDisplay.rleft_button
-            && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, button->x, button->y, button->x1 - button->x + 1, button->y1 - button->y + 1))) {
+    if ((lbDisplay.mleft_button && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, button->x, button->y,
+                                                button->x1 - button->x + 1, button->y1 - button->y + 1)) ||
+        (lbDisplay.rleft_button && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, button->x, button->y,
+                                                button->x1 - button->x + 1, button->y1 - button->y + 1))) {
         set_font_from_cache(0x22);
         x = (button->x1 - button->x + 1 - LbTextStringWidth(text)) >> 1;
         LbTextDraw(x + 1, ((button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
@@ -525,10 +526,10 @@ void draw_glass_text_hilight_no_jump(SlistButton *button, char *text)
     LbTextSetJustifyWindow(button->x, 0, button->x1 - button->x + 1);
     set_font_from_cache(0x22);
     x = (button->x1 - button->x + 1 - LbTextStringWidth(text)) >> 1;
-    if ((lbDisplay.mleft_button
-         && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, button->x, button->y, button->x1 - button->x + 1, button->y1 - button->y + 1))
-        || (lbDisplay.rleft_button
-            && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, button->x, button->y, button->x1 - button->x + 1, button->y1 - button->y + 1)))
+    if ((lbDisplay.mleft_button && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, button->x, button->y,
+                                                button->x1 - button->x + 1, button->y1 - button->y + 1)) ||
+        (lbDisplay.rleft_button && over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, button->x, button->y,
+                                                button->x1 - button->x + 1, button->y1 - button->y + 1)))
         LbTextDraw(x + 1, ((button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1) + 1, text);
     else
         LbTextDraw(x, (button->y1 + button->y + 1 - (lbFontPtr ? lbFontPtr[34].height : 0)) >> 1, text);

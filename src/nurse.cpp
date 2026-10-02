@@ -2,10 +2,8 @@
 
 extern "C" {
 
-
 void remove_person_from_room_list(Thing *person);
 u8 check_room_mutex(Thing *staff);
-
 }
 
 u16 find_unallocated_bed(RoomInfo *room);
@@ -99,9 +97,11 @@ void nurse_in_ward(Thing *nurse)
             return;
         if ((nurse->orders & ORD_REST) && take_a_break(nurse))
             return;
-        if (allhosps[nurse->owner].staff_leave_rooms
-            && actual_game_turn % (nurse->tiredness > allhosps[nurse->owner].rest_threshold ? nurse->work_delay * 2 + 1 : nurse->work_delay + 1) == 0
-            && obey_pager(nurse))
+        if (allhosps[nurse->owner].staff_leave_rooms &&
+            actual_game_turn % (nurse->tiredness > allhosps[nurse->owner].rest_threshold ? nurse->work_delay * 2 + 1
+                                                                                         : nurse->work_delay + 1) ==
+                0 &&
+            obey_pager(nurse))
             return;
         if (nurse->tiredness > allhosps[nurse->owner].rest_threshold && take_a_break(nurse))
             return;

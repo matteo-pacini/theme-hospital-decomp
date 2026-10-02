@@ -85,7 +85,8 @@ s8 tutorial(void)
                 advisor.tutorial_step = 0x1d;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if ((old_packet[player].type == EV_SELL_OBJECT && old_packet[player].value == 0xb) && gamevar.buy_list.to_place[0xb] == 0) {
+            } else if ((old_packet[player].type == EV_SELL_OBJECT && old_packet[player].value == 0xb) &&
+                       gamevar.buy_list.to_place[0xb] == 0) {
                 tutorial_display_flags[13] = 0;
                 tutorial_display_flags[11] = 0;
                 advisor.tutorial_step = 0x28;
@@ -175,7 +176,8 @@ s8 tutorial(void)
         break;
     case 0x21:
         if (tutorial_display_flags[4] != 2) {
-            if (old_packet[player].type == 0x38 || (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
+            if (old_packet[player].type == 0x38 ||
+                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
                 tutorial_display_flags[1] = 0;
                 tutorial_display_flags[4] = 0;
                 advisor.tutorial_step = 0x1e;
@@ -221,7 +223,8 @@ s8 tutorial(void)
         break;
     case 0x25:
         if (tutorial_display_flags[8] != 2) {
-            if (old_packet[player].type == 0x38 || (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
+            if (old_packet[player].type == 0x38 ||
+                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
                 tutorial_display_flags[8] = 2;
                 tutorial_display_flags[9] = 2;
                 tutorial_display_flags[1] = 0;
@@ -272,7 +275,8 @@ s8 tutorial(void)
         break;
     case 0x26:
         if (tutorial_display_flags[9] != 2) {
-            if (old_packet[player].type == 0x38 || (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
+            if (old_packet[player].type == 0x38 ||
+                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
                 tutorial_display_flags[9] = 2;
                 tutorial_display_flags[1] = 0;
                 tutorial_display_flags[4] = 0;
@@ -815,7 +819,8 @@ s8 tutorial(void)
         break;
     case 0x23:
         if (tutorial_display_flags[6] != 2) {
-            if (old_packet[player].type == 0x38 || (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 1)) {
+            if (old_packet[player].type == 0x38 ||
+                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 1)) {
                 tutorial_display_flags[2] = 0;
                 tutorial_display_flags[6] = 0;
                 advisor.tutorial_step = 0x1f;

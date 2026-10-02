@@ -10,21 +10,11 @@
  * config/functions.txt and config/symbols.txt.
  */
 
-enum TbScreenMode {
-    SCREEN_MODE_1 = 1,
-    SCREEN_MODE_13 = 13
-};
+enum TbScreenMode { SCREEN_MODE_1 = 1, SCREEN_MODE_13 = 13 };
 
-enum TbPaletteFadeFlag {
-    Lb_PALETTE_FADE_OPEN = 0,
-    Lb_PALETTE_FADE_CLOSED = 1
-};
+enum TbPaletteFadeFlag { Lb_PALETTE_FADE_OPEN = 0, Lb_PALETTE_FADE_CLOSED = 1 };
 
-enum TbError {
-    Lb_FAIL = -1,
-    Lb_OK = 0,
-    Lb_SUCCESS = 1
-};
+enum TbError { Lb_FAIL = -1, Lb_OK = 0, Lb_SUCCESS = 1 };
 
 struct TbSprite {
     u32 data;
@@ -319,7 +309,6 @@ void AIL_resume_sequence(u32 handle, ...);
 #pragma aux AIL_resume_sequence "_*"
 void AIL_end_sequence(u32 handle, ...);
 #pragma aux AIL_end_sequence "_*"
-
 }
 
 /* A cache block's header; the block's data follows it. */
@@ -431,11 +420,7 @@ TbError LbNetwork_Send(u32 player, void *buf, u32 len);
 u32 LbNetwork_Receive(u32 player, void *buf, u32 len);
 
 /* The library's service enum has no tag: any typedef name mangles as $$TE$$. */
-typedef enum {
-    NS_IPX = 1,
-    NS_MODEM = 2,
-    NS_SERIAL = 3
-} TbNetworkService;
+typedef enum { NS_IPX = 1, NS_MODEM = 2, NS_SERIAL = 3 } TbNetworkService;
 
 struct __tibcaGUID {
     u32 data[4];
@@ -468,10 +453,10 @@ struct TbNetworkPlayerNameEntry {
     char name[0x10];
 };
 
-typedef void (__stdcall *TbNetworkCallbackFunc)(TbNetworkCallbackData *, void *);
+typedef void(__stdcall *TbNetworkCallbackFunc)(TbNetworkCallbackData *, void *);
 
-TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf, u32 exchange_size,
-                       __7308jnTbNetworkPlayerInfo *info, void *init_data);
+TbError LbNetwork_Init(TbNetworkService service, __tibcaGUID guid, u32 max_players, void *exchange_buf,
+                       u32 exchange_size, __7308jnTbNetworkPlayerInfo *info, void *init_data);
 TbError LbNetwork_Create(char *session, char *name, u32 *player, void *data);
 TbError LbNetwork_Join(TbNetworkSessionNameEntry *session, char *name, u32 *player, void *data);
 TbError LbNetwork_EnableNewPlayers(u32 allow);

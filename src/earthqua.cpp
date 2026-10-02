@@ -5,8 +5,8 @@ u8 check_if_point_beyond_scroll_limit(const s32 x, const s32 y, const u8 with_ma
 extern "C" {
 // demo: earthquake_table
 s8 earthquake_table[16][2] = {
-    { 4, 4 }, { 1, 2 }, { 3, 1 }, { 2, 1 }, { 0, -2 }, { -1, -2 }, { 4, -4 }, { 1, -2 },
-    { -4, 4 }, { -3, -1 }, { -2, 0 }, { 0, 2 }, { -2, -1 }, { -4, -4 }, { 2, 0 }, { -1, 2 },
+    {4, 4},  {1, 2},   {3, 1},  {2, 1}, {0, -2},  {-1, -2}, {4, -4}, {1, -2},
+    {-4, 4}, {-3, -1}, {-2, 0}, {0, 2}, {-2, -1}, {-4, -4}, {2, 0},  {-1, 2},
 };
 void ReleaseLoopedSample(u32 source_id, s16 number);
 void shake_screen(s8 dx, s8 dy);
@@ -27,7 +27,8 @@ u8 earthquake(const s8 magnitude, const u8 chance)
             } else {
                 gamevar.quake_shake_index += saferand() % 16;
                 gamevar.quake_shake_index = gamevar.quake_shake_index % 16;
-                shake_screen(gamevar.quake_amplitude * earthquake_table[gamevar.quake_shake_index][0], gamevar.quake_amplitude * earthquake_table[gamevar.quake_shake_index][1]);
+                shake_screen(gamevar.quake_amplitude * earthquake_table[gamevar.quake_shake_index][0],
+                             gamevar.quake_amplitude * earthquake_table[gamevar.quake_shake_index][1]);
                 return 1;
             }
         }
@@ -40,7 +41,8 @@ u8 earthquake(const s8 magnitude, const u8 chance)
             } else {
                 gamevar.quake_shake_index += saferand() % 16;
                 gamevar.quake_shake_index = gamevar.quake_shake_index % 16;
-                shake_screen(gamevar.quake_amplitude * earthquake_table[gamevar.quake_shake_index][0], gamevar.quake_amplitude * earthquake_table[gamevar.quake_shake_index][1]);
+                shake_screen(gamevar.quake_amplitude * earthquake_table[gamevar.quake_shake_index][0],
+                             gamevar.quake_amplitude * earthquake_table[gamevar.quake_shake_index][1]);
                 return 1;
             }
         }

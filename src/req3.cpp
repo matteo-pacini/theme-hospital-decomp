@@ -109,8 +109,9 @@ void req3(Window *win)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                 }
             } else if (i == resvars.requester_buttons[0x11]) {
-                if (!(patient->treatment == 0 || patient->flags & PF_GUESSED || patient->flags & PF_FED_UP || patient->illness == patient->known_illness)
-                    && patient->diagnosis >= gbv.diagnosis_complete) {
+                if (!(patient->treatment == 0 || patient->flags & PF_GUESSED || patient->flags & PF_FED_UP ||
+                      patient->illness == patient->known_illness) &&
+                    patient->diagnosis >= gbv.diagnosis_complete) {
                     if (!(patient->treatment == 0 || patient->flags & PF_GUESSED)) {
                         if (patient->health > 0) {
                             D_001549d0[player].type = EV_FORCE_CURE;
@@ -150,34 +151,43 @@ void req3_overdraw(Window *win)
     if (D_001581b2[1].toggle_delay)
         D_001581b2[1].toggle_delay--;
     if (patient->diagnosis < gbv.diagnosis_complete) {
-        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_a.x, y + resvars.boxes_ReqLayoutp->box_a.y, resvars.boxes_ReqLayoutp->box_a.w, resvars.boxes_ReqLayoutp->box_a.h, 0x46);
-        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_c.x, y + resvars.boxes_ReqLayoutp->box_c.y, resvars.boxes_ReqLayoutp->box_c.w, resvars.boxes_ReqLayoutp->box_c.h, 0x46);
+        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_a.x, y + resvars.boxes_ReqLayoutp->box_a.y,
+                  resvars.boxes_ReqLayoutp->box_a.w, resvars.boxes_ReqLayoutp->box_a.h, 0x46);
+        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_c.x, y + resvars.boxes_ReqLayoutp->box_c.y,
+                  resvars.boxes_ReqLayoutp->box_c.w, resvars.boxes_ReqLayoutp->box_c.h, 0x46);
     }
     if (!patient->queue_room)
-        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_b.x, y + resvars.boxes_ReqLayoutp->box_b.y, resvars.boxes_ReqLayoutp->box_b.w, resvars.boxes_ReqLayoutp->box_b.h, 0x46);
-    if (patient->treatment == 0 || patient->flags & PF_GUESSED || patient->flags & PF_FED_UP || patient->illness == patient->known_illness
-        || patient->diagnosis < gbv.diagnosis_complete) {
-        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_c.x, y + resvars.boxes_ReqLayoutp->box_c.y, resvars.boxes_ReqLayoutp->box_c.w, resvars.boxes_ReqLayoutp->box_c.h, 0x46);
+        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_b.x, y + resvars.boxes_ReqLayoutp->box_b.y,
+                  resvars.boxes_ReqLayoutp->box_b.w, resvars.boxes_ReqLayoutp->box_b.h, 0x46);
+    if (patient->treatment == 0 || patient->flags & PF_GUESSED || patient->flags & PF_FED_UP ||
+        patient->illness == patient->known_illness || patient->diagnosis < gbv.diagnosis_complete) {
+        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_c.x, y + resvars.boxes_ReqLayoutp->box_c.y,
+                  resvars.boxes_ReqLayoutp->box_c.w, resvars.boxes_ReqLayoutp->box_c.h, 0x46);
         if (patient->flags & PF_CURED || patient->flags & PF_SENT_HOME)
-            LbDrawBox(x + resvars.boxes_ReqLayoutp->box_d.x, y + resvars.boxes_ReqLayoutp->box_d.y, resvars.boxes_ReqLayoutp->box_d.w, resvars.boxes_ReqLayoutp->box_d.h, 0x46);
+            LbDrawBox(x + resvars.boxes_ReqLayoutp->box_d.x, y + resvars.boxes_ReqLayoutp->box_d.y,
+                      resvars.boxes_ReqLayoutp->box_d.w, resvars.boxes_ReqLayoutp->box_d.h, 0x46);
     }
-    draw_gauge(patient->happiness_s, x + resvars.boxes_ReqLayoutp->gauge_x, y + resvars.boxes_ReqLayoutp->gauge_y, (u16)resvars.boxes_ReqLayoutp->gauge_len,
-               &button_sprite[resvars.requester_sprites[0]], 100, 0, 100, 1);
-    draw_gauge(patient->refreshment, x + resvars.coords_ReqLayoutp->gauge2_x, y + resvars.coords_ReqLayoutp->gauge2_y, (u16)resvars.boxes_ReqLayoutp->gauge_len,
-               &button_sprite[resvars.requester_sprites[0x10]], 100, 0, 100, 1);
-    draw_gauge((s16)patient->warmth, x + resvars.coords_ReqLayoutp->gauge3_x, y + resvars.coords_ReqLayoutp->gauge3_y, (u16)resvars.boxes_ReqLayoutp->gauge_len,
-               &button_sprite[resvars.requester_sprites[0x11]], 100, 0, 100, 1);
+    draw_gauge(patient->happiness_s, x + resvars.boxes_ReqLayoutp->gauge_x, y + resvars.boxes_ReqLayoutp->gauge_y,
+               (u16)resvars.boxes_ReqLayoutp->gauge_len, &button_sprite[resvars.requester_sprites[0]], 100, 0, 100, 1);
+    draw_gauge(patient->refreshment, x + resvars.coords_ReqLayoutp->gauge2_x, y + resvars.coords_ReqLayoutp->gauge2_y,
+               (u16)resvars.boxes_ReqLayoutp->gauge_len, &button_sprite[resvars.requester_sprites[0x10]], 100, 0, 100,
+               1);
+    draw_gauge((s16)patient->warmth, x + resvars.coords_ReqLayoutp->gauge3_x, y + resvars.coords_ReqLayoutp->gauge3_y,
+               (u16)resvars.boxes_ReqLayoutp->gauge_len, &button_sprite[resvars.requester_sprites[0x11]], 100, 0, 100,
+               1);
     if (D_001581b2[1].show_graph)
         draw_health_graph(patient, x, y, color.red);
     else
         draw_diagnosis(patient, x, y);
     if (lbDisplay.mleft_button) {
-        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->next.x, y + resvars.boxes_ReqLayoutp->next.y, resvars.boxes_ReqLayoutp->next.w,
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->next.x,
+                         y + resvars.boxes_ReqLayoutp->next.y, resvars.boxes_ReqLayoutp->next.w,
                          resvars.boxes_ReqLayoutp->next.h)) {
             othervar.center_on_slot = 1;
             othervar.full_redraw = 1;
-        } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->diag.x, y + resvars.boxes_ReqLayoutp->diag.y,
-                                resvars.boxes_ReqLayoutp->diag.w, resvars.boxes_ReqLayoutp->diag.h)) {
+        } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->diag.x,
+                                y + resvars.boxes_ReqLayoutp->diag.y, resvars.boxes_ReqLayoutp->diag.w,
+                                resvars.boxes_ReqLayoutp->diag.h)) {
             if (!D_001581b2[1].toggle_delay) {
                 D_001581b2[1].show_graph = !D_001581b2[1].show_graph ? 1 : 0;
                 D_001581b2[1].toggle_delay = 5;
@@ -185,7 +195,8 @@ void req3_overdraw(Window *win)
         }
     }
     if (lbDisplay.mright_button && !othervar.right_button_was_down) {
-        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->next.x, y + resvars.boxes_ReqLayoutp->next.y, resvars.boxes_ReqLayoutp->next.w,
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->next.x,
+                         y + resvars.boxes_ReqLayoutp->next.y, resvars.boxes_ReqLayoutp->next.w,
                          resvars.boxes_ReqLayoutp->next.h)) {
             u16 old;
 
@@ -260,8 +271,10 @@ void draw_diagnosis(Thing *patient, u16 x, u16 y)
     u16 dy;
     char buf[100];
 
-    LbDrawBox(x + resvars.boxes_ReqLayoutp->diag.x, y + resvars.boxes_ReqLayoutp->diag.y, resvars.boxes_ReqLayoutp->diag.w, resvars.boxes_ReqLayoutp->diag.h, 0xa9);
-    LbTextSetClipWindow(x + resvars.boxes_ReqLayoutp->diag.x, y + resvars.boxes_ReqLayoutp->diag.y, resvars.boxes_ReqLayoutp->diag.w, resvars.boxes_ReqLayoutp->diag.h);
+    LbDrawBox(x + resvars.boxes_ReqLayoutp->diag.x, y + resvars.boxes_ReqLayoutp->diag.y,
+              resvars.boxes_ReqLayoutp->diag.w, resvars.boxes_ReqLayoutp->diag.h, 0xa9);
+    LbTextSetClipWindow(x + resvars.boxes_ReqLayoutp->diag.x, y + resvars.boxes_ReqLayoutp->diag.y,
+                        resvars.boxes_ReqLayoutp->diag.w, resvars.boxes_ReqLayoutp->diag.h);
     set_font_from_cache(3);
     dy = 0;
     for (i = 0; i < 10; i++) {
@@ -410,8 +423,8 @@ extern "C" void req3_help_if_curable(void)
     Thing *patient;
 
     patient = &thing[D_001581b2[1].value];
-    if (patient->treatment != 0 && !(patient->flags & PF_GUESSED) && !(patient->flags & PF_FED_UP) && patient->illness != patient->known_illness
-        && patient->diagnosis >= gbv.diagnosis_complete)
+    if (patient->treatment != 0 && !(patient->flags & PF_GUESSED) && !(patient->flags & PF_FED_UP) &&
+        patient->illness != patient->known_illness && patient->diagnosis >= gbv.diagnosis_complete)
         lib_strcpy(othervar.help_msg, help_text[resvars.help_hotspots[othervar.help_hotspot].text]);
 }
 

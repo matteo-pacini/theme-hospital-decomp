@@ -4831,7 +4831,8 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y);
 void draw_energise_frame(Thing *w, const s16 x, const s16 y);
 void draw_a_frame_scaled(const u16 frame_id, const s16 x, const s16 y, u8 flags, const u8 flip, s32 scale);
 void draw_hilight_frame(Thing *w, const s16 x, const s16 y);
-void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 hidden, const u8 flip);
+void full_draw_frame(Thing *w, const u16 frame_id, const s16 x, const s16 y, const u8 flags, const u8 hidden,
+                     const u8 flip);
 void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, const u8 flip);
 void InitPixBuffer(s16 x, s16 y, s16 w, s16 h, u8 colour, u8 clear);
 void FillPixBuffer(u8 colour);
@@ -5071,7 +5072,8 @@ void find_common_window(s32 x0, s32 y0, s32 x1, s32 y1, const s32 wx0, const s32
 void goto_cell_in_window(const u8 win, const s32 cell);
 void goto_column_row_in_window(const u8 win, const s32 x, const s32 y);
 void find_cell_at_point(const u8 win, const s32 x, const s32 y);
-void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1, const s32 y1);
+void open_new_window(const u8 a, const u8 source, const u8 preset, const s32 x0, const s32 y0, const s32 x1,
+                     const s32 y1);
 void give_emergency_stats(u16 call, u8 owner);
 void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y);
 u32 old_newrand(void);
@@ -5144,8 +5146,6 @@ u16 find_next_emergency_person(u16 id, u32 flags);
 #pragma aux find_next_emergency_person "W?find_next_emergency_person$n(us)us"
 void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 value, u8 type);
 #pragma aux set_award_value "W?set_award_value$n(xucxucxucxsuc)v"
-
-
 }
 
 /*

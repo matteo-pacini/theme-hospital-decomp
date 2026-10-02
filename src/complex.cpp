@@ -35,13 +35,13 @@ u8 staff_go_near_object(Thing *w);
 void fail_person_complex(Thing *person);
 void thingpage_cancel_my_response(ThingPager *p, Thing *handyman);
 
-#define PLAY_FRAME(t, a) \
-    { \
-        u16 anim; \
- \
-        anim = check_frame(a, t) + (u16)(t)->facing; \
-        (t)->sprite = start[anim].frame; \
-        (t)->flip = start[anim].flags > 0 ? (u8)1 : (u8)0; \
+#define PLAY_FRAME(t, a)                                                                                               \
+    {                                                                                                                  \
+        u16 anim;                                                                                                      \
+                                                                                                                       \
+        anim = check_frame(a, t) + (u16)(t)->facing;                                                                   \
+        (t)->sprite = start[anim].frame;                                                                               \
+        (t)->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;                                                             \
     }
 void rest_staff(Thing *staff, s16 amount);
 void research_contribution(Thing *researcher, s16 amount);
@@ -157,8 +157,9 @@ u8 process_staff_complex(Thing *employee)
         break;
     case 6:
         obj = &thing[employee->object];
-        if ((obj->in_use == 1 || obj->state == OS_REMOVED) || obj->type != THING_OBJECT
-            || obj->use_pos[employee->subtype == STAFF_HANDYMAN ? 2 : 0] != ((s16)employee->y.tile << 7) + (s16)employee->x.tile) {
+        if ((obj->in_use == 1 || obj->state == OS_REMOVED) || obj->type != THING_OBJECT ||
+            obj->use_pos[employee->subtype == STAFF_HANDYMAN ? 2 : 0] !=
+                ((s16)employee->y.tile << 7) + (s16)employee->x.tile) {
             fail_staff_complex(employee);
             return 3;
         }
@@ -250,9 +251,9 @@ u8 process_staff_complex(Thing *employee)
                 fail_staff_complex(employee);
                 return 4;
             }
-            if (employee->room == 0
-                && ((room_info[door->room_id].being_edited || room_info[door->room_id].state == RS_EDITED)
-                    || door->room_id == allhosps[door->owner].edited_room)) {
+            if (employee->room == 0 &&
+                ((room_info[door->room_id].being_edited || room_info[door->room_id].state == RS_EDITED) ||
+                 door->room_id == allhosps[door->owner].edited_room)) {
                 fail_staff_complex(employee);
                 return 4;
             }
@@ -549,7 +550,6 @@ void merge_slave(Thing *employee)
     }
 }
 
-
 // As process_staff_complex, for a patient's complex (person_complex_group).
 // Returns 1 after a step, 2 if no complex is running, 0 or 3 if the step
 // failed (fail_person_complex, or PS_COMPLEX_RETRY for a busy door).
@@ -618,8 +618,8 @@ u8 process_person_complex(Thing *person)
         break;
     case 6:
         obj = &thing[person->object];
-        if ((obj->in_use == 1 || obj->state == OS_REMOVED) || obj->type != THING_OBJECT
-            || obj->use_pos[1] != ((s16)person->y.tile << 7) + (s16)person->x.tile) {
+        if ((obj->in_use == 1 || obj->state == OS_REMOVED) || obj->type != THING_OBJECT ||
+            obj->use_pos[1] != ((s16)person->y.tile << 7) + (s16)person->x.tile) {
             fail_person_complex(person);
             return 3;
         }
@@ -695,7 +695,8 @@ u8 process_person_complex(Thing *person)
                 person->state = PS_COMPLEX_RETRY;
                 return 3;
             }
-            if (person->room == 0 && (room_info[door->room_id].being_edited || room_info[door->room_id].state == RS_EDITED)) {
+            if (person->room == 0 &&
+                (room_info[door->room_id].being_edited || room_info[door->room_id].state == RS_EDITED)) {
                 fail_person_complex(person);
                 return 3;
             }
@@ -963,21 +964,21 @@ void person_wait_for_complex_slave(Thing *person)
     slave = &thing[person->slave];
     if (slave > thing) {
         if (slave->state == PS_ENTERTAINS_THEMSELF) {
-        person->state = person->next_state;
-        person->next_state = 0;
-        process_person_complex(person);
-        slave->state = PS_COMPLEX_RETRY;
-        obj = &thing[person->object];
-        if (obj > thing) {
-            person->layers[5] = slave->layers[5];
-            person->layers[6] = slave->layers[6];
-            person->layers[7] = slave->layers[7];
-            person->layers[8] = slave->layers[8];
-            person->layers[9] = slave->layers[9];
-        }
-        person->layers[10] = obj->layers[10];
-        person->layers[11] = obj->layers[11];
-        person->layers[12] = obj->layers[12];
+            person->state = person->next_state;
+            person->next_state = 0;
+            process_person_complex(person);
+            slave->state = PS_COMPLEX_RETRY;
+            obj = &thing[person->object];
+            if (obj > thing) {
+                person->layers[5] = slave->layers[5];
+                person->layers[6] = slave->layers[6];
+                person->layers[7] = slave->layers[7];
+                person->layers[8] = slave->layers[8];
+                person->layers[9] = slave->layers[9];
+            }
+            person->layers[10] = obj->layers[10];
+            person->layers[11] = obj->layers[11];
+            person->layers[12] = obj->layers[12];
         }
     }
 }
@@ -1273,8 +1274,10 @@ void interrupt_complex(Thing *w)
     w->resume_state = 0;
     w->x.frac = w->y.frac = 0x80;
     w->countdown = 0;
-    obj = &thing[w->object && (thing[w->object].type == THING_OBJECT || thing[w->object].type == THING_DOOR)
-                 && (u16)(w - thing) == thing[w->object].user ? w->object : 0];
+    obj = &thing[w->object && (thing[w->object].type == THING_OBJECT || thing[w->object].type == THING_DOOR) &&
+                         (u16)(w - thing) == thing[w->object].user
+                     ? w->object
+                     : 0];
     if (obj > thing) {
         if (obj->type == THING_DOOR) {
             if (w->type == THING_STAFF) {

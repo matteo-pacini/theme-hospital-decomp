@@ -20,7 +20,6 @@ u8 is_room_empty(RoomInfo *room);
 void display_year_charts(void);
 void insert_hall_details(void);
 void display_hall(void);
-
 }
 
 // The game's main loop, until quit_game asks to leave or a mode change or the
@@ -67,7 +66,8 @@ void game(void)
             if (display_mode == DM_LOST_FOCUS) {
                 run_things = process_lost_focus_display(0);
             } else {
-                set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+                set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height,
+                                                3);
             }
         } else {
             if (display_mode_control[display_mode]) {
@@ -229,7 +229,8 @@ void game(void)
             LbMouseRemove();
         }
         limit_framerate();
-        if ((display_mode == DM_GAME || display_mode == DM_MODAL) && resvars.screen_mode == SCREEN_MODE_13 && othervar.full_swap_frames == 0) {
+        if ((display_mode == DM_GAME || display_mode == DM_MODAL) && resvars.screen_mode == SCREEN_MODE_13 &&
+            othervar.full_swap_frames == 0) {
             special_refresh();
         } else {
             if (othervar.full_swap_frames) {
@@ -267,8 +268,8 @@ void game(void)
             setup_colors();
         }
         if (othervar.show_level_brief || othervar.show_net_criteria || othervar.net_result_page) {
-            if (display_mode == DM_GAME && crequester.id == REQ_NONE && othervar.irequester_slot == 0 && gamevar.mouse_mode != MM_HELP && !othervar.net_result
-                && gamevar.mouse_mode != MM_PLACE_STAFF) {
+            if (display_mode == DM_GAME && crequester.id == REQ_NONE && othervar.irequester_slot == 0 &&
+                gamevar.mouse_mode != MM_HELP && !othervar.net_result && gamevar.mouse_mode != MM_PLACE_STAFF) {
                 display_mission();
             }
         }
@@ -340,7 +341,8 @@ void start_turn(void)
     if (gamevar.max_speed) {
         myplayer.game_speed_s = 0x7d00;
     }
-    if (now - gamecounts.last_turn_clock < 1000 / myplayer.game_speed_s && othervar.turbo_key == 0 && statvar.num_players <= 1) {
+    if (now - gamecounts.last_turn_clock < 1000 / myplayer.game_speed_s && othervar.turbo_key == 0 &&
+        statvar.num_players <= 1) {
         gamevar.turn_skipped = 1;
         return;
     }
@@ -481,8 +483,8 @@ void do_charts(void)
         display_research();
         break;
     case 4:
-        draw_graphs((u16)resvars.screen_boxes->graph_x, (u16)resvars.screen_boxes->graph_y, (u16)resvars.screen_boxes->graph_h,
-                    (u16)resvars.screen_boxes->graph_step);
+        draw_graphs((u16)resvars.screen_boxes->graph_x, (u16)resvars.screen_boxes->graph_y,
+                    (u16)resvars.screen_boxes->graph_h, (u16)resvars.screen_boxes->graph_step);
         break;
     case 5:
         display_slist();

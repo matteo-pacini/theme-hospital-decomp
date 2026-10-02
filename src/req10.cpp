@@ -70,10 +70,11 @@ void req10(Window *win)
                     D_001549d0[player].type = EV_REQ1_RESET_ROOMS;
                     D_001549d0[player].value = 6;
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
-                } else if (i == resvars.requester_buttons[0x1b] || i == resvars.requester_buttons[0x1c] || i == resvars.requester_buttons[0x1d]
-                    || i == resvars.requester_buttons[0x1e] || i == resvars.requester_buttons[0x1f] || i == resvars.requester_buttons[0x20]
-                    || i == resvars.requester_buttons[0x21] || i == resvars.requester_buttons[0x22] || i == resvars.requester_buttons[0x23]
-                    || i == resvars.requester_buttons[0x24]) {
+                } else if (i == resvars.requester_buttons[0x1b] || i == resvars.requester_buttons[0x1c] ||
+                           i == resvars.requester_buttons[0x1d] || i == resvars.requester_buttons[0x1e] ||
+                           i == resvars.requester_buttons[0x1f] || i == resvars.requester_buttons[0x20] ||
+                           i == resvars.requester_buttons[0x21] || i == resvars.requester_buttons[0x22] ||
+                           i == resvars.requester_buttons[0x23] || i == resvars.requester_buttons[0x24]) {
                     if (crequester.kind) {
                         total = 0;
                         room = crequester.kind;
@@ -134,7 +135,7 @@ void req10_overdraw(Window *win)
     else
         compute_help_text(0, 0, 2);
     LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
-        window.clip_y1 - window.clip_y0);
+                              window.clip_y1 - window.clip_y0);
     ox = win->x - lbDisplay.graphics_window_x;
     oy = win->y - lbDisplay.graphics_window_y;
     lbDisplay.draw_flags = 0;
@@ -177,28 +178,31 @@ void req10_overdraw(Window *win)
             scale_x = 0x790000 / fr->width;
             scale_y = 0x790000 / fr->length;
             if (scale_y >= 0x10000 && scale_x >= 0x10000) {
-                draw_a_frame(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x18].x, oy + resvars.coords[0x18].y, 0,
-                    start[objects[obj].preview_anim].flags);
+                draw_a_frame(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x18].x,
+                             oy + resvars.coords[0x18].y, 0, start[objects[obj].preview_anim].flags);
             } else if (scale_y <= scale_x) {
                 draw_a_frame_scaled(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x18].x,
-                    oy + resvars.coords[0x18].y, 0, start[objects[obj].preview_anim].flags, scale_y >> 8 << 8);
+                                    oy + resvars.coords[0x18].y, 0, start[objects[obj].preview_anim].flags,
+                                    scale_y >> 8 << 8);
             } else {
                 draw_a_frame_scaled(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x18].x,
-                    oy + resvars.coords[0x18].y, 0, start[objects[obj].preview_anim].flags, scale_x >> 8 << 8);
+                                    oy + resvars.coords[0x18].y, 0, start[objects[obj].preview_anim].flags,
+                                    scale_x >> 8 << 8);
             }
         }
         for (i = 0; i < 10; i++) {
             room = req_indices[i];
             set_font_from_cache(1);
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes[i + 1].x, oy + resvars.boxes[i + 1].y,
-                    resvars.boxes[i + 1].w, resvars.boxes[i + 1].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes[i + 1].x,
+                             oy + resvars.boxes[i + 1].y, resvars.boxes[i + 1].w, resvars.boxes[i + 1].h)) {
                 if (crequester.kind != room)
                     play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                 crequester.kind = room;
                 set_font_from_cache(2);
             }
             if (room)
-                LbTextDraw(ox + resvars.coords[i + 0x2a].x, oy + resvars.coords[i + 0x2a].y, room_names[rooms[room].id]);
+                LbTextDraw(ox + resvars.coords[i + 0x2a].x, oy + resvars.coords[i + 0x2a].y,
+                           room_names[rooms[room].id]);
         }
         total = 0;
         for (k = 0; k < rooms[croom].compulsory_count; k++) {

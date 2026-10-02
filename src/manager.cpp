@@ -59,8 +59,9 @@ void display_manager(void)
         break;
     }
     if (lbDisplay.rleft_button) {
-        if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, (s16)resvars.screen_boxes_ManagerBoxp[31].x, (s16)resvars.screen_boxes_ManagerBoxp[31].y,
-                         (s16)resvars.screen_boxes_ManagerBoxp[31].w, (s16)resvars.screen_boxes_ManagerBoxp[31].h))
+        if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, (s16)resvars.screen_boxes_ManagerBoxp[31].x,
+                         (s16)resvars.screen_boxes_ManagerBoxp[31].y, (s16)resvars.screen_boxes_ManagerBoxp[31].w,
+                         (s16)resvars.screen_boxes_ManagerBoxp[31].h))
             process_keys(0, 0x3b);
         if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0x15b, 0x198, 0x87, 0x45))
             process_keys(0, 0x14);
@@ -84,58 +85,74 @@ void display_manager_text(void)
     LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0x100;
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[11].x, resvars.screen_boxes_ManagerBoxp[11].y, resvars.screen_boxes_ManagerBoxp[11].w, resvars.screen_boxes_ManagerBoxp[11].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[11].x, resvars.screen_boxes_ManagerBoxp[11].y,
+                    resvars.screen_boxes_ManagerBoxp[11].w, resvars.screen_boxes_ManagerBoxp[11].h);
     sprintf(buf, "%s", bank_text[0]);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[12].x, resvars.screen_boxes_ManagerBoxp[12].y, resvars.screen_boxes_ManagerBoxp[12].w, resvars.screen_boxes_ManagerBoxp[12].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[12].x, resvars.screen_boxes_ManagerBoxp[12].y,
+                    resvars.screen_boxes_ManagerBoxp[12].w, resvars.screen_boxes_ManagerBoxp[12].h);
     sprintf(buf, "%s", bank_text[1]);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[13].x, resvars.screen_boxes_ManagerBoxp[13].y, resvars.screen_boxes_ManagerBoxp[13].w, resvars.screen_boxes_ManagerBoxp[13].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[13].x, resvars.screen_boxes_ManagerBoxp[13].y,
+                    resvars.screen_boxes_ManagerBoxp[13].w, resvars.screen_boxes_ManagerBoxp[13].h);
     sprintf(buf, "%s", bank_text[2]);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[14].x, resvars.screen_boxes_ManagerBoxp[14].y, resvars.screen_boxes_ManagerBoxp[14].w, resvars.screen_boxes_ManagerBoxp[14].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[14].x, resvars.screen_boxes_ManagerBoxp[14].y,
+                    resvars.screen_boxes_ManagerBoxp[14].w, resvars.screen_boxes_ManagerBoxp[14].h);
     sprintf(buf, "%s", bank_text[3]);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[15].x, resvars.screen_boxes_ManagerBoxp[15].y, resvars.screen_boxes_ManagerBoxp[15].w, resvars.screen_boxes_ManagerBoxp[15].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[15].x, resvars.screen_boxes_ManagerBoxp[15].y,
+                    resvars.screen_boxes_ManagerBoxp[15].w, resvars.screen_boxes_ManagerBoxp[15].h);
     sprintf(buf, "%s", bank_text[4]);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[19].x, resvars.screen_boxes_ManagerBoxp[19].y, resvars.screen_boxes_ManagerBoxp[19].w, resvars.screen_boxes_ManagerBoxp[19].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[19].x, resvars.screen_boxes_ManagerBoxp[19].y,
+                    resvars.screen_boxes_ManagerBoxp[19].w, resvars.screen_boxes_ManagerBoxp[19].h);
     sprintf(buf, "%s", bank_text[5]);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[20].x, resvars.screen_boxes_ManagerBoxp[20].y, resvars.screen_boxes_ManagerBoxp[20].w, resvars.screen_boxes_ManagerBoxp[20].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[20].x, resvars.screen_boxes_ManagerBoxp[20].y,
+                    resvars.screen_boxes_ManagerBoxp[20].w, resvars.screen_boxes_ManagerBoxp[20].h);
     sprintf(buf, "%s", bank_text[6]);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[21].x, resvars.screen_boxes_ManagerBoxp[21].y, resvars.screen_boxes_ManagerBoxp[21].w, resvars.screen_boxes_ManagerBoxp[21].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[21].x, resvars.screen_boxes_ManagerBoxp[21].y,
+                    resvars.screen_boxes_ManagerBoxp[21].w, resvars.screen_boxes_ManagerBoxp[21].h);
     sprintf(buf, "$ %d", myhosp->hospital_value);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[22].x, resvars.screen_boxes_ManagerBoxp[22].y, resvars.screen_boxes_ManagerBoxp[22].w, resvars.screen_boxes_ManagerBoxp[22].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[22].x, resvars.screen_boxes_ManagerBoxp[22].y,
+                    resvars.screen_boxes_ManagerBoxp[22].w, resvars.screen_boxes_ManagerBoxp[22].h);
     sprintf(buf, "$ %d", myhosp->balance);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[23].x, resvars.screen_boxes_ManagerBoxp[23].y, resvars.screen_boxes_ManagerBoxp[23].w, resvars.screen_boxes_ManagerBoxp[23].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[23].x, resvars.screen_boxes_ManagerBoxp[23].y,
+                    resvars.screen_boxes_ManagerBoxp[23].w, resvars.screen_boxes_ManagerBoxp[23].h);
     sprintf(buf, "$ %d", myhosp->loan);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[24].x, resvars.screen_boxes_ManagerBoxp[24].y, resvars.screen_boxes_ManagerBoxp[24].w, resvars.screen_boxes_ManagerBoxp[24].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[24].x, resvars.screen_boxes_ManagerBoxp[24].y,
+                    resvars.screen_boxes_ManagerBoxp[24].w, resvars.screen_boxes_ManagerBoxp[24].h);
     sprintf(buf, "$ %d", towns[myhosp->level].interest_rate * myhosp->loan / 10000 / 12);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[25].x, resvars.screen_boxes_ManagerBoxp[25].y, resvars.screen_boxes_ManagerBoxp[25].w, resvars.screen_boxes_ManagerBoxp[25].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[25].x, resvars.screen_boxes_ManagerBoxp[25].y,
+                    resvars.screen_boxes_ManagerBoxp[25].w, resvars.screen_boxes_ManagerBoxp[25].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->insurance_claims[0][i];
     sprintf(buf, "$ %d", sum);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[26].x, resvars.screen_boxes_ManagerBoxp[26].y, resvars.screen_boxes_ManagerBoxp[26].w, resvars.screen_boxes_ManagerBoxp[26].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[26].x, resvars.screen_boxes_ManagerBoxp[26].y,
+                    resvars.screen_boxes_ManagerBoxp[26].w, resvars.screen_boxes_ManagerBoxp[26].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->insurance_claims[1][i];
     sprintf(buf, "$ %d", sum);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[27].x, resvars.screen_boxes_ManagerBoxp[27].y, resvars.screen_boxes_ManagerBoxp[27].w, resvars.screen_boxes_ManagerBoxp[27].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[27].x, resvars.screen_boxes_ManagerBoxp[27].y,
+                    resvars.screen_boxes_ManagerBoxp[27].w, resvars.screen_boxes_ManagerBoxp[27].h);
     for (i = 0, sum = 0; i < 12; i++)
         sum += myhosp->insurance_claims[2][i];
     sprintf(buf, "$ %d", sum);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[28].x, resvars.screen_boxes_ManagerBoxp[28].y, resvars.screen_boxes_ManagerBoxp[28].w, resvars.screen_boxes_ManagerBoxp[28].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[28].x, resvars.screen_boxes_ManagerBoxp[28].y,
+                    resvars.screen_boxes_ManagerBoxp[28].w, resvars.screen_boxes_ManagerBoxp[28].h);
     sprintf(buf, "%d.%d%%", towns[myhosp->level].inflation_rate / 100, towns[myhosp->level].inflation_rate % 100);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[29].x, resvars.screen_boxes_ManagerBoxp[29].y, resvars.screen_boxes_ManagerBoxp[29].w, resvars.screen_boxes_ManagerBoxp[29].h);
+    LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[29].x, resvars.screen_boxes_ManagerBoxp[29].y,
+                    resvars.screen_boxes_ManagerBoxp[29].w, resvars.screen_boxes_ManagerBoxp[29].h);
     sprintf(buf, "%d.%d%%", towns[myhosp->level].interest_rate / 100, towns[myhosp->level].interest_rate % 100);
     LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
     if (manager.value) {
@@ -152,7 +169,8 @@ void display_manager_text(void)
         resvars.screen_buttons[5].sprite = 0;
         resvars.screen_buttons[6].sprite = 0;
         resvars.screen_buttons[7].sprite = 2;
-        LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[16].x, resvars.screen_boxes_ManagerBoxp[16].y, resvars.screen_boxes_ManagerBoxp[16].w, resvars.screen_boxes_ManagerBoxp[16].h);
+        LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[16].x, resvars.screen_boxes_ManagerBoxp[16].y,
+                        resvars.screen_boxes_ManagerBoxp[16].w, resvars.screen_boxes_ManagerBoxp[16].h);
         sprintf(buf, "%s", insurance_names[insurance_co[gbv.ins_control_base[manager.value]].name]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
         for (i = 0; i < 12; i++) {
@@ -171,13 +189,15 @@ void display_manager_text(void)
         i = mycontrol->month;
         end = 12;
         x = resvars.screen_boxes_ManagerBoxp[30].x;
-        y = resvars.screen_boxes_ManagerBoxp[30].y - myhosp->insurance_claims[manager.value - 1][i] * resvars.screen_boxes_ManagerBoxp[30].h / max;
+        y = resvars.screen_boxes_ManagerBoxp[30].y -
+            myhosp->insurance_claims[manager.value - 1][i] * resvars.screen_boxes_ManagerBoxp[30].h / max;
         for (pass = 0; pass < 2; pass++) {
             while (i < end) {
                 px = x;
                 py = y;
                 x += resvars.screen_boxes_ManagerBoxp[30].w / 12;
-                y = resvars.screen_boxes_ManagerBoxp[30].y - myhosp->insurance_claims[manager.value - 1][i] * resvars.screen_boxes_ManagerBoxp[30].h / max;
+                y = resvars.screen_boxes_ManagerBoxp[30].y -
+                    myhosp->insurance_claims[manager.value - 1][i] * resvars.screen_boxes_ManagerBoxp[30].h / max;
                 LbDrawLine(px + 1, py + 1, x + 1, y + 1, othervar.manager_line_shadow_colour);
                 LbDrawLine(px, py, x, y, othervar.manager_line_colour);
                 i++;
@@ -194,13 +214,16 @@ void display_manager_text(void)
         resvars.screen_buttons[5].sprite = 3;
         resvars.screen_buttons[6].sprite = 3;
         resvars.screen_buttons[7].sprite = 3;
-        LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[16].x, resvars.screen_boxes_ManagerBoxp[16].y, resvars.screen_boxes_ManagerBoxp[16].w, resvars.screen_boxes_ManagerBoxp[16].h);
+        LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[16].x, resvars.screen_boxes_ManagerBoxp[16].y,
+                        resvars.screen_boxes_ManagerBoxp[16].w, resvars.screen_boxes_ManagerBoxp[16].h);
         sprintf(buf, "%s", insurance_names[insurance_co[ins_control[0]].name]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-        LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[17].x, resvars.screen_boxes_ManagerBoxp[17].y, resvars.screen_boxes_ManagerBoxp[17].w, resvars.screen_boxes_ManagerBoxp[17].h);
+        LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[17].x, resvars.screen_boxes_ManagerBoxp[17].y,
+                        resvars.screen_boxes_ManagerBoxp[17].w, resvars.screen_boxes_ManagerBoxp[17].h);
         sprintf(buf, "%s", insurance_names[insurance_co[ins_control[1]].name]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
-        LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[18].x, resvars.screen_boxes_ManagerBoxp[18].y, resvars.screen_boxes_ManagerBoxp[18].w, resvars.screen_boxes_ManagerBoxp[18].h);
+        LbTextSetWindow(resvars.screen_boxes_ManagerBoxp[18].x, resvars.screen_boxes_ManagerBoxp[18].y,
+                        resvars.screen_boxes_ManagerBoxp[18].w, resvars.screen_boxes_ManagerBoxp[18].h);
         sprintf(buf, "%s", insurance_names[insurance_co[ins_control[2]].name]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y, buf);
         compute_help_text(0, 0, 0x16);
@@ -220,8 +243,9 @@ void process_bank_panel(void)
 
     if (lbDisplay.rleft_button) {
         for (i = 0; resvars.screen_buttons[i + 3].width != 0 && resvars.screen_buttons[i + 3].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 3].x, resvars.screen_buttons[i + 3].y,
-                             (s16)resvars.screen_buttons[i + 3].width, (s16)resvars.screen_buttons[i + 3].height)) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 3].x,
+                             resvars.screen_buttons[i + 3].y, (s16)resvars.screen_buttons[i + 3].width,
+                             (s16)resvars.screen_buttons[i + 3].height)) {
                 resvars.screen_buttons[i + 3].callback(i);
                 reqspr_draw(resvars.screen_buttons[i + 3].sprite_x, resvars.screen_buttons[i + 3].sprite_y,
                             &screen_sprites_tab_start[resvars.screen_buttons[i + 3].sprite]);
@@ -230,8 +254,9 @@ void process_bank_panel(void)
     }
     if (lbDisplay.mleft_button) {
         for (i = 0; resvars.screen_buttons[i + 3].width != 0 && resvars.screen_buttons[i + 3].height != 0; i++) {
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 3].x, resvars.screen_buttons[i + 3].y,
-                             (s16)resvars.screen_buttons[i + 3].width, (s16)resvars.screen_buttons[i + 3].height)) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 3].x,
+                             resvars.screen_buttons[i + 3].y, (s16)resvars.screen_buttons[i + 3].width,
+                             (s16)resvars.screen_buttons[i + 3].height)) {
                 reqspr_draw(resvars.screen_buttons[i + 3].sprite_x, resvars.screen_buttons[i + 3].sprite_y,
                             &screen_sprites_tab_start[resvars.screen_buttons[i + 3].sprite]);
                 break;
@@ -307,7 +332,8 @@ void display_manager_face(void)
             othervar.manager_face3_frame = 1;
     }
     if (othervar.manager_face1_frame) {
-        reqspr_draw(resvars.screen_coords[79].x, resvars.screen_coords[79].y, &screen_sprites_tab_start[bank_manager_face1[othervar.manager_face1_frame]]);
+        reqspr_draw(resvars.screen_coords[79].x, resvars.screen_coords[79].y,
+                    &screen_sprites_tab_start[bank_manager_face1[othervar.manager_face1_frame]]);
         othervar.manager_face1_frame++;
         if (bank_manager_face1[othervar.manager_face1_frame] == -1) {
             othervar.manager_face1_frame = 0;
@@ -316,13 +342,15 @@ void display_manager_face(void)
         }
     }
     if (othervar.manager_face2_frame) {
-        reqspr_draw(resvars.screen_coords[80].x, resvars.screen_coords[80].y, &screen_sprites_tab_start[bank_manager_face2[othervar.manager_face2_frame]]);
+        reqspr_draw(resvars.screen_coords[80].x, resvars.screen_coords[80].y,
+                    &screen_sprites_tab_start[bank_manager_face2[othervar.manager_face2_frame]]);
         othervar.manager_face2_frame++;
         if (bank_manager_face2[othervar.manager_face2_frame] == -1)
             othervar.manager_face2_frame = 0;
     }
     if (othervar.manager_face3_frame) {
-        reqspr_draw(resvars.screen_coords[81].x, resvars.screen_coords[81].y, &screen_sprites_tab_start[bank_manager_face3[othervar.manager_face3_frame]]);
+        reqspr_draw(resvars.screen_coords[81].x, resvars.screen_coords[81].y,
+                    &screen_sprites_tab_start[bank_manager_face3[othervar.manager_face3_frame]]);
         othervar.manager_face3_frame++;
         if (bank_manager_face3[othervar.manager_face3_frame] == -1)
             othervar.manager_face3_frame = 0;
@@ -350,5 +378,6 @@ void manager_help_displayed_ins(void)
     u32 text;
 
     text = resvars.help_hotspots_ManagerHelpp[othervar.help_hotspot].text;
-    sprintf(othervar.help_msg, help_text[text], insurance_names[insurance_co[gbv.ins_control_base[manager.value]].name]);
+    sprintf(othervar.help_msg, help_text[text],
+            insurance_names[insurance_co[gbv.ins_control_base[manager.value]].name]);
 }

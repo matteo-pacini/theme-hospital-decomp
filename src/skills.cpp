@@ -22,7 +22,8 @@ u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wante
     room = &room_info[room_id];
     free_pager = 0;
     count = 0;
-    if (room->type != ROOM_FREE) {}
+    if (room->type != ROOM_FREE) {
+    }
     room = &room_info[room_id];
     if (room->type == ROOM_RECEPTION)
         return 0;
@@ -85,14 +86,14 @@ u16 check_pager(Thing *staff)
     found = 0;
     best = 999;
     for (pager = pagers; pager < end_pagers; pager++) {
-        if ((pager->owner == staff->owner && (pager->mask & staff->skills) && pager->claimed_until < actual_game_turn)
-            || (u16)(staff - thing) == pager->responder) {
+        if ((pager->owner == staff->owner && (pager->mask & staff->skills) &&
+             pager->claimed_until < actual_game_turn) ||
+            (u16)(staff - thing) == pager->responder) {
             room = &room_info[pager->room];
             if (!(room->state == 1 || room->state == 0))
                 continue;
             {
-                dist = abs(staff->x.tile - room->door_tile % 128)
-                     + abs(staff->y.tile - room->door_tile / 128);
+                dist = abs(staff->x.tile - room->door_tile % 128) + abs(staff->y.tile - room->door_tile / 128);
                 if (best > dist) {
                     best = dist;
                     found = pager;
@@ -132,7 +133,8 @@ void pager_arrival(Thing *staff)
     other = 0;
     blank = 0;
     for (pager = pagers; pager < end_pagers; pager++) {
-        if ((pager->mask & staff->skills) && (u16)(staff->room - room_info) == pager->room && pager->owner == staff->owner) {
+        if ((pager->mask & staff->skills) && (u16)(staff->room - room_info) == pager->room &&
+            pager->owner == staff->owner) {
             if ((u16)(staff - thing) == pager->responder)
                 goto found;
             if (pager->responder)
@@ -193,8 +195,9 @@ RoomInfo *get_expertise_dest(u16 type, Thing *patient)
                 fallback = room;
                 if (spare_queue_capacity(0, 1, room, owner)) {
                     score = room->queue_length * gbv.q_points;
-                    score += (abs(patient->x.tile - room->door_tile % 128)
-                            + abs(patient->y.tile - room->door_tile / 128)) * gbv.dist_points;
+                    score +=
+                        (abs(patient->x.tile - room->door_tile % 128) + abs(patient->y.tile - room->door_tile / 128)) *
+                        gbv.dist_points;
                     score += gbv.no_staff_points;
                     for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
                         if (occupant->type == THING_STAFF) {

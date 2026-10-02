@@ -1,3 +1,4 @@
+// clang-format off: tables are laid out by hand.
 #include "hosp.h"
 
 // The sound effect tables. Data only: config/sections.txt places the

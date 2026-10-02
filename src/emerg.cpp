@@ -43,7 +43,6 @@ void setup_emergency_stats(u16 call, u8 owner);
 u16 summon_vehicle(u16 owner, u8 kind, u16 cell, u16 anim, u16 shadow_anim);
 u32 old_newrand(void);
 
-
 u16 saferand(void);
 u16 count_emergency_staff(u8 owner);
 u16 create_shadow(u16 tile, u16 caster, u8 owner, u16 anim);

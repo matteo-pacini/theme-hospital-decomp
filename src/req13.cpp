@@ -11,7 +11,6 @@ struct Req13Layout {
 extern "C" {
 
 extern Event D_001549d0[];
-
 }
 
 void req13_no_pressed(void);
@@ -55,7 +54,8 @@ void req13_overdraw(Window *win)
     y = win->y - lbDisplay.graphics_window_y;
     set_font_from_cache(1);
     lbDisplay.draw_flags = 0x20;
-    LbTextSetWindow(resvars.boxes_Req13Layoutp->text_x, resvars.boxes_Req13Layoutp->text_y, resvars.boxes_Req13Layoutp->text_w, resvars.boxes_Req13Layoutp->text_h);
+    LbTextSetWindow(resvars.boxes_Req13Layoutp->text_x, resvars.boxes_Req13Layoutp->text_y,
+                    resvars.boxes_Req13Layoutp->text_w, resvars.boxes_Req13Layoutp->text_h);
     LbTextDraw(0, 0, othervar.yesno_msg);
     lbDisplay.draw_flags = 0;
 }

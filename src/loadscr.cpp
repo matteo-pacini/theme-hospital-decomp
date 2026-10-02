@@ -121,7 +121,8 @@ void draw_load_game(void)
                     LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
                     display_mode = DM_GAME;
                     D_00156910 = 1;
-                    set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width, lbDisplay.physical_screen_height, 3);
+                    set_all_refresh_zones_in_window(0, 0, lbDisplay.physical_screen_width,
+                                                    lbDisplay.physical_screen_height, 3);
                     draw_it();
                     othervar.pending_palette = palette;
                     break;
@@ -185,7 +186,8 @@ void process_mouse_load_game(void)
     s32 bit;
 
     if (loadgame.state == 4) {
-        reqspr_draw((u16)resvars.screen_buttons[0x9e].x, (u16)resvars.screen_buttons[0x9e].y, &screen_sprites_tab_start[2]);
+        reqspr_draw((u16)resvars.screen_buttons[0x9e].x, (u16)resvars.screen_buttons[0x9e].y,
+                    &screen_sprites_tab_start[2]);
         mask = CurrentDisplay;
         while (mask) {
             bit = mask & -mask;
@@ -199,25 +201,29 @@ void process_mouse_load_game(void)
                 x = resvars.screen_buttons[base + i].x;
                 y = resvars.screen_buttons[base + i].y;
                 if (lbDisplay.rleft_button) {
-                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
-                            resvars.screen_buttons[base + i].height - y + 1)) {
+                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y,
+                                     resvars.screen_buttons[base + i].width - x + 1,
+                                     resvars.screen_buttons[base + i].height - y + 1)) {
                         play_sound(SNDSRC_GENERAL, SFX_YESX, -1, -1);
                         lbDisplay.rleft_button = 0;
                         if (resvars.screen_buttons[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x,
+                                              resvars.screen_buttons[base + i].height - y, 1);
                         if (resvars.screen_buttons[base + i].callback)
                             resvars.screen_buttons[base + i].callback(i);
                         break;
                     }
                 }
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
-                        resvars.screen_buttons[base + i].height - y + 1)) {
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y,
+                                 resvars.screen_buttons[base + i].width - x + 1,
+                                 resvars.screen_buttons[base + i].height - y + 1)) {
                     if (resvars.screen_buttons[base + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
+                        draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x,
+                                          resvars.screen_buttons[base + i].height - y, 1);
                     if (i != loadgame.value) {
                         play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
                         loadgame.value = i;
@@ -236,8 +242,9 @@ void display_loadgame_screen(void)
 {
     s32 i;
 
-    for (i = 0; (!resvars.screen_buttons[i + 0x95].sprite && resvars.screen_buttons[i + 0x95].width != 0)
-                && resvars.screen_buttons[i + 0x95].height != 0; i++) {
+    for (i = 0; (!resvars.screen_buttons[i + 0x95].sprite && resvars.screen_buttons[i + 0x95].width != 0) &&
+                resvars.screen_buttons[i + 0x95].height != 0;
+         i++) {
         if (loadable[i])
             sprintf(tmp, "%s %d", load_text[0], i);
         else

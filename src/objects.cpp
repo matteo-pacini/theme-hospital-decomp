@@ -30,8 +30,6 @@ extern SlidingDoorControl sliding_doors[];
 extern ObjectWalls object_walls[];
 
 extern "C" {
-
-
 }
 
 void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *control, u8 cleanse);
@@ -82,9 +80,9 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     control = &objects[kind];
     shape = &shapes[control->shapes[dir]];
     for (i = 0; i < shape->count; i++) {
-        if ((cell[(s16)shape->points[i]].wall_n && (shape->point_wall_flags[i] & 1))
-            || (cell[(s16)shape->points[i]].wall_w && (shape->point_wall_flags[i] & 2))
-            || (cell[(s16)shape->points[i]].flags & 7)) {
+        if ((cell[(s16)shape->points[i]].wall_n && (shape->point_wall_flags[i] & 1)) ||
+            (cell[(s16)shape->points[i]].wall_w && (shape->point_wall_flags[i] & 2)) ||
+            (cell[(s16)shape->points[i]].flags & 7)) {
             return 0;
         }
         if (cell[(s16)shape->points[i]].owner_flags != 1 << owner && kind != 0x11) {
@@ -95,9 +93,9 @@ u8 can_place_object(u16 tile, u16 kind, u8 dir, u8 owner)
         }
     }
     for (i = 0; i < 3; i++) {
-        if ((cell[shape->use_offsets[i]].wall_n && (shape->use_wall_flags & 1))
-            || (cell[shape->use_offsets[i]].wall_w && (shape->use_wall_flags & 2))
-            || (cell[shape->use_offsets[i]].flags & 7)) {
+        if ((cell[shape->use_offsets[i]].wall_n && (shape->use_wall_flags & 1)) ||
+            (cell[shape->use_offsets[i]].wall_w && (shape->use_wall_flags & 2)) ||
+            (cell[shape->use_offsets[i]].flags & 7)) {
             return 0;
         }
     }
@@ -180,7 +178,10 @@ void place_existing_object(Thing *obj, u16 tile, u8 dir)
         anim = check_frame(obj->fuse + 0x9bf, obj) + obj->facing;
         obj->sprite = start[anim].frame;
         obj->flip = start[anim].flags > 0;
-        obj->owner = (map[tile].owner_flags & 2) ? 1 : (map[tile].owner_flags & 4) ? 2 : (map[tile].owner_flags & 8) ? 3 : 0;
+        obj->owner = (map[tile].owner_flags & 2)   ? 1
+                     : (map[tile].owner_flags & 4) ? 2
+                     : (map[tile].owner_flags & 8) ? 3
+                                                   : 0;
         break;
     }
 }
@@ -620,7 +621,8 @@ u16 find_nearest_manned_reception(Thing *person, const u8 room, const u8 need_sp
 
     best = thing;
     best_score = 9999;
-    for (desk = &thing[listhead[person->owner].objects[OBJ_RECEPTION_DESK]]; desk > thing; desk = &thing[desk->type_obj_next]) {
+    for (desk = &thing[listhead[person->owner].objects[OBJ_RECEPTION_DESK]]; desk > thing;
+         desk = &thing[desk->type_obj_next]) {
         staff = &thing[desk->user];
         if (staff > thing) {
             if (!staff->room || !(room == 0 || (u16)(staff->room - room_info) == room)) {
@@ -724,7 +726,8 @@ Thing *find_door(Thing *person)
     for (i = 0; i < 5; i++) {
         door = search_mapwho(&cell[special_around[i]], THING_DOOR);
         if (door > thing) {
-            if (person->room || (s16)person->x.tile + ((s16)person->y.tile << 7) == room_info[door->room_id].door_tile) {
+            if (person->room ||
+                (s16)person->x.tile + ((s16)person->y.tile << 7) == room_info[door->room_id].door_tile) {
                 return door;
             }
         }
@@ -895,7 +898,8 @@ u8 treatment_machine_used(const u16 illness, const u16 tile)
             }
             if (machine->times_used > machine->strength / 3) {
                 percent = machine->times_used * 100 / (machine->strength + 1);
-                thingpage_request(&allhosps[machine->owner].repair_pager, (u16)(machine - thing), percent < 100 ? percent : 100);
+                thingpage_request(&allhosps[machine->owner].repair_pager, (u16)(machine - thing),
+                                  percent < 100 ? percent : 100);
             }
             if (machine->strength * 75 / 100 <= machine->times_used) {
                 return modify_machine(machine);
@@ -973,16 +977,19 @@ void mark_object_shape(Map *base_cell, Shapes *shape, u8 dir, ObjectControl *con
     ObjectWalls *walls;
 
     for (i = 0; i < shape->count; i++) {
-        if (shape->points[9] == shape->points[i] || shape->points[10] == shape->points[i]
-            || shape->points[11] == shape->points[i] || shape->points[12] == shape->points[i]
-            || shape->points[13] == shape->points[i] || shape->points[14] == shape->points[i]) {
+        if (shape->points[9] == shape->points[i] || shape->points[10] == shape->points[i] ||
+            shape->points[11] == shape->points[i] || shape->points[12] == shape->points[i] ||
+            shape->points[13] == shape->points[i] || shape->points[14] == shape->points[i]) {
             base_cell[(s16)shape->points[i]].flags |= 2;
         } else {
             base_cell[(s16)shape->points[i]].flags |= 1;
         }
         if (cleanse) {
             cell = &base_cell[(s16)shape->points[i]];
-            cleanse_area((cell->owner_flags & 2) ? 1 : (cell->owner_flags & 4) ? 2 : (cell->owner_flags & 8) ? 3 : 0,
+            cleanse_area((cell->owner_flags & 2)   ? 1
+                         : (cell->owner_flags & 4) ? 2
+                         : (cell->owner_flags & 8) ? 3
+                                                   : 0,
                          (u16)(cell - map) % 128, (u16)(cell - map) / 128, 1, 1);
         }
     }
@@ -1135,15 +1142,19 @@ u8 should_sliding_door_open(Thing *door)
     Map *cell;
 
     offset = sliding_doors[door->subtype - 0x3a].offset[door->facing];
-    cell = &map[((s16)door->y.tile << 7) + (s16)door->x.tile + shapes[objects[door->subtype].shapes[door->facing]].use_offsets[1] + offset];
+    cell = &map[((s16)door->y.tile << 7) + (s16)door->x.tile +
+                shapes[objects[door->subtype].shapes[door->facing]].use_offsets[1] + offset];
     for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
-        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR || occupant->type == THING_INSPECTOR) {
+        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR ||
+            occupant->type == THING_INSPECTOR) {
             return 1;
         }
     }
-    cell = &map[shapes[objects[door->subtype].shapes[door->facing]].extra_use_offsets[1] + (((s16)door->y.tile << 7) + (s16)door->x.tile) + offset];
+    cell = &map[shapes[objects[door->subtype].shapes[door->facing]].extra_use_offsets[1] +
+                (((s16)door->y.tile << 7) + (s16)door->x.tile) + offset];
     for (occupant = &thing[cell->first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
-        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR || occupant->type == THING_INSPECTOR) {
+        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR ||
+            occupant->type == THING_INSPECTOR) {
             return 1;
         }
     }
@@ -1163,11 +1174,11 @@ u8 check_no_peeps_in_way(u16 tile, u8 kind, u8 dir)
     room = which_room(tile);
     shape = &shapes[objects[kind].shapes[dir]];
     for (i = shape->count - 1; i >= 0; i--) {
-        if (!(check_no_peeps_on_cell(room, tile + shape->points[i], -1)
-              && check_no_peeps_on_cell(room, tile + shape->points[i] - 0x80, 2)
-              && check_no_peeps_on_cell(room, tile + shape->points[i] + 1, 3)
-              && check_no_peeps_on_cell(room, tile + shape->points[i] + 0x80, 0)
-              && check_no_peeps_on_cell(room, tile + shape->points[i] - 1, 1))) {
+        if (!(check_no_peeps_on_cell(room, tile + shape->points[i], -1) &&
+              check_no_peeps_on_cell(room, tile + shape->points[i] - 0x80, 2) &&
+              check_no_peeps_on_cell(room, tile + shape->points[i] + 1, 3) &&
+              check_no_peeps_on_cell(room, tile + shape->points[i] + 0x80, 0) &&
+              check_no_peeps_on_cell(room, tile + shape->points[i] - 1, 1))) {
             return 0;
         }
     }
@@ -1186,13 +1197,14 @@ u8 check_no_peeps_on_cell(RoomInfo *room, u16 tile, s8 side)
         return 1;
     }
     for (occupant = &thing[map[tile].first]; occupant > thing; occupant = &thing[occupant->cell_next]) {
-        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR || occupant->type == THING_INSPECTOR
-            || occupant->type == THING_REAPER) {
+        if (occupant->type == THING_PATIENT || occupant->type == THING_STAFF || occupant->type == THING_MAYOR ||
+            occupant->type == THING_INSPECTOR || occupant->type == THING_REAPER) {
             if (side == -1) {
                 return 0;
             }
             if (occupant->facing == side) {
-                if (occupant->type == THING_PATIENT && occupant->state == PS_ENTERTAINS_THEMSELF && occupant->complex_action != 0x46) {
+                if (occupant->type == THING_PATIENT && occupant->state == PS_ENTERTAINS_THEMSELF &&
+                    occupant->complex_action != 0x46) {
                     return 1;
                 }
                 if (occupant->type == THING_PATIENT && occupant->state == PS_WAITS_FOR_DECISION) {

@@ -26,7 +26,7 @@ void special_refresh(void)
 // FUNCTION: 0x000ab144
 void refresh_to_VRAM(void)
 {
-    static s8 vesaPageNum[] = { 0, 0, 0, -1, 1, 1, -2, 2, 2, -3, 3, 3, -4, 4, 4, 0 };
+    static s8 vesaPageNum[] = {0, 0, 0, -1, 1, 1, -2, 2, 2, -3, 3, 3, -4, 4, 4, 0};
     s8 page;
     u32 dst;
     s32 col;
@@ -59,7 +59,8 @@ void refresh_to_VRAM(void)
                         page = vesaPageNum[row];
                         LbVesaSetPage(page);
                     }
-                    for (line = 0; line < 32; line++, src = src_next, dst = dst_next, src_next += 0x280, dst_next += 0x280)
+                    for (line = 0; line < 32;
+                         line++, src = src_next, dst = dst_next, src_next += 0x280, dst_next += 0x280)
                         copy_dwords(dst, src, width << 3);
                 } else {
                     u32 bytes;
@@ -76,7 +77,7 @@ void refresh_to_VRAM(void)
                         LbVesaSetPage(page);
                     }
                     for (line = 0; !done; line++, src = src_next, dst = dst_next, src_next += 0x280, dst_next += 0x280,
-                         offset += lbDisplay.physical_screen_width, bank = (offset & 0xffff0000) >> 16) {
+                        offset += lbDisplay.physical_screen_width, bank = (offset & 0xffff0000) >> 16) {
                         if (page != bank) {
                             page = bank;
                             LbVesaSetPage(page);

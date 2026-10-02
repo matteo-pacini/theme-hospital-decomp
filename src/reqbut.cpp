@@ -1,3 +1,4 @@
+// clang-format off: tables are laid out by hand.
 #include "hosp.h"
 
 // The requester button and sprite tables, one of each for high and low

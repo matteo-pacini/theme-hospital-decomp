@@ -6,14 +6,7 @@ struct CDSpeedTable {
 };
 
 CDSpeedTable cd_speed_table[] = {
-    { 1, 0x20800 },
-    { 2, 0x46000 },
-    { 3, 0x66800 },
-    { 4, 0x8c000 },
-    { 6, 0xd7000 },
-    { 8, 0x122000 },
-    { 12, 0x168000 },
-    { 99, 0 },
+    {1, 0x20800}, {2, 0x46000}, {3, 0x66800}, {4, 0x8c000}, {6, 0xd7000}, {8, 0x122000}, {12, 0x168000}, {99, 0},
 };
 
 // Measures the CD drive's speed by reading up to count bytes of the file at

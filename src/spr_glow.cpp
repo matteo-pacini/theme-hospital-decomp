@@ -3,7 +3,6 @@
 extern "C" {
 }
 
-
 // Draws RLE sprite spr at (x, y) in the graphics window, clipped, honouring
 // lbDisplay.draw_flags: 1 mirrors it, 2 flips it vertically, and 4 or 8
 // blend each pixel with colour glow through the ghost table (4 with the

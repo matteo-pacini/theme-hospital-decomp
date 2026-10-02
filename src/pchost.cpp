@@ -26,7 +26,6 @@ void setup_lores_screen(void);
 void use_hires_help_and_fonts(void);
 void use_lores_help_and_fonts(void);
 void use_hires_layout(void);
-
 }
 
 // Starts up the machine side: the 640x480 screen and palette, the language
@@ -296,7 +295,8 @@ u8 setup_any_screen(const u8 *const palette, TbScreenMode mode)
         variant = 2;
         use_lores_help_and_fonts();
     }
-    if (LbScreenSetupAnyMode(mode, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height, palette, variant, 0) != 1) {
+    if (LbScreenSetupAnyMode(mode, lbScreenModeInfo[mode].width, lbScreenModeInfo[mode].height, palette, variant, 0) !=
+        1) {
         if (mode == SCREEN_MODE_13) {
             error_number = 4;
         } else {

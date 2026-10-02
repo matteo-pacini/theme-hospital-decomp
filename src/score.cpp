@@ -422,17 +422,23 @@ void check_hall_buttons(void)
 
     if (lbDisplay.mleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0xa9].width != 0 && resvars.screen_buttons[i + 0xa9].height != 0; i++) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i + 0xa9].x, resvars.screen_buttons[i + 0xa9].y, resvars.screen_buttons[i + 0xa9].width, resvars.screen_buttons[i + 0xa9].height)) {
-                reqspr_draw(resvars.screen_buttons[i + 0xa9].sprite_x, resvars.screen_buttons[i + 0xa9].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[i + 0xa9].sprite]);
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i + 0xa9].x,
+                             resvars.screen_buttons[i + 0xa9].y, resvars.screen_buttons[i + 0xa9].width,
+                             resvars.screen_buttons[i + 0xa9].height)) {
+                reqspr_draw(resvars.screen_buttons[i + 0xa9].sprite_x, resvars.screen_buttons[i + 0xa9].sprite_y,
+                            &screen_sprites_tab_start[resvars.screen_buttons[i + 0xa9].sprite]);
                 break;
             }
         }
     }
     if (lbDisplay.rleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0xa9].width != 0 && resvars.screen_buttons[i + 0xa9].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0xa9].x, resvars.screen_buttons[i + 0xa9].y, resvars.screen_buttons[i + 0xa9].width, resvars.screen_buttons[i + 0xa9].height)) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0xa9].x,
+                             resvars.screen_buttons[i + 0xa9].y, resvars.screen_buttons[i + 0xa9].width,
+                             resvars.screen_buttons[i + 0xa9].height)) {
                 resvars.screen_buttons[i + 0xa9].callback(i);
-                reqspr_draw(resvars.screen_buttons[i + 0xa9].sprite_x, resvars.screen_buttons[i + 0xa9].sprite_y, &screen_sprites_tab_start[resvars.screen_buttons[i + 0xa9].sprite]);
+                reqspr_draw(resvars.screen_buttons[i + 0xa9].sprite_x, resvars.screen_buttons[i + 0xa9].sprite_y,
+                            &screen_sprites_tab_start[resvars.screen_buttons[i + 0xa9].sprite]);
                 break;
             }
         }

@@ -13,7 +13,6 @@ extern char **cabinet_text, **illness_text;
 extern char **skill_names;
 
 void conv_string(void *dst, char *src, int mode);
-
 }
 
 // Runs one frame of the casebook screen (drugs.state: 0 loads it, 2 shows
@@ -79,7 +78,8 @@ void display_drugs(void)
     }
     set_font_from_cache(0xe);
     line_height = lbFontPtr ? lbFontPtr[34].height : 0;
-    LbTextSetWindow(resvars.screen_boxes->drugs_text_x, resvars.screen_boxes->drugs_text_y, resvars.screen_boxes->drugs_text_w, resvars.screen_boxes->drugs_text_h);
+    LbTextSetWindow(resvars.screen_boxes->drugs_text_x, resvars.screen_boxes->drugs_text_y,
+                    resvars.screen_boxes->drugs_text_w, resvars.screen_boxes->drugs_text_h);
     lbDisplay.draw_flags = 0x100;
     illness = othervar.selected_illness;
     def = &expertise[illness];
@@ -130,10 +130,12 @@ void display_drugs(void)
     count = 0;
     if (othervar.selected_illness + 1 < 0x2e) {
         for (i = othervar.selected_illness + 1; i < 0x2e; i++) {
-            if ((i < 0x24 && myhosp->rooms[i].discovered)
-                || (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1)
-                || (i == 0x2c && (allhosps[player].equipment[55].available != 0 && objects[OBJ_AUTO_AUTOPSY].available_for_level != 0)
-                    && listhead[player].rooms[ROOM_RESEARCH])) {
+            if ((i < 0x24 && myhosp->rooms[i].discovered) ||
+                (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1) ||
+                (i == 0x2c &&
+                 (allhosps[player].equipment[55].available != 0 &&
+                  objects[OBJ_AUTO_AUTOPSY].available_for_level != 0) &&
+                 listhead[player].rooms[ROOM_RESEARCH])) {
                 if (count >= 7) {
                     break;
                 }
@@ -147,9 +149,9 @@ void display_drugs(void)
         n = 7;
         count = 7;
         for (i = othervar.selected_illness - 1; i > 0; i--) {
-            if (((i < 0x24 && myhosp->rooms[i].discovered)
-                 || (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1))
-                && i < 0x2c) {
+            if (((i < 0x24 && myhosp->rooms[i].discovered) ||
+                 (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1)) &&
+                i < 0x2c) {
                 if (count == 0) {
                     break;
                 }
@@ -170,8 +172,9 @@ void display_drugs(void)
             } else {
                 set_font_from_cache(0xe);
                 if (lbDisplay.left_button) {
-                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.screen_coords[i].x, resvars.screen_coords[i].y,
-                                    lbDisplay.graphics_screen_width - resvars.screen_coords[i].y, line_height)) {
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.screen_coords[i].x,
+                                     resvars.screen_coords[i].y,
+                                     lbDisplay.graphics_screen_width - resvars.screen_coords[i].y, line_height)) {
                         othervar.selected_illness = list[i];
                         play_sound(SNDSRC_GENERAL, SFX_PAGETUR2, -1, -1);
                         lbDisplay.left_button = 0;
@@ -215,7 +218,8 @@ void display_drugs(void)
             reqspr_draw(resvars.screen_coords[0x20].x, resvars.screen_coords[0x20].y, screen_sprites_tab_start + 12);
             if (def->outcome != 1 && def->outcome != 5 && def->outcome != 4) {
                 if (def->kind == 0x27) {
-                    reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 7);
+                    reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y,
+                                screen_sprites_tab_start + 7);
                     set_font_from_cache(0x2e);
                     sprintf(buf, "?");
                     LbTextSetWindow(0x134, resvars.screen_coords[0x21].y, 0x1c, 0x32);
@@ -224,20 +228,24 @@ void display_drugs(void)
                     unavailable = 1;
                     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
                     lbDisplay.draw_flags = 0;
-                } else if (allhosps[player].equipment[def->kind].available == 1
-                           && objects[def->kind].available_for_level == 1) {
-                    reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 6);
+                } else if (allhosps[player].equipment[def->kind].available == 1 &&
+                           objects[def->kind].available_for_level == 1) {
+                    reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y,
+                                screen_sprites_tab_start + 6);
                     if (listhead[player].rooms[def->category] == 0) {
                         no_room = 1;
                     }
                     if (def->staff_mask == 0x40) {
-                        reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 10);
+                        reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y,
+                                    screen_sprites_tab_start + 10);
                     }
                     if (def->category == 10) {
-                        reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 8);
+                        reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y,
+                                    screen_sprites_tab_start + 8);
                     }
                 } else {
-                    reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 9);
+                    reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y,
+                                screen_sprites_tab_start + 9);
                     unavailable = 1;
                 }
             }
@@ -278,12 +286,14 @@ void process_drug_panel(void)
     if (lbDisplay.left_button) {
         drugs.value = 0;
         for (i = 0; resvars.screen_buttons[i + 0x12].width != 0 && resvars.screen_buttons[i + 0x12].height != 0; i++) {
-            if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.screen_buttons[i + 0x12].x, resvars.screen_buttons[i + 0x12].y,
-                            (s16)resvars.screen_buttons[i + 0x12].width, (s16)resvars.screen_buttons[i + 0x12].height)) {
+            if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.screen_buttons[i + 0x12].x,
+                             resvars.screen_buttons[i + 0x12].y, (s16)resvars.screen_buttons[i + 0x12].width,
+                             (s16)resvars.screen_buttons[i + 0x12].height)) {
                 resvars.screen_buttons[i + 0x12].callback(i);
                 if (resvars.screen_buttons[i + 0x12].sprite) {
-                    reqspr_draw(resvars.screen_buttons[i + 0x12].sprite_x, resvars.screen_buttons[i + 0x12].sprite_y,
-                                (TbSprite *)((u32)screen_sprites_tab_start + resvars.screen_buttons[i + 0x12].sprite * 6));
+                    reqspr_draw(
+                        resvars.screen_buttons[i + 0x12].sprite_x, resvars.screen_buttons[i + 0x12].sprite_y,
+                        (TbSprite *)((u32)screen_sprites_tab_start + resvars.screen_buttons[i + 0x12].sprite * 6));
                 }
                 break;
             }
@@ -293,14 +303,16 @@ void process_drug_panel(void)
     }
     if (lbDisplay.mleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0x12].width != 0 && resvars.screen_buttons[i + 0x12].height != 0; i++) {
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x12].x, resvars.screen_buttons[i + 0x12].y,
-                            (s16)resvars.screen_buttons[i + 0x12].width, (s16)resvars.screen_buttons[i + 0x12].height)) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x12].x,
+                             resvars.screen_buttons[i + 0x12].y, (s16)resvars.screen_buttons[i + 0x12].width,
+                             (s16)resvars.screen_buttons[i + 0x12].height)) {
                 if (i == 0 || i == 1) {
                     resvars.screen_buttons[i + 0x12].callback(i);
                 }
                 if (resvars.screen_buttons[i + 0x12].sprite) {
-                    reqspr_draw(resvars.screen_buttons[i + 0x12].sprite_x, resvars.screen_buttons[i + 0x12].sprite_y,
-                                (TbSprite *)((u32)screen_sprites_tab_start + resvars.screen_buttons[i + 0x12].sprite * 6));
+                    reqspr_draw(
+                        resvars.screen_buttons[i + 0x12].sprite_x, resvars.screen_buttons[i + 0x12].sprite_y,
+                        (TbSprite *)((u32)screen_sprites_tab_start + resvars.screen_buttons[i + 0x12].sprite * 6));
                 }
                 break;
             }
@@ -453,10 +465,12 @@ u8 get_next_illness(const u8 forward, const u8 from)
     case 0:
         if (from - 1 > 0) {
             for (i = from - 1; i > 0; i--) {
-                if ((i < 0x24 && myhosp->rooms[i].discovered)
-                    || (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1)
-                    || (i == 0x2c && (allhosps[player].equipment[55].available != 0 && objects[OBJ_AUTO_AUTOPSY].available_for_level != 0)
-                        && listhead[player].rooms[ROOM_RESEARCH])) {
+                if ((i < 0x24 && myhosp->rooms[i].discovered) ||
+                    (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1) ||
+                    (i == 0x2c &&
+                     (allhosps[player].equipment[55].available != 0 &&
+                      objects[OBJ_AUTO_AUTOPSY].available_for_level != 0) &&
+                     listhead[player].rooms[ROOM_RESEARCH])) {
                     return i;
                 }
             }
@@ -465,10 +479,12 @@ u8 get_next_illness(const u8 forward, const u8 from)
     default:
         if (from + 1 < 0x2e) {
             for (i = from + 1; i < 0x2e; i++) {
-                if ((i < 0x24 && myhosp->rooms[i].discovered)
-                    || (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1)
-                    || (i == 0x2c && (allhosps[player].equipment[55].available != 0 && objects[OBJ_AUTO_AUTOPSY].available_for_level != 0)
-                        && listhead[player].rooms[ROOM_RESEARCH])) {
+                if ((i < 0x24 && myhosp->rooms[i].discovered) ||
+                    (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1) ||
+                    (i == 0x2c &&
+                     (allhosps[player].equipment[55].available != 0 &&
+                      objects[OBJ_AUTO_AUTOPSY].available_for_level != 0) &&
+                     listhead[player].rooms[ROOM_RESEARCH])) {
                     return i;
                 }
             }
@@ -509,7 +525,8 @@ void drugs_help_cure_type(void)
     }
     if (expertise[othervar.selected_illness].kind == 0x27) {
         if (allhosps[player].rooms[othervar.selected_illness].cure_available == 1) {
-            sprintf(othervar.help_msg, help_text[148], allhosps[player].rooms[othervar.selected_illness].drug_effectiveness);
+            sprintf(othervar.help_msg, help_text[148],
+                    allhosps[player].rooms[othervar.selected_illness].drug_effectiveness);
         } else {
             lib_strcpy(othervar.help_msg, help_text[147]);
         }

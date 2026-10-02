@@ -1,3 +1,4 @@
+// clang-format off: tables are laid out by hand.
 #include "hosp.h"
 
 // The floor and wall block sprite table and its pristine copy. Data only:

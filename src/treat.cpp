@@ -9,7 +9,6 @@ extern "C" {
 extern char **illness_text;
 
 void strcat(char *dst, char *src);
-
 }
 
 // staff has given patient their current treatment: applies its diagnosis
@@ -142,7 +141,8 @@ void setup_next_treatment(Thing *staff, Thing *patient)
     }
     if (patient->flags & PF_NEEDS_DIAGNOSIS_ROOM) {
         pct = patient->diagnosis * 100 / gbv.diagnosis_complete;
-        if (allhosps[patient->owner].guess_cure_threshold <= pct && allhosps[patient->owner].rooms[patient->illness].discovered == 1 && pct > 0) {
+        if (allhosps[patient->owner].guess_cure_threshold <= pct &&
+            allhosps[patient->owner].rooms[patient->illness].discovered == 1 && pct > 0) {
             best_guess_treatment(patient);
         } else if (allhosps[patient->owner].send_home_threshold >= pct) {
             patient->flags32 = 0;
@@ -532,7 +532,10 @@ s32 calc_ability(Thing *staff)
     {
         char buf[200];
 
-        sprintf(buf, "Diag Ability %d      Staff Ability %3d    Random %3d    Skill %3d    Tired %3d   QuackDoc %3d    RoomAdd %3d", total, staff->ability, random_adj, skill_adj, tired_adj, quack_adj, room_adj);
+        sprintf(buf,
+                "Diag Ability %d      Staff Ability %3d    Random %3d    Skill %3d    Tired %3d   QuackDoc %3d    "
+                "RoomAdd %3d",
+                total, staff->ability, random_adj, skill_adj, tired_adj, quack_adj, room_adj);
     }
     return total;
 }
@@ -768,7 +771,8 @@ u16 call_no_diagnosis(Thing *patient, char **strs)
         pct = 99;
     }
     sprintf(buf1, strs[2], pct, illness_text[patient->illness]);
-    if (allhosps[patient->owner].rooms[patient->illness].cure_available != 1 || allhosps[patient->owner].rooms[patient->illness].discovered == 0) {
+    if (allhosps[patient->owner].rooms[patient->illness].cure_available != 1 ||
+        allhosps[patient->owner].rooms[patient->illness].discovered == 0) {
         available_buttons &= ~2;
     }
     text_x = 0;
@@ -777,7 +781,8 @@ u16 call_no_diagnosis(Thing *patient, char **strs)
     strcat(buf2, new_line);
     strcat(buf2, strs[1]);
     strcat(buf2, new_line);
-    if (allhosps[patient->owner].rooms[patient->illness].cure_available == 1 && allhosps[patient->owner].rooms[patient->illness].discovered == 1) {
+    if (allhosps[patient->owner].rooms[patient->illness].cure_available == 1 &&
+        allhosps[patient->owner].rooms[patient->illness].discovered == 1) {
         strcat(buf2, buf1);
     }
     LbTextDraw(text_x, text_y, buf2);

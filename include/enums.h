@@ -257,19 +257,10 @@ enum {
 };
 
 // Thing.state (and reaper_next_state) of the grim reaper.
-enum {
-    REAPER_PLAY_ANIM = 2,
-    REAPER_WAITS = 4,
-    REAPER_REMOVE = 6,
-    REAPER_GOTO_HELL = 8
-};
+enum { REAPER_PLAY_ANIM = 2, REAPER_WAITS = 4, REAPER_REMOVE = 6, REAPER_GOTO_HELL = 8 };
 
 // Thing.state of a rat.
-enum {
-    RAT_SCURRIES = 2,
-    RAT_ARRIVES = 4,
-    RAT_LEAVES = 6
-};
+enum { RAT_SCURRIES = 2, RAT_ARRIVES = 4, RAT_LEAVES = 6 };
 
 // Thing.state of a helicopter (or saucer).
 enum {
@@ -951,9 +942,7 @@ enum {
 
 // Thing.subtype of a patient (anim_starts index) while infected with alien
 // DNA; Thing.orig_subtype keeps the kind to restore.
-enum {
-    PK_ALIEN = 0xe
-};
+enum { PK_ALIEN = 0xe };
 
 // mainmenu.state (draw_main_menu). 0x11-0x16 animate the highlight moving
 // between two entries.
@@ -1031,13 +1020,7 @@ enum {
 
 // Research categories: AllHosps.research_alloc index and do_research's
 // category (names: language section 16, same index).
-enum {
-    RC_CURE = 0,
-    RC_DIAGNOSIS = 1,
-    RC_DRUGS = 2,
-    RC_IMPROVEMENTS = 3,
-    RC_SPECIALISATION = 4
-};
+enum { RC_CURE = 0, RC_DIAGNOSIS = 1, RC_DRUGS = 2, RC_IMPROVEMENTS = 3, RC_SPECIALISATION = 4 };
 
 // set_mouse_mode's mode (kept in gamevar.mouse_mode): what a click on the map does.
 enum {
@@ -1072,12 +1055,7 @@ enum {
 
 // Thing.numfx_type and create_numfx's type: how a floating number is drawn
 // (mapwho_numfx).
-enum {
-    NUMFX_NUMBER = 0,
-    NUMFX_TEXT = 1,
-    NUMFX_FORMATTED = 2,
-    NUMFX_MONEY = 3
-};
+enum { NUMFX_NUMBER = 0, NUMFX_TEXT = 1, NUMFX_FORMATTED = 2, NUMFX_MONEY = 3 };
 
 // hosp_play_smk's idx: animation_table index, named after the video file.
 // Entries 7 to 0x15 are the level briefings (area01v.smk...), played as

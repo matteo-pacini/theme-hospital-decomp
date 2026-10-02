@@ -239,15 +239,19 @@ void play_winlose(void)
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         reqspr_draw(resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y, &screen_sprites_tab_start[1]);
         reqspr_draw(resvars.screen_coords[0xd0].x, resvars.screen_coords[0xd0].y, &screen_sprites_tab_start[3]);
-        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y, screen_sprites_tab_start[1].width,
-                screen_sprites_tab_start[1].height))
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x,
+                         resvars.screen_coords[0xcf].y, screen_sprites_tab_start[1].width,
+                         screen_sprites_tab_start[1].height))
             reqspr_draw(resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y, &screen_sprites_tab_start[2]);
-        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xd0].x, resvars.screen_coords[0xd0].y, screen_sprites_tab_start[1].width,
-                screen_sprites_tab_start[1].height))
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xd0].x,
+                         resvars.screen_coords[0xd0].y, screen_sprites_tab_start[1].width,
+                         screen_sprites_tab_start[1].height))
             reqspr_draw(resvars.screen_coords[0xd0].x, resvars.screen_coords[0xd0].y, &screen_sprites_tab_start[4]);
         if (!--text_delay) {
-            LbTextSetJustifyWindow(resvars.screen_boxes_Boxp[0xae].x, resvars.screen_boxes_Boxp[0xae].y, resvars.screen_boxes_Boxp[0xae].w + 0x64);
-            LbTextSetClipWindow(resvars.screen_boxes_Boxp[0xae].x, 0, resvars.screen_boxes_Boxp[0xae].w, lbDisplay.graphics_screen_width);
+            LbTextSetJustifyWindow(resvars.screen_boxes_Boxp[0xae].x, resvars.screen_boxes_Boxp[0xae].y,
+                                   resvars.screen_boxes_Boxp[0xae].w + 0x64);
+            LbTextSetClipWindow(resvars.screen_boxes_Boxp[0xae].x, 0, resvars.screen_boxes_Boxp[0xae].w,
+                                lbDisplay.graphics_screen_width);
             set_font_from_cache(0x17);
             lbDisplay.draw_flags |= 0x20;
             yofs_text = 0;
@@ -265,8 +269,9 @@ void play_winlose(void)
             }
         }
         if (lbDisplay.left_button) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y,
-                    screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x,
+                             resvars.screen_coords[0xcf].y, screen_sprites_tab_start[1].width,
+                             screen_sprites_tab_start[1].height)) {
                 if (level_number != 0xc) {
                     D_001549d0[player].type = EV_CANCEL_BUILD;
                     area.state = 0;
@@ -293,8 +298,9 @@ void play_winlose(void)
                     display_mode = DM_MAIN_MENU;
                     quit_game = 0;
                 }
-            } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xd0].x, resvars.screen_coords[0xd0].y,
-                           screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
+            } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xd0].x,
+                                    resvars.screen_coords[0xd0].y, screen_sprites_tab_start[1].width,
+                                    screen_sprites_tab_start[1].height)) {
                 gamevar.win_declined_count++;
                 othervar.win_declined = 1;
                 othervar.bonus_level = 0;
@@ -341,12 +347,15 @@ void play_winlose(void)
                 ;
             LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             reqspr_draw(resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y, &screen_sprites_tab_start[1]);
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y,
-                    screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height))
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x,
+                             resvars.screen_coords[0xcf].y, screen_sprites_tab_start[1].width,
+                             screen_sprites_tab_start[1].height))
                 reqspr_draw(resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y, &screen_sprites_tab_start[2]);
             if (!--text_delay) {
-                LbTextSetJustifyWindow(resvars.screen_boxes_Boxp[0xae].x, resvars.screen_boxes_Boxp[0xae].y, resvars.screen_boxes_Boxp[0xae].w + 0x64);
-                LbTextSetClipWindow(resvars.screen_boxes_Boxp[0xae].x, 0, resvars.screen_boxes_Boxp[0xae].w, lbDisplay.graphics_screen_width);
+                LbTextSetJustifyWindow(resvars.screen_boxes_Boxp[0xae].x, resvars.screen_boxes_Boxp[0xae].y,
+                                       resvars.screen_boxes_Boxp[0xae].w + 0x64);
+                LbTextSetClipWindow(resvars.screen_boxes_Boxp[0xae].x, 0, resvars.screen_boxes_Boxp[0xae].w,
+                                    lbDisplay.graphics_screen_width);
                 set_font_from_cache(0x17);
                 lbDisplay.draw_flags |= 0x20;
                 yofs_text = 0;
@@ -364,8 +373,9 @@ void play_winlose(void)
                 }
             }
             if (lbDisplay.left_button) {
-                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x, resvars.screen_coords[0xcf].y,
-                        screen_sprites_tab_start[1].width, screen_sprites_tab_start[1].height)) {
+                if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_coords[0xcf].x,
+                                 resvars.screen_coords[0xcf].y, screen_sprites_tab_start[1].width,
+                                 screen_sprites_tab_start[1].height)) {
                     set_mouse_mode(MM_SCREEN);
                     clear_loading_screen(0);
                     smack_draw_callback = 0;

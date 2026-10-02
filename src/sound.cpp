@@ -80,7 +80,6 @@ void SetSamplePan(u32 source_id, s16 number, u16 pan, void *handle);
 void SetSampleVolume(u32 source_id, s16 number, s16 volume, void *handle);
 SampleInfo *GetFirstSampleInfoStructure(void);
 SampleInfo *GetLastSampleInfoStructure(void);
-
 }
 
 // Starts the sound and music drivers and loads the sound bank for the
@@ -170,7 +169,8 @@ void do_ambients(void)
             if (!IsSamplePlaying(0, 0, othervar.ambient_sample->SampleHandle))
                 othervar.ambient_playing = 0;
         } else if (AmbientQueue[0].sound) {
-            othervar.ambient_sample = play_sample_using_heap(SNDSRC_AMBIENT, AmbientQueue[0].sound + 500, myplayer.ambient_volume, 0x40, 0x64, 0, 2);
+            othervar.ambient_sample = play_sample_using_heap(SNDSRC_AMBIENT, AmbientQueue[0].sound + 500,
+                                                             myplayer.ambient_volume, 0x40, 0x64, 0, 2);
             if (othervar.ambient_sample)
                 othervar.ambient_playing = AmbientQueue[0].sound;
             for (i = 0; i < 3; i++)
@@ -253,15 +253,19 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
                 StopSample(source, sfx_details[sfx].sample);
                 return;
             case SFXT_RANDOM_PITCH:
-                pitch = pitch_group[sfx_details[sfx].group].values[saferand() % pitch_group[sfx_details[sfx].group].count];
+                pitch =
+                    pitch_group[sfx_details[sfx].group].values[saferand() % pitch_group[sfx_details[sfx].group].count];
                 sample = sfx_details[sfx].sample;
                 break;
             case SFXT_RANDOM_SAMPLE:
                 pitch = 100;
-                sample = sample_group[sfx_details[sfx].group].samples[saferand() % sample_group[sfx_details[sfx].group].count];
+                sample = sample_group[sfx_details[sfx].group]
+                             .samples[saferand() % sample_group[sfx_details[sfx].group].count];
                 break;
             case SFXT_PITCH_RANGE:
-                pitch = pitch_group[sfx_details[sfx].group].values[0] + saferand() % (pitch_group[sfx_details[sfx].group].values[1] - pitch_group[sfx_details[sfx].group].values[0]);
+                pitch = pitch_group[sfx_details[sfx].group].values[0] +
+                        saferand() % (pitch_group[sfx_details[sfx].group].values[1] -
+                                      pitch_group[sfx_details[sfx].group].values[0]);
                 sample = sfx_details[sfx].sample;
                 break;
             }
@@ -281,7 +285,8 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
                 else if (pan > 0x7f)
                     pan = 0x7f;
             }
-            play_sample_using_heap(source, sample, volume, pan, pitch, sfx_details[sfx].loop, sfx_details[sfx].play_type);
+            play_sample_using_heap(source, sample, volume, pan, pitch, sfx_details[sfx].loop,
+                                   sfx_details[sfx].play_type);
         }
     }
 }
@@ -301,36 +306,37 @@ void manage_sound(void)
     for (sample = GetFirstSampleInfoStructure(); sample <= GetLastSampleInfoStructure(); sample++) {
         if (IsSamplePlaying(0, 0, sample->SampleHandle)) {
             if (sample->SourceID > 0xe) {
-            if ((Thing *)sample->SourceID > thing && (Thing *)sample->SourceID < end_things) {
-                source = (Thing *)sample->SourceID;
-                give_screen_xy_of_cell_at_column_row(window.current_window, source->x.tile, source->y.tile);
-                info.cell_x += resvars.tile_width / 2;
-                info.cell_y += resvars.tile_height / 2;
-                if (sample->SourceID == SNDSRC_CLOCK) {
-                    if (myhosp->emergency_timer_s == 0)
+                if ((Thing *)sample->SourceID > thing && (Thing *)sample->SourceID < end_things) {
+                    source = (Thing *)sample->SourceID;
+                    give_screen_xy_of_cell_at_column_row(window.current_window, source->x.tile, source->y.tile);
+                    info.cell_x += resvars.tile_width / 2;
+                    info.cell_y += resvars.tile_height / 2;
+                    if (sample->SourceID == SNDSRC_CLOCK) {
+                        if (myhosp->emergency_timer_s == 0)
+                            StopSample(sample->SourceID, sample->SampleNumber);
+                    } else if (info.cell_x > 0 && info.cell_x < lbDisplay.physical_screen_width && info.cell_y > 0 &&
+                               info.cell_y < lbDisplay.physical_screen_height) {
+                        half = lbDisplay.physical_screen_width / 2;
+                        volume = (half - ABS(info.cell_x - half)) * myplayer.sfx_volume / half;
+                        pan = info.cell_x * 0x7f / lbDisplay.physical_screen_width;
+                        if (volume < 0)
+                            volume = 0;
+                        else if (volume > myplayer.sfx_volume)
+                            volume = myplayer.sfx_volume;
+                        if (pan < 0)
+                            pan = 0;
+                        else if (pan > 0x7f)
+                            pan = 0x7f;
+                        if (sample->SamplePan != pan)
+                            SetSamplePan(0, 0, pan, sample->SampleHandle);
+                        if (sample->SampleVolume != volume)
+                            SetSampleVolume(0, 0, volume, sample->SampleHandle);
+                    } else {
                         StopSample(sample->SourceID, sample->SampleNumber);
-                } else if (info.cell_x > 0 && info.cell_x < lbDisplay.physical_screen_width && info.cell_y > 0 && info.cell_y < lbDisplay.physical_screen_height) {
-                    half = lbDisplay.physical_screen_width / 2;
-                    volume = (half - ABS(info.cell_x - half)) * myplayer.sfx_volume / half;
-                    pan = info.cell_x * 0x7f / lbDisplay.physical_screen_width;
-                    if (volume < 0)
-                        volume = 0;
-                    else if (volume > myplayer.sfx_volume)
-                        volume = myplayer.sfx_volume;
-                    if (pan < 0)
-                        pan = 0;
-                    else if (pan > 0x7f)
-                        pan = 0x7f;
-                    if (sample->SamplePan != pan)
-                        SetSamplePan(0, 0, pan, sample->SampleHandle);
-                    if (sample->SampleVolume != volume)
-                        SetSampleVolume(0, 0, volume, sample->SampleHandle);
+                    }
                 } else {
                     StopSample(sample->SourceID, sample->SampleNumber);
                 }
-            } else {
-                StopSample(sample->SourceID, sample->SampleNumber);
-            }
             }
         }
     }

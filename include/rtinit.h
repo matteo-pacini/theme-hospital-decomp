@@ -10,9 +10,7 @@ struct rt_init {
     void (*rtn)(void);
 };
 
-#define AXI(routine, priority) \
-    static struct rt_init __based(__segname("XI")) _xi_##routine = { 0, priority, routine };
-#define AYI(routine, priority) \
-    static struct rt_init __based(__segname("YI")) _yi_##routine = { 0, priority, routine };
+#define AXI(routine, priority) static struct rt_init __based(__segname("XI")) _xi_##routine = {0, priority, routine};
+#define AYI(routine, priority) static struct rt_init __based(__segname("YI")) _yi_##routine = {0, priority, routine};
 
 #endif

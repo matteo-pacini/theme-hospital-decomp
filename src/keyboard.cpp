@@ -9,14 +9,14 @@ extern u8 lbIInkeyFlags;
 void process_game_keys(u8 modifiers, u8 key);
 unsigned inp(unsigned port);
 unsigned outp(unsigned port, unsigned value);
-void (__interrupt __far *_dos_getvect(unsigned num))();
-void _dos_setvect(unsigned num, void (__interrupt __far *handler)());
+void(__interrupt __far *_dos_getvect(unsigned num))();
+void _dos_setvect(unsigned num, void(__interrupt __far *handler)());
 }
 
 extern volatile long keybuffer[];
 extern volatile long keybufferin;
 extern volatile long keybufferout;
-extern void (__interrupt __far *myOldInt)();
+extern void(__interrupt __far *myOldInt)();
 
 // Handles key key with modifiers (MOD_* bits) in the game view; see
 // process_game_keys.
@@ -25,7 +25,6 @@ void process_keys(u8 modifiers, u8 key)
 {
     process_game_keys(modifiers, key);
 }
-
 
 extern "C" {
 extern Event D_001549d0[];

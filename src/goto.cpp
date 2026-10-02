@@ -17,13 +17,13 @@ u16 find_free_object_anywhere(u16 id, u8 kind);
 u8 should_nurse_vaccinate(Thing *nurse);
 u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate);
 
-#define PLAY_FRAME(t, a) \
-    { \
-        u16 anim; \
-\
-        anim = check_frame(a, t) + (u16)(t)->facing; \
-        (t)->sprite = start[anim].frame; \
-        (t)->flip = start[anim].flags > 0 ? (u8)1 : (u8)0; \
+#define PLAY_FRAME(t, a)                                                                                               \
+    {                                                                                                                  \
+        u16 anim;                                                                                                      \
+                                                                                                                       \
+        anim = check_frame(a, t) + (u16)(t)->facing;                                                                   \
+        (t)->sprite = start[anim].frame;                                                                               \
+        (t)->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;                                                             \
     }
 
 // PS_GOTO_DESTINATION: walks person a step towards dest_x,dest_y, animating
@@ -41,7 +41,8 @@ s16 person_goto_destination(Thing *person)
         person->sprite = frame[person->sprite].next;
     person->countdown--;
     if (person->countdown <= 0) {
-        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 && move_peep_from_blueprint(person))
+        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 &&
+            move_peep_from_blueprint(person))
             return 0;
         modify_person(person);
         if (do_reaction(person))
@@ -65,7 +66,8 @@ s16 person_goto_destination(Thing *person)
             person_nav_failure(person);
             return 0;
         default:
-            if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
+            if (person->facing != dir ||
+                start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
                 PLAY_FRAME(person, anim_starts[person->subtype].walk);
             }
@@ -95,7 +97,8 @@ s16 person_goto_object(Thing *person)
         person->sprite = frame[person->sprite].next;
     person->countdown--;
     if (person->countdown <= 0) {
-        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 && move_peep_from_blueprint(person))
+        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 &&
+            move_peep_from_blueprint(person))
             return 0;
         modify_person(person);
         if (person->health <= 0)
@@ -105,9 +108,11 @@ s16 person_goto_object(Thing *person)
         person->countdown = person->speed == 0 ? div_err() : 0x100 / person->speed;
         dir = person_head_for(person, 1);
         if (dir >= 0 && dir <= 3) {
-            if (abs(person->x.tile - person->dest_x) < othervar.object_near_dist && abs(person->y.tile - person->dest_y) < othervar.object_near_dist) {
+            if (abs(person->x.tile - person->dest_x) < othervar.object_near_dist &&
+                abs(person->y.tile - person->dest_y) < othervar.object_near_dist) {
                 obj = &thing[person->object];
-                if (obj->in_use == 1 || obj->state == OS_REMOVED || (obj->type != THING_DOOR && obj->type != THING_OBJECT))
+                if (obj->in_use == 1 || obj->state == OS_REMOVED ||
+                    (obj->type != THING_DOOR && obj->type != THING_OBJECT))
                     dir = 4;
             }
         }
@@ -139,7 +144,8 @@ s16 person_goto_object(Thing *person)
         case 2:
         case 3:
         default:
-            if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
+            if (person->facing != dir ||
+                start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
                 PLAY_FRAME(person, anim_starts[person->subtype].walk);
             }
@@ -170,7 +176,8 @@ void person_goto_queue(Thing *person)
         person->sprite = frame[person->sprite].next;
     person->countdown--;
     if (person->countdown <= 0) {
-        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 && move_peep_from_blueprint(person))
+        if (blocks[map[(s16)person->x.tile + ((s16)person->y.tile << 7)].overlay].width == 0x20 &&
+            move_peep_from_blueprint(person))
             return;
         modify_person(person);
         if (person->health <= 0)
@@ -181,7 +188,8 @@ void person_goto_queue(Thing *person)
         room = &room_info[person->dest_room];
         dir = person_head_for(person, 3);
         if (dir >= 0 && dir <= 3) {
-            if (abs(person->x.tile - person->dest_x) <= othervar.queue_near_dist && abs(person->y.tile - person->dest_y) <= othervar.queue_near_dist) {
+            if (abs(person->x.tile - person->dest_x) <= othervar.queue_near_dist &&
+                abs(person->y.tile - person->dest_y) <= othervar.queue_near_dist) {
                 if (room->type == ROOM_RECEPTION || queue_size(room) > 0)
                     dir = 4;
             }
@@ -199,8 +207,8 @@ void person_goto_queue(Thing *person)
                     start_person_going(person);
                     return;
                 }
-                if (abs(person->x.tile - room->door_tile % 128) > othervar.queue_near_dist
-                    || abs(person->y.tile - room->door_tile / 128) > othervar.queue_near_dist) {
+                if (abs(person->x.tile - room->door_tile % 128) > othervar.queue_near_dist ||
+                    abs(person->y.tile - room->door_tile / 128) > othervar.queue_near_dist) {
                     set_destination_coords(person, room->door_tile);
                     person->countdown = 0;
                     return;
@@ -229,7 +237,8 @@ void person_goto_queue(Thing *person)
             person_nav_failure(person);
             return;
         default:
-            if (person->facing != dir || start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
+            if (person->facing != dir ||
+                start[anim_starts[person->subtype].patient_stand + person->facing].frame == person->sprite) {
                 person->facing = dir;
                 PLAY_FRAME(person, anim_starts[person->subtype].walk);
             }
@@ -300,7 +309,8 @@ s16 staff_goto_object(Thing *employee)
         employee->sprite = frame[employee->sprite].next;
     employee->countdown--;
     if (employee->countdown <= 0) {
-        if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 && move_peep_from_blueprint(employee))
+        if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 &&
+            move_peep_from_blueprint(employee))
             return 0;
         employee->countdown = employee->speed == 0 ? div_err() : 0x100 / employee->speed;
         dir = person_head_for(employee, 1);
@@ -327,7 +337,8 @@ s16 staff_goto_object(Thing *employee)
         case 2:
         case 3:
         default:
-            if (employee->facing != dir || start[staff_anim_starts[employee->subtype].staff_stand + employee->facing].frame == employee->sprite) {
+            if (employee->facing != dir ||
+                start[staff_anim_starts[employee->subtype].staff_stand + employee->facing].frame == employee->sprite) {
                 employee->facing = dir;
                 PLAY_FRAME(employee, staff_anim_starts[employee->subtype].walk);
             }
@@ -355,12 +366,13 @@ u8 try_staff_wander(Thing *employee, s8 dx, s8 dy, u8 substate)
     y = employee->y.tile + dy;
     tile = x + (y << 7);
     m = &map[tile];
-    if (!(m >= map && m < end_map && !(m->flags & 3) && (x >= 0 && x < 0x80 && y >= 0 && y < 0x80))
-        || m->owner_flags != 1 << employee->owner || which_room(tile)) {
+    if (!(m >= map && m < end_map && !(m->flags & 3) && (x >= 0 && x < 0x80 && y >= 0 && y < 0x80)) ||
+        m->owner_flags != 1 << employee->owner || which_room(tile)) {
         employee->substate = 6;
         return 0;
     }
-    if (!(employee->dest_x + dx >= 0 && employee->dest_x + dx < 0x80 && employee->dest_y + dy >= 0 && employee->dest_y + dy < 0x80)) {
+    if (!(employee->dest_x + dx >= 0 && employee->dest_x + dx < 0x80 && employee->dest_y + dy >= 0 &&
+          employee->dest_y + dy < 0x80)) {
         employee->substate = 6;
         return 0;
     }
@@ -395,7 +407,8 @@ void staff_wanders(Thing *employee)
     if (shall_i_resign(employee))
         return;
     if (employee->substate == 0) {
-        if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 && move_peep_from_blueprint(employee))
+        if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 &&
+            move_peep_from_blueprint(employee))
             return;
         employee->countdown--;
         if (employee->countdown <= 0)
@@ -413,7 +426,8 @@ void staff_wanders(Thing *employee)
                     return;
                 }
             }
-            if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 && move_peep_from_blueprint(employee))
+            if (blocks[map[(s16)employee->x.tile + ((s16)employee->y.tile << 7)].overlay].width == 0x20 &&
+                move_peep_from_blueprint(employee))
                 return;
             if (shall_i_resign(employee))
                 return;
@@ -517,8 +531,8 @@ void peep_bp_goto(Thing *peep)
         peep->sprite = frame[peep->sprite].next;
     peep->countdown--;
     if (peep->countdown <= 0) {
-        if (blocks[map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].overlay].width != 0x20
-            || (peep->x.tile == peep->saved_dest_x && peep->y.tile == peep->saved_dest_y)) {
+        if (blocks[map[(s16)peep->x.tile + ((s16)peep->y.tile << 7)].overlay].width != 0x20 ||
+            (peep->x.tile == peep->saved_dest_x && peep->y.tile == peep->saved_dest_y)) {
             peep->state = peep->saved_state;
             return;
         }
@@ -542,19 +556,22 @@ void peep_bp_goto(Thing *peep)
                 else
                     dir = 3;
             }
-            if (!retry || blocks[map[(s16)((u16)peep->x.tile + ((u16)peep->y.tile << 7)) + around[dir]].overlay].width == 0x20)
+            if (!retry ||
+                blocks[map[(s16)((u16)peep->x.tile + ((u16)peep->y.tile << 7)) + around[dir]].overlay].width == 0x20)
                 break;
             vertical = !vertical;
             retry = 0;
         }
         peep->countdown = peep->speed == 0 ? div_err() : 0x100 / peep->speed;
         if (peep->type == THING_STAFF) {
-            if (peep->facing != dir || start[staff_anim_starts[peep->subtype].staff_stand + peep->facing].frame == peep->sprite) {
+            if (peep->facing != dir ||
+                start[staff_anim_starts[peep->subtype].staff_stand + peep->facing].frame == peep->sprite) {
                 peep->facing = dir;
                 PLAY_FRAME(peep, staff_anim_starts[peep->subtype].walk);
             }
         } else {
-            if (peep->facing != dir || start[anim_starts[peep->subtype].patient_stand + peep->facing].frame == peep->sprite) {
+            if (peep->facing != dir ||
+                start[anim_starts[peep->subtype].patient_stand + peep->facing].frame == peep->sprite) {
                 peep->facing = dir;
                 PLAY_FRAME(peep, anim_starts[peep->subtype].walk);
             }
@@ -640,8 +657,8 @@ void peep_stuck(Thing *peep)
             return;
         }
         dest = (s16)peep->saved_dest_x + ((s16)peep->saved_dest_y << 7);
-        if ((peep->type != THING_PATIENT || !(peep->flags & PF_FED_UP))
-            && check_points_connected((u16)peep->x.tile + ((u16)peep->y.tile << 7), dest)) {
+        if ((peep->type != THING_PATIENT || !(peep->flags & PF_FED_UP)) &&
+            check_points_connected((u16)peep->x.tile + ((u16)peep->y.tile << 7), dest)) {
             peep->state = peep->saved_state;
             peep->dest_x = peep->saved_dest_x;
             peep->dest_y = peep->saved_dest_y;

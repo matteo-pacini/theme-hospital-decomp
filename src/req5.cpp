@@ -44,8 +44,8 @@ void req5(Window *win)
                 u8 kind;
 
                 kind = thing[D_001581b2[3].value].subtype;
-                if ((u32)allhosps[player].balance >= (u32)allhosps[player].object_stats[kind].cost
-                    && allhosps[player].balance > 0) {
+                if ((u32)allhosps[player].balance >= (u32)allhosps[player].object_stats[kind].cost &&
+                    allhosps[player].balance > 0) {
                     sprintf(othervar.yesno_msg, yesno_text[2], object_names[objects[kind].name],
                             allhosps[othervar.cur_player].object_stats[kind].cost);
                     open_yes_no_requester(EV_REPLACE_MACHINE, D_001581b2[3].value, 0, EV_CLOSE_YES_NO, 0, 0);
@@ -107,15 +107,15 @@ void req5_overdraw(Window *win)
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         set_font_from_cache(0);
         if (lbDisplay.mleft_button) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x54].x, y + resvars.boxes[0x54].y, resvars.boxes[0x54].w,
-                             resvars.boxes[0x54].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x54].x,
+                             y + resvars.boxes[0x54].y, resvars.boxes[0x54].w, resvars.boxes[0x54].h)) {
                 othervar.center_on_slot = 3;
                 othervar.full_redraw = 1;
             }
         }
         if (lbDisplay.mright_button && !othervar.right_button_was_down) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x54].x, y + resvars.boxes[0x54].y, resvars.boxes[0x54].w,
-                             resvars.boxes[0x54].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x54].x,
+                             y + resvars.boxes[0x54].y, resvars.boxes[0x54].w, resvars.boxes[0x54].h)) {
                 D_001581b2[3].value = find_next_thing(machine, THING_OBJECT, -1, -1);
                 othervar.center_on_slot = 3;
                 othervar.full_redraw = 1;
@@ -139,7 +139,8 @@ void req5_draw_machine_usage_bar(long x, long y, long filled, long total)
     s32 i;
 
     for (i = (filled << 16) / ((total << 16) / resvars.boxes[0x53].w) - 1; i >= 0; i--)
-        reqspr_draw(x + resvars.boxes[0x53].x + i, y + resvars.boxes[0x53].y, &button_sprite[resvars.requester_sprites[4]]);
+        reqspr_draw(x + resvars.boxes[0x53].x + i, y + resvars.boxes[0x53].y,
+                    &button_sprite[resvars.requester_sprites[4]]);
 }
 
 // Returns 1 if thing id is among pager's requests, else 0.

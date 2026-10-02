@@ -46,19 +46,20 @@ void draw_cell_no(s32 cell, u8 colour)
 
     row = cell / 128;
     col = cell % 128;
-    x = col * (resvars.tile_width / 2) - resvars.tile_width / 2 * row - window.scroll_x[window.current_window] + window.center_x[window.current_window]
-        + resvars.tile_width / 2;
-    y = col * (resvars.tile_height / 2) + resvars.tile_height / 2 * row - window.scroll_y[window.current_window] + window.center_y[window.current_window]
-        - resvars.tile_height;
-    find_common_window(0, 0, lbDisplay.graphics_screen_width, lbDisplay.physical_screen_height - 0x5c, window.zone_x[window.current_window],
-                       window.zone_y[window.current_window], window.zone_x1[window.current_window], window.zone_y1[window.current_window]);
-    find_common_window(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height, window.zone_x[window.current_window], window.zone_y[window.current_window],
+    x = col * (resvars.tile_width / 2) - resvars.tile_width / 2 * row - window.scroll_x[window.current_window] +
+        window.center_x[window.current_window] + resvars.tile_width / 2;
+    y = col * (resvars.tile_height / 2) + resvars.tile_height / 2 * row - window.scroll_y[window.current_window] +
+        window.center_y[window.current_window] - resvars.tile_height;
+    find_common_window(0, 0, lbDisplay.graphics_screen_width, lbDisplay.physical_screen_height - 0x5c,
+                       window.zone_x[window.current_window], window.zone_y[window.current_window],
+                       window.zone_x1[window.current_window], window.zone_y1[window.current_window]);
+    find_common_window(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height,
+                       window.zone_x[window.current_window], window.zone_y[window.current_window],
                        window.zone_x1[window.current_window], window.zone_y1[window.current_window]);
     find_common_window(info.clip_x0, info.clip_y0, info.clip_x1, info.clip_y1, window.clip_x0, window.clip_y0,
                        window.clip_x1, window.clip_y1);
     if (info.clip_empty == 0) {
-        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
-                                  info.clip_y1 - info.clip_y0);
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0, info.clip_y1 - info.clip_y0);
         x -= info.clip_x0;
         y -= info.clip_y0;
         top_x = x - resvars.tile_width / 2;
@@ -72,12 +73,16 @@ void draw_cell_no(s32 cell, u8 colour)
 // FUNCTION: 0x000b1318
 void draw_cell_no_editor(s32 x, s32 y, u8 colour)
 {
-    if (-(resvars.tile_width / 2) <= x && resvars.tile_width / 2 + lbDisplay.graphics_screen_width > x && -resvars.tile_height <= y && lbDisplay.physical_screen_height - 0x5c > y) {
+    if (-(resvars.tile_width / 2) <= x && resvars.tile_width / 2 + lbDisplay.graphics_screen_width > x &&
+        -resvars.tile_height <= y && lbDisplay.physical_screen_height - 0x5c > y) {
         LbDrawLine(x, y, (resvars.tile_width - 1) / 2 + x - 1, y + (resvars.tile_height - 1) / 2, colour);
-        LbDrawLine((resvars.tile_width - 1) / 2 + x, y + (resvars.tile_height - 1) / 2, x, y + (resvars.tile_height - 1), colour);
-        LbDrawLine(x, resvars.tile_height - 1 + y, x - (resvars.tile_width - 1) / 2, y + (resvars.tile_height - 1) / 2, colour);
+        LbDrawLine((resvars.tile_width - 1) / 2 + x, y + (resvars.tile_height - 1) / 2, x,
+                   y + (resvars.tile_height - 1), colour);
+        LbDrawLine(x, resvars.tile_height - 1 + y, x - (resvars.tile_width - 1) / 2, y + (resvars.tile_height - 1) / 2,
+                   colour);
         LbDrawLine(x - (resvars.tile_width - 1) / 2, y + (resvars.tile_height - 1) / 2, x, y, colour);
-        set_all_refresh_zones_in_window(x - (resvars.tile_width - 1) / 2, y, (resvars.tile_width - 1) / 2 + x - 1, resvars.tile_height - 1 + y, 3);
+        set_all_refresh_zones_in_window(x - (resvars.tile_width - 1) / 2, y, (resvars.tile_width - 1) / 2 + x - 1,
+                                        resvars.tile_height - 1 + y, 3);
     }
 }
 
@@ -179,9 +184,10 @@ draw:
     }
     row = gamevar.place_tile / 128;
     col = gamevar.place_tile % 128;
-    x = resvars.tile_width * col / 2 - resvars.tile_width * row / 2 - window.scroll_x[window.current_window] + window.center_x[window.current_window];
-    y = resvars.tile_height * col / 2 + resvars.tile_height * row / 2 - window.scroll_y[window.current_window] + window.center_y[window.current_window]
-        + resvars.tile_height / 2;
+    x = resvars.tile_width * col / 2 - resvars.tile_width * row / 2 - window.scroll_x[window.current_window] +
+        window.center_x[window.current_window];
+    y = resvars.tile_height * col / 2 + resvars.tile_height * row / 2 - window.scroll_y[window.current_window] +
+        window.center_y[window.current_window] + resvars.tile_height / 2;
     switch (kind) {
     case 0x11:
         obj_frame = get_frame_for_placing_bomb();
@@ -207,9 +213,10 @@ draw:
         compute_object_drag_shape(tile3, kind, dir2);
         row = tile3 / 128;
         col = tile3 % 128;
-        x2 = resvars.tile_width * col / 2 - resvars.tile_width * row / 2 - window.scroll_x[window.current_window] + window.center_x[window.current_window];
-        y2 = resvars.tile_height * col / 2 + resvars.tile_height * row / 2 - window.scroll_y[window.current_window] + window.center_y[window.current_window]
-            + resvars.tile_height / 2;
+        x2 = resvars.tile_width * col / 2 - resvars.tile_width * row / 2 - window.scroll_x[window.current_window] +
+             window.center_x[window.current_window];
+        y2 = resvars.tile_height * col / 2 + resvars.tile_height * row / 2 - window.scroll_y[window.current_window] +
+             window.center_y[window.current_window] + resvars.tile_height / 2;
         part_frame = start[objects[kind].anim_start + dir2].frame;
         flip2 = start[objects[kind].anim_start + dir2].flags;
         if (next_part[part].dirs[dir].draw_part_first) {

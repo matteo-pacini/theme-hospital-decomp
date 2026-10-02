@@ -156,7 +156,8 @@ void evaluate_reputation(const u8 treatment, const u8 owner)
     hosp = &allhosps[owner];
     if (treatment) {
         if (hosp->rooms[treatment].rep_events > 0)
-            hosp->rooms[treatment].reputation = hosp->rooms[treatment].rep_points * 500 / hosp->rooms[treatment].rep_events;
+            hosp->rooms[treatment].reputation =
+                hosp->rooms[treatment].rep_points * 500 / hosp->rooms[treatment].rep_events;
         else
             hosp->rooms[treatment].reputation = 500;
         if (hosp->rooms[treatment].reputation < 0)

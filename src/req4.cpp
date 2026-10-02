@@ -68,7 +68,8 @@ void req4(Window *win)
                     close_query(2);
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
-                    open_yes_no_requester(EV_SACK_STAFF, D_001581b2[2].value, 0, EV_CANCEL_SACK, D_001581b2[2].value, 0);
+                    open_yes_no_requester(EV_SACK_STAFF, D_001581b2[2].value, 0, EV_CANCEL_SACK, D_001581b2[2].value,
+                                          0);
                 } else if (i == resvars.requester_buttons[0x2b]) {
                     D_001549d0[player].type = EV_PICK_UP_STAFF;
                     D_001549d0[player].value = D_001581b2[2].value;
@@ -90,7 +91,8 @@ void req4(Window *win)
                     close_query(2);
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                     sprintf(othervar.yesno_msg, "%s", yesno_text[5]);
-                    open_yes_no_requester(EV_SACK_STAFF, D_001581b2[2].value, 0, EV_CANCEL_SACK, D_001581b2[2].value, 0);
+                    open_yes_no_requester(EV_SACK_STAFF, D_001581b2[2].value, 0, EV_CANCEL_SACK, D_001581b2[2].value,
+                                          0);
                 } else if (i == resvars.requester_buttons[0x2e]) {
                     D_001549d0[player].type = EV_PICK_UP_STAFF;
                     D_001549d0[player].value = D_001581b2[2].value;
@@ -137,13 +139,13 @@ void req4_overdraw(Window *win)
         LbTextDraw(x + resvars.coords[0x6b].x, y + resvars.coords[0x6b].y, buf);
         draw_staff_handyman_bars(staff, x, y, &button_sprite[resvars.requester_sprites[3]]);
         if (lbDisplay.mleft_button) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4e].x, y + resvars.boxes[0x4e].y, resvars.boxes[0x4e].w,
-                             resvars.boxes[0x4e].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4e].x,
+                             y + resvars.boxes[0x4e].y, resvars.boxes[0x4e].w, resvars.boxes[0x4e].h)) {
                 othervar.center_on_slot = 2;
                 othervar.full_redraw = 1;
             }
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x5d].x, y + resvars.boxes[0x5d].y, resvars.boxes[0x5d].w,
-                             resvars.boxes[0x5d].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x5d].x,
+                             y + resvars.boxes[0x5d].y, resvars.boxes[0x5d].w, resvars.boxes[0x5d].h)) {
                 othervar.slist_staff = staff - thing;
                 D_001549d0[player].type = EV_OPEN_SCREEN;
                 D_001549d0[player].value = 5;
@@ -151,8 +153,8 @@ void req4_overdraw(Window *win)
             }
         }
         if (lbDisplay.mright_button && !othervar.right_button_was_down) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4e].x, y + resvars.boxes[0x4e].y, resvars.boxes[0x4e].w,
-                             resvars.boxes[0x4e].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4e].x,
+                             y + resvars.boxes[0x4e].y, resvars.boxes[0x4e].w, resvars.boxes[0x4e].h)) {
                 D_001581b2[2].value = find_next_thing(staff, THING_STAFF, staff->subtype, -1);
                 play_sound(SNDSRC_GENERAL, SFX_CAMCLICK, -1, -1);
             }
@@ -171,32 +173,39 @@ void req4_overdraw(Window *win)
         slot = 0;
         slot++;
         if (staff->skills & SKILL_JUNIOR)
-            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[10]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y,
+                        &button_sprite[resvars.requester_sprites[10]]);
         slot++;
         if (staff->skills & SKILL_DOCTOR && !(staff->skills & SKILL_CONSULTANT) && !(staff->skills & SKILL_JUNIOR))
-            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[10]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y,
+                        &button_sprite[resvars.requester_sprites[10]]);
         slot++;
         if (staff->skills & SKILL_CONSULTANT)
-            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[10]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y,
+                        &button_sprite[resvars.requester_sprites[10]]);
         slot++;
         if (staff->skills & SKILL_SURGEON)
-            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[11]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y,
+                        &button_sprite[resvars.requester_sprites[11]]);
         slot++;
         if (staff->skills & SKILL_PSYCHIATRIST)
-            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[12]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y,
+                        &button_sprite[resvars.requester_sprites[12]]);
         slot++;
         if (staff->skills & SKILL_RESEARCHER)
-            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y, &button_sprite[resvars.requester_sprites[13]]);
+            reqspr_draw(x + resvars.boxes[slot + 0x19].x, y + resvars.boxes[slot + 0x19].y,
+                        &button_sprite[resvars.requester_sprites[13]]);
         if (!(staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON))
-            LbDrawBox(x + resvars.boxes[0x40].x, y + resvars.boxes[0x40].y, resvars.boxes[0x40].w, resvars.boxes[0x40].h, 0x7a);
+            LbDrawBox(x + resvars.boxes[0x40].x, y + resvars.boxes[0x40].y, resvars.boxes[0x40].w,
+                      resvars.boxes[0x40].h, 0x7a);
         if (lbDisplay.mleft_button) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4d].x, y + resvars.boxes[0x4d].y, resvars.boxes[0x4d].w,
-                             resvars.boxes[0x4d].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4d].x,
+                             y + resvars.boxes[0x4d].y, resvars.boxes[0x4d].w, resvars.boxes[0x4d].h)) {
                 othervar.center_on_slot = 2;
                 othervar.full_redraw = 1;
             }
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x5d].x, y + resvars.boxes[0x5d].y, resvars.boxes[0x5d].w,
-                             resvars.boxes[0x5d].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x5d].x,
+                             y + resvars.boxes[0x5d].y, resvars.boxes[0x5d].w, resvars.boxes[0x5d].h)) {
                 othervar.slist_staff = staff - thing;
                 D_001549d0[player].type = EV_OPEN_SCREEN;
                 D_001549d0[player].value = 5;
@@ -204,8 +213,8 @@ void req4_overdraw(Window *win)
             }
         }
         if (lbDisplay.mright_button && !othervar.right_button_was_down) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4d].x, y + resvars.boxes[0x4d].y, resvars.boxes[0x4d].w,
-                             resvars.boxes[0x4d].h)) {
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes[0x4d].x,
+                             y + resvars.boxes[0x4d].y, resvars.boxes[0x4d].w, resvars.boxes[0x4d].h)) {
                 if (staff->subtype == STAFF_DOCTOR || staff->subtype == STAFF_SURGEON)
                     D_001581b2[2].value = find_next_thing(staff, THING_STAFF, STAFF_DOCTOR, STAFF_SURGEON);
                 else
@@ -324,9 +333,12 @@ void adjust_handyman_values(const u16 id, const u8 button)
 // FUNCTION: 0x00087e7c
 void draw_staff_handyman_bars(const Thing *const handyman, const u16 x, const u16 y, TbSprite *spr)
 {
-    draw_gauge(handyman->prio_litter, x + resvars.coords[0x72].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x, spr, 100, 0, 100, 1);
-    draw_gauge(handyman->prio_plants, x + resvars.coords[0x73].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x, spr, 100, 0, 100, 1);
-    draw_gauge(handyman->prio_repair, x + resvars.coords[0x74].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x, spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_litter, x + resvars.coords[0x72].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x,
+               spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_plants, x + resvars.coords[0x73].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x,
+               spr, 100, 0, 100, 1);
+    draw_gauge(handyman->prio_repair, x + resvars.coords[0x74].x, y + resvars.coords[0x72].y, resvars.coords[0xaa].x,
+               spr, 100, 0, 100, 1);
 }
 
 // Counts the reference texts (general, good and bad, each list ending at
@@ -338,11 +350,14 @@ void setup_req4_references(void)
     char buf[4];
 
     sprintf(buf, ".");
-    for (i = 0; ref_general_text[i][0] != buf[0]; i++) {}
+    for (i = 0; ref_general_text[i][0] != buf[0]; i++) {
+    }
     statvar.ref_general_count = i;
-    for (i = 0; ref_good_text[i][0] != buf[0]; i++) {}
+    for (i = 0; ref_good_text[i][0] != buf[0]; i++) {
+    }
     statvar.ref_good_count = i;
-    for (i = 0; ref_bad_text[i][0] != buf[0]; i++) {}
+    for (i = 0; ref_bad_text[i][0] != buf[0]; i++) {
+    }
     statvar.ref_bad_count = i;
 }
 

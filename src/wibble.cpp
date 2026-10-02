@@ -3,7 +3,6 @@
 extern "C" {
 
 extern s32 lbSinTable[];
-
 }
 
 extern s32 *xoffptr;
@@ -60,7 +59,8 @@ void draw_wibble(s32 x, s32 y, u8 *buf, s32 w, s32 h, s32 phase)
     s32 skipx;
     s32 skipy;
 
-    dst = lbDisplay.wscreen + lbDisplay.graphics_window_x + lbDisplay.graphics_window_y * lbDisplay.graphics_screen_width;
+    dst =
+        lbDisplay.wscreen + lbDisplay.graphics_window_x + lbDisplay.graphics_window_y * lbDisplay.graphics_screen_width;
     src = buf + (yoffptr[phase] - aamp) * srcwidth;
     if (x >= 0) {
         if (x >= lbDisplay.graphics_window_width)

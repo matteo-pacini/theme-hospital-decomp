@@ -2,11 +2,9 @@
 
 extern "C" {
 
-
 u8 check_room_mutex(Thing *staff);
 Thing *search_mapwho(Map *cell, u16 kind);
 void stop_waiting_for_patient(Thing *w);
-
 }
 
 // SS_DOCTOR_IN_OFFICE: sends doctor to sit at the room's desk (then
@@ -55,7 +53,8 @@ void doctor_works_at_desk(Thing *doctor)
                             if (queue) {
                                 if (call_person_to_room(doctor, queue, 0x28, doctor->room->door_tile, 1)) {
                                     set_icon_value(doctor, ICON_CALLING);
-                                    if (find_object((u16)doctor->x.tile + ((u16)doctor->y.tile << 7), OBJ_CABINET, 1, 0x96, doctor->owner)) {
+                                    if (find_object((u16)doctor->x.tile + ((u16)doctor->y.tile << 7), OBJ_CABINET, 1,
+                                                    0x96, doctor->owner)) {
                                         doctor->next_state = SS_DOCTOR_WAITS_FOR_PATIENT;
                                         set_complex(doctor, 0x32, 0);
                                         process_staff_complex(doctor);
@@ -67,7 +66,8 @@ void doctor_works_at_desk(Thing *doctor)
                         } else {
                             othervar.rand_pct = old_newrand() % 100;
                             if (othervar.rand_pct >= 25 && othervar.rand_pct < 32) {
-                                if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_CABINET, 1, 0x96, doctor->owner)) {
+                                if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_CABINET, 1, 0x96,
+                                                doctor->owner)) {
                                     doctor->resume_state = SS_DOCTOR_IN_OFFICE;
                                     set_complex(doctor, 0x14, 0);
                                     process_staff_complex(doctor);
@@ -76,13 +76,17 @@ void doctor_works_at_desk(Thing *doctor)
                                 u8 paged;
 
                                 paged = 0;
-                                if (doctor->tiredness > allhosps[doctor->owner].rest_threshold && take_a_break(doctor)) {
+                                if (doctor->tiredness > allhosps[doctor->owner].rest_threshold &&
+                                    take_a_break(doctor)) {
                                     paged = 1;
-                                } else if ((allhosps[doctor->owner].staff_leave_rooms && doctor->room->queue_head == 0)
-                                           && (actual_game_turn % (doctor->tiredness > allhosps[doctor->owner].rest_threshold
-                                                                      ? doctor->work_delay * 2 + 1
-                                                                      : doctor->work_delay + 1) == 0
-                                           && obey_pager(doctor))) {
+                                } else if ((allhosps[doctor->owner].staff_leave_rooms &&
+                                            doctor->room->queue_head == 0) &&
+                                           (actual_game_turn %
+                                                    (doctor->tiredness > allhosps[doctor->owner].rest_threshold
+                                                         ? doctor->work_delay * 2 + 1
+                                                         : doctor->work_delay + 1) ==
+                                                0 &&
+                                            obey_pager(doctor))) {
                                     reset_icon_value(doctor, ICON_CALLING);
                                     paged = 1;
                                 }
@@ -122,7 +126,8 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
             patient->resume_state = 0;
             switch (doctor->room->type) {
             case ROOM_GP:
-                if (find_object(((u16)patient->y.tile << 7) + (u16)patient->x.tile, OBJ_CHAIR, 1, 0x96, patient->owner)) {
+                if (find_object(((u16)patient->y.tile << 7) + (u16)patient->x.tile, OBJ_CHAIR, 1, 0x96,
+                                patient->owner)) {
                     patient->next_state = PS_SLAVE_READY;
                     if (set_complex(patient, 0x82, 0)) {
                         process_person_complex(patient);
@@ -160,7 +165,8 @@ void doctor_waits_for_patient_to_arrive(Thing *doctor)
                 process_staff_complex(doctor);
                 break;
             case ROOM_PSYCH:
-                if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_BOOKCASE, 1, 0x96, doctor->owner)) {
+                if (find_object(((u16)doctor->y.tile << 7) + (u16)doctor->x.tile, OBJ_BOOKCASE, 1, 0x96,
+                                doctor->owner)) {
                     set_complex(doctor, 0x370, 0);
                 }
                 doctor->next_state = SS_DOCTOR_EXAMINES;
@@ -333,7 +339,8 @@ void doctor_in_machine_room(Thing *doctor)
                         if (doctor->room->being_edited || doctor->room->state == RS_EDITED) {
                             evacuate_staff(doctor);
                         } else if ((doctor->orders & ORD_REST) && take_a_break(doctor)) {
-                        } else if ((doctor->subtype == STAFF_NURSE && allhosps[doctor->owner].idle_nurses == 0) && could_nurse_vaccinate(doctor)) {
+                        } else if ((doctor->subtype == STAFF_NURSE && allhosps[doctor->owner].idle_nurses == 0) &&
+                                   could_nurse_vaccinate(doctor)) {
                             evacuate_staff(doctor);
                         } else {
                             if (doctor->room->state == RS_REPAIR_DUE) {
@@ -348,12 +355,14 @@ void doctor_in_machine_room(Thing *doctor)
                                             doctor->state = SS_SURGEON_WAITS;
                                         } else {
                                             lead = find_waiting_surgeon(doctor->room, 0x10);
-                                            if (lead > thing && call_person_to_room(lead, queue, 0x28, doctor->room->door_tile, 1)) {
+                                            if (lead > thing &&
+                                                call_person_to_room(lead, queue, 0x28, doctor->room->door_tile, 1)) {
                                                 u16 anim;
 
                                                 doctor->state = SS_ASSISTANT_READY;
                                                 set_icon_value(lead, ICON_CALLING);
-                                                anim = check_frame(staff_anim_starts[lead->subtype].staff_stand, lead) + (u16)lead->facing;
+                                                anim = check_frame(staff_anim_starts[lead->subtype].staff_stand, lead) +
+                                                       (u16)lead->facing;
                                                 lead->sprite = start[anim].frame;
                                                 lead->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                                                 lead->state = SS_DOCTOR_WAITS_FOR_PATIENT;
@@ -363,7 +372,8 @@ void doctor_in_machine_room(Thing *doctor)
                                         u16 anim;
 
                                         set_icon_value(doctor, ICON_CALLING);
-                                        anim = check_frame(staff_anim_starts[doctor->subtype].staff_stand, doctor) + (u16)doctor->facing;
+                                        anim = check_frame(staff_anim_starts[doctor->subtype].staff_stand, doctor) +
+                                               (u16)doctor->facing;
                                         doctor->sprite = start[anim].frame;
                                         doctor->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                                         doctor->state = SS_DOCTOR_WAITS_FOR_PATIENT;
@@ -371,8 +381,9 @@ void doctor_in_machine_room(Thing *doctor)
                                 }
                             } else {
                                 othervar.rand_pct = old_newrand() % 100;
-                                if ((othervar.rand_pct >= 25 && othervar.rand_pct < 27)
-                                    || ((s16)doctor->y.tile << 7) + (s16)doctor->x.tile == doctor->room->door_inside_tile) {
+                                if ((othervar.rand_pct >= 25 && othervar.rand_pct < 27) ||
+                                    ((s16)doctor->y.tile << 7) + (s16)doctor->x.tile ==
+                                        doctor->room->door_inside_tile) {
                                     u16 tile;
                                     RoomInfo *cur_room;
                                     u16 pos;
@@ -381,9 +392,11 @@ void doctor_in_machine_room(Thing *doctor)
                                     cur_room = which_room(tile);
                                     othervar.rand_pct = old_newrand() % 100;
                                     if (othervar.rand_pct >= 25 && othervar.rand_pct < 26) {
-                                        pos = ((s16)(cur_room->height / 2) << 7) + (s16)(cur_room->width / 2) + cur_room->pos;
+                                        pos = ((s16)(cur_room->height / 2) << 7) + (s16)(cur_room->width / 2) +
+                                              cur_room->pos;
                                     } else {
-                                        pos = ((s16)(old_newrand() % cur_room->height) << 7) + (s16)(old_newrand() % cur_room->width) + cur_room->pos;
+                                        pos = ((s16)(old_newrand() % cur_room->height) << 7) +
+                                              (s16)(old_newrand() % cur_room->width) + cur_room->pos;
                                     }
                                     if (tile != pos && can_i_get_to(doctor, pos)) {
                                         doctor->next_state = doctor->resume_state = SS_DOCTOR_IN_MACHINE_ROOM;
@@ -394,17 +407,22 @@ void doctor_in_machine_room(Thing *doctor)
                                     u8 paged;
 
                                     paged = 0;
-                                    if (doctor->tiredness > allhosps[doctor->owner].rest_threshold && take_a_break(doctor)) {
+                                    if (doctor->tiredness > allhosps[doctor->owner].rest_threshold &&
+                                        take_a_break(doctor)) {
                                         paged = 1;
-                                    } else if ((allhosps[doctor->owner].staff_leave_rooms && doctor->room->queue_head == 0)
-                                               && (actual_game_turn % (doctor->tiredness > allhosps[doctor->owner].rest_threshold
-                                                                          ? doctor->work_delay * 2 + 1
-                                                                          : doctor->work_delay + 1) == 0
-                                               && obey_pager(doctor))) {
+                                    } else if ((allhosps[doctor->owner].staff_leave_rooms &&
+                                                doctor->room->queue_head == 0) &&
+                                               (actual_game_turn %
+                                                        (doctor->tiredness > allhosps[doctor->owner].rest_threshold
+                                                             ? doctor->work_delay * 2 + 1
+                                                             : doctor->work_delay + 1) ==
+                                                    0 &&
+                                                obey_pager(doctor))) {
                                         paged = 1;
                                     }
                                     if (paged && doctor->room->queue_head) {
-                                        page_member_of_staff(rooms[doctor->room->type].doctor_skills, doctor->room - room_info, 0, 1, doctor->owner);
+                                        page_member_of_staff(rooms[doctor->room->type].doctor_skills,
+                                                             doctor->room - room_info, 0, 1, doctor->owner);
                                     }
                                 }
                             }
@@ -445,14 +463,17 @@ void doctor_researches(Thing *doctor)
                 } else if (doctor->orders & ORD_LEAVE_ROOM) {
                     doctor->orders &= 0xf0;
                     evacuate_staff(doctor);
-                } else if (((doctor->orders & ORD_REST) || doctor->tiredness > allhosps[doctor->owner].rest_threshold) && take_a_break(doctor)) {
+                } else if (((doctor->orders & ORD_REST) ||
+                            doctor->tiredness > allhosps[doctor->owner].rest_threshold) &&
+                           take_a_break(doctor)) {
                 } else {
                     othervar.rand_pct = old_newrand() % 100;
                     if (othervar.rand_pct >= 0 && othervar.rand_pct < 25) {
                         queue = doctor->room->queue_head;
                         if (queue) {
                             ok = 1;
-                            for (occupant = &thing[doctor->room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
+                            for (occupant = &thing[doctor->room->first]; occupant > thing;
+                                 occupant = &thing[occupant->room_next]) {
                                 if (occupant->type == THING_STAFF && occupant->slave) {
                                     ok = 0;
                                 } else if (occupant->type == THING_PATIENT) {
@@ -469,7 +490,8 @@ void doctor_researches(Thing *doctor)
                         }
                     } else {
                         for (i = 0; i < 4; i++) {
-                            obj = find_object((u16)doctor->x.tile + ((u16)doctor->y.tile << 7), research_tasks[i].object, 1, 0x96, doctor->owner);
+                            obj = find_object((u16)doctor->x.tile + ((u16)doctor->y.tile << 7),
+                                              research_tasks[i].object, 1, 0x96, doctor->owner);
                             if (obj) {
                                 user = search_mapwho(&map[thing[obj].use_pos[0]], THING_STAFF);
                                 if (!(user == 0 || user == doctor)) {

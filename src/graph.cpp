@@ -5,7 +5,6 @@ extern Graphs graph[];
 extern "C" {
 }
 
-
 struct GraphLabel {
     u8 kind;
     u16 value;
@@ -75,7 +74,8 @@ void spread_graph_labels(u16 gap)
                 moved = 1;
             }
             if (!below && above) {
-                if (GraphTextPos[i].value > resvars.screen_boxes_GraphRectp[46].y - resvars.screen_boxes_GraphRectp[46].h - gap)
+                if (GraphTextPos[i].value >
+                    resvars.screen_boxes_GraphRectp[46].y - resvars.screen_boxes_GraphRectp[46].h - gap)
                     GraphTextPos[i].value--;
                 moved = 1;
             }
@@ -141,7 +141,8 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         if (!graph[i].visible)
             reqspr_draw(resvars.screen_buttons[i + 0x25].sprite_x, resvars.screen_buttons[i + 0x25].sprite_y,
                         &screen_sprites_tab_start[resvars.screen_buttons[i + 0x25].sprite]);
-        LbTextSetWindow(resvars.screen_boxes_GraphRectp[i + 47].x, resvars.screen_boxes_GraphRectp[i + 47].y, resvars.screen_boxes_GraphRectp[i + 47].w, resvars.screen_boxes_GraphRectp[i + 47].h);
+        LbTextSetWindow(resvars.screen_boxes_GraphRectp[i + 47].x, resvars.screen_boxes_GraphRectp[i + 47].y,
+                        resvars.screen_boxes_GraphRectp[i + 47].w, resvars.screen_boxes_GraphRectp[i + 47].h);
         lbDisplay.draw_flags |= 0x140;
         lbDisplay.draw_colour = colour[graph[i].colour];
         lbDisplay.draw_flags |= 0x40;
@@ -293,8 +294,9 @@ void process_graph_panel(void)
 
     if (lbDisplay.rleft_button || lbDisplay.rright_button) {
         for (i = 0; resvars.screen_buttons[i + 0x25].width != 0 && resvars.screen_buttons[i + 0x25].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x25].x, resvars.screen_buttons[i + 0x25].y,
-                             resvars.screen_buttons[i + 0x25].width, resvars.screen_buttons[i + 0x25].height)) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x25].x,
+                             resvars.screen_buttons[i + 0x25].y, resvars.screen_buttons[i + 0x25].width,
+                             resvars.screen_buttons[i + 0x25].height)) {
                 resvars.screen_buttons[i + 0x25].callback(i);
                 reqspr_draw(resvars.screen_buttons[i + 0x25].sprite_x, resvars.screen_buttons[i + 0x25].sprite_y,
                             &screen_sprites_tab_start[resvars.screen_buttons[i + 0x25].sprite]);
@@ -305,8 +307,9 @@ void process_graph_panel(void)
     }
     if (lbDisplay.mleft_button || lbDisplay.mright_button) {
         for (i = 0; resvars.screen_buttons[i + 0x25].width != 0 && resvars.screen_buttons[i + 0x25].height != 0; i++) {
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x25].x, resvars.screen_buttons[i + 0x25].y,
-                             resvars.screen_buttons[i + 0x25].width, resvars.screen_buttons[i + 0x25].height)) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x25].x,
+                             resvars.screen_buttons[i + 0x25].y, resvars.screen_buttons[i + 0x25].width,
+                             resvars.screen_buttons[i + 0x25].height)) {
                 reqspr_draw(resvars.screen_buttons[i + 0x25].sprite_x, resvars.screen_buttons[i + 0x25].sprite_y,
                             &screen_sprites_tab_start[resvars.screen_buttons[i + 0x25].sprite]);
                 break;

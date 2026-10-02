@@ -7,7 +7,6 @@ extern u32 last_flag_turn;
 extern RoomInfo *last_flag_room;
 
 u16 nth_other_active_player(int nth);
-
 }
 
 // Moves the patient at position pos (1-based) of room room_id's queue to its

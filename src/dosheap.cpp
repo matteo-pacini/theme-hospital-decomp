@@ -58,7 +58,8 @@ void *CDosHeap::Alloc(u32 size)
             rec->next = used_list;
             used_list = rec;
             stats.RecordAlloc(rec);
-            Report("Allocated block (Count%d,Frags%d)of %d bytes, \t%d allocated", stats.GetAllocCount(), GetFreeFragCount(this), size, stats.GetTotalAllocation());
+            Report("Allocated block (Count%d,Frags%d)of %d bytes, \t%d allocated", stats.GetAllocCount(),
+                   GetFreeFragCount(this), size, stats.GetTotalAllocation());
             return rec->ptr;
         }
     }
@@ -118,7 +119,6 @@ void CDosHeapStats_Init(CDosHeapStats *stats)
     stats->total = 0;
     stats->count = 0;
 }
-
 }
 
 // Frees the block allocated at p, merging it into an adjacent free block where
@@ -135,10 +135,12 @@ void CDosHeap::Free(void *p)
         if (!MergeRecord(rec)) {
             rec->next = free_list;
             free_list = rec;
-            Report("freed block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(), GetFreeFragCount(this), rec->size, stats.GetTotalAllocation());
+            Report("freed block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(),
+                   GetFreeFragCount(this), rec->size, stats.GetTotalAllocation());
         } else {
             ReleaseRecord(rec);
-            Report("freed & merged block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(), GetFreeFragCount(this), rec->size, stats.GetTotalAllocation());
+            Report("freed & merged block (Count%d,Frags%d) of %d bytes,\t%d allocated", stats.GetAllocCount(),
+                   GetFreeFragCount(this), rec->size, stats.GetTotalAllocation());
         }
     } else
         Error("Free failed to free block at address %d", rec->ptr);
@@ -321,5 +323,4 @@ u32 GetFreeFragCount(CDosHeap *heap)
     }
     return frags;
 }
-
 }

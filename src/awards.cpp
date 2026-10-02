@@ -2,8 +2,8 @@
 
 u8 year_check(s32 *values, const s32 limit, const u8 above);
 void set_trophy_value(const u8 trophy_no, const s16 value, u8 type);
-void general_award(s32 *field, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
-                   const u8 type, const s16 good, const s16 bad);
+void general_award(s32 *field, s32 value, const u8 award, const s32 high, const s32 low, const u8 size,
+                   const u8 is_signed, const u8 type, const s16 good, const s16 bad);
 
 // Year end: decides the player's 13 awards (all_awards, cleared first) from
 // this year's figures, the monthly award_counts and the level's thresholds
@@ -31,26 +31,29 @@ void check_awards_won(void)
             switch (i) {
             case 0:
                 if (myhosp->level * 2 <= cures)
-                    general_award(&myhosp->reputation, myhosp->reputation, 0, awards_trophies.reputation_award, awards_trophies.reputation_poor, 4, 0,
-                                  2, awards_trophies.award_reputation_bonus, awards_trophies.award_reputation_penalty);
+                    general_award(&myhosp->reputation, myhosp->reputation, 0, awards_trophies.reputation_award,
+                                  awards_trophies.reputation_poor, 4, 0, 2, awards_trophies.award_reputation_bonus,
+                                  awards_trophies.award_reputation_penalty);
                 break;
             case 1:
                 if (myhosp->visitors > myhosp->year_start_visitors)
                     general_award((s32 *)&myhosp->cures, myhosp->cures, 1,
                                   awards_trophies.cures_award * (myhosp->visitors - myhosp->year_start_visitors),
-                                  awards_trophies.cures_poor * (myhosp->visitors - myhosp->year_start_visitors), 2, 0, 2, awards_trophies.cures_bonus,
-                                  awards_trophies.cures_penalty);
+                                  awards_trophies.cures_poor * (myhosp->visitors - myhosp->year_start_visitors), 2, 0,
+                                  2, awards_trophies.cures_bonus, awards_trophies.cures_penalty);
                 break;
             case 2:
                 if (myhosp->visitors > myhosp->year_start_visitors && myhosp->cures)
                     general_award((s32 *)&myhosp->deaths, myhosp->deaths, 2,
                                   awards_trophies.deaths_award * (myhosp->visitors - myhosp->year_start_visitors),
-                                  awards_trophies.deaths_poor * (myhosp->visitors - myhosp->year_start_visitors), 2, 0, 2, awards_trophies.deaths_bonus,
-                                  awards_trophies.deaths_penalty);
+                                  awards_trophies.deaths_poor * (myhosp->visitors - myhosp->year_start_visitors), 2, 0,
+                                  2, awards_trophies.deaths_bonus, awards_trophies.deaths_penalty);
                 break;
             case 3:
                 if (myhosp->level * 2 <= cures)
-                    general_award((s32 *)&myhosp->market_share, myhosp->market_share, 3, awards_trophies.population_percentage_award, awards_trophies.population_percentage_poor, 2, 0, 1,
+                    general_award((s32 *)&myhosp->market_share, myhosp->market_share, 3,
+                                  awards_trophies.population_percentage_award,
+                                  awards_trophies.population_percentage_poor, 2, 0, 1,
                                   awards_trophies.population_percentage_bonus, awards_trophies.population_pct_penalty);
                 break;
             case 4:
@@ -71,8 +74,9 @@ void check_awards_won(void)
                     set_award_value(i, -1, 0, awards_trophies.bonus_penalty[7], 1);
                 break;
             case 6:
-                general_award(&myhosp->hospital_value, myhosp->hospital_value, 6, awards_trophies.hosp_value_award, awards_trophies.hosp_value_poor, 4, 0, 1,
-                              awards_trophies.hosp_value_bonus, awards_trophies.hosp_value_penalty);
+                general_award(&myhosp->hospital_value, myhosp->hospital_value, 6, awards_trophies.hosp_value_award,
+                              awards_trophies.hosp_value_poor, 4, 0, 1, awards_trophies.hosp_value_bonus,
+                              awards_trophies.hosp_value_penalty);
                 break;
             case 7:
                 if (year_check(award_counts.staff_happiness, awards_trophies.staff_happiness_award, 1))
@@ -112,9 +116,12 @@ void check_awards_won(void)
                 }
                 break;
             case 12:
-                if (year_check(award_counts.machines, 1, 1) && year_check(award_counts.machine_wear, awards_trophies.well_kept_tech_award, 0))
+                if (year_check(award_counts.machines, 1, 1) &&
+                    year_check(award_counts.machine_wear, awards_trophies.well_kept_tech_award, 0))
                     set_award_value(i, 1, 0, awards_trophies.bonus_penalty[10], 1);
-                else if (award_counts.machine_exploded || (year_check(award_counts.machines, 1, 1) && year_check(award_counts.machine_wear, awards_trophies.well_kept_tech_poor, 1)))
+                else if (award_counts.machine_exploded ||
+                         (year_check(award_counts.machines, 1, 1) &&
+                          year_check(award_counts.machine_wear, awards_trophies.well_kept_tech_poor, 1)))
                     set_award_value(i, -1, 0, awards_trophies.bonus_penalty[11], 1);
                 break;
             default:
@@ -143,7 +150,9 @@ void check_trophies_won(void)
             switch (i) {
             case 0:
                 if (myhosp->visitors > myhosp->year_start_visitors) {
-                    if ((myhosp->cures - mycontrol->year_start_cures << 8) / (myhosp->visitors - myhosp->year_start_visitors) > 0xf3) {
+                    if ((myhosp->cures - mycontrol->year_start_cures << 8) /
+                            (myhosp->visitors - myhosp->year_start_visitors) >
+                        0xf3) {
                         set_trophy_value(i, awards_trophies.trophy_cures_bonus, 2);
                         change_balance(TX_TROPHY_BONUS, (u16)awards_trophies.trophy_cures_bonus, 0, player);
                     }
@@ -162,7 +171,8 @@ void check_trophies_won(void)
                 break;
             case 3:
                 if (award_counts.mayor_visits > 1) {
-                    if ((award_counts.mayor_score_total << 8) / award_counts.mayor_visits < awards_trophies.trophy_mayor << 8)
+                    if ((award_counts.mayor_score_total << 8) / award_counts.mayor_visits < awards_trophies.trophy_mayor
+                                                                                                << 8)
                         set_trophy_value(i, awards_trophies.trophy_mayor_bonus, 1);
                 }
                 break;
@@ -179,7 +189,8 @@ void check_trophies_won(void)
                 break;
             case 6:
                 if (award_counts.rat_shots > 0 && awards_trophies.rat_kills_absolute / 2 < award_counts.rats_killed) {
-                    if ((award_counts.rats_killed << 8) / award_counts.rat_shots > (awards_trophies.rat_kills_percentage << 8) / 100) {
+                    if ((award_counts.rats_killed << 8) / award_counts.rat_shots >
+                        (awards_trophies.rat_kills_percentage << 8) / 100) {
                         set_trophy_value(i, awards_trophies.rat_kills_percentage_bonus, 2);
                         othervar.plaque_rat_kill_pct = award_counts.rats_killed * 100 / award_counts.rat_shots;
                     }
@@ -328,8 +339,8 @@ void set_award_value(const u8 award, const s8 dir, const u8 tier, const s16 valu
 // hospital beats it, tripled if it also beats their total. Below low: bad,
 // doubled if every other hospital is above it. type as for set_award_value.
 // FUNCTION: 0x000b4698
-void general_award(s32 *field, s32 value, const u8 award, const s32 high, const s32 low, const u8 size, const u8 is_signed,
-                   const u8 type, const s16 good, const s16 bad)
+void general_award(s32 *field, s32 value, const u8 award, const s32 high, const s32 low, const u8 size,
+                   const u8 is_signed, const u8 type, const s16 good, const s16 bad)
 {
     s32 hosp_no;
     s32 total;

@@ -187,7 +187,8 @@ void reaper_waits(Thing *reaper)
                             reaper->state = REAPER_PLAY_ANIM;
                             reaper->reaper_next_state = REAPER_WAITS;
                             reaper->next_sprite = start[check_frame(0x1f5, reaper) + reaper->facing].frame;
-                            reaper->next_flip = start[check_frame(0x1f5, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
+                            reaper->next_flip =
+                                start[check_frame(0x1f5, reaper) + reaper->facing].flags > 0 ? (u8)1 : (u8)0;
                         } else if (--reaper->timer <= 0 || victim->next_state != PS_AT_HELL_GATE) {
                             reaper_leaves_normally(reaper);
                         }

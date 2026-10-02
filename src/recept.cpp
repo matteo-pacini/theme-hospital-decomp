@@ -47,11 +47,16 @@ void receptionist_setup(Thing *receptionist)
     RoomInfo *room;
 
     room = 0;
-    for (other_desk = &thing[listhead[receptionist->owner].objects[OBJ_RECEPTION_DESK]]; other_desk > thing; other_desk = &thing[other_desk->type_obj_next]) {
+    for (other_desk = &thing[listhead[receptionist->owner].objects[OBJ_RECEPTION_DESK]]; other_desk > thing;
+         other_desk = &thing[other_desk->type_obj_next]) {
         if ((u16)(other_desk - thing) != receptionist->object) {
             if (other_desk->in_use != 0) {
-                if ((other_desk->x.tile - receptionist->x.tile < 0 ? -(other_desk->x.tile - receptionist->x.tile) : (other_desk->x.tile - receptionist->x.tile)) <= 10) {
-                    if ((other_desk->y.tile - receptionist->y.tile < 0 ? -(other_desk->y.tile - receptionist->y.tile) : (other_desk->y.tile - receptionist->y.tile)) <= 10) {
+                if ((other_desk->x.tile - receptionist->x.tile < 0
+                         ? -(other_desk->x.tile - receptionist->x.tile)
+                         : (other_desk->x.tile - receptionist->x.tile)) <= 10) {
+                    if ((other_desk->y.tile - receptionist->y.tile < 0
+                             ? -(other_desk->y.tile - receptionist->y.tile)
+                             : (other_desk->y.tile - receptionist->y.tile)) <= 10) {
                         desk_user = &thing[other_desk->user];
                         if (desk_user > thing) {
                             room = desk_user->room;
@@ -124,7 +129,8 @@ void receptionist_works(Thing *receptionist)
                     } else {
                         u16 anim;
 
-                        anim = check_frame(staff_anim_starts[receptionist->subtype].anims[2], receptionist) + receptionist->facing;
+                        anim = check_frame(staff_anim_starts[receptionist->subtype].anims[2], receptionist) +
+                               receptionist->facing;
                         receptionist->sprite = start[anim].frame;
                         receptionist->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                         receptionist->state = SS_RECEPTIONIST_WORKS;
@@ -225,7 +231,8 @@ void receptionist_reset(Thing *receptionist)
     room = 0;
     found = 0;
     if (receptionist->room && receptionist->room->type == ROOM_RECEPTION) {
-        for (other_desk = &thing[listhead[receptionist->owner].objects[OBJ_RECEPTION_DESK]]; other_desk > thing; other_desk = &thing[other_desk->type_obj_next]) {
+        for (other_desk = &thing[listhead[receptionist->owner].objects[OBJ_RECEPTION_DESK]]; other_desk > thing;
+             other_desk = &thing[other_desk->type_obj_next]) {
             if ((u16)(other_desk - thing) != receptionist->object) {
                 if (other_desk->in_use != 0) {
                     desk_user = &thing[other_desk->user];

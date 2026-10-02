@@ -143,5 +143,4 @@ s32 rle_decompress(s8 *data, s32 len)
     LbMemoryFree(buf);
     return size;
 }
-
 }

@@ -13,7 +13,6 @@ extern FloorDef litter_starts[];
 
 void draw_glow_frame(Thing *w, s16 x, s16 y);
 void draw_wibble_frame(Thing *w, s16 x, s16 y);
-
 }
 
 // Draws everything on one map cell: its overlay and floor litter, a
@@ -38,8 +37,10 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     D_001567b0[2] = D_001567b0[3] = 0;
     for (id = cell->first; id > 0; id = occupant->cell_next) {
         occupant = &thing[id];
-        screen_x = resvars.screen_mode == SCREEN_MODE_13 ? ((occupant->x.frac - occupant->y.frac) >> 3) + 0x20 : ((occupant->x.frac - occupant->y.frac) >> 4) + 0x10;
-        screen_y = resvars.screen_mode == SCREEN_MODE_13 ? (occupant->y.frac + occupant->x.frac) >> 4 : (occupant->y.frac + occupant->x.frac) >> 5;
+        screen_x = resvars.screen_mode == SCREEN_MODE_13 ? ((occupant->x.frac - occupant->y.frac) >> 3) + 0x20
+                                                         : ((occupant->x.frac - occupant->y.frac) >> 4) + 0x10;
+        screen_y = resvars.screen_mode == SCREEN_MODE_13 ? (occupant->y.frac + occupant->x.frac) >> 4
+                                                         : (occupant->y.frac + occupant->x.frac) >> 5;
         bucket = ((occupant->y.frac + occupant->x.frac) >> 4) + occupant->depth;
         if (node < (ToDraw *)&pixBuf) {
             node->next = buckets[bucket];
@@ -61,7 +62,7 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
     }
     if (id < 0) {
         draw_a_frame(start[blueprint[-id].anim].frame, (resvars.tile_width >> 1) + x, (resvars.tile_height >> 1) + y, 0,
-            start[blueprint[-id].anim].flags);
+                     start[blueprint[-id].anim].flags);
     }
     floor = cell->floor & 0xf;
     if (floor) {
@@ -71,12 +72,14 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
         frame = start[litter_starts[floor].anim].frame;
         flip = start[litter_starts[floor].anim].flags;
         if (litter_starts[floor].animated) {
-            draw_a_frame(frame, x + (resvars.screen_mode == SCREEN_MODE_13 ? 32 : 16), y + (resvars.screen_mode == SCREEN_MODE_13 ? 16 : 8), 0, flip);
+            draw_a_frame(frame, x + (resvars.screen_mode == SCREEN_MODE_13 ? 32 : 16),
+                         y + (resvars.screen_mode == SCREEN_MODE_13 ? 16 : 8), 0, flip);
         } else {
             Offset *offset;
 
             offset = &resvars.litter_pos_Offsetp[((u16)(cell - map) * 0x2e4a4321 >> 16) & 7];
-            draw_a_frame(frame, x + resvars.tile_width / 2 + offset->x, y + resvars.tile_height / 2 + offset->y, 0, flip);
+            draw_a_frame(frame, x + resvars.tile_width / 2 + offset->x, y + resvars.tile_height / 2 + offset->y, 0,
+                         flip);
         }
     }
     for (i = 0; i < 32; i++) {
@@ -192,8 +195,8 @@ void mapwho_person(Thing *person, s32 x, s32 y, s32 left, s32 top)
     default:
         break;
     }
-    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
-        && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x &&
+        D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
         othervar.pointed_thing_s = person - thing;
     }
 }
@@ -254,8 +257,8 @@ void mapwho_staff(Thing *staff, s32 x, s32 y, s32 left, s32 top)
     default:
         break;
     }
-    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
-        && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x &&
+        D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
         othervar.pointed_thing_s = staff - thing;
     }
 }
@@ -281,8 +284,8 @@ void mapwho_object(Thing *obj, const s32 x, const s32 y, const s32 left, const s
         } else {
             draw_special_id_frame(obj, x, y);
         }
-        if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
-            && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+        if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x &&
+            D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
             othervar.pointed_thing_s = obj - thing;
         }
         if (obj->overlay_frame) {
@@ -330,8 +333,10 @@ void mapwho_rat(Thing *rat, const s32 x, const s32 y, const s32 left0, const s32
     top = top0 + D_001567b0[5] - othervar.rat_near_margin;
     bottom = top + D_001567b0[7] + othervar.rat_near_margin * 2;
     if (mouse_x > left && mouse_x < right && mouse_y > top && mouse_y < bottom) {
-        if (left + othervar.rat_near_margin - othervar.rat_hit_margin < mouse_x && right - othervar.rat_near_margin + othervar.rat_hit_margin > mouse_x
-            && top + othervar.rat_near_margin - othervar.rat_hit_margin < mouse_y && bottom - othervar.rat_near_margin + othervar.rat_hit_margin > mouse_y) {
+        if (left + othervar.rat_near_margin - othervar.rat_hit_margin < mouse_x &&
+            right - othervar.rat_near_margin + othervar.rat_hit_margin > mouse_x &&
+            top + othervar.rat_near_margin - othervar.rat_hit_margin < mouse_y &&
+            bottom - othervar.rat_near_margin + othervar.rat_hit_margin > mouse_y) {
             othervar.pointed_thing_s = rat - thing;
             othervar.pointed_rat_s = rat - thing;
         } else {
@@ -383,8 +388,8 @@ void mapwho_numfx(Thing *fx, s32 x, s32 y)
 void mapwho_mayor(Thing *mayor, s32 x, s32 y, s32 left, s32 top)
 {
     draw_special_id_frame(mayor, x, y);
-    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x
-        && D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
+    if (D_001567b0[4] + left < lbDisplay.mmouse_x && D_001567b0[4] + D_001567b0[6] + left > lbDisplay.mmouse_x &&
+        D_001567b0[5] + top < lbDisplay.mmouse_y && D_001567b0[5] + D_001567b0[7] + top > lbDisplay.mmouse_y) {
         othervar.pointed_thing_s = mayor - thing;
     }
 }

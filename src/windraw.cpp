@@ -1,8 +1,6 @@
 #include "hosp.h"
 
 extern "C" {
-
-
 }
 
 // Draws win's visible buttons in their pressed, highlighted or normal
@@ -26,7 +24,8 @@ void draw_buttons(Window *win)
         x = win->x - lbDisplay.graphics_window_x;
         y = win->y - lbDisplay.graphics_window_y;
         if (button->flags & 1)
-            reqspr_draw((s16)x + button->disabled_x, (s16)y + button->disabled_y, &button_sprite[button->disabled_sprite]);
+            reqspr_draw((s16)x + button->disabled_x, (s16)y + button->disabled_y,
+                        &button_sprite[button->disabled_sprite]);
         else if ((button->flags & 6) && (!(button->flags & 2) || !(button->flags & 4)))
             reqspr_draw((s16)x + button->pressed_x, (s16)y + button->pressed_y, &button_sprite[button->pressed_sprite]);
         else
@@ -71,8 +70,7 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     y1 = y0 + len2;
     find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
     if (info.clip_empty == 0) {
-        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
-                                  info.clip_y1 - info.clip_y0);
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0, info.clip_y1 - info.clip_y0);
         dx += x0 - info.clip_x0;
         dy += y0 - info.clip_y0;
         len = dx;
@@ -101,8 +99,7 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     y1 = y0 + h;
     find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
     if (info.clip_empty == 0) {
-        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
-                                  info.clip_y1 - info.clip_y0);
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0, info.clip_y1 - info.clip_y0);
         dx += x0 - info.clip_x0;
         dy += y0 - info.clip_y0;
         for (j = 0; j < nx; j++) {
@@ -124,8 +121,7 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     y1 = y0 + len;
     find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
     if (info.clip_empty == 0) {
-        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
-                                  info.clip_y1 - info.clip_y0);
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0, info.clip_y1 - info.clip_y0);
         dx += x0 - info.clip_x0;
         dy += y0 - info.clip_y0;
         for (j = 0; j < ny; j++) {
@@ -144,8 +140,7 @@ void draw_a_window(s16 x, s16 y, s16 w, s16 h, u8 style)
     y1 = y0 + h;
     find_common_window(x0, y0, x1, y1, window.clip_x0, window.clip_y0, window.clip_x1, window.clip_y1);
     if (info.clip_empty == 0) {
-        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0,
-                                  info.clip_y1 - info.clip_y0);
+        LbScreenSetGraphicsWindow(info.clip_x0, info.clip_y0, info.clip_x1 - info.clip_x0, info.clip_y1 - info.clip_y0);
         dx += x0 - info.clip_x0;
         dy += y0 - info.clip_y0;
         LbSpriteDraw(dx, dy, &bord[style + 1]);

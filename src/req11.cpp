@@ -84,7 +84,7 @@ void req11_overdraw(Window *win)
         return;
     compute_help_text(0, 0, 5);
     LbScreenSetGraphicsWindow(window.clip_x0, window.clip_y0, window.clip_x1 - window.clip_x0,
-        window.clip_y1 - window.clip_y0);
+                              window.clip_y1 - window.clip_y0);
     ox = win->x - lbDisplay.graphics_window_x;
     oy = win->y - lbDisplay.graphics_window_y;
     set_all_refresh_zones_in_window(ox, oy, win->width + ox, lbDisplay.graphics_screen_height, 3);
@@ -109,14 +109,14 @@ void req11_overdraw(Window *win)
         scale_x = 0x790000 / fr->width;
         scale_y = 0x790000 / fr->length;
         if (scale_y >= 0x10000 || scale_x >= 0x10000) {
-            draw_a_frame(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x, oy + resvars.coords[0x1c].y, 0,
-                start[objects[obj].preview_anim].flags);
+            draw_a_frame(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x,
+                         oy + resvars.coords[0x1c].y, 0, start[objects[obj].preview_anim].flags);
         } else if (scale_y <= scale_x) {
-            draw_a_frame_scaled(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x, oy + resvars.coords[0x1c].y,
-                0, start[objects[obj].preview_anim].flags, scale_y);
+            draw_a_frame_scaled(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x,
+                                oy + resvars.coords[0x1c].y, 0, start[objects[obj].preview_anim].flags, scale_y);
         } else {
-            draw_a_frame_scaled(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x, oy + resvars.coords[0x1c].y,
-                0, start[objects[obj].preview_anim].flags, scale_x);
+            draw_a_frame_scaled(start[objects[obj].preview_anim].frame, ox + resvars.coords[0x1c].x,
+                                oy + resvars.coords[0x1c].y, 0, start[objects[obj].preview_anim].flags, scale_x);
         }
     }
     for (i = 0; i < 10; i++) {
@@ -124,8 +124,8 @@ void req11_overdraw(Window *win)
         if (!item)
             break;
         set_font_from_cache(1);
-        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes[i + 0xb].x, oy + resvars.boxes[i + 0xb].y,
-                resvars.boxes[i + 0xb].w, resvars.boxes[i + 0xb].h)) {
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, ox + resvars.boxes[i + 0xb].x,
+                         oy + resvars.boxes[i + 0xb].y, resvars.boxes[i + 0xb].w, resvars.boxes[i + 0xb].h)) {
             set_font_from_cache(2);
             if (crequester.item != item)
                 play_sound(SNDSRC_GENERAL, SFX_HLIGHT5, -1, -1);
@@ -189,9 +189,9 @@ void clicked_buy_objects(const s32 idx, const u8 button)
     obj = crequester.item;
     if (req_indices[idx]) {
         if (button == 1) {
-            if (cost_of_all_selected_objects() + allhosps[player].object_stats[obj].cost * amount
-                    <= (u32)allhosps[player].balance
-                && allhosps[player].balance > 0) {
+            if (cost_of_all_selected_objects() + allhosps[player].object_stats[obj].cost * amount <=
+                    (u32)allhosps[player].balance &&
+                allhosps[player].balance > 0) {
                 D_001549d0[player].type = EV_BUY_OBJECT;
                 D_001549d0[player].value = obj;
                 D_001549d0[player].arg = amount;

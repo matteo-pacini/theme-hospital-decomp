@@ -1,3 +1,4 @@
+// clang-format off: tables are laid out by hand.
 #include "coords.h"
 
 // The low-resolution screen layout: boxes, positions, buttons, help areas

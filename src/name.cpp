@@ -79,7 +79,6 @@ int LbFileFindNext(void *ff);
 char *strtok(char *str, char *charset);
 char *strncpy(char *dst, char *src, u32 len);
 int stricmp(char *s, char *t);
-
 }
 
 // Runs one frame of the name-entry and preferences screens' state machine
@@ -271,7 +270,8 @@ void process_mouse_nickname(void)
     s32 bit;
 
     if ((CurrentDisplay & DesiredDisplay) & 1)
-        reqspr_draw((u16)resvars.screen_buttons[163].x, (u16)resvars.screen_buttons[163].y, &screen_sprites_tab_start[2]);
+        reqspr_draw((u16)resvars.screen_buttons[163].x, (u16)resvars.screen_buttons[163].y,
+                    &screen_sprites_tab_start[2]);
     if (nickname.state == 5) {
         mask = CurrentDisplay;
         while (mask) {
@@ -285,47 +285,56 @@ void process_mouse_nickname(void)
                     if (first_button + i == 0xa4 || first_button + i == 0xa5)
                         continue;
                 }
-                if (resvars.screen_buttons[first_button + i].width == 0 || resvars.screen_buttons[first_button + i].height == 0)
+                if (resvars.screen_buttons[first_button + i].width == 0 ||
+                    resvars.screen_buttons[first_button + i].height == 0)
                     break;
                 x = resvars.screen_buttons[first_button + i].x;
                 y = resvars.screen_buttons[first_button + i].y;
                 if (lbDisplay.rleft_button) {
-                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.screen_buttons[first_button + i].width - x + 1,
+                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y,
+                                     resvars.screen_buttons[first_button + i].width - x + 1,
                                      resvars.screen_buttons[first_button + i].height - y + 1)) {
                         lbDisplay.rleft_button = 0;
                         if (resvars.screen_buttons[first_button + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x,
+                                              resvars.screen_buttons[first_button + i].height - y, 1);
                         if (resvars.screen_buttons[first_button + i].callback)
                             resvars.screen_buttons[first_button + i].callback(i);
                         continue;
                     }
                 }
-                if (lbDisplay.mleft_button && over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y, resvars.screen_buttons[first_button + i].width - x + 1,
-                                               resvars.screen_buttons[first_button + i].height - y + 1)) {
+                if (lbDisplay.mleft_button && over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, y,
+                                                           resvars.screen_buttons[first_button + i].width - x + 1,
+                                                           resvars.screen_buttons[first_button + i].height - y + 1)) {
                     if (resvars.screen_buttons[first_button + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
+                        draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x,
+                                          resvars.screen_buttons[first_button + i].height - y, 1);
                 }
                 if (first_button == 0xa0) {
                     switch (i) {
                     case 0:
                         if (advisor.flags & 1)
-                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x,
+                                              resvars.screen_buttons[first_button + i].height - y, 1);
                         break;
                     case 1:
                         if (!(advisor.flags & 1))
-                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x,
+                                              resvars.screen_buttons[first_button + i].height - y, 1);
                         break;
                     case 6:
                         if (resvars.game_mode == SCREEN_MODE_1)
-                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x,
+                                              resvars.screen_buttons[first_button + i].height - y, 1);
                         break;
                     case 7:
                         if (resvars.game_mode == SCREEN_MODE_13)
-                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x, resvars.screen_buttons[first_button + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.screen_buttons[first_button + i].width - x,
+                                              resvars.screen_buttons[first_button + i].height - y, 1);
                         break;
                     case 2:
                     case 3:
@@ -448,10 +457,15 @@ void draw_new_prefs_screen(void)
     y = 0x155;
     y += (0x176 - y - character_height()) >> 1;
     LbTextDraw(x, y, misc_text[0x1d]);
-    LbTextDraw(resvars.screen_boxes_NetBoxp[122].x + (resvars.screen_boxes_NetBoxp[122].w - LbTextStringWidth(misc_text[0x1e])) / 2,
-               resvars.screen_boxes_NetBoxp[122].y + (resvars.screen_boxes_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2, misc_text[0x1e]);
-    LbTextDraw(resvars.screen_boxes_NetBoxp[122].x + (resvars.screen_boxes_NetBoxp[122].w - LbTextStringWidth(balance_file_name)) / 2,
-               resvars.screen_boxes_NetBoxp[122].y + (resvars.screen_boxes_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2 + LbTextCharHeight('B'),
+    LbTextDraw(resvars.screen_boxes_NetBoxp[122].x +
+                   (resvars.screen_boxes_NetBoxp[122].w - LbTextStringWidth(misc_text[0x1e])) / 2,
+               resvars.screen_boxes_NetBoxp[122].y +
+                   (resvars.screen_boxes_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2,
+               misc_text[0x1e]);
+    LbTextDraw(resvars.screen_boxes_NetBoxp[122].x +
+                   (resvars.screen_boxes_NetBoxp[122].w - LbTextStringWidth(balance_file_name)) / 2,
+               resvars.screen_boxes_NetBoxp[122].y +
+                   (resvars.screen_boxes_NetBoxp[122].h - LbTextCharHeight('B') * 2) / 2 + LbTextCharHeight('B'),
                balance_file_name);
     draw_balance_file_explanation();
 }

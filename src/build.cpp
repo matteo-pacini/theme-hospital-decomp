@@ -32,7 +32,6 @@ void clear_cell_of_ratholes(u8 owner, u16 tile);
 #pragma aux clear_cell_of_ratholes "W?clear_cell_of_ratholes$n(ucus)v"
 u8 is_room_empty(RoomInfo *room);
 Thing *search_mapwho(Map *cell, u16 kind);
-
 }
 
 void give_screen_xy_of_cell_at_column_row(const u8 win, const s32 x, const s32 y);
@@ -193,12 +192,16 @@ void temp_place_door(u16 pos, u8 owner)
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
         LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
         if (owner == player) {
-            LbSpriteDraw(d, i - blocks[doortype[type].overlays[j]].info->height, blocks[doortype[type].overlays[j]].info);
+            LbSpriteDraw(d, i - blocks[doortype[type].overlays[j]].info->height,
+                         blocks[doortype[type].overlays[j]].info);
         }
         cx = (best_tile + (s16)doortype[type].tiles[j]) % 128;
         cy = (best_tile + (s16)doortype[type].tiles[j]) / 128;
         if (build->door_state != 2) {
-            blocked = !can_place_door((cy << 7) + cx, 3, blueprint[(s16)doortype[type % 4 + 4].sprites[0]].build_type - 1) ? (u8)1 : (u8)0;
+            blocked =
+                !can_place_door((cy << 7) + cx, 3, blueprint[(s16)doortype[type % 4 + 4].sprites[0]].build_type - 1)
+                    ? (u8)1
+                    : (u8)0;
         } else {
             int kind;
 
@@ -211,7 +214,8 @@ void temp_place_door(u16 pos, u8 owner)
         if (check_valid || blocked) {
             if (blocked || !is_valid_door((cy << 7) + cx, owner, type)) {
                 if (owner == player) {
-                    draw_a_one_colour_frame(start[doortype[type].cursor_anim].frame, d, i, (u16)color.red, start[doortype[type].cursor_anim].flags);
+                    draw_a_one_colour_frame(start[doortype[type].cursor_anim].frame, d, i, (u16)color.red,
+                                            start[doortype[type].cursor_anim].flags);
                 }
                 othervar.door_invalid[owner] = 1;
             } else if (owner == player) {
@@ -878,7 +882,8 @@ void delete_room(RoomInfo *room)
                 }
             }
             for (obj = &thing[map[(s16)x + ((s16)y << 7)].first]; obj > thing; obj = &thing[obj->cell_next]) {
-                if (obj->type == THING_DOOR || (obj->type == THING_OBJECT && (obj->subtype == OBJ_SWING_DOOR || obj->subtype == OBJ_SWING_DOOR2))) {
+                if (obj->type == THING_DOOR || (obj->type == THING_OBJECT &&
+                                                (obj->subtype == OBJ_SWING_DOOR || obj->subtype == OBJ_SWING_DOOR2))) {
                     switch (obj->facing) {
                     case 0:
                     case 2:
@@ -1456,7 +1461,9 @@ u8 place_object_nav_check(RoomInfo *room, u16 pos, u8 kind, u8 dir, u16 pos2, u8
         goto fail;
     }
     for (obj = &thing[room->first_object]; obj > thing; obj = &thing[obj->room_obj_next]) {
-        if (obj->state != OS_REMOVED && !check_object_nav((u16)obj->subtype, &shapes[objects[obj->subtype].shapes[obj->facing]], room, ((u16)obj->y.tile << 7) + (u16)obj->x.tile, (u16)room->type)) {
+        if (obj->state != OS_REMOVED &&
+            !check_object_nav((u16)obj->subtype, &shapes[objects[obj->subtype].shapes[obj->facing]], room,
+                              ((u16)obj->y.tile << 7) + (u16)obj->x.tile, (u16)room->type)) {
             goto fail;
         }
     }
@@ -1753,7 +1760,8 @@ u16 compute_object_pointed(RoomInfo *room)
     obj = &thing[othervar.pointed_thing];
     if (obj->owner == player) {
         if (room) {
-            if (!(!(obj->type == THING_OBJECT && (u16)(room - room_info) == obj->room_id) || obj->subtype == OBJ_SWING_DOOR || obj->subtype == OBJ_SWING_DOOR2)) {
+            if (!(!(obj->type == THING_OBJECT && (u16)(room - room_info) == obj->room_id) ||
+                  obj->subtype == OBJ_SWING_DOOR || obj->subtype == OBJ_SWING_DOOR2)) {
                 return othervar.pointed_thing;
             } else {
                 return 0;
@@ -1830,7 +1838,8 @@ void pick_up_object(u16 id, u8 both)
     if (othervar.cur_player == player) {
         gamevar.buy_list.to_place[obj->subtype]++;
         gamevar.place_dir = obj->facing;
-        init_place_object(obj->subtype, gamevar.place_mode, room, obj->x.tile + (obj->y.tile << 7) - othervar.mouse_cell);
+        init_place_object(obj->subtype, gamevar.place_mode, room,
+                          obj->x.tile + (obj->y.tile << 7) - othervar.mouse_cell);
         othervar.pickup_thing = 0;
     }
 }
@@ -2036,7 +2045,11 @@ void init_object_drag_shape(void)
     othervar.drag_y1 = 0;
 }
 
-#define LINKED_OBJECT(w) ((w)->object && (thing[(w)->object].type == THING_OBJECT || thing[(w)->object].type == THING_DOOR) && (u16)((w) - thing) == thing[(w)->object].user ? (w)->object : 0)
+#define LINKED_OBJECT(w)                                                                                               \
+    ((w)->object && (thing[(w)->object].type == THING_OBJECT || thing[(w)->object].type == THING_DOOR) &&              \
+             (u16)((w) - thing) == thing[(w)->object].user                                                             \
+         ? (w)->object                                                                                                 \
+         : 0)
 
 #define DRAG_MIN(a, b) ((a) > (b) ? ((a) = (b)) : 0)
 #define DRAG_MAX(a, b) ((a) < (b) ? ((a) = (b)) : 0)
@@ -2272,7 +2285,8 @@ void pick_up_object_right_click(void)
     if (clicked->type == THING_PATIENT && LINKED_OBJECT(clicked)) {
         clicked = &thing[LINKED_OBJECT(clicked)];
     }
-    if (clicked->type == THING_OBJECT && clicked->owner == player && (!clicked->room_id || (objects[clicked->subtype].flags & 8)) && !(objects[clicked->subtype].flags & 1)) {
+    if (clicked->type == THING_OBJECT && clicked->owner == player &&
+        (!clicked->room_id || (objects[clicked->subtype].flags & 8)) && !(objects[clicked->subtype].flags & 1)) {
         othervar.pickup_thing = othervar.pointed_thing;
         clicked_for_edit();
     }

@@ -97,12 +97,13 @@ void draw_research_text(void)
                     else if (len > 0x122)
                         len = 0x122;
                     for (x = 0; x < len; x += 5)
-                        reqspr_draw(resvars.screen_coords[i + 0x5c].x + x, resvars.screen_coords[i + 0x5c].y, &screen_sprites_tab_start[3]);
+                        reqspr_draw(resvars.screen_coords[i + 0x5c].x + x, resvars.screen_coords[i + 0x5c].y,
+                                    &screen_sprites_tab_start[3]);
                 }
             }
         } else {
-            LbDrawBox(resvars.screen_boxes_ChoiceBoxp[i + 0x29].x, resvars.screen_boxes_ChoiceBoxp[i + 0x29].y, resvars.screen_boxes_ChoiceBoxp[i + 0x29].w, resvars.screen_boxes_ChoiceBoxp[i + 0x29].h,
-                      0xb);
+            LbDrawBox(resvars.screen_boxes_ChoiceBoxp[i + 0x29].x, resvars.screen_boxes_ChoiceBoxp[i + 0x29].y,
+                      resvars.screen_boxes_ChoiceBoxp[i + 0x29].w, resvars.screen_boxes_ChoiceBoxp[i + 0x29].h, 0xb);
             LbTextDraw(resvars.screen_coords[i + 0x61].x, resvars.screen_coords[i + 0x61].y, misc_text[0x14]);
         }
     }
@@ -151,8 +152,9 @@ void process_res_panel(void)
 
     if (lbDisplay.rleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0x19].width != 0 && resvars.screen_buttons[i + 0x19].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x19].x, resvars.screen_buttons[i + 0x19].y,
-                             resvars.screen_buttons[i + 0x19].width, resvars.screen_buttons[i + 0x19].height)) {
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i + 0x19].x,
+                             resvars.screen_buttons[i + 0x19].y, resvars.screen_buttons[i + 0x19].width,
+                             resvars.screen_buttons[i + 0x19].height)) {
                 if (i == 0)
                     resvars.screen_buttons[i + 0x19].callback(i);
                 reqspr_draw(resvars.screen_buttons[i + 0x19].sprite_x, resvars.screen_buttons[i + 0x19].sprite_y,
@@ -166,8 +168,9 @@ void process_res_panel(void)
     }
     if (lbDisplay.mleft_button) {
         for (i = 0; resvars.screen_buttons[i + 0x19].width != 0 && resvars.screen_buttons[i + 0x19].height != 0; i++) {
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x19].x, resvars.screen_buttons[i + 0x19].y,
-                             resvars.screen_buttons[i + 0x19].width, resvars.screen_buttons[i + 0x19].height)) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, resvars.screen_buttons[i + 0x19].x,
+                             resvars.screen_buttons[i + 0x19].y, resvars.screen_buttons[i + 0x19].width,
+                             resvars.screen_buttons[i + 0x19].height)) {
                 if (i != 0)
                     resvars.screen_buttons[i + 0x19].callback(i);
                 reqspr_draw(resvars.screen_buttons[i + 0x19].sprite_x, resvars.screen_buttons[i + 0x19].sprite_y,

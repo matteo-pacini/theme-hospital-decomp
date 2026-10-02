@@ -10,7 +10,7 @@ u32 line_of_sight_cleanup(wallhug_path *path, u32 first);
 u32 wallhug_continue_trivial(wallhug_path *path, wallhug_waypoint cur, u32 limit);
 u32 wallhug_trivial(wallhug_path *path);
 
-wallhug_waypoint wallhug_dirn_steps[] = { { 0, 0xff }, { 1, 0 }, { 0, 1 }, { 0xff, 0 } };
+wallhug_waypoint wallhug_dirn_steps[] = {{0, 0xff}, {1, 0}, {0, 1}, {0xff, 0}};
 extern s32 dx;
 extern s32 dy;
 extern s32 bresval;
@@ -88,7 +88,8 @@ u32 line_of_sight(wallhug_waypoint from, wallhug_waypoint to)
         dir = bresenham();
         if (wall_in_way(cur.x, cur.y, dir))
             return 0;
-        if (dir == 0 || dir == 1 || dir == 2 || dir == 3) {}
+        if (dir == 0 || dir == 1 || dir == 2 || dir == 3) {
+        }
         cur.x += wallhug_dirn_steps[dir].x;
         cur.y += wallhug_dirn_steps[dir].y;
     }
@@ -207,7 +208,8 @@ inline void wallhug_hugstep(wallhug_hugger *hugger)
             return;
         }
     } else {
-        if (hugger->dir == 0 || hugger->dir == 1 || hugger->dir == 2 || hugger->dir == 3) {}
+        if (hugger->dir == 0 || hugger->dir == 1 || hugger->dir == 2 || hugger->dir == 3) {
+        }
         hugger->pos.x += wallhug_dirn_steps[hugger->dir].x;
         hugger->pos.y += wallhug_dirn_steps[hugger->dir].y;
         dir = (hugger->dir + hugger->turn) & 3;
@@ -308,12 +310,12 @@ inline u32 huggers_met_again(wallhug_info *info)
     if (info->hugger[0].dir == 0x33 || info->hugger[0].dir == 0x32)
         return 0;
     next = info->hugger[0].pos;
-    if (info->hugger[0].dir == 0 || info->hugger[0].dir == 1 || info->hugger[0].dir == 2
-        || info->hugger[0].dir == 3) {}
+    if (info->hugger[0].dir == 0 || info->hugger[0].dir == 1 || info->hugger[0].dir == 2 || info->hugger[0].dir == 3) {
+    }
     next.x += wallhug_dirn_steps[info->hugger[0].dir].x;
     next.y += wallhug_dirn_steps[info->hugger[0].dir].y;
-    if (!((info->hugger[1].pos.x - next.x) & 0xff) && !((info->hugger[1].pos.y - next.y) & 0xff)
-        && ((info->hugger[0].dir + 2) & 3) == info->hugger[1].dir)
+    if (!((info->hugger[1].pos.x - next.x) & 0xff) && !((info->hugger[1].pos.y - next.y) & 0xff) &&
+        ((info->hugger[0].dir + 2) & 3) == info->hugger[1].dir)
         return 1;
     return 0;
 }
@@ -405,7 +407,8 @@ u32 wallhug_continue_trivial(wallhug_path *path, wallhug_waypoint cur, u32 limit
             from = cur;
             bresenham_start(from, path->end);
         } else {
-            if (dir == 0 || dir == 1 || dir == 2 || dir == 3) {}
+            if (dir == 0 || dir == 1 || dir == 2 || dir == 3) {
+            }
             cur.x += wallhug_dirn_steps[dir].x;
             cur.y += wallhug_dirn_steps[dir].y;
         }

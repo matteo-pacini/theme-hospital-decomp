@@ -10,7 +10,6 @@ s32 orthonav_whatnext(orthonav_path *path, s8 x, s8 y, s32 dir);
 extern "C" {
 
 void nav_init(Thing *person);
-
 }
 
 // Returns 1 if a step from tile (x, y) in direction dir (0 -y, 1 +x, 2 +y,
@@ -127,17 +126,17 @@ s32 person_in_way(u32 x, u32 y, u32 dir)
     id = cell->first;
     for (i = 0; i < 4; i++) {
         if (id > 0) {
-        other = &thing[id];
-        switch (other->type) {
-        case THING_PATIENT:
-        case THING_STAFF:
-            if (other != nav_person) {
-                if (other->facing == opposite_angle[nav_person->facing])
-                    return 0x8000;
+            other = &thing[id];
+            switch (other->type) {
+            case THING_PATIENT:
+            case THING_STAFF:
+                if (other != nav_person) {
+                    if (other->facing == opposite_angle[nav_person->facing])
+                        return 0x8000;
+                }
+                break;
             }
-            break;
-        }
-        id = other->cell_next;
+            id = other->cell_next;
         } else {
             break;
         }
@@ -160,18 +159,18 @@ s32 person_overlap(void)
     id = cell->first;
     for (i = 0; i < 4; i++) {
         if (id > 0) {
-        other = &thing[id];
-        switch (other->type) {
-        case THING_PATIENT:
-        case THING_STAFF:
-            if (other > nav_person) {
-                if (other->facing == nav_person->facing) {
-                    return 0x8000;
+            other = &thing[id];
+            switch (other->type) {
+            case THING_PATIENT:
+            case THING_STAFF:
+                if (other > nav_person) {
+                    if (other->facing == nav_person->facing) {
+                        return 0x8000;
+                    }
                 }
+                break;
             }
-            break;
-        }
-        id = other->cell_next;
+            id = other->cell_next;
         } else {
             break;
         }
@@ -187,5 +186,4 @@ void nav_init(Thing *person)
 {
     orthonav_init(THING_PATH(person), person->x.tile, person->y.tile, person->dest_x, person->dest_y);
 }
-
 }

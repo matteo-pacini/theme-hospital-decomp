@@ -21,7 +21,6 @@ void person_gone(Thing *person);
 void remove_person_from_room_list(Thing *person);
 void person_flys(Thing *person);
 void strcat(char *dst, char *src);
-
 }
 
 // Patient state PS_WAITS_FOR_BUSY: animates and goes home when the timer
@@ -70,8 +69,8 @@ void person_in_queue(Thing *person)
         if (cur->flags & 1) {
             person->countdown--;
             if (person->countdown <= 0) {
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20
-                    && move_peep_from_blueprint(person)) {
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20 &&
+                    move_peep_from_blueprint(person)) {
                     return;
                 }
                 modify_person(person);
@@ -81,7 +80,8 @@ void person_in_queue(Thing *person)
                         page_staff_i_need(person, room);
                     }
                     if (abilities[person->subtype][0] && person->refreshment < 30 && person->complex_action != 60) {
-                        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_DRINKS_MACHINE, 1, 150, person->owner)) {
+                        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_DRINKS_MACHINE, 1, 150,
+                                        person->owner)) {
                             person->resume_state = PS_ENTERTAINS_THEMSELF;
                             person->next_state = PS_ENTERTAINS_THEMSELF;
                             set_complex(person, 60, 0);
@@ -108,7 +108,8 @@ void person_in_queue(Thing *person)
                         {
                             u16 anim;
 
-                            anim = check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
+                            anim =
+                                check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
                             person->sprite = start[anim].frame;
                             person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                         }
@@ -139,8 +140,8 @@ void person_entertains_themself(Thing *person)
         if (cur->flags & 1) {
             person->countdown--;
             if (person->countdown <= 0) {
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20
-                    && move_peep_from_blueprint(person)) {
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20 &&
+                    move_peep_from_blueprint(person)) {
                     return;
                 }
                 modify_person(person);
@@ -159,7 +160,8 @@ void person_entertains_themself(Thing *person)
                         return;
                     }
                     if (abilities[person->subtype][0] && person->refreshment < 30 && person->complex_action != 60) {
-                        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_DRINKS_MACHINE, 1, 150, person->owner)) {
+                        if (find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_DRINKS_MACHINE, 1, 150,
+                                        person->owner)) {
                             person->resume_state = PS_ENTERTAINS_THEMSELF;
                             person->next_state = PS_ENTERTAINS_THEMSELF;
                             set_complex(person, 60, 0);
@@ -167,7 +169,8 @@ void person_entertains_themself(Thing *person)
                             return;
                         }
                     }
-                    if (abilities[person->subtype][2] && person->bladder > gbv.bowel_full && person->complex_action != 90) {
+                    if (abilities[person->subtype][2] && person->bladder > gbv.bowel_full &&
+                        person->complex_action != 90) {
                         room = get_nearest_room_info(person, ROOM_TOILETS);
                         if (room != 0) {
                             leave_queue(person);
@@ -198,7 +201,8 @@ void person_entertains_themself(Thing *person)
                         {
                             u16 anim;
 
-                            anim = check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
+                            anim =
+                                check_frame(anim_starts[person->subtype].patient_stand, person) + (u16)person->facing;
                             person->sprite = start[anim].frame;
                             person->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
                         }
@@ -230,7 +234,8 @@ u16 find_standing_place(Thing *person)
         for (i = old_newrand() % 12 + 1; i <= standing_place[0]; i++) {
             tile = base + standing_place[i];
             target = &map[tile];
-            if (target->first == 0 && !(target->flags & 7) && can_i_get_to(person, tile) > 0 && !(target->owner_flags & MAP_OUTDOOR)) {
+            if (target->first == 0 && !(target->flags & 7) && can_i_get_to(person, tile) > 0 &&
+                !(target->owner_flags & MAP_OUTDOOR)) {
                 break;
             }
         }
@@ -767,7 +772,8 @@ void person_in_bogs(Thing *person)
         }
     } else if (person->substate == 1) {
         person->impatience = 0;
-        if (person->illness >= 0x10 && find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_SINK, 1, 150, person->owner)) {
+        if (person->illness >= 0x10 &&
+            find_object(((u16)person->y.tile << 7) + (u16)person->x.tile, OBJ_SINK, 1, 150, person->owner)) {
             person->next_state = PS_LEAVE_TOILETS;
             person->resume_state = PS_LEAVE_TOILETS;
             set_complex(person, 350, 0);
@@ -964,8 +970,10 @@ void person_waits_for_decision(Thing *person)
                         treatment = person->treatment;
                     }
                     category = expertise[treatment].category;
-                    done = allhosps[person->owner].rooms[treatment].cure_available == 1 && listhead[person->owner].rooms[category]
-                        ? (u8)1 : (u8)0;
+                    done = allhosps[person->owner].rooms[treatment].cure_available == 1 &&
+                                   listhead[person->owner].rooms[category]
+                               ? (u8)1
+                               : (u8)0;
                     if (done || (u16)(othervar.cur_turn - person->timer) >= 1500) {
                         person->flags &= ~PF_AWAITING_DECISION;
                         reset_icon_value(person, ICON_AWAITING_DECISION);
@@ -987,8 +995,8 @@ void person_waits_for_decision(Thing *person)
                         return;
                     }
                 }
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20
-                    && move_peep_from_blueprint(person)) {
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].width == 0x20 &&
+                    move_peep_from_blueprint(person)) {
                     return;
                 }
                 {

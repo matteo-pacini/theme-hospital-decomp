@@ -669,8 +669,11 @@ void display_button_text(s32 mask)
             }
             LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
             set_font_from_cache(0x21);
-            LbTextDraw((resvars.screen_boxes_NetBoxp[132].w - LbTextStringWidth(buf)) / 2 + resvars.screen_boxes_NetBoxp[132].x,
-                       resvars.screen_boxes_NetBoxp[132].y + (resvars.screen_boxes_NetBoxp[132].h - (lbFontPtr ? lbFontPtr[66].height : 0)) / 2, buf);
+            LbTextDraw((resvars.screen_boxes_NetBoxp[132].w - LbTextStringWidth(buf)) / 2 +
+                           resvars.screen_boxes_NetBoxp[132].x,
+                       resvars.screen_boxes_NetBoxp[132].y +
+                           (resvars.screen_boxes_NetBoxp[132].h - (lbFontPtr ? lbFontPtr[66].height : 0)) / 2,
+                       buf);
             break;
         }
         case 0x200:
@@ -750,15 +753,16 @@ void draw_available_ports(u8 modem)
     y = resvars.screen_boxes_NetBoxp[idx].y + 4;
     for (i = 0; i < 3; i++, y += character_height()) {
         sprintf(buf, network_text[15], i + 1 + TopPort);
-        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x, y, (s16)resvars.screen_boxes_NetBoxp[idx].w,
-                         character_height())) {
+        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x, y,
+                         (s16)resvars.screen_boxes_NetBoxp[idx].w, character_height())) {
             if (lbDisplay.mleft_button) {
                 myplayer.serial_config[4] = 1 << (i + TopPort);
                 lbDisplay.left_button = 0;
             }
         }
         if (((s8)myplayer.serial_config[4] >> (i + TopPort)) == 1)
-            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
+            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w,
+                                             y, buf);
         else
             draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
     }
@@ -781,15 +785,16 @@ void draw_available_bauds(u8 modem)
     y = resvars.screen_boxes_NetBoxp[idx].y + 4;
     for (i = 0; i < 3; i++, y += character_height()) {
         sprintf(buf, "%d", Bauds[i + TopBaud]);
-        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x, y, (s16)resvars.screen_boxes_NetBoxp[idx].w,
-                         character_height())) {
+        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x, y,
+                         (s16)resvars.screen_boxes_NetBoxp[idx].w, character_height())) {
             if (lbDisplay.mleft_button) {
                 myplayer.serial_config[5] = TopBaud + i;
                 lbDisplay.left_button = 0;
             }
         }
         if (myplayer.serial_config[5] == TopBaud + i)
-            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
+            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w,
+                                             y, buf);
         else
             draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
     }
@@ -818,17 +823,19 @@ void draw_available_irqs(void)
         y = resvars.screen_boxes_NetBoxp[idx].y + 10;
         for (i = 0; i < 4; i++, y += character_height()) {
             sprintf(buf, "IRQ %d", i + TopIRQ);
-            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x, y, (s16)resvars.screen_boxes_NetBoxp[idx].w,
-                             character_height())) {
+            if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[idx].x,
+                             y, (s16)resvars.screen_boxes_NetBoxp[idx].w, character_height())) {
                 if (lbDisplay.mleft_button) {
                     myplayer.serial_config[n] = TopIRQ + i;
                     lbDisplay.left_button = 0;
                 }
             }
             if (myplayer.serial_config[n] == TopIRQ + i)
-                draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
+                draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[idx].x,
+                                                 resvars.screen_boxes_NetBoxp[idx].w, y, buf);
             else
-                draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, buf);
+                draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y,
+                                       buf);
         }
     }
 }
@@ -1106,24 +1113,28 @@ void process_mouse_network_select(void)
                 x = resvars.screen_buttons[base + i].x;
                 y = resvars.screen_buttons[base + i].y;
                 if (lbDisplay.rleft_button) {
-                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
+                    if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, x, y,
+                                     resvars.screen_buttons[base + i].width - x + 1,
                                      resvars.screen_buttons[base + i].height - y + 1)) {
                         lbDisplay.rleft_button = 0;
                         if (resvars.screen_buttons[base + i].sprite)
                             reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                         else
-                            draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
+                            draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x,
+                                              resvars.screen_buttons[base + i].height - y, 1);
                         if (resvars.screen_buttons[base + i].callback)
                             resvars.screen_buttons[base + i].callback(i);
                         break;
                     }
                 }
-                if (lbDisplay.mleft_button && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, x, y, resvars.screen_buttons[base + i].width - x + 1,
-                                               resvars.screen_buttons[base + i].height - y + 1)) {
+                if (lbDisplay.mleft_button && over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, x, y,
+                                                           resvars.screen_buttons[base + i].width - x + 1,
+                                                           resvars.screen_buttons[base + i].height - y + 1)) {
                     if (resvars.screen_buttons[base + i].sprite)
                         reqspr_draw(x, y, &screen_sprites_tab_start[1]);
                     else
-                        draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x, resvars.screen_buttons[base + i].height - y, 1);
+                        draw_button_edges(x, y, resvars.screen_buttons[base + i].width - x,
+                                          resvars.screen_buttons[base + i].height - y, 1);
                 }
             }
         }
@@ -1772,17 +1783,19 @@ void draw_phone_numbers(void)
         start = 0;
     y = resvars.screen_boxes_NetBoxp[127].y + 4;
     for (i = start; i < 3 && i + BookIndex < BookCount; i++, y += character_height()) {
-        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[127].x, y, (s16)resvars.screen_boxes_NetBoxp[127].w,
-                         character_height())) {
+        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[127].x, y,
+                         (s16)resvars.screen_boxes_NetBoxp[127].w, character_height())) {
             if (lbDisplay.mleft_button) {
                 BookHilight = i + BookIndex;
                 lbDisplay.left_button = 0;
             }
         }
         if (i + BookIndex == BookHilight)
-            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[127].x, resvars.screen_boxes_NetBoxp[127].w, y, PhoneBook[i + BookIndex]);
+            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[127].x, resvars.screen_boxes_NetBoxp[127].w,
+                                             y, PhoneBook[i + BookIndex]);
         else
-            draw_small_centre_text(resvars.screen_boxes_NetBoxp[127].x, resvars.screen_boxes_NetBoxp[127].w, y, PhoneBook[i + BookIndex]);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[127].x, resvars.screen_boxes_NetBoxp[127].w, y,
+                                   PhoneBook[i + BookIndex]);
     }
     if (DesiredDisplay & 0x400) {
         sprintf(buf, "%s*", PhoneNumber);
@@ -1873,7 +1886,8 @@ void draw_message_box(void)
     lbDisplay.draw_flags = 0;
     y = resvars.screen_boxes_NetBoxp[121].y;
     for (i = TopMessage; i - TopMessage < 3 && NetMessageText[i][0]; i++, y += character_height())
-        draw_small_centre_text(resvars.screen_boxes_NetBoxp[121].x, resvars.screen_boxes_NetBoxp[121].w, y, NetMessageText[i]);
+        draw_small_centre_text(resvars.screen_boxes_NetBoxp[121].x, resvars.screen_boxes_NetBoxp[121].w, y,
+                               NetMessageText[i]);
 }
 
 void update_message_box(u8 key, u8 shift, u8 from);
@@ -2090,7 +2104,8 @@ void draw_active_session(u8 com_panel)
         login_control.player_scroll = 0;
     for (i = 0, j = login_control.player_scroll; i < 3 && j < 4; j++) {
         if (D_001609c4[j].active) {
-            draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y, player_info[j].name);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[idx].x, resvars.screen_boxes_NetBoxp[idx].w, y,
+                                   player_info[j].name);
             y += character_height();
             i++;
         }
@@ -2153,37 +2168,39 @@ void draw_available_sessions(SessionInfo *sessions)
     if (hilighted_session >= 0) {
         if (strcmp(hilighted_session_name, SESSION_NAMES[hilighted_session])) {
             for (i = 0; i < session_count; i++) {
-            if (!strcmp(SESSION_NAMES[i], hilighted_session_name)) {
-                if (i < 0) {
-                    hilighted_session = i;
-                    hilighted_session_name[0] = 0;
-                } else {
-                    hilighted_session = i;
-                    lib_strcpy(hilighted_session_name, SESSION_NAMES[i]);
+                if (!strcmp(SESSION_NAMES[i], hilighted_session_name)) {
+                    if (i < 0) {
+                        hilighted_session = i;
+                        hilighted_session_name[0] = 0;
+                    } else {
+                        hilighted_session = i;
+                        lib_strcpy(hilighted_session_name, SESSION_NAMES[i]);
+                    }
+                    break;
                 }
-                break;
             }
-        }
-        if (i == session_count) {
-            hilighted_session = -1;
-            hilighted_session_name[0] = 0;
-        }
+            if (i == session_count) {
+                hilighted_session = -1;
+                hilighted_session_name[0] = 0;
+            }
         }
     }
     y = resvars.screen_boxes_NetBoxp[125].y + 4;
     for (i = TopSession; TopSession + session_count > i && TopSession + 3 > i; i++, y += character_height()) {
         if (i == hilighted_session && !found) {
-            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[125].x, resvars.screen_boxes_NetBoxp[125].w, y, SESSION_NAMES[i]);
+            draw_small_highlight_centre_text(resvars.screen_boxes_NetBoxp[125].x, resvars.screen_boxes_NetBoxp[125].w,
+                                             y, SESSION_NAMES[i]);
             draw_players_on_session(i);
             found = 1;
         } else {
-            draw_small_centre_text(resvars.screen_boxes_NetBoxp[125].x, resvars.screen_boxes_NetBoxp[125].w, y, SESSION_NAMES[i]);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[125].x, resvars.screen_boxes_NetBoxp[125].w, y,
+                                   SESSION_NAMES[i]);
         }
     }
     y = resvars.screen_boxes_NetBoxp[125].y + 4;
     for (i = TopSession; TopSession + session_count > i && TopSession + 3 > i; i++, y += character_height()) {
-        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[125].x, y, (s16)resvars.screen_boxes_NetBoxp[125].w,
-                         character_height())) {
+        if (over_hotspot((s16)lbDisplay.mmouse_x, (s16)lbDisplay.mmouse_y, (s16)resvars.screen_boxes_NetBoxp[125].x, y,
+                         (s16)resvars.screen_boxes_NetBoxp[125].w, character_height())) {
             if (lbDisplay.mleft_button) {
                 if (hilighted_session != i) {
                     memset(player_info, 0, 0x90);
@@ -2232,7 +2249,8 @@ void draw_players_on_session(u32 session)
     y = resvars.screen_boxes_NetBoxp[123].y + 4;
     for (count = 0, i = login_control.player_scroll; count < 3 && i < 4; i++) {
         if (player_names[i][0]) {
-            draw_small_centre_text(resvars.screen_boxes_NetBoxp[123].x, resvars.screen_boxes_NetBoxp[123].w, y, player_names[i]);
+            draw_small_centre_text(resvars.screen_boxes_NetBoxp[123].x, resvars.screen_boxes_NetBoxp[123].w, y,
+                                   player_names[i]);
             y += character_height();
             count++;
         }
@@ -2582,7 +2600,9 @@ void draw_current_message(char *text)
     s16 h;
 
     x = resvars.screen_boxes_NetBoxp[120].x + 10;
-    y = (resvars.screen_boxes_NetBoxp[120].y + resvars.screen_boxes_NetBoxp[120].h - (lbFontPtr ? lbFontPtr[66].height : 0)) / 2;
+    y = (resvars.screen_boxes_NetBoxp[120].y + resvars.screen_boxes_NetBoxp[120].h -
+         (lbFontPtr ? lbFontPtr[66].height : 0)) /
+        2;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     set_font_from_cache(0x21);
     h = lbFontPtr ? lbFontPtr[34].height : 0;
@@ -2749,7 +2769,8 @@ void do_net_text(void)
             k++;
         memmove(current_text.text, current_text.text + k, len - k + 1);
         othervar.net_text_scroll += k * (lbFontPtr ? lbFontPtr[1].width : 0) << 16;
-        set_all_refresh_zones_in_window(0, pager_text_recieved.y, lbDisplay.graphics_screen_width, h + pager_text_recieved.y - 1, 3);
+        set_all_refresh_zones_in_window(0, pager_text_recieved.y, lbDisplay.graphics_screen_width,
+                                        h + pager_text_recieved.y - 1, 3);
         LbTextDraw(othervar.net_text_x, pager_text_recieved.y, current_text.text);
         if (TimeLapse)
             othervar.net_text_scroll -= (TimeLapse * 0x23 << 16) / 1000;
@@ -2769,7 +2790,8 @@ void do_net_text(void)
         lbDisplay.draw_flags = 4;
         LbDrawBox(0, pager_text_entering.y - 1, lbDisplay.graphics_screen_width, h, color.black);
         lbDisplay.draw_flags = 0;
-        set_all_refresh_zones_in_window(0, pager_text_entering.y - 1, lbDisplay.graphics_screen_width, h + pager_text_entering.y + 1, 3);
+        set_all_refresh_zones_in_window(0, pager_text_entering.y - 1, lbDisplay.graphics_screen_width,
+                                        h + pager_text_entering.y + 1, 3);
         LbTextDraw(pager_text_entering.x, pager_text_entering.y, buf);
     }
     lbDisplay.draw_flags = saved;
@@ -2789,7 +2811,8 @@ void net_text_display(u8 from)
     set_font_from_cache(1);
     if (current_text.text[0]) {
         n = (lbDisplay.graphics_screen_width - othervar.net_text_x - LbTextStringWidth(current_text.text)) /
-                (lbFontPtr ? lbFontPtr[1].width : 0) + 1;
+                (lbFontPtr ? lbFontPtr[1].width : 0) +
+            1;
         if (n < 4)
             n = 4;
         LbMemorySet(buf, ' ', n);

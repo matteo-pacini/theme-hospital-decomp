@@ -6,7 +6,6 @@ extern Menu choice;
 void strcat(char *dst, char *src);
 }
 
-
 u16 create_mayor(u8 owner);
 u8 mayor_judges_hospital(u8 owner);
 
@@ -98,7 +97,8 @@ void generate_mayors(void)
             case 2:
                 if (actual_game_turn > hosp->mayor_arrival_turn) {
                     hosp->mayor = create_mayor((u8)i);
-                    if (hosp->mayor) {}
+                    if (hosp->mayor) {
+                    }
                     hosp->mayor_state = 3;
                     if (i == player) {
                         advisor.forced_advice_id = 8;
@@ -125,34 +125,34 @@ u16 create_mayor(u8 owner)
 
     mayor = allocate_thing(0x19);
     if (mayor != 0) {
-    Thing *reception_desk;
-    mayor->type = THING_MAYOR;
-    mayor->owner = owner;
-    pos = room_info[allhosps[owner].entrances[old_newrand() & 3]].door_tile;
-    mayor->x.tile = pos % 128;
-    mayor->y.tile = pos / 128;
-    mayor->x.frac = 0x80;
-    mayor->y.frac = 0x80;
-    mayor->speed = 0x10;
-    mayor->anim_speed = 2;
-    mayor->facing = 1;
-    insert_node(mayor, mayor->x, mayor->y);
-    anim = check_frame(0x89, mayor) + mayor->facing;
-    mayor->sprite = start[anim].frame;
-    mayor->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
-    reception_desk = &thing[listhead[owner].objects[OBJ_RECEPTION_DESK]];
-    if (reception_desk > thing) {
-        set_destination_coords(mayor, reception_desk->use_pos[1]);
-        mayor->state = MAYOR_GOTO;
-        mayor->goto_state = MAYOR_PAUSES;
-        mayor->inspect_room = 0;
-    } else {
-        set_destination_coords(mayor, room_info[allhosps[mayor->owner].entrances[old_newrand() & 3]].door_tile);
-        mayor->state = MAYOR_GOTO;
-        mayor->goto_state = MAYOR_GONE;
-        allhosps[mayor->owner].mayor_verdict = 0xe;
-    }
-    return mayor - thing;
+        Thing *reception_desk;
+        mayor->type = THING_MAYOR;
+        mayor->owner = owner;
+        pos = room_info[allhosps[owner].entrances[old_newrand() & 3]].door_tile;
+        mayor->x.tile = pos % 128;
+        mayor->y.tile = pos / 128;
+        mayor->x.frac = 0x80;
+        mayor->y.frac = 0x80;
+        mayor->speed = 0x10;
+        mayor->anim_speed = 2;
+        mayor->facing = 1;
+        insert_node(mayor, mayor->x, mayor->y);
+        anim = check_frame(0x89, mayor) + mayor->facing;
+        mayor->sprite = start[anim].frame;
+        mayor->flip = start[anim].flags > 0 ? (u8)1 : (u8)0;
+        reception_desk = &thing[listhead[owner].objects[OBJ_RECEPTION_DESK]];
+        if (reception_desk > thing) {
+            set_destination_coords(mayor, reception_desk->use_pos[1]);
+            mayor->state = MAYOR_GOTO;
+            mayor->goto_state = MAYOR_PAUSES;
+            mayor->inspect_room = 0;
+        } else {
+            set_destination_coords(mayor, room_info[allhosps[mayor->owner].entrances[old_newrand() & 3]].door_tile);
+            mayor->state = MAYOR_GOTO;
+            mayor->goto_state = MAYOR_GONE;
+            allhosps[mayor->owner].mayor_verdict = 0xe;
+        }
+        return mayor - thing;
     }
     return 0;
 }

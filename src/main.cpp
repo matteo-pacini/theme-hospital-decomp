@@ -25,7 +25,6 @@ void display_copyright(void);
 // where a string initialiser puts them (a zero initialiser puts them in
 // _BSS).
 char D_00128f24[0xdc] = "";
-
 }
 
 u8 no_cd = 1;

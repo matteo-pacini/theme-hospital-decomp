@@ -28,10 +28,10 @@ u8 is_person_highlighted_for_vaccination(u8 flag);
 void panel_l_button(const u16 icon);
 void clicked_for_edit(void);
 
-#define PARTNER(t)                                                                                         \
-    ((t)->object && (thing[(t)->object].type == THING_OBJECT || thing[(t)->object].type == THING_DOOR)       \
-             && (u16)((t) - thing) == thing[(t)->object].user                                      \
-         ? (t)->object                                                                                  \
+#define PARTNER(t)                                                                                                     \
+    ((t)->object && (thing[(t)->object].type == THING_OBJECT || thing[(t)->object].type == THING_DOOR) &&              \
+             (u16)((t) - thing) == thing[(t)->object].user                                                             \
+         ? (t)->object                                                                                                 \
          : 0)
 void panel_ml_button(const u16 icon);
 void panel_r_button(const u16 icon);
@@ -43,7 +43,6 @@ void pick_up_object_right_click(void);
 u16 compute_object_pointed(RoomInfo *room);
 void compute_room_pointed(u16 tile);
 void draw_from_frame(const u16 frame_id, const s16 x, const s16 y, u8 *remap, const u8 flip);
-
 
 // Per-frame mouse handling in the game view: edge scrolling, the pointer
 // over menus, windows and the bottom panel, and in MM_NORMAL what the pointer
@@ -66,13 +65,16 @@ void process_mouse(void)
         if (lbDisplay.left_button || lbDisplay.right_button) {
             lbDisplay.left_button = 0;
             lbDisplay.right_button = 0;
-            if (othervar.help_close_x <= lbDisplay.mouse_x && othervar.help_close_x + pulldv[19].width > lbDisplay.mouse_x
-                && othervar.help_close_y <= lbDisplay.mouse_y && othervar.help_close_y + pulldv[19].height > lbDisplay.mouse_y)
+            if (othervar.help_close_x <= lbDisplay.mouse_x &&
+                othervar.help_close_x + pulldv[19].width > lbDisplay.mouse_x &&
+                othervar.help_close_y <= lbDisplay.mouse_y &&
+                othervar.help_close_y + pulldv[19].height > lbDisplay.mouse_y)
                 finish_composite_help();
         }
         return;
     }
-    if (debug.suppress_help) {}
+    if (debug.suppress_help) {
+    }
     scroll = 0;
     if (lbDisplay.mmouse_x <= resvars.coords[0xa7].x)
         scroll |= 4;
@@ -111,11 +113,11 @@ void process_mouse(void)
             if (othervar.pointer_sprite != PTR_DEFAULT)
                 set_mouse_sprite(PTR_DEFAULT);
         }
-    } else if (advisor_up_states[advisor.anim_state] && lbDisplay.right_button
-               && ((lbDisplay.mmouse_y >= resvars.coords[0x93].y && advisor.box_left_u <= lbDisplay.mmouse_x && lbDisplay.mmouse_x <= resvars.coords[0x92].x
-                    && lbDisplay.mmouse_y <= resvars.coords[0x92].y)
-                   || (lbDisplay.mmouse_x >= resvars.coords[0x90].x && lbDisplay.mmouse_y >= resvars.coords[0x90].y
-                       && lbDisplay.mmouse_x <= resvars.coords[0x91].x && lbDisplay.mmouse_y <= resvars.coords[0x91].y))) {
+    } else if (advisor_up_states[advisor.anim_state] && lbDisplay.right_button &&
+               ((lbDisplay.mmouse_y >= resvars.coords[0x93].y && advisor.box_left_u <= lbDisplay.mmouse_x &&
+                 lbDisplay.mmouse_x <= resvars.coords[0x92].x && lbDisplay.mmouse_y <= resvars.coords[0x92].y) ||
+                (lbDisplay.mmouse_x >= resvars.coords[0x90].x && lbDisplay.mmouse_y >= resvars.coords[0x90].y &&
+                 lbDisplay.mmouse_x <= resvars.coords[0x91].x && lbDisplay.mmouse_y <= resvars.coords[0x91].y))) {
         othervar.advisor_right_click = 1;
         gamevar.hover_action = 8;
         icon = 0x27;
@@ -155,13 +157,13 @@ void process_mouse(void)
             } else if (crequester.id == REQ_NONE && (hovered = &thing[othervar.pointed_thing]) > thing) {
                 if (gamevar.rat_fest_level)
                     return;
-                if ((hovered->type == THING_PATIENT || hovered->type == THING_STAFF)
-                    && (used_object = &thing[hovered->object
-                                               && (thing[hovered->object].type == THING_OBJECT || thing[hovered->object].type == THING_DOOR)
-                                               && (u16)(hovered - thing) == thing[hovered->object].user
-                                           ? hovered->object
-                                           : 0])
-                           > thing) {
+                if ((hovered->type == THING_PATIENT || hovered->type == THING_STAFF) &&
+                    (used_object = &thing[hovered->object &&
+                                                  (thing[hovered->object].type == THING_OBJECT ||
+                                                   thing[hovered->object].type == THING_DOOR) &&
+                                                  (u16)(hovered - thing) == thing[hovered->object].user
+                                              ? hovered->object
+                                              : 0]) > thing) {
                     if (used_object->subtype == OBJ_RECEPTION_DESK) {
                         othervar.prev_panel_info = othervar.panel_info;
                         othervar.panel_info = 4;
@@ -196,7 +198,8 @@ void process_mouse(void)
                     }
                 }
                 hovered = &thing[othervar.pointed_thing];
-                if (hovered->type == THING_OBJECT && (hovered->subtype == OBJ_SWING_DOOR || hovered->subtype == OBJ_SWING_DOOR2) && hovered->door_main)
+                if (hovered->type == THING_OBJECT &&
+                    (hovered->subtype == OBJ_SWING_DOOR || hovered->subtype == OBJ_SWING_DOOR2) && hovered->door_main)
                     hovered = &thing[hovered->door_main];
                 if (hovered->type == THING_PATIENT) {
                     othervar.prev_panel_info = othervar.panel_info;
@@ -301,14 +304,14 @@ void process_left_button(u16 icon)
                 if (crequester.id != REQ_NONE)
                     break;
                 if (myhosp->epidemic_timer) {
-                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x, resvars.coords[0x86].y,
-                                     watch[14].width, watch[14].height)) {
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x,
+                                     resvars.coords[0x86].y, watch[14].width, watch[14].height)) {
                         gamevar.mouse_mode = MM_VACCINATE;
                         play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
                         break;
                     }
-                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x, resvars.coords[0x86].y,
-                                     watch[13].width, watch[13].height)) {
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x,
+                                     resvars.coords[0x86].y, watch[13].width, watch[13].height)) {
                         if (othervar.epidemic_patient) {
                             othervar.center_on_slot = 1;
                             D_001581b2[1].value = othervar.epidemic_patient;
@@ -319,16 +322,16 @@ void process_left_button(u16 icon)
                     }
                 }
                 if (myhosp->opening_countdown) {
-                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x, resvars.coords[0x86].y,
-                                     watch[14].width, watch[14].height)) {
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x,
+                                     resvars.coords[0x86].y, watch[14].width, watch[14].height)) {
                         D_001549d0[player].type = EV_ANNOUNCE;
                         play_sound(SNDSRC_GENERAL, SFX_FANFARE, -1, -1);
                         break;
                     }
                 }
                 if (myhosp->emergency_timer) {
-                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x84].x, resvars.coords[0x84].y,
-                                     watch[13].width, watch[13].height)) {
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x84].x,
+                                     resvars.coords[0x84].y, watch[13].width, watch[13].height)) {
                         if (othervar.emergency_patient) {
                             othervar.center_on_slot = 1;
                             D_001581b2[1].value = othervar.emergency_patient;
@@ -370,7 +373,8 @@ void process_left_button(u16 icon)
                         case THING_STAFF:
                             switch (clicked->subtype) {
                             case STAFF_RECEPTIONIST:
-                                if (PARTNER(&thing[othervar.panel_thing]) && thing[PARTNER(&thing[othervar.panel_thing])].subtype == OBJ_RECEPTION_DESK) {
+                                if (PARTNER(&thing[othervar.panel_thing]) &&
+                                    thing[PARTNER(&thing[othervar.panel_thing])].subtype == OBJ_RECEPTION_DESK) {
                                     if (thing[othervar.panel_thing].room) {
                                         D_001549d0[player].type = EV_OPEN_QUEUE_WINDOW;
                                         D_001549d0[player].value = thing[othervar.panel_thing].room - room_info;
@@ -431,7 +435,8 @@ void process_left_button(u16 icon)
                     if (thing[othervar.panel_thing].owner == player) {
                         D_001549d0[player].type = EV_OPEN_QUEUE_WINDOW;
                         D_001549d0[player].value = thing[othervar.panel_thing].room_id;
-                        D_001549d0[player].arg = (thing[othervar.panel_thing].y.tile << 7) + thing[othervar.panel_thing].x.tile;
+                        D_001549d0[player].arg =
+                            (thing[othervar.panel_thing].y.tile << 7) + thing[othervar.panel_thing].x.tile;
                         compute_room_pointed(othervar.mouse_cell);
                     }
                     break;
@@ -523,8 +528,8 @@ void process_left_button(u16 icon)
                 break;
             case MM_VACCINATE:
                 if (myhosp->epidemic_timer) {
-                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x, resvars.coords[0x86].y,
-                                     watch[14].width, watch[14].height)) {
+                    if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x,
+                                     resvars.coords[0x86].y, watch[14].width, watch[14].height)) {
                         gamevar.mouse_mode = MM_NORMAL;
                         break;
                     }
@@ -545,7 +550,8 @@ void process_left_button(u16 icon)
                     if (selected > thing) {
                         if (selected->type == THING_STAFF && selected->subtype == STAFF_RECEPTIONIST)
                             room = selected->room;
-                        else if (selected->type == THING_OBJECT && selected->subtype == OBJ_RECEPTION_DESK && selected->user)
+                        else if (selected->type == THING_OBJECT && selected->subtype == OBJ_RECEPTION_DESK &&
+                                 selected->user)
                             room = thing[selected->user].room;
                     }
                 }
@@ -596,13 +602,13 @@ void process_mleft_button(u16 icon)
                 case MM_NORMAL:
                 case MM_VACCINATE:
                     if (myhosp->epidemic_timer) {
-                        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.coords[0x86].x, resvars.coords[0x86].y,
-                                         watch[14].width, watch[14].height))
+                        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.coords[0x86].x,
+                                         resvars.coords[0x86].y, watch[14].width, watch[14].height))
                             reqspr_draw(resvars.coords[0x86].x, resvars.coords[0x86].y, &watch[15]);
                     }
                     if (myhosp->emergency_timer) {
-                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x84].x, resvars.coords[0x84].y,
-                                         watch[13].width, watch[13].height)) {
+                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x84].x,
+                                         resvars.coords[0x84].y, watch[13].width, watch[13].height)) {
                             if (othervar.emergency_patient) {
                                 othervar.center_on_slot = 1;
                                 D_001581b2[1].value = othervar.emergency_patient;
@@ -657,8 +663,8 @@ void process_right_button(u16 icon)
                 switch (gamevar.mouse_mode) {
                 case MM_NORMAL:
                     if (myhosp->epidemic_timer) {
-                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x, resvars.coords[0x86].y,
-                                         watch[13].width, watch[13].height)) {
+                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x86].x,
+                                         resvars.coords[0x86].y, watch[13].width, watch[13].height)) {
                             othervar.epidemic_patient = find_next_emergency_person(othervar.emergency_patient, 0x20);
                             if (othervar.epidemic_patient) {
                                 D_001549d0[player].type = EV_OPEN_THING_WINDOW;
@@ -673,8 +679,8 @@ void process_right_button(u16 icon)
                         }
                     }
                     if (myhosp->emergency_timer) {
-                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x84].x, resvars.coords[0x84].y,
-                                         watch[13].width, watch[13].height)) {
+                        if (over_hotspot(lbDisplay.mouse_x, lbDisplay.mouse_y, resvars.coords[0x84].x,
+                                         resvars.coords[0x84].y, watch[13].width, watch[13].height)) {
                             othervar.emergency_patient = find_next_emergency_person(othervar.emergency_patient, 0x40);
                             if (othervar.emergency_patient) {
                                 D_001549d0[player].type = EV_OPEN_THING_WINDOW;
@@ -692,16 +698,17 @@ void process_right_button(u16 icon)
                         switch (gamevar.hover_action) {
                         case 0:
                         case 3:
-                            if (!mouse_was_on_window
-                                && (!allhosps[player].edited_room || crequester.id != REQ_EDIT_ROOM)
-                                && (crequester.id != REQ_NONE || othervar.irequester_slot != 0)) {
+                            if (!mouse_was_on_window &&
+                                (!allhosps[player].edited_room || crequester.id != REQ_EDIT_ROOM) &&
+                                (crequester.id != REQ_NONE || othervar.irequester_slot != 0)) {
                                 process_keys(0, 1);
                             } else {
                                 hovered = &thing[othervar.pointed_thing];
                                 if (hovered->owner == player) {
                                     if (allhosps[player].edited_room) {
                                         check_object_right_click_in_room_edit();
-                                    } else if (gamevar.hover_action == 3 && hovered > thing && hovered->type == THING_STAFF) {
+                                    } else if (gamevar.hover_action == 3 && hovered > thing &&
+                                               hovered->type == THING_STAFF) {
                                         D_001549d0[player].type = EV_PICK_UP_STAFF;
                                         D_001549d0[player].value = othervar.pointed_thing;
                                         play_sound(SNDSRC_GENERAL, SFX_PICKUP, -1, -1);
@@ -781,7 +788,8 @@ void process_no_button(u16 icon)
                 } else {
                     hovered = &thing[othervar.pointed_thing];
                     if (hovered > thing && hovered->owner == player) {
-                        if ((hovered->type == THING_OBJECT && hovered->subtype == OBJ_RECEPTION_DESK) || (hovered->type == THING_STAFF && hovered->subtype == STAFF_RECEPTIONIST))
+                        if ((hovered->type == THING_OBJECT && hovered->subtype == OBJ_RECEPTION_DESK) ||
+                            (hovered->type == THING_STAFF && hovered->subtype == STAFF_RECEPTIONIST))
                             flag_all_queue_members(thing[othervar.panel_thing].room);
                     }
                 }
@@ -807,7 +815,8 @@ void process_no_button(u16 icon)
                 LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
                 LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
                 draw_from_frame(start[blueprint[gamevar.place_blueprint].anim].frame, resvars.tile_width / 2 + mcurx,
-                                mcury - resvars.tile_height / 2, 0, start[blueprint[gamevar.place_blueprint].anim].flags);
+                                mcury - resvars.tile_height / 2, 0,
+                                start[blueprint[gamevar.place_blueprint].anim].flags);
                 break;
             case MM_PICK_UP_OBJECT:
                 othervar.pickup_thing = compute_object_pointed(&room_info[allhosps[player].edited_room]);

@@ -136,7 +136,6 @@ int LbMemoryGrow(void *p, u32 size)
 {
     return -1;
 }
-
 }
 
 // Puts all 100 block records on the free list, with nothing allocated.
@@ -155,7 +154,8 @@ _CMemory::_CMemory()
 // FUNCTION: 0x000baf64
 _CMemory::~_CMemory()
 {
-    if (used_list) {}
+    if (used_list) {
+    }
 }
 
 // Allocates size bytes, zeroed: from DOS conventional memory if low is nonzero,
@@ -240,7 +240,6 @@ u32 _CMemory_Free(_CMemory *mem, void *p)
     mem->free_list = block;
     return 1;
 }
-
 }
 
 // Allocates size bytes (under 640 KB) of DOS memory with DPMI function 0x100.

@@ -65,7 +65,8 @@ int LbFilePosition(int handle);
 char IsSamplePlaying(s32 source_id, s32 number, void *handle);
 SampleInfo *GetFirstSampleInfoStructure(void);
 SampleInfo *GetLastSampleInfoStructure(void);
-SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, u32 volume, u32 pan, u16 pitch, s8 loop, u8 type, void *address, u32 extra);
+SampleInfo *PlaySampleFromAddress(u32 source_id, s16 number, u32 volume, u32 pan, u16 pitch, s8 loop, u8 type,
+                                  void *address, u32 extra);
 void *cache_block_data(TbCacheUsedBlock *block);
 void lock_cache_block(TbCacheUsedBlock *block);
 }
@@ -201,7 +202,8 @@ SampleInfo *play_sample_using_heap(u32 source, s16 sample, u32 volume, u32 pan, 
         cache.MakeNewest(st->block);
     }
     data = cache_block_data(st->block);
-    info = PlaySampleFromAddress(source, sample, volume, pan, pitch, loop, type, cache_block_data(st->block), st->priority);
+    info = PlaySampleFromAddress(source, sample, volume, pan, pitch, loop, type, cache_block_data(st->block),
+                                 st->priority);
     if (info == 0)
         return 0;
     info->flags |= 1;

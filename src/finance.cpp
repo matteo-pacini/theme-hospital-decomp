@@ -47,17 +47,9 @@ extern "C" {
 extern Event D_001549d0[];
 // demo: banktext
 StatItem banktext[] = {
-    { 1, 32, 8 },
-    { 2, 8, 24 },
-    { 3, 2, 40 },
-    { 4, 11, 40 },
-    { 5, 40, 40 },
-    { 6, 50, 40 },
-    { 7, 62, 40 },
-    { 8, 84, 405 },
-    { 2, 25, 405 },
-    { 9, 568, 405, { 0x30, 0, 0x1e } },
-    { 0, 0, 0 },
+    {1, 32, 8},  {2, 8, 24},  {3, 2, 40},   {4, 11, 40},  {5, 40, 40},
+    {6, 50, 40}, {7, 62, 40}, {8, 84, 405}, {2, 25, 405}, {9, 568, 405, {0x30, 0, 0x1e}},
+    {0, 0, 0},
 };
 extern char **stat_text;
 extern char **finance_text;
@@ -84,8 +76,8 @@ void change_balance(const u8 type, const s32 amount, const u16 arg, const u16 ow
         count = (u16)mycontrol->entry_count;
         day = (u16)mycontrol->day;
         month = (u16)mycontrol->month;
-        if (count && mycontrol->entries[count - 1].type == type && mycontrol->entries[count - 1].day == day
-            && mycontrol->entries[count - 1].month == month) {
+        if (count && mycontrol->entries[count - 1].type == type && mycontrol->entries[count - 1].day == day &&
+            mycontrol->entries[count - 1].month == month) {
             mycontrol->entries[count - 1].amount += amount;
         } else {
             mycontrol->entries[count].day = day;
@@ -243,9 +235,11 @@ void month_end(void)
         if (amount != 0)
             change_balance(TX_HEATING, -amount, 0, i);
         if (allhosps[i].loan != 0)
-            change_balance(TX_LOAN_INTEREST, -(towns[allhosps[i].level].interest_rate * allhosps[i].loan / 10000 / 12), 0, i);
+            change_balance(TX_LOAN_INTEREST, -(towns[allhosps[i].level].interest_rate * allhosps[i].loan / 10000 / 12),
+                           0, i);
         if (allhosps[i].balance < 0)
-            change_balance(TX_OVERDRAFT_INTEREST, towns[allhosps[i].level].interest_rate * allhosps[i].balance * 2 / 10000 / 12, 0, i);
+            change_balance(TX_OVERDRAFT_INTEREST,
+                           towns[allhosps[i].level].interest_rate * allhosps[i].balance * 2 / 10000 / 12, 0, i);
         calc_pricing_factor(i);
         total += allhosps[i].month_visitors;
     }
@@ -379,8 +373,8 @@ void bank_statement(void)
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
     lbDisplay.draw_flags = 0x100;
     for (i = 0; i < 6; i++) {
-        LbTextSetWindow(resvars.screen_boxes_Boxp[i + 4].x, resvars.screen_boxes_Boxp[i + 4].y, resvars.screen_boxes_Boxp[i + 4].w,
-                        resvars.screen_boxes_Boxp[i + 4].h);
+        LbTextSetWindow(resvars.screen_boxes_Boxp[i + 4].x, resvars.screen_boxes_Boxp[i + 4].y,
+                        resvars.screen_boxes_Boxp[i + 4].w, resvars.screen_boxes_Boxp[i + 4].h);
         sprintf(buf, "%s", stat_text[i]);
         LbTextDraw(resvars.screen_coords[71].x, resvars.screen_coords[71].y * 2, buf);
     }
@@ -470,7 +464,8 @@ void process_stat_panel(void)
 
     if (lbDisplay.rleft_button) {
         for (i = 0; resvars.screen_buttons[i].width != 0 && resvars.screen_buttons[i].height != 0; i++) {
-            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i].x, resvars.screen_buttons[i].y, resvars.screen_buttons[i].width,
+            if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, resvars.screen_buttons[i].x,
+                             resvars.screen_buttons[i].y, resvars.screen_buttons[i].width,
                              resvars.screen_buttons[i].height)) {
                 resvars.screen_buttons[i].callback(i);
                 reqspr_draw(resvars.screen_buttons[i].sprite_x, resvars.screen_buttons[i].sprite_y,
@@ -480,7 +475,8 @@ void process_stat_panel(void)
     }
     if (lbDisplay.mleft_button) {
         for (i = 0; resvars.screen_buttons[i].width != 0 && resvars.screen_buttons[i].height != 0; i++) {
-            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i].x, resvars.screen_buttons[i].y, resvars.screen_buttons[i].width,
+            if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, resvars.screen_buttons[i].x,
+                             resvars.screen_buttons[i].y, resvars.screen_buttons[i].width,
                              resvars.screen_buttons[i].height)) {
                 reqspr_draw(resvars.screen_buttons[i].sprite_x, resvars.screen_buttons[i].sprite_y,
                             &screen_sprites_tab_start[resvars.screen_buttons[i].sprite]);
@@ -544,12 +540,14 @@ void daily_admin(void)
         if (allhosps[i].emergency_state_s == 2) {
             if (allhosps[i].emergency_present == 0) {
                 allhosps[i].emergency_state = 1;
-                if (allhosps[i].emergency_cured * 100 / allhosps[i].emergency_patients >= allhosps[i].emergency_win_pct) {
+                if (allhosps[i].emergency_cured * 100 / allhosps[i].emergency_patients >=
+                    allhosps[i].emergency_win_pct) {
                     change_balance(TX_EMERGENCY_BONUS, allhosps[i].emergency_bonus * allhosps[i].emergency_cured, 0, i);
                     reputation_affected(0, REP_EMERGENCY_SUCCESS, 0, i, 0);
                     satisfied_net_criteria(1, i);
                 } else {
-                    reputation_affected(0, REP_EMERGENCY_FAILED, 0, i, allhosps[i].emergency_patients - allhosps[i].emergency_cured);
+                    reputation_affected(0, REP_EMERGENCY_FAILED, 0, i,
+                                        allhosps[i].emergency_patients - allhosps[i].emergency_cured);
                 }
                 make_a_playercall(5, 1, 0x14, i);
             }
