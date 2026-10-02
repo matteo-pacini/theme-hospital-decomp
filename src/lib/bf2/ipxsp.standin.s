@@ -964,7 +964,7 @@
     call "W?AddPlayer$:ServiceProvider$n(ulpnaulul)$TbError$$"
     test al, al
     je .L000d9182
-    .byte 0x68; .long _D_001262d0  # push 0x62d0
+    .byte 0x68; .long _D_001262d0  # push 0x62d0; "  WARNING network: IPXServiceProvider::Start() failure on Ad"
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000d9182:
@@ -1297,7 +1297,7 @@
     call "W?AddPlayer$:ServiceProvider$n(ulpnaulul)$TbError$$"
     test al, al
     je .L000d86cb
-    .byte 0x68; .long _D_00126289  # push 0x6289
+    .byte 0x68; .long _D_00126289  # push 0x6289; "  WARNING network: IPXServiceProvider::Start() failure on Ad"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
@@ -2102,7 +2102,7 @@
     jne .L000d697b
     mov eax, dword ptr [esp + 0xcc]
     mov ecx, 6
-    .byte 0xbf; .long _D_00126282  # mov edi, 0x6282
+    .byte 0xbf; .long _D_00126282  # mov edi, 0x6282; "BU.GI."
     add edx, 4
     mov dword ptr [esp + 0xb0], eax
     mov ah, 0xff

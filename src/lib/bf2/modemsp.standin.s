@@ -78,7 +78,7 @@
     call "W?SetInitModemFunc$:CommHandler$n(pn()l)v"
     cmp ecx, -7
     jne .L000ee871
-    .byte 0x68; .long _D_00127c29  # push 0x7c29
+    .byte 0x68; .long _D_00127c29  # push 0x7c29; "MODEM: USER ABORTS MODEM INIT FUNCTION"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
@@ -91,7 +91,7 @@
 .L000ee871:
     cmp ecx, -1
     jne .L000ee894
-    .byte 0x68; .long _D_00127c50  # push 0x7c50
+    .byte 0x68; .long _D_00127c50  # push 0x7c50; "MODEM: Didin't get modem Response from InitModem\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
@@ -106,7 +106,7 @@
     lea ecx, [ebx + 8]
     cmp edi, 1
     je .L000ee8f8
-    .byte 0x68; .long _D_00127c82  # push 0x7c82
+    .byte 0x68; .long _D_00127c82  # push 0x7c82; "MODEM: Modem Response wasn't OK on InitModem\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov edi, ecx
@@ -129,7 +129,7 @@
     mov dword ptr [ebx + 0xa8], eax
     mov edx, dword ptr [ebp + 0xb14]
     push edx
-    .byte 0x68; .long _D_00127cb0  # push 0x7cb0
+    .byte 0x68; .long _D_00127cb0  # push 0x7cb0; "MODEM RESPONSE CODE = %s\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 8
@@ -159,7 +159,7 @@
     mov dword ptr [ebx + 0xa8], eax
     mov eax, dword ptr [ebp + 0xb14]
     push eax
-    .byte 0x68; .long _D_00127cca  # push 0x7cca
+    .byte 0x68; .long _D_00127cca  # push 0x7cca; "MODEM RESPONSE CODE = %s\n"
     call "NetworkDebugPrintf_"
     mov eax, dword ptr [ebp + 0xb14]
     add esp, 8
@@ -170,7 +170,7 @@
     call "W?GetModemResponse$:CommHandler$n(l)l"
     mov edi, dword ptr [ebp + 0xb14]
     push edi
-    .byte 0x68; .long _D_00127ce4  # push 0x7ce4
+    .byte 0x68; .long _D_00127ce4  # push 0x7ce4; "ANSWER MODEM RESPONSE CODE = %s\n"
     mov edx, eax
     mov esi, eax
     call "NetworkDebugPrintf_"
@@ -193,13 +193,13 @@
     je .L000eea4b
     cmp esi, 1
     je .L000ee9ba
-    .byte 0x68; .long _D_00127d05  # push 0x7d05
+    .byte 0x68; .long _D_00127d05  # push 0x7d05; "MODEM: I COULDNT JOIN SERVER SO I MUST HANGUP THE MODEM\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [ebp + 0xb14]
     call "W?HangUpModem$:CommHandler$n()l"
 .L000ee9ba:
-    .byte 0x68; .long _D_00127d3e  # push 0x7d3e
+    .byte 0x68; .long _D_00127d3e  # push 0x7d3e; "MODEM: TURN OFF AUTO ANSWER BY CALLING INITIALISE\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [ebp + 0xb14]
@@ -208,7 +208,7 @@
 .L000ee9d4:
     cmp edx, -1
     jne .L000ee9f7
-    .byte 0x68; .long _D_00127d71  # push 0x7d71
+    .byte 0x68; .long _D_00127d71  # push 0x7d71; "MODEM: Didn't responsded to Auto Answer Command\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
@@ -219,7 +219,7 @@
     pop esi
     ret 4
 .L000ee9f7:
-    .byte 0x68; .long _D_00127da2  # push 0x7da2
+    .byte 0x68; .long _D_00127da2  # push 0x7da2; "MODEM: Responded with the following return Code\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov edi, ecx
@@ -241,7 +241,7 @@
     mov dword ptr [ebx + 0xa8], edx
     mov eax, dword ptr [ebp + 0xb14]
     push eax
-    .byte 0x68; .long _D_00127dd3  # push 0x7dd3
+    .byte 0x68; .long _D_00127dd3  # push 0x7dd3; "MODEM RESPONSE CODE = %s\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 8
@@ -337,7 +337,7 @@
     call "W?SetInitModemFunc$:CommHandler$n(pn()l)v"
     cmp ebx, -7
     jne .L000eeb63
-    .byte 0x68; .long _D_00127ded  # push 0x7ded
+    .byte 0x68; .long _D_00127ded  # push 0x7ded; "USER ABORTS MODEM INIT FUNCTION\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
@@ -347,7 +347,7 @@
 .L000eeb63:
     cmp ebx, -1
     jne .L000eeb88
-    .byte 0x68; .long _D_00127e0e  # push 0x7e0e
+    .byte 0x68; .long _D_00127e0e  # push 0x7e0e; "DIDN'T GET MODEM RESPONSE FROM INIT FUNCTION\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
@@ -383,7 +383,7 @@
     mov dword ptr [eax + 0xa8], ebx
     mov edi, dword ptr [ebp + 0xb14]
     push edi
-    .byte 0x68; .long _D_00127e3c  # push 0x7e3c
+    .byte 0x68; .long _D_00127e3c  # push 0x7e3c; "DIDN'T GET OK MODEM RESPONSE CODE FOR INIT= %s\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 8
@@ -413,7 +413,7 @@
     mov dword ptr [eax + 0xa8], ebx
     mov ecx, dword ptr [ebp + 0xb14]
     push ecx
-    .byte 0x68; .long _D_00127e6c  # push 0x7e6c
+    .byte 0x68; .long _D_00127e6c  # push 0x7e6c; "MODEM RESPONSE CODE = %s\n"
     call "NetworkDebugPrintf_"
     add esp, 8
     mov edx, dword ptr [esp + 4]
@@ -426,11 +426,11 @@
     call "W?SetDialModemFunc$:CommHandler$n(pn()l)v"
     cmp ebx, -7
     jne .L000eec7b
-    .byte 0x68; .long _D_00127e86  # push 0x7e86
+    .byte 0x68; .long _D_00127e86  # push 0x7e86; "USER ABORTS MODEM DIALING FUNCTION\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
-    .byte 0x68; .long _D_00127eaa  # push 0x7eaa
+    .byte 0x68; .long _D_00127eaa  # push 0x7eaa; "OK ILL BETTER HANGUP THE MODEM JUST IN-CASE\n"
     mov dword ptr [eax + 0xa8], ebx
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -445,11 +445,11 @@
 .L000eec7b:
     cmp ebx, -1
     jne .L000eecb8
-    .byte 0x68; .long _D_00127ed7  # push 0x7ed7
+    .byte 0x68; .long _D_00127ed7  # push 0x7ed7; "NO MODEM RESPONSE FROM DIALING\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
-    .byte 0x68; .long _D_00127ef7  # push 0x7ef7
+    .byte 0x68; .long _D_00127ef7  # push 0x7ef7; "OK ILL BETTER HANGUP THE MODEM JUST IN-CASE\n"
     mov dword ptr [eax + 0xa8], ebx
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -481,7 +481,7 @@
     mov dword ptr [eax + 0xa8], ebx
     mov esi, dword ptr [ebp + 0xb14]
     push esi
-    .byte 0x68; .long _D_00127f24  # push 0x7f24
+    .byte 0x68; .long _D_00127f24  # push 0x7f24; "MODEM RESPONSE CODE = %s\n"
     call "NetworkDebugPrintf_"
     add esp, 8
     cmp ebx, 2
@@ -500,7 +500,7 @@
     xor edx, edx
     call "memset_"
     mov eax, dword ptr [esp + 4]
-    .byte 0x68; .long _D_00127f3e  # push 0x7f3e
+    .byte 0x68; .long _D_00127f3e  # push 0x7f3e; "NO SERVER FOUND HANGINGUP MODEM\n"
     mov dword ptr [eax + 0xa8], 0xfffffffe
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -515,7 +515,7 @@
 .L000eed54:
     cmp ebx, 4
     jne .L000eed6f
-    .byte 0x68; .long _D_00127f5f  # push 0x7f5f
+    .byte 0x68; .long _D_00127f5f  # push 0x7f5f; "MODEM: IS BUSY OR ENGAGED\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
@@ -527,7 +527,7 @@
 .L000eed6f:
     cmp ebx, 7
     jne .L000eed8a
-    .byte 0x68; .long _D_00127f7a  # push 0x7f7a
+    .byte 0x68; .long _D_00127f7a  # push 0x7f7a; "MODEM: THERE IS NO DIALTONE\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
@@ -539,7 +539,7 @@
 .L000eed8a:
     cmp ebx, 5
     jne .L000eeda5
-    .byte 0x68; .long _D_00127f97  # push 0x7f97
+    .byte 0x68; .long _D_00127f97  # push 0x7f97; "MODEM DIDN'T UNDERSTAND MODEM STRING\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
@@ -551,7 +551,7 @@
 .L000eeda5:
     cmp ebx, 6
     jne .L000eedc0
-    .byte 0x68; .long _D_00127fbd  # push 0x7fbd
+    .byte 0x68; .long _D_00127fbd  # push 0x7fbd; "MODEM: THERE IS NOCARRIER\n"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4

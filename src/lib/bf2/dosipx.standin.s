@@ -124,7 +124,7 @@
     test ebx, ebx
     jne .L000d427d
     push ecx
-    .byte 0x68; .long _D_00126012  # push 0x6012
+    .byte 0x68; .long _D_00126012  # push 0x6012; "CAN USE THIS VECTOR 0x%x\n"
     call "IPXDebug_"
     add esp, 8
     mov word ptr [esi + 0x3e], cx
@@ -446,7 +446,7 @@
     pop edi
     mov eax, dword ptr [ebp + 0x26]
     push eax
-    .byte 0x68; .long _D_00125e70  # push 0x5e70
+    .byte 0x68; .long _D_00125e70  # push 0x5e70; "ALLOCATED FINE HANDLER SIZE = %d\n"
     mov ebx, 0x4d4
     xor edx, edx
     call "IPXDebug_"
@@ -494,14 +494,14 @@
     shr eax, 4
     and eax, 0xffff
     push eax
-    .byte 0x68; .long _D_00125e92  # push 0x5e92
+    .byte 0x68; .long _D_00125e92  # push 0x5e92; "IPXSEND SEG = %x, OFF = %x\n"
     mov dword ptr [ebp + 0x16], edi
     call "IPXDebug_"
     mov eax, dword ptr [ebp + 0x16]
     add esp, 0xc
     test eax, eax
     jne .L000d382b
-    .byte 0xbe; .long _D_00125eae  # mov esi, 0x5eae
+    .byte 0xbe; .long _D_00125eae  # mov esi, 0x5eae; "COULDN'T ALLOCATE FOR SEND PACKETS\n"
     .byte 0xbf; .long "W?IPXDEBUGSTRING$n[]a"  # mov edi, 0x6c2bc
     push edi
 .L000d37be:
@@ -561,7 +561,7 @@
     mov dword ptr [ebp + 0x22], eax
     test eax, eax
     jne .L000d3950
-    .byte 0xbe; .long _D_00125ed2  # mov esi, 0x5ed2
+    .byte 0xbe; .long _D_00125ed2  # mov esi, 0x5ed2; "COULDN'T ALLOCATE FOR BUFFER\n"
     .byte 0xbf; .long "W?IPXDEBUGSTRING$n[]a"  # mov edi, 0x6c2bc
     push edi
 .L000d38a0:
@@ -652,7 +652,7 @@
     mov dword ptr [ebp + 0x1a], esi
     test esi, esi
     jne .L000d3ad9
-    .byte 0xbe; .long _D_00125ef0  # mov esi, 0x5ef0
+    .byte 0xbe; .long _D_00125ef0  # mov esi, 0x5ef0; "COULDN'T ALLOCATE FOR SAP BUFFER\n"
     .byte 0xbf; .long "W?IPXDEBUGSTRING$n[]a"  # mov edi, 0x6c2bc
     push edi
 .L000d39f9:
@@ -747,7 +747,7 @@
     mov word ptr [ebx + 0x8c], ax
     cmp edx, 0xff
     je .L000d3c98
-    .byte 0xbe; .long _D_00125f12  # mov esi, 0x5f12
+    .byte 0xbe; .long _D_00125f12  # mov esi, 0x5f12; "IPX DRIVER NOT INSTALLED\n"
     .byte 0xbf; .long "W?IPXDEBUGSTRING$n[]a"  # mov edi, 0x6c2bc
     push edi
 .L000d3b8e:
@@ -836,14 +836,14 @@
     xor eax, eax
     mov al, byte ptr [edx]
     push eax
-    .byte 0x68; .long _D_00125f2c  # push 0x5f2c
+    .byte 0x68; .long _D_00125f2c  # push 0x5f2c; "IPX ENTRY = %x\n"
     call "IPXDebug_"
     add esp, 8
     mov eax, ebp
     call "W?SetupVector$:IPXHandler$n()l"
     test eax, eax
     jne .L000d3e1f
-    .byte 0xbe; .long _D_00125f3c  # mov esi, 0x5f3c
+    .byte 0xbe; .long _D_00125f3c  # mov esi, 0x5f3c; "COULD NOT FIND FREE VECTOR FROM 0x60 to 0x66\n"
     .byte 0xbf; .long "W?IPXDEBUGSTRING$n[]a"  # mov edi, 0x6c2bc
     push edi
 .L000d3cfe:
@@ -901,7 +901,7 @@
     mov dword ptr [esp + 0x94], eax
     mov eax, 0x31
     call "int386_"
-    .byte 0x68; .long _D_00125f6a  # push 0x5f6a
+    .byte 0x68; .long _D_00125f6a  # push 0x5f6a; "FAILED\n"
     mov dword ptr [ebp + 0x30], 0
     call "IPXDebug_"
     mov eax, 1
@@ -922,12 +922,12 @@
     mov ax, word ptr [eax + 0x8c]
     and eax, 0xffff
     push eax
-    .byte 0x68; .long _D_00125f72  # push 0x5f72
+    .byte 0x68; .long _D_00125f72  # push 0x5f72; "INITSUCCESSFULL IPX ADDRESS = SEG %x OFF %x\n"
     .byte 0x68; .long "W?IPXDEBUGSTRING$n[]a"  # push 0x6c2bc
     call "sprintf_"
     add esp, 0x10
     .byte 0x68; .long "W?IPXDEBUGSTRING$n[]a"  # push 0x6c2bc
-    .byte 0x68; .long _D_00125f9f  # push 0x5f9f
+    .byte 0x68; .long _D_00125f9f  # push 0x5f9f; "%s"
     call "IPXDebug_"
     add esp, 8
     lea edx, [esp + 0x254]
@@ -944,7 +944,7 @@
     pop ebx
     ret
 .L000d3e80:
-    .byte 0xbe; .long _D_00125fa2  # mov esi, 0x5fa2
+    .byte 0xbe; .long _D_00125fa2  # mov esi, 0x5fa2; "COULDN'T ALLOCATE FOR DRIVER\n"
     .byte 0xbf; .long "W?IPXDEBUGSTRING$n[]a"  # mov edi, 0x6c2bc
     push edi
 .L000d3e8b:

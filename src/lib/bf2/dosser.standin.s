@@ -92,7 +92,7 @@
     .byte 0x50
     .byte 0x8b; .byte 0x44; .byte 0x24; .byte 0x28
     .byte 0x50
-    .byte 0x68; .long _D_00128690
+    .byte 0x68; .long _D_00128690  # "SERIALHANDLER size %d Port %x IRQ %x INT VECT %x\n"
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x14
     .byte 0x31; .byte 0xd2

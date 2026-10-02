@@ -350,7 +350,7 @@
 .L000e3464:
     cmp dword ptr ["_i"], 0x20
     jne .L000e34ab
-    .byte 0xbe; .long _D_00126e84  # mov esi, 0x6e84
+    .byte 0xbe; .long _D_00126e84  # mov esi, 0x6e84; "Internal note queue overflow\n"
     .byte 0xbf; .long "_AIL_error"  # mov edi, 0x6c990
     mov edx, edi
 .L000e3479:

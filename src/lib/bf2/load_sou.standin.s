@@ -198,7 +198,7 @@
     xor eax, eax
     mov al, byte ptr [esp + 0x1c]
     push eax
-    .byte 0x68; .long _D_0012813c  # push 0x813c
+    .byte 0x68; .long _D_0012813c  # push 0x813c; "BF42 - load sound bank %d\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 0xc
@@ -308,7 +308,7 @@
     jbe .L000f0140
     mov eax, esi
     call "LbFileClose_"
-    .byte 0x68; .long _D_00128157  # push 0x8157
+    .byte 0x68; .long _D_00128157  # push 0x8157; "BF43 - load sound bank - failed - bank not found\n"
     jmp .L000f01f3
 .L000f0140:
     dec edi
@@ -328,14 +328,14 @@
     jne .L000f0180
     mov eax, esi
     call "LbFileClose_"
-    .byte 0x68; .long _D_00128189  # push 0x8189
+    .byte 0x68; .long _D_00128189  # push 0x8189; "BF44 - load sound bank - failed - cannot allocate\n"
     .byte 0xe9; .long .L000f01f3-.-4  # jmp 0xf01f3
 .L000f0180:
     mov al, byte ptr [esp + 0x1c]
     mov byte ptr [_CurrentSoundBank], al
     mov eax, esi
     call "LbFileClose_"
-    .byte 0x68; .long _D_001281bc  # push 0x81bc
+    .byte 0x68; .long _D_001281bc  # push 0x81bc; "BF45 - load sound bank - passed\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -350,25 +350,25 @@
     pop ebx
     ret
 .L000f01b7:
-    .byte 0x68; .long _D_001281dd  # push 0x81dd
+    .byte 0x68; .long _D_001281dd  # push 0x81dd; "BF46 - load sound bank - failed - no sound.dat\n"
     jmp .L000f01f3
 .L000f01be:
     cmp byte ptr ["_SoundInstalled"], 0
     jne .L000f01ce
-    .byte 0x68; .long _D_0012820d  # push 0x820d
+    .byte 0x68; .long _D_0012820d  # push 0x820d; "BF47 - load sound bank - failed - Sound not installed\n"
     jmp .L000f01f3
 .L000f01ce:
     cmp byte ptr ["_SoundAble"], 0
     jne .L000f01de
-    .byte 0x68; .long _D_00128244  # push 0x8244
+    .byte 0x68; .long _D_00128244  # push 0x8244; "BF47 - load sound bank - failed - SoundAble = 0\n"
     jmp .L000f01f3
 .L000f01de:
     cmp byte ptr ["_DisableLoadSounds"], 0
     je .L000f01ee
-    .byte 0x68; .long _D_00128275  # push 0x8275
+    .byte 0x68; .long _D_00128275  # push 0x8275; "BF47 - load sound bank - failed - LoadSounds disabled\n"
     jmp .L000f01f3
 .L000f01ee:
-    .byte 0x68; .long _D_001282ac  # push 0x82ac
+    .byte 0x68; .long _D_001282ac  # push 0x82ac; "BF47 - load sound bank - failed - already loaded\n"
 .L000f01f3:
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"

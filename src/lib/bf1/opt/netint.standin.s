@@ -96,10 +96,10 @@
     mov byte ptr [esp], al
     jmp .L000c076f
 .L000c075b:
-    .byte 0x68; .long _D_0012242f  # push 0x242f
+    .byte 0x68; .long _D_0012242f  # push 0x242f; "  WARNING network: LbNetwork_CompleteExchange() failure on H"
     jmp .L000c0767
 .L000c0762:
-    .byte 0x68; .long _D_0012247f  # push 0x247f
+    .byte 0x68; .long _D_0012247f  # push 0x247f; "  WARNING network: LbNetwork_CompleteExchange() failure on H"
 .L000c0767:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -122,7 +122,7 @@
     mov byte ptr [esp], al
     jmp .L000c07b3
 .L000c07a6:
-    .byte 0x68; .long _D_001224d0  # push 0x24d0
+    .byte 0x68; .long _D_001224d0  # push 0x24d0; "  WARNING network: LbNetwork_CompleteExchange() failure on S"
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000c07b3:
@@ -136,7 +136,7 @@
     sub eax, edx
     cmp eax, ebx
     jbe .L000c08a7
-    .byte 0x68; .long _D_00122517  # push 0x2517
+    .byte 0x68; .long _D_00122517  # push 0x2517; "Timed out waiting for host"
     call "NetworkDebugPrintf_"
     inc esi
     add esp, 4
@@ -145,7 +145,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000c07fc
-    .byte 0x68; .long _D_00122532  # push 0x2532
+    .byte 0x68; .long _D_00122532  # push 0x2532; "  WARNING network: LbNetwork_CompleteExchange() deletePlayer"
     jmp .L000c082a
 .L000c07fc:
     .byte 0xb8; .long "W?deletePlayerBuffer$n[]uc"  # mov eax, 0x6926c
@@ -157,7 +157,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000c0832
-    .byte 0x68; .long _D_00122583  # push 0x2583
+    .byte 0x68; .long _D_00122583  # push 0x2583; "  WARNING network: HostDataCollection() failure on SP::Send("
 .L000c082a:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -168,7 +168,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000c084a
-    .byte 0x68; .long _D_001225c2  # push 0x25c2
+    .byte 0x68; .long _D_001225c2  # push 0x25c2; "  WARNING network: LbNetwork_CompleteExchange() requestCompo"
     jmp .L000c087e
 .L000c084a:
     .byte 0xb8; .long "W?requestCompositeExchangeDataBuffer$n[]uc"  # mov eax, 0x6927c
@@ -181,7 +181,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000c0886
-    .byte 0x68; .long _D_00122623  # push 0x2623
+    .byte 0x68; .long _D_00122623  # push 0x2623; "  WARNING network: LbNetwork_CompleteExchange() failure on S"
 .L000c087e:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -307,10 +307,10 @@
     mov byte ptr [esp], al
     jmp .L000c09ff
 .L000c09eb:
-    .byte 0x68; .long _D_0012242f  # push 0x242f
+    .byte 0x68; .long _D_0012242f  # push 0x242f; "  WARNING network: LbNetwork_CompleteExchange() failure on H"
     jmp .L000c09f7
 .L000c09f2:
-    .byte 0x68; .long _D_0012247f  # push 0x247f
+    .byte 0x68; .long _D_0012247f  # push 0x247f; "  WARNING network: LbNetwork_CompleteExchange() failure on H"
 .L000c09f7:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -333,7 +333,7 @@
     mov byte ptr [esp], al
     jmp .L000c0a43
 .L000c0a36:
-    .byte 0x68; .long _D_001224d0  # push 0x24d0
+    .byte 0x68; .long _D_001224d0  # push 0x24d0; "  WARNING network: LbNetwork_CompleteExchange() failure on S"
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0a43:
@@ -347,7 +347,7 @@
     sub eax, edx
     cmp eax, ebx
     jbe .L000c0b37
-    .byte 0x68; .long _D_00122517  # push 0x2517
+    .byte 0x68; .long _D_00122517  # push 0x2517; "Timed out waiting for host"
     call "NetworkDebugPrintf_"
     inc esi
     add esp, 4
@@ -356,7 +356,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000c0a8c
-    .byte 0x68; .long _D_00122532  # push 0x2532
+    .byte 0x68; .long _D_00122532  # push 0x2532; "  WARNING network: LbNetwork_CompleteExchange() deletePlayer"
     jmp .L000c0aba
 .L000c0a8c:
     .byte 0xb8; .long "W?deletePlayerBuffer$n[]uc"  # mov eax, 0x6926c
@@ -368,7 +368,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000c0ac2
-    .byte 0x68; .long _D_00122583  # push 0x2583
+    .byte 0x68; .long _D_00122583  # push 0x2583; "  WARNING network: HostDataCollection() failure on SP::Send("
 .L000c0aba:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -379,7 +379,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000c0ada
-    .byte 0x68; .long _D_001225c2  # push 0x25c2
+    .byte 0x68; .long _D_001225c2  # push 0x25c2; "  WARNING network: LbNetwork_CompleteExchange() requestCompo"
     jmp .L000c0b0e
 .L000c0ada:
     .byte 0xb8; .long "W?requestCompositeExchangeDataBuffer$n[]uc"  # mov eax, 0x6927c
@@ -392,7 +392,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000c0b16
-    .byte 0x68; .long _D_00122623  # push 0x2623
+    .byte 0x68; .long _D_00122623  # push 0x2623; "  WARNING network: LbNetwork_CompleteExchange() failure on S"
 .L000c0b0e:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -523,7 +523,7 @@
     mov byte ptr [esp + 8], al
     jmp .L000c0c98
 .L000c0c8b:
-    .byte 0x68; .long _D_001223eb  # push 0x23eb
+    .byte 0x68; .long _D_001223eb  # push 0x23eb; "  WARNING network: LbNetwork_StartExchange() failure on SP::"
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0c98:
@@ -610,10 +610,10 @@
     mov byte ptr [esp + 0xc], al
     jmp .L000c0dce
 .L000c0dba:
-    .byte 0x68; .long _D_0012242f  # push 0x242f
+    .byte 0x68; .long _D_0012242f  # push 0x242f; "  WARNING network: LbNetwork_CompleteExchange() failure on H"
     jmp .L000c0dc6
 .L000c0dc1:
-    .byte 0x68; .long _D_0012247f  # push 0x247f
+    .byte 0x68; .long _D_0012247f  # push 0x247f; "  WARNING network: LbNetwork_CompleteExchange() failure on H"
 .L000c0dc6:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -636,7 +636,7 @@
     mov byte ptr [esp + 0xc], al
     jmp .L000c0e13
 .L000c0e06:
-    .byte 0x68; .long _D_001224d0  # push 0x24d0
+    .byte 0x68; .long _D_001224d0  # push 0x24d0; "  WARNING network: LbNetwork_CompleteExchange() failure on S"
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000c0e13:
@@ -650,7 +650,7 @@
     sub eax, ebx
     cmp eax, edx
     jbe .L000c0f07
-    .byte 0x68; .long _D_00122517  # push 0x2517
+    .byte 0x68; .long _D_00122517  # push 0x2517; "Timed out waiting for host"
     call "NetworkDebugPrintf_"
     inc esi
     add esp, 4
@@ -659,7 +659,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000c0e5c
-    .byte 0x68; .long _D_00122532  # push 0x2532
+    .byte 0x68; .long _D_00122532  # push 0x2532; "  WARNING network: LbNetwork_CompleteExchange() deletePlayer"
     jmp .L000c0e8a
 .L000c0e5c:
     .byte 0xb8; .long "W?deletePlayerBuffer$n[]uc"  # mov eax, 0x6926c
@@ -671,7 +671,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000c0e92
-    .byte 0x68; .long _D_00122583  # push 0x2583
+    .byte 0x68; .long _D_00122583  # push 0x2583; "  WARNING network: HostDataCollection() failure on SP::Send("
 .L000c0e8a:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -682,7 +682,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000c0eaa
-    .byte 0x68; .long _D_001225c2  # push 0x25c2
+    .byte 0x68; .long _D_001225c2  # push 0x25c2; "  WARNING network: LbNetwork_CompleteExchange() requestCompo"
     jmp .L000c0ede
 .L000c0eaa:
     .byte 0xb8; .long "W?requestCompositeExchangeDataBuffer$n[]uc"  # mov eax, 0x6927c
@@ -695,7 +695,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000c0ee6
-    .byte 0x68; .long _D_00122623  # push 0x2623
+    .byte 0x68; .long _D_00122623  # push 0x2623; "  WARNING network: LbNetwork_CompleteExchange() failure on S"
 .L000c0ede:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -729,10 +729,10 @@
     mov byte ptr [esp + 4], al
     jmp .L000c0f58
 .L000c0f44:
-    .byte 0x68; .long _D_0012266a  # push 0x266a
+    .byte 0x68; .long _D_0012266a  # push 0x266a; "  WARNING network: LbNetwork_Exchange() failure on LbNetwork"
     jmp .L000c0f50
 .L000c0f4b:
-    .byte 0x68; .long _D_001226bb  # push 0x26bb
+    .byte 0x68; .long _D_001226bb  # push 0x26bb; "  WARNING network: LbNetwork_Exchange() failure on LbNetwork"
 .L000c0f50:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -832,7 +832,7 @@
     sub eax, edi
     cmp eax, ebp
     jbe .L000c1431
-    .byte 0x68; .long _D_00122843  # push 0x2843
+    .byte 0x68; .long _D_00122843  # push 0x2843; "Timed out waiting for client"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, dword ptr [esp + 4]
@@ -843,7 +843,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000c12de
-    .byte 0x68; .long _D_00122860  # push 0x2860
+    .byte 0x68; .long _D_00122860  # push 0x2860; "  WARNING network: HostDataCollection() deletePlayerBuffer i"
     call "NetworkDebugPrintf_"
     add esp, 4
     jmp .L000c140e
@@ -889,7 +889,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000c1379
-    .byte 0x68; .long _D_001228a9  # push 0x28a9
+    .byte 0x68; .long _D_001228a9  # push 0x28a9; "  WARNING network: HostDataCollection() failure on SP::Send("
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000c1379:
@@ -903,7 +903,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000c13a5
-    .byte 0x68; .long _D_001228e8  # push 0x28e8
+    .byte 0x68; .long _D_001228e8  # push 0x28e8; "  WARNING network: HostDataCollection() requestExchangeDataB"
     call "NetworkDebugPrintf_"
     add esp, 4
     .byte 0xe9; .long .L000c140e-.-4  # jmp 0xc140e
@@ -928,7 +928,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000c1401
-    .byte 0x68; .long _D_00122938  # push 0x2938
+    .byte 0x68; .long _D_00122938  # push 0x2938; "  WARNING network: HostDataCollection() failure on SP::Send("
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000c1401:

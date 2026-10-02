@@ -20,14 +20,14 @@
     mov cl, 0xff
     test ebx, ebx
     jne .L000ed6ee
-    .byte 0x68; .long _D_00127419  # push 0x7419
+    .byte 0x68; .long _D_00127419  # push 0x7419; "  WARNING network: SerialSP::Start() not initialised\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     jmp .L000ed78e
 .L000ed6ee:
     cmp eax, 2
     je .L000ed707
-    .byte 0x68; .long _D_0012744f  # push 0x744f
+    .byte 0x68; .long _D_0012744f  # push 0x744f; "  WARNING network: SerialSP::Start() maxPlayers != 2\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov al, cl
@@ -40,7 +40,7 @@
     call "W?StrCpyTrunc$n(pnapnaul)v"
     cmp dword ptr [esi + 0xb14], 0
     jne .L000ed734
-    .byte 0x68; .long _D_00127485  # push 0x7485
+    .byte 0x68; .long _D_00127485  # push 0x7485; "  WARNING network: SerialSP::Start() NULL m_commHandlerPtr\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov al, cl
@@ -66,7 +66,7 @@
     call "W?AddPlayer$:ServiceProvider$n(ulpnaulul)$TbError$$"
     test al, al
     je .L000ed782
-    .byte 0x68; .long _D_001274c1  # push 0x74c1
+    .byte 0x68; .long _D_001274c1  # push 0x74c1; "  WARNING network: Win95SerialSP::Start() failure on AddPlay"
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000ed782:
@@ -109,7 +109,7 @@
     mov dword ptr [esp + 8], edx
     jmp .L000edf6b
 .L000edf57:
-    .byte 0x68; .long _D_00127b7d  # push 0x7b7d
+    .byte 0x68; .long _D_00127b7d  # push 0x7b7d; "  WARNING network: SerialSP::PrivateReceive() invalid mode v"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edx
@@ -371,7 +371,7 @@
     call "W?GetAddPlayerMsgSize$:ServiceProvider$n(pna)ul"
     cmp eax, 0x28
     jbe .L000ee26f
-    .byte 0x68; .long _D_00127bbf  # push 0x7bbf
+    .byte 0x68; .long _D_00127bbf  # push 0x7bbf; "  WARNING network: SerialSP::PrivateReceive addPlayerBuffer "
     call "NetworkDebugPrintf_"
     add esp, 4
     jmp .L000ee28e

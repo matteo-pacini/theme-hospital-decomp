@@ -30,7 +30,7 @@
     lea eax, [edx - 1]
     push eax
     push ebp
-    .byte 0x68; .long _D_001242c8  # push 0x42c8
+    .byte 0x68; .long _D_001242c8  # push 0x42c8; "  Warning: LbNetwork_Send() player index %d is out of range "
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 0xc
@@ -95,7 +95,7 @@
 .L000cabd7:
     cmp eax, 0x7530
     jle .L000cabf1
-    .byte 0x68; .long _D_001243a6  # push 0x43a6
+    .byte 0x68; .long _D_001243a6  # push 0x43a6; "  Warning : LbNetwork_Send() timeout on CTS or END\n"
     call "NetworkDebugPrintf_"
     xor ebx, ebx
     add esp, 4
@@ -126,7 +126,7 @@
     push esi
     mov edi, dword ptr [eax + 8]
     push edi
-    .byte 0x68; .long _D_00124310  # push 0x4310
+    .byte 0x68; .long _D_00124310  # push 0x4310; "  Warning : LbNetwork_Send() requested page numbers %d to %d"
     xor ebp, ebp
     call "NetworkDebugPrintf_"
     add esp, 0xc
@@ -193,7 +193,7 @@
     jmp .L000cad09
 .L000cacf5:
     push ebp
-    .byte 0x68; .long _D_0012435f  # push 0x435f
+    .byte 0x68; .long _D_0012435f  # push 0x435f; "  Warning: LbNetwork_Send() failure on SP::Send() for DATA P"
     call "NetworkDebugPrintf_"
     add esp, 8
     xor eax, eax
@@ -268,7 +268,7 @@
     pop ecx
     ret
 .L000cadcb:
-    .byte 0x68; .long _D_001243da  # push 0x43da
+    .byte 0x68; .long _D_001243da  # push 0x43da; "  Warning : LbNetwork_Send() failure on SP::Send() for RTS\n"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov al, byte ptr [esp + 0x24]
@@ -343,7 +343,7 @@
 .L000cae8b:
     cmp eax, 0x7530
     jle .L000caea1
-    .byte 0x68; .long _D_001244d4  # push 0x44d4
+    .byte 0x68; .long _D_001244d4  # push 0x44d4; "  Warning : LbNetwork_Receive() timeout on RTS\n"
     call "NetworkDebugPrintf_"
     xor esi, esi
 .L000cae9e:
@@ -383,7 +383,7 @@
     cmp edx, 0x200
     jbe .L000caf2c
     push edx
-    .byte 0x68; .long _D_00124416  # push 0x4416
+    .byte 0x68; .long _D_00124416  # push 0x4416; "  Warning : LbNetwork_Receive() page size %d is out of range"
     call "NetworkDebugPrintf_"
     add esp, 8
     jmp .L000caf49
@@ -392,7 +392,7 @@
     cmp ebp, ebx
     jae .L000caf44
     push ebx
-    .byte 0x68; .long _D_00124454  # push 0x4454
+    .byte 0x68; .long _D_00124454  # push 0x4454; "  Warning : LbNetwork_Receive() total size %d is out of rang"
     call "NetworkDebugPrintf_"
     add esp, 8
     jmp .L000caf49
@@ -415,7 +415,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000caea1
-    .byte 0x68; .long _D_00124493  # push 0x4493
+    .byte 0x68; .long _D_00124493  # push 0x4493; "  Warning : LbNetwork_Receive() failure on SP::Send() for AB"
     call "NetworkDebugPrintf_"
     jmp .L000cae9e
 .L000caf9a:
@@ -544,7 +544,7 @@
     mov ecx, dword ptr [esp + 0x84]
     push ecx
     push edx
-    .byte 0x68; .long _D_00124504  # push 0x4504
+    .byte 0x68; .long _D_00124504  # push 0x4504; "  Warning : LbNetwork_Receive() unexpected page %d instead o"
     mov ebx, 7
     xor ecx, ecx
     call "NetworkDebugPrintf_"
@@ -562,11 +562,11 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000cb208
-    .byte 0x68; .long _D_00124555  # push 0x4555
+    .byte 0x68; .long _D_00124555  # push 0x4555; "  Warning : LbNetwork_Receive() failure on SP::Send() for AB"
     .byte 0xe9; .long .L000cb200-.-4  # jmp 0xcb200
 .L000cb18a:
     push eax
-    .byte 0x68; .long _D_00124596  # push 0x4596
+    .byte 0x68; .long _D_00124596  # push 0x4596; "  Warning : LbNetwork_Receive() unexpected command %d receiv"
     call "NetworkDebugPrintf_"
     add esp, 8
     test esi, esi
@@ -597,7 +597,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000cb208
-    .byte 0x68; .long _D_001245d6  # push 0x45d6
+    .byte 0x68; .long _D_001245d6  # push 0x45d6; "  Warning : LbNetwork_Receive() failure on SP::Send() for AB"
 .L000cb200:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -612,7 +612,7 @@
     push ecx
     mov esi, 4
     mov dword ptr [esp + 0x84], ebx
-    .byte 0x68; .long _D_00124617  # push 0x4617
+    .byte 0x68; .long _D_00124617  # push 0x4617; "  Warning : LbNetwork_Receive() failure on SP::Send() for CT"
     mov edx, esi
     mov ebx, 7
     call "NetworkDebugPrintf_"
@@ -627,7 +627,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000cb273
-    .byte 0x68; .long _D_00124665  # push 0x4665
+    .byte 0x68; .long _D_00124665  # push 0x4665; "  Warning : LbNetwork_Receive() failure on SP::Send() for AB"
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000cb273:
@@ -649,7 +649,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000cb2cc
-    .byte 0x68; .long _D_001246a6  # push 0x46a6
+    .byte 0x68; .long _D_001246a6  # push 0x46a6; "  Warning : LbNetwork_Receive() failure on SP::Send() for EN"
     call "NetworkDebugPrintf_"
     add esp, 4
 .L000cb2cc:

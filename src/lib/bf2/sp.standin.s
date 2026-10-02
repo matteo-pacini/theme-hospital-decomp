@@ -50,10 +50,10 @@
     mov byte ptr [esp + 8], dh
     jmp .L000d2b6c
 .L000d2b58:
-    .byte 0x68; .long _D_001256e7  # push 0x56e7
+    .byte 0x68; .long _D_001256e7  # push 0x56e7; "  WARNING network: ServiceProvider::EnumeratePlayersForSessi"
     jmp .L000d2b64
 .L000d2b5f:
-    .byte 0x68; .long _D_0012574e  # push 0x574e
+    .byte 0x68; .long _D_0012574e  # push 0x574e; "  WARNING network: ServiceProvider::EnumeratePlayersForSessi"
 .L000d2b64:
     call "NetworkDebugPrintf_"
     add esp, 4
@@ -215,7 +215,7 @@
     mov byte ptr [esp + 0x484], ah
     test ebx, ebx
     jne .L000d1e6b
-    .byte 0x68; .long _D_00125189  # push 0x5189
+    .byte 0x68; .long _D_00125189  # push 0x5189; "  WARNING network: ServiceProvider::Receive() not initialise"
     call "NetworkDebugPrintf_"
     mov al, 0xff
     add esp, 4
@@ -246,7 +246,7 @@
     xor ebx, ebx
     test edx, edx
     jne .L000d1ee5
-    .byte 0x68; .long _D_00124f4b  # push 0x4f4b
+    .byte 0x68; .long _D_00124f4b  # push 0x4f4b; "  WARNING network: ServiceProvider::DecodeMessageStub() NULL"
     call "NetworkDebugPrintf_"
     add esp, 4
     jmp .L000d1f1f
@@ -325,7 +325,7 @@
     .byte 0x89; .byte 0xc3
     .byte 0xeb; .byte .L000d2019-.-1
 .L000d200b:
-    .byte 0xb8; .long _D_001251c8
+    .byte 0xb8; .long _D_001251c8  # "  WARNING network: ServiceProvider::Receive() NIL target for"
     .byte 0x50
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
@@ -343,7 +343,7 @@
     .byte 0xff; .byte 0x56; .byte 0x28
     .byte 0x85; .byte 0xc0
     .byte 0x75; .byte .L000d205e-.-1
-    .byte 0x68; .long _D_0012521e
+    .byte 0x68; .long _D_0012521e  # "  WARNING network: ServiceProvider::ReadMessage() Inconsista"
     .byte 0xb5; .byte 0xff
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
@@ -447,7 +447,7 @@
     .byte 0xff; .byte 0x12
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d219a:
-    .byte 0xb8; .long _D_0012526d
+    .byte 0xb8; .long _D_0012526d  # "  WARNING network: ServiceProvider::ReadMessage() consistenc"
     .byte 0x50
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
@@ -504,7 +504,7 @@
     .byte 0xff; .byte 0x50; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d226d:
-    .byte 0xb8; .long _D_001252bf
+    .byte 0xb8; .long _D_001252bf  # "  WARNING network: ServiceProvider::ReadMessage() consistenc"
     .byte 0x50
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
@@ -530,7 +530,7 @@
     .byte 0x31; .byte 0xdb
     .byte 0x85; .byte 0xd2
     .byte 0x75; .byte .L000d22e4-.-1
-    .byte 0x68; .long _D_00124f4b
+    .byte 0x68; .long _D_00124f4b  # "  WARNING network: ServiceProvider::DecodeMessageStub() NULL"
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xeb; .byte .L000d231e-.-1
@@ -571,7 +571,7 @@
     .byte 0xff; .byte 0x52; .byte 0x20
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d2354:
-    .byte 0x68; .long _D_00125304
+    .byte 0x68; .long _D_00125304  # "  WARNING network: ServiceProvider::ReadMessage() consistenc"
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
@@ -610,7 +610,7 @@
     .byte 0xff; .byte 0x50; .byte 0x14
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d23f1:
-    .byte 0x68; .long _D_00125349
+    .byte 0x68; .long _D_00125349  # "  WARNING network: ServiceProvider::ReadMessage() consistenc"
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
@@ -653,7 +653,7 @@
     .byte 0xff; .byte 0x50; .byte 0x18
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d249c:
-    .byte 0x68; .long _D_0012538e
+    .byte 0x68; .long _D_0012538e  # "  WARNING network: ServiceProvider::ReadMessage() consistenc"
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
     .byte 0xe9; .long .L000d1e83-.-4
@@ -677,7 +677,7 @@
     .byte 0x89; .byte 0xc3
     .byte 0xeb; .byte .L000d2504-.-1
 .L000d24f7:
-    .byte 0x68; .long _D_001253d3
+    .byte 0x68; .long _D_001253d3  # "  WARNING network: ServiceProvider::Receive() NIL target for"
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
 .L000d2504:
@@ -694,7 +694,7 @@
     .byte 0xff; .byte 0x56; .byte 0x28
     .byte 0x85; .byte 0xc0
     .byte 0x75; .byte .L000d2549-.-1
-    .byte 0x68; .long _D_0012542f
+    .byte 0x68; .long _D_0012542f  # "  WARNING network: ServiceProvider::ReadMessage() Inconsista"
     .byte 0xb5; .byte 0xff
     .byte 0xe8; .long "NetworkDebugPrintf_"-.-4
     .byte 0x83; .byte 0xc4; .byte 0x04
@@ -704,7 +704,7 @@
     .byte 0x89; .byte 0x94; .byte 0x24; .byte 0x80; .byte 0x04; .byte 0x00; .byte 0x00
     .byte 0xe9; .long .L000d1e83-.-4
 .L000d2557:
-    .byte 0x68; .long _D_0012547e  # push 0x547e
+    .byte 0x68; .long _D_0012547e  # push 0x547e; "  WARNING network: ServiceProvider::Receive() messageType is"
     call "NetworkDebugPrintf_"
     add esp, 4
     jmp .L000d1e83

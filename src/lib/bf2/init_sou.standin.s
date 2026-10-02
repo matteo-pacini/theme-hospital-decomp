@@ -23,7 +23,7 @@
     mov bh, 5
     test ah, ah
     je .L000dd024
-    .byte 0x68; .long _D_001263b4  # push 0x63b4
+    .byte 0x68; .long _D_001263b4  # push 0x63b4; "BF3  - Init sound\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -32,7 +32,7 @@
     xor eax, eax
     mov ax, word ptr ["_SoundType"]
     push eax
-    .byte 0x68; .long _D_001263c7  # push 0x63c7
+    .byte 0x68; .long _D_001263c7  # push 0x63c7; "BF4  - Default sound type -  %d\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 0xc
@@ -47,14 +47,14 @@
     cmp byte ptr ["_AILStartupAlreadyInitiated"], 0
     je .L000dca10
     call "_AIL_shutdown"
-    .byte 0x68; .long _D_001263e8  # push 0x63e8
+    .byte 0x68; .long _D_001263e8  # push 0x63e8; "BF5  - No samples requested - AIL shutdown\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
     .byte 0xb8; .long "_SoundProgressMessage"  # mov eax, 0x6cdc4
     call "SoundProgressLog_"
 .L000dca10:
-    .byte 0x68; .long _D_00126414  # push 0x6414
+    .byte 0x68; .long _D_00126414  # push 0x6414; "BF6  - No samples requested  \n"
     xor ah, ah
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     mov byte ptr ["_SoundAble"], ah
@@ -131,12 +131,12 @@
     call "_AIL_set_preference"
     add esp, 8
 .L000dcb13:
-    .byte 0xb8; .long _D_00126433  # mov eax, 0x6433
+    .byte 0xb8; .long _D_00126433  # mov eax, 0x6433; "BF_FORCE_SOUND_DRIVER"
     call "getenv_"
     mov edx, eax
     test eax, eax
     je .L000dcc4d
-    .byte 0x68; .long _D_00126449  # push 0x6449
+    .byte 0x68; .long _D_00126449  # push 0x6449; "BF8  - Force sound driver environment active\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -152,7 +152,7 @@
     push eax
     lea eax, [esp + 0x28]
     push eax
-    .byte 0x68; .long _D_00126477  # push 0x6477
+    .byte 0x68; .long _D_00126477  # push 0x6477; "%s %x %d %d %d"
     push edx
     call "sscanf_"
     add esp, 0x1c
@@ -165,7 +165,7 @@
     mov dword ptr ["_SoundDriver"], eax
     test eax, eax
     jne .L000dcbdc
-    .byte 0x68; .long _D_00126486  # push 0x6486
+    .byte 0x68; .long _D_00126486  # push 0x6486; "BF9  - MDSOUND environment driver installation - failed\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -175,7 +175,7 @@
     jne .L000dcbad
     call "_AIL_shutdown"
 .L000dcbad:
-    .byte 0x68; .long _D_001264bf  # push 0x64bf
+    .byte 0x68; .long _D_001264bf  # push 0x64bf; "none"
     .byte 0x68; .long "_SoundInstallChoice"+0x80  # push 0x6c768
     xor bh, bh
     call "sprintf_"
@@ -193,11 +193,11 @@
 .L000dcbdc:
     lea eax, [esp + 0x18]
     push eax
-    .byte 0x68; .long _D_001264c4  # push 0x64c4
+    .byte 0x68; .long _D_001264c4  # push 0x64c4; "%s"
     .byte 0x68; .long "_SoundInstallChoice"+0x80  # push 0x6c768
     call "sprintf_"
     add esp, 0xc
-    .byte 0x68; .long _D_001264c7  # push 0x64c7
+    .byte 0x68; .long _D_001264c7  # push 0x64c7; "BF10 - MDSOUND environment driver installation - passed\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -206,7 +206,7 @@
     mov eax, dword ptr [esp]
     mov word ptr ["_SoundInstallChoice"+0x100], ax
 .L000dcc18:
-    .byte 0x68; .long _D_00126626  # push 0x6626
+    .byte 0x68; .long _D_00126626  # push 0x6626; "BF18 - determine sound type to be loaded\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -219,24 +219,24 @@
     call "DetermineSoundType_"
     jmp .L000dcdd7
 .L000dcc4d:
-    .byte 0x68; .long _D_00126500  # push 0x6500
+    .byte 0x68; .long _D_00126500  # push 0x6500; "DIG.INI"
     .byte 0x68; .long "_SoundInstallChoice"  # push 0x6c6e8
     call "_AIL_read_INI"
     add esp, 8
     test eax, eax
     je .L000dcd3b
-    .byte 0x68; .long _D_00126508  # push 0x6508
+    .byte 0x68; .long _D_00126508  # push 0x6508; "BF11 - Search for DIG.INI - passed   \n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
     .byte 0xb8; .long "_SoundProgressMessage"  # mov eax, 0x6cdc4
-    .byte 0xba; .long _D_0012652f  # mov edx, 0x652f
+    .byte 0xba; .long _D_0012652f  # mov edx, 0x652f; "None"
     call "SoundProgressLog_"
     .byte 0xb8; .long "_SoundInstallChoice"+0x80  # mov eax, 0x6c768
     call "stricmp_"
     test eax, eax
     jne .L000dccdd
-    .byte 0x68; .long _D_00126534  # push 0x6534
+    .byte 0x68; .long _D_00126534  # push 0x6534; "BF12 - user requests no sound in SETSOUND   \n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -264,7 +264,7 @@
     mov dword ptr ["W?init_error$nul"], eax
     test eax, eax
     jne .L000dcd0e
-    .byte 0x68; .long _D_00126562  # push 0x6562
+    .byte 0x68; .long _D_00126562  # push 0x6562; "BF13 - DIG.INI driver installation - passed\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -272,23 +272,23 @@
     mov bl, 1
     jmp .L000dcd64
 .L000dcd0e:
-    .byte 0x68; .long _D_0012658f  # push 0x658f
+    .byte 0x68; .long _D_0012658f  # push 0x658f; "none"
     .byte 0x68; .long "_SoundInstallChoice"+0x80  # push 0x6c768
     call "sprintf_"
     add esp, 8
     mov edi, dword ptr ["W?init_error$nul"]
     push edi
-    .byte 0x68; .long _D_00126594  # push 0x6594
+    .byte 0x68; .long _D_00126594  # push 0x6594; "BF14 - DIG.INI driver installation - failed %d\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 0xc
     jmp .L000dcd5f
 .L000dcd3b:
-    .byte 0x68; .long _D_001265c4  # push 0x65c4
+    .byte 0x68; .long _D_001265c4  # push 0x65c4; "none"
     .byte 0x68; .long "_SoundInstallChoice"+0x80  # push 0x6c768
     call "sprintf_"
     add esp, 8
-    .byte 0x68; .long _D_001265c9  # push 0x65c9
+    .byte 0x68; .long _D_001265c9  # push 0x65c9; "BF15 - Search for DIG.INI - failed\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -299,7 +299,7 @@
     test bl, bl
     jne .L000dcc18
     .byte 0x68; .long "_AIL_error"  # push 0x6c990
-    .byte 0x68; .long _D_001265ed  # push 0x65ed
+    .byte 0x68; .long _D_001265ed  # push 0x65ed; "BF16 - all dig driver installation attempts failed - %s\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 0xc
@@ -321,7 +321,7 @@
     pop ebx
     ret
 .L000dcdbb:
-    .byte 0x68; .long _D_00126650  # push 0x6650
+    .byte 0x68; .long _D_00126650  # push 0x6650; "BF19 - LoadSounds disabled\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
@@ -332,13 +332,13 @@
     mov ax, word ptr ["_SoundType"]
     test eax, eax
     jne .L000dcf0d
-    .byte 0x68; .long _D_0012666c  # push 0x666c
+    .byte 0x68; .long _D_0012666c  # push 0x666c; "BF20 - cannot allocate for digital samples\n"
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     call "sprintf_"
     add esp, 8
     .byte 0xb8; .long "_SoundProgressMessage"  # mov eax, 0x6cdc4
     call "SoundProgressLog_"
-    .byte 0x68; .long _D_00126698  # push 0x6698
+    .byte 0x68; .long _D_00126698  # push 0x6698; "none"
     .byte 0x68; .long "_SoundInstallChoice"+0x80  # push 0x6c768
     call "sprintf_"
     mov ah, byte ptr ["_MusicAble"]
@@ -482,7 +482,7 @@
     cmp ebx, ecx
     jbe .L000dcfc1
 .L000dcfe8:
-    .byte 0x68; .long _D_0012669d  # push 0x669d
+    .byte 0x68; .long _D_0012669d  # push 0x669d; "BF24 - Init sound completed\n"
     mov dh, 1
     .byte 0x68; .long "_SoundProgressMessage"  # push 0x6cdc4
     mov byte ptr ["_SoundInstalled"], dh

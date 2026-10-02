@@ -20,7 +20,7 @@
     sub ebp, 0x82
     mov dword ptr [ebp + 0x7a], eax
     xor edx, edx
-    .byte 0x68; .long _D_00121dfc  # push 0x1dfc
+    .byte 0x68; .long _D_00121dfc  # push 0x1dfc; "LbDataLoadAll"
     mov dword ptr [ebp + 0x7e], edx
     call "LbErrorLog_"
     add esp, 4
@@ -47,18 +47,18 @@
     jne .L000bcee0
     mov eax, dword ptr [ebp + 0x76]
     push eax
-    .byte 0x68; .long _D_00121e6d  # push 0x1e6d
+    .byte 0x68; .long _D_00121e6d  # push 0x1e6d; "ERROR: File %s.\n"
     call "W?LbDebugString$n(pnae)v"
     add esp, 8
     mov eax, dword ptr [ebp + 0x76]
     push eax
-    .byte 0x68; .long _D_00121e7e  # push 0x1e7e
+    .byte 0x68; .long _D_00121e7e  # push 0x1e7e; "LbDataLoadAll() : Error loading file: %s"
     lea eax, [ebp - 0x26]
     push eax
     mov ebx, 0x6e
     call "sprintf_"
     add esp, 0xc
-    .byte 0xba; .long _D_00121ea7  # mov edx, 0x1ea7
+    .byte 0xba; .long _D_00121ea7  # mov edx, 0x1ea7; "gdata.cpp"
     lea eax, [ebp - 0x26]
     call "W?LbAssertMessage$n(pnxapnxaul)i"
     test eax, eax
@@ -82,18 +82,18 @@
     jne .L000bce95
     mov eax, dword ptr [ebp + 0x76]
     push eax
-    .byte 0x68; .long _D_00121e0a  # push 0x1e0a
+    .byte 0x68; .long _D_00121e0a  # push 0x1e0a; "ERROR: Allocation %s.\n"
     call "W?LbDebugString$n(pnae)v"
     add esp, 8
     mov eax, dword ptr [ebp + 0x76]
     push eax
-    .byte 0x68; .long _D_00121e21  # push 0x1e21
+    .byte 0x68; .long _D_00121e21  # push 0x1e21; "LbDataLoadAll() : Memory alloaction error before loading fil"
     lea eax, [ebp - 0xbe]
     push eax
     mov ebx, 0x66
     call "sprintf_"
     add esp, 0xc
-    .byte 0xba; .long _D_00121e63  # mov edx, 0x1e63
+    .byte 0xba; .long _D_00121e63  # mov edx, 0x1e63; "gdata.cpp"
     lea eax, [ebp - 0xbe]
     call "W?LbAssertMessage$n(pnxapnxaul)i"
     test eax, eax

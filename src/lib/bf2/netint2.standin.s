@@ -40,7 +40,7 @@
 .L000d30fa:
     push ebx
     push esi
-    .byte 0x68; .long _D_00125a28  # push 0x5a28
+    .byte 0x68; .long _D_00125a28  # push 0x5a28; "  WARNING network: TwoPlayerCallback() Unexpected sequence n"
     call "NetworkDebugPrintf_"
     add esp, 0xc
     test esi, esi
@@ -55,7 +55,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000d3144
-    .byte 0x68; .long _D_00125a80  # push 0x5a80
+    .byte 0x68; .long _D_00125a80  # push 0x5a80; "  WARNING network: CompleteTwoPlayerExchange() requestExchan"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edi
@@ -72,7 +72,7 @@
     call "W?EncodeRequestExchangeDataMsg$n(pnuculul)v"
     mov eax, dword ptr ["W?sequenceNumber$nul"]
     push eax
-    .byte 0x68; .long _D_00125ad7  # push 0x5ad7
+    .byte 0x68; .long _D_00125ad7  # push 0x5ad7; "Requesting resend of seq %d because we received the next one"
     .byte 0xbb; .long "W?requestExchangeDataBuffer$n[]uc"  # mov ebx, 0x69274
     call "NetworkDebugPrintf_"
     add esp, 8
@@ -81,7 +81,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000d32ed
-    .byte 0x68; .long _D_00125b15  # push 0x5b15
+    .byte 0x68; .long _D_00125b15  # push 0x5b15; "  WARNING network: CompleteTwoPlayerExchange() failure on SP"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edi
@@ -93,7 +93,7 @@
     ret 0x10
 .L000d31a3:
     push eax
-    .byte 0x68; .long _D_00125b5b  # push 0x5b5b
+    .byte 0x68; .long _D_00125b5b  # push 0x5b5b; "  WARNING network: TwoPlayerCallback() invalid length: %d\n"
     call "NetworkDebugPrintf_"
     add esp, 8
     mov eax, edi
@@ -144,7 +144,7 @@
     mov ebx, dword ptr ["W?sequenceNumber$nul"]
     push ebx
     push esi
-    .byte 0x68; .long _D_00125b96  # push 0x5b96
+    .byte 0x68; .long _D_00125b96  # push 0x5b96; "  WARNING network: TwoPlayerCallback() Unexpected sequence n"
     call "NetworkDebugPrintf_"
     add esp, 0xc
     test esi, esi
@@ -159,7 +159,7 @@
     call "W?GetRequestCompositeExchangeDataMsgSize$n()ul"
     cmp eax, 8
     jbe .L000d3283
-    .byte 0x68; .long _D_00125bee  # push 0x5bee
+    .byte 0x68; .long _D_00125bee  # push 0x5bee; "  WARNING network: CompleteTwoPlayerExchange() requestExchan"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edi
@@ -176,7 +176,7 @@
     call "W?EncodeRequestExchangeDataMsg$n(pnuculul)v"
     mov esi, dword ptr ["W?sequenceNumber$nul"]
     push esi
-    .byte 0x68; .long _D_00125c45  # push 0x5c45
+    .byte 0x68; .long _D_00125c45  # push 0x5c45; "Requesting resend of seq %d because we received the next one"
     .byte 0xbb; .long "W?requestExchangeDataBuffer$n[]uc"  # mov ebx, 0x69274
     call "NetworkDebugPrintf_"
     add esp, 8
@@ -185,7 +185,7 @@
     call "W?Send$:ServiceProvider$n(ulpnv)$TbError$$"
     test al, al
     je .L000d32ed
-    .byte 0x68; .long _D_00125c83  # push 0x5c83
+    .byte 0x68; .long _D_00125c83  # push 0x5c83; "  WARNING network: CompleteTwoPlayerExchange() failure on SP"
     call "NetworkDebugPrintf_"
     add esp, 4
     mov eax, edi
@@ -197,7 +197,7 @@
     ret 0x10
 .L000d32df:
     push eax
-    .byte 0x68; .long _D_00125cc9  # push 0x5cc9
+    .byte 0x68; .long _D_00125cc9  # push 0x5cc9; "  WARNING network: TwoPlayerCallback() invalid length: %d\n"
     call "NetworkDebugPrintf_"
     add esp, 8
 .L000d32ed:
