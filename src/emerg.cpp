@@ -258,13 +258,13 @@ u32 announce_emergency(u8 owner, char **strs)
     exp = &expertise[illness];
     if (allhosps[owner].rooms[illness].cure_available == 1) {
         curable = 1;
-        if (exp->kind == 0x27)
+        if (exp->kind == OBJ_PHARMACY_CABINET)
             effectiveness = hosp->rooms[illness].drug_effectiveness;
     } else {
         if (listhead[owner].rooms[exp->category] == 0 && room_available(exp->category))
             missing_room = exp->category;
         for (i = 0; i < 9; i++) {
-            if ((exp->staff_mask & (1 << i)) && listhead[owner].staff[i] == 0) {
+            if ((exp->staff_mask & (1 << i)) && listhead[owner].staff_by_skill[i] == 0) {
                 missing_staff = i;
                 break;
             }

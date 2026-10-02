@@ -482,7 +482,7 @@ void process_turn(void)
         case 0x14:
             if (i == player) {
                 crequester.arg = 1;
-                set_buyable_items(3);
+                set_buyable_items(ROOM_CORRIDOR);
             }
             break;
         case EV_PLACE_BP_DOOR:
@@ -951,7 +951,7 @@ void process_turn(void)
                     set_mouse_mode(MM_NORMAL);
                     pmenu.disabled = 0;
                 } else {
-                    init_place_object(0x11, gamevar.place_mode, gamevar.place_room, 0);
+                    init_place_object(OBJ_LITTER_BOMB, gamevar.place_mode, gamevar.place_room, 0);
                 }
             }
             break;
@@ -1072,7 +1072,7 @@ void process_turn(void)
             allhosps[i].emergency_cured = 0;
             othervar.emergency_timer_start = allhosps[i].emergency_timer;
             if (i == player) {
-                return_from_screen(0, 1, 1);
+                return_from_screen(MM_NORMAL, 1, 1);
             }
             break;
         case EV_NET_TEXT_DISPLAY:
@@ -1193,12 +1193,12 @@ void process_turn(void)
                 cancel_top_level_requesters(REQ_BUY_OBJECTS);
                 if (crequester.id == REQ_NONE) {
                     crequester.arg = 1;
-                    set_buyable_items(3);
+                    set_buyable_items(ROOM_CORRIDOR);
                     close_irequesters();
                     crequester.id = REQ_BUY_OBJECTS;
                     open_requester(crequester.id, 1);
                     allhosps[i].edited_room = 0;
-                    crequester.kind = 3;
+                    crequester.kind = ROOM_CORRIDOR;
                     crequester.arg3 = 0;
                     crequester.mode = 3;
                     crequester.item = req_indices[0];
@@ -1452,7 +1452,7 @@ void process_turn(void)
         case EV_OPEN_YES_NO:
             if (i == player) {
                 if (othervar.screen_pic_loaded) {
-                    return_from_screen(0, 1, 1);
+                    return_from_screen(MM_NORMAL, 1, 1);
                 }
                 othervar.yesno_saved_mouse_mode = gamevar.mouse_mode;
                 display_mode = DM_MODAL;

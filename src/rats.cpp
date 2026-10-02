@@ -80,12 +80,12 @@ found:
     allhosps[owner].ratholes[slot].side = side;
     if (side == 0) {
         remove_litter(tile, owner);
-        cell->floor &= 0xf0;
-        cell->floor |= 7;
+        cell->litter_shadow &= 0xf0;
+        cell->litter_shadow |= 7;
     } else if (side == 3) {
         remove_litter(tile, owner);
-        cell->floor &= 0xf0;
-        cell->floor |= 8;
+        cell->litter_shadow &= 0xf0;
+        cell->litter_shadow |= 8;
     }
 }
 
@@ -110,8 +110,8 @@ void remove_rathole(u8 owner, u8 idx)
     hole = &allhosps[owner].ratholes[idx];
     last = &allhosps[owner].ratholes[allhosps[owner].rathole_count - 1];
     if (hole->side == 0 || hole->side == 3) {
-        map[hole->tile].floor &= 0xf0;
-        map[hole->tile].floor |= 0;
+        map[hole->tile].litter_shadow &= 0xf0;
+        map[hole->tile].litter_shadow |= 0;
     }
     lib_memcpy(hole, last, 3);
     memset(last, 0, 3);
@@ -314,7 +314,7 @@ void cleanse_area(u8 owner, u8 x, u8 y, u8 w, u8 h)
     }
     for (tx = x; x + w > tx; tx++) {
         for (ty = y; y + h > ty; ty++) {
-            if (map[(s16)tx + (s16)ty * 128].floor & 0xf) {
+            if (map[(s16)tx + (s16)ty * 128].litter_shadow & 0xf) {
                 remove_litter(ty * 128 + tx, owner);
             }
         }

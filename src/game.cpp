@@ -411,7 +411,7 @@ void start_turn(void)
     if (room > room_info) {
         if (room->being_edited && is_room_empty(&room_info[allhosps[player].edited_room])) {
             if (gamevar.mouse_mode == MM_EDIT_ROOM_WAIT) {
-                if (room_info[allhosps[player].edited_room].first == 0) {
+                if (room_info[allhosps[player].edited_room].first_person == 0) {
                     player_events[player].type = EV_SETUP_PLACE_OBJECT_REQUESTER;
                 }
             } else {

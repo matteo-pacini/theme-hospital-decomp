@@ -31,12 +31,15 @@ char *strchr(const char *s, int c);
 
 typedef struct __iobuf {
     unsigned char *_ptr;
+    // Reading: bytes left in the buffer; writing: bytes buffered.
     int _cnt;
     unsigned char *_base;
     unsigned _flag;
     int _handle;
     unsigned _bufsize;
+    // One-byte buffer used when allocating the real one fails.
     unsigned char _ungotten;
+    // Number of the tmpfile, for removing it on close.
     unsigned char _tmpfchar;
 } FILE;
 

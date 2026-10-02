@@ -1,11 +1,16 @@
 #include "hosp.h"
 
 struct Slot {
+    // 0x0: Requester shown (REQ_).
     u8 kind;
     u8 unknown1[0x1];
+    // 0x2: Thing shown.
     u16 value;
-    s16 f4;
-    u8 f6;
+    // 0x4: Patient window: nonzero shows the health graph, 0 the diagnosis.
+    s16 show_graph;
+    // 0x6: Patient window: frames before the graph/diagnosis toggle works
+    // again.
+    u8 toggle_delay;
     u8 unknown7[0x4];
 };
 

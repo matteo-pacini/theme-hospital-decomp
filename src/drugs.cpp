@@ -68,7 +68,7 @@ void display_drugs(void)
         break;
     case 1:
         player_events[player].type = EV_RETURN_FROM_SCREEN;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         break;
     case 2:
         copy_screen_to_wscreen(bscreen);
@@ -87,7 +87,7 @@ void display_drugs(void)
     for (i = 0; i + 0x11 != 0x1d; i++) {
         switch (i) {
         case 6:
-            if (illness >= 0x24 || illness == 1) {
+            if (illness >= 0x24 || illness == ILL_GENERAL_PRACTICE) {
                 sprintf(buf, "%d", myhosp->reputation);
             } else {
                 sprintf(buf, "%d", myhosp->rooms[illness].reputation);
@@ -132,8 +132,8 @@ void display_drugs(void)
         for (i = othervar.selected_illness + 1; i < 0x2e; i++) {
             if ((i < 0x24 && myhosp->rooms[i].discovered) ||
                 (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1) ||
-                (i == 0x2c &&
-                 (allhosps[player].equipment[55].available != 0 &&
+                (i == ILL_AUTOPSY &&
+                 (allhosps[player].equipment[OBJ_AUTO_AUTOPSY].available != 0 &&
                   objects[OBJ_AUTO_AUTOPSY].available_for_level != 0) &&
                  listhead[player].rooms[ROOM_RESEARCH])) {
                 if (count >= 7) {
@@ -193,7 +193,7 @@ void display_drugs(void)
     LbTextDraw(0, (0x1a - (lbFontPtr ? lbFontPtr[34].height : 0)) / 2, cabinet_text[7]);
     lbDisplay.draw_flags = 0;
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
-    if (!(illness >= 0x24 || illness == 1)) {
+    if (!(illness >= 0x24 || illness == ILL_GENERAL_PRACTICE)) {
         if (allhosps[player].rooms[illness].cure_available == 1) {
             if (def->kind == OBJ_PHARMACY_CABINET) {
                 value = allhosps[player].rooms[illness].drug_effectiveness;
@@ -208,7 +208,7 @@ void display_drugs(void)
                 }
                 LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
                 lbDisplay.draw_flags = 0;
-            } else if (def->category == 10) {
+            } else if (def->category == ROOM_THEATRE) {
                 reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 8);
             } else if (def->outcome != 1 && def->outcome != 5 && def->outcome != 4) {
                 reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y, screen_sprites_tab_start + 6);
@@ -239,7 +239,7 @@ void display_drugs(void)
                         reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y,
                                     screen_sprites_tab_start + 10);
                     }
-                    if (def->category == 10) {
+                    if (def->category == ROOM_THEATRE) {
                         reqspr_draw(resvars.screen_coords[0x1f].x, resvars.screen_coords[0x1f].y,
                                     screen_sprites_tab_start + 8);
                     }
@@ -467,8 +467,8 @@ u8 get_next_illness(const u8 forward, const u8 from)
             for (i = from - 1; i > 0; i--) {
                 if ((i < 0x24 && myhosp->rooms[i].discovered) ||
                     (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1) ||
-                    (i == 0x2c &&
-                     (allhosps[player].equipment[55].available != 0 &&
+                    (i == ILL_AUTOPSY &&
+                     (allhosps[player].equipment[OBJ_AUTO_AUTOPSY].available != 0 &&
                       objects[OBJ_AUTO_AUTOPSY].available_for_level != 0) &&
                      listhead[player].rooms[ROOM_RESEARCH])) {
                     return i;
@@ -481,8 +481,8 @@ u8 get_next_illness(const u8 forward, const u8 from)
             for (i = from + 1; i < 0x2e; i++) {
                 if ((i < 0x24 && myhosp->rooms[i].discovered) ||
                     (i >= 0x24 && allhosps[player].rooms[i].cure_available == 1) ||
-                    (i == 0x2c &&
-                     (allhosps[player].equipment[55].available != 0 &&
+                    (i == ILL_AUTOPSY &&
+                     (allhosps[player].equipment[OBJ_AUTO_AUTOPSY].available != 0 &&
                       objects[OBJ_AUTO_AUTOPSY].available_for_level != 0) &&
                      listhead[player].rooms[ROOM_RESEARCH])) {
                     return i;
@@ -521,7 +521,7 @@ void drugs_help_concentrate(void)
 // FUNCTION: 0x00014090
 void drugs_help_cure_type(void)
 {
-    if (othervar.selected_illness >= 0x24 || othervar.selected_illness == 1) {
+    if (othervar.selected_illness >= 0x24 || othervar.selected_illness == ILL_GENERAL_PRACTICE) {
         return;
     }
     if (expertise[othervar.selected_illness].kind == OBJ_PHARMACY_CABINET) {
@@ -533,7 +533,7 @@ void drugs_help_cure_type(void)
         }
     } else if (expertise[othervar.selected_illness].staff_mask == 0x40) {
         lib_strcpy(othervar.help_msg, help_text[149]);
-    } else if (expertise[othervar.selected_illness].category == 10) {
+    } else if (expertise[othervar.selected_illness].category == ROOM_THEATRE) {
         lib_strcpy(othervar.help_msg, help_text[150]);
     } else {
         lib_strcpy(othervar.help_msg, help_text[151]);

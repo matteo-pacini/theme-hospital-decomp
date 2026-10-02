@@ -57,11 +57,11 @@ void create_job_market(void)
 
     for (i = 0; i < 30; i++) {
         if (staff_levels[i].month == othervar.game_month) {
-            gamevar.staff_seed = staff_levels[i].fund;
-            gamevar.applicants_wanted[0] = staff_levels[i].counts[0];
-            gamevar.applicants_wanted[1] = staff_levels[i].counts[1];
-            gamevar.applicants_wanted[2] = staff_levels[i].counts[2];
-            gamevar.applicants_wanted[3] = staff_levels[i].counts[3];
+            gamevar.staff_seed = staff_levels[i].seed;
+            gamevar.applicants_wanted[STAFF_NURSE] = staff_levels[i].counts[STAFF_NURSE];
+            gamevar.applicants_wanted[STAFF_DOCTOR] = staff_levels[i].counts[STAFF_DOCTOR];
+            gamevar.applicants_wanted[STAFF_HANDYMAN] = staff_levels[i].counts[STAFF_HANDYMAN];
+            gamevar.applicants_wanted[STAFF_RECEPTIONIST] = staff_levels[i].counts[STAFF_RECEPTIONIST];
             gamevar.shrink_rate = staff_levels[i].rates[0];
             gamevar.surgeon_rate = staff_levels[i].rates[1];
             gamevar.researcher_rate = staff_levels[i].rates[2];
@@ -220,7 +220,7 @@ s16 place_staff_in_struct(u16 kind, u16 extra_skills)
         new_staff->layers[7] = staffrand() & 3;
         new_staff->layers[8] = staffrand() & 3;
         new_staff->layers[9] = staffrand() & 3;
-        if (kind == 0 || kind == 3) {
+        if (kind == STAFF_NURSE || kind == STAFF_RECEPTIONIST) {
             new_staff->layers[5] = 1;
         }
         new_staff->hire_expiry = actual_game_turn + 2500 + staffrand() % 2500;
@@ -696,7 +696,7 @@ void draw_staff_cursor(void)
             if (check_points_connected(othervar.mouse_cell, room->door_inside_tile) == 0) {
                 bad = 1;
             }
-            if ((room->state != 0 && room->state != 1) && gamevar.held_staff_kind != 2) {
+            if ((room->state != 0 && room->state != 1) && gamevar.held_staff_kind != STAFF_HANDYMAN) {
                 bad = 1;
             }
         } else {
@@ -1238,19 +1238,19 @@ void training_builder(u8 level)
                 gamevar.shrink_rate = 1;
                 gamevar.surgeon_rate = 0;
                 gamevar.researcher_rate = 0;
-                id = place_staff_in_struct(1, 0);
+                id = place_staff_in_struct(STAFF_DOCTOR, 0);
                 if (id) {
                     place_staff_on_map(cell - map, id, 0, player);
                 }
                 gamevar.shrink_rate = 0;
                 gamevar.surgeon_rate = 1;
-                id = place_staff_in_struct(1, 0);
+                id = place_staff_in_struct(STAFF_DOCTOR, 0);
                 if (id) {
                     place_staff_on_map(cell - map, id, 0, player);
                 }
                 gamevar.surgeon_rate = 0;
                 gamevar.researcher_rate = 1;
-                id = place_staff_in_struct(1, 0);
+                id = place_staff_in_struct(STAFF_DOCTOR, 0);
                 if (id) {
                     place_staff_on_map(cell - map, id, 0, player);
                 }

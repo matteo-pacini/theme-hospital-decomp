@@ -8,15 +8,19 @@ struct MenuItem {
 
 struct Req2Layout {
     u8 unknown0[0x170];
+    // 0x170: Staff requester (req12): window showing the staff member.
     s32 win_x;
     s32 win_y;
     s32 win_w;
     s32 win_h;
+    // 0x180: Staff requester: text window of the message.
     s32 msg_x;
     s32 msg_y;
     s32 msg_w;
     s32 msg_h;
     u8 unknown190[0x220];
+    // 0x3b0: Hire requester: cover0 and cover1 hide the doctor-only parts for a
+    // candidate who is not a doctor.
     s32 cover0_x;
     s32 cover0_y;
     s32 cover0_w;
@@ -25,22 +29,28 @@ struct Req2Layout {
     s32 cover1_y;
     s32 cover1_w;
     s32 cover1_h;
+    // 0x3d0: Hire requester: box blanked while crequester.mode is 1.
     s32 box_x;
     s32 box_y;
     s32 box_w;
     s32 box_h;
     u8 unknown3e0[0x30];
+    // 0x410: Hire requester: text window of the candidate's reference.
     s32 text_x;
     s32 text_y;
     s32 text_w;
     s32 text_h;
     u8 unknown420[0x140];
+    // 0x560: Hire requester: the candidate's ability gauge (both requesters
+    // use gauge_w).
     u16 gauge_x;
     u8 unknown562[2];
     u16 gauge_y;
     u8 unknown566[2];
     u16 gauge_w;
     u8 unknown56a[6];
+    // 0x570: Staff requester: cover2 and cover3 hide the doctor-only parts for
+    // staff who are not doctors or surgeons.
     s32 cover2_x;
     s32 cover2_y;
     s32 cover2_w;
@@ -84,23 +94,23 @@ void req2(Window *win)
             debug.last_button = i;
             if (i == resvars.requester_buttons[2]) {
                 player_events[player].type = EV_HIRE_SELECT_KIND;
-                player_events[player].value = 1;
-                if (crequester.arg != 1 || crequester.mode != 2)
+                player_events[player].value = STAFF_DOCTOR;
+                if (crequester.arg != STAFF_DOCTOR || crequester.mode != 2)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[3]) {
                 player_events[player].type = EV_HIRE_SELECT_KIND;
-                player_events[player].value = 0;
-                if (crequester.arg != 0 || crequester.mode != 2)
+                player_events[player].value = STAFF_NURSE;
+                if (crequester.arg != STAFF_NURSE || crequester.mode != 2)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[5]) {
                 player_events[player].type = EV_HIRE_SELECT_KIND;
-                player_events[player].value = 3;
-                if (crequester.arg != 3 || crequester.mode != 2)
+                player_events[player].value = STAFF_RECEPTIONIST;
+                if (crequester.arg != STAFF_RECEPTIONIST || crequester.mode != 2)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[4]) {
                 player_events[player].type = EV_HIRE_SELECT_KIND;
-                player_events[player].value = 2;
-                if (crequester.arg != 2 || crequester.mode != 2)
+                player_events[player].value = STAFF_HANDYMAN;
+                if (crequester.arg != STAFF_HANDYMAN || crequester.mode != 2)
                     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
             } else if (i == resvars.requester_buttons[8]) {
                 if (crequester.arg2) {
@@ -201,19 +211,19 @@ void req2_overdraw(Window *win)
     lbDisplay.draw_flags = 0;
     if (crequester.arg2 && crequester.mode == 2) {
         for (button = win->buttons, i = 1; button; button = button->next, i++) {
-            if (i == resvars.requester_buttons[2] && crequester.arg == 1) {
+            if (i == resvars.requester_buttons[2] && crequester.arg == STAFF_DOCTOR) {
                 spr = resvars.requester_sprites[0x35];
                 break;
             }
-            if (i == resvars.requester_buttons[3] && crequester.arg == 0) {
+            if (i == resvars.requester_buttons[3] && crequester.arg == STAFF_NURSE) {
                 spr = 0x10b;
                 break;
             }
-            if (i == resvars.requester_buttons[5] && crequester.arg == 3) {
+            if (i == resvars.requester_buttons[5] && crequester.arg == STAFF_RECEPTIONIST) {
                 spr = resvars.requester_sprites[0x31];
                 break;
             }
-            if (i == resvars.requester_buttons[4] && crequester.arg == 2) {
+            if (i == resvars.requester_buttons[4] && crequester.arg == STAFF_HANDYMAN) {
                 spr = 0x10d;
                 break;
             }

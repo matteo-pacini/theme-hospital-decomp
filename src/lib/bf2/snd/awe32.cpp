@@ -25,8 +25,9 @@ struct AWEInfo {
     u32 preset_size;
 };
 
+// The head of Miles' _MDI_DRIVER (include/ail.h), as far as this file uses it.
 struct AWEDriver {
-    u32 unknown0;
+    u32 tag;
     u32 drvr;
 };
 

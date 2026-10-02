@@ -266,7 +266,7 @@ u8 display_loading_screen(void)
     while (LbScreenLock() != 1) {
     }
     hosp_fade_palette(0, 10, Lb_PALETTE_FADE_CLOSED);
-    load_screen(0x15);
+    load_screen(SCR_LOADING);
     copy_screen_to_wscreen(bscreen);
     LbScreenUnlock();
     LbScreenSwap();

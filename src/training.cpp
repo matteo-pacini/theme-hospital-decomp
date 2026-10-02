@@ -221,7 +221,7 @@ u16 find_training_room_no_consultant(u8 owner, u16 exclude)
             Thing *occupant;
 
             free = 1;
-            for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
+            for (occupant = &thing[room->first_person]; occupant > thing; occupant = &thing[occupant->room_next]) {
                 if (occupant->type == THING_STAFF && occupant->subtype == STAFF_DOCTOR &&
                     (occupant->skills & SKILL_CONSULTANT)) {
                     free = 0;
@@ -257,7 +257,7 @@ u16 find_emptiest_training_room(u8 owner, u16 exclude)
                     space++;
                 }
             }
-            for (t = &thing[room->first]; t > thing; t = &thing[t->room_next]) {
+            for (t = &thing[room->first_person]; t > thing; t = &thing[t->room_next]) {
                 if (t->type == THING_STAFF && t->subtype == STAFF_DOCTOR && !(t->skills & SKILL_CONSULTANT)) {
                     space--;
                 }
@@ -296,14 +296,14 @@ void training_done(const Thing *consultant, const u8 kind)
     points = 0;
     limit = old_newrand() % consultant->ability;
     skills = (u16)(consultant->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_RESEARCHER));
-    for (student = &thing[consultant->room->first]; student > thing; student = &thing[student->room_next]) {
+    for (student = &thing[consultant->room->first_person]; student > thing; student = &thing[student->room_next]) {
         if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT) &&
             (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
             students++;
         }
     }
     students = (students >> 2) + 1;
-    for (student = &thing[consultant->room->first]; student > thing; student = &thing[student->room_next]) {
+    for (student = &thing[consultant->room->first_person]; student > thing; student = &thing[student->room_next]) {
         if (student->type == THING_STAFF && student->subtype == STAFF_DOCTOR && !(student->skills & SKILL_CONSULTANT) &&
             (TRAINING_OBJECT(student) && thing[TRAINING_OBJECT(student)].subtype == OBJ_LECTURE_CHAIR)) {
             learn = skills & ~(u16)(student->skills & (SKILL_SURGEON | SKILL_PSYCHIATRIST | SKILL_RESEARCHER));

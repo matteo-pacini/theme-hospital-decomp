@@ -2,7 +2,8 @@
 
 struct SelectionState {
     u8 unknown0[0xd];
-    u16 widget;
+    // 0xd: irequester_slots[1].value: the thing shown in the patient window.
+    u16 patient_window_thing;
     u8 unknown15[0x1d];
 };
 
@@ -69,7 +70,7 @@ void person_in_queue(Thing *person)
         if (cur->flags & 1) {
             person->countdown--;
             if (person->countdown <= 0) {
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].flags == 0x20 &&
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].floor_block].flags == 0x20 &&
                     move_peep_from_blueprint(person)) {
                     return;
                 }
@@ -142,7 +143,7 @@ void person_entertains_themself(Thing *person)
         if (cur->flags & 1) {
             person->countdown--;
             if (person->countdown <= 0) {
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].flags == 0x20 &&
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].floor_block].flags == 0x20 &&
                     move_peep_from_blueprint(person)) {
                     return;
                 }
@@ -290,7 +291,7 @@ void remove_person(Thing *person)
     abandon_complex(person);
     remove_person_from_room_list(person);
     cancel_vaccination_request(person);
-    if (&thing[irequester_slots.widget] == person) {
+    if (&thing[irequester_slots.patient_window_thing] == person) {
         close_irequesters();
     }
     remove_thing(person);
@@ -321,12 +322,12 @@ void insert_person_in_room_list(RoomInfo *room, Thing *person)
 
     id = person - thing;
     if (room != 0) {
-        first = room->first;
+        first = room->first_person;
         if (first) {
             person->room_next = first;
             thing[first].room_prev = id;
         }
-        room->first = id;
+        room->first_person = id;
     }
     person->room = room;
     if (person->type == THING_PATIENT) {
@@ -344,12 +345,12 @@ void remove_person_from_room_list(Thing *person)
 
     room = person->room;
     if (room != 0) {
-        if (room->first) {
+        if (room->first_person) {
             prev = &thing[person->room_prev];
             if (prev > thing) {
                 prev->room_next = person->room_next;
             } else {
-                room->first = person->room_next;
+                room->first_person = person->room_next;
             }
             next = &thing[person->room_next];
             if (next > thing) {
@@ -550,7 +551,7 @@ void send_person_to_bed(Thing *person)
             return;
         }
     }
-    room = get_expertise_dest(0x2a, person);
+    room = get_expertise_dest(ILL_DIAG_WARD, person);
     room->queue_incoming++;
     page_member_of_staff(4, room - room_info, 1, 1, person->owner);
     person->dest_room = room - room_info;
@@ -595,7 +596,7 @@ u16 find_peep(u16 room_id, u8 random, u8 type, u8 state, u8 owner)
     count = 0;
     room = &room_info[room_id];
     if (random) {
-        for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
+        for (person = &thing[room->first_person]; person > thing; person = &thing[person->room_next]) {
             if (person->owner == owner) {
                 if (type && person->type != type) {
                     continue;
@@ -613,7 +614,7 @@ u16 find_peep(u16 room_id, u8 random, u8 type, u8 state, u8 owner)
     } else {
         count = 1;
     }
-    for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
+    for (person = &thing[room->first_person]; person > thing; person = &thing[person->room_next]) {
         if (person->owner == owner) {
             if (type && person->type != type) {
                 continue;
@@ -1000,7 +1001,7 @@ void person_waits_for_decision(Thing *person)
                         return;
                     }
                 }
-                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].overlay].flags == 0x20 &&
+                if (blocks[map[((s16)person->y.tile << 7) + (s16)person->x.tile].floor_block].flags == 0x20 &&
                     move_peep_from_blueprint(person)) {
                     return;
                 }
@@ -1052,12 +1053,12 @@ u16 make_a_playercall(const u16 type, const u16 subject, const s16 timeout, u8 o
             call->type = type;
             call->id = popup_id[0]++;
             call->active = 1;
-            call->x = subject;
+            call->subject = subject;
             call->timer = timeout;
             call->owner = owner;
             add_panel_popup(call);
-            if (listhead[owner].first[type] == 0) {
-                listhead[owner].first[type] = call - playercall;
+            if (listhead[owner].first_call[type] == 0) {
+                listhead[owner].first_call[type] = call - playercall;
             }
             return call->id;
         }
@@ -1066,7 +1067,7 @@ u16 make_a_playercall(const u16 type, const u16 subject, const s16 timeout, u8 o
 }
 
 // Makes the oldest of player `owner`'s calls of type `type` the head of
-// listhead.first[type].
+// listhead.first_call[type].
 // FUNCTION: 0x00018438
 void get_new_popup_head(u16 type, u8 owner)
 {
@@ -1079,7 +1080,7 @@ void get_new_popup_head(u16 type, u8 owner)
             continue;
         }
         if (min > call->id) {
-            listhead[owner].first[type] = call - playercall;
+            listhead[owner].first_call[type] = call - playercall;
             min = call->id;
         }
     }
@@ -1102,14 +1103,14 @@ void save_popup(u16 type)
         if (statvar.num_players > 1 && player_info[i].active == 0) {
             continue;
         }
-        call = playercall + listhead[i].first[type];
+        call = playercall + listhead[i].first_call[type];
         if (call->type == 0) {
             return;
         }
         memmove(&popup_store[i][type], call, 12);
         delete_panel_popup(call);
         call->type = 0;
-        listhead[i].first[type] = 0;
+        listhead[i].first_call[type] = 0;
         get_new_popup_head(type, i);
     }
 }
@@ -1155,10 +1156,10 @@ u16 get_playercall(const u16 type, u16 id, u8 owner)
         }
         if (id == 0 || id && id == call->id) {
             call->type = 0;
-            result = call->x;
+            result = call->subject;
             delete_panel_popup(call);
-            if (listhead[owner].first[type] == call - playercall) {
-                listhead[owner].first[type] = 0;
+            if (listhead[owner].first_call[type] == call - playercall) {
+                listhead[owner].first_call[type] = 0;
                 get_new_popup_head(type, owner);
             }
             break;
@@ -1187,7 +1188,7 @@ u16 check_playercall(u16 type, u16 subject, u8 owner)
             count++;
         } else if (type == 3) {
             count++;
-        } else if (call->x == subject) {
+        } else if (call->subject == subject) {
             count++;
         }
     }
@@ -1220,13 +1221,13 @@ void expire_playercalls(void)
                 choice_spare_data = 0x63;
                 packet_choice_result(CH_EPIDEMIC_COVER_UP);
             } else if (call->type == 5) {
-                if (call->x == 1) {
+                if (call->subject == 1) {
                     allhosps[call->owner].emergency_state = 0;
                 }
             }
             owner2 = call->owner;
-            if (listhead[owner2].first[call->type] == call - playercall) {
-                listhead[owner2].first[call->type] = 0;
+            if (listhead[owner2].first_call[call->type] == call - playercall) {
+                listhead[owner2].first_call[call->type] = 0;
                 changed = 1;
             }
             delete_panel_popup(call);
@@ -1235,8 +1236,8 @@ void expire_playercalls(void)
     }
     if (changed) {
         for (call = playercall + 1; call < end_playercall; call++) {
-            if (call->type && listhead[call->owner].first[call->type] == 0) {
-                listhead[call->owner].first[call->type] = call - playercall;
+            if (call->type && listhead[call->owner].first_call[call->type] == 0) {
+                listhead[call->owner].first_call[call->type] = call - playercall;
             }
         }
     }
@@ -1276,7 +1277,7 @@ u16 call_no_treatment(Thing *person, char **strs)
         room = exp->category;
     }
     for (i = 0; i < 9; i++) {
-        if ((exp->staff_mask & (1 << i)) && listhead[person->owner].staff[i] == 0) {
+        if ((exp->staff_mask & (1 << i)) && listhead[person->owner].staff_by_skill[i] == 0) {
             staff = i;
             break;
         }
@@ -1341,7 +1342,7 @@ void person_arrived_from_call(Thing *person)
     Thing *staff;
 
     if (person->room != 0) {
-        for (staff = thing + person->room->first; staff > thing; staff = thing + staff->room_next) {
+        for (staff = thing + person->room->first_person; staff > thing; staff = thing + staff->room_next) {
             if (staff->type == THING_STAFF && (u16)(person - thing) == staff->slave) {
                 return;
             }
@@ -1402,7 +1403,7 @@ u16 announce_new_illness_fax(const u8 kind, char **strs)
         room = exp->category;
     }
     for (i = 0; i < 9; i++) {
-        if ((exp->staff_mask & (1 << i)) && listhead[player].staff[i] == 0) {
+        if ((exp->staff_mask & (1 << i)) && listhead[player].staff_by_skill[i] == 0) {
             staff = i;
             break;
         }
@@ -1473,16 +1474,16 @@ void interrupt_person(Thing *person)
     Thing *staff;
 
     if (person->queue_room) {
-        state = 8;
+        state = PS_RETURN_TO_QUEUE_AREA;
     } else if (person->dest_room) {
-        state = 0x24;
+        state = PS_GOTO_QUEUE;
     } else {
         leave_queue(person);
-        state = 0x26;
+        state = PS_GO_FOR_TREATMENT;
     }
     interrupt_complex(person);
     if (person->room) {
-        for (staff = thing + person->room->first; staff > thing; staff = thing + staff->room_next) {
+        for (staff = thing + person->room->first_person; staff > thing; staff = thing + staff->room_next) {
             if (staff->type == THING_STAFF && (u16)(person - thing) == staff->slave) {
                 staff->slave = 0;
                 interrupt_staff(staff);

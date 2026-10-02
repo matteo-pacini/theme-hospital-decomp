@@ -26,28 +26,45 @@ typedef void(__pascal *AILSAMPLECB)(HSAMPLE sample);
 typedef struct _SAMPLE {
     char tag[4];
     HDIGDRIVER driver;
+    // SMP_FREE, SMP_DONE, SMP_PLAYING or SMP_STOPPED.
     U32 status;
+    // Two buffers (one unless streaming): address, size in bytes, next byte
+    // to mix, and nonzero once the application has sent an empty one.
     void *start[2];
     U32 len[2];
     U32 pos[2];
     U32 done[2];
+    // Buffer being mixed (0 or 1).
     S32 current_buffer;
+    // Streaming: current_buffer when AIL_sample_buffer_ready last handed out a
+    // buffer (-2, then -1, before its first two calls).
     S32 last_buffer;
+    // Streaming ran out of data.
     S32 starved;
+    // Plays left (1 once, 0 forever); loop_end -1 is the end of the sample.
     S32 loop_count;
     S32 loop_start;
     S32 loop_end;
+    // DIG_F_ format.
     S32 format;
+    // DIG_PCM_SIGN.
     U32 flags;
     S32 playback_rate;
+    // 0-127; pan 0 left, 127 right.
     S32 volume;
     S32 pan;
+    // Per output channel (left or mono, right): the scaled value of each
+    // 8-bit sample byte; 16-bit samples use only [n][0], as the scale.
     S32 vol_scale[2][256];
+    // 1 single buffer, 2 streamed double buffers.
     S32 service_type;
+    // Start-of-block, end-of-buffer and end-of-sample callbacks.
     AILSAMPLECB SOB;
     AILSAMPLECB EOB;
     AILSAMPLECB EOS;
     S32 user_data[8];
+    // The file players' state (ailsfile.c's indices); [7] also keeps status
+    // while SS_configure_buffers rebuilds the DMA buffers.
     S32 system_data[8];
 } SAMPLE;
 
@@ -193,15 +210,19 @@ typedef struct _DIG_DRIVER {
     U32 DMA_sel;
     void *DMA_buf;
     void *DMA[2];
+    // The DMA half the driver is playing (DST's active_buffer; -1 none), and
+    // its value at the last service.
     S16 *buffer_flag;
     S32 last_buffer;
     S32 channels_per_sample;
     S32 bytes_per_channel;
     S32 channels_per_buffer;
     S32 samples_per_buffer;
+    // 32-bit mixing buffer for one DMA half, and its size in bytes.
     S32 build_size;
     S32 *build_buffer;
     S32 playing;
+    // Services in a row with no sample playing; the third stops DMA playback.
     S32 quiet;
     HSAMPLE samples;
     S32 n_samples;
@@ -276,16 +297,20 @@ typedef struct _SEQUENCE {
     char tag[4];
     HMDIDRIVER driver;
     U32 status;
+    // The XMIDI sequence's TIMB (timbre list), RBRN (branch points) and EVNT
+    // (events) chunks; EVNT_ptr is the next event.
     void *TIMB;
     void *RBRN;
     void *EVNT;
     U8 *EVNT_ptr;
+    // Indirect controller array (AIL_register_ICA_array), or null.
     U8 *ICA;
     AILPREFIXCB prefix_callback;
     AILTRIGGERCB trigger_callback;
     AILBEATCB beat_callback;
     AILSEQUENCECB EOS;
     S32 loop_count;
+    // Ticks until the next events, and services played so far.
     S32 interval_count;
     S32 interval_num;
     S32 volume;
@@ -303,10 +328,15 @@ typedef struct _SEQUENCE {
     S32 time_fraction;
     S32 beat_fraction;
     S32 time_per_beat;
+    // Nested XMIDI FOR loops: the event after each FOR, and passes left (-1
+    // unused).
     U8 *FOR_ptrs[FOR_NEST];
     S32 FOR_loop_count[FOR_NEST];
+    // Logical to physical MIDI channel.
     S32 chan_map[NUM_CHANS];
+    // The controller values this sequence has set, per logical channel.
     CTRL_LOG shadow;
+    // Notes sounding: channel (-1 free slot), key and ticks left.
     S32 note_count;
     S32 note_chan[MAX_NOTES];
     S32 note_num[MAX_NOTES];
@@ -321,10 +351,15 @@ typedef struct _MDI_DRIVER {
     MDI_DDT *DDT;
     MDI_DST *DST;
     HTIMER timer;
+    // Microseconds per service.
     S32 interval_time;
+    // Nonzero (a nesting count) stops the service from playing sequences.
     S32 disable;
     HSEQUENCE sequences;
     S32 n_sequences;
+    // Per physical channel: lock (1 locked, 2 protected, 0 free), the
+    // sequence that locked it, the user before the lock (owner) and lock
+    // state before it (state), the last sequence to use it, and notes on.
     S32 lock[NUM_CHANS];
     HSEQUENCE locker[NUM_CHANS];
     HSEQUENCE owner[NUM_CHANS];
@@ -333,6 +368,7 @@ typedef struct _MDI_DRIVER {
     S32 notes[NUM_CHANS];
     AILEVENTCB event_trap;
     AILTIMBRECB timbre_trap;
+    // MIDI messages queued in DST's MIDI_data, and bytes used there.
     S32 message_count;
     S32 offset;
     S32 master_volume;

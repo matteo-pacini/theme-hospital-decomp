@@ -4,10 +4,12 @@ extern "C" {
 }
 
 struct ModemStartData {
+    // Response and dial timeouts in seconds; 0 keeps the provider's.
     long timeout;
     long dial_timeout;
     char response[0x50];
     char number[0x50];
+    // Result of the last modem command (InitModem / GetModemResponse codes).
     long result;
     long (*init_func)(void);
     long (*dial_func)(void);
@@ -52,7 +54,7 @@ TbError ModemSP::Start(char *session, char *name, u32 max_players, void *data)
     ModemStartData *init;
     TbError ret = Lb_FAIL;
 
-    if (started) {
+    if (initialised) {
         if (in_session)
             Stop();
         if (data) {
@@ -131,7 +133,7 @@ TbError ModemSP::Start(TbNetworkSessionNameEntry *session, char *name, void *dat
     ModemStartData *init;
     TbError ret = Lb_FAIL;
 
-    if (started) {
+    if (initialised) {
         if (in_session)
             Stop();
         if (data) {

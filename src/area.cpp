@@ -63,7 +63,7 @@ u8 draw_area_select(void)
 
     switch (area.state) {
     case 0:
-        return_from_screen(9, 0, 1);
+        return_from_screen(MM_SCREEN, 0, 1);
         unload_game_files();
         if (animation_table[level_number + 7].cd_install_level > install_type) {
             sprintf(buf, "%s%s", cd_install_path, animation_table[level_number + 7].name);
@@ -95,7 +95,7 @@ u8 draw_area_select(void)
         break;
     case 2:
         set_mouse_mode(MM_SCREEN);
-        FadeSample(10, 0xd2, 0, 1, 1);
+        FadeSample(SNDSRC_GENERAL, 0xd2, 0, 1, 1);
         LbScreenClear(0);
         if (!display_loading_screen())
             return 0;

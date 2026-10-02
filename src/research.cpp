@@ -275,7 +275,7 @@ void send_person_for_research(Thing *patient)
     u16 idx;
     RoomInfo *room;
 
-    room = get_expertise_dest(0x2c, patient);
+    room = get_expertise_dest(ILL_AUTOPSY, patient);
     room->queue_incoming++;
     page_staff_i_need(patient, room);
     patient->dest_room = room - room_info;
@@ -309,7 +309,7 @@ u16 emptiest_research_room(u8 owner)
                         count++;
                 }
             }
-            for (t = &thing[room->first]; t > thing; t = &thing[t->room_next]) {
+            for (t = &thing[room->first_person]; t > thing; t = &thing[t->room_next]) {
                 if (t->type == THING_STAFF)
                     count--;
             }
@@ -434,7 +434,7 @@ s32 find_new_diag_cost(u8 illness, u8 owner)
 // FUNCTION: 0x0006e330
 s32 find_new_drug_cost(u8 illness, u8 owner)
 {
-    if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].discovered == 1) &&
+    if ((expertise[illness].kind == OBJ_PHARMACY_CABINET && allhosps[owner].rooms[illness].discovered == 1) &&
         allhosps[owner].rooms[illness].cure_available == 0)
         return expertise[illness].cost;
     return -1;
@@ -447,7 +447,7 @@ s32 find_drug_improve_cost(u8 illness, u8 owner)
 {
     u8 rating;
 
-    if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].discovered == 1) &&
+    if ((expertise[illness].kind == OBJ_PHARMACY_CABINET && allhosps[owner].rooms[illness].discovered == 1) &&
         allhosps[owner].rooms[illness].cure_available == 1) {
         rating = find_best_drug_rating(illness, owner);
         if (rating < 100)
@@ -548,14 +548,14 @@ void do_illness_research(u8 owner, u8 illness, u32 amount, u8 category)
             hosp->illness_research[illness] -= cost;
             item_researched(expertise[illness].kind, illness, owner);
         }
-    } else if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].discovered == 1) &&
+    } else if ((expertise[illness].kind == OBJ_PHARMACY_CABINET && allhosps[owner].rooms[illness].discovered == 1) &&
                allhosps[owner].rooms[illness].cure_available == 0) {
         cost = hosp->research_cost[category] = expertise[illness].cost;
         if (hosp->illness_research[illness] >= cost) {
             hosp->illness_research[illness] -= cost;
             drug_researched(illness, owner);
         }
-    } else if ((expertise[illness].kind == 0x27 && allhosps[owner].rooms[illness].discovered == 1) &&
+    } else if ((expertise[illness].kind == OBJ_PHARMACY_CABINET && allhosps[owner].rooms[illness].discovered == 1) &&
                allhosps[owner].rooms[illness].cure_available == 1) {
         rating = find_best_drug_rating(illness, owner);
         cost = (gbv.rsch_improve_cost_percent + rating / 25 * gbv.rsch_improve_inc_percent) * expertise[illness].cost /

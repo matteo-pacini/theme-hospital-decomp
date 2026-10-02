@@ -219,7 +219,7 @@ void check_around(Thing *person)
         base = &map[((s16)person->y.tile << 7) + (s16)person->x.tile];
         for (i = 0; i < 5; i++) {
             m = &base[around[i]];
-            floor = m->floor & 0xf;
+            floor = m->litter_shadow & 0xf;
             if (floor) {
                 if (floor == 5 || floor == 6) {
                     person->nausea++;
@@ -292,7 +292,7 @@ u8 do_reaction(Thing *peep)
                 illness = show_anims[i].illness;
                 if (illness == peep->illness || illness == 0) {
                     if (show_anims[i].ability == 0 || abilities[peep->subtype][show_anims[i].ability]) {
-                        if (show_anims[i].any_subtype || show_anims[i].subtypes[peep->facing]) {
+                        if (show_anims[i].any_facing || show_anims[i].facings[peep->facing]) {
                             ok = 0;
                             switch (show_anims[i].condition) {
                             case 0:
@@ -436,7 +436,7 @@ s16 staff_check_around(Thing *employee)
         base = &map[((s16)employee->y.tile << 7) + (s16)employee->x.tile];
         for (i = 0; i < 5; i++) {
             m = &base[around[i]];
-            floor = m->floor & 0xf;
+            floor = m->litter_shadow & 0xf;
             if (floor) {
                 if (floor == 5)
                     employee->happiness--;
@@ -533,8 +533,8 @@ void staff_count(Thing *employee)
                 adcounts.surgeons++;
             case STAFF_DOCTOR:
                 adcounts.doctors_and_nurses++;
-                adcounts.staff_tiredness_by_kind[1] += employee->tiredness;
-                adcounts.staff_happiness_by_kind[1] += employee->happiness;
+                adcounts.staff_tiredness_by_kind[STAFF_DOCTOR] += employee->tiredness;
+                adcounts.staff_happiness_by_kind[STAFF_DOCTOR] += employee->happiness;
                 if (employee->skills & SKILL_CONSULTANT)
                     adcounts.consultants++;
                 if (employee->skills & SKILL_RESEARCHER)
@@ -544,16 +544,16 @@ void staff_count(Thing *employee)
                 break;
             case STAFF_NURSE:
                 adcounts.doctors_and_nurses++;
-                adcounts.staff_tiredness_by_kind[0] += employee->tiredness;
-                adcounts.staff_happiness_by_kind[0] += employee->happiness;
+                adcounts.staff_tiredness_by_kind[STAFF_NURSE] += employee->tiredness;
+                adcounts.staff_happiness_by_kind[STAFF_NURSE] += employee->happiness;
                 break;
             case STAFF_HANDYMAN:
-                adcounts.staff_tiredness_by_kind[2] += employee->tiredness;
-                adcounts.staff_happiness_by_kind[2] += employee->happiness;
+                adcounts.staff_tiredness_by_kind[STAFF_HANDYMAN] += employee->tiredness;
+                adcounts.staff_happiness_by_kind[STAFF_HANDYMAN] += employee->happiness;
                 break;
             case STAFF_RECEPTIONIST:
-                adcounts.staff_tiredness_by_kind[3] += employee->tiredness;
-                adcounts.staff_happiness_by_kind[3] += employee->happiness;
+                adcounts.staff_tiredness_by_kind[STAFF_RECEPTIONIST] += employee->tiredness;
+                adcounts.staff_happiness_by_kind[STAFF_RECEPTIONIST] += employee->happiness;
                 break;
             }
             adcounts.staff_happiness_sum += employee->happiness;

@@ -10,6 +10,7 @@ struct ManagerBox {
 struct ManagerHelp {
     u8 unknown0[8];
     u16 text;
+    // 0xa: ins_control index of the insurance company the hotspot points at.
     u16 arg;
     u8 unknownc[4];
 };
@@ -55,16 +56,16 @@ void display_manager(void)
         break;
     case 2:
         player_events[player].type = EV_RETURN_FROM_SCREEN;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         break;
     }
     if (lbDisplay.rleft_button) {
         if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, (s16)resvars.screen_boxes_ManagerBoxp[31].x,
                          (s16)resvars.screen_boxes_ManagerBoxp[31].y, (s16)resvars.screen_boxes_ManagerBoxp[31].w,
                          (s16)resvars.screen_boxes_ManagerBoxp[31].h))
-            process_keys(0, 0x3b);
+            process_keys(0, KC_F1);
         if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0x15b, 0x198, 0x87, 0x45))
-            process_keys(0, 0x14);
+            process_keys(0, KC_T);
     }
     lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = lbDisplay.rright_button = 0;
     lbDisplay.draw_flags = 0;

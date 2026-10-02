@@ -21,10 +21,18 @@ struct GlassBox {
     // box, where no code reads it.
     u16 unused_copied_to_zoom;
     u8 unknownA[4];
+    // 0xe: Box style for draw_a_box: -1 or 0 background (0 translucent), 1 or 2
+    // foreground.
     u8 type;
+    // 0xf: Nonzero: drawn as a button.
     u8 button;
+    // 0x10: Length of the zoom animation in frames.
     u8 steps;
-    u8 unknown11;
+    // 0x11: Frames before opening and closing, unless add_glass_box is given
+    // its own.
+    u8 delay;
+    // 0x12: Where the zoom grows from: 0 the box's centre, 1 its top centre, 2
+    // the screen centre.
     u8 origin;
     u8 unknown13;
 };
@@ -48,7 +56,7 @@ struct NetControl {
     // 0x4: Number of levels read, -1 if none.
     s8 level_count;
     // 0x5: The levels: number, title and name.
-    NetPlayer players[6];
+    NetPlayer levels[6];
 };
 
 struct LoginPlayer {
@@ -58,8 +66,12 @@ struct LoginPlayer {
 
 struct LoginControl {
     u8 unknown0[0x17];
+    // 0x17: 6 not in a session, 5 in one, 9 the host is choosing the level and
+    // new players are shut out (command 9), 8 the level is chosen and the game
+    // starts (command 2).
     u8 state;
     u8 unknown18[7];
+    // 0x1f: First player shown in the three-line player list.
     u8 player_scroll;
     // 0x20: Sent as screen_packet's shared_value in each login exchange; set
     // from the host's on the first exchange and from any player sending
@@ -77,8 +89,8 @@ struct SlistButton {
 };
 
 struct BalanceFileInfo {
-    BalanceFileInfo *prev;
     BalanceFileInfo *next;
+    BalanceFileInfo *prev;
 };
 
 struct ScreenPacket {
@@ -365,7 +377,7 @@ void draw_network_select(void)
         read_modem_ini_file();
         statvar.num_players = 1;
         player = 0;
-        return_from_screen(9, 0, 1);
+        return_from_screen(MM_SCREEN, 0, 1);
         load_ingame_pic(SCR_NETWORK_PREFS, 1, 0x19, 0, SCREEN_MODE_13);
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");
         calculate_grey(ppalette.data);
@@ -675,7 +687,7 @@ void display_button_text(s32 mask)
 
             sprintf(buf, "%s %s", misc_text[30], balance_file_name);
             lbDisplay.draw_flags = 0;
-            if (current_balance_file != current_balance_file->next) {
+            if (current_balance_file != current_balance_file->prev) {
                 draw_glass_text(SLIST(94), upstr);
                 draw_glass_text(SLIST(95), downstr);
             }
@@ -721,7 +733,7 @@ void display_button_text(s32 mask)
             break;
         case 0x1000:
             for (i = 0; i < net_control.level_count; i++)
-                draw_glass_text(SLIST(i + 0x8c), net_control.players[i].name);
+                draw_glass_text(SLIST(i + 0x8c), net_control.levels[i].name);
             draw_level_selection_screen();
             break;
         case 8:
@@ -1116,7 +1128,7 @@ void process_mouse_network_select(void)
             if (!base)
                 continue;
             for (i = 0;; i++) {
-                if (current_balance_file == current_balance_file->next) {
+                if (current_balance_file == current_balance_file->prev) {
                     if (base + i == 0x5e || base + i == 0x5f)
                         continue;
                 }
@@ -1248,13 +1260,13 @@ void process_network_buttons(u8 button)
     }
 }
 
-// Level choice button: chooses net_control.players[button]'s level and
+// Level choice button: chooses net_control.levels[button]'s level and
 // starts the game.
 // FUNCTION: 0x0008242c
 void process_level_buttons(u8 button)
 {
     play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
-    level_number = net_control.players[button].level;
+    level_number = net_control.levels[button].level;
     screen_packet[player].command = 2;
 }
 
@@ -1362,12 +1374,12 @@ void process_balance_buttons(u8 button)
 {
     switch (button) {
     case 0:
-        if (current_balance_file != current_balance_file->next)
+        if (current_balance_file != current_balance_file->prev)
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         prev_balance_file();
         break;
     case 1:
-        if (current_balance_file != current_balance_file->prev)
+        if (current_balance_file != current_balance_file->next)
             play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
         next_balance_file();
         break;
@@ -2433,8 +2445,8 @@ void swap_year_end_packets(void)
     year_packet[player].mishaps = myhosp->mishaps;
     year_packet[player].amenity_count = myhosp->amenity_count;
     year_packet[player].staff_count = myhosp->staff_count;
-    year_packet[player].staff_by_kind[1] = myhosp->staff_by_kind[1];
-    year_packet[player].staff_by_kind[0] = myhosp->staff_by_kind[0];
+    year_packet[player].staff_by_kind[STAFF_DOCTOR] = myhosp->staff_by_kind[STAFF_DOCTOR];
+    year_packet[player].staff_by_kind[STAFF_NURSE] = myhosp->staff_by_kind[STAFF_NURSE];
     year_packet[player].leisure_count = myhosp->leisure_count;
     year_packet[player].litter_count = myhosp->litter_count;
     year_packet[player].rathole_count = myhosp->rathole_count;
@@ -2461,8 +2473,8 @@ void swap_year_end_packets(void)
             allhosps[i].mishaps = year_packet[i].mishaps;
             allhosps[i].amenity_count = year_packet[i].amenity_count;
             allhosps[i].staff_count = year_packet[i].staff_count;
-            allhosps[i].staff_by_kind[1] = year_packet[i].staff_by_kind[1];
-            allhosps[i].staff_by_kind[0] = year_packet[i].staff_by_kind[0];
+            allhosps[i].staff_by_kind[STAFF_DOCTOR] = year_packet[i].staff_by_kind[STAFF_DOCTOR];
+            allhosps[i].staff_by_kind[STAFF_NURSE] = year_packet[i].staff_by_kind[STAFF_NURSE];
             allhosps[i].leisure_count = year_packet[i].leisure_count;
             allhosps[i].litter_count = year_packet[i].litter_count;
             allhosps[i].rathole_count = year_packet[i].rathole_count;
@@ -2588,11 +2600,11 @@ u8 send_message(void)
     else if (BufferedInkey >= 0x47 && BufferedInkey <= 0x49)
         BufferedInkey -= 0x3f;
     else if (BufferedInkey == KC_NUMPAD0)
-        BufferedInkey = 0xb;
+        BufferedInkey = KC_0;
     else if (BufferedInkey == KC_DIVIDE)
         BufferedInkey = 0x35;
     else if (BufferedInkey == KC_NUMPADENTER)
-        BufferedInkey = 0x1c;
+        BufferedInkey = KC_RETURN;
     else if (HospShift & MOD_SHIFT)
         BufferedInkey |= 0x80;
     screen_packet[player].key = BufferedInkey;
@@ -3048,9 +3060,9 @@ void network_read_control(u8 n)
                     }
                 }
             }
-            net_control.players[count].level = atoi(num);
-            sprintf(net_control.players[count].title, "%s", title);
-            sprintf(net_control.players[count].name, "%s", name);
+            net_control.levels[count].level = atoi(num);
+            sprintf(net_control.levels[count].title, "%s", title);
+            sprintf(net_control.levels[count].name, "%s", name);
             count++;
             if (count == 6)
                 break;

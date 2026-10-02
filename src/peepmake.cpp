@@ -44,7 +44,7 @@ void calc_visitors_this_month(void)
     unused = 0;
     for (i = 0; i < 30; i++) {
         if (popn[i].month == othervar.game_month) {
-            gamevar.visitor_change = popn[i].count;
+            gamevar.visitor_change = popn[i].change;
             break;
         }
         if (popn[i].month > othervar.game_month)
@@ -372,7 +372,7 @@ Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
         for (j = 0; j < 10; j++)
             peep->health_history[j] = peep->health;
         peep->treatment = ILL_GENERAL_PRACTICE;
-        peep->known_illness = 1;
+        peep->known_illness = ILL_GENERAL_PRACTICE;
         peep->diagnosis_handicap = old_normal_rand(1, expertise[illness].max_diag_diff);
         if (old_newrand() % towns[myhosp->level].insurance_odds == 0)
             peep->insurance = 1 << old_newrand() % 3;

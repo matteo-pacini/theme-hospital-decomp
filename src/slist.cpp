@@ -19,11 +19,16 @@ struct SlistMenuItem {
 };
 
 struct Slot {
+    // 0x0: Requester shown (REQ_).
     u8 kind;
     u8 unknown1[0x1];
+    // 0x2: Thing shown.
     u16 value;
-    s16 f4;
-    u8 f6;
+    // 0x4: Patient window: nonzero shows the health graph, 0 the diagnosis.
+    s16 show_graph;
+    // 0x6: Patient window: frames before the graph/diagnosis toggle works
+    // again.
+    u8 toggle_delay;
     u8 unknown7[0x4];
 };
 
@@ -68,7 +73,7 @@ void display_slist(void)
     lbDisplay.draw_flags = 0;
     switch (slist.state) {
     case 0:
-        load_ingame_pic(SCR_STAFF_LIST, 1, 0x21, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_STAFF_LIST, 1, MM_STAFF_LIST, 0, SCREEN_MODE_13);
         loaded_face.head = 0xff;
         loaded_face.body = 0xff;
         loaded_face.legs = 0xff;
@@ -136,13 +141,13 @@ void display_slist(void)
         break;
     case 2:
         player_events[player].type = EV_RETURN_TO_THING_WINDOW;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         player_events[player].arg = slist.value;
         cancel_helpmsg();
         break;
     case 3:
         player_events[player].type = EV_RETURN_FROM_SCREEN;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         cancel_helpmsg();
         break;
     default:
@@ -664,25 +669,25 @@ void process_slist_button(u8 button)
         play_sound(SNDSRC_GENERAL, SFX_NO4, -1, -1);
         break;
     case 8:
-        sound = 8;
+        sound = SFX_WRONG2;
         if (othervar.slist_page > 0) {
             if (staff_on_page(othervar.slist_page - 1)) {
                 othervar.slist_page--;
                 for (i = 0; i < 10; i++)
                     slist.value = get_slist_staff(1);
-                sound = 0x43;
+                sound = SFX_SELECTX;
             }
         }
         play_sound(SNDSRC_GENERAL, sound, -1, -1);
         break;
     case 9:
-        sound = 8;
+        sound = SFX_WRONG2;
         if (othervar.slist_page < 150) {
             if (staff_on_page(othervar.slist_page + 1)) {
                 othervar.slist_page++;
                 for (i = 0; i < 10; i++)
                     slist.value = get_slist_staff(0);
-                sound = 0x43;
+                sound = SFX_SELECTX;
             }
         }
         play_sound(SNDSRC_GENERAL, sound, -1, -1);

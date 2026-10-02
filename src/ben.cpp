@@ -173,28 +173,28 @@ u8 what_key_is_it_really(u8 key)
     if (install_language == 2) {
         switch (key) {
         case KC_Y:
-            return 0x2c;
+            return KC_Z;
         case KC_Z:
-            return 0x15;
+            return KC_Y;
         default:
             return key;
         }
     } else if (install_language == 1) {
         switch (key) {
         case KC_Q:
-            return 0x1e;
+            return KC_A;
         case KC_A:
-            return 0x10;
+            return KC_Q;
         case KC_W:
-            return 0x2c;
+            return KC_Z;
         case KC_Z:
-            return 0x11;
+            return KC_W;
         case KC_M:
-            return 0x33;
+            return KC_COMMA;
         case KC_COMMA:
-            return 0x27;
+            return KC_SEMICOLON;
         case KC_SEMICOLON:
-            return 0x32;
+            return KC_M;
         default:
             return key;
         }

@@ -41,7 +41,7 @@ void display_policy(void)
         break;
     case 3:
         player_events[player].type = EV_RETURN_FROM_SCREEN;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         break;
     }
     LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);

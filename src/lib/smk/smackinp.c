@@ -85,6 +85,7 @@ typedef struct SmackSnd {
     // 0x38: The track's LargestInTrack rounded down to 4: a starved track is
     // padded with silence up to this many bytes per frame.
     u32 minchunk;
+    // 0x3c-0x44: the sound driver's next, sample and halfsize (smkmss.c).
     u32 f3c;
     u32 f40;
     u32 f44;
@@ -103,6 +104,7 @@ typedef struct SmackSnd {
     // 0x5c: Set when soundnext handled starved; it clears starved (and itself)
     // on the next frame.
     u32 starvedseen;
+    // 0x60: The sound driver's own fields (smkmss.c's played onwards).
     u8 unknown60[0x84 - 0x60];
 } SmackSnd;
 
@@ -141,6 +143,8 @@ typedef struct Smack {
     // 0x3a8: Size of framebuf less its 8 spare bytes: the whole file's frames,
     // or the largest frame when reading ahead.
     u32 framebufsize;
+    // 0x3ac: Decoding tables built by SmackDoTables from the file's Huffman
+    // trees; passed to Unsmack.
     void *addr32;
     // 0x3b0: Blit table for Unsmack and SmackGetRect, built by SmackToBuffer or
     // SmackToScreen; byte 0 is 1 for a buffer, 0 for the screen.
@@ -166,6 +170,7 @@ typedef struct Smack {
     u8 *frametypes;
     // 0x3d0: Start of the current frame's chunks; SndSize is measured from it.
     u8 *framestart;
+    // 0x3d4: Each track's audio chunk in the current frame, or NULL.
     u32 *trackbufs[7];
     // 0x3f0: The current frame's video data (after its palette and audio
     // chunks), passed to Unsmack.

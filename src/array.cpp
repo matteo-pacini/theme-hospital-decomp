@@ -27,12 +27,12 @@ void pulldown_briefing();
 // layouts and bound to their names with #pragma aux. The panel icon tables
 // are arrays of PanelIcon, which include/hosp.h's Icons does not describe.
 struct ExpertiseData {
-    u16 unknown0;
-    u16 f2;
+    u16 staff_mask;
+    u16 start_price;
     u8 kind;
     u8 unknown5[2];
-    u8 unknown7;
-    u8 unknown8;
+    u8 needs_ward;
+    u8 outcome;
     u8 category;
     u8 unknown10[2];
     u32 cost;
@@ -40,14 +40,14 @@ struct ExpertiseData {
 };
 
 struct menuData {
-    u8 unknown0;
+    u8 open_pulldown;
     u8 font;
     u8 font_hi;
     u8 line_height;
     u8 char_width;
     u8 count;
     u8 subcount;
-    u8 unknown7;
+    u8 disabled;
     Pulldown pulldowns[13];
 };
 

@@ -2,8 +2,11 @@
 
 struct VariableTable {
     char name[0x30];
+    // 0x30: Size of the variable (1 byte, 2 word, 4 long) and how the bounds
+    // are compared (8 signed, 0x10 the upper bound unsigned).
     u16 flags;
     u32 address;
+    // 0x36: Bytes between consecutive indices.
     u16 stride;
     u16 max_index;
     s32 min;

@@ -54,6 +54,7 @@ struct TbNetworkPlayerEntry {
 struct __ic76sReceiveCallbacks {
     void (__stdcall *addMsg)(u32 id, char *name, void *data);
     void (__stdcall *deleteMsg)(u32 id, void *data);
+    // Told the new host's id when the host leaves.
     void (__stdcall *hostMsg)(u32 id, void *data);
     void (__stdcall *unknownc)(void *data);
     void *(__stdcall *multiPlayer)(u32 id, u32 size, u32 seq, void *data);
@@ -75,7 +76,8 @@ struct ServiceProvider {
     TbNetworkPlayerEntry players[32];
     char session_name[0x20];
     __ic76sReceiveCallbacks *callbacks;
-    u32 started;
+    // Set once the provider's Init succeeds ("not initialised" otherwise).
+    u32 initialised;
     void *callback_data;
 
     ServiceProvider();
@@ -128,13 +130,17 @@ void DecodeMessageStub(void *buf, u32 *size, TbMessageType *type, u32 *seq);
 struct __4kqpm7ClientDataEntry {
     u32 id;
     u32 active;
+    // got_data and name in bf1/opt/net.h's copy; no code here reads them.
     u8 unknown8[0x24];
 };
 
 struct __4dn7ojSerialInitData {
+    // COM port index (0-3).
     u32 port;
     u32 baud;
+    // -1 keeps the port's default IRQ.
     s32 irq;
+    // 1 direct serial link, 2 modem (only then are the strings used).
     u32 mode;
     char *init_str;
     char *dial_str;
@@ -146,20 +152,26 @@ struct __iobuf;
 
 struct CommHandlerData {
     char response[0x50];
+    // clock() ticks (1/100 s) to wait for the init and hang-up responses.
     long timeout;
+    // clock() ticks to wait for CONNECT when dialling or answering.
     long dial_timeout;
     char init_str[0x50];
     char dial_str[0x50];
     char hangup_str[0x50];
     char answer_str[0x50];
     long port;
+    // Set by SetModemResponseTimeOut (in 1/100 s); no code reads it.
     long response_timeout;
     char last_cmd[0x50];
     u8 online;
+    // Callbacks polled while waiting for a response in InitModem, DialModem,
+    // HangUpModem and AnswerModem; -7 from one aborts the wait.
     long (*init_func)(void);
     long (*dial_func)(void);
     long (*hangup_func)(void);
-    long (*other_func)(void);
+    long (*answer_func)(void);
+    // The callback of the command now waiting, or null.
     long (*cur_func)(void);
 };
 
@@ -211,10 +223,15 @@ enum ParserState {
 struct Parser {
     u32 active;
     ParserState state;
+    // Bytes taken so far in the current state.
     u32 count;
+    // The packet's message stub, data and checksum.
     u8 msg[0x407];
+    // The header being matched, chosen by its first byte (0x1b message, 0x1e
+    // guaranteed message, 4 acknowledgement).
     u8 header[4];
     u8 seq;
+    // Data size from the message stub.
     u32 size;
 
     Parser();
@@ -235,10 +252,13 @@ struct SerialSP : ServiceProvider {
     u32 port;
     u32 baud;
     __4dn7ojSerialInitData serial_data;
+    // Sequence numbers of the next guaranteed message sent and expected.
     u8 send_seq;
     u8 recv_seq;
     u32 awaiting_ack;
     u8 unknownb46[4];
+    // Packet parsers: each received byte goes to every active one and starts
+    // one idle one, so a packet is found wherever it begins.
     Parser parsers[10];
 
     SerialSP();
@@ -318,6 +338,7 @@ struct ECB;
 
 struct IPXHeader {
     u16 checksum;
+    // Big-endian, including this 30-byte header.
     u16 length;
     u8 transport;
     u8 type;
@@ -329,11 +350,15 @@ struct IPXHeader {
     u16 src_socket;
 };
 
+// An IPX event control block (ECB) with its single fragment, the IPX header
+// and data, in DOS memory.
 struct IPXPacket {
     u32 link;
     u16 esr_off;
     u16 esr_seg;
+    // Nonzero while IPX owns the ECB.
     u8 in_use;
+    // IPX completion code (0 success).
     u8 completion;
     u16 socket;
     u8 workspace[0x10];
@@ -347,12 +372,15 @@ struct IPXPacket {
 };
 
 struct __2aq9p8IPXPARAMS {
+    // IPX function: 3 send, 4 listen; 0xa (relinquish control) ends a batch.
     u16 cmd;
     u16 off;
     u16 seg;
 };
 
+// A SAP server advertisement; op, type and hops are big-endian.
 struct SAPPacket {
+    // 2: general service response.
     u16 op;
     u16 type;
     char name[0x30];
@@ -395,15 +423,24 @@ extern u8 serial_handler_code[];
 extern char IPXDEBUGSTRING[];
 
 struct IPXHandler {
-    u32 stamp;
+    // clock() of the last SAP advertisement; UpdateServer re-advertises 4000
+    // ticks after it.
+    u32 advertise_time;
     u32 last_update;
+    // The SAP listening socket (socket) is open.
     u32 socket_open;
+    // This machine's IPX address.
     u8 net[4];
     u8 node[6];
     IPXPacket *send_packets;
+    // Listening on the SAP socket.
     IPXPacket *recv_packets;
+    // DOS memory: the real-mode batch code (IPX entry point at 2), the ESRs at
+    // 0x78 and 0x80 with their counters at 0x88 and 0x89, the batch entries
+    // from 0x90 and the real-mode stack.
     u8 *dosbuf;
     u8 *addrbuf;
+    // Size of the real-mode code copied to dosbuf.
     u32 esr_size;
     u16 dosbuf_sel;
     u32 send_sel;
@@ -411,13 +448,18 @@ struct IPXHandler {
     u16 addr_sel;
     u16 rm_ss;
     u16 rm_sp;
+    // Offsets of the send and receive ESRs in dosbuf's segment.
     u16 send_esr;
     u16 recv_esr;
+    // Real-mode interrupt (0x60-0x65) pointed at the batch code, and the
+    // vector it replaced.
     u16 vector;
     u16 old_seg;
     u16 old_off;
+    // 1-based index of the send packet last used.
     u16 next_packet;
     u16 batch_count;
+    // SAP listening socket number (0x452 asked for, else 0x4141).
     u16 socket;
 
     IPXHandler();
@@ -450,7 +492,10 @@ struct IPXPlayerEntry {
     u32 id;
     char name[0x20];
     __3ljac5NETSOCKET addr;
+    // Acknowledged the last broadcast system message; players that did not
+    // are dropped by RemoveAbortedPlayer.
     u16 ack;
+    // Acknowledged RemoveAbortedPlayer's delete-player message.
     u16 abort_acked;
 };
 
@@ -463,6 +508,8 @@ struct IPXSessionInfo {
     u32 host_id;
     u16 num_players;
     u16 max_players;
+    // Which page of 6 player entries a BUHP reply carries (they follow it at
+    // 0x50).
     u32 page;
     u32 unknown4c;
 };
@@ -478,6 +525,7 @@ struct __5303ctCLIENTINFOPACKET {
     u32 local_id;
     u16 num_players;
     u16 max_players;
+    // The page of 6 player entries asked for next (see IPXSessionInfo).
     u32 page;
     // 0x50: Zeroed by IPXServiceProvider::EnumerateAndAddPlayers; no code reads
     // it.
@@ -508,7 +556,10 @@ struct __6eas9nIPXDATAMESSAGE {
     u32 magic;
     u32 from;
     u8 unknown8[2];
+    // The sender's msg_seq, echoed by the acknowledgement.
     u8 seq;
+    // Guaranteed (BUDG) messages: per-receiver data sequence number, so a
+    // repeat is acknowledged but not queued again.
     u8 dseq;
     u8 data[0x212];
 };
@@ -543,23 +594,38 @@ struct IPXSessionEntry {
 
 struct IPXServiceProvider : ServiceProvider {
     IPXHandler ipx;
+    // Receive packets listening on socket.
     IPXPacket *packets;
+    // Indexed by player id; hides ServiceProvider::players.
     IPXPlayerEntry *players;
+    // Sessions heard of while enumerating; an entry with time 0 is free.
     IPXSessionEntry session_list[32];
     __3ljac5NETSOCKET socket;
+    // Scratch entry passed to the session enumeration callback.
     TbNetworkSessionNameEntry entry;
+    // The session hosted (host_state 1).
     IPXSessionInfo session;
+    // The session joined (host_state 2), with this player's id.
     __5303ctCLIENTINFOPACKET remote;
     __tibcaGUID guid;
+    // Received messages waiting to be read (32 entries).
     IPXQueueEntry *queue;
+    // The data message being sent, kept for resending until acknowledged.
     __6eas9nIPXDATAMESSAGE out;
     u32 packets_sel;
+    // "BU.GI." and the GUID: the name advertised by SAP when hosting.
     char server_name[0x1515 - 0x14e5];
+    // Highest session_list index searched (loops run up to and including it).
     u16 session_count;
+    // 0 no session, 1 hosting, 2 joined.
     u16 host_state;
-    u8 sys_seq;
-    u8 acked_a[0x20];
-    u8 acked_b[0x20];
+    // Sequence number of the next system or data message sent.
+    u8 msg_seq;
+    // Per player: data sequence number of the next guaranteed message sent to
+    // them, and of the next one expected from them.
+    u8 send_dseq[0x20];
+    u8 recv_dseq[0x20];
+    // New players may join (EnableNewPlayers).
     u32 accepting;
 
     virtual ~IPXServiceProvider();

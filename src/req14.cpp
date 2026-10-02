@@ -264,9 +264,9 @@ void set_edit_room_requester_mode(const u8 mode)
     case 8:
         crequester.arg2 = 1 << resvars.requester_buttons[0x51];
     case 6:
-        if (crequester.kind == 3 || room_info[allhosps[player].edited_room].first_object == 0)
+        if (crequester.kind == ROOM_CORRIDOR || room_info[allhosps[player].edited_room].first_object == 0)
             crequester.arg |= 1 << resvars.requester_buttons[0x51];
-        if (crequester.kind != 3) {
+        if (crequester.kind != ROOM_CORRIDOR) {
             if (does_room_contain_compulsory_objects(&room_info[allhosps[player].edited_room])) {
                 crequester.arg = 0;
                 othervar.edit_room_hint = 0xe;
@@ -282,7 +282,7 @@ void set_edit_room_requester_mode(const u8 mode)
         crequester.arg = (1 << resvars.requester_buttons[0x52]) | (1 << resvars.requester_buttons[0x50]) |
                          (1 << resvars.requester_buttons[0x51]);
         othervar.edit_room_hint = 0x10;
-        crequester.kind = 3;
+        crequester.kind = ROOM_CORRIDOR;
         break;
     case 1:
     case 3:

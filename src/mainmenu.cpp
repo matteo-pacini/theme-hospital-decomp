@@ -54,7 +54,7 @@ void draw_main_menu(void)
     count = 0;
     switch (mainmenu.state) {
     case MMS_ENTER:
-        return_from_screen(9, 0, 0);
+        return_from_screen(MM_SCREEN, 0, 0);
     case MMS_UNLOAD_GAME:
         lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
         unload_game_files();
@@ -67,7 +67,7 @@ void draw_main_menu(void)
         setup_lores_screen();
         use_hires_help_and_fonts();
         lbDisplay.left_button = lbDisplay.right_button = lbDisplay.rleft_button = 0;
-        load_ingame_pic(SCR_MAIN_MENU, 1, 0x14, 0, SCREEN_MODE_1);
+        load_ingame_pic(SCR_MAIN_MENU, 1, MM_MAIN_MENU, 0, SCREEN_MODE_1);
         LbScreenUnlock();
         LbScreenClear(0);
         LbScreenSwap();
@@ -110,7 +110,7 @@ void draw_main_menu(void)
         mainmenu.state = MMS_LOAD_CONTINUE;
         break;
     case MMS_LOAD_CONTINUE:
-        return_from_screen(0, 0, 1);
+        return_from_screen(MM_NORMAL, 0, 1);
         LbScreenClear(0);
         if (!display_loading_screen())
             break;
@@ -220,7 +220,7 @@ void draw_main_menu(void)
         mainmenu.state = MMS_TITLE;
         break;
     case MMS_TITLE:
-        load_ingame_pic(SCR_TITLE, 1, 9, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_TITLE, 1, MM_SCREEN, 0, SCREEN_MODE_13);
         othervar.saved_screen_ptr = lbDisplay.wscreen;
         othervar.saved_screen_width = lbDisplay.graphics_screen_width;
         othervar.saved_screen_height = lbDisplay.graphics_screen_height;
@@ -259,7 +259,7 @@ void draw_main_menu(void)
                     else
                         done = play_intro();
                     fade_out_menu();
-                    load_ingame_pic(SCR_TITLE, 1, 9, 0, SCREEN_MODE_13);
+                    load_ingame_pic(SCR_TITLE, 1, MM_SCREEN, 0, SCREEN_MODE_13);
                     othervar.saved_screen_ptr = lbDisplay.wscreen;
                     othervar.saved_screen_width = lbDisplay.graphics_screen_width;
                     othervar.saved_screen_height = lbDisplay.graphics_screen_height;
@@ -300,7 +300,7 @@ void draw_main_menu(void)
         mainmenu.state = MMS_ENTER;
         break;
     case MMS_CREDITS:
-        load_ingame_pic(SCR_CREDITS, 1, 9, 0, SCREEN_MODE_13);
+        load_ingame_pic(SCR_CREDITS, 1, MM_SCREEN, 0, SCREEN_MODE_13);
         mainmenu.state = MMS_CREDITS_SCROLL;
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);

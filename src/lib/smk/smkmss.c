@@ -52,30 +52,37 @@ typedef struct SmackSnd {
     U8 *writepos;
     U32 pending;
     U32 bytespersec;
-    U32 f18;
-    U32 f1c;
-    U32 f20;
-    U32 f24;
-    U32 f28;
-    U32 f2c;
-    U32 f30;
-    U32 f34;
-    U32 f38;
+    // 0x18-0x38: smackinp.c's buffering and timing fields, unused here.
+    U32 bufsize;
+    U32 frameadd;
+    U32 clockfix;
+    U32 clockbase;
+    U32 lateclockfix;
+    U32 written;
+    U32 overflows;
+    U32 soundskips;
+    U32 minchunk;
     struct SmackSnd *next;
     HSAMPLE sample;
+    // 0x44: Size of each half of the MSS double buffer (halves).
     U32 halfsize;
     U32 rate;
     U32 flush;
     U32 bits16;
     U32 stereo;
     U32 starved;
-    U32 f5c;
+    U32 starvedseen;
+    // 0x60: Bytes of the buffers loaded before the current one.
     U32 played;
     U8 *halves[2];
     U32 f6c;
     U32 f70;
+    // 0x74: MSS's minimum buffer size for the format; less pending than this
+    // waits (unless flushing).
     U32 minbuf;
+    // 0x78: Bytes loaded since loadtime.
     U32 loaded;
+    // 0x7c: Timer reading when the current buffer was loaded, or 0.
     U32 loadtime;
     U32 f80;
 } SmackSnd;

@@ -776,7 +776,7 @@ Thing *find_person_in_room(RoomInfo *room, u16 kind, u16 sub)
     Thing *person;
 
     if (room) {
-        for (person = thing + room->first; person > thing; person = thing + person->room_next) {
+        for (person = thing + room->first_person; person > thing; person = thing + person->room_next) {
             if (person->type == kind) {
                 if (person->subtype == sub) {
                     return person;
@@ -798,7 +798,7 @@ void setup_abort_all_requesters(void)
         return;
     }
     switch (crequester.id) {
-    case 10:
+    case REQ_BUY_OBJECTS:
         if (crequester.arg3) {
             player_events[player].type = EV_BACK_TO_PLACE_OBJECT;
             player_events[player].value = 1;
@@ -806,7 +806,7 @@ void setup_abort_all_requesters(void)
             return;
         }
         break;
-    case 5:
+    case REQ_EDIT_ROOM:
         if (crequester.mode == 0) {
             if (othervar.editing_room == 1) {
                 sprintf(othervar.yesno_msg, "%s", yesno_text[4]);
@@ -816,12 +816,12 @@ void setup_abort_all_requesters(void)
             player_events[player].type = EV_DELETE_ROOM;
             return;
         }
-        if (crequester.kind != 3) {
+        if (crequester.kind != ROOM_CORRIDOR) {
             player_events[player].type = EV_EDIT_BLUEPRINT;
             return;
         }
         break;
-    case 12:
+    case REQ_STAFF_DEMAND:
         req12_clicked_sack();
         return;
     }
@@ -855,11 +855,11 @@ void cancel_top_level_requesters(s32 keep)
 {
     if (crequester.id != keep) {
         switch (crequester.id) {
-        case 9:
-        case 11:
+        case REQ_BUILD_ROOM:
+        case REQ_HIRE_STAFF:
             close_crequester(crequester.id);
             break;
-        case 10:
+        case REQ_BUY_OBJECTS:
             if (!crequester.arg3) {
                 clear_build_objects(othervar.cur_player);
                 close_crequester(crequester.id);
@@ -914,7 +914,8 @@ u8 hosp_play_smk(const u8 idx)
     if (wasPlaying) {
         LbScreenUnlock();
     }
-    if (resvars.game_mode == SCREEN_MODE_1 && resvars.screen_mode == SCREEN_MODE_1 && idx != 0x16 && idx != 0x17) {
+    if (resvars.game_mode == SCREEN_MODE_1 && resvars.screen_mode == SCREEN_MODE_1 && idx != ANIM_MAIN_MENU1 &&
+        idx != ANIM_MAIN_MENU2) {
         if (!change_res(SCREEN_MODE_13)) {
             reset_host();
             exit(1);

@@ -34,15 +34,15 @@ void place_litter(u16 tile, s8 owner, u8 type)
 
     m = &map[tile];
     if (m->owner_flags == 1 << owner) {
-        cur = m->floor & 0xf;
+        cur = m->litter_shadow & 0xf;
         if (cur == 0) {
-            m->floor &= 0xf0;
-            m->floor |= type;
+            m->litter_shadow &= 0xf0;
+            m->litter_shadow |= type;
             allhosps[owner].litter_count++;
             allhosps[owner].last_litter_tile = tile;
         } else if ((type == 5 || type == 4) && !(cur == 0 || cur == 7 || cur == 8)) {
-            m->floor &= 0xf0;
-            m->floor |= type;
+            m->litter_shadow &= 0xf0;
+            m->litter_shadow |= type;
             allhosps[owner].last_litter_tile = tile;
         }
     }
@@ -56,9 +56,9 @@ void remove_litter(u16 tile, u8 owner)
     u8 cur;
 
     m = &map[tile];
-    cur = m->floor & 0xf;
+    cur = m->litter_shadow & 0xf;
     if (m->owner_flags == 1 << owner && !(cur == 0 || cur == 7 || cur == 8)) {
-        m->floor &= 0xf0;
+        m->litter_shadow &= 0xf0;
         allhosps[owner].litter_count--;
     }
 }
@@ -279,7 +279,7 @@ void handyman_works(Thing *handyman)
         seq = objects[thing[handyman->object].subtype].repair_aniseq;
         reset_icon_value(&thing[handyman->object], ICON_NEEDS_REPAIR);
         if (seq)
-            choose_aniseq(handyman, seq, 0x3c);
+            choose_aniseq(handyman, seq, SS_HANDYMAN_WORKS);
         machine = &thing[handyman->object];
         if (machine > thing)
             machine->smoke[old_newrand() % 3] = 0;
@@ -331,7 +331,8 @@ void handyman_check_for_litter(Thing *handyman)
     dy = old_newrand() % (range * 2) - range;
     pos = ((u16)handyman->y.tile << 7) + (u16)handyman->x.tile + ((dy << 7) + dx);
     m = &map[pos];
-    if (!(m->floor & 0xf) || (m->floor & 0xf) == 7 || (m->floor & 0xf) == 8 || m->owner_flags != (1 << handyman->owner))
+    if (!(m->litter_shadow & 0xf) || (m->litter_shadow & 0xf) == 7 || (m->litter_shadow & 0xf) == 8 ||
+        m->owner_flags != (1 << handyman->owner))
         return;
     {
         u16 nearest;
@@ -424,7 +425,7 @@ u8 thingpage_request(ThingPager *p, u16 id, u8 priority)
     p->pages[p->count].id = id;
     p->pages[p->count].priority = priority;
     p->pages[p->count].responder = 0;
-    p->pages[p->count].time = 0;
+    p->pages[p->count].claimed_until = 0;
     p->count++;
     return 1;
 }
@@ -465,7 +466,7 @@ u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min)
     for (i = p->count - 1; i >= 0; i--) {
         if (room && thing[p->pages[i].id].room_id != room)
             continue;
-        if (p->pages[i].responder != (u16)(handyman - thing) && p->pages[i].time > actual_game_turn)
+        if (p->pages[i].responder != (u16)(handyman - thing) && p->pages[i].claimed_until > actual_game_turn)
             continue;
         if (p->pages[i].priority < min)
             continue;
@@ -494,7 +495,7 @@ u16 thingpage_respond(ThingPager *p, Thing *handyman, u16 room, u8 min)
     if (best == -1)
         return 0;
     p->pages[best].responder = handyman - thing;
-    p->pages[best].time = actual_game_turn + 3000;
+    p->pages[best].claimed_until = actual_game_turn + 3000;
     return p->pages[best].id;
 }
 
@@ -535,7 +536,7 @@ void thingpage_cancel_my_response(ThingPager *p, Thing *handyman)
     for (i = p->count - 1; i >= 0; i--) {
         if (p->pages[i].responder == id) {
             p->pages[i].responder = 0;
-            p->pages[i].time = 0;
+            p->pages[i].claimed_until = 0;
         }
     }
 }
@@ -608,15 +609,17 @@ u8 handyman_try_litter(Thing *handyman)
     target = 0;
     pos = (u16)handyman->x.tile + ((u16)handyman->y.tile << 7);
     for (i = 0; i < 9; i++) {
-        if (!(!(map[pos + special_around[i]].floor & 0xf) || (map[pos + special_around[i]].floor & 0xf) == 7 ||
-              (map[pos + special_around[i]].floor & 0xf) == 8)) {
+        if (!(!(map[pos + special_around[i]].litter_shadow & 0xf) ||
+              (map[pos + special_around[i]].litter_shadow & 0xf) == 7 ||
+              (map[pos + special_around[i]].litter_shadow & 0xf) == 8)) {
             target = pos + special_around[i];
             break;
         }
     }
     if (target == 0 && handyman->work_target) {
-        if (!(!(map[handyman->work_target].floor & 0xf) || (map[handyman->work_target].floor & 0xf) == 7 ||
-              (map[handyman->work_target].floor & 0xf) == 8))
+        if (!(!(map[handyman->work_target].litter_shadow & 0xf) ||
+              (map[handyman->work_target].litter_shadow & 0xf) == 7 ||
+              (map[handyman->work_target].litter_shadow & 0xf) == 8))
             target = handyman->work_target;
         handyman->work_target = handyman->work_target2;
         handyman->work_target2 = 0;

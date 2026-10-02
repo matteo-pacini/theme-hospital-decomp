@@ -3,6 +3,8 @@
 struct MenuItem {
     u8 unknown0[8];
     u16 text;
+    // 0xa: Per-hotspot argument: the hospital named, or the criteria bar's
+    // position.
     u16 arg;
     u8 unknownc[4];
 };
@@ -123,7 +125,7 @@ void display_peep_overview(void)
         break;
     case 2:
         player_events[player].type = EV_RETURN_FROM_SCREEN;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         cancel_helpmsg();
         break;
     }
@@ -286,11 +288,11 @@ void calculate_piechart(void)
     for (i = 0; i < 4u; i++) {
         slices[i].start += 4;
         slices[i].end += 4;
-        if (slices[i].radius != 0 && i != overview.value)
-            slices[i].radius -= 2;
+        if (slices[i].pull_out != 0 && i != overview.value)
+            slices[i].pull_out -= 2;
     }
-    if (slices[overview.value].radius < 0x50)
-        slices[overview.value].radius += 2;
+    if (slices[overview.value].pull_out < 0x50)
+        slices[overview.value].pull_out += 2;
 }
 
 // Draws the pie chart and each slice's hospital name.

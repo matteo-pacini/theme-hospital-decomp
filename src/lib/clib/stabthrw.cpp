@@ -66,7 +66,7 @@ struct RT_TYPE_SIG {
         RT_TYPE_SIG *base;
         unsigned char size;
         struct {
-            unsigned size;
+            unsigned flags;
             void (*ctor)();
             void (*dtor)(void *, unsigned);
         } clss;
@@ -88,7 +88,8 @@ struct active_exc {
     THROW_RO *throw_ro;
     RT_TYPE_SIG *sig;
     void *extra_object;
-    unsigned reserved;
+    // The EXC_AREA the exception was allocated in (allocexc.cpp).
+    unsigned area;
     rw_dtreg *rw;
     DTOR_CMD *cmd;
     unsigned char state;

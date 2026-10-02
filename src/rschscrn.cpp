@@ -46,7 +46,7 @@ void display_research(void)
         break;
     case 2:
         player_events[player].type = EV_RETURN_FROM_SCREEN;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         StopSample(0xc, 0x75);
         break;
     default:

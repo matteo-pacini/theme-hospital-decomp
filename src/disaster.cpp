@@ -258,7 +258,7 @@ void explosion_kills_dudes_in_room(RoomInfo *room)
     tries = 50;
     while (again && --tries >= 0) {
         again = 0;
-        for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
+        for (person = &thing[room->first_person]; person > thing; person = &thing[person->room_next]) {
             if (person->type == THING_STAFF) {
                 sack_staff(person, 2);
                 again = 1;
@@ -266,7 +266,7 @@ void explosion_kills_dudes_in_room(RoomInfo *room)
             }
         }
     }
-    for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
+    for (person = &thing[room->first_person]; person > thing; person = &thing[person->room_next]) {
         if (person->type == THING_PATIENT)
             person_dies(person);
     }
@@ -411,7 +411,7 @@ void what_is_required(u8 illness, u8 owner)
     exp = &expertise[illness];
     if (allhosps[owner].rooms[illness].cure_available == 1) {
         required.treatable = 1;
-        if (exp->kind == 0x27)
+        if (exp->kind == OBJ_PHARMACY_CABINET)
             required.raw[2] = allhosps[owner].rooms[illness].drug_effectiveness;
         return;
     }
@@ -421,7 +421,7 @@ void what_is_required(u8 illness, u8 owner)
             required.room_unavailable = 1;
     }
     if (exp->staff_mask & 0x20) {
-        if (listhead[owner].staff[5] == 0) {
+        if (listhead[owner].staff_by_skill[5] == 0) {
             required.staff_mask = 0x20;
             required.missing_skill = 5;
             required.surgeons_needed = 2;
@@ -432,7 +432,7 @@ void what_is_required(u8 illness, u8 owner)
         }
     } else {
         for (i = 0; i < 9; i++) {
-            if ((exp->staff_mask & (1 << i)) && listhead[owner].staff[i] == 0) {
+            if ((exp->staff_mask & (1 << i)) && listhead[owner].staff_by_skill[i] == 0) {
                 required.staff_mask = exp->staff_mask;
                 required.missing_skill = i;
                 break;
@@ -443,7 +443,7 @@ void what_is_required(u8 illness, u8 owner)
         if (allhosps[owner].rooms[ILL_DIAG_WARD].cure_available == 0) {
             if (listhead[owner].rooms[ROOM_WARD] == 0)
                 required.needs_ward = 1;
-            if (listhead[owner].staff[2] == 0)
+            if (listhead[owner].staff_by_skill[2] == 0)
                 required.needs_nurse = 1;
         }
     }

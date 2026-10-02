@@ -1066,12 +1066,12 @@ void draw_popup_icons(void)
                                       resvars.coords_PanelLayoutp->popup_window_dy,
                                   lbDisplay.graphics_screen_width, game_panel[popup_icons[1].sprite].height);
         for (i = 1; popup_icons[i].sprite != 0; i++) {
-            if (listhead[player].first[i]) {
+            if (listhead[player].first_call[i]) {
                 spr = &game_panel[popup_icons[i].sprite];
-                call = &playercall[listhead[player].first[i]];
+                call = &playercall[listhead[player].first_call[i]];
                 if (call->slot < 9) {
-                    if (call->flash) {
-                        if (call->flash > 0x22)
+                    if (call->slide_step) {
+                        if (call->slide_step > 0x22)
                             x = resvars.coords_PanelLayoutp->slots[call->slot].x +
                                 resvars.coords_PanelLayoutp->popup_icon_dx;
                         else
@@ -1081,40 +1081,40 @@ void draw_popup_icons(void)
                             resvars.coords_PanelLayoutp->popup_icon_dx;
                     }
                     y = 0;
-                    if (call->flash) {
-                        x += resvars.panel_popup_coords_Pointp[call->flash].x;
-                        y += resvars.panel_popup_coords_Pointp[call->flash].y;
-                        if (resvars.panel_popup_coords_Pointp[call->flash].x == 0 &&
-                            resvars.panel_popup_coords_Pointp[call->flash].y == 0) {
-                            call->flash = 0;
+                    if (call->slide_step) {
+                        x += resvars.panel_popup_coords_Pointp[call->slide_step].x;
+                        y += resvars.panel_popup_coords_Pointp[call->slide_step].y;
+                        if (resvars.panel_popup_coords_Pointp[call->slide_step].x == 0 &&
+                            resvars.panel_popup_coords_Pointp[call->slide_step].y == 0) {
+                            call->slide_step = 0;
                         } else {
-                            if (call->flash == 1 && othervar.popup_shutter_state != 3) {
+                            if (call->slide_step == 1 && othervar.popup_shutter_state != 3) {
                             } else {
-                                call->flash++;
+                                call->slide_step++;
                             }
                             for (;;) {
-                                if (resvars.panel_popup_coords_Pointp[call->flash].x <
+                                if (resvars.panel_popup_coords_Pointp[call->slide_step].x <
                                     resvars.coords_PanelLayoutp->slots[call->slot].x) {
-                                    if (resvars.panel_popup_coords_Pointp[call->flash].x == 0 &&
-                                        resvars.panel_popup_coords_Pointp[call->flash].y == 0) {
-                                        if (call->flash > 0x22) {
-                                            call->flash = 0;
+                                    if (resvars.panel_popup_coords_Pointp[call->slide_step].x == 0 &&
+                                        resvars.panel_popup_coords_Pointp[call->slide_step].y == 0) {
+                                        if (call->slide_step > 0x22) {
+                                            call->slide_step = 0;
                                         } else {
                                             switch (call->slot) {
                                             case 4:
                                             case 5:
                                             case 6:
                                             case 7:
-                                                call->flash = 0;
+                                                call->slide_step = 0;
                                                 break;
                                             default:
-                                                call->flash = 0x22;
+                                                call->slide_step = 0x22;
                                                 break;
                                             }
                                         }
                                         break;
                                     }
-                                    call->flash++;
+                                    call->slide_step++;
                                 } else {
                                     break;
                                 }
@@ -1161,12 +1161,12 @@ void draw_popup_icons(void)
                                       resvars.coords_PanelLayoutp->popup_window_dy,
                                   lbDisplay.graphics_screen_width, game_panel[popup_icons[1].sprite].height);
         for (i = 1; popup_icons[i].sprite != 0; i++) {
-            if (listhead[player].first[i]) {
+            if (listhead[player].first_call[i]) {
                 spr = &game_panel[popup_icons[i].sprite];
-                call = &playercall[listhead[player].first[i]];
+                call = &playercall[listhead[player].first_call[i]];
                 if (call->slot < 9) {
-                    if (call->flash) {
-                        if (call->flash > 0x22)
+                    if (call->slide_step) {
+                        if (call->slide_step > 0x22)
                             x = resvars.coords_PanelLayoutp->slots[call->slot].x +
                                 resvars.coords_PanelLayoutp->popup_icon_dx;
                         else
@@ -1176,9 +1176,9 @@ void draw_popup_icons(void)
                             resvars.coords_PanelLayoutp->popup_icon_dx;
                     }
                     y = 0;
-                    if (call->flash) {
-                        x += resvars.panel_popup_coords_Pointp[call->flash].x;
-                        y += resvars.panel_popup_coords_Pointp[call->flash].y;
+                    if (call->slide_step) {
+                        x += resvars.panel_popup_coords_Pointp[call->slide_step].x;
+                        y += resvars.panel_popup_coords_Pointp[call->slide_step].y;
                     }
                     if (y == 0) {
                         x1 = x + spr->width;
@@ -1311,7 +1311,7 @@ void add_panel_popup(PlayerCall *call)
         if (i < 9) {
             call->slot = i;
             panel_popup_pos[i] = call - playercall;
-            call->flash = 1;
+            call->slide_step = 1;
             othervar.popup_shutter_state = 2;
         } else {
             call->slot = 9;
@@ -1331,8 +1331,8 @@ void rebuild_panel_popup_pos(void)
     for (i = 0; i < 9; i++)
         panel_popup_pos[i] = 0;
     for (j = 1; popup_icons[j].sprite != 0; j++) {
-        if (listhead[player].first[j]) {
-            call = &playercall[listhead[player].first[j]];
+        if (listhead[player].first_call[j]) {
+            call = &playercall[listhead[player].first_call[j]];
             panel_popup_pos[call->slot] = call - playercall;
         }
     }
@@ -1357,7 +1357,7 @@ void maintain_panel_popup(void)
             call = &playercall[panel_popup_pos[i]];
             gone = 1;
             for (j = 1; popup_icons[j].sprite != 0; j++) {
-                if (panel_popup_pos[i] == listhead[player].first[j])
+                if (panel_popup_pos[i] == listhead[player].first_call[j])
                     gone = 0;
             }
             if (gone)
@@ -1367,26 +1367,26 @@ void maintain_panel_popup(void)
         }
     }
     for (j = 1; popup_icons[j].sprite != 0; j++) {
-        if (listhead[player].first[j]) {
-            call = &playercall[listhead[player].first[j]];
+        if (listhead[player].first_call[j]) {
+            call = &playercall[listhead[player].first_call[j]];
             if (call->slot < 9 && call->slot > 0) {
                 if (!panel_popup_pos[call->slot - 1]) {
                     remove_panel_popup(call->slot - 1);
                     call->slot--;
                     panel_popup_pos[call->slot] = call - playercall;
-                    call->flash = 1;
+                    call->slide_step = 1;
                 }
             }
         }
     }
     for (j = 1; popup_icons[j].sprite != 0; j++) {
-        if (listhead[player].first[j]) {
-            call = &playercall[listhead[player].first[j]];
+        if (listhead[player].first_call[j]) {
+            call = &playercall[listhead[player].first_call[j]];
             if (call->slot < 9) {
                 slot = call->slot;
                 for (k = 1; popup_icons[k].sprite != 0; k++) {
-                    if (listhead[player].first[k]) {
-                        other_call = &playercall[listhead[player].first[k]];
+                    if (listhead[player].first_call[k]) {
+                        other_call = &playercall[listhead[player].first_call[k]];
                         if (other_call->slot < 9) {
                             if (other_call != call) {
                                 if (slot == other_call->slot)

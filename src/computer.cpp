@@ -397,7 +397,7 @@ void process_computer_peep(Thing *patient, u8 owner)
     for (;;) {
         ADVANCE_TIME();
         if (allhosps[owner].rooms[ILL_GENERAL_PRACTICE].cure_available == 1) {
-            update_single_cure_cost(1, owner);
+            update_single_cure_cost(ILL_GENERAL_PRACTICE, owner);
             bucket->income += hosp->rooms[ILL_GENERAL_PRACTICE].price;
             patient->treatment = ILL_GENERAL_PRACTICE;
             computer_diag_progress(patient, owner);

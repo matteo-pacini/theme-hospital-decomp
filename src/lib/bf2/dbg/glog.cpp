@@ -3,6 +3,7 @@
 struct TbLog {
     char filename[0x91];
     char prefix[0x21];
+    // LbLogSetup's flags: bits 0-1 the open mode (exactly one set).
     u32 flags;
     u32 initialised;
     u32 created;

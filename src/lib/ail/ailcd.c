@@ -51,6 +51,7 @@ typedef struct {
 
 typedef struct {
     U32 tracks;
+    /* Each track's start in milliseconds (+1); pos[tracks] is the disc's end. */
     U32 pos[100];
 } RB_CONTENTS;
 
@@ -58,7 +59,9 @@ typedef struct _REDBOOK {
     U32 drive;
     U32 paused;
     U32 pause_pos;
+    /* End of the range being played, in milliseconds (resumed to after a pause). */
     U32 end;
+    /* contents must be reread (set at open and after a drive error). */
     U32 dirty;
     RB_CONTENTS contents;
 } REDBOOK;

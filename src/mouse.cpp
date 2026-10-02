@@ -1,11 +1,16 @@
 #include "hosp.h"
 
 struct Slot {
+    // 0x0: Requester shown (REQ_).
     u8 kind;
     u8 unknown1[0x1];
+    // 0x2: Thing shown.
     u16 value;
-    u16 f4;
-    u8 f6;
+    // 0x4: Patient window: nonzero shows the health graph, 0 the diagnosis.
+    u16 show_graph;
+    // 0x6: Patient window: frames before the graph/diagnosis toggle works
+    // again.
+    u8 toggle_delay;
     u8 unknown7[0x4];
 };
 
@@ -705,7 +710,7 @@ void process_right_button(u16 icon)
                             if (!mouse_was_on_window &&
                                 (!allhosps[player].edited_room || crequester.id != REQ_EDIT_ROOM) &&
                                 (crequester.id != REQ_NONE || othervar.irequester_slot != 0)) {
-                                process_keys(0, 1);
+                                process_keys(0, KC_ESCAPE);
                             } else {
                                 hovered = &thing[othervar.pointed_thing];
                                 if (hovered->owner == player) {
@@ -756,7 +761,7 @@ void process_right_button(u16 icon)
                 case MM_EDIT_ROOM:
                 case MM_VACCINATE:
                     if (!mouse_was_on_window)
-                        process_keys(0, 1);
+                        process_keys(0, KC_ESCAPE);
                     break;
                 case MM_EDIT_ROOM_WAIT:
                     player_events[player].type = EV_CANCEL_EDIT_ROOM;

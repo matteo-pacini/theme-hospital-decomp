@@ -1,13 +1,17 @@
 #include "hosp.h"
 
 struct Advice {
+    // 0x0: Situation code find_advice switches on; 0 ends the table.
     u16 id;
     u16 duration;
+    // 0x4: Multiplied by times_given: the larger it is, the longer the advice
+    // waits before it may be given again.
     u16 repeat_weight;
     u8 times_given;
     // 0x7: Set by find_advice (always to 0) and cleared by reset_advisor; no
     // code reads it.
     u8 unused_set_by_find_advice_0;
+    // 0x8: Game turn it was last given.
     u32 time;
     // 0xc: Set by find_advice (always to 0) and cleared by reset_advisor; no
     // code reads it.
@@ -340,8 +344,8 @@ u8 find_advice(const u16 id)
         }
         break;
     case 8:
-        if (myhosp->staff_by_kind[1] >= 6 && adcounts.idle_doctors > myhosp->staff_by_kind[1] / 3 &&
-            advisor.has_patients) {
+        if (myhosp->staff_by_kind[STAFF_DOCTOR] >= 6 &&
+            adcounts.idle_doctors > myhosp->staff_by_kind[STAFF_DOCTOR] / 3 && advisor.has_patients) {
             sprintf(advisor.text, advisor_text[8]);
             found = 1;
         }
@@ -357,7 +361,7 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x65:
-        if (myhosp->staff_by_kind[0] >= 4 && adcounts.idle_nurses > myhosp->staff_by_kind[0] / 4 &&
+        if (myhosp->staff_by_kind[STAFF_NURSE] >= 4 && adcounts.idle_nurses > myhosp->staff_by_kind[STAFF_NURSE] / 4 &&
             advisor.has_patients) {
             sprintf(advisor.text, advisor_text[0x65]);
             found = 1;
@@ -566,7 +570,7 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x45:
-        if (advice[id].times_given < 1 && myhosp->litter_count > 0 && myhosp->staff_by_kind[2] == 0) {
+        if (advice[id].times_given < 1 && myhosp->litter_count > 0 && myhosp->staff_by_kind[STAFF_HANDYMAN] == 0) {
             sprintf(advisor.text, advisor_text[0x45]);
             found = 1;
         }
@@ -590,7 +594,7 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x5c:
-        if (NRAdcounts.plants > 0 && myhosp->staff_by_kind[2] == 0) {
+        if (NRAdcounts.plants > 0 && myhosp->staff_by_kind[STAFF_HANDYMAN] == 0) {
             sprintf(advisor.text, advisor_text[0x5c]);
             found = 1;
         }
@@ -630,7 +634,7 @@ u8 find_advice(const u16 id)
         break;
     case 0x50:
         if (listhead[player].rooms[ROOM_TRAINING] != 0 && adcounts.consultants == 0 &&
-            othervar.last_built_room_s == 0x16 && advisor.has_patients) {
+            othervar.last_built_room_s == ROOM_TRAINING && advisor.has_patients) {
             sprintf(advisor.text, advisor_text[0x50]);
             found = 1;
             othervar.last_built_room_s = 0;
@@ -638,7 +642,7 @@ u8 find_advice(const u16 id)
         break;
     case 0x53:
         if (listhead[player].rooms[ROOM_RESEARCH] != 0 && adcounts.researchers == 0 &&
-            othervar.last_built_room_s == 0x1c && advisor.has_patients) {
+            othervar.last_built_room_s == ROOM_RESEARCH && advisor.has_patients) {
             if (!myplayer.advisor_flags[1]) {
                 sprintf(advisor.text, advisor_situations[2]);
                 myplayer.advisor_flags[1] = 1;
@@ -650,9 +654,9 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x66:
-        what_is_required(0x13, player);
-        if ((required.raw[0] & 0x20) && required.missing_room != 10 && required.surgeons_needed == 2 &&
-            othervar.last_built_room_s == 10 && required.needs_ward) {
+        what_is_required(ILL_KIDNEY_BEANS, player);
+        if ((required.raw[0] & 0x20) && required.missing_room != ROOM_THEATRE && required.surgeons_needed == 2 &&
+            othervar.last_built_room_s == ROOM_THEATRE && required.needs_ward) {
             if (!myplayer.advisor_flags[2]) {
                 sprintf(advisor.text, advisor_situations[3]);
                 myplayer.advisor_flags[2] = 1;
@@ -664,9 +668,9 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x54:
-        what_is_required(0x13, player);
-        if ((required.raw[0] & 0x20) && required.missing_room != 10 && required.surgeons_needed == 2 &&
-            othervar.last_built_room_s == 10) {
+        what_is_required(ILL_KIDNEY_BEANS, player);
+        if ((required.raw[0] & 0x20) && required.missing_room != ROOM_THEATRE && required.surgeons_needed == 2 &&
+            othervar.last_built_room_s == ROOM_THEATRE) {
             if (!myplayer.advisor_flags[2]) {
                 sprintf(advisor.text, advisor_situations[3]);
                 myplayer.advisor_flags[2] = 1;
@@ -678,49 +682,51 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x67:
-        what_is_required(0x13, player);
-        if ((required.raw[0] & 0x20) && required.missing_room != 10 && required.surgeons_needed == 1 &&
-            othervar.last_built_room_s == 10 && required.needs_ward) {
+        what_is_required(ILL_KIDNEY_BEANS, player);
+        if ((required.raw[0] & 0x20) && required.missing_room != ROOM_THEATRE && required.surgeons_needed == 1 &&
+            othervar.last_built_room_s == ROOM_THEATRE && required.needs_ward) {
             sprintf(advisor.text, advisor_text[0x67]);
             found = 1;
         }
         break;
     case 0x55:
-        what_is_required(0x13, player);
-        if ((required.raw[0] & 0x20) && required.missing_room != 10 && required.surgeons_needed == 1 &&
-            othervar.last_built_room_s == 10) {
+        what_is_required(ILL_KIDNEY_BEANS, player);
+        if ((required.raw[0] & 0x20) && required.missing_room != ROOM_THEATRE && required.surgeons_needed == 1 &&
+            othervar.last_built_room_s == ROOM_THEATRE) {
             sprintf(advisor.text, advisor_text[0x55]);
             found = 1;
         }
         break;
     case 0x56:
-        what_is_required(0x13, player);
-        if (!required.staff_mask && required.missing_room != 10 && required.needs_ward &&
-            othervar.last_built_room_s == 10) {
+        what_is_required(ILL_KIDNEY_BEANS, player);
+        if (!required.staff_mask && required.missing_room != ROOM_THEATRE && required.needs_ward &&
+            othervar.last_built_room_s == ROOM_THEATRE) {
             sprintf(advisor.text, advisor_text[0x56]);
             found = 1;
             othervar.last_built_room_s = 0;
         }
         break;
     case 0x57:
-        what_is_required(0x13, player);
-        if (!required.needs_ward && required.needs_nurse && othervar.last_built_room_s == 9) {
+        what_is_required(ILL_KIDNEY_BEANS, player);
+        if (!required.needs_ward && required.needs_nurse && othervar.last_built_room_s == ROOM_WARD) {
             sprintf(advisor.text, advisor_text[0x57]);
             found = 1;
             othervar.last_built_room_s = 0;
         }
         break;
     case 0x4f:
-        what_is_required(5, player);
-        if ((required.raw[0] & 4) && required.missing_room != 0xb && othervar.last_built_room_s == 0xb) {
+        what_is_required(ILL_INVISIBILITY, player);
+        if ((required.raw[0] & 4) && required.missing_room != ROOM_PHARMACY &&
+            othervar.last_built_room_s == ROOM_PHARMACY) {
             sprintf(advisor.text, advisor_text[0x4f]);
             found = 1;
             othervar.last_built_room_s = 0;
         }
         break;
     case 0x4e:
-        what_is_required(4, player);
-        if ((required.raw[0] & 0x40) && required.missing_room != 8 && othervar.last_built_room_s == 8) {
+        what_is_required(ILL_KING_COMPLEX, player);
+        if ((required.raw[0] & 0x40) && required.missing_room != ROOM_PSYCH &&
+            othervar.last_built_room_s == ROOM_PSYCH) {
             if (!myplayer.advisor_flags[3]) {
                 sprintf(advisor.text, advisor_situations[4]);
                 myplayer.advisor_flags[3] = 1;
@@ -732,7 +738,7 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x5d:
-        if (adcounts.machines > 0 && myhosp->staff_by_kind[2] == 0 && othervar.last_built_room_s > 0 &&
+        if (adcounts.machines > 0 && myhosp->staff_by_kind[STAFF_HANDYMAN] == 0 && othervar.last_built_room_s > 0 &&
             advisor.has_patients) {
             sprintf(advisor.text, advisor_text[0x5d]);
             found = 1;
@@ -760,15 +766,16 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x68:
-        if (listhead[player].rooms[ROOM_GP] != 0 && myhosp->staff_by_kind[1] == 0 && othervar.last_built_room_s == 7 &&
-            myhosp->level == 1) {
+        if (listhead[player].rooms[ROOM_GP] != 0 && myhosp->staff_by_kind[STAFF_DOCTOR] == 0 &&
+            othervar.last_built_room_s == ROOM_GP && myhosp->level == 1) {
             sprintf(advisor.text, advisor_text[0x68]);
             found = 1;
             othervar.last_built_room_s = 0;
         }
         break;
     case 0x69:
-        if (listhead[player].rooms[ROOM_RECEPTION] != 0 && myhosp->staff_by_kind[3] == 0 && myhosp->level == 1) {
+        if (listhead[player].rooms[ROOM_RECEPTION] != 0 && myhosp->staff_by_kind[STAFF_RECEPTIONIST] == 0 &&
+            myhosp->level == 1) {
             sprintf(advisor.text, advisor_text[0x69]);
             found = 1;
             othervar.last_built_room_s = 0;
@@ -846,28 +853,28 @@ u8 find_advice(const u16 id)
         break;
     case 0x7b:
         if (advisor.new_staff_pending) {
-            if (advisor.new_staff_kind == 1) {
-                if (advisor.new_staff_room == 8) {
+            if (advisor.new_staff_kind == STAFF_DOCTOR) {
+                if (advisor.new_staff_room == ROOM_PSYCH) {
                     sprintf(advisor.text, advisor_text[0x7d]);
                     found = 1;
-                } else if (advisor.new_staff_room == 0x1c) {
+                } else if (advisor.new_staff_room == ROOM_RESEARCH) {
                     sprintf(advisor.text, advisor_text[0x7b]);
                     found = 1;
-                } else if (advisor.new_staff_room == 10) {
+                } else if (advisor.new_staff_room == ROOM_THEATRE) {
                     sprintf(advisor.text, advisor_text[0x7c]);
                     found = 1;
-                } else if (advisor.new_staff_room != 0x1d) {
+                } else if (advisor.new_staff_room != ROOM_TOILETS) {
                     sprintf(advisor.text, advisor_text[0x7e + saferand() % 2],
                             real_room_names[rooms[advisor.new_staff_room].id]);
                     found = 1;
                 }
-            } else if (advisor.new_staff_kind == 0) {
-                if (advisor.new_staff_room != 0x1d) {
+            } else if (advisor.new_staff_kind == STAFF_NURSE) {
+                if (advisor.new_staff_room != ROOM_TOILETS) {
                     sprintf(advisor.text, advisor_text[0x80 + saferand() % 2],
                             real_room_names[rooms[advisor.new_staff_room].id]);
                     found = 1;
                 }
-            } else if (advisor.new_staff_kind == 3) {
+            } else if (advisor.new_staff_kind == STAFF_RECEPTIONIST) {
                 sprintf(advisor.text, advisor_text[0x82]);
                 found = 1;
             }
@@ -909,7 +916,7 @@ u8 find_advice(const u16 id)
         }
         break;
     case 0x8c:
-        if (!myplayer.advisor_flags[0] && othervar.last_built_room_s == 0x1c) {
+        if (!myplayer.advisor_flags[0] && othervar.last_built_room_s == ROOM_RESEARCH) {
             sprintf(advisor.text, advisor_situations[1]);
             myplayer.advisor_flags[0] = 1;
             found = 1;
@@ -1108,10 +1115,10 @@ u8 advisor_plants(void)
 u8 advisor_old_hardware(void)
 {
     if (adcounts.machine_wear_sum * 20 * adcounts.machines > adcounts.machines * 0x1300) {
-        if (myhosp->staff_by_kind[2] > 0) {
+        if (myhosp->staff_by_kind[STAFF_HANDYMAN] > 0) {
             sprintf(advisor.text, advisor_text[3]);
             return 1;
-        } else if (myhosp->staff_by_kind[2] == 0) {
+        } else if (myhosp->staff_by_kind[STAFF_HANDYMAN] == 0) {
             sprintf(advisor.text, extra_advice[0x21]);
             return 1;
         }
@@ -1119,10 +1126,10 @@ u8 advisor_old_hardware(void)
         sprintf(advisor.text, extra_advice[0x1f]);
         return 1;
     } else if (adcounts.machine_wear_sum * 5 * adcounts.machines > adcounts.machines * 0x300) {
-        if (myhosp->staff_by_kind[2] > 0) {
+        if (myhosp->staff_by_kind[STAFF_HANDYMAN] > 0) {
             sprintf(advisor.text, extra_advice[0x20]);
             return 1;
-        } else if (myhosp->staff_by_kind[2] == 0) {
+        } else if (myhosp->staff_by_kind[STAFF_HANDYMAN] == 0) {
             sprintf(advisor.text, extra_advice[0x22]);
             return 1;
         }
@@ -1131,7 +1138,7 @@ u8 advisor_old_hardware(void)
             sprintf(advisor.text, advisor_situations[10]);
             myplayer.advisor_flags[12] = 1;
             return 1;
-        } else if (myhosp->staff_by_kind[2] > 0) {
+        } else if (myhosp->staff_by_kind[STAFF_HANDYMAN] > 0) {
             sprintf(advisor.text, extra_advice[0x23]);
             return 1;
         }
@@ -1247,10 +1254,10 @@ u8 advisor_litter_problem(void)
     litter = (myhosp->litter_count << 14) / myhosp->area;
     if (litter > 0x600) {
         play_ambient(0xd7);
-        if (myhosp->staff_by_kind[2] > 0) {
+        if (myhosp->staff_by_kind[STAFF_HANDYMAN] > 0) {
             sprintf(advisor.text, extra_advice[0x12]);
             return 1;
-        } else if (myhosp->staff_by_kind[2] == 0) {
+        } else if (myhosp->staff_by_kind[STAFF_HANDYMAN] == 0) {
             sprintf(advisor.text, extra_advice[0x11]);
             return 1;
         }
@@ -1258,10 +1265,10 @@ u8 advisor_litter_problem(void)
         sprintf(advisor.text, extra_advice[0x10]);
         return 1;
     } else if (litter > 0x100) {
-        if (myhosp->staff_by_kind[2] > 1) {
+        if (myhosp->staff_by_kind[STAFF_HANDYMAN] > 1) {
             sprintf(advisor.text, advisor_text[0x46]);
             return 1;
-        } else if (myhosp->staff_by_kind[2] == 0) {
+        } else if (myhosp->staff_by_kind[STAFF_HANDYMAN] == 0) {
             sprintf(advisor.text, extra_advice[0x13]);
             return 1;
         }
@@ -1302,10 +1309,10 @@ u8 advisor_benches(void)
 u8 advisor_dead_plants(void)
 {
     if (NRAdcounts.plant_health_sum * 0x190000 / NRAdcounts.plants < 0xce4000) {
-        if (myhosp->staff_by_kind[2] == 0) {
+        if (myhosp->staff_by_kind[STAFF_HANDYMAN] == 0) {
             sprintf(advisor.text, extra_advice[0x27]);
             return 1;
-        } else if (myhosp->staff_by_kind[2] > 1) {
+        } else if (myhosp->staff_by_kind[STAFF_HANDYMAN] > 1) {
             sprintf(advisor.text, extra_advice[0x28]);
             return 1;
         }

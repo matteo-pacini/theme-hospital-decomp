@@ -5,8 +5,11 @@ extern FillInWindow fill_in_windows[];
 extern RoomNavControl room_nav[];
 
 struct NextPartEntry {
+    // 0x0: Facing of the second part.
     u8 angle;
-    u32 pos;
+    // 0x1: Map offset of the second part from the first (u16; read here with the
+    // two bytes after it).
+    u32 offset;
     u8 unknown5;
 };
 
@@ -192,21 +195,21 @@ void temp_place_door(u16 pos, u8 owner)
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
         LbTextSetWindow(0, 0, lbDisplay.physical_screen_width, statvar.view_height);
         if (owner == player) {
-            LbSpriteDraw(d, i - blocks[doortype[type].overlays[j]].info->height,
-                         blocks[doortype[type].overlays[j]].info);
+            LbSpriteDraw(d, i - blocks[doortype[type].floor_blocks[j]].info->height,
+                         blocks[doortype[type].floor_blocks[j]].info);
         }
         cx = (best_tile + (s16)doortype[type].tiles[j]) % 128;
         cy = (best_tile + (s16)doortype[type].tiles[j]) / 128;
         if (build->door_kind != 2) {
-            blocked =
-                !can_place_door((cy << 7) + cx, 3, blueprint[(s16)doortype[type % 4 + 4].sprites[0]].build_type - 1)
-                    ? (u8)1
-                    : (u8)0;
+            blocked = !can_place_door((cy << 7) + cx, OBJ_DOOR,
+                                      blueprint[(s16)doortype[type % 4 + 4].sprites[0]].build_type - 1)
+                          ? (u8)1
+                          : (u8)0;
         } else {
             int kind;
 
             kind = blueprint[find_small_thing((cy << 7) + cx)].object_kind;
-            blocked = kind == 3 || kind == 0x34 || kind == 0x35 ? (u8)1 : (u8)0;
+            blocked = kind == OBJ_DOOR || kind == OBJ_SWING_DOOR || kind == OBJ_SWING_DOOR2 ? (u8)1 : (u8)0;
         }
         give_screen_xy_of_cell_at_column_row(window.current_window, cx, cy - 1);
         d = info.cell_x;
@@ -300,7 +303,7 @@ void place_bp_door(u8 owner, u8 swap)
             piece += 6;
         }
         place_small_thing(tile, (u16)piece, 0);
-        map[tile - doortype[type].offset].overlay = doortype[type].overlays[i];
+        map[tile - doortype[type].offset].floor_block = doortype[type].floor_blocks[i];
     }
     othervar.full_redraw = 1;
     if (bs->door_kind == 2) {
@@ -457,7 +460,7 @@ void build_all_rooms(void)
     for (cell = map; cell < end_map; cell++) {
         if (cell->owner_flags == mask) {
             if (find_bluep_who(cell) < 0) {
-                if (cell->overlay == 0x17 || cell->overlay >= 0x20) {
+                if (cell->floor_block == 0x17 || cell->floor_block >= 0x20) {
                 } else {
                     search_for_outer_color(cell);
                     color.corner_wall_colour = 7;
@@ -671,8 +674,8 @@ void build_all_rooms(void)
     }
     for (cell = map; cell < end_map; cell++) {
         if (cell->owner_flags & mask) {
-            if (blocks[cell->overlay].flags == 0x20) {
-                cell->overlay = 0x13;
+            if (blocks[cell->floor_block].flags == 0x20) {
+                cell->floor_block = 0x13;
             }
         }
     }
@@ -702,7 +705,7 @@ s8 search_for_outer_color(Map *cell)
         } else if (cell->wall_w) {
             col = get_wall_color(cell);
         }
-        if (cell->overlay == 0xf) {
+        if (cell->floor_block == 0xf) {
             color.side_wall_colour = col;
             col = -1;
         } else {
@@ -776,7 +779,7 @@ void price_all_rooms(u16 type, u8 owner)
         }
         for (y = room->pos / 128; y < room->pos / 128 + room->height; y++) {
             for (x = room->pos % 128; x < room->pos % 128 + room->width; x++) {
-                map[(s16)x + ((s16)y << 7)].overlay = rooms[type].overlay;
+                map[(s16)x + ((s16)y << 7)].floor_block = rooms[type].floor_block;
             }
         }
         recolour_all_rooms();
@@ -1584,12 +1587,12 @@ void init_place_object(u8 kind, u8 mode, u16 room, s16 offset)
     place_object_change_angle((s8)gamevar.place_dir);
     set_mouse_mode(MM_PLACE_OBJECT);
     if (mode == 2) {
-        crequester.kind = 3;
+        crequester.kind = ROOM_CORRIDOR;
     }
     setup_place_object_requester();
     crequester.arg3 = kind;
     if (mode == 2) {
-        crequester.kind = 3;
+        crequester.kind = ROOM_CORRIDOR;
         set_edit_room_requester_mode(10);
     }
 }
@@ -1832,7 +1835,7 @@ void pick_up_object(u16 id, u8 both)
         remove_object_from_map(obj);
         if (othervar.cur_player == player) {
             gamevar.place_mode = 2;
-            crequester.kind = 3;
+            crequester.kind = ROOM_CORRIDOR;
         }
     }
     if (othervar.cur_player == player) {
@@ -1870,7 +1873,7 @@ void clear_build_objects(u8 owner)
     }
     if (owner == player) {
         for (i = 0; i < 0x3e; i++) {
-            if (statvar.num_players > 1 && i == 0x11) {
+            if (statvar.num_players > 1 && i == OBJ_LITTER_BOMB) {
                 continue;
             }
             gamevar.buy_list.to_place[i] = 0;
@@ -1958,9 +1961,9 @@ u16 place_object_wall_hug(u16 pos, u8 kind)
 
         part_kind = next_part[objects[kind].next_part_index].kind;
         part_angle = next_part[objects[kind].next_part_index].parts[angle].angle;
-        part_pos = next_part[objects[kind].next_part_index].parts[angle].pos;
+        part_pos = next_part[objects[kind].next_part_index].parts[angle].offset;
         b = &statvar.object_bounds[part_kind][part_angle];
-        convert_MW_to_xy(next_part[objects[kind].next_part_index].parts[angle].pos, &ox, &oy);
+        convert_MW_to_xy(next_part[objects[kind].next_part_index].parts[angle].offset, &ox, &oy);
         if (sx + b->minX + ox < rx) {
             sx = rx - b->minX - ox;
         }
@@ -2176,12 +2179,13 @@ u8 corridor_object_nav_check(u16 pos, u8 kind, u8 dir)
     ok = 1;
     side = 1;
     count = 0x18;
-    if (kind == 0xb) {
+    if (kind == OBJ_RECEPTION_DESK) {
         side = 0;
         count = 0x18;
     }
     mark_object_shape(cell, shape, dir, &objects[kind], 0);
-    if (!(kind == 0x2d || kind == 0x11 || check_points_connected(entrance, pos + shape->use_offsets[side]))) {
+    if (!(kind == OBJ_PLANT || kind == OBJ_LITTER_BOMB ||
+          check_points_connected(entrance, pos + shape->use_offsets[side]))) {
         ok = 0;
     } else {
         for (i = 0; i < count; i++) {
@@ -2257,7 +2261,7 @@ u8 corridor_object_room_nav_check(u16 pos, u8 kind, u8 dir, RoomInfo *room)
         return 0;
     }
     mark_object_shape(cell, shape, dir, &objects[kind], 0);
-    for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
+    for (occupant = &thing[room->first_person]; occupant > thing; occupant = &thing[occupant->room_next]) {
         obj = &thing[LINKED_OBJECT(occupant)];
         if (obj > thing) {
             if (occupant->type == THING_STAFF) {
@@ -2378,7 +2382,7 @@ extern "C" u8 is_room_empty(RoomInfo *room)
 {
     Thing *door;
 
-    if (room->first) {
+    if (room->first_person) {
         return 0;
     }
     door = search_mapwho(&map[room->door_tile], THING_DOOR);

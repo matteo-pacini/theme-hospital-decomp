@@ -116,7 +116,7 @@ void do_earthquake(void)
                         continue;
                     }
                 }
-                if (obj->state != 0x12) {
+                if (obj->state != OS_REMOVED) {
                     obj->times_used += gamevar.quake_severity;
                     if (obj->strength * 75 / 100 <= obj->times_used) {
                         modify_machine(obj);

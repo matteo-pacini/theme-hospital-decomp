@@ -231,7 +231,7 @@ void change_health(Thing *patient, s16 amount)
     } else if (health <= 100) {
         reset_icon_value(patient, patient->icon_id);
         set_icon_value(patient, ICON_HEALTH_1);
-    } else if (patient->icon_id >= 1 && patient->icon_id <= 5) {
+    } else if (patient->icon_id >= ICON_HEALTH_1 && patient->icon_id <= ICON_HEALTH_5) {
         reset_icon_value(patient, patient->icon_id);
     }
     if (health > 0) {
@@ -630,10 +630,10 @@ void person_go_for_treatment(Thing *patient)
         process_person_complex(patient);
         break;
     }
-    case 0x2a:
+    case ILL_DIAG_WARD:
         send_person_to_bed(patient);
         break;
-    case 0x2c:
+    case ILL_AUTOPSY:
         send_person_for_research(patient);
         break;
     default: {
@@ -859,7 +859,7 @@ u16 find_possible_diagnosis(Thing *patient)
     patient->treatment = 0;
     if (diag->count) {
         for (i = 0, count = 0; i < diag->count; i++) {
-            treatment = (u16)diag->ids[i];
+            treatment = (u16)diag->treatments[i];
             if (allhosps[patient->owner].rooms[treatment].cure_available == 1) {
                 list[count++] = treatment;
             }

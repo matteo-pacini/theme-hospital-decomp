@@ -56,64 +56,64 @@ void reputation_affected(const u8 treatment, const u16 event, const u16 month, c
     count = 0;
     hosp = &allhosps[owner];
     switch (event) {
-    case 0:
-    case 6:
-    case 21:
+    case REP_CURED:
+    case REP_COMPUTER_DIAGNOSED:
+    case REP_ILLNESS_FOUND:
         delta = 1;
         break;
-    case 3:
+    case REP_DIED:
     case 25:
         delta = -1;
         break;
-    case 22:
+    case REP_CASE:
         count = 1;
         break;
-    case 2:
-    case 4:
-    case 7:
-    case 10:
+    case REP_GO_FOR_TREATMENT:
+    case REP_DIAGNOSED:
+    case REP_NO_TREATMENT_FOUND:
+    case REP_NEXT_TREATMENT:
         break;
-    case 5:
+    case REP_DIAGNOSIS_FAILED:
         delta = -(hosp->rep_events * 5) / 100;
         break;
-    case 9:
+    case REP_RESEARCHED:
         if (treatment)
             delta = hosp->rooms[treatment].rep_events * 5 / 100;
         else
             delta = hosp->rep_events * 5 / 100;
         break;
-    case 11:
+    case REP_MACHINE_EXPLODED:
         delta = -(hosp->rep_events * 10) / 100;
         break;
-    case 12:
+    case REP_EMERGENCY_SUCCESS:
         delta = hosp->rep_events * 2 / 100;
         break;
-    case 13:
+    case REP_EMERGENCY_FAILED:
         delta = -(hosp->rep_events * (amount * 4)) / 100;
         break;
-    case 14:
+    case REP_EPIDEMIC_DECLARED:
         delta = -(hosp->rep_events * 2) / 100;
         break;
-    case 15:
+    case REP_EPIDEMIC_COVER_UP_FOUND:
         delta = -(hosp->rep_events * 10) / 100;
         break;
-    case 16:
+    case REP_VIP_GOOD:
         delta = hosp->rep_events * 4 / 100;
         break;
-    case 17:
+    case REP_VIP_FAIR:
         delta = hosp->rep_events * 2 / 100;
         break;
-    case 18:
+    case REP_VIP_BAD:
         delta = -(hosp->rep_events * 4) / 100;
         break;
-    case 19:
+    case REP_AUTOPSY:
         delta = -(hosp->rep_events * 20) / 100;
         break;
     case 20:
         delta = -1;
         break;
-    case 23:
-    case 24:
+    case REP_TROPHY:
+    case REP_AWARD:
         delta += amount * hosp->rep_events / 100;
         break;
     case 1:
@@ -330,7 +330,7 @@ s32 max_price_for_treatment(const u16 treatment, const u8 owner)
 
     monopoly = 0;
     base = expertise[treatment].start_price;
-    if (treatment >= 0x24 || treatment == 1)
+    if (treatment >= 0x24 || treatment == ILL_GENERAL_PRACTICE)
         rep = allhosps[owner].reputation;
     else
         rep = allhosps[owner].rooms[treatment].reputation;

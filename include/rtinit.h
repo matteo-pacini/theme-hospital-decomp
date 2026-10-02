@@ -5,7 +5,10 @@
    tables: __InitRtns calls the XI routines at startup and __FiniRtns the
    YI routines at exit, each in order of priority. */
 struct rt_init {
+    /* 0 as defined; __InitRtns and __FiniRtns set it to 2 once the routine
+       has been handled. */
     unsigned char rtn_type;
+    /* Lower runs earlier at startup and later at exit. */
     unsigned char priority;
     void (*rtn)(void);
 };

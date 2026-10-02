@@ -423,7 +423,7 @@ void restore_display_screen(void)
     switch (display_mode) {
     case DM_GAME:
     case DM_MODAL:
-        return_from_screen(0, 1, 1);
+        return_from_screen(MM_NORMAL, 1, 1);
         break;
     case DM_CHARTS:
         bank.state = 0;

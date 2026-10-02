@@ -25,7 +25,7 @@ IPXHandler::IPXHandler()
     next_packet = 0;
     batch_count = 0;
     socket_open = 0;
-    stamp = clock();
+    advertise_time = clock();
     memset(IPXDEBUGSTRING, 0, 0x50);
 }
 
@@ -183,7 +183,7 @@ void IPXHandler::DeInit(void)
         recv_sel = 0;
         IPXDebug("DEALLOCATED\n");
         strcpy(IPXDEBUGSTRING, "DEINIT SUCCESSFULL\n");
-        stamp = clock();
+        advertise_time = clock();
         batch_count = 0;
     } else {
         strcpy(IPXDEBUGSTRING, "DEINIT FAILED\n");
@@ -604,9 +604,9 @@ void IPXHandler::UpdateServer(u16 type, char *name, __3ljac5NETSOCKET *sock)
             }
         }
         last_update = clock();
-        if (last_update - stamp > 4000) {
+        if (last_update - advertise_time > 4000) {
             AdvertiseServer(type, name, sock);
-            stamp = last_update;
+            advertise_time = last_update;
         } else if (count) {
             BatchProcess();
         }

@@ -15,11 +15,13 @@
 struct SampleInfo {
     u32 SampleHandle;
     volatile s32 SampleVolume;
+    // Playback rate as a percentage of the sample's own.
     u16 SamplePitch;
     u16 SamplePan;
     volatile s16 FadeToVolume;
     u32 SourceID;
     s16 SampleNumber;
+    // 0 not fading, 1 fading up, 2 fading down.
     volatile u8 FadeState;
     // Nonzero: end the sample once the fade reaches FadeToVolume.
     volatile u8 FadeStopFlag;
@@ -28,6 +30,8 @@ struct SampleInfo {
     // 0x17: Zeroed by PlaySampleFromAddress; no code reads it.
     u8 unused_set_by_PlaySampleFromAddress;
     u8 unknown18;
+    // Caller's tag (logged as "pri"); PlaySampleFromAddress type 3 reuses the
+    // voice of the same source and tag.
     u32 ExtraData;
 };
 

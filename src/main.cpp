@@ -211,7 +211,7 @@ void setup_blocks(void)
     u32 i = 0;
 
     reset_blocks();
-    for (; blocks[i].height >= 0; i++) {
+    for (; blocks[i].terminator >= 0; i++) {
         if (i >= 0x50) {
             blocks[i].data = (u32)&tile[(u8)blocks[i].data + 0x51];
         } else {
@@ -242,7 +242,7 @@ void reset_blocks(void)
 {
     int i;
 
-    for (i = 0; blocks[i].height >= 0; i++) {
+    for (i = 0; blocks[i].terminator >= 0; i++) {
         blocks[i].data = blocks_backup[i];
     }
 }

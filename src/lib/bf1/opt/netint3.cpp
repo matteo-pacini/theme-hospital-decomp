@@ -2,6 +2,7 @@
 
 struct __4p8ei9UnidirectionalHeader {
     u8 stub[4];
+    // 0 RTS, 1 request, 2 data, 3 end, 4 abort.
     u32 type;
 };
 
@@ -10,12 +11,16 @@ struct __68fguuUnidirectionalRTSMessage {
     u32 type;
     u32 size;
     u32 block_size;
+    // Blocks per request, less one.
     u32 window;
 };
 
 struct __2unp93UnidirectionalDataMessage {
     u8 stub[4];
     u32 type;
+    // incomingUnidirectionalMessage receives every type through this layout:
+    // a request's block and last are its first and last block, an RTS's
+    // block, last and window its size, block_size and window.
     u32 block;
     union {
         u8 data[0x200];

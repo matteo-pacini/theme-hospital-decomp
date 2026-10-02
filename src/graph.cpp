@@ -6,8 +6,11 @@ extern "C" {
 }
 
 struct GraphLabel {
-    u8 kind;
-    u16 value;
+    // 0x0: graph[] index of the statistic labelled.
+    u8 graph;
+    // 0x1: Screen y of the label.
+    u16 y;
+    // 0x3: Value shown on the label.
     s32 data;
 };
 
@@ -43,11 +46,11 @@ void insert_graph_label(s16 kind, s16 value, s32 data)
     u8 i;
 
     i = 0;
-    while (GraphTextPos[i].value <= value && i < NumText)
+    while (GraphTextPos[i].y <= value && i < NumText)
         i++;
     memmove(&GraphTextPos[i + 1], &GraphTextPos[i], (NumText - i) * 7);
-    GraphTextPos[i].kind = kind;
-    GraphTextPos[i].value = value;
+    GraphTextPos[i].graph = kind;
+    GraphTextPos[i].y = value;
     GraphTextPos[i].data = data;
     NumText++;
 }
@@ -66,17 +69,17 @@ void spread_graph_labels(u16 gap)
     while (moved) {
         moved = 0;
         for (i = 0; i < NumText; i++) {
-            below = i > 0 && GraphTextPos[i].value - GraphTextPos[i - 1].value < gap ? (u8)1 : (u8)0;
-            above = i < NumText - 1 && GraphTextPos[i + 1].value - GraphTextPos[i].value < gap ? (u8)1 : (u8)0;
+            below = i > 0 && GraphTextPos[i].y - GraphTextPos[i - 1].y < gap ? (u8)1 : (u8)0;
+            above = i < NumText - 1 && GraphTextPos[i + 1].y - GraphTextPos[i].y < gap ? (u8)1 : (u8)0;
             if (below && !above) {
-                if (GraphTextPos[i].value < resvars.screen_boxes_GraphRectp[46].y)
-                    GraphTextPos[i].value++;
+                if (GraphTextPos[i].y < resvars.screen_boxes_GraphRectp[46].y)
+                    GraphTextPos[i].y++;
                 moved = 1;
             }
             if (!below && above) {
-                if (GraphTextPos[i].value >
+                if (GraphTextPos[i].y >
                     resvars.screen_boxes_GraphRectp[46].y - resvars.screen_boxes_GraphRectp[46].h - gap)
-                    GraphTextPos[i].value--;
+                    GraphTextPos[i].y--;
                 moved = 1;
             }
         }
@@ -123,7 +126,7 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
         break;
     case 2:
         player_events[player].type = EV_RETURN_FROM_SCREEN;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         break;
     }
     set_font_from_cache(0xb);
@@ -240,11 +243,11 @@ void draw_graphs(u16 x, u16 y, u16 h, u16 step)
     }
     spread_graph_labels(font_height);
     for (k = 0; k < NumText; k++) {
-        i = GraphTextPos[k].kind;
+        i = GraphTextPos[k].graph;
         sprintf(buf, "%s:%d", report_text[graph[i].label], GraphTextPos[k].data);
         lbDisplay.draw_colour = colour[graph[i].colour];
         lbDisplay.draw_flags |= 0x40;
-        LbTextDraw(x + 4, GraphTextPos[k].value, buf);
+        LbTextDraw(x + 4, GraphTextPos[k].y, buf);
     }
     month = mycontrol->month;
     year = actual_game_turn / 0x4650;

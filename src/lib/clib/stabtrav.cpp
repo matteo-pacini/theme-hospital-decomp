@@ -41,8 +41,8 @@ struct STAB_TRAVERSE {
 
 struct DTREG_VFPTRS {
     RO_STATE *(*state_table)(RO_DTREG *ro);
-    void *(*get_object)(rw_dtreg *rw, unsigned state_var);
-    void (*trav_init)(STAB_TRAVERSE *ctl, rw_dtreg *rw);
+    void *(*point_object)(rw_dtreg *rw, unsigned state_var);
+    void (*init_traverse)(STAB_TRAVERSE *ctl, rw_dtreg *rw);
 };
 
 extern DTREG_VFPTRS *__wcpp_2_data_dtreg_vfptrs_[];
@@ -79,7 +79,7 @@ void __wcpp_2_stab_trav_init_(STAB_TRAVERSE *ctl, rw_dtreg *rw)
     ctl->rw = rw;
     ctl->state_var = rw->state_var;
     ctl->bound = 0;
-    __wcpp_2_data_dtreg_vfptrs_[rw->ro->kind]->trav_init(ctl, rw);
+    __wcpp_2_data_dtreg_vfptrs_[rw->ro->kind]->init_traverse(ctl, rw);
 }
 
 // __wcpp_2_stab_trav_comp_: step ctl's state back by 2 (past the object being constructed).

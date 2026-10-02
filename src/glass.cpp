@@ -64,8 +64,8 @@ struct ZoomBox {
 };
 
 struct BalanceFileInfo {
-    BalanceFileInfo *prev;
     BalanceFileInfo *next;
+    BalanceFileInfo *prev;
 };
 
 extern s32 CurrentDisplay;
@@ -243,7 +243,7 @@ void draw_a_box(u8 zoom)
         if (ZoomBoxes[zoom].button) {
             if (!((((s8)ZoomBoxes[zoom].type != 2 && display_mode == DM_NICKNAME) ||
                    (to[0] == 0x213 && display_mode == DM_NETWORK_SELECT)) &&
-                  current_balance_file && current_balance_file == current_balance_file->next)) {
+                  current_balance_file && current_balance_file == current_balance_file->prev)) {
                 draw_button_box(x, y, w, h);
                 draw_button_edges(x, y, w - 1, h - 1, 0);
             }

@@ -2,8 +2,11 @@
 
 /* Links between the cells of one scan row, for drawing them back to front. */
 struct CellLink {
+    // 0x0: Cell drawn just before this one in its overlap chain, or -1.
     s8 behind;
+    // 0x1: Cell drawn just after it, or -1.
     s8 front;
+    // 0x2: Next chain (or next plain cell), or -1.
     s8 next;
 };
 
@@ -490,7 +493,7 @@ void do_cell(const u8 win, const s32 x, const s32 y, const s32 col, const s32 ro
     s32 by1;
 
     m = &map[cell];
-    if ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0)) {
+    if ((m->first || (m->litter_shadow & 0xf)) || (m->flags & 0xc0)) {
         if (m->flags & 0x10) {
             ox = 0x5a - resvars.tile_width / 2;
             oy = 0xb4 - resvars.tile_height * 3 / 2;
@@ -607,7 +610,7 @@ void draw_all_sprites_on_wscreen_selectively_using_pix_buffer(const u8 win, s32 
             for (i = 0; i < line_len; i++) {
                 m = &map[c];
                 if ((((x >= 0 && x < 0x80) && y >= 0) && y < 0x80) &&
-                    ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0))) {
+                    ((m->first || (m->litter_shadow & 0xf)) || (m->flags & 0xc0))) {
                     if (m->flags & MAP_BIG_CELL) {
                         s8 prec;
 
@@ -738,9 +741,9 @@ void draw_window_on_wscreen_mk2(const u8 win, s32 x0, s32 y0, s32 x1, s32 y1, co
                     m = &mp[c];
                     if (m->wall_n) {
                         if (myplayer.shadows_on) {
-                            if (!(m->floor & 0x20))
+                            if (!(m->litter_shadow & 0x20))
                                 LbSpriteDraw(x, sy - blocks[m->wall_n].info->height, blocks[m->wall_n].info);
-                            if (m->floor & 0x20) {
+                            if (m->litter_shadow & 0x20) {
                                 if (m->wall_n == InteriorWallHalf.block) {
                                     LbSpriteDraw(x, sy - InteriorWallHalf.sprite.height, &InteriorWallHalf.sprite);
                                 } else {
@@ -1181,44 +1184,44 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
         for (i = 0; i < line_len; i++) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
-                tile = m->overlay;
+                tile = m->floor_block;
                 if (myplayer.shadows_on) {
-                    if (!(m->floor & 0x10) && !(m->floor & 0x40)) {
+                    if (!(m->litter_shadow & 0x10) && !(m->litter_shadow & 0x40)) {
                         LbSpriteDraw(x, sy - blocks[tile].info->height, blocks[tile].info);
-                    } else if (m->floor & 0x40) {
-                        if (m->overlay == InteriorTileFull.block) {
+                    } else if (m->litter_shadow & 0x40) {
+                        if (m->floor_block == InteriorTileFull.block) {
                             LbSpriteDraw(x, sy - InteriorTileFull.sprite.height, &InteriorTileFull.sprite);
-                        } else if (m->overlay == RoomTileFull[0].block) {
+                        } else if (m->floor_block == RoomTileFull[0].block) {
                             LbSpriteDraw(x, sy - RoomTileFull[0].sprite.height, &RoomTileFull[0].sprite);
-                        } else if (m->overlay == RoomTileFull[1].block) {
+                        } else if (m->floor_block == RoomTileFull[1].block) {
                             LbSpriteDraw(x, sy - RoomTileFull[1].sprite.height, &RoomTileFull[1].sprite);
-                        } else if (m->overlay == RoomTileFull[2].block) {
+                        } else if (m->floor_block == RoomTileFull[2].block) {
                             LbSpriteDraw(x, sy - RoomTileFull[2].sprite.height, &RoomTileFull[2].sprite);
-                        } else if (m->overlay == RoomTileFull[3].block) {
+                        } else if (m->floor_block == RoomTileFull[3].block) {
                             LbSpriteDraw(x, sy - RoomTileFull[3].sprite.height, &RoomTileFull[3].sprite);
                         } else {
-                            overlay.width = blocks[m->overlay].info->width;
-                            overlay.height = blocks[m->overlay].info->height;
+                            overlay.width = blocks[m->floor_block].info->width;
+                            overlay.height = blocks[m->floor_block].info->height;
                             overlay.data = (u32)ShadowBuffer;
-                            create_overlay_sprite(blocks[m->overlay].info, blocks[73].info, &overlay);
+                            create_overlay_sprite(blocks[m->floor_block].info, blocks[73].info, &overlay);
                             LbSpriteDraw(x, sy - overlay.height, &overlay);
                         }
-                    } else if (m->floor & 0x10) {
-                        if (m->overlay == InteriorTileHalf.block) {
+                    } else if (m->litter_shadow & 0x10) {
+                        if (m->floor_block == InteriorTileHalf.block) {
                             LbSpriteDraw(x, sy - InteriorTileHalf.sprite.height, &InteriorTileHalf.sprite);
-                        } else if (m->overlay == RoomTileHalf[0].block) {
+                        } else if (m->floor_block == RoomTileHalf[0].block) {
                             LbSpriteDraw(x, sy - RoomTileHalf[0].sprite.height, &RoomTileHalf[0].sprite);
-                        } else if (m->overlay == RoomTileHalf[1].block) {
+                        } else if (m->floor_block == RoomTileHalf[1].block) {
                             LbSpriteDraw(x, sy - RoomTileHalf[1].sprite.height, &RoomTileHalf[1].sprite);
-                        } else if (m->overlay == RoomTileHalf[2].block) {
+                        } else if (m->floor_block == RoomTileHalf[2].block) {
                             LbSpriteDraw(x, sy - RoomTileHalf[2].sprite.height, &RoomTileHalf[2].sprite);
-                        } else if (m->overlay == RoomTileHalf[3].block) {
+                        } else if (m->floor_block == RoomTileHalf[3].block) {
                             LbSpriteDraw(x, sy - RoomTileHalf[3].sprite.height, &RoomTileHalf[3].sprite);
                         } else {
-                            overlay.width = blocks[m->overlay].info->width;
-                            overlay.height = blocks[m->overlay].info->height;
+                            overlay.width = blocks[m->floor_block].info->width;
+                            overlay.height = blocks[m->floor_block].info->height;
                             overlay.data = (u32)ShadowBuffer;
-                            create_overlay_sprite(blocks[m->overlay].info, blocks[74].info, &overlay);
+                            create_overlay_sprite(blocks[m->floor_block].info, blocks[74].info, &overlay);
                             LbSpriteDraw(x, sy - overlay.height, &overlay);
                         }
                     }
@@ -1270,9 +1273,9 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
                 m = &mp[c];
                 if (m->wall_n) {
                     if (myplayer.shadows_on) {
-                        if (!(m->floor & 0x20)) {
+                        if (!(m->litter_shadow & 0x20)) {
                             LbSpriteDraw(x, sy - blocks[m->wall_n].info->height, blocks[m->wall_n].info);
-                        } else if (m->floor & 0x20) {
+                        } else if (m->litter_shadow & 0x20) {
                             if (m->wall_n == InteriorWallHalf.block) {
                                 LbSpriteDraw(x, sy - InteriorWallHalf.sprite.height, &InteriorWallHalf.sprite);
                             } else if (m->wall_n == InteriorWallHalf.block) {
@@ -1308,7 +1311,7 @@ void draw_all_mk7_selective_sprites_wscreen(const u8 win, s32 x0, s32 y0, s32 x1
         for (i = 0; i < line_len; i++) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
-                if ((m->first || (m->floor & 0xf)) || (m->flags & 0xc0)) {
+                if ((m->first || (m->litter_shadow & 0xf)) || (m->flags & 0xc0)) {
                     if (!(m->flags & 0x10)) {
                         do_mapwho(m, x, sy - resvars.tile_height, 0, 0);
                     } else {
@@ -1455,44 +1458,44 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
         for (i = line_len; --i >= 0;) {
             if ((((cx >= 0 && cx < 0x80) && cy >= 0) && cy < 0x80)) {
                 m = &mp[c];
-                tile = m->overlay;
+                tile = m->floor_block;
                 if (myplayer.shadows_on) {
-                    if (!(m->floor & 0x10) && !(m->floor & 0x40)) {
+                    if (!(m->litter_shadow & 0x10) && !(m->litter_shadow & 0x40)) {
                         draw_a_clipped_four_zone_floor_tile(x, py, blocks[tile].info, x0, y0, x1, y1);
-                    } else if (m->floor & 0x40) {
-                        if (m->overlay == InteriorTileFull.block) {
+                    } else if (m->litter_shadow & 0x40) {
+                        if (m->floor_block == InteriorTileFull.block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &InteriorTileFull.sprite, x0, y0, x1, y1);
-                        } else if (m->overlay == RoomTileFull[0].block) {
+                        } else if (m->floor_block == RoomTileFull[0].block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &RoomTileFull[0].sprite, x0, y0, x1, y1);
-                        } else if (m->overlay == RoomTileFull[1].block) {
+                        } else if (m->floor_block == RoomTileFull[1].block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &RoomTileFull[1].sprite, x0, y0, x1, y1);
-                        } else if (m->overlay == RoomTileFull[2].block) {
+                        } else if (m->floor_block == RoomTileFull[2].block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &RoomTileFull[2].sprite, x0, y0, x1, y1);
-                        } else if (m->overlay == RoomTileFull[3].block) {
+                        } else if (m->floor_block == RoomTileFull[3].block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &RoomTileFull[3].sprite, x0, y0, x1, y1);
                         } else {
-                            overlay.width = blocks[m->overlay].info->width;
-                            overlay.height = blocks[m->overlay].info->height;
+                            overlay.width = blocks[m->floor_block].info->width;
+                            overlay.height = blocks[m->floor_block].info->height;
                             overlay.data = (u32)ShadowBuffer;
-                            create_overlay_sprite(blocks[m->overlay].info, blocks[73].info, &overlay);
+                            create_overlay_sprite(blocks[m->floor_block].info, blocks[73].info, &overlay);
                             draw_a_clipped_four_zone_floor_tile(x, py, &overlay, x0, y0, x1, y1);
                         }
-                    } else if (m->floor & 0x10) {
-                        if (m->overlay == InteriorTileHalf.block) {
+                    } else if (m->litter_shadow & 0x10) {
+                        if (m->floor_block == InteriorTileHalf.block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &InteriorTileHalf.sprite, x0, y0, x1, y1);
-                        } else if (m->overlay == RoomTileHalf[0].block) {
+                        } else if (m->floor_block == RoomTileHalf[0].block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &RoomTileHalf[0].sprite, x0, y0, x1, y1);
-                        } else if (m->overlay == RoomTileHalf[1].block) {
+                        } else if (m->floor_block == RoomTileHalf[1].block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &RoomTileHalf[1].sprite, x0, y0, x1, y1);
-                        } else if (m->overlay == RoomTileHalf[2].block) {
+                        } else if (m->floor_block == RoomTileHalf[2].block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &RoomTileHalf[2].sprite, x0, y0, x1, y1);
-                        } else if (m->overlay == RoomTileHalf[3].block) {
+                        } else if (m->floor_block == RoomTileHalf[3].block) {
                             draw_a_clipped_four_zone_floor_tile(x, py, &RoomTileHalf[3].sprite, x0, y0, x1, y1);
                         } else {
-                            overlay.width = blocks[m->overlay].info->width;
-                            overlay.height = blocks[m->overlay].info->height;
+                            overlay.width = blocks[m->floor_block].info->width;
+                            overlay.height = blocks[m->floor_block].info->height;
                             overlay.data = (u32)ShadowBuffer;
-                            create_overlay_sprite(blocks[m->overlay].info, blocks[74].info, &overlay);
+                            create_overlay_sprite(blocks[m->floor_block].info, blocks[74].info, &overlay);
                             draw_a_clipped_four_zone_floor_tile(x, py, &overlay, x0, y0, x1, y1);
                         }
                     }
@@ -1540,10 +1543,10 @@ void draw_all_mk7_no_sprites_bscreen(const u8 win, s32 x0, s32 y0, s32 x1, s32 y
                 m = &mp[c];
                 if (m->wall_n) {
                     if (myplayer.shadows_on) {
-                        if (!(m->floor & 0x20)) {
+                        if (!(m->litter_shadow & 0x20)) {
                             tile = blocks[m->wall_n].data;
                             draw_a_clipped_four_zone_wall_0(x, py, blocks[m->wall_n].info, x0, y0, x1, y1);
-                        } else if (m->floor & 0x20) {
+                        } else if (m->litter_shadow & 0x20) {
                             if (m->wall_n == InteriorWallHalf.block) {
                                 draw_a_clipped_four_zone_wall_0(x, py, &InteriorWallHalf.sprite, x0, y0, x1, y1);
                             } else {

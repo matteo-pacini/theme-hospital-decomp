@@ -65,7 +65,7 @@ struct rw_dtreg {
 
 struct DTREG_VFPTRS {
     void *reserved;
-    void *(*get_object)(rw_dtreg *rw, unsigned state_var);
+    void *(*point_object)(rw_dtreg *rw, unsigned state_var);
 };
 
 struct DTOR_CMD_ARRAY {
@@ -158,7 +158,7 @@ void destruct_traverse(unsigned bound, rw_dtreg *rw, int partial)
         default:
             __wcpp_2_corrupted_stack_();
         case 0:
-            obj = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->get_object(rw, state_var);
+            obj = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->point_object(rw, state_var);
             __wcpp_2_dtor_array_((char *)obj + ((DTOR_CMD_ARRAY *)cmd)->offset,
                 ((DTOR_CMD_ARRAY *)cmd)->count, ((DTOR_CMD_ARRAY *)cmd)->sig);
             break;
@@ -190,7 +190,7 @@ void destruct_traverse(unsigned bound, rw_dtreg *rw, int partial)
             break;
         }
         } else {
-            obj = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->get_object(rw, state_var);
+            obj = __wcpp_2_data_dtreg_vfptrs_[ro->kind]->point_object(rw, state_var);
             dtor(obj, 0);
         }
     }

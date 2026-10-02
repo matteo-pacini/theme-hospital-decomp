@@ -65,7 +65,7 @@ s32 mouse_in_slice(s32 x0, s32 y0, s32 x1, s32 y1, s32 x2, s32 y2, s32 h)
 // Draws sector i of a pie centred on (cx, cy) with radii rx, ry and
 // thickness h (pixels): its top, rim and visible sides (side_off 1 or 2
 // leaves out the start or end side), pulled out from the centre by its
-// radius (1/256 of the radii). Sets its label position, and
+// pull_out (1/256 of the radii). Sets its label position, and
 // pie_sector_return to i if the mouse is over it. Angles: 0x800 a full turn.
 // FUNCTION: 0x000b7f48
 void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i)
@@ -95,13 +95,13 @@ void sector_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, Sector *sectors, s32 i
     if (end < start)
         end += 0x800;
     mid = (start + end) >> 1;
-    ox = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * sec->radius) >> 8);
-    oy = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * sec->radius) >> 8);
+    ox = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * sec->pull_out) >> 8);
+    oy = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * sec->pull_out) >> 8);
     sx = ox + fixmul(lbSinTable[(start & 0x7ff) + 0x200], rx);
     sy = oy - fixmul(lbSinTable[start & 0x7ff], ry);
     ex = ox + fixmul(lbSinTable[(end & 0x7ff) + 0x200], rx);
     ey = oy - fixmul(lbSinTable[end & 0x7ff], ry);
-    text_radius = sec->text_offset + sec->radius;
+    text_radius = sec->text_offset + sec->pull_out;
     sec->text_x = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * text_radius) >> 8);
     sec->text_y = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * text_radius) >> 8);
     sec->text_right = lbSinTable[(mid & 0x7ff) + 0x200] >= 0 ? 1 : 0;
@@ -221,15 +221,15 @@ void pie_render(s32 cx, s32 cy, s32 rx, s32 ry, s32 h, s32 count, Sector *sector
 
                 sec = &sectors[i];
                 mid = sectors[i].start + (span >> 1);
-                ox = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * sec->radius) >> 8);
-                oy = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * sec->radius) >> 8);
-                text_radius = sec->text_offset + sec->radius;
+                ox = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * sec->pull_out) >> 8);
+                oy = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * sec->pull_out) >> 8);
+                text_radius = sec->text_offset + sec->pull_out;
                 sec->text_x = cx + (fixmul(lbSinTable[(mid & 0x7ff) + 0x200], rx * text_radius) >> 8);
                 sec->text_y = cy - (fixmul(lbSinTable[mid & 0x7ff], ry * text_radius) >> 8);
                 sec->text_right = lbSinTable[(mid & 0x7ff) + 0x200] >= 0 ? 1 : 0;
                 split = i;
                 lib_memcpy(&copy, &sectors[split], 0x21);
-                sectors[split].radius = 0;
+                sectors[split].pull_out = 0;
                 start_half_first =
                     lbSinTable[(sectors[i].start & 0x7ff) + 0x200] >= 0 || lbSinTable[(mid & 0x7ff) + 0x200] <= 0;
                 if (start_half_first) {

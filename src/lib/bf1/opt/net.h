@@ -53,7 +53,8 @@ struct ServiceProvider {
     TbNetworkPlayerEntry players[32];
     char session_name[0x20];
     __ic76sReceiveCallbacks *callbacks;
-    u32 started;
+    // Set once the provider's Init succeeds ("not initialised" otherwise).
+    u32 initialised;
     void *callback_data;
 
     ServiceProvider();

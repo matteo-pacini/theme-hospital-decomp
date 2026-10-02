@@ -12,6 +12,8 @@
  */
 
 union MapPos {
+    // Position in 1/256 tile: the tile in the high byte, the fraction in the
+    // low.
     u16 raw;
     struct {
         u8 frac;
@@ -27,16 +29,26 @@ struct Map {
     // ends at a value <= 0: the negated id of the tile's small thing (blueprint
     // marker, find_small_thing), or 0.
     s16 first;
-    // 0x2: Overlay block id.
-    u8 overlay;
+    // 0x2: Floor block id (blocks[] index): the ground tile drawn under
+    // everything else, including blueprint and door floor pieces.
+    u8 floor_block;
     // 0x3: Block id of the wall on the tile's north edge, or 0.
     u8 wall_n;
     // 0x4: Block id of the wall on the tile's west edge, or 0.
     u8 wall_w;
-    // 0x5: Tile flags.
+    // 0x5: Tile flags. Bits 0-2 mark the tile occupied (tested & 7 before
+    // placing anything): 1 an object's footprint, impassable to wall_in_way
+    // unless 2 is also set; 2 a footprint tile that is also a use tile, and
+    // door tiles; 4 an object's use tile (mark_object_shape); small things add
+    // their blueprint flags. 0x10: set on a
+    // door's tile while it is in use and on the tile diagonally behind (-129)
+    // a wall. MAP_BIG_CELL. Bits 6-7: n > 0 draws start[625 + n] over the tile
+    // (mapwho).
     u8 flags;
-    // 0x6: Floor block id; the low nibble is tested for floor type.
-    u8 floor;
+    // 0x6: Low nibble: litter on the tile (litter_starts index, 0 none; 7 and
+    // 8 are rat holes, which handymen leave). 0x10 / 0x40: floor_block in half
+    // / full shadow; 0x20: wall_n in shadow (set by shadows.cpp).
+    u8 litter_shadow;
     // 0x7: Bit (1 << owner) set on land the hospital owns; 0x10 set on outdoor
     // tiles.
     u8 owner_flags;
@@ -44,12 +56,16 @@ struct Map {
 
 struct Blocks {
     union {
+        // Tile sprite number as stored in blocks_backup; setup_blocks turns it
+        // into the info pointer.
         u32 data;
         TbSprite *info;
     };
-    // 0x4: Flag bits of the block, tested on wall and overlay blocks.
+    // 0x4: Flag bits of the block, tested on wall and floor blocks.
     u8 flags;
-    s8 height;
+    // 0x5: Negative (-99) only in the entry after the last block, where
+    // setup_blocks and reset_blocks stop.
+    s8 terminator;
 };
 
 struct RoomInfo {
@@ -59,23 +75,33 @@ struct RoomInfo {
     // 0x3: <0 free slot, 0 in use, 1 in use (set by nurse_in_ward), else
     // RS_*: 3 blueprint, 4 being edited, 5 repair due, 6 closed.
     s8 state;
+    // 0x4: Tile just outside the door, where people walk to enter and queue.
     u16 door_tile;
+    // 0x6: Tile just inside the door.
     u16 door_inside_tile;
     union {
+        // 0x8: Tile (x + y * 128) of the room's top-left corner.
         u16 pos;
         struct {
+            // Low byte of pos, passed to the furnishing requester (arg3).
             u8 pos_lo;
             union {
                 u8 unknown9[3];
                 struct {
                     u8 unknown9_;
+                    // 0xa: Thing id of the first patient queueing for the
+                    // room (Thing.queue_next), or 0.
                     u16 queue_head;
                 };
             };
         };
     };
+    // 0xc: Thing id of the first object in the room (Thing.room_obj_next).
     u16 first_object;
-    u16 first;
+    // 0xe: Thing id of the first person in the room (Thing.room_next).
+    u16 first_person;
+    // 0x10: Thing ids of the staff holding the room (check_room_mutex):
+    // operating theatres take two surgeons, other rooms use [0] only.
     u16 staff[2];
     // 0x14: Patients who have entered the room, or been served by its
     // receptionist; shown by the queue and machine windows.
@@ -150,7 +176,8 @@ struct Thing {
     // Sound of the last frame drawn, so that a looping frame plays it once.
     u8 last_sound;
     // 0x18: status icon over a person's head or a broken machine
-    // (icon_table index). Negative until peep_icon announces it.
+    // (icon_table index). Kinds with icon_table mode < 0 are stored negative
+    // until peep_icon announces them.
     s8 icon_id;
     // Turns left to show the icon. 0xffff keeps it.
     u16 icon_timer;
@@ -217,7 +244,9 @@ struct Thing {
         // Rats: x step per turn in 1/65536 tile.
         s32 rat_dx;
         struct {
-            // People: turns to wait in the current state.
+            // People, the grim reaper, mayor and inspector: turns to wait in
+            // the current state. Patients waiting for a decision or a room:
+            // the turn (othervar.cur_turn) the wait began.
             s16 timer;
             // People: position in the current complex's action list.
             u16 complex_pc;
@@ -285,7 +314,7 @@ struct Thing {
         // the tiles they leave to afterwards (3-5).
         u16 use_pos[6];
         struct {
-            // People: links in the room's list of people (RoomInfo.first).
+            // People: links in the room's list of people (RoomInfo.first_person).
             u16 room_prev;
             u16 room_next;
             // People: 0-100.
@@ -471,7 +500,8 @@ struct Thing {
             union {
                 // 0x94, patients: treatments received, oldest first.
                 u8 treatments[10];
-                // Doctors: their assistant. Nurses: their bed or patient.
+                // Doctors: their assistant. Nurses: the ward desk or the
+                // patient they last went to.
                 // Handymen: the litter tile they head for.
                 u16 work_target;
                 // Job applicants: game turn they leave the list.
@@ -543,6 +573,8 @@ struct Thing {
             // 0x6c: animation and state to switch to when the current
             // animation ends (reaper_play_anim).
             u16 next_sprite;
+            // The gate to hell it appears beside and leads its victim to
+            // (thing id).
             u16 gate;
             u8 next_flip;
             u8 reaper_next_state;
@@ -558,9 +590,12 @@ struct Thing {
                 u16 door_partner;
                 // Plants: 400 when watered; dying below 0.
                 s16 plant_health;
-                // Bombs.
+                // Litter bombs.
                 struct {
+                    // Fuse stage 0-8 (animation offset); explodes at 8.
                     u8 fuse;
+                    // Counts every 16 turns; at gbv.bomb_fuse_ticks fuse
+                    // advances.
                     u8 fuse_tick;
                 };
                 // Projectors: 1 once the consultant has started the lecture;
@@ -613,8 +648,11 @@ struct Thing {
 };
 
 struct HospitalDrug {
+    // 0x0: Charged each time the drug is used (TX_DRUG_COST); research cuts
+    // it by 5% down to 10.
     u16 cost;
     u8 unknown2;
+    // 0x3: Rating 0-100; research raises it.
     u8 effectiveness;
 };
 
@@ -715,9 +753,16 @@ struct ObjectStats {
     u8 upgrade_level;
 };
 
+/*
+ * A job waiting for a handyman: a plant to water or a machine to repair.
+ */
 struct ThingPage {
+    // 0x0: Thing id of the plant or machine.
     u16 id;
-    u32 time;
+    // 0x2: Turn until which the responder holds the page; others may take it
+    // after.
+    u32 claimed_until;
+    // 0x6: Thing id of the handyman answering, or 0.
     u16 responder;
     u8 priority;
 };
@@ -727,9 +772,17 @@ struct ThingPager {
     ThingPage pages[0x40];
 };
 
+/*
+ * One step of a computer opponent's script (com_strategy[]), or its pending
+ * action (AllHosps.action).
+ */
 struct ComputerStrategy {
+    // 0x0: 0 decide again, 1 employ, 2 build, 3 place objects, 4 loan; other
+    // values act at once in computer_decision.
     u16 type;
+    // 0x2: Staff kind, room, object or amount the action applies to.
     s16 arg;
+    // 0x4: How many to employ or place.
     s16 count;
 };
 
@@ -758,6 +811,7 @@ struct ComputerPlayer {
 };
 
 struct ComputerDecisions {
+    // Turns to wait after an action of this type, times pace / 10.
     u16 delay;
 };
 
@@ -771,6 +825,8 @@ extern u8 com_room_orders[][14];
 
 struct RatHole {
     u16 tile;
+    // Direction 0-3 of the wall the hole is in; holes in the tile's own north
+    // (0) and west (3) walls are drawn as litter 7 and 8.
     u8 side;
 };
 
@@ -800,11 +856,12 @@ struct BuildState {
             BuildPoint start;
             // 0x2: Same bytes as x1, y1.
             BuildPoint end;
-            // 0x4: Corner of the blueprint held fixed while the player drags
-            // it.
+            // 0x4: Corner of the blueprint held fixed while the player drags a
+            // corner or edge (drag 1, 2); the tile grabbed when moving the
+            // whole blueprint (drag 3).
             BuildPoint anchor;
-            // 0x6: Set to the bottom-right corner when an edge drag (drag 2)
-            // starts.
+            // 0x6: Edge drags (drag 2): with anchor, the two ends of the
+            // opposite edge, which stays fixed.
             BuildPoint pivot;
         };
     };
@@ -812,7 +869,8 @@ struct BuildState {
     u16 room;
     // 0xa: room_info index of the room under the pointer while editing, or 0.
     u16 edit_room;
-    // 0xc: 0 until a blueprint drag starts, then the drag mode (1 or 2).
+    // 0xc: 0 until a blueprint drag starts, then the drag mode: 1 a corner,
+    // 2 an edge, 3 the whole blueprint.
     u8 drag;
     // 0xd: Room type (ROOM_*) being built.
     u8 room_type;
@@ -832,9 +890,10 @@ struct BuildState {
     u16 objects[20];
     // 0x3b: Building step (2 while waiting for the room to clear).
     u8 state;
-    // 0x3c: Map overlay of the blueprint top-left tile before the blueprint was
-    // marked.
-    u8 saved_overlay;
+    // 0x3c: Floor block put back over the blueprint area when it is
+    // uncommitted: that of its top-left tile before it was marked, or of the
+    // door tile of a room being deleted.
+    u8 saved_floor_block;
 };
 
 struct ResearchWorkStations {
@@ -843,9 +902,13 @@ struct ResearchWorkStations {
     u8 unknown17;
 };
 
+/*
+ * One #popn entry of the level file (Month, Change).
+ */
 struct Population {
     u16 month;
-    u16 count;
+    // Added to gamevar.visitors_per_month from that month on.
+    u16 change;
 };
 
 struct AllHosps {
@@ -855,6 +918,8 @@ struct AllHosps {
     u8 player_type;
     // 0x2b: 2 while the player is in the game; 0 after they quit.
     u8 playing;
+    // 0x2c: Average percentage met of the best group of win criteria
+    // (evaluate_criteria), up to 100, or 200 once the level is won.
     u8 win_progress;
     s32 score;
     s32 start_score;
@@ -866,18 +931,27 @@ struct AllHosps {
         u8 unknown45[0x176];
         struct {
             u8 unknown45_[0x90];
+            // 0xd5: Drinks machine takings this month (sales_income[0]).
             s32 drinks_income;
+            // 0xd9: Jukebox takings this month (sales_income[1]).
             s32 jukebox_income;
         };
         struct {
             u8 unknown45a_[0x90];
+            // 0xd5: drinks_income and jukebox_income, banked at month end.
             s32 sales_income[2];
         };
         struct {
             u8 unknown45r_[0x98];
+            // 0xdd: Points earned by researchers, not yet shared out among
+            // the research categories.
             s32 research_points;
+            // 0xe1: Points put towards each illness's next research item.
             s32 illness_research[0x2f];
+            // 0x19d: Cost of the item each category is researching.
             s32 research_cost[5];
+            // 0x1b1: Percentage of research_points given to each category;
+            // -1 once the category has nothing left.
             s16 research_alloc[5];
         };
         // 0x45: Fees owed by each of the three insurance companies, by the
@@ -898,9 +972,11 @@ struct AllHosps {
         u8 unknown1cd[2];
         s16 month_visitors;
     };
+    // 0x1cf: room_info indexes of the hospital's entrances.
     s16 entrances[4];
     u16 heli_pad_tile;
     union {
+        // 0x1d9: Turns left to treat the emergency (the panel's watch).
         u16 emergency_timer;
         s16 emergency_timer_s;
     };
@@ -934,6 +1010,8 @@ struct AllHosps {
         u8 unknown1e6[3];
         struct {
             u8 emergency_patients;
+            // 0x1e7: Emergency patients still in the hospital, recounted by
+            // each census.
             u8 emergency_present;
             u8 emergency_win_pct;
         };
@@ -965,6 +1043,7 @@ struct AllHosps {
     // found, the compensation paid instead.
     u16 epidemic_fine;
     u16 contagious_count;
+    // 0x207: Turns left to vaccinate before the health inspector comes.
     u16 epidemic_timer;
     // 0x209: [0] inspector verdict 0..3, [1] 3 while the health inspector is on
     // site.
@@ -1018,6 +1097,8 @@ struct AllHosps {
             s16 avg_staff_happiness;
         };
     };
+    // 0xc8e: Prices of the treatments it offers as a percentage of their
+    // maximums, 0-300 (calc_pricing_factor).
     s16 price_level;
     u16 extinguisher_count;
     u16 radiator_count;
@@ -1061,14 +1142,19 @@ struct AllHosps {
     u16 idle_nurses_prev;
     u16 idle_nurses;
     u16 vaccine_requests;
+    // 0x11f4: Staff member the player has picked up (thing id), or 0; put back
+    // at held_staff_tile if not placed.
     u16 held_staff;
     u16 held_staff_tile;
+    // 0x11f8, computer players: turn of the next AI action.
     u32 next_action_turn;
     ComputerStrategy action;
     u16 action_from_note;
     ComputerStrategy notes[8];
     s32 wage_bill;
     u32 rooms_built;
+    // 0x123c: Simulated patients arrived and not yet treated (computer
+    // players); sizes their staff and objects.
     s32 patient_load;
     s16 strategy_step;
     s16 recheck_step;
@@ -1087,11 +1173,17 @@ struct AllHosps {
     u16 opening_countdown;
 };
 
+/*
+ * One line of the bank statement (GameControl.entries).
+ */
 struct BankEntry {
     s32 amount;
+    // 0x4: Transaction type (TX_*, finance_text index).
     u8 type;
     u8 day;
     u8 month;
+    // 0x7: Insurance company (insurance_names) or illness (illness_text)
+    // named on the line, for the types that show one.
     u8 extra;
 };
 
@@ -1180,21 +1272,41 @@ struct GameControl {
     u8 month;
 };
 
+/*
+ * Per-player indexes (listhead[]).
+ */
 struct ListHead {
+    // 0x0: First object of each kind (thing id; Thing.type_obj_next), or 0.
     u16 objects[0x3e];
-    u16 staff[0x10];
+    // 0x7c: Number of staff with each skill bit (insert_skill).
+    u16 staff_by_skill[0x10];
+    // 0x9c: A room (room_info index) of each type, or 0 if none; computer
+    // players count their rooms here instead.
     u16 rooms[0x1e];
-    u16 first[9];
+    // 0xd8: First pending call (playercall index) of each type, or 0.
+    u16 first_call[9];
 };
 
+/*
+ * A pending fax or event shown as a panel popup (playercall[],
+ * make_a_playercall).
+ */
 struct PlayerCall {
+    // 0x0: Kind of call, 0 for a free entry.
     u16 type;
-    u16 x;
+    // 0x2: What the call is about (a thing id, or a code for the type).
+    u16 subject;
+    // 0x4: Turns before it expires, 0 never.
     s16 timer;
+    // 0x6: Unique id handed to the caller.
     u16 id;
+    // 0x8: Set to 1 when made; never read.
     u8 active;
+    // 0x9: Panel popup slot 0-8, or 9 when all were taken.
     u8 slot;
-    u8 flash;
+    // 0xa: Step of the popup's slide-in animation (panel_popup_coords), 0
+    // once settled.
+    u8 slide_step;
     u8 owner;
 };
 
@@ -1411,6 +1523,7 @@ struct ObjectControl {
         // leaves; nonzero only for machines, which the mouse and the
         // find-machine button test it for.
         u16 debris;
+        // Low byte of debris, the piece blast_things leaves.
         u8 debris_lo;
     };
     // 0x22: Bit 0: cannot be picked up; bit 1: hovering shows panel info 6; bit
@@ -1455,9 +1568,9 @@ struct RoomControl {
             u8 buyable[0xa];
         };
     };
-    // 0x22: Map overlay set on the floor tiles of the room while it is a
-    // blueprint.
-    u8 overlay;
+    // 0x22: Floor block (Map.floor_block) laid on the room's tiles once its
+    // blueprint is accepted (price_all_rooms).
+    u8 floor_block;
     u8 unknown23;
     // 0x24: 0 for double doors (init_double_doors), else a single door that
     // patients enter straight through; copied to build.door_kind.
@@ -1510,7 +1623,7 @@ struct Shapes {
             // use_y); [2]: the object's depth.
             u8 use_xy_depth[3];
             // 0x22: Per footprint point: bit 0 and bit 1 forbid placing the
-            // point on a cell with the first or second wall byte set.
+            // point on a cell with a wall_n or wall_w.
             u8 point_wall_flags[9];
         };
     };
@@ -1526,7 +1639,8 @@ struct Shapes {
 struct Blueprint {
     // 0x0: start[] index of the piece's frame.
     u16 anim;
-    // 0x2: Wall block (or door kind) the piece builds.
+    // 0x2: What the piece builds, by build_type: a wall block, a door kind or
+    // an object kind.
     u16 kind;
     // 0x4: How the piece is built (the switch in build_all_rooms); for doors,
     // the placing direction plus 1.
@@ -1557,9 +1671,9 @@ struct DoorInfo {
     u16 door_offset;
     // 0x11: Tile offset of the room's door_inside_tile.
     u16 door_inside_offset;
-    // 0x13: Map overlays set on its tiles.
-    u16 overlays[3];
-    // 0x19: Tile offset subtracted for the overlay and preview tiles.
+    // 0x13: Floor blocks (Map.floor_block) set on its tiles.
+    u16 floor_blocks[3];
+    // 0x19: Tile offset subtracted for the floor block and preview tiles.
     u16 offset;
     // 0x1b: Nonzero for doors: placing one sets the room's two door-side tiles
     // from door_offset and door_inside_offset; zero for the window entries.
@@ -1571,14 +1685,22 @@ struct VXY {
     s16 y;
 };
 
+/*
+ * One person kind's animations (anim_starts by patient kind,
+ * staff_anim_starts by staff kind).
+ */
 struct AnimStart {
     union {
+        // 0x0: start[] index of each animation; add the facing.
         u16 anims[0x8c];
         struct {
+            // 0x0: anims[0], walking.
             u16 walk;
             u8 unknown2[8];
+            // 0xa: anims[5], staff standing.
             u16 staff_stand;
             u8 unknownC[6];
+            // 0x12: anims[9], patients standing.
             u16 patient_stand;
             u8 unknown14[0x8e];
             // 0xa2 (anims[0x51]): person_dead lets the grim reaper come (at
@@ -1607,29 +1729,52 @@ struct StaffControl {
     u8 unknownc;
 };
 
+/*
+ * One Smacker movie (animation_table[]).
+ */
 struct AnimTable {
+    // 0x0: File name.
     char name[0x28];
+    // 0x28: When above the install type, the file is read from the CD
+    // (cd_install_path) rather than the hard disk.
     u16 cd_install_level;
     u16 f2a;
     u16 f2c;
+    // 0x2e: Frame from which the win/lose screen shows its text.
     u32 text_frame;
+    // 0x32: Passed to play_smk.
     u32 smk_flags;
     u32 play_flags;
 };
 
+/*
+ * One animation frame (frame[]): a list of elements drawn together.
+ */
 struct CompFrame {
+    // 0x0: elelist index of the frame's element ids, ending at 0xffff.
     u32 list;
+    // 0x4: Bounding box, used for mouse hits and scaling.
     u8 width;
     u8 height;
+    // 0x6: Sound played when the frame is drawn (sfx_details index), or 0.
     u8 sound;
+    // 0x7: Bit 0: the last frame of its animation.
     u8 flags;
+    // 0x8: Next frame of the animation (it loops).
     u16 next;
 };
 
+/*
+ * One sprite of a frame (element[]).
+ */
 struct CompElement {
+    // 0x0: Byte offset of the sprite in its sprite table.
     u16 sprite;
+    // 0x2: Position from the frame's origin, biased by 0x8d and 0xca.
     u8 x;
     u8 y;
+    // 0x4: Low nibble: draw flags; above it the layer (5 bits) and the layer
+    // element id (7 bits) the element belongs to (ElementBits in draw.cpp).
     u16 flags;
 };
 
@@ -1689,8 +1834,13 @@ struct SfxDetail {
     u16 allow_repeat;
 };
 
+/*
+ * One animation (start[]): its first frame.
+ */
 struct CompStarts {
+    // 0x0: frame[] index.
     u32 frame;
+    // 0x4: Nonzero: drawn mirrored (copied to Thing.flip).
     u32 flags;
 };
 
@@ -1767,12 +1917,19 @@ struct PulldownItem {
 };
 
 struct Pulldown {
+    // 0x0: Shown on the menu bar.
     u8 active;
+    // 0x1: Number of items.
     u8 count;
+    // 0x2: pulldown_text index of its title.
     u8 text;
-    u16 length;
+    // 0x3: Length of its title in characters, which sets its width on the bar.
+    u16 title_length;
+    // 0x5: Length of its longest item in characters.
     u16 width;
+    // 0x7: Submenus: the pulldown holding the item that opens it.
     u8 parent;
+    // 0x8: Submenus: y of the item that opens it.
     u16 y;
     PulldownItem items[30];
 };
@@ -1787,10 +1944,14 @@ struct menu {
         u8 unknown1[6];
         struct {
             u8 font;
+            // 0x2: Font of the item under the mouse.
             u8 font_hi;
             u8 line_height;
             u8 char_width;
+            // 0x5: pulldowns[1..count - 1] are the menus on the bar; their
+            // submenus follow.
             u8 count;
+            // 0x6: Number of submenus.
             u8 subcount;
         };
     };
@@ -1802,7 +1963,10 @@ struct menu {
 
 struct HospPlayerDetails {
     union {
+        // 0x0: Player name, at most 8 characters and a terminator; the bytes
+        // after it hold the fields below.
         char name_chars[0x11];
+        // Same bytes, as edited by the name entry screen.
         s8 name[0x11];
         struct {
             u8 unknown0_[0xc];
@@ -1831,7 +1995,11 @@ struct HospPlayerDetails {
     u8 language;
     u8 autosave;
     u8 room_help_seen[0x1e];
+    // One-off advice already given, by advice slot; [20] is toggled by a key
+    // and tested by the advisor.
     u8 advisor_flags[0x15];
+    // Serial and modem link settings: [4] the COM port as a bit, [5] a Bauds
+    // index; all six get defaults while [0] is 0.
     u8 serial_config[6];
 };
 
@@ -1941,16 +2109,22 @@ struct Game {
     union {
         u8 unknown0[0x1e];
         struct {
+            // 0x0: Seed of staffrand.
             u32 staff_seed;
             u16 applicant_count;
+            // 0x6: Job applicants of each staff kind.
             u16 applicants[4];
             u8 unknowne[2];
+            // 0x10: Applicants of each kind to keep on offer (staff_levels).
             u16 applicants_wanted[4];
             u8 unknown18_[2];
             u16 peeps_arrived;
+            // 0x1c: Turns between patient arrivals (1500 /
+            // visitors_per_month), 0 for none.
             s16 peep_interval;
         };
     };
+    // 0x1e: Blueprint id drawn under the pointer while placing a piece.
     u8 place_blueprint;
     u8 unknown1f;
     // 0x20: room_info index of the room whose objects the local player was last
@@ -1964,7 +2138,10 @@ struct Game {
             u16 place_tile;
         };
     };
+    // 0x25: Object kind being placed.
     u8 place_kind;
+    // 0x26: 0 placed freely in the room, 1 against a wall (place_wall_hug), 2
+    // an object being moved.
     u8 place_mode;
     union {
         u8 unknown27[8];
@@ -1980,6 +2157,7 @@ struct Game {
         };
     };
     u16 place_room;
+    // 0x31: Tile offset from the pointer's cell to the object's tile.
     s16 place_offset;
     union {
         Blob63 buy_list;
@@ -1989,17 +2167,26 @@ struct Game {
             // yet placed.
             u8 litter_bombs_to_place;
             u8 unknown45[0x2c];
+            // 0x71: buy_list's last byte: the number of object kinds still to
+            // place.
             u8 buy_kind_count;
         };
+        // 0x33: Counts chosen in the buy objects requester, by object kind.
         u8 buy_count[0x3f];
     };
     u8 staff_place_ok;
     u16 staff_cursor_anim;
     u16 held_staff;
     u16 held_staff_kind;
+    // 0x79: held_staff_kind the placing cursor was built for; 0xffff forces a
+    // rebuild.
     u16 drawn_staff_kind;
+    // 0x7b: Pending advisor announcements by ANN_* kind, up to four values
+    // each ([0] is announced first).
     u16 announce[14][4];
+    // 0xeb: Turn the current quake phase times out.
     u32 quake_timer;
+    // 0xef: 0 none, then 1-4 through a quake (quake.cpp).
     u8 quake_phase;
     union {
         u8 quake_strength;
@@ -2011,6 +2198,7 @@ struct Game {
     s8 quake_amplitude;
     u8 quake_shake_index;
     union {
+        // 0xf4: 1 while the shaking builds up, -1 while it dies down.
         s8 quake_ramp;
         u8 quake_ramp_u;
     };
@@ -2031,11 +2219,17 @@ struct Game {
     u32 next_quake_turn;
     u8 quake_severity;
     u8 quake_pending;
+    // 0x12d: Set for a frame drawn without a game turn (game speed); frames
+    // then play no sounds.
     u8 turn_skipped;
     u16 mouse_mode;
+    // 0x130: What the pointer is over in MM_NORMAL (process_mouse): 3 a person
+    // or object, 4 a room door, 5/6 near/on a rat, 7 a pending call, 8 the
+    // advisor, 1/2 a vaccination target or not.
     u16 hover_action;
     u16 scroll_min_tile;
     u16 scroll_max_tile;
+    // 0x136: Single player: illness chosen for concentrated research.
     u16 research_illness;
     u8 max_speed;
     u8 turbo;
@@ -2049,6 +2243,7 @@ struct Game {
     u16 peep_owner_counter;
     u8 quake_used[16];
     u8 emergency_used[20];
+    // 0x16f: 1 in N new doctors gets each skill (staff_levels rates; 0 never).
     u8 shrink_rate;
     u8 surgeon_rate;
     u8 researcher_rate;
@@ -2227,9 +2422,12 @@ struct HospWindow {
     };
     union {
         struct {
+            // 0x30: zone_x[0], as the screen mode setup writes the main view's
+            // zone; likewise the other *0 fields.
             s32 zone0_x;
             u8 unknown34[8];
         };
+        // 0x30: Left edge of the window on screen.
         s32 zone_x[3];
     };
     union {
@@ -2237,6 +2435,7 @@ struct HospWindow {
             s32 zone0_y;
             u8 unknown40[8];
         };
+        // 0x3c: Top edge of the window on screen.
         s32 zone_y[3];
     };
     union {
@@ -2461,17 +2660,27 @@ struct Debug {
             u8 nav_debug;
         };
     };
+    // Set by the -S and -L options: start straight in a level, skipping the
+    // menus.
     u8 direct_start;
     u8 unknown1fb[0x1e];
     u8 force_bonus_level;
 };
 
+/*
+ * Setup of a rat bonus level or the training level (rat_fest_level[level]):
+ * each owned tile gets litter, a rat hole or staff with a 1-in-N *_chance roll
+ * until the matching *_max is reached.
+ */
 struct RatFestLevel {
     u16 litter_max;
     u16 litter_chance;
     u16 holes_max;
     u16 holes_chance;
+    // 0x8: Seeds both random generators (seed, safeseed) before placing.
     u32 seed;
+    // 0xc: Handymen to place (rat levels); the training level places its
+    // consultant doctors on the first tile that passes staff_chance.
     u16 staff_max;
     u16 staff_chance;
 };
@@ -2505,7 +2714,8 @@ struct TrophyBalance {
             s16 reputation;
             // 0x8: Cash bonus of the reputation trophy.
             s16 trophy_reputation_bonus;
-            // 0xa: Mean plant health percentage needed for the plant trophy.
+            // 0xa: Plant health percentage every month of the year must reach
+            // for the plant trophy.
             u8 plant;
             // 0xb: Reputation bonus of the plant trophy.
             u8 plant_bonus;
@@ -2525,13 +2735,17 @@ struct TrophyBalance {
             u8 trophy_mayor;
             // 0x16: Reputation bonus of the mayor trophy.
             u8 trophy_mayor_bonus;
-            // 0x17: Cures above which the cures award is won.
+            // 0x17: Times the year's new visitors: cures above that win the
+            // cures award.
             u8 cures_award;
-            // 0x18: Cures below which the poor cures award is given.
+            // 0x18: Times the year's new visitors: cures below that give the
+            // poor cures award.
             u8 cures_poor;
-            // 0x19: Deaths below which the deaths award is won.
+            // 0x19: Times the year's new visitors: deaths above that win the
+            // deaths award (the level files mean it the other way round).
             u8 deaths_award;
-            // 0x1a: Deaths above which the poor deaths award is given.
+            // 0x1a: Times the year's new visitors: deaths below that give the
+            // poor deaths award.
             u8 deaths_poor;
             // 0x1b: Share of the town's patients above which the population
             // award is won.
@@ -2539,9 +2753,11 @@ struct TrophyBalance {
             // 0x1c: Share of the town's patients below which the poor
             // population award is given.
             u8 population_percentage_poor;
-            // 0x1d: Cures-to-deaths ratio above which the award is won.
+            // 0x1d: Cures per death, as a percentage, above which the award is
+            // won.
             u8 cures_v_deaths_award;
-            // 0x1e: Cures-to-deaths ratio below which the poor award is given.
+            // 0x1e: Cures per death, as a percentage, below which the poor
+            // award is given.
             u8 cures_v_deaths_poor;
             // 0x1f: Reputation above which the reputation award is won.
             u16 reputation_award;
@@ -2551,10 +2767,11 @@ struct TrophyBalance {
             s32 hosp_value_award;
             // 0x27: Hospital value below which the poor value award is given.
             s32 hosp_value_poor;
-            // 0x2b: Litter level below which the cleanliness award is won.
+            // 0x2b: Litter per tile of the hospital, as a percentage (rat holes
+            // count double), below which the cleanliness award is won.
             u8 cleanliness_award;
-            // 0x2c: Litter level above which the poor cleanliness award is
-            // given.
+            // 0x2c: The poor cleanliness award is given when litter per tile
+            // exceeds 1/cleanliness_poor (not a percentage, unlike the award).
             u8 cleanliness_poor;
             // 0x2d: Percentage of emergency patients saved above which the
             // emergency award is won.
@@ -2591,7 +2808,8 @@ struct TrophyBalance {
             // 0x3b: Research points spent in the year below which the poor
             // research award is given.
             u32 new_tech_poor;
-            // 0x3f: Cash bonus of the cures award.
+            // 0x3f: Cash bonus of the cures award; with no deaths, also the
+            // cures needed for the cures-to-deaths award.
             s16 cures_bonus;
             // 0x41: Cash penalty of the poor cures award.
             s16 cures_penalty;
@@ -2602,14 +2820,14 @@ struct TrophyBalance {
             // 0x47: Reputation bonus of the population award.
             s8 population_percentage_bonus;
             // 0x48: Reputation penalty of the poor population award.
-            s8 population_pct_penalty;
+            s8 population_percentage_penalty;
             // 0x49: Cash bonus of the cures-to-deaths award.
             s16 cures_v_deaths_bonus;
             // 0x4b: Cash penalty of the poor cures-to-deaths award.
             s16 cures_v_deaths_penalty;
-            // 0x4d: Bonus of the reputation award.
+            // 0x4d: Cash bonus of the reputation award.
             s16 award_reputation_bonus;
-            // 0x4f: Penalty of the poor reputation award.
+            // 0x4f: Cash penalty of the poor reputation award.
             s16 award_reputation_penalty;
             // 0x51: Reputation bonus of the hospital value award.
             s16 hosp_value_bonus;
@@ -2640,7 +2858,7 @@ struct StaffLevels {
     u8 rates[5];
     // 0xf: Level-file key staff_levels.Seed: seeds staffrand
     // (gamevar.staff_seed) when the row takes effect.
-    u32 fund;
+    u32 seed;
 };
 
 /*
@@ -2668,12 +2886,25 @@ struct Menu {
     u8 unknown3;
 };
 
+/*
+ * The open requester (crequester); the meaning of the arguments depends on id.
+ */
 struct Req {
+    // 0x0: Page or step of the requester, e.g. build room 1 departments and 4
+    // rooms, buy objects 3, edit room the set_edit_room_requester_mode step.
     u16 mode;
+    // 0x2: Open requester (REQ_*), REQ_NONE for none.
     u8 id;
+    // 0x3: Selected object in the build and buy-objects lists.
     u8 item;
+    // 0x4: E.g. the staff kind in the hire-staff requester, the staff member
+    // in the staff-demand one, or edit-room buttons to disable (bitmask).
     u16 arg;
+    // 0x6: E.g. the applicant shown in the hire-staff requester, or the amount
+    // asked for in the staff-demand one.
     u16 arg2;
+    // 0x8: Room type for the build, buy-objects and edit-room requesters (3
+    // for corridor objects); request kind (misc_text index) for staff demands.
     u8 kind;
     // 0x9: Byte argument whose use depends on the requester: the object kind
     // being placed for requester 10, set once the staff view window is open for
@@ -2845,9 +3076,9 @@ struct Advisor {
     u8 heli_landed;
     union {
         // 0x128: Events since the last advice: 1 staff resigning, 2 a patient
-        // would not pay, 4 new illness or treatment, 0x20 balance under 7/8 of
-        // the start cash, 0x40 cure, 0x80 death; find_advice clears what it
-        // reports.
+        // would not pay, 4 new illness or treatment, 8 epidemic started, 0x20
+        // balance under 7/8 of the start cash, 0x40 cure, 0x80 death, 0x100
+        // epidemic covered up; find_advice clears what it reports.
         u8 event_flags;
         // 0x128: Dword view of event_flags.
         u32 event_flags_u32;
@@ -2894,7 +3125,8 @@ struct General {
     u8 unknown11[0x5];
     // 0x16: Set to 1 by init_game_vars; no code reads it.
     u8 unused_set_by_init_game_vars;
-    // 0x17: Set when the blueprint drawing marked a tile invalid.
+    // 0x17: Set when the blueprint drawing marked a tile invalid; no code reads
+    // it.
     u8 blueprint_has_invalid;
     // 0x18: Per player: the door position being placed for the blueprint is
     // invalid.
@@ -2939,13 +3171,14 @@ struct General {
     // 0x38: Info-requester slot whose thing the main view should centre on, or
     // 0.
     u8 center_on_slot;
-    // 0x39: Illness most recently passed on by contagion.
+    // 0x39: Illness most recently passed on by contagion; no code reads it.
     u16 last_spread_illness;
     // 0x3b: Bank balance as currently shown; rolls toward the real balance.
     s32 shown_balance;
     // 0x3f: Step (0..3) of the balance roll animation.
     u8 balance_roll_step;
-    // 0x40: Index (across all pulldowns) of the pulldown item last clicked.
+    // 0x40: Index (across all pulldowns) of the pulldown item last clicked; no
+    // code reads it.
     u8 clicked_pulldown_item;
     union {
         // 0x41: Thing under the mouse, found while drawing.
@@ -2981,7 +3214,8 @@ struct General {
     u16 queue_win_room;
     // 0x63: Selected position in that room's queue, or 0.
     u16 queue_pos;
-    // 0x65: Map cell of the thing clicked to open the queue window, or 0.
+    // 0x65: Map cell of the thing clicked to open the queue window, or 0; no
+    // code reads it.
     u16 queue_win_cell;
     // 0x67: Queue window drag: 0 none, 1 dragging a person, 2 dragging the
     // queue bar.
@@ -3007,7 +3241,8 @@ struct General {
     };
     // 0x71: Set when the mouse is near a rat but not on it.
     u8 near_rat;
-    // 0x72: Level outcome to show: 1 won, 2 lost, 6 left the network game.
+    // 0x72: Level outcome to show: 1 won, 2 lost (or left a network game
+    // without winning it), 6 left a network game after winning it.
     u16 winlose_result;
     union {
         // 0x74: Money offered for the next level after a win; becomes the next
@@ -3096,7 +3331,7 @@ struct General {
     u8 turbo_key;
     // 0x8b1: No windows or screens are open, so requesters may pop up.
     u8 user_idle;
-    // 0x8b2: Clock when user_idle last became set.
+    // 0x8b2: Clock when user_idle last became set; no code reads it.
     u32 idle_since;
     // 0x8b6: Gates drugs_help_concentrate's help text; display_drugs clears it
     // every frame and no code sets it.
@@ -3121,7 +3356,8 @@ struct General {
     // 0x9ae: Command value sent when no is pressed.
     u16 no_value;
     u8 unknown9b0[0x1];
-    // 0x9b1: Command arg sent when no is pressed.
+    // 0x9b1: Command arg sent when no is pressed; if nonzero, also the mouse
+    // mode set when the box closes.
     u16 no_arg;
     u8 unknown9b3[0x4];
     // 0x9b7: Set once the win criteria are met.
@@ -3398,74 +3634,139 @@ struct Balance {
     // psychiatrist, consultant and researcher skills (the level key's array
     // starts at 0xb2).
     s16 salary_add[6];
+    // 0xc4: A staff member's wage demand starts at ability / this plus the
+    // kind's minimum salary.
     u16 salary_ability_divisor;
+    // 0xc6: ResearchPointsDivisor key; no code reads it.
     u8 unknownc6[2];
+    // 0xc8: Effectiveness of a newly discovered drug.
     u8 start_rating;
     u8 unknownc9;
+    // 0xca: Price per dose of a newly discovered drug.
     u16 start_cost;
+    // 0xcc: MinDrugCost key; no code reads it.
     u8 unknowncc[2];
+    // 0xce: A newly infected patient's contagion is 1 to this.
     u16 how_contagious;
+    // 0xd0: Before this game month, contagious illnesses use reduce_cont_rate.
     u16 reduce_cont_months;
+    // 0xd2: Before this many patients arrived, contagious illnesses use
+    // reduce_cont_rate.
     u16 reduce_cont_peep_count;
+    // 0xd4: Percent the illness's ContRate (a 1-in-n chance) is scaled to
+    // while reduce_cont_months or reduce_cont_peep_count applies.
     u16 reduce_cont_rate;
+    // 0xd6: No visual illnesses before this game month.
     u16 hold_visual_months;
+    // 0xd8: No visual illnesses before this many patients arrived.
     u16 hold_visual_peep_count;
+    // 0xda: Tiredness a staff member sheds per rest step standing (rest_staff).
     s16 rest_standing;
+    // 0xdc: Tiredness shed per rest step on a sofa.
     s16 rest_sofa;
+    // 0xde: Tiredness shed per rest step at the video game.
     s16 rest_game;
+    // 0xe0: Tiredness shed per rest step at the snooker table.
     s16 rest_snooker;
+    // 0xe2: Tiredness a staff member gains per periodic update, unless
+    // wandering or in the staff room.
     u16 work_light;
+    // 0xe4: Turns between a person's periodic updates (Thing.modify_time).
     u16 modify_freq;
     u16 not_tired;
     u16 tired;
     u16 very_tired;
     u16 crack_up_tired;
+    // 0xee: Above half this tiredness, rest amounts are scaled by this /
+    // tiredness (rest_staff).
     u16 recovery_factor;
+    // 0xf0: Least tiredness a scaled rest step sheds.
     u16 recovery_minimum;
+    // 0xf2: Strength research stops raising a machine kind's strength at.
     u16 max_object_strength;
+    // 0xf4: Strength a machine kind gains per strength research step.
     u16 research_increment;
+    // 0xf6: Training points per lesson, by lesson kind (0 lecture, 1
+    // skeleton, 2 bookcase).
     u16 training_value[3];
     // 0xfc: Diagnosis progress at which a patient counts as diagnosed;
     // percentages of diagnosis are taken against it.
     u16 diagnosis_complete;
+    // 0xfe: Diagnosis progress at or below which a patient is given up on
+    // (sent for an autopsy or left near death).
     s16 diagnosis_hopeless;
+    // 0x100: Room-choice penalty per patient already queueing (lower wins).
     u16 q_points;
+    // 0x102: Room-choice penalty per tile of distance.
     u16 dist_points;
+    // 0x104: Room-choice penalty for a room with no staff in it.
     u16 no_staff_points;
+    // 0x106: Litter urge above which a patient drops litter.
     s16 litter_drop;
+    // 0x108: Impatience at which a patient gives up and leaves.
     s16 leave_max;
+    // 0x10a: Discontent at which a staff member resigns.
     s16 resign_max;
     s16 happy;
     s16 unhappy;
     s16 very_unhappy;
     s16 drink_happy;
     s16 toilet_happy;
+    // 0x116: Bladder above which a person wants the toilet.
     s16 bowel_full;
+    // 0x118: Bladder at which a patient may wet themselves.
     s16 bowel_overflows;
+    // 0x11a: Nausea at which a patient may vomit.
     s16 vomit_limit;
+    // 0x11c: A patient also drops litter on a 1-in-this chance; 0 always.
     u16 litter_random;
+    // 0x11e: Happiness change per appraisal when paid below the wage demand.
     u16 salary_too_low;
+    // 0x120: Happiness change per appraisal otherwise.
     u16 salary_too_high;
+    // 0x122: MaxDiagDiff key; no code reads it.
     u8 unknown122[2];
+    // 0x124: Percent of start_score above which score growth is capped
+    // (ScoreRatings.capped_growth).
     u16 score_max_inc;
+    // 0x126: Cost of one vaccination.
     u16 vac_cost;
+    // 0x128: Mayor-launch checks with a reception desk before the mayor
+    // visits.
     u16 mayor_launch;
     u8 unknown12a[2];
+    // 0x12c: Disaster checks before the next disaster starts.
     u16 disaster_launch;
+    // 0x12e: Epidemic fine per contagious patient.
     u16 epidemic_fine;
+    // 0x130: Lowest compensation for an epidemic covered up in time.
     u16 epidemic_comp_lo;
+    // 0x132: Highest compensation for an epidemic covered up in time.
     u16 epidemic_comp_hi;
+    // 0x134: MinimumAbductTime and AbductionsPerYear keys; no code reads them.
     u8 unknown134[4];
+    // 0x138: Percent of an illness's research cost an autopsy contributes.
     u16 autopsy_rsch_percent;
+    // 0x13a: AutopsyRepHitPercent key; no code reads it.
     u8 unknown13a[2];
+    // 0x13c: A new patient goes to a random hospital on a 1-in-this chance.
     u8 alloc_rand;
     u8 alloc_total_rep;
+    // 0x13e: Weight of a hospital's reputation for the illness when a new
+    // patient picks a hospital.
     u8 alloc_ind_rep;
+    // 0x13f: Before this game month, new patients go to hospitals in turn.
     u8 alloc_delay;
+    // 0x140: Effectiveness a drug gains per improvement.
     u8 drug_improve_rate;
+    // 0x141: Ability a trainee gains per lesson, divided among the class.
     u16 training_rate;
+    // 0x143: Months after hiring before a junior can become a doctor.
     u8 promo_doc;
+    // 0x144: Months after hiring before a doctor can become a consultant.
     u8 promo_con;
+    // 0x145: Base percent chance per spread check that a contagious patient
+    // infects others (plus half their warmth).
     u8 contagious_spread_factor;
     // 0x146: Training progress needed to qualify as a surgeon
     // (AbilityThreshold[0]).
@@ -3487,20 +3788,28 @@ struct Balance {
     u8 bomb_litter_chance;
     // 0x151: Largest ring radius a litter bomb spreads litter over.
     u8 bomb_litter_radius;
-    // 0x152: Turns per fuse step of a litter bomb; it explodes after 8 steps.
+    // 0x152: Fuse ticks (one per 16 turns) per fuse step of a litter bomb; it
+    // explodes after 8 steps.
     u8 bomb_fuse_ticks;
     // 0x153: Pieces of litter one litter bomb scatters.
     u8 bomb_litter_count;
     // 0x154: Turns before a new hospital opens to patients (the panel watch); 0
     // opens it at once.
     u16 open_countdown;
+    // 0x156: Ability above which a junior is promoted to doctor.
     u16 doctor_threshold;
+    // 0x158: Ability above which a doctor is promoted to consultant.
     u16 consultant_threshold;
+    // 0x15a: Base cost of a drug or machine improvement, in percent of the
+    // illness's research cost.
     u8 rsch_improve_cost_percent;
+    // 0x15b: Percent added to that cost per improvement level.
     u8 rsch_improve_inc_percent;
     // 0x15c: Low half of the RemoveRatHoleChance key, which the level loader
     // writes as 4 bytes (over ins_control_base too); no code reads it.
     u8 remove_rathole_chance_lo[2];
+    // 0x15e: Indexed from 1, reads ins_control[index - 1], which follows gbv in
+    // memory.
     u16 ins_control_base[1];
 };
 
@@ -3513,7 +3822,7 @@ struct AwardCounts {
     s32 staff_happiness[13];
     // 0x34: Monthly mean patient happiness (scaled by 256).
     s32 peep_happiness[13];
-    // 0x68: Monthly mean plant health.
+    // 0x68: Monthly mean plant health (scaled by 0x190000).
     s32 plant_health[13];
     // 0x9c: Monthly mean patient waiting time (scaled by 256).
     s32 waiting_times[13];
@@ -3596,9 +3905,13 @@ struct Awards {
     u8 reward_kind;
 };
 
+/* One thing a doctor in the research room may go and use (research_tasks). */
 struct ResearchTasks {
+    // 0x0: The doctor uses it on a 1-in-this chance per check.
     u16 chance;
+    // 0x2: Object kind (OBJ_*) to use.
     u16 object;
+    // 0x4: Complex the doctor runs on it (set_complex).
     u16 action;
 };
 
@@ -3703,8 +4016,8 @@ struct AdvisorCounts {
             s16 staff_happiness_by_kind[4];
         };
     };
-    // 0x8e: Doctors who cracked up since the advisor last said so (not cleared
-    // by the count pass).
+    // 0x8e: Doctors who cracked up since the last count pass cleared it
+    // (reset_all_count clears 0xa6 bytes); the advisor speaks when it is 1.
     u8 crackups;
     union {
         u8 unknown8f[0x19];
@@ -3714,7 +4027,7 @@ struct AdvisorCounts {
             // 0x90: Sum of machine wear (times_used * 512 / (strength * 3)).
             s32 machine_wear_sum;
             u8 unknown94_[4];
-            // 0x98: Object kind of that machine.
+            // 0x98: Object kind of the machine with max_machine_wear.
             u8 worst_machine;
             // 0x99: idle_staff[STAFF_NURSE].
             u8 idle_nurses;
@@ -3761,7 +4074,8 @@ struct WinLose {
     s32 base;
     // 0xc: Criteria with the same group must all be met together.
     u16 group;
-    // 0xe: 1 once the measured value reached value (check_criteria_values).
+    // 0xe: 1 if the value measured at the last check met value as op asks
+    // (check_criteria_values).
     u16 met;
     // 0x10: The value measured at the last check.
     s32 current;
@@ -3798,18 +4112,24 @@ struct InsuranceCo {
     u8 extra_pay_pct;
 };
 
+/* A slice of a 3D pie chart (pie_render); angles run 0..0x7ff for a full turn. */
 struct Sector {
     s32 start;
     s32 end;
-    s32 radius;
+    // 0x8: How far the slice is pulled out from the centre, in 1/256 of the
+    // pie's radii.
+    s32 pull_out;
     u8 top_colour;
     u8 side_colour1;
     u8 side_colour2;
     u8 rim_colour;
     u8 edge_colour;
+    // 0x11: Distance of the label beyond pull_out, in 1/256 of the radii.
     s32 text_offset;
+    // 0x15: Label position, set when the slice is drawn.
     s32 text_x;
     s32 text_y;
+    // 0x1d: 1 if the label is on the right half of the pie.
     s32 text_right;
 };
 
@@ -4227,7 +4547,7 @@ struct ClickArea {
 };
 
 /*
- * Properties of a floor overlay (background[], indexed by Map.overlay).
+ * Properties of a floor overlay (background[], indexed by Map.floor_block).
  */
 struct Background {
     // 0x0: Cells with this overlay are drawn on the town and plot-sale maps.
@@ -4266,6 +4586,7 @@ struct Picture {
  * (resvars.help_hotspots_HelpHotspotp).
  */
 struct HelpHotspot {
+    // 0x0: Left; a negative x0 ends a requester's group, -2 the table.
     s16 x0;
     s16 y0;
     s16 x1;
@@ -4280,6 +4601,8 @@ struct HelpHotspot {
 };
 
 struct PlotAdjacent {
+    // 0x0: Level the plot is on; 0 ends the list. Entry i's neighbouring plots
+    // are adjacent_plot_numbers[i].
     u8 level;
     u8 plot;
 };
@@ -4312,9 +4635,10 @@ struct Town {
     // illness; 0 never.
     u8 ill_rate;
     u8 unknown8[6];
-    // 0xe: InflationRate key.
+    // 0xe: InflationRate key, in hundredths of a percent.
     u16 inflation_rate;
-    // 0x10: InterestRate key.
+    // 0x10: InterestRate key: yearly rate on the loan (twice it on an
+    // overdraft), in hundredths of a percent.
     u16 interest_rate;
     // 0x12: A new patient is insured with a 1 in insurance_odds chance.
     u16 insurance_odds;
@@ -4322,29 +4646,41 @@ struct Town {
 };
 
 struct FaceDirns {
+    // 0x0: By the object's facing: the facing a staff member using it turns
+    // to ([0..3]), then a patient ([4..7]); -1 leaves it.
     s8 dirs[8];
 };
 
 struct ObjectWalls {
     u8 count;
+    // 0x1: Map cell offset, from the object's tile, of each blank wall.
     u16 pos[4];
+    // 0x9: Which wall of that cell (index from Map.wall_n).
     u8 side[4];
 };
 
 struct WallHug {
+    // 0x0: 4 for a corner object, whose wall is picked by both room diagonals.
     u8 kind;
+    // 0x1: Facing to place it with, by the room wall it goes against (0 the
+    // low-y wall, 1 high-x, 2 high-y, 3 low-x).
     u8 angle[4];
 };
 
 struct PossibleDiag {
     u8 count;
-    u8 ids[9];
+    // 0x1: Diagnosis treatments (Hospital.rooms indices) a patient of this
+    // set may be sent to.
+    u8 treatments[9];
 };
 
 struct RoomNavControl {
     u8 door_count;
+    // 0x1: Object kinds whose use points 10 and 13 (Shapes.points) must reach
+    // the room's door.
     u8 door_objects[10];
     u8 count;
+    // 0xc: Object kinds whose use points 9/12 and 11/14 must reach the door.
     u8 objects[10];
 };
 
@@ -4370,6 +4706,8 @@ struct FillInWindow {
 struct SlidingDoorControl {
     u16 open_anim;
     u16 close_anim;
+    // 0x4: By facing: map cell offset added to the door's two use points to
+    // reach the tiles checked for someone approaching.
     s16 offset[4];
 };
 
@@ -4389,10 +4727,16 @@ struct Graphs {
 
 struct ShowAnim {
     u16 anim;
-    u8 subtypes[4];
-    u8 any_subtype;
+    // 0x2: Nonzero for each facing the patient may play it in.
+    u8 facings[4];
+    // 0x6: Nonzero: playable in any facing.
+    u8 any_facing;
+    // 0x7: Illness the patient must have, 0 for any.
     u8 illness;
+    // 0x8: 0 always; 1 impatience over half leave_max; 2 or 3 over three
+    // quarters of it.
     u16 condition;
+    // 0xa: abilities[] column the patient's kind must have, 0 for none.
     u8 ability;
 };
 
@@ -4425,6 +4769,7 @@ struct PeepType {
     u8 kind;
     u8 count;
     u8 head[5];
+    // 0x7: Per head: its variations[] (PeepPalette) entry.
     u8 palette[5];
     u8 weight;
 };
@@ -4436,6 +4781,7 @@ struct Coord {
 
 struct PeepPalette {
     u8 count1;
+    // 0x1: Layer 1 choices; with count1 4 in a network game, one per player.
     u8 layer1[5];
     u8 count2;
     u8 layer2[5];
@@ -4445,7 +4791,9 @@ struct PeepPalette {
 
 struct FloorDef {
     u16 anim;
-    u16 animated;
+    // 0x2: Nonzero: drawn at the tile's centre rather than at one of the
+    // scattered litter positions (resvars.litter_pos_Offsetp).
+    u16 centred;
 };
 
 /*
@@ -4500,12 +4848,15 @@ struct PanelIcon {
 };
 
 struct ambient {
+    // 0x0: Announcement sample number minus 500; 0 for none.
     u8 sound;
     u8 priority;
 };
 
 struct PitchGroup {
     u8 count;
+    // 0x1: Pitches (percent) to pick from; a pitch-range sound effect uses
+    // [0]..[1] instead.
     u8 values[5];
 };
 

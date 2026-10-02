@@ -220,17 +220,17 @@ void mark_blueprint_on_map(s16 x0, s16 y0, s16 x1, s16 y1, u8 set_overlay)
             if (set_overlay && y != y1 + 1 && x != x1 + 1) {
                 if (height % 2 == 0 && width % 2 == 0) {
                     if (y == (height - 1) / 2 + y0 && x == (width - 1) / 2 + x0)
-                        cell->overlay = 0x26;
+                        cell->floor_block = 0x26;
                     else if (y == (height - 1) / 2 + y0 && x == (width + 1) / 2 + x0)
-                        cell->overlay = 0x25;
+                        cell->floor_block = 0x25;
                     else if (y == (height + 1) / 2 + y0 && x == (width - 1) / 2 + x0)
-                        cell->overlay = 0x24;
+                        cell->floor_block = 0x24;
                     else if (y == (height + 1) / 2 + y0 && x == (width + 1) / 2 + x0)
-                        cell->overlay = 0x27;
+                        cell->floor_block = 0x27;
                     else
-                        cell->overlay = block;
+                        cell->floor_block = block;
                 } else {
-                    cell->overlay = block;
+                    cell->floor_block = block;
                 }
             }
             if (piece) {
@@ -431,7 +431,7 @@ u8 commit_blueprint(u8 owner)
     room = &room_info[build->room];
     build->door_kind = rooms[build->room_type].door_kind;
     allhosps[owner].build.draw_mode = 0;
-    build->saved_overlay = map[(s16)build->x0 + ((s16)build->y0 << 7)].overlay;
+    build->saved_floor_block = map[(s16)build->x0 + ((s16)build->y0 << 7)].floor_block;
     mark_blueprint_on_map(build->x0, build->y0, build->x1, build->y1, 1);
     room->created_turn = actual_game_turn;
     room->pos = (s16)(build->x0 + (build->y0 << 7));
@@ -448,7 +448,7 @@ u8 commit_blueprint(u8 owner)
     height = build->y1 - build->y0 + 1;
     for (y = build->y0; y < build->y0 + height; y++) {
         for (x = build->x0; x < build->x0 + width; x++) {
-            map[(s16)x + ((s16)y << 7)].floor &= 0xaf;
+            map[(s16)x + ((s16)y << 7)].litter_shadow &= 0xaf;
         }
     }
     return 1;
@@ -472,7 +472,7 @@ void uncommit_blueprint(u8 owner)
     }
     for (x = build->x0; x <= build->x1; x++) {
         for (y = build->y0; y <= build->y1; y++) {
-            map[(s16)x + ((s16)y << 7)].overlay = build->saved_overlay;
+            map[(s16)x + ((s16)y << 7)].floor_block = build->saved_floor_block;
         }
     }
     build->draw_mode = 1;
@@ -588,7 +588,7 @@ void edit_blueprint(u8 owner)
         }
     }
     if (room->door_tile && room->door_tile < 0x4000)
-        build->saved_overlay = map[room->door_tile].overlay;
+        build->saved_floor_block = map[room->door_tile].floor_block;
     room_deleted_update_listhead(room);
     delete_room(room);
     uncommit_blueprint(owner);

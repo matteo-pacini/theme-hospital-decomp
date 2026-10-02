@@ -20,7 +20,7 @@ s8 tutorial(void)
     switch (advisor.tutorial_step) {
     case 0x1d:
         if (tutorial_display_flags[0] != 2) {
-            if (old_packet[player].type != 0x62) {
+            if (old_packet[player].type != EV_OPEN_FURNISH_CORRIDOR) {
                 if (tutorial_display_flags[0] == 0) {
                     sprintf(advisor.text, advisor_text[29]);
                     advisor.rewrap = 1;
@@ -46,13 +46,13 @@ s8 tutorial(void)
                 advisor.tutorial_step = 0x1d;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type == 0x2b) {
+            } else if (old_packet[player].type == EV_PLACE_NEXT_OBJECT) {
                 tutorial_display_flags[0] = 0;
                 tutorial_display_flags[11] = 0;
                 advisor.tutorial_step = 0x1d;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type != EV_BUY_OBJECT || old_packet[player].value != 0xb) {
+            } else if (old_packet[player].type != EV_BUY_OBJECT || old_packet[player].value != OBJ_RECEPTION_DESK) {
                 if (tutorial_display_flags[11] == 0) {
                     if (resvars.game_mode == SCREEN_MODE_13) {
                         sprintf(advisor.text, advisor_text[40]);
@@ -85,14 +85,14 @@ s8 tutorial(void)
                 advisor.tutorial_step = 0x1d;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if ((old_packet[player].type == EV_SELL_OBJECT && old_packet[player].value == 0xb) &&
-                       gamevar.buy_list.to_place[0xb] == 0) {
+            } else if ((old_packet[player].type == EV_SELL_OBJECT && old_packet[player].value == OBJ_RECEPTION_DESK) &&
+                       gamevar.buy_list.to_place[OBJ_RECEPTION_DESK] == 0) {
                 tutorial_display_flags[13] = 0;
                 tutorial_display_flags[11] = 0;
                 advisor.tutorial_step = 0x28;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type != 0x2b) {
+            } else if (old_packet[player].type != EV_PLACE_NEXT_OBJECT) {
                 if (tutorial_display_flags[13] == 0) {
                     if (resvars.game_mode == SCREEN_MODE_13) {
                         sprintf(advisor.text, advisor_text[42]);
@@ -150,8 +150,8 @@ s8 tutorial(void)
         }
         break;
     case 0x1e:
-        if (tutorial_display_flags[1] != 2 && !listhead[player].staff[0]) {
-            if (old_packet[player].type != 0x2e) {
+        if (tutorial_display_flags[1] != 2 && !listhead[player].staff_by_skill[0]) {
+            if (old_packet[player].type != EV_OPEN_HIRE_STAFF) {
                 if (tutorial_display_flags[1] == 0) {
                     sprintf(advisor.text, advisor_text[30]);
                     advisor.rewrap = 1;
@@ -176,14 +176,15 @@ s8 tutorial(void)
         break;
     case 0x21:
         if (tutorial_display_flags[4] != 2) {
-            if (old_packet[player].type == 0x38 ||
-                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
+            if (old_packet[player].type == EV_CANCEL_BUILD ||
+                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != STAFF_RECEPTIONIST)) {
                 tutorial_display_flags[1] = 0;
                 tutorial_display_flags[4] = 0;
                 advisor.tutorial_step = 0x1e;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type == 0x2f && old_packet[player].value != 3) {
+            } else if (old_packet[player].type == EV_HIRE_SELECT_KIND &&
+                       old_packet[player].value != STAFF_RECEPTIONIST) {
                 if (resvars.game_mode == SCREEN_MODE_13) {
                     sprintf(advisor.text, advisor_text[33]);
                     advisor.rewrap = 1;
@@ -193,7 +194,8 @@ s8 tutorial(void)
                 advisor.tutorial_highlight = 3;
                 set_force_help(4, 0x19);
                 return 1;
-            } else if (old_packet[player].type != 0x2f || old_packet[player].value != 3) {
+            } else if (old_packet[player].type != EV_HIRE_SELECT_KIND ||
+                       old_packet[player].value != STAFF_RECEPTIONIST) {
                 if (tutorial_display_flags[4] == 0) {
                     if (resvars.game_mode == SCREEN_MODE_13) {
                         sprintf(advisor.text, advisor_text[33]);
@@ -223,8 +225,8 @@ s8 tutorial(void)
         break;
     case 0x25:
         if (tutorial_display_flags[8] != 2) {
-            if (old_packet[player].type == 0x38 ||
-                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
+            if (old_packet[player].type == EV_CANCEL_BUILD ||
+                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != STAFF_RECEPTIONIST)) {
                 tutorial_display_flags[8] = 2;
                 tutorial_display_flags[9] = 2;
                 tutorial_display_flags[1] = 0;
@@ -232,20 +234,21 @@ s8 tutorial(void)
                 advisor.tutorial_step = 0x1e;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value == 3) {
+            } else if (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value == STAFF_RECEPTIONIST) {
                 tutorial_display_flags[8] = 2;
                 tutorial_display_flags[9] = 2;
                 advisor.tutorial_step = 0x24;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type == 0x2f && old_packet[player].value != 3) {
+            } else if (old_packet[player].type == EV_HIRE_SELECT_KIND &&
+                       old_packet[player].value != STAFF_RECEPTIONIST) {
                 tutorial_display_flags[8] = 2;
                 tutorial_display_flags[9] = 2;
                 tutorial_display_flags[4] = 0;
                 advisor.tutorial_step = 0x21;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type != 0x32 || old_packet[player].value != 1) {
+            } else if (old_packet[player].type != EV_HIRE_NEXT_APPLICANT || old_packet[player].value != 1) {
                 if (tutorial_display_flags[8] == 0) {
                     if (resvars.game_mode == SCREEN_MODE_13) {
                         sprintf(advisor.text, advisor_text[37]);
@@ -275,26 +278,27 @@ s8 tutorial(void)
         break;
     case 0x26:
         if (tutorial_display_flags[9] != 2) {
-            if (old_packet[player].type == 0x38 ||
-                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 3)) {
+            if (old_packet[player].type == EV_CANCEL_BUILD ||
+                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != STAFF_RECEPTIONIST)) {
                 tutorial_display_flags[9] = 2;
                 tutorial_display_flags[1] = 0;
                 tutorial_display_flags[4] = 0;
                 advisor.tutorial_step = 0x1e;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value == 3) {
+            } else if (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value == STAFF_RECEPTIONIST) {
                 tutorial_display_flags[9] = 2;
                 advisor.tutorial_step = 0x24;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type == 0x2f && old_packet[player].value != 3) {
+            } else if (old_packet[player].type == EV_HIRE_SELECT_KIND &&
+                       old_packet[player].value != STAFF_RECEPTIONIST) {
                 tutorial_display_flags[9] = 2;
                 tutorial_display_flags[4] = 0;
                 advisor.tutorial_step = 0x21;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type != 0x32 || old_packet[player].value != 0) {
+            } else if (old_packet[player].type != EV_HIRE_NEXT_APPLICANT || old_packet[player].value != 0) {
                 if (tutorial_display_flags[9] == 0) {
                     if (resvars.game_mode == SCREEN_MODE_13) {
                         sprintf(advisor.text, advisor_text[38]);
@@ -324,14 +328,15 @@ s8 tutorial(void)
         break;
     case 0x22:
         if (tutorial_display_flags[5] != 2) {
-            if (old_packet[player].type == 0x38) {
+            if (old_packet[player].type == EV_CANCEL_BUILD) {
                 tutorial_display_flags[5] = 0;
                 tutorial_display_flags[1] = 0;
                 tutorial_display_flags[4] = 0;
                 advisor.tutorial_step = 0x1e;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type == 0x2f && old_packet[player].value != 3) {
+            } else if (old_packet[player].type == EV_HIRE_SELECT_KIND &&
+                       old_packet[player].value != STAFF_RECEPTIONIST) {
                 tutorial_display_flags[4] = 0;
                 advisor.tutorial_step = 0x21;
                 clear_force_help();
@@ -366,7 +371,7 @@ s8 tutorial(void)
         break;
     case 0x24:
         if (tutorial_display_flags[7] != 2) {
-            if (old_packet[player].type == 0x38) {
+            if (old_packet[player].type == EV_CANCEL_BUILD) {
                 tutorial_display_flags[7] = 2;
                 tutorial_display_flags[1] = 0;
                 tutorial_display_flags[4] = 0;
@@ -380,7 +385,7 @@ s8 tutorial(void)
                 advisor.extra_segments = 0;
                 tutorial_display_flags[7] = 0;
                 return 1;
-            } else if (!listhead[player].staff[0]) {
+            } else if (!listhead[player].staff_by_skill[0]) {
                 if (tutorial_display_flags[7] == 0) {
                     sprintf(advisor.text, advisor_text[36]);
                     advisor.rewrap = 1;
@@ -404,7 +409,7 @@ s8 tutorial(void)
         break;
     case 0x20:
         if (tutorial_display_flags[3] != 2 && !listhead[player].rooms[ROOM_GP]) {
-            if (old_packet[player].type != 0x37) {
+            if (old_packet[player].type != EV_OPEN_BUILD_ROOM) {
                 if (tutorial_display_flags[3] == 0) {
                     sprintf(advisor.text, advisor_text[32]);
                     advisor.rewrap = 1;
@@ -429,7 +434,7 @@ s8 tutorial(void)
         }
         break;
     case 0x2b:
-        if (old_packet[player].type == 0x38) {
+        if (old_packet[player].type == EV_CANCEL_BUILD) {
             tutorial_display_flags[3] = 0;
             tutorial_display_flags[14] = 0;
             advisor.tutorial_step = 0x20;
@@ -461,7 +466,7 @@ s8 tutorial(void)
         }
         break;
     case 0x2c:
-        if (old_packet[player].type == 0x26) {
+        if (old_packet[player].type == EV_CLOSE_REQUESTERS) {
             tutorial_display_flags[3] = 0;
             tutorial_display_flags[14] = 0;
             tutorial_display_flags[15] = 0;
@@ -469,14 +474,14 @@ s8 tutorial(void)
             clear_force_help();
             advisor.tutorial_highlight = 0;
         } else if (tutorial_display_flags[15] != 2) {
-            if (old_packet[player].type == 0x35 && old_packet[player].value != 7) {
+            if (old_packet[player].type == EV_INIT_BLUEPRINT && old_packet[player].value != ROOM_GP) {
                 tutorial_display_flags[3] = 0;
                 tutorial_display_flags[14] = 0;
                 tutorial_display_flags[15] = 0;
                 advisor.tutorial_step = 0x20;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type != 0x35) {
+            } else if (old_packet[player].type != EV_INIT_BLUEPRINT) {
                 if (tutorial_display_flags[15] == 0) {
                     if (resvars.game_mode == SCREEN_MODE_13) {
                         sprintf(advisor.text, advisor_text[44]);
@@ -502,7 +507,7 @@ s8 tutorial(void)
         }
         break;
     case 0x39:
-        if (old_packet[player].type == 0x38) {
+        if (old_packet[player].type == EV_CANCEL_BUILD) {
             tutorial_display_flags[3] = 0;
             tutorial_display_flags[14] = 0;
             tutorial_display_flags[15] = 0;
@@ -524,7 +529,7 @@ s8 tutorial(void)
         }
         break;
     case 0x2f:
-        if (old_packet[player].type == 0x38) {
+        if (old_packet[player].type == EV_CANCEL_BUILD) {
             tutorial_display_flags[3] = 0;
             tutorial_display_flags[14] = 0;
             tutorial_display_flags[15] = 0;
@@ -574,7 +579,7 @@ s8 tutorial(void)
         }
         break;
     case 0x38:
-        if (old_packet[player].type == 0x38) {
+        if (old_packet[player].type == EV_CANCEL_BUILD) {
             tutorial_display_flags[3] = 0;
             tutorial_display_flags[14] = 0;
             tutorial_display_flags[15] = 0;
@@ -793,8 +798,8 @@ s8 tutorial(void)
         }
         break;
     case 0x1f:
-        if (tutorial_display_flags[2] != 2 && !listhead[player].staff[4]) {
-            if (old_packet[player].type != 0x2e) {
+        if (tutorial_display_flags[2] != 2 && !listhead[player].staff_by_skill[4]) {
+            if (old_packet[player].type != EV_OPEN_HIRE_STAFF) {
                 if (tutorial_display_flags[2] == 0) {
                     sprintf(advisor.text, advisor_text[31]);
                     advisor.rewrap = 1;
@@ -819,14 +824,14 @@ s8 tutorial(void)
         break;
     case 0x23:
         if (tutorial_display_flags[6] != 2) {
-            if (old_packet[player].type == 0x38 ||
-                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != 1)) {
+            if (old_packet[player].type == EV_CANCEL_BUILD ||
+                (old_packet[player].type == EV_MARK_EMPLOYING && old_packet[player].value != STAFF_DOCTOR)) {
                 tutorial_display_flags[2] = 0;
                 tutorial_display_flags[6] = 0;
                 advisor.tutorial_step = 0x1f;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type != 0x2f || old_packet[player].value != 1) {
+            } else if (old_packet[player].type != EV_HIRE_SELECT_KIND || old_packet[player].value != STAFF_DOCTOR) {
                 if (tutorial_display_flags[6] == 0) {
                     if (resvars.game_mode == SCREEN_MODE_13) {
                         sprintf(advisor.text, advisor_text[35]);
@@ -856,14 +861,14 @@ s8 tutorial(void)
         break;
     case 0x2d:
         if (tutorial_display_flags[16] != 2) {
-            if (old_packet[player].type == 0x38) {
+            if (old_packet[player].type == EV_CANCEL_BUILD) {
                 tutorial_display_flags[2] = 0;
                 tutorial_display_flags[6] = 0;
                 tutorial_display_flags[16] = 0;
                 advisor.tutorial_step = 0x1f;
                 clear_force_help();
                 advisor.tutorial_highlight = 0;
-            } else if (old_packet[player].type == 0x2f && old_packet[player].value != 1) {
+            } else if (old_packet[player].type == EV_HIRE_SELECT_KIND && old_packet[player].value != STAFF_DOCTOR) {
                 tutorial_display_flags[6] = 0;
                 advisor.tutorial_step = 0x23;
                 clear_force_help();
@@ -898,7 +903,7 @@ s8 tutorial(void)
         break;
     case 0x27:
         if (tutorial_display_flags[10] != 2) {
-            if (old_packet[player].type == 0x38) {
+            if (old_packet[player].type == EV_CANCEL_BUILD) {
                 tutorial_display_flags[10] = 0;
                 tutorial_display_flags[2] = 0;
                 tutorial_display_flags[6] = 0;
@@ -913,7 +918,7 @@ s8 tutorial(void)
                 advisor.extra_segments = 0;
                 tutorial_display_flags[10] = 0;
                 return 1;
-            } else if (!listhead[player].staff[4]) {
+            } else if (!listhead[player].staff_by_skill[4]) {
                 if (tutorial_display_flags[10] == 0) {
                     sprintf(advisor.text, advisor_text[39]);
                     advisor.rewrap = 1;

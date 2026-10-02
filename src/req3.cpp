@@ -29,21 +29,33 @@ struct ReqLayout {
     s32 graph_width;
     s32 graph_height;
     u8 unknown240[0x120];
-    s32 gauge2_x;
-    s32 gauge2_y;
-    s32 gauge3_x;
-    s32 gauge3_y;
+    s32 refreshment_gauge_x;
+    s32 refreshment_gauge_y;
+    s32 warmth_gauge_x;
+    s32 warmth_gauge_y;
     u8 unknown370[0x70];
-    Box box_a;
-    Box box_b;
+    // 0x3e0: Casebook button, greyed out while the patient is undiagnosed.
+    Box casebook_button;
+    // 0x3f0: Queue window button, greyed out while the patient is in no room's
+    // queue.
+    Box queue_button;
     u8 unknown400[0xf0];
-    Box next;
+    // 0x4f0: Patient view: a left click centres the main view on the patient,
+    // a right click moves the window to the next patient.
+    Box patient_view;
+    // 0x500: Diagnosis text area; clicking it toggles the health graph.
     Box diag;
-    Box box_c;
-    Box box_d;
+    // 0x510: Force cure button, greyed out while the patient is undiagnosed,
+    // has no treatment, is on a guess, is fed up, or known_illness equals
+    // illness.
+    Box cure_button;
+    // 0x520: Send home button, greyed out (only when cure_button is) once the
+    // patient is cured or sent home.
+    Box home_button;
     u8 unknown530[0x20];
-    s32 gauge_x;
-    s32 gauge_y;
+    s32 happiness_gauge_x;
+    s32 happiness_gauge_y;
+    // 0x558: Length of the three gauges.
     s32 gauge_len;
 };
 
@@ -129,8 +141,8 @@ void req3(Window *win)
 
 // Draws the patient window: greys the unavailable buttons, the happiness,
 // thirst and warmth gauges, and the health graph or diagnosis list (toggled
-// by clicking it); a left click on the next button centres the view on the
-// patient, a right click moves to the next patient.
+// by clicking it); a left click on the patient view centres the main view on
+// the patient, a right click moves to the next patient.
 // FUNCTION: 0x0007308c
 void req3_overdraw(Window *win)
 {
@@ -152,38 +164,39 @@ void req3_overdraw(Window *win)
     if (irequester_slots[1].toggle_delay)
         irequester_slots[1].toggle_delay--;
     if (patient->diagnosis < gbv.diagnosis_complete) {
-        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_a.x, y + resvars.boxes_ReqLayoutp->box_a.y,
-                  resvars.boxes_ReqLayoutp->box_a.w, resvars.boxes_ReqLayoutp->box_a.h, 0x46);
-        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_c.x, y + resvars.boxes_ReqLayoutp->box_c.y,
-                  resvars.boxes_ReqLayoutp->box_c.w, resvars.boxes_ReqLayoutp->box_c.h, 0x46);
+        LbDrawBox(x + resvars.boxes_ReqLayoutp->casebook_button.x, y + resvars.boxes_ReqLayoutp->casebook_button.y,
+                  resvars.boxes_ReqLayoutp->casebook_button.w, resvars.boxes_ReqLayoutp->casebook_button.h, 0x46);
+        LbDrawBox(x + resvars.boxes_ReqLayoutp->cure_button.x, y + resvars.boxes_ReqLayoutp->cure_button.y,
+                  resvars.boxes_ReqLayoutp->cure_button.w, resvars.boxes_ReqLayoutp->cure_button.h, 0x46);
     }
     if (!patient->queue_room)
-        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_b.x, y + resvars.boxes_ReqLayoutp->box_b.y,
-                  resvars.boxes_ReqLayoutp->box_b.w, resvars.boxes_ReqLayoutp->box_b.h, 0x46);
+        LbDrawBox(x + resvars.boxes_ReqLayoutp->queue_button.x, y + resvars.boxes_ReqLayoutp->queue_button.y,
+                  resvars.boxes_ReqLayoutp->queue_button.w, resvars.boxes_ReqLayoutp->queue_button.h, 0x46);
     if (patient->treatment == 0 || patient->flags & PF_GUESSED || patient->flags & PF_FED_UP ||
         patient->illness == patient->known_illness || patient->diagnosis < gbv.diagnosis_complete) {
-        LbDrawBox(x + resvars.boxes_ReqLayoutp->box_c.x, y + resvars.boxes_ReqLayoutp->box_c.y,
-                  resvars.boxes_ReqLayoutp->box_c.w, resvars.boxes_ReqLayoutp->box_c.h, 0x46);
+        LbDrawBox(x + resvars.boxes_ReqLayoutp->cure_button.x, y + resvars.boxes_ReqLayoutp->cure_button.y,
+                  resvars.boxes_ReqLayoutp->cure_button.w, resvars.boxes_ReqLayoutp->cure_button.h, 0x46);
         if (patient->flags & PF_CURED || patient->flags & PF_SENT_HOME)
-            LbDrawBox(x + resvars.boxes_ReqLayoutp->box_d.x, y + resvars.boxes_ReqLayoutp->box_d.y,
-                      resvars.boxes_ReqLayoutp->box_d.w, resvars.boxes_ReqLayoutp->box_d.h, 0x46);
+            LbDrawBox(x + resvars.boxes_ReqLayoutp->home_button.x, y + resvars.boxes_ReqLayoutp->home_button.y,
+                      resvars.boxes_ReqLayoutp->home_button.w, resvars.boxes_ReqLayoutp->home_button.h, 0x46);
     }
-    draw_gauge(patient->happiness_s, x + resvars.boxes_ReqLayoutp->gauge_x, y + resvars.boxes_ReqLayoutp->gauge_y,
-               (u16)resvars.boxes_ReqLayoutp->gauge_len, &button_sprite[resvars.requester_sprites[0]], 100, 0, 100, 1);
-    draw_gauge(patient->refreshment, x + resvars.coords_ReqLayoutp->gauge2_x, y + resvars.coords_ReqLayoutp->gauge2_y,
-               (u16)resvars.boxes_ReqLayoutp->gauge_len, &button_sprite[resvars.requester_sprites[0x10]], 100, 0, 100,
-               1);
-    draw_gauge((s16)patient->warmth, x + resvars.coords_ReqLayoutp->gauge3_x, y + resvars.coords_ReqLayoutp->gauge3_y,
-               (u16)resvars.boxes_ReqLayoutp->gauge_len, &button_sprite[resvars.requester_sprites[0x11]], 100, 0, 100,
-               1);
+    draw_gauge(patient->happiness_s, x + resvars.boxes_ReqLayoutp->happiness_gauge_x,
+               y + resvars.boxes_ReqLayoutp->happiness_gauge_y, (u16)resvars.boxes_ReqLayoutp->gauge_len,
+               &button_sprite[resvars.requester_sprites[0]], 100, 0, 100, 1);
+    draw_gauge(patient->refreshment, x + resvars.coords_ReqLayoutp->refreshment_gauge_x,
+               y + resvars.coords_ReqLayoutp->refreshment_gauge_y, (u16)resvars.boxes_ReqLayoutp->gauge_len,
+               &button_sprite[resvars.requester_sprites[0x10]], 100, 0, 100, 1);
+    draw_gauge((s16)patient->warmth, x + resvars.coords_ReqLayoutp->warmth_gauge_x,
+               y + resvars.coords_ReqLayoutp->warmth_gauge_y, (u16)resvars.boxes_ReqLayoutp->gauge_len,
+               &button_sprite[resvars.requester_sprites[0x11]], 100, 0, 100, 1);
     if (irequester_slots[1].show_graph)
         draw_health_graph(patient, x, y, color.red);
     else
         draw_diagnosis(patient, x, y);
     if (lbDisplay.mleft_button) {
-        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->next.x,
-                         y + resvars.boxes_ReqLayoutp->next.y, resvars.boxes_ReqLayoutp->next.w,
-                         resvars.boxes_ReqLayoutp->next.h)) {
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->patient_view.x,
+                         y + resvars.boxes_ReqLayoutp->patient_view.y, resvars.boxes_ReqLayoutp->patient_view.w,
+                         resvars.boxes_ReqLayoutp->patient_view.h)) {
             othervar.center_on_slot = 1;
             othervar.full_redraw = 1;
         } else if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->diag.x,
@@ -196,9 +209,9 @@ void req3_overdraw(Window *win)
         }
     }
     if (lbDisplay.mright_button && !othervar.right_button_was_down) {
-        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->next.x,
-                         y + resvars.boxes_ReqLayoutp->next.y, resvars.boxes_ReqLayoutp->next.w,
-                         resvars.boxes_ReqLayoutp->next.h)) {
+        if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x + resvars.boxes_ReqLayoutp->patient_view.x,
+                         y + resvars.boxes_ReqLayoutp->patient_view.y, resvars.boxes_ReqLayoutp->patient_view.w,
+                         resvars.boxes_ReqLayoutp->patient_view.h)) {
             u16 old;
 
             old = irequester_slots[1].value;

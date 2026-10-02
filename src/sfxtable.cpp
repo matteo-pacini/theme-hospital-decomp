@@ -9,13 +9,13 @@
 // and bound to its name with #pragma aux.
 struct SfxDetailData {
     u8 unknown0[4];
-    s8 f4;
+    s8 loop;
     u8 unknown5[3];
     u8 type;
     u8 sample;
     u8 group;
-    u8 fb;
-    u16 unknownC;
+    u8 play_type;
+    u16 allow_repeat;
 };
 
 SfxDetailData sfx_details_data[242] = {

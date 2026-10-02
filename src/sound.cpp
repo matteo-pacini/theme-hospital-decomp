@@ -209,7 +209,8 @@ void play_ambient(u8 sound)
     u8 i;
     u8 slot;
 
-    if (myplayer.ambients_on != 0 && Ambients[sound].sound && myhosp->staff_by_kind[3] != 0 && !gamevar.paused) {
+    if (myplayer.ambients_on != 0 && Ambients[sound].sound && myhosp->staff_by_kind[STAFF_RECEPTIONIST] != 0 &&
+        !gamevar.paused) {
         for (i = 0; i < 4; i++) {
             if (!AmbientQueue[i].sound) {
                 AmbientQueue[i] = Ambients[sound];

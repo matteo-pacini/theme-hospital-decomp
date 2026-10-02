@@ -14,6 +14,8 @@ struct _SAMPLE;
 
 struct SoundBankEntry {
     u8 unknown0[0x12];
+    // Offset into the bank's data until format_music or format_sounds makes
+    // it a pointer.
     u32 data;
     u8 unknown16[0xa];
 };
@@ -36,11 +38,13 @@ struct AILIni {
 struct SampleInfo {
     u32 SampleHandle;
     volatile s32 SampleVolume;
+    // Playback rate as a percentage of the sample's own.
     u16 SamplePitch;
     u16 SamplePan;
     volatile s16 FadeToVolume;
     u32 SourceID;
     s16 SampleNumber;
+    // 0 not fading, 1 fading up, 2 fading down.
     volatile u8 FadeState;
     // Nonzero: end the sample once the fade reaches FadeToVolume.
     volatile u8 FadeStopFlag;
@@ -49,11 +53,13 @@ struct SampleInfo {
     // 0x17: Zeroed by InitSound; no code reads it.
     u8 unused_set_by_InitSound;
     u8 unknown18;
+    // Caller's tag (see PlaySampleFromAddress).
     u32 ExtraData;
 };
 
 struct BankHead {
     u32 tab_offset;
+    // -1: the file has no bank of this type.
     u32 data_offset;
     u32 tab_size;
     u32 data_size;

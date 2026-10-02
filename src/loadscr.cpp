@@ -62,7 +62,7 @@ void draw_load_game(void)
     width = lbFontPtr ? lbFontPtr[34].width : 0;
     switch (loadgame.state) {
     case 0:
-        return_from_screen(9, 0, 1);
+        return_from_screen(MM_SCREEN, 0, 1);
         lbDisplay.left_button = 0;
         load_ingame_pic(SCR_LOAD_GAME, 1, 0x19, 0, SCREEN_MODE_13);
         LbGhostTableGenerate(ppalette.data, 0x1e, "qdata/ghost1.dat");

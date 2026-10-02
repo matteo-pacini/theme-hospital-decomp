@@ -51,10 +51,10 @@ void check_awards_won(void)
                 break;
             case 3:
                 if (myhosp->level * 2 <= cures)
-                    general_award((s32 *)&myhosp->market_share, myhosp->market_share, 3,
-                                  awards_trophies.population_percentage_award,
-                                  awards_trophies.population_percentage_poor, 2, 0, 1,
-                                  awards_trophies.population_percentage_bonus, awards_trophies.population_pct_penalty);
+                    general_award(
+                        (s32 *)&myhosp->market_share, myhosp->market_share, 3,
+                        awards_trophies.population_percentage_award, awards_trophies.population_percentage_poor, 2, 0,
+                        1, awards_trophies.population_percentage_bonus, awards_trophies.population_percentage_penalty);
                 break;
             case 4:
                 if (myhosp->deaths > 0) {

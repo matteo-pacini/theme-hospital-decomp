@@ -1,10 +1,12 @@
 #include "hosp.h"
 
 struct FrameBox {
+    // 0x0: Dirty rectangle grown to cover every frame drawn since it was reset.
     s16 x0;
     s16 y0;
     s16 x1;
     s16 y1;
+    // 0x8: Box of the last frame drawn.
     s16 x;
     s16 y;
     s16 w;

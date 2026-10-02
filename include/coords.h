@@ -41,7 +41,9 @@ struct HelpControl {
     s16 y;
     s16 x1;
     s16 y1;
-    s32 text;
+    // Help text index in the low word, requester slot (HelpHotspot.req_slot)
+    // in the high word.
+    s32 text_and_slot;
     void (*callback)(void);
 };
 

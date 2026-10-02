@@ -1,8 +1,10 @@
 #include "hosp.h"
 
 struct TrackSlot {
+    // 0x0: Requester shown (REQ_).
     u8 kind;
     u8 unknown1[0x1];
+    // 0x2: Thing shown.
     u16 value;
     u8 unknown4[0x7];
 };

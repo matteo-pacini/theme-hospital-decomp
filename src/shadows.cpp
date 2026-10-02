@@ -49,21 +49,21 @@ void add_static_shadows(void)
     u32 i;
 
     for (i = 0; i < 0x4000; i++) {
-        map[i].floor &= 0x8f;
+        map[i].litter_shadow &= 0x8f;
         if ((map[i].wall_w && (blocks[map[i].wall_w].flags & 1) && !(blocks[map[i].wall_w].flags & 0x40) &&
              !(blocks[map[i].wall_w].flags & 0x80)) ||
             door((u16)i, 1)) {
-            map[i].floor |= 0x40;
+            map[i].litter_shadow |= 0x40;
             if ((!map[i + 128].wall_w || (blocks[map[i + 128].wall_w].flags & 0xe0)) && !door((u16)(i + 0x80), 1)) {
-                map[i].floor &= 0xbf;
-                map[i].floor |= 0x10;
+                map[i].litter_shadow &= 0xbf;
+                map[i].litter_shadow |= 0x10;
             }
             if (((!map[i - 128].wall_w && !door((u16)(i - 0x80), 1)) || (blocks[map[i - 128].wall_w].flags & 0x60)) &&
                 ((!map[i].wall_n && !door((u16)(i - 0x80), 1)) || (blocks[map[i].wall_n].flags & 0x60))) {
-                map[i - 128].floor |= 0x40;
-                map[i - 128 - 1].floor |= 0x40;
+                map[i - 128].litter_shadow |= 0x40;
+                map[i - 128 - 1].litter_shadow |= 0x40;
             }
-            map[i].floor |= 0x20;
+            map[i].litter_shadow |= 0x20;
         }
     }
 }
@@ -80,14 +80,14 @@ void precalculate_shadow_blocks(void)
     reset_precalculated_shadows();
     for (; i < 0x4000; i++) {
         if (map[i].wall_n && map[i].wall_w && ((1 << player) & map[i].owner_flags)) {
-            InteriorTileFull.block = map[i].overlay;
-            InteriorTileFull.sprite.width = blocks[map[i].overlay].info->width;
-            InteriorTileFull.sprite.height = blocks[map[i].overlay].info->height;
-            create_overlay_sprite(blocks[map[i].overlay].info, blocks[73].info, &InteriorTileFull.sprite);
-            InteriorTileHalf.block = map[i].overlay;
-            InteriorTileHalf.sprite.width = blocks[map[i].overlay].info->width;
-            InteriorTileHalf.sprite.height = blocks[map[i].overlay].info->height;
-            create_overlay_sprite(blocks[map[i].overlay].info, blocks[74].info, &InteriorTileHalf.sprite);
+            InteriorTileFull.block = map[i].floor_block;
+            InteriorTileFull.sprite.width = blocks[map[i].floor_block].info->width;
+            InteriorTileFull.sprite.height = blocks[map[i].floor_block].info->height;
+            create_overlay_sprite(blocks[map[i].floor_block].info, blocks[73].info, &InteriorTileFull.sprite);
+            InteriorTileHalf.block = map[i].floor_block;
+            InteriorTileHalf.sprite.width = blocks[map[i].floor_block].info->width;
+            InteriorTileHalf.sprite.height = blocks[map[i].floor_block].info->height;
+            create_overlay_sprite(blocks[map[i].floor_block].info, blocks[74].info, &InteriorTileHalf.sprite);
             InteriorWallHalf.block = map[i].wall_n;
             InteriorWallHalf.sprite.width = blocks[map[i].wall_n].info->width;
             InteriorWallHalf.sprite.height = blocks[map[i].wall_n].info->height;

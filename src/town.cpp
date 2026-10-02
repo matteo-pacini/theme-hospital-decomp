@@ -95,7 +95,7 @@ void draw_town_select(void)
         setup_abort_all_requesters();
         othervar.pending_heating_level = myhosp->heating_level;
         othervar.unused_set_with_heating_level_u32 = 0x32;
-        load_ingame_pic(SCR_TOWN, 1, 0xa, level_number, SCREEN_MODE_13);
+        load_ingame_pic(SCR_TOWN, 1, MM_TOWN_MAP, level_number, SCREEN_MODE_13);
         LbScreenSetGraphicsWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         LbTextSetWindow(0, 0, lbDisplay.graphics_screen_width, lbDisplay.graphics_screen_height);
         if (!town.value)
@@ -130,7 +130,7 @@ void draw_town_select(void)
         set_mouse_mode(MM_TOWN_MAP);
         if (lbDisplay.rleft_button) {
             if (over_hotspot(lbDisplay.rmouse_x, lbDisplay.rmouse_y, 0xd, 0x1a6, 0xc0, 0x2e)) {
-                process_keys(0, 0x41);
+                process_keys(0, KC_F7);
                 LbGhostTableGenerate(palette, 0x42, "qdata/ghost66.dat");
                 town.state = 0;
             }
@@ -385,7 +385,7 @@ void display_hospital_map_sale(void)
                 colour = color.orange;
             if (map[(s16)x + ((s16)y << 7)].owner_flags & 8)
                 colour = color.green;
-            if (background[map[(s16)x + ((s16)y << 7)].overlay].show_on_map)
+            if (background[map[(s16)x + ((s16)y << 7)].floor_block].show_on_map)
                 LbDrawBox(area_towns[myhosp->level].x + x * area_towns[myhosp->level].width,
                           area_towns[myhosp->level].y + y * area_towns[myhosp->level].height,
                           area_towns[myhosp->level].width, area_towns[myhosp->level].height, colour);
@@ -463,9 +463,9 @@ void buy_land(u16 plot)
             map[i].wall_w = level->tiles[i].wall_w;
             map[i].first = level->tiles[i].first;
             adjust_mapwho(i);
-            map[i].overlay = level->tiles[i].overlay;
+            map[i].floor_block = level->tiles[i].floor_block;
             map[i].flags = level->tiles[i].flags & 0x3f;
-            map[i].floor = level->tiles[i].floor & 0xf0;
+            map[i].litter_shadow = level->tiles[i].litter_shadow & 0xf0;
             map[i].owner_flags = level->tiles[i].owner_flags;
             map[i].owner_flags |= 1 << othervar.cur_player;
             level->plots[i] = 0;
@@ -498,8 +498,8 @@ void mow_grass(void)
                 grass = 2;
             else
                 grass = 0;
-            if (map[(s16)x + ((s16)y << 7)].overlay == 0 || map[(s16)x + ((s16)y << 7)].overlay == 2)
-                map[(s16)x + ((s16)y << 7)].overlay = grass;
+            if (map[(s16)x + ((s16)y << 7)].floor_block == 0 || map[(s16)x + ((s16)y << 7)].floor_block == 2)
+                map[(s16)x + ((s16)y << 7)].floor_block = grass;
         }
     }
 }
@@ -600,9 +600,9 @@ void recreate_map(const u8 flag)
                 map[i].wall_n = level->tiles[i].wall_n;
                 map[i].wall_w = level->tiles[i].wall_w;
                 map[i].first = level->tiles[i].first;
-                map[i].overlay = level->tiles[i].overlay;
+                map[i].floor_block = level->tiles[i].floor_block;
                 map[i].flags = level->tiles[i].flags & 0x3f;
-                map[i].floor = level->tiles[i].floor & 0xf0;
+                map[i].litter_shadow = level->tiles[i].litter_shadow & 0xf0;
                 map[i].owner_flags = level->tiles[i].owner_flags;
                 map[i].owner_flags &= ~1;
                 map[i].owner_flags &= ~2;
@@ -619,9 +619,9 @@ void recreate_map(const u8 flag)
                     map[i].wall_n = level->tiles[i].wall_n;
                     map[i].wall_w = level->tiles[i].wall_w;
                     map[i].first = level->tiles[i].first;
-                    map[i].overlay = level->tiles[i].overlay;
+                    map[i].floor_block = level->tiles[i].floor_block;
                     map[i].flags = level->tiles[i].flags & 0x3f;
-                    map[i].floor = level->tiles[i].floor & 0xf0;
+                    map[i].litter_shadow = level->tiles[i].litter_shadow & 0xf0;
                     map[i].owner_flags = level->tiles[i].owner_flags;
                     map[i].owner_flags |= 1;
                     level->plots[i] = 0;
@@ -636,9 +636,9 @@ void recreate_map(const u8 flag)
                     map[i].wall_n = level->tiles[i].wall_n;
                     map[i].wall_w = level->tiles[i].wall_w;
                     map[i].first = level->tiles[i].first;
-                    map[i].overlay = level->tiles[i].overlay;
+                    map[i].floor_block = level->tiles[i].floor_block;
                     map[i].flags = level->tiles[i].flags & 0x3f;
-                    map[i].floor = level->tiles[i].floor & 0xf0;
+                    map[i].litter_shadow = level->tiles[i].litter_shadow & 0xf0;
                     map[i].owner_flags = level->tiles[i].owner_flags;
                     map[i].owner_flags |= 2;
                     level->plots[i] = 0;
@@ -653,9 +653,9 @@ void recreate_map(const u8 flag)
                     map[i].wall_n = level->tiles[i].wall_n;
                     map[i].wall_w = level->tiles[i].wall_w;
                     map[i].first = level->tiles[i].first;
-                    map[i].overlay = level->tiles[i].overlay;
+                    map[i].floor_block = level->tiles[i].floor_block;
                     map[i].flags = level->tiles[i].flags & 0x3f;
-                    map[i].floor = level->tiles[i].floor & 0xf0;
+                    map[i].litter_shadow = level->tiles[i].litter_shadow & 0xf0;
                     map[i].owner_flags = level->tiles[i].owner_flags;
                     map[i].owner_flags |= 4;
                     level->plots[i] = 0;
@@ -670,9 +670,9 @@ void recreate_map(const u8 flag)
                     map[i].wall_n = level->tiles[i].wall_n;
                     map[i].wall_w = level->tiles[i].wall_w;
                     map[i].first = level->tiles[i].first;
-                    map[i].overlay = level->tiles[i].overlay;
+                    map[i].floor_block = level->tiles[i].floor_block;
                     map[i].flags = level->tiles[i].flags & 0x3f;
-                    map[i].floor = level->tiles[i].floor & 0xf0;
+                    map[i].litter_shadow = level->tiles[i].litter_shadow & 0xf0;
                     map[i].owner_flags = level->tiles[i].owner_flags;
                     map[i].owner_flags |= 8;
                     level->plots[i] = 0;
@@ -684,11 +684,11 @@ void recreate_map(const u8 flag)
             }
             if (!found) {
                 map[i].first = 0;
-                map[i].overlay = 0;
+                map[i].floor_block = 0;
                 map[i].wall_n = 0;
                 map[i].wall_w = 0;
-                map[i].flags = background[map[i].overlay].map_defaults[1] & 0x3f;
-                map[i].owner_flags = background[map[i].overlay].map_defaults[0];
+                map[i].flags = background[map[i].floor_block].map_defaults[1] & 0x3f;
+                map[i].owner_flags = background[map[i].floor_block].map_defaults[0];
             }
         }
         mow_grass();
@@ -696,7 +696,7 @@ void recreate_map(const u8 flag)
         for (i = 0; i < 0x4000; i++) {
             rnd *= 0xbb40e62d;
             if (level->plots[i]) {
-                if (map[i].overlay == 0) {
+                if (map[i].floor_block == 0) {
                     if (((rnd >> 8) & 0x7fff) % 50 == 0)
                         map[i].wall_n = ((rnd >> 8) & 0x7fff & 7) + 0xb6;
                 }
@@ -851,7 +851,7 @@ extern "C" void setup_bid_map(void)
 {
     s32 unused;
 
-    load_ingame_pic(SCR_TOWN_BID, 1, 10, level_number, SCREEN_MODE_13);
+    load_ingame_pic(SCR_TOWN_BID, 1, MM_TOWN_MAP, level_number, SCREEN_MODE_13);
     othervar.saved_screen_ptr = lbDisplay.wscreen;
     othervar.saved_screen_width = lbDisplay.graphics_screen_width;
     othervar.saved_screen_height = lbDisplay.graphics_screen_height;
@@ -1193,7 +1193,7 @@ extern "C" void draw_hilight_plot(void)
                 colour = color.orange;
             if (map[(s16)x + ((s16)y << 7)].owner_flags & 8)
                 colour = color.green;
-            if (background[map[(s16)x + ((s16)y << 7)].overlay].show_on_map)
+            if (background[map[(s16)x + ((s16)y << 7)].floor_block].show_on_map)
                 LbDrawBox(resvars.screen_boxes_TownViewp->x + x * 2, resvars.screen_boxes_TownViewp->y + y * 2, 2, 2,
                           colour);
             if (level->plots[(s16)x + ((s16)y << 7)] == othervar.bid_plot)
@@ -1389,14 +1389,14 @@ extern "C" void remove_town_bid(void)
     if (othervar.town_bid_return_mode) {
         display_mode = othervar.town_bid_return_mode;
         switch (display_mode) {
-        case 9:
+        case DM_CHOICE:
             choice.state = 0x5a;
             break;
-        case 0:
-        case 11:
-            return_from_screen(0, 1, 1);
+        case DM_GAME:
+        case DM_MODAL:
+            return_from_screen(MM_NORMAL, 1, 1);
             break;
-        case 1:
+        case DM_CHARTS:
             bank.state = 0;
             drugs.state = 0;
             pol.state = 0;
@@ -1410,22 +1410,22 @@ extern "C" void remove_town_bid(void)
             options.state = 1;
             que.state = 0;
             break;
-        case 4:
+        case DM_TOWN_MAP:
             town.state = 0;
             break;
-        case 2:
-        case 3:
-        case 5:
-        case 6:
-        case 7:
-        case 8:
-        case 10:
+        case DM_MAIN_MENU:
+        case DM_AREA_SELECT:
+        case DM_NETWORK_SELECT:
+        case DM_LOAD_GAME:
+        case DM_WINLOSE:
+        case DM_YEAR_END:
+        case DM_NICKNAME:
         default:
             break;
         }
         othervar.town_bid_return_mode = 0;
     } else {
-        return_from_screen(0, 1, 1);
+        return_from_screen(MM_NORMAL, 1, 1);
     }
 }
 

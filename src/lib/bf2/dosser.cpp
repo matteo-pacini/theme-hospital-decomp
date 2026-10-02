@@ -24,6 +24,8 @@ int fclose(FILE *fp);
 }
 
 struct TbSerialDev {
+    // Copy of serial_handler_code; Init patches the word at 2 with the port's
+    // base.
     u8 isr_code[0x96];
     u8 tx_buf[0x800];
     u8 rx_buf[0x800];
@@ -32,8 +34,10 @@ struct TbSerialDev {
     u16 irq;
     u16 rx_head;
     u16 rx_tail;
+    // Transmit ring indices (into tx_buf), moved only by inc_head/inc_tail.
     u16 head;
     u16 tail;
+    // The baud rate as an unaligned u32.
     u8 baud[4];
     u8 port;
 };
@@ -43,6 +47,7 @@ struct ComHandlerInfo {
     u16 base;
     u16 vector;
     u16 irq;
+    // Bit 0: dev is set up (Init done, DeInit not yet).
     u16 flags;
     void (__interrupt __far *old_handler)(void);
     u32 old_pm_off;
@@ -728,7 +733,7 @@ CommHandler::CommHandler()
     CH(this)->online = 0;
     CH(this)->init_func = 0;
     CH(this)->dial_func = 0;
-    CH(this)->other_func = 0;
+    CH(this)->answer_func = 0;
     CH(this)->hangup_func = 0;
     CH(this)->response_timeout = 6000;
     CH(this)->timeout = 1000;
@@ -745,7 +750,7 @@ CommHandler::~CommHandler()
 {
     CH(this)->init_func = 0;
     CH(this)->dial_func = 0;
-    CH(this)->other_func = 0;
+    CH(this)->answer_func = 0;
     CH(this)->hangup_func = 0;
     CH(this)->online = 0;
 }
@@ -916,7 +921,7 @@ long CommHandler::AnswerModem(void)
 {
     long ret;
 
-    CH(this)->cur_func = CH(this)->other_func;
+    CH(this)->cur_func = CH(this)->answer_func;
     SendModemString(CH(this)->answer_str);
     ret = 3;
     while (ret == 3 || ret == 1)
@@ -1084,7 +1089,7 @@ void CommHandler::SetHangUpModemFunc(long (*fn)(void))
 // FUNCTION: 0xf731c
 void CommHandler::SetAnswerModemFunc(long (*fn)(void))
 {
-    CH(this)->other_func = fn;
+    CH(this)->answer_func = fn;
 }
 
 // Raises DTR.

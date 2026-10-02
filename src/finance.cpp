@@ -365,7 +365,7 @@ void bank_statement(void)
         break;
     case 2:
         player_events[player].type = EV_RETURN_FROM_SCREEN;
-        player_events[player].value = 0;
+        player_events[player].value = MM_NORMAL;
         break;
     }
     set_font_from_cache(0x1c);
@@ -498,7 +498,7 @@ void process_stat_button(u8 button)
         break;
     case 1:
         play_sound(SNDSRC_GENERAL, SFX_SELECTX, -1, -1);
-        process_keys(0, 0x41);
+        process_keys(0, KC_F7);
         break;
     }
 }

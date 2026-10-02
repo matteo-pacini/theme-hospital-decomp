@@ -44,7 +44,7 @@ TbError SerialSP::Release(void)
     u32 start;
 
     NetworkDebugPrintf("  LbNETWORK : Releasing SerialSP\n");
-    if (!started) {
+    if (!initialised) {
         NetworkDebugPrintf("  WARNING network: SerialSP::Release() not initialised\n");
         return Lb_FAIL;
     }
@@ -59,7 +59,7 @@ TbError SerialSP::Release(void)
         comm->DeInit();
         delete comm;
         comm = 0;
-        started = 0;
+        initialised = 0;
     }
     return ServiceProvider::Release();
 }
@@ -74,7 +74,7 @@ TbError SerialSP::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallb
     NetworkDebugPrintf("  LbNETWORK : Initialising SerialSP\n");
     send_seq = 0;
     recv_seq = 0;
-    started = 0;
+    initialised = 0;
     awaiting_ack = 0;
     if (ServiceProvider::Initialise(cb, data) == Lb_OK) {
         this->guid = guid;
@@ -94,7 +94,7 @@ TbError SerialSP::Init(__tibcaGUID guid, __tibcaGUID *pguid, __ic76sReceiveCallb
             }
         }
         if (ret == Lb_OK)
-            started = 1;
+            initialised = 1;
     } else {
         NetworkDebugPrintf("  WARNING network: SerialSP::SerialSP() failure on parent initialisation\n");
     }
@@ -109,7 +109,7 @@ TbError SerialSP::Start(char *session, char *name, u32 max_players, void *data)
 {
     TbError ret = Lb_FAIL;
 
-    if (!started) {
+    if (!initialised) {
         NetworkDebugPrintf("  WARNING network: SerialSP::Start() not initialised\n");
     } else {
         if (max_players != 2) {
@@ -144,7 +144,7 @@ TbError SerialSP::Start(TbNetworkSessionNameEntry *session, char *name, void *da
     u32 start;
     u32 waiting;
 
-    if (!started) {
+    if (!initialised) {
         NetworkDebugPrintf("  WARNING network: SerialSP::Start() not initialised\n");
         return Lb_FAIL;
     }
@@ -280,7 +280,7 @@ TbError SerialSP::Enumerate(void (__stdcall *callback)(TbNetworkCallbackData *, 
 {
     TbNetworkSessionNameEntry *session;
 
-    if (!started) {
+    if (!initialised) {
         NetworkDebugPrintf("  WARNING network: SerialSP::Enumerate() not initialised\n");
         return Lb_FAIL;
     }
@@ -299,7 +299,7 @@ TbError SerialSP::Enumerate(TbNetworkSessionNameEntry *session, void (__stdcall 
 {
     TbError ret;
 
-    if (!started) {
+    if (!initialised) {
         NetworkDebugPrintf("  WARNING network: SerialSP::Enumerate() not initialised\n");
         return Lb_FAIL;
     }
@@ -332,7 +332,7 @@ TbError SerialSP::Stop(void)
     TbError ret = Lb_FAIL;
 
     size = GetRequestCompositeExchangeDataMsgSize();
-    if (!started) {
+    if (!initialised) {
         NetworkDebugPrintf("  WARNING network: SerialSP::Stop() not initialised\n");
     } else {
         if (!in_session) {

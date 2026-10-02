@@ -1,11 +1,16 @@
 #include "hosp.h"
 
 struct Slot {
+    // 0x0: Requester shown (REQ_).
     u8 kind;
     u8 unknown1[0x1];
+    // 0x2: Thing shown.
     u16 value;
-    s16 f4;
-    u8 f6;
+    // 0x4: Patient window: nonzero shows the health graph, 0 the diagnosis.
+    s16 show_graph;
+    // 0x6: Patient window: frames before the graph/diagnosis toggle works
+    // again.
+    u8 toggle_delay;
     u8 unknown7[0x4];
 };
 
@@ -252,10 +257,10 @@ void close_irequesters(void)
     s32 w;
     s32 h;
 
-    remove_window(open_windows, &resvars.window_list[2]);
-    remove_window(open_windows, &resvars.window_list[0]);
-    remove_window(open_windows, &resvars.window_list[1]);
-    remove_window(open_windows, &resvars.window_list[3]);
+    remove_window(open_windows, &resvars.window_list[REQ_PATIENT]);
+    remove_window(open_windows, &resvars.window_list[REQ_STAFF]);
+    remove_window(open_windows, &resvars.window_list[REQ_HANDYMAN]);
+    remove_window(open_windows, &resvars.window_list[REQ_MACHINE]);
     while (window.window_count > 1) {
         x = window.zone_x[window.window_count - 1];
         y = window.zone_y[window.window_count - 1];

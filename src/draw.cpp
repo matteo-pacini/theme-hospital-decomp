@@ -24,10 +24,12 @@ struct IconScreen {
 };
 
 struct FrameBox {
+    // 0x0: Dirty rectangle grown to cover every frame drawn since it was reset.
     s16 x0;
     s16 y0;
     s16 x1;
     s16 y1;
+    // 0x8: Box of the last frame drawn.
     s16 x;
     s16 y;
     s16 w;
@@ -589,7 +591,7 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
     old_height = lbDisplay.graphics_window_height;
     obj = &thing[w->object];
     if (obj > thing) {
-        if (w->subtype == 0xe)
+        if (w->subtype == PK_ALIEN)
             draw_special_id_frame(obj, x, y);
         f = &frame[w->sprite];
         split_height = obj->split_height;
@@ -634,7 +636,7 @@ void draw_split_frame(Thing *w, const s16 x, const s16 y)
             frame_bounds.x1 = frame_bounds.x + frame_bounds.w;
         if (frame_bounds.y1 < frame_bounds.y + frame_bounds.h)
             frame_bounds.y1 = frame_bounds.y + frame_bounds.h;
-        if (w->subtype == 0xe) {
+        if (w->subtype == PK_ALIEN) {
             s32 anim;
 
             if (w->facing == 0)

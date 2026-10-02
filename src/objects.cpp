@@ -200,7 +200,7 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     s32 cost;
 
     build = &allhosps[owner].build;
-    if (!(kind == 0x30 || can_place_object(tile, kind, dir, owner))) {
+    if (!(kind == OBJ_GATES_OF_HELL || can_place_object(tile, kind, dir, owner))) {
         return 0;
     }
     othervar.force_place_objects = 0;
@@ -220,7 +220,7 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
     if (!check_no_peeps_in_way(tile, kind, dir)) {
         return 0;
     }
-    if (kind == 0x37) {
+    if (kind == OBJ_AUTO_AUTOPSY) {
         allhosps[owner].rooms[ILL_AUTOPSY].cure_available = 1;
     }
     for (i = 0; i < 20; i++) {
@@ -250,7 +250,7 @@ u16 place_object(u16 tile, u16 kind, u8 dir, u8 owner)
         obj->layers[10] = 0;
         obj->layers[11] = old_newrand() & 3;
         obj->layers[12] = old_newrand() & 3;
-        if (kind == 0x2d) {
+        if (kind == OBJ_PLANT) {
             obj->plant_health = 400;
             if (obj->owner == player) {
                 NRAdcounts.plant_health_sum += 0x37;
@@ -1333,7 +1333,7 @@ u8 try_litter_explosion(u32 x, u32 y, u32 *count, u8 owner)
     if (old_newrand() % 100 > gbv.bomb_litter_chance) {
         return 0;
     }
-    if (which_room(pos) == 0 && !(cell->flags & 7) && !(cell->floor & 0xf)) {
+    if (which_room(pos) == 0 && !(cell->flags & 7) && !(cell->litter_shadow & 0xf)) {
         place_litter(pos, (s8)owner, old_newrand() % 3 + 1);
         (*count)--;
         return *count == 0;

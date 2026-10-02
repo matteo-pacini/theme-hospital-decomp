@@ -38,7 +38,7 @@ u16 page_member_of_staff(u16 skill_mask, u16 room_id, u8 count_present, s8 wante
         skill_mask = bit;
     }
     if (count_present) {
-        for (staff = &thing[room->first]; staff > thing; staff = &thing[staff->room_next]) {
+        for (staff = &thing[room->first_person]; staff > thing; staff = &thing[staff->room_next]) {
             if (staff->type == THING_STAFF && (staff->skills & skill_mask)) {
                 if (--wanted <= 0)
                     return 1;
@@ -199,7 +199,8 @@ RoomInfo *get_expertise_dest(u16 type, Thing *patient)
                         (abs(patient->x.tile - room->door_tile % 128) + abs(patient->y.tile - room->door_tile / 128)) *
                         gbv.dist_points;
                     score += gbv.no_staff_points;
-                    for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
+                    for (occupant = &thing[room->first_person]; occupant > thing;
+                         occupant = &thing[occupant->room_next]) {
                         if (occupant->type == THING_STAFF) {
                             score -= gbv.no_staff_points;
                             break;
@@ -220,7 +221,7 @@ RoomInfo *get_expertise_dest(u16 type, Thing *patient)
 }
 
 // Counts a staff member with skill bits mask in player `owner`'s per-skill
-// staff counts (listhead.staff).
+// staff counts (listhead.staff_by_skill).
 // FUNCTION: 0x0004a0d0
 void insert_skill(u16 mask, u8 owner)
 {
@@ -228,7 +229,7 @@ void insert_skill(u16 mask, u8 owner)
 
     for (i = 0; i < 9; i++) {
         if (mask & (1 << i))
-            listhead[owner].staff[i]++;
+            listhead[owner].staff_by_skill[i]++;
     }
 }
 
@@ -241,8 +242,8 @@ void remove_skill(u16 mask, u8 owner)
 
     for (i = 0; i < 9; i++) {
         if (mask & (1 << i)) {
-            if (listhead[owner].staff[i])
-                listhead[owner].staff[i]--;
+            if (listhead[owner].staff_by_skill[i])
+                listhead[owner].staff_by_skill[i]--;
         }
     }
 }
@@ -342,7 +343,7 @@ void set_expertise_room(RoomInfo *room)
                     for (j = 0; j < 9; j++) {
                         if (((1 << j) & mask) == 0x20 && allhosps[room->owner].surgeon_count < 2)
                             break;
-                        if ((mask & (1 << j)) && listhead[room->owner].staff[j] == 0)
+                        if ((mask & (1 << j)) && listhead[room->owner].staff_by_skill[j] == 0)
                             break;
                     }
                     if (j >= 9)
@@ -371,7 +372,7 @@ void remove_expertise_staff(Thing *staff)
     mask = staff->skills;
     for (i = 0; i < 9; i++) {
         if (mask & (1 << i)) {
-            if (listhead[staff->owner].staff[i] == 0 || (i == 5 && allhosps[staff->owner].surgeon_count < 3)) {
+            if (listhead[staff->owner].staff_by_skill[i] == 0 || (i == 5 && allhosps[staff->owner].surgeon_count < 3)) {
                 for (j = 1; j < 0x2f; j++) {
                     if (allhosps[staff->owner].rooms[j].cure_available == 1) {
                         if ((1 << i) & expertise[j].staff_mask)
@@ -428,7 +429,7 @@ void set_expertise_ward(u8 owner)
                         continue;
                     mask = exp->staff_mask;
                     for (j = 0; j < 9; j++) {
-                        if ((mask & (1 << j)) && listhead[owner].staff[j] == 0)
+                        if ((mask & (1 << j)) && listhead[owner].staff_by_skill[j] == 0)
                             break;
                     }
                     if (j >= 9)

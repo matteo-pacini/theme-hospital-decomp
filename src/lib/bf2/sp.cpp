@@ -51,7 +51,7 @@ ServiceProvider::ServiceProvider()
     in_session = 0;
     player_count = 0;
     strcpy(session_name, "");
-    started = 0;
+    initialised = 0;
     callback_data = 0;
     callbacks = &nilReceiveAspect;
 }
@@ -80,7 +80,7 @@ TbError ServiceProvider::Initialise(__ic76sReceiveCallbacks *cbs, void *data)
     if (cbs)
         callbacks = cbs;
     in_session = 0;
-    started = 0;
+    initialised = 0;
     init_count++;
     return Lb_OK;
 }
@@ -499,7 +499,7 @@ TbError ServiceProvider::CheckForDeletedHost(u8 *msg)
 // the callbacks. Stops after a data or one-way message, or at an
 // unselected kind (left waiting). A waiting message of type 3 or an unknown
 // type, or of type 8 when unselected or without its callback, is never read,
-// so the loop keeps peeking it. Returns Lb_FAIL if not started or reading a
+// so the loop keeps peeking it. Returns Lb_FAIL if not initialised or reading a
 // data or one-way message failed, else Lb_OK.
 // FUNCTION: 0xd1e24
 // NONMATCHING: the inlined DecodeMessageStub swaps ecx/edx (buffer and sequence pointer); its jump table sits in the preceding range
@@ -523,7 +523,7 @@ TbError ServiceProvider::Receive(u32 flags)
 
     keep_going = 1;
     ret = Lb_OK;
-    if (!started) {
+    if (!initialised) {
         NetworkDebugPrintf("  WARNING network: ServiceProvider::Receive() not initialised\n");
         return Lb_FAIL;
     }
@@ -680,7 +680,7 @@ TbError ServiceProvider::Send(u32 to, void *buf)
     s8 guaranteed;
 
     ret = Lb_FAIL;
-    if (!started) {
+    if (!initialised) {
         NetworkDebugPrintf("  WARNING network: ServiceProvider::Send() not initialised\n");
         return Lb_FAIL;
     }

@@ -32,7 +32,7 @@ struct RT_TYPE_SIG {
         RT_TYPE_SIG *base;
         unsigned char size;
         struct {
-            unsigned size;
+            unsigned flags;
             void (*ctor)();
             void (*dtor)(void *, unsigned);
         } clss;

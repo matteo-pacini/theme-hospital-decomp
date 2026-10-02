@@ -307,7 +307,7 @@ void stop_waiting_for_patient(Thing *w)
     w->state = get_state(w->room->type, w);
     w->slave = 0;
     if (w->subtype == STAFF_SURGEON) {
-        w = find_waiting_surgeon(w->room, 0x18);
+        w = find_waiting_surgeon(w->room, SS_ASSISTANT_READY);
         if (w) {
             w->state = get_state(w->room->type, w);
             w->slave = 0;
@@ -355,7 +355,7 @@ void doctor_in_machine_room(Thing *doctor)
                                             doctor->timer = 200;
                                             doctor->state = SS_SURGEON_WAITS;
                                         } else {
-                                            lead = find_waiting_surgeon(doctor->room, 0x10);
+                                            lead = find_waiting_surgeon(doctor->room, SS_SURGEON_WAITS);
                                             if (lead > thing &&
                                                 call_person_to_room(lead, queue, 0x28, doctor->room->door_tile, 1)) {
                                                 u16 anim;
@@ -473,7 +473,7 @@ void doctor_researches(Thing *doctor)
                         queue = doctor->room->queue_head;
                         if (queue) {
                             ok = 1;
-                            for (occupant = &thing[doctor->room->first]; occupant > thing;
+                            for (occupant = &thing[doctor->room->first_person]; occupant > thing;
                                  occupant = &thing[occupant->room_next]) {
                                 if (occupant->type == THING_STAFF && occupant->slave) {
                                     ok = 0;
@@ -559,7 +559,7 @@ u8 count_surgeons(RoomInfo *room)
     u8 count;
 
     count = 0;
-    for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
+    for (person = &thing[room->first_person]; person > thing; person = &thing[person->room_next]) {
         if (person->type == THING_STAFF && person->subtype == STAFF_SURGEON) {
             count++;
         }
@@ -656,7 +656,7 @@ Thing *find_waiting_surgeon(RoomInfo *room, u8 state)
 {
     Thing *person;
 
-    for (person = &thing[room->first]; person > thing; person = &thing[person->room_next]) {
+    for (person = &thing[room->first_person]; person > thing; person = &thing[person->room_next]) {
         if (person->type == THING_STAFF && person->state == state) {
             return person;
         }

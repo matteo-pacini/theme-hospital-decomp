@@ -15,7 +15,7 @@ void draw_glow_frame(Thing *w, s16 x, s16 y);
 void draw_wibble_frame(Thing *w, s16 x, s16 y);
 }
 
-// Draws everything on one map cell: its overlay and floor litter, a
+// Draws everything on one map cell: its floor block and litter, a
 // blueprint marker, then its things in depth order through the mapwho_*
 // routine for each type. (x, y) is the cell's screen position; (left, top)
 // is the view's origin, used to test which thing is under the mouse.
@@ -56,7 +56,8 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
 
         sprite = start[((cell->flags & 0xc0) >> 6) + 625].frame;
         if (cell->flags & 0x10) {
-            LbSpriteDraw(x, resvars.tile_height + y - blocks[cell->overlay].info->height, blocks[cell->overlay].info);
+            LbSpriteDraw(x, resvars.tile_height + y - blocks[cell->floor_block].info->height,
+                         blocks[cell->floor_block].info);
         }
         draw_a_frame(sprite, resvars.tile_width / 2 + x, resvars.tile_height / 2 + y, 0, 0);
     }
@@ -64,14 +65,14 @@ void do_mapwho(const Map *const cell, const s32 x, const s32 y, const s32 left, 
         draw_a_frame(start[blueprint[-id].anim].frame, (resvars.tile_width >> 1) + x, (resvars.tile_height >> 1) + y, 0,
                      start[blueprint[-id].anim].flags);
     }
-    floor = cell->floor & 0xf;
+    floor = cell->litter_shadow & 0xf;
     if (floor) {
         u16 frame;
         u8 flip;
 
         frame = start[litter_starts[floor].anim].frame;
         flip = start[litter_starts[floor].anim].flags;
-        if (litter_starts[floor].animated) {
+        if (litter_starts[floor].centred) {
             draw_a_frame(frame, x + (resvars.screen_mode == SCREEN_MODE_13 ? 32 : 16),
                          y + (resvars.screen_mode == SCREEN_MODE_13 ? 16 : 8), 0, flip);
         } else {

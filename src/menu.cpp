@@ -81,7 +81,7 @@ void setup_menus(void)
     set_font_from_cache(0);
     sprintf(sep, ".");
     sprintf(end, "..");
-    for (i = 1; (pmenu.pulldowns[i].length = lib_strlen(pulldown_text[i])), strcmp(sep, pulldown_text[i]); i++)
+    for (i = 1; (pmenu.pulldowns[i].title_length = lib_strlen(pulldown_text[i])), strcmp(sep, pulldown_text[i]); i++)
         ;
     pmenu.count = i;
     i++;
@@ -180,14 +180,14 @@ void draw_menus(void)
                     if (pmenu.open_pulldown == i)
                         draw_pulldown(x, (u16)pmenu.line_height, i);
                 }
-                x += pmenu.pulldowns[i].length * pmenu.char_width;
+                x += pmenu.pulldowns[i].title_length * pmenu.char_width;
             }
         }
         if (pmenu.open_pulldown >= pmenu.count) {
             if (lbDisplay.mleft_button) {
                 x = 0;
                 for (i = 1; i < pmenu.pulldowns[pmenu.open_pulldown].parent; i++)
-                    x += pmenu.pulldowns[i].length * pmenu.char_width;
+                    x += pmenu.pulldowns[i].title_length * pmenu.char_width;
                 draw_pulldown(x, (u16)pmenu.line_height, (u16)pmenu.pulldowns[pmenu.open_pulldown].parent);
                 x += pmenu.char_width * pmenu.pulldowns[i].width + pulldv[6].width;
                 draw_pulldown(x, pmenu.pulldowns[pmenu.open_pulldown].y, (u16)pmenu.open_pulldown);
@@ -375,11 +375,11 @@ extern "C" void process_menus(void)
                     item_no += pmenu.pulldowns[i].count;
                 }
                 if (pmenu.open_pulldown < pmenu.count) {
-                    x += pmenu.pulldowns[i].length * pmenu.char_width;
+                    x += pmenu.pulldowns[i].title_length * pmenu.char_width;
                 } else {
                     x = 0;
                     for (j = 1; j < pmenu.pulldowns[pmenu.open_pulldown].parent; j++)
-                        x += pmenu.pulldowns[j].length * pmenu.char_width;
+                        x += pmenu.pulldowns[j].title_length * pmenu.char_width;
                     x += pmenu.pulldowns[j].width * pmenu.char_width + pulldv[6].width;
                 }
             }
@@ -389,7 +389,7 @@ extern "C" void process_menus(void)
     if (lbDisplay.mleft_button && !pmenu.disabled) {
         if (y0 + h1 + h2 > lbDisplay.mmouse_y) {
             x2 = 0;
-            x = pmenu.char_width * pmenu.pulldowns[1].length;
+            x = pmenu.char_width * pmenu.pulldowns[1].title_length;
             for (i = 1; i < pmenu.count; i++) {
                 if (pmenu.pulldowns[i].active) {
                     if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x2, 0, x, pmenu.line_height)) {
@@ -399,7 +399,7 @@ extern "C" void process_menus(void)
                         break;
                     }
                     x2 += x;
-                    x = pmenu.pulldowns[i + 1].length * pmenu.char_width;
+                    x = pmenu.pulldowns[i + 1].title_length * pmenu.char_width;
                 }
             }
         } else {
@@ -407,7 +407,7 @@ extern "C" void process_menus(void)
                 x = 0;
                 for (i = 1; i < pmenu.pulldowns[pmenu.open_pulldown].parent; i++) {
                     if (pmenu.pulldowns[i].active)
-                        x += pmenu.pulldowns[i].length * pmenu.char_width;
+                        x += pmenu.pulldowns[i].title_length * pmenu.char_width;
                 }
                 i = pmenu.pulldowns[pmenu.open_pulldown].parent;
                 if (over_hotspot(lbDisplay.mmouse_x, lbDisplay.mmouse_y, x, pmenu.line_height,
@@ -419,11 +419,11 @@ extern "C" void process_menus(void)
                 if (pmenu.pulldowns[pmenu.open_pulldown].parent) {
                     x = 0;
                     for (i = 1; i < pmenu.pulldowns[pmenu.open_pulldown].parent; i++)
-                        x += pmenu.pulldowns[i].length * pmenu.char_width;
+                        x += pmenu.pulldowns[i].title_length * pmenu.char_width;
                 } else {
                     x = 0;
                     for (i = 1; i < pmenu.open_pulldown; i++)
-                        x += pmenu.pulldowns[i].length * pmenu.char_width;
+                        x += pmenu.pulldowns[i].title_length * pmenu.char_width;
                 }
                 i = pmenu.open_pulldown;
                 for (j = 0; j < pmenu.pulldowns[i].count; j++) {

@@ -6,10 +6,10 @@ void reset_icon_value(Thing *const peep, const s8 icon);
 // anonymous struct; the table is defined with this layout of the same size,
 // bound to its real name with #pragma aux.
 struct IconTableData {
-    u8 unknown0;
-    u16 unknown1;
-    u16 f3;
-    s8 f5;
+    u8 priority;
+    u16 anim;
+    u16 duration;
+    s8 mode;
 };
 
 IconTableData icon_table_data[] = {

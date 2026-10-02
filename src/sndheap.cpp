@@ -9,6 +9,8 @@ struct SampleInfo {
     u32 SourceID;
     s16 SampleNumber;
     u8 unknown14[3];
+    // 0x17: Bit 0: playing from a sound heap block, which stays locked while
+    // it plays.
     u8 flags;
     u8 unknown18[5];
 };
@@ -32,8 +34,11 @@ struct SampleTable {
 
 /* One entry of the sound bank's directory. */
 struct SoundBankEntry {
+    // 0x0: File offset of the bank's SoundBankSample records.
     u32 offset;
+    // 0x4: Added to each record's offset to give its file offset.
     u32 base;
+    // 0x8: Size of the records in bytes.
     u32 size;
     u32 unknownc;
 };

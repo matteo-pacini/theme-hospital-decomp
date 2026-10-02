@@ -60,7 +60,7 @@ u16 find_unallocated_bed(RoomInfo *room)
 
     for (bed = &thing[room->first_object]; bed > thing; bed = &thing[bed->room_obj_next]) {
         if (bed->subtype == OBJ_BED && bed->user == 0) {
-            for (occupant = &thing[room->first]; occupant > thing; occupant = &thing[occupant->room_next]) {
+            for (occupant = &thing[room->first_person]; occupant > thing; occupant = &thing[occupant->room_next]) {
                 if (occupant->type == THING_PATIENT && &thing[occupant->object] == bed)
                     break;
             }

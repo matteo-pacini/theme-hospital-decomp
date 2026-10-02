@@ -17,6 +17,8 @@ enum TbPaletteFadeFlag { Lb_PALETTE_FADE_OPEN = 0, Lb_PALETTE_FADE_CLOSED = 1 };
 enum TbError { Lb_FAIL = -1, Lb_OK = 0, Lb_SUCCESS = 1 };
 
 struct TbSprite {
+    // RLE pixel data: an offset into the sprite data until LbSpriteSetup makes
+    // it a pointer (LbSpriteReset undoes that).
     u32 data;
     u8 width;
     u8 height;
@@ -27,6 +29,7 @@ struct TbScreenModeInfo {
     u16 height;
     u16 BitsPerPixel;
     s32 Available;
+    // BIOS video mode number; 0x100 and up is a VESA mode.
     s32 VideoMode;
     char Desc[24];
 };
@@ -124,9 +127,13 @@ struct TbLoadFiles {
     union {
         struct {
             char FName[0x1c];
+            // Variable that receives the loaded buffer; 0 ends a list.
             u8 **Start;
+            // Variable that receives the buffer's end, or 0.
             u8 **SEnd;
+            // File length; for a name starting with '*', the size to allocate.
             s32 SLength;
+            // Bit 0: allocate the buffer in low (DOS) memory.
             u16 Flags;
             /* A u16 (modify_data_load_filename reads it as one), split
                because wpp386 10.6 fails with "segment too large" when an
@@ -315,8 +322,11 @@ void AIL_end_sequence(u32 handle, ...);
 struct TbCacheUsedBlock {
     TbCacheUsedBlock *next;
     TbCacheUsedBlock *prev;
+    // The owner's id, returned by ThrowOutOldest (sounds: sample + 1).
     u32 tag;
+    // Nonzero: ThrowOutOldest skips the block.
     u32 locked;
+    // Block size, this header included.
     u32 size;
 };
 
@@ -326,6 +336,7 @@ struct TbCacheFreeBlock {
 };
 
 struct TbCache {
+    // Number of used blocks.
     s32 count;
     TbCacheFreeBlock *free;
     TbCacheUsedBlock *oldest;
