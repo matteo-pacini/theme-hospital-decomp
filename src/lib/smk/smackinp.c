@@ -785,7 +785,7 @@ u8 nexttrack(u32 *flags)
     return 0xff;
 }
 
-// SmackOpen: open Smacker file name (with flag 0x1000 name is an open file handle; with 0x2000000 the Smack is built in the memory at name, whose first dword holds the handle when 0x1000 is also set): read the header and frame tables, build the decoding tables, set up read-ahead or load the whole file, prepare the first frame and open the requested sound tracks; NULL on failure.
+// SmackOpen: open Smacker file name (with flag 0x1000 name is an open file handle; with 0x2000000 the Smack is built in the memory at name, whose first dword holds the handle when 0x1000 is also set): read the header and frame tables, build the decoding tables, set up read-ahead or load the whole file, prepare the first frame and open the requested sound tracks; NULL on failure. When allocating the Smack fails or the header is bad, the file is closed through the null or freed smk.
 // FUNCTION: 0xe9c80
 // NONMATCHING: the spill slots of largest, start, handle, left, fps and
 // nextsize are ordered differently, the inlined readframe loads FrameNum
@@ -1691,7 +1691,7 @@ void __pascal SmackColorTrans(Smack *smk, const void *trans)
     }
 }
 
-// SmackColorRemap: remap the video's colours to the nearest (squared RGB distance) of numcolors entries of remappal, laid out as paltype describes (1: 16-bit components, 2: BGR order, 4: 4-byte entries, with 8 the colour in bytes 1-3).
+// SmackColorRemap: remap the video's colours to the nearest (squared RGB distance) of numcolors entries of remappal, laid out as paltype describes (1: 16-bit components, 2: BGR order, 4: 4-byte entries, with 8 the colour in bytes 1-3). With numcolors 0, best is stored uninitialised.
 // FUNCTION: 0xe85b0
 // NONMATCHING: register allocation: r, g, b and ro, bo get each other's spill
 // slots and are loaded through different registers; the target computes

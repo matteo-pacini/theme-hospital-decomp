@@ -296,6 +296,8 @@ void play_sound(u32 source, u16 sfx, s32 x, s32 y)
 // Per frame: adjusts the volume and pan of samples whose source is a thing
 // to its position on screen, stopping those whose thing is off screen or
 // whose source is not a thing.
+// The emergency clock branch (SNDSRC_CLOCK) sits inside the test for a
+// thing source and never runs.
 // FUNCTION: 0x00089204
 void manage_sound(void)
 {

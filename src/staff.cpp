@@ -1128,7 +1128,8 @@ void staff_join_new_employer(u16 id, u16 owner)
 
 // Makes staff room's lock holder in place of the first current holder,
 // interrupting and evacuating that one (except in an operating theatre with
-// a free slot). Does nothing if no one holds the room.
+// a free slot, where it still takes the occupied slot rather than the free
+// one). Does nothing if no one holds the room.
 // FUNCTION: 0x0002c9cc
 void change_lockholder(Thing *staff, RoomInfo *room)
 {

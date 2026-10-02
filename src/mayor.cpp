@@ -201,6 +201,8 @@ void mayor_pauses(Thing *mayor)
 // Scores player `owner`'s hospital for a VIP visit (litter, staff tiredness,
 // patients' warmth, doctor grades, rooms, a random part) and returns the
 // verdict, a mayor_result index 0-14.
+// Litter over 20 scores the same as litter over 10: the > 20 test comes
+// second.
 // FUNCTION: 0x000a13a4
 u8 mayor_judges_hospital(u8 owner)
 {

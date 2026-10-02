@@ -33,6 +33,7 @@ u8 no_cd = 1;
 // command-line switches (-L<n> starts level n as a new game, -N<name> sets the
 // player name, among others), shows the copyright screen unless -Q, then
 // runs the game. Returns the DOS exit code: 1 if the memory setup failed.
+// -N copies the name into myplayer with no length limit.
 // FUNCTION: 0x00010010
 int main(u16 argc, char **argv)
 {

@@ -352,7 +352,8 @@ void computer_decision(u8 owner)
 // the personality's guess_at; then a cure if the hospital has it (or a death,
 // when a drug fails its effectiveness roll). Adds the income, cures, deaths
 // and reputation changes to the bucket (comp_buckets) of the simulated month,
-// advancing the simulated date as it goes.
+// advancing the simulated date as it goes. has_drinks is left uninitialised
+// when there are too few drinks machines.
 // FUNCTION: 0x0004f15c
 void process_computer_peep(Thing *patient, u8 owner)
 {
@@ -626,7 +627,8 @@ u8 computer_place_object(u8 obj, u8 free, u8 owner)
 // Changes owner's loan by 5000: amount negative adds 5000 to the balance and to
 // loan if the balance is at least 5000 and the loan is positive; amount
 // positive takes 5000 from both if the loan stays at least 5000 below max_loan. Returns
-// 1 if done.
+// 1 if done. Each branch's test fits the other's body: the negative
+// (repay) case borrows, and nothing caps the loan at max_loan.
 // FUNCTION: 0x0004fe78
 u8 computer_loan(s8 amount, u8 owner)
 {

@@ -36,6 +36,8 @@ void display_awards(void);
 // state to restore afterwards in year_end_backup (the fax being shown, if
 // any, else a copy of choice_backup). Places on the map each hospital's staff member held in
 // allhosps.held_staff (at tile held_staff_tile) and clears the awards and trophies to show.
+// Saving the fax copies 10 bytes from choice_state on, two past the end of
+// year_end_backup (into numbuttons and numtext).
 // FUNCTION: 0x000b4980
 void start_year_end(void)
 {

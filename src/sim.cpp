@@ -238,6 +238,8 @@ void check_game_over(void)
 // Single player, levels before 12: offers the win as soon as the criteria
 // are met (saving the screen in progress to return to). Network game:
 // checks the current criterion.
+// Saving the fax copies 10 bytes from choice_state on, two past the end of
+// year_end_backup (into numbuttons and numtext).
 // FUNCTION: 0x00058b00
 void check_quarterly_game_over(void)
 {

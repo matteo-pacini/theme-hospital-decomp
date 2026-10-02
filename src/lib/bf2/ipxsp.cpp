@@ -615,6 +615,8 @@ struct IPXEnumPlayer {
 // an answer. Returns Lb_FAIL if not initialised, or if the host does not
 // answer or the pages run out (the session is then dropped from the list);
 // otherwise Lb_OK.
+// count is read uninitialised if the first reply already reports 32
+// players.
 // FUNCTION: 0xd6e2c
 // NONMATCHING: frame 4 bytes smaller, stack slots and register choice; done is tested as a byte
 // here, the target loads it with the sar trick
@@ -929,6 +931,8 @@ TbError IPXServiceProvider::SendPlayerInfo(__5303ctCLIENTINFOPACKET *info, __3lj
 // are allowed), replies with their slot (BUNP) and tells everyone (BUSA).
 // Returns Lb_FAIL if not hosting or AddPlayer fails, else Lb_OK (also when
 // the session is full or the player is already in it).
+// If no free slot is found, BUSA still goes out with players[i], one past
+// the table.
 // FUNCTION: 0xd852c
 // NONMATCHING: frame layout and register allocation differ
 TbError IPXServiceProvider::AddPlayerToSession(__35ct5sCLIENTJOINPACKET *join, __3ljac5NETSOCKET *from)

@@ -287,6 +287,8 @@ void add_contagiousness(Thing *patient)
 // x): appearance to suit the illness, needs, health, insurance and cash.
 // Puts them on the map if the hospital is on it (allhosps.player_type 1). Returns
 // the patient, or 0 if no thing was free.
+// health_history is filled with the raw health truncated to a byte, not
+// health / 10.
 // FUNCTION: 0x00070918
 Thing *make_a_peep(u16 pos, u8 illness, u8 owner)
 {

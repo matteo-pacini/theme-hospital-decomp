@@ -328,6 +328,7 @@ RoomInfo *get_nearest_room_info(Thing *person, u8 kind)
 
 // Single player, cheats enabled (othervar.cheats_enabled): flags 2 makes this level's
 // objects available, 4 every object, 8 adds 1000 cash and 0x10 takes 1000.
+// The flags cheat_mode passes (0x20 and up) are ignored.
 // FUNCTION: 0x0001a238
 void cheat(u32 flags)
 {

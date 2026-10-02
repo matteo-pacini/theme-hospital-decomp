@@ -523,6 +523,7 @@ void reset_all_count(void)
 
 // Adds employee (the local player's, not applicants) to the statistics pass:
 // staff counts, tiredness, happiness and warmth totals, and idle staff.
+// An idle surgeon (subtype 4) is counted in idle_staff[4], past the array.
 // FUNCTION: 0x00072684
 void staff_count(Thing *employee)
 {

@@ -249,6 +249,8 @@ s32 AWEFreeMem(AWEDriver *mdi, u16 bank)
 // Loads soundfont <MusicDataPath>/<prefix>.sbk into the AWE32 (only with
 // the SBAWE32 driver and MusicType "w"), setting Awe32SoundfontLoaded on
 // success; with UseCurrentAwe32Soundfont it keeps the one loaded.
+// The path goes into a 20-byte buffer, and failures after the open return
+// without closing the file.
 // FUNCTION: 0xef830
 void LoadAwe32Soundfont(char *prefix)
 {

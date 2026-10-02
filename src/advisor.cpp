@@ -160,6 +160,8 @@ void display_advisor(void)
 // statistics pass, announcements and the level's criteria), writes the advice
 // text into advisor.text, makes it the current advice (advisor.advice_id) and records
 // when it was given. Returns 1 if advice was written, else 0.
+// Case 0xd's stronger contagion warning (count >= 8, tested after >= 4) is
+// never reached, and case 0x10 ignores advisor_staff_tired's result.
 // FUNCTION: 0x0005defc
 u8 find_advice(const u16 id)
 {

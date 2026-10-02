@@ -133,6 +133,8 @@ U32 AIL_fgets(S32 file, INI_BUFFER *buf, char *dest, U32 maxlen)
 // and DMA_16_bit, one "key value" per line, ';' starting a comment. IO fields
 // not given are -1. Returns 1 and fills `INI`; 0 if the file is missing or
 // lacks DRIVER or DEVICE (then AIL_error says so).
+// Lines go into an 80-byte buffer with maxlen 80, so a line of 80 or more
+// characters writes a byte past it.
 // FUNCTION: 0x000dedd0
 S32 __cdecl AIL_API_read_INI(AIL_INI *INI, char *filename)
 {

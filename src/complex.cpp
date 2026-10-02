@@ -68,6 +68,7 @@ extern "C" u8 process_complex_either(Thing *w)
 // if any, or enters next_state. Returns 1 after a step, 2 if no complex is
 // running, 0, 3 or 4 if the step failed (fail_staff_complex, or the state was
 // set to SS_COMPLEX_RETRY for a busy door).
+// Step 54 passes thing (the null thing), not the patient, to check_frame.
 // FUNCTION: 0x0003e724
 u8 process_staff_complex(Thing *employee)
 {

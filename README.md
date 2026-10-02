@@ -212,3 +212,6 @@ register allocation). Library flags are in `config/cflags.txt`.
 
 See [docs/MATCHING.md](docs/MATCHING.md) for compiler behaviour and the
 source idioms that reproduce it.
+
+[docs/BUGS.md](docs/BUGS.md) lists bugs in the original code that the
+decompilation keeps.

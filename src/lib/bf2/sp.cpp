@@ -667,6 +667,8 @@ TbError ServiceProvider::Receive(u32 flags)
 // Sends message buf to player to: messages to this machine's own player are
 // handled at once; others go out guaranteed except exchange data, its
 // requests and type 8. Returns Lb_OK, or Lb_FAIL.
+// A type 8 message to the local player passes the uninitialised player_id
+// to its callback.
 // FUNCTION: 0xd25ac
 TbError ServiceProvider::Send(u32 to, void *buf)
 {

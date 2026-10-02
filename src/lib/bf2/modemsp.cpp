@@ -44,6 +44,7 @@ TbError ModemSP::Init(__tibcaGUID guid, __ic76sReceiveCallbacks *callbacks, void
 // timeouts and waiting callback in data (a ModemStartData, which also
 // receives the modem's result and response), sets it to auto-answer and
 // starts the serial session. Returns Lb_OK, or Lb_FAIL.
+// The response debug lines pass comm, not a string, for %s.
 // FUNCTION: 0xee77c
 // NONMATCHING: register choice: the target keeps the InitModem result on the stack and the
 // response buffer address in ecx

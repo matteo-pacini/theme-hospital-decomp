@@ -1072,7 +1072,8 @@ S32 __cdecl AIL_digital_master_volume(HDIGDRIVER dig)
 
 // Stores `dig`'s DMA rate in `*rate`, hardware format in `*format` and device
 // name in `string`; NULL ones are skipped. Logged when MSS_DEBUG tracing is on;
-// the logged result reads all three pointers.
+// the logged result reads all three pointers, passing *string (a char) for
+// %s.
 // FUNCTION: 0x000c4910
 void __cdecl AIL_digital_configuration(HDIGDRIVER dig, S32 *rate, S32 *format,
                                        char *string)

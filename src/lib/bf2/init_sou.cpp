@@ -209,6 +209,8 @@ void InitSound(void)
 // types, in decimal, are 1644, 1640, 1622, 1620, 1611, 1610 (16-bit) and
 // 822, 811, 800 (8-bit); InitSound plays them at 44.1, 44.1, 22.05, 22.05,
 // 11.025, 11.025, 22.05, 11.025 and 11.025 kHz.
+// A SoundType not in that list is retried forever if it cannot be
+// allocated.
 // FUNCTION: 0xdd040
 void DetermineSoundType(void)
 {
