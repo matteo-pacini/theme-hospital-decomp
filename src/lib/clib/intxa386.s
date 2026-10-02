@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __int386x: issue interrupt esi with registers from in_regs (edi) and segregs (ebx); results to out_regs (edx, cflag from carry) and segregs' es/ds.
 // FUNCTION: 0x000ecd62
 
 .section _TEXT,"ax",@progbits,unique,970082
@@ -36,6 +37,7 @@
     ret
 .size "__int386x_",.-"__int386x_"
 
+// fn_000ecd9a: load the registers from in_regs and segregs and "return" into the int-n stub for interrupt esi (whose ret comes back to __int386x).
 // FUNCTION: 0x000ecd9a
 
 .section _TEXT,"ax",@progbits,unique,970138
@@ -57,6 +59,7 @@
     ret
 .size "fn_000ecd9a_",.-"fn_000ecd9a_"
 
+// _DoINTR: issue interrupt intno with every register, segment register and the flags taken from and stored back to the REGPACK at edx.
 // FUNCTION: 0x000ecdbf
 
 .section _TEXT,"ax",@progbits,unique,970175
@@ -99,6 +102,7 @@
     ret
 .size "_DoINTR_",.-"_DoINTR_"
 
+// fn_000ece0c: load the registers from the REGPACK at edx and "return" into the int-n stub for interrupt al; the stub table follows.
 // FUNCTION: 0x000ece0c
 
 .section _TEXT,"ax",@progbits,unique,970252

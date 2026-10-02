@@ -8,6 +8,7 @@ unsigned char _TinyGetCharEcho(void);
     "int 21h" \
     value [al] modify [eax];
 
+// getche: read a keystroke with echo (a pushed-back _cbyte first).
 // FUNCTION: 0xfc8ff
 int getche(void)
 {

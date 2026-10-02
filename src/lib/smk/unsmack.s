@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// fn_0010b640: zero bytes at the start of the module, not code.
 // FUNCTION: 0x0010b640
 
 .section _TEXT,"ax",@progbits,unique,1095232
@@ -104,6 +105,7 @@
     add byte ptr [eax], al
 .size "fn_0010b640_",.-"fn_0010b640_"
 
+// fn_0010b700: read a Huffman tree with 8-bit leaves from the bit stream (esi, bits in ebp) into the node array at edi.
 // FUNCTION: 0x0010b700
 
 .section _TEXT,"ax",@progbits,unique,1095424
@@ -180,6 +182,7 @@
     .byte 0x87; .byte 0xdb
 .size "fn_0010b700_",.-"fn_0010b700_"
 
+// fn_0010b7a0: read a 16-bit-leaf Huffman tree from the bit stream: three escape values, then leaves built from the low- and high-byte trees; records the escape leaves' nodes at edx.
 // FUNCTION: 0x0010b7a0
 
 .section _TEXT,"ax",@progbits,unique,1095584
@@ -458,6 +461,7 @@
     .byte 0x87; .byte 0xdb
 .size "fn_0010b7a0_",.-"fn_0010b7a0_"
 
+// fn_0010ba90: build the fast lookup table at edi for the tree at edx: for each bit pattern of the table's width, the node reached and the bits consumed.
 // FUNCTION: 0x0010ba90
 
 .section _TEXT,"ax",@progbits,unique,1096336
@@ -506,6 +510,7 @@
     .byte 0x87; .byte 0xc9
 .size "fn_0010ba90_",.-"fn_0010ba90_"
 
+// fn_0010bb00: read one video tree from the bit stream (its byte trees, the tree and its lookup table), or store an empty tree if the stream says it is absent.
 // FUNCTION: 0x0010bb00
 
 .section _TEXT,"ax",@progbits,unique,1096448
@@ -568,6 +573,7 @@
     .byte 0x90
 .size "fn_0010bb00_",.-"fn_0010bb00_"
 
+// SmackGetSizeTables: size of the fixed part of the decoding tables (0x7468 bytes); the trees' sizes come on top.
 // FUNCTION: 0x0010bb90
 
 .section _TEXT,"ax",@progbits,unique,1096592
@@ -583,6 +589,7 @@
     .byte 0x87; .byte 0xc9
 .size "_SmackGetSizeTables",.-"_SmackGetSizeTables"
 
+// SmackDoTables: build the four video Huffman trees (sizes codesize, absize, detailsize, typesize) from the header data at tables into addr32, choosing an unused value to mark non-leaf nodes.
 // FUNCTION: 0x0010bba0
 
 .section _TEXT,"ax",@progbits,unique,1096608
@@ -812,6 +819,7 @@
     .byte 0x90
 .size "_SmackDoTables",.-"_SmackDoTables"
 
+// fn_0010bee0: set, in the value bitmap at edi, the bit of every leaf value in the eax-byte tree at esi.
 // FUNCTION: 0x0010bee0
 
 .section _TEXT,"ax",@progbits,unique,1097440
@@ -842,6 +850,7 @@
     ret
 .size "fn_0010bee0_",.-"fn_0010bee0_"
 
+// fn_0010bf10: rewrite the eax-byte tree at esi: each leaf's low word becomes its value, every other node's the unused marker value; the frame decoder's block routines follow it.
 // FUNCTION: 0x0010bf10
 
 .section _TEXT,"ax",@progbits,unique,1097488
@@ -4957,6 +4966,7 @@
     .byte 0x87; .byte 0xc9
 .size "fn_0010bf10_",.-"fn_0010bf10_"
 
+// Unsmack: decode one frame's video data with the tables at addr32 into the destination the table at deltas describes.
 // FUNCTION: 0x0010e820
 
 .section _TEXT,"ax",@progbits,unique,1108000
@@ -5245,6 +5255,7 @@
     .byte 0x90
 .size "_Unsmack",.-"_Unsmack"
 
+// SmackDoPCM: decompress insize bytes of Smacker audio at in (work: scratch for its trees) into the ring buffer outbase..outend starting at outpos.
 // FUNCTION: 0x0010ebf0
 
 .section _TEXT,"ax",@progbits,unique,1108976
@@ -5914,6 +5925,7 @@
     .byte 0x87; .byte 0xdb
 .size "_SmackDoPCM",.-"_SmackDoPCM"
 
+// SmackGetSizeDeltas: size of the destination table for a width x height frame (width * height / 256 + 32).
 // FUNCTION: 0x0010f420
 
 .section _TEXT,"ax",@progbits,unique,1111072
@@ -5940,6 +5952,7 @@
     .byte 0x90
 .size "_SmackGetSizeDeltas",.-"_SmackGetSizeDeltas"
 
+// SmackGetRect: next changed rectangle of the last decoded frame from the table at deltas into rect (x, y, w, h); returns 1, or 0 when there are no more.
 // FUNCTION: 0x0010f440
 
 .section _TEXT,"ax",@progbits,unique,1111104
@@ -6066,6 +6079,7 @@
     .byte 0x90
 .size "_SmackGetRect",.-"_SmackGetRect"
 
+// SmackRemapTables: remap the colour values in the decoding tables at addr32 through the 256-entry table trans.
 // FUNCTION: 0x0010f560
 
 .section _TEXT,"ax",@progbits,unique,1111392

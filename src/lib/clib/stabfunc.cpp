@@ -28,6 +28,7 @@ void *__wcpp_2_base_register_(RW_DTREG *rw, void *ro, unsigned state_var);
 RO_STATE *fun_state_table(RO_DTREG *ro);
 #pragma aux fun_state_table "W?fun_state_table$n(pn$ro_dtreg$$)pn$__7a4u3RO_STATE$$"
 
+// fun_state_table: state table of a function registration (it follows the ro header).
 // FUNCTION: 0xcf3e4
 RO_STATE *fun_state_table(RO_DTREG *ro)
 {
@@ -37,6 +38,7 @@ RO_STATE *fun_state_table(RO_DTREG *ro)
 void *fun_point_object(RW_DTREG *rw, unsigned index);
 #pragma aux fun_point_object "W?fun_point_object$n(pn$rw_dtreg$$ui)pnv"
 
+// fun_point_object: address of the local object for state index (frame offset from the ro table, relative to rw).
 // FUNCTION: 0xcf3e8
 void *fun_point_object(RW_DTREG *rw, unsigned index)
 {
@@ -48,6 +50,7 @@ void *fun_point_object(RW_DTREG *rw, unsigned index)
 void fun_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw);
 #pragma aux fun_init_traverse "W?fun_init_traverse$n(pn$__1j2o3bSTAB_TRAVERSE$$pn$rw_dtreg$$)v"
 
+// fun_init_traverse: start a destruction traversal of a function registration (object type 0).
 // FUNCTION: 0xcf3f5
 void fun_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw)
 {
@@ -66,6 +69,7 @@ static DTREG_VFPTRS fun_vftable = { fun_state_table, fun_point_object, fun_init_
 void init(void);
 #pragma aux init "W?init$n()v"
 
+// init: startup routine; install the function registration handlers in __wcpp_2_data_dtreg_vfptrs_[0].
 // FUNCTION: 0xcf3fa
 void init(void)
 {
@@ -74,6 +78,7 @@ void init(void)
 
 AXI(init, 10)
 
+// __wcpp_2_fun_register_: register function block rw with read-only table ro (state 0).
 // FUNCTION: 0xcf405
 void __wcpp_2_fun_register_(RW_DTREG *rw, void *ro)
 {

@@ -56,6 +56,7 @@ char testFlag(unsigned char *flags, unsigned index);
 
 extern "C" {
 
+// __wcpp_2_stab_entry_: state-table entry of registration ro for state_var (NULL for state 0; array registrations have one entry).
 // FUNCTION: 0xf3cb0
 RO_STATE *__wcpp_2_stab_entry_(RO_DTREG *ro, unsigned state_var)
 {
@@ -71,6 +72,7 @@ RO_STATE *__wcpp_2_stab_entry_(RO_DTREG *ro, unsigned state_var)
     return state;
 }
 
+// __wcpp_2_stab_trav_init_: start a traversal ctl of rw's state table at its current state.
 // FUNCTION: 0xf3cde
 void __wcpp_2_stab_trav_init_(STAB_TRAVERSE *ctl, rw_dtreg *rw)
 {
@@ -80,12 +82,14 @@ void __wcpp_2_stab_trav_init_(STAB_TRAVERSE *ctl, rw_dtreg *rw)
     __wcpp_2_data_dtreg_vfptrs_[rw->ro->kind]->trav_init(ctl, rw);
 }
 
+// __wcpp_2_stab_trav_comp_: step ctl's state back by 2 (past the object being constructed).
 // FUNCTION: 0xf3cff
 void __wcpp_2_stab_trav_comp_(STAB_TRAVERSE *ctl)
 {
     ctl->state_var -= 2;
 }
 
+// __wcpp_2_stab_trav_next_: step ctl to the previous state, following set-state and test-flag commands; returns that entry (NULL at state 0).
 // FUNCTION: 0xf3d04
 RO_STATE *__wcpp_2_stab_trav_next_(STAB_TRAVERSE *ctl)
 {
@@ -131,6 +135,7 @@ RO_STATE *__wcpp_2_stab_trav_next_(STAB_TRAVERSE *ctl)
     return state;
 }
 
+// __wcpp_2_stab_trav_move_: from ctl's state, follow set-state and test-flag commands to an entry with a destructor or other command, storing the state reached; returns the entry.
 // FUNCTION: 0xf3d89
 RO_STATE *__wcpp_2_stab_trav_move_(STAB_TRAVERSE *ctl)
 {

@@ -17,6 +17,7 @@ char *strcpy(char *dst, const char *src);
 char *__cvt(double value, int ndigits, int *dec, int *sign, int fmt, char *buf);
 #pragma aux __cvt parm routine [];
 
+// __cvt: ecvt/fcvt core; ndigits significant digits ('F' fmt: digits after the point) of value into buf, decimal exponent in *dec, sign in *sign; "inf"/"nan" as is.
 // FUNCTION: 0xfcbf5
 char *__cvt(double value, int ndigits, int *dec, int *sign, int fmt, char *buf)
 {

@@ -52,6 +52,7 @@ unsigned long __gettime(void);
     value [ecx] \
     modify [eax edx];
 
+// __getctime: fill *t with the current local date and time from DOS (rereading the date if midnight passed); returns the milliseconds.
 // FUNCTION: 0xeb7a7
 int __getctime(struct tm *t)
 {

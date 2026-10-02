@@ -15,6 +15,7 @@ tiny_ret_t _TinyMkDir(const char *path);
 
 int __set_errno_dos(unsigned err);
 
+// mkdir: create directory path (DOS 39h); returns 0, or -1 with errno set.
 // FUNCTION: 0xec6a7
 int mkdir(const char *path)
 {

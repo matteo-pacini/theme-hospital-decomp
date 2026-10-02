@@ -35,8 +35,9 @@ static const unsigned char Days[3][7] = {
 extern char result[];
 
 struct tm *_localtime(const time_t *timer, struct tm *tm);
-char *asctime(const struct tm *time);
+char *asctime(const struct tm *timeptr);
 
+// convDec: write num (0-99) as two decimal digits at buf[off].
 // FUNCTION: 0xfa9a7
 static void convDec(int num, int off, char *buf)
 {
@@ -47,33 +48,34 @@ static void convDec(int num, int off, char *buf)
     buf[off + 1] = d.rem + '0';
 }
 
+// _asctime: format *timeptr as "Ddd Mmm dd hh:mm:ss yyyy\n" into buf; returns buf.
 // FUNCTION: 0xfa9da
-char *_asctime(const struct tm *time, char *buf)
+char *_asctime(const struct tm *timeptr, char *buf)
 {
     div_t d;
     int i;
 
-    i = time->tm_wday;
+    i = timeptr->tm_wday;
     buf[0] = Days[0][i];
     buf[1] = Days[1][i];
     buf[2] = Days[2][i];
     buf[3] = ' ';
-    i = time->tm_mon;
+    i = timeptr->tm_mon;
     buf[4] = Months[0][i];
     buf[5] = Months[1][i];
     buf[6] = Months[2][i];
     buf[7] = ' ';
-    convDec(time->tm_mday, 8, buf);
+    convDec(timeptr->tm_mday, 8, buf);
     if ((int)buf[8] == '0')
         buf[8] = ' ';
     buf[10] = ' ';
-    convDec(time->tm_hour, 11, buf);
+    convDec(timeptr->tm_hour, 11, buf);
     buf[13] = ':';
-    convDec(time->tm_min, 14, buf);
+    convDec(timeptr->tm_min, 14, buf);
     buf[16] = ':';
-    convDec(time->tm_sec, 17, buf);
+    convDec(timeptr->tm_sec, 17, buf);
     buf[19] = ' ';
-    d = div(time->tm_year, 100);
+    d = div(timeptr->tm_year, 100);
     convDec(d.quot + 19, 20, buf);
     convDec(d.rem, 22, buf);
     buf[24] = '\n';
@@ -81,6 +83,7 @@ char *_asctime(const struct tm *time, char *buf)
     return buf;
 }
 
+// _ctime: format *timer as local time into buf (asctime layout); returns buf.
 // FUNCTION: 0xfaac7
 char *_ctime(const time_t *timer, char *buf)
 {
@@ -91,14 +94,16 @@ char *_ctime(const time_t *timer, char *buf)
 
 struct tm *localtime(const time_t *timer);
 
+// ctime: *timer as a local-time asctime string in a static buffer.
 // FUNCTION: 0xfaae0
 char *ctime(const time_t *timer)
 {
     return asctime(localtime(timer));
 }
 
+// asctime: format *timeptr as "Ddd Mmm dd hh:mm:ss yyyy\n" in a static buffer; returns it.
 // FUNCTION: 0xfaae5
-char *asctime(const struct tm *time)
+char *asctime(const struct tm *timeptr)
 {
-    return _asctime(time, result);
+    return _asctime(timeptr, result);
 }

@@ -26,6 +26,7 @@ int intdos(union REGS *in_regs, union REGS *out_regs);
 
 extern clock_t clock_start;
 
+// clock_value: current time of day from DOS (2Ch) in hundredths of a second since midnight.
 // FUNCTION: 0xec34a
 clock_t clock_value(void)
 {
@@ -36,12 +37,14 @@ clock_t clock_value(void)
     return ((regs.h.ch * 60UL + regs.h.cl) * 60 + regs.h.dh) * 100 + regs.h.dl;
 }
 
+// __clock_init: record the start time for clock().
 // FUNCTION: 0x000ec3a5
 void __clock_init(void)
 {
     clock_start = clock_value();
 }
 
+// __clock: hundredths of a second since __clock_init, allowing for one midnight wrap.
 // FUNCTION: 0x000ec3b0
 clock_t __clock(void)
 {

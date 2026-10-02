@@ -30,6 +30,7 @@ tiny_ret_t _TinySeek(int handle, unsigned long offset, int method);
 unsigned __IOMode(int handle);
 int __set_errno_dos(unsigned err);
 
+// __qwrite: write len bytes to handle (seeking to the end first in append mode); returns bytes written (errno ENOSPC if short), or -1.
 // FUNCTION: 0xec4b8
 int __qwrite(int handle, const void *buffer, unsigned len)
 {

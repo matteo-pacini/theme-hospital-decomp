@@ -3,6 +3,7 @@
 void __delay(unsigned ms);
 void __delay_init(void);
 
+// delay: suspend execution for ms milliseconds.
 // FUNCTION: 0xce37a
 void delay(unsigned ms)
 {

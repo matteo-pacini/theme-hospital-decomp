@@ -1,5 +1,6 @@
 #include "clib.h"
 
+// atoi: convert the decimal string p (leading whitespace, optional sign) to int.
 // FUNCTION: 0xbc00f
 int atoi(const char *p)
 {

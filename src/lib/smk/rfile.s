@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// radopen: open the file at far name with DOS access mode mode (3Dh); returns the handle, or -1.
 // FUNCTION: 0x000f2fe0
 
 .section _TEXT,"ax",@progbits,unique,995296
@@ -27,6 +28,7 @@
     ret
 .size "_radopen",.-"_radopen"
 
+// raderase: delete the file at far name (DOS 41h).
 // FUNCTION: 0x000f3001
 
 .section _TEXT,"ax",@progbits,unique,995329
@@ -50,6 +52,7 @@
     ret
 .size "_raderase",.-"_raderase"
 
+// radcreate: create or truncate the file at far name (DOS 3Ch, normal attributes); returns the handle, or -1.
 // FUNCTION: 0x000f3019
 
 .section _TEXT,"ax",@progbits,unique,995353
@@ -77,6 +80,7 @@
     ret
 .size "_radcreate",.-"_radcreate"
 
+// radread: read size bytes from handle into a far buffer in chunks of up to 60K (DOS 3Fh), stopping at end of file or an error; stores the bytes read in *amount.
 // FUNCTION: 0x000f3039
 
 .section _TEXT,"ax",@progbits,unique,995385
@@ -125,6 +129,7 @@
     ret
 .size "_radread",.-"_radread"
 
+// radwrite: write size bytes from a far buffer to handle in chunks of up to 60K (DOS 40h), stopping on an error or a short write; stores the bytes written in *amount.
 // FUNCTION: 0x000f3085
 
 .section _TEXT,"ax",@progbits,unique,995461
@@ -173,6 +178,7 @@
     ret
 .size "_radwrite",.-"_radwrite"
 
+// radseekbegin: seek handle to pos from the start (DOS 4200h); returns the new position. radseekcur and radseekend share its body.
 // FUNCTION: 0x000f30d1
 
 .section _TEXT,"ax",@progbits,unique,995537
@@ -199,6 +205,7 @@
     ret
 .size "_radseekbegin",.-"_radseekbegin"
 
+// radseekcur: seek handle by pos from the current position; returns the new position.
 // FUNCTION: 0x000f30f5
 
 .section _TEXT,"ax",@progbits,unique,995573
@@ -209,6 +216,7 @@
     .byte 0xeb; .byte 0xda  # jmp 0xf30d5
 .size "_radseekcur",.-"_radseekcur"
 
+// radseekend: seek handle to pos from the end; returns the new position.
 // FUNCTION: 0x000f30fb
 
 .section _TEXT,"ax",@progbits,unique,995579
@@ -219,6 +227,7 @@
     .byte 0xeb; .byte 0xd4  # jmp 0xf30d5
 .size "_radseekend",.-"_radseekend"
 
+// radclose: close handle (DOS 3Eh).
 // FUNCTION: 0x000f3101
 
 .section _TEXT,"ax",@progbits,unique,995585
@@ -236,6 +245,7 @@
     ret
 .size "_radclose",.-"_radclose"
 
+// IsRemote: 1 if handle refers to a remote (network) file or device (IOCTL 440Ah), else 0.
 // FUNCTION: 0x000f310f
 
 .section _TEXT,"ax",@progbits,unique,995599
@@ -259,6 +269,7 @@
     ret
 .size "_IsRemote",.-"_IsRemote"
 
+// radgetfiletime: handle's DOS file time and date (DOS 5700h), time in the high word, date in the low.
 // FUNCTION: 0x000f312d
 
 .section _TEXT,"ax",@progbits,unique,995629
@@ -281,6 +292,7 @@
     ret
 .size "_radgetfiletime",.-"_radgetfiletime"
 
+// radsetfiletime: set handle's DOS file time (high word) and date (low word) from value (DOS 5701h).
 // FUNCTION: 0x000f3148
 
 .section _TEXT,"ax",@progbits,unique,995656

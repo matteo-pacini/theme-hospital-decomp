@@ -23,6 +23,7 @@ extern struct tm __end_dst;
 
 time_t mktime(struct tm *t);
 
+// __leapyear: 1 if year is a Gregorian leap year, else 0.
 // FUNCTION: 0xf3359
 int __leapyear(int year)
 {
@@ -35,6 +36,7 @@ int __leapyear(int year)
     return 0;
 }
 
+// calc_yday: day of year (0-based) on which DST rule timerule (Mm.w.d, Jn or n form) falls in year (since 1900).
 // FUNCTION: 0xf3394
 int calc_yday(const struct tm *timerule, int year)
 {
@@ -74,6 +76,7 @@ int calc_yday(const struct tm *timerule, int year)
     return timerule->tm_yday;
 }
 
+// check_order: 1 if DST rule start falls after rule end in year (southern hemisphere), else 0.
 // FUNCTION: 0xf3479
 int check_order(const struct tm *start, const struct tm *end, int year)
 {
@@ -88,6 +91,7 @@ int check_order(const struct tm *start, const struct tm *end, int year)
 
 int time_less(const struct tm *t1, const struct tm *t2);
 
+// __isindst: set and return t->tm_isdst from the TZ daylight-saving rules (0 if there is no DST zone).
 // FUNCTION: 0xf34ad
 int __isindst(struct tm *t)
 {
@@ -205,6 +209,7 @@ int __isindst(struct tm *t)
     return t->tm_isdst = dst;
 }
 
+// time_less: 1 if t1's time of day is earlier than t2's, else 0.
 // FUNCTION: 0xf3770
 int time_less(const struct tm *t1, const struct tm *t2)
 {

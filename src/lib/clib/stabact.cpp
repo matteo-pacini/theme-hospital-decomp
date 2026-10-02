@@ -26,6 +26,7 @@ struct TYPE_SIG_CLASS {
 
 THREAD_CTL *__wcpp_2_arr_register_(void *array, RW_DTREG_ARRAY *rw, TYPE_SIG_CLASS *sig);
 
+// __wcpp_2_ctor_array_: default-construct count elements of class sig at array, registered so a throw destroys the finished ones; returns the array.
 // FUNCTION: 0xed300
 void *__wcpp_2_ctor_array_(void *array, unsigned count, TYPE_SIG_CLASS *sig)
 {

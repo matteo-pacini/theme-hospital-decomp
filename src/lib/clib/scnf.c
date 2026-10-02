@@ -39,18 +39,21 @@ static int scan_int(SCNF_SPECS *specs, va_list *arg, int base, int sign_flag);
 static const char *get_opt(const char *opt_str, SCNF_SPECS *specs);
 static void report_scan(SCNF_SPECS *specs, va_list *arg, int match);
 
+// cget: next input character through the source's get callback.
 // FUNCTION: 0xfaaf2
 static int cget(SCNF_SPECS *specs)
 {
     return (*specs->cget_rtn)(specs);
 }
 
+// uncget: push c back through the source's unget callback.
 // FUNCTION: 0xfaaf9
 static void uncget(int c, SCNF_SPECS *specs)
 {
     (*specs->uncget_rtn)(c, specs);
 }
 
+// __scnf: scanf engine; match format against input from specs's callbacks, storing through args; returns items assigned, or EOF if input ended before any.
 // FUNCTION: 0xfab01
 int __scnf(SCNF_SPECS *specs, const char *format, va_list *args)
 {
@@ -147,6 +150,7 @@ fail:
     return items_assigned;
 }
 
+// get_opt: parse a conversion's '*', width and N/F/h/l/w/L modifiers at opt_str into specs; returns the conversion character's position.
 // FUNCTION: 0xfad48
 static const char *get_opt(const char *opt_str, SCNF_SPECS *specs)
 {
@@ -200,6 +204,7 @@ static const char *get_opt(const char *opt_str, SCNF_SPECS *specs)
     return opt_str;
 }
 
+// scan_white: skip input whitespace; returns how many chars were skipped.
 // FUNCTION: 0xfae3d
 static int scan_white(SCNF_SPECS *specs)
 {
@@ -218,6 +223,7 @@ static int scan_white(SCNF_SPECS *specs)
     return len;
 }
 
+// scan_char: %c; read width chars (default 1) into the next argument, 16-bit with l; returns chars read.
 // FUNCTION: 0xfae7c
 static int scan_char(SCNF_SPECS *specs, va_list *arg)
 {
@@ -256,6 +262,7 @@ static int scan_char(SCNF_SPECS *specs, va_list *arg)
     return len;
 }
 
+// scan_string: %s; skip whitespace, then read a non-blank word (wide with l) into the next argument; returns chars consumed.
 // FUNCTION: 0xfaf11
 static int scan_string(SCNF_SPECS *specs, va_list *arg)
 {
@@ -319,6 +326,7 @@ done:
     return len;
 }
 
+// report_scan: %n; store match (chars consumed so far) in the next argument.
 // FUNCTION: 0xfb034
 static void report_scan(SCNF_SPECS *specs, va_list *arg, int match)
 {
@@ -342,6 +350,7 @@ static void report_scan(SCNF_SPECS *specs, va_list *arg, int match)
     }
 }
 
+// makelist: build the bit set of a %[ scanset at format (up to ']') in charset; returns the end.
 // FUNCTION: 0xfb092
 static const char *makelist(const char *format, char *charset)
 {
@@ -359,6 +368,7 @@ static const char *makelist(const char *format, char *charset)
     return format;
 }
 
+// scan_arb: %[ ; read up to width chars that are in (or, with '^', not in) the scanset into the next argument; returns chars read.
 // FUNCTION: 0xfb0d5
 static int scan_arb(SCNF_SPECS *specs, va_list *arg, const char **format)
 {
@@ -420,6 +430,7 @@ extern void (*__EFG_scanf)(char *buf, double *ld);
 
 // NONMATCHING: the sign branch counts pref_len in ecx instead of ebp, and
 // at is cleared through ebp (shared with digit_found) instead of eax
+// scan_float: %e/%f/%g; read a floating-point number and store it as float, double or (with h) 16.16 fixed point; returns chars consumed.
 // FUNCTION: 0xfb1cf
 static int scan_float(SCNF_SPECS *specs, va_list *arg)
 {
@@ -550,6 +561,7 @@ done:
 }
 
 // NONMATCHING: stack slot assignment of pref_len, sign and arg
+// scan_int: %d/%i/%o/%u/%x; read an integer in base (0 = from prefix), accepting a sign if sign_flag, and store it; returns chars consumed.
 // FUNCTION: 0xfb4e6
 static int scan_int(SCNF_SPECS *specs, va_list *arg, int base, int sign_flag)
 {
@@ -663,6 +675,7 @@ static int radix_value(int c);
 /* config/functions.txt has no name for radix_value. */
 #pragma aux radix_value "fn_000fb6d6_"
 
+// radix_value: hex digit value of c (case-insensitive), 16 if not a hex digit.
 // FUNCTION: 0xfb6d6
 static int radix_value(int c)
 {
@@ -674,6 +687,7 @@ static int radix_value(int c)
     return 16;
 }
 
+// cgetw: next character while the field width lasts; EOF once it is used up or input ends.
 // FUNCTION: 0xfb6fd
 static int cgetw(SCNF_SPECS *specs)
 {

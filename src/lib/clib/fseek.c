@@ -5,6 +5,7 @@
 
 long tell(int handle);
 
+// __update_buffer: move fp's read position by diff within its buffer if possible (returns 0); otherwise empty the buffer and return 1.
 // FUNCTION: 0xfc7c1
 static int __update_buffer(long diff, FILE *fp)
 {
@@ -19,6 +20,7 @@ static int __update_buffer(long diff, FILE *fp)
     return 1;
 }
 
+// fseek: set fp's position to offset from origin (SEEK_SET/CUR/END); returns 0, or -1 on error.
 // FUNCTION: 0xfc803
 int fseek(FILE *fp, long offset, int origin)
 {

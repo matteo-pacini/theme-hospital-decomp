@@ -58,12 +58,14 @@ extern const double _HugeValue;
 double _matherr(struct exception *excp);
 double __math2err(unsigned err_info, double *arg1, double *arg2);
 
+// __math1err: __math2err for a one-argument function.
 // FUNCTION: 0xfdbf2
 double __math1err(unsigned err_info, double *arg1)
 {
     return __math2err(err_info, arg1, arg1);
 }
 
+// __math2err: build a struct exception from err_info (error kind, function name, default result) and the arguments, and pass it to _matherr; returns the result.
 // FUNCTION: 0xfdbfc
 double __math2err(unsigned err_info, double *arg1, double *arg2)
 {

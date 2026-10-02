@@ -5,6 +5,7 @@ double modf(double value, double *iptr);
 double floor(double x);
 #pragma aux floor parm routine [] frame;
 
+// floor: largest integral value not greater than x.
 // FUNCTION: 0xfca3d
 double floor(double x)
 {

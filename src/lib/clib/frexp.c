@@ -3,6 +3,7 @@
 double frexp(double value, int *exp);
 #pragma aux frexp parm routine [];
 
+// frexp: split value into a mantissa in [0.5, 1) and a power of two stored in *exp.
 // FUNCTION: 0xfd868
 double frexp(double value, int *exp)
 {

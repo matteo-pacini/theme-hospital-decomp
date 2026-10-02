@@ -1,5 +1,6 @@
 #include "clib.h"
 
+// Alphabet: digit characters for radix conversion; a table in the code segment, not a function.
 // FUNCTION: 0xec560
 static const char __based(__segname("_CODE")) Alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 
@@ -13,6 +14,7 @@ unsigned __udiv(unsigned value, unsigned __near *radix);
     modify exact [eax edx];
 
 
+// utoa: write unsigned value in radix (2-36) to buffer; returns buffer.
 // FUNCTION: 0xec585
 char *utoa(unsigned value, char *buffer, int radix)
 {
@@ -37,6 +39,7 @@ char *utoa(unsigned value, char *buffer, int radix)
 }
 
 
+// itoa: write value in radix (2-36) to buffer, signed only for radix 10; returns buffer.
 // FUNCTION: 0xec5cf
 char *itoa(int value, char *buffer, int radix)
 {

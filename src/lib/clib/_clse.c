@@ -16,6 +16,7 @@ tiny_ret_t _TinyClose(int handle);
 
 void __SetIOMode(int handle, unsigned value);
 
+// __close: close handle (DOS 3Eh) and clear its I/O mode; returns 0, or -1 with errno EBADF.
 // FUNCTION: 0xed226
 int __close(int handle)
 {

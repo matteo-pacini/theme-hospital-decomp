@@ -25,6 +25,7 @@ short DPMILockLinearRegion(long linear, long size);
     value [ax] \
     modify [ebx ecx esi edi];
 
+// __CommonInit: startup init; sets _amblksiz to 32K and, under a non-zero-based DPMI host, locks the __GETDS code region.
 // FUNCTION: 0xec934
 void __CommonInit(void)
 {

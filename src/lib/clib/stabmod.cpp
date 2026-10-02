@@ -31,6 +31,7 @@ void __wcpp_2_destruct_all_(void);
 void __wcpp_2_module_dtor__(void);
 #pragma aux __wcpp_2_module_dtor__ "*"
 
+// __wcpp_2_module_dtor__: at exit, destroy the static objects of every registered module, newest first.
 // FUNCTION: 0xcf1d8
 void __wcpp_2_module_dtor__(void)
 {
@@ -60,6 +61,7 @@ void __wcpp_2_module_dtor__(void)
 RO_STATE *fs_state_table(RO_DTREG *ro);
 #pragma aux fs_state_table "W?fs_state_table$n(pn$ro_dtreg$$)pn$__7a4u3RO_STATE$$"
 
+// fs_state_table: state table of a file-scope (module) registration (it follows the ro header).
 // FUNCTION: 0xcf234
 RO_STATE *fs_state_table(RO_DTREG *ro)
 {
@@ -69,6 +71,7 @@ RO_STATE *fs_state_table(RO_DTREG *ro)
 void *fs_point_object(RW_DTREG *rw, unsigned index);
 #pragma aux fs_point_object "W?fs_point_object$n(pn$rw_dtreg$$ui)pnv"
 
+// fs_point_object: address of the static object for state index (from the ro table).
 // FUNCTION: 0xcf238
 void *fs_point_object(RW_DTREG *rw, unsigned index)
 {
@@ -84,6 +87,7 @@ struct STAB_TRAVERSE {
 void fs_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw);
 #pragma aux fs_init_traverse "W?fs_init_traverse$n(pn$__1j2o3bSTAB_TRAVERSE$$pn$rw_dtreg$$)v"
 
+// fs_init_traverse: start a destruction traversal of a module registration (object type 0).
 // FUNCTION: 0xcf23f
 void fs_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG *rw)
 {
@@ -102,6 +106,7 @@ static DTREG_VFPTRS fs_vftable = { fs_state_table, fs_point_object, fs_init_trav
 static void init(void);
 #pragma aux init "W?init$n()v"
 
+// init: startup routine; install the module registration handlers in __wcpp_2_data_dtreg_vfptrs_[3].
 // FUNCTION: 0xcf244
 static void init(void)
 {
@@ -113,6 +118,7 @@ AXI(init, 10)
 void __wcpp_2_mod_register__(RW_DTREG *rw);
 #pragma aux __wcpp_2_mod_register__ "__wcpp_2_mod_register__"
 
+// __wcpp_2_mod_register__: add module registration rw to the list destroyed at exit.
 // FUNCTION: 0xcf24f
 void __wcpp_2_mod_register__(RW_DTREG *rw)
 {

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// fdiv_main_routine: Pentium-FDIV-safe divide of the two extended operands on the stack: divisors with a flawed bit pattern are prescaled (with the dividend) before the fdivp.
 // FUNCTION: 0x000fd14c
 
 .section _TEXT,"ax",@progbits,unique,1036620
@@ -101,6 +102,7 @@
     ret
 .size "fdiv_main_routine",.-"fdiv_main_routine"
 
+// __fdiv_fpr: FDIV-safe forms of the register fdiv/fdivr instructions, dispatched through a table by eax.
 // FUNCTION: 0x000fd263
 
 .section _TEXT,"ax",@progbits,unique,1036899
@@ -520,6 +522,7 @@
     .byte 0xc3
 .size "__fdiv_fpr",.-"__fdiv_fpr"
 
+// __fdivp_sti_st: FDIV-safe fdivp st(1), st.
 // FUNCTION: 0x000fd6ff
 
 .section _TEXT,"ax",@progbits,unique,1038079
@@ -534,6 +537,7 @@
     ret
 .size "__fdivp_sti_st",.-"__fdivp_sti_st"
 
+// __fdivrp_sti_st: FDIV-safe fdivrp st(1), st.
 // FUNCTION: 0x000fd712
 
 .section _TEXT,"ax",@progbits,unique,1038098
@@ -548,6 +552,7 @@
     ret
 .size "__fdivrp_sti_st",.-"__fdivrp_sti_st"
 
+// __fdiv_chk: FDIV-safe divide, same operand order as __fdivrp_sti_st.
 // FUNCTION: 0x000fd725
 
 .section _TEXT,"ax",@progbits,unique,1038117
@@ -562,6 +567,7 @@
     ret
 .size "__fdiv_chk",.-"__fdiv_chk"
 
+// __fdiv_m32: FDIV-safe st(0) / float operand on the stack (plain fdiv for an infinite or NaN operand).
 // FUNCTION: 0x000fd738
 
 .section _TEXT,"ax",@progbits,unique,1038136
@@ -597,6 +603,7 @@
     ret 4
 .size "__fdiv_m32",.-"__fdiv_m32"
 
+// __fdiv_m64: FDIV-safe st(0) / double operand on the stack (plain fdiv for an infinite or NaN operand).
 // FUNCTION: 0x000fd784
 
 .section _TEXT,"ax",@progbits,unique,1038212
@@ -632,6 +639,7 @@
     ret 8
 .size "__fdiv_m64",.-"__fdiv_m64"
 
+// __fdiv_m32r: FDIV-safe float operand on the stack / st(0) (fdivr).
 // FUNCTION: 0x000fd7d0
 
 .section _TEXT,"ax",@progbits,unique,1038288
@@ -667,6 +675,7 @@
     ret 4
 .size "__fdiv_m32r",.-"__fdiv_m32r"
 
+// __fdiv_m64r: FDIV-safe double operand on the stack / st(0) (fdivr).
 // FUNCTION: 0x000fd81c
 
 .section _TEXT,"ax",@progbits,unique,1038364

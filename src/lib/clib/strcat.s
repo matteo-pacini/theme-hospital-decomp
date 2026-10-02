@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// strcat: append string src to dst; returns dst.
 // FUNCTION: 0x000c93bf
 
 .section _TEXT,"ax",@progbits,unique,824255

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// _dos_gettime: store the DOS time (hour, minute, second, hundredths) in *time; returns 0.
 // FUNCTION: 0x000dc94d
 
 .section _TEXT,"ax",@progbits,unique,903501

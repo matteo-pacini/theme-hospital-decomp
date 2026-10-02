@@ -40,6 +40,7 @@ int DoDosCall(union REGS *in_regs, union REGS *out_regs);
     value [eax] \
     modify [ebx ecx edx esi edi];
 
+// intdos: issue INT 21h with in_regs, results in out_regs (cflag set on carry, errno on error); returns eax.
 // FUNCTION: 0xf4880
 int intdos(union REGS *in_regs, union REGS *out_regs)
 {

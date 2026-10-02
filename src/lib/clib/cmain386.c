@@ -22,6 +22,7 @@ void exit(int status);
 
 #pragma aux __CMain "*";
 
+// __CMain: allocate the alloca stack area, run __CommonInit, then exit(main(argc, argv)).
 // FUNCTION: 0xd0560
 void __CMain(void)
 {

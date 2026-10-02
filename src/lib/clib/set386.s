@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// memset: fill n bytes at s with (unsigned char)c; returns s.
 // FUNCTION: 0x000bc0b0
 
 .section _TEXT,"ax",@progbits,unique,770224

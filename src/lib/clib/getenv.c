@@ -4,6 +4,7 @@ extern char **environ;
 
 int strnicmp(const char *s, const char *t, size_t n);
 
+// getenv: value of environment variable name (case-insensitive), or NULL.
 // FUNCTION: 0xce2f0
 char *getenv(const char *name)
 {

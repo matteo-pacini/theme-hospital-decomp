@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __STOSB: store ecx bytes of the repeated pattern in edx at eax (aligning, then by dwords); eax ends past the area.
 // FUNCTION: 0x000cf520
 
 .section _TEXT,"ax",@progbits,unique,849184
@@ -36,6 +37,7 @@
 .size "__STOSB",.-"__STOSB"
     .byte 0x90, 0x90, 0x90, 0x90, 0x90, 0x90
 
+// __STOSD: store ecx copies of dword edx at eax (unrolled by 32 bytes); eax ends past the area.
 // FUNCTION: 0x000cf557
 
 .globl "__STOSD"

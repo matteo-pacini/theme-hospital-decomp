@@ -15,6 +15,7 @@ tiny_ret_t _TinyRmDir(const char *path);
 
 int __set_errno_dos(unsigned err);
 
+// rmdir: remove directory path (DOS 3Ah); returns 0, or -1 with errno set.
 // FUNCTION: 0xec90a
 int rmdir(const char *path)
 {

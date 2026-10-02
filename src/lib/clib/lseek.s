@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// lseek: move handle's file position to offset from origin (DOS 42h); returns the new position, or -1 with errno set.
 // FUNCTION: 0x000d0ed8
 
 .section _TEXT,"ax",@progbits,unique,855768

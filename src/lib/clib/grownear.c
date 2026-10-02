@@ -141,6 +141,7 @@ void *_TinyCBAlloc(unsigned size);
 /* config/functions.txt has no name for __unlink. */
 #pragma aux __unlink "__unlink_"
 
+// __unlink: remove miniheap heap from the near-heap list, fixing the rovers.
 // FUNCTION: 0xebd67
 void __unlink(mheapptr heap)
 {
@@ -170,6 +171,7 @@ void __unlink(mheapptr heap)
 void __unlink_esi(mheapptr heap);
 #pragma aux __unlink_esi "__unlink_" modify [esi]
 
+// __FreeDPMIBlocks: release every DPMI/DOS-allocated miniheap that is entirely free.
 // FUNCTION: 0xebdb8
 void __FreeDPMIBlocks(void)
 {
@@ -196,6 +198,7 @@ void __FreeDPMIBlocks(void)
 
 frlptr __LinkUpNewMHeap(mheapptr p1);
 
+// __ReAllocDPMIBlock: grow the single-allocation DPMI miniheap holding block p1 to req_size; returns the resized block, or NULL.
 // FUNCTION: 0xebe14
 void *__ReAllocDPMIBlock(frlptr p1, unsigned req_size)
 {
@@ -244,6 +247,7 @@ void *__ReAllocDPMIBlock(frlptr p1, unsigned req_size)
     return NULL;
 }
 
+// __LinkUpNewMHeap: insert miniheap p1 into the address-ordered heap list and make its space one free block; returns that block.
 // FUNCTION: 0xebf13
 frlptr __LinkUpNewMHeap(mheapptr p1)
 {
@@ -283,6 +287,7 @@ frlptr __LinkUpNewMHeap(mheapptr p1)
     return (frlptr)p1;
 }
 
+// __LastFree: size of the near heap's last free block if it ends at the current break, else 0.
 // FUNCTION: 0xebf87
 unsigned __LastFree(void)
 {
@@ -300,6 +305,7 @@ unsigned __LastFree(void)
     return 0;
 }
 
+// RationalAlloc: allocate a size-byte miniheap from DPMI, falling back to DOS memory (keeping __minreal free) for up to 64K; NULL on failure.
 // FUNCTION: 0xebfd7
 void *RationalAlloc(size_t size)
 {
@@ -337,6 +343,7 @@ void *RationalAlloc(size_t size)
 
 int __AdjustAmount(unsigned *amount);
 
+// __CreateNewNHeap: add a new miniheap of at least amount bytes from DPMI or the CodeBuilder extender; returns 1 on success.
 // FUNCTION: 0xec0a8
 int __CreateNewNHeap(unsigned amount)
 {
@@ -376,6 +383,7 @@ int __CreateNewNHeap(unsigned amount)
     return 1;
 }
 
+// __ExpandDGROUP: grow the near heap by amount bytes (raising the break, or a new miniheap under some extenders); returns 1 on success.
 // FUNCTION: 0xec158
 int __ExpandDGROUP(unsigned amount)
 {
@@ -439,6 +447,7 @@ int __ExpandDGROUP(unsigned amount)
     return 1;
 }
 
+// __AdjustAmount: round *amount up to the size to request for a heap of that many bytes (overheads, _amblksiz minimum, 4K pages); returns 0 if it overflows.
 // FUNCTION: 0xec2a4
 int __AdjustAmount(unsigned *amount)
 {

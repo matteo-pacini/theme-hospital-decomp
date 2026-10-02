@@ -137,6 +137,7 @@ U8 __pascal SmackSoundUseMSS(void *digdriver);
 
 #pragma aux (__pascal) MSSCopyWrap "SMACKWRAPCOPY";
 
+// MSSCopyWrap: copy n bytes from ring buffer position src (buffer start..end) to dst, wrapping at end; returns the new read position.
 // FUNCTION: 0xe7ec0
 U8 *__pascal MSSCopyWrap(U8 *dst, U8 *src, U8 *start, U8 *end, U32 n)
 {
@@ -158,6 +159,7 @@ U8 *__pascal MSSCopyWrap(U8 *dst, U8 *src, U8 *start, U8 *end, U32 n)
     return src;
 }
 
+// MSSLowSoundCheck: for every open sound track, note starvation and refill whichever MSS double-buffer half is free from the track's ring buffer once enough is pending (or when flushing).
 // FUNCTION: 0xe7db0
 void __pascal MSSLowSoundCheck(void)
 {
@@ -190,6 +192,7 @@ void __pascal MSSLowSoundCheck(void)
     }
 }
 
+// MSSLowSoundPlayed: bytes of snd played so far: earlier buffers plus the current one's progress, estimated from the time since it was loaded.
 // FUNCTION: 0xe7d60
 U32 __pascal MSSLowSoundPlayed(SmackSnd *snd)
 {
@@ -206,6 +209,7 @@ U32 __pascal MSSLowSoundPlayed(SmackSnd *snd)
     return snd->played + played;
 }
 
+// MSSInitSample: (re)initialise snd's MSS sample: format from bits16/stereo, playback rate, user data snd, volume 127.
 // FUNCTION: 0xe7cd0
 void MSSInitSample(SmackSnd *snd)
 {
@@ -217,6 +221,7 @@ void MSSInitSample(SmackSnd *snd)
     AIL_set_sample_volume(snd->sample, 0x7f);
 }
 
+// MSSLowSoundOpen: open sound track snd on MSS (installing a digital driver from the MSS Lite images if none was given): size and allocate its locked double buffer, allocate a sample and link it into the track list; returns 1 on success.
 // FUNCTION: 0xe7af0
 U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
 {
@@ -260,6 +265,7 @@ U8 __pascal MSSLowSoundOpen(SmackSnd *snd, U32 flags)
     return 1;
 }
 
+// MSSLowSoundPurge: stop snd's sample and reset its played counts.
 // FUNCTION: 0xe7ac0
 void __pascal MSSLowSoundPurge(SmackSnd *snd)
 {
@@ -270,6 +276,7 @@ void __pascal MSSLowSoundPurge(SmackSnd *snd)
     MSSInitSample(snd);
 }
 
+// MSSLowSoundClose: stop and release snd's sample and buffer, and unlink it from the track list.
 // FUNCTION: 0xe7a40
 void __pascal MSSLowSoundClose(SmackSnd *snd)
 {
@@ -293,17 +300,20 @@ void __pascal MSSLowSoundClose(SmackSnd *snd)
     }
 }
 
+// MSSSmackTimerRead: Smacker's timer through MSS; milliseconds (AIL_ms_count).
 // FUNCTION: 0x000e7a30
 U32 __pascal MSSSmackTimerRead(void)
 {
     return AIL_ms_count();
 }
 
+// MSSSmackTimerSetup: timer setup/shutdown hook for MSS; nothing to do.
 // FUNCTION: 0xe7a20
 void __pascal MSSSmackTimerSetup(void)
 {
 }
 
+// MSSLowSoundVolPan: set snd's volume (0-0x8000, scaled to 0-127) and pan (0-0x10000, scaled to 0-127).
 // FUNCTION: 0xe79b0
 void __pascal MSSLowSoundVolPan(SmackSnd *snd, U32 volume, U32 pan)
 {
@@ -313,6 +323,7 @@ void __pascal MSSLowSoundVolPan(SmackSnd *snd, U32 volume, U32 pan)
     AIL_set_sample_pan(snd->sample, (mult64anddiv(pan, 1270, 0x10000) + 5) / 10);
 }
 
+// SmackSoundUseMSS: make Smacker play sound and time through MSS with digital driver digdriver; returns 0 if a track is already open, else 1.
 // FUNCTION: 0xe7910
 U8 __pascal SmackSoundUseMSS(void *digdriver)
 {

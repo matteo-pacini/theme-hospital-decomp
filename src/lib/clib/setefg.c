@@ -10,6 +10,7 @@ void __cnvs2d();
 
 void __setEFGfmt(void);
 
+// __setEFGfmt: install the floating-point printf and scanf conversion routines.
 // FUNCTION: 0xef08c
 void __setEFGfmt(void)
 {

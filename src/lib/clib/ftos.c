@@ -2,12 +2,14 @@
 
 static int MaxPrec = 17;
 
+// _SetMaxPrec: set the maximum precision for floating-point formatting.
 // FUNCTION: 0xfc117
 void _SetMaxPrec(int max_prec)
 {
     MaxPrec = max_prec;
 }
 
+// DoEFormat: write an exponent's sign and at least exp_digits digits (0 = 2, or 3 if needed) at p if they fit in width; returns the length needed.
 // FUNCTION: 0xfc11d
 static int DoEFormat(char *p, int exp, int exp_digits, int width)
 {
@@ -61,6 +63,7 @@ static int DoEFormat(char *p, int exp, int exp_digits, int width)
     return len;
 }
 
+// DoFFormat: write the decimal digits as fixed point at p, ndigits before the point and frac after (zero-padded); returns the end.
 // FUNCTION: 0xfc1c0
 static char *DoFFormat(char *p, char *digits, int ndigits, int frac)
 {
@@ -110,6 +113,7 @@ void *memset(void *s, int c, size_t n);
 
 static void AdjField(char *p, int len, int width);
 
+// AdjField: right-justify the len chars at p in a field of width, blank-padded, adding a 0 before a leading '.'.
 // FUNCTION: 0xfc223
 static void AdjField(char *p, int len, int width)
 {
@@ -152,6 +156,7 @@ double floor(double x);
 double fabs(double x);
 #pragma intrinsic(fabs)
 
+// _FtoS: format *value into a width-char field at buf in E, F or G style (fmt) with digits of precision, scale and exponent settings; '*'-filled on overflow.
 // FUNCTION: 0xfc294
 void _FtoS(char *buf, double *value, int digits, char plus, int width,
            int scale, int exp_digits, char exp_char, char fmt)

@@ -11,6 +11,7 @@ void *malloc(size_t size);
 
 void __chktty(FILE *fp);
 
+// __ioalloc: allocate fp's buffer (134 bytes line-buffered, 1 unbuffered, else BUFSIZ); falls back to the one-byte _ungotten as unbuffered.
 // FUNCTION: 0xf320e
 void __ioalloc(FILE *fp)
 {

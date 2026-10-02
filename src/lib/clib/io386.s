@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// _dos_read: read up to count bytes from handle into a far buffer (DOS 3Fh), bytes read in *bytes; returns 0 or the DOS error.
 // FUNCTION: 0x000fa918
 
 .section _TEXT,"ax",@progbits,unique,1026328
@@ -26,6 +27,7 @@
     ret 4
 .size "_dos_read_",.-"_dos_read_"
 
+// _dos_write: write count bytes from a far buffer to handle (DOS 40h), bytes written in *bytes; returns 0 or the DOS error. Shares _dos_read's body.
 // FUNCTION: 0x000fa942
 
 .section _TEXT,"ax",@progbits,unique,1026370

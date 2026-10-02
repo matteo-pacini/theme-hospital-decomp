@@ -6,6 +6,7 @@ size_t lib_strlen(const char *s);
 /* config/functions.txt has no name for strlen. */
 #pragma aux lib_strlen "strlen_"
 
+// strlen: length of s, excluding the terminator.
 // FUNCTION: 0xcd716
 size_t lib_strlen(const char *s)
 {

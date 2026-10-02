@@ -54,12 +54,14 @@ void __set_errno(int err);
 
 int raise(int sig);
 
+// __sigabort: abort handler once signal() is used; raise(SIGABRT).
 // FUNCTION: 0xfbafb
 void __sigabort(void)
 {
     raise(SIGABRT);
 }
 
+// __sigfpe_handler: call the user's SIGFPE handler (reset to SIG_DFL first) with fpe_type, if one is installed.
 // FUNCTION: 0xfbb05
 void __sigfpe_handler(int fpe_type)
 {
@@ -72,6 +74,7 @@ void __sigfpe_handler(int fpe_type)
     }
 }
 
+// signal: set the handler for sig, hooking the Ctrl-C/Ctrl-Break/FPE interrupts as needed; returns the previous handler or SIG_ERR.
 // FUNCTION: 0xfbb3a
 __sig_func signal(int sig, __sig_func func)
 {
@@ -103,6 +106,7 @@ __sig_func signal(int sig, __sig_func func)
     return prev_func;
 }
 
+// raise: deliver sig to its handler (reset to SIG_DFL first); SIGABRT with SIG_DFL terminates; returns 0, or -1 for an unknown sig.
 // FUNCTION: 0xfbbef
 int raise(int sig)
 {

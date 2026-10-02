@@ -7,6 +7,7 @@
 unsigned __IOMode(int handle);
 void __SetIOMode(int handle, unsigned value);
 
+// setmode: set handle (and its stream) to O_BINARY or O_TEXT; returns the previous mode, or -1 with errno set.
 // FUNCTION: 0xd0bb5
 int setmode(int handle, int mode)
 {

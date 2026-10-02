@@ -21,6 +21,7 @@ struct RT_TYPE_SIG;
 THREAD_CTL *__wcpp_2_arr_register_(void *array, RW_DTREG_ARRAY *rw, RT_TYPE_SIG *sig);
 void __wcpp_2_destruct_internal_(unsigned bound, RW_DTREG_ARRAY *rw);
 
+// __wcpp_2_dtor_array_: destroy count elements of type sig at array (last first); returns array.
 // FUNCTION: 0xf46b0
 void *__wcpp_2_dtor_array_(void *array, unsigned count, RT_TYPE_SIG *sig)
 {

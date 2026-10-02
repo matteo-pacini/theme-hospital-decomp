@@ -40,6 +40,7 @@ char *parse_offset(char *tz, char *name, long *offset);
 char *parse_rule(char *tz, struct tm *timeptr);
 void __parse_tz(char *tz);
 
+// __CacheOSTZ: toggle the OS time-zone cache flag and set have_OS_TZ from flag; returns the previous cache flag.
 // FUNCTION: 0xf38e0
 int __CacheOSTZ(int flag)
 {
@@ -51,6 +52,7 @@ int __CacheOSTZ(int flag)
     return old;
 }
 
+// tryOSTimeZone: fallback when TZ is unset; only marks the OS time zone as present.
 // FUNCTION: 0xf3934
 void tryOSTimeZone(void)
 {
@@ -58,6 +60,7 @@ void tryOSTimeZone(void)
         tzFlag.have_OS_TZ = 1;
 }
 
+// tzset: set timezone, daylight and the DST rules from the TZ environment variable.
 // FUNCTION: 0xf394c
 void tzset(void)
 {
@@ -70,6 +73,7 @@ void tzset(void)
     }
 }
 
+// parse_time: parse a decimal number at tz into *val; returns the end.
 // FUNCTION: 0xf3991
 char *parse_time(char *tz, int *val)
 {
@@ -84,6 +88,7 @@ char *parse_time(char *tz, int *val)
     return tz;
 }
 
+// parse_offset: parse a TZ zone name (to name, at most 30 chars) and optional [+-]hh[:mm[:ss]] offset (to *offset, seconds); returns the end.
 // FUNCTION: 0xf39b5
 // NONMATCHING: name and len swap stack slots, and the digit test after the
 // sign zero-extends *tz with xor/mov instead of and
@@ -130,6 +135,7 @@ char *parse_offset(char *tz, char *name, long *offset)
     return tz;
 }
 
+// parse_rule: parse a TZ DST rule (Jn, n or Mm.w.d, then /hh[:mm[:ss]], default 02:00) into *timeptr; tm_isdst records the form; returns the end.
 // FUNCTION: 0xf3ade
 char *parse_rule(char *tz, struct tm *timeptr)
 {
@@ -180,6 +186,7 @@ char *parse_rule(char *tz, struct tm *timeptr)
     return tz;
 }
 
+// __parse_tz: parse a TZ string into the zone names, timezone, daylight, __dst_adjust and the DST start and end rules.
 // FUNCTION: 0xf395a
 void __parse_tz(char *tz)
 {

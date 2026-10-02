@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __sys_init_387_emulator: install the 387 emulator if no FPU answers (or ebp is nonzero on entry), then initialise the FPU state with _8087cw.
 // FUNCTION: 0x000ef0a8
 
 .section _TEXT,"ax",@progbits,unique,979112
@@ -36,6 +37,7 @@
     ret
 .size "__sys_init_387_emulator",.-"__sys_init_387_emulator"
 
+// fn_000ef0d8: install the emulator's INT 7 (device not available) handler and enable FPU emulation, by the method the DOS extender needs.
 // FUNCTION: 0x000ef0d8
 
 .section _TEXT,"ax",@progbits,unique,979160
@@ -102,6 +104,7 @@
     ret
 .size "fn_000ef0d8_",.-"fn_000ef0d8_"
 
+// fn_000ef1a3: build an interrupt-gate descriptor (edx:ecx) for the emulator's INT 7 handler in the current code segment.
 // FUNCTION: 0x000ef1a3
 
 .section _TEXT,"ax",@progbits,unique,979363
@@ -119,6 +122,7 @@
     ret
 .size "fn_000ef1a3_",.-"fn_000ef1a3_"
 
+// fn_000ef1c0: Phar Lap: save the INT 7 vector, point it at the emulator and set CR0.EM (directly or through 2535h).
 // FUNCTION: 0x000ef1c0
 
 .section _TEXT,"ax",@progbits,unique,979392
@@ -154,6 +158,7 @@
     ret
 .size "fn_000ef1c0_",.-"fn_000ef1c0_"
 
+// fn_000ef20d: Phar Lap 2535h: read CR0, set EM and clear MP, write it back.
 // FUNCTION: 0x000ef20d
 
 .section _TEXT,"ax",@progbits,unique,979469
@@ -171,6 +176,7 @@
     ret
 .size "fn_000ef20d_",.-"fn_000ef20d_"
 
+// __sys_fini_387_emulator: if the emulator was installed, undo the INT 7 hook and CR0 changes for the DOS extender in use.
 // FUNCTION: 0x000ef22d
 
 .section _TEXT,"ax",@progbits,unique,979501
@@ -225,6 +231,7 @@
     ret
 .size "__sys_fini_387_emulator",.-"__sys_fini_387_emulator"
 
+// fn_000ef2a7: Phar Lap: restore the saved INT 7 vector and CR0's original EM/MP bits.
 // FUNCTION: 0x000ef2a7
 
 .section _TEXT,"ax",@progbits,unique,979623
@@ -252,6 +259,7 @@
     ret
 .size "fn_000ef2a7_",.-"fn_000ef2a7_"
 
+// fn_000ef2e2: Phar Lap 2535h: write CR0 back with its original EM/MP bits.
 // FUNCTION: 0x000ef2e2
 
 .section _TEXT,"ax",@progbits,unique,979682
@@ -277,6 +285,7 @@
     .byte 0xc3
 .size "fn_000ef2e2_",.-"fn_000ef2e2_"
 
+// __init_8087_: with a real FPU, install the fsave/frstor routines as __Save8087/__Rest8087; then initialise the FPU with _8087cw (__init_80x87).
 // FUNCTION: 0x000ef30c
 
 .section _TEXT,"ax",@progbits,unique,979724

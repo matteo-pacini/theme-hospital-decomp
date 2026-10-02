@@ -19,6 +19,7 @@ double strtod(const char *s, char **endptr);
 
 // NONMATCHING: the exponent sign is read with movzx into edi instead of into
 // dl, and the exponent digit is accumulated in esi rather than edx
+// strtod: convert the decimal string s to double, storing the end in *endptr; +-HUGE_VAL or 0 with errno ERANGE out of range.
 // FUNCTION: 0xfc4e3
 double strtod(const char *s, char **endptr)
 {

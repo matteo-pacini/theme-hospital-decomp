@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __MemAllocator: allocate eax bytes (rounded to 4, at least 12) from miniheap ebx in segment edx, splitting a free block; returns the pointer, or 0.
 // FUNCTION: 0x000ebbb4
 
 .section _TEXT,"ax",@progbits,unique,965556
@@ -88,6 +89,7 @@
     .byte 0xe9; .long "__MemFree"+0x106-.-4
 .size "__MemAllocator",.-"__MemAllocator"
 
+// __MemFree: free block eax of miniheap ebx in segment edx, merging it with free neighbours and updating the heap's rover and size hints.
 // FUNCTION: 0x000ebc5c
 
 .section _TEXT,"ax",@progbits,unique,965724

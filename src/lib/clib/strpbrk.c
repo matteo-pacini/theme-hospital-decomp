@@ -4,6 +4,7 @@ extern const unsigned char _Bits[8];
 
 void __setbits(unsigned char *vector, const char *charset);
 
+// strpbrk: first char in str that is also in charset, or NULL.
 // FUNCTION: 0xf4b1a
 char *strpbrk(const char *str, const char *charset)
 {

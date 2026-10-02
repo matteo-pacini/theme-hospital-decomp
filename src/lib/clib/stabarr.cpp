@@ -48,6 +48,7 @@ unsigned __wcpp_2_ts_size_(RT_TYPE_SIG *sig);
 RO_STATE *arr_state_table(RO_DTREG_ARRAY *ro);
 #pragma aux arr_state_table "W?arr_state_table$n(pn$ro_dtreg$$)pn$__7a4u3RO_STATE$$"
 
+// arr_state_table: state table of an array registration (its element count field).
 // FUNCTION: 0xf5190
 RO_STATE *arr_state_table(RO_DTREG_ARRAY *ro)
 {
@@ -57,6 +58,7 @@ RO_STATE *arr_state_table(RO_DTREG_ARRAY *ro)
 void *arr_point_object(RW_DTREG_ARRAY *rw, unsigned state_var);
 #pragma aux arr_point_object "W?arr_point_object$n(pn$rw_dtreg$$ui)pnv"
 
+// arr_point_object: address of the array element for state state_var (1-based).
 // FUNCTION: 0xf5194
 void *arr_point_object(RW_DTREG_ARRAY *rw, unsigned state_var)
 {
@@ -66,6 +68,7 @@ void *arr_point_object(RW_DTREG_ARRAY *rw, unsigned state_var)
 void arr_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG_ARRAY *rw);
 #pragma aux arr_init_traverse "W?arr_init_traverse$n(pn$__1j2o3bSTAB_TRAVERSE$$pn$rw_dtreg$$)v"
 
+// arr_init_traverse: start a destruction traversal of an array registration (object type 0).
 // FUNCTION: 0xf51ad
 void arr_init_traverse(STAB_TRAVERSE *ctl, RW_DTREG_ARRAY *rw)
 {
@@ -84,6 +87,7 @@ static DTREG_VFPTRS arr_vftable = { arr_state_table, arr_point_object, arr_init_
 static void init(void);
 #pragma aux init "W?init$n()v"
 
+// init: startup routine; install the array registration handlers in __wcpp_2_data_dtreg_vfptrs_[2].
 // FUNCTION: 0xf51b2
 static void init(void)
 {
@@ -92,6 +96,7 @@ static void init(void)
 
 AXI(init, 10)
 
+// __wcpp_2_arr_register_: fill rw as an array registration for array of type sig (count from sig) and register it.
 // FUNCTION: 0xf51bd
 void __wcpp_2_arr_register_(void *array, RW_DTREG_ARRAY *rw, RT_ARRAY_SIG *sig)
 {

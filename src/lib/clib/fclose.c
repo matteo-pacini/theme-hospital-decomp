@@ -16,6 +16,7 @@ int fclose(FILE *fp);
 /* config/functions.txt has no name for fclose. */
 #pragma aux fclose "fclose_"
 
+// fclose: flush and close stream fp; returns 0, or -1 if fp is not open or closing fails.
 // FUNCTION: 0xf49cb
 int fclose(FILE *fp)
 {
@@ -32,6 +33,7 @@ int fclose(FILE *fp)
     return __shutdown_stream(fp, 1);
 }
 
+// __shutdown_stream: __doclose fp, then release its FILE; returns __doclose's result.
 // FUNCTION: 0xf49f8
 int __shutdown_stream(FILE *fp, int close_handle)
 {
@@ -42,6 +44,7 @@ int __shutdown_stream(FILE *fp, int close_handle)
     return ret;
 }
 
+// __hex: lowercase hex digit for num (0-15).
 // FUNCTION: 0xf4a0d
 char __hex(int num)
 {
@@ -51,6 +54,7 @@ char __hex(int num)
     return num;
 }
 
+// __MkTmpFile: write tmpfile name "tPPPP_NN.tmp" (PID and stream number in hex) into buf.
 // FUNCTION: 0xf4a19
 void __MkTmpFile(char *buf, int num)
 {
@@ -73,6 +77,7 @@ void __MkTmpFile(char *buf, int num)
     buf[12] = '\0';
 }
 
+// __doclose: flush fp, seek its handle to the logical position, optionally close it, free its buffer and delete its temporary file; returns 0 or nonzero on error.
 // FUNCTION: 0xf4a7e
 int __doclose(FILE *fp, int close_handle)
 {

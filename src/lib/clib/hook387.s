@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __hook387: set up FPU emulation: register with a Windows emulator if one is present (returns 1), else under DOS/4G install the INT 7 handler and set CR0.EM (returns 0).
 // FUNCTION: 0x000fa7c2
 
 .section _TEXT,"ax",@progbits,unique,1025986
@@ -100,6 +101,7 @@
     ret
 .size "__hook387",.-"__hook387"
 
+// __unhook387: undo __hook387 (Windows emulator: returns 1; else clear CR0.EM if it was set, returns 0).
 // FUNCTION: 0x000fa896
 
 .section _TEXT,"ax",@progbits,unique,1026198
@@ -153,6 +155,7 @@
     .byte 0xc3
 .size "__unhook387",.-"__unhook387"
 
+// __init_80x87: initialise the FPU with control word ax and identify it; returns 2 for a 287 (projective infinity), 3 for a 387 or later.
 // FUNCTION: 0x000fa8f0
 
 .section _TEXT,"ax",@progbits,unique,1026288

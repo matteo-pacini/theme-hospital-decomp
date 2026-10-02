@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// fn_000f75a0: the emulator's constant tables (status/control/tag masks), not code; the instructions are a disassembly of data.
 // FUNCTION: 0x000f75a0
 
 .section _TEXT,"ax",@progbits,unique,1013152
@@ -98,6 +99,7 @@
     .byte 0x87; .byte 0xdb
 .size "fn_000f75a0_",.-"fn_000f75a0_"
 
+// __int7_X32VM: the emulator's dispatch tables (addressing-mode and per-opcode handler addresses), followed by its INT 7 entry stubs, which save the registers and call fn_000f79a8.
 // FUNCTION: 0x000f7654
 
 .section _TEXT,"ax",@progbits,unique,1013332
@@ -358,6 +360,7 @@
     .byte 0xcf
 .size "__int7_X32VM",.-"__int7_X32VM"
 
+// fn_000f79a8: emulate the x87 instructions at the trapping CS:EIP (skipping prefixes, decoding ModR/M) one after another, returning at the first non-FPU instruction.
 // FUNCTION: 0x000f79a8
 
 .section _TEXT,"ax",@progbits,unique,1014184
@@ -541,6 +544,7 @@
     .byte 0xe9; .long .L000f79a8-.-4
 .size "fn_000f79a8_",.-"fn_000f79a8_"
 
+// fn_000f7bb8: raise FPU exception al: set it in the status word and, if unmasked, call __FPE_handler(ah) with the register image copied to the stack; the addressing-mode and instruction handlers follow it.
 // FUNCTION: 0x000f7bb8
 
 .section _TEXT,"ax",@progbits,unique,1014712
@@ -1866,6 +1870,7 @@
     jmp "fn_000f79a8_"
 .size "fn_000f7bb8_",.-"fn_000f7bb8_"
 
+// fn_000f90be: long double subtract, *ebx = *eax - *edx (negates the second operand's sign, then shares fn_000f90cc).
 // FUNCTION: 0x000f90be
 
 .section _TEXT,"ax",@progbits,unique,1020094
@@ -1880,6 +1885,7 @@
     .byte 0xeb; .byte 0x07  # jmp 0xf90d3
 .size "fn_000f90be_",.-"fn_000f90be_"
 
+// fn_000f90cc: long double add, *ebx = *eax + *edx.
 // FUNCTION: 0x000f90cc
 
 .section _TEXT,"ax",@progbits,unique,1020108
@@ -1906,6 +1912,7 @@
     ret
 .size "fn_000f90cc_",.-"fn_000f90cc_"
 
+// fn_000f90f6: long double add, *ebx = *eax + the long double passed on the stack.
 // FUNCTION: 0x000f90f6
 
 .section _TEXT,"ax",@progbits,unique,1020150
@@ -1932,6 +1939,7 @@
     ret 0xc
 .size "fn_000f90f6_",.-"fn_000f90f6_"
 
+// fn_000f9126: long double add core: edx:eax (exponent si) + ecx:ebx (exponent in esi's high word), result in edx:eax:si.
 // FUNCTION: 0x000f9126
 
 .section _TEXT,"ax",@progbits,unique,1020198
@@ -2108,6 +2116,7 @@
     jmp .L000f927b
 .size "fn_000f9126_",.-"fn_000f9126_"
 
+// fn_000f9292: compare the long doubles at eax and edx; returns 0 if equal, -1 or 1 for less or greater, 2 if unordered (NaN).
 // FUNCTION: 0x000f9292
 
 .section _TEXT,"ax",@progbits,unique,1020562
@@ -2184,6 +2193,7 @@
     ret
 .size "fn_000f9292_",.-"fn_000f9292_"
 
+// fn_000f932b: long double divide, *ebx = *eax / *edx.
 // FUNCTION: 0x000f932b
 
 .section _TEXT,"ax",@progbits,unique,1020715
@@ -2210,6 +2220,7 @@
     ret
 .size "fn_000f932b_",.-"fn_000f932b_"
 
+// fn_000f9355: long double divide core on registers (as fn_000f9126); x/0 raises zero-divide (infinity), 0/0 invalid (indefinite).
 // FUNCTION: 0x000f9355
 
 .section _TEXT,"ax",@progbits,unique,1020757
@@ -2417,6 +2428,7 @@
     ret
 .size "fn_000f9355_",.-"fn_000f9355_"
 
+// fn_000f9500: long double multiply, *ebx = *eax * *edx.
 // FUNCTION: 0x000f9500
 
 .section _TEXT,"ax",@progbits,unique,1021184
@@ -2443,6 +2455,7 @@
     ret
 .size "fn_000f9500_",.-"fn_000f9500_"
 
+// fn_000f952a: long double multiply core on registers (as fn_000f9126).
 // FUNCTION: 0x000f952a
 
 .section _TEXT,"ax",@progbits,unique,1021226
@@ -2618,6 +2631,7 @@
     .byte 0xc3
 .size "fn_000f952a_",.-"fn_000f952a_"
 
+// fn_000f967b: convert the long double at eax to an integer of at most 31 magnitude bits in eax (0x80000000 if too large); shares fn_000f9680.
 // FUNCTION: 0x000f967b
 
 .section _TEXT,"ax",@progbits,unique,1021563
@@ -2629,6 +2643,7 @@
     .byte 0xeb; .byte 0x03  # jmp 0xf9683
 .size "fn_000f967b_",.-"fn_000f967b_"
 
+// fn_000f9680: convert the long double at eax to an integer of at most 32 magnitude bits in eax (0x80000000 if too large).
 // FUNCTION: 0x000f9680
 
 .section _TEXT,"ax",@progbits,unique,1021568
@@ -2691,6 +2706,7 @@
     ret
 .size "fn_000f9680_",.-"fn_000f9680_"
 
+// fn_000f96ea: convert signed int eax to the long double at edx.
 // FUNCTION: 0x000f96ea
 
 .section _TEXT,"ax",@progbits,unique,1021674
@@ -2708,6 +2724,7 @@
     pop ebx
 .size "fn_000f96ea_",.-"fn_000f96ea_"
 
+// fn_000f96fb: convert unsigned int eax to the long double at edx.
 // FUNCTION: 0x000f96fb
 
 .section _TEXT,"ax",@progbits,unique,1021691
@@ -2743,6 +2760,7 @@
     ret
 .size "fn_000f96fb_",.-"fn_000f96fb_"
 
+// fn_000f9730: convert the double in edx:eax to the long double at ebx (a NaN raises invalid and is made quiet).
 // FUNCTION: 0x000f9730
 
 .section _TEXT,"ax",@progbits,unique,1021744
@@ -2806,6 +2824,7 @@
     ret
 .size "fn_000f9730_",.-"fn_000f9730_"
 
+// fn_000f97b0: convert the long double at eax to a float in eax, rounded to nearest even.
 // FUNCTION: 0x000f97b0
 
 .section _TEXT,"ax",@progbits,unique,1021872
@@ -2868,6 +2887,7 @@
     ret
 .size "fn_000f97b0_",.-"fn_000f97b0_"
 
+// fn_000f982f: convert the long double at eax to a double in edx:eax, rounded to nearest even.
 // FUNCTION: 0x000f982f
 
 .section _TEXT,"ax",@progbits,unique,1021999
@@ -2960,6 +2980,7 @@
     ret
 .size "fn_000f982f_",.-"fn_000f982f_"
 
+// fn_000f98f6: convert the float in eax to the long double at edx; a table of mantissa masks follows.
 // FUNCTION: 0x000f98f6
 
 .section _TEXT,"ax",@progbits,unique,1022198
@@ -3077,6 +3098,7 @@
     .byte 0x00
 .size "fn_000f98f6_",.-"fn_000f98f6_"
 
+// fn_000f99bb: round the long double at eax to an integer in place, using rounding control dx (0 nearest, 400h down, 800h up, C00h chop).
 // FUNCTION: 0x000f99bb
 
 .section _TEXT,"ax",@progbits,unique,1022395
@@ -3240,6 +3262,7 @@
     .byte 0x80; .byte 0xff; .byte 0x3f
 .size "fn_000f99bb_",.-"fn_000f99bb_"
 
+// fn_000f9b48: fpatan: arctangent of *eax / *edx, quadrant from their signs, into *ebx.
 // FUNCTION: 0x000f9b48
 
 .section _TEXT,"ax",@progbits,unique,1022792
@@ -3308,6 +3331,7 @@
     ret
 .size "fn_000f9b48_",.-"fn_000f9b48_"
 
+// fn_000f9bfe: arctangent of the long double at eax, in place (|x| >= 1 is reduced through 1/x).
 // FUNCTION: 0x000f9bfe
 
 .section _TEXT,"ax",@progbits,unique,1022974
@@ -3439,6 +3463,7 @@
     ret
 .size "fn_000f9bfe_",.-"fn_000f9bfe_"
 
+// fn_000f9d61: partial remainder (fprem): *eax = *eax mod *edx; returns the low quotient bits.
 // FUNCTION: 0x000f9d61
 
 .section _TEXT,"ax",@progbits,unique,1023329
@@ -3495,6 +3520,7 @@
     ret
 .size "fn_000f9d61_",.-"fn_000f9d61_"
 
+// fn_000f9dc7: remainder core on registers for fn_000f9d61; the quotient bits are returned in edi.
 // FUNCTION: 0x000f9dc7
 
 .section _TEXT,"ax",@progbits,unique,1023431
@@ -3569,6 +3595,7 @@
     ret
 .size "fn_000f9dc7_",.-"fn_000f9dc7_"
 
+// fn_000f9e42: fxam: classify the long double at eax into condition codes C0-C3 in the status word, and update its tag.
 // FUNCTION: 0x000f9e42
 
 .section _TEXT,"ax",@progbits,unique,1023554
@@ -3665,6 +3692,7 @@
     .byte 0xc0; .byte 0x08; .byte 0xc0
 .size "fn_000f9e42_",.-"fn_000f9e42_"
 
+// fn_000f9f30: add 1.0 to the long double at eax.
 // FUNCTION: 0x000f9f30
 
 .section _TEXT,"ax",@progbits,unique,1023792
@@ -3684,6 +3712,7 @@
     pop ebx
 .size "fn_000f9f30_",.-"fn_000f9f30_"
 
+// fn_000f9f49: fyl2x: *edx = *edx * log2(*eax).
 // FUNCTION: 0x000f9f49
 
 .section _TEXT,"ax",@progbits,unique,1023817
@@ -3721,6 +3750,7 @@
     ret
 .size "fn_000f9f49_",.-"fn_000f9f49_"
 
+// fn_000f9f8c: natural logarithm of the long double at eax, in place (mantissa reduced about sqrt(1/2), then a series).
 // FUNCTION: 0x000f9f8c
 
 .section _TEXT,"ax",@progbits,unique,1023884
@@ -3968,6 +3998,7 @@
     .byte 0x00
 .size "fn_000f9f8c_",.-"fn_000f9f8c_"
 
+// fn_000fa224: sine, tangent or cosine (esi 0, 1, 2) of the long double at eax, in place, reducing by octants of pi.
 // FUNCTION: 0x000fa224
 
 .section _TEXT,"ax",@progbits,unique,1024548
@@ -4165,6 +4196,7 @@
     ret
 .size "fn_000fa224_",.-"fn_000fa224_"
 
+// fn_000fa41b: sine of the long double at eax, in place.
 // FUNCTION: 0x000fa41b
 
 .section _TEXT,"ax",@progbits,unique,1025051
@@ -4178,6 +4210,7 @@
     ret
 .size "fn_000fa41b_",.-"fn_000fa41b_"
 
+// fn_000fa425: cosine of the long double at eax, in place.
 // FUNCTION: 0x000fa425
 
 .section _TEXT,"ax",@progbits,unique,1025061
@@ -4191,6 +4224,7 @@
     ret
 .size "fn_000fa425_",.-"fn_000fa425_"
 
+// fn_000fa432: tangent of the long double at eax, in place.
 // FUNCTION: 0x000fa432
 
 .section _TEXT,"ax",@progbits,unique,1025074
@@ -4204,6 +4238,7 @@
     ret
 .size "fn_000fa432_",.-"fn_000fa432_"
 
+// fn_000fa440: the 2^x routine's table of long double constants, not code.
 // FUNCTION: 0x000fa440
 
 .section _TEXT,"ax",@progbits,unique,1025088
@@ -4234,6 +4269,7 @@
     .byte 0x3f
 .size "fn_000fa440_",.-"fn_000fa440_"
 
+// fn_000fa468: f2xm1: *eax = 2^(*eax) - 1.
 // FUNCTION: 0x000fa468
 
 .section _TEXT,"ax",@progbits,unique,1025128
@@ -4418,6 +4454,7 @@
     ret
 .size "fn_000fa468_",.-"fn_000fa468_"
 
+// fn_000fa63c: square root of the long double at eax, in place; negative values give the indefinite NaN.
 // FUNCTION: 0x000fa63c
 
 .section _TEXT,"ax",@progbits,unique,1025596
@@ -4540,6 +4577,7 @@
     .byte 0xc3
 .size "fn_000fa63c_",.-"fn_000fa63c_"
 
+// fn_000fa728: evaluate a polynomial by Horner's rule at x (edx:eax, exponent si) with ebx steps over the long double coefficients at cs:ecx; result in edx:eax:si.
 // FUNCTION: 0x000fa728
 
 .section _TEXT,"ax",@progbits,unique,1025832
@@ -4581,6 +4619,7 @@
     ret
 .size "fn_000fa728_",.-"fn_000fa728_"
 
+// fn_000fa77a: *eax = x * P(x^2), with P's coefficients at cs:edx and ebx steps (fn_000fa728).
 // FUNCTION: 0x000fa77a
 
 .section _TEXT,"ax",@progbits,unique,1025914

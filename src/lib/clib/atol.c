@@ -1,5 +1,6 @@
 #include "clib.h"
 
+// atol: convert the decimal string p (leading whitespace, optional sign) to long.
 // FUNCTION: 0xce480
 long atol(const char *p)
 {

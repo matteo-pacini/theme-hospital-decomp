@@ -15,6 +15,7 @@ tiny_ret_t _TinyRead(int handle, void *buffer, unsigned len);
 
 int __set_errno_dos(unsigned err);
 
+// __qread: read up to len bytes from handle into buffer (DOS 3Fh); returns the count, or -1 with errno set.
 // FUNCTION: 0xfc91c
 int __qread(int handle, void *buffer, unsigned len)
 {

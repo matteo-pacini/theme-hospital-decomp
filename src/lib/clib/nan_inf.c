@@ -6,6 +6,7 @@ char *strcpy(char *dst, const char *src);
 int __Nan_Inf(double value, char *buf);
 #pragma aux __Nan_Inf parm routine [];
 
+// __Nan_Inf: if value is infinite or NaN, write "inf"/"nan" (with '-' if negative) to buf and return 1; else return 0.
 // FUNCTION: 0xfc93b
 int __Nan_Inf(double value, char *buf)
 {

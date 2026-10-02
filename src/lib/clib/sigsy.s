@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __int23_handler: Ctrl-C (INT 23h) handler; on the runtime's own stack, raise(SIGINT) if the program hooked it, else chain to the previous handler.
 // FUNCTION: 0x000f4bca
 
 .section _TEXT,"ax",@progbits,unique,1002442
@@ -62,6 +63,7 @@
     iretd
 .size "__int23_handler_",.-"__int23_handler_"
 
+// __int_ctrl_break_handler: Ctrl-Break (INT 1Bh) handler; raise(SIGBREAK) if the program hooked it, else chain to the previous handler (shares __int23_handler's tail).
 // FUNCTION: 0x000f4c5f
 
 .section _TEXT,"ax",@progbits,unique,1002591
@@ -108,6 +110,7 @@
     jmp "__int23_handler_"+0x70
 .size "__int_ctrl_break_handler_",.-"__int_ctrl_break_handler_"
 
+// __DPMI_hosted: 1 if running under a DPMI host (DPMI 0400h reports a version), else -1; the answer is cached.
 // FUNCTION: 0x000f4cd7
 
 .section _TEXT,"ax",@progbits,unique,1002711
@@ -170,6 +173,7 @@
     ret
 .size "__DPMI_hosted_",.-"__DPMI_hosted_"
 
+// __restore_int23: restore the saved INT 23h vectors (Phar Lap, DPMI or DOS) and drop it from the __int23_exit hook.
 // FUNCTION: 0x000f4d6b
 
 .section _TEXT,"ax",@progbits,unique,1002859
@@ -310,6 +314,7 @@
     .byte 0xc3
 .size "__restore_int23_",.-"__restore_int23_"
 
+// __restore_int: restore both INT 23h and INT 1Bh (falls into __restore_int_ctrl_break).
 // FUNCTION: 0x000f4f1c
 
 .section _TEXT,"ax",@progbits,unique,1003292
@@ -319,6 +324,7 @@
     call "__restore_int23_"
 .size "__restore_int_",.-"__restore_int_"
 
+// __restore_int_ctrl_break: restore the saved INT 1Bh vectors and drop it from the __int23_exit hook.
 // FUNCTION: 0x000f4f21
 
 .section _TEXT,"ax",@progbits,unique,1003297
@@ -341,6 +347,7 @@
     jmp "__restore_int23_"+0x105
 .size "__restore_int_ctrl_break_",.-"__restore_int_ctrl_break_"
 
+// __grab_int23: save the INT 23h vectors and install __int23_handler (once), registering its restore in the __int23_exit hook.
 // FUNCTION: 0x000f4f59
 
 .section _TEXT,"ax",@progbits,unique,1003353
@@ -436,6 +443,7 @@
     ret
 .size "__grab_int23_",.-"__grab_int23_"
 
+// __grab_int_ctrl_break: save the INT 1Bh vectors and install __int_ctrl_break_handler (once), registering its restore in the __int23_exit hook.
 // FUNCTION: 0x000f5074
 
 .section _TEXT,"ax",@progbits,unique,1003636

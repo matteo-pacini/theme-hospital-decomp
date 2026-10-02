@@ -17,6 +17,7 @@ char *_inline_strcpy(char *dst, const char *src);
     0x58                    /* done: pop eax */ \
     parm [eax] [edx] value [eax] modify [ecx edx];
 
+// strcpy: copy string src to dst; returns dst.
 // FUNCTION: 0xbbff0
 char *strcpy(char *dst, const char *src)
 {

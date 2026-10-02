@@ -1,5 +1,6 @@
 #include "clib.h"
 
+// strstr: first occurrence of string s2 in s1 (s1 if s2 is empty), or NULL.
 // FUNCTION: 0xcd72f
 char *strstr(const char *s1, const char *s2)
 {

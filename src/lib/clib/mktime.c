@@ -30,6 +30,7 @@ struct tm *__brktime(unsigned long days, time_t wallclock, long gmtdelta, struct
 void tzset(void);
 int __isindst(struct tm *t);
 
+// mktime: convert local broken-down time *t to time_t, normalising *t (wday, yday); -1 if not representable.
 // FUNCTION: 0xeb86a
 // NONMATCHING: days is summed in a different order and register
 time_t mktime(struct tm *t)

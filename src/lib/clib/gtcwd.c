@@ -27,6 +27,7 @@ void *malloc(size_t size);
 #pragma aux malloc "_nmalloc_"
 char *strncpy(char *dst, const char *src, size_t n);
 
+// getcwd: copy the current drive and directory ("X:\path") into buf (malloc'd when buf is NULL); returns buf or NULL.
 // FUNCTION: 0xec6c8
 char *getcwd(char *buf, size_t size)
 {

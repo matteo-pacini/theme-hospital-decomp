@@ -35,12 +35,14 @@ int fputc(int c, FILE *fp);
 void __set_EDOM(void);
 void __set_ERANGE(void);
 
+// _set_matherr: install rtn as the math error handler.
 // FUNCTION: 0xfdf13
 void _set_matherr(int (*rtn)(struct exception *))
 {
     _RWD_matherr = rtn;
 }
 
+// __rterrmsg: print "<message> in <funcname>" for math error errcode to stderr.
 // FUNCTION: 0xfdf19
 void __rterrmsg(int errcode, char *funcname)
 {
@@ -53,6 +55,7 @@ void __rterrmsg(int errcode, char *funcname)
     fputc('\n', fp);
 }
 
+// _matherr: call the math error handler; if it returns 0, print the error and set errno (EDOM for domain errors, else ERANGE); returns excp->retval.
 // FUNCTION: 0xfdf61
 double _matherr(struct exception *excp)
 {

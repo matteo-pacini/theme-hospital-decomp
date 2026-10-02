@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __ModF: split the double at eax: integral part stored at edx, fractional part (with the sign) left at eax.
 // FUNCTION: 0x000fcdd2
 
 .section _TEXT,"ax",@progbits,unique,1035730
@@ -76,6 +77,7 @@
     ret
 .size "__ModF",.-"__ModF"
 
+// __ZBuf2F: convert the decimal digit string at eax to the double at edx (exact up to 64 bits, then rounded).
 // FUNCTION: 0x000fce62
 
 .section _TEXT,"ax",@progbits,unique,1035874
@@ -126,6 +128,7 @@
     ret
 .size "__ZBuf2F",.-"__ZBuf2F"
 
+// fn_000fcead: pack the 64-bit mantissa edx:eax with exponent field edi into a double in edx:eax, normalising and rounding; 0 stays 0.
 // FUNCTION: 0x000fcead
 
 .section _TEXT,"ax",@progbits,unique,1035949

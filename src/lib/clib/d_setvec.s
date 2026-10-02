@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// _dos_setvect: set interrupt intnum's handler to far address handler (Phar Lap 2504h, else DOS 25h).
 // FUNCTION: 0x000cd192
 
 .section _TEXT,"ax",@progbits,unique,840082

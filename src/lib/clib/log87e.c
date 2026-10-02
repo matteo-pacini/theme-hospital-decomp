@@ -5,6 +5,7 @@ double __math1err(unsigned err_info, double *arg1);
 double __log87_err(double x, unsigned code);
 #pragma aux __log87_err parm routine [];
 
+// __log87_err: report a log-family error for x through __math1err (singularity for x == 0 except acosh, else domain error; result -HUGE_VAL).
 // FUNCTION: 0xfcf2f
 double __log87_err(double x, unsigned code)
 {

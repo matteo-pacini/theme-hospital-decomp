@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// fn_000ed282: startup routine; record the program's stack segment for __STK.
 // FUNCTION: 0x000ed282
 
 .section _TEXT,"ax",@progbits,unique,971394
@@ -10,6 +11,7 @@
     ret
 .size "fn_000ed282_",.-"fn_000ed282_"
 
+// __CHK: stack check for the size passed on the stack (__STK).
 // FUNCTION: 0x000ed28a
 
 .section _TEXT,"ax",@progbits,unique,971402
@@ -22,6 +24,7 @@
     ret 4
 .size "__CHK",.-"__CHK"
 
+// __GRO: stack-growth hook; does nothing.
 // FUNCTION: 0x000ed29a
 
 .section _TEXT,"ax",@progbits,unique,971418
@@ -31,6 +34,7 @@
     ret 4
 .size "__GRO",.-"__GRO"
 
+// __STK: check that eax bytes of stack remain above _STACKLOW; on the program's own stack, a shortfall is a fatal stack overflow.
 // FUNCTION: 0x000ed29d
 
 .section _TEXT,"ax",@progbits,unique,971421
@@ -51,6 +55,7 @@
     ret
 .size "__STK",.-"__STK"
 
+// __STKOVERFLOW: fatal "Stack Overflow!" error.
 // FUNCTION: 0x000ed2bb
 
 .section _TEXT,"ax",@progbits,unique,971451

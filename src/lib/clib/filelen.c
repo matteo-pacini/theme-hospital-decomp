@@ -1,5 +1,6 @@
 #include "clib.h"
 
+// filelength: size in bytes of the file open on handle, or -1; the file position is unchanged.
 // FUNCTION: 0xd11eb
 long filelength(int handle)
 {

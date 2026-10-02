@@ -25,6 +25,7 @@ RT_TYPE_SIG *catBaseSig(RT_TYPE_SIG *sig);
 /* config/functions.txt has no name for catBaseSig. */
 #pragma aux catBaseSig "W?catBaseSig$n(pn$rt_type_sig$$)pn$1$"
 
+// catBaseSig: the pointed-to type signature if sig is a pointer type, else sig.
 // FUNCTION: 0xfb838
 RT_TYPE_SIG *catBaseSig(RT_TYPE_SIG *sig)
 {
@@ -38,6 +39,7 @@ extern "C" {
 int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero);
 #pragma aux ts_equiv "__wcpp_2_ts_equiv__"
 
+// __wcpp_2_ts_equiv__: nonzero if a catch with catch_sig (NULL = catch(...)) accepts a throw of throw_sig; with zero set, only pointer catches match.
 // FUNCTION: 0xfb841
 int ts_equiv(RT_TYPE_SIG *catch_sig, RT_TYPE_SIG *throw_sig, int zero)
 {

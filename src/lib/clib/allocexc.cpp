@@ -85,6 +85,7 @@ void __wcpp_2_fatal_runtime_error_(char *msg, int code);
 // NONMATCHING: size and the hoisted size + 8 swap edi/ebp, the found block
 // stays in ebx instead of moving to ebp, and the rounding mask is applied
 // as and di,0xfffc in the original
+// __wcpp_2_alloc_exc_: allocate an active exception in the exception area, push it on thr's list and copy-construct the thrown object into it; fatal error if the area is full.
 // FUNCTION: 0xfb940
 active_exc *__wcpp_2_alloc_exc_(void *object, THROW_RO *ro, thread_ctl *thr)
 {
@@ -159,6 +160,7 @@ active_exc *__wcpp_2_alloc_exc_(void *object, THROW_RO *ro, thread_ctl *thr)
     return exc;
 }
 
+// __wcpp_2_free_exc_: pop thr's current exception and return its storage to the area's address-ordered free list.
 // FUNCTION: 0xfba7b
 void __wcpp_2_free_exc_(thread_ctl *thr)
 {
@@ -179,6 +181,7 @@ void __wcpp_2_free_exc_(thread_ctl *thr)
     ((FREE_AREA *)hdr)->next = cur;
 }
 
+// __wcpp_2_pop_exc_: unlink and return thr's current exception.
 // FUNCTION: 0xfbaa8
 active_exc *__wcpp_2_pop_exc_(thread_ctl *thr)
 {
@@ -189,6 +192,7 @@ active_exc *__wcpp_2_pop_exc_(thread_ctl *thr)
     return exc;
 }
 
+// __wcpp_2_push_exc_: make exc thr's current exception; returns exc.
 // FUNCTION: 0xfbab7
 active_exc *__wcpp_2_push_exc_(thread_ctl *thr, active_exc *exc)
 {

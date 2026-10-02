@@ -91,6 +91,7 @@ time_t _d2ttime(unsigned date, unsigned time);
 
 unsigned short at2mode(int attr, char *fname);
 
+// stat: fill *buf with information on file path (no wildcards; a root directory is checked with chdir); returns 0, or -1 with errno ENOENT.
 // FUNCTION: 0xec750
 int stat(const char *path, struct stat *buf)
 {
@@ -143,6 +144,7 @@ int stat(const char *path, struct stat *buf)
     return 0;
 }
 
+// at2mode: st_mode bits from DOS attributes attr (and fname's .EXE/.COM extension for execute permission).
 // FUNCTION: 0xec89a
 unsigned short at2mode(int attr, char *fname)
 {

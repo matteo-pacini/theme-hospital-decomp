@@ -12,6 +12,7 @@ struct THREAD_CTL {
 
 extern THREAD_CTL _wint_thread_data;
 
+// __wcpp_2_base_register_: push destruction-registration block rw (with ro and state_var) on the thread's list; returns the thread data.
 // FUNCTION: 0xec324
 THREAD_CTL *__wcpp_2_base_register_(RW_DTREG *rw, void *ro, unsigned state_var)
 {
@@ -22,6 +23,7 @@ THREAD_CTL *__wcpp_2_base_register_(RW_DTREG *rw, void *ro, unsigned state_var)
     return &_wint_thread_data;
 }
 
+// __wcpp_2_base_deregister_: pop the thread's newest registration block.
 // FUNCTION: 0xec33d
 void __wcpp_2_base_deregister_(void)
 {

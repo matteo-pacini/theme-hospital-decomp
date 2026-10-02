@@ -25,6 +25,7 @@ double strtod(const char *s, char **endptr);
 
 static void forcedecpt(char *p, SPECS *specs);
 
+// _EFG_Format: printf's %e/%f/%g conversion; formats the next double from args per specs into buffer; returns the start of the text.
 // FUNCTION: 0xf744b
 FAR_STRING _EFG_Format(char *buffer, va_list *args, SPECS *specs)
 {
@@ -65,6 +66,7 @@ FAR_STRING _EFG_Format(char *buffer, va_list *args, SPECS *specs)
     return result;
 }
 
+// forcedecpt: unless '#' was given, remove a trailing '.' (and, for %g, trailing zeros) before any exponent in p.
 // FUNCTION: 0xf752f
 static void forcedecpt(char *p, SPECS *specs)
 {
@@ -88,6 +90,7 @@ static void forcedecpt(char *p, SPECS *specs)
 
 void __cnvs2d(char *buf, double *value);
 
+// __cnvs2d: scanf's floating-point conversion; *value = strtod(buf).
 // FUNCTION: 0xf758e
 void __cnvs2d(char *buf, double *value)
 {

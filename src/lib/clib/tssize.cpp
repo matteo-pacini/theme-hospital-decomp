@@ -30,6 +30,7 @@ struct RT_TYPE_SIG {
 
 void __wcpp_2_corrupted_stack_(void);
 
+// __wcpp_2_ts_size_: size of the object described by type signature sig (a pointer type's base); corrupted-stack error on an unknown type.
 // FUNCTION: 0xfbcf0
 unsigned __wcpp_2_ts_size_(RT_TYPE_SIG *sig)
 {

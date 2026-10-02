@@ -5,6 +5,7 @@ extern const unsigned char _Bits[8];
 
 void __setbits(unsigned char *vector, const char *charset);
 
+// strtok: next token of str (NULL continues the previous string) delimited by chars in charset; NULs the delimiter; NULL when none left.
 // FUNCTION: 0xce37f
 char *strtok(char *str, const char *charset)
 {

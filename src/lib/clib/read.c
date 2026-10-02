@@ -20,6 +20,7 @@ tiny_ret_t _TinyRead(int handle, void *buffer, unsigned len);
 unsigned __IOMode(int handle);
 int __set_errno_dos(unsigned err);
 
+// read: read up to len bytes from handle into buf (text mode drops CR and stops at Ctrl-Z); returns bytes stored, or -1 with errno set.
 // FUNCTION: 0xd0f1b
 // NONMATCHING: esi and edi are swapped (the original keeps total_len in esi),
 // and buf is copied to ebp before the __IOMode call rather than after

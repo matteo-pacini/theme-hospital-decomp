@@ -15,6 +15,7 @@ tiny_ret_t _TinyChDir(const char *path);
 
 int __set_errno_dos(unsigned err);
 
+// chdir: change the current directory to path (DOS 3Bh); returns 0, or -1 with errno set.
 // FUNCTION: 0xec686
 int chdir(const char *path)
 {

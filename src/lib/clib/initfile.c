@@ -11,6 +11,7 @@ void *malloc(size_t size);
 #pragma aux malloc "_nmalloc_"
 void __fatal_runtime_error(char *msg, unsigned retcode);
 
+// __InitFiles: make stderr unbuffered and put every preinitialised __iob stream on the open-stream list.
 // FUNCTION: 0xec3d8
 void __InitFiles(void)
 {

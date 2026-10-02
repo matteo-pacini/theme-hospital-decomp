@@ -13,6 +13,7 @@ int __qread(int handle, void *buffer, unsigned len);
 int __fill_buffer(FILE *fp);
 int __filbuf(FILE *fp);
 
+// fgetc: read the next character from fp; text mode drops CR and treats Ctrl-Z as end of file; returns EOF on end or error.
 // FUNCTION: 0xfbfb3
 int fgetc(FILE *fp)
 {
@@ -49,6 +50,7 @@ int fgetc(FILE *fp)
     return c;
 }
 
+// __filbuf: refill fp's buffer and return its first character, or EOF.
 // FUNCTION: 0xfc03c
 int __filbuf(FILE *fp)
 {
@@ -59,6 +61,7 @@ int __filbuf(FILE *fp)
     return *(fp->_ptr - 1);
 }
 
+// __fill_buffer: refill fp's buffer from its handle (unbuffered console stdin reads one char via getche); sets EOF/error flags; returns the byte count.
 // FUNCTION: 0xfc06b
 int __fill_buffer(FILE *fp)
 {

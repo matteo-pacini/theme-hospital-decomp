@@ -13,6 +13,7 @@ tiny_ret_t _TinyGetDeviceInfo(int handle);
 
 #define TIO_CTL_DEVICE 0x80
 
+// isatty: nonzero if handle refers to a character device (DOS IOCTL 4400h).
 // FUNCTION: 0xed25b
 int isatty(int handle)
 {

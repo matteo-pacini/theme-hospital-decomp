@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __Phar_hook_init: save the FPU IRQ's vectors and install the FPU exception handler through Phar Lap's 25xxh calls (older versions also patch the IDT).
 // FUNCTION: 0x000fdd2c
 
 .section _TEXT,"ax",@progbits,unique,1039660
@@ -74,6 +75,7 @@
     ret
 .size "__Phar_hook_init_",.-"__Phar_hook_init_"
 
+// __Phar_hook_fini: restore the saved FPU IRQ vectors (Phar Lap 2507h).
 // FUNCTION: 0x000fddef
 
 .section _TEXT,"ax",@progbits,unique,1039855

@@ -11,6 +11,7 @@ void __Enable_FPE(void);
 void __GrabFP87(void);
 #pragma aux __GrabFP87 "__GrabFP87"
 
+// __GrabFP87: install the SIGFPE handler and FPU exception hook once (registering its exit hook), then enable FP exceptions.
 // FUNCTION: 0xfcefe
 void __GrabFP87(void)
 {

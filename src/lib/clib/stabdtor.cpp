@@ -23,6 +23,7 @@ void __wcpp_2_corrupted_stack_(void);
 RO_STATE *nextDtorPosn(STAB_TRAVERSE *ctl);
 #pragma aux nextDtorPosn "W?nextDtorPosn$n(pn$__1j2o3bSTAB_TRAVERSE$$)pn$__7a4u3RO_STATE$$"
 
+// nextDtorPosn: advance ctl to its next state-table entry, checking that a command entry (one without a destructor) is a known kind; returns the entry.
 // FUNCTION: 0xeb9c0
 RO_STATE *nextDtorPosn(STAB_TRAVERSE *ctl)
 {
@@ -111,6 +112,7 @@ void dtorComponent(DTOR_CMD_COMPONENT *cmd, unsigned dtor_flag, rw_dtreg *rw, un
 void destruct_traverse(unsigned bound, rw_dtreg *rw, int partial);
 #pragma aux destruct_traverse "W?destruct_traverse$n(uipn$rw_dtreg$$i)v"
 
+// dtorComponent: call a component's destructor (with dtor_flag) unless its registration flags intersect mask.
 // FUNCTION: 0xeba0a
 void dtorComponent(DTOR_CMD_COMPONENT *cmd, unsigned dtor_flag, rw_dtreg *rw, unsigned mask)
 {
@@ -121,6 +123,7 @@ void dtorComponent(DTOR_CMD_COMPONENT *cmd, unsigned dtor_flag, rw_dtreg *rw, un
         cmd->dtor(comp->base + cmd->delta, dtor_flag);
 }
 
+// destruct_traverse: destroy rw's registered objects from its current state down to bound (partial: start past the object under construction), executing the state table's destructors and commands.
 // FUNCTION: 0xeba54
 void destruct_traverse(unsigned bound, rw_dtreg *rw, int partial)
 {
@@ -197,6 +200,7 @@ void destruct_traverse(unsigned bound, rw_dtreg *rw, int partial)
 
 void __wcpp_2_destruct_internal_(unsigned bound, rw_dtreg *rw);
 
+// __wcpp_2_destruct_internal_: destroy rw's objects down to state bound.
 // FUNCTION: 0xebb84
 void __wcpp_2_destruct_internal_(unsigned bound, rw_dtreg *rw)
 {
@@ -212,24 +216,28 @@ extern THREAD_CTL _wint_thread_data;
 void __wcpp_2_destruct_(unsigned bound);
 void __wcpp_2_destruct_after_(unsigned bound);
 
+// __wcpp_2_destruct_all_: destroy every object of the newest registration.
 // FUNCTION: 0xebb8e
 void __wcpp_2_destruct_all_(void)
 {
     __wcpp_2_destruct_(0);
 }
 
+// __wcpp_2_destruct_: destroy the newest registration's objects down to state bound.
 // FUNCTION: 0xebb90
 void __wcpp_2_destruct_(unsigned bound)
 {
     destruct_traverse(bound, _wint_thread_data.registered, 0);
 }
 
+// __wcpp_2_destruct_after_all_: __wcpp_2_destruct_after_(0).
 // FUNCTION: 0xebba2
 void __wcpp_2_destruct_after_all_(void)
 {
     __wcpp_2_destruct_after_(0);
 }
 
+// __wcpp_2_destruct_after_: destroy the newest registration's objects down to bound, skipping the one under construction.
 // FUNCTION: 0xebba4
 void __wcpp_2_destruct_after_(unsigned bound)
 {

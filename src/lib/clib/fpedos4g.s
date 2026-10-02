@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __DOS4G_hook_init: save the __FPE_int interrupt vector and point it at the FPU exception handler (DOS/4G).
 // FUNCTION: 0x000fde1c
 
 .section _TEXT,"ax",@progbits,unique,1039900
@@ -22,6 +23,7 @@
     ret
 .size "__DOS4G_hook_init_",.-"__DOS4G_hook_init_"
 
+// __DOS4G_hook_fini: restore the saved __FPE_int interrupt vector.
 // FUNCTION: 0x000fde49
 
 .section _TEXT,"ax",@progbits,unique,1039945

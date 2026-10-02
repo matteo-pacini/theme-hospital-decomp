@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// access: check that file path exists (and, for write mode, is not read-only); returns 0, or -1 with errno set.
 // FUNCTION: 0x000d0b5c
 
 .section _TEXT,"ax",@progbits,unique,854876

@@ -1,11 +1,13 @@
 #include "clib.h"
 
+// flushall: flush all open streams; returns the number of open streams.
 // FUNCTION: 0xbc07c
 int flushall(void)
 {
     return __flushall(~0);
 }
 
+// __flushall: flush every open stream whose flags intersect mask; returns how many matched.
 // FUNCTION: 0xbc081
 int __flushall(int mask)
 {

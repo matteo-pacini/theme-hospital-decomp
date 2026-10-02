@@ -576,7 +576,7 @@ section-relative (`config/sections.txt`). Library modules are one segment,
 so `tools/split.py` lays their units out as built without `-zm`.
 
 No CD's library (10.0a, 10.5, 10.6) has the EXE's `grownear` module as a
-whole: its `__AdjustAmount` rounds to 8 bytes where 10.6's rounds to 4 (the
+whole: its `__AdjustAmount` rounds to 4 bytes where 10.6's rounds to 8 (the
 module's other functions do match 10.5's and 10.6's), so it stays C. Its
 `__FreeDPMIBlocks` never keeps a value in esi across its call to
 `__unlink`, although `__unlink` saves esi: no flag, compiler version or

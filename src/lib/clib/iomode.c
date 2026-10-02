@@ -8,6 +8,7 @@ extern unsigned *_iomode;
 
 int isatty(int handle);
 
+// __IOMode: I/O mode flags of handle (0 if out of range); first use of a standard handle sets _ISTTY from isatty.
 // FUNCTION: 0xed1bc
 unsigned __IOMode(int handle)
 {
@@ -23,6 +24,7 @@ unsigned __IOMode(int handle)
     return _iomode[handle];
 }
 
+// __SetIOMode: set handle's I/O mode flags to value (marked initialised).
 // FUNCTION: 0xed211
 // NONMATCHING: the index is scaled into a register instead of the address
 void __SetIOMode(int handle, unsigned value)

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// outp: write byte value to I/O port port.
 // FUNCTION: 0x000cd1c7
 
 .section _TEXT,"ax",@progbits,unique,840135

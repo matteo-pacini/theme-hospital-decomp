@@ -10,6 +10,7 @@ int __CmpBigInt(int digits, void *bigint);
 int _Scale(int exp, double x, int digits, void *bigint);
 #pragma aux _Scale parm [eax];
 
+// _Scale: scale x by 10^(digits - exp), round it to an integer in bigint, and return __CmpBigInt(digits, bigint).
 // FUNCTION: 0xfca97
 int _Scale(int exp, double x, int digits, void *bigint)
 {

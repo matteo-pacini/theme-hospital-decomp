@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// rename: rename file old to new (DOS 56h); returns 0, or -1 with errno set.
 // FUNCTION: 0x000d12aa
 
 .section _TEXT,"ax",@progbits,unique,856746

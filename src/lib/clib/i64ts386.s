@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __CmpBigInt: number of decimal digits of the 64-bit integer at edx minus eax (0 if it has exactly eax digits).
 // FUNCTION: 0x000fcf86
 
 .section _TEXT,"ax",@progbits,unique,1036166
@@ -40,6 +41,7 @@
     ret
 .size "__CmpBigInt",.-"__CmpBigInt"
 
+// __Rnd2Int: round the double at eax to a 64-bit integer (half to even) stored at edx.
 // FUNCTION: 0x000fcfc0
 
 .section _TEXT,"ax",@progbits,unique,1036224
@@ -101,6 +103,7 @@
     ret
 .size "__Rnd2Int",.-"__Rnd2Int"
 
+// __Bin2String: write the low ebx decimal digits of the 64-bit integer at eax (zero-padded) to the buffer at edx, NUL-terminated.
 // FUNCTION: 0x000fd02b
 
 .section _TEXT,"ax",@progbits,unique,1036331
@@ -170,6 +173,7 @@
 .size "__Bin2String",.-"__Bin2String"
 
 
+// fn_000fd095: return in edi the address of the 64-bit powers-of-ten table that follows the call.
 // FUNCTION: 0x000fd095
 
 .section _TEXT,"ax",@progbits,unique,1036437
@@ -191,6 +195,8 @@
     .byte 0xe0, 0x0d, 0x00, 0x00, 0x64, 0xa7, 0x04, 0x23, 0xc7, 0x8a, 0x00, 0x00, 0xe8, 0x89, 0xff, 0xff
     .byte 0xff, 0xff, 0xff, 0xff, 0xff, 0xff
 .size "fn_000fd095_",.-"fn_000fd095_"
+
+// fn_000fd14a: return the caller's return address in edi.
 // FUNCTION: 0x000fd14a
 
 .section _TEXT,"ax",@progbits,unique,1036618

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// _chain_intr: from an __interrupt handler, restore the interrupted registers and jump to the handler at far address (eax, dx); does not return.
 // FUNCTION: 0x000fbcb2
 
 .section _TEXT,"ax",@progbits,unique,1031346

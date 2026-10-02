@@ -2,6 +2,7 @@
 
 long tell(int handle);
 
+// ftell: current position of fp, accounting for buffered data; -1 on error.
 // FUNCTION: 0xfbacb
 long ftell(FILE *fp)
 {

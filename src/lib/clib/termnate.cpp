@@ -18,6 +18,7 @@ void __exit(int status);
 
 }
 
+// terminate: call the installed terminate handler (fatal error if it returns); without one, exit with the pending abort message, or with status 1.
 // FUNCTION: 0xfc724
 void terminate(void)
 {

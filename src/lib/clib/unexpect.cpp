@@ -20,6 +20,7 @@ void terminate(void);
 void unexpected(void);
 #pragma aux unexpected "W?unexpected$n()v"
 
+// unexpected: call the installed unexpected handler (fatal error if it returns), or terminate() if none.
 // FUNCTION: 0xfc770
 void unexpected(void)
 {

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// segread: store the current segment registers in *segregs.
 // FUNCTION: 0x000d0b1b
 
 .section _TEXT,"ax",@progbits,unique,854811

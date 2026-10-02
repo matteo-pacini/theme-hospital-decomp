@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __Ergo_hook_init: save the FPU IRQ's interrupt vector and point it at the FPU exception handler (entry chosen by the master PIC base) (Ergo).
 // FUNCTION: 0x000fde62
 
 .section _TEXT,"ax",@progbits,unique,1039970
@@ -28,6 +29,7 @@
     ret
 .size "__Ergo_hook_init_",.-"__Ergo_hook_init_"
 
+// __Ergo_hook_fini: restore the saved FPU IRQ interrupt vector.
 // FUNCTION: 0x000fdea0
 
 .section _TEXT,"ax",@progbits,unique,1040032

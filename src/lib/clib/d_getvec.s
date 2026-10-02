@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// _dos_getvect: far address of the protected-mode handler for interrupt intnum (Phar Lap 2502h, else DOS 35h).
 // FUNCTION: 0x000cd160
 
 .section _TEXT,"ax",@progbits,unique,840032

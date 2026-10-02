@@ -7,6 +7,7 @@ unsigned _SP(void);
     "mov eax,esp" \
     value [eax];
 
+// stackavail: bytes of stack left above _STACKLOW.
 // FUNCTION: 0xec92b
 unsigned stackavail(void)
 {

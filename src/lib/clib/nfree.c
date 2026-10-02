@@ -33,6 +33,7 @@ unsigned short FP_SEG(const volatile void __far *);
 
 void _nfree(void *stg);
 
+// _nfree: free near-heap block stg (NULL is ignored), finding its miniheap and updating the allocation rovers.
 // FUNCTION: 0x000cf342
 void _nfree(void *stg)
 {

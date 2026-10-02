@@ -74,6 +74,7 @@ void __SetIOMode(int handle, unsigned value);
 int __set_errno_dos(unsigned err);
 int isatty(int handle);
 
+// open: open file name with access mode (O_* flags; permission argument for O_CREAT); returns a handle, or -1 with errno set.
 // FUNCTION: 0xd0c66
 int open(const char *name, int mode, ...)
 {
@@ -86,6 +87,7 @@ int open(const char *name, int mode, ...)
     return sopen(name, mode, SH_COMPAT, permission);
 }
 
+// sopen: open file name with access mode and sharing mode shflag (permission argument for O_CREAT); returns a handle, or -1 with errno set.
 // FUNCTION: 0xd0c8a
 int sopen(const char *name, int mode, int shflag, ...)
 {
@@ -166,6 +168,7 @@ int sopen(const char *name, int mode, int shflag, ...)
     return handle;
 }
 
+// __set_binary: put handle in binary mode (raw mode for a device); returns 0, or -1 with errno set.
 // FUNCTION: 0xd0e73
 int __set_binary(int handle)
 {

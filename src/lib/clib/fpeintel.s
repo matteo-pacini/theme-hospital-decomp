@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __Intel_hook_init: save the __FPE_int protected- and real-mode vectors and set the protected-mode one to the FPU exception handler (DPMI 204h/200h/205h).
 // FUNCTION: 0x000fdeba
 
 .section _TEXT,"ax",@progbits,unique,1040058
@@ -31,6 +32,7 @@
     ret
 .size "__Intel_hook_init_",.-"__Intel_hook_init_"
 
+// __Intel_hook_fini: nothing to undo; returns.
 // FUNCTION: 0x000fdf12
 
 .section _TEXT,"ax",@progbits,unique,1040146

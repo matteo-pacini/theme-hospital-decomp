@@ -15,6 +15,7 @@ int cget_string(SCNF_SPECS *specs);
 /* config/functions.txt has no name for cget_string. */
 #pragma aux cget_string "cget_string_"
 
+// cget_string: __scnf input callback; next character of the string, or EOF (setting eoinp) at its end.
 // FUNCTION: 0xefe5a
 int cget_string(SCNF_SPECS *specs)
 {
@@ -33,12 +34,14 @@ void uncget_string(int c, SCNF_SPECS *specs);
 /* config/functions.txt has no name for uncget_string. */
 #pragma aux uncget_string "uncget_string_"
 
+// uncget_string: __scnf push-back callback; step the string back one character.
 // FUNCTION: 0xefe83
 void uncget_string(int c, SCNF_SPECS *specs)
 {
     --specs->ptr;
 }
 
+// vsscanf: formatted input from string s with a va_list; returns fields assigned, or EOF.
 // FUNCTION: 0xefe87
 int vsscanf(const char *s, const char *format, va_list args)
 {
@@ -50,6 +53,7 @@ int vsscanf(const char *s, const char *format, va_list args)
     return __scnf(&specs, format, args);
 }
 
+// sscanf: formatted input from string s; returns fields assigned, or EOF.
 // FUNCTION: 0xefeae
 int sscanf(const char *s, const char *format, ...)
 {

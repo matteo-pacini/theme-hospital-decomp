@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __doserror: after a DOS call, return 0 if carry is clear, else set errno from DOS error ax and return that error code.
 // FUNCTION: 0x000ed2ca
 
 .section _TEXT,"ax",@progbits,unique,971466

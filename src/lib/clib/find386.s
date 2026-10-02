@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// _dos_findfirst: find the first file matching path and attributes attr, results in *buf (DOS 4Eh with buf as the DTA); returns 0 or the DOS error.
 // FUNCTION: 0x000d1228
 
 .section _TEXT,"ax",@progbits,unique,856616
@@ -23,6 +24,7 @@
     ret
 .size "_dos_findfirst_",.-"_dos_findfirst_"
 
+// _dos_findnext: find the next file of the search in *buf (DOS 4Fh); returns 0 or the DOS error.
 // FUNCTION: 0x000d1245
 
 .section _TEXT,"ax",@progbits,unique,856645
@@ -42,6 +44,7 @@
     ret
 .size "_dos_findnext_",.-"_dos_findnext_"
 
+// _dos_findclose: end a search; nothing to release, returns 0.
 // FUNCTION: 0x000d1261
 
 .section _TEXT,"ax",@progbits,unique,856673
@@ -52,6 +55,7 @@
     ret
 .size "_dos_findclose_",.-"_dos_findclose_"
 
+// fn_000d1264: under CodeBuilder (_Extender 9), copy the 43-byte DTA into the caller's find buffer edx.
 // FUNCTION: 0x000d1264
 
 .section _TEXT,"ax",@progbits,unique,856676
@@ -80,6 +84,7 @@
     ret
 .size "fn_000d1264_",.-"fn_000d1264_"
 
+// fn_000d1287: under CodeBuilder (_Extender 9), copy the caller's find buffer edx into the DTA.
 // FUNCTION: 0x000d1287
 
 .section _TEXT,"ax",@progbits,unique,856711

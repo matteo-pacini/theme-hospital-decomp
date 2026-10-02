@@ -40,6 +40,7 @@ void *__doalloca(size_t __size);
     "sub esp,eax" \
     __parm __nomemory [eax] __value [esp] __modify __exact __nomemory [esp];
 
+// write: write len bytes from buffer to handle (text mode writes "\r\n" for '\n'); returns len or the bytes written (errno ENOSPC), or -1 with errno set.
 // FUNCTION: 0xd1016
 // NONMATCHING: same code, but the spilled locals get different stack slots
 int write(int handle, const void *buffer, unsigned len)

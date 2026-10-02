@@ -18,6 +18,7 @@ void __chktty(FILE *fp);
 extern int _fmode;
 extern __stream_link *__ClosedStreams;
 
+// __open_flags: translate an fopen mode string ("r", "w+", "ab", ...) to stream flags; 0 with errno EINVAL if invalid.
 // FUNCTION: 0xfbd31
 int __open_flags(const char *modestr)
 {
@@ -57,6 +58,7 @@ int __open_flags(const char *modestr)
     return flags;
 }
 
+// __doopen: open name with sopen for the given mode and flags into fp (seeking to the end for append); frees fp and returns NULL on failure.
 // FUNCTION: 0xfbe02
 static FILE *__doopen(const char *name, char mode, int file_flags, int shflag, FILE *fp)
 {
@@ -101,6 +103,7 @@ static FILE *__doopen(const char *name, char mode, int file_flags, int shflag, F
     return fp;
 }
 
+// _fsopen: open file name with mode access_mode and sharing mode shflag; returns the stream or NULL.
 // FUNCTION: 0xfbec6
 FILE *_fsopen(const char *name, const char *access_mode, int shflag)
 {
@@ -116,12 +119,14 @@ FILE *_fsopen(const char *name, const char *access_mode, int shflag)
     return fp;
 }
 
+// fopen: open file name with mode access_mode; returns the stream or NULL.
 // FUNCTION: 0xfbeff
 FILE *fopen(const char *name, const char *access_mode)
 {
     return _fsopen(name, access_mode, SH_COMPAT);
 }
 
+// close_file: close fp if open, or move it back from the closed list to the open list; NULL with errno EBADF if fp is unknown.
 // FUNCTION: 0xfbf09
 static FILE *close_file(FILE *fp)
 {
@@ -158,6 +163,7 @@ static FILE *close_file(FILE *fp)
     return NULL;
 }
 
+// freopen: close fp and reopen it on file name with mode access_mode; returns fp or NULL.
 // FUNCTION: 0xfbf71
 FILE *freopen(const char *name, const char *access_mode, FILE *fp)
 {

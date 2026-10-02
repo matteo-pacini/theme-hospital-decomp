@@ -12,6 +12,7 @@ typedef struct {
 int fputc(int c, FILE *fp);
 void __ioalloc(FILE *fp);
 
+// file_putc: __prtf output callback; fputc op_char to the destination stream and count it.
 // FUNCTION: 0x000eb229
 void file_putc(SPECS *specs, int op_char)
 {
@@ -19,6 +20,7 @@ void file_putc(SPECS *specs, int op_char)
     specs->_output_count++;
 }
 
+// __fprtf: vfprintf core; format arg to fp (an unbuffered stream is buffered for the call, then flushed); returns chars written or -1.
 // FUNCTION: 0xeb23a
 int __fprtf(FILE *fp, const char *format, va_list arg)
 {

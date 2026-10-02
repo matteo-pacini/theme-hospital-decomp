@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// memmove: copy n bytes from src to dst, correct for overlapping areas; returns dst.
 // FUNCTION: 0x000c9372
 
 .section _TEXT,"ax",@progbits,unique,824178

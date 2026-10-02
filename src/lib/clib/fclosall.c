@@ -11,6 +11,7 @@ int docloseall(int exclude);
 
 void __full_io_exit(void);
 
+// __full_io_exit: exit hook; close every stream (standard streams keep their handles), then __purgefp.
 // FUNCTION: 0xec44f
 void __full_io_exit(void)
 {
@@ -20,12 +21,14 @@ void __full_io_exit(void)
 
 int fcloseall(void);
 
+// fcloseall: close all streams except stdin/stdout/stderr/stdaux/stdprn; returns the number closed.
 // FUNCTION: 0xec45b
 int fcloseall(void)
 {
     return docloseall(NUM_STD_STREAMS);
 }
 
+// docloseall: shut down open streams; static __iob entries below exclude are skipped and the standard streams keep their handles; returns the count.
 // FUNCTION: 0xec460
 int docloseall(int exclude)
 {

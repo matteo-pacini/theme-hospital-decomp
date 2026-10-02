@@ -1,5 +1,6 @@
 #include "clib.h"
 
+// _SplitParms: split command line p into arguments (blank-separated, double quotes, \" and \\ escapes); with argv NULL only counts; stores the end in *endptr; returns argc.
 // FUNCTION: 0xd070c
 int _SplitParms(char *p, char **argv, char **endptr)
 {

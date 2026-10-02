@@ -22,6 +22,7 @@ extern struct tm The_time;
 
 int __leapyear(unsigned year);
 
+// __brktime: fill *t from a day count since 1900 (days) plus wallclock seconds, less gmtdelta seconds; returns t.
 // FUNCTION: 0xf37a0
 // NONMATCHING: register allocation (the target keeps t in ecx)
 struct tm *__brktime(unsigned long days, unsigned long wallclock, long gmtdelta, struct tm *t)
@@ -68,6 +69,7 @@ struct tm *__brktime(unsigned long days, unsigned long wallclock, long gmtdelta,
     return t;
 }
 
+// _gmtime: convert *timer to UTC broken-down time in *tm; returns tm.
 // FUNCTION: 0xf38b5
 struct tm *_gmtime(const time_t *timer, struct tm *tm)
 {
@@ -75,6 +77,7 @@ struct tm *_gmtime(const time_t *timer, struct tm *tm)
     return __brktime(25567, *timer, 0, tm);
 }
 
+// gmtime: convert *timer to UTC in a static struct tm; returns it.
 // FUNCTION: 0x000f38d3
 struct tm *gmtime(const time_t *timer)
 {

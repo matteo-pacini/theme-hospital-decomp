@@ -6,6 +6,7 @@
 
 int isatty(int handle);
 
+// __chktty: on first use, mark fp as a TTY if its handle is one, and make it line-buffered unless a buffering mode is already set.
 // FUNCTION: 0xfb7df
 void __chktty(FILE *fp)
 {

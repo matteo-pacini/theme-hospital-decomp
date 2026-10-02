@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __wcpp_2_call_unexpected__: jump to unexpected().
 // FUNCTION: 0x000fb880
 
 .section _TEXT,"ax",@progbits,unique,1030272
@@ -9,6 +10,7 @@
     jmp "W?unexpected$n()v"
 .size "__wcpp_2_call_unexpected__",.-"__wcpp_2_call_unexpected__"
 
+// _setjmp: save the registers and return address in env; returns 0.
 // FUNCTION: 0x000fb886
 
 .section _TEXT,"ax",@progbits,unique,1030278
@@ -34,6 +36,7 @@
     ret
 .size "_setjmp_",.-"_setjmp_"
 
+// longjmp: run __longjmp_handler (C++ unwinding), restore the registers saved in env and return val (1 if val is 0) from its _setjmp.
 // FUNCTION: 0x000fb8bb
 
 .section _TEXT,"ax",@progbits,unique,1030331

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __CHP: truncate st(0) to an integer (round toward zero), restoring the FPU control word.
 // FUNCTION: 0x000fca7a
 
 .section _TEXT,"ax",@progbits,unique,1034874

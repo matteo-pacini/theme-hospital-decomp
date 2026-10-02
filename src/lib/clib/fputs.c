@@ -6,6 +6,7 @@
 void __ioalloc(FILE *fp);
 int fputc(int c, FILE *fp);
 
+// fputs: write string s to fp; returns the number of characters written, or EOF on error.
 // FUNCTION: 0xfdfb4
 int fputs(const char *s, FILE *fp)
 {

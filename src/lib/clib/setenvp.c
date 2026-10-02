@@ -14,6 +14,7 @@ void __setenvp(void);
 
 // NONMATCHING: the original keeps the environment segment in fs and reloads
 // es from it; 10.6 keeps it in dx, and register allocation differs
+// __setenvp: build environ (and __env_mask) from a near-heap copy of the DOS environment block, once.
 // FUNCTION: 0xf3285
 void __setenvp(void)
 {

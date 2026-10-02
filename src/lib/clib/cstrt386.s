@@ -9,6 +9,7 @@
 "_C_00010003":
     .byte 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90
 
+// _cstart_: program entry (after the copyright string it jumps over): set up the stack and break, identify the DOS extender, locate the environment and command line, note NO87, clear BSS, run the startup routines (__InitRtns) and __CMain.
 // FUNCTION: 0x000bca0c
 
 .section _TEXT,"ax",@progbits,unique,772620
@@ -250,6 +251,7 @@
     .byte 0xe8; .long "__CMain"-.-4
 .size "_cstart_",.-"_cstart_"
 
+// __exit: run every exit routine (__FiniRtns) and terminate with status (DOS 4Ch).
 // FUNCTION: 0x000bcc9b
 
 .section _TEXT,"ax",@progbits,unique,773275
@@ -259,6 +261,7 @@
     .byte 0xeb; .byte 0x23  # jmp 0xbccc0
 .size "__exit_",.-"__exit_"
 
+// __do_exit_with_msg_: write msg to the console device, run the exit routines and terminate with retcode.
 // FUNCTION: 0x000bcc9d
 
 .section _TEXT,"ax",@progbits,unique,773277
@@ -294,6 +297,7 @@
     .byte 0x8d; .byte 0x40; .byte 0x00  # lea eax, [eax]
 .size "__do_exit_with_msg__",.-"__do_exit_with_msg__"
 
+// __GETDS: load ds with the program's data selector, saved in the code segment at startup.
 // FUNCTION: 0x000bccd8
 
 .section _TEXT,"ax",@progbits,unique,773336
@@ -304,6 +308,7 @@
     ret
 .size "__GETDS",.-"__GETDS"
 
+// ___GETDSEnd_: end marker of the __GETDS region locked by __CommonInit; the bytes here are data, not code.
 // FUNCTION: 0x000bcce3
 
 .section _TEXT,"ax",@progbits,unique,773347

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __Init_FPE_handler: with a real FPU and no hook yet, install the FPU exception interrupt hook for the DOS extender in use and enable FP exceptions; __Fini_FPE_handler, 0x5d bytes in, masks them and removes the hook.
 // FUNCTION: 0x000fd8d8
 
 .section _TEXT,"ax",@progbits,unique,1038552
@@ -85,6 +86,7 @@
     .byte 0xc3
 .size "__Init_FPE_handler_",.-"__Init_FPE_handler_"
 
+// __Enable_FPE: unmask the invalid, zero-divide and overflow FPU exceptions; the FPU exception interrupt handlers follow it.
 // FUNCTION: 0x000fd992
 
 .section _TEXT,"ax",@progbits,unique,1038738
@@ -220,6 +222,7 @@
     .byte 0xcf
 .size "__Enable_FPE_",.-"__Enable_FPE_"
 
+// fn_000fdaba: for an invalid-operation exception in instruction bx, pick the FPE code in cl (sqrt of a negative, log or mod error, integer overflow, underflow...) and patch the result where needed.
 // FUNCTION: 0x000fdaba
 
 .section _TEXT,"ax",@progbits,unique,1039034
@@ -287,6 +290,7 @@
     ret
 .size "fn_000fdaba_",.-"fn_000fdaba_"
 
+// fn_000fdb47: for an overflow in instruction bx, replace its result with a signed maximum (memory destination) or infinity (register destination).
 // FUNCTION: 0x000fdb47
 
 .section _TEXT,"ax",@progbits,unique,1039175
@@ -327,6 +331,7 @@
     ret
 .size "fn_000fdb47_",.-"fn_000fdb47_"
 
+// fn_000fdb99: replace st(0) with DBL_MAX (bh bit 2) or FLT_MAX, keeping its sign.
 // FUNCTION: 0x000fdb99
 
 .section _TEXT,"ax",@progbits,unique,1039257
@@ -351,6 +356,7 @@
     ret
 .size "fn_000fdb99_",.-"fn_000fdb99_"
 
+// fn_000fdbbf: load the long double at esi into the instruction's destination register (st(bl & 7) or st(0)).
 // FUNCTION: 0x000fdbbf
 
 .section _TEXT,"ax",@progbits,unique,1039295
@@ -384,6 +390,7 @@
     ret
 .size "fn_000fdbbf_",.-"fn_000fdbbf_"
 
+// fn_000fdbe4: store st(0) at es:edi as a double (bl bit 2) or a float.
 // FUNCTION: 0x000fdbe4
 
 .section _TEXT,"ax",@progbits,unique,1039332

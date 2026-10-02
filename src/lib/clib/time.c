@@ -17,6 +17,7 @@ struct tm {
 int __getctime(struct tm *t);
 time_t mktime(struct tm *t);
 
+// time: current calendar time (rounded to the nearest second), also stored in *timer if not NULL.
 // FUNCTION: 0xce95a
 time_t time(time_t *timer)
 {

@@ -11,6 +11,7 @@ tiny_ret_t TinyDelete(const char *name);
     parm [edx] \
     value [eax];
 
+// unlink: delete file filename (DOS 41h); returns 0, or -1 with errno set.
 // FUNCTION: 0xed2dd
 int unlink(const char *filename)
 {

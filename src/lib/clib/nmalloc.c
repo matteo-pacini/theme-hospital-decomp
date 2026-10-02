@@ -38,6 +38,7 @@ unsigned short FP_SEG(const volatile void __far *);
 
 void *_nmalloc(size_t amt);
 
+// _nmalloc: allocate amt bytes from the near heap, growing DGROUP or calling __nmemneed when full; NULL on failure or amt == 0.
 // FUNCTION: 0x000cf25f
 void *_nmalloc(size_t amt)
 {

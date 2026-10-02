@@ -205,6 +205,7 @@ DISPATCHABLE __wcpp_2_dispatchable_(dispatch_exc *dispatch, rw_dtreg *rw);
 void __wcpp_2_save_exc_(dispatch_exc *dispatch, void *object);
 void __wcpp_2_dispatch_(dispatch_exc *dispatch, DISPATCHABLE kind);
 
+// callTerminate: mark the current exception and the thread as terminating, then call terminate().
 // FUNCTION: 0xf3e1c
 void callTerminate(thread_ctl *thr)
 {
@@ -217,6 +218,7 @@ void callTerminate(thread_ctl *thr)
     __wcpp_2_call_terminate_();
 }
 
+// __wcpp_2_corrupted_stack_: terminate with the "corrupted stack" abort message.
 // FUNCTION: 0xf3e33
 // NONMATCHING: the original reaches callTerminate with a short jump within
 // the same segment
@@ -226,6 +228,7 @@ void __wcpp_2_corrupted_stack_(void)
     callTerminate(&_wint_thread_data);
 }
 
+// typesigIndex: 1-based index of the first of count catch signatures sigs (NULL = catch-all) that accepts one of the thrown type's conversions (recorded in dispatch->cnv); 0 if none.
 // FUNCTION: 0xf3e44
 // NONMATCHING: register allocation and stack slots
 unsigned typesigIndex(dispatch_exc *dispatch, unsigned count, RT_TYPE_SIG **sigs)
@@ -259,6 +262,7 @@ unsigned typesigIndex(dispatch_exc *dispatch, unsigned count, RT_TYPE_SIG **sigs
     return 0;
 }
 
+// dispatchableFnExc: 1 if the thrown type violates the exception specification cmd (no listed type matches), else 0.
 // FUNCTION: 0xf3ee0
 int dispatchableFnExc(dispatch_exc *dispatch, DTOR_CMD *cmd)
 {
@@ -272,6 +276,7 @@ int dispatchableFnExc(dispatch_exc *dispatch, DTOR_CMD *cmd)
     return 0;
 }
 
+// fneDispatch: exception-specification violation; mark the exception and call unexpected().
 // FUNCTION: 0xf3f07
 void fneDispatch(dispatch_exc *dispatch)
 {
@@ -283,6 +288,7 @@ void fneDispatch(dispatch_exc *dispatch)
     unexpected();
 }
 
+// dispatchableCatch: 1 if try block cmd has a catch for the thrown type, recording the try and the catch number in dispatch; else 0.
 // FUNCTION: 0xf3f1d
 int dispatchableCatch(dispatch_exc *dispatch, DTOR_CMD *cmd)
 {
@@ -298,6 +304,7 @@ int dispatchableCatch(dispatch_exc *dispatch, DTOR_CMD *cmd)
     return 1;
 }
 
+// throwCnvSig: type signature of the matched conversion (a pointer's base type).
 // FUNCTION: 0xf3f43
 RT_TYPE_SIG *throwCnvSig(dispatch_exc *dispatch)
 {
@@ -309,6 +316,7 @@ RT_TYPE_SIG *throwCnvSig(dispatch_exc *dispatch)
     return sig;
 }
 
+// excToBePopped: 1 if leaving the current catch block should destroy the thread's current exception (it is not still caught further out), else 0.
 // FUNCTION: 0xf3f51
 int excToBePopped(thread_ctl *thr)
 {
@@ -342,6 +350,7 @@ int excToBePopped(thread_ctl *thr)
     goto pop;
 }
 
+// catchDispatch: initialise the matched catch parameter from the exception object and longjmp into the catch block.
 // FUNCTION: 0xf3ff4
 // NONMATCHING: the original keeps rw in a stack slot and src/offset in
 // edx/esi; 10.6 allocates them differently
@@ -429,6 +438,7 @@ void catchDispatch(dispatch_exc *dispatch)
     longjmp(env, dispatch->catch_no + 1);
 }
 
+// catchDone: destroy exception exc's object (class types) and free it.
 // FUNCTION: 0xf4132
 void catchDone(thread_ctl *thr, active_exc *exc)
 {
@@ -448,6 +458,7 @@ void catchDone(thread_ctl *thr, active_exc *exc)
     __wcpp_2_free_exc_(thr);
 }
 
+// __wcpp_2_catch_done_: called at the end of a catch block; finish the current exception if it is to be popped.
 // FUNCTION: 0xf416f
 void __wcpp_2_catch_done_(void)
 {
@@ -455,6 +466,7 @@ void __wcpp_2_catch_done_(void)
         catchDone(&_wint_thread_data, _wint_thread_data.excepts);
 }
 
+// unwindExc: finish every active exception newer than dispatch->exc.
 // FUNCTION: 0xf4190
 void unwindExc(dispatch_exc *dispatch)
 {
@@ -475,6 +487,7 @@ void unwindExc(dispatch_exc *dispatch)
     }
 }
 
+// unwindStack: destroy the objects of every registration above the handler's, then those of the handler's block down to its state.
 // FUNCTION: 0xf41b5
 void unwindStack(dispatch_exc *dispatch)
 {
@@ -500,6 +513,7 @@ void unwindStack(dispatch_exc *dispatch)
         exc->state = state;
 }
 
+// dispatchable: search registration rw's state table for a matching catch or a violated exception specification (re-throws use the active exception's type); records the handler's state.
 // FUNCTION: 0xf420b
 // NONMATCHING: the target places the command compare tree before the case
 // bodies; 10.6 emits it after them
@@ -562,6 +576,7 @@ done:
     return retn;
 }
 
+// getActiveExc: the thread's current exception, after checking its state (fatal error or terminate if a throw is not allowed now).
 // FUNCTION: 0xf430c
 active_exc *getActiveExc(thread_ctl *thr)
 {
@@ -594,6 +609,7 @@ active_exc *getActiveExc(thread_ctl *thr)
     return exc;
 }
 
+// dispatch_init: start dispatching a throw of type ro (NULL = re-throw), zero set for a thrown 0 constant.
 // FUNCTION: 0xf4390
 void dispatch_init(dispatch_exc *dispatch, THROW_RO *ro, int zero)
 {
@@ -609,6 +625,7 @@ void dispatch_init(dispatch_exc *dispatch, THROW_RO *ro, int zero)
     }
 }
 
+// __wcpp_2_dispatchable_: check function registration rw for a handler (other kinds have none); terminates if the registrations are exhausted.
 // FUNCTION: 0xf43c9
 DISPATCHABLE __wcpp_2_dispatchable_(dispatch_exc *dispatch, rw_dtreg *rw)
 {
@@ -637,6 +654,7 @@ DISPATCHABLE __wcpp_2_dispatchable_(dispatch_exc *dispatch, rw_dtreg *rw)
     }
 }
 
+// __wcpp_2_save_exc_: make the thrown object (or the re-thrown exception) the current exception, finishing newer ones, and record the handler.
 // FUNCTION: 0xf4422
 void __wcpp_2_save_exc_(dispatch_exc *dispatch, void *object)
 {
@@ -660,6 +678,7 @@ void __wcpp_2_save_exc_(dispatch_exc *dispatch, void *object)
     }
 }
 
+// __wcpp_2_dispatch_: transfer control to the handler found (kind), or terminate / report an unhandled exception; does not return.
 // FUNCTION: 0xf44a0
 void __wcpp_2_dispatch_(dispatch_exc *dispatch, DISPATCHABLE kind)
 {
@@ -686,6 +705,7 @@ void __wcpp_2_dispatch_(dispatch_exc *dispatch, DISPATCHABLE kind)
     }
 }
 
+// throwIt: throw object of type ro: find a handler, save the exception, unwind the stack and dispatch.
 // FUNCTION: 0xf4551
 void throwIt(void *object, THROW_RO *ro, int zero)
 {
@@ -701,18 +721,21 @@ void throwIt(void *object, THROW_RO *ro, int zero)
     __wcpp_2_dispatch_(&dispatch, disp);
 }
 
+// __wcpp_2_rethrow_: "throw;" — re-throw the current exception.
 // FUNCTION: 0xf4598
 void __wcpp_2_rethrow_(void)
 {
     throwIt(0, 0, 0);
 }
 
+// __wcpp_2_throw_: throw object of type ro.
 // FUNCTION: 0xf45a8
 void __wcpp_2_throw_(void *object, THROW_RO *ro)
 {
     throwIt(object, ro, 0);
 }
 
+// __wcpp_2_throw_zero_: throw object of type ro, a 0 constant (convertible to any pointer).
 // FUNCTION: 0xf45b2
 // NONMATCHING: the target jumps into __wcpp_2_throw_'s call, so the module
 // was built in one segment; compiling it with -zm- reproduces this but moves
@@ -722,6 +745,7 @@ void __wcpp_2_throw_zero_(void *object, THROW_RO *ro)
     throwIt(object, ro, 1);
 }
 
+// popCatches: step dispatch->exc past the exceptions caught by the active catch blocks of registration rw.
 // FUNCTION: 0xf45ba
 void popCatches(dispatch_exc *dispatch, rw_dtreg *rw)
 {
@@ -743,6 +767,7 @@ void popCatches(dispatch_exc *dispatch, rw_dtreg *rw)
     dispatch->exc = exc;
 }
 
+// __wcpp_2_lj_handler_: longjmp hook; destroy registered objects and finish exceptions above bound before the jump.
 // FUNCTION: 0xf4605
 void __wcpp_2_lj_handler_(rw_dtreg *bound)
 {
@@ -790,6 +815,7 @@ void __wcpp_2_lj_handler_(rw_dtreg *bound)
     unwindStack(&dispatch);
 }
 
+// __wcpp_2_lj_init_: install __wcpp_2_lj_handler_ as the longjmp handler.
 // FUNCTION: 0xf46a5
 void __wcpp_2_lj_init_(void)
 {

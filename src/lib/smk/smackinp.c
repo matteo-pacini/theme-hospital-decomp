@@ -270,7 +270,7 @@ void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32
 void __pascal SmackColorTrans(Smack *smk, const void *trans);
 #pragma aux (__pascal) SmackColorTrans "SMACKCOLORTRANS";
 
-u16 *PutWidths(u16 *p, u32 width, u32 pitch, u32 height, u32 lines);
+u16 *PutWidths(u16 *p, u32 bpl, u32 width, u32 mult, u32 lines);
 
 void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 *wintbl, u32 banked);
 #pragma aux (__pascal) SmackToScreen "SMACKTOSCREEN";
@@ -284,6 +284,7 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on);
 /* config/functions.txt has no name for readframe. */
 #pragma aux readframe "readframe_";
 
+// smkmalloc: RADMALLOC(bytes), adding them to smk's memory total and peak.
 // FUNCTION: 0xeb200
 void *smkmalloc(Smack *smk, u32 bytes)
 {
@@ -293,6 +294,7 @@ void *smkmalloc(Smack *smk, u32 bytes)
     return RADMALLOC(bytes);
 }
 
+// backgroundload: if frames remain and 4K of the read-ahead buffer is free, read 4K of the file into it (throttled to the simulated speed if set) and count the time; returns the bytes read.
 // FUNCTION: 0xeb0f0
 u32 backgroundload(Smack *smk)
 {
@@ -327,6 +329,7 @@ u32 backgroundload(Smack *smk)
     return amount;
 }
 
+// blockread: read size bytes of the file into buf, from the read-ahead buffer first, then directly in up to 16K chunks, refilling the buffer for the tail; a short read sets the read-error flag; returns the bytes delivered.
 // FUNCTION: 0xeae00
 u32 blockread(Smack *smk, u8 *buf, u32 size)
 {
@@ -412,6 +415,7 @@ timing:
     return total;
 }
 
+// readframe: read the current frame's data into the frame buffer (nothing if the whole file is in memory); returns the bytes read.
 // FUNCTION: 0xeadb0
 u32 readframe(Smack *smk)
 {
@@ -422,6 +426,7 @@ u32 readframe(Smack *smk)
     return blockread(smk, smk->f3bc, smk->FrameSize);
 }
 
+// gotoframe: reposition on FrameNum: on frame 0 clear the palette and reset the sound buffers, then reuse read-ahead data or seek to the frame and read it; returns the bytes read.
 // FUNCTION: 0xeab30
 // NONMATCHING: in the else branch the target stores f448 and f444 before f440
 // and adds f450 to f43c in place; written in that order, ours adds to a copy
@@ -497,6 +502,7 @@ u32 gotoframe(Smack *smk)
     return blockread(smk, smk->f3bc, smk->FrameSize);
 }
 
+// setuptheframe: prepare the current frame (wrapping past the last one): locate its per-track audio chunks and video data and decode its palette chunk, setting NewPalette when the palette changed.
 // FUNCTION: 0xea7a0
 // NONMATCHING: register allocation in the palette loop (the target keeps c in
 // cl, src in edx and dst in ebp)
@@ -597,6 +603,7 @@ frame:
     smk->NewPalette = 0;
 }
 
+// soundopen: open sound track trk (rate, stereo and 16-bit from TrackType): allocate its ring buffer and open it through the low-level sound driver; returns 1 on success.
 // FUNCTION: 0xea520
 u8 soundopen(Smack *smk, u8 trk)
 {
@@ -646,6 +653,7 @@ u8 soundopen(Smack *smk, u8 trk)
     return 1;
 }
 
+// nexttrack: index (0-6) of the lowest SMACKTRACK bit set in *flags, clearing it; 0xff if none.
 // FUNCTION: 0xea4f0
 u8 nexttrack(u32 *flags)
 {
@@ -663,6 +671,7 @@ u8 nexttrack(u32 *flags)
     return 0xff;
 }
 
+// SmackOpen: open Smacker file name (a file handle with flag 0x1000; into caller memory with 0x2000000): read the header and frame tables, build the decoding tables, set up read-ahead or load the whole file, prepare the first frame and open the requested sound tracks; NULL on failure.
 // FUNCTION: 0xe9c80
 // NONMATCHING: the spill slots of largest, start, handle, left, fps and
 // nextsize are ordered differently, the inlined readframe loads FrameNum
@@ -916,12 +925,14 @@ Smack *__pascal SmackOpen(const char *name, u32 flags, u32 extrabuf)
     return smk;
 }
 
+// SmackSimulate: simulate a read speed of speed bytes per second for files opened with flag 0x800.
 // FUNCTION: 0x000e9c70
 void __pascal SmackSimulate(u32 speed)
 {
     simspeed = speed;
 }
 
+// SmackFrameRate: frame rate used instead of the file's for files opened with flag 0x80 (rate > 0 in frames per second).
 // FUNCTION: 0xe9c50
 void __pascal SmackFrameRate(s32 rate)
 {
@@ -930,6 +941,7 @@ void __pascal SmackFrameRate(s32 rate)
     forcerate = rate;
 }
 
+// SmackSoundOnOff: turn smk's sound tracks on (padding them with silence to catch up) or off (stopping and emptying them); returns 0 if a track cannot be restarted, else 1.
 // FUNCTION: 0xe9a20
 // NONMATCHING: register allocation; the target keeps behind in ebp and
 // spills the sounds[] cursor (one more dword of frame), loads LowSoundOnAddr into
@@ -998,6 +1010,7 @@ u32 __pascal SmackSoundOnOff(Smack *smk, u32 on)
     return 1;
 }
 
+// SmackClose: close smk's sound tracks and file and free its buffers and the Smack itself (unless caller-owned).
 // FUNCTION: 0xe98d0
 void __pascal SmackClose(Smack *smk)
 {
@@ -1041,6 +1054,7 @@ void __pascal SmackClose(Smack *smk)
     SmackTimerDoneAddr();
 }
 
+// soundnext: append the current frame's audio for every open track to its ring buffer (decoding compressed audio, padding underruns with silence) and advance the timing track's clock.
 // FUNCTION: 0xe94c0
 // NONMATCHING: register allocation; the target spills silence (one more
 // dword of frame) and keeps the inlined nexttrack's mask in edx
@@ -1143,6 +1157,7 @@ done:
     }
 }
 
+// doskip: 1 if the timing sound track has already played past this frame, i.e. the frame is late, else 0.
 // FUNCTION: 0xe9440
 u8 doskip(Smack *smk)
 {
@@ -1165,6 +1180,7 @@ u8 doskip(Smack *smk)
     return 0;
 }
 
+// SmackDoFrame: queue the current frame's audio and decompress its video, skipping the video if the frame is late (unless opened with 0x400); returns 1 if it was late.
 // FUNCTION: 0xe9350
 u32 __pascal SmackDoFrame(Smack *smk)
 {
@@ -1207,6 +1223,7 @@ u32 __pascal SmackDoFrame(Smack *smk)
     return skip;
 }
 
+// timeframe: account the finished frame's time: slowest two frames, blit and decompression time.
 // FUNCTION: 0xe9230
 void timeframe(Smack *smk)
 {
@@ -1244,6 +1261,7 @@ void timeframe(Smack *smk)
     }
 }
 
+// SmackSummary: fill *sum with smk's playback statistics.
 // FUNCTION: 0xe9110
 void __pascal SmackSummary(Smack *smk, SmackSum *sum)
 {
@@ -1274,6 +1292,7 @@ void __pascal SmackSummary(Smack *smk, SmackSum *sum)
     sum->SoundSkips = smk->f430 != -1 ? smk->sounds[smk->f430]->f34 : 0;
 }
 
+// SmackNextFrame: advance to the next frame, reading and preparing its data (after a read error only the frame number advances).
 // FUNCTION: 0xe9050
 void __pascal SmackNextFrame(Smack *smk)
 {
@@ -1295,19 +1314,21 @@ void __pascal SmackNextFrame(Smack *smk)
     }
 }
 
+// PutWidths: write a blit table's row parameters at p: bpl, width in dwords, mult * bpl - 4, mult * bpl and bpl * lines - width; returns the end.
 // FUNCTION: 0xe9010
-u16 *PutWidths(u16 *p, u32 width, u32 pitch, u32 height, u32 lines)
+u16 *PutWidths(u16 *p, u32 bpl, u32 width, u32 mult, u32 lines)
 {
     // The casts add expression nodes that keep this function over the
     // -oe=25 inlining limit: the original never inlines it.
-    *p++ = (u16)width;
-    *p++ = (u16)(pitch >> 2);
-    *p++ = (u16)((u16)(height * width) - 4);
-    *p++ = (u16)(height * width);
-    *p++ = (u16)(width * lines - pitch);
+    *p++ = (u16)bpl;
+    *p++ = (u16)(width >> 2);
+    *p++ = (u16)((u16)(mult * bpl) - 4);
+    *p++ = (u16)(mult * bpl);
+    *p++ = (u16)(bpl * lines - width);
     return p;
 }
 
+// SmackToScreen: build the blit table for decoding straight to the screen at left, top with pitch, splitting rows at 64K boundaries through the bank numbers in wintbl when banked.
 // FUNCTION: 0xe8ab0
 // NONMATCHING: register allocation: the original keeps pitch in edi, stride
 // in esi and height (later p) in ebp, and spills prevbuf; ours spills p and
@@ -1467,6 +1488,7 @@ void __pascal SmackToScreen(Smack *smk, u32 left, u32 top, u32 pitch, const u16 
     *p = 0xffff;
 }
 
+// SmackToBuffer: set up decoding into buf at left, top with pitch (flags nonzero: rows bottom-up in a destheight-row buffer); a NULL buf frees the table.
 // FUNCTION: 0xe8890
 // NONMATCHING: register allocation: the target reads the delta header byte
 // into bl before comparing it, and multiplies pitch * row in a fresh register
@@ -1542,6 +1564,7 @@ have:
     *p = height;
 }
 
+// SmackColorTrans: remap the video's colours through the 256-entry table trans.
 // FUNCTION: 0xe8840
 void __pascal SmackColorTrans(Smack *smk, const void *trans)
 {
@@ -1554,6 +1577,7 @@ void __pascal SmackColorTrans(Smack *smk, const void *trans)
     }
 }
 
+// SmackColorRemap: remap the video's colours to the nearest (squared RGB distance) of numcolors entries of remappal, laid out as paltype describes.
 // FUNCTION: 0xe85b0
 // NONMATCHING: register allocation: r, g, b and ro, bo get each other's spill
 // slots and are loaded through different registers; the target computes
@@ -1634,6 +1658,7 @@ void __pascal SmackColorRemap(Smack *smk, const u8 *remappal, u32 numcolors, u32
     SmackRemapTables(smk->addr32, remap);
 }
 
+// SmackGetTrackData: copy the current frame's data of track trackflag to dest (decoding compressed audio); returns its size.
 // FUNCTION: 0xe8480
 u32 __pascal SmackGetTrackData(Smack *smk, u8 *dest, u32 trackflag)
 {
@@ -1666,6 +1691,7 @@ u32 __pascal SmackGetTrackData(Smack *smk, u8 *dest, u32 trackflag)
     return src[0] - 4;
 }
 
+// SmackGoto: move to frame (1-based) and prepare it.
 // FUNCTION: 0xe8440
 void __pascal SmackGoto(Smack *smk, u32 frame)
 {
@@ -1680,6 +1706,7 @@ void __pascal SmackGoto(Smack *smk, u32 frame)
     }
 }
 
+// SmackToBufferRect: next changed rectangle of the decoded frame into LastRect* (SmackSurface 1 merges all into one, 0 merges while it saves area, 2 none); returns 1 if one was produced.
 // FUNCTION: 0xe8190
 // NONMATCHING: register allocation; the target computes &smk->f3f8 into ecx
 // once before loading left/top, and loads smk->NewPalette into eax so that its
@@ -1772,6 +1799,7 @@ rect:
     return 1;
 }
 
+// SmackSoundInTrack: 1 if any track in trackflags carries sound.
 // FUNCTION: 0xe8120
 u32 __pascal SmackSoundInTrack(Smack *smk, u32 trackflags)
 {
@@ -1787,6 +1815,7 @@ u32 __pascal SmackSoundInTrack(Smack *smk, u32 trackflags)
     return 0;
 }
 
+// SmackVolumePan: set the volume and pan (each 0-0x10000) of the tracks in trackflag.
 // FUNCTION: 0xe8080
 void __pascal SmackVolumePan(Smack *smk, u32 trackflag, u32 volume, u32 pan)
 {
@@ -1807,6 +1836,7 @@ void __pascal SmackVolumePan(Smack *smk, u32 trackflag, u32 volume, u32 pan)
     }
 }
 
+// SmackSoundCheck: service the low-level sound driver if a track is open.
 // FUNCTION: 0x000e8070
 void __pascal SmackSoundCheck(void)
 {
@@ -1814,6 +1844,7 @@ void __pascal SmackSoundCheck(void)
         LowSoundCheckAddr();
 }
 
+// SmackWait: 1 while the next frame is not yet due (by the timing sound track, else the frame rate), reading ahead in the meantime; 0 when it is.
 // FUNCTION: 0xe7f40
 u32 __pascal SmackWait(Smack *smk)
 {

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// modf: split value into integral part (stored in *iptr) and fractional part (returned), both with value's sign.
 // FUNCTION: 0x000fcf6c
 
 .section _TEXT,"ax",@progbits,unique,1036140

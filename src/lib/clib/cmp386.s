@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// strcmp: compare s1 and s2 (a dword at a time); <0, 0 or >0.
 // FUNCTION: 0x000cd350
 
 .section _TEXT,"ax",@progbits,unique,840528

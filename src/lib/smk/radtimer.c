@@ -58,6 +58,7 @@ static u32 timeradjust = 0;
 static u32 lasttimerread = 0;
 void (__pascal *SmackTimerSetupAddr)(void) = DOSSmackTimerSetup;
 
+// BIOSSmackTimerRead: milliseconds from the BIOS tick count at 0:46Ch (ticks * 2746 / 50), kept increasing across its midnight reset.
 // FUNCTION: 0xf2fa0
 u32 __pascal BIOSSmackTimerRead(void)
 {
@@ -70,6 +71,7 @@ u32 __pascal BIOSSmackTimerRead(void)
     return mult64anddiv(ticks + timeradjust, 2746, 50);
 }
 
+// VTDSmackTimerRead: milliseconds from the Windows virtual timer device (VTD); never goes backwards.
 // FUNCTION: 0xf2f80
 u32 __pascal VTDSmackTimerRead(void)
 {
@@ -82,11 +84,13 @@ u32 __pascal VTDSmackTimerRead(void)
     return ticks;
 }
 
+// DOSSmackTimerDone: timer shutdown hook; nothing to undo.
 // FUNCTION: 0xf2f70
 void __pascal DOSSmackTimerDone(void)
 {
 }
 
+// DOSSmackTimerSetup: on first use pick the timer: the Windows VTD if INT 2Fh 1684h finds it, else the BIOS tick count with the PIT reset to its standard rate.
 // FUNCTION: 0xf2ec0
 void __pascal DOSSmackTimerSetup(void)
 {

@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __InitRtns: run each startup (XI) routine with priority <= al, lowest priority first, marking each done.
 // FUNCTION: 0x000d05b0
 
 .section _TEXT,"ax",@progbits,unique,853424
@@ -52,6 +53,7 @@
     ret
 .size "__InitRtns",.-"__InitRtns"
 
+// __FiniRtns: run each exit (YI) routine with priority >= al, highest first, calling only those <= dl; each is marked done.
 // FUNCTION: 0x000d05fb
 
 .section _TEXT,"ax",@progbits,unique,853499

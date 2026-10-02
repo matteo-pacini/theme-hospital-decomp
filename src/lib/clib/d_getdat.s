@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// _dos_getdate: store the DOS date (day, month, year, day of week) in *date; returns 0.
 // FUNCTION: 0x000dc932
 
 .section _TEXT,"ax",@progbits,unique,903474

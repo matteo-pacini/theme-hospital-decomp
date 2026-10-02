@@ -24,6 +24,7 @@ struct tm *__brktime(unsigned long days, time_t wallclock, long gmtdelta, struct
 int __isindst(struct tm *t);
 void tzset(void);
 
+// _localtime: convert *timer to local broken-down time in *tm, applying the timezone and DST; returns tm.
 // FUNCTION: 0xfa949
 struct tm *_localtime(const time_t *timer, struct tm *tm)
 {
@@ -37,6 +38,7 @@ struct tm *_localtime(const time_t *timer, struct tm *tm)
     return tm;
 }
 
+// localtime: convert *timer to local time in a static struct tm; returns it.
 // FUNCTION: 0xfa99a
 struct tm *localtime(const time_t *timer)
 {

@@ -14,6 +14,7 @@ typedef long time_t;
 
 time_t mktime(struct tm *t);
 
+// _d2ttime: convert a DOS packed date and time to time_t (local time, DST unknown).
 // FUNCTION: 0xf4b64
 time_t _d2ttime(unsigned date, unsigned time)
 {

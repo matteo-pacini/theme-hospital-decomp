@@ -8,6 +8,7 @@ unsigned char _TinyGetCharNoEcho(void);
     "int 21h" \
     value [al] modify [eax];
 
+// getch: read a keystroke without echo (a pushed-back _cbyte first).
 // FUNCTION: 0xecd44
 int getch(void)
 {

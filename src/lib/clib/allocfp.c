@@ -11,6 +11,7 @@ void *malloc(size_t size);
 void _nfree(void *ptr);
 void *memset(void *s, int c, size_t n);
 
+// __allocfp: get a zeroed FILE marked read/write and link it on the open list; reuses a closed one, then a free __iob slot, then mallocs one; NULL with errno ENOMEM on failure.
 // FUNCTION: 0xf48ce
 FILE *__allocfp(int handle)
 {
@@ -55,6 +56,7 @@ no_mem:
     return NULL;
 }
 
+// __freefp: move fp from the open-stream list to the closed list for reuse.
 // FUNCTION: 0xf4974
 void __freefp(FILE *fp)
 {
@@ -78,6 +80,7 @@ void __freefp(FILE *fp)
     link->next = next;
 }
 
+// __purgefp: free every link on the closed-stream list.
 // FUNCTION: 0x000f49ad
 void __purgefp(void)
 {

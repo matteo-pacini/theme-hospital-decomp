@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// IF@LOG: natural log of st(0) (also the shared body of IF@LOG2/IF@LOG10, function code in al); x <= 0 goes to __log87_err.
 // FUNCTION: 0x000fc9ce
 
 .section _TEXT,"ax",@progbits,unique,1034702
@@ -45,6 +46,7 @@
     ret
 .size "IF@LOG",.-"IF@LOG"
 
+// IF@LOG2: base-2 log of st(0).
 // FUNCTION: 0x000fca11
 
 .section _TEXT,"ax",@progbits,unique,1034769
@@ -55,6 +57,7 @@
     .byte 0xeb; .byte 0xbb  # jmp 0xfc9d0
 .size "IF@LOG2",.-"IF@LOG2"
 
+// IF@LOG10: base-10 log of st(0).
 // FUNCTION: 0x000fca15
 
 .section _TEXT,"ax",@progbits,unique,1034773
@@ -65,6 +68,7 @@
     .byte 0xeb; .byte 0xb7  # jmp 0xfc9d0
 .size "IF@LOG10",.-"IF@LOG10"
 
+// log: natural logarithm of x.
 // FUNCTION: 0x000fca19
 
 .section _TEXT,"ax",@progbits,unique,1034777
@@ -76,6 +80,7 @@
     ret 8
 .size "log_",.-"log_"
 
+// log10: base-10 logarithm of x.
 // FUNCTION: 0x000fca25
 
 .section _TEXT,"ax",@progbits,unique,1034789
@@ -87,6 +92,7 @@
     ret 8
 .size "log10_",.-"log10_"
 
+// log2: base-2 logarithm of x.
 // FUNCTION: 0x000fca31
 
 .section _TEXT,"ax",@progbits,unique,1034801

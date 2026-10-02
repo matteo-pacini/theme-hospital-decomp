@@ -18,6 +18,7 @@ static unsigned long nearly_overflowing[] = {
 
 int radix_value(char c);
 
+// _stol: strtol/strtoul core; parse nptr in base (0 = from prefix) and store the end in *endptr; who is 1 for signed range checks; errno EDOM for a bad base, ERANGE on overflow.
 // FUNCTION: 0xeeeb9
 unsigned long _stol(const char *nptr, char **endptr, int base, int who)
 {
@@ -94,18 +95,21 @@ unsigned long _stol(const char *nptr, char **endptr, int base, int who)
     return value;
 }
 
+// strtoul: convert nptr to unsigned long in base (0 = from prefix); ULONG_MAX with errno ERANGE on overflow.
 // FUNCTION: 0xef01c
 unsigned long strtoul(const char *nptr, char **endptr, int base)
 {
     return _stol(nptr, endptr, base, 0);
 }
 
+// strtol: convert nptr to long in base (0 = from prefix); LONG_MIN/LONG_MAX with errno ERANGE on overflow.
 // FUNCTION: 0xef026
 long strtol(const char *nptr, char **endptr, int base)
 {
     return _stol(nptr, endptr, base, 1);
 }
 
+// radix_value: digit value of c in bases up to 36 (case-insensitive), 37 if not a digit.
 // FUNCTION: 0xef02e
 int radix_value(char c)
 {

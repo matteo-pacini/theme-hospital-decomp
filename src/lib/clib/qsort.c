@@ -34,12 +34,14 @@ void inline_swap(char *p, char *q, size_t size);
 
 #pragma aux byteswap parm [esi] [edi] [ecx] modify [eax ecx edx esi edi];
 
+// byteswap: exchange size bytes at p and q.
 // FUNCTION: 0xced1f
 void byteswap(char *p, char *q, size_t size)
 {
     inline_swap(p, q, size);
 }
 
+// med3: median of the elements a, b and c under cmp.
 // FUNCTION: 0xced45
 char *med3(char *a, char *b, char *c, _compfn cmp)
 {
@@ -76,6 +78,7 @@ void qsort(char *base, size_t n, size_t size, _compfn compar);
 // NONMATCHING: the stack slots of the shell-sort step constants and of pv/pn
 // are swapped; the pb/pc exchange and the first min() pick the other
 // register order
+// qsort: sort n elements of size bytes at base in ascending order of compar.
 // FUNCTION: 0xced9d
 void qsort(char *base, size_t n, size_t size, _compfn compar)
 {

@@ -49,6 +49,7 @@ void FixedPoint_Format(char *buf, long value, SPECS *specs);
 FAR_STRING float_format(char *buffer, va_list *pargs, SPECS *specs);
 void zupstr(char *p);
 
+// __prtf: printf engine; format args, emitting each char through out_putc(specs, c) with dest as the destination; returns chars output.
 // FUNCTION: 0xcf5c3
 int __prtf(void *dest, const char *format, va_list args, void (*out_putc)())
 {
@@ -151,6 +152,7 @@ int __prtf(void *dest, const char *format, va_list args, void (*out_putc)())
     return specs._output_count;
 }
 
+// getprintspecs: parse a conversion's flags, width, precision and size modifier at ctl into specs (consuming '*' arguments); returns the conversion character's position.
 // FUNCTION: 0xcf89d
 const char *getprintspecs(const char *ctl, va_list *pargs, SPECS *specs)
 {
@@ -211,6 +213,7 @@ const char *getprintspecs(const char *ctl, va_list *pargs, SPECS *specs)
     return ctl;
 }
 
+// evalflags: parse printf flag characters (-#+ 0) at ctl into specs; returns the first non-flag.
 // FUNCTION: 0xcf9db
 const char *evalflags(const char *ctl, SPECS *specs)
 {
@@ -236,6 +239,7 @@ const char *evalflags(const char *ctl, SPECS *specs)
     return ctl;
 }
 
+// far_strlen: length of far string s, at most precision (-1 = unlimited).
 // FUNCTION: 0xcfa3a
 int far_strlen(FAR_STRING s, int precision)
 {
@@ -250,6 +254,7 @@ int far_strlen(FAR_STRING s, int precision)
     return len;
 }
 
+// far_other_strlen: length in 16-bit characters of wide string s, at most precision.
 // FUNCTION: 0xcfa5e
 int far_other_strlen(FAR_STRING s, int precision)
 {
@@ -266,6 +271,7 @@ int far_other_strlen(FAR_STRING s, int precision)
     return len;
 }
 
+// fmt4hex: value as exactly maxlen zero-padded hex digits (low digits kept) in buf.
 // FUNCTION: 0xcfa81
 void fmt4hex(unsigned value, char *buf, int maxlen)
 {
@@ -300,6 +306,7 @@ typedef union {
     } bite;
 } T32;
 
+// FixedPoint_Format: format 16.16 fixed-point value in decimal (%hf; default 4 places, rounded) into buf.
 // FUNCTION: 0xcfadf
 void FixedPoint_Format(char *buf, long value, SPECS *specs)
 {
@@ -355,12 +362,14 @@ void FixedPoint_Format(char *buf, long value, SPECS *specs)
     }
 }
 
+// float_format: format a floating-point argument through the installed __EFG_printf handler.
 // FUNCTION: 0xcfbd4
 FAR_STRING float_format(char *buffer, va_list *pargs, SPECS *specs)
 {
     return (*__EFG_printf)(buffer, pargs, specs);
 }
 
+// formstring: convert the current argument for specs's conversion into text (in buffer or the argument string), setting prefix, zero padding and remaining field width; returns the text.
 // FUNCTION: 0xcfbdb
 // NONMATCHING: flip_sign and the null_string spill swap stack slots; the
 // original merges the f/e/g far_strlen tails into no_zero's call (ours into
@@ -562,6 +571,7 @@ done:
     return arg;
 }
 
+// zupstr: uppercase string p in place.
 // FUNCTION: 0xd00c4
 void zupstr(char *p)
 {

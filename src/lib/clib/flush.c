@@ -1,5 +1,6 @@
 #include "clib.h"
 
+// __flush: write out fp's dirty buffer, or seek back over unread buffered input; resets the buffer; returns 0 or EOF.
 // FUNCTION: 0xcf438
 int __flush(FILE *fp)
 {

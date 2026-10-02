@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// __delay_init: calibrate delay(); count DOS get-time (2Ch) calls during one change of the seconds value.
 // FUNCTION: 0x000eb701
 
 .section _TEXT,"ax",@progbits,unique,964353
@@ -38,6 +39,7 @@
     ret
 .size "__delay_init_",.-"__delay_init_"
 
+// __delay: wait about ms milliseconds by repeating DOS get-time calls (calibrated count per second).
 // FUNCTION: 0x000eb733
 
 .section _TEXT,"ax",@progbits,unique,964403

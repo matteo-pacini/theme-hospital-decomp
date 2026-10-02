@@ -1,5 +1,6 @@
 .intel_syntax noprefix
 
+// _harderr: install handler (far pointer) as the INT 24h critical-error handler, called on a private stack with the error codes and its result returned to DOS; returns 0.
 // FUNCTION: 0x000ce546
 
 .section _TEXT,"ax",@progbits,unique,845126

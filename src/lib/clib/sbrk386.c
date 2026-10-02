@@ -75,6 +75,7 @@ unsigned GetDSLimit(void);
 
 void *__brk(unsigned brk_value);
 
+// sbrk: grow the data area by increment bytes; returns the old break, or (void *)-1 with errno set. Under some extenders allocates a separate 4K-rounded block instead.
 // FUNCTION: 0xf46ed
 void *sbrk(int increment)
 {
@@ -101,6 +102,7 @@ void *sbrk(int increment)
     return __brk(_curbrk + increment);
 }
 
+// __brk: set the program break to brk_value by resizing the DOS/extender memory block; returns the old break, or (void *)-1 with errno ENOMEM.
 // FUNCTION: 0xf47b5
 void *__brk(unsigned brk_value)
 {
